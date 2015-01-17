@@ -10,8 +10,11 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include <iostream>
 #include <thread>
 #include <chrono>
+
+#include "Shader.h"
 
 float pFov = 50.0f;
 float pAspect = 1.0f;
@@ -22,21 +25,13 @@ static void error_callback(int error, const char* description)
 {
 	fputs(description, stderr);
 }
-static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
-{
-	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
-		glfwSetWindowShouldClose(window, GL_TRUE);
-}
 
 void windowSize_callback(GLFWwindow* window, int width, int height)
 {
 	glfwSetWindowSize(window, width, height);
 
 	pAspect = width / (float) height;
-	// Set OpenGL viewport and camera
-	//glViewport(0, 0, width, height);
 
-	// Send the new window size to AntTweakBar
 	TwWindowSize(width, height);
 }
 
@@ -58,6 +53,8 @@ void TwEventMouseWheelGLFW3(GLFWwindow* window, double xoffset, double yoffset)
 void TwEventKeyGLFW3(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
 	TwEventKeyGLFW(key, action);
+	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+		glfwSetWindowShouldClose(window, GL_TRUE);
 }
 
 void TwEventCharGLFW3(GLFWwindow* window, unsigned int codepoint)
@@ -89,7 +86,7 @@ int main(void)
 	glfwSetKeyCallback(window, (GLFWkeyfun)TwEventKeyGLFW3);
 	glfwSetCharCallback(window, (GLFWcharfun)TwEventCharGLFW3);
 	
-	glfwSwapInterval(1);
+	//glfwSwapInterval(1);
 
 	TwBar *bar = TwNewBar("TweakBar");
 	TwWindowSize(640, 480);
@@ -101,6 +98,26 @@ int main(void)
 	TwAddVarRO(bar, "time", TW_TYPE_DOUBLE, &time, " label='Time' precision=2 help='Time (in seconds).' ");
 	TwAddVarRO(bar, "delta time", TW_TYPE_DOUBLE, &dt, " label='Delta Time' precision=2 help='Delta Time (in seconds).' ");
 	TwAddVarRO(bar, "FPS", TW_TYPE_DOUBLE, &fps, " label='FPS' precision=2 help='Frame Per Second' ");
+
+	glewInit();
+
+	cubey::ShaderProgram prog;
+	prog.AddShader(GL_VERTEX_SHADER, "shaders\\debug_shader.glsl", "#define _VERTEX_S_");
+	prog.AddShader(GL_FRAGMENT_SHADER, "shaders\\debug_shader.glsl", "#define _FRAGMENT_S_");
+	prog.LinkProgram();
+
+	GLint max_buffer_size;
+	glGetProgramiv(prog.gl_, GL_ACTIVE_UNIFORM_MAX_LENGTH, &max_buffer_size);
+
+	GLint uniform_size;
+	GLenum uniform_type;
+	char* uniform_name = new char[max_buffer_size];
+	glGetActiveUniform(prog.gl_, 0, max_buffer_size, NULL, &uniform_size, &uniform_type, uniform_name);
+
+	delete[] uniform_name;
+
+	GLint uniform_loc0 = glGetUniformLocation(prog.gl_, "u_projection_mat");
+	GLint uniform_loc1 = glGetUniformLocation(prog.gl_, "u_model_mat");
 
 	while (!glfwWindowShouldClose(window))
 	{
