@@ -142,10 +142,4 @@ namespace cubey {
 			delete[] uniform_name;
 		}
 	}
-
-	
-
-
-	
-
 }

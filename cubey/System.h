@@ -10,14 +10,39 @@
 #include "Event.h"
 
 namespace cubey {
-	DECLARE_EVENT_TYPE0(SystemInitEvent);
+	struct SystemInitEvent {};
 
-	DECLARE_EVENT_TYPE2(WindowSizeEvent, int, int);
-	DECLARE_EVENT_TYPE3(MouseButtonEvent, int, int, int);
-	DECLARE_EVENT_TYPE2(MousePosEvent, double, double);
-	DECLARE_EVENT_TYPE2(MouseWheelEvent, double, double);
-	DECLARE_EVENT_TYPE4(KeyEvent, int, int, int, int);
-	DECLARE_EVENT_TYPE1(CharEvent, unsigned int);
+	struct WindowSizeEvent {
+		int width;
+		int height;
+	};
+
+	struct MouseButtonEvent {
+		int button;
+		int action;
+		int mods;
+	};
+
+	struct MousePosEvent {
+		double xpos;
+		double ypos;
+	};
+
+	struct MouseWheelEvent {
+		double xoffset;
+		double yoffset;
+	};
+
+	struct KeyEvent {
+		int key;
+		int scancode;
+		int action;
+		int yoffset;
+	};
+
+	struct CharEvent {
+		unsigned int codepoint;
+	};
 
 	class System {
 	public:

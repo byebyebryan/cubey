@@ -70,12 +70,12 @@ int main(void)
 	System::Main()->Init();
 
 	TwInit(TW_OPENGL, NULL);
-	EventChannel<WindowSizeEvent>::Add([](const WindowSizeEvent& e){TwWindowSize(e.para_0, e.para_1); });
-	EventChannel<MouseButtonEvent>::Add([](const MouseButtonEvent& e){TwEventMouseButtonGLFW(e.para_0, e.para_1); });
-	EventChannel<MousePosEvent>::Add([](const MousePosEvent& e){TwEventMousePosGLFW(e.para_0, e.para_1); });
-	EventChannel<MouseWheelEvent>::Add([](const MouseWheelEvent& e){TwEventMouseWheelGLFW(e.para_1); });
-	EventChannel<KeyEvent>::Add([](const KeyEvent& e){TwEventKeyGLFW(e.para_0, e.para_2); });
-	EventChannel<CharEvent>::Add([](const CharEvent& e){TwEventCharGLFW(e.para_0, GLFW_PRESS); });
+	EventChannel<WindowSizeEvent>::Add([](const WindowSizeEvent& e){TwWindowSize(e.width, e.height); });
+	EventChannel<MouseButtonEvent>::Add([](const MouseButtonEvent& e){TwEventMouseButtonGLFW(e.button, e.action); });
+	EventChannel<MousePosEvent>::Add([](const MousePosEvent& e){TwEventMousePosGLFW(e.xpos, e.ypos); });
+	EventChannel<MouseWheelEvent>::Add([](const MouseWheelEvent& e){TwEventMouseWheelGLFW(e.yoffset); });
+	EventChannel<KeyEvent>::Add([](const KeyEvent& e){TwEventKeyGLFW(e.key, e.action); });
+	EventChannel<CharEvent>::Add([](const CharEvent& e){TwEventCharGLFW(e.codepoint, GLFW_PRESS); });
 
 	TwBar *bar = TwNewBar("TweakBar");
 	TwWindowSize(640, 480);

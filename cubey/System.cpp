@@ -34,25 +34,25 @@ void cubey::System::ErrorHandler(int error, const char* description) {
 
 void cubey::System::WindowSizeHandler(GLFWwindow* window, int width, int height) {
 	glfwSetWindowSize(window, width, height);
-	EventChannel<WindowSizeEvent>::Broadcast(WindowSizeEvent(width, height));
+	EventChannel<WindowSizeEvent>::Broadcast(WindowSizeEvent{ width, height });
 }
 
 void cubey::System::MouseButtonHandler(GLFWwindow* window, int button, int action, int mods) {
-	EventChannel<MouseButtonEvent>::Broadcast(MouseButtonEvent(button, action, mods));
+	EventChannel<MouseButtonEvent>::Broadcast(MouseButtonEvent{ button, action, mods });
 }
 
 void cubey::System::MousePosHandler(GLFWwindow* window, double xpos, double ypos) {
-	EventChannel<MousePosEvent>::Broadcast(MousePosEvent(xpos, ypos));
+	EventChannel<MousePosEvent>::Broadcast(MousePosEvent{ xpos, ypos });
 }
 
 void cubey::System::MouseWheelHandler(GLFWwindow* window, double xoffset, double yoffset) {
-	EventChannel<MouseWheelEvent>::Broadcast(MouseWheelEvent(xoffset, yoffset));
+	EventChannel<MouseWheelEvent>::Broadcast(MouseWheelEvent{ xoffset, yoffset });
 }
 
 void cubey::System::KeyHandler(GLFWwindow* window, int key, int scancode, int action, int mods) {
-	EventChannel<KeyEvent>::Broadcast(KeyEvent(key, scancode, action, mods));
+	EventChannel<KeyEvent>::Broadcast(KeyEvent{ key, scancode, action, mods });
 }
 
 void cubey::System::CharHandler(GLFWwindow* window, unsigned int codepoint) {
-	EventChannel<CharEvent>::Broadcast(CharEvent(codepoint));
+	EventChannel<CharEvent>::Broadcast(CharEvent{ codepoint });
 }
