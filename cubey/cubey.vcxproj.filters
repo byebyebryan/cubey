@@ -3,9 +3,12 @@
   <ItemGroup>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Shader.cpp" />
+    <ClCompile Include="System.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Shader.h" />
+    <ClInclude Include="System.h" />
+    <ClInclude Include="Event.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Shaders">

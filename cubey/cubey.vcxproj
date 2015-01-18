@@ -90,9 +90,12 @@
   <ItemGroup>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Shader.cpp" />
+    <ClCompile Include="System.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Event.h" />
     <ClInclude Include="Shader.h" />
+    <ClInclude Include="System.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\debug_shader.glsl" />

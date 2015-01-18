@@ -15,6 +15,9 @@
 #include <chrono>
 
 #include "Shader.h"
+#include "System.h"
+
+using namespace cubey;
 
 float pFov = 50.0f;
 float pAspect = 1.0f;
@@ -23,7 +26,7 @@ float pFar = 1000.0f;
 
 static void error_callback(int error, const char* description)
 {
-	fputs(description, stderr);
+	std::cerr << description << std::endl;
 }
 
 void windowSize_callback(GLFWwindow* window, int width, int height)
@@ -64,29 +67,15 @@ void TwEventCharGLFW3(GLFWwindow* window, unsigned int codepoint)
 
 int main(void)
 {
-	GLFWwindow* window;
-	glfwSetErrorCallback(error_callback);
-	if (!glfwInit())
-		exit(EXIT_FAILURE);
-	window = glfwCreateWindow(640, 480, "Simple example", NULL, NULL);
-	if (!window)
-	{
-		glfwTerminate();
-		exit(EXIT_FAILURE);
-	}
-	glfwMakeContextCurrent(window);
-
-	//glfwSwapInterval(1);
+	System::Main()->Init();
 
 	TwInit(TW_OPENGL, NULL);
-	glfwSetWindowSizeCallback(window, windowSize_callback);
-	glfwSetMouseButtonCallback(window, (GLFWmousebuttonfun)TwEventMouseButtonGLFW3);
-	glfwSetCursorPosCallback(window, (GLFWcursorposfun)TwEventMousePosGLFW3);
-	glfwSetScrollCallback(window, (GLFWscrollfun)TwEventMouseWheelGLFW3);
-	glfwSetKeyCallback(window, (GLFWkeyfun)TwEventKeyGLFW3);
-	glfwSetCharCallback(window, (GLFWcharfun)TwEventCharGLFW3);
-	
-	//glfwSwapInterval(1);
+	EventChannel<WindowSizeEvent>::Add([](const WindowSizeEvent& e){TwWindowSize(e.para_0, e.para_1); });
+	EventChannel<MouseButtonEvent>::Add([](const MouseButtonEvent& e){TwEventMouseButtonGLFW(e.para_0, e.para_1); });
+	EventChannel<MousePosEvent>::Add([](const MousePosEvent& e){TwEventMousePosGLFW(e.para_0, e.para_1); });
+	EventChannel<MouseWheelEvent>::Add([](const MouseWheelEvent& e){TwEventMouseWheelGLFW(e.para_1); });
+	EventChannel<KeyEvent>::Add([](const KeyEvent& e){TwEventKeyGLFW(e.para_0, e.para_2); });
+	EventChannel<CharEvent>::Add([](const CharEvent& e){TwEventCharGLFW(e.para_0, GLFW_PRESS); });
 
 	TwBar *bar = TwNewBar("TweakBar");
 	TwWindowSize(640, 480);
@@ -99,31 +88,18 @@ int main(void)
 	TwAddVarRO(bar, "delta time", TW_TYPE_DOUBLE, &dt, " label='Delta Time' precision=2 help='Delta Time (in seconds).' ");
 	TwAddVarRO(bar, "FPS", TW_TYPE_DOUBLE, &fps, " label='FPS' precision=2 help='Frame Per Second' ");
 
-	glewInit();
+	//glewInit();
 
-	cubey::ShaderProgram prog;
-	prog.AddShader(GL_VERTEX_SHADER, "shaders\\debug_shader.glsl", "#define _VERTEX_S_");
-	prog.AddShader(GL_FRAGMENT_SHADER, "shaders\\debug_shader.glsl", "#define _FRAGMENT_S_");
-	prog.LinkProgram();
+	//cubey::ShaderProgram prog;
+	//prog.AddShader(GL_VERTEX_SHADER, "shaders\\debug_shader.glsl", "#define _VERTEX_S_");
+	//prog.AddShader(GL_FRAGMENT_SHADER, "shaders\\debug_shader.glsl", "#define _FRAGMENT_S_");
+	//prog.Link();
 
-	GLint max_buffer_size;
-	glGetProgramiv(prog.gl_, GL_ACTIVE_UNIFORM_MAX_LENGTH, &max_buffer_size);
-
-	GLint uniform_size;
-	GLenum uniform_type;
-	char* uniform_name = new char[max_buffer_size];
-	glGetActiveUniform(prog.gl_, 0, max_buffer_size, NULL, &uniform_size, &uniform_type, uniform_name);
-
-	delete[] uniform_name;
-
-	GLint uniform_loc0 = glGetUniformLocation(prog.gl_, "u_projection_mat");
-	GLint uniform_loc1 = glGetUniformLocation(prog.gl_, "u_model_mat");
-
-	while (!glfwWindowShouldClose(window))
+	while (!glfwWindowShouldClose(cubey::System::Main()->window_))
 	{
 		float ratio;
 		int width, height;
-		glfwGetFramebufferSize(window, &width, &height);
+		glfwGetFramebufferSize(cubey::System::Main()->window_, &width, &height);
 		ratio = width / (float)height;
 		glViewport(0, 0, width, height);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -153,20 +129,20 @@ int main(void)
 		double t1 = 1.0 / 60.0 - dt;
 		if (t1 > 0)
 		{
-			std::this_thread::sleep_for(std::chrono::milliseconds((int)(t1*1000.0)));
-			t0 = time;
-			time = glfwGetTime();
-			dt = time - t0;
+		std::this_thread::sleep_for(std::chrono::milliseconds((int)(t1*1000.0)));
+		t0 = time;
+		time = glfwGetTime();
+		dt = time - t0;
 		}
 
 		fps = 1.0 / dt;
 
 		TwDraw();
 
-		glfwSwapBuffers(window);
+		glfwSwapBuffers(cubey::System::Main()->window_);
 		glfwPollEvents();
 	}
-	glfwDestroyWindow(window);
+	glfwDestroyWindow(cubey::System::Main()->window_);
 	TwTerminate();
 	glfwTerminate();
 	exit(EXIT_SUCCESS);
