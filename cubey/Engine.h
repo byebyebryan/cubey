@@ -2,13 +2,13 @@
 
 #include "GL/glew.h"
 #include "GLFW/glfw3.h"
-
 #include "Event.h"
 
 namespace cubey {
+
 	class Engine {
 	public:
-		struct InitEvent {
+		struct StartUpEvent {
 		};
 		struct EarlyUpdateEvent {
 			float deltatime;
@@ -59,6 +59,7 @@ namespace cubey {
 		static void Init();
 		static void MainLoop();
 		static void Update(float delta_time);
+		static void Render();
 		static void Terminate();
 
 		static void ErrorHandler(int error, const char* description);
@@ -71,11 +72,6 @@ namespace cubey {
 		static void CharHandler(GLFWwindow* window, unsigned int codepoint);
 
 		static GLFWwindow* window_;
-		static double timer_;
-		static double fps_;
-		static double regulated_fps_;
-		static double delta_time_;
-		static double regulated_delta_time_;
 	};
 }
 

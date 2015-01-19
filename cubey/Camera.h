@@ -1,6 +1,5 @@
 #pragma once
 
-#include "GL/glew.h"
 #include "glm/glm.hpp"
 #include "glm/gtc/quaternion.hpp"
 
@@ -8,10 +7,12 @@ namespace cubey {
 
 	class Camera {
 	public:
-		Camera();
+		static Camera* Main() {
+			static Camera instance;
+			return &instance;
+		}
 
-		static Camera* Main();
-
+		void Reset();
 		void Init();
 		void Update(float delta_time);
 
@@ -21,6 +22,15 @@ namespace cubey {
 
 		glm::mat4 GetProjectionMat();
 		glm::mat4 GetViewMat();
+		glm::mat4 GetMVPMat(const glm::mat4& model_mat);
+
+		float fov_;
+		float aspect_;
+		float near_;
+		float far_;
+
+		float mouse_sensitivty_;
+		float movement_speed_;
 
 		glm::mat4 transform_mat_;
 		glm::vec3 position_;
@@ -31,15 +41,7 @@ namespace cubey {
 		glm::vec3 right_;
 		glm::vec3 up_;
 	private:
-		void UpdateOrientation();
-
-		float fov_;
-		float aspect_;
-		float near_;
-		float far_;
-
-		float mouse_sensitivty_;
-		float movement_speed_;
+		void UpdateTransform();
 
 		bool left_mouse_btn_drag_engaged_;
 		float left_mouse_btn_drag_prev_pos_x_;
@@ -51,5 +53,4 @@ namespace cubey {
 
 		glm::vec3 movement_;
 	};
-
 }

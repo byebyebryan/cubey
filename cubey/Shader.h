@@ -1,9 +1,8 @@
 #pragma once
 
-#include "GL/glew.h"
-#include <iostream>
 #include <vector>
 #include <unordered_map>
+#include "GL/glew.h"
 #include "glm/glm.hpp"
 #include "glm/gtc/type_ptr.hpp"
 

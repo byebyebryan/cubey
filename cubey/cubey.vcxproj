@@ -92,7 +92,8 @@
     <ClCompile Include="Engine.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Shader.cpp" />
-    <ClCompile Include="System.cpp" />
+    <ClCompile Include="Time.cpp" />
+    <ClCompile Include="UI.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Camera.h" />
@@ -100,6 +101,8 @@
     <ClInclude Include="Event.h" />
     <ClInclude Include="Shader.h" />
     <ClInclude Include="System.h" />
+    <ClInclude Include="Time.h" />
+    <ClInclude Include="UI.h" />
     <ClInclude Include="Vertex.h" />
   </ItemGroup>
   <ItemGroup>

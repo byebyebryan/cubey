@@ -3,9 +3,10 @@
   <ItemGroup>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Shader.cpp" />
-    <ClCompile Include="System.cpp" />
     <ClCompile Include="Engine.cpp" />
     <ClCompile Include="Camera.cpp" />
+    <ClCompile Include="UI.cpp" />
+    <ClCompile Include="Time.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Shader.h" />
@@ -14,6 +15,8 @@
     <ClInclude Include="Engine.h" />
     <ClInclude Include="Vertex.h" />
     <ClInclude Include="Camera.h" />
+    <ClInclude Include="UI.h" />
+    <ClInclude Include="Time.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Shaders">

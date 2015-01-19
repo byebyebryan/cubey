@@ -3,19 +3,14 @@
 #include <iostream>
 #include <thread>
 #include <chrono>
+#include "Time.h"
 
 namespace cubey {
 	const std::string kDefaultWindowTitle = "cubey!";
 	const int kDefaultWindowWidth = 800;
 	const int kDefaultWindowHeight = 600;
-	const int kFPSLimit = 60;
-
+	
 	GLFWwindow* Engine::window_ = nullptr;
-	double Engine::timer_ = 0.0;
-	double Engine::fps_ = 0.0;
-	double Engine::regulated_fps_ = 0.0;
-	double Engine::delta_time_ = 0.0;
-	double Engine::regulated_delta_time_ = 0.0;
 
 	void Engine::Init() {
 		glfwSetErrorCallback((GLFWerrorfun)ErrorHandler);
@@ -40,36 +35,41 @@ namespace cubey {
 		glfwSetCharCallback(window_, (GLFWcharfun)CharHandler);
 
 		glewInit();
-
-		EventChannel<InitEvent>::Broadcast(InitEvent{});
 	}
 
 	void Engine::MainLoop() {
-		timer_ = glfwGetTime();
-		double target_delta_time = 1.0 / kFPSLimit;
-		while (!glfwWindowShouldClose(window_)) {
-			double current_time = glfwGetTime();
-			regulated_delta_time_ = delta_time_ = current_time - timer_;
-			regulated_fps_ = fps_ = 1.0 / delta_time_;
+		Time::time_since_start_ = glfwGetTime();
 
-			double delta_time_deficit = target_delta_time - delta_time_;
+		EventChannel<StartUpEvent>::Broadcast(StartUpEvent{});
+
+
+		while (!glfwWindowShouldClose(window_)) {
+			Time::delta_time_ = Time::frame_time_;
+			Time::raw_fps_ = Time::regulated_fps_ = 1.0 / Time::frame_time_;
+
+			double delta_time_deficit = Time::target_delta_time_ - Time::frame_time_;
 			if (delta_time_deficit > 0.0) {
 				std::this_thread::sleep_for(std::chrono::milliseconds((int)(delta_time_deficit * 1000.0)));
-				current_time = glfwGetTime();
-				regulated_delta_time_ = current_time - timer_;
-				regulated_fps_ = 1.0 / regulated_delta_time_;
+				Time::delta_time_ = glfwGetTime() - Time::time_since_start_;
+				Time::regulated_fps_ = 1.0 / Time::delta_time_;
 			}
 
-			timer_ = current_time;
-			Update(regulated_delta_time_);
+			Time::time_since_start_ = glfwGetTime();
+			ScopeTimer frame_timer(&Time::frame_time_);
+			Update(Time::delta_time_);
+			Render();
 		}
 	}
 
 	void Engine::Update(float delta_time) {
+		ScopeTimer timer(&Time::logic_time_);
 		EventChannel<EarlyUpdateEvent>::Broadcast(EarlyUpdateEvent{ delta_time });
 		EventChannel<UpdateEvent>::Broadcast(UpdateEvent{ delta_time });
 		EventChannel<LateUpdateEvent>::Broadcast(LateUpdateEvent{ delta_time });
+	}
 
+	void Engine::Render() {
+		ScopeTimer timer(&Time::render_time_);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		EventChannel<RenderEvent>::Broadcast(RenderEvent{});
 		EventChannel<UIRenderEvent>::Broadcast(UIRenderEvent{});

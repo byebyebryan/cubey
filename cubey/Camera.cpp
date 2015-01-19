@@ -5,7 +5,6 @@
 
 namespace cubey {
 	const float kDefaultFOV = 60.0f;
-	const float kDefaultAspect = 1.0f;
 	const float kDefaultNear = 1.0f;
 	const float kDefaultFar = 500.0f;
 	const glm::vec3 kDefaultPosition = glm::vec3(0.0f, 0.0f, 10.0f);
@@ -14,17 +13,20 @@ namespace cubey {
 	const float kDefaultMouseSensitivity = 1.0f;
 	const float kDefaultMovementSpeed = 5.0f;
 
-	Camera::Camera() {
+	void Camera::Reset() {
 		fov_ = glm::radians(kDefaultFOV);
-		aspect_ = kDefaultAspect;
 		near_ = kDefaultNear;
 		far_ = kDefaultFar;
+
+		int w, h;
+		glfwGetFramebufferSize(Engine::window_, &w, &h);
+		aspect_ = w / (float)h;
 
 		position_ = kDefaultPosition;
 		look_at_ = kDefaultLookAt;
 
 		transform_mat_ = GetViewMat();
-		UpdateOrientation();
+		UpdateTransform();
 
 		right_mouse_btn_drag_engaged_ = false;
 		right_mouse_btn_drag_prev_pos_x_ = 0.0f;
@@ -40,16 +42,9 @@ namespace cubey {
 		movement_speed_ = kDefaultMovementSpeed;
 	}
 
-	Camera* Camera::Main() {
-		static Camera main_camera;
-		return &main_camera;
-	}
-
 	void Camera::Init() {
-		int w, h;
-		glfwGetFramebufferSize(Engine::window_, &w, &h);
-		aspect_ = w / (float)h;
-
+		Reset();
+		
 		EventChannel<Engine::UpdateEvent>::Add([this](const Engine::UpdateEvent& e){
 			Update(e.deltatime);
 		});
@@ -77,8 +72,7 @@ namespace cubey {
 			to_target = glm::rotateY(to_target, -x_offset * delta_time * mouse_sensitivty_);
 
 			look_at_ = position_ + to_target;
-			transform_mat_ = GetViewMat();
-			UpdateOrientation();
+			UpdateTransform();
 
 			left_mouse_btn_drag_prev_pos_x_ = x;
 			left_mouse_btn_drag_prev_pos_y_ = y;
@@ -94,8 +88,7 @@ namespace cubey {
 			from_target = glm::rotateY(from_target, -x_offset * delta_time * mouse_sensitivty_);
 
 			position_ = look_at_ + from_target;
-			transform_mat_ = GetViewMat();
-			UpdateOrientation();
+			UpdateTransform();
 
 			right_mouse_btn_drag_prev_pos_x_ = x;
 			right_mouse_btn_drag_prev_pos_y_ = y;
@@ -189,6 +182,11 @@ namespace cubey {
 				movement_.y = 0.0f;
 			}
 			break;
+		case GLFW_KEY_C:
+			if (action == GLFW_PRESS) {
+				Reset();
+			}
+			break;
 		}
 	}
 
@@ -200,14 +198,17 @@ namespace cubey {
 		return glm::lookAt(position_, look_at_, glm::vec3(0.0f, 1.0f, 0.0f));
 	}
 
-	void Camera::UpdateOrientation() {
+	glm::mat4 Camera::GetMVPMat(const glm::mat4& model_mat) {
+		return GetProjectionMat() * model_mat * GetViewMat();
+	}
+
+	void Camera::UpdateTransform() {
+		transform_mat_ = GetViewMat();
 		orientation_ = glm::quat(transform_mat_);
 		forward_ = glm::vec3(0.0f, 0.0f, 1.0f) * orientation_;
 		right_ = glm::vec3(1.0f, 0.0f, 0.0f) * orientation_;
 		up_ = glm::vec3(0.0f, 1.0f, 0.0f) * orientation_;
 	}
-
-	
 
 }
 
