@@ -11,7 +11,8 @@ namespace cubey {
 	const glm::vec3 kDefaultPosition = glm::vec3(0.0f, 0.0f, 10.0f);
 	const glm::vec3 kDefaultLookAt = glm::vec3();
 
-	const float kDefaultMouseDragSensitivity = 1.0f;
+	const float kDefaultMouseSensitivity = 1.0f;
+	const float kDefaultMovementSpeed = 5.0f;
 
 	Camera::Camera() {
 		fov_ = glm::radians(kDefaultFOV);
@@ -28,7 +29,15 @@ namespace cubey {
 		right_mouse_btn_drag_engaged_ = false;
 		right_mouse_btn_drag_prev_pos_x_ = 0.0f;
 		right_mouse_btn_drag_prev_pos_y_ = 0.0f;
-		mouse_drag_sensitivty_ = kDefaultMouseDragSensitivity;
+
+		left_mouse_btn_drag_engaged_ = false;
+		left_mouse_btn_drag_prev_pos_x_ = 0.0f;
+		left_mouse_btn_drag_prev_pos_y_ = 0.0f;
+
+		movement_ = glm::vec3();
+
+		mouse_sensitivty_ = kDefaultMouseSensitivity;
+		movement_speed_ = kDefaultMovementSpeed;
 	}
 
 	Camera* Camera::Main() {
@@ -50,9 +59,30 @@ namespace cubey {
 		EventChannel<Engine::MouseWheelEvent>::Add([this](const Engine::MouseWheelEvent& e){
 			MouseWheelHandler(e.yoffset);
 		});
+		EventChannel<Engine::KeyEvent>::Add([this](const Engine::KeyEvent& e){
+			KeyHandler(e.key, e.action);
+		});
 	}
 
 	void Camera::Update(float delta_time) {
+		
+		if (left_mouse_btn_drag_engaged_) {
+			double x, y;
+			glfwGetCursorPos(Engine::window_, &x, &y);
+			float x_offset = x - left_mouse_btn_drag_prev_pos_x_;
+			float y_offset = y - left_mouse_btn_drag_prev_pos_y_;
+
+			glm::vec3 to_target = look_at_ - position_;
+			to_target = glm::rotate(to_target, -y_offset * delta_time * mouse_sensitivty_, right_);
+			to_target = glm::rotateY(to_target, -x_offset * delta_time * mouse_sensitivty_);
+
+			look_at_ = position_ + to_target;
+			transform_mat_ = GetViewMat();
+			UpdateOrientation();
+
+			left_mouse_btn_drag_prev_pos_x_ = x;
+			left_mouse_btn_drag_prev_pos_y_ = y;
+		}
 		if (right_mouse_btn_drag_engaged_) {
 			double x, y;
 			glfwGetCursorPos(Engine::window_, &x, &y);
@@ -60,8 +90,8 @@ namespace cubey {
 			float y_offset = y - right_mouse_btn_drag_prev_pos_y_;
 
 			glm::vec3 from_target = position_ - look_at_;
-			from_target = glm::rotate(from_target, - y_offset * delta_time * mouse_drag_sensitivty_, right_);
-			from_target = glm::rotateY(from_target, - x_offset * delta_time * mouse_drag_sensitivty_);
+			from_target = glm::rotate(from_target, -y_offset * delta_time * mouse_sensitivty_, right_);
+			from_target = glm::rotateY(from_target, -x_offset * delta_time * mouse_sensitivty_);
 
 			position_ = look_at_ + from_target;
 			transform_mat_ = GetViewMat();
@@ -70,10 +100,27 @@ namespace cubey {
 			right_mouse_btn_drag_prev_pos_x_ = x;
 			right_mouse_btn_drag_prev_pos_y_ = y;
 		}
+
+		glm::vec3 movement = delta_time * movement_speed_ * movement_ * orientation_;
+		position_ += movement;
+		look_at_ += movement;
+		transform_mat_ = GetViewMat();
 	}
 
 	void Camera::MouseButtonHandler(int button, int action) {
-		if (button == GLFW_MOUSE_BUTTON_RIGHT){
+		if (button == GLFW_MOUSE_BUTTON_LEFT) {
+			if (action == GLFW_PRESS) {
+				left_mouse_btn_drag_engaged_ = true;
+				double x, y;
+				glfwGetCursorPos(Engine::window_, &x, &y);
+				left_mouse_btn_drag_prev_pos_x_ = x;
+				left_mouse_btn_drag_prev_pos_y_ = y;
+			}
+			else if (action == GLFW_RELEASE) {
+				left_mouse_btn_drag_engaged_ = false;
+			}
+		}
+		else if (button == GLFW_MOUSE_BUTTON_RIGHT) {
 			if (action == GLFW_PRESS) {
 				right_mouse_btn_drag_engaged_ = true;
 				double x, y;
@@ -91,6 +138,60 @@ namespace cubey {
 		position_ -= forward_ * yoffset;
 	}
 
+	void Camera::KeyHandler(int key, int action) {
+		switch (key)
+		{
+		case GLFW_KEY_W:
+			if (action == GLFW_PRESS) {
+				movement_.z = -1.0f;
+			}
+			else if (action == GLFW_RELEASE) {
+				movement_.z = 0.0f;
+			}
+			break;
+		case GLFW_KEY_S:
+			if (action == GLFW_PRESS) {
+				movement_.z = 1.0f;
+			}
+			else if (action == GLFW_RELEASE) {
+				movement_.z = 0.0f;
+			}
+			break;
+		case GLFW_KEY_A:
+			if (action == GLFW_PRESS) {
+				movement_.x = -1.0f;
+			}
+			else if (action == GLFW_RELEASE) {
+				movement_.x = 0.0f;
+			}
+			break;
+		case GLFW_KEY_D:
+			if (action == GLFW_PRESS) {
+				movement_.x = 1.0f;
+			}
+			else if (action == GLFW_RELEASE) {
+				movement_.x = 0.0f;
+			}
+			break;
+		case GLFW_KEY_Z:
+			if (action == GLFW_PRESS) {
+				movement_.y = -1.0f;
+			}
+			else if (action == GLFW_RELEASE) {
+				movement_.y = 0.0f;
+			}
+			break;
+		case GLFW_KEY_X:
+			if (action == GLFW_PRESS) {
+				movement_.y = 1.0f;
+			}
+			else if (action == GLFW_RELEASE) {
+				movement_.y = 0.0f;
+			}
+			break;
+		}
+	}
+
 	glm::mat4 Camera::GetProjectionMat() {
 		return glm::perspective(fov_, aspect_, near_, far_);
 	}
@@ -105,6 +206,8 @@ namespace cubey {
 		right_ = glm::vec3(1.0f, 0.0f, 0.0f) * orientation_;
 		up_ = glm::vec3(0.0f, 1.0f, 0.0f) * orientation_;
 	}
+
+	
 
 }
 

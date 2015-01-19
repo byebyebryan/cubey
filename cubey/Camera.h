@@ -17,6 +17,7 @@ namespace cubey {
 
 		void MouseButtonHandler(int button, int action);
 		void MouseWheelHandler(float yoffset);
+		void KeyHandler(int key, int action);
 
 		glm::mat4 GetProjectionMat();
 		glm::mat4 GetViewMat();
@@ -37,11 +38,18 @@ namespace cubey {
 		float near_;
 		float far_;
 
-		float mouse_drag_sensitivty_;
+		float mouse_sensitivty_;
+		float movement_speed_;
+
+		bool left_mouse_btn_drag_engaged_;
+		float left_mouse_btn_drag_prev_pos_x_;
+		float left_mouse_btn_drag_prev_pos_y_;
 
 		bool right_mouse_btn_drag_engaged_;
 		float right_mouse_btn_drag_prev_pos_x_;
 		float right_mouse_btn_drag_prev_pos_y_;
+
+		glm::vec3 movement_;
 	};
 
 }
