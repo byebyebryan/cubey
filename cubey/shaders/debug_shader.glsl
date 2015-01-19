@@ -4,8 +4,8 @@ uniform mat4 u_mvp_mat;
 
 #ifdef _VERTEX_S_
 
-in vec4 in_vertex_position;
-in vec4 in_vertex_color;
+layout(location = 0) in vec4 in_vertex_position;
+layout(location = 1) in vec4 in_vertex_color;
 
 out vec4 var_color;
 
