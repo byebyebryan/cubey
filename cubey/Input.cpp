@@ -75,7 +75,7 @@ namespace cubey {
 	void Input::KeyHandler(int key, int action, int mods) {
 		switch (key)
 		{
-		case GLFW_KEY_W:
+		case GLFW_KEY_S:
 			if (action == GLFW_PRESS) {
 				movement_.z = -1.0f;
 			}
@@ -83,7 +83,7 @@ namespace cubey {
 				movement_.z = 0.0f;
 			}
 			break;
-		case GLFW_KEY_S:
+		case GLFW_KEY_W:
 			if (action == GLFW_PRESS) {
 				movement_.z = 1.0f;
 			}

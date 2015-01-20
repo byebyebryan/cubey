@@ -19,6 +19,7 @@
     <ClInclude Include="UI.h" />
     <ClInclude Include="Time.h" />
     <ClInclude Include="Input.h" />
+    <ClInclude Include="Transform.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Shaders">

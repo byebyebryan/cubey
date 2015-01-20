@@ -45,7 +45,12 @@ namespace cubey {
 
 		TwAddVarRO(bar, "camera position", TW_TYPE_DIR3F, &Camera::Main()->position_, "");
 		TwAddVarRO(bar, "camera orientation", TW_TYPE_QUAT4F, &Camera::Main()->orientation_, "");
-		TwAddVarRO(bar, "camera target", TW_TYPE_DIR3F, &Camera::Main()->look_at_, "");
+		TwAddVarRO(bar, "camera euler angles", TW_TYPE_DIR3F, &Camera::Main()->euler_angles_, "");
+
+		TwAddVarRO(bar, "camera forward", TW_TYPE_DIR3F, &Camera::Main()->forward_, "");
+		TwAddVarRO(bar, "camera right", TW_TYPE_DIR3F, &Camera::Main()->right_, "");
+		TwAddVarRO(bar, "camera up", TW_TYPE_DIR3F, &Camera::Main()->up_, "");
+		TwAddVarRO(bar, "camera target", TW_TYPE_DIR3F, &Camera::Main()->look_at_target_pos_, "");
 	}
 
 	void UI::UIRender() {
