@@ -2,6 +2,8 @@
 
 #include <functional>
 #include <vector>
+#include <map>
+#include <stdint.h>
 
 namespace cubey {
 	struct EmptyType {};
@@ -16,28 +18,86 @@ namespace cubey {
 	};
 
 	template<typename T>
+	class EventLisenter {
+	public:
+		EventLisenter() {
+			id_ = 0;
+		}
+
+		EventLisenter(const std::function<void(const T&)>& handler_func) : handler_func_(handler_func) {
+			id_ = NewID();
+		}
+
+		~EventLisenter() {
+			RemoveFromChannel();
+		}
+
+		void PushToChannel() {
+			EventChannel<T>::Add(*this);
+		}
+
+		void RemoveFromChannel() {
+			EventChannel<T>::Remove(id_);
+		}
+
+		static uint64_t NewID() {
+			static uint64_t current_id = 0;
+			return ++current_id;
+		}
+
+		uint64_t id_;
+		std::function<void(const T&)> handler_func_;
+	};
+
+	template<typename T>
 	class EventChannel {
 	public:
-		static int Add(const std::function<void(const T&)>& handler) {
-			handlers().push_back(handler);
-			return handlers().size() - 1;
+		static void Add(const EventLisenter<T>& listener) {
+			Listeners()[listener.id_] = listener.handler_func_;
+		}
+
+		static uint64_t DirtyAdd(const std::function<void(const T&)>& handler_func) {
+			uint64_t dirty_id = EventLisenter<T>::NewID();
+			Listeners()[dirty_id] = handler_func;
+			return dirty_id;
 		}
 
 		static void Broadcast(const T& event) {
-			for (auto& handler : handlers()) {
-				handler(event);
+			if (!IsMuted()) {
+				for (auto it = Listeners().rbegin(); it != Listeners().rend(); ++it) {
+					it->second(event);
+				}
 			}
 		}
 
-		static void Boradcast(std::initializer_list<T> init_list) {
-			T e(init_list);
-			Boradcast(e);
+		static void Broadcast(std::initializer_list<T> init_list) {
+			if (!IsMuted()) {
+				T e(init_list);
+				Broadcast(e);
+			}
+		}
+
+		static void Remove(uint64_t listener_id) {
+			Listeners().erase(listener_id);
+		}
+
+		static void Mute() {
+			IsMuted() = true;
+		}
+
+		static void Unmute() {
+			IsMuted() = false;
 		}
 
 	private:
-		static std::vector<std::function<void(const T&)>>& handlers() {
-			static std::vector<std::function<void(const T&)>> handlers_instance;
-			return handlers_instance;
+		static std::map<uint64_t, std::function<void(const T&)>>& Listeners() {
+			static std::map<uint64_t, std::function<void(const T&)>> listeners_instance;
+			return listeners_instance;
+		}
+
+		static bool& IsMuted() {
+			static bool is_muted = false;
+			return is_muted;
 		}
 	};
 }

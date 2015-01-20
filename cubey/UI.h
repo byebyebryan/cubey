@@ -7,6 +7,8 @@ namespace cubey {
 	{
 	public:
 		void Init() override;
+
+	private:
 		void UIRender() override;
 		void Terminate() override;
 	};

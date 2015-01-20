@@ -2,23 +2,23 @@
 
 #include "glm/glm.hpp"
 #include "glm/gtc/quaternion.hpp"
+#include "Event.h"
+#include "Engine.h"
 
 namespace cubey {
 
 	class Camera {
 	public:
+		Camera();
+
 		static Camera* Main() {
-			static Camera instance;
-			return &instance;
+			static Camera* instance = new Camera();
+			return instance;
 		}
 
-		void Reset();
 		void Init();
+		void Reset();
 		void Update(float delta_time);
-
-		void MouseButtonHandler(int button, int action);
-		void MouseWheelHandler(float yoffset);
-		void KeyHandler(int key, int action);
 
 		glm::mat4 GetProjectionMat();
 		glm::mat4 GetViewMat();
@@ -41,16 +41,8 @@ namespace cubey {
 		glm::vec3 right_;
 		glm::vec3 up_;
 	private:
+		EventLisenter<Engine::UpdateEvent> update_listener_;
+
 		void UpdateTransform();
-
-		bool left_mouse_btn_drag_engaged_;
-		float left_mouse_btn_drag_prev_pos_x_;
-		float left_mouse_btn_drag_prev_pos_y_;
-
-		bool right_mouse_btn_drag_engaged_;
-		float right_mouse_btn_drag_prev_pos_x_;
-		float right_mouse_btn_drag_prev_pos_y_;
-
-		glm::vec3 movement_;
 	};
 }

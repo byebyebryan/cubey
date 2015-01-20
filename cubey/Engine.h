@@ -1,8 +1,8 @@
 #pragma once
 
-#include "GL/glew.h"
-#include "GLFW/glfw3.h"
 #include "Event.h"
+
+struct GLFWwindow;
 
 namespace cubey {
 
@@ -10,6 +10,9 @@ namespace cubey {
 	public:
 		struct StartUpEvent {
 		};
+		struct TerminateEvent {
+		};
+
 		struct EarlyUpdateEvent {
 			float deltatime;
 		};
@@ -23,8 +26,7 @@ namespace cubey {
 		};
 		struct UIRenderEvent {
 		};
-		struct TerminationEvent {
-		};
+		
 		struct WindowSizeEvent {
 			int width;
 			int height;
@@ -50,7 +52,7 @@ namespace cubey {
 			int key;
 			int scancode;
 			int action;
-			int yoffset;
+			int mods;
 		};
 		struct CharEvent {
 			unsigned int codepoint;

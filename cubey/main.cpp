@@ -18,6 +18,7 @@
 #include "Vertex.h"
 #include "Camera.h"
 #include "UI.h"
+#include "Input.h"
 
 using namespace cubey;
 
@@ -41,8 +42,10 @@ void TestRender(const Engine::RenderEvent& e) {
 
 int main(void) {
 	Engine::Init();
-	Camera::Main()->Init();
+
+	Input::Main()->Init();
 	UI::Main()->Init();
+	Camera::Main()->Init();
 
 	GLuint vbo;
 	glGenBuffers(1, &vbo);
@@ -104,7 +107,7 @@ int main(void) {
 	prog->AddShader(GL_FRAGMENT_SHADER, "shaders\\debug_shader.glsl", "#define _FRAGMENT_S_");
 	prog->Link();
 
-	EventChannel<Engine::RenderEvent>::Add(TestRender);
+	EventChannel<Engine::RenderEvent>::DirtyAdd(TestRender);
 
 	Engine::MainLoop();
 	Engine::Terminate();

@@ -1,5 +1,6 @@
 #include "UI.h"
 
+#include "GLFW/glfw3.h"
 #include "AntTweakBar.h"
 #include "Engine.h"
 #include "Camera.h"
@@ -11,12 +12,24 @@ namespace cubey {
 		System::Init();
 
 		TwInit(TW_OPENGL, NULL);
-		EventChannel<Engine::WindowSizeEvent>::Add([](const Engine::WindowSizeEvent& e){TwWindowSize(e.width, e.height); });
-		EventChannel<Engine::MouseButtonEvent>::Add([](const Engine::MouseButtonEvent& e){TwEventMouseButtonGLFW(e.button, e.action); });
-		EventChannel<Engine::MousePosEvent>::Add([](const Engine::MousePosEvent& e){TwEventMousePosGLFW(e.xpos, e.ypos); });
-		EventChannel<Engine::MouseWheelEvent>::Add([](const Engine::MouseWheelEvent& e){TwEventMouseWheelGLFW(e.yoffset); });
-		EventChannel<Engine::KeyEvent>::Add([](const Engine::KeyEvent& e){TwEventKeyGLFW(e.key, e.action); });
-		EventChannel<Engine::CharEvent>::Add([](const Engine::CharEvent& e){TwEventCharGLFW(e.codepoint, GLFW_PRESS); });
+		EventChannel<Engine::WindowSizeEvent>::DirtyAdd([](const Engine::WindowSizeEvent& e){
+			TwWindowSize(e.width, e.height); 
+		});
+		EventChannel<Engine::MouseButtonEvent>::DirtyAdd([](const Engine::MouseButtonEvent& e){
+			TwEventMouseButtonGLFW(e.button, e.action); 
+		});
+		EventChannel<Engine::MousePosEvent>::DirtyAdd([](const Engine::MousePosEvent& e){
+			TwEventMousePosGLFW(e.xpos, e.ypos); 
+		});
+		EventChannel<Engine::MouseWheelEvent>::DirtyAdd([](const Engine::MouseWheelEvent& e){
+			TwEventMouseWheelGLFW(e.yoffset); 
+		});
+		EventChannel<Engine::KeyEvent>::DirtyAdd([](const Engine::KeyEvent& e){
+			TwEventKeyGLFW(e.key, e.action); 
+		});
+		EventChannel<Engine::CharEvent>::DirtyAdd([](const Engine::CharEvent& e){
+			TwEventCharGLFW(e.codepoint, GLFW_PRESS); 
+		});
 
 		TwBar *bar = TwNewBar("TweakBar");
 		int w, h;

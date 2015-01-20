@@ -4,27 +4,13 @@ namespace cubey {
 	class Time
 	{
 	public:
-		static double time_since_start() { 
-			return time_since_start_; 
-		}
-		static double raw_fps() { 
-			return raw_fps_; 
-		}
-		static double regulated_fps() {
-			return regulated_fps_;
-		}
-		static double delta_time() {
-			return delta_time_;
-		}
-		static double frame_time() {
-			return frame_time_;
-		}
-		static double logic_time() {
-			return logic_time_;
-		}
-		static double render_time() {
-			return render_time_;
-		}
+		static double time_since_start() { return time_since_start_; }
+		static double raw_fps() { return raw_fps_; }
+		static double regulated_fps() {return regulated_fps_;}
+		static double delta_time() {return delta_time_;}
+		static double frame_time() {return frame_time_;}
+		static double logic_time() {return logic_time_;}
+		static double render_time() {return render_time_;}
 	
 	private:
 		static double time_since_start_;

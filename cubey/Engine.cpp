@@ -3,6 +3,8 @@
 #include <iostream>
 #include <thread>
 #include <chrono>
+#include "GL/glew.h"
+#include "GLFW/glfw3.h"
 #include "Time.h"
 
 namespace cubey {
@@ -42,7 +44,6 @@ namespace cubey {
 
 		EventChannel<StartUpEvent>::Broadcast(StartUpEvent{});
 
-
 		while (!glfwWindowShouldClose(window_)) {
 			Time::delta_time_ = Time::frame_time_;
 			Time::raw_fps_ = Time::regulated_fps_ = 1.0 / Time::frame_time_;
@@ -78,7 +79,7 @@ namespace cubey {
 	}
 
 	void Engine::Terminate() {
-		EventChannel<TerminationEvent>::Broadcast(TerminationEvent{});
+		EventChannel<TerminateEvent>::Broadcast(TerminateEvent{});
 		glfwDestroyWindow(window_);
 		glfwTerminate();
 	}
