@@ -1,2 +1,2 @@
 # cubey
-Experiment on marching cubes
+Simple openGL game engine based on glfw3
