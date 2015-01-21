@@ -103,6 +103,7 @@
     <ClInclude Include="Event.h" />
     <ClInclude Include="Interfaces.h" />
     <ClInclude Include="Input.h" />
+    <ClInclude Include="Mesh.h" />
     <ClInclude Include="Shader.h" />
     <ClInclude Include="Time.h" />
     <ClInclude Include="Transform.h" />

@@ -31,6 +31,7 @@ namespace cubey {
 			forward_(glm::vec3(0.0f, 0.0f, 1.0f)),
 			right_(glm::vec3(1.0f, 0.0f, 0.0f)),
 			up_(glm::vec3(0.0f, 1.0f, 0.0f)) {
+
 			RefreshMat();
 		}
 
@@ -43,6 +44,7 @@ namespace cubey {
 			forward_(glm::vec3(0.0f, 0.0f, 1.0f)),
 			right_(glm::vec3(1.0f, 0.0f, 0.0f)),
 			up_(glm::vec3(0.0f, 1.0f, 0.0f)) {
+
 			RotateTo(_orientation);
 		}
 
@@ -55,6 +57,7 @@ namespace cubey {
 			forward_(glm::vec3(0.0f, 0.0f, 1.0f)),
 			right_(glm::vec3(1.0f, 0.0f, 0.0f)),
 			up_(glm::vec3(0.0f, 1.0f, 0.0f)) {
+
 			RotateTo(_orientation);
 		}
 

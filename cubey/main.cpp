@@ -7,6 +7,7 @@
 
 #include "Shader.h"
 #include "Vertex.h"
+#include "Mesh.h"
 
 using namespace cubey;
 
@@ -14,6 +15,7 @@ GLuint vao = 0;
 ShaderProgram* prog = nullptr;
 
 glm::mat4 model_mat = glm::mat4();
+Mesh* mesh;
 
 void TestRender(const Engine::RenderEvent& e) {
 
@@ -34,8 +36,7 @@ void TestRender(const Engine::RenderEvent& e) {
 	prog->SetUniform("u_directional_light_direction", directional_light_dir_es);
 	prog->SetUniform("u_directional_light_color", directional_light);
 
-	glBindVertexArray(vao);
-	glDrawArrays(GL_TRIANGLES, 0, 36);
+	mesh->Draw();
 }
 
 int main(void) {
@@ -142,15 +143,9 @@ int main(void) {
 		{ { 0.0f, 0.0f, 1.0f }, { 0.0f, 0.0f, 1.0f } },
 	};
 
-	VertexListHelper::CalculateNormals(data, 36, data->attrib_ptr_0(), data->attrib_ptr_2());
+	VertexArrayHelper::CalculateNormals(data, 36, data->attrib_ptr_0(), data->attrib_ptr_2());
 
-	glBufferData(GL_ARRAY_BUFFER, sizeof(data), data, GL_STATIC_DRAW);
-	data->DescribeLayout();
-
-
-	glm::vec3
-	glBindVertexArray(0);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	mesh = Mesh::Create(data, 36, GL_TRIANGLES);
 
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);

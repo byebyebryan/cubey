@@ -118,7 +118,7 @@ namespace cubey {
 		}
 	};
 
-	class VertexListHelper {
+	class VertexArrayHelper {
 	public:
 		template<typename T0, typename T1>
 		static void CalculateNormals(Vertex2<T0, T1>* verts, int size, glm::vec3 Vertex2<T0, T1>::*pos_attrib, glm::vec3 Vertex2<T0, T1>::*normal_attrib) {

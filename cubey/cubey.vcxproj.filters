@@ -21,6 +21,7 @@
     <ClInclude Include="Input.h" />
     <ClInclude Include="Transform.h" />
     <ClInclude Include="Interfaces.h" />
+    <ClInclude Include="Mesh.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Shaders">
