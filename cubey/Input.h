@@ -1,10 +1,10 @@
 #pragma once
 
-#include "System.h"
 #include "glm/glm.hpp"
+#include "Interfaces.h"
 
 namespace cubey {
-	class Input : public System < Input > {
+	class Input : public IEngineEvents, public ISingleton<Input> {
 	public:
 		Input();
 

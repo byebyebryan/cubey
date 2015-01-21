@@ -2,14 +2,12 @@
 
 #include "GLFW/glfw3.h"
 #include "AntTweakBar.h"
-#include "Engine.h"
 #include "Camera.h"
-#include "Time.h"
 
 namespace cubey {
 
 	void UI::Init() {
-		System::Init();
+		IEngineEvents::Init();
 
 		TwInit(TW_OPENGL, NULL);
 		EventChannel<Engine::WindowSizeEvent>::DirtyAdd([](const Engine::WindowSizeEvent& e){
@@ -33,7 +31,8 @@ namespace cubey {
 
 		TwBar *bar = TwNewBar("TweakBar");
 		int w, h;
-		TwWindowSize(800, 600);
+		glfwGetWindowSize(Engine::window_, &w, &h);
+		TwWindowSize(w, h);
 		TwDefine(" GLOBAL help='AntTweakBar Test' ");
 
 		TwAddVarRO(bar, "time", TW_TYPE_DOUBLE, &Time::time_since_start_, "precision=2 help='Time Since Start.' ");
@@ -43,14 +42,18 @@ namespace cubey {
 		TwAddVarRO(bar, "delta time", TW_TYPE_DOUBLE, &Time::delta_time_, "precision=4 help='Delta Time.' ");
 		TwAddVarRO(bar, "regulated fps", TW_TYPE_DOUBLE, &Time::regulated_fps_, "precision=2 help='Regulated FPS.' ");
 
-		TwAddVarRO(bar, "camera position", TW_TYPE_DIR3F, &Camera::Main()->position_, "");
-		TwAddVarRO(bar, "camera orientation", TW_TYPE_QUAT4F, &Camera::Main()->orientation_, "");
-		TwAddVarRO(bar, "camera euler angles", TW_TYPE_DIR3F, &Camera::Main()->euler_angles_, "");
+		TwAddVarRO(bar, "camera position", TW_TYPE_DIR3F, &Camera::Main()->transform_.position_, "");
+		TwAddVarRO(bar, "camera orientation", TW_TYPE_QUAT4F, &Camera::Main()->transform_.orientation_, "");
+		TwAddVarRO(bar, "camera euler angles", TW_TYPE_DIR3F, &Camera::Main()->transform_.euler_angles_, "");
 
-		TwAddVarRO(bar, "camera forward", TW_TYPE_DIR3F, &Camera::Main()->forward_, "");
-		TwAddVarRO(bar, "camera right", TW_TYPE_DIR3F, &Camera::Main()->right_, "");
-		TwAddVarRO(bar, "camera up", TW_TYPE_DIR3F, &Camera::Main()->up_, "");
+		TwAddVarRO(bar, "camera forward", TW_TYPE_DIR3F, &Camera::Main()->transform_.forward_, "");
+		TwAddVarRO(bar, "camera right", TW_TYPE_DIR3F, &Camera::Main()->transform_.right_, "");
+		TwAddVarRO(bar, "camera up", TW_TYPE_DIR3F, &Camera::Main()->transform_.up_, "");
+
 		TwAddVarRO(bar, "camera target", TW_TYPE_DIR3F, &Camera::Main()->look_at_target_pos_, "");
+		TwAddVarRO(bar, "camera yaw", TW_TYPE_FLOAT, &Camera::Main()->yaw_, "");
+		TwAddVarRO(bar, "camera pitch", TW_TYPE_FLOAT, &Camera::Main()->pitch_, "");
+		TwAddVarRO(bar, "camera roll", TW_TYPE_FLOAT, &Camera::Main()->roll_, "");
 	}
 
 	void UI::UIRender() {

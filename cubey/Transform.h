@@ -11,14 +11,52 @@ namespace cubey {
 	class Transform
 	{
 	public:
-		Transform() : transformation_mat_(glm::mat4()),
+		Transform() : 
+			transformation_mat_(glm::mat4()),
 			position_(glm::vec3()),
 			orientation_(glm::quat()),
 			scale_(glm::vec3(1.0f, 1.0f, 1.0f)),
 			euler_angles_(glm::vec3()),
 			forward_(glm::vec3(0.0f, 0.0f, 1.0f)),
 			right_(glm::vec3(1.0f, 0.0f, 0.0f)),
-			up_(glm::vec3(0.0f, 1.0f, 0.0f)) {}
+			up_(glm::vec3(0.0f, 1.0f, 0.0f)) {
+		}
+
+		Transform(const glm::vec3& _position) : 
+			transformation_mat_(glm::mat4()),
+			position_(_position),
+			orientation_(glm::quat()),
+			scale_(glm::vec3(1.0f, 1.0f, 1.0f)),
+			euler_angles_(glm::vec3()),
+			forward_(glm::vec3(0.0f, 0.0f, 1.0f)),
+			right_(glm::vec3(1.0f, 0.0f, 0.0f)),
+			up_(glm::vec3(0.0f, 1.0f, 0.0f)) {
+			RefreshMat();
+		}
+
+		Transform(const glm::vec3& _position, const glm::quat& _orientation) : 
+			transformation_mat_(glm::mat4()),
+			position_(_position),
+			orientation_(glm::quat()),
+			scale_(glm::vec3(1.0f, 1.0f, 1.0f)),
+			euler_angles_(glm::vec3()),
+			forward_(glm::vec3(0.0f, 0.0f, 1.0f)),
+			right_(glm::vec3(1.0f, 0.0f, 0.0f)),
+			up_(glm::vec3(0.0f, 1.0f, 0.0f)) {
+			RotateTo(_orientation);
+		}
+
+		Transform(const glm::vec3& _position, const glm::quat& _orientation, const glm::vec3& _scale) :
+			transformation_mat_(glm::mat4()),
+			position_(_position),
+			orientation_(glm::quat()),
+			scale_(_scale),
+			euler_angles_(glm::vec3()),
+			forward_(glm::vec3(0.0f, 0.0f, 1.0f)),
+			right_(glm::vec3(1.0f, 0.0f, 0.0f)),
+			up_(glm::vec3(0.0f, 1.0f, 0.0f)) {
+			RotateTo(_orientation);
+		}
 
 		void TranslateTo(const glm::vec3& _position) {
 			position_ = _position;
@@ -36,7 +74,7 @@ namespace cubey {
 			up_ = glm::vec3(0.0f, 1.0f, 0.0f) * orientation_;
 			RefreshMat();
 		}
-		void Roate(const glm::quat& _rotation) {
+		void Rotate(const glm::quat& _rotation) {
 			RotateTo(orientation_ * _rotation);
 		}
 
@@ -52,8 +90,8 @@ namespace cubey {
 			LookAt(target, glm::vec3(0.0f, 1.0f, 0.0f));
 		}
 
-		void LookAt(const glm::vec3& target, const glm::vec3& up) {
-			RotateTo(glm::quat(glm::lookAt(target, position_, glm::vec3(0.0f, 1.0f, 0.0f))));
+		void LookAt(const glm::vec3& target, const glm::vec3& _up) {
+			RotateTo(glm::quat(glm::lookAt(target, position_, _up)));
 		}
 
 		glm::mat4 transformation_mat() { return transformation_mat_; }
@@ -81,7 +119,7 @@ namespace cubey {
 		glm::vec3 right_;
 		glm::vec3 up_;
 
-		
+		friend class UI;
 	};
 }
 

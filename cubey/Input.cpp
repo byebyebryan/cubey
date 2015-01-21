@@ -1,7 +1,6 @@
 #include "Input.h"
 
 #include "GLFW/glfw3.h"
-#include "Engine.h"
 
 namespace cubey {
 	Input::Input() {
@@ -14,7 +13,7 @@ namespace cubey {
 	}
 
 	void Input::Init() {
-		System::Init();
+		IEngineEvents::Init();
 
 		EventChannel<Engine::MouseButtonEvent>::DirtyAdd([this](const Engine::MouseButtonEvent& e){
 			MouseButtonHandler(e.button, e.action, e.mods);

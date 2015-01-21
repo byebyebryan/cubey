@@ -1,10 +1,9 @@
 #pragma once
 
-#include "System.h"
+#include "Interfaces.h"
 
 namespace cubey {
-	class UI : public System<UI>
-	{
+	class UI : public IEngineEvents, public ISingleton<UI> {
 	public:
 		void Init() override;
 

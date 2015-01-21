@@ -25,7 +25,7 @@ namespace cubey {
 
 		friend class Engine;
 		friend class UI;
-		friend class Timer;
+		friend class ScopeTimer;
 	};
 
 	class ScopeTimer {

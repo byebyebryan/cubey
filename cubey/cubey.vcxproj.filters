@@ -8,10 +8,10 @@
     <ClCompile Include="UI.cpp" />
     <ClCompile Include="Time.cpp" />
     <ClCompile Include="Input.cpp" />
+    <ClCompile Include="Interfaces.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Shader.h" />
-    <ClInclude Include="System.h" />
     <ClInclude Include="Event.h" />
     <ClInclude Include="Engine.h" />
     <ClInclude Include="Vertex.h" />
@@ -20,6 +20,7 @@
     <ClInclude Include="Time.h" />
     <ClInclude Include="Input.h" />
     <ClInclude Include="Transform.h" />
+    <ClInclude Include="Interfaces.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Shaders">

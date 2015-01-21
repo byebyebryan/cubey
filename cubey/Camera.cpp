@@ -1,22 +1,19 @@
 #include "Camera.h"
 
 #include "GLFW/glfw3.h"
-
-#include "Engine.h"
 #include "Input.h"
 
 namespace cubey {
 	const float kDefaultFOV = 60.0f;
 	const float kDefaultZNear = 1.0f;
 	const float kDefaultZFar = 500.0f;
-	const glm::vec3 kDefaultPosition = glm::vec3(0.0f, 0.0f, -5.0f);
+	const glm::vec3 kDefaultPosition = glm::vec3(0.0f, 0.0f, -10.0f);
 	const glm::vec3 kDefaultLookAtTargetPos = glm::vec3();
 
 	const float kDefaultMouseSensitivity = 1.0f;
 	const float kDefaultMovementSpeed = 5.0f;
 
-	const float kCameraPitchLimit = 85.0f;
-	const float kCameraPitchLimitY = sin(glm::radians(kCameraPitchLimit));
+	const float kDefaultPitchLimit = 85.0f;
 
 	Camera::Camera() {
 		update_listener_ = EventLisenter<Engine::UpdateEvent>([this](const Engine::UpdateEvent& e){
@@ -38,17 +35,25 @@ namespace cubey {
 		glfwGetFramebufferSize(Engine::window_, &w, &h);
 		aspect_ = w / (float)h;
 
-		position_ = kDefaultPosition;
+		transform_.TranslateTo(kDefaultPosition);
 		look_at_target_pos_ = kDefaultLookAtTargetPos;
 		look_at_target_ = nullptr;
-		LookAt(look_at_target_pos_);
+		transform_.LookAt(look_at_target_pos_);
 
 		projection_mat_ = glm::perspective(fov_, aspect_, z_near_, z_far_);
 
 		mouse_sensitivty_ = kDefaultMouseSensitivity;
 		movement_speed_ = kDefaultMovementSpeed;
 
+		pitch_limit_ = kDefaultPitchLimit;
+		//!!!!!!!!!!!!
+		//these should be computed from initial orientation
+		yaw_ = 0.0f;
+		pitch_ = 0.0f;
+		roll_ = 0.0f;
+
 		flip_mat_ = glm::scale(glm::vec3(-1.0f, 1.0f, 1.0f));
+		view_mat_ = glm::lookAt(transform_.position(), look_at_target_pos_, transform_.up()) * flip_mat_;
 	}
 
 	void Camera::Update(float delta_time) {
@@ -57,50 +62,80 @@ namespace cubey {
 		}
 
 		if (Input::Main()->is_left_mouse_btn_down()) {
-			glm::vec3 from_target = position_ - look_at_target_pos_;
-			glm::vec3 t_from_target = glm::rotate(from_target, -Input::Main()->mouse_pos_offset().y * delta_time * mouse_sensitivty_, right_);
-			glm::vec3 n_from_target = glm::normalize(t_from_target);
-			if (n_from_target.y <= kCameraPitchLimitY && n_from_target.y > -kCameraPitchLimitY) {
-				from_target = t_from_target;
-			}
-			from_target = glm::rotateY(from_target, -Input::Main()->mouse_pos_offset().x * delta_time * mouse_sensitivty_);
-			position_ = look_at_target_pos_ + from_target;
-			LookAt(look_at_target_pos_);
+			Orbit(-Input::Main()->mouse_pos_offset().x * delta_time * mouse_sensitivty_, Input::Main()->mouse_pos_offset().y * delta_time * mouse_sensitivty_);
 		}
 		if (Input::Main()->is_right_mouse_btn_down()) {
-			glm::vec3 to_target = look_at_target_pos_ - position_;
-			glm::vec3 t_to_target = glm::rotate(t_to_target, -Input::Main()->mouse_pos_offset().y * delta_time * mouse_sensitivty_, right_);
-			glm::vec3 n_to_target = glm::normalize(t_to_target);
-			if (n_to_target.y <= kCameraPitchLimitY && n_to_target.y > -kCameraPitchLimitY) {
-				to_target = t_to_target;
-			}
-			to_target = glm::rotateY(to_target, -Input::Main()->mouse_pos_offset().x * delta_time * mouse_sensitivty_);
-			look_at_target_pos_ = position_ + to_target;
-			LookAt(look_at_target_pos_);
+			PanTilt(Input::Main()->mouse_pos_offset().x * delta_time * mouse_sensitivty_, -Input::Main()->mouse_pos_offset().y * delta_time * mouse_sensitivty_);
 		}
 
-		glm::vec3 movement = delta_time * movement_speed_ * Input::Main()->movement() * orientation_;
-		Translate(movement);
+		glm::vec3 movement = delta_time * movement_speed_ * Input::Main()->movement() * transform_.orientation();
+		transform_.Translate(movement);
 		look_at_target_pos_ += movement;
 
-		view_mat_ =  glm::lookAt(position_, look_at_target_pos_, up_) * flip_mat_;
+		view_mat_ = glm::lookAt(transform_.position(), look_at_target_pos_, transform_.up()) * flip_mat_;
 	}
 
-	glm::mat4 Camera::ProjectionMat() {
-		return projection_mat_;
+	void Camera::LookAt(glm::vec3 target_pos) {
+		look_at_target_pos_ = target_pos;
+		transform_.LookAt(look_at_target_pos_, transform_.up());
+		view_mat_ = glm::lookAt(transform_.position(), look_at_target_pos_, transform_.up()) * flip_mat_;
 	}
 
-	glm::mat4 Camera::ViewMat() {
-		return view_mat_;
+	void Camera::PanTilt(float yaw, float pitch) {
+		glm::vec3 to_target = look_at_target_pos_ - transform_.position();
+
+		yaw_ += glm::degrees(yaw);
+		if (yaw_ > 180.f) {
+			yaw_ -= 180.f;
+		}
+		else if (yaw_ < -180.f) {
+			yaw_ += 180.f;
+		}
+		glm::quat q_yaw = glm::angleAxis(yaw, glm::vec3(0.0f, 1.0f, 0.0f));
+		transform_.Rotate(q_yaw);
+		to_target = to_target * q_yaw;
+
+		pitch_ += glm::degrees(pitch);
+		if (pitch_ > -pitch_limit_ && pitch_ < pitch_limit_) {
+			glm::quat q_pitch = glm::angleAxis(pitch, transform_.right());
+			transform_.Rotate(q_pitch);
+			to_target = to_target * q_pitch;
+		}
+		else {
+			pitch_ -= glm::degrees(pitch);
+		}
+		
+		look_at_target_pos_ = transform_.position() + to_target;
 	}
 
-	glm::mat4 Camera::MVPMat(const glm::mat4& model_mat) {
-		return projection_mat_ * view_mat_ * model_mat;
+	void Camera::Orbit(float yaw, float pitch) {
+		glm::vec3 from_target = transform_.position() - look_at_target_pos_;
+
+		yaw_ += glm::degrees(yaw);
+		if (yaw_ > 180.f) {
+			yaw_ -= 180.f;
+		}
+		else if (yaw_ < -180.f) {
+			yaw_ += 180.f;
+		}
+		glm::quat q_yaw = glm::angleAxis(yaw, glm::vec3(0.0f, 1.0f, 0.0f));
+		from_target = from_target * q_yaw;
+		transform_.Rotate(q_yaw);
+
+		pitch_ += glm::degrees(pitch);
+		if (pitch_ > -pitch_limit_ && pitch_ < pitch_limit_) {
+			glm::quat q_pitch = glm::angleAxis(pitch, transform_.right());
+			from_target = from_target * q_pitch;
+			transform_.Rotate(q_pitch);
+		}
+		else {
+			pitch_ -= glm::degrees(pitch);
+		}
+
+		transform_.TranslateTo(look_at_target_pos_ + from_target);
 	}
 
-	glm::mat3 Camera::NormalMat(const glm::mat4& model_mat) {
-		return glm::inverseTranspose(glm::mat3( view_mat_ * model_mat));
-	}
+	
 
 }
 

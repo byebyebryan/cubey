@@ -1,25 +1,12 @@
-
-#define GLM_FORCE_PURE
-
 #include "GL/glew.h"
-#include "GLFW/glfw3.h"
-#include "glm/glm.hpp"
-
-#include "glm/gtx/normal.hpp"
-
-#include <stdlib.h>
-#include <stdio.h>
-
-#include <iostream>
-#include <thread>
-#include <chrono>
 
 #include "Engine.h"
-#include "Shader.h"
-#include "Vertex.h"
 #include "Camera.h"
 #include "UI.h"
 #include "Input.h"
+
+#include "Shader.h"
+#include "Vertex.h"
 
 using namespace cubey;
 
@@ -31,14 +18,14 @@ glm::mat4 model_mat = glm::mat4();
 void TestRender(const Engine::RenderEvent& e) {
 
 	//model_mat = glm::translate(model_mat, glm::vec3(0.0f, 0.0f, 0.01f));
-	glm::mat4 mvp_mat = Camera::Main()->MVPMat(model_mat);
-	glm::mat3 normal_mat = Camera::Main()->NormalMat(model_mat);
+	glm::mat4 mvp_mat = Camera::Main()->CalculateMVPMat(model_mat);
+	glm::mat3 normal_mat = Camera::Main()->CalculateNormalMat(model_mat);
 
 	glm::vec3 ambient_light = glm::vec3(0.5f, 0.5f, 0.5f);
 	glm::vec3 directional_light = glm::vec3(0.5f, 0.5f, 0.5f);
-	glm::vec4 directional_light_dir = glm::vec4(0.5f, 1.0f, 0.0f, 0.0f);
+	glm::vec4 directional_light_dir = glm::vec4(-0.5f, -1.0f, -0.25f, 0.0f);
 
-	glm::vec3 directional_light_dir_es = glm::vec3(glm::normalize(Camera::Main()->ViewMat() * directional_light_dir));
+	glm::vec3 directional_light_dir_es = glm::vec3(glm::normalize(Camera::Main()->view_mat() * directional_light_dir));
 
 	prog->Activate();
 	prog->SetUniform("u_mvp_mat", mvp_mat);
@@ -55,8 +42,8 @@ int main(void) {
 	Engine::Init();
 
 	Input::Main()->Init();
-	UI::Main()->Init();
 	Camera::Main()->Init();
+	UI::Main()->Init();
 
 	GLuint vbo;
 	glGenBuffers(1, &vbo);
@@ -106,91 +93,62 @@ int main(void) {
 	//};
 
 	Vertex3<glm::vec3, glm::vec3, glm::vec3> data[36] = {
-		{ { 0.0f, 0.0f, 0.0f }, { 1.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f } },
-		{ { 0.0f, 0.0f, -0.2f }, { 1.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f } },
-		{ { 1.0f, 0.0f, 0.0f }, { 1.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f } },
+		{ { 0.0f, 0.0f, 0.0f }, { 1.0f, 0.0f, 0.0f } },
+		{ { 0.0f, 0.0f, -0.2f }, { 1.0f, 0.0f, 0.0f } },
+		{ { 1.0f, 0.0f, 0.0f }, { 1.0f, 0.0f, 0.0f } },
 
-		{ { 0.0f, -0.2f, 0.0f }, { 1.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 1.0f } },
-		{ { 0.0f, 0.0f, 0.0f }, { 1.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 1.0f } },
-		{ { 1.0f, 0.0f, 0.0f }, { 1.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 1.0f } },
+		{ { 0.0f, -0.2f, 0.0f }, { 1.0f, 0.0f, 0.0f } },
+		{ { 0.0f, 0.0f, 0.0f }, { 1.0f, 0.0f, 0.0f } },
+		{ { 1.0f, 0.0f, 0.0f }, { 1.0f, 0.0f, 0.0f } },
 
-		{ { 0.0f, 0.0f, -0.2f }, { 0.0f, 1.0f, 0.0f }, { 1.0f, 0.0f, 0.0f } },
-		{ { 0.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f }, { 1.0f, 0.0f, 0.0f } },
-		{ { 0.0f, 1.0f, 0.0f }, { 0.0f, 1.0f, 0.0f }, { 1.0f, 0.0f, 0.0f } },
+		{ { 0.0f, 0.0f, -0.2f }, { 0.0f, 1.0f, 0.0f } },
+		{ { 0.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f } },
+		{ { 0.0f, 1.0f, 0.0f }, { 0.0f, 1.0f, 0.0f } },
 
-		{ { 0.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f, 1.0f } },
-		{ { -0.2f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f, 1.0f } },
-		{ { 0.0f, 1.0f, 0.0f }, { 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f, 1.0f } },
+		{ { 0.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f } },
+		{ { -0.2f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f } },
+		{ { 0.0f, 1.0f, 0.0f }, { 0.0f, 1.0f, 0.0f } },
 
-		{ { -0.2f, 0.0f, 0.0f }, { 0.0f, 0.0f, 1.0f }, { 0.0f, 1.0f, 0.0f } },
-		{ { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 1.0f }, { 0.0f, 1.0f, 0.0f } },
-		{ { 0.0f, 0.0f, 1.0f }, { 0.0f, 0.0f, 1.0f }, { 0.0f, 1.0f, 0.0f } },
+		{ { -0.2f, 0.0f, 0.0f }, { 0.0f, 0.0f, 1.0f } },
+		{ { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 1.0f } },
+		{ { 0.0f, 0.0f, 1.0f }, { 0.0f, 0.0f, 1.0f } },
 
-		{ { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 1.0f }, { 1.0f, 0.0f, 0.0f } },
-		{ { 0.0f, -0.2f, 0.0f }, { 0.0f, 0.0f, 1.0f }, { 1.0f, 0.0f, 0.0f } },
-		{ { 0.0f, 0.0f, 1.0f }, { 0.0f, 0.0f, 1.0f }, { 1.0f, 0.0f, 0.0f } },
+		{ { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 1.0f } },
+		{ { 0.0f, -0.2f, 0.0f }, { 0.0f, 0.0f, 1.0f } },
+		{ { 0.0f, 0.0f, 1.0f }, { 0.0f, 0.0f, 1.0f } },
 
-		{ { 0.0f, 0.0f, -0.2f }, { 1.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f } },
-		{ { -0.15f, -0.15f, -0.15f }, { 1.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f } },
-		{ { 1.0f, 0.0f, 0.0f }, { 1.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f } },
+		{ { 0.0f, 0.0f, -0.2f }, { 1.0f, 0.0f, 0.0f } },
+		{ { -0.15f, -0.15f, -0.15f }, { 1.0f, 0.0f, 0.0f } },
+		{ { 1.0f, 0.0f, 0.0f }, { 1.0f, 0.0f, 0.0f } },
 
-		{ { -0.15f, -0.15f, -0.15f }, { 1.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 1.0f } },
-		{ { 0.0f, -0.2f, 0.0f }, { 1.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 1.0f } },
-		{ { 1.0f, 0.0f, 0.0f }, { 1.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 1.0f } },
+		{ { -0.15f, -0.15f, -0.15f }, { 1.0f, 0.0f, 0.0f } },
+		{ { 0.0f, -0.2f, 0.0f }, { 1.0f, 0.0f, 0.0f } },
+		{ { 1.0f, 0.0f, 0.0f }, { 1.0f, 0.0f, 0.0f } },
 
-		{ { -0.15f, -0.15f, -0.15f }, { 0.0f, 1.0f, 0.0f }, { 1.0f, 0.0f, 0.0f } },
-		{ { 0.0f, 0.0f, -0.2f }, { 0.0f, 1.0f, 0.0f }, { 1.0f, 0.0f, 0.0f } },
-		{ { 0.0f, 1.0f, 0.0f }, { 0.0f, 1.0f, 0.0f }, { 1.0f, 0.0f, 0.0f } },
+		{ { -0.15f, -0.15f, -0.15f }, { 0.0f, 1.0f, 0.0f } },
+		{ { 0.0f, 0.0f, -0.2f }, { 0.0f, 1.0f, 0.0f } },
+		{ { 0.0f, 1.0f, 0.0f }, { 0.0f, 1.0f, 0.0f } },
 
-		{ { -0.2f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f, 1.0f } },
-		{ { -0.15f, -0.15f, -0.15f }, { 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f, 1.0f } },
-		{ { 0.0f, 1.0f, 0.0f }, { 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f, 1.0f } },
+		{ { -0.2f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f } },
+		{ { -0.15f, -0.15f, -0.15f }, { 0.0f, 1.0f, 0.0f } },
+		{ { 0.0f, 1.0f, 0.0f }, { 0.0f, 1.0f, 0.0f } },
 
-		{ { -0.15f, -0.15f, -0.15f }, { 0.0f, 0.0f, 1.0f }, { 0.0f, 1.0f, 0.0f } },
-		{ { -0.2f, 0.0f, 0.0f }, { 0.0f, 0.0f, 1.0f }, { 0.0f, 1.0f, 0.0f } },
-		{ { 0.0f, 0.0f, 1.0f }, { 0.0f, 0.0f, 1.0f }, { 0.0f, 1.0f, 0.0f } },
+		{ { -0.15f, -0.15f, -0.15f }, { 0.0f, 0.0f, 1.0f } },
+		{ { -0.2f, 0.0f, 0.0f }, { 0.0f, 0.0f, 1.0f } },
+		{ { 0.0f, 0.0f, 1.0f }, { 0.0f, 0.0f, 1.0f } },
 
-		{ { 0.0f, -0.2f, 0.0f }, { 0.0f, 0.0f, 1.0f }, { 1.0f, 0.0f, 0.0f } },
-		{ { -0.15f, -0.15f, -0.15f }, { 0.0f, 0.0f, 1.0f }, { 1.0f, 0.0f, 0.0f } },
-		{ { 0.0f, 0.0f, 1.0f }, { 0.0f, 0.0f, 1.0f }, { 1.0f, 0.0f, 0.0f } },
+		{ { 0.0f, -0.2f, 0.0f }, { 0.0f, 0.0f, 1.0f } },
+		{ { -0.15f, -0.15f, -0.15f }, { 0.0f, 0.0f, 1.0f } },
+		{ { 0.0f, 0.0f, 1.0f }, { 0.0f, 0.0f, 1.0f } },
 	};
 
-	int a, b, c;
-	a = 18;
-	b = a + 1, c = a + 2;
-	data[a].attrib_2 = glm::triangleNormal(data[a].attrib_0, data[b].attrib_0, data[c].attrib_0);
-	data[b].attrib_2 = glm::triangleNormal(data[a].attrib_0, data[b].attrib_0, data[c].attrib_0);
-	data[c].attrib_2 = glm::triangleNormal(data[a].attrib_0, data[b].attrib_0, data[c].attrib_0);
-
-	a += 3;  b = a + 1, c = a + 2;
-	data[a].attrib_2 = glm::triangleNormal(data[a].attrib_0, data[b].attrib_0, data[c].attrib_0);
-	data[b].attrib_2 = glm::triangleNormal(data[a].attrib_0, data[b].attrib_0, data[c].attrib_0);
-	data[c].attrib_2 = glm::triangleNormal(data[a].attrib_0, data[b].attrib_0, data[c].attrib_0);
-
-	a += 3;  b = a + 1, c = a + 2;
-	data[a].attrib_2 = glm::triangleNormal(data[a].attrib_0, data[b].attrib_0, data[c].attrib_0);
-	data[b].attrib_2 = glm::triangleNormal(data[a].attrib_0, data[b].attrib_0, data[c].attrib_0);
-	data[c].attrib_2 = glm::triangleNormal(data[a].attrib_0, data[b].attrib_0, data[c].attrib_0);
-
-	a += 3;  b = a + 1, c = a + 2;
-	data[a].attrib_2 = glm::triangleNormal(data[a].attrib_0, data[b].attrib_0, data[c].attrib_0);
-	data[b].attrib_2 = glm::triangleNormal(data[a].attrib_0, data[b].attrib_0, data[c].attrib_0);
-	data[c].attrib_2 = glm::triangleNormal(data[a].attrib_0, data[b].attrib_0, data[c].attrib_0);
-
-	a += 3;  b = a + 1, c = a + 2;
-	data[a].attrib_2 = glm::triangleNormal(data[a].attrib_0, data[b].attrib_0, data[c].attrib_0);
-	data[b].attrib_2 = glm::triangleNormal(data[a].attrib_0, data[b].attrib_0, data[c].attrib_0);
-	data[c].attrib_2 = glm::triangleNormal(data[a].attrib_0, data[b].attrib_0, data[c].attrib_0);
-
-	a += 3;  b = a + 1, c = a + 2;
-	data[a].attrib_2 = glm::triangleNormal(data[a].attrib_0, data[b].attrib_0, data[c].attrib_0);
-	data[b].attrib_2 = glm::triangleNormal(data[a].attrib_0, data[b].attrib_0, data[c].attrib_0);
-	data[c].attrib_2 = glm::triangleNormal(data[a].attrib_0, data[b].attrib_0, data[c].attrib_0);
-
+	VertexListHelper::CalculateNormals(data, 36, data->attrib_ptr_0(), data->attrib_ptr_2());
 
 	glBufferData(GL_ARRAY_BUFFER, sizeof(data), data, GL_STATIC_DRAW);
 	data->DescribeLayout();
 
+
+	glm::vec3
 	glBindVertexArray(0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
