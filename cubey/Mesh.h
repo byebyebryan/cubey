@@ -2,6 +2,8 @@
 
 #include "Vertex.h"
 #include "Transform.h"
+#include "Shader.h"
+#include "Camera.h"
 
 namespace cubey {
 	class Mesh {
@@ -21,7 +23,7 @@ namespace cubey {
 		template<typename T>
 		static Mesh* Create(T* vertices, GLsizei vertices_count, GLenum draw_mode, GLenum buffer_uasge = GL_STATIC_DRAW) {
 			Mesh* new_mesh = new Mesh(vertices_count, draw_mode);
-			
+
 			glGenBuffers(1, &(new_mesh->vbo_));
 			glGenVertexArrays(1, &(new_mesh->vao_));
 
@@ -37,18 +39,40 @@ namespace cubey {
 			return new_mesh;
 		}
 
-		void Draw() {
-			glBindVertexArray(vao_);
-			glDrawArrays(draw_mode_, 0, vertices_count_);
-			glBindVertexArray(0);
-		}
+		class MeshInstance* CreateInstance(ShaderProgram* program, const std::string& u_mvp_mat_name, const std::string& u_normal_mat_name,
+			Camera* camera = Camera::Main(), const Transform& transform = Transform());
 
-		glm::mat4 model_mat() { return transform_.transformation_mat(); }
+		void Draw();
+
 	private:
-		Transform transform_;
 		GLenum draw_mode_;
 		GLsizei vertices_count_;
 		GLuint vao_;
 		GLuint vbo_;
 	};
+
+	class MeshInstance {
+	public:
+		MeshInstance(Mesh* mesh, ShaderProgram* program, int u_mvp_mat_location, int u_normal_mat_location,
+			Camera* camera = Camera::Main(), const Transform& transform = Transform()) :
+			mesh_(mesh),
+			program_(program),
+			u_mvp_mat_location_(u_mvp_mat_location),
+			u_normal_mat_location_(u_normal_mat_location),
+			camera_(camera),
+			transform_(transform) {
+		}
+
+		void Draw();
+
+		Transform transform_;
+	private:
+		Mesh* mesh_;
+		Camera* camera_;
+		ShaderProgram* program_;
+		int u_mvp_mat_location_;
+		int u_normal_mat_location_;
+	};
+
+	
 }

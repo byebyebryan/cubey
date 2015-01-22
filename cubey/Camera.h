@@ -5,9 +5,14 @@
 
 namespace cubey {
 
-	class Camera : public ISingleton<Camera> {
+	class Camera {
 	public:
 		Camera();
+
+		static Camera* Main() {
+			static Camera* instance = new Camera();
+			return instance;
+		}
 
 		void Init();
 		void Reset();

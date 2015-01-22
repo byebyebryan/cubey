@@ -118,7 +118,11 @@ namespace cubey {
 			std::cerr << "*** Poop: Cannot use invalid program" << std::endl;
 			return false;
 		}
-		glUseProgram(gl_);
+		GLint current_prog;
+		glGetIntegerv(GL_CURRENT_PROGRAM, &current_prog);
+		if (current_prog != gl_) {
+			glUseProgram(gl_);
+		}
 		return true;
 	}
 
@@ -136,10 +140,8 @@ namespace cubey {
 			glGetActiveUniform(gl_, i, max_buffer_size, NULL, &uniform_size, &uniform_type, uniform_name);
 			GLint uniform_location = glGetUniformLocation(gl_, uniform_name);
 			if (uniform_location >= 0) {
-				uniform_var_index_to_location.push_back(uniform_location);
 				uniform_var_name_to_location[std::string(uniform_name)] = uniform_location;
-				std::cout << "Uniform Variable " << uniform_var_index_to_location.size() - 1 << " : " << uniform_name \
-					<< " at location " << uniform_location << std::endl;
+				std::cout << "Uniform Variable : " << uniform_name << " at location " << uniform_location << std::endl;
 			}
 			delete[] uniform_name;
 		}

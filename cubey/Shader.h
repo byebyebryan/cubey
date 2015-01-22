@@ -31,9 +31,13 @@ namespace cubey {
 		bool Link();
 		bool Activate();
 
+		int GetUniformLocation(const std::string& name) {
+			return uniform_var_name_to_location[name];
+		}
+
 		template<typename T>
-		void SetUniform(int index, const T& value) {
-			SetUniformImpl(uniform_var_index_to_location[index], value);
+		void SetUniform(int location, const T& value) {
+			SetUniformImpl(location, value);
 		}
 		template<typename T>
 		void SetUniform(const std::string& name, const T& value) {
@@ -76,7 +80,6 @@ namespace cubey {
 		}
 
 		std::vector<Shader> shaders_;
-		std::vector<GLint> uniform_var_index_to_location;
 		std::unordered_map<std::string, GLint> uniform_var_name_to_location;
 		bool is_linked_;
 	};
