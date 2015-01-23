@@ -107,7 +107,7 @@ namespace cubey {
 		glm::vec3 up() { return up_; }
 	protected:
 		void RefreshMat() {
-			transformation_mat_ = glm::scale(scale_) * glm::mat4_cast(orientation_) * glm::translate(position_);
+			transformation_mat_ = glm::translate(position_) * glm::mat4_cast(orientation_) * glm::scale(scale_);
 		}
 
 		glm::mat4 transformation_mat_;

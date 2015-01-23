@@ -21,8 +21,8 @@ namespace cubey {
 		}
 
 		template<typename T>
-		static Mesh* Create(T* vertices, GLsizei vertices_count, GLenum draw_mode, GLenum buffer_uasge = GL_STATIC_DRAW) {
-			Mesh* new_mesh = new Mesh(vertices_count, draw_mode);
+		static Mesh* Create(std::vector<T> vertices, GLenum draw_mode, GLenum buffer_uasge = GL_STATIC_DRAW) {
+			Mesh* new_mesh = new Mesh(vertices.size(), draw_mode);
 
 			glGenBuffers(1, &(new_mesh->vbo_));
 			glGenVertexArrays(1, &(new_mesh->vao_));
@@ -30,8 +30,8 @@ namespace cubey {
 			glBindVertexArray(new_mesh->vao_);
 			glBindBuffer(GL_ARRAY_BUFFER, new_mesh->vbo_);
 
-			glBufferData(GL_ARRAY_BUFFER, sizeof(T) * vertices_count, vertices, buffer_uasge);
-			vertices->DescribeLayout();
+			glBufferData(GL_ARRAY_BUFFER, sizeof(T) * vertices.size(), vertices.data(), buffer_uasge);
+			T::DescribeLayout();
 
 			glBindVertexArray(0);
 			glBindBuffer(GL_ARRAY_BUFFER, 0);

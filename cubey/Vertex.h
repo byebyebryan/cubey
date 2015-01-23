@@ -1,5 +1,6 @@
 #pragma once
 
+#include <vector>
 #include <GL/glew.h>
 #include <glm/glm.hpp>
 #include "glm/gtx/normal.hpp"
@@ -121,51 +122,48 @@ namespace cubey {
 	class VertexArrayHelper {
 	public:
 		template<typename T0, typename T1>
-		static void CalculateNormals(Vertex2<T0, T1>* verts, int size, glm::vec3 Vertex2<T0, T1>::*pos_attrib, glm::vec3 Vertex2<T0, T1>::*normal_attrib) {
-			CalculateNormalsImpl(verts, size, pos_attrib, normal_attrib);
-		}
-		template<typename T0, typename T1>
-		static void CalculateNormals(Vertex2<T0, T1>* verts, int size, glm::vec4 Vertex2<T0, T1>::*pos_attrib, glm::vec3 Vertex2<T0, T1>::*normal_attrib) {
-			CalculateNormalsImpl(verts, size, pos_attrib, normal_attrib);
-		}
-		template<typename T0, typename T1, typename T2>
-		static void CalculateNormals(Vertex3<T0, T1, T2>* verts, int size, glm::vec3 Vertex3<T0, T1, T2>::*pos_attrib, glm::vec3 Vertex3<T0, T1, T2>::*normal_attrib) {
-			CalculateNormalsImpl(verts, size, pos_attrib, normal_attrib);
-		}
-		template<typename T0, typename T1, typename T2>
-		static void CalculateNormals(Vertex3<T0, T1, T2>* verts, int size, glm::vec4 Vertex3<T0, T1, T2>::*pos_attrib, glm::vec3 Vertex3<T0, T1, T2>::*normal_attrib) {
-			CalculateNormalsImpl(verts, size, pos_attrib, normal_attrib);
-		}
-		template<typename T0, typename T1, typename T2, typename T3>
-		static void CalculateNormals(Vertex4<T0, T1, T2, T3>* verts, int size, glm::vec3 Vertex4<T0, T1, T2, T3>::*pos_attrib, glm::vec3 Vertex4<T0, T1, T2, T3>::*normal_attrib) {
-			CalculateNormalsImpl(verts, size, pos_attrib, normal_attrib);
-		}
-		template<typename T0, typename T1, typename T2, typename T3>
-		static void CalculateNormals(Vertex4<T0, T1, T2, T3>* verts, int size, glm::vec4 Vertex4<T0, T1, T2, T3>::*pos_attrib, glm::vec3 Vertex4<T0, T1, T2, T3>::*normal_attrib) {
-			CalculateNormalsImpl(verts, size, pos_attrib, normal_attrib);
+		static void CalculateNormal(std::vector<T0>& vertex_array, T1 T0::*pos_attrib_ptr, glm::vec3 T0::*normal_attrib_ptr) {
+			int num_triangles = vertex_array.size() / 3;
+			for (int i = 0; i < num_triangles; i++) {
+				glm::vec3 i_normal = glm::triangleNormal(vertex_array[i * 3].*pos_attrib_ptr, vertex_array[i * 3 + 1].*pos_attrib_ptr, vertex_array[i * 3 + 2].*pos_attrib_ptr);
+				vertex_array[i * 3].*normal_attrib_ptr = i_normal;
+				vertex_array[i * 3 + 1].*normal_attrib_ptr = i_normal;
+				vertex_array[i * 3 + 2].*normal_attrib_ptr = i_normal;
+			}
 		}
 
-	private:
-		template<typename T>
-		static void CalculateNormalsImpl(T* verts, int size, glm::vec3 T::*pos_attrib, glm::vec3 T::*normal_attrib) {
-			int num_triangles = size / 3;
-			for (int i = 0; i < num_triangles; i++) {
-				glm::vec3 i_normal = glm::triangleNormal(verts[i * 3].*pos_attrib, verts[i * 3 + 1].*pos_attrib, verts[i * 3 + 2].*pos_attrib);
-				verts[i * 3].*normal_attrib = i_normal;
-				verts[i * 3 + 1].*normal_attrib = i_normal;
-				verts[i * 3 + 2].*normal_attrib = i_normal;
+		template<typename T0, typename T1>
+		static void ChangeColor(std::vector<T0>& vertex_array, T1 T0::*color_attrib_ptr, const T1& color) {
+			for (T0& vertex : vertex_array) {
+				vertex.*color_attrib_ptr = color;
 			}
 		}
+
 		template<typename T>
-		static void CalculateNormalsImpl(T* verts, int size, glm::vec4 T::*pos_attrib, glm::vec3 T::*normal_attrib) {
-			int num_triangles = size / 3;
-			for (int i = 0; i < num_triangles; i++) {
-				glm::vec3 i_normal = glm::triangleNormal(verts[i * 3].*pos_attrib, verts[i * 3 + 1].*pos_attrib, verts[i * 3 + 2].*pos_attrib);
-				verts[i * 3].*normal_attrib = i_normal;
-				verts[i * 3 + 1].*normal_attrib = i_normal;
-				verts[i * 3 + 2].*normal_attrib = i_normal;
+		static void ApplyTransform(std::vector<T>& vertex_array, glm::vec3 T::*pos_attrib_ptr, glm::vec3 T::*normal_attrib_ptr, glm::mat4 transformation_mat) {
+			for (T& vertex : vertex_array) {
+				glm::vec4 pos = glm::vec4(vertex.*pos_attrib_ptr, 1.0f);
+				pos = transformation_mat * pos;
+				vertex.*pos_attrib_ptr = glm::vec3(pos);
 			}
+			CalculateNormal(vertex_array, pos_attrib_ptr, normal_attrib_ptr);
 		}
+
+		template<typename T>
+		static void ApplyTransform(std::vector<T>& vertex_array, glm::vec4 T::*pos_attrib_ptr, glm::vec3 T::*normal_attrib_ptr, glm::mat4 transformation_mat) {
+			for (T& vertex : vertex_array) {
+				vertex.*pos_attrib_ptr = transformation_mat * vertex.*pos_attrib_ptr;
+			}
+			CalculateNormal(vertex_array, pos_attrib_ptr, normal_attrib_ptr);
+		}
+
+		template<typename T>
+		static std::vector<T> CombineArrays(std::vector<T>& vertex_array_0, std::vector<T>& vertex_array_1) {
+			std::vector<T> new_array(vertex_array_0);
+			new_array.insert(new_array.end(), vertex_array_1.begin(), vertex_array_1.end());
+			return new_array;
+		}
+
 	};
 
 	class VertexAttribInfo {

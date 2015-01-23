@@ -2,31 +2,79 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="Shader.cpp" />
-    <ClCompile Include="Engine.cpp" />
-    <ClCompile Include="Camera.cpp" />
-    <ClCompile Include="UI.cpp" />
-    <ClCompile Include="Time.cpp" />
-    <ClCompile Include="Input.cpp" />
-    <ClCompile Include="Interfaces.cpp" />
-    <ClCompile Include="Mesh.cpp" />
+    <ClCompile Include="Camera.cpp">
+      <Filter>cubey</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine.cpp">
+      <Filter>cubey</Filter>
+    </ClCompile>
+    <ClCompile Include="Input.cpp">
+      <Filter>cubey</Filter>
+    </ClCompile>
+    <ClCompile Include="Interfaces.cpp">
+      <Filter>cubey</Filter>
+    </ClCompile>
+    <ClCompile Include="Mesh.cpp">
+      <Filter>cubey</Filter>
+    </ClCompile>
+    <ClCompile Include="PrimitiveFactory.cpp">
+      <Filter>cubey</Filter>
+    </ClCompile>
+    <ClCompile Include="Shader.cpp">
+      <Filter>cubey</Filter>
+    </ClCompile>
+    <ClCompile Include="Time.cpp">
+      <Filter>cubey</Filter>
+    </ClCompile>
+    <ClCompile Include="UI.cpp">
+      <Filter>cubey</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Shader.h" />
-    <ClInclude Include="Event.h" />
-    <ClInclude Include="Engine.h" />
-    <ClInclude Include="Vertex.h" />
-    <ClInclude Include="Camera.h" />
-    <ClInclude Include="UI.h" />
-    <ClInclude Include="Time.h" />
-    <ClInclude Include="Input.h" />
-    <ClInclude Include="Transform.h" />
-    <ClInclude Include="Interfaces.h" />
-    <ClInclude Include="Mesh.h" />
+    <ClInclude Include="cubey.h" />
+    <ClInclude Include="Camera.h">
+      <Filter>cubey</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine.h">
+      <Filter>cubey</Filter>
+    </ClInclude>
+    <ClInclude Include="Event.h">
+      <Filter>cubey</Filter>
+    </ClInclude>
+    <ClInclude Include="Input.h">
+      <Filter>cubey</Filter>
+    </ClInclude>
+    <ClInclude Include="Interfaces.h">
+      <Filter>cubey</Filter>
+    </ClInclude>
+    <ClInclude Include="Mesh.h">
+      <Filter>cubey</Filter>
+    </ClInclude>
+    <ClInclude Include="PrimitiveFactory.h">
+      <Filter>cubey</Filter>
+    </ClInclude>
+    <ClInclude Include="Shader.h">
+      <Filter>cubey</Filter>
+    </ClInclude>
+    <ClInclude Include="Time.h">
+      <Filter>cubey</Filter>
+    </ClInclude>
+    <ClInclude Include="Transform.h">
+      <Filter>cubey</Filter>
+    </ClInclude>
+    <ClInclude Include="UI.h">
+      <Filter>cubey</Filter>
+    </ClInclude>
+    <ClInclude Include="Vertex.h">
+      <Filter>cubey</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Shaders">
       <UniqueIdentifier>{3e024228-8c96-4538-89c0-9dc628efcfd3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="cubey">
+      <UniqueIdentifier>{45c4a86a-f068-4dfa-93f6-013df95f147e}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

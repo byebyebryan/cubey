@@ -60,6 +60,8 @@ namespace cubey {
 			Update(Time::delta_time_);
 			Render();
 		}
+
+		Terminate();
 	}
 
 	void Engine::Update(float delta_time) {
