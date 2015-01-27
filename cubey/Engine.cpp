@@ -42,14 +42,12 @@ namespace cubey {
 
 		glewInit();
 
-		Input::Main()->Init();
-		Camera::Main()->Init();
-		UI::Main()->Init();
+		Input::Main();
+		Camera::Main();
+		UI::Main();
 	}
 
 	void Engine::MainLoop() {
-		Init();
-
 		EventChannel<InitEvent>::Broadcast(InitEvent());
 
 		Time::time_since_start_ = glfwGetTime();

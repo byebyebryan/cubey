@@ -39,6 +39,9 @@ namespace cubey {
 			return new_mesh;
 		}
 
+		class SimpleMeshInstance* CreateSimpleInstance(ShaderProgram* program, const std::string& u_mvp_mat_name,
+			Camera* camera = Camera::Main(), const Transform& transform = Transform());
+
 		class MeshInstance* CreateInstance(ShaderProgram* program, const std::string& u_mvp_mat_name, const std::string& u_normal_mat_name,
 			Camera* camera = Camera::Main(), const Transform& transform = Transform());
 
@@ -49,6 +52,27 @@ namespace cubey {
 		GLsizei vertices_count_;
 		GLuint vao_;
 		GLuint vbo_;
+	};
+
+	class SimpleMeshInstance {
+	public:
+		SimpleMeshInstance(Mesh* mesh, ShaderProgram* program, int u_mvp_mat_location,
+			Camera* camera = Camera::Main(), const Transform& transform = Transform()) :
+			mesh_(mesh),
+			program_(program),
+			u_mvp_mat_location_(u_mvp_mat_location),
+			camera_(camera),
+			transform_(transform) {
+		}
+
+		void Draw();
+
+		Transform transform_;
+	private:
+		Mesh* mesh_;
+		Camera* camera_;
+		ShaderProgram* program_;
+		int u_mvp_mat_location_;
 	};
 
 	class MeshInstance {

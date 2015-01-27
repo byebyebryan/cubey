@@ -97,6 +97,7 @@
     <ClCompile Include="Input.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Mesh.cpp" />
+    <ClCompile Include="ParticleTest.cpp" />
     <ClCompile Include="PrimitiveFactory.cpp" />
     <ClCompile Include="Shader.cpp" />
     <ClCompile Include="Time.cpp" />
@@ -111,6 +112,7 @@
     <ClInclude Include="Interfaces.h" />
     <ClInclude Include="Input.h" />
     <ClInclude Include="Mesh.h" />
+    <ClInclude Include="ParticleTest.h" />
     <ClInclude Include="PrimitiveFactory.h" />
     <ClInclude Include="Shader.h" />
     <ClInclude Include="Time.h" />
@@ -120,6 +122,8 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\debug_shader.glsl" />
+    <None Include="shaders\particle_render_shader.glsl" />
+    <None Include="shaders\particle_update_shader.glsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

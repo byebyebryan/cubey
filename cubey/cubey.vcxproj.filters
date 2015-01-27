@@ -30,6 +30,7 @@
       <Filter>cubey</Filter>
     </ClCompile>
     <ClCompile Include="CameraTest.cpp" />
+    <ClCompile Include="ParticleTest.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Camera.h">
@@ -72,6 +73,7 @@
       <Filter>cubey</Filter>
     </ClInclude>
     <ClInclude Include="CameraTest.h" />
+    <ClInclude Include="ParticleTest.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Shaders">
@@ -83,6 +85,12 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\debug_shader.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\particle_render_shader.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\particle_update_shader.glsl">
       <Filter>Shaders</Filter>
     </None>
   </ItemGroup>

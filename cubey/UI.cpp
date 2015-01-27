@@ -42,16 +42,16 @@ namespace cubey {
 
 		TwAddVarRO(bar, "camera position", TW_TYPE_DIR3F, &Camera::Main()->transform_.position_, "");
 		TwAddVarRO(bar, "camera orientation", TW_TYPE_QUAT4F, &Camera::Main()->transform_.orientation_, "");
-		TwAddVarRO(bar, "camera euler angles", TW_TYPE_DIR3F, &Camera::Main()->transform_.euler_angles_, "");
+		//TwAddVarRO(bar, "camera euler angles", TW_TYPE_DIR3F, &Camera::Main()->transform_.euler_angles_, "");
 
-		TwAddVarRO(bar, "camera forward", TW_TYPE_DIR3F, &Camera::Main()->transform_.forward_, "");
-		TwAddVarRO(bar, "camera right", TW_TYPE_DIR3F, &Camera::Main()->transform_.right_, "");
-		TwAddVarRO(bar, "camera up", TW_TYPE_DIR3F, &Camera::Main()->transform_.up_, "");
+		//TwAddVarRO(bar, "camera forward", TW_TYPE_DIR3F, &Camera::Main()->transform_.forward_, "");
+		//TwAddVarRO(bar, "camera right", TW_TYPE_DIR3F, &Camera::Main()->transform_.right_, "");
+		//TwAddVarRO(bar, "camera up", TW_TYPE_DIR3F, &Camera::Main()->transform_.up_, "");
 
-		TwAddVarRO(bar, "camera target", TW_TYPE_DIR3F, &Camera::Main()->look_at_target_pos_, "");
-		TwAddVarRO(bar, "camera yaw", TW_TYPE_FLOAT, &Camera::Main()->yaw_, "");
-		TwAddVarRO(bar, "camera pitch", TW_TYPE_FLOAT, &Camera::Main()->pitch_, "");
-		TwAddVarRO(bar, "camera roll", TW_TYPE_FLOAT, &Camera::Main()->roll_, "");
+		//TwAddVarRO(bar, "camera target", TW_TYPE_DIR3F, &Camera::Main()->look_at_target_pos_, "");
+		//TwAddVarRO(bar, "camera yaw", TW_TYPE_FLOAT, &Camera::Main()->yaw_, "");
+		//TwAddVarRO(bar, "camera pitch", TW_TYPE_FLOAT, &Camera::Main()->pitch_, "");
+		//TwAddVarRO(bar, "camera roll", TW_TYPE_FLOAT, &Camera::Main()->roll_, "");
 	}
 
 	void UI::UIRender() {

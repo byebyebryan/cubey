@@ -7,22 +7,28 @@ namespace cubey {
 	const float kDefaultFOV = 60.0f;
 	const float kDefaultZNear = 1.0f;
 	const float kDefaultZFar = 500.0f;
-	const glm::vec3 kDefaultPosition = glm::vec3(0.0f, 0.0f, -10.0f);
+	const glm::vec3 kDefaultPosition = glm::vec3(0.0f, 0.0f, -15.0f);
 	const glm::vec3 kDefaultLookAtTargetPos = glm::vec3();
 
 	const float kDefaultMouseSensitivity = 1.0f;
 	const float kDefaultMovementSpeed = 5.0f;
 
+	const float kDefautlMouseWheelSpeed = 5.0f;
+
 	const float kDefaultPitchLimit = 85.0f;
 
 	Camera::Camera() {
-		update_listener_ = EventLisenter<Engine::UpdateEvent>([this](const Engine::UpdateEvent& e){
+		init_lisenter_ = EventLisenter<Engine::InitEvent>([this](const Engine::InitEvent& e){
+			Init();
+		});
+		update_lisenter_ = EventLisenter<Engine::UpdateEvent>([this](const Engine::UpdateEvent& e){
 			Update(e.deltatime);
 		});
+		init_lisenter_.PushToChannel();
+		update_lisenter_.PushToChannel();
 	}
 
 	void Camera::Init() {
-		update_listener_.PushToChannel();
 		Reset();
 	}
 
@@ -44,6 +50,8 @@ namespace cubey {
 
 		mouse_sensitivty_ = kDefaultMouseSensitivity;
 		movement_speed_ = kDefaultMovementSpeed;
+
+		mouse_wheel_speed_ = kDefautlMouseWheelSpeed;
 
 		pitch_limit_ = kDefaultPitchLimit;
 		//!!!!!!!!!!!!
@@ -67,6 +75,9 @@ namespace cubey {
 		if (Input::Main()->is_right_mouse_btn_down()) {
 			PanTilt(Input::Main()->mouse_pos_offset().x * delta_time * mouse_sensitivty_, -Input::Main()->mouse_pos_offset().y * delta_time * mouse_sensitivty_);
 		}
+
+		float mouse_wheel_movement = delta_time * Input::Main()->mouse_wheel_offset() * mouse_wheel_speed_;
+		transform_.Translate(transform_.forward() * mouse_wheel_movement);
 
 		glm::vec3 movement = delta_time * movement_speed_ * Input::Main()->movement() * transform_.orientation();
 		transform_.Translate(movement);

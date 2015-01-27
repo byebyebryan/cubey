@@ -40,12 +40,14 @@ namespace cubey {
 
 		float mouse_sensitivty_;
 		float movement_speed_;
+		float mouse_wheel_speed_;
 
 		float pitch_limit_;
 
 		Transform transform_;
 	private:
-		EventLisenter<Engine::UpdateEvent> update_listener_;
+		EventLisenter<Engine::InitEvent> init_lisenter_;
+		EventLisenter<Engine::UpdateEvent> update_lisenter_;
 
 		glm::vec3 look_at_target_pos_;
 		Transform* look_at_target_;
