@@ -7,6 +7,10 @@
 #include "GLFW/glfw3.h"
 #include "Time.h"
 
+#include "Camera.h"
+#include "UI.h"
+#include "Input.h"
+
 namespace cubey {
 	const std::string kDefaultWindowTitle = "cubey!";
 	const int kDefaultWindowWidth = 800;
@@ -37,9 +41,17 @@ namespace cubey {
 		glfwSetCharCallback(window_, (GLFWcharfun)CharHandler);
 
 		glewInit();
+
+		Input::Main()->Init();
+		Camera::Main()->Init();
+		UI::Main()->Init();
 	}
 
 	void Engine::MainLoop() {
+		Init();
+
+		EventChannel<InitEvent>::Broadcast(InitEvent());
+
 		Time::time_since_start_ = glfwGetTime();
 
 		EventChannel<StartUpEvent>::Broadcast(StartUpEvent{});

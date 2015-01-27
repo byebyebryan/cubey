@@ -2,6 +2,9 @@
 
 namespace cubey {
 	IEngineEvents::IEngineEvents() {
+		init_lisenter_ = EventLisenter<Engine::InitEvent>([this](const Engine::InitEvent& e){
+			Init();
+		});
 		start_up_lisenter_ = EventLisenter<Engine::StartUpEvent>([this](const Engine::StartUpEvent& e){
 			StartUp();
 		});
@@ -24,9 +27,7 @@ namespace cubey {
 		ui_render_lisenter_ = EventLisenter<Engine::UIRenderEvent>([this](const Engine::UIRenderEvent& e){
 			UIRender();
 		});
-	}
-
-	void IEngineEvents::Init() {
+		init_lisenter_.PushToChannel();
 		start_up_lisenter_.PushToChannel();
 		terminate_lisenter_.PushToChannel();
 		early_update_lisenter_.PushToChannel();
@@ -35,4 +36,6 @@ namespace cubey {
 		render_lisenter_.PushToChannel();
 		ui_render_lisenter_.PushToChannel();
 	}
+
+	
 }

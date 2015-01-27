@@ -13,8 +13,6 @@ namespace cubey {
 	}
 
 	void Input::Init() {
-		IEngineEvents::Init();
-
 		EventChannel<Engine::MouseButtonEvent>::DirtyAdd([this](const Engine::MouseButtonEvent& e){
 			MouseButtonHandler(e.button, e.action, e.mods);
 		});

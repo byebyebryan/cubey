@@ -27,7 +27,7 @@ namespace cubey {
 		ShaderProgram();
 		~ShaderProgram();
 
-		bool AddShader(GLenum shader_type, const std::string& file_name, const std::string& preprocessor_def);
+		bool AddShader(GLenum shader_type, const std::string& file_name, const std::string& preprocessor_def = " ");
 		bool Link();
 		bool Activate();
 
@@ -68,6 +68,15 @@ namespace cubey {
 		}
 		void SetUniformImpl(GLint location, const glm::vec4& value) {
 			glUniform4fv(location, 1, glm::value_ptr(value));
+		}
+		void SetUniformImpl(GLint location, const std::vector<glm::vec2>& value) {
+			glUniform2fv(location, value.size(), (const GLfloat*)value.data());
+		}
+		void SetUniformImpl(GLint location, const std::vector<glm::vec3>& value) {
+			glUniform3fv(location, value.size(), (const GLfloat*)value.data());
+		}
+		void SetUniformImpl(GLint location, const std::vector<glm::vec4>& value) {
+			glUniform4fv(location, value.size(), (const GLfloat*)value.data());
 		}
 		void SetUniformImpl(GLint location, const glm::mat2& value) {
 			glUniformMatrix2fv(location, 1, GL_FALSE, glm::value_ptr(value));

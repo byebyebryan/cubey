@@ -1,4 +1,4 @@
-#version 430 core
+#version 430
 
 #ifdef _VERTEX_S_
 

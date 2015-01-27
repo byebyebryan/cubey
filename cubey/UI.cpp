@@ -7,8 +7,6 @@
 namespace cubey {
 
 	void UI::Init() {
-		IEngineEvents::Init();
-
 		TwInit(TW_OPENGL, NULL);
 		EventChannel<Engine::WindowSizeEvent>::DirtyAdd([](const Engine::WindowSizeEvent& e){
 			TwWindowSize(e.width, e.height); 

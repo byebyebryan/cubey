@@ -90,6 +90,7 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="CameraTest.cpp" />
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="Engine.cpp" />
     <ClCompile Include="Interfaces.cpp" />
@@ -102,6 +103,7 @@
     <ClCompile Include="UI.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="CameraTest.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="cubey.h" />
     <ClInclude Include="Engine.h" />

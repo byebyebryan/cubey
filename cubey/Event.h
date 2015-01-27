@@ -52,7 +52,9 @@ namespace cubey {
 	class EventChannel {
 	public:
 		static void Add(const EventLisenter<T>& listener) {
-			Listeners()[listener.id_] = listener.handler_func_;
+			if (Listeners().find(listener.id_) == Listeners().end()) {
+				Listeners()[listener.id_] = listener.handler_func_;
+			}
 		}
 
 		static uint64_t DirtyAdd(const std::function<void(const T&)>& handler_func) {

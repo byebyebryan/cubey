@@ -22,12 +22,10 @@ namespace cubey {
 		IEngineEvents();
 		virtual ~IEngineEvents() {}
 
-		virtual void Init();
-
 	protected:
+		virtual void Init() {}
 		virtual void StartUp() {}
-		virtual void Terminate() {}
-
+		
 		virtual void EarlyUpdate(float delta_time) {}
 		virtual void Update(float delta_time) {}
 		virtual void LateUpdate(float delta_time) {}
@@ -35,7 +33,10 @@ namespace cubey {
 		virtual void Render() {}
 		virtual void UIRender() {}
 
+		virtual void Terminate() {}
+
 	private:
+		EventLisenter<Engine::InitEvent> init_lisenter_;
 		EventLisenter<Engine::StartUpEvent> start_up_lisenter_;
 		EventLisenter<Engine::TerminateEvent> terminate_lisenter_;
 		EventLisenter<Engine::EarlyUpdateEvent> early_update_lisenter_;

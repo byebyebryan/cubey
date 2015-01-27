@@ -29,9 +29,9 @@
     <ClCompile Include="UI.cpp">
       <Filter>cubey</Filter>
     </ClCompile>
+    <ClCompile Include="CameraTest.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="cubey.h" />
     <ClInclude Include="Camera.h">
       <Filter>cubey</Filter>
     </ClInclude>
@@ -68,6 +68,10 @@
     <ClInclude Include="Vertex.h">
       <Filter>cubey</Filter>
     </ClInclude>
+    <ClInclude Include="cubey.h">
+      <Filter>cubey</Filter>
+    </ClInclude>
+    <ClInclude Include="CameraTest.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Shaders">
