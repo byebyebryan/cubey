@@ -74,8 +74,8 @@ void main() {
 				p.velocity.xyz = u_streams[idx] + rand_vec3(p.position.xzy) * u_particle_stream_deviation;
 			}
 			else {
-				p.position.xyz = rand_vec3(p.position.yxz) * u_particle_initial_spread;
-				p.velocity.xyz = rand_vec3(p.velocity.zxy) * u_particle_initial_speed;
+				p.position.xyz = normalize(rand_vec3(p.position.yxz)) * rand_float(p.position.xzy) * u_particle_initial_spread;
+				p.velocity.xyz = normalize(rand_vec3(p.velocity.zxy)) * rand_float(p.velocity.yzx) * u_particle_initial_speed;
 			}
 
 			particles[gl_GlobalInvocationID.x] = p;
