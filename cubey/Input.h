@@ -8,7 +8,7 @@ namespace cubey {
 	public:
 		Input();
 
-		void Init() override;
+		void SystemInit() override;
 		
 		bool is_left_mouse_btn_down() { return is_left_mouse_btn_down_; }
 		bool is_right_mouse_btn_down() { return is_right_mouse_btn_down_; }
@@ -17,6 +17,9 @@ namespace cubey {
 		float mouse_wheel_offset() { return mouse_wheel_offset_; }
 		glm::vec3 movement() { return movement_; }
 
+
+		bool mouse_button_consumed_by_ui_;
+		bool mouse_wheel_consumed_by_ui_;
 	private:
 		void StartUp() override;
 		void EarlyUpdate(float delta_time) override;

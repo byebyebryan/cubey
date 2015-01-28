@@ -10,9 +10,12 @@ namespace cubey {
 		mouse_pos_offset_ = glm::vec2();
 		mouse_wheel_offset_ = mouse_wheel_offset_prev_ = 0.0f;
 		movement_ = glm::vec3();
+
+		mouse_button_consumed_by_ui_ = false;
+		mouse_wheel_consumed_by_ui_ = false;
 	}
 
-	void Input::Init() {
+	void Input::SystemInit() {
 		EventChannel<Engine::MouseButtonEvent>::DirtyAdd([this](const Engine::MouseButtonEvent& e){
 			MouseButtonHandler(e.button, e.action, e.mods);
 		});
@@ -42,6 +45,10 @@ namespace cubey {
 	}
 
 	void Input::MouseButtonHandler(int button, int action, int mods) {
+		if (mouse_button_consumed_by_ui_) {
+			return;
+		}
+
 		if (button == GLFW_MOUSE_BUTTON_LEFT) {
 			if (action == GLFW_PRESS) {
 				is_left_mouse_btn_down_ = true;
@@ -66,6 +73,9 @@ namespace cubey {
 	}
 
 	void Input::MouseWheelHandler(float yoffset) {
+		if (mouse_wheel_consumed_by_ui_) {
+			return;
+		}
 		mouse_wheel_offset_prev_ += yoffset;
 	}
 

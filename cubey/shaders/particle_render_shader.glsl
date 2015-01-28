@@ -3,18 +3,18 @@
 #ifdef _VERTEX_S_
 
 uniform mat4 u_mvp_mat;
-uniform float lifespan;
+uniform float u_particle_lifespan;
+
+uniform vec4 u_particle_color_cold;
+uniform vec4 u_particle_color_hot;
 
 layout(location = 0) in vec4 in_vertex_position;
 
 out vec4 var_color;
 
-const vec4 hot = vec4(1, 0.2, 0, 0.5);
-const vec4 cold = vec4(0, 0, 1, 0.5);
-
 void main() {
 	gl_Position = u_mvp_mat * vec4(in_vertex_position.xyz, 1);
-	var_color = mix(cold, hot, in_vertex_position.w / lifespan );
+	var_color = mix(u_particle_color_cold, u_particle_color_hot, in_vertex_position.w / u_particle_lifespan );
 }
 
 #endif

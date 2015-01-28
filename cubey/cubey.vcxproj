@@ -122,6 +122,8 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\debug_shader.glsl" />
+    <None Include="shaders\debug_shader_unlit.glsl" />
+    <None Include="shaders\particle_init_shader.glsl" />
     <None Include="shaders\particle_render_shader.glsl" />
     <None Include="shaders\particle_update_shader.glsl" />
   </ItemGroup>

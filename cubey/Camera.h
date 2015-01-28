@@ -14,7 +14,7 @@ namespace cubey {
 			return instance;
 		}
 
-		void Init();
+		void SystemInit();
 		void Reset();
 		void Update(float delta_time);
 
@@ -46,7 +46,7 @@ namespace cubey {
 
 		Transform transform_;
 	private:
-		EventLisenter<Engine::InitEvent> init_lisenter_;
+		EventLisenter<Engine::SystemInitEvent> system_init_lisenter_;
 		EventLisenter<Engine::UpdateEvent> update_lisenter_;
 
 		glm::vec3 look_at_target_pos_;

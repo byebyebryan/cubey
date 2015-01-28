@@ -11,6 +11,59 @@ namespace cubey {
 	const glm::vec3 right = { 0.0f, 1.0f, 0.0f };
 	const glm::vec3 forward = { 0.0f, 0.0f, 1.0f };
 
+	std::vector<Vertex2<glm::vec3, glm::vec3>> PrimitiveFactory::UnitBoxUnlit() {
+		std::vector<Vertex2<glm::vec3, glm::vec3>> box_verts = {
+			{ { -0.5f, -0.5f, -0.5f }, blue},
+			{ { 0.5f, -0.5f, -0.5f }, blue},
+			{ { -0.5f, 0.5f, -0.5f }, blue},
+
+			{ { 0.5f, -0.5f, -0.5f }, blue},
+			{ { 0.5f, 0.5f, -0.5f }, blue},
+			{ { -0.5f, 0.5f, -0.5f }, blue},
+
+			{ { 0.5f, -0.5f, 0.5f }, blue},
+			{ { -0.5f, -0.5f, 0.5f }, blue},
+			{ { -0.5f, 0.5f, 0.5f }, blue},
+
+			{ { 0.5f, 0.5f, 0.5f }, blue},
+			{ { 0.5f, -0.5f, 0.5f }, blue},
+			{ { -0.5f, 0.5f, 0.5f }, blue},
+
+			{ { 0.5f, -0.5f, -0.5f }, green},
+			{ { -0.5f, -0.5f, -0.5f }, green},
+			{ { -0.5f, -0.5f, 0.5f }, green},
+
+			{ { 0.5f, -0.5f, 0.5f }, green},
+			{ { 0.5f, -0.5f, -0.5f }, green},
+			{ { -0.5f, -0.5f, 0.5f }, green},
+
+			{ { -0.5f, 0.5f, -0.5f }, green},
+			{ { 0.5f, 0.5f, -0.5f }, green},
+			{ { -0.5f, 0.5f, 0.5f }, green},
+
+			{ { 0.5f, 0.5f, -0.5f }, green},
+			{ { 0.5f, 0.5f, 0.5f }, green},
+			{ { -0.5f, 0.5f, 0.5f }, green},
+
+			{ { -0.5f, -0.5f, 0.5f }, red},
+			{ { -0.5f, -0.5f, -0.5f }, red},
+			{ { -0.5f, 0.5f, -0.5f }, red},
+
+			{ { -0.5f, 0.5f, 0.5f }, red},
+			{ { -0.5f, -0.5f, 0.5f }, red},
+			{ { -0.5f, 0.5f, -0.5f }, red},
+
+			{ { 0.5f, -0.5f, -0.5f }, red},
+			{ { 0.5f, -0.5f, 0.5f }, red},
+			{ { 0.5f, 0.5f, -0.5f }, red},
+
+			{ { 0.5f, -0.5f, 0.5f }, red},
+			{ { 0.5f, 0.5f, 0.5f }, red},
+			{ { 0.5f, 0.5f, -0.5f }, red},
+		};
+		return box_verts;
+	}
+
 	std::vector<Vertex3<glm::vec3, glm::vec3, glm::vec3>> PrimitiveFactory::UnitBox() {
 		std::vector<Vertex3<glm::vec3, glm::vec3, glm::vec3>> box_verts = {
 			{ { -0.5f, -0.5f, -0.5f }, blue, -forward },
@@ -85,5 +138,7 @@ namespace cubey {
 
 		return combined_array;
 	}
+
+	
 
 }

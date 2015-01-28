@@ -7,28 +7,28 @@ namespace cubey {
 	const float kDefaultFOV = 60.0f;
 	const float kDefaultZNear = 1.0f;
 	const float kDefaultZFar = 500.0f;
-	const glm::vec3 kDefaultPosition = glm::vec3(0.0f, 0.0f, -15.0f);
+	const glm::vec3 kDefaultPosition = glm::vec3(0.0f, 0.0f, -20.0f);
 	const glm::vec3 kDefaultLookAtTargetPos = glm::vec3();
 
 	const float kDefaultMouseSensitivity = 1.0f;
 	const float kDefaultMovementSpeed = 5.0f;
 
-	const float kDefautlMouseWheelSpeed = 5.0f;
+	const float kDefautlMouseWheelSpeed = 10.0f;
 
 	const float kDefaultPitchLimit = 85.0f;
 
 	Camera::Camera() {
-		init_lisenter_ = EventLisenter<Engine::InitEvent>([this](const Engine::InitEvent& e){
-			Init();
+		system_init_lisenter_ = EventLisenter<Engine::SystemInitEvent>([this](const Engine::SystemInitEvent& e){
+			SystemInit();
 		});
 		update_lisenter_ = EventLisenter<Engine::UpdateEvent>([this](const Engine::UpdateEvent& e){
 			Update(e.deltatime);
 		});
-		init_lisenter_.PushToChannel();
+		system_init_lisenter_.PushToChannel();
 		update_lisenter_.PushToChannel();
 	}
 
-	void Camera::Init() {
+	void Camera::SystemInit() {
 		Reset();
 	}
 

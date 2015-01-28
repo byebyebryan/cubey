@@ -5,8 +5,6 @@
 using namespace cubey;
 
 int main(void) {
-	Engine::Init();
-
 	ParticleTest test;
 
 	Engine::MainLoop();

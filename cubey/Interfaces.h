@@ -23,6 +23,8 @@ namespace cubey {
 		virtual ~IEngineEvents() {}
 
 	protected:
+
+		virtual void SystemInit() {}
 		virtual void Init() {}
 		virtual void StartUp() {}
 		
@@ -36,6 +38,7 @@ namespace cubey {
 		virtual void Terminate() {}
 
 	private:
+		EventLisenter<Engine::SystemInitEvent> system_init_lisenter_;
 		EventLisenter<Engine::InitEvent> init_lisenter_;
 		EventLisenter<Engine::StartUpEvent> start_up_lisenter_;
 		EventLisenter<Engine::TerminateEvent> terminate_lisenter_;

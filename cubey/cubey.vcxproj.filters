@@ -84,13 +84,19 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <None Include="shaders\debug_shader.glsl">
-      <Filter>Shaders</Filter>
-    </None>
     <None Include="shaders\particle_render_shader.glsl">
       <Filter>Shaders</Filter>
     </None>
     <None Include="shaders\particle_update_shader.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\debug_shader_unlit.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\debug_shader.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\particle_init_shader.glsl">
       <Filter>Shaders</Filter>
     </None>
   </ItemGroup>

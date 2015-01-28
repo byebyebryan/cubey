@@ -9,6 +9,9 @@ namespace cubey {
 
 	class Engine {
 	public:
+		struct SystemInitEvent {
+		};
+
 		struct InitEvent {
 		};
 

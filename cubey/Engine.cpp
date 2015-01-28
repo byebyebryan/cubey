@@ -13,8 +13,8 @@
 
 namespace cubey {
 	const std::string kDefaultWindowTitle = "cubey!";
-	const int kDefaultWindowWidth = 800;
-	const int kDefaultWindowHeight = 600;
+	const int kDefaultWindowWidth = 1280;
+	const int kDefaultWindowHeight = 720;
 	
 	GLFWwindow* Engine::window_ = nullptr;
 
@@ -42,13 +42,19 @@ namespace cubey {
 
 		glewInit();
 
+		UI::Main();
 		Input::Main();
 		Camera::Main();
-		UI::Main();
+		
+		srand(time(0));
+
+		EventChannel<SystemInitEvent>::Broadcast(SystemInitEvent());
+
+		EventChannel<InitEvent>::Broadcast(InitEvent());
 	}
 
 	void Engine::MainLoop() {
-		EventChannel<InitEvent>::Broadcast(InitEvent());
+		Init();
 
 		Time::time_since_start_ = glfwGetTime();
 
