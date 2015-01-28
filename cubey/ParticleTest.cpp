@@ -89,12 +89,6 @@ namespace cubey {
 		return glm::vec4(GetVec3(), mass_.current_value);
 	}
 
-	
-
-	
-
-	
-
 	void ParticleTest::Init() {
 		//glEnable(GL_DEPTH_TEST);
 		//glEnable(GL_CULL_FACE);
