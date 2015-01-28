@@ -66,7 +66,7 @@ void main() {
 	if(p.position.w < 0) {
 		
 		if(gl_WorkGroupID.x < u_particle_pack_count) {
-			p.position.w += u_particle_lifespan;
+			p.position.w += u_particle_lifespan * rand_float(p.position.xzy);
 			
 			int idx = rand_index(rand_vec3(p.velocity.zyx) + p.position.xzy, 0, int(u_stream_count / u_particle_stream_ratio));
 			if (idx < u_stream_count) {
