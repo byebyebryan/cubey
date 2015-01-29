@@ -13,7 +13,7 @@ namespace cubey {
 	const float kDefaultMouseSensitivity = 1.0f;
 	const float kDefaultMovementSpeed = 5.0f;
 
-	const float kDefautlMouseWheelSpeed = 10.0f;
+	const float kDefautlMouseWheelSpeed = 20.0f;
 
 	const float kDefaultPitchLimit = 85.0f;
 

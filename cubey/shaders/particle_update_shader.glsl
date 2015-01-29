@@ -26,11 +26,15 @@ uniform float u_particle_bound_sq;
 uniform float u_particle_stream_deviation;
 uniform float u_particle_speed_decay;
 
+//uniform float u_particle_hue;
+
 uniform float u_attraction_force_multiplier;
 
 uniform uint u_particle_pack_count;
 uniform int u_attractor_count;
 uniform int u_stream_count;
+
+
 
 const float k_bound_decay = 0.9;
 
@@ -70,7 +74,7 @@ void main() {
 			
 			int idx = rand_index(rand_vec3(p.velocity.zyx) + p.position.xzy, 0, int(u_stream_count / u_particle_stream_ratio));
 			if (idx < u_stream_count) {
-				p.position.xyz = rand_vec3(p.position.zyx) * u_particle_stream_deviation;
+				p.position.xyz = normalize(rand_vec3(p.position.zyx)) * rand_float(p.position.yzx) * u_particle_initial_spread;
 				p.velocity.xyz = u_streams[idx] + rand_vec3(p.position.xzy) * u_particle_stream_deviation;
 			}
 			else {
@@ -78,6 +82,7 @@ void main() {
 				p.velocity.xyz = normalize(rand_vec3(p.velocity.zxy)) * rand_float(p.velocity.yzx) * u_particle_initial_speed;
 			}
 
+			//p.velocity.w = u_particle_hue;
 			particles[gl_GlobalInvocationID.x] = p;
 		}
 	}
@@ -93,6 +98,7 @@ void main() {
 			for (int i =0; i< u_attractor_count; i++) {
 				vec3 dist = u_attractors[i].xyz - p.position.xyz;
 				p.velocity.xyz += u_attraction_force_multiplier * u_delta_time * u_attractors[i].w * normalize(dist) / dot(dist, dist);
+				//p.velocity.xyz += u_attraction_force_multiplier * u_delta_time * u_attractors[i].w * dist / dot(dist, dist);
 			}
 
 			p.velocity.xyz -= u_delta_time * normalize(p.velocity.xyz) * dot(p.velocity.xyz, p.velocity.xyz) * u_particle_speed_decay;

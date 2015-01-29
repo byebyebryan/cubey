@@ -88,6 +88,7 @@ namespace cubey {
 		float u_particle_bound_;
 		float u_particle_stream_deviation_;
 		float u_particle_speed_decay_;
+		float u_particle_size_;
 
 		float u_attraction_force_multiplier_;
 
@@ -96,6 +97,8 @@ namespace cubey {
 		int u_stream_count_;
 
 		unsigned long long particle_count;
+
+		//float u_particle_hue_;
 
 		glm::vec4 u_particle_color_cold_;
 		glm::vec4 u_particle_color_hot_;

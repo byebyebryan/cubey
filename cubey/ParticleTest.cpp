@@ -7,34 +7,36 @@
 #define MAX_ATTRACTOR_COUNT 64 
 #define MAX_STREAM_COUNT 128
 
-#define DEFAULT_PARTICLE_PACK_COUNT 5000
+#define DEFAULT_PARTICLE_PACK_COUNT 1000
 #define DEFAULT_ATTRACTOR_COUNT 8
 #define DEFAULT_STREAM_COUNT 32
 
 #define DEFAULT_PARTICLE_LIFE 5.0f
 #define DEFAULT_PARTICLE_STREAM_RATIO 1.0f
-#define DEFAULT_PARTICLE_INIT_SPREAD 2.5f
+#define DEFAULT_PARTICLE_INIT_SPREAD 1.0f
 #define DEFAULT_PARTICLE_INIT_SPEED 5.0f
-#define DEFAULT_PARTICLE_BOUND 25.0f
+#define DEFAULT_PARTICLE_BOUND 100.0f
 #define DEFAULT_PARTICLE_STREAM_DEVIATION 0.2f
-#define DEFAULT_PARTICLE_SPEED_DECAY 0.1f
+#define DEFAULT_PARTICLE_SPEED_DECAY 0.0f
+
+#define DEFAULT_PARTICLE_SIZE 0.5f
 
 #define DEFAULT_ATTRACTION_FORCE_MULTIPLIER -1.0f
 
-#define DEFAULT_ATTRACTOR_MIN_MASS 100.0f
+#define DEFAULT_ATTRACTOR_MIN_MASS 200.0f
 #define DEFAULT_ATTRACTOR_MAX_MASS 500.0f
-#define DEFAULT_ATTRACTOR_MIN_DIST 5.0f
-#define DEFAULT_ATTRACTOR_MAX_DIST 10.0f
-#define DEFAULT_ATTRACTOR_MIN_TIME 2.5f
-#define DEFAULT_ATTRACTOR_MAX_TIME 5.0f
+#define DEFAULT_ATTRACTOR_MIN_DIST 10.0f
+#define DEFAULT_ATTRACTOR_MAX_DIST 25.0f
+#define DEFAULT_ATTRACTOR_MIN_TIME 5.0f
+#define DEFAULT_ATTRACTOR_MAX_TIME 8.0f
 
 #define DEFAULT_STREAM_MIN_VEL 5.0f
 #define DEFAULT_STREAM_MAX_VEL 10.0f
 #define DEFAULT_STREAM_MIN_TIME 2.5f
 #define DEFAULT_STREAM_MAX_TIME 5.0f
 
-#define DEFAULT_PARTICLE_COLOR_COLD glm::vec4(0,0,1.0f,0);
-#define DEFAULT_PARTICLE_COLOR_HOT glm::vec4(1.0f,0.2f,0,0.5f);
+#define DEFAULT_PARTICLE_COLOR_COLD glm::vec4(0.0f, 0.2f, 1.0f, 0.1f);
+#define DEFAULT_PARTICLE_COLOR_HOT glm::vec4(1.0f, 0.2f, 0.0f, 0.1f);
 
 namespace cubey {
 	void IOrbitalObject::Init() {
@@ -94,6 +96,9 @@ namespace cubey {
 		//glEnable(GL_CULL_FACE);
 		//glClearColor(0.4, 0.4, 0.4, 1);
 
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+
 		u_particle_lifespan_ = DEFAULT_PARTICLE_LIFE;
 		u_particle_stream_ratio_ = DEFAULT_PARTICLE_STREAM_RATIO;
 		u_particle_initial_speed_ = DEFAULT_PARTICLE_INIT_SPEED;
@@ -101,6 +106,8 @@ namespace cubey {
 		u_particle_bound_ = DEFAULT_PARTICLE_BOUND;
 		u_particle_stream_deviation_ = DEFAULT_PARTICLE_STREAM_DEVIATION;
 		u_particle_speed_decay_ = DEFAULT_PARTICLE_SPEED_DECAY;
+
+		u_particle_size_ = DEFAULT_PARTICLE_SIZE;
 
 		u_particle_pack_count_ = DEFAULT_PARTICLE_PACK_COUNT;
 		u_attractor_count_ = DEFAULT_ATTRACTOR_COUNT;
@@ -110,6 +117,8 @@ namespace cubey {
 
 		u_particle_color_cold_ = DEFAULT_PARTICLE_COLOR_COLD;
 		u_particle_color_hot_ = DEFAULT_PARTICLE_COLOR_HOT;
+
+		u_particle_hue_ = 0.0f;
 
 		attractors_min_distance_ = DEFAULT_ATTRACTOR_MIN_DIST;
 		attractors_max_distance_ = DEFAULT_ATTRACTOR_MAX_DIST;
@@ -140,6 +149,7 @@ namespace cubey {
 
 		render_prog_ = new ShaderProgram();
 		render_prog_->AddShader(GL_VERTEX_SHADER, "shaders\\particle_render_shader.glsl", "#define _VERTEX_S_");
+		render_prog_->AddShader(GL_GEOMETRY_SHADER, "shaders\\particle_render_shader.glsl", "#define _GEOMETRY_S_");
 		render_prog_->AddShader(GL_FRAGMENT_SHADER, "shaders\\particle_render_shader.glsl", "#define _FRAGMENT_S_");
 		render_prog_->Link();
 
@@ -183,24 +193,31 @@ namespace cubey {
 		TwAddVarRW(UI::Main()->tw_bar_, "particle count", TW_TYPE_UINT32, &particle_count, "");
 
 		TwAddVarRW(UI::Main()->tw_bar_, "particle group count", TW_TYPE_UINT16, &u_particle_pack_count_, "min=100 max=10000 step=1000");
-		TwAddVarRW(UI::Main()->tw_bar_, "attractor count", TW_TYPE_INT16, &u_attractor_count_, "min=1 max=64 step=4");
-		TwAddVarRW(UI::Main()->tw_bar_, "stream count", TW_TYPE_INT16, &u_stream_count_, "min=1 max=128 step=4");
+		TwAddVarRW(UI::Main()->tw_bar_, "attractor count", TW_TYPE_INT16, &u_attractor_count_, "min=0 max=64 step=4");
+		TwAddVarRW(UI::Main()->tw_bar_, "stream count", TW_TYPE_INT16, &u_stream_count_, "min=0 max=128 step=4");
 
-		TwAddVarRW(UI::Main()->tw_bar_, "particle lifespan", TW_TYPE_FLOAT, &u_particle_lifespan_, "min=1 max=10 step=1");
+		TwAddVarRW(UI::Main()->tw_bar_, "particle lifespan", TW_TYPE_FLOAT, &u_particle_lifespan_, "min=1 max=20 step=1");
 		TwAddVarRW(UI::Main()->tw_bar_, "particle bound", TW_TYPE_FLOAT, &u_particle_bound_, "min=5 max=100 step=5");
 		TwAddVarRW(UI::Main()->tw_bar_, "attraction force log10", TW_TYPE_FLOAT, &u_attraction_force_multiplier_, "min=-5 max=5 step=1");
+
+		TwAddVarRW(UI::Main()->tw_bar_, "particle initial spread", TW_TYPE_FLOAT, &u_particle_initial_spread_, "min=0 max=5 step=0.5");
+		TwAddVarRW(UI::Main()->tw_bar_, "particle initial speed", TW_TYPE_FLOAT, &u_particle_initial_speed_, "min=0 max=10 step=1");
 
 		TwAddVarRW(UI::Main()->tw_bar_, "particle stream ratio", TW_TYPE_FLOAT, &u_particle_stream_ratio_, "min=0 max=1 step=0.1");
 		TwAddVarRW(UI::Main()->tw_bar_, "particle stream deviation", TW_TYPE_FLOAT, &u_particle_stream_deviation_, "min=0 max=1 step=0.1");
 		TwAddVarRW(UI::Main()->tw_bar_, "particle speed decay", TW_TYPE_FLOAT, &u_particle_speed_decay_, "min=0 max=0.9 step=0.1");
 		
+		TwAddVarRW(UI::Main()->tw_bar_, "particle size", TW_TYPE_FLOAT, &u_particle_size_, "min=0.05 max=1.0 step=0.05");
+
+		//TwAddVarRW(UI::Main()->tw_bar_, "particle hue", TW_TYPE_FLOAT, &u_particle_hue_, "min=0 max=1.0 step=0.1");
+
 		TwAddVarRW(UI::Main()->tw_bar_, "particle color cold", TW_TYPE_COLOR4F, &u_particle_color_cold_, "");
 		TwAddVarRW(UI::Main()->tw_bar_, "particle color hot", TW_TYPE_COLOR4F, &u_particle_color_hot_, "");
 
 		TwAddVarRW(UI::Main()->tw_bar_, "attractor distance min", TW_TYPE_FLOAT, &attractors_min_distance_, "min=5 max=50 step=5");
 		TwAddVarRW(UI::Main()->tw_bar_, "attractor distance max", TW_TYPE_FLOAT, &attractors_max_distance_, "min=5 max=100 step=5");
-		TwAddVarRW(UI::Main()->tw_bar_, "attractor mass min", TW_TYPE_FLOAT, &attractors_min_mass_, "min=1 max=800 step=100");
-		TwAddVarRW(UI::Main()->tw_bar_, "attractor mass max", TW_TYPE_FLOAT, &attractors_max_mass_, "min=1 max=1600 step=100");
+		TwAddVarRW(UI::Main()->tw_bar_, "attractor mass min", TW_TYPE_FLOAT, &attractors_min_mass_, "min=-800 max=1600 step=100");
+		TwAddVarRW(UI::Main()->tw_bar_, "attractor mass max", TW_TYPE_FLOAT, &attractors_max_mass_, "min=-800 max=1600 step=100");
 		TwAddVarRW(UI::Main()->tw_bar_, "attractor travel time min", TW_TYPE_FLOAT, &attractors_min_travel_time_, "min=0.5 max=5.0 step=0.5");
 		TwAddVarRW(UI::Main()->tw_bar_, "attractor travel time max", TW_TYPE_FLOAT, &attractors_max_travel_time_, "min=0.5 max=10.0 step=0.5");
 
@@ -227,14 +244,14 @@ namespace cubey {
 		render_prog_->SetUniform("u_particle_color_cold", u_particle_color_cold_);
 		render_prog_->SetUniform("u_particle_color_hot", u_particle_color_hot_);
 
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+		Camera::Main()->transform_.TranslateTo(glm::vec3(0, 0, -50.0f));
 		//glPointSize(2.0f);
 	}
 
 	void ParticleTest::Update(float delta_time) {
-
 		particle_count = (unsigned long long)u_particle_pack_count_ * 128;
+
+		//u_particle_hue_ = 0.5f + 0.5f * glm::sin(Time::time_since_start() / 5.0f);
 
 		for (int i = 0; i < MAX_ATTRACTOR_COUNT; i++) {
 			attractors_[i].min_distance_to_center_ = attractors_min_distance_;
@@ -275,6 +292,8 @@ namespace cubey {
 		update_prog_->SetUniform("u_stream_count", u_stream_count_);
 		update_prog_->SetUniform("u_attraction_force_multiplier", glm::pow(10, u_attraction_force_multiplier_));
 
+		//update_prog_->SetUniform("u_particle_hue", u_particle_hue_);
+
 		update_prog_->SetUniform("u_delta_time", delta_time);
 		update_prog_->SetUniform("u_attractors[0]", u_attractors_);
 		update_prog_->SetUniform("u_streams[0]", u_streams_);
@@ -289,11 +308,15 @@ namespace cubey {
 		render_prog_->SetUniform("u_particle_lifespan", u_particle_lifespan_);
 		render_prog_->SetUniform("u_particle_color_cold", u_particle_color_cold_);
 		render_prog_->SetUniform("u_particle_color_hot", u_particle_color_hot_);
-		render_prog_->SetUniform("u_mvp_mat", Camera::Main()->CalculateMVPMat(glm::mat4()));
-		
+		render_prog_->SetUniform("u_view_model_mat", Camera::Main()->view_mat());
+		render_prog_->SetUniform("u_projection_mat", Camera::Main()->projection_mat());
+		render_prog_->SetUniform("u_particle_size", u_particle_size_);
+
 		glBindBuffer(GL_ARRAY_BUFFER, ssbo_);
 		glVertexAttribPointer(0, 4, GL_FLOAT, false, 2 * sizeof(glm::vec4), (GLvoid*)0);
 		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(1, 1, GL_FLOAT, false, 2 * sizeof(glm::vec4), (GLvoid*)(7*sizeof(float)));
+		glEnableVertexAttribArray(1);
 
 		glDrawArrays(GL_POINTS, 0, u_particle_pack_count_ * 128);
 		glBindBuffer(GL_ARRAY_BUFFER, 0);

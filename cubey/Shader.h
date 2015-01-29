@@ -64,6 +64,7 @@ namespace cubey {
 			glUniform2fv(location, 1, glm::value_ptr(value));
 		}
 		void SetUniformImpl(GLint location, const glm::vec3& value) {
+			const float* p = glm::value_ptr(value);
 			glUniform3fv(location, 1, glm::value_ptr(value));
 		}
 		void SetUniformImpl(GLint location, const glm::vec4& value) {

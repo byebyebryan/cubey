@@ -71,7 +71,7 @@ void main() {
 	
 	vec3 seed = vec3(x, y, z);
 
-	p.position.xyz = normalize(rand_vec3(seed.yxz) + rand_vec3(seed.zyx)) * rand_float(rand_vec3(seed.yzx)) * u_particle_initial_spread;
+	p.position.xyz = normalize(rand_vec3(seed.yxz) + rand_vec3(seed.yzx)) * rand_float(rand_vec3(seed.xzy)) * u_particle_initial_spread;
 	p.position.w = rand_float(rand_vec3(seed)) * u_particle_lifespan;
 	p.velocity.xyz = normalize(rand_vec3(seed.zxy) - rand_vec3(seed.yzx)) * rand_float(rand_vec3(seed.xzy)) * u_particle_initial_speed;
 
