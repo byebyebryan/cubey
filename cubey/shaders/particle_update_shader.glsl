@@ -25,6 +25,7 @@ uniform float u_particle_initial_speed;
 uniform float u_particle_bound_sq;
 uniform float u_particle_stream_deviation;
 uniform float u_particle_speed_decay;
+uniform float u_particle_speed_randomizer;
 
 //uniform float u_particle_hue;
 
@@ -101,6 +102,7 @@ void main() {
 				//p.velocity.xyz += u_attraction_force_multiplier * u_delta_time * u_attractors[i].w * dist / dot(dist, dist);
 			}
 
+			p.velocity.xyz += normalize(rand_vec3(p.velocity.zxy)) * rand_float(p.velocity.yzx) * u_particle_speed_randomizer;
 			p.velocity.xyz -= u_delta_time * normalize(p.velocity.xyz) * dot(p.velocity.xyz, p.velocity.xyz) * u_particle_speed_decay;
 		}
 

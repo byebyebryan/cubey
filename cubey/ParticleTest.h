@@ -88,6 +88,8 @@ namespace cubey {
 		float u_particle_bound_;
 		float u_particle_stream_deviation_;
 		float u_particle_speed_decay_;
+		float u_particle_speed_randomizer_;
+
 		float u_particle_size_;
 
 		float u_attraction_force_multiplier_;
@@ -114,6 +116,8 @@ namespace cubey {
 		float streams_max_vel_;
 		float streams_min_travel_time_;
 		float streams_max_travel_time_;
+
+		float camera_orbit_speed_;
 	};
 }
 
