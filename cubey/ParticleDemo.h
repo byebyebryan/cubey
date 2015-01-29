@@ -61,7 +61,7 @@ namespace cubey {
 		float max_mass_;
 	};
 
-	class ParticleTest : public IEngineEvents {
+	class ParticleDemo : public IEngineEvents {
 	public:
 		void Init() override;
 		void Update(float delta_time) override;

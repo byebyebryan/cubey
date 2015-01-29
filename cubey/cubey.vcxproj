@@ -96,8 +96,9 @@
     <ClCompile Include="Interfaces.cpp" />
     <ClCompile Include="Input.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="MarchingCubesDemo.cpp" />
     <ClCompile Include="Mesh.cpp" />
-    <ClCompile Include="ParticleTest.cpp" />
+    <ClCompile Include="ParticleDemo.cpp" />
     <ClCompile Include="PrimitiveFactory.cpp" />
     <ClCompile Include="Shader.cpp" />
     <ClCompile Include="Time.cpp" />
@@ -106,13 +107,15 @@
   <ItemGroup>
     <ClInclude Include="CameraTest.h" />
     <ClInclude Include="Camera.h" />
+    <ClInclude Include="TriangleTable.h" />
     <ClInclude Include="cubey.h" />
     <ClInclude Include="Engine.h" />
     <ClInclude Include="Event.h" />
+    <ClInclude Include="MarchingCubesDemo.h" />
     <ClInclude Include="Interfaces.h" />
     <ClInclude Include="Input.h" />
     <ClInclude Include="Mesh.h" />
-    <ClInclude Include="ParticleTest.h" />
+    <ClInclude Include="ParticleDemo.h" />
     <ClInclude Include="PrimitiveFactory.h" />
     <ClInclude Include="Shader.h" />
     <ClInclude Include="Time.h" />
@@ -123,6 +126,7 @@
   <ItemGroup>
     <None Include="shaders\debug_shader.glsl" />
     <None Include="shaders\debug_shader_unlit.glsl" />
+    <None Include="shaders\marching_cubes_render_shader.glsl" />
     <None Include="shaders\particle_init_shader.glsl" />
     <None Include="shaders\particle_render_shader.glsl" />
     <None Include="shaders\particle_update_shader.glsl" />

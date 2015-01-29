@@ -1,11 +1,12 @@
 #include "cubey.h"
 #include "CameraTest.h"
-#include "ParticleTest.h"
+#include "ParticleDemo.h"
+#include "MarchingCubesDemo.h"
 
 using namespace cubey;
 
 int main(void) {
-	ParticleTest test;
+	MarchingCubesDemo demo;
 
 	Engine::MainLoop();
 }

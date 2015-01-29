@@ -1,4 +1,4 @@
-#include "ParticleTest.h"
+#include "ParticleDemo.h"
 
 #include "glm/gtc/random.hpp"
 #include "glm/gtx/quaternion.hpp"
@@ -94,7 +94,7 @@ namespace cubey {
 		return glm::vec4(GetVec3(), mass_.current_value);
 	}
 
-	void ParticleTest::Init() {
+	void ParticleDemo::Init() {
 		//glEnable(GL_DEPTH_TEST);
 		//glEnable(GL_CULL_FACE);
 		//glClearColor(0.4, 0.4, 0.4, 1);
@@ -257,7 +257,7 @@ namespace cubey {
 		//glPointSize(2.0f);
 	}
 
-	void ParticleTest::Update(float delta_time) {
+	void ParticleDemo::Update(float delta_time) {
 		particle_count = (unsigned long long)u_particle_pack_count_ * 128;
 
 		Camera::Main()->Orbit(delta_time * glm::radians(camera_orbit_speed_), 0);
@@ -314,7 +314,7 @@ namespace cubey {
 		//glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 	}
 
-	void ParticleTest::Render() {
+	void ParticleDemo::Render() {
 		render_prog_->Activate();
 		render_prog_->SetUniform("u_particle_lifespan", u_particle_lifespan_);
 		render_prog_->SetUniform("u_particle_color_cold", u_particle_color_cold_);
