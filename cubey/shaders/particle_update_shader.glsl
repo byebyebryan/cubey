@@ -35,8 +35,6 @@ uniform uint u_particle_pack_count;
 uniform int u_attractor_count;
 uniform int u_stream_count;
 
-
-
 const float k_bound_decay = 0.9;
 
 layout (local_size_x = 128) in;
@@ -77,6 +75,9 @@ void main() {
 			if (idx < u_stream_count) {
 				p.position.xyz = normalize(rand_vec3(p.position.zyx)) * rand_float(p.position.yzx) * u_particle_initial_spread;
 				p.velocity.xyz = u_streams[idx] + rand_vec3(p.position.xzy) * u_particle_stream_deviation;
+
+				//p.position.xyz = u_streams[idx] + normalize(rand_vec3(p.position.zyx)) * rand_float(p.position.yzx) * u_particle_initial_spread;
+				//p.velocity.xyz = u_streams[idx] * rand_vec3(p.position.xzy) * u_particle_stream_deviation;
 			}
 			else {
 				p.position.xyz = normalize(rand_vec3(p.position.yxz)) * rand_float(p.position.xzy) * u_particle_initial_spread;
@@ -102,7 +103,7 @@ void main() {
 				//p.velocity.xyz += u_attraction_force_multiplier * u_delta_time * u_attractors[i].w * dist / dot(dist, dist);
 			}
 
-			p.velocity.xyz += normalize(rand_vec3(p.velocity.zxy)) * rand_float(p.velocity.yzx) * u_particle_speed_randomizer;
+			p.velocity.xyz += normalize(rand_vec3(p.position.zyx)) * rand_float(p.position.xzy) * u_particle_speed_randomizer;
 			p.velocity.xyz -= u_delta_time * normalize(p.velocity.xyz) * dot(p.velocity.xyz, p.velocity.xyz) * u_particle_speed_decay;
 		}
 

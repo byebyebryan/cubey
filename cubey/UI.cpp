@@ -32,7 +32,7 @@ namespace cubey {
 		glfwGetWindowSize(Engine::window_, &w, &h);
 		TwWindowSize(w, h);
 		TwDefine(" GLOBAL help='AntTweakBar Test' ");
-		TwDefine("cubey! size = '320 560'");
+		TwDefine("cubey! size = '320 640'");
 
 		TwAddVarRO(tw_bar_, "time", TW_TYPE_DOUBLE, &Time::time_since_start_, "precision=2 help='Time Since Start.' ");
 		TwAddVarRO(tw_bar_, "frame time", TW_TYPE_DOUBLE, &Time::frame_time_, "precision=4 help='Frame Time.' ");

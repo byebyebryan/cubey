@@ -118,6 +118,10 @@ namespace cubey {
 		float streams_max_travel_time_;
 
 		float camera_orbit_speed_;
+
+		bool particle_paused_;
+
+		GLuint particle_texture_;
 	};
 }
 

@@ -41,6 +41,8 @@
 
 #define DEFAULT_CAMERA_ORBIT_SPEED 15.0f
 
+#define PARTICLE_TEXTURE_SIZE 32
+
 namespace cubey {
 	void IOrbitalObject::Init() {
 		SetNextDestination();
@@ -140,6 +142,8 @@ namespace cubey {
 
 		camera_orbit_speed_ = DEFAULT_CAMERA_ORBIT_SPEED;
 
+		particle_paused_ = false;
+
 		/*debug_prog_ = new ShaderProgram();
 		debug_prog_->AddShader(GL_VERTEX_SHADER, "shaders\\debug_shader_unlit.glsl", "#define _VERTEX_S_");
 		debug_prog_->AddShader(GL_FRAGMENT_SHADER, "shaders\\debug_shader_unlit.glsl", "#define _FRAGMENT_S_");
@@ -234,6 +238,7 @@ namespace cubey {
 		TwAddVarRW(UI::Main()->tw_bar_, "stream travel time max", TW_TYPE_FLOAT, &streams_max_travel_time_, "min=0.5 max=20.0 step=0.5");
 
 		TwAddVarRW(UI::Main()->tw_bar_, "camera orbit speed", TW_TYPE_FLOAT, &camera_orbit_speed_, "min=0 max=60 step=5");
+		TwAddVarRW(UI::Main()->tw_bar_, "simulation paused", TW_TYPE_BOOLCPP, &particle_paused_, "");
 
 		update_prog_->Activate();
 		update_prog_->SetUniform("u_particle_lifespan", u_particle_lifespan_);
@@ -252,15 +257,49 @@ namespace cubey {
 		render_prog_->SetUniform("u_particle_lifespan", u_particle_lifespan_);
 		render_prog_->SetUniform("u_particle_color_cold", u_particle_color_cold_);
 		render_prog_->SetUniform("u_particle_color_hot", u_particle_color_hot_);
+		render_prog_->SetUniform("u_particle_texture", 0);
 
 		Camera::Main()->transform_.TranslateTo(glm::vec3(0, 0, -75.0f));
 		//glPointSize(2.0f);
+
+		float radius = (PARTICLE_TEXTURE_SIZE - 1) / 2.0f;
+		glm::vec2 center = glm::vec2(radius);
+		float solid_ratio = 1.0f;
+		float fall_off_ratio = 1.0f - solid_ratio;;
+		
+		float particle_tex_data[PARTICLE_TEXTURE_SIZE * PARTICLE_TEXTURE_SIZE];
+		for (int x = 0; x < PARTICLE_TEXTURE_SIZE; x++) {
+			for (int y = 0; y < PARTICLE_TEXTURE_SIZE; y++) {				
+				//float dist = glm::distance(glm::vec2((float)x, (float)y), center);
+				float dist = glm::max(glm::abs(x - radius), glm::abs(y - radius));
+
+				float dist_ratio = dist / radius;
+				particle_tex_data[x*PARTICLE_TEXTURE_SIZE + y] = dist_ratio <= solid_ratio ? 1.0f : glm::smoothstep(1.0f, 0.0f, (dist_ratio - solid_ratio) / fall_off_ratio);
+
+
+			}
+		}
+
+
+		glActiveTexture(GL_TEXTURE0);
+		glGenTextures(1, &particle_texture_);
+		glBindTexture(GL_TEXTURE_2D, particle_texture_);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, PARTICLE_TEXTURE_SIZE, PARTICLE_TEXTURE_SIZE, 0, GL_RED, GL_FLOAT, particle_tex_data);
+
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	}
 
 	void ParticleDemo::Update(float delta_time) {
-		particle_count = (unsigned long long)u_particle_pack_count_ * 128;
 
 		Camera::Main()->Orbit(delta_time * glm::radians(camera_orbit_speed_), 0);
+
+		if (particle_paused_) {
+			return;
+		}
+
+		particle_count = (unsigned long long)u_particle_pack_count_ * 128;
+
 		//u_particle_hue_ = 0.5f + 0.5f * glm::sin(Time::time_since_start() / 5.0f);
 
 		for (int i = 0; i < MAX_ATTRACTOR_COUNT; i++) {
@@ -315,6 +354,10 @@ namespace cubey {
 	}
 
 	void ParticleDemo::Render() {
+
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, particle_texture_);
+
 		render_prog_->Activate();
 		render_prog_->SetUniform("u_particle_lifespan", u_particle_lifespan_);
 		render_prog_->SetUniform("u_particle_color_cold", u_particle_color_cold_);

@@ -6,7 +6,7 @@
 using namespace cubey;
 
 int main(void) {
-	MarchingCubesDemo demo;
+	ParticleDemo demo;
 
 	Engine::MainLoop();
 }

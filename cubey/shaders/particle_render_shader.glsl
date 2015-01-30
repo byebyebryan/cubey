@@ -49,6 +49,7 @@ in vec4 point_color[];
 in float point_size[];
 
 out vec4 var_color;
+out vec2 var_uv;
 
 void main() {
 	vec4 pos = gl_in[0].gl_Position;
@@ -58,18 +59,22 @@ void main() {
 
 	gl_Position = u_projection_mat * vec4(pos.xy - right - up, pos.zw);
 	var_color = point_color[0];
+	var_uv = vec2(0, 0);
 	EmitVertex();
 
 	gl_Position = u_projection_mat * vec4(pos.xy + right - up, pos.zw);
 	var_color = point_color[0];
+	var_uv = vec2(1, 0);
 	EmitVertex();
 
 	gl_Position = u_projection_mat * vec4(pos.xy - right + up, pos.zw);
 	var_color = point_color[0];
+	var_uv = vec2(0, 1);
 	EmitVertex();
 
 	gl_Position = u_projection_mat * vec4(pos.xy + right + up, pos.zw);
 	var_color = point_color[0];
+	var_uv = vec2(1, 1);
 	EmitVertex();
 }
 
@@ -77,12 +82,16 @@ void main() {
 
 #ifdef _FRAGMENT_S_
 
+uniform sampler2D u_particle_texture;
+
 in vec4 var_color;
+in vec2 var_uv;
 
 out vec4 out_color;
 
 void main() {
 	out_color = var_color;
+	out_color.a *= texture(u_particle_texture, var_uv).r;
 }
 
 #endif
