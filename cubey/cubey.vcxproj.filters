@@ -2,81 +2,82 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="Camera.cpp">
-      <Filter>cubey</Filter>
-    </ClCompile>
-    <ClCompile Include="Engine.cpp">
-      <Filter>cubey</Filter>
-    </ClCompile>
-    <ClCompile Include="Input.cpp">
-      <Filter>cubey</Filter>
-    </ClCompile>
-    <ClCompile Include="Interfaces.cpp">
-      <Filter>cubey</Filter>
-    </ClCompile>
-    <ClCompile Include="Mesh.cpp">
-      <Filter>cubey</Filter>
-    </ClCompile>
-    <ClCompile Include="PrimitiveFactory.cpp">
-      <Filter>cubey</Filter>
-    </ClCompile>
-    <ClCompile Include="Shader.cpp">
-      <Filter>cubey</Filter>
-    </ClCompile>
-    <ClCompile Include="Time.cpp">
-      <Filter>cubey</Filter>
-    </ClCompile>
-    <ClCompile Include="UI.cpp">
-      <Filter>cubey</Filter>
-    </ClCompile>
     <ClCompile Include="CameraTest.cpp" />
     <ClCompile Include="ParticleDemo.cpp" />
     <ClCompile Include="MarchingCubesDemo.cpp" />
+    <ClCompile Include="cubey\Camera.cpp">
+      <Filter>cubey</Filter>
+    </ClCompile>
+    <ClCompile Include="cubey\Engine.cpp">
+      <Filter>cubey</Filter>
+    </ClCompile>
+    <ClCompile Include="cubey\Input.cpp">
+      <Filter>cubey</Filter>
+    </ClCompile>
+    <ClCompile Include="cubey\Interfaces.cpp">
+      <Filter>cubey</Filter>
+    </ClCompile>
+    <ClCompile Include="cubey\Mesh.cpp">
+      <Filter>cubey</Filter>
+    </ClCompile>
+    <ClCompile Include="cubey\PrimitiveFactory.cpp">
+      <Filter>cubey</Filter>
+    </ClCompile>
+    <ClCompile Include="cubey\Shader.cpp">
+      <Filter>cubey</Filter>
+    </ClCompile>
+    <ClCompile Include="cubey\Time.cpp">
+      <Filter>cubey</Filter>
+    </ClCompile>
+    <ClCompile Include="cubey\UI.cpp">
+      <Filter>cubey</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Camera.h">
-      <Filter>cubey</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine.h">
-      <Filter>cubey</Filter>
-    </ClInclude>
-    <ClInclude Include="Event.h">
-      <Filter>cubey</Filter>
-    </ClInclude>
-    <ClInclude Include="Input.h">
-      <Filter>cubey</Filter>
-    </ClInclude>
-    <ClInclude Include="Interfaces.h">
-      <Filter>cubey</Filter>
-    </ClInclude>
-    <ClInclude Include="Mesh.h">
-      <Filter>cubey</Filter>
-    </ClInclude>
-    <ClInclude Include="PrimitiveFactory.h">
-      <Filter>cubey</Filter>
-    </ClInclude>
-    <ClInclude Include="Shader.h">
-      <Filter>cubey</Filter>
-    </ClInclude>
-    <ClInclude Include="Time.h">
-      <Filter>cubey</Filter>
-    </ClInclude>
-    <ClInclude Include="Transform.h">
-      <Filter>cubey</Filter>
-    </ClInclude>
-    <ClInclude Include="UI.h">
-      <Filter>cubey</Filter>
-    </ClInclude>
-    <ClInclude Include="Vertex.h">
-      <Filter>cubey</Filter>
-    </ClInclude>
-    <ClInclude Include="cubey.h">
-      <Filter>cubey</Filter>
-    </ClInclude>
     <ClInclude Include="CameraTest.h" />
     <ClInclude Include="ParticleDemo.h" />
     <ClInclude Include="MarchingCubesDemo.h" />
     <ClInclude Include="TriangleTable.h" />
+    <ClInclude Include="cubey.h" />
+    <ClInclude Include="cubey\Camera.h">
+      <Filter>cubey</Filter>
+    </ClInclude>
+    <ClInclude Include="cubey\Engine.h">
+      <Filter>cubey</Filter>
+    </ClInclude>
+    <ClInclude Include="cubey\Event.h">
+      <Filter>cubey</Filter>
+    </ClInclude>
+    <ClInclude Include="cubey\Input.h">
+      <Filter>cubey</Filter>
+    </ClInclude>
+    <ClInclude Include="cubey\Interfaces.h">
+      <Filter>cubey</Filter>
+    </ClInclude>
+    <ClInclude Include="cubey\Mesh.h">
+      <Filter>cubey</Filter>
+    </ClInclude>
+    <ClInclude Include="cubey\PrimitiveFactory.h">
+      <Filter>cubey</Filter>
+    </ClInclude>
+    <ClInclude Include="cubey\Shader.h">
+      <Filter>cubey</Filter>
+    </ClInclude>
+    <ClInclude Include="cubey\Time.h">
+      <Filter>cubey</Filter>
+    </ClInclude>
+    <ClInclude Include="cubey\Transform.h">
+      <Filter>cubey</Filter>
+    </ClInclude>
+    <ClInclude Include="cubey\TriangleTable.h">
+      <Filter>cubey</Filter>
+    </ClInclude>
+    <ClInclude Include="cubey\UI.h">
+      <Filter>cubey</Filter>
+    </ClInclude>
+    <ClInclude Include="cubey\Vertex.h">
+      <Filter>cubey</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Shaders">

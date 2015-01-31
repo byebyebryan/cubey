@@ -91,37 +91,38 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="CameraTest.cpp" />
-    <ClCompile Include="Camera.cpp" />
-    <ClCompile Include="Engine.cpp" />
-    <ClCompile Include="Interfaces.cpp" />
-    <ClCompile Include="Input.cpp" />
+    <ClCompile Include="cubey\Camera.cpp" />
+    <ClCompile Include="cubey\Engine.cpp" />
+    <ClCompile Include="cubey\Input.cpp" />
+    <ClCompile Include="cubey\Interfaces.cpp" />
+    <ClCompile Include="cubey\Mesh.cpp" />
+    <ClCompile Include="cubey\PrimitiveFactory.cpp" />
+    <ClCompile Include="cubey\Shader.cpp" />
+    <ClCompile Include="cubey\Time.cpp" />
+    <ClCompile Include="cubey\UI.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MarchingCubesDemo.cpp" />
-    <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="ParticleDemo.cpp" />
-    <ClCompile Include="PrimitiveFactory.cpp" />
-    <ClCompile Include="Shader.cpp" />
-    <ClCompile Include="Time.cpp" />
-    <ClCompile Include="UI.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CameraTest.h" />
-    <ClInclude Include="Camera.h" />
+    <ClInclude Include="cubey\Camera.h" />
+    <ClInclude Include="cubey\Engine.h" />
+    <ClInclude Include="cubey\Event.h" />
+    <ClInclude Include="cubey\Input.h" />
+    <ClInclude Include="cubey\Interfaces.h" />
+    <ClInclude Include="cubey\Mesh.h" />
+    <ClInclude Include="cubey\PrimitiveFactory.h" />
+    <ClInclude Include="cubey\Shader.h" />
+    <ClInclude Include="cubey\Time.h" />
+    <ClInclude Include="cubey\Transform.h" />
+    <ClInclude Include="cubey\TriangleTable.h" />
+    <ClInclude Include="cubey\UI.h" />
+    <ClInclude Include="cubey\Vertex.h" />
     <ClInclude Include="TriangleTable.h" />
     <ClInclude Include="cubey.h" />
-    <ClInclude Include="Engine.h" />
-    <ClInclude Include="Event.h" />
     <ClInclude Include="MarchingCubesDemo.h" />
-    <ClInclude Include="Interfaces.h" />
-    <ClInclude Include="Input.h" />
-    <ClInclude Include="Mesh.h" />
     <ClInclude Include="ParticleDemo.h" />
-    <ClInclude Include="PrimitiveFactory.h" />
-    <ClInclude Include="Shader.h" />
-    <ClInclude Include="Time.h" />
-    <ClInclude Include="Transform.h" />
-    <ClInclude Include="UI.h" />
-    <ClInclude Include="Vertex.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\debug_shader.glsl" />
