@@ -1,8 +1,10 @@
 #version 430
 
-#define MAX_PARTICLE_PACK_COUNT 1000
+#define MAX_PARTICLE_PACK_COUNT 10000
 #define MAX_ATTRACTOR_COUNT 64 
-#define MAX_STREAM_COUNT 64
+#define MAX_STREAM_COUNT 128
+
+#define PARTICLE_PACK_SIZE 128
 
 struct Particle {
 	vec4 position; //xyz = position, w = life
@@ -10,7 +12,7 @@ struct Particle {
 };
 
 layout (std430, binding=0) buffer b_particles_data {
-	Particle particles[MAX_PARTICLE_PACK_COUNT * 128];
+	Particle particles[MAX_PARTICLE_PACK_COUNT * PARTICLE_PACK_SIZE];
 };
 
 uniform float u_particle_lifespan;
@@ -19,7 +21,7 @@ uniform float u_particle_initial_speed;
 
 uniform float u_random_seed;
 
-layout (local_size_x = 128) in;
+layout (local_size_x = PARTICLE_PACK_SIZE) in;
 
 // A single iteration of Bob Jenkins' One-At-A-Time hashing algorithm.
 uint hash( uint x ) {
@@ -65,15 +67,13 @@ void main() {
 	
 	Particle p;
 
-	float x = random_from_int(gl_GlobalInvocationID.x);
-	float y = random_from_float(float(gl_GlobalInvocationID.x) * u_random_seed);
-	float z = random_from_float(x * u_random_seed);
-	
-	vec3 seed = vec3(x, y, z);
+	p.position.x = gl_LocalInvocationID.x;
+	p.position.y = gl_WorkGroupID.x;
+	p.position.z = 0.0;
 
-	p.position.xyz = normalize(rand_vec3(seed.yxz) + rand_vec3(seed.yzx)) * rand_float(rand_vec3(seed.xzy)) * u_particle_initial_spread;
-	p.position.w = rand_float(rand_vec3(seed)) * u_particle_lifespan;
-	p.velocity.xyz = normalize(rand_vec3(seed.zxy) - rand_vec3(seed.yzx)) * rand_float(rand_vec3(seed.xzy)) * u_particle_initial_speed;
+	p.position.w = rand_float(p.position.xyz) * u_particle_lifespan;
+
+	p.velocity.xyz = rand_vec3(p.position.xyz);
 
 	particles[gl_GlobalInvocationID.x] = p;
 }

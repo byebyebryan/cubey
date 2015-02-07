@@ -11,7 +11,7 @@ namespace cubey {
 	const glm::vec3 kDefaultLookAtTargetPos = glm::vec3();
 
 	const float kDefaultMouseSensitivity = 1.0f;
-	const float kDefaultMovementSpeed = 5.0f;
+	const float kDefaultMovementSpeed = 20.0f;
 
 	const float kDefautlMouseWheelSpeed = 20.0f;
 

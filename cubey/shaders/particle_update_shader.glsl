@@ -1,8 +1,10 @@
 #version 430
 
-#define MAX_PARTICLE_PACK_COUNT 1000
+#define MAX_PARTICLE_PACK_COUNT 10000
 #define MAX_ATTRACTOR_COUNT 64 
 #define MAX_STREAM_COUNT 128
+
+#define PARTICLE_PACK_SIZE 128
 
 struct Particle {
 	vec4 position; //xyz = position, w = life
@@ -10,7 +12,7 @@ struct Particle {
 };
 
 layout (std430, binding=0) buffer b_particles_data {
-	Particle particles[MAX_PARTICLE_PACK_COUNT * 128];
+	Particle particles[MAX_PARTICLE_PACK_COUNT * PARTICLE_PACK_SIZE];
 };
 
 uniform vec4 u_attractors[MAX_ATTRACTOR_COUNT]; //xyz = position, w = mass
@@ -37,7 +39,7 @@ uniform int u_stream_count;
 
 const float k_bound_decay = 0.9;
 
-layout (local_size_x = 128) in;
+layout (local_size_x = PARTICLE_PACK_SIZE) in;
 
 float rand_float(vec3 v_in) {
     return fract(sin(dot(v_in ,vec3(12.9898, 78.233, 56.8346))) * 43758.5453);

@@ -100,7 +100,7 @@ namespace cubey {
 			break;
 		case GLFW_KEY_A:
 			if (action == GLFW_PRESS) {
-				movement_.x = -1.0f;
+				movement_.x = 1.0f;
 			}
 			else if (action == GLFW_RELEASE) {
 				movement_.x = 0.0f;
@@ -108,7 +108,7 @@ namespace cubey {
 			break;
 		case GLFW_KEY_D:
 			if (action == GLFW_PRESS) {
-				movement_.x = 1.0f;
+				movement_.x = -1.0f;
 			}
 			else if (action == GLFW_RELEASE) {
 				movement_.x = 0.0f;

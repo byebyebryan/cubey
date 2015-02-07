@@ -7,6 +7,8 @@
 #define MAX_ATTRACTOR_COUNT 64 
 #define MAX_STREAM_COUNT 128
 
+#define PARTICLE_PACK_SIZE 128
+
 #define DEFAULT_PARTICLE_PACK_COUNT 4000
 #define DEFAULT_ATTRACTOR_COUNT 8
 #define DEFAULT_STREAM_COUNT 32
@@ -138,7 +140,7 @@ namespace cubey {
 		streams_min_travel_time_ = DEFAULT_STREAM_MIN_TIME;
 		streams_max_travel_time_ = DEFAULT_STREAM_MAX_TIME;
 
-		particle_count = (unsigned long long)u_particle_pack_count_ * 128;
+		particle_count = (unsigned long long)u_particle_pack_count_ * PARTICLE_PACK_SIZE;
 
 		camera_orbit_speed_ = DEFAULT_CAMERA_ORBIT_SPEED;
 
@@ -171,7 +173,7 @@ namespace cubey {
 
 		glGenBuffers(1, &ssbo_);
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_);
-		glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(glm::vec4) * MAX_PARTICLE_PACK_COUNT * 128 * 2, NULL, GL_DYNAMIC_COPY);
+		glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(glm::vec4) * MAX_PARTICLE_PACK_COUNT * PARTICLE_PACK_SIZE * 2, NULL, GL_DYNAMIC_COPY);
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssbo_);
 
@@ -202,7 +204,7 @@ namespace cubey {
 
 		TwAddVarRW(UI::Main()->tw_bar_, "particle count", TW_TYPE_UINT32, &particle_count, "");
 
-		TwAddVarRW(UI::Main()->tw_bar_, "particle group count", TW_TYPE_UINT16, &u_particle_pack_count_, "min=100 max=10000 step=1000");
+		TwAddVarRW(UI::Main()->tw_bar_, "particle group count", TW_TYPE_UINT16, &u_particle_pack_count_, "min=1000 max=10000 step=1000");
 		TwAddVarRW(UI::Main()->tw_bar_, "attractor count", TW_TYPE_INT16, &u_attractor_count_, "min=0 max=64 step=4");
 		TwAddVarRW(UI::Main()->tw_bar_, "stream count", TW_TYPE_INT16, &u_stream_count_, "min=0 max=128 step=4");
 
@@ -298,7 +300,7 @@ namespace cubey {
 			return;
 		}
 
-		particle_count = (unsigned long long)u_particle_pack_count_ * 128;
+		particle_count = (unsigned long long)u_particle_pack_count_ * PARTICLE_PACK_SIZE;
 
 		//u_particle_hue_ = 0.5f + 0.5f * glm::sin(Time::time_since_start() / 5.0f);
 
@@ -372,7 +374,7 @@ namespace cubey {
 		//glVertexAttribPointer(1, 1, GL_FLOAT, false, 2 * sizeof(glm::vec4), (GLvoid*)(7 * sizeof(float)));
 		//glEnableVertexAttribArray(1);
 
-		glDrawArrays(GL_POINTS, 0, u_particle_pack_count_ * 128);
+		glDrawArrays(GL_POINTS, 0, u_particle_pack_count_ * PARTICLE_PACK_SIZE);
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 	}
 

@@ -32,6 +32,7 @@
     <ClCompile Include="cubey\UI.cpp">
       <Filter>cubey</Filter>
     </ClCompile>
+    <ClCompile Include="SimulatedSmokeDemo.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CameraTest.h" />
@@ -78,6 +79,7 @@
     <ClInclude Include="cubey\Vertex.h">
       <Filter>cubey</Filter>
     </ClInclude>
+    <ClInclude Include="SimulatedSmokeDemo.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Shaders">
@@ -104,6 +106,15 @@
       <Filter>Shaders</Filter>
     </None>
     <None Include="shaders\marching_cubes_render_shader.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\smoke_simulation_update_shader.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\smoke_simulation_render_shader.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\smoke_simulation_raytracing_shader.glsl">
       <Filter>Shaders</Filter>
     </None>
   </ItemGroup>

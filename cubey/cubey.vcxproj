@@ -103,6 +103,7 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MarchingCubesDemo.cpp" />
     <ClCompile Include="ParticleDemo.cpp" />
+    <ClCompile Include="SimulatedSmokeDemo.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CameraTest.h" />
@@ -119,6 +120,7 @@
     <ClInclude Include="cubey\TriangleTable.h" />
     <ClInclude Include="cubey\UI.h" />
     <ClInclude Include="cubey\Vertex.h" />
+    <ClInclude Include="SimulatedSmokeDemo.h" />
     <ClInclude Include="TriangleTable.h" />
     <ClInclude Include="cubey.h" />
     <ClInclude Include="MarchingCubesDemo.h" />
@@ -131,6 +133,9 @@
     <None Include="shaders\particle_init_shader.glsl" />
     <None Include="shaders\particle_render_shader.glsl" />
     <None Include="shaders\particle_update_shader.glsl" />
+    <None Include="shaders\smoke_simulation_raytracing_shader.glsl" />
+    <None Include="shaders\smoke_simulation_render_shader.glsl" />
+    <None Include="shaders\smoke_simulation_update_shader.glsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
