@@ -1,4 +1,3 @@
-#version 430
 
 #define MAX_PARTICLE_PACK_COUNT 10000
 #define MAX_ATTRACTOR_COUNT 64 
@@ -15,6 +14,45 @@ layout (std430, binding=0) buffer b_particles_data {
 	Particle particles[MAX_PARTICLE_PACK_COUNT * PARTICLE_PACK_SIZE];
 };
 
+__CS_INIT__
+
+uniform float u_particle_lifespan;
+uniform float u_particle_initial_spread;
+uniform float u_particle_initial_speed;
+
+uniform float u_random_seed;
+
+layout (local_size_x = PARTICLE_PACK_SIZE) in;
+
+float rand_float(vec3 v_in) {
+    return fract(sin(dot(v_in ,vec3(12.9898, 78.233, 56.8346))) * 43758.5453);
+}
+
+float rand_float_signed(vec3 v_in) {
+	return mix(-1, 1, rand_float(v_in));
+}
+
+vec3 rand_vec3(vec3 v_in) {
+	return vec3(rand_float_signed(v_in.yzx), rand_float_signed(v_in.yxz), rand_float_signed(v_in.xzy));
+}
+
+void main() {
+	
+	Particle p;
+
+	p.position.x = gl_LocalInvocationID.x;
+	p.position.y = gl_WorkGroupID.x;
+	p.position.z = 0.0;
+
+	p.position.w = rand_float(p.position.xyz) * u_particle_lifespan;
+
+	p.velocity.xyz = rand_vec3(p.position.xyz);
+
+	particles[gl_GlobalInvocationID.x] = p;
+}
+
+__CS_UPDATE__
+
 uniform vec4 u_attractors[MAX_ATTRACTOR_COUNT]; //xyz = position, w = mass
 uniform vec3 u_streams[MAX_STREAM_COUNT];
 
@@ -28,8 +66,6 @@ uniform float u_particle_bound_sq;
 uniform float u_particle_stream_deviation;
 uniform float u_particle_speed_decay;
 uniform float u_particle_speed_randomizer;
-
-//uniform float u_particle_hue;
 
 uniform float u_attraction_force_multiplier;
 

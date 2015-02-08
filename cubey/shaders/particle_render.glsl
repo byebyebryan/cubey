@@ -1,6 +1,5 @@
-#version 430
 
-#ifdef _VERTEX_S_
+__VS__
 
 uniform mat4 u_view_model_mat;
 
@@ -36,9 +35,7 @@ void main() {
 	point_size = u_particle_size * ratio;
 }
 
-#endif
-
-#ifdef _GEOMETRY_S_
+__GS__
 
 uniform mat4 u_projection_mat;
 
@@ -78,9 +75,7 @@ void main() {
 	EmitVertex();
 }
 
-#endif
-
-#ifdef _FRAGMENT_S_
+__FS__
 
 uniform sampler2D u_particle_texture;
 
@@ -93,5 +88,3 @@ void main() {
 	out_color = var_color;
 	out_color.a *= texture(u_particle_texture, var_uv).r;
 }
-
-#endif

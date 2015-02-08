@@ -2,7 +2,7 @@
 
 #include "Vertex.h"
 #include "Transform.h"
-#include "Shader.h"
+#include "ShaderProgram.h"
 #include "Camera.h"
 
 namespace cubey {

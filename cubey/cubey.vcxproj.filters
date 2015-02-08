@@ -2,9 +2,6 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="CameraTest.cpp" />
-    <ClCompile Include="ParticleDemo.cpp" />
-    <ClCompile Include="MarchingCubesDemo.cpp" />
     <ClCompile Include="cubey\Camera.cpp">
       <Filter>cubey</Filter>
     </ClCompile>
@@ -32,12 +29,18 @@
     <ClCompile Include="cubey\UI.cpp">
       <Filter>cubey</Filter>
     </ClCompile>
+    <ClCompile Include="cubey\ShaderProgram.cpp">
+      <Filter>cubey</Filter>
+    </ClCompile>
+    <ClCompile Include="cubey\ShaderManager.cpp">
+      <Filter>cubey</Filter>
+    </ClCompile>
+    <ClCompile Include="MarchingCubesDemo.cpp" />
+    <ClCompile Include="ParticleDemo.cpp" />
     <ClCompile Include="SimulatedSmokeDemo.cpp" />
+    <ClCompile Include="CameraTest.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="CameraTest.h" />
-    <ClInclude Include="ParticleDemo.h" />
-    <ClInclude Include="MarchingCubesDemo.h" />
     <ClInclude Include="TriangleTable.h" />
     <ClInclude Include="cubey.h" />
     <ClInclude Include="cubey\Camera.h">
@@ -76,7 +79,16 @@
     <ClInclude Include="cubey\Vertex.h">
       <Filter>cubey</Filter>
     </ClInclude>
+    <ClInclude Include="cubey\ShaderProgram.h">
+      <Filter>cubey</Filter>
+    </ClInclude>
+    <ClInclude Include="cubey\ShaderManager.h">
+      <Filter>cubey</Filter>
+    </ClInclude>
+    <ClInclude Include="MarchingCubesDemo.h" />
+    <ClInclude Include="ParticleDemo.h" />
     <ClInclude Include="SimulatedSmokeDemo.h" />
+    <ClInclude Include="CameraTest.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Shaders">
@@ -87,31 +99,22 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <None Include="shaders\particle_render_shader.glsl">
+    <None Include="shaders\debug.glsl">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="shaders\particle_update_shader.glsl">
+    <None Include="shaders\marching_cubes_render.glsl">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="shaders\debug_shader_unlit.glsl">
+    <None Include="shaders\particle_compute.glsl">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="shaders\debug_shader.glsl">
+    <None Include="shaders\particle_render.glsl">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="shaders\particle_init_shader.glsl">
+    <None Include="shaders\smoke_compute.glsl">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="shaders\marching_cubes_render_shader.glsl">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="shaders\smoke_simulation_update_shader.glsl">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="shaders\smoke_simulation_render_shader.glsl">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="shaders\smoke_simulation_raytracing_shader.glsl">
+    <None Include="shaders\smoke_render.glsl">
       <Filter>Shaders</Filter>
     </None>
   </ItemGroup>

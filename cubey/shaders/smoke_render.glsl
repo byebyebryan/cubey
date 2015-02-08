@@ -1,34 +1,5 @@
-#version 430
 
-#ifdef _FIRST_PASS_VERTEX_S_
-
-layout(location = 0) in vec4 in_vertex_position;
-layout(location = 1) in vec3 in_vertex_tex_coord;
-
-uniform mat4 u_mvp_mat;
-
-out vec3 var_vertex_tex_coord;
-
-void main() {
-	gl_Position = u_mvp_mat * in_vertex_position;
-	var_vertex_tex_coord = in_vertex_tex_coord;
-}
-
-#endif
-
-#ifdef _FIRST_PASS_FRAGMENT_S_
-
-in vec3 var_vertex_tex_coord;
-
-out vec4 out_color;
-
-void main() {
-	out_color = vec4(var_vertex_tex_coord, 1);
-}
-
-#endif
-
-#ifdef _SECOND_PASS_VERTEX_S_
+__VS__
 
 layout(location = 0) in vec4 in_vertex_position;
 
@@ -36,12 +7,7 @@ void main() {
 	gl_Position = in_vertex_position;
 }
 
-#endif
-
-#ifdef _SECOND_PASS_FRAGMENT_S_
-
-//layout (binding = 0, rgba32f) uniform image2D i_entry_tex_coord;
-//layout (binding = 1, rgba32f) uniform image2D i_exit_tex_coord;
+__FS__
 
 layout (binding = 0) uniform sampler3D t_density;
 
@@ -141,5 +107,3 @@ void main() {
 	}
 	out_color = vec4(acc_color, 1 - acc_alpha);
 }
-
-#endif

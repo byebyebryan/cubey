@@ -6,7 +6,7 @@
 #include "cubey\Input.h"
 #include "cubey\Time.h"
 
-#include "cubey\Shader.h"
+#include "cubey\ShaderManager.h"
 #include "cubey\Vertex.h"
 #include "cubey\Mesh.h"
 #include "cubey\PrimitiveFactory.h"

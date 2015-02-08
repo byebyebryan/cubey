@@ -98,6 +98,8 @@
     <ClCompile Include="cubey\Mesh.cpp" />
     <ClCompile Include="cubey\PrimitiveFactory.cpp" />
     <ClCompile Include="cubey\Shader.cpp" />
+    <ClCompile Include="cubey\ShaderManager.cpp" />
+    <ClCompile Include="cubey\ShaderProgram.cpp" />
     <ClCompile Include="cubey\Time.cpp" />
     <ClCompile Include="cubey\UI.cpp" />
     <ClCompile Include="main.cpp" />
@@ -115,26 +117,25 @@
     <ClInclude Include="cubey\Mesh.h" />
     <ClInclude Include="cubey\PrimitiveFactory.h" />
     <ClInclude Include="cubey\Shader.h" />
+    <ClInclude Include="cubey\ShaderManager.h" />
+    <ClInclude Include="cubey\ShaderProgram.h" />
     <ClInclude Include="cubey\Time.h" />
     <ClInclude Include="cubey\Transform.h" />
     <ClInclude Include="cubey\UI.h" />
     <ClInclude Include="cubey\Vertex.h" />
+    <ClInclude Include="MarchingCubesDemo.h" />
+    <ClInclude Include="ParticleDemo.h" />
     <ClInclude Include="SimulatedSmokeDemo.h" />
     <ClInclude Include="TriangleTable.h" />
     <ClInclude Include="cubey.h" />
-    <ClInclude Include="MarchingCubesDemo.h" />
-    <ClInclude Include="ParticleDemo.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="shaders\debug_shader.glsl" />
-    <None Include="shaders\debug_shader_unlit.glsl" />
-    <None Include="shaders\marching_cubes_render_shader.glsl" />
-    <None Include="shaders\particle_init_shader.glsl" />
-    <None Include="shaders\particle_render_shader.glsl" />
-    <None Include="shaders\particle_update_shader.glsl" />
-    <None Include="shaders\smoke_simulation_raytracing_shader.glsl" />
-    <None Include="shaders\smoke_simulation_render_shader.glsl" />
-    <None Include="shaders\smoke_simulation_update_shader.glsl" />
+    <None Include="shaders\debug.glsl" />
+    <None Include="shaders\marching_cubes_render.glsl" />
+    <None Include="shaders\particle_render.glsl" />
+    <None Include="shaders\particle_compute.glsl" />
+    <None Include="shaders\smoke_render.glsl" />
+    <None Include="shaders\smoke_compute.glsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

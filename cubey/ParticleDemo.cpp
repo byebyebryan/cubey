@@ -151,19 +151,11 @@ namespace cubey {
 		debug_prog_->AddShader(GL_FRAGMENT_SHADER, "shaders\\debug_shader_unlit.glsl", "#define _FRAGMENT_S_");
 		debug_prog_->Link();*/
 
-		init_prog_ = new ShaderProgram();
-		init_prog_->AddShader(GL_COMPUTE_SHADER, "shaders\\particle_init_shader.glsl");
-		init_prog_->Link();
-
-		update_prog_ = new ShaderProgram();
-		update_prog_->AddShader(GL_COMPUTE_SHADER, "shaders\\particle_update_shader.glsl");
-		update_prog_->Link();
-
-		render_prog_ = new ShaderProgram();
-		render_prog_->AddShader(GL_VERTEX_SHADER, "shaders\\particle_render_shader.glsl", "#define _VERTEX_S_");
-		render_prog_->AddShader(GL_GEOMETRY_SHADER, "shaders\\particle_render_shader.glsl", "#define _GEOMETRY_S_");
-		render_prog_->AddShader(GL_FRAGMENT_SHADER, "shaders\\particle_render_shader.glsl", "#define _FRAGMENT_S_");
-		render_prog_->Link();
+		init_prog_ = ShaderManager::Main()->CreateProgram("particle_compute.CS_INIT");
+		
+		update_prog_ = ShaderManager::Main()->CreateProgram("particle_compute.CS_UPDATE");
+		
+		render_prog_ = ShaderManager::Main()->CreateProgram("particle_render.VS.GS.FS");
 
 		/*glm::vec4* particle_data = new glm::vec4[MAX_PARTICLE_PACK_COUNT * 128 * 2];
 		for (int i = 0; i < MAX_PARTICLE_PACK_COUNT * 128; i++) {

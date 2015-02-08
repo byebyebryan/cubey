@@ -1,4 +1,3 @@
-#version 430
 
 #define LOCAL_WORKGROUP_SIZE_X 8
 #define LOCAL_WORKGROUP_SIZE_Y 8
@@ -6,7 +5,7 @@
 
 layout (local_size_x = LOCAL_WORKGROUP_SIZE_X, local_size_y = LOCAL_WORKGROUP_SIZE_Y, local_size_z = LOCAL_WORKGROUP_SIZE_Z) in;
 
-#ifdef _FILL_RGBA_
+__CS_FILL_RGBA__
 
 layout (binding = 0, rgba16f) uniform image3D i_target;
 
@@ -15,9 +14,7 @@ void main() {
 	imageStore(i_target, pos, vec4(0));
 }
 
-#endif
-
-#ifdef _FILL_R_
+__CS_FILL_R__
 
 layout (binding = 0, r16f) uniform image3D i_target;
 
@@ -26,9 +23,7 @@ void main() {
 	imageStore(i_target, pos, vec4(0));
 }
 
-#endif
-
-#ifdef _FILL_OBSTACLE_
+__CS_FILL_OBSTACLE__
 
 layout (binding = 0, rgba16f) uniform image3D i_obstacle;
 
@@ -48,9 +43,7 @@ void main() {
 	imageStore(i_obstacle, pos, target_value);
 }
 
-#endif
-
-#ifdef _ADVECT_RGBA_
+__CS_ADVECT_RGBA__
 
 layout (binding = 0, rgba16f) uniform image3D i_velocity;
 layout (binding = 1, rgba16f) uniform image3D i_obstacle;
@@ -107,9 +100,7 @@ void main() {
 	imageStore(i_target, pos, target_value);
 }
 
-#endif
-
-#ifdef _ADVECT_R_
+__CS_ADVECT_R__
 
 layout (binding = 0, rgba16f) uniform image3D i_velocity;
 layout (binding = 1, rgba16f) uniform image3D i_obstacle;
@@ -166,9 +157,7 @@ void main() {
 	imageStore(i_target, pos, target_value);
 }
 
-#endif
-
-#ifdef _ADVECT_R_MAC_CORMACK_
+__CS_ADVECT_R_MAC_CORMACK__
 
 layout (binding = 0, rgba16f) uniform image3D i_velocity;
 layout (binding = 1, rgba16f) uniform image3D i_obstacle;
@@ -256,9 +245,7 @@ void main() {
 	imageStore(i_target, pos, target_value);
 }
 
-#endif
-
-#ifdef _SPLAT_
+__CS_SPLAT__
 
 layout (binding = 0, r16f) uniform image3D i_source;
 layout (binding = 1, r16f) uniform image3D i_target;
@@ -278,9 +265,7 @@ void main() {
 	imageStore(i_target, pos, target_value);
 }
 
-#endif
-
-#ifdef _APPLY_BUOYANCY_
+__CS_BUOYANCY__
 
 layout (binding = 0, rgba16f) uniform image3D i_velocity;
 layout (binding = 1, r16f) uniform image3D i_temperature;
@@ -305,9 +290,7 @@ void main() {
 	imageStore(i_velocity_target, pos, vel);
 }
 
-#endif
-
-#ifdef _COMPUTE_VORTICITY_
+__CS_VORTICITY__
 
 layout (binding = 0, rgba16f) uniform image3D i_velocity;
 layout (binding = 1, rgba16f) uniform image3D i_vorticity;
@@ -330,9 +313,7 @@ void main() {
 	imageStore(i_vorticity, pos, vec4(vor, 0));
 }
 
-#endif
-
-#ifdef _COMPUTE_CONFINEMENT_
+__CS_CONFINEMENT__
 
 layout (binding = 0, rgba16f) uniform image3D i_velocity;
 layout (binding = 1, rgba16f) uniform image3D i_vorticity;
@@ -366,9 +347,7 @@ void main() {
 	imageStore(i_velocity_target, pos, vec4(vel, 0));
 }
 
-#endif
-
-#ifdef _COMPUTE_DIVERGENCE_
+__CS_DIVERGENCE__
 
 layout (binding = 0, rgba16f) uniform image3D i_velocity;
 layout (binding = 1, rgba16f) uniform image3D i_obstacle;
@@ -406,9 +385,7 @@ void main() {
 	imageStore(i_divergence, pos, vec4(div));
 }
 
-#endif
-
-#ifdef _JACOBI_
+__CS_JACOBI__
 
 layout (binding = 0, r16f) uniform image3D i_divergence;
 layout (binding = 1, rgba16f) uniform image3D i_obstacle;
@@ -449,9 +426,7 @@ void main() {
 	imageStore(i_pressure_target, pos, vec4(p));
 }
 
-#endif
-
-#ifdef _SUBTRACT_GRADIENT_
+__CS_PROJECTION__
 
 layout (binding = 0, rgba16f) uniform image3D i_velocity;
 layout (binding = 1, rgba16f) uniform image3D i_obstacle;
@@ -503,7 +478,5 @@ void main() {
 	}
 	imageStore(i_velocity_target, pos, target_vel);
 
-	memoryBarrier();
 }
 
-#endif

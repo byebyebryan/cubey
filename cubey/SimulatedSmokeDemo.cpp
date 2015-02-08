@@ -24,81 +24,33 @@ namespace cubey {
 		glClearColor(0.5, 0.5, 0.5, 1.0);
 		//glPointSize(2.5f);
 
-		init_fill_rgba_ = new ShaderProgram();
-		init_fill_rgba_->AddShader(GL_COMPUTE_SHADER, "shaders\\smoke_simulation_update_shader.glsl", "#define _FILL_RGBA_");
-		init_fill_rgba_->Link();
+		init_fill_rgba_ = ShaderManager::Main()->CreateProgram("smoke_compute.__CS_FILL_RGBA__");
 
-		init_fill_r_ = new ShaderProgram();
-		init_fill_r_->AddShader(GL_COMPUTE_SHADER, "shaders\\smoke_simulation_update_shader.glsl", "#define _FILL_R_");
-		init_fill_r_->Link();
+		init_fill_r_ = ShaderManager::Main()->CreateProgram("smoke_compute.__CS_FILL_R__");
 
-		init_fill_obstacle_ = new ShaderProgram();
-		init_fill_obstacle_->AddShader(GL_COMPUTE_SHADER, "shaders\\smoke_simulation_update_shader.glsl", "#define _FILL_OBSTACLE_");
-		init_fill_obstacle_->Link();
+		init_fill_obstacle_ = ShaderManager::Main()->CreateProgram("smoke_compute.__CS_FILL_OBSTACLE__");
 
-		update_advect_rgba_ = new ShaderProgram();
-		update_advect_rgba_->AddShader(GL_COMPUTE_SHADER, "shaders\\smoke_simulation_update_shader.glsl", "#define _ADVECT_RGBA_");
-		update_advect_rgba_->Link();
+		update_advect_rgba_ = ShaderManager::Main()->CreateProgram("smoke_compute.__CS_ADVECT_RGBA__");
 
-		update_advect_r_ = new ShaderProgram();
-		update_advect_r_->AddShader(GL_COMPUTE_SHADER, "shaders\\smoke_simulation_update_shader.glsl", "#define _ADVECT_R_");
-		update_advect_r_->Link();
+		update_advect_r_ = ShaderManager::Main()->CreateProgram("smoke_compute.__CS_ADVECT_R__");
 
-		update_advect_r_mac_cormack_ = new ShaderProgram();
-		update_advect_r_mac_cormack_->AddShader(GL_COMPUTE_SHADER, "shaders\\smoke_simulation_update_shader.glsl", "#define _ADVECT_R_MAC_CORMACK_");
-		update_advect_r_mac_cormack_->Link();
+		update_advect_r_mac_cormack_ = ShaderManager::Main()->CreateProgram("smoke_compute.__CS_ADVECT_R_MAC_CORMACK__");
 
-		update_splat_ = new ShaderProgram();
-		update_splat_->AddShader(GL_COMPUTE_SHADER, "shaders\\smoke_simulation_update_shader.glsl", "#define _SPLAT_");
-		update_splat_->Link();
+		update_splat_ = ShaderManager::Main()->CreateProgram("smoke_compute.__CS_SPLAT__");
 
-		update_buoyancy_ = new ShaderProgram();
-		update_buoyancy_->AddShader(GL_COMPUTE_SHADER, "shaders\\smoke_simulation_update_shader.glsl", "#define _APPLY_BUOYANCY_");
-		update_buoyancy_->Link();
+		update_buoyancy_ = ShaderManager::Main()->CreateProgram("smoke_compute.__CS_BUOYANCY__");
 
-		update_vorticity_ = new ShaderProgram();
-		update_vorticity_->AddShader(GL_COMPUTE_SHADER, "shaders\\smoke_simulation_update_shader.glsl", "#define _COMPUTE_VORTICITY_");
-		update_vorticity_->Link();
+		update_vorticity_ = ShaderManager::Main()->CreateProgram("smoke_compute.__CS_VORTICITY__");
 
-		update_confinement_ = new ShaderProgram();
-		update_confinement_->AddShader(GL_COMPUTE_SHADER, "shaders\\smoke_simulation_update_shader.glsl", "#define _COMPUTE_CONFINEMENT_");
-		update_confinement_->Link();
+		update_confinement_ = ShaderManager::Main()->CreateProgram("smoke_compute.__CS_CONFINEMENT__");
 
-		update_divergence_ = new ShaderProgram();
-		update_divergence_->AddShader(GL_COMPUTE_SHADER, "shaders\\smoke_simulation_update_shader.glsl", "#define _COMPUTE_DIVERGENCE_");
-		update_divergence_->Link();
+		update_divergence_ = ShaderManager::Main()->CreateProgram("smoke_compute.__CS_DIVERGENCE__");
 
-		update_jacobi_ = new ShaderProgram();
-		update_jacobi_->AddShader(GL_COMPUTE_SHADER, "shaders\\smoke_simulation_update_shader.glsl", "#define _JACOBI_");
-		update_jacobi_->Link();
+		update_jacobi_ = ShaderManager::Main()->CreateProgram("smoke_compute.__CS_JACOBI__");
 
-		update_gradient_ = new ShaderProgram();
-		update_gradient_->AddShader(GL_COMPUTE_SHADER, "shaders\\smoke_simulation_update_shader.glsl", "#define _SUBTRACT_GRADIENT_");
-		update_gradient_->Link();
+		update_gradient_ = ShaderManager::Main()->CreateProgram("smoke_compute.__CS_PROJECTION__");
 
-		init_fill_verts_ = new ShaderProgram();
-		init_fill_verts_->AddShader(GL_COMPUTE_SHADER, "shaders\\smoke_simulation_render_shader.glsl", "#define _VERTEX_INIT_");
-		init_fill_verts_->Link();
-
-		render_ = new ShaderProgram();
-		render_->AddShader(GL_VERTEX_SHADER, "shaders\\smoke_simulation_render_shader.glsl", "#define _VERTEX_S_");
-		render_->AddShader(GL_FRAGMENT_SHADER, "shaders\\smoke_simulation_render_shader.glsl", "#define _FRAGMENT_S_");
-		render_->Link();
-
-		render_first_pass_ = new ShaderProgram();
-		render_first_pass_->AddShader(GL_VERTEX_SHADER, "shaders\\smoke_simulation_raytracing_shader.glsl", "#define _FIRST_PASS_VERTEX_S_");
-		render_first_pass_->AddShader(GL_FRAGMENT_SHADER, "shaders\\smoke_simulation_raytracing_shader.glsl", "#define _FIRST_PASS_FRAGMENT_S_");
-		render_first_pass_->Link();
-
-		render_second_pass_ = new ShaderProgram();
-		render_second_pass_->AddShader(GL_VERTEX_SHADER, "shaders\\smoke_simulation_raytracing_shader.glsl", "#define _SECOND_PASS_VERTEX_S_");
-		render_second_pass_->AddShader(GL_FRAGMENT_SHADER, "shaders\\smoke_simulation_raytracing_shader.glsl", "#define _SECOND_PASS_FRAGMENT_S_");
-		render_second_pass_->Link();
-
-		render_debug_ = new ShaderProgram();
-		render_debug_->AddShader(GL_VERTEX_SHADER, "shaders\\debug_shader_unlit.glsl", "#define _VERTEX_S_");
-		render_debug_->AddShader(GL_FRAGMENT_SHADER, "shaders\\debug_shader_unlit.glsl", "#define _FRAGMENT_S_");
-		render_debug_->Link();
+		render_ = ShaderManager::Main()->CreateProgram("smoke_render.VS.FS");
 
 		/*unsigned long long i = 0;
 		glm::vec3* data = new glm::vec3[GLOBAL_SIZE_X * GLOBAL_SIZE_Y * GLOBAL_SIZE_Z];
@@ -190,8 +142,8 @@ namespace cubey {
 			vertex.attrib_1 = vertex.attrib_0 + glm::vec3(0.5f);
 		}*/
 
-		mesh = Mesh::Create(PrimitiveFactory::UnitBoxUnlit(), GL_TRIANGLES);
-		mesh_instance = mesh->CreateSimpleInstance(render_debug_, "u_mvp_mat");
+		//mesh = Mesh::Create(PrimitiveFactory::UnitBoxUnlit(), GL_TRIANGLES);
+		//mesh_instance = mesh->CreateSimpleInstance(render_debug_, "u_mvp_mat");
 
 		glm::vec2 fsq_verts[6] = {
 			{ -1.0f, -1.0f }, { 1.0f, -1.0f }, { 1.0f, 1.0f }, { -1.0f, -1.0f }, { 1.0f, 1.0f }, { -1.0f, 1.0f }
@@ -419,15 +371,15 @@ namespace cubey {
 		//render_debug_->Activate();
 		//mesh_instance->Draw();
 
-		render_second_pass_->Activate();
+		render_->Activate();
 
 		GLint viewport_size[4];
 		glGetIntegerv(GL_VIEWPORT, viewport_size);
 
 		glm::vec2 viewport_size_f = { viewport_size[2], viewport_size[3] };
 
-		render_second_pass_->SetUniform("u_viewport_size", viewport_size_f);
-		render_second_pass_->SetUniform("u_inverse_mvp", glm::inverse(Camera::Main()->view_mat()));
+		render_->SetUniform("u_viewport_size", viewport_size_f);
+		render_->SetUniform("u_inverse_mvp", glm::inverse(Camera::Main()->view_mat()));
 
 		//glBindImageTexture(0, t_entry_points, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
 		//glBindImageTexture(1, t_exit_points, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);

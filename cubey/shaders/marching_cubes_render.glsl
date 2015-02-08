@@ -1,6 +1,5 @@
-#version 430
 
-#ifdef _VERTEX_S_
+__VS__
 
 layout(location = 0) in vec4 in_vertex_position;
 
@@ -8,9 +7,7 @@ void main() {
 	gl_Position = in_vertex_position;
 }
 
-#endif
-
-#ifdef _GEOMETRY_S_
+__GS__
 
 vec3 mod289(vec3 x) {
 	return x - floor(x * (1.0 / 289.0)) * 289.0;
@@ -196,9 +193,7 @@ void main() {
 	}
 }
 
-#endif
-
-#ifdef _FRAGMENT_S_
+__FS__
 
 uniform vec3 u_ambient_light_color;
 uniform vec3 u_directional_light_direction;
@@ -215,5 +210,3 @@ void main() {
 
 	out_color = vec4(rgb, 1);
 }
-
-#endif

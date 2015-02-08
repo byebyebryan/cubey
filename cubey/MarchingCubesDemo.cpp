@@ -10,11 +10,7 @@ namespace cubey {
 		glEnable(GL_CULL_FACE);
 		glClearColor(0.4, 0.4, 0.4, 1);
 
-		cubes_render_prog_ = new ShaderProgram();
-		cubes_render_prog_->AddShader(GL_VERTEX_SHADER, "shaders\\marching_cubes_render_shader.glsl", "#define _VERTEX_S_");
-		cubes_render_prog_->AddShader(GL_GEOMETRY_SHADER, "shaders\\marching_cubes_render_shader.glsl", "#define _GEOMETRY_S_");
-		cubes_render_prog_->AddShader(GL_FRAGMENT_SHADER, "shaders\\marching_cubes_render_shader.glsl", "#define _FRAGMENT_S_");
-		cubes_render_prog_->Link();
+		cubes_render_prog_ = ShaderManager::Main()->CreateProgram("marching_cubes_render.VS.GS.FS");
 
 		glGenBuffers(1, &ssbo_);
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_);
