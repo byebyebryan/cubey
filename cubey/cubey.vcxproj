@@ -117,7 +117,6 @@
     <ClInclude Include="cubey\Shader.h" />
     <ClInclude Include="cubey\Time.h" />
     <ClInclude Include="cubey\Transform.h" />
-    <ClInclude Include="cubey\TriangleTable.h" />
     <ClInclude Include="cubey\UI.h" />
     <ClInclude Include="cubey\Vertex.h" />
     <ClInclude Include="SimulatedSmokeDemo.h" />

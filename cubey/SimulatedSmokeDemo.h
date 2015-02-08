@@ -57,6 +57,8 @@ namespace cubey {
 		ShaderProgram* render_first_pass_;
 		ShaderProgram* render_second_pass_;
 
+		ShaderProgram* render_debug_;
+
 		Mesh* mesh;
 		SimpleMeshInstance* mesh_instance;
 

@@ -70,9 +70,6 @@
     <ClInclude Include="cubey\Transform.h">
       <Filter>cubey</Filter>
     </ClInclude>
-    <ClInclude Include="cubey\TriangleTable.h">
-      <Filter>cubey</Filter>
-    </ClInclude>
     <ClInclude Include="cubey\UI.h">
       <Filter>cubey</Filter>
     </ClInclude>

@@ -21,7 +21,7 @@ namespace cubey {
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		glEnable(GL_TEXTURE_2D);
 		glEnable(GL_TEXTURE_3D);
-		glClearColor(0, 0, 0, 0);
+		glClearColor(0.5, 0.5, 0.5, 1.0);
 		//glPointSize(2.5f);
 
 		init_fill_rgba_ = new ShaderProgram();
@@ -95,15 +95,20 @@ namespace cubey {
 		render_second_pass_->AddShader(GL_FRAGMENT_SHADER, "shaders\\smoke_simulation_raytracing_shader.glsl", "#define _SECOND_PASS_FRAGMENT_S_");
 		render_second_pass_->Link();
 
-		unsigned long long i = 0;
+		render_debug_ = new ShaderProgram();
+		render_debug_->AddShader(GL_VERTEX_SHADER, "shaders\\debug_shader_unlit.glsl", "#define _VERTEX_S_");
+		render_debug_->AddShader(GL_FRAGMENT_SHADER, "shaders\\debug_shader_unlit.glsl", "#define _FRAGMENT_S_");
+		render_debug_->Link();
+
+		/*unsigned long long i = 0;
 		glm::vec3* data = new glm::vec3[GLOBAL_SIZE_X * GLOBAL_SIZE_Y * GLOBAL_SIZE_Z];
 		for (int x = 0; x < GLOBAL_SIZE_X; x++) {
-			for (int y = 0; y < GLOBAL_SIZE_Y; y++) {
-				for (int z = 0; z < GLOBAL_SIZE_Z; z++) {
-					data[i] = glm::vec3(x / 10.0f, y / 10.0f, z / 10.0f);
-					i++;
-				}
-			}
+		for (int y = 0; y < GLOBAL_SIZE_Y; y++) {
+		for (int z = 0; z < GLOBAL_SIZE_Z; z++) {
+		data[i] = glm::vec3(x / 10.0f, y / 10.0f, z / 10.0f);
+		i++;
+		}
+		}
 		}
 
 		glGenBuffers(1, &ssbo_);
@@ -113,7 +118,7 @@ namespace cubey {
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssbo_);
 
 		delete[] data;
-
+		*/
 		//init_fill_verts_->Activate();
 
 		//glDispatchCompute(WORK_GROUP_NUM, WORK_GROUP_NUM, WORK_GROUP_NUM);
@@ -154,7 +159,7 @@ namespace cubey {
 		glDispatchCompute(WORKGROUP_COUNT_X, WORKGROUP_COUNT_Y, WORKGROUP_COUNT_Z);
 		glMemoryBarrier(GL_ALL_BARRIER_BITS);
 
-		GLint view_port[4];
+		/*GLint view_port[4];
 		glGetIntegerv(GL_VIEWPORT, view_port);
 
 		glGenTextures(1, &t_entry_points);
@@ -183,10 +188,10 @@ namespace cubey {
 		auto verts = PrimitiveFactory::UnitBoxUnlit();
 		for (auto & vertex : verts) {
 			vertex.attrib_1 = vertex.attrib_0 + glm::vec3(0.5f);
-		}
+		}*/
 
-		mesh = Mesh::Create(verts, GL_TRIANGLES);
-		mesh_instance = mesh->CreateSimpleInstance(render_first_pass_, "u_mvp_mat");
+		mesh = Mesh::Create(PrimitiveFactory::UnitBoxUnlit(), GL_TRIANGLES);
+		mesh_instance = mesh->CreateSimpleInstance(render_debug_, "u_mvp_mat");
 
 		glm::vec2 fsq_verts[6] = {
 			{ -1.0f, -1.0f }, { 1.0f, -1.0f }, { 1.0f, 1.0f }, { -1.0f, -1.0f }, { 1.0f, 1.0f }, { -1.0f, 1.0f }
@@ -205,7 +210,7 @@ namespace cubey {
 		glBindVertexArray(0);
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-		Camera::Main()->transform_.TranslateTo(glm::vec3(0, 0, -2.0f));
+		Camera::Main()->transform_.TranslateTo(glm::vec3(0, 0, -1.5f));
 	}
 
 	void SimulatedSmokeDemo::Update(float delta_time) {
@@ -284,7 +289,7 @@ namespace cubey {
 		i_temperature.Swap();
 
 		update_splat_->SetUniform("u_radius", 0.8f);
-		update_splat_->SetUniform("u_intensity", 5.0f);
+		update_splat_->SetUniform("u_intensity", 10.0f);
 
 		glBindImageTexture(0, i_density.ping, 0, GL_TRUE, 0, GL_READ_ONLY, GL_R16F);
 		glBindImageTexture(1, i_density.pong, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_R16F);
@@ -350,7 +355,7 @@ namespace cubey {
 		glBindImageTexture(0, i_divergence, 0, GL_TRUE, 0, GL_READ_ONLY, GL_R16F);
 		glBindImageTexture(1, i_obstacle, 0, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA16F);
 
-		for (int i = 0; i < 80; i++) {
+		for (int i = 0; i < 20; i++) {
 			glBindImageTexture(2, i_pressure.ping, 0, GL_TRUE, 0, GL_READ_ONLY, GL_R16F);
 			glBindImageTexture(3, i_pressure.pong, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_R16F);
 
@@ -389,7 +394,7 @@ namespace cubey {
 		glDrawArrays(GL_POINTS, 0, GLOBAL_SIZE_X * GLOBAL_SIZE_Y * GLOBAL_SIZE_Z);
 		glBindBuffer(GL_ARRAY_BUFFER, 0);*/
 
-		render_first_pass_->Activate();
+		/*render_first_pass_->Activate();
 		glEnable(GL_DEPTH_TEST);
 		glCullFace(GL_BACK);
 		glBindFramebuffer(GL_FRAMEBUFFER, fb_entry_points);
@@ -407,18 +412,25 @@ namespace cubey {
 
 		glCullFace(GL_BACK);
 
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);*/
 
 		//glDisable(GL_DEPTH_TEST);
 
+		//render_debug_->Activate();
+		//mesh_instance->Draw();
+
 		render_second_pass_->Activate();
 
-		render_second_pass_->SetUniform("u_step_size", 0.02f);
-		render_second_pass_->SetUniform("u_max_steps", 80);
-		render_second_pass_->SetUniform("u_density_factor", 5.0f);
+		GLint viewport_size[4];
+		glGetIntegerv(GL_VIEWPORT, viewport_size);
 
-		glBindImageTexture(0, t_entry_points, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
-		glBindImageTexture(1, t_exit_points, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
+		glm::vec2 viewport_size_f = { viewport_size[2], viewport_size[3] };
+
+		render_second_pass_->SetUniform("u_viewport_size", viewport_size_f);
+		render_second_pass_->SetUniform("u_inverse_mvp", glm::inverse(Camera::Main()->view_mat()));
+
+		//glBindImageTexture(0, t_entry_points, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
+		//glBindImageTexture(1, t_exit_points, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
 
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_3D, i_density.ping);
@@ -426,6 +438,8 @@ namespace cubey {
 		glBindVertexArray(fullscreen_quad_vao);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 		glBindVertexArray(0);
+
+		
 	}
 
 	void SimulatedSmokeDemo::GenTexture(GLuint& tex, GLenum internal_format) {
