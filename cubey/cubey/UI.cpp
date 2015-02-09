@@ -7,7 +7,7 @@
 namespace cubey {
 
 	void UI::SystemInit() {
-		TwInit(TW_OPENGL, NULL);
+		TwInit(TW_OPENGL_CORE, NULL);
 		EventChannel<Engine::WindowSizeEvent>::DirtyAdd([](const Engine::WindowSizeEvent& e){
 			TwWindowSize(e.width, e.height); 
 		});
@@ -32,17 +32,17 @@ namespace cubey {
 		glfwGetWindowSize(Engine::window_, &w, &h);
 		TwWindowSize(w, h);
 		TwDefine(" GLOBAL help='AntTweakBar Test' ");
-		TwDefine("cubey! size = '320 640'");
+		TwDefine("cubey! size='320 640' refresh=0.5 ");
 
-		TwAddVarRO(tw_bar_, "time", TW_TYPE_DOUBLE, &Time::time_since_start_, "precision=2 help='Time Since Start.' ");
-		TwAddVarRO(tw_bar_, "frame time", TW_TYPE_DOUBLE, &Time::frame_time_, "precision=4 help='Frame Time.' ");
-		TwAddVarRO(tw_bar_, "fps", TW_TYPE_DOUBLE, &Time::raw_fps_, "precision=2 help='Frame Per Second' ");
+		//TwAddVarRO(tw_bar_, "time", TW_TYPE_DOUBLE, &Time::time_since_start_, "precision=2 help='Time Since Start.' group=Time");
+		TwAddVarRO(tw_bar_, "frame time", TW_TYPE_DOUBLE, &Time::frame_time_, "precision=4 help='Frame Time.' group=Time");
+		TwAddVarRO(tw_bar_, "fps", TW_TYPE_DOUBLE, &Time::raw_fps_, "precision=2 help='Frame Per Second' group=Time");
 		
-		TwAddVarRO(tw_bar_, "delta time", TW_TYPE_DOUBLE, &Time::delta_time_, "precision=4 help='Delta Time.' ");
-		TwAddVarRO(tw_bar_, "regulated fps", TW_TYPE_DOUBLE, &Time::regulated_fps_, "precision=2 help='Regulated FPS.' ");
+		TwAddVarRO(tw_bar_, "delta time", TW_TYPE_DOUBLE, &Time::delta_time_, "precision=4 help='Delta Time.' group=Time");
+		TwAddVarRO(tw_bar_, "regulated fps", TW_TYPE_DOUBLE, &Time::regulated_fps_, "precision=2 help='Regulated FPS.' group=Time");
 
-		TwAddVarRO(tw_bar_, "camera position", TW_TYPE_DIR3F, &Camera::Main()->transform_.position_, "");
-		TwAddVarRO(tw_bar_, "camera orientation", TW_TYPE_QUAT4F, &Camera::Main()->transform_.orientation_, "");
+		TwAddVarRO(tw_bar_, "camera position", TW_TYPE_DIR3F, &Camera::Main()->transform_.position_, "group=Camera");
+		TwAddVarRO(tw_bar_, "camera orientation", TW_TYPE_QUAT4F, &Camera::Main()->transform_.orientation_, "group=Camera");
 		//TwAddVarRO(bar, "camera euler angles", TW_TYPE_DIR3F, &Camera::Main()->transform_.euler_angles_, "");
 
 		//TwAddVarRO(bar, "camera forward", TW_TYPE_DIR3F, &Camera::Main()->transform_.forward_, "");
