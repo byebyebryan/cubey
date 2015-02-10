@@ -1,4 +1,56 @@
 
+__CS_SHADOW__
+
+#define LOCAL_WORKGROUP_SIZE_X 8
+#define LOCAL_WORKGROUP_SIZE_Y 8
+#define LOCAL_WORKGROUP_SIZE_Z 8
+
+layout (local_size_x = LOCAL_WORKGROUP_SIZE_X, local_size_y = LOCAL_WORKGROUP_SIZE_Y, local_size_z = LOCAL_WORKGROUP_SIZE_Z) in;
+
+layout (binding = 0) uniform sampler3D t_density;
+layout (binding = 1) uniform sampler3D t_obstacle;
+
+layout (binding = 0, r16f) uniform image3D i_shadow;
+
+uniform float u_step_size = 0.01;
+uniform int u_max_steps = 150;
+uniform float u_density_factor = 10.0;
+
+uniform vec3 u_light_position = vec3(3.0,3.0,3.0);
+
+uniform float u_absorption = 100.0;
+
+void main() {
+	ivec3 pos = ivec3(gl_GlobalInvocationID);
+	
+	vec3 coord = vec3(pos / vec3(gl_NumWorkGroups * gl_WorkGroupSize));
+	
+	vec3 light_dir = normalize(u_light_position - coord);
+	float acc_light = 1.0;
+	vec3 light_tracing_coord = coord;
+	
+	for (int j=0; j< u_max_steps; j++) {
+		light_tracing_coord += light_dir * u_step_size;
+		if (light_tracing_coord.x < 0 || light_tracing_coord.y < 0 || light_tracing_coord.z < 0 ) break;
+		if (light_tracing_coord.x > 1 || light_tracing_coord.y > 1 || light_tracing_coord.z > 1 ) break;
+		
+		float ob = texture(t_obstacle, light_tracing_coord).x;
+		if (ob >0.5) {
+			imageStore(i_shadow, pos, vec4(0));
+			return;
+		}
+		
+		float ld = texture(t_density, light_tracing_coord).x * u_density_factor;
+		if (ld  > 0) {
+			acc_light *= 1.0 - clamp(ld * u_step_size * u_absorption, 0, 1.0);
+		}			//continue;
+
+		if (acc_light <= 0.001) break;
+	}
+	
+	imageStore(i_shadow, pos, vec4(acc_light));
+}
+
 __VS__
 
 layout(location = 0) in vec4 in_vertex_position;
@@ -10,14 +62,19 @@ void main() {
 __FS__
 
 layout (binding = 0) uniform sampler3D t_density;
+layout (binding = 1) uniform sampler3D t_shadow;
+layout (binding = 2) uniform sampler3D t_obstacle;
 
 uniform float u_step_size = 0.01;
 uniform int u_max_steps = 150;
 uniform float u_density_factor = 10.0;
 uniform int u_max_light_steps = 32;
 
+uniform vec3 u_smoke_color = vec3(1.0, 0.5, 0);
+
 uniform vec3 u_light_position = vec3(3.0,3.0,3.0);
-uniform vec3 u_light_intensity = vec3(100.0);
+uniform vec3 u_light_color = vec3(1.0);
+uniform float u_light_intensity = 100.0;
 uniform float u_absorption = 100.0;
 
 uniform vec2 u_viewport_size;
@@ -71,7 +128,7 @@ void main() {
 	vec3 tracing_coord = entry_coord;
 
 	float acc_alpha = 1.0;
-	vec3 acc_color = vec3(0.25);
+	vec3 acc_color = vec3(0);
 
 	for(int i=0; i< u_max_steps; i++) {
 
@@ -80,29 +137,27 @@ void main() {
 		if (tracing_coord.x > 1 || tracing_coord.y > 1 || tracing_coord.z > 1 ) break;
 
 		float density = texture(t_density, tracing_coord).x * u_density_factor;
-		if (density <= 0) continue;
-
-		acc_alpha *= 1.0 - clamp(density * u_step_size * u_absorption, 0, 0.9);
-		if (acc_alpha <= 0.01) break;
-
-		vec3 light_dir = normalize(u_light_position - tracing_coord);
-		float acc_light = 1.0;
-		vec3 light_tracing_coord = tracing_coord;
-
-		for (int j=0; j< u_max_light_steps; j++) {
-			light_tracing_coord += light_dir * u_step_size;
-			if (light_tracing_coord.x < 0 || light_tracing_coord.y < 0 || light_tracing_coord.z < 0 ) break;
-			if (light_tracing_coord.x > 1 || light_tracing_coord.y > 1 || light_tracing_coord.z > 1 ) break;
-
-			float ld = texture(t_density, light_tracing_coord).x * u_density_factor;
-			if (ld  > 0) {
-				acc_light *= 1.0 - clamp(ld * u_step_size * u_absorption, 0, 0.9);
-			}			//continue;
-
-			if (acc_light <= 0.1) break;
+		
+		float acc_light = texture(t_shadow, tracing_coord).x;
+		
+		if (density <= 0) {
+			float ob = texture(t_obstacle, tracing_coord).x;
+			if (ob >0.5) {
+				acc_color += vec3(0.0, 0.5, 1.0) * u_light_color * u_light_intensity * acc_light * acc_alpha * u_step_size;
+				acc_alpha = 0;
+				break;
+			}
+		
+			acc_alpha *= 1.0 - clamp(0.01 * u_step_size * u_absorption, 0, 1);
+			acc_color += u_light_color * u_light_intensity * acc_light * acc_alpha * 0.01 * u_step_size;
 		}
-
-		acc_color += u_light_intensity * acc_light * acc_alpha * density * u_step_size;
+		else {
+			acc_alpha *= 1.0 - clamp(density * u_step_size * u_absorption, 0, 1);
+			acc_color += u_smoke_color * u_light_color * u_light_intensity * acc_light * acc_alpha * density * u_step_size;
+		}
+		
+		
+		if (acc_alpha <= 0.01) break;
 
 	}
 	out_color = vec4(acc_color, 1 - acc_alpha);

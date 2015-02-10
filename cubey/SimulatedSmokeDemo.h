@@ -24,17 +24,25 @@ namespace cubey {
 		void GenTexture(GLuint& tex, GLenum internal_format);
 		void GenTexture(Slab& slab, GLenum internal_format);
 
+		void FillObstacle();
+		void Advert(float delta_time);
+		void AddImpulse(float delta_time);
+		void ApplyBuoyancy(float delta_time);
+		void ApplyVorticityConfinement(float delta_time);
+		void ComputeDivergence();
+		void Jacobi();
+		void Projection();
+
 		Slab i_velocity;
 		Slab i_temperature;
 		Slab i_density;
 		Slab i_pressure;
 		GLuint i_divergence;
 		GLuint i_obstacle;
-
 		GLuint i_vorticity;
-
 		GLuint i_phi_n_1_hat;
 		GLuint i_phi_n_hat;
+		GLuint i_shadow;
 
 		ShaderProgram* init_fill_rgba_;
 		ShaderProgram* init_fill_r_;
@@ -50,26 +58,33 @@ namespace cubey {
 		ShaderProgram* update_jacobi_;
 		ShaderProgram* update_gradient_;
 
-		ShaderProgram* init_fill_verts_;
-
+		ShaderProgram* render_shadow_;
 		ShaderProgram* render_;
-
-		ShaderProgram* render_first_pass_;
-		ShaderProgram* render_second_pass_;
-
-		ShaderProgram* render_debug_;
-
-		Mesh* mesh;
-		SimpleMeshInstance* mesh_instance;
 
 		GLuint fullscreen_quad_vao;
 
-		GLuint t_entry_points;
-		GLuint t_exit_points;
-		GLuint fb_entry_points;
-		GLuint fb_exit_points;
+		glm::vec3 obsticle_position_;
+		float obsticle_radius_;
 
-		GLuint ssbo_;
+		float velocity_dissipation_;
+		float temperature_dissipation_;
+		float temperature_decay_;
+		float density_dissipation_;
+		float density_decay_;
+
+		glm::vec3 injection_location_;
+
+		float temperature_injection_radius_;
+		float temperature_injection_intensity_;
+
+		float density_injection_radius_;
+		float density_injection_intensity_;
+
+		float ambient_temperature_;
+		float buoyancy_;
+		float weight_;
+
+		float vorticity_strength_;
 	};
 
 }
