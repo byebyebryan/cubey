@@ -93,7 +93,7 @@ namespace cubey {
 		velocity_dissipation_ = -2.0f;
 		temperature_dissipation_ = -2.0f;
 		temperature_decay_ = -3.0f;
-		density_dissipation_ = -3.0f;
+		density_dissipation_ = -2.0f;
 		density_decay_ = -3.0f;
 
 		injection_location_ = glm::vec3(0.5f, 0.1f, 0.5f);
