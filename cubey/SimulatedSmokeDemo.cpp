@@ -97,7 +97,7 @@ namespace cubey {
 		temperature_dissipation_ = -2.0f;
 		temperature_decay_ = -3.0f;
 		density_dissipation_ = -2.0f;
-		density_decay_ = -2.0f;
+		density_decay_ = -3.0f;
 
 		injection_location_ = glm::vec3(0.5f, 0.1f, 0.5f);
 
@@ -118,14 +118,15 @@ namespace cubey {
 		add_explosion_ = true;
 		explosion_timer_ = 3.0f;
 		explosion_concetration_ = 0.3f;
-		explosion_force_min_ = 1.5f;
-		explosion_force_max_ = 2.5f;
+		explosion_force_min_ = 1.75f;
+		explosion_force_max_ = 2.0f;
 		explosion_injection_ratio_ = 0.0f;
 		explosion_temperature_ratio_ = 0.0f;
 
 		TwAddVarRW(UI::Main()->tw_bar_, "rotating camera", TW_TYPE_BOOLCPP, &camera_rotation_, "group=Camera");
 
-		TwAddVarRW(UI::Main()->tw_bar_, "obstacle radius", TW_TYPE_FLOAT, &obsticle_radius_, "min=0 max=10 step=1 group=Obstacle");
+		TwAddVarRW(UI::Main()->tw_bar_, "obstacle position", TW_TYPE_DIR3F, &obsticle_position_, "group=Obstacle");
+		TwAddVarRW(UI::Main()->tw_bar_, "obstacle radius", TW_TYPE_FLOAT, &obsticle_radius_, "min=0 max=32 step=2 group=Obstacle");
 
 		TwAddVarRW(UI::Main()->tw_bar_, "velocity dissipation log10", TW_TYPE_FLOAT, &velocity_dissipation_, "min=-5 max=-1 step=1 group=Advert");
 		TwAddVarRW(UI::Main()->tw_bar_, "temperature dissipation log10", TW_TYPE_FLOAT, &temperature_dissipation_, "min=-5 max=-1 step=1 group=Advert");
@@ -141,8 +142,8 @@ namespace cubey {
 		TwAddVarRW(UI::Main()->tw_bar_, "add explosion", TW_TYPE_BOOLCPP, &add_explosion_, "group=Explosion");
 		TwAddVarRW(UI::Main()->tw_bar_, "explosion timer min", TW_TYPE_FLOAT, &explosion_timer_, "min=0.5 max=10 step=0.5 group=Explosion");
 		TwAddVarRW(UI::Main()->tw_bar_, "explosion concentration", TW_TYPE_FLOAT, &explosion_concetration_, "min=0.1 max=2.0 step=0.1 group=Explosion");
-		TwAddVarRW(UI::Main()->tw_bar_, "explosion force min log10", TW_TYPE_FLOAT, &explosion_force_min_, "min=-2 max=3 step=0.5 group=Explosion");
-		TwAddVarRW(UI::Main()->tw_bar_, "explosion force max log10", TW_TYPE_FLOAT, &explosion_force_max_, "min=-2 max=3 step=0.5 group=Explosion");
+		TwAddVarRW(UI::Main()->tw_bar_, "explosion force min log10", TW_TYPE_FLOAT, &explosion_force_min_, "min=-2 max=3 step=0.25 group=Explosion");
+		TwAddVarRW(UI::Main()->tw_bar_, "explosion force max log10", TW_TYPE_FLOAT, &explosion_force_max_, "min=-2 max=3 step=0.25 group=Explosion");
 		TwAddVarRW(UI::Main()->tw_bar_, "explosion temperature ratio log10", TW_TYPE_FLOAT, &explosion_temperature_ratio_, "min=-2 max=2 step=0.25 group=Explosion");
 		TwAddVarRW(UI::Main()->tw_bar_, "explosion injection ratio log10", TW_TYPE_FLOAT, &explosion_injection_ratio_, "min=-2 max=2 step=0.25 group=Explosion");
 		

@@ -16,7 +16,7 @@ uniform float u_step_size = 0.01;
 uniform int u_max_steps = 150;
 uniform float u_density_factor = 10.0;
 
-uniform vec3 u_light_position = vec3(1.0,1.0,1.0);
+uniform vec3 u_light_position = vec3(1.5,1.5,1.5);
 
 uniform float u_absorption = 100.0;
 
