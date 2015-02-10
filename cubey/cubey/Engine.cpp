@@ -5,7 +5,6 @@
 #include <chrono>
 #include "GL/glew.h"
 #include "GLFW/glfw3.h"
-#include "Time.h"
 
 #include "Camera.h"
 #include "UI.h"

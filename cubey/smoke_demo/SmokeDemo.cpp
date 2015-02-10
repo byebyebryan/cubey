@@ -1,4 +1,4 @@
-#include "SimulatedSmokeDemo.h"
+#include "SmokeDemo.h"
 
 #include "glm/gtc/random.hpp"
 
@@ -16,7 +16,7 @@
 
 namespace cubey {
 
-	void SimulatedSmokeDemo::Init() {
+	void SmokeDemo::Init() {
 		glEnable(GL_DEPTH_TEST);
 		glEnable(GL_CULL_FACE);
 		glEnable(GL_BLEND);
@@ -155,7 +155,7 @@ namespace cubey {
 		TwAddVarRW(UI::Main()->tw_bar_, "vorticity strength", TW_TYPE_FLOAT, &vorticity_strength_, "min=0 max=100 step=10 group=Vorticity");
 	}
 
-	void SimulatedSmokeDemo::Update(float delta_time) {
+	void SmokeDemo::Update(float delta_time) {
 		FillObstacle();
 
 		Advert(delta_time);
@@ -170,7 +170,7 @@ namespace cubey {
 		if(camera_rotation_) Camera::Main()->Orbit(delta_time * glm::radians(15.0f), 0);
 	}
 
-	void SimulatedSmokeDemo::Render() {
+	void SmokeDemo::Render() {
 
 		render_shadow_->Activate();
 
@@ -211,7 +211,7 @@ namespace cubey {
 		
 	}
 
-	void SimulatedSmokeDemo::GenTexture(GLuint& tex, GLenum internal_format) {
+	void SmokeDemo::GenTexture(GLuint& tex, GLenum internal_format) {
 		glActiveTexture(GL_TEXTURE0);
 		glGenTextures(1, &tex);
 		glBindTexture(GL_TEXTURE_3D, tex);
@@ -226,12 +226,12 @@ namespace cubey {
 		glBindTexture(GL_TEXTURE_3D, 0);
 	}
 
-	void SimulatedSmokeDemo::GenTexture(Slab& slab, GLenum internal_format) {
+	void SmokeDemo::GenTexture(Slab& slab, GLenum internal_format) {
 		GenTexture(slab.ping, internal_format);
 		GenTexture(slab.pong, internal_format);
 	}
 
-	void SimulatedSmokeDemo::FillObstacle() {
+	void SmokeDemo::FillObstacle() {
 		init_fill_obstacle_->Activate();
 		init_fill_obstacle_->SetUniform("u_location", glm::vec3(GLOBAL_SIZE_X * obsticle_position_.x, GLOBAL_SIZE_Y * obsticle_position_.y, GLOBAL_SIZE_Z * obsticle_position_.z));
 		init_fill_obstacle_->SetUniform("u_radius", obsticle_radius_);
@@ -241,7 +241,7 @@ namespace cubey {
 		glMemoryBarrier(GL_ALL_BARRIER_BITS);
 	}
 
-	void SimulatedSmokeDemo::Advert(float delta_time) {
+	void SmokeDemo::Advert(float delta_time) {
 		//advert velocity
 		update_advect_rgba_->Activate();
 		update_advect_rgba_->SetUniform("u_time_step", delta_time);
@@ -334,7 +334,7 @@ namespace cubey {
 		i_density.Swap();
 	}
 
-	void SimulatedSmokeDemo::AddImpulse(float delta_time) {
+	void SmokeDemo::AddImpulse(float delta_time) {
 		update_splat_->Activate();
 		update_splat_->SetUniform("u_time_step", delta_time);
 		update_splat_->SetUniform("u_location", glm::vec3(GLOBAL_SIZE_X * injection_location_.x, GLOBAL_SIZE_Y * injection_location_.y, GLOBAL_SIZE_Z * injection_location_.z));
@@ -370,7 +370,7 @@ namespace cubey {
 		}
 	}
 
-	void SimulatedSmokeDemo::AddExplosion(float delta_time) {
+	void SmokeDemo::AddExplosion(float delta_time) {
 		float intensity = glm::linearRand(glm::pow(10, explosion_force_min_), glm::pow(10, explosion_force_max_));
 
 		update_explosion_->Activate();
@@ -411,7 +411,7 @@ namespace cubey {
 		i_density.Swap();
 	}
 
-	void SimulatedSmokeDemo::ApplyBuoyancy(float delta_time) {
+	void SmokeDemo::ApplyBuoyancy(float delta_time) {
 		update_buoyancy_->Activate();
 		update_buoyancy_->SetUniform("u_ambient_temperature", ambient_temperature_);
 		update_buoyancy_->SetUniform("u_time_step", delta_time);
@@ -429,7 +429,7 @@ namespace cubey {
 		i_velocity.Swap();
 	}
 
-	void SimulatedSmokeDemo::ApplyVorticityConfinement(float delta_time) {
+	void SmokeDemo::ApplyVorticityConfinement(float delta_time) {
 		update_vorticity_->Activate();
 
 		glBindImageTexture(0, i_velocity.ping, 0, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA16F);
@@ -452,7 +452,7 @@ namespace cubey {
 		i_velocity.Swap();
 	}
 
-	void SimulatedSmokeDemo::ComputeDivergence() {
+	void SmokeDemo::ComputeDivergence() {
 		update_divergence_->Activate();
 
 		glBindImageTexture(0, i_velocity.ping, 0, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA16F);
@@ -463,7 +463,7 @@ namespace cubey {
 		glMemoryBarrier(GL_ALL_BARRIER_BITS);
 	}
 
-	void SimulatedSmokeDemo::Jacobi() {
+	void SmokeDemo::Jacobi() {
 		init_fill_r_->Activate();
 
 		glBindImageTexture(0, i_pressure.ping, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_R16F);
@@ -486,7 +486,7 @@ namespace cubey {
 		}
 	}
 
-	void SimulatedSmokeDemo::Projection() {
+	void SmokeDemo::Projection() {
 		update_gradient_->Activate();
 
 		glBindImageTexture(0, i_velocity.ping, 0, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA16F);

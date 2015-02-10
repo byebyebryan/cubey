@@ -14,7 +14,7 @@ namespace cubey {
 		}
 	};
 
-	class SimulatedSmokeDemo : public IEngineEvents {
+	class SmokeDemo : public IEngineEvents {
 	public:
 		void Init() override;
 		void Update(float delta_time) override;

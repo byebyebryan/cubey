@@ -11,9 +11,9 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{3D2FE42F-E3B1-471B-9753-5D0C90B74507}</ProjectGuid>
+    <ProjectGuid>{C8BEC822-9088-4928-AF99-40663E5D4808}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>cubey</RootNamespace>
+    <RootNamespace>particle_demo</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -41,11 +41,11 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <OutDir>$(SolutionDir)$(Configuration)\</OutDir>
+    <OutDir>$(Configuration)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>$(SolutionDir).\$(Configuration)\</OutDir>
+    <OutDir>$(Configuration)\</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -54,16 +54,16 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_LIB;GLEW_STATIC;GLFW_INCLUDE_GLU;GLM_FORCE_PURE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>include\</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\cubey;$(SolutionDir)\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>lib\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>opengl32.lib;glu32.lib;glew32sd.lib;glfw3d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)\lib;$(SolutionDir)\cubey\$(Configuration)\</AdditionalLibraryDirectories>
+      <AdditionalDependencies>opengl32.lib;glu32.lib;glew32sd.lib;glfw3d.lib;cubey.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>if not exist "$(OutDir)AntTweakBar.dll" xcopy /y "$(ProjectDir)lib\AntTweakBar.dll" "$(OutDir)"</Command>
+      <Command>if not exist "$(OutDir)AntTweakBar.dll" xcopy /y "$(SolutionDir)\lib\AntTweakBar.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -75,67 +75,30 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;_LIB;GLEW_STATIC;GLFW_INCLUDE_GLU;GLM_FORCE_PURE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>include\</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\cubey;$(SolutionDir)\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>lib\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>opengl32.lib;glu32.lib;glew32s.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)\lib;$(SolutionDir)\cubey\$(Configuration)\</AdditionalLibraryDirectories>
+      <AdditionalDependencies>opengl32.lib;glu32.lib;glew32s.lib;glfw3.lib;cubey.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>if not exist "$(OutDir)AntTweakBar.dll" xcopy /y "$(ProjectDir)lib\AntTweakBar.dll" "$(OutDir)"</Command>
+      <Command>if not exist "$(OutDir)AntTweakBar.dll" xcopy /y "$(SolutionDir)\lib\AntTweakBar.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="CameraTest.cpp" />
-    <ClCompile Include="cubey\Camera.cpp" />
-    <ClCompile Include="cubey\Engine.cpp" />
-    <ClCompile Include="cubey\Input.cpp" />
-    <ClCompile Include="cubey\Interfaces.cpp" />
-    <ClCompile Include="cubey\Mesh.cpp" />
-    <ClCompile Include="cubey\PrimitiveFactory.cpp" />
-    <ClCompile Include="cubey\Shader.cpp" />
-    <ClCompile Include="cubey\ShaderManager.cpp" />
-    <ClCompile Include="cubey\ShaderProgram.cpp" />
-    <ClCompile Include="cubey\Time.cpp" />
-    <ClCompile Include="cubey\UI.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="MarchingCubesDemo.cpp" />
     <ClCompile Include="ParticleDemo.cpp" />
-    <ClCompile Include="SimulatedSmokeDemo.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="CameraTest.h" />
-    <ClInclude Include="cubey\Camera.h" />
-    <ClInclude Include="cubey\Engine.h" />
-    <ClInclude Include="cubey\Event.h" />
-    <ClInclude Include="cubey\Input.h" />
-    <ClInclude Include="cubey\Interfaces.h" />
-    <ClInclude Include="cubey\Mesh.h" />
-    <ClInclude Include="cubey\PrimitiveFactory.h" />
-    <ClInclude Include="cubey\Shader.h" />
-    <ClInclude Include="cubey\ShaderManager.h" />
-    <ClInclude Include="cubey\ShaderProgram.h" />
-    <ClInclude Include="cubey\Time.h" />
-    <ClInclude Include="cubey\Transform.h" />
-    <ClInclude Include="cubey\UI.h" />
-    <ClInclude Include="cubey\Vertex.h" />
-    <ClInclude Include="MarchingCubesDemo.h" />
     <ClInclude Include="ParticleDemo.h" />
-    <ClInclude Include="SimulatedSmokeDemo.h" />
-    <ClInclude Include="TriangleTable.h" />
-    <ClInclude Include="cubey.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="shaders\debug.glsl" />
-    <None Include="shaders\marching_cubes_render.glsl" />
-    <None Include="shaders\particle_render.glsl" />
     <None Include="shaders\particle_compute.glsl" />
-    <None Include="shaders\smoke_render.glsl" />
-    <None Include="shaders\smoke_compute.glsl" />
+    <None Include="shaders\particle_render.glsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

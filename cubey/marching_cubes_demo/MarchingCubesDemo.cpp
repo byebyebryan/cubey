@@ -21,9 +21,9 @@ namespace cubey {
 		std::vector<Vertex1<glm::vec3>> verts;
 
 		for (int x = 0; x < 64; x++) {
-			for (int y = 0; y < 64; y++) {
+			for (int y = 0; y < 32; y++) {
 				for (int z = 0; z < 64; z++) {
-					verts.push_back(Vertex1<glm::vec3>{ { -0.5f + x / 64.0f, -0.5f + y / 64.0f, -0.5f + z / 64.0f } });
+					verts.push_back(Vertex1<glm::vec3>{ { -0.5f + x / 64.0f, -0.125f + y / 64.0f, -0.5f + z / 64.0f } });
 				}
 			}
 		}
@@ -33,6 +33,7 @@ namespace cubey {
 
 		cubes_render_prog_->Activate();
 		cubes_render_prog_->SetUniform("u_block_resolution", 64.0f);
+		
 	}
 
 	void MarchingCubesDemo::Update(float delta_time) {
@@ -48,6 +49,8 @@ namespace cubey {
 		
 
 		cubes_render_prog_->Activate();
+
+		cubes_render_prog_->SetUniform("u_time", Time::time_since_start() / 10.0f);
 
 		cubes_render_prog_->SetUniform("u_normal_mat", Camera::Main()->CalculateNormalMat(glm::mat4()));
 

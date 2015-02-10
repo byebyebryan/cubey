@@ -45,6 +45,7 @@ namespace cubey {
 		}
 		else {
 			is_linked_ = true;
+			shaders_.clear();
 			std::cout << "Linked program: " << program_key_ << std::endl;
 			QueryUniforms();
 		}

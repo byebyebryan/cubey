@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Event.h"
-#include "Time.h"
+#include "TimeManager.h"
 
 struct GLFWwindow;
 
