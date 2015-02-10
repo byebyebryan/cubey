@@ -27,6 +27,7 @@ namespace cubey {
 		void FillObstacle();
 		void Advert(float delta_time);
 		void AddImpulse(float delta_time);
+		void AddExplosion(float delta_time);
 		void ApplyBuoyancy(float delta_time);
 		void ApplyVorticityConfinement(float delta_time);
 		void ComputeDivergence();
@@ -51,6 +52,7 @@ namespace cubey {
 		ShaderProgram* update_advect_r_;
 		ShaderProgram* update_advect_r_mac_cormack_;
 		ShaderProgram* update_splat_;
+		ShaderProgram* update_explosion_;
 		ShaderProgram* update_buoyancy_;
 		ShaderProgram* update_vorticity_;
 		ShaderProgram* update_confinement_;
@@ -80,11 +82,22 @@ namespace cubey {
 		float density_injection_radius_;
 		float density_injection_intensity_;
 
+		bool random_explosion_;
+		float explosion_timer_min_;
+		float explosion_timer_max_;
+		float explosion_concetration_;
+		float explosion_force_min_;
+		float explosion_force_max_;
+		float explosion_injection_ratio_;
+		float explosion_temperature_ratio_;
+
 		float ambient_temperature_;
 		float buoyancy_;
 		float weight_;
 
 		float vorticity_strength_;
+
+		bool camera_rotation_;
 	};
 
 }

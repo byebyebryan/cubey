@@ -266,6 +266,27 @@ void main() {
 	imageStore(i_target, pos, target_value);
 }
 
+__CS_EXPLOSION__
+
+layout (binding = 0, rgba16f) uniform image3D i_source;
+layout (binding = 1, rgba16f) uniform image3D i_target;
+
+uniform float u_time_step;
+uniform vec3 u_location;
+uniform float u_radius;
+uniform float u_intensity;
+
+void main() {
+	ivec3 pos = ivec3(gl_GlobalInvocationID);
+	float dist_sq = dot(u_location - pos, u_location - pos);
+	float gaussian = exp( - dist_sq / 2 * u_radius * u_radius) / u_radius;
+	
+	vec4 source_value = imageLoad(i_source, pos);
+	vec3 dir = normalize(pos - u_location);
+	vec3 target_value = source_value.xyz + u_intensity * gaussian * u_time_step * dir;
+	imageStore(i_target, pos, vec4(target_value,0));
+}
+
 __CS_BUOYANCY__
 
 layout (binding = 0, rgba16f) uniform image3D i_velocity;

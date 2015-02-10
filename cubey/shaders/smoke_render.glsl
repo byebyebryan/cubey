@@ -16,7 +16,7 @@ uniform float u_step_size = 0.01;
 uniform int u_max_steps = 150;
 uniform float u_density_factor = 10.0;
 
-uniform vec3 u_light_position = vec3(3.0,3.0,3.0);
+uniform vec3 u_light_position = vec3(1.0,1.0,1.0);
 
 uniform float u_absorption = 100.0;
 
@@ -68,11 +68,9 @@ layout (binding = 2) uniform sampler3D t_obstacle;
 uniform float u_step_size = 0.01;
 uniform int u_max_steps = 150;
 uniform float u_density_factor = 10.0;
-uniform int u_max_light_steps = 32;
 
 uniform vec3 u_smoke_color = vec3(1.0, 0.5, 0);
 
-uniform vec3 u_light_position = vec3(3.0,3.0,3.0);
 uniform vec3 u_light_color = vec3(1.0);
 uniform float u_light_intensity = 100.0;
 uniform float u_absorption = 100.0;
