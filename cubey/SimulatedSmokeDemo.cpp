@@ -97,7 +97,7 @@ namespace cubey {
 		temperature_dissipation_ = -2.0f;
 		temperature_decay_ = -3.0f;
 		density_dissipation_ = -2.0f;
-		density_decay_ = -3.0f;
+		density_decay_ = -2.0f;
 
 		injection_location_ = glm::vec3(0.5f, 0.1f, 0.5f);
 
@@ -115,12 +115,11 @@ namespace cubey {
 
 		camera_rotation_ = true;
 
-		random_explosion_ = true;
-		explosion_timer_min_ = 3.0f;
-		explosion_timer_max_ = 5.0f;
-		explosion_concetration_ = 0.2f;
-		explosion_force_min_ = 1.0f;
-		explosion_force_max_ = 2.0f;
+		add_explosion_ = true;
+		explosion_timer_ = 3.0f;
+		explosion_concetration_ = 0.3f;
+		explosion_force_min_ = 1.5f;
+		explosion_force_max_ = 2.5f;
 		explosion_injection_ratio_ = 0.0f;
 		explosion_temperature_ratio_ = 0.0f;
 
@@ -130,21 +129,20 @@ namespace cubey {
 
 		TwAddVarRW(UI::Main()->tw_bar_, "velocity dissipation log10", TW_TYPE_FLOAT, &velocity_dissipation_, "min=-5 max=-1 step=1 group=Advert");
 		TwAddVarRW(UI::Main()->tw_bar_, "temperature dissipation log10", TW_TYPE_FLOAT, &temperature_dissipation_, "min=-5 max=-1 step=1 group=Advert");
-		TwAddVarRW(UI::Main()->tw_bar_, "temperature decay log10", TW_TYPE_FLOAT, &temperature_decay_, "min=-5 max=-1 step=1 group=Advert");
+		TwAddVarRW(UI::Main()->tw_bar_, "temperature decay log10", TW_TYPE_FLOAT, &temperature_decay_, "min=-5 max=0 step=1 group=Advert");
 		TwAddVarRW(UI::Main()->tw_bar_, "density dissipation log10", TW_TYPE_FLOAT, &density_dissipation_, "min=-5 max=-1 step=1 group=Advert");
-		TwAddVarRW(UI::Main()->tw_bar_, "density decay log10", TW_TYPE_FLOAT, &density_decay_, "min=-5 max=-1 step=1 group=Advert");
+		TwAddVarRW(UI::Main()->tw_bar_, "density decay log10", TW_TYPE_FLOAT, &density_decay_, "min=-5 max=0 step=1 group=Advert");
 
 		TwAddVarRW(UI::Main()->tw_bar_, "temperature inject concentration", TW_TYPE_FLOAT, &temperature_injection_radius_, "min=0.1 max=2.0 step=0.1 group=Injection");
 		TwAddVarRW(UI::Main()->tw_bar_, "temperature inject intensity log10", TW_TYPE_FLOAT, &temperature_injection_intensity_, "min=0 max=4 step=0.25 group=Injection");
 		TwAddVarRW(UI::Main()->tw_bar_, "density inject concentration", TW_TYPE_FLOAT, &density_injection_radius_, "min=0.1 max=2.0 step=0.1 group=Injection");
 		TwAddVarRW(UI::Main()->tw_bar_, "density inject intensity log10", TW_TYPE_FLOAT, &density_injection_intensity_, "min=0 max=4 step=0.25 group=Injection");
 
-		TwAddVarRW(UI::Main()->tw_bar_, "random explosion", TW_TYPE_BOOLCPP, &random_explosion_, "group=Explosion");
-		TwAddVarRW(UI::Main()->tw_bar_, "explosion timer min", TW_TYPE_FLOAT, &explosion_timer_min_, "min=0 max=10 step=0.5 group=Explosion");
-		TwAddVarRW(UI::Main()->tw_bar_, "explosion timer max", TW_TYPE_FLOAT, &explosion_timer_max_, "min=0 max=10 step=0.5 group=Explosion");
+		TwAddVarRW(UI::Main()->tw_bar_, "add explosion", TW_TYPE_BOOLCPP, &add_explosion_, "group=Explosion");
+		TwAddVarRW(UI::Main()->tw_bar_, "explosion timer min", TW_TYPE_FLOAT, &explosion_timer_, "min=0.5 max=10 step=0.5 group=Explosion");
 		TwAddVarRW(UI::Main()->tw_bar_, "explosion concentration", TW_TYPE_FLOAT, &explosion_concetration_, "min=0.1 max=2.0 step=0.1 group=Explosion");
-		TwAddVarRW(UI::Main()->tw_bar_, "explosion force min log10", TW_TYPE_FLOAT, &explosion_force_min_, "min=-2 max=2 step=0.5 group=Explosion");
-		TwAddVarRW(UI::Main()->tw_bar_, "explosion force max log10", TW_TYPE_FLOAT, &explosion_force_max_, "min=-2 max=2 step=0.5 group=Explosion");
+		TwAddVarRW(UI::Main()->tw_bar_, "explosion force min log10", TW_TYPE_FLOAT, &explosion_force_min_, "min=-2 max=3 step=0.5 group=Explosion");
+		TwAddVarRW(UI::Main()->tw_bar_, "explosion force max log10", TW_TYPE_FLOAT, &explosion_force_max_, "min=-2 max=3 step=0.5 group=Explosion");
 		TwAddVarRW(UI::Main()->tw_bar_, "explosion temperature ratio log10", TW_TYPE_FLOAT, &explosion_temperature_ratio_, "min=-2 max=2 step=0.25 group=Explosion");
 		TwAddVarRW(UI::Main()->tw_bar_, "explosion injection ratio log10", TW_TYPE_FLOAT, &explosion_injection_ratio_, "min=-2 max=2 step=0.25 group=Explosion");
 		
@@ -361,8 +359,8 @@ namespace cubey {
 
 		static float timer = 3.0f;
 		if (timer < 0) {
-			if (random_explosion_) {
-				timer = glm::linearRand(explosion_timer_min_, explosion_timer_max_);
+			if (add_explosion_) {
+				timer = explosion_timer_;
 				AddExplosion(delta_time);
 			}
 		}
@@ -372,8 +370,7 @@ namespace cubey {
 	}
 
 	void SimulatedSmokeDemo::AddExplosion(float delta_time) {
-		float intensity = glm::linearRand(explosion_force_min_, explosion_force_max_);
-		intensity = glm::pow(10, intensity);
+		float intensity = glm::linearRand(glm::pow(10, explosion_force_min_), glm::pow(10, explosion_force_max_));
 
 		update_explosion_->Activate();
 

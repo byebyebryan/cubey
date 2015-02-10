@@ -82,9 +82,8 @@ namespace cubey {
 		float density_injection_radius_;
 		float density_injection_intensity_;
 
-		bool random_explosion_;
-		float explosion_timer_min_;
-		float explosion_timer_max_;
+		bool add_explosion_;
+		float explosion_timer_;
 		float explosion_concetration_;
 		float explosion_force_min_;
 		float explosion_force_max_;
