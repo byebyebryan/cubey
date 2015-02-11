@@ -10,6 +10,8 @@ namespace cubey {
 		glEnable(GL_CULL_FACE);
 		glClearColor(0.4, 0.4, 0.4, 1);
 
+		ShaderManager::BufferCleaner shader_cleaner;
+
 		cubes_render_prog_ = ShaderManager::Main()->CreateProgram("marching_cubes_render.VS.GS.FS");
 
 		glGenBuffers(1, &ssbo_);

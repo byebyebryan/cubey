@@ -25,6 +25,8 @@ namespace cubey {
 		glEnable(GL_TEXTURE_3D);
 		glClearColor(0.5, 0.5, 0.5, 1.0);
 
+		ShaderManager::BufferCleaner shader_cleaner;
+
 		init_fill_rgba_ = ShaderManager::Main()->CreateProgram("smoke_compute.__CS_FILL_RGBA__");
 		init_fill_r_ = ShaderManager::Main()->CreateProgram("smoke_compute.__CS_FILL_R__");
 		init_fill_obstacle_ = ShaderManager::Main()->CreateProgram("smoke_compute.__CS_FILL_OBSTACLE__");

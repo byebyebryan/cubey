@@ -151,6 +151,8 @@ namespace cubey {
 		debug_prog_->AddShader(GL_FRAGMENT_SHADER, "shaders\\debug_shader_unlit.glsl", "#define _FRAGMENT_S_");
 		debug_prog_->Link();*/
 
+		ShaderManager::BufferCleaner shader_cleaner;
+
 		init_prog_ = ShaderManager::Main()->CreateProgram("particle_compute.CS_INIT");
 		
 		update_prog_ = ShaderManager::Main()->CreateProgram("particle_compute.CS_UPDATE");

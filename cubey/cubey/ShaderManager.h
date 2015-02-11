@@ -26,6 +26,8 @@ namespace cubey {
 
 		private:
 			static std::set<std::string> files_;
+
+			friend ShaderManager;
 		};
 
 		ShaderProgram* CreateProgram(const std::string& program_key);

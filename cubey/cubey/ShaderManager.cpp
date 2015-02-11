@@ -66,6 +66,8 @@ namespace cubey {
 			}
 		}
 
+		BufferCleaner::files_.insert(file_name);
+
 		program->Link();
 
 		programs_[program_key] = program;
