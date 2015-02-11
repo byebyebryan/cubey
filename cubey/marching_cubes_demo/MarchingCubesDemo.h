@@ -13,6 +13,6 @@ namespace cubey {
 		ShaderProgram* cubes_render_prog_;
 		GLuint ssbo_;
 		Mesh* mesh_;
-		SimpleMeshInstance* mesh_instance_;
+		MeshInstance* mesh_instance_;
 	};
 }

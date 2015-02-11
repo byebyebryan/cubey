@@ -34,6 +34,7 @@
     <ClInclude Include="Interfaces.h" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="TimeManager.h" />
+    <ClInclude Include="VertexArray.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\debug.glsl">

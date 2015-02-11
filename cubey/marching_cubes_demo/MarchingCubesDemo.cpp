@@ -20,18 +20,18 @@ namespace cubey {
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssbo_);
 
-		std::vector<Vertex1<glm::vec3>> verts;
+		Vertex<VPosition3>::Array verts;
 
 		for (int x = 0; x < 64; x++) {
 			for (int y = 0; y < 32; y++) {
 				for (int z = 0; z < 64; z++) {
-					verts.push_back(Vertex1<glm::vec3>{ { -0.5f + x / 64.0f, -0.125f + y / 64.0f, -0.5f + z / 64.0f } });
+					verts.push_back(Vertex<VPosition3>{ { -0.5f + x / 64.0f, -0.125f + y / 64.0f, -0.5f + z / 64.0f } });
 				}
 			}
 		}
 
 		mesh_ = Mesh::Create(verts, GL_POINTS);
-		mesh_instance_ = mesh_->CreateSimpleInstance(cubes_render_prog_, "u_mvp_mat");
+		mesh_instance_ = mesh_->CreateInstance(cubes_render_prog_, "u_mvp_mat");
 
 		cubes_render_prog_->Activate();
 		cubes_render_prog_->SetUniform("u_block_resolution", 64.0f);

@@ -63,7 +63,7 @@ namespace cubey {
 		ShaderProgram* render_shadow_;
 		ShaderProgram* render_;
 
-		GLuint fullscreen_quad_vao;
+		MeshInstance* fullscreen_quad_;
 
 		glm::vec3 obsticle_position_;
 		float obsticle_radius_;

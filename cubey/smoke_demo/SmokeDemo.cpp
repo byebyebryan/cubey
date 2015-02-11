@@ -73,22 +73,7 @@ namespace cubey {
 		glDispatchCompute(WORKGROUP_COUNT_X, WORKGROUP_COUNT_Y, WORKGROUP_COUNT_Z);
 		glMemoryBarrier(GL_ALL_BARRIER_BITS);
 
-		glm::vec2 fsq_verts[6] = {
-			{ -1.0f, -1.0f }, { 1.0f, -1.0f }, { 1.0f, 1.0f }, { -1.0f, -1.0f }, { 1.0f, 1.0f }, { -1.0f, 1.0f }
-		};
-
-		GLuint vbo;
-		glGenBuffers(1, &vbo);
-		glGenVertexArrays(1, &fullscreen_quad_vao);
-
-		glBindVertexArray(fullscreen_quad_vao);
-		glBindBuffer(GL_ARRAY_BUFFER, vbo);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec2) * 6, fsq_verts, GL_STATIC_DRAW);
-		glVertexAttribPointer(0, 2, GL_FLOAT, false, 0, (GLvoid*)0);
-		glEnableVertexAttribArray(0);
-
-		glBindVertexArray(0);
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
+		fullscreen_quad_ = PrimitiveFactory::FullScreenQuad()->CreateInstance(render_);
 
 		Camera::Main()->transform_.TranslateTo(glm::vec3(0, 0, -1.5f));
 
@@ -206,11 +191,7 @@ namespace cubey {
 		glActiveTexture(GL_TEXTURE2);
 		glBindTexture(GL_TEXTURE_3D, i_obstacle);
 
-		glBindVertexArray(fullscreen_quad_vao);
-		glDrawArrays(GL_TRIANGLES, 0, 6);
-		glBindVertexArray(0);
-
-		
+		fullscreen_quad_->Draw();
 	}
 
 	void SmokeDemo::GenTexture(GLuint& tex, GLenum internal_format) {

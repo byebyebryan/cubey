@@ -20,7 +20,13 @@ namespace cubey {
 		void Activate();
 
 		inline int GetUniformLocation(const std::string& name) {
-			return uniform_var_name_to_location[name];
+			auto it = uniform_var_name_to_location.find(name);
+			if (it == uniform_var_name_to_location.end()) {
+				return -1;
+			}
+			else {
+				return it->second;
+			}
 		}
 
 		template<typename T>
