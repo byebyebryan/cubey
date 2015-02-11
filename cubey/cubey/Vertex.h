@@ -7,13 +7,11 @@
 
 namespace cubey {
 
-	template<typename T0>
-	struct Vertex1 {
-		T0 attrib_0;
+	template<typename T0 = glm::vec3, typename... TX>
+	struct Vertex {
+		T0 position;
 
-		static T0 Vertex1::* attrib_ptr_0() {
-			return &Vertex1::attrib_0;
-		}
+		typedef std::vector<Vertex> ArrayType;
 
 		static void DescribeLayout() {
 			GLint size_0 = VertexAttribInfo::GetSize<T0>();
@@ -24,15 +22,14 @@ namespace cubey {
 	};
 
 	template<typename T0, typename T1>
-	struct Vertex2 {
-		T0 attrib_0;
-		T1 attrib_1;
+	struct Vertex<T0, T1> {
+		T0 position;
+		T1 attrib_0;
 
-		static T0 Vertex2::* attrib_ptr_0() {
-			return &Vertex2::attrib_0;
-		}
-		static T1 Vertex2::* attrib_ptr_1() {
-			return &Vertex2::attrib_1;
+		typedef std::vector<Vertex> ArrayType;
+
+		static T1 Vertex::* attrib_ptr_0() {
+			return &Vertex::attrib_0;
 		}
 
 		static void DescribeLayout() {
@@ -48,19 +45,18 @@ namespace cubey {
 	};
 
 	template<typename T0, typename T1, typename T2>
-	struct Vertex3 {
-		T0 attrib_0;
-		T1 attrib_1;
-		T2 attrib_2;
+	struct Vertex < T0, T1, T2 > {
+		T0 position;
+		T1 attrib_0;
+		T2 attrib_1;
 
-		static T0 Vertex3::* attrib_ptr_0() {
-			return &Vertex3::attrib_0;
+		typedef std::vector<Vertex> ArrayType;
+
+		static T1 Vertex::* attrib_ptr_0() {
+			return &Vertex::attrib_0;
 		}
-		static T1 Vertex3::* attrib_ptr_1() {
-			return &Vertex3::attrib_1;
-		}
-		static T2 Vertex3::* attrib_ptr_2() {
-			return &Vertex3::attrib_2;
+		static T2 Vertex::* attrib_ptr_1() {
+			return &Vertex::attrib_1;
 		}
 
 		static void DescribeLayout() {
@@ -80,23 +76,22 @@ namespace cubey {
 	};
 
 	template<typename T0, typename T1, typename T2, typename T3>
-	struct Vertex4 {
-		T0 attrib_0;
-		T1 attrib_1;
-		T2 attrib_2;
-		T3 attrib_3;
+	struct Vertex < T0, T1, T2, T3 > {
+		T0 position;
+		T1 attrib_0;
+		T2 attrib_1;
+		T3 attrib_2;
 
-		static T0 Vertex4::* attrib_ptr_0() {
-			return &Vertex4::attrib_0;
+		typedef std::vector<Vertex> ArrayType;
+
+		static T1 Vertex::* attrib_ptr_0() {
+			return &Vertex::attrib_0;
 		}
-		static T1 Vertex4::* attrib_ptr_1() {
-			return &Vertex4::attrib_1;
+		static T2 Vertex::* attrib_ptr_1() {
+			return &Vertex::attrib_1;
 		}
-		static T2 Vertex4::* attrib_ptr_2() {
-			return &Vertex4::attrib_2;
-		}
-		static T3 Vertex4::* attrib_ptr_3() {
-			return &Vertex4::attrib_3;
+		static T3 Vertex::* attrib_ptr_2() {
+			return &Vertex::attrib_2;
 		}
 
 		static void DescribeLayout() {
@@ -118,6 +113,9 @@ namespace cubey {
 			glEnableVertexAttribArray(3);
 		}
 	};
+
+	template<typename... TX>
+	using VertexArray = typename Vertex<TX...>::VertexArray;
 
 	class VertexArrayHelper {
 	public:
@@ -171,6 +169,8 @@ namespace cubey {
 		template<typename T>
 		static int GetSize() { return 0; }
 		template<>
+		static int GetSize<unsigned int>() { return 1; }
+		template<>
 		static int GetSize<int>() { return 1; }
 		template<>
 		static int GetSize<float>() { return 1; }
@@ -184,6 +184,8 @@ namespace cubey {
 		template<typename T>
 		static GLenum GetType() { return GL_INVALID_VALUE; }
 		template<>
+		static GLenum GetType<unsigned int>() { return GL_UNSIGNED_INT; }
+		template<>
 		static GLenum GetType<int>() { return GL_INT; }
 		template<>
 		static GLenum GetType<float>() { return GL_FLOAT; }
@@ -194,5 +196,4 @@ namespace cubey {
 		template<>
 		static GLenum GetType<glm::vec4>() { return GL_FLOAT; }
 	};
-	
 }
