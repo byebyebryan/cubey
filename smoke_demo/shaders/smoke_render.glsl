@@ -12,7 +12,7 @@ layout (binding = 1) uniform sampler3D t_obstacle;
 
 layout (binding = 0, r16f) uniform image3D i_shadow;
 
-uniform float u_step_size = 1.0/96;
+uniform float u_step_size = 1.0/128;
 uniform int u_max_steps = 1000;
 uniform float u_density_factor = 10.0;
 
@@ -42,7 +42,7 @@ void main() {
 		
 		float ld = texture(t_density, light_tracing_coord).x * u_density_factor;
 		if (ld  > 0) {
-			acc_light *= 1.0 - clamp(ld * u_step_size * u_absorption, 0, 1.0);
+			acc_light *= exp( - ld * u_step_size * u_absorption);
 		}			//continue;
 
 		if (acc_light <= 0.01) break;
@@ -65,11 +65,11 @@ layout (binding = 0) uniform sampler3D t_density;
 layout (binding = 1) uniform sampler3D t_shadow;
 layout (binding = 2) uniform sampler3D t_obstacle;
 
-uniform float u_step_size = 1.0/96;
+uniform float u_step_size = 1.0/128;
 uniform int u_max_steps = 1000;
 uniform float u_density_factor = 10.0;
 
-uniform vec3 u_smoke_color = vec3(1.0, 0.5, 0);
+uniform vec3 u_smoke_color = vec3(1.0, 0.5, 0.0);
 
 uniform vec3 u_light_color = vec3(1.0);
 uniform float u_light_intensity = 100.0;
@@ -145,14 +145,15 @@ void main() {
 				acc_alpha = 0;
 				break;
 			}
-		
-			acc_alpha *= 1.0 - clamp(u_step_size, 0, 1);
+			
+			
 			acc_color += u_light_color * u_light_intensity * acc_light * acc_alpha * 0.01 * u_step_size;
+			acc_alpha *= 1.0 - u_step_size;
 		}
 		else {
-			acc_alpha *= 1.0 - clamp(density * u_step_size * u_absorption, 0, 0.5);
-			acc_color += u_smoke_color * u_light_color * u_light_intensity * acc_light * acc_alpha * density * u_step_size;
 			
+			acc_color += u_smoke_color * u_light_color * u_light_intensity * acc_light * acc_alpha * density * u_step_size;
+			acc_alpha *= exp( - density * u_step_size * u_absorption);
 		}
 		
 		

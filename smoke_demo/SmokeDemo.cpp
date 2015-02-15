@@ -7,7 +7,7 @@
 #define LOCAL_WORKGROUP_SIZE_Z 8
 
 #define GLOBAL_SIZE_X 96
-#define GLOBAL_SIZE_Y 96
+#define GLOBAL_SIZE_Y 128
 #define GLOBAL_SIZE_Z 96
 
 #define WORKGROUP_COUNT_X GLOBAL_SIZE_X/LOCAL_WORKGROUP_SIZE_X
@@ -105,7 +105,7 @@ namespace cubey {
 
 		camera_rotation_ = true;
 
-		jacobi_iterations_ = 10;
+		jacobi_iterations_ = 20;
 		simulation_paused_ = false;
 
 		add_explosion_ = true;
