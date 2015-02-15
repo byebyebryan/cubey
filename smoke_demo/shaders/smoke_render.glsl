@@ -20,6 +20,10 @@ uniform vec3 u_light_position = vec3(1.5,1.5,1.5);
 
 uniform float u_absorption = 100.0;
 
+float rand_float(vec3 v_in) {
+    return fract(sin(dot(v_in ,vec3(12.9898, 78.233, 56.8346))) * 43758.5453);
+}
+
 void main() {
 	ivec3 pos = ivec3(gl_GlobalInvocationID);
 	
@@ -27,7 +31,7 @@ void main() {
 	
 	vec3 light_dir = normalize(u_light_position - coord);
 	float acc_light = 1.0;
-	vec3 light_tracing_coord = coord;
+	vec3 light_tracing_coord = coord + mix(-0.1, 0.1, rand_float(coord)) * light_dir * u_step_size;
 	
 	for (int j=0; j< u_max_steps; j++) {
 		light_tracing_coord += light_dir * u_step_size;
@@ -102,6 +106,10 @@ vec2 IntersectBox(Ray r, AABB aabb) {
 	return vec2(t_near, t_far);
 }
 
+float rand_float(vec3 v_in) {
+    return fract(sin(dot(v_in ,vec3(12.9898, 78.233, 56.8346))) * 43758.5453);
+}
+
 void main() {
 	vec4 screen_pos;
 	screen_pos.xy = 2.0 * gl_FragCoord.xy / u_viewport_size - 1.0;
@@ -123,7 +131,7 @@ void main() {
 	vec3 entry_coord = local_origin + local_dir * t.x;
 	vec3 exit_coord = local_origin + local_dir * t.y;
 	
-	vec3 tracing_coord = entry_coord;
+	vec3 tracing_coord = entry_coord + mix(-0.5, 0.5, rand_float(entry_coord)) * u_step_size * local_dir;
 
 	float acc_alpha = 1.0;
 	vec3 acc_color = vec3(0);
