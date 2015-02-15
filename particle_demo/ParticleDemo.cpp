@@ -230,10 +230,6 @@ namespace cubey {
 		TwAddVarRW(UI::Main()->tw_bar_, "attractor travel time min", TW_TYPE_FLOAT, &attractors_min_travel_time_, "min=0.5 max=5.0 step=0.5 group=Attractor");
 		TwAddVarRW(UI::Main()->tw_bar_, "attractor travel time max", TW_TYPE_FLOAT, &attractors_max_travel_time_, "min=0.5 max=10.0 step=0.5 group=Attractor");
 
-		
-
-		
-
 		update_prog_->Activate();
 		update_prog_->SetUniform("u_particle_lifespan", u_particle_lifespan_);
 		update_prog_->SetUniform("u_particle_stream_ratio", u_particle_stream_ratio_);

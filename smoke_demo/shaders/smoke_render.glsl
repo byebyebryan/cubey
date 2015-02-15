@@ -12,8 +12,8 @@ layout (binding = 1) uniform sampler3D t_obstacle;
 
 layout (binding = 0, r16f) uniform image3D i_shadow;
 
-uniform float u_step_size = 0.01;
-uniform int u_max_steps = 150;
+uniform float u_step_size = 1.0/96;
+uniform int u_max_steps = 1000;
 uniform float u_density_factor = 10.0;
 
 uniform vec3 u_light_position = vec3(1.5,1.5,1.5);
@@ -45,7 +45,7 @@ void main() {
 			acc_light *= 1.0 - clamp(ld * u_step_size * u_absorption, 0, 1.0);
 		}			//continue;
 
-		if (acc_light <= 0.001) break;
+		if (acc_light <= 0.01) break;
 	}
 	
 	imageStore(i_shadow, pos, vec4(acc_light));
@@ -65,8 +65,8 @@ layout (binding = 0) uniform sampler3D t_density;
 layout (binding = 1) uniform sampler3D t_shadow;
 layout (binding = 2) uniform sampler3D t_obstacle;
 
-uniform float u_step_size = 0.01;
-uniform int u_max_steps = 150;
+uniform float u_step_size = 1.0/96;
+uniform int u_max_steps = 1000;
 uniform float u_density_factor = 10.0;
 
 uniform vec3 u_smoke_color = vec3(1.0, 0.5, 0);
@@ -146,12 +146,13 @@ void main() {
 				break;
 			}
 		
-			acc_alpha *= 1.0 - clamp(0.01 * u_step_size * u_absorption, 0, 1);
+			acc_alpha *= 1.0 - clamp(u_step_size, 0, 1);
 			acc_color += u_light_color * u_light_intensity * acc_light * acc_alpha * 0.01 * u_step_size;
 		}
 		else {
-			acc_alpha *= 1.0 - clamp(density * u_step_size * u_absorption, 0, 1);
+			acc_alpha *= 1.0 - clamp(density * u_step_size * u_absorption, 0, 0.5);
 			acc_color += u_smoke_color * u_light_color * u_light_intensity * acc_light * acc_alpha * density * u_step_size;
+			
 		}
 		
 		

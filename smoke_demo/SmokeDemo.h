@@ -97,6 +97,9 @@ namespace cubey {
 		float vorticity_strength_;
 
 		bool camera_rotation_;
+
+		int jacobi_iterations_;
+		bool simulation_paused_;
 	};
 
 }

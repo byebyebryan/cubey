@@ -77,6 +77,9 @@ namespace cubey {
 
 		Camera::Main()->transform_.TranslateTo(glm::vec3(0, 0, -1.5f));
 
+		Camera::Main()->mouse_wheel_speed_ = 1.0f;
+		Camera::Main()->movement_speed_ = 1.0f;
+
 		obsticle_position_ = glm::vec3(0.5f);
 		obsticle_radius_ = 0.0f;
 
@@ -101,6 +104,9 @@ namespace cubey {
 		vorticity_strength_ = 10.0f;
 
 		camera_rotation_ = true;
+
+		jacobi_iterations_ = 10;
+		simulation_paused_ = false;
 
 		add_explosion_ = true;
 		explosion_timer_ = 3.0f;
@@ -140,9 +146,15 @@ namespace cubey {
 		TwAddVarRW(UI::Main()->tw_bar_, "weight log10", TW_TYPE_FLOAT, &weight_, "min=0 max=5 step=0.5 group=Buoyancy");
 
 		TwAddVarRW(UI::Main()->tw_bar_, "vorticity strength", TW_TYPE_FLOAT, &vorticity_strength_, "min=0 max=100 step=10 group=Vorticity");
+
+		TwAddVarRW(UI::Main()->tw_bar_, "jacobi iterations", TW_TYPE_INT16, &jacobi_iterations_, "min=5 max=50 step=5 group=Simulation");
+		TwAddVarRW(UI::Main()->tw_bar_, "simulation paused", TW_TYPE_BOOLCPP, &simulation_paused_, "group=Simulation");
 	}
 
 	void SmokeDemo::Update(float delta_time) {
+		if (camera_rotation_) Camera::Main()->Orbit(delta_time * glm::radians(15.0f), 0);
+		if (simulation_paused_) return;
+
 		FillObstacle();
 
 		Advert(delta_time);
@@ -154,7 +166,7 @@ namespace cubey {
 		Jacobi();
 		Projection();
 		
-		if(camera_rotation_) Camera::Main()->Orbit(delta_time * glm::radians(15.0f), 0);
+		
 	}
 
 	void SmokeDemo::Render() {
@@ -458,7 +470,7 @@ namespace cubey {
 		glBindImageTexture(0, i_divergence, 0, GL_TRUE, 0, GL_READ_ONLY, GL_R16F);
 		glBindImageTexture(1, i_obstacle, 0, GL_TRUE, 0, GL_READ_ONLY, GL_R16F);
 
-		for (int i = 0; i < 20; i++) {
+		for (int i = 0; i < jacobi_iterations_; i++) {
 			glBindImageTexture(2, i_pressure.ping, 0, GL_TRUE, 0, GL_READ_ONLY, GL_R16F);
 			glBindImageTexture(3, i_pressure.pong, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_R16F);
 

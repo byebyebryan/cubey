@@ -17,6 +17,7 @@
     <ClCompile Include="Interfaces.cpp" />
     <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="TimeManager.cpp" />
+    <ClCompile Include="Config.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="PrimitiveFactory.h" />
@@ -35,6 +36,7 @@
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="TimeManager.h" />
     <ClInclude Include="VertexArray.h" />
+    <ClInclude Include="Config.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\debug.glsl">
