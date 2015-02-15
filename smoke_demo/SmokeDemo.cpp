@@ -7,7 +7,7 @@
 #define LOCAL_WORKGROUP_SIZE_Z 8
 
 #define GLOBAL_SIZE_X 96
-#define GLOBAL_SIZE_Y 128
+#define GLOBAL_SIZE_Y 96
 #define GLOBAL_SIZE_Z 96
 
 #define WORKGROUP_COUNT_X GLOBAL_SIZE_X/LOCAL_WORKGROUP_SIZE_X
@@ -41,6 +41,7 @@ namespace cubey {
 		update_divergence_ = ShaderManager::Main()->CreateProgram("smoke_compute.__CS_DIVERGENCE__");
 		update_jacobi_ = ShaderManager::Main()->CreateProgram("smoke_compute.__CS_JACOBI__");
 		update_gradient_ = ShaderManager::Main()->CreateProgram("smoke_compute.__CS_PROJECTION__");
+		render_blur_ = ShaderManager::Main()->CreateProgram("smoke_render.__CS_GAUSSIAN_BLUR__");
 		render_shadow_ = ShaderManager::Main()->CreateProgram("smoke_render.__CS_SHADOW__");
 		render_ = ShaderManager::Main()->CreateProgram("smoke_render.VS.FS");
 
@@ -56,6 +57,9 @@ namespace cubey {
 		GenTexture(i_phi_n_hat, GL_R16F);
 
 		GenTexture(i_shadow, GL_R16F);
+
+		GenTexture(i_density_blured, GL_R16F);
+		GenTexture(i_shadow_blured, GL_R16F);
 
 		init_fill_rgba_->Activate();
 
@@ -116,6 +120,21 @@ namespace cubey {
 		explosion_injection_ratio_ = 0.0f;
 		explosion_temperature_ratio_ = 0.0f;
 
+		blur_density_ = false;
+		density_blur_sigma_ = 1.0f;
+		density_sample_jittering_ = 1.0f;
+		blur_shadow_ = true;
+		shadow_blur_sigma_ = 1.0f;
+		shadow_sample_jittering_ = 0.5f;
+
+		color_absorption_ = 2.0f;
+		light_absorption_ = 2.0f;
+		light_intensity_ = 2.0f;
+		ambient_light_ = 0.0f;
+
+		light_color_ = glm::vec3(1.0f);
+		smoke_color_ = glm::vec3(1.0f, 0.5f, 0.0f);
+
 		TwAddVarRW(UI::Main()->tw_bar_, "rotating camera", TW_TYPE_BOOLCPP, &camera_rotation_, "group=Camera");
 
 		TwAddVarRW(UI::Main()->tw_bar_, "obstacle position", TW_TYPE_DIR3F, &obsticle_position_, "group=Obstacle");
@@ -149,6 +168,20 @@ namespace cubey {
 
 		TwAddVarRW(UI::Main()->tw_bar_, "jacobi iterations", TW_TYPE_INT16, &jacobi_iterations_, "min=5 max=50 step=5 group=Simulation");
 		TwAddVarRW(UI::Main()->tw_bar_, "simulation paused", TW_TYPE_BOOLCPP, &simulation_paused_, "group=Simulation");
+
+		TwAddVarRW(UI::Main()->tw_bar_, "blur density", TW_TYPE_BOOLCPP, &blur_density_, "group=Blur");
+		TwAddVarRW(UI::Main()->tw_bar_, "density blur sigma", TW_TYPE_FLOAT, &density_blur_sigma_, "min=0.1 max=2.0 step=0.1 group=Blur");
+		TwAddVarRW(UI::Main()->tw_bar_, "density sample jittering", TW_TYPE_FLOAT, &density_sample_jittering_, "min=0.0 max=1.0 step=0.1 group=Blur");
+		TwAddVarRW(UI::Main()->tw_bar_, "blur lighting", TW_TYPE_BOOLCPP, &blur_shadow_, "group=Blur");
+		TwAddVarRW(UI::Main()->tw_bar_, "lighting blur sigma", TW_TYPE_FLOAT, &shadow_blur_sigma_, "min=0.1 max=2.0 step=0.1 group=Blur");
+		TwAddVarRW(UI::Main()->tw_bar_, "lighting sample jittering", TW_TYPE_FLOAT, &shadow_sample_jittering_, "min=0.0 max=1.0 step=0.1 group=Blur");
+
+		TwAddVarRW(UI::Main()->tw_bar_, "color absorption log10", TW_TYPE_FLOAT, &color_absorption_, "min=0.0 max=3 step=0.25 group=Lighting");
+		TwAddVarRW(UI::Main()->tw_bar_, "light absorption log10", TW_TYPE_FLOAT, &light_absorption_, "min=0.0 max=3 step=0.25 group=Lighting");
+		TwAddVarRW(UI::Main()->tw_bar_, "light intensity log10", TW_TYPE_FLOAT, &light_intensity_, "min=0.0 max=3 step=0.25 group=Lighting");
+		TwAddVarRW(UI::Main()->tw_bar_, "ambient light log10", TW_TYPE_FLOAT, &ambient_light_, "min=-2 max=1 step=0.25 group=Lighting");
+		TwAddVarRW(UI::Main()->tw_bar_, "smoke color", TW_TYPE_COLOR3F, &smoke_color_, "group=Lighting");
+		TwAddVarRW(UI::Main()->tw_bar_, "light color", TW_TYPE_COLOR3F, &light_color_, "group=Lighting");
 	}
 
 	void SmokeDemo::Update(float delta_time) {
@@ -173,6 +206,9 @@ namespace cubey {
 
 		render_shadow_->Activate();
 
+		render_shadow_->SetUniform("u_jittering", shadow_sample_jittering_);
+		render_shadow_->SetUniform("u_absorption", glm::pow(10,light_absorption_));
+
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_3D, i_density.ping);
 
@@ -184,7 +220,16 @@ namespace cubey {
 		glDispatchCompute(WORKGROUP_COUNT_X, WORKGROUP_COUNT_Y, WORKGROUP_COUNT_Z);
 		glMemoryBarrier(GL_ALL_BARRIER_BITS);
 
+		Blur();
+
 		render_->Activate();
+
+		render_->SetUniform("u_jittering", density_sample_jittering_);
+		render_->SetUniform("u_absorption", glm::pow(10, color_absorption_));
+		render_->SetUniform("u_light_intensity", glm::pow(10, light_intensity_));
+		render_->SetUniform("u_smoke_color", smoke_color_);
+		render_->SetUniform("u_light_color", light_color_);
+		render_->SetUniform("u_ambient", glm::pow(10, ambient_light_));
 
 		GLint viewport_size[4];
 		glGetIntegerv(GL_VIEWPORT, viewport_size);
@@ -194,16 +239,36 @@ namespace cubey {
 		render_->SetUniform("u_viewport_size", viewport_size_f);
 		render_->SetUniform("u_inverse_mvp", glm::inverse(Camera::Main()->view_mat()));
 
+		GLuint t_density = blur_density_ ? i_density_blured.ping : i_density.ping;
+		GLuint t_shadow = blur_shadow_ ? i_shadow_blured.ping : i_shadow;
+
 		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_3D, i_density.ping);
+		glBindTexture(GL_TEXTURE_3D, t_density);
 
 		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_3D, i_shadow);
+		glBindTexture(GL_TEXTURE_3D, t_shadow);
 
 		glActiveTexture(GL_TEXTURE2);
 		glBindTexture(GL_TEXTURE_3D, i_obstacle);
 
 		fullscreen_quad_->Draw();
+	}
+
+	std::vector<float> SmokeDemo::ComputeGaussianKernel(float sigma) {
+		float offset[5] = { 2.0f, 1.0f, 0.0f, 1.0f, 2.0f };
+		float sum = 0.0f;
+		std::vector<float> weights;
+
+		for (int i = 0; i < 5; i++) {
+			weights.push_back(glm::exp(-offset[i] * offset[i] / (sigma* sigma * 2.0f)));
+			sum += weights[i];
+		}
+
+		for (int i = 0; i < 5; i++) {
+			weights[i] /= sum;
+		}
+
+		return weights;
 	}
 
 	void SmokeDemo::GenTexture(GLuint& tex, GLenum internal_format) {
@@ -494,6 +559,77 @@ namespace cubey {
 
 		i_velocity.Swap();
 	}
+
+	void SmokeDemo::Blur() {
+		if (blur_shadow_) {
+			render_blur_->Activate();
+
+			render_blur_->SetUniform("u_weights[0]", ComputeGaussianKernel(shadow_blur_sigma_));
+			render_blur_->SetUniform("u_pass_num", 0);
+
+			glBindImageTexture(0, i_shadow, 0, GL_TRUE, 0, GL_READ_ONLY, GL_R16F);
+			glBindImageTexture(1, i_shadow_blured.ping, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_R16F);
+
+			glDispatchCompute(WORKGROUP_COUNT_X, WORKGROUP_COUNT_Y, WORKGROUP_COUNT_Z);
+			glMemoryBarrier(GL_ALL_BARRIER_BITS);
+
+			render_blur_->SetUniform("u_pass_num", 1);
+
+			glBindImageTexture(0, i_shadow_blured.ping, 0, GL_TRUE, 0, GL_READ_ONLY, GL_R16F);
+			glBindImageTexture(1, i_shadow_blured.pong, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_R16F);
+
+			glDispatchCompute(WORKGROUP_COUNT_X, WORKGROUP_COUNT_Y, WORKGROUP_COUNT_Z);
+			glMemoryBarrier(GL_ALL_BARRIER_BITS);
+
+			i_shadow_blured.Swap();
+
+			render_blur_->SetUniform("u_pass_num", 2);
+
+			glBindImageTexture(0, i_shadow_blured.ping, 0, GL_TRUE, 0, GL_READ_ONLY, GL_R16F);
+			glBindImageTexture(1, i_shadow_blured.pong, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_R16F);
+
+			glDispatchCompute(WORKGROUP_COUNT_X, WORKGROUP_COUNT_Y, WORKGROUP_COUNT_Z);
+			glMemoryBarrier(GL_ALL_BARRIER_BITS);
+
+			i_shadow_blured.Swap();
+		}
+
+		if (blur_density_) {
+			render_blur_->Activate();
+
+			render_blur_->SetUniform("u_weights[0]", ComputeGaussianKernel(density_blur_sigma_));
+
+			render_blur_->SetUniform("u_pass_num", 0);
+
+			glBindImageTexture(0, i_density.ping, 0, GL_TRUE, 0, GL_READ_ONLY, GL_R16F);
+			glBindImageTexture(1, i_density_blured.ping, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_R16F);
+
+			glDispatchCompute(WORKGROUP_COUNT_X, WORKGROUP_COUNT_Y, WORKGROUP_COUNT_Z);
+			glMemoryBarrier(GL_ALL_BARRIER_BITS);
+
+			render_blur_->SetUniform("u_pass_num", 1);
+
+			glBindImageTexture(0, i_density_blured.ping, 0, GL_TRUE, 0, GL_READ_ONLY, GL_R16F);
+			glBindImageTexture(1, i_density_blured.pong, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_R16F);
+
+			glDispatchCompute(WORKGROUP_COUNT_X, WORKGROUP_COUNT_Y, WORKGROUP_COUNT_Z);
+			glMemoryBarrier(GL_ALL_BARRIER_BITS);
+
+			i_density_blured.Swap();
+
+			render_blur_->SetUniform("u_pass_num", 2);
+
+			glBindImageTexture(0, i_density_blured.ping, 0, GL_TRUE, 0, GL_READ_ONLY, GL_R16F);
+			glBindImageTexture(1, i_density_blured.pong, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_R16F);
+
+			glDispatchCompute(WORKGROUP_COUNT_X, WORKGROUP_COUNT_Y, WORKGROUP_COUNT_Z);
+			glMemoryBarrier(GL_ALL_BARRIER_BITS);
+
+			i_density_blured.Swap();
+		}
+	}
+
+	
 
 	
 

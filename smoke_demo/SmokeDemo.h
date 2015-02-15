@@ -34,6 +34,10 @@ namespace cubey {
 		void Jacobi();
 		void Projection();
 
+		void Blur();
+
+		std::vector<float> ComputeGaussianKernel(float sigma);
+
 		Slab i_velocity;
 		Slab i_temperature;
 		Slab i_density;
@@ -44,6 +48,9 @@ namespace cubey {
 		GLuint i_phi_n_1_hat;
 		GLuint i_phi_n_hat;
 		GLuint i_shadow;
+
+		Slab i_density_blured;
+		Slab i_shadow_blured;
 
 		ShaderProgram* init_fill_rgba_;
 		ShaderProgram* init_fill_r_;
@@ -60,6 +67,7 @@ namespace cubey {
 		ShaderProgram* update_jacobi_;
 		ShaderProgram* update_gradient_;
 
+		ShaderProgram* render_blur_;
 		ShaderProgram* render_shadow_;
 		ShaderProgram* render_;
 
@@ -100,6 +108,21 @@ namespace cubey {
 
 		int jacobi_iterations_;
 		bool simulation_paused_;
+
+		bool blur_density_;
+		float density_blur_sigma_;
+		float density_sample_jittering_;
+		bool blur_shadow_;
+		float shadow_blur_sigma_;
+		float shadow_sample_jittering_;
+
+		float color_absorption_;
+		float light_absorption_;
+		float light_intensity_;
+		float ambient_light_;
+
+		glm::vec3 light_color_;
+		glm::vec3 smoke_color_;
 	};
 
 }

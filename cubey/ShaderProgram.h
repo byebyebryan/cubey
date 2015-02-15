@@ -52,6 +52,9 @@ namespace cubey {
 		inline void SetUniformImpl(GLint location, const float& value) {
 			glProgramUniform1f(gl_, location, value);
 		}
+		inline void SetUniformImpl(GLint location, const std::vector<float>& value) {
+			glProgramUniform1fv(gl_, location, value.size(), (const GLfloat*)value.data());
+		}
 		inline void SetUniformImpl(GLint location, const double& value) {
 			glProgramUniform1d(gl_, location, value);
 		}

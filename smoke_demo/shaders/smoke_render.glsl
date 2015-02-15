@@ -1,4 +1,40 @@
 
+__CS_GAUSSIAN_BLUR__
+
+#define LOCAL_WORKGROUP_SIZE_X 8
+#define LOCAL_WORKGROUP_SIZE_Y 8
+#define LOCAL_WORKGROUP_SIZE_Z 8
+
+layout (local_size_x = LOCAL_WORKGROUP_SIZE_X, local_size_y = LOCAL_WORKGROUP_SIZE_Y, local_size_z = LOCAL_WORKGROUP_SIZE_Z) in;
+
+layout (binding = 0, r16f) uniform image3D i_source;
+layout (binding = 1, r16f) uniform image3D i_target;
+
+uniform int u_pass_num;
+uniform float u_weights[5] = float[](0.05399096651318985, 0.24197072451914536, 0.3989422804014327, 0.24197072451914536, 0.05399096651318985);
+
+uniform ivec3 u_offset[15] = ivec3[](
+	ivec3(-2,0,0), ivec3(-1,0,0), ivec3(0,0,0), ivec3(1,0,0), ivec3(2,0,0),
+	ivec3(0,-2,0), ivec3(0,-1,0), ivec3(0,0,0), ivec3(0,1,0), ivec3(0,2,0),
+	ivec3(0,0,-2), ivec3(0,0,-1), ivec3(0,0,0), ivec3(0,0,1), ivec3(0,0,2)
+);
+
+ivec3 clamp_i (ivec3 i_in) {
+	return clamp(i_in, ivec3(0), ivec3(gl_NumWorkGroups * gl_WorkGroupSize) - ivec3(1));
+}
+
+void main() {
+	ivec3 pos = ivec3(gl_GlobalInvocationID);
+
+	float blur = 0;
+	for (int i=0; i<5; i++) {
+		blur += imageLoad(i_source, clamp_i(pos + u_offset[u_pass_num*5 + i])).x * u_weights[i];
+	}
+
+	imageStore(i_target, pos, vec4(blur));
+}
+
+
 __CS_SHADOW__
 
 #define LOCAL_WORKGROUP_SIZE_X 8
@@ -20,6 +56,8 @@ uniform vec3 u_light_position = vec3(1.5,1.5,1.5);
 
 uniform float u_absorption = 100.0;
 
+uniform float u_jittering = 0.5;
+
 float rand_float(vec3 v_in) {
     return fract(sin(dot(v_in ,vec3(12.9898, 78.233, 56.8346))) * 43758.5453);
 }
@@ -31,7 +69,7 @@ void main() {
 	
 	vec3 light_dir = normalize(u_light_position - coord);
 	float acc_light = 1.0;
-	vec3 light_tracing_coord = coord + mix(-0.1, 0.1, rand_float(coord)) * light_dir * u_step_size;
+	vec3 light_tracing_coord = coord + mix(-u_jittering/2, u_jittering, rand_float(coord)) * light_dir * u_step_size;
 	
 	for (int j=0; j< u_max_steps; j++) {
 		light_tracing_coord += light_dir * u_step_size;
@@ -78,6 +116,10 @@ uniform vec3 u_smoke_color = vec3(1.0, 0.5, 0.0);
 uniform vec3 u_light_color = vec3(1.0);
 uniform float u_light_intensity = 100.0;
 uniform float u_absorption = 100.0;
+
+uniform float u_jittering = 0.5;
+
+uniform float u_ambient = 1.0f;
 
 uniform vec2 u_viewport_size;
 uniform mat4 u_inverse_mvp;
@@ -131,7 +173,7 @@ void main() {
 	vec3 entry_coord = local_origin + local_dir * t.x;
 	vec3 exit_coord = local_origin + local_dir * t.y;
 	
-	vec3 tracing_coord = entry_coord + mix(-0.5, 0.5, rand_float(entry_coord)) * u_step_size * local_dir;
+	vec3 tracing_coord = entry_coord + mix(-u_jittering/2.0, u_jittering/2.0, rand_float(entry_coord)) * u_step_size * local_dir;
 
 	float acc_alpha = 1.0;
 	vec3 acc_color = vec3(0);
@@ -155,8 +197,8 @@ void main() {
 			}
 			
 			
-			acc_color += u_light_color * u_light_intensity * acc_light * acc_alpha * 0.01 * u_step_size;
-			acc_alpha *= 1.0 - u_step_size;
+			acc_color += u_light_color * u_light_intensity * acc_light * acc_alpha * 0.01 * u_step_size * u_ambient;
+			acc_alpha *= 1.0 - u_step_size*u_ambient;
 		}
 		else {
 			
