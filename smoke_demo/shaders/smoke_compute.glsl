@@ -18,29 +18,45 @@ __CS_FILL_R__
 
 layout (binding = 0, r16f) uniform image3D i_target;
 
+uniform float u_fill_value = 0;
+uniform vec3 u_extend = vec3(1, 1, 1);
+
 void main() {
+	vec4 fill = vec4(0);
 	ivec3 pos = ivec3(gl_GlobalInvocationID);
-	imageStore(i_target, pos, vec4(0));
+	vec3 center = vec3(gl_NumWorkGroups * gl_WorkGroupSize - 1) * 0.5;
+	vec3 box = vec3(gl_NumWorkGroups * gl_WorkGroupSize - 1) * u_extend * 0.5;
+	if (abs(pos.x - center.x) <= box.x && abs(pos.y - center.y) <= box.y && abs(pos.z - center.z) <= box.z) {
+		fill = vec4(u_fill_value);
+	}
+	imageStore(i_target, pos, fill);
 }
 
 __CS_FILL_OBSTACLE__
 
 layout (binding = 0, r16f) uniform image3D i_obstacle;
+layout (binding = 1, rgba16f) uniform image3D i_obstacle_v;
 
 uniform vec3 u_location;
 uniform float u_radius;
+uniform vec3 u_velocity;
 
 void main() {
 	ivec3 pos = ivec3(gl_GlobalInvocationID);
 	vec4 target_value = vec4(0);
+	vec4 target_v = vec4(0);
 
 	if (pos.x == 0 || pos.x == gl_NumWorkGroups.x * gl_WorkGroupSize.x - 1) target_value.x = 0.5;
 	if (pos.y == 0 || pos.y == gl_NumWorkGroups.y * gl_WorkGroupSize.y - 1) target_value.x = 0.5;
 	if (pos.z == 0 || pos.z == gl_NumWorkGroups.z * gl_WorkGroupSize.z - 1) target_value.x = 0.5;
 
-	if (distance(u_location, vec3(pos)) < u_radius) target_value.x = 1;
+	if (distance(u_location, vec3(pos)) < u_radius) {
+		target_value.x = 1;
+		target_v.xyz = u_velocity;
+	}
 	
 	imageStore(i_obstacle, pos, target_value);
+	imageStore(i_obstacle_v, pos, target_v);
 }
 
 __CS_ADVECT_RGBA__
@@ -172,6 +188,8 @@ uniform float u_time_step;
 uniform float u_dissipation;
 uniform float u_decay;
 
+uniform float u_minimum = 0;
+
 ivec3 clamp_i (ivec3 i_in) {
 	return clamp(i_in, ivec3(0), ivec3(gl_NumWorkGroups * gl_WorkGroupSize) - ivec3(1));
 }
@@ -240,7 +258,7 @@ void main() {
 		vec4 source_value = sample_trilinear(i_phi_n_1_hat, back_track_pos) + 0.5 * (imageLoad(i_source, pos) - imageLoad(i_phi_n_hat, pos));
 		vec2 bound = mac_cormack_bound(i_source, back_track_pos);
 		source_value.x = clamp(source_value.x, bound.x, bound.y);
-		target_value = source_value * u_dissipation - u_time_step * u_decay;
+		target_value.x = max(u_minimum, source_value.x * u_dissipation - u_time_step * u_decay);
 	}
 	
 	imageStore(i_target, pos, target_value);
@@ -304,10 +322,10 @@ void main() {
 	vec4 vel = imageLoad(i_velocity, pos);
 	float temp = imageLoad(i_temperature, pos).x;
 	
-	if(temp > u_ambient_temperature) {
+	//if(temp > u_ambient_temperature) {
 		float dens = imageLoad(i_density, pos).x;
 		vel += u_time_step * ((temp - u_ambient_temperature) * u_buoyancy - dens * u_weight) * vec4(0,1,0,0);
-	}
+	//}
 	
 	imageStore(i_velocity_target, pos, vel);
 }
@@ -373,7 +391,8 @@ __CS_DIVERGENCE__
 
 layout (binding = 0, rgba16f) uniform image3D i_velocity;
 layout (binding = 1, r16f) uniform image3D i_obstacle;
-layout (binding = 2, r16f) uniform image3D i_divergence;
+layout (binding = 2, rgba16f) uniform image3D i_obstacle_v;
+layout (binding = 3, r16f) uniform image3D i_divergence;
 
 ivec3 clamp_i (ivec3 i_in) {
 	return clamp(i_in, ivec3(0), ivec3(gl_NumWorkGroups * gl_WorkGroupSize) - ivec3(1));
@@ -396,12 +415,12 @@ void main() {
 	vec4 o_u = imageLoad(i_obstacle, clamp_i(pos +ivec3(0, 1, 0)));
 	vec4 o_d = imageLoad(i_obstacle, clamp_i(pos +ivec3(0, -1, 0)));
 	
-	if (o_f.x > 0) v_f.xyz = vec3(0);
-	if (o_b.x > 0) v_b.xyz = vec3(0);
-	if (o_r.x > 0) v_r.xyz = vec3(0);
-	if (o_l.x > 0) v_l.xyz = vec3(0);
-	if (o_u.x > 0) v_u.xyz = vec3(0);
-	if (o_d.x > 0) v_d.xyz = vec3(0);
+	if (o_f.x > 0) v_f.xyz = imageLoad(i_obstacle_v, clamp_i(pos +ivec3(0, 0, 1))).xyz;
+	if (o_b.x > 0) v_b.xyz = imageLoad(i_obstacle_v, clamp_i(pos +ivec3(0, 0, -1))).xyz;
+	if (o_r.x > 0) v_r.xyz = imageLoad(i_obstacle_v, clamp_i(pos +ivec3(1, 0, 0))).xyz;
+	if (o_l.x > 0) v_l.xyz = imageLoad(i_obstacle_v, clamp_i(pos +ivec3(-1, 0, 0))).xyz;
+	if (o_u.x > 0) v_u.xyz = imageLoad(i_obstacle_v, clamp_i(pos +ivec3(0, 1, 0))).xyz;
+	if (o_d.x > 0) v_d.xyz = imageLoad(i_obstacle_v, clamp_i(pos +ivec3(0, -1, 0))).xyz;
 	
 	float div = 0.5 * (v_f.z - v_b.z + v_r.x - v_l.x + v_u.y - v_d.y);
 	imageStore(i_divergence, pos, vec4(div));
@@ -453,7 +472,9 @@ __CS_PROJECTION__
 layout (binding = 0, rgba16f) uniform image3D i_velocity;
 layout (binding = 1, r16f) uniform image3D i_obstacle;
 layout (binding = 2, r16f) uniform image3D i_pressure;
-layout (binding = 3, rgba16f) uniform image3D i_velocity_target;
+layout (binding = 3, rgba16f) uniform image3D i_obstacle_v;
+layout (binding = 4, rgba16f) uniform image3D i_velocity_target;
+
 
 ivec3 clamp_i (ivec3 i_in) {
 	return clamp(i_in, ivec3(0), ivec3(gl_NumWorkGroups * gl_WorkGroupSize) - ivec3(1));
@@ -486,12 +507,12 @@ void main() {
 		vec3 o_v = vec3(0);
 		vec3 v_mask = vec3(1);
 		
-		if (o_f.r > 0) {p_f = p_c; o_v.z = 0; v_mask.z = 0;}
-		if (o_b.r > 0) {p_b = p_c; o_v.z = 0; v_mask.z = 0;}
-		if (o_r.r > 0) {p_r = p_c; o_v.x = 0; v_mask.x = 0;}
-		if (o_l.r > 0) {p_l = p_c; o_v.x = 0; v_mask.x = 0;}
-		if (o_u.r > 0) {p_u = p_c; o_v.y = 0; v_mask.y = 0;}
-		if (o_d.r > 0) {p_d = p_c; o_v.y = 0; v_mask.y = 0;}
+		if (o_f.r > 0) {p_f = p_c; o_v.z = imageLoad(i_obstacle_v, clamp_i(pos +ivec3(0, 0, 1))).z; v_mask.z = 0;}
+		if (o_b.r > 0) {p_b = p_c; o_v.z = imageLoad(i_obstacle_v, clamp_i(pos +ivec3(0, 0, -1))).z; v_mask.z = 0;}
+		if (o_r.r > 0) {p_r = p_c; o_v.x = imageLoad(i_obstacle_v, clamp_i(pos +ivec3(1, 0, 0))).x; v_mask.x = 0;}
+		if (o_l.r > 0) {p_l = p_c; o_v.x = imageLoad(i_obstacle_v, clamp_i(pos +ivec3(-1, 0, 0))).x; v_mask.x = 0;}
+		if (o_u.r > 0) {p_u = p_c; o_v.y = imageLoad(i_obstacle_v, clamp_i(pos +ivec3(0, 1, 0))).y; v_mask.y = 0;}
+		if (o_d.r > 0) {p_d = p_c; o_v.y = imageLoad(i_obstacle_v, clamp_i(pos +ivec3(0, -1, 0))).y; v_mask.y = 0;}
 		
 		vec3 source_vel = imageLoad(i_velocity, pos).xyz;
 		vec3 grad = vec3(p_r - p_l, p_u - p_d, p_f - p_b) * 0.5;

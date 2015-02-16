@@ -52,7 +52,7 @@ uniform float u_step_size = 1.0/128;
 uniform int u_max_steps = 1000;
 uniform float u_density_factor = 10.0;
 
-uniform vec3 u_light_position = vec3(1.5,1.5,1.5);
+uniform vec3 u_light_position = vec3(1.5,1.0,1.5);
 
 uniform float u_absorption = 100.0;
 
@@ -106,10 +106,13 @@ __FS__
 layout (binding = 0) uniform sampler3D t_density;
 layout (binding = 1) uniform sampler3D t_shadow;
 layout (binding = 2) uniform sampler3D t_obstacle;
+layout (binding = 3) uniform sampler3D t_temperature;
 
 uniform float u_step_size = 1.0/128;
 uniform int u_max_steps = 1000;
 uniform float u_density_factor = 10.0;
+
+uniform int u_enable_shadowing = 1;
 
 uniform vec3 u_smoke_color = vec3(1.0, 0.5, 0.0);
 
@@ -124,7 +127,11 @@ uniform float u_ambient = 1.0f;
 uniform vec2 u_viewport_size;
 uniform mat4 u_inverse_mvp;
 
+uniform int u_temperature_color = 0;
+
 out vec4 out_color;
+
+uniform vec3 u_light_position = vec3(1.5,1.5,1.5);
 
 const float pi = 3.1415926535897932384626433832795;
 
@@ -172,7 +179,7 @@ void main() {
 	if(t.x < 0) t.x = 0;
 	vec3 entry_coord = local_origin + local_dir * t.x;
 	vec3 exit_coord = local_origin + local_dir * t.y;
-	
+
 	vec3 tracing_coord = entry_coord + mix(-u_jittering/2.0, u_jittering/2.0, rand_float(entry_coord)) * u_step_size * local_dir;
 
 	float acc_alpha = 1.0;
@@ -181,28 +188,35 @@ void main() {
 	for(int i=0; i< u_max_steps; i++) {
 
 		tracing_coord += local_dir * u_step_size;
+
 		if (tracing_coord.x < 0 || tracing_coord.y < 0 || tracing_coord.z < 0 ) break;
 		if (tracing_coord.x > 1 || tracing_coord.y > 1 || tracing_coord.z > 1 ) break;
 
 		float density = texture(t_density, tracing_coord).x * u_density_factor;
 		
-		float acc_light = texture(t_shadow, tracing_coord).x;
+		float acc_light = 1.0;
+		if (u_enable_shadowing == 1) acc_light = texture(t_shadow, tracing_coord).x;
+
+		float temperature = texture(t_temperature, tracing_coord).x;
 		
-		if (density <= 0) {
-			float ob = texture(t_obstacle, tracing_coord).x;
-			if (ob >0.5) {
-				acc_color += vec3(0.0, 0.5, 1.0) * u_light_color * u_light_intensity * acc_light * acc_alpha * u_step_size;
-				acc_alpha = 0;
-				break;
-			}
-			
-			
-			acc_color += u_light_color * u_light_intensity * acc_light * acc_alpha * 0.01 * u_step_size * u_ambient;
+		float ob = texture(t_obstacle, tracing_coord).x;
+		if (ob >0.5) {
+			acc_color += vec3(0.0, 0.5, 1.0) * u_light_color * u_light_intensity * acc_light * acc_alpha * u_step_size;
+			acc_alpha = 0;
+			break;
+		}
+
+		if (density <= 0.1 * u_ambient) {
+			acc_color += u_light_color * acc_light * acc_alpha * u_ambient * u_step_size;
 			acc_alpha *= 1.0 - u_step_size*u_ambient;
 		}
 		else {
 			
-			acc_color += u_smoke_color * u_light_color * u_light_intensity * acc_light * acc_alpha * density * u_step_size;
+			vec3 color = u_smoke_color;
+
+			if(u_temperature_color == 1) color = mix(u_smoke_color, vec3(0) , exp(-temperature*temperature/10));
+
+			acc_color += u_light_color * u_light_intensity * acc_light * acc_alpha * density * u_step_size * color;
 			acc_alpha *= exp( - density * u_step_size * u_absorption);
 		}
 		

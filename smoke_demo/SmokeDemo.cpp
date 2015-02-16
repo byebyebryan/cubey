@@ -52,6 +52,7 @@ namespace cubey {
 		GenTexture(i_divergence, GL_R16F);
 		GenTexture(i_obstacle, GL_R16F);
 		GenTexture(i_vorticity, GL_RGBA16F);
+		GenTexture(i_obstacle_v, GL_RGBA16F);
 
 		GenTexture(i_phi_n_1_hat, GL_R16F);
 		GenTexture(i_phi_n_hat, GL_R16F);
@@ -60,6 +61,8 @@ namespace cubey {
 
 		GenTexture(i_density_blured, GL_R16F);
 		GenTexture(i_shadow_blured, GL_R16F);
+		GenTexture(i_temperature_blured, GL_R16F);
+		GenTexture(i_obstacle_blured, GL_R16F);
 
 		init_fill_rgba_->Activate();
 
@@ -86,6 +89,8 @@ namespace cubey {
 
 		obsticle_position_ = glm::vec3(0.5f);
 		obsticle_radius_ = 0.0f;
+		enable_obstacle_motion_ = false;
+		enable_obstacle_motion_prev_ = false;
 
 		velocity_dissipation_ = -2.0f;
 		temperature_dissipation_ = -2.0f;
@@ -93,6 +98,7 @@ namespace cubey {
 		density_dissipation_ = -2.0f;
 		density_decay_ = -3.0f;
 
+		enable_injection_ = true;
 		injection_location_ = glm::vec3(0.5f, 0.1f, 0.5f);
 
 		temperature_injection_radius_ = 0.5f;
@@ -101,6 +107,7 @@ namespace cubey {
 		density_injection_radius_ = 1.0f;
 		density_injection_intensity_ = 1.0f;
 
+		enable_buoyancy_ = true;
 		ambient_temperature_ = 0.0f;
 		buoyancy_ = 1.0f;
 		weight_ = 1.0f;
@@ -120,8 +127,8 @@ namespace cubey {
 		explosion_injection_ratio_ = 0.0f;
 		explosion_temperature_ratio_ = 0.0f;
 
-		blur_density_ = false;
-		density_blur_sigma_ = 1.0f;
+		blur_density_ = true;
+		density_blur_sigma_ = 0.5f;
 		density_sample_jittering_ = 1.0f;
 		blur_shadow_ = true;
 		shadow_blur_sigma_ = 1.0f;
@@ -135,37 +142,44 @@ namespace cubey {
 		light_color_ = glm::vec3(1.0f);
 		smoke_color_ = glm::vec3(1.0f, 0.5f, 0.0f);
 
+		enable_shadows_ = true;
+
+		enable_temperature_color_ = false;
+
 		TwAddVarRW(UI::Main()->tw_bar_, "rotating camera", TW_TYPE_BOOLCPP, &camera_rotation_, "group=Camera");
 
 		TwAddVarRW(UI::Main()->tw_bar_, "obstacle position", TW_TYPE_DIR3F, &obsticle_position_, "group=Obstacle");
 		TwAddVarRW(UI::Main()->tw_bar_, "obstacle radius", TW_TYPE_FLOAT, &obsticle_radius_, "min=0 max=32 step=2 group=Obstacle");
+		TwAddVarRW(UI::Main()->tw_bar_, "enable obstacle motion", TW_TYPE_BOOLCPP, &enable_obstacle_motion_, "group=Obstacle");
 
-		TwAddVarRW(UI::Main()->tw_bar_, "velocity dissipation log10", TW_TYPE_FLOAT, &velocity_dissipation_, "min=-5 max=-1 step=1 group=Advert");
-		TwAddVarRW(UI::Main()->tw_bar_, "temperature dissipation log10", TW_TYPE_FLOAT, &temperature_dissipation_, "min=-5 max=-1 step=1 group=Advert");
-		TwAddVarRW(UI::Main()->tw_bar_, "temperature decay log10", TW_TYPE_FLOAT, &temperature_decay_, "min=-5 max=0 step=1 group=Advert");
-		TwAddVarRW(UI::Main()->tw_bar_, "density dissipation log10", TW_TYPE_FLOAT, &density_dissipation_, "min=-5 max=-1 step=1 group=Advert");
-		TwAddVarRW(UI::Main()->tw_bar_, "density decay log10", TW_TYPE_FLOAT, &density_decay_, "min=-5 max=0 step=1 group=Advert");
+		TwAddVarRW(UI::Main()->tw_bar_, "velocity dissipation log10", TW_TYPE_FLOAT, &velocity_dissipation_, "min=-5 max=-1 step=0.25 group=Advert");
+		TwAddVarRW(UI::Main()->tw_bar_, "temperature dissipation log10", TW_TYPE_FLOAT, &temperature_dissipation_, "min=-5 max=-1 step=0.25 group=Advert");
+		TwAddVarRW(UI::Main()->tw_bar_, "temperature decay log10", TW_TYPE_FLOAT, &temperature_decay_, "min=-5 max=0 step=0.25 group=Advert");
+		TwAddVarRW(UI::Main()->tw_bar_, "density dissipation log10", TW_TYPE_FLOAT, &density_dissipation_, "min=-5 max=-1 step=0.25 group=Advert");
+		TwAddVarRW(UI::Main()->tw_bar_, "density decay log10", TW_TYPE_FLOAT, &density_decay_, "min=-5 max=0 step=0.25 group=Advert");
 
+		TwAddVarRW(UI::Main()->tw_bar_, "enable injection", TW_TYPE_BOOLCPP, &enable_injection_, "group=Injection");
+		TwAddVarRW(UI::Main()->tw_bar_, "inject position", TW_TYPE_DIR3F, &injection_location_, "group=Injection");
 		TwAddVarRW(UI::Main()->tw_bar_, "temperature inject concentration", TW_TYPE_FLOAT, &temperature_injection_radius_, "min=0.1 max=2.0 step=0.1 group=Injection");
 		TwAddVarRW(UI::Main()->tw_bar_, "temperature inject intensity log10", TW_TYPE_FLOAT, &temperature_injection_intensity_, "min=0 max=4 step=0.25 group=Injection");
 		TwAddVarRW(UI::Main()->tw_bar_, "density inject concentration", TW_TYPE_FLOAT, &density_injection_radius_, "min=0.1 max=2.0 step=0.1 group=Injection");
 		TwAddVarRW(UI::Main()->tw_bar_, "density inject intensity log10", TW_TYPE_FLOAT, &density_injection_intensity_, "min=0 max=4 step=0.25 group=Injection");
 
+		TwAddVarRW(UI::Main()->tw_bar_, "enable buoyancy", TW_TYPE_BOOLCPP, &enable_buoyancy_, "group=Buoyancy");
+		TwAddVarRW(UI::Main()->tw_bar_, "ambient temperature", TW_TYPE_FLOAT, &ambient_temperature_, "min=-10 max=10 step=0.25 group=Buoyancy");
+		TwAddVarRW(UI::Main()->tw_bar_, "buoyancy log10", TW_TYPE_FLOAT, &buoyancy_, "min=0 max=5 step=0.25 group=Buoyancy");
+		TwAddVarRW(UI::Main()->tw_bar_, "weight log10", TW_TYPE_FLOAT, &weight_, "min=0 max=5 step=0.25 group=Buoyancy");
+
+		TwAddVarRW(UI::Main()->tw_bar_, "vorticity strength", TW_TYPE_FLOAT, &vorticity_strength_, "min=0 max=100 step=5 group=Vorticity");
+
 		TwAddVarRW(UI::Main()->tw_bar_, "add explosion", TW_TYPE_BOOLCPP, &add_explosion_, "group=Explosion");
-		TwAddVarRW(UI::Main()->tw_bar_, "explosion timer min", TW_TYPE_FLOAT, &explosion_timer_, "min=0.5 max=10 step=0.5 group=Explosion");
+		TwAddVarRW(UI::Main()->tw_bar_, "explosion timer", TW_TYPE_FLOAT, &explosion_timer_, "min=0.5 max=10 step=0.5 group=Explosion");
 		TwAddVarRW(UI::Main()->tw_bar_, "explosion concentration", TW_TYPE_FLOAT, &explosion_concetration_, "min=0.1 max=2.0 step=0.1 group=Explosion");
 		TwAddVarRW(UI::Main()->tw_bar_, "explosion force min log10", TW_TYPE_FLOAT, &explosion_force_min_, "min=-2 max=3 step=0.25 group=Explosion");
 		TwAddVarRW(UI::Main()->tw_bar_, "explosion force max log10", TW_TYPE_FLOAT, &explosion_force_max_, "min=-2 max=3 step=0.25 group=Explosion");
 		TwAddVarRW(UI::Main()->tw_bar_, "explosion temperature ratio log10", TW_TYPE_FLOAT, &explosion_temperature_ratio_, "min=-2 max=2 step=0.25 group=Explosion");
 		TwAddVarRW(UI::Main()->tw_bar_, "explosion injection ratio log10", TW_TYPE_FLOAT, &explosion_injection_ratio_, "min=-2 max=2 step=0.25 group=Explosion");
 		
-
-		TwAddVarRW(UI::Main()->tw_bar_, "ambient temperature", TW_TYPE_FLOAT, &ambient_temperature_, "min=-10 max=10 step=1 group=Buoyancy");
-		TwAddVarRW(UI::Main()->tw_bar_, "buoyancy log10", TW_TYPE_FLOAT, &buoyancy_, "min=0 max=5 step=0.5 group=Buoyancy");
-		TwAddVarRW(UI::Main()->tw_bar_, "weight log10", TW_TYPE_FLOAT, &weight_, "min=0 max=5 step=0.5 group=Buoyancy");
-
-		TwAddVarRW(UI::Main()->tw_bar_, "vorticity strength", TW_TYPE_FLOAT, &vorticity_strength_, "min=0 max=100 step=10 group=Vorticity");
-
 		TwAddVarRW(UI::Main()->tw_bar_, "jacobi iterations", TW_TYPE_INT16, &jacobi_iterations_, "min=5 max=50 step=5 group=Simulation");
 		TwAddVarRW(UI::Main()->tw_bar_, "simulation paused", TW_TYPE_BOOLCPP, &simulation_paused_, "group=Simulation");
 
@@ -182,13 +196,15 @@ namespace cubey {
 		TwAddVarRW(UI::Main()->tw_bar_, "ambient light log10", TW_TYPE_FLOAT, &ambient_light_, "min=-2 max=1 step=0.25 group=Lighting");
 		TwAddVarRW(UI::Main()->tw_bar_, "smoke color", TW_TYPE_COLOR3F, &smoke_color_, "group=Lighting");
 		TwAddVarRW(UI::Main()->tw_bar_, "light color", TW_TYPE_COLOR3F, &light_color_, "group=Lighting");
+		TwAddVarRW(UI::Main()->tw_bar_, "enable shadows", TW_TYPE_BOOLCPP, &enable_shadows_, "group=Lighting");
+		TwAddVarRW(UI::Main()->tw_bar_, "enable temperature color", TW_TYPE_BOOLCPP, &enable_temperature_color_, "group=Lighting");
 	}
 
 	void SmokeDemo::Update(float delta_time) {
 		if (camera_rotation_) Camera::Main()->Orbit(delta_time * glm::radians(15.0f), 0);
 		if (simulation_paused_) return;
 
-		FillObstacle();
+		FillObstacle(delta_time);
 
 		Advert(delta_time);
 		AddImpulse(delta_time);
@@ -204,21 +220,23 @@ namespace cubey {
 
 	void SmokeDemo::Render() {
 
-		render_shadow_->Activate();
+		if (enable_shadows_) {
+			render_shadow_->Activate();
 
-		render_shadow_->SetUniform("u_jittering", shadow_sample_jittering_);
-		render_shadow_->SetUniform("u_absorption", glm::pow(10,light_absorption_));
+			render_shadow_->SetUniform("u_jittering", shadow_sample_jittering_);
+			render_shadow_->SetUniform("u_absorption", glm::pow(10, light_absorption_));
 
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_3D, i_density.ping);
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_3D, i_density.ping);
 
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_3D, i_obstacle);
+			glActiveTexture(GL_TEXTURE1);
+			glBindTexture(GL_TEXTURE_3D, i_obstacle);
 
-		glBindImageTexture(0, i_shadow, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_R16F);
+			glBindImageTexture(0, i_shadow, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_R16F);
 
-		glDispatchCompute(WORKGROUP_COUNT_X, WORKGROUP_COUNT_Y, WORKGROUP_COUNT_Z);
-		glMemoryBarrier(GL_ALL_BARRIER_BITS);
+			glDispatchCompute(WORKGROUP_COUNT_X, WORKGROUP_COUNT_Y, WORKGROUP_COUNT_Z);
+			glMemoryBarrier(GL_ALL_BARRIER_BITS);
+		}
 
 		Blur();
 
@@ -231,6 +249,9 @@ namespace cubey {
 		render_->SetUniform("u_light_color", light_color_);
 		render_->SetUniform("u_ambient", glm::pow(10, ambient_light_));
 
+		render_->SetUniform("u_enable_shadowing", (int)enable_shadows_);
+		render_->SetUniform("u_temperature_color", (int)enable_temperature_color_);
+
 		GLint viewport_size[4];
 		glGetIntegerv(GL_VIEWPORT, viewport_size);
 
@@ -241,6 +262,7 @@ namespace cubey {
 
 		GLuint t_density = blur_density_ ? i_density_blured.ping : i_density.ping;
 		GLuint t_shadow = blur_shadow_ ? i_shadow_blured.ping : i_shadow;
+		GLuint t_obstacle = obsticle_radius_ > 0 ? i_obstacle_blured.ping : i_obstacle;
 
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_3D, t_density);
@@ -249,7 +271,10 @@ namespace cubey {
 		glBindTexture(GL_TEXTURE_3D, t_shadow);
 
 		glActiveTexture(GL_TEXTURE2);
-		glBindTexture(GL_TEXTURE_3D, i_obstacle);
+		glBindTexture(GL_TEXTURE_3D, t_obstacle);
+
+		glActiveTexture(GL_TEXTURE3);
+		glBindTexture(GL_TEXTURE_3D, i_temperature_blured.ping);
 
 		fullscreen_quad_->Draw();
 	}
@@ -291,12 +316,38 @@ namespace cubey {
 		GenTexture(slab.pong, internal_format);
 	}
 
-	void SmokeDemo::FillObstacle() {
+	void SmokeDemo::FillObstacle(float delta_time) {
+		
+		glm::vec3 pos = glm::vec3(GLOBAL_SIZE_X * obsticle_position_.x, GLOBAL_SIZE_Y * obsticle_position_.y, GLOBAL_SIZE_Z * obsticle_position_.z);
+		glm::vec3 v = glm::vec3(0);
+
+		if (enable_obstacle_motion_) {
+			if (!enable_obstacle_motion_prev_) {
+				obstacle_current_pos_ = glm::vec3(0, GLOBAL_SIZE_Y * obsticle_position_.y, GLOBAL_SIZE_Z * obsticle_position_.z);;
+				obstacle_current_v_ = glm::vec3(100, 0, 0);
+				pos = obstacle_current_pos_;
+				v = obstacle_current_v_;
+
+				enable_obstacle_motion_prev_ = true;
+			}
+			else {
+				obstacle_current_pos_ += obstacle_current_v_ * delta_time;
+				pos = obstacle_current_pos_;
+				v = obstacle_current_v_;
+			}
+		}
+		else {
+			enable_obstacle_motion_prev_ = false;
+		}
+
 		init_fill_obstacle_->Activate();
-		init_fill_obstacle_->SetUniform("u_location", glm::vec3(GLOBAL_SIZE_X * obsticle_position_.x, GLOBAL_SIZE_Y * obsticle_position_.y, GLOBAL_SIZE_Z * obsticle_position_.z));
+		init_fill_obstacle_->SetUniform("u_location", pos);
 		init_fill_obstacle_->SetUniform("u_radius", obsticle_radius_);
+		init_fill_obstacle_->SetUniform("u_velocity", v);
 
 		glBindImageTexture(0, i_obstacle, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_R16F);
+		glBindImageTexture(1, i_obstacle_v, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA16F);
+
 		glDispatchCompute(WORKGROUP_COUNT_X, WORKGROUP_COUNT_Y, WORKGROUP_COUNT_Z);
 		glMemoryBarrier(GL_ALL_BARRIER_BITS);
 	}
@@ -392,31 +443,36 @@ namespace cubey {
 		glMemoryBarrier(GL_ALL_BARRIER_BITS);
 
 		i_density.Swap();
+
+		
 	}
 
 	void SmokeDemo::AddImpulse(float delta_time) {
-		update_splat_->Activate();
-		update_splat_->SetUniform("u_time_step", delta_time);
-		update_splat_->SetUniform("u_location", glm::vec3(GLOBAL_SIZE_X * injection_location_.x, GLOBAL_SIZE_Y * injection_location_.y, GLOBAL_SIZE_Z * injection_location_.z));
-		update_splat_->SetUniform("u_radius", temperature_injection_radius_);
-		update_splat_->SetUniform("u_intensity", glm::pow(10, temperature_injection_intensity_));
+		if (enable_injection_) {
+			update_splat_->Activate();
+			update_splat_->SetUniform("u_time_step", delta_time);
+			update_splat_->SetUniform("u_location", glm::vec3(GLOBAL_SIZE_X * injection_location_.x, GLOBAL_SIZE_Y * injection_location_.y, GLOBAL_SIZE_Z * injection_location_.z));
+			update_splat_->SetUniform("u_radius", temperature_injection_radius_);
+			update_splat_->SetUniform("u_intensity", glm::pow(10, temperature_injection_intensity_));
 
-		glBindImageTexture(0, i_temperature.ping, 0, GL_TRUE, 0, GL_READ_ONLY, GL_R16F);
-		glBindImageTexture(1, i_temperature.pong, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_R16F);
-		glDispatchCompute(WORKGROUP_COUNT_X, WORKGROUP_COUNT_Y, WORKGROUP_COUNT_Z);
-		glMemoryBarrier(GL_ALL_BARRIER_BITS);
+			glBindImageTexture(0, i_temperature.ping, 0, GL_TRUE, 0, GL_READ_ONLY, GL_R16F);
+			glBindImageTexture(1, i_temperature.pong, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_R16F);
+			glDispatchCompute(WORKGROUP_COUNT_X, WORKGROUP_COUNT_Y, WORKGROUP_COUNT_Z);
+			glMemoryBarrier(GL_ALL_BARRIER_BITS);
 
-		i_temperature.Swap();
+			i_temperature.Swap();
 
-		update_splat_->SetUniform("u_radius", density_injection_radius_);
-		update_splat_->SetUniform("u_intensity", glm::pow(10, density_injection_intensity_));
+			update_splat_->SetUniform("u_radius", density_injection_radius_);
+			update_splat_->SetUniform("u_intensity", glm::pow(10, density_injection_intensity_));
 
-		glBindImageTexture(0, i_density.ping, 0, GL_TRUE, 0, GL_READ_ONLY, GL_R16F);
-		glBindImageTexture(1, i_density.pong, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_R16F);
-		glDispatchCompute(WORKGROUP_COUNT_X, WORKGROUP_COUNT_Y, WORKGROUP_COUNT_Z);
-		glMemoryBarrier(GL_ALL_BARRIER_BITS);
+			glBindImageTexture(0, i_density.ping, 0, GL_TRUE, 0, GL_READ_ONLY, GL_R16F);
+			glBindImageTexture(1, i_density.pong, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_R16F);
+			glDispatchCompute(WORKGROUP_COUNT_X, WORKGROUP_COUNT_Y, WORKGROUP_COUNT_Z);
+			glMemoryBarrier(GL_ALL_BARRIER_BITS);
 
-		i_density.Swap();
+			i_density.Swap();
+		}
+		
 
 		static float timer = 3.0f;
 		if (timer < 0) {
@@ -472,6 +528,8 @@ namespace cubey {
 	}
 
 	void SmokeDemo::ApplyBuoyancy(float delta_time) {
+		if (!enable_buoyancy_) return;
+
 		update_buoyancy_->Activate();
 		update_buoyancy_->SetUniform("u_ambient_temperature", ambient_temperature_);
 		update_buoyancy_->SetUniform("u_time_step", delta_time);
@@ -517,7 +575,8 @@ namespace cubey {
 
 		glBindImageTexture(0, i_velocity.ping, 0, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA16F);
 		glBindImageTexture(1, i_obstacle, 0, GL_TRUE, 0, GL_READ_ONLY, GL_R16F);
-		glBindImageTexture(2, i_divergence, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_R16F);
+		glBindImageTexture(2, i_obstacle_v, 0, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA16F);
+		glBindImageTexture(3, i_divergence, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_R16F);
 
 		glDispatchCompute(WORKGROUP_COUNT_X, WORKGROUP_COUNT_Y, WORKGROUP_COUNT_Z);
 		glMemoryBarrier(GL_ALL_BARRIER_BITS);
@@ -552,7 +611,8 @@ namespace cubey {
 		glBindImageTexture(0, i_velocity.ping, 0, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA16F);
 		glBindImageTexture(1, i_obstacle, 0, GL_TRUE, 0, GL_READ_ONLY, GL_R16F);
 		glBindImageTexture(2, i_pressure.ping, 0, GL_TRUE, 0, GL_READ_ONLY, GL_R16F);
-		glBindImageTexture(3, i_velocity.pong, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA16F);
+		glBindImageTexture(3, i_obstacle_v, 0, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA16F);
+		glBindImageTexture(4, i_velocity.pong, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA16F);
 
 		glDispatchCompute(WORKGROUP_COUNT_X, WORKGROUP_COUNT_Y, WORKGROUP_COUNT_Z);
 		glMemoryBarrier(GL_ALL_BARRIER_BITS);
@@ -561,7 +621,7 @@ namespace cubey {
 	}
 
 	void SmokeDemo::Blur() {
-		if (blur_shadow_) {
+		if (enable_shadows_ && blur_shadow_) {
 			render_blur_->Activate();
 
 			render_blur_->SetUniform("u_weights[0]", ComputeGaussianKernel(shadow_blur_sigma_));
@@ -626,6 +686,74 @@ namespace cubey {
 			glMemoryBarrier(GL_ALL_BARRIER_BITS);
 
 			i_density_blured.Swap();
+		}
+
+		if (enable_temperature_color_) {
+			render_blur_->Activate();
+
+			render_blur_->SetUniform("u_weights[0]", ComputeGaussianKernel(density_blur_sigma_));
+
+			render_blur_->SetUniform("u_pass_num", 0);
+
+			glBindImageTexture(0, i_temperature.ping, 0, GL_TRUE, 0, GL_READ_ONLY, GL_R16F);
+			glBindImageTexture(1, i_temperature_blured.ping, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_R16F);
+
+			glDispatchCompute(WORKGROUP_COUNT_X, WORKGROUP_COUNT_Y, WORKGROUP_COUNT_Z);
+			glMemoryBarrier(GL_ALL_BARRIER_BITS);
+
+			render_blur_->SetUniform("u_pass_num", 1);
+
+			glBindImageTexture(0, i_temperature_blured.ping, 0, GL_TRUE, 0, GL_READ_ONLY, GL_R16F);
+			glBindImageTexture(1, i_temperature_blured.pong, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_R16F);
+
+			glDispatchCompute(WORKGROUP_COUNT_X, WORKGROUP_COUNT_Y, WORKGROUP_COUNT_Z);
+			glMemoryBarrier(GL_ALL_BARRIER_BITS);
+
+			i_temperature_blured.Swap();
+
+			render_blur_->SetUniform("u_pass_num", 2);
+
+			glBindImageTexture(0, i_temperature_blured.ping, 0, GL_TRUE, 0, GL_READ_ONLY, GL_R16F);
+			glBindImageTexture(1, i_temperature_blured.pong, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_R16F);
+
+			glDispatchCompute(WORKGROUP_COUNT_X, WORKGROUP_COUNT_Y, WORKGROUP_COUNT_Z);
+			glMemoryBarrier(GL_ALL_BARRIER_BITS);
+
+			i_temperature_blured.Swap();
+		}
+
+		if (obsticle_radius_ > 0) {
+			render_blur_->Activate();
+
+			render_blur_->SetUniform("u_weights[0]", ComputeGaussianKernel(density_blur_sigma_));
+
+			render_blur_->SetUniform("u_pass_num", 0);
+
+			glBindImageTexture(0, i_obstacle, 0, GL_TRUE, 0, GL_READ_ONLY, GL_R16F);
+			glBindImageTexture(1, i_obstacle_blured.ping, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_R16F);
+
+			glDispatchCompute(WORKGROUP_COUNT_X, WORKGROUP_COUNT_Y, WORKGROUP_COUNT_Z);
+			glMemoryBarrier(GL_ALL_BARRIER_BITS);
+
+			render_blur_->SetUniform("u_pass_num", 1);
+
+			glBindImageTexture(0, i_obstacle_blured.ping, 0, GL_TRUE, 0, GL_READ_ONLY, GL_R16F);
+			glBindImageTexture(1, i_obstacle_blured.pong, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_R16F);
+
+			glDispatchCompute(WORKGROUP_COUNT_X, WORKGROUP_COUNT_Y, WORKGROUP_COUNT_Z);
+			glMemoryBarrier(GL_ALL_BARRIER_BITS);
+
+			i_obstacle_blured.Swap();
+
+			render_blur_->SetUniform("u_pass_num", 2);
+
+			glBindImageTexture(0, i_obstacle_blured.ping, 0, GL_TRUE, 0, GL_READ_ONLY, GL_R16F);
+			glBindImageTexture(1, i_obstacle_blured.pong, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_R16F);
+
+			glDispatchCompute(WORKGROUP_COUNT_X, WORKGROUP_COUNT_Y, WORKGROUP_COUNT_Z);
+			glMemoryBarrier(GL_ALL_BARRIER_BITS);
+
+			i_obstacle_blured.Swap();
 		}
 	}
 

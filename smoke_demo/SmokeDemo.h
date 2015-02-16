@@ -24,7 +24,7 @@ namespace cubey {
 		void GenTexture(GLuint& tex, GLenum internal_format);
 		void GenTexture(Slab& slab, GLenum internal_format);
 
-		void FillObstacle();
+		void FillObstacle(float delta_time);
 		void Advert(float delta_time);
 		void AddImpulse(float delta_time);
 		void AddExplosion(float delta_time);
@@ -49,8 +49,12 @@ namespace cubey {
 		GLuint i_phi_n_hat;
 		GLuint i_shadow;
 
+		GLuint i_obstacle_v;
+
 		Slab i_density_blured;
 		Slab i_shadow_blured;
+		Slab i_temperature_blured;
+		Slab i_obstacle_blured;
 
 		ShaderProgram* init_fill_rgba_;
 		ShaderProgram* init_fill_r_;
@@ -82,6 +86,8 @@ namespace cubey {
 		float density_dissipation_;
 		float density_decay_;
 
+		bool enable_injection_;
+
 		glm::vec3 injection_location_;
 
 		float temperature_injection_radius_;
@@ -98,6 +104,7 @@ namespace cubey {
 		float explosion_injection_ratio_;
 		float explosion_temperature_ratio_;
 
+		bool enable_buoyancy_;
 		float ambient_temperature_;
 		float buoyancy_;
 		float weight_;
@@ -123,6 +130,15 @@ namespace cubey {
 
 		glm::vec3 light_color_;
 		glm::vec3 smoke_color_;
+
+		bool enable_shadows_;
+
+		bool enable_temperature_color_;
+
+		bool enable_obstacle_motion_;
+		bool enable_obstacle_motion_prev_;
+		glm::vec3 obstacle_current_pos_;
+		glm::vec3 obstacle_current_v_;
 	};
 
 }
