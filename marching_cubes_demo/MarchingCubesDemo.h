@@ -3,7 +3,7 @@
 #include "cubey.h"
 
 namespace cubey {
-	class MarchingCubesDemo : public IEngineEvents {
+	class MarchingCubesDemo : public EngineEventsBase {
 	public:
 		void Init() override;
 		void Update(float delta_time) override;

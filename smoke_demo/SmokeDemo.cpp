@@ -27,23 +27,23 @@ namespace cubey {
 
 		ShaderManager::BufferCleaner shader_cleaner;
 
-		init_fill_rgba_ = ShaderManager::Main()->CreateProgram("smoke_compute.__CS_FILL_RGBA__");
-		init_fill_r_ = ShaderManager::Main()->CreateProgram("smoke_compute.__CS_FILL_R__");
-		init_fill_obstacle_ = ShaderManager::Main()->CreateProgram("smoke_compute.__CS_FILL_OBSTACLE__");
-		update_advect_rgba_ = ShaderManager::Main()->CreateProgram("smoke_compute.__CS_ADVECT_RGBA__");
-		update_advect_r_ = ShaderManager::Main()->CreateProgram("smoke_compute.__CS_ADVECT_R__");
-		update_advect_r_mac_cormack_ = ShaderManager::Main()->CreateProgram("smoke_compute.__CS_ADVECT_R_MAC_CORMACK__");
-		update_splat_ = ShaderManager::Main()->CreateProgram("smoke_compute.__CS_SPLAT__");
-		update_explosion_ = ShaderManager::Main()->CreateProgram("smoke_compute.__CS_EXPLOSION__");
-		update_buoyancy_ = ShaderManager::Main()->CreateProgram("smoke_compute.__CS_BUOYANCY__");
-		update_vorticity_ = ShaderManager::Main()->CreateProgram("smoke_compute.__CS_VORTICITY__");
-		update_confinement_ = ShaderManager::Main()->CreateProgram("smoke_compute.__CS_CONFINEMENT__");
-		update_divergence_ = ShaderManager::Main()->CreateProgram("smoke_compute.__CS_DIVERGENCE__");
-		update_jacobi_ = ShaderManager::Main()->CreateProgram("smoke_compute.__CS_JACOBI__");
-		update_gradient_ = ShaderManager::Main()->CreateProgram("smoke_compute.__CS_PROJECTION__");
-		render_blur_ = ShaderManager::Main()->CreateProgram("smoke_render.__CS_GAUSSIAN_BLUR__");
-		render_shadow_ = ShaderManager::Main()->CreateProgram("smoke_render.__CS_SHADOW__");
-		render_ = ShaderManager::Main()->CreateProgram("smoke_render.VS.FS");
+		init_fill_rgba_ = ShaderManager::Get()->CreateProgram("smoke_compute.__CS_FILL_RGBA__");
+		init_fill_r_ = ShaderManager::Get()->CreateProgram("smoke_compute.__CS_FILL_R__");
+		init_fill_obstacle_ = ShaderManager::Get()->CreateProgram("smoke_compute.__CS_FILL_OBSTACLE__");
+		update_advect_rgba_ = ShaderManager::Get()->CreateProgram("smoke_compute.__CS_ADVECT_RGBA__");
+		update_advect_r_ = ShaderManager::Get()->CreateProgram("smoke_compute.__CS_ADVECT_R__");
+		update_advect_r_mac_cormack_ = ShaderManager::Get()->CreateProgram("smoke_compute.__CS_ADVECT_R_MAC_CORMACK__");
+		update_splat_ = ShaderManager::Get()->CreateProgram("smoke_compute.__CS_SPLAT__");
+		update_explosion_ = ShaderManager::Get()->CreateProgram("smoke_compute.__CS_EXPLOSION__");
+		update_buoyancy_ = ShaderManager::Get()->CreateProgram("smoke_compute.__CS_BUOYANCY__");
+		update_vorticity_ = ShaderManager::Get()->CreateProgram("smoke_compute.__CS_VORTICITY__");
+		update_confinement_ = ShaderManager::Get()->CreateProgram("smoke_compute.__CS_CONFINEMENT__");
+		update_divergence_ = ShaderManager::Get()->CreateProgram("smoke_compute.__CS_DIVERGENCE__");
+		update_jacobi_ = ShaderManager::Get()->CreateProgram("smoke_compute.__CS_JACOBI__");
+		update_gradient_ = ShaderManager::Get()->CreateProgram("smoke_compute.__CS_PROJECTION__");
+		render_blur_ = ShaderManager::Get()->CreateProgram("smoke_render.__CS_GAUSSIAN_BLUR__");
+		render_shadow_ = ShaderManager::Get()->CreateProgram("smoke_render.__CS_SHADOW__");
+		render_ = ShaderManager::Get()->CreateProgram("smoke_render.VS.FS");
 
 		GenTexture(i_velocity, GL_RGBA16F);
 		GenTexture(i_temperature, GL_R16F);
@@ -82,10 +82,10 @@ namespace cubey {
 
 		fullscreen_quad_ = PrimitiveFactory::FullScreenQuad()->CreateInstance(render_);
 
-		Camera::Main()->transform_.TranslateTo(glm::vec3(0, 0, -1.5f));
+		MainCamera::Get()->transform_.TranslateTo(glm::vec3(0, 0, -1.5f));
 
-		Camera::Main()->mouse_wheel_speed_ = 1.0f;
-		Camera::Main()->movement_speed_ = 1.0f;
+		MainCamera::Get()->mouse_wheel_speed_ = 1.0f;
+		MainCamera::Get()->movement_speed_ = 1.0f;
 
 		obsticle_position_ = glm::vec3(0.5f);
 		obsticle_radius_ = 0.0f;
@@ -146,62 +146,62 @@ namespace cubey {
 
 		enable_temperature_color_ = false;
 
-		TwAddVarRW(UI::Main()->tw_bar_, "rotating camera", TW_TYPE_BOOLCPP, &camera_rotation_, "group=Camera");
+		TwUI::Get()->AddRW("rotating camera", TW_TYPE_BOOLCPP, &camera_rotation_, "group=Camera");
 
-		TwAddVarRW(UI::Main()->tw_bar_, "obstacle position", TW_TYPE_DIR3F, &obsticle_position_, "group=Obstacle");
-		TwAddVarRW(UI::Main()->tw_bar_, "obstacle radius", TW_TYPE_FLOAT, &obsticle_radius_, "min=0 max=32 step=2 group=Obstacle");
-		TwAddVarRW(UI::Main()->tw_bar_, "enable obstacle motion", TW_TYPE_BOOLCPP, &enable_obstacle_motion_, "group=Obstacle");
+		TwUI::Get()->AddRW("obstacle position", TW_TYPE_DIR3F, &obsticle_position_, "group=Obstacle");
+		TwUI::Get()->AddRW("obstacle radius", TW_TYPE_FLOAT, &obsticle_radius_, "min=0 max=32 step=2 group=Obstacle");
+		TwUI::Get()->AddRW("enable obstacle motion", TW_TYPE_BOOLCPP, &enable_obstacle_motion_, "group=Obstacle");
 
-		TwAddVarRW(UI::Main()->tw_bar_, "velocity dissipation log10", TW_TYPE_FLOAT, &velocity_dissipation_, "min=-5 max=-1 step=0.25 group=Advert");
-		TwAddVarRW(UI::Main()->tw_bar_, "temperature dissipation log10", TW_TYPE_FLOAT, &temperature_dissipation_, "min=-5 max=-1 step=0.25 group=Advert");
-		TwAddVarRW(UI::Main()->tw_bar_, "temperature decay log10", TW_TYPE_FLOAT, &temperature_decay_, "min=-5 max=0 step=0.25 group=Advert");
-		TwAddVarRW(UI::Main()->tw_bar_, "density dissipation log10", TW_TYPE_FLOAT, &density_dissipation_, "min=-5 max=-1 step=0.25 group=Advert");
-		TwAddVarRW(UI::Main()->tw_bar_, "density decay log10", TW_TYPE_FLOAT, &density_decay_, "min=-5 max=0 step=0.25 group=Advert");
+		TwUI::Get()->AddRW("velocity dissipation log10", TW_TYPE_FLOAT, &velocity_dissipation_, "min=-5 max=-1 step=0.25 group=Advert");
+		TwUI::Get()->AddRW("temperature dissipation log10", TW_TYPE_FLOAT, &temperature_dissipation_, "min=-5 max=-1 step=0.25 group=Advert");
+		TwUI::Get()->AddRW("temperature decay log10", TW_TYPE_FLOAT, &temperature_decay_, "min=-5 max=0 step=0.25 group=Advert");
+		TwUI::Get()->AddRW("density dissipation log10", TW_TYPE_FLOAT, &density_dissipation_, "min=-5 max=-1 step=0.25 group=Advert");
+		TwUI::Get()->AddRW("density decay log10", TW_TYPE_FLOAT, &density_decay_, "min=-5 max=0 step=0.25 group=Advert");
 
-		TwAddVarRW(UI::Main()->tw_bar_, "enable injection", TW_TYPE_BOOLCPP, &enable_injection_, "group=Injection");
-		TwAddVarRW(UI::Main()->tw_bar_, "inject position", TW_TYPE_DIR3F, &injection_location_, "group=Injection");
-		TwAddVarRW(UI::Main()->tw_bar_, "temperature inject concentration", TW_TYPE_FLOAT, &temperature_injection_radius_, "min=0.1 max=2.0 step=0.1 group=Injection");
-		TwAddVarRW(UI::Main()->tw_bar_, "temperature inject intensity log10", TW_TYPE_FLOAT, &temperature_injection_intensity_, "min=0 max=4 step=0.25 group=Injection");
-		TwAddVarRW(UI::Main()->tw_bar_, "density inject concentration", TW_TYPE_FLOAT, &density_injection_radius_, "min=0.1 max=2.0 step=0.1 group=Injection");
-		TwAddVarRW(UI::Main()->tw_bar_, "density inject intensity log10", TW_TYPE_FLOAT, &density_injection_intensity_, "min=0 max=4 step=0.25 group=Injection");
+		TwUI::Get()->AddRW("enable injection", TW_TYPE_BOOLCPP, &enable_injection_, "group=Injection");
+		TwUI::Get()->AddRW("inject position", TW_TYPE_DIR3F, &injection_location_, "group=Injection");
+		TwUI::Get()->AddRW("temperature inject concentration", TW_TYPE_FLOAT, &temperature_injection_radius_, "min=0.1 max=2.0 step=0.1 group=Injection");
+		TwUI::Get()->AddRW("temperature inject intensity log10", TW_TYPE_FLOAT, &temperature_injection_intensity_, "min=0 max=4 step=0.25 group=Injection");
+		TwUI::Get()->AddRW("density inject concentration", TW_TYPE_FLOAT, &density_injection_radius_, "min=0.1 max=2.0 step=0.1 group=Injection");
+		TwUI::Get()->AddRW("density inject intensity log10", TW_TYPE_FLOAT, &density_injection_intensity_, "min=0 max=4 step=0.25 group=Injection");
 
-		TwAddVarRW(UI::Main()->tw_bar_, "enable buoyancy", TW_TYPE_BOOLCPP, &enable_buoyancy_, "group=Buoyancy");
-		TwAddVarRW(UI::Main()->tw_bar_, "ambient temperature", TW_TYPE_FLOAT, &ambient_temperature_, "min=-10 max=10 step=0.25 group=Buoyancy");
-		TwAddVarRW(UI::Main()->tw_bar_, "buoyancy log10", TW_TYPE_FLOAT, &buoyancy_, "min=0 max=5 step=0.25 group=Buoyancy");
-		TwAddVarRW(UI::Main()->tw_bar_, "weight log10", TW_TYPE_FLOAT, &weight_, "min=0 max=5 step=0.25 group=Buoyancy");
+		TwUI::Get()->AddRW("enable buoyancy", TW_TYPE_BOOLCPP, &enable_buoyancy_, "group=Buoyancy");
+		TwUI::Get()->AddRW("ambient temperature", TW_TYPE_FLOAT, &ambient_temperature_, "min=-10 max=10 step=0.25 group=Buoyancy");
+		TwUI::Get()->AddRW("buoyancy log10", TW_TYPE_FLOAT, &buoyancy_, "min=0 max=5 step=0.25 group=Buoyancy");
+		TwUI::Get()->AddRW("weight log10", TW_TYPE_FLOAT, &weight_, "min=0 max=5 step=0.25 group=Buoyancy");
 
-		TwAddVarRW(UI::Main()->tw_bar_, "vorticity strength", TW_TYPE_FLOAT, &vorticity_strength_, "min=0 max=100 step=5 group=Vorticity");
+		TwUI::Get()->AddRW("vorticity strength", TW_TYPE_FLOAT, &vorticity_strength_, "min=0 max=100 step=5 group=Vorticity");
 
-		TwAddVarRW(UI::Main()->tw_bar_, "add explosion", TW_TYPE_BOOLCPP, &add_explosion_, "group=Explosion");
-		TwAddVarRW(UI::Main()->tw_bar_, "explosion timer", TW_TYPE_FLOAT, &explosion_timer_, "min=0.5 max=10 step=0.5 group=Explosion");
-		TwAddVarRW(UI::Main()->tw_bar_, "explosion concentration", TW_TYPE_FLOAT, &explosion_concetration_, "min=0.1 max=2.0 step=0.1 group=Explosion");
-		TwAddVarRW(UI::Main()->tw_bar_, "explosion force min log10", TW_TYPE_FLOAT, &explosion_force_min_, "min=-2 max=3 step=0.25 group=Explosion");
-		TwAddVarRW(UI::Main()->tw_bar_, "explosion force max log10", TW_TYPE_FLOAT, &explosion_force_max_, "min=-2 max=3 step=0.25 group=Explosion");
-		TwAddVarRW(UI::Main()->tw_bar_, "explosion temperature ratio log10", TW_TYPE_FLOAT, &explosion_temperature_ratio_, "min=-2 max=2 step=0.25 group=Explosion");
-		TwAddVarRW(UI::Main()->tw_bar_, "explosion injection ratio log10", TW_TYPE_FLOAT, &explosion_injection_ratio_, "min=-2 max=2 step=0.25 group=Explosion");
+		TwUI::Get()->AddRW("add explosion", TW_TYPE_BOOLCPP, &add_explosion_, "group=Explosion");
+		TwUI::Get()->AddRW("explosion timer", TW_TYPE_FLOAT, &explosion_timer_, "min=0.5 max=10 step=0.5 group=Explosion");
+		TwUI::Get()->AddRW("explosion concentration", TW_TYPE_FLOAT, &explosion_concetration_, "min=0.1 max=2.0 step=0.1 group=Explosion");
+		TwUI::Get()->AddRW("explosion force min log10", TW_TYPE_FLOAT, &explosion_force_min_, "min=-2 max=3 step=0.25 group=Explosion");
+		TwUI::Get()->AddRW("explosion force max log10", TW_TYPE_FLOAT, &explosion_force_max_, "min=-2 max=3 step=0.25 group=Explosion");
+		TwUI::Get()->AddRW("explosion temperature ratio log10", TW_TYPE_FLOAT, &explosion_temperature_ratio_, "min=-2 max=2 step=0.25 group=Explosion");
+		TwUI::Get()->AddRW("explosion injection ratio log10", TW_TYPE_FLOAT, &explosion_injection_ratio_, "min=-2 max=2 step=0.25 group=Explosion");
 		
-		TwAddVarRW(UI::Main()->tw_bar_, "jacobi iterations", TW_TYPE_INT16, &jacobi_iterations_, "min=5 max=50 step=5 group=Simulation");
-		TwAddVarRW(UI::Main()->tw_bar_, "simulation paused", TW_TYPE_BOOLCPP, &simulation_paused_, "group=Simulation");
+		TwUI::Get()->AddRW("jacobi iterations", TW_TYPE_INT16, &jacobi_iterations_, "min=5 max=50 step=5 group=Simulation");
+		TwUI::Get()->AddRW("simulation paused", TW_TYPE_BOOLCPP, &simulation_paused_, "group=Simulation");
 
-		TwAddVarRW(UI::Main()->tw_bar_, "blur density", TW_TYPE_BOOLCPP, &blur_density_, "group=Blur");
-		TwAddVarRW(UI::Main()->tw_bar_, "density blur sigma", TW_TYPE_FLOAT, &density_blur_sigma_, "min=0.1 max=2.0 step=0.1 group=Blur");
-		TwAddVarRW(UI::Main()->tw_bar_, "density sample jittering", TW_TYPE_FLOAT, &density_sample_jittering_, "min=0.0 max=1.0 step=0.1 group=Blur");
-		TwAddVarRW(UI::Main()->tw_bar_, "blur lighting", TW_TYPE_BOOLCPP, &blur_shadow_, "group=Blur");
-		TwAddVarRW(UI::Main()->tw_bar_, "lighting blur sigma", TW_TYPE_FLOAT, &shadow_blur_sigma_, "min=0.1 max=2.0 step=0.1 group=Blur");
-		TwAddVarRW(UI::Main()->tw_bar_, "lighting sample jittering", TW_TYPE_FLOAT, &shadow_sample_jittering_, "min=0.0 max=1.0 step=0.1 group=Blur");
+		TwUI::Get()->AddRW("blur density", TW_TYPE_BOOLCPP, &blur_density_, "group=Blur");
+		TwUI::Get()->AddRW("density blur sigma", TW_TYPE_FLOAT, &density_blur_sigma_, "min=0.1 max=2.0 step=0.1 group=Blur");
+		TwUI::Get()->AddRW("density sample jittering", TW_TYPE_FLOAT, &density_sample_jittering_, "min=0.0 max=1.0 step=0.1 group=Blur");
+		TwUI::Get()->AddRW("blur lighting", TW_TYPE_BOOLCPP, &blur_shadow_, "group=Blur");
+		TwUI::Get()->AddRW("lighting blur sigma", TW_TYPE_FLOAT, &shadow_blur_sigma_, "min=0.1 max=2.0 step=0.1 group=Blur");
+		TwUI::Get()->AddRW("lighting sample jittering", TW_TYPE_FLOAT, &shadow_sample_jittering_, "min=0.0 max=1.0 step=0.1 group=Blur");
 
-		TwAddVarRW(UI::Main()->tw_bar_, "color absorption log10", TW_TYPE_FLOAT, &color_absorption_, "min=0.0 max=3 step=0.25 group=Lighting");
-		TwAddVarRW(UI::Main()->tw_bar_, "light absorption log10", TW_TYPE_FLOAT, &light_absorption_, "min=0.0 max=3 step=0.25 group=Lighting");
-		TwAddVarRW(UI::Main()->tw_bar_, "light intensity log10", TW_TYPE_FLOAT, &light_intensity_, "min=0.0 max=3 step=0.25 group=Lighting");
-		TwAddVarRW(UI::Main()->tw_bar_, "ambient light log10", TW_TYPE_FLOAT, &ambient_light_, "min=-2 max=1 step=0.25 group=Lighting");
-		TwAddVarRW(UI::Main()->tw_bar_, "smoke color", TW_TYPE_COLOR3F, &smoke_color_, "group=Lighting");
-		TwAddVarRW(UI::Main()->tw_bar_, "light color", TW_TYPE_COLOR3F, &light_color_, "group=Lighting");
-		TwAddVarRW(UI::Main()->tw_bar_, "enable shadows", TW_TYPE_BOOLCPP, &enable_shadows_, "group=Lighting");
-		TwAddVarRW(UI::Main()->tw_bar_, "enable temperature color", TW_TYPE_BOOLCPP, &enable_temperature_color_, "group=Lighting");
+		TwUI::Get()->AddRW("color absorption log10", TW_TYPE_FLOAT, &color_absorption_, "min=0.0 max=3 step=0.25 group=Lighting");
+		TwUI::Get()->AddRW("light absorption log10", TW_TYPE_FLOAT, &light_absorption_, "min=0.0 max=3 step=0.25 group=Lighting");
+		TwUI::Get()->AddRW("light intensity log10", TW_TYPE_FLOAT, &light_intensity_, "min=0.0 max=3 step=0.25 group=Lighting");
+		TwUI::Get()->AddRW("ambient light log10", TW_TYPE_FLOAT, &ambient_light_, "min=-2 max=1 step=0.25 group=Lighting");
+		TwUI::Get()->AddRW("smoke color", TW_TYPE_COLOR3F, &smoke_color_, "group=Lighting");
+		TwUI::Get()->AddRW("light color", TW_TYPE_COLOR3F, &light_color_, "group=Lighting");
+		TwUI::Get()->AddRW("enable shadows", TW_TYPE_BOOLCPP, &enable_shadows_, "group=Lighting");
+		TwUI::Get()->AddRW("enable temperature color", TW_TYPE_BOOLCPP, &enable_temperature_color_, "group=Lighting");
 	}
 
 	void SmokeDemo::Update(float delta_time) {
-		if (camera_rotation_) Camera::Main()->Orbit(delta_time * glm::radians(15.0f), 0);
+		if (camera_rotation_) MainCamera::Get()->Orbit(delta_time * glm::radians(15.0f), 0);
 		if (simulation_paused_) return;
 
 		FillObstacle(delta_time);
@@ -258,7 +258,7 @@ namespace cubey {
 		glm::vec2 viewport_size_f = { viewport_size[2], viewport_size[3] };
 
 		render_->SetUniform("u_viewport_size", viewport_size_f);
-		render_->SetUniform("u_inverse_mvp", glm::inverse(Camera::Main()->view_mat()));
+		render_->SetUniform("u_inverse_mvp", glm::inverse(MainCamera::Get()->view_mat()));
 
 		GLuint t_density = blur_density_ ? i_density_blured.ping : i_density.ping;
 		GLuint t_shadow = blur_shadow_ ? i_shadow_blured.ping : i_shadow;

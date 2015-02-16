@@ -3,7 +3,7 @@
 #include "cubey.h"
 
 namespace cubey {
-	class CameraTest : public IEngineEvents {
+	class CameraTest : public EngineEventsBase {
 	public:
 		void Init() override;
 		void Render() override;

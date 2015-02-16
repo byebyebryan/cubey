@@ -1,14 +1,15 @@
 #pragma once
 
 #include "glm/glm.hpp"
-#include "Interfaces.h"
+#include "SingletonBase.h"
+#include "EngineEventsBase.h"
 
 namespace cubey {
-	class Input : public IEngineEvents, public ISingleton<Input> {
+	class Input : public EngineEventsBase, public SingletonBase<Input> {
 	public:
 		Input();
 
-		void SystemInit() override;
+		void SystemInit();
 		
 		bool is_left_mouse_btn_down() { return is_left_mouse_btn_down_; }
 		bool is_right_mouse_btn_down() { return is_right_mouse_btn_down_; }
@@ -16,7 +17,6 @@ namespace cubey {
 		glm::vec2 mouse_pos_offset() { return mouse_pos_offset_; }
 		float mouse_wheel_offset() { return mouse_wheel_offset_; }
 		glm::vec3 movement() { return movement_; }
-
 
 		bool mouse_button_consumed_by_ui_;
 		bool mouse_wheel_consumed_by_ui_;

@@ -10,7 +10,7 @@ namespace cubey {
 
 	void ShaderManager::BufferCleaner::Clear() {
 		for (auto& file_name : files_) {
-			ShaderManager::Main()->UnloadFile(file_name);
+			ShaderManager::Get()->UnloadFile(file_name);
 		}
 		files_.clear();
 	}

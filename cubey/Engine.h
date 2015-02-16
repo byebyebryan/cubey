@@ -9,8 +9,6 @@ namespace cubey {
 
 	class Engine {
 	public:
-		struct SystemInitEvent {
-		};
 
 		struct InitEvent {
 		};
@@ -64,7 +62,10 @@ namespace cubey {
 		struct CharEvent {
 			unsigned int codepoint;
 		};
-	
+		
+		static void Push(class EngineEventsBase* engine_events_base);
+		static void Pop(class EngineEventsBase* engine_events_base);
+
 		static void Init();
 		static void MainLoop();
 		static void Update(float delta_time);

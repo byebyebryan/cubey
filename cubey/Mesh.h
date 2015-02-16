@@ -40,9 +40,13 @@ namespace cubey {
 		}
 
 		class MeshInstance* CreateInstance(ShaderProgram* program, const std::string& u_mvp_mat_name = "", const std::string& u_normal_mat_name = "",
-			Camera* camera = Camera::Main(), const Transform& transform = Transform());
+			Camera* camera = MainCamera::Get(), const Transform& transform = Transform());
 
-		void Draw();
+		void Draw() {
+			glBindVertexArray(vao_);
+			glDrawArrays(draw_mode_, 0, vertices_count_);
+			glBindVertexArray(0);
+		}
 
 	private:
 		GLenum draw_mode_;
@@ -54,7 +58,7 @@ namespace cubey {
 	class MeshInstance {
 	public:
 		MeshInstance(Mesh* mesh, ShaderProgram* program, int u_mvp_mat_location, int u_normal_mat_location,
-			Camera* camera = Camera::Main(), const Transform& transform = Transform()) :
+			Camera* camera = MainCamera::Get(), const Transform& transform = Transform()) :
 			mesh_(mesh),
 			program_(program),
 			u_mvp_mat_location_(u_mvp_mat_location),
@@ -63,7 +67,15 @@ namespace cubey {
 			transform_(transform) {
 		}
 
-		void Draw();
+		void Draw() {
+			if (u_mvp_mat_location_ != -1) {
+				program_->SetUniform(u_mvp_mat_location_, camera_->CalculateMVPMat(transform_.transformation_mat()));
+			}
+			if (u_normal_mat_location_ != -1) {
+				program_->SetUniform(u_normal_mat_location_, camera_->CalculateNormalMat(transform_.transformation_mat()));
+			}
+			mesh_->Draw();
+		}
 
 		Transform transform_;
 	private:
@@ -74,5 +86,9 @@ namespace cubey {
 		int u_normal_mat_location_;
 	};
 
-	
+	inline MeshInstance* Mesh::CreateInstance(ShaderProgram* program, const std::string& u_mvp_mat_name /*= ""*/, const std::string& u_normal_mat_name /*= ""*/, Camera* camera /*= MainCamera::Get()*/, const Transform& transform /*= Transform()*/) {
+		MeshInstance* new_instance = new MeshInstance(this, program,
+			program->GetUniformLocation(u_mvp_mat_name), program->GetUniformLocation(u_normal_mat_name), camera, transform);
+		return new_instance;
+	}
 }

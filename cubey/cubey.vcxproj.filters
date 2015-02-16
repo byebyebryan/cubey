@@ -10,14 +10,11 @@
     <ClCompile Include="Shader.cpp" />
     <ClCompile Include="ShaderManager.cpp" />
     <ClCompile Include="ShaderProgram.cpp" />
-    <ClCompile Include="UI.cpp" />
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="Engine.cpp" />
     <ClCompile Include="Input.cpp" />
-    <ClCompile Include="Interfaces.cpp" />
-    <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="TimeManager.cpp" />
-    <ClCompile Include="Config.cpp" />
+    <ClCompile Include="TwUI.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="PrimitiveFactory.h" />
@@ -25,18 +22,20 @@
     <ClInclude Include="ShaderManager.h" />
     <ClInclude Include="ShaderProgram.h" />
     <ClInclude Include="Transform.h" />
-    <ClInclude Include="UI.h" />
     <ClInclude Include="Vertex.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="cubey.h" />
     <ClInclude Include="Engine.h" />
     <ClInclude Include="Event.h" />
     <ClInclude Include="Input.h" />
-    <ClInclude Include="Interfaces.h" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="TimeManager.h" />
     <ClInclude Include="VertexArray.h" />
-    <ClInclude Include="Config.h" />
+    <ClInclude Include="SingletonBase.h" />
+    <ClInclude Include="EngineEventsBase.h" />
+    <ClInclude Include="TwUI.h" />
+    <ClInclude Include="AutoXmlBase.h" />
+    <ClInclude Include="AutoXmlTypes.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\debug.glsl">

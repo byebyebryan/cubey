@@ -4,7 +4,9 @@
 using namespace cubey;
 
 int main(void) {
-	MarchingCubesDemo demo;
+	Engine::Init();
+
+	Engine::Push(new MarchingCubesDemo());
 
 	Engine::MainLoop();
 

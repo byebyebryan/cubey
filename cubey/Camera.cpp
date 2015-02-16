@@ -18,17 +18,13 @@ namespace cubey {
 	const float kDefaultPitchLimit = 85.0f;
 
 	Camera::Camera() {
-		system_init_lisenter_ = EventLisenter<Engine::SystemInitEvent>([this](const Engine::SystemInitEvent& e){
-			SystemInit();
-		});
+
 		update_lisenter_ = EventLisenter<Engine::UpdateEvent>([this](const Engine::UpdateEvent& e){
 			Update(e.deltatime);
 		});
-		system_init_lisenter_.PushToChannel();
-		update_lisenter_.PushToChannel();
-	}
 
-	void Camera::SystemInit() {
+		update_lisenter_.PushToChannel();
+
 		Reset();
 	}
 
@@ -69,17 +65,17 @@ namespace cubey {
 			look_at_target_pos_ = look_at_target_->position();
 		}
 
-		if (Input::Main()->is_left_mouse_btn_down()) {
-			Orbit(-Input::Main()->mouse_pos_offset().x * delta_time * mouse_sensitivty_, Input::Main()->mouse_pos_offset().y * delta_time * mouse_sensitivty_);
+		if (Input::Get()->is_left_mouse_btn_down()) {
+			Orbit(-Input::Get()->mouse_pos_offset().x * delta_time * mouse_sensitivty_, Input::Get()->mouse_pos_offset().y * delta_time * mouse_sensitivty_);
 		}
-		if (Input::Main()->is_right_mouse_btn_down()) {
-			PanTilt(Input::Main()->mouse_pos_offset().x * delta_time * mouse_sensitivty_, -Input::Main()->mouse_pos_offset().y * delta_time * mouse_sensitivty_);
+		if (Input::Get()->is_right_mouse_btn_down()) {
+			PanTilt(Input::Get()->mouse_pos_offset().x * delta_time * mouse_sensitivty_, -Input::Get()->mouse_pos_offset().y * delta_time * mouse_sensitivty_);
 		}
 
-		float mouse_wheel_movement = delta_time * Input::Main()->mouse_wheel_offset() * mouse_wheel_speed_;
+		float mouse_wheel_movement = delta_time * Input::Get()->mouse_wheel_offset() * mouse_wheel_speed_;
 		transform_.Translate(transform_.forward() * mouse_wheel_movement);
 
-		glm::vec3 movement = delta_time * movement_speed_ * Input::Main()->movement() * transform_.orientation();
+		glm::vec3 movement = delta_time * movement_speed_ * Input::Get()->movement() * transform_.orientation();
 		transform_.Translate(movement);
 		look_at_target_pos_ += movement;
 

@@ -4,8 +4,9 @@
 using namespace cubey;
 
 int main(void) {
-	CameraTest demo;
+	Engine::Init();
+
+	Engine::Push(new CameraTest());
 
 	Engine::MainLoop();
-
 }

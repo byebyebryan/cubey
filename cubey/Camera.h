@@ -1,7 +1,8 @@
 #pragma once
 
-#include "Interfaces.h"
+#include "SingletonBase.h"
 #include "Transform.h"
+#include "Engine.h"
 
 namespace cubey {
 
@@ -9,12 +10,6 @@ namespace cubey {
 	public:
 		Camera();
 
-		static Camera* Main() {
-			static Camera* instance = new Camera();
-			return instance;
-		}
-
-		void SystemInit();
 		void Reset();
 		void Update(float delta_time);
 
@@ -46,7 +41,6 @@ namespace cubey {
 
 		Transform transform_;
 	private:
-		EventLisenter<Engine::SystemInitEvent> system_init_lisenter_;
 		EventLisenter<Engine::UpdateEvent> update_lisenter_;
 
 		glm::vec3 look_at_target_pos_;
@@ -60,6 +54,11 @@ namespace cubey {
 		float pitch_;
 		float roll_;
 
-		friend class UI;
+		friend class TwUI;
+	};
+
+	class MainCamera : public Camera, public SingletonBase < MainCamera > {
+	public:
+		void SystemInit() {}
 	};
 }

@@ -4,7 +4,9 @@
 using namespace cubey;
 
 int main(void) {
-	ParticleDemo demo;
+	Engine::Init();
+
+	Engine::Push(new ParticleDemo());
 
 	Engine::MainLoop();
 

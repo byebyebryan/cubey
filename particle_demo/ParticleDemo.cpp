@@ -153,11 +153,11 @@ namespace cubey {
 
 		ShaderManager::BufferCleaner shader_cleaner;
 
-		init_prog_ = ShaderManager::Main()->CreateProgram("particle_compute.CS_INIT");
+		init_prog_ = ShaderManager::Get()->CreateProgram("particle_compute.CS_INIT");
 		
-		update_prog_ = ShaderManager::Main()->CreateProgram("particle_compute.CS_UPDATE");
+		update_prog_ = ShaderManager::Get()->CreateProgram("particle_compute.CS_UPDATE");
 		
-		render_prog_ = ShaderManager::Main()->CreateProgram("particle_render.VS.GS.FS");
+		render_prog_ = ShaderManager::Get()->CreateProgram("particle_render.VS.GS.FS");
 
 		/*glm::vec4* particle_data = new glm::vec4[MAX_PARTICLE_PACK_COUNT * 128 * 2];
 		for (int i = 0; i < MAX_PARTICLE_PACK_COUNT * 128; i++) {
@@ -196,39 +196,39 @@ namespace cubey {
 			u_streams_.push_back(streams_[i].GetVec3());
 		}
 
-		TwAddVarRW(UI::Main()->tw_bar_, "camera orbit speed", TW_TYPE_FLOAT, &camera_orbit_speed_, "min=0 max=60 step=5 group=Camera");
+		TwUI::Get()->AddRW("camera orbit speed", TW_TYPE_FLOAT, &camera_orbit_speed_, "min=0 max=60 step=5 group=Camera");
 
-		TwAddVarRW(UI::Main()->tw_bar_, "simulation paused", TW_TYPE_BOOLCPP, &particle_paused_, "group=Particle");
-		TwAddVarRO(UI::Main()->tw_bar_, "particle count", TW_TYPE_UINT32, &particle_count, "group=Particle");
-		TwAddVarRW(UI::Main()->tw_bar_, "particle group count", TW_TYPE_UINT16, &u_particle_pack_count_, "min=1000 max=10000 step=1000 group=Particle");
-		TwAddVarRW(UI::Main()->tw_bar_, "particle size", TW_TYPE_FLOAT, &u_particle_size_, "min=0.05 max=1.0 step=0.05 group=Particle");
-		TwAddVarRW(UI::Main()->tw_bar_, "particle lifespan", TW_TYPE_FLOAT, &u_particle_lifespan_, "min=1 max=25 step=1 group=Particle");
-		TwAddVarRW(UI::Main()->tw_bar_, "particle bound", TW_TYPE_FLOAT, &u_particle_bound_, "min=5 max=125 step=5 group=Particle");
-		TwAddVarRW(UI::Main()->tw_bar_, "particle initial spread", TW_TYPE_FLOAT, &u_particle_initial_spread_, "min=0 max=5 step=0.5 group=Particle");
-		TwAddVarRW(UI::Main()->tw_bar_, "particle initial speed", TW_TYPE_FLOAT, &u_particle_initial_speed_, "min=0 max=10 step=1 group=Particle");
-		TwAddVarRW(UI::Main()->tw_bar_, "particle speed decay", TW_TYPE_FLOAT, &u_particle_speed_decay_, "min=0 max=0.9 step=0.1 group=Particle");
-		TwAddVarRW(UI::Main()->tw_bar_, "particle speed randomizer", TW_TYPE_FLOAT, &u_particle_speed_randomizer_, "min=0 max=1.0 step=0.05 group=Particle");
-		TwAddVarRW(UI::Main()->tw_bar_, "particle color cold", TW_TYPE_COLOR4F, &u_particle_color_cold_, " group=Particle");
-		TwAddVarRW(UI::Main()->tw_bar_, "particle color hot", TW_TYPE_COLOR4F, &u_particle_color_hot_, " group=Particle");
+		TwUI::Get()->AddRW("simulation paused", TW_TYPE_BOOLCPP, &particle_paused_, "group=Particle");
+		TwUI::Get()->AddRO("particle count", TW_TYPE_UINT32, &particle_count, "group=Particle");
+		TwUI::Get()->AddRW("particle group count", TW_TYPE_UINT16, &u_particle_pack_count_, "min=1000 max=10000 step=1000 group=Particle");
+		TwUI::Get()->AddRW("particle size", TW_TYPE_FLOAT, &u_particle_size_, "min=0.05 max=1.0 step=0.05 group=Particle");
+		TwUI::Get()->AddRW("particle lifespan", TW_TYPE_FLOAT, &u_particle_lifespan_, "min=1 max=25 step=1 group=Particle");
+		TwUI::Get()->AddRW("particle bound", TW_TYPE_FLOAT, &u_particle_bound_, "min=5 max=125 step=5 group=Particle");
+		TwUI::Get()->AddRW("particle initial spread", TW_TYPE_FLOAT, &u_particle_initial_spread_, "min=0 max=5 step=0.5 group=Particle");
+		TwUI::Get()->AddRW("particle initial speed", TW_TYPE_FLOAT, &u_particle_initial_speed_, "min=0 max=10 step=1 group=Particle");
+		TwUI::Get()->AddRW("particle speed decay", TW_TYPE_FLOAT, &u_particle_speed_decay_, "min=0 max=0.9 step=0.1 group=Particle");
+		TwUI::Get()->AddRW("particle speed randomizer", TW_TYPE_FLOAT, &u_particle_speed_randomizer_, "min=0 max=1.0 step=0.05 group=Particle");
+		TwUI::Get()->AddRW("particle color cold", TW_TYPE_COLOR4F, &u_particle_color_cold_, " group=Particle");
+		TwUI::Get()->AddRW("particle color hot", TW_TYPE_COLOR4F, &u_particle_color_hot_, " group=Particle");
 
-		TwAddVarRW(UI::Main()->tw_bar_, "stream count", TW_TYPE_INT16, &u_stream_count_, "min=0 max=128 step=4 group=Stream");
-		TwAddVarRW(UI::Main()->tw_bar_, "stream ratio", TW_TYPE_FLOAT, &u_particle_stream_ratio_, "min=0 max=1 step=0.1 group=Stream");
-		TwAddVarRW(UI::Main()->tw_bar_, "stream deviation", TW_TYPE_FLOAT, &u_particle_stream_deviation_, "min=0 max=1 step=0.1 group=Stream");
-		TwAddVarRW(UI::Main()->tw_bar_, "stream velocity min", TW_TYPE_FLOAT, &streams_min_vel_, "min=0.5 max=25 step=2.5 group=Stream");
-		TwAddVarRW(UI::Main()->tw_bar_, "stream velocity max", TW_TYPE_FLOAT, &streams_max_vel_, "min=0.5 max=50 step=2.5 group=Stream");
-		TwAddVarRW(UI::Main()->tw_bar_, "stream travel time min", TW_TYPE_FLOAT, &streams_min_travel_time_, "min=0.1 max=10.0 step=0.5 group=Stream");
-		TwAddVarRW(UI::Main()->tw_bar_, "stream travel time max", TW_TYPE_FLOAT, &streams_max_travel_time_, "min=0.5 max=20.0 step=0.5 group=Stream");
+		TwUI::Get()->AddRW("stream count", TW_TYPE_INT16, &u_stream_count_, "min=0 max=128 step=4 group=Stream");
+		TwUI::Get()->AddRW("stream ratio", TW_TYPE_FLOAT, &u_particle_stream_ratio_, "min=0 max=1 step=0.1 group=Stream");
+		TwUI::Get()->AddRW("stream deviation", TW_TYPE_FLOAT, &u_particle_stream_deviation_, "min=0 max=1 step=0.1 group=Stream");
+		TwUI::Get()->AddRW("stream velocity min", TW_TYPE_FLOAT, &streams_min_vel_, "min=0.5 max=25 step=2.5 group=Stream");
+		TwUI::Get()->AddRW("stream velocity max", TW_TYPE_FLOAT, &streams_max_vel_, "min=0.5 max=50 step=2.5 group=Stream");
+		TwUI::Get()->AddRW("stream travel time min", TW_TYPE_FLOAT, &streams_min_travel_time_, "min=0.1 max=10.0 step=0.5 group=Stream");
+		TwUI::Get()->AddRW("stream travel time max", TW_TYPE_FLOAT, &streams_max_travel_time_, "min=0.5 max=20.0 step=0.5 group=Stream");
 
 
-		TwAddVarRW(UI::Main()->tw_bar_, "attractor count", TW_TYPE_INT16, &u_attractor_count_, "min=0 max=64 step=4 group=Attractor");
+		TwUI::Get()->AddRW("attractor count", TW_TYPE_INT16, &u_attractor_count_, "min=0 max=64 step=4 group=Attractor");
 		
-		TwAddVarRW(UI::Main()->tw_bar_, "attraction force log10", TW_TYPE_FLOAT, &u_attraction_force_multiplier_, "min=-8 max=8 step=1 group=Attractor");
-		TwAddVarRW(UI::Main()->tw_bar_, "attractor distance min", TW_TYPE_FLOAT, &attractors_min_distance_, "min=5 max=50 step=5 group=Attractor");
-		TwAddVarRW(UI::Main()->tw_bar_, "attractor distance max", TW_TYPE_FLOAT, &attractors_max_distance_, "min=5 max=100 step=5 group=Attractor");
-		TwAddVarRW(UI::Main()->tw_bar_, "attractor mass min", TW_TYPE_FLOAT, &attractors_min_mass_, "min=-800 max=1600 step=100 group=Attractor");
-		TwAddVarRW(UI::Main()->tw_bar_, "attractor mass max", TW_TYPE_FLOAT, &attractors_max_mass_, "min=-800 max=1600 step=100 group=Attractor");
-		TwAddVarRW(UI::Main()->tw_bar_, "attractor travel time min", TW_TYPE_FLOAT, &attractors_min_travel_time_, "min=0.5 max=5.0 step=0.5 group=Attractor");
-		TwAddVarRW(UI::Main()->tw_bar_, "attractor travel time max", TW_TYPE_FLOAT, &attractors_max_travel_time_, "min=0.5 max=10.0 step=0.5 group=Attractor");
+		TwUI::Get()->AddRW("attraction force log10", TW_TYPE_FLOAT, &u_attraction_force_multiplier_, "min=-8 max=8 step=1 group=Attractor");
+		TwUI::Get()->AddRW("attractor distance min", TW_TYPE_FLOAT, &attractors_min_distance_, "min=5 max=50 step=5 group=Attractor");
+		TwUI::Get()->AddRW("attractor distance max", TW_TYPE_FLOAT, &attractors_max_distance_, "min=5 max=100 step=5 group=Attractor");
+		TwUI::Get()->AddRW("attractor mass min", TW_TYPE_FLOAT, &attractors_min_mass_, "min=-800 max=1600 step=100 group=Attractor");
+		TwUI::Get()->AddRW("attractor mass max", TW_TYPE_FLOAT, &attractors_max_mass_, "min=-800 max=1600 step=100 group=Attractor");
+		TwUI::Get()->AddRW("attractor travel time min", TW_TYPE_FLOAT, &attractors_min_travel_time_, "min=0.5 max=5.0 step=0.5 group=Attractor");
+		TwUI::Get()->AddRW("attractor travel time max", TW_TYPE_FLOAT, &attractors_max_travel_time_, "min=0.5 max=10.0 step=0.5 group=Attractor");
 
 		update_prog_->Activate();
 		update_prog_->SetUniform("u_particle_lifespan", u_particle_lifespan_);
@@ -249,7 +249,7 @@ namespace cubey {
 		render_prog_->SetUniform("u_particle_color_hot", u_particle_color_hot_);
 		render_prog_->SetUniform("u_particle_texture", 0);
 
-		Camera::Main()->transform_.TranslateTo(glm::vec3(0, 0, -75.0f));
+		MainCamera::Get()->transform_.TranslateTo(glm::vec3(0, 0, -75.0f));
 		//glPointSize(2.0f);
 
 		float radius = (PARTICLE_TEXTURE_SIZE - 1) / 2.0f;
@@ -281,7 +281,7 @@ namespace cubey {
 
 	void ParticleDemo::Update(float delta_time) {
 
-		Camera::Main()->Orbit(delta_time * glm::radians(camera_orbit_speed_), 0);
+		MainCamera::Get()->Orbit(delta_time * glm::radians(camera_orbit_speed_), 0);
 
 		if (particle_paused_) {
 			return;
@@ -351,8 +351,8 @@ namespace cubey {
 		render_prog_->SetUniform("u_particle_lifespan", u_particle_lifespan_);
 		render_prog_->SetUniform("u_particle_color_cold", u_particle_color_cold_);
 		render_prog_->SetUniform("u_particle_color_hot", u_particle_color_hot_);
-		render_prog_->SetUniform("u_view_model_mat", Camera::Main()->view_mat());
-		render_prog_->SetUniform("u_projection_mat", Camera::Main()->projection_mat());
+		render_prog_->SetUniform("u_view_model_mat", MainCamera::Get()->view_mat());
+		render_prog_->SetUniform("u_projection_mat", MainCamera::Get()->projection_mat());
 		render_prog_->SetUniform("u_particle_size", u_particle_size_);
 
 		glBindBuffer(GL_ARRAY_BUFFER, ssbo_);

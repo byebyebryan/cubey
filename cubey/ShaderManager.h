@@ -8,11 +8,11 @@
 #include "GL/glew.h"
 
 #include "ShaderProgram.h"
-#include "Interfaces.h"
+#include "SingletonBase.h"
 
 namespace cubey {
 
-	class ShaderManager : public ISingleton<ShaderManager> {
+	class ShaderManager : public SingletonBase<ShaderManager> {
 	public:
 		class BufferCleaner {
 		public:

@@ -122,7 +122,7 @@ namespace cubey {
 		glm::vec3 right_;
 		glm::vec3 up_;
 
-		friend class UI;
+		friend class TwUI;
 	};
 }
 

@@ -24,7 +24,7 @@ namespace cubey {
 		static double render_time_;
 
 		friend class Engine;
-		friend class UI;
+		friend class TwUI;
 		friend class ScopeTimer;
 	};
 

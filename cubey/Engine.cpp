@@ -7,8 +7,9 @@
 #include "GLFW/glfw3.h"
 
 #include "Camera.h"
-#include "UI.h"
+#include "TwUI.h"
 #include "Input.h"
+#include "EngineEventsBase.h"
 
 namespace cubey {
 	const std::string kDefaultWindowTitle = "cubey!";
@@ -16,6 +17,14 @@ namespace cubey {
 	const int kDefaultWindowHeight = 720;
 	
 	GLFWwindow* Engine::window_ = nullptr;
+
+	void Engine::Push(EngineEventsBase* engine_events_base) {
+		engine_events_base->PushToEngine();
+	}
+
+	void Engine::Pop(EngineEventsBase* engine_events_base) {
+		engine_events_base->PopFromEngine();
+	}
 
 	void Engine::Init() {
 		glfwSetErrorCallback((GLFWerrorfun)ErrorHandler);
@@ -41,19 +50,15 @@ namespace cubey {
 
 		glewInit();
 
-		UI::Main();
-		Input::Main();
-		Camera::Main();
-		
 		srand(time(0));
 
-		EventChannel<SystemInitEvent>::Broadcast(SystemInitEvent());
-
-		EventChannel<InitEvent>::Broadcast(InitEvent());
+		TwUI::Get()->SystemInit();
+		Input::Get()->SystemInit();
+		MainCamera::Get()->SystemInit();
 	}
 
 	void Engine::MainLoop() {
-		Init();
+		EventChannel<InitEvent>::Broadcast(InitEvent());
 
 		Time::time_since_start_ = glfwGetTime();
 
@@ -134,6 +139,8 @@ namespace cubey {
 	void Engine::CharHandler(GLFWwindow* window, unsigned int codepoint) {
 		EventChannel<CharEvent>::Broadcast(CharEvent{ codepoint });
 	}
+
+	
 
 }
 
