@@ -2,6 +2,31 @@
 
 namespace cubey {
 	void SmokeDemo::PrepTextures() {
+		DelTexture(s3d_velocity_);
+		DelTexture(s3d_temperature_);
+		DelTexture(s3d_density_);
+
+		DelTexture(s3d_pressure_);
+
+		DelTexture(t3d_divergence_);
+		DelTexture(t3d_obstacle_);
+		DelTexture(t3d_vorticity_);
+
+		DelTexture(t3d_phi_n_1_hat_rgba_);
+		DelTexture(t3d_phi_n_hat_rgba_);
+		DelTexture(t3d_phi_n_1_hat_r_);
+		DelTexture(t3d_phi_n_hat_r_);
+
+		DelTexture(t3d_lighting_);
+
+		DelTexture(t3d_density_blured_);
+		DelTexture(t3d_lighting_blured_);
+		DelTexture(t3d_temperature_blured_);
+		DelTexture(t3d_obstacle_blured_);
+
+		DelTexture(s3d_blur_r_);
+		DelTexture(s3d_blur_rgba_);
+
 		glm::ivec3 size = glm::ivec3(resolution_x(), resolution_y(), resolution_z());
 
 		GenTexture(s3d_velocity_, GL_RGBA16F, size);
@@ -55,6 +80,18 @@ namespace cubey {
 	void SmokeDemo::GenTexture(Slab& slab, GLenum internal_format, const glm::ivec3& size) {
 		GenTexture(slab.ping, internal_format, size);
 		GenTexture(slab.pong, internal_format, size);
+	}
+
+	void SmokeDemo::DelTexture(Tex3D& tex) {
+		if (tex.gl) {
+			glDeleteTextures(1, &tex.gl);
+			tex.gl = 0;
+		}
+	}
+
+	void SmokeDemo::DelTexture(Slab& slab) {
+		DelTexture(slab.ping);
+		DelTexture(slab.pong);
 	}
 
 	void SmokeDemo::ClearTexture(const Tex3D& tex) {

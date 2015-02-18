@@ -1,5 +1,7 @@
 #include "SmokeDemo.h"
 
+#include "glm/gtc/random.hpp"
+
 namespace cubey {
 	void SmokeDemo::FillObstacle() {
 
@@ -189,49 +191,39 @@ namespace cubey {
 	}
 
 	void SmokeDemo::Inject(float delta_time) {
+		if (!injection_enabled()) return;
 
-		if (injection_0_enabled()) {
-			InjectDensity(injection_0_position(), injection_0_density_sigma(), glm::vec4(Pow10(injection_0_density_intensity_log10()),0,0,0), delta_time);
-			InjectTemperature(injection_0_position(), injection_0_temperature_sigma(), Pow10(injection_0_temperature_intensity_log10()), delta_time);
-			if (injection_0_linear_foce()) {
-				InjectForceLinear(injection_0_position(), injection_0_linear_foce_dir(), injection_0_force_sigma(), Pow10(injection_0_force_intensity_log10()), delta_time);
+		static float y_rotation = 0.0f;
+
+		glm::vec4 density_intensity[4] = { glm::vec4(Pow10(injection_density_intensity_log10()), 0, 0, 0), glm::vec4(0, Pow10(injection_density_intensity_log10()), 0, 0),
+			glm::vec4(0, 0, Pow10(injection_density_intensity_log10()), 0), glm::vec4(0, 0, 0, Pow10(injection_density_intensity_log10()))
+		};
+
+		float d_y_rot = glm::radians(360.0f / injection_count());
+		float y_rot = glm::radians(y_rotation);
+
+		for (int i = 0; i < injection_count(); i++) {
+			glm::vec3 dir = glm::rotateX(glm::vec3(0, 1, 0), glm::radians(injection_x_rotation()));
+			dir = glm::rotateY(dir, y_rot);
+			glm::vec3 pos = injection_reference_position() + glm::rotateY(glm::vec3(0, 0, 1), y_rot) * injection_reference_distance();
+
+			InjectDensity(pos, injection_density_sigma(), density_intensity[i], delta_time);
+			InjectTemperature(pos, injection_temperature_sigma(), Pow10(injection_temperature_intensity_log10()), delta_time);
+			if (injection_linear_foce()) {
+				InjectForceLinear(pos, dir, injection_force_sigma(), Pow10(injection_force_intensity_log10()), delta_time);
 			}
 			else {
-				InjectForce(injection_0_position(), injection_0_force_sigma(), Pow10(injection_0_force_intensity_log10()), delta_time);
+				InjectForce(pos, injection_force_sigma(), Pow10(injection_force_intensity_log10()), delta_time);
 			}
+
+			y_rot += d_y_rot;
 		}
 
-		if (injection_1_enabled()) {
-			InjectDensity(injection_1_position(), injection_1_density_sigma(), glm::vec4(0, Pow10(injection_1_density_intensity_log10()), 0, 0), delta_time);
-			InjectTemperature(injection_1_position(), injection_1_temperature_sigma(), Pow10(injection_1_temperature_intensity_log10()), delta_time);
-			if (injection_1_linear_foce()) {
-				InjectForceLinear(injection_1_position(), injection_1_linear_foce_dir(), injection_1_force_sigma(), Pow10(injection_1_force_intensity_log10()), delta_time);
-			}
-			else {
-				InjectForce(injection_1_position(), injection_1_force_sigma(), Pow10(injection_1_force_intensity_log10()), delta_time);
-			}
-		}
+		if (injection_y_rotation_enabled()) {
+			y_rotation += injection_y_rotation_speed() * delta_time;
 
-		if (injection_2_enabled()) {
-			InjectDensity(injection_2_position(), injection_2_density_sigma(), glm::vec4(0, 0, Pow10(injection_2_density_intensity_log10()), 0), delta_time);
-			InjectTemperature(injection_2_position(), injection_2_temperature_sigma(), Pow10(injection_2_temperature_intensity_log10()), delta_time);
-			if (injection_2_linear_foce()) {
-				InjectForceLinear(injection_2_position(), injection_2_linear_foce_dir(), injection_2_force_sigma(), Pow10(injection_2_force_intensity_log10()), delta_time);
-			}
-			else {
-				InjectForce(injection_2_position(), injection_2_force_sigma(), Pow10(injection_2_force_intensity_log10()), delta_time);
-			}
-		}
-
-		if (injection_3_enabled()) {
-			InjectDensity(injection_3_position(), injection_3_density_sigma(), glm::vec4(0, 0, 0, Pow10(injection_3_density_intensity_log10())), delta_time);
-			InjectTemperature(injection_3_position(), injection_3_temperature_sigma(), Pow10(injection_3_temperature_intensity_log10()), delta_time);
-			if (injection_3_linear_foce()) {
-				InjectForceLinear(injection_3_position(), injection_3_linear_foce_dir(), injection_3_force_sigma(), Pow10(injection_3_force_intensity_log10()), delta_time);
-			}
-			else {
-				InjectForce(injection_3_position(), injection_3_force_sigma(), Pow10(injection_3_force_intensity_log10()), delta_time);
-			}
+			if (y_rotation > 180.0f) y_rotation -= 360.0f;
+			if (y_rotation < -180.0f) y_rotation += 360.0f;
 		}
 	}
 
@@ -244,10 +236,22 @@ namespace cubey {
 			timer = explosion_timer();
 
 			InjectForce(explosion_position(), explosion_force_sigma(), Pow10(explosion_force_intensity_log10()), 1.0f);
-			glm::vec4 density_injection = glm::vec4(Pow10(explosion_density_0_intensity_log10()), 
-				                                    Pow10(explosion_density_1_intensity_log10()), 
-				                                    Pow10(explosion_density_2_intensity_log10()), 
-				                                    Pow10(explosion_density_3_intensity_log10()));
+
+			glm::vec4 density_injection = glm::vec4(Pow10(explosion_density_0_intensity_log10()),
+				Pow10(explosion_density_1_intensity_log10()),
+				Pow10(explosion_density_2_intensity_log10()),
+				Pow10(explosion_density_3_intensity_log10()));
+
+			if (explosion_density_random_mix()) {
+				glm::vec4 density_rand = { glm::linearRand(0.0f, Pow10(explosion_density_0_intensity_log10())), glm::linearRand(0.0f, Pow10(explosion_density_1_intensity_log10())),
+					glm::linearRand(0.0f, Pow10(explosion_density_2_intensity_log10())), glm::linearRand(0.0f, Pow10(explosion_density_3_intensity_log10())),
+				};
+
+				float density_sum = Pow10(explosion_density_0_intensity_log10()) + Pow10(explosion_density_1_intensity_log10()) +
+					Pow10(explosion_density_2_intensity_log10()) + Pow10(explosion_density_3_intensity_log10());
+				float density_rand_sum = density_rand.x + density_rand.y + density_rand.z + density_rand.w;
+				density_injection = density_sum * density_rand / density_rand_sum;
+			}
 
 			InjectDensity(explosion_position(), explosion_density_sigma(), density_injection, 1.0f);
 			InjectTemperature(explosion_position(), explosion_temperature_sigma(), Pow10(explosion_temperature_intensity_log10()), 1.0f);

@@ -44,8 +44,6 @@ namespace cubey {
 
 		fullscreen_quad_ = PrimitiveFactory::FullScreenQuad()->CreateInstance(sp_render_);
 
-		PrepTextures();
-
 		TwBarInit();
 
 		TwDefine("main/Camera opened=false");
@@ -64,17 +62,23 @@ namespace cubey {
 		TwDefine("main/Shadows opened=false");
 		TwDefine("main/Radiance opened=false");
 
+		TwAddButton(TwUI::Get()->main_bar_, "change resolution", &SmokeDemo::ChangeResolution, this, "group=Simulation");
 		TwAddButton(TwUI::Get()->main_bar_, "save config", &SmokeDemo::SaveConfig, this, "group=XML");
 
 		EventChannel<Engine::DropEvent>::DirtyAdd([this](const Engine::DropEvent& e){
 			ReadFromFile(e.names[0]);
 			std::cout << "Loaded config file : " << e.names[0] << std::endl;
+			StartUp();
 		});
 
 		MainCamera::Get()->transform_.TranslateTo(glm::vec3(0, 0, -1.5f));
 		MainCamera::Get()->Orbit(glm::radians(30.0f), glm::radians(-15.0f));
 		MainCamera::Get()->mouse_wheel_speed_ = 1.0f;
 		MainCamera::Get()->movement_speed_ = 1.0f;
+	}
+
+	void SmokeDemo::StartUp() {
+		PrepTextures();
 	}
 
 	void SmokeDemo::Update(float delta_time) {
@@ -200,5 +204,16 @@ namespace cubey {
 		p->WriteToFile(file_name);
 		std::cout << "Saved config file : " << file_name << std::endl;
 	}
+
+	void TW_CALL SmokeDemo::ChangeResolution(void* client_data) {
+		SmokeDemo* p = (SmokeDemo*)client_data;
+		p->StartUp();
+	}
+
+	
+
+	
+
+	
 
 }
