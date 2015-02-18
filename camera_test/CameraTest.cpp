@@ -10,6 +10,14 @@ namespace cubey {
 		prog = ShaderManager::Get()->CreateProgram("debug.VS_LIT.FS_LIT");
 
 		mesh_instance = PrimitiveFactory::UnitBoxWNormal(glm::vec3(1.0))->CreateInstance(prog, "u_mvp_mat", "u_normal_mat");
+
+		TwBarInit();
+
+		std::string buffer;
+		WriteToBuffer(buffer);
+		std::cout << buffer << std::endl;
+
+		WriteToFile("test.xml");
 	}
 
 	void CameraTest::Render() {

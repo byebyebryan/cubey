@@ -29,19 +29,19 @@ namespace cubey {
 			TwEventCharGLFW(e.codepoint, GLFW_PRESS); 
 		});
 
-		main_bar_ = TwNewBar("cubey!");
+		main_bar_ = TwNewBar("main");
 		int w, h;
 		glfwGetWindowSize(Engine::window_, &w, &h);
 		TwWindowSize(w, h);
-		TwDefine(" GLOBAL help='AntTweakBar Test' ");
-		TwDefine("cubey! size='320 640' refresh=0.5 ");
+		TwDefine(" GLOBAL help='cubey' ");
+		TwDefine("main size='320 640' refresh=0.5 ");
 
 		//TwAddVarRO(tw_bar_, "time", TW_TYPE_DOUBLE, &Time::time_since_start_, "precision=2 help='Time Since Start.' group=Time");
-		TwAddVarRO(main_bar_, "frame time", TW_TYPE_DOUBLE, &Time::frame_time_, "precision=4 help='Frame Time.' group=Time");
-		TwAddVarRO(main_bar_, "fps", TW_TYPE_DOUBLE, &Time::raw_fps_, "precision=2 help='Frame Per Second' group=Time");
+		TwAddVarRO(main_bar_, "frame time", TW_TYPE_DOUBLE, &Time::frame_time_, "precision=4 group=Time");
+		TwAddVarRO(main_bar_, "fps", TW_TYPE_DOUBLE, &Time::raw_fps_, "precision=2 group=Time");
 		
-		TwAddVarRO(main_bar_, "delta time", TW_TYPE_DOUBLE, &Time::delta_time_, "precision=4 help='Delta Time.' group=Time");
-		TwAddVarRO(main_bar_, "regulated fps", TW_TYPE_DOUBLE, &Time::regulated_fps_, "precision=2 help='Regulated FPS.' group=Time");
+		TwAddVarRO(main_bar_, "delta time", TW_TYPE_DOUBLE, &Time::delta_time_, "precision=4 group=Time");
+		TwAddVarRO(main_bar_, "regulated fps", TW_TYPE_DOUBLE, &Time::regulated_fps_, "precision=2 group=Time");
 
 		TwAddVarRO(main_bar_, "camera position", TW_TYPE_DIR3F, &MainCamera::Get()->transform_.position_, "group=Camera");
 		TwAddVarRO(main_bar_, "camera orientation", TW_TYPE_QUAT4F, &MainCamera::Get()->transform_.orientation_, "group=Camera");

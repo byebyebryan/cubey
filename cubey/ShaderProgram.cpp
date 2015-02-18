@@ -70,7 +70,7 @@ namespace cubey {
 		GLint max_buffer_size;
 		glGetProgramiv(gl_, GL_ACTIVE_UNIFORM_MAX_LENGTH, &max_buffer_size);
 
-		std::cout << "Uniforms: " << std::endl;
+		//std::cout << "Uniforms: " << std::endl;
 
 		for (int i = 0; i < num_active_uniforms; i++) {
 			GLint uniform_size;
@@ -80,11 +80,11 @@ namespace cubey {
 			GLint uniform_location = glGetUniformLocation(gl_, uniform_name);
 			if (uniform_location >= 0) {
 				uniform_var_name_to_location[std::string(uniform_name)] = uniform_location;
-				std::cout << "location " << uniform_location << " : " << uniform_name << std::endl;
+				//std::cout << "location " << uniform_location << " : " << uniform_name << std::endl;
 			}
 			delete[] uniform_name;
 		}
 
-		std::cout << std::endl;
+		//std::cout << std::endl;
 	}
 }

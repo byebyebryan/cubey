@@ -6,16 +6,27 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <None Include="shaders\smoke_compute.glsl">
+    <None Include="shaders\smoke_render.glsl">
       <Filter>shaders</Filter>
     </None>
-    <None Include="shaders\smoke_render.glsl">
+    <None Include="shaders\smoke_compute_ext.glsl">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\smoke_compute_sim.glsl">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\smoke_compute_util.glsl">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\smoke_render_util.glsl">
       <Filter>shaders</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="SmokeDemo.cpp" />
+    <ClCompile Include="SmokeDemoUtil.cpp" />
+    <ClCompile Include="SmokeDemoSim.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="SmokeDemo.h" />

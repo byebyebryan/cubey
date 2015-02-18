@@ -3,142 +3,232 @@
 
 namespace cubey {
 	
+	struct Tex3D {
+		GLuint gl;
+		GLenum format;
+		glm::ivec3 size;
+	};
+
 	struct Slab {
-		GLuint ping;
-		GLuint pong;
+		Tex3D ping;
+		Tex3D pong;
 
 		void Swap() {
-			GLuint t = ping;
+			Tex3D t = ping;
 			ping = pong;
 			pong = t;
 		}
 	};
 
-	class SmokeDemo : public EngineEventsBase {
+	
+
+	class SmokeDemo : public EngineEventsBase, public AutoXmlBase<SmokeDemo> {
 	public:
 		void Init() override;
 		void Update(float delta_time) override;
 		void Render() override;
 
+		static void TW_CALL SaveConfig(void* client_data);
 	private:
-		void GenTexture(GLuint& tex, GLenum internal_format);
-		void GenTexture(Slab& slab, GLenum internal_format);
 
-		void FillObstacle(float delta_time);
+		void FillObstacle();
+
 		void Advert(float delta_time);
-		void AddImpulse(float delta_time);
-		void AddExplosion(float delta_time);
+		void AdvertSL(const Tex3D& source, const Tex3D& target, float dissipation, float delta_time);
+		void AdvertMC(const Tex3D& source, const Tex3D& target, float dissipation, float decay, float delta_time);
+
+		void Inject(float delta_time);
+		void InjectForce(const glm::vec3& position, float sigma, float intensity, float delta_time);
+		void InjectForceLinear(const glm::vec3& position, const glm::vec3& direction, float sigma, float intensity, float delta_time);
+		void InjectTemperature(const glm::vec3& position, float sigma, float intensity, float delta_time);
+		void InjectDensity(const glm::vec3& position, float sigma, const glm::vec4& intensity, float delta_time);
+
+		void Explosion(float delta_time);
+
 		void ApplyBuoyancy(float delta_time);
-		void ApplyVorticityConfinement(float delta_time);
+
+		void VorticityConfinement(float delta_time);
+
 		void ComputeDivergence();
 		void Jacobi();
 		void Projection();
 
-		void Blur();
+		void ComputeLighting(const Tex3D& obstacle);
 
-		std::vector<float> ComputeGaussianKernel(float sigma);
-
-		Slab i_velocity;
-		Slab i_temperature;
-		Slab i_density;
-		Slab i_pressure;
-		GLuint i_divergence;
-		GLuint i_obstacle;
-		GLuint i_vorticity;
-		GLuint i_phi_n_1_hat;
-		GLuint i_phi_n_hat;
-		GLuint i_shadow;
-
-		GLuint i_obstacle_v;
-
-		Slab i_density_blured;
-		Slab i_shadow_blured;
-		Slab i_temperature_blured;
-		Slab i_obstacle_blured;
-
-		ShaderProgram* init_fill_rgba_;
-		ShaderProgram* init_fill_r_;
-		ShaderProgram* init_fill_obstacle_;
-		ShaderProgram* update_advect_rgba_;
-		ShaderProgram* update_advect_r_;
-		ShaderProgram* update_advect_r_mac_cormack_;
-		ShaderProgram* update_splat_;
-		ShaderProgram* update_explosion_;
-		ShaderProgram* update_buoyancy_;
-		ShaderProgram* update_vorticity_;
-		ShaderProgram* update_confinement_;
-		ShaderProgram* update_divergence_;
-		ShaderProgram* update_jacobi_;
-		ShaderProgram* update_gradient_;
-
-		ShaderProgram* render_blur_;
-		ShaderProgram* render_shadow_;
-		ShaderProgram* render_;
+		void PrepTextures();
+		void GenTexture(Tex3D& tex, GLenum internal_formatm, const glm::ivec3& size);
+		void GenTexture(Slab& slab, GLenum internal_format, const glm::ivec3& size);
+		void ClearTexture(const Tex3D& tex);
+		std::vector<float> ComputeGaussianKernel(int size, float sigma);
+		void GaussianBlur(const Tex3D& source, const Tex3D& target, float sigma);
+		float Pow10(float x) { return glm::pow(10.0f, x); }
 
 		MeshInstance* fullscreen_quad_;
 
-		glm::vec3 obsticle_position_;
-		float obsticle_radius_;
+		Slab s3d_velocity_;
+		Slab s3d_temperature_;
+		Slab s3d_density_;
+		Slab s3d_pressure_;
+		Tex3D t3d_divergence_;
+		Tex3D t3d_obstacle_;
+		Tex3D t3d_vorticity_;
 
-		float velocity_dissipation_;
-		float temperature_dissipation_;
-		float temperature_decay_;
-		float density_dissipation_;
-		float density_decay_;
+		Tex3D t3d_phi_n_1_hat_rgba_;
+		Tex3D t3d_phi_n_hat_rgba_;
+		Tex3D t3d_phi_n_1_hat_r_;
+		Tex3D t3d_phi_n_hat_r_;
 
-		bool enable_injection_;
+		Tex3D t3d_lighting_;
 
-		glm::vec3 injection_location_;
+		Tex3D t3d_density_blured_;
+		Tex3D t3d_lighting_blured_;
+		Tex3D t3d_temperature_blured_;
+		Tex3D t3d_obstacle_blured_;
 
-		float temperature_injection_radius_;
-		float temperature_injection_intensity_;
+		Slab s3d_blur_r_;
+		Slab s3d_blur_rgba_;
 
-		float density_injection_radius_;
-		float density_injection_intensity_;
+		ShaderProgram* sp_fill_rgba_;
+		ShaderProgram* sp_fill_r_;
+		ShaderProgram* sp_fill_boundary_;
+		ShaderProgram* sp_fill_obstacle_ball_;
+		ShaderProgram* sp_fill_obstacle_box_;
 
-		bool add_explosion_;
-		float explosion_timer_;
-		float explosion_concetration_;
-		float explosion_force_min_;
-		float explosion_force_max_;
-		float explosion_injection_ratio_;
-		float explosion_temperature_ratio_;
+		ShaderProgram* sp_advect_rgba_;
+		ShaderProgram* sp_advect_r_;
+		ShaderProgram* sp_advect_r_mac_cormack_rgba_;
+		ShaderProgram* sp_advect_r_mac_cormack_r_;
 
-		bool enable_buoyancy_;
-		float ambient_temperature_;
-		float buoyancy_;
-		float weight_;
+		ShaderProgram* sp_inject_splat_v_;
+		ShaderProgram* sp_inject_splat_v_linear_;
+		ShaderProgram* sp_inject_splat_rgba_;
+		ShaderProgram* sp_inject_splat_r_;
 
-		float vorticity_strength_;
+		ShaderProgram* sp_buoyancy_;
 
-		bool camera_rotation_;
+		ShaderProgram* sp_vorticity_;
+		ShaderProgram* sp_confinement_;
 
-		int jacobi_iterations_;
-		bool simulation_paused_;
+		ShaderProgram* sp_divergence_;
+		ShaderProgram* sp_jacobi_;
+		ShaderProgram* sp_project_;
 
-		bool blur_density_;
-		float density_blur_sigma_;
-		float density_sample_jittering_;
-		bool blur_shadow_;
-		float shadow_blur_sigma_;
-		float shadow_sample_jittering_;
+		ShaderProgram* sp_blur_rgba_;
+		ShaderProgram* sp_blur_r_;
+		ShaderProgram* sp_lighting_;
+		ShaderProgram* sp_render_;
 
-		float color_absorption_;
-		float light_absorption_;
-		float light_intensity_;
-		float ambient_light_;
+		AUTO_XML_VAR_TW(bool, camera_rotation_enabled, true, "group=Camera");
+		AUTO_XML_VAR_TW(float, camera_rotation_speed, 15.0f, "precision=2 min=-30 max=30 step=5 group=Camera");
 
-		glm::vec3 light_color_;
-		glm::vec3 smoke_color_;
+		AUTO_XML_VAR_TW(bool, simulation_paused, false, "group=Simulation");
+		AUTO_XML_VAR_TW(int, resolution_x, 128, "min=16 max=256 step=16 group=Simulation");
+		AUTO_XML_VAR_TW(int, resolution_y, 128, "min=16 max=256 step=16 group=Simulation");
+		AUTO_XML_VAR_TW(int, resolution_z, 128, "min=16 max=256 step=16 group=Simulation");
+		AUTO_XML_VAR_TW(int, solver_iterations, 10, "min=5 max=50 step=5 group=Simulation");
 
-		bool enable_shadows_;
+		AUTO_XML_VAR_TW(bool, obstacle_enabled, false, "group=Obstacle");
+		AUTO_XML_VAR_TW(int, obstacle_type, 0, "min=0 max=1 step=1 group=Obstacle");
+		AUTO_XML_VAR_TW(glm::vec3, obstacle_position, glm::vec3(0.5f,0.5f,0.5f), "group=Obstacle");
+		AUTO_XML_VAR_TW(float, obstacle_radius, 0.25f, "precision=2 min=0 max=1 step=0.05 group=Obstacle");
 
-		bool enable_temperature_color_;
+		AUTO_XML_VAR_TW(float, velocity_dissipation_log10, -2.0f, "precision=2 min=-5 max=-1 step=0.25 group=Advection");
+		AUTO_XML_VAR_TW(float, temperature_dissipation_log10, -2.0f, "precision=2 min=-5 max=-1 step=0.25 group=Advection");
+		AUTO_XML_VAR_TW(float, temperature_decay_log10, -3.0f, "precision=2 min=-5 max=1 step=0.25 group=Advection");
+		AUTO_XML_VAR_TW(float, density_dissipation_log10, -2.0f, "precision=2 min=-5 max=-1 step=0.25 group=Advection");
+		AUTO_XML_VAR_TW(float, density_decay_log10, -3.0f, "precision=2 min=-5 max=1 step=0.25 group=Advection");
 
-		bool enable_obstacle_motion_;
-		bool enable_obstacle_motion_prev_;
-		glm::vec3 obstacle_current_pos_;
-		glm::vec3 obstacle_current_v_;
+		AUTO_XML_VAR_TW(bool, injection_0_enabled, true, "group=Injection0");
+		AUTO_XML_VAR_TW(glm::vec3, injection_0_position, glm::vec3(0.25f, 0.1f, 0.5f), "group=Injection0");
+		AUTO_XML_VAR_TW(bool, injection_0_linear_foce, false, "group=Injection0");
+		AUTO_XML_VAR_TW(glm::vec3, injection_0_linear_foce_dir, glm::vec3(1.0f, 0.5f, 0.0f), "group=Injection0");
+		AUTO_XML_VAR_TW(float, injection_0_force_sigma, 0.5f, "precision=2 min=0.1 max=2 step=0.1 group=Injection0");
+		AUTO_XML_VAR_TW(float, injection_0_force_intensity_log10, 2.0f, "precision=2 min=-2 max=4 step=0.25 group=Injection0");
+		AUTO_XML_VAR_TW(float, injection_0_temperature_sigma, 0.5f, "precision=2 min=0.1 max=2 step=0.1 group=Injection0");
+		AUTO_XML_VAR_TW(float, injection_0_temperature_intensity_log10, 1.5f, "precision=2 min=0 max=4 step=0.25 group=Injection0");
+		AUTO_XML_VAR_TW(float, injection_0_density_sigma, 1.0f, "precision=2 min=0.1 max=2 step=0.1 group=Injection0");
+		AUTO_XML_VAR_TW(float, injection_0_density_intensity_log10, 2.0f, "precision=2 min=0 max=4 step=0.25 group=Injection0");
+
+		AUTO_XML_VAR_TW(bool, injection_1_enabled, true, "group=Injection1");
+		AUTO_XML_VAR_TW(glm::vec3, injection_1_position, glm::vec3(0.75f, 0.1f, 0.5f), "group=Injection1");
+		AUTO_XML_VAR_TW(bool, injection_1_linear_foce, false, "group=Injection1");
+		AUTO_XML_VAR_TW(glm::vec3, injection_1_linear_foce_dir, glm::vec3(-1.0f, 0.5f, 0.0f), "group=Injection1");
+		AUTO_XML_VAR_TW(float, injection_1_force_sigma, 0.5f, "precision=2 min=0.1 max=2 step=0.1 group=Injection1");
+		AUTO_XML_VAR_TW(float, injection_1_force_intensity_log10, 2.0f, "precision=2 min=-2 max=4 step=0.25 group=Injection1");
+		AUTO_XML_VAR_TW(float, injection_1_temperature_sigma, 0.5f, "precision=2 min=0.1 max=2 step=0.1 group=Injection1");
+		AUTO_XML_VAR_TW(float, injection_1_temperature_intensity_log10, 1.5f, "precision=2 min=0 max=4 step=0.25 group=Injection1");
+		AUTO_XML_VAR_TW(float, injection_1_density_sigma, 1.0f, "precision=2 min=0.1 max=2 step=0.1 group=Injection1");
+		AUTO_XML_VAR_TW(float, injection_1_density_intensity_log10, 2.0f, "precision=2 min=0 max=4 step=0.25 group=Injection1");
+
+		AUTO_XML_VAR_TW(bool, injection_2_enabled, true, "group=Injection2");
+		AUTO_XML_VAR_TW(glm::vec3, injection_2_position, glm::vec3(0.5f, 0.1f, 0.25f), "group=Injection2");
+		AUTO_XML_VAR_TW(bool, injection_2_linear_foce, false, "group=Injection2");
+		AUTO_XML_VAR_TW(glm::vec3, injection_2_linear_foce_dir, glm::vec3(0.0f, 0.5f, 1.0f), "group=Injection2");
+		AUTO_XML_VAR_TW(float, injection_2_force_sigma, 0.5f, "precision=2 min=0.1 max=2 step=0.1 group=Injection2");
+		AUTO_XML_VAR_TW(float, injection_2_force_intensity_log10, 2.0f, "precision=2 min=-2 max=4 step=0.25 group=Injection2");
+		AUTO_XML_VAR_TW(float, injection_2_temperature_sigma, 0.5f, "precision=2 min=0.1 max=2 step=0.1 group=Injection2");
+		AUTO_XML_VAR_TW(float, injection_2_temperature_intensity_log10, 1.5f, "precision=2 min=0 max=4 step=0.25 group=Injection2");
+		AUTO_XML_VAR_TW(float, injection_2_density_sigma, 1.0f, "precision=2 min=0.1 max=2 step=0.1 group=Injection2");
+		AUTO_XML_VAR_TW(float, injection_2_density_intensity_log10, 2.0f, "precision=2 min=0 max=4 step=0.25 group=Injection2");
+
+		AUTO_XML_VAR_TW(bool, injection_3_enabled, true, "group=Injection3");
+		AUTO_XML_VAR_TW(glm::vec3, injection_3_position, glm::vec3(0.5f, 0.1f, 0.75f), "group=Injection3");
+		AUTO_XML_VAR_TW(bool, injection_3_linear_foce, false, "group=Injection3");
+		AUTO_XML_VAR_TW(glm::vec3, injection_3_linear_foce_dir, glm::vec3(0.0f, 0.5f, -1.0f), "group=Injection3");
+		AUTO_XML_VAR_TW(float, injection_3_force_sigma, 0.5f, "precision=2 min=0.1 max=2 step=0.1 group=Injection3");
+		AUTO_XML_VAR_TW(float, injection_3_force_intensity_log10, 2.0f, "precision=2 min=-2 max=4 step=0.25 group=Injection3");
+		AUTO_XML_VAR_TW(float, injection_3_temperature_sigma, 0.5f, "precision=2 min=0.1 max=2 step=0.1 group=Injection3");
+		AUTO_XML_VAR_TW(float, injection_3_temperature_intensity_log10, 1.5f, "precision=2 min=0 max=4 step=0.25 group=Injection3");
+		AUTO_XML_VAR_TW(float, injection_3_density_sigma, 1.0f, "precision=2 min=0.1 max=2 step=0.1 group=Injection3");
+		AUTO_XML_VAR_TW(float, injection_3_density_intensity_log10, 2.0f, "precision=2 min=0 max=4 step=0.25 group=Injection3");
+
+		AUTO_XML_VAR_TW(bool, explosion_enabled, false, "group=Explosion");
+		AUTO_XML_VAR_TW(glm::vec3, explosion_position, glm::vec3(0.5f, 0.1f, 0.5f), "group=Explosion");
+		AUTO_XML_VAR_TW(float, explosion_timer, 3.0f, "precision=2 min=0.1 max=10 step=0.5 group=Explosion");
+		AUTO_XML_VAR_TW(float, explosion_force_sigma, 0.3f, "precision=2 min=0.1 max=2 step=0.1 group=Explosion");
+		AUTO_XML_VAR_TW(float, explosion_force_intensity_log10, 2.0f, "precision=2 min=-2 max=4 step=0.25 group=Explosion");
+		AUTO_XML_VAR_TW(float, explosion_temperature_sigma, 0.3f, "precision=2 min=0.1 max=2 step=0.1 group=Explosion");
+		AUTO_XML_VAR_TW(float, explosion_temperature_intensity_log10, 2.0f, "precision=2 min=0 max=4 step=0.25 group=Explosion");
+		AUTO_XML_VAR_TW(float, explosion_density_sigma, 0.5f, "precision=2 min=0.1 max=2 step=0.1 group=Explosion");
+		AUTO_XML_VAR_TW(float, explosion_density_0_intensity_log10, 1.0f, "precision=2 min=0 max=4 step=0.25 group=Explosion");
+		AUTO_XML_VAR_TW(float, explosion_density_1_intensity_log10, 1.0f, "precision=2 min=0 max=4 step=0.25 group=Explosion");
+		AUTO_XML_VAR_TW(float, explosion_density_2_intensity_log10, 1.0f, "precision=2 min=0 max=4 step=0.25 group=Explosion");
+		AUTO_XML_VAR_TW(float, explosion_density_3_intensity_log10, 1.0f, "precision=2 min=0 max=4 step=0.25 group=Explosion");
+
+		AUTO_XML_VAR_TW(bool, buoyancy_enabled, true, "group=Buoyancy");
+		AUTO_XML_VAR_TW(float, ambient_temperature, 0.0f, "precision=2 min=-5 max=10 step=0.5 group=Buoyancy");
+		AUTO_XML_VAR_TW(float, buoyancy_log10, 1.0f, "precision=2 min=0 max=5 step=0.25 group=Buoyancy");
+		AUTO_XML_VAR_TW(float, weight_log10, 1.0f, "precision=2 min=0 max=5 step=0.25 group=Buoyancy");
+
+		AUTO_XML_VAR_TW(bool, vorticity_confinement_enabled, true, "group=Vorticity");
+		AUTO_XML_VAR_TW(float, vorticity_confinement_strength, 10.0f, "precision=2 min=0 max=100 step=2.5 group=Vorticity");
+
+		AUTO_XML_VAR_TW(float, smoke_color_absorption_log10, 2.0f, "precision=2 min=-1 max=3 step=0.25 group=Smoke");
+		AUTO_XML_VAR_TW(float, smoke_density_factor_log10, 1.0f, "precision=2 min=-1 max=3 step=0.25 group=Smoke");
+		AUTO_XML_VAR_TW(int, smoke_sampling_resolution, 128, "min=16 max=256 step=16 group=Smoke");
+		AUTO_XML_VAR_TW(float, smoke_sampling_jittering, 1.0f, "precision=2 min=0 max=1 step=0.1 group=Smoke");
+		AUTO_XML_VAR_TW(bool, smoke_blur_enabled, true, "group=Smoke");
+		AUTO_XML_VAR_TW(float, smoke_blur_sigma, 0.5f, "precision=2 min=0.1 max=2 step=0.25 group=Smoke");
+		AUTO_XML_VAR_TW(AColor3F, smoke_color_0, AColor3F{ glm::vec3(1.0f, 0.5f, 0.0f) }, "group=Smoke");
+		AUTO_XML_VAR_TW(AColor3F, smoke_color_1, AColor3F{ glm::vec3(0.0f, 0.5f, 1.0f) }, "group=Smoke");
+		AUTO_XML_VAR_TW(AColor3F, smoke_color_2, AColor3F{ glm::vec3(1.0f, 0.0f, 0.5f) }, "group=Smoke");
+		AUTO_XML_VAR_TW(AColor3F, smoke_color_3, AColor3F{ glm::vec3(0.5f, 1.0f, 0.0f) }, "group=Smoke");
+
+		AUTO_XML_VAR_TW(glm::vec3, light_position, glm::vec3(0.8, 0.8, 0.8), "group=Lighting");
+		AUTO_XML_VAR_TW(AColor3F, light_color, AColor3F{ glm::vec3(1.0f, 1.0f, 1.0f) }, "group=Lighting");
+		AUTO_XML_VAR_TW(float, light_absorption_log10, 2.0f, "precision=2 min=-1 max=3 step=0.25 group=Lighting");
+		AUTO_XML_VAR_TW(float, light_intensity_log10, 2.0f, "precision=2 min=-1 max=3 step=0.25 group=Lighting");
+		AUTO_XML_VAR_TW(float, ambient_light_log10, 0.0f, "precision=2 min=-2 max=2 step=0.25 group=Lighting");
+
+		AUTO_XML_VAR_TW(bool, shadows_enabled, true, "group=Shadows");
+		AUTO_XML_VAR_TW(int, shadows_sampling_resolution, 128, "min=16 max=256 step=16 group=Shadows");
+		AUTO_XML_VAR_TW(float, shadows_sampling_jittering, 0.5f, "precision=2 min=0 max=1 step=0.1 group=Shadows");
+		AUTO_XML_VAR_TW(bool, shadows_blur_enabled, true, "group=Shadows");
+		AUTO_XML_VAR_TW(float, shadows_blur_sigma, 1.0f, "precision=2 min=0.1 max=2 step=0.25 group=Shadows");
+
+		AUTO_XML_VAR_TW(bool, radiance_color_enabled, false, "group=Radiance");
+		AUTO_XML_VAR_TW(float, radiance_color_falloff_log10, 1.0f, "precision=2 min=-2 max=2 step=0.25 group=Radiance");
+
 	};
 
 }

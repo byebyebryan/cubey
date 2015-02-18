@@ -62,6 +62,10 @@ namespace cubey {
 		struct CharEvent {
 			unsigned int codepoint;
 		};
+		struct DropEvent {
+			int count; 
+			const char ** names;
+		};
 		
 		static void Push(class EngineEventsBase* engine_events_base);
 		static void Pop(class EngineEventsBase* engine_events_base);
@@ -80,6 +84,7 @@ namespace cubey {
 		static void MouseWheelHandler(GLFWwindow* window, double xoffset, double yoffset);
 		static void KeyHandler(GLFWwindow* window, int key, int scancode, int action, int mods);
 		static void CharHandler(GLFWwindow* window, unsigned int codepoint);
+		static void DropHandler(GLFWwindow* window, int count, const char ** names);
 
 		static GLFWwindow* window_;
 	};

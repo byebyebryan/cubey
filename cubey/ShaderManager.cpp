@@ -140,7 +140,7 @@ namespace cubey {
 			if (std::regex_match(line, std::regex("__(VS|VERTEX|GS|GEOMETRY|FS|FRAGMENT|CS|COMPUTE).*__"))) {
 				auto it = new_file.blocks.find(line);
 				if (it == new_file.blocks.end()) {
-					new_file.blocks[line] = "#line "+ std::to_string(line_num) + "\n";
+					new_file.blocks[line] = "#line "+ std::to_string(line_num + 2) + "\n";
 					current_block = new_file.blocks.find(line);
 				}
 				else {
@@ -154,7 +154,7 @@ namespace cubey {
 				include_file_name = std::regex_replace(include_file_name, std::regex("[<>\"]"), "");
 
 				current_block->second.append(GetInclude(include_file_name) + "\n");
-				current_block->second.append("#line " + std::to_string(line_num) + "\n");
+				current_block->second.append("#line " + std::to_string(line_num + 2) + "\n");
 			}
 			else {
 				current_block->second.append(line + "\n");

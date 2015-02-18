@@ -11,12 +11,17 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <None Include="shaders\smoke_compute.glsl" />
+    <None Include="shaders\smoke_compute_ext.glsl" />
+    <None Include="shaders\smoke_compute_sim.glsl" />
+    <None Include="shaders\smoke_compute_util.glsl" />
     <None Include="shaders\smoke_render.glsl" />
+    <None Include="shaders\smoke_render_util.glsl" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="SmokeDemo.cpp" />
+    <ClCompile Include="SmokeDemoSim.cpp" />
+    <ClCompile Include="SmokeDemoUtil.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="SmokeDemo.h" />

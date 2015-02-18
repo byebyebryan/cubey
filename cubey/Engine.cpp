@@ -47,13 +47,14 @@ namespace cubey {
 		glfwSetScrollCallback(window_, (GLFWscrollfun)MouseWheelHandler);
 		glfwSetKeyCallback(window_, (GLFWkeyfun)KeyHandler);
 		glfwSetCharCallback(window_, (GLFWcharfun)CharHandler);
+		glfwSetDropCallback(window_, (GLFWdropfun)DropHandler);
 
 		glewInit();
 
 		srand(time(0));
 
-		TwUI::Get()->SystemInit();
 		Input::Get()->SystemInit();
+		TwUI::Get()->SystemInit();
 		MainCamera::Get()->SystemInit();
 	}
 
@@ -138,6 +139,10 @@ namespace cubey {
 
 	void Engine::CharHandler(GLFWwindow* window, unsigned int codepoint) {
 		EventChannel<CharEvent>::Broadcast(CharEvent{ codepoint });
+	}
+
+	void Engine::DropHandler(GLFWwindow* window, int count, const char ** names) {
+		EventChannel<DropEvent>::Broadcast(DropEvent{ count, names });
 	}
 
 	

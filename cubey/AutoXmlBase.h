@@ -7,25 +7,45 @@
 #include <vector>
 #include <functional>
 #include <assert.h>
-#include "tinyxml2.h"
 #include "AutoXmlTypes.h"
+#include "TwUI.h"
 
 #ifndef AUTO_XML_VAR
-#define AUTO_XML_VAR(var_type, var_name) \
-	private: template <typename T0> class AutoXML_##var_name { \
+#define AUTO_XML_VAR(var_type, var_name, var_default) \
+	private: class AutoXml_##var_name { \
 	public: \
 		std::string name_; \
 		var_type value_; \
-		AutoXML_##var_name () : name_(#var_name) { \
-			value_ = var_type(); \
-			T0::reading_funcs()[#var_name] = std::bind(&AutoXmlType<var_type>::Read, std::placeholders::_1, &value_); \
-			T0::writing_funcs()[#var_name] = std::bind(&AutoXmlType<var_type>::Write, std::placeholders::_1, #var_name, std::cref(value_)); \
-								} \
-				}; \
-	private: AutoXML_##var_name<AutoXmlClass> var_name##_; \
-	public: var_type var_name() {return var_name##_.value_;} \
-	public: var_type * var_name_ptr() {return &var_name##_.value_;} \
-	public: void set_##var_name(const var_type & value) {var_name##_.value_ = value;}
+		AutoXml_##var_name () : name_(#var_name) { \
+			value_ = var_default; \
+			AutoXmlClass::reading_funcs()[#var_name] = std::bind(&AutoXmlType<var_type>::Read, std::placeholders::_1, &value_); \
+			AutoXmlClass::writing_funcs().push_back(std::bind(&AutoXmlType<var_type>::Write, std::placeholders::_1, name_.c_str(), &value_)); \
+		} \
+	}; \
+	private: AutoXml_##var_name auto_xml_##var_name##_; \
+	public: var_type var_name() {return auto_xml_##var_name##_.value_;} \
+	public: var_type * var_name##_ptr() {return &auto_xml_##var_name##_.value_;} \
+	public: void set_##var_name(const var_type & value) {auto_xml_##var_name##_.value_ = value;}
+
+#endif
+
+#ifndef AUTO_XML_VAR_TW
+#define AUTO_XML_VAR_TW(var_type, var_name, var_default, var_tw_define) \
+	private: class AutoXml_##var_name { \
+	public: \
+		std::string name_; \
+		var_type value_; \
+		AutoXml_##var_name () : name_(#var_name) { \
+			value_ = var_default; \
+			AutoXmlClass::reading_funcs()[#var_name] = std::bind(&AutoXmlType<var_type>::Read, std::placeholders::_1, &value_); \
+			AutoXmlClass::writing_funcs().push_back(std::bind(&AutoXmlType<var_type>::Write, std::placeholders::_1, name_.c_str(), &value_)); \
+			AutoXmlClass::tw_adding_funcs().push_back([this](){TwUI::Get()->AddRW(name_.c_str(), AutoXmlType<var_type>::tw_type(), &value_, var_tw_define); }); \
+		} \
+	}; \
+	private: AutoXml_##var_name auto_xml_##var_name##_; \
+	public: var_type var_name() {return auto_xml_##var_name##_.value_;} \
+	public: var_type * var_name##_ptr() {return &auto_xml_##var_name##_.value_;} \
+	public: void set_##var_name(const var_type & value) {auto_xml_##var_name##_.value_ = value;}
 
 #endif
 
@@ -48,12 +68,14 @@ namespace cubey {
 			XMLDocument * xmlDoc = new XMLDocument();
 			xmlDoc->Parse(buffer.c_str());
 			XMLElement * xmlNode = xmlDoc->RootElement()->FirstChildElement();
-			while (xmlNode)
-			{
+			while (xmlNode) {
 				auto it = reading_funcs().find(xmlNode->Name());
-				if (it != reading_funcs().end())
-				{
+				if (it != reading_funcs().end()) {
 					it->second(xmlNode);
+				}
+				else {
+					std::cerr << "*** Poop: Invalid XML Entry: " << xmlNode->Name() << std::endl;
+					assert(false);
 				}
 				xmlNode = xmlNode->NextSiblingElement();
 			}
@@ -68,9 +90,8 @@ namespace cubey {
 			XMLElement * rootElement = xmlDoc->NewElement("root");
 			xmlDoc->InsertEndChild(rootElement);
 
-			for (auto & it : writing_funcs())
-			{
-				it.second(rootElement);
+			for (auto & it : writing_funcs()) {
+				it(rootElement);
 			}
 
 			XMLPrinter xmlPrinter;
@@ -84,14 +105,25 @@ namespace cubey {
 			fileStream << buffer;
 		}
 
+		void TwBarInit() {
+			for (auto & it : tw_adding_funcs()) {
+				it();
+			}
+		}
+
 	protected:
 		//reading/writing function maps
-		static std::unordered_map<std::string, std::function<void(tinyxml2::XMLElement *)>> & reading_funcs() {
-			static std::unordered_map<std::string, std::function<void(tinyxml2::XMLElement *)>> funcs;
+		static std::unordered_map<std::string, std::function<void(XMLElement *)>> & reading_funcs() {
+			static std::unordered_map<std::string, std::function<void(XMLElement *)>> funcs;
 			return funcs;
 		};
-		static std::unordered_map<std::string, std::function<void(tinyxml2::XMLElement *)>> & writing_funcs() {
-			static std::unordered_map<std::string, std::function<void(tinyxml2::XMLElement *)>> funcs;
+		static std::vector<std::function<void(XMLElement *)>> & writing_funcs() {
+			static std::vector<std::function<void(XMLElement *)>> funcs;
+			return funcs;
+		}
+
+		static std::vector<std::function<void()>> & tw_adding_funcs() {
+			static std::vector<std::function<void()>> funcs;
 			return funcs;
 		}
 	};

@@ -4,6 +4,9 @@
     <Filter Include="Shaders">
       <UniqueIdentifier>{3e024228-8c96-4538-89c0-9dc628efcfd3}</UniqueIdentifier>
     </Filter>
+    <Filter Include="tinyxml2">
+      <UniqueIdentifier>{28bd1916-0569-49a8-863f-e5ee723859d0}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="PrimitiveFactory.cpp" />
@@ -15,6 +18,9 @@
     <ClCompile Include="Input.cpp" />
     <ClCompile Include="TimeManager.cpp" />
     <ClCompile Include="TwUI.cpp" />
+    <ClCompile Include="..\include\tinyxml2.cpp">
+      <Filter>tinyxml2</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="PrimitiveFactory.h" />
@@ -36,6 +42,9 @@
     <ClInclude Include="TwUI.h" />
     <ClInclude Include="AutoXmlBase.h" />
     <ClInclude Include="AutoXmlTypes.h" />
+    <ClInclude Include="..\include\tinyxml2.h">
+      <Filter>tinyxml2</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\debug.glsl">
