@@ -238,7 +238,7 @@ namespace cubey {
 	void SmokeDemo::Explosion(float delta_time) {
 		if (!explosion_enabled()) return;
 
-		static float timer = explosion_timer();
+		static float timer = 1.0f;
 
 		if (timer <= 0.0f) {
 			timer = explosion_timer();
