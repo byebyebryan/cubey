@@ -18,10 +18,7 @@ uniform float u_step_size = 1.0/128;
 uniform int u_max_steps = 1000;
 uniform float u_density_factor = 10.0;
 
-uniform vec3 u_smoke_color_0 = vec3(1, 0, 0);
-uniform vec3 u_smoke_color_1 = vec3(0, 1, 0);
-uniform vec3 u_smoke_color_2 = vec3(0, 0, 1);
-uniform vec3 u_smoke_color_3 = vec3(0.5, 0.5, 0);
+uniform vec3 u_smoke_color[4] = vec3[](vec3(1, 0, 0), vec3(0, 1, 0), vec3(0, 0, 1), vec3(0, 0, 0));
 
 uniform vec3 u_light_color = vec3(1.0);
 uniform float u_light_intensity = 100.0;
@@ -123,7 +120,7 @@ void main() {
 		}
 		else {
 			
-			vec3 color = u_smoke_color_0 * density.x + u_smoke_color_1 * density.y + u_smoke_color_2 * density.z + u_smoke_color_3 * density.w;
+			vec3 color = u_smoke_color[0] * density.x + u_smoke_color[1] * density.y + u_smoke_color[2] * density.z + u_smoke_color[3] * density.w;
 
 			if(u_temperature_color == 1) color = mix(color, vec3(0) , exp(-temperature*temperature/u_temperature_color_falloff));
 

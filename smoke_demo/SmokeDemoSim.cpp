@@ -1,6 +1,7 @@
 #include "SmokeDemo.h"
 
 #include "glm/gtc/random.hpp"
+#include "glm/gtx/color_space.hpp"
 
 namespace cubey {
 	void SmokeDemo::FillObstacle() {
@@ -195,9 +196,12 @@ namespace cubey {
 
 		static float y_rotation = 0.0f;
 
-		glm::vec4 density_intensity[4] = { glm::vec4(Pow10(injection_density_intensity_log10()), 0, 0, 0), glm::vec4(0, Pow10(injection_density_intensity_log10()), 0, 0),
-			glm::vec4(0, 0, Pow10(injection_density_intensity_log10()), 0), glm::vec4(0, 0, 0, Pow10(injection_density_intensity_log10()))
-		};
+		float hue = injection_density_color_hue();
+		if (injection_density_color_random_hue()) {
+			hue = glm::linearRand(0.0f, 360.0f);
+		}
+
+		float d_hue = 360.0f / injection_count();
 
 		float d_y_rot = glm::radians(360.0f / injection_count());
 		float y_rot = glm::radians(y_rotation);
@@ -207,7 +211,11 @@ namespace cubey {
 			dir = glm::rotateY(dir, y_rot);
 			glm::vec3 pos = injection_reference_position() + glm::rotateY(glm::vec3(0, 0, 1), y_rot) * injection_reference_distance();
 
-			InjectDensity(pos, injection_density_sigma(), density_intensity[i], delta_time);
+			float density = Pow10(injection_density_intensity_log10()) / 3.0f;
+
+			glm::vec3 injection_density = glm::rgbColor(glm::vec3(hue, injection_density_color_saturation(), injection_density_color_value())) * density;
+
+			InjectDensity(pos, injection_density_sigma(), glm::vec4(injection_density, 0.0f), delta_time);
 			InjectTemperature(pos, injection_temperature_sigma(), Pow10(injection_temperature_intensity_log10()), delta_time);
 			if (injection_linear_foce()) {
 				InjectForceLinear(pos, dir, injection_force_sigma(), Pow10(injection_force_intensity_log10()), delta_time);
@@ -217,6 +225,7 @@ namespace cubey {
 			}
 
 			y_rot += d_y_rot;
+			hue += d_hue;
 		}
 
 		if (injection_y_rotation_enabled()) {
@@ -237,23 +246,14 @@ namespace cubey {
 
 			InjectForce(explosion_position(), explosion_force_sigma(), Pow10(explosion_force_intensity_log10()), 1.0f);
 
-			glm::vec4 density_injection = glm::vec4(Pow10(explosion_density_0_intensity_log10()),
-				Pow10(explosion_density_1_intensity_log10()),
-				Pow10(explosion_density_2_intensity_log10()),
-				Pow10(explosion_density_3_intensity_log10()));
+			float density_intensity = Pow10(explosion_density_intensity_log10());
+			glm::vec3 density_injection = density_intensity * glm::rgbColor(glm::vec3(explosion_density_color_hue(), explosion_density_color_saturation(), explosion_density_color_value())) / 3.0f;
 
-			if (explosion_density_random_mix()) {
-				glm::vec4 density_rand = { glm::linearRand(0.0f, Pow10(explosion_density_0_intensity_log10())), glm::linearRand(0.0f, Pow10(explosion_density_1_intensity_log10())),
-					glm::linearRand(0.0f, Pow10(explosion_density_2_intensity_log10())), glm::linearRand(0.0f, Pow10(explosion_density_3_intensity_log10())),
-				};
-
-				float density_sum = Pow10(explosion_density_0_intensity_log10()) + Pow10(explosion_density_1_intensity_log10()) +
-					Pow10(explosion_density_2_intensity_log10()) + Pow10(explosion_density_3_intensity_log10());
-				float density_rand_sum = density_rand.x + density_rand.y + density_rand.z + density_rand.w;
-				density_injection = density_sum * density_rand / density_rand_sum;
+			if (explosion_density_color_random_hue()) {
+				density_injection = density_intensity * glm::rgbColor(glm::vec3(glm::linearRand(0.0f, 360.0f), explosion_density_color_saturation(), explosion_density_color_value())) / 3.0f;
 			}
 
-			InjectDensity(explosion_position(), explosion_density_sigma(), density_injection, 1.0f);
+			InjectDensity(explosion_position(), explosion_density_sigma(), glm::vec4(density_injection, 0.0f), 1.0f);
 			InjectTemperature(explosion_position(), explosion_temperature_sigma(), Pow10(explosion_temperature_intensity_log10()), 1.0f);
 		}
 		else {

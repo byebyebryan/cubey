@@ -10,7 +10,7 @@ namespace cubey {
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		glEnable(GL_TEXTURE_3D);
-		glClearColor(0.5, 0.5, 0.5, 1.0);
+		//glClearColor(0.5, 0.5, 0.5, 1.0);
 
 		ShaderManager::BufferCleaner shader_cleaner;
 
@@ -50,10 +50,7 @@ namespace cubey {
 		TwDefine("main/Simulation opened=false");
 		TwDefine("main/Obstacle opened=false");
 		TwDefine("main/Advection opened=false");
-		TwDefine("main/Injection0 opened=false");
-		TwDefine("main/Injection1 opened=false");
-		TwDefine("main/Injection2 opened=false");
-		TwDefine("main/Injection3 opened=false");
+		TwDefine("main/Injection opened=false");
 		TwDefine("main/Explosion opened=false");
 		TwDefine("main/Buoyancy opened=false");
 		TwDefine("main/Vorticity opened=false");
@@ -141,11 +138,6 @@ namespace cubey {
 
 		sp_render_->SetUniform("u_step_size", 1.0f/smoke_sampling_resolution());
 		sp_render_->SetUniform("u_jittering", smoke_sampling_jittering());
-
-		sp_render_->SetUniform("u_smoke_color_0", smoke_color_0().vec);
-		sp_render_->SetUniform("u_smoke_color_1", smoke_color_1().vec);
-		sp_render_->SetUniform("u_smoke_color_2", smoke_color_2().vec);
-		sp_render_->SetUniform("u_smoke_color_3", smoke_color_3().vec);
 
 		sp_render_->SetUniform("u_light_color", light_color().vec);
 		sp_render_->SetUniform("u_light_intensity", Pow10(light_intensity_log10()));
