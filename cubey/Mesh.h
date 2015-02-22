@@ -8,7 +8,7 @@
 namespace cubey {
 	class Mesh {
 	public:
-		//Mesh() : vao_(0), vbo_(0), vertices_count_(0), draw_mode_(GL_POINTS) {}
+
 		Mesh(GLsizei vertices_count, GLenum draw_mode) : vao_(0), vbo_(0),
 			vertices_count_(vertices_count), draw_mode_(draw_mode) {
 		}
@@ -50,17 +50,16 @@ namespace cubey {
 			glBindVertexArray(0);
 		}
 
-	private:
+	protected:
 		GLenum draw_mode_;
 		GLsizei vertices_count_;
-		GLsizei indices_count_;
 		GLuint vao_;
 		GLuint vbo_;
 	};
 
 	class MeshIndexed : public Mesh {
 	public:
-		//Mesh() : vao_(0), vbo_(0), vertices_count_(0), draw_mode_(GL_POINTS) {}
+
 		MeshIndexed(GLsizei vertices_count, GLsizei indices_count, GLenum draw_mode) : Mesh(vertices_count, draw_mode), ibo_(0), indices_count_(indices_count) {
 		}
 
@@ -104,11 +103,7 @@ namespace cubey {
 		}
 
 	private:
-		GLenum draw_mode_;
-		GLsizei vertices_count_;
 		GLsizei indices_count_;
-		GLuint vao_;
-		GLuint vbo_;
 		GLuint ibo_;
 	};
 

@@ -22,7 +22,7 @@ void main() {
 __FS_FIRST_PASS__
 
 uniform vec3 u_ambient_light_color = vec3(0.5, 0.5, 0.5);
-uniform vec3 u_directional_light_direction = vec3(-0.5f, -1.0f, -0.25f);
+uniform vec3 u_directional_light_direction = vec3(0.5f, 1.0f, 0.25f);
 uniform vec3 u_directional_light_color = vec3(0.5f, 0.5f, 0.5f);
 
 uniform mat4 u_view_mat;

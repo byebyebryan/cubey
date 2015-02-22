@@ -33,9 +33,9 @@ namespace cubey {
 		}
 
 		template<typename T>
-		static MeshIndexed* UnitBallWNormal(int iterations, const T& color) {
+		static MeshIndexed* UnitBallWNormal(const T& color, int iterations = 5) {
 			Vertex<VPosition3, VNormal>::Array vertices = UnitTetrahedronWNormalVerts();
-			std::vector<unsigned int> indicies = { 0, 1, 2, 0, 1, 3, 1, 2, 3, 2, 0, 3 };
+			std::vector<unsigned int> indicies = { 0, 2, 1, 0, 3, 2, 0, 1, 3, 1, 2, 3 };
 			for (int i = 0; i < iterations; i++) {
 				UnitBallExpand(vertices, indicies);
 			}

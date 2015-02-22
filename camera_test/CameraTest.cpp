@@ -4,11 +4,9 @@ namespace cubey {
 
 	void CameraTest::Init() {
 		glEnable(GL_DEPTH_TEST);
-		//glEnable(GL_CULL_FACE);
+		glEnable(GL_CULL_FACE);
 		glEnable(GL_TEXTURE_2D);
 		glClearColor(0.4, 0.4, 0.4, 1);
-
-		glViewport(0, 0, 640, 360);
 
 		glGenTextures(1, &t2_fp_);
 		glBindTexture(GL_TEXTURE_2D, t2_fp_);
@@ -26,7 +24,7 @@ namespace cubey {
 		sp_first_ = ShaderManager::Get()->CreateProgram("debug.__VS_FIRST_PASS__.__FS_FIRST_PASS__");
 		sp_second_ = ShaderManager::Get()->CreateProgram("debug.__VS_SECOND_PASS__.__FS_SECOND_PASS__");
 
-		mi_box_ = PrimitiveFactory::UnitBallWNormal(0, glm::vec3(1.0))->CreateInstance(sp_first_, "u_mvp_mat", "u_normal_mat");
+		mi_box_ = PrimitiveFactory::UnitBallWNormal(glm::vec3(1.0))->CreateInstance(sp_first_, "u_mvp_mat", "u_normal_mat");
 		mi_fsq_ = PrimitiveFactory::FullScreenQuad()->CreateInstance(sp_second_);
 	}
 
