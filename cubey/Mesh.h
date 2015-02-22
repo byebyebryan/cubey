@@ -61,7 +61,7 @@ namespace cubey {
 	class MeshIndexed : public Mesh {
 	public:
 		//Mesh() : vao_(0), vbo_(0), vertices_count_(0), draw_mode_(GL_POINTS) {}
-		MeshIndexed(GLsizei vertices_count, GLsizei indices_count, GLenum draw_mode) : Mesh(vertices_count, draw_mode), ibo_(0) {
+		MeshIndexed(GLsizei vertices_count, GLsizei indices_count, GLenum draw_mode) : Mesh(vertices_count, draw_mode), ibo_(0), indices_count_(indices_count) {
 		}
 
 		~MeshIndexed() {
