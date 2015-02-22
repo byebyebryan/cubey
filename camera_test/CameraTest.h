@@ -9,12 +9,14 @@ namespace cubey {
 		void Render() override;
 
 	private:
-		ShaderProgram* prog;
-		Mesh* mesh;
-		MeshInstance* mesh_instance;
 
-		AUTO_XML_VAR_TW(glm::vec3, foo, glm::vec3(1,0,0), "group=test");
-		AUTO_XML_VAR_TW(float, bar, 12.0f, "group=test");
+		GLuint t2_fp_;
+		GLuint fb_fp_;
+		MeshInstance* mi_fsq_;
+		MeshInstance* mi_box_;
+
+		ShaderProgram* sp_first_;
+		ShaderProgram* sp_second_;
 	};
 
 }

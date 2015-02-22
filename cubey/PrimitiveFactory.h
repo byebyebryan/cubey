@@ -11,6 +11,8 @@ namespace cubey {
 		static Vertex<VPosition3, VNormal>::Array UnitBoxWNormalVerts();
 		static Vertex<VPosition2, VTexCoord2>::Array FullScreenQuadVerts();
 
+		static Vertex<VPosition3, VNormal>::Array UnitTetrahedronWNormalVerts();
+
 		static Mesh* UnitBox() {
 			static Mesh* mesh = Mesh::Create(UnitBoxVerts(), GL_TRIANGLES);
 			return mesh;
@@ -30,10 +32,25 @@ namespace cubey {
 			return mesh;
 		}
 
+		template<typename T>
+		static MeshIndexed* UnitBallWNormal(int iterations, const T& color) {
+			Vertex<VPosition3, VNormal>::Array vertices = UnitTetrahedronWNormalVerts();
+			std::vector<unsigned int> indicies = { 0, 1, 2, 0, 1, 3, 1, 2, 3, 2, 0, 3 };
+			for (int i = 0; i < iterations; i++) {
+				UnitBallExpand(vertices, indicies);
+			}
+			auto cverts = VertexArrayHelper::AppendAttrib(vertices, color);
+			MeshIndexed* mesh = MeshIndexed::Create(cverts, indicies, GL_TRIANGLES);
+			return mesh;
+		}
+
 		static Mesh* FullScreenQuad() {
 			static Mesh* mesh = Mesh::Create(FullScreenQuadVerts(), GL_TRIANGLE_STRIP);
 			return mesh;
 		}
+
+	private:
+		static void UnitBallExpand(Vertex<VPosition3, VNormal>::Array& vertices, std::vector<unsigned int>& indicies);
 	};
 }
 
