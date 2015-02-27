@@ -130,7 +130,6 @@ namespace cubey {
 		}
 
 		Transform transform_;
-	private:
 		Mesh* mesh_;
 		Camera* camera_;
 		ShaderProgram* program_;

@@ -80,7 +80,7 @@ namespace cubey {
 			GLint uniform_location = glGetUniformLocation(gl_, uniform_name);
 			if (uniform_location >= 0) {
 				uniform_var_name_to_location[std::string(uniform_name)] = uniform_location;
-				//std::cout << "location " << uniform_location << " : " << uniform_name << std::endl;
+				std::cout << "location " << uniform_location << " : " << uniform_name << std::endl;
 			}
 			delete[] uniform_name;
 		}

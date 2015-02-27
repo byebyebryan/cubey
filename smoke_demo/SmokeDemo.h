@@ -126,7 +126,7 @@ namespace cubey {
 		ShaderProgram* sp_render_;
 
 		AUTO_XML_VAR_TW(bool, camera_rotation_enabled, true, "group=Camera");
-		AUTO_XML_VAR_TW(float, camera_rotation_speed, 15.0f, "precision=2 min=-30 max=30 step=5 group=Camera");
+		AUTO_XML_VAR_TW(float, camera_rotation_speed, 10.0f, "precision=2 min=-30 max=30 step=5 group=Camera");
 
 		AUTO_XML_VAR_TW(bool, simulation_paused, false, "group=Simulation");
 		AUTO_XML_VAR_TW(int, solver_iterations, 10, "min=5 max=50 step=5 group=Simulation");
@@ -137,29 +137,29 @@ namespace cubey {
 		AUTO_XML_VAR_TW(bool, obstacle_enabled, false, "group=Obstacle");
 		AUTO_XML_VAR_TW(int, obstacle_type, 0, "min=0 max=1 step=1 group=Obstacle");
 		AUTO_XML_VAR_TW(glm::vec3, obstacle_position, glm::vec3(0.5f,0.5f,0.5f), "group=Obstacle");
-		AUTO_XML_VAR_TW(float, obstacle_radius, 0.15f, "precision=2 min=0 max=1 step=0.05 group=Obstacle");
+		AUTO_XML_VAR_TW(float, obstacle_radius, 0.3f, "precision=2 min=0 max=1 step=0.05 group=Obstacle");
 
 		AUTO_XML_VAR_TW(float, velocity_dissipation_log10, -3.0f, "precision=2 min=-5 max=-1 step=0.25 group=Advection");
 		AUTO_XML_VAR_TW(float, temperature_dissipation_log10, -2.0f, "precision=2 min=-5 max=-1 step=0.25 group=Advection");
 		AUTO_XML_VAR_TW(float, temperature_decay_log10, -3.0f, "precision=2 min=-5 max=1 step=0.25 group=Advection");
-		AUTO_XML_VAR_TW(float, density_dissipation_log10, -2.0f, "precision=2 min=-5 max=-1 step=0.25 group=Advection");
+		AUTO_XML_VAR_TW(float, density_dissipation_log10, -3.5f, "precision=2 min=-5 max=-1 step=0.25 group=Advection");
 		AUTO_XML_VAR_TW(float, density_decay_log10, -3.0f, "precision=2 min=-5 max=1 step=0.25 group=Advection");
 
 		AUTO_XML_VAR_TW(bool, injection_enabled, true, "group=Injection");
 		AUTO_XML_VAR_TW(int, injection_count, 4, "min=1 max=12 step=1 group=Injection");
 		AUTO_XML_VAR_TW(glm::vec3, injection_reference_position, glm::vec3(0.5f, 0.1f, 0.5f), "group=Injection");
-		AUTO_XML_VAR_TW(float, injection_reference_distance, 0.1f, "precision=2 min=0 max=0.5 step=0.05 group=Injection");
+		AUTO_XML_VAR_TW(float, injection_reference_distance, 0.25f, "precision=2 min=0 max=0.5 step=0.05 group=Injection");
 		AUTO_XML_VAR_TW(bool, injection_linear_foce, false, "group=Injection");
 		AUTO_XML_VAR_TW(float, injection_x_rotation, 30.0f, "precision=2 min=0 max=180 step=5 group=Injection");
-		AUTO_XML_VAR_TW(bool, injection_y_rotation_enabled, true, "group=Injection");
+		AUTO_XML_VAR_TW(bool, injection_y_rotation_enabled, false, "group=Injection");
 		AUTO_XML_VAR_TW(float, injection_y_rotation_speed, 60.0f, "precision=2 min=-180 max=180 step=10 group=Injection");
 
-		AUTO_XML_VAR_TW(float, injection_force_sigma, 0.4f, "precision=2 min=0.1 max=2 step=0.05 group=Injection");
-		AUTO_XML_VAR_TW(float, injection_force_intensity_log10, 2.5f, "precision=2 min=-2 max=4 step=0.25 group=Injection");
+		AUTO_XML_VAR_TW(float, injection_force_sigma, 0.25f, "precision=2 min=0.1 max=2 step=0.05 group=Injection");
+		AUTO_XML_VAR_TW(float, injection_force_intensity_log10, 2.0f, "precision=2 min=-2 max=4 step=0.25 group=Injection");
 		AUTO_XML_VAR_TW(float, injection_temperature_sigma, 0.5f, "precision=2 min=0.1 max=2 step=0.05 group=Injection");
-		AUTO_XML_VAR_TW(float, injection_temperature_intensity_log10, 1.5f, "precision=2 min=0 max=4 step=0.25 group=Injection");
+		AUTO_XML_VAR_TW(float, injection_temperature_intensity_log10, 1.25f, "precision=2 min=0 max=4 step=0.25 group=Injection");
 		AUTO_XML_VAR_TW(float, injection_density_sigma, 1.0f, "precision=2 min=0.1 max=2 step=0.05 group=Injection");
-		AUTO_XML_VAR_TW(float, injection_density_intensity_log10, 1.0f, "precision=2 min=0 max=4 step=0.25 group=Injection");
+		AUTO_XML_VAR_TW(float, injection_density_intensity_log10, 2.0f, "precision=2 min=0 max=4 step=0.25 group=Injection");
 		AUTO_XML_VAR_TW(bool, injection_density_color_random_hue, false, "group=Injection");
 		AUTO_XML_VAR_TW(float, injection_density_color_hue, 45.0f, "precision=2 min=0 max=360 step=10 group=Injection");
 		AUTO_XML_VAR_TW(float, injection_density_color_saturation, 1.0f, "precision=2 min=0 max=1 step=0.05 group=Injection");
@@ -168,10 +168,10 @@ namespace cubey {
 		AUTO_XML_VAR_TW(bool, explosion_enabled, false, "group=Explosion");
 		AUTO_XML_VAR_TW(glm::vec3, explosion_position, glm::vec3(0.5f, 0.1f, 0.5f), "group=Explosion");
 		AUTO_XML_VAR_TW(float, explosion_timer, 3.0f, "precision=2 min=0.1 max=10 step=0.5 group=Explosion");
-		AUTO_XML_VAR_TW(float, explosion_force_sigma, 0.3f, "precision=2 min=0.1 max=2 step=0.05 group=Explosion");
+		AUTO_XML_VAR_TW(float, explosion_force_sigma, 0.25f, "precision=2 min=0.1 max=2 step=0.05 group=Explosion");
 		AUTO_XML_VAR_TW(float, explosion_force_intensity_log10, 2.0f, "precision=2 min=-2 max=4 step=0.25 group=Explosion");
 		AUTO_XML_VAR_TW(float, explosion_temperature_sigma, 0.25f, "precision=2 min=0.1 max=2 step=0.05 group=Explosion");
-		AUTO_XML_VAR_TW(float, explosion_temperature_intensity_log10, 1.75f, "precision=2 min=0 max=4 step=0.25 group=Explosion");
+		AUTO_XML_VAR_TW(float, explosion_temperature_intensity_log10, 1.25f, "precision=2 min=0 max=4 step=0.25 group=Explosion");
 		AUTO_XML_VAR_TW(float, explosion_density_sigma, 0.55f, "precision=2 min=0.1 max=2 step=0.05 group=Explosion");
 		AUTO_XML_VAR_TW(float, explosion_density_intensity_log10, 2.0f, "precision=2 min=0 max=4 step=0.25 group=Explosion");
 		AUTO_XML_VAR_TW(bool, explosion_density_color_random_hue, true, "group=Explosion");
@@ -188,12 +188,14 @@ namespace cubey {
 		AUTO_XML_VAR_TW(bool, vorticity_confinement_enabled, true, "group=Vorticity");
 		AUTO_XML_VAR_TW(float, vorticity_confinement_strength, 10.0f, "precision=2 min=0 max=100 step=2.5 group=Vorticity");
 
+		AUTO_XML_VAR_TW(float, gradient_scale, 1.1f, "precision=2 min=1 max=2 step=0.05 group=Projection");
+
 		AUTO_XML_VAR_TW(float, smoke_color_absorption_log10, 2.0f, "precision=2 min=-1 max=3 step=0.25 group=Smoke");
 		AUTO_XML_VAR_TW(float, smoke_density_factor_log10, 1.0f, "precision=2 min=-1 max=3 step=0.25 group=Smoke");
 		AUTO_XML_VAR_TW(int, smoke_sampling_resolution, 128, "min=16 max=256 step=16 group=Smoke");
-		AUTO_XML_VAR_TW(float, smoke_sampling_jittering, 0.5f, "precision=2 min=0 max=1 step=0.1 group=Smoke");
+		AUTO_XML_VAR_TW(float, smoke_sampling_jittering, 1.0f, "precision=2 min=0 max=1 step=0.1 group=Smoke");
 		AUTO_XML_VAR_TW(bool, smoke_blur_enabled, true, "group=Smoke");
-		AUTO_XML_VAR_TW(float, smoke_blur_sigma, 0.6f, "precision=2 min=0.1 max=2 step=0.05 group=Smoke");
+		AUTO_XML_VAR_TW(float, smoke_blur_sigma, 0.75f, "precision=2 min=0.1 max=2 step=0.05 group=Smoke");
 		
 
 		AUTO_XML_VAR_TW(glm::vec3, light_position, glm::vec3(4.0, 1.0, 2.0), "group=Lighting");
@@ -203,13 +205,13 @@ namespace cubey {
 		AUTO_XML_VAR_TW(float, ambient_light_log10, 0.0f, "precision=2 min=-2 max=2 step=0.25 group=Lighting");
 
 		AUTO_XML_VAR_TW(bool, shadows_enabled, true, "group=Shadows");
-		AUTO_XML_VAR_TW(int, shadows_sampling_resolution, 128, "min=16 max=256 step=16 group=Shadows");
+		AUTO_XML_VAR_TW(int, shadows_sampling_resolution, 64, "min=16 max=256 step=16 group=Shadows");
 		AUTO_XML_VAR_TW(float, shadows_sampling_jittering, 0.5f, "precision=2 min=0 max=1 step=0.1 group=Shadows");
 		AUTO_XML_VAR_TW(bool, shadows_blur_enabled, true, "group=Shadows");
-		AUTO_XML_VAR_TW(float, shadows_blur_sigma, 1.0f, "precision=2 min=0.1 max=2 step=0.05 group=Shadows");
+		AUTO_XML_VAR_TW(float, shadows_blur_sigma, 1.5f, "precision=2 min=0.1 max=2 step=0.05 group=Shadows");
 
 		AUTO_XML_VAR_TW(bool, radiance_color_enabled, false, "group=Radiance");
-		AUTO_XML_VAR_TW(float, radiance_color_falloff_log10, 0.0f, "precision=2 min=-3 max=3 step=0.25 group=Radiance");
+		AUTO_XML_VAR_TW(float, radiance_color_falloff_log10, 2.0f, "precision=2 min=-1 max=5 step=0.25 group=Radiance");
 
 	};
 

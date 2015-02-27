@@ -46,7 +46,7 @@ namespace cubey {
 
 		TwBarInit();
 
-		TwDefine("main/Camera opened=false");
+		//TwDefine("main/Camera opened=false");
 		TwDefine("main/Simulation opened=false");
 		TwDefine("main/Obstacle opened=false");
 		TwDefine("main/Advection opened=false");
@@ -54,6 +54,7 @@ namespace cubey {
 		TwDefine("main/Explosion opened=false");
 		TwDefine("main/Buoyancy opened=false");
 		TwDefine("main/Vorticity opened=false");
+		TwDefine("main/Projection opened=false");
 		TwDefine("main/Smoke opened=false");
 		TwDefine("main/Lighting opened=false");
 		TwDefine("main/Shadows opened=false");

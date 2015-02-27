@@ -358,6 +358,8 @@ namespace cubey {
 	void SmokeDemo::Projection() {
 		sp_project_->Activate();
 
+		sp_project_->SetUniform("u_gradient_scale", gradient_scale());
+
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_3D, s3d_velocity_.ping.gl);
 

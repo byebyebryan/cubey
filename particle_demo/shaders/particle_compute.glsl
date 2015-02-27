@@ -11,7 +11,7 @@ struct Particle {
 };
 
 layout (std430, binding=0) buffer b_particles_data {
-	Particle particles[MAX_PARTICLE_PACK_COUNT * PARTICLE_PACK_SIZE];
+	Particle particles[];
 };
 
 __CS_INIT__

@@ -102,6 +102,7 @@
     <ClCompile Include="ShaderProgram.cpp" />
     <ClCompile Include="TimeManager.cpp" />
     <ClCompile Include="TwUI.cpp" />
+    <ClCompile Include="Util.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\tinyxml2.h" />
@@ -114,6 +115,7 @@
     <ClInclude Include="Event.h" />
     <ClInclude Include="Input.h" />
     <ClInclude Include="Mesh.h" />
+    <ClInclude Include="ObjLoader.h" />
     <ClInclude Include="PrimitiveFactory.h" />
     <ClInclude Include="Shader.h" />
     <ClInclude Include="ShaderManager.h" />
@@ -122,6 +124,7 @@
     <ClInclude Include="TimeManager.h" />
     <ClInclude Include="Transform.h" />
     <ClInclude Include="TwUI.h" />
+    <ClInclude Include="Util.h" />
     <ClInclude Include="Vertex.h" />
     <ClInclude Include="VertexArray.h" />
   </ItemGroup>

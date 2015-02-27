@@ -21,6 +21,7 @@
     <ClCompile Include="..\include\tinyxml2.cpp">
       <Filter>tinyxml2</Filter>
     </ClCompile>
+    <ClCompile Include="Util.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="PrimitiveFactory.h" />
@@ -45,6 +46,8 @@
     <ClInclude Include="..\include\tinyxml2.h">
       <Filter>tinyxml2</Filter>
     </ClInclude>
+    <ClInclude Include="Util.h" />
+    <ClInclude Include="ObjLoader.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\debug.glsl">

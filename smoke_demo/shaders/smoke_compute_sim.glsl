@@ -337,6 +337,8 @@ layout (binding = 2) uniform sampler3D t_pressure;
 
 layout (binding = 0, rgba16f) uniform image3D i_velocity_target;
 
+uniform float u_gradient_scale = 1.1;
+
 ivec3 clamp_i (ivec3 i_in) {
 	ivec3 res;
 	res.x = clamp(i_in.x, 0, int(gl_NumWorkGroups.x * gl_WorkGroupSize.x) -1);
@@ -381,7 +383,7 @@ void main() {
 		
 		vec3 source_vel = texelFetch(t_velocity, pos, 0).xyz;
 		vec3 grad = vec3(p_r - p_l, p_u - p_d, p_f - p_b) * 0.5;
-		vec3 v = source_vel - grad;
+		vec3 v = source_vel - grad*u_gradient_scale;
 		target_vel.xyz = (v * v_mask) + o_v;
 	}
 	imageStore(i_velocity_target, pos, target_vel);

@@ -9,6 +9,7 @@
 
 #include "ShaderProgram.h"
 #include "SingletonBase.h"
+#include "Util.h"
 
 namespace cubey {
 
@@ -42,12 +43,9 @@ namespace cubey {
 
 		void LoadFile(const std::string& file_name);
 		std::string GetInclude(const std::string& file_name);
-		std::vector<std::string> Tokenize(const std::string& str, const std::string& delimiters = ".");
+		
 		GLenum GetShaderType(const std::string& shader_key);
 
-		//std::string current_file_;
-		//std::stringstream buffer_;
-		//std::set<std::string> directives_;
 		std::unordered_map<std::string, ShaderFile> files_;
 		std::unordered_map<std::string, ShaderProgram*> programs_;
 	};

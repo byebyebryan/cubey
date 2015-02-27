@@ -86,7 +86,7 @@ namespace cubey {
 			RefreshMat();
 		}
 		void Scale(const glm::vec3& _scale) {
-			ScaleTo(scale_ * scale_);
+			ScaleTo(scale_ * _scale);
 		}
 
 		void LookAt(const glm::vec3& target) {

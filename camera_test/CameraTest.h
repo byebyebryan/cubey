@@ -10,11 +10,22 @@ namespace cubey {
 
 	private:
 
-		GLuint t2_fp_;
+		GLuint t2_shadow_map_;
+		GLuint fb_shadow_pass_;
+
+		GLuint tc_shadow_map_;
+
+		GLuint t2_fp_c_;
+		GLuint t2_fp_d_;
 		GLuint fb_fp_;
 		MeshInstance* mi_fsq_;
+		MeshInstance* mi_plane_;
 		MeshInstance* mi_box_;
+		MeshInstance* mi_ball_;
+		MeshInstance* mi_ball_2_;
+		MeshInstance* mi_tea_pot_;
 
+		ShaderProgram* sp_shadow_pass_;
 		ShaderProgram* sp_first_;
 		ShaderProgram* sp_second_;
 	};

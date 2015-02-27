@@ -23,6 +23,15 @@ namespace cubey {
 			return new_vertex_array;
 		}
 
+		template<typename T, typename... TX>
+		static typename Vertex<TX..., T>::Array AppendAttrib(std::vector<Vertex<TX...>>& vertex_array_0, const std::vector<T>& attrib) {
+			Vertex<TX..., T>::Array new_vertex_array;
+			for (int i = 0; i < vertex_array_0.size();i++) {
+				new_vertex_array.push_back(vertex_array_0[i].AppendAttrib<T>(attrib[i]));
+			}
+			return new_vertex_array;
+		}
+
 		template<typename T>
 		static typename T::ParentType::Array PopAttrib(std::vector<T>& vertex_array_0) {
 			T::ParentType::Array new_vertex_array;
