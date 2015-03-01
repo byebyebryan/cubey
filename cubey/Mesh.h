@@ -121,10 +121,10 @@ namespace cubey {
 
 		void Draw() {
 			if (u_mvp_mat_location_ != -1) {
-				program_->SetUniform(u_mvp_mat_location_, camera_->CalculateMVPMat(transform_.transformation_mat()));
+				program_->SetUniformDirty(u_mvp_mat_location_, camera_->CalculateMVPMat(transform_.transformation_mat()));
 			}
 			if (u_normal_mat_location_ != -1) {
-				program_->SetUniform(u_normal_mat_location_, camera_->CalculateNormalMat(transform_.transformation_mat()));
+				program_->SetUniformDirty(u_normal_mat_location_, camera_->CalculateNormalMat(transform_.transformation_mat()));
 			}
 			mesh_->Draw();
 		}

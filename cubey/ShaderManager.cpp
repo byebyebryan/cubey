@@ -200,7 +200,4 @@ namespace cubey {
 		}
 		return GL_INVALID_ENUM;
 	}
-
-	
-
 }

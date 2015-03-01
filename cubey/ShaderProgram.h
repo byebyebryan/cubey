@@ -1,5 +1,8 @@
 #pragma once
 
+#include <iostream>
+#include <fstream>
+#include <sstream>
 #include <vector>
 #include <unordered_map>
 #include "GL/glew.h"
@@ -30,12 +33,20 @@ namespace cubey {
 		}
 
 		template<typename T>
-		void SetUniform(int location, const T& value) {
+		void SetUniformDirty(int location, const T& value) {
 			SetUniformImpl(location, value);
 		}
+
 		template<typename T>
 		void SetUniform(const std::string& name, const T& value) {
-			SetUniformImpl(uniform_var_name_to_location[name], value);
+			int uniform_location = GetUniformLocation(name);
+			if (uniform_location == -1) {
+				//std::cerr << "*** Poop: Failed to find uniform: " << name << std::endl;
+				//assert(false);
+			}
+			else {
+				SetUniformImpl(uniform_location, value);
+			}
 		}
 
 		GLuint gl_;
@@ -84,6 +95,15 @@ namespace cubey {
 		}
 		inline void SetUniformImpl(GLint location, const glm::mat4& value) {
 			glProgramUniformMatrix4fv(gl_, location, 1, GL_FALSE, glm::value_ptr(value));
+		}
+		inline void SetUniformImpl(GLint location, const std::vector<glm::mat2>& value) {
+			glProgramUniformMatrix2fv(gl_, location, value.size(), GL_FALSE, (const GLfloat*)value.data());
+		}
+		inline void SetUniformImpl(GLint location, const std::vector<glm::mat3>& value) {
+			glProgramUniformMatrix3fv(gl_, location, value.size(), GL_FALSE, (const GLfloat*)value.data());
+		}
+		inline void SetUniformImpl(GLint location, const std::vector<glm::mat4>& value) {
+			glProgramUniformMatrix4fv(gl_, location, value.size(), GL_FALSE, (const GLfloat*)value.data());
 		}
 
 		std::vector<Shader> shaders_;
