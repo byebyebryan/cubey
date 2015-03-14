@@ -90,7 +90,7 @@ namespace cubey {
 	template<>
 	struct AutoXmlType < int >
 	{
-		static TwType tw_type() { return TW_TYPE_INT16; }
+		static TwType tw_type() { return TW_TYPE_INT32; }
 
 		static void Read(XMLElement * xml_element, int * value)
 		{

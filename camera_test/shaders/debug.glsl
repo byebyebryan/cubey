@@ -149,7 +149,7 @@ void main() {
 	float diffuse = max(0.0, dot(var_normal, light_direction));
 	float specular = max(0.0, dot(var_normal, half_vector));
 	
-	specular = pow(specular, u_material.shininess)*u_material.shininess / 10.0;
+	specular = diffuse * pow(specular, u_material.shininess)*u_material.shininess / 10.0;
 	if (diffuse == 0.0) specular = 0.0;
 	
 	vec3 scattered_light = (u_light.ambient + light_amount * diffuse * u_light.color * attenuation) * u_material.diffuse;
@@ -242,8 +242,8 @@ void main() {
 	float diffuse = max(0.0, dot(var_normal, light_direction));
 	float specular = max(0.0, dot(var_normal, half_vector));
 	
-	specular = pow(specular, u_material.shininess)*u_material.shininess / 10.0;
-	if (diffuse == 0.0) specular = 0.0;
+	specular = diffuse * pow(specular, u_material.shininess)*u_material.shininess / 10.0;
+	//if (diffuse == 0.0) specular = 0.0;
 	
 	//eye_direction.x = - eye_direction.x;
 	vec3 diffuse_color = u_material.diffuse;
@@ -253,7 +253,7 @@ void main() {
 		//reflection_direction = reflection_direction + var_position.xyz;
 		
 		//reflection_direction.y = -reflection_direction.y;
-		diffuse_color = texture(t_reflection_map, -reflection_direction).xyz * 0.9 + diffuse_color * 0.1;
+		diffuse_color = texture(t_reflection_map, -reflection_direction).xyz * 0.8 + diffuse_color * 0.2;
 	}
 	
 	vec3 scattered_light = (u_light.ambient + light_amount * diffuse * u_light.color * attenuation) * diffuse_color;

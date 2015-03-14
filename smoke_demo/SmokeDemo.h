@@ -129,7 +129,7 @@ namespace cubey {
 		AUTO_XML_VAR_TW(float, camera_rotation_speed, 10.0f, "precision=2 min=-30 max=30 step=5 group=Camera");
 
 		AUTO_XML_VAR_TW(bool, simulation_paused, false, "group=Simulation");
-		AUTO_XML_VAR_TW(int, solver_iterations, 10, "min=5 max=50 step=5 group=Simulation");
+		AUTO_XML_VAR_TW(int, solver_iterations, 20, "min=5 max=50 step=5 group=Simulation");
 		AUTO_XML_VAR_TW(int, resolution_x, 128, "min=16 max=256 step=16 group=Simulation");
 		AUTO_XML_VAR_TW(int, resolution_y, 128, "min=16 max=256 step=16 group=Simulation");
 		AUTO_XML_VAR_TW(int, resolution_z, 128, "min=16 max=256 step=16 group=Simulation");
@@ -140,10 +140,10 @@ namespace cubey {
 		AUTO_XML_VAR_TW(float, obstacle_radius, 0.3f, "precision=2 min=0 max=1 step=0.05 group=Obstacle");
 
 		AUTO_XML_VAR_TW(float, velocity_dissipation_log10, -3.0f, "precision=2 min=-5 max=-1 step=0.25 group=Advection");
-		AUTO_XML_VAR_TW(float, temperature_dissipation_log10, -2.0f, "precision=2 min=-5 max=-1 step=0.25 group=Advection");
-		AUTO_XML_VAR_TW(float, temperature_decay_log10, -3.0f, "precision=2 min=-5 max=1 step=0.25 group=Advection");
-		AUTO_XML_VAR_TW(float, density_dissipation_log10, -3.5f, "precision=2 min=-5 max=-1 step=0.25 group=Advection");
-		AUTO_XML_VAR_TW(float, density_decay_log10, -3.0f, "precision=2 min=-5 max=1 step=0.25 group=Advection");
+		AUTO_XML_VAR_TW(float, temperature_dissipation_log10, -3.0f, "precision=2 min=-5 max=-1 step=0.25 group=Advection");
+		AUTO_XML_VAR_TW(float, temperature_decay_log10, -1.5f, "precision=2 min=-5 max=1 step=0.25 group=Advection");
+		AUTO_XML_VAR_TW(float, density_dissipation_log10, -3.0f, "precision=2 min=-5 max=-1 step=0.25 group=Advection");
+		AUTO_XML_VAR_TW(float, density_decay_log10, -1.5f, "precision=2 min=-5 max=1 step=0.25 group=Advection");
 
 		AUTO_XML_VAR_TW(bool, injection_enabled, true, "group=Injection");
 		AUTO_XML_VAR_TW(int, injection_count, 4, "min=1 max=12 step=1 group=Injection");
@@ -157,7 +157,7 @@ namespace cubey {
 		AUTO_XML_VAR_TW(float, injection_force_sigma, 0.25f, "precision=2 min=0.1 max=2 step=0.05 group=Injection");
 		AUTO_XML_VAR_TW(float, injection_force_intensity_log10, 2.0f, "precision=2 min=-2 max=4 step=0.25 group=Injection");
 		AUTO_XML_VAR_TW(float, injection_temperature_sigma, 0.5f, "precision=2 min=0.1 max=2 step=0.05 group=Injection");
-		AUTO_XML_VAR_TW(float, injection_temperature_intensity_log10, 1.25f, "precision=2 min=0 max=4 step=0.25 group=Injection");
+		AUTO_XML_VAR_TW(float, injection_temperature_intensity_log10, 1.5f, "precision=2 min=0 max=4 step=0.25 group=Injection");
 		AUTO_XML_VAR_TW(float, injection_density_sigma, 1.0f, "precision=2 min=0.1 max=2 step=0.05 group=Injection");
 		AUTO_XML_VAR_TW(float, injection_density_intensity_log10, 2.0f, "precision=2 min=0 max=4 step=0.25 group=Injection");
 		AUTO_XML_VAR_TW(bool, injection_density_color_random_hue, false, "group=Injection");

@@ -1,134 +1,97 @@
 
-__VS_SHADOW_PASS__
-
-uniform mat4 u_mvp_mat;
-
-layout(location = 0) in vec4 in_vertex_position;
-
-void main() {
-	gl_Position = u_mvp_mat * in_vertex_position;
-}
-
-__FS_SHADOW_PASS__
-
-out vec4 out_color;
-
-void main() {
-	out_color = vec4(1.0);
-}
-
-__VS_FIRST_PASS__
-
-uniform mat4 u_mvp_mat;
-uniform mat4 u_mv_mat;
-uniform mat4 u_m_mat;
-uniform mat3 u_normal_mat;
-
-layout(location = 0) in vec4 in_vertex_position;
-layout(location = 1) in vec3 in_vertex_normal;
-
-out vec3 var_normal;
-out vec4 var_position;
-//out vec4 var_ws_position;
-
-void main() {
-	gl_Position = u_mvp_mat * in_vertex_position;
-	var_position = u_mv_mat * in_vertex_position;
-	var_normal = normalize(u_normal_mat * in_vertex_normal);
-	//var_ws_position = u_m_mat * in_vertex_position;
-}
-
-__FS_FIRST_PASS__
-
-uniform vec3 u_ambient_light_color = vec3(0.1, 0.1, 0.1);
-uniform vec4 u_light_position;
-uniform vec3 u_light_color = vec3(1.0, 1.0, 1.0);
-uniform float u_shininess = 100.0;
-uniform float u_light_attenuation_constant = 1.0;
-uniform float u_light_attenuation_linear = 0.1;
-uniform float u_light_attenuation_quadratic = 0.25;
-
-uniform vec4 u_light_position_ws;
-
-uniform mat4 u_iv_mat;
-
-layout (binding = 0) uniform samplerCubeShadow t_shadow_map;
-
-in vec3 var_normal;
-in vec4 var_position;
-//in vec4 var_ws_position;
-
-out vec4 out_color;
-
-float VectorToDepthValue(vec3 Vec)
-{
-    vec3 AbsVec = abs(Vec);
-    float LocalZcomp = max(AbsVec.x, max(AbsVec.y, AbsVec.z));
-
-    const float f = 100.0;
-    const float n = 0.1;
-    float NormZComp = (f+n) / (f-n) - (2*f*n)/(f-n)/LocalZcomp;
-    return (NormZComp + 1.0) * 0.5;
-}
-
-void main() {
-	vec3 light_direction = vec3(u_light_position) - vec3(var_position);
-	float light_distance = length(light_direction);
-	
-	vec3 light_dir_ws = vec3(u_iv_mat * (var_position - u_light_position));
-	
-	float d = VectorToDepthValue(light_dir_ws);
-	
-	light_direction = light_direction / light_distance;
-	
-	float attenuation = 1.0 / (u_light_attenuation_constant + u_light_attenuation_linear * light_distance + u_light_attenuation_quadratic * light_distance * light_distance);
-	
-	vec3 half_vector = normalize(light_direction + normalize( - var_position.xyz));
-	
-	float s = texture(t_shadow_map, vec4(normalize(light_dir_ws), d));
-	
-	//float l = 0.0;
-	//if (s + 0.0001 > d) l = 1.0;
-	
-	float diffuse = max(0.0, dot(var_normal, light_direction));
-	float specular = max(0.0, dot(var_normal, half_vector));
-	
-	specular = pow(specular, u_shininess)*u_shininess / 10.0;
-	if (diffuse == 0.0) specular = 0.0;
-	
-	vec3 scattered_light = u_ambient_light_color + s * diffuse * u_light_color * attenuation;
-	vec3 reflected_light = s * u_light_color * specular * attenuation;
-	//scattered_light = vec3(ivec3(8 * scattered_light))/8.0;
-	//float luminance = dot(scattered_light, vec3(0.2126, 0.7152, 0.0722));
-	vec3 rgb = min(vec3(1.0), scattered_light + reflected_light);
-
-	const vec3 gamma = vec3(1.0/2.2);
-	
-	out_color = vec4(pow(rgb, gamma), 1.0);
-	//out_color = vec4(d, 0.0, 0.0, 1.0);
-	//out_color = vec4(vec3(light_dir_ws), 1.0);
-}
-
-__VS_SECOND_PASS__
+__VS_FRACTAL__
 
 layout(location = 0) in vec4 in_position;
-layout(location = 1) in vec4 in_tex_coord;
+layout(location = 1) in vec2 in_tex_coord;
 
-out vec4 var_tex_coord;
+out vec2 var_tex_coord;
 
 void main() {
 	gl_Position = in_position;
 	var_tex_coord = in_tex_coord;
 }
 
-__FS_SECOND_PASS__
+__FS_FRACTAL__
 
-layout (binding = 0) uniform sampler2D t_tex;
+uniform vec2 u_c = vec2(-0.75, 0.25);
+uniform int u_max_iterations = 512;
+uniform float u_zoom = 1.0;
+uniform vec2 u_move = vec2(0, 0);
+uniform int u_type = 1;
+uniform int u_order = 2;
 
-in vec4 var_tex_coord;
+uniform float u_starting_hue = 0.0;
 
+uniform float u_aspect_ratio;
+
+in vec2 var_tex_coord;
 out vec4 out_color;
 
+vec3 hsl2rgb( in vec3 c )
+{
+    vec3 rgb = clamp( abs(mod(c.x*6.0+vec3(0.0,4.0,2.0),6.0)-3.0)-1.0, 0.0, 1.0 );
+
+    return c.z + c.y * (rgb-0.5)*(1.0-abs(2.0*c.z-1.0));
+}
+
+vec3 hsv2rgb( in vec3 c )
+{
+    vec3 rgb = clamp( abs(mod(c.x*6.0+vec3(0.0,4.0,2.0),6.0)-3.0)-1.0, 0.0, 1.0 );
+	
+    return c.z * mix( vec3(1.0), rgb, c.y);
+}
+
+vec2 complex_multiply(vec2 a, vec2 b) {
+	return vec2(a.x * b.x - a.y * b.y, a.x * b.y + a.y * b.x);
+}
+
 void main() {
-	out_color = texture(t_tex, var_tex_coord.xy);
+	
+	int i;
+	
+	vec2 z,c,dz;
+	
+	vec2 p = (var_tex_coord * 2.0 - 1.0) * vec2(u_aspect_ratio, 1.0) * u_zoom + u_move * vec2(1, -1);
+	
+	if (u_type==0) {
+		c = u_c;
+		z = p;
+		dz = vec2(1.0, 0.0);
+	}
+	else {
+		c = p;
+		z = vec2(0.0);
+		dz = vec2(0.0);
+	}
+	
+	for(i = 0; i< u_max_iterations; i++) {
+		vec2 z_x = z;
+		
+		for (int j = 1; j < u_order - 1; j++) {
+			z = complex_multiply(z, z_x);
+		}
+		
+		if (u_type==0) {
+			dz = u_order * complex_multiply(z, dz);
+		}
+		else {
+			dz = u_order * complex_multiply(z, dz) + vec2(1.0, 0.0);
+		}
+		
+		z = complex_multiply(z, z_x) + c;
+		
+		//if (dot(z, z) < 0.00001) break;
+		if (dot(z, z) > 1024) break;
+	}
+	
+	float d = 0.0;
+	if (i < u_max_iterations) d = sqrt( dot(z, z) / dot(dz, dz) ) * log(dot(z,z));
+	float c1 = clamp( 4.0*d/u_zoom, 0.0, 1.0 );
+	c1 = pow(c1, 0.25);
+	
+	//vec3 hsv = vec3(u_starting_hue + float(i)/float(u_max_iterations), 1.0, 1.0);
+	//if (i == u_max_iterations) hsv.z = 0.0;
+	//vec3 rgb = hsv2rgb(hsv);
+	//out_color = vec4(rgb, 1.0);
+	out_color = vec4(vec3(c1), 1);
 }

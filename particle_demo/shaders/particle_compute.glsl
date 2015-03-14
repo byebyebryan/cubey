@@ -44,9 +44,9 @@ void main() {
 	p.position.y = gl_WorkGroupID.x;
 	p.position.z = 0.0;
 
-	p.position.w = rand_float(p.position.xyz) * u_particle_lifespan;
+	p.position.w = 0.0;
 
-	p.velocity.xyz = rand_vec3(p.position.xyz);
+	p.velocity.xyz = vec3(0.0);
 
 	particles[gl_GlobalInvocationID.x] = p;
 }
@@ -101,15 +101,17 @@ void main() {
 	
 	Particle p = particles[gl_GlobalInvocationID.x];
 	
+	float seed = float(gl_GlobalInvocationID.x) / 1000.0;
+	
 	p.position.xyz += p.velocity.xyz * u_delta_time;
 	p.position.w -= u_delta_time;
 	
 	if(p.position.w < 0) {
 		
 		if(gl_WorkGroupID.x < u_particle_pack_count) {
-			p.position.w += u_particle_lifespan * rand_float(p.position.xzy);
+			p.position.w += u_particle_lifespan * rand_float(p.position.xzy * seed);
 			
-			int idx = rand_index(rand_vec3(p.velocity.zyx) + p.position.xzy, 0, int(u_stream_count / u_particle_stream_ratio));
+			int idx = rand_index(rand_vec3(p.velocity.zyx * seed) + p.position.xzy * seed, 0, int(u_stream_count / u_particle_stream_ratio));
 			if (idx < u_stream_count) {
 				p.position.xyz = normalize(rand_vec3(p.position.zyx)) * rand_float(p.position.yzx) * u_particle_initial_spread;
 				p.velocity.xyz = u_streams[idx] + rand_vec3(p.position.xzy) * u_particle_stream_deviation;

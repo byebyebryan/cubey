@@ -7,7 +7,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="Scene.cpp" />
+    <ClCompile Include="FractalDemo.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\debug.glsl">
@@ -15,6 +15,6 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Scene.h" />
+    <ClInclude Include="FractalDemo.h" />
   </ItemGroup>
 </Project>

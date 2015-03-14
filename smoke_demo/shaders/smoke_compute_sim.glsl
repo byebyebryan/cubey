@@ -146,10 +146,10 @@ void main() {
 			source_value.y = clamp(source_value.y, bound_min.y, bound_max.y);
 			source_value.z = clamp(source_value.z, bound_min.z, bound_max.z);
 			source_value.w = clamp(source_value.w, bound_min.w, bound_max.w);
-			target_value.x = max(u_minimum.x, source_value.x * (1 - u_time_step) - u_time_step * u_decay);
-			target_value.y = max(u_minimum.y, source_value.y * (1 - u_time_step) - u_time_step * u_decay);
-			target_value.z = max(u_minimum.z, source_value.z * (1 - u_time_step) - u_time_step * u_decay);
-			target_value.w = max(u_minimum.w, source_value.w * (1 - u_time_step) - u_time_step * u_decay);
+			target_value.x = max(u_minimum.x, source_value.x * (1 - u_dissipation) - u_time_step * u_decay);
+			target_value.y = max(u_minimum.y, source_value.y * (1 - u_dissipation) - u_time_step * u_decay);
+			target_value.z = max(u_minimum.z, source_value.z * (1 - u_dissipation) - u_time_step * u_decay);
+			target_value.w = max(u_minimum.w, source_value.w * (1 - u_dissipation) - u_time_step * u_decay);
 		}
 	}
 	

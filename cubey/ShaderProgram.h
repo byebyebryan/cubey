@@ -67,7 +67,7 @@ namespace cubey {
 			glProgramUniform1fv(gl_, location, value.size(), (const GLfloat*)value.data());
 		}
 		inline void SetUniformImpl(GLint location, const double& value) {
-			glProgramUniform1d(gl_, location, value);
+			glProgramUniform1f(gl_, location, (float)value);
 		}
 		inline void SetUniformImpl(GLint location, const glm::vec2& value) {
 			glProgramUniform2fv(gl_, location, 1, glm::value_ptr(value));

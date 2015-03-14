@@ -38,8 +38,8 @@
 #define DEFAULT_STREAM_MIN_TIME 2.5f
 #define DEFAULT_STREAM_MAX_TIME 5.0f
 
-#define DEFAULT_PARTICLE_COLOR_COLD glm::vec4(0.0f, 0.2f, 1.0f, 0.1f);
-#define DEFAULT_PARTICLE_COLOR_HOT glm::vec4(1.0f, 0.2f, 0.0f, 0.1f);
+#define DEFAULT_PARTICLE_COLOR_COLD glm::vec4(0.0f, 0.2f, 1.0f, 0.5f);
+#define DEFAULT_PARTICLE_COLOR_HOT glm::vec4(1.0f, 0.2f, 0.0f, 0.5f);
 
 #define DEFAULT_CAMERA_ORBIT_SPEED 15.0f
 
@@ -104,7 +104,7 @@ namespace cubey {
 		//glClearColor(0.4, 0.4, 0.4, 1);
 
 		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 		u_particle_lifespan_ = DEFAULT_PARTICLE_LIFE;
 		u_particle_stream_ratio_ = DEFAULT_PARTICLE_STREAM_RATIO;
@@ -260,8 +260,8 @@ namespace cubey {
 		float particle_tex_data[PARTICLE_TEXTURE_SIZE * PARTICLE_TEXTURE_SIZE];
 		for (int x = 0; x < PARTICLE_TEXTURE_SIZE; x++) {
 			for (int y = 0; y < PARTICLE_TEXTURE_SIZE; y++) {				
-				//float dist = glm::distance(glm::vec2((float)x, (float)y), center);
-				float dist = glm::max(glm::abs(x - radius), glm::abs(y - radius));
+				float dist = glm::distance(glm::vec2((float)x, (float)y), center);
+				//float dist = glm::max(glm::abs(x - radius), glm::abs(y - radius));
 
 				float dist_ratio = dist / radius;
 				particle_tex_data[x*PARTICLE_TEXTURE_SIZE + y] = dist_ratio <= solid_ratio ? 1.0f : glm::smoothstep(1.0f, 0.0f, (dist_ratio - solid_ratio) / fall_off_ratio);
@@ -277,6 +277,7 @@ namespace cubey {
 
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
 	}
 
 	void ParticleDemo::Update(float delta_time) {

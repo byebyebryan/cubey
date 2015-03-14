@@ -1,12 +1,12 @@
 
-#include "CameraTest.h"
+#include "FractalDemo.h"
 
 using namespace cubey;
 
 int main(void) {
 	Engine::Init();
 
-	Engine::Push(new CameraTest());
+	Engine::Push(new FractalDemo());
 
 	Engine::MainLoop();
 }

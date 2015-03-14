@@ -12,13 +12,13 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="Scene.cpp" />
+    <ClCompile Include="FractalDemo.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\debug.glsl" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Scene.h" />
+    <ClInclude Include="FractalDemo.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{2EC06FC9-B514-4382-AEAF-4ACE375D1D39}</ProjectGuid>

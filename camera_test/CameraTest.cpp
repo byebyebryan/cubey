@@ -112,8 +112,6 @@ namespace cubey {
 
 		GLuint e = glGetError();*/
 
-		
-
 		//glEnable(GL_POLYGON_OFFSET_FILL);
 		//glPolygonOffset(2.0f, 4.0f);
 
