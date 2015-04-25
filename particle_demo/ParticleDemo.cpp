@@ -104,7 +104,8 @@ namespace cubey {
 		//glClearColor(0.4, 0.4, 0.4, 1);
 
 		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE);
 
 		u_particle_lifespan_ = DEFAULT_PARTICLE_LIFE;
 		u_particle_stream_ratio_ = DEFAULT_PARTICLE_STREAM_RATIO;
@@ -196,6 +197,9 @@ namespace cubey {
 			u_streams_.push_back(streams_[i].GetVec3());
 		}
 
+		center_ = IOrbitalObject(15.0f, 25.0f, 2.5f, 5.0f);
+		center_.Init();
+
 		TwUI::Get()->AddRW("camera orbit speed", TW_TYPE_FLOAT, &camera_orbit_speed_, "min=0 max=60 step=5 group=Camera");
 
 		TwUI::Get()->AddRW("simulation paused", TW_TYPE_BOOLCPP, &particle_paused_, "group=Particle");
@@ -278,6 +282,7 @@ namespace cubey {
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
+		std::cout << sizeof(int) << std::endl;
 	}
 
 	void ParticleDemo::Update(float delta_time) {
@@ -317,6 +322,8 @@ namespace cubey {
 			u_streams_[i] = streams_[i].GetVec3();
 		}
 
+		center_.Update(delta_time);
+
 		update_prog_->Activate();
 
 		update_prog_->SetUniform("u_particle_lifespan", u_particle_lifespan_);
@@ -337,6 +344,7 @@ namespace cubey {
 		update_prog_->SetUniform("u_delta_time", delta_time);
 		update_prog_->SetUniform("u_attractors[0]", u_attractors_);
 		update_prog_->SetUniform("u_streams[0]", u_streams_);
+		update_prog_->SetUniform("u_center", center_.GetVec3());
 		//glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
 		glDispatchCompute(MAX_PARTICLE_PACK_COUNT, 1, 1);
 		glMemoryBarrier(GL_ALL_BARRIER_BITS);

@@ -15,6 +15,9 @@ namespace cubey {
 			start_up_lisenter_ = EventLisenter<Engine::StartUpEvent>([this](const Engine::StartUpEvent& e){
 				StartUp();
 			});
+			close_down_lisenter_ = EventLisenter<Engine::CloseDownEvent>([this](const Engine::CloseDownEvent& e){
+				CloseDown();
+			});
 			terminate_lisenter_ = EventLisenter<Engine::TerminateEvent>([this](const Engine::TerminateEvent& e){
 				Terminate();
 			});
@@ -61,10 +64,12 @@ namespace cubey {
 			ui_render_lisenter_.RemoveFromChannel();
 		}
 
+		virtual void StartUp() {}
+		virtual void CloseDown() {}
+
 	protected:
 
 		virtual void Init() {}
-		virtual void StartUp() {}
 
 		virtual void EarlyUpdate(float delta_time) {}
 		virtual void Update(float delta_time) {}
@@ -72,13 +77,14 @@ namespace cubey {
 
 		virtual void Render() {}
 		virtual void UIRender() {}
-
+		
 		virtual void Terminate() {}
 
 	private:
 
 		EventLisenter<Engine::InitEvent> init_lisenter_;
 		EventLisenter<Engine::StartUpEvent> start_up_lisenter_;
+		EventLisenter<Engine::CloseDownEvent> close_down_lisenter_;
 		EventLisenter<Engine::TerminateEvent> terminate_lisenter_;
 		EventLisenter<Engine::EarlyUpdateEvent> early_update_lisenter_;
 		EventLisenter<Engine::UpdateEvent> update_lisenter_;

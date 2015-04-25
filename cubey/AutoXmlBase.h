@@ -40,6 +40,7 @@
 			AutoXmlClass::reading_funcs()[#var_name] = std::bind(&AutoXmlType<var_type>::Read, std::placeholders::_1, &value_); \
 			AutoXmlClass::writing_funcs().push_back(std::bind(&AutoXmlType<var_type>::Write, std::placeholders::_1, name_.c_str(), &value_)); \
 			AutoXmlClass::tw_adding_funcs().push_back([this](){TwUI::Get()->AddRW(name_.c_str(), AutoXmlType<var_type>::tw_type(), &value_, var_tw_define); }); \
+			AutoXmlClass::tw_removing_funcs().push_back([this](){TwUI::Get()->RemoveEntry(name_.c_str()); }); \
 		} \
 	}; \
 	private: AutoXml_##var_name auto_xml_##var_name##_; \
@@ -111,6 +112,12 @@ namespace cubey {
 			}
 		}
 
+		void TwBarRemove() {
+			for (auto & it : tw_removing_funcs()) {
+				it();
+			}
+		}
+
 	protected:
 		//reading/writing function maps
 		static std::unordered_map<std::string, std::function<void(XMLElement *)>> & reading_funcs() {
@@ -123,6 +130,10 @@ namespace cubey {
 		}
 
 		static std::vector<std::function<void()>> & tw_adding_funcs() {
+			static std::vector<std::function<void()>> funcs;
+			return funcs;
+		}
+		static std::vector<std::function<void()>> & tw_removing_funcs() {
 			static std::vector<std::function<void()>> funcs;
 			return funcs;
 		}

@@ -82,6 +82,8 @@ namespace cubey {
 			Render();
 		}
 
+		EventChannel<CloseDownEvent>::Broadcast(CloseDownEvent{});
+
 		Terminate();
 	}
 

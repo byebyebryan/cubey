@@ -14,6 +14,9 @@ namespace cubey {
 			T destination_value;
 		};
 
+		IOrbitalObject() : min_distance_to_center_(0), max_distance_to_center_(0), min_travel_time_(0), max_travel_time_(0) {
+		}
+
 		IOrbitalObject(float _min_distance_to_center, float _max_distance_to_center, float _min_travel_time, float _max_travel_time)
 			: min_distance_to_center_(_min_distance_to_center), max_distance_to_center_(_max_distance_to_center), 
 			min_travel_time_(_min_travel_time), max_travel_time_(_max_travel_time) {
@@ -80,6 +83,8 @@ namespace cubey {
 
 		std::vector<Attractor> attractors_;
 		std::vector<Stream> streams_;;
+
+		IOrbitalObject center_;
 
 		float u_particle_lifespan_;
 		float u_particle_stream_ratio_;

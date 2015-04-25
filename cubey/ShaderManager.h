@@ -34,6 +34,7 @@ namespace cubey {
 		ShaderProgram* CreateProgram(const std::string& program_key);
 		ShaderProgram* GetProgram(const std::string& program_key);
 		void DestroyProgram(const std::string& program_key);
+		void DestroyProgram(ShaderProgram* program);
 		void UnloadFile(const std::string& file_name);
 
 	private:

@@ -56,6 +56,8 @@ __CS_UPDATE__
 uniform vec4 u_attractors[MAX_ATTRACTOR_COUNT]; //xyz = position, w = mass
 uniform vec3 u_streams[MAX_STREAM_COUNT];
 
+uniform vec3 u_center = vec3(0.0, 0.0, 0.0);
+
 uniform float u_delta_time;
 
 uniform float u_particle_lifespan;
@@ -112,15 +114,13 @@ void main() {
 			p.position.w += u_particle_lifespan * rand_float(p.position.xzy * seed);
 			
 			int idx = rand_index(rand_vec3(p.velocity.zyx * seed) + p.position.xzy * seed, 0, int(u_stream_count / u_particle_stream_ratio));
-			if (idx < u_stream_count) {
-				p.position.xyz = normalize(rand_vec3(p.position.zyx)) * rand_float(p.position.yzx) * u_particle_initial_spread;
-				p.velocity.xyz = u_streams[idx] + rand_vec3(p.position.xzy) * u_particle_stream_deviation;
 
-				//p.position.xyz = u_streams[idx] + normalize(rand_vec3(p.position.zyx)) * rand_float(p.position.yzx) * u_particle_initial_spread;
-				//p.velocity.xyz = u_streams[idx] * rand_vec3(p.position.xzy) * u_particle_stream_deviation;
+			p.position.xyz = u_center + normalize(rand_vec3(p.position.zyx)) * rand_float(p.position.yzx) * u_particle_initial_spread;
+
+			if (idx < u_stream_count) {
+				p.velocity.xyz = u_streams[idx] - u_center + rand_vec3(p.position.xzy) * u_particle_stream_deviation;
 			}
 			else {
-				p.position.xyz = normalize(rand_vec3(p.position.yxz)) * rand_float(p.position.xzy) * u_particle_initial_spread;
 				p.velocity.xyz = normalize(rand_vec3(p.velocity.zxy)) * rand_float(p.velocity.yzx) * u_particle_initial_speed;
 			}
 

@@ -91,8 +91,11 @@ namespace cubey {
 			programs_.erase(it);
 		}
 	}
-
 	
+	void ShaderManager::DestroyProgram(ShaderProgram* program) {
+		DestroyProgram(program->program_key_);
+	}
+
 	void ShaderManager::LoadFile(const std::string& file_name) {
 
 		auto it = files_.find(file_name);

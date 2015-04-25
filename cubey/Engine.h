@@ -12,11 +12,14 @@ namespace cubey {
 
 		struct InitEvent {
 		};
+		struct TerminateEvent {
+		};
 
 		struct StartUpEvent {
 		};
-		struct TerminateEvent {
+		struct CloseDownEvent {
 		};
+		
 
 		struct EarlyUpdateEvent {
 			float deltatime;

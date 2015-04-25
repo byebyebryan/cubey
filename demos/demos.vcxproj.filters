@@ -1,0 +1,32 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="shaders">
+      <UniqueIdentifier>{b5a91f8d-4f95-4159-a011-9da29e66a7c5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Fractal2DDemo">
+      <UniqueIdentifier>{fa9f9743-4c06-4fcc-b635-c81fa9c76bfe}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="shaders\debug.glsl">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\fractal_2d.glsl">
+      <Filter>shaders</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="MainMenu.cpp" />
+    <ClCompile Include="Fractal2DDemo.cpp">
+      <Filter>Fractal2DDemo</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="MainMenu.h" />
+    <ClInclude Include="Fractal2DDemo.h">
+      <Filter>Fractal2DDemo</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
