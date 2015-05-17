@@ -9,17 +9,16 @@ namespace cubey {
 		menu_bar_ = TwNewBar("menu");
 		//TwDefine("main visible=false");
 
-		ShowMenu();
-	}
-
-	void MainMenu::ShowMenu() {
-		TwUI::Get()->ClearBar(menu_bar_);
 		TwUI::Get()->AddButton([this](){
 			HideMenu();
 			fractal_2d_demo_ = new Fractal2DDemo();
 			fractal_2d_demo_->StartUp();
 		}, "fractal demo", "group=MainMenu", menu_bar_);
 
+		ShowMenu();
+	}
+
+	void MainMenu::ShowMenu() {
 		TwDefine("main visible=false");
 		TwDefine("menu visible=true");
 	}

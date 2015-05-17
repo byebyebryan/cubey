@@ -44,6 +44,8 @@ namespace cubey {
 
 		fullscreen_quad_ = PrimitiveFactory::FullScreenQuad()->CreateInstance(sp_render_);
 
+		TwUI::Get()->AddDefaultInfo();
+
 		TwBarInit();
 
 		//TwDefine("main/Camera opened=false");
@@ -80,6 +82,7 @@ namespace cubey {
 	}
 
 	void SmokeDemo::Update(float delta_time) {
+
 		if (camera_rotation_enabled()) {
 			MainCamera::Get()->Orbit(delta_time * glm::radians(camera_rotation_speed()), 0);
 		}
@@ -101,6 +104,7 @@ namespace cubey {
 	}
 
 	void SmokeDemo::Render() {
+
 		Tex3D obstacle = t3d_obstacle_;
 		Tex3D temperature = s3d_temperature_.ping;
 		Tex3D density = s3d_density_.ping;

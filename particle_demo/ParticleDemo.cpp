@@ -24,7 +24,7 @@
 
 #define DEFAULT_PARTICLE_SIZE 0.5f
 
-#define DEFAULT_ATTRACTION_FORCE_MULTIPLIER -1.0f
+#define DEFAULT_ATTRACTION_FORCE_MULTIPLIER 0.0f
 
 #define DEFAULT_ATTRACTOR_MIN_MASS 200.0f
 #define DEFAULT_ATTRACTOR_MAX_MASS 500.0f
@@ -38,8 +38,8 @@
 #define DEFAULT_STREAM_MIN_TIME 2.5f
 #define DEFAULT_STREAM_MAX_TIME 5.0f
 
-#define DEFAULT_PARTICLE_COLOR_COLD glm::vec4(0.0f, 0.2f, 1.0f, 0.5f);
-#define DEFAULT_PARTICLE_COLOR_HOT glm::vec4(1.0f, 0.2f, 0.0f, 0.5f);
+#define DEFAULT_PARTICLE_COLOR_COLD glm::vec4(0.0f, 0.2f, 1.0f, 0.1f);
+#define DEFAULT_PARTICLE_COLOR_HOT glm::vec4(1.0f, 0.2f, 0.0f, 0.2f);
 
 #define DEFAULT_CAMERA_ORBIT_SPEED 15.0f
 
@@ -57,7 +57,8 @@ namespace cubey {
 		distance_to_center_.original_value = distance_to_center_.destination_value;
 		distance_to_center_.destination_value = glm::linearRand(min_distance_to_center_, max_distance_to_center_);
 		rotation_.original_value = rotation_.destination_value;
-		rotation_.destination_value = glm::rotation(glm::vec3(0, 1.0f, 0), glm::sphericalRand(1.0f));
+		rotation_.destination_value = rotation_.original_value * glm::angleAxis(glm::radians(glm::linearRand(90.0f, 180.0f)), glm::sphericalRand(1.0f));
+		//rotation_.destination_value = glm::rotation(glm::vec3(0, 1.0f, 0), glm::sphericalRand(1.0f));
 	}
 
 	void IOrbitalObject::Update(float dt) {
@@ -210,7 +211,7 @@ namespace cubey {
 		TwUI::Get()->AddRW("particle bound", TW_TYPE_FLOAT, &u_particle_bound_, "min=5 max=125 step=5 group=Particle");
 		TwUI::Get()->AddRW("particle initial spread", TW_TYPE_FLOAT, &u_particle_initial_spread_, "min=0 max=5 step=0.5 group=Particle");
 		TwUI::Get()->AddRW("particle initial speed", TW_TYPE_FLOAT, &u_particle_initial_speed_, "min=0 max=10 step=1 group=Particle");
-		TwUI::Get()->AddRW("particle speed decay", TW_TYPE_FLOAT, &u_particle_speed_decay_, "min=0 max=0.9 step=0.1 group=Particle");
+		TwUI::Get()->AddRW("particle speed decay", TW_TYPE_FLOAT, &u_particle_speed_decay_, "min=0 max=0.2 step=0.01 group=Particle");
 		TwUI::Get()->AddRW("particle speed randomizer", TW_TYPE_FLOAT, &u_particle_speed_randomizer_, "min=0 max=1.0 step=0.05 group=Particle");
 		TwUI::Get()->AddRW("particle color cold", TW_TYPE_COLOR4F, &u_particle_color_cold_, " group=Particle");
 		TwUI::Get()->AddRW("particle color hot", TW_TYPE_COLOR4F, &u_particle_color_hot_, " group=Particle");
@@ -345,6 +346,9 @@ namespace cubey {
 		update_prog_->SetUniform("u_attractors[0]", u_attractors_);
 		update_prog_->SetUniform("u_streams[0]", u_streams_);
 		update_prog_->SetUniform("u_center", center_.GetVec3());
+
+		//update_prog_->SetUniform("u_center", glm::vec3(0.0f));
+
 		//glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
 		glDispatchCompute(MAX_PARTICLE_PACK_COUNT, 1, 1);
 		glMemoryBarrier(GL_ALL_BARRIER_BITS);

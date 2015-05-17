@@ -111,7 +111,7 @@ void main() {
 	if(p.position.w < 0) {
 		
 		if(gl_WorkGroupID.x < u_particle_pack_count) {
-			p.position.w += u_particle_lifespan * rand_float(p.position.xzy * seed);
+			p.position.w += u_particle_lifespan * (rand_float(p.position.xzy * seed) + 0.1);
 			
 			int idx = rand_index(rand_vec3(p.velocity.zyx * seed) + p.position.xzy * seed, 0, int(u_stream_count / u_particle_stream_ratio));
 
@@ -139,11 +139,15 @@ void main() {
 		else {
 			for (int i =0; i< u_attractor_count; i++) {
 				vec3 dist = u_attractors[i].xyz - p.position.xyz;
+
+				dist = max(length(dist), 5.0) * normalize(dist);
+
 				p.velocity.xyz += u_attraction_force_multiplier * u_delta_time * u_attractors[i].w * normalize(dist) / dot(dist, dist);
 				//p.velocity.xyz += u_attraction_force_multiplier * u_delta_time * u_attractors[i].w * dist / dot(dist, dist);
 			}
 
-			p.velocity.xyz += normalize(rand_vec3(p.position.zyx)) * rand_float(p.position.xzy) * u_particle_speed_randomizer;
+			p.velocity.xyz = length(p.velocity.xyz) * normalize(normalize(p.velocity.xyz) + rand_vec3(p.position.zyx) * u_particle_speed_randomizer);
+			//p.velocity.xyz += normalize(rand_vec3(p.position.zyx)) * rand_float(p.position.xzy) * u_particle_speed_randomizer;
 			p.velocity.xyz -= u_delta_time * normalize(p.velocity.xyz) * dot(p.velocity.xyz, p.velocity.xyz) * u_particle_speed_decay;
 		}
 

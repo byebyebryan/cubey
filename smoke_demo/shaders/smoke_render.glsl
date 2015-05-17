@@ -77,7 +77,7 @@ void main() {
 	vec3 local_origin = (u_inverse_mvp * vec4(0,0,0,1)).xyz + vec3(0.5);
 	
 	Ray eye_ray = Ray(local_origin, local_dir);
-	AABB aabb = AABB(vec3(0), vec3(1));
+	AABB aabb = AABB(vec3(0), vec3(1,1,1));
 	
 	vec2 t = IntersectBox(eye_ray, aabb);
 	if(t.x >= t.y) discard;
@@ -88,6 +88,9 @@ void main() {
 	vec3 exit_coord = local_origin + local_dir * t.y;
 
 	vec3 tracing_coord = entry_coord + mix(-u_jittering/2.0, u_jittering/2.0, rand_float(entry_coord)) * u_step_size * local_dir;
+
+	//tracing_coord.y /= 2.0;
+	//local_dir.y /= 2.0;
 
 	float acc_alpha = 1.0;
 	vec3 acc_color = vec3(0);

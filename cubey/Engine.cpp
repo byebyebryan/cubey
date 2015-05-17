@@ -77,9 +77,17 @@ namespace cubey {
 			}
 
 			Time::time_since_start_ = glfwGetTime();
+
 			ScopeTimer frame_timer(&Time::frame_time_);
+
 			Update(Time::delta_time_);
 			Render();
+			UIRender();
+
+			glfwSwapBuffers(window_);
+			glfwPollEvents();
+
+			//glFinish();
 		}
 
 		EventChannel<CloseDownEvent>::Broadcast(CloseDownEvent{});
@@ -92,15 +100,23 @@ namespace cubey {
 		EventChannel<EarlyUpdateEvent>::Broadcast(EarlyUpdateEvent{ delta_time });
 		EventChannel<UpdateEvent>::Broadcast(UpdateEvent{ delta_time });
 		EventChannel<LateUpdateEvent>::Broadcast(LateUpdateEvent{ delta_time });
+		//glFlush();
+		//glFinish();
 	}
 
 	void Engine::Render() {
 		ScopeTimer timer(&Time::render_time_);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		EventChannel<RenderEvent>::Broadcast(RenderEvent{});
+		//glFlush();
+		//glFinish();
+	}
+
+	void Engine::UIRender() {
+		ScopeTimer timer(&Time::ui_time_);
 		EventChannel<UIRenderEvent>::Broadcast(UIRenderEvent{});
-		glfwSwapBuffers(window_);
-		glfwPollEvents();
+		//glFlush();
+		//glFinish();
 	}
 
 	void Engine::Terminate() {

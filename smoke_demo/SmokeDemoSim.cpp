@@ -5,13 +5,13 @@
 
 namespace cubey {
 	void SmokeDemo::FillObstacle() {
-
 		if (!obstacle_enabled()) {
 			sp_fill_boundary_->Activate();
 
 			glBindImageTexture(0, t3d_obstacle_.gl, 0, GL_TRUE, 0, GL_WRITE_ONLY, t3d_obstacle_.format);
 
 			glDispatchCompute(t3d_obstacle_.size.x / 8, t3d_obstacle_.size.y / 8, t3d_obstacle_.size.z / 8);
+
 			glMemoryBarrier(GL_ALL_BARRIER_BITS);
 		}
 		else {

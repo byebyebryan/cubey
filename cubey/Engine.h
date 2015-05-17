@@ -77,6 +77,7 @@ namespace cubey {
 		static void MainLoop();
 		static void Update(float delta_time);
 		static void Render();
+		static void UIRender();
 		static void Terminate();
 
 		static void ErrorHandler(int error, const char* description);

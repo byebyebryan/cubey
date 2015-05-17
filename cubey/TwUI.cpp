@@ -76,6 +76,8 @@ namespace cubey {
 		button_callbacks_[idx] = callback_fn;
 		button_ids_[name] = idx;
 
+		bar_buttons_[bar].push_back(name);
+
 		TwAddButton(bar, name, &TwUI::TwButtonCall, (void*)idx, def);
 	}
 
@@ -89,20 +91,33 @@ namespace cubey {
 			button_ids_.erase(it);
 			button_callbacks_.erase(idx);
 		}
+
+		bar_buttons_[bar].erase(std::find(bar_buttons_[bar].begin(), bar_buttons_[bar].end(), name));
 	}
 
 	void TwUI::ClearBar(TwBar* bar /*= nullptr*/) {
 		if (!bar) bar = main_bar_;
 		TwRemoveAllVars(bar);
 
-		button_callbacks_.clear();
-		button_ids_.clear();
+		for (auto btn : bar_buttons_[bar]) {
+			uint32_t idx = button_ids_[btn];
+			button_ids_.erase(btn);
+			button_callbacks_.erase(idx);
+		}
+
+		bar_buttons_.erase(bar);
+
+		//button_callbacks_.clear();
+		//button_ids_.clear();
 	}
 
 	void TwUI::AddDefaultInfo(TwBar* bar /*= nullptr*/) {
 		if (!bar) bar = main_bar_;
 
 		TwAddVarRO(bar, "frame time", TW_TYPE_DOUBLE, &Time::frame_time_, "precision=4 group=Time");
+		TwAddVarRO(bar, "logic time", TW_TYPE_DOUBLE, &Time::logic_time_, "precision=4 group=Time");
+		TwAddVarRO(bar, "render time", TW_TYPE_DOUBLE, &Time::render_time_, "precision=4 group=Time");
+		TwAddVarRO(bar, "ui time", TW_TYPE_DOUBLE, &Time::ui_time_, "precision=4 group=Time");
 		TwAddVarRO(bar, "fps", TW_TYPE_DOUBLE, &Time::raw_fps_, "precision=2 group=Time");
 
 		TwAddVarRO(bar, "delta time", TW_TYPE_DOUBLE, &Time::delta_time_, "precision=4 group=Time");
@@ -120,5 +135,7 @@ namespace cubey {
 	std::map<uint32_t, std::function<void()>> TwUI::button_callbacks_;
 
 	std::map<std::string, uint32_t> TwUI::button_ids_;
+
+	std::map<TwBar*, std::vector<std::string>> TwUI::bar_buttons_;
 
 }

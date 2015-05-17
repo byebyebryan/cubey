@@ -6,6 +6,7 @@
 #include "SingletonBase.h"
 
 #include <iostream>
+#include <vector>
 
 namespace cubey {
 
@@ -48,6 +49,7 @@ namespace cubey {
 
 		static std::map<uint32_t, std::function<void()>> button_callbacks_;
 		static std::map<std::string, uint32_t> button_ids_;
+		static std::map<TwBar*, std::vector<std::string>> bar_buttons_;
 	};
 }
 

@@ -31,6 +31,7 @@ namespace cubey {
 
 		static void TW_CALL SaveConfig(void* client_data);
 		static void TW_CALL ChangeResolution(void* client_data);
+
 	private:
 
 		void FillObstacle();

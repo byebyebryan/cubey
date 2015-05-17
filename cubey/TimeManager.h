@@ -22,6 +22,7 @@ namespace cubey {
 		static double frame_time_;
 		static double logic_time_;
 		static double render_time_;
+		static double ui_time_;
 
 		friend class Engine;
 		friend class TwUI;

@@ -93,5 +93,5 @@ void main() {
 	//if (i == u_max_iterations) hsv.z = 0.0;
 	//vec3 rgb = hsv2rgb(hsv);
 	//out_color = vec4(rgb, 1.0);
-	out_color = vec4(vec3(c1), 1);
+	out_color = vec4(vec3(1 - c1), 1);
 }
