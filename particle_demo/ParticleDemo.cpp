@@ -198,7 +198,7 @@ namespace cubey {
 			u_streams_.push_back(streams_[i].GetVec3());
 		}
 
-		center_ = IOrbitalObject(15.0f, 25.0f, 2.5f, 5.0f);
+		center_ = IOrbitalObject(10.0f, 20.0f, 2.5f, 5.0f);
 		center_.Init();
 
 		TwUI::Get()->AddRW("camera orbit speed", TW_TYPE_FLOAT, &camera_orbit_speed_, "min=0 max=60 step=5 group=Camera");

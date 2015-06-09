@@ -15,8 +15,11 @@
     <ClInclude Include="Cubey.h" />
     <ClInclude Include="ServiceLocator.h" />
     <ClInclude Include="Logger.h" />
+    <ClInclude Include="ThreadMgr.h" />
+    <ClInclude Include="DuoBuffer.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Engine.cpp" />
+    <ClCompile Include="Logger.cpp" />
   </ItemGroup>
 </Project>

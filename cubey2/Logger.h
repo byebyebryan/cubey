@@ -2,6 +2,11 @@
 
 #include <iostream>
 #include <time.h>
+#include <queue>
+#include <thread>
+#include <mutex>
+#include <condition_variable>
+
 #include "GLFW/glfw3.h"
 #include "ServiceLocator.h"
 
@@ -14,8 +19,19 @@ namespace cubey {
 	};
 
 	ILogger* Logger() {
-		ServiceLocator<ILogger>::Get();
+		return ServiceLocator<ILogger>::Get();
 	}
+
+	void Log(const std::string& message) {
+		Logger()->Log(message);
+	}
+
+	class LoggerMT {
+		static std::mutex process_mutex_;
+		static std::condition_variable process_cond_var_;
+
+		static std::queue<std::string> msg_queue_;
+	};
 
 	class ConsoleLogger : public ILogger {
 	public:
@@ -35,6 +51,11 @@ namespace cubey {
 
 			std::cout << buffer << message.c_str() << std::endl;
 		}
+	protected:
+		std::mutex process_mutex_;
+		std::condition_variable process_cond_var_;
+
+		std::queue<std::string> msg_queue_;
 	};
 
 	
