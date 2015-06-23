@@ -95,9 +95,9 @@
     <None Include="shaders\debug.glsl" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\..\..\..\Code\GitRepos\cubey\cubey2\DuoBufferMTB.h" />
     <ClInclude Include="Cubey.h" />
     <ClInclude Include="DuoBuffer.h" />
+    <ClInclude Include="DuoBufferMTB.h" />
     <ClInclude Include="DuoBufferMTNB.h" />
     <ClInclude Include="Engine.h" />
     <ClInclude Include="ILogger.h" />

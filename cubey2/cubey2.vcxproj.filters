@@ -16,11 +16,11 @@
     <ClInclude Include="ServiceLocator.h" />
     <ClInclude Include="ThreadMgr.h" />
     <ClInclude Include="DuoBuffer.h" />
-    <ClInclude Include="..\..\..\..\..\..\Code\GitRepos\cubey\cubey2\DuoBufferMTB.h" />
     <ClInclude Include="DuoBufferMTNB.h" />
     <ClInclude Include="ILogger.h" />
     <ClInclude Include="LoggerUtil.h" />
     <ClInclude Include="ConsoleLogger.h" />
+    <ClInclude Include="DuoBufferMTB.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Engine.cpp" />

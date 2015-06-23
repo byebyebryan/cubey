@@ -17,7 +17,7 @@ void foo() {
 }
 
 int main(void) {
-	ServiceLocator<ILogger>::Set(new ConsoleLogger());
+	ConsoleLogger::Init();
 
 	std::cout << std::this_thread::get_id() << std::endl;
 
