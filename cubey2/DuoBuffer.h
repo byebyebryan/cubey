@@ -1,9 +1,5 @@
 #pragma once
 
-#include <atomic>
-#include <mutex>
-#include <thread>
-
 namespace cubey {
 	template<typename BufferT>
 	class DuoBuffer {
@@ -49,32 +45,5 @@ namespace cubey {
 		BufferT* back_buffer_ptr_;
 
 		bool flip_;
-	};
-
-	template<typename BufferT>
-	class DuoBufferMT : public DuoBuffer<BufferT> {
-	public:
-		void LockFrontBuffer() {
-			std::unique_lock<std::mutex> lock(front_buffer_mutex_, std::defer_lock);
-
-
-		}
-
-		void UnlockFrontBuffer() {
-
-		}
-
-		void LockBackBuffer() {
-
-		}
-	protected:
-		std::atomic_flag has_requested_swap_;
-		std::atomic_flag is_waiting_for_swap_;
-
-		std::mutex front_buffer_mutex_;
-		std::mutex back_buffer_mutex_;
-
-		std::mutex front_buffer_cond_var_;
-		std::mutex back_buffer_cond_var_;
 	};
 }
