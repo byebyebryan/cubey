@@ -7,7 +7,7 @@ namespace cubey {
 
 	void FractalDemo::Init() {
 
-		sp_fractal_ = ShaderManager::Get()->CreateProgram("debug.__VS_FRACTAL__.__FS_FRACTAL__");
+		sp_fractal_ = ShaderManager::Get()->CreateProgram("fractal_2d.__VS_FRACTAL__.__FS_FRACTAL__");
 		mi_fsq_ = PrimitiveFactory::FullScreenQuad()->CreateInstance(sp_fractal_);
 
 		type_ = 1;

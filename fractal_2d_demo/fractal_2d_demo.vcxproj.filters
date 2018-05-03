@@ -10,7 +10,7 @@
     <ClCompile Include="FractalDemo.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="shaders\debug.glsl">
+    <None Include="shaders\fractal_2d.glsl">
       <Filter>shaders</Filter>
     </None>
   </ItemGroup>
