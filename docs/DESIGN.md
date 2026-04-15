@@ -1,0 +1,177 @@
+# Cubey 2.0 — Design Document
+
+## What It Is
+
+A minimal C++ framework for GPU-driven procedural graphics experiments and demos. Not a game engine, not a framework for others to build on — a personal workbench for trying things out quickly.
+
+## Origin
+
+The original cubey (2015) was a learning project for C++/OpenGL/GPGPU. It featured 5 working demos: fluid simulation, particles, marching cubes, fractals, and a camera test with shadows. The fluid sim demo gained traction on YouTube/GitHub (~28 stars, ~5 forks). 
+
+This is a ground-up rewrite carrying forward the same spirit with modern tools and techniques.
+
+## Guiding Principles
+
+- **Minimal framework, maximum demo.** The C++ framework exists to get out of the way. The interesting work happens in shaders and compute.
+- **Primary target: desktop with full GPU power.** No compromises for portability. Vulkan backend is first-class.
+- **Optional web builds** via a secondary WebGPU/Dawn backend. Nice to have for presentable demos, not a constraint on features.
+- **Headless rendering is first-class.** Every demo can render to image without a window. Enables automated testing and AI-assisted development.
+- **Shaders compile at build time.** No runtime hot-reload complexity. GLSL → SPIR-V via glslangValidator at build time.
+
+## Technology Stack
+
+| Layer | Choice | Rationale |
+|-------|--------|-----------|
+| Language | C++20 | Concepts, ranges, std::format, std::span |
+| Build | CMake + Ninja | Cross-platform, fast incremental builds |
+| Primary GPU API | Vulkan | Full GPU control, async compute, no feature ceiling |
+| Secondary GPU API | WebGPU (Dawn) | Optional web builds for portable demos |
+| Windowing | GLFW | Minimal, Vulkan-native surface creation |
+| UI | ImGui | Industry standard debug UI |
+| Math | GLM | Familiar, header-only, Vulkan-friendly |
+| Shader compilation | glslangValidator (build time) | GLSL → SPIR-V, no runtime dependency |
+| Image output | stb_image_write | PNG output for headless mode |
+
+## Architecture
+
+```
+                    +---------------------+
+                    |     Demo Layer      |  <-- fluid sim, SDF sculpt, particles, etc.
+                    |  (shared C++ code)  |
+                    +----------+----------+
+                               |
+                    +----------v----------+
+                    |   Cubey GPU API     |  <-- thin abstraction (~25 operations)
+                    |  Buffer, Texture3D, |      Buffer, Texture, Pipeline, BindGroup
+                    |  ComputePipeline,   |
+                    |  RenderPipeline     |
+                    +-----+--------+-----+
+                          |        |
+               +----------v--+  +--v-----------+
+               | Vulkan BE   |  | WebGPU BE   |
+               | (primary)   |  | (secondary) |
+               | full power  |  | Dawn/Emscr  |
+               +-------------+  +--------------+
+```
+
+### GPU Abstraction
+
+Demos interact with a small set of backend-agnostic types:
+- `Buffer` — GPU buffer (vertex, storage, uniform, index, indirect)
+- `Texture2D`, `Texture3D` — image data
+- `Pipeline` — compute or render pipeline
+- `BindGroup` — resource binding set
+
+Core operations: create resources, dispatch compute, draw, memory barriers, submit, present. Each backend implements these against Vulkan or WebGPU.
+
+### Demo Interface
+
+```cpp
+struct App {
+    virtual void setup() = 0;
+    virtual void update(float dt) = 0;
+    virtual void render() = 0;
+    virtual void ui() = 0;  // ImGui panel
+    virtual void on_key(...) {}   // optional
+    virtual void on_mouse(...) {} // optional
+};
+```
+
+Entry point:
+```cpp
+int main() {
+    return cubey::run<MyDemo>(Config{.title = "fluid sim", .width = 1280, .height = 720});
+}
+```
+
+## Testing & Feedback Loop
+
+Every demo supports two modes:
+
+**Interactive:** Opens a window, renders at 60fps, ImGui controls for parameters.
+
+**Headless:**
+```bash
+./fluid_sim --headless --frames 60 --width 1280 --height 720 --output result.png
+```
+
+Headless mode enables:
+- Automated validation (Vulkan validation layers, exit code, numerical invariants)
+- Image output for visual verification
+- Compute data readback for numerical checks (mass conservation, NaN detection, bounds)
+- Golden image comparison for regression testing
+
+This is critical for AI-assisted development — the agent gets structured pass/fail feedback without needing to "see" the output.
+
+## Shader Strategy
+
+- **Desktop (Vulkan):** GLSL → SPIR-V at build time via glslangValidator
+- **Web (WebGPU):** WGSL versions written only for demos that get web builds
+- Not all demos need web versions — complex experiments stay desktop-only
+- Shared shader includes (noise functions, math utilities) in a common directory
+
+## Projected Demos
+
+| Demo | Source | Notes |
+|------|--------|-------|
+| Fluid Simulation | cubey1 rewrite | Eulerian 3D fluid sim, compute-based, raymarched volume rendering |
+| Particle System | cubey1 rewrite | GPU particles, compute + indirect draw (replacing geometry shader) |
+| Marching Cubes | cubey1 rewrite | Isosurface extraction via compute + indirect draw |
+| Fractal 2D | cubey1 rewrite | Mandelbrot/Julia renderer |
+| SDF Sculpting | projectR port | Sparse SDF brick tree, raymarched rendering, Morton-coded spatial indexing |
+
+## Borrowing from Filament
+
+Where applicable, borrow architectural patterns (not code) from Google's Filament:
+- Handle-based resource management (`Handle<T>` — typed IDs, not raw pointers)
+- Ring buffer / N-frames-in-flight without stalling
+- Uniform arena / blob allocator for batching uniforms
+- Sampler caching to deduplicate identical VkSampler objects
+
+## Directory Structure (Target)
+
+```
+cubey/
+  CMakeLists.txt
+  src/
+    cubey/
+      app.h/cpp           -- lifecycle, run loop
+      gpu.h                -- GPU abstraction interface
+      gpu_vulkan.cpp       -- Vulkan backend implementation
+      gpu_webgpu.cpp       -- WebGPU backend implementation
+      window.h/cpp         -- GLFW window + input
+      camera.h/cpp         -- orbit camera
+      imgui_layer.h/cpp    -- ImGui init/frame/shutdown
+    demos/
+      fluid_sim/
+        fluid_sim.h/cpp
+        shaders/
+          fluid_advect.comp.glsl
+          fluid_diffuse.comp.glsl
+          fluid_render.vert.glsl
+          fluid_render.frag.glsl
+      sdf_sculpt/
+      particles/
+      marching_cubes/
+      fractal/
+  shaders/                 -- shared GLSL includes (noise, math)
+  assets/                  -- textures, meshes
+  docs/
+    DESIGN.md              -- this file
+```
+
+## Migration Notes
+
+- `master` branch is preserved with the original code intact
+- `main` branch starts from scratch
+- Old `0.1`–`0.5` branches cleaned up from remote
+- README will be updated once the project is buildable
+
+## What We're Not Building
+
+- Another SDL / raylib / shadertoy
+- A game engine
+- A framework others build on
+- A cross-platform compatibility layer
+- Runtime shader hot-reload
+- A material/render-pass pipeline system
