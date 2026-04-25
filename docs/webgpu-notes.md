@@ -154,3 +154,91 @@ Firefox uses wgpu (Rust WebGPU implementation) over Vulkan on Linux, with no GPU
 ### Checking Chrome's WebGPU status
 
 `chrome://gpu` → look for "Dawn info" — if it shows `<Unknown GPU>` or `Compatibility Mode (ANGLE/OpenGL ES)`, Chrome is either blocklisting the GPU or Vulkan is disabled. `chrome://flags/#enable-vulkan` and `chrome://flags/#enable-unsafe-webgpu` can help.
+
+### Making Chrome flags permanent
+
+Chrome reads `~/.config/chrome-flags.conf` at every launch (one flag per line). Add persistent flags there rather than passing them on the command line:
+
+```
+--ignore-gpu-blocklist
+--enable-unsafe-webgpu
+```
+
+---
+
+## Compute shaders
+
+### Compute → vertex buffer pattern
+
+A storage buffer can carry both `WGPUBufferUsage_Storage` and `WGPUBufferUsage_Vertex` simultaneously. This is the core pattern for GPU-driven geometry (particles, marching cubes, SDF):
+
+```cpp
+// compute writes here; render reads it as a vertex buffer
+g.vbuf = upload_buffer(WGPUBufferUsage_Storage | WGPUBufferUsage_Vertex, ...);
+```
+
+In the compute BGL, bind it as `WGPUBufferBindingType_Storage` (read-write). In the render pass, bind it with `wgpuRenderPassEncoderSetVertexBuffer` as normal.
+
+### Implicit barrier between passes
+
+WebGPU guarantees ordering within a single command encoder. A compute pass that ends before a render pass begins does not need an explicit pipeline barrier — the GPU sees the writes before the render reads. Just structure the encoding order correctly:
+
+```cpp
+// compute pass first
+WGPUComputePassEncoder cp = wgpuCommandEncoderBeginComputePass(encoder, ...);
+/* dispatch */
+wgpuComputePassEncoderEnd(cp);
+
+// render pass after — vbuf writes are visible
+WGPURenderPassEncoder rp = wgpuCommandEncoderBeginRenderPass(encoder, ...);
+/* draw */
+wgpuRenderPassEncoderEnd(rp);
+```
+
+### WGSL vec3 alignment in storage buffers
+
+`array<vec3f>` has element stride **16**, not 12 — vec3 is padded to vec4 alignment in the WGSL memory layout. A tightly-packed `float[N*3]` buffer from C++ will be misread. Use `array<f32>` with manual indexing instead:
+
+```wgsl
+@group(0) @binding(1) var<storage, read> src: array<f32>;
+
+let b   = vertex_index * 3u;
+let pos = vec3f(src[b], src[b + 1u], src[b + 2u]);
+```
+
+This matches the 12-byte-stride vertex buffer layout on the C++ side exactly.
+
+### Uniform struct size must match WGSL layout
+
+WGSL pads structs to the alignment of their largest member. A struct containing `mat4x4f` (align 16) has its total size rounded up to a multiple of 16. A C++ struct that ends in a `float` after a `mat4` needs 12 bytes of explicit padding to match:
+
+```cpp
+struct Uniforms {
+    glm::mat4 mvp;    // 64 bytes
+    float     time;   //  4 bytes
+    float     _pad[3]; // 12 bytes — round to 80 (next multiple of 16)
+};
+```
+
+### Separate bind group layouts for compute and render
+
+The same uniform buffer can be bound in both a compute BGL and a render BGL with different `visibility` flags. Create two layouts and two bind groups; they share the underlying `WGPUBuffer` object:
+
+```cpp
+// compute BGL: uniform (compute stage) + src storage + dst storage
+// render BGL:  uniform (vertex stage) only
+```
+
+Layouts and pipeline layouts can be released immediately after pipeline / bind group creation — Dawn reference-counts them internally.
+
+### Workgroup size and dispatch
+
+With `@compute @workgroup_size(N)`, a single `dispatchWorkgroups(1, 1, 1)` launches exactly N threads. For small fixed-size work (e.g. 8 cube vertices), a workgroup sized to the data avoids wasted threads without needing a grid dispatch. Guard against out-of-bounds anyway:
+
+```wgsl
+@compute @workgroup_size(8)
+fn cs_main(@builtin(global_invocation_id) id: vec3u) {
+    if (id.x >= 8u) { return; }
+    ...
+}
+```

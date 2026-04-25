@@ -7,6 +7,15 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 include(FetchContent)
 
+# ── GLM ───────────────────────────────────────────────────────────────────────
+# Header-only, works on both native and Emscripten
+FetchContent_Declare(
+    glm
+    GIT_REPOSITORY https://github.com/g-truc/glm
+    GIT_TAG        1.0.1
+)
+FetchContent_MakeAvailable(glm)
+
 if (NOT EMSCRIPTEN)
 
     # ── Dawn ─────────────────────────────────────────────────────────────────
@@ -92,3 +101,5 @@ if (EMSCRIPTEN)
 else()
     target_link_libraries(cubey PRIVATE webgpu_dawn glfw glfw3webgpu)
 endif()
+
+target_link_libraries(cubey PRIVATE glm::glm)
