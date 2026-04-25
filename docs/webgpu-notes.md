@@ -242,3 +242,81 @@ fn cs_main(@builtin(global_invocation_id) id: vec3u) {
     ...
 }
 ```
+
+---
+
+## Textures
+
+### Compute-writable + sample-able texture
+
+A texture can have both `StorageBinding` and `TextureBinding` usage simultaneously — compute writes to it, the fragment shader samples it:
+
+```cpp
+WGPUTextureDescriptor d{};
+d.format  = WGPUTextureFormat_RGBA8Unorm;
+d.usage   = WGPUTextureUsage_StorageBinding | WGPUTextureUsage_TextureBinding;
+d.size    = {64, 64, 1};
+// ...
+```
+
+No explicit barrier needed — a compute pass ending before the render pass in the same command encoder is sufficient.
+
+### Texture format enum casing
+
+Dawn uses `RGBA8Unorm` (all-caps component), not `Rgba8Unorm`:
+
+```cpp
+WGPUTextureFormat_RGBA8Unorm   // ✓
+WGPUTextureFormat_Rgba8Unorm   // ✗ — won't compile
+```
+
+The WGSL side uses lowercase: `texture_storage_2d<rgba8unorm, write>`.
+
+### Storage texture BGL entry
+
+The storage texture binding layout uses `storageTexture`, not `texture` or `buffer`:
+
+```cpp
+entry.storageTexture.access        = WGPUStorageTextureAccess_WriteOnly;
+entry.storageTexture.format        = WGPUTextureFormat_RGBA8Unorm;
+entry.storageTexture.viewDimension = WGPUTextureViewDimension_2D;
+```
+
+For the bind group entry, set `bge.textureView` (same as a sampled texture — the distinction is in the BGL, not the bind group).
+
+### Sampled texture BGL entry
+
+```cpp
+entry.texture.sampleType    = WGPUTextureSampleType_Float;
+entry.texture.viewDimension = WGPUTextureViewDimension_2D;
+```
+
+Sampler entry:
+
+```cpp
+entry.sampler.type = WGPUSamplerBindingType_Filtering;
+```
+
+### Sampler maxAnisotropy must be >= 1
+
+A zero-initialized `WGPUSamplerDescriptor` is rejected by Dawn even for non-anisotropic filtering. Always set explicitly:
+
+```cpp
+WGPUSamplerDescriptor d{};
+d.magFilter     = WGPUFilterMode_Linear;
+d.minFilter     = WGPUFilterMode_Linear;
+d.maxAnisotropy = 1;  // required — 0 is invalid
+```
+
+### 2D dispatch for textures
+
+For an N×N texture with workgroup_size(W, W), dispatch `(N/W, N/W, 1)` groups. Use `textureDimensions` in the shader rather than hardcoding the size:
+
+```wgsl
+@compute @workgroup_size(8, 8)
+fn cs_main(@builtin(global_invocation_id) id: vec3u) {
+    let dim = textureDimensions(out_tex);
+    if (id.x >= dim.x || id.y >= dim.y) { return; }
+    textureStore(out_tex, vec2i(id.xy), vec4f(...));
+}
+```

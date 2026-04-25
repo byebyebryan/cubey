@@ -6,9 +6,18 @@ The [original cubey](https://github.com/brynne8/cubey) (2015) covered fluid simu
 
 See [`docs/DESIGN.md`](docs/DESIGN.md) for the full plan.
 
-## Current state
+## Current state (`webgpu` branch)
 
-`webgpu` branch — hello triangle, native + web, both working.
+Prototype phase — validating the WebGPU API surface before designing the abstraction layer.
+
+| Demo | What it exercises |
+|------|-------------------|
+| Hello triangle | Pipeline, surface, async adapter/device init |
+| Spinning cube | Vertex/index buffers, uniform buffer, depth buffer, MVP transform |
+| Compute vertex deform | Storage buffer, compute pipeline, `Storage \| Vertex` buffer pattern |
+| Compute texture | Storage texture write from compute, sampler, `texture_2d` sampling in fragment shader |
+
+All demos run on both native (Dawn/Vulkan) and web (emdawnwebgpu/Chrome+Firefox).
 
 ## Building
 
@@ -44,4 +53,5 @@ Chrome on Linux may need `--ignore-gpu-blocklist --enable-unsafe-webgpu` if your
 | Language | C++20 |
 | GPU API | WebGPU (Dawn native / emdawnwebgpu web) |
 | Windowing | GLFW 3.4 |
+| Math | GLM 1.0.1 |
 | Build | CMake + Ninja |
