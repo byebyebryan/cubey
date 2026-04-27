@@ -30,7 +30,7 @@ set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(glfw)
 
 set(CUBEY_COMP_SHADER_PATH "${CMAKE_CURRENT_BINARY_DIR}/shaders/headless.comp.spv")
-set(CUBEY_VERT_SHADER_PATH "${CMAKE_CURRENT_BINARY_DIR}/shaders/fullscreen.vert.spv")
+set(CUBEY_VERT_SHADER_PATH "${CMAKE_CURRENT_BINARY_DIR}/shaders/cube.vert.spv")
 set(CUBEY_FRAG_SHADER_PATH "${CMAKE_CURRENT_BINARY_DIR}/shaders/sample.frag.spv")
 configure_file(src/config.h.in generated/config.h @ONLY)
 
@@ -44,8 +44,8 @@ add_custom_command(
 add_custom_command(
     OUTPUT "${CUBEY_VERT_SHADER_PATH}"
     COMMAND "${CMAKE_COMMAND}" -E make_directory "${CMAKE_CURRENT_BINARY_DIR}/shaders"
-    COMMAND "${GLSLANG_VALIDATOR}" -V "${CMAKE_CURRENT_SOURCE_DIR}/shaders/fullscreen.vert" -o "${CUBEY_VERT_SHADER_PATH}"
-    DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/shaders/fullscreen.vert"
+    COMMAND "${GLSLANG_VALIDATOR}" -V "${CMAKE_CURRENT_SOURCE_DIR}/shaders/cube.vert" -o "${CUBEY_VERT_SHADER_PATH}"
+    DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/shaders/cube.vert"
     VERBATIM
 )
 add_custom_command(
@@ -72,10 +72,10 @@ target_link_libraries(cubey PRIVATE vulkan glfw)
 
 if (BUILD_TESTING)
     add_test(
-        NAME headless_vulkan_graphics_pipeline
+        NAME headless_vulkan_textured_cube
         COMMAND cubey --headless --width 128 --height 96 --frames 1 --output "${CMAKE_CURRENT_BINARY_DIR}/headless.ppm"
     )
-    set_tests_properties(headless_vulkan_graphics_pipeline PROPERTIES
+    set_tests_properties(headless_vulkan_textured_cube PROPERTIES
         PASS_REGULAR_EXPRESSION "graphics verification passed"
     )
 

@@ -14,7 +14,9 @@ automation:
 - Vulkan instance, physical-device selection, logical device, and queue setup
 - build-time GLSL to SPIR-V compilation with `glslangValidator`
 - compute pipeline writing a procedural image into a storage image
-- graphics pipeline sampling the compute-written image
+- graphics pipeline drawing indexed cube geometry
+- vertex/index buffers, a uniform MVP buffer, and a depth attachment
+- fragment shader sampling the compute-written image on the cube
 - render pass targeting either a swapchain image or an offscreen color image
 - transfer-buffer readback for headless smoke verification
 - swapchain acquisition and presentation
@@ -25,9 +27,11 @@ handling was added, a bounded desktop run printed one `swapchain out of date;
 recreating` line and then completed normally. The Codex tty session can only
 verify the expected no-display failure and the headless path.
 
-The current visible path now exercises both compute and graphics. Compute writes
-an RGBA storage image, the render pass samples it through a fullscreen triangle,
-and the swapchain image is presented from the render pass final layout.
+The current visible path now exercises both compute and a basic 3D graphics
+workload. Compute writes an RGBA storage image, the render pass draws indexed
+cube geometry with an MVP uniform and depth testing, and the fragment shader
+samples the compute-written image on the cube before presenting the swapchain
+image from the render pass final layout.
 
 ---
 
@@ -61,7 +65,7 @@ All shaders are compiled at build time:
 
 ```cmake
 glslangValidator -V shaders/headless.comp -o build-vulkan/shaders/headless.comp.spv
-glslangValidator -V shaders/fullscreen.vert -o build-vulkan/shaders/fullscreen.vert.spv
+glslangValidator -V shaders/cube.vert -o build-vulkan/shaders/cube.vert.spv
 glslangValidator -V shaders/sample.frag -o build-vulkan/shaders/sample.frag.spv
 ```
 
@@ -86,15 +90,15 @@ Use `--frames N` for bounded smoke tests:
 ```
 
 The current path acquires a swapchain image, dispatches compute into a storage
-image, transitions that image to `SHADER_READ_ONLY_OPTIMAL`, samples it in a
-fullscreen graphics pass, and presents the swapchain image from
-`PRESENT_SRC_KHR`.
+image, transitions that image to `SHADER_READ_ONLY_OPTIMAL`, binds cube
+vertex/index buffers plus a per-frame MVP uniform buffer, draws with depth
+testing, and presents the swapchain image from `PRESENT_SRC_KHR`.
 
 ### Headless mode
 
-Headless mode uses the same compute shader and graphics pipeline, renders into
-an offscreen color image, copies that image to a host-visible readback buffer,
-and writes a PPM:
+Headless mode uses the same compute shader and textured-cube graphics pipeline,
+renders into an offscreen color image with a depth attachment, copies the color
+image to a host-visible readback buffer, and writes a PPM:
 
 ```bash
 ./build-vulkan/cubey --headless --width 512 --height 512 --frames 8 --output build-vulkan/spike.ppm
@@ -102,6 +106,25 @@ and writes a PPM:
 
 The smoke verification checks that the rendered output varies across the image
 and that every pixel has alpha 255.
+
+### Textured-cube slice
+
+The first mesh slice keeps resource ownership intentionally simple:
+
+- cube vertex and index buffers are host-visible/coherent
+- one host-visible uniform buffer stores the current MVP matrix
+- the compute-written storage image is still the sampled texture
+- a depth attachment is created for both swapchain and headless framebuffers
+- the graphics pass now uses vertex input plus `vkCmdDrawIndexed`
+
+This gives the Vulkan branch a closer comparison point to the WebGPU spinning
+cube experiment without introducing staging uploads, frame overlap, or reusable
+renderer abstractions yet.
+
+Review checkpoint: the follow-up review tightened the depth setup rather than
+changing the slice shape. Depth/stencil fallback formats now create an image
+view with the stencil aspect included, and the render-pass dependencies include
+both early and late fragment-test stages so depth writes are covered explicitly.
 
 ---
 
@@ -127,10 +150,10 @@ window system, not the requested window size.
 
 Window mode now treats `VK_ERROR_OUT_OF_DATE_KHR` and `VK_SUBOPTIMAL_KHR` from
 acquire/present as recoverable. It waits for the device, destroys and recreates
-the swapchain, image views, framebuffers, render pass, source image, graphics
-pipeline, and descriptor sets, then retries the frame. To avoid an invisible
-hang during smoke tests, window mode aborts if the swapchain remains out of date
-after eight consecutive recreation attempts.
+the swapchain, image views, framebuffers, render pass, source image, depth
+attachment, graphics pipeline, and descriptor sets, then retries the frame. To
+avoid an invisible hang during smoke tests, window mode aborts if the swapchain
+remains out of date after eight consecutive recreation attempts.
 
 Follow-up desktop smoke confirmed the expected behavior: one recreation message
 was printed, and the run finished without issue.
@@ -147,7 +170,8 @@ intentionally out of scope for this spike.
 The first visible path copied a compute-written buffer directly into the
 swapchain image. That was a useful bridge from headless compute to presentation,
 but it did not exercise a graphics pipeline. The branch now renders through a
-real render pass and fullscreen triangle.
+real render pass. The graphics pass started as a fullscreen triangle and now
+draws indexed cube geometry.
 
 ### Swapchain image usage changed with the render pass
 
@@ -188,10 +212,12 @@ combinations from failing later in a less obvious pipeline or copy call.
 
 ### Synchronization is explicit but still manageable
 
-The branch currently has two explicit synchronization paths:
+The branch currently has a few explicit ordering points:
 
 - compute shader write to fragment shader read
 - color attachment output to transfer read for headless readback
+- per-frame host uniform update before submitting the command buffer
+- render-pass dependency coverage for color and early/late depth writes
 
 This is heavier than WebGPU, but the exact work being synchronized is visible in
 the code.
@@ -200,14 +226,9 @@ the code.
 
 ## Review notes before growing this branch
 
-- The main source file is intentionally too large for a real architecture. If
-  this branch becomes the project direction, split it into lifecycle, device,
-  swapchain, compute pipeline, and demo files before adding another demo.
-- Add validation-layer support before debugging harder rendering issues.
-- Add resize/out-of-date swapchain handling before treating window mode as more
-  than a smoke test.
 - Replace per-frame semaphore/fence allocation and the current conservative
   `vkQueueWaitIdle` present cleanup with reusable per-frame state before
   measuring performance.
-- Add vertex/index/uniform/depth state next if the goal is to match the WebGPU
-  spinning-cube demo directly.
+- Add validation-layer support before the next rendering/debugging-heavy slice.
+- Split the single source file once the spike needs another demo or persistent
+  renderer surface.

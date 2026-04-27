@@ -8,8 +8,9 @@ The current spike validates:
 - Vulkan instance/device/compute queue setup
 - build-time GLSL to SPIR-V compilation
 - storage-image compute writes
-- graphics pipeline sampling the compute-written image
-- explicit shader-write to host-read synchronization
+- graphics pipeline drawing indexed cube geometry
+- sampled compute texture, vertex input, uniform MVP data, and depth testing
+- explicit compute-to-fragment and render-to-readback synchronization
 - GLFW window and Vulkan surface creation
 - swapchain presentation through a render pass
 - headless offscreen render, readback, and deterministic smoke verification
