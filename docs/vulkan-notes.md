@@ -19,9 +19,11 @@ automation:
 - transfer-buffer readback for headless smoke verification
 - swapchain acquisition and presentation
 
-Desktop smoke status: the visible GLFW/Vulkan surface path was confirmed by the
-user from a graphical session after the swapchain path was added. The Codex tty
-session can only verify the expected no-display failure and the headless path.
+Desktop smoke status: the visible GLFW/Vulkan surface path was confirmed from a
+graphical session after the swapchain path was added. After swapchain recreation
+handling was added, a bounded desktop run printed one `swapchain out of date;
+recreating` line and then completed normally. The Codex tty session can only
+verify the expected no-display failure and the headless path.
 
 The current visible path now exercises both compute and graphics. Compute writes
 an RGBA storage image, the render pass samples it through a fullscreen triangle,
@@ -129,6 +131,9 @@ the swapchain, image views, framebuffers, render pass, source image, graphics
 pipeline, and descriptor sets, then retries the frame. To avoid an invisible
 hang during smoke tests, window mode aborts if the swapchain remains out of date
 after eight consecutive recreation attempts.
+
+Follow-up desktop smoke confirmed the expected behavior: one recreation message
+was printed, and the run finished without issue.
 
 ### One queue family is enough for this spike
 
