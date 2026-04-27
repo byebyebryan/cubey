@@ -1,0 +1,36 @@
+#version 450
+
+layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
+
+layout(push_constant) uniform Push {
+    uint width;
+    uint height;
+    float time;
+    uint bgra;
+} pc;
+
+layout(std430, binding = 0) buffer Pixels {
+    uint rgba[];
+} pixels;
+
+void main() {
+    uvec2 p = gl_GlobalInvocationID.xy;
+    if (p.x >= pc.width || p.y >= pc.height) {
+        return;
+    }
+
+    vec2 uv = vec2(p) / vec2(max(pc.width - 1, 1), max(pc.height - 1, 1));
+    float wave = sin(uv.x * 14.0 + pc.time) * sin(uv.y * 11.0 - pc.time * 0.7);
+    float ring = sin(length(uv - vec2(0.5)) * 32.0 - pc.time * 1.3);
+    float v = clamp(wave * 0.35 + ring * 0.25 + 0.5, 0.0, 1.0);
+
+    uint r = uint(clamp(v * 255.0, 0.0, 255.0));
+    uint g = uint(clamp(uv.x * v * 255.0, 0.0, 255.0));
+    uint b = uint(clamp((1.0 - uv.y) * (1.0 - v * 0.5) * 255.0, 0.0, 255.0));
+
+    if (pc.bgra != 0) {
+        pixels.rgba[p.y * pc.width + p.x] = b | (g << 8) | (r << 16) | (255u << 24);
+    } else {
+        pixels.rgba[p.y * pc.width + p.x] = r | (g << 8) | (b << 16) | (255u << 24);
+    }
+}

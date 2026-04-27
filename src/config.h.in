@@ -1,0 +1,3 @@
+#pragma once
+
+#define CUBEY_COMP_SHADER_PATH "@CUBEY_COMP_SHADER_PATH@"
