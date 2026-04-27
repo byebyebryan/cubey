@@ -13,17 +13,19 @@ automation:
 - GLFW window creation and Vulkan surface creation
 - Vulkan instance, physical-device selection, logical device, and queue setup
 - build-time GLSL to SPIR-V compilation with `glslangValidator`
-- compute pipeline writing a procedural image into a storage buffer
-- host-visible readback for headless smoke verification
+- compute pipeline writing a procedural image into a storage image
+- graphics pipeline sampling the compute-written image
+- render pass targeting either a swapchain image or an offscreen color image
+- transfer-buffer readback for headless smoke verification
 - swapchain acquisition and presentation
-- copy from compute-written storage buffer into the acquired swapchain image
 
 Desktop smoke status: the visible GLFW/Vulkan surface path was confirmed by the
 user from a graphical session after the swapchain path was added. The Codex tty
 session can only verify the expected no-display failure and the headless path.
 
-This is not yet a render-pass demo. The visible path is deliberately simple:
-compute writes pixels, transfer copies pixels into the swapchain image, present.
+The current visible path now exercises both compute and graphics. Compute writes
+an RGBA storage image, the render pass samples it through a fullscreen triangle,
+and the swapchain image is presented from the render pass final layout.
 
 ---
 
@@ -53,10 +55,12 @@ X11 support.
 
 ### Shader compilation is build-time
 
-The compute shader is compiled at build time:
+All shaders are compiled at build time:
 
 ```cmake
 glslangValidator -V shaders/headless.comp -o build-vulkan/shaders/headless.comp.spv
+glslangValidator -V shaders/fullscreen.vert -o build-vulkan/shaders/fullscreen.vert.spv
+glslangValidator -V shaders/sample.frag -o build-vulkan/shaders/sample.frag.spv
 ```
 
 The generated shader path is injected through `src/config.h.in`.
@@ -79,22 +83,23 @@ Use `--frames N` for bounded smoke tests:
 ./build-vulkan/cubey --frames 300
 ```
 
-The current path does not use a graphics pipeline. It acquires a swapchain
-image, dispatches compute, transitions the swapchain image to
-`TRANSFER_DST_OPTIMAL`, copies the storage buffer into it, transitions to
-`PRESENT_SRC_KHR`, and presents.
+The current path acquires a swapchain image, dispatches compute into a storage
+image, transitions that image to `SHADER_READ_ONLY_OPTIMAL`, samples it in a
+fullscreen graphics pass, and presents the swapchain image from
+`PRESENT_SRC_KHR`.
 
 ### Headless mode
 
-Headless mode uses the same compute shader and storage buffer, then reads back
-the buffer and writes a PPM:
+Headless mode uses the same compute shader and graphics pipeline, renders into
+an offscreen color image, copies that image to a host-visible readback buffer,
+and writes a PPM:
 
 ```bash
 ./build-vulkan/cubey --headless --width 512 --height 512 --frames 8 --output build-vulkan/spike.ppm
 ```
 
-The smoke verification checks that the output varies across the image and that
-every pixel has alpha 255.
+The smoke verification checks that the rendered output varies across the image
+and that every pixel has alpha 255.
 
 ---
 
@@ -112,49 +117,61 @@ This keeps one test command useful in both environments.
 
 ### One queue family is enough for this spike
 
-The spike requires a single queue family that supports compute and present. That
-worked on the target machine. A more general renderer may need separate compute,
-graphics, transfer, and present queues, but that complexity is intentionally out
-of scope for this spike.
+The spike requires a single queue family that supports graphics, compute, and
+present. That worked on the target machine. A more general renderer may need
+separate compute, graphics, transfer, and present queues, but that complexity is
+intentionally out of scope for this spike.
 
-### Transfer-to-swapchain is a useful first visible path
+### Transfer-to-swapchain was useful, then replaced
 
-Copying a compute-written buffer into the swapchain image avoids render-pass and
-graphics-pipeline setup while still proving surface creation, swapchain image
-ownership/layout transitions, and present. It is not the final rendering model,
-but it is a good bridge from headless compute to visible output.
+The first visible path copied a compute-written buffer directly into the
+swapchain image. That was a useful bridge from headless compute to presentation,
+but it did not exercise a graphics pipeline. The branch now renders through a
+real render pass and fullscreen triangle.
 
-### Swapchain image usage matters
+### Swapchain image usage changed with the render pass
 
-The visible path requires:
+The buffer-copy path required:
 
 ```cpp
 VK_IMAGE_USAGE_TRANSFER_DST_BIT
 ```
 
+The graphics path now requires:
+
+```cpp
+VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT
+```
+
 in `VkSwapchainCreateInfoKHR::imageUsage`, and it checks
 `VkSurfaceCapabilitiesKHR::supportedUsageFlags` before creating the swapchain.
 
-### Channel order needs format awareness
+### Sampling avoids swapchain channel-order hacks
 
-Most Linux swapchains commonly expose BGRA formats. The shader takes a small
-push-constant flag so the same procedural compute path can write either RGBA or
-BGRA byte order before the buffer-to-image copy.
+The buffer-copy path needed explicit RGBA/BGRA byte-order handling before
+copying into the swapchain. The render-pass path samples a normal RGBA texture
+and lets the fragment output path write to the actual swapchain format.
 
-### Host-visible storage is convenient, not final
+### Device-local images are now the main path
 
-For this spike, the storage buffer is host-visible and coherent. That keeps
-readback simple and avoids staging-buffer complexity. A performance-oriented
-path should move compute output to device-local memory and use staging buffers
-only where readback is required.
+The compute source image and render target are device-local. Headless readback
+uses a separate host-visible staging buffer after rendering. This is closer to
+the shape a real demo will need than the initial host-visible storage-buffer
+path.
+
+### Format feature checks are explicit
+
+The spike checks that the compute source format supports both storage-image and
+sampled-image usage, and that the headless offscreen format supports color
+attachment plus transfer source usage. This keeps unsupported device/format
+combinations from failing later in a less obvious pipeline or copy call.
 
 ### Synchronization is explicit but still manageable
 
 The branch currently has two explicit synchronization paths:
 
-- compute shader write to host read for headless mode
-- compute shader write to transfer read, then transfer write to present for
-  window mode
+- compute shader write to fragment shader read
+- color attachment output to transfer read for headless readback
 
 This is heavier than WebGPU, but the exact work being synchronized is visible in
 the code.
@@ -169,7 +186,8 @@ the code.
 - Add validation-layer support before debugging harder rendering issues.
 - Add resize/out-of-date swapchain handling before treating window mode as more
   than a smoke test.
-- Replace per-frame semaphore/fence allocation with reusable per-frame state
-  before measuring performance.
-- Add a graphics-pipeline pass next if the goal is to compare Vulkan's real demo
-  ergonomics against the WebGPU spike.
+- Replace per-frame semaphore/fence allocation and the current conservative
+  `vkQueueWaitIdle` present cleanup with reusable per-frame state before
+  measuring performance.
+- Add vertex/index/uniform/depth state next if the goal is to match the WebGPU
+  spinning-cube demo directly.

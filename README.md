@@ -7,11 +7,12 @@ The current spike validates:
 
 - Vulkan instance/device/compute queue setup
 - build-time GLSL to SPIR-V compilation
-- storage-buffer compute writes
+- storage-image compute writes
+- graphics pipeline sampling the compute-written image
 - explicit shader-write to host-read synchronization
 - GLFW window and Vulkan surface creation
-- swapchain presentation by copying compute output into the acquired image
-- headless readback and deterministic smoke verification
+- swapchain presentation through a render pass
+- headless offscreen render, readback, and deterministic smoke verification
 - simple PPM image output for visual inspection
 
 It is still a spike, not a reusable renderer.

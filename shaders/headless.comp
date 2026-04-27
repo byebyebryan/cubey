@@ -6,12 +6,9 @@ layout(push_constant) uniform Push {
     uint width;
     uint height;
     float time;
-    uint bgra;
 } pc;
 
-layout(std430, binding = 0) buffer Pixels {
-    uint rgba[];
-} pixels;
+layout(rgba8, binding = 0) uniform writeonly image2D out_image;
 
 void main() {
     uvec2 p = gl_GlobalInvocationID.xy;
@@ -24,13 +21,6 @@ void main() {
     float ring = sin(length(uv - vec2(0.5)) * 32.0 - pc.time * 1.3);
     float v = clamp(wave * 0.35 + ring * 0.25 + 0.5, 0.0, 1.0);
 
-    uint r = uint(clamp(v * 255.0, 0.0, 255.0));
-    uint g = uint(clamp(uv.x * v * 255.0, 0.0, 255.0));
-    uint b = uint(clamp((1.0 - uv.y) * (1.0 - v * 0.5) * 255.0, 0.0, 255.0));
-
-    if (pc.bgra != 0) {
-        pixels.rgba[p.y * pc.width + p.x] = b | (g << 8) | (r << 16) | (255u << 24);
-    } else {
-        pixels.rgba[p.y * pc.width + p.x] = r | (g << 8) | (b << 16) | (255u << 24);
-    }
+    vec3 color = vec3(v, uv.x * v, (1.0 - uv.y) * (1.0 - v * 0.5));
+    imageStore(out_image, ivec2(p), vec4(color, 1.0));
 }

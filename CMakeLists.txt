@@ -30,6 +30,8 @@ set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(glfw)
 
 set(CUBEY_COMP_SHADER_PATH "${CMAKE_CURRENT_BINARY_DIR}/shaders/headless.comp.spv")
+set(CUBEY_VERT_SHADER_PATH "${CMAKE_CURRENT_BINARY_DIR}/shaders/fullscreen.vert.spv")
+set(CUBEY_FRAG_SHADER_PATH "${CMAKE_CURRENT_BINARY_DIR}/shaders/sample.frag.spv")
 configure_file(src/config.h.in generated/config.h @ONLY)
 
 add_custom_command(
@@ -39,7 +41,25 @@ add_custom_command(
     DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/shaders/headless.comp"
     VERBATIM
 )
-add_custom_target(cubey_shaders DEPENDS "${CUBEY_COMP_SHADER_PATH}")
+add_custom_command(
+    OUTPUT "${CUBEY_VERT_SHADER_PATH}"
+    COMMAND "${CMAKE_COMMAND}" -E make_directory "${CMAKE_CURRENT_BINARY_DIR}/shaders"
+    COMMAND "${GLSLANG_VALIDATOR}" -V "${CMAKE_CURRENT_SOURCE_DIR}/shaders/fullscreen.vert" -o "${CUBEY_VERT_SHADER_PATH}"
+    DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/shaders/fullscreen.vert"
+    VERBATIM
+)
+add_custom_command(
+    OUTPUT "${CUBEY_FRAG_SHADER_PATH}"
+    COMMAND "${CMAKE_COMMAND}" -E make_directory "${CMAKE_CURRENT_BINARY_DIR}/shaders"
+    COMMAND "${GLSLANG_VALIDATOR}" -V "${CMAKE_CURRENT_SOURCE_DIR}/shaders/sample.frag" -o "${CUBEY_FRAG_SHADER_PATH}"
+    DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/shaders/sample.frag"
+    VERBATIM
+)
+add_custom_target(cubey_shaders DEPENDS
+    "${CUBEY_COMP_SHADER_PATH}"
+    "${CUBEY_VERT_SHADER_PATH}"
+    "${CUBEY_FRAG_SHADER_PATH}"
+)
 
 add_executable(cubey src/main.cpp)
 add_dependencies(cubey cubey_shaders)
@@ -52,15 +72,15 @@ target_link_libraries(cubey PRIVATE vulkan glfw)
 
 if (BUILD_TESTING)
     add_test(
-        NAME headless_vulkan_compute
-        COMMAND cubey --headless --frames 1 --output "${CMAKE_CURRENT_BINARY_DIR}/headless.ppm"
+        NAME headless_vulkan_graphics_pipeline
+        COMMAND cubey --headless --width 128 --height 96 --frames 1 --output "${CMAKE_CURRENT_BINARY_DIR}/headless.ppm"
     )
-    set_tests_properties(headless_vulkan_compute PROPERTIES
-        PASS_REGULAR_EXPRESSION "verification passed"
+    set_tests_properties(headless_vulkan_graphics_pipeline PROPERTIES
+        PASS_REGULAR_EXPRESSION "graphics verification passed"
     )
 
     add_test(
         NAME window_mode_reaches_glfw
-        COMMAND /bin/sh -c "$<TARGET_FILE:cubey> --frames 1 --width 64 --height 64 2>&1 | grep -Eq 'glfwInit failed|window mode:'"
+        COMMAND /bin/sh -c "out=$($<TARGET_FILE:cubey> --frames 1 --width 64 --height 64 2>&1); status=$?; printf '%s\n' \"$out\"; if [ $status -eq 0 ]; then printf '%s\n' \"$out\" | grep -q 'window mode:'; else printf '%s\n' \"$out\" | grep -q 'glfwInit failed'; fi"
     )
 endif()
