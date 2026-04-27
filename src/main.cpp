@@ -104,30 +104,17 @@ public:
             vkDeviceWaitIdle(device_);
         }
 
-        for (VkFramebuffer framebuffer : framebuffers_) {
-            vkDestroyFramebuffer(device_, framebuffer, nullptr);
-        }
-        if (render_pass_ != VK_NULL_HANDLE) vkDestroyRenderPass(device_, render_pass_, nullptr);
-        for (VkImageView view : swapchain_views_) {
-            vkDestroyImageView(device_, view, nullptr);
-        }
-        if (swapchain_ != VK_NULL_HANDLE) vkDestroySwapchainKHR(device_, swapchain_, nullptr);
-
-        if (offscreen_view_ != VK_NULL_HANDLE) vkDestroyImageView(device_, offscreen_view_, nullptr);
-        if (offscreen_image_ != VK_NULL_HANDLE) vkDestroyImage(device_, offscreen_image_, nullptr);
-        if (offscreen_memory_ != VK_NULL_HANDLE) vkFreeMemory(device_, offscreen_memory_, nullptr);
-        if (readback_buffer_ != VK_NULL_HANDLE) vkDestroyBuffer(device_, readback_buffer_, nullptr);
-        if (readback_memory_ != VK_NULL_HANDLE) vkFreeMemory(device_, readback_memory_, nullptr);
-
+        destroy_framebuffers();
+        destroy_render_pass();
+        destroy_swapchain_views();
+        destroy_swapchain();
+        destroy_offscreen_resources();
+        destroy_readback_resources();
         if (sampler_ != VK_NULL_HANDLE) vkDestroySampler(device_, sampler_, nullptr);
-        if (source_view_ != VK_NULL_HANDLE) vkDestroyImageView(device_, source_view_, nullptr);
-        if (source_image_ != VK_NULL_HANDLE) vkDestroyImage(device_, source_image_, nullptr);
-        if (source_memory_ != VK_NULL_HANDLE) vkFreeMemory(device_, source_memory_, nullptr);
-
-        if (descriptor_pool_ != VK_NULL_HANDLE) vkDestroyDescriptorPool(device_, descriptor_pool_, nullptr);
-        if (graphics_pipeline_ != VK_NULL_HANDLE) vkDestroyPipeline(device_, graphics_pipeline_, nullptr);
+        destroy_source_resources();
+        destroy_descriptor_pool();
+        destroy_graphics_pipeline();
         if (compute_pipeline_ != VK_NULL_HANDLE) vkDestroyPipeline(device_, compute_pipeline_, nullptr);
-        if (graphics_layout_ != VK_NULL_HANDLE) vkDestroyPipelineLayout(device_, graphics_layout_, nullptr);
         if (compute_layout_ != VK_NULL_HANDLE) vkDestroyPipelineLayout(device_, compute_layout_, nullptr);
         if (graphics_set_layout_ != VK_NULL_HANDLE) vkDestroyDescriptorSetLayout(device_, graphics_set_layout_, nullptr);
         if (compute_set_layout_ != VK_NULL_HANDLE) vkDestroyDescriptorSetLayout(device_, compute_set_layout_, nullptr);
@@ -182,6 +169,11 @@ public:
     }
 
 private:
+    enum class FrameResult {
+        Rendered,
+        RecreateSwapchain,
+    };
+
     void init_window() {
         if (!glfwInit()) {
             throw std::runtime_error("glfwInit failed");
@@ -375,6 +367,118 @@ private:
         check(vkGetSwapchainImagesKHR(device_, swapchain_, &actual_count, nullptr), "vkGetSwapchainImagesKHR count");
         swapchain_images_.resize(actual_count);
         check(vkGetSwapchainImagesKHR(device_, swapchain_, &actual_count, swapchain_images_.data()), "vkGetSwapchainImagesKHR");
+    }
+
+    void destroy_swapchain() {
+        if (swapchain_ != VK_NULL_HANDLE) {
+            vkDestroySwapchainKHR(device_, swapchain_, nullptr);
+            swapchain_ = VK_NULL_HANDLE;
+        }
+        swapchain_images_.clear();
+    }
+
+    void destroy_swapchain_views() {
+        for (VkImageView view : swapchain_views_) {
+            vkDestroyImageView(device_, view, nullptr);
+        }
+        swapchain_views_.clear();
+    }
+
+    void destroy_framebuffers() {
+        for (VkFramebuffer framebuffer : framebuffers_) {
+            vkDestroyFramebuffer(device_, framebuffer, nullptr);
+        }
+        framebuffers_.clear();
+    }
+
+    void destroy_render_pass() {
+        if (render_pass_ != VK_NULL_HANDLE) {
+            vkDestroyRenderPass(device_, render_pass_, nullptr);
+            render_pass_ = VK_NULL_HANDLE;
+        }
+    }
+
+    void destroy_graphics_pipeline() {
+        if (graphics_pipeline_ != VK_NULL_HANDLE) {
+            vkDestroyPipeline(device_, graphics_pipeline_, nullptr);
+            graphics_pipeline_ = VK_NULL_HANDLE;
+        }
+        if (graphics_layout_ != VK_NULL_HANDLE) {
+            vkDestroyPipelineLayout(device_, graphics_layout_, nullptr);
+            graphics_layout_ = VK_NULL_HANDLE;
+        }
+    }
+
+    void destroy_descriptor_pool() {
+        if (descriptor_pool_ != VK_NULL_HANDLE) {
+            vkDestroyDescriptorPool(device_, descriptor_pool_, nullptr);
+            descriptor_pool_ = VK_NULL_HANDLE;
+        }
+        compute_set_ = VK_NULL_HANDLE;
+        graphics_set_ = VK_NULL_HANDLE;
+    }
+
+    void destroy_source_resources() {
+        if (source_view_ != VK_NULL_HANDLE) {
+            vkDestroyImageView(device_, source_view_, nullptr);
+            source_view_ = VK_NULL_HANDLE;
+        }
+        if (source_image_ != VK_NULL_HANDLE) {
+            vkDestroyImage(device_, source_image_, nullptr);
+            source_image_ = VK_NULL_HANDLE;
+        }
+        if (source_memory_ != VK_NULL_HANDLE) {
+            vkFreeMemory(device_, source_memory_, nullptr);
+            source_memory_ = VK_NULL_HANDLE;
+        }
+        source_layout_ = VK_IMAGE_LAYOUT_UNDEFINED;
+    }
+
+    void destroy_offscreen_resources() {
+        if (offscreen_view_ != VK_NULL_HANDLE) {
+            vkDestroyImageView(device_, offscreen_view_, nullptr);
+            offscreen_view_ = VK_NULL_HANDLE;
+        }
+        if (offscreen_image_ != VK_NULL_HANDLE) {
+            vkDestroyImage(device_, offscreen_image_, nullptr);
+            offscreen_image_ = VK_NULL_HANDLE;
+        }
+        if (offscreen_memory_ != VK_NULL_HANDLE) {
+            vkFreeMemory(device_, offscreen_memory_, nullptr);
+            offscreen_memory_ = VK_NULL_HANDLE;
+        }
+    }
+
+    void destroy_readback_resources() {
+        if (readback_buffer_ != VK_NULL_HANDLE) {
+            vkDestroyBuffer(device_, readback_buffer_, nullptr);
+            readback_buffer_ = VK_NULL_HANDLE;
+        }
+        if (readback_memory_ != VK_NULL_HANDLE) {
+            vkFreeMemory(device_, readback_memory_, nullptr);
+            readback_memory_ = VK_NULL_HANDLE;
+        }
+        readback_size_ = 0;
+    }
+
+    void recreate_window_resources() {
+        check(vkDeviceWaitIdle(device_), "vkDeviceWaitIdle before swapchain recreate");
+
+        destroy_descriptor_pool();
+        destroy_graphics_pipeline();
+        destroy_framebuffers();
+        destroy_render_pass();
+        destroy_source_resources();
+        destroy_swapchain_views();
+        destroy_swapchain();
+
+        create_swapchain();
+        create_swapchain_views();
+        create_source_image();
+        create_render_pass();
+        create_framebuffers();
+        create_graphics_pipeline();
+        create_descriptors();
     }
 
     void require_format_features(VkFormat format, VkFormatFeatureFlags required, const char* label) const {
@@ -972,7 +1076,7 @@ private:
         submit_and_wait(cmd, "headless graphics submit/wait");
     }
 
-    void render_one_window_frame(uint32_t frame_index) {
+    FrameResult render_one_window_frame(uint32_t frame_index) {
         auto semaphore_info = vk_struct<VkSemaphoreCreateInfo>(VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO);
         VkSemaphore image_available = VK_NULL_HANDLE;
         VkSemaphore present_ready = VK_NULL_HANDLE;
@@ -985,12 +1089,19 @@ private:
 
         uint32_t image_index = 0;
         VkResult acquired = vkAcquireNextImageKHR(device_, swapchain_, UINT64_MAX, image_available, VK_NULL_HANDLE, &image_index);
+        if (acquired == VK_ERROR_OUT_OF_DATE_KHR) {
+            vkDestroyFence(device_, fence, nullptr);
+            vkDestroySemaphore(device_, present_ready, nullptr);
+            vkDestroySemaphore(device_, image_available, nullptr);
+            return FrameResult::RecreateSwapchain;
+        }
         if (acquired != VK_SUCCESS && acquired != VK_SUBOPTIMAL_KHR) {
             vkDestroyFence(device_, fence, nullptr);
             vkDestroySemaphore(device_, present_ready, nullptr);
             vkDestroySemaphore(device_, image_available, nullptr);
             check(acquired, "vkAcquireNextImageKHR");
         }
+        bool recreate_after_present = acquired == VK_SUBOPTIMAL_KHR;
 
         VkCommandBuffer cmd = allocate_command_buffer();
         auto begin = vk_struct<VkCommandBufferBeginInfo>(VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO);
@@ -1021,7 +1132,9 @@ private:
         present.pSwapchains = &swapchain_;
         present.pImageIndices = &image_index;
         VkResult present_result = vkQueuePresentKHR(queue_, &present);
-        if (present_result != VK_SUCCESS && present_result != VK_SUBOPTIMAL_KHR) {
+        if (present_result == VK_ERROR_OUT_OF_DATE_KHR || present_result == VK_SUBOPTIMAL_KHR) {
+            recreate_after_present = true;
+        } else if (present_result != VK_SUCCESS) {
             check(present_result, "vkQueuePresentKHR");
         }
         check(vkQueueWaitIdle(queue_), "vkQueueWaitIdle present");
@@ -1030,6 +1143,7 @@ private:
         vkDestroyFence(device_, fence, nullptr);
         vkDestroySemaphore(device_, present_ready, nullptr);
         vkDestroySemaphore(device_, image_available, nullptr);
+        return recreate_after_present ? FrameResult::RecreateSwapchain : FrameResult::Rendered;
     }
 
     void render_window() {
@@ -1041,9 +1155,20 @@ private:
         );
 
         uint32_t frame = 0;
+        uint32_t consecutive_recreates = 0;
         while (!glfwWindowShouldClose(window_) && (opts_.frames == 0 || frame < opts_.frames)) {
             glfwPollEvents();
-            render_one_window_frame(frame);
+            FrameResult result = render_one_window_frame(frame);
+            if (result == FrameResult::RecreateSwapchain) {
+                ++consecutive_recreates;
+                if (consecutive_recreates > 8) {
+                    throw std::runtime_error("swapchain stayed out of date after 8 recreation attempts");
+                }
+                std::puts("swapchain out of date; recreating");
+                recreate_window_resources();
+                continue;
+            }
+            consecutive_recreates = 0;
             ++frame;
         }
         vkDeviceWaitIdle(device_);

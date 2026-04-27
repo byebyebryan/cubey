@@ -115,6 +115,21 @@ window cannot be opened. The CTest window smoke accepts either:
 
 This keeps one test command useful in both environments.
 
+### Present can invalidate the swapchain immediately
+
+On the RTX 5070 Ti desktop smoke, the first graphics-pipeline window run reached
+the present path and then returned `VK_ERROR_OUT_OF_DATE_KHR` from
+`vkQueuePresentKHR` (`VkResult -1000001004`). The logged swapchain extent was
+`1280x1432`, which is a useful reminder that the surface extent is owned by the
+window system, not the requested window size.
+
+Window mode now treats `VK_ERROR_OUT_OF_DATE_KHR` and `VK_SUBOPTIMAL_KHR` from
+acquire/present as recoverable. It waits for the device, destroys and recreates
+the swapchain, image views, framebuffers, render pass, source image, graphics
+pipeline, and descriptor sets, then retries the frame. To avoid an invisible
+hang during smoke tests, window mode aborts if the swapchain remains out of date
+after eight consecutive recreation attempts.
+
 ### One queue family is enough for this spike
 
 The spike requires a single queue family that supports graphics, compute, and
