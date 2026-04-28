@@ -6,15 +6,15 @@ A minimal C++ framework for GPU-driven procedural graphics experiments and demos
 
 ## Origin
 
-The original cubey (2015) was a learning project for C++/OpenGL/GPGPU. It featured 5 working demos: fluid simulation, particles, marching cubes, fractals, and a camera test with shadows. The fluid sim demo gained traction on YouTube/GitHub (~28 stars, ~5 forks). 
+The original cubey (2015) was a learning project for C++/OpenGL/GPGPU. It featured 5 working demos: fluid simulation, particles, marching cubes, fractals, and a camera test with shadows. The fluid sim demo gained traction on YouTube/GitHub (~28 stars, ~5 forks).
 
 This is a ground-up rewrite carrying forward the same spirit with modern tools and techniques.
 
 ## Guiding Principles
 
 - **Minimal framework, maximum demo.** The C++ framework exists to get out of the way. The interesting work happens in shaders and compute.
-- **Primary target: desktop with full GPU power.** No compromises for portability. Vulkan backend is first-class.
-- **Optional web builds** via a secondary WebGPU/Dawn backend. Nice to have for presentable demos, not a constraint on features.
+- **Primary target: desktop with full GPU power.** No compromises for portability. Native Vulkan is the foundation.
+- **WebGPU is optional and deferred.** Dawn/WebGPU remains useful for browser-facing demos later, but it should not shape the first renderer abstraction.
 - **Headless rendering is first-class.** Every demo can render to image without a window. Enables automated testing and AI-assisted development.
 - **Shaders compile at build time.** No runtime hot-reload complexity. GLSL → SPIR-V via glslangValidator at build time.
 
@@ -25,7 +25,7 @@ This is a ground-up rewrite carrying forward the same spirit with modern tools a
 | Language | C++20 | Concepts, ranges, std::format, std::span |
 | Build | CMake + Ninja | Cross-platform, fast incremental builds |
 | Primary GPU API | Vulkan | Full GPU control, async compute, no feature ceiling |
-| Secondary GPU API | WebGPU (Dawn) | Optional web builds for portable demos |
+| Optional future API | WebGPU (Dawn) | Browser demos if the project earns that need |
 | Windowing | GLFW | Minimal, Vulkan-native surface creation |
 | UI | ImGui | Industry standard debug UI |
 | Math | GLM | Familiar, header-only, Vulkan-friendly |
@@ -37,32 +37,51 @@ This is a ground-up rewrite carrying forward the same spirit with modern tools a
 ```
                     +---------------------+
                     |     Demo Layer      |  <-- fluid sim, SDF sculpt, particles, etc.
-                    |  (shared C++ code)  |
                     +----------+----------+
                                |
                     +----------v----------+
-                    |   Cubey GPU API     |  <-- thin abstraction (~25 operations)
-                    |  Buffer, Texture3D, |      Buffer, Texture, Pipeline, BindGroup
-                    |  ComputePipeline,   |
-                    |  RenderPipeline     |
-                    +-----+--------+-----+
-                          |        |
-               +----------v--+  +--v-----------+
-               | Vulkan BE   |  | WebGPU BE   |
-               | (primary)   |  | (secondary) |
-               | full power  |  | Dawn/Emscr  |
-               +-------------+  +--------------+
+                    |   Cubey Runtime     |  <-- app loop, window, camera, UI, headless mode
+                    +----------+----------+
+                               |
+                    +----------v----------+
+                    |  Vulkan Renderer    |  <-- device, swapchain, resources, pipelines,
+                    |  (primary path)     |      frame state, passes
+                    +---------------------+
 ```
 
-### GPU Abstraction
+The current decision is deliberately not to build a broad backend-agnostic GPU
+API yet. The WebGPU/Dawn spike showed that Dawn is already an abstraction layer;
+adding another one above it would add project complexity while still inheriting
+WebGPU's limits. The first implementation should make Vulkan livable through
+small native modules, not hide it behind a premature portability contract.
 
-Demos interact with a small set of backend-agnostic types:
+### Renderer Seams
+
+The near-term Vulkan renderer should split around real ownership boundaries:
+
+- `Device` — instance, physical device, logical device, queue selection, validation
+- `Surface` / `Swapchain` — GLFW surface, extent ownership, present, resize/out-of-date recreation
+- `Buffer` / `Image` — allocation, views, staging uploads, readback
+- `Shader` / `Pipeline` — build-time shader paths, compute and graphics pipelines
+- `FrameResources` — command buffers, semaphores, fences, N-frames-in-flight
+- demo/pass code — the actual procedural experiments
+
+These seams should be practical C++ modules first. A future WebGPU backend can
+be reconsidered if the project needs browser demos, but it should be driven by a
+real use case rather than by symmetry.
+
+### Resource Vocabulary
+
+Demos should eventually interact with a small set of renderer-level concepts:
+
 - `Buffer` — GPU buffer (vertex, storage, uniform, index, indirect)
 - `Texture2D`, `Texture3D` — image data
 - `Pipeline` — compute or render pipeline
 - `BindGroup` — resource binding set
 
-Core operations: create resources, dispatch compute, draw, memory barriers, submit, present. Each backend implements these against Vulkan or WebGPU.
+Core operations: create resources, dispatch compute, draw, synchronize, submit,
+present, and read back. In the first version, those operations map directly to
+Vulkan and remain free to expose Vulkan-specific requirements where useful.
 
 ### Demo Interface
 
@@ -106,8 +125,8 @@ This is critical for AI-assisted development — the agent gets structured pass/
 ## Shader Strategy
 
 - **Desktop (Vulkan):** GLSL → SPIR-V at build time via glslangValidator
-- **Web (WebGPU):** WGSL versions written only for demos that get web builds
-- Not all demos need web versions — complex experiments stay desktop-only
+- **Web (future WebGPU):** WGSL versions only for demos that explicitly need browser builds
+- Not all demos need web versions; complex experiments stay desktop-only
 - Shared shader includes (noise functions, math utilities) in a common directory
 
 ## Projected Demos
@@ -128,6 +147,10 @@ Where applicable, borrow architectural patterns (not code) from Google's Filamen
 - Uniform arena / blob allocator for batching uniforms
 - Sampler caching to deduplicate identical VkSampler objects
 
+Do not copy Filament's backend/frontend split yet. Cubey does not currently
+need multiple production backends, and Dawn/WebGPU already provides an
+abstraction layer where browser portability is the goal.
+
 ## Directory Structure (Target)
 
 ```
@@ -136,9 +159,12 @@ cubey/
   src/
     cubey/
       app.h/cpp           -- lifecycle, run loop
-      gpu.h                -- GPU abstraction interface
-      gpu_vulkan.cpp       -- Vulkan backend implementation
-      gpu_webgpu.cpp       -- WebGPU backend implementation
+      renderer.h/cpp       -- high-level renderer facade used by demos
+      device_vk.h/cpp      -- instance/device/queue/validation
+      swapchain_vk.h/cpp   -- surface, swapchain, resize/present
+      resources_vk.h/cpp   -- buffers, images, views, staging/readback
+      pipeline_vk.h/cpp    -- shader modules, pipeline layouts, pipelines
+      frame_vk.h/cpp       -- command buffers, sync objects, frame state
       window.h/cpp         -- GLFW window + input
       camera.h/cpp         -- orbit camera
       imgui_layer.h/cpp    -- ImGui init/frame/shutdown
@@ -158,6 +184,7 @@ cubey/
   assets/                  -- textures, meshes
   docs/
     DESIGN.md              -- this file
+    spike-findings.md      -- WebGPU/Vulkan spike decision record
 ```
 
 ## Migration Notes
@@ -165,7 +192,8 @@ cubey/
 - `master` branch is preserved with the original code intact
 - `main` branch starts from scratch
 - Old `0.1`–`0.5` branches cleaned up from remote
-- README will be updated once the project is buildable
+- `webgpu` and `vulkan` branches are spike branches used to choose the renderer direction
+- README and spike findings now capture the Vulkan-first decision before mainline implementation begins
 
 ## What We're Not Building
 
@@ -173,5 +201,6 @@ cubey/
 - A game engine
 - A framework others build on
 - A cross-platform compatibility layer
+- A dual Vulkan/WebGPU backend abstraction before there is a concrete web-demo need
 - Runtime shader hot-reload
 - A material/render-pass pipeline system
