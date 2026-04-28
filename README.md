@@ -21,6 +21,7 @@ See:
 
 - [Design document](docs/DESIGN.md)
 - [Spike findings and decision record](docs/spike-findings.md)
+- [C++ style guide](docs/cpp-style.md)
 
 ## Spike Branches
 
@@ -31,3 +32,23 @@ See:
 
 Main remains docs-first until the Vulkan spike is reshaped into a maintainable
 foundation.
+
+## Development Setup
+
+Use the CMake presets as the default entrypoint:
+
+```bash
+cmake --preset dev
+cmake --build --preset dev
+ctest --preset dev
+```
+
+The repo also includes:
+
+- `.clang-format` for C++ formatting
+- `.clang-tidy` for static-analysis defaults
+- `.editorconfig` and `.gitattributes` for stable text formatting
+- `asan` and `tidy` CMake presets for sanitizer and clang-tidy builds
+
+For non-mechanical naming, ownership, and Vulkan structure conventions, use the
+[Cubey C++ style guide](docs/cpp-style.md).
