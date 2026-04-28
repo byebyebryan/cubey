@@ -156,6 +156,8 @@ abstraction layer where browser portability is the goal.
 ```
 cubey/
   CMakeLists.txt
+  CHANGELOG.md             -- release-note source
+  LICENSE                  -- MIT license
   src/
     cubey/
       app.h/cpp           -- lifecycle, run loop
@@ -184,7 +186,10 @@ cubey/
   assets/                  -- textures, meshes
   docs/
     DESIGN.md              -- this file
+    roadmap.md             -- living implementation plan
+    working-notes.md       -- progress notes, hiccups, gotchas, learnings
     spike-findings.md      -- WebGPU/Vulkan spike decision record
+    cpp-style.md           -- C++ naming, formatting, and review conventions
 ```
 
 ## Migration Notes

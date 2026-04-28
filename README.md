@@ -20,8 +20,11 @@ fit for Cubey's native-workbench goals.
 See:
 
 - [Design document](docs/DESIGN.md)
+- [Roadmap](docs/roadmap.md)
+- [Working notes](docs/working-notes.md)
 - [Spike findings and decision record](docs/spike-findings.md)
 - [C++ style guide](docs/cpp-style.md)
+- [Changelog / release notes](CHANGELOG.md)
 
 ## Spike Branches
 
@@ -52,3 +55,8 @@ The repo also includes:
 
 For non-mechanical naming, ownership, and Vulkan structure conventions, use the
 [Cubey C++ style guide](docs/cpp-style.md).
+
+## License
+
+Cubey is licensed under the [MIT License](LICENSE), matching the original
+project branch.
