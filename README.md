@@ -11,8 +11,9 @@ The current spike validates:
 - graphics pipeline drawing indexed cube geometry
 - sampled compute texture, vertex input, uniform MVP data, and depth testing
 - explicit compute-to-fragment and render-to-readback synchronization
+- optional Vulkan validation layer and debug messenger support
 - GLFW window and Vulkan surface creation
-- swapchain presentation through a render pass
+- swapchain presentation through a render pass, including resize/out-of-date recreation
 - headless offscreen render, readback, and deterministic smoke verification
 - simple PPM image output for visual inspection
 
@@ -32,7 +33,14 @@ Use `--frames N` with window mode for a bounded smoke run:
 
 ```bash
 ./build-vulkan/cubey --frames 300
+./build-vulkan/cubey --require-validation --frames 300 --width 1280 --height 720
 ```
+
+Validation support is enabled by default when `VK_LAYER_KHRONOS_validation` is
+installed. Use `--validation` to enable it explicitly, `--no-validation` to
+suppress it, or `--require-validation` to fail fast when the layer is missing.
+The build option
+`-DCUBEY_ENABLE_VALIDATION=OFF` changes the default.
 
 The fetched source dependencies are `Vulkan-Headers` and GLFW. The Vulkan
 loader comes from the local `vulkan` pkg-config package.

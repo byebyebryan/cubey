@@ -17,15 +17,28 @@ automation:
 - graphics pipeline drawing indexed cube geometry
 - vertex/index buffers, a uniform MVP buffer, and a depth attachment
 - fragment shader sampling the compute-written image on the cube
+- optional `VK_LAYER_KHRONOS_validation` and debug-utils messenger support
 - render pass targeting either a swapchain image or an offscreen color image
 - transfer-buffer readback for headless smoke verification
-- swapchain acquisition and presentation
+- swapchain acquisition, presentation, and resize/out-of-date recreation
 
-Desktop smoke status: the visible GLFW/Vulkan surface path was confirmed from a
-graphical session after the swapchain path was added. After swapchain recreation
-handling was added, a bounded desktop run printed one `swapchain out of date;
-recreating` line and then completed normally. The Codex tty session can only
-verify the expected no-display failure and the headless path.
+Desktop smoke status: the visible GLFW/Vulkan surface path has now passed under
+`--require-validation` in a niri session on the RTX 5070 Ti. The compositor
+forced the framebuffer extent to `1280x1432` for a requested `1280x720` window,
+which confirms again that the swapchain must follow the surface extent rather
+than the requested window size. The bounded run reported one present-driven
+recreate and two explicit resize recreates, then continued normally:
+
+```text
+window mode: NVIDIA GeForce RTX 5070 Ti rendering textured cube through graphics pipeline at 1280x1432
+swapchain out of date; recreating
+framebuffer resized; recreating swapchain
+framebuffer resized; recreating swapchain
+```
+
+The Codex tty session can still only verify the expected no-display failure and
+the headless path, but the user-run desktop smoke now covers the visible
+validation, present, and resize paths.
 
 The current visible path now exercises both compute and a basic 3D graphics
 workload. Compute writes an RGBA storage image, the render pass draws indexed
@@ -71,6 +84,22 @@ glslangValidator -V shaders/sample.frag -o build-vulkan/shaders/sample.frag.spv
 
 The generated shader path is injected through `src/config.h.in`.
 
+### Validation support is opt-out, but layer-dependent
+
+`CUBEY_ENABLE_VALIDATION` is ON by default at configure time. At runtime, the
+spike probes for `VK_LAYER_KHRONOS_validation`:
+
+- if available, it enables the layer and routes warning/error messages through a
+  `VK_EXT_debug_utils` messenger when that extension is available
+- if unavailable, it logs a short message and continues
+- `--validation` enables the probe explicitly
+- `--no-validation` disables the probe
+- `--require-validation` makes the missing layer a hard failure
+
+On this machine, `pacman -Q vulkan-validation-layers` currently reports
+`vulkan-validation-layers 1.4.341.0-2`, and the headless smoke passes with
+`--require-validation`.
+
 ---
 
 ## Runtime modes
@@ -89,10 +118,21 @@ Use `--frames N` for bounded smoke tests:
 ./build-vulkan/cubey --frames 300
 ```
 
+Use `--require-validation` for a stronger desktop smoke when validation layers
+are installed:
+
+```bash
+./build-vulkan/cubey --require-validation --frames 300 --width 1280 --height 720
+```
+
 The current path acquires a swapchain image, dispatches compute into a storage
 image, transitions that image to `SHADER_READ_ONLY_OPTIMAL`, binds cube
 vertex/index buffers plus a per-frame MVP uniform buffer, draws with depth
 testing, and presents the swapchain image from `PRESENT_SRC_KHR`.
+
+GLFW framebuffer-size callbacks mark the swapchain dirty. The render loop
+recreates window resources on explicit resize, and still handles
+`VK_ERROR_OUT_OF_DATE_KHR` / `VK_SUBOPTIMAL_KHR` from acquire or present.
 
 ### Headless mode
 
@@ -140,7 +180,7 @@ window cannot be opened. The CTest window smoke accepts either:
 
 This keeps one test command useful in both environments.
 
-### Present can invalidate the swapchain immediately
+### Present and compositor resize can invalidate the swapchain
 
 On the RTX 5070 Ti desktop smoke, the first graphics-pipeline window run reached
 the present path and then returned `VK_ERROR_OUT_OF_DATE_KHR` from
@@ -157,6 +197,17 @@ remains out of date after eight consecutive recreation attempts.
 
 Follow-up desktop smoke confirmed the expected behavior: one recreation message
 was printed, and the run finished without issue.
+
+After validation support and framebuffer resize handling were added, a
+`--require-validation` desktop run under niri exercised both recovery paths in
+one bounded run. The compositor forced the surface extent to `1280x1432`, the
+first present caused `swapchain out of date; recreating`, and manual resizing
+printed `framebuffer resized; recreating swapchain` twice. That makes the
+current resize handling good enough for this spike.
+
+The resize path now also waits for a nonzero GLFW framebuffer size before
+creating a swapchain, so minimized or temporarily zero-sized windows do not feed
+an invalid extent into swapchain creation.
 
 ### One queue family is enough for this spike
 
@@ -229,6 +280,5 @@ the code.
 - Replace per-frame semaphore/fence allocation and the current conservative
   `vkQueueWaitIdle` present cleanup with reusable per-frame state before
   measuring performance.
-- Add validation-layer support before the next rendering/debugging-heavy slice.
 - Split the single source file once the spike needs another demo or persistent
   renderer surface.

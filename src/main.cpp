@@ -19,6 +19,8 @@
 
 struct Options {
     bool headless = false;
+    bool validation = CUBEY_VALIDATION_DEFAULT != 0;
+    bool require_validation = false;
     uint32_t width = 1280;
     uint32_t height = 720;
     uint32_t frames = 0;
@@ -202,6 +204,14 @@ static Options parse_args(int argc, char** argv) {
 
         if (arg == "--headless") {
             opts.headless = true;
+        } else if (arg == "--validation") {
+            opts.validation = true;
+        } else if (arg == "--no-validation") {
+            opts.validation = false;
+            opts.require_validation = false;
+        } else if (arg == "--require-validation") {
+            opts.validation = true;
+            opts.require_validation = true;
         } else if (arg == "--output") {
             opts.output = need_value("--output");
         } else if (arg == "--width") {
@@ -252,16 +262,19 @@ public:
         if (command_pool_ != VK_NULL_HANDLE) vkDestroyCommandPool(device_, command_pool_, nullptr);
         if (device_ != VK_NULL_HANDLE) vkDestroyDevice(device_, nullptr);
         if (surface_ != VK_NULL_HANDLE) vkDestroySurfaceKHR(instance_, surface_, nullptr);
+        destroy_debug_messenger();
         if (instance_ != VK_NULL_HANDLE) vkDestroyInstance(instance_, nullptr);
         if (window_ != nullptr) glfwDestroyWindow(window_);
         if (glfw_initialized_) glfwTerminate();
     }
 
     void run() {
+        configure_validation();
         if (!opts_.headless) {
             init_window();
         }
         create_instance();
+        create_debug_messenger();
         if (!opts_.headless) {
             create_surface();
         }
@@ -323,6 +336,127 @@ private:
         if (window_ == nullptr) {
             throw std::runtime_error("glfwCreateWindow failed");
         }
+        glfwSetWindowUserPointer(window_, this);
+        glfwSetFramebufferSizeCallback(window_, framebuffer_size_callback);
+    }
+
+    static void framebuffer_size_callback(GLFWwindow* window, int, int) {
+        auto* spike = static_cast<VulkanGraphicsSpike*>(glfwGetWindowUserPointer(window));
+        if (spike != nullptr) {
+            spike->framebuffer_resized_ = true;
+        }
+    }
+
+    static constexpr std::array<const char*, 1> validation_layers() {
+        return { "VK_LAYER_KHRONOS_validation" };
+    }
+
+    bool instance_layer_available(const char* name) const {
+        uint32_t count = 0;
+        check(vkEnumerateInstanceLayerProperties(&count, nullptr), "vkEnumerateInstanceLayerProperties count");
+        std::vector<VkLayerProperties> layers(count);
+        check(vkEnumerateInstanceLayerProperties(&count, layers.data()), "vkEnumerateInstanceLayerProperties");
+        for (const VkLayerProperties& layer : layers) {
+            if (std::string_view(layer.layerName) == name) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    bool instance_extension_available(const char* name) const {
+        uint32_t count = 0;
+        check(vkEnumerateInstanceExtensionProperties(nullptr, &count, nullptr), "vkEnumerateInstanceExtensionProperties count");
+        std::vector<VkExtensionProperties> extensions(count);
+        check(vkEnumerateInstanceExtensionProperties(nullptr, &count, extensions.data()), "vkEnumerateInstanceExtensionProperties");
+        for (const VkExtensionProperties& extension : extensions) {
+            if (std::string_view(extension.extensionName) == name) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    void configure_validation() {
+        if (!opts_.validation) {
+            return;
+        }
+
+        const auto layers = validation_layers();
+        for (const char* layer : layers) {
+            if (!instance_layer_available(layer)) {
+                if (opts_.require_validation) {
+                    throw std::runtime_error(std::string("required validation layer is unavailable: ") + layer);
+                }
+                std::fprintf(stderr, "cubey: validation layer unavailable, continuing without it: %s\n", layer);
+                return;
+            }
+        }
+
+        validation_enabled_ = true;
+        if (instance_extension_available(VK_EXT_DEBUG_UTILS_EXTENSION_NAME)) {
+            debug_utils_enabled_ = true;
+        } else {
+            std::fprintf(stderr, "cubey: debug utils extension unavailable; validation messages may not be routed\n");
+        }
+    }
+
+    static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(
+        VkDebugUtilsMessageSeverityFlagBitsEXT severity,
+        VkDebugUtilsMessageTypeFlagsEXT,
+        const VkDebugUtilsMessengerCallbackDataEXT* data,
+        void*
+    ) {
+        const char* label = severity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT ? "error" : "warning";
+        const char* message = data != nullptr && data->pMessage != nullptr ? data->pMessage : "(no message)";
+        std::fprintf(stderr, "vulkan validation %s: %s\n", label, message);
+        return VK_FALSE;
+    }
+
+    static VkDebugUtilsMessengerCreateInfoEXT debug_messenger_info() {
+        auto info = vk_struct<VkDebugUtilsMessengerCreateInfoEXT>(VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT);
+        info.messageSeverity =
+            VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
+            VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+        info.messageType =
+            VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
+            VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
+            VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+        info.pfnUserCallback = debug_callback;
+        return info;
+    }
+
+    void create_debug_messenger() {
+        if (!debug_utils_enabled_) {
+            return;
+        }
+        auto create_fn = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(
+            vkGetInstanceProcAddr(instance_, "vkCreateDebugUtilsMessengerEXT")
+        );
+        if (create_fn == nullptr) {
+            if (opts_.require_validation) {
+                throw std::runtime_error("vkCreateDebugUtilsMessengerEXT is unavailable");
+            }
+            std::fprintf(stderr, "cubey: vkCreateDebugUtilsMessengerEXT unavailable; validation messages may not be routed\n");
+            debug_utils_enabled_ = false;
+            return;
+        }
+
+        auto info = debug_messenger_info();
+        check(create_fn(instance_, &info, nullptr, &debug_messenger_), "vkCreateDebugUtilsMessengerEXT");
+    }
+
+    void destroy_debug_messenger() {
+        if (debug_messenger_ == VK_NULL_HANDLE) {
+            return;
+        }
+        auto destroy_fn = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(
+            vkGetInstanceProcAddr(instance_, "vkDestroyDebugUtilsMessengerEXT")
+        );
+        if (destroy_fn != nullptr) {
+            destroy_fn(instance_, debug_messenger_, nullptr);
+        }
+        debug_messenger_ = VK_NULL_HANDLE;
     }
 
     void create_instance() {
@@ -343,8 +477,23 @@ private:
                 throw std::runtime_error("glfwGetRequiredInstanceExtensions failed");
             }
             extensions.assign(required, required + extension_count);
-            info.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
-            info.ppEnabledExtensionNames = extensions.data();
+        }
+        if (debug_utils_enabled_) {
+            extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+        }
+        info.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
+        info.ppEnabledExtensionNames = extensions.data();
+
+        const auto layers = validation_layers();
+        if (validation_enabled_) {
+            info.enabledLayerCount = static_cast<uint32_t>(layers.size());
+            info.ppEnabledLayerNames = layers.data();
+        }
+
+        VkDebugUtilsMessengerCreateInfoEXT debug_info{};
+        if (debug_utils_enabled_) {
+            debug_info = debug_messenger_info();
+            info.pNext = &debug_info;
         }
         check(vkCreateInstance(&info, nullptr, &instance_), "vkCreateInstance");
     }
@@ -441,7 +590,22 @@ private:
         return VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
     }
 
+    void wait_for_presentable_window_size() const {
+        int fb_w = 0;
+        int fb_h = 0;
+        glfwGetFramebufferSize(window_, &fb_w, &fb_h);
+        while ((fb_w == 0 || fb_h == 0) && !glfwWindowShouldClose(window_)) {
+            glfwWaitEvents();
+            glfwGetFramebufferSize(window_, &fb_w, &fb_h);
+        }
+        if (fb_w == 0 || fb_h == 0) {
+            throw std::runtime_error("window closed before a presentable framebuffer size was available");
+        }
+    }
+
     void create_swapchain() {
+        wait_for_presentable_window_size();
+
         VkSurfaceCapabilitiesKHR caps{};
         check(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device_, surface_, &caps), "vkGetPhysicalDeviceSurfaceCapabilitiesKHR");
         if ((caps.supportedUsageFlags & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) == 0) {
@@ -501,6 +665,7 @@ private:
         check(vkGetSwapchainImagesKHR(device_, swapchain_, &actual_count, nullptr), "vkGetSwapchainImagesKHR count");
         swapchain_images_.resize(actual_count);
         check(vkGetSwapchainImagesKHR(device_, swapchain_, &actual_count, swapchain_images_.data()), "vkGetSwapchainImagesKHR");
+        framebuffer_resized_ = false;
     }
 
     void destroy_swapchain() {
@@ -1525,6 +1690,12 @@ private:
         uint32_t consecutive_recreates = 0;
         while (!glfwWindowShouldClose(window_) && (opts_.frames == 0 || frame < opts_.frames)) {
             glfwPollEvents();
+            if (framebuffer_resized_) {
+                std::puts("framebuffer resized; recreating swapchain");
+                recreate_window_resources();
+                consecutive_recreates = 0;
+                continue;
+            }
             FrameResult result = render_one_window_frame(frame);
             if (result == FrameResult::RecreateSwapchain) {
                 ++consecutive_recreates;
@@ -1589,8 +1760,12 @@ private:
 
     Options opts_;
     bool glfw_initialized_ = false;
+    bool validation_enabled_ = false;
+    bool debug_utils_enabled_ = false;
+    bool framebuffer_resized_ = false;
     GLFWwindow* window_ = nullptr;
     VkInstance instance_ = VK_NULL_HANDLE;
+    VkDebugUtilsMessengerEXT debug_messenger_ = VK_NULL_HANDLE;
     VkSurfaceKHR surface_ = VK_NULL_HANDLE;
     VkPhysicalDevice physical_device_ = VK_NULL_HANDLE;
     VkPhysicalDeviceProperties device_properties_{};

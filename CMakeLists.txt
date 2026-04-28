@@ -12,6 +12,13 @@ find_program(GLSLANG_VALIDATOR glslangValidator REQUIRED)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(VULKAN REQUIRED vulkan)
 
+option(CUBEY_ENABLE_VALIDATION "Enable Vulkan validation layers when available" ON)
+if (CUBEY_ENABLE_VALIDATION)
+    set(CUBEY_VALIDATION_DEFAULT 1)
+else()
+    set(CUBEY_VALIDATION_DEFAULT 0)
+endif()
+
 FetchContent_Declare(
     vulkan_headers
     GIT_REPOSITORY https://github.com/KhronosGroup/Vulkan-Headers.git
