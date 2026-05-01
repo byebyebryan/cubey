@@ -4,12 +4,6 @@ add_executable(cubey_example_window_clear
 )
 set_target_properties(cubey_example_window_clear PROPERTIES OUTPUT_NAME window_clear)
 
-target_include_directories(
-    cubey_example_window_clear
-    PRIVATE
-        "${vulkan_headers_SOURCE_DIR}/include"
-)
-
 target_compile_definitions(cubey_example_window_clear PRIVATE GLFW_INCLUDE_NONE)
 
 target_link_libraries(
@@ -18,7 +12,6 @@ target_link_libraries(
         cubey::cubey
         cubey_project_warnings
         glfw
-        PkgConfig::VULKAN_LOADER
 )
 
 if (BUILD_TESTING)

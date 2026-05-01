@@ -1,6 +1,8 @@
 #include "window_clear_app.h"
 
-#include "vk_check.h"
+#include <cubey/vulkan/device.h>
+#include <cubey/vulkan/instance.h>
+#include <cubey/vulkan/vk_check.h>
 
 #include <GLFW/glfw3.h>
 #include <vulkan/vulkan.h>
@@ -8,24 +10,16 @@
 #include <algorithm>
 #include <array>
 #include <cstdio>
+#include <optional>
 #include <stdexcept>
-#include <string>
-#include <string_view>
 #include <utility>
 #include <vector>
 
 namespace cubey::examples::window_clear {
 namespace {
 
-constexpr std::uint32_t make_vk_version(std::uint32_t major, std::uint32_t minor,
-                                        std::uint32_t patch) {
-    return (major << 22U) | (minor << 12U) | patch;
-}
-
-constexpr std::uint32_t make_vk_api_version(std::uint32_t variant, std::uint32_t major,
-                                            std::uint32_t minor, std::uint32_t patch) {
-    return (variant << 29U) | (major << 22U) | (minor << 12U) | patch;
-}
+using cubey::vulkan::check;
+using cubey::vulkan::vk_struct;
 
 class WindowClearApp {
   public:
@@ -46,16 +40,14 @@ class WindowClearApp {
         destroy_swapchain_views();
         destroy_swapchain();
 
-        if (device_ != VK_NULL_HANDLE) {
-            vkDestroyDevice(device_, nullptr);
-        }
         if (surface_ != VK_NULL_HANDLE) {
             vkDestroySurfaceKHR(instance_, surface_, nullptr);
+            surface_ = VK_NULL_HANDLE;
         }
-        destroy_debug_messenger();
-        if (instance_ != VK_NULL_HANDLE) {
-            vkDestroyInstance(instance_, nullptr);
-        }
+        device_owner_.reset();
+        device_ = VK_NULL_HANDLE;
+        instance_owner_.reset();
+        instance_ = VK_NULL_HANDLE;
         if (window_ != nullptr) {
             glfwDestroyWindow(window_);
         }
@@ -70,11 +62,8 @@ class WindowClearApp {
         }
 
         init_window();
-        configure_validation();
         create_instance();
-        create_debug_messenger();
         create_surface();
-        select_physical_device();
         create_device();
         create_swapchain_resources();
         create_commands();
@@ -88,10 +77,6 @@ class WindowClearApp {
         Rendered,
         RecreateSwapchain,
     };
-
-    static constexpr std::array<const char*, 1> validation_layers() {
-        return {"VK_LAYER_KHRONOS_validation"};
-    }
 
     void init_window() {
         if (glfwInit() == 0) {
@@ -126,166 +111,22 @@ class WindowClearApp {
         }
     }
 
-    static bool instance_layer_available(const char* name) {
-        std::uint32_t count = 0;
-        check(vkEnumerateInstanceLayerProperties(&count, nullptr),
-              "vkEnumerateInstanceLayerProperties count");
-        std::vector<VkLayerProperties> layers(count);
-        check(vkEnumerateInstanceLayerProperties(&count, layers.data()),
-              "vkEnumerateInstanceLayerProperties");
-
-        for (const VkLayerProperties& layer : layers) {
-            if (std::string_view(layer.layerName) == name) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    static bool instance_extension_available(const char* name) {
-        std::uint32_t count = 0;
-        check(vkEnumerateInstanceExtensionProperties(nullptr, &count, nullptr),
-              "vkEnumerateInstanceExtensionProperties count");
-        std::vector<VkExtensionProperties> extensions(count);
-        check(vkEnumerateInstanceExtensionProperties(nullptr, &count, extensions.data()),
-              "vkEnumerateInstanceExtensionProperties");
-
-        for (const VkExtensionProperties& extension : extensions) {
-            if (std::string_view(extension.extensionName) == name) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    void configure_validation() {
-        if (!config_.validation) {
-            return;
-        }
-
-        for (const char* layer : validation_layers()) {
-            if (!instance_layer_available(layer)) {
-                if (config_.require_validation) {
-                    throw std::runtime_error(
-                        std::string("required validation layer is unavailable: ") + layer);
-                }
-                std::fprintf(stderr,
-                             "cubey: validation layer unavailable, continuing without it: %s\n",
-                             layer);
-                return;
-            }
-        }
-
-        validation_enabled_ = true;
-        if (instance_extension_available(VK_EXT_DEBUG_UTILS_EXTENSION_NAME)) {
-            debug_utils_enabled_ = true;
-        } else {
-            std::fprintf(stderr, "cubey: debug utils extension unavailable; validation messages "
-                                 "may not be routed\n");
-        }
-    }
-
-    static VKAPI_ATTR VkBool32 VKAPI_CALL
-    debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT severity,
-                   VkDebugUtilsMessageTypeFlagsEXT unused_type,
-                   const VkDebugUtilsMessengerCallbackDataEXT* data, void* unused_user_data) {
-        (void)unused_type;
-        (void)unused_user_data;
-        const char* label =
-            severity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT ? "error" : "warning";
-        const char* message =
-            data != nullptr && data->pMessage != nullptr ? data->pMessage : "(no message)";
-        std::fprintf(stderr, "vulkan validation %s: %s\n", label, message);
-        return VK_FALSE;
-    }
-
-    static VkDebugUtilsMessengerCreateInfoEXT debug_messenger_info() {
-        auto info = vk_struct<VkDebugUtilsMessengerCreateInfoEXT>(
-            VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT);
-        info.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
-                               VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-        info.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
-                           VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
-                           VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-        info.pfnUserCallback = debug_callback;
-        return info;
-    }
-
     void create_instance() {
-        auto app = vk_struct<VkApplicationInfo>(VK_STRUCTURE_TYPE_APPLICATION_INFO);
-        app.pApplicationName = config_.title.c_str();
-        app.applicationVersion = make_vk_version(0, 1, 0);
-        app.pEngineName = "cubey";
-        app.engineVersion = make_vk_version(0, 1, 0);
-        app.apiVersion = make_vk_api_version(0, 1, 2, 0);
-
-        auto info = vk_struct<VkInstanceCreateInfo>(VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO);
-        info.pApplicationInfo = &app;
-
         std::uint32_t extension_count = 0;
         const char** required_extensions = glfwGetRequiredInstanceExtensions(&extension_count);
         if (required_extensions == nullptr || extension_count == 0) {
             throw std::runtime_error("glfwGetRequiredInstanceExtensions failed");
         }
 
-        std::vector<const char*> extensions(required_extensions,
-                                            required_extensions + extension_count);
-        if (debug_utils_enabled_) {
-            extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-        }
-        info.enabledExtensionCount = static_cast<std::uint32_t>(extensions.size());
-        info.ppEnabledExtensionNames = extensions.data();
+        cubey::vulkan::InstanceConfig instance_config;
+        instance_config.application_name = config_.title;
+        instance_config.required_extensions.assign(required_extensions,
+                                                   required_extensions + extension_count);
+        instance_config.validation = config_.validation;
+        instance_config.require_validation = config_.require_validation;
 
-        const auto layers = validation_layers();
-        if (validation_enabled_) {
-            info.enabledLayerCount = static_cast<std::uint32_t>(layers.size());
-            info.ppEnabledLayerNames = layers.data();
-        }
-
-        VkDebugUtilsMessengerCreateInfoEXT debug_info{};
-        if (debug_utils_enabled_) {
-            debug_info = debug_messenger_info();
-            info.pNext = &debug_info;
-        }
-
-        check(vkCreateInstance(&info, nullptr, &instance_), "vkCreateInstance");
-    }
-
-    void create_debug_messenger() {
-        if (!debug_utils_enabled_) {
-            return;
-        }
-
-        auto create_fn = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(
-            vkGetInstanceProcAddr(instance_, "vkCreateDebugUtilsMessengerEXT"));
-        if (create_fn == nullptr) {
-            if (config_.require_validation) {
-                throw std::runtime_error("vkCreateDebugUtilsMessengerEXT is unavailable");
-            }
-            std::fprintf(
-                stderr,
-                "cubey: vkCreateDebugUtilsMessengerEXT unavailable; validation messages may not "
-                "be routed\n");
-            debug_utils_enabled_ = false;
-            return;
-        }
-
-        auto info = debug_messenger_info();
-        check(create_fn(instance_, &info, nullptr, &debug_messenger_),
-              "vkCreateDebugUtilsMessengerEXT");
-    }
-
-    void destroy_debug_messenger() {
-        if (debug_messenger_ == VK_NULL_HANDLE) {
-            return;
-        }
-
-        auto destroy_fn = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(
-            vkGetInstanceProcAddr(instance_, "vkDestroyDebugUtilsMessengerEXT"));
-        if (destroy_fn != nullptr) {
-            destroy_fn(instance_, debug_messenger_, nullptr);
-        }
-        debug_messenger_ = VK_NULL_HANDLE;
+        instance_owner_.emplace(instance_config);
+        instance_ = instance_owner_->handle();
     }
 
     void create_surface() {
@@ -293,80 +134,21 @@ class WindowClearApp {
               "glfwCreateWindowSurface");
     }
 
-    static bool device_supports_swapchain(VkPhysicalDevice device) {
-        std::uint32_t count = 0;
-        check(vkEnumerateDeviceExtensionProperties(device, nullptr, &count, nullptr),
-              "vkEnumerateDeviceExtensionProperties count");
-        std::vector<VkExtensionProperties> extensions(count);
-        check(vkEnumerateDeviceExtensionProperties(device, nullptr, &count, extensions.data()),
-              "vkEnumerateDeviceExtensionProperties");
-
-        for (const VkExtensionProperties& extension : extensions) {
-            if (std::string_view(extension.extensionName) == VK_KHR_SWAPCHAIN_EXTENSION_NAME) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    void select_physical_device() {
-        std::uint32_t device_count = 0;
-        check(vkEnumeratePhysicalDevices(instance_, &device_count, nullptr),
-              "vkEnumeratePhysicalDevices count");
-        if (device_count == 0) {
-            throw std::runtime_error("no Vulkan physical devices found");
-        }
-
-        std::vector<VkPhysicalDevice> devices(device_count);
-        check(vkEnumeratePhysicalDevices(instance_, &device_count, devices.data()),
-              "vkEnumeratePhysicalDevices");
-
-        for (VkPhysicalDevice candidate : devices) {
-            if (!device_supports_swapchain(candidate)) {
-                continue;
-            }
-
-            std::uint32_t family_count = 0;
-            vkGetPhysicalDeviceQueueFamilyProperties(candidate, &family_count, nullptr);
-            std::vector<VkQueueFamilyProperties> families(family_count);
-            vkGetPhysicalDeviceQueueFamilyProperties(candidate, &family_count, families.data());
-
-            for (std::uint32_t i = 0; i < family_count; ++i) {
-                VkBool32 present_supported = VK_FALSE;
-                check(vkGetPhysicalDeviceSurfaceSupportKHR(candidate, i, surface_,
-                                                           &present_supported),
-                      "vkGetPhysicalDeviceSurfaceSupportKHR");
-                if ((families[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) != 0 &&
-                    present_supported == VK_TRUE) {
-                    physical_device_ = candidate;
-                    queue_family_ = i;
-                    vkGetPhysicalDeviceProperties(physical_device_, &device_properties_);
-                    return;
-                }
-            }
-        }
-
-        throw std::runtime_error(
-            "no Vulkan device with one queue family supporting graphics and present found");
-    }
-
     void create_device() {
-        float priority = 1.0f;
-        auto queue_info =
-            vk_struct<VkDeviceQueueCreateInfo>(VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO);
-        queue_info.queueFamilyIndex = queue_family_;
-        queue_info.queueCount = 1;
-        queue_info.pQueuePriorities = &priority;
+        cubey::vulkan::DeviceConfig device_config;
+        device_config.surface = surface_;
+        device_config.required_queue_flags = VK_QUEUE_GRAPHICS_BIT;
+        device_config.require_present = true;
 
-        std::array<const char*, 1> extensions{VK_KHR_SWAPCHAIN_EXTENSION_NAME};
-        auto info = vk_struct<VkDeviceCreateInfo>(VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO);
-        info.queueCreateInfoCount = 1;
-        info.pQueueCreateInfos = &queue_info;
-        info.enabledExtensionCount = static_cast<std::uint32_t>(extensions.size());
-        info.ppEnabledExtensionNames = extensions.data();
-
-        check(vkCreateDevice(physical_device_, &info, nullptr, &device_), "vkCreateDevice");
-        vkGetDeviceQueue(device_, queue_family_, 0, &queue_);
+        if (!instance_owner_.has_value()) {
+            throw std::runtime_error("Vulkan instance must exist before creating a device");
+        }
+        device_owner_.emplace(instance_owner_.value(), device_config);
+        physical_device_ = device_owner_->physical_device();
+        device_properties_ = device_owner_->properties();
+        device_ = device_owner_->handle();
+        queue_ = device_owner_->queue();
+        queue_family_ = device_owner_->queue_family();
     }
 
     static VkCompositeAlphaFlagBitsKHR choose_composite_alpha(VkCompositeAlphaFlagsKHR flags) {
@@ -766,13 +548,12 @@ class WindowClearApp {
 
     RunConfig config_;
     bool glfw_initialized_ = false;
-    bool validation_enabled_ = false;
-    bool debug_utils_enabled_ = false;
     bool framebuffer_resized_ = false;
     GLFWwindow* window_ = nullptr;
 
+    std::optional<cubey::vulkan::Instance> instance_owner_;
+    std::optional<cubey::vulkan::Device> device_owner_;
     VkInstance instance_ = VK_NULL_HANDLE;
-    VkDebugUtilsMessengerEXT debug_messenger_ = VK_NULL_HANDLE;
     VkSurfaceKHR surface_ = VK_NULL_HANDLE;
     VkPhysicalDevice physical_device_ = VK_NULL_HANDLE;
     VkPhysicalDeviceProperties device_properties_{};

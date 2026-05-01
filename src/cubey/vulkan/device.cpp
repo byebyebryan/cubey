@@ -1,0 +1,120 @@
+#include <cubey/vulkan/device.h>
+
+#include <cubey/vulkan/vk_check.h>
+
+#include <array>
+#include <stdexcept>
+#include <string_view>
+#include <vector>
+
+namespace cubey::vulkan {
+namespace {
+
+bool device_supports_swapchain(VkPhysicalDevice device) {
+    std::uint32_t count = 0;
+    check(vkEnumerateDeviceExtensionProperties(device, nullptr, &count, nullptr),
+          "vkEnumerateDeviceExtensionProperties count");
+    std::vector<VkExtensionProperties> extensions(count);
+    check(vkEnumerateDeviceExtensionProperties(device, nullptr, &count, extensions.data()),
+          "vkEnumerateDeviceExtensionProperties");
+
+    for (const VkExtensionProperties& extension : extensions) {
+        if (std::string_view(extension.extensionName) == VK_KHR_SWAPCHAIN_EXTENSION_NAME) {
+            return true;
+        }
+    }
+    return false;
+}
+
+} // namespace
+
+Device::Device(const Instance& instance, const DeviceConfig& config) {
+    select_physical_device(instance, config);
+    create_device(config);
+}
+
+Device::~Device() {
+    if (device_ != VK_NULL_HANDLE) {
+        vkDestroyDevice(device_, nullptr);
+    }
+}
+
+void Device::wait_idle() const {
+    if (device_ != VK_NULL_HANDLE) {
+        check(vkDeviceWaitIdle(device_), "vkDeviceWaitIdle");
+    }
+}
+
+void Device::select_physical_device(const Instance& instance, const DeviceConfig& config) {
+    if (config.require_present && config.surface == VK_NULL_HANDLE) {
+        throw std::runtime_error("present-capable device selection requires a Vulkan surface");
+    }
+
+    std::uint32_t device_count = 0;
+    check(vkEnumeratePhysicalDevices(instance.handle(), &device_count, nullptr),
+          "vkEnumeratePhysicalDevices count");
+    if (device_count == 0) {
+        throw std::runtime_error("no Vulkan physical devices found");
+    }
+
+    std::vector<VkPhysicalDevice> devices(device_count);
+    check(vkEnumeratePhysicalDevices(instance.handle(), &device_count, devices.data()),
+          "vkEnumeratePhysicalDevices");
+
+    for (VkPhysicalDevice candidate : devices) {
+        if (config.require_present && !device_supports_swapchain(candidate)) {
+            continue;
+        }
+
+        std::uint32_t family_count = 0;
+        vkGetPhysicalDeviceQueueFamilyProperties(candidate, &family_count, nullptr);
+        std::vector<VkQueueFamilyProperties> families(family_count);
+        vkGetPhysicalDeviceQueueFamilyProperties(candidate, &family_count, families.data());
+
+        for (std::uint32_t i = 0; i < family_count; ++i) {
+            VkBool32 present_supported = VK_TRUE;
+            if (config.require_present) {
+                check(vkGetPhysicalDeviceSurfaceSupportKHR(candidate, i, config.surface,
+                                                           &present_supported),
+                      "vkGetPhysicalDeviceSurfaceSupportKHR");
+            }
+
+            if ((families[i].queueFlags & config.required_queue_flags) ==
+                    config.required_queue_flags &&
+                present_supported == VK_TRUE) {
+                physical_device_ = candidate;
+                queue_family_ = i;
+                vkGetPhysicalDeviceProperties(physical_device_, &properties_);
+                return;
+            }
+        }
+    }
+
+    throw std::runtime_error(config.require_present
+                                 ? "no Vulkan device with one queue family supporting required "
+                                   "queues and present found"
+                                 : "no Vulkan device with required queues found");
+}
+
+void Device::create_device(const DeviceConfig& config) {
+    float priority = 1.0f;
+    auto queue_info =
+        vk_struct<VkDeviceQueueCreateInfo>(VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO);
+    queue_info.queueFamilyIndex = queue_family_;
+    queue_info.queueCount = 1;
+    queue_info.pQueuePriorities = &priority;
+
+    std::array<const char*, 1> extensions{VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+    auto info = vk_struct<VkDeviceCreateInfo>(VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO);
+    info.queueCreateInfoCount = 1;
+    info.pQueueCreateInfos = &queue_info;
+    if (config.require_present) {
+        info.enabledExtensionCount = static_cast<std::uint32_t>(extensions.size());
+        info.ppEnabledExtensionNames = extensions.data();
+    }
+
+    check(vkCreateDevice(physical_device_, &info, nullptr, &device_), "vkCreateDevice");
+    vkGetDeviceQueue(device_, queue_family_, 0, &queue_);
+}
+
+} // namespace cubey::vulkan

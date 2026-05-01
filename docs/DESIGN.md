@@ -203,7 +203,10 @@ cubey/
     cubey/
       app_config.h         -- shared run configuration
       runtime.h            -- future reusable app/runtime entrypoints
-      vulkan/              -- future public Vulkan-facing runtime types as needed
+      vulkan/
+        vk_check.h         -- Vulkan result helpers
+        instance.h         -- instance, validation, debug messenger
+        device.h           -- physical/logical device and queue ownership
   src/
     cubey/
       app_config.cpp

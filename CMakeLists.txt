@@ -27,6 +27,8 @@ add_library(cubey_project_warnings INTERFACE)
 cubey_configure_warnings(cubey_project_warnings)
 
 include(FetchContent)
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(VULKAN_LOADER REQUIRED IMPORTED_TARGET vulkan)
 
 FetchContent_Declare(
     vulkan_headers
@@ -40,9 +42,6 @@ include(CTest)
 add_subdirectory(src/cubey)
 
 if (CUBEY_BUILD_EXAMPLES)
-    find_package(PkgConfig REQUIRED)
-    pkg_check_modules(VULKAN_LOADER REQUIRED IMPORTED_TARGET vulkan)
-
     FetchContent_Declare(
         glfw
         GIT_REPOSITORY https://github.com/glfw/glfw

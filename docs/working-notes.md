@@ -17,6 +17,12 @@ As of 2026-05-01:
   out-of-date/resize recreation.
 - `window_clear` is example code, not library API. Keep named example behavior
   under `examples/`; promote only reusable primitives into `cubey`.
+- Promoted the first reusable Vulkan primitives into `cubey`:
+  `cubey::vulkan::Instance` owns validation/debug-utils setup, and
+  `cubey::vulkan::Device` owns physical-device selection, logical-device
+  lifetime, and queue access.
+- GLFW window setup, surface creation, swapchain, render pass, framebuffers,
+  command buffers, sync, and clear/present behavior remain example-local.
 - The current terminal session has no display, so direct local execution reports
   `window_clear: glfwInit failed`; CTest accepts that as the expected no-display
   smoke result.

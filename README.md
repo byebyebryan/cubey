@@ -37,10 +37,10 @@ See:
 | `vulkan` | Native Vulkan visible/headless experiment | Successful; informs the mainline renderer direction |
 
 Main now contains the first visible-surface slice: the `cubey` library plus a
-minimal `examples/window_clear` executable. The example owns its clear/present
-app code; reusable Vulkan pieces should move into `cubey` only after they are
-shaped as library primitives. The spike branches remain reference material for
-later compute, textured-cube, headless, and browser work.
+minimal `examples/window_clear` executable. `cubey` owns the reusable Vulkan
+instance/device primitives; the example still owns GLFW, surface, swapchain, and
+clear/present app code. The spike branches remain reference material for later
+compute, textured-cube, headless, and browser work.
 
 ## Development Setup
 

@@ -5,7 +5,7 @@
 #include <stdexcept>
 #include <string>
 
-namespace cubey::examples::window_clear {
+namespace cubey::vulkan {
 
 inline void check(VkResult result, const char* what) {
     if (result != VK_SUCCESS) {
@@ -20,4 +20,4 @@ template <typename T> T vk_struct(VkStructureType type) {
     return value;
 }
 
-} // namespace cubey::examples::window_clear
+} // namespace cubey::vulkan

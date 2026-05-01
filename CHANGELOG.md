@@ -16,6 +16,8 @@ versioned section and use that section as the release notes.
 - Living roadmap and working-notes docs.
 - MIT license, matching the original cubey branch.
 - `cubey` static library target with public headers under `include/cubey/`.
+- Public Vulkan `Instance` and `Device` primitives for validation/debug-utils
+  setup, physical-device selection, logical-device ownership, and queue access.
 - `examples/window_clear`, a minimal Vulkan/GLFW visible-surface clear/present
   smoke executable.
 - CTest smoke that accepts either successful window startup or the known
@@ -27,6 +29,9 @@ versioned section and use that section as the release notes.
   OpenGL continuation or WebGPU-first rewrite.
 - Runnable targets are explicit examples/projects rather than a generic `cubey`
   executable.
+- `examples/window_clear` now uses reusable `cubey::vulkan::Instance` and
+  `cubey::vulkan::Device` primitives while keeping GLFW, surface, swapchain, and
+  clear/present behavior example-local.
 
 ## Pre-2.0 History
 

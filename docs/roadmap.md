@@ -58,11 +58,14 @@ Exit criteria:
 Current checkpoint:
 
 - `cubey` static library target exists.
+- Reusable `cubey::vulkan::Instance` and `cubey::vulkan::Device` primitives now
+  own validation/debug-utils setup, physical-device selection, logical-device
+  lifetime, and queue access.
 - `examples/window_clear` links against `cubey` and clears/presents a swapchain
   image through Vulkan/GLFW.
-- The `window_clear` app implementation is intentionally example-local. Promote
-  Vulkan code into `cubey` only when it becomes reusable instance/device/window/
-  swapchain primitives.
+- The remaining `window_clear` app implementation is intentionally
+  example-local: GLFW window setup, surface creation, swapchain, render pass,
+  framebuffers, command buffers, sync, and clear/present behavior.
 - Dev CTest covers the target in both graphical and no-display terminal
   sessions.
 - Headless rendering, shader compilation, compute, frame overlap, and the
