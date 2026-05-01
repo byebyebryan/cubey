@@ -38,9 +38,10 @@ See:
 
 Main now contains the first visible-surface slice: the `cubey` library plus a
 minimal `examples/window_clear` executable. `cubey` owns the reusable Vulkan
-instance/device primitives; the example still owns GLFW, surface, swapchain, and
-clear/present app code. The spike branches remain reference material for later
-compute, textured-cube, headless, and browser work.
+instance, device, swapchain, and single-frame command/sync primitives; the
+example still owns GLFW, surface creation, render pass, framebuffers, and the
+clear/acquire/present app loop. The spike branches remain reference material for
+later compute, textured-cube, headless, and browser work.
 
 ## Development Setup
 

@@ -63,10 +63,12 @@ small native modules, not hide it behind a premature portability contract.
 The near-term Vulkan renderer should split around real ownership boundaries:
 
 - `Device` — instance, physical device, logical device, queue selection, validation
-- `Surface` / `Swapchain` — GLFW surface, extent ownership, present, resize/out-of-date recreation
+- `Surface` / `Swapchain` — platform surface handoff, surface extent ownership,
+  image views, present-mode constraints, and resize/out-of-date recreation
 - `Buffer` / `Image` — allocation, views, staging uploads, readback
 - `Shader` / `Pipeline` — build-time shader paths, compute and graphics pipelines
-- `FrameResources` — command buffers, semaphores, fences, N-frames-in-flight
+- `FrameResources` — command pools/buffers, semaphores, fences, and eventual
+  N-frames-in-flight
 - project/pass code — the actual procedural experiments
 
 These seams should be practical C++ modules first. A future WebGPU backend can
@@ -207,6 +209,8 @@ cubey/
         vk_check.h         -- Vulkan result helpers
         instance.h         -- instance, validation, debug messenger
         device.h           -- physical/logical device and queue ownership
+        swapchain.h        -- swapchain images and image views
+        frame_resources.h  -- per-frame command/sync resources
   src/
     cubey/
       app_config.cpp
@@ -215,10 +219,10 @@ cubey/
         instance.cpp       -- instance, validation, debug messenger
         device.cpp         -- physical/logical device, queues
         window.cpp         -- GLFW window + input
-        swapchain.cpp      -- surface extent, present, resize/recreate
+        swapchain.cpp      -- surface extent, swapchain images/views
         resources.cpp      -- buffers, images, views, staging/readback
         pipeline.cpp       -- shader modules, pipeline layouts, pipelines
-        frame.cpp          -- command buffers, sync objects, frame state
+        frame_resources.cpp -- command buffers and sync objects
       camera.cpp           -- orbit camera
       imgui_layer.cpp      -- ImGui init/frame/shutdown
   examples/

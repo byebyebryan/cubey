@@ -18,6 +18,8 @@ versioned section and use that section as the release notes.
 - `cubey` static library target with public headers under `include/cubey/`.
 - Public Vulkan `Instance` and `Device` primitives for validation/debug-utils
   setup, physical-device selection, logical-device ownership, and queue access.
+- Public Vulkan `Swapchain` and `FrameResources` primitives for swapchain
+  image/view ownership and single-frame command/sync resources.
 - `examples/window_clear`, a minimal Vulkan/GLFW visible-surface clear/present
   smoke executable.
 - CTest smoke that accepts either successful window startup or the known
@@ -29,9 +31,10 @@ versioned section and use that section as the release notes.
   OpenGL continuation or WebGPU-first rewrite.
 - Runnable targets are explicit examples/projects rather than a generic `cubey`
   executable.
-- `examples/window_clear` now uses reusable `cubey::vulkan::Instance` and
-  `cubey::vulkan::Device` primitives while keeping GLFW, surface, swapchain, and
-  clear/present behavior example-local.
+- `examples/window_clear` now uses reusable `cubey::vulkan` instance, device,
+  swapchain, and frame-resource primitives while keeping GLFW, surface creation,
+  render pass, framebuffers, command recording, acquire/present behavior, and
+  resize policy example-local.
 
 ## Pre-2.0 History
 

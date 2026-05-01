@@ -44,7 +44,8 @@ Goal: reshape the successful Vulkan spike into maintainable mainline modules.
   and debug messenger setup.
 - Swapchain acquisition, presentation, out-of-date handling, and compositor
   resize recovery.
-- Frame resources: command buffers, semaphores, fences, and N-frames-in-flight.
+- Frame resources: command buffers, semaphores, fences, and future
+  N-frames-in-flight.
 - Build-time GLSL to SPIR-V shader flow.
 
 Exit criteria:
@@ -58,18 +59,19 @@ Exit criteria:
 Current checkpoint:
 
 - `cubey` static library target exists.
-- Reusable `cubey::vulkan::Instance` and `cubey::vulkan::Device` primitives now
-  own validation/debug-utils setup, physical-device selection, logical-device
-  lifetime, and queue access.
+- Reusable `cubey::vulkan::Instance`, `Device`, `Swapchain`, and
+  `FrameResources` primitives now own validation/debug-utils setup,
+  physical-device selection, logical-device lifetime, queue access, swapchain
+  image/view ownership, and single-frame command/sync resources.
 - `examples/window_clear` links against `cubey` and clears/presents a swapchain
   image through Vulkan/GLFW.
 - The remaining `window_clear` app implementation is intentionally
-  example-local: GLFW window setup, surface creation, swapchain, render pass,
-  framebuffers, command buffers, sync, and clear/present behavior.
+  example-local: GLFW window setup, surface creation, render pass,
+  framebuffers, command recording, acquire/present behavior, and resize policy.
 - Dev CTest covers the target in both graphical and no-display terminal
   sessions.
-- Headless rendering, shader compilation, compute, frame overlap, and the
-  textured cube remain future slices.
+- Headless rendering, shader compilation, compute, frame overlap, richer render
+  pass/pipeline helpers, and the textured cube remain future slices.
 
 ## Phase 2: Resource Layer and App API
 

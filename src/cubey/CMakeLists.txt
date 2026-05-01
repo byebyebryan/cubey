@@ -1,7 +1,9 @@
 add_library(cubey STATIC
     app_config.cpp
     vulkan/device.cpp
+    vulkan/frame_resources.cpp
     vulkan/instance.cpp
+    vulkan/swapchain.cpp
 )
 add_library(cubey::cubey ALIAS cubey)
 

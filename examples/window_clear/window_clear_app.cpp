@@ -1,14 +1,15 @@
 #include "window_clear_app.h"
 
 #include <cubey/vulkan/device.h>
+#include <cubey/vulkan/frame_resources.h>
 #include <cubey/vulkan/instance.h>
+#include <cubey/vulkan/swapchain.h>
 #include <cubey/vulkan/vk_check.h>
 
 #include <GLFW/glfw3.h>
 #include <vulkan/vulkan.h>
 
-#include <algorithm>
-#include <array>
+#include <cstdint>
 #include <cstdio>
 #include <optional>
 #include <stdexcept>
@@ -33,12 +34,10 @@ class WindowClearApp {
             static_cast<void>(vkDeviceWaitIdle(device_));
         }
 
-        destroy_sync();
-        destroy_commands();
+        frame_resources_.reset();
         destroy_framebuffers();
         destroy_render_pass();
-        destroy_swapchain_views();
-        destroy_swapchain();
+        swapchain_.reset();
 
         if (surface_ != VK_NULL_HANDLE) {
             vkDestroySurfaceKHR(instance_, surface_, nullptr);
@@ -66,8 +65,7 @@ class WindowClearApp {
         create_surface();
         create_device();
         create_swapchain_resources();
-        create_commands();
-        create_sync();
+        create_frame_resources();
         render_window();
         return 0;
     }
@@ -144,27 +142,8 @@ class WindowClearApp {
             throw std::runtime_error("Vulkan instance must exist before creating a device");
         }
         device_owner_.emplace(instance_owner_.value(), device_config);
-        physical_device_ = device_owner_->physical_device();
-        device_properties_ = device_owner_->properties();
         device_ = device_owner_->handle();
         queue_ = device_owner_->queue();
-        queue_family_ = device_owner_->queue_family();
-    }
-
-    static VkCompositeAlphaFlagBitsKHR choose_composite_alpha(VkCompositeAlphaFlagsKHR flags) {
-        constexpr std::array<VkCompositeAlphaFlagBitsKHR, 4> choices{
-            VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
-            VK_COMPOSITE_ALPHA_PRE_MULTIPLIED_BIT_KHR,
-            VK_COMPOSITE_ALPHA_POST_MULTIPLIED_BIT_KHR,
-            VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR,
-        };
-
-        for (VkCompositeAlphaFlagBitsKHR choice : choices) {
-            if ((flags & choice) != 0) {
-                return choice;
-            }
-        }
-        return VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
     }
 
     void wait_for_presentable_window_size() const {
@@ -181,9 +160,18 @@ class WindowClearApp {
         }
     }
 
+    [[nodiscard]] VkExtent2D current_framebuffer_extent() const {
+        int fb_width = 0;
+        int fb_height = 0;
+        glfwGetFramebufferSize(window_, &fb_width, &fb_height);
+        return {
+            static_cast<std::uint32_t>(fb_width),
+            static_cast<std::uint32_t>(fb_height),
+        };
+    }
+
     void create_swapchain_resources() {
         create_swapchain();
-        create_swapchain_views();
         create_render_pass();
         create_framebuffers();
     }
@@ -191,8 +179,7 @@ class WindowClearApp {
     void destroy_swapchain_resources() {
         destroy_framebuffers();
         destroy_render_pass();
-        destroy_swapchain_views();
-        destroy_swapchain();
+        swapchain_.reset();
     }
 
     void recreate_swapchain_resources() {
@@ -204,122 +191,17 @@ class WindowClearApp {
     void create_swapchain() {
         wait_for_presentable_window_size();
 
-        VkSurfaceCapabilitiesKHR caps{};
-        check(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device_, surface_, &caps),
-              "vkGetPhysicalDeviceSurfaceCapabilitiesKHR");
-        if ((caps.supportedUsageFlags & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) == 0) {
-            throw std::runtime_error("surface does not support color-attachment swapchain images");
-        }
-
-        std::uint32_t format_count = 0;
-        check(vkGetPhysicalDeviceSurfaceFormatsKHR(physical_device_, surface_, &format_count,
-                                                   nullptr),
-              "vkGetPhysicalDeviceSurfaceFormatsKHR count");
-        if (format_count == 0) {
-            throw std::runtime_error("surface reported no formats");
-        }
-        std::vector<VkSurfaceFormatKHR> formats(format_count);
-        check(vkGetPhysicalDeviceSurfaceFormatsKHR(physical_device_, surface_, &format_count,
-                                                   formats.data()),
-              "vkGetPhysicalDeviceSurfaceFormatsKHR");
-
-        surface_format_ = formats[0];
-        for (const VkSurfaceFormatKHR& format : formats) {
-            if (format.format == VK_FORMAT_B8G8R8A8_UNORM ||
-                format.format == VK_FORMAT_R8G8B8A8_UNORM) {
-                surface_format_ = format;
-                break;
-            }
-        }
-
-        if (caps.currentExtent.width != UINT32_MAX) {
-            swapchain_extent_ = caps.currentExtent;
-        } else {
-            int fb_width = 0;
-            int fb_height = 0;
-            glfwGetFramebufferSize(window_, &fb_width, &fb_height);
-            const auto clamp_dimension = [](int value, std::uint32_t minimum,
-                                            std::uint32_t maximum) {
-                return std::clamp(static_cast<std::uint32_t>(std::max(value, 1)), minimum, maximum);
-            };
-            swapchain_extent_.width =
-                clamp_dimension(fb_width, caps.minImageExtent.width, caps.maxImageExtent.width);
-            swapchain_extent_.height =
-                clamp_dimension(fb_height, caps.minImageExtent.height, caps.maxImageExtent.height);
-        }
-
-        std::uint32_t image_count = caps.minImageCount + 1;
-        if (caps.maxImageCount > 0) {
-            image_count = std::min(image_count, caps.maxImageCount);
-        }
-
-        auto info =
-            vk_struct<VkSwapchainCreateInfoKHR>(VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR);
-        info.surface = surface_;
-        info.minImageCount = image_count;
-        info.imageFormat = surface_format_.format;
-        info.imageColorSpace = surface_format_.colorSpace;
-        info.imageExtent = swapchain_extent_;
-        info.imageArrayLayers = 1;
-        info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-        info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        info.preTransform = caps.currentTransform;
-        info.compositeAlpha = choose_composite_alpha(caps.supportedCompositeAlpha);
-        info.presentMode = VK_PRESENT_MODE_FIFO_KHR;
-        info.clipped = VK_TRUE;
-
-        check(vkCreateSwapchainKHR(device_, &info, nullptr, &swapchain_), "vkCreateSwapchainKHR");
-
-        std::uint32_t actual_count = 0;
-        check(vkGetSwapchainImagesKHR(device_, swapchain_, &actual_count, nullptr),
-              "vkGetSwapchainImagesKHR count");
-        swapchain_images_.resize(actual_count);
-        check(vkGetSwapchainImagesKHR(device_, swapchain_, &actual_count, swapchain_images_.data()),
-              "vkGetSwapchainImagesKHR");
+        cubey::vulkan::SwapchainConfig swapchain_config;
+        swapchain_config.surface = surface_;
+        swapchain_config.desired_extent = current_framebuffer_extent();
+        swapchain_config.image_usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+        swapchain_.emplace(vulkan_device(), swapchain_config);
         framebuffer_resized_ = false;
-    }
-
-    void destroy_swapchain() {
-        if (swapchain_ != VK_NULL_HANDLE) {
-            vkDestroySwapchainKHR(device_, swapchain_, nullptr);
-            swapchain_ = VK_NULL_HANDLE;
-        }
-        swapchain_images_.clear();
-    }
-
-    VkImageView create_image_view(VkImage image, VkFormat format) const {
-        auto info = vk_struct<VkImageViewCreateInfo>(VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO);
-        info.image = image;
-        info.viewType = VK_IMAGE_VIEW_TYPE_2D;
-        info.format = format;
-        info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        info.subresourceRange.baseMipLevel = 0;
-        info.subresourceRange.levelCount = 1;
-        info.subresourceRange.baseArrayLayer = 0;
-        info.subresourceRange.layerCount = 1;
-
-        VkImageView view = VK_NULL_HANDLE;
-        check(vkCreateImageView(device_, &info, nullptr, &view), "vkCreateImageView");
-        return view;
-    }
-
-    void create_swapchain_views() {
-        swapchain_views_.reserve(swapchain_images_.size());
-        for (VkImage image : swapchain_images_) {
-            swapchain_views_.push_back(create_image_view(image, surface_format_.format));
-        }
-    }
-
-    void destroy_swapchain_views() {
-        for (VkImageView view : swapchain_views_) {
-            vkDestroyImageView(device_, view, nullptr);
-        }
-        swapchain_views_.clear();
     }
 
     void create_render_pass() {
         VkAttachmentDescription color_attachment{};
-        color_attachment.format = surface_format_.format;
+        color_attachment.format = swapchain().format();
         color_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
         color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
         color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -363,15 +245,15 @@ class WindowClearApp {
     }
 
     void create_framebuffers() {
-        framebuffers_.reserve(swapchain_views_.size());
-        for (VkImageView view : swapchain_views_) {
+        framebuffers_.reserve(swapchain().image_count());
+        for (VkImageView view : swapchain().image_views()) {
             auto info =
                 vk_struct<VkFramebufferCreateInfo>(VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO);
             info.renderPass = render_pass_;
             info.attachmentCount = 1;
             info.pAttachments = &view;
-            info.width = swapchain_extent_.width;
-            info.height = swapchain_extent_.height;
+            info.width = swapchain().extent().width;
+            info.height = swapchain().extent().height;
             info.layers = 1;
 
             VkFramebuffer framebuffer = VK_NULL_HANDLE;
@@ -388,64 +270,16 @@ class WindowClearApp {
         framebuffers_.clear();
     }
 
-    void create_commands() {
-        auto pool_info =
-            vk_struct<VkCommandPoolCreateInfo>(VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO);
-        pool_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-        pool_info.queueFamilyIndex = queue_family_;
-        check(vkCreateCommandPool(device_, &pool_info, nullptr, &command_pool_),
-              "vkCreateCommandPool");
-
-        auto alloc =
-            vk_struct<VkCommandBufferAllocateInfo>(VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO);
-        alloc.commandPool = command_pool_;
-        alloc.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-        alloc.commandBufferCount = 1;
-        check(vkAllocateCommandBuffers(device_, &alloc, &command_buffer_),
-              "vkAllocateCommandBuffers");
-    }
-
-    void destroy_commands() {
-        if (command_pool_ != VK_NULL_HANDLE) {
-            vkDestroyCommandPool(device_, command_pool_, nullptr);
-            command_pool_ = VK_NULL_HANDLE;
-            command_buffer_ = VK_NULL_HANDLE;
-        }
-    }
-
-    void create_sync() {
-        auto semaphore_info =
-            vk_struct<VkSemaphoreCreateInfo>(VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO);
-        check(vkCreateSemaphore(device_, &semaphore_info, nullptr, &image_available_),
-              "vkCreateSemaphore image_available");
-        check(vkCreateSemaphore(device_, &semaphore_info, nullptr, &present_ready_),
-              "vkCreateSemaphore present_ready");
-
-        auto fence_info = vk_struct<VkFenceCreateInfo>(VK_STRUCTURE_TYPE_FENCE_CREATE_INFO);
-        fence_info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-        check(vkCreateFence(device_, &fence_info, nullptr, &frame_fence_), "vkCreateFence frame");
-    }
-
-    void destroy_sync() {
-        if (frame_fence_ != VK_NULL_HANDLE) {
-            vkDestroyFence(device_, frame_fence_, nullptr);
-            frame_fence_ = VK_NULL_HANDLE;
-        }
-        if (present_ready_ != VK_NULL_HANDLE) {
-            vkDestroySemaphore(device_, present_ready_, nullptr);
-            present_ready_ = VK_NULL_HANDLE;
-        }
-        if (image_available_ != VK_NULL_HANDLE) {
-            vkDestroySemaphore(device_, image_available_, nullptr);
-            image_available_ = VK_NULL_HANDLE;
-        }
+    void create_frame_resources() {
+        frame_resources_.emplace(vulkan_device());
     }
 
     void record_clear_frame(std::uint32_t image_index) {
+        VkCommandBuffer command_buffer = frame_resources().command_buffer();
         auto begin =
             vk_struct<VkCommandBufferBeginInfo>(VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO);
         begin.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-        check(vkBeginCommandBuffer(command_buffer_, &begin), "vkBeginCommandBuffer window_clear");
+        check(vkBeginCommandBuffer(command_buffer, &begin), "vkBeginCommandBuffer window_clear");
 
         VkClearValue clear{};
         clear.color = {{0.02f, 0.025f, 0.035f, 1.0f}};
@@ -454,23 +288,25 @@ class WindowClearApp {
         pass.renderPass = render_pass_;
         pass.framebuffer = framebuffers_.at(static_cast<std::size_t>(image_index));
         pass.renderArea.offset = {0, 0};
-        pass.renderArea.extent = swapchain_extent_;
+        pass.renderArea.extent = swapchain().extent();
         pass.clearValueCount = 1;
         pass.pClearValues = &clear;
 
-        vkCmdBeginRenderPass(command_buffer_, &pass, VK_SUBPASS_CONTENTS_INLINE);
-        vkCmdEndRenderPass(command_buffer_);
+        vkCmdBeginRenderPass(command_buffer, &pass, VK_SUBPASS_CONTENTS_INLINE);
+        vkCmdEndRenderPass(command_buffer);
 
-        check(vkEndCommandBuffer(command_buffer_), "vkEndCommandBuffer window_clear");
+        check(vkEndCommandBuffer(command_buffer), "vkEndCommandBuffer window_clear");
     }
 
     FrameResult draw_frame() {
-        check(vkWaitForFences(device_, 1, &frame_fence_, VK_TRUE, UINT64_MAX),
-              "vkWaitForFences frame");
+        cubey::vulkan::FrameResources& frame = frame_resources();
+        cubey::vulkan::Swapchain& active_swapchain = swapchain();
+        frame.wait_for_frame();
 
         std::uint32_t image_index = 0;
-        VkResult acquired = vkAcquireNextImageKHR(device_, swapchain_, UINT64_MAX, image_available_,
-                                                  VK_NULL_HANDLE, &image_index);
+        VkResult acquired =
+            vkAcquireNextImageKHR(device_, active_swapchain.handle(), UINT64_MAX,
+                                  frame.image_available(), VK_NULL_HANDLE, &image_index);
         if (acquired == VK_ERROR_OUT_OF_DATE_KHR) {
             return FrameResult::RecreateSwapchain;
         }
@@ -479,26 +315,30 @@ class WindowClearApp {
         }
         bool recreate_after_present = acquired == VK_SUBOPTIMAL_KHR;
 
-        check(vkResetFences(device_, 1, &frame_fence_), "vkResetFences frame");
-        check(vkResetCommandBuffer(command_buffer_, 0), "vkResetCommandBuffer frame");
+        frame.reset_fence();
+        frame.reset_command_buffer();
         record_clear_frame(image_index);
 
         VkPipelineStageFlags wait_stage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
         auto submit = vk_struct<VkSubmitInfo>(VK_STRUCTURE_TYPE_SUBMIT_INFO);
         submit.waitSemaphoreCount = 1;
-        submit.pWaitSemaphores = &image_available_;
+        VkSemaphore image_available = frame.image_available();
+        submit.pWaitSemaphores = &image_available;
         submit.pWaitDstStageMask = &wait_stage;
         submit.commandBufferCount = 1;
-        submit.pCommandBuffers = &command_buffer_;
+        VkCommandBuffer command_buffer = frame.command_buffer();
+        submit.pCommandBuffers = &command_buffer;
         submit.signalSemaphoreCount = 1;
-        submit.pSignalSemaphores = &present_ready_;
-        check(vkQueueSubmit(queue_, 1, &submit, frame_fence_), "vkQueueSubmit window_clear");
+        VkSemaphore present_ready = frame.present_ready();
+        submit.pSignalSemaphores = &present_ready;
+        check(vkQueueSubmit(queue_, 1, &submit, frame.fence()), "vkQueueSubmit window_clear");
 
         auto present = vk_struct<VkPresentInfoKHR>(VK_STRUCTURE_TYPE_PRESENT_INFO_KHR);
         present.waitSemaphoreCount = 1;
-        present.pWaitSemaphores = &present_ready_;
+        present.pWaitSemaphores = &present_ready;
         present.swapchainCount = 1;
-        present.pSwapchains = &swapchain_;
+        VkSwapchainKHR swapchain_handle = active_swapchain.handle();
+        present.pSwapchains = &swapchain_handle;
         present.pImageIndices = &image_index;
         VkResult presented = vkQueuePresentKHR(queue_, &present);
         if (presented == VK_ERROR_OUT_OF_DATE_KHR || presented == VK_SUBOPTIMAL_KHR) {
@@ -511,8 +351,8 @@ class WindowClearApp {
     }
 
     void render_window() {
-        std::printf("window_clear: %s clearing swapchain at %ux%u\n", device_properties_.deviceName,
-                    swapchain_extent_.width, swapchain_extent_.height);
+        std::printf("window_clear: %s clearing swapchain at %ux%u\n", vulkan_device().device_name(),
+                    swapchain().extent().width, swapchain().extent().height);
 
         std::uint32_t frame = 0;
         std::uint32_t consecutive_recreates = 0;
@@ -546,6 +386,27 @@ class WindowClearApp {
         check(vkDeviceWaitIdle(device_), "vkDeviceWaitIdle after window_clear");
     }
 
+    cubey::vulkan::Swapchain& swapchain() {
+        if (!swapchain_.has_value()) {
+            throw std::runtime_error("swapchain is not initialized");
+        }
+        return swapchain_.value();
+    }
+
+    cubey::vulkan::Device& vulkan_device() {
+        if (!device_owner_.has_value()) {
+            throw std::runtime_error("Vulkan device is not initialized");
+        }
+        return device_owner_.value();
+    }
+
+    cubey::vulkan::FrameResources& frame_resources() {
+        if (!frame_resources_.has_value()) {
+            throw std::runtime_error("frame resources are not initialized");
+        }
+        return frame_resources_.value();
+    }
+
     RunConfig config_;
     bool glfw_initialized_ = false;
     bool framebuffer_resized_ = false;
@@ -553,27 +414,15 @@ class WindowClearApp {
 
     std::optional<cubey::vulkan::Instance> instance_owner_;
     std::optional<cubey::vulkan::Device> device_owner_;
+    std::optional<cubey::vulkan::Swapchain> swapchain_;
+    std::optional<cubey::vulkan::FrameResources> frame_resources_;
     VkInstance instance_ = VK_NULL_HANDLE;
     VkSurfaceKHR surface_ = VK_NULL_HANDLE;
-    VkPhysicalDevice physical_device_ = VK_NULL_HANDLE;
-    VkPhysicalDeviceProperties device_properties_{};
     VkDevice device_ = VK_NULL_HANDLE;
     VkQueue queue_ = VK_NULL_HANDLE;
-    std::uint32_t queue_family_ = 0;
 
-    VkSwapchainKHR swapchain_ = VK_NULL_HANDLE;
-    VkSurfaceFormatKHR surface_format_{};
-    VkExtent2D swapchain_extent_{};
-    std::vector<VkImage> swapchain_images_;
-    std::vector<VkImageView> swapchain_views_;
     std::vector<VkFramebuffer> framebuffers_;
     VkRenderPass render_pass_ = VK_NULL_HANDLE;
-
-    VkCommandPool command_pool_ = VK_NULL_HANDLE;
-    VkCommandBuffer command_buffer_ = VK_NULL_HANDLE;
-    VkSemaphore image_available_ = VK_NULL_HANDLE;
-    VkSemaphore present_ready_ = VK_NULL_HANDLE;
-    VkFence frame_fence_ = VK_NULL_HANDLE;
 };
 
 } // namespace

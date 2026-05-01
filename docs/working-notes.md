@@ -21,8 +21,11 @@ As of 2026-05-01:
   `cubey::vulkan::Instance` owns validation/debug-utils setup, and
   `cubey::vulkan::Device` owns physical-device selection, logical-device
   lifetime, and queue access.
-- GLFW window setup, surface creation, swapchain, render pass, framebuffers,
-  command buffers, sync, and clear/present behavior remain example-local.
+- Promoted `cubey::vulkan::Swapchain` for swapchain/image-view ownership and
+  `cubey::vulkan::FrameResources` for a single command pool, command buffer,
+  semaphores, and fence.
+- GLFW window setup, surface creation, render pass, framebuffers, command
+  recording, acquire/present behavior, and resize policy remain example-local.
 - The current terminal session has no display, so direct local execution reports
   `window_clear: glfwInit failed`; CTest accepts that as the expected no-display
   smoke result.
@@ -94,3 +97,11 @@ As of 2026-04-28:
   work has formatting, warning, and doc conventions in place.
 - Captured roadmap and working notes as living docs to keep short-term context
   close to the codebase.
+
+### 2026-05-01
+
+- Kept the Vulkan slice focused on reusable ownership boundaries: instance,
+  device, swapchain images/views, and single-frame command/sync state belong in
+  `cubey`; GLFW and the clear/present loop stay in `examples/window_clear`.
+- Direct terminal smoke still reports `glfwInit failed` in this no-display
+  session, while CTest treats that as an acceptable environment boundary.
