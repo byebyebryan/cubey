@@ -70,13 +70,17 @@ Current checkpoint:
 - `examples/triangle` links against `cubey`, compiles vertex/fragment shaders
   at build time, creates an example-local graphics pipeline, and draws a
   `gl_VertexIndex` triangle.
+- `examples/spinning_cube` links against `cubey`, compiles vertex/fragment
+  shaders at build time, draws shader-generated cube geometry, updates an MVP
+  matrix through push constants, and uses an example-local depth attachment.
 - The remaining visible app implementation is intentionally example-local: GLFW
-  window setup, surface creation, render pass, pipeline layout/pipeline,
-  framebuffers, command recording, acquire/present behavior, and resize policy.
+  window setup, surface creation, render pass, pipeline layout/pipeline, depth
+  resources, framebuffers, command recording, acquire/present behavior, and
+  resize policy.
 - Dev CTest covers the target in both graphical and no-display terminal
   sessions.
 - Headless rendering, compute, frame overlap, richer render pass/pipeline
-  helpers, buffers/images/staging, and the textured cube remain future slices.
+  helpers, buffers/images/staging, and a textured cube remain future slices.
 
 ## Phase 2: Resource Layer and App API
 

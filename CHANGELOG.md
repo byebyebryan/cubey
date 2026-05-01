@@ -26,6 +26,8 @@ versioned section and use that section as the release notes.
   smoke executable.
 - `examples/triangle`, a minimal shader-backed Vulkan graphics pipeline smoke
   executable using `gl_VertexIndex`.
+- `examples/spinning_cube`, a shader-generated cube smoke executable with push
+  constants, animation, and an example-local depth attachment.
 - CTest smoke that accepts either successful window startup or the known
   no-display GLFW failure in terminal sessions.
 
@@ -39,9 +41,9 @@ versioned section and use that section as the release notes.
   swapchain, and frame-resource primitives while keeping GLFW, surface creation,
   render pass, framebuffers, command recording, acquire/present behavior, and
   resize policy example-local.
-- Shader-backed examples keep render pass, pipeline, framebuffers, command
-  recording, acquire/present behavior, and resize policy local until the
-  repeated shape is clearer.
+- Shader-backed examples keep render pass, pipeline, depth resources,
+  framebuffers, command recording, acquire/present behavior, and resize policy
+  local until the repeated shape is clearer.
 
 ## Pre-2.0 History
 

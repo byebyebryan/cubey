@@ -27,9 +27,12 @@ As of 2026-05-01:
 - Promoted `cubey::vulkan::ShaderModule` and added CMake GLSL-to-SPIR-V shader
   compilation with `glslangValidator`.
 - Added `examples/triangle` as the first shader-backed graphics pipeline smoke.
-- GLFW window setup, surface creation, render pass, graphics pipeline,
-  framebuffers, command recording, acquire/present behavior, and resize policy
-  remain example-local.
+- Added `examples/spinning_cube` to exercise push constants, per-frame MVP
+  animation, depth format selection, and example-local depth image/view
+  resources.
+- GLFW window setup, surface creation, render pass, graphics pipeline, depth
+  resources, framebuffers, command recording, acquire/present behavior, and
+  resize policy remain example-local.
 - The current terminal session has no display, so direct local execution reports
   `glfwInit failed`; CTest accepts that as the expected no-display smoke result.
 - The next useful manual desktop smokes are:
@@ -37,6 +40,7 @@ As of 2026-05-01:
 ```bash
 ./build/dev/examples/window_clear/window_clear --require-validation --frames 300 --width 1280 --height 720
 ./build/dev/examples/triangle/triangle --require-validation --frames 300 --width 1280 --height 720
+./build/dev/examples/spinning_cube/spinning_cube --require-validation --frames 300 --width 1280 --height 720
 ```
 
 As of 2026-04-28:
@@ -77,6 +81,22 @@ As of 2026-04-28:
   optionally enable during manual debugging.
 - Visible and headless rendering need to stay healthy together. Headless gives
   the project inspectable artifacts and better automated feedback.
+- The Codex terminal may not inherit the desktop Wayland variables even when a
+  niri session is active. For graphical smoke tests from that shell, inject the
+  window context explicitly:
+
+```bash
+env XDG_RUNTIME_DIR=/run/user/1000 WAYLAND_DISPLAY=wayland-1 DISPLAY=:1 XDG_CURRENT_DESKTOP=niri \
+  ctest --preset dev --output-on-failure
+```
+
+- If every visible example fails with
+  `vkEnumeratePhysicalDevices count failed with VkResult -3` and
+  `vulkaninfo --summary` also fails, check the host driver before debugging
+  Cubey. On 2026-05-01 this was an NVIDIA userspace/kernel-module mismatch
+  after a package upgrade: installed userspace was `595.71.05`, but the loaded
+  kernel module was still `595.58.03`; rebooting into the upgraded kernel/module
+  should be the first fix.
 
 ### Repo / Build
 
@@ -112,3 +132,6 @@ As of 2026-04-28:
 - Added the first shader-backed example without promoting render pass or
   pipeline abstractions yet. The repeated code between `window_clear` and
   `triangle` is now useful evidence for the next promotion decision.
+- Added a spinning cube without adding vertex/index buffers yet. The useful new
+  signal is depth ownership and push constants; buffers, image uploads, and
+  texture sampling remain separate future slices.

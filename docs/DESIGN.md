@@ -231,6 +231,7 @@ cubey/
     window_clear/          -- minimal visible Vulkan clear/present path; owns
                               example-specific app code
     triangle/              -- minimal shader-backed graphics pipeline path
+    spinning_cube/         -- shader-generated cube, push constants, depth
     headless_render/       -- minimal offscreen image path
   projects/
       fluid_sim/

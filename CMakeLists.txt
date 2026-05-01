@@ -55,4 +55,5 @@ if (CUBEY_BUILD_EXAMPLES)
 
     add_subdirectory(examples/window_clear)
     add_subdirectory(examples/triangle)
+    add_subdirectory(examples/spinning_cube)
 endif()

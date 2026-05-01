@@ -38,12 +38,13 @@ See:
 
 Main now contains the first visible-surface examples: `examples/window_clear`
 for raw clear/present and `examples/triangle` for build-time GLSL shaders plus
-graphics pipeline setup. `cubey` owns the reusable Vulkan instance, device,
-swapchain, shader-module, and single-frame command/sync primitives; examples
-still own GLFW, surface creation, render passes, framebuffers, command
-recording, acquire/present behavior, and resize policy. The spike branches
-remain reference material for later compute, textured-cube, headless, and
-browser work.
+graphics pipeline setup. `examples/spinning_cube` adds push constants, per-frame
+animation, and a depth attachment without introducing buffer/staging work yet.
+`cubey` owns the reusable Vulkan instance, device, swapchain, shader-module, and
+single-frame command/sync primitives; examples still own GLFW, surface creation,
+render passes, depth images, framebuffers, command recording, acquire/present
+behavior, and resize policy. The spike branches remain reference material for
+later compute, textured-cube, headless, and browser work.
 
 ## Development Setup
 
@@ -62,6 +63,7 @@ The visible-surface smoke targets are:
 ```bash
 ./build/dev/examples/window_clear/window_clear --frames 300 --width 1280 --height 720
 ./build/dev/examples/triangle/triangle --frames 300 --width 1280 --height 720
+./build/dev/examples/spinning_cube/spinning_cube --frames 300 --width 1280 --height 720
 ```
 
 Use validation as a hard requirement when the validation layers are installed:
@@ -69,6 +71,7 @@ Use validation as a hard requirement when the validation layers are installed:
 ```bash
 ./build/dev/examples/window_clear/window_clear --require-validation --frames 300 --width 1280 --height 720
 ./build/dev/examples/triangle/triangle --require-validation --frames 300 --width 1280 --height 720
+./build/dev/examples/spinning_cube/spinning_cube --require-validation --frames 300 --width 1280 --height 720
 ```
 
 The repo also includes:
