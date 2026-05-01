@@ -2,7 +2,10 @@
 
 ## What It Is
 
-A minimal C++ framework for GPU-driven procedural graphics experiments and demos. Not a game engine, not a framework for others to build on — a personal workbench for trying things out quickly.
+A minimal C++ library and workbench for GPU-driven procedural graphics
+experiments. Not a game engine, not a polished external SDK - a personal
+workbench for trying graphics ideas quickly while keeping the reusable runtime
+small and explicit.
 
 ## Origin
 
@@ -12,10 +15,10 @@ This is a ground-up rewrite carrying forward the same spirit with modern tools a
 
 ## Guiding Principles
 
-- **Minimal framework, maximum demo.** The C++ framework exists to get out of the way. The interesting work happens in shaders and compute.
+- **Minimal library, maximum project.** The C++ runtime exists to get out of the way. The interesting work happens in shaders and compute.
 - **Primary target: desktop with full GPU power.** No compromises for portability. Native Vulkan is the foundation.
-- **WebGPU is optional and deferred.** Dawn/WebGPU remains useful for browser-facing demos later, but it should not shape the first renderer abstraction.
-- **Headless rendering is first-class.** Every demo can render to image without a window. Enables automated testing and AI-assisted development.
+- **WebGPU is optional and deferred.** Dawn/WebGPU remains useful for browser-facing showcases later, but it should not shape the first renderer abstraction.
+- **Headless rendering is first-class.** Every project should eventually render to image without a window. Enables automated testing and AI-assisted development.
 - **Shaders compile at build time.** No runtime hot-reload complexity. GLSL → SPIR-V via glslangValidator at build time.
 
 ## Technology Stack
@@ -25,7 +28,7 @@ This is a ground-up rewrite carrying forward the same spirit with modern tools a
 | Language | C++20 | Concepts, ranges, std::format, std::span |
 | Build | CMake + Ninja | Cross-platform, fast incremental builds |
 | Primary GPU API | Vulkan | Full GPU control, async compute, no feature ceiling |
-| Optional future API | WebGPU (Dawn) | Browser demos if the project earns that need |
+| Optional future API | WebGPU (Dawn) | Browser showcases if the project earns that need |
 | Windowing | GLFW | Minimal, Vulkan-native surface creation |
 | UI | ImGui | Industry standard debug UI |
 | Math | GLM | Familiar, header-only, Vulkan-friendly |
@@ -36,7 +39,7 @@ This is a ground-up rewrite carrying forward the same spirit with modern tools a
 
 ```
                     +---------------------+
-                    |     Demo Layer      |  <-- fluid sim, SDF sculpt, particles, etc.
+                    | Projects / Examples |  <-- fluid sim, SDF sculpt, particles, etc.
                     +----------+----------+
                                |
                     +----------v----------+
@@ -64,15 +67,16 @@ The near-term Vulkan renderer should split around real ownership boundaries:
 - `Buffer` / `Image` — allocation, views, staging uploads, readback
 - `Shader` / `Pipeline` — build-time shader paths, compute and graphics pipelines
 - `FrameResources` — command buffers, semaphores, fences, N-frames-in-flight
-- demo/pass code — the actual procedural experiments
+- project/pass code — the actual procedural experiments
 
 These seams should be practical C++ modules first. A future WebGPU backend can
-be reconsidered if the project needs browser demos, but it should be driven by a
+be reconsidered if the project needs browser showcases, but it should be driven by a
 real use case rather than by symmetry.
 
 ### Resource Vocabulary
 
-Demos should eventually interact with a small set of renderer-level concepts:
+Projects and examples should eventually interact with a small set of
+renderer-level concepts:
 
 - `Buffer` — GPU buffer (vertex, storage, uniform, index, indirect)
 - `Texture2D`, `Texture3D` — image data
@@ -83,7 +87,7 @@ Core operations: create resources, dispatch compute, draw, synchronize, submit,
 present, and read back. In the first version, those operations map directly to
 Vulkan and remain free to expose Vulkan-specific requirements where useful.
 
-### Demo Interface
+### App Interface
 
 ```cpp
 struct App {
@@ -99,13 +103,13 @@ struct App {
 Entry point:
 ```cpp
 int main() {
-    return cubey::run<MyDemo>(Config{.title = "fluid sim", .width = 1280, .height = 720});
+    return cubey::run<MyProject>(Config{.title = "fluid sim", .width = 1280, .height = 720});
 }
 ```
 
 ## Testing & Feedback Loop
 
-Every demo supports two modes:
+Every non-trivial project should eventually support two modes:
 
 **Interactive:** Opens a window, renders at 60fps, ImGui controls for parameters.
 
@@ -125,13 +129,13 @@ This is critical for AI-assisted development — the agent gets structured pass/
 ## Shader Strategy
 
 - **Desktop (Vulkan):** GLSL → SPIR-V at build time via glslangValidator
-- **Web (future WebGPU):** WGSL versions only for demos that explicitly need browser builds
-- Not all demos need web versions; complex experiments stay desktop-only
+- **Web (future WebGPU):** WGSL versions only for projects that explicitly need browser builds
+- Not all projects need web versions; complex experiments stay desktop-only
 - Shared shader includes (noise functions, math utilities) in a common directory
 
-## Projected Demos
+## Projected Projects
 
-| Demo | Source | Notes |
+| Project | Source | Notes |
 |------|--------|-------|
 | Fluid Simulation | cubey1 rewrite | Eulerian 3D fluid sim, compute-based, raymarched volume rendering |
 | Particle System | cubey1 rewrite | GPU particles, compute + indirect draw (replacing geometry shader) |
@@ -151,28 +155,73 @@ Do not copy Filament's backend/frontend split yet. Cubey does not currently
 need multiple production backends, and Dawn/WebGPU already provides an
 abstraction layer where browser portability is the goal.
 
-## Directory Structure (Target)
+## Repository Structure
+
+Cubey is becoming a small C++ monorepo. The primary target is the `cubey`
+library. Runnable binaries should be named explicitly and live in either
+`examples/` or `projects/`:
+
+- `include/cubey/` - public library headers. These define the include discipline
+  used by examples, projects, and tests.
+- `src/cubey/` - library implementation and private headers.
+- `examples/` - small, focused reference programs that prove one concept or API
+  path, such as `window_clear` or `headless_render`.
+- `projects/` - first-class graphics experiments and longer-lived creative
+  work, such as `fluid_sim`, `particles`, `marching_cubes`, `fractal`, and
+  `sdf_sculpt`.
+- `tools/` - repo utilities, asset processors, shader tools, or diagnostics.
+- `tests/` - unit and integration tests.
+- `benchmarks/` - performance targets once there is something meaningful to
+  measure.
+
+CMake should model this as explicit targets, not source-folder convention. The
+dependency direction is:
+
+```
+cubey library
+  ^
+  |
+examples / projects / tools / tests / benchmarks
+```
+
+Projects can depend on `cubey`; `cubey` must not depend on projects. Shared code
+either graduates into `cubey` or stays local to the project that needs it.
+
+The `cubey` target should expose public headers now, but it should not gain
+install/export/package rules until the project genuinely needs external
+consumption and versioning.
 
 ```
 cubey/
   CMakeLists.txt
   CHANGELOG.md             -- release-note source
   LICENSE                  -- MIT license
+  include/
+    cubey/
+      app_config.h         -- shared run configuration
+      runtime.h            -- app/runtime entrypoints
+      vulkan/              -- public Vulkan-facing runtime types as needed
   src/
     cubey/
-      app.h/cpp           -- lifecycle, run loop
-      renderer.h/cpp       -- high-level renderer facade used by demos
-      device_vk.h/cpp      -- instance/device/queue/validation
-      swapchain_vk.h/cpp   -- surface, swapchain, resize/present
-      resources_vk.h/cpp   -- buffers, images, views, staging/readback
-      pipeline_vk.h/cpp    -- shader modules, pipeline layouts, pipelines
-      frame_vk.h/cpp       -- command buffers, sync objects, frame state
-      window.h/cpp         -- GLFW window + input
-      camera.h/cpp         -- orbit camera
-      imgui_layer.h/cpp    -- ImGui init/frame/shutdown
-    demos/
+      app_config.cpp
+      runtime.cpp          -- lifecycle, run loop
+      vulkan/
+        instance.cpp       -- instance, validation, debug messenger
+        device.cpp         -- physical/logical device, queues
+        window.cpp         -- GLFW window + input
+        swapchain.cpp      -- surface extent, present, resize/recreate
+        resources.cpp      -- buffers, images, views, staging/readback
+        pipeline.cpp       -- shader modules, pipeline layouts, pipelines
+        frame.cpp          -- command buffers, sync objects, frame state
+      camera.cpp           -- orbit camera
+      imgui_layer.cpp      -- ImGui init/frame/shutdown
+  examples/
+    window_clear/          -- minimal visible Vulkan clear/present path
+    headless_render/       -- minimal offscreen image path
+  projects/
       fluid_sim/
-        fluid_sim.h/cpp
+        CMakeLists.txt
+        main.cpp
         shaders/
           fluid_advect.comp.glsl
           fluid_diffuse.comp.glsl
@@ -182,6 +231,9 @@ cubey/
       particles/
       marching_cubes/
       fractal/
+  tools/
+  tests/
+  benchmarks/
   shaders/                 -- shared GLSL includes (noise, math)
   assets/                  -- textures, meshes
   docs/
@@ -206,6 +258,6 @@ cubey/
 - A game engine
 - A framework others build on
 - A cross-platform compatibility layer
-- A dual Vulkan/WebGPU backend abstraction before there is a concrete web-demo need
+- A dual Vulkan/WebGPU backend abstraction before there is a concrete browser-facing project need
 - Runtime shader hot-reload
 - A material/render-pass pipeline system

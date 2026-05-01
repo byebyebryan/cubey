@@ -13,8 +13,11 @@ As of 2026-04-28:
   scaffolding only.
 - `webgpu` and `vulkan` remain spike branches.
 - The project direction is Vulkan-first for the main renderer.
-- The next implementation slice is to bring the Vulkan spike back into `main`
-  as small modules instead of one large experiment file.
+- The primary CMake target should be the `cubey` library. Runnable programs
+  should be explicit examples or projects, starting with
+  `examples/window_clear`.
+- The next implementation slice is to bring the visible Vulkan clear/present
+  path back into `main` as small modules instead of one large experiment file.
 
 ## Hiccups and Gotchas
 
@@ -49,6 +52,11 @@ As of 2026-04-28:
 - Keep build artifacts out of Git with ignored `build*/` directories.
 - `CHANGELOG.md` is the release-note source. Avoid separate release-note files
   until real releases make that worthwhile.
+- Keep `include/cubey/` as the public include surface for in-repo examples,
+  projects, and tests. Defer install/export/package rules until external
+  consumption becomes real.
+- Use `examples/` for minimal reference programs and `projects/` for
+  long-lived graphics experiments.
 - Prefer adding CI once `main` has a real source target and smoke command to
   exercise. Empty CI would add maintenance without much signal.
 

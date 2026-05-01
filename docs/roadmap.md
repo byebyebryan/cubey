@@ -20,6 +20,8 @@ Goal: make `main` a clean place to build from before porting spike code.
 - Formatting, linting, editor, Git text-normalization, and warning defaults.
 - License, changelog/release-note source, roadmap, and working notes.
 - C++ style guide for formatting, naming, ownership, and Vulkan structure.
+- Explicit monorepo shape: `cubey` as the primary library, `examples/` for
+  focused reference programs, and `projects/` for first-class graphics work.
 
 Exit criteria:
 
@@ -31,6 +33,9 @@ Exit criteria:
 
 Goal: reshape the successful Vulkan spike into maintainable mainline modules.
 
+- Primary `cubey` static library with public headers under `include/cubey/`.
+- First runnable example under `examples/window_clear/`, not a generic `cubey`
+  executable.
 - CLI/config surface for visible and headless modes.
 - GLFW window creation and Vulkan surface ownership.
 - Vulkan instance, physical device, logical device, queues, validation layers,
@@ -42,35 +47,37 @@ Goal: reshape the successful Vulkan spike into maintainable mainline modules.
 
 Exit criteria:
 
-- Visible smoke opens a window and renders a simple GPU result.
+- `cubey` builds as the primary library target and examples link against it.
+- `window_clear` opens a window and renders a simple GPU result.
 - Headless smoke renders and writes an inspectable image.
 - Validation-layer smoke can be required from the command line.
 - Resize and swapchain recreation remain first-class tested behavior.
 
-## Phase 2: Resource Layer and Demo API
+## Phase 2: Resource Layer and App API
 
-Goal: make demos concise without hiding important Vulkan constraints.
+Goal: make examples and projects concise without hiding important Vulkan
+constraints.
 
 - RAII wrappers for buffers, images, image views, shader modules, pipelines, and
   frame-owned synchronization.
 - Staging upload and readback paths for meshes, textures, uniforms, and compute
   outputs.
-- A small demo interface for setup, update, render, UI, and input hooks.
+- A small app interface for setup, update, render, UI, and input hooks.
 - Practical renderer vocabulary for buffers, textures, pipelines, bind groups,
   dispatch, draw, submit, present, and readback.
 
 Exit criteria:
 
-- Demo code can focus on shader/data behavior instead of raw setup boilerplate.
+- Project code can focus on shader/data behavior instead of raw setup boilerplate.
 - Vulkan synchronization and image layout requirements remain visible where
   they matter.
-- Headless and visible runs share the same demo code path where practical.
+- Headless and visible runs share the same project code path where practical.
 
-## Phase 3: First Real Demo
+## Phase 3: First Real Project
 
-Goal: prove the framework with one non-trivial procedural graphics demo.
+Goal: prove the framework with one non-trivial procedural graphics project.
 
-Candidate demos:
+Candidate projects:
 
 - Fractal renderer for the fastest end-to-end visual loop.
 - GPU particle system for compute plus graphics pipeline pressure.
@@ -78,8 +85,8 @@ Candidate demos:
 
 Exit criteria:
 
-- The demo runs interactively with a window.
-- The same demo can run headlessly for a fixed number of frames and produce a
+- The project runs interactively with a window.
+- The same project can run headlessly for a fixed number of frames and produce a
   deterministic output artifact.
 - README contains the exact commands for local smoke testing.
 
@@ -87,8 +94,8 @@ Exit criteria:
 
 - ImGui debug controls.
 - Orbit camera and common interaction helpers.
-- Ports of original cubey demos: fluid simulation, particles, marching cubes,
+- Ports of original cubey projects: fluid simulation, particles, marching cubes,
   fractals, and camera/shadow tests.
 - SDF sculpting experiments from `projectR` if the resource model holds up.
-- WebGPU/browser revisit only after a concrete browser-facing demo earns the
+- WebGPU/browser revisit only after a concrete browser-facing project earns the
   extra shader and platform surface area.
