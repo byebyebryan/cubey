@@ -186,6 +186,9 @@ examples / projects / tools / tests / benchmarks
 
 Projects can depend on `cubey`; `cubey` must not depend on projects. Shared code
 either graduates into `cubey` or stays local to the project that needs it.
+Example-specific app behavior should stay in that example. The `cubey` library
+should contain reusable runtime/platform pieces, not named examples such as
+`window_clear`.
 
 The `cubey` target should expose public headers now, but it should not gain
 install/export/package rules until the project genuinely needs external
@@ -199,12 +202,12 @@ cubey/
   include/
     cubey/
       app_config.h         -- shared run configuration
-      runtime.h            -- app/runtime entrypoints
-      vulkan/              -- public Vulkan-facing runtime types as needed
+      runtime.h            -- future reusable app/runtime entrypoints
+      vulkan/              -- future public Vulkan-facing runtime types as needed
   src/
     cubey/
       app_config.cpp
-      runtime.cpp          -- lifecycle, run loop
+      runtime.cpp          -- future lifecycle/run-loop implementation
       vulkan/
         instance.cpp       -- instance, validation, debug messenger
         device.cpp         -- physical/logical device, queues
@@ -216,7 +219,8 @@ cubey/
       camera.cpp           -- orbit camera
       imgui_layer.cpp      -- ImGui init/frame/shutdown
   examples/
-    window_clear/          -- minimal visible Vulkan clear/present path
+    window_clear/          -- minimal visible Vulkan clear/present path; owns
+                              example-specific app code
     headless_render/       -- minimal offscreen image path
   projects/
       fluid_sim/

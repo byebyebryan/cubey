@@ -36,8 +36,11 @@ See:
 | `webgpu` | Dawn native plus emdawnwebgpu browser experiment | Successful API/prototyping spike; not the primary path |
 | `vulkan` | Native Vulkan visible/headless experiment | Successful; informs the mainline renderer direction |
 
-Main remains docs-first until the Vulkan spike is reshaped into a maintainable
-foundation.
+Main now contains the first visible-surface slice: the `cubey` library plus a
+minimal `examples/window_clear` executable. The example owns its clear/present
+app code; reusable Vulkan pieces should move into `cubey` only after they are
+shaped as library primitives. The spike branches remain reference material for
+later compute, textured-cube, headless, and browser work.
 
 ## Development Setup
 
@@ -47,6 +50,18 @@ Use the CMake presets as the default entrypoint:
 cmake --preset dev
 cmake --build --preset dev
 ctest --preset dev
+```
+
+The first visible-surface smoke target is:
+
+```bash
+./build/dev/examples/window_clear/window_clear --frames 300 --width 1280 --height 720
+```
+
+Use validation as a hard requirement when the validation layers are installed:
+
+```bash
+./build/dev/examples/window_clear/window_clear --require-validation --frames 300 --width 1280 --height 720
 ```
 
 The repo also includes:

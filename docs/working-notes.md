@@ -7,6 +7,25 @@ decisions into `docs/DESIGN.md`, `docs/roadmap.md`, or
 
 ## Current Checkpoint
 
+As of 2026-05-01:
+
+- `main` has moved from docs/tooling-only to the first implementation slice.
+- The primary target is `cubey`, a static library with public headers under
+  `include/cubey/`.
+- `examples/window_clear` is the first runnable. It creates a GLFW/Vulkan
+  visible surface, clears a swapchain image, presents it, and handles
+  out-of-date/resize recreation.
+- `window_clear` is example code, not library API. Keep named example behavior
+  under `examples/`; promote only reusable primitives into `cubey`.
+- The current terminal session has no display, so direct local execution reports
+  `window_clear: glfwInit failed`; CTest accepts that as the expected no-display
+  smoke result.
+- The next useful manual desktop smoke is:
+
+```bash
+./build/dev/examples/window_clear/window_clear --require-validation --frames 300 --width 1280 --height 720
+```
+
 As of 2026-04-28:
 
 - `main` is intentionally lightweight: docs, repo setup, and build/tooling

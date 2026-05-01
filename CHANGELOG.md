@@ -15,11 +15,18 @@ versioned section and use that section as the release notes.
 - Vulkan-first renderer direction docs based on the WebGPU and Vulkan spikes.
 - Living roadmap and working-notes docs.
 - MIT license, matching the original cubey branch.
+- `cubey` static library target with public headers under `include/cubey/`.
+- `examples/window_clear`, a minimal Vulkan/GLFW visible-surface clear/present
+  smoke executable.
+- CTest smoke that accepts either successful window startup or the known
+  no-display GLFW failure in terminal sessions.
 
 ### Changed
 
 - Cubey 2.0 is framed as a ground-up native Vulkan workbench rather than an
   OpenGL continuation or WebGPU-first rewrite.
+- Runnable targets are explicit examples/projects rather than a generic `cubey`
+  executable.
 
 ## Pre-2.0 History
 

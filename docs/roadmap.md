@@ -12,7 +12,7 @@ but it is not the architecture driver for the main renderer.
 
 ## Phase 0: Repo Foundation
 
-Status: in progress.
+Status: complete for the first implementation slice.
 
 Goal: make `main` a clean place to build from before porting spike code.
 
@@ -30,6 +30,8 @@ Exit criteria:
 - Empty-project build and tooling presets work cleanly.
 
 ## Phase 1: Vulkan Runtime Skeleton
+
+Status: in progress.
 
 Goal: reshape the successful Vulkan spike into maintainable mainline modules.
 
@@ -52,6 +54,19 @@ Exit criteria:
 - Headless smoke renders and writes an inspectable image.
 - Validation-layer smoke can be required from the command line.
 - Resize and swapchain recreation remain first-class tested behavior.
+
+Current checkpoint:
+
+- `cubey` static library target exists.
+- `examples/window_clear` links against `cubey` and clears/presents a swapchain
+  image through Vulkan/GLFW.
+- The `window_clear` app implementation is intentionally example-local. Promote
+  Vulkan code into `cubey` only when it becomes reusable instance/device/window/
+  swapchain primitives.
+- Dev CTest covers the target in both graphical and no-display terminal
+  sessions.
+- Headless rendering, shader compilation, compute, frame overlap, and the
+  textured cube remain future slices.
 
 ## Phase 2: Resource Layer and App API
 
