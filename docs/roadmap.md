@@ -63,15 +63,20 @@ Current checkpoint:
   `FrameResources` primitives now own validation/debug-utils setup,
   physical-device selection, logical-device lifetime, queue access, swapchain
   image/view ownership, and single-frame command/sync resources.
+- Reusable `cubey::vulkan::ShaderModule` exists, and CMake can compile GLSL to
+  SPIR-V with `glslangValidator` for example targets.
 - `examples/window_clear` links against `cubey` and clears/presents a swapchain
   image through Vulkan/GLFW.
-- The remaining `window_clear` app implementation is intentionally
-  example-local: GLFW window setup, surface creation, render pass,
+- `examples/triangle` links against `cubey`, compiles vertex/fragment shaders
+  at build time, creates an example-local graphics pipeline, and draws a
+  `gl_VertexIndex` triangle.
+- The remaining visible app implementation is intentionally example-local: GLFW
+  window setup, surface creation, render pass, pipeline layout/pipeline,
   framebuffers, command recording, acquire/present behavior, and resize policy.
 - Dev CTest covers the target in both graphical and no-display terminal
   sessions.
-- Headless rendering, shader compilation, compute, frame overlap, richer render
-  pass/pipeline helpers, and the textured cube remain future slices.
+- Headless rendering, compute, frame overlap, richer render pass/pipeline
+  helpers, buffers/images/staging, and the textured cube remain future slices.
 
 ## Phase 2: Resource Layer and App API
 

@@ -13,6 +13,7 @@ option(CUBEY_ENABLE_CLANG_TIDY "Run clang-tidy during builds" OFF)
 option(CUBEY_BUILD_EXAMPLES "Build Cubey examples" ON)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+include(CubeyShaders)
 include(CubeyWarnings)
 
 if (CUBEY_ENABLE_CLANG_TIDY)
@@ -53,4 +54,5 @@ if (CUBEY_BUILD_EXAMPLES)
     FetchContent_MakeAvailable(glfw)
 
     add_subdirectory(examples/window_clear)
+    add_subdirectory(examples/triangle)
 endif()

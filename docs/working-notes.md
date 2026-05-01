@@ -24,15 +24,19 @@ As of 2026-05-01:
 - Promoted `cubey::vulkan::Swapchain` for swapchain/image-view ownership and
   `cubey::vulkan::FrameResources` for a single command pool, command buffer,
   semaphores, and fence.
-- GLFW window setup, surface creation, render pass, framebuffers, command
-  recording, acquire/present behavior, and resize policy remain example-local.
+- Promoted `cubey::vulkan::ShaderModule` and added CMake GLSL-to-SPIR-V shader
+  compilation with `glslangValidator`.
+- Added `examples/triangle` as the first shader-backed graphics pipeline smoke.
+- GLFW window setup, surface creation, render pass, graphics pipeline,
+  framebuffers, command recording, acquire/present behavior, and resize policy
+  remain example-local.
 - The current terminal session has no display, so direct local execution reports
-  `window_clear: glfwInit failed`; CTest accepts that as the expected no-display
-  smoke result.
-- The next useful manual desktop smoke is:
+  `glfwInit failed`; CTest accepts that as the expected no-display smoke result.
+- The next useful manual desktop smokes are:
 
 ```bash
 ./build/dev/examples/window_clear/window_clear --require-validation --frames 300 --width 1280 --height 720
+./build/dev/examples/triangle/triangle --require-validation --frames 300 --width 1280 --height 720
 ```
 
 As of 2026-04-28:
@@ -105,3 +109,6 @@ As of 2026-04-28:
   `cubey`; GLFW and the clear/present loop stay in `examples/window_clear`.
 - Direct terminal smoke still reports `glfwInit failed` in this no-display
   session, while CTest treats that as an acceptable environment boundary.
+- Added the first shader-backed example without promoting render pass or
+  pipeline abstractions yet. The repeated code between `window_clear` and
+  `triangle` is now useful evidence for the next promotion decision.

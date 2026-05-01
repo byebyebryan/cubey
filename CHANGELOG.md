@@ -20,8 +20,12 @@ versioned section and use that section as the release notes.
   setup, physical-device selection, logical-device ownership, and queue access.
 - Public Vulkan `Swapchain` and `FrameResources` primitives for swapchain
   image/view ownership and single-frame command/sync resources.
+- Public Vulkan `ShaderModule` primitive and CMake GLSL-to-SPIR-V helper using
+  `glslangValidator`.
 - `examples/window_clear`, a minimal Vulkan/GLFW visible-surface clear/present
   smoke executable.
+- `examples/triangle`, a minimal shader-backed Vulkan graphics pipeline smoke
+  executable using `gl_VertexIndex`.
 - CTest smoke that accepts either successful window startup or the known
   no-display GLFW failure in terminal sessions.
 
@@ -35,6 +39,9 @@ versioned section and use that section as the release notes.
   swapchain, and frame-resource primitives while keeping GLFW, surface creation,
   render pass, framebuffers, command recording, acquire/present behavior, and
   resize policy example-local.
+- Shader-backed examples keep render pass, pipeline, framebuffers, command
+  recording, acquire/present behavior, and resize policy local until the
+  repeated shape is clearer.
 
 ## Pre-2.0 History
 

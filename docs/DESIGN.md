@@ -210,6 +210,7 @@ cubey/
         instance.h         -- instance, validation, debug messenger
         device.h           -- physical/logical device and queue ownership
         swapchain.h        -- swapchain images and image views
+        shader_module.h    -- shader module lifetime
         frame_resources.h  -- per-frame command/sync resources
   src/
     cubey/
@@ -221,13 +222,15 @@ cubey/
         window.cpp         -- GLFW window + input
         swapchain.cpp      -- surface extent, swapchain images/views
         resources.cpp      -- buffers, images, views, staging/readback
-        pipeline.cpp       -- shader modules, pipeline layouts, pipelines
+        shader_module.cpp  -- shader module lifetime
+        pipeline.cpp       -- future pipeline layouts and pipelines
         frame_resources.cpp -- command buffers and sync objects
       camera.cpp           -- orbit camera
       imgui_layer.cpp      -- ImGui init/frame/shutdown
   examples/
     window_clear/          -- minimal visible Vulkan clear/present path; owns
                               example-specific app code
+    triangle/              -- minimal shader-backed graphics pipeline path
     headless_render/       -- minimal offscreen image path
   projects/
       fluid_sim/

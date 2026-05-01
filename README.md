@@ -36,12 +36,14 @@ See:
 | `webgpu` | Dawn native plus emdawnwebgpu browser experiment | Successful API/prototyping spike; not the primary path |
 | `vulkan` | Native Vulkan visible/headless experiment | Successful; informs the mainline renderer direction |
 
-Main now contains the first visible-surface slice: the `cubey` library plus a
-minimal `examples/window_clear` executable. `cubey` owns the reusable Vulkan
-instance, device, swapchain, and single-frame command/sync primitives; the
-example still owns GLFW, surface creation, render pass, framebuffers, and the
-clear/acquire/present app loop. The spike branches remain reference material for
-later compute, textured-cube, headless, and browser work.
+Main now contains the first visible-surface examples: `examples/window_clear`
+for raw clear/present and `examples/triangle` for build-time GLSL shaders plus
+graphics pipeline setup. `cubey` owns the reusable Vulkan instance, device,
+swapchain, shader-module, and single-frame command/sync primitives; examples
+still own GLFW, surface creation, render passes, framebuffers, command
+recording, acquire/present behavior, and resize policy. The spike branches
+remain reference material for later compute, textured-cube, headless, and
+browser work.
 
 ## Development Setup
 
@@ -53,16 +55,20 @@ cmake --build --preset dev
 ctest --preset dev
 ```
 
-The first visible-surface smoke target is:
+Shader examples require `glslangValidator` at build time.
+
+The visible-surface smoke targets are:
 
 ```bash
 ./build/dev/examples/window_clear/window_clear --frames 300 --width 1280 --height 720
+./build/dev/examples/triangle/triangle --frames 300 --width 1280 --height 720
 ```
 
 Use validation as a hard requirement when the validation layers are installed:
 
 ```bash
 ./build/dev/examples/window_clear/window_clear --require-validation --frames 300 --width 1280 --height 720
+./build/dev/examples/triangle/triangle --require-validation --frames 300 --width 1280 --height 720
 ```
 
 The repo also includes:
