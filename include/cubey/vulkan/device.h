@@ -41,6 +41,9 @@ class Device {
         return properties_.deviceName;
     }
 
+    [[nodiscard]] std::uint32_t find_memory_type(std::uint32_t type_bits,
+                                                 VkMemoryPropertyFlags required) const;
+
     void wait_idle() const;
 
   private:

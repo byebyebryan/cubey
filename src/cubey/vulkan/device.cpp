@@ -39,6 +39,24 @@ Device::~Device() {
     }
 }
 
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+std::uint32_t Device::find_memory_type(std::uint32_t type_bits,
+                                       VkMemoryPropertyFlags required) const {
+    VkPhysicalDeviceMemoryProperties memory_properties{};
+    vkGetPhysicalDeviceMemoryProperties(physical_device_, &memory_properties);
+
+    for (std::uint32_t i = 0; i < memory_properties.memoryTypeCount; ++i) {
+        const bool type_matches = (type_bits & (1U << i)) != 0;
+        const bool flags_match =
+            (memory_properties.memoryTypes[i].propertyFlags & required) == required;
+        if (type_matches && flags_match) {
+            return i;
+        }
+    }
+
+    throw std::runtime_error("no compatible Vulkan memory type found");
+}
+
 void Device::wait_idle() const {
     if (device_ != VK_NULL_HANDLE) {
         check(vkDeviceWaitIdle(device_), "vkDeviceWaitIdle");

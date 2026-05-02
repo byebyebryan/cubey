@@ -1,7 +1,9 @@
 #include "spinning_cube_app.h"
 
+#include <cubey/vulkan/buffer.h>
 #include <cubey/vulkan/device.h>
 #include <cubey/vulkan/frame_resources.h>
+#include <cubey/vulkan/immediate_commands.h>
 #include <cubey/vulkan/instance.h>
 #include <cubey/vulkan/shader_module.h>
 #include <cubey/vulkan/swapchain.h>
@@ -150,6 +152,43 @@ struct PushConstants {
     Mat4 mvp;
 };
 
+struct Vertex {
+    std::array<float, 3> position;
+    std::array<float, 3> color;
+};
+
+constexpr std::array<Vertex, 24> kCubeVertices{{
+    Vertex{{-1.0F, -1.0F, 1.0F}, {0.95F, 0.25F, 0.18F}},
+    Vertex{{1.0F, -1.0F, 1.0F}, {0.95F, 0.25F, 0.18F}},
+    Vertex{{1.0F, 1.0F, 1.0F}, {0.95F, 0.25F, 0.18F}},
+    Vertex{{-1.0F, 1.0F, 1.0F}, {0.95F, 0.25F, 0.18F}},
+    Vertex{{1.0F, -1.0F, -1.0F}, {0.18F, 0.56F, 0.95F}},
+    Vertex{{-1.0F, -1.0F, -1.0F}, {0.18F, 0.56F, 0.95F}},
+    Vertex{{-1.0F, 1.0F, -1.0F}, {0.18F, 0.56F, 0.95F}},
+    Vertex{{1.0F, 1.0F, -1.0F}, {0.18F, 0.56F, 0.95F}},
+    Vertex{{-1.0F, -1.0F, -1.0F}, {0.22F, 0.78F, 0.42F}},
+    Vertex{{-1.0F, -1.0F, 1.0F}, {0.22F, 0.78F, 0.42F}},
+    Vertex{{-1.0F, 1.0F, 1.0F}, {0.22F, 0.78F, 0.42F}},
+    Vertex{{-1.0F, 1.0F, -1.0F}, {0.22F, 0.78F, 0.42F}},
+    Vertex{{1.0F, -1.0F, 1.0F}, {0.96F, 0.76F, 0.18F}},
+    Vertex{{1.0F, -1.0F, -1.0F}, {0.96F, 0.76F, 0.18F}},
+    Vertex{{1.0F, 1.0F, -1.0F}, {0.96F, 0.76F, 0.18F}},
+    Vertex{{1.0F, 1.0F, 1.0F}, {0.96F, 0.76F, 0.18F}},
+    Vertex{{-1.0F, 1.0F, 1.0F}, {0.65F, 0.34F, 0.95F}},
+    Vertex{{1.0F, 1.0F, 1.0F}, {0.65F, 0.34F, 0.95F}},
+    Vertex{{1.0F, 1.0F, -1.0F}, {0.65F, 0.34F, 0.95F}},
+    Vertex{{-1.0F, 1.0F, -1.0F}, {0.65F, 0.34F, 0.95F}},
+    Vertex{{-1.0F, -1.0F, -1.0F}, {0.18F, 0.82F, 0.82F}},
+    Vertex{{1.0F, -1.0F, -1.0F}, {0.18F, 0.82F, 0.82F}},
+    Vertex{{1.0F, -1.0F, 1.0F}, {0.18F, 0.82F, 0.82F}},
+    Vertex{{-1.0F, -1.0F, 1.0F}, {0.18F, 0.82F, 0.82F}},
+}};
+
+constexpr std::array<std::uint16_t, 36> kCubeIndices{{
+    0,  1,  2,  0,  2,  3,  4,  5,  6,  4,  6,  7,  8,  9,  10, 8,  10, 11,
+    12, 13, 14, 12, 14, 15, 16, 17, 18, 16, 18, 19, 20, 21, 22, 20, 22, 23,
+}};
+
 class SpinningCubeApp {
   public:
     explicit SpinningCubeApp(RunConfig config) : config_(std::move(config)) {}
@@ -163,6 +202,8 @@ class SpinningCubeApp {
         }
 
         frame_resources_.reset();
+        index_buffer_.reset();
+        vertex_buffer_.reset();
         destroy_framebuffers();
         destroy_depth_resources();
         destroy_pipeline();
@@ -194,6 +235,7 @@ class SpinningCubeApp {
         create_instance();
         create_surface();
         create_device();
+        create_cube_buffers();
         create_swapchain_resources();
         create_frame_resources();
         render_window();
@@ -354,24 +396,6 @@ class SpinningCubeApp {
         throw std::runtime_error("no supported depth format found");
     }
 
-    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
-    [[nodiscard]] std::uint32_t find_memory_type(std::uint32_t type_bits,
-                                                 VkMemoryPropertyFlags required) const {
-        VkPhysicalDeviceMemoryProperties memory_properties{};
-        vkGetPhysicalDeviceMemoryProperties(vulkan_device().physical_device(), &memory_properties);
-
-        for (std::uint32_t i = 0; i < memory_properties.memoryTypeCount; ++i) {
-            const bool type_matches = (type_bits & (1U << i)) != 0;
-            const bool flags_match =
-                (memory_properties.memoryTypes[i].propertyFlags & required) == required;
-            if (type_matches && flags_match) {
-                return i;
-            }
-        }
-
-        throw std::runtime_error("no compatible Vulkan memory type found");
-    }
-
     void create_render_pass() {
         depth_format_ = choose_depth_format();
 
@@ -467,8 +491,28 @@ class SpinningCubeApp {
             fragment_stage,
         };
 
+        VkVertexInputBindingDescription vertex_binding{};
+        vertex_binding.binding = 0;
+        vertex_binding.stride = sizeof(Vertex);
+        vertex_binding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+        std::array<VkVertexInputAttributeDescription, 2> vertex_attributes{};
+        vertex_attributes[0].location = 0;
+        vertex_attributes[0].binding = 0;
+        vertex_attributes[0].format = VK_FORMAT_R32G32B32_SFLOAT;
+        vertex_attributes[0].offset = offsetof(Vertex, position);
+        vertex_attributes[1].location = 1;
+        vertex_attributes[1].binding = 0;
+        vertex_attributes[1].format = VK_FORMAT_R32G32B32_SFLOAT;
+        vertex_attributes[1].offset = offsetof(Vertex, color);
+
         auto vertex_input = vk_struct<VkPipelineVertexInputStateCreateInfo>(
             VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO);
+        vertex_input.vertexBindingDescriptionCount = 1;
+        vertex_input.pVertexBindingDescriptions = &vertex_binding;
+        vertex_input.vertexAttributeDescriptionCount =
+            static_cast<std::uint32_t>(vertex_attributes.size());
+        vertex_input.pVertexAttributeDescriptions = vertex_attributes.data();
 
         auto input_assembly = vk_struct<VkPipelineInputAssemblyStateCreateInfo>(
             VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO);
@@ -585,8 +629,8 @@ class SpinningCubeApp {
 
         auto alloc = vk_struct<VkMemoryAllocateInfo>(VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO);
         alloc.allocationSize = requirements.size;
-        alloc.memoryTypeIndex =
-            find_memory_type(requirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        alloc.memoryTypeIndex = vulkan_device().find_memory_type(
+            requirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
         check(vkAllocateMemory(device_, &alloc, nullptr, &depth_memory_), "vkAllocateMemory depth");
         check(vkBindImageMemory(device_, depth_image_, depth_memory_, 0),
               "vkBindImageMemory depth");
@@ -654,6 +698,41 @@ class SpinningCubeApp {
         frame_resources_.emplace(vulkan_device(), swapchain().image_count());
     }
 
+    template <typename T, std::size_t Count>
+    void upload_device_buffer(const std::array<T, Count>& data, VkBufferUsageFlags usage,
+                              std::optional<cubey::vulkan::Buffer>& destination) const {
+        const VkDeviceSize byte_size = static_cast<VkDeviceSize>(sizeof(T) * data.size());
+
+        cubey::vulkan::BufferConfig staging_config;
+        staging_config.size = byte_size;
+        staging_config.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+        staging_config.memory_properties =
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+        cubey::vulkan::Buffer staging(vulkan_device(), staging_config);
+        staging.upload(data.data(), byte_size);
+
+        cubey::vulkan::BufferConfig device_config;
+        device_config.size = byte_size;
+        device_config.usage = usage | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+        device_config.memory_properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+        destination.emplace(vulkan_device(), device_config);
+
+        copy_buffer(staging.handle(), destination->handle(), byte_size);
+    }
+
+    void create_cube_buffers() {
+        upload_device_buffer(kCubeVertices, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, vertex_buffer_);
+        upload_device_buffer(kCubeIndices, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, index_buffer_);
+    }
+
+    void copy_buffer(VkBuffer source, VkBuffer destination, VkDeviceSize byte_size) const {
+        cubey::vulkan::ImmediateCommands commands(vulkan_device());
+        VkBufferCopy copy{};
+        copy.size = byte_size;
+        vkCmdCopyBuffer(commands.command_buffer(), source, destination, 1, &copy);
+        commands.submit_and_wait();
+    }
+
     [[nodiscard]] PushConstants current_push_constants() const {
         const auto now = std::chrono::steady_clock::now();
         const float seconds =
@@ -698,9 +777,15 @@ class SpinningCubeApp {
 
         vkCmdBeginRenderPass(command_buffer, &pass, VK_SUBPASS_CONTENTS_INLINE);
         vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_);
+        const std::array<VkBuffer, 1> vertex_buffers{vertex_buffer().handle()};
+        constexpr std::array<VkDeviceSize, 1> vertex_offsets{0};
+        vkCmdBindVertexBuffers(command_buffer, 0, static_cast<std::uint32_t>(vertex_buffers.size()),
+                               vertex_buffers.data(), vertex_offsets.data());
+        vkCmdBindIndexBuffer(command_buffer, index_buffer().handle(), 0, VK_INDEX_TYPE_UINT16);
         vkCmdPushConstants(command_buffer, pipeline_layout_, VK_SHADER_STAGE_VERTEX_BIT, 0,
                            sizeof(PushConstants), &push_constants);
-        vkCmdDraw(command_buffer, 36, 1, 0, 0);
+        vkCmdDrawIndexed(command_buffer, static_cast<std::uint32_t>(kCubeIndices.size()), 1, 0, 0,
+                         0);
         vkCmdEndRenderPass(command_buffer);
 
         check(vkEndCommandBuffer(command_buffer), "vkEndCommandBuffer spinning_cube");
@@ -759,7 +844,7 @@ class SpinningCubeApp {
     }
 
     void render_window() {
-        std::printf("spinning_cube: %s rendering shader cube at %ux%u\n",
+        std::printf("spinning_cube: %s rendering indexed cube at %ux%u\n",
                     vulkan_device().device_name(), swapchain().extent().width,
                     swapchain().extent().height);
 
@@ -830,6 +915,20 @@ class SpinningCubeApp {
         return frame_resources_.value();
     }
 
+    [[nodiscard]] cubey::vulkan::Buffer& vertex_buffer() {
+        if (!vertex_buffer_.has_value()) {
+            throw std::runtime_error("vertex buffer is not initialized");
+        }
+        return vertex_buffer_.value();
+    }
+
+    [[nodiscard]] cubey::vulkan::Buffer& index_buffer() {
+        if (!index_buffer_.has_value()) {
+            throw std::runtime_error("index buffer is not initialized");
+        }
+        return index_buffer_.value();
+    }
+
     RunConfig config_;
     bool glfw_initialized_ = false;
     bool framebuffer_resized_ = false;
@@ -840,6 +939,8 @@ class SpinningCubeApp {
     std::optional<cubey::vulkan::Device> device_owner_;
     std::optional<cubey::vulkan::Swapchain> swapchain_;
     std::optional<cubey::vulkan::FrameResources> frame_resources_;
+    std::optional<cubey::vulkan::Buffer> vertex_buffer_;
+    std::optional<cubey::vulkan::Buffer> index_buffer_;
     VkInstance instance_ = VK_NULL_HANDLE;
     VkSurfaceKHR surface_ = VK_NULL_HANDLE;
     VkDevice device_ = VK_NULL_HANDLE;

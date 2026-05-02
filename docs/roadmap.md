@@ -59,20 +59,23 @@ Exit criteria:
 Current checkpoint:
 
 - `cubey` static library target exists.
-- Reusable `cubey::vulkan::Instance`, `Device`, `Swapchain`, and
+- Reusable `cubey::vulkan::Instance`, `Device`, `Buffer`, `Swapchain`, and
   `FrameResources` primitives now own validation/debug-utils setup,
   physical-device selection, logical-device lifetime, queue access, swapchain
-  image/view ownership, and single-frame command/sync resources.
+  image/view ownership, buffer allocation, and single-frame command/sync
+  resources.
 - Reusable `cubey::vulkan::ShaderModule` exists, and CMake can compile GLSL to
   SPIR-V with `glslangValidator` for example targets.
+- Reusable `cubey::vulkan::ImmediateCommands` supports one-shot setup uploads.
 - `examples/window_clear` links against `cubey` and clears/presents a swapchain
   image through Vulkan/GLFW.
 - `examples/triangle` links against `cubey`, compiles vertex/fragment shaders
   at build time, creates an example-local graphics pipeline, and draws a
   `gl_VertexIndex` triangle.
 - `examples/spinning_cube` links against `cubey`, compiles vertex/fragment
-  shaders at build time, draws shader-generated cube geometry, updates an MVP
-  matrix through push constants, and uses an example-local depth attachment.
+  shaders at build time, draws an indexed cube from device-local vertex/index
+  buffers, updates an MVP matrix through push constants, and uses an
+  example-local depth attachment.
 - The remaining visible app implementation is intentionally example-local: GLFW
   window setup, surface creation, render pass, pipeline layout/pipeline, depth
   resources, framebuffers, command recording, acquire/present behavior, and
@@ -80,7 +83,8 @@ Current checkpoint:
 - Dev CTest covers the target in both graphical and no-display terminal
   sessions.
 - Headless rendering, compute, frame overlap, richer render pass/pipeline
-  helpers, buffers/images/staging, and a textured cube remain future slices.
+  helpers, images/textures/descriptors, and a textured cube remain future
+  slices.
 
 ## Phase 2: Resource Layer and App API
 

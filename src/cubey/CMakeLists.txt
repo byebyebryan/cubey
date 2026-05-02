@@ -1,7 +1,9 @@
 add_library(cubey STATIC
     app_config.cpp
+    vulkan/buffer.cpp
     vulkan/device.cpp
     vulkan/frame_resources.cpp
+    vulkan/immediate_commands.cpp
     vulkan/instance.cpp
     vulkan/shader_module.cpp
     vulkan/swapchain.cpp

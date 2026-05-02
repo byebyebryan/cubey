@@ -20,17 +20,20 @@ As of 2026-05-02:
 - Promoted the first reusable Vulkan primitives into `cubey`:
   `cubey::vulkan::Instance` owns validation/debug-utils setup, and
   `cubey::vulkan::Device` owns physical-device selection, logical-device
-  lifetime, and queue access.
+  lifetime, queue access, and memory-type selection.
 - Promoted `cubey::vulkan::Swapchain` for swapchain/image-view ownership and
   `cubey::vulkan::FrameResources` for a single command pool, command buffer,
   image-available semaphore, per-swapchain-image present-ready semaphores, and
   fence.
+- Promoted `cubey::vulkan::Buffer` for Vulkan buffer/memory ownership and
+  host-visible coherent upload, plus `cubey::vulkan::ImmediateCommands` for
+  one-shot setup copies.
 - Promoted `cubey::vulkan::ShaderModule` and added CMake GLSL-to-SPIR-V shader
   compilation with `glslangValidator`.
 - Added `examples/triangle` as the first shader-backed graphics pipeline smoke.
 - Added `examples/spinning_cube` to exercise push constants, per-frame MVP
-  animation, depth format selection, and example-local depth image/view
-  resources.
+  animation, depth format selection, device-local vertex/index buffers, staging
+  upload, and example-local depth image/view resources.
 - GLFW window setup, surface creation, render pass, graphics pipeline, depth
   resources, framebuffers, command recording, acquire/present behavior, and
   resize policy remain example-local.
@@ -154,3 +157,7 @@ env XDG_RUNTIME_DIR=/run/user/1000 WAYLAND_DISPLAY=wayland-1 DISPLAY=:1 XDG_CURR
   no-display CTest path could not see: one reusable present-ready semaphore was
   still possibly owned by the swapchain. `FrameResources` now tracks
   present-ready semaphores per swapchain image.
+- The first resource-layer slice added `Buffer` and one-shot immediate commands.
+  `spinning_cube` now uploads real vertex/index data through a staging buffer
+  and draws with `vkCmdDrawIndexed`; image upload, descriptors, and sampling are
+  the next resource milestone.
