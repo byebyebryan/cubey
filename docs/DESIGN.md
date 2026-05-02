@@ -237,7 +237,7 @@ cubey/
                               example-specific app code
     triangle/              -- minimal shader-backed graphics pipeline path
     spinning_cube/         -- indexed cube, push constants, depth
-    textured_cube/         -- generated texture upload, descriptors, sampling
+    textured_cube/         -- compute texture generation, descriptors, sampling
     headless_render/       -- minimal offscreen image path
   projects/
       fluid_sim/

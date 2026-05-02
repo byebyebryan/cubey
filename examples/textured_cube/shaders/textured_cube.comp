@@ -1,0 +1,20 @@
+#version 450
+
+layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
+
+layout(set = 0, binding = 0, rgba8) uniform writeonly image2D output_image;
+
+void main() {
+    ivec2 pixel = ivec2(gl_GlobalInvocationID.xy);
+    ivec2 size = imageSize(output_image);
+    if (pixel.x >= size.x || pixel.y >= size.y) {
+        return;
+    }
+
+    bool checker = ((pixel.x / 8 + pixel.y / 8) % 2) == 0;
+    vec2 uv = (vec2(pixel) + vec2(0.5)) / vec2(size);
+    vec3 warm = mix(vec3(0.95, 0.82, 0.25), vec3(1.0, 0.34, 0.18), uv.x);
+    vec3 cool = mix(vec3(0.08, 0.28, 0.78), vec3(0.12, 0.82, 0.78), uv.y);
+    vec3 color = checker ? warm : cool;
+    imageStore(output_image, pixel, vec4(color, 1.0));
+}

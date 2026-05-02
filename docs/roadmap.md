@@ -81,17 +81,17 @@ Current checkpoint:
   shaders at build time, draws an indexed cube from device-local vertex/index
   buffers, updates an MVP matrix through push constants, and uses an
   example-local depth attachment.
-- `examples/textured_cube` links against `cubey`, generates a checkerboard
-  texture, uploads it through a staging buffer, transitions it for shader
-  sampling, binds it through a combined image sampler descriptor, and draws an
-  interactive shaded textured indexed cube with per-face normals.
+- `examples/textured_cube` links against `cubey`, generates a texture with a
+  compute shader writing a storage image, transitions it for shader sampling,
+  binds it through a combined image sampler descriptor, and draws an interactive
+  shaded textured indexed cube with per-face normals.
 - The remaining visible app implementation is intentionally example-local: GLFW
   window setup, surface creation, render pass, pipeline layout/pipeline, depth
   resources, framebuffers, command recording, acquire/present behavior, and
   resize policy.
 - Dev CTest covers the target in both graphical and no-display terminal
   sessions.
-- Headless rendering, compute, frame overlap, richer render pass/pipeline
+- Headless rendering, frame overlap, richer render pass/pipeline
   helpers, external asset loading, and reusable descriptor helpers remain future
   slices.
 

@@ -46,6 +46,8 @@ using cubey::vulkan::vk_struct;
 constexpr float kPi = std::numbers::pi_v<float>;
 constexpr std::uint32_t kTextureWidth = 64;
 constexpr std::uint32_t kTextureHeight = 64;
+constexpr VkFormat kTextureFormat = VK_FORMAT_R8G8B8A8_UNORM;
+constexpr std::uint32_t kTextureComputeGroupSize = 8;
 
 struct Mat4 {
     std::array<float, 16> values{};
@@ -200,25 +202,6 @@ constexpr std::array<std::uint16_t, 36> kCubeIndices{{
     12, 13, 14, 12, 14, 15, 16, 17, 18, 16, 18, 19, 20, 21, 22, 20, 22, 23,
 }};
 
-struct Texel {
-    std::uint8_t red;
-    std::uint8_t green;
-    std::uint8_t blue;
-    std::uint8_t alpha;
-};
-
-std::vector<Texel> generate_checkerboard_texture() {
-    std::vector<Texel> pixels(static_cast<std::size_t>(kTextureWidth) * kTextureHeight);
-    for (std::uint32_t y = 0; y < kTextureHeight; ++y) {
-        for (std::uint32_t x = 0; x < kTextureWidth; ++x) {
-            const bool bright = ((x / 8U) + (y / 8U)) % 2U == 0;
-            pixels[(y * kTextureWidth) + x] =
-                bright ? Texel{245, 231, 95, 255} : Texel{25, 118, 210, 255};
-        }
-    }
-    return pixels;
-}
-
 class TexturedCubeApp {
   public:
     explicit TexturedCubeApp(RunConfig config) : config_(std::move(config)) {}
@@ -234,6 +217,7 @@ class TexturedCubeApp {
         frame_resources_.reset();
         destroy_swapchain_resources();
         destroy_descriptors();
+        destroy_compute_resources();
         texture_sampler_.reset();
         texture_image_.reset();
         index_buffer_.reset();
@@ -389,7 +373,7 @@ class TexturedCubeApp {
     void create_device() {
         cubey::vulkan::DeviceConfig device_config;
         device_config.surface = surface_;
-        device_config.required_queue_flags = VK_QUEUE_GRAPHICS_BIT;
+        device_config.required_queue_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT;
         device_config.require_present = true;
 
         if (!instance_owner_.has_value()) {
@@ -771,32 +755,34 @@ class TexturedCubeApp {
     }
 
     void create_texture_resources() {
-        const std::vector<Texel> pixels = generate_checkerboard_texture();
-        const VkDeviceSize byte_size = static_cast<VkDeviceSize>(sizeof(Texel) * pixels.size());
-
-        cubey::vulkan::BufferConfig staging_config;
-        staging_config.size = byte_size;
-        staging_config.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-        staging_config.memory_properties =
-            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-        cubey::vulkan::Buffer staging(vulkan_device(), staging_config);
-        staging.upload(pixels.data(), byte_size);
+        validate_texture_format_support();
 
         cubey::vulkan::ImageConfig image_config;
         image_config.extent = {kTextureWidth, kTextureHeight, 1};
-        image_config.format = VK_FORMAT_R8G8B8A8_UNORM;
-        image_config.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+        image_config.format = kTextureFormat;
+        image_config.usage = VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
         image_config.aspect = VK_IMAGE_ASPECT_COLOR_BIT;
         texture_image_.emplace(vulkan_device(), image_config);
 
-        transition_texture_image(VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-        copy_buffer_to_texture(staging.handle());
-        transition_texture_image(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                                 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+        create_compute_resources();
+        dispatch_compute_texture();
+        destroy_compute_resources();
 
         cubey::vulkan::SamplerConfig sampler_config;
         texture_sampler_.emplace(vulkan_device(), sampler_config);
         create_descriptors();
+    }
+
+    void validate_texture_format_support() const {
+        VkFormatProperties properties{};
+        vkGetPhysicalDeviceFormatProperties(vulkan_device().physical_device(), kTextureFormat,
+                                            &properties);
+        constexpr VkFormatFeatureFlags required_features =
+            VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT | VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT;
+        if ((properties.optimalTilingFeatures & required_features) != required_features) {
+            throw std::runtime_error(
+                "texture format does not support storage-image generation and sampling");
+        }
     }
 
     void copy_buffer(VkBuffer source, VkBuffer destination, VkDeviceSize byte_size) const {
@@ -823,16 +809,15 @@ class TexturedCubeApp {
         barrier.subresourceRange.layerCount = 1;
 
         VkPipelineStageFlags source_stage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-        VkPipelineStageFlags destination_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+        VkPipelineStageFlags destination_stage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
 
-        if (old_layout == VK_IMAGE_LAYOUT_UNDEFINED &&
-            new_layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
-            barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-        } else if (old_layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL &&
+        if (old_layout == VK_IMAGE_LAYOUT_UNDEFINED && new_layout == VK_IMAGE_LAYOUT_GENERAL) {
+            barrier.dstAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+        } else if (old_layout == VK_IMAGE_LAYOUT_GENERAL &&
                    new_layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
-            barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+            barrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
             barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-            source_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+            source_stage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
             destination_stage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
         } else {
             throw std::runtime_error("unsupported texture image layout transition");
@@ -843,18 +828,116 @@ class TexturedCubeApp {
         commands.submit_and_wait();
     }
 
-    void copy_buffer_to_texture(VkBuffer source) const {
-        cubey::vulkan::ImmediateCommands commands(vulkan_device());
-        VkBufferImageCopy copy{};
-        copy.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        copy.imageSubresource.mipLevel = 0;
-        copy.imageSubresource.baseArrayLayer = 0;
-        copy.imageSubresource.layerCount = 1;
-        copy.imageExtent = texture_image().extent();
+    void create_compute_resources() {
+        VkDescriptorSetLayoutBinding texture_binding{};
+        texture_binding.binding = 0;
+        texture_binding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+        texture_binding.descriptorCount = 1;
+        texture_binding.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
 
-        vkCmdCopyBufferToImage(commands.command_buffer(), source, texture_image().handle(),
-                               VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy);
+        auto layout_info = vk_struct<VkDescriptorSetLayoutCreateInfo>(
+            VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO);
+        layout_info.bindingCount = 1;
+        layout_info.pBindings = &texture_binding;
+        check(vkCreateDescriptorSetLayout(device_, &layout_info, nullptr,
+                                          &compute_descriptor_set_layout_),
+              "vkCreateDescriptorSetLayout compute texture");
+
+        VkDescriptorPoolSize pool_size{};
+        pool_size.type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+        pool_size.descriptorCount = 1;
+
+        auto pool_info =
+            vk_struct<VkDescriptorPoolCreateInfo>(VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO);
+        pool_info.maxSets = 1;
+        pool_info.poolSizeCount = 1;
+        pool_info.pPoolSizes = &pool_size;
+        check(vkCreateDescriptorPool(device_, &pool_info, nullptr, &compute_descriptor_pool_),
+              "vkCreateDescriptorPool compute texture");
+
+        auto alloc =
+            vk_struct<VkDescriptorSetAllocateInfo>(VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO);
+        alloc.descriptorPool = compute_descriptor_pool_;
+        alloc.descriptorSetCount = 1;
+        alloc.pSetLayouts = &compute_descriptor_set_layout_;
+        check(vkAllocateDescriptorSets(device_, &alloc, &compute_descriptor_set_),
+              "vkAllocateDescriptorSets compute texture");
+
+        VkDescriptorImageInfo image_info{};
+        image_info.imageView = texture_image().view();
+        image_info.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+        auto write = vk_struct<VkWriteDescriptorSet>(VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET);
+        write.dstSet = compute_descriptor_set_;
+        write.dstBinding = 0;
+        write.descriptorCount = 1;
+        write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+        write.pImageInfo = &image_info;
+        vkUpdateDescriptorSets(device_, 1, &write, 0, nullptr);
+
+        auto layout =
+            vk_struct<VkPipelineLayoutCreateInfo>(VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO);
+        layout.setLayoutCount = 1;
+        layout.pSetLayouts = &compute_descriptor_set_layout_;
+        check(vkCreatePipelineLayout(device_, &layout, nullptr, &compute_pipeline_layout_),
+              "vkCreatePipelineLayout compute texture");
+
+        const std::vector<std::uint32_t> compute_code =
+            read_spirv_file(shader_path("textured_cube.comp.spv"));
+        cubey::vulkan::ShaderModule compute_shader(vulkan_device(), compute_code);
+
+        auto stage = vk_struct<VkPipelineShaderStageCreateInfo>(
+            VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO);
+        stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;
+        stage.module = compute_shader.handle();
+        stage.pName = "main";
+
+        auto pipeline_info =
+            vk_struct<VkComputePipelineCreateInfo>(VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO);
+        pipeline_info.stage = stage;
+        pipeline_info.layout = compute_pipeline_layout_;
+        check(vkCreateComputePipelines(device_, VK_NULL_HANDLE, 1, &pipeline_info, nullptr,
+                                       &compute_pipeline_),
+              "vkCreateComputePipelines texture");
+    }
+
+    void destroy_compute_resources() {
+        if (compute_pipeline_ != VK_NULL_HANDLE) {
+            vkDestroyPipeline(device_, compute_pipeline_, nullptr);
+            compute_pipeline_ = VK_NULL_HANDLE;
+        }
+        if (compute_pipeline_layout_ != VK_NULL_HANDLE) {
+            vkDestroyPipelineLayout(device_, compute_pipeline_layout_, nullptr);
+            compute_pipeline_layout_ = VK_NULL_HANDLE;
+        }
+        compute_descriptor_set_ = VK_NULL_HANDLE;
+        if (compute_descriptor_pool_ != VK_NULL_HANDLE) {
+            vkDestroyDescriptorPool(device_, compute_descriptor_pool_, nullptr);
+            compute_descriptor_pool_ = VK_NULL_HANDLE;
+        }
+        if (compute_descriptor_set_layout_ != VK_NULL_HANDLE) {
+            vkDestroyDescriptorSetLayout(device_, compute_descriptor_set_layout_, nullptr);
+            compute_descriptor_set_layout_ = VK_NULL_HANDLE;
+        }
+    }
+
+    void dispatch_compute_texture() const {
+        transition_texture_image(VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
+
+        cubey::vulkan::ImmediateCommands commands(vulkan_device());
+        vkCmdBindPipeline(commands.command_buffer(), VK_PIPELINE_BIND_POINT_COMPUTE,
+                          compute_pipeline_);
+        vkCmdBindDescriptorSets(commands.command_buffer(), VK_PIPELINE_BIND_POINT_COMPUTE,
+                                compute_pipeline_layout_, 0, 1, &compute_descriptor_set_, 0,
+                                nullptr);
+        constexpr std::uint32_t groups_x =
+            (kTextureWidth + kTextureComputeGroupSize - 1U) / kTextureComputeGroupSize;
+        constexpr std::uint32_t groups_y =
+            (kTextureHeight + kTextureComputeGroupSize - 1U) / kTextureComputeGroupSize;
+        vkCmdDispatch(commands.command_buffer(), groups_x, groups_y, 1);
         commands.submit_and_wait();
+
+        transition_texture_image(VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     }
 
     void create_descriptors() {
@@ -1031,9 +1114,9 @@ class TexturedCubeApp {
         orbit_controller_.set_auto_rotation_speed(0.9F);
         frame_clock_.reset();
 
-        std::printf("textured_cube: %s rendering interactive shaded textured cube at %ux%u\n",
-                    vulkan_device().device_name(), swapchain().extent().width,
-                    swapchain().extent().height);
+        std::printf(
+            "textured_cube: %s rendering interactive compute shaded textured cube at %ux%u\n",
+            vulkan_device().device_name(), swapchain().extent().width, swapchain().extent().height);
 
         std::uint32_t frame = 0;
         std::uint32_t consecutive_recreates = 0;
@@ -1177,8 +1260,13 @@ class TexturedCubeApp {
     VkDescriptorSetLayout descriptor_set_layout_ = VK_NULL_HANDLE;
     VkDescriptorPool descriptor_pool_ = VK_NULL_HANDLE;
     VkDescriptorSet descriptor_set_ = VK_NULL_HANDLE;
+    VkDescriptorSetLayout compute_descriptor_set_layout_ = VK_NULL_HANDLE;
+    VkDescriptorPool compute_descriptor_pool_ = VK_NULL_HANDLE;
+    VkDescriptorSet compute_descriptor_set_ = VK_NULL_HANDLE;
     VkPipelineLayout pipeline_layout_ = VK_NULL_HANDLE;
     VkPipeline pipeline_ = VK_NULL_HANDLE;
+    VkPipelineLayout compute_pipeline_layout_ = VK_NULL_HANDLE;
+    VkPipeline compute_pipeline_ = VK_NULL_HANDLE;
     VkFormat depth_format_ = VK_FORMAT_UNDEFINED;
 };
 

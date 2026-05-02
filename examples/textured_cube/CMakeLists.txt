@@ -25,6 +25,7 @@ cubey_add_glsl_shaders(
     SOURCES
         shaders/textured_cube.vert
         shaders/textured_cube.frag
+        shaders/textured_cube.comp
 )
 
 if (BUILD_TESTING)
@@ -32,7 +33,7 @@ if (BUILD_TESTING)
         NAME textured_cube_reaches_glfw
         COMMAND
             /bin/sh -c
-            "out=$($<TARGET_FILE:cubey_example_textured_cube> --frames 1 --width 64 --height 64 2>&1); status=$?; printf '%s\n' \"$out\"; if [ $status -eq 0 ]; then printf '%s\n' \"$out\" | grep -q 'textured_cube: .*rendering interactive shaded textured cube'; else printf '%s\n' \"$out\" | grep -q 'glfwInit failed\\|GLFW reports Vulkan is not supported'; fi"
+            "out=$($<TARGET_FILE:cubey_example_textured_cube> --frames 1 --width 64 --height 64 2>&1); status=$?; printf '%s\n' \"$out\"; if [ $status -eq 0 ]; then printf '%s\n' \"$out\" | grep -q 'textured_cube: .*rendering interactive compute shaded textured cube'; else printf '%s\n' \"$out\" | grep -q 'glfwInit failed\\|GLFW reports Vulkan is not supported'; fi"
     )
     set_tests_properties(textured_cube_reaches_glfw PROPERTIES TIMEOUT 10)
 endif()

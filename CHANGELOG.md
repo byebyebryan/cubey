@@ -22,12 +22,18 @@ versioned section and use that section as the release notes.
   image/view ownership and single-frame command/sync resources.
 - Public Vulkan `ShaderModule` primitive and CMake GLSL-to-SPIR-V helper using
   `glslangValidator`.
+- Public Vulkan `Buffer`, `Image`, `Sampler`, and `ImmediateCommands`
+  primitives for device resources, generated texture paths, and setup uploads.
+- Public frame timing, orbit-controller, and frame-stat helpers for interactive
+  visible examples.
 - `examples/window_clear`, a minimal Vulkan/GLFW visible-surface clear/present
   smoke executable.
 - `examples/triangle`, a minimal shader-backed Vulkan graphics pipeline smoke
   executable using `gl_VertexIndex`.
 - `examples/spinning_cube`, a shader-generated cube smoke executable with push
   constants, animation, and an example-local depth attachment.
+- `examples/textured_cube`, an interactive shaded cube that generates texture
+  data through a setup-time compute shader and samples it in the graphics pass.
 - CTest smoke that accepts either successful window startup or the known
   no-display GLFW failure in terminal sessions.
 

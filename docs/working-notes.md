@@ -40,10 +40,11 @@ As of 2026-05-02:
 - Added `examples/spinning_cube` to exercise push constants, per-frame MVP
   animation, depth format selection, device-local vertex/index buffers, staging
   upload, and example-local depth image/view resources.
-- Added `examples/textured_cube` to exercise generated texture upload, image
-  layout transitions, combined image sampler descriptors, normals, directional
-  lighting, and shader sampling. It is also the first interactive example:
-  left-drag rotates, Space pauses, `R` resets, and Escape exits.
+- Added `examples/textured_cube` to exercise compute-generated texture data,
+  image layout transitions, storage-image descriptors, combined image sampler
+  descriptors, normals, directional lighting, and shader sampling. It is also
+  the first interactive example: left-drag rotates, Space pauses, `R` resets,
+  and Escape exits.
 - GLFW window setup, surface creation, render pass, graphics pipeline, depth
   resources, framebuffers, command recording, acquire/present behavior, and
   resize policy remain example-local.
@@ -188,3 +189,8 @@ env XDG_RUNTIME_DIR=/run/user/1000 WAYLAND_DISPLAY=wayland-1 DISPLAY=:1 XDG_CURR
   a fixed directional light, and push constants for MVP plus model matrices.
   This exercises vertex attribute growth without introducing uniform buffers
   yet.
+- The compute-texture slice replaced the CPU checkerboard upload with a
+  setup-time compute dispatch into a storage image, followed by an explicit
+  `GENERAL` to `SHADER_READ_ONLY_OPTIMAL` transition before the graphics pass
+  samples it. This gives compute-plus-graphics signal without promoting
+  descriptor or pipeline helpers into `cubey` prematurely.

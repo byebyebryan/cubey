@@ -40,14 +40,14 @@ Main now contains the first visible-surface examples: `examples/window_clear`
 for raw clear/present and `examples/triangle` for build-time GLSL shaders plus
 graphics pipeline setup. `examples/spinning_cube` adds device-local vertex/index
 buffers, push constants, per-frame animation, and a depth attachment.
-`examples/textured_cube` adds generated texture upload, normals, directional
+`examples/textured_cube` adds a compute-generated texture, normals, directional
 lighting, image/sampler ownership, descriptors, and fragment-shader sampling.
 `cubey` owns the reusable Vulkan
 instance, device, buffer, image, sampler, swapchain, shader-module, frame
 clock, orbit-controller, and single-frame command/sync primitives; examples
 still own GLFW, surface creation, render passes, framebuffers, command
 recording, acquire/present behavior, and resize policy. The spike branches
-remain reference material for later compute, headless, and browser work.
+remain reference material for deeper compute, headless, and browser work.
 
 ## Development Setup
 
@@ -79,10 +79,10 @@ Use validation as a hard requirement when the validation layers are installed:
 ./build/dev/examples/textured_cube/textured_cube --require-validation --frames 300 --width 1280 --height 720
 ```
 
-`textured_cube` supports basic interaction: left-drag rotates the shaded cube,
-Space pauses/resumes auto-rotation, `R` resets the view, and Escape closes the
-window. Its window title periodically reports FPS, frame time, swapchain extent,
-triangle count, and pixel rate.
+`textured_cube` supports basic interaction: left-drag rotates the shaded
+compute-textured cube, Space pauses/resumes auto-rotation, `R` resets the view,
+and Escape closes the window. Its window title periodically reports FPS, frame
+time, swapchain extent, triangle count, and pixel rate.
 
 The repo also includes:
 
