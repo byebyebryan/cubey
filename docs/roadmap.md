@@ -65,6 +65,8 @@ Current checkpoint:
   physical-device selection, logical-device lifetime, queue access, swapchain
   image/view ownership, buffer/image allocation, sampler ownership, and
   single-frame command/sync resources.
+- Reusable `cubey::FrameClock` and `cubey::OrbitController` cover basic frame
+  timing and mouse-driven view control.
 - Reusable `cubey::vulkan::ShaderModule` exists, and CMake can compile GLSL to
   SPIR-V with `glslangValidator` for example targets.
 - Reusable `cubey::vulkan::ImmediateCommands` supports one-shot setup uploads.
@@ -79,8 +81,8 @@ Current checkpoint:
   example-local depth attachment.
 - `examples/textured_cube` links against `cubey`, generates a checkerboard
   texture, uploads it through a staging buffer, transitions it for shader
-  sampling, binds it through a combined image sampler descriptor, and draws a
-  textured indexed cube.
+  sampling, binds it through a combined image sampler descriptor, and draws an
+  interactive textured indexed cube.
 - The remaining visible app implementation is intentionally example-local: GLFW
   window setup, surface creation, render pass, pipeline layout/pipeline, depth
   resources, framebuffers, command recording, acquire/present behavior, and

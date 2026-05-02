@@ -1,0 +1,13 @@
+add_executable(cubey_core_tests
+    frame_clock_tests.cpp
+    orbit_controller_tests.cpp
+)
+
+target_link_libraries(
+    cubey_core_tests
+    PRIVATE
+        cubey::cubey
+        cubey_project_warnings
+)
+
+add_test(NAME cubey_core_tests COMMAND cubey_core_tests)

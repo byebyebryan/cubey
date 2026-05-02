@@ -30,6 +30,8 @@ As of 2026-05-02:
   one-shot setup copies.
 - Promoted `cubey::vulkan::Image` and `cubey::vulkan::Sampler` for basic 2D
   image/view/memory ownership and sampler ownership.
+- Promoted `cubey::FrameClock` and `cubey::OrbitController` for deterministic
+  frame timing, auto-rotation, pause/reset, and mouse-drag rotation.
 - Promoted `cubey::vulkan::ShaderModule` and added CMake GLSL-to-SPIR-V shader
   compilation with `glslangValidator`.
 - Added `examples/triangle` as the first shader-backed graphics pipeline smoke.
@@ -38,6 +40,8 @@ As of 2026-05-02:
   upload, and example-local depth image/view resources.
 - Added `examples/textured_cube` to exercise generated texture upload, image
   layout transitions, combined image sampler descriptors, and shader sampling.
+  It is also the first interactive example: left-drag rotates, Space pauses,
+  `R` resets, and Escape exits.
 - GLFW window setup, surface creation, render pass, graphics pipeline, depth
   resources, framebuffers, command recording, acquire/present behavior, and
   resize policy remain example-local.
@@ -171,3 +175,7 @@ env XDG_RUNTIME_DIR=/run/user/1000 WAYLAND_DISPLAY=wayland-1 DISPLAY=:1 XDG_CURR
   `examples/textured_cube`. The example intentionally uses a generated
   checkerboard texture before asset loading so the signal stays focused on
   transfer, layout transitions, descriptors, and shader sampling.
+- The first interaction slice added unit-tested pure timing/control helpers and
+  wired `textured_cube` to GLFW callbacks. Keeping GLFW calls example-local
+  preserves the current library boundary while still moving reusable control
+  policy into `cubey`.

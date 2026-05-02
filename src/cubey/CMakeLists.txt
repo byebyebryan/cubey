@@ -1,5 +1,7 @@
 add_library(cubey STATIC
     app_config.cpp
+    frame_clock.cpp
+    orbit_controller.cpp
     vulkan/buffer.cpp
     vulkan/device.cpp
     vulkan/frame_resources.cpp

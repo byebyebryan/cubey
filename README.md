@@ -42,11 +42,11 @@ graphics pipeline setup. `examples/spinning_cube` adds device-local vertex/index
 buffers, push constants, per-frame animation, and a depth attachment.
 `examples/textured_cube` adds generated texture upload, image/sampler ownership,
 descriptors, and fragment-shader sampling. `cubey` owns the reusable Vulkan
-instance, device, buffer, image, sampler, swapchain, shader-module, and
-single-frame command/sync primitives; examples still own GLFW, surface creation,
-render passes, framebuffers, command recording, acquire/present behavior, and
-resize policy. The spike branches remain reference material for later compute,
-headless, and browser work.
+instance, device, buffer, image, sampler, swapchain, shader-module, frame
+clock, orbit-controller, and single-frame command/sync primitives; examples
+still own GLFW, surface creation, render passes, framebuffers, command
+recording, acquire/present behavior, and resize policy. The spike branches
+remain reference material for later compute, headless, and browser work.
 
 ## Development Setup
 
@@ -77,6 +77,9 @@ Use validation as a hard requirement when the validation layers are installed:
 ./build/dev/examples/spinning_cube/spinning_cube --require-validation --frames 300 --width 1280 --height 720
 ./build/dev/examples/textured_cube/textured_cube --require-validation --frames 300 --width 1280 --height 720
 ```
+
+`textured_cube` supports basic interaction: left-drag rotates the cube, Space
+pauses/resumes auto-rotation, `R` resets the view, and Escape closes the window.
 
 The repo also includes:
 

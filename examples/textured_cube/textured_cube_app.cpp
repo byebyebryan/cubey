@@ -1,5 +1,7 @@
 #include "textured_cube_app.h"
 
+#include <cubey/frame_clock.h>
+#include <cubey/orbit_controller.h>
 #include <cubey/vulkan/buffer.h>
 #include <cubey/vulkan/device.h>
 #include <cubey/vulkan/frame_resources.h>
@@ -292,6 +294,9 @@ class TexturedCubeApp {
 
         glfwSetWindowUserPointer(window_, this);
         glfwSetFramebufferSizeCallback(window_, framebuffer_size_callback);
+        glfwSetCursorPosCallback(window_, cursor_pos_callback);
+        glfwSetMouseButtonCallback(window_, mouse_button_callback);
+        glfwSetKeyCallback(window_, key_callback);
     }
 
     // GLFW fixes this callback signature.
@@ -302,6 +307,55 @@ class TexturedCubeApp {
         auto* app = static_cast<TexturedCubeApp*>(glfwGetWindowUserPointer(window));
         if (app != nullptr) {
             app->framebuffer_resized_ = true;
+        }
+    }
+
+    // GLFW fixes this callback signature.
+    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+    static void cursor_pos_callback(GLFWwindow* window, double x, double y) {
+        auto* app = static_cast<TexturedCubeApp*>(glfwGetWindowUserPointer(window));
+        if (app != nullptr && app->orbit_controller_.dragging()) {
+            app->orbit_controller_.drag_to(x, y);
+        }
+    }
+
+    // GLFW fixes this callback signature.
+    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+    static void mouse_button_callback(GLFWwindow* window, int button, int action, int unused_mods) {
+        (void)unused_mods;
+        auto* app = static_cast<TexturedCubeApp*>(glfwGetWindowUserPointer(window));
+        if (app == nullptr || button != GLFW_MOUSE_BUTTON_LEFT) {
+            return;
+        }
+
+        if (action == GLFW_PRESS) {
+            double x = 0.0;
+            double y = 0.0;
+            glfwGetCursorPos(window, &x, &y);
+            app->orbit_controller_.begin_drag(x, y);
+        } else if (action == GLFW_RELEASE) {
+            app->orbit_controller_.end_drag();
+        }
+    }
+
+    // GLFW fixes this callback signature.
+    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+    static void key_callback(GLFWwindow* window, int key, int unused_scancode, int action,
+                             int unused_mods) {
+        (void)unused_scancode;
+        (void)unused_mods;
+        auto* app = static_cast<TexturedCubeApp*>(glfwGetWindowUserPointer(window));
+        if (app == nullptr || action != GLFW_PRESS) {
+            return;
+        }
+
+        if (key == GLFW_KEY_ESCAPE) {
+            glfwSetWindowShouldClose(window, GLFW_TRUE);
+        } else if (key == GLFW_KEY_R) {
+            app->orbit_controller_.reset();
+            app->frame_clock_.reset();
+        } else if (key == GLFW_KEY_SPACE) {
+            app->orbit_controller_.toggle_pause();
         }
     }
 
@@ -856,11 +910,8 @@ class TexturedCubeApp {
     }
 
     [[nodiscard]] PushConstants current_push_constants() const {
-        const auto now = std::chrono::steady_clock::now();
-        const float seconds =
-            static_cast<float>(std::chrono::duration<double>(now - start_time_).count());
-
-        const Mat4 model = multiply(rotation_y(seconds * 0.9F), rotation_x(seconds * 0.55F));
+        const Mat4 model =
+            multiply(rotation_y(orbit_controller_.yaw()), rotation_x(orbit_controller_.pitch()));
         const Mat4 view = translation(0.0F, 0.0F, -4.2F);
         const float aspect = static_cast<float>(swapchain().extent().width) /
                              static_cast<float>(swapchain().extent().height);
@@ -968,7 +1019,10 @@ class TexturedCubeApp {
     }
 
     void render_window() {
-        std::printf("textured_cube: %s rendering textured cube at %ux%u\n",
+        orbit_controller_.set_auto_rotation_speed(0.9F);
+        frame_clock_.reset();
+
+        std::printf("textured_cube: %s rendering interactive textured cube at %ux%u\n",
                     vulkan_device().device_name(), swapchain().extent().width,
                     swapchain().extent().height);
 
@@ -976,7 +1030,9 @@ class TexturedCubeApp {
         std::uint32_t consecutive_recreates = 0;
         while (glfwWindowShouldClose(window_) == 0 &&
                (config_.frames == 0 || frame < config_.frames)) {
+            const FrameTiming timing = frame_clock_.tick();
             glfwPollEvents();
+            orbit_controller_.update(timing.delta_seconds);
 
             if (framebuffer_resized_) {
                 std::puts("framebuffer resized; recreating swapchain");
@@ -1078,7 +1134,8 @@ class TexturedCubeApp {
     bool glfw_initialized_ = false;
     bool framebuffer_resized_ = false;
     GLFWwindow* window_ = nullptr;
-    std::chrono::steady_clock::time_point start_time_ = std::chrono::steady_clock::now();
+    FrameClock frame_clock_;
+    OrbitController orbit_controller_;
 
     std::optional<cubey::vulkan::Instance> instance_owner_;
     std::optional<cubey::vulkan::Device> device_owner_;

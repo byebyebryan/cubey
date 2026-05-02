@@ -42,6 +42,10 @@ include(CTest)
 
 add_subdirectory(src/cubey)
 
+if (BUILD_TESTING)
+    add_subdirectory(tests/cubey)
+endif()
+
 if (CUBEY_BUILD_EXAMPLES)
     FetchContent_Declare(
         glfw
