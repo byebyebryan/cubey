@@ -209,6 +209,9 @@ cubey/
         vk_check.h         -- Vulkan result helpers
         instance.h         -- instance, validation, debug messenger
         device.h           -- physical/logical device and queue ownership
+        buffer.h           -- Vulkan buffer and memory ownership
+        image.h            -- Vulkan image, memory, and image-view ownership
+        sampler.h          -- Vulkan sampler ownership
         swapchain.h        -- swapchain images and image views
         shader_module.h    -- shader module lifetime
         frame_resources.h  -- per-frame command/sync resources
@@ -220,8 +223,10 @@ cubey/
         instance.cpp       -- instance, validation, debug messenger
         device.cpp         -- physical/logical device, queues
         window.cpp         -- GLFW window + input
+        buffer.cpp         -- buffers and host-visible upload
+        image.cpp          -- images, memory, and image views
+        sampler.cpp        -- samplers
         swapchain.cpp      -- surface extent, swapchain images/views
-        resources.cpp      -- buffers, images, views, staging/readback
         shader_module.cpp  -- shader module lifetime
         pipeline.cpp       -- future pipeline layouts and pipelines
         frame_resources.cpp -- command buffers and sync objects
@@ -231,7 +236,8 @@ cubey/
     window_clear/          -- minimal visible Vulkan clear/present path; owns
                               example-specific app code
     triangle/              -- minimal shader-backed graphics pipeline path
-    spinning_cube/         -- shader-generated cube, push constants, depth
+    spinning_cube/         -- indexed cube, push constants, depth
+    textured_cube/         -- generated texture upload, descriptors, sampling
     headless_render/       -- minimal offscreen image path
   projects/
       fluid_sim/

@@ -28,12 +28,16 @@ As of 2026-05-02:
 - Promoted `cubey::vulkan::Buffer` for Vulkan buffer/memory ownership and
   host-visible coherent upload, plus `cubey::vulkan::ImmediateCommands` for
   one-shot setup copies.
+- Promoted `cubey::vulkan::Image` and `cubey::vulkan::Sampler` for basic 2D
+  image/view/memory ownership and sampler ownership.
 - Promoted `cubey::vulkan::ShaderModule` and added CMake GLSL-to-SPIR-V shader
   compilation with `glslangValidator`.
 - Added `examples/triangle` as the first shader-backed graphics pipeline smoke.
 - Added `examples/spinning_cube` to exercise push constants, per-frame MVP
   animation, depth format selection, device-local vertex/index buffers, staging
   upload, and example-local depth image/view resources.
+- Added `examples/textured_cube` to exercise generated texture upload, image
+  layout transitions, combined image sampler descriptors, and shader sampling.
 - GLFW window setup, surface creation, render pass, graphics pipeline, depth
   resources, framebuffers, command recording, acquire/present behavior, and
   resize policy remain example-local.
@@ -48,6 +52,8 @@ env XDG_RUNTIME_DIR=/run/user/1000 WAYLAND_DISPLAY=wayland-1 DISPLAY=:1 XDG_CURR
   ./build/dev/examples/triangle/triangle --require-validation --frames 300 --width 1280 --height 720
 env XDG_RUNTIME_DIR=/run/user/1000 WAYLAND_DISPLAY=wayland-1 DISPLAY=:1 XDG_CURRENT_DESKTOP=niri \
   ./build/dev/examples/spinning_cube/spinning_cube --require-validation --frames 300 --width 1280 --height 720
+env XDG_RUNTIME_DIR=/run/user/1000 WAYLAND_DISPLAY=wayland-1 DISPLAY=:1 XDG_CURRENT_DESKTOP=niri \
+  ./build/dev/examples/textured_cube/textured_cube --require-validation --frames 300 --width 1280 --height 720
 ```
 
 As of 2026-04-28:
@@ -161,3 +167,7 @@ env XDG_RUNTIME_DIR=/run/user/1000 WAYLAND_DISPLAY=wayland-1 DISPLAY=:1 XDG_CURR
   `spinning_cube` now uploads real vertex/index data through a staging buffer
   and draws with `vkCmdDrawIndexed`; image upload, descriptors, and sampling are
   the next resource milestone.
+- The second resource-layer slice added `Image`, `Sampler`, and
+  `examples/textured_cube`. The example intentionally uses a generated
+  checkerboard texture before asset loading so the signal stays focused on
+  transfer, layout transitions, descriptors, and shader sampling.

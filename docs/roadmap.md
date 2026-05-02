@@ -59,11 +59,12 @@ Exit criteria:
 Current checkpoint:
 
 - `cubey` static library target exists.
-- Reusable `cubey::vulkan::Instance`, `Device`, `Buffer`, `Swapchain`, and
-  `FrameResources` primitives now own validation/debug-utils setup,
+- Reusable `cubey::vulkan::Instance`, `Device`, `Buffer`, `Image`, `Sampler`,
+  `Swapchain`, and `FrameResources` primitives now own validation/debug-utils
+  setup,
   physical-device selection, logical-device lifetime, queue access, swapchain
-  image/view ownership, buffer allocation, and single-frame command/sync
-  resources.
+  image/view ownership, buffer/image allocation, sampler ownership, and
+  single-frame command/sync resources.
 - Reusable `cubey::vulkan::ShaderModule` exists, and CMake can compile GLSL to
   SPIR-V with `glslangValidator` for example targets.
 - Reusable `cubey::vulkan::ImmediateCommands` supports one-shot setup uploads.
@@ -76,6 +77,10 @@ Current checkpoint:
   shaders at build time, draws an indexed cube from device-local vertex/index
   buffers, updates an MVP matrix through push constants, and uses an
   example-local depth attachment.
+- `examples/textured_cube` links against `cubey`, generates a checkerboard
+  texture, uploads it through a staging buffer, transitions it for shader
+  sampling, binds it through a combined image sampler descriptor, and draws a
+  textured indexed cube.
 - The remaining visible app implementation is intentionally example-local: GLFW
   window setup, surface creation, render pass, pipeline layout/pipeline, depth
   resources, framebuffers, command recording, acquire/present behavior, and
@@ -83,7 +88,7 @@ Current checkpoint:
 - Dev CTest covers the target in both graphical and no-display terminal
   sessions.
 - Headless rendering, compute, frame overlap, richer render pass/pipeline
-  helpers, images/textures/descriptors, and a textured cube remain future
+  helpers, external asset loading, and reusable descriptor helpers remain future
   slices.
 
 ## Phase 2: Resource Layer and App API
