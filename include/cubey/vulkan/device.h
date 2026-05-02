@@ -12,6 +12,7 @@ struct DeviceConfig {
     VkSurfaceKHR surface = VK_NULL_HANDLE;
     VkQueueFlags required_queue_flags = VK_QUEUE_GRAPHICS_BIT;
     bool require_present = true;
+    bool require_dynamic_rendering = false;
 };
 
 class Device {

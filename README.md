@@ -38,8 +38,9 @@ See:
 
 Main now contains the first visible-surface examples: `examples/window_clear`
 for raw clear/present and `examples/triangle` for build-time GLSL shaders plus
-graphics pipeline setup. `examples/spinning_cube` adds device-local vertex/index
-buffers, push constants, per-frame animation, and a depth attachment.
+dynamic-rendering graphics pipeline setup. `examples/spinning_cube` adds
+device-local vertex/index buffers, push constants, per-frame animation, and a
+depth attachment.
 `examples/textured_cube` adds a compute-generated texture, normals, directional
 lighting, image/sampler ownership, descriptors, and fragment-shader sampling.
 `cubey` owns the reusable Vulkan

@@ -37,6 +37,9 @@ As of 2026-05-02:
 - Promoted `cubey::vulkan::ShaderModule` and added CMake GLSL-to-SPIR-V shader
   compilation with `glslangValidator`.
 - Added `examples/triangle` as the first shader-backed graphics pipeline smoke.
+- Converted `examples/triangle` to dynamic rendering as the first render-pass
+  direction spike. This removes triangle's render pass/framebuffer ownership and
+  points the visible runtime shell toward dynamic-rendering attachments.
 - Added `examples/spinning_cube` to exercise push constants, per-frame MVP
   animation, depth format selection, device-local vertex/index buffers, staging
   upload, and example-local depth image/view resources.
@@ -198,3 +201,6 @@ env XDG_RUNTIME_DIR=/run/user/1000 WAYLAND_DISPLAY=wayland-1 DISPLAY=:1 XDG_CURR
   device model. This is acceptable for the current desktop target and keeps the
   example simple, but split graphics/compute/present queues should be handled
   before treating the device layer as a broader compatibility abstraction.
+- The dynamic-rendering slice raised the requested instance API version to
+  Vulkan 1.3 and added an opt-in device feature requirement. Use this path for
+  the next visible runtime shell instead of wrapping classic render passes first.

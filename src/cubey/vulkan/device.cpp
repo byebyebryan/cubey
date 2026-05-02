@@ -10,6 +10,11 @@
 namespace cubey::vulkan {
 namespace {
 
+constexpr std::uint32_t make_vk_api_version(std::uint32_t variant, std::uint32_t major,
+                                            std::uint32_t minor, std::uint32_t patch) {
+    return (variant << 29U) | (major << 22U) | (minor << 12U) | patch;
+}
+
 bool device_supports_swapchain(VkPhysicalDevice device) {
     std::uint32_t count = 0;
     check(vkEnumerateDeviceExtensionProperties(device, nullptr, &count, nullptr),
@@ -24,6 +29,22 @@ bool device_supports_swapchain(VkPhysicalDevice device) {
         }
     }
     return false;
+}
+
+bool device_supports_dynamic_rendering(VkPhysicalDevice device) {
+    VkPhysicalDeviceProperties properties{};
+    vkGetPhysicalDeviceProperties(device, &properties);
+    if (properties.apiVersion < make_vk_api_version(0, 1, 3, 0)) {
+        return false;
+    }
+
+    auto dynamic_rendering = vk_struct<VkPhysicalDeviceDynamicRenderingFeatures>(
+        VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES);
+    auto features =
+        vk_struct<VkPhysicalDeviceFeatures2>(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2);
+    features.pNext = &dynamic_rendering;
+    vkGetPhysicalDeviceFeatures2(device, &features);
+    return dynamic_rendering.dynamicRendering == VK_TRUE;
 }
 
 } // namespace
@@ -83,6 +104,9 @@ void Device::select_physical_device(const Instance& instance, const DeviceConfig
         if (config.require_present && !device_supports_swapchain(candidate)) {
             continue;
         }
+        if (config.require_dynamic_rendering && !device_supports_dynamic_rendering(candidate)) {
+            continue;
+        }
 
         std::uint32_t family_count = 0;
         vkGetPhysicalDeviceQueueFamilyProperties(candidate, &family_count, nullptr);
@@ -108,12 +132,16 @@ void Device::select_physical_device(const Instance& instance, const DeviceConfig
         }
     }
 
-    throw std::runtime_error(
-        config.require_present
-            ? "no Vulkan device with one queue family supporting required queues and present "
-              "found; Cubey currently requires one family for requested graphics/compute/present "
-              "work"
-            : "no Vulkan device with required queues found");
+    if (config.require_present) {
+        throw std::runtime_error(
+            "no Vulkan device with one queue family supporting required queues and present found; "
+            "Cubey currently requires one family for requested graphics/compute/present work");
+    }
+    if (config.require_dynamic_rendering) {
+        throw std::runtime_error(
+            "no Vulkan device with required queues and dynamic rendering found");
+    }
+    throw std::runtime_error("no Vulkan device with required queues found");
 }
 
 void Device::create_device(const DeviceConfig& config) {
@@ -128,6 +156,14 @@ void Device::create_device(const DeviceConfig& config) {
     auto info = vk_struct<VkDeviceCreateInfo>(VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO);
     info.queueCreateInfoCount = 1;
     info.pQueueCreateInfos = &queue_info;
+
+    auto dynamic_rendering = vk_struct<VkPhysicalDeviceDynamicRenderingFeatures>(
+        VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES);
+    if (config.require_dynamic_rendering) {
+        dynamic_rendering.dynamicRendering = VK_TRUE;
+        info.pNext = &dynamic_rendering;
+    }
+
     if (config.require_present) {
         info.enabledExtensionCount = static_cast<std::uint32_t>(extensions.size());
         info.ppEnabledExtensionNames = extensions.data();

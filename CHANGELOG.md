@@ -29,7 +29,7 @@ versioned section and use that section as the release notes.
 - `examples/window_clear`, a minimal Vulkan/GLFW visible-surface clear/present
   smoke executable.
 - `examples/triangle`, a minimal shader-backed Vulkan graphics pipeline smoke
-  executable using `gl_VertexIndex`.
+  executable using dynamic rendering and `gl_VertexIndex`.
 - `examples/spinning_cube`, a shader-generated cube smoke executable with push
   constants, animation, and an example-local depth attachment.
 - `examples/textured_cube`, an interactive shaded cube that generates texture

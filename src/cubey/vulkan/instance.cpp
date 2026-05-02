@@ -141,7 +141,7 @@ void Instance::create_instance(const InstanceConfig& config) {
     app.applicationVersion = config.application_version;
     app.pEngineName = "cubey";
     app.engineVersion = make_vk_version(0, 1, 0);
-    app.apiVersion = make_vk_api_version(0, 1, 2, 0);
+    app.apiVersion = make_vk_api_version(0, 1, 3, 0);
 
     std::vector<const char*> extensions = config.required_extensions;
     if (debug_utils_enabled_) {

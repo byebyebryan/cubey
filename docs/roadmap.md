@@ -75,8 +75,8 @@ Current checkpoint:
 - `examples/window_clear` links against `cubey` and clears/presents a swapchain
   image through Vulkan/GLFW.
 - `examples/triangle` links against `cubey`, compiles vertex/fragment shaders
-  at build time, creates an example-local graphics pipeline, and draws a
-  `gl_VertexIndex` triangle.
+  at build time, creates an example-local dynamic-rendering graphics pipeline,
+  and draws a `gl_VertexIndex` triangle without a render pass or framebuffer.
 - `examples/spinning_cube` links against `cubey`, compiles vertex/fragment
   shaders at build time, draws an indexed cube from device-local vertex/index
   buffers, updates an MVP matrix through push constants, and uses an
@@ -94,7 +94,7 @@ Current checkpoint:
   resize policy.
 - Dev CTest covers the target in both graphical and no-display terminal
   sessions.
-- Headless rendering, frame overlap, richer render pass/pipeline
+- Headless rendering, frame overlap, richer dynamic-rendering/pipeline
   helpers, split graphics/compute/present queue-family support, external asset
   loading, and reusable descriptor helpers remain future slices.
 

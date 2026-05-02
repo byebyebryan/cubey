@@ -72,9 +72,7 @@ class TriangleApp {
         }
 
         frame_resources_.reset();
-        destroy_framebuffers();
         destroy_pipeline();
-        destroy_render_pass();
         swapchain_.reset();
 
         if (surface_ != VK_NULL_HANDLE) {
@@ -175,6 +173,7 @@ class TriangleApp {
         device_config.surface = surface_;
         device_config.required_queue_flags = VK_QUEUE_GRAPHICS_BIT;
         device_config.require_present = true;
+        device_config.require_dynamic_rendering = true;
 
         if (!instance_owner_.has_value()) {
             throw std::runtime_error("Vulkan instance must exist before creating a device");
@@ -210,15 +209,11 @@ class TriangleApp {
 
     void create_swapchain_resources() {
         create_swapchain();
-        create_render_pass();
         create_pipeline();
-        create_framebuffers();
     }
 
     void destroy_swapchain_resources() {
-        destroy_framebuffers();
         destroy_pipeline();
-        destroy_render_pass();
         swapchain_.reset();
     }
 
@@ -239,51 +234,6 @@ class TriangleApp {
         swapchain_config.image_usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
         swapchain_.emplace(vulkan_device(), swapchain_config);
         framebuffer_resized_ = false;
-    }
-
-    void create_render_pass() {
-        VkAttachmentDescription color_attachment{};
-        color_attachment.format = swapchain().format();
-        color_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
-        color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-        color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-        color_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-        color_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-        color_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        color_attachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-
-        VkAttachmentReference color_ref{};
-        color_ref.attachment = 0;
-        color_ref.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-        VkSubpassDescription subpass{};
-        subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-        subpass.colorAttachmentCount = 1;
-        subpass.pColorAttachments = &color_ref;
-
-        VkSubpassDependency dependency{};
-        dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-        dependency.dstSubpass = 0;
-        dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-        dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-        dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-
-        auto info = vk_struct<VkRenderPassCreateInfo>(VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO);
-        info.attachmentCount = 1;
-        info.pAttachments = &color_attachment;
-        info.subpassCount = 1;
-        info.pSubpasses = &subpass;
-        info.dependencyCount = 1;
-        info.pDependencies = &dependency;
-
-        check(vkCreateRenderPass(device_, &info, nullptr, &render_pass_), "vkCreateRenderPass");
-    }
-
-    void destroy_render_pass() {
-        if (render_pass_ != VK_NULL_HANDLE) {
-            vkDestroyRenderPass(device_, render_pass_, nullptr);
-            render_pass_ = VK_NULL_HANDLE;
-        }
     }
 
     void create_pipeline() {
@@ -363,8 +313,15 @@ class TriangleApp {
         check(vkCreatePipelineLayout(device_, &layout_info, nullptr, &pipeline_layout_),
               "vkCreatePipelineLayout");
 
+        const VkFormat color_format = swapchain().format();
+        auto rendering_info = vk_struct<VkPipelineRenderingCreateInfo>(
+            VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO);
+        rendering_info.colorAttachmentCount = 1;
+        rendering_info.pColorAttachmentFormats = &color_format;
+
         auto pipeline_info = vk_struct<VkGraphicsPipelineCreateInfo>(
             VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO);
+        pipeline_info.pNext = &rendering_info;
         pipeline_info.stageCount = static_cast<std::uint32_t>(shader_stages.size());
         pipeline_info.pStages = shader_stages.data();
         pipeline_info.pVertexInputState = &vertex_input;
@@ -374,8 +331,6 @@ class TriangleApp {
         pipeline_info.pMultisampleState = &multisample;
         pipeline_info.pColorBlendState = &color_blend;
         pipeline_info.layout = pipeline_layout_;
-        pipeline_info.renderPass = render_pass_;
-        pipeline_info.subpass = 0;
 
         check(vkCreateGraphicsPipelines(device_, VK_NULL_HANDLE, 1, &pipeline_info, nullptr,
                                         &pipeline_),
@@ -393,34 +348,40 @@ class TriangleApp {
         }
     }
 
-    void create_framebuffers() {
-        framebuffers_.reserve(swapchain().image_count());
-        for (VkImageView view : swapchain().image_views()) {
-            auto info =
-                vk_struct<VkFramebufferCreateInfo>(VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO);
-            info.renderPass = render_pass_;
-            info.attachmentCount = 1;
-            info.pAttachments = &view;
-            info.width = swapchain().extent().width;
-            info.height = swapchain().extent().height;
-            info.layers = 1;
-
-            VkFramebuffer framebuffer = VK_NULL_HANDLE;
-            check(vkCreateFramebuffer(device_, &info, nullptr, &framebuffer),
-                  "vkCreateFramebuffer");
-            framebuffers_.push_back(framebuffer);
-        }
-    }
-
-    void destroy_framebuffers() {
-        for (VkFramebuffer framebuffer : framebuffers_) {
-            vkDestroyFramebuffer(device_, framebuffer, nullptr);
-        }
-        framebuffers_.clear();
-    }
-
     void create_frame_resources() {
         frame_resources_.emplace(vulkan_device(), swapchain().image_count());
+    }
+
+    void transition_swapchain_image(VkCommandBuffer command_buffer, std::uint32_t image_index,
+                                    VkImageLayout old_layout, VkImageLayout new_layout) const {
+        auto barrier = vk_struct<VkImageMemoryBarrier>(VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER);
+        barrier.oldLayout = old_layout;
+        barrier.newLayout = new_layout;
+        barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.image = swapchain().images().at(static_cast<std::size_t>(image_index));
+        barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        barrier.subresourceRange.baseMipLevel = 0;
+        barrier.subresourceRange.levelCount = 1;
+        barrier.subresourceRange.baseArrayLayer = 0;
+        barrier.subresourceRange.layerCount = 1;
+
+        VkPipelineStageFlags source_stage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+        VkPipelineStageFlags destination_stage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        if (old_layout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL &&
+            new_layout == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR) {
+            barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+            source_stage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+            destination_stage = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+        } else if (old_layout == VK_IMAGE_LAYOUT_UNDEFINED &&
+                   new_layout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) {
+            barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+        } else {
+            throw std::runtime_error("unsupported swapchain image layout transition");
+        }
+
+        vkCmdPipelineBarrier(command_buffer, source_stage, destination_stage, 0, 0, nullptr, 0,
+                             nullptr, 1, &barrier);
     }
 
     void record_triangle_frame(std::uint32_t image_index) {
@@ -430,21 +391,35 @@ class TriangleApp {
         begin.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
         check(vkBeginCommandBuffer(command_buffer, &begin), "vkBeginCommandBuffer triangle");
 
+        transition_swapchain_image(command_buffer, image_index, VK_IMAGE_LAYOUT_UNDEFINED,
+                                   VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+
         VkClearValue clear{};
         clear.color = {{0.015F, 0.017F, 0.024F, 1.0F}};
+        auto color_attachment =
+            vk_struct<VkRenderingAttachmentInfo>(VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO);
+        color_attachment.imageView =
+            swapchain().image_views().at(static_cast<std::size_t>(image_index));
+        color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+        color_attachment.clearValue = clear;
 
-        auto pass = vk_struct<VkRenderPassBeginInfo>(VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO);
-        pass.renderPass = render_pass_;
-        pass.framebuffer = framebuffers_.at(static_cast<std::size_t>(image_index));
-        pass.renderArea.offset = {0, 0};
-        pass.renderArea.extent = swapchain().extent();
-        pass.clearValueCount = 1;
-        pass.pClearValues = &clear;
+        auto rendering = vk_struct<VkRenderingInfo>(VK_STRUCTURE_TYPE_RENDERING_INFO);
+        rendering.renderArea.offset = {0, 0};
+        rendering.renderArea.extent = swapchain().extent();
+        rendering.layerCount = 1;
+        rendering.colorAttachmentCount = 1;
+        rendering.pColorAttachments = &color_attachment;
 
-        vkCmdBeginRenderPass(command_buffer, &pass, VK_SUBPASS_CONTENTS_INLINE);
+        vkCmdBeginRendering(command_buffer, &rendering);
         vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_);
         vkCmdDraw(command_buffer, 3, 1, 0, 0);
-        vkCmdEndRenderPass(command_buffer);
+        vkCmdEndRendering(command_buffer);
+
+        transition_swapchain_image(command_buffer, image_index,
+                                   VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                   VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 
         check(vkEndCommandBuffer(command_buffer), "vkEndCommandBuffer triangle");
     }
@@ -502,7 +477,7 @@ class TriangleApp {
     }
 
     void render_window() {
-        std::printf("triangle: %s rendering shader triangle at %ux%u\n",
+        std::printf("triangle: %s rendering dynamic triangle at %ux%u\n",
                     vulkan_device().device_name(), swapchain().extent().width,
                     swapchain().extent().height);
 
@@ -552,6 +527,13 @@ class TriangleApp {
         return device_owner_.value();
     }
 
+    [[nodiscard]] const cubey::vulkan::Swapchain& swapchain() const {
+        if (!swapchain_.has_value()) {
+            throw std::runtime_error("swapchain is not initialized");
+        }
+        return swapchain_.value();
+    }
+
     cubey::vulkan::FrameResources& frame_resources() {
         if (!frame_resources_.has_value()) {
             throw std::runtime_error("frame resources are not initialized");
@@ -573,8 +555,6 @@ class TriangleApp {
     VkDevice device_ = VK_NULL_HANDLE;
     VkQueue queue_ = VK_NULL_HANDLE;
 
-    std::vector<VkFramebuffer> framebuffers_;
-    VkRenderPass render_pass_ = VK_NULL_HANDLE;
     VkPipelineLayout pipeline_layout_ = VK_NULL_HANDLE;
     VkPipeline pipeline_ = VK_NULL_HANDLE;
 };
