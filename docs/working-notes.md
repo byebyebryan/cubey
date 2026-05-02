@@ -194,3 +194,7 @@ env XDG_RUNTIME_DIR=/run/user/1000 WAYLAND_DISPLAY=wayland-1 DISPLAY=:1 XDG_CURR
   `GENERAL` to `SHADER_READ_ONLY_OPTIMAL` transition before the graphics pass
   samples it. This gives compute-plus-graphics signal without promoting
   descriptor or pipeline helpers into `cubey` prematurely.
+- The compute-texture path still uses Cubey's current single-queue-family
+  device model. This is acceptable for the current desktop target and keeps the
+  example simple, but split graphics/compute/present queues should be handled
+  before treating the device layer as a broader compatibility abstraction.

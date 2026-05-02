@@ -108,10 +108,12 @@ void Device::select_physical_device(const Instance& instance, const DeviceConfig
         }
     }
 
-    throw std::runtime_error(config.require_present
-                                 ? "no Vulkan device with one queue family supporting required "
-                                   "queues and present found"
-                                 : "no Vulkan device with required queues found");
+    throw std::runtime_error(
+        config.require_present
+            ? "no Vulkan device with one queue family supporting required queues and present "
+              "found; Cubey currently requires one family for requested graphics/compute/present "
+              "work"
+            : "no Vulkan device with required queues found");
 }
 
 void Device::create_device(const DeviceConfig& config) {

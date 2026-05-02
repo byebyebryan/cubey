@@ -341,7 +341,7 @@ class TexturedCubeApp {
             glfwSetWindowShouldClose(window, GLFW_TRUE);
         } else if (key == GLFW_KEY_R) {
             app->orbit_controller_.reset();
-            app->frame_clock_.reset();
+            app->reset_frame_timing();
         } else if (key == GLFW_KEY_SPACE) {
             app->orbit_controller_.toggle_pause();
         }
@@ -430,6 +430,11 @@ class TexturedCubeApp {
         destroy_swapchain_resources();
         create_swapchain_resources();
         create_frame_resources();
+    }
+
+    void reset_frame_timing() {
+        frame_clock_.reset();
+        frame_stats_.reset();
     }
 
     void create_swapchain() {
@@ -1112,7 +1117,7 @@ class TexturedCubeApp {
 
     void render_window() {
         orbit_controller_.set_auto_rotation_speed(0.9F);
-        frame_clock_.reset();
+        reset_frame_timing();
 
         std::printf(
             "textured_cube: %s rendering interactive compute shaded textured cube at %ux%u\n",
@@ -1122,16 +1127,21 @@ class TexturedCubeApp {
         std::uint32_t consecutive_recreates = 0;
         while (glfwWindowShouldClose(window_) == 0 &&
                (config_.frames == 0 || frame < config_.frames)) {
-            const FrameTiming timing = frame_clock_.tick();
             glfwPollEvents();
-            orbit_controller_.update(timing.delta_seconds);
+            if (glfwWindowShouldClose(window_) != 0) {
+                break;
+            }
 
             if (framebuffer_resized_) {
                 std::puts("framebuffer resized; recreating swapchain");
                 recreate_swapchain_resources();
+                reset_frame_timing();
                 consecutive_recreates = 0;
                 continue;
             }
+
+            const FrameTiming timing = frame_clock_.tick();
+            orbit_controller_.update(timing.delta_seconds);
 
             FrameResult result = draw_frame();
             if (result == FrameResult::RecreateSwapchain) {
@@ -1142,6 +1152,7 @@ class TexturedCubeApp {
                 }
                 std::puts("swapchain out of date; recreating");
                 recreate_swapchain_resources();
+                reset_frame_timing();
                 continue;
             }
 

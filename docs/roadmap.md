@@ -85,6 +85,9 @@ Current checkpoint:
   compute shader writing a storage image, transitions it for shader sampling,
   binds it through a combined image sampler descriptor, and draws an interactive
   shaded textured indexed cube with per-face normals.
+- The current device model intentionally selects one queue family for required
+  graphics, compute, and present capabilities. Split queue-family support is a
+  future framework slice, not part of the current example-local compute path.
 - The remaining visible app implementation is intentionally example-local: GLFW
   window setup, surface creation, render pass, pipeline layout/pipeline, depth
   resources, framebuffers, command recording, acquire/present behavior, and
@@ -92,8 +95,8 @@ Current checkpoint:
 - Dev CTest covers the target in both graphical and no-display terminal
   sessions.
 - Headless rendering, frame overlap, richer render pass/pipeline
-  helpers, external asset loading, and reusable descriptor helpers remain future
-  slices.
+  helpers, split graphics/compute/present queue-family support, external asset
+  loading, and reusable descriptor helpers remain future slices.
 
 ## Phase 2: Resource Layer and App API
 
