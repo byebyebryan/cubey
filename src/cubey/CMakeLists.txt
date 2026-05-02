@@ -4,11 +4,13 @@ add_library(cubey STATIC
     frame_stats.cpp
     orbit_controller.cpp
     vulkan/buffer.cpp
+    vulkan/descriptors.cpp
     vulkan/device.cpp
     vulkan/frame_resources.cpp
     vulkan/image.cpp
     vulkan/immediate_commands.cpp
     vulkan/instance.cpp
+    vulkan/pipeline.cpp
     vulkan/sampler.cpp
     vulkan/shader_module.cpp
     vulkan/swapchain.cpp

@@ -3,6 +3,7 @@
 #include <cubey/vulkan/device.h>
 #include <cubey/vulkan/frame_resources.h>
 #include <cubey/vulkan/instance.h>
+#include <cubey/vulkan/pipeline.h>
 #include <cubey/vulkan/shader_module.h>
 #include <cubey/vulkan/swapchain.h>
 #include <cubey/vulkan/visible_frame.h>
@@ -73,7 +74,8 @@ class TriangleApp {
         }
 
         frame_resources_.reset();
-        destroy_pipeline();
+        pipeline_.reset();
+        pipeline_layout_.reset();
         swapchain_.reset();
 
         if (surface_ != VK_NULL_HANDLE) {
@@ -208,7 +210,8 @@ class TriangleApp {
     }
 
     void destroy_swapchain_resources() {
-        destroy_pipeline();
+        pipeline_.reset();
+        pipeline_layout_.reset();
         swapchain_.reset();
     }
 
@@ -305,8 +308,7 @@ class TriangleApp {
 
         auto layout_info =
             vk_struct<VkPipelineLayoutCreateInfo>(VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO);
-        check(vkCreatePipelineLayout(device_, &layout_info, nullptr, &pipeline_layout_),
-              "vkCreatePipelineLayout");
+        pipeline_layout_.emplace(vulkan_device(), layout_info);
 
         const VkFormat color_format = swapchain().format();
         auto rendering_info = vk_struct<VkPipelineRenderingCreateInfo>(
@@ -325,22 +327,9 @@ class TriangleApp {
         pipeline_info.pRasterizationState = &rasterizer;
         pipeline_info.pMultisampleState = &multisample;
         pipeline_info.pColorBlendState = &color_blend;
-        pipeline_info.layout = pipeline_layout_;
+        pipeline_info.layout = pipeline_layout().handle();
 
-        check(vkCreateGraphicsPipelines(device_, VK_NULL_HANDLE, 1, &pipeline_info, nullptr,
-                                        &pipeline_),
-              "vkCreateGraphicsPipelines");
-    }
-
-    void destroy_pipeline() {
-        if (pipeline_ != VK_NULL_HANDLE) {
-            vkDestroyPipeline(device_, pipeline_, nullptr);
-            pipeline_ = VK_NULL_HANDLE;
-        }
-        if (pipeline_layout_ != VK_NULL_HANDLE) {
-            vkDestroyPipelineLayout(device_, pipeline_layout_, nullptr);
-            pipeline_layout_ = VK_NULL_HANDLE;
-        }
+        pipeline_.emplace(vulkan_device(), pipeline_info);
     }
 
     void create_frame_resources() {
@@ -416,7 +405,7 @@ class TriangleApp {
         rendering.pColorAttachments = &color_attachment;
 
         vkCmdBeginRendering(command_buffer, &rendering);
-        vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_);
+        vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline().handle());
         vkCmdDraw(command_buffer, 3, 1, 0, 0);
         vkCmdEndRendering(command_buffer);
 
@@ -495,6 +484,20 @@ class TriangleApp {
         return swapchain_.value();
     }
 
+    [[nodiscard]] const cubey::vulkan::PipelineLayout& pipeline_layout() const {
+        if (!pipeline_layout_.has_value()) {
+            throw std::runtime_error("pipeline layout is not initialized");
+        }
+        return pipeline_layout_.value();
+    }
+
+    [[nodiscard]] const cubey::vulkan::GraphicsPipeline& pipeline() const {
+        if (!pipeline_.has_value()) {
+            throw std::runtime_error("pipeline is not initialized");
+        }
+        return pipeline_.value();
+    }
+
     cubey::vulkan::FrameResources& frame_resources() {
         if (!frame_resources_.has_value()) {
             throw std::runtime_error("frame resources are not initialized");
@@ -515,8 +518,8 @@ class TriangleApp {
     VkSurfaceKHR surface_ = VK_NULL_HANDLE;
     VkDevice device_ = VK_NULL_HANDLE;
 
-    VkPipelineLayout pipeline_layout_ = VK_NULL_HANDLE;
-    VkPipeline pipeline_ = VK_NULL_HANDLE;
+    std::optional<cubey::vulkan::PipelineLayout> pipeline_layout_;
+    std::optional<cubey::vulkan::GraphicsPipeline> pipeline_;
 };
 
 } // namespace

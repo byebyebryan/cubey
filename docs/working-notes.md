@@ -39,6 +39,10 @@ As of 2026-05-02:
   triangle-count, and pixel-rate telemetry.
 - Promoted `cubey::vulkan::ShaderModule` and added CMake GLSL-to-SPIR-V shader
   compilation with `glslangValidator`.
+- Promoted the first pipeline/descriptor ownership helpers:
+  `PipelineLayout`, `GraphicsPipeline`, `ComputePipeline`,
+  `DescriptorSetLayout`, and `DescriptorPool`. These wrappers own lifetimes but
+  intentionally keep create-info construction visible in example/project code.
 - Added `examples/triangle` as the first shader-backed graphics pipeline smoke.
 - Converted `examples/triangle` to dynamic rendering as the first render-pass
   direction spike. This removes triangle's render pass/framebuffer ownership and
@@ -211,3 +215,6 @@ env XDG_RUNTIME_DIR=/run/user/1000 WAYLAND_DISPLAY=wayland-1 DISPLAY=:1 XDG_CURR
   does not own GLFW or resize policy yet, which keeps the primary `cubey` target
   free of an unconditional GLFW dependency while still removing the most
   repeated acquire/submit/present code.
+- The pipeline/descriptor helper slice stayed at RAII ownership, not renderer
+  policy. That keeps the project away from a premature material/render-graph
+  abstraction while still reducing Vulkan handle cleanup code.

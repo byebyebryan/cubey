@@ -72,6 +72,10 @@ Current checkpoint:
 - Reusable `cubey::vulkan::ShaderModule` exists, and CMake can compile GLSL to
   SPIR-V with `glslangValidator` for example targets.
 - Reusable `cubey::vulkan::ImmediateCommands` supports one-shot setup uploads.
+- Reusable `cubey::vulkan::PipelineLayout`, `GraphicsPipeline`,
+  `ComputePipeline`, `DescriptorSetLayout`, and `DescriptorPool` own basic
+  pipeline and descriptor lifetimes while still taking raw Vulkan create-info
+  structs.
 - Reusable `cubey::vulkan::draw_visible_frame` owns the common acquire, command
   reset, callback recording, submit, present, and out-of-date result path for
   visible examples.
