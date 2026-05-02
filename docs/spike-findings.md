@@ -4,7 +4,7 @@ Decision record after the `webgpu` and `vulkan` branches.
 
 ## Recommendation
 
-Use **native Vulkan as the primary Cubey 2.0 renderer target**.
+Use **native Vulkan as the primary Cubey 2.0 graphics path**.
 
 Keep WebGPU/Dawn as:
 
@@ -51,7 +51,7 @@ The spike also exposed costs that matter for Cubey:
 - The browser uses the local GPU, so a web build does not solve remote-dev GPU
   access.
 - WebGPU's safety and portability constraints become Cubey's ceiling if it is
-  the primary renderer.
+  the primary path.
 
 The conclusion is not that WebGPU is bad. It is a good optional presentation
 path. It is less aligned with a native graphics workbench where explicit GPU
@@ -62,7 +62,7 @@ control and project feel are part of the point.
 The `vulkan` branch successfully exercised:
 
 - Vulkan instance/device/queue setup
-- GLFW visible surface creation
+- GLFW windowed surface creation
 - swapchain acquisition, presentation, out-of-date handling, and resize
   recreation
 - compute shader writing a storage image
@@ -75,7 +75,7 @@ The `vulkan` branch successfully exercised:
 
 The key desktop smoke passed under `--require-validation` in niri on the RTX
 5070 Ti. niri forced a `1280x1432` framebuffer extent for a requested
-`1280x720` window, which confirmed the renderer must follow the compositor-owned
+`1280x720` window, which confirmed the app must follow the compositor-owned
 surface extent. The run exercised both recovery paths:
 
 ```text
@@ -96,8 +96,8 @@ Vulkan's costs are real but useful:
 - validation layer setup and debug messenger plumbing
 - need to build reusable frame resources before measuring performance
 
-These costs are closer to the native renderer complexity Cubey should own. The
-spike made that complexity visible and manageable rather than hiding it behind a
+These costs are closer to the native Vulkan complexity Cubey should own. The
+spike made that complexity concrete and manageable rather than hiding it behind a
 larger dependency.
 
 ## Decision

@@ -10,12 +10,12 @@
 
 namespace cubey::vulkan {
 
-enum class FrameResult : std::uint8_t {
+enum class RenderFrameResult : std::uint8_t {
     Rendered,
     RecreateSwapchain,
 };
 
-struct Frame {
+struct RenderFrame {
     VkCommandBuffer command_buffer = VK_NULL_HANDLE;
     std::uint32_t image_index = 0;
     bool suboptimal = false;
@@ -31,8 +31,8 @@ class RenderContext {
   public:
     explicit RenderContext(RenderContextConfig config);
 
-    FrameResult begin_frame(Frame* frame) const;
-    FrameResult end_frame(const Frame& frame) const;
+    RenderFrameResult begin_frame(RenderFrame* frame) const;
+    RenderFrameResult end_frame(const RenderFrame& frame) const;
 
   private:
     RenderContextConfig config_;

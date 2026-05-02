@@ -13,11 +13,11 @@ As of 2026-05-02:
 - The primary target is `cubey`, a static library with public headers under
   `include/cubey/`.
 - `examples/window_clear` is the first runnable. It creates a GLFW/Vulkan
-  visible surface, clears a swapchain image, presents it, and handles
+  windowed surface, clears a swapchain image, presents it, and handles
   out-of-date/resize recreation.
 - `window_clear` is example code, not library API. Keep named example behavior
-  under `examples/`; promote only reusable primitives into `cubey`.
-- Promoted the first reusable Vulkan primitives into `cubey`:
+  under `examples/`; promote only reusable components into `cubey`.
+- Promoted the first reusable Vulkan components into `cubey`:
   `cubey::vulkan::Instance` owns validation/debug-utils setup, and
   `cubey::vulkan::Device` owns physical-device selection, logical-device
   lifetime, queue access, and memory-type selection.
@@ -31,22 +31,22 @@ As of 2026-05-02:
 - Promoted `cubey::vulkan::Image` and `cubey::vulkan::Sampler` for basic 2D
   image/view/memory ownership and sampler ownership.
 - Promoted `cubey::vulkan::RenderContext` for explicit `begin_frame` /
-  `end_frame` handling around visible acquire, per-frame command reset, submit,
-  present, and out-of-date/suboptimal reporting.
+  `end_frame` handling around surface-backed acquire, per-frame command reset,
+  submit, present, and out-of-date/suboptimal reporting.
 - Promoted `cubey::FrameClock` and `cubey::OrbitController` for deterministic
   frame timing, auto-rotation, pause/reset, and mouse-drag rotation.
 - Promoted `cubey::FrameStats` for lightweight FPS, frame-time, extent,
   triangle-count, and pixel-rate telemetry.
 - Promoted `cubey::vulkan::ShaderModule` and added CMake GLSL-to-SPIR-V shader
   compilation with `glslangValidator`.
-- Promoted the first pipeline/descriptor ownership helpers:
+- Promoted the first pipeline/descriptor ownership components:
   `PipelineLayout`, `GraphicsPipeline`, `ComputePipeline`,
   `DescriptorSetLayout`, and `DescriptorPool`. These wrappers own lifetimes but
   intentionally keep create-info construction visible in example/project code.
 - Added `examples/triangle` as the first shader-backed graphics pipeline smoke.
 - Converted `examples/triangle` to dynamic rendering as the first render-pass
   direction spike. This removes triangle's render pass/framebuffer ownership and
-  points the visible runtime shell toward dynamic-rendering attachments.
+  points the windowed runtime path toward dynamic-rendering attachments.
 - Added `examples/spinning_cube` to exercise push constants, per-frame MVP
   animation, depth format selection, device-local vertex/index buffers, staging
   upload, and example-local depth image/view resources.
@@ -78,11 +78,11 @@ As of 2026-04-28:
 - `main` is intentionally lightweight: docs, repo setup, and build/tooling
   scaffolding only.
 - `webgpu` and `vulkan` remain spike branches.
-- The project direction is Vulkan-first for the main renderer.
+- The project direction is Vulkan-first for the main Vulkan layer.
 - The primary CMake target should be the `cubey` library. Runnable programs
   should be explicit examples or projects, starting with
   `examples/window_clear`.
-- The next implementation slice is to bring the visible Vulkan clear/present
+- The next implementation slice is to bring the windowed Vulkan clear/present
   path back into `main` as small modules instead of one large experiment file.
 
 ## Hiccups and Gotchas
@@ -102,14 +102,14 @@ As of 2026-04-28:
 ### Vulkan
 
 - The compositor owns the real framebuffer extent. Under niri, a requested
-  `1280x720` Vulkan window was forced to `1280x1432`; the renderer must follow
-  the swapchain/surface extent rather than assuming the requested size.
+  `1280x720` Vulkan window was forced to `1280x1432`; the app must follow the
+  swapchain/surface extent rather than assuming the requested size.
 - `VK_ERROR_OUT_OF_DATE_KHR` and framebuffer resize events are normal runtime
-  paths, not exceptional failures. The renderer should log them clearly and
+  paths, not exceptional failures. The app should log them clearly and
   recreate the swapchain.
 - Validation layers should stay easy to require from smoke commands, not just
   optionally enable during manual debugging.
-- Visible and headless rendering need to stay healthy together. Headless gives
+- Windowed and headless rendering need to stay healthy together. Headless gives
   the project inspectable artifacts and better automated feedback.
 - The Codex terminal may not inherit the desktop Wayland variables even when a
   niri session is active. For graphical smoke tests from that shell, inject the
@@ -120,7 +120,7 @@ env XDG_RUNTIME_DIR=/run/user/1000 WAYLAND_DISPLAY=wayland-1 DISPLAY=:1 XDG_CURR
   ctest --preset dev --output-on-failure
 ```
 
-- If every visible example fails with
+- If every windowed example fails with
   `vkEnumeratePhysicalDevices count failed with VkResult -3` and
   `vulkaninfo --summary` also fails, check the host driver before debugging
   Cubey. On 2026-05-01 this was an NVIDIA userspace/kernel-module mismatch
@@ -152,7 +152,7 @@ env XDG_RUNTIME_DIR=/run/user/1000 WAYLAND_DISPLAY=wayland-1 DISPLAY=:1 XDG_CURR
 ### 2026-04-28
 
 - Preserved the original project's MIT license direction on `main`.
-- Added repo-level setup before porting renderer code so future implementation
+- Added repo-level setup before porting Vulkan code so future implementation
   work has formatting, warning, and doc conventions in place.
 - Captured roadmap and working notes as living docs to keep short-term context
   close to the codebase.
@@ -203,22 +203,23 @@ env XDG_RUNTIME_DIR=/run/user/1000 WAYLAND_DISPLAY=wayland-1 DISPLAY=:1 XDG_CURR
   setup-time compute dispatch into a storage image, followed by an explicit
   `GENERAL` to `SHADER_READ_ONLY_OPTIMAL` transition before the graphics pass
   samples it. This gives compute-plus-graphics signal without promoting
-  descriptor or pipeline helpers into `cubey` prematurely.
+  descriptor or pipeline components into `cubey` prematurely.
 - The compute-texture path still uses Cubey's current single-queue-family
   device model. This is acceptable for the current desktop target and keeps the
   example simple, but split graphics/compute/present queues should be handled
   before treating the device layer as a broader compatibility abstraction.
 - The dynamic-rendering slice raised the requested instance API version to
   Vulkan 1.3 and added an opt-in device feature requirement. Use this path for
-  the next visible runtime shell instead of wrapping classic render passes first.
-- The render-context helper intentionally stops at the Vulkan frame boundary. It
-  does not own GLFW or resize policy yet, which keeps the primary `cubey` target
-  free of an unconditional GLFW dependency while still removing the most
-  repeated acquire/submit/present code.
-- All current visible examples now use `RenderContext::begin_frame`, record
+  the next windowed runtime path instead of wrapping classic render passes first.
+- The `RenderContext` component intentionally stops at the Vulkan frame
+  boundary. It does not own GLFW or resize policy yet, which keeps the primary
+  `cubey` target free of an unconditional GLFW dependency while still removing
+  the most repeated acquire/submit/present code.
+- All current windowed examples now use `RenderContext::begin_frame`, record
   commands directly, then call `RenderContext::end_frame` for submit, present,
   and out-of-date/suboptimal reporting. The examples still own their resize
   policy.
-- The pipeline/descriptor helper slice stayed at RAII ownership, not renderer
-  policy. That keeps the project away from a premature material/render-graph
-  abstraction while still reducing Vulkan handle cleanup code.
+- The pipeline/descriptor component slice stayed at RAII ownership, not
+  rendering policy. That keeps the project away from a premature
+  material/render-graph abstraction while still reducing Vulkan handle cleanup
+  code.

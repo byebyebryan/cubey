@@ -12,10 +12,10 @@ rewrite using a modern native GPU stack.
 Primary target: **native Vulkan on desktop**.
 
 The WebGPU/Dawn spike was useful and remains a reference for possible browser
-showcases, but it is not the foundation for the main renderer. The Vulkan spike
-proved the core surface, compute, render, validation, resize, and headless
-workflows on the target machine with a lighter dependency footprint and better
-fit for Cubey's native-workbench goals.
+showcases, but it is not the foundation for the main Vulkan path. The Vulkan
+spike proved the core surface, compute, rendering, validation, resize, and
+headless workflows on the target machine with a lighter dependency footprint and
+better fit for Cubey's native-workbench goals.
 
 The repo is structured around a primary `cubey` C++ library. Runnable targets
 are explicit examples or projects rather than a generic `cubey` executable.
@@ -34,9 +34,9 @@ See:
 | Branch | Purpose | Status |
 | --- | --- | --- |
 | `webgpu` | Dawn native plus emdawnwebgpu browser experiment | Successful API/prototyping spike; not the primary path |
-| `vulkan` | Native Vulkan visible/headless experiment | Successful; informs the mainline renderer direction |
+| `vulkan` | Native Vulkan windowed/headless experiment | Successful; informs the mainline Vulkan layer |
 
-Main now contains the first visible-surface examples: `examples/window_clear`
+Main now contains the first windowed examples: `examples/window_clear`
 for raw clear/present and `examples/triangle` for build-time GLSL shaders plus
 dynamic-rendering graphics pipeline setup. `examples/spinning_cube` adds
 device-local vertex/index buffers, push constants, per-frame animation, and a
@@ -45,10 +45,10 @@ depth attachment.
 lighting, image/sampler ownership, descriptors, and fragment-shader sampling.
 `cubey` owns the reusable Vulkan
 instance, device, buffer, image, sampler, swapchain, shader-module, frame
-clock, orbit-controller, pipeline, descriptor, render-context begin/end frame
-lifecycle, and single-frame command/sync primitives; examples still own
-GLFW, surface creation, render pass/depth details where not yet ported to
-dynamic rendering, command recording, and resize policy. The spike branches
+clock, orbit-controller, pipeline, descriptor, `RenderContext` surface-backed
+begin/end frame lifecycle, and single-frame command/sync components; examples
+still own GLFW, surface creation, render pass/depth details where not yet ported
+to dynamic rendering, command recording, and resize policy. The spike branches
 remain reference material for deeper compute, headless, and browser work.
 
 ## Development Setup
@@ -63,7 +63,7 @@ ctest --preset dev
 
 Shader examples require `glslangValidator` at build time.
 
-The visible-surface smoke targets are:
+The windowed smoke targets are:
 
 ```bash
 ./build/dev/examples/window_clear/window_clear --frames 300 --width 1280 --height 720

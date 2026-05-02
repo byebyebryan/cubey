@@ -407,16 +407,16 @@ class TriangleApp {
         check(vkEndCommandBuffer(command_buffer), "vkEndCommandBuffer triangle");
     }
 
-    cubey::vulkan::FrameResult draw_frame() {
+    cubey::vulkan::RenderFrameResult draw_frame() {
         cubey::vulkan::RenderContext render_context({
             .device = &vulkan_device(),
             .swapchain = &swapchain(),
             .frame_resources = &frame_resources(),
         });
 
-        cubey::vulkan::Frame frame;
-        cubey::vulkan::FrameResult result = render_context.begin_frame(&frame);
-        if (result == cubey::vulkan::FrameResult::RecreateSwapchain) {
+        cubey::vulkan::RenderFrame frame;
+        cubey::vulkan::RenderFrameResult result = render_context.begin_frame(&frame);
+        if (result == cubey::vulkan::RenderFrameResult::RecreateSwapchain) {
             return result;
         }
 
@@ -442,8 +442,8 @@ class TriangleApp {
                 continue;
             }
 
-            cubey::vulkan::FrameResult result = draw_frame();
-            if (result == cubey::vulkan::FrameResult::RecreateSwapchain) {
+            cubey::vulkan::RenderFrameResult result = draw_frame();
+            if (result == cubey::vulkan::RenderFrameResult::RecreateSwapchain) {
                 ++consecutive_recreates;
                 if (consecutive_recreates > 8) {
                     throw std::runtime_error(

@@ -12,25 +12,26 @@ versioned section and use that section as the release notes.
   clang-tidy defaults.
 - C++ style guide covering formatting, naming, Vulkan structure, and review
   priorities.
-- Vulkan-first renderer direction docs based on the WebGPU and Vulkan spikes.
+- Vulkan-first direction docs based on the WebGPU and Vulkan spikes.
 - Living roadmap and working-notes docs.
 - MIT license, matching the original cubey branch.
 - `cubey` static library target with public headers under `include/cubey/`.
-- Public Vulkan `Instance` and `Device` primitives for validation/debug-utils
+- Public Vulkan `Instance` and `Device` types for validation/debug-utils
   setup, physical-device selection, logical-device ownership, and queue access.
-- Public Vulkan `Swapchain` and `FrameResources` primitives for swapchain
+- Public Vulkan `Swapchain` and `FrameResources` components for swapchain
   image/view ownership and single-frame command/sync resources.
-- Public Vulkan `ShaderModule` primitive and CMake GLSL-to-SPIR-V helper using
+- Public Vulkan `ShaderModule` type and CMake GLSL-to-SPIR-V helper using
   `glslangValidator`.
 - Public Vulkan `Buffer`, `Image`, `Sampler`, and `ImmediateCommands`
-  primitives for device resources, generated texture paths, and setup uploads.
-- Public Vulkan pipeline and descriptor RAII helpers that accept explicit
+  components for device resources, generated texture paths, and setup uploads.
+- Public Vulkan pipeline and descriptor RAII types that accept explicit
   Vulkan create-info structs.
-- Public Vulkan `RenderContext` helper for explicit begin/end frame lifecycle,
-  acquire, command reset, submit, present, and swapchain-recreate signaling.
-- Public frame timing, orbit-controller, and frame-stat helpers for interactive
-  visible examples.
-- `examples/window_clear`, a minimal Vulkan/GLFW visible-surface clear/present
+- Public Vulkan `RenderContext` component for explicit surface-backed
+  begin/end frame lifecycle, acquire, command reset, submit, present, and
+  swapchain-recreate signaling.
+- Public frame timing, orbit-controller, and frame-stat types for interactive
+  windowed examples.
+- `examples/window_clear`, a minimal Vulkan/GLFW windowed clear/present
   smoke executable.
 - `examples/triangle`, a minimal shader-backed Vulkan graphics pipeline smoke
   executable using dynamic rendering and `gl_VertexIndex`.
@@ -48,7 +49,7 @@ versioned section and use that section as the release notes.
 - Runnable targets are explicit examples/projects rather than a generic `cubey`
   executable.
 - `examples/window_clear` now uses reusable `cubey::vulkan` instance, device,
-  swapchain, and frame-resource primitives while keeping GLFW, surface creation,
+  swapchain, and frame-resource components while keeping GLFW, surface creation,
   render pass, framebuffers, command recording, acquire/present behavior, and
   resize policy example-local.
 - Shader-backed examples keep render pass, pipeline, depth resources,

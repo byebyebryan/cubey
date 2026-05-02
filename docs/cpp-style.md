@@ -29,7 +29,7 @@ Use names to make scope and ownership obvious without adding noisy prefixes.
 | Function parameters | `snake_case` | `width`, `usage`, `debug_name` |
 | Private data members | `snake_case_` | `device_`, `swapchain_`, `frame_index_` |
 | Constants | `kPascalCase` | `kFramesInFlight`, `kValidationLayers` |
-| Enum values | `PascalCase` | `FrameResult::RecreateSwapchain` |
+| Enum values | `PascalCase` | `RenderFrameResult::RecreateSwapchain` |
 | CMake options | `CUBEY_UPPER_SNAKE` | `CUBEY_ENABLE_VALIDATION` |
 
 Avoid `m_`, `s_`, `g_`, and Hungarian-style prefixes. Prefer avoiding mutable

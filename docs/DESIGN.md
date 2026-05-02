@@ -17,7 +17,7 @@ This is a ground-up rewrite carrying forward the same spirit with modern tools a
 
 - **Minimal library, maximum project.** The C++ runtime exists to get out of the way. The interesting work happens in shaders and compute.
 - **Primary target: desktop with full GPU power.** No compromises for portability. Native Vulkan is the foundation.
-- **WebGPU is optional and deferred.** Dawn/WebGPU remains useful for browser-facing showcases later, but it should not shape the first renderer abstraction.
+- **WebGPU is optional and deferred.** Dawn/WebGPU remains useful for browser-facing showcases later, but it should not shape the first Vulkan layer.
 - **Headless rendering is first-class.** Every project should eventually render to image without a window. Enables automated testing and AI-assisted development.
 - **Shaders compile at build time.** No runtime hot-reload complexity. GLSL → SPIR-V via glslangValidator at build time.
 
@@ -47,7 +47,7 @@ This is a ground-up rewrite carrying forward the same spirit with modern tools a
                     +----------+----------+
                                |
                     +----------v----------+
-                    |  Vulkan Renderer    |  <-- device, swapchain, resources, pipelines,
+                    |    Vulkan Layer      |  <-- device, swapchain, resources, pipelines,
                     |  (primary path)     |      frame state, passes
                     +---------------------+
 ```
@@ -58,9 +58,9 @@ adding another one above it would add project complexity while still inheriting
 WebGPU's limits. The first implementation should make Vulkan livable through
 small native modules, not hide it behind a premature portability contract.
 
-### Renderer Seams
+### Vulkan Layer Seams
 
-The near-term Vulkan renderer should split around real ownership boundaries:
+The near-term Vulkan layer should split around real ownership boundaries:
 
 - `Device` — instance, physical device, logical device, queue selection, validation
 - `Surface` / `Swapchain` — platform surface handoff, surface extent ownership,
@@ -77,12 +77,12 @@ real use case rather than by symmetry.
 
 ### Resource Vocabulary
 
-Projects and examples should eventually interact with a small set of
-renderer-level concepts:
+Projects and examples should eventually interact with a small set of rendering
+concepts:
 
 - `Buffer` — GPU buffer (vertex, storage, uniform, index, indirect)
 - `Texture2D`, `Texture3D` — image data
-- `Pipeline` — compute or render pipeline
+- `Pipeline` — compute or graphics pipeline
 - `BindGroup` — resource binding set
 
 Core operations: create resources, dispatch compute, draw, synchronize, submit,
@@ -204,36 +204,44 @@ cubey/
   include/
     cubey/
       app_config.h         -- shared run configuration
-      runtime.h            -- future reusable app/runtime entrypoints
+      frame_clock.h        -- frame timing
+      frame_stats.h        -- lightweight telemetry formatting
+      orbit_controller.h   -- basic orbit input state
       vulkan/
         vk_check.h         -- Vulkan result helpers
         instance.h         -- instance, validation, debug messenger
         device.h           -- physical/logical device and queue ownership
         buffer.h           -- Vulkan buffer and memory ownership
-        image.h            -- Vulkan image, memory, and image-view ownership
-        sampler.h          -- Vulkan sampler ownership
-        swapchain.h        -- swapchain images and image views
-        shader_module.h    -- shader module lifetime
+        descriptors.h      -- descriptor set layout/pool ownership
         frame_resources.h  -- per-frame command/sync resources
+        image.h            -- Vulkan image, memory, and image-view ownership
+        immediate_commands.h -- one-shot setup command submission
+        pipeline.h         -- pipeline layout and pipeline ownership
+        render_context.h   -- surface-backed begin/end frame lifecycle
+        sampler.h          -- Vulkan sampler ownership
+        shader_module.h    -- shader module lifetime
+        swapchain.h        -- swapchain images and image views
   src/
     cubey/
       app_config.cpp
-      runtime.cpp          -- future lifecycle/run-loop implementation
+      frame_clock.cpp
+      frame_stats.cpp
+      orbit_controller.cpp
       vulkan/
         instance.cpp       -- instance, validation, debug messenger
         device.cpp         -- physical/logical device, queues
-        window.cpp         -- GLFW window + input
         buffer.cpp         -- buffers and host-visible upload
-        image.cpp          -- images, memory, and image views
-        sampler.cpp        -- samplers
-        swapchain.cpp      -- surface extent, swapchain images/views
-        shader_module.cpp  -- shader module lifetime
-        pipeline.cpp       -- future pipeline layouts and pipelines
+        descriptors.cpp    -- descriptor set layout/pool ownership
         frame_resources.cpp -- command buffers and sync objects
-      camera.cpp           -- orbit camera
-      imgui_layer.cpp      -- ImGui init/frame/shutdown
+        image.cpp          -- images, memory, and image views
+        immediate_commands.cpp -- one-shot setup command submission
+        pipeline.cpp       -- pipeline layout and pipeline ownership
+        render_context.cpp -- surface-backed begin/end frame lifecycle
+        sampler.cpp        -- samplers
+        shader_module.cpp  -- shader module lifetime
+        swapchain.cpp      -- surface extent, swapchain images/views
   examples/
-    window_clear/          -- minimal visible Vulkan clear/present path; owns
+    window_clear/          -- minimal windowed Vulkan clear/present path; owns
                               example-specific app code
     triangle/              -- minimal shader-backed graphics pipeline path
     spinning_cube/         -- indexed cube, push constants, depth
@@ -270,7 +278,7 @@ cubey/
 - `master` branch is preserved with the original code intact
 - `main` branch starts from scratch
 - Old `0.1`–`0.5` branches cleaned up from remote
-- `webgpu` and `vulkan` branches are spike branches used to choose the renderer direction
+- `webgpu` and `vulkan` branches are spike branches used to choose the Vulkan-first direction
 - README and spike findings now capture the Vulkan-first decision before mainline implementation begins
 
 ## What We're Not Building

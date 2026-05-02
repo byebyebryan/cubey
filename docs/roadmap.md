@@ -8,7 +8,7 @@ before the old assumptions become tribal knowledge.
 
 Cubey 2.0 is a native Vulkan-first GPU workbench for procedural graphics
 experiments. WebGPU/Dawn remains useful as an optional future presentation path,
-but it is not the architecture driver for the main renderer.
+but it is not the architecture driver for the main Vulkan layer.
 
 ## Phase 0: Repo Foundation
 
@@ -38,7 +38,7 @@ Goal: reshape the successful Vulkan spike into maintainable mainline modules.
 - Primary `cubey` static library with public headers under `include/cubey/`.
 - First runnable example under `examples/window_clear/`, not a generic `cubey`
   executable.
-- CLI/config surface for visible and headless modes.
+- CLI/config surface for windowed and headless modes.
 - GLFW window creation and Vulkan surface ownership.
 - Vulkan instance, physical device, logical device, queues, validation layers,
   and debug messenger setup.
@@ -60,7 +60,7 @@ Current checkpoint:
 
 - `cubey` static library target exists.
 - Reusable `cubey::vulkan::Instance`, `Device`, `Buffer`, `Image`, `Sampler`,
-  `Swapchain`, and `FrameResources` primitives now own validation/debug-utils
+  `Swapchain`, and `FrameResources` components now own validation/debug-utils
   setup,
   physical-device selection, logical-device lifetime, queue access, swapchain
   image/view ownership, buffer/image allocation, sampler ownership, and
@@ -68,7 +68,7 @@ Current checkpoint:
 - Reusable `cubey::FrameClock` and `cubey::OrbitController` cover basic frame
   timing and mouse-driven view control.
 - Reusable `cubey::FrameStats` covers lightweight FPS/frame-time/extent/triangle
-  telemetry formatting for visible examples.
+  telemetry formatting for windowed examples.
 - Reusable `cubey::vulkan::ShaderModule` exists, and CMake can compile GLSL to
   SPIR-V with `glslangValidator` for example targets.
 - Reusable `cubey::vulkan::ImmediateCommands` supports one-shot setup uploads.
@@ -77,8 +77,9 @@ Current checkpoint:
   pipeline and descriptor lifetimes while still taking raw Vulkan create-info
   structs.
 - Reusable `cubey::vulkan::RenderContext` exposes explicit `begin_frame` and
-  `end_frame` calls for the common acquire, command reset, submit, present, and
-  out-of-date result path used by all current visible examples.
+  `end_frame` calls for the common surface-backed acquire, command reset,
+  submit, present, and out-of-date result path used by all current windowed
+  examples.
 - `examples/window_clear` links against `cubey` and clears/presents a swapchain
   image through Vulkan/GLFW.
 - `examples/triangle` links against `cubey`, compiles vertex/fragment shaders
@@ -95,14 +96,14 @@ Current checkpoint:
 - The current device model intentionally selects one queue family for required
   graphics, compute, and present capabilities. Split queue-family support is a
   future framework slice, not part of the current example-local compute path.
-- The remaining visible app implementation is intentionally example-local: GLFW
+- The remaining windowed app implementation is intentionally example-local: GLFW
   window setup, surface creation, render pass/depth details where still needed,
   pipeline layout/pipeline, command recording, and resize policy.
 - Dev CTest covers the target in both graphical and no-display terminal
   sessions.
 - Headless rendering, frame overlap, richer dynamic-rendering/pipeline
-  helpers, split graphics/compute/present queue-family support, external asset
-  loading, and reusable descriptor helpers remain future slices.
+  components, split graphics/compute/present queue-family support, external asset
+  loading, and reusable descriptor components remain future slices.
 
 ## Phase 2: Resource Layer and App API
 
@@ -114,7 +115,7 @@ constraints.
 - Staging upload and readback paths for meshes, textures, uniforms, and compute
   outputs.
 - A small app interface for setup, update, render, UI, and input hooks.
-- Practical renderer vocabulary for buffers, textures, pipelines, bind groups,
+- Practical rendering vocabulary for buffers, textures, pipelines, bind groups,
   dispatch, draw, submit, present, and readback.
 
 Exit criteria:
@@ -122,7 +123,7 @@ Exit criteria:
 - Project code can focus on shader/data behavior instead of raw setup boilerplate.
 - Vulkan synchronization and image layout requirements remain visible where
   they matter.
-- Headless and visible runs share the same project code path where practical.
+- Headless and windowed runs share the same project code path where practical.
 
 ## Phase 3: First Real Project
 

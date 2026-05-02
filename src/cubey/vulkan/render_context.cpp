@@ -26,7 +26,7 @@ RenderContext::RenderContext(RenderContextConfig config) : config_(config) {
     validate_config(config_);
 }
 
-FrameResult RenderContext::begin_frame(Frame* frame) const {
+RenderFrameResult RenderContext::begin_frame(RenderFrame* frame) const {
     if (frame == nullptr) {
         throw std::runtime_error("begin_frame requires a frame output");
     }
@@ -42,7 +42,7 @@ FrameResult RenderContext::begin_frame(Frame* frame) const {
         vkAcquireNextImageKHR(device.handle(), active_swapchain.handle(), UINT64_MAX,
                               frame_resources.image_available(), VK_NULL_HANDLE, &image_index);
     if (acquired == VK_ERROR_OUT_OF_DATE_KHR) {
-        return FrameResult::RecreateSwapchain;
+        return RenderFrameResult::RecreateSwapchain;
     }
     if (acquired != VK_SUCCESS && acquired != VK_SUBOPTIMAL_KHR) {
         check(acquired, "vkAcquireNextImageKHR");
@@ -55,10 +55,10 @@ FrameResult RenderContext::begin_frame(Frame* frame) const {
         .image_index = image_index,
         .suboptimal = acquired == VK_SUBOPTIMAL_KHR,
     };
-    return FrameResult::Rendered;
+    return RenderFrameResult::Rendered;
 }
 
-FrameResult RenderContext::end_frame(const Frame& frame) const {
+RenderFrameResult RenderContext::end_frame(const RenderFrame& frame) const {
     if (frame.command_buffer == VK_NULL_HANDLE) {
         throw std::runtime_error("end_frame requires a recorded command buffer");
     }
@@ -99,7 +99,8 @@ FrameResult RenderContext::end_frame(const Frame& frame) const {
         check(presented, "vkQueuePresentKHR");
     }
 
-    return recreate_after_present ? FrameResult::RecreateSwapchain : FrameResult::Rendered;
+    return recreate_after_present ? RenderFrameResult::RecreateSwapchain
+                                  : RenderFrameResult::Rendered;
 }
 
 } // namespace cubey::vulkan
