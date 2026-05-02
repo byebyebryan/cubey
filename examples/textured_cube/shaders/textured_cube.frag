@@ -1,4 +1,7 @@
 #version 450
+#extension GL_GOOGLE_include_directive : require
+
+#include "cubey/lighting.glsl"
 
 layout(set = 0, binding = 0, std140) uniform SceneUniforms {
     mat4 mvp;
@@ -18,8 +21,8 @@ layout(location = 0) out vec4 out_color;
 void main() {
     vec4 sampled = texture(cube_texture, frag_uv);
     vec3 normal = normalize(frag_normal);
-    vec3 light_dir = normalize(scene.light_direction.xyz);
-    float diffuse = max(dot(normal, light_dir), 0.0);
-    vec3 light = scene.ambient_color.rgb + scene.light_color.rgb * diffuse;
+    vec3 light =
+        cubey_lambert_light(normal, scene.light_direction.xyz, scene.ambient_color.rgb,
+                            scene.light_color.rgb);
     out_color = vec4(frag_color * sampled.rgb * light, sampled.a);
 }

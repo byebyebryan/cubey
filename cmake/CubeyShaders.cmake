@@ -1,7 +1,7 @@
 function(cubey_add_glsl_shaders target)
     set(options)
     set(one_value_args OUTPUT_DIR)
-    set(multi_value_args SOURCES)
+    set(multi_value_args DEPENDS INCLUDE_DIRS SOURCES)
     cmake_parse_arguments(CUBEY_SHADER "${options}" "${one_value_args}" "${multi_value_args}" ${ARGN})
 
     if (NOT CUBEY_SHADER_SOURCES)
@@ -14,6 +14,18 @@ function(cubey_add_glsl_shaders target)
 
     find_program(GLSLANG_VALIDATOR_EXE glslangValidator REQUIRED)
 
+    set(include_args)
+    foreach(include_dir IN LISTS CUBEY_SHADER_INCLUDE_DIRS)
+        get_filename_component(include_path "${include_dir}" ABSOLUTE)
+        list(APPEND include_args "-I${include_path}")
+    endforeach()
+
+    set(shader_dependencies)
+    foreach(dependency IN LISTS CUBEY_SHADER_DEPENDS)
+        get_filename_component(dependency_path "${dependency}" ABSOLUTE)
+        list(APPEND shader_dependencies "${dependency_path}")
+    endforeach()
+
     set(shader_outputs)
     foreach(shader IN LISTS CUBEY_SHADER_SOURCES)
         get_filename_component(shader_path "${shader}" ABSOLUTE)
@@ -23,8 +35,10 @@ function(cubey_add_glsl_shaders target)
         add_custom_command(
             OUTPUT "${shader_output}"
             COMMAND "${CMAKE_COMMAND}" -E make_directory "${CUBEY_SHADER_OUTPUT_DIR}"
-            COMMAND "${GLSLANG_VALIDATOR_EXE}" -V "${shader_path}" -o "${shader_output}"
-            DEPENDS "${shader_path}"
+            COMMAND
+                "${GLSLANG_VALIDATOR_EXE}" ${include_args}
+                -V "${shader_path}" -o "${shader_output}"
+            DEPENDS "${shader_path}" ${shader_dependencies}
             COMMENT "Compiling GLSL shader ${shader_name}"
             VERBATIM
         )

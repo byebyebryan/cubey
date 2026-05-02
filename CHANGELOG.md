@@ -29,6 +29,8 @@ versioned section and use that section as the release notes.
 - Public Vulkan `RenderContext` component for explicit surface-backed
   begin/end frame lifecycle, acquire, command reset, submit, present, and
   swapchain-recreate signaling.
+- GLSL shader helper support for shared include directories and dependency
+  tracking.
 - Public frame timing, orbit-controller, and frame-stat types for interactive
   windowed examples.
 - `examples/window_clear`, a minimal Vulkan/GLFW windowed clear/present
@@ -38,7 +40,8 @@ versioned section and use that section as the release notes.
 - `examples/spinning_cube`, a shader-generated cube smoke executable with push
   constants, animation, and an example-local depth attachment.
 - `examples/textured_cube`, an interactive shaded cube that generates texture
-  data through a setup-time compute shader and samples it in the graphics pass.
+  data through a setup-time compute shader and samples it in the graphics pass
+  with descriptor-backed scene uniforms.
 - CTest smoke that accepts either successful window startup or the known
   no-display GLFW failure in terminal sessions.
 

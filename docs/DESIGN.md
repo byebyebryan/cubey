@@ -133,7 +133,7 @@ This is critical for AI-assisted development — the agent gets structured pass/
 - **Desktop (Vulkan):** GLSL → SPIR-V at build time via glslangValidator
 - **Web (future WebGPU):** WGSL versions only for projects that explicitly need browser builds
 - Not all projects need web versions; complex experiments stay desktop-only
-- Shared shader includes (noise functions, math utilities) in a common directory
+- Shared shader includes (lighting, noise functions, math utilities) in a common directory
 
 ## Projected Projects
 
@@ -245,7 +245,8 @@ cubey/
                               example-specific app code
     triangle/              -- minimal shader-backed graphics pipeline path
     spinning_cube/         -- indexed cube, push constants, depth
-    textured_cube/         -- compute texture generation, descriptors, sampling
+    textured_cube/         -- compute texture generation, uniforms, descriptors,
+                              sampling
     headless_render/       -- minimal offscreen image path
   projects/
       fluid_sim/
@@ -263,7 +264,7 @@ cubey/
   tools/
   tests/
   benchmarks/
-  shaders/                 -- shared GLSL includes (noise, math)
+  shaders/                 -- shared GLSL includes (lighting, noise, math)
   assets/                  -- textures, meshes
   docs/
     DESIGN.md              -- this file

@@ -70,7 +70,8 @@ Current checkpoint:
 - Reusable `cubey::FrameStats` covers lightweight FPS/frame-time/extent/triangle
   telemetry formatting for windowed examples.
 - Reusable `cubey::vulkan::ShaderModule` exists, and CMake can compile GLSL to
-  SPIR-V with `glslangValidator` for example targets.
+  SPIR-V with `glslangValidator` for example targets, including shared include
+  directories and dependency tracking.
 - Reusable `cubey::vulkan::ImmediateCommands` supports one-shot setup uploads.
 - Reusable `cubey::vulkan::PipelineLayout`, `GraphicsPipeline`,
   `ComputePipeline`, `DescriptorSetLayout`, and `DescriptorPool` own basic
@@ -91,8 +92,9 @@ Current checkpoint:
   example-local depth attachment.
 - `examples/textured_cube` links against `cubey`, generates a texture with a
   compute shader writing a storage image, transitions it for shader sampling,
-  binds it through a combined image sampler descriptor, and draws an interactive
-  shaded textured indexed cube with per-face normals.
+  binds scene uniforms plus a combined image sampler descriptor, and draws an
+  interactive shaded textured indexed cube with per-face normals and shared
+  GLSL Lambert lighting.
 - The current device model intentionally selects one queue family for required
   graphics, compute, and present capabilities. Split queue-family support is a
   future framework slice, not part of the current example-local compute path.

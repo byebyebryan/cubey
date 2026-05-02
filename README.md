@@ -41,15 +41,17 @@ for raw clear/present and `examples/triangle` for build-time GLSL shaders plus
 dynamic-rendering graphics pipeline setup. `examples/spinning_cube` adds
 device-local vertex/index buffers, push constants, per-frame animation, and a
 depth attachment.
-`examples/textured_cube` adds a compute-generated texture, normals, directional
-lighting, image/sampler ownership, descriptors, and fragment-shader sampling.
+`examples/textured_cube` adds a compute-generated texture, descriptor-backed
+scene uniforms, normals, shared GLSL lighting, image/sampler ownership, and
+fragment-shader sampling.
 `cubey` owns the reusable Vulkan
 instance, device, buffer, image, sampler, swapchain, shader-module, frame
-clock, orbit-controller, pipeline, descriptor, `RenderContext` surface-backed
-begin/end frame lifecycle, and single-frame command/sync components; examples
-still own GLFW, surface creation, render pass/depth details where not yet ported
-to dynamic rendering, command recording, and resize policy. The spike branches
-remain reference material for deeper compute, headless, and browser work.
+clock, orbit-controller, pipeline, descriptor, shared shader includes,
+`RenderContext` surface-backed begin/end frame lifecycle, and single-frame
+command/sync components; examples still own GLFW, surface creation, render
+pass/depth details where not yet ported to dynamic rendering, command recording,
+and resize policy. The spike branches remain reference material for deeper
+compute, headless, and browser work.
 
 ## Development Setup
 

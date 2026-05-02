@@ -38,7 +38,8 @@ As of 2026-05-02:
 - Promoted `cubey::FrameStats` for lightweight FPS, frame-time, extent,
   triangle-count, and pixel-rate telemetry.
 - Promoted `cubey::vulkan::ShaderModule` and added CMake GLSL-to-SPIR-V shader
-  compilation with `glslangValidator`.
+  compilation with `glslangValidator`, including shared shader include
+  directories and dependency tracking.
 - Promoted the first pipeline/descriptor ownership components:
   `PipelineLayout`, `GraphicsPipeline`, `ComputePipeline`,
   `DescriptorSetLayout`, and `DescriptorPool`. These wrappers own lifetimes but
@@ -51,10 +52,10 @@ As of 2026-05-02:
   animation, depth format selection, device-local vertex/index buffers, staging
   upload, and example-local depth image/view resources.
 - Added `examples/textured_cube` to exercise compute-generated texture data,
-  image layout transitions, storage-image descriptors, combined image sampler
-  descriptors, normals, directional lighting, and shader sampling. It is also
-  the first interactive example: left-drag rotates, Space pauses, `R` resets,
-  and Escape exits.
+  image layout transitions, storage-image descriptors, a descriptor-backed scene
+  uniform buffer, combined image sampler descriptors, normals, shared GLSL
+  directional lighting, and shader sampling. It is also the first interactive
+  example: left-drag rotates, Space pauses, `R` resets, and Escape exits.
 - GLFW window setup, surface creation, render pass, graphics pipeline, depth
   resources, framebuffers, command recording, acquire/present behavior, and
   resize policy remain example-local.
@@ -195,10 +196,11 @@ env XDG_RUNTIME_DIR=/run/user/1000 WAYLAND_DISPLAY=wayland-1 DISPLAY=:1 XDG_CURR
 - The telemetry slice updates the `textured_cube` window title rather than
   adding text rendering or ImGui yet. This gives immediate framework signal
   without expanding the render pass/UI surface.
-- The shaded-cube slice kept lighting intentionally simple: per-face normals,
-  a fixed directional light, and push constants for MVP plus model matrices.
-  This exercises vertex attribute growth without introducing uniform buffers
-  yet.
+- The shaded-cube slice initially kept lighting intentionally simple with
+  per-face normals, a fixed directional light, and push constants for MVP plus
+  model matrices. The follow-up `textured_cube` uniform slice moved scene
+  matrices and light values into a descriptor-backed uniform buffer once
+  descriptors had a concrete use case.
 - The compute-texture slice replaced the CPU checkerboard upload with a
   setup-time compute dispatch into a storage image, followed by an explicit
   `GENERAL` to `SHADER_READ_ONLY_OPTIMAL` transition before the graphics pass

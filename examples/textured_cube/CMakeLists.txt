@@ -22,6 +22,10 @@ target_link_libraries(
 cubey_add_glsl_shaders(
     cubey_example_textured_cube
     OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/shaders"
+    INCLUDE_DIRS
+        "${CMAKE_SOURCE_DIR}/shaders"
+    DEPENDS
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/lighting.glsl"
     SOURCES
         shaders/textured_cube.vert
         shaders/textured_cube.frag
