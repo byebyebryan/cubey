@@ -48,8 +48,9 @@ instance, device, buffer, image, sampler, swapchain, shader-module, frame
 clock, orbit-controller, pipeline, descriptor, visible-frame acquire/submit/
 present helper, and single-frame command/sync primitives; examples still own
 GLFW, surface creation, render pass/depth details where not yet ported to
-dynamic rendering, command recording, and resize policy. The spike branches
-remain reference material for deeper compute, headless, and browser work.
+dynamic rendering, command recording callbacks, and resize policy. The spike
+branches remain reference material for deeper compute, headless, and browser
+work.
 
 ## Development Setup
 

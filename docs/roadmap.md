@@ -78,7 +78,7 @@ Current checkpoint:
   structs.
 - Reusable `cubey::vulkan::draw_visible_frame` owns the common acquire, command
   reset, callback recording, submit, present, and out-of-date result path for
-  visible examples.
+  all current visible examples.
 - `examples/window_clear` links against `cubey` and clears/presents a swapchain
   image through Vulkan/GLFW.
 - `examples/triangle` links against `cubey`, compiles vertex/fragment shaders

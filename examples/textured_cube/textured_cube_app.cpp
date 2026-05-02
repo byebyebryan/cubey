@@ -12,6 +12,7 @@
 #include <cubey/vulkan/sampler.h>
 #include <cubey/vulkan/shader_module.h>
 #include <cubey/vulkan/swapchain.h>
+#include <cubey/vulkan/visible_frame.h>
 #include <cubey/vulkan/vk_check.h>
 
 #include <GLFW/glfw3.h>
@@ -257,11 +258,6 @@ class TexturedCubeApp {
     }
 
   private:
-    enum class FrameResult : std::uint8_t {
-        Rendered,
-        RecreateSwapchain,
-    };
-
     void init_window() {
         if (glfwInit() == 0) {
             throw std::runtime_error("glfwInit failed");
@@ -381,7 +377,6 @@ class TexturedCubeApp {
         }
         device_owner_.emplace(instance_owner_.value(), device_config);
         device_ = device_owner_->handle();
-        queue_ = device_owner_->queue();
     }
 
     void wait_for_presentable_window_size() const {
@@ -1019,8 +1014,16 @@ class TexturedCubeApp {
         };
     }
 
-    void record_cube_frame(std::uint32_t image_index) {
-        VkCommandBuffer command_buffer = frame_resources().command_buffer();
+    static void record_cube_frame_callback(void* user_data,
+                                           const cubey::vulkan::VisibleFrameContext& context) {
+        auto* app = static_cast<TexturedCubeApp*>(user_data);
+        if (app == nullptr) {
+            throw std::runtime_error("textured_cube recorder requires app user data");
+        }
+        app->record_cube_frame(context.command_buffer, context.image_index);
+    }
+
+    void record_cube_frame(VkCommandBuffer command_buffer, std::uint32_t image_index) {
         auto begin =
             vk_struct<VkCommandBufferBeginInfo>(VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO);
         begin.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
@@ -1063,56 +1066,14 @@ class TexturedCubeApp {
         check(vkEndCommandBuffer(command_buffer), "vkEndCommandBuffer textured_cube");
     }
 
-    FrameResult draw_frame() {
-        cubey::vulkan::FrameResources& frame = frame_resources();
-        cubey::vulkan::Swapchain& active_swapchain = swapchain();
-        frame.wait_for_frame();
-
-        std::uint32_t image_index = 0;
-        VkResult acquired =
-            vkAcquireNextImageKHR(device_, active_swapchain.handle(), UINT64_MAX,
-                                  frame.image_available(), VK_NULL_HANDLE, &image_index);
-        if (acquired == VK_ERROR_OUT_OF_DATE_KHR) {
-            return FrameResult::RecreateSwapchain;
-        }
-        if (acquired != VK_SUCCESS && acquired != VK_SUBOPTIMAL_KHR) {
-            check(acquired, "vkAcquireNextImageKHR");
-        }
-        bool recreate_after_present = acquired == VK_SUBOPTIMAL_KHR;
-
-        frame.reset_fence();
-        frame.reset_command_buffer();
-        record_cube_frame(image_index);
-
-        VkPipelineStageFlags wait_stage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-        auto submit = vk_struct<VkSubmitInfo>(VK_STRUCTURE_TYPE_SUBMIT_INFO);
-        submit.waitSemaphoreCount = 1;
-        VkSemaphore image_available = frame.image_available();
-        submit.pWaitSemaphores = &image_available;
-        submit.pWaitDstStageMask = &wait_stage;
-        submit.commandBufferCount = 1;
-        VkCommandBuffer command_buffer = frame.command_buffer();
-        submit.pCommandBuffers = &command_buffer;
-        submit.signalSemaphoreCount = 1;
-        VkSemaphore present_ready = frame.present_ready(static_cast<std::size_t>(image_index));
-        submit.pSignalSemaphores = &present_ready;
-        check(vkQueueSubmit(queue_, 1, &submit, frame.fence()), "vkQueueSubmit textured_cube");
-
-        auto present = vk_struct<VkPresentInfoKHR>(VK_STRUCTURE_TYPE_PRESENT_INFO_KHR);
-        present.waitSemaphoreCount = 1;
-        present.pWaitSemaphores = &present_ready;
-        present.swapchainCount = 1;
-        VkSwapchainKHR swapchain_handle = active_swapchain.handle();
-        present.pSwapchains = &swapchain_handle;
-        present.pImageIndices = &image_index;
-        VkResult presented = vkQueuePresentKHR(queue_, &present);
-        if (presented == VK_ERROR_OUT_OF_DATE_KHR || presented == VK_SUBOPTIMAL_KHR) {
-            recreate_after_present = true;
-        } else if (presented != VK_SUCCESS) {
-            check(presented, "vkQueuePresentKHR");
-        }
-
-        return recreate_after_present ? FrameResult::RecreateSwapchain : FrameResult::Rendered;
+    cubey::vulkan::VisibleFrameResult draw_frame() {
+        return cubey::vulkan::draw_visible_frame({
+            .device = &vulkan_device(),
+            .swapchain = &swapchain(),
+            .frame_resources = &frame_resources(),
+            .recorder = record_cube_frame_callback,
+            .user_data = this,
+        });
     }
 
     void render_window() {
@@ -1143,8 +1104,8 @@ class TexturedCubeApp {
             const FrameTiming timing = frame_clock_.tick();
             orbit_controller_.update(timing.delta_seconds);
 
-            FrameResult result = draw_frame();
-            if (result == FrameResult::RecreateSwapchain) {
+            cubey::vulkan::VisibleFrameResult result = draw_frame();
+            if (result == cubey::vulkan::VisibleFrameResult::RecreateSwapchain) {
                 ++consecutive_recreates;
                 if (consecutive_recreates > 8) {
                     throw std::runtime_error(
@@ -1264,7 +1225,6 @@ class TexturedCubeApp {
     VkInstance instance_ = VK_NULL_HANDLE;
     VkSurfaceKHR surface_ = VK_NULL_HANDLE;
     VkDevice device_ = VK_NULL_HANDLE;
-    VkQueue queue_ = VK_NULL_HANDLE;
 
     std::vector<VkFramebuffer> framebuffers_;
     VkRenderPass render_pass_ = VK_NULL_HANDLE;

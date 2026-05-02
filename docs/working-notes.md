@@ -215,6 +215,9 @@ env XDG_RUNTIME_DIR=/run/user/1000 WAYLAND_DISPLAY=wayland-1 DISPLAY=:1 XDG_CURR
   does not own GLFW or resize policy yet, which keeps the primary `cubey` target
   free of an unconditional GLFW dependency while still removing the most
   repeated acquire/submit/present code.
+- All current visible examples now route their acquire, command reset, submit,
+  present, and out-of-date/suboptimal reporting through `draw_visible_frame`.
+  The examples still record their own commands and own their resize policy.
 - The pipeline/descriptor helper slice stayed at RAII ownership, not renderer
   policy. That keeps the project away from a premature material/render-graph
   abstraction while still reducing Vulkan handle cleanup code.
