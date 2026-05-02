@@ -32,6 +32,8 @@ As of 2026-05-02:
   image/view/memory ownership and sampler ownership.
 - Promoted `cubey::FrameClock` and `cubey::OrbitController` for deterministic
   frame timing, auto-rotation, pause/reset, and mouse-drag rotation.
+- Promoted `cubey::FrameStats` for lightweight FPS, frame-time, extent,
+  triangle-count, and pixel-rate telemetry.
 - Promoted `cubey::vulkan::ShaderModule` and added CMake GLSL-to-SPIR-V shader
   compilation with `glslangValidator`.
 - Added `examples/triangle` as the first shader-backed graphics pipeline smoke.
@@ -179,3 +181,6 @@ env XDG_RUNTIME_DIR=/run/user/1000 WAYLAND_DISPLAY=wayland-1 DISPLAY=:1 XDG_CURR
   wired `textured_cube` to GLFW callbacks. Keeping GLFW calls example-local
   preserves the current library boundary while still moving reusable control
   policy into `cubey`.
+- The telemetry slice updates the `textured_cube` window title rather than
+  adding text rendering or ImGui yet. This gives immediate framework signal
+  without expanding the render pass/UI surface.

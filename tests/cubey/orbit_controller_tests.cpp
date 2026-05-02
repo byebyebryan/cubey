@@ -21,10 +21,12 @@ void require_close(float actual, float expected, const char* message) {
 } // namespace
 
 void test_frame_clock_tracks_delta_elapsed_and_index();
+void test_frame_stats_publish_window_title_metrics();
 
 int main() {
     try {
         test_frame_clock_tracks_delta_elapsed_and_index();
+        test_frame_stats_publish_window_title_metrics();
 
         cubey::OrbitController controller;
 

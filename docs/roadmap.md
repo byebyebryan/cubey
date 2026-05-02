@@ -67,6 +67,8 @@ Current checkpoint:
   single-frame command/sync resources.
 - Reusable `cubey::FrameClock` and `cubey::OrbitController` cover basic frame
   timing and mouse-driven view control.
+- Reusable `cubey::FrameStats` covers lightweight FPS/frame-time/extent/triangle
+  telemetry formatting for visible examples.
 - Reusable `cubey::vulkan::ShaderModule` exists, and CMake can compile GLSL to
   SPIR-V with `glslangValidator` for example targets.
 - Reusable `cubey::vulkan::ImmediateCommands` supports one-shot setup uploads.

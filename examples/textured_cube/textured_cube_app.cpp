@@ -1,6 +1,7 @@
 #include "textured_cube_app.h"
 
 #include <cubey/frame_clock.h>
+#include <cubey/frame_stats.h>
 #include <cubey/orbit_controller.h>
 #include <cubey/vulkan/buffer.h>
 #include <cubey/vulkan/device.h>
@@ -28,6 +29,7 @@
 #include <numbers>
 #include <optional>
 #include <stdexcept>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -1054,6 +1056,17 @@ class TexturedCubeApp {
             }
 
             consecutive_recreates = 0;
+            const VkExtent2D extent = swapchain().extent();
+            std::optional<FrameStatsSnapshot> stats = frame_stats_.record_frame({
+                .delta_seconds = timing.delta_seconds,
+                .width = extent.width,
+                .height = extent.height,
+                .triangles = static_cast<std::uint32_t>(kCubeIndices.size() / 3U),
+            });
+            if (stats.has_value()) {
+                const std::string title = format_window_title(config_.title, stats.value());
+                glfwSetWindowTitle(window_, title.c_str());
+            }
             ++frame;
         }
 
@@ -1135,6 +1148,7 @@ class TexturedCubeApp {
     bool framebuffer_resized_ = false;
     GLFWwindow* window_ = nullptr;
     FrameClock frame_clock_;
+    FrameStats frame_stats_;
     OrbitController orbit_controller_;
 
     std::optional<cubey::vulkan::Instance> instance_owner_;

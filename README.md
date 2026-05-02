@@ -80,6 +80,8 @@ Use validation as a hard requirement when the validation layers are installed:
 
 `textured_cube` supports basic interaction: left-drag rotates the cube, Space
 pauses/resumes auto-rotation, `R` resets the view, and Escape closes the window.
+Its window title periodically reports FPS, frame time, swapchain extent,
+triangle count, and pixel rate.
 
 The repo also includes:
 
