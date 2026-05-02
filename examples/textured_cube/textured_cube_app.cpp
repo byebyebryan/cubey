@@ -159,10 +159,15 @@ std::filesystem::path shader_path(const char* filename) {
     return std::filesystem::path(CUBEY_TEXTURED_CUBE_SHADER_DIR) / filename;
 }
 
-struct PushConstants {
+struct SceneUniforms {
     Mat4 mvp;
     Mat4 model;
+    std::array<float, 4> light_direction;
+    std::array<float, 4> light_color;
+    std::array<float, 4> ambient_color;
 };
+
+static_assert(sizeof(SceneUniforms) == (sizeof(Mat4) * 2U) + (sizeof(float) * 12U));
 
 struct Vertex {
     std::array<float, 3> position;
@@ -221,6 +226,7 @@ class TexturedCubeApp {
         destroy_compute_resources();
         texture_sampler_.reset();
         texture_image_.reset();
+        scene_uniform_buffer_.reset();
         index_buffer_.reset();
         vertex_buffer_.reset();
 
@@ -250,6 +256,7 @@ class TexturedCubeApp {
         create_surface();
         create_device();
         create_cube_buffers();
+        create_scene_uniform_buffer();
         create_texture_resources();
         create_swapchain_resources();
         create_frame_resources();
@@ -638,17 +645,10 @@ class TexturedCubeApp {
         color_blend.attachmentCount = 1;
         color_blend.pAttachments = &color_blend_attachment;
 
-        VkPushConstantRange push_constant_range{};
-        push_constant_range.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-        push_constant_range.offset = 0;
-        push_constant_range.size = sizeof(PushConstants);
-
         auto layout_info =
             vk_struct<VkPipelineLayoutCreateInfo>(VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO);
         layout_info.setLayoutCount = 1;
         layout_info.pSetLayouts = &descriptor_set_layout_;
-        layout_info.pushConstantRangeCount = 1;
-        layout_info.pPushConstantRanges = &push_constant_range;
         check(vkCreatePipelineLayout(device_, &layout_info, nullptr, &pipeline_layout_),
               "vkCreatePipelineLayout");
 
@@ -752,6 +752,15 @@ class TexturedCubeApp {
     void create_cube_buffers() {
         upload_device_buffer(kCubeVertices, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, vertex_buffer_);
         upload_device_buffer(kCubeIndices, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, index_buffer_);
+    }
+
+    void create_scene_uniform_buffer() {
+        cubey::vulkan::BufferConfig config;
+        config.size = sizeof(SceneUniforms);
+        config.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+        config.memory_properties =
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+        scene_uniform_buffer_.emplace(vulkan_device(), config);
     }
 
     void create_texture_resources() {
@@ -941,28 +950,46 @@ class TexturedCubeApp {
     }
 
     void create_descriptors() {
+        VkDescriptorSetLayoutBinding scene_binding{};
+        scene_binding.binding = 0;
+        scene_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        scene_binding.descriptorCount = 1;
+        scene_binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+
         VkDescriptorSetLayoutBinding texture_binding{};
-        texture_binding.binding = 0;
+        texture_binding.binding = 1;
         texture_binding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
         texture_binding.descriptorCount = 1;
         texture_binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
+        const std::array<VkDescriptorSetLayoutBinding, 2> bindings{
+            scene_binding,
+            texture_binding,
+        };
+
         auto layout_info = vk_struct<VkDescriptorSetLayoutCreateInfo>(
             VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO);
-        layout_info.bindingCount = 1;
-        layout_info.pBindings = &texture_binding;
+        layout_info.bindingCount = static_cast<std::uint32_t>(bindings.size());
+        layout_info.pBindings = bindings.data();
         check(vkCreateDescriptorSetLayout(device_, &layout_info, nullptr, &descriptor_set_layout_),
               "vkCreateDescriptorSetLayout");
 
-        VkDescriptorPoolSize pool_size{};
-        pool_size.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        pool_size.descriptorCount = 1;
+        const std::array<VkDescriptorPoolSize, 2> pool_sizes{{
+            {
+                .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                .descriptorCount = 1,
+            },
+            {
+                .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                .descriptorCount = 1,
+            },
+        }};
 
         auto pool_info =
             vk_struct<VkDescriptorPoolCreateInfo>(VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO);
         pool_info.maxSets = 1;
-        pool_info.poolSizeCount = 1;
-        pool_info.pPoolSizes = &pool_size;
+        pool_info.poolSizeCount = static_cast<std::uint32_t>(pool_sizes.size());
+        pool_info.pPoolSizes = pool_sizes.data();
         check(vkCreateDescriptorPool(device_, &pool_info, nullptr, &descriptor_pool_),
               "vkCreateDescriptorPool");
 
@@ -974,18 +1001,32 @@ class TexturedCubeApp {
         check(vkAllocateDescriptorSets(device_, &alloc, &descriptor_set_),
               "vkAllocateDescriptorSets");
 
+        VkDescriptorBufferInfo scene_info{};
+        scene_info.buffer = scene_uniform_buffer().handle();
+        scene_info.offset = 0;
+        scene_info.range = sizeof(SceneUniforms);
+
         VkDescriptorImageInfo image_info{};
         image_info.sampler = texture_sampler().handle();
         image_info.imageView = texture_image().view();
         image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
-        auto write = vk_struct<VkWriteDescriptorSet>(VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET);
-        write.dstSet = descriptor_set_;
-        write.dstBinding = 0;
-        write.descriptorCount = 1;
-        write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        write.pImageInfo = &image_info;
-        vkUpdateDescriptorSets(device_, 1, &write, 0, nullptr);
+        std::array<VkWriteDescriptorSet, 2> writes{};
+        writes[0] = vk_struct<VkWriteDescriptorSet>(VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET);
+        writes[0].dstSet = descriptor_set_;
+        writes[0].dstBinding = 0;
+        writes[0].descriptorCount = 1;
+        writes[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        writes[0].pBufferInfo = &scene_info;
+
+        writes[1] = vk_struct<VkWriteDescriptorSet>(VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET);
+        writes[1].dstSet = descriptor_set_;
+        writes[1].dstBinding = 1;
+        writes[1].descriptorCount = 1;
+        writes[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        writes[1].pImageInfo = &image_info;
+        vkUpdateDescriptorSets(device_, static_cast<std::uint32_t>(writes.size()), writes.data(), 0,
+                               nullptr);
     }
 
     void destroy_descriptors() {
@@ -1000,7 +1041,7 @@ class TexturedCubeApp {
         }
     }
 
-    [[nodiscard]] PushConstants current_push_constants() const {
+    [[nodiscard]] SceneUniforms current_scene_uniforms() const {
         const Mat4 model =
             multiply(rotation_y(orbit_controller_.yaw()), rotation_x(orbit_controller_.pitch()));
         const Mat4 view = translation(0.0F, 0.0F, -4.2F);
@@ -1009,12 +1050,22 @@ class TexturedCubeApp {
         const Mat4 projection = perspective(kPi / 3.0F, aspect, 0.1F, 100.0F);
 
         return {
-            multiply(projection, multiply(view, model)),
-            model,
+            .mvp = multiply(projection, multiply(view, model)),
+            .model = model,
+            .light_direction = {0.35F, -0.55F, 0.76F, 0.0F},
+            .light_color = {0.76F, 0.76F, 0.76F, 1.0F},
+            .ambient_color = {0.24F, 0.24F, 0.24F, 1.0F},
         };
     }
 
+    void update_scene_uniforms() {
+        const SceneUniforms uniforms = current_scene_uniforms();
+        scene_uniform_buffer().upload(&uniforms, sizeof(uniforms));
+    }
+
     void record_cube_frame(VkCommandBuffer command_buffer, std::uint32_t image_index) {
+        update_scene_uniforms();
+
         auto begin =
             vk_struct<VkCommandBufferBeginInfo>(VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO);
         begin.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
@@ -1037,8 +1088,6 @@ class TexturedCubeApp {
         pass.clearValueCount = static_cast<std::uint32_t>(clear_values.size());
         pass.pClearValues = clear_values.data();
 
-        const PushConstants push_constants = current_push_constants();
-
         vkCmdBeginRenderPass(command_buffer, &pass, VK_SUBPASS_CONTENTS_INLINE);
         vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_);
         vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout_,
@@ -1048,8 +1097,6 @@ class TexturedCubeApp {
         vkCmdBindVertexBuffers(command_buffer, 0, static_cast<std::uint32_t>(vertex_buffers.size()),
                                vertex_buffers.data(), vertex_offsets.data());
         vkCmdBindIndexBuffer(command_buffer, index_buffer().handle(), 0, VK_INDEX_TYPE_UINT16);
-        vkCmdPushConstants(command_buffer, pipeline_layout_, VK_SHADER_STAGE_VERTEX_BIT, 0,
-                           sizeof(PushConstants), &push_constants);
         vkCmdDrawIndexed(command_buffer, static_cast<std::uint32_t>(kCubeIndices.size()), 1, 0, 0,
                          0);
         vkCmdEndRenderPass(command_buffer);
@@ -1182,6 +1229,13 @@ class TexturedCubeApp {
         return index_buffer_.value();
     }
 
+    [[nodiscard]] cubey::vulkan::Buffer& scene_uniform_buffer() {
+        if (!scene_uniform_buffer_.has_value()) {
+            throw std::runtime_error("scene uniform buffer is not initialized");
+        }
+        return scene_uniform_buffer_.value();
+    }
+
     [[nodiscard]] const cubey::vulkan::Image& texture_image() const {
         if (!texture_image_.has_value()) {
             throw std::runtime_error("texture image is not initialized");
@@ -1217,6 +1271,7 @@ class TexturedCubeApp {
     std::optional<cubey::vulkan::FrameResources> frame_resources_;
     std::optional<cubey::vulkan::Buffer> vertex_buffer_;
     std::optional<cubey::vulkan::Buffer> index_buffer_;
+    std::optional<cubey::vulkan::Buffer> scene_uniform_buffer_;
     std::optional<cubey::vulkan::Image> texture_image_;
     std::optional<cubey::vulkan::Image> depth_image_;
     std::optional<cubey::vulkan::Sampler> texture_sampler_;
