@@ -224,8 +224,10 @@ class TriangleApp {
 
     void recreate_swapchain_resources() {
         check(vkDeviceWaitIdle(device_), "vkDeviceWaitIdle before swapchain recreate");
+        frame_resources_.reset();
         destroy_swapchain_resources();
         create_swapchain_resources();
+        create_frame_resources();
     }
 
     void create_swapchain() {
@@ -418,7 +420,7 @@ class TriangleApp {
     }
 
     void create_frame_resources() {
-        frame_resources_.emplace(vulkan_device());
+        frame_resources_.emplace(vulkan_device(), swapchain().image_count());
     }
 
     void record_triangle_frame(std::uint32_t image_index) {
@@ -478,7 +480,7 @@ class TriangleApp {
         VkCommandBuffer command_buffer = frame.command_buffer();
         submit.pCommandBuffers = &command_buffer;
         submit.signalSemaphoreCount = 1;
-        VkSemaphore present_ready = frame.present_ready();
+        VkSemaphore present_ready = frame.present_ready(static_cast<std::size_t>(image_index));
         submit.pSignalSemaphores = &present_ready;
         check(vkQueueSubmit(queue_, 1, &submit, frame.fence()), "vkQueueSubmit triangle");
 

@@ -4,13 +4,15 @@
 
 #include <vulkan/vulkan.h>
 
+#include <cstddef>
 #include <cstdint>
+#include <vector>
 
 namespace cubey::vulkan {
 
 class FrameResources {
   public:
-    explicit FrameResources(const Device& device);
+    explicit FrameResources(const Device& device, std::size_t present_ready_count);
     ~FrameResources();
 
     FrameResources(const FrameResources&) = delete;
@@ -25,8 +27,11 @@ class FrameResources {
     VkSemaphore image_available() const {
         return image_available_;
     }
-    VkSemaphore present_ready() const {
-        return present_ready_;
+    VkSemaphore present_ready(std::size_t image_index) const {
+        return present_ready_.at(image_index);
+    }
+    std::size_t present_ready_count() const {
+        return present_ready_.size();
     }
     VkFence fence() const {
         return fence_;
@@ -45,7 +50,7 @@ class FrameResources {
     VkCommandPool command_pool_ = VK_NULL_HANDLE;
     VkCommandBuffer command_buffer_ = VK_NULL_HANDLE;
     VkSemaphore image_available_ = VK_NULL_HANDLE;
-    VkSemaphore present_ready_ = VK_NULL_HANDLE;
+    std::vector<VkSemaphore> present_ready_;
     VkFence fence_ = VK_NULL_HANDLE;
 };
 

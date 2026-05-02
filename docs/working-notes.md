@@ -7,7 +7,7 @@ decisions into `docs/DESIGN.md`, `docs/roadmap.md`, or
 
 ## Current Checkpoint
 
-As of 2026-05-01:
+As of 2026-05-02:
 
 - `main` has moved from docs/tooling-only to the first implementation slice.
 - The primary target is `cubey`, a static library with public headers under
@@ -23,7 +23,8 @@ As of 2026-05-01:
   lifetime, and queue access.
 - Promoted `cubey::vulkan::Swapchain` for swapchain/image-view ownership and
   `cubey::vulkan::FrameResources` for a single command pool, command buffer,
-  semaphores, and fence.
+  image-available semaphore, per-swapchain-image present-ready semaphores, and
+  fence.
 - Promoted `cubey::vulkan::ShaderModule` and added CMake GLSL-to-SPIR-V shader
   compilation with `glslangValidator`.
 - Added `examples/triangle` as the first shader-backed graphics pipeline smoke.
@@ -33,14 +34,17 @@ As of 2026-05-01:
 - GLFW window setup, surface creation, render pass, graphics pipeline, depth
   resources, framebuffers, command recording, acquire/present behavior, and
   resize policy remain example-local.
-- The current terminal session has no display, so direct local execution reports
-  `glfwInit failed`; CTest accepts that as the expected no-display smoke result.
-- The next useful manual desktop smokes are:
+- CTest covers both the no-display terminal boundary and graphical runs when a
+  desktop window context is injected.
+- The current useful manual desktop smokes are:
 
 ```bash
-./build/dev/examples/window_clear/window_clear --require-validation --frames 300 --width 1280 --height 720
-./build/dev/examples/triangle/triangle --require-validation --frames 300 --width 1280 --height 720
-./build/dev/examples/spinning_cube/spinning_cube --require-validation --frames 300 --width 1280 --height 720
+env XDG_RUNTIME_DIR=/run/user/1000 WAYLAND_DISPLAY=wayland-1 DISPLAY=:1 XDG_CURRENT_DESKTOP=niri \
+  ./build/dev/examples/window_clear/window_clear --require-validation --frames 300 --width 1280 --height 720
+env XDG_RUNTIME_DIR=/run/user/1000 WAYLAND_DISPLAY=wayland-1 DISPLAY=:1 XDG_CURRENT_DESKTOP=niri \
+  ./build/dev/examples/triangle/triangle --require-validation --frames 300 --width 1280 --height 720
+env XDG_RUNTIME_DIR=/run/user/1000 WAYLAND_DISPLAY=wayland-1 DISPLAY=:1 XDG_CURRENT_DESKTOP=niri \
+  ./build/dev/examples/spinning_cube/spinning_cube --require-validation --frames 300 --width 1280 --height 720
 ```
 
 As of 2026-04-28:
@@ -97,6 +101,11 @@ env XDG_RUNTIME_DIR=/run/user/1000 WAYLAND_DISPLAY=wayland-1 DISPLAY=:1 XDG_CURR
   after a package upgrade: installed userspace was `595.71.05`, but the loaded
   kernel module was still `595.58.03`; rebooting into the upgraded kernel/module
   should be the first fix.
+- Binary semaphores signaled into `vkQueuePresentKHR` cannot be reused just
+  because the CPU waited on the next frame fence. The swapchain owns that
+  wait-side lifetime until the presented image is reacquired. Keep present-ready
+  semaphores indexed by acquired swapchain image, and recreate them with frame
+  resources whenever the swapchain image count changes.
 
 ### Repo / Build
 
@@ -135,3 +144,13 @@ env XDG_RUNTIME_DIR=/run/user/1000 WAYLAND_DISPLAY=wayland-1 DISPLAY=:1 XDG_CURR
 - Added a spinning cube without adding vertex/index buffers yet. The useful new
   signal is depth ownership and push constants; buffers, image uploads, and
   texture sampling remain separate future slices.
+
+### 2026-05-02
+
+- After rebooting into the matching NVIDIA userspace/kernel module, graphical
+  Vulkan runs from the Codex shell worked by explicitly injecting the active
+  niri Wayland environment.
+- Validation-layer desktop smokes caught a real presentation-sync bug that the
+  no-display CTest path could not see: one reusable present-ready semaphore was
+  still possibly owned by the swapchain. `FrameResources` now tracks
+  present-ready semaphores per swapchain image.

@@ -6,10 +6,14 @@
 
 namespace cubey::vulkan {
 
-FrameResources::FrameResources(const Device& device)
-    : device_(device.handle()), queue_family_(device.queue_family()) {
+FrameResources::FrameResources(const Device& device, std::size_t present_ready_count)
+    : device_(device.handle()), queue_family_(device.queue_family()),
+      present_ready_(present_ready_count, VK_NULL_HANDLE) {
     if (device_ == VK_NULL_HANDLE) {
         throw std::runtime_error("frame resources require a valid Vulkan device");
+    }
+    if (present_ready_.empty()) {
+        throw std::runtime_error("frame resources require at least one present-ready semaphore");
     }
 
     try {
@@ -52,8 +56,10 @@ void FrameResources::create() {
     auto semaphore_info = vk_struct<VkSemaphoreCreateInfo>(VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO);
     check(vkCreateSemaphore(device_, &semaphore_info, nullptr, &image_available_),
           "vkCreateSemaphore image_available");
-    check(vkCreateSemaphore(device_, &semaphore_info, nullptr, &present_ready_),
-          "vkCreateSemaphore present_ready");
+    for (VkSemaphore& semaphore : present_ready_) {
+        check(vkCreateSemaphore(device_, &semaphore_info, nullptr, &semaphore),
+              "vkCreateSemaphore present_ready");
+    }
 
     auto fence_info = vk_struct<VkFenceCreateInfo>(VK_STRUCTURE_TYPE_FENCE_CREATE_INFO);
     fence_info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
@@ -65,10 +71,13 @@ void FrameResources::destroy() {
         vkDestroyFence(device_, fence_, nullptr);
         fence_ = VK_NULL_HANDLE;
     }
-    if (present_ready_ != VK_NULL_HANDLE) {
-        vkDestroySemaphore(device_, present_ready_, nullptr);
-        present_ready_ = VK_NULL_HANDLE;
+    for (VkSemaphore& semaphore : present_ready_) {
+        if (semaphore != VK_NULL_HANDLE) {
+            vkDestroySemaphore(device_, semaphore, nullptr);
+            semaphore = VK_NULL_HANDLE;
+        }
     }
+    present_ready_.clear();
     if (image_available_ != VK_NULL_HANDLE) {
         vkDestroySemaphore(device_, image_available_, nullptr);
         image_available_ = VK_NULL_HANDLE;
