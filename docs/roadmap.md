@@ -84,7 +84,7 @@ Current checkpoint:
 - `examples/textured_cube` links against `cubey`, generates a checkerboard
   texture, uploads it through a staging buffer, transitions it for shader
   sampling, binds it through a combined image sampler descriptor, and draws an
-  interactive textured indexed cube.
+  interactive shaded textured indexed cube with per-face normals.
 - The remaining visible app implementation is intentionally example-local: GLFW
   window setup, surface creation, render pass, pipeline layout/pipeline, depth
   resources, framebuffers, command recording, acquire/present behavior, and

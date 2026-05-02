@@ -41,9 +41,9 @@ As of 2026-05-02:
   animation, depth format selection, device-local vertex/index buffers, staging
   upload, and example-local depth image/view resources.
 - Added `examples/textured_cube` to exercise generated texture upload, image
-  layout transitions, combined image sampler descriptors, and shader sampling.
-  It is also the first interactive example: left-drag rotates, Space pauses,
-  `R` resets, and Escape exits.
+  layout transitions, combined image sampler descriptors, normals, directional
+  lighting, and shader sampling. It is also the first interactive example:
+  left-drag rotates, Space pauses, `R` resets, and Escape exits.
 - GLFW window setup, surface creation, render pass, graphics pipeline, depth
   resources, framebuffers, command recording, acquire/present behavior, and
   resize policy remain example-local.
@@ -184,3 +184,7 @@ env XDG_RUNTIME_DIR=/run/user/1000 WAYLAND_DISPLAY=wayland-1 DISPLAY=:1 XDG_CURR
 - The telemetry slice updates the `textured_cube` window title rather than
   adding text rendering or ImGui yet. This gives immediate framework signal
   without expanding the render pass/UI surface.
+- The shaded-cube slice kept lighting intentionally simple: per-face normals,
+  a fixed directional light, and push constants for MVP plus model matrices.
+  This exercises vertex attribute growth without introducing uniform buffers
+  yet.
