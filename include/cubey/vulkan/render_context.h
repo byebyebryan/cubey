@@ -10,26 +10,32 @@
 
 namespace cubey::vulkan {
 
-enum class VisibleFrameResult : std::uint8_t {
+enum class FrameResult : std::uint8_t {
     Rendered,
     RecreateSwapchain,
 };
 
-struct VisibleFrameContext {
+struct Frame {
     VkCommandBuffer command_buffer = VK_NULL_HANDLE;
     std::uint32_t image_index = 0;
+    bool suboptimal = false;
 };
 
-using VisibleFrameRecorder = void (*)(void* user_data, const VisibleFrameContext& context);
-
-struct VisibleFrameConfig {
+struct RenderContextConfig {
     Device* device = nullptr;
     Swapchain* swapchain = nullptr;
     FrameResources* frame_resources = nullptr;
-    VisibleFrameRecorder recorder = nullptr;
-    void* user_data = nullptr;
 };
 
-VisibleFrameResult draw_visible_frame(const VisibleFrameConfig& config);
+class RenderContext {
+  public:
+    explicit RenderContext(RenderContextConfig config);
+
+    FrameResult begin_frame(Frame* frame) const;
+    FrameResult end_frame(const Frame& frame) const;
+
+  private:
+    RenderContextConfig config_;
+};
 
 } // namespace cubey::vulkan

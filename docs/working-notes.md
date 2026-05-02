@@ -30,9 +30,9 @@ As of 2026-05-02:
   one-shot setup copies.
 - Promoted `cubey::vulkan::Image` and `cubey::vulkan::Sampler` for basic 2D
   image/view/memory ownership and sampler ownership.
-- Promoted `cubey::vulkan::draw_visible_frame` for shared visible acquire,
-  per-frame command reset, callback recording, submit, present, and
-  out-of-date/suboptimal reporting.
+- Promoted `cubey::vulkan::RenderContext` for explicit `begin_frame` /
+  `end_frame` handling around visible acquire, per-frame command reset, submit,
+  present, and out-of-date/suboptimal reporting.
 - Promoted `cubey::FrameClock` and `cubey::OrbitController` for deterministic
   frame timing, auto-rotation, pause/reset, and mouse-drag rotation.
 - Promoted `cubey::FrameStats` for lightweight FPS, frame-time, extent,
@@ -211,13 +211,14 @@ env XDG_RUNTIME_DIR=/run/user/1000 WAYLAND_DISPLAY=wayland-1 DISPLAY=:1 XDG_CURR
 - The dynamic-rendering slice raised the requested instance API version to
   Vulkan 1.3 and added an opt-in device feature requirement. Use this path for
   the next visible runtime shell instead of wrapping classic render passes first.
-- The visible-frame helper intentionally stops at the Vulkan frame boundary. It
+- The render-context helper intentionally stops at the Vulkan frame boundary. It
   does not own GLFW or resize policy yet, which keeps the primary `cubey` target
   free of an unconditional GLFW dependency while still removing the most
   repeated acquire/submit/present code.
-- All current visible examples now route their acquire, command reset, submit,
-  present, and out-of-date/suboptimal reporting through `draw_visible_frame`.
-  The examples still record their own commands and own their resize policy.
+- All current visible examples now use `RenderContext::begin_frame`, record
+  commands directly, then call `RenderContext::end_frame` for submit, present,
+  and out-of-date/suboptimal reporting. The examples still own their resize
+  policy.
 - The pipeline/descriptor helper slice stayed at RAII ownership, not renderer
   policy. That keeps the project away from a premature material/render-graph
   abstraction while still reducing Vulkan handle cleanup code.

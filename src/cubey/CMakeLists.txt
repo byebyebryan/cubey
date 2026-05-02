@@ -11,10 +11,10 @@ add_library(cubey STATIC
     vulkan/immediate_commands.cpp
     vulkan/instance.cpp
     vulkan/pipeline.cpp
+    vulkan/render_context.cpp
     vulkan/sampler.cpp
     vulkan/shader_module.cpp
     vulkan/swapchain.cpp
-    vulkan/visible_frame.cpp
 )
 add_library(cubey::cubey ALIAS cubey)
 

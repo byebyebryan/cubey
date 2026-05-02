@@ -26,8 +26,8 @@ versioned section and use that section as the release notes.
   primitives for device resources, generated texture paths, and setup uploads.
 - Public Vulkan pipeline and descriptor RAII helpers that accept explicit
   Vulkan create-info structs.
-- Public Vulkan visible-frame helper for acquire, command reset, submit,
-  present, and swapchain-recreate signaling.
+- Public Vulkan `RenderContext` helper for explicit begin/end frame lifecycle,
+  acquire, command reset, submit, present, and swapchain-recreate signaling.
 - Public frame timing, orbit-controller, and frame-stat helpers for interactive
   visible examples.
 - `examples/window_clear`, a minimal Vulkan/GLFW visible-surface clear/present

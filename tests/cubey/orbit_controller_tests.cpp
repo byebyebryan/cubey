@@ -22,11 +22,13 @@ void require_close(float actual, float expected, const char* message) {
 
 void test_frame_clock_tracks_delta_elapsed_and_index();
 void test_frame_stats_publish_window_title_metrics();
+void test_render_context_exposes_explicit_frame_boundary();
 
 int main() {
     try {
         test_frame_clock_tracks_delta_elapsed_and_index();
         test_frame_stats_publish_window_title_metrics();
+        test_render_context_exposes_explicit_frame_boundary();
 
         cubey::OrbitController controller;
 

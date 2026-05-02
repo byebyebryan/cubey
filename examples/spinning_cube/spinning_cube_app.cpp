@@ -5,9 +5,9 @@
 #include <cubey/vulkan/frame_resources.h>
 #include <cubey/vulkan/immediate_commands.h>
 #include <cubey/vulkan/instance.h>
+#include <cubey/vulkan/render_context.h>
 #include <cubey/vulkan/shader_module.h>
 #include <cubey/vulkan/swapchain.h>
-#include <cubey/vulkan/visible_frame.h>
 #include <cubey/vulkan/vk_check.h>
 
 #include <GLFW/glfw3.h>
@@ -744,15 +744,6 @@ class SpinningCubeApp {
         };
     }
 
-    static void record_cube_frame_callback(void* user_data,
-                                           const cubey::vulkan::VisibleFrameContext& context) {
-        auto* app = static_cast<SpinningCubeApp*>(user_data);
-        if (app == nullptr) {
-            throw std::runtime_error("spinning_cube recorder requires app user data");
-        }
-        app->record_cube_frame(context.command_buffer, context.image_index);
-    }
-
     void record_cube_frame(VkCommandBuffer command_buffer, std::uint32_t image_index) {
         auto begin =
             vk_struct<VkCommandBufferBeginInfo>(VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO);
@@ -794,14 +785,21 @@ class SpinningCubeApp {
         check(vkEndCommandBuffer(command_buffer), "vkEndCommandBuffer spinning_cube");
     }
 
-    cubey::vulkan::VisibleFrameResult draw_frame() {
-        return cubey::vulkan::draw_visible_frame({
+    cubey::vulkan::FrameResult draw_frame() {
+        cubey::vulkan::RenderContext render_context({
             .device = &vulkan_device(),
             .swapchain = &swapchain(),
             .frame_resources = &frame_resources(),
-            .recorder = record_cube_frame_callback,
-            .user_data = this,
         });
+
+        cubey::vulkan::Frame frame;
+        cubey::vulkan::FrameResult result = render_context.begin_frame(&frame);
+        if (result == cubey::vulkan::FrameResult::RecreateSwapchain) {
+            return result;
+        }
+
+        record_cube_frame(frame.command_buffer, frame.image_index);
+        return render_context.end_frame(frame);
     }
 
     void render_window() {
@@ -822,8 +820,8 @@ class SpinningCubeApp {
                 continue;
             }
 
-            cubey::vulkan::VisibleFrameResult result = draw_frame();
-            if (result == cubey::vulkan::VisibleFrameResult::RecreateSwapchain) {
+            cubey::vulkan::FrameResult result = draw_frame();
+            if (result == cubey::vulkan::FrameResult::RecreateSwapchain) {
                 ++consecutive_recreates;
                 if (consecutive_recreates > 8) {
                     throw std::runtime_error(
