@@ -45,10 +45,11 @@ depth attachment.
 lighting, image/sampler ownership, descriptors, and fragment-shader sampling.
 `cubey` owns the reusable Vulkan
 instance, device, buffer, image, sampler, swapchain, shader-module, frame
-clock, orbit-controller, and single-frame command/sync primitives; examples
-still own GLFW, surface creation, render passes, framebuffers, command
-recording, acquire/present behavior, and resize policy. The spike branches
-remain reference material for deeper compute, headless, and browser work.
+clock, orbit-controller, visible-frame acquire/submit/present helper, and
+single-frame command/sync primitives; examples still own GLFW, surface creation,
+render pass/depth details where not yet ported to dynamic rendering, command
+recording, and resize policy. The spike branches remain reference material for
+deeper compute, headless, and browser work.
 
 ## Development Setup
 

@@ -72,6 +72,9 @@ Current checkpoint:
 - Reusable `cubey::vulkan::ShaderModule` exists, and CMake can compile GLSL to
   SPIR-V with `glslangValidator` for example targets.
 - Reusable `cubey::vulkan::ImmediateCommands` supports one-shot setup uploads.
+- Reusable `cubey::vulkan::draw_visible_frame` owns the common acquire, command
+  reset, callback recording, submit, present, and out-of-date result path for
+  visible examples.
 - `examples/window_clear` links against `cubey` and clears/presents a swapchain
   image through Vulkan/GLFW.
 - `examples/triangle` links against `cubey`, compiles vertex/fragment shaders
@@ -89,9 +92,8 @@ Current checkpoint:
   graphics, compute, and present capabilities. Split queue-family support is a
   future framework slice, not part of the current example-local compute path.
 - The remaining visible app implementation is intentionally example-local: GLFW
-  window setup, surface creation, render pass, pipeline layout/pipeline, depth
-  resources, framebuffers, command recording, acquire/present behavior, and
-  resize policy.
+  window setup, surface creation, render pass/depth details where still needed,
+  pipeline layout/pipeline, command recording, and resize policy.
 - Dev CTest covers the target in both graphical and no-display terminal
   sessions.
 - Headless rendering, frame overlap, richer dynamic-rendering/pipeline

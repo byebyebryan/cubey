@@ -12,6 +12,7 @@ add_library(cubey STATIC
     vulkan/sampler.cpp
     vulkan/shader_module.cpp
     vulkan/swapchain.cpp
+    vulkan/visible_frame.cpp
 )
 add_library(cubey::cubey ALIAS cubey)
 
