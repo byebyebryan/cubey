@@ -4,6 +4,7 @@
 #include <cubey/frame_stats.h>
 #include <cubey/orbit_controller.h>
 #include <cubey/vulkan/buffer.h>
+#include <cubey/vulkan/command_pool.h>
 #include <cubey/vulkan/device.h>
 #include <cubey/vulkan/frame_resources.h>
 #include <cubey/vulkan/image.h>
@@ -1066,10 +1067,8 @@ class TexturedCubeApp {
     void record_cube_frame(VkCommandBuffer command_buffer, std::uint32_t image_index) {
         update_scene_uniforms();
 
-        auto begin =
-            vk_struct<VkCommandBufferBeginInfo>(VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO);
-        begin.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-        check(vkBeginCommandBuffer(command_buffer, &begin), "vkBeginCommandBuffer textured_cube");
+        cubey::vulkan::begin_command_buffer(command_buffer,
+                                            VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
         VkClearValue color_clear{};
         color_clear.color = {{0.014F, 0.016F, 0.022F, 1.0F}};

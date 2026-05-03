@@ -60,11 +60,12 @@ Current checkpoint:
 
 - `cubey` static library target exists.
 - Reusable `cubey::vulkan::Instance`, `Device`, `Buffer`, `Image`, `Sampler`,
-  `Swapchain`, and `FrameResources` components now own validation/debug-utils
-  setup,
+  `Swapchain`, `CommandPool`, and `FrameResources` components now own
+  validation/debug-utils setup,
   physical-device selection, logical-device lifetime, queue access, swapchain
-  image/view ownership, buffer/image allocation, sampler ownership, and
-  single-frame command/sync resources.
+  image/view ownership, buffer/image allocation, sampler ownership,
+  command-pool ownership, command-buffer allocation, and single-frame
+  command/sync resources.
 - Reusable `cubey::FrameClock` and `cubey::OrbitController` cover basic frame
   timing and mouse-driven view control.
 - Reusable `cubey::FrameStats` covers lightweight FPS/frame-time/extent/triangle

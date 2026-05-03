@@ -1,5 +1,6 @@
 #include "window_clear_app.h"
 
+#include <cubey/vulkan/command_pool.h>
 #include <cubey/vulkan/device.h>
 #include <cubey/vulkan/frame_resources.h>
 #include <cubey/vulkan/instance.h>
@@ -272,10 +273,8 @@ class WindowClearApp {
     }
 
     void record_clear_frame(VkCommandBuffer command_buffer, std::uint32_t image_index) {
-        auto begin =
-            vk_struct<VkCommandBufferBeginInfo>(VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO);
-        begin.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-        check(vkBeginCommandBuffer(command_buffer, &begin), "vkBeginCommandBuffer window_clear");
+        cubey::vulkan::begin_command_buffer(command_buffer,
+                                            VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
         VkClearValue clear{};
         clear.color = {{0.02f, 0.025f, 0.035f, 1.0f}};

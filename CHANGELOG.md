@@ -18,8 +18,9 @@ versioned section and use that section as the release notes.
 - `cubey` static library target with public headers under `include/cubey/`.
 - Public Vulkan `Instance` and `Device` types for validation/debug-utils
   setup, physical-device selection, logical-device ownership, and queue access.
-- Public Vulkan `Swapchain` and `FrameResources` components for swapchain
-  image/view ownership and single-frame command/sync resources.
+- Public Vulkan `Swapchain`, `CommandPool`, and `FrameResources` components for
+  swapchain image/view ownership, command-pool ownership, command-buffer
+  allocation, and single-frame command/sync resources.
 - Public Vulkan `ShaderModule` type and CMake GLSL-to-SPIR-V helper using
   `glslangValidator`.
 - Public Vulkan `Buffer`, `Image`, `Sampler`, and `ImmediateCommands`

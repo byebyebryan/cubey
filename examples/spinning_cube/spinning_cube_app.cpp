@@ -1,6 +1,7 @@
 #include "spinning_cube_app.h"
 
 #include <cubey/vulkan/buffer.h>
+#include <cubey/vulkan/command_pool.h>
 #include <cubey/vulkan/device.h>
 #include <cubey/vulkan/frame_resources.h>
 #include <cubey/vulkan/immediate_commands.h>
@@ -745,10 +746,8 @@ class SpinningCubeApp {
     }
 
     void record_cube_frame(VkCommandBuffer command_buffer, std::uint32_t image_index) {
-        auto begin =
-            vk_struct<VkCommandBufferBeginInfo>(VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO);
-        begin.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-        check(vkBeginCommandBuffer(command_buffer, &begin), "vkBeginCommandBuffer spinning_cube");
+        cubey::vulkan::begin_command_buffer(command_buffer,
+                                            VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
         VkClearValue color_clear{};
         color_clear.color = {{0.015F, 0.017F, 0.024F, 1.0F}};

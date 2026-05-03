@@ -67,8 +67,8 @@ The near-term Vulkan layer should split around real ownership boundaries:
   image views, present-mode constraints, and resize/out-of-date recreation
 - `Buffer` / `Image` — allocation, views, staging uploads, readback
 - `Shader` / `Pipeline` — build-time shader paths, compute and graphics pipelines
-- `FrameResources` — command pools/buffers, semaphores, fences, and eventual
-  N-frames-in-flight
+- `CommandPool` / `FrameResources` — command pool ownership, command-buffer
+  allocation, semaphores, fences, and eventual N-frames-in-flight
 - project/pass code — the actual procedural experiments
 
 These seams should be practical C++ modules first. A future WebGPU backend can
@@ -212,6 +212,7 @@ cubey/
         instance.h         -- instance, validation, debug messenger
         device.h           -- physical/logical device and queue ownership
         buffer.h           -- Vulkan buffer and memory ownership
+        command_pool.h     -- command pool ownership and command-buffer begin
         descriptors.h      -- descriptor set layout/pool ownership
         frame_resources.h  -- per-frame command/sync resources
         image.h            -- Vulkan image, memory, and image-view ownership
@@ -231,6 +232,7 @@ cubey/
         instance.cpp       -- instance, validation, debug messenger
         device.cpp         -- physical/logical device, queues
         buffer.cpp         -- buffers and host-visible upload
+        command_pool.cpp   -- command pool ownership and command-buffer begin
         descriptors.cpp    -- descriptor set layout/pool ownership
         frame_resources.cpp -- command buffers and sync objects
         image.cpp          -- images, memory, and image views

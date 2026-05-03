@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cubey/vulkan/command_pool.h>
 #include <cubey/vulkan/device.h>
 
 #include <vulkan/vulkan.h>
@@ -28,8 +29,7 @@ class ImmediateCommands {
 
     VkDevice device_ = VK_NULL_HANDLE;
     VkQueue queue_ = VK_NULL_HANDLE;
-    std::uint32_t queue_family_ = 0;
-    VkCommandPool command_pool_ = VK_NULL_HANDLE;
+    CommandPool command_pool_;
     VkCommandBuffer command_buffer_ = VK_NULL_HANDLE;
     bool submitted_ = false;
 };

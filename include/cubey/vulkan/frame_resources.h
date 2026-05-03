@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cubey/vulkan/command_pool.h>
 #include <cubey/vulkan/device.h>
 
 #include <vulkan/vulkan.h>
@@ -19,7 +20,7 @@ class FrameResources {
     FrameResources& operator=(const FrameResources&) = delete;
 
     VkCommandPool command_pool() const {
-        return command_pool_;
+        return command_pool_.handle();
     }
     VkCommandBuffer command_buffer() const {
         return command_buffer_;
@@ -46,8 +47,7 @@ class FrameResources {
     void destroy();
 
     VkDevice device_ = VK_NULL_HANDLE;
-    std::uint32_t queue_family_ = 0;
-    VkCommandPool command_pool_ = VK_NULL_HANDLE;
+    CommandPool command_pool_;
     VkCommandBuffer command_buffer_ = VK_NULL_HANDLE;
     VkSemaphore image_available_ = VK_NULL_HANDLE;
     std::vector<VkSemaphore> present_ready_;

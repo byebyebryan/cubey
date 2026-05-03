@@ -23,7 +23,7 @@ Use names to make scope and ownership obvious without adding noisy prefixes.
 
 | Scope / kind | Style | Example |
 | --- | --- | --- |
-| Types, classes, structs, enums | `PascalCase` | `Device`, `Swapchain`, `FrameResources` |
+| Types, classes, structs, enums | `PascalCase` | `Device`, `Swapchain`, `CommandPool` |
 | Functions and methods | `snake_case` | `create_swapchain()`, `submit_frame()` |
 | Local variables | `snake_case` | `image_count`, `frame_index` |
 | Function parameters | `snake_case` | `width`, `usage`, `debug_name` |
@@ -67,7 +67,7 @@ Only add `vk_` when there is a real same-scope ambiguity.
 - Keep important synchronization, image layout transitions, and ownership
   boundaries visible near the code that needs them.
 - Prefer small Vulkan-native modules over a broad backend abstraction:
-  `Device`, `Swapchain`, `Buffer`, `Image`, `Pipeline`, `FrameResources`.
+  `Device`, `Swapchain`, `Buffer`, `Image`, `Pipeline`, `CommandPool`.
 - Validation-layer and headless smoke paths are first-class workflows, not debug
   afterthoughts.
 - Use comments for synchronization reasoning, lifetime boundaries, and

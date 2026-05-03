@@ -1,5 +1,6 @@
 #include "triangle_app.h"
 
+#include <cubey/vulkan/command_pool.h>
 #include <cubey/vulkan/device.h>
 #include <cubey/vulkan/frame_resources.h>
 #include <cubey/vulkan/instance.h>
@@ -369,10 +370,8 @@ class TriangleApp {
     }
 
     void record_triangle_frame(VkCommandBuffer command_buffer, std::uint32_t image_index) {
-        auto begin =
-            vk_struct<VkCommandBufferBeginInfo>(VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO);
-        begin.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-        check(vkBeginCommandBuffer(command_buffer, &begin), "vkBeginCommandBuffer triangle");
+        cubey::vulkan::begin_command_buffer(command_buffer,
+                                            VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
         transition_swapchain_image(command_buffer, image_index, VK_IMAGE_LAYOUT_UNDEFINED,
                                    VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);

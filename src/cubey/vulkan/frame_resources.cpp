@@ -7,7 +7,8 @@
 namespace cubey::vulkan {
 
 FrameResources::FrameResources(const Device& device, std::size_t present_ready_count)
-    : device_(device.handle()), queue_family_(device.queue_family()),
+    : device_(device.handle()),
+      command_pool_(device, {.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT}),
       present_ready_(present_ready_count, VK_NULL_HANDLE) {
     if (device_ == VK_NULL_HANDLE) {
         throw std::runtime_error("frame resources require a valid Vulkan device");
@@ -41,17 +42,7 @@ void FrameResources::reset_command_buffer() const {
 }
 
 void FrameResources::create() {
-    auto pool_info = vk_struct<VkCommandPoolCreateInfo>(VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO);
-    pool_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    pool_info.queueFamilyIndex = queue_family_;
-    check(vkCreateCommandPool(device_, &pool_info, nullptr, &command_pool_), "vkCreateCommandPool");
-
-    auto alloc =
-        vk_struct<VkCommandBufferAllocateInfo>(VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO);
-    alloc.commandPool = command_pool_;
-    alloc.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    alloc.commandBufferCount = 1;
-    check(vkAllocateCommandBuffers(device_, &alloc, &command_buffer_), "vkAllocateCommandBuffers");
+    command_buffer_ = command_pool_.allocate_primary();
 
     auto semaphore_info = vk_struct<VkSemaphoreCreateInfo>(VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO);
     check(vkCreateSemaphore(device_, &semaphore_info, nullptr, &image_available_),
@@ -82,11 +73,7 @@ void FrameResources::destroy() {
         vkDestroySemaphore(device_, image_available_, nullptr);
         image_available_ = VK_NULL_HANDLE;
     }
-    if (command_pool_ != VK_NULL_HANDLE) {
-        vkDestroyCommandPool(device_, command_pool_, nullptr);
-        command_pool_ = VK_NULL_HANDLE;
-        command_buffer_ = VK_NULL_HANDLE;
-    }
+    command_buffer_ = VK_NULL_HANDLE;
 }
 
 } // namespace cubey::vulkan

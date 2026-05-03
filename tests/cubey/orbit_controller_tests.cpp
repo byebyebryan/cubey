@@ -20,12 +20,14 @@ void require_close(float actual, float expected, const char* message) {
 
 } // namespace
 
+void test_command_pool_exposes_command_buffer_ownership();
 void test_frame_clock_tracks_delta_elapsed_and_index();
 void test_frame_stats_publish_window_title_metrics();
 void test_render_context_exposes_explicit_frame_boundary();
 
 int main() {
     try {
+        test_command_pool_exposes_command_buffer_ownership();
         test_frame_clock_tracks_delta_elapsed_and_index();
         test_frame_stats_publish_window_title_metrics();
         test_render_context_exposes_explicit_frame_boundary();

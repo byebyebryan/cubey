@@ -21,10 +21,11 @@ As of 2026-05-02:
   `cubey::vulkan::Instance` owns validation/debug-utils setup, and
   `cubey::vulkan::Device` owns physical-device selection, logical-device
   lifetime, queue access, and memory-type selection.
-- Promoted `cubey::vulkan::Swapchain` for swapchain/image-view ownership and
-  `cubey::vulkan::FrameResources` for a single command pool, command buffer,
-  image-available semaphore, per-swapchain-image present-ready semaphores, and
-  fence.
+- Promoted `cubey::vulkan::Swapchain` for swapchain/image-view ownership,
+  `cubey::vulkan::CommandPool` for command-pool ownership and primary
+  command-buffer allocation, and `cubey::vulkan::FrameResources` for one frame
+  command buffer, image-available semaphore, per-swapchain-image present-ready
+  semaphores, and fence.
 - Promoted `cubey::vulkan::Buffer` for Vulkan buffer/memory ownership and
   host-visible coherent upload, plus `cubey::vulkan::ImmediateCommands` for
   one-shot setup copies.
@@ -210,6 +211,11 @@ env XDG_RUNTIME_DIR=/run/user/1000 WAYLAND_DISPLAY=wayland-1 DISPLAY=:1 XDG_CURR
   device model. This is acceptable for the current desktop target and keeps the
   example simple, but split graphics/compute/present queues should be handled
   before treating the device layer as a broader compatibility abstraction.
+- The command abstraction is intentionally narrow: `CommandPool` owns pool
+  lifetime and primary-buffer allocation, and `begin_command_buffer` removes
+  repeated begin boilerplate. Queue submission still flows through `Device`,
+  `RenderContext`, and `ImmediateCommands` until split graphics/compute/present
+  queues create a real need for a queue abstraction.
 - The dynamic-rendering slice raised the requested instance API version to
   Vulkan 1.3 and added an opt-in device feature requirement. Use this path for
   the next windowed runtime path instead of wrapping classic render passes first.
