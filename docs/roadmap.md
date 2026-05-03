@@ -78,13 +78,15 @@ Current checkpoint:
   `ComputePipeline`, `DescriptorSetLayout`, and `DescriptorPool` own basic
   pipeline and descriptor lifetimes while still taking raw Vulkan create-info
   structs.
+- Reusable `cubey::vulkan` rendering helpers build the current color/depth
+  attachment transitions and dynamic-rendering attachment descriptors without
+  owning render policy.
 - Reusable `cubey::vulkan::RenderContext` exposes explicit `begin_frame` and
   `end_frame` calls for the common surface-backed acquire, command reset,
   submit, present, and out-of-date result path used by all current windowed
   examples.
 - `examples/window_clear` links against `cubey` and clears/presents a swapchain
-  image through Vulkan/GLFW with an example-local classic clear render
-  pass/framebuffer path.
+  image through Vulkan/GLFW using dynamic rendering.
 - `examples/triangle` links against `cubey`, compiles vertex/fragment shaders
   at build time, creates an example-local dynamic-rendering graphics pipeline,
   and draws a `gl_VertexIndex` triangle without a render pass or framebuffer.
@@ -101,16 +103,13 @@ Current checkpoint:
   graphics, compute, and present capabilities. Split queue-family support is a
   future framework slice, not part of the current example-local compute path.
 - The remaining windowed app implementation is intentionally example-local: GLFW
-  window setup, surface creation, `window_clear`'s clear render
-  pass/framebuffers, shader-backed depth attachment setup, pipeline
-  layout/pipeline, explicit image layout transitions, command recording, and
-  resize policy.
+  window setup, surface creation, shader-backed depth attachment setup,
+  pipeline layout/pipeline, command recording, and resize policy.
 - Dev CTest covers the target in both graphical and no-display terminal
   sessions.
-- Headless rendering, frame overlap, reusable dynamic-rendering attachment
-  helpers, richer pipeline components, split graphics/compute/present
-  queue-family support, external asset loading, and broader descriptor
-  components remain future slices.
+- Headless rendering, frame overlap, richer rendering/pipeline helpers, split
+  graphics/compute/present queue-family support, external asset loading, and
+  broader descriptor components remain future slices.
 
 ## Phase 2: Resource Layer and App API
 

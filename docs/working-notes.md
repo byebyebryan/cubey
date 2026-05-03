@@ -14,8 +14,7 @@ As of 2026-05-02:
   `include/cubey/`.
 - `examples/window_clear` is the first runnable. It creates a GLFW/Vulkan
   windowed surface, clears a swapchain image, presents it, and handles
-  out-of-date/resize recreation through an example-local classic clear render
-  pass/framebuffer path.
+  out-of-date/resize recreation through dynamic rendering.
 - `window_clear` is example code, not library API. Keep named example behavior
   under `examples/`; promote only reusable components into `cubey`.
 - Promoted the first reusable Vulkan components into `cubey`:
@@ -46,6 +45,9 @@ As of 2026-05-02:
   `PipelineLayout`, `GraphicsPipeline`, `ComputePipeline`,
   `DescriptorSetLayout`, and `DescriptorPool`. These wrappers own lifetimes but
   intentionally keep create-info construction visible in example/project code.
+- Promoted narrow rendering helpers for image layout transitions and
+  dynamic-rendering color/depth attachment setup. They reduce repeated Vulkan
+  struct boilerplate without owning command recording or render policy.
 - Added `examples/triangle` as the first shader-backed graphics pipeline smoke.
 - Converted `examples/triangle` to dynamic rendering as the first render-pass
   direction spike. This removes triangle's render pass/framebuffer ownership and
@@ -59,10 +61,9 @@ As of 2026-05-02:
   directional lighting, dynamic rendering, and shader sampling. It is also the
   first interactive example: left-drag rotates, Space pauses, `R` resets, and
   Escape exits.
-- GLFW window setup, surface creation, `window_clear`'s clear render
-  pass/framebuffers, shader-backed graphics pipeline and depth resources,
-  explicit image layout transitions, command recording, acquire/present
-  behavior, and resize policy remain example-local.
+- GLFW window setup, surface creation, shader-backed graphics pipeline and
+  depth resources, command recording, acquire/present behavior, and resize
+  policy remain example-local.
 - CTest covers both the no-display terminal boundary and graphical runs when a
   desktop window context is injected.
 - The current useful manual desktop smokes are:
@@ -234,11 +235,6 @@ env XDG_RUNTIME_DIR=/run/user/1000 WAYLAND_DISPLAY=wayland-1 DISPLAY=:1 XDG_CURR
   rendering policy. That keeps the project away from a premature
   material/render-graph abstraction while still reducing Vulkan handle cleanup
   code.
-- The cube examples now follow the triangle's dynamic-rendering path. Their
-  color/depth attachments and image layout transitions are still explicit and
-  example-local, but classic render pass/framebuffer setup is gone from the
-  shader-backed windowed examples.
-- `window_clear` still intentionally exercises the minimal classic
-  render-pass/framebuffer clear path. Keeping that isolated gives a small
-  comparison point while the shader-backed path moves forward on dynamic
-  rendering.
+- All current windowed examples now use dynamic rendering. The helper layer owns
+  repeated image-transition and attachment-info construction, while examples
+  still own frame command recording and resize policy.

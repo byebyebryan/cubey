@@ -6,6 +6,7 @@
 #include <cubey/vulkan/frame_resources.h>
 #include <cubey/vulkan/immediate_commands.h>
 #include <cubey/vulkan/instance.h>
+#include <cubey/vulkan/rendering.h>
 #include <cubey/vulkan/render_context.h>
 #include <cubey/vulkan/shader_module.h>
 #include <cubey/vulkan/swapchain.h>
@@ -595,58 +596,6 @@ class SpinningCubeApp {
         frame_resources_.emplace(vulkan_device(), swapchain().image_count());
     }
 
-    void transition_swapchain_image(VkCommandBuffer command_buffer, std::uint32_t image_index,
-                                    VkImageLayout old_layout, VkImageLayout new_layout) const {
-        auto barrier = vk_struct<VkImageMemoryBarrier>(VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER);
-        barrier.oldLayout = old_layout;
-        barrier.newLayout = new_layout;
-        barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        barrier.image = swapchain().images().at(static_cast<std::size_t>(image_index));
-        barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        barrier.subresourceRange.baseMipLevel = 0;
-        barrier.subresourceRange.levelCount = 1;
-        barrier.subresourceRange.baseArrayLayer = 0;
-        barrier.subresourceRange.layerCount = 1;
-
-        VkPipelineStageFlags source_stage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-        VkPipelineStageFlags destination_stage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-        if (old_layout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL &&
-            new_layout == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR) {
-            barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-            source_stage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-            destination_stage = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
-        } else if (old_layout == VK_IMAGE_LAYOUT_UNDEFINED &&
-                   new_layout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) {
-            barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-        } else {
-            throw std::runtime_error("unsupported swapchain image layout transition");
-        }
-
-        vkCmdPipelineBarrier(command_buffer, source_stage, destination_stage, 0, 0, nullptr, 0,
-                             nullptr, 1, &barrier);
-    }
-
-    void transition_depth_image(VkCommandBuffer command_buffer) const {
-        auto barrier = vk_struct<VkImageMemoryBarrier>(VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER);
-        barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        barrier.newLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-        barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        barrier.image = depth_image_;
-        barrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
-                                VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-        barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-        barrier.subresourceRange.baseMipLevel = 0;
-        barrier.subresourceRange.levelCount = 1;
-        barrier.subresourceRange.baseArrayLayer = 0;
-        barrier.subresourceRange.layerCount = 1;
-
-        vkCmdPipelineBarrier(command_buffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-                             VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT, 0, 0, nullptr, 0,
-                             nullptr, 1, &barrier);
-    }
-
     template <typename T, std::size_t Count>
     void upload_device_buffer(const std::array<T, Count>& data, VkBufferUsageFlags usage,
                               std::optional<cubey::vulkan::Buffer>& destination) const {
@@ -702,31 +651,22 @@ class SpinningCubeApp {
         cubey::vulkan::begin_command_buffer(command_buffer,
                                             VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
-        transition_swapchain_image(command_buffer, image_index, VK_IMAGE_LAYOUT_UNDEFINED,
-                                   VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-        transition_depth_image(command_buffer);
+        const std::size_t swapchain_image_index = static_cast<std::size_t>(image_index);
+        const VkImage swapchain_image = swapchain().images().at(swapchain_image_index);
+        cubey::vulkan::transition_image_layout(
+            command_buffer, cubey::vulkan::begin_color_attachment_transition(swapchain_image));
+        cubey::vulkan::transition_image_layout(
+            command_buffer, cubey::vulkan::begin_depth_attachment_transition(depth_image_));
 
         VkClearValue color_clear{};
         color_clear.color = {{0.015F, 0.017F, 0.024F, 1.0F}};
         VkClearValue depth_clear{};
         depth_clear.depthStencil = {1.0F, 0};
 
-        auto color_attachment =
-            vk_struct<VkRenderingAttachmentInfo>(VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO);
-        color_attachment.imageView =
-            swapchain().image_views().at(static_cast<std::size_t>(image_index));
-        color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-        color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-        color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-        color_attachment.clearValue = color_clear;
-
-        auto depth_attachment =
-            vk_struct<VkRenderingAttachmentInfo>(VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO);
-        depth_attachment.imageView = depth_view_;
-        depth_attachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-        depth_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-        depth_attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-        depth_attachment.clearValue = depth_clear;
+        const VkRenderingAttachmentInfo color_attachment = cubey::vulkan::color_rendering_attachment(
+            swapchain().image_views().at(swapchain_image_index), color_clear);
+        const VkRenderingAttachmentInfo depth_attachment =
+            cubey::vulkan::depth_rendering_attachment(depth_view_, depth_clear);
 
         auto rendering = vk_struct<VkRenderingInfo>(VK_STRUCTURE_TYPE_RENDERING_INFO);
         rendering.renderArea.offset = {0, 0};
@@ -751,9 +691,9 @@ class SpinningCubeApp {
                          0);
         vkCmdEndRendering(command_buffer);
 
-        transition_swapchain_image(command_buffer, image_index,
-                                   VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                                   VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+        cubey::vulkan::transition_image_layout(
+            command_buffer,
+            cubey::vulkan::finish_color_attachment_for_present_transition(swapchain_image));
 
         check(vkEndCommandBuffer(command_buffer), "vkEndCommandBuffer spinning_cube");
     }

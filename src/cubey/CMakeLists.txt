@@ -12,6 +12,7 @@ add_library(cubey STATIC
     vulkan/immediate_commands.cpp
     vulkan/instance.cpp
     vulkan/pipeline.cpp
+    vulkan/rendering.cpp
     vulkan/render_context.cpp
     vulkan/sampler.cpp
     vulkan/shader_module.cpp

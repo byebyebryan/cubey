@@ -1,0 +1,30 @@
+#pragma once
+
+#include <vulkan/vulkan.h>
+
+namespace cubey::vulkan {
+
+struct ImageLayoutTransition {
+    VkImage image = VK_NULL_HANDLE;
+    VkImageAspectFlags aspect_mask = 0;
+    VkImageLayout old_layout = VK_IMAGE_LAYOUT_UNDEFINED;
+    VkImageLayout new_layout = VK_IMAGE_LAYOUT_UNDEFINED;
+    VkAccessFlags src_access_mask = 0;
+    VkAccessFlags dst_access_mask = 0;
+    VkPipelineStageFlags src_stage_mask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+    VkPipelineStageFlags dst_stage_mask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+};
+
+[[nodiscard]] ImageLayoutTransition begin_color_attachment_transition(VkImage image);
+[[nodiscard]] ImageLayoutTransition finish_color_attachment_for_present_transition(VkImage image);
+[[nodiscard]] ImageLayoutTransition begin_depth_attachment_transition(VkImage image);
+[[nodiscard]] VkImageMemoryBarrier image_memory_barrier(const ImageLayoutTransition& transition);
+void transition_image_layout(VkCommandBuffer command_buffer,
+                             const ImageLayoutTransition& transition);
+
+[[nodiscard]] VkRenderingAttachmentInfo color_rendering_attachment(VkImageView image_view,
+                                                                   VkClearValue clear);
+[[nodiscard]] VkRenderingAttachmentInfo depth_rendering_attachment(VkImageView image_view,
+                                                                   VkClearValue clear);
+
+} // namespace cubey::vulkan

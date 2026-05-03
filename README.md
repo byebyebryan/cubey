@@ -37,20 +37,20 @@ See:
 | `vulkan` | Native Vulkan windowed/headless experiment | Successful; informs the mainline Vulkan layer |
 
 Main now contains the first windowed examples: `examples/window_clear`
-for raw clear/present and `examples/triangle` for build-time GLSL shaders plus
-dynamic-rendering graphics pipeline setup. `examples/spinning_cube` adds
-device-local vertex/index buffers, push constants, per-frame animation, and a
-depth attachment through dynamic rendering.
+for dynamic-rendering clear/present and `examples/triangle` for build-time GLSL
+shaders plus dynamic-rendering graphics pipeline setup.
+`examples/spinning_cube` adds device-local vertex/index buffers, push
+constants, per-frame animation, and a depth attachment through dynamic
+rendering.
 `examples/textured_cube` adds a compute-generated texture, descriptor-backed
 scene uniforms, normals, shared GLSL lighting, image/sampler ownership, and
 fragment-shader sampling through dynamic rendering.
 `cubey` owns the reusable Vulkan instance, device, buffer, image, sampler,
-swapchain, shader-module, command-pool, frame clock, orbit-controller, pipeline,
-descriptor, shared shader includes, `RenderContext` surface-backed begin/end
-frame lifecycle, and single-frame command/sync components; examples still own
-GLFW, surface creation, `window_clear`'s minimal clear render pass/framebuffers,
-shader-backed depth attachment setup, explicit image layout transitions, command
-recording, and resize policy. The spike branches
+swapchain, shader-module, command-pool, rendering helpers, frame clock,
+orbit-controller, pipeline, descriptor, shared shader includes, `RenderContext`
+surface-backed begin/end frame lifecycle, and single-frame command/sync
+components; examples still own GLFW, surface creation, shader-backed depth
+attachment setup, command recording, and resize policy. The spike branches
 remain reference material for deeper compute, headless, and browser work.
 
 ## Development Setup

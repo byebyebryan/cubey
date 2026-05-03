@@ -30,12 +30,14 @@ versioned section and use that section as the release notes.
 - Public Vulkan `RenderContext` component for explicit surface-backed
   begin/end frame lifecycle, acquire, command reset, submit, present, and
   swapchain-recreate signaling.
+- Public Vulkan rendering helpers for current image layout transitions and
+  dynamic-rendering color/depth attachment setup.
 - GLSL shader helper support for shared include directories and dependency
   tracking.
 - Public frame timing, orbit-controller, and frame-stat types for interactive
   windowed examples.
-- `examples/window_clear`, a minimal Vulkan/GLFW windowed clear/present
-  smoke executable.
+- `examples/window_clear`, a minimal Vulkan/GLFW dynamic-rendering windowed
+  clear/present smoke executable.
 - `examples/triangle`, a minimal shader-backed Vulkan graphics pipeline smoke
   executable using dynamic rendering and `gl_VertexIndex`.
 - `examples/spinning_cube`, a shader-generated cube smoke executable with push
@@ -53,13 +55,9 @@ versioned section and use that section as the release notes.
   OpenGL continuation or WebGPU-first rewrite.
 - Runnable targets are explicit examples/projects rather than a generic `cubey`
   executable.
-- `examples/window_clear` now uses reusable `cubey::vulkan` instance, device,
-  swapchain, and frame-resource components while keeping GLFW, surface creation,
-  its minimal clear render pass/framebuffers, command recording,
-  acquire/present behavior, and resize policy example-local.
-- Shader-backed examples now use dynamic rendering instead of classic render
-  passes/framebuffers while keeping pipeline setup, depth attachments, explicit
-  layout transitions, command recording, acquire/present behavior, and resize
+- Windowed examples now use dynamic rendering instead of classic render
+  passes/framebuffers while keeping GLFW, surface creation, pipeline setup,
+  depth attachments, command recording, acquire/present behavior, and resize
   policy local until the repeated shape is clearer.
 
 ## Pre-2.0 History

@@ -224,6 +224,7 @@ cubey/
         image.h            -- Vulkan image, memory, and image-view ownership
         immediate_commands.h -- one-shot setup command submission
         pipeline.h         -- pipeline layout and pipeline ownership
+        rendering.h        -- image transitions and dynamic-rendering helpers
         render_context.h   -- surface-backed begin/end frame lifecycle
         sampler.h          -- Vulkan sampler ownership
         shader_module.h    -- shader module lifetime
@@ -244,6 +245,7 @@ cubey/
         image.cpp          -- images, memory, and image views
         immediate_commands.cpp -- one-shot setup command submission
         pipeline.cpp       -- pipeline layout and pipeline ownership
+        rendering.cpp      -- image transitions and dynamic-rendering helpers
         render_context.cpp -- surface-backed begin/end frame lifecycle
         sampler.cpp        -- samplers
         shader_module.cpp  -- shader module lifetime

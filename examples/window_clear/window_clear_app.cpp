@@ -4,6 +4,7 @@
 #include <cubey/vulkan/device.h>
 #include <cubey/vulkan/frame_resources.h>
 #include <cubey/vulkan/instance.h>
+#include <cubey/vulkan/rendering.h>
 #include <cubey/vulkan/render_context.h>
 #include <cubey/vulkan/swapchain.h>
 #include <cubey/vulkan/vk_check.h>
@@ -11,12 +12,12 @@
 #include <GLFW/glfw3.h>
 #include <vulkan/vulkan.h>
 
+#include <cstddef>
 #include <cstdint>
 #include <cstdio>
 #include <optional>
 #include <stdexcept>
 #include <utility>
-#include <vector>
 
 namespace cubey::examples::window_clear {
 namespace {
@@ -37,8 +38,6 @@ class WindowClearApp {
         }
 
         frame_resources_.reset();
-        destroy_framebuffers();
-        destroy_render_pass();
         swapchain_.reset();
 
         if (surface_ != VK_NULL_HANDLE) {
@@ -134,6 +133,7 @@ class WindowClearApp {
         device_config.surface = surface_;
         device_config.required_queue_flags = VK_QUEUE_GRAPHICS_BIT;
         device_config.require_present = true;
+        device_config.require_dynamic_rendering = true;
 
         if (!instance_owner_.has_value()) {
             throw std::runtime_error("Vulkan instance must exist before creating a device");
@@ -168,13 +168,9 @@ class WindowClearApp {
 
     void create_swapchain_resources() {
         create_swapchain();
-        create_render_pass();
-        create_framebuffers();
     }
 
     void destroy_swapchain_resources() {
-        destroy_framebuffers();
-        destroy_render_pass();
         swapchain_.reset();
     }
 
@@ -197,77 +193,6 @@ class WindowClearApp {
         framebuffer_resized_ = false;
     }
 
-    void create_render_pass() {
-        VkAttachmentDescription color_attachment{};
-        color_attachment.format = swapchain().format();
-        color_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
-        color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-        color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-        color_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-        color_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-        color_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        color_attachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-
-        VkAttachmentReference color_ref{};
-        color_ref.attachment = 0;
-        color_ref.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-        VkSubpassDescription subpass{};
-        subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-        subpass.colorAttachmentCount = 1;
-        subpass.pColorAttachments = &color_ref;
-
-        VkSubpassDependency dependency{};
-        dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-        dependency.dstSubpass = 0;
-        dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-        dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-        dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-
-        auto info = vk_struct<VkRenderPassCreateInfo>(VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO);
-        info.attachmentCount = 1;
-        info.pAttachments = &color_attachment;
-        info.subpassCount = 1;
-        info.pSubpasses = &subpass;
-        info.dependencyCount = 1;
-        info.pDependencies = &dependency;
-
-        check(vkCreateRenderPass(device_, &info, nullptr, &render_pass_), "vkCreateRenderPass");
-    }
-
-    void destroy_render_pass() {
-        if (render_pass_ != VK_NULL_HANDLE) {
-            vkDestroyRenderPass(device_, render_pass_, nullptr);
-            render_pass_ = VK_NULL_HANDLE;
-        }
-    }
-
-    void create_framebuffers() {
-        framebuffers_.reserve(swapchain().image_count());
-        for (VkImageView view : swapchain().image_views()) {
-            auto info =
-                vk_struct<VkFramebufferCreateInfo>(VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO);
-            info.renderPass = render_pass_;
-            info.attachmentCount = 1;
-            info.pAttachments = &view;
-            info.width = swapchain().extent().width;
-            info.height = swapchain().extent().height;
-            info.layers = 1;
-
-            VkFramebuffer framebuffer = VK_NULL_HANDLE;
-            check(vkCreateFramebuffer(device_, &info, nullptr, &framebuffer),
-                  "vkCreateFramebuffer");
-            framebuffers_.push_back(framebuffer);
-        }
-    }
-
-    void destroy_framebuffers() {
-        for (VkFramebuffer framebuffer : framebuffers_) {
-            vkDestroyFramebuffer(device_, framebuffer, nullptr);
-        }
-        framebuffers_.clear();
-    }
-
     void create_frame_resources() {
         frame_resources_.emplace(vulkan_device(), swapchain().image_count());
     }
@@ -276,19 +201,29 @@ class WindowClearApp {
         cubey::vulkan::begin_command_buffer(command_buffer,
                                             VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
+        const std::size_t swapchain_image_index = static_cast<std::size_t>(image_index);
+        const VkImage swapchain_image = swapchain().images().at(swapchain_image_index);
+        cubey::vulkan::transition_image_layout(
+            command_buffer, cubey::vulkan::begin_color_attachment_transition(swapchain_image));
+
         VkClearValue clear{};
         clear.color = {{0.02f, 0.025f, 0.035f, 1.0f}};
+        const VkRenderingAttachmentInfo color_attachment = cubey::vulkan::color_rendering_attachment(
+            swapchain().image_views().at(swapchain_image_index), clear);
 
-        auto pass = vk_struct<VkRenderPassBeginInfo>(VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO);
-        pass.renderPass = render_pass_;
-        pass.framebuffer = framebuffers_.at(static_cast<std::size_t>(image_index));
-        pass.renderArea.offset = {0, 0};
-        pass.renderArea.extent = swapchain().extent();
-        pass.clearValueCount = 1;
-        pass.pClearValues = &clear;
+        auto rendering = vk_struct<VkRenderingInfo>(VK_STRUCTURE_TYPE_RENDERING_INFO);
+        rendering.renderArea.offset = {0, 0};
+        rendering.renderArea.extent = swapchain().extent();
+        rendering.layerCount = 1;
+        rendering.colorAttachmentCount = 1;
+        rendering.pColorAttachments = &color_attachment;
 
-        vkCmdBeginRenderPass(command_buffer, &pass, VK_SUBPASS_CONTENTS_INLINE);
-        vkCmdEndRenderPass(command_buffer);
+        vkCmdBeginRendering(command_buffer, &rendering);
+        vkCmdEndRendering(command_buffer);
+
+        cubey::vulkan::transition_image_layout(
+            command_buffer,
+            cubey::vulkan::finish_color_attachment_for_present_transition(swapchain_image));
 
         check(vkEndCommandBuffer(command_buffer), "vkEndCommandBuffer window_clear");
     }
@@ -379,9 +314,6 @@ class WindowClearApp {
     VkInstance instance_ = VK_NULL_HANDLE;
     VkSurfaceKHR surface_ = VK_NULL_HANDLE;
     VkDevice device_ = VK_NULL_HANDLE;
-
-    std::vector<VkFramebuffer> framebuffers_;
-    VkRenderPass render_pass_ = VK_NULL_HANDLE;
 };
 
 } // namespace

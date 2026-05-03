@@ -3,6 +3,7 @@ add_executable(cubey_core_tests
     frame_clock_tests.cpp
     frame_stats_tests.cpp
     orbit_controller_tests.cpp
+    rendering_tests.cpp
     render_context_tests.cpp
 )
 

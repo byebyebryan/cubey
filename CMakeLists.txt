@@ -67,12 +67,13 @@ if (CUBEY_BUILD_EXAMPLES)
             "vkCreateRenderPass|vkDestroyRenderPass|VkRenderPass|vkCreateFramebuffer|vkDestroyFramebuffer|VkFramebuffer|vkCmdBeginRenderPass|vkCmdEndRenderPass|VkRenderPassBeginInfo"
         )
         add_test(
-            NAME shader_backed_examples_use_dynamic_rendering
+            NAME windowed_examples_use_dynamic_rendering
             COMMAND
                 /bin/sh -c
-                "grep -RE \"$1\" \"$2\" \"$3\" \"$4\"; status=$?; test \"$status\" -eq 1"
-                shader_backed_examples_use_dynamic_rendering
+                "grep -RE \"$1\" \"$2\" \"$3\" \"$4\" \"$5\"; status=$?; test \"$status\" -eq 1"
+                windowed_examples_use_dynamic_rendering
                 "${CUBEY_CLASSIC_RENDERING_PATTERN}"
+                "${CMAKE_SOURCE_DIR}/examples/window_clear"
                 "${CMAKE_SOURCE_DIR}/examples/triangle"
                 "${CMAKE_SOURCE_DIR}/examples/spinning_cube"
                 "${CMAKE_SOURCE_DIR}/examples/textured_cube"
