@@ -83,30 +83,34 @@ Current checkpoint:
   submit, present, and out-of-date result path used by all current windowed
   examples.
 - `examples/window_clear` links against `cubey` and clears/presents a swapchain
-  image through Vulkan/GLFW.
+  image through Vulkan/GLFW with an example-local classic clear render
+  pass/framebuffer path.
 - `examples/triangle` links against `cubey`, compiles vertex/fragment shaders
   at build time, creates an example-local dynamic-rendering graphics pipeline,
   and draws a `gl_VertexIndex` triangle without a render pass or framebuffer.
 - `examples/spinning_cube` links against `cubey`, compiles vertex/fragment
   shaders at build time, draws an indexed cube from device-local vertex/index
-  buffers, updates an MVP matrix through push constants, and uses an
-  example-local depth attachment.
+  buffers, updates an MVP matrix through push constants, and uses dynamic
+  rendering with an example-local depth attachment.
 - `examples/textured_cube` links against `cubey`, generates a texture with a
   compute shader writing a storage image, transitions it for shader sampling,
   binds scene uniforms plus a combined image sampler descriptor, and draws an
-  interactive shaded textured indexed cube with per-face normals and shared
-  GLSL Lambert lighting.
+  interactive shaded textured indexed cube through dynamic rendering with
+  per-face normals and shared GLSL Lambert lighting.
 - The current device model intentionally selects one queue family for required
   graphics, compute, and present capabilities. Split queue-family support is a
   future framework slice, not part of the current example-local compute path.
 - The remaining windowed app implementation is intentionally example-local: GLFW
-  window setup, surface creation, render pass/depth details where still needed,
-  pipeline layout/pipeline, command recording, and resize policy.
+  window setup, surface creation, `window_clear`'s clear render
+  pass/framebuffers, shader-backed depth attachment setup, pipeline
+  layout/pipeline, explicit image layout transitions, command recording, and
+  resize policy.
 - Dev CTest covers the target in both graphical and no-display terminal
   sessions.
-- Headless rendering, frame overlap, richer dynamic-rendering/pipeline
-  components, split graphics/compute/present queue-family support, external asset
-  loading, and reusable descriptor components remain future slices.
+- Headless rendering, frame overlap, reusable dynamic-rendering attachment
+  helpers, richer pipeline components, split graphics/compute/present
+  queue-family support, external asset loading, and broader descriptor
+  components remain future slices.
 
 ## Phase 2: Resource Layer and App API
 

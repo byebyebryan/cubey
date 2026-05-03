@@ -379,6 +379,7 @@ class TexturedCubeApp {
         device_config.surface = surface_;
         device_config.required_queue_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT;
         device_config.require_present = true;
+        device_config.require_dynamic_rendering = true;
 
         if (!instance_owner_.has_value()) {
             throw std::runtime_error("Vulkan instance must exist before creating a device");
@@ -413,17 +414,14 @@ class TexturedCubeApp {
 
     void create_swapchain_resources() {
         create_swapchain();
-        create_render_pass();
+        depth_format_ = choose_depth_format();
         create_pipeline();
         create_depth_resources();
-        create_framebuffers();
     }
 
     void destroy_swapchain_resources() {
-        destroy_framebuffers();
         depth_image_.reset();
         destroy_pipeline();
-        destroy_render_pass();
         swapchain_.reset();
     }
 
@@ -468,76 +466,6 @@ class TexturedCubeApp {
         }
 
         throw std::runtime_error("no supported depth format found");
-    }
-
-    void create_render_pass() {
-        depth_format_ = choose_depth_format();
-
-        VkAttachmentDescription color_attachment{};
-        color_attachment.format = swapchain().format();
-        color_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
-        color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-        color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-        color_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-        color_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-        color_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        color_attachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-
-        VkAttachmentDescription depth_attachment{};
-        depth_attachment.format = depth_format_;
-        depth_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
-        depth_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-        depth_attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-        depth_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-        depth_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-        depth_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        depth_attachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
-        const std::array<VkAttachmentDescription, 2> attachments{
-            color_attachment,
-            depth_attachment,
-        };
-
-        VkAttachmentReference color_ref{};
-        color_ref.attachment = 0;
-        color_ref.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-        VkAttachmentReference depth_ref{};
-        depth_ref.attachment = 1;
-        depth_ref.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
-        VkSubpassDescription subpass{};
-        subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-        subpass.colorAttachmentCount = 1;
-        subpass.pColorAttachments = &color_ref;
-        subpass.pDepthStencilAttachment = &depth_ref;
-
-        VkSubpassDependency dependency{};
-        dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-        dependency.dstSubpass = 0;
-        dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT |
-                                  VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-        dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT |
-                                  VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-        dependency.dstAccessMask =
-            VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-
-        auto info = vk_struct<VkRenderPassCreateInfo>(VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO);
-        info.attachmentCount = static_cast<std::uint32_t>(attachments.size());
-        info.pAttachments = attachments.data();
-        info.subpassCount = 1;
-        info.pSubpasses = &subpass;
-        info.dependencyCount = 1;
-        info.pDependencies = &dependency;
-
-        check(vkCreateRenderPass(device_, &info, nullptr, &render_pass_), "vkCreateRenderPass");
-    }
-
-    void destroy_render_pass() {
-        if (render_pass_ != VK_NULL_HANDLE) {
-            vkDestroyRenderPass(device_, render_pass_, nullptr);
-            render_pass_ = VK_NULL_HANDLE;
-        }
     }
 
     void create_pipeline() {
@@ -653,8 +581,16 @@ class TexturedCubeApp {
         check(vkCreatePipelineLayout(device_, &layout_info, nullptr, &pipeline_layout_),
               "vkCreatePipelineLayout");
 
+        const VkFormat color_format = swapchain().format();
+        auto rendering_info = vk_struct<VkPipelineRenderingCreateInfo>(
+            VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO);
+        rendering_info.colorAttachmentCount = 1;
+        rendering_info.pColorAttachmentFormats = &color_format;
+        rendering_info.depthAttachmentFormat = depth_format_;
+
         auto pipeline_info = vk_struct<VkGraphicsPipelineCreateInfo>(
             VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO);
+        pipeline_info.pNext = &rendering_info;
         pipeline_info.stageCount = static_cast<std::uint32_t>(shader_stages.size());
         pipeline_info.pStages = shader_stages.data();
         pipeline_info.pVertexInputState = &vertex_input;
@@ -665,8 +601,6 @@ class TexturedCubeApp {
         pipeline_info.pDepthStencilState = &depth_stencil;
         pipeline_info.pColorBlendState = &color_blend;
         pipeline_info.layout = pipeline_layout_;
-        pipeline_info.renderPass = render_pass_;
-        pipeline_info.subpass = 0;
 
         check(vkCreateGraphicsPipelines(device_, VK_NULL_HANDLE, 1, &pipeline_info, nullptr,
                                         &pipeline_),
@@ -693,39 +627,60 @@ class TexturedCubeApp {
         depth_image_.emplace(vulkan_device(), config);
     }
 
-    void create_framebuffers() {
-        framebuffers_.reserve(swapchain().image_count());
-        for (VkImageView view : swapchain().image_views()) {
-            const std::array<VkImageView, 2> attachments{
-                view,
-                depth_image().view(),
-            };
-
-            auto info =
-                vk_struct<VkFramebufferCreateInfo>(VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO);
-            info.renderPass = render_pass_;
-            info.attachmentCount = static_cast<std::uint32_t>(attachments.size());
-            info.pAttachments = attachments.data();
-            info.width = swapchain().extent().width;
-            info.height = swapchain().extent().height;
-            info.layers = 1;
-
-            VkFramebuffer framebuffer = VK_NULL_HANDLE;
-            check(vkCreateFramebuffer(device_, &info, nullptr, &framebuffer),
-                  "vkCreateFramebuffer");
-            framebuffers_.push_back(framebuffer);
-        }
-    }
-
-    void destroy_framebuffers() {
-        for (VkFramebuffer framebuffer : framebuffers_) {
-            vkDestroyFramebuffer(device_, framebuffer, nullptr);
-        }
-        framebuffers_.clear();
-    }
-
     void create_frame_resources() {
         frame_resources_.emplace(vulkan_device(), swapchain().image_count());
+    }
+
+    void transition_swapchain_image(VkCommandBuffer command_buffer, std::uint32_t image_index,
+                                    VkImageLayout old_layout, VkImageLayout new_layout) const {
+        auto barrier = vk_struct<VkImageMemoryBarrier>(VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER);
+        barrier.oldLayout = old_layout;
+        barrier.newLayout = new_layout;
+        barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.image = swapchain().images().at(static_cast<std::size_t>(image_index));
+        barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        barrier.subresourceRange.baseMipLevel = 0;
+        barrier.subresourceRange.levelCount = 1;
+        barrier.subresourceRange.baseArrayLayer = 0;
+        barrier.subresourceRange.layerCount = 1;
+
+        VkPipelineStageFlags source_stage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+        VkPipelineStageFlags destination_stage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        if (old_layout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL &&
+            new_layout == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR) {
+            barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+            source_stage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+            destination_stage = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+        } else if (old_layout == VK_IMAGE_LAYOUT_UNDEFINED &&
+                   new_layout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) {
+            barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+        } else {
+            throw std::runtime_error("unsupported swapchain image layout transition");
+        }
+
+        vkCmdPipelineBarrier(command_buffer, source_stage, destination_stage, 0, 0, nullptr, 0,
+                             nullptr, 1, &barrier);
+    }
+
+    void transition_depth_image(VkCommandBuffer command_buffer) const {
+        auto barrier = vk_struct<VkImageMemoryBarrier>(VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER);
+        barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        barrier.newLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.image = depth_image().handle();
+        barrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
+                                VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+        barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+        barrier.subresourceRange.baseMipLevel = 0;
+        barrier.subresourceRange.levelCount = 1;
+        barrier.subresourceRange.baseArrayLayer = 0;
+        barrier.subresourceRange.layerCount = 1;
+
+        vkCmdPipelineBarrier(command_buffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                             VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT, 0, 0, nullptr, 0,
+                             nullptr, 1, &barrier);
     }
 
     template <typename T, std::size_t Count>
@@ -1070,24 +1025,41 @@ class TexturedCubeApp {
         cubey::vulkan::begin_command_buffer(command_buffer,
                                             VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
+        transition_swapchain_image(command_buffer, image_index, VK_IMAGE_LAYOUT_UNDEFINED,
+                                   VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+        transition_depth_image(command_buffer);
+
         VkClearValue color_clear{};
         color_clear.color = {{0.014F, 0.016F, 0.022F, 1.0F}};
         VkClearValue depth_clear{};
         depth_clear.depthStencil = {1.0F, 0};
-        const std::array<VkClearValue, 2> clear_values{
-            color_clear,
-            depth_clear,
-        };
 
-        auto pass = vk_struct<VkRenderPassBeginInfo>(VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO);
-        pass.renderPass = render_pass_;
-        pass.framebuffer = framebuffers_.at(static_cast<std::size_t>(image_index));
-        pass.renderArea.offset = {0, 0};
-        pass.renderArea.extent = swapchain().extent();
-        pass.clearValueCount = static_cast<std::uint32_t>(clear_values.size());
-        pass.pClearValues = clear_values.data();
+        auto color_attachment =
+            vk_struct<VkRenderingAttachmentInfo>(VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO);
+        color_attachment.imageView =
+            swapchain().image_views().at(static_cast<std::size_t>(image_index));
+        color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+        color_attachment.clearValue = color_clear;
 
-        vkCmdBeginRenderPass(command_buffer, &pass, VK_SUBPASS_CONTENTS_INLINE);
+        auto depth_attachment =
+            vk_struct<VkRenderingAttachmentInfo>(VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO);
+        depth_attachment.imageView = depth_image().view();
+        depth_attachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        depth_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        depth_attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        depth_attachment.clearValue = depth_clear;
+
+        auto rendering = vk_struct<VkRenderingInfo>(VK_STRUCTURE_TYPE_RENDERING_INFO);
+        rendering.renderArea.offset = {0, 0};
+        rendering.renderArea.extent = swapchain().extent();
+        rendering.layerCount = 1;
+        rendering.colorAttachmentCount = 1;
+        rendering.pColorAttachments = &color_attachment;
+        rendering.pDepthAttachment = &depth_attachment;
+
+        vkCmdBeginRendering(command_buffer, &rendering);
         vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_);
         vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout_,
                                 0, 1, &descriptor_set_, 0, nullptr);
@@ -1098,7 +1070,11 @@ class TexturedCubeApp {
         vkCmdBindIndexBuffer(command_buffer, index_buffer().handle(), 0, VK_INDEX_TYPE_UINT16);
         vkCmdDrawIndexed(command_buffer, static_cast<std::uint32_t>(kCubeIndices.size()), 1, 0, 0,
                          0);
-        vkCmdEndRenderPass(command_buffer);
+        vkCmdEndRendering(command_buffer);
+
+        transition_swapchain_image(command_buffer, image_index,
+                                   VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                   VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 
         check(vkEndCommandBuffer(command_buffer), "vkEndCommandBuffer textured_cube");
     }
@@ -1278,8 +1254,6 @@ class TexturedCubeApp {
     VkSurfaceKHR surface_ = VK_NULL_HANDLE;
     VkDevice device_ = VK_NULL_HANDLE;
 
-    std::vector<VkFramebuffer> framebuffers_;
-    VkRenderPass render_pass_ = VK_NULL_HANDLE;
     VkDescriptorSetLayout descriptor_set_layout_ = VK_NULL_HANDLE;
     VkDescriptorPool descriptor_pool_ = VK_NULL_HANDLE;
     VkDescriptorSet descriptor_set_ = VK_NULL_HANDLE;

@@ -14,7 +14,8 @@ As of 2026-05-02:
   `include/cubey/`.
 - `examples/window_clear` is the first runnable. It creates a GLFW/Vulkan
   windowed surface, clears a swapchain image, presents it, and handles
-  out-of-date/resize recreation.
+  out-of-date/resize recreation through an example-local classic clear render
+  pass/framebuffer path.
 - `window_clear` is example code, not library API. Keep named example behavior
   under `examples/`; promote only reusable components into `cubey`.
 - Promoted the first reusable Vulkan components into `cubey`:
@@ -51,15 +52,17 @@ As of 2026-05-02:
   points the windowed runtime path toward dynamic-rendering attachments.
 - Added `examples/spinning_cube` to exercise push constants, per-frame MVP
   animation, depth format selection, device-local vertex/index buffers, staging
-  upload, and example-local depth image/view resources.
+  upload, dynamic rendering, and example-local depth image/view resources.
 - Added `examples/textured_cube` to exercise compute-generated texture data,
   image layout transitions, storage-image descriptors, a descriptor-backed scene
   uniform buffer, combined image sampler descriptors, normals, shared GLSL
-  directional lighting, and shader sampling. It is also the first interactive
-  example: left-drag rotates, Space pauses, `R` resets, and Escape exits.
-- GLFW window setup, surface creation, render pass, graphics pipeline, depth
-  resources, framebuffers, command recording, acquire/present behavior, and
-  resize policy remain example-local.
+  directional lighting, dynamic rendering, and shader sampling. It is also the
+  first interactive example: left-drag rotates, Space pauses, `R` resets, and
+  Escape exits.
+- GLFW window setup, surface creation, `window_clear`'s clear render
+  pass/framebuffers, shader-backed graphics pipeline and depth resources,
+  explicit image layout transitions, command recording, acquire/present
+  behavior, and resize policy remain example-local.
 - CTest covers both the no-display terminal boundary and graphical runs when a
   desktop window context is injected.
 - The current useful manual desktop smokes are:
@@ -196,7 +199,7 @@ env XDG_RUNTIME_DIR=/run/user/1000 WAYLAND_DISPLAY=wayland-1 DISPLAY=:1 XDG_CURR
   policy into `cubey`.
 - The telemetry slice updates the `textured_cube` window title rather than
   adding text rendering or ImGui yet. This gives immediate framework signal
-  without expanding the render pass/UI surface.
+  without expanding the rendering/UI surface.
 - The shaded-cube slice initially kept lighting intentionally simple with
   per-face normals, a fixed directional light, and push constants for MVP plus
   model matrices. The follow-up `textured_cube` uniform slice moved scene
@@ -231,3 +234,11 @@ env XDG_RUNTIME_DIR=/run/user/1000 WAYLAND_DISPLAY=wayland-1 DISPLAY=:1 XDG_CURR
   rendering policy. That keeps the project away from a premature
   material/render-graph abstraction while still reducing Vulkan handle cleanup
   code.
+- The cube examples now follow the triangle's dynamic-rendering path. Their
+  color/depth attachments and image layout transitions are still explicit and
+  example-local, but classic render pass/framebuffer setup is gone from the
+  shader-backed windowed examples.
+- `window_clear` still intentionally exercises the minimal classic
+  render-pass/framebuffer clear path. Keeping that isolated gives a small
+  comparison point while the shader-backed path moves forward on dynamic
+  rendering.

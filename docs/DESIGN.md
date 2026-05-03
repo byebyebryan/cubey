@@ -30,10 +30,10 @@ This is a ground-up rewrite carrying forward the same spirit with modern tools a
 | Primary GPU API | Vulkan | Full GPU control, async compute, no feature ceiling |
 | Optional future API | WebGPU (Dawn) | Browser showcases if the project earns that need |
 | Windowing | GLFW | Minimal, Vulkan-native surface creation |
-| UI | ImGui | Industry standard debug UI |
-| Math | GLM | Familiar, header-only, Vulkan-friendly |
+| UI | None yet; ImGui is the likely debug UI | Current telemetry stays lightweight until UI earns the dependency |
+| Math | Project-local helpers now; GLM remains a candidate | Keep dependencies narrow until shared math pressure appears |
 | Shader compilation | glslangValidator (build time) | GLSL → SPIR-V, no runtime dependency |
-| Image output | stb_image_write | PNG output for headless mode |
+| Image output | None yet; stb_image_write remains a candidate | PNG output belongs with the future headless path |
 
 ## Architecture
 
@@ -43,12 +43,13 @@ This is a ground-up rewrite carrying forward the same spirit with modern tools a
                     +----------+----------+
                                |
                     +----------v----------+
-                    |   Cubey Runtime     |  <-- app loop, window, camera, UI, headless mode
+                    |   Cubey Runtime     |  <-- frame/input/resource helpers now;
+                    |                     |      app/window/UI/headless layers later
                     +----------+----------+
                                |
                     +----------v----------+
                     |    Vulkan Layer      |  <-- device, swapchain, resources, pipelines,
-                    |  (primary path)     |      frame state, passes
+                    |  (primary path)     |      dynamic rendering, frame state
                     +---------------------+
 ```
 
@@ -81,15 +82,19 @@ Projects and examples should eventually interact with a small set of rendering
 concepts:
 
 - `Buffer` — GPU buffer (vertex, storage, uniform, index, indirect)
-- `Texture2D`, `Texture3D` — image data
+- `Image` / future `Texture2D`, `Texture3D` — image data
 - `Pipeline` — compute or graphics pipeline
-- `BindGroup` — resource binding set
+- `DescriptorSet` — Vulkan resource binding set
 
 Core operations: create resources, dispatch compute, draw, synchronize, submit,
 present, and read back. In the first version, those operations map directly to
 Vulkan and remain free to expose Vulkan-specific requirements where useful.
 
-### App Interface
+### Future App Interface
+
+This is not implemented yet. Current examples own their app loops and GLFW
+callbacks directly; the library only promotes reusable pieces once repeated
+shape is clear.
 
 ```cpp
 struct App {
@@ -167,7 +172,8 @@ library. Runnable binaries should be named explicitly and live in either
   used by examples, projects, and tests.
 - `src/cubey/` - library implementation and private headers.
 - `examples/` - small, focused reference programs that prove one concept or API
-  path, such as `window_clear` or `headless_render`.
+  path. Current examples are `window_clear`, `triangle`, `spinning_cube`, and
+  `textured_cube`; `headless_render` is a planned path.
 - `projects/` - first-class graphics experiments and longer-lived creative
   work, such as `fluid_sim`, `particles`, `marching_cubes`, `fractal`, and
   `sdf_sculpt`.
@@ -249,7 +255,7 @@ cubey/
     spinning_cube/         -- indexed cube, push constants, depth
     textured_cube/         -- compute texture generation, uniforms, descriptors,
                               sampling
-    headless_render/       -- minimal offscreen image path
+    headless_render/       -- planned minimal offscreen image path
   projects/
       fluid_sim/
         CMakeLists.txt
@@ -282,7 +288,8 @@ cubey/
 - `main` branch starts from scratch
 - Old `0.1`–`0.5` branches cleaned up from remote
 - `webgpu` and `vulkan` branches are spike branches used to choose the Vulkan-first direction
-- README and spike findings now capture the Vulkan-first decision before mainline implementation begins
+- README and spike findings capture the initial Vulkan-first decision;
+  roadmap and working notes track the mainline implementation as it evolves
 
 ## What We're Not Building
 
@@ -292,4 +299,4 @@ cubey/
 - A cross-platform compatibility layer
 - A dual Vulkan/WebGPU backend abstraction before there is a concrete browser-facing project need
 - Runtime shader hot-reload
-- A material/render-pass pipeline system
+- A material/render-graph/pipeline system

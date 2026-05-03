@@ -39,10 +39,11 @@ versioned section and use that section as the release notes.
 - `examples/triangle`, a minimal shader-backed Vulkan graphics pipeline smoke
   executable using dynamic rendering and `gl_VertexIndex`.
 - `examples/spinning_cube`, a shader-generated cube smoke executable with push
-  constants, animation, and an example-local depth attachment.
+  constants, animation, dynamic rendering, and an example-local depth
+  attachment.
 - `examples/textured_cube`, an interactive shaded cube that generates texture
   data through a setup-time compute shader and samples it in the graphics pass
-  with descriptor-backed scene uniforms.
+  with descriptor-backed scene uniforms and dynamic rendering.
 - CTest smoke that accepts either successful window startup or the known
   no-display GLFW failure in terminal sessions.
 
@@ -54,11 +55,12 @@ versioned section and use that section as the release notes.
   executable.
 - `examples/window_clear` now uses reusable `cubey::vulkan` instance, device,
   swapchain, and frame-resource components while keeping GLFW, surface creation,
-  render pass, framebuffers, command recording, acquire/present behavior, and
-  resize policy example-local.
-- Shader-backed examples keep render pass, pipeline, depth resources,
-  framebuffers, command recording, acquire/present behavior, and resize policy
-  local until the repeated shape is clearer.
+  its minimal clear render pass/framebuffers, command recording,
+  acquire/present behavior, and resize policy example-local.
+- Shader-backed examples now use dynamic rendering instead of classic render
+  passes/framebuffers while keeping pipeline setup, depth attachments, explicit
+  layout transitions, command recording, acquire/present behavior, and resize
+  policy local until the repeated shape is clearer.
 
 ## Pre-2.0 History
 
