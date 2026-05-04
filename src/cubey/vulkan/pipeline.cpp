@@ -2,9 +2,128 @@
 
 #include <cubey/vulkan/vk_check.h>
 
+#include <cstdint>
 #include <stdexcept>
 
 namespace cubey::vulkan {
+namespace {
+
+void validate_dynamic_graphics_pipeline_config(const DynamicGraphicsPipelineConfig& config) {
+    if (config.layout == VK_NULL_HANDLE) {
+        throw std::runtime_error("dynamic graphics pipeline requires a pipeline layout");
+    }
+    if (config.extent.width == 0 || config.extent.height == 0) {
+        throw std::runtime_error("dynamic graphics pipeline requires a non-empty extent");
+    }
+    if (config.color_format == VK_FORMAT_UNDEFINED) {
+        throw std::runtime_error("dynamic graphics pipeline requires a color format");
+    }
+    if (config.shader_stages.empty()) {
+        throw std::runtime_error("dynamic graphics pipeline requires at least one shader stage");
+    }
+    if ((config.depth_test || config.depth_write) && config.depth_format == VK_FORMAT_UNDEFINED) {
+        throw std::runtime_error(
+            "dynamic graphics pipeline depth state requires a depth attachment format");
+    }
+}
+
+} // namespace
+
+VkPipelineShaderStageCreateInfo shader_stage(VkShaderStageFlagBits stage, VkShaderModule module,
+                                             const char* entry_point) {
+    auto info = vk_struct<VkPipelineShaderStageCreateInfo>(
+        VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO);
+    info.stage = stage;
+    info.module = module;
+    info.pName = entry_point;
+    return info;
+}
+
+DynamicGraphicsPipelineInfo::DynamicGraphicsPipelineInfo(
+    const DynamicGraphicsPipelineConfig& config) {
+    validate_dynamic_graphics_pipeline_config(config);
+
+    shader_stages_.assign(config.shader_stages.begin(), config.shader_stages.end());
+    vertex_bindings_.assign(config.vertex_bindings.begin(), config.vertex_bindings.end());
+    vertex_attributes_.assign(config.vertex_attributes.begin(), config.vertex_attributes.end());
+    color_format_ = config.color_format;
+
+    rendering_info_ =
+        vk_struct<VkPipelineRenderingCreateInfo>(VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO);
+    rendering_info_.colorAttachmentCount = 1;
+    rendering_info_.pColorAttachmentFormats = &color_format_;
+    rendering_info_.depthAttachmentFormat = config.depth_format;
+
+    vertex_input_ = vk_struct<VkPipelineVertexInputStateCreateInfo>(
+        VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO);
+    vertex_input_.vertexBindingDescriptionCount =
+        static_cast<std::uint32_t>(vertex_bindings_.size());
+    vertex_input_.pVertexBindingDescriptions = vertex_bindings_.data();
+    vertex_input_.vertexAttributeDescriptionCount =
+        static_cast<std::uint32_t>(vertex_attributes_.size());
+    vertex_input_.pVertexAttributeDescriptions = vertex_attributes_.data();
+
+    input_assembly_ = vk_struct<VkPipelineInputAssemblyStateCreateInfo>(
+        VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO);
+    input_assembly_.topology = config.topology;
+
+    viewport_.x = 0.0F;
+    viewport_.y = 0.0F;
+    viewport_.width = static_cast<float>(config.extent.width);
+    viewport_.height = static_cast<float>(config.extent.height);
+    viewport_.minDepth = 0.0F;
+    viewport_.maxDepth = 1.0F;
+
+    scissor_.offset = {0, 0};
+    scissor_.extent = config.extent;
+
+    viewport_state_ = vk_struct<VkPipelineViewportStateCreateInfo>(
+        VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO);
+    viewport_state_.viewportCount = 1;
+    viewport_state_.pViewports = &viewport_;
+    viewport_state_.scissorCount = 1;
+    viewport_state_.pScissors = &scissor_;
+
+    rasterizer_ = vk_struct<VkPipelineRasterizationStateCreateInfo>(
+        VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO);
+    rasterizer_.polygonMode = config.polygon_mode;
+    rasterizer_.cullMode = config.cull_mode;
+    rasterizer_.frontFace = config.front_face;
+    rasterizer_.lineWidth = 1.0F;
+
+    multisample_ = vk_struct<VkPipelineMultisampleStateCreateInfo>(
+        VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO);
+    multisample_.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+
+    depth_stencil_ = vk_struct<VkPipelineDepthStencilStateCreateInfo>(
+        VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO);
+    depth_stencil_.depthTestEnable = config.depth_test ? VK_TRUE : VK_FALSE;
+    depth_stencil_.depthWriteEnable = config.depth_write ? VK_TRUE : VK_FALSE;
+    depth_stencil_.depthCompareOp = config.depth_compare_op;
+
+    color_blend_attachment_.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
+                                             VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+
+    color_blend_ = vk_struct<VkPipelineColorBlendStateCreateInfo>(
+        VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO);
+    color_blend_.attachmentCount = 1;
+    color_blend_.pAttachments = &color_blend_attachment_;
+
+    create_info_ =
+        vk_struct<VkGraphicsPipelineCreateInfo>(VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO);
+    create_info_.pNext = &rendering_info_;
+    create_info_.stageCount = static_cast<std::uint32_t>(shader_stages_.size());
+    create_info_.pStages = shader_stages_.data();
+    create_info_.pVertexInputState = &vertex_input_;
+    create_info_.pInputAssemblyState = &input_assembly_;
+    create_info_.pViewportState = &viewport_state_;
+    create_info_.pRasterizationState = &rasterizer_;
+    create_info_.pMultisampleState = &multisample_;
+    create_info_.pDepthStencilState =
+        config.depth_format == VK_FORMAT_UNDEFINED ? nullptr : &depth_stencil_;
+    create_info_.pColorBlendState = &color_blend_;
+    create_info_.layout = config.layout;
+}
 
 PipelineLayout::PipelineLayout(const Device& device, const VkPipelineLayoutCreateInfo& info)
     : device_(device.handle()) {

@@ -25,8 +25,8 @@ versioned section and use that section as the release notes.
   `glslangValidator`.
 - Public Vulkan `Buffer`, `Image`, `Sampler`, and `ImmediateCommands`
   components for device resources, generated texture paths, and setup uploads.
-- Public Vulkan pipeline and descriptor RAII types that accept explicit
-  Vulkan create-info structs.
+- Public Vulkan pipeline and descriptor RAII types, plus a dynamic graphics
+  pipeline create-info helper for the current single-color-attachment path.
 - Public Vulkan `RenderContext` component for explicit surface-backed
   begin/end frame lifecycle, acquire, command reset, submit, present, and
   swapchain-recreate signaling.
@@ -56,9 +56,11 @@ versioned section and use that section as the release notes.
 - Runnable targets are explicit examples/projects rather than a generic `cubey`
   executable.
 - Windowed examples now use dynamic rendering instead of classic render
-  passes/framebuffers while keeping GLFW, surface creation, pipeline setup,
-  depth attachments, command recording, acquire/present behavior, and resize
-  policy local until the repeated shape is clearer.
+  passes/framebuffers while keeping GLFW, surface creation, depth attachments,
+  command recording, acquire/present behavior, and resize policy local.
+- Graphics examples now share dynamic graphics pipeline create-info setup while
+  retaining explicit example-local layout, shader, vertex-input, and descriptor
+  choices.
 
 ## Pre-2.0 History
 

@@ -10,8 +10,9 @@
 #include <cubey/vulkan/image.h>
 #include <cubey/vulkan/immediate_commands.h>
 #include <cubey/vulkan/instance.h>
-#include <cubey/vulkan/rendering.h>
+#include <cubey/vulkan/pipeline.h>
 #include <cubey/vulkan/render_context.h>
+#include <cubey/vulkan/rendering.h>
 #include <cubey/vulkan/sampler.h>
 #include <cubey/vulkan/shader_module.h>
 #include <cubey/vulkan/swapchain.h>
@@ -422,7 +423,8 @@ class TexturedCubeApp {
 
     void destroy_swapchain_resources() {
         depth_image_.reset();
-        destroy_pipeline();
+        pipeline_.reset();
+        pipeline_layout_.reset();
         swapchain_.reset();
     }
 
@@ -477,17 +479,10 @@ class TexturedCubeApp {
         cubey::vulkan::ShaderModule vertex_shader(vulkan_device(), vertex_code);
         cubey::vulkan::ShaderModule fragment_shader(vulkan_device(), fragment_code);
 
-        auto vertex_stage = vk_struct<VkPipelineShaderStageCreateInfo>(
-            VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO);
-        vertex_stage.stage = VK_SHADER_STAGE_VERTEX_BIT;
-        vertex_stage.module = vertex_shader.handle();
-        vertex_stage.pName = "main";
-
-        auto fragment_stage = vk_struct<VkPipelineShaderStageCreateInfo>(
-            VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO);
-        fragment_stage.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-        fragment_stage.module = fragment_shader.handle();
-        fragment_stage.pName = "main";
+        const VkPipelineShaderStageCreateInfo vertex_stage =
+            cubey::vulkan::shader_stage(VK_SHADER_STAGE_VERTEX_BIT, vertex_shader.handle());
+        const VkPipelineShaderStageCreateInfo fragment_stage =
+            cubey::vulkan::shader_stage(VK_SHADER_STAGE_FRAGMENT_BIT, fragment_shader.handle());
 
         const std::array<VkPipelineShaderStageCreateInfo, 2> shader_stages{
             vertex_stage,
@@ -517,106 +512,24 @@ class TexturedCubeApp {
         vertex_attributes[3].format = VK_FORMAT_R32G32_SFLOAT;
         vertex_attributes[3].offset = offsetof(Vertex, uv);
 
-        auto vertex_input = vk_struct<VkPipelineVertexInputStateCreateInfo>(
-            VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO);
-        vertex_input.vertexBindingDescriptionCount = 1;
-        vertex_input.pVertexBindingDescriptions = &vertex_binding;
-        vertex_input.vertexAttributeDescriptionCount =
-            static_cast<std::uint32_t>(vertex_attributes.size());
-        vertex_input.pVertexAttributeDescriptions = vertex_attributes.data();
-
-        auto input_assembly = vk_struct<VkPipelineInputAssemblyStateCreateInfo>(
-            VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO);
-        input_assembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-
-        VkViewport viewport{};
-        viewport.x = 0.0F;
-        viewport.y = 0.0F;
-        viewport.width = static_cast<float>(swapchain().extent().width);
-        viewport.height = static_cast<float>(swapchain().extent().height);
-        viewport.minDepth = 0.0F;
-        viewport.maxDepth = 1.0F;
-
-        VkRect2D scissor{};
-        scissor.offset = {0, 0};
-        scissor.extent = swapchain().extent();
-
-        auto viewport_state = vk_struct<VkPipelineViewportStateCreateInfo>(
-            VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO);
-        viewport_state.viewportCount = 1;
-        viewport_state.pViewports = &viewport;
-        viewport_state.scissorCount = 1;
-        viewport_state.pScissors = &scissor;
-
-        auto rasterizer = vk_struct<VkPipelineRasterizationStateCreateInfo>(
-            VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO);
-        rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
-        rasterizer.cullMode = VK_CULL_MODE_NONE;
-        rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
-        rasterizer.lineWidth = 1.0F;
-
-        auto multisample = vk_struct<VkPipelineMultisampleStateCreateInfo>(
-            VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO);
-        multisample.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
-
-        auto depth_stencil = vk_struct<VkPipelineDepthStencilStateCreateInfo>(
-            VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO);
-        depth_stencil.depthTestEnable = VK_TRUE;
-        depth_stencil.depthWriteEnable = VK_TRUE;
-        depth_stencil.depthCompareOp = VK_COMPARE_OP_LESS;
-
-        VkPipelineColorBlendAttachmentState color_blend_attachment{};
-        color_blend_attachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT |
-                                                VK_COLOR_COMPONENT_G_BIT |
-                                                VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-
-        auto color_blend = vk_struct<VkPipelineColorBlendStateCreateInfo>(
-            VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO);
-        color_blend.attachmentCount = 1;
-        color_blend.pAttachments = &color_blend_attachment;
-
         auto layout_info =
             vk_struct<VkPipelineLayoutCreateInfo>(VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO);
         layout_info.setLayoutCount = 1;
         layout_info.pSetLayouts = &descriptor_set_layout_;
-        check(vkCreatePipelineLayout(device_, &layout_info, nullptr, &pipeline_layout_),
-              "vkCreatePipelineLayout");
+        pipeline_layout_.emplace(vulkan_device(), layout_info);
 
-        const VkFormat color_format = swapchain().format();
-        auto rendering_info = vk_struct<VkPipelineRenderingCreateInfo>(
-            VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO);
-        rendering_info.colorAttachmentCount = 1;
-        rendering_info.pColorAttachmentFormats = &color_format;
-        rendering_info.depthAttachmentFormat = depth_format_;
-
-        auto pipeline_info = vk_struct<VkGraphicsPipelineCreateInfo>(
-            VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO);
-        pipeline_info.pNext = &rendering_info;
-        pipeline_info.stageCount = static_cast<std::uint32_t>(shader_stages.size());
-        pipeline_info.pStages = shader_stages.data();
-        pipeline_info.pVertexInputState = &vertex_input;
-        pipeline_info.pInputAssemblyState = &input_assembly;
-        pipeline_info.pViewportState = &viewport_state;
-        pipeline_info.pRasterizationState = &rasterizer;
-        pipeline_info.pMultisampleState = &multisample;
-        pipeline_info.pDepthStencilState = &depth_stencil;
-        pipeline_info.pColorBlendState = &color_blend;
-        pipeline_info.layout = pipeline_layout_;
-
-        check(vkCreateGraphicsPipelines(device_, VK_NULL_HANDLE, 1, &pipeline_info, nullptr,
-                                        &pipeline_),
-              "vkCreateGraphicsPipelines");
-    }
-
-    void destroy_pipeline() {
-        if (pipeline_ != VK_NULL_HANDLE) {
-            vkDestroyPipeline(device_, pipeline_, nullptr);
-            pipeline_ = VK_NULL_HANDLE;
-        }
-        if (pipeline_layout_ != VK_NULL_HANDLE) {
-            vkDestroyPipelineLayout(device_, pipeline_layout_, nullptr);
-            pipeline_layout_ = VK_NULL_HANDLE;
-        }
+        cubey::vulkan::DynamicGraphicsPipelineConfig pipeline_config;
+        pipeline_config.layout = pipeline_layout().handle();
+        pipeline_config.extent = swapchain().extent();
+        pipeline_config.color_format = swapchain().format();
+        pipeline_config.depth_format = depth_format_;
+        pipeline_config.shader_stages = shader_stages;
+        pipeline_config.vertex_bindings = {&vertex_binding, 1};
+        pipeline_config.vertex_attributes = vertex_attributes;
+        pipeline_config.depth_test = true;
+        pipeline_config.depth_write = true;
+        const cubey::vulkan::DynamicGraphicsPipelineInfo pipeline_info(pipeline_config);
+        pipeline_.emplace(vulkan_device(), pipeline_info.create_info());
     }
 
     void create_depth_resources() {
@@ -987,8 +900,9 @@ class TexturedCubeApp {
         VkClearValue depth_clear{};
         depth_clear.depthStencil = {1.0F, 0};
 
-        const VkRenderingAttachmentInfo color_attachment = cubey::vulkan::color_rendering_attachment(
-            swapchain().image_views().at(swapchain_image_index), color_clear);
+        const VkRenderingAttachmentInfo color_attachment =
+            cubey::vulkan::color_rendering_attachment(
+                swapchain().image_views().at(swapchain_image_index), color_clear);
         const VkRenderingAttachmentInfo depth_attachment =
             cubey::vulkan::depth_rendering_attachment(depth_image().view(), depth_clear);
 
@@ -1001,9 +915,9 @@ class TexturedCubeApp {
         rendering.pDepthAttachment = &depth_attachment;
 
         vkCmdBeginRendering(command_buffer, &rendering);
-        vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_);
-        vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout_,
-                                0, 1, &descriptor_set_, 0, nullptr);
+        vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline().handle());
+        vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                pipeline_layout().handle(), 0, 1, &descriptor_set_, 0, nullptr);
         const std::array<VkBuffer, 1> vertex_buffers{vertex_buffer().handle()};
         constexpr std::array<VkDeviceSize, 1> vertex_offsets{0};
         vkCmdBindVertexBuffers(command_buffer, 0, static_cast<std::uint32_t>(vertex_buffers.size()),
@@ -1173,6 +1087,20 @@ class TexturedCubeApp {
         return texture_sampler_.value();
     }
 
+    [[nodiscard]] const cubey::vulkan::PipelineLayout& pipeline_layout() const {
+        if (!pipeline_layout_.has_value()) {
+            throw std::runtime_error("pipeline layout is not initialized");
+        }
+        return pipeline_layout_.value();
+    }
+
+    [[nodiscard]] const cubey::vulkan::GraphicsPipeline& pipeline() const {
+        if (!pipeline_.has_value()) {
+            throw std::runtime_error("pipeline is not initialized");
+        }
+        return pipeline_.value();
+    }
+
     RunConfig config_;
     bool glfw_initialized_ = false;
     bool framebuffer_resized_ = false;
@@ -1191,6 +1119,8 @@ class TexturedCubeApp {
     std::optional<cubey::vulkan::Image> texture_image_;
     std::optional<cubey::vulkan::Image> depth_image_;
     std::optional<cubey::vulkan::Sampler> texture_sampler_;
+    std::optional<cubey::vulkan::PipelineLayout> pipeline_layout_;
+    std::optional<cubey::vulkan::GraphicsPipeline> pipeline_;
     VkInstance instance_ = VK_NULL_HANDLE;
     VkSurfaceKHR surface_ = VK_NULL_HANDLE;
     VkDevice device_ = VK_NULL_HANDLE;
@@ -1201,8 +1131,6 @@ class TexturedCubeApp {
     VkDescriptorSetLayout compute_descriptor_set_layout_ = VK_NULL_HANDLE;
     VkDescriptorPool compute_descriptor_pool_ = VK_NULL_HANDLE;
     VkDescriptorSet compute_descriptor_set_ = VK_NULL_HANDLE;
-    VkPipelineLayout pipeline_layout_ = VK_NULL_HANDLE;
-    VkPipeline pipeline_ = VK_NULL_HANDLE;
     VkPipelineLayout compute_pipeline_layout_ = VK_NULL_HANDLE;
     VkPipeline compute_pipeline_ = VK_NULL_HANDLE;
     VkFormat depth_format_ = VK_FORMAT_UNDEFINED;

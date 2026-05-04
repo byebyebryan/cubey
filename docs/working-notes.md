@@ -7,7 +7,7 @@ decisions into `docs/DESIGN.md`, `docs/roadmap.md`, or
 
 ## Current Checkpoint
 
-As of 2026-05-02:
+As of 2026-05-04:
 
 - `main` has moved from docs/tooling-only to the first implementation slice.
 - The primary target is `cubey`, a static library with public headers under
@@ -45,6 +45,10 @@ As of 2026-05-02:
   `PipelineLayout`, `GraphicsPipeline`, `ComputePipeline`,
   `DescriptorSetLayout`, and `DescriptorPool`. These wrappers own lifetimes but
   intentionally keep create-info construction visible in example/project code.
+- Promoted `DynamicGraphicsPipelineInfo` and `shader_stage` for the common
+  dynamic-rendering graphics pipeline shape: one color attachment, optional
+  depth, fixed viewport/scissor from swapchain extent, single-sample raster
+  state, and explicit shader/layout/vertex-input choices from the caller.
 - Promoted narrow rendering helpers for image layout transitions and
   dynamic-rendering color/depth attachment setup. They reduce repeated Vulkan
   struct boilerplate without owning command recording or render policy.
@@ -61,9 +65,10 @@ As of 2026-05-02:
   directional lighting, dynamic rendering, and shader sampling. It is also the
   first interactive example: left-drag rotates, Space pauses, `R` resets, and
   Escape exits.
-- GLFW window setup, surface creation, shader-backed graphics pipeline and
-  depth resources, command recording, acquire/present behavior, and resize
-  policy remain example-local.
+- GLFW window setup, surface creation, shader-backed depth resources, command
+  recording, acquire/present behavior, and resize policy remain example-local.
+  Graphics pipeline creation now uses the shared helper, while examples still
+  own pipeline layout, shader module, vertex-input, and descriptor choices.
 - CTest covers both the no-display terminal boundary and graphical runs when a
   desktop window context is injected.
 - The current useful manual desktop smokes are:
@@ -238,3 +243,10 @@ env XDG_RUNTIME_DIR=/run/user/1000 WAYLAND_DISPLAY=wayland-1 DISPLAY=:1 XDG_CURR
 - All current windowed examples now use dynamic rendering. The helper layer owns
   repeated image-transition and attachment-info construction, while examples
   still own frame command recording and resize policy.
+- The first graphics pipeline helper slice intentionally covers the repeated
+  dynamic-rendering create-info shape, not a material system or renderer.
+  `triangle`, `spinning_cube`, and `textured_cube` now share shader-stage and
+  graphics-pipeline setup while keeping their layout, vertex-input, descriptor,
+  and depth decisions explicit. The setup-time compute pipeline in
+  `textured_cube` remains local until compute/descriptor repetition produces a
+  clearer helper boundary.

@@ -78,6 +78,10 @@ Current checkpoint:
   `ComputePipeline`, `DescriptorSetLayout`, and `DescriptorPool` own basic
   pipeline and descriptor lifetimes while still taking raw Vulkan create-info
   structs.
+- Reusable `cubey::vulkan::DynamicGraphicsPipelineInfo` builds the current
+  dynamic-rendering graphics pipeline create-info shape for one color
+  attachment plus optional depth, while examples still choose shaders, layouts,
+  vertex input, descriptors, and depth usage explicitly.
 - Reusable `cubey::vulkan` rendering helpers build the current color/depth
   attachment transitions and dynamic-rendering attachment descriptors without
   owning render policy.
@@ -88,8 +92,9 @@ Current checkpoint:
 - `examples/window_clear` links against `cubey` and clears/presents a swapchain
   image through Vulkan/GLFW using dynamic rendering.
 - `examples/triangle` links against `cubey`, compiles vertex/fragment shaders
-  at build time, creates an example-local dynamic-rendering graphics pipeline,
-  and draws a `gl_VertexIndex` triangle without a render pass or framebuffer.
+  at build time, creates a dynamic-rendering graphics pipeline through the
+  shared pipeline helper, and draws a `gl_VertexIndex` triangle without a render
+  pass or framebuffer.
 - `examples/spinning_cube` links against `cubey`, compiles vertex/fragment
   shaders at build time, draws an indexed cube from device-local vertex/index
   buffers, updates an MVP matrix through push constants, and uses dynamic
@@ -104,7 +109,7 @@ Current checkpoint:
   future framework slice, not part of the current example-local compute path.
 - The remaining windowed app implementation is intentionally example-local: GLFW
   window setup, surface creation, shader-backed depth attachment setup,
-  pipeline layout/pipeline, command recording, and resize policy.
+  pipeline layout choices, command recording, and resize policy.
 - Dev CTest covers the target in both graphical and no-display terminal
   sessions.
 - Headless rendering, frame overlap, richer rendering/pipeline helpers, split

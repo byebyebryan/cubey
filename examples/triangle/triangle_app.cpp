@@ -5,8 +5,8 @@
 #include <cubey/vulkan/frame_resources.h>
 #include <cubey/vulkan/instance.h>
 #include <cubey/vulkan/pipeline.h>
-#include <cubey/vulkan/rendering.h>
 #include <cubey/vulkan/render_context.h>
+#include <cubey/vulkan/rendering.h>
 #include <cubey/vulkan/shader_module.h>
 #include <cubey/vulkan/swapchain.h>
 #include <cubey/vulkan/vk_check.h>
@@ -244,94 +244,27 @@ class TriangleApp {
         cubey::vulkan::ShaderModule vertex_shader(vulkan_device(), vertex_code);
         cubey::vulkan::ShaderModule fragment_shader(vulkan_device(), fragment_code);
 
-        auto vertex_stage = vk_struct<VkPipelineShaderStageCreateInfo>(
-            VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO);
-        vertex_stage.stage = VK_SHADER_STAGE_VERTEX_BIT;
-        vertex_stage.module = vertex_shader.handle();
-        vertex_stage.pName = "main";
-
-        auto fragment_stage = vk_struct<VkPipelineShaderStageCreateInfo>(
-            VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO);
-        fragment_stage.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-        fragment_stage.module = fragment_shader.handle();
-        fragment_stage.pName = "main";
+        const VkPipelineShaderStageCreateInfo vertex_stage =
+            cubey::vulkan::shader_stage(VK_SHADER_STAGE_VERTEX_BIT, vertex_shader.handle());
+        const VkPipelineShaderStageCreateInfo fragment_stage =
+            cubey::vulkan::shader_stage(VK_SHADER_STAGE_FRAGMENT_BIT, fragment_shader.handle());
 
         const std::array<VkPipelineShaderStageCreateInfo, 2> shader_stages{
             vertex_stage,
             fragment_stage,
         };
 
-        auto vertex_input = vk_struct<VkPipelineVertexInputStateCreateInfo>(
-            VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO);
-
-        auto input_assembly = vk_struct<VkPipelineInputAssemblyStateCreateInfo>(
-            VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO);
-        input_assembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-
-        VkViewport viewport{};
-        viewport.x = 0.0F;
-        viewport.y = 0.0F;
-        viewport.width = static_cast<float>(swapchain().extent().width);
-        viewport.height = static_cast<float>(swapchain().extent().height);
-        viewport.minDepth = 0.0F;
-        viewport.maxDepth = 1.0F;
-
-        VkRect2D scissor{};
-        scissor.offset = {0, 0};
-        scissor.extent = swapchain().extent();
-
-        auto viewport_state = vk_struct<VkPipelineViewportStateCreateInfo>(
-            VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO);
-        viewport_state.viewportCount = 1;
-        viewport_state.pViewports = &viewport;
-        viewport_state.scissorCount = 1;
-        viewport_state.pScissors = &scissor;
-
-        auto rasterizer = vk_struct<VkPipelineRasterizationStateCreateInfo>(
-            VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO);
-        rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
-        rasterizer.cullMode = VK_CULL_MODE_NONE;
-        rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
-        rasterizer.lineWidth = 1.0F;
-
-        auto multisample = vk_struct<VkPipelineMultisampleStateCreateInfo>(
-            VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO);
-        multisample.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
-
-        VkPipelineColorBlendAttachmentState color_blend_attachment{};
-        color_blend_attachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT |
-                                                VK_COLOR_COMPONENT_G_BIT |
-                                                VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-
-        auto color_blend = vk_struct<VkPipelineColorBlendStateCreateInfo>(
-            VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO);
-        color_blend.attachmentCount = 1;
-        color_blend.pAttachments = &color_blend_attachment;
-
         auto layout_info =
             vk_struct<VkPipelineLayoutCreateInfo>(VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO);
         pipeline_layout_.emplace(vulkan_device(), layout_info);
 
-        const VkFormat color_format = swapchain().format();
-        auto rendering_info = vk_struct<VkPipelineRenderingCreateInfo>(
-            VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO);
-        rendering_info.colorAttachmentCount = 1;
-        rendering_info.pColorAttachmentFormats = &color_format;
-
-        auto pipeline_info = vk_struct<VkGraphicsPipelineCreateInfo>(
-            VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO);
-        pipeline_info.pNext = &rendering_info;
-        pipeline_info.stageCount = static_cast<std::uint32_t>(shader_stages.size());
-        pipeline_info.pStages = shader_stages.data();
-        pipeline_info.pVertexInputState = &vertex_input;
-        pipeline_info.pInputAssemblyState = &input_assembly;
-        pipeline_info.pViewportState = &viewport_state;
-        pipeline_info.pRasterizationState = &rasterizer;
-        pipeline_info.pMultisampleState = &multisample;
-        pipeline_info.pColorBlendState = &color_blend;
-        pipeline_info.layout = pipeline_layout().handle();
-
-        pipeline_.emplace(vulkan_device(), pipeline_info);
+        cubey::vulkan::DynamicGraphicsPipelineConfig pipeline_config;
+        pipeline_config.layout = pipeline_layout().handle();
+        pipeline_config.extent = swapchain().extent();
+        pipeline_config.color_format = swapchain().format();
+        pipeline_config.shader_stages = shader_stages;
+        const cubey::vulkan::DynamicGraphicsPipelineInfo pipeline_info(pipeline_config);
+        pipeline_.emplace(vulkan_device(), pipeline_info.create_info());
     }
 
     void create_frame_resources() {
@@ -349,8 +282,9 @@ class TriangleApp {
 
         VkClearValue clear{};
         clear.color = {{0.015F, 0.017F, 0.024F, 1.0F}};
-        const VkRenderingAttachmentInfo color_attachment = cubey::vulkan::color_rendering_attachment(
-            swapchain().image_views().at(swapchain_image_index), clear);
+        const VkRenderingAttachmentInfo color_attachment =
+            cubey::vulkan::color_rendering_attachment(
+                swapchain().image_views().at(swapchain_image_index), clear);
 
         auto rendering = vk_struct<VkRenderingInfo>(VK_STRUCTURE_TYPE_RENDERING_INFO);
         rendering.renderArea.offset = {0, 0};

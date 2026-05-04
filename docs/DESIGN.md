@@ -223,7 +223,7 @@ cubey/
         frame_resources.h  -- per-frame command/sync resources
         image.h            -- Vulkan image, memory, and image-view ownership
         immediate_commands.h -- one-shot setup command submission
-        pipeline.h         -- pipeline layout and pipeline ownership
+        pipeline.h         -- pipeline ownership and graphics setup helpers
         rendering.h        -- image transitions and dynamic-rendering helpers
         render_context.h   -- surface-backed begin/end frame lifecycle
         sampler.h          -- Vulkan sampler ownership
@@ -244,7 +244,7 @@ cubey/
         frame_resources.cpp -- command buffers and sync objects
         image.cpp          -- images, memory, and image views
         immediate_commands.cpp -- one-shot setup command submission
-        pipeline.cpp       -- pipeline layout and pipeline ownership
+        pipeline.cpp       -- pipeline ownership and graphics setup helpers
         rendering.cpp      -- image transitions and dynamic-rendering helpers
         render_context.cpp -- surface-backed begin/end frame lifecycle
         sampler.cpp        -- samplers

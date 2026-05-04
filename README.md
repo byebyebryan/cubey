@@ -47,11 +47,12 @@ scene uniforms, normals, shared GLSL lighting, image/sampler ownership, and
 fragment-shader sampling through dynamic rendering.
 `cubey` owns the reusable Vulkan instance, device, buffer, image, sampler,
 swapchain, shader-module, command-pool, rendering helpers, frame clock,
-orbit-controller, pipeline, descriptor, shared shader includes, `RenderContext`
-surface-backed begin/end frame lifecycle, and single-frame command/sync
-components; examples still own GLFW, surface creation, shader-backed depth
-attachment setup, command recording, and resize policy. The spike branches
-remain reference material for deeper compute, headless, and browser work.
+orbit-controller, pipeline ownership, dynamic graphics pipeline setup,
+descriptor, shared shader includes, `RenderContext` surface-backed begin/end
+frame lifecycle, and single-frame command/sync components; examples still own
+GLFW, surface creation, shader-backed depth attachment setup, command recording,
+and resize policy. The spike branches remain reference material for deeper
+compute, headless, and browser work.
 
 ## Development Setup
 
