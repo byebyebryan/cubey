@@ -10,6 +10,9 @@ Cubey 2.0 is a native Vulkan-first GPU workbench for procedural graphics
 experiments. WebGPU/Dawn remains useful as an optional future presentation path,
 but it is not the architecture driver for the main Vulkan layer.
 
+See [Vulkan abstraction map](vulkan-abstractions.md) for the planned framework
+layers, promotion rules, and next implementation batches.
+
 ## Phase 0: Repo Foundation
 
 Status: complete for the first implementation slice.
@@ -115,6 +118,9 @@ Current checkpoint:
 - Headless rendering, frame overlap, richer rendering/pipeline helpers, split
   graphics/compute/present queue-family support, external asset loading, and
   broader descriptor components remain future slices.
+
+Next implementation batch: resource and attachment cleanup, especially shared
+depth format/attachment setup and common staging upload helpers.
 
 ## Phase 2: Resource Layer and App API
 

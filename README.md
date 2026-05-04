@@ -24,6 +24,7 @@ See:
 
 - [Design document](docs/DESIGN.md)
 - [Roadmap](docs/roadmap.md)
+- [Vulkan abstraction map](docs/vulkan-abstractions.md)
 - [Working notes](docs/working-notes.md)
 - [Spike findings and decision record](docs/spike-findings.md)
 - [C++ style guide](docs/cpp-style.md)
