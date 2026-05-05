@@ -60,6 +60,11 @@ As of 2026-05-04:
   writes, descriptor updates, pipeline layouts, and compute pipeline create-info.
   `textured_cube` now shares this setup while keeping descriptor layout, shader,
   and dispatch choices explicit.
+- Promoted transfer/readback helpers for readback buffers, generated/uploaded
+  sampled image configs, buffer-image copy regions, buffer-to-image and
+  image-to-buffer copies, and named storage/transfer/sampling transitions.
+  `textured_cube` now uses the shared generated-texture config and storage
+  transition helpers.
 - Added `examples/triangle` as the first shader-backed graphics pipeline smoke.
 - Converted `examples/triangle` to dynamic rendering as the first render-pass
   direction spike. This removes triangle's render pass/framebuffer ownership and
@@ -269,3 +274,7 @@ env XDG_RUNTIME_DIR=/run/user/1000 WAYLAND_DISPLAY=wayland-1 DISPLAY=:1 XDG_CURR
   groups or material abstractions. The useful helper boundary is still Vulkan
   vocabulary: layout bindings, pool sizes, descriptor writes, pipeline layouts,
   compute pipeline create info, and explicit dispatch from the example.
+- The transfer/readback slice added the missing low-level pieces for future
+  headless artifacts without adding a headless host yet. Generated sampled
+  images now include transfer-source usage so compute outputs can be copied into
+  readback buffers once a headless smoke has a render target to inspect.

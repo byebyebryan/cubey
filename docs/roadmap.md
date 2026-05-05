@@ -80,6 +80,10 @@ Current checkpoint:
   one-shot setup uploads into device-local buffers.
 - Reusable `cubey::vulkan::DepthAttachment` owns depth image/view setup and
   shared depth format selection.
+- Reusable `cubey::vulkan` transfer/readback helpers cover readback buffers,
+  sampled image configs, buffer-image copy regions, buffer-to-image copies,
+  image-to-buffer copies, and current storage/transfer/sampling image layout
+  transitions.
 - Reusable `cubey::vulkan::PipelineLayout`, `GraphicsPipeline`,
   `ComputePipeline`, `DescriptorSetLayout`, and `DescriptorPool` own basic
   pipeline and descriptor lifetimes while still taking raw Vulkan create-info
@@ -124,12 +128,12 @@ Current checkpoint:
   and resize policy.
 - Dev CTest covers the target in both graphical and no-display terminal
   sessions.
-- Headless rendering, frame overlap, texture transfer/readback helpers, split
-  graphics/compute/present queue-family support, and external asset loading
-  remain future slices.
+- Headless rendering, frame overlap, split graphics/compute/present queue-family
+  support, and external asset loading remain future slices.
 
-Next implementation batch: transfer, texture, and readback helpers, especially
-buffer-to-image copy, image transition vocabulary, and readback paths.
+Next implementation batch: frame-loop and swapchain-sized resource rebuild
+cleanup, especially shared rebuild helpers if the repeated example code is clear
+enough to promote.
 
 ## Phase 2: Resource Layer and App API
 

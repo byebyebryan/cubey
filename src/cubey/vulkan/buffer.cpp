@@ -56,6 +56,24 @@ void Buffer::upload(const void* data, VkDeviceSize byte_size, VkDeviceSize offse
     vkUnmapMemory(device_, memory_);
 }
 
+void Buffer::download(void* data, VkDeviceSize byte_size, VkDeviceSize offset) const {
+    if (data == nullptr) {
+        throw std::runtime_error("buffer download requires destination data");
+    }
+    if ((memory_properties_ & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) == 0 ||
+        (memory_properties_ & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) == 0) {
+        throw std::runtime_error("buffer download requires host-visible coherent memory");
+    }
+    if (byte_size == 0 || offset > size_ || byte_size > size_ - offset) {
+        throw std::runtime_error("buffer download range is outside the buffer");
+    }
+
+    void* mapped = nullptr;
+    check(vkMapMemory(device_, memory_, offset, byte_size, 0, &mapped), "vkMapMemory buffer");
+    std::memcpy(data, mapped, static_cast<std::size_t>(byte_size));
+    vkUnmapMemory(device_, memory_);
+}
+
 void Buffer::create(const BufferConfig& config) {
     if (config.size == 0) {
         throw std::runtime_error("buffer size must be positive");
@@ -134,6 +152,15 @@ BufferConfig staging_buffer_config(VkDeviceSize byte_size) {
     return {
         .size = byte_size,
         .usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+        .memory_properties =
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+    };
+}
+
+BufferConfig readback_buffer_config(VkDeviceSize byte_size) {
+    return {
+        .size = byte_size,
+        .usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT,
         .memory_properties =
             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
     };

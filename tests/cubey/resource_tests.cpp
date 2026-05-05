@@ -62,3 +62,58 @@ void test_resource_helpers_describe_device_local_upload_and_depth_setup() {
     static_assert(std::is_constructible_v<cubey::vulkan::DepthAttachment,
                                           const cubey::vulkan::Device&, VkExtent2D>);
 }
+
+void test_transfer_helpers_describe_texture_and_readback_paths() {
+    constexpr VkDeviceSize byte_size = 256;
+
+    const cubey::vulkan::BufferConfig readback = cubey::vulkan::readback_buffer_config(byte_size);
+    require(readback.size == byte_size, "readback buffer should preserve byte size");
+    require(readback.usage == VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+            "readback buffer should be a transfer destination");
+    require(readback.memory_properties ==
+                (VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT),
+            "readback buffer should use host-visible coherent memory");
+
+    const VkExtent2D extent{64, 32};
+    const VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
+    const cubey::vulkan::ImageConfig generated =
+        cubey::vulkan::storage_sampled_image_config(extent, format);
+    require(generated.extent.width == extent.width,
+            "generated texture config should preserve width");
+    require(generated.extent.height == extent.height,
+            "generated texture config should preserve height");
+    require((generated.usage & VK_IMAGE_USAGE_STORAGE_BIT) != 0,
+            "generated texture config should support storage writes");
+    require((generated.usage & VK_IMAGE_USAGE_SAMPLED_BIT) != 0,
+            "generated texture config should support sampling");
+    require((generated.usage & VK_IMAGE_USAGE_TRANSFER_SRC_BIT) != 0,
+            "generated texture config should support readback copies");
+    require(generated.aspect == VK_IMAGE_ASPECT_COLOR_BIT,
+            "generated texture config should use color aspect");
+
+    const cubey::vulkan::ImageConfig uploaded =
+        cubey::vulkan::transfer_sampled_image_config(extent, format);
+    require((uploaded.usage & VK_IMAGE_USAGE_TRANSFER_DST_BIT) != 0,
+            "uploaded texture config should support transfer writes");
+    require((uploaded.usage & VK_IMAGE_USAGE_SAMPLED_BIT) != 0,
+            "uploaded texture config should support sampling");
+
+    const VkExtent3D copy_extent{extent.width, extent.height, 1};
+    const VkBufferImageCopy copy = cubey::vulkan::buffer_image_copy(copy_extent);
+    require(copy.imageExtent.width == copy_extent.width, "copy region should preserve width");
+    require(copy.imageExtent.height == copy_extent.height, "copy region should preserve height");
+    require(copy.imageExtent.depth == copy_extent.depth, "copy region should preserve depth");
+    require(copy.imageSubresource.aspectMask == VK_IMAGE_ASPECT_COLOR_BIT,
+            "copy region should target color aspect");
+    require(copy.imageSubresource.layerCount == 1, "copy region should target one layer");
+
+    static_assert(
+        std::is_same_v<decltype(&cubey::vulkan::copy_buffer_to_image),
+                       void (*)(const cubey::vulkan::Device&, VkBuffer, VkImage, VkExtent3D)>);
+    static_assert(
+        std::is_same_v<decltype(&cubey::vulkan::copy_image_to_buffer),
+                       void (*)(const cubey::vulkan::Device&, VkImage, VkBuffer, VkExtent3D)>);
+    static_assert(
+        std::is_same_v<decltype(&cubey::vulkan::Buffer::download),
+                       void (cubey::vulkan::Buffer::*)(void*, VkDeviceSize, VkDeviceSize) const>);
+}

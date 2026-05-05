@@ -89,10 +89,11 @@ Current state:
 - `begin_command_buffer` removes repeated begin boilerplate.
 - `copy_buffer` and `upload_device_buffer` cover current setup-time transfers
   into device-local buffers.
+- `copy_buffer_to_image` and `copy_image_to_buffer` cover current one-shot
+  image transfer/readback copies.
 
 Needed next:
 
-- Copy helpers for buffer-to-image transfers.
 - One-shot compute/transfer helper vocabulary.
 - Queue submit wrappers once more submission paths repeat.
 
@@ -108,14 +109,16 @@ Current state:
 - `DepthAttachment` owns the swapchain-sized depth image/view path.
 - Shared buffer helpers cover staging config, device-local config, and
   setup-time uploads for vertex/index data.
-- Examples still own some resource policy, including texture transitions and
-  readback absence.
+- Shared image helpers cover generated sampled image config, uploaded sampled
+  image config, and buffer-image copy regions.
+- Shared buffer helpers cover readback buffer config and host-visible coherent
+  download.
+- Examples still own some resource policy, including when transfers and
+  readback are used.
 
 Needed next:
 
-- Staging upload helpers for images.
-- Texture creation and transition helpers for generated and sampled images.
-- Readback path for future headless image output and tests.
+- A concrete headless output path that uses the readback helpers.
 
 Defer:
 
@@ -174,6 +177,8 @@ Current state:
 - Rendering helpers cover current color/depth transitions and attachment-info
   construction.
 - `DepthAttachment` covers the current reusable depth target ownership path.
+- Rendering helpers also cover current storage-image, transfer-destination,
+  transfer-source, and sampling transition paths.
 
 Needed next:
 
@@ -280,14 +285,16 @@ rather than a general bind-group abstraction.
 
 Goal: support generated/uploaded textures and future headless artifacts.
 
-- Add image transition helpers for storage, transfer, sampling, and readback
-  paths.
-- Add buffer-to-image copy helper.
-- Add readback buffer/image path.
-- Use the readback path for a first inspectable smoke artifact when headless
-  work resumes.
+- Status: initial pass complete on `main`.
+- Added image transition helpers for storage, transfer destination, transfer
+  source, and sampling paths.
+- Added generated/uploaded sampled image config helpers and buffer-image copy
+  region setup.
+- Added buffer-to-image and image-to-buffer copy helpers.
+- Added readback buffer config and host-visible coherent buffer download.
 
-This batch bridges visible window demos and automated graphics verification.
+The concrete headless artifact path is still deferred until the project/runtime
+boundary is clearer, but the low-level copy/readback pieces are now available.
 
 ### Batch 4: Frame Loop And Swapchain-Sized Resource Rebuild
 
@@ -317,6 +324,6 @@ first-class experiments.
 
 ## Near-Term Recommendation
 
-Batch 1 and Batch 2 have their first passes on `main`; continue with Batch 3
-next. Batch 3 should build the transfer, texture, and readback foundation before
-returning to headless output or starting the first real project.
+Batch 1 through Batch 3 have their first passes on `main`; continue with a
+narrow Batch 4 next. Batch 4 should promote only the swapchain-sized resource
+rebuild code that is clearly repeated across examples.

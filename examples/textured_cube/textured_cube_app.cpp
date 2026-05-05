@@ -548,11 +548,8 @@ class TexturedCubeApp {
     void create_texture_resources() {
         validate_texture_format_support();
 
-        cubey::vulkan::ImageConfig image_config;
-        image_config.extent = {kTextureWidth, kTextureHeight, 1};
-        image_config.format = kTextureFormat;
-        image_config.usage = VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
-        image_config.aspect = VK_IMAGE_ASPECT_COLOR_BIT;
+        const cubey::vulkan::ImageConfig image_config = cubey::vulkan::storage_sampled_image_config(
+            {kTextureWidth, kTextureHeight}, kTextureFormat);
         texture_image_.emplace(vulkan_device(), image_config);
 
         create_compute_resources();
@@ -568,46 +565,18 @@ class TexturedCubeApp {
         VkFormatProperties properties{};
         vkGetPhysicalDeviceFormatProperties(vulkan_device().physical_device(), kTextureFormat,
                                             &properties);
-        constexpr VkFormatFeatureFlags required_features =
-            VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT | VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT;
+        constexpr VkFormatFeatureFlags required_features = VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT |
+                                                           VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT |
+                                                           VK_FORMAT_FEATURE_TRANSFER_SRC_BIT;
         if ((properties.optimalTilingFeatures & required_features) != required_features) {
             throw std::runtime_error(
-                "texture format does not support storage-image generation and sampling");
+                "texture format does not support storage-image generation, sampling, and readback");
         }
     }
 
-    void transition_texture_image(VkImageLayout old_layout, VkImageLayout new_layout) const {
+    void transition_texture_image(const cubey::vulkan::ImageLayoutTransition& transition) const {
         cubey::vulkan::ImmediateCommands commands(vulkan_device());
-
-        auto barrier = vk_struct<VkImageMemoryBarrier>(VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER);
-        barrier.oldLayout = old_layout;
-        barrier.newLayout = new_layout;
-        barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        barrier.image = texture_image().handle();
-        barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        barrier.subresourceRange.baseMipLevel = 0;
-        barrier.subresourceRange.levelCount = 1;
-        barrier.subresourceRange.baseArrayLayer = 0;
-        barrier.subresourceRange.layerCount = 1;
-
-        VkPipelineStageFlags source_stage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-        VkPipelineStageFlags destination_stage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
-
-        if (old_layout == VK_IMAGE_LAYOUT_UNDEFINED && new_layout == VK_IMAGE_LAYOUT_GENERAL) {
-            barrier.dstAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
-        } else if (old_layout == VK_IMAGE_LAYOUT_GENERAL &&
-                   new_layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
-            barrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
-            barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-            source_stage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
-            destination_stage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-        } else {
-            throw std::runtime_error("unsupported texture image layout transition");
-        }
-
-        vkCmdPipelineBarrier(commands.command_buffer(), source_stage, destination_stage, 0, 0,
-                             nullptr, 0, nullptr, 1, &barrier);
+        cubey::vulkan::transition_image_layout(commands.command_buffer(), transition);
         commands.submit_and_wait();
     }
 
@@ -667,7 +636,8 @@ class TexturedCubeApp {
     }
 
     void dispatch_compute_texture() const {
-        transition_texture_image(VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
+        transition_texture_image(
+            cubey::vulkan::begin_storage_image_write_transition(texture_image().handle()));
 
         cubey::vulkan::ImmediateCommands commands(vulkan_device());
         vkCmdBindPipeline(commands.command_buffer(), VK_PIPELINE_BIND_POINT_COMPUTE,
@@ -682,7 +652,8 @@ class TexturedCubeApp {
         vkCmdDispatch(commands.command_buffer(), groups_x, groups_y, 1);
         commands.submit_and_wait();
 
-        transition_texture_image(VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+        transition_texture_image(cubey::vulkan::finish_storage_image_write_for_sampling_transition(
+            texture_image().handle()));
     }
 
     void create_descriptors() {

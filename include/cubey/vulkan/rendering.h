@@ -18,6 +18,12 @@ struct ImageLayoutTransition {
 [[nodiscard]] ImageLayoutTransition begin_color_attachment_transition(VkImage image);
 [[nodiscard]] ImageLayoutTransition finish_color_attachment_for_present_transition(VkImage image);
 [[nodiscard]] ImageLayoutTransition begin_depth_attachment_transition(VkImage image);
+[[nodiscard]] ImageLayoutTransition begin_storage_image_write_transition(VkImage image);
+[[nodiscard]] ImageLayoutTransition
+finish_storage_image_write_for_sampling_transition(VkImage image);
+[[nodiscard]] ImageLayoutTransition begin_transfer_dst_transition(VkImage image);
+[[nodiscard]] ImageLayoutTransition finish_transfer_dst_for_sampling_transition(VkImage image);
+[[nodiscard]] ImageLayoutTransition begin_transfer_src_transition(VkImage image);
 [[nodiscard]] VkImageMemoryBarrier image_memory_barrier(const ImageLayoutTransition& transition);
 void transition_image_layout(VkCommandBuffer command_buffer,
                              const ImageLayoutTransition& transition);

@@ -26,6 +26,9 @@ versioned section and use that section as the release notes.
 - Public Vulkan `Buffer`, `Image`, `DepthAttachment`, `Sampler`, and
   `ImmediateCommands` components for device resources, generated texture paths,
   depth attachments, and setup uploads.
+- Public Vulkan transfer/readback helpers for readback buffers, sampled image
+  configs, buffer-image copies, and storage/transfer/sampling image layout
+  transitions.
 - Public Vulkan pipeline and descriptor RAII types, plus descriptor write
   helpers, pipeline-layout create-info helpers, a compute pipeline create-info
   helper, and a dynamic graphics pipeline create-info helper for the current
@@ -69,6 +72,8 @@ versioned section and use that section as the release notes.
 - `textured_cube` now shares descriptor layout/pool/write helpers plus compute
   pipeline and pipeline-layout create-info helpers instead of carrying raw
   descriptor and compute setup blocks.
+- `textured_cube` now uses shared storage-image transition and generated
+  sampled-image config helpers for its compute-generated texture.
 
 ## Pre-2.0 History
 

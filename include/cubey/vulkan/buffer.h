@@ -30,6 +30,7 @@ class Buffer {
     }
 
     void upload(const void* data, VkDeviceSize byte_size, VkDeviceSize offset = 0) const;
+    void download(void* data, VkDeviceSize byte_size, VkDeviceSize offset = 0) const;
 
   private:
     void create(const BufferConfig& config);
@@ -45,6 +46,7 @@ class Buffer {
 };
 
 [[nodiscard]] BufferConfig staging_buffer_config(VkDeviceSize byte_size);
+[[nodiscard]] BufferConfig readback_buffer_config(VkDeviceSize byte_size);
 [[nodiscard]] BufferConfig device_local_buffer_config(VkDeviceSize byte_size,
                                                       VkBufferUsageFlags usage);
 void copy_buffer(const Device& device, VkBuffer source, VkBuffer destination,

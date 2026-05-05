@@ -54,6 +54,57 @@ void test_rendering_helpers_describe_dynamic_rendering_setup() {
     require(begin_depth.dst_stage_mask == VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
             "depth transition should end at early fragment tests");
 
+    const cubey::vulkan::ImageLayoutTransition storage_write =
+        cubey::vulkan::begin_storage_image_write_transition(image);
+    require(storage_write.old_layout == VK_IMAGE_LAYOUT_UNDEFINED,
+            "storage write transition should discard previous contents");
+    require(storage_write.new_layout == VK_IMAGE_LAYOUT_GENERAL,
+            "storage write transition should target general layout");
+    require(storage_write.dst_access_mask == VK_ACCESS_SHADER_WRITE_BIT,
+            "storage write transition should allow shader writes");
+    require(storage_write.dst_stage_mask == VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+            "storage write transition should target compute shader stage");
+
+    const cubey::vulkan::ImageLayoutTransition sampled =
+        cubey::vulkan::finish_storage_image_write_for_sampling_transition(image);
+    require(sampled.old_layout == VK_IMAGE_LAYOUT_GENERAL,
+            "sample transition should start from storage-image layout");
+    require(sampled.new_layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+            "sample transition should target shader-read layout");
+    require(sampled.src_access_mask == VK_ACCESS_SHADER_WRITE_BIT,
+            "sample transition should wait on shader writes");
+    require(sampled.dst_access_mask == VK_ACCESS_SHADER_READ_BIT,
+            "sample transition should allow shader reads");
+    require(sampled.src_stage_mask == VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+            "sample transition should start at compute shader stage");
+    require(sampled.dst_stage_mask == VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+            "sample transition should target fragment shader stage");
+
+    const cubey::vulkan::ImageLayoutTransition transfer_dst =
+        cubey::vulkan::begin_transfer_dst_transition(image);
+    require(transfer_dst.new_layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+            "transfer dst transition should target transfer dst layout");
+    require(transfer_dst.dst_access_mask == VK_ACCESS_TRANSFER_WRITE_BIT,
+            "transfer dst transition should allow transfer writes");
+    require(transfer_dst.dst_stage_mask == VK_PIPELINE_STAGE_TRANSFER_BIT,
+            "transfer dst transition should target transfer stage");
+
+    const cubey::vulkan::ImageLayoutTransition transfer_sampled =
+        cubey::vulkan::finish_transfer_dst_for_sampling_transition(image);
+    require(transfer_sampled.old_layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+            "transfer sampled transition should start from transfer dst layout");
+    require(transfer_sampled.new_layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+            "transfer sampled transition should target shader-read layout");
+    require(transfer_sampled.src_access_mask == VK_ACCESS_TRANSFER_WRITE_BIT,
+            "transfer sampled transition should wait on transfer writes");
+
+    const cubey::vulkan::ImageLayoutTransition transfer_src =
+        cubey::vulkan::begin_transfer_src_transition(image);
+    require(transfer_src.new_layout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+            "transfer src transition should target transfer src layout");
+    require(transfer_src.dst_access_mask == VK_ACCESS_TRANSFER_READ_BIT,
+            "transfer src transition should allow transfer reads");
+
     const VkImageMemoryBarrier barrier = cubey::vulkan::image_memory_barrier(begin_depth);
     require(barrier.sType == VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
             "barrier should use the image memory barrier structure type");

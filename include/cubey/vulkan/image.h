@@ -52,6 +52,13 @@ class Image {
 
 [[nodiscard]] VkFormat choose_depth_format(const Device& device);
 [[nodiscard]] ImageConfig depth_image_config(VkExtent2D extent, VkFormat format);
+[[nodiscard]] ImageConfig storage_sampled_image_config(VkExtent2D extent, VkFormat format);
+[[nodiscard]] ImageConfig transfer_sampled_image_config(VkExtent2D extent, VkFormat format);
+[[nodiscard]] VkBufferImageCopy buffer_image_copy(VkExtent3D extent);
+void copy_buffer_to_image(const Device& device, VkBuffer source, VkImage destination,
+                          VkExtent3D extent);
+void copy_image_to_buffer(const Device& device, VkImage source, VkBuffer destination,
+                          VkExtent3D extent);
 
 class DepthAttachment {
   public:
