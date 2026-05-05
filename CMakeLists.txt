@@ -62,6 +62,7 @@ if (CUBEY_BUILD_EXAMPLES)
     add_subdirectory(examples/spinning_cube)
     add_subdirectory(examples/textured_cube)
     add_subdirectory(examples/headless_render)
+    add_subdirectory(examples/fractal)
 
     if (BUILD_TESTING)
         set(CUBEY_CLASSIC_RENDERING_PATTERN
@@ -71,7 +72,7 @@ if (CUBEY_BUILD_EXAMPLES)
             NAME examples_use_dynamic_rendering
             COMMAND
                 /bin/sh -c
-                "grep -RE \"$1\" \"$2\" \"$3\" \"$4\" \"$5\" \"$6\"; status=$?; test \"$status\" -eq 1"
+                "grep -RE \"$1\" \"$2\" \"$3\" \"$4\" \"$5\" \"$6\" \"$7\"; status=$?; test \"$status\" -eq 1"
                 examples_use_dynamic_rendering
                 "${CUBEY_CLASSIC_RENDERING_PATTERN}"
                 "${CMAKE_SOURCE_DIR}/examples/window_clear"
@@ -79,6 +80,7 @@ if (CUBEY_BUILD_EXAMPLES)
                 "${CMAKE_SOURCE_DIR}/examples/spinning_cube"
                 "${CMAKE_SOURCE_DIR}/examples/textured_cube"
                 "${CMAKE_SOURCE_DIR}/examples/headless_render"
+                "${CMAKE_SOURCE_DIR}/examples/fractal"
         )
     endif()
 endif()
