@@ -52,9 +52,9 @@ orbit-controller, pipeline ownership, dynamic graphics pipeline setup,
 descriptor setup/write helpers, compute pipeline setup, depth attachment setup,
 texture transfer/readback helpers, shared shader includes, `RenderContext`
 surface-backed begin/end frame lifecycle, and single-frame command/sync
-components; examples still own GLFW, surface creation, command recording, and
-resize policy. The spike branches remain reference material for deeper compute,
-headless, and browser work.
+components, and swapchain recreate-attempt tracking; examples still own GLFW,
+surface creation, command recording, and resize policy. The spike branches
+remain reference material for deeper compute, headless, and browser work.
 
 ## Development Setup
 

@@ -799,7 +799,7 @@ class TexturedCubeApp {
             vulkan_device().device_name(), swapchain().extent().width, swapchain().extent().height);
 
         std::uint32_t frame = 0;
-        std::uint32_t consecutive_recreates = 0;
+        cubey::vulkan::SwapchainRecreateTracker recreate_tracker;
         while (glfwWindowShouldClose(window_) == 0 &&
                (config_.frames == 0 || frame < config_.frames)) {
             glfwPollEvents();
@@ -811,7 +811,7 @@ class TexturedCubeApp {
                 std::puts("framebuffer resized; recreating swapchain");
                 recreate_swapchain_resources();
                 reset_frame_timing();
-                consecutive_recreates = 0;
+                recreate_tracker.reset();
                 continue;
             }
 
@@ -820,18 +820,14 @@ class TexturedCubeApp {
 
             cubey::vulkan::RenderFrameResult result = draw_frame();
             if (result == cubey::vulkan::RenderFrameResult::RecreateSwapchain) {
-                ++consecutive_recreates;
-                if (consecutive_recreates > 8) {
-                    throw std::runtime_error(
-                        "swapchain stayed out of date after 8 recreation attempts");
-                }
+                recreate_tracker.record_recreate_request();
                 std::puts("swapchain out of date; recreating");
                 recreate_swapchain_resources();
                 reset_frame_timing();
                 continue;
             }
 
-            consecutive_recreates = 0;
+            recreate_tracker.reset();
             const VkExtent2D extent = swapchain().extent();
             std::optional<FrameStatsSnapshot> stats = frame_stats_.record_frame({
                 .delta_seconds = timing.delta_seconds,

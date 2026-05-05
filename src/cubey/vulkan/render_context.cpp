@@ -26,6 +26,24 @@ RenderContext::RenderContext(RenderContextConfig config) : config_(config) {
     validate_config(config_);
 }
 
+SwapchainRecreateTracker::SwapchainRecreateTracker(std::uint32_t max_consecutive_recreates)
+    : max_consecutive_recreates_(max_consecutive_recreates) {
+    if (max_consecutive_recreates_ == 0) {
+        throw std::runtime_error("swapchain recreate tracker limit must be positive");
+    }
+}
+
+void SwapchainRecreateTracker::record_recreate_request() {
+    ++consecutive_recreates_;
+    if (consecutive_recreates_ > max_consecutive_recreates_) {
+        throw std::runtime_error("swapchain stayed out of date after repeated recreation attempts");
+    }
+}
+
+void SwapchainRecreateTracker::reset() {
+    consecutive_recreates_ = 0;
+}
+
 RenderFrameResult RenderContext::begin_frame(RenderFrame* frame) const {
     if (frame == nullptr) {
         throw std::runtime_error("begin_frame requires a frame output");

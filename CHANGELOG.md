@@ -36,6 +36,8 @@ versioned section and use that section as the release notes.
 - Public Vulkan `RenderContext` component for explicit surface-backed
   begin/end frame lifecycle, acquire, command reset, submit, present, and
   swapchain-recreate signaling.
+- Public Vulkan `SwapchainRecreateTracker` helper for guarding repeated
+  out-of-date/suboptimal recreate loops.
 - Public Vulkan rendering helpers for current image layout transitions and
   dynamic-rendering color/depth attachment setup.
 - GLSL shader helper support for shared include directories and dependency
@@ -74,6 +76,8 @@ versioned section and use that section as the release notes.
   descriptor and compute setup blocks.
 - `textured_cube` now uses shared storage-image transition and generated
   sampled-image config helpers for its compute-generated texture.
+- Windowed examples now share recreate-attempt tracking while still owning their
+  swapchain resource rebuild steps.
 
 ## Pre-2.0 History
 

@@ -65,6 +65,9 @@ As of 2026-05-04:
   image-to-buffer copies, and named storage/transfer/sampling transitions.
   `textured_cube` now uses the shared generated-texture config and storage
   transition helpers.
+- Promoted `SwapchainRecreateTracker` for the one clearly repeated frame-loop
+  policy: bounding consecutive out-of-date/suboptimal recreate attempts. The
+  actual swapchain-sized resource rebuild order remains example-local.
 - Added `examples/triangle` as the first shader-backed graphics pipeline smoke.
 - Converted `examples/triangle` to dynamic rendering as the first render-pass
   direction spike. This removes triangle's render pass/framebuffer ownership and
@@ -278,3 +281,7 @@ env XDG_RUNTIME_DIR=/run/user/1000 WAYLAND_DISPLAY=wayland-1 DISPLAY=:1 XDG_CURR
   headless artifacts without adding a headless host yet. Generated sampled
   images now include transfer-source usage so compute outputs can be copied into
   readback buffers once a headless smoke has a render target to inspect.
+- The frame-loop cleanup slice only promoted recreate-attempt tracking. A
+  generic swapchain resource rebuild callback would add indirection around code
+  that still differs by example, so the rebuild steps stay visible until a host
+  layer has a stronger reason to exist.

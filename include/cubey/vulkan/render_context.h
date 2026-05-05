@@ -27,6 +27,22 @@ struct RenderContextConfig {
     FrameResources* frame_resources = nullptr;
 };
 
+class SwapchainRecreateTracker {
+  public:
+    explicit SwapchainRecreateTracker(std::uint32_t max_consecutive_recreates = 8);
+
+    void record_recreate_request();
+    void reset();
+
+    [[nodiscard]] std::uint32_t consecutive_recreates() const {
+        return consecutive_recreates_;
+    }
+
+  private:
+    std::uint32_t max_consecutive_recreates_ = 0;
+    std::uint32_t consecutive_recreates_ = 0;
+};
+
 class RenderContext {
   public:
     explicit RenderContext(RenderContextConfig config);

@@ -104,6 +104,8 @@ Current checkpoint:
   `end_frame` calls for the common surface-backed acquire, command reset,
   submit, present, and out-of-date result path used by all current windowed
   examples.
+- Reusable `cubey::vulkan::SwapchainRecreateTracker` guards repeated
+  out-of-date/suboptimal recreate loops across all current windowed examples.
 - `examples/window_clear` links against `cubey` and clears/presents a swapchain
   image through Vulkan/GLFW using dynamic rendering.
 - `examples/triangle` links against `cubey`, compiles vertex/fragment shaders
@@ -124,16 +126,16 @@ Current checkpoint:
   graphics, compute, and present capabilities. Split queue-family support is a
   future framework slice, not part of the current example-local compute path.
 - The remaining windowed app implementation is intentionally example-local: GLFW
-  window setup, surface creation, pipeline layout choices, command recording,
-  and resize policy.
+  window setup, surface creation, swapchain-sized resource rebuild order,
+  pipeline layout choices, command recording, and resize policy.
 - Dev CTest covers the target in both graphical and no-display terminal
   sessions.
 - Headless rendering, frame overlap, split graphics/compute/present queue-family
   support, and external asset loading remain future slices.
 
-Next implementation batch: frame-loop and swapchain-sized resource rebuild
-cleanup, especially shared rebuild helpers if the repeated example code is clear
-enough to promote.
+Next implementation checkpoint: reassess before the app/runtime layer. The
+remaining rebuild code is still example-specific enough that a broader host
+should wait for either headless output or the first real project.
 
 ## Phase 2: Resource Layer and App API
 

@@ -4,8 +4,8 @@
 #include <cubey/vulkan/device.h>
 #include <cubey/vulkan/frame_resources.h>
 #include <cubey/vulkan/instance.h>
-#include <cubey/vulkan/rendering.h>
 #include <cubey/vulkan/render_context.h>
+#include <cubey/vulkan/rendering.h>
 #include <cubey/vulkan/swapchain.h>
 #include <cubey/vulkan/vk_check.h>
 
@@ -208,8 +208,9 @@ class WindowClearApp {
 
         VkClearValue clear{};
         clear.color = {{0.02f, 0.025f, 0.035f, 1.0f}};
-        const VkRenderingAttachmentInfo color_attachment = cubey::vulkan::color_rendering_attachment(
-            swapchain().image_views().at(swapchain_image_index), clear);
+        const VkRenderingAttachmentInfo color_attachment =
+            cubey::vulkan::color_rendering_attachment(
+                swapchain().image_views().at(swapchain_image_index), clear);
 
         auto rendering = vk_struct<VkRenderingInfo>(VK_STRUCTURE_TYPE_RENDERING_INFO);
         rendering.renderArea.offset = {0, 0};
@@ -250,7 +251,7 @@ class WindowClearApp {
                     swapchain().extent().width, swapchain().extent().height);
 
         std::uint32_t frame = 0;
-        std::uint32_t consecutive_recreates = 0;
+        cubey::vulkan::SwapchainRecreateTracker recreate_tracker;
         while (glfwWindowShouldClose(window_) == 0 &&
                (config_.frames == 0 || frame < config_.frames)) {
             glfwPollEvents();
@@ -258,23 +259,19 @@ class WindowClearApp {
             if (framebuffer_resized_) {
                 std::puts("framebuffer resized; recreating swapchain");
                 recreate_swapchain_resources();
-                consecutive_recreates = 0;
+                recreate_tracker.reset();
                 continue;
             }
 
             cubey::vulkan::RenderFrameResult result = draw_frame();
             if (result == cubey::vulkan::RenderFrameResult::RecreateSwapchain) {
-                ++consecutive_recreates;
-                if (consecutive_recreates > 8) {
-                    throw std::runtime_error(
-                        "swapchain stayed out of date after 8 recreation attempts");
-                }
+                recreate_tracker.record_recreate_request();
                 std::puts("swapchain out of date; recreating");
                 recreate_swapchain_resources();
                 continue;
             }
 
-            consecutive_recreates = 0;
+            recreate_tracker.reset();
             ++frame;
         }
 

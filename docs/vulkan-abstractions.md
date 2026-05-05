@@ -68,6 +68,7 @@ Current state:
   present semaphores, and fence.
 - `RenderContext` owns the surface-backed `begin_frame` / `end_frame`
   acquire, submit, present, and recreate result path.
+- `SwapchainRecreateTracker` owns bounded consecutive recreate-attempt tracking.
 
 Needed next:
 
@@ -301,10 +302,13 @@ boundary is clearer, but the low-level copy/readback pieces are now available.
 Goal: reduce repeated resize/recreate code after the lower-level resources are
 stable.
 
-- Add a helper for rebuilding swapchain-sized resources.
-- Consider N-frames-in-flight.
-- Consider a small resize/recreate coordinator if all examples still carry the
-  same loop shape.
+- Status: narrow pass complete on `main`.
+- Added `SwapchainRecreateTracker` for the repeated consecutive recreate-attempt
+  guard used by all current windowed examples.
+- Moved windowed examples onto the shared tracker while keeping their
+  swapchain-sized resource rebuild order explicit.
+- Deferred a generic rebuild callback/coordinator because the actual resource
+  creation/destruction order still differs by example.
 
 This batch should remain platform-light. GLFW should still live in examples or
 in a separate future host layer.
@@ -324,6 +328,7 @@ first-class experiments.
 
 ## Near-Term Recommendation
 
-Batch 1 through Batch 3 have their first passes on `main`; continue with a
-narrow Batch 4 next. Batch 4 should promote only the swapchain-sized resource
-rebuild code that is clearly repeated across examples.
+Batch 1 through Batch 4 have their first passes on `main`. Pause before the
+app/runtime layer and choose the next driver deliberately: either headless output
+using the readback helpers, or the first real project that can define the host
+boundary through concrete pressure.
