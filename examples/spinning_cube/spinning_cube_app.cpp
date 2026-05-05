@@ -4,7 +4,7 @@
 #include <cubey/vulkan/command_pool.h>
 #include <cubey/vulkan/device.h>
 #include <cubey/vulkan/frame_resources.h>
-#include <cubey/vulkan/immediate_commands.h>
+#include <cubey/vulkan/image.h>
 #include <cubey/vulkan/instance.h>
 #include <cubey/vulkan/pipeline.h>
 #include <cubey/vulkan/render_context.h>
@@ -208,9 +208,9 @@ class SpinningCubeApp {
         frame_resources_.reset();
         index_buffer_.reset();
         vertex_buffer_.reset();
-        destroy_depth_resources();
         pipeline_.reset();
         pipeline_layout_.reset();
+        depth_attachment_.reset();
         swapchain_.reset();
 
         if (surface_ != VK_NULL_HANDLE) {
@@ -342,15 +342,14 @@ class SpinningCubeApp {
 
     void create_swapchain_resources() {
         create_swapchain();
-        depth_format_ = choose_depth_format();
-        create_pipeline();
         create_depth_resources();
+        create_pipeline();
     }
 
     void destroy_swapchain_resources() {
-        destroy_depth_resources();
         pipeline_.reset();
         pipeline_layout_.reset();
+        depth_attachment_.reset();
         swapchain_.reset();
     }
 
@@ -371,25 +370,6 @@ class SpinningCubeApp {
         swapchain_config.image_usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
         swapchain_.emplace(vulkan_device(), swapchain_config);
         framebuffer_resized_ = false;
-    }
-
-    [[nodiscard]] VkFormat choose_depth_format() const {
-        constexpr std::array<VkFormat, 2> candidates{
-            VK_FORMAT_D32_SFLOAT,
-            VK_FORMAT_D16_UNORM,
-        };
-
-        for (VkFormat format : candidates) {
-            VkFormatProperties properties{};
-            vkGetPhysicalDeviceFormatProperties(vulkan_device().physical_device(), format,
-                                                &properties);
-            if ((properties.optimalTilingFeatures &
-                 VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) != 0) {
-                return format;
-            }
-        }
-
-        throw std::runtime_error("no supported depth format found");
     }
 
     void create_pipeline() {
@@ -440,7 +420,7 @@ class SpinningCubeApp {
         pipeline_config.layout = pipeline_layout().handle();
         pipeline_config.extent = swapchain().extent();
         pipeline_config.color_format = swapchain().format();
-        pipeline_config.depth_format = depth_format_;
+        pipeline_config.depth_format = depth_attachment().format();
         pipeline_config.shader_stages = shader_stages;
         pipeline_config.vertex_bindings = {&vertex_binding, 1};
         pipeline_config.vertex_attributes = vertex_attributes;
@@ -451,98 +431,23 @@ class SpinningCubeApp {
     }
 
     void create_depth_resources() {
-        auto image_info = vk_struct<VkImageCreateInfo>(VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO);
-        image_info.imageType = VK_IMAGE_TYPE_2D;
-        image_info.extent.width = swapchain().extent().width;
-        image_info.extent.height = swapchain().extent().height;
-        image_info.extent.depth = 1;
-        image_info.mipLevels = 1;
-        image_info.arrayLayers = 1;
-        image_info.format = depth_format_;
-        image_info.tiling = VK_IMAGE_TILING_OPTIMAL;
-        image_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        image_info.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-        image_info.samples = VK_SAMPLE_COUNT_1_BIT;
-        image_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-
-        check(vkCreateImage(device_, &image_info, nullptr, &depth_image_), "vkCreateImage depth");
-
-        VkMemoryRequirements requirements{};
-        vkGetImageMemoryRequirements(device_, depth_image_, &requirements);
-
-        auto alloc = vk_struct<VkMemoryAllocateInfo>(VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO);
-        alloc.allocationSize = requirements.size;
-        alloc.memoryTypeIndex = vulkan_device().find_memory_type(
-            requirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-        check(vkAllocateMemory(device_, &alloc, nullptr, &depth_memory_), "vkAllocateMemory depth");
-        check(vkBindImageMemory(device_, depth_image_, depth_memory_, 0),
-              "vkBindImageMemory depth");
-
-        auto view_info = vk_struct<VkImageViewCreateInfo>(VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO);
-        view_info.image = depth_image_;
-        view_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
-        view_info.format = depth_format_;
-        view_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-        view_info.subresourceRange.baseMipLevel = 0;
-        view_info.subresourceRange.levelCount = 1;
-        view_info.subresourceRange.baseArrayLayer = 0;
-        view_info.subresourceRange.layerCount = 1;
-        check(vkCreateImageView(device_, &view_info, nullptr, &depth_view_),
-              "vkCreateImageView depth");
-    }
-
-    void destroy_depth_resources() {
-        if (depth_view_ != VK_NULL_HANDLE) {
-            vkDestroyImageView(device_, depth_view_, nullptr);
-            depth_view_ = VK_NULL_HANDLE;
-        }
-        if (depth_image_ != VK_NULL_HANDLE) {
-            vkDestroyImage(device_, depth_image_, nullptr);
-            depth_image_ = VK_NULL_HANDLE;
-        }
-        if (depth_memory_ != VK_NULL_HANDLE) {
-            vkFreeMemory(device_, depth_memory_, nullptr);
-            depth_memory_ = VK_NULL_HANDLE;
-        }
+        depth_attachment_.emplace(vulkan_device(), swapchain().extent());
     }
 
     void create_frame_resources() {
         frame_resources_.emplace(vulkan_device(), swapchain().image_count());
     }
 
-    template <typename T, std::size_t Count>
-    void upload_device_buffer(const std::array<T, Count>& data, VkBufferUsageFlags usage,
-                              std::optional<cubey::vulkan::Buffer>& destination) const {
-        const VkDeviceSize byte_size = static_cast<VkDeviceSize>(sizeof(T) * data.size());
-
-        cubey::vulkan::BufferConfig staging_config;
-        staging_config.size = byte_size;
-        staging_config.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-        staging_config.memory_properties =
-            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-        cubey::vulkan::Buffer staging(vulkan_device(), staging_config);
-        staging.upload(data.data(), byte_size);
-
-        cubey::vulkan::BufferConfig device_config;
-        device_config.size = byte_size;
-        device_config.usage = usage | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-        device_config.memory_properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-        destination.emplace(vulkan_device(), device_config);
-
-        copy_buffer(staging.handle(), destination->handle(), byte_size);
-    }
-
     void create_cube_buffers() {
-        upload_device_buffer(kCubeVertices, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, vertex_buffer_);
-        upload_device_buffer(kCubeIndices, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, index_buffer_);
-    }
+        const VkDeviceSize vertex_bytes =
+            static_cast<VkDeviceSize>(kCubeVertices.size() * sizeof(kCubeVertices.front()));
+        const VkDeviceSize index_bytes =
+            static_cast<VkDeviceSize>(kCubeIndices.size() * sizeof(kCubeIndices.front()));
 
-    void copy_buffer(VkBuffer source, VkBuffer destination, VkDeviceSize byte_size) const {
-        cubey::vulkan::ImmediateCommands commands(vulkan_device());
-        VkBufferCopy copy{};
-        copy.size = byte_size;
-        vkCmdCopyBuffer(commands.command_buffer(), source, destination, 1, &copy);
-        commands.submit_and_wait();
+        vertex_buffer_ = cubey::vulkan::upload_device_buffer(
+            vulkan_device(), kCubeVertices.data(), vertex_bytes, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+        index_buffer_ = cubey::vulkan::upload_device_buffer(
+            vulkan_device(), kCubeIndices.data(), index_bytes, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
     }
 
     [[nodiscard]] PushConstants current_push_constants() const {
@@ -570,7 +475,8 @@ class SpinningCubeApp {
         cubey::vulkan::transition_image_layout(
             command_buffer, cubey::vulkan::begin_color_attachment_transition(swapchain_image));
         cubey::vulkan::transition_image_layout(
-            command_buffer, cubey::vulkan::begin_depth_attachment_transition(depth_image_));
+            command_buffer,
+            cubey::vulkan::begin_depth_attachment_transition(depth_attachment().handle()));
 
         VkClearValue color_clear{};
         color_clear.color = {{0.015F, 0.017F, 0.024F, 1.0F}};
@@ -580,8 +486,8 @@ class SpinningCubeApp {
         const VkRenderingAttachmentInfo color_attachment =
             cubey::vulkan::color_rendering_attachment(
                 swapchain().image_views().at(swapchain_image_index), color_clear);
-        const VkRenderingAttachmentInfo depth_attachment =
-            cubey::vulkan::depth_rendering_attachment(depth_view_, depth_clear);
+        const VkRenderingAttachmentInfo depth_rendering_attachment =
+            cubey::vulkan::depth_rendering_attachment(depth_attachment().view(), depth_clear);
 
         auto rendering = vk_struct<VkRenderingInfo>(VK_STRUCTURE_TYPE_RENDERING_INFO);
         rendering.renderArea.offset = {0, 0};
@@ -589,7 +495,7 @@ class SpinningCubeApp {
         rendering.layerCount = 1;
         rendering.colorAttachmentCount = 1;
         rendering.pColorAttachments = &color_attachment;
-        rendering.pDepthAttachment = &depth_attachment;
+        rendering.pDepthAttachment = &depth_rendering_attachment;
 
         const PushConstants push_constants = current_push_constants();
 
@@ -730,6 +636,13 @@ class SpinningCubeApp {
         return pipeline_.value();
     }
 
+    [[nodiscard]] const cubey::vulkan::DepthAttachment& depth_attachment() const {
+        if (!depth_attachment_.has_value()) {
+            throw std::runtime_error("depth attachment is not initialized");
+        }
+        return depth_attachment_.value();
+    }
+
     RunConfig config_;
     bool glfw_initialized_ = false;
     bool framebuffer_resized_ = false;
@@ -744,14 +657,10 @@ class SpinningCubeApp {
     std::optional<cubey::vulkan::Buffer> index_buffer_;
     std::optional<cubey::vulkan::PipelineLayout> pipeline_layout_;
     std::optional<cubey::vulkan::GraphicsPipeline> pipeline_;
+    std::optional<cubey::vulkan::DepthAttachment> depth_attachment_;
     VkInstance instance_ = VK_NULL_HANDLE;
     VkSurfaceKHR surface_ = VK_NULL_HANDLE;
     VkDevice device_ = VK_NULL_HANDLE;
-
-    VkFormat depth_format_ = VK_FORMAT_UNDEFINED;
-    VkImage depth_image_ = VK_NULL_HANDLE;
-    VkDeviceMemory depth_memory_ = VK_NULL_HANDLE;
-    VkImageView depth_view_ = VK_NULL_HANDLE;
 };
 
 } // namespace

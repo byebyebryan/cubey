@@ -416,15 +416,14 @@ class TexturedCubeApp {
 
     void create_swapchain_resources() {
         create_swapchain();
-        depth_format_ = choose_depth_format();
-        create_pipeline();
         create_depth_resources();
+        create_pipeline();
     }
 
     void destroy_swapchain_resources() {
-        depth_image_.reset();
         pipeline_.reset();
         pipeline_layout_.reset();
+        depth_attachment_.reset();
         swapchain_.reset();
     }
 
@@ -450,25 +449,6 @@ class TexturedCubeApp {
         swapchain_config.image_usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
         swapchain_.emplace(vulkan_device(), swapchain_config);
         framebuffer_resized_ = false;
-    }
-
-    [[nodiscard]] VkFormat choose_depth_format() const {
-        constexpr std::array<VkFormat, 2> candidates{
-            VK_FORMAT_D32_SFLOAT,
-            VK_FORMAT_D16_UNORM,
-        };
-
-        for (VkFormat format : candidates) {
-            VkFormatProperties properties{};
-            vkGetPhysicalDeviceFormatProperties(vulkan_device().physical_device(), format,
-                                                &properties);
-            if ((properties.optimalTilingFeatures &
-                 VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) != 0) {
-                return format;
-            }
-        }
-
-        throw std::runtime_error("no supported depth format found");
     }
 
     void create_pipeline() {
@@ -522,7 +502,7 @@ class TexturedCubeApp {
         pipeline_config.layout = pipeline_layout().handle();
         pipeline_config.extent = swapchain().extent();
         pipeline_config.color_format = swapchain().format();
-        pipeline_config.depth_format = depth_format_;
+        pipeline_config.depth_format = depth_attachment().format();
         pipeline_config.shader_stages = shader_stages;
         pipeline_config.vertex_bindings = {&vertex_binding, 1};
         pipeline_config.vertex_attributes = vertex_attributes;
@@ -533,43 +513,23 @@ class TexturedCubeApp {
     }
 
     void create_depth_resources() {
-        cubey::vulkan::ImageConfig config;
-        config.extent = {swapchain().extent().width, swapchain().extent().height, 1};
-        config.format = depth_format_;
-        config.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-        config.aspect = VK_IMAGE_ASPECT_DEPTH_BIT;
-        depth_image_.emplace(vulkan_device(), config);
+        depth_attachment_.emplace(vulkan_device(), swapchain().extent());
     }
 
     void create_frame_resources() {
         frame_resources_.emplace(vulkan_device(), swapchain().image_count());
     }
 
-    template <typename T, std::size_t Count>
-    void upload_device_buffer(const std::array<T, Count>& data, VkBufferUsageFlags usage,
-                              std::optional<cubey::vulkan::Buffer>& destination) const {
-        const VkDeviceSize byte_size = static_cast<VkDeviceSize>(sizeof(T) * data.size());
-
-        cubey::vulkan::BufferConfig staging_config;
-        staging_config.size = byte_size;
-        staging_config.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-        staging_config.memory_properties =
-            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-        cubey::vulkan::Buffer staging(vulkan_device(), staging_config);
-        staging.upload(data.data(), byte_size);
-
-        cubey::vulkan::BufferConfig device_config;
-        device_config.size = byte_size;
-        device_config.usage = usage | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-        device_config.memory_properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-        destination.emplace(vulkan_device(), device_config);
-
-        copy_buffer(staging.handle(), destination->handle(), byte_size);
-    }
-
     void create_cube_buffers() {
-        upload_device_buffer(kCubeVertices, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, vertex_buffer_);
-        upload_device_buffer(kCubeIndices, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, index_buffer_);
+        const VkDeviceSize vertex_bytes =
+            static_cast<VkDeviceSize>(kCubeVertices.size() * sizeof(kCubeVertices.front()));
+        const VkDeviceSize index_bytes =
+            static_cast<VkDeviceSize>(kCubeIndices.size() * sizeof(kCubeIndices.front()));
+
+        vertex_buffer_ = cubey::vulkan::upload_device_buffer(
+            vulkan_device(), kCubeVertices.data(), vertex_bytes, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+        index_buffer_ = cubey::vulkan::upload_device_buffer(
+            vulkan_device(), kCubeIndices.data(), index_bytes, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
     }
 
     void create_scene_uniform_buffer() {
@@ -610,14 +570,6 @@ class TexturedCubeApp {
             throw std::runtime_error(
                 "texture format does not support storage-image generation and sampling");
         }
-    }
-
-    void copy_buffer(VkBuffer source, VkBuffer destination, VkDeviceSize byte_size) const {
-        cubey::vulkan::ImmediateCommands commands(vulkan_device());
-        VkBufferCopy copy{};
-        copy.size = byte_size;
-        vkCmdCopyBuffer(commands.command_buffer(), source, destination, 1, &copy);
-        commands.submit_and_wait();
     }
 
     void transition_texture_image(VkImageLayout old_layout, VkImageLayout new_layout) const {
@@ -893,7 +845,7 @@ class TexturedCubeApp {
             command_buffer, cubey::vulkan::begin_color_attachment_transition(swapchain_image));
         cubey::vulkan::transition_image_layout(
             command_buffer,
-            cubey::vulkan::begin_depth_attachment_transition(depth_image().handle()));
+            cubey::vulkan::begin_depth_attachment_transition(depth_attachment().handle()));
 
         VkClearValue color_clear{};
         color_clear.color = {{0.014F, 0.016F, 0.022F, 1.0F}};
@@ -903,8 +855,8 @@ class TexturedCubeApp {
         const VkRenderingAttachmentInfo color_attachment =
             cubey::vulkan::color_rendering_attachment(
                 swapchain().image_views().at(swapchain_image_index), color_clear);
-        const VkRenderingAttachmentInfo depth_attachment =
-            cubey::vulkan::depth_rendering_attachment(depth_image().view(), depth_clear);
+        const VkRenderingAttachmentInfo depth_rendering_attachment =
+            cubey::vulkan::depth_rendering_attachment(depth_attachment().view(), depth_clear);
 
         auto rendering = vk_struct<VkRenderingInfo>(VK_STRUCTURE_TYPE_RENDERING_INFO);
         rendering.renderArea.offset = {0, 0};
@@ -912,7 +864,7 @@ class TexturedCubeApp {
         rendering.layerCount = 1;
         rendering.colorAttachmentCount = 1;
         rendering.pColorAttachments = &color_attachment;
-        rendering.pDepthAttachment = &depth_attachment;
+        rendering.pDepthAttachment = &depth_rendering_attachment;
 
         vkCmdBeginRendering(command_buffer, &rendering);
         vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline().handle());
@@ -1073,13 +1025,6 @@ class TexturedCubeApp {
         return texture_image_.value();
     }
 
-    [[nodiscard]] const cubey::vulkan::Image& depth_image() const {
-        if (!depth_image_.has_value()) {
-            throw std::runtime_error("depth image is not initialized");
-        }
-        return depth_image_.value();
-    }
-
     [[nodiscard]] const cubey::vulkan::Sampler& texture_sampler() const {
         if (!texture_sampler_.has_value()) {
             throw std::runtime_error("texture sampler is not initialized");
@@ -1101,6 +1046,13 @@ class TexturedCubeApp {
         return pipeline_.value();
     }
 
+    [[nodiscard]] const cubey::vulkan::DepthAttachment& depth_attachment() const {
+        if (!depth_attachment_.has_value()) {
+            throw std::runtime_error("depth attachment is not initialized");
+        }
+        return depth_attachment_.value();
+    }
+
     RunConfig config_;
     bool glfw_initialized_ = false;
     bool framebuffer_resized_ = false;
@@ -1117,10 +1069,10 @@ class TexturedCubeApp {
     std::optional<cubey::vulkan::Buffer> index_buffer_;
     std::optional<cubey::vulkan::Buffer> scene_uniform_buffer_;
     std::optional<cubey::vulkan::Image> texture_image_;
-    std::optional<cubey::vulkan::Image> depth_image_;
     std::optional<cubey::vulkan::Sampler> texture_sampler_;
     std::optional<cubey::vulkan::PipelineLayout> pipeline_layout_;
     std::optional<cubey::vulkan::GraphicsPipeline> pipeline_;
+    std::optional<cubey::vulkan::DepthAttachment> depth_attachment_;
     VkInstance instance_ = VK_NULL_HANDLE;
     VkSurfaceKHR surface_ = VK_NULL_HANDLE;
     VkDevice device_ = VK_NULL_HANDLE;
@@ -1133,7 +1085,6 @@ class TexturedCubeApp {
     VkDescriptorSet compute_descriptor_set_ = VK_NULL_HANDLE;
     VkPipelineLayout compute_pipeline_layout_ = VK_NULL_HANDLE;
     VkPipeline compute_pipeline_ = VK_NULL_HANDLE;
-    VkFormat depth_format_ = VK_FORMAT_UNDEFINED;
 };
 
 } // namespace

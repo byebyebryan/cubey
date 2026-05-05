@@ -23,8 +23,9 @@ versioned section and use that section as the release notes.
   allocation, and single-frame command/sync resources.
 - Public Vulkan `ShaderModule` type and CMake GLSL-to-SPIR-V helper using
   `glslangValidator`.
-- Public Vulkan `Buffer`, `Image`, `Sampler`, and `ImmediateCommands`
-  components for device resources, generated texture paths, and setup uploads.
+- Public Vulkan `Buffer`, `Image`, `DepthAttachment`, `Sampler`, and
+  `ImmediateCommands` components for device resources, generated texture paths,
+  depth attachments, and setup uploads.
 - Public Vulkan pipeline and descriptor RAII types, plus a dynamic graphics
   pipeline create-info helper for the current single-color-attachment path.
 - Public Vulkan `RenderContext` component for explicit surface-backed
@@ -41,8 +42,8 @@ versioned section and use that section as the release notes.
 - `examples/triangle`, a minimal shader-backed Vulkan graphics pipeline smoke
   executable using dynamic rendering and `gl_VertexIndex`.
 - `examples/spinning_cube`, a shader-generated cube smoke executable with push
-  constants, animation, dynamic rendering, and an example-local depth
-  attachment.
+  constants, animation, dynamic rendering, device-local vertex/index buffers,
+  and a shared depth attachment helper.
 - `examples/textured_cube`, an interactive shaded cube that generates texture
   data through a setup-time compute shader and samples it in the graphics pass
   with descriptor-backed scene uniforms and dynamic rendering.
@@ -56,11 +57,13 @@ versioned section and use that section as the release notes.
 - Runnable targets are explicit examples/projects rather than a generic `cubey`
   executable.
 - Windowed examples now use dynamic rendering instead of classic render
-  passes/framebuffers while keeping GLFW, surface creation, depth attachments,
-  command recording, acquire/present behavior, and resize policy local.
+  passes/framebuffers while keeping GLFW, surface creation, command recording,
+  acquire/present behavior, and resize policy local.
 - Graphics examples now share dynamic graphics pipeline create-info setup while
   retaining explicit example-local layout, shader, vertex-input, and descriptor
   choices.
+- Cube examples now share device-local buffer upload and depth attachment setup
+  helpers instead of carrying local staging-copy and depth-image code.
 
 ## Pre-2.0 History
 

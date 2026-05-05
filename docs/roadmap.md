@@ -76,7 +76,10 @@ Current checkpoint:
 - Reusable `cubey::vulkan::ShaderModule` exists, and CMake can compile GLSL to
   SPIR-V with `glslangValidator` for example targets, including shared include
   directories and dependency tracking.
-- Reusable `cubey::vulkan::ImmediateCommands` supports one-shot setup uploads.
+- Reusable `cubey::vulkan::ImmediateCommands` plus buffer helpers support
+  one-shot setup uploads into device-local buffers.
+- Reusable `cubey::vulkan::DepthAttachment` owns depth image/view setup and
+  shared depth format selection.
 - Reusable `cubey::vulkan::PipelineLayout`, `GraphicsPipeline`,
   `ComputePipeline`, `DescriptorSetLayout`, and `DescriptorPool` own basic
   pipeline and descriptor lifetimes while still taking raw Vulkan create-info
@@ -101,7 +104,7 @@ Current checkpoint:
 - `examples/spinning_cube` links against `cubey`, compiles vertex/fragment
   shaders at build time, draws an indexed cube from device-local vertex/index
   buffers, updates an MVP matrix through push constants, and uses dynamic
-  rendering with an example-local depth attachment.
+  rendering with a shared depth attachment helper.
 - `examples/textured_cube` links against `cubey`, generates a texture with a
   compute shader writing a storage image, transitions it for shader sampling,
   binds scene uniforms plus a combined image sampler descriptor, and draws an
@@ -111,16 +114,16 @@ Current checkpoint:
   graphics, compute, and present capabilities. Split queue-family support is a
   future framework slice, not part of the current example-local compute path.
 - The remaining windowed app implementation is intentionally example-local: GLFW
-  window setup, surface creation, shader-backed depth attachment setup,
-  pipeline layout choices, command recording, and resize policy.
+  window setup, surface creation, pipeline layout choices, command recording,
+  and resize policy.
 - Dev CTest covers the target in both graphical and no-display terminal
   sessions.
 - Headless rendering, frame overlap, richer rendering/pipeline helpers, split
   graphics/compute/present queue-family support, external asset loading, and
   broader descriptor components remain future slices.
 
-Next implementation batch: resource and attachment cleanup, especially shared
-depth format/attachment setup and common staging upload helpers.
+Next implementation batch: descriptor and compute setup, especially descriptor
+allocation/write helpers and compute pipeline create-info helpers.
 
 ## Phase 2: Resource Layer and App API
 

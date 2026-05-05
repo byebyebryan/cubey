@@ -26,6 +26,7 @@ void test_frame_stats_publish_window_title_metrics();
 void test_pipeline_helpers_describe_dynamic_graphics_pipeline_setup();
 void test_rendering_helpers_describe_dynamic_rendering_setup();
 void test_render_context_exposes_explicit_frame_boundary();
+void test_resource_helpers_describe_device_local_upload_and_depth_setup();
 
 int main() {
     try {
@@ -35,6 +36,7 @@ int main() {
         test_pipeline_helpers_describe_dynamic_graphics_pipeline_setup();
         test_rendering_helpers_describe_dynamic_rendering_setup();
         test_render_context_exposes_explicit_frame_boundary();
+        test_resource_helpers_describe_device_local_upload_and_depth_setup();
 
         cubey::OrbitController controller;
 

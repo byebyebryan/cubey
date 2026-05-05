@@ -19,6 +19,8 @@ class Buffer {
 
     Buffer(const Buffer&) = delete;
     Buffer& operator=(const Buffer&) = delete;
+    Buffer(Buffer&& other) noexcept;
+    Buffer& operator=(Buffer&& other) noexcept;
 
     VkBuffer handle() const {
         return buffer_;
@@ -32,6 +34,7 @@ class Buffer {
   private:
     void create(const BufferConfig& config);
     void destroy();
+    void move_from(Buffer& other) noexcept;
 
     VkPhysicalDevice physical_device_ = VK_NULL_HANDLE;
     VkDevice device_ = VK_NULL_HANDLE;
@@ -40,5 +43,13 @@ class Buffer {
     VkDeviceSize size_ = 0;
     VkMemoryPropertyFlags memory_properties_ = 0;
 };
+
+[[nodiscard]] BufferConfig staging_buffer_config(VkDeviceSize byte_size);
+[[nodiscard]] BufferConfig device_local_buffer_config(VkDeviceSize byte_size,
+                                                      VkBufferUsageFlags usage);
+void copy_buffer(const Device& device, VkBuffer source, VkBuffer destination,
+                 VkDeviceSize byte_size);
+[[nodiscard]] Buffer upload_device_buffer(const Device& device, const void* data,
+                                          VkDeviceSize byte_size, VkBufferUsageFlags usage);
 
 } // namespace cubey::vulkan

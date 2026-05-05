@@ -50,4 +50,32 @@ class Image {
     VkExtent3D extent_{};
 };
 
+[[nodiscard]] VkFormat choose_depth_format(const Device& device);
+[[nodiscard]] ImageConfig depth_image_config(VkExtent2D extent, VkFormat format);
+
+class DepthAttachment {
+  public:
+    DepthAttachment(const Device& device, VkExtent2D extent);
+    ~DepthAttachment() = default;
+
+    DepthAttachment(const DepthAttachment&) = delete;
+    DepthAttachment& operator=(const DepthAttachment&) = delete;
+
+    [[nodiscard]] VkImage handle() const {
+        return image_.handle();
+    }
+    [[nodiscard]] VkImageView view() const {
+        return image_.view();
+    }
+    [[nodiscard]] VkFormat format() const {
+        return image_.format();
+    }
+    [[nodiscard]] VkExtent3D extent() const {
+        return image_.extent();
+    }
+
+  private:
+    Image image_;
+};
+
 } // namespace cubey::vulkan

@@ -2,6 +2,7 @@
 
 #include <cubey/vulkan/vk_check.h>
 
+#include <array>
 #include <stdexcept>
 
 namespace cubey::vulkan {
@@ -89,5 +90,35 @@ void Image::destroy() {
         memory_ = VK_NULL_HANDLE;
     }
 }
+
+VkFormat choose_depth_format(const Device& device) {
+    constexpr std::array<VkFormat, 2> candidates{
+        VK_FORMAT_D32_SFLOAT,
+        VK_FORMAT_D16_UNORM,
+    };
+
+    for (VkFormat format : candidates) {
+        VkFormatProperties properties{};
+        vkGetPhysicalDeviceFormatProperties(device.physical_device(), format, &properties);
+        if ((properties.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) !=
+            0) {
+            return format;
+        }
+    }
+
+    throw std::runtime_error("no supported depth format found");
+}
+
+ImageConfig depth_image_config(VkExtent2D extent, VkFormat format) {
+    return {
+        .extent = {extent.width, extent.height, 1},
+        .format = format,
+        .usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+        .aspect = VK_IMAGE_ASPECT_DEPTH_BIT,
+    };
+}
+
+DepthAttachment::DepthAttachment(const Device& device, VkExtent2D extent)
+    : image_(device, depth_image_config(extent, choose_depth_format(device))) {}
 
 } // namespace cubey::vulkan

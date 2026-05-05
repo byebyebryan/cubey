@@ -6,6 +6,7 @@ add_executable(cubey_core_tests
     pipeline_tests.cpp
     rendering_tests.cpp
     render_context_tests.cpp
+    resource_tests.cpp
 )
 
 target_link_libraries(

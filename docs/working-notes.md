@@ -52,23 +52,28 @@ As of 2026-05-04:
 - Promoted narrow rendering helpers for image layout transitions and
   dynamic-rendering color/depth attachment setup. They reduce repeated Vulkan
   struct boilerplate without owning command recording or render policy.
+- Promoted resource helpers for staging buffer config, device-local buffer
+  upload/copy, depth format selection, depth image config, and `DepthAttachment`
+  ownership. The cube examples now share this setup instead of carrying local
+  staging-copy and depth-image code.
 - Added `examples/triangle` as the first shader-backed graphics pipeline smoke.
 - Converted `examples/triangle` to dynamic rendering as the first render-pass
   direction spike. This removes triangle's render pass/framebuffer ownership and
   points the windowed runtime path toward dynamic-rendering attachments.
 - Added `examples/spinning_cube` to exercise push constants, per-frame MVP
-  animation, depth format selection, device-local vertex/index buffers, staging
-  upload, dynamic rendering, and example-local depth image/view resources.
+  animation, device-local vertex/index buffers, staging upload, dynamic
+  rendering, and shared depth attachment setup.
 - Added `examples/textured_cube` to exercise compute-generated texture data,
   image layout transitions, storage-image descriptors, a descriptor-backed scene
   uniform buffer, combined image sampler descriptors, normals, shared GLSL
   directional lighting, dynamic rendering, and shader sampling. It is also the
   first interactive example: left-drag rotates, Space pauses, `R` resets, and
   Escape exits.
-- GLFW window setup, surface creation, shader-backed depth resources, command
-  recording, acquire/present behavior, and resize policy remain example-local.
-  Graphics pipeline creation now uses the shared helper, while examples still
-  own pipeline layout, shader module, vertex-input, and descriptor choices.
+- GLFW window setup, surface creation, command recording, acquire/present
+  behavior, and resize policy remain example-local. Graphics pipeline creation,
+  device-local cube-buffer uploads, and depth attachments now use shared helpers,
+  while examples still own pipeline layout, shader module, vertex-input, and
+  descriptor choices.
 - CTest covers both the no-display terminal boundary and graphical runs when a
   desktop window context is injected.
 - The current useful manual desktop smokes are:
@@ -250,3 +255,8 @@ env XDG_RUNTIME_DIR=/run/user/1000 WAYLAND_DISPLAY=wayland-1 DISPLAY=:1 XDG_CURR
   and depth decisions explicit. The setup-time compute pipeline in
   `textured_cube` remains local until compute/descriptor repetition produces a
   clearer helper boundary.
+- The resource and attachment cleanup slice made `Buffer` movable so helper
+  functions can return owned device-local buffers. It also moved the cube
+  examples onto shared staging upload and `DepthAttachment` helpers. This keeps
+  the examples focused on scene data and command recording while still leaving
+  descriptor, compute, and texture transition policy visible for the next batch.

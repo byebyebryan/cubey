@@ -46,11 +46,11 @@ Current state:
 - `Instance` owns validation/debug-utils setup.
 - `Device` owns physical-device selection, logical-device lifetime, one queue
   family, queue access, feature checks, and memory-type selection.
+- `choose_depth_format` centralizes the current supported depth format probe.
 
 Needed next:
 
 - Capability helpers for formats and optional features.
-- Depth format selection helper.
 - Queue-family model that can represent split graphics, compute, and present
   queues.
 
@@ -87,10 +87,12 @@ Current state:
   allocation.
 - `ImmediateCommands` owns one-shot setup command submission.
 - `begin_command_buffer` removes repeated begin boilerplate.
+- `copy_buffer` and `upload_device_buffer` cover current setup-time transfers
+  into device-local buffers.
 
 Needed next:
 
-- Copy helpers for buffer-to-buffer and buffer-to-image transfers.
+- Copy helpers for buffer-to-image transfers.
 - One-shot compute/transfer helper vocabulary.
 - Queue submit wrappers once more submission paths repeat.
 
@@ -103,13 +105,15 @@ Defer:
 Current state:
 
 - `Buffer`, `Image`, and `Sampler` own basic Vulkan resource lifetime.
-- Examples still own some resource policy, including depth attachment setup,
-  staging upload patterns, texture transitions, and readback absence.
+- `DepthAttachment` owns the swapchain-sized depth image/view path.
+- Shared buffer helpers cover staging config, device-local config, and
+  setup-time uploads for vertex/index data.
+- Examples still own some resource policy, including texture transitions and
+  readback absence.
 
 Needed next:
 
-- Depth attachment helper using `Image`.
-- Staging upload helpers for buffers and images.
+- Staging upload helpers for images.
 - Texture creation and transition helpers for generated and sampled images.
 - Readback path for future headless image output and tests.
 
@@ -168,10 +172,10 @@ Current state:
 - Dynamic rendering is the primary path.
 - Rendering helpers cover current color/depth transitions and attachment-info
   construction.
+- `DepthAttachment` covers the current reusable depth target ownership path.
 
 Needed next:
 
-- Depth attachment helper.
 - Render-target bundle for extent, format, color view, and optional depth.
 - Clear/load/store options if examples stop clearing every frame.
 
@@ -242,14 +246,17 @@ Defer:
 Goal: normalize resource setup that is already repeated without changing the
 example frame loop.
 
-- Add depth format selection.
-- Add depth attachment setup using `Image`.
-- Add buffer copy and buffer upload helpers around `ImmediateCommands`.
-- Move `spinning_cube` depth ownership to `Image`, matching `textured_cube`.
-- Keep command recording and resize policy example-local.
+- Status: initial pass complete on `main`.
+- Added shared depth format selection and `DepthAttachment` setup using
+  `Image`.
+- Added buffer copy and device-local buffer upload helpers around
+  `ImmediateCommands`.
+- Moved `spinning_cube` and `textured_cube` onto the shared depth attachment and
+  buffer upload helpers.
+- Kept command recording and resize policy example-local.
 
-This batch is the lowest-risk next step because it removes repeated resource
-code and resolves the mismatch between the two cube examples.
+Remaining resource work, especially image upload and readback, belongs in Batch
+3 after descriptor and compute helper names prove themselves.
 
 ### Batch 2: Descriptor And Compute Setup
 
@@ -305,6 +312,6 @@ first-class experiments.
 
 ## Near-Term Recommendation
 
-Start with Batch 1, then Batch 2. Together they complete the resource,
-attachment, descriptor, and compute setup foundation needed before returning to
+Batch 1 has its first pass on `main`; continue with Batch 2 next. Batch 2 should
+complete the descriptor and compute setup foundation before returning to
 headless output or starting the first real project.

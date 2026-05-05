@@ -1,5 +1,6 @@
 #include <cubey/vulkan/buffer.h>
 
+#include <cubey/vulkan/immediate_commands.h>
 #include <cubey/vulkan/vk_check.h>
 
 #include <cstring>
@@ -23,6 +24,18 @@ Buffer::Buffer(const Device& device, const BufferConfig& config)
 
 Buffer::~Buffer() {
     destroy();
+}
+
+Buffer::Buffer(Buffer&& other) noexcept {
+    move_from(other);
+}
+
+Buffer& Buffer::operator=(Buffer&& other) noexcept {
+    if (this != &other) {
+        destroy();
+        move_from(other);
+    }
+    return *this;
 }
 
 void Buffer::upload(const void* data, VkDeviceSize byte_size, VkDeviceSize offset) const {
@@ -99,6 +112,72 @@ void Buffer::destroy() {
         vkFreeMemory(device_, memory_, nullptr);
         memory_ = VK_NULL_HANDLE;
     }
+}
+
+void Buffer::move_from(Buffer& other) noexcept {
+    physical_device_ = other.physical_device_;
+    device_ = other.device_;
+    buffer_ = other.buffer_;
+    memory_ = other.memory_;
+    size_ = other.size_;
+    memory_properties_ = other.memory_properties_;
+
+    other.physical_device_ = VK_NULL_HANDLE;
+    other.device_ = VK_NULL_HANDLE;
+    other.buffer_ = VK_NULL_HANDLE;
+    other.memory_ = VK_NULL_HANDLE;
+    other.size_ = 0;
+    other.memory_properties_ = 0;
+}
+
+BufferConfig staging_buffer_config(VkDeviceSize byte_size) {
+    return {
+        .size = byte_size,
+        .usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+        .memory_properties =
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+    };
+}
+
+BufferConfig device_local_buffer_config(VkDeviceSize byte_size, VkBufferUsageFlags usage) {
+    return {
+        .size = byte_size,
+        .usage = usage | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+        .memory_properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+    };
+}
+
+void copy_buffer(const Device& device, VkBuffer source, VkBuffer destination,
+                 VkDeviceSize byte_size) {
+    if (source == VK_NULL_HANDLE || destination == VK_NULL_HANDLE) {
+        throw std::runtime_error("buffer copy requires valid source and destination buffers");
+    }
+    if (byte_size == 0) {
+        throw std::runtime_error("buffer copy size must be positive");
+    }
+
+    ImmediateCommands commands(device);
+    VkBufferCopy copy{};
+    copy.size = byte_size;
+    vkCmdCopyBuffer(commands.command_buffer(), source, destination, 1, &copy);
+    commands.submit_and_wait();
+}
+
+Buffer upload_device_buffer(const Device& device, const void* data, VkDeviceSize byte_size,
+                            VkBufferUsageFlags usage) {
+    if (data == nullptr) {
+        throw std::runtime_error("device buffer upload requires data");
+    }
+    if (byte_size == 0) {
+        throw std::runtime_error("device buffer upload size must be positive");
+    }
+
+    Buffer staging(device, staging_buffer_config(byte_size));
+    staging.upload(data, byte_size);
+
+    Buffer destination(device, device_local_buffer_config(byte_size, usage));
+    copy_buffer(device, staging.handle(), destination.handle(), byte_size);
+    return destination;
 }
 
 } // namespace cubey::vulkan
