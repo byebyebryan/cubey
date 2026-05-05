@@ -43,6 +43,21 @@ void test_rendering_helpers_describe_dynamic_rendering_setup() {
     require(present.dst_stage_mask == VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
             "present transition should end at bottom of pipe");
 
+    const cubey::vulkan::ImageLayoutTransition color_readback =
+        cubey::vulkan::finish_color_attachment_for_readback_transition(image);
+    require(color_readback.old_layout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+            "color readback transition should start from color attachment layout");
+    require(color_readback.new_layout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+            "color readback transition should target transfer source layout");
+    require(color_readback.src_access_mask == VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+            "color readback transition should wait on color writes");
+    require(color_readback.dst_access_mask == VK_ACCESS_TRANSFER_READ_BIT,
+            "color readback transition should allow transfer reads");
+    require(color_readback.src_stage_mask == VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+            "color readback transition should start at color output");
+    require(color_readback.dst_stage_mask == VK_PIPELINE_STAGE_TRANSFER_BIT,
+            "color readback transition should target transfer stage");
+
     const cubey::vulkan::ImageLayoutTransition begin_depth =
         cubey::vulkan::begin_depth_attachment_transition(image);
     require(begin_depth.aspect_mask == VK_IMAGE_ASPECT_DEPTH_BIT,

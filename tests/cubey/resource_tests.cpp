@@ -48,6 +48,19 @@ void test_resource_helpers_describe_device_local_upload_and_depth_setup() {
             "depth image should be a depth attachment");
     require(depth.aspect == VK_IMAGE_ASPECT_DEPTH_BIT, "depth image should use depth aspect");
 
+    const cubey::vulkan::ImageConfig color =
+        cubey::vulkan::color_render_target_image_config(extent, VK_FORMAT_R8G8B8A8_UNORM);
+    require(color.extent.width == extent.width, "color render target should preserve width");
+    require(color.extent.height == extent.height, "color render target should preserve height");
+    require(color.extent.depth == 1, "color render target should be 2D");
+    require(color.format == VK_FORMAT_R8G8B8A8_UNORM, "color render target should preserve format");
+    require((color.usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) != 0,
+            "color render target should support color attachment rendering");
+    require((color.usage & VK_IMAGE_USAGE_TRANSFER_SRC_BIT) != 0,
+            "color render target should support readback copies");
+    require(color.aspect == VK_IMAGE_ASPECT_COLOR_BIT,
+            "color render target should use color aspect");
+
     static_assert(!std::is_copy_constructible_v<cubey::vulkan::Buffer>);
     static_assert(std::is_move_constructible_v<cubey::vulkan::Buffer>);
     static_assert(

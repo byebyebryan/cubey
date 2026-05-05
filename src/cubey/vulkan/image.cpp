@@ -110,6 +110,15 @@ VkFormat choose_depth_format(const Device& device) {
     throw std::runtime_error("no supported depth format found");
 }
 
+ImageConfig color_render_target_image_config(VkExtent2D extent, VkFormat format) {
+    return {
+        .extent = {extent.width, extent.height, 1},
+        .format = format,
+        .usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
+        .aspect = VK_IMAGE_ASPECT_COLOR_BIT,
+    };
+}
+
 ImageConfig depth_image_config(VkExtent2D extent, VkFormat format) {
     return {
         .extent = {extent.width, extent.height, 1},

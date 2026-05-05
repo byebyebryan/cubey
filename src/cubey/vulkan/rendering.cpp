@@ -30,6 +30,19 @@ ImageLayoutTransition finish_color_attachment_for_present_transition(VkImage ima
     };
 }
 
+ImageLayoutTransition finish_color_attachment_for_readback_transition(VkImage image) {
+    return {
+        .image = image,
+        .aspect_mask = VK_IMAGE_ASPECT_COLOR_BIT,
+        .old_layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+        .new_layout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+        .src_access_mask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+        .dst_access_mask = VK_ACCESS_TRANSFER_READ_BIT,
+        .src_stage_mask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+        .dst_stage_mask = VK_PIPELINE_STAGE_TRANSFER_BIT,
+    };
+}
+
 ImageLayoutTransition begin_depth_attachment_transition(VkImage image) {
     return {
         .image = image,
