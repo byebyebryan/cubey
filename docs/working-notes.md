@@ -107,6 +107,11 @@ As of 2026-05-05:
 - Roadmap alignment: the next framework driver should be a real project. The
   lightweight fractal work stayed under `examples/fractal` and did not justify a
   broad app/runtime layer.
+- Threading/async alignment: before the first real project grows, add an
+  async-ready boundary rather than a full threaded renderer. The intended shape
+  is CPU jobs behind Cubey APIs, queued upload/capture requests, explicit GPU
+  ownership for queue submission and resource lifetime, and promotion gates for
+  render threads, parallel command recording, and split queues.
 - The current useful manual desktop smokes are:
 
 ```bash
@@ -343,3 +348,8 @@ env XDG_RUNTIME_DIR=/run/user/1000 WAYLAND_DISPLAY=wayland-1 DISPLAY=:1 XDG_CURR
   smoke checks now live in `cmake/CubeySmokeTests.cmake`. Individual examples
   declare only the target, test name, and expected success pattern or output
   path.
+- Captured `docs/threading-and-async.md` so the first real project can start
+  from an async-ready shape instead of growing around direct blocking
+  upload/readback/PNG paths. The doc records Taskflow and `BS::thread_pool` as
+  first candidates, but keeps either dependency hidden behind future
+  `cubey::jobs` APIs.

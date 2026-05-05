@@ -13,6 +13,9 @@ versioned section and use that section as the release notes.
 - C++ style guide covering formatting, naming, Vulkan structure, and review
   priorities.
 - Vulkan-first direction docs based on the WebGPU and Vulkan spikes.
+- Threading and async design doc covering the async-ready runtime boundary,
+  CPU job facade, Vulkan ownership rules, queued upload/capture direction, and
+  deferred full multithreaded renderer work.
 - Living roadmap and working-notes docs.
 - MIT license, matching the original cubey branch.
 - `cubey` static library target with public headers under `include/cubey/`.

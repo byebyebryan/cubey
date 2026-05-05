@@ -11,7 +11,8 @@ experiments. WebGPU/Dawn remains useful as an optional future presentation path,
 but it is not the architecture driver for the main Vulkan layer.
 
 See [Vulkan abstraction map](vulkan-abstractions.md) for the planned framework
-layers, promotion rules, and next implementation batches.
+layers and promotion rules, and [threading and async design](threading-and-async.md)
+for the async-ready runtime boundary that should shape the first real project.
 
 ## Phase 0: Repo Foundation
 
@@ -151,10 +152,10 @@ Current checkpoint:
   external asset loading remain future slices.
 
 Alignment: the Vulkan layer now has visible windowed examples plus a minimal
-headless PNG path. The next useful pressure should come from a first real
-project, not another generic runtime layer. The remaining rebuild and headless
-setup code is still specific enough that a broader host should wait for repeated
-project pressure.
+headless PNG path. Before the first real project grows, Cubey should add an
+async-ready runtime boundary: CPU jobs behind Cubey APIs, queued upload/capture
+requests, and explicit GPU-owner submission. The full threaded renderer, split
+queues, and parallel command recording should still wait for project pressure.
 
 ## Phase 2: Headless Output And Runtime Boundary
 
@@ -204,9 +205,32 @@ Exit criteria:
 - The same example can run headlessly and produce a deterministic PNG artifact.
 - README contains the exact commands for local smoke testing.
 
-## Phase 4: First Real Project
+## Phase 4: Threading And Async Runtime Boundary
 
-Status: next.
+Status: design captured; implementation next.
+
+Goal: make the first real project fit a non-stalling Vulkan model without
+building a full threaded renderer too early.
+
+- Add a small `cubey::jobs` facade around a chosen CPU executor.
+- Keep third-party task/executor types out of public Cubey APIs.
+- Shape uploads, captures, readbacks, and PNG encoding as queued work.
+- Keep GPU ownership and `VkQueue` submission serialized through one owner.
+- Keep examples direct; require longer-lived `projects/` to use the
+  async-ready structure once it exists.
+
+Exit criteria:
+
+- Docs identify the app thread, GPU owner, worker executor, frame packet,
+  upload request, capture request, and frame ticket concepts.
+- A job facade spike can run CPU work, propagate errors, shut down cleanly, and
+  provide deterministic test behavior.
+- Upload/capture APIs can start synchronous internally while exposing queued
+  semantics to project code.
+
+## Phase 5: First Real Project
+
+Status: after the threading/async boundary.
 
 Goal: prove the framework with one non-trivial procedural graphics project and
 let repeated project needs shape the app/runtime API.
@@ -225,14 +249,14 @@ Exit criteria:
   deterministic output artifact.
 - README contains the exact commands for local smoke testing.
 
-## Phase 5: Runtime Extraction
+## Phase 6: Runtime Extraction
 
 Status: defer until the first real project provides real pressure.
 
 Goal: extract only the host concepts that repeated windowed/headless project code
 has proven useful.
 
-- Project lifecycle vocabulary: setup, update, render, resize, shutdown.
+- Project lifecycle vocabulary: setup, update, render packet, resize, shutdown.
 - Optional windowed host outside `cubey::vulkan`.
 - Optional headless host that shares project render code where practical.
 - Input/UI hooks only after a project needs them.

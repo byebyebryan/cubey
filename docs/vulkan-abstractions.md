@@ -33,6 +33,10 @@ The current boundary is:
 - Keep GLFW/platform code out of the low-level Vulkan library. If it becomes
   reusable, split it into a platform/app layer rather than mixing it into
   `cubey::vulkan`.
+- Keep threading and async work shaped by
+  [threading and async design](threading-and-async.md): one GPU owner first,
+  CPU jobs behind Cubey APIs, queued upload/capture requests, and explicit
+  promotion gates for parallel command recording or split queues.
 - Do not invent WebGPU-style vocabulary unless Cubey code has naturally arrived
   there. Descriptors may eventually look like bind groups, but the Vulkan
   ownership model comes first.
@@ -47,17 +51,21 @@ Current state:
 - `Device` owns physical-device selection, logical-device lifetime, one queue
   family, queue access, feature checks, and memory-type selection.
 - `choose_depth_format` centralizes the current supported depth format probe.
+- The current submission model assumes one GPU owner that serializes queue
+  submission.
 
 Needed next:
 
 - Capability helpers for formats and optional features.
 - Queue-family model that can represent split graphics, compute, and present
   queues.
+- Submission coordinator only after queue submission paths repeat.
 
 Defer:
 
 - Sophisticated multi-GPU selection.
-- Full queue abstraction until split queues are implemented.
+- Full queue abstraction, split queues, and timeline-semaphore scheduling until
+  project evidence justifies them.
 
 ### 2. Frame And Presentation
 
@@ -73,6 +81,7 @@ Current state:
 Needed next:
 
 - N-frames-in-flight support after the single-frame path is stable.
+- Frame tickets for deferred destruction and delayed readback/capture readiness.
 - A way to rebuild swapchain-sized resources consistently.
 - A reusable resize/recreate coordinator if example loops keep repeating.
 
@@ -92,14 +101,19 @@ Current state:
   into device-local buffers.
 - `copy_buffer_to_image` and `copy_image_to_buffer` cover current one-shot
   image transfer/readback copies.
+- Command recording is single-threaded and owned by the current frame loop.
 
 Needed next:
 
 - One-shot compute/transfer helper vocabulary.
 - Queue submit wrappers once more submission paths repeat.
+- Per-frame/per-thread command-pool sharding before any parallel command
+  recording.
 
 Defer:
 
+- Parallel command recording and secondary command buffers until profiling or a
+  project proves command recording cost.
 - A general queue class until split queue families force the shape.
 
 ### 4. Resources And Memory
@@ -118,11 +132,15 @@ Current state:
   target and color-attachment-to-readback transition used by headless output.
 - Examples still own some resource policy, including when transfers and
   readback are used.
+- Upload and capture behavior is still direct/blocking at the example level.
 
 Needed next:
 
+- Queue-shaped upload and capture requests that can execute synchronously at
+  first, while keeping project code independent from blocking implementation
+  details.
 - Reuse the headless output path from a real project so repeated host shape is
-  visible before abstraction.
+  visible before deeper abstraction.
 
 Defer:
 
@@ -226,7 +244,9 @@ Current state:
 
 Needed later:
 
-- Project runtime vocabulary: setup, update, render, resize, shutdown.
+- Project runtime vocabulary: setup, update, render packet, resize, shutdown.
+- `ProjectContext` services for CPU jobs, uploads, capture requests, timing,
+  and eventually UI hooks.
 - Optional windowed host outside the low-level Vulkan layer.
 - Headless host that can share project render code and write inspectable
   artifacts.
@@ -236,7 +256,30 @@ Defer:
 - Pulling GLFW into `cubey::vulkan`.
 - UI layer or ImGui until the render/runtime boundary is clearer.
 
-### 10. Debugging And Instrumentation
+### 10. Threading And Async
+
+Current state:
+
+- The design is captured in [threading and async design](threading-and-async.md).
+- All current Vulkan work runs through direct example loops.
+- `ImmediateCommands`, readback helpers, and PNG output are synchronous.
+
+Needed next:
+
+- `cubey::jobs` facade over a selected CPU executor.
+- Deterministic inline executor for tests.
+- Queue-shaped upload and capture APIs.
+- Explicit GPU-owner vocabulary for serialized queue submission and GPU
+  lifetime decisions.
+
+Defer:
+
+- Dedicated render thread.
+- Parallel command recording.
+- Split graphics/compute/transfer queue scheduling.
+- Public task-graph dependency types.
+
+### 11. Debugging And Instrumentation
 
 Current state:
 
@@ -370,12 +413,27 @@ not a project runtime.
 This is still example work. It should not create a project interface around
 setup, update, render, resize, or shutdown.
 
-### Batch 7: First Project And Runtime Pressure
+### Batch 7: Threading And Async Runtime Boundary
+
+Goal: prepare project code for non-stalling GPU workflows without introducing a
+full threaded renderer.
+
+- Status: design captured in [threading and async design](threading-and-async.md).
+- Add a small CPU job facade behind Cubey APIs.
+- Decide whether Taskflow or `BS::thread_pool` best fits the first slice.
+- Introduce queued upload/capture/readback shapes, initially processed
+  synchronously by the GPU owner.
+- Keep examples direct; make the first project use the async-ready boundary.
+
+This batch should create design pressure before the first real project grows
+around blocking helper calls.
+
+### Batch 8: First Project And Runtime Pressure
 
 Goal: let a real project define the app/runtime seam.
 
-- Start with particles, fluid simulation, or marching cubes now that the fractal
-  example has proven the fullscreen/headless loop.
+- Start with particles, fluid simulation, or marching cubes after the
+  async-ready runtime boundary has a first pass.
 - Use the headless artifact path for deterministic smoke output.
 - Extract shared lifecycle or host code only when both windowed and headless
   paths repeat the same shape in real project code.
@@ -388,5 +446,5 @@ resize, and shutdown may become worthwhile.
 ## Near-Term Recommendation
 
 Batch 1 through Batch 6 have their first passes on `main`. Start Batch 7 next:
-a real project that can create enough pressure to judge whether an app/runtime
-host is worth extracting.
+the threading/async runtime boundary. Then use Batch 8, the first real project,
+to decide how much app/runtime host to extract.

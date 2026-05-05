@@ -20,6 +20,9 @@ This is a ground-up rewrite carrying forward the same spirit with modern tools a
 - **WebGPU is optional and deferred.** Dawn/WebGPU remains useful for browser-facing showcases later, but it should not shape the first Vulkan layer.
 - **Headless rendering is first-class.** Every project should eventually render to image without a window. Enables automated testing and AI-assisted development.
 - **Shaders compile at build time.** No runtime hot-reload complexity. GLSL → SPIR-V via glslangValidator at build time.
+- **Async-ready before heavily threaded.** Shape project code around jobs,
+  queued uploads, queued captures, and explicit GPU ownership before adding a
+  dedicated render thread or parallel command recording.
 
 ## Technology Stack
 
@@ -34,6 +37,7 @@ This is a ground-up rewrite carrying forward the same spirit with modern tools a
 | Math | Project-local helpers now; GLM remains a candidate | Keep dependencies narrow until shared math pressure appears |
 | Shader compilation | glslangValidator (build time) | GLSL → SPIR-V, no runtime dependency |
 | Image output | `stb_image_write` | Single-header dependency, enough for inspectable artifacts |
+| CPU async work | undecided behind `cubey::jobs` | Taskflow and `BS::thread_pool` are the first candidates |
 
 ## Architecture
 
@@ -95,6 +99,12 @@ Vulkan and remain free to expose Vulkan-specific requirements where useful.
 This is not implemented yet. Current examples own their app loops and GLFW
 callbacks directly; the library only promotes reusable pieces once repeated
 shape is clear.
+
+Before this becomes a broad host, projects should move toward the async-ready
+shape described in [threading and async design](threading-and-async.md): app
+state produces render packets, CPU jobs run behind Cubey APIs, upload/capture
+requests are queued, and one GPU owner serializes queue submission and resource
+lifetime decisions.
 
 ```cpp
 struct App {
@@ -292,6 +302,7 @@ cubey/
     DESIGN.md              -- this file
     roadmap.md             -- living implementation plan
     working-notes.md       -- progress notes, hiccups, gotchas, learnings
+    threading-and-async.md -- CPU jobs, queued GPU work, and MT promotion gates
     spike-findings.md      -- WebGPU/Vulkan spike decision record
     cpp-style.md           -- C++ naming, formatting, and review conventions
 ```
