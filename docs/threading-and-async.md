@@ -172,10 +172,12 @@ Candidate dependencies:
   project.
 - **HPX:** too broad for Cubey's current scope.
 
-Initial preference: spike Taskflow first if the first project wants dependency
-graphs; otherwise use `BS::thread_pool` behind `cubey::jobs` for a smaller CPU
-job slice. Either way, do not expose the dependency in public project-facing
-APIs.
+Initial implementation: `cubey::jobs::JobSystem` uses a minimal
+standard-library worker pool behind the Cubey facade, paired with
+`InlineExecutor` for deterministic tests. Taskflow and `BS::thread_pool` remain
+future swap candidates if dependency graphs or richer pool features become
+worth the dependency. Either way, do not expose the dependency in public
+project-facing APIs.
 
 ## Uploads, Captures, And Readbacks
 
@@ -306,10 +308,13 @@ around blocking setup/readback calls.
 
 ### Slice 1: Job Facade Spike
 
-- Choose Taskflow or `BS::thread_pool` behind `cubey::jobs`.
-- Add `JobSystem`, a job handle/result shape, and an inline test executor.
-- Add tests for completion, exception propagation, shutdown, and no dependency
-  leakage through public APIs.
+Status: initial pass complete.
+
+- Added `JobSystem`, `JobHandle`, and `InlineExecutor` under `cubey::jobs`.
+- Kept the implementation standard-library-only for now while preserving the
+  facade needed to swap in Taskflow or `BS::thread_pool` later.
+- Added tests for completion, exception propagation, shutdown, and deterministic
+  inline execution.
 
 ### Slice 2: Async-Ready Upload And Capture Queues
 

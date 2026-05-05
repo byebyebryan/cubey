@@ -20,6 +20,7 @@ add_library(cubey STATIC
     frame_clock.cpp
     frame_stats.cpp
     image_output.cpp
+    jobs.cpp
     orbit_controller.cpp
     spirv_file.cpp
     vulkan/buffer.cpp

@@ -99,6 +99,9 @@ Current checkpoint:
   and a color-attachment-to-readback transition.
 - Reusable `cubey::write_png_rgba8` wraps the vendored `stb_image_write` PNG
   path behind a byte-buffer API.
+- Reusable `cubey::jobs::JobSystem`, `InlineExecutor`, and `JobHandle` provide
+  the first CPU job facade behind Cubey APIs without exposing a third-party
+  executor.
 - Reusable `cubey::vulkan::PipelineLayout`, `GraphicsPipeline`,
   `ComputePipeline`, `DescriptorSetLayout`, and `DescriptorPool` own basic
   pipeline and descriptor lifetimes while still taking raw Vulkan create-info
@@ -212,7 +215,7 @@ Status: design captured; implementation next.
 Goal: make the first real project fit a non-stalling Vulkan model without
 building a full threaded renderer too early.
 
-- Add a small `cubey::jobs` facade around a chosen CPU executor.
+- Added a small `cubey::jobs` facade around a standard-library worker executor.
 - Keep third-party task/executor types out of public Cubey APIs.
 - Shape uploads, captures, readbacks, and PNG encoding as queued work.
 - Keep GPU ownership and `VkQueue` submission serialized through one owner.
@@ -223,7 +226,7 @@ Exit criteria:
 
 - Docs identify the app thread, GPU owner, worker executor, frame packet,
   upload request, capture request, and frame ticket concepts.
-- A job facade spike can run CPU work, propagate errors, shut down cleanly, and
+- The job facade can run CPU work, propagate errors, shut down cleanly, and
   provide deterministic test behavior.
 - Upload/capture APIs can start synchronous internally while exposing queued
   semantics to project code.

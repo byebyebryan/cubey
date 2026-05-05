@@ -43,6 +43,9 @@ As of 2026-05-05:
   directories and dependency tracking.
 - Promoted `cubey::read_spirv_file` so shader-backed examples share one tested
   SPIR-V bytecode loader instead of carrying local file readers.
+- Promoted `cubey::jobs::JobSystem`, `InlineExecutor`, and `JobHandle` as the
+  first CPU job facade. The implementation is standard-library-only for now,
+  keeping Taskflow or `BS::thread_pool` swappable behind Cubey APIs later.
 - Promoted the first pipeline/descriptor ownership components:
   `PipelineLayout`, `GraphicsPipeline`, `ComputePipeline`,
   `DescriptorSetLayout`, and `DescriptorPool`. These wrappers own lifetimes but
@@ -353,3 +356,6 @@ env XDG_RUNTIME_DIR=/run/user/1000 WAYLAND_DISPLAY=wayland-1 DISPLAY=:1 XDG_CURR
   upload/readback/PNG paths. The doc records Taskflow and `BS::thread_pool` as
   first candidates, but keeps either dependency hidden behind future
   `cubey::jobs` APIs.
+- Batch 1 of the threading/async loop landed the job facade first, with tests
+  for immediate inline execution, worker result delivery, exception propagation,
+  accepted-job completion during shutdown, and submit rejection after shutdown.

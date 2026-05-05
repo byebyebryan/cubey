@@ -48,6 +48,8 @@ versioned section and use that section as the release notes.
   tracking.
 - Public SPIR-V file-loading helper for shader-backed examples and future
   projects.
+- Public CPU job facade with a worker-backed `JobSystem`, deterministic
+  `InlineExecutor`, and `JobHandle` result wrapper.
 - Public frame timing, orbit-controller, and frame-stat types for interactive
   windowed examples.
 - `examples/window_clear`, a minimal Vulkan/GLFW dynamic-rendering windowed

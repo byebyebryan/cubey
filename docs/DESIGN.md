@@ -229,6 +229,7 @@ cubey/
       frame_clock.h        -- frame timing
       frame_stats.h        -- lightweight telemetry formatting
       image_output.h       -- PNG artifact output
+      jobs.h               -- CPU job facade
       orbit_controller.h   -- basic orbit input state
       spirv_file.h         -- SPIR-V bytecode file loading
       vulkan/
@@ -253,6 +254,7 @@ cubey/
       frame_clock.cpp
       frame_stats.cpp
       image_output.cpp
+      jobs.cpp
       orbit_controller.cpp
       spirv_file.cpp
       stb_image_write.cpp -- isolated vendored PNG writer implementation

@@ -262,12 +262,12 @@ Current state:
 
 - The design is captured in [threading and async design](threading-and-async.md).
 - All current Vulkan work runs through direct example loops.
+- `cubey::jobs::JobSystem`, `InlineExecutor`, and `JobHandle` provide the first
+  CPU job facade.
 - `ImmediateCommands`, readback helpers, and PNG output are synchronous.
 
 Needed next:
 
-- `cubey::jobs` facade over a selected CPU executor.
-- Deterministic inline executor for tests.
 - Queue-shaped upload and capture APIs.
 - Explicit GPU-owner vocabulary for serialized queue submission and GPU
   lifetime decisions.
@@ -419,8 +419,7 @@ Goal: prepare project code for non-stalling GPU workflows without introducing a
 full threaded renderer.
 
 - Status: design captured in [threading and async design](threading-and-async.md).
-- Add a small CPU job facade behind Cubey APIs.
-- Decide whether Taskflow or `BS::thread_pool` best fits the first slice.
+- Added a small CPU job facade behind Cubey APIs.
 - Introduce queued upload/capture/readback shapes, initially processed
   synchronously by the GPU owner.
 - Keep examples direct; make the first project use the async-ready boundary.
