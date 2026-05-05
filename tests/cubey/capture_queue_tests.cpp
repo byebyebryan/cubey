@@ -8,6 +8,7 @@
 #include <fstream>
 #include <iterator>
 #include <stdexcept>
+#include <type_traits>
 #include <vector>
 
 namespace {
@@ -27,6 +28,11 @@ std::vector<std::uint8_t> read_file(const std::filesystem::path& path) {
 }
 
 } // namespace
+
+static_assert(!std::is_copy_constructible_v<cubey::CaptureQueue>);
+static_assert(!std::is_copy_assignable_v<cubey::CaptureQueue>);
+static_assert(!std::is_move_constructible_v<cubey::CaptureQueue>);
+static_assert(!std::is_move_assignable_v<cubey::CaptureQueue>);
 
 void test_capture_queue_encodes_png_with_inline_executor() {
     const std::filesystem::path output =

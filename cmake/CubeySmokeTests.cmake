@@ -23,4 +23,9 @@ function(cubey_add_png_smoke_test name target output_path)
             ${ARGN}
     )
     set_tests_properties("${name}" PROPERTIES TIMEOUT 10)
+    set_property(
+        TEST "${name}"
+        APPEND
+        PROPERTY ENVIRONMENT "LSAN_OPTIONS=suppressions=${CMAKE_SOURCE_DIR}/cmake/lsan.supp"
+    )
 endfunction()

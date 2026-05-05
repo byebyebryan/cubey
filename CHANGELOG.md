@@ -104,6 +104,8 @@ versioned section and use that section as the release notes.
   local file readers.
 - Example CTest targets now use shared CMake smoke helpers instead of repeated
   shell snippets.
+- Headless PNG smoke tests now apply a narrow LeakSanitizer suppression for
+  DBus allocations left alive by the Vulkan loader/driver path on Linux.
 - Roadmap and Vulkan abstraction docs now route the next framework checkpoint
   toward a real project before a broader app/runtime host.
 

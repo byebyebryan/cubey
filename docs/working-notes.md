@@ -214,6 +214,10 @@ env XDG_RUNTIME_DIR=/run/user/1000 WAYLAND_DISPLAY=wayland-1 DISPLAY=:1 XDG_CURR
 - Keep build artifacts out of Git with ignored `build*/` directories.
 - `CHANGELOG.md` is the release-note source. Avoid separate release-note files
   until real releases make that worthwhile.
+- The `asan` preset can report DBus-owned allocations from Vulkan loader/driver
+  initialization after successful headless PNG renders. The PNG CTest smoke
+  helpers apply the narrow suppressions in `cmake/lsan.supp`; keep app-owned
+  leak suppression out of that file.
 - Keep `include/cubey/` as the public include surface for in-repo examples,
   projects, and tests. Defer install/export/package rules until external
   consumption becomes real.

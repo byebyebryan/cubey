@@ -1,0 +1,5 @@
+# Vulkan loader and driver initialization can leave DBus-owned allocations alive
+# at process exit on some Linux desktops. Keep PNG smoke tests focused on cubey
+# leaks while still allowing LeakSanitizer to report unsuppressed stacks.
+leak:dbus_message_new_empty_header
+leak:_dbus_string_copy_len

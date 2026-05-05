@@ -18,7 +18,7 @@ struct CaptureRequest {
 };
 
 class CaptureTicket {
-public:
+  public:
     CaptureTicket(std::filesystem::path output_path, jobs::JobHandle<void> job);
 
     CaptureTicket(const CaptureTicket&) = delete;
@@ -42,19 +42,24 @@ public:
         job_.get();
     }
 
-private:
+  private:
     std::filesystem::path output_path_;
     jobs::JobHandle<void> job_;
 };
 
 class CaptureQueue {
-public:
+  public:
     explicit CaptureQueue(jobs::JobSystem& jobs);
     explicit CaptureQueue(jobs::InlineExecutor& jobs);
 
+    CaptureQueue(const CaptureQueue&) = delete;
+    CaptureQueue& operator=(const CaptureQueue&) = delete;
+    CaptureQueue(CaptureQueue&&) = delete;
+    CaptureQueue& operator=(CaptureQueue&&) = delete;
+
     [[nodiscard]] CaptureTicket enqueue_png(CaptureRequest request);
 
-private:
+  private:
     using SubmitFunction = std::function<jobs::JobHandle<void>(std::function<void()>)>;
 
     explicit CaptureQueue(SubmitFunction submit);

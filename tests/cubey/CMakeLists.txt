@@ -9,6 +9,7 @@ add_executable(cubey_core_tests
     frame_ticket_tests.cpp
     image_output_tests.cpp
     jobs_tests.cpp
+    main.cpp
     orbit_controller_tests.cpp
     pipeline_tests.cpp
     project_runtime_tests.cpp
