@@ -3,6 +3,7 @@
 #include <cubey/frame_clock.h>
 #include <cubey/frame_stats.h>
 #include <cubey/orbit_controller.h>
+#include <cubey/spirv_file.h>
 #include <cubey/vulkan/buffer.h>
 #include <cubey/vulkan/command_pool.h>
 #include <cubey/vulkan/descriptors.h>
@@ -29,8 +30,6 @@
 #include <cstdint>
 #include <cstdio>
 #include <filesystem>
-#include <fstream>
-#include <limits>
 #include <numbers>
 #include <optional>
 #include <stdexcept>
@@ -133,30 +132,6 @@ Mat4 perspective(float fovy_radians, float aspect, float near_z, float far_z) {
     at(matrix, 2, 3) = (far_z * near_z) / (near_z - far_z);
     at(matrix, 3, 2) = -1.0F;
     return matrix;
-}
-
-std::vector<std::uint32_t> read_spirv_file(const std::filesystem::path& path) {
-    const std::uintmax_t byte_size = std::filesystem::file_size(path);
-    if (byte_size == 0 || byte_size % sizeof(std::uint32_t) != 0) {
-        throw std::runtime_error("invalid SPIR-V size for " + path.string());
-    }
-    if (byte_size > static_cast<std::uintmax_t>(std::numeric_limits<std::streamsize>::max()) ||
-        byte_size / sizeof(std::uint32_t) >
-            static_cast<std::uintmax_t>(std::numeric_limits<std::size_t>::max())) {
-        throw std::runtime_error("SPIR-V file is too large: " + path.string());
-    }
-
-    std::vector<std::uint32_t> code(static_cast<std::size_t>(byte_size / sizeof(std::uint32_t)));
-    std::ifstream file(path, std::ios::binary);
-    if (!file) {
-        throw std::runtime_error("failed to open SPIR-V file: " + path.string());
-    }
-
-    file.read(reinterpret_cast<char*>(code.data()), static_cast<std::streamsize>(byte_size));
-    if (!file) {
-        throw std::runtime_error("failed to read SPIR-V file: " + path.string());
-    }
-    return code;
 }
 
 std::filesystem::path shader_path(const char* filename) {
@@ -454,9 +429,9 @@ class TexturedCubeApp {
 
     void create_pipeline() {
         const std::vector<std::uint32_t> vertex_code =
-            read_spirv_file(shader_path("textured_cube.vert.spv"));
+            cubey::read_spirv_file(shader_path("textured_cube.vert.spv"));
         const std::vector<std::uint32_t> fragment_code =
-            read_spirv_file(shader_path("textured_cube.frag.spv"));
+            cubey::read_spirv_file(shader_path("textured_cube.frag.spv"));
         cubey::vulkan::ShaderModule vertex_shader(vulkan_device(), vertex_code);
         cubey::vulkan::ShaderModule fragment_shader(vulkan_device(), fragment_code);
 
@@ -615,7 +590,7 @@ class TexturedCubeApp {
         compute_pipeline_layout_.emplace(vulkan_device(), pipeline_layout_info.create_info());
 
         const std::vector<std::uint32_t> compute_code =
-            read_spirv_file(shader_path("textured_cube.comp.spv"));
+            cubey::read_spirv_file(shader_path("textured_cube.comp.spv"));
         cubey::vulkan::ShaderModule compute_shader(vulkan_device(), compute_code);
 
         const VkPipelineShaderStageCreateInfo stage =

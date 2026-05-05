@@ -3,6 +3,7 @@
 #include "fractal_view.h"
 
 #include <cubey/image_output.h>
+#include <cubey/spirv_file.h>
 #include <cubey/vulkan/buffer.h>
 #include <cubey/vulkan/command_pool.h>
 #include <cubey/vulkan/device.h>
@@ -26,7 +27,6 @@
 #include <cstdint>
 #include <cstdio>
 #include <filesystem>
-#include <fstream>
 #include <limits>
 #include <optional>
 #include <span>
@@ -64,30 +64,6 @@ constexpr std::size_t kOutputBytesPerPixel = 4;
         throw std::runtime_error("fractal output is too large");
     }
     return pixel_count * kOutputBytesPerPixel;
-}
-
-std::vector<std::uint32_t> read_spirv_file(const std::filesystem::path& path) {
-    const std::uintmax_t byte_size = std::filesystem::file_size(path);
-    if (byte_size == 0 || byte_size % sizeof(std::uint32_t) != 0) {
-        throw std::runtime_error("invalid SPIR-V size for " + path.string());
-    }
-    if (byte_size > static_cast<std::uintmax_t>(std::numeric_limits<std::streamsize>::max()) ||
-        byte_size / sizeof(std::uint32_t) >
-            static_cast<std::uintmax_t>(std::numeric_limits<std::size_t>::max())) {
-        throw std::runtime_error("SPIR-V file is too large: " + path.string());
-    }
-
-    std::vector<std::uint32_t> code(static_cast<std::size_t>(byte_size / sizeof(std::uint32_t)));
-    std::ifstream file(path, std::ios::binary);
-    if (!file) {
-        throw std::runtime_error("failed to open SPIR-V file: " + path.string());
-    }
-
-    file.read(reinterpret_cast<char*>(code.data()), static_cast<std::streamsize>(byte_size));
-    if (!file) {
-        throw std::runtime_error("failed to read SPIR-V file: " + path.string());
-    }
-    return code;
 }
 
 std::filesystem::path shader_path(const char* filename) {
@@ -385,9 +361,9 @@ class FractalApp {
 
     void create_pipeline(VkFormat color_format, VkExtent2D extent) {
         const std::vector<std::uint32_t> vertex_code =
-            read_spirv_file(shader_path("fractal.vert.spv"));
+            cubey::read_spirv_file(shader_path("fractal.vert.spv"));
         const std::vector<std::uint32_t> fragment_code =
-            read_spirv_file(shader_path("fractal.frag.spv"));
+            cubey::read_spirv_file(shader_path("fractal.frag.spv"));
         cubey::vulkan::ShaderModule vertex_shader(vulkan_device(), vertex_code);
         cubey::vulkan::ShaderModule fragment_shader(vulkan_device(), fragment_code);
 
