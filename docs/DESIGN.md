@@ -227,14 +227,15 @@ cubey/
     cubey/
       app_config.h         -- shared run configuration
       capture_queue.h      -- job-backed PNG capture encoding queue
+      file_io.h            -- generic binary file reads/writes
       frame_clock.h        -- frame timing
       frame_stats.h        -- lightweight telemetry formatting
       frame_tickets.h      -- frame tickets and deferred destruction
-      image_output.h       -- PNG artifact output
+      image_io.h           -- PNG artifact output
       jobs.h               -- CPU job facade
       orbit_controller.h   -- basic orbit input state
       project_runtime.h    -- async-ready project vocabulary
-      spirv_file.h         -- SPIR-V bytecode file loading
+      spirv_io.h           -- SPIR-V bytecode file loading
       upload_queue.h       -- CPU-owned upload request queue
       vulkan/
         vk_check.h         -- Vulkan result helpers
@@ -256,14 +257,15 @@ cubey/
     cubey/
       app_config.cpp
       capture_queue.cpp
+      file_io.cpp
       frame_clock.cpp
       frame_stats.cpp
       frame_tickets.cpp
-      image_output.cpp
+      image_io.cpp
       jobs.cpp
       orbit_controller.cpp
       project_runtime.cpp
-      spirv_file.cpp
+      spirv_io.cpp
       upload_queue.cpp
       stb_image_write.cpp -- isolated vendored PNG writer implementation
       vulkan/

@@ -2,8 +2,8 @@
 
 #include "fractal_view.h"
 
-#include <cubey/image_output.h>
-#include <cubey/spirv_file.h>
+#include <cubey/image_io.h>
+#include <cubey/spirv_io.h>
 #include <cubey/vulkan/buffer.h>
 #include <cubey/vulkan/command_pool.h>
 #include <cubey/vulkan/device.h>

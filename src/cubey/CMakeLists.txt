@@ -18,14 +18,15 @@ add_library(cubey STATIC
     $<TARGET_OBJECTS:cubey_stb_image_write>
     app_config.cpp
     capture_queue.cpp
+    file_io.cpp
     frame_clock.cpp
     frame_stats.cpp
     frame_tickets.cpp
-    image_output.cpp
+    image_io.cpp
     jobs.cpp
     orbit_controller.cpp
     project_runtime.cpp
-    spirv_file.cpp
+    spirv_io.cpp
     upload_queue.cpp
     vulkan/buffer.cpp
     vulkan/command_pool.cpp

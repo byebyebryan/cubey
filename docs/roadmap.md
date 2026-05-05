@@ -86,7 +86,8 @@ Current checkpoint:
 - Reusable `cubey::vulkan::ShaderModule` exists, and CMake can compile GLSL to
   SPIR-V with `glslangValidator` for example targets, including shared include
   directories and dependency tracking. Reusable `cubey::read_spirv_file` loads
-  compiled shader bytecode for shader-backed examples and future projects.
+  compiled shader bytecode through the `spirv_io` layer for shader-backed
+  examples and future projects.
 - Reusable `cubey::vulkan::ImmediateCommands` plus buffer helpers support
   one-shot setup uploads into device-local buffers.
 - Reusable `cubey::vulkan::DepthAttachment` owns depth image/view setup and
@@ -97,8 +98,9 @@ Current checkpoint:
   and sampling image layout transitions.
   The headless path also uses an explicit offscreen color render-target config
   and a color-attachment-to-readback transition.
-- Reusable `cubey::write_png_rgba8` wraps the vendored `stb_image_write` PNG
-  path behind a byte-buffer API.
+- Reusable `cubey::read_binary_file` and `cubey::write_binary_file` cover
+  generic byte I/O; `cubey::write_png_rgba8` wraps the vendored
+  `stb_image_write` PNG path behind the `image_io` API.
 - Reusable `cubey::jobs::JobSystem`, `InlineExecutor`, and `JobHandle` provide
   the first CPU job facade behind Cubey APIs without exposing a third-party
   executor.

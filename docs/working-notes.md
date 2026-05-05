@@ -41,8 +41,9 @@ As of 2026-05-05:
 - Promoted `cubey::vulkan::ShaderModule` and added CMake GLSL-to-SPIR-V shader
   compilation with `glslangValidator`, including shared shader include
   directories and dependency tracking.
-- Promoted `cubey::read_spirv_file` so shader-backed examples share one tested
-  SPIR-V bytecode loader instead of carrying local file readers.
+- Promoted `cubey::file_io` for generic binary reads/writes and
+  `cubey::spirv_io` for tested SPIR-V word loading. Shader-backed examples
+  share `cubey::read_spirv_file` instead of carrying local file readers.
 - Promoted `cubey::jobs::JobSystem`, `InlineExecutor`, and `JobHandle` as the
   first CPU job facade. The implementation is standard-library-only for now,
   keeping Taskflow or `BS::thread_pool` swappable behind Cubey APIs later.
@@ -87,7 +88,7 @@ As of 2026-05-05:
   transition helpers.
 - Promoted the narrow pieces needed for the first headless artifact path:
   offscreen color render-target config, color-attachment-to-readback transition,
-  and `cubey::write_png_rgba8` backed by vendored `stb_image_write`.
+  and `cubey::image_io` PNG writing backed by vendored `stb_image_write`.
 - Promoted `SwapchainRecreateTracker` for the one clearly repeated frame-loop
   policy: bounding consecutive out-of-date/suboptimal recreate attempts. The
   actual swapchain-sized resource rebuild order remains example-local.
@@ -362,9 +363,9 @@ env XDG_RUNTIME_DIR=/run/user/1000 WAYLAND_DISPLAY=wayland-1 DISPLAY=:1 XDG_CURR
 - `examples/fractal` now has an example-local `FractalView` for pan, cursor
   zoom, reset, and push constants. That kept input math testable without moving
   fractal-specific behavior into `cubey`.
-- Repo-wide cleanup after the fractal slice promoted repeated shader bytecode
-  reads into `cubey::read_spirv_file`, with tests for aligned word loading and
-  rejection of misaligned byte counts.
+- Repo-wide cleanup after the fractal slice promoted generic binary reads and
+  writes into `cubey::file_io`, kept SPIR-V word loading in `cubey::spirv_io`,
+  and renamed PNG artifact helpers to `cubey::image_io`.
 - The repeated CTest shell snippets for windowed/no-display and headless PNG
   smoke checks now live in `cmake/CubeySmokeTests.cmake`. Individual examples
   declare only the target, test name, and expected success pattern or output

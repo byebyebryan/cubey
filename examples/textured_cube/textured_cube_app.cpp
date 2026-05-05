@@ -3,7 +3,7 @@
 #include <cubey/frame_clock.h>
 #include <cubey/frame_stats.h>
 #include <cubey/orbit_controller.h>
-#include <cubey/spirv_file.h>
+#include <cubey/spirv_io.h>
 #include <cubey/vulkan/buffer.h>
 #include <cubey/vulkan/command_pool.h>
 #include <cubey/vulkan/descriptors.h>

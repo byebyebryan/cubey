@@ -175,7 +175,7 @@ Current state:
 - `ShaderModule` owns shader module lifetime.
 - CMake compiles GLSL to SPIR-V with shared include support.
 - `read_spirv_file` loads compiled SPIR-V bytecode into aligned 32-bit words
-  for shader module creation.
+  through `spirv_io` for shader module creation.
 - `PipelineLayout`, `GraphicsPipeline`, and `ComputePipeline` own pipeline
   lifetime.
 - `DynamicGraphicsPipelineInfo` builds the current single-color-attachment

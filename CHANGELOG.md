@@ -32,7 +32,8 @@ versioned section and use that section as the release notes.
 - Public Vulkan transfer/readback helpers for readback buffers, sampled image
   configs, buffer-image copies, and storage, transfer, sampled-image readback,
   color-attachment readback, and sampling image layout transitions.
-- Public PNG output helper backed by vendored `stb_image_write`.
+- Public binary file I/O helpers and PNG image I/O helper backed by vendored
+  `stb_image_write`.
 - Public Vulkan pipeline and descriptor RAII types, plus descriptor write
   helpers, pipeline-layout create-info helpers, a compute pipeline create-info
   helper, and a dynamic graphics pipeline create-info helper for the current
@@ -46,8 +47,7 @@ versioned section and use that section as the release notes.
   dynamic-rendering color/depth attachment setup.
 - GLSL shader helper support for shared include directories and dependency
   tracking.
-- Public SPIR-V file-loading helper for shader-backed examples and future
-  projects.
+- Public SPIR-V I/O helper for shader-backed examples and future projects.
 - Public CPU job facade with a worker-backed `JobSystem`, deterministic
   `InlineExecutor`, and `JobHandle` result wrapper.
 - Public PNG capture queue that moves completed RGBA pixels into job-backed
@@ -100,8 +100,8 @@ versioned section and use that section as the release notes.
   sampled-image config helpers for its compute-generated texture.
 - Windowed examples now share recreate-attempt tracking while still owning their
   swapchain resource rebuild steps.
-- Shader-backed examples now share SPIR-V file loading instead of carrying
-  local file readers.
+- Shader-backed examples now share SPIR-V I/O layered on generic binary file
+  reads instead of carrying local file readers.
 - Example CTest targets now use shared CMake smoke helpers instead of repeated
   shell snippets.
 - Headless PNG smoke tests now apply a narrow LeakSanitizer suppression for

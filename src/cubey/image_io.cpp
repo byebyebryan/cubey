@@ -1,4 +1,4 @@
-#include <cubey/image_output.h>
+#include <cubey/image_io.h>
 
 #include <stb_image_write.h>
 

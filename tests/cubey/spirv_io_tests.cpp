@@ -1,9 +1,9 @@
-#include <cubey/spirv_file.h>
+#include <cubey/file_io.h>
+#include <cubey/spirv_io.h>
 
 #include <array>
 #include <cstdint>
 #include <filesystem>
-#include <fstream>
 #include <stdexcept>
 #include <vector>
 
@@ -15,28 +15,20 @@ void require(bool condition, const char* message) {
     }
 }
 
-void write_binary_file(const std::filesystem::path& path, const std::vector<unsigned char>& bytes) {
-    std::ofstream file(path, std::ios::binary);
-    if (!file) {
-        throw std::runtime_error("failed to open temporary SPIR-V test file");
-    }
-    file.write(reinterpret_cast<const char*>(bytes.data()),
-               static_cast<std::streamsize>(bytes.size()));
-}
-
 } // namespace
 
-void test_spirv_file_reads_aligned_words() {
+void test_spirv_io_reads_aligned_words() {
     const std::filesystem::path path =
-        std::filesystem::temp_directory_path() / "cubey_spirv_file_test.spv";
+        std::filesystem::temp_directory_path() / "cubey_spirv_io_test.spv";
     std::filesystem::remove(path);
 
     constexpr std::array<std::uint32_t, 2> words{
         0x07230203U,
         0x00010000U,
     };
-    const auto* bytes = reinterpret_cast<const unsigned char*>(words.data());
-    write_binary_file(path, {bytes, bytes + sizeof(words)});
+    const auto* bytes = reinterpret_cast<const std::uint8_t*>(words.data());
+    const std::vector<std::uint8_t> spirv_bytes{bytes, bytes + sizeof(words)};
+    cubey::write_binary_file(path, spirv_bytes);
 
     const std::vector<std::uint32_t> loaded = cubey::read_spirv_file(path);
     require(loaded == std::vector<std::uint32_t>(words.begin(), words.end()),
@@ -45,11 +37,12 @@ void test_spirv_file_reads_aligned_words() {
     std::filesystem::remove(path);
 }
 
-void test_spirv_file_rejects_misaligned_byte_count() {
+void test_spirv_io_rejects_misaligned_byte_count() {
     const std::filesystem::path path =
-        std::filesystem::temp_directory_path() / "cubey_spirv_file_bad_test.spv";
+        std::filesystem::temp_directory_path() / "cubey_spirv_io_bad_test.spv";
     std::filesystem::remove(path);
-    write_binary_file(path, {0x03, 0x02, 0x23});
+    constexpr std::array<std::uint8_t, 3> bytes{0x03, 0x02, 0x23};
+    cubey::write_binary_file(path, bytes);
 
     bool rejected = false;
     try {

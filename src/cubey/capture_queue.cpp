@@ -1,6 +1,6 @@
 #include <cubey/capture_queue.h>
 
-#include <cubey/image_output.h>
+#include <cubey/image_io.h>
 
 #include <utility>
 

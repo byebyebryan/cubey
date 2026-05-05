@@ -1,12 +1,11 @@
-#include <cubey/image_output.h>
+#include <cubey/file_io.h>
+#include <cubey/image_io.h>
 
 #include <algorithm>
 #include <array>
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
-#include <fstream>
-#include <iterator>
 #include <stdexcept>
 #include <vector>
 
@@ -16,14 +15,6 @@ void require(bool condition, const char* message) {
     if (!condition) {
         throw std::runtime_error(message);
     }
-}
-
-std::vector<std::uint8_t> read_file(const std::filesystem::path& path) {
-    std::ifstream file(path, std::ios::binary);
-    if (!file) {
-        throw std::runtime_error("failed to open generated PNG");
-    }
-    return {std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()};
 }
 
 std::uint32_t read_be_u32(const std::vector<std::uint8_t>& bytes, std::size_t offset) {
@@ -38,9 +29,9 @@ std::uint32_t read_be_u32(const std::vector<std::uint8_t>& bytes, std::size_t of
 
 } // namespace
 
-void test_image_output_writes_rgba_png() {
+void test_image_io_writes_rgba_png() {
     const std::filesystem::path output =
-        std::filesystem::temp_directory_path() / "cubey_image_output_test.png";
+        std::filesystem::temp_directory_path() / "cubey_image_io_test.png";
     std::filesystem::remove(output);
 
     constexpr std::array<std::uint8_t, 16> pixels{
@@ -48,7 +39,7 @@ void test_image_output_writes_rgba_png() {
     };
     cubey::write_png_rgba8(output, 2, 2, pixels);
 
-    const std::vector<std::uint8_t> bytes = read_file(output);
+    const std::vector<std::uint8_t> bytes = cubey::read_binary_file(output);
     constexpr std::array<std::uint8_t, 8> png_signature{
         0x89, 'P', 'N', 'G', '\r', '\n', 0x1A, '\n',
     };

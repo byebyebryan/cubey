@@ -4,10 +4,11 @@ add_executable(cubey_core_tests
     command_pool_tests.cpp
     compute_pipeline_tests.cpp
     descriptor_tests.cpp
+    file_io_tests.cpp
     frame_clock_tests.cpp
     frame_stats_tests.cpp
     frame_ticket_tests.cpp
-    image_output_tests.cpp
+    image_io_tests.cpp
     jobs_tests.cpp
     main.cpp
     orbit_controller_tests.cpp
@@ -16,7 +17,7 @@ add_executable(cubey_core_tests
     rendering_tests.cpp
     render_context_tests.cpp
     resource_tests.cpp
-    spirv_file_tests.cpp
+    spirv_io_tests.cpp
     upload_queue_tests.cpp
 )
 

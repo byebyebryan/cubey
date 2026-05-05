@@ -1,6 +1,6 @@
 #include "headless_render_app.h"
 
-#include <cubey/image_output.h>
+#include <cubey/image_io.h>
 #include <cubey/vulkan/buffer.h>
 #include <cubey/vulkan/device.h>
 #include <cubey/vulkan/image.h>

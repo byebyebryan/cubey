@@ -1,6 +1,6 @@
 #include "triangle_app.h"
 
-#include <cubey/spirv_file.h>
+#include <cubey/spirv_io.h>
 #include <cubey/vulkan/command_pool.h>
 #include <cubey/vulkan/device.h>
 #include <cubey/vulkan/frame_resources.h>
