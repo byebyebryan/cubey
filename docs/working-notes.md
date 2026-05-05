@@ -50,6 +50,9 @@ As of 2026-05-05:
   async-shaped consumer: completed RGBA pixels can be queued for PNG encoding
   through `cubey::jobs`, with blocking waits made explicit through
   `CaptureTicket::finish()`.
+- Promoted `cubey::UploadQueue`, `UploadTicket`, and `QueuedUpload` as the
+  first upload-side request queue. It owns submitted CPU bytes and can be
+  drained by the future GPU owner without exposing Vulkan staging yet.
 - Promoted the first pipeline/descriptor ownership components:
   `PipelineLayout`, `GraphicsPipeline`, `ComputePipeline`,
   `DescriptorSetLayout`, and `DescriptorPool`. These wrappers own lifetimes but
@@ -366,3 +369,6 @@ env XDG_RUNTIME_DIR=/run/user/1000 WAYLAND_DISPLAY=wayland-1 DISPLAY=:1 XDG_CURR
 - Batch 2 added the CPU-side capture encoding queue. It does not change Vulkan
   readback yet; it establishes the ticket/wait vocabulary that later GPU
   capture polling should reuse.
+- Batch 3 added the CPU-side upload queue. It deliberately stops before Vulkan
+  staging/copy integration so the first project can submit upload intent without
+  forcing the final GPU scheduling shape.

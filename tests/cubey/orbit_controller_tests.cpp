@@ -39,6 +39,8 @@ void test_resource_helpers_describe_device_local_upload_and_depth_setup();
 void test_spirv_file_reads_aligned_words();
 void test_spirv_file_rejects_misaligned_byte_count();
 void test_transfer_helpers_describe_texture_and_readback_paths();
+void test_upload_queue_drains_in_submission_order();
+void test_upload_queue_owns_payload_until_drain();
 
 int main() {
     try {
@@ -61,6 +63,8 @@ int main() {
         test_spirv_file_reads_aligned_words();
         test_spirv_file_rejects_misaligned_byte_count();
         test_transfer_helpers_describe_texture_and_readback_paths();
+        test_upload_queue_owns_payload_until_drain();
+        test_upload_queue_drains_in_submission_order();
 
         cubey::OrbitController controller;
 

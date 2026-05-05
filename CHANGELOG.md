@@ -52,6 +52,8 @@ versioned section and use that section as the release notes.
   `InlineExecutor`, and `JobHandle` result wrapper.
 - Public PNG capture queue that moves completed RGBA pixels into job-backed
   encoding work and returns an explicit completion ticket.
+- Public upload request queue that owns submitted CPU bytes until the GPU owner
+  drains them.
 - Public frame timing, orbit-controller, and frame-stat types for interactive
   windowed examples.
 - `examples/window_clear`, a minimal Vulkan/GLFW dynamic-rendering windowed

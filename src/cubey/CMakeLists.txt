@@ -24,6 +24,7 @@ add_library(cubey STATIC
     jobs.cpp
     orbit_controller.cpp
     spirv_file.cpp
+    upload_queue.cpp
     vulkan/buffer.cpp
     vulkan/command_pool.cpp
     vulkan/descriptors.cpp

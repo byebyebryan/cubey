@@ -208,6 +208,12 @@ buffers and schedules PNG encoding through `cubey::jobs`, returning a
 readback is still direct in current examples; later slices should move the GPU
 copy/poll side behind the same request/ticket vocabulary.
 
+`cubey::UploadQueue` is the first upload-side request queue. It owns submitted
+CPU bytes, returns monotonic `UploadTicket` values, and lets the future GPU
+owner drain queued uploads in submission order. The queue is guarded internally
+so worker jobs can safely submit CPU-side upload requests before any Vulkan
+staging/copy work is introduced.
+
 ## Command Recording
 
 Keep current primary-command-buffer recording until command recording time is a
@@ -324,12 +330,14 @@ Status: initial pass complete.
 
 ### Slice 2: Async-Ready Upload And Capture Queues
 
-Status: capture encoding initial pass complete; upload queue remains next.
+Status: initial pass complete.
 
 - Added a CPU-side PNG capture queue for already-completed RGBA8 pixels.
 - Kept GPU readback unchanged while making PNG encoding job-backed and
   ticket-based.
 - Blocking waits now happen through explicit `CaptureTicket::finish()`.
+- Added a CPU-side upload request queue that owns submitted bytes until the GPU
+  owner drains them.
 
 ### Slice 3: First Project Runtime Boundary
 

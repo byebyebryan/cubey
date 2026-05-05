@@ -233,6 +233,7 @@ cubey/
       jobs.h               -- CPU job facade
       orbit_controller.h   -- basic orbit input state
       spirv_file.h         -- SPIR-V bytecode file loading
+      upload_queue.h       -- CPU-owned upload request queue
       vulkan/
         vk_check.h         -- Vulkan result helpers
         instance.h         -- instance, validation, debug messenger
@@ -259,6 +260,7 @@ cubey/
       jobs.cpp
       orbit_controller.cpp
       spirv_file.cpp
+      upload_queue.cpp
       stb_image_write.cpp -- isolated vendored PNG writer implementation
       vulkan/
         instance.cpp       -- instance, validation, debug messenger

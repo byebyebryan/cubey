@@ -266,11 +266,13 @@ Current state:
   CPU job facade.
 - `CaptureQueue` and `CaptureTicket` provide job-backed PNG encoding for
   completed RGBA pixel buffers.
+- `UploadQueue`, `UploadTicket`, and `QueuedUpload` provide the first CPU-owned
+  upload request queue.
 - `ImmediateCommands`, readback helpers, and PNG output are synchronous.
 
 Needed next:
 
-- Queue-shaped upload and capture APIs.
+- GPU readback/capture polling APIs.
 - Explicit GPU-owner vocabulary for serialized queue submission and GPU
   lifetime decisions.
 

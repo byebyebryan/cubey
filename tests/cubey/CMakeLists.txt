@@ -14,6 +14,7 @@ add_executable(cubey_core_tests
     render_context_tests.cpp
     resource_tests.cpp
     spirv_file_tests.cpp
+    upload_queue_tests.cpp
 )
 
 target_link_libraries(
