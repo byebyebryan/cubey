@@ -226,6 +226,7 @@ cubey/
   include/
     cubey/
       app_config.h         -- shared run configuration
+      capture_queue.h      -- job-backed PNG capture encoding queue
       frame_clock.h        -- frame timing
       frame_stats.h        -- lightweight telemetry formatting
       image_output.h       -- PNG artifact output
@@ -251,6 +252,7 @@ cubey/
   src/
     cubey/
       app_config.cpp
+      capture_queue.cpp
       frame_clock.cpp
       frame_stats.cpp
       image_output.cpp

@@ -46,6 +46,10 @@ As of 2026-05-05:
 - Promoted `cubey::jobs::JobSystem`, `InlineExecutor`, and `JobHandle` as the
   first CPU job facade. The implementation is standard-library-only for now,
   keeping Taskflow or `BS::thread_pool` swappable behind Cubey APIs later.
+- Promoted `cubey::CaptureQueue` and `CaptureTicket` as the first concrete
+  async-shaped consumer: completed RGBA pixels can be queued for PNG encoding
+  through `cubey::jobs`, with blocking waits made explicit through
+  `CaptureTicket::finish()`.
 - Promoted the first pipeline/descriptor ownership components:
   `PipelineLayout`, `GraphicsPipeline`, `ComputePipeline`,
   `DescriptorSetLayout`, and `DescriptorPool`. These wrappers own lifetimes but
@@ -359,3 +363,6 @@ env XDG_RUNTIME_DIR=/run/user/1000 WAYLAND_DISPLAY=wayland-1 DISPLAY=:1 XDG_CURR
 - Batch 1 of the threading/async loop landed the job facade first, with tests
   for immediate inline execution, worker result delivery, exception propagation,
   accepted-job completion during shutdown, and submit rejection after shutdown.
+- Batch 2 added the CPU-side capture encoding queue. It does not change Vulkan
+  readback yet; it establishes the ticket/wait vocabulary that later GPU
+  capture polling should reuse.

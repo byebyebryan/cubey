@@ -264,6 +264,8 @@ Current state:
 - All current Vulkan work runs through direct example loops.
 - `cubey::jobs::JobSystem`, `InlineExecutor`, and `JobHandle` provide the first
   CPU job facade.
+- `CaptureQueue` and `CaptureTicket` provide job-backed PNG encoding for
+  completed RGBA pixel buffers.
 - `ImmediateCommands`, readback helpers, and PNG output are synchronous.
 
 Needed next:

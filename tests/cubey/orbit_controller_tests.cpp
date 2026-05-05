@@ -21,6 +21,8 @@ void require_close(float actual, float expected, const char* message) {
 } // namespace
 
 void test_app_config_parses_png_output_path();
+void test_capture_queue_encodes_png_with_inline_executor();
+void test_capture_queue_propagates_encoding_errors();
 void test_command_pool_exposes_command_buffer_ownership();
 void test_compute_helpers_describe_pipeline_and_layout_setup();
 void test_descriptor_helpers_describe_layout_pool_and_writes();
@@ -41,6 +43,8 @@ void test_transfer_helpers_describe_texture_and_readback_paths();
 int main() {
     try {
         test_app_config_parses_png_output_path();
+        test_capture_queue_encodes_png_with_inline_executor();
+        test_capture_queue_propagates_encoding_errors();
         test_command_pool_exposes_command_buffer_ownership();
         test_compute_helpers_describe_pipeline_and_layout_setup();
         test_descriptor_helpers_describe_layout_pool_and_writes();

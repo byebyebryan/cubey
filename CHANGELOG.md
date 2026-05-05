@@ -50,6 +50,8 @@ versioned section and use that section as the release notes.
   projects.
 - Public CPU job facade with a worker-backed `JobSystem`, deterministic
   `InlineExecutor`, and `JobHandle` result wrapper.
+- Public PNG capture queue that moves completed RGBA pixels into job-backed
+  encoding work and returns an explicit completion ticket.
 - Public frame timing, orbit-controller, and frame-stat types for interactive
   windowed examples.
 - `examples/window_clear`, a minimal Vulkan/GLFW dynamic-rendering windowed

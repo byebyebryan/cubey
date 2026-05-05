@@ -1,5 +1,6 @@
 add_executable(cubey_core_tests
     app_config_tests.cpp
+    capture_queue_tests.cpp
     command_pool_tests.cpp
     compute_pipeline_tests.cpp
     descriptor_tests.cpp

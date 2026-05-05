@@ -102,6 +102,8 @@ Current checkpoint:
 - Reusable `cubey::jobs::JobSystem`, `InlineExecutor`, and `JobHandle` provide
   the first CPU job facade behind Cubey APIs without exposing a third-party
   executor.
+- Reusable `cubey::CaptureQueue` and `CaptureTicket` provide the first
+  async-shaped PNG encoding path over completed RGBA pixel buffers.
 - Reusable `cubey::vulkan::PipelineLayout`, `GraphicsPipeline`,
   `ComputePipeline`, `DescriptorSetLayout`, and `DescriptorPool` own basic
   pipeline and descriptor lifetimes while still taking raw Vulkan create-info
@@ -217,7 +219,8 @@ building a full threaded renderer too early.
 
 - Added a small `cubey::jobs` facade around a standard-library worker executor.
 - Keep third-party task/executor types out of public Cubey APIs.
-- Shape uploads, captures, readbacks, and PNG encoding as queued work.
+- Added job-backed PNG capture encoding as the first queued work consumer.
+- Shape uploads, GPU readbacks, and deeper capture polling as queued work.
 - Keep GPU ownership and `VkQueue` submission serialized through one owner.
 - Keep examples direct; require longer-lived `projects/` to use the
   async-ready structure once it exists.

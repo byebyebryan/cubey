@@ -202,6 +202,12 @@ The headless path may still block at process shutdown to produce its required
 artifact, but the runtime should make the blocking wait visible and keep the
 interactive path non-stalling.
 
+Initial implementation: `cubey::CaptureQueue` accepts completed RGBA8 pixel
+buffers and schedules PNG encoding through `cubey::jobs`, returning a
+`CaptureTicket` whose `finish()` call makes the blocking wait explicit. GPU
+readback is still direct in current examples; later slices should move the GPU
+copy/poll side behind the same request/ticket vocabulary.
+
 ## Command Recording
 
 Keep current primary-command-buffer recording until command recording time is a
@@ -318,9 +324,12 @@ Status: initial pass complete.
 
 ### Slice 2: Async-Ready Upload And Capture Queues
 
-- Add CPU-side request/result queues without changing GPU behavior much.
-- Keep processing synchronous on the GPU owner at first.
-- Make blocking waits explicit, especially for headless output.
+Status: capture encoding initial pass complete; upload queue remains next.
+
+- Added a CPU-side PNG capture queue for already-completed RGBA8 pixels.
+- Kept GPU readback unchanged while making PNG encoding job-backed and
+  ticket-based.
+- Blocking waits now happen through explicit `CaptureTicket::finish()`.
 
 ### Slice 3: First Project Runtime Boundary
 
