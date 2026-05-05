@@ -27,8 +27,8 @@ versioned section and use that section as the release notes.
   `ImmediateCommands` components for device resources, generated texture paths,
   depth attachments, and setup uploads.
 - Public Vulkan transfer/readback helpers for readback buffers, sampled image
-  configs, buffer-image copies, and storage/transfer/sampling image layout
-  transitions.
+  configs, buffer-image copies, and storage, transfer, sampled-image readback,
+  and sampling image layout transitions.
 - Public Vulkan pipeline and descriptor RAII types, plus descriptor write
   helpers, pipeline-layout create-info helpers, a compute pipeline create-info
   helper, and a dynamic graphics pipeline create-info helper for the current

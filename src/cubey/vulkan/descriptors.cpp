@@ -6,7 +6,7 @@
 
 namespace cubey::vulkan {
 
-VkWriteDescriptorSet DescriptorBufferWrite::descriptor_write() const {
+VkWriteDescriptorSet DescriptorBufferWrite::descriptor_write() const& {
     auto result = vk_struct<VkWriteDescriptorSet>(VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET);
     result.dstSet = set;
     result.dstBinding = binding;
@@ -16,7 +16,7 @@ VkWriteDescriptorSet DescriptorBufferWrite::descriptor_write() const {
     return result;
 }
 
-VkWriteDescriptorSet DescriptorImageWrite::descriptor_write() const {
+VkWriteDescriptorSet DescriptorImageWrite::descriptor_write() const& {
     auto result = vk_struct<VkWriteDescriptorSet>(VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET);
     result.dstSet = set;
     result.dstBinding = binding;

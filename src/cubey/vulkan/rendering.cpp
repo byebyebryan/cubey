@@ -96,7 +96,7 @@ ImageLayoutTransition finish_transfer_dst_for_sampling_transition(VkImage image)
     };
 }
 
-ImageLayoutTransition begin_transfer_src_transition(VkImage image) {
+ImageLayoutTransition begin_sampled_image_readback_transition(VkImage image) {
     return {
         .image = image,
         .aspect_mask = VK_IMAGE_ASPECT_COLOR_BIT,

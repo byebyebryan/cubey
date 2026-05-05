@@ -99,11 +99,11 @@ void test_rendering_helpers_describe_dynamic_rendering_setup() {
             "transfer sampled transition should wait on transfer writes");
 
     const cubey::vulkan::ImageLayoutTransition transfer_src =
-        cubey::vulkan::begin_transfer_src_transition(image);
+        cubey::vulkan::begin_sampled_image_readback_transition(image);
     require(transfer_src.new_layout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-            "transfer src transition should target transfer src layout");
+            "sampled-image readback transition should target transfer src layout");
     require(transfer_src.dst_access_mask == VK_ACCESS_TRANSFER_READ_BIT,
-            "transfer src transition should allow transfer reads");
+            "sampled-image readback transition should allow transfer reads");
 
     const VkImageMemoryBarrier barrier = cubey::vulkan::image_memory_barrier(begin_depth);
     require(barrier.sType == VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,

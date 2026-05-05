@@ -179,7 +179,7 @@ Current state:
   construction.
 - `DepthAttachment` covers the current reusable depth target ownership path.
 - Rendering helpers also cover current storage-image, transfer-destination,
-  transfer-source, and sampling transition paths.
+  sampled-image readback, and sampling transition paths.
 
 Needed next:
 

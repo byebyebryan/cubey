@@ -82,8 +82,8 @@ Current checkpoint:
   shared depth format selection.
 - Reusable `cubey::vulkan` transfer/readback helpers cover readback buffers,
   sampled image configs, buffer-image copy regions, buffer-to-image copies,
-  image-to-buffer copies, and current storage/transfer/sampling image layout
-  transitions.
+  image-to-buffer copies, and current storage, transfer, sampled-image readback,
+  and sampling image layout transitions.
 - Reusable `cubey::vulkan::PipelineLayout`, `GraphicsPipeline`,
   `ComputePipeline`, `DescriptorSetLayout`, and `DescriptorPool` own basic
   pipeline and descriptor lifetimes while still taking raw Vulkan create-info

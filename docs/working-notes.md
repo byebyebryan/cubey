@@ -62,7 +62,8 @@ As of 2026-05-04:
   and dispatch choices explicit.
 - Promoted transfer/readback helpers for readback buffers, generated/uploaded
   sampled image configs, buffer-image copy regions, buffer-to-image and
-  image-to-buffer copies, and named storage/transfer/sampling transitions.
+  image-to-buffer copies, and named storage, transfer, sampled-image readback,
+  and sampling transitions.
   `textured_cube` now uses the shared generated-texture config and storage
   transition helpers.
 - Promoted `SwapchainRecreateTracker` for the one clearly repeated frame-loop

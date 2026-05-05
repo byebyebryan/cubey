@@ -26,7 +26,9 @@ struct DescriptorBufferWrite {
     std::uint32_t binding = 0;
     VkDescriptorType descriptor_type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 
-    [[nodiscard]] VkWriteDescriptorSet descriptor_write() const;
+    // The returned Vulkan write points at this object's info member.
+    [[nodiscard]] VkWriteDescriptorSet descriptor_write() const&;
+    VkWriteDescriptorSet descriptor_write() const&& = delete;
 };
 
 struct DescriptorImageWrite {
@@ -35,7 +37,9 @@ struct DescriptorImageWrite {
     std::uint32_t binding = 0;
     VkDescriptorType descriptor_type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
 
-    [[nodiscard]] VkWriteDescriptorSet descriptor_write() const;
+    // The returned Vulkan write points at this object's info member.
+    [[nodiscard]] VkWriteDescriptorSet descriptor_write() const&;
+    VkWriteDescriptorSet descriptor_write() const&& = delete;
 };
 
 [[nodiscard]] DescriptorBufferWrite uniform_buffer_descriptor(VkDescriptorSet set,

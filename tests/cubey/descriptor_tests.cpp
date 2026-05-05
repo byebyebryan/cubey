@@ -4,6 +4,7 @@
 
 #include <array>
 #include <stdexcept>
+#include <utility>
 
 namespace {
 
@@ -13,9 +14,15 @@ void require(bool condition, const char* message) {
     }
 }
 
+template <typename T>
+concept RvalueDescriptorWriteCallable = requires(T value) { std::move(value).descriptor_write(); };
+
 } // namespace
 
 void test_descriptor_helpers_describe_layout_pool_and_writes() {
+    static_assert(!RvalueDescriptorWriteCallable<cubey::vulkan::DescriptorBufferWrite>);
+    static_assert(!RvalueDescriptorWriteCallable<cubey::vulkan::DescriptorImageWrite>);
+
     const VkDescriptorSet descriptor_set = reinterpret_cast<VkDescriptorSet>(0x10);
     const VkBuffer uniform_buffer = reinterpret_cast<VkBuffer>(0x20);
     const VkImageView storage_view = reinterpret_cast<VkImageView>(0x30);
