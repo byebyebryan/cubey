@@ -69,9 +69,10 @@ As of 2026-05-05:
   dynamic-rendering graphics pipeline shape: one color attachment, optional
   depth, fixed viewport/scissor from swapchain extent, single-sample raster
   state, and explicit shader/layout/vertex-input choices from the caller.
-- Promoted narrow rendering helpers for image layout transitions and
+- Promoted narrow Vulkan helpers for image layout transitions and
   dynamic-rendering color/depth attachment setup. They reduce repeated Vulkan
-  struct boilerplate without owning command recording or render policy.
+  struct boilerplate without owning command recording or render policy, and now
+  live in separate `image_transitions` and `dynamic_rendering` modules.
 - Promoted resource helpers for staging buffer config, device-local buffer
   upload/copy, depth format selection, depth image config, and `DepthAttachment`
   ownership. The cube examples now share this setup instead of carrying local

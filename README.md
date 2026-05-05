@@ -53,8 +53,9 @@ writes an inspectable PNG.
 `examples/fractal` adds a fullscreen Mandelbrot-style shader path with windowed
 navigation and a headless PNG mode.
 `cubey` owns the reusable Vulkan instance, device, buffer, image, sampler,
-swapchain, shader-module, command-pool, rendering helpers, frame clock,
-orbit-controller, CPU job facade, PNG capture queue, upload request queue,
+swapchain, shader-module, command-pool, image-transition and dynamic-rendering
+helpers, frame clock, orbit-controller, CPU job facade, PNG capture queue,
+upload request queue,
 frame tickets/deferred destruction, async-ready project runtime vocabulary,
 binary file I/O, SPIR-V file loading, pipeline ownership, dynamic graphics
 pipeline setup, descriptor setup/write helpers, compute pipeline setup, depth

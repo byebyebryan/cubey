@@ -2,10 +2,11 @@
 
 #include <cubey/vulkan/command_pool.h>
 #include <cubey/vulkan/device.h>
+#include <cubey/vulkan/dynamic_rendering.h>
 #include <cubey/vulkan/frame_resources.h>
+#include <cubey/vulkan/image_transitions.h>
 #include <cubey/vulkan/instance.h>
 #include <cubey/vulkan/render_context.h>
-#include <cubey/vulkan/rendering.h>
 #include <cubey/vulkan/swapchain.h>
 #include <cubey/vulkan/vk_check.h>
 

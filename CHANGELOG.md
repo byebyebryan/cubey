@@ -43,8 +43,8 @@ versioned section and use that section as the release notes.
   swapchain-recreate signaling.
 - Public Vulkan `SwapchainRecreateTracker` helper for guarding repeated
   out-of-date/suboptimal recreate loops.
-- Public Vulkan rendering helpers for current image layout transitions and
-  dynamic-rendering color/depth attachment setup.
+- Public Vulkan image transition helpers and dynamic-rendering color/depth
+  attachment setup helpers.
 - GLSL shader helper support for shared include directories and dependency
   tracking.
 - Public SPIR-V I/O helper for shader-backed examples and future projects.

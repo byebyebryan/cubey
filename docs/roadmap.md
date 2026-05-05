@@ -127,9 +127,10 @@ Current checkpoint:
   dynamic-rendering graphics pipeline create-info shape for one color
   attachment plus optional depth, while examples still choose shaders, layouts,
   vertex input, descriptors, and depth usage explicitly.
-- Reusable `cubey::vulkan` rendering helpers build the current color/depth
-  attachment transitions and dynamic-rendering attachment descriptors without
-  owning render policy.
+- Reusable `cubey::vulkan` image-transition helpers build the current
+  color/depth/storage/transfer layout transitions, while dynamic-rendering
+  helpers build color/depth attachment descriptors without owning render
+  policy.
 - Reusable `cubey::vulkan::RenderContext` exposes explicit `begin_frame` and
   `end_frame` calls for the common surface-backed acquire, command reset,
   submit, present, and out-of-date result path used by all current windowed

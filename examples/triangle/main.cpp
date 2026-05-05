@@ -1,4 +1,4 @@
-#include <cubey/app_config.h>
+#include <cubey/run_config.h>
 
 #include "triangle_app.h"
 

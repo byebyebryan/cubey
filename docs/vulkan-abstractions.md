@@ -128,8 +128,9 @@ Current state:
   image config, and buffer-image copy regions.
 - Shared buffer helpers cover readback buffer config and host-visible coherent
   download.
-- Shared image/rendering helpers now cover the first offscreen color render
-  target and color-attachment-to-readback transition used by headless output.
+- Shared image and image-transition helpers now cover the first offscreen color
+  render target and color-attachment-to-readback transition used by headless
+  output.
 - Examples still own some resource policy, including when transfers and
   readback are used.
 - Upload and capture behavior is still direct/blocking at the example level.
@@ -198,10 +199,10 @@ Defer:
 Current state:
 
 - Dynamic rendering is the primary path.
-- Rendering helpers cover current color/depth transitions and attachment-info
-  construction.
+- `image_transitions` covers current color/depth/storage/transfer layout
+  transitions; `dynamic_rendering` covers attachment-info construction.
 - `DepthAttachment` covers the current reusable depth target ownership path.
-- Rendering helpers also cover current storage-image, transfer-destination,
+- `image_transitions` also covers current storage-image, transfer-destination,
   sampled-image readback, color-attachment readback, and sampling transition
   paths.
 

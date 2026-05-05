@@ -16,7 +16,7 @@ set_target_properties(cubey_stb_image_write PROPERTIES CXX_CLANG_TIDY "")
 
 add_library(cubey STATIC
     $<TARGET_OBJECTS:cubey_stb_image_write>
-    app_config.cpp
+    run_config.cpp
     capture_queue.cpp
     file_io.cpp
     frame_clock.cpp
@@ -32,12 +32,13 @@ add_library(cubey STATIC
     vulkan/command_pool.cpp
     vulkan/descriptors.cpp
     vulkan/device.cpp
+    vulkan/dynamic_rendering.cpp
     vulkan/frame_resources.cpp
     vulkan/image.cpp
     vulkan/immediate_commands.cpp
     vulkan/instance.cpp
     vulkan/pipeline.cpp
-    vulkan/rendering.cpp
+    vulkan/image_transitions.cpp
     vulkan/render_context.cpp
     vulkan/sampler.cpp
     vulkan/shader_module.cpp

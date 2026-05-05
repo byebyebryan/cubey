@@ -225,7 +225,7 @@ cubey/
     CubeyWarnings.cmake    -- compiler warning helper
   include/
     cubey/
-      app_config.h         -- shared run configuration
+      run_config.h         -- shared run configuration
       capture_queue.h      -- job-backed PNG capture encoding queue
       file_io.h            -- generic binary file reads/writes
       frame_clock.h        -- frame timing
@@ -247,15 +247,16 @@ cubey/
         frame_resources.h  -- per-frame command/sync resources
         image.h            -- Vulkan image, memory, and image-view ownership
         immediate_commands.h -- one-shot setup command submission
+        dynamic_rendering.h -- dynamic-rendering attachment helpers
+        image_transitions.h -- image layout transitions and barriers
         pipeline.h         -- pipeline ownership and graphics setup helpers
-        rendering.h        -- image transitions and dynamic-rendering helpers
         render_context.h   -- surface-backed begin/end frame lifecycle
         sampler.h          -- Vulkan sampler ownership
         shader_module.h    -- shader module lifetime
         swapchain.h        -- swapchain images and image views
   src/
     cubey/
-      app_config.cpp
+      run_config.cpp
       capture_queue.cpp
       file_io.cpp
       frame_clock.cpp
@@ -277,8 +278,9 @@ cubey/
         frame_resources.cpp -- command buffers and sync objects
         image.cpp          -- images, memory, and image views
         immediate_commands.cpp -- one-shot setup command submission
+        dynamic_rendering.cpp -- dynamic-rendering attachment helpers
+        image_transitions.cpp -- image layout transitions and barriers
         pipeline.cpp       -- pipeline ownership and graphics setup helpers
-        rendering.cpp      -- image transitions and dynamic-rendering helpers
         render_context.cpp -- surface-backed begin/end frame lifecycle
         sampler.cpp        -- samplers
         shader_module.cpp  -- shader module lifetime

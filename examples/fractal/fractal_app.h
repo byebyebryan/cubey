@@ -1,6 +1,6 @@
 #pragma once
 
-#include <cubey/app_config.h>
+#include <cubey/run_config.h>
 
 namespace cubey::examples::fractal {
 

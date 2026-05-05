@@ -29,9 +29,4 @@ finish_storage_image_write_for_sampling_transition(VkImage image);
 void transition_image_layout(VkCommandBuffer command_buffer,
                              const ImageLayoutTransition& transition);
 
-[[nodiscard]] VkRenderingAttachmentInfo color_rendering_attachment(VkImageView image_view,
-                                                                   VkClearValue clear);
-[[nodiscard]] VkRenderingAttachmentInfo depth_rendering_attachment(VkImageView image_view,
-                                                                   VkClearValue clear);
-
 } // namespace cubey::vulkan

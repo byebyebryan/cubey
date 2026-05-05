@@ -1,9 +1,10 @@
 add_executable(cubey_core_tests
-    app_config_tests.cpp
+    run_config_tests.cpp
     capture_queue_tests.cpp
     command_pool_tests.cpp
     compute_pipeline_tests.cpp
     descriptor_tests.cpp
+    dynamic_rendering_tests.cpp
     file_io_tests.cpp
     frame_clock_tests.cpp
     frame_stats_tests.cpp
@@ -14,7 +15,7 @@ add_executable(cubey_core_tests
     orbit_controller_tests.cpp
     pipeline_tests.cpp
     project_runtime_tests.cpp
-    rendering_tests.cpp
+    image_transitions_tests.cpp
     render_context_tests.cpp
     resource_tests.cpp
     spirv_io_tests.cpp
