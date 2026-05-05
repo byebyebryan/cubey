@@ -183,20 +183,39 @@ Exit criteria:
   new layout assumptions by name.
 - The docs identify what still belongs to examples versus a future runtime host.
 
-## Phase 3: First Real Project
+## Phase 3: Fractal Example
 
 Status: next.
+
+Goal: add a small fractal example that proves fullscreen rendering and reuses
+the headless artifact path without pretending to justify a project runtime.
+
+- Add `examples/fractal` as a fullscreen Mandelbrot-style shader smoke.
+- Keep windowed setup, command recording, and navigation example-local.
+- Reuse existing dynamic graphics pipeline helpers.
+- Reuse the headless render-target/readback/PNG path for deterministic output.
+- Promote only narrow fullscreen helpers if duplication with `triangle` becomes
+  obvious in the diff.
+
+Exit criteria:
+
+- The example runs interactively with a window.
+- The same example can run headlessly and produce a deterministic PNG artifact.
+- README contains the exact commands for local smoke testing.
+
+## Phase 4: First Real Project
+
+Status: after the fractal example.
 
 Goal: prove the framework with one non-trivial procedural graphics project and
 let repeated project needs shape the app/runtime API.
 
 Candidate projects:
 
-- Fractal renderer for the fastest end-to-end visual loop and the simplest
-  headless/windowed comparison.
 - GPU particle system for compute plus graphics pipeline pressure.
 - Fluid simulation rewrite for the strongest connection to the original cubey,
   after the runtime has more evidence.
+- Marching cubes for compute-generated geometry and indirect draw pressure.
 
 Exit criteria:
 
@@ -205,9 +224,10 @@ Exit criteria:
   deterministic output artifact.
 - README contains the exact commands for local smoke testing.
 
-## Phase 4: Runtime Extraction
+## Phase 5: Runtime Extraction
 
-Status: defer until Phase 2 and Phase 3 provide real pressure.
+Status: defer until the fractal example and first real project provide real
+pressure.
 
 Goal: extract only the host concepts that repeated windowed/headless project code
 has proven useful.

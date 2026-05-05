@@ -175,8 +175,7 @@ library. Runnable binaries should be named explicitly and live in either
   path. Current examples are `window_clear`, `triangle`, `spinning_cube`,
   `textured_cube`, and `headless_render`.
 - `projects/` - first-class graphics experiments and longer-lived creative
-  work, such as `fluid_sim`, `particles`, `marching_cubes`, `fractal`, and
-  `sdf_sculpt`.
+  work, such as `fluid_sim`, `particles`, `marching_cubes`, and `sdf_sculpt`.
 - `third_party/` - small vendored dependencies with explicit license notes.
 - `tools/` - repo utilities, asset processors, shader tools, or diagnostics.
 - `tests/` - unit and integration tests.
@@ -261,6 +260,7 @@ cubey/
     textured_cube/         -- compute texture generation, uniforms, descriptors,
                               sampling
     headless_render/       -- minimal offscreen image path
+    fractal/               -- planned fullscreen fractal shader smoke
   projects/
       fluid_sim/
         CMakeLists.txt
@@ -273,7 +273,6 @@ cubey/
       sdf_sculpt/
       particles/
       marching_cubes/
-      fractal/
   tools/
   tests/
   benchmarks/

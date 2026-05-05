@@ -83,7 +83,8 @@ versioned section and use that section as the release notes.
 - Windowed examples now share recreate-attempt tracking while still owning their
   swapchain resource rebuild steps.
 - Roadmap and Vulkan abstraction docs now route the next framework checkpoint
-  toward the first real project before a broader app/runtime host.
+  toward a lightweight fractal example before a real project or broader
+  app/runtime host.
 
 ## Pre-2.0 History
 

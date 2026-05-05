@@ -98,9 +98,10 @@ As of 2026-05-05:
   vertex-input, descriptor layout choices, dispatch choices, and render policy.
 - CTest covers no-display terminal boundaries, graphical runs when a desktop
   window context is injected, and the headless PNG artifact path.
-- Roadmap alignment: the next framework driver should be the first real project.
-  A broad app/runtime layer should wait until both windowed and headless project
-  paths repeat the same shape.
+- Roadmap alignment: the next framework driver should be a lightweight
+  `examples/fractal` target, not `projects/fractal`. A broad app/runtime layer
+  should wait until both windowed and headless real project paths repeat the same
+  shape.
 - The current useful manual desktop smokes are:
 
 ```bash

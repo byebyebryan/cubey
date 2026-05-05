@@ -346,18 +346,33 @@ Implemented work loop:
    first. Keep it no-window and no-GLFW.
 4. Artifact test slice: add CTest coverage that runs the example with validation
    enabled when available, writes into the build tree, and checks PNG signature.
-5. Review checkpoint: complete for the clear-based PNG smoke. A simple
-   fullscreen shader remains optional; the stronger next signal is likely the
-   first real project.
+5. Review checkpoint: complete for the clear-based PNG smoke. The next signal
+   is a lightweight fullscreen fractal example before the first real project.
 
-### Batch 6: First Project And Runtime Pressure
+### Batch 6: Fractal Example
+
+Goal: prove fullscreen rendering and headless artifact reuse with an example,
+not a project runtime.
+
+- Add `examples/fractal` with a fullscreen Mandelbrot-style fragment shader.
+- Keep windowed setup, command recording, and controls example-local.
+- Add a headless PNG path through the existing offscreen render-target/readback
+  helpers.
+- Extract only a narrow fullscreen helper if duplication with `triangle` is
+  clearer after implementation.
+
+This is still example work. It should not create a project interface around
+setup, update, render, resize, or shutdown.
+
+### Batch 7: First Project And Runtime Pressure
 
 Goal: let a real project define the app/runtime seam.
 
-- Start with a small `projects/fractal` if the goal is fast visual signal.
-- Use the headless artifact path from Batch 5 for deterministic smoke output.
+- Start with particles, fluid simulation, or marching cubes once the fractal
+  example has proven the fullscreen/headless loop.
+- Use the headless artifact path for deterministic smoke output.
 - Extract shared lifecycle or host code only when both windowed and headless
-  paths repeat the same shape.
+  paths repeat the same shape in real project code.
 - Keep examples as reference programs; move longer-lived creative work under
   `projects/`.
 
@@ -367,6 +382,5 @@ resize, and shutdown may become worthwhile.
 ## Near-Term Recommendation
 
 Batch 1 through Batch 5 have their first passes on `main`. Start Batch 6 next:
-a small real project, likely `projects/fractal`, that uses the current windowed
-and headless paths. Let that project define whether a runtime host is worth
-extracting.
+a lightweight `examples/fractal` target that uses the current windowed and
+headless paths. Save real runtime pressure for Batch 7.

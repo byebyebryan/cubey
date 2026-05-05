@@ -59,10 +59,11 @@ command/sync components, and swapchain recreate-attempt tracking; examples still
 own GLFW, surface creation, command recording, and resize policy. The spike
 branches remain reference material for deeper compute and browser work.
 
-The next framework checkpoint should come from the first real project. A small
-fractal renderer is the likely fastest path because it can reuse the current
-windowed and headless artifact paths without forcing a broad app/runtime host
-upfront.
+The next framework checkpoint should be a lightweight `examples/fractal` target.
+That is still example-sized: a fullscreen shader, optional headless PNG output,
+and only enough navigation to make the result inspectable. A first real project
+should wait until there is stronger pressure than a small Mandelbrot-style
+smoke.
 
 ## Development Setup
 
