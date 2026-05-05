@@ -14,6 +14,7 @@ option(CUBEY_BUILD_EXAMPLES "Build Cubey examples" ON)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(CubeyShaders)
+include(CubeySmokeTests)
 include(CubeyWarnings)
 
 if (CUBEY_ENABLE_CLANG_TIDY)

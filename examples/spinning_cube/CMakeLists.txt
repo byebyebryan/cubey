@@ -28,11 +28,9 @@ cubey_add_glsl_shaders(
 )
 
 if (BUILD_TESTING)
-    add_test(
-        NAME spinning_cube_reaches_glfw
-        COMMAND
-            /bin/sh -c
-            "out=$($<TARGET_FILE:cubey_example_spinning_cube> --frames 1 --width 64 --height 64 2>&1); status=$?; printf '%s\n' \"$out\"; if [ $status -eq 0 ]; then printf '%s\n' \"$out\" | grep -q 'spinning_cube: .*rendering indexed cube'; else printf '%s\n' \"$out\" | grep -q 'glfwInit failed\\|GLFW reports Vulkan is not supported'; fi"
+    cubey_add_windowed_smoke_test(
+        spinning_cube_reaches_glfw
+        cubey_example_spinning_cube
+        "spinning_cube: .*rendering indexed cube"
     )
-    set_tests_properties(spinning_cube_reaches_glfw PROPERTIES TIMEOUT 10)
 endif()

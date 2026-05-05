@@ -15,11 +15,9 @@ target_link_libraries(
 )
 
 if (BUILD_TESTING)
-    add_test(
-        NAME window_clear_reaches_glfw
-        COMMAND
-            /bin/sh -c
-            "out=$($<TARGET_FILE:cubey_example_window_clear> --frames 1 --width 64 --height 64 2>&1); status=$?; printf '%s\n' \"$out\"; if [ $status -eq 0 ]; then printf '%s\n' \"$out\" | grep -q 'window_clear:'; else printf '%s\n' \"$out\" | grep -q 'glfwInit failed\\|GLFW reports Vulkan is not supported'; fi"
+    cubey_add_windowed_smoke_test(
+        window_clear_reaches_glfw
+        cubey_example_window_clear
+        "window_clear:"
     )
-    set_tests_properties(window_clear_reaches_glfw PROPERTIES TIMEOUT 10)
 endif()
