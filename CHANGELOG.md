@@ -57,6 +57,8 @@ versioned section and use that section as the release notes.
   with descriptor-backed scene uniforms and dynamic rendering.
 - `examples/headless_render`, a no-window Vulkan smoke that renders an
   offscreen color target, reads it back, and writes a PNG artifact.
+- `examples/fractal`, a fullscreen Mandelbrot-style shader smoke with
+  example-local pan/zoom/reset navigation and headless PNG output.
 - CTest smoke that accepts either successful window startup or the known
   no-display GLFW failure in terminal sessions.
 - CTest smoke for headless PNG artifact creation and PNG signature validation.
@@ -83,8 +85,7 @@ versioned section and use that section as the release notes.
 - Windowed examples now share recreate-attempt tracking while still owning their
   swapchain resource rebuild steps.
 - Roadmap and Vulkan abstraction docs now route the next framework checkpoint
-  toward a lightweight fractal example before a real project or broader
-  app/runtime host.
+  toward a real project before a broader app/runtime host.
 
 ## Pre-2.0 History
 

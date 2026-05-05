@@ -346,20 +346,22 @@ Implemented work loop:
    first. Keep it no-window and no-GLFW.
 4. Artifact test slice: add CTest coverage that runs the example with validation
    enabled when available, writes into the build tree, and checks PNG signature.
-5. Review checkpoint: complete for the clear-based PNG smoke. The next signal
-   is a lightweight fullscreen fractal example before the first real project.
+5. Review checkpoint: complete for the clear-based PNG smoke.
 
 ### Batch 6: Fractal Example
 
 Goal: prove fullscreen rendering and headless artifact reuse with an example,
 not a project runtime.
 
-- Add `examples/fractal` with a fullscreen Mandelbrot-style fragment shader.
-- Keep windowed setup, command recording, and controls example-local.
-- Add a headless PNG path through the existing offscreen render-target/readback
+- Status: initial pass complete on `main`.
+- Added `examples/fractal` with a fullscreen Mandelbrot-style fragment shader.
+- Kept windowed setup, command recording, and controls example-local.
+- Added a headless PNG path through the existing offscreen render-target/readback
   helpers.
-- Extract only a narrow fullscreen helper if duplication with `triangle` is
-  clearer after implementation.
+- Added example-local view math for drag pan, wheel zoom, reset, and push
+  constants.
+- Did not extract a fullscreen helper; the new code stayed clearer as explicit
+  example code for now.
 
 This is still example work. It should not create a project interface around
 setup, update, render, resize, or shutdown.
@@ -368,7 +370,7 @@ setup, update, render, resize, or shutdown.
 
 Goal: let a real project define the app/runtime seam.
 
-- Start with particles, fluid simulation, or marching cubes once the fractal
+- Start with particles, fluid simulation, or marching cubes now that the fractal
   example has proven the fullscreen/headless loop.
 - Use the headless artifact path for deterministic smoke output.
 - Extract shared lifecycle or host code only when both windowed and headless
@@ -381,6 +383,6 @@ resize, and shutdown may become worthwhile.
 
 ## Near-Term Recommendation
 
-Batch 1 through Batch 5 have their first passes on `main`. Start Batch 6 next:
-a lightweight `examples/fractal` target that uses the current windowed and
-headless paths. Save real runtime pressure for Batch 7.
+Batch 1 through Batch 6 have their first passes on `main`. Start Batch 7 next:
+a real project that can create enough pressure to judge whether an app/runtime
+host is worth extracting.

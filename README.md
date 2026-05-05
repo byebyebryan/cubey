@@ -49,6 +49,8 @@ fragment-shader sampling through dynamic rendering.
 `examples/headless_render` adds the first no-window artifact path: it renders
 an offscreen color target through dynamic rendering, reads the image back, and
 writes an inspectable PNG.
+`examples/fractal` adds a fullscreen Mandelbrot-style shader path with windowed
+navigation and a headless PNG mode.
 `cubey` owns the reusable Vulkan instance, device, buffer, image, sampler,
 swapchain, shader-module, command-pool, rendering helpers, frame clock,
 orbit-controller, pipeline ownership, dynamic graphics pipeline setup,
@@ -59,11 +61,9 @@ command/sync components, and swapchain recreate-attempt tracking; examples still
 own GLFW, surface creation, command recording, and resize policy. The spike
 branches remain reference material for deeper compute and browser work.
 
-The next framework checkpoint should be a lightweight `examples/fractal` target.
-That is still example-sized: a fullscreen shader, optional headless PNG output,
-and only enough navigation to make the result inspectable. A first real project
-should wait until there is stronger pressure than a small Mandelbrot-style
-smoke.
+The next framework checkpoint should come from a first real project such as
+particles, fluid simulation, or marching cubes. The fractal slice stayed
+example-sized and did not justify a broad app/runtime host.
 
 ## Development Setup
 
@@ -84,12 +84,14 @@ The windowed smoke targets are:
 ./build/dev/examples/triangle/triangle --frames 300 --width 1280 --height 720
 ./build/dev/examples/spinning_cube/spinning_cube --frames 300 --width 1280 --height 720
 ./build/dev/examples/textured_cube/textured_cube --frames 300 --width 1280 --height 720
+./build/dev/examples/fractal/fractal --frames 300 --width 1280 --height 720
 ```
 
-The headless PNG smoke is:
+The headless PNG smokes are:
 
 ```bash
 ./build/dev/examples/headless_render/headless_render --width 640 --height 360 --output /tmp/cubey-headless.png
+./build/dev/examples/fractal/fractal --headless --width 640 --height 360 --output /tmp/cubey-fractal.png
 ```
 
 Use validation as a hard requirement when the validation layers are installed:
@@ -99,13 +101,18 @@ Use validation as a hard requirement when the validation layers are installed:
 ./build/dev/examples/triangle/triangle --require-validation --frames 300 --width 1280 --height 720
 ./build/dev/examples/spinning_cube/spinning_cube --require-validation --frames 300 --width 1280 --height 720
 ./build/dev/examples/textured_cube/textured_cube --require-validation --frames 300 --width 1280 --height 720
+./build/dev/examples/fractal/fractal --require-validation --frames 300 --width 1280 --height 720
 ./build/dev/examples/headless_render/headless_render --require-validation --width 640 --height 360 --output /tmp/cubey-headless.png
+./build/dev/examples/fractal/fractal --headless --require-validation --width 640 --height 360 --output /tmp/cubey-fractal.png
 ```
 
 `textured_cube` supports basic interaction: left-drag rotates the shaded
 compute-textured cube, Space pauses/resumes auto-rotation, `R` resets the view,
 and Escape closes the window. Its window title periodically reports FPS, frame
 time, swapchain extent, triangle count, and pixel rate.
+
+`fractal` supports basic navigation: left-drag pans, mouse wheel zooms around
+the cursor, `R` resets the view, and Escape closes the window.
 
 The repo also includes:
 

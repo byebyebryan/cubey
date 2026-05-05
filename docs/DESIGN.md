@@ -260,7 +260,7 @@ cubey/
     textured_cube/         -- compute texture generation, uniforms, descriptors,
                               sampling
     headless_render/       -- minimal offscreen image path
-    fractal/               -- planned fullscreen fractal shader smoke
+    fractal/               -- fullscreen fractal shader smoke and headless PNG
   projects/
       fluid_sim/
         CMakeLists.txt

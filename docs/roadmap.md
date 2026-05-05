@@ -185,17 +185,17 @@ Exit criteria:
 
 ## Phase 3: Fractal Example
 
-Status: next.
+Status: initial pass complete.
 
 Goal: add a small fractal example that proves fullscreen rendering and reuses
 the headless artifact path without pretending to justify a project runtime.
 
-- Add `examples/fractal` as a fullscreen Mandelbrot-style shader smoke.
-- Keep windowed setup, command recording, and navigation example-local.
-- Reuse existing dynamic graphics pipeline helpers.
-- Reuse the headless render-target/readback/PNG path for deterministic output.
-- Promote only narrow fullscreen helpers if duplication with `triangle` becomes
-  obvious in the diff.
+- Added `examples/fractal` as a fullscreen Mandelbrot-style shader smoke.
+- Kept windowed setup, command recording, and navigation example-local.
+- Reused existing dynamic graphics pipeline helpers.
+- Reused the headless render-target/readback/PNG path for deterministic output.
+- Did not promote fullscreen helpers; the example did not create enough pressure
+  to justify another abstraction yet.
 
 Exit criteria:
 
@@ -205,7 +205,7 @@ Exit criteria:
 
 ## Phase 4: First Real Project
 
-Status: after the fractal example.
+Status: next.
 
 Goal: prove the framework with one non-trivial procedural graphics project and
 let repeated project needs shape the app/runtime API.
@@ -226,8 +226,7 @@ Exit criteria:
 
 ## Phase 5: Runtime Extraction
 
-Status: defer until the fractal example and first real project provide real
-pressure.
+Status: defer until the first real project provides real pressure.
 
 Goal: extract only the host concepts that repeated windowed/headless project code
 has proven useful.

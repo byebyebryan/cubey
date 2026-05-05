@@ -91,6 +91,9 @@ As of 2026-05-05:
 - Added `examples/headless_render` to exercise no-window Vulkan instance/device
   creation, offscreen dynamic rendering, image-to-buffer readback, and PNG
   artifact writing.
+- Added `examples/fractal` to exercise fullscreen fragment rendering, push
+  constants, example-local drag/zoom navigation, and reuse of the headless PNG
+  artifact path.
 - GLFW window setup, surface creation, command recording, acquire/present
   behavior, and resize policy remain example-local. Graphics pipeline creation,
   descriptor/compute setup, device-local cube-buffer uploads, and depth
@@ -98,10 +101,9 @@ As of 2026-05-05:
   vertex-input, descriptor layout choices, dispatch choices, and render policy.
 - CTest covers no-display terminal boundaries, graphical runs when a desktop
   window context is injected, and the headless PNG artifact path.
-- Roadmap alignment: the next framework driver should be a lightweight
-  `examples/fractal` target, not `projects/fractal`. A broad app/runtime layer
-  should wait until both windowed and headless real project paths repeat the same
-  shape.
+- Roadmap alignment: the next framework driver should be a real project. The
+  lightweight fractal work stayed under `examples/fractal` and did not justify a
+  broad app/runtime layer.
 - The current useful manual desktop smokes are:
 
 ```bash
@@ -113,7 +115,10 @@ env XDG_RUNTIME_DIR=/run/user/1000 WAYLAND_DISPLAY=wayland-1 DISPLAY=:1 XDG_CURR
   ./build/dev/examples/spinning_cube/spinning_cube --require-validation --frames 300 --width 1280 --height 720
 env XDG_RUNTIME_DIR=/run/user/1000 WAYLAND_DISPLAY=wayland-1 DISPLAY=:1 XDG_CURRENT_DESKTOP=niri \
   ./build/dev/examples/textured_cube/textured_cube --require-validation --frames 300 --width 1280 --height 720
+env XDG_RUNTIME_DIR=/run/user/1000 WAYLAND_DISPLAY=wayland-1 DISPLAY=:1 XDG_CURRENT_DESKTOP=niri \
+  ./build/dev/examples/fractal/fractal --require-validation --frames 300 --width 1280 --height 720
 ./build/dev/examples/headless_render/headless_render --require-validation --width 640 --height 360 --output /tmp/cubey-headless.png
+./build/dev/examples/fractal/fractal --headless --require-validation --width 640 --height 360 --output /tmp/cubey-fractal.png
 ```
 
 As of 2026-04-28:
@@ -322,3 +327,9 @@ env XDG_RUNTIME_DIR=/run/user/1000 WAYLAND_DISPLAY=wayland-1 DISPLAY=:1 XDG_CURR
 - CTest now includes `headless_render_writes_png`, which writes into the build
   tree and validates the PNG signature. The manual validation smoke produced a
   `128 x 72` RGBA PNG on the RTX 5070 Ti.
+- The fractal example deliberately stayed in `examples/`, not `projects/`: it is
+  useful fullscreen/headless signal, but still too small to create real project
+  runtime pressure.
+- `examples/fractal` now has an example-local `FractalView` for pan, cursor
+  zoom, reset, and push constants. That kept input math testable without moving
+  fractal-specific behavior into `cubey`.
