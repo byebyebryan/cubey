@@ -156,6 +156,8 @@ Current state:
 
 - `ShaderModule` owns shader module lifetime.
 - CMake compiles GLSL to SPIR-V with shared include support.
+- `read_spirv_file` loads compiled SPIR-V bytecode into aligned 32-bit words
+  for shader module creation.
 - `PipelineLayout`, `GraphicsPipeline`, and `ComputePipeline` own pipeline
   lifetime.
 - `DynamicGraphicsPipelineInfo` builds the current single-color-attachment
@@ -240,6 +242,8 @@ Current state:
 
 - Validation is easy to require from examples.
 - CTest covers no-display boundary behavior and headless PNG artifact creation.
+- Shared CMake smoke helpers keep windowed no-display checks and headless PNG
+  validation consistent across examples.
 
 Needed later:
 

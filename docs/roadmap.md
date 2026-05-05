@@ -57,8 +57,8 @@ app engine.
 Completed criteria:
 
 - `cubey` builds as the primary library target and examples link against it.
-- `window_clear`, `triangle`, `spinning_cube`, and `textured_cube` open windows
-  and render through dynamic rendering.
+- `window_clear`, `triangle`, `spinning_cube`, `textured_cube`, and `fractal`
+  open windows and render through dynamic rendering.
 - Validation-layer smoke can be required from the command line.
 - Resize and swapchain recreation remain first-class tested behavior.
 - Headless smoke renders and writes an inspectable PNG.
@@ -84,7 +84,8 @@ Current checkpoint:
   telemetry formatting for windowed examples.
 - Reusable `cubey::vulkan::ShaderModule` exists, and CMake can compile GLSL to
   SPIR-V with `glslangValidator` for example targets, including shared include
-  directories and dependency tracking.
+  directories and dependency tracking. Reusable `cubey::read_spirv_file` loads
+  compiled shader bytecode for shader-backed examples and future projects.
 - Reusable `cubey::vulkan::ImmediateCommands` plus buffer helpers support
   one-shot setup uploads into device-local buffers.
 - Reusable `cubey::vulkan::DepthAttachment` owns depth image/view setup and
@@ -145,7 +146,7 @@ Current checkpoint:
   window setup, surface creation, swapchain-sized resource rebuild order,
   pipeline layout choices, command recording, and resize policy.
 - Dev CTest covers the target in graphical, no-display terminal, and headless
-  artifact sessions.
+  artifact sessions through shared windowed and PNG smoke helpers.
 - Frame overlap, split graphics/compute/present queue-family support, and
   external asset loading remain future slices.
 

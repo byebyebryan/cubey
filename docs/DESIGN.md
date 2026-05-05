@@ -171,9 +171,11 @@ library. Runnable binaries should be named explicitly and live in either
 - `include/cubey/` - public library headers. These define the include discipline
   used by examples, projects, and tests.
 - `src/cubey/` - library implementation and private headers.
+- `cmake/` - shared CMake helpers for shaders, warnings, and CTest smoke
+  targets.
 - `examples/` - small, focused reference programs that prove one concept or API
   path. Current examples are `window_clear`, `triangle`, `spinning_cube`,
-  `textured_cube`, and `headless_render`.
+  `textured_cube`, `headless_render`, and `fractal`.
 - `projects/` - first-class graphics experiments and longer-lived creative
   work, such as `fluid_sim`, `particles`, `marching_cubes`, and `sdf_sculpt`.
 - `third_party/` - small vendored dependencies with explicit license notes.
@@ -207,6 +209,10 @@ cubey/
   CMakeLists.txt
   CHANGELOG.md             -- release-note source
   LICENSE                  -- MIT license
+  cmake/
+    CubeyShaders.cmake     -- GLSL to SPIR-V build helper
+    CubeySmokeTests.cmake  -- shared CTest smoke helper definitions
+    CubeyWarnings.cmake    -- compiler warning helper
   include/
     cubey/
       app_config.h         -- shared run configuration
@@ -214,6 +220,7 @@ cubey/
       frame_stats.h        -- lightweight telemetry formatting
       image_output.h       -- PNG artifact output
       orbit_controller.h   -- basic orbit input state
+      spirv_file.h         -- SPIR-V bytecode file loading
       vulkan/
         vk_check.h         -- Vulkan result helpers
         instance.h         -- instance, validation, debug messenger
@@ -237,6 +244,7 @@ cubey/
       frame_stats.cpp
       image_output.cpp
       orbit_controller.cpp
+      spirv_file.cpp
       vulkan/
         instance.cpp       -- instance, validation, debug messenger
         device.cpp         -- physical/logical device, queues

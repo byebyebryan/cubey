@@ -43,6 +43,8 @@ versioned section and use that section as the release notes.
   dynamic-rendering color/depth attachment setup.
 - GLSL shader helper support for shared include directories and dependency
   tracking.
+- Public SPIR-V file-loading helper for shader-backed examples and future
+  projects.
 - Public frame timing, orbit-controller, and frame-stat types for interactive
   windowed examples.
 - `examples/window_clear`, a minimal Vulkan/GLFW dynamic-rendering windowed
@@ -62,6 +64,7 @@ versioned section and use that section as the release notes.
 - CTest smoke that accepts either successful window startup or the known
   no-display GLFW failure in terminal sessions.
 - CTest smoke for headless PNG artifact creation and PNG signature validation.
+- Shared CMake CTest smoke helpers for windowed and headless example targets.
 
 ### Changed
 
@@ -84,6 +87,10 @@ versioned section and use that section as the release notes.
   sampled-image config helpers for its compute-generated texture.
 - Windowed examples now share recreate-attempt tracking while still owning their
   swapchain resource rebuild steps.
+- Shader-backed examples now share SPIR-V file loading instead of carrying
+  local file readers.
+- Example CTest targets now use shared CMake smoke helpers instead of repeated
+  shell snippets.
 - Roadmap and Vulkan abstraction docs now route the next framework checkpoint
   toward a real project before a broader app/runtime host.
 

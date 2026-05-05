@@ -41,6 +41,8 @@ As of 2026-05-05:
 - Promoted `cubey::vulkan::ShaderModule` and added CMake GLSL-to-SPIR-V shader
   compilation with `glslangValidator`, including shared shader include
   directories and dependency tracking.
+- Promoted `cubey::read_spirv_file` so shader-backed examples share one tested
+  SPIR-V bytecode loader instead of carrying local file readers.
 - Promoted the first pipeline/descriptor ownership components:
   `PipelineLayout`, `GraphicsPipeline`, `ComputePipeline`,
   `DescriptorSetLayout`, and `DescriptorPool`. These wrappers own lifetimes but
@@ -100,7 +102,8 @@ As of 2026-05-05:
   attachments now use shared helpers, while examples still own shader module,
   vertex-input, descriptor layout choices, dispatch choices, and render policy.
 - CTest covers no-display terminal boundaries, graphical runs when a desktop
-  window context is injected, and the headless PNG artifact path.
+  window context is injected, and the headless PNG artifact path through shared
+  CMake smoke helpers.
 - Roadmap alignment: the next framework driver should be a real project. The
   lightweight fractal work stayed under `examples/fractal` and did not justify a
   broad app/runtime layer.
@@ -333,3 +336,10 @@ env XDG_RUNTIME_DIR=/run/user/1000 WAYLAND_DISPLAY=wayland-1 DISPLAY=:1 XDG_CURR
 - `examples/fractal` now has an example-local `FractalView` for pan, cursor
   zoom, reset, and push constants. That kept input math testable without moving
   fractal-specific behavior into `cubey`.
+- Repo-wide cleanup after the fractal slice promoted repeated shader bytecode
+  reads into `cubey::read_spirv_file`, with tests for aligned word loading and
+  rejection of misaligned byte counts.
+- The repeated CTest shell snippets for windowed/no-display and headless PNG
+  smoke checks now live in `cmake/CubeySmokeTests.cmake`. Individual examples
+  declare only the target, test name, and expected success pattern or output
+  path.
