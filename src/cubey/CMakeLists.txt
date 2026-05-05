@@ -1,4 +1,21 @@
+add_library(cubey_stb_image_write OBJECT
+    stb_image_write.cpp
+)
+target_include_directories(
+    cubey_stb_image_write
+    SYSTEM
+    PRIVATE
+        "${PROJECT_SOURCE_DIR}/third_party/stb"
+)
+target_link_libraries(
+    cubey_stb_image_write
+    PRIVATE
+        cubey_project_options
+)
+set_target_properties(cubey_stb_image_write PROPERTIES CXX_CLANG_TIDY "")
+
 add_library(cubey STATIC
+    $<TARGET_OBJECTS:cubey_stb_image_write>
     app_config.cpp
     frame_clock.cpp
     frame_stats.cpp

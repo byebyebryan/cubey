@@ -245,6 +245,7 @@ cubey/
       image_output.cpp
       orbit_controller.cpp
       spirv_file.cpp
+      stb_image_write.cpp -- isolated vendored PNG writer implementation
       vulkan/
         instance.cpp       -- instance, validation, debug messenger
         device.cpp         -- physical/logical device, queues

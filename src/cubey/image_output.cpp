@@ -1,6 +1,5 @@
 #include <cubey/image_output.h>
 
-#define STB_IMAGE_WRITE_IMPLEMENTATION
 #include <stb_image_write.h>
 
 #include <cstddef>

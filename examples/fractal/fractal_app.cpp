@@ -189,6 +189,8 @@ class FractalApp {
         }
     }
 
+    // GLFW fixes this callback signature.
+    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
     static void key_callback(GLFWwindow* window, int key, int unused_scancode, int action,
                              int unused_mods) {
         (void)unused_scancode;
@@ -199,6 +201,8 @@ class FractalApp {
         }
     }
 
+    // GLFW fixes this callback signature.
+    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
     static void mouse_button_callback(GLFWwindow* window, int button, int action, int unused_mods) {
         (void)unused_mods;
         auto* app = static_cast<FractalApp*>(glfwGetWindowUserPointer(window));
@@ -232,6 +236,8 @@ class FractalApp {
         last_cursor_y_ = y_position;
     }
 
+    // Uses GLFW integer key/action codes.
+    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
     void handle_key(int key, int action) {
         if (action != GLFW_PRESS) {
             return;
@@ -243,6 +249,8 @@ class FractalApp {
         }
     }
 
+    // Uses GLFW integer button/action codes.
+    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
     void handle_mouse_button(int button, int action) {
         if (button != GLFW_MOUSE_BUTTON_LEFT) {
             return;
