@@ -268,6 +268,8 @@ Current state:
   completed RGBA pixel buffers.
 - `UploadQueue`, `UploadTicket`, and `QueuedUpload` provide the first CPU-owned
   upload request queue.
+- `FrameTicketIssuer`, `FrameTicket`, and `DeferredDestructionQueue` provide
+  CPU-side ticket retirement vocabulary.
 - `ImmediateCommands`, readback helpers, and PNG output are synchronous.
 
 Needed next:
@@ -275,6 +277,7 @@ Needed next:
 - GPU readback/capture polling APIs.
 - Explicit GPU-owner vocabulary for serialized queue submission and GPU
   lifetime decisions.
+- Vulkan fence/timeline integration for frame tickets.
 
 Defer:
 

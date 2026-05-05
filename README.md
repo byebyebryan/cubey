@@ -55,8 +55,9 @@ navigation and a headless PNG mode.
 `cubey` owns the reusable Vulkan instance, device, buffer, image, sampler,
 swapchain, shader-module, command-pool, rendering helpers, frame clock,
 orbit-controller, CPU job facade, PNG capture queue, upload request queue,
-SPIR-V file loading, pipeline ownership, dynamic graphics pipeline setup,
-descriptor setup/write helpers, compute pipeline setup, depth attachment setup,
+frame tickets/deferred destruction, SPIR-V file loading, pipeline ownership,
+dynamic graphics pipeline setup, descriptor setup/write helpers,
+compute pipeline setup, depth attachment setup,
 texture transfer/readback helpers, PNG output helper, shared shader includes,
 `RenderContext` surface-backed begin/end frame lifecycle, single-frame
 command/sync components, and swapchain recreate-attempt tracking; examples still

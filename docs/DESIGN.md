@@ -229,6 +229,7 @@ cubey/
       capture_queue.h      -- job-backed PNG capture encoding queue
       frame_clock.h        -- frame timing
       frame_stats.h        -- lightweight telemetry formatting
+      frame_tickets.h      -- frame tickets and deferred destruction
       image_output.h       -- PNG artifact output
       jobs.h               -- CPU job facade
       orbit_controller.h   -- basic orbit input state
@@ -256,6 +257,7 @@ cubey/
       capture_queue.cpp
       frame_clock.cpp
       frame_stats.cpp
+      frame_tickets.cpp
       image_output.cpp
       jobs.cpp
       orbit_controller.cpp

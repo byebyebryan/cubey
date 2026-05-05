@@ -20,6 +20,7 @@ add_library(cubey STATIC
     capture_queue.cpp
     frame_clock.cpp
     frame_stats.cpp
+    frame_tickets.cpp
     image_output.cpp
     jobs.cpp
     orbit_controller.cpp

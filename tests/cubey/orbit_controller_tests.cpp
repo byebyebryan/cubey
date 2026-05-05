@@ -28,6 +28,7 @@ void test_compute_helpers_describe_pipeline_and_layout_setup();
 void test_descriptor_helpers_describe_layout_pool_and_writes();
 void test_frame_clock_tracks_delta_elapsed_and_index();
 void test_frame_stats_publish_window_title_metrics();
+void test_frame_ticket_issuer_returns_monotonic_tickets();
 void test_image_output_writes_rgba_png();
 void test_inline_executor_runs_jobs_immediately();
 void test_job_system_runs_jobs_and_propagates_errors();
@@ -41,6 +42,7 @@ void test_spirv_file_rejects_misaligned_byte_count();
 void test_transfer_helpers_describe_texture_and_readback_paths();
 void test_upload_queue_drains_in_submission_order();
 void test_upload_queue_owns_payload_until_drain();
+void test_deferred_destruction_queue_retires_completed_tickets();
 
 int main() {
     try {
@@ -52,6 +54,7 @@ int main() {
         test_descriptor_helpers_describe_layout_pool_and_writes();
         test_frame_clock_tracks_delta_elapsed_and_index();
         test_frame_stats_publish_window_title_metrics();
+        test_frame_ticket_issuer_returns_monotonic_tickets();
         test_image_output_writes_rgba_png();
         test_inline_executor_runs_jobs_immediately();
         test_job_system_runs_jobs_and_propagates_errors();
@@ -65,6 +68,7 @@ int main() {
         test_transfer_helpers_describe_texture_and_readback_paths();
         test_upload_queue_owns_payload_until_drain();
         test_upload_queue_drains_in_submission_order();
+        test_deferred_destruction_queue_retires_completed_tickets();
 
         cubey::OrbitController controller;
 

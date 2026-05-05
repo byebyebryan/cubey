@@ -6,6 +6,7 @@ add_executable(cubey_core_tests
     descriptor_tests.cpp
     frame_clock_tests.cpp
     frame_stats_tests.cpp
+    frame_ticket_tests.cpp
     image_output_tests.cpp
     jobs_tests.cpp
     orbit_controller_tests.cpp

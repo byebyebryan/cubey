@@ -214,6 +214,11 @@ owner drain queued uploads in submission order. The queue is guarded internally
 so worker jobs can safely submit CPU-side upload requests before any Vulkan
 staging/copy work is introduced.
 
+`cubey::FrameTicketIssuer` and `DeferredDestructionQueue` are the first
+CPU-side lifetime primitives. They do not yet query Vulkan fences; they provide
+the monotonic ticket and retire-after-ticket vocabulary that later
+N-frames-in-flight and readback polling can connect to real GPU completion.
+
 ## Command Recording
 
 Keep current primary-command-buffer recording until command recording time is a
@@ -347,9 +352,11 @@ Status: initial pass complete.
 
 ### Slice 4: Frame Overlap And Deferred Destruction
 
-- Add N-frames-in-flight or frame tickets once the single-frame path becomes a
-  bottleneck.
-- Retire deferred destruction and readbacks by completed frame/submission.
+Status: frame-ticket/deferred-destruction initial pass complete.
+
+- Added frame ticket issuance and comparison.
+- Added deferred destruction actions retired by completed ticket.
+- Kept this CPU-side; Vulkan fence/timeline integration remains future work.
 
 ### Slice 5: Parallel Command Recording And Split Queues
 
