@@ -1,8 +1,12 @@
 #include "fractal_app.h"
 
+#include <cubey/image_output.h>
+#include <cubey/vulkan/buffer.h>
 #include <cubey/vulkan/command_pool.h>
 #include <cubey/vulkan/device.h>
 #include <cubey/vulkan/frame_resources.h>
+#include <cubey/vulkan/image.h>
+#include <cubey/vulkan/immediate_commands.h>
 #include <cubey/vulkan/instance.h>
 #include <cubey/vulkan/pipeline.h>
 #include <cubey/vulkan/render_context.h>
@@ -15,6 +19,7 @@
 #include <vulkan/vulkan.h>
 
 #include <array>
+#include <cstddef>
 #include <cstdint>
 #include <cstdio>
 #include <filesystem>
@@ -23,6 +28,7 @@
 #include <optional>
 #include <span>
 #include <stdexcept>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -36,6 +42,9 @@ namespace {
 using cubey::vulkan::check;
 using cubey::vulkan::vk_struct;
 
+constexpr VkFormat kHeadlessOutputFormat = VK_FORMAT_R8G8B8A8_UNORM;
+constexpr std::size_t kOutputBytesPerPixel = 4;
+
 struct FractalPushConstants {
     float center_x = -0.5F;
     float center_y = 0.0F;
@@ -43,6 +52,24 @@ struct FractalPushConstants {
     float aspect = 1.0F;
     std::int32_t max_iterations = 180;
 };
+
+[[nodiscard]] std::size_t checked_pixel_byte_size(std::uint32_t width, std::uint32_t height) {
+    if (width == 0 || height == 0) {
+        throw std::runtime_error("fractal render dimensions must be positive");
+    }
+
+    const std::size_t checked_width = static_cast<std::size_t>(width);
+    const std::size_t checked_height = static_cast<std::size_t>(height);
+    if (checked_width > std::numeric_limits<std::size_t>::max() / checked_height) {
+        throw std::runtime_error("fractal output is too large");
+    }
+
+    const std::size_t pixel_count = checked_width * checked_height;
+    if (pixel_count > std::numeric_limits<std::size_t>::max() / kOutputBytesPerPixel) {
+        throw std::runtime_error("fractal output is too large");
+    }
+    return pixel_count * kOutputBytesPerPixel;
+}
 
 std::vector<std::uint32_t> read_spirv_file(const std::filesystem::path& path) {
     const std::uintmax_t byte_size = std::filesystem::file_size(path);
@@ -107,7 +134,10 @@ class FractalApp {
 
     int run() {
         if (config_.headless) {
-            throw std::runtime_error("fractal does not support --headless yet");
+            create_headless_instance();
+            create_headless_device();
+            render_headless();
+            return 0;
         }
 
         init_window();
@@ -121,6 +151,29 @@ class FractalApp {
     }
 
   private:
+    void create_headless_instance() {
+        cubey::vulkan::InstanceConfig instance_config;
+        instance_config.application_name = config_.title;
+        instance_config.validation = config_.validation;
+        instance_config.require_validation = config_.require_validation;
+
+        instance_owner_.emplace(instance_config);
+        instance_ = instance_owner_->handle();
+    }
+
+    void create_headless_device() {
+        cubey::vulkan::DeviceConfig device_config;
+        device_config.required_queue_flags = VK_QUEUE_GRAPHICS_BIT;
+        device_config.require_present = false;
+        device_config.require_dynamic_rendering = true;
+
+        if (!instance_owner_.has_value()) {
+            throw std::runtime_error("Vulkan instance must exist before creating a device");
+        }
+        device_owner_.emplace(instance_owner_.value(), device_config);
+        device_ = device_owner_->handle();
+    }
+
     void init_window() {
         if (glfwInit() == 0) {
             throw std::runtime_error("glfwInit failed");
@@ -292,6 +345,29 @@ class FractalApp {
         return constants;
     }
 
+    void record_fractal_draw(VkCommandBuffer command_buffer, VkImageView image_view,
+                             VkExtent2D extent) const {
+        VkClearValue clear{};
+        clear.color = {{0.015F, 0.018F, 0.026F, 1.0F}};
+        const VkRenderingAttachmentInfo color_attachment =
+            cubey::vulkan::color_rendering_attachment(image_view, clear);
+
+        auto rendering = vk_struct<VkRenderingInfo>(VK_STRUCTURE_TYPE_RENDERING_INFO);
+        rendering.renderArea.offset = {0, 0};
+        rendering.renderArea.extent = extent;
+        rendering.layerCount = 1;
+        rendering.colorAttachmentCount = 1;
+        rendering.pColorAttachments = &color_attachment;
+
+        const FractalPushConstants constants = push_constants(extent);
+        vkCmdBeginRendering(command_buffer, &rendering);
+        vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline().handle());
+        vkCmdPushConstants(command_buffer, pipeline_layout().handle(), VK_SHADER_STAGE_FRAGMENT_BIT,
+                           0, sizeof(constants), &constants);
+        vkCmdDraw(command_buffer, 3, 1, 0, 0);
+        vkCmdEndRendering(command_buffer);
+    }
+
     void record_fractal_frame(VkCommandBuffer command_buffer, std::uint32_t image_index) {
         cubey::vulkan::begin_command_buffer(command_buffer,
                                             VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
@@ -301,32 +377,28 @@ class FractalApp {
         cubey::vulkan::transition_image_layout(
             command_buffer, cubey::vulkan::begin_color_attachment_transition(swapchain_image));
 
-        VkClearValue clear{};
-        clear.color = {{0.015F, 0.018F, 0.026F, 1.0F}};
-        const VkRenderingAttachmentInfo color_attachment =
-            cubey::vulkan::color_rendering_attachment(
-                swapchain().image_views().at(swapchain_image_index), clear);
-
-        auto rendering = vk_struct<VkRenderingInfo>(VK_STRUCTURE_TYPE_RENDERING_INFO);
-        rendering.renderArea.offset = {0, 0};
-        rendering.renderArea.extent = swapchain().extent();
-        rendering.layerCount = 1;
-        rendering.colorAttachmentCount = 1;
-        rendering.pColorAttachments = &color_attachment;
-
-        const FractalPushConstants constants = push_constants(swapchain().extent());
-        vkCmdBeginRendering(command_buffer, &rendering);
-        vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline().handle());
-        vkCmdPushConstants(command_buffer, pipeline_layout().handle(), VK_SHADER_STAGE_FRAGMENT_BIT,
-                           0, sizeof(constants), &constants);
-        vkCmdDraw(command_buffer, 3, 1, 0, 0);
-        vkCmdEndRendering(command_buffer);
+        record_fractal_draw(command_buffer, swapchain().image_views().at(swapchain_image_index),
+                            swapchain().extent());
 
         cubey::vulkan::transition_image_layout(
             command_buffer,
             cubey::vulkan::finish_color_attachment_for_present_transition(swapchain_image));
 
         check(vkEndCommandBuffer(command_buffer), "vkEndCommandBuffer fractal");
+    }
+
+    void record_headless_frame(cubey::vulkan::Image& render_target, VkExtent2D extent) {
+        cubey::vulkan::ImmediateCommands commands(vulkan_device());
+        const VkCommandBuffer command_buffer = commands.command_buffer();
+
+        cubey::vulkan::transition_image_layout(
+            command_buffer,
+            cubey::vulkan::begin_color_attachment_transition(render_target.handle()));
+        record_fractal_draw(command_buffer, render_target.view(), extent);
+        cubey::vulkan::transition_image_layout(
+            command_buffer,
+            cubey::vulkan::finish_color_attachment_for_readback_transition(render_target.handle()));
+        commands.submit_and_wait();
     }
 
     cubey::vulkan::RenderFrameResult draw_frame() {
@@ -377,6 +449,31 @@ class FractalApp {
         }
 
         check(vkDeviceWaitIdle(device_), "vkDeviceWaitIdle after fractal");
+    }
+
+    void render_headless() {
+        const VkExtent2D extent{config_.width, config_.height};
+        cubey::vulkan::Image render_target(
+            vulkan_device(),
+            cubey::vulkan::color_render_target_image_config(extent, kHeadlessOutputFormat));
+        create_pipeline(render_target.format(), extent);
+        record_headless_frame(render_target, extent);
+
+        const std::size_t byte_size = checked_pixel_byte_size(extent.width, extent.height);
+        const VkDeviceSize readback_byte_size = static_cast<VkDeviceSize>(byte_size);
+        cubey::vulkan::Buffer readback(vulkan_device(),
+                                       cubey::vulkan::readback_buffer_config(readback_byte_size));
+        cubey::vulkan::copy_image_to_buffer(vulkan_device(), render_target.handle(),
+                                            readback.handle(), {extent.width, extent.height, 1});
+
+        std::vector<std::uint8_t> pixels(byte_size);
+        readback.download(pixels.data(), readback_byte_size);
+        cubey::write_png_rgba8(config_.output_path, extent.width, extent.height, pixels);
+
+        const std::string output_path = config_.output_path.string();
+        std::printf("fractal: %s wrote %s at %ux%u\n", vulkan_device().device_name(),
+                    output_path.c_str(), extent.width, extent.height);
+        check(vkDeviceWaitIdle(device_), "vkDeviceWaitIdle after fractal headless");
     }
 
     cubey::vulkan::Swapchain& swapchain() {
