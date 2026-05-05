@@ -28,6 +28,18 @@ cubey_add_glsl_shaders(
 )
 
 if (BUILD_TESTING)
+    add_executable(cubey_example_fractal_tests
+        fractal_view_tests.cpp
+    )
+    target_include_directories(cubey_example_fractal_tests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
+    target_link_libraries(
+        cubey_example_fractal_tests
+        PRIVATE
+            cubey_project_options
+            cubey_project_warnings
+    )
+    add_test(NAME fractal_view_tests COMMAND cubey_example_fractal_tests)
+
     add_test(
         NAME fractal_reaches_glfw
         COMMAND

@@ -1,5 +1,7 @@
 #include "fractal_app.h"
 
+#include "fractal_view.h"
+
 #include <cubey/image_output.h>
 #include <cubey/vulkan/buffer.h>
 #include <cubey/vulkan/command_pool.h>
@@ -19,6 +21,7 @@
 #include <vulkan/vulkan.h>
 
 #include <array>
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <cstdio>
@@ -44,14 +47,6 @@ using cubey::vulkan::vk_struct;
 
 constexpr VkFormat kHeadlessOutputFormat = VK_FORMAT_R8G8B8A8_UNORM;
 constexpr std::size_t kOutputBytesPerPixel = 4;
-
-struct FractalPushConstants {
-    float center_x = -0.5F;
-    float center_y = 0.0F;
-    float scale = 1.35F;
-    float aspect = 1.0F;
-    std::int32_t max_iterations = 180;
-};
 
 [[nodiscard]] std::size_t checked_pixel_byte_size(std::uint32_t width, std::uint32_t height) {
     if (width == 0 || height == 0) {
@@ -194,6 +189,10 @@ class FractalApp {
 
         glfwSetWindowUserPointer(window_, this);
         glfwSetFramebufferSizeCallback(window_, framebuffer_size_callback);
+        glfwSetCursorPosCallback(window_, cursor_position_callback);
+        glfwSetKeyCallback(window_, key_callback);
+        glfwSetMouseButtonCallback(window_, mouse_button_callback);
+        glfwSetScrollCallback(window_, scroll_callback);
     }
 
     // GLFW fixes this callback signature.
@@ -205,6 +204,92 @@ class FractalApp {
         if (app != nullptr) {
             app->framebuffer_resized_ = true;
         }
+    }
+
+    static void cursor_position_callback(GLFWwindow* window, double x_position, double y_position) {
+        auto* app = static_cast<FractalApp*>(glfwGetWindowUserPointer(window));
+        if (app != nullptr) {
+            app->handle_cursor_position(x_position, y_position);
+        }
+    }
+
+    static void key_callback(GLFWwindow* window, int key, int unused_scancode, int action,
+                             int unused_mods) {
+        (void)unused_scancode;
+        (void)unused_mods;
+        auto* app = static_cast<FractalApp*>(glfwGetWindowUserPointer(window));
+        if (app != nullptr) {
+            app->handle_key(key, action);
+        }
+    }
+
+    static void mouse_button_callback(GLFWwindow* window, int button, int action, int unused_mods) {
+        (void)unused_mods;
+        auto* app = static_cast<FractalApp*>(glfwGetWindowUserPointer(window));
+        if (app != nullptr) {
+            app->handle_mouse_button(button, action);
+        }
+    }
+
+    // GLFW fixes this callback signature.
+    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+    static void scroll_callback(GLFWwindow* window, double unused_x_offset, double y_offset) {
+        (void)unused_x_offset;
+        auto* app = static_cast<FractalApp*>(glfwGetWindowUserPointer(window));
+        if (app != nullptr) {
+            app->handle_scroll(y_offset);
+        }
+    }
+
+    void handle_cursor_position(double x_position, double y_position) {
+        if (!dragging_) {
+            return;
+        }
+
+        int fb_width = 0;
+        int fb_height = 0;
+        glfwGetFramebufferSize(window_, &fb_width, &fb_height);
+        view_.pan_by_screen_delta(static_cast<float>(x_position - last_cursor_x_),
+                                  static_cast<float>(y_position - last_cursor_y_),
+                                  static_cast<float>(fb_width), static_cast<float>(fb_height));
+        last_cursor_x_ = x_position;
+        last_cursor_y_ = y_position;
+    }
+
+    void handle_key(int key, int action) {
+        if (action != GLFW_PRESS) {
+            return;
+        }
+        if (key == GLFW_KEY_ESCAPE) {
+            glfwSetWindowShouldClose(window_, GLFW_TRUE);
+        } else if (key == GLFW_KEY_R) {
+            view_.reset();
+        }
+    }
+
+    void handle_mouse_button(int button, int action) {
+        if (button != GLFW_MOUSE_BUTTON_LEFT) {
+            return;
+        }
+        if (action == GLFW_PRESS) {
+            dragging_ = true;
+            glfwGetCursorPos(window_, &last_cursor_x_, &last_cursor_y_);
+        } else if (action == GLFW_RELEASE) {
+            dragging_ = false;
+        }
+    }
+
+    void handle_scroll(double y_offset) {
+        double cursor_x = 0.0;
+        double cursor_y = 0.0;
+        glfwGetCursorPos(window_, &cursor_x, &cursor_y);
+
+        int fb_width = 0;
+        int fb_height = 0;
+        glfwGetFramebufferSize(window_, &fb_width, &fb_height);
+        const float factor = std::pow(0.86F, static_cast<float>(y_offset));
+        view_.zoom_at(factor, static_cast<float>(cursor_x), static_cast<float>(cursor_y),
+                      static_cast<float>(fb_width), static_cast<float>(fb_height));
     }
 
     void create_instance() {
@@ -340,9 +425,7 @@ class FractalApp {
     }
 
     [[nodiscard]] FractalPushConstants push_constants(VkExtent2D extent) const {
-        FractalPushConstants constants;
-        constants.aspect = static_cast<float>(extent.width) / static_cast<float>(extent.height);
-        return constants;
+        return view_.push_constants(extent.width, extent.height);
     }
 
     void record_fractal_draw(VkCommandBuffer command_buffer, VkImageView image_view,
@@ -514,7 +597,11 @@ class FractalApp {
     RunConfig config_;
     bool glfw_initialized_ = false;
     bool framebuffer_resized_ = false;
+    bool dragging_ = false;
+    double last_cursor_x_ = 0.0;
+    double last_cursor_y_ = 0.0;
     GLFWwindow* window_ = nullptr;
+    FractalView view_;
 
     std::optional<cubey::vulkan::Instance> instance_owner_;
     std::optional<cubey::vulkan::Device> device_owner_;
