@@ -27,6 +27,21 @@ void validate_dynamic_graphics_pipeline_config(const DynamicGraphicsPipelineConf
     }
 }
 
+void validate_compute_pipeline_config(const ComputePipelineConfig& config) {
+    if (config.layout == VK_NULL_HANDLE) {
+        throw std::runtime_error("compute pipeline requires a pipeline layout");
+    }
+    if (config.shader_stage.stage != VK_SHADER_STAGE_COMPUTE_BIT) {
+        throw std::runtime_error("compute pipeline requires a compute shader stage");
+    }
+    if (config.shader_stage.module == VK_NULL_HANDLE) {
+        throw std::runtime_error("compute pipeline requires a shader module");
+    }
+    if (config.shader_stage.pName == nullptr) {
+        throw std::runtime_error("compute pipeline requires a shader entry point");
+    }
+}
+
 } // namespace
 
 VkPipelineShaderStageCreateInfo shader_stage(VkShaderStageFlagBits stage, VkShaderModule module,
@@ -37,6 +52,29 @@ VkPipelineShaderStageCreateInfo shader_stage(VkShaderStageFlagBits stage, VkShad
     info.module = module;
     info.pName = entry_point;
     return info;
+}
+
+PipelineLayoutInfo::PipelineLayoutInfo(const PipelineLayoutConfig& config) {
+    set_layouts_.assign(config.set_layouts.begin(), config.set_layouts.end());
+    push_constants_.assign(config.push_constants.begin(), config.push_constants.end());
+
+    create_info_ =
+        vk_struct<VkPipelineLayoutCreateInfo>(VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO);
+    create_info_.setLayoutCount = static_cast<std::uint32_t>(set_layouts_.size());
+    create_info_.pSetLayouts = set_layouts_.data();
+    create_info_.pushConstantRangeCount = static_cast<std::uint32_t>(push_constants_.size());
+    create_info_.pPushConstantRanges = push_constants_.data();
+}
+
+ComputePipelineInfo::ComputePipelineInfo(const ComputePipelineConfig& config) {
+    validate_compute_pipeline_config(config);
+
+    shader_stage_ = config.shader_stage;
+
+    create_info_ =
+        vk_struct<VkComputePipelineCreateInfo>(VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO);
+    create_info_.stage = shader_stage_;
+    create_info_.layout = config.layout;
 }
 
 DynamicGraphicsPipelineInfo::DynamicGraphicsPipelineInfo(

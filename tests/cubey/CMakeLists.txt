@@ -1,5 +1,7 @@
 add_executable(cubey_core_tests
     command_pool_tests.cpp
+    compute_pipeline_tests.cpp
+    descriptor_tests.cpp
     frame_clock_tests.cpp
     frame_stats_tests.cpp
     orbit_controller_tests.cpp

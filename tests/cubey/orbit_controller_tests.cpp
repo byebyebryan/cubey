@@ -21,6 +21,8 @@ void require_close(float actual, float expected, const char* message) {
 } // namespace
 
 void test_command_pool_exposes_command_buffer_ownership();
+void test_compute_helpers_describe_pipeline_and_layout_setup();
+void test_descriptor_helpers_describe_layout_pool_and_writes();
 void test_frame_clock_tracks_delta_elapsed_and_index();
 void test_frame_stats_publish_window_title_metrics();
 void test_pipeline_helpers_describe_dynamic_graphics_pipeline_setup();
@@ -31,6 +33,8 @@ void test_resource_helpers_describe_device_local_upload_and_depth_setup();
 int main() {
     try {
         test_command_pool_exposes_command_buffer_ownership();
+        test_compute_helpers_describe_pipeline_and_layout_setup();
+        test_descriptor_helpers_describe_layout_pool_and_writes();
         test_frame_clock_tracks_delta_elapsed_and_index();
         test_frame_stats_publish_window_title_metrics();
         test_pipeline_helpers_describe_dynamic_graphics_pipeline_setup();

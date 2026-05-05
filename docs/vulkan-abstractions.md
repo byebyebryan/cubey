@@ -128,15 +128,15 @@ Defer:
 Current state:
 
 - `DescriptorSetLayout` and `DescriptorPool` own basic layout/pool lifetime.
-- Descriptor writes and allocation are still mostly example-local.
+- Descriptor allocation is owned by `DescriptorPool`.
+- Descriptor helper functions cover layout bindings, pool sizes, uniform-buffer
+  writes, storage-image writes, combined image sampler writes, and descriptor
+  set updates.
 
 Needed next:
 
-- Descriptor set allocation helper.
-- Descriptor write helpers for uniform buffers, storage images, sampled
-  images, and combined image samplers.
-- Pipeline layout helper that assembles descriptor set layouts and push
-  constants without hiding the layout contract.
+- Sampled-image descriptor write helper if a sampled image without sampler gets
+  a concrete use case.
 
 Defer:
 
@@ -153,11 +153,12 @@ Current state:
   lifetime.
 - `DynamicGraphicsPipelineInfo` builds the current single-color-attachment
   dynamic graphics pipeline create-info shape.
+- `PipelineLayoutInfo` builds pipeline layout create-info for descriptor set
+  layouts and push constants.
+- `ComputePipelineInfo` builds the current compute pipeline create-info shape.
 
 Needed next:
 
-- Compute pipeline create-info helper.
-- Pipeline layout helper for descriptor sets and push constants.
 - Optional graphics-state knobs only when examples need them.
 
 Defer:
@@ -263,13 +264,17 @@ Remaining resource work, especially image upload and readback, belongs in Batch
 Goal: make `textured_cube`'s compute texture path less bespoke while preserving
 explicit descriptor contracts.
 
-- Add descriptor allocation/write helpers.
-- Add compute pipeline create-info helper.
-- Add pipeline layout helper for descriptor set layouts and push constants.
-- Migrate the setup-time compute texture path.
+- Status: initial pass complete on `main`.
+- Added descriptor binding, pool-size, descriptor-write, and descriptor-update
+  helpers for current uniform-buffer, storage-image, and combined image sampler
+  paths.
+- Added pipeline-layout and compute-pipeline create-info helpers.
+- Moved `textured_cube`'s graphics descriptors and setup-time compute texture
+  path onto the shared helpers while keeping layout and dispatch choices
+  explicit.
 
-This batch should happen before adding more compute examples, so the next
-project does not copy a one-off descriptor and compute setup block.
+Remaining descriptor work should be driven by the next concrete resource path
+rather than a general bind-group abstraction.
 
 ### Batch 3: Transfer, Texture, And Readback Path
 
@@ -312,6 +317,6 @@ first-class experiments.
 
 ## Near-Term Recommendation
 
-Batch 1 has its first pass on `main`; continue with Batch 2 next. Batch 2 should
-complete the descriptor and compute setup foundation before returning to
-headless output or starting the first real project.
+Batch 1 and Batch 2 have their first passes on `main`; continue with Batch 3
+next. Batch 3 should build the transfer, texture, and readback foundation before
+returning to headless output or starting the first real project.

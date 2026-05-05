@@ -84,6 +84,11 @@ Current checkpoint:
   `ComputePipeline`, `DescriptorSetLayout`, and `DescriptorPool` own basic
   pipeline and descriptor lifetimes while still taking raw Vulkan create-info
   structs.
+- Reusable `cubey::vulkan` descriptor helpers build layout bindings, pool
+  sizes, descriptor writes, and descriptor updates for current uniform-buffer,
+  storage-image, and combined image sampler paths.
+- Reusable `cubey::vulkan::PipelineLayoutInfo` and `ComputePipelineInfo` build
+  the current pipeline-layout and compute-pipeline create-info shapes.
 - Reusable `cubey::vulkan::DynamicGraphicsPipelineInfo` builds the current
   dynamic-rendering graphics pipeline create-info shape for one color
   attachment plus optional depth, while examples still choose shaders, layouts,
@@ -107,9 +112,10 @@ Current checkpoint:
   rendering with a shared depth attachment helper.
 - `examples/textured_cube` links against `cubey`, generates a texture with a
   compute shader writing a storage image, transitions it for shader sampling,
-  binds scene uniforms plus a combined image sampler descriptor, and draws an
-  interactive shaded textured indexed cube through dynamic rendering with
-  per-face normals and shared GLSL Lambert lighting.
+  binds scene uniforms plus a combined image sampler descriptor through shared
+  descriptor/compute helpers, and draws an interactive shaded textured indexed
+  cube through dynamic rendering with per-face normals and shared GLSL Lambert
+  lighting.
 - The current device model intentionally selects one queue family for required
   graphics, compute, and present capabilities. Split queue-family support is a
   future framework slice, not part of the current example-local compute path.
@@ -118,12 +124,12 @@ Current checkpoint:
   and resize policy.
 - Dev CTest covers the target in both graphical and no-display terminal
   sessions.
-- Headless rendering, frame overlap, richer rendering/pipeline helpers, split
-  graphics/compute/present queue-family support, external asset loading, and
-  broader descriptor components remain future slices.
+- Headless rendering, frame overlap, texture transfer/readback helpers, split
+  graphics/compute/present queue-family support, and external asset loading
+  remain future slices.
 
-Next implementation batch: descriptor and compute setup, especially descriptor
-allocation/write helpers and compute pipeline create-info helpers.
+Next implementation batch: transfer, texture, and readback helpers, especially
+buffer-to-image copy, image transition vocabulary, and readback paths.
 
 ## Phase 2: Resource Layer and App API
 

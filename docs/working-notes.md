@@ -56,6 +56,10 @@ As of 2026-05-04:
   upload/copy, depth format selection, depth image config, and `DepthAttachment`
   ownership. The cube examples now share this setup instead of carrying local
   staging-copy and depth-image code.
+- Promoted descriptor and compute setup helpers for descriptor bindings, pools,
+  writes, descriptor updates, pipeline layouts, and compute pipeline create-info.
+  `textured_cube` now shares this setup while keeping descriptor layout, shader,
+  and dispatch choices explicit.
 - Added `examples/triangle` as the first shader-backed graphics pipeline smoke.
 - Converted `examples/triangle` to dynamic rendering as the first render-pass
   direction spike. This removes triangle's render pass/framebuffer ownership and
@@ -71,9 +75,9 @@ As of 2026-05-04:
   Escape exits.
 - GLFW window setup, surface creation, command recording, acquire/present
   behavior, and resize policy remain example-local. Graphics pipeline creation,
-  device-local cube-buffer uploads, and depth attachments now use shared helpers,
-  while examples still own pipeline layout, shader module, vertex-input, and
-  descriptor choices.
+  descriptor/compute setup, device-local cube-buffer uploads, and depth
+  attachments now use shared helpers, while examples still own shader module,
+  vertex-input, descriptor layout choices, dispatch choices, and render policy.
 - CTest covers both the no-display terminal boundary and graphical runs when a
   desktop window context is injected.
 - The current useful manual desktop smokes are:
@@ -241,10 +245,11 @@ env XDG_RUNTIME_DIR=/run/user/1000 WAYLAND_DISPLAY=wayland-1 DISPLAY=:1 XDG_CURR
   commands directly, then call `RenderContext::end_frame` for submit, present,
   and out-of-date/suboptimal reporting. The examples still own their resize
   policy.
-- The pipeline/descriptor component slice stayed at RAII ownership, not
-  rendering policy. That keeps the project away from a premature
-  material/render-graph abstraction while still reducing Vulkan handle cleanup
-  code.
+- The pipeline/descriptor component slice started at RAII ownership, not
+  rendering policy. The descriptor/compute setup slice then promoted the narrow
+  helper names that had become repetitive: descriptor bindings, pool sizes,
+  descriptor writes, descriptor updates, pipeline-layout create info, and
+  compute-pipeline create info.
 - All current windowed examples now use dynamic rendering. The helper layer owns
   repeated image-transition and attachment-info construction, while examples
   still own frame command recording and resize policy.
@@ -252,11 +257,15 @@ env XDG_RUNTIME_DIR=/run/user/1000 WAYLAND_DISPLAY=wayland-1 DISPLAY=:1 XDG_CURR
   dynamic-rendering create-info shape, not a material system or renderer.
   `triangle`, `spinning_cube`, and `textured_cube` now share shader-stage and
   graphics-pipeline setup while keeping their layout, vertex-input, descriptor,
-  and depth decisions explicit. The setup-time compute pipeline in
-  `textured_cube` remains local until compute/descriptor repetition produces a
-  clearer helper boundary.
+  and depth decisions explicit. The descriptor/compute setup slice later moved
+  `textured_cube`'s setup-time compute path onto shared create-info and
+  descriptor-write helpers.
 - The resource and attachment cleanup slice made `Buffer` movable so helper
   functions can return owned device-local buffers. It also moved the cube
-  examples onto shared staging upload and `DepthAttachment` helpers. This keeps
-  the examples focused on scene data and command recording while still leaving
-  descriptor, compute, and texture transition policy visible for the next batch.
+  examples onto shared staging upload and `DepthAttachment` helpers. It kept the
+  examples focused on scene data and command recording while leaving descriptor,
+  compute, and texture transition policy visible for follow-up slices.
+- The descriptor and compute setup slice deliberately stopped short of bind
+  groups or material abstractions. The useful helper boundary is still Vulkan
+  vocabulary: layout bindings, pool sizes, descriptor writes, pipeline layouts,
+  compute pipeline create info, and explicit dispatch from the example.

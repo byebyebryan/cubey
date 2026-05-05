@@ -26,8 +26,10 @@ versioned section and use that section as the release notes.
 - Public Vulkan `Buffer`, `Image`, `DepthAttachment`, `Sampler`, and
   `ImmediateCommands` components for device resources, generated texture paths,
   depth attachments, and setup uploads.
-- Public Vulkan pipeline and descriptor RAII types, plus a dynamic graphics
-  pipeline create-info helper for the current single-color-attachment path.
+- Public Vulkan pipeline and descriptor RAII types, plus descriptor write
+  helpers, pipeline-layout create-info helpers, a compute pipeline create-info
+  helper, and a dynamic graphics pipeline create-info helper for the current
+  single-color-attachment path.
 - Public Vulkan `RenderContext` component for explicit surface-backed
   begin/end frame lifecycle, acquire, command reset, submit, present, and
   swapchain-recreate signaling.
@@ -64,6 +66,9 @@ versioned section and use that section as the release notes.
   choices.
 - Cube examples now share device-local buffer upload and depth attachment setup
   helpers instead of carrying local staging-copy and depth-image code.
+- `textured_cube` now shares descriptor layout/pool/write helpers plus compute
+  pipeline and pipeline-layout create-info helpers instead of carrying raw
+  descriptor and compute setup blocks.
 
 ## Pre-2.0 History
 

@@ -26,8 +26,55 @@ struct DynamicGraphicsPipelineConfig {
     VkCompareOp depth_compare_op = VK_COMPARE_OP_LESS;
 };
 
+struct PipelineLayoutConfig {
+    std::span<const VkDescriptorSetLayout> set_layouts;
+    std::span<const VkPushConstantRange> push_constants;
+};
+
+class PipelineLayoutInfo {
+  public:
+    explicit PipelineLayoutInfo(const PipelineLayoutConfig& config);
+
+    PipelineLayoutInfo(const PipelineLayoutInfo&) = delete;
+    PipelineLayoutInfo& operator=(const PipelineLayoutInfo&) = delete;
+    PipelineLayoutInfo(PipelineLayoutInfo&&) = delete;
+    PipelineLayoutInfo& operator=(PipelineLayoutInfo&&) = delete;
+
+    [[nodiscard]] const VkPipelineLayoutCreateInfo& create_info() const {
+        return create_info_;
+    }
+
+  private:
+    std::vector<VkDescriptorSetLayout> set_layouts_;
+    std::vector<VkPushConstantRange> push_constants_;
+    VkPipelineLayoutCreateInfo create_info_{};
+};
+
+struct ComputePipelineConfig {
+    VkPipelineLayout layout = VK_NULL_HANDLE;
+    VkPipelineShaderStageCreateInfo shader_stage{};
+};
+
 [[nodiscard]] VkPipelineShaderStageCreateInfo
 shader_stage(VkShaderStageFlagBits stage, VkShaderModule module, const char* entry_point = "main");
+
+class ComputePipelineInfo {
+  public:
+    explicit ComputePipelineInfo(const ComputePipelineConfig& config);
+
+    ComputePipelineInfo(const ComputePipelineInfo&) = delete;
+    ComputePipelineInfo& operator=(const ComputePipelineInfo&) = delete;
+    ComputePipelineInfo(ComputePipelineInfo&&) = delete;
+    ComputePipelineInfo& operator=(ComputePipelineInfo&&) = delete;
+
+    [[nodiscard]] const VkComputePipelineCreateInfo& create_info() const {
+        return create_info_;
+    }
+
+  private:
+    VkPipelineShaderStageCreateInfo shader_stage_{};
+    VkComputePipelineCreateInfo create_info_{};
+};
 
 class DynamicGraphicsPipelineInfo {
   public:
