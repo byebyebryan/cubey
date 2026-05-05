@@ -66,6 +66,9 @@ As of 2026-05-05:
   and sampling transitions.
   `textured_cube` now uses the shared generated-texture config and storage
   transition helpers.
+- Promoted the narrow pieces needed for the first headless artifact path:
+  offscreen color render-target config, color-attachment-to-readback transition,
+  and `cubey::write_png_rgba8` backed by vendored `stb_image_write`.
 - Promoted `SwapchainRecreateTracker` for the one clearly repeated frame-loop
   policy: bounding consecutive out-of-date/suboptimal recreate attempts. The
   actual swapchain-sized resource rebuild order remains example-local.
@@ -85,16 +88,19 @@ As of 2026-05-05:
   directional lighting, dynamic rendering, and shader sampling. It is also the
   first interactive example: left-drag rotates, Space pauses, `R` resets, and
   Escape exits.
+- Added `examples/headless_render` to exercise no-window Vulkan instance/device
+  creation, offscreen dynamic rendering, image-to-buffer readback, and PNG
+  artifact writing.
 - GLFW window setup, surface creation, command recording, acquire/present
   behavior, and resize policy remain example-local. Graphics pipeline creation,
   descriptor/compute setup, device-local cube-buffer uploads, and depth
   attachments now use shared helpers, while examples still own shader module,
   vertex-input, descriptor layout choices, dispatch choices, and render policy.
-- CTest covers both the no-display terminal boundary and graphical runs when a
-  desktop window context is injected.
-- Roadmap alignment: the next framework driver should be a minimal headless
-  PNG artifact path before a broad app/runtime layer. A real project should
-  provide the pressure for any later host abstraction.
+- CTest covers no-display terminal boundaries, graphical runs when a desktop
+  window context is injected, and the headless PNG artifact path.
+- Roadmap alignment: the next framework driver should be the first real project.
+  A broad app/runtime layer should wait until both windowed and headless project
+  paths repeat the same shape.
 - The current useful manual desktop smokes are:
 
 ```bash
@@ -106,6 +112,7 @@ env XDG_RUNTIME_DIR=/run/user/1000 WAYLAND_DISPLAY=wayland-1 DISPLAY=:1 XDG_CURR
   ./build/dev/examples/spinning_cube/spinning_cube --require-validation --frames 300 --width 1280 --height 720
 env XDG_RUNTIME_DIR=/run/user/1000 WAYLAND_DISPLAY=wayland-1 DISPLAY=:1 XDG_CURRENT_DESKTOP=niri \
   ./build/dev/examples/textured_cube/textured_cube --require-validation --frames 300 --width 1280 --height 720
+./build/dev/examples/headless_render/headless_render --require-validation --width 640 --height 360 --output /tmp/cubey-headless.png
 ```
 
 As of 2026-04-28:
@@ -146,6 +153,8 @@ As of 2026-04-28:
   optionally enable during manual debugging.
 - Windowed and headless rendering need to stay healthy together. Headless gives
   the project inspectable artifacts and better automated feedback.
+- The headless PNG path does not need GLFW or desktop environment variables,
+  but it still needs a Vulkan-capable GPU and driver visible to the process.
 - The Codex terminal may not inherit the desktop Wayland variables even when a
   niri session is active. For graphical smoke tests from that shell, inject the
   window context explicitly:
@@ -296,7 +305,19 @@ env XDG_RUNTIME_DIR=/run/user/1000 WAYLAND_DISPLAY=wayland-1 DISPLAY=:1 XDG_CURR
   descriptor writes is acceptable for now, but the API must make pointer
   lifetimes hard to misuse. Naming also matters for transition helpers; generic
   names are risky when old-layout and source-stage assumptions are specific.
-- The next useful framework pressure is a no-window artifact path. It will likely
-  need an offscreen color target, an explicit color-attachment-to-readback
-  transition, image-to-buffer copy, `stb_image_write` PNG output, and a no-display
-  CTest smoke before any app host abstraction is justified.
+- The no-window artifact path proved useful only after it stayed concrete:
+  offscreen color target, explicit color-attachment-to-readback transition,
+  image-to-buffer copy, `stb_image_write` PNG output, and a no-display CTest
+  smoke. That is still not enough evidence to justify a broad app host.
+
+### 2026-05-05
+
+- The headless PNG slice landed in three small checkpoints: PNG byte-buffer
+  output helper, Vulkan offscreen color/readback helpers, and
+  `examples/headless_render`.
+- `headless_render` intentionally renders a deterministic clear first. A
+  fullscreen shader could add signal later, but the current value is proving
+  the no-window Vulkan path and PNG artifact loop without creating an app host.
+- CTest now includes `headless_render_writes_png`, which writes into the build
+  tree and validates the PNG signature. The manual validation smoke produced a
+  `128 x 72` RGBA PNG on the RTX 5070 Ti.

@@ -28,7 +28,8 @@ versioned section and use that section as the release notes.
   depth attachments, and setup uploads.
 - Public Vulkan transfer/readback helpers for readback buffers, sampled image
   configs, buffer-image copies, and storage, transfer, sampled-image readback,
-  and sampling image layout transitions.
+  color-attachment readback, and sampling image layout transitions.
+- Public PNG output helper backed by vendored `stb_image_write`.
 - Public Vulkan pipeline and descriptor RAII types, plus descriptor write
   helpers, pipeline-layout create-info helpers, a compute pipeline create-info
   helper, and a dynamic graphics pipeline create-info helper for the current
@@ -54,8 +55,11 @@ versioned section and use that section as the release notes.
 - `examples/textured_cube`, an interactive shaded cube that generates texture
   data through a setup-time compute shader and samples it in the graphics pass
   with descriptor-backed scene uniforms and dynamic rendering.
+- `examples/headless_render`, a no-window Vulkan smoke that renders an
+  offscreen color target, reads it back, and writes a PNG artifact.
 - CTest smoke that accepts either successful window startup or the known
   no-display GLFW failure in terminal sessions.
+- CTest smoke for headless PNG artifact creation and PNG signature validation.
 
 ### Changed
 
@@ -79,7 +83,7 @@ versioned section and use that section as the release notes.
 - Windowed examples now share recreate-attempt tracking while still owning their
   swapchain resource rebuild steps.
 - Roadmap and Vulkan abstraction docs now route the next framework checkpoint
-  toward a minimal headless PNG artifact path before a broader app/runtime host.
+  toward the first real project before a broader app/runtime host.
 
 ## Pre-2.0 History
 

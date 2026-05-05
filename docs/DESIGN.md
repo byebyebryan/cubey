@@ -33,7 +33,7 @@ This is a ground-up rewrite carrying forward the same spirit with modern tools a
 | UI | None yet; ImGui is the likely debug UI | Current telemetry stays lightweight until UI earns the dependency |
 | Math | Project-local helpers now; GLM remains a candidate | Keep dependencies narrow until shared math pressure appears |
 | Shader compilation | glslangValidator (build time) | GLSL → SPIR-V, no runtime dependency |
-| Image output | `stb_image_write` planned for headless PNG output | Single-header dependency, enough for inspectable artifacts |
+| Image output | `stb_image_write` | Single-header dependency, enough for inspectable artifacts |
 
 ## Architecture
 
@@ -172,8 +172,8 @@ library. Runnable binaries should be named explicitly and live in either
   used by examples, projects, and tests.
 - `src/cubey/` - library implementation and private headers.
 - `examples/` - small, focused reference programs that prove one concept or API
-  path. Current examples are `window_clear`, `triangle`, `spinning_cube`, and
-  `textured_cube`; `headless_render` is a planned path.
+  path. Current examples are `window_clear`, `triangle`, `spinning_cube`,
+  `textured_cube`, and `headless_render`.
 - `projects/` - first-class graphics experiments and longer-lived creative
   work, such as `fluid_sim`, `particles`, `marching_cubes`, `fractal`, and
   `sdf_sculpt`.
@@ -213,6 +213,7 @@ cubey/
       app_config.h         -- shared run configuration
       frame_clock.h        -- frame timing
       frame_stats.h        -- lightweight telemetry formatting
+      image_output.h       -- PNG artifact output
       orbit_controller.h   -- basic orbit input state
       vulkan/
         vk_check.h         -- Vulkan result helpers
@@ -235,6 +236,7 @@ cubey/
       app_config.cpp
       frame_clock.cpp
       frame_stats.cpp
+      image_output.cpp
       orbit_controller.cpp
       vulkan/
         instance.cpp       -- instance, validation, debug messenger
@@ -258,7 +260,7 @@ cubey/
     spinning_cube/         -- indexed cube, push constants, depth
     textured_cube/         -- compute texture generation, uniforms, descriptors,
                               sampling
-    headless_render/       -- planned minimal offscreen image path
+    headless_render/       -- minimal offscreen image path
   projects/
       fluid_sim/
         CMakeLists.txt

@@ -34,7 +34,8 @@ Exit criteria:
 
 ## Phase 1: Windowed Vulkan Runtime Skeleton
 
-Status: windowed framework checkpoint complete; headless output remains open.
+Status: windowed framework checkpoint and first headless artifact checkpoint
+complete; frame overlap remains open.
 
 Goal: reshape the successful Vulkan spike into maintainable mainline modules
 and prove visible desktop rendering without turning the library into a generic
@@ -60,12 +61,12 @@ Completed criteria:
   and render through dynamic rendering.
 - Validation-layer smoke can be required from the command line.
 - Resize and swapchain recreation remain first-class tested behavior.
+- Headless smoke renders and writes an inspectable PNG.
 
 Open criteria:
 
-- Headless smoke renders and writes an inspectable image.
 - N-frames-in-flight remains a future optimization, not a blocker for the first
-  visible framework checkpoint.
+  framework checkpoint.
 
 Current checkpoint:
 
@@ -92,6 +93,10 @@ Current checkpoint:
   sampled image configs, buffer-image copy regions, buffer-to-image copies,
   image-to-buffer copies, and current storage, transfer, sampled-image readback,
   and sampling image layout transitions.
+  The headless path also uses an explicit offscreen color render-target config
+  and a color-attachment-to-readback transition.
+- Reusable `cubey::write_png_rgba8` wraps the vendored `stb_image_write` PNG
+  path behind a byte-buffer API.
 - Reusable `cubey::vulkan::PipelineLayout`, `GraphicsPipeline`,
   `ComputePipeline`, `DescriptorSetLayout`, and `DescriptorPool` own basic
   pipeline and descriptor lifetimes while still taking raw Vulkan create-info
@@ -130,40 +135,42 @@ Current checkpoint:
   descriptor/compute helpers, and draws an interactive shaded textured indexed
   cube through dynamic rendering with per-face normals and shared GLSL Lambert
   lighting.
+- `examples/headless_render` links against `cubey`, creates no GLFW window or
+  surface, renders an offscreen color target through dynamic rendering, copies
+  it into a readback buffer, and writes a PNG artifact.
 - The current device model intentionally selects one queue family for required
   graphics, compute, and present capabilities. Split queue-family support is a
   future framework slice, not part of the current example-local compute path.
 - The remaining windowed app implementation is intentionally example-local: GLFW
   window setup, surface creation, swapchain-sized resource rebuild order,
   pipeline layout choices, command recording, and resize policy.
-- Dev CTest covers the target in both graphical and no-display terminal
-  sessions.
-- Headless rendering, frame overlap, split graphics/compute/present queue-family
-  support, and external asset loading remain future slices.
+- Dev CTest covers the target in graphical, no-display terminal, and headless
+  artifact sessions.
+- Frame overlap, split graphics/compute/present queue-family support, and
+  external asset loading remain future slices.
 
-Alignment: the windowed Vulkan layer is now far enough along that the next
-framework signal should come from a no-window artifact path, not another
-windowed example and not a broad app/runtime layer. The remaining rebuild code is
-still example-specific enough that a broader host should wait for either
-headless output or the first real project.
+Alignment: the Vulkan layer now has visible windowed examples plus a minimal
+headless PNG path. The next useful pressure should come from a first real
+project, not another generic runtime layer. The remaining rebuild and headless
+setup code is still specific enough that a broader host should wait for repeated
+project pressure.
 
 ## Phase 2: Headless Output And Runtime Boundary
 
-Status: next.
+Status: initial pass complete.
 
 Goal: prove that Cubey can produce inspectable GPU artifacts without a desktop
 surface while keeping the runtime boundary concrete.
 
-- Add a minimal `examples/headless_render` target or equivalent explicit
-  no-window smoke.
-- Add `stb_image_write` as a small third-party dependency for PNG artifact
+- Added `examples/headless_render` as an explicit no-window smoke.
+- Added `stb_image_write` as a small third-party dependency for PNG artifact
   output.
-- Create an offscreen color target through the existing Vulkan resource model.
-- Add only the layout transitions and copy helpers needed for that concrete
+- Created an offscreen color target through the existing Vulkan resource model.
+- Added only the layout transitions and copy helpers needed for that concrete
   render-target readback path.
-- Write a simple deterministic PNG artifact.
-- Add CTest coverage for the no-display success path, including output-file
-  existence and basic PNG signature/size checks.
+- Wrote a simple deterministic PNG artifact.
+- Added CTest coverage for the no-display success path, including output-file
+  existence and PNG signature checks.
 - Keep `window_clear`, `triangle`, `spinning_cube`, and `textured_cube`
   windowed-example loops explicit unless the headless path reveals reusable host
   shape.
@@ -178,7 +185,7 @@ Exit criteria:
 
 ## Phase 3: First Real Project
 
-Status: after the headless artifact path.
+Status: next.
 
 Goal: prove the framework with one non-trivial procedural graphics project and
 let repeated project needs shape the app/runtime API.

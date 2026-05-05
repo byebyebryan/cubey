@@ -46,21 +46,23 @@ rendering.
 `examples/textured_cube` adds a compute-generated texture, descriptor-backed
 scene uniforms, normals, shared GLSL lighting, image/sampler ownership, and
 fragment-shader sampling through dynamic rendering.
+`examples/headless_render` adds the first no-window artifact path: it renders
+an offscreen color target through dynamic rendering, reads the image back, and
+writes an inspectable PNG.
 `cubey` owns the reusable Vulkan instance, device, buffer, image, sampler,
 swapchain, shader-module, command-pool, rendering helpers, frame clock,
 orbit-controller, pipeline ownership, dynamic graphics pipeline setup,
 descriptor setup/write helpers, compute pipeline setup, depth attachment setup,
-texture transfer/readback helpers, shared shader includes, `RenderContext`
-surface-backed begin/end frame lifecycle, and single-frame command/sync
-components, and swapchain recreate-attempt tracking; examples still own GLFW,
-surface creation, command recording, and resize policy. The spike branches
-remain reference material for deeper compute, headless, and browser work.
+texture transfer/readback helpers, PNG output helper, shared shader includes,
+`RenderContext` surface-backed begin/end frame lifecycle, single-frame
+command/sync components, and swapchain recreate-attempt tracking; examples still
+own GLFW, surface creation, command recording, and resize policy. The spike
+branches remain reference material for deeper compute and browser work.
 
-The next framework checkpoint is a minimal headless artifact path, likely as an
-explicit `examples/headless_render` target. It should reuse the current Vulkan
-resource/readback helpers, write an inspectable PNG from a no-window run via
-`stb_image_write`, and avoid introducing a broad app/runtime host until a real
-project creates that pressure.
+The next framework checkpoint should come from the first real project. A small
+fractal renderer is the likely fastest path because it can reuse the current
+windowed and headless artifact paths without forcing a broad app/runtime host
+upfront.
 
 ## Development Setup
 
@@ -83,6 +85,12 @@ The windowed smoke targets are:
 ./build/dev/examples/textured_cube/textured_cube --frames 300 --width 1280 --height 720
 ```
 
+The headless PNG smoke is:
+
+```bash
+./build/dev/examples/headless_render/headless_render --width 640 --height 360 --output /tmp/cubey-headless.png
+```
+
 Use validation as a hard requirement when the validation layers are installed:
 
 ```bash
@@ -90,6 +98,7 @@ Use validation as a hard requirement when the validation layers are installed:
 ./build/dev/examples/triangle/triangle --require-validation --frames 300 --width 1280 --height 720
 ./build/dev/examples/spinning_cube/spinning_cube --require-validation --frames 300 --width 1280 --height 720
 ./build/dev/examples/textured_cube/textured_cube --require-validation --frames 300 --width 1280 --height 720
+./build/dev/examples/headless_render/headless_render --require-validation --width 640 --height 360 --output /tmp/cubey-headless.png
 ```
 
 `textured_cube` supports basic interaction: left-drag rotates the shaded
