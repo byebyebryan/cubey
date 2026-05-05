@@ -2,6 +2,7 @@ add_library(cubey STATIC
     app_config.cpp
     frame_clock.cpp
     frame_stats.cpp
+    image_output.cpp
     orbit_controller.cpp
     vulkan/buffer.cpp
     vulkan/command_pool.cpp
@@ -25,6 +26,13 @@ target_include_directories(
     PUBLIC
         "${PROJECT_SOURCE_DIR}/include"
         "${vulkan_headers_SOURCE_DIR}/include"
+)
+
+target_include_directories(
+    cubey
+    SYSTEM
+    PRIVATE
+        "${PROJECT_SOURCE_DIR}/third_party/stb"
 )
 
 target_link_libraries(

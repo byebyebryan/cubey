@@ -25,6 +25,7 @@ void test_compute_helpers_describe_pipeline_and_layout_setup();
 void test_descriptor_helpers_describe_layout_pool_and_writes();
 void test_frame_clock_tracks_delta_elapsed_and_index();
 void test_frame_stats_publish_window_title_metrics();
+void test_image_output_writes_rgba_png();
 void test_pipeline_helpers_describe_dynamic_graphics_pipeline_setup();
 void test_rendering_helpers_describe_dynamic_rendering_setup();
 void test_render_context_exposes_explicit_frame_boundary();
@@ -38,6 +39,7 @@ int main() {
         test_descriptor_helpers_describe_layout_pool_and_writes();
         test_frame_clock_tracks_delta_elapsed_and_index();
         test_frame_stats_publish_window_title_metrics();
+        test_image_output_writes_rgba_png();
         test_pipeline_helpers_describe_dynamic_graphics_pipeline_setup();
         test_rendering_helpers_describe_dynamic_rendering_setup();
         test_render_context_exposes_explicit_frame_boundary();
