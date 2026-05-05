@@ -56,6 +56,12 @@ components, and swapchain recreate-attempt tracking; examples still own GLFW,
 surface creation, command recording, and resize policy. The spike branches
 remain reference material for deeper compute, headless, and browser work.
 
+The next framework checkpoint is a minimal headless artifact path, likely as an
+explicit `examples/headless_render` target. It should reuse the current Vulkan
+resource/readback helpers, write an inspectable PNG from a no-window run via
+`stb_image_write`, and avoid introducing a broad app/runtime host until a real
+project creates that pressure.
+
 ## Development Setup
 
 Use the CMake presets as the default entrypoint:

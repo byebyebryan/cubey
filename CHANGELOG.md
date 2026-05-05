@@ -78,6 +78,8 @@ versioned section and use that section as the release notes.
   sampled-image config helpers for its compute-generated texture.
 - Windowed examples now share recreate-attempt tracking while still owning their
   swapchain resource rebuild steps.
+- Roadmap and Vulkan abstraction docs now route the next framework checkpoint
+  toward a minimal headless PNG artifact path before a broader app/runtime host.
 
 ## Pre-2.0 History
 

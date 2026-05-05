@@ -288,14 +288,15 @@ Goal: support generated/uploaded textures and future headless artifacts.
 
 - Status: initial pass complete on `main`.
 - Added image transition helpers for storage, transfer destination, transfer
-  source, and sampling paths.
+  sampled-image readback, and sampling paths.
 - Added generated/uploaded sampled image config helpers and buffer-image copy
   region setup.
 - Added buffer-to-image and image-to-buffer copy helpers.
 - Added readback buffer config and host-visible coherent buffer download.
 
-The concrete headless artifact path is still deferred until the project/runtime
-boundary is clearer, but the low-level copy/readback pieces are now available.
+The concrete headless artifact path is now the next planned batch. The
+low-level copy/readback pieces are available; the missing part is an explicit
+offscreen render target and artifact-writing smoke.
 
 ### Batch 4: Frame Loop And Swapchain-Sized Resource Rebuild
 
@@ -313,22 +314,69 @@ stable.
 This batch should remain platform-light. GLFW should still live in examples or
 in a separate future host layer.
 
-### Batch 5: Project Runtime And Headless Host
+### Batch 5: Headless Artifact Path
 
-Goal: make real projects concise and testable.
+Goal: prove no-window rendering and artifact readback before abstracting the app
+host.
 
-- Define a small project interface around setup, update, render, resize, and
-  shutdown.
-- Add a windowed host if the example loops have clearly converged.
-- Add a headless host that can share project render code and produce output
-  artifacts.
+- Add a minimal `examples/headless_render` or equivalent explicit no-window
+  target.
+- Add `stb_image_write` for PNG output, keeping dependency wiring small and
+  isolated from the Vulkan layer.
+- Create an offscreen color target and render into it with dynamic rendering.
+- Add any missing transition helpers for the exact render-target readback path.
+- Copy the image into a readback buffer and write a deterministic PNG artifact.
+- Add CTest coverage for artifact creation in no-display terminal sessions.
 
-This is the point where `examples/` can stay minimal and `projects/` can become
-first-class experiments.
+Keep this batch intentionally small. It should pressure render-target/readback
+vocabulary, not create a general app shell.
+
+Suggested implementation order:
+
+1. Add a repo-level third-party location for the single `stb_image_write.h`
+   header plus a short license note.
+2. Add a small image-output wrapper in `cubey` or the headless example. Keep it
+   independent of Vulkan handles: bytes in, PNG file out.
+3. Add offscreen color image config and layout transitions for clear/render and
+   color-render-target readback.
+4. Add `examples/headless_render` with a deterministic clear or simple
+   fullscreen shader path.
+5. Add a no-display CTest smoke that writes into the build tree and validates
+   PNG signature plus expected dimensions.
+
+Work loop:
+
+1. Dependency slice: vendor `stb_image_write.h`, add a license note, and add a
+   tiny PNG output wrapper with byte-level tests.
+2. Vulkan helper slice: add the offscreen color image config and any explicitly
+   named color-render-target readback transition helpers, with unit tests for the
+   create-info and transition structs.
+3. Example slice: add `examples/headless_render` using a deterministic clear
+   first. Keep it no-window and no-GLFW.
+4. Artifact test slice: add CTest coverage that runs the example with validation
+   required when available, writes into the build tree, and checks PNG signature
+   plus dimensions.
+5. Review checkpoint: only after the PNG smoke works, decide whether a simple
+   fullscreen shader adds useful signal before starting the first real project.
+
+### Batch 6: First Project And Runtime Pressure
+
+Goal: let a real project define the app/runtime seam.
+
+- Start with a small `projects/fractal` if the goal is fast visual signal.
+- Use the headless artifact path from Batch 5 for deterministic smoke output.
+- Extract shared lifecycle or host code only when both windowed and headless
+  paths repeat the same shape.
+- Keep examples as reference programs; move longer-lived creative work under
+  `projects/`.
+
+This is the point where a project interface around setup, update, render,
+resize, and shutdown may become worthwhile.
 
 ## Near-Term Recommendation
 
-Batch 1 through Batch 4 have their first passes on `main`. Pause before the
-app/runtime layer and choose the next driver deliberately: either headless output
-using the readback helpers, or the first real project that can define the host
-boundary through concrete pressure.
+Batch 1 through Batch 4 have their first passes on `main`. Do Batch 5 next:
+headless output using the existing resource/readback helpers, plus only the
+extra render-target transition/copy pieces it proves are missing. After that,
+start the first real project and let it define whether a runtime host is worth
+extracting.

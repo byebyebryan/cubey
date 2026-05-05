@@ -7,7 +7,7 @@ decisions into `docs/DESIGN.md`, `docs/roadmap.md`, or
 
 ## Current Checkpoint
 
-As of 2026-05-04:
+As of 2026-05-05:
 
 - `main` has moved from docs/tooling-only to the first implementation slice.
 - The primary target is `cubey`, a static library with public headers under
@@ -69,6 +69,9 @@ As of 2026-05-04:
 - Promoted `SwapchainRecreateTracker` for the one clearly repeated frame-loop
   policy: bounding consecutive out-of-date/suboptimal recreate attempts. The
   actual swapchain-sized resource rebuild order remains example-local.
+- Tightened the Vulkan helper contracts after review: descriptor write helpers
+  now reject temporary wrapper objects at compile time, and the sampled-image
+  readback transition name now exposes its layout assumptions.
 - Added `examples/triangle` as the first shader-backed graphics pipeline smoke.
 - Converted `examples/triangle` to dynamic rendering as the first render-pass
   direction spike. This removes triangle's render pass/framebuffer ownership and
@@ -89,6 +92,9 @@ As of 2026-05-04:
   vertex-input, descriptor layout choices, dispatch choices, and render policy.
 - CTest covers both the no-display terminal boundary and graphical runs when a
   desktop window context is injected.
+- Roadmap alignment: the next framework driver should be a minimal headless
+  PNG artifact path before a broad app/runtime layer. A real project should
+  provide the pressure for any later host abstraction.
 - The current useful manual desktop smokes are:
 
 ```bash
@@ -286,3 +292,11 @@ env XDG_RUNTIME_DIR=/run/user/1000 WAYLAND_DISPLAY=wayland-1 DISPLAY=:1 XDG_CURR
   generic swapchain resource rebuild callback would add indirection around code
   that still differs by example, so the rebuild steps stay visible until a host
   layer has a stronger reason to exist.
+- The helper-contract review kept the layer honest: returning raw Vulkan
+  descriptor writes is acceptable for now, but the API must make pointer
+  lifetimes hard to misuse. Naming also matters for transition helpers; generic
+  names are risky when old-layout and source-stage assumptions are specific.
+- The next useful framework pressure is a no-window artifact path. It will likely
+  need an offscreen color target, an explicit color-attachment-to-readback
+  transition, image-to-buffer copy, `stb_image_write` PNG output, and a no-display
+  CTest smoke before any app host abstraction is justified.

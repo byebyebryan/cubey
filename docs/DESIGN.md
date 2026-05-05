@@ -33,7 +33,7 @@ This is a ground-up rewrite carrying forward the same spirit with modern tools a
 | UI | None yet; ImGui is the likely debug UI | Current telemetry stays lightweight until UI earns the dependency |
 | Math | Project-local helpers now; GLM remains a candidate | Keep dependencies narrow until shared math pressure appears |
 | Shader compilation | glslangValidator (build time) | GLSL → SPIR-V, no runtime dependency |
-| Image output | None yet; stb_image_write remains a candidate | PNG output belongs with the future headless path |
+| Image output | `stb_image_write` planned for headless PNG output | Single-header dependency, enough for inspectable artifacts |
 
 ## Architecture
 
@@ -177,6 +177,7 @@ library. Runnable binaries should be named explicitly and live in either
 - `projects/` - first-class graphics experiments and longer-lived creative
   work, such as `fluid_sim`, `particles`, `marching_cubes`, `fractal`, and
   `sdf_sculpt`.
+- `third_party/` - small vendored dependencies with explicit license notes.
 - `tools/` - repo utilities, asset processors, shader tools, or diagnostics.
 - `tests/` - unit and integration tests.
 - `benchmarks/` - performance targets once there is something meaningful to
@@ -276,6 +277,7 @@ cubey/
   benchmarks/
   shaders/                 -- shared GLSL includes (lighting, noise, math)
   assets/                  -- textures, meshes
+  third_party/             -- vendored single-header dependencies and notices
   docs/
     DESIGN.md              -- this file
     roadmap.md             -- living implementation plan

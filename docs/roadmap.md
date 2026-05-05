@@ -32,32 +32,40 @@ Exit criteria:
   project direction from the repo docs.
 - Empty-project build and tooling presets work cleanly.
 
-## Phase 1: Vulkan Runtime Skeleton
+## Phase 1: Windowed Vulkan Runtime Skeleton
 
-Status: in progress.
+Status: windowed framework checkpoint complete; headless output remains open.
 
-Goal: reshape the successful Vulkan spike into maintainable mainline modules.
+Goal: reshape the successful Vulkan spike into maintainable mainline modules
+and prove visible desktop rendering without turning the library into a generic
+app engine.
 
 - Primary `cubey` static library with public headers under `include/cubey/`.
 - First runnable example under `examples/window_clear/`, not a generic `cubey`
   executable.
-- CLI/config surface for windowed and headless modes.
+- CLI/config surface for windowed examples and future headless modes.
 - GLFW window creation and Vulkan surface ownership.
 - Vulkan instance, physical device, logical device, queues, validation layers,
   and debug messenger setup.
 - Swapchain acquisition, presentation, out-of-date handling, and compositor
   resize recovery.
-- Frame resources: command buffers, semaphores, fences, and future
-  N-frames-in-flight.
+- Frame resources: command buffers, semaphores, fences, and the current
+  single-frame synchronization path.
 - Build-time GLSL to SPIR-V shader flow.
 
-Exit criteria:
+Completed criteria:
 
 - `cubey` builds as the primary library target and examples link against it.
-- `window_clear` opens a window and renders a simple GPU result.
-- Headless smoke renders and writes an inspectable image.
+- `window_clear`, `triangle`, `spinning_cube`, and `textured_cube` open windows
+  and render through dynamic rendering.
 - Validation-layer smoke can be required from the command line.
 - Resize and swapchain recreation remain first-class tested behavior.
+
+Open criteria:
+
+- Headless smoke renders and writes an inspectable image.
+- N-frames-in-flight remains a future optimization, not a blocker for the first
+  visible framework checkpoint.
 
 Current checkpoint:
 
@@ -133,39 +141,55 @@ Current checkpoint:
 - Headless rendering, frame overlap, split graphics/compute/present queue-family
   support, and external asset loading remain future slices.
 
-Next implementation checkpoint: reassess before the app/runtime layer. The
-remaining rebuild code is still example-specific enough that a broader host
-should wait for either headless output or the first real project.
+Alignment: the windowed Vulkan layer is now far enough along that the next
+framework signal should come from a no-window artifact path, not another
+windowed example and not a broad app/runtime layer. The remaining rebuild code is
+still example-specific enough that a broader host should wait for either
+headless output or the first real project.
 
-## Phase 2: Resource Layer and App API
+## Phase 2: Headless Output And Runtime Boundary
 
-Goal: make examples and projects concise without hiding important Vulkan
-constraints.
+Status: next.
 
-- RAII wrappers for buffers, images, image views, shader modules, pipelines, and
-  frame-owned synchronization.
-- Staging upload and readback paths for meshes, textures, uniforms, and compute
-  outputs.
-- A small app interface for setup, update, render, UI, and input hooks.
-- Practical rendering vocabulary for buffers, textures, pipelines, bind groups,
-  dispatch, draw, submit, present, and readback.
+Goal: prove that Cubey can produce inspectable GPU artifacts without a desktop
+surface while keeping the runtime boundary concrete.
+
+- Add a minimal `examples/headless_render` target or equivalent explicit
+  no-window smoke.
+- Add `stb_image_write` as a small third-party dependency for PNG artifact
+  output.
+- Create an offscreen color target through the existing Vulkan resource model.
+- Add only the layout transitions and copy helpers needed for that concrete
+  render-target readback path.
+- Write a simple deterministic PNG artifact.
+- Add CTest coverage for the no-display success path, including output-file
+  existence and basic PNG signature/size checks.
+- Keep `window_clear`, `triangle`, `spinning_cube`, and `textured_cube`
+  windowed-example loops explicit unless the headless path reveals reusable host
+  shape.
 
 Exit criteria:
 
-- Project code can focus on shader/data behavior instead of raw setup boilerplate.
-- Vulkan synchronization and image layout requirements remain visible where
-  they matter.
-- Headless and windowed runs share the same project code path where practical.
+- A no-window command can run with validation enabled and produce an inspectable
+  PNG artifact in a terminal session.
+- The offscreen path reuses `cubey` resource/readback helpers and exposes any
+  new layout assumptions by name.
+- The docs identify what still belongs to examples versus a future runtime host.
 
 ## Phase 3: First Real Project
 
-Goal: prove the framework with one non-trivial procedural graphics project.
+Status: after the headless artifact path.
+
+Goal: prove the framework with one non-trivial procedural graphics project and
+let repeated project needs shape the app/runtime API.
 
 Candidate projects:
 
-- Fractal renderer for the fastest end-to-end visual loop.
+- Fractal renderer for the fastest end-to-end visual loop and the simplest
+  headless/windowed comparison.
 - GPU particle system for compute plus graphics pipeline pressure.
-- Fluid simulation rewrite for the strongest connection to the original cubey.
+- Fluid simulation rewrite for the strongest connection to the original cubey,
+  after the runtime has more evidence.
 
 Exit criteria:
 
@@ -173,6 +197,25 @@ Exit criteria:
 - The same project can run headlessly for a fixed number of frames and produce a
   deterministic output artifact.
 - README contains the exact commands for local smoke testing.
+
+## Phase 4: Runtime Extraction
+
+Status: defer until Phase 2 and Phase 3 provide real pressure.
+
+Goal: extract only the host concepts that repeated windowed/headless project code
+has proven useful.
+
+- Project lifecycle vocabulary: setup, update, render, resize, shutdown.
+- Optional windowed host outside `cubey::vulkan`.
+- Optional headless host that shares project render code where practical.
+- Input/UI hooks only after a project needs them.
+
+Exit criteria:
+
+- At least one real project gets shorter without hiding Vulkan synchronization,
+  layout, descriptor, or resize constraints.
+- Examples remain useful as small reference programs rather than becoming hidden
+  framework tests.
 
 ## Later
 
