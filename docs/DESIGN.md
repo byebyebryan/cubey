@@ -233,6 +233,7 @@ cubey/
       image_output.h       -- PNG artifact output
       jobs.h               -- CPU job facade
       orbit_controller.h   -- basic orbit input state
+      project_runtime.h    -- async-ready project vocabulary
       spirv_file.h         -- SPIR-V bytecode file loading
       upload_queue.h       -- CPU-owned upload request queue
       vulkan/
@@ -261,6 +262,7 @@ cubey/
       image_output.cpp
       jobs.cpp
       orbit_controller.cpp
+      project_runtime.cpp
       spirv_file.cpp
       upload_queue.cpp
       stb_image_write.cpp -- isolated vendored PNG writer implementation

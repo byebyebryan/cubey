@@ -282,6 +282,12 @@ submission as a casual escape hatch.
 
 Examples can stay explicit. Projects should use this boundary once it exists.
 
+Initial implementation: `ProjectContext` exposes jobs, uploads, captures, frame
+tickets, and deferred destruction as services. `ProjectFrame`, `ProjectExtent`,
+`RenderPacket`, and the `ProjectLike` concept define the first compile-time
+checked lifecycle shape for future `projects/` code. No existing example has
+been moved onto this host vocabulary.
+
 ## Error Handling And Shutdown
 
 - Worker exceptions must be captured and returned through job handles or an
@@ -346,7 +352,14 @@ Status: initial pass complete.
 
 ### Slice 3: First Project Runtime Boundary
 
-- Add a small project host shape for `projects/`, not for existing examples.
+Status: initial pass complete.
+
+- Added a small project runtime vocabulary for `projects/`, not existing
+  examples.
+- Added `ProjectContext` service access to jobs, uploads, captures, frame
+  tickets, and deferred destruction.
+- Added a `ProjectLike` concept for setup/update/render-packet/resize/shutdown
+  lifecycle checks.
 - The first real project should produce frame packets and use upload/capture
   requests instead of direct blocking calls.
 

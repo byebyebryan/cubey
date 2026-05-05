@@ -11,6 +11,7 @@ add_executable(cubey_core_tests
     jobs_tests.cpp
     orbit_controller_tests.cpp
     pipeline_tests.cpp
+    project_runtime_tests.cpp
     rendering_tests.cpp
     render_context_tests.cpp
     resource_tests.cpp

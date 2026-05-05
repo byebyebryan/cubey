@@ -34,6 +34,8 @@ void test_inline_executor_runs_jobs_immediately();
 void test_job_system_runs_jobs_and_propagates_errors();
 void test_job_system_shutdown_rejects_new_jobs();
 void test_pipeline_helpers_describe_dynamic_graphics_pipeline_setup();
+void test_project_context_exposes_async_runtime_services();
+void test_project_runtime_contract_supports_lifecycle_shape();
 void test_rendering_helpers_describe_dynamic_rendering_setup();
 void test_render_context_exposes_explicit_frame_boundary();
 void test_resource_helpers_describe_device_local_upload_and_depth_setup();
@@ -60,6 +62,8 @@ int main() {
         test_job_system_runs_jobs_and_propagates_errors();
         test_job_system_shutdown_rejects_new_jobs();
         test_pipeline_helpers_describe_dynamic_graphics_pipeline_setup();
+        test_project_context_exposes_async_runtime_services();
+        test_project_runtime_contract_supports_lifecycle_shape();
         test_rendering_helpers_describe_dynamic_rendering_setup();
         test_render_context_exposes_explicit_frame_boundary();
         test_resource_helpers_describe_device_local_upload_and_depth_setup();

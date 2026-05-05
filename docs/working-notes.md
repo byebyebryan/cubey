@@ -56,6 +56,10 @@ As of 2026-05-05:
 - Promoted `cubey::FrameTicketIssuer`, `FrameTicket`, and
   `DeferredDestructionQueue` as CPU-side frame-ticket vocabulary for deferred
   cleanup. They are not tied to Vulkan fences yet.
+- Promoted `cubey::ProjectContext`, `ProjectFrame`, `ProjectExtent`,
+  `RenderPacket`, and `ProjectLike` as the first async-ready project runtime
+  vocabulary. Existing examples remain direct; future `projects/` should use
+  the new boundary.
 - Promoted the first pipeline/descriptor ownership components:
   `PipelineLayout`, `GraphicsPipeline`, `ComputePipeline`,
   `DescriptorSetLayout`, and `DescriptorPool`. These wrappers own lifetimes but
@@ -378,3 +382,7 @@ env XDG_RUNTIME_DIR=/run/user/1000 WAYLAND_DISPLAY=wayland-1 DISPLAY=:1 XDG_CURR
 - Batch 4 added frame tickets and deferred destruction. This gives future
   in-flight GPU lifetime work a vocabulary before N-frames-in-flight or timeline
   semaphore integration exists.
+- Batch 5 added the project runtime vocabulary but did not migrate examples.
+  This keeps reference examples readable while making the first real project use
+  setup/update/render-packet/resize/shutdown and service-based access to jobs,
+  uploads, captures, frame tickets, and deferred cleanup.

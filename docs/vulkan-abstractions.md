@@ -270,6 +270,8 @@ Current state:
   upload request queue.
 - `FrameTicketIssuer`, `FrameTicket`, and `DeferredDestructionQueue` provide
   CPU-side ticket retirement vocabulary.
+- `ProjectContext`, `ProjectFrame`, `ProjectExtent`, `RenderPacket`, and
+  `ProjectLike` provide the first async-ready project runtime vocabulary.
 - `ImmediateCommands`, readback helpers, and PNG output are synchronous.
 
 Needed next:
@@ -430,6 +432,7 @@ full threaded renderer.
 - Introduce queued upload/capture/readback shapes, initially processed
   synchronously by the GPU owner.
 - Keep examples direct; make the first project use the async-ready boundary.
+- Added the first project runtime vocabulary and lifecycle concept.
 
 This batch should create design pressure before the first real project grows
 around blocking helper calls.

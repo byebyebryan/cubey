@@ -56,6 +56,8 @@ versioned section and use that section as the release notes.
   drains them.
 - Public frame ticket issuer and deferred destruction queue for retiring
   CPU-side cleanup actions after completed frame/submission points.
+- Public async-ready project runtime vocabulary: project frames, extents,
+  render packets, project context services, and `ProjectLike` concept checks.
 - Public frame timing, orbit-controller, and frame-stat types for interactive
   windowed examples.
 - `examples/window_clear`, a minimal Vulkan/GLFW dynamic-rendering windowed

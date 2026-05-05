@@ -109,6 +109,9 @@ Current checkpoint:
 - Reusable `cubey::FrameTicketIssuer`, `FrameTicket`, and
   `DeferredDestructionQueue` provide the first frame-ticket retirement
   vocabulary.
+- Reusable `cubey::ProjectContext`, `ProjectFrame`, `ProjectExtent`,
+  `RenderPacket`, and `ProjectLike` provide the first async-ready project
+  runtime vocabulary.
 - Reusable `cubey::vulkan::PipelineLayout`, `GraphicsPipeline`,
   `ComputePipeline`, `DescriptorSetLayout`, and `DescriptorPool` own basic
   pipeline and descriptor lifetimes while still taking raw Vulkan create-info
@@ -217,7 +220,7 @@ Exit criteria:
 
 ## Phase 4: Threading And Async Runtime Boundary
 
-Status: design captured; implementation next.
+Status: initial pass complete.
 
 Goal: make the first real project fit a non-stalling Vulkan model without
 building a full threaded renderer too early.
@@ -228,6 +231,8 @@ building a full threaded renderer too early.
 - Added CPU-owned upload requests that can be drained by the GPU owner.
 - Added frame tickets and deferred destruction helpers for future in-flight GPU
   lifetime tracking.
+- Added project runtime vocabulary for setup, update, render-packet, resize,
+  and shutdown contracts.
 - Shape GPU readbacks and deeper capture polling as queued work.
 - Keep GPU ownership and `VkQueue` submission serialized through one owner.
 - Keep examples direct; require longer-lived `projects/` to use the
@@ -241,10 +246,12 @@ Exit criteria:
   provide deterministic test behavior.
 - Upload/capture APIs can start synchronous internally while exposing queued
   semantics to project code.
+- A project-like type can be checked at compile time against the setup, update,
+  render-packet, resize, and shutdown contract.
 
 ## Phase 5: First Real Project
 
-Status: after the threading/async boundary.
+Status: next.
 
 Goal: prove the framework with one non-trivial procedural graphics project and
 let repeated project needs shape the app/runtime API.
