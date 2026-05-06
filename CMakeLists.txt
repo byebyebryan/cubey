@@ -10,6 +10,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 option(CUBEY_ENABLE_WARNINGS "Enable project warning flags" ON)
 option(CUBEY_WARNINGS_AS_ERRORS "Treat project warnings as errors" OFF)
 option(CUBEY_ENABLE_CLANG_TIDY "Run clang-tidy during builds" OFF)
+option(CUBEY_BUILD_APP "Build Cubey GLFW app runtime" ON)
 option(CUBEY_BUILD_EXAMPLES "Build Cubey examples" ON)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
@@ -43,11 +44,11 @@ include(CTest)
 
 add_subdirectory(src/cubey)
 
-if (BUILD_TESTING)
-    add_subdirectory(tests/cubey)
+if (CUBEY_BUILD_EXAMPLES AND NOT CUBEY_BUILD_APP)
+    message(FATAL_ERROR "CUBEY_BUILD_EXAMPLES requires CUBEY_BUILD_APP")
 endif()
 
-if (CUBEY_BUILD_EXAMPLES)
+if (CUBEY_BUILD_APP)
     FetchContent_Declare(
         glfw
         GIT_REPOSITORY https://github.com/glfw/glfw
@@ -58,6 +59,14 @@ if (CUBEY_BUILD_EXAMPLES)
     set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
     FetchContent_MakeAvailable(glfw)
 
+    add_subdirectory(src/cubey/app)
+endif()
+
+if (BUILD_TESTING)
+    add_subdirectory(tests/cubey)
+endif()
+
+if (CUBEY_BUILD_EXAMPLES)
     add_subdirectory(examples/window_clear)
     add_subdirectory(examples/triangle)
     add_subdirectory(examples/spinning_cube)
