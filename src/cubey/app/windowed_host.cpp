@@ -164,11 +164,11 @@ void WindowedHost::create_frame_resources() {
 void WindowedHost::create_swapchain_resources() {
     create_swapchain();
     create_frame_resources();
+    swapchain_resources_created_ = true;
     if (callbacks_.create_swapchain_resources) {
         WindowedAppContext active_context = context();
         callbacks_.create_swapchain_resources(active_context);
     }
-    swapchain_resources_created_ = true;
 }
 
 void WindowedHost::destroy_swapchain_resources() {

@@ -7,7 +7,6 @@ set_target_properties(cubey_example_triangle PROPERTIES OUTPUT_NAME triangle)
 target_compile_definitions(
     cubey_example_triangle
     PRIVATE
-        GLFW_INCLUDE_NONE
         CUBEY_TRIANGLE_SHADER_DIR="${CMAKE_CURRENT_BINARY_DIR}/shaders"
 )
 
@@ -15,8 +14,8 @@ target_link_libraries(
     cubey_example_triangle
     PRIVATE
         cubey::cubey
+        cubey::app
         cubey_project_warnings
-        glfw
 )
 
 cubey_add_glsl_shaders(
