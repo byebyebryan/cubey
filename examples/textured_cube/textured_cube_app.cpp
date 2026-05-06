@@ -3,6 +3,7 @@
 #include <cubey/app/glfw_window.h>
 #include <cubey/app/windowed_host.h>
 #include <cubey/frame_stats.h>
+#include <cubey/math.h>
 #include <cubey/orbit_controller.h>
 #include <cubey/spirv_io.h>
 #include <cubey/vulkan/buffer.h>
@@ -20,7 +21,6 @@
 #include <vulkan/vulkan.h>
 
 #include <array>
-#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <cstdio>
@@ -41,106 +41,25 @@ namespace {
 using cubey::vulkan::check;
 using cubey::vulkan::vk_struct;
 
-constexpr float kPi = std::numbers::pi_v<float>;
 constexpr std::uint32_t kTextureWidth = 64;
 constexpr std::uint32_t kTextureHeight = 64;
 constexpr VkFormat kTextureFormat = VK_FORMAT_R8G8B8A8_UNORM;
 constexpr std::uint32_t kTextureComputeGroupSize = 8;
-
-struct Mat4 {
-    std::array<float, 16> values{};
-};
-
-float& at(Mat4& matrix, std::size_t row, std::size_t column) {
-    return matrix.values[(column * 4U) + row];
-}
-
-float at(const Mat4& matrix, std::size_t row, std::size_t column) {
-    return matrix.values[(column * 4U) + row];
-}
-
-Mat4 identity() {
-    Mat4 matrix{};
-    at(matrix, 0, 0) = 1.0F;
-    at(matrix, 1, 1) = 1.0F;
-    at(matrix, 2, 2) = 1.0F;
-    at(matrix, 3, 3) = 1.0F;
-    return matrix;
-}
-
-Mat4 multiply(const Mat4& lhs, const Mat4& rhs) {
-    Mat4 result{};
-    for (std::size_t row = 0; row < 4; ++row) {
-        for (std::size_t column = 0; column < 4; ++column) {
-            float value = 0.0F;
-            for (std::size_t i = 0; i < 4; ++i) {
-                value += at(lhs, row, i) * at(rhs, i, column);
-            }
-            at(result, row, column) = value;
-        }
-    }
-    return result;
-}
-
-// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
-Mat4 translation(float x, float y, float z) {
-    Mat4 matrix = identity();
-    at(matrix, 0, 3) = x;
-    at(matrix, 1, 3) = y;
-    at(matrix, 2, 3) = z;
-    return matrix;
-}
-
-Mat4 rotation_x(float angle) {
-    const float sine = std::sin(angle);
-    const float cosine = std::cos(angle);
-
-    Mat4 matrix = identity();
-    at(matrix, 1, 1) = cosine;
-    at(matrix, 1, 2) = -sine;
-    at(matrix, 2, 1) = sine;
-    at(matrix, 2, 2) = cosine;
-    return matrix;
-}
-
-Mat4 rotation_y(float angle) {
-    const float sine = std::sin(angle);
-    const float cosine = std::cos(angle);
-
-    Mat4 matrix = identity();
-    at(matrix, 0, 0) = cosine;
-    at(matrix, 0, 2) = sine;
-    at(matrix, 2, 0) = -sine;
-    at(matrix, 2, 2) = cosine;
-    return matrix;
-}
-
-// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
-Mat4 perspective(float fovy_radians, float aspect, float near_z, float far_z) {
-    const float focal = 1.0F / std::tan(fovy_radians * 0.5F);
-
-    Mat4 matrix{};
-    at(matrix, 0, 0) = focal / aspect;
-    at(matrix, 1, 1) = -focal;
-    at(matrix, 2, 2) = far_z / (near_z - far_z);
-    at(matrix, 2, 3) = (far_z * near_z) / (near_z - far_z);
-    at(matrix, 3, 2) = -1.0F;
-    return matrix;
-}
 
 std::filesystem::path shader_path(const char* filename) {
     return std::filesystem::path(CUBEY_TEXTURED_CUBE_SHADER_DIR) / filename;
 }
 
 struct SceneUniforms {
-    Mat4 mvp;
-    Mat4 model;
+    cubey::math::Mat4 mvp;
+    cubey::math::Mat4 model;
     std::array<float, 4> light_direction;
     std::array<float, 4> light_color;
     std::array<float, 4> ambient_color;
 };
 
-static_assert(sizeof(SceneUniforms) == (sizeof(Mat4) * 2U) + (sizeof(float) * 12U));
+static_assert(sizeof(cubey::math::Mat4) == sizeof(float) * 16U);
+static_assert(sizeof(SceneUniforms) == (sizeof(cubey::math::Mat4) * 2U) + (sizeof(float) * 12U));
 
 struct Vertex {
     std::array<float, 3> position;
@@ -545,14 +464,15 @@ class TexturedCubeApp {
     }
 
     [[nodiscard]] SceneUniforms current_scene_uniforms(VkExtent2D extent) const {
-        const Mat4 model =
-            multiply(rotation_y(orbit_controller_.yaw()), rotation_x(orbit_controller_.pitch()));
-        const Mat4 view = translation(0.0F, 0.0F, -4.2F);
+        const cubey::math::Mat4 model = cubey::math::rotation_y(orbit_controller_.yaw()) *
+                                        cubey::math::rotation_x(orbit_controller_.pitch());
+        const cubey::math::Mat4 view = cubey::math::translation(0.0F, 0.0F, -4.2F);
         const float aspect = static_cast<float>(extent.width) / static_cast<float>(extent.height);
-        const Mat4 projection = perspective(kPi / 3.0F, aspect, 0.1F, 100.0F);
+        const cubey::math::Mat4 projection =
+            cubey::math::perspective(std::numbers::pi_v<float> / 3.0F, aspect, 0.1F, 100.0F);
 
         return {
-            .mvp = multiply(projection, multiply(view, model)),
+            .mvp = projection * view * model,
             .model = model,
             .light_direction = {0.35F, -0.55F, 0.76F, 0.0F},
             .light_color = {0.76F, 0.76F, 0.76F, 1.0F},
