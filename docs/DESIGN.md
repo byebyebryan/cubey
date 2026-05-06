@@ -34,7 +34,7 @@ This is a ground-up rewrite carrying forward the same spirit with modern tools a
 | Optional future API | WebGPU (Dawn) | Browser showcases if the project earns that need |
 | Windowing | GLFW | Minimal, Vulkan-native surface creation |
 | UI | None yet; ImGui is the likely debug UI | Current telemetry stays lightweight until UI earns the dependency |
-| Math | Project-local helpers now; GLM remains a candidate | Keep dependencies narrow until shared math pressure appears |
+| Math | GLM behind `cubey::math` | Share matrix/vector types and Vulkan projection conventions without exposing ad hoc example math |
 | Shader compilation | glslangValidator (build time) | GLSL → SPIR-V, no runtime dependency |
 | Image output | `stb_image_write` | Single-header dependency, enough for inspectable artifacts |
 | CPU async work | undecided behind `cubey::jobs` | Taskflow and `BS::thread_pool` are the first candidates |
@@ -236,6 +236,7 @@ cubey/
       frame_tickets.h      -- frame tickets and deferred destruction
       image_io.h           -- PNG artifact output
       jobs.h               -- CPU job facade
+      math.h               -- GLM-backed math aliases and Vulkan projection helpers
       orbit_controller.h   -- basic orbit input state
       project_runtime.h    -- async-ready project vocabulary
       spirv_io.h           -- SPIR-V bytecode file loading

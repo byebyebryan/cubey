@@ -84,6 +84,8 @@ Current checkpoint:
   timing and mouse-driven view control.
 - Reusable `cubey::FrameStats` covers lightweight FPS/frame-time/extent/triangle
   telemetry formatting for windowed examples.
+- Reusable `cubey::math` wraps GLM matrix/vector types and the current Vulkan
+  transform/projection conventions used by cube examples.
 - Reusable `cubey::vulkan::ShaderModule` exists, and CMake can compile GLSL to
   SPIR-V with `glslangValidator` for example targets, including shared include
   directories and dependency tracking. Reusable `cubey::read_spirv_file` loads
@@ -122,6 +124,8 @@ Current checkpoint:
 - Reusable `cubey::vulkan` descriptor helpers build layout bindings, pool
   sizes, descriptor writes, and descriptor updates for current uniform-buffer,
   storage-buffer, storage-image, and combined image sampler paths.
+- Reusable `cubey::vulkan::DescriptorSetInfo` and `DescriptorSetBundle` cover
+  the current one-layout/one-pool/one-set descriptor shape used by examples.
 - Reusable `cubey::vulkan::PipelineLayoutInfo` and `ComputePipelineInfo` build
   the current pipeline-layout and compute-pipeline create-info shapes.
 - Reusable `cubey::vulkan::DynamicGraphicsPipelineInfo` builds the current
@@ -150,14 +154,15 @@ Current checkpoint:
   pass or framebuffer through the shared app host.
 - `examples/spinning_cube` links against `cubey`, compiles vertex/fragment
   shaders at build time, draws an indexed cube from device-local vertex/index
-  buffers, updates an MVP matrix through push constants, and uses dynamic
-  rendering with a shared depth attachment helper through the shared app host.
+  buffers, updates a shared-math MVP matrix through push constants, and uses
+  dynamic rendering with a shared depth attachment helper through the shared app
+  host.
 - `examples/textured_cube` links against `cubey`, generates a texture with a
   compute shader writing a storage image, transitions it for shader sampling,
   binds scene uniforms plus a combined image sampler descriptor through shared
   descriptor/compute helpers, and draws an interactive shaded textured indexed
   cube through dynamic rendering with per-face normals and shared GLSL Lambert
-  lighting through the shared app host.
+  lighting and shared math helpers through the shared app host.
 - `examples/headless_render` links against `cubey`, creates no GLFW window or
   surface, renders an offscreen color target through dynamic rendering, copies
   it into a readback buffer, and writes a PNG artifact.

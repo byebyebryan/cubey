@@ -38,8 +38,12 @@ versioned section and use that section as the release notes.
   helpers, pipeline-layout create-info helpers, a compute pipeline create-info
   helper, and a dynamic graphics pipeline create-info helper for the current
   single-color-attachment path.
+- Public Vulkan descriptor set info and bundle helpers that own the repeated
+  descriptor layout, pool, and single descriptor-set allocation path.
 - Public Vulkan dynamic graphics pipeline blend controls and a storage-buffer
   descriptor write helper.
+- Public GLM-backed `cubey::math` wrapper for matrix/vector types and the
+  current Vulkan transform/projection conventions.
 - Public Vulkan `RenderContext` component for explicit surface-backed
   begin/end frame lifecycle, acquire, command reset, submit, present, and
   swapchain-recreate signaling.
@@ -103,8 +107,12 @@ versioned section and use that section as the release notes.
 - `textured_cube` now shares descriptor layout/pool/write helpers plus compute
   pipeline and pipeline-layout create-info helpers instead of carrying raw
   descriptor and compute setup blocks.
+- `textured_cube` and `particles` now use the descriptor set bundle helper
+  instead of carrying separate descriptor layout, pool, and allocation members.
 - `textured_cube` now uses shared storage-image transition and generated
   sampled-image config helpers for its compute-generated texture.
+- `spinning_cube` and `textured_cube` now use shared Cubey math helpers instead
+  of carrying duplicate local matrix code.
 - Windowed examples now share GLFW windowing, Vulkan surface creation,
   acquire/present behavior, resize handling, frame timing, and swapchain
   recreation through `cubey_app`.

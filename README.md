@@ -55,14 +55,15 @@ writes an inspectable PNG.
 navigation and a headless PNG mode.
 `examples/particles` adds compute-updated attractor particles rendered as
 instanced screen-facing quads with procedural Gaussian splats.
-`cubey` owns the reusable Vulkan instance, device, buffer, image, sampler,
-swapchain, shader-module, command-pool, image-transition and dynamic-rendering
-helpers, frame clock, orbit-controller, CPU job facade, PNG capture queue,
+`cubey` owns the reusable GLM-backed math wrapper, Vulkan instance, device,
+buffer, image, sampler, swapchain, shader-module, command-pool,
+image-transition and dynamic-rendering helpers, frame clock, orbit-controller,
+CPU job facade, PNG capture queue,
 upload request queue,
 frame tickets/deferred destruction, async-ready project runtime vocabulary,
 binary file I/O, SPIR-V file loading, pipeline ownership, dynamic graphics
 pipeline setup including blend state, descriptor setup/write helpers including
-storage buffers, compute pipeline setup, depth
+descriptor set bundles and storage buffers, compute pipeline setup, depth
 attachment setup, texture transfer/readback helpers, PNG image I/O helper,
 shared shader includes,
 `RenderContext` surface-backed begin/end frame lifecycle, single-frame
@@ -89,7 +90,9 @@ cmake --build --preset dev
 ctest --preset dev
 ```
 
-Shader examples require `glslangValidator` at build time.
+Shader examples require `glslangValidator` at build time. GLM is used through
+the public `cubey::math` wrapper and is resolved by CMake with `find_package`
+or a FetchContent fallback.
 
 The windowed smoke targets are:
 

@@ -7,7 +7,7 @@ decisions into `docs/DESIGN.md`, `docs/roadmap.md`, or
 
 ## Current Checkpoint
 
-As of 2026-05-05:
+As of 2026-05-06:
 
 - `main` has moved from docs/tooling-only to the first implementation slice.
 - The primary target is `cubey`, a static library with public headers under
@@ -38,6 +38,9 @@ As of 2026-05-05:
   frame timing, auto-rotation, pause/reset, and mouse-drag rotation.
 - Promoted `cubey::FrameStats` for lightweight FPS, frame-time, extent,
   triangle-count, and pixel-rate telemetry.
+- Promoted `cubey::math` as a narrow GLM-backed math wrapper. It exposes the
+  current `Mat4`/`Vec4` types plus transform helpers and a Vulkan projection
+  helper with depth-zero-to-one and framebuffer-Y conventions.
 - Promoted `cubey::vulkan::ShaderModule` and added CMake GLSL-to-SPIR-V shader
   compilation with `glslangValidator`, including shared shader include
   directories and dependency tracking.
@@ -84,6 +87,9 @@ As of 2026-05-05:
   images, and combined image samplers. `textured_cube` and `particles` now share
   this setup while keeping descriptor layout, shader, and dispatch choices
   explicit.
+- Promoted `DescriptorSetInfo` and `DescriptorSetBundle` for the repeated
+  single descriptor layout/pool/set shape. This removes layout/pool/allocation
+  member boilerplate from examples without turning descriptors into bind groups.
 - Promoted transfer/readback helpers for readback buffers, generated/uploaded
   sampled image configs, buffer-image copy regions, buffer-to-image and
   image-to-buffer copies, and named storage, transfer, sampled-image readback,
@@ -124,9 +130,10 @@ As of 2026-05-05:
   blending. It is intentionally still an example, not a project/runtime host.
 - GLFW window setup, surface creation, command recording, acquire/present
   behavior, and resize policy remain example-local. Graphics pipeline creation,
-  descriptor/compute setup, device-local cube-buffer uploads, and depth
-  attachments now use shared helpers, while examples still own shader module,
-  vertex-input, descriptor layout choices, dispatch choices, and render policy.
+  descriptor/compute setup, device-local cube-buffer uploads, depth attachments,
+  and cube transform math now use shared helpers, while examples still own
+  shader module, vertex-input, descriptor layout choices, dispatch choices, and
+  render policy.
 - CTest covers no-display terminal boundaries, graphical runs when a desktop
   window context is injected, and the headless PNG artifact path through shared
   CMake smoke helpers.
@@ -425,3 +432,18 @@ env XDG_RUNTIME_DIR=/run/user/1000 WAYLAND_DISPLAY=wayland-1 DISPLAY=:1 XDG_CURR
   `cubey::app` for window hosting and keep their own shader, pipeline,
   descriptor, render-resource, and command-recording policy. `headless_render`
   and `fractal --headless` remain explicit no-window paths.
+
+### 2026-05-06
+
+- The descriptor cleanup added `DescriptorSetInfo` and `DescriptorSetBundle`.
+  `textured_cube` and `particles` now carry their descriptor layout choices
+  locally but no longer own separate layout, pool, and allocation members.
+- GLM is now a CMake-resolved dependency behind `cubey::math`. The wrapper keeps
+  GLM's matrix/vector types available while centralizing Cubey's Vulkan
+  projection convention: radians, depth zero-to-one, and framebuffer-Y flip.
+- `spinning_cube` and `textured_cube` now use `cubey::math` for model, view,
+  projection, and MVP matrices. This removes duplicate local matrix code but
+  still leaves mesh data, descriptor layout, and render policy in the examples.
+- GLM should stay behind Cubey's public wrapper in examples/projects unless a
+  project has a clear need for broader GLM APIs. This keeps future math
+  convention changes localized.

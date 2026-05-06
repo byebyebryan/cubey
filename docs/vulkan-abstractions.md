@@ -157,6 +157,10 @@ Current state:
 
 - `DescriptorSetLayout` and `DescriptorPool` own basic layout/pool lifetime.
 - Descriptor allocation is owned by `DescriptorPool`.
+- `DescriptorSetInfo` owns layout-binding and pool-size create-info storage for
+  the common one-layout/one-pool shape.
+- `DescriptorSetBundle` owns a descriptor set layout, pool, and one allocated
+  descriptor set for examples that do not need a custom descriptor allocator.
 - Descriptor helper functions cover layout bindings, pool sizes, uniform-buffer
   writes, storage-buffer writes, storage-image writes, combined image sampler
   writes, and descriptor set updates.
@@ -165,6 +169,8 @@ Needed next:
 
 - Sampled-image descriptor write helper if a sampled image without sampler gets
   a concrete use case.
+- Multi-set or resettable descriptor-pool helpers only after a project needs
+  more than the current one-set bundle shape.
 
 Defer:
 
@@ -224,6 +230,8 @@ Current state:
 
 - Cube examples still define vertex data, index data, vertex descriptions, and
   upload behavior locally.
+- Cube examples use the shared GLM-backed `cubey::math` wrapper for MVP/model
+  matrices and Vulkan clip-space projection conventions.
 - `examples/particles` still defines particle storage-buffer layout, seeding,
   simulation parameters, billboard generation, and blending policy locally.
 
@@ -344,10 +352,12 @@ explicit descriptor contracts.
 - Added descriptor binding, pool-size, descriptor-write, and descriptor-update
   helpers for current uniform-buffer, storage-buffer, storage-image, and
   combined image sampler paths.
+- Added descriptor set info and bundle helpers for the repeated single-set
+  descriptor layout/pool/allocation path.
 - Added pipeline-layout and compute-pipeline create-info helpers.
 - Moved `textured_cube`'s graphics descriptors and setup-time compute texture
   path onto the shared helpers while keeping layout and dispatch choices
-  explicit.
+  explicit. `particles` and `textured_cube` now use descriptor bundles.
 
 Remaining descriptor work should be driven by the next concrete resource path
 rather than a general bind-group abstraction.
@@ -484,5 +494,6 @@ resize, and shutdown may become worthwhile.
 ## Near-Term Recommendation
 
 Batch 1 through Batch 7 and the particle example have their first passes on
-`main`. Use Batch 8, the first real project, to decide how much app/runtime
-host to extract.
+`main`. The descriptor-bundle and shared-math cleanup has also landed, reducing
+example-local boilerplate without hiding Vulkan binding or render policy. Use
+Batch 8, the first real project, to decide how much app/runtime host to extract.
