@@ -28,6 +28,7 @@ void test_descriptor_helpers_describe_layout_pool_and_writes() {
     const VkImageView storage_view = reinterpret_cast<VkImageView>(0x30);
     const VkSampler sampler = reinterpret_cast<VkSampler>(0x40);
     const VkImageView sampled_view = reinterpret_cast<VkImageView>(0x50);
+    const VkBuffer storage_buffer = reinterpret_cast<VkBuffer>(0x60);
 
     const VkDescriptorSetLayoutBinding uniform_binding = cubey::vulkan::descriptor_binding(
         0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT);
@@ -87,6 +88,21 @@ void test_descriptor_helpers_describe_layout_pool_and_writes() {
             "uniform write should use uniform-buffer type");
     require(uniform_descriptor.pBufferInfo == &uniform_write.buffer_info,
             "uniform write should point at owned buffer info");
+
+    const cubey::vulkan::DescriptorBufferWrite storage_buffer_write =
+        cubey::vulkan::storage_buffer_descriptor(descriptor_set, 1, storage_buffer, 128, 32);
+    const VkWriteDescriptorSet storage_buffer_descriptor =
+        storage_buffer_write.descriptor_write();
+    require(storage_buffer_write.buffer_info.buffer == storage_buffer,
+            "storage buffer write should preserve buffer");
+    require(storage_buffer_write.buffer_info.offset == 32,
+            "storage buffer write should preserve offset");
+    require(storage_buffer_write.buffer_info.range == 128,
+            "storage buffer write should preserve range");
+    require(storage_buffer_descriptor.descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+            "storage buffer write should use storage-buffer type");
+    require(storage_buffer_descriptor.pBufferInfo == &storage_buffer_write.buffer_info,
+            "storage buffer write should point at owned buffer info");
 
     const cubey::vulkan::DescriptorImageWrite storage_write =
         cubey::vulkan::storage_image_descriptor(descriptor_set, 1, storage_view);

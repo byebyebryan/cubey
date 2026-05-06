@@ -102,6 +102,28 @@ DescriptorBufferWrite uniform_buffer_descriptor(VkDescriptorSet set, std::uint32
 }
 // NOLINTEND(bugprone-easily-swappable-parameters)
 
+// NOLINTBEGIN(bugprone-easily-swappable-parameters)
+DescriptorBufferWrite storage_buffer_descriptor(VkDescriptorSet set, std::uint32_t binding,
+                                                VkBuffer buffer, VkDeviceSize range,
+                                                VkDeviceSize offset) {
+    if (set == VK_NULL_HANDLE || buffer == VK_NULL_HANDLE) {
+        throw std::runtime_error("storage buffer descriptor requires valid set and buffer");
+    }
+    if (range == 0) {
+        throw std::runtime_error("storage buffer descriptor range must be positive");
+    }
+
+    DescriptorBufferWrite result{};
+    result.buffer_info.buffer = buffer;
+    result.buffer_info.offset = offset;
+    result.buffer_info.range = range;
+    result.set = set;
+    result.binding = binding;
+    result.descriptor_type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    return result;
+}
+// NOLINTEND(bugprone-easily-swappable-parameters)
+
 DescriptorImageWrite storage_image_descriptor(VkDescriptorSet set, std::uint32_t binding,
                                               VkImageView image_view, VkImageLayout layout) {
     if (set == VK_NULL_HANDLE || image_view == VK_NULL_HANDLE) {

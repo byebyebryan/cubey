@@ -46,6 +46,10 @@ struct DescriptorImageWrite {
                                                               std::uint32_t binding,
                                                               VkBuffer buffer, VkDeviceSize range,
                                                               VkDeviceSize offset = 0);
+[[nodiscard]] DescriptorBufferWrite storage_buffer_descriptor(VkDescriptorSet set,
+                                                              std::uint32_t binding,
+                                                              VkBuffer buffer, VkDeviceSize range,
+                                                              VkDeviceSize offset = 0);
 [[nodiscard]] DescriptorImageWrite
 storage_image_descriptor(VkDescriptorSet set, std::uint32_t binding, VkImageView image_view,
                          VkImageLayout layout = VK_IMAGE_LAYOUT_GENERAL);
