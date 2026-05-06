@@ -67,6 +67,9 @@ versioned section and use that section as the release notes.
   CPU-side cleanup actions after completed frame/submission points.
 - Public async-ready project runtime vocabulary: project frames, extents,
   render packets, project context services, and `ProjectLike` concept checks.
+- Public `ProjectRuntimeServices` owner for project-facing jobs, uploads,
+  captures, frame tickets, deferred destruction, and `ProjectFrame` creation
+  from frame timing.
 - Public frame timing, orbit-controller, and frame-stat types for interactive
   windowed examples.
 - `examples/window_clear`, a minimal Vulkan/GLFW dynamic-rendering windowed
@@ -141,6 +144,9 @@ versioned section and use that section as the release notes.
 - `headless_render`, `fractal --headless`, and `fluid_2d --headless` now use
   the shared no-GLFW headless PNG host while keeping resource setup, simulation,
   and command recording local to each runnable.
+- `fluid_2d` simulation steps now consume `ProjectFrame` values from shared
+  project runtime services in both windowed and headless modes, while keeping
+  Vulkan command recording and resource policy project-local.
 
 ## Pre-2.0 History
 

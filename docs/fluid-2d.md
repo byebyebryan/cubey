@@ -52,6 +52,21 @@ output deterministic.
   field resources, compute simulation, render pipeline setup, and the fullscreen
   capture draw.
 
+## Checkpoint 4
+
+Status: project frame integration complete.
+
+Goal: make the first project consume Cubey's runtime service vocabulary without
+creating a generic project host.
+
+- `fluid_2d` owns a `cubey::ProjectRuntimeServices` instance.
+- Windowed and headless simulation steps now use `cubey::ProjectFrame` for
+  delta time, elapsed time, frame index, and frame tickets.
+- Vulkan resource setup, compute dispatch recording, fullscreen draw recording,
+  input handling, and shutdown remain project-local callbacks.
+- A broader project adapter remains deferred until another `projects/` target
+  repeats the same lifecycle bridge.
+
 Smoke commands:
 
 ```bash

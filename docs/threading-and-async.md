@@ -258,8 +258,10 @@ boundary. The exact names can change, but the shape should be:
 
 ```cpp
 struct ProjectFrame {
-    float dt;
-    std::uint32_t frame_index;
+    double delta_seconds;
+    double elapsed_seconds;
+    std::uint64_t frame_index;
+    FrameTicket ticket;
 };
 
 struct RenderPacket {
@@ -283,10 +285,11 @@ submission as a casual escape hatch.
 Examples can stay explicit. Projects should use this boundary once it exists.
 
 Initial implementation: `ProjectContext` exposes jobs, uploads, captures, frame
-tickets, and deferred destruction as services. `ProjectFrame`, `ProjectExtent`,
-`RenderPacket`, and the `ProjectLike` concept define the first compile-time
-checked lifecycle shape for future `projects/` code. No existing example has
-been moved onto this host vocabulary.
+tickets, and deferred destruction as services. `ProjectRuntimeServices` owns
+those services and issues `ProjectFrame` values from `FrameTiming`. `ProjectFrame`,
+`ProjectExtent`, `RenderPacket`, and the `ProjectLike` concept define the first
+compile-time checked lifecycle shape for future `projects/` code. `fluid_2d`
+now consumes `ProjectFrame` for simulation timing, but examples remain direct.
 
 ## Error Handling And Shutdown
 
@@ -358,10 +361,12 @@ Status: initial pass complete.
   examples.
 - Added `ProjectContext` service access to jobs, uploads, captures, frame
   tickets, and deferred destruction.
+- Added `ProjectRuntimeServices` as the first project-owned service bundle and
+  frame-ticket issuer.
 - Added a `ProjectLike` concept for setup/update/render-packet/resize/shutdown
   lifecycle checks.
-- The first real project should produce frame packets and use upload/capture
-  requests instead of direct blocking calls.
+- The first real project now consumes `ProjectFrame` for timing; frame packets
+  and queued upload/capture requests remain future pressure.
 
 ### Slice 4: Frame Overlap And Deferred Destruction
 
@@ -382,9 +387,10 @@ Status: frame-ticket/deferred-destruction initial pass complete.
 
 - Should Cubey prefer Taskflow first for graph-shaped frame work, or
   `BS::thread_pool` first for the smallest useful CPU job layer?
-- Should `cubey::jobs` be public immediately, or initially private to the
-  future project host?
-- Should async PNG encoding be the first consumer, or should the first real
-  project drive the first consumer?
-- Should the first project be particles, fluid simulation, or marching cubes if
-  the goal is to stress async uploads/captures and future parallel recording?
+- Should the current standard-library `cubey::jobs` implementation stay long
+  term, or should a future workload justify swapping in Taskflow or
+  `BS::thread_pool` behind the same API?
+- Should `ProjectRuntimeServices` grow into a project adapter, or should the
+  next project keep using the windowed/headless hosts directly?
+- Should GPU capture polling or queued uploads become the first real
+  Vulkan-backed async path?

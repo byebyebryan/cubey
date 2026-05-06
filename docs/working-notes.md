@@ -64,6 +64,9 @@ As of 2026-05-06:
   `RenderPacket`, and `ProjectLike` as the first async-ready project runtime
   vocabulary. Existing examples remain direct; future `projects/` should use
   the new boundary.
+- Promoted `cubey::ProjectRuntimeServices` as the first project-facing owner for
+  jobs, uploads, captures, frame tickets, deferred destruction, and
+  `ProjectFrame` creation from frame timing.
 - Promoted the first pipeline/descriptor ownership components:
   `PipelineLayout`, `GraphicsPipeline`, `ComputePipeline`,
   `DescriptorSetLayout`, and `DescriptorPool`. These wrappers own lifetimes but
@@ -415,10 +418,10 @@ env XDG_RUNTIME_DIR=/run/user/1000 WAYLAND_DISPLAY=wayland-1 DISPLAY=:1 XDG_CURR
 - Batch 4 added frame tickets and deferred destruction. This gives future
   in-flight GPU lifetime work a vocabulary before N-frames-in-flight or timeline
   semaphore integration exists.
-- Batch 5 added the project runtime vocabulary but did not migrate examples.
-  This keeps reference examples readable while making the first real project use
-  setup/update/render-packet/resize/shutdown and service-based access to jobs,
-  uploads, captures, frame tickets, and deferred cleanup.
+- Batch 5 added the project runtime vocabulary without migrating examples. This
+  keeps reference examples readable while letting `fluid_2d` start using
+  service-based access to jobs, uploads, captures, frame tickets, deferred
+  cleanup, and project-frame timing.
 - The particle slice stayed intentionally under `examples/particles`: the useful
   signal was graphics-plus-compute command recording, storage-buffer
   descriptors, additive blending, and GPU-updated billboard rendering. It does
@@ -469,6 +472,10 @@ env XDG_RUNTIME_DIR=/run/user/1000 WAYLAND_DISPLAY=wayland-1 DISPLAY=:1 XDG_CURR
   now has left-drag injection, pause/resume, reset, and dye/velocity/divergence/
   pressure render modes. Headless stays deterministic by using the procedural
   injector and fixed timing.
+- `fluid_2d` now owns `ProjectRuntimeServices` and records simulation from
+  `ProjectFrame` in both windowed and headless modes. This makes frame timing
+  and frame tickets real project vocabulary without introducing a generic
+  project host or moving Vulkan command recording out of the project.
 - This still should not promote renderer, scene, or generic solver
   abstractions. The next useful pressure is solver tuning or a second project
   that repeats the same resource shape.

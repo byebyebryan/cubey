@@ -115,8 +115,8 @@ Current checkpoint:
   `DeferredDestructionQueue` provide the first frame-ticket retirement
   vocabulary.
 - Reusable `cubey::ProjectContext`, `ProjectFrame`, `ProjectExtent`,
-  `RenderPacket`, and `ProjectLike` provide the first async-ready project
-  runtime vocabulary.
+  `RenderPacket`, `ProjectRuntimeServices`, and `ProjectLike` provide the first
+  async-ready project runtime vocabulary and service ownership bundle.
 - Reusable `cubey::vulkan::PipelineLayout`, `GraphicsPipeline`,
   `ComputePipeline`, `DescriptorSetLayout`, and `DescriptorPool` own basic
   pipeline and descriptor lifetimes while still taking raw Vulkan create-info
@@ -281,6 +281,8 @@ building a full threaded renderer too early.
   lifetime tracking.
 - Added project runtime vocabulary for setup, update, render-packet, resize,
   and shutdown contracts.
+- Added `ProjectRuntimeServices` and moved `fluid_2d` simulation timing onto
+  `ProjectFrame` while keeping command recording project-local.
 - Shape GPU readbacks and deeper capture polling as queued work.
 - Keep GPU ownership and `VkQueue` submission serialized through one owner.
 - Keep examples direct; require longer-lived `projects/` to use the
@@ -310,7 +312,8 @@ Current project:
   dye-and-velocity field. The current checkpoint has compute
   injection/advection, pressure projection, pointer injection, pause/reset,
   debug render modes, fullscreen rendering, a windowed smoke, and
-  deterministic headless PNG output.
+  deterministic headless PNG output. Simulation timing now flows through
+  `ProjectFrame` in both windowed and headless modes.
 
 Candidate follow-ups:
 
@@ -341,6 +344,8 @@ has proven useful.
 - Initial windowed host outside `cubey::vulkan`. Status: complete for current
   windowed examples.
 - Project lifecycle vocabulary: setup, update, render packet, resize, shutdown.
+- Project runtime services for jobs, uploads, captures, frame tickets, deferred
+  destruction, and `ProjectFrame` creation. Status: complete.
 - Narrow no-GLFW headless PNG host that shares no-window instance/device,
   offscreen target, capture transitions, readback, and artifact writing. Status:
   complete for current headless examples and `fluid_2d`.

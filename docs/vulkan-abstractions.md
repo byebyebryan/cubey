@@ -294,7 +294,8 @@ Current state:
 - `FrameTicketIssuer`, `FrameTicket`, and `DeferredDestructionQueue` provide
   CPU-side ticket retirement vocabulary.
 - `ProjectContext`, `ProjectFrame`, `ProjectExtent`, `RenderPacket`, and
-  `ProjectLike` provide the first async-ready project runtime vocabulary.
+  `ProjectRuntimeServices`, and `ProjectLike` provide the first async-ready
+  project runtime vocabulary and service ownership bundle.
 - `ImmediateCommands`, readback helpers, and PNG output are synchronous.
 
 Needed next:

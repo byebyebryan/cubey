@@ -101,6 +101,8 @@ resource creation/destruction, update, command recording, and shutdown.
 11. Migrate `projects/fluid_2d --headless` to the shared headless host while
     preserving project-local compute simulation and fullscreen draw code.
     Status: complete.
+12. Add project runtime services and move `fluid_2d` simulation timing onto
+    `ProjectFrame` in both windowed and headless modes. Status: complete.
 
 ## Current Checkpoint
 
@@ -123,6 +125,11 @@ resource creation/destruction, update, command recording, and shutdown.
 - `headless_render`, `fractal --headless`, and `fluid_2d --headless` use the
   headless host while keeping their resource setup, simulation/update work, and
   capture command recording local.
+- `cubey::ProjectRuntimeServices` now owns project-facing jobs, uploads,
+  captures, frame tickets, and deferred destruction. `fluid_2d` uses it to
+  create `ProjectFrame` values for simulation in both hosts.
+- A generic project host or adapter is still deferred; the current evidence only
+  justifies shared service ownership and frame vocabulary.
 
 ## Promotion Rules
 
@@ -134,6 +141,8 @@ resource creation/destruction, update, command recording, and shutdown.
 - Add more input/UI hosting only as examples or projects need it.
 - Keep the headless host narrow: no scene/render abstraction, no implicit
   project lifecycle, and no GLFW dependency.
+- Promote a project lifecycle adapter only after another `projects/` target
+  repeats the same setup/update/render/shutdown bridge.
 
 ## Current Non-Goals
 
