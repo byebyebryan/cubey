@@ -12,6 +12,7 @@ option(CUBEY_WARNINGS_AS_ERRORS "Treat project warnings as errors" OFF)
 option(CUBEY_ENABLE_CLANG_TIDY "Run clang-tidy during builds" OFF)
 option(CUBEY_BUILD_APP "Build Cubey GLFW app runtime" ON)
 option(CUBEY_BUILD_EXAMPLES "Build Cubey examples" ON)
+option(CUBEY_BUILD_PROJECTS "Build Cubey projects" ON)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(CubeyShaders)
@@ -57,6 +58,10 @@ add_subdirectory(src/cubey)
 
 if (CUBEY_BUILD_EXAMPLES AND NOT CUBEY_BUILD_APP)
     message(FATAL_ERROR "CUBEY_BUILD_EXAMPLES requires CUBEY_BUILD_APP")
+endif()
+
+if (CUBEY_BUILD_PROJECTS AND NOT CUBEY_BUILD_APP)
+    message(FATAL_ERROR "CUBEY_BUILD_PROJECTS requires CUBEY_BUILD_APP")
 endif()
 
 if (CUBEY_BUILD_APP)
@@ -106,4 +111,8 @@ if (CUBEY_BUILD_EXAMPLES)
                 "${CMAKE_SOURCE_DIR}/examples/particles"
         )
     endif()
+endif()
+
+if (CUBEY_BUILD_PROJECTS)
+    add_subdirectory(projects)
 endif()
