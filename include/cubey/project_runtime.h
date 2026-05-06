@@ -78,6 +78,24 @@ class ProjectRuntimeServices {
     DeferredDestructionQueue deferred_destruction_;
 };
 
+class ProjectRuntimeAdapter {
+  public:
+    explicit ProjectRuntimeAdapter(std::size_t worker_count = 0);
+
+    ProjectRuntimeAdapter(const ProjectRuntimeAdapter&) = delete;
+    ProjectRuntimeAdapter& operator=(const ProjectRuntimeAdapter&) = delete;
+    ProjectRuntimeAdapter(ProjectRuntimeAdapter&&) = delete;
+    ProjectRuntimeAdapter& operator=(ProjectRuntimeAdapter&&) = delete;
+
+    [[nodiscard]] ProjectContext context();
+    [[nodiscard]] const ProjectFrame& frame_for_timing(const FrameTiming& timing);
+    [[nodiscard]] std::size_t retire_deferred_destruction();
+
+  private:
+    ProjectRuntimeServices services_;
+    ProjectFrame active_frame_;
+};
+
 template <typename T>
 concept ProjectLike =
     requires(T project, ProjectContext& context, ProjectFrame frame, ProjectExtent extent) {

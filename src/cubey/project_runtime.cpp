@@ -44,4 +44,24 @@ ProjectFrame ProjectRuntimeServices::begin_frame(const FrameTiming& timing) {
     };
 }
 
+ProjectRuntimeAdapter::ProjectRuntimeAdapter(std::size_t worker_count) : services_(worker_count) {}
+
+ProjectContext ProjectRuntimeAdapter::context() {
+    return services_.context();
+}
+
+const ProjectFrame& ProjectRuntimeAdapter::frame_for_timing(const FrameTiming& timing) {
+    if (active_frame_.frame_index != timing.frame_index ||
+        active_frame_.elapsed_seconds != timing.elapsed_seconds) {
+        active_frame_ = services_.begin_frame(timing);
+    }
+    return active_frame_;
+}
+
+std::size_t ProjectRuntimeAdapter::retire_deferred_destruction() {
+    ProjectContext active_context = context();
+    return active_context.deferred_destruction().retire_completed(
+        active_context.frame_tickets().current());
+}
+
 } // namespace cubey

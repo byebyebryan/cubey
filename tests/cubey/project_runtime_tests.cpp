@@ -132,3 +132,53 @@ void test_project_runtime_services_create_project_frames_and_context() {
     require(context.deferred_destruction().retire_completed(frame.ticket) == 1,
             "runtime services should expose deferred destruction state");
 }
+
+void test_project_runtime_adapter_reuses_frame_for_same_timing() {
+    cubey::ProjectRuntimeAdapter adapter(1);
+
+    const cubey::FrameTiming first_timing{
+        .delta_seconds = 0.016,
+        .elapsed_seconds = 0.5,
+        .frame_index = 7,
+    };
+    const cubey::ProjectFrame& first = adapter.frame_for_timing(first_timing);
+    const cubey::ProjectFrame& repeated = adapter.frame_for_timing(first_timing);
+
+    require(first.ticket.value == repeated.ticket.value,
+            "runtime adapter should reuse the project frame for the same host frame");
+    require(first.delta_seconds == 0.016, "runtime adapter should preserve delta time");
+    require(first.elapsed_seconds == 0.5, "runtime adapter should preserve elapsed time");
+    require(first.frame_index == 7, "runtime adapter should preserve frame index");
+    const std::uint64_t first_ticket = first.ticket.value;
+
+    const cubey::ProjectFrame& second = adapter.frame_for_timing({
+        .delta_seconds = 0.02,
+        .elapsed_seconds = 0.52,
+        .frame_index = 8,
+    });
+    require(second.ticket.value == first_ticket + 1,
+            "runtime adapter should issue a new ticket for a new host frame");
+    require(second.delta_seconds == 0.02, "runtime adapter should update delta time");
+    require(second.elapsed_seconds == 0.52, "runtime adapter should update elapsed time");
+    require(second.frame_index == 8, "runtime adapter should update frame index");
+}
+
+void test_project_runtime_adapter_exposes_context_and_retirement() {
+    cubey::ProjectRuntimeAdapter adapter(1);
+    cubey::ProjectContext context = adapter.context();
+
+    auto job = context.jobs().submit([] { return 21; });
+    require(job.get() == 21, "runtime adapter should expose project job services");
+
+    const cubey::ProjectFrame& frame = adapter.frame_for_timing({
+        .delta_seconds = 0.033,
+        .elapsed_seconds = 2.0,
+        .frame_index = 3,
+    });
+    bool retired = false;
+    context.deferred_destruction().defer_after(frame.ticket, [&retired] { retired = true; });
+
+    require(adapter.retire_deferred_destruction() == 1,
+            "runtime adapter should retire deferred actions through the current frame ticket");
+    require(retired, "runtime adapter should run retired deferred actions");
+}
