@@ -20,6 +20,7 @@
 #include <GLFW/glfw3.h>
 #include <vulkan/vulkan.h>
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstdint>
@@ -47,6 +48,7 @@ using cubey::vulkan::check;
 using cubey::vulkan::vk_struct;
 
 constexpr std::uint32_t kParticleCount = 8192;
+constexpr std::uint32_t kComputeGroupSize = 128;
 constexpr float kGoldenAngle = 2.39996314F;
 
 struct ParticleGpu {
@@ -59,8 +61,14 @@ struct DrawPushConstants {
     std::array<float, 4> inv_extent_scale_time{};
 };
 
+struct ComputePushConstants {
+    std::array<float, 4> attractor_strength_dt{};
+    std::array<float, 4> bounds_damping_time{};
+};
+
 static_assert(sizeof(ParticleGpu) == 48);
 static_assert(sizeof(DrawPushConstants) == 16);
+static_assert(sizeof(ComputePushConstants) == 32);
 
 std::filesystem::path shader_path(const char* filename) {
     return std::filesystem::path(CUBEY_PARTICLES_SHADER_DIR) / filename;
@@ -119,6 +127,8 @@ class ParticlesApp {
 
         frame_resources_.reset();
         destroy_swapchain_resources();
+        compute_pipeline_.reset();
+        compute_pipeline_layout_.reset();
         descriptor_pool_.reset();
         descriptor_set_layout_.reset();
         particle_buffer_.reset();
@@ -150,6 +160,7 @@ class ParticlesApp {
         create_device();
         create_particle_buffer();
         create_descriptor_resources();
+        create_compute_resources();
         create_swapchain_resources();
         create_frame_resources();
         render_window();
@@ -177,6 +188,7 @@ class ParticlesApp {
 
         glfwSetWindowUserPointer(window_, this);
         glfwSetFramebufferSizeCallback(window_, framebuffer_size_callback);
+        glfwSetKeyCallback(window_, key_callback);
     }
 
     // GLFW fixes this callback signature.
@@ -187,6 +199,29 @@ class ParticlesApp {
         auto* app = static_cast<ParticlesApp*>(glfwGetWindowUserPointer(window));
         if (app != nullptr) {
             app->framebuffer_resized_ = true;
+        }
+    }
+
+    // GLFW fixes this callback signature.
+    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+    static void key_callback(GLFWwindow* window, int key, int unused_scancode, int action,
+                             int unused_mods) {
+        (void)unused_scancode;
+        (void)unused_mods;
+        if (action != GLFW_PRESS) {
+            return;
+        }
+
+        auto* app = static_cast<ParticlesApp*>(glfwGetWindowUserPointer(window));
+        if (app == nullptr) {
+            return;
+        }
+        if (key == GLFW_KEY_ESCAPE) {
+            glfwSetWindowShouldClose(window, GLFW_TRUE);
+        } else if (key == GLFW_KEY_SPACE) {
+            app->paused_ = !app->paused_;
+        } else if (key == GLFW_KEY_R) {
+            app->reset_particles_requested_ = true;
         }
     }
 
@@ -216,7 +251,7 @@ class ParticlesApp {
     void create_device() {
         cubey::vulkan::DeviceConfig device_config;
         device_config.surface = surface_;
-        device_config.required_queue_flags = VK_QUEUE_GRAPHICS_BIT;
+        device_config.required_queue_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT;
         device_config.require_present = true;
         device_config.require_dynamic_rendering = true;
 
@@ -237,7 +272,8 @@ class ParticlesApp {
 
     void create_descriptor_resources() {
         const VkDescriptorSetLayoutBinding particle_binding = cubey::vulkan::descriptor_binding(
-            0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT);
+            0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+            VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_COMPUTE_BIT);
         const std::array<VkDescriptorSetLayoutBinding, 1> bindings{particle_binding};
         const VkDescriptorSetLayoutCreateInfo layout_info =
             cubey::vulkan::descriptor_set_layout_info(bindings);
@@ -259,6 +295,41 @@ class ParticlesApp {
                                                      particle_buffer().size());
         const VkWriteDescriptorSet write = particle_write.descriptor_write();
         cubey::vulkan::update_descriptor_sets(vulkan_device(), {&write, 1});
+    }
+
+    void reset_particle_buffer() {
+        check(vkDeviceWaitIdle(device_), "vkDeviceWaitIdle before particle reset");
+        particle_buffer_.reset();
+        create_particle_buffer();
+        update_particle_descriptor();
+        reset_particles_requested_ = false;
+        reset_frame_timing();
+    }
+
+    void create_compute_resources() {
+        const std::vector<std::uint32_t> compute_code =
+            cubey::read_spirv_file(shader_path("particles.comp.spv"));
+        cubey::vulkan::ShaderModule compute_shader(vulkan_device(), compute_code);
+
+        VkPushConstantRange compute_push_constant{};
+        compute_push_constant.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+        compute_push_constant.offset = 0;
+        compute_push_constant.size = sizeof(ComputePushConstants);
+        const std::array<VkDescriptorSetLayout, 1> set_layouts{descriptor_set_layout().handle()};
+        const std::array<VkPushConstantRange, 1> push_constants{compute_push_constant};
+        const cubey::vulkan::PipelineLayoutInfo layout_info({
+            .set_layouts = set_layouts,
+            .push_constants = push_constants,
+        });
+        compute_pipeline_layout_.emplace(vulkan_device(), layout_info.create_info());
+
+        const VkPipelineShaderStageCreateInfo compute_stage =
+            cubey::vulkan::shader_stage(VK_SHADER_STAGE_COMPUTE_BIT, compute_shader.handle());
+        const cubey::vulkan::ComputePipelineInfo pipeline_info({
+            .layout = compute_pipeline_layout().handle(),
+            .shader_stage = compute_stage,
+        });
+        compute_pipeline_.emplace(vulkan_device(), pipeline_info.create_info());
     }
 
     void wait_for_presentable_window_size() const {
@@ -363,10 +434,54 @@ class ParticlesApp {
         frame_resources_.emplace(vulkan_device(), swapchain().image_count());
     }
 
+    void record_particle_compute(VkCommandBuffer command_buffer, const FrameTiming& timing) const {
+        const float time = static_cast<float>(timing.elapsed_seconds);
+        const float delta_seconds =
+            std::min(static_cast<float>(timing.delta_seconds), 1.0F / 30.0F);
+        const ComputePushConstants push_constants{
+            .attractor_strength_dt =
+                {
+                    std::cos(time * 0.63F) * 0.42F,
+                    std::sin(time * 0.97F) * 0.32F,
+                    0.32F,
+                    delta_seconds,
+                },
+            .bounds_damping_time =
+                {
+                    1.08F,
+                    0.985F,
+                    time,
+                    0.0F,
+                },
+        };
+
+        vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE,
+                          compute_pipeline().handle());
+        vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE,
+                                compute_pipeline_layout().handle(), 0, 1, &descriptor_set_, 0,
+                                nullptr);
+        vkCmdPushConstants(command_buffer, compute_pipeline_layout().handle(),
+                           VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(ComputePushConstants),
+                           &push_constants);
+        vkCmdDispatch(command_buffer, (kParticleCount + kComputeGroupSize - 1U) / kComputeGroupSize,
+                      1, 1);
+
+        auto particle_barrier = vk_struct<VkMemoryBarrier>(VK_STRUCTURE_TYPE_MEMORY_BARRIER);
+        particle_barrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+        particle_barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+        vkCmdPipelineBarrier(command_buffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                             VK_PIPELINE_STAGE_VERTEX_SHADER_BIT, 0, 1, &particle_barrier, 0,
+                             nullptr, 0, nullptr);
+    }
+
     void record_particles_frame(VkCommandBuffer command_buffer, std::uint32_t image_index,
                                 const FrameTiming& timing) {
         cubey::vulkan::begin_command_buffer(command_buffer,
                                             VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+
+        if (!paused_) {
+            record_particle_compute(command_buffer, timing);
+        }
 
         const std::size_t swapchain_image_index = static_cast<std::size_t>(image_index);
         const VkImage swapchain_image = swapchain().images().at(swapchain_image_index);
@@ -439,7 +554,7 @@ class ParticlesApp {
     void render_window() {
         reset_frame_timing();
 
-        std::printf("particles: %s rendering instanced particle billboards at %ux%u\n",
+        std::printf("particles: %s rendering compute attractor particles at %ux%u\n",
                     vulkan_device().device_name(), swapchain().extent().width,
                     swapchain().extent().height);
 
@@ -450,6 +565,12 @@ class ParticlesApp {
             glfwPollEvents();
             if (glfwWindowShouldClose(window_) != 0) {
                 break;
+            }
+
+            if (reset_particles_requested_) {
+                reset_particle_buffer();
+                recreate_tracker.reset();
+                continue;
             }
 
             if (framebuffer_resized_) {
@@ -530,6 +651,20 @@ class ParticlesApp {
         return particle_buffer_.value();
     }
 
+    [[nodiscard]] const cubey::vulkan::PipelineLayout& compute_pipeline_layout() const {
+        if (!compute_pipeline_layout_.has_value()) {
+            throw std::runtime_error("compute pipeline layout is not initialized");
+        }
+        return compute_pipeline_layout_.value();
+    }
+
+    [[nodiscard]] const cubey::vulkan::ComputePipeline& compute_pipeline() const {
+        if (!compute_pipeline_.has_value()) {
+            throw std::runtime_error("compute pipeline is not initialized");
+        }
+        return compute_pipeline_.value();
+    }
+
     [[nodiscard]] const cubey::vulkan::PipelineLayout& pipeline_layout() const {
         if (!pipeline_layout_.has_value()) {
             throw std::runtime_error("pipeline layout is not initialized");
@@ -554,6 +689,8 @@ class ParticlesApp {
     RunConfig config_;
     bool glfw_initialized_ = false;
     bool framebuffer_resized_ = false;
+    bool paused_ = false;
+    bool reset_particles_requested_ = false;
     GLFWwindow* window_ = nullptr;
 
     std::optional<cubey::vulkan::Instance> instance_owner_;
@@ -570,6 +707,8 @@ class ParticlesApp {
 
     std::optional<cubey::vulkan::PipelineLayout> pipeline_layout_;
     std::optional<cubey::vulkan::GraphicsPipeline> pipeline_;
+    std::optional<cubey::vulkan::PipelineLayout> compute_pipeline_layout_;
+    std::optional<cubey::vulkan::ComputePipeline> compute_pipeline_;
     FrameClock frame_clock_;
     FrameStats frame_stats_;
 };
