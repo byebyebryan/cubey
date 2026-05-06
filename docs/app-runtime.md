@@ -57,6 +57,7 @@ Owns the platform window and Vulkan surface handoff:
 - Report the current framebuffer extent.
 - Wait until the framebuffer is presentable.
 - Poll/wait events and expose close state.
+- Dispatch key, mouse-button, cursor-position, and scroll events.
 
 This type should not know about Cubey swapchains, frame resources, pipelines, or
 project lifecycles.
@@ -84,21 +85,32 @@ resource creation/destruction, update, command recording, and shutdown.
    Status: complete.
 5. Migrate `examples/particles` to prove update/input/compute-plus-graphics
    behavior. Status: complete.
-6. Revisit headless hosting after the windowed host has real shape.
+6. Migrate `examples/spinning_cube` to prove indexed geometry, depth, and
+   per-frame push constants. Status: complete.
+7. Add pointer input and migrate `examples/textured_cube` to prove
+   orbit-control input, frame stats, descriptors, setup-time compute, and
+   texture sampling. Status: complete.
+8. Migrate the windowed `examples/fractal` path while preserving its headless
+   PNG path. Status: complete.
+9. Revisit headless hosting after a project or repeated headless examples make
+   the shared shape obvious.
 
 ## Current Checkpoint
 
 - `cubey_app` is an optional target that depends on `cubey`, GLFW, and Vulkan.
 - `cubey::app::GlfwWindow` owns GLFW initialization, no-client-API window
   creation, required Vulkan instance extension lookup, framebuffer resize
-  tracking, presentable-size waiting, title updates, and key event dispatch.
+  tracking, presentable-size waiting, title updates, and key/pointer event
+  dispatch.
 - `cubey::app::GlfwSurface` owns the GLFW-created `VkSurfaceKHR`.
 - `cubey::app::WindowedHost` owns the current windowed loop: instance, surface,
   device, swapchain, frame resources, frame timing, optional frame stats,
   acquire/record/submit/present, and swapchain recreation.
-- `examples/window_clear`, `examples/triangle`, and `examples/particles` use
-  the app host. They still own their shaders, pipelines, descriptors, command
-  recording, and example-specific state.
+- All current windowed examples use the app host: `window_clear`, `triangle`,
+  `spinning_cube`, `textured_cube`, `fractal`, and `particles`. They still own
+  their shaders, pipelines, descriptors, command recording, and example-specific
+  state.
+- `headless_render` and `fractal --headless` remain explicit no-window paths.
 
 ## Promotion Rules
 
@@ -107,10 +119,9 @@ resource creation/destruction, update, command recording, and shutdown.
 - Keep lifecycle APIs small enough that `window_clear` and `triangle` remain
   readable.
 - Prefer project-owned state over host-owned policy.
-- Add input events only as examples need them; start with key presses and
-  resize.
-- Keep headless host extraction separate from the first windowed host unless a
-  migration makes the shared shape obvious.
+- Add more input/UI hosting only as examples or projects need it.
+- Keep headless host extraction separate until a project or repeated headless
+  examples make the shared shape obvious.
 
 ## Current Non-Goals
 

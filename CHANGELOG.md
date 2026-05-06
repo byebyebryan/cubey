@@ -83,8 +83,8 @@ versioned section and use that section as the release notes.
   no-display GLFW failure in terminal sessions.
 - CTest smoke for headless PNG artifact creation and PNG signature validation.
 - Shared CMake CTest smoke helpers for windowed and headless example targets.
-- Optional `cubey_app` target with a GLFW window/surface host and the first
-  windowed app loop.
+- Optional `cubey_app` target with a GLFW window/surface host, pointer/key input
+  dispatch, and the shared windowed app loop.
 
 ### Changed
 
@@ -93,8 +93,8 @@ versioned section and use that section as the release notes.
 - Runnable targets are explicit examples/projects rather than a generic `cubey`
   executable.
 - Windowed examples now use dynamic rendering instead of classic render
-  passes/framebuffers while keeping GLFW, surface creation, command recording,
-  acquire/present behavior, and resize policy local.
+  passes/framebuffers while keeping command recording and render-resource policy
+  local.
 - Graphics examples now share dynamic graphics pipeline create-info setup while
   retaining explicit example-local layout, shader, vertex-input, and descriptor
   choices.
@@ -105,20 +105,23 @@ versioned section and use that section as the release notes.
   descriptor and compute setup blocks.
 - `textured_cube` now uses shared storage-image transition and generated
   sampled-image config helpers for its compute-generated texture.
-- Windowed examples now share recreate-attempt tracking while still owning their
-  swapchain resource rebuild steps.
+- Windowed examples now share GLFW windowing, Vulkan surface creation,
+  acquire/present behavior, resize handling, frame timing, and swapchain
+  recreation through `cubey_app`.
 - Shader-backed examples now share SPIR-V I/O layered on generic binary file
   reads instead of carrying local file readers.
 - Example CTest targets now use shared CMake smoke helpers instead of repeated
   shell snippets.
 - Headless PNG smoke tests now apply a narrow LeakSanitizer suppression for
   DBus allocations left alive by the Vulkan loader/driver path on Linux.
-- Roadmap and Vulkan abstraction docs now route the next framework checkpoint
-  toward a real project before a broader app/runtime host.
+- Roadmap and Vulkan abstraction docs now frame the app/runtime host as the
+  standard windowed-example path while still deferring renderer and scene-system
+  abstractions.
 - The particle rewrite is currently categorized as an example-sized reference
   program rather than a first-class `projects/` target.
-- `window_clear`, `triangle`, and `particles` now use the shared GLFW/windowed
-  app host while keeping command recording and render resources example-local.
+- `window_clear`, `triangle`, `spinning_cube`, `textured_cube`, `fractal`, and
+  `particles` now use the shared GLFW/windowed app host while keeping command
+  recording and render resources example-local.
 
 ## Pre-2.0 History
 

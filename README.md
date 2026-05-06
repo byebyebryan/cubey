@@ -39,7 +39,7 @@ See:
 | `webgpu` | Dawn native plus emdawnwebgpu browser experiment | Successful API/prototyping spike; not the primary path |
 | `vulkan` | Native Vulkan windowed/headless experiment | Successful; informs the mainline Vulkan layer |
 
-Main now contains the first windowed examples: `examples/window_clear`
+Main now contains windowed examples: `examples/window_clear`
 for dynamic-rendering clear/present and `examples/triangle` for build-time GLSL
 shaders plus dynamic-rendering graphics pipeline setup.
 `examples/spinning_cube` adds device-local vertex/index buffers, push
@@ -68,14 +68,16 @@ shared shader includes,
 `RenderContext` surface-backed begin/end frame lifecycle, single-frame
 command/sync components, and swapchain recreate-attempt tracking; examples still
 own command recording and render policy.
-`cubey_app` owns the first GLFW-backed window/app host layer used by
-`window_clear`, `triangle`, and `particles`; the remaining examples still carry
-their local host loops until they are migrated intentionally. The spike branches
-remain reference material for deeper compute and browser work.
+`cubey_app` owns the GLFW-backed window/app host layer used by all current
+windowed examples: `window_clear`, `triangle`, `spinning_cube`,
+`textured_cube`, `fractal`, and `particles`. Headless paths remain explicit
+until a shared headless host shape is proven. The spike branches remain
+reference material for deeper compute and browser work.
 
 The next framework checkpoint should come from a first real project such as
-fluid simulation or marching cubes. The fractal and particle slices stayed
-example-sized and did not justify a broad app/runtime host.
+fluid simulation or marching cubes. The current examples now justify the
+windowed host layer, but still do not justify a renderer, scene system, or broad
+backend abstraction.
 
 ## Development Setup
 

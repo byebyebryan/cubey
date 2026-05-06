@@ -419,3 +419,9 @@ env XDG_RUNTIME_DIR=/run/user/1000 WAYLAND_DISPLAY=wayland-1 DISPLAY=:1 XDG_CURR
   handoff, and `WindowedHost` owns the repeated windowed loop. `window_clear`,
   `triangle`, and `particles` now use it while keeping Vulkan command recording
   and render resources example-local.
+- The follow-up windowed-host migration moved `window_clear`, `spinning_cube`,
+  `textured_cube`, and the windowed `fractal` path onto `WindowedHost` too.
+  Direct GLFW use is now isolated to `cubey_app`; examples depend on
+  `cubey::app` for window hosting and keep their own shader, pipeline,
+  descriptor, render-resource, and command-recording policy. `headless_render`
+  and `fractal --headless` remain explicit no-window paths.

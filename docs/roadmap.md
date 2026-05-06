@@ -139,8 +139,9 @@ Current checkpoint:
 - Reusable `cubey::vulkan::SwapchainRecreateTracker` guards repeated
   out-of-date/suboptimal recreate loops across all current windowed examples.
 - Optional `cubey_app` target owns the first GLFW-backed app/runtime layer:
-  window lifetime, surface creation/destruction, key dispatch, windowed frame
-  loop, frame timing, optional frame stats, and swapchain recreate orchestration.
+  window lifetime, surface creation/destruction, key/pointer dispatch, windowed
+  frame loop, frame timing, optional frame stats, and swapchain recreate
+  orchestration.
 - `examples/window_clear` links against `cubey` and clears/presents a swapchain
   image through the shared app host using dynamic rendering.
 - `examples/triangle` links against `cubey`, compiles vertex/fragment shaders
@@ -150,19 +151,20 @@ Current checkpoint:
 - `examples/spinning_cube` links against `cubey`, compiles vertex/fragment
   shaders at build time, draws an indexed cube from device-local vertex/index
   buffers, updates an MVP matrix through push constants, and uses dynamic
-  rendering with a shared depth attachment helper.
+  rendering with a shared depth attachment helper through the shared app host.
 - `examples/textured_cube` links against `cubey`, generates a texture with a
   compute shader writing a storage image, transitions it for shader sampling,
   binds scene uniforms plus a combined image sampler descriptor through shared
   descriptor/compute helpers, and draws an interactive shaded textured indexed
   cube through dynamic rendering with per-face normals and shared GLSL Lambert
-  lighting.
+  lighting through the shared app host.
 - `examples/headless_render` links against `cubey`, creates no GLFW window or
   surface, renders an offscreen color target through dynamic rendering, copies
   it into a readback buffer, and writes a PNG artifact.
 - `examples/fractal` links against `cubey`, renders a fullscreen
   Mandelbrot-style fragment shader, supports example-local pan/zoom/reset
-  navigation, and reuses the headless render-target/readback/PNG path.
+  navigation through the shared app host, and reuses the explicit headless
+  render-target/readback/PNG path.
 - `examples/particles` links against `cubey`, updates a storage-buffer particle
   field with a per-frame compute shader, inserts an explicit compute-to-vertex
   memory barrier, and renders the result as instanced screen-facing quads with
@@ -170,14 +172,13 @@ Current checkpoint:
 - The current device model intentionally selects one queue family for required
   graphics, compute, and present capabilities. Split queue-family support is a
   future framework slice, not part of the current example-local compute path.
-- The remaining non-hosted windowed app implementation is intentionally
-  example-local: swapchain-sized resource rebuild order, pipeline layout
-  choices, command recording, and resize policy.
+- Windowed example host mechanics now live in `cubey_app`; swapchain-sized
+  render resources, pipeline layout choices, and command recording remain
+  example-local.
 - Dev CTest covers the target in graphical, no-display terminal, and headless
   artifact sessions through shared windowed and PNG smoke helpers.
-- Frame overlap, split graphics/compute/present queue-family support and
-  external asset loading remain future slices. A narrow app/runtime host is now
-  ready to extract from the repeated example shape.
+- Frame overlap, split graphics/compute/present queue-family support, a shared
+  headless host, and external asset loading remain future slices.
 
 Alignment: the Vulkan layer now has visible windowed examples plus a minimal
 headless PNG path. Cubey has the first async-ready runtime vocabulary: CPU jobs
@@ -201,9 +202,8 @@ surface while keeping the runtime boundary concrete.
 - Wrote a simple deterministic PNG artifact.
 - Added CTest coverage for the no-display success path, including output-file
   existence and PNG signature checks.
-- Keep `window_clear`, `triangle`, `spinning_cube`, and `textured_cube`
-  windowed-example loops explicit unless the headless path reveals reusable host
-  shape.
+- Keep headless paths explicit unless a project or repeated headless examples
+  reveal reusable host shape.
 
 Exit criteria:
 
@@ -316,13 +316,14 @@ Exit criteria:
 
 ## Phase 6: Runtime Extraction
 
-Status: active next.
+Status: active.
 
 Goal: extract only the host concepts that repeated windowed/headless project code
 has proven useful.
 
-- GLFW-backed window host outside `cubey::vulkan`.
-- Initial windowed host outside `cubey::vulkan`.
+- GLFW-backed window host outside `cubey::vulkan`. Status: complete.
+- Initial windowed host outside `cubey::vulkan`. Status: complete for current
+  windowed examples.
 - Project lifecycle vocabulary: setup, update, render packet, resize, shutdown.
 - Optional headless host that shares project render code where practical.
 - Input/UI hooks only after a project needs them.
