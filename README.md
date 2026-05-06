@@ -25,6 +25,7 @@ See:
 - [Design document](docs/DESIGN.md)
 - [Roadmap](docs/roadmap.md)
 - [Vulkan abstraction map](docs/vulkan-abstractions.md)
+- [App runtime direction](docs/app-runtime.md)
 - [Threading and async design](docs/threading-and-async.md)
 - [Working notes](docs/working-notes.md)
 - [Spike findings and decision record](docs/spike-findings.md)

@@ -11,8 +11,9 @@ experiments. WebGPU/Dawn remains useful as an optional future presentation path,
 but it is not the architecture driver for the main Vulkan layer.
 
 See [Vulkan abstraction map](vulkan-abstractions.md) for the planned framework
-layers and promotion rules, and [threading and async design](threading-and-async.md)
-for the async-ready runtime boundary that should shape the first real project.
+layers and promotion rules, [app runtime](app-runtime.md) for the GLFW/windowed
+host extraction path, and [threading and async design](threading-and-async.md)
+for the async-ready runtime boundary.
 
 ## Phase 0: Repo Foundation
 
@@ -171,8 +172,9 @@ Current checkpoint:
   pipeline layout choices, command recording, and resize policy.
 - Dev CTest covers the target in graphical, no-display terminal, and headless
   artifact sessions through shared windowed and PNG smoke helpers.
-- Frame overlap, split graphics/compute/present queue-family support, external
-  asset loading, and a project/runtime host remain future slices.
+- Frame overlap, split graphics/compute/present queue-family support and
+  external asset loading remain future slices. A narrow app/runtime host is now
+  ready to extract from the repeated example shape.
 
 Alignment: the Vulkan layer now has visible windowed examples plus a minimal
 headless PNG path. Cubey has the first async-ready runtime vocabulary: CPU jobs
@@ -311,11 +313,12 @@ Exit criteria:
 
 ## Phase 6: Runtime Extraction
 
-Status: defer until the first real project provides real pressure.
+Status: active next.
 
 Goal: extract only the host concepts that repeated windowed/headless project code
 has proven useful.
 
+- GLFW-backed window host outside `cubey::vulkan`.
 - Project lifecycle vocabulary: setup, update, render packet, resize, shutdown.
 - Optional windowed host outside `cubey::vulkan`.
 - Optional headless host that shares project render code where practical.
@@ -323,8 +326,10 @@ has proven useful.
 
 Exit criteria:
 
-- At least one real project gets shorter without hiding Vulkan synchronization,
-  layout, descriptor, or resize constraints.
+- `window_clear` and `triangle` get shorter without hiding Vulkan
+  synchronization, layout, descriptor, or resize constraints.
+- `particles` proves the host can support update/input/compute-plus-graphics
+  without becoming a particle system or renderer.
 - Examples remain useful as small reference programs rather than becoming hidden
   framework tests.
 

@@ -19,8 +19,10 @@ The current boundary is:
   construction.
 - Examples and projects own rendering intent: shaders, meshes, descriptors,
   command recording, resize policy, and user interaction.
-- Higher-level renderer, material, render-graph, and app-host concepts should
-  wait until multiple projects create real pressure for them.
+- Higher-level renderer, material, and render-graph concepts should wait until
+  multiple projects create real pressure for them. A narrow app host is now
+  justified by repeated example host code, but it should live outside
+  `cubey::vulkan`.
 
 ## Promotion Rules
 
@@ -87,7 +89,7 @@ Needed next:
 
 Defer:
 
-- Full app shell until we decide where platform ownership belongs.
+- Renderer/material/scene abstractions until project pressure proves them.
 
 ### 3. Commands And Submission
 
@@ -252,6 +254,7 @@ Needed later:
 - Project runtime vocabulary: setup, update, render packet, resize, shutdown.
 - `ProjectContext` services for CPU jobs, uploads, capture requests, timing,
   and eventually UI hooks.
+- GLFW-backed window host outside the low-level Vulkan layer.
 - Optional windowed host outside the low-level Vulkan layer.
 - Headless host that can share project render code and write inspectable
   artifacts.
@@ -376,8 +379,8 @@ stable.
 - Deferred a generic rebuild callback/coordinator because the actual resource
   creation/destruction order still differs by example.
 
-This batch should remain platform-light. GLFW should still live in examples or
-in a separate future host layer.
+This batch stayed platform-light. GLFW should now move into a separate app host
+layer rather than into `cubey::vulkan`.
 
 ### Batch 5: Headless Artifact Path
 
