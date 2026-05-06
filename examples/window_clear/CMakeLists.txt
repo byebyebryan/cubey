@@ -4,14 +4,12 @@ add_executable(cubey_example_window_clear
 )
 set_target_properties(cubey_example_window_clear PROPERTIES OUTPUT_NAME window_clear)
 
-target_compile_definitions(cubey_example_window_clear PRIVATE GLFW_INCLUDE_NONE)
-
 target_link_libraries(
     cubey_example_window_clear
     PRIVATE
         cubey::cubey
+        cubey::app
         cubey_project_warnings
-        glfw
 )
 
 if (BUILD_TESTING)

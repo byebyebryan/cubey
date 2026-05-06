@@ -1,5 +1,6 @@
 #include "window_clear_app.h"
 
+#include <cubey/app/glfw_window.h>
 #include <cubey/vulkan/command_pool.h>
 #include <cubey/vulkan/device.h>
 #include <cubey/vulkan/dynamic_rendering.h>
@@ -10,7 +11,6 @@
 #include <cubey/vulkan/swapchain.h>
 #include <cubey/vulkan/vk_check.h>
 
-#include <GLFW/glfw3.h>
 #include <vulkan/vulkan.h>
 
 #include <cstddef>
@@ -19,6 +19,7 @@
 #include <optional>
 #include <stdexcept>
 #include <utility>
+#include <vector>
 
 namespace cubey::examples::window_clear {
 namespace {
@@ -41,20 +42,12 @@ class WindowClearApp {
         frame_resources_.reset();
         swapchain_.reset();
 
-        if (surface_ != VK_NULL_HANDLE) {
-            vkDestroySurfaceKHR(instance_, surface_, nullptr);
-            surface_ = VK_NULL_HANDLE;
-        }
         device_owner_.reset();
         device_ = VK_NULL_HANDLE;
+        surface_.reset();
         instance_owner_.reset();
         instance_ = VK_NULL_HANDLE;
-        if (window_ != nullptr) {
-            glfwDestroyWindow(window_);
-        }
-        if (glfw_initialized_) {
-            glfwTerminate();
-        }
+        window_.reset();
     }
 
     int run() {
@@ -74,49 +67,20 @@ class WindowClearApp {
 
   private:
     void init_window() {
-        if (glfwInit() == 0) {
-            throw std::runtime_error("glfwInit failed");
-        }
-        glfw_initialized_ = true;
-
-        if (glfwVulkanSupported() == 0) {
-            throw std::runtime_error("GLFW reports Vulkan is not supported");
-        }
-
-        glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-        window_ =
-            glfwCreateWindow(static_cast<int>(config_.width), static_cast<int>(config_.height),
-                             config_.title.c_str(), nullptr, nullptr);
-        if (window_ == nullptr) {
-            throw std::runtime_error("glfwCreateWindow failed");
-        }
-
-        glfwSetWindowUserPointer(window_, this);
-        glfwSetFramebufferSizeCallback(window_, framebuffer_size_callback);
-    }
-
-    // GLFW fixes this callback signature.
-    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
-    static void framebuffer_size_callback(GLFWwindow* window, int unused_width, int unused_height) {
-        (void)unused_width;
-        (void)unused_height;
-        auto* app = static_cast<WindowClearApp*>(glfwGetWindowUserPointer(window));
-        if (app != nullptr) {
-            app->framebuffer_resized_ = true;
-        }
+        window_.emplace(cubey::app::GlfwWindowConfig{
+            .width = config_.width,
+            .height = config_.height,
+            .title = config_.title,
+        });
     }
 
     void create_instance() {
-        std::uint32_t extension_count = 0;
-        const char** required_extensions = glfwGetRequiredInstanceExtensions(&extension_count);
-        if (required_extensions == nullptr || extension_count == 0) {
-            throw std::runtime_error("glfwGetRequiredInstanceExtensions failed");
-        }
+        const std::vector<const char*> required_extensions =
+            window().required_instance_extensions();
 
         cubey::vulkan::InstanceConfig instance_config;
         instance_config.application_name = config_.title;
-        instance_config.required_extensions.assign(required_extensions,
-                                                   required_extensions + extension_count);
+        instance_config.required_extensions = required_extensions;
         instance_config.validation = config_.validation;
         instance_config.require_validation = config_.require_validation;
 
@@ -125,13 +89,12 @@ class WindowClearApp {
     }
 
     void create_surface() {
-        check(glfwCreateWindowSurface(instance_, window_, nullptr, &surface_),
-              "glfwCreateWindowSurface");
+        surface_.emplace(window(), instance_);
     }
 
     void create_device() {
         cubey::vulkan::DeviceConfig device_config;
-        device_config.surface = surface_;
+        device_config.surface = surface().handle();
         device_config.required_queue_flags = VK_QUEUE_GRAPHICS_BIT;
         device_config.require_present = true;
         device_config.require_dynamic_rendering = true;
@@ -144,27 +107,11 @@ class WindowClearApp {
     }
 
     void wait_for_presentable_window_size() const {
-        int fb_width = 0;
-        int fb_height = 0;
-        glfwGetFramebufferSize(window_, &fb_width, &fb_height);
-        while ((fb_width == 0 || fb_height == 0) && glfwWindowShouldClose(window_) == 0) {
-            glfwWaitEvents();
-            glfwGetFramebufferSize(window_, &fb_width, &fb_height);
-        }
-        if (fb_width == 0 || fb_height == 0) {
-            throw std::runtime_error(
-                "window closed before a presentable framebuffer size was available");
-        }
+        window().wait_for_presentable_framebuffer();
     }
 
     [[nodiscard]] VkExtent2D current_framebuffer_extent() const {
-        int fb_width = 0;
-        int fb_height = 0;
-        glfwGetFramebufferSize(window_, &fb_width, &fb_height);
-        return {
-            static_cast<std::uint32_t>(fb_width),
-            static_cast<std::uint32_t>(fb_height),
-        };
+        return window().framebuffer_extent();
     }
 
     void create_swapchain_resources() {
@@ -187,11 +134,10 @@ class WindowClearApp {
         wait_for_presentable_window_size();
 
         cubey::vulkan::SwapchainConfig swapchain_config;
-        swapchain_config.surface = surface_;
+        swapchain_config.surface = surface().handle();
         swapchain_config.desired_extent = current_framebuffer_extent();
         swapchain_config.image_usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
         swapchain_.emplace(vulkan_device(), swapchain_config);
-        framebuffer_resized_ = false;
     }
 
     void create_frame_resources() {
@@ -253,11 +199,10 @@ class WindowClearApp {
 
         std::uint32_t frame = 0;
         cubey::vulkan::SwapchainRecreateTracker recreate_tracker;
-        while (glfwWindowShouldClose(window_) == 0 &&
-               (config_.frames == 0 || frame < config_.frames)) {
-            glfwPollEvents();
+        while (!window().should_close() && (config_.frames == 0 || frame < config_.frames)) {
+            window().poll_events();
 
-            if (framebuffer_resized_) {
+            if (window().consume_framebuffer_resized()) {
                 std::puts("framebuffer resized; recreating swapchain");
                 recreate_swapchain_resources();
                 recreate_tracker.reset();
@@ -300,17 +245,36 @@ class WindowClearApp {
         return frame_resources_.value();
     }
 
-    RunConfig config_;
-    bool glfw_initialized_ = false;
-    bool framebuffer_resized_ = false;
-    GLFWwindow* window_ = nullptr;
+    cubey::app::GlfwWindow& window() {
+        if (!window_.has_value()) {
+            throw std::runtime_error("GLFW window is not initialized");
+        }
+        return window_.value();
+    }
 
+    [[nodiscard]] const cubey::app::GlfwWindow& window() const {
+        if (!window_.has_value()) {
+            throw std::runtime_error("GLFW window is not initialized");
+        }
+        return window_.value();
+    }
+
+    cubey::app::GlfwSurface& surface() {
+        if (!surface_.has_value()) {
+            throw std::runtime_error("GLFW surface is not initialized");
+        }
+        return surface_.value();
+    }
+
+    RunConfig config_;
+
+    std::optional<cubey::app::GlfwWindow> window_;
     std::optional<cubey::vulkan::Instance> instance_owner_;
+    std::optional<cubey::app::GlfwSurface> surface_;
     std::optional<cubey::vulkan::Device> device_owner_;
     std::optional<cubey::vulkan::Swapchain> swapchain_;
     std::optional<cubey::vulkan::FrameResources> frame_resources_;
     VkInstance instance_ = VK_NULL_HANDLE;
-    VkSurfaceKHR surface_ = VK_NULL_HANDLE;
     VkDevice device_ = VK_NULL_HANDLE;
 };
 
