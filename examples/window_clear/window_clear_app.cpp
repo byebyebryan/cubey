@@ -51,8 +51,8 @@ class WindowClearApp {
                     },
                 .update = {},
                 .record_frame =
-                    [this](cubey::app::WindowedAppContext& context, VkCommandBuffer command_buffer,
-                           std::uint32_t image_index, const FrameTiming& timing) {
+                    [](cubey::app::WindowedAppContext& context, VkCommandBuffer command_buffer,
+                       std::uint32_t image_index, const FrameTiming& timing) {
                         (void)timing;
                         record_clear_frame(context, command_buffer, image_index);
                     },
@@ -63,8 +63,8 @@ class WindowClearApp {
     }
 
   private:
-    void record_clear_frame(cubey::app::WindowedAppContext& context, VkCommandBuffer command_buffer,
-                            std::uint32_t image_index) {
+    static void record_clear_frame(cubey::app::WindowedAppContext& context,
+                                   VkCommandBuffer command_buffer, std::uint32_t image_index) {
         cubey::vulkan::begin_command_buffer(command_buffer,
                                             VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
