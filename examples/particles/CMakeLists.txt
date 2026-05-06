@@ -7,7 +7,6 @@ set_target_properties(cubey_example_particles PROPERTIES OUTPUT_NAME particles)
 target_compile_definitions(
     cubey_example_particles
     PRIVATE
-        GLFW_INCLUDE_NONE
         CUBEY_PARTICLES_SHADER_DIR="${CMAKE_CURRENT_BINARY_DIR}/shaders"
 )
 
@@ -15,8 +14,8 @@ target_link_libraries(
     cubey_example_particles
     PRIVATE
         cubey::cubey
+        cubey::app
         cubey_project_warnings
-        glfw
 )
 
 cubey_add_glsl_shaders(

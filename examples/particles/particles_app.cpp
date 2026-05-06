@@ -1,23 +1,18 @@
 #include "particles_app.h"
 
-#include <cubey/frame_clock.h>
+#include <cubey/app/glfw_window.h>
+#include <cubey/app/windowed_host.h>
 #include <cubey/frame_stats.h>
 #include <cubey/spirv_io.h>
 #include <cubey/vulkan/buffer.h>
 #include <cubey/vulkan/command_pool.h>
 #include <cubey/vulkan/descriptors.h>
-#include <cubey/vulkan/device.h>
 #include <cubey/vulkan/dynamic_rendering.h>
-#include <cubey/vulkan/frame_resources.h>
 #include <cubey/vulkan/image_transitions.h>
-#include <cubey/vulkan/instance.h>
 #include <cubey/vulkan/pipeline.h>
-#include <cubey/vulkan/render_context.h>
 #include <cubey/vulkan/shader_module.h>
-#include <cubey/vulkan/swapchain.h>
 #include <cubey/vulkan/vk_check.h>
 
-#include <GLFW/glfw3.h>
 #include <vulkan/vulkan.h>
 
 #include <algorithm>
@@ -28,7 +23,6 @@
 #include <filesystem>
 #include <optional>
 #include <stdexcept>
-#include <string>
 #include <utility>
 #include <vector>
 
@@ -39,10 +33,7 @@
 namespace cubey::examples::particles {
 namespace {
 
-using cubey::format_window_title;
-using cubey::FrameClock;
-using cubey::FrameStats;
-using cubey::FrameStatsSnapshot;
+using cubey::FrameStatsSample;
 using cubey::FrameTiming;
 using cubey::vulkan::check;
 using cubey::vulkan::vk_struct;
@@ -120,196 +111,150 @@ class ParticlesApp {
     ParticlesApp(const ParticlesApp&) = delete;
     ParticlesApp& operator=(const ParticlesApp&) = delete;
 
-    ~ParticlesApp() {
-        if (device_ != VK_NULL_HANDLE) {
-            static_cast<void>(vkDeviceWaitIdle(device_));
-        }
-
-        frame_resources_.reset();
-        destroy_swapchain_resources();
-        compute_pipeline_.reset();
-        compute_pipeline_layout_.reset();
-        descriptor_pool_.reset();
-        descriptor_set_layout_.reset();
-        particle_buffer_.reset();
-
-        if (surface_ != VK_NULL_HANDLE) {
-            vkDestroySurfaceKHR(instance_, surface_, nullptr);
-            surface_ = VK_NULL_HANDLE;
-        }
-        device_owner_.reset();
-        device_ = VK_NULL_HANDLE;
-        instance_owner_.reset();
-        instance_ = VK_NULL_HANDLE;
-        if (window_ != nullptr) {
-            glfwDestroyWindow(window_);
-        }
-        if (glfw_initialized_) {
-            glfwTerminate();
-        }
-    }
-
     int run() {
         if (config_.headless) {
             throw std::runtime_error("particles does not support --headless yet");
         }
 
-        init_window();
-        create_instance();
-        create_surface();
-        create_device();
-        create_particle_buffer();
-        create_descriptor_resources();
-        create_compute_resources();
-        create_swapchain_resources();
-        create_frame_resources();
-        render_window();
-        return 0;
+        cubey::app::WindowedHost host(
+            {
+                .run_config = config_,
+                .required_queue_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
+                .swapchain_image_usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+                .require_dynamic_rendering = true,
+            },
+            {
+                .create_swapchain_resources =
+                    [this](cubey::app::WindowedAppContext& context) {
+                        create_global_resources_if_needed(context);
+                        create_pipeline(context);
+                    },
+                .destroy_swapchain_resources =
+                    [this](cubey::app::WindowedAppContext& context) {
+                        (void)context;
+                        destroy_swapchain_resources();
+                    },
+                .on_ready =
+                    [this](cubey::app::WindowedAppContext& context) {
+                        setup_input(context);
+                        std::printf(
+                            "particles: %s rendering compute attractor particles at %ux%u\n",
+                            context.device().device_name(), context.swapchain().extent().width,
+                            context.swapchain().extent().height);
+                    },
+                .update =
+                    [this](cubey::app::WindowedAppContext& context, const FrameTiming& timing) {
+                        (void)timing;
+                        if (reset_particles_requested_) {
+                            reset_particle_buffer(context);
+                        }
+                    },
+                .record_frame =
+                    [this](cubey::app::WindowedAppContext& context, VkCommandBuffer command_buffer,
+                           std::uint32_t image_index, const FrameTiming& timing) {
+                        record_particles_frame(context, command_buffer, image_index, timing);
+                    },
+                .frame_stats_sample =
+                    [](cubey::app::WindowedAppContext& context,
+                       const FrameTiming& timing) -> std::optional<FrameStatsSample> {
+                    const VkExtent2D extent = context.swapchain().extent();
+                    return FrameStatsSample{
+                        .delta_seconds = timing.delta_seconds,
+                        .width = extent.width,
+                        .height = extent.height,
+                        .triangles = kParticleCount * 2U,
+                    };
+                },
+                .shutdown =
+                    [this](cubey::app::WindowedAppContext& context) {
+                        (void)context;
+                        destroy_all_resources();
+                    },
+            });
+        return host.run();
     }
 
   private:
-    void init_window() {
-        if (glfwInit() == 0) {
-            throw std::runtime_error("glfwInit failed");
-        }
-        glfw_initialized_ = true;
-
-        if (glfwVulkanSupported() == 0) {
-            throw std::runtime_error("GLFW reports Vulkan is not supported");
-        }
-
-        glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-        window_ =
-            glfwCreateWindow(static_cast<int>(config_.width), static_cast<int>(config_.height),
-                             config_.title.c_str(), nullptr, nullptr);
-        if (window_ == nullptr) {
-            throw std::runtime_error("glfwCreateWindow failed");
-        }
-
-        glfwSetWindowUserPointer(window_, this);
-        glfwSetFramebufferSizeCallback(window_, framebuffer_size_callback);
-        glfwSetKeyCallback(window_, key_callback);
+    void setup_input(cubey::app::WindowedAppContext& context) {
+        cubey::app::GlfwWindow* window = &context.window();
+        window->set_key_callback([this, window](const cubey::app::KeyEvent& event) {
+            if (event.action != cubey::app::KeyAction::Press) {
+                return;
+            }
+            switch (event.key) {
+            case cubey::app::Key::Escape:
+                window->request_close();
+                break;
+            case cubey::app::Key::Space:
+                paused_ = !paused_;
+                break;
+            case cubey::app::Key::R:
+                reset_particles_requested_ = true;
+                break;
+            default:
+                break;
+            }
+        });
     }
 
-    // GLFW fixes this callback signature.
-    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
-    static void framebuffer_size_callback(GLFWwindow* window, int unused_width, int unused_height) {
-        (void)unused_width;
-        (void)unused_height;
-        auto* app = static_cast<ParticlesApp*>(glfwGetWindowUserPointer(window));
-        if (app != nullptr) {
-            app->framebuffer_resized_ = true;
-        }
-    }
-
-    // GLFW fixes this callback signature.
-    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
-    static void key_callback(GLFWwindow* window, int key, int unused_scancode, int action,
-                             int unused_mods) {
-        (void)unused_scancode;
-        (void)unused_mods;
-        if (action != GLFW_PRESS) {
+    void create_global_resources_if_needed(cubey::app::WindowedAppContext& context) {
+        if (particle_buffer_.has_value()) {
             return;
         }
 
-        auto* app = static_cast<ParticlesApp*>(glfwGetWindowUserPointer(window));
-        if (app == nullptr) {
-            return;
-        }
-        if (key == GLFW_KEY_ESCAPE) {
-            glfwSetWindowShouldClose(window, GLFW_TRUE);
-        } else if (key == GLFW_KEY_SPACE) {
-            app->paused_ = !app->paused_;
-        } else if (key == GLFW_KEY_R) {
-            app->reset_particles_requested_ = true;
-        }
+        create_particle_buffer(context);
+        create_descriptor_resources(context);
+        create_compute_resources(context);
     }
 
-    void create_instance() {
-        std::uint32_t extension_count = 0;
-        const char** required_extensions = glfwGetRequiredInstanceExtensions(&extension_count);
-        if (required_extensions == nullptr || extension_count == 0) {
-            throw std::runtime_error("glfwGetRequiredInstanceExtensions failed");
-        }
-
-        cubey::vulkan::InstanceConfig instance_config;
-        instance_config.application_name = config_.title;
-        instance_config.required_extensions.assign(required_extensions,
-                                                   required_extensions + extension_count);
-        instance_config.validation = config_.validation;
-        instance_config.require_validation = config_.require_validation;
-
-        instance_owner_.emplace(instance_config);
-        instance_ = instance_owner_->handle();
-    }
-
-    void create_surface() {
-        check(glfwCreateWindowSurface(instance_, window_, nullptr, &surface_),
-              "glfwCreateWindowSurface");
-    }
-
-    void create_device() {
-        cubey::vulkan::DeviceConfig device_config;
-        device_config.surface = surface_;
-        device_config.required_queue_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT;
-        device_config.require_present = true;
-        device_config.require_dynamic_rendering = true;
-
-        if (!instance_owner_.has_value()) {
-            throw std::runtime_error("Vulkan instance must exist before creating a device");
-        }
-        device_owner_.emplace(instance_owner_.value(), device_config);
-        device_ = device_owner_->handle();
-    }
-
-    void create_particle_buffer() {
+    void create_particle_buffer(cubey::app::WindowedAppContext& context) {
         const std::vector<ParticleGpu> particles = make_initial_particles();
         const VkDeviceSize byte_size =
             static_cast<VkDeviceSize>(particles.size() * sizeof(ParticleGpu));
         particle_buffer_.emplace(cubey::vulkan::upload_device_buffer(
-            vulkan_device(), particles.data(), byte_size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT));
+            context.device(), particles.data(), byte_size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT));
     }
 
-    void create_descriptor_resources() {
+    void create_descriptor_resources(cubey::app::WindowedAppContext& context) {
         const VkDescriptorSetLayoutBinding particle_binding = cubey::vulkan::descriptor_binding(
             0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
             VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_COMPUTE_BIT);
         const std::array<VkDescriptorSetLayoutBinding, 1> bindings{particle_binding};
         const VkDescriptorSetLayoutCreateInfo layout_info =
             cubey::vulkan::descriptor_set_layout_info(bindings);
-        descriptor_set_layout_.emplace(vulkan_device(), layout_info);
+        descriptor_set_layout_.emplace(context.device(), layout_info);
 
         const VkDescriptorPoolSize pool_size =
             cubey::vulkan::descriptor_pool_size(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1);
         const std::array<VkDescriptorPoolSize, 1> pool_sizes{pool_size};
         const VkDescriptorPoolCreateInfo pool_info =
             cubey::vulkan::descriptor_pool_info(1, pool_sizes);
-        descriptor_pool_.emplace(vulkan_device(), pool_info);
+        descriptor_pool_.emplace(context.device(), pool_info);
         descriptor_set_ = descriptor_pool().allocate(descriptor_set_layout().handle());
-        update_particle_descriptor();
+        update_particle_descriptor(context);
     }
 
-    void update_particle_descriptor() {
+    void update_particle_descriptor(cubey::app::WindowedAppContext& context) {
         const cubey::vulkan::DescriptorBufferWrite particle_write =
             cubey::vulkan::storage_buffer_descriptor(descriptor_set_, 0, particle_buffer().handle(),
                                                      particle_buffer().size());
         const VkWriteDescriptorSet write = particle_write.descriptor_write();
-        cubey::vulkan::update_descriptor_sets(vulkan_device(), {&write, 1});
+        cubey::vulkan::update_descriptor_sets(context.device(), {&write, 1});
     }
 
-    void reset_particle_buffer() {
-        check(vkDeviceWaitIdle(device_), "vkDeviceWaitIdle before particle reset");
+    void reset_particle_buffer(cubey::app::WindowedAppContext& context) {
+        check(vkDeviceWaitIdle(context.device().handle()),
+              "vkDeviceWaitIdle before particle reset");
         particle_buffer_.reset();
-        create_particle_buffer();
-        update_particle_descriptor();
+        create_particle_buffer(context);
+        update_particle_descriptor(context);
         reset_particles_requested_ = false;
-        reset_frame_timing();
     }
 
-    void create_compute_resources() {
+    void create_compute_resources(cubey::app::WindowedAppContext& context) {
         const std::vector<std::uint32_t> compute_code =
             cubey::read_spirv_file(shader_path("particles.comp.spv"));
-        cubey::vulkan::ShaderModule compute_shader(vulkan_device(), compute_code);
+        cubey::vulkan::ShaderModule compute_shader(context.device(), compute_code);
 
         VkPushConstantRange compute_push_constant{};
         compute_push_constant.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
@@ -321,7 +266,7 @@ class ParticlesApp {
             .set_layouts = set_layouts,
             .push_constants = push_constants,
         });
-        compute_pipeline_layout_.emplace(vulkan_device(), layout_info.create_info());
+        compute_pipeline_layout_.emplace(context.device(), layout_info.create_info());
 
         const VkPipelineShaderStageCreateInfo compute_stage =
             cubey::vulkan::shader_stage(VK_SHADER_STAGE_COMPUTE_BIT, compute_shader.handle());
@@ -329,70 +274,31 @@ class ParticlesApp {
             .layout = compute_pipeline_layout().handle(),
             .shader_stage = compute_stage,
         });
-        compute_pipeline_.emplace(vulkan_device(), pipeline_info.create_info());
-    }
-
-    void wait_for_presentable_window_size() const {
-        int fb_width = 0;
-        int fb_height = 0;
-        glfwGetFramebufferSize(window_, &fb_width, &fb_height);
-        while ((fb_width == 0 || fb_height == 0) && glfwWindowShouldClose(window_) == 0) {
-            glfwWaitEvents();
-            glfwGetFramebufferSize(window_, &fb_width, &fb_height);
-        }
-        if (fb_width == 0 || fb_height == 0) {
-            throw std::runtime_error(
-                "window closed before a presentable framebuffer size was available");
-        }
-    }
-
-    [[nodiscard]] VkExtent2D current_framebuffer_extent() const {
-        int fb_width = 0;
-        int fb_height = 0;
-        glfwGetFramebufferSize(window_, &fb_width, &fb_height);
-        return {
-            static_cast<std::uint32_t>(fb_width),
-            static_cast<std::uint32_t>(fb_height),
-        };
-    }
-
-    void create_swapchain_resources() {
-        create_swapchain();
-        create_pipeline();
+        compute_pipeline_.emplace(context.device(), pipeline_info.create_info());
     }
 
     void destroy_swapchain_resources() {
         pipeline_.reset();
         pipeline_layout_.reset();
-        swapchain_.reset();
     }
 
-    void recreate_swapchain_resources() {
-        check(vkDeviceWaitIdle(device_), "vkDeviceWaitIdle before swapchain recreate");
-        frame_resources_.reset();
+    void destroy_all_resources() {
         destroy_swapchain_resources();
-        create_swapchain_resources();
-        create_frame_resources();
+        compute_pipeline_.reset();
+        compute_pipeline_layout_.reset();
+        descriptor_pool_.reset();
+        descriptor_set_ = VK_NULL_HANDLE;
+        descriptor_set_layout_.reset();
+        particle_buffer_.reset();
     }
 
-    void create_swapchain() {
-        wait_for_presentable_window_size();
-
-        cubey::vulkan::SwapchainConfig swapchain_config;
-        swapchain_config.surface = surface_;
-        swapchain_config.desired_extent = current_framebuffer_extent();
-        swapchain_config.image_usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-        swapchain_.emplace(vulkan_device(), swapchain_config);
-        framebuffer_resized_ = false;
-    }
-
-    void create_pipeline() {
+    void create_pipeline(cubey::app::WindowedAppContext& context) {
         const std::vector<std::uint32_t> vertex_code =
             cubey::read_spirv_file(shader_path("particles.vert.spv"));
         const std::vector<std::uint32_t> fragment_code =
             cubey::read_spirv_file(shader_path("particles.frag.spv"));
-        cubey::vulkan::ShaderModule vertex_shader(vulkan_device(), vertex_code);
-        cubey::vulkan::ShaderModule fragment_shader(vulkan_device(), fragment_code);
+        cubey::vulkan::ShaderModule vertex_shader(context.device(), vertex_code);
+        cubey::vulkan::ShaderModule fragment_shader(context.device(), fragment_code);
 
         const VkPipelineShaderStageCreateInfo vertex_stage =
             cubey::vulkan::shader_stage(VK_SHADER_STAGE_VERTEX_BIT, vertex_shader.handle());
@@ -414,12 +320,12 @@ class ParticlesApp {
             .set_layouts = set_layouts,
             .push_constants = push_constants,
         });
-        pipeline_layout_.emplace(vulkan_device(), layout_info.create_info());
+        pipeline_layout_.emplace(context.device(), layout_info.create_info());
 
         cubey::vulkan::DynamicGraphicsPipelineConfig pipeline_config;
         pipeline_config.layout = pipeline_layout().handle();
-        pipeline_config.extent = swapchain().extent();
-        pipeline_config.color_format = swapchain().format();
+        pipeline_config.extent = context.swapchain().extent();
+        pipeline_config.color_format = context.swapchain().format();
         pipeline_config.shader_stages = shader_stages;
         pipeline_config.blend_enable = true;
         pipeline_config.src_color_blend_factor = VK_BLEND_FACTOR_ONE;
@@ -427,11 +333,7 @@ class ParticlesApp {
         pipeline_config.src_alpha_blend_factor = VK_BLEND_FACTOR_ONE;
         pipeline_config.dst_alpha_blend_factor = VK_BLEND_FACTOR_ONE;
         const cubey::vulkan::DynamicGraphicsPipelineInfo pipeline_info(pipeline_config);
-        pipeline_.emplace(vulkan_device(), pipeline_info.create_info());
-    }
-
-    void create_frame_resources() {
-        frame_resources_.emplace(vulkan_device(), swapchain().image_count());
+        pipeline_.emplace(context.device(), pipeline_info.create_info());
     }
 
     void record_particle_compute(VkCommandBuffer command_buffer, const FrameTiming& timing) const {
@@ -474,7 +376,8 @@ class ParticlesApp {
                              nullptr, 0, nullptr);
     }
 
-    void record_particles_frame(VkCommandBuffer command_buffer, std::uint32_t image_index,
+    void record_particles_frame(cubey::app::WindowedAppContext& context,
+                                VkCommandBuffer command_buffer, std::uint32_t image_index,
                                 const FrameTiming& timing) {
         cubey::vulkan::begin_command_buffer(command_buffer,
                                             VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
@@ -483,8 +386,9 @@ class ParticlesApp {
             record_particle_compute(command_buffer, timing);
         }
 
+        cubey::vulkan::Swapchain& swapchain = context.swapchain();
         const std::size_t swapchain_image_index = static_cast<std::size_t>(image_index);
-        const VkImage swapchain_image = swapchain().images().at(swapchain_image_index);
+        const VkImage swapchain_image = swapchain.images().at(swapchain_image_index);
         cubey::vulkan::transition_image_layout(
             command_buffer, cubey::vulkan::begin_color_attachment_transition(swapchain_image));
 
@@ -492,16 +396,16 @@ class ParticlesApp {
         clear.color = {{0.006F, 0.007F, 0.012F, 1.0F}};
         const VkRenderingAttachmentInfo color_attachment =
             cubey::vulkan::color_rendering_attachment(
-                swapchain().image_views().at(swapchain_image_index), clear);
+                swapchain.image_views().at(swapchain_image_index), clear);
 
         auto rendering = vk_struct<VkRenderingInfo>(VK_STRUCTURE_TYPE_RENDERING_INFO);
         rendering.renderArea.offset = {0, 0};
-        rendering.renderArea.extent = swapchain().extent();
+        rendering.renderArea.extent = swapchain.extent();
         rendering.layerCount = 1;
         rendering.colorAttachmentCount = 1;
         rendering.pColorAttachments = &color_attachment;
 
-        const VkExtent2D extent = swapchain().extent();
+        const VkExtent2D extent = swapchain.extent();
         const DrawPushConstants push_constants{
             .inv_extent_scale_time =
                 {
@@ -527,107 +431,6 @@ class ParticlesApp {
             cubey::vulkan::finish_color_attachment_for_present_transition(swapchain_image));
 
         check(vkEndCommandBuffer(command_buffer), "vkEndCommandBuffer particles");
-    }
-
-    cubey::vulkan::RenderFrameResult draw_frame(const FrameTiming& timing) {
-        cubey::vulkan::RenderContext render_context({
-            .device = &vulkan_device(),
-            .swapchain = &swapchain(),
-            .frame_resources = &frame_resources(),
-        });
-
-        cubey::vulkan::RenderFrame frame;
-        cubey::vulkan::RenderFrameResult result = render_context.begin_frame(&frame);
-        if (result == cubey::vulkan::RenderFrameResult::RecreateSwapchain) {
-            return result;
-        }
-
-        record_particles_frame(frame.command_buffer, frame.image_index, timing);
-        return render_context.end_frame(frame);
-    }
-
-    void reset_frame_timing() {
-        frame_clock_.reset();
-        frame_stats_.reset();
-    }
-
-    void render_window() {
-        reset_frame_timing();
-
-        std::printf("particles: %s rendering compute attractor particles at %ux%u\n",
-                    vulkan_device().device_name(), swapchain().extent().width,
-                    swapchain().extent().height);
-
-        std::uint32_t frame = 0;
-        cubey::vulkan::SwapchainRecreateTracker recreate_tracker;
-        while (glfwWindowShouldClose(window_) == 0 &&
-               (config_.frames == 0 || frame < config_.frames)) {
-            glfwPollEvents();
-            if (glfwWindowShouldClose(window_) != 0) {
-                break;
-            }
-
-            if (reset_particles_requested_) {
-                reset_particle_buffer();
-                recreate_tracker.reset();
-                continue;
-            }
-
-            if (framebuffer_resized_) {
-                std::puts("framebuffer resized; recreating swapchain");
-                recreate_swapchain_resources();
-                reset_frame_timing();
-                recreate_tracker.reset();
-                continue;
-            }
-
-            const FrameTiming timing = frame_clock_.tick();
-            cubey::vulkan::RenderFrameResult result = draw_frame(timing);
-            if (result == cubey::vulkan::RenderFrameResult::RecreateSwapchain) {
-                recreate_tracker.record_recreate_request();
-                std::puts("swapchain out of date; recreating");
-                recreate_swapchain_resources();
-                reset_frame_timing();
-                continue;
-            }
-
-            recreate_tracker.reset();
-            const VkExtent2D extent = swapchain().extent();
-            std::optional<FrameStatsSnapshot> stats = frame_stats_.record_frame({
-                .delta_seconds = timing.delta_seconds,
-                .width = extent.width,
-                .height = extent.height,
-                .triangles = kParticleCount * 2U,
-            });
-            if (stats.has_value()) {
-                const std::string title = format_window_title(config_.title, stats.value());
-                glfwSetWindowTitle(window_, title.c_str());
-            }
-            ++frame;
-        }
-
-        check(vkDeviceWaitIdle(device_), "vkDeviceWaitIdle after particles");
-    }
-
-    [[nodiscard]] cubey::vulkan::Swapchain& swapchain() {
-        if (!swapchain_.has_value()) {
-            throw std::runtime_error("swapchain is not initialized");
-        }
-        return swapchain_.value();
-    }
-
-    [[nodiscard]] const cubey::vulkan::Swapchain& swapchain() const {
-        if (!swapchain_.has_value()) {
-            throw std::runtime_error("swapchain is not initialized");
-        }
-        return swapchain_.value();
-    }
-
-    [[nodiscard]] cubey::vulkan::Device& vulkan_device() {
-        if (!device_owner_.has_value()) {
-            throw std::runtime_error("Vulkan device is not initialized");
-        }
-        return device_owner_.value();
     }
 
     [[nodiscard]] const cubey::vulkan::DescriptorSetLayout& descriptor_set_layout() const {
@@ -679,38 +482,19 @@ class ParticlesApp {
         return pipeline_.value();
     }
 
-    [[nodiscard]] cubey::vulkan::FrameResources& frame_resources() {
-        if (!frame_resources_.has_value()) {
-            throw std::runtime_error("frame resources are not initialized");
-        }
-        return frame_resources_.value();
-    }
-
     RunConfig config_;
-    bool glfw_initialized_ = false;
-    bool framebuffer_resized_ = false;
     bool paused_ = false;
     bool reset_particles_requested_ = false;
-    GLFWwindow* window_ = nullptr;
 
-    std::optional<cubey::vulkan::Instance> instance_owner_;
-    std::optional<cubey::vulkan::Device> device_owner_;
     std::optional<cubey::vulkan::Buffer> particle_buffer_;
     std::optional<cubey::vulkan::DescriptorSetLayout> descriptor_set_layout_;
     std::optional<cubey::vulkan::DescriptorPool> descriptor_pool_;
-    std::optional<cubey::vulkan::Swapchain> swapchain_;
-    std::optional<cubey::vulkan::FrameResources> frame_resources_;
     VkDescriptorSet descriptor_set_ = VK_NULL_HANDLE;
-    VkInstance instance_ = VK_NULL_HANDLE;
-    VkSurfaceKHR surface_ = VK_NULL_HANDLE;
-    VkDevice device_ = VK_NULL_HANDLE;
 
     std::optional<cubey::vulkan::PipelineLayout> pipeline_layout_;
     std::optional<cubey::vulkan::GraphicsPipeline> pipeline_;
     std::optional<cubey::vulkan::PipelineLayout> compute_pipeline_layout_;
     std::optional<cubey::vulkan::ComputePipeline> compute_pipeline_;
-    FrameClock frame_clock_;
-    FrameStats frame_stats_;
 };
 
 } // namespace
