@@ -156,8 +156,8 @@ Current state:
 - `DescriptorSetLayout` and `DescriptorPool` own basic layout/pool lifetime.
 - Descriptor allocation is owned by `DescriptorPool`.
 - Descriptor helper functions cover layout bindings, pool sizes, uniform-buffer
-  writes, storage-image writes, combined image sampler writes, and descriptor
-  set updates.
+  writes, storage-buffer writes, storage-image writes, combined image sampler
+  writes, and descriptor set updates.
 
 Needed next:
 
@@ -180,7 +180,7 @@ Current state:
 - `PipelineLayout`, `GraphicsPipeline`, and `ComputePipeline` own pipeline
   lifetime.
 - `DynamicGraphicsPipelineInfo` builds the current single-color-attachment
-  dynamic graphics pipeline create-info shape.
+  dynamic graphics pipeline create-info shape with optional depth and blending.
 - `PipelineLayoutInfo` builds pipeline layout create-info for descriptor set
   layouts and push constants.
 - `ComputePipelineInfo` builds the current compute pipeline create-info shape.
@@ -222,12 +222,16 @@ Current state:
 
 - Cube examples still define vertex data, index data, vertex descriptions, and
   upload behavior locally.
+- `examples/particles` still defines particle storage-buffer layout, seeding,
+  simulation parameters, billboard generation, and blending policy locally.
 
 Needed later:
 
 - Mesh upload helper for vertex/index buffers.
 - Texture object/helper for generated or uploaded sampled images.
 - Small geometry helpers only if repeated examples need the same primitives.
+- Storage-buffer or billboard helpers only after another example/project repeats
+  the particle shape.
 
 Defer:
 
@@ -334,8 +338,8 @@ explicit descriptor contracts.
 
 - Status: initial pass complete on `main`.
 - Added descriptor binding, pool-size, descriptor-write, and descriptor-update
-  helpers for current uniform-buffer, storage-image, and combined image sampler
-  paths.
+  helpers for current uniform-buffer, storage-buffer, storage-image, and
+  combined image sampler paths.
 - Added pipeline-layout and compute-pipeline create-info helpers.
 - Moved `textured_cube`'s graphics descriptors and setup-time compute texture
   path onto the shared helpers while keeping layout and dispatch choices
@@ -423,6 +427,25 @@ not a project runtime.
 This is still example work. It should not create a project interface around
 setup, update, render, resize, or shutdown.
 
+### Batch 6.5: Particle Example
+
+Goal: carry forward the original Cubey particle feel as an example and exercise
+compute-to-graphics storage-buffer use without promoting a project host.
+
+- Status: initial pass complete on `main`.
+- Added `examples/particles` with deterministic attractor-style particles.
+- Used compute to update a storage buffer and graphics to read the same buffer
+  as instanced screen-facing quads.
+- Added dynamic graphics pipeline blend controls and a storage-buffer descriptor
+  helper as narrow reusable pressure from the example.
+- Kept particle seeding, simulation constants, billboard generation, command
+  recording, and controls example-local.
+- Deferred particle-system helpers, indirect draw, and app/runtime host work.
+
+This is still example work. A future particle system should move under
+`projects/` only if it needs longer-lived state, headless capture, indirect
+draw, asset/resource policy, or UI/runtime pressure.
+
 ### Batch 7: Threading And Async Runtime Boundary
 
 Goal: prepare project code for non-stalling GPU workflows without introducing a
@@ -442,8 +465,9 @@ around blocking helper calls.
 
 Goal: let a real project define the app/runtime seam.
 
-- Start with particles, fluid simulation, or marching cubes after the
-  async-ready runtime boundary has a first pass.
+- Start with fluid simulation, marching cubes, SDF sculpting, or a larger
+  particle system only if it grows beyond the current example-sized attractor
+  demo.
 - Use the headless artifact path for deterministic smoke output.
 - Extract shared lifecycle or host code only when both windowed and headless
   paths repeat the same shape in real project code.
@@ -455,6 +479,6 @@ resize, and shutdown may become worthwhile.
 
 ## Near-Term Recommendation
 
-Batch 1 through Batch 6 have their first passes on `main`. Start Batch 7 next:
-the threading/async runtime boundary. Then use Batch 8, the first real project,
-to decide how much app/runtime host to extract.
+Batch 1 through Batch 7 and the particle example have their first passes on
+`main`. Use Batch 8, the first real project, to decide how much app/runtime
+host to extract.

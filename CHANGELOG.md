@@ -38,6 +38,8 @@ versioned section and use that section as the release notes.
   helpers, pipeline-layout create-info helpers, a compute pipeline create-info
   helper, and a dynamic graphics pipeline create-info helper for the current
   single-color-attachment path.
+- Public Vulkan dynamic graphics pipeline blend controls and a storage-buffer
+  descriptor write helper.
 - Public Vulkan `RenderContext` component for explicit surface-backed
   begin/end frame lifecycle, acquire, command reset, submit, present, and
   swapchain-recreate signaling.
@@ -74,6 +76,9 @@ versioned section and use that section as the release notes.
   offscreen color target, reads it back, and writes a PNG artifact.
 - `examples/fractal`, a fullscreen Mandelbrot-style shader smoke with
   example-local pan/zoom/reset navigation and headless PNG output.
+- `examples/particles`, a compute-updated attractor particle smoke rendered as
+  instanced screen-facing quads with procedural Gaussian splats and additive
+  blending.
 - CTest smoke that accepts either successful window startup or the known
   no-display GLFW failure in terminal sessions.
 - CTest smoke for headless PNG artifact creation and PNG signature validation.
@@ -108,6 +113,8 @@ versioned section and use that section as the release notes.
   DBus allocations left alive by the Vulkan loader/driver path on Linux.
 - Roadmap and Vulkan abstraction docs now route the next framework checkpoint
   toward a real project before a broader app/runtime host.
+- The particle rewrite is currently categorized as an example-sized reference
+  program rather than a first-class `projects/` target.
 
 ## Pre-2.0 History
 

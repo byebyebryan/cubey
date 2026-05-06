@@ -67,8 +67,9 @@ As of 2026-05-05:
   intentionally keep create-info construction visible in example/project code.
 - Promoted `DynamicGraphicsPipelineInfo` and `shader_stage` for the common
   dynamic-rendering graphics pipeline shape: one color attachment, optional
-  depth, fixed viewport/scissor from swapchain extent, single-sample raster
-  state, and explicit shader/layout/vertex-input choices from the caller.
+  depth, optional blend state, fixed viewport/scissor from swapchain extent,
+  single-sample raster state, and explicit shader/layout/vertex-input choices
+  from the caller.
 - Promoted narrow Vulkan helpers for image layout transitions and
   dynamic-rendering color/depth attachment setup. They reduce repeated Vulkan
   struct boilerplate without owning command recording or render policy, and now
@@ -79,8 +80,10 @@ As of 2026-05-05:
   staging-copy and depth-image code.
 - Promoted descriptor and compute setup helpers for descriptor bindings, pools,
   writes, descriptor updates, pipeline layouts, and compute pipeline create-info.
-  `textured_cube` now shares this setup while keeping descriptor layout, shader,
-  and dispatch choices explicit.
+  Current descriptor writes cover uniform buffers, storage buffers, storage
+  images, and combined image samplers. `textured_cube` and `particles` now share
+  this setup while keeping descriptor layout, shader, and dispatch choices
+  explicit.
 - Promoted transfer/readback helpers for readback buffers, generated/uploaded
   sampled image configs, buffer-image copy regions, buffer-to-image and
   image-to-buffer copies, and named storage, transfer, sampled-image readback,
@@ -115,6 +118,10 @@ As of 2026-05-05:
 - Added `examples/fractal` to exercise fullscreen fragment rendering, push
   constants, example-local drag/zoom navigation, and reuse of the headless PNG
   artifact path.
+- Added `examples/particles` to exercise a graphics-plus-compute frame path:
+  a storage-buffer particle field is updated by a compute shader and rendered as
+  instanced screen-facing quads with procedural Gaussian splats and additive
+  blending. It is intentionally still an example, not a project/runtime host.
 - GLFW window setup, surface creation, command recording, acquire/present
   behavior, and resize policy remain example-local. Graphics pipeline creation,
   descriptor/compute setup, device-local cube-buffer uploads, and depth
@@ -124,8 +131,8 @@ As of 2026-05-05:
   window context is injected, and the headless PNG artifact path through shared
   CMake smoke helpers.
 - Roadmap alignment: the next framework driver should be a real project. The
-  lightweight fractal work stayed under `examples/fractal` and did not justify a
-  broad app/runtime layer.
+  lightweight fractal and particle work stayed under `examples/` and did not
+  justify a broad app/runtime layer.
 - Threading/async alignment: before the first real project grows, add an
   async-ready boundary rather than a full threaded renderer. The intended shape
   is CPU jobs behind Cubey APIs, queued upload/capture requests, explicit GPU
@@ -144,6 +151,8 @@ env XDG_RUNTIME_DIR=/run/user/1000 WAYLAND_DISPLAY=wayland-1 DISPLAY=:1 XDG_CURR
   ./build/dev/examples/textured_cube/textured_cube --require-validation --frames 300 --width 1280 --height 720
 env XDG_RUNTIME_DIR=/run/user/1000 WAYLAND_DISPLAY=wayland-1 DISPLAY=:1 XDG_CURRENT_DESKTOP=niri \
   ./build/dev/examples/fractal/fractal --require-validation --frames 300 --width 1280 --height 720
+env XDG_RUNTIME_DIR=/run/user/1000 WAYLAND_DISPLAY=wayland-1 DISPLAY=:1 XDG_CURRENT_DESKTOP=niri \
+  ./build/dev/examples/particles/particles --require-validation --frames 300 --width 1280 --height 720
 ./build/dev/examples/headless_render/headless_render --require-validation --width 640 --height 360 --output /tmp/cubey-headless.png
 ./build/dev/examples/fractal/fractal --headless --require-validation --width 640 --height 360 --output /tmp/cubey-fractal.png
 ```
@@ -196,6 +205,11 @@ As of 2026-04-28:
 env XDG_RUNTIME_DIR=/run/user/1000 WAYLAND_DISPLAY=wayland-1 DISPLAY=:1 XDG_CURRENT_DESKTOP=niri \
   ctest --preset dev --output-on-failure
 ```
+
+- Windowed runs launched from a non-interactive Codex shell can be heavily
+  compositor-throttled even when `WAYLAND_DISPLAY=wayland-1` is injected.
+  Short `--frames 1` to `--frames 5` smokes are useful for validation from that
+  shell; longer visual smokes are better run from a normal desktop terminal.
 
 - If every windowed example fails with
   `vkEnumeratePhysicalDevices count failed with VkResult -3` and
@@ -392,3 +406,11 @@ env XDG_RUNTIME_DIR=/run/user/1000 WAYLAND_DISPLAY=wayland-1 DISPLAY=:1 XDG_CURR
   This keeps reference examples readable while making the first real project use
   setup/update/render-packet/resize/shutdown and service-based access to jobs,
   uploads, captures, frame tickets, and deferred cleanup.
+- The particle slice stayed intentionally under `examples/particles`: the useful
+  signal was graphics-plus-compute command recording, storage-buffer
+  descriptors, additive blending, and GPU-updated billboard rendering. It does
+  not yet justify a project host or shared particle system abstraction.
+- For particles, screen-facing quads are generated in the vertex shader from
+  `gl_VertexIndex` and `gl_InstanceIndex`; this avoids geometry shaders while
+  keeping the particle storage buffer directly readable by both compute and
+  graphics stages.

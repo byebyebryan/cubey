@@ -52,13 +52,16 @@ an offscreen color target through dynamic rendering, reads the image back, and
 writes an inspectable PNG.
 `examples/fractal` adds a fullscreen Mandelbrot-style shader path with windowed
 navigation and a headless PNG mode.
+`examples/particles` adds compute-updated attractor particles rendered as
+instanced screen-facing quads with procedural Gaussian splats.
 `cubey` owns the reusable Vulkan instance, device, buffer, image, sampler,
 swapchain, shader-module, command-pool, image-transition and dynamic-rendering
 helpers, frame clock, orbit-controller, CPU job facade, PNG capture queue,
 upload request queue,
 frame tickets/deferred destruction, async-ready project runtime vocabulary,
 binary file I/O, SPIR-V file loading, pipeline ownership, dynamic graphics
-pipeline setup, descriptor setup/write helpers, compute pipeline setup, depth
+pipeline setup including blend state, descriptor setup/write helpers including
+storage buffers, compute pipeline setup, depth
 attachment setup, texture transfer/readback helpers, PNG image I/O helper,
 shared shader includes,
 `RenderContext` surface-backed begin/end frame lifecycle, single-frame
@@ -67,7 +70,7 @@ own GLFW, surface creation, command recording, and resize policy. The spike
 branches remain reference material for deeper compute and browser work.
 
 The next framework checkpoint should come from a first real project such as
-particles, fluid simulation, or marching cubes. The fractal slice stayed
+fluid simulation or marching cubes. The fractal and particle slices stayed
 example-sized and did not justify a broad app/runtime host.
 
 ## Development Setup
@@ -90,6 +93,7 @@ The windowed smoke targets are:
 ./build/dev/examples/spinning_cube/spinning_cube --frames 300 --width 1280 --height 720
 ./build/dev/examples/textured_cube/textured_cube --frames 300 --width 1280 --height 720
 ./build/dev/examples/fractal/fractal --frames 300 --width 1280 --height 720
+./build/dev/examples/particles/particles --frames 300 --width 1280 --height 720
 ```
 
 The headless PNG smokes are:
@@ -107,6 +111,7 @@ Use validation as a hard requirement when the validation layers are installed:
 ./build/dev/examples/spinning_cube/spinning_cube --require-validation --frames 300 --width 1280 --height 720
 ./build/dev/examples/textured_cube/textured_cube --require-validation --frames 300 --width 1280 --height 720
 ./build/dev/examples/fractal/fractal --require-validation --frames 300 --width 1280 --height 720
+./build/dev/examples/particles/particles --require-validation --frames 300 --width 1280 --height 720
 ./build/dev/examples/headless_render/headless_render --require-validation --width 640 --height 360 --output /tmp/cubey-headless.png
 ./build/dev/examples/fractal/fractal --headless --require-validation --width 640 --height 360 --output /tmp/cubey-fractal.png
 ```
@@ -118,6 +123,9 @@ time, swapchain extent, triangle count, and pixel rate.
 
 `fractal` supports basic navigation: left-drag pans, mouse wheel zooms around
 the cursor, `R` resets the view, and Escape closes the window.
+
+`particles` supports basic controls: Space pauses/resumes compute updates, `R`
+resets the particle field, and Escape closes the window.
 
 The repo also includes:
 

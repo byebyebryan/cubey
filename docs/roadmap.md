@@ -58,8 +58,8 @@ app engine.
 Completed criteria:
 
 - `cubey` builds as the primary library target and examples link against it.
-- `window_clear`, `triangle`, `spinning_cube`, `textured_cube`, and `fractal`
-  open windows and render through dynamic rendering.
+- `window_clear`, `triangle`, `spinning_cube`, `textured_cube`, `fractal`, and
+  `particles` open windows and render through dynamic rendering.
 - Validation-layer smoke can be required from the command line.
 - Resize and swapchain recreation remain first-class tested behavior.
 - Headless smoke renders and writes an inspectable PNG.
@@ -120,13 +120,13 @@ Current checkpoint:
   structs.
 - Reusable `cubey::vulkan` descriptor helpers build layout bindings, pool
   sizes, descriptor writes, and descriptor updates for current uniform-buffer,
-  storage-image, and combined image sampler paths.
+  storage-buffer, storage-image, and combined image sampler paths.
 - Reusable `cubey::vulkan::PipelineLayoutInfo` and `ComputePipelineInfo` build
   the current pipeline-layout and compute-pipeline create-info shapes.
 - Reusable `cubey::vulkan::DynamicGraphicsPipelineInfo` builds the current
   dynamic-rendering graphics pipeline create-info shape for one color
-  attachment plus optional depth, while examples still choose shaders, layouts,
-  vertex input, descriptors, and depth usage explicitly.
+  attachment plus optional depth and blending, while examples still choose
+  shaders, layouts, vertex input, descriptors, and depth usage explicitly.
 - Reusable `cubey::vulkan` image-transition helpers build the current
   color/depth/storage/transfer layout transitions, while dynamic-rendering
   helpers build color/depth attachment descriptors without owning render
@@ -156,6 +156,13 @@ Current checkpoint:
 - `examples/headless_render` links against `cubey`, creates no GLFW window or
   surface, renders an offscreen color target through dynamic rendering, copies
   it into a readback buffer, and writes a PNG artifact.
+- `examples/fractal` links against `cubey`, renders a fullscreen
+  Mandelbrot-style fragment shader, supports example-local pan/zoom/reset
+  navigation, and reuses the headless render-target/readback/PNG path.
+- `examples/particles` links against `cubey`, updates a storage-buffer particle
+  field with a per-frame compute shader, inserts an explicit compute-to-vertex
+  memory barrier, and renders the result as instanced screen-facing quads with
+  additive Gaussian splats.
 - The current device model intentionally selects one queue family for required
   graphics, compute, and present capabilities. Split queue-family support is a
   future framework slice, not part of the current example-local compute path.
@@ -164,13 +171,13 @@ Current checkpoint:
   pipeline layout choices, command recording, and resize policy.
 - Dev CTest covers the target in graphical, no-display terminal, and headless
   artifact sessions through shared windowed and PNG smoke helpers.
-- Frame overlap, split graphics/compute/present queue-family support, and
-  external asset loading remain future slices.
+- Frame overlap, split graphics/compute/present queue-family support, external
+  asset loading, and a project/runtime host remain future slices.
 
 Alignment: the Vulkan layer now has visible windowed examples plus a minimal
-headless PNG path. Before the first real project grows, Cubey should add an
-async-ready runtime boundary: CPU jobs behind Cubey APIs, queued upload/capture
-requests, and explicit GPU-owner submission. The full threaded renderer, split
+headless PNG path. Cubey has the first async-ready runtime vocabulary: CPU jobs
+behind Cubey APIs, queued upload/capture requests, frame tickets, deferred
+cleanup, and project lifecycle concepts. The full threaded renderer, split
 queues, and parallel command recording should still wait for project pressure.
 
 ## Phase 2: Headless Output And Runtime Boundary
@@ -221,6 +228,33 @@ Exit criteria:
 - The same example can run headlessly and produce a deterministic PNG artifact.
 - README contains the exact commands for local smoke testing.
 
+## Phase 3.5: Particle Example
+
+Status: initial pass complete.
+
+Goal: add a compact particle example that carries forward the original Cubey
+particle feel while staying below the threshold for a `projects/` runtime.
+
+- Added `examples/particles` with a deterministic attractor-style particle
+  field.
+- Rendered particles as instanced screen-facing quads, not points or geometry
+  shader billboards.
+- Used a procedural Gaussian splat in the fragment shader with additive
+  blending.
+- Updated particle position/velocity in a compute shader over a storage buffer,
+  then rendered the same buffer in the graphics pass.
+- Kept controls example-local: Space pauses updates, `R` resets the field, and
+  Escape closes the window.
+- Did not promote particle simulation, billboard, or app-host abstractions; this
+  remains reference example code until a real project repeats the shape.
+
+Exit criteria:
+
+- The example runs interactively with validation enabled.
+- The compute-to-graphics storage-buffer synchronization is explicit in command
+  recording.
+- The docs identify why this is still an example and not the first project.
+
 ## Phase 4: Threading And Async Runtime Boundary
 
 Status: initial pass complete.
@@ -261,10 +295,12 @@ let repeated project needs shape the app/runtime API.
 
 Candidate projects:
 
-- GPU particle system for compute plus graphics pipeline pressure.
-- Fluid simulation rewrite for the strongest connection to the original cubey,
-  after the runtime has more evidence.
+- Fluid simulation rewrite for the strongest connection to the original Cubey.
 - Marching cubes for compute-generated geometry and indirect draw pressure.
+- SDF sculpting if the sparse resource model becomes the more interesting
+  framework driver.
+- A larger particle system only if it grows beyond the current example-sized
+  attractor demo.
 
 Exit criteria:
 
@@ -296,8 +332,9 @@ Exit criteria:
 
 - ImGui debug controls.
 - Orbit camera and common interaction helpers.
-- Ports of original cubey projects: fluid simulation, particles, marching cubes,
-  fractals, and camera/shadow tests.
+- Ports of original Cubey projects: fluid simulation, marching cubes, fractals,
+  and camera/shadow tests. Particle work should stay in `examples/particles`
+  unless it grows into a larger project.
 - SDF sculpting experiments from `projectR` if the resource model holds up.
 - WebGPU/browser revisit only after a concrete browser-facing project earns the
   extra shader and platform surface area.

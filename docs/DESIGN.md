@@ -155,7 +155,7 @@ This is critical for AI-assisted development — the agent gets structured pass/
 | Project | Source | Notes |
 |------|--------|-------|
 | Fluid Simulation | cubey1 rewrite | Eulerian 3D fluid sim, compute-based, raymarched volume rendering |
-| Particle System | cubey1 rewrite | GPU particles, compute + indirect draw (replacing geometry shader) |
+| Particle System | cubey1 rewrite | Prototype attractor particles now live under `examples/particles`; a larger project would need compute + indirect draw pressure before graduating |
 | Marching Cubes | cubey1 rewrite | Isosurface extraction via compute + indirect draw |
 | Fractal 2D | cubey1 rewrite | Mandelbrot/Julia renderer |
 | SDF Sculpting | projectR port | Sparse SDF brick tree, raymarched rendering, Morton-coded spatial indexing |
@@ -185,9 +185,9 @@ library. Runnable binaries should be named explicitly and live in either
   targets.
 - `examples/` - small, focused reference programs that prove one concept or API
   path. Current examples are `window_clear`, `triangle`, `spinning_cube`,
-  `textured_cube`, `headless_render`, and `fractal`.
+  `textured_cube`, `headless_render`, `fractal`, and `particles`.
 - `projects/` - first-class graphics experiments and longer-lived creative
-  work, such as `fluid_sim`, `particles`, `marching_cubes`, and `sdf_sculpt`.
+  work, such as `fluid_sim`, `marching_cubes`, and `sdf_sculpt`.
 - `third_party/` - small vendored dependencies with explicit license notes.
 - `tools/` - repo utilities, asset processors, shader tools, or diagnostics.
 - `tests/` - unit and integration tests.
@@ -294,6 +294,8 @@ cubey/
                               sampling
     headless_render/       -- minimal offscreen image path
     fractal/               -- fullscreen fractal shader smoke and headless PNG
+    particles/             -- compute-updated attractor particles with
+                              instanced billboard splats
   projects/
       fluid_sim/
         CMakeLists.txt
@@ -304,7 +306,6 @@ cubey/
           fluid_render.vert.glsl
           fluid_render.frag.glsl
       sdf_sculpt/
-      particles/
       marching_cubes/
   tools/
   tests/
