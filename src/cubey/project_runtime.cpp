@@ -32,7 +32,7 @@ ProjectRuntimeServices::ProjectRuntimeServices(std::size_t worker_count)
     : jobs_(worker_count), captures_(jobs_) {}
 
 ProjectContext ProjectRuntimeServices::context() {
-    return ProjectContext(jobs_, uploads_, captures_, frame_tickets_, deferred_destruction_);
+    return {jobs_, uploads_, captures_, frame_tickets_, deferred_destruction_};
 }
 
 ProjectFrame ProjectRuntimeServices::begin_frame(const FrameTiming& timing) {
