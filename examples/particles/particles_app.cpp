@@ -216,28 +216,22 @@ class ParticlesApp {
     }
 
     void create_descriptor_resources(cubey::app::WindowedAppContext& context) {
-        const VkDescriptorSetLayoutBinding particle_binding = cubey::vulkan::descriptor_binding(
-            0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-            VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_COMPUTE_BIT);
-        const std::array<VkDescriptorSetLayoutBinding, 1> bindings{particle_binding};
-        const VkDescriptorSetLayoutCreateInfo layout_info =
-            cubey::vulkan::descriptor_set_layout_info(bindings);
-        descriptor_set_layout_.emplace(context.device(), layout_info);
-
-        const VkDescriptorPoolSize pool_size =
-            cubey::vulkan::descriptor_pool_size(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1);
-        const std::array<VkDescriptorPoolSize, 1> pool_sizes{pool_size};
-        const VkDescriptorPoolCreateInfo pool_info =
-            cubey::vulkan::descriptor_pool_info(1, pool_sizes);
-        descriptor_pool_.emplace(context.device(), pool_info);
-        descriptor_set_ = descriptor_pool().allocate(descriptor_set_layout().handle());
+        const std::array<cubey::vulkan::DescriptorSetBindingConfig, 1> bindings{{
+            {
+                .binding = 0,
+                .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+                .stage_flags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_COMPUTE_BIT,
+            },
+        }};
+        const cubey::vulkan::DescriptorSetInfo info(bindings);
+        descriptors_.emplace(context.device(), info);
         update_particle_descriptor(context);
     }
 
     void update_particle_descriptor(cubey::app::WindowedAppContext& context) {
         const cubey::vulkan::DescriptorBufferWrite particle_write =
-            cubey::vulkan::storage_buffer_descriptor(descriptor_set_, 0, particle_buffer().handle(),
-                                                     particle_buffer().size());
+            cubey::vulkan::storage_buffer_descriptor(
+                descriptors().set(), 0, particle_buffer().handle(), particle_buffer().size());
         const VkWriteDescriptorSet write = particle_write.descriptor_write();
         cubey::vulkan::update_descriptor_sets(context.device(), {&write, 1});
     }
@@ -260,7 +254,7 @@ class ParticlesApp {
         compute_push_constant.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
         compute_push_constant.offset = 0;
         compute_push_constant.size = sizeof(ComputePushConstants);
-        const std::array<VkDescriptorSetLayout, 1> set_layouts{descriptor_set_layout().handle()};
+        const std::array<VkDescriptorSetLayout, 1> set_layouts{descriptors().layout()};
         const std::array<VkPushConstantRange, 1> push_constants{compute_push_constant};
         const cubey::vulkan::PipelineLayoutInfo layout_info({
             .set_layouts = set_layouts,
@@ -286,9 +280,7 @@ class ParticlesApp {
         destroy_swapchain_resources();
         compute_pipeline_.reset();
         compute_pipeline_layout_.reset();
-        descriptor_pool_.reset();
-        descriptor_set_ = VK_NULL_HANDLE;
-        descriptor_set_layout_.reset();
+        descriptors_.reset();
         particle_buffer_.reset();
     }
 
@@ -314,7 +306,7 @@ class ParticlesApp {
         draw_push_constant.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
         draw_push_constant.offset = 0;
         draw_push_constant.size = sizeof(DrawPushConstants);
-        const std::array<VkDescriptorSetLayout, 1> set_layouts{descriptor_set_layout().handle()};
+        const std::array<VkDescriptorSetLayout, 1> set_layouts{descriptors().layout()};
         const std::array<VkPushConstantRange, 1> push_constants{draw_push_constant};
         const cubey::vulkan::PipelineLayoutInfo layout_info({
             .set_layouts = set_layouts,
@@ -359,8 +351,9 @@ class ParticlesApp {
 
         vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE,
                           compute_pipeline().handle());
+        const VkDescriptorSet descriptor_set = descriptors().set();
         vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE,
-                                compute_pipeline_layout().handle(), 0, 1, &descriptor_set_, 0,
+                                compute_pipeline_layout().handle(), 0, 1, &descriptor_set, 0,
                                 nullptr);
         vkCmdPushConstants(command_buffer, compute_pipeline_layout().handle(),
                            VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(ComputePushConstants),
@@ -418,8 +411,9 @@ class ParticlesApp {
 
         vkCmdBeginRendering(command_buffer, &rendering);
         vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline().handle());
+        const VkDescriptorSet descriptor_set = descriptors().set();
         vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                pipeline_layout().handle(), 0, 1, &descriptor_set_, 0, nullptr);
+                                pipeline_layout().handle(), 0, 1, &descriptor_set, 0, nullptr);
         vkCmdPushConstants(command_buffer, pipeline_layout().handle(),
                            VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
                            sizeof(DrawPushConstants), &push_constants);
@@ -433,18 +427,11 @@ class ParticlesApp {
         check(vkEndCommandBuffer(command_buffer), "vkEndCommandBuffer particles");
     }
 
-    [[nodiscard]] const cubey::vulkan::DescriptorSetLayout& descriptor_set_layout() const {
-        if (!descriptor_set_layout_.has_value()) {
-            throw std::runtime_error("particle descriptor set layout is not initialized");
+    [[nodiscard]] const cubey::vulkan::DescriptorSetBundle& descriptors() const {
+        if (!descriptors_.has_value()) {
+            throw std::runtime_error("particle descriptors are not initialized");
         }
-        return descriptor_set_layout_.value();
-    }
-
-    [[nodiscard]] const cubey::vulkan::DescriptorPool& descriptor_pool() const {
-        if (!descriptor_pool_.has_value()) {
-            throw std::runtime_error("particle descriptor pool is not initialized");
-        }
-        return descriptor_pool_.value();
+        return descriptors_.value();
     }
 
     [[nodiscard]] const cubey::vulkan::Buffer& particle_buffer() const {
@@ -487,9 +474,7 @@ class ParticlesApp {
     bool reset_particles_requested_ = false;
 
     std::optional<cubey::vulkan::Buffer> particle_buffer_;
-    std::optional<cubey::vulkan::DescriptorSetLayout> descriptor_set_layout_;
-    std::optional<cubey::vulkan::DescriptorPool> descriptor_pool_;
-    VkDescriptorSet descriptor_set_ = VK_NULL_HANDLE;
+    std::optional<cubey::vulkan::DescriptorSetBundle> descriptors_;
 
     std::optional<cubey::vulkan::PipelineLayout> pipeline_layout_;
     std::optional<cubey::vulkan::GraphicsPipeline> pipeline_;

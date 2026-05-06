@@ -362,9 +362,7 @@ class TexturedCubeApp {
         vertex_attributes[3].format = VK_FORMAT_R32G32_SFLOAT;
         vertex_attributes[3].offset = offsetof(Vertex, uv);
 
-        const std::array<VkDescriptorSetLayout, 1> set_layouts{
-            descriptor_set_layout().handle(),
-        };
+        const std::array<VkDescriptorSetLayout, 1> set_layouts{descriptors().layout()};
         const cubey::vulkan::PipelineLayoutInfo layout_info({
             .set_layouts = set_layouts,
             .push_constants = {},
@@ -448,33 +446,23 @@ class TexturedCubeApp {
     }
 
     void create_compute_resources(cubey::app::WindowedAppContext& context) {
-        const std::array<VkDescriptorSetLayoutBinding, 1> bindings{
-            cubey::vulkan::descriptor_binding(0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
-                                              VK_SHADER_STAGE_COMPUTE_BIT),
-        };
-        const VkDescriptorSetLayoutCreateInfo descriptor_layout_info =
-            cubey::vulkan::descriptor_set_layout_info(bindings);
-        compute_descriptor_set_layout_.emplace(context.device(), descriptor_layout_info);
-
-        const std::array<VkDescriptorPoolSize, 1> pool_sizes{
-            cubey::vulkan::descriptor_pool_size(VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1),
-        };
-        const VkDescriptorPoolCreateInfo descriptor_pool_info =
-            cubey::vulkan::descriptor_pool_info(1, pool_sizes);
-        compute_descriptor_pool_.emplace(context.device(), descriptor_pool_info);
-
-        compute_descriptor_set_ =
-            compute_descriptor_pool().allocate(compute_descriptor_set_layout().handle());
+        const std::array<cubey::vulkan::DescriptorSetBindingConfig, 1> bindings{{
+            {
+                .binding = 0,
+                .type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+                .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT,
+            },
+        }};
+        const cubey::vulkan::DescriptorSetInfo descriptor_info(bindings);
+        compute_descriptors_.emplace(context.device(), descriptor_info);
 
         const cubey::vulkan::DescriptorImageWrite texture_write =
-            cubey::vulkan::storage_image_descriptor(compute_descriptor_set_, 0,
+            cubey::vulkan::storage_image_descriptor(compute_descriptors().set(), 0,
                                                     texture_image().view());
         const std::array<VkWriteDescriptorSet, 1> writes{texture_write.descriptor_write()};
         cubey::vulkan::update_descriptor_sets(context.device(), writes);
 
-        const std::array<VkDescriptorSetLayout, 1> set_layouts{
-            compute_descriptor_set_layout().handle(),
-        };
+        const std::array<VkDescriptorSetLayout, 1> set_layouts{compute_descriptors().layout()};
         const cubey::vulkan::PipelineLayoutInfo pipeline_layout_info({
             .set_layouts = set_layouts,
             .push_constants = {},
@@ -497,9 +485,7 @@ class TexturedCubeApp {
     void destroy_compute_resources() {
         compute_pipeline_.reset();
         compute_pipeline_layout_.reset();
-        compute_descriptor_set_ = VK_NULL_HANDLE;
-        compute_descriptor_pool_.reset();
-        compute_descriptor_set_layout_.reset();
+        compute_descriptors_.reset();
     }
 
     void dispatch_compute_texture(cubey::app::WindowedAppContext& context) const {
@@ -509,9 +495,10 @@ class TexturedCubeApp {
         cubey::vulkan::ImmediateCommands commands(context.device());
         vkCmdBindPipeline(commands.command_buffer(), VK_PIPELINE_BIND_POINT_COMPUTE,
                           compute_pipeline().handle());
+        const VkDescriptorSet descriptor_set = compute_descriptors().set();
         vkCmdBindDescriptorSets(commands.command_buffer(), VK_PIPELINE_BIND_POINT_COMPUTE,
-                                compute_pipeline_layout().handle(), 0, 1, &compute_descriptor_set_,
-                                0, nullptr);
+                                compute_pipeline_layout().handle(), 0, 1, &descriptor_set, 0,
+                                nullptr);
         constexpr std::uint32_t groups_x =
             (kTextureWidth + kTextureComputeGroupSize - 1U) / kTextureComputeGroupSize;
         constexpr std::uint32_t groups_y =
@@ -525,34 +512,27 @@ class TexturedCubeApp {
     }
 
     void create_descriptors(cubey::app::WindowedAppContext& context) {
-        const std::array<VkDescriptorSetLayoutBinding, 2> bindings{
-            cubey::vulkan::descriptor_binding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-                                              VK_SHADER_STAGE_VERTEX_BIT |
-                                                  VK_SHADER_STAGE_FRAGMENT_BIT),
-            cubey::vulkan::descriptor_binding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                                              VK_SHADER_STAGE_FRAGMENT_BIT),
-        };
-
-        const VkDescriptorSetLayoutCreateInfo layout_info =
-            cubey::vulkan::descriptor_set_layout_info(bindings);
-        descriptor_set_layout_.emplace(context.device(), layout_info);
-
-        const std::array<VkDescriptorPoolSize, 2> pool_sizes{{
-            cubey::vulkan::descriptor_pool_size(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1),
-            cubey::vulkan::descriptor_pool_size(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1),
+        const std::array<cubey::vulkan::DescriptorSetBindingConfig, 2> bindings{{
+            {
+                .binding = 0,
+                .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                .stage_flags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+            },
+            {
+                .binding = 1,
+                .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
+            },
         }};
-
-        const VkDescriptorPoolCreateInfo pool_info =
-            cubey::vulkan::descriptor_pool_info(1, pool_sizes);
-        descriptor_pool_.emplace(context.device(), pool_info);
-        descriptor_set_ = descriptor_pool_->allocate(descriptor_set_layout().handle());
+        const cubey::vulkan::DescriptorSetInfo descriptor_info(bindings);
+        descriptors_.emplace(context.device(), descriptor_info);
 
         const cubey::vulkan::DescriptorBufferWrite scene_write =
             cubey::vulkan::uniform_buffer_descriptor(
-                descriptor_set_, 0, scene_uniform_buffer().handle(), sizeof(SceneUniforms));
+                descriptors().set(), 0, scene_uniform_buffer().handle(), sizeof(SceneUniforms));
         const cubey::vulkan::DescriptorImageWrite image_write =
             cubey::vulkan::combined_image_sampler_descriptor(
-                descriptor_set_, 1, texture_sampler().handle(), texture_image().view());
+                descriptors().set(), 1, texture_sampler().handle(), texture_image().view());
         const std::array<VkWriteDescriptorSet, 2> writes{
             scene_write.descriptor_write(),
             image_write.descriptor_write(),
@@ -561,9 +541,7 @@ class TexturedCubeApp {
     }
 
     void destroy_descriptors() {
-        descriptor_set_ = VK_NULL_HANDLE;
-        descriptor_pool_.reset();
-        descriptor_set_layout_.reset();
+        descriptors_.reset();
     }
 
     [[nodiscard]] SceneUniforms current_scene_uniforms(VkExtent2D extent) const {
@@ -624,8 +602,9 @@ class TexturedCubeApp {
 
         vkCmdBeginRendering(command_buffer, &rendering);
         vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline().handle());
+        const VkDescriptorSet descriptor_set = descriptors().set();
         vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                pipeline_layout().handle(), 0, 1, &descriptor_set_, 0, nullptr);
+                                pipeline_layout().handle(), 0, 1, &descriptor_set, 0, nullptr);
         const std::array<VkBuffer, 1> vertex_buffers{vertex_buffer().handle()};
         constexpr std::array<VkDeviceSize, 1> vertex_offsets{0};
         vkCmdBindVertexBuffers(command_buffer, 0, static_cast<std::uint32_t>(vertex_buffers.size()),
@@ -677,25 +656,18 @@ class TexturedCubeApp {
         return texture_sampler_.value();
     }
 
-    [[nodiscard]] const cubey::vulkan::DescriptorSetLayout& descriptor_set_layout() const {
-        if (!descriptor_set_layout_.has_value()) {
-            throw std::runtime_error("descriptor set layout is not initialized");
+    [[nodiscard]] const cubey::vulkan::DescriptorSetBundle& descriptors() const {
+        if (!descriptors_.has_value()) {
+            throw std::runtime_error("texture descriptors are not initialized");
         }
-        return descriptor_set_layout_.value();
+        return descriptors_.value();
     }
 
-    [[nodiscard]] const cubey::vulkan::DescriptorSetLayout& compute_descriptor_set_layout() const {
-        if (!compute_descriptor_set_layout_.has_value()) {
-            throw std::runtime_error("compute descriptor set layout is not initialized");
+    [[nodiscard]] const cubey::vulkan::DescriptorSetBundle& compute_descriptors() const {
+        if (!compute_descriptors_.has_value()) {
+            throw std::runtime_error("compute descriptors are not initialized");
         }
-        return compute_descriptor_set_layout_.value();
-    }
-
-    [[nodiscard]] const cubey::vulkan::DescriptorPool& compute_descriptor_pool() const {
-        if (!compute_descriptor_pool_.has_value()) {
-            throw std::runtime_error("compute descriptor pool is not initialized");
-        }
-        return compute_descriptor_pool_.value();
+        return compute_descriptors_.value();
     }
 
     [[nodiscard]] const cubey::vulkan::PipelineLayout& pipeline_layout() const {
@@ -741,18 +713,13 @@ class TexturedCubeApp {
     std::optional<cubey::vulkan::Buffer> scene_uniform_buffer_;
     std::optional<cubey::vulkan::Image> texture_image_;
     std::optional<cubey::vulkan::Sampler> texture_sampler_;
-    std::optional<cubey::vulkan::DescriptorSetLayout> descriptor_set_layout_;
-    std::optional<cubey::vulkan::DescriptorPool> descriptor_pool_;
+    std::optional<cubey::vulkan::DescriptorSetBundle> descriptors_;
     std::optional<cubey::vulkan::PipelineLayout> pipeline_layout_;
     std::optional<cubey::vulkan::GraphicsPipeline> pipeline_;
     std::optional<cubey::vulkan::DepthAttachment> depth_attachment_;
-    std::optional<cubey::vulkan::DescriptorSetLayout> compute_descriptor_set_layout_;
-    std::optional<cubey::vulkan::DescriptorPool> compute_descriptor_pool_;
+    std::optional<cubey::vulkan::DescriptorSetBundle> compute_descriptors_;
     std::optional<cubey::vulkan::PipelineLayout> compute_pipeline_layout_;
     std::optional<cubey::vulkan::ComputePipeline> compute_pipeline_;
-
-    VkDescriptorSet descriptor_set_ = VK_NULL_HANDLE;
-    VkDescriptorSet compute_descriptor_set_ = VK_NULL_HANDLE;
 };
 
 } // namespace
