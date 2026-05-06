@@ -42,6 +42,30 @@ KeyAction to_key_action(int action) {
     }
 }
 
+MouseButton to_mouse_button(int button) {
+    switch (button) {
+    case GLFW_MOUSE_BUTTON_LEFT:
+        return MouseButton::Left;
+    case GLFW_MOUSE_BUTTON_MIDDLE:
+        return MouseButton::Middle;
+    case GLFW_MOUSE_BUTTON_RIGHT:
+        return MouseButton::Right;
+    default:
+        return MouseButton::Unknown;
+    }
+}
+
+MouseButtonAction to_mouse_button_action(int action) {
+    switch (action) {
+    case GLFW_PRESS:
+        return MouseButtonAction::Press;
+    case GLFW_RELEASE:
+        return MouseButtonAction::Release;
+    default:
+        return MouseButtonAction::Unknown;
+    }
+}
+
 } // namespace
 
 GlfwWindow::GlfwWindow(const GlfwWindowConfig& config) {
@@ -125,8 +149,30 @@ void GlfwWindow::set_title(const char* title) const {
     glfwSetWindowTitle(window_, title);
 }
 
+CursorPosition GlfwWindow::cursor_position() const {
+    if (window_ == nullptr) {
+        throw std::runtime_error("GLFW cursor position requires a window");
+    }
+    CursorPosition position{};
+    glfwGetCursorPos(window_, &position.x, &position.y);
+    return position;
+}
+
 void GlfwWindow::set_key_callback(std::function<void(const KeyEvent&)> callback) {
     key_callback_ = std::move(callback);
+}
+
+void GlfwWindow::set_mouse_button_callback(std::function<void(const MouseButtonEvent&)> callback) {
+    mouse_button_callback_ = std::move(callback);
+}
+
+void GlfwWindow::set_cursor_position_callback(
+    std::function<void(const CursorPositionEvent&)> callback) {
+    cursor_position_callback_ = std::move(callback);
+}
+
+void GlfwWindow::set_scroll_callback(std::function<void(const ScrollEvent&)> callback) {
+    scroll_callback_ = std::move(callback);
 }
 
 bool GlfwWindow::consume_framebuffer_resized() {
@@ -157,6 +203,9 @@ void GlfwWindow::create(const GlfwWindowConfig& config) {
     glfwSetWindowUserPointer(window_, this);
     glfwSetFramebufferSizeCallback(window_, framebuffer_size_callback);
     glfwSetKeyCallback(window_, key_callback);
+    glfwSetMouseButtonCallback(window_, mouse_button_callback);
+    glfwSetCursorPosCallback(window_, cursor_position_callback);
+    glfwSetScrollCallback(window_, scroll_callback);
 }
 
 void GlfwWindow::destroy() {
@@ -190,6 +239,39 @@ void GlfwWindow::key_callback(GLFWwindow* window, int key, int scancode, int act
             .native_key = key,
             .native_scancode = scancode,
             .native_mods = mods,
+        });
+    }
+}
+
+void GlfwWindow::mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
+    auto* app_window = static_cast<GlfwWindow*>(glfwGetWindowUserPointer(window));
+    if (app_window != nullptr && app_window->mouse_button_callback_) {
+        app_window->mouse_button_callback_({
+            .button = to_mouse_button(button),
+            .action = to_mouse_button_action(action),
+            .cursor = app_window->cursor_position(),
+            .native_button = button,
+            .native_mods = mods,
+        });
+    }
+}
+
+void GlfwWindow::cursor_position_callback(GLFWwindow* window, double x, double y) {
+    auto* app_window = static_cast<GlfwWindow*>(glfwGetWindowUserPointer(window));
+    if (app_window != nullptr && app_window->cursor_position_callback_) {
+        app_window->cursor_position_callback_({
+            .cursor = {.x = x, .y = y},
+        });
+    }
+}
+
+void GlfwWindow::scroll_callback(GLFWwindow* window, double x_offset, double y_offset) {
+    auto* app_window = static_cast<GlfwWindow*>(glfwGetWindowUserPointer(window));
+    if (app_window != nullptr && app_window->scroll_callback_) {
+        app_window->scroll_callback_({
+            .x_offset = x_offset,
+            .y_offset = y_offset,
+            .cursor = app_window->cursor_position(),
         });
     }
 }

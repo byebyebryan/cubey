@@ -33,6 +33,42 @@ struct KeyEvent {
     int native_mods = 0;
 };
 
+enum class MouseButton {
+    Unknown,
+    Left,
+    Middle,
+    Right,
+};
+
+enum class MouseButtonAction {
+    Unknown,
+    Press,
+    Release,
+};
+
+struct CursorPosition {
+    double x = 0.0;
+    double y = 0.0;
+};
+
+struct MouseButtonEvent {
+    MouseButton button = MouseButton::Unknown;
+    MouseButtonAction action = MouseButtonAction::Unknown;
+    CursorPosition cursor{};
+    int native_button = 0;
+    int native_mods = 0;
+};
+
+struct CursorPositionEvent {
+    CursorPosition cursor{};
+};
+
+struct ScrollEvent {
+    double x_offset = 0.0;
+    double y_offset = 0.0;
+    CursorPosition cursor{};
+};
+
 struct GlfwWindowConfig {
     std::uint32_t width = 1280;
     std::uint32_t height = 720;
@@ -56,7 +92,11 @@ class GlfwWindow {
     [[nodiscard]] bool should_close() const;
     void request_close() const;
     void set_title(const char* title) const;
+    [[nodiscard]] CursorPosition cursor_position() const;
     void set_key_callback(std::function<void(const KeyEvent&)> callback);
+    void set_mouse_button_callback(std::function<void(const MouseButtonEvent&)> callback);
+    void set_cursor_position_callback(std::function<void(const CursorPositionEvent&)> callback);
+    void set_scroll_callback(std::function<void(const ScrollEvent&)> callback);
 
     [[nodiscard]] bool framebuffer_resized() const {
         return framebuffer_resized_;
@@ -76,11 +116,22 @@ class GlfwWindow {
     // GLFW fixes this callback signature.
     // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
     static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
+    // GLFW fixes this callback signature.
+    static void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
+    // GLFW fixes this callback signature.
+    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+    static void cursor_position_callback(GLFWwindow* window, double x, double y);
+    // GLFW fixes this callback signature.
+    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+    static void scroll_callback(GLFWwindow* window, double x_offset, double y_offset);
 
     bool glfw_initialized_ = false;
     bool framebuffer_resized_ = false;
     GLFWwindow* window_ = nullptr;
     std::function<void(const KeyEvent&)> key_callback_;
+    std::function<void(const MouseButtonEvent&)> mouse_button_callback_;
+    std::function<void(const CursorPositionEvent&)> cursor_position_callback_;
+    std::function<void(const ScrollEvent&)> scroll_callback_;
 };
 
 class GlfwSurface {
