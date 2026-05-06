@@ -7,7 +7,6 @@ set_target_properties(cubey_example_spinning_cube PROPERTIES OUTPUT_NAME spinnin
 target_compile_definitions(
     cubey_example_spinning_cube
     PRIVATE
-        GLFW_INCLUDE_NONE
         CUBEY_SPINNING_CUBE_SHADER_DIR="${CMAKE_CURRENT_BINARY_DIR}/shaders"
 )
 
@@ -15,8 +14,8 @@ target_link_libraries(
     cubey_example_spinning_cube
     PRIVATE
         cubey::cubey
+        cubey::app
         cubey_project_warnings
-        glfw
 )
 
 cubey_add_glsl_shaders(

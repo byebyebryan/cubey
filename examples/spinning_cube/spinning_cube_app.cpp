@@ -1,21 +1,16 @@
 #include "spinning_cube_app.h"
 
+#include <cubey/app/windowed_host.h>
 #include <cubey/spirv_io.h>
 #include <cubey/vulkan/buffer.h>
 #include <cubey/vulkan/command_pool.h>
-#include <cubey/vulkan/device.h>
 #include <cubey/vulkan/dynamic_rendering.h>
-#include <cubey/vulkan/frame_resources.h>
 #include <cubey/vulkan/image.h>
 #include <cubey/vulkan/image_transitions.h>
-#include <cubey/vulkan/instance.h>
 #include <cubey/vulkan/pipeline.h>
-#include <cubey/vulkan/render_context.h>
 #include <cubey/vulkan/shader_module.h>
-#include <cubey/vulkan/swapchain.h>
 #include <cubey/vulkan/vk_check.h>
 
-#include <GLFW/glfw3.h>
 #include <vulkan/vulkan.h>
 
 #include <array>
@@ -176,185 +171,85 @@ class SpinningCubeApp {
     SpinningCubeApp(const SpinningCubeApp&) = delete;
     SpinningCubeApp& operator=(const SpinningCubeApp&) = delete;
 
-    ~SpinningCubeApp() {
-        if (device_ != VK_NULL_HANDLE) {
-            static_cast<void>(vkDeviceWaitIdle(device_));
-        }
-
-        frame_resources_.reset();
-        index_buffer_.reset();
-        vertex_buffer_.reset();
-        pipeline_.reset();
-        pipeline_layout_.reset();
-        depth_attachment_.reset();
-        swapchain_.reset();
-
-        if (surface_ != VK_NULL_HANDLE) {
-            vkDestroySurfaceKHR(instance_, surface_, nullptr);
-            surface_ = VK_NULL_HANDLE;
-        }
-        device_owner_.reset();
-        device_ = VK_NULL_HANDLE;
-        instance_owner_.reset();
-        instance_ = VK_NULL_HANDLE;
-        if (window_ != nullptr) {
-            glfwDestroyWindow(window_);
-        }
-        if (glfw_initialized_) {
-            glfwTerminate();
-        }
-    }
-
     int run() {
         if (config_.headless) {
             throw std::runtime_error("spinning_cube does not support --headless yet");
         }
 
-        init_window();
-        create_instance();
-        create_surface();
-        create_device();
-        create_cube_buffers();
-        create_swapchain_resources();
-        create_frame_resources();
-        render_window();
-        return 0;
+        cubey::app::WindowedHost host(
+            {
+                .run_config = config_,
+                .required_queue_flags = VK_QUEUE_GRAPHICS_BIT,
+                .swapchain_image_usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+                .require_dynamic_rendering = true,
+            },
+            {
+                .create_swapchain_resources =
+                    [this](cubey::app::WindowedAppContext& context) {
+                        create_global_resources_if_needed(context);
+                        create_swapchain_resources(context);
+                    },
+                .destroy_swapchain_resources =
+                    [this](cubey::app::WindowedAppContext& context) {
+                        (void)context;
+                        destroy_swapchain_resources();
+                    },
+                .on_ready =
+                    [](cubey::app::WindowedAppContext& context) {
+                        std::printf("spinning_cube: %s rendering indexed cube at %ux%u\n",
+                                    context.device().device_name(),
+                                    context.swapchain().extent().width,
+                                    context.swapchain().extent().height);
+                    },
+                .update = {},
+                .record_frame =
+                    [this](cubey::app::WindowedAppContext& context, VkCommandBuffer command_buffer,
+                           std::uint32_t image_index, const FrameTiming& timing) {
+                        (void)timing;
+                        record_cube_frame(context, command_buffer, image_index);
+                    },
+                .frame_stats_sample = {},
+                .shutdown =
+                    [this](cubey::app::WindowedAppContext& context) {
+                        (void)context;
+                        destroy_all_resources();
+                    },
+            });
+        return host.run();
     }
 
   private:
-    void init_window() {
-        if (glfwInit() == 0) {
-            throw std::runtime_error("glfwInit failed");
+    void create_global_resources_if_needed(cubey::app::WindowedAppContext& context) {
+        if (vertex_buffer_.has_value()) {
+            return;
         }
-        glfw_initialized_ = true;
-
-        if (glfwVulkanSupported() == 0) {
-            throw std::runtime_error("GLFW reports Vulkan is not supported");
-        }
-
-        glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-        window_ =
-            glfwCreateWindow(static_cast<int>(config_.width), static_cast<int>(config_.height),
-                             config_.title.c_str(), nullptr, nullptr);
-        if (window_ == nullptr) {
-            throw std::runtime_error("glfwCreateWindow failed");
-        }
-
-        glfwSetWindowUserPointer(window_, this);
-        glfwSetFramebufferSizeCallback(window_, framebuffer_size_callback);
+        create_cube_buffers(context);
     }
 
-    // GLFW fixes this callback signature.
-    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
-    static void framebuffer_size_callback(GLFWwindow* window, int unused_width, int unused_height) {
-        (void)unused_width;
-        (void)unused_height;
-        auto* app = static_cast<SpinningCubeApp*>(glfwGetWindowUserPointer(window));
-        if (app != nullptr) {
-            app->framebuffer_resized_ = true;
-        }
-    }
-
-    void create_instance() {
-        std::uint32_t extension_count = 0;
-        const char** required_extensions = glfwGetRequiredInstanceExtensions(&extension_count);
-        if (required_extensions == nullptr || extension_count == 0) {
-            throw std::runtime_error("glfwGetRequiredInstanceExtensions failed");
-        }
-
-        cubey::vulkan::InstanceConfig instance_config;
-        instance_config.application_name = config_.title;
-        instance_config.required_extensions.assign(required_extensions,
-                                                   required_extensions + extension_count);
-        instance_config.validation = config_.validation;
-        instance_config.require_validation = config_.require_validation;
-
-        instance_owner_.emplace(instance_config);
-        instance_ = instance_owner_->handle();
-    }
-
-    void create_surface() {
-        check(glfwCreateWindowSurface(instance_, window_, nullptr, &surface_),
-              "glfwCreateWindowSurface");
-    }
-
-    void create_device() {
-        cubey::vulkan::DeviceConfig device_config;
-        device_config.surface = surface_;
-        device_config.required_queue_flags = VK_QUEUE_GRAPHICS_BIT;
-        device_config.require_present = true;
-        device_config.require_dynamic_rendering = true;
-
-        if (!instance_owner_.has_value()) {
-            throw std::runtime_error("Vulkan instance must exist before creating a device");
-        }
-        device_owner_.emplace(instance_owner_.value(), device_config);
-        device_ = device_owner_->handle();
-    }
-
-    void wait_for_presentable_window_size() const {
-        int fb_width = 0;
-        int fb_height = 0;
-        glfwGetFramebufferSize(window_, &fb_width, &fb_height);
-        while ((fb_width == 0 || fb_height == 0) && glfwWindowShouldClose(window_) == 0) {
-            glfwWaitEvents();
-            glfwGetFramebufferSize(window_, &fb_width, &fb_height);
-        }
-        if (fb_width == 0 || fb_height == 0) {
-            throw std::runtime_error(
-                "window closed before a presentable framebuffer size was available");
-        }
-    }
-
-    [[nodiscard]] VkExtent2D current_framebuffer_extent() const {
-        int fb_width = 0;
-        int fb_height = 0;
-        glfwGetFramebufferSize(window_, &fb_width, &fb_height);
-        return {
-            static_cast<std::uint32_t>(fb_width),
-            static_cast<std::uint32_t>(fb_height),
-        };
-    }
-
-    void create_swapchain_resources() {
-        create_swapchain();
-        create_depth_resources();
-        create_pipeline();
+    void create_swapchain_resources(cubey::app::WindowedAppContext& context) {
+        create_depth_resources(context);
+        create_pipeline(context);
     }
 
     void destroy_swapchain_resources() {
         pipeline_.reset();
         pipeline_layout_.reset();
         depth_attachment_.reset();
-        swapchain_.reset();
     }
 
-    void recreate_swapchain_resources() {
-        check(vkDeviceWaitIdle(device_), "vkDeviceWaitIdle before swapchain recreate");
-        frame_resources_.reset();
+    void destroy_all_resources() {
         destroy_swapchain_resources();
-        create_swapchain_resources();
-        create_frame_resources();
+        index_buffer_.reset();
+        vertex_buffer_.reset();
     }
 
-    void create_swapchain() {
-        wait_for_presentable_window_size();
-
-        cubey::vulkan::SwapchainConfig swapchain_config;
-        swapchain_config.surface = surface_;
-        swapchain_config.desired_extent = current_framebuffer_extent();
-        swapchain_config.image_usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-        swapchain_.emplace(vulkan_device(), swapchain_config);
-        framebuffer_resized_ = false;
-    }
-
-    void create_pipeline() {
+    void create_pipeline(cubey::app::WindowedAppContext& context) {
         const std::vector<std::uint32_t> vertex_code =
             cubey::read_spirv_file(shader_path("spinning_cube.vert.spv"));
         const std::vector<std::uint32_t> fragment_code =
             cubey::read_spirv_file(shader_path("spinning_cube.frag.spv"));
-        cubey::vulkan::ShaderModule vertex_shader(vulkan_device(), vertex_code);
-        cubey::vulkan::ShaderModule fragment_shader(vulkan_device(), fragment_code);
+        cubey::vulkan::ShaderModule vertex_shader(context.device(), vertex_code);
+        cubey::vulkan::ShaderModule fragment_shader(context.device(), fragment_code);
 
         const VkPipelineShaderStageCreateInfo vertex_stage =
             cubey::vulkan::shader_stage(VK_SHADER_STAGE_VERTEX_BIT, vertex_shader.handle());
@@ -390,12 +285,12 @@ class SpinningCubeApp {
             vk_struct<VkPipelineLayoutCreateInfo>(VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO);
         layout_info.pushConstantRangeCount = 1;
         layout_info.pPushConstantRanges = &push_constant_range;
-        pipeline_layout_.emplace(vulkan_device(), layout_info);
+        pipeline_layout_.emplace(context.device(), layout_info);
 
         cubey::vulkan::DynamicGraphicsPipelineConfig pipeline_config;
         pipeline_config.layout = pipeline_layout().handle();
-        pipeline_config.extent = swapchain().extent();
-        pipeline_config.color_format = swapchain().format();
+        pipeline_config.extent = context.swapchain().extent();
+        pipeline_config.color_format = context.swapchain().format();
         pipeline_config.depth_format = depth_attachment().format();
         pipeline_config.shader_stages = shader_stages;
         pipeline_config.vertex_bindings = {&vertex_binding, 1};
@@ -403,38 +298,34 @@ class SpinningCubeApp {
         pipeline_config.depth_test = true;
         pipeline_config.depth_write = true;
         const cubey::vulkan::DynamicGraphicsPipelineInfo pipeline_info(pipeline_config);
-        pipeline_.emplace(vulkan_device(), pipeline_info.create_info());
+        pipeline_.emplace(context.device(), pipeline_info.create_info());
     }
 
-    void create_depth_resources() {
-        depth_attachment_.emplace(vulkan_device(), swapchain().extent());
+    void create_depth_resources(cubey::app::WindowedAppContext& context) {
+        depth_attachment_.emplace(context.device(), context.swapchain().extent());
     }
 
-    void create_frame_resources() {
-        frame_resources_.emplace(vulkan_device(), swapchain().image_count());
-    }
-
-    void create_cube_buffers() {
+    void create_cube_buffers(cubey::app::WindowedAppContext& context) {
         const VkDeviceSize vertex_bytes =
             static_cast<VkDeviceSize>(kCubeVertices.size() * sizeof(kCubeVertices.front()));
         const VkDeviceSize index_bytes =
             static_cast<VkDeviceSize>(kCubeIndices.size() * sizeof(kCubeIndices.front()));
 
-        vertex_buffer_ = cubey::vulkan::upload_device_buffer(
-            vulkan_device(), kCubeVertices.data(), vertex_bytes, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+        vertex_buffer_ =
+            cubey::vulkan::upload_device_buffer(context.device(), kCubeVertices.data(),
+                                                vertex_bytes, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
         index_buffer_ = cubey::vulkan::upload_device_buffer(
-            vulkan_device(), kCubeIndices.data(), index_bytes, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+            context.device(), kCubeIndices.data(), index_bytes, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
     }
 
-    [[nodiscard]] PushConstants current_push_constants() const {
+    [[nodiscard]] PushConstants current_push_constants(VkExtent2D extent) const {
         const auto now = std::chrono::steady_clock::now();
         const float seconds =
             static_cast<float>(std::chrono::duration<double>(now - start_time_).count());
 
         const Mat4 model = multiply(rotation_y(seconds * 0.9F), rotation_x(seconds * 0.55F));
         const Mat4 view = translation(0.0F, 0.0F, -4.2F);
-        const float aspect = static_cast<float>(swapchain().extent().width) /
-                             static_cast<float>(swapchain().extent().height);
+        const float aspect = static_cast<float>(extent.width) / static_cast<float>(extent.height);
         const Mat4 projection = perspective(kPi / 3.0F, aspect, 0.1F, 100.0F);
 
         return {
@@ -442,12 +333,14 @@ class SpinningCubeApp {
         };
     }
 
-    void record_cube_frame(VkCommandBuffer command_buffer, std::uint32_t image_index) {
+    void record_cube_frame(cubey::app::WindowedAppContext& context, VkCommandBuffer command_buffer,
+                           std::uint32_t image_index) {
         cubey::vulkan::begin_command_buffer(command_buffer,
                                             VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
+        cubey::vulkan::Swapchain& swapchain = context.swapchain();
         const std::size_t swapchain_image_index = static_cast<std::size_t>(image_index);
-        const VkImage swapchain_image = swapchain().images().at(swapchain_image_index);
+        const VkImage swapchain_image = swapchain.images().at(swapchain_image_index);
         cubey::vulkan::transition_image_layout(
             command_buffer, cubey::vulkan::begin_color_attachment_transition(swapchain_image));
         cubey::vulkan::transition_image_layout(
@@ -461,19 +354,19 @@ class SpinningCubeApp {
 
         const VkRenderingAttachmentInfo color_attachment =
             cubey::vulkan::color_rendering_attachment(
-                swapchain().image_views().at(swapchain_image_index), color_clear);
+                swapchain.image_views().at(swapchain_image_index), color_clear);
         const VkRenderingAttachmentInfo depth_rendering_attachment =
             cubey::vulkan::depth_rendering_attachment(depth_attachment().view(), depth_clear);
 
         auto rendering = vk_struct<VkRenderingInfo>(VK_STRUCTURE_TYPE_RENDERING_INFO);
         rendering.renderArea.offset = {0, 0};
-        rendering.renderArea.extent = swapchain().extent();
+        rendering.renderArea.extent = swapchain.extent();
         rendering.layerCount = 1;
         rendering.colorAttachmentCount = 1;
         rendering.pColorAttachments = &color_attachment;
         rendering.pDepthAttachment = &depth_rendering_attachment;
 
-        const PushConstants push_constants = current_push_constants();
+        const PushConstants push_constants = current_push_constants(swapchain.extent());
 
         vkCmdBeginRendering(command_buffer, &rendering);
         vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline().handle());
@@ -493,91 +386,6 @@ class SpinningCubeApp {
             cubey::vulkan::finish_color_attachment_for_present_transition(swapchain_image));
 
         check(vkEndCommandBuffer(command_buffer), "vkEndCommandBuffer spinning_cube");
-    }
-
-    cubey::vulkan::RenderFrameResult draw_frame() {
-        cubey::vulkan::RenderContext render_context({
-            .device = &vulkan_device(),
-            .swapchain = &swapchain(),
-            .frame_resources = &frame_resources(),
-        });
-
-        cubey::vulkan::RenderFrame frame;
-        cubey::vulkan::RenderFrameResult result = render_context.begin_frame(&frame);
-        if (result == cubey::vulkan::RenderFrameResult::RecreateSwapchain) {
-            return result;
-        }
-
-        record_cube_frame(frame.command_buffer, frame.image_index);
-        return render_context.end_frame(frame);
-    }
-
-    void render_window() {
-        std::printf("spinning_cube: %s rendering indexed cube at %ux%u\n",
-                    vulkan_device().device_name(), swapchain().extent().width,
-                    swapchain().extent().height);
-
-        std::uint32_t frame = 0;
-        cubey::vulkan::SwapchainRecreateTracker recreate_tracker;
-        while (glfwWindowShouldClose(window_) == 0 &&
-               (config_.frames == 0 || frame < config_.frames)) {
-            glfwPollEvents();
-
-            if (framebuffer_resized_) {
-                std::puts("framebuffer resized; recreating swapchain");
-                recreate_swapchain_resources();
-                recreate_tracker.reset();
-                continue;
-            }
-
-            cubey::vulkan::RenderFrameResult result = draw_frame();
-            if (result == cubey::vulkan::RenderFrameResult::RecreateSwapchain) {
-                recreate_tracker.record_recreate_request();
-                std::puts("swapchain out of date; recreating");
-                recreate_swapchain_resources();
-                continue;
-            }
-
-            recreate_tracker.reset();
-            ++frame;
-        }
-
-        check(vkDeviceWaitIdle(device_), "vkDeviceWaitIdle after spinning_cube");
-    }
-
-    [[nodiscard]] cubey::vulkan::Swapchain& swapchain() {
-        if (!swapchain_.has_value()) {
-            throw std::runtime_error("swapchain is not initialized");
-        }
-        return swapchain_.value();
-    }
-
-    [[nodiscard]] const cubey::vulkan::Swapchain& swapchain() const {
-        if (!swapchain_.has_value()) {
-            throw std::runtime_error("swapchain is not initialized");
-        }
-        return swapchain_.value();
-    }
-
-    [[nodiscard]] cubey::vulkan::Device& vulkan_device() {
-        if (!device_owner_.has_value()) {
-            throw std::runtime_error("Vulkan device is not initialized");
-        }
-        return device_owner_.value();
-    }
-
-    [[nodiscard]] const cubey::vulkan::Device& vulkan_device() const {
-        if (!device_owner_.has_value()) {
-            throw std::runtime_error("Vulkan device is not initialized");
-        }
-        return device_owner_.value();
-    }
-
-    [[nodiscard]] cubey::vulkan::FrameResources& frame_resources() {
-        if (!frame_resources_.has_value()) {
-            throw std::runtime_error("frame resources are not initialized");
-        }
-        return frame_resources_.value();
     }
 
     [[nodiscard]] cubey::vulkan::Buffer& vertex_buffer() {
@@ -616,23 +424,13 @@ class SpinningCubeApp {
     }
 
     RunConfig config_;
-    bool glfw_initialized_ = false;
-    bool framebuffer_resized_ = false;
-    GLFWwindow* window_ = nullptr;
     std::chrono::steady_clock::time_point start_time_ = std::chrono::steady_clock::now();
 
-    std::optional<cubey::vulkan::Instance> instance_owner_;
-    std::optional<cubey::vulkan::Device> device_owner_;
-    std::optional<cubey::vulkan::Swapchain> swapchain_;
-    std::optional<cubey::vulkan::FrameResources> frame_resources_;
     std::optional<cubey::vulkan::Buffer> vertex_buffer_;
     std::optional<cubey::vulkan::Buffer> index_buffer_;
     std::optional<cubey::vulkan::PipelineLayout> pipeline_layout_;
     std::optional<cubey::vulkan::GraphicsPipeline> pipeline_;
     std::optional<cubey::vulkan::DepthAttachment> depth_attachment_;
-    VkInstance instance_ = VK_NULL_HANDLE;
-    VkSurfaceKHR surface_ = VK_NULL_HANDLE;
-    VkDevice device_ = VK_NULL_HANDLE;
 };
 
 } // namespace
