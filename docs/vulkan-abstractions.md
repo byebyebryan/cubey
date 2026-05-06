@@ -246,6 +246,8 @@ Current state:
 - Windowed examples own GLFW, surfaces, frame loop, input callbacks, resize
   policy, and command recording. The headless example owns its no-window
   render/readback loop.
+- `cubey_app` now owns GLFW/window/surface hosting and the first shared
+  windowed loop for `window_clear`, `triangle`, and `particles`.
 - Shared non-platform helpers cover frame timing, frame stats, and orbit
   control.
 
@@ -254,8 +256,8 @@ Needed later:
 - Project runtime vocabulary: setup, update, render packet, resize, shutdown.
 - `ProjectContext` services for CPU jobs, uploads, capture requests, timing,
   and eventually UI hooks.
-- GLFW-backed window host outside the low-level Vulkan layer.
-- Optional windowed host outside the low-level Vulkan layer.
+- Migrate the remaining examples only when each migration keeps command
+  recording and render policy clear.
 - Headless host that can share project render code and write inspectable
   artifacts.
 

@@ -83,6 +83,8 @@ versioned section and use that section as the release notes.
   no-display GLFW failure in terminal sessions.
 - CTest smoke for headless PNG artifact creation and PNG signature validation.
 - Shared CMake CTest smoke helpers for windowed and headless example targets.
+- Optional `cubey_app` target with a GLFW window/surface host and the first
+  windowed app loop.
 
 ### Changed
 
@@ -115,6 +117,8 @@ versioned section and use that section as the release notes.
   toward a real project before a broader app/runtime host.
 - The particle rewrite is currently categorized as an example-sized reference
   program rather than a first-class `projects/` target.
+- `window_clear`, `triangle`, and `particles` now use the shared GLFW/windowed
+  app host while keeping command recording and render resources example-local.
 
 ## Pre-2.0 History
 

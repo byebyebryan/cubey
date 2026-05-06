@@ -67,8 +67,11 @@ attachment setup, texture transfer/readback helpers, PNG image I/O helper,
 shared shader includes,
 `RenderContext` surface-backed begin/end frame lifecycle, single-frame
 command/sync components, and swapchain recreate-attempt tracking; examples still
-own GLFW, surface creation, command recording, and resize policy. The spike
-branches remain reference material for deeper compute and browser work.
+own command recording and render policy.
+`cubey_app` owns the first GLFW-backed window/app host layer used by
+`window_clear`, `triangle`, and `particles`; the remaining examples still carry
+their local host loops until they are migrated intentionally. The spike branches
+remain reference material for deeper compute and browser work.
 
 The next framework checkpoint should come from a first real project such as
 fluid simulation or marching cubes. The fractal and particle slices stayed

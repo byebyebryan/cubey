@@ -76,13 +76,29 @@ resource creation/destruction, update, command recording, and shutdown.
 
 ## Migration Order
 
-1. Extract `GlfwWindow`.
-2. Migrate `examples/window_clear` to prove the platform layer.
-3. Extract the first `WindowedHost` loop.
+1. Extract `GlfwWindow`. Status: complete.
+2. Migrate `examples/window_clear` to prove the platform layer. Status:
+   complete.
+3. Extract the first `WindowedHost` loop. Status: complete.
 4. Migrate `examples/triangle` to prove the minimal render callback path.
+   Status: complete.
 5. Migrate `examples/particles` to prove update/input/compute-plus-graphics
-   behavior.
+   behavior. Status: complete.
 6. Revisit headless hosting after the windowed host has real shape.
+
+## Current Checkpoint
+
+- `cubey_app` is an optional target that depends on `cubey`, GLFW, and Vulkan.
+- `cubey::app::GlfwWindow` owns GLFW initialization, no-client-API window
+  creation, required Vulkan instance extension lookup, framebuffer resize
+  tracking, presentable-size waiting, title updates, and key event dispatch.
+- `cubey::app::GlfwSurface` owns the GLFW-created `VkSurfaceKHR`.
+- `cubey::app::WindowedHost` owns the current windowed loop: instance, surface,
+  device, swapchain, frame resources, frame timing, optional frame stats,
+  acquire/record/submit/present, and swapchain recreation.
+- `examples/window_clear`, `examples/triangle`, and `examples/particles` use
+  the app host. They still own their shaders, pipelines, descriptors, command
+  recording, and example-specific state.
 
 ## Promotion Rules
 

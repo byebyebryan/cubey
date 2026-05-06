@@ -138,12 +138,15 @@ Current checkpoint:
   examples.
 - Reusable `cubey::vulkan::SwapchainRecreateTracker` guards repeated
   out-of-date/suboptimal recreate loops across all current windowed examples.
+- Optional `cubey_app` target owns the first GLFW-backed app/runtime layer:
+  window lifetime, surface creation/destruction, key dispatch, windowed frame
+  loop, frame timing, optional frame stats, and swapchain recreate orchestration.
 - `examples/window_clear` links against `cubey` and clears/presents a swapchain
-  image through Vulkan/GLFW using dynamic rendering.
+  image through the shared app host using dynamic rendering.
 - `examples/triangle` links against `cubey`, compiles vertex/fragment shaders
   at build time, creates a dynamic-rendering graphics pipeline through the
   shared pipeline helper, and draws a `gl_VertexIndex` triangle without a render
-  pass or framebuffer.
+  pass or framebuffer through the shared app host.
 - `examples/spinning_cube` links against `cubey`, compiles vertex/fragment
   shaders at build time, draws an indexed cube from device-local vertex/index
   buffers, updates an MVP matrix through push constants, and uses dynamic
@@ -163,13 +166,13 @@ Current checkpoint:
 - `examples/particles` links against `cubey`, updates a storage-buffer particle
   field with a per-frame compute shader, inserts an explicit compute-to-vertex
   memory barrier, and renders the result as instanced screen-facing quads with
-  additive Gaussian splats.
+  additive Gaussian splats through the shared app host.
 - The current device model intentionally selects one queue family for required
   graphics, compute, and present capabilities. Split queue-family support is a
   future framework slice, not part of the current example-local compute path.
-- The remaining windowed app implementation is intentionally example-local: GLFW
-  window setup, surface creation, swapchain-sized resource rebuild order,
-  pipeline layout choices, command recording, and resize policy.
+- The remaining non-hosted windowed app implementation is intentionally
+  example-local: swapchain-sized resource rebuild order, pipeline layout
+  choices, command recording, and resize policy.
 - Dev CTest covers the target in graphical, no-display terminal, and headless
   artifact sessions through shared windowed and PNG smoke helpers.
 - Frame overlap, split graphics/compute/present queue-family support and
@@ -319,8 +322,8 @@ Goal: extract only the host concepts that repeated windowed/headless project cod
 has proven useful.
 
 - GLFW-backed window host outside `cubey::vulkan`.
+- Initial windowed host outside `cubey::vulkan`.
 - Project lifecycle vocabulary: setup, update, render packet, resize, shutdown.
-- Optional windowed host outside `cubey::vulkan`.
 - Optional headless host that shares project render code where practical.
 - Input/UI hooks only after a project needs them.
 

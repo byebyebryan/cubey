@@ -414,3 +414,8 @@ env XDG_RUNTIME_DIR=/run/user/1000 WAYLAND_DISPLAY=wayland-1 DISPLAY=:1 XDG_CURR
   `gl_VertexIndex` and `gl_InstanceIndex`; this avoids geometry shaders while
   keeping the particle storage buffer directly readable by both compute and
   graphics stages.
+- The first app/runtime extraction landed as `cubey_app`, not as part of
+  `cubey::vulkan`. `GlfwWindow` and `GlfwSurface` own the platform/surface
+  handoff, and `WindowedHost` owns the repeated windowed loop. `window_clear`,
+  `triangle`, and `particles` now use it while keeping Vulkan command recording
+  and render resources example-local.

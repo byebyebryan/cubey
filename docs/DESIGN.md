@@ -225,6 +225,9 @@ cubey/
     CubeyWarnings.cmake    -- compiler warning helper
   include/
     cubey/
+      app/
+        glfw_window.h      -- GLFW window and surface host
+        windowed_host.h    -- shared windowed app loop
       run_config.h         -- shared run configuration
       capture_queue.h      -- job-backed PNG capture encoding queue
       file_io.h            -- generic binary file reads/writes
@@ -268,6 +271,9 @@ cubey/
       project_runtime.cpp
       spirv_io.cpp
       upload_queue.cpp
+      app/
+        glfw_window.cpp    -- GLFW window and surface host
+        windowed_host.cpp  -- shared windowed app loop
       stb_image_write.cpp -- isolated vendored PNG writer implementation
       vulkan/
         instance.cpp       -- instance, validation, debug messenger
