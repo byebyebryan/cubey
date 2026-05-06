@@ -6,6 +6,7 @@
 
 #include <cstdint>
 #include <span>
+#include <vector>
 
 namespace cubey::vulkan {
 
@@ -59,6 +60,44 @@ combined_image_sampler_descriptor(VkDescriptorSet set, std::uint32_t binding, Vk
                                   VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 void update_descriptor_sets(const Device& device, std::span<const VkWriteDescriptorSet> writes);
 
+struct DescriptorSetBindingConfig {
+    std::uint32_t binding = 0;
+    VkDescriptorType type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    VkShaderStageFlags stage_flags = 0;
+    std::uint32_t descriptor_count = 1;
+};
+
+class DescriptorSetInfo {
+  public:
+    explicit DescriptorSetInfo(std::span<const DescriptorSetBindingConfig> bindings,
+                               std::uint32_t max_sets = 1);
+
+    DescriptorSetInfo(const DescriptorSetInfo&) = delete;
+    DescriptorSetInfo& operator=(const DescriptorSetInfo&) = delete;
+
+    [[nodiscard]] std::span<const VkDescriptorSetLayoutBinding> bindings() const {
+        return bindings_;
+    }
+
+    [[nodiscard]] std::span<const VkDescriptorPoolSize> pool_sizes() const {
+        return pool_sizes_;
+    }
+
+    [[nodiscard]] const VkDescriptorSetLayoutCreateInfo& layout_info() const {
+        return layout_info_;
+    }
+
+    [[nodiscard]] const VkDescriptorPoolCreateInfo& pool_info() const {
+        return pool_info_;
+    }
+
+  private:
+    std::vector<VkDescriptorSetLayoutBinding> bindings_;
+    std::vector<VkDescriptorPoolSize> pool_sizes_;
+    VkDescriptorSetLayoutCreateInfo layout_info_{};
+    VkDescriptorPoolCreateInfo pool_info_{};
+};
+
 class DescriptorSetLayout {
   public:
     DescriptorSetLayout(const Device& device, const VkDescriptorSetLayoutCreateInfo& info);
@@ -93,6 +132,31 @@ class DescriptorPool {
   private:
     VkDevice device_ = VK_NULL_HANDLE;
     VkDescriptorPool pool_ = VK_NULL_HANDLE;
+};
+
+class DescriptorSetBundle {
+  public:
+    DescriptorSetBundle(const Device& device, const DescriptorSetInfo& info);
+
+    DescriptorSetBundle(const DescriptorSetBundle&) = delete;
+    DescriptorSetBundle& operator=(const DescriptorSetBundle&) = delete;
+
+    [[nodiscard]] VkDescriptorSetLayout layout() const {
+        return layout_.handle();
+    }
+
+    [[nodiscard]] VkDescriptorPool pool() const {
+        return pool_.handle();
+    }
+
+    [[nodiscard]] VkDescriptorSet set() const {
+        return set_;
+    }
+
+  private:
+    DescriptorSetLayout layout_;
+    DescriptorPool pool_;
+    VkDescriptorSet set_ = VK_NULL_HANDLE;
 };
 
 } // namespace cubey::vulkan

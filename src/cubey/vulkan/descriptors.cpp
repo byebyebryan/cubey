@@ -2,6 +2,7 @@
 
 #include <cubey/vulkan/vk_check.h>
 
+#include <limits>
 #include <stdexcept>
 
 namespace cubey::vulkan {
@@ -169,6 +170,47 @@ void update_descriptor_sets(const Device& device, std::span<const VkWriteDescrip
                            writes.data(), 0, nullptr);
 }
 
+DescriptorSetInfo::DescriptorSetInfo(std::span<const DescriptorSetBindingConfig> bindings,
+                                     std::uint32_t max_sets) {
+    if (bindings.empty()) {
+        throw std::runtime_error("descriptor set info requires at least one binding");
+    }
+    if (max_sets == 0) {
+        throw std::runtime_error("descriptor set info max set count must be positive");
+    }
+
+    bindings_.reserve(bindings.size());
+    for (const DescriptorSetBindingConfig& binding : bindings) {
+        bindings_.push_back(descriptor_binding(binding.binding, binding.type, binding.stage_flags,
+                                               binding.descriptor_count));
+
+        const std::uint32_t descriptor_count = binding.descriptor_count;
+        if (descriptor_count > std::numeric_limits<std::uint32_t>::max() / max_sets) {
+            throw std::runtime_error("descriptor pool size count overflow");
+        }
+        const std::uint32_t total_count = descriptor_count * max_sets;
+
+        bool merged = false;
+        for (VkDescriptorPoolSize& pool_size : pool_sizes_) {
+            if (pool_size.type == binding.type) {
+                if (pool_size.descriptorCount >
+                    std::numeric_limits<std::uint32_t>::max() - total_count) {
+                    throw std::runtime_error("descriptor pool size count overflow");
+                }
+                pool_size.descriptorCount += total_count;
+                merged = true;
+                break;
+            }
+        }
+        if (!merged) {
+            pool_sizes_.push_back(descriptor_pool_size(binding.type, total_count));
+        }
+    }
+
+    layout_info_ = descriptor_set_layout_info(bindings_);
+    pool_info_ = descriptor_pool_info(max_sets, pool_sizes_);
+}
+
 DescriptorSetLayout::DescriptorSetLayout(const Device& device,
                                          const VkDescriptorSetLayoutCreateInfo& info)
     : device_(device.handle()) {
@@ -215,6 +257,11 @@ VkDescriptorSet DescriptorPool::allocate(VkDescriptorSetLayout layout) const {
     VkDescriptorSet set = VK_NULL_HANDLE;
     check(vkAllocateDescriptorSets(device_, &alloc, &set), "vkAllocateDescriptorSets");
     return set;
+}
+
+DescriptorSetBundle::DescriptorSetBundle(const Device& device, const DescriptorSetInfo& info)
+    : layout_(device, info.layout_info()), pool_(device, info.pool_info()) {
+    set_ = pool_.allocate(layout_.handle());
 }
 
 } // namespace cubey::vulkan

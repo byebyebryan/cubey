@@ -4,6 +4,7 @@
 
 #include <array>
 #include <stdexcept>
+#include <type_traits>
 #include <utility>
 
 namespace {
@@ -91,8 +92,7 @@ void test_descriptor_helpers_describe_layout_pool_and_writes() {
 
     const cubey::vulkan::DescriptorBufferWrite storage_buffer_write =
         cubey::vulkan::storage_buffer_descriptor(descriptor_set, 1, storage_buffer, 128, 32);
-    const VkWriteDescriptorSet storage_buffer_descriptor =
-        storage_buffer_write.descriptor_write();
+    const VkWriteDescriptorSet storage_buffer_descriptor = storage_buffer_write.descriptor_write();
     require(storage_buffer_write.buffer_info.buffer == storage_buffer,
             "storage buffer write should preserve buffer");
     require(storage_buffer_write.buffer_info.offset == 32,
@@ -126,4 +126,67 @@ void test_descriptor_helpers_describe_layout_pool_and_writes() {
             "combined sampler write should preserve image view");
     require(sampler_descriptor.descriptorType == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
             "combined sampler write should use combined-image-sampler type");
+}
+
+void test_descriptor_set_info_copies_bindings_and_aggregates_pool_sizes() {
+    static_assert(!std::is_copy_constructible_v<cubey::vulkan::DescriptorSetBundle>);
+    static_assert(!std::is_copy_assignable_v<cubey::vulkan::DescriptorSetBundle>);
+
+    const std::array<cubey::vulkan::DescriptorSetBindingConfig, 3> configs{{
+        {
+            .binding = 0,
+            .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+            .stage_flags = VK_SHADER_STAGE_VERTEX_BIT,
+        },
+        {
+            .binding = 1,
+            .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
+        },
+        {
+            .binding = 2,
+            .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+            .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
+            .descriptor_count = 2,
+        },
+    }};
+
+    const cubey::vulkan::DescriptorSetInfo info(configs, 2);
+
+    require(info.bindings().size() == configs.size(),
+            "descriptor set info should expose one binding per config");
+    require(info.bindings()[0].binding == 0, "descriptor set info should preserve binding index");
+    require(info.bindings()[2].descriptorCount == 2,
+            "descriptor set info should preserve descriptor count");
+    require(info.bindings().data() !=
+                reinterpret_cast<const VkDescriptorSetLayoutBinding*>(configs.data()),
+            "descriptor set info should own binding storage");
+
+    const VkDescriptorSetLayoutCreateInfo& layout_info = info.layout_info();
+    require(layout_info.sType == VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+            "descriptor set info should expose layout create info");
+    require(layout_info.bindingCount == configs.size(),
+            "descriptor set info should preserve layout binding count");
+    require(layout_info.pBindings == info.bindings().data(),
+            "descriptor set info layout info should point at owned bindings");
+
+    require(info.pool_sizes().size() == 2,
+            "descriptor set info should aggregate duplicate descriptor types");
+    require(info.pool_sizes()[0].type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+            "descriptor set info should preserve first descriptor type order");
+    require(info.pool_sizes()[0].descriptorCount == 6,
+            "descriptor set info should multiply uniform descriptors by max sets");
+    require(info.pool_sizes()[1].type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            "descriptor set info should preserve sampler descriptor type");
+    require(info.pool_sizes()[1].descriptorCount == 2,
+            "descriptor set info should multiply sampler descriptors by max sets");
+
+    const VkDescriptorPoolCreateInfo& pool_info = info.pool_info();
+    require(pool_info.sType == VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
+            "descriptor set info should expose descriptor pool create info");
+    require(pool_info.maxSets == 2, "descriptor set info should preserve max set count");
+    require(pool_info.poolSizeCount == info.pool_sizes().size(),
+            "descriptor set info should preserve pool size count");
+    require(pool_info.pPoolSizes == info.pool_sizes().data(),
+            "descriptor set info pool info should point at owned pool sizes");
 }

@@ -8,6 +8,7 @@ void test_command_pool_exposes_command_buffer_ownership();
 void test_compute_helpers_describe_pipeline_and_layout_setup();
 void test_deferred_destruction_queue_retires_completed_tickets();
 void test_descriptor_helpers_describe_layout_pool_and_writes();
+void test_descriptor_set_info_copies_bindings_and_aggregates_pool_sizes();
 void test_dynamic_rendering_describes_attachment_setup();
 void test_file_io_round_trips_binary_bytes();
 void test_frame_clock_tracks_delta_elapsed_and_index();
@@ -39,6 +40,7 @@ int main() {
         test_compute_helpers_describe_pipeline_and_layout_setup();
         test_deferred_destruction_queue_retires_completed_tickets();
         test_descriptor_helpers_describe_layout_pool_and_writes();
+        test_descriptor_set_info_copies_bindings_and_aggregates_pool_sizes();
         test_dynamic_rendering_describes_attachment_setup();
         test_file_io_round_trips_binary_bytes();
         test_frame_clock_tracks_delta_elapsed_and_index();
