@@ -4,6 +4,7 @@
 #include <cubey/app/windowed_host.h>
 #include <cubey/frame_stats.h>
 #include <cubey/headless_png_host.h>
+#include <cubey/project_runtime.h>
 #include <cubey/spirv_io.h>
 #include <cubey/vulkan/buffer.h>
 #include <cubey/vulkan/command_pool.h>
@@ -42,6 +43,7 @@ namespace {
 
 using cubey::FrameStatsSample;
 using cubey::FrameTiming;
+using cubey::ProjectFrame;
 using cubey::vulkan::check;
 using cubey::vulkan::vk_struct;
 
@@ -131,7 +133,7 @@ struct FrameInjection {
 
 class Fluid2DApp {
   public:
-    explicit Fluid2DApp(RunConfig config) : config_(std::move(config)) {}
+    explicit Fluid2DApp(RunConfig config) : config_(std::move(config)), runtime_(1) {}
 
     Fluid2DApp(const Fluid2DApp&) = delete;
     Fluid2DApp& operator=(const Fluid2DApp&) = delete;
@@ -170,12 +172,14 @@ class Fluid2DApp {
                     },
                 .update =
                     [this](cubey::app::WindowedAppContext& context, const FrameTiming& timing) {
-                        update_interaction(context, timing);
+                        const ProjectFrame& project_frame = project_frame_for_timing(timing);
+                        update_interaction(context, project_frame);
                     },
                 .record_frame =
                     [this](cubey::app::WindowedAppContext& context, VkCommandBuffer command_buffer,
                            std::uint32_t image_index, const FrameTiming& timing) {
-                        record_frame(context, command_buffer, image_index, timing);
+                        const ProjectFrame& project_frame = project_frame_for_timing(timing);
+                        record_frame(context, command_buffer, image_index, project_frame);
                     },
                 .frame_stats_sample =
                     [](cubey::app::WindowedAppContext& context,
@@ -192,12 +196,27 @@ class Fluid2DApp {
                     [this](cubey::app::WindowedAppContext& context) {
                         (void)context;
                         destroy_all_resources();
+                        retire_project_runtime();
                     },
             });
         return host.run();
     }
 
   private:
+    const ProjectFrame& project_frame_for_timing(const FrameTiming& timing) {
+        if (active_project_frame_.frame_index != timing.frame_index ||
+            active_project_frame_.elapsed_seconds != timing.elapsed_seconds) {
+            active_project_frame_ = runtime_.begin_frame(timing);
+        }
+        return active_project_frame_;
+    }
+
+    void retire_project_runtime() {
+        cubey::ProjectContext context = runtime_.context();
+        static_cast<void>(
+            context.deferred_destruction().retire_completed(context.frame_tickets().current()));
+    }
+
     void setup_input(cubey::app::WindowedAppContext& context) {
         cubey::app::GlfwWindow* window = &context.window();
         window->set_key_callback([this, window](const cubey::app::KeyEvent& event) {
@@ -233,8 +252,9 @@ class Fluid2DApp {
         });
     }
 
-    void update_interaction(cubey::app::WindowedAppContext& context, const FrameTiming& timing) {
-        (void)timing;
+    void update_interaction(cubey::app::WindowedAppContext& context,
+                            const ProjectFrame& project_frame) {
+        (void)project_frame;
         const VkExtent2D extent = context.swapchain().extent();
         frame_injection_ = {};
         if (!pointer_.left_down || !pointer_.has_cursor || extent.width == 0 ||
@@ -635,10 +655,10 @@ class Fluid2DApp {
     }
 
     [[nodiscard]] SimulationPushConstants
-    simulation_push_constants(const FrameTiming& timing) const {
-        const float time = static_cast<float>(timing.elapsed_seconds);
+    simulation_push_constants(const ProjectFrame& frame) const {
+        const float time = static_cast<float>(frame.elapsed_seconds);
         const float dt =
-            std::min(static_cast<float>(timing.delta_seconds), fluid_config_.fixed_delta_seconds);
+            std::min(static_cast<float>(frame.delta_seconds), fluid_config_.fixed_delta_seconds);
         const bool pointer_active = frame_injection_.active;
         const float injection_x =
             pointer_active ? frame_injection_.xy[0] : 0.5F + (std::cos(time * 0.73F) * 0.23F);
@@ -702,7 +722,7 @@ class Fluid2DApp {
             });
     }
 
-    void record_fluid_compute(VkCommandBuffer command_buffer, const FrameTiming& timing) {
+    void record_fluid_compute(VkCommandBuffer command_buffer, const ProjectFrame& frame) {
         if (reset_requested_) {
             record_field_reset(command_buffer);
             reset_requested_ = false;
@@ -711,7 +731,7 @@ class Fluid2DApp {
             return;
         }
 
-        const SimulationPushConstants push_constants = simulation_push_constants(timing);
+        const SimulationPushConstants push_constants = simulation_push_constants(frame);
         const DispatchGroups groups = compute_dispatch_groups(fluid_config_);
 
         vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE,
@@ -845,11 +865,11 @@ class Fluid2DApp {
     }
 
     void record_frame(cubey::app::WindowedAppContext& context, VkCommandBuffer command_buffer,
-                      std::uint32_t image_index, const FrameTiming& timing) {
+                      std::uint32_t image_index, const ProjectFrame& frame) {
         cubey::vulkan::begin_command_buffer(command_buffer,
                                             VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
-        record_fluid_compute(command_buffer, timing);
+        record_fluid_compute(command_buffer, frame);
 
         cubey::vulkan::Swapchain& swapchain = context.swapchain();
         const std::size_t swapchain_image_index = static_cast<std::size_t>(image_index);
@@ -868,9 +888,9 @@ class Fluid2DApp {
     }
 
     void record_headless_simulation_frame(cubey::vulkan::Device& device,
-                                          const FrameTiming& timing) {
+                                          const ProjectFrame& frame) {
         cubey::vulkan::ImmediateCommands commands(device);
-        record_fluid_compute(commands.command_buffer(), timing);
+        record_fluid_compute(commands.command_buffer(), frame);
         commands.submit_and_wait();
     }
 
@@ -888,8 +908,9 @@ class Fluid2DApp {
         callbacks.before_capture = [this](cubey::HeadlessPngContext& context) {
             const std::uint32_t frames = headless_frame_count(config_);
             for (std::uint32_t frame = 1; frame <= frames; ++frame) {
-                record_headless_simulation_frame(context.device(),
-                                                 fixed_headless_timing(fluid_config_, frame));
+                const ProjectFrame project_frame =
+                    runtime_.begin_frame(fixed_headless_timing(fluid_config_, frame));
+                record_headless_simulation_frame(context.device(), project_frame);
             }
         };
         callbacks.record_capture = [this](cubey::HeadlessPngContext&,
@@ -897,7 +918,10 @@ class Fluid2DApp {
                                           const cubey::HeadlessRenderTarget& target) {
             record_fullscreen_draw(command_buffer, target.view, target.extent);
         };
-        callbacks.shutdown = [this](cubey::HeadlessPngContext&) { destroy_all_resources(); };
+        callbacks.shutdown = [this](cubey::HeadlessPngContext&) {
+            destroy_all_resources();
+            retire_project_runtime();
+        };
 
         cubey::HeadlessPngHost host(std::move(host_config), std::move(callbacks));
         return host.run();
@@ -1079,6 +1103,8 @@ class Fluid2DApp {
     }
 
     RunConfig config_;
+    cubey::ProjectRuntimeServices runtime_;
+    ProjectFrame active_project_frame_;
     Fluid2DConfig fluid_config_;
     PointerState pointer_;
     FrameInjection frame_injection_;
