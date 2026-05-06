@@ -4,16 +4,12 @@
 
 #include <cubey/app/glfw_window.h>
 #include <cubey/app/windowed_host.h>
-#include <cubey/image_io.h>
+#include <cubey/headless_png_host.h>
 #include <cubey/spirv_io.h>
-#include <cubey/vulkan/buffer.h>
 #include <cubey/vulkan/command_pool.h>
 #include <cubey/vulkan/device.h>
 #include <cubey/vulkan/dynamic_rendering.h>
-#include <cubey/vulkan/image.h>
 #include <cubey/vulkan/image_transitions.h>
-#include <cubey/vulkan/immediate_commands.h>
-#include <cubey/vulkan/instance.h>
 #include <cubey/vulkan/pipeline.h>
 #include <cubey/vulkan/shader_module.h>
 #include <cubey/vulkan/vk_check.h>
@@ -22,15 +18,12 @@
 
 #include <array>
 #include <cmath>
-#include <cstddef>
 #include <cstdint>
 #include <cstdio>
 #include <filesystem>
-#include <limits>
 #include <optional>
 #include <span>
 #include <stdexcept>
-#include <string>
 #include <utility>
 #include <vector>
 
@@ -44,27 +37,6 @@ namespace {
 using cubey::vulkan::check;
 using cubey::vulkan::vk_struct;
 
-constexpr VkFormat kHeadlessOutputFormat = VK_FORMAT_R8G8B8A8_UNORM;
-constexpr std::size_t kOutputBytesPerPixel = 4;
-
-[[nodiscard]] std::size_t checked_pixel_byte_size(std::uint32_t width, std::uint32_t height) {
-    if (width == 0 || height == 0) {
-        throw std::runtime_error("fractal render dimensions must be positive");
-    }
-
-    const std::size_t checked_width = static_cast<std::size_t>(width);
-    const std::size_t checked_height = static_cast<std::size_t>(height);
-    if (checked_width > std::numeric_limits<std::size_t>::max() / checked_height) {
-        throw std::runtime_error("fractal output is too large");
-    }
-
-    const std::size_t pixel_count = checked_width * checked_height;
-    if (pixel_count > std::numeric_limits<std::size_t>::max() / kOutputBytesPerPixel) {
-        throw std::runtime_error("fractal output is too large");
-    }
-    return pixel_count * kOutputBytesPerPixel;
-}
-
 std::filesystem::path shader_path(const char* filename) {
     return std::filesystem::path(CUBEY_FRACTAL_SHADER_DIR) / filename;
 }
@@ -77,24 +49,13 @@ class FractalApp {
     FractalApp& operator=(const FractalApp&) = delete;
 
     ~FractalApp() {
-        if (device_owner_.has_value()) {
-            static_cast<void>(vkDeviceWaitIdle(device_owner_->handle()));
-        }
-
         pipeline_.reset();
         pipeline_layout_.reset();
-        device_owner_.reset();
-        device_ = VK_NULL_HANDLE;
-        instance_owner_.reset();
-        instance_ = VK_NULL_HANDLE;
     }
 
     int run() {
         if (config_.headless) {
-            create_headless_instance();
-            create_headless_device();
-            render_headless();
-            return 0;
+            return run_headless();
         }
 
         cubey::app::WindowedHost host(
@@ -141,27 +102,25 @@ class FractalApp {
     }
 
   private:
-    void create_headless_instance() {
-        cubey::vulkan::InstanceConfig instance_config;
-        instance_config.application_name = config_.title;
-        instance_config.validation = config_.validation;
-        instance_config.require_validation = config_.require_validation;
+    int run_headless() {
+        cubey::HeadlessPngHostConfig host_config;
+        host_config.run_config = config_;
+        host_config.required_queue_flags = VK_QUEUE_GRAPHICS_BIT;
 
-        instance_owner_.emplace(instance_config);
-        instance_ = instance_owner_->handle();
-    }
+        cubey::HeadlessPngHostCallbacks callbacks;
+        callbacks.create_resources = [this](cubey::HeadlessPngContext& context) {
+            const cubey::HeadlessRenderTarget& target = context.render_target();
+            create_pipeline(context.device(), target.format, target.extent);
+        };
+        callbacks.record_capture = [this](cubey::HeadlessPngContext&,
+                                          VkCommandBuffer command_buffer,
+                                          const cubey::HeadlessRenderTarget& target) {
+            record_fractal_draw(command_buffer, target.view, target.extent);
+        };
+        callbacks.shutdown = [this](cubey::HeadlessPngContext&) { destroy_swapchain_resources(); };
 
-    void create_headless_device() {
-        cubey::vulkan::DeviceConfig device_config;
-        device_config.required_queue_flags = VK_QUEUE_GRAPHICS_BIT;
-        device_config.require_present = false;
-        device_config.require_dynamic_rendering = true;
-
-        if (!instance_owner_.has_value()) {
-            throw std::runtime_error("Vulkan instance must exist before creating a device");
-        }
-        device_owner_.emplace(instance_owner_.value(), device_config);
-        device_ = device_owner_->handle();
+        cubey::HeadlessPngHost host(std::move(host_config), std::move(callbacks));
+        return host.run();
     }
 
     void setup_input(cubey::app::WindowedAppContext& context) {
@@ -306,52 +265,6 @@ class FractalApp {
         check(vkEndCommandBuffer(command_buffer), "vkEndCommandBuffer fractal");
     }
 
-    void record_headless_frame(cubey::vulkan::Image& render_target, VkExtent2D extent) {
-        cubey::vulkan::ImmediateCommands commands(vulkan_device());
-        const VkCommandBuffer command_buffer = commands.command_buffer();
-
-        cubey::vulkan::transition_image_layout(
-            command_buffer,
-            cubey::vulkan::begin_color_attachment_transition(render_target.handle()));
-        record_fractal_draw(command_buffer, render_target.view(), extent);
-        cubey::vulkan::transition_image_layout(
-            command_buffer,
-            cubey::vulkan::finish_color_attachment_for_readback_transition(render_target.handle()));
-        commands.submit_and_wait();
-    }
-
-    void render_headless() {
-        const VkExtent2D extent{config_.width, config_.height};
-        cubey::vulkan::Image render_target(
-            vulkan_device(),
-            cubey::vulkan::color_render_target_image_config(extent, kHeadlessOutputFormat));
-        create_pipeline(vulkan_device(), render_target.format(), extent);
-        record_headless_frame(render_target, extent);
-
-        const std::size_t byte_size = checked_pixel_byte_size(extent.width, extent.height);
-        const VkDeviceSize readback_byte_size = static_cast<VkDeviceSize>(byte_size);
-        cubey::vulkan::Buffer readback(vulkan_device(),
-                                       cubey::vulkan::readback_buffer_config(readback_byte_size));
-        cubey::vulkan::copy_image_to_buffer(vulkan_device(), render_target.handle(),
-                                            readback.handle(), {extent.width, extent.height, 1});
-
-        std::vector<std::uint8_t> pixels(byte_size);
-        readback.download(pixels.data(), readback_byte_size);
-        cubey::write_png_rgba8(config_.output_path, extent.width, extent.height, pixels);
-
-        const std::string output_path = config_.output_path.string();
-        std::printf("fractal: %s wrote %s at %ux%u\n", vulkan_device().device_name(),
-                    output_path.c_str(), extent.width, extent.height);
-        check(vkDeviceWaitIdle(device_), "vkDeviceWaitIdle after fractal headless");
-    }
-
-    cubey::vulkan::Device& vulkan_device() {
-        if (!device_owner_.has_value()) {
-            throw std::runtime_error("Vulkan device is not initialized");
-        }
-        return device_owner_.value();
-    }
-
     [[nodiscard]] const cubey::vulkan::PipelineLayout& pipeline_layout() const {
         if (!pipeline_layout_.has_value()) {
             throw std::runtime_error("pipeline layout is not initialized");
@@ -371,11 +284,6 @@ class FractalApp {
     double last_cursor_x_ = 0.0;
     double last_cursor_y_ = 0.0;
     FractalView view_;
-
-    std::optional<cubey::vulkan::Instance> instance_owner_;
-    std::optional<cubey::vulkan::Device> device_owner_;
-    VkInstance instance_ = VK_NULL_HANDLE;
-    VkDevice device_ = VK_NULL_HANDLE;
 
     std::optional<cubey::vulkan::PipelineLayout> pipeline_layout_;
     std::optional<cubey::vulkan::GraphicsPipeline> pipeline_;
