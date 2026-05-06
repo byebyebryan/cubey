@@ -14,6 +14,7 @@ void test_file_io_round_trips_binary_bytes();
 void test_frame_clock_tracks_delta_elapsed_and_index();
 void test_frame_stats_publish_window_title_metrics();
 void test_frame_ticket_issuer_returns_monotonic_tickets();
+void test_headless_png_host_validates_capture_shape();
 void test_image_io_writes_rgba_png();
 void test_image_transitions_describe_layout_barriers();
 void test_inline_executor_runs_jobs_immediately();
@@ -47,6 +48,7 @@ int main() {
         test_frame_clock_tracks_delta_elapsed_and_index();
         test_frame_stats_publish_window_title_metrics();
         test_frame_ticket_issuer_returns_monotonic_tickets();
+        test_headless_png_host_validates_capture_shape();
         test_image_io_writes_rgba_png();
         test_image_transitions_describe_layout_barriers();
         test_inline_executor_runs_jobs_immediately();

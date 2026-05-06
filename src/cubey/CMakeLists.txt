@@ -22,6 +22,7 @@ add_library(cubey STATIC
     frame_clock.cpp
     frame_stats.cpp
     frame_tickets.cpp
+    headless_png_host.cpp
     image_io.cpp
     jobs.cpp
     orbit_controller.cpp
