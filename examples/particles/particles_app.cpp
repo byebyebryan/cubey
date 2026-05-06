@@ -91,20 +91,20 @@ std::filesystem::path shader_path(const char* filename) {
         const float rank = (static_cast<float>(i) + 0.5F) / static_cast<float>(kParticleCount);
         const float angle = static_cast<float>(i) * kGoldenAngle;
         const float radius = std::sqrt(rank) * 0.84F;
-        const float jitter = (hash01(i * 747796405U + 2891336453U) - 0.5F) * 0.08F;
+        const float jitter = (hash01((i * 747796405U) + 2891336453U) - 0.5F) * 0.08F;
         const float x = std::cos(angle) * (radius + jitter);
         const float y = std::sin(angle) * (radius + jitter);
-        const float heat = hash01(i * 277803737U + 1013904223U);
-        const float size_pixels = 2.0F + hash01(i * 1597334677U + 3812015801U) * 4.5F;
+        const float heat = hash01((i * 277803737U) + 1013904223U);
+        const float size_pixels = 2.0F + (hash01((i * 1597334677U) + 3812015801U) * 4.5F);
 
         particles.push_back({
             .position_radius = {x, y, 0.0F, size_pixels},
             .velocity_seed = {-y * 0.08F, x * 0.08F, 0.0F, heat},
             .color =
                 {
-                    0.25F + heat * 0.70F,
-                    0.55F + (1.0F - heat) * 0.25F,
-                    0.95F - heat * 0.40F,
+                    0.25F + (heat * 0.70F),
+                    0.55F + ((1.0F - heat) * 0.25F),
+                    0.95F - (heat * 0.40F),
                     0.24F,
                 },
         });
