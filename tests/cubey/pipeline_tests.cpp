@@ -64,6 +64,13 @@ void test_pipeline_helpers_describe_dynamic_graphics_pipeline_setup() {
     config.vertex_attributes = vertex_attributes;
     config.depth_test = true;
     config.depth_write = true;
+    config.blend_enable = true;
+    config.src_color_blend_factor = VK_BLEND_FACTOR_ONE;
+    config.dst_color_blend_factor = VK_BLEND_FACTOR_ONE;
+    config.color_blend_op = VK_BLEND_OP_ADD;
+    config.src_alpha_blend_factor = VK_BLEND_FACTOR_ONE;
+    config.dst_alpha_blend_factor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+    config.alpha_blend_op = VK_BLEND_OP_ADD;
 
     const cubey::vulkan::DynamicGraphicsPipelineInfo info(config);
     const VkGraphicsPipelineCreateInfo& create_info = info.create_info();
@@ -122,4 +129,18 @@ void test_pipeline_helpers_describe_dynamic_graphics_pipeline_setup() {
             "depth state should enable depth writes when requested");
     require(create_info.pColorBlendState->attachmentCount == 1,
             "color blending should describe one attachment");
+    require(create_info.pColorBlendState->pAttachments[0].blendEnable == VK_TRUE,
+            "color blending should be enabled when requested");
+    require(create_info.pColorBlendState->pAttachments[0].srcColorBlendFactor ==
+                VK_BLEND_FACTOR_ONE,
+            "color blending should preserve the source color factor");
+    require(create_info.pColorBlendState->pAttachments[0].dstColorBlendFactor ==
+                VK_BLEND_FACTOR_ONE,
+            "color blending should preserve the destination color factor");
+    require(create_info.pColorBlendState->pAttachments[0].srcAlphaBlendFactor ==
+                VK_BLEND_FACTOR_ONE,
+            "color blending should preserve the source alpha factor");
+    require(create_info.pColorBlendState->pAttachments[0].dstAlphaBlendFactor ==
+                VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
+            "color blending should preserve the destination alpha factor");
 }

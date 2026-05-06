@@ -24,6 +24,13 @@ struct DynamicGraphicsPipelineConfig {
     bool depth_test = false;
     bool depth_write = false;
     VkCompareOp depth_compare_op = VK_COMPARE_OP_LESS;
+    bool blend_enable = false;
+    VkBlendFactor src_color_blend_factor = VK_BLEND_FACTOR_ONE;
+    VkBlendFactor dst_color_blend_factor = VK_BLEND_FACTOR_ZERO;
+    VkBlendOp color_blend_op = VK_BLEND_OP_ADD;
+    VkBlendFactor src_alpha_blend_factor = VK_BLEND_FACTOR_ONE;
+    VkBlendFactor dst_alpha_blend_factor = VK_BLEND_FACTOR_ZERO;
+    VkBlendOp alpha_blend_op = VK_BLEND_OP_ADD;
 };
 
 struct PipelineLayoutConfig {

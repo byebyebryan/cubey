@@ -141,6 +141,13 @@ DynamicGraphicsPipelineInfo::DynamicGraphicsPipelineInfo(
 
     color_blend_attachment_.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
                                              VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+    color_blend_attachment_.blendEnable = config.blend_enable ? VK_TRUE : VK_FALSE;
+    color_blend_attachment_.srcColorBlendFactor = config.src_color_blend_factor;
+    color_blend_attachment_.dstColorBlendFactor = config.dst_color_blend_factor;
+    color_blend_attachment_.colorBlendOp = config.color_blend_op;
+    color_blend_attachment_.srcAlphaBlendFactor = config.src_alpha_blend_factor;
+    color_blend_attachment_.dstAlphaBlendFactor = config.dst_alpha_blend_factor;
+    color_blend_attachment_.alphaBlendOp = config.alpha_blend_op;
 
     color_blend_ = vk_struct<VkPipelineColorBlendStateCreateInfo>(
         VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO);
