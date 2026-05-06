@@ -3,12 +3,35 @@
 #include <vulkan/vulkan.h>
 
 #include <cstdint>
+#include <functional>
 #include <string>
 #include <vector>
 
 struct GLFWwindow;
 
 namespace cubey::app {
+
+enum class Key {
+    Unknown,
+    Escape,
+    R,
+    Space,
+};
+
+enum class KeyAction {
+    Unknown,
+    Press,
+    Release,
+    Repeat,
+};
+
+struct KeyEvent {
+    Key key = Key::Unknown;
+    KeyAction action = KeyAction::Unknown;
+    int native_key = 0;
+    int native_scancode = 0;
+    int native_mods = 0;
+};
 
 struct GlfwWindowConfig {
     std::uint32_t width = 1280;
@@ -33,6 +56,7 @@ class GlfwWindow {
     [[nodiscard]] bool should_close() const;
     void request_close() const;
     void set_title(const char* title) const;
+    void set_key_callback(std::function<void(const KeyEvent&)> callback);
 
     [[nodiscard]] bool framebuffer_resized() const {
         return framebuffer_resized_;
@@ -49,10 +73,14 @@ class GlfwWindow {
     // GLFW fixes this callback signature.
     // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
     static void framebuffer_size_callback(GLFWwindow* window, int width, int height);
+    // GLFW fixes this callback signature.
+    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+    static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
 
     bool glfw_initialized_ = false;
     bool framebuffer_resized_ = false;
     GLFWwindow* window_ = nullptr;
+    std::function<void(const KeyEvent&)> key_callback_;
 };
 
 class GlfwSurface {

@@ -2,6 +2,7 @@
 
 #include <cubey/app/glfw_window.h>
 #include <cubey/frame_clock.h>
+#include <cubey/frame_stats.h>
 #include <cubey/run_config.h>
 #include <cubey/vulkan/device.h>
 #include <cubey/vulkan/frame_resources.h>
@@ -70,6 +71,8 @@ struct WindowedHostCallbacks {
     std::function<void(WindowedAppContext&, const FrameTiming&)> update;
     std::function<void(WindowedAppContext&, VkCommandBuffer, std::uint32_t, const FrameTiming&)>
         record_frame;
+    std::function<std::optional<FrameStatsSample>(WindowedAppContext&, const FrameTiming&)>
+        frame_stats_sample;
     std::function<void(WindowedAppContext&)> shutdown;
 };
 
@@ -114,6 +117,7 @@ class WindowedHost {
     std::optional<cubey::vulkan::Swapchain> swapchain_;
     std::optional<cubey::vulkan::FrameResources> frame_resources_;
     FrameClock frame_clock_;
+    FrameStats frame_stats_;
 };
 
 } // namespace cubey::app

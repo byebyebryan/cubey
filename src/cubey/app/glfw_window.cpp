@@ -16,6 +16,32 @@ void validate_config(const GlfwWindowConfig& config) {
     }
 }
 
+Key to_key(int key) {
+    switch (key) {
+    case GLFW_KEY_ESCAPE:
+        return Key::Escape;
+    case GLFW_KEY_R:
+        return Key::R;
+    case GLFW_KEY_SPACE:
+        return Key::Space;
+    default:
+        return Key::Unknown;
+    }
+}
+
+KeyAction to_key_action(int action) {
+    switch (action) {
+    case GLFW_PRESS:
+        return KeyAction::Press;
+    case GLFW_RELEASE:
+        return KeyAction::Release;
+    case GLFW_REPEAT:
+        return KeyAction::Repeat;
+    default:
+        return KeyAction::Unknown;
+    }
+}
+
 } // namespace
 
 GlfwWindow::GlfwWindow(GlfwWindowConfig config) {
@@ -93,6 +119,10 @@ void GlfwWindow::set_title(const char* title) const {
     glfwSetWindowTitle(window_, title);
 }
 
+void GlfwWindow::set_key_callback(std::function<void(const KeyEvent&)> callback) {
+    key_callback_ = std::move(callback);
+}
+
 bool GlfwWindow::consume_framebuffer_resized() {
     const bool result = framebuffer_resized_;
     framebuffer_resized_ = false;
@@ -120,6 +150,7 @@ void GlfwWindow::create(GlfwWindowConfig config) {
 
     glfwSetWindowUserPointer(window_, this);
     glfwSetFramebufferSizeCallback(window_, framebuffer_size_callback);
+    glfwSetKeyCallback(window_, key_callback);
 }
 
 void GlfwWindow::destroy() {
@@ -139,6 +170,19 @@ void GlfwWindow::framebuffer_size_callback(GLFWwindow* window, int width, int he
     auto* app_window = static_cast<GlfwWindow*>(glfwGetWindowUserPointer(window));
     if (app_window != nullptr) {
         app_window->framebuffer_resized_ = true;
+    }
+}
+
+void GlfwWindow::key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+    auto* app_window = static_cast<GlfwWindow*>(glfwGetWindowUserPointer(window));
+    if (app_window != nullptr && app_window->key_callback_) {
+        app_window->key_callback_({
+            .key = to_key(key),
+            .action = to_key_action(action),
+            .native_key = key,
+            .native_scancode = scancode,
+            .native_mods = mods,
+        });
     }
 }
 

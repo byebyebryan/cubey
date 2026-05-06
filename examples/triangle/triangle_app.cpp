@@ -76,6 +76,7 @@ class TriangleApp {
                         (void)timing;
                         record_triangle_frame(context, command_buffer, image_index);
                     },
+                .frame_stats_sample = {},
                 .shutdown = {},
             });
         return host.run();

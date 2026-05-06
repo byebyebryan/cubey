@@ -1,10 +1,13 @@
 #include <cubey/app/windowed_host.h>
 
+#include <cubey/frame_stats.h>
 #include <cubey/vulkan/render_context.h>
 #include <cubey/vulkan/vk_check.h>
 
 #include <cstdio>
+#include <optional>
 #include <stdexcept>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -83,6 +86,7 @@ int WindowedHost::run() {
             std::puts("framebuffer resized; recreating swapchain");
             recreate_swapchain_resources();
             frame_clock_.reset();
+            frame_stats_.reset();
             recreate_tracker.reset();
             continue;
         }
@@ -99,15 +103,29 @@ int WindowedHost::run() {
             std::puts("swapchain out of date; recreating");
             recreate_swapchain_resources();
             frame_clock_.reset();
+            frame_stats_.reset();
             continue;
         }
 
         recreate_tracker.reset();
+        if (callbacks_.frame_stats_sample) {
+            std::optional<FrameStatsSample> sample =
+                callbacks_.frame_stats_sample(active_context, timing);
+            if (sample.has_value()) {
+                std::optional<FrameStatsSnapshot> stats = frame_stats_.record_frame(sample.value());
+                if (stats.has_value()) {
+                    const std::string title =
+                        format_window_title(config_.run_config.title, stats.value());
+                    window().set_title(title.c_str());
+                }
+            }
+        }
         ++frame;
     }
 
     cubey::vulkan::check(vkDeviceWaitIdle(device().handle()),
                          "vkDeviceWaitIdle after windowed host");
+    destroy_swapchain_resources();
     if (callbacks_.shutdown) {
         WindowedAppContext active_context = context();
         callbacks_.shutdown(active_context);
