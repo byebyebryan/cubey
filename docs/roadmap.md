@@ -298,14 +298,21 @@ Exit criteria:
 
 ## Phase 5: First Real Project
 
-Status: next.
+Status: active; first `fluid_2d` checkpoint complete.
 
 Goal: prove the framework with one non-trivial procedural graphics project and
 let repeated project needs shape the app/runtime API.
 
-Candidate projects:
+Current project:
 
-- Fluid simulation rewrite for the strongest connection to the original Cubey.
+- `projects/fluid_2d` starts the fluid simulation rewrite as a smaller 2D
+  dye-and-velocity field. The first checkpoint has compute injection/advection,
+  fullscreen rendering, a windowed smoke, and deterministic headless PNG output.
+
+Candidate follow-ups:
+
+- Pressure projection for `fluid_2d`: divergence, pressure Jacobi iterations,
+  and gradient subtraction.
 - Marching cubes for compute-generated geometry and indirect draw pressure.
 - SDF sculpting if the sparse resource model becomes the more interesting
   framework driver.
@@ -317,7 +324,8 @@ Exit criteria:
 - The project runs interactively with a window.
 - The same project can run headlessly for a fixed number of frames and produce a
   deterministic output artifact.
-- README contains the exact commands for local smoke testing.
+- README contains the exact commands for local smoke testing. Status: complete
+  for `fluid_2d` checkpoint 1.
 
 ## Phase 6: Runtime Extraction
 

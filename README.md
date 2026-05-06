@@ -55,6 +55,9 @@ writes an inspectable PNG.
 navigation and a headless PNG mode.
 `examples/particles` adds compute-updated attractor particles rendered as
 instanced screen-facing quads with procedural Gaussian splats.
+`projects/fluid_2d` is the first project target: a 2D dye-and-velocity field
+with compute injection/advection, fullscreen rendering, and deterministic
+headless PNG output.
 `cubey` owns the reusable GLM-backed math wrapper, Vulkan instance, device,
 buffer, image, sampler, swapchain, shader-module, command-pool,
 image-transition and dynamic-rendering helpers, frame clock, orbit-controller,
@@ -70,15 +73,13 @@ shared shader includes,
 command/sync components, and swapchain recreate-attempt tracking; examples still
 own command recording and render policy.
 `cubey_app` owns the GLFW-backed window/app host layer used by all current
-windowed examples: `window_clear`, `triangle`, `spinning_cube`,
-`textured_cube`, `fractal`, and `particles`. Headless paths remain explicit
-until a shared headless host shape is proven. The spike branches remain
+windowed examples and the first windowed project. Headless paths remain
+explicit until a shared headless host shape is proven. The spike branches remain
 reference material for deeper compute and browser work.
 
-The next framework checkpoint should come from a first real project such as
-fluid simulation or marching cubes. The current examples now justify the
-windowed host layer, but still do not justify a renderer, scene system, or broad
-backend abstraction.
+The next framework checkpoint should come from extending the first real project,
+`fluid_2d`, rather than extracting a renderer, scene system, or broad backend
+abstraction ahead of project pressure.
 
 ## Development Setup
 
@@ -103,6 +104,7 @@ The windowed smoke targets are:
 ./build/dev/examples/textured_cube/textured_cube --frames 300 --width 1280 --height 720
 ./build/dev/examples/fractal/fractal --frames 300 --width 1280 --height 720
 ./build/dev/examples/particles/particles --frames 300 --width 1280 --height 720
+./build/dev/projects/fluid_2d/fluid_2d --frames 300 --width 1280 --height 720
 ```
 
 The headless PNG smokes are:
@@ -110,6 +112,7 @@ The headless PNG smokes are:
 ```bash
 ./build/dev/examples/headless_render/headless_render --width 640 --height 360 --output /tmp/cubey-headless.png
 ./build/dev/examples/fractal/fractal --headless --width 640 --height 360 --output /tmp/cubey-fractal.png
+./build/dev/projects/fluid_2d/fluid_2d --headless --frames 120 --width 640 --height 360 --output /tmp/cubey-fluid-2d.png
 ```
 
 Use validation as a hard requirement when the validation layers are installed:
@@ -121,8 +124,10 @@ Use validation as a hard requirement when the validation layers are installed:
 ./build/dev/examples/textured_cube/textured_cube --require-validation --frames 300 --width 1280 --height 720
 ./build/dev/examples/fractal/fractal --require-validation --frames 300 --width 1280 --height 720
 ./build/dev/examples/particles/particles --require-validation --frames 300 --width 1280 --height 720
+./build/dev/projects/fluid_2d/fluid_2d --require-validation --frames 300 --width 1280 --height 720
 ./build/dev/examples/headless_render/headless_render --require-validation --width 640 --height 360 --output /tmp/cubey-headless.png
 ./build/dev/examples/fractal/fractal --headless --require-validation --width 640 --height 360 --output /tmp/cubey-fractal.png
+./build/dev/projects/fluid_2d/fluid_2d --headless --require-validation --frames 120 --width 640 --height 360 --output /tmp/cubey-fluid-2d.png
 ```
 
 `textured_cube` supports basic interaction: left-drag rotates the shaded
@@ -135,6 +140,10 @@ the cursor, `R` resets the view, and Escape closes the window.
 
 `particles` supports basic controls: Space pauses/resumes compute updates, `R`
 resets the particle field, and Escape closes the window.
+
+`fluid_2d` currently runs a deterministic compute-updated dye field. Escape
+closes the window. Pressure projection and richer interaction are planned
+follow-up slices.
 
 The repo also includes:
 

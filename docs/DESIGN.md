@@ -154,7 +154,8 @@ This is critical for AI-assisted development — the agent gets structured pass/
 
 | Project | Source | Notes |
 |------|--------|-------|
-| Fluid Simulation | cubey1 rewrite | Eulerian 3D fluid sim, compute-based, raymarched volume rendering |
+| Fluid 2D | cubey1 rewrite warmup | First project target; compute-updated 2D dye/velocity field with headless PNG output |
+| Fluid Simulation 3D | cubey1 rewrite | Future Eulerian 3D fluid sim, compute-based, raymarched volume rendering |
 | Particle System | cubey1 rewrite | Prototype attractor particles now live under `examples/particles`; a larger project would need compute + indirect draw pressure before graduating |
 | Marching Cubes | cubey1 rewrite | Isosurface extraction via compute + indirect draw |
 | Fractal 2D | cubey1 rewrite | Mandelbrot/Julia renderer |
@@ -187,7 +188,8 @@ library. Runnable binaries should be named explicitly and live in either
   path. Current examples are `window_clear`, `triangle`, `spinning_cube`,
   `textured_cube`, `headless_render`, `fractal`, and `particles`.
 - `projects/` - first-class graphics experiments and longer-lived creative
-  work, such as `fluid_sim`, `marching_cubes`, and `sdf_sculpt`.
+  work, starting with `fluid_2d` and later candidates such as `fluid_sim`,
+  `marching_cubes`, and `sdf_sculpt`.
 - `third_party/` - small vendored dependencies with explicit license notes.
 - `tools/` - repo utilities, asset processors, shader tools, or diagnostics.
 - `tests/` - unit and integration tests.
@@ -304,14 +306,15 @@ cubey/
     particles/             -- compute-updated attractor particles with
                               instanced billboard splats
   projects/
-      fluid_sim/
+      fluid_2d/
         CMakeLists.txt
         main.cpp
         shaders/
-          fluid_advect.comp.glsl
-          fluid_diffuse.comp.glsl
-          fluid_render.vert.glsl
-          fluid_render.frag.glsl
+          fluid_2d_inject.comp
+          fluid_2d_advect.comp
+          fluid_2d.vert
+          fluid_2d_render.frag
+      fluid_sim/
       sdf_sculpt/
       marching_cubes/
   tools/

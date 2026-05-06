@@ -447,3 +447,14 @@ env XDG_RUNTIME_DIR=/run/user/1000 WAYLAND_DISPLAY=wayland-1 DISPLAY=:1 XDG_CURR
 - GLM should stay behind Cubey's public wrapper in examples/projects unless a
   project has a clear need for broader GLM APIs. This keeps future math
   convention changes localized.
+- `projects/fluid_2d` is now the first project target. The first checkpoint uses
+  a 256x144 storage-buffer field with dye and velocity per cell, then records
+  compute inject and advect/fade passes before rendering the dye field through a
+  fullscreen graphics pass.
+- The project has both windowed and headless paths. Headless uses fixed timing,
+  a deterministic injector, the existing offscreen render/readback helpers, and
+  a PNG smoke test. This proves project-level headless output without extracting
+  a shared headless host yet.
+- The solver is intentionally incomplete: no divergence, pressure solve, or
+  gradient subtraction yet. The next fluid slice should improve solver quality
+  before promoting renderer or scene abstractions.

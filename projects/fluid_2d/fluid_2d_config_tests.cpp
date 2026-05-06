@@ -1,5 +1,6 @@
 #include "fluid_2d_config.h"
 
+#include <cubey/frame_clock.h>
 #include <cubey/run_config.h>
 
 #include <cstdio>
@@ -34,6 +35,14 @@ int main() {
         run_config.frames = 8;
         require(cubey::projects::fluid_2d::headless_frame_count(run_config) == 8,
                 "headless frame count should honor --frames");
+
+        const cubey::FrameTiming timing =
+            cubey::projects::fluid_2d::fixed_headless_timing(config, 5);
+        require(timing.frame_index == 5, "fixed headless timing should preserve frame index");
+        require(timing.delta_seconds == config.fixed_delta_seconds,
+                "fixed headless timing should use fixed simulation delta");
+        require(timing.elapsed_seconds == config.fixed_delta_seconds * 5.0,
+                "fixed headless timing should use deterministic elapsed time");
     } catch (const std::exception& error) {
         std::fprintf(stderr, "fluid_2d_config_tests: %s\n", error.what());
         return 1;

@@ -3,12 +3,17 @@
 #include <cubey/app/glfw_window.h>
 #include <cubey/app/windowed_host.h>
 #include <cubey/frame_stats.h>
+#include <cubey/image_io.h>
 #include <cubey/spirv_io.h>
 #include <cubey/vulkan/buffer.h>
 #include <cubey/vulkan/command_pool.h>
 #include <cubey/vulkan/descriptors.h>
+#include <cubey/vulkan/device.h>
 #include <cubey/vulkan/dynamic_rendering.h>
+#include <cubey/vulkan/image.h>
 #include <cubey/vulkan/image_transitions.h>
+#include <cubey/vulkan/immediate_commands.h>
+#include <cubey/vulkan/instance.h>
 #include <cubey/vulkan/pipeline.h>
 #include <cubey/vulkan/shader_module.h>
 #include <cubey/vulkan/vk_check.h>
@@ -17,11 +22,14 @@
 
 #include <array>
 #include <cmath>
+#include <cstddef>
 #include <cstdint>
 #include <cstdio>
 #include <filesystem>
+#include <limits>
 #include <optional>
 #include <stdexcept>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -40,6 +48,8 @@ using cubey::vulkan::check;
 using cubey::vulkan::vk_struct;
 
 constexpr float kFallbackInjectionRadius = 0.08F;
+constexpr VkFormat kHeadlessOutputFormat = VK_FORMAT_R8G8B8A8_UNORM;
+constexpr std::size_t kOutputBytesPerPixel = 4;
 
 struct RenderPushConstants {
     std::array<float, 4> grid_time{};
@@ -59,6 +69,24 @@ std::filesystem::path shader_path(const char* filename) {
     return std::filesystem::path(CUBEY_FLUID_2D_SHADER_DIR) / filename;
 }
 
+[[nodiscard]] std::size_t checked_pixel_byte_size(std::uint32_t width, std::uint32_t height) {
+    if (width == 0 || height == 0) {
+        throw std::runtime_error("fluid_2d render dimensions must be positive");
+    }
+
+    const std::size_t checked_width = static_cast<std::size_t>(width);
+    const std::size_t checked_height = static_cast<std::size_t>(height);
+    if (checked_width > std::numeric_limits<std::size_t>::max() / checked_height) {
+        throw std::runtime_error("fluid_2d output is too large");
+    }
+
+    const std::size_t pixel_count = checked_width * checked_height;
+    if (pixel_count > std::numeric_limits<std::size_t>::max() / kOutputBytesPerPixel) {
+        throw std::runtime_error("fluid_2d output is too large");
+    }
+    return pixel_count * kOutputBytesPerPixel;
+}
+
 class Fluid2DApp {
   public:
     explicit Fluid2DApp(RunConfig config) : config_(std::move(config)) {}
@@ -68,7 +96,13 @@ class Fluid2DApp {
 
     int run() {
         if (config_.headless) {
-            throw std::runtime_error("fluid_2d does not support --headless yet");
+            create_headless_instance();
+            create_headless_device();
+            render_headless();
+            destroy_all_resources();
+            headless_device_.reset();
+            headless_instance_.reset();
+            return 0;
         }
 
         cubey::app::WindowedHost host(
@@ -125,6 +159,22 @@ class Fluid2DApp {
     }
 
   private:
+    void create_headless_instance() {
+        cubey::vulkan::InstanceConfig instance_config;
+        instance_config.application_name = config_.title;
+        instance_config.validation = config_.validation;
+        instance_config.require_validation = config_.require_validation;
+        headless_instance_.emplace(instance_config);
+    }
+
+    void create_headless_device() {
+        cubey::vulkan::DeviceConfig device_config;
+        device_config.required_queue_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT;
+        device_config.require_present = false;
+        device_config.require_dynamic_rendering = true;
+        headless_device_.emplace(headless_instance(), device_config);
+    }
+
     static void setup_input(cubey::app::WindowedAppContext& context) {
         cubey::app::GlfwWindow* window = &context.window();
         window->set_key_callback([window](const cubey::app::KeyEvent& event) {
@@ -445,6 +495,80 @@ class Fluid2DApp {
         check(vkEndCommandBuffer(command_buffer), "vkEndCommandBuffer fluid_2d");
     }
 
+    void record_headless_simulation_frame(const FrameTiming& timing) const {
+        cubey::vulkan::ImmediateCommands commands(headless_device());
+        record_fluid_compute(commands.command_buffer(), timing);
+        commands.submit_and_wait();
+    }
+
+    void record_headless_render(cubey::vulkan::Image& render_target, VkExtent2D extent,
+                                const FrameTiming& timing) const {
+        cubey::vulkan::ImmediateCommands commands(headless_device());
+        const VkCommandBuffer command_buffer = commands.command_buffer();
+        cubey::vulkan::transition_image_layout(
+            command_buffer,
+            cubey::vulkan::begin_color_attachment_transition(render_target.handle()));
+        record_fullscreen_draw(command_buffer, render_target.view(), extent, timing);
+        cubey::vulkan::transition_image_layout(
+            command_buffer,
+            cubey::vulkan::finish_color_attachment_for_readback_transition(render_target.handle()));
+        commands.submit_and_wait();
+    }
+
+    void render_headless() {
+        const VkExtent2D extent{config_.width, config_.height};
+        create_global_resources_if_needed(headless_device());
+
+        cubey::vulkan::Image render_target(
+            headless_device(),
+            cubey::vulkan::color_render_target_image_config(extent, kHeadlessOutputFormat));
+        create_render_pipeline(headless_device(), render_target.format(), extent);
+
+        const std::uint32_t frames = headless_frame_count(config_);
+        for (std::uint32_t frame = 1; frame <= frames; ++frame) {
+            record_headless_simulation_frame(fixed_headless_timing(fluid_config_, frame));
+        }
+        record_headless_render(render_target, extent, fixed_headless_timing(fluid_config_, frames));
+
+        const std::size_t byte_size = checked_pixel_byte_size(extent.width, extent.height);
+        const VkDeviceSize readback_byte_size = static_cast<VkDeviceSize>(byte_size);
+        cubey::vulkan::Buffer readback(headless_device(),
+                                       cubey::vulkan::readback_buffer_config(readback_byte_size));
+        cubey::vulkan::copy_image_to_buffer(headless_device(), render_target.handle(),
+                                            readback.handle(), {extent.width, extent.height, 1});
+
+        std::vector<std::uint8_t> pixels(byte_size);
+        readback.download(pixels.data(), readback_byte_size);
+        cubey::write_png_rgba8(config_.output_path, extent.width, extent.height, pixels);
+
+        const std::string output_path = config_.output_path.string();
+        std::printf("fluid_2d: %s wrote %s at %ux%u after %u frames\n",
+                    headless_device().device_name(), output_path.c_str(), extent.width,
+                    extent.height, frames);
+        check(vkDeviceWaitIdle(headless_device().handle()), "vkDeviceWaitIdle after fluid_2d");
+    }
+
+    [[nodiscard]] cubey::vulkan::Instance& headless_instance() {
+        if (!headless_instance_.has_value()) {
+            throw std::runtime_error("headless Vulkan instance is not initialized");
+        }
+        return headless_instance_.value();
+    }
+
+    [[nodiscard]] const cubey::vulkan::Device& headless_device() const {
+        if (!headless_device_.has_value()) {
+            throw std::runtime_error("headless Vulkan device is not initialized");
+        }
+        return headless_device_.value();
+    }
+
+    [[nodiscard]] cubey::vulkan::Device& headless_device() {
+        if (!headless_device_.has_value()) {
+            throw std::runtime_error("headless Vulkan device is not initialized");
+        }
+        return headless_device_.value();
+    }
+
     [[nodiscard]] const cubey::vulkan::Buffer& field_a() const {
         if (!field_a_.has_value()) {
             throw std::runtime_error("fluid field A is not initialized");
@@ -517,6 +641,8 @@ class Fluid2DApp {
 
     RunConfig config_;
     Fluid2DConfig fluid_config_;
+    std::optional<cubey::vulkan::Instance> headless_instance_;
+    std::optional<cubey::vulkan::Device> headless_device_;
     std::optional<cubey::vulkan::Buffer> field_a_;
     std::optional<cubey::vulkan::Buffer> field_b_;
     std::optional<cubey::vulkan::DescriptorSetLayout> compute_descriptor_layout_;

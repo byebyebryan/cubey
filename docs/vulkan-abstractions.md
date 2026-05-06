@@ -491,9 +491,14 @@ Goal: let a real project define the app/runtime seam.
 This is the point where a project interface around setup, update, render,
 resize, and shutdown may become worthwhile.
 
+Status: `projects/fluid_2d` now provides the first project-pressure checkpoint.
+It uses storage-buffer ping-pong fields, compute injection/advection, fullscreen
+rendering, and explicit headless PNG output. The next useful pressure is solver
+quality and lifecycle shape, not a renderer abstraction.
+
 ## Near-Term Recommendation
 
-Batch 1 through Batch 7 and the particle example have their first passes on
-`main`. The descriptor-bundle and shared-math cleanup has also landed, reducing
-example-local boilerplate without hiding Vulkan binding or render policy. Use
-Batch 8, the first real project, to decide how much app/runtime host to extract.
+Batch 1 through Batch 8 have their first passes on `main`. The descriptor-bundle
+and shared-math cleanup reduced example-local boilerplate without hiding Vulkan
+binding or render policy. Use `fluid_2d` pressure projection and interaction to
+decide the next project/runtime extractions.

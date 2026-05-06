@@ -47,4 +47,15 @@ if (BUILD_TESTING)
         cubey_project_fluid_2d
         "fluid_2d: .*rendering 2D fluid project"
     )
+
+    set(CUBEY_FLUID_2D_HEADLESS_SMOKE_OUTPUT
+        "${CMAKE_CURRENT_BINARY_DIR}/fluid-2d-headless-smoke.png"
+    )
+    cubey_add_png_smoke_test(
+        fluid_2d_headless_writes_png
+        cubey_project_fluid_2d
+        "${CUBEY_FLUID_2D_HEADLESS_SMOKE_OUTPUT}"
+        --headless
+        --frames 8
+    )
 endif()

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cubey/frame_clock.h>
 #include <cubey/run_config.h>
 
 #include <array>
@@ -52,6 +53,19 @@ struct Fluid2DConfig {
         return 120;
     }
     return config.frames;
+}
+
+[[nodiscard]] inline FrameTiming fixed_headless_timing(const Fluid2DConfig& config,
+                                                       std::uint64_t frame_index) {
+    if (frame_index == 0) {
+        throw std::runtime_error("fixed headless frame index must be positive");
+    }
+    return {
+        .delta_seconds = config.fixed_delta_seconds,
+        .elapsed_seconds =
+            static_cast<double>(config.fixed_delta_seconds) * static_cast<double>(frame_index),
+        .frame_index = frame_index,
+    };
 }
 
 } // namespace cubey::projects::fluid_2d
