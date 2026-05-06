@@ -25,6 +25,7 @@ void test_orbit_controller_tracks_rotation_drag_pause_and_reset();
 void test_pipeline_helpers_describe_dynamic_graphics_pipeline_setup();
 void test_project_context_exposes_async_runtime_services();
 void test_project_runtime_contract_supports_lifecycle_shape();
+void test_project_runtime_services_create_project_frames_and_context();
 void test_render_context_exposes_explicit_frame_boundary();
 void test_resource_helpers_describe_device_local_upload_and_depth_setup();
 void test_spirv_io_reads_aligned_words();
@@ -59,6 +60,7 @@ int main() {
         test_pipeline_helpers_describe_dynamic_graphics_pipeline_setup();
         test_project_context_exposes_async_runtime_services();
         test_project_runtime_contract_supports_lifecycle_shape();
+        test_project_runtime_services_create_project_frames_and_context();
         test_render_context_exposes_explicit_frame_boundary();
         test_resource_helpers_describe_device_local_upload_and_depth_setup();
         test_spirv_io_reads_aligned_words();

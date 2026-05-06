@@ -1,11 +1,13 @@
 #pragma once
 
 #include <cubey/capture_queue.h>
+#include <cubey/frame_clock.h>
 #include <cubey/frame_tickets.h>
 #include <cubey/jobs.h>
 #include <cubey/upload_queue.h>
 
 #include <concepts>
+#include <cstddef>
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -19,6 +21,7 @@ struct ProjectExtent {
 
 struct ProjectFrame {
     double delta_seconds = 0.0;
+    double elapsed_seconds = 0.0;
     std::uint64_t frame_index = 0;
     FrameTicket ticket;
 };
@@ -31,7 +34,7 @@ struct RenderPacket {
 };
 
 class ProjectContext {
-public:
+  public:
     ProjectContext(jobs::JobSystem& jobs, UploadQueue& uploads, CaptureQueue& captures,
                    FrameTicketIssuer& frame_tickets,
                    DeferredDestructionQueue& deferred_destruction);
@@ -47,7 +50,7 @@ public:
     [[nodiscard]] FrameTicketIssuer& frame_tickets() const;
     [[nodiscard]] DeferredDestructionQueue& deferred_destruction() const;
 
-private:
+  private:
     jobs::JobSystem* jobs_;
     UploadQueue* uploads_;
     CaptureQueue* captures_;
@@ -55,14 +58,34 @@ private:
     DeferredDestructionQueue* deferred_destruction_;
 };
 
-template <typename T>
-concept ProjectLike = requires(T project, ProjectContext& context, ProjectFrame frame,
-                               ProjectExtent extent) {
-    { project.setup(context) } -> std::same_as<void>;
-    { project.update(frame, context) } -> std::same_as<void>;
-    { project.render_packet(frame, context) } -> std::same_as<RenderPacket>;
-    { project.resize(extent, context) } -> std::same_as<void>;
-    { project.shutdown(context) } -> std::same_as<void>;
+class ProjectRuntimeServices {
+  public:
+    explicit ProjectRuntimeServices(std::size_t worker_count = 0);
+
+    ProjectRuntimeServices(const ProjectRuntimeServices&) = delete;
+    ProjectRuntimeServices& operator=(const ProjectRuntimeServices&) = delete;
+    ProjectRuntimeServices(ProjectRuntimeServices&&) = delete;
+    ProjectRuntimeServices& operator=(ProjectRuntimeServices&&) = delete;
+
+    [[nodiscard]] ProjectContext context();
+    [[nodiscard]] ProjectFrame begin_frame(const FrameTiming& timing);
+
+  private:
+    jobs::JobSystem jobs_;
+    UploadQueue uploads_;
+    CaptureQueue captures_;
+    FrameTicketIssuer frame_tickets_;
+    DeferredDestructionQueue deferred_destruction_;
 };
+
+template <typename T>
+concept ProjectLike =
+    requires(T project, ProjectContext& context, ProjectFrame frame, ProjectExtent extent) {
+        { project.setup(context) } -> std::same_as<void>;
+        { project.update(frame, context) } -> std::same_as<void>;
+        { project.render_packet(frame, context) } -> std::same_as<RenderPacket>;
+        { project.resize(extent, context) } -> std::same_as<void>;
+        { project.shutdown(context) } -> std::same_as<void>;
+    };
 
 } // namespace cubey

@@ -89,9 +89,8 @@ void test_project_runtime_contract_supports_lifecycle_shape() {
 
     project.setup(context);
     project.update({.delta_seconds = 0.016, .frame_index = 1, .ticket = {.value = 1}}, context);
-    cubey::RenderPacket packet =
-        project.render_packet({.delta_seconds = 0.016, .frame_index = 1, .ticket = {.value = 1}},
-                              context);
+    cubey::RenderPacket packet = project.render_packet(
+        {.delta_seconds = 0.016, .frame_index = 1, .ticket = {.value = 1}}, context);
     project.resize({.width = 800, .height = 600}, context);
     project.shutdown(context);
 
@@ -104,4 +103,32 @@ void test_project_runtime_contract_supports_lifecycle_shape() {
     require(deferred.retire_completed({.value = 1}) == 1,
             "project shutdown should be able to defer destruction");
     require(project.shutdown_seen, "deferred shutdown action should run");
+}
+
+void test_project_runtime_services_create_project_frames_and_context() {
+    cubey::ProjectRuntimeServices services(1);
+    cubey::ProjectContext context = services.context();
+
+    auto job = context.jobs().submit([] { return 12; });
+    require(job.get() == 12, "runtime services should expose a working job system");
+
+    cubey::UploadTicket upload = context.upload_queue().enqueue({
+        .label = "runtime upload",
+        .bytes = {7, 8, 9},
+    });
+    require(upload.id == 1, "runtime services should expose upload queue state");
+
+    cubey::ProjectFrame frame = services.begin_frame({
+        .delta_seconds = 0.25,
+        .elapsed_seconds = 1.5,
+        .frame_index = 4,
+    });
+    require(frame.delta_seconds == 0.25, "project frame should preserve delta time");
+    require(frame.elapsed_seconds == 1.5, "project frame should preserve elapsed time");
+    require(frame.frame_index == 4, "project frame should preserve frame index");
+    require(frame.ticket.value == 1, "project frame should issue a frame ticket");
+
+    context.deferred_destruction().defer_after(frame.ticket, [] {});
+    require(context.deferred_destruction().retire_completed(frame.ticket) == 1,
+            "runtime services should expose deferred destruction state");
 }
