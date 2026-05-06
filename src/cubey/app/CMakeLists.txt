@@ -1,5 +1,6 @@
 add_library(cubey_app STATIC
     glfw_window.cpp
+    windowed_host.cpp
 )
 add_library(cubey::app ALIAS cubey_app)
 
