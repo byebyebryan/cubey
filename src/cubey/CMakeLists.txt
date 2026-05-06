@@ -64,7 +64,15 @@ target_link_libraries(
     cubey
     PUBLIC
         cubey_project_options
+        glm::glm
         PkgConfig::VULKAN_LOADER
     PRIVATE
         cubey_project_warnings
+)
+
+target_compile_definitions(
+    cubey
+    PUBLIC
+        GLM_FORCE_DEPTH_ZERO_TO_ONE
+        GLM_FORCE_RADIANS
 )
