@@ -286,10 +286,13 @@ Examples can stay explicit. Projects should use this boundary once it exists.
 
 Initial implementation: `ProjectContext` exposes jobs, uploads, captures, frame
 tickets, and deferred destruction as services. `ProjectRuntimeServices` owns
-those services and issues `ProjectFrame` values from `FrameTiming`. `ProjectFrame`,
-`ProjectExtent`, `RenderPacket`, and the `ProjectLike` concept define the first
-compile-time checked lifecycle shape for future `projects/` code. `fluid_2d`
-now consumes `ProjectFrame` for simulation timing, but examples remain direct.
+those services and issues `ProjectFrame` values from `FrameTiming`.
+`ProjectRuntimeAdapter` adds the thin host bridge for same-frame project-frame
+reuse, project context access, and deferred destruction retirement.
+`ProjectFrame`, `ProjectExtent`, `RenderPacket`, and the `ProjectLike` concept
+define the first compile-time checked lifecycle shape for future `projects/`
+code. `fluid_2d` now consumes `ProjectFrame` for simulation timing, but
+examples remain direct.
 
 ## Error Handling And Shutdown
 
@@ -363,6 +366,8 @@ Status: initial pass complete.
   tickets, and deferred destruction.
 - Added `ProjectRuntimeServices` as the first project-owned service bundle and
   frame-ticket issuer.
+- Added `ProjectRuntimeAdapter` as the first thin host bridge over those
+  services without owning project lifecycle callbacks.
 - Added a `ProjectLike` concept for setup/update/render-packet/resize/shutdown
   lifecycle checks.
 - The first real project now consumes `ProjectFrame` for timing; frame packets
@@ -390,7 +395,7 @@ Status: frame-ticket/deferred-destruction initial pass complete.
 - Should the current standard-library `cubey::jobs` implementation stay long
   term, or should a future workload justify swapping in Taskflow or
   `BS::thread_pool` behind the same API?
-- Should `ProjectRuntimeServices` grow into a project adapter, or should the
-  next project keep using the windowed/headless hosts directly?
+- Should `ProjectRuntimeAdapter` grow into a project host, or should the next
+  project keep using the windowed/headless hosts directly?
 - Should GPU capture polling or queued uploads become the first real
   Vulkan-backed async path?

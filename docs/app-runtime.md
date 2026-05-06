@@ -103,6 +103,9 @@ resource creation/destruction, update, command recording, and shutdown.
     Status: complete.
 12. Add project runtime services and move `fluid_2d` simulation timing onto
     `ProjectFrame` in both windowed and headless modes. Status: complete.
+13. Extract `ProjectRuntimeAdapter` for the repeated host bridge: one project
+    frame per host frame, context access, and deferred destruction retirement.
+    Status: complete.
 
 ## Current Checkpoint
 
@@ -126,10 +129,13 @@ resource creation/destruction, update, command recording, and shutdown.
   headless host while keeping their resource setup, simulation/update work, and
   capture command recording local.
 - `cubey::ProjectRuntimeServices` now owns project-facing jobs, uploads,
-  captures, frame tickets, and deferred destruction. `fluid_2d` uses it to
-  create `ProjectFrame` values for simulation in both hosts.
-- A generic project host or adapter is still deferred; the current evidence only
-  justifies shared service ownership and frame vocabulary.
+  captures, frame tickets, and deferred destruction.
+- `cubey::ProjectRuntimeAdapter` wraps those services with the repeated
+  host-bridge behavior: convert `FrameTiming` to one `ProjectFrame` per host
+  frame, expose `ProjectContext`, and retire deferred destruction on shutdown.
+  `fluid_2d` uses the adapter in both windowed and headless modes.
+- A generic project host is still deferred; the current evidence only justifies
+  shared service ownership and frame bridging.
 
 ## Promotion Rules
 
@@ -141,7 +147,7 @@ resource creation/destruction, update, command recording, and shutdown.
 - Add more input/UI hosting only as examples or projects need it.
 - Keep the headless host narrow: no scene/render abstraction, no implicit
   project lifecycle, and no GLFW dependency.
-- Promote a project lifecycle adapter only after another `projects/` target
+- Promote a full project lifecycle host only after another `projects/` target
   repeats the same setup/update/render/shutdown bridge.
 
 ## Current Non-Goals

@@ -115,8 +115,9 @@ Current checkpoint:
   `DeferredDestructionQueue` provide the first frame-ticket retirement
   vocabulary.
 - Reusable `cubey::ProjectContext`, `ProjectFrame`, `ProjectExtent`,
-  `RenderPacket`, `ProjectRuntimeServices`, and `ProjectLike` provide the first
-  async-ready project runtime vocabulary and service ownership bundle.
+  `RenderPacket`, `ProjectRuntimeServices`, `ProjectRuntimeAdapter`, and
+  `ProjectLike` provide the first async-ready project runtime vocabulary,
+  service ownership bundle, and thin host bridge.
 - Reusable `cubey::vulkan::PipelineLayout`, `GraphicsPipeline`,
   `ComputePipeline`, `DescriptorSetLayout`, and `DescriptorPool` own basic
   pipeline and descriptor lifetimes while still taking raw Vulkan create-info
@@ -283,6 +284,8 @@ building a full threaded renderer too early.
   and shutdown contracts.
 - Added `ProjectRuntimeServices` and moved `fluid_2d` simulation timing onto
   `ProjectFrame` while keeping command recording project-local.
+- Added `ProjectRuntimeAdapter` and moved `fluid_2d` onto it while keeping host
+  callbacks and command recording project-local.
 - Shape GPU readbacks and deeper capture polling as queued work.
 - Keep GPU ownership and `VkQueue` submission serialized through one owner.
 - Keep examples direct; require longer-lived `projects/` to use the
@@ -346,6 +349,8 @@ has proven useful.
 - Project lifecycle vocabulary: setup, update, render packet, resize, shutdown.
 - Project runtime services for jobs, uploads, captures, frame tickets, deferred
   destruction, and `ProjectFrame` creation. Status: complete.
+- Thin project runtime adapter for one project frame per host frame, context
+  access, and deferred destruction retirement. Status: complete.
 - Narrow no-GLFW headless PNG host that shares no-window instance/device,
   offscreen target, capture transitions, readback, and artifact writing. Status:
   complete for current headless examples and `fluid_2d`.

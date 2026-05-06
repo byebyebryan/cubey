@@ -64,7 +64,7 @@ image-transition and dynamic-rendering helpers, frame clock, orbit-controller,
 CPU job facade, PNG capture queue,
 upload request queue,
 frame tickets/deferred destruction, async-ready project runtime vocabulary,
-project runtime services,
+project runtime services and adapter,
 binary file I/O, SPIR-V file loading, pipeline ownership, dynamic graphics
 pipeline setup including blend state, descriptor setup/write helpers including
 descriptor set bundles and storage buffers, compute pipeline setup, depth

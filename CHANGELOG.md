@@ -70,6 +70,9 @@ versioned section and use that section as the release notes.
 - Public `ProjectRuntimeServices` owner for project-facing jobs, uploads,
   captures, frame tickets, deferred destruction, and `ProjectFrame` creation
   from frame timing.
+- Public `ProjectRuntimeAdapter` for the narrow host bridge: same-frame
+  `ProjectFrame` reuse, new-frame ticket issue, project context access, and
+  deferred destruction retirement.
 - Public frame timing, orbit-controller, and frame-stat types for interactive
   windowed examples.
 - `examples/window_clear`, a minimal Vulkan/GLFW dynamic-rendering windowed
@@ -145,7 +148,7 @@ versioned section and use that section as the release notes.
   the shared no-GLFW headless PNG host while keeping resource setup, simulation,
   and command recording local to each runnable.
 - `fluid_2d` simulation steps now consume `ProjectFrame` values from shared
-  project runtime services in both windowed and headless modes, while keeping
+  project runtime adapter in both windowed and headless modes, while keeping
   Vulkan command recording and resource policy project-local.
 
 ## Pre-2.0 History

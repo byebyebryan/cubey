@@ -54,17 +54,19 @@ output deterministic.
 
 ## Checkpoint 4
 
-Status: project frame integration complete.
+Status: project runtime adapter integration complete.
 
 Goal: make the first project consume Cubey's runtime service vocabulary without
 creating a generic project host.
 
-- `fluid_2d` owns a `cubey::ProjectRuntimeServices` instance.
+- `fluid_2d` owns a `cubey::ProjectRuntimeAdapter` instance.
 - Windowed and headless simulation steps now use `cubey::ProjectFrame` for
   delta time, elapsed time, frame index, and frame tickets.
+- The adapter owns runtime services, caches one project frame per host frame,
+  exposes project context, and retires deferred destruction during shutdown.
 - Vulkan resource setup, compute dispatch recording, fullscreen draw recording,
   input handling, and shutdown remain project-local callbacks.
-- A broader project adapter remains deferred until another `projects/` target
+- A broader project host remains deferred until another `projects/` target
   repeats the same lifecycle bridge.
 
 Smoke commands:

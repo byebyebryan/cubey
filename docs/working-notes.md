@@ -67,6 +67,9 @@ As of 2026-05-06:
 - Promoted `cubey::ProjectRuntimeServices` as the first project-facing owner for
   jobs, uploads, captures, frame tickets, deferred destruction, and
   `ProjectFrame` creation from frame timing.
+- Promoted `cubey::ProjectRuntimeAdapter` as the thin reusable bridge between
+  concrete hosts and project frame vocabulary. It does not own window/headless
+  hosting, Vulkan command recording, or project lifecycle callbacks.
 - Promoted the first pipeline/descriptor ownership components:
   `PipelineLayout`, `GraphicsPipeline`, `ComputePipeline`,
   `DescriptorSetLayout`, and `DescriptorPool`. These wrappers own lifetimes but
@@ -472,7 +475,7 @@ env XDG_RUNTIME_DIR=/run/user/1000 WAYLAND_DISPLAY=wayland-1 DISPLAY=:1 XDG_CURR
   now has left-drag injection, pause/resume, reset, and dye/velocity/divergence/
   pressure render modes. Headless stays deterministic by using the procedural
   injector and fixed timing.
-- `fluid_2d` now owns `ProjectRuntimeServices` and records simulation from
+- `fluid_2d` now owns `ProjectRuntimeAdapter` and records simulation from
   `ProjectFrame` in both windowed and headless modes. This makes frame timing
   and frame tickets real project vocabulary without introducing a generic
   project host or moving Vulkan command recording out of the project.
