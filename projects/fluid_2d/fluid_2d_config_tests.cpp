@@ -28,6 +28,11 @@ int main() {
         require(cubey::projects::fluid_2d::field_byte_size(config) ==
                     sizeof(cubey::projects::fluid_2d::FluidCellGpu) * kExpectedCellCount,
                 "field byte size should cover one cell per grid location");
+        require(config.pressure_iterations == 24,
+                "fluid pressure solve should default to 24 Jacobi iterations");
+        require(cubey::projects::fluid_2d::scalar_field_byte_size(config) ==
+                    sizeof(float) * kExpectedCellCount,
+                "scalar field byte size should cover one float per grid location");
 
         cubey::RunConfig run_config;
         require(cubey::projects::fluid_2d::headless_frame_count(run_config) == 120,

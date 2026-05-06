@@ -16,8 +16,24 @@ headless modes.
 - Start with injection plus advection/fade compute passes.
 - Render dye through a fullscreen graphics pass.
 - Support a deterministic headless run that writes a PNG artifact.
-- Defer pressure projection, richer controls, and reusable headless/project
-  hosting until the first visible project path exists.
+- Deliberately defer pressure projection, richer controls, and reusable
+  headless/project hosting until the first visible project path exists.
+
+## Checkpoint 2
+
+Status: pressure projection complete.
+
+Goal: improve solver quality without extracting a renderer, scene system, or
+generic simulation abstraction.
+
+- Add scalar storage buffers for divergence and pressure ping-pong.
+- Compute divergence from the advected velocity field and reset pressure each
+  frame.
+- Run fixed-count Jacobi pressure iterations.
+- Subtract the pressure gradient from the velocity field in place so field A
+  remains the next frame's source and the render source.
+- Keep pressure resources and dispatch policy project-local until another
+  project repeats the shape.
 
 Smoke commands:
 
@@ -26,34 +42,29 @@ Smoke commands:
 ./build/dev/projects/fluid_2d/fluid_2d --headless --require-validation --frames 120 --width 640 --height 360 --output /tmp/cubey-fluid-2d.png
 ```
 
-## First Solver Shape
+## Current Solver Shape
 
-The first slice intentionally uses a simple visual solver:
+The current slice still values predictable runtime/framework pressure over a
+physically complete fluid, but it now includes the standard projection step:
 
 ```text
 field A -> inject -> field B
 field B -> advect/fade -> field A
+field A -> divergence + pressure reset
+pressure A/B -> Jacobi iterations
+field A + pressure -> subtract gradient in place
 field A -> fullscreen render
 ```
 
-Each field cell stores dye and velocity. The first version values predictable
-runtime/framework pressure over physically complete incompressible flow. The
-next solver slice can add divergence, pressure Jacobi iterations, and gradient
-subtraction once the project shell and headless artifact path are working.
+Each field cell stores dye and velocity. Divergence and pressure are separate
+scalar buffers, which keeps the field layout stable while pressure solve details
+remain local to this project.
 
-## Next Solver Slice
+## Next Slices
 
-Add pressure projection:
-
-```text
-field A -> inject -> field B
-field B -> advect/fade -> field A
-field A -> divergence -> divergence buffer
-pressure ping/pong -> Jacobi iterations
-field A + pressure -> subtract gradient -> field B
-field B -> fullscreen render
-```
-
-Keep this project-local until the repeated pieces are obvious. Likely reusable
-pressure points are buffer-ping-pong descriptors, fixed-step headless project
-execution, and GPU readback/capture polling.
+- Add richer interaction: pointer injection, pause/reset, and simple view/debug
+  toggles.
+- Add optional debug visualization for velocity, divergence, or pressure if the
+  solver needs tuning.
+- Revisit reusable helpers only after a second project repeats buffer
+  ping-pong descriptors, fixed-step headless execution, or GPU capture polling.

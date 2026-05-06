@@ -22,6 +22,7 @@ struct Fluid2DConfig {
     std::uint32_t grid_width = 256;
     std::uint32_t grid_height = 144;
     std::uint32_t compute_group_size = 8;
+    std::uint32_t pressure_iterations = 24;
     float fixed_delta_seconds = 1.0F / 60.0F;
     float dye_decay_per_second = 0.985F;
     float velocity_decay_per_second = 0.992F;
@@ -46,6 +47,14 @@ struct Fluid2DConfig {
         throw std::runtime_error("fluid field is too large");
     }
     return cell_count * sizeof(FluidCellGpu);
+}
+
+[[nodiscard]] inline std::size_t scalar_field_byte_size(const Fluid2DConfig& config) {
+    const std::size_t cell_count = field_cell_count(config);
+    if (cell_count > std::numeric_limits<std::size_t>::max() / sizeof(float)) {
+        throw std::runtime_error("fluid scalar field is too large");
+    }
+    return cell_count * sizeof(float);
 }
 
 [[nodiscard]] inline std::uint32_t headless_frame_count(const RunConfig& config) {

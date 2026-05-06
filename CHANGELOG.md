@@ -84,8 +84,9 @@ versioned section and use that section as the release notes.
   instanced screen-facing quads with procedural Gaussian splats and additive
   blending.
 - `projects/fluid_2d`, the first project target: a 2D dye-and-velocity compute
-  simulation with injection/advection passes, fullscreen rendering, config
-  tests, windowed smoke, and deterministic headless PNG smoke.
+  simulation with injection/advection passes, project-local pressure
+  projection, fullscreen rendering, config tests, windowed smoke, and
+  deterministic headless PNG smoke.
 - CTest smoke that accepts either successful window startup or the known
   no-display GLFW failure in terminal sessions.
 - CTest smoke for headless PNG artifact creation and PNG signature validation.

@@ -87,6 +87,39 @@ std::filesystem::path shader_path(const char* filename) {
     return pixel_count * kOutputBytesPerPixel;
 }
 
+struct DispatchGroups {
+    std::uint32_t x = 0;
+    std::uint32_t y = 0;
+};
+
+[[nodiscard]] DispatchGroups compute_dispatch_groups(const Fluid2DConfig& config) {
+    return {
+        .x = (config.grid_width + config.compute_group_size - 1U) / config.compute_group_size,
+        .y = (config.grid_height + config.compute_group_size - 1U) / config.compute_group_size,
+    };
+}
+
+[[nodiscard]] VkPushConstantRange simulation_push_constant_range() {
+    return {
+        .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
+        .offset = 0,
+        .size = sizeof(SimulationPushConstants),
+    };
+}
+
+struct ShaderWriteBarrier {
+    VkPipelineStageFlags dst_stage = 0;
+    VkAccessFlags dst_access = 0;
+};
+
+void record_shader_write_barrier(VkCommandBuffer command_buffer, ShaderWriteBarrier config) {
+    auto barrier = vk_struct<VkMemoryBarrier>(VK_STRUCTURE_TYPE_MEMORY_BARRIER);
+    barrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+    barrier.dstAccessMask = config.dst_access;
+    vkCmdPipelineBarrier(command_buffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, config.dst_stage, 0,
+                         1, &barrier, 0, nullptr, 0, nullptr);
+}
+
 class Fluid2DApp {
   public:
     explicit Fluid2DApp(RunConfig config) : config_(std::move(config)) {}
@@ -108,7 +141,7 @@ class Fluid2DApp {
         cubey::app::WindowedHost host(
             {
                 .run_config = config_,
-                .required_queue_flags = VK_QUEUE_GRAPHICS_BIT,
+                .required_queue_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
                 .swapchain_image_usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
                 .require_dynamic_rendering = true,
             },
@@ -194,12 +227,27 @@ class Fluid2DApp {
 
     void destroy_all_resources() {
         destroy_swapchain_resources();
+        projection_pipeline_.reset();
+        pressure_pipeline_.reset();
+        divergence_pipeline_.reset();
         advect_pipeline_.reset();
         inject_pipeline_.reset();
+        projection_pipeline_layout_.reset();
+        pressure_pipeline_layout_.reset();
+        divergence_pipeline_layout_.reset();
         compute_pipeline_layout_.reset();
         render_descriptors_.reset();
+        projection_descriptor_pool_.reset();
+        projection_descriptor_layout_.reset();
+        pressure_descriptor_pool_.reset();
+        pressure_descriptor_layout_.reset();
+        divergence_descriptor_pool_.reset();
+        divergence_descriptor_layout_.reset();
         compute_descriptor_pool_.reset();
         compute_descriptor_layout_.reset();
+        pressure_b_.reset();
+        pressure_a_.reset();
+        divergence_.reset();
         field_b_.reset();
         field_a_.reset();
     }
@@ -221,6 +269,16 @@ class Fluid2DApp {
                                                              VK_BUFFER_USAGE_STORAGE_BUFFER_BIT));
         field_b_.emplace(cubey::vulkan::upload_device_buffer(device, initial.data(), byte_size,
                                                              VK_BUFFER_USAGE_STORAGE_BUFFER_BIT));
+
+        const std::vector<float> scalar_initial(field_cell_count(fluid_config_), 0.0F);
+        const VkDeviceSize scalar_byte_size =
+            static_cast<VkDeviceSize>(scalar_field_byte_size(fluid_config_));
+        divergence_.emplace(cubey::vulkan::upload_device_buffer(
+            device, scalar_initial.data(), scalar_byte_size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT));
+        pressure_a_.emplace(cubey::vulkan::upload_device_buffer(
+            device, scalar_initial.data(), scalar_byte_size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT));
+        pressure_b_.emplace(cubey::vulkan::upload_device_buffer(
+            device, scalar_initial.data(), scalar_byte_size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT));
     }
 
     void create_descriptor_resources(cubey::vulkan::Device& device) {
@@ -241,6 +299,79 @@ class Fluid2DApp {
         compute_descriptor_pool_.emplace(device, compute_info.pool_info());
         inject_descriptor_set_ = compute_descriptor_pool().allocate(compute_descriptor_layout());
         advect_descriptor_set_ = compute_descriptor_pool().allocate(compute_descriptor_layout());
+
+        const std::array<cubey::vulkan::DescriptorSetBindingConfig, 4> divergence_bindings{{
+            {
+                .binding = 0,
+                .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+                .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT,
+            },
+            {
+                .binding = 1,
+                .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+                .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT,
+            },
+            {
+                .binding = 2,
+                .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+                .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT,
+            },
+            {
+                .binding = 3,
+                .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+                .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT,
+            },
+        }};
+        const cubey::vulkan::DescriptorSetInfo divergence_info(divergence_bindings);
+        divergence_descriptor_layout_.emplace(device, divergence_info.layout_info());
+        divergence_descriptor_pool_.emplace(device, divergence_info.pool_info());
+        divergence_descriptor_set_ =
+            divergence_descriptor_pool().allocate(divergence_descriptor_layout());
+
+        const std::array<cubey::vulkan::DescriptorSetBindingConfig, 3> pressure_bindings{{
+            {
+                .binding = 0,
+                .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+                .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT,
+            },
+            {
+                .binding = 1,
+                .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+                .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT,
+            },
+            {
+                .binding = 2,
+                .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+                .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT,
+            },
+        }};
+        const cubey::vulkan::DescriptorSetInfo pressure_info(pressure_bindings, 2);
+        pressure_descriptor_layout_.emplace(device, pressure_info.layout_info());
+        pressure_descriptor_pool_.emplace(device, pressure_info.pool_info());
+        pressure_a_to_b_descriptor_set_ =
+            pressure_descriptor_pool().allocate(pressure_descriptor_layout());
+        pressure_b_to_a_descriptor_set_ =
+            pressure_descriptor_pool().allocate(pressure_descriptor_layout());
+
+        const std::array<cubey::vulkan::DescriptorSetBindingConfig, 2> projection_bindings{{
+            {
+                .binding = 0,
+                .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+                .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT,
+            },
+            {
+                .binding = 1,
+                .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+                .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT,
+            },
+        }};
+        const cubey::vulkan::DescriptorSetInfo projection_info(projection_bindings, 2);
+        projection_descriptor_layout_.emplace(device, projection_info.layout_info());
+        projection_descriptor_pool_.emplace(device, projection_info.pool_info());
+        projection_pressure_a_descriptor_set_ =
+            projection_descriptor_pool().allocate(projection_descriptor_layout());
+        projection_pressure_b_descriptor_set_ =
+            projection_descriptor_pool().allocate(projection_descriptor_layout());
 
         const std::array<cubey::vulkan::DescriptorSetBindingConfig, 1> render_bindings{{
             {
@@ -271,49 +402,123 @@ class Fluid2DApp {
         const cubey::vulkan::DescriptorBufferWrite render_source =
             cubey::vulkan::storage_buffer_descriptor(render_descriptors().set(), 0,
                                                      field_a().handle(), field_a().size());
-        const std::array<VkWriteDescriptorSet, 5> writes{
-            inject_source.descriptor_write(), inject_destination.descriptor_write(),
-            advect_source.descriptor_write(), advect_destination.descriptor_write(),
-            render_source.descriptor_write(),
+        const cubey::vulkan::DescriptorBufferWrite divergence_source =
+            cubey::vulkan::storage_buffer_descriptor(divergence_descriptor_set_, 0,
+                                                     field_a().handle(), field_a().size());
+        const cubey::vulkan::DescriptorBufferWrite divergence_destination =
+            cubey::vulkan::storage_buffer_descriptor(divergence_descriptor_set_, 1,
+                                                     divergence().handle(), divergence().size());
+        const cubey::vulkan::DescriptorBufferWrite divergence_pressure_a =
+            cubey::vulkan::storage_buffer_descriptor(divergence_descriptor_set_, 2,
+                                                     pressure_a().handle(), pressure_a().size());
+        const cubey::vulkan::DescriptorBufferWrite divergence_pressure_b =
+            cubey::vulkan::storage_buffer_descriptor(divergence_descriptor_set_, 3,
+                                                     pressure_b().handle(), pressure_b().size());
+        const cubey::vulkan::DescriptorBufferWrite pressure_a_to_b_divergence =
+            cubey::vulkan::storage_buffer_descriptor(pressure_a_to_b_descriptor_set_, 0,
+                                                     divergence().handle(), divergence().size());
+        const cubey::vulkan::DescriptorBufferWrite pressure_a_to_b_source =
+            cubey::vulkan::storage_buffer_descriptor(pressure_a_to_b_descriptor_set_, 1,
+                                                     pressure_a().handle(), pressure_a().size());
+        const cubey::vulkan::DescriptorBufferWrite pressure_a_to_b_destination =
+            cubey::vulkan::storage_buffer_descriptor(pressure_a_to_b_descriptor_set_, 2,
+                                                     pressure_b().handle(), pressure_b().size());
+        const cubey::vulkan::DescriptorBufferWrite pressure_b_to_a_divergence =
+            cubey::vulkan::storage_buffer_descriptor(pressure_b_to_a_descriptor_set_, 0,
+                                                     divergence().handle(), divergence().size());
+        const cubey::vulkan::DescriptorBufferWrite pressure_b_to_a_source =
+            cubey::vulkan::storage_buffer_descriptor(pressure_b_to_a_descriptor_set_, 1,
+                                                     pressure_b().handle(), pressure_b().size());
+        const cubey::vulkan::DescriptorBufferWrite pressure_b_to_a_destination =
+            cubey::vulkan::storage_buffer_descriptor(pressure_b_to_a_descriptor_set_, 2,
+                                                     pressure_a().handle(), pressure_a().size());
+        const cubey::vulkan::DescriptorBufferWrite projection_pressure_a_field =
+            cubey::vulkan::storage_buffer_descriptor(projection_pressure_a_descriptor_set_, 0,
+                                                     field_a().handle(), field_a().size());
+        const cubey::vulkan::DescriptorBufferWrite projection_pressure_a_pressure =
+            cubey::vulkan::storage_buffer_descriptor(projection_pressure_a_descriptor_set_, 1,
+                                                     pressure_a().handle(), pressure_a().size());
+        const cubey::vulkan::DescriptorBufferWrite projection_pressure_b_field =
+            cubey::vulkan::storage_buffer_descriptor(projection_pressure_b_descriptor_set_, 0,
+                                                     field_a().handle(), field_a().size());
+        const cubey::vulkan::DescriptorBufferWrite projection_pressure_b_pressure =
+            cubey::vulkan::storage_buffer_descriptor(projection_pressure_b_descriptor_set_, 1,
+                                                     pressure_b().handle(), pressure_b().size());
+
+        const std::array<cubey::vulkan::DescriptorBufferWrite, 19> buffer_writes{
+            inject_source,
+            inject_destination,
+            advect_source,
+            advect_destination,
+            render_source,
+            divergence_source,
+            divergence_destination,
+            divergence_pressure_a,
+            divergence_pressure_b,
+            pressure_a_to_b_divergence,
+            pressure_a_to_b_source,
+            pressure_a_to_b_destination,
+            pressure_b_to_a_divergence,
+            pressure_b_to_a_source,
+            pressure_b_to_a_destination,
+            projection_pressure_a_field,
+            projection_pressure_a_pressure,
+            projection_pressure_b_field,
+            projection_pressure_b_pressure,
         };
+        std::array<VkWriteDescriptorSet, buffer_writes.size()> writes{};
+        for (std::size_t index = 0; index < buffer_writes.size(); ++index) {
+            writes[index] = buffer_writes[index].descriptor_write();
+        }
         cubey::vulkan::update_descriptor_sets(device, writes);
     }
 
-    void create_compute_pipelines(cubey::vulkan::Device& device) {
-        const VkPushConstantRange compute_push_constant{
-            .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
-            .offset = 0,
-            .size = sizeof(SimulationPushConstants),
-        };
-        const std::array<VkDescriptorSetLayout, 1> set_layouts{compute_descriptor_layout()};
+    static void create_compute_layout(cubey::vulkan::Device& device,
+                                      VkDescriptorSetLayout descriptor_layout,
+                                      std::optional<cubey::vulkan::PipelineLayout>& destination) {
+        const VkPushConstantRange compute_push_constant = simulation_push_constant_range();
+        const std::array<VkDescriptorSetLayout, 1> set_layouts{descriptor_layout};
         const std::array<VkPushConstantRange, 1> push_constants{compute_push_constant};
         const cubey::vulkan::PipelineLayoutInfo layout_info({
             .set_layouts = set_layouts,
             .push_constants = push_constants,
         });
-        compute_pipeline_layout_.emplace(device, layout_info.create_info());
+        destination.emplace(device, layout_info.create_info());
+    }
 
-        const std::vector<std::uint32_t> inject_code =
-            cubey::read_spirv_file(shader_path("fluid_2d_inject.comp.spv"));
-        cubey::vulkan::ShaderModule inject_shader(device, inject_code);
-        const VkPipelineShaderStageCreateInfo inject_stage =
-            cubey::vulkan::shader_stage(VK_SHADER_STAGE_COMPUTE_BIT, inject_shader.handle());
-        const cubey::vulkan::ComputePipelineInfo inject_info({
-            .layout = compute_pipeline_layout().handle(),
-            .shader_stage = inject_stage,
+    static void create_compute_pipeline_from_shader(
+        cubey::vulkan::Device& device, const char* filename,
+        const cubey::vulkan::PipelineLayout& pipeline_layout,
+        std::optional<cubey::vulkan::ComputePipeline>& destination) {
+        const std::vector<std::uint32_t> code = cubey::read_spirv_file(shader_path(filename));
+        cubey::vulkan::ShaderModule shader(device, code);
+        const VkPipelineShaderStageCreateInfo stage =
+            cubey::vulkan::shader_stage(VK_SHADER_STAGE_COMPUTE_BIT, shader.handle());
+        const cubey::vulkan::ComputePipelineInfo info({
+            .layout = pipeline_layout.handle(),
+            .shader_stage = stage,
         });
-        inject_pipeline_.emplace(device, inject_info.create_info());
+        destination.emplace(device, info.create_info());
+    }
 
-        const std::vector<std::uint32_t> advect_code =
-            cubey::read_spirv_file(shader_path("fluid_2d_advect.comp.spv"));
-        cubey::vulkan::ShaderModule advect_shader(device, advect_code);
-        const VkPipelineShaderStageCreateInfo advect_stage =
-            cubey::vulkan::shader_stage(VK_SHADER_STAGE_COMPUTE_BIT, advect_shader.handle());
-        const cubey::vulkan::ComputePipelineInfo advect_info({
-            .layout = compute_pipeline_layout().handle(),
-            .shader_stage = advect_stage,
-        });
-        advect_pipeline_.emplace(device, advect_info.create_info());
+    void create_compute_pipelines(cubey::vulkan::Device& device) {
+        create_compute_layout(device, compute_descriptor_layout(), compute_pipeline_layout_);
+        create_compute_pipeline_from_shader(device, "fluid_2d_inject.comp.spv",
+                                            compute_pipeline_layout(), inject_pipeline_);
+        create_compute_pipeline_from_shader(device, "fluid_2d_advect.comp.spv",
+                                            compute_pipeline_layout(), advect_pipeline_);
+
+        create_compute_layout(device, divergence_descriptor_layout(), divergence_pipeline_layout_);
+        create_compute_pipeline_from_shader(device, "fluid_2d_divergence.comp.spv",
+                                            divergence_pipeline_layout(), divergence_pipeline_);
+
+        create_compute_layout(device, pressure_descriptor_layout(), pressure_pipeline_layout_);
+        create_compute_pipeline_from_shader(device, "fluid_2d_pressure.comp.spv",
+                                            pressure_pipeline_layout(), pressure_pipeline_);
+
+        create_compute_layout(device, projection_descriptor_layout(), projection_pipeline_layout_);
+        create_compute_pipeline_from_shader(device, "fluid_2d_projection.comp.spv",
+                                            projection_pipeline_layout(), projection_pipeline_);
     }
 
     void create_render_pipeline(cubey::vulkan::Device& device, VkFormat color_format,
@@ -395,12 +600,7 @@ class Fluid2DApp {
 
     void record_fluid_compute(VkCommandBuffer command_buffer, const FrameTiming& timing) const {
         const SimulationPushConstants push_constants = simulation_push_constants(timing);
-        const std::uint32_t groups_x =
-            (fluid_config_.grid_width + fluid_config_.compute_group_size - 1U) /
-            fluid_config_.compute_group_size;
-        const std::uint32_t groups_y =
-            (fluid_config_.grid_height + fluid_config_.compute_group_size - 1U) /
-            fluid_config_.compute_group_size;
+        const DispatchGroups groups = compute_dispatch_groups(fluid_config_);
 
         vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE,
                           inject_pipeline().handle());
@@ -409,14 +609,14 @@ class Fluid2DApp {
                                 0, nullptr);
         vkCmdPushConstants(command_buffer, compute_pipeline_layout().handle(),
                            VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(push_constants), &push_constants);
-        vkCmdDispatch(command_buffer, groups_x, groups_y, 1);
+        vkCmdDispatch(command_buffer, groups.x, groups.y, 1);
 
-        auto compute_to_compute = vk_struct<VkMemoryBarrier>(VK_STRUCTURE_TYPE_MEMORY_BARRIER);
-        compute_to_compute.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
-        compute_to_compute.dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
-        vkCmdPipelineBarrier(command_buffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-                             VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 1, &compute_to_compute, 0,
-                             nullptr, 0, nullptr);
+        record_shader_write_barrier(
+            command_buffer,
+            {
+                .dst_stage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                .dst_access = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
+            });
 
         vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE,
                           advect_pipeline().handle());
@@ -425,14 +625,73 @@ class Fluid2DApp {
                                 0, nullptr);
         vkCmdPushConstants(command_buffer, compute_pipeline_layout().handle(),
                            VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(push_constants), &push_constants);
-        vkCmdDispatch(command_buffer, groups_x, groups_y, 1);
+        vkCmdDispatch(command_buffer, groups.x, groups.y, 1);
 
-        auto compute_to_fragment = vk_struct<VkMemoryBarrier>(VK_STRUCTURE_TYPE_MEMORY_BARRIER);
-        compute_to_fragment.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
-        compute_to_fragment.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-        vkCmdPipelineBarrier(command_buffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-                             VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 1, &compute_to_fragment, 0,
-                             nullptr, 0, nullptr);
+        record_shader_write_barrier(
+            command_buffer,
+            {
+                .dst_stage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                .dst_access = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
+            });
+
+        vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE,
+                          divergence_pipeline().handle());
+        vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE,
+                                divergence_pipeline_layout().handle(), 0, 1,
+                                &divergence_descriptor_set_, 0, nullptr);
+        vkCmdPushConstants(command_buffer, divergence_pipeline_layout().handle(),
+                           VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(push_constants), &push_constants);
+        vkCmdDispatch(command_buffer, groups.x, groups.y, 1);
+
+        record_shader_write_barrier(
+            command_buffer,
+            {
+                .dst_stage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                .dst_access = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
+            });
+
+        vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE,
+                          pressure_pipeline().handle());
+        for (std::uint32_t iteration = 0; iteration < fluid_config_.pressure_iterations;
+             ++iteration) {
+            const VkDescriptorSet descriptor_set = (iteration % 2U == 0)
+                                                       ? pressure_a_to_b_descriptor_set_
+                                                       : pressure_b_to_a_descriptor_set_;
+            vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE,
+                                    pressure_pipeline_layout().handle(), 0, 1, &descriptor_set, 0,
+                                    nullptr);
+            vkCmdPushConstants(command_buffer, pressure_pipeline_layout().handle(),
+                               VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(push_constants),
+                               &push_constants);
+            vkCmdDispatch(command_buffer, groups.x, groups.y, 1);
+            record_shader_write_barrier(
+                command_buffer,
+                {
+                    .dst_stage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                    .dst_access = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
+                });
+        }
+
+        const bool final_pressure_is_a = (fluid_config_.pressure_iterations % 2U) == 0;
+        const VkDescriptorSet projection_descriptor_set =
+            final_pressure_is_a ? projection_pressure_a_descriptor_set_
+                                : projection_pressure_b_descriptor_set_;
+        vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE,
+                          projection_pipeline().handle());
+        vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE,
+                                projection_pipeline_layout().handle(), 0, 1,
+                                &projection_descriptor_set, 0, nullptr);
+        vkCmdPushConstants(command_buffer, projection_pipeline_layout().handle(),
+                           VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(push_constants), &push_constants);
+        vkCmdDispatch(command_buffer, groups.x, groups.y, 1);
+
+        record_shader_write_barrier(
+            command_buffer,
+            {
+                .dst_stage =
+                    VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                .dst_access = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
+            });
     }
 
     void record_fullscreen_draw(VkCommandBuffer command_buffer, VkImageView image_view,
@@ -583,6 +842,27 @@ class Fluid2DApp {
         return field_b_.value();
     }
 
+    [[nodiscard]] const cubey::vulkan::Buffer& divergence() const {
+        if (!divergence_.has_value()) {
+            throw std::runtime_error("fluid divergence field is not initialized");
+        }
+        return divergence_.value();
+    }
+
+    [[nodiscard]] const cubey::vulkan::Buffer& pressure_a() const {
+        if (!pressure_a_.has_value()) {
+            throw std::runtime_error("fluid pressure field A is not initialized");
+        }
+        return pressure_a_.value();
+    }
+
+    [[nodiscard]] const cubey::vulkan::Buffer& pressure_b() const {
+        if (!pressure_b_.has_value()) {
+            throw std::runtime_error("fluid pressure field B is not initialized");
+        }
+        return pressure_b_.value();
+    }
+
     [[nodiscard]] VkDescriptorSetLayout compute_descriptor_layout() const {
         if (!compute_descriptor_layout_.has_value()) {
             throw std::runtime_error("compute descriptor layout is not initialized");
@@ -595,6 +875,48 @@ class Fluid2DApp {
             throw std::runtime_error("compute descriptor pool is not initialized");
         }
         return compute_descriptor_pool_.value();
+    }
+
+    [[nodiscard]] VkDescriptorSetLayout divergence_descriptor_layout() const {
+        if (!divergence_descriptor_layout_.has_value()) {
+            throw std::runtime_error("divergence descriptor layout is not initialized");
+        }
+        return divergence_descriptor_layout_->handle();
+    }
+
+    [[nodiscard]] const cubey::vulkan::DescriptorPool& divergence_descriptor_pool() const {
+        if (!divergence_descriptor_pool_.has_value()) {
+            throw std::runtime_error("divergence descriptor pool is not initialized");
+        }
+        return divergence_descriptor_pool_.value();
+    }
+
+    [[nodiscard]] VkDescriptorSetLayout pressure_descriptor_layout() const {
+        if (!pressure_descriptor_layout_.has_value()) {
+            throw std::runtime_error("pressure descriptor layout is not initialized");
+        }
+        return pressure_descriptor_layout_->handle();
+    }
+
+    [[nodiscard]] const cubey::vulkan::DescriptorPool& pressure_descriptor_pool() const {
+        if (!pressure_descriptor_pool_.has_value()) {
+            throw std::runtime_error("pressure descriptor pool is not initialized");
+        }
+        return pressure_descriptor_pool_.value();
+    }
+
+    [[nodiscard]] VkDescriptorSetLayout projection_descriptor_layout() const {
+        if (!projection_descriptor_layout_.has_value()) {
+            throw std::runtime_error("projection descriptor layout is not initialized");
+        }
+        return projection_descriptor_layout_->handle();
+    }
+
+    [[nodiscard]] const cubey::vulkan::DescriptorPool& projection_descriptor_pool() const {
+        if (!projection_descriptor_pool_.has_value()) {
+            throw std::runtime_error("projection descriptor pool is not initialized");
+        }
+        return projection_descriptor_pool_.value();
     }
 
     [[nodiscard]] const cubey::vulkan::DescriptorSetBundle& render_descriptors() const {
@@ -611,6 +933,27 @@ class Fluid2DApp {
         return compute_pipeline_layout_.value();
     }
 
+    [[nodiscard]] const cubey::vulkan::PipelineLayout& divergence_pipeline_layout() const {
+        if (!divergence_pipeline_layout_.has_value()) {
+            throw std::runtime_error("divergence pipeline layout is not initialized");
+        }
+        return divergence_pipeline_layout_.value();
+    }
+
+    [[nodiscard]] const cubey::vulkan::PipelineLayout& pressure_pipeline_layout() const {
+        if (!pressure_pipeline_layout_.has_value()) {
+            throw std::runtime_error("pressure pipeline layout is not initialized");
+        }
+        return pressure_pipeline_layout_.value();
+    }
+
+    [[nodiscard]] const cubey::vulkan::PipelineLayout& projection_pipeline_layout() const {
+        if (!projection_pipeline_layout_.has_value()) {
+            throw std::runtime_error("projection pipeline layout is not initialized");
+        }
+        return projection_pipeline_layout_.value();
+    }
+
     [[nodiscard]] const cubey::vulkan::ComputePipeline& inject_pipeline() const {
         if (!inject_pipeline_.has_value()) {
             throw std::runtime_error("inject pipeline is not initialized");
@@ -623,6 +966,27 @@ class Fluid2DApp {
             throw std::runtime_error("advect pipeline is not initialized");
         }
         return advect_pipeline_.value();
+    }
+
+    [[nodiscard]] const cubey::vulkan::ComputePipeline& divergence_pipeline() const {
+        if (!divergence_pipeline_.has_value()) {
+            throw std::runtime_error("divergence pipeline is not initialized");
+        }
+        return divergence_pipeline_.value();
+    }
+
+    [[nodiscard]] const cubey::vulkan::ComputePipeline& pressure_pipeline() const {
+        if (!pressure_pipeline_.has_value()) {
+            throw std::runtime_error("pressure pipeline is not initialized");
+        }
+        return pressure_pipeline_.value();
+    }
+
+    [[nodiscard]] const cubey::vulkan::ComputePipeline& projection_pipeline() const {
+        if (!projection_pipeline_.has_value()) {
+            throw std::runtime_error("projection pipeline is not initialized");
+        }
+        return projection_pipeline_.value();
     }
 
     [[nodiscard]] const cubey::vulkan::PipelineLayout& render_pipeline_layout() const {
@@ -645,14 +1009,34 @@ class Fluid2DApp {
     std::optional<cubey::vulkan::Device> headless_device_;
     std::optional<cubey::vulkan::Buffer> field_a_;
     std::optional<cubey::vulkan::Buffer> field_b_;
+    std::optional<cubey::vulkan::Buffer> divergence_;
+    std::optional<cubey::vulkan::Buffer> pressure_a_;
+    std::optional<cubey::vulkan::Buffer> pressure_b_;
     std::optional<cubey::vulkan::DescriptorSetLayout> compute_descriptor_layout_;
     std::optional<cubey::vulkan::DescriptorPool> compute_descriptor_pool_;
     VkDescriptorSet inject_descriptor_set_ = VK_NULL_HANDLE;
     VkDescriptorSet advect_descriptor_set_ = VK_NULL_HANDLE;
+    std::optional<cubey::vulkan::DescriptorSetLayout> divergence_descriptor_layout_;
+    std::optional<cubey::vulkan::DescriptorPool> divergence_descriptor_pool_;
+    VkDescriptorSet divergence_descriptor_set_ = VK_NULL_HANDLE;
+    std::optional<cubey::vulkan::DescriptorSetLayout> pressure_descriptor_layout_;
+    std::optional<cubey::vulkan::DescriptorPool> pressure_descriptor_pool_;
+    VkDescriptorSet pressure_a_to_b_descriptor_set_ = VK_NULL_HANDLE;
+    VkDescriptorSet pressure_b_to_a_descriptor_set_ = VK_NULL_HANDLE;
+    std::optional<cubey::vulkan::DescriptorSetLayout> projection_descriptor_layout_;
+    std::optional<cubey::vulkan::DescriptorPool> projection_descriptor_pool_;
+    VkDescriptorSet projection_pressure_a_descriptor_set_ = VK_NULL_HANDLE;
+    VkDescriptorSet projection_pressure_b_descriptor_set_ = VK_NULL_HANDLE;
     std::optional<cubey::vulkan::DescriptorSetBundle> render_descriptors_;
     std::optional<cubey::vulkan::PipelineLayout> compute_pipeline_layout_;
+    std::optional<cubey::vulkan::PipelineLayout> divergence_pipeline_layout_;
+    std::optional<cubey::vulkan::PipelineLayout> pressure_pipeline_layout_;
+    std::optional<cubey::vulkan::PipelineLayout> projection_pipeline_layout_;
     std::optional<cubey::vulkan::ComputePipeline> inject_pipeline_;
     std::optional<cubey::vulkan::ComputePipeline> advect_pipeline_;
+    std::optional<cubey::vulkan::ComputePipeline> divergence_pipeline_;
+    std::optional<cubey::vulkan::ComputePipeline> pressure_pipeline_;
+    std::optional<cubey::vulkan::ComputePipeline> projection_pipeline_;
     std::optional<cubey::vulkan::PipelineLayout> render_pipeline_layout_;
     std::optional<cubey::vulkan::GraphicsPipeline> render_pipeline_;
 };

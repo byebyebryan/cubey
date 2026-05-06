@@ -312,6 +312,9 @@ cubey/
         shaders/
           fluid_2d_inject.comp
           fluid_2d_advect.comp
+          fluid_2d_divergence.comp
+          fluid_2d_pressure.comp
+          fluid_2d_projection.comp
           fluid_2d.vert
           fluid_2d_render.frag
       fluid_sim/

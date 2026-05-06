@@ -455,6 +455,10 @@ env XDG_RUNTIME_DIR=/run/user/1000 WAYLAND_DISPLAY=wayland-1 DISPLAY=:1 XDG_CURR
   a deterministic injector, the existing offscreen render/readback helpers, and
   a PNG smoke test. This proves project-level headless output without extracting
   a shared headless host yet.
-- The solver is intentionally incomplete: no divergence, pressure solve, or
-  gradient subtraction yet. The next fluid slice should improve solver quality
-  before promoting renderer or scene abstractions.
+- Pressure projection now runs project-local: divergence and pressure buffers
+  are scalar storage buffers, Jacobi iterations ping-pong pressure A/B, and the
+  gradient subtraction updates field A in place so the next frame and render
+  path keep the existing source field.
+- This still should not promote renderer, scene, or generic solver
+  abstractions. The next useful pressure is interaction/debug control or a
+  second project that repeats the same resource shape.

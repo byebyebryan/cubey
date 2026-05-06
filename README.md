@@ -56,8 +56,8 @@ navigation and a headless PNG mode.
 `examples/particles` adds compute-updated attractor particles rendered as
 instanced screen-facing quads with procedural Gaussian splats.
 `projects/fluid_2d` is the first project target: a 2D dye-and-velocity field
-with compute injection/advection, fullscreen rendering, and deterministic
-headless PNG output.
+with compute injection/advection, pressure projection, fullscreen rendering,
+and deterministic headless PNG output.
 `cubey` owns the reusable GLM-backed math wrapper, Vulkan instance, device,
 buffer, image, sampler, swapchain, shader-module, command-pool,
 image-transition and dynamic-rendering helpers, frame clock, orbit-controller,
@@ -141,9 +141,9 @@ the cursor, `R` resets the view, and Escape closes the window.
 `particles` supports basic controls: Space pauses/resumes compute updates, `R`
 resets the particle field, and Escape closes the window.
 
-`fluid_2d` currently runs a deterministic compute-updated dye field. Escape
-closes the window. Pressure projection and richer interaction are planned
-follow-up slices.
+`fluid_2d` currently runs a deterministic compute-updated dye field with a
+project-local pressure projection pass. Escape closes the window. Richer
+interaction is a planned follow-up slice.
 
 The repo also includes:
 
