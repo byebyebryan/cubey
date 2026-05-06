@@ -1,7 +1,7 @@
 #version 450
 
 layout(push_constant) uniform RenderParams {
-    vec4 grid_time;
+    vec4 grid_debug;
 } params;
 
 struct Cell {
@@ -12,6 +12,18 @@ struct Cell {
 layout(set = 0, binding = 0, std430) readonly buffer RenderField {
     Cell cells[];
 } render_field;
+
+layout(set = 0, binding = 1, std430) readonly buffer DivergenceField {
+    float values[];
+} divergence_field;
+
+layout(set = 0, binding = 2, std430) readonly buffer PressureAField {
+    float values[];
+} pressure_a_field;
+
+layout(set = 0, binding = 3, std430) readonly buffer PressureBField {
+    float values[];
+} pressure_b_field;
 
 layout(location = 0) in vec2 frag_position;
 layout(location = 0) out vec4 out_color;
@@ -38,12 +50,69 @@ Cell sample_field(vec2 uv, uint width, uint height) {
     return result;
 }
 
+float sample_divergence(vec2 uv, uint width, uint height) {
+    vec2 position = uv * vec2(width, height) - vec2(0.5);
+    ivec2 base = ivec2(floor(position));
+    vec2 fraction = fract(position);
+
+    uint index_a = cell_index(base, width, height);
+    uint index_b = cell_index(base + ivec2(1, 0), width, height);
+    uint index_c = cell_index(base + ivec2(0, 1), width, height);
+    uint index_d = cell_index(base + ivec2(1, 1), width, height);
+
+    float a = divergence_field.values[index_a];
+    float b = divergence_field.values[index_b];
+    float c = divergence_field.values[index_c];
+    float d = divergence_field.values[index_d];
+    return mix(mix(a, b, fraction.x), mix(c, d, fraction.x), fraction.y);
+}
+
+float sample_pressure(vec2 uv, uint width, uint height) {
+    vec2 position = uv * vec2(width, height) - vec2(0.5);
+    ivec2 base = ivec2(floor(position));
+    vec2 fraction = fract(position);
+    bool use_pressure_b = params.grid_debug.w > 0.5;
+
+    uint index_a = cell_index(base, width, height);
+    uint index_b = cell_index(base + ivec2(1, 0), width, height);
+    uint index_c = cell_index(base + ivec2(0, 1), width, height);
+    uint index_d = cell_index(base + ivec2(1, 1), width, height);
+
+    float a = use_pressure_b ? pressure_b_field.values[index_a] : pressure_a_field.values[index_a];
+    float b = use_pressure_b ? pressure_b_field.values[index_b] : pressure_a_field.values[index_b];
+    float c = use_pressure_b ? pressure_b_field.values[index_c] : pressure_a_field.values[index_c];
+    float d = use_pressure_b ? pressure_b_field.values[index_d] : pressure_a_field.values[index_d];
+    return mix(mix(a, b, fraction.x), mix(c, d, fraction.x), fraction.y);
+}
+
+vec3 signed_scalar_color(float value, float scale) {
+    float positive = clamp(value * scale, 0.0, 1.0);
+    float negative = clamp(-value * scale, 0.0, 1.0);
+    return vec3(0.08, 0.09, 0.11) + vec3(0.88, 0.22, 0.08) * positive +
+           vec3(0.10, 0.42, 0.92) * negative;
+}
+
 void main() {
     vec2 uv = frag_position * 0.5 + 0.5;
-    uint width = uint(params.grid_time.x);
-    uint height = uint(params.grid_time.y);
+    uint width = uint(params.grid_debug.x);
+    uint height = uint(params.grid_debug.y);
+    int debug_mode = int(params.grid_debug.z + 0.5);
     Cell cell = sample_field(uv, width, height);
     float speed = clamp(length(cell.velocity.xy) * 0.45, 0.0, 1.0);
+    if (debug_mode == 1) {
+        vec2 direction = speed > 0.001 ? normalize(cell.velocity.xy) : vec2(0.0);
+        out_color = vec4(vec3(direction * 0.35 + 0.5, speed), 1.0);
+        return;
+    }
+    if (debug_mode == 2) {
+        out_color = vec4(signed_scalar_color(sample_divergence(uv, width, height), 24.0), 1.0);
+        return;
+    }
+    if (debug_mode == 3) {
+        out_color = vec4(signed_scalar_color(sample_pressure(uv, width, height), 5.0), 1.0);
+        return;
+    }
+
     vec3 dye = clamp(cell.dye.rgb, vec3(0.0), vec3(1.0));
     vec3 velocity_tint = vec3(0.04, 0.10, 0.16) + vec3(0.05, 0.12, 0.20) * speed;
     out_color = vec4(dye + velocity_tint, 1.0);

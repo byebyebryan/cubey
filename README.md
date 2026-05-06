@@ -141,9 +141,10 @@ the cursor, `R` resets the view, and Escape closes the window.
 `particles` supports basic controls: Space pauses/resumes compute updates, `R`
 resets the particle field, and Escape closes the window.
 
-`fluid_2d` currently runs a deterministic compute-updated dye field with a
-project-local pressure projection pass. Escape closes the window. Richer
-interaction is a planned follow-up slice.
+`fluid_2d` currently runs a compute-updated dye field with project-local
+pressure projection. Left-drag injects dye and force, Space pauses/resumes
+simulation, `R` resets the field, `D` cycles dye/velocity/divergence/pressure
+views, and Escape closes the window. Headless mode remains deterministic.
 
 The repo also includes:
 

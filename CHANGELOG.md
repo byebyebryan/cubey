@@ -85,8 +85,9 @@ versioned section and use that section as the release notes.
   blending.
 - `projects/fluid_2d`, the first project target: a 2D dye-and-velocity compute
   simulation with injection/advection passes, project-local pressure
-  projection, fullscreen rendering, config tests, windowed smoke, and
-  deterministic headless PNG smoke.
+  projection, pointer injection, pause/reset controls, debug render modes,
+  fullscreen rendering, config tests, windowed smoke, and deterministic
+  headless PNG smoke.
 - CTest smoke that accepts either successful window startup or the known
   no-display GLFW failure in terminal sessions.
 - CTest smoke for headless PNG artifact creation and PNG signature validation.

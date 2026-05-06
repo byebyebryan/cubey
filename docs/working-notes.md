@@ -459,6 +459,10 @@ env XDG_RUNTIME_DIR=/run/user/1000 WAYLAND_DISPLAY=wayland-1 DISPLAY=:1 XDG_CURR
   are scalar storage buffers, Jacobi iterations ping-pong pressure A/B, and the
   gradient subtraction updates field A in place so the next frame and render
   path keep the existing source field.
+- Interaction and debug views also stayed project-local. Windowed `fluid_2d`
+  now has left-drag injection, pause/resume, reset, and dye/velocity/divergence/
+  pressure render modes. Headless stays deterministic by using the procedural
+  injector and fixed timing.
 - This still should not promote renderer, scene, or generic solver
-  abstractions. The next useful pressure is interaction/debug control or a
-  second project that repeats the same resource shape.
+  abstractions. The next useful pressure is solver tuning or a second project
+  that repeats the same resource shape.

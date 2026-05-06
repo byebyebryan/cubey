@@ -307,13 +307,14 @@ Current project:
 
 - `projects/fluid_2d` starts the fluid simulation rewrite as a smaller 2D
   dye-and-velocity field. The current checkpoint has compute
-  injection/advection, pressure projection, fullscreen rendering, a windowed
-  smoke, and deterministic headless PNG output.
+  injection/advection, pressure projection, pointer injection, pause/reset,
+  debug render modes, fullscreen rendering, a windowed smoke, and
+  deterministic headless PNG output.
 
 Candidate follow-ups:
 
-- Interaction and debug controls for `fluid_2d`: pointer injection,
-  pause/reset, and optional velocity/divergence/pressure visualization.
+- Solver tuning for `fluid_2d` now that velocity/divergence/pressure views are
+  inspectable.
 - Marching cubes for compute-generated geometry and indirect draw pressure.
 - SDF sculpting if the sparse resource model becomes the more interesting
   framework driver.

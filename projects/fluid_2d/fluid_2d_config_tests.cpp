@@ -33,6 +33,22 @@ int main() {
         require(cubey::projects::fluid_2d::scalar_field_byte_size(config) ==
                     sizeof(float) * kExpectedCellCount,
                 "scalar field byte size should cover one float per grid location");
+        require(cubey::projects::fluid_2d::next_debug_view(
+                    cubey::projects::fluid_2d::FluidDebugView::Dye) ==
+                    cubey::projects::fluid_2d::FluidDebugView::Velocity,
+                "debug view should cycle from dye to velocity");
+        require(cubey::projects::fluid_2d::next_debug_view(
+                    cubey::projects::fluid_2d::FluidDebugView::Velocity) ==
+                    cubey::projects::fluid_2d::FluidDebugView::Divergence,
+                "debug view should cycle from velocity to divergence");
+        require(cubey::projects::fluid_2d::next_debug_view(
+                    cubey::projects::fluid_2d::FluidDebugView::Divergence) ==
+                    cubey::projects::fluid_2d::FluidDebugView::Pressure,
+                "debug view should cycle from divergence to pressure");
+        require(cubey::projects::fluid_2d::next_debug_view(
+                    cubey::projects::fluid_2d::FluidDebugView::Pressure) ==
+                    cubey::projects::fluid_2d::FluidDebugView::Dye,
+                "debug view should cycle from pressure to dye");
 
         cubey::RunConfig run_config;
         require(cubey::projects::fluid_2d::headless_frame_count(run_config) == 120,

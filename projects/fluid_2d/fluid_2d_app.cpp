@@ -20,6 +20,7 @@
 
 #include <vulkan/vulkan.h>
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstddef>
@@ -48,11 +49,12 @@ using cubey::vulkan::check;
 using cubey::vulkan::vk_struct;
 
 constexpr float kFallbackInjectionRadius = 0.08F;
+constexpr float kPointerInjectionRadius = 0.065F;
 constexpr VkFormat kHeadlessOutputFormat = VK_FORMAT_R8G8B8A8_UNORM;
 constexpr std::size_t kOutputBytesPerPixel = 4;
 
 struct RenderPushConstants {
-    std::array<float, 4> grid_time{};
+    std::array<float, 4> grid_debug{};
 };
 
 struct SimulationPushConstants {
@@ -112,6 +114,11 @@ struct ShaderWriteBarrier {
     VkAccessFlags dst_access = 0;
 };
 
+struct TransferWriteBarrier {
+    VkPipelineStageFlags dst_stage = 0;
+    VkAccessFlags dst_access = 0;
+};
+
 void record_shader_write_barrier(VkCommandBuffer command_buffer, ShaderWriteBarrier config) {
     auto barrier = vk_struct<VkMemoryBarrier>(VK_STRUCTURE_TYPE_MEMORY_BARRIER);
     barrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
@@ -119,6 +126,31 @@ void record_shader_write_barrier(VkCommandBuffer command_buffer, ShaderWriteBarr
     vkCmdPipelineBarrier(command_buffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, config.dst_stage, 0,
                          1, &barrier, 0, nullptr, 0, nullptr);
 }
+
+void record_transfer_write_barrier(VkCommandBuffer command_buffer, TransferWriteBarrier config) {
+    auto barrier = vk_struct<VkMemoryBarrier>(VK_STRUCTURE_TYPE_MEMORY_BARRIER);
+    barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    barrier.dstAccessMask = config.dst_access;
+    vkCmdPipelineBarrier(command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, config.dst_stage, 0, 1,
+                         &barrier, 0, nullptr, 0, nullptr);
+}
+
+[[nodiscard]] float debug_view_push_value(FluidDebugView view) {
+    return static_cast<float>(static_cast<std::uint32_t>(view));
+}
+
+struct PointerState {
+    bool left_down = false;
+    bool has_cursor = false;
+    cubey::app::CursorPosition cursor{};
+    cubey::app::CursorPosition accumulated_delta{};
+};
+
+struct FrameInjection {
+    bool active = false;
+    std::array<float, 2> xy{};
+    std::array<float, 2> force{};
+};
 
 class Fluid2DApp {
   public:
@@ -158,14 +190,17 @@ class Fluid2DApp {
                         destroy_swapchain_resources();
                     },
                 .on_ready =
-                    [](cubey::app::WindowedAppContext& context) {
+                    [this](cubey::app::WindowedAppContext& context) {
                         setup_input(context);
                         std::printf("fluid_2d: %s rendering 2D fluid project at %ux%u\n",
                                     context.device().device_name(),
                                     context.swapchain().extent().width,
                                     context.swapchain().extent().height);
                     },
-                .update = {},
+                .update =
+                    [this](cubey::app::WindowedAppContext& context, const FrameTiming& timing) {
+                        update_interaction(context, timing);
+                    },
                 .record_frame =
                     [this](cubey::app::WindowedAppContext& context, VkCommandBuffer command_buffer,
                            std::uint32_t image_index, const FrameTiming& timing) {
@@ -208,16 +243,72 @@ class Fluid2DApp {
         headless_device_.emplace(headless_instance(), device_config);
     }
 
-    static void setup_input(cubey::app::WindowedAppContext& context) {
+    void setup_input(cubey::app::WindowedAppContext& context) {
         cubey::app::GlfwWindow* window = &context.window();
-        window->set_key_callback([window](const cubey::app::KeyEvent& event) {
+        window->set_key_callback([this, window](const cubey::app::KeyEvent& event) {
             if (event.action != cubey::app::KeyAction::Press) {
                 return;
             }
             if (event.key == cubey::app::Key::Escape) {
                 window->request_close();
+            } else if (event.key == cubey::app::Key::Space) {
+                paused_ = !paused_;
+            } else if (event.key == cubey::app::Key::R) {
+                reset_requested_ = true;
+            } else if (event.key == cubey::app::Key::D) {
+                debug_view_ = next_debug_view(debug_view_);
             }
         });
+        window->set_mouse_button_callback([this](const cubey::app::MouseButtonEvent& event) {
+            if (event.button != cubey::app::MouseButton::Left) {
+                return;
+            }
+            pointer_.left_down = event.action == cubey::app::MouseButtonAction::Press;
+            pointer_.has_cursor = true;
+            pointer_.cursor = event.cursor;
+            pointer_.accumulated_delta = {};
+        });
+        window->set_cursor_position_callback([this](const cubey::app::CursorPositionEvent& event) {
+            if (pointer_.left_down && pointer_.has_cursor) {
+                pointer_.accumulated_delta.x += event.cursor.x - pointer_.cursor.x;
+                pointer_.accumulated_delta.y += event.cursor.y - pointer_.cursor.y;
+            }
+            pointer_.has_cursor = true;
+            pointer_.cursor = event.cursor;
+        });
+    }
+
+    void update_interaction(cubey::app::WindowedAppContext& context, const FrameTiming& timing) {
+        (void)timing;
+        const VkExtent2D extent = context.swapchain().extent();
+        frame_injection_ = {};
+        if (!pointer_.left_down || !pointer_.has_cursor || extent.width == 0 ||
+            extent.height == 0) {
+            pointer_.accumulated_delta = {};
+            return;
+        }
+
+        const float width = static_cast<float>(extent.width);
+        const float height = static_cast<float>(extent.height);
+        const float cursor_x = static_cast<float>(pointer_.cursor.x);
+        const float cursor_y = static_cast<float>(pointer_.cursor.y);
+        const float delta_x = static_cast<float>(pointer_.accumulated_delta.x);
+        const float delta_y = static_cast<float>(pointer_.accumulated_delta.y);
+
+        frame_injection_ = {
+            .active = true,
+            .xy =
+                {
+                    std::clamp(cursor_x / width, 0.0F, 1.0F),
+                    std::clamp(1.0F - (cursor_y / height), 0.0F, 1.0F),
+                },
+            .force =
+                {
+                    std::clamp((delta_x / width) * 90.0F, -8.0F, 8.0F),
+                    std::clamp((-delta_y / height) * 90.0F, -8.0F, 8.0F),
+                },
+        };
+        pointer_.accumulated_delta = {};
     }
 
     void destroy_swapchain_resources() {
@@ -373,9 +464,24 @@ class Fluid2DApp {
         projection_pressure_b_descriptor_set_ =
             projection_descriptor_pool().allocate(projection_descriptor_layout());
 
-        const std::array<cubey::vulkan::DescriptorSetBindingConfig, 1> render_bindings{{
+        const std::array<cubey::vulkan::DescriptorSetBindingConfig, 4> render_bindings{{
             {
                 .binding = 0,
+                .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+                .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
+            },
+            {
+                .binding = 1,
+                .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+                .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
+            },
+            {
+                .binding = 2,
+                .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+                .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
+            },
+            {
+                .binding = 3,
                 .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
                 .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
             },
@@ -402,6 +508,15 @@ class Fluid2DApp {
         const cubey::vulkan::DescriptorBufferWrite render_source =
             cubey::vulkan::storage_buffer_descriptor(render_descriptors().set(), 0,
                                                      field_a().handle(), field_a().size());
+        const cubey::vulkan::DescriptorBufferWrite render_divergence =
+            cubey::vulkan::storage_buffer_descriptor(render_descriptors().set(), 1,
+                                                     divergence().handle(), divergence().size());
+        const cubey::vulkan::DescriptorBufferWrite render_pressure_a =
+            cubey::vulkan::storage_buffer_descriptor(render_descriptors().set(), 2,
+                                                     pressure_a().handle(), pressure_a().size());
+        const cubey::vulkan::DescriptorBufferWrite render_pressure_b =
+            cubey::vulkan::storage_buffer_descriptor(render_descriptors().set(), 3,
+                                                     pressure_b().handle(), pressure_b().size());
         const cubey::vulkan::DescriptorBufferWrite divergence_source =
             cubey::vulkan::storage_buffer_descriptor(divergence_descriptor_set_, 0,
                                                      field_a().handle(), field_a().size());
@@ -445,12 +560,15 @@ class Fluid2DApp {
             cubey::vulkan::storage_buffer_descriptor(projection_pressure_b_descriptor_set_, 1,
                                                      pressure_b().handle(), pressure_b().size());
 
-        const std::array<cubey::vulkan::DescriptorBufferWrite, 19> buffer_writes{
+        const std::array<cubey::vulkan::DescriptorBufferWrite, 22> buffer_writes{
             inject_source,
             inject_destination,
             advect_source,
             advect_destination,
             render_source,
+            render_divergence,
+            render_pressure_a,
+            render_pressure_b,
             divergence_source,
             divergence_destination,
             divergence_pressure_a,
@@ -566,6 +684,22 @@ class Fluid2DApp {
         const float time = static_cast<float>(timing.elapsed_seconds);
         const float dt =
             std::min(static_cast<float>(timing.delta_seconds), fluid_config_.fixed_delta_seconds);
+        const bool pointer_active = frame_injection_.active;
+        const float injection_x =
+            pointer_active ? frame_injection_.xy[0] : 0.5F + (std::cos(time * 0.73F) * 0.23F);
+        const float injection_y =
+            pointer_active ? frame_injection_.xy[1] : 0.5F + (std::sin(time * 0.91F) * 0.18F);
+        const float injection_radius =
+            pointer_active ? kPointerInjectionRadius : kFallbackInjectionRadius;
+        const float injection_strength = pointer_active ? 11.0F : 8.0F;
+        const std::array<float, 3> injection_dye =
+            pointer_active
+                ? std::array<float, 3>{0.98F, 0.32F, 0.13F}
+                : std::array<float, 3>{0.12F + (0.18F * std::sin(time * 0.47F)), 0.46F, 0.92F};
+        const float force_x =
+            pointer_active ? frame_injection_.force[0] : -std::sin(time * 0.91F) * 1.8F;
+        const float force_y =
+            pointer_active ? frame_injection_.force[1] : std::cos(time * 0.73F) * 1.8F;
         return {
             .grid_dt_time =
                 {
@@ -576,29 +710,52 @@ class Fluid2DApp {
                 },
             .injection_xy_radius_strength =
                 {
-                    0.5F + (std::cos(time * 0.73F) * 0.23F),
-                    0.5F + (std::sin(time * 0.91F) * 0.18F),
-                    kFallbackInjectionRadius,
-                    8.0F,
+                    injection_x,
+                    injection_y,
+                    injection_radius,
+                    injection_strength,
                 },
             .injection_dye_active =
                 {
-                    0.12F + (0.18F * std::sin(time * 0.47F)),
-                    0.46F,
-                    0.92F,
-                    0.0F,
+                    injection_dye[0],
+                    injection_dye[1],
+                    injection_dye[2],
+                    1.0F,
                 },
             .force_decay =
                 {
-                    -std::sin(time * 0.91F) * 1.8F,
-                    std::cos(time * 0.73F) * 1.8F,
+                    force_x,
+                    force_y,
                     fluid_config_.dye_decay_per_second,
                     fluid_config_.velocity_decay_per_second,
                 },
         };
     }
 
-    void record_fluid_compute(VkCommandBuffer command_buffer, const FrameTiming& timing) const {
+    void record_field_reset(VkCommandBuffer command_buffer) const {
+        vkCmdFillBuffer(command_buffer, field_a().handle(), 0, field_a().size(), 0);
+        vkCmdFillBuffer(command_buffer, field_b().handle(), 0, field_b().size(), 0);
+        vkCmdFillBuffer(command_buffer, divergence().handle(), 0, divergence().size(), 0);
+        vkCmdFillBuffer(command_buffer, pressure_a().handle(), 0, pressure_a().size(), 0);
+        vkCmdFillBuffer(command_buffer, pressure_b().handle(), 0, pressure_b().size(), 0);
+        record_transfer_write_barrier(
+            command_buffer,
+            {
+                .dst_stage =
+                    VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                .dst_access = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
+            });
+    }
+
+    void record_fluid_compute(VkCommandBuffer command_buffer, const FrameTiming& timing) {
+        if (reset_requested_) {
+            record_field_reset(command_buffer);
+            reset_requested_ = false;
+        }
+        if (paused_) {
+            return;
+        }
+
         const SimulationPushConstants push_constants = simulation_push_constants(timing);
         const DispatchGroups groups = compute_dispatch_groups(fluid_config_);
 
@@ -695,7 +852,7 @@ class Fluid2DApp {
     }
 
     void record_fullscreen_draw(VkCommandBuffer command_buffer, VkImageView image_view,
-                                VkExtent2D extent, const FrameTiming& timing) const {
+                                VkExtent2D extent) const {
         VkClearValue clear{};
         clear.color = {{0.006F, 0.008F, 0.014F, 1.0F}};
         const VkRenderingAttachmentInfo color_attachment =
@@ -709,11 +866,12 @@ class Fluid2DApp {
         rendering.pColorAttachments = &color_attachment;
 
         const RenderPushConstants push_constants{
-            .grid_time =
+            .grid_debug =
                 {
                     static_cast<float>(fluid_config_.grid_width),
                     static_cast<float>(fluid_config_.grid_height),
-                    static_cast<float>(timing.elapsed_seconds),
+                    debug_view_push_value(debug_view_),
+                    (fluid_config_.pressure_iterations % 2U) == 0 ? 0.0F : 1.0F,
                 },
         };
 
@@ -745,7 +903,7 @@ class Fluid2DApp {
             command_buffer, cubey::vulkan::begin_color_attachment_transition(swapchain_image));
 
         record_fullscreen_draw(command_buffer, swapchain.image_views().at(swapchain_image_index),
-                               swapchain.extent(), timing);
+                               swapchain.extent());
 
         cubey::vulkan::transition_image_layout(
             command_buffer,
@@ -754,20 +912,19 @@ class Fluid2DApp {
         check(vkEndCommandBuffer(command_buffer), "vkEndCommandBuffer fluid_2d");
     }
 
-    void record_headless_simulation_frame(const FrameTiming& timing) const {
+    void record_headless_simulation_frame(const FrameTiming& timing) {
         cubey::vulkan::ImmediateCommands commands(headless_device());
         record_fluid_compute(commands.command_buffer(), timing);
         commands.submit_and_wait();
     }
 
-    void record_headless_render(cubey::vulkan::Image& render_target, VkExtent2D extent,
-                                const FrameTiming& timing) const {
+    void record_headless_render(cubey::vulkan::Image& render_target, VkExtent2D extent) const {
         cubey::vulkan::ImmediateCommands commands(headless_device());
         const VkCommandBuffer command_buffer = commands.command_buffer();
         cubey::vulkan::transition_image_layout(
             command_buffer,
             cubey::vulkan::begin_color_attachment_transition(render_target.handle()));
-        record_fullscreen_draw(command_buffer, render_target.view(), extent, timing);
+        record_fullscreen_draw(command_buffer, render_target.view(), extent);
         cubey::vulkan::transition_image_layout(
             command_buffer,
             cubey::vulkan::finish_color_attachment_for_readback_transition(render_target.handle()));
@@ -787,7 +944,7 @@ class Fluid2DApp {
         for (std::uint32_t frame = 1; frame <= frames; ++frame) {
             record_headless_simulation_frame(fixed_headless_timing(fluid_config_, frame));
         }
-        record_headless_render(render_target, extent, fixed_headless_timing(fluid_config_, frames));
+        record_headless_render(render_target, extent);
 
         const std::size_t byte_size = checked_pixel_byte_size(extent.width, extent.height);
         const VkDeviceSize readback_byte_size = static_cast<VkDeviceSize>(byte_size);
@@ -1005,6 +1162,11 @@ class Fluid2DApp {
 
     RunConfig config_;
     Fluid2DConfig fluid_config_;
+    PointerState pointer_;
+    FrameInjection frame_injection_;
+    FluidDebugView debug_view_ = FluidDebugView::Dye;
+    bool paused_ = false;
+    bool reset_requested_ = false;
     std::optional<cubey::vulkan::Instance> headless_instance_;
     std::optional<cubey::vulkan::Device> headless_device_;
     std::optional<cubey::vulkan::Buffer> field_a_;

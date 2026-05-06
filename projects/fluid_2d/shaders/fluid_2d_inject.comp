@@ -41,11 +41,12 @@ void main() {
     float dt = params.grid_dt_time.z;
 
     vec3 dye = max(params.injection_dye_active.rgb, vec3(0.0));
+    float inject_active = clamp(params.injection_dye_active.w, 0.0, 1.0);
     vec2 force = params.force_decay.xy;
     float strength = params.injection_xy_radius_strength.w;
-    cell.dye.rgb += dye * splat * strength * dt;
+    cell.dye.rgb += dye * splat * strength * inject_active * dt;
     cell.dye.a = 1.0;
-    cell.velocity.xy += force * splat * dt;
+    cell.velocity.xy += force * splat * inject_active * dt;
 
     destination_field.cells[index] = cell;
 }

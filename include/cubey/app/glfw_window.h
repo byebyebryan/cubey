@@ -13,6 +13,7 @@ namespace cubey::app {
 
 enum class Key {
     Unknown,
+    D,
     Escape,
     R,
     Space,

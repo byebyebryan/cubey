@@ -18,6 +18,13 @@ struct FluidCellGpu {
 
 static_assert(sizeof(FluidCellGpu) == sizeof(float) * 8U);
 
+enum class FluidDebugView : std::uint32_t {
+    Dye = 0,
+    Velocity = 1,
+    Divergence = 2,
+    Pressure = 3,
+};
+
 struct Fluid2DConfig {
     std::uint32_t grid_width = 256;
     std::uint32_t grid_height = 144;
@@ -27,6 +34,20 @@ struct Fluid2DConfig {
     float dye_decay_per_second = 0.985F;
     float velocity_decay_per_second = 0.992F;
 };
+
+[[nodiscard]] inline FluidDebugView next_debug_view(FluidDebugView view) {
+    switch (view) {
+    case FluidDebugView::Dye:
+        return FluidDebugView::Velocity;
+    case FluidDebugView::Velocity:
+        return FluidDebugView::Divergence;
+    case FluidDebugView::Divergence:
+        return FluidDebugView::Pressure;
+    case FluidDebugView::Pressure:
+        return FluidDebugView::Dye;
+    }
+    return FluidDebugView::Dye;
+}
 
 [[nodiscard]] inline std::size_t field_cell_count(const Fluid2DConfig& config) {
     if (config.grid_width == 0 || config.grid_height == 0) {

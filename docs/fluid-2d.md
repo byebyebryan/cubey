@@ -35,6 +35,20 @@ generic simulation abstraction.
 - Keep pressure resources and dispatch policy project-local until another
   project repeats the shape.
 
+## Checkpoint 3
+
+Status: interaction and debug views complete.
+
+Goal: make the first project steerable and inspectable while keeping headless
+output deterministic.
+
+- Left-drag injects dye and cursor-derived force into the fluid field.
+- Space pauses/resumes simulation without closing the window.
+- `R` clears dye, velocity, divergence, and pressure buffers.
+- `D` cycles render modes: dye, velocity, divergence, pressure.
+- Headless mode continues to use the procedural injector and fixed timing so
+  smoke output remains stable.
+
 Smoke commands:
 
 ```bash
@@ -62,9 +76,7 @@ remain local to this project.
 
 ## Next Slices
 
-- Add richer interaction: pointer injection, pause/reset, and simple view/debug
-  toggles.
-- Add optional debug visualization for velocity, divergence, or pressure if the
-  solver needs tuning.
+- Tune the solver now that velocity, divergence, and pressure are visible.
+- Consider a minimal project-local HUD only if title-bar stats are not enough.
 - Revisit reusable helpers only after a second project repeats buffer
   ping-pong descriptors, fixed-step headless execution, or GPU capture polling.
