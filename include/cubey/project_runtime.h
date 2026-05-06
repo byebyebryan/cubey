@@ -94,6 +94,7 @@ class ProjectRuntimeAdapter {
   private:
     ProjectRuntimeServices services_;
     ProjectFrame active_frame_;
+    bool has_active_frame_ = false;
 };
 
 template <typename T>

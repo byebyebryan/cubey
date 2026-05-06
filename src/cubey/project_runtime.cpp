@@ -51,9 +51,10 @@ ProjectContext ProjectRuntimeAdapter::context() {
 }
 
 const ProjectFrame& ProjectRuntimeAdapter::frame_for_timing(const FrameTiming& timing) {
-    if (active_frame_.frame_index != timing.frame_index ||
+    if (!has_active_frame_ || active_frame_.frame_index != timing.frame_index ||
         active_frame_.elapsed_seconds != timing.elapsed_seconds) {
         active_frame_ = services_.begin_frame(timing);
+        has_active_frame_ = true;
     }
     return active_frame_;
 }

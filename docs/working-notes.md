@@ -442,8 +442,9 @@ env XDG_RUNTIME_DIR=/run/user/1000 WAYLAND_DISPLAY=wayland-1 DISPLAY=:1 XDG_CURR
   `textured_cube`, and the windowed `fractal` path onto `WindowedHost` too.
   Direct GLFW use is now isolated to `cubey_app`; examples depend on
   `cubey::app` for window hosting and keep their own shader, pipeline,
-  descriptor, render-resource, and command-recording policy. `headless_render`
-  and `fractal --headless` remain explicit no-window paths.
+  descriptor, render-resource, and command-recording policy. At that point,
+  `headless_render` and `fractal --headless` still owned explicit no-window
+  paths; they later moved onto `HeadlessPngHost`.
 
 ### 2026-05-06
 

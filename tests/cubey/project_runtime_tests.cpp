@@ -136,6 +136,10 @@ void test_project_runtime_services_create_project_frames_and_context() {
 void test_project_runtime_adapter_reuses_frame_for_same_timing() {
     cubey::ProjectRuntimeAdapter adapter(1);
 
+    const cubey::ProjectFrame& initial = adapter.frame_for_timing({});
+    require(initial.ticket.value == 1,
+            "runtime adapter should issue a valid ticket for an initial zero timing");
+
     const cubey::FrameTiming first_timing{
         .delta_seconds = 0.016,
         .elapsed_seconds = 0.5,
