@@ -99,6 +99,11 @@ As of 2026-05-06:
 - Promoted the narrow pieces needed for the first headless artifact path:
   offscreen color render-target config, color-attachment-to-readback transition,
   and `cubey::image_io` PNG writing backed by vendored `stb_image_write`.
+- Promoted `cubey::HeadlessPngHost` after `headless_render`,
+  `fractal --headless`, and `fluid_2d --headless` repeated the same no-window
+  host mechanics. It owns instance/device setup, offscreen target creation,
+  capture transitions, readback, and PNG writing without pulling GLFW into the
+  base `cubey` target.
 - Promoted `SwapchainRecreateTracker` for the one clearly repeated frame-loop
   policy: bounding consecutive out-of-date/suboptimal recreate attempts. The
   actual swapchain-sized resource rebuild order remains example-local.
@@ -162,6 +167,7 @@ env XDG_RUNTIME_DIR=/run/user/1000 WAYLAND_DISPLAY=wayland-1 DISPLAY=:1 XDG_CURR
   ./build/dev/examples/particles/particles --require-validation --frames 300 --width 1280 --height 720
 ./build/dev/examples/headless_render/headless_render --require-validation --width 640 --height 360 --output /tmp/cubey-headless.png
 ./build/dev/examples/fractal/fractal --headless --require-validation --width 640 --height 360 --output /tmp/cubey-fractal.png
+./build/dev/projects/fluid_2d/fluid_2d --headless --require-validation --frames 120 --width 640 --height 360 --output /tmp/cubey-fluid-2d.png
 ```
 
 As of 2026-04-28:
@@ -351,10 +357,10 @@ env XDG_RUNTIME_DIR=/run/user/1000 WAYLAND_DISPLAY=wayland-1 DISPLAY=:1 XDG_CURR
   groups or material abstractions. The useful helper boundary is still Vulkan
   vocabulary: layout bindings, pool sizes, descriptor writes, pipeline layouts,
   compute pipeline create info, and explicit dispatch from the example.
-- The transfer/readback slice added the missing low-level pieces for future
-  headless artifacts without adding a headless host yet. Generated sampled
-  images now include transfer-source usage so compute outputs can be copied into
-  readback buffers once a headless smoke has a render target to inspect.
+- The transfer/readback slice added the missing low-level pieces for headless
+  artifacts before the host shape was clear. Generated sampled images now
+  include transfer-source usage so compute outputs can be copied into readback
+  buffers once a headless smoke has a render target to inspect.
 - The frame-loop cleanup slice only promoted recreate-attempt tracking. A
   generic swapchain resource rebuild callback would add indirection around code
   that still differs by example, so the rebuild steps stay visible until a host
@@ -452,9 +458,9 @@ env XDG_RUNTIME_DIR=/run/user/1000 WAYLAND_DISPLAY=wayland-1 DISPLAY=:1 XDG_CURR
   compute inject and advect/fade passes before rendering the dye field through a
   fullscreen graphics pass.
 - The project has both windowed and headless paths. Headless uses fixed timing,
-  a deterministic injector, the existing offscreen render/readback helpers, and
-  a PNG smoke test. This proves project-level headless output without extracting
-  a shared headless host yet.
+  a deterministic injector, the shared headless PNG host, and a PNG smoke test.
+  This proves project-level headless output without making the host responsible
+  for simulation or render policy.
 - Pressure projection now runs project-local: divergence and pressure buffers
   are scalar storage buffers, Jacobi iterations ping-pong pressure A/B, and the
   gradient subtraction updates field A in place so the next frame and render
@@ -466,3 +472,7 @@ env XDG_RUNTIME_DIR=/run/user/1000 WAYLAND_DISPLAY=wayland-1 DISPLAY=:1 XDG_CURR
 - This still should not promote renderer, scene, or generic solver
   abstractions. The next useful pressure is solver tuning or a second project
   that repeats the same resource shape.
+- The headless host extraction is intentionally narrow. It removed duplicate
+  no-window setup/readback/PNG plumbing from `headless_render`, `fractal`, and
+  `fluid_2d`, but capture command recording, resource setup, fixed-step
+  simulation, and project shutdown remain local callbacks.

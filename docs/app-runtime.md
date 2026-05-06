@@ -31,7 +31,8 @@ Keep GLFW and app hosting outside `cubey::vulkan`.
 
 ```text
 cubey
-  core runtime, jobs, uploads, captures, Vulkan ownership helpers
+  core runtime, jobs, uploads, captures, headless PNG host,
+  Vulkan ownership helpers
 
 cubey_app
   GLFW window host and windowed app host
@@ -92,8 +93,14 @@ resource creation/destruction, update, command recording, and shutdown.
    texture sampling. Status: complete.
 8. Migrate the windowed `examples/fractal` path while preserving its headless
    PNG path. Status: complete.
-9. Revisit headless hosting after a project or repeated headless examples make
-   the shared shape obvious.
+9. Extract a narrow no-GLFW headless PNG host after `headless_render`,
+   `fractal --headless`, and `fluid_2d --headless` repeated the same offscreen
+   render/readback/write loop. Status: complete.
+10. Migrate `examples/headless_render` and `examples/fractal --headless` to the
+    shared headless host. Status: complete.
+11. Migrate `projects/fluid_2d --headless` to the shared headless host while
+    preserving project-local compute simulation and fullscreen draw code.
+    Status: complete.
 
 ## Current Checkpoint
 
@@ -110,7 +117,12 @@ resource creation/destruction, update, command recording, and shutdown.
   `spinning_cube`, `textured_cube`, `fractal`, and `particles`. They still own
   their shaders, pipelines, descriptors, command recording, and example-specific
   state.
-- `headless_render` and `fractal --headless` remain explicit no-window paths.
+- `cubey::HeadlessPngHost` owns the repeated no-window Vulkan instance/device,
+  offscreen RGBA target, color-attachment/readback transitions, image readback,
+  and PNG write path without depending on GLFW.
+- `headless_render`, `fractal --headless`, and `fluid_2d --headless` use the
+  headless host while keeping their resource setup, simulation/update work, and
+  capture command recording local.
 
 ## Promotion Rules
 
@@ -120,8 +132,8 @@ resource creation/destruction, update, command recording, and shutdown.
   readable.
 - Prefer project-owned state over host-owned policy.
 - Add more input/UI hosting only as examples or projects need it.
-- Keep headless host extraction separate until a project or repeated headless
-  examples make the shared shape obvious.
+- Keep the headless host narrow: no scene/render abstraction, no implicit
+  project lifecycle, and no GLFW dependency.
 
 ## Current Non-Goals
 

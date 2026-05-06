@@ -58,6 +58,9 @@ versioned section and use that section as the release notes.
   `InlineExecutor`, and `JobHandle` result wrapper.
 - Public PNG capture queue that moves completed RGBA pixels into job-backed
   encoding work and returns an explicit completion ticket.
+- Public `HeadlessPngHost` for no-window Vulkan capture: instance/device setup,
+  offscreen RGBA render target, capture transitions, readback, and PNG artifact
+  writing behind project-provided render callbacks.
 - Public upload request queue that owns submitted CPU bytes until the GPU owner
   drains them.
 - Public frame ticket issuer and deferred destruction queue for retiring
@@ -135,6 +138,9 @@ versioned section and use that section as the release notes.
 - `window_clear`, `triangle`, `spinning_cube`, `textured_cube`, `fractal`, and
   `particles` now use the shared GLFW/windowed app host while keeping command
   recording and render resources example-local.
+- `headless_render`, `fractal --headless`, and `fluid_2d --headless` now use
+  the shared no-GLFW headless PNG host while keeping resource setup, simulation,
+  and command recording local to each runnable.
 
 ## Pre-2.0 History
 

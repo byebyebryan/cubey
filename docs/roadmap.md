@@ -168,8 +168,8 @@ Current checkpoint:
   it into a readback buffer, and writes a PNG artifact.
 - `examples/fractal` links against `cubey`, renders a fullscreen
   Mandelbrot-style fragment shader, supports example-local pan/zoom/reset
-  navigation through the shared app host, and reuses the explicit headless
-  render-target/readback/PNG path.
+  navigation through the shared app host, and reuses the shared headless PNG
+  host for no-window output.
 - `examples/particles` links against `cubey`, updates a storage-buffer particle
   field with a per-frame compute shader, inserts an explicit compute-to-vertex
   memory barrier, and renders the result as instanced screen-facing quads with
@@ -182,8 +182,8 @@ Current checkpoint:
   example-local.
 - Dev CTest covers the target in graphical, no-display terminal, and headless
   artifact sessions through shared windowed and PNG smoke helpers.
-- Frame overlap, split graphics/compute/present queue-family support, a shared
-  headless host, and external asset loading remain future slices.
+- Frame overlap, split graphics/compute/present queue-family support, GPU
+  capture polling, and external asset loading remain future slices.
 
 Alignment: the Vulkan layer now has visible windowed examples plus a minimal
 headless PNG path. Cubey has the first async-ready runtime vocabulary: CPU jobs
@@ -207,8 +207,8 @@ surface while keeping the runtime boundary concrete.
 - Wrote a simple deterministic PNG artifact.
 - Added CTest coverage for the no-display success path, including output-file
   existence and PNG signature checks.
-- Keep headless paths explicit unless a project or repeated headless examples
-  reveal reusable host shape.
+- Follow-up extraction added the shared no-GLFW `HeadlessPngHost` once repeated
+  examples and the first project revealed a concrete reusable shape.
 
 Exit criteria:
 
@@ -216,7 +216,8 @@ Exit criteria:
   PNG artifact in a terminal session.
 - The offscreen path reuses `cubey` resource/readback helpers and exposes any
   new layout assumptions by name.
-- The docs identify what still belongs to examples versus a future runtime host.
+- The docs identify what belongs to examples/projects versus reusable host
+  plumbing.
 
 ## Phase 3: Fractal Example
 
@@ -228,7 +229,7 @@ the headless artifact path without pretending to justify a project runtime.
 - Added `examples/fractal` as a fullscreen Mandelbrot-style shader smoke.
 - Kept windowed setup, command recording, and navigation example-local.
 - Reused existing dynamic graphics pipeline helpers.
-- Reused the headless render-target/readback/PNG path for deterministic output.
+- Reused the shared headless PNG host for deterministic output.
 - Did not promote fullscreen helpers; the example did not create enough pressure
   to justify another abstraction yet.
 
@@ -340,7 +341,9 @@ has proven useful.
 - Initial windowed host outside `cubey::vulkan`. Status: complete for current
   windowed examples.
 - Project lifecycle vocabulary: setup, update, render packet, resize, shutdown.
-- Optional headless host that shares project render code where practical.
+- Narrow no-GLFW headless PNG host that shares no-window instance/device,
+  offscreen target, capture transitions, readback, and artifact writing. Status:
+  complete for current headless examples and `fluid_2d`.
 - Input/UI hooks only after a project needs them.
 
 Exit criteria:

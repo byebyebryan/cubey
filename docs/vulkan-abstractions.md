@@ -133,17 +133,20 @@ Current state:
 - Shared image and image-transition helpers now cover the first offscreen color
   render target and color-attachment-to-readback transition used by headless
   output.
+- `HeadlessPngHost` owns the repeated no-window offscreen target, capture
+  transition, image readback, and PNG artifact write path.
 - Examples still own some resource policy, including when transfers and
   readback are used.
-- Upload and capture behavior is still direct/blocking at the example level.
+- GPU upload and capture behavior is still direct/blocking at the current
+  runnable/host level.
 
 Needed next:
 
 - Queue-shaped upload and capture requests that can execute synchronously at
   first, while keeping project code independent from blocking implementation
   details.
-- Reuse the headless output path from a real project so repeated host shape is
-  visible before deeper abstraction.
+- GPU capture polling and ticket integration once interactive capture becomes a
+  real workflow.
 
 Defer:
 
@@ -255,8 +258,10 @@ Current state:
   shared windowed loop, frame timing/stats hooks, and swapchain recreation for
   all current windowed examples.
 - Windowed examples still own shaders, pipelines, descriptors, swapchain-sized
-  render resources, command recording, and example behavior. The headless paths
-  own their no-window render/readback loops.
+  render resources, command recording, and example behavior.
+- `cubey::HeadlessPngHost` owns the repeated no-window Vulkan setup, offscreen
+  RGBA render target, capture transitions, readback buffer copy, and PNG write
+  path for current headless examples/projects.
 - Shared non-platform helpers cover frame timing, frame stats, and orbit
   control.
 
@@ -265,8 +270,8 @@ Needed later:
 - Project runtime vocabulary: setup, update, render packet, resize, shutdown.
 - `ProjectContext` services for CPU jobs, uploads, capture requests, timing,
   and eventually UI hooks.
-- Headless host that can share project render code and write inspectable
-  artifacts.
+- Higher-level host lifecycle only if a second project repeats project-level
+  setup/update/render/shutdown structure.
 
 Defer:
 
@@ -278,7 +283,8 @@ Defer:
 Current state:
 
 - The design is captured in [threading and async design](threading-and-async.md).
-- All current Vulkan work runs through direct example loops.
+- Current Vulkan work runs through narrow windowed/headless hosts plus
+  runnable-owned command recording.
 - `cubey::jobs::JobSystem`, `InlineExecutor`, and `JobHandle` provide the first
   CPU job facade.
 - `CaptureQueue` and `CaptureTicket` provide job-backed PNG encoding for
@@ -406,6 +412,9 @@ host.
 - Added the missing transition helper for the exact render-target readback path.
 - Copied the image into a readback buffer and wrote a deterministic PNG artifact.
 - Added CTest coverage for artifact creation in no-display terminal sessions.
+- Follow-up extraction added `cubey::HeadlessPngHost` and migrated
+  `headless_render`, `fractal --headless`, and `fluid_2d --headless` onto the
+  shared no-GLFW host.
 
 Keep this batch intentionally small. It should pressure render-target/readback
 vocabulary, not create a general app shell.
@@ -431,8 +440,7 @@ not a project runtime.
 - Status: initial pass complete on `main`.
 - Added `examples/fractal` with a fullscreen Mandelbrot-style fragment shader.
 - Kept windowed setup, command recording, and controls example-local.
-- Added a headless PNG path through the existing offscreen render-target/readback
-  helpers.
+- Added a headless PNG path through the shared no-GLFW host.
 - Added example-local view math for drag pan, wheel zoom, reset, and push
   constants.
 - Did not extract a fullscreen helper; the new code stayed clearer as explicit
@@ -494,9 +502,9 @@ resize, and shutdown may become worthwhile.
 Status: `projects/fluid_2d` now provides the first project-pressure checkpoint.
 It uses storage-buffer ping-pong fields, compute injection/advection,
 project-local pressure projection, pointer injection, debug render modes,
-fullscreen rendering, and explicit headless PNG output. The next useful
-pressure is solver tuning or another project with repeated resource needs, not
-a renderer abstraction.
+fullscreen rendering, and shared-host headless PNG output. The next useful
+pressure is solver tuning or another project with repeated lifecycle/resource
+needs, not a renderer abstraction.
 
 ## Near-Term Recommendation
 

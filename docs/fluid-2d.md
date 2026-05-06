@@ -48,6 +48,9 @@ output deterministic.
 - `D` cycles render modes: dye, velocity, divergence, pressure.
 - Headless mode continues to use the procedural injector and fixed timing so
   smoke output remains stable.
+- Headless output runs through `cubey::HeadlessPngHost`; the project still owns
+  field resources, compute simulation, render pipeline setup, and the fullscreen
+  capture draw.
 
 Smoke commands:
 
@@ -79,4 +82,5 @@ remain local to this project.
 - Tune the solver now that velocity, divergence, and pressure are visible.
 - Consider a minimal project-local HUD only if title-bar stats are not enough.
 - Revisit reusable helpers only after a second project repeats buffer
-  ping-pong descriptors, fixed-step headless execution, or GPU capture polling.
+  ping-pong descriptors, fixed-step simulation orchestration, or GPU capture
+  polling.

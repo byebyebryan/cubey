@@ -48,7 +48,7 @@ This is a ground-up rewrite carrying forward the same spirit with modern tools a
                                |
                     +----------v----------+
                     |   Cubey Runtime     |  <-- frame/input/resource helpers now;
-                    |                     |      app/window/UI/headless layers later
+                    |                     |      app/window/UI layers stay narrow
                     +----------+----------+
                                |
                     +----------v----------+
@@ -94,11 +94,17 @@ Core operations: create resources, dispatch compute, draw, synchronize, submit,
 present, and read back. In the first version, those operations map directly to
 Vulkan and remain free to expose Vulkan-specific requirements where useful.
 
-### Future App Interface
+### Current And Future App Interfaces
 
-This is not implemented yet. Current examples own their app loops and GLFW
-callbacks directly; the library only promotes reusable pieces once repeated
-shape is clear.
+Cubey now has two narrow hosts:
+
+- `cubey_app` owns GLFW window/surface hosting and the shared windowed loop.
+- `cubey::HeadlessPngHost` owns no-window Vulkan setup, an offscreen RGBA
+  target, capture transitions, readback, and PNG artifact writing.
+
+Examples and projects still own their shaders, resources, command recording,
+simulation, and render policy. The library only promotes reusable host pieces
+once repeated shape is clear.
 
 Before this becomes a broad host, projects should move toward the async-ready
 shape described in [threading and async design](threading-and-async.md): app
@@ -236,6 +242,7 @@ cubey/
       frame_clock.h        -- frame timing
       frame_stats.h        -- lightweight telemetry formatting
       frame_tickets.h      -- frame tickets and deferred destruction
+      headless_png_host.h  -- no-window offscreen PNG capture host
       image_io.h           -- PNG artifact output
       jobs.h               -- CPU job facade
       math.h               -- GLM-backed math aliases and Vulkan projection helpers
@@ -268,6 +275,7 @@ cubey/
       frame_clock.cpp
       frame_stats.cpp
       frame_tickets.cpp
+      headless_png_host.cpp
       image_io.cpp
       jobs.cpp
       orbit_controller.cpp

@@ -68,14 +68,16 @@ binary file I/O, SPIR-V file loading, pipeline ownership, dynamic graphics
 pipeline setup including blend state, descriptor setup/write helpers including
 descriptor set bundles and storage buffers, compute pipeline setup, depth
 attachment setup, texture transfer/readback helpers, PNG image I/O helper,
+headless PNG host,
 shared shader includes,
 `RenderContext` surface-backed begin/end frame lifecycle, single-frame
 command/sync components, and swapchain recreate-attempt tracking; examples still
 own command recording and render policy.
 `cubey_app` owns the GLFW-backed window/app host layer used by all current
-windowed examples and the first windowed project. Headless paths remain
-explicit until a shared headless host shape is proven. The spike branches remain
-reference material for deeper compute and browser work.
+windowed examples and the first windowed project. The base `cubey` target owns a
+separate no-GLFW `HeadlessPngHost` used by current headless examples and the
+first project. The spike branches remain reference material for deeper compute
+and browser work.
 
 The next framework checkpoint should come from extending the first real project,
 `fluid_2d`, rather than extracting a renderer, scene system, or broad backend
