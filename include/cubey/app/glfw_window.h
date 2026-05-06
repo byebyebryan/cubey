@@ -41,7 +41,7 @@ struct GlfwWindowConfig {
 
 class GlfwWindow {
   public:
-    explicit GlfwWindow(GlfwWindowConfig config);
+    explicit GlfwWindow(const GlfwWindowConfig& config);
     ~GlfwWindow();
 
     GlfwWindow(const GlfwWindow&) = delete;
@@ -67,7 +67,7 @@ class GlfwWindow {
     }
 
   private:
-    void create(GlfwWindowConfig config);
+    void create(const GlfwWindowConfig& config);
     void destroy();
 
     // GLFW fixes this callback signature.

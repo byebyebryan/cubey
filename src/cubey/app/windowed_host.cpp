@@ -46,11 +46,14 @@ WindowedHost::WindowedHost(WindowedHostConfig config, WindowedHostCallbacks call
 
 WindowedHost::~WindowedHost() {
     if (device_.has_value()) {
-        static_cast<void>(vkDeviceWaitIdle(device().handle()));
+        static_cast<void>(vkDeviceWaitIdle(device_->handle()));
     }
     try {
         destroy_swapchain_resources();
+    } catch (const std::exception& error) {
+        std::fprintf(stderr, "windowed host cleanup failed: %s\n", error.what());
     } catch (...) {
+        std::fprintf(stderr, "windowed host cleanup failed\n");
     }
     frame_resources_.reset();
     swapchain_.reset();

@@ -44,8 +44,8 @@ KeyAction to_key_action(int action) {
 
 } // namespace
 
-GlfwWindow::GlfwWindow(GlfwWindowConfig config) {
-    create(std::move(config));
+GlfwWindow::GlfwWindow(const GlfwWindowConfig& config) {
+    create(config);
 }
 
 GlfwWindow::~GlfwWindow() {
@@ -92,10 +92,16 @@ void GlfwWindow::wait_for_presentable_framebuffer() const {
 }
 
 void GlfwWindow::poll_events() const {
+    if (window_ == nullptr) {
+        throw std::runtime_error("GLFW event polling requires a window");
+    }
     glfwPollEvents();
 }
 
 void GlfwWindow::wait_events() const {
+    if (window_ == nullptr) {
+        throw std::runtime_error("GLFW event waiting requires a window");
+    }
     glfwWaitEvents();
 }
 
@@ -129,7 +135,7 @@ bool GlfwWindow::consume_framebuffer_resized() {
     return result;
 }
 
-void GlfwWindow::create(GlfwWindowConfig config) {
+void GlfwWindow::create(const GlfwWindowConfig& config) {
     validate_config(config);
 
     if (glfwInit() == 0) {
@@ -164,6 +170,8 @@ void GlfwWindow::destroy() {
     }
 }
 
+// GLFW fixes this callback signature.
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
 void GlfwWindow::framebuffer_size_callback(GLFWwindow* window, int width, int height) {
     (void)width;
     (void)height;
