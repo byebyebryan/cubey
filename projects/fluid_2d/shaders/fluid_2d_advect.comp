@@ -1,0 +1,69 @@
+#version 450
+
+layout(local_size_x = 8, local_size_y = 8) in;
+
+struct Cell {
+    vec4 dye;
+    vec4 velocity;
+};
+
+layout(set = 0, binding = 0, std430) readonly buffer SourceField {
+    Cell cells[];
+} source_field;
+
+layout(set = 0, binding = 1, std430) buffer DestinationField {
+    Cell cells[];
+} destination_field;
+
+layout(push_constant) uniform SimulationParams {
+    vec4 grid_dt_time;
+    vec4 injection_xy_radius_strength;
+    vec4 injection_dye_active;
+    vec4 force_decay;
+} params;
+
+uint cell_index(ivec2 coord, uint width, uint height) {
+    ivec2 clamped = clamp(coord, ivec2(0), ivec2(int(width) - 1, int(height) - 1));
+    return (uint(clamped.y) * width) + uint(clamped.x);
+}
+
+Cell sample_field(vec2 uv, uint width, uint height) {
+    vec2 position = uv * vec2(width, height) - vec2(0.5);
+    ivec2 base = ivec2(floor(position));
+    vec2 fraction = fract(position);
+
+    Cell a = source_field.cells[cell_index(base, width, height)];
+    Cell b = source_field.cells[cell_index(base + ivec2(1, 0), width, height)];
+    Cell c = source_field.cells[cell_index(base + ivec2(0, 1), width, height)];
+    Cell d = source_field.cells[cell_index(base + ivec2(1, 1), width, height)];
+
+    Cell result;
+    result.dye = mix(mix(a.dye, b.dye, fraction.x), mix(c.dye, d.dye, fraction.x), fraction.y);
+    result.velocity = mix(mix(a.velocity, b.velocity, fraction.x),
+                          mix(c.velocity, d.velocity, fraction.x), fraction.y);
+    return result;
+}
+
+void main() {
+    uint width = uint(params.grid_dt_time.x);
+    uint height = uint(params.grid_dt_time.y);
+    uint x = gl_GlobalInvocationID.x;
+    uint y = gl_GlobalInvocationID.y;
+    if (x >= width || y >= height) {
+        return;
+    }
+
+    uint index = (y * width) + x;
+    Cell current = source_field.cells[index];
+    vec2 uv = (vec2(x, y) + vec2(0.5)) / vec2(width, height);
+    float dt = params.grid_dt_time.z;
+    vec2 previous_uv = clamp(uv - (current.velocity.xy * dt * 0.18), vec2(0.0), vec2(1.0));
+    Cell advected = sample_field(previous_uv, width, height);
+
+    float decay_scale = dt * 60.0;
+    advected.dye.rgb *= pow(params.force_decay.z, decay_scale);
+    advected.velocity.xy *= pow(params.force_decay.w, decay_scale);
+    advected.dye.rgb = clamp(advected.dye.rgb, vec3(0.0), vec3(8.0));
+    advected.velocity.zw = vec2(0.0);
+    destination_field.cells[index] = advected;
+}

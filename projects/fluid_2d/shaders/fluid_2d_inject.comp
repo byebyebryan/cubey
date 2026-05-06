@@ -1,0 +1,51 @@
+#version 450
+
+layout(local_size_x = 8, local_size_y = 8) in;
+
+struct Cell {
+    vec4 dye;
+    vec4 velocity;
+};
+
+layout(set = 0, binding = 0, std430) readonly buffer SourceField {
+    Cell cells[];
+} source_field;
+
+layout(set = 0, binding = 1, std430) buffer DestinationField {
+    Cell cells[];
+} destination_field;
+
+layout(push_constant) uniform SimulationParams {
+    vec4 grid_dt_time;
+    vec4 injection_xy_radius_strength;
+    vec4 injection_dye_active;
+    vec4 force_decay;
+} params;
+
+void main() {
+    uint width = uint(params.grid_dt_time.x);
+    uint height = uint(params.grid_dt_time.y);
+    uint x = gl_GlobalInvocationID.x;
+    uint y = gl_GlobalInvocationID.y;
+    if (x >= width || y >= height) {
+        return;
+    }
+
+    uint index = (y * width) + x;
+    Cell cell = source_field.cells[index];
+
+    vec2 uv = (vec2(x, y) + vec2(0.5)) / vec2(width, height);
+    vec2 to_injection = uv - params.injection_xy_radius_strength.xy;
+    float radius = max(params.injection_xy_radius_strength.z, 0.0001);
+    float splat = exp(-dot(to_injection, to_injection) / (radius * radius));
+    float dt = params.grid_dt_time.z;
+
+    vec3 dye = max(params.injection_dye_active.rgb, vec3(0.0));
+    vec2 force = params.force_decay.xy;
+    float strength = params.injection_xy_radius_strength.w;
+    cell.dye.rgb += dye * splat * strength * dt;
+    cell.dye.a = 1.0;
+    cell.velocity.xy += force * splat * dt;
+
+    destination_field.cells[index] = cell;
+}

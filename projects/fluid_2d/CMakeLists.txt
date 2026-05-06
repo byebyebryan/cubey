@@ -24,6 +24,8 @@ cubey_add_glsl_shaders(
     SOURCES
         shaders/fluid_2d.vert
         shaders/fluid_2d_render.frag
+        shaders/fluid_2d_inject.comp
+        shaders/fluid_2d_advect.comp
 )
 
 if (BUILD_TESTING)
