@@ -27,10 +27,16 @@ See:
 - [Vulkan abstraction map](docs/vulkan-abstractions.md)
 - [App runtime direction](docs/app-runtime.md)
 - [Threading and async design](docs/threading-and-async.md)
+- [Fluid simulation direction](docs/fluid-simulation.md)
 - [Working notes](docs/working-notes.md)
 - [Spike findings and decision record](docs/spike-findings.md)
 - [C++ style guide](docs/cpp-style.md)
 - [Changelog / release notes](CHANGELOG.md)
+
+Project-local design notes live beside their targets:
+
+- [Fluid 2D project](projects/fluid_2d/README.md)
+- [Fluid 2.5D project design](projects/fluid_25d/README.md)
 
 ## Spike Branches
 

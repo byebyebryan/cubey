@@ -2,6 +2,9 @@
 
 Status: design first. No CMake target or implementation exists yet.
 
+The broader fluid technique map lives in
+[`docs/fluid-simulation.md`](../../docs/fluid-simulation.md).
+
 `fluid_25d` is the filesystem and target-friendly name for a 2.5D fluid project:
 a 2D shallow-water simulation over a heightmap terrain. The goal is water that
 flows downhill, pools in basins, drains through sinks, and produces useful
@@ -133,6 +136,27 @@ Expected views:
 The visual target is not photoreal water. The important signal is whether water
 moves according to terrain, conserves mass well enough to trust the result, and
 stays stable under simple scenarios.
+
+## Relationship To Other Fluid Work
+
+`fluid_25d` is the scalable terrain-water path. It is where Cubey should answer
+questions about rivers, flooding, basins, rainfall, sources, sinks, and water
+moving over authored heightfields.
+
+It should not absorb the whole fluid-simulation roadmap:
+
+- `fluid_2d` remains the incompressible grid-fluid lab for advection, pressure
+  solves, obstacles, vorticity, and possible level-set or FLIP-style 2D liquid
+  experiments.
+- A future sparse 3D gas/smoke project is the better place to revisit the GPU
+  Gems volumetric-fluid idea with modern sparse/tiled allocation.
+- Particle methods such as PBF, DFSPH, FLIP/APIC, or MLS-MPM are separate liquid
+  or multiphase project candidates, not prerequisites for checkpoint 1 here.
+
+The main scaling bet here is dimensional reduction: solve water as a 2D
+heightfield quantity over terrain instead of trying to simulate a full 3D water
+volume. That gives up splashes, spray, overturning waves, and vertical gaps, but
+it targets a much more scene-relevant problem.
 
 ## Project Boundaries
 

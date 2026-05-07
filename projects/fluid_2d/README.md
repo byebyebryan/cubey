@@ -9,6 +9,11 @@ its simulation policy locally. Cubey provides the Vulkan/runtime pieces; this
 project owns the field layout, compute passes, interaction model, render modes,
 and tuning.
 
+This README is the source of truth for `fluid_2d` design notes and checkpoint
+history. Cross-project runtime decisions still belong under `docs/`.
+The broader fluid technique map lives in
+[`docs/fluid-simulation.md`](../../docs/fluid-simulation.md).
+
 ## Current Status
 
 Implemented:
@@ -52,6 +57,126 @@ Each field cell stores dye and velocity. Divergence and pressure are separate
 scalar buffers so pressure-solve details can evolve without changing the main
 field layout.
 
+## Technique Direction
+
+`fluid_2d` should stay the incompressible grid-fluid lab. It is the right place
+to improve the classic GPU Gems / Stable Fluids style solver, but it should not
+become the general answer to all water simulation.
+
+Near-term improvements worth trying:
+
+- Better advection: MacCormack or BFECC to reduce numerical diffusion.
+- Obstacles and boundaries: solid masks, moving obstacle velocity injection, and
+  no-slip/free-slip boundary modes.
+- Vorticity confinement: cheap visual energy for smoke-like dye motion.
+- Pressure solver upgrades: red-black Gauss-Seidel, conjugate gradient, or later
+  multigrid instead of only fixed-count Jacobi.
+
+Separate experiments worth considering once the current grid path is cleaner:
+
+- 2D level-set liquid: signed distance field plus marching-squares surface,
+  useful for free-surface blobs and sloshing in cross-section.
+- Particle level set: level set corrected by marker particles to reduce mass
+  loss.
+- Volume of fluid: better mass conservation than pure level set, with a more
+  awkward interface reconstruction path.
+- 2D PIC/FLIP/APIC: grid pressure solve plus particles for advection, likely
+  more visually rewarding for liquid than pure level set.
+- Lattice Boltzmann: useful for flow-around-obstacle experiments, less directly
+  aligned with free-surface water.
+- Reaction, buoyancy, or combustion: good if this project becomes a smoke/fire
+  lab rather than a liquid lab.
+
+Level-set water should be treated as a distinct mode or later project slice, not
+as a tiny tweak to the current dye solver:
+
+```text
+velocity grid
+signed distance field phi
+phi < 0 = liquid
+phi > 0 = air
+advect phi by velocity
+solve pressure only in liquid cells
+use a free-surface pressure boundary near phi = 0
+render phi = 0 with marching squares
+```
+
+Scaling guidance:
+
+- `fluid_2d` is useful for solver learning, diagnostics, and stylized
+  smoke/dye/liquid cross-sections.
+- `fluid_25d` is the better path for scalable terrain water, rivers, and
+  flooding.
+- A future sparse 3D gas/smoke project is the better path for a modernized
+  GPU-Gems-style volumetric demo.
+
+## Historical Checkpoints
+
+### Checkpoint 1
+
+Status: initial pass complete.
+
+Goal: render a deterministic compute-updated dye field in both windowed and
+headless modes.
+
+- Add a `projects/` CMake lane and `fluid_2d` binary.
+- Use a fixed-size 2D grid with ping-pong GPU fields.
+- Start with injection plus advection/fade compute passes.
+- Render dye through a fullscreen graphics pass.
+- Support a deterministic headless run that writes a PNG artifact.
+- Deliberately defer pressure projection, richer controls, and reusable
+  headless/project hosting until the first visible project path exists.
+
+### Checkpoint 2
+
+Status: pressure projection complete.
+
+Goal: improve solver quality without extracting a renderer, scene system, or
+generic simulation abstraction.
+
+- Add scalar storage buffers for divergence and pressure ping-pong.
+- Compute divergence from the advected velocity field and reset pressure each
+  frame.
+- Run fixed-count Jacobi pressure iterations.
+- Subtract the pressure gradient from the velocity field in place so field A
+  remains the next frame's source and the render source.
+- Keep pressure resources and dispatch policy project-local until another
+  project repeats the shape.
+
+### Checkpoint 3
+
+Status: interaction and debug views complete.
+
+Goal: make the first project steerable and inspectable while keeping headless
+output deterministic.
+
+- Left-drag injects dye and cursor-derived force into the fluid field.
+- Space pauses/resumes simulation without closing the window.
+- `R` clears dye, velocity, divergence, and pressure buffers.
+- `D` cycles render modes: dye, velocity, divergence, pressure.
+- Headless mode continues to use the procedural injector and fixed timing so
+  smoke output remains stable.
+- Headless output runs through `cubey::HeadlessPngHost`; the project still owns
+  field resources, compute simulation, render pipeline setup, and the fullscreen
+  capture draw.
+
+### Checkpoint 4
+
+Status: project runtime adapter integration complete.
+
+Goal: make the first project consume Cubey's runtime service vocabulary without
+creating a generic project host.
+
+- `fluid_2d` owns a `cubey::ProjectRuntimeAdapter` instance.
+- Windowed and headless simulation steps now use `cubey::ProjectFrame` for
+  delta time, elapsed time, frame index, and frame tickets.
+- The adapter owns runtime services, caches one project frame per host frame,
+  exposes project context, and retires deferred destruction during shutdown.
+- Vulkan resource setup, compute dispatch recording, fullscreen draw recording,
+  input handling, and shutdown remain project-local callbacks.
+- A broader project host remains deferred until another `projects/` target
+  repeats the same lifecycle bridge.
+
 ## Commands
 
 ```bash
@@ -59,8 +184,11 @@ field layout.
 ./build/dev/projects/fluid_2d/fluid_2d --headless --require-validation --frames 120 --width 640 --height 360 --output /tmp/cubey-fluid-2d.png
 ```
 
-## Notes
+## Next Slices
 
-The checkpoint log and historical decisions live in
-[`docs/fluid-2d.md`](../../docs/fluid-2d.md). This README is the project-local
-entrypoint for the current shape.
+- Improve advection quality before adding more visual polish.
+- Add obstacle masks and boundary-condition debug views.
+- Consider a project-local HUD only if title-bar stats are not enough.
+- Revisit reusable helpers only after `fluid_2d` and `fluid_25d` repeat buffer
+  ping-pong descriptors, fixed-step simulation orchestration, or GPU capture
+  polling.
