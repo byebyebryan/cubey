@@ -9,9 +9,9 @@
 #include <cubey/render/mesh.h>
 #include <cubey/render/target.h>
 #include <cubey/render/texture.h>
+#include <cubey/render/uniform_buffer.h>
 #include <cubey/spirv_io.h>
 #include <cubey/transform_3d.h>
-#include <cubey/vulkan/buffer.h>
 #include <cubey/vulkan/command_pool.h>
 #include <cubey/vulkan/descriptors.h>
 #include <cubey/vulkan/image.h>
@@ -180,7 +180,7 @@ class TexturedCubeApp {
             return;
         }
         create_cube_mesh(context);
-        create_scene_uniform_buffer(context);
+        create_scene_uniforms(context);
         create_texture_resources(context);
     }
 
@@ -200,7 +200,7 @@ class TexturedCubeApp {
         destroy_descriptors();
         destroy_compute_resources();
         texture_.reset();
-        scene_uniform_buffer_.reset();
+        scene_uniforms_.reset();
         mesh_.reset();
     }
 
@@ -275,13 +275,8 @@ class TexturedCubeApp {
                                                                            kCubeIndices));
     }
 
-    void create_scene_uniform_buffer(cubey::app::WindowedAppContext& context) {
-        cubey::vulkan::BufferConfig config;
-        config.size = sizeof(SceneUniforms);
-        config.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-        config.memory_properties =
-            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-        scene_uniform_buffer_.emplace(context.device(), config);
+    void create_scene_uniforms(cubey::app::WindowedAppContext& context) {
+        scene_uniforms_.emplace(context.device(), context.frame_slot_count());
     }
 
     void create_texture_resources(cubey::app::WindowedAppContext& context) {
@@ -400,19 +395,33 @@ class TexturedCubeApp {
                 .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
             },
         }};
-        const cubey::vulkan::DescriptorSetInfo descriptor_info(bindings);
+        const std::uint32_t frame_slot_count = context.frame_slot_count();
+        const cubey::vulkan::DescriptorSetInfo descriptor_info(bindings, frame_slot_count);
         descriptors_.emplace(context.device(), descriptor_info);
 
-        const cubey::vulkan::DescriptorBufferWrite scene_write =
-            cubey::vulkan::uniform_buffer_descriptor(
-                descriptors().set(), 0, scene_uniform_buffer().handle(), sizeof(SceneUniforms));
-        const cubey::vulkan::DescriptorImageWrite image_write =
-            cubey::vulkan::combined_image_sampler_descriptor(
-                descriptors().set(), 1, texture().sampler().handle(), texture().view());
-        const std::array<VkWriteDescriptorSet, 2> writes{
-            scene_write.descriptor_write(),
-            image_write.descriptor_write(),
-        };
+        std::vector<cubey::vulkan::DescriptorBufferWrite> scene_writes;
+        std::vector<cubey::vulkan::DescriptorImageWrite> image_writes;
+        scene_writes.reserve(frame_slot_count);
+        image_writes.reserve(frame_slot_count);
+        for (std::uint32_t slot_index = 0; slot_index < frame_slot_count; ++slot_index) {
+            const cubey::render::FrameSlot frame_slot{
+                .index = slot_index,
+                .count = frame_slot_count,
+            };
+            const VkDescriptorSet descriptor_set = descriptors().set(slot_index);
+            scene_writes.push_back(cubey::vulkan::uniform_buffer_descriptor(
+                descriptor_set, 0, scene_uniforms().buffer(frame_slot).handle(),
+                scene_uniforms().range()));
+            image_writes.push_back(cubey::vulkan::combined_image_sampler_descriptor(
+                descriptor_set, 1, texture().sampler().handle(), texture().view()));
+        }
+
+        std::vector<VkWriteDescriptorSet> writes;
+        writes.reserve(frame_slot_count * 2U);
+        for (std::uint32_t slot_index = 0; slot_index < frame_slot_count; ++slot_index) {
+            writes.push_back(scene_writes[slot_index].descriptor_write());
+            writes.push_back(image_writes[slot_index].descriptor_write());
+        }
         cubey::vulkan::update_descriptor_sets(context.device(), writes);
     }
 
@@ -436,14 +445,14 @@ class TexturedCubeApp {
         };
     }
 
-    void update_scene_uniforms(VkExtent2D extent) {
+    void update_scene_uniforms(VkExtent2D extent, cubey::render::FrameSlot frame_slot) {
         const SceneUniforms uniforms = current_scene_uniforms(extent);
-        scene_uniform_buffer().upload(&uniforms, sizeof(uniforms));
+        scene_uniforms().upload(frame_slot, uniforms);
     }
 
     void record_cube_frame(const cubey::app::WindowedRenderFrame& frame) {
         const VkCommandBuffer command_buffer = frame.command_buffer;
-        update_scene_uniforms(frame.color_target.extent);
+        update_scene_uniforms(frame.color_target.extent, frame.frame_slot);
 
         cubey::vulkan::begin_command_buffer(command_buffer,
                                             VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
@@ -469,7 +478,7 @@ class TexturedCubeApp {
 
         vkCmdBeginRendering(command_buffer, &rendering.info());
         vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline().handle());
-        const VkDescriptorSet descriptor_set = descriptors().set();
+        const VkDescriptorSet descriptor_set = descriptors().set(frame.frame_slot.index);
         vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
                                 pipeline_layout().handle(), 0, 1, &descriptor_set, 0, nullptr);
         const cubey::render::DrawItem draw_item{
@@ -497,11 +506,11 @@ class TexturedCubeApp {
         return mesh_.value();
     }
 
-    [[nodiscard]] cubey::vulkan::Buffer& scene_uniform_buffer() {
-        if (!scene_uniform_buffer_.has_value()) {
-            throw std::runtime_error("scene uniform buffer is not initialized");
+    [[nodiscard]] const cubey::render::FrameUniformBuffer<SceneUniforms>& scene_uniforms() const {
+        if (!scene_uniforms_.has_value()) {
+            throw std::runtime_error("scene uniforms are not initialized");
         }
-        return scene_uniform_buffer_.value();
+        return scene_uniforms_.value();
     }
 
     [[nodiscard]] const cubey::render::Texture2D& texture() const {
@@ -511,7 +520,7 @@ class TexturedCubeApp {
         return texture_.value();
     }
 
-    [[nodiscard]] const cubey::vulkan::DescriptorSetBundle& descriptors() const {
+    [[nodiscard]] const cubey::vulkan::DescriptorSetArray& descriptors() const {
         if (!descriptors_.has_value()) {
             throw std::runtime_error("texture descriptors are not initialized");
         }
@@ -565,9 +574,9 @@ class TexturedCubeApp {
     OrbitController orbit_controller_;
 
     std::optional<cubey::render::Mesh> mesh_;
-    std::optional<cubey::vulkan::Buffer> scene_uniform_buffer_;
+    std::optional<cubey::render::FrameUniformBuffer<SceneUniforms>> scene_uniforms_;
     std::optional<cubey::render::Texture2D> texture_;
-    std::optional<cubey::vulkan::DescriptorSetBundle> descriptors_;
+    std::optional<cubey::vulkan::DescriptorSetArray> descriptors_;
     std::optional<cubey::vulkan::PipelineLayout> pipeline_layout_;
     std::optional<cubey::vulkan::GraphicsPipeline> pipeline_;
     std::optional<cubey::vulkan::DepthAttachment> depth_attachment_;
