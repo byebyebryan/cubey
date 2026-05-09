@@ -12,6 +12,8 @@ scratch material out of the main path.
 - [Roadmap](roadmap.md): current implementation phases and next work.
 - [Vulkan abstraction map](vulkan-abstractions.md): reusable Vulkan foundation
   boundaries and planned framework slices.
+- [Renderer foundation](renderer-foundation.md): `cubey::render` contracts that
+  sit above Vulkan without introducing scene, material, or render-graph policy.
 - [App runtime](app-runtime.md): GLFW/windowed host, headless host, input, frame
   flow, and project lifecycle direction.
 - [Threading and async](threading-and-async.md): CPU jobs, queued GPU work,

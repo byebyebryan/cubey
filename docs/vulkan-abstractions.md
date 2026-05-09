@@ -17,6 +17,8 @@ The current boundary is:
 
 - `cubey::vulkan` owns Vulkan object lifetime and common create-info
   construction.
+- `cubey::render` owns renderer-facing vocabulary above Vulkan: target views,
+  narrow resource wrappers, and small draw helpers.
 - Examples and projects own rendering intent: shaders, meshes, descriptors,
   command recording, resize policy, and user interaction.
 - Higher-level renderer, material, and render-graph concepts should be designed

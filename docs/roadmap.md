@@ -11,9 +11,11 @@ experiments. Vulkan is the architecture driver for the shared runtime and
 graphics foundation.
 
 See [Vulkan abstraction map](vulkan-abstractions.md) for the planned framework
-layers and foundation rules, [app runtime](app-runtime.md) for the GLFW/windowed
-host extraction path, and [threading and async design](threading-and-async.md)
-for the async-ready runtime boundary.
+layers and foundation rules, [renderer foundation](renderer-foundation.md) for
+the first `cubey::render` contracts above Vulkan, [app runtime](app-runtime.md)
+for the GLFW/windowed host extraction path, and
+[threading and async design](threading-and-async.md) for the async-ready runtime
+boundary.
 
 ## Phase 0: Repo Foundation
 
