@@ -32,6 +32,7 @@ void test_inline_executor_runs_jobs_immediately();
 void test_job_system_runs_jobs_and_propagates_errors();
 void test_job_system_shutdown_rejects_new_jobs();
 void test_math_helpers_match_vulkan_projection_conventions();
+void test_math_quaternion_helpers_match_rotation_matrices();
 void test_orbit_controller_tracks_rotation_drag_pause_and_reset();
 void test_orbit_controller_updates_from_input_snapshot();
 void test_pipeline_helpers_describe_dynamic_graphics_pipeline_setup();
@@ -90,6 +91,7 @@ int main() {
         test_job_system_runs_jobs_and_propagates_errors();
         test_job_system_shutdown_rejects_new_jobs();
         test_math_helpers_match_vulkan_projection_conventions();
+        test_math_quaternion_helpers_match_rotation_matrices();
         test_orbit_controller_tracks_rotation_drag_pause_and_reset();
         test_orbit_controller_updates_from_input_snapshot();
         test_pipeline_helpers_describe_dynamic_graphics_pipeline_setup();

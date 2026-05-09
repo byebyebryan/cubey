@@ -10,11 +10,13 @@
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/quaternion.hpp>
 
 namespace cubey::math {
 
 using Mat3 = glm::mat3;
 using Mat4 = glm::mat4;
+using Quat = glm::quat;
 using Vec2 = glm::vec2;
 using Vec3 = glm::vec3;
 using Vec4 = glm::vec4;
@@ -42,6 +44,27 @@ using Vec4 = glm::vec4;
 
 [[nodiscard]] inline Mat4 rotation_z(float radians) {
     return glm::rotate(identity(), radians, glm::vec3{0.0F, 0.0F, 1.0F});
+}
+
+[[nodiscard]] inline Quat identity_quat() {
+    return Quat{1.0F, 0.0F, 0.0F, 0.0F};
+}
+
+[[nodiscard]] inline Quat angle_axis_quat(float radians, Vec3 axis) {
+    if (glm::length(axis) == 0.0F) {
+        return identity_quat();
+    }
+    return glm::angleAxis(radians, glm::normalize(axis));
+}
+
+[[nodiscard]] inline Quat euler_xyz_quat(Vec3 radians) {
+    return angle_axis_quat(radians.z, {0.0F, 0.0F, 1.0F}) *
+           angle_axis_quat(radians.y, {0.0F, 1.0F, 0.0F}) *
+           angle_axis_quat(radians.x, {1.0F, 0.0F, 0.0F});
+}
+
+[[nodiscard]] inline Mat4 rotation(Quat quaternion) {
+    return glm::mat4_cast(glm::normalize(quaternion));
 }
 
 [[nodiscard]] inline Mat4 scale(Vec3 scale) {
