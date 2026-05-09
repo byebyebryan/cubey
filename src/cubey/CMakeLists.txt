@@ -36,6 +36,7 @@ add_library(cubey STATIC
     render/mesh.cpp
     render/target.cpp
     render/texture.cpp
+    render/uniform_buffer.cpp
     spirv_io.cpp
     upload_queue.cpp
     vulkan/buffer.cpp

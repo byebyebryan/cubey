@@ -42,6 +42,8 @@ void test_render_context_exposes_explicit_frame_boundary();
 void test_frame_slot_defaults_to_single_frame_slot();
 void test_frame_slot_wraps_frame_indices();
 void test_frame_slot_rejects_invalid_slots();
+void test_frame_uniform_buffer_config_describes_host_visible_uniform_storage();
+void test_frame_uniform_buffer_contract_is_slot_based_and_move_only();
 void test_resource_helpers_describe_device_local_upload_and_depth_setup();
 void test_spirv_io_reads_aligned_words();
 void test_spirv_io_rejects_misaligned_byte_count();
@@ -95,6 +97,8 @@ int main() {
         test_frame_slot_defaults_to_single_frame_slot();
         test_frame_slot_wraps_frame_indices();
         test_frame_slot_rejects_invalid_slots();
+        test_frame_uniform_buffer_config_describes_host_visible_uniform_storage();
+        test_frame_uniform_buffer_contract_is_slot_based_and_move_only();
         test_resource_helpers_describe_device_local_upload_and_depth_setup();
         test_spirv_io_reads_aligned_words();
         test_spirv_io_rejects_misaligned_byte_count();
