@@ -122,9 +122,10 @@ resource creation/destruction, update, command recording, and shutdown.
 - `cubey::Camera2D` and `OrbitCamera3D` hold reusable 2D view state and 3D
   view/projection state. The current examples still own when and how those
   cameras are applied.
-- `cubey::Transform2D` and `Transform3D` are explicit model-transform value
-  types. They provide matrix construction only; they do not introduce parent
-  hierarchy, scene ownership, renderables, or entity IDs.
+- `cubey::Transform2D` and `Transform3D` are explicit affine transform value
+  types. `Transform3D` stores quaternion rotation, and transform hierarchies
+  compute cached local-to-world affine matrices without introducing scene
+  ownership, renderables, or entity IDs.
 - `cubey::input::PointerDrag`, `PanZoom2DController`, and the input-aware
   `OrbitController` cover the current repeated 2D/3D pointer-control shapes
   without introducing a scene or action-binding system. The pan/zoom controller

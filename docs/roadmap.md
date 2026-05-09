@@ -83,17 +83,18 @@ Current checkpoint:
   command-pool ownership, command-buffer allocation, per-frame-slot
   command/sync resources, and per-image present synchronization.
 - Reusable `cubey::FrameClock`, `cubey::Transform2D`, `cubey::Transform3D`,
-  `cubey::Camera2D`, `cubey::OrbitCamera3D`, and `cubey::OrbitController` cover
-  basic frame timing, explicit 2D/3D model-transform boundaries, shared 2D/3D
+  transform hierarchies, `cubey::Camera2D`, `cubey::OrbitCamera3D`, and
+  `cubey::OrbitController` cover basic frame timing, explicit 2D/3D affine
+  transform boundaries, cached parent/child world transforms, shared 2D/3D
   camera state, and mouse-driven orbit input.
 - Reusable `cubey::input::InputState`/`InputFrame` provide per-frame keyboard
   and mouse polling over the GLFW callback stream, with shared pointer-drag,
   camera-backed 2D pan/zoom, and input-aware orbit-control helpers.
 - Reusable `cubey::FrameStats` covers lightweight FPS/frame-time/extent/triangle
   telemetry formatting for windowed examples.
-- Reusable `cubey::math` wraps GLM matrix/vector types and the current Vulkan
-  transform/projection conventions used by the shared transform/camera helpers
-  and cube examples.
+- Reusable `cubey::math` wraps GLM matrix/vector/quaternion types and the
+  current Vulkan transform/projection conventions used by the shared
+  transform/camera helpers and cube examples.
 - Reusable `cubey::vulkan::ShaderModule` exists, and CMake can compile GLSL to
   SPIR-V with `glslangValidator` for example targets, including shared include
   directories and dependency tracking. Reusable `cubey::read_spirv_file` loads

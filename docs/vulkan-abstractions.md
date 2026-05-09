@@ -555,9 +555,22 @@ This batch keeps binary semaphores, one queue family, and one command pool.
 Timeline semaphores, split queues, deferred destruction integration, and
 parallel command recording remain separate slices.
 
+### Batch 10: Transform v2 And Lazy Hierarchy
+
+Goal: make transforms a durable foundation before scene/entity/renderable
+systems depend on them.
+
+- Status: planned.
+- Replace ambiguous model-matrix terminology with explicit affine transforms.
+- Store 3D rotation as a quaternion and keep 2D rotation as scalar radians.
+- Add transform-only 2D and 3D hierarchies with cached local-to-world affine
+  matrices, lazy recomputation, and an explicit eager update pass.
+- Keep hierarchy independent from scene ownership, renderables, entity IDs,
+  deletion/reuse policy, and transaction batching.
+
 ## Near-Term Recommendation
 
-Batch 1 through Batch 9 have their first passes on `main`. The frame-overlap
-runtime now gives per-frame data and future deferred work a real frame model.
-Use `fluid_2d` solver tuning and the next larger project candidate to decide
-project/runtime extractions.
+Batch 1 through Batch 9 have their first passes on `main`. Batch 10 should
+settle affine transforms and transform hierarchies before Cubey adds scene or
+entity concepts. Use `fluid_2d` solver tuning and the next larger project
+candidate to decide broader project/runtime extractions.
