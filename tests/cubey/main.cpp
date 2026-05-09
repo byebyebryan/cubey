@@ -2,6 +2,10 @@
 #include <exception>
 
 void test_run_config_parses_png_output_path();
+void test_camera_2d_pans_zooms_and_reports_view();
+void test_camera_2d_clamps_scale();
+void test_orbit_camera_3d_matches_current_cube_view_projection();
+void test_orbit_camera_3d_accepts_orbit_state();
 void test_capture_queue_encodes_png_with_inline_executor();
 void test_capture_queue_propagates_encoding_errors();
 void test_command_pool_exposes_command_buffer_ownership();
@@ -45,6 +49,10 @@ void test_upload_queue_owns_payload_until_drain();
 int main() {
     try {
         test_run_config_parses_png_output_path();
+        test_camera_2d_pans_zooms_and_reports_view();
+        test_camera_2d_clamps_scale();
+        test_orbit_camera_3d_matches_current_cube_view_projection();
+        test_orbit_camera_3d_accepts_orbit_state();
         test_capture_queue_encodes_png_with_inline_executor();
         test_capture_queue_propagates_encoding_errors();
         test_command_pool_exposes_command_buffer_ownership();

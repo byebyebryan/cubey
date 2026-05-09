@@ -80,15 +80,17 @@ Current checkpoint:
   image/view ownership, buffer/image allocation, sampler ownership,
   command-pool ownership, command-buffer allocation, and single-frame
   command/sync resources.
-- Reusable `cubey::FrameClock` and `cubey::OrbitController` cover basic frame
-  timing and mouse-driven view control.
+- Reusable `cubey::FrameClock`, `cubey::Camera2D`, `cubey::OrbitCamera3D`, and
+  `cubey::OrbitController` cover basic frame timing, shared 2D/3D camera state,
+  and mouse-driven orbit input.
 - Reusable `cubey::input::InputState`/`InputFrame` provide per-frame keyboard
   and mouse polling over the GLFW callback stream, with shared pointer-drag,
-  2D pan/zoom, and input-aware orbit-control helpers.
+  camera-backed 2D pan/zoom, and input-aware orbit-control helpers.
 - Reusable `cubey::FrameStats` covers lightweight FPS/frame-time/extent/triangle
   telemetry formatting for windowed examples.
 - Reusable `cubey::math` wraps GLM matrix/vector types and the current Vulkan
-  transform/projection conventions used by cube examples.
+  transform/projection conventions used by the shared camera helpers and cube
+  examples.
 - Reusable `cubey::vulkan::ShaderModule` exists, and CMake can compile GLSL to
   SPIR-V with `glslangValidator` for example targets, including shared include
   directories and dependency tracking. Reusable `cubey::read_spirv_file` loads
@@ -158,20 +160,21 @@ Current checkpoint:
   pass or framebuffer through the shared app host.
 - `examples/spinning_cube` links against `cubey`, compiles vertex/fragment
   shaders at build time, draws an indexed cube from device-local vertex/index
-  buffers, updates a shared-math MVP matrix through push constants, and uses
-  dynamic rendering with a shared depth attachment helper through the shared app
-  host.
+  buffers, updates an MVP matrix from shared camera and math helpers through
+  push constants, and uses dynamic rendering with a shared depth attachment
+  helper through the shared app host.
 - `examples/textured_cube` links against `cubey`, generates a texture with a
   compute shader writing a storage image, transitions it for shader sampling,
   binds scene uniforms plus a combined image sampler descriptor through shared
   descriptor/compute helpers, and draws an interactive shaded textured indexed
-  cube through dynamic rendering with per-face normals and shared GLSL Lambert
-  lighting and shared math helpers through the shared app host.
+  cube through dynamic rendering with per-face normals, shared GLSL Lambert
+  lighting, shared camera projection, and shared math helpers through the shared
+  app host.
 - `examples/headless_render` links against `cubey`, creates no GLFW window or
   surface, renders an offscreen color target through dynamic rendering, copies
   it into a readback buffer, and writes a PNG artifact.
 - `examples/fractal` links against `cubey`, renders a fullscreen
-  Mandelbrot-style fragment shader, supports example-local pan/zoom/reset
+  Mandelbrot-style fragment shader, supports camera-backed pan/zoom/reset
   navigation through the shared app host, and reuses the shared headless PNG
   host for no-window output.
 - `examples/particles` links against `cubey`, updates a storage-buffer particle

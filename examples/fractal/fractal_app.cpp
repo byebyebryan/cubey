@@ -137,8 +137,6 @@ class FractalApp {
         const VkExtent2D extent = context.swapchain().extent();
         view_controller_.update_from_input(context.input(), static_cast<float>(extent.width),
                                            static_cast<float>(extent.height));
-        view_.set_view(view_controller_.center_x(), view_controller_.center_y(),
-                       view_controller_.scale());
     }
 
     void destroy_swapchain_resources() {
@@ -184,7 +182,7 @@ class FractalApp {
     }
 
     [[nodiscard]] FractalPushConstants push_constants(VkExtent2D extent) const {
-        return view_.push_constants(extent.width, extent.height);
+        return view_.push_constants(view_controller_.camera(), extent.width, extent.height);
     }
 
     void record_fractal_draw(VkCommandBuffer command_buffer, VkImageView image_view,
@@ -247,11 +245,10 @@ class FractalApp {
 
     RunConfig config_;
     FractalView view_;
-    cubey::input::PanZoom2DController view_controller_{cubey::input::PanZoom2DConfig{
-        .center_x = -0.5F,
-        .center_y = 0.0F,
+    cubey::input::PanZoom2DController view_controller_{cubey::Camera2D({
+        .center = {-0.5F, 0.0F},
         .scale = 1.35F,
-    }};
+    })};
 
     std::optional<cubey::vulkan::PipelineLayout> pipeline_layout_;
     std::optional<cubey::vulkan::GraphicsPipeline> pipeline_;

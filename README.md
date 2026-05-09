@@ -66,8 +66,8 @@ with compute injection/advection, pressure projection, fullscreen rendering,
 and deterministic headless PNG output.
 `cubey` owns the reusable GLM-backed math wrapper, Vulkan instance, device,
 buffer, image, sampler, swapchain, shader-module, command-pool,
-image-transition and dynamic-rendering helpers, frame clock, orbit-controller,
-CPU job facade, PNG capture queue,
+image-transition and dynamic-rendering helpers, frame clock, 2D/3D camera
+helpers, orbit-controller, CPU job facade, PNG capture queue,
 upload request queue,
 frame tickets/deferred destruction, async-ready project runtime vocabulary,
 project runtime services and adapter,
@@ -76,13 +76,13 @@ pipeline setup including blend state, descriptor setup/write helpers including
 descriptor set bundles and storage buffers, compute pipeline setup, depth
 attachment setup, texture transfer/readback helpers, PNG image I/O helper,
 headless PNG host,
-shared shader includes,
-`RenderContext` surface-backed begin/end frame lifecycle, single-frame
+shared shader includes, `RenderContext` surface-backed begin/end frame
+lifecycle, single-frame
 command/sync components, and swapchain recreate-attempt tracking; examples still
 own command recording and render policy. `cubey::input` owns the shared
 keyboard/mouse frame snapshot plus pointer-drag and 2D pan/zoom helpers, while
-`OrbitController` consumes that input snapshot for the current 3D orbit-control
-path.
+the 2D pan/zoom controller mutates `Camera2D` and `OrbitController` consumes
+that input snapshot for the current 3D orbit-control path.
 `cubey_app` owns the GLFW-backed window/app host layer used by all current
 windowed examples and the first windowed project. The base `cubey` target owns a
 separate no-GLFW `HeadlessPngHost` used by current headless examples and the
@@ -142,13 +142,14 @@ Use validation as a hard requirement when the validation layers are installed:
 ./build/dev/projects/fluid_2d/fluid_2d --headless --require-validation --frames 120 --width 640 --height 360 --output /tmp/cubey-fluid-2d.png
 ```
 
-`textured_cube` supports basic interaction: left-drag rotates the shaded
-compute-textured cube, Space pauses/resumes auto-rotation, `R` resets the view,
-and Escape closes the window. Its window title periodically reports FPS, frame
-time, swapchain extent, triangle count, and pixel rate.
+`spinning_cube` and `textured_cube` share the reusable orbit-camera view and
+projection helper. `textured_cube` supports basic interaction: left-drag rotates
+the shaded compute-textured cube, Space pauses/resumes auto-rotation, `R` resets
+the view, and Escape closes the window. Its window title periodically reports
+FPS, frame time, swapchain extent, triangle count, and pixel rate.
 
-`fractal` supports basic navigation: left-drag pans, mouse wheel zooms around
-the cursor, `R` resets the view, and Escape closes the window.
+`fractal` supports basic `Camera2D` navigation: left-drag pans, mouse wheel
+zooms around the cursor, `R` resets the view, and Escape closes the window.
 
 `particles` supports basic controls: Space pauses/resumes compute updates, `R`
 resets the particle field, and Escape closes the window.

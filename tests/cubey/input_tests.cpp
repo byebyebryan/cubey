@@ -1,3 +1,4 @@
+#include <cubey/camera_2d.h>
 #include <cubey/input.h>
 #include <cubey/pan_zoom_2d_controller.h>
 #include <cubey/pointer_drag.h>
@@ -173,11 +174,10 @@ void test_pointer_drag_tracks_active_cursor_and_accumulated_delta() {
 }
 
 void test_pan_zoom_2d_controller_pans_and_zooms_from_input() {
-    cubey::input::PanZoom2DController controller({
-        .center_x = -0.5F,
-        .center_y = 0.0F,
+    cubey::input::PanZoom2DController controller(cubey::Camera2D({
+        .center = {-0.5F, 0.0F},
         .scale = 0.675F,
-    });
+    }));
     cubey::input::InputState input;
 
     input.begin_frame();
@@ -189,16 +189,19 @@ void test_pan_zoom_2d_controller_pans_and_zooms_from_input() {
     input.record_cursor_position({.cursor = {.x = 384.0, .y = 144.0}});
     controller.update_from_input(input.frame(), 640.0F, 360.0F);
 
-    require_close(controller.center_x(), -0.74F, "2D horizontal drag should pan in view units");
-    require_close(controller.center_y(), 0.135F, "2D vertical drag should follow screen motion");
+    require_close(controller.camera().center().x, -0.74F,
+                  "2D horizontal drag should pan in view units");
+    require_close(controller.camera().center().y, 0.135F,
+                  "2D vertical drag should follow screen motion");
 
     input.begin_frame();
     input.record_scroll({.x_offset = 0.0, .y_offset = 1.0, .cursor = {.x = 320.0, .y = 180.0}});
     controller.update_from_input(input.frame(), 640.0F, 360.0F);
-    require_close(controller.scale(), 0.5805F, "wheel up should zoom in at the cursor");
+    require_close(controller.camera().scale(), 0.5805F, "wheel up should zoom in at the cursor");
 
     controller.reset();
-    require_close(controller.center_x(), -0.5F, "reset should restore configured center x");
-    require_close(controller.center_y(), 0.0F, "reset should restore configured center y");
-    require_close(controller.scale(), 0.675F, "reset should restore configured scale");
+    require_close(controller.camera().center().x, -0.5F,
+                  "reset should restore configured center x");
+    require_close(controller.camera().center().y, 0.0F, "reset should restore configured center y");
+    require_close(controller.camera().scale(), 0.675F, "reset should restore configured scale");
 }

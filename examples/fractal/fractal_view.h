@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cubey/camera_2d.h>
+
 #include <cstdint>
 
 namespace cubey::examples::fractal {
@@ -14,29 +16,20 @@ struct FractalPushConstants {
 
 class FractalView {
   public:
-    [[nodiscard]] FractalPushConstants push_constants(std::uint32_t width,
-                                                      std::uint32_t height) const {
+    [[nodiscard]] FractalPushConstants
+    push_constants(const cubey::Camera2D& camera, std::uint32_t width, std::uint32_t height) const {
+        const Camera2DView view =
+            camera.view(static_cast<float>(width), static_cast<float>(height));
         FractalPushConstants constants;
-        constants.center_x = center_x_;
-        constants.center_y = center_y_;
-        constants.scale = scale_;
-        if (height != 0) {
-            constants.aspect = static_cast<float>(width) / static_cast<float>(height);
-        }
+        constants.center_x = view.center.x;
+        constants.center_y = view.center.y;
+        constants.scale = view.scale;
+        constants.aspect = view.aspect;
         constants.max_iterations = max_iterations_;
         return constants;
     }
 
-    void set_view(float center_x, float center_y, float scale) {
-        center_x_ = center_x;
-        center_y_ = center_y;
-        scale_ = scale;
-    }
-
   private:
-    float center_x_ = -0.5F;
-    float center_y_ = 0.0F;
-    float scale_ = 1.35F;
     std::int32_t max_iterations_ = 180;
 };
 

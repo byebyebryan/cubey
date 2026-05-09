@@ -17,6 +17,8 @@ set_target_properties(cubey_stb_image_write PROPERTIES CXX_CLANG_TIDY "")
 add_library(cubey STATIC
     $<TARGET_OBJECTS:cubey_stb_image_write>
     run_config.cpp
+    camera_2d.cpp
+    orbit_camera_3d.cpp
     capture_queue.cpp
     file_io.cpp
     frame_clock.cpp

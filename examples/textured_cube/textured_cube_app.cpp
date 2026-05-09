@@ -4,6 +4,7 @@
 #include <cubey/app/windowed_host.h>
 #include <cubey/frame_stats.h>
 #include <cubey/math.h>
+#include <cubey/orbit_camera_3d.h>
 #include <cubey/orbit_controller.h>
 #include <cubey/spirv_io.h>
 #include <cubey/vulkan/buffer.h>
@@ -25,7 +26,6 @@
 #include <cstdint>
 #include <cstdio>
 #include <filesystem>
-#include <numbers>
 #include <optional>
 #include <stdexcept>
 #include <utility>
@@ -430,13 +430,10 @@ class TexturedCubeApp {
     [[nodiscard]] SceneUniforms current_scene_uniforms(VkExtent2D extent) const {
         const cubey::math::Mat4 model = cubey::math::rotation_y(orbit_controller_.yaw()) *
                                         cubey::math::rotation_x(orbit_controller_.pitch());
-        const cubey::math::Mat4 view = cubey::math::translation(0.0F, 0.0F, -4.2F);
         const float aspect = static_cast<float>(extent.width) / static_cast<float>(extent.height);
-        const cubey::math::Mat4 projection =
-            cubey::math::perspective(std::numbers::pi_v<float> / 3.0F, aspect, 0.1F, 100.0F);
 
         return {
-            .mvp = projection * view * model,
+            .mvp = camera_.view_projection_matrix(aspect) * model,
             .model = model,
             .light_direction = {0.35F, -0.55F, 0.76F, 0.0F},
             .light_color = {0.76F, 0.76F, 0.76F, 1.0F},
@@ -590,6 +587,7 @@ class TexturedCubeApp {
     }
 
     RunConfig config_;
+    cubey::OrbitCamera3D camera_;
     OrbitController orbit_controller_;
 
     std::optional<cubey::vulkan::Buffer> vertex_buffer_;

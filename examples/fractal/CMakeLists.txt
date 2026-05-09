@@ -34,6 +34,7 @@ if (BUILD_TESTING)
     target_link_libraries(
         cubey_example_fractal_tests
         PRIVATE
+            cubey::cubey
             cubey_project_options
             cubey_project_warnings
     )

@@ -2,6 +2,7 @@
 
 #include <cubey/app/windowed_host.h>
 #include <cubey/math.h>
+#include <cubey/orbit_camera_3d.h>
 #include <cubey/spirv_io.h>
 #include <cubey/vulkan/buffer.h>
 #include <cubey/vulkan/command_pool.h>
@@ -20,7 +21,6 @@
 #include <cstdint>
 #include <cstdio>
 #include <filesystem>
-#include <numbers>
 #include <optional>
 #include <stdexcept>
 #include <utility>
@@ -242,13 +242,10 @@ class SpinningCubeApp {
 
         const cubey::math::Mat4 model =
             cubey::math::rotation_y(seconds * 0.9F) * cubey::math::rotation_x(seconds * 0.55F);
-        const cubey::math::Mat4 view = cubey::math::translation(0.0F, 0.0F, -4.2F);
         const float aspect = static_cast<float>(extent.width) / static_cast<float>(extent.height);
-        const cubey::math::Mat4 projection =
-            cubey::math::perspective(std::numbers::pi_v<float> / 3.0F, aspect, 0.1F, 100.0F);
 
         return {
-            projection * view * model,
+            camera_.view_projection_matrix(aspect) * model,
         };
     }
 
@@ -343,6 +340,7 @@ class SpinningCubeApp {
     }
 
     RunConfig config_;
+    cubey::OrbitCamera3D camera_;
     std::chrono::steady_clock::time_point start_time_ = std::chrono::steady_clock::now();
 
     std::optional<cubey::vulkan::Buffer> vertex_buffer_;

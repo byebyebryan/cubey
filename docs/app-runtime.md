@@ -118,9 +118,15 @@ resource creation/destruction, update, command recording, and shutdown.
   for keyboard, mouse button, cursor, drag, and scroll state. Windowed examples
   and projects now read input during `update()` instead of installing local
   callback-driven state machines.
+- `cubey::Camera2D` and `OrbitCamera3D` hold reusable 2D view state and 3D
+  view/projection state. The current examples still own when and how those
+  cameras are applied.
 - `cubey::input::PointerDrag`, `PanZoom2DController`, and the input-aware
   `OrbitController` cover the current repeated 2D/3D pointer-control shapes
-  without introducing a scene, camera, or action-binding system.
+  without introducing a scene or action-binding system. The pan/zoom controller
+  mutates `Camera2D`; `OrbitController` still models orbit input state that can
+  be applied to a 3D camera when an example needs camera orbiting instead of
+  object rotation.
 - `cubey::app::GlfwSurface` owns the GLFW-created `VkSurfaceKHR`.
 - `cubey::app::WindowedHost` owns the current windowed loop: instance, surface,
   device, swapchain, frame resources, frame timing, optional frame stats,

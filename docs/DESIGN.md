@@ -34,7 +34,7 @@ This is a ground-up rewrite carrying forward the same spirit with modern tools a
 | Optional future API | WebGPU (Dawn) | Browser showcases if the project earns that need |
 | Windowing | GLFW | Minimal, Vulkan-native surface creation |
 | UI | None yet; ImGui is the likely debug UI | Current telemetry stays lightweight until UI earns the dependency |
-| Math | GLM behind `cubey::math` | Share matrix/vector types and Vulkan projection conventions without exposing ad hoc example math |
+| Math | GLM behind `cubey::math` | Share matrix/vector types, camera state, and Vulkan projection conventions without exposing ad hoc example math |
 | Shader compilation | glslangValidator (build time) | GLSL → SPIR-V, no runtime dependency |
 | Image output | `stb_image_write` | Single-header dependency, enough for inspectable artifacts |
 | CPU async work | undecided behind `cubey::jobs` | Taskflow and `BS::thread_pool` are the first candidates |
@@ -242,11 +242,16 @@ cubey/
       frame_clock.h        -- frame timing
       frame_stats.h        -- lightweight telemetry formatting
       frame_tickets.h      -- frame tickets and deferred destruction
+      camera_2d.h          -- reusable 2D camera view state
       headless_png_host.h  -- no-window offscreen PNG capture host
       image_io.h           -- PNG artifact output
+      input.h              -- shared keyboard and mouse input snapshot
       jobs.h               -- CPU job facade
       math.h               -- GLM-backed math aliases and Vulkan projection helpers
+      orbit_camera_3d.h    -- reusable 3D orbit camera view/projection state
       orbit_controller.h   -- basic orbit input state
+      pan_zoom_2d_controller.h -- input-driven 2D camera pan/zoom controller
+      pointer_drag.h       -- shared pointer drag helper
       project_runtime.h    -- async-ready project vocabulary
       spirv_io.h           -- SPIR-V bytecode file loading
       upload_queue.h       -- CPU-owned upload request queue
@@ -271,14 +276,19 @@ cubey/
     cubey/
       run_config.cpp
       capture_queue.cpp
+      camera_2d.cpp
       file_io.cpp
       frame_clock.cpp
       frame_stats.cpp
       frame_tickets.cpp
       headless_png_host.cpp
       image_io.cpp
+      input.cpp
       jobs.cpp
+      orbit_camera_3d.cpp
       orbit_controller.cpp
+      pan_zoom_2d_controller.cpp
+      pointer_drag.cpp
       project_runtime.cpp
       spirv_io.cpp
       upload_queue.cpp

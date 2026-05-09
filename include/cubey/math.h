@@ -14,6 +14,8 @@
 namespace cubey::math {
 
 using Mat4 = glm::mat4;
+using Vec2 = glm::vec2;
+using Vec3 = glm::vec3;
 using Vec4 = glm::vec4;
 
 [[nodiscard]] inline Mat4 identity() {
@@ -23,6 +25,10 @@ using Vec4 = glm::vec4;
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
 [[nodiscard]] inline Mat4 translation(float x, float y, float z) {
     return glm::translate(identity(), glm::vec3{x, y, z});
+}
+
+[[nodiscard]] inline Mat4 translation(Vec3 offset) {
+    return glm::translate(identity(), offset);
 }
 
 [[nodiscard]] inline Mat4 rotation_x(float radians) {
