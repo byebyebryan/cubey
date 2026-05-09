@@ -20,6 +20,9 @@ descriptor_set_layout_info(std::span<const VkDescriptorSetLayoutBinding> binding
                                                         std::uint32_t descriptor_count);
 [[nodiscard]] VkDescriptorPoolCreateInfo
 descriptor_pool_info(std::uint32_t max_sets, std::span<const VkDescriptorPoolSize> pool_sizes);
+[[nodiscard]] VkDescriptorSetAllocateInfo
+descriptor_set_allocate_info(VkDescriptorPool pool,
+                             std::span<const VkDescriptorSetLayout> layouts);
 
 struct DescriptorBufferWrite {
     VkDescriptorBufferInfo buffer_info{};
@@ -90,12 +93,16 @@ class DescriptorSetInfo {
     [[nodiscard]] const VkDescriptorPoolCreateInfo& pool_info() const {
         return pool_info_;
     }
+    [[nodiscard]] std::uint32_t max_sets() const {
+        return max_sets_;
+    }
 
   private:
     std::vector<VkDescriptorSetLayoutBinding> bindings_;
     std::vector<VkDescriptorPoolSize> pool_sizes_;
     VkDescriptorSetLayoutCreateInfo layout_info_{};
     VkDescriptorPoolCreateInfo pool_info_{};
+    std::uint32_t max_sets_ = 0;
 };
 
 class DescriptorSetLayout {
@@ -128,6 +135,8 @@ class DescriptorPool {
     }
 
     VkDescriptorSet allocate(VkDescriptorSetLayout layout) const;
+    std::vector<VkDescriptorSet> allocate_many(VkDescriptorSetLayout layout,
+                                               std::uint32_t count) const;
 
   private:
     VkDevice device_ = VK_NULL_HANDLE;
@@ -157,6 +166,37 @@ class DescriptorSetBundle {
     DescriptorSetLayout layout_;
     DescriptorPool pool_;
     VkDescriptorSet set_ = VK_NULL_HANDLE;
+};
+
+class DescriptorSetArray {
+  public:
+    DescriptorSetArray(const Device& device, const DescriptorSetInfo& info);
+
+    DescriptorSetArray(const DescriptorSetArray&) = delete;
+    DescriptorSetArray& operator=(const DescriptorSetArray&) = delete;
+
+    [[nodiscard]] VkDescriptorSetLayout layout() const {
+        return layout_.handle();
+    }
+
+    [[nodiscard]] VkDescriptorPool pool() const {
+        return pool_.handle();
+    }
+
+    [[nodiscard]] std::span<const VkDescriptorSet> sets() const {
+        return sets_;
+    }
+
+    [[nodiscard]] VkDescriptorSet set(std::uint32_t index) const;
+
+    [[nodiscard]] std::uint32_t size() const {
+        return static_cast<std::uint32_t>(sets_.size());
+    }
+
+  private:
+    DescriptorSetLayout layout_;
+    DescriptorPool pool_;
+    std::vector<VkDescriptorSet> sets_;
 };
 
 } // namespace cubey::vulkan

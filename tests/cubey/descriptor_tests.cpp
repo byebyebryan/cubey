@@ -3,9 +3,11 @@
 #include <vulkan/vulkan.h>
 
 #include <array>
+#include <span>
 #include <stdexcept>
 #include <type_traits>
 #include <utility>
+#include <vector>
 
 namespace {
 
@@ -182,6 +184,7 @@ void test_descriptor_set_info_copies_bindings_and_aggregates_pool_sizes() {
             "descriptor set info should multiply sampler descriptors by max sets");
 
     const VkDescriptorPoolCreateInfo& pool_info = info.pool_info();
+    require(info.max_sets() == 2, "descriptor set info should expose max set count");
     require(pool_info.sType == VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
             "descriptor set info should expose descriptor pool create info");
     require(pool_info.maxSets == 2, "descriptor set info should preserve max set count");
@@ -189,4 +192,39 @@ void test_descriptor_set_info_copies_bindings_and_aggregates_pool_sizes() {
             "descriptor set info should preserve pool size count");
     require(pool_info.pPoolSizes == info.pool_sizes().data(),
             "descriptor set info pool info should point at owned pool sizes");
+
+    static_assert(!std::is_copy_constructible_v<cubey::vulkan::DescriptorSetArray>);
+    static_assert(!std::is_copy_assignable_v<cubey::vulkan::DescriptorSetArray>);
+    static_assert(std::is_same_v<decltype(&cubey::vulkan::DescriptorPool::allocate_many),
+                                 std::vector<VkDescriptorSet> (
+                                     cubey::vulkan::DescriptorPool::*)(
+                                     VkDescriptorSetLayout, std::uint32_t) const>);
+    static_assert(std::is_same_v<decltype(&cubey::vulkan::DescriptorSetArray::set),
+                                 VkDescriptorSet (cubey::vulkan::DescriptorSetArray::*)(
+                                     std::uint32_t) const>);
+    static_assert(std::is_same_v<decltype(&cubey::vulkan::DescriptorSetArray::sets),
+                                 std::span<const VkDescriptorSet> (
+                                     cubey::vulkan::DescriptorSetArray::*)() const>);
+    static_assert(std::is_same_v<decltype(&cubey::vulkan::DescriptorSetArray::size),
+                                 std::uint32_t (cubey::vulkan::DescriptorSetArray::*)() const>);
+}
+
+void test_descriptor_set_allocate_info_describes_multiple_sets() {
+    const VkDescriptorPool pool = reinterpret_cast<VkDescriptorPool>(0x70);
+    const std::array<VkDescriptorSetLayout, 3> layouts{
+        reinterpret_cast<VkDescriptorSetLayout>(0x80),
+        reinterpret_cast<VkDescriptorSetLayout>(0x90),
+        reinterpret_cast<VkDescriptorSetLayout>(0xA0),
+    };
+
+    const VkDescriptorSetAllocateInfo info =
+        cubey::vulkan::descriptor_set_allocate_info(pool, layouts);
+
+    require(info.sType == VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
+            "descriptor allocate info should use descriptor set allocate info");
+    require(info.descriptorPool == pool, "descriptor allocate info should preserve pool");
+    require(info.descriptorSetCount == layouts.size(),
+            "descriptor allocate info should preserve layout count");
+    require(info.pSetLayouts == layouts.data(),
+            "descriptor allocate info should point at caller-owned layouts");
 }

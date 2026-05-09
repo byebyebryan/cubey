@@ -2,6 +2,7 @@
 
 #include <cubey/vulkan/vk_check.h>
 
+#include <cstddef>
 #include <limits>
 #include <stdexcept>
 
@@ -78,6 +79,32 @@ VkDescriptorPoolCreateInfo descriptor_pool_info(std::uint32_t max_sets,
     info.maxSets = max_sets;
     info.poolSizeCount = static_cast<std::uint32_t>(pool_sizes.size());
     info.pPoolSizes = pool_sizes.data();
+    return info;
+}
+
+VkDescriptorSetAllocateInfo
+descriptor_set_allocate_info(VkDescriptorPool pool,
+                             std::span<const VkDescriptorSetLayout> layouts) {
+    if (pool == VK_NULL_HANDLE) {
+        throw std::runtime_error("descriptor set allocation requires a valid pool");
+    }
+    if (layouts.empty()) {
+        throw std::runtime_error("descriptor set allocation requires at least one layout");
+    }
+    if (layouts.size() > std::numeric_limits<std::uint32_t>::max()) {
+        throw std::runtime_error("descriptor set allocation layout count overflow");
+    }
+    for (VkDescriptorSetLayout layout : layouts) {
+        if (layout == VK_NULL_HANDLE) {
+            throw std::runtime_error("descriptor set allocation requires valid layouts");
+        }
+    }
+
+    auto info =
+        vk_struct<VkDescriptorSetAllocateInfo>(VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO);
+    info.descriptorPool = pool;
+    info.descriptorSetCount = static_cast<std::uint32_t>(layouts.size());
+    info.pSetLayouts = layouts.data();
     return info;
 }
 
@@ -178,6 +205,7 @@ DescriptorSetInfo::DescriptorSetInfo(std::span<const DescriptorSetBindingConfig>
     if (max_sets == 0) {
         throw std::runtime_error("descriptor set info max set count must be positive");
     }
+    max_sets_ = max_sets;
 
     bindings_.reserve(bindings.size());
     for (const DescriptorSetBindingConfig& binding : bindings) {
@@ -244,24 +272,37 @@ DescriptorPool::~DescriptorPool() {
 }
 
 VkDescriptorSet DescriptorPool::allocate(VkDescriptorSetLayout layout) const {
-    if (layout == VK_NULL_HANDLE) {
-        throw std::runtime_error("descriptor set allocation requires a valid layout");
+    return allocate_many(layout, 1).front();
+}
+
+std::vector<VkDescriptorSet> DescriptorPool::allocate_many(VkDescriptorSetLayout layout,
+                                                           std::uint32_t count) const {
+    if (count == 0) {
+        throw std::runtime_error("descriptor set allocation count must be positive");
     }
 
-    auto alloc =
-        vk_struct<VkDescriptorSetAllocateInfo>(VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO);
-    alloc.descriptorPool = pool_;
-    alloc.descriptorSetCount = 1;
-    alloc.pSetLayouts = &layout;
+    std::vector<VkDescriptorSetLayout> layouts(count, layout);
+    const VkDescriptorSetAllocateInfo alloc = descriptor_set_allocate_info(pool_, layouts);
 
-    VkDescriptorSet set = VK_NULL_HANDLE;
-    check(vkAllocateDescriptorSets(device_, &alloc, &set), "vkAllocateDescriptorSets");
-    return set;
+    std::vector<VkDescriptorSet> sets(count, VK_NULL_HANDLE);
+    check(vkAllocateDescriptorSets(device_, &alloc, sets.data()), "vkAllocateDescriptorSets");
+    return sets;
 }
 
 DescriptorSetBundle::DescriptorSetBundle(const Device& device, const DescriptorSetInfo& info)
     : layout_(device, info.layout_info()), pool_(device, info.pool_info()) {
     set_ = pool_.allocate(layout_.handle());
+}
+
+DescriptorSetArray::DescriptorSetArray(const Device& device, const DescriptorSetInfo& info)
+    : layout_(device, info.layout_info()), pool_(device, info.pool_info()),
+      sets_(pool_.allocate_many(layout_.handle(), info.max_sets())) {}
+
+VkDescriptorSet DescriptorSetArray::set(std::uint32_t index) const {
+    if (index >= sets_.size()) {
+        throw std::runtime_error("descriptor set array index is out of range");
+    }
+    return sets_.at(static_cast<std::size_t>(index));
 }
 
 } // namespace cubey::vulkan
