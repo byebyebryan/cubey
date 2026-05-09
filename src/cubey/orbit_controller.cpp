@@ -58,4 +58,25 @@ void OrbitController::end_drag() {
     dragging_ = false;
 }
 
+void OrbitController::update_from_input(const cubey::input::InputFrame& input,
+                                        double delta_seconds) {
+    if (input.key_pressed(cubey::input::Key::R)) {
+        reset();
+    }
+    if (input.key_pressed(cubey::input::Key::Space)) {
+        toggle_pause();
+    }
+
+    dragging_ = input.mouse_button_down(cubey::input::MouseButton::Left);
+    if (dragging_) {
+        const cubey::input::PointerDelta delta =
+            input.mouse_button_delta(cubey::input::MouseButton::Left);
+        yaw_ += static_cast<float>(delta.x) * kDragRadiansPerPixel;
+        pitch_ += static_cast<float>(delta.y) * kDragRadiansPerPixel;
+        pitch_ = std::clamp(pitch_, -kMaxPitchRadians, kMaxPitchRadians);
+    }
+
+    update(delta_seconds);
+}
+
 } // namespace cubey

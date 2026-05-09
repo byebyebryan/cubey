@@ -135,8 +135,7 @@ class ParticlesApp {
                         destroy_swapchain_resources();
                     },
                 .on_ready =
-                    [this](cubey::app::WindowedAppContext& context) {
-                        setup_input(context);
+                    [](cubey::app::WindowedAppContext& context) {
                         std::printf(
                             "particles: %s rendering compute attractor particles at %ux%u\n",
                             context.device().device_name(), context.swapchain().extent().width,
@@ -145,6 +144,15 @@ class ParticlesApp {
                 .update =
                     [this](cubey::app::WindowedAppContext& context, const FrameTiming& timing) {
                         (void)timing;
+                        if (context.input().key_pressed(cubey::input::Key::Escape)) {
+                            context.window().request_close();
+                        }
+                        if (context.input().key_pressed(cubey::input::Key::Space)) {
+                            paused_ = !paused_;
+                        }
+                        if (context.input().key_pressed(cubey::input::Key::R)) {
+                            reset_particles_requested_ = true;
+                        }
                         if (reset_particles_requested_) {
                             reset_particle_buffer(context);
                         }
@@ -175,28 +183,6 @@ class ParticlesApp {
     }
 
   private:
-    void setup_input(cubey::app::WindowedAppContext& context) {
-        cubey::app::GlfwWindow* window = &context.window();
-        window->set_key_callback([this, window](const cubey::app::KeyEvent& event) {
-            if (event.action != cubey::app::KeyAction::Press) {
-                return;
-            }
-            switch (event.key) {
-            case cubey::app::Key::Escape:
-                window->request_close();
-                break;
-            case cubey::app::Key::Space:
-                paused_ = !paused_;
-                break;
-            case cubey::app::Key::R:
-                reset_particles_requested_ = true;
-                break;
-            default:
-                break;
-            }
-        });
-    }
-
     void create_global_resources_if_needed(cubey::app::WindowedAppContext& context) {
         if (particle_buffer_.has_value()) {
             return;

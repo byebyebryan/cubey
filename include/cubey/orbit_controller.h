@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cubey/input.h>
+
 namespace cubey {
 
 class OrbitController {
@@ -13,6 +15,7 @@ class OrbitController {
     void begin_drag(double x, double y);
     void drag_to(double x, double y);
     void end_drag();
+    void update_from_input(const cubey::input::InputFrame& input, double delta_seconds);
 
     float yaw() const {
         return yaw_;

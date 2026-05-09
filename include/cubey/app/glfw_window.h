@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cubey/input.h>
+
 #include <vulkan/vulkan.h>
 
 #include <cstdint>
@@ -11,64 +13,15 @@ struct GLFWwindow;
 
 namespace cubey::app {
 
-enum class Key {
-    Unknown,
-    D,
-    Escape,
-    R,
-    Space,
-};
-
-enum class KeyAction {
-    Unknown,
-    Press,
-    Release,
-    Repeat,
-};
-
-struct KeyEvent {
-    Key key = Key::Unknown;
-    KeyAction action = KeyAction::Unknown;
-    int native_key = 0;
-    int native_scancode = 0;
-    int native_mods = 0;
-};
-
-enum class MouseButton {
-    Unknown,
-    Left,
-    Middle,
-    Right,
-};
-
-enum class MouseButtonAction {
-    Unknown,
-    Press,
-    Release,
-};
-
-struct CursorPosition {
-    double x = 0.0;
-    double y = 0.0;
-};
-
-struct MouseButtonEvent {
-    MouseButton button = MouseButton::Unknown;
-    MouseButtonAction action = MouseButtonAction::Unknown;
-    CursorPosition cursor{};
-    int native_button = 0;
-    int native_mods = 0;
-};
-
-struct CursorPositionEvent {
-    CursorPosition cursor{};
-};
-
-struct ScrollEvent {
-    double x_offset = 0.0;
-    double y_offset = 0.0;
-    CursorPosition cursor{};
-};
+using Key = cubey::input::Key;
+using KeyAction = cubey::input::KeyAction;
+using KeyEvent = cubey::input::KeyEvent;
+using MouseButton = cubey::input::MouseButton;
+using MouseButtonAction = cubey::input::MouseButtonAction;
+using CursorPosition = cubey::input::CursorPosition;
+using MouseButtonEvent = cubey::input::MouseButtonEvent;
+using CursorPositionEvent = cubey::input::CursorPositionEvent;
+using ScrollEvent = cubey::input::ScrollEvent;
 
 struct GlfwWindowConfig {
     std::uint32_t width = 1280;
@@ -98,6 +51,7 @@ class GlfwWindow {
     void set_mouse_button_callback(std::function<void(const MouseButtonEvent&)> callback);
     void set_cursor_position_callback(std::function<void(const CursorPositionEvent&)> callback);
     void set_scroll_callback(std::function<void(const ScrollEvent&)> callback);
+    void set_input_state(cubey::input::InputState* input_state);
 
     [[nodiscard]] bool framebuffer_resized() const {
         return framebuffer_resized_;
@@ -129,6 +83,7 @@ class GlfwWindow {
     bool glfw_initialized_ = false;
     bool framebuffer_resized_ = false;
     GLFWwindow* window_ = nullptr;
+    cubey::input::InputState* input_state_ = nullptr;
     std::function<void(const KeyEvent&)> key_callback_;
     std::function<void(const MouseButtonEvent&)> mouse_button_callback_;
     std::function<void(const CursorPositionEvent&)> cursor_position_callback_;

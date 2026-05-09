@@ -3,6 +3,7 @@
 #include <cubey/app/glfw_window.h>
 #include <cubey/frame_clock.h>
 #include <cubey/frame_stats.h>
+#include <cubey/input.h>
 #include <cubey/run_config.h>
 #include <cubey/vulkan/device.h>
 #include <cubey/vulkan/frame_resources.h>
@@ -23,7 +24,8 @@ class WindowedAppContext {
     WindowedAppContext(const RunConfig& config, GlfwWindow& window,
                        cubey::vulkan::Instance& instance, GlfwSurface& surface,
                        cubey::vulkan::Device& device, cubey::vulkan::Swapchain& swapchain,
-                       cubey::vulkan::FrameResources& frame_resources);
+                       cubey::vulkan::FrameResources& frame_resources,
+                       const cubey::input::InputFrame& input);
 
     [[nodiscard]] const RunConfig& config() const {
         return config_;
@@ -46,6 +48,9 @@ class WindowedAppContext {
     [[nodiscard]] cubey::vulkan::FrameResources& frame_resources() const {
         return frame_resources_;
     }
+    [[nodiscard]] const cubey::input::InputFrame& input() const {
+        return input_;
+    }
 
   private:
     const RunConfig& config_;
@@ -55,6 +60,7 @@ class WindowedAppContext {
     cubey::vulkan::Device& device_;
     cubey::vulkan::Swapchain& swapchain_;
     cubey::vulkan::FrameResources& frame_resources_;
+    const cubey::input::InputFrame& input_;
 };
 
 struct WindowedHostConfig {
@@ -118,6 +124,7 @@ class WindowedHost {
     std::optional<cubey::vulkan::FrameResources> frame_resources_;
     FrameClock frame_clock_;
     FrameStats frame_stats_;
+    cubey::input::InputState input_state_;
 };
 
 } // namespace cubey::app

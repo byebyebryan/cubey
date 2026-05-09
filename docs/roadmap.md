@@ -82,6 +82,9 @@ Current checkpoint:
   command/sync resources.
 - Reusable `cubey::FrameClock` and `cubey::OrbitController` cover basic frame
   timing and mouse-driven view control.
+- Reusable `cubey::input::InputState`/`InputFrame` provide per-frame keyboard
+  and mouse polling over the GLFW callback stream, with shared pointer-drag,
+  2D pan/zoom, and input-aware orbit-control helpers.
 - Reusable `cubey::FrameStats` covers lightweight FPS/frame-time/extent/triangle
   telemetry formatting for windowed examples.
 - Reusable `cubey::math` wraps GLM matrix/vector types and the current Vulkan

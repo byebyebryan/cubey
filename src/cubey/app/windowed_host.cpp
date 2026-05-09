@@ -35,9 +35,10 @@ WindowedAppContext::WindowedAppContext(const RunConfig& config, GlfwWindow& wind
                                        cubey::vulkan::Instance& instance, GlfwSurface& surface,
                                        cubey::vulkan::Device& device,
                                        cubey::vulkan::Swapchain& swapchain,
-                                       cubey::vulkan::FrameResources& frame_resources)
+                                       cubey::vulkan::FrameResources& frame_resources,
+                                       const cubey::input::InputFrame& input)
     : config_(config), window_(window), instance_(instance), surface_(surface), device_(device),
-      swapchain_(swapchain), frame_resources_(frame_resources) {}
+      swapchain_(swapchain), frame_resources_(frame_resources), input_(input) {}
 
 WindowedHost::WindowedHost(WindowedHostConfig config, WindowedHostCallbacks callbacks)
     : config_(std::move(config)), callbacks_(std::move(callbacks)) {
@@ -80,6 +81,7 @@ int WindowedHost::run() {
     cubey::vulkan::SwapchainRecreateTracker recreate_tracker;
     while (!window().should_close() &&
            (config_.run_config.frames == 0 || frame < config_.run_config.frames)) {
+        input_state_.begin_frame();
         window().poll_events();
         if (window().should_close()) {
             break;
@@ -98,6 +100,9 @@ int WindowedHost::run() {
         WindowedAppContext active_context = context();
         if (callbacks_.update) {
             callbacks_.update(active_context, timing);
+        }
+        if (window().should_close()) {
+            break;
         }
 
         cubey::vulkan::RenderFrameResult result = draw_frame(timing);
@@ -142,6 +147,7 @@ void WindowedHost::create_window() {
         .height = config_.run_config.height,
         .title = config_.run_config.title,
     });
+    window().set_input_state(&input_state_);
 }
 
 void WindowedHost::create_instance() {
@@ -228,8 +234,8 @@ cubey::vulkan::RenderFrameResult WindowedHost::draw_frame(const FrameTiming& tim
 }
 
 WindowedAppContext WindowedHost::context() {
-    return {config_.run_config, window(),    instance(),       surface(),
-            device(),           swapchain(), frame_resources()};
+    return {config_.run_config, window(),    instance(),        surface(),
+            device(),           swapchain(), frame_resources(), input_state_.frame()};
 }
 
 GlfwWindow& WindowedHost::window() {

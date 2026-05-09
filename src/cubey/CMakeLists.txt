@@ -24,8 +24,11 @@ add_library(cubey STATIC
     frame_tickets.cpp
     headless_png_host.cpp
     image_io.cpp
+    input.cpp
     jobs.cpp
     orbit_controller.cpp
+    pan_zoom_2d_controller.cpp
+    pointer_drag.cpp
     project_runtime.cpp
     spirv_io.cpp
     upload_queue.cpp

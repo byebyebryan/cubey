@@ -23,22 +23,16 @@ int main() {
         require_close(constants.scale, 1.35F, "initial scale should match Mandelbrot view");
         require_close(constants.aspect, 640.0F / 360.0F, "aspect should come from extent");
 
-        view.zoom_at(0.5F, 320.0F, 180.0F, 640.0F, 360.0F);
+        view.set_view(-0.5F, 0.0F, 0.675F);
         constants = view.push_constants(640, 360);
-        require_close(constants.center_x, -0.5F, "center zoom should preserve center x");
-        require_close(constants.center_y, 0.0F, "center zoom should preserve center y");
-        require_close(constants.scale, 0.675F, "zoom should scale the view");
+        require_close(constants.center_x, -0.5F, "set view should update center x");
+        require_close(constants.center_y, 0.0F, "set view should update center y");
+        require_close(constants.scale, 0.675F, "set view should update scale");
 
-        view.pan_by_screen_delta(64.0F, -36.0F, 640.0F, 360.0F);
+        view.set_view(-0.74F, 0.135F, 0.675F);
         constants = view.push_constants(640, 360);
-        require_close(constants.center_x, -0.74F, "horizontal drag should pan in fractal units");
-        require_close(constants.center_y, 0.135F, "vertical drag should follow screen motion");
-
-        view.reset();
-        constants = view.push_constants(640, 360);
-        require_close(constants.center_x, -0.5F, "reset should restore center x");
-        require_close(constants.center_y, 0.0F, "reset should restore center y");
-        require_close(constants.scale, 1.35F, "reset should restore scale");
+        require_close(constants.center_x, -0.74F, "set view should accept panned center x");
+        require_close(constants.center_y, 0.135F, "set view should accept panned center y");
     } catch (const std::exception& error) {
         std::fprintf(stderr, "fractal_view_tests: %s\n", error.what());
         return 1;

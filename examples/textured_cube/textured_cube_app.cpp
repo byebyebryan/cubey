@@ -132,7 +132,6 @@ class TexturedCubeApp {
                     },
                 .on_ready =
                     [this](cubey::app::WindowedAppContext& context) {
-                        setup_input(context);
                         orbit_controller_.set_auto_rotation_speed(0.9F);
                         std::printf("textured_cube: %s rendering interactive compute shaded "
                                     "textured cube at %ux%u\n",
@@ -142,8 +141,10 @@ class TexturedCubeApp {
                     },
                 .update =
                     [this](cubey::app::WindowedAppContext& context, const FrameTiming& timing) {
-                        (void)context;
-                        orbit_controller_.update(timing.delta_seconds);
+                        if (context.input().key_pressed(cubey::input::Key::Escape)) {
+                            context.window().request_close();
+                        }
+                        orbit_controller_.update_from_input(context.input(), timing.delta_seconds);
                     },
                 .record_frame =
                     [this](cubey::app::WindowedAppContext& context, VkCommandBuffer command_buffer,
@@ -172,43 +173,6 @@ class TexturedCubeApp {
     }
 
   private:
-    void setup_input(cubey::app::WindowedAppContext& context) {
-        cubey::app::GlfwWindow* window = &context.window();
-        window->set_cursor_position_callback([this](const cubey::app::CursorPositionEvent& event) {
-            if (orbit_controller_.dragging()) {
-                orbit_controller_.drag_to(event.cursor.x, event.cursor.y);
-            }
-        });
-        window->set_mouse_button_callback([this](const cubey::app::MouseButtonEvent& event) {
-            if (event.button != cubey::app::MouseButton::Left) {
-                return;
-            }
-            if (event.action == cubey::app::MouseButtonAction::Press) {
-                orbit_controller_.begin_drag(event.cursor.x, event.cursor.y);
-            } else if (event.action == cubey::app::MouseButtonAction::Release) {
-                orbit_controller_.end_drag();
-            }
-        });
-        window->set_key_callback([this, window](const cubey::app::KeyEvent& event) {
-            if (event.action != cubey::app::KeyAction::Press) {
-                return;
-            }
-            switch (event.key) {
-            case cubey::app::Key::Escape:
-                window->request_close();
-                break;
-            case cubey::app::Key::R:
-                orbit_controller_.reset();
-                break;
-            case cubey::app::Key::Space:
-                orbit_controller_.toggle_pause();
-                break;
-            default:
-                break;
-            }
-        });
-    }
-
     void create_global_resources_if_needed(cubey::app::WindowedAppContext& context) {
         if (vertex_buffer_.has_value()) {
             return;

@@ -1,5 +1,7 @@
 #include <cubey/orbit_controller.h>
 
+#include <cubey/input.h>
+
 #include <cmath>
 #include <stdexcept>
 
@@ -44,4 +46,35 @@ void test_orbit_controller_tracks_rotation_drag_pause_and_reset() {
     require_close(controller.yaw(), 0.0F, "reset should clear yaw");
     require_close(controller.pitch(), 0.0F, "reset should clear pitch");
     require(!controller.paused(), "reset should resume animation");
+}
+
+void test_orbit_controller_updates_from_input_snapshot() {
+    cubey::OrbitController controller;
+    cubey::input::InputState input;
+
+    controller.set_auto_rotation_speed(0.5F);
+
+    input.begin_frame();
+    input.record_mouse_button({
+        .button = cubey::input::MouseButton::Left,
+        .action = cubey::input::MouseButtonAction::Press,
+        .cursor = {.x = 10.0, .y = 10.0},
+    });
+    input.record_cursor_position({.cursor = {.x = 30.0, .y = 5.0}});
+    controller.update_from_input(input.frame(), 2.0);
+
+    require_close(controller.yaw(), 0.2F, "input drag should adjust yaw");
+    require_close(controller.pitch(), -0.05F, "input drag should adjust pitch");
+    require(controller.dragging(), "input button state should mark controller dragging");
+
+    input.begin_frame();
+    input.record_mouse_button({
+        .button = cubey::input::MouseButton::Left,
+        .action = cubey::input::MouseButtonAction::Release,
+        .cursor = {.x = 30.0, .y = 5.0},
+    });
+    controller.update_from_input(input.frame(), 2.0);
+
+    require_close(controller.yaw(), 1.2F, "auto rotation should resume after drag release");
+    require(!controller.dragging(), "input release should clear dragging");
 }

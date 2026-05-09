@@ -5,6 +5,7 @@
 #include <cubey/app/glfw_window.h>
 #include <cubey/app/windowed_host.h>
 #include <cubey/headless_png_host.h>
+#include <cubey/pan_zoom_2d_controller.h>
 #include <cubey/spirv_io.h>
 #include <cubey/vulkan/command_pool.h>
 #include <cubey/vulkan/device.h>
@@ -17,7 +18,6 @@
 #include <vulkan/vulkan.h>
 
 #include <array>
-#include <cmath>
 #include <cstdint>
 #include <cstdio>
 #include <filesystem>
@@ -77,14 +77,17 @@ class FractalApp {
                         destroy_swapchain_resources();
                     },
                 .on_ready =
-                    [this](cubey::app::WindowedAppContext& context) {
-                        setup_input(context);
+                    [](cubey::app::WindowedAppContext& context) {
                         std::printf("fractal: %s rendering fullscreen fractal at %ux%u\n",
                                     context.device().device_name(),
                                     context.swapchain().extent().width,
                                     context.swapchain().extent().height);
                     },
-                .update = {},
+                .update =
+                    [this](cubey::app::WindowedAppContext& context, const FrameTiming& timing) {
+                        (void)timing;
+                        update_input(context);
+                    },
                 .record_frame =
                     [this](cubey::app::WindowedAppContext& context, VkCommandBuffer command_buffer,
                            std::uint32_t image_index, const FrameTiming& timing) {
@@ -123,56 +126,19 @@ class FractalApp {
         return host.run();
     }
 
-    void setup_input(cubey::app::WindowedAppContext& context) {
-        cubey::app::GlfwWindow* window = &context.window();
-        window->set_cursor_position_callback(
-            [this, window](const cubey::app::CursorPositionEvent& event) {
-                if (!dragging_) {
-                    return;
-                }
+    void update_input(cubey::app::WindowedAppContext& context) {
+        if (context.input().key_pressed(cubey::input::Key::Escape)) {
+            context.window().request_close();
+        }
+        if (context.input().key_pressed(cubey::input::Key::R)) {
+            view_controller_.reset();
+        }
 
-                const VkExtent2D extent = window->framebuffer_extent();
-                view_.pan_by_screen_delta(static_cast<float>(event.cursor.x - last_cursor_x_),
-                                          static_cast<float>(event.cursor.y - last_cursor_y_),
-                                          static_cast<float>(extent.width),
-                                          static_cast<float>(extent.height));
-                last_cursor_x_ = event.cursor.x;
-                last_cursor_y_ = event.cursor.y;
-            });
-        window->set_key_callback([this, window](const cubey::app::KeyEvent& event) {
-            if (event.action != cubey::app::KeyAction::Press) {
-                return;
-            }
-            switch (event.key) {
-            case cubey::app::Key::Escape:
-                window->request_close();
-                break;
-            case cubey::app::Key::R:
-                view_.reset();
-                break;
-            default:
-                break;
-            }
-        });
-        window->set_mouse_button_callback([this](const cubey::app::MouseButtonEvent& event) {
-            if (event.button != cubey::app::MouseButton::Left) {
-                return;
-            }
-            if (event.action == cubey::app::MouseButtonAction::Press) {
-                dragging_ = true;
-                last_cursor_x_ = event.cursor.x;
-                last_cursor_y_ = event.cursor.y;
-            } else if (event.action == cubey::app::MouseButtonAction::Release) {
-                dragging_ = false;
-            }
-        });
-        window->set_scroll_callback([this, window](const cubey::app::ScrollEvent& event) {
-            const VkExtent2D extent = window->framebuffer_extent();
-            const float factor = std::pow(0.86F, static_cast<float>(event.y_offset));
-            view_.zoom_at(factor, static_cast<float>(event.cursor.x),
-                          static_cast<float>(event.cursor.y), static_cast<float>(extent.width),
-                          static_cast<float>(extent.height));
-        });
+        const VkExtent2D extent = context.swapchain().extent();
+        view_controller_.update_from_input(context.input(), static_cast<float>(extent.width),
+                                           static_cast<float>(extent.height));
+        view_.set_view(view_controller_.center_x(), view_controller_.center_y(),
+                       view_controller_.scale());
     }
 
     void destroy_swapchain_resources() {
@@ -280,10 +246,12 @@ class FractalApp {
     }
 
     RunConfig config_;
-    bool dragging_ = false;
-    double last_cursor_x_ = 0.0;
-    double last_cursor_y_ = 0.0;
     FractalView view_;
+    cubey::input::PanZoom2DController view_controller_{cubey::input::PanZoom2DConfig{
+        .center_x = -0.5F,
+        .center_y = 0.0F,
+        .scale = 1.35F,
+    }};
 
     std::optional<cubey::vulkan::PipelineLayout> pipeline_layout_;
     std::optional<cubey::vulkan::GraphicsPipeline> pipeline_;

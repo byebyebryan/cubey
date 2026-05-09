@@ -79,7 +79,10 @@ headless PNG host,
 shared shader includes,
 `RenderContext` surface-backed begin/end frame lifecycle, single-frame
 command/sync components, and swapchain recreate-attempt tracking; examples still
-own command recording and render policy.
+own command recording and render policy. `cubey::input` owns the shared
+keyboard/mouse frame snapshot plus pointer-drag and 2D pan/zoom helpers, while
+`OrbitController` consumes that input snapshot for the current 3D orbit-control
+path.
 `cubey_app` owns the GLFW-backed window/app host layer used by all current
 windowed examples and the first windowed project. The base `cubey` target owns a
 separate no-GLFW `HeadlessPngHost` used by current headless examples and the

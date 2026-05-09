@@ -10,7 +10,7 @@ The app runtime is responsible for host flow:
 
 - GLFW window lifetime and Vulkan surface handoff.
 - Presentable framebuffer extent queries and minimized-window waiting.
-- Input/event dispatch.
+- Input collection, per-frame input snapshots, and low-level event dispatch.
 - Windowed frame loop, frame timing, frame stats, and frame limits.
 - Swapchain resize/out-of-date recreation orchestration.
 - Project lifecycle calls.
@@ -113,7 +113,14 @@ resource creation/destruction, update, command recording, and shutdown.
 - `cubey::app::GlfwWindow` owns GLFW initialization, no-client-API window
   creation, required Vulkan instance extension lookup, framebuffer resize
   tracking, presentable-size waiting, title updates, and key/pointer event
-  dispatch.
+  dispatch. It also feeds host-owned input state from GLFW callbacks.
+- `cubey::input::InputState` and `InputFrame` provide the shared polling layer
+  for keyboard, mouse button, cursor, drag, and scroll state. Windowed examples
+  and projects now read input during `update()` instead of installing local
+  callback-driven state machines.
+- `cubey::input::PointerDrag`, `PanZoom2DController`, and the input-aware
+  `OrbitController` cover the current repeated 2D/3D pointer-control shapes
+  without introducing a scene, camera, or action-binding system.
 - `cubey::app::GlfwSurface` owns the GLFW-created `VkSurfaceKHR`.
 - `cubey::app::WindowedHost` owns the current windowed loop: instance, surface,
   device, swapchain, frame resources, frame timing, optional frame stats,

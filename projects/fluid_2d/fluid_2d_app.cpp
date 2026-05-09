@@ -4,6 +4,7 @@
 #include <cubey/app/windowed_host.h>
 #include <cubey/frame_stats.h>
 #include <cubey/headless_png_host.h>
+#include <cubey/pointer_drag.h>
 #include <cubey/project_runtime.h>
 #include <cubey/spirv_io.h>
 #include <cubey/vulkan/buffer.h>
@@ -118,13 +119,6 @@ void record_transfer_write_barrier(VkCommandBuffer command_buffer, TransferWrite
     return static_cast<float>(static_cast<std::uint32_t>(view));
 }
 
-struct PointerState {
-    bool left_down = false;
-    bool has_cursor = false;
-    cubey::app::CursorPosition cursor{};
-    cubey::app::CursorPosition accumulated_delta{};
-};
-
 struct FrameInjection {
     bool active = false;
     std::array<float, 2> xy{};
@@ -163,8 +157,7 @@ class Fluid2DApp {
                         destroy_swapchain_resources();
                     },
                 .on_ready =
-                    [this](cubey::app::WindowedAppContext& context) {
-                        setup_input(context);
+                    [](cubey::app::WindowedAppContext& context) {
                         std::printf("fluid_2d: %s rendering 2D fluid project at %ux%u\n",
                                     context.device().device_name(),
                                     context.swapchain().extent().width,
@@ -203,58 +196,40 @@ class Fluid2DApp {
     }
 
   private:
-    void setup_input(cubey::app::WindowedAppContext& context) {
-        cubey::app::GlfwWindow* window = &context.window();
-        window->set_key_callback([this, window](const cubey::app::KeyEvent& event) {
-            if (event.action != cubey::app::KeyAction::Press) {
-                return;
-            }
-            if (event.key == cubey::app::Key::Escape) {
-                window->request_close();
-            } else if (event.key == cubey::app::Key::Space) {
-                paused_ = !paused_;
-            } else if (event.key == cubey::app::Key::R) {
-                reset_requested_ = true;
-            } else if (event.key == cubey::app::Key::D) {
-                debug_view_ = next_debug_view(debug_view_);
-            }
-        });
-        window->set_mouse_button_callback([this](const cubey::app::MouseButtonEvent& event) {
-            if (event.button != cubey::app::MouseButton::Left) {
-                return;
-            }
-            pointer_.left_down = event.action == cubey::app::MouseButtonAction::Press;
-            pointer_.has_cursor = true;
-            pointer_.cursor = event.cursor;
-            pointer_.accumulated_delta = {};
-        });
-        window->set_cursor_position_callback([this](const cubey::app::CursorPositionEvent& event) {
-            if (pointer_.left_down && pointer_.has_cursor) {
-                pointer_.accumulated_delta.x += event.cursor.x - pointer_.cursor.x;
-                pointer_.accumulated_delta.y += event.cursor.y - pointer_.cursor.y;
-            }
-            pointer_.has_cursor = true;
-            pointer_.cursor = event.cursor;
-        });
-    }
-
     void update_interaction(cubey::app::WindowedAppContext& context,
                             const ProjectFrame& project_frame) {
         (void)project_frame;
+        const cubey::input::InputFrame& input = context.input();
+        if (input.key_pressed(cubey::input::Key::Escape)) {
+            context.window().request_close();
+        }
+        if (input.key_pressed(cubey::input::Key::Space)) {
+            paused_ = !paused_;
+        }
+        if (input.key_pressed(cubey::input::Key::R)) {
+            reset_requested_ = true;
+        }
+        if (input.key_pressed(cubey::input::Key::D)) {
+            debug_view_ = next_debug_view(debug_view_);
+        }
+
+        pointer_drag_.update(input);
         const VkExtent2D extent = context.swapchain().extent();
         frame_injection_ = {};
-        if (!pointer_.left_down || !pointer_.has_cursor || extent.width == 0 ||
+        if (!pointer_drag_.active() || !pointer_drag_.has_cursor() || extent.width == 0 ||
             extent.height == 0) {
-            pointer_.accumulated_delta = {};
+            static_cast<void>(pointer_drag_.consume_accumulated_delta());
             return;
         }
 
         const float width = static_cast<float>(extent.width);
         const float height = static_cast<float>(extent.height);
-        const float cursor_x = static_cast<float>(pointer_.cursor.x);
-        const float cursor_y = static_cast<float>(pointer_.cursor.y);
-        const float delta_x = static_cast<float>(pointer_.accumulated_delta.x);
-        const float delta_y = static_cast<float>(pointer_.accumulated_delta.y);
+        const cubey::input::CursorPosition cursor = pointer_drag_.cursor();
+        const cubey::input::PointerDelta delta = pointer_drag_.consume_accumulated_delta();
+        const float cursor_x = static_cast<float>(cursor.x);
+        const float cursor_y = static_cast<float>(cursor.y);
+        const float delta_x = static_cast<float>(delta.x);
+        const float delta_y = static_cast<float>(delta.y);
 
         frame_injection_ = {
             .active = true,
@@ -269,7 +244,6 @@ class Fluid2DApp {
                     std::clamp((-delta_y / height) * 90.0F, -8.0F, 8.0F),
                 },
         };
-        pointer_.accumulated_delta = {};
     }
 
     void destroy_swapchain_resources() {
@@ -1091,7 +1065,7 @@ class Fluid2DApp {
     RunConfig config_;
     cubey::ProjectRuntimeAdapter runtime_;
     Fluid2DConfig fluid_config_;
-    PointerState pointer_;
+    cubey::input::PointerDrag pointer_drag_;
     FrameInjection frame_injection_;
     FluidDebugView debug_view_ = FluidDebugView::Dye;
     bool paused_ = false;

@@ -177,6 +177,10 @@ void GlfwWindow::set_scroll_callback(std::function<void(const ScrollEvent&)> cal
     scroll_callback_ = std::move(callback);
 }
 
+void GlfwWindow::set_input_state(cubey::input::InputState* input_state) {
+    input_state_ = input_state;
+}
+
 bool GlfwWindow::consume_framebuffer_resized() {
     const bool result = framebuffer_resized_;
     framebuffer_resized_ = false;
@@ -234,47 +238,71 @@ void GlfwWindow::framebuffer_size_callback(GLFWwindow* window, int width, int he
 
 void GlfwWindow::key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
     auto* app_window = static_cast<GlfwWindow*>(glfwGetWindowUserPointer(window));
-    if (app_window != nullptr && app_window->key_callback_) {
-        app_window->key_callback_({
+    if (app_window != nullptr) {
+        const KeyEvent event{
             .key = to_key(key),
             .action = to_key_action(action),
             .native_key = key,
             .native_scancode = scancode,
             .native_mods = mods,
-        });
+        };
+        if (app_window->input_state_ != nullptr) {
+            app_window->input_state_->record_key(event);
+        }
+        if (app_window->key_callback_) {
+            app_window->key_callback_(event);
+        }
     }
 }
 
 void GlfwWindow::mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
     auto* app_window = static_cast<GlfwWindow*>(glfwGetWindowUserPointer(window));
-    if (app_window != nullptr && app_window->mouse_button_callback_) {
-        app_window->mouse_button_callback_({
+    if (app_window != nullptr) {
+        const MouseButtonEvent event{
             .button = to_mouse_button(button),
             .action = to_mouse_button_action(action),
             .cursor = app_window->cursor_position(),
             .native_button = button,
             .native_mods = mods,
-        });
+        };
+        if (app_window->input_state_ != nullptr) {
+            app_window->input_state_->record_mouse_button(event);
+        }
+        if (app_window->mouse_button_callback_) {
+            app_window->mouse_button_callback_(event);
+        }
     }
 }
 
 void GlfwWindow::cursor_position_callback(GLFWwindow* window, double x, double y) {
     auto* app_window = static_cast<GlfwWindow*>(glfwGetWindowUserPointer(window));
-    if (app_window != nullptr && app_window->cursor_position_callback_) {
-        app_window->cursor_position_callback_({
+    if (app_window != nullptr) {
+        const CursorPositionEvent event{
             .cursor = {.x = x, .y = y},
-        });
+        };
+        if (app_window->input_state_ != nullptr) {
+            app_window->input_state_->record_cursor_position(event);
+        }
+        if (app_window->cursor_position_callback_) {
+            app_window->cursor_position_callback_(event);
+        }
     }
 }
 
 void GlfwWindow::scroll_callback(GLFWwindow* window, double x_offset, double y_offset) {
     auto* app_window = static_cast<GlfwWindow*>(glfwGetWindowUserPointer(window));
-    if (app_window != nullptr && app_window->scroll_callback_) {
-        app_window->scroll_callback_({
+    if (app_window != nullptr) {
+        const ScrollEvent event{
             .x_offset = x_offset,
             .y_offset = y_offset,
             .cursor = app_window->cursor_position(),
-        });
+        };
+        if (app_window->input_state_ != nullptr) {
+            app_window->input_state_->record_scroll(event);
+        }
+        if (app_window->scroll_callback_) {
+            app_window->scroll_callback_(event);
+        }
     }
 }
 
