@@ -29,6 +29,7 @@ add_executable(cubey_core_tests
     render_uniform_buffer_tests.cpp
     resource_tests.cpp
     spirv_io_tests.cpp
+    transform_hierarchy_tests.cpp
     transform_tests.cpp
     upload_queue_tests.cpp
     windowed_host_tests.cpp
