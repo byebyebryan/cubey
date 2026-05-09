@@ -123,7 +123,10 @@ resource creation/destruction, update, command recording, and shutdown.
   view/projection state. The current examples still own when and how those
   cameras are applied.
 - `cubey::Transform2D` and `Transform3D` are explicit affine transform value
-  types. `Transform3D` stores quaternion rotation, and transform hierarchies
+  types. `Transform2D` uses translation, scalar-radian rotation, and scale to
+  produce a `Mat3`; `Transform3D` uses translation, quaternion rotation, and
+  scale to produce a `Mat4`. Both expose `affine_matrix()` instead of
+  model-matrix terminology. `TransformHierarchy2D` and `TransformHierarchy3D`
   compute cached local-to-world affine matrices without introducing scene
   ownership, renderables, or entity IDs.
 - `cubey::input::PointerDrag`, `PanZoom2DController`, and the input-aware

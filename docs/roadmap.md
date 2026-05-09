@@ -83,10 +83,11 @@ Current checkpoint:
   command-pool ownership, command-buffer allocation, per-frame-slot
   command/sync resources, and per-image present synchronization.
 - Reusable `cubey::FrameClock`, `cubey::Transform2D`, `cubey::Transform3D`,
-  transform hierarchies, `cubey::Camera2D`, `cubey::OrbitCamera3D`, and
-  `cubey::OrbitController` cover basic frame timing, explicit 2D/3D affine
-  transform boundaries, cached parent/child world transforms, shared 2D/3D
-  camera state, and mouse-driven orbit input.
+  `cubey::TransformHierarchy2D`, `cubey::TransformHierarchy3D`,
+  `cubey::Camera2D`, `cubey::OrbitCamera3D`, and `cubey::OrbitController`
+  cover basic frame timing, explicit 2D/3D affine transform boundaries,
+  quaternion-backed 3D rotation, cached parent/child world transforms, shared
+  2D/3D camera state, and mouse-driven orbit input.
 - Reusable `cubey::input::InputState`/`InputFrame` provide per-frame keyboard
   and mouse polling over the GLFW callback stream, with shared pointer-drag,
   camera-backed 2D pan/zoom, and input-aware orbit-control helpers.

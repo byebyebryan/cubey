@@ -98,6 +98,20 @@ Core operations: create resources, dispatch compute, draw, synchronize, submit,
 present, and read back. In the first version, those operations map directly to
 Vulkan and remain free to expose Vulkan-specific requirements where useful.
 
+### Transform And Camera Vocabulary
+
+Reusable spatial types should stay explicit and narrow:
+
+- `Transform2D` is translation, scalar-radian rotation, scale, and a `Mat3`
+  affine matrix.
+- `Transform3D` is translation, quaternion rotation, scale, and a `Mat4` affine
+  matrix.
+- `TransformHierarchy2D` and `TransformHierarchy3D` are transform-only trees
+  with cached local-to-world affine matrices. They are not scene graphs and do
+  not own renderables, components, or entity identity.
+- `Camera2D` and `OrbitCamera3D` own view/projection state separately from
+  transform hierarchy ownership.
+
 ### Current And Future App Interfaces
 
 Cubey now has two narrow hosts:
