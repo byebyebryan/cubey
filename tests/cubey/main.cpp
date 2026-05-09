@@ -17,6 +17,7 @@ void test_descriptor_set_allocate_info_describes_multiple_sets();
 void test_dynamic_rendering_describes_attachment_setup();
 void test_file_io_round_trips_binary_bytes();
 void test_frame_clock_tracks_delta_elapsed_and_index();
+void test_frame_resources_expose_slot_based_contract();
 void test_frame_stats_publish_window_title_metrics();
 void test_frame_ticket_issuer_returns_monotonic_tickets();
 void test_headless_png_host_validates_capture_shape();
@@ -73,6 +74,7 @@ int main() {
         test_dynamic_rendering_describes_attachment_setup();
         test_file_io_round_trips_binary_bytes();
         test_frame_clock_tracks_delta_elapsed_and_index();
+        test_frame_resources_expose_slot_based_contract();
         test_frame_stats_publish_window_title_metrics();
         test_frame_ticket_issuer_returns_monotonic_tickets();
         test_headless_png_host_validates_capture_shape();

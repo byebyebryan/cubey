@@ -11,9 +11,21 @@
 
 namespace cubey::vulkan {
 
+struct FrameResourcesConfig {
+    std::size_t present_ready_count = 0;
+    std::uint32_t frame_slot_count = 1;
+};
+
+struct FrameResourceSlot {
+    VkCommandBuffer command_buffer = VK_NULL_HANDLE;
+    VkSemaphore image_available = VK_NULL_HANDLE;
+    VkFence fence = VK_NULL_HANDLE;
+};
+
 class FrameResources {
   public:
     explicit FrameResources(const Device& device, std::size_t present_ready_count);
+    FrameResources(const Device& device, const FrameResourcesConfig& config);
     ~FrameResources();
 
     FrameResources(const FrameResources&) = delete;
@@ -22,11 +34,11 @@ class FrameResources {
     VkCommandPool command_pool() const {
         return command_pool_.handle();
     }
-    VkCommandBuffer command_buffer() const {
-        return command_buffer_;
+    const FrameResourceSlot& slot(std::uint32_t frame_slot_index) const {
+        return frame_slots_.at(frame_slot_index);
     }
-    VkSemaphore image_available() const {
-        return image_available_;
+    std::uint32_t frame_slot_count() const {
+        return static_cast<std::uint32_t>(frame_slots_.size());
     }
     VkSemaphore present_ready(std::size_t image_index) const {
         return present_ready_.at(image_index);
@@ -35,12 +47,14 @@ class FrameResources {
         return present_ready_.size();
     }
     VkFence fence() const {
-        return fence_;
+        return slot(0).fence;
     }
+    VkFence image_in_flight(std::size_t image_index) const;
+    void mark_image_in_flight(std::size_t image_index, VkFence fence);
 
-    void wait_for_frame() const;
-    void reset_fence() const;
-    void reset_command_buffer() const;
+    void wait_for_frame(std::uint32_t frame_slot_index) const;
+    void reset_fence(std::uint32_t frame_slot_index) const;
+    void reset_command_buffer(std::uint32_t frame_slot_index) const;
 
   private:
     void create();
@@ -48,10 +62,9 @@ class FrameResources {
 
     VkDevice device_ = VK_NULL_HANDLE;
     CommandPool command_pool_;
-    VkCommandBuffer command_buffer_ = VK_NULL_HANDLE;
-    VkSemaphore image_available_ = VK_NULL_HANDLE;
+    std::vector<FrameResourceSlot> frame_slots_;
     std::vector<VkSemaphore> present_ready_;
-    VkFence fence_ = VK_NULL_HANDLE;
+    std::vector<VkFence> images_in_flight_;
 };
 
 } // namespace cubey::vulkan

@@ -53,12 +53,14 @@ RenderFrameResult RenderContext::begin_frame(RenderFrame* frame) const {
     Device& device = *config_.device;
     Swapchain& active_swapchain = *config_.swapchain;
     FrameResources& frame_resources = *config_.frame_resources;
-    frame_resources.wait_for_frame();
+    constexpr std::uint32_t frame_slot_index = 0;
+    const FrameResourceSlot& frame_slot = frame_resources.slot(frame_slot_index);
+    frame_resources.wait_for_frame(frame_slot_index);
 
     std::uint32_t image_index = 0;
     VkResult acquired =
         vkAcquireNextImageKHR(device.handle(), active_swapchain.handle(), UINT64_MAX,
-                              frame_resources.image_available(), VK_NULL_HANDLE, &image_index);
+                              frame_slot.image_available, VK_NULL_HANDLE, &image_index);
     if (acquired == VK_ERROR_OUT_OF_DATE_KHR) {
         return RenderFrameResult::RecreateSwapchain;
     }
@@ -66,10 +68,10 @@ RenderFrameResult RenderContext::begin_frame(RenderFrame* frame) const {
         check(acquired, "vkAcquireNextImageKHR");
     }
 
-    frame_resources.reset_fence();
-    frame_resources.reset_command_buffer();
+    frame_resources.reset_fence(frame_slot_index);
+    frame_resources.reset_command_buffer(frame_slot_index);
     *frame = {
-        .command_buffer = frame_resources.command_buffer(),
+        .command_buffer = frame_slot.command_buffer,
         .image_index = image_index,
         .suboptimal = acquired == VK_SUBOPTIMAL_KHR,
     };
@@ -84,11 +86,13 @@ RenderFrameResult RenderContext::end_frame(const RenderFrame& frame) const {
     Device& device = *config_.device;
     Swapchain& active_swapchain = *config_.swapchain;
     FrameResources& frame_resources = *config_.frame_resources;
+    constexpr std::uint32_t frame_slot_index = 0;
+    const FrameResourceSlot& frame_slot = frame_resources.slot(frame_slot_index);
 
     VkPipelineStageFlags wait_stage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
     auto submit = vk_struct<VkSubmitInfo>(VK_STRUCTURE_TYPE_SUBMIT_INFO);
     submit.waitSemaphoreCount = 1;
-    VkSemaphore image_available = frame_resources.image_available();
+    VkSemaphore image_available = frame_slot.image_available;
     submit.pWaitSemaphores = &image_available;
     submit.pWaitDstStageMask = &wait_stage;
     submit.commandBufferCount = 1;
@@ -98,8 +102,7 @@ RenderFrameResult RenderContext::end_frame(const RenderFrame& frame) const {
     VkSemaphore present_ready =
         frame_resources.present_ready(static_cast<std::size_t>(frame.image_index));
     submit.pSignalSemaphores = &present_ready;
-    check(vkQueueSubmit(device.queue(), 1, &submit, frame_resources.fence()),
-          "vkQueueSubmit frame");
+    check(vkQueueSubmit(device.queue(), 1, &submit, frame_slot.fence), "vkQueueSubmit frame");
 
     auto present = vk_struct<VkPresentInfoKHR>(VK_STRUCTURE_TYPE_PRESENT_INFO_KHR);
     present.waitSemaphoreCount = 1;

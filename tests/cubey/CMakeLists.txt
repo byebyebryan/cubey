@@ -8,6 +8,7 @@ add_executable(cubey_core_tests
     dynamic_rendering_tests.cpp
     file_io_tests.cpp
     frame_clock_tests.cpp
+    frame_resources_tests.cpp
     frame_stats_tests.cpp
     frame_ticket_tests.cpp
     headless_png_host_tests.cpp
