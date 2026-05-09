@@ -126,6 +126,10 @@ Current checkpoint:
   `RenderPacket`, `ProjectRuntimeServices`, `ProjectRuntimeAdapter`, and
   `ProjectLike` provide the first async-ready project runtime vocabulary,
   service ownership bundle, and thin host bridge.
+- Reusable `cubey::render` target, texture, mesh, and draw-item contracts now
+  sit above `cubey::vulkan`: windowed/headless color target views,
+  dynamic-rendering target setup, generated/uploaded sampled texture ownership,
+  indexed mesh upload, and minimal indexed draw recording.
 - Reusable `cubey::vulkan::PipelineLayout`, `GraphicsPipeline`,
   `ComputePipeline`, `DescriptorSetLayout`, and `DescriptorPool` own basic
   pipeline and descriptor lifetimes while still taking raw Vulkan create-info
@@ -154,7 +158,8 @@ Current checkpoint:
 - Optional `cubey_app` target owns the first GLFW-backed app/runtime layer:
   window lifetime, surface creation/destruction, key/pointer dispatch, windowed
   frame loop, frame timing, optional frame stats, and swapchain recreate
-  orchestration.
+  orchestration. Render callbacks receive `WindowedRenderFrame`, including the
+  active swapchain color target view.
 - `examples/window_clear` links against `cubey` and clears/presents a swapchain
   image through the shared app host using dynamic rendering.
 - `examples/triangle` links against `cubey`, compiles vertex/fragment shaders
@@ -162,17 +167,17 @@ Current checkpoint:
   shared pipeline helper, and draws a `gl_VertexIndex` triangle without a render
   pass or framebuffer through the shared app host.
 - `examples/spinning_cube` links against `cubey`, compiles vertex/fragment
-  shaders at build time, draws an indexed cube from device-local vertex/index
-  buffers, updates an MVP matrix from shared transform, camera, and math helpers
-  through push constants, and uses dynamic rendering with a shared depth
+  shaders at build time, draws an indexed cube through `cubey::render::Mesh`
+  and `DrawItem`, updates an MVP matrix from shared transform, camera, and math
+  helpers through push constants, and uses dynamic rendering with a shared depth
   attachment helper through the shared app host.
-- `examples/textured_cube` links against `cubey`, generates a texture with a
+- `examples/textured_cube` links against `cubey`, generates a `Texture2D` with a
   compute shader writing a storage image, transitions it for shader sampling,
   binds scene uniforms plus a combined image sampler descriptor through shared
   descriptor/compute helpers, and draws an interactive shaded textured indexed
-  cube through dynamic rendering with per-face normals, shared GLSL Lambert
-  lighting, shared transform/model matrices, shared camera projection, and
-  shared math helpers through the shared app host.
+  cube through `cubey::render::Mesh`, `DrawItem`, dynamic rendering, per-face
+  normals, shared GLSL Lambert lighting, shared transform/model matrices,
+  shared camera projection, and shared math helpers through the shared app host.
 - `examples/headless_render` links against `cubey`, creates no GLFW window or
   surface, renders an offscreen color target through dynamic rendering, copies
   it into a readback buffer, and writes a PNG artifact.

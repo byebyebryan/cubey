@@ -135,13 +135,17 @@ resource creation/destruction, update, command recording, and shutdown.
 - `cubey::app::WindowedHost` owns the current windowed loop: instance, surface,
   device, swapchain, frame resources, frame timing, optional frame stats,
   acquire/record/submit/present, and swapchain recreation.
+- Windowed render callbacks receive `cubey::app::WindowedRenderFrame`, which
+  carries the command buffer, swapchain image index, timing, and
+  `cubey::render::ColorTargetView` for the active swapchain image.
 - All current windowed examples use the app host: `window_clear`, `triangle`,
   `spinning_cube`, `textured_cube`, `fractal`, and `particles`. They still own
   their shaders, pipelines, descriptors, command recording, and example-specific
   state.
 - `cubey::HeadlessPngHost` owns the repeated no-window Vulkan instance/device,
   offscreen RGBA target, color-attachment/readback transitions, image readback,
-  and PNG write path without depending on GLFW.
+  and PNG write path without depending on GLFW. Its target view uses the same
+  `cubey::render::ColorTargetView` vocabulary as the windowed path.
 - `headless_render`, `fractal --headless`, and `fluid_2d --headless` use the
   headless host while keeping their resource setup, simulation/update work, and
   capture command recording local.

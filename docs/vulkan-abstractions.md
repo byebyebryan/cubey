@@ -149,6 +149,8 @@ Current state:
   output.
 - `HeadlessPngHost` owns the repeated no-window offscreen target, capture
   transition, image readback, and PNG artifact write path.
+- `cubey::render::Texture2D` now owns the current generated/uploaded sampled
+  texture image shape above the raw Vulkan `Image` and optional `Sampler`.
 - Examples still own some resource policy, including when transfers and
   readback are used.
 - GPU upload and capture behavior is still direct/blocking at the current
@@ -230,11 +232,15 @@ Current state:
 - `image_transitions` also covers current storage-image, transfer-destination,
   sampled-image readback, color-attachment readback, and sampling transition
   paths.
+- `cubey::render::ColorTargetView`, `DepthTargetView`, `RenderTargetView`, and
+  `RenderTargetRenderingInfo` provide target vocabulary and dynamic-rendering
+  setup above Vulkan without owning layout transitions.
 
 Needed next:
 
-- Render-target bundle for extent, format, color view, and optional depth.
 - Clear/load/store options if examples stop clearing every frame.
+- Additional target shape only when a concrete project needs multiple color
+  targets, resolve attachments, or sampled offscreen render targets.
 
 Defer:
 
@@ -245,8 +251,11 @@ Defer:
 
 Current state:
 
-- Cube examples still define vertex data, index data, vertex descriptions, and
-  upload behavior locally.
+- Cube examples still define vertex data, index data, and vertex descriptions
+  locally, but use `cubey::render::Mesh` and `DrawItem` for indexed buffer
+  ownership and draw recording.
+- `examples/textured_cube` uses `cubey::render::Texture2D` for its
+  compute-generated sampled texture ownership.
 - Cube examples use the shared GLM-backed `cubey::math` wrapper for MVP/model
   matrices and Vulkan clip-space projection conventions.
 - `examples/particles` still defines particle storage-buffer layout, seeding,
@@ -254,10 +263,10 @@ Current state:
 
 Needed later:
 
-- Mesh upload helper for vertex/index buffers.
-- Texture object/helper for generated or uploaded sampled images.
 - Small geometry helpers once repeated examples or a clear primitive contract
   justify them.
+- Material/pipeline conventions once descriptor, shader, and parameter
+  contracts are narrow enough.
 - Storage-buffer or billboard helpers once the data layout and render contract
   are clear enough to avoid baking in one particle demo's policy.
 

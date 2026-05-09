@@ -7,8 +7,8 @@ visible where they affect correctness.
 
 ## Direction
 
-The first renderer slice should create small contracts for concepts that are
-already stable across the repo:
+The first renderer slice creates small contracts for concepts that are already
+stable across the repo:
 
 - render target views for swapchain and offscreen color targets, with optional
   depth targets;
@@ -67,3 +67,19 @@ engine's scope:
 
 The first `cubey::render` layer should borrow this vocabulary discipline, not a
 full engine architecture.
+
+## Current Checkpoint
+
+- `ColorTargetView`, `DepthTargetView`, and `RenderTargetView` describe
+  swapchain and offscreen targets without owning layout transitions.
+- `RenderTargetRenderingInfo` builds dynamic rendering attachment state from a
+  target view and clear values while keeping command-buffer scope explicit.
+- `WindowedHost` passes `WindowedRenderFrame` to render callbacks, including the
+  command buffer, swapchain image index, timing, and color target view.
+- `HeadlessRenderTarget` is now the same target-view vocabulary as
+  `cubey::render::ColorTargetView`.
+- `Texture2D` owns a Vulkan image plus an optional sampler for the current
+  storage-sampled and transfer-sampled texture paths.
+- `Mesh`, `DrawItem`, and `record_draw_item` own uploaded indexed geometry and
+  record the minimal bind/draw sequence. Vertex layout, pipeline state,
+  descriptors, materials, transforms, and push constants remain caller-owned.
