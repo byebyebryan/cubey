@@ -7,17 +7,17 @@ experiments. Not a game engine, not a polished external SDK - a personal
 workbench for trying graphics ideas quickly while keeping the reusable runtime
 small and explicit.
 
-## Origin
+## Background
 
-The original cubey (2015) was a learning project for C++/OpenGL/GPGPU. It featured 5 working demos: fluid simulation, particles, marching cubes, fractals, and a camera test with shadows. The fluid sim demo gained traction on YouTube/GitHub (~28 stars, ~5 forks).
-
-This is a ground-up rewrite carrying forward the same spirit with modern tools and techniques.
+Cubey 2.0 is a ground-up native Vulkan rewrite of the original C++/OpenGL/GPGPU
+Cubey experiments. Historical spike notes and migration context live under
+`docs/archive/` and `docs/notes/`; this document should stay focused on the
+current design.
 
 ## Guiding Principles
 
 - **Minimal library, maximum project.** The C++ runtime exists to get out of the way. The interesting work happens in shaders and compute.
 - **Primary target: desktop with full GPU power.** No compromises for portability. Native Vulkan is the foundation.
-- **WebGPU is optional and deferred.** Dawn/WebGPU remains useful for browser-facing showcases later, but it should not shape the first Vulkan layer.
 - **Headless rendering is first-class.** Every project should eventually render to image without a window. Enables automated testing and AI-assisted development.
 - **Shaders compile at build time.** No runtime hot-reload complexity. GLSL → SPIR-V via glslangValidator at build time.
 - **Async-ready before heavily threaded.** Shape project code around jobs,
@@ -39,7 +39,6 @@ This is a ground-up rewrite carrying forward the same spirit with modern tools a
 | Language | C++20 | Concepts, ranges, std::format, std::span |
 | Build | CMake + Ninja | Cross-platform, fast incremental builds |
 | Primary GPU API | Vulkan | Full GPU control, async compute, no feature ceiling |
-| Optional future API | WebGPU (Dawn) | Browser showcases if the project earns that need |
 | Windowing | GLFW | Minimal, Vulkan-native surface creation |
 | UI | None yet; ImGui is the likely debug UI | Current telemetry stays lightweight until UI earns the dependency |
 | Math | GLM behind `cubey::math` | Share matrix/vector types, transform/camera state, and Vulkan projection conventions without exposing ad hoc example math |
@@ -65,11 +64,9 @@ This is a ground-up rewrite carrying forward the same spirit with modern tools a
                     +---------------------+
 ```
 
-The current decision is deliberately not to build a broad backend-agnostic GPU
-API yet. The WebGPU/Dawn spike showed that Dawn is already an abstraction layer;
-adding another one above it would add project complexity while still inheriting
-WebGPU's limits. The first implementation should make Vulkan livable through
-small native modules, not hide it behind a premature portability contract.
+Cubey should not build a broad backend-agnostic GPU API. The implementation
+should make Vulkan livable through small native modules while keeping the
+constraints that affect correctness visible.
 
 ### Vulkan Layer Seams
 
@@ -84,9 +81,8 @@ The near-term Vulkan layer should split around real ownership boundaries:
   allocation, semaphores, fences, and eventual N-frames-in-flight
 - project/pass code — the actual procedural experiments
 
-These seams should be practical C++ modules first. A future WebGPU backend can
-be reconsidered if the project needs browser showcases, but it should be driven by a
-real use case rather than by symmetry.
+These seams should be practical C++ modules first. Portability work should be
+driven by a concrete project need rather than symmetry.
 
 ### Resource Vocabulary
 
@@ -162,8 +158,6 @@ This is critical for AI-assisted development — the agent gets structured pass/
 ## Shader Strategy
 
 - **Desktop (Vulkan):** GLSL → SPIR-V at build time via glslangValidator
-- **Web (future WebGPU):** WGSL versions only for projects that explicitly need browser builds
-- Not all projects need web versions; complex experiments stay desktop-only
 - Shared shader includes (lighting, noise functions, math utilities) in a common directory
 
 ## Projected Projects
@@ -384,29 +378,22 @@ cubey/
   assets/                  -- textures, meshes
   third_party/             -- vendored single-header dependencies and notices
   docs/
-    DESIGN.md              -- this file
+    README.md              -- docs index and taxonomy
+    DESIGN.md              -- current design and tenets
     roadmap.md             -- living implementation plan
-    working-notes.md       -- progress notes, hiccups, gotchas, learnings
-    threading-and-async.md -- CPU jobs, queued GPU work, and MT promotion gates
-    spike-findings.md      -- WebGPU/Vulkan spike decision record
+    app-runtime.md         -- app/window/headless host direction
+    threading-and-async.md -- CPU jobs, queued GPU work, and MT boundaries
+    vulkan-abstractions.md -- Vulkan foundation map
     cpp-style.md           -- C++ naming, formatting, and review conventions
+    notes/                 -- scratch context and working notes
+    archive/               -- historical decisions and superseded context
 ```
-
-## Migration Notes
-
-- `master` branch is preserved with the original code intact
-- `main` branch starts from scratch
-- Old `0.1`–`0.5` branches cleaned up from remote
-- `webgpu` and `vulkan` branches are spike branches used to choose the Vulkan-first direction
-- README and spike findings capture the initial Vulkan-first decision;
-  roadmap and working notes track the mainline implementation as it evolves
 
 ## What We're Not Building
 
 - Another SDL / raylib / shadertoy
 - A game engine
 - A framework others build on
-- A cross-platform compatibility layer
-- A dual Vulkan/WebGPU backend abstraction before there is a concrete browser-facing project need
+- A broad cross-platform compatibility layer
 - Runtime shader hot-reload
 - A full material/render-graph/pipeline system before its contract is clear

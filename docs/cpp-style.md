@@ -53,7 +53,7 @@ Only add `vk_` when there is a real same-scope ambiguity.
 ## C++ Usage
 
 - Use C++20, but keep it plain and readable.
-- Prefer RAII for owning Vulkan resources once code leaves spike mode.
+- Prefer RAII for owning Vulkan resources once code leaves prototype mode.
 - Prefer `std::span`, `std::array`, `std::vector`, and `std::string_view` where
   they naturally express ownership and lifetime.
 - Prefer scoped enums.

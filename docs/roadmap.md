@@ -6,12 +6,12 @@ before the old assumptions become tribal knowledge.
 
 ## Current Direction
 
-Cubey 2.0 is a native Vulkan-first GPU workbench for procedural graphics
-experiments. WebGPU/Dawn remains useful as an optional future presentation path,
-but it is not the architecture driver for the main Vulkan layer.
+Cubey 2.0 is a native Vulkan desktop GPU workbench for procedural graphics
+experiments. Vulkan is the architecture driver for the shared runtime and
+graphics foundation.
 
 See [Vulkan abstraction map](vulkan-abstractions.md) for the planned framework
-layers and promotion rules, [app runtime](app-runtime.md) for the GLFW/windowed
+layers and foundation rules, [app runtime](app-runtime.md) for the GLFW/windowed
 host extraction path, and [threading and async design](threading-and-async.md)
 for the async-ready runtime boundary.
 
@@ -19,7 +19,8 @@ for the async-ready runtime boundary.
 
 Status: complete for the first implementation slice.
 
-Goal: make `main` a clean place to build from before porting spike code.
+Goal: make `main` a clean place to build from before building the new native
+runtime foundation.
 
 - CMake presets for development, release, sanitizer, and clang-tidy builds.
 - Formatting, linting, editor, Git text-normalization, and warning defaults.
@@ -39,9 +40,8 @@ Exit criteria:
 Status: windowed framework checkpoint and first headless artifact checkpoint
 complete; frame overlap remains open.
 
-Goal: reshape the successful Vulkan spike into maintainable mainline modules
-and prove visible desktop rendering without turning the library into a generic
-app engine.
+Goal: build maintainable mainline Vulkan modules and prove visible desktop
+rendering without turning the library into a generic app engine.
 
 - Primary `cubey` static library with public headers under `include/cubey/`.
 - First runnable example under `examples/window_clear/`, not a generic `cubey`
@@ -384,5 +384,5 @@ Exit criteria:
   and camera/shadow tests. Particle work should stay in `examples/particles`
   unless it grows into a larger project.
 - SDF sculpting experiments from `projectR` if the resource model holds up.
-- WebGPU/browser revisit only after a concrete browser-facing project earns the
+- Browser or alternate-backend work only after a concrete project earns the
   extra shader and platform surface area.

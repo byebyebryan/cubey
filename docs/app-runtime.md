@@ -178,4 +178,4 @@ resource creation/destruction, update, command recording, and shutdown.
 - Split graphics/compute/present queue scheduler.
 - Parallel command recording.
 - ImGui/UI hosting.
-- WebGPU/Dawn backend parity.
+- Backend parity work.

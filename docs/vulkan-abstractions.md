@@ -47,10 +47,10 @@ The current boundary is:
 - Keep threading and async work shaped by
   [threading and async design](threading-and-async.md): one GPU owner first,
   CPU jobs behind Cubey APIs, queued upload/capture requests, and explicit
-  promotion gates for parallel command recording or split queues.
-- Do not invent WebGPU-style vocabulary unless Cubey code has naturally arrived
-  there. Descriptors may eventually look like bind groups, but the Vulkan
-  ownership model comes first.
+  explicit contracts for parallel command recording or split queues.
+- Do not invent portability-layer vocabulary unless Cubey code has naturally
+  arrived there. Descriptors may eventually look like bind groups, but the
+  Vulkan ownership model comes first.
 
 ## Layer Map
 

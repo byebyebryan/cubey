@@ -2,8 +2,9 @@
 
 This is a living scratchpad for progress, hiccups, learnings, and gotchas that
 are useful but not polished enough for the design document yet. Promote durable
-decisions into `docs/DESIGN.md`, `docs/roadmap.md`, or
-`docs/spike-findings.md` when they stabilize.
+decisions into `docs/DESIGN.md`, `docs/roadmap.md`, or another current design
+doc when they stabilize. Historical decision records belong under
+`docs/archive/`.
 
 Architectural note: older entries that say "wait for project pressure" reflect
 an earlier anti-sprawl bias. The current stance in `docs/DESIGN.md`,
