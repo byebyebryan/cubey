@@ -233,12 +233,12 @@ class SpinningCubeApp {
             static_cast<float>(std::chrono::duration<double>(now - start_time_).count());
 
         const cubey::Transform3D transform{
-            .rotation_radians = {seconds * 0.55F, seconds * 0.9F, 0.0F},
+            .rotation = cubey::math::euler_xyz_quat({seconds * 0.55F, seconds * 0.9F, 0.0F}),
         };
         const float aspect = static_cast<float>(extent.width) / static_cast<float>(extent.height);
 
         return {
-            camera_.view_projection_matrix(aspect) * transform.model_matrix(),
+            camera_.view_projection_matrix(aspect) * transform.affine_matrix(),
         };
     }
 

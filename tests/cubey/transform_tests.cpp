@@ -24,17 +24,35 @@ void require_matrix_close(const cubey::math::Mat4& actual, const cubey::math::Ma
     }
 }
 
+void require_matrix_close(const cubey::math::Mat3& actual, const cubey::math::Mat3& expected,
+                          const char* message) {
+    for (int column = 0; column < 3; ++column) {
+        for (int row = 0; row < 3; ++row) {
+            require_close(actual[column][row], expected[column][row], message);
+        }
+    }
+}
+
 } // namespace
 
-void test_transform_2d_builds_2d_model_matrix() {
+void test_transform_2d_builds_affine_matrix() {
     const cubey::Transform2D transform{
-        .position = {2.0F, 3.0F},
+        .translation = {2.0F, 3.0F},
         .rotation_radians = std::numbers::pi_v<float> / 2.0F,
         .scale = {2.0F, 4.0F},
     };
 
     const cubey::math::Vec3 transformed_point =
-        transform.model_matrix() * cubey::math::Vec3{1.0F, 0.0F, 1.0F};
+        transform.affine_matrix() * cubey::math::Vec3{1.0F, 0.0F, 1.0F};
+    cubey::math::Mat3 expected{1.0F};
+    expected[0][0] = 0.0F;
+    expected[0][1] = 2.0F;
+    expected[1][0] = -4.0F;
+    expected[1][1] = 0.0F;
+    expected[2][0] = 2.0F;
+    expected[2][1] = 3.0F;
+    require_matrix_close(transform.affine_matrix(), expected,
+                         "2D transform should expose its affine matrix");
     require_close(transformed_point.x, 2.0F,
                   "2D transform should apply scale, rotation, then translation");
     require_close(transformed_point.y, 5.0F,
@@ -42,15 +60,16 @@ void test_transform_2d_builds_2d_model_matrix() {
     require_close(transformed_point.z, 1.0F, "2D transform should preserve homogeneous z");
 }
 
-void test_transform_3d_builds_3d_model_matrix() {
+void test_transform_3d_builds_affine_matrix() {
     const cubey::Transform3D transform{
-        .position = {2.0F, 3.0F, 4.0F},
-        .rotation_radians = {std::numbers::pi_v<float> / 2.0F, 0.0F, 0.0F},
+        .translation = {2.0F, 3.0F, 4.0F},
+        .rotation = cubey::math::angle_axis_quat(std::numbers::pi_v<float> / 2.0F,
+                                                 {1.0F, 0.0F, 0.0F}),
         .scale = {2.0F, 3.0F, 4.0F},
     };
 
     const cubey::math::Vec4 transformed_point =
-        transform.model_matrix() * cubey::math::Vec4{0.0F, 1.0F, 0.0F, 1.0F};
+        transform.affine_matrix() * cubey::math::Vec4{0.0F, 1.0F, 0.0F, 1.0F};
     require_close(transformed_point.x, 2.0F,
                   "3D transform should apply scale, rotation, then translation");
     require_close(transformed_point.y, 3.0F,
@@ -64,11 +83,11 @@ void test_transform_3d_matches_existing_cube_rotation_order() {
     const float pitch = 0.55F;
     const float yaw = 0.9F;
     const cubey::Transform3D transform{
-        .rotation_radians = {pitch, yaw, 0.0F},
+        .rotation = cubey::math::euler_xyz_quat({pitch, yaw, 0.0F}),
     };
 
     const cubey::math::Mat4 expected =
         cubey::math::rotation_y(yaw) * cubey::math::rotation_x(pitch);
-    require_matrix_close(transform.model_matrix(), expected,
+    require_matrix_close(transform.affine_matrix(), expected,
                          "3D transform should preserve existing cube rotation order");
 }

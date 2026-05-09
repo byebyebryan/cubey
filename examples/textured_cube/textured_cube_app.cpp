@@ -431,9 +431,11 @@ class TexturedCubeApp {
 
     [[nodiscard]] SceneUniforms current_scene_uniforms(VkExtent2D extent) const {
         const cubey::Transform3D transform{
-            .rotation_radians = {orbit_controller_.pitch(), orbit_controller_.yaw(), 0.0F},
+            .rotation =
+                cubey::math::euler_xyz_quat({orbit_controller_.pitch(), orbit_controller_.yaw(),
+                                             0.0F}),
         };
-        const cubey::math::Mat4 model = transform.model_matrix();
+        const cubey::math::Mat4 model = transform.affine_matrix();
         const float aspect = static_cast<float>(extent.width) / static_cast<float>(extent.height);
 
         return {
