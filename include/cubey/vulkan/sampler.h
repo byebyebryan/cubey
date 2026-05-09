@@ -19,12 +19,16 @@ class Sampler {
 
     Sampler(const Sampler&) = delete;
     Sampler& operator=(const Sampler&) = delete;
+    Sampler(Sampler&& other) noexcept;
+    Sampler& operator=(Sampler&& other) noexcept;
 
     VkSampler handle() const {
         return sampler_;
     }
 
   private:
+    void move_from(Sampler& other) noexcept;
+
     VkDevice device_ = VK_NULL_HANDLE;
     VkSampler sampler_ = VK_NULL_HANDLE;
 };

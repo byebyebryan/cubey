@@ -25,6 +25,18 @@ Image::~Image() {
     destroy();
 }
 
+Image::Image(Image&& other) noexcept {
+    move_from(other);
+}
+
+Image& Image::operator=(Image&& other) noexcept {
+    if (this != &other) {
+        destroy();
+        move_from(other);
+    }
+    return *this;
+}
+
 void Image::create(const Device& device, const ImageConfig& config) {
     if (config.extent.width == 0 || config.extent.height == 0 || config.extent.depth == 0) {
         throw std::runtime_error("image extent must be nonzero");
@@ -90,6 +102,22 @@ void Image::destroy() {
         vkFreeMemory(device_, memory_, nullptr);
         memory_ = VK_NULL_HANDLE;
     }
+}
+
+void Image::move_from(Image& other) noexcept {
+    device_ = other.device_;
+    image_ = other.image_;
+    memory_ = other.memory_;
+    view_ = other.view_;
+    format_ = other.format_;
+    extent_ = other.extent_;
+
+    other.device_ = VK_NULL_HANDLE;
+    other.image_ = VK_NULL_HANDLE;
+    other.memory_ = VK_NULL_HANDLE;
+    other.view_ = VK_NULL_HANDLE;
+    other.format_ = VK_FORMAT_UNDEFINED;
+    other.extent_ = {};
 }
 
 VkFormat choose_depth_format(const Device& device) {

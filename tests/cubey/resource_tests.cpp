@@ -1,5 +1,6 @@
 #include <cubey/vulkan/buffer.h>
 #include <cubey/vulkan/image.h>
+#include <cubey/vulkan/sampler.h>
 
 #include <vulkan/vulkan.h>
 
@@ -63,6 +64,12 @@ void test_resource_helpers_describe_device_local_upload_and_depth_setup() {
 
     static_assert(!std::is_copy_constructible_v<cubey::vulkan::Buffer>);
     static_assert(std::is_move_constructible_v<cubey::vulkan::Buffer>);
+    static_assert(!std::is_copy_constructible_v<cubey::vulkan::Image>);
+    static_assert(std::is_move_constructible_v<cubey::vulkan::Image>);
+    static_assert(!std::is_copy_constructible_v<cubey::vulkan::Sampler>);
+    static_assert(std::is_move_constructible_v<cubey::vulkan::Sampler>);
+    static_assert(!std::is_copy_constructible_v<cubey::vulkan::DepthAttachment>);
+    static_assert(std::is_move_constructible_v<cubey::vulkan::DepthAttachment>);
     static_assert(
         std::is_same_v<decltype(&cubey::vulkan::copy_buffer),
                        void (*)(const cubey::vulkan::Device&, VkBuffer, VkBuffer, VkDeviceSize)>);

@@ -36,4 +36,26 @@ Sampler::~Sampler() {
     }
 }
 
+Sampler::Sampler(Sampler&& other) noexcept {
+    move_from(other);
+}
+
+Sampler& Sampler::operator=(Sampler&& other) noexcept {
+    if (this != &other) {
+        if (sampler_ != VK_NULL_HANDLE) {
+            vkDestroySampler(device_, sampler_, nullptr);
+        }
+        move_from(other);
+    }
+    return *this;
+}
+
+void Sampler::move_from(Sampler& other) noexcept {
+    device_ = other.device_;
+    sampler_ = other.sampler_;
+
+    other.device_ = VK_NULL_HANDLE;
+    other.sampler_ = VK_NULL_HANDLE;
+}
+
 } // namespace cubey::vulkan

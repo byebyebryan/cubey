@@ -24,6 +24,8 @@ class Image {
 
     Image(const Image&) = delete;
     Image& operator=(const Image&) = delete;
+    Image(Image&& other) noexcept;
+    Image& operator=(Image&& other) noexcept;
 
     VkImage handle() const {
         return image_;
@@ -41,6 +43,7 @@ class Image {
   private:
     void create(const Device& device, const ImageConfig& config);
     void destroy();
+    void move_from(Image& other) noexcept;
 
     VkDevice device_ = VK_NULL_HANDLE;
     VkImage image_ = VK_NULL_HANDLE;
@@ -68,6 +71,8 @@ class DepthAttachment {
 
     DepthAttachment(const DepthAttachment&) = delete;
     DepthAttachment& operator=(const DepthAttachment&) = delete;
+    DepthAttachment(DepthAttachment&& other) noexcept = default;
+    DepthAttachment& operator=(DepthAttachment&& other) noexcept = default;
 
     [[nodiscard]] VkImage handle() const {
         return image_.handle();
