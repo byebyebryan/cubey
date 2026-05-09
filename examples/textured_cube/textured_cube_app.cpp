@@ -6,12 +6,12 @@
 #include <cubey/math.h>
 #include <cubey/orbit_camera_3d.h>
 #include <cubey/orbit_controller.h>
+#include <cubey/render/target.h>
 #include <cubey/spirv_io.h>
 #include <cubey/transform_3d.h>
 #include <cubey/vulkan/buffer.h>
 #include <cubey/vulkan/command_pool.h>
 #include <cubey/vulkan/descriptors.h>
-#include <cubey/vulkan/dynamic_rendering.h>
 #include <cubey/vulkan/image.h>
 #include <cubey/vulkan/image_transitions.h>
 #include <cubey/vulkan/immediate_commands.h>
@@ -148,10 +148,10 @@ class TexturedCubeApp {
                         orbit_controller_.update_from_input(context.input(), timing.delta_seconds);
                     },
                 .record_frame =
-                    [this](cubey::app::WindowedAppContext& context, VkCommandBuffer command_buffer,
-                           std::uint32_t image_index, const FrameTiming& timing) {
-                        (void)timing;
-                        record_cube_frame(context, command_buffer, image_index);
+                    [this](cubey::app::WindowedAppContext& context,
+                           const cubey::app::WindowedRenderFrame& frame) {
+                        (void)context;
+                        record_cube_frame(frame);
                     },
                 .frame_stats_sample =
                     [](cubey::app::WindowedAppContext& context,
@@ -449,18 +449,16 @@ class TexturedCubeApp {
         scene_uniform_buffer().upload(&uniforms, sizeof(uniforms));
     }
 
-    void record_cube_frame(cubey::app::WindowedAppContext& context, VkCommandBuffer command_buffer,
-                           std::uint32_t image_index) {
-        cubey::vulkan::Swapchain& swapchain = context.swapchain();
-        update_scene_uniforms(swapchain.extent());
+    void record_cube_frame(const cubey::app::WindowedRenderFrame& frame) {
+        const VkCommandBuffer command_buffer = frame.command_buffer;
+        update_scene_uniforms(frame.color_target.extent);
 
         cubey::vulkan::begin_command_buffer(command_buffer,
                                             VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
-        const std::size_t swapchain_image_index = static_cast<std::size_t>(image_index);
-        const VkImage swapchain_image = swapchain.images().at(swapchain_image_index);
         cubey::vulkan::transition_image_layout(
-            command_buffer, cubey::vulkan::begin_color_attachment_transition(swapchain_image));
+            command_buffer,
+            cubey::vulkan::begin_color_attachment_transition(frame.color_target.image));
         cubey::vulkan::transition_image_layout(
             command_buffer,
             cubey::vulkan::begin_depth_attachment_transition(depth_attachment().handle()));
@@ -469,22 +467,15 @@ class TexturedCubeApp {
         color_clear.color = {{0.014F, 0.016F, 0.022F, 1.0F}};
         VkClearValue depth_clear{};
         depth_clear.depthStencil = {1.0F, 0};
+        const cubey::render::RenderTargetView target = cubey::render::render_target_view(
+            frame.color_target, cubey::render::depth_target_view(depth_attachment()));
+        const cubey::render::RenderClearValues clear_values{
+            .color = color_clear,
+            .depth = depth_clear,
+        };
+        const cubey::render::RenderTargetRenderingInfo rendering(target, clear_values);
 
-        const VkRenderingAttachmentInfo color_attachment =
-            cubey::vulkan::color_rendering_attachment(
-                swapchain.image_views().at(swapchain_image_index), color_clear);
-        const VkRenderingAttachmentInfo depth_rendering_attachment =
-            cubey::vulkan::depth_rendering_attachment(depth_attachment().view(), depth_clear);
-
-        auto rendering = vk_struct<VkRenderingInfo>(VK_STRUCTURE_TYPE_RENDERING_INFO);
-        rendering.renderArea.offset = {0, 0};
-        rendering.renderArea.extent = swapchain.extent();
-        rendering.layerCount = 1;
-        rendering.colorAttachmentCount = 1;
-        rendering.pColorAttachments = &color_attachment;
-        rendering.pDepthAttachment = &depth_rendering_attachment;
-
-        vkCmdBeginRendering(command_buffer, &rendering);
+        vkCmdBeginRendering(command_buffer, &rendering.info());
         vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline().handle());
         const VkDescriptorSet descriptor_set = descriptors().set();
         vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
@@ -500,7 +491,8 @@ class TexturedCubeApp {
 
         cubey::vulkan::transition_image_layout(
             command_buffer,
-            cubey::vulkan::finish_color_attachment_for_present_transition(swapchain_image));
+            cubey::vulkan::finish_color_attachment_for_present_transition(
+                frame.color_target.image));
 
         check(vkEndCommandBuffer(command_buffer), "vkEndCommandBuffer textured_cube");
     }

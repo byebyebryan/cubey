@@ -6,6 +6,7 @@
 #include <cubey/headless_png_host.h>
 #include <cubey/pointer_drag.h>
 #include <cubey/project_runtime.h>
+#include <cubey/render/target.h>
 #include <cubey/spirv_io.h>
 #include <cubey/vulkan/buffer.h>
 #include <cubey/vulkan/command_pool.h>
@@ -169,10 +170,12 @@ class Fluid2DApp {
                         update_interaction(context, project_frame);
                     },
                 .record_frame =
-                    [this](cubey::app::WindowedAppContext& context, VkCommandBuffer command_buffer,
-                           std::uint32_t image_index, const FrameTiming& timing) {
-                        const ProjectFrame& project_frame = runtime_.frame_for_timing(timing);
-                        record_frame(context, command_buffer, image_index, project_frame);
+                    [this](cubey::app::WindowedAppContext& context,
+                           const cubey::app::WindowedRenderFrame& frame) {
+                        (void)context;
+                        const ProjectFrame& project_frame =
+                            runtime_.frame_for_timing(frame.timing);
+                        record_frame(frame, project_frame);
                     },
                 .frame_stats_sample =
                     [](cubey::app::WindowedAppContext& context,
@@ -824,25 +827,25 @@ class Fluid2DApp {
         vkCmdEndRendering(command_buffer);
     }
 
-    void record_frame(cubey::app::WindowedAppContext& context, VkCommandBuffer command_buffer,
-                      std::uint32_t image_index, const ProjectFrame& frame) {
+    void record_frame(const cubey::app::WindowedRenderFrame& render_frame,
+                      const ProjectFrame& frame) {
+        const VkCommandBuffer command_buffer = render_frame.command_buffer;
         cubey::vulkan::begin_command_buffer(command_buffer,
                                             VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
         record_fluid_compute(command_buffer, frame);
 
-        cubey::vulkan::Swapchain& swapchain = context.swapchain();
-        const std::size_t swapchain_image_index = static_cast<std::size_t>(image_index);
-        const VkImage swapchain_image = swapchain.images().at(swapchain_image_index);
         cubey::vulkan::transition_image_layout(
-            command_buffer, cubey::vulkan::begin_color_attachment_transition(swapchain_image));
+            command_buffer,
+            cubey::vulkan::begin_color_attachment_transition(render_frame.color_target.image));
 
-        record_fullscreen_draw(command_buffer, swapchain.image_views().at(swapchain_image_index),
-                               swapchain.extent());
+        record_fullscreen_draw(command_buffer, render_frame.color_target.view,
+                               render_frame.color_target.extent);
 
         cubey::vulkan::transition_image_layout(
             command_buffer,
-            cubey::vulkan::finish_color_attachment_for_present_transition(swapchain_image));
+            cubey::vulkan::finish_color_attachment_for_present_transition(
+                render_frame.color_target.image));
 
         check(vkEndCommandBuffer(command_buffer), "vkEndCommandBuffer fluid_2d");
     }

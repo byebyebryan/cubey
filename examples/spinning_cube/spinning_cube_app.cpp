@@ -3,11 +3,11 @@
 #include <cubey/app/windowed_host.h>
 #include <cubey/math.h>
 #include <cubey/orbit_camera_3d.h>
+#include <cubey/render/target.h>
 #include <cubey/spirv_io.h>
 #include <cubey/transform_3d.h>
 #include <cubey/vulkan/buffer.h>
 #include <cubey/vulkan/command_pool.h>
-#include <cubey/vulkan/dynamic_rendering.h>
 #include <cubey/vulkan/image.h>
 #include <cubey/vulkan/image_transitions.h>
 #include <cubey/vulkan/pipeline.h>
@@ -121,10 +121,10 @@ class SpinningCubeApp {
                     },
                 .update = {},
                 .record_frame =
-                    [this](cubey::app::WindowedAppContext& context, VkCommandBuffer command_buffer,
-                           std::uint32_t image_index, const FrameTiming& timing) {
-                        (void)timing;
-                        record_cube_frame(context, command_buffer, image_index);
+                    [this](cubey::app::WindowedAppContext& context,
+                           const cubey::app::WindowedRenderFrame& frame) {
+                        (void)context;
+                        record_cube_frame(frame);
                     },
                 .frame_stats_sample = {},
                 .shutdown =
@@ -251,16 +251,14 @@ class SpinningCubeApp {
         };
     }
 
-    void record_cube_frame(cubey::app::WindowedAppContext& context, VkCommandBuffer command_buffer,
-                           std::uint32_t image_index) {
+    void record_cube_frame(const cubey::app::WindowedRenderFrame& frame) {
+        const VkCommandBuffer command_buffer = frame.command_buffer;
         cubey::vulkan::begin_command_buffer(command_buffer,
                                             VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
-        cubey::vulkan::Swapchain& swapchain = context.swapchain();
-        const std::size_t swapchain_image_index = static_cast<std::size_t>(image_index);
-        const VkImage swapchain_image = swapchain.images().at(swapchain_image_index);
         cubey::vulkan::transition_image_layout(
-            command_buffer, cubey::vulkan::begin_color_attachment_transition(swapchain_image));
+            command_buffer,
+            cubey::vulkan::begin_color_attachment_transition(frame.color_target.image));
         cubey::vulkan::transition_image_layout(
             command_buffer,
             cubey::vulkan::begin_depth_attachment_transition(depth_attachment().handle()));
@@ -269,24 +267,17 @@ class SpinningCubeApp {
         color_clear.color = {{0.015F, 0.017F, 0.024F, 1.0F}};
         VkClearValue depth_clear{};
         depth_clear.depthStencil = {1.0F, 0};
+        const cubey::render::RenderTargetView target = cubey::render::render_target_view(
+            frame.color_target, cubey::render::depth_target_view(depth_attachment()));
+        const cubey::render::RenderClearValues clear_values{
+            .color = color_clear,
+            .depth = depth_clear,
+        };
+        const cubey::render::RenderTargetRenderingInfo rendering(target, clear_values);
 
-        const VkRenderingAttachmentInfo color_attachment =
-            cubey::vulkan::color_rendering_attachment(
-                swapchain.image_views().at(swapchain_image_index), color_clear);
-        const VkRenderingAttachmentInfo depth_rendering_attachment =
-            cubey::vulkan::depth_rendering_attachment(depth_attachment().view(), depth_clear);
+        const PushConstants push_constants = current_push_constants(frame.color_target.extent);
 
-        auto rendering = vk_struct<VkRenderingInfo>(VK_STRUCTURE_TYPE_RENDERING_INFO);
-        rendering.renderArea.offset = {0, 0};
-        rendering.renderArea.extent = swapchain.extent();
-        rendering.layerCount = 1;
-        rendering.colorAttachmentCount = 1;
-        rendering.pColorAttachments = &color_attachment;
-        rendering.pDepthAttachment = &depth_rendering_attachment;
-
-        const PushConstants push_constants = current_push_constants(swapchain.extent());
-
-        vkCmdBeginRendering(command_buffer, &rendering);
+        vkCmdBeginRendering(command_buffer, &rendering.info());
         vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline().handle());
         const std::array<VkBuffer, 1> vertex_buffers{vertex_buffer().handle()};
         constexpr std::array<VkDeviceSize, 1> vertex_offsets{0};
@@ -301,7 +292,8 @@ class SpinningCubeApp {
 
         cubey::vulkan::transition_image_layout(
             command_buffer,
-            cubey::vulkan::finish_color_attachment_for_present_transition(swapchain_image));
+            cubey::vulkan::finish_color_attachment_for_present_transition(
+                frame.color_target.image));
 
         check(vkEndCommandBuffer(command_buffer), "vkEndCommandBuffer spinning_cube");
     }

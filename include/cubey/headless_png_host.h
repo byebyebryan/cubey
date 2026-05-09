@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cubey/render/target.h>
 #include <cubey/run_config.h>
 #include <cubey/vulkan/device.h>
 #include <cubey/vulkan/instance.h>
@@ -13,12 +14,7 @@
 
 namespace cubey {
 
-struct HeadlessRenderTarget {
-    VkExtent2D extent{};
-    VkFormat format = VK_FORMAT_UNDEFINED;
-    VkImage image = VK_NULL_HANDLE;
-    VkImageView view = VK_NULL_HANDLE;
-};
+using HeadlessRenderTarget = cubey::render::ColorTargetView;
 
 class HeadlessPngContext {
   public:

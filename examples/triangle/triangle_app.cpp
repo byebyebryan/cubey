@@ -1,9 +1,9 @@
 #include "triangle_app.h"
 
 #include <cubey/app/windowed_host.h>
+#include <cubey/render/target.h>
 #include <cubey/spirv_io.h>
 #include <cubey/vulkan/command_pool.h>
-#include <cubey/vulkan/dynamic_rendering.h>
 #include <cubey/vulkan/image_transitions.h>
 #include <cubey/vulkan/pipeline.h>
 #include <cubey/vulkan/shader_module.h>
@@ -71,10 +71,10 @@ class TriangleApp {
                     },
                 .update = {},
                 .record_frame =
-                    [this](cubey::app::WindowedAppContext& context, VkCommandBuffer command_buffer,
-                           std::uint32_t image_index, const FrameTiming& timing) {
-                        (void)timing;
-                        record_triangle_frame(context, command_buffer, image_index);
+                    [this](cubey::app::WindowedAppContext& context,
+                           const cubey::app::WindowedRenderFrame& frame) {
+                        (void)context;
+                        record_triangle_frame(frame);
                     },
                 .frame_stats_sample = {},
                 .shutdown = {},
@@ -119,38 +119,32 @@ class TriangleApp {
         pipeline_.emplace(context.device(), pipeline_info.create_info());
     }
 
-    void record_triangle_frame(cubey::app::WindowedAppContext& context,
-                               VkCommandBuffer command_buffer, std::uint32_t image_index) {
+    void record_triangle_frame(const cubey::app::WindowedRenderFrame& frame) {
+        const VkCommandBuffer command_buffer = frame.command_buffer;
         cubey::vulkan::begin_command_buffer(command_buffer,
                                             VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
-        cubey::vulkan::Swapchain& swapchain = context.swapchain();
-        const std::size_t swapchain_image_index = static_cast<std::size_t>(image_index);
-        const VkImage swapchain_image = swapchain.images().at(swapchain_image_index);
         cubey::vulkan::transition_image_layout(
-            command_buffer, cubey::vulkan::begin_color_attachment_transition(swapchain_image));
+            command_buffer,
+            cubey::vulkan::begin_color_attachment_transition(frame.color_target.image));
 
         VkClearValue clear{};
         clear.color = {{0.015F, 0.017F, 0.024F, 1.0F}};
-        const VkRenderingAttachmentInfo color_attachment =
-            cubey::vulkan::color_rendering_attachment(
-                swapchain.image_views().at(swapchain_image_index), clear);
+        const cubey::render::RenderTargetView target =
+            cubey::render::render_target_view(frame.color_target);
+        cubey::render::RenderClearValues clear_values;
+        clear_values.color = clear;
+        const cubey::render::RenderTargetRenderingInfo rendering(target, clear_values);
 
-        auto rendering = vk_struct<VkRenderingInfo>(VK_STRUCTURE_TYPE_RENDERING_INFO);
-        rendering.renderArea.offset = {0, 0};
-        rendering.renderArea.extent = swapchain.extent();
-        rendering.layerCount = 1;
-        rendering.colorAttachmentCount = 1;
-        rendering.pColorAttachments = &color_attachment;
-
-        vkCmdBeginRendering(command_buffer, &rendering);
+        vkCmdBeginRendering(command_buffer, &rendering.info());
         vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline().handle());
         vkCmdDraw(command_buffer, 3, 1, 0, 0);
         vkCmdEndRendering(command_buffer);
 
         cubey::vulkan::transition_image_layout(
             command_buffer,
-            cubey::vulkan::finish_color_attachment_for_present_transition(swapchain_image));
+            cubey::vulkan::finish_color_attachment_for_present_transition(
+                frame.color_target.image));
 
         check(vkEndCommandBuffer(command_buffer), "vkEndCommandBuffer triangle");
     }

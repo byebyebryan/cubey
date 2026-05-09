@@ -6,10 +6,10 @@
 #include <cubey/app/windowed_host.h>
 #include <cubey/headless_png_host.h>
 #include <cubey/pan_zoom_2d_controller.h>
+#include <cubey/render/target.h>
 #include <cubey/spirv_io.h>
 #include <cubey/vulkan/command_pool.h>
 #include <cubey/vulkan/device.h>
-#include <cubey/vulkan/dynamic_rendering.h>
 #include <cubey/vulkan/image_transitions.h>
 #include <cubey/vulkan/pipeline.h>
 #include <cubey/vulkan/shader_module.h>
@@ -89,10 +89,10 @@ class FractalApp {
                         update_input(context);
                     },
                 .record_frame =
-                    [this](cubey::app::WindowedAppContext& context, VkCommandBuffer command_buffer,
-                           std::uint32_t image_index, const FrameTiming& timing) {
-                        (void)timing;
-                        record_fractal_frame(context, command_buffer, image_index);
+                    [this](cubey::app::WindowedAppContext& context,
+                           const cubey::app::WindowedRenderFrame& frame) {
+                        (void)context;
+                        record_fractal_frame(frame);
                     },
                 .frame_stats_sample = {},
                 .shutdown =
@@ -118,7 +118,7 @@ class FractalApp {
         callbacks.record_capture = [this](cubey::HeadlessPngContext&,
                                           VkCommandBuffer command_buffer,
                                           const cubey::HeadlessRenderTarget& target) {
-            record_fractal_draw(command_buffer, target.view, target.extent);
+            record_fractal_draw(command_buffer, target);
         };
         callbacks.shutdown = [this](cubey::HeadlessPngContext&) { destroy_swapchain_resources(); };
 
@@ -185,22 +185,18 @@ class FractalApp {
         return view_.push_constants(view_controller_.camera(), extent.width, extent.height);
     }
 
-    void record_fractal_draw(VkCommandBuffer command_buffer, VkImageView image_view,
-                             VkExtent2D extent) const {
+    void record_fractal_draw(VkCommandBuffer command_buffer,
+                             const cubey::render::ColorTargetView& target) const {
         VkClearValue clear{};
         clear.color = {{0.015F, 0.018F, 0.026F, 1.0F}};
-        const VkRenderingAttachmentInfo color_attachment =
-            cubey::vulkan::color_rendering_attachment(image_view, clear);
+        const cubey::render::RenderTargetView render_target =
+            cubey::render::render_target_view(target);
+        cubey::render::RenderClearValues clear_values;
+        clear_values.color = clear;
+        const cubey::render::RenderTargetRenderingInfo rendering(render_target, clear_values);
 
-        auto rendering = vk_struct<VkRenderingInfo>(VK_STRUCTURE_TYPE_RENDERING_INFO);
-        rendering.renderArea.offset = {0, 0};
-        rendering.renderArea.extent = extent;
-        rendering.layerCount = 1;
-        rendering.colorAttachmentCount = 1;
-        rendering.pColorAttachments = &color_attachment;
-
-        const FractalPushConstants constants = push_constants(extent);
-        vkCmdBeginRendering(command_buffer, &rendering);
+        const FractalPushConstants constants = push_constants(target.extent);
+        vkCmdBeginRendering(command_buffer, &rendering.info());
         vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline().handle());
         vkCmdPushConstants(command_buffer, pipeline_layout().handle(), VK_SHADER_STAGE_FRAGMENT_BIT,
                            0, sizeof(constants), &constants);
@@ -208,23 +204,21 @@ class FractalApp {
         vkCmdEndRendering(command_buffer);
     }
 
-    void record_fractal_frame(cubey::app::WindowedAppContext& context,
-                              VkCommandBuffer command_buffer, std::uint32_t image_index) {
+    void record_fractal_frame(const cubey::app::WindowedRenderFrame& frame) {
+        const VkCommandBuffer command_buffer = frame.command_buffer;
         cubey::vulkan::begin_command_buffer(command_buffer,
                                             VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
-        cubey::vulkan::Swapchain& swapchain = context.swapchain();
-        const std::size_t swapchain_image_index = static_cast<std::size_t>(image_index);
-        const VkImage swapchain_image = swapchain.images().at(swapchain_image_index);
         cubey::vulkan::transition_image_layout(
-            command_buffer, cubey::vulkan::begin_color_attachment_transition(swapchain_image));
+            command_buffer,
+            cubey::vulkan::begin_color_attachment_transition(frame.color_target.image));
 
-        record_fractal_draw(command_buffer, swapchain.image_views().at(swapchain_image_index),
-                            swapchain.extent());
+        record_fractal_draw(command_buffer, frame.color_target);
 
         cubey::vulkan::transition_image_layout(
             command_buffer,
-            cubey::vulkan::finish_color_attachment_for_present_transition(swapchain_image));
+            cubey::vulkan::finish_color_attachment_for_present_transition(
+                frame.color_target.image));
 
         check(vkEndCommandBuffer(command_buffer), "vkEndCommandBuffer fractal");
     }

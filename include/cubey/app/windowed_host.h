@@ -4,6 +4,7 @@
 #include <cubey/frame_clock.h>
 #include <cubey/frame_stats.h>
 #include <cubey/input.h>
+#include <cubey/render/target.h>
 #include <cubey/run_config.h>
 #include <cubey/vulkan/device.h>
 #include <cubey/vulkan/frame_resources.h>
@@ -70,13 +71,19 @@ struct WindowedHostConfig {
     bool require_dynamic_rendering = true;
 };
 
+struct WindowedRenderFrame {
+    VkCommandBuffer command_buffer = VK_NULL_HANDLE;
+    std::uint32_t image_index = 0;
+    cubey::render::ColorTargetView color_target;
+    FrameTiming timing;
+};
+
 struct WindowedHostCallbacks {
     std::function<void(WindowedAppContext&)> create_swapchain_resources;
     std::function<void(WindowedAppContext&)> destroy_swapchain_resources;
     std::function<void(WindowedAppContext&)> on_ready;
     std::function<void(WindowedAppContext&, const FrameTiming&)> update;
-    std::function<void(WindowedAppContext&, VkCommandBuffer, std::uint32_t, const FrameTiming&)>
-        record_frame;
+    std::function<void(WindowedAppContext&, const WindowedRenderFrame&)> record_frame;
     std::function<std::optional<FrameStatsSample>(WindowedAppContext&, const FrameTiming&)>
         frame_stats_sample;
     std::function<void(WindowedAppContext&)> shutdown;

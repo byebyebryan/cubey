@@ -229,7 +229,14 @@ cubey::vulkan::RenderFrameResult WindowedHost::draw_frame(const FrameTiming& tim
     }
 
     WindowedAppContext active_context = context();
-    callbacks_.record_frame(active_context, frame.command_buffer, frame.image_index, timing);
+    const WindowedRenderFrame render_frame{
+        .command_buffer = frame.command_buffer,
+        .image_index = frame.image_index,
+        .color_target =
+            cubey::render::swapchain_color_target_view(swapchain(), frame.image_index),
+        .timing = timing,
+    };
+    callbacks_.record_frame(active_context, render_frame);
     return render_context.end_frame(frame);
 }
 
