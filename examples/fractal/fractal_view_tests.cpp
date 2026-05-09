@@ -32,7 +32,7 @@ int main() {
         view.pan_by_screen_delta(64.0F, -36.0F, 640.0F, 360.0F);
         constants = view.push_constants(640, 360);
         require_close(constants.center_x, -0.74F, "horizontal drag should pan in fractal units");
-        require_close(constants.center_y, -0.135F, "vertical drag should pan in fractal units");
+        require_close(constants.center_y, 0.135F, "vertical drag should follow screen motion");
 
         view.reset();
         constants = view.push_constants(640, 360);

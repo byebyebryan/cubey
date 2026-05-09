@@ -34,7 +34,7 @@ class FractalView {
         }
         const float aspect = width / height;
         center_x_ -= (delta_x / width) * 2.0F * scale_ * aspect;
-        center_y_ += (delta_y / height) * 2.0F * scale_;
+        center_y_ -= (delta_y / height) * 2.0F * scale_;
     }
 
     void zoom_at(float factor, float cursor_x, float cursor_y, float width, float height) {
