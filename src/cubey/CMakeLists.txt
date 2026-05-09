@@ -33,6 +33,7 @@ add_library(cubey STATIC
     pointer_drag.cpp
     project_runtime.cpp
     render/target.cpp
+    render/texture.cpp
     spirv_io.cpp
     upload_queue.cpp
     vulkan/buffer.cpp
