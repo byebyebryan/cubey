@@ -31,6 +31,7 @@ add_executable(cubey_core_tests
     spirv_io_tests.cpp
     transform_tests.cpp
     upload_queue_tests.cpp
+    windowed_host_tests.cpp
 )
 
 target_link_libraries(

@@ -74,6 +74,7 @@ struct WindowedHostConfig {
     RunConfig run_config;
     VkQueueFlags required_queue_flags = VK_QUEUE_GRAPHICS_BIT;
     VkImageUsageFlags swapchain_image_usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    std::uint32_t frame_slot_count = 2;
     bool require_dynamic_rendering = true;
 };
 
