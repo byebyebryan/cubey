@@ -54,8 +54,8 @@ rendering without turning the library into a generic app engine.
   and debug messenger setup.
 - Swapchain acquisition, presentation, out-of-date handling, and compositor
   resize recovery.
-- Frame resources: command buffers, semaphores, fences, and the current
-  single-frame synchronization path.
+- Frame resources: command buffers, semaphores, fences, and the frame-slot
+  synchronization path.
 - Build-time GLSL to SPIR-V shader flow.
 
 Completed criteria:
@@ -69,8 +69,8 @@ Completed criteria:
 
 Open criteria:
 
-- N-frames-in-flight remains a future optimization, not a blocker for the first
-  framework checkpoint.
+- Frame overlap is now part of the runtime foundation. Timeline semaphores,
+  split queues, and parallel command recording remain future optimizations.
 
 Current checkpoint:
 
@@ -200,8 +200,9 @@ Current checkpoint:
   example-local.
 - Dev CTest covers the target in graphical, no-display terminal, and headless
   artifact sessions through shared windowed and PNG smoke helpers.
-- Frame overlap, split graphics/compute/present queue-family support, GPU
-  capture polling, and external asset loading remain future slices.
+- Split graphics/compute/present queue-family support, GPU capture polling,
+  timeline semaphores, parallel command recording, and external asset loading
+  remain future slices.
 
 Alignment: the Vulkan layer now has visible windowed examples plus a minimal
 headless PNG path. Cubey has the first async-ready runtime vocabulary: CPU jobs

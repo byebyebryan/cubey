@@ -86,18 +86,16 @@ Defer:
 Current state:
 
 - `Swapchain` owns swapchain images and views.
-- `FrameResources` owns one command buffer, acquire semaphore, per-image
-  present semaphores, and fence.
+- `FrameResources` owns per-frame-slot command buffers, acquire semaphores, and
+  fences, plus per-image present-ready semaphores.
 - `RenderContext` owns the surface-backed `begin_frame` / `end_frame`
-  acquire, submit, present, and recreate result path.
+  acquire, submit, present, frame-slot advance, and recreate result path.
 - `SwapchainRecreateTracker` owns bounded consecutive recreate-attempt tracking.
-- The app host exposes a render frame slot to callbacks. The current runtime
-  still has one slot, but examples can now put CPU-updated GPU data behind an
-  explicit per-frame index.
+- The app host exposes the active render frame slot to callbacks. Frame slot,
+  frame index, and swapchain image index are separate concepts.
 
 Needed next:
 
-- N-frames-in-flight support after the single-frame path is stable.
 - Frame tickets for deferred destruction and delayed readback/capture readiness.
 - A way to rebuild swapchain-sized resources consistently.
 - A reusable resize/recreate coordinator if example loops keep repeating.

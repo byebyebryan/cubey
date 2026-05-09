@@ -88,5 +88,5 @@ full engine architecture.
   descriptors, materials, transforms, and push constants remain caller-owned.
 - `FrameSlot` gives render callbacks a stable frame-data index, and
   `FrameUniformBuffer<T>` owns one host-visible uniform buffer per frame slot.
-  The current windowed host still exposes a single slot; this is a contract for
-  per-frame data ownership, not N-frames-in-flight yet.
+  The current windowed host uses real frame slots for overlapping frame
+  resources, while swapchain image ownership stays Vulkan-visible.
