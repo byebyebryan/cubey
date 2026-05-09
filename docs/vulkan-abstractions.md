@@ -91,6 +91,9 @@ Current state:
 - `RenderContext` owns the surface-backed `begin_frame` / `end_frame`
   acquire, submit, present, and recreate result path.
 - `SwapchainRecreateTracker` owns bounded consecutive recreate-attempt tracking.
+- The app host exposes a render frame slot to callbacks. The current runtime
+  still has one slot, but examples can now put CPU-updated GPU data behind an
+  explicit per-frame index.
 
 Needed next:
 
@@ -180,6 +183,8 @@ Current state:
   the common one-layout/one-pool shape.
 - `DescriptorSetBundle` owns a descriptor set layout, pool, and one allocated
   descriptor set for examples that do not need a custom descriptor allocator.
+- `DescriptorSetArray` owns one layout, one pool, and multiple allocated sets
+  for per-frame binding data while preserving Vulkan descriptor terminology.
 - Descriptor helper functions cover layout bindings, pool sizes, uniform-buffer
   writes, storage-buffer writes, storage-image writes, combined image sampler
   writes, and descriptor set updates.
@@ -188,8 +193,8 @@ Needed next:
 
 - Sampled-image descriptor write helper if a sampled image without sampler gets
   a concrete use case.
-- Multi-set or resettable descriptor-pool helpers once the descriptor lifetime
-  and allocation contract is clearer than the current one-set bundle shape.
+- Resettable descriptor-pool helpers once descriptor reuse needs a stronger
+  lifetime contract than the current owned bundle/array shapes.
 
 Defer:
 

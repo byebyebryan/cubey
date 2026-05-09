@@ -129,7 +129,8 @@ Current checkpoint:
 - Reusable `cubey::render` target, texture, mesh, and draw-item contracts now
   sit above `cubey::vulkan`: windowed/headless color target views,
   dynamic-rendering target setup, generated/uploaded sampled texture ownership,
-  indexed mesh upload, and minimal indexed draw recording.
+  indexed mesh upload, minimal indexed draw recording, explicit frame-slot
+  identity, and per-frame uniform buffers.
 - Reusable `cubey::vulkan::PipelineLayout`, `GraphicsPipeline`,
   `ComputePipeline`, `DescriptorSetLayout`, and `DescriptorPool` own basic
   pipeline and descriptor lifetimes while still taking raw Vulkan create-info
@@ -139,6 +140,8 @@ Current checkpoint:
   storage-buffer, storage-image, and combined image sampler paths.
 - Reusable `cubey::vulkan::DescriptorSetInfo` and `DescriptorSetBundle` cover
   the current one-layout/one-pool/one-set descriptor shape used by examples.
+- Reusable `cubey::vulkan::DescriptorSetArray` covers the same owned
+  layout/pool shape for multiple sets, primarily for per-frame bindings.
 - Reusable `cubey::vulkan::PipelineLayoutInfo` and `ComputePipelineInfo` build
   the current pipeline-layout and compute-pipeline create-info shapes.
 - Reusable `cubey::vulkan::DynamicGraphicsPipelineInfo` builds the current

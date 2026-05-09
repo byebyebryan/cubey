@@ -15,6 +15,8 @@ stable across the repo:
 - a frame-facing target contract that hosts can pass to examples and projects;
 - texture and mesh resource wrappers that own Vulkan resources without hiding
   layout transitions or descriptor updates;
+- explicit frame slots and per-frame uniform buffers for CPU-updated render
+  data;
 - draw packet metadata for simple indexed draws.
 
 `cubey::render` may depend on `cubey::vulkan`. `cubey::vulkan` must not depend
@@ -27,6 +29,7 @@ on `cubey::render`.
 - target views: color, depth, extent, format, and image/view handles;
 - resource wrappers: texture and mesh ownership around existing Vulkan buffers,
   images, and samplers;
+- frame data: frame-slot identity and host-visible per-frame uniform buffers;
 - small command helpers for well-defined draw operations.
 
 Examples and projects still own render intent:
@@ -83,3 +86,7 @@ full engine architecture.
 - `Mesh`, `DrawItem`, and `record_draw_item` own uploaded indexed geometry and
   record the minimal bind/draw sequence. Vertex layout, pipeline state,
   descriptors, materials, transforms, and push constants remain caller-owned.
+- `FrameSlot` gives render callbacks a stable frame-data index, and
+  `FrameUniformBuffer<T>` owns one host-visible uniform buffer per frame slot.
+  The current windowed host still exposes a single slot; this is a contract for
+  per-frame data ownership, not N-frames-in-flight yet.
