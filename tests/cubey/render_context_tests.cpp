@@ -24,6 +24,12 @@ void test_render_context_exposes_explicit_frame_boundary() {
     if (frame.image_index != 0) {
         throw std::runtime_error("frame image index should default to zero");
     }
+    if (frame.frame_slot_index != 0) {
+        throw std::runtime_error("frame slot index should default to zero");
+    }
+    if (frame.frame_slot_count != 1) {
+        throw std::runtime_error("frame slot count should default to one");
+    }
     if (frame.suboptimal) {
         throw std::runtime_error("frame should not default to suboptimal");
     }
@@ -36,6 +42,8 @@ void test_render_context_exposes_explicit_frame_boundary() {
 
     static_assert(std::is_same_v<decltype(frame.command_buffer), VkCommandBuffer>);
     static_assert(std::is_same_v<decltype(frame.image_index), std::uint32_t>);
+    static_assert(std::is_same_v<decltype(frame.frame_slot_index), std::uint32_t>);
+    static_assert(std::is_same_v<decltype(frame.frame_slot_count), std::uint32_t>);
     static_assert(std::is_same_v<decltype(&cubey::vulkan::RenderContext::begin_frame),
                                  cubey::vulkan::RenderFrameResult (cubey::vulkan::RenderContext::*)(
                                      cubey::vulkan::RenderFrame*) const>);

@@ -18,6 +18,8 @@ enum class RenderFrameResult : std::uint8_t {
 struct RenderFrame {
     VkCommandBuffer command_buffer = VK_NULL_HANDLE;
     std::uint32_t image_index = 0;
+    std::uint32_t frame_slot_index = 0;
+    std::uint32_t frame_slot_count = 1;
     bool suboptimal = false;
 };
 

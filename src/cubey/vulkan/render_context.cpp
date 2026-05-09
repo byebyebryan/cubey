@@ -53,7 +53,7 @@ RenderFrameResult RenderContext::begin_frame(RenderFrame* frame) const {
     Device& device = *config_.device;
     Swapchain& active_swapchain = *config_.swapchain;
     FrameResources& frame_resources = *config_.frame_resources;
-    constexpr std::uint32_t frame_slot_index = 0;
+    const std::uint32_t frame_slot_index = frame_resources.current_frame_slot_index();
     const FrameResourceSlot& frame_slot = frame_resources.slot(frame_slot_index);
     frame_resources.wait_for_frame(frame_slot_index);
 
@@ -68,11 +68,21 @@ RenderFrameResult RenderContext::begin_frame(RenderFrame* frame) const {
         check(acquired, "vkAcquireNextImageKHR");
     }
 
+    const std::size_t image_slot = static_cast<std::size_t>(image_index);
+    const VkFence image_fence = frame_resources.image_in_flight(image_slot);
+    if (image_fence != VK_NULL_HANDLE) {
+        check(vkWaitForFences(device.handle(), 1, &image_fence, VK_TRUE, UINT64_MAX),
+              "vkWaitForFences swapchain image");
+    }
+
     frame_resources.reset_fence(frame_slot_index);
     frame_resources.reset_command_buffer(frame_slot_index);
+    frame_resources.mark_image_in_flight(image_slot, frame_slot.fence);
     *frame = {
         .command_buffer = frame_slot.command_buffer,
         .image_index = image_index,
+        .frame_slot_index = frame_slot_index,
+        .frame_slot_count = frame_resources.frame_slot_count(),
         .suboptimal = acquired == VK_SUBOPTIMAL_KHR,
     };
     return RenderFrameResult::Rendered;
@@ -86,8 +96,7 @@ RenderFrameResult RenderContext::end_frame(const RenderFrame& frame) const {
     Device& device = *config_.device;
     Swapchain& active_swapchain = *config_.swapchain;
     FrameResources& frame_resources = *config_.frame_resources;
-    constexpr std::uint32_t frame_slot_index = 0;
-    const FrameResourceSlot& frame_slot = frame_resources.slot(frame_slot_index);
+    const FrameResourceSlot& frame_slot = frame_resources.slot(frame.frame_slot_index);
 
     VkPipelineStageFlags wait_stage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
     auto submit = vk_struct<VkSubmitInfo>(VK_STRUCTURE_TYPE_SUBMIT_INFO);
@@ -120,6 +129,7 @@ RenderFrameResult RenderContext::end_frame(const RenderFrame& frame) const {
         check(presented, "vkQueuePresentKHR");
     }
 
+    frame_resources.advance_frame_slot();
     return recreate_after_present ? RenderFrameResult::RecreateSwapchain
                                   : RenderFrameResult::Rendered;
 }

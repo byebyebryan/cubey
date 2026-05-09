@@ -40,6 +40,10 @@ FrameResources::~FrameResources() {
     destroy();
 }
 
+void FrameResources::advance_frame_slot() {
+    current_frame_slot_index_ = (current_frame_slot_index_ + 1U) % frame_slot_count();
+}
+
 VkFence FrameResources::image_in_flight(std::size_t image_index) const {
     return images_in_flight_.at(image_index);
 }
@@ -109,6 +113,7 @@ void FrameResources::destroy() {
     }
     frame_slots_.clear();
     images_in_flight_.clear();
+    current_frame_slot_index_ = 0;
 }
 
 } // namespace cubey::vulkan

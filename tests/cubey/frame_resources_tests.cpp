@@ -38,6 +38,11 @@ void test_frame_resources_expose_slot_based_contract() {
     static_assert(!std::is_copy_assignable_v<cubey::vulkan::FrameResources>);
     static_assert(std::is_same_v<decltype(&cubey::vulkan::FrameResources::frame_slot_count),
                                  std::uint32_t (cubey::vulkan::FrameResources::*)() const>);
+    static_assert(
+        std::is_same_v<decltype(&cubey::vulkan::FrameResources::current_frame_slot_index),
+                       std::uint32_t (cubey::vulkan::FrameResources::*)() const>);
+    static_assert(std::is_same_v<decltype(&cubey::vulkan::FrameResources::advance_frame_slot),
+                                 void (cubey::vulkan::FrameResources::*)()>);
     static_assert(std::is_same_v<decltype(&cubey::vulkan::FrameResources::slot),
                                  const cubey::vulkan::FrameResourceSlot& (
                                      cubey::vulkan::FrameResources::*)(std::uint32_t) const>);

@@ -40,6 +40,10 @@ class FrameResources {
     std::uint32_t frame_slot_count() const {
         return static_cast<std::uint32_t>(frame_slots_.size());
     }
+    std::uint32_t current_frame_slot_index() const {
+        return current_frame_slot_index_;
+    }
+    void advance_frame_slot();
     VkSemaphore present_ready(std::size_t image_index) const {
         return present_ready_.at(image_index);
     }
@@ -65,6 +69,7 @@ class FrameResources {
     std::vector<FrameResourceSlot> frame_slots_;
     std::vector<VkSemaphore> present_ready_;
     std::vector<VkFence> images_in_flight_;
+    std::uint32_t current_frame_slot_index_ = 0;
 };
 
 } // namespace cubey::vulkan
