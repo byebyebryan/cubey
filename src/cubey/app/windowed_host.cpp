@@ -14,6 +14,8 @@
 namespace cubey::app {
 namespace {
 
+constexpr std::uint32_t kWindowedFrameSlotCount = cubey::render::kSingleFrameSlotCount;
+
 void validate_config(const WindowedHostConfig& config, const WindowedHostCallbacks& callbacks) {
     if (config.run_config.headless) {
         throw std::runtime_error("windowed host does not support --headless");
@@ -36,9 +38,13 @@ WindowedAppContext::WindowedAppContext(const RunConfig& config, GlfwWindow& wind
                                        cubey::vulkan::Device& device,
                                        cubey::vulkan::Swapchain& swapchain,
                                        cubey::vulkan::FrameResources& frame_resources,
-                                       const cubey::input::InputFrame& input)
+                                       const cubey::input::InputFrame& input,
+                                       std::uint32_t frame_slot_count)
     : config_(config), window_(window), instance_(instance), surface_(surface), device_(device),
-      swapchain_(swapchain), frame_resources_(frame_resources), input_(input) {}
+      swapchain_(swapchain), frame_resources_(frame_resources), input_(input),
+      frame_slot_count_(frame_slot_count) {
+    cubey::render::validate_frame_slot({.index = 0, .count = frame_slot_count_});
+}
 
 WindowedHost::WindowedHost(WindowedHostConfig config, WindowedHostCallbacks callbacks)
     : config_(std::move(config)), callbacks_(std::move(callbacks)) {
@@ -232,6 +238,8 @@ cubey::vulkan::RenderFrameResult WindowedHost::draw_frame(const FrameTiming& tim
     const WindowedRenderFrame render_frame{
         .command_buffer = frame.command_buffer,
         .image_index = frame.image_index,
+        .frame_slot =
+            cubey::render::frame_slot_for_index(timing.frame_index, kWindowedFrameSlotCount),
         .color_target =
             cubey::render::swapchain_color_target_view(swapchain(), frame.image_index),
         .timing = timing,
@@ -242,7 +250,8 @@ cubey::vulkan::RenderFrameResult WindowedHost::draw_frame(const FrameTiming& tim
 
 WindowedAppContext WindowedHost::context() {
     return {config_.run_config, window(),    instance(),        surface(),
-            device(),           swapchain(), frame_resources(), input_state_.frame()};
+            device(),           swapchain(), frame_resources(), input_state_.frame(),
+            kWindowedFrameSlotCount};
 }
 
 GlfwWindow& WindowedHost::window() {

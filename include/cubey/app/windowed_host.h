@@ -4,6 +4,7 @@
 #include <cubey/frame_clock.h>
 #include <cubey/frame_stats.h>
 #include <cubey/input.h>
+#include <cubey/render/frame_data.h>
 #include <cubey/render/target.h>
 #include <cubey/run_config.h>
 #include <cubey/vulkan/device.h>
@@ -26,7 +27,8 @@ class WindowedAppContext {
                        cubey::vulkan::Instance& instance, GlfwSurface& surface,
                        cubey::vulkan::Device& device, cubey::vulkan::Swapchain& swapchain,
                        cubey::vulkan::FrameResources& frame_resources,
-                       const cubey::input::InputFrame& input);
+                       const cubey::input::InputFrame& input,
+                       std::uint32_t frame_slot_count);
 
     [[nodiscard]] const RunConfig& config() const {
         return config_;
@@ -52,6 +54,9 @@ class WindowedAppContext {
     [[nodiscard]] const cubey::input::InputFrame& input() const {
         return input_;
     }
+    [[nodiscard]] std::uint32_t frame_slot_count() const {
+        return frame_slot_count_;
+    }
 
   private:
     const RunConfig& config_;
@@ -62,6 +67,7 @@ class WindowedAppContext {
     cubey::vulkan::Swapchain& swapchain_;
     cubey::vulkan::FrameResources& frame_resources_;
     const cubey::input::InputFrame& input_;
+    std::uint32_t frame_slot_count_ = cubey::render::kSingleFrameSlotCount;
 };
 
 struct WindowedHostConfig {
@@ -74,6 +80,7 @@ struct WindowedHostConfig {
 struct WindowedRenderFrame {
     VkCommandBuffer command_buffer = VK_NULL_HANDLE;
     std::uint32_t image_index = 0;
+    cubey::render::FrameSlot frame_slot;
     cubey::render::ColorTargetView color_target;
     FrameTiming timing;
 };
