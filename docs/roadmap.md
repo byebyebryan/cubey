@@ -80,8 +80,8 @@ Current checkpoint:
   validation/debug-utils setup,
   physical-device selection, logical-device lifetime, queue access, swapchain
   image/view ownership, buffer/image allocation, sampler ownership,
-  command-pool ownership, command-buffer allocation, and single-frame
-  command/sync resources.
+  command-pool ownership, command-buffer allocation, per-frame-slot
+  command/sync resources, and per-image present synchronization.
 - Reusable `cubey::FrameClock`, `cubey::Transform2D`, `cubey::Transform3D`,
   `cubey::Camera2D`, `cubey::OrbitCamera3D`, and `cubey::OrbitController` cover
   basic frame timing, explicit 2D/3D model-transform boundaries, shared 2D/3D
@@ -154,15 +154,16 @@ Current checkpoint:
   policy.
 - Reusable `cubey::vulkan::RenderContext` exposes explicit `begin_frame` and
   `end_frame` calls for the common surface-backed acquire, command reset,
-  submit, present, and out-of-date result path used by all current windowed
-  examples.
+  submit, present, frame-slot advance, per-image in-flight fence wait, and
+  out-of-date result path used by all current windowed examples.
 - Reusable `cubey::vulkan::SwapchainRecreateTracker` guards repeated
   out-of-date/suboptimal recreate loops across all current windowed examples.
 - Optional `cubey_app` target owns the first GLFW-backed app/runtime layer:
   window lifetime, surface creation/destruction, key/pointer dispatch, windowed
   frame loop, frame timing, optional frame stats, and swapchain recreate
   orchestration. Render callbacks receive `WindowedRenderFrame`, including the
-  active swapchain color target view.
+  active frame slot and swapchain color target view. The windowed host defaults
+  to two frame slots.
 - `examples/window_clear` links against `cubey` and clears/presents a swapchain
   image through the shared app host using dynamic rendering.
 - `examples/triangle` links against `cubey`, compiles vertex/fragment shaders
@@ -176,8 +177,8 @@ Current checkpoint:
   attachment helper through the shared app host.
 - `examples/textured_cube` links against `cubey`, generates a `Texture2D` with a
   compute shader writing a storage image, transitions it for shader sampling,
-  binds scene uniforms plus a combined image sampler descriptor through shared
-  descriptor/compute helpers, and draws an interactive shaded textured indexed
+  binds per-frame scene uniforms plus a combined image sampler descriptor
+  through shared descriptor/compute helpers, and draws an interactive shaded textured indexed
   cube through `cubey::render::Mesh`, `DrawItem`, dynamic rendering, per-face
   normals, shared GLSL Lambert lighting, shared transform/model matrices,
   shared camera projection, and shared math helpers through the shared app host.

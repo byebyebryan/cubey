@@ -536,9 +536,28 @@ work is solver tuning, another project with different lifecycle/resource needs,
 or a clearly designed foundation boundary; it should not default to a broad
 renderer abstraction.
 
+### Batch 9: Frame Overlap Runtime
+
+Goal: make the frame-slot contract real before building higher-level render
+systems on top.
+
+- Status: initial pass complete on `main`.
+- Added slot-based `FrameResources` with per-slot command buffers, acquire
+  semaphores, and fences.
+- Kept present-ready semaphores per swapchain image and added per-image
+  in-flight fence tracking.
+- Moved `RenderContext` onto active frame slots and advanced the slot ring after
+  submit/present.
+- Updated the windowed host to default to two frame slots and to pass the actual
+  active slot through `WindowedRenderFrame`.
+
+This batch keeps binary semaphores, one queue family, and one command pool.
+Timeline semaphores, split queues, deferred destruction integration, and
+parallel command recording remain separate slices.
+
 ## Near-Term Recommendation
 
-Batch 1 through Batch 8 have their first passes on `main`. The descriptor-bundle
-and shared-math cleanup reduced example-local boilerplate without hiding Vulkan
-binding or render policy. Use `fluid_2d` solver tuning and the next larger
-project candidate to decide project/runtime extractions.
+Batch 1 through Batch 9 have their first passes on `main`. The frame-overlap
+runtime now gives per-frame data and future deferred work a real frame model.
+Use `fluid_2d` solver tuning and the next larger project candidate to decide
+project/runtime extractions.
