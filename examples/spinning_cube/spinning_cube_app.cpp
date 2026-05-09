@@ -3,10 +3,10 @@
 #include <cubey/app/windowed_host.h>
 #include <cubey/math.h>
 #include <cubey/orbit_camera_3d.h>
+#include <cubey/render/mesh.h>
 #include <cubey/render/target.h>
 #include <cubey/spirv_io.h>
 #include <cubey/transform_3d.h>
-#include <cubey/vulkan/buffer.h>
 #include <cubey/vulkan/command_pool.h>
 #include <cubey/vulkan/image.h>
 #include <cubey/vulkan/image_transitions.h>
@@ -138,10 +138,10 @@ class SpinningCubeApp {
 
   private:
     void create_global_resources_if_needed(cubey::app::WindowedAppContext& context) {
-        if (vertex_buffer_.has_value()) {
+        if (mesh_.has_value()) {
             return;
         }
-        create_cube_buffers(context);
+        create_cube_mesh(context);
     }
 
     void create_swapchain_resources(cubey::app::WindowedAppContext& context) {
@@ -157,8 +157,7 @@ class SpinningCubeApp {
 
     void destroy_all_resources() {
         destroy_swapchain_resources();
-        index_buffer_.reset();
-        vertex_buffer_.reset();
+        mesh_.reset();
     }
 
     void create_pipeline(cubey::app::WindowedAppContext& context) {
@@ -223,17 +222,9 @@ class SpinningCubeApp {
         depth_attachment_.emplace(context.device(), context.swapchain().extent());
     }
 
-    void create_cube_buffers(cubey::app::WindowedAppContext& context) {
-        const VkDeviceSize vertex_bytes =
-            static_cast<VkDeviceSize>(kCubeVertices.size() * sizeof(kCubeVertices.front()));
-        const VkDeviceSize index_bytes =
-            static_cast<VkDeviceSize>(kCubeIndices.size() * sizeof(kCubeIndices.front()));
-
-        vertex_buffer_ =
-            cubey::vulkan::upload_device_buffer(context.device(), kCubeVertices.data(),
-                                                vertex_bytes, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
-        index_buffer_ = cubey::vulkan::upload_device_buffer(
-            context.device(), kCubeIndices.data(), index_bytes, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+    void create_cube_mesh(cubey::app::WindowedAppContext& context) {
+        mesh_.emplace(context.device(), cubey::render::indexed_mesh_config(kCubeVertices,
+                                                                           kCubeIndices));
     }
 
     [[nodiscard]] PushConstants current_push_constants(VkExtent2D extent) const {
@@ -279,15 +270,16 @@ class SpinningCubeApp {
 
         vkCmdBeginRendering(command_buffer, &rendering.info());
         vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline().handle());
-        const std::array<VkBuffer, 1> vertex_buffers{vertex_buffer().handle()};
-        constexpr std::array<VkDeviceSize, 1> vertex_offsets{0};
-        vkCmdBindVertexBuffers(command_buffer, 0, static_cast<std::uint32_t>(vertex_buffers.size()),
-                               vertex_buffers.data(), vertex_offsets.data());
-        vkCmdBindIndexBuffer(command_buffer, index_buffer().handle(), 0, VK_INDEX_TYPE_UINT16);
+        const cubey::render::DrawItem draw_item{
+            .mesh = &mesh(),
+            .instance_count = 1,
+            .first_index = 0,
+            .vertex_offset = 0,
+            .first_instance = 0,
+        };
         vkCmdPushConstants(command_buffer, pipeline_layout().handle(), VK_SHADER_STAGE_VERTEX_BIT,
                            0, sizeof(PushConstants), &push_constants);
-        vkCmdDrawIndexed(command_buffer, static_cast<std::uint32_t>(kCubeIndices.size()), 1, 0, 0,
-                         0);
+        cubey::render::record_draw_item(command_buffer, draw_item);
         vkCmdEndRendering(command_buffer);
 
         cubey::vulkan::transition_image_layout(
@@ -298,18 +290,11 @@ class SpinningCubeApp {
         check(vkEndCommandBuffer(command_buffer), "vkEndCommandBuffer spinning_cube");
     }
 
-    [[nodiscard]] cubey::vulkan::Buffer& vertex_buffer() {
-        if (!vertex_buffer_.has_value()) {
-            throw std::runtime_error("vertex buffer is not initialized");
+    [[nodiscard]] const cubey::render::Mesh& mesh() const {
+        if (!mesh_.has_value()) {
+            throw std::runtime_error("cube mesh is not initialized");
         }
-        return vertex_buffer_.value();
-    }
-
-    [[nodiscard]] cubey::vulkan::Buffer& index_buffer() {
-        if (!index_buffer_.has_value()) {
-            throw std::runtime_error("index buffer is not initialized");
-        }
-        return index_buffer_.value();
+        return mesh_.value();
     }
 
     [[nodiscard]] const cubey::vulkan::PipelineLayout& pipeline_layout() const {
@@ -337,8 +322,7 @@ class SpinningCubeApp {
     cubey::OrbitCamera3D camera_;
     std::chrono::steady_clock::time_point start_time_ = std::chrono::steady_clock::now();
 
-    std::optional<cubey::vulkan::Buffer> vertex_buffer_;
-    std::optional<cubey::vulkan::Buffer> index_buffer_;
+    std::optional<cubey::render::Mesh> mesh_;
     std::optional<cubey::vulkan::PipelineLayout> pipeline_layout_;
     std::optional<cubey::vulkan::GraphicsPipeline> pipeline_;
     std::optional<cubey::vulkan::DepthAttachment> depth_attachment_;
