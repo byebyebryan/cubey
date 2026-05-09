@@ -32,6 +32,7 @@ add_library(cubey STATIC
     pan_zoom_2d_controller.cpp
     pointer_drag.cpp
     project_runtime.cpp
+    render/mesh.cpp
     render/target.cpp
     render/texture.cpp
     spirv_io.cpp
