@@ -7,6 +7,7 @@
 #include <cubey/orbit_camera_3d.h>
 #include <cubey/orbit_controller.h>
 #include <cubey/render/target.h>
+#include <cubey/render/texture.h>
 #include <cubey/spirv_io.h>
 #include <cubey/transform_3d.h>
 #include <cubey/vulkan/buffer.h>
@@ -16,7 +17,6 @@
 #include <cubey/vulkan/image_transitions.h>
 #include <cubey/vulkan/immediate_commands.h>
 #include <cubey/vulkan/pipeline.h>
-#include <cubey/vulkan/sampler.h>
 #include <cubey/vulkan/shader_module.h>
 #include <cubey/vulkan/vk_check.h>
 
@@ -198,8 +198,7 @@ class TexturedCubeApp {
         destroy_swapchain_resources();
         destroy_descriptors();
         destroy_compute_resources();
-        texture_sampler_.reset();
-        texture_image_.reset();
+        texture_.reset();
         scene_uniform_buffer_.reset();
         index_buffer_.reset();
         vertex_buffer_.reset();
@@ -296,16 +295,17 @@ class TexturedCubeApp {
     void create_texture_resources(cubey::app::WindowedAppContext& context) {
         validate_texture_format_support(context);
 
-        const cubey::vulkan::ImageConfig image_config = cubey::vulkan::storage_sampled_image_config(
-            {kTextureWidth, kTextureHeight}, kTextureFormat);
-        texture_image_.emplace(context.device(), image_config);
+        cubey::render::Texture2DConfig texture_config;
+        texture_config.extent = {kTextureWidth, kTextureHeight};
+        texture_config.format = kTextureFormat;
+        texture_config.usage = cubey::render::Texture2DUsage::StorageSampled;
+        texture_config.create_sampler = true;
+        texture_.emplace(context.device(), texture_config);
 
         create_compute_resources(context);
         dispatch_compute_texture(context);
         destroy_compute_resources();
 
-        cubey::vulkan::SamplerConfig sampler_config;
-        texture_sampler_.emplace(context.device(), sampler_config);
         create_descriptors(context);
     }
 
@@ -342,7 +342,7 @@ class TexturedCubeApp {
 
         const cubey::vulkan::DescriptorImageWrite texture_write =
             cubey::vulkan::storage_image_descriptor(compute_descriptors().set(), 0,
-                                                    texture_image().view());
+                                                    texture().view());
         const std::array<VkWriteDescriptorSet, 1> writes{texture_write.descriptor_write()};
         cubey::vulkan::update_descriptor_sets(context.device(), writes);
 
@@ -374,7 +374,7 @@ class TexturedCubeApp {
 
     void dispatch_compute_texture(cubey::app::WindowedAppContext& context) const {
         transition_texture_image(
-            context, cubey::vulkan::begin_storage_image_write_transition(texture_image().handle()));
+            context, cubey::vulkan::begin_storage_image_write_transition(texture().handle()));
 
         cubey::vulkan::ImmediateCommands commands(context.device());
         vkCmdBindPipeline(commands.command_buffer(), VK_PIPELINE_BIND_POINT_COMPUTE,
@@ -392,7 +392,7 @@ class TexturedCubeApp {
 
         transition_texture_image(context,
                                  cubey::vulkan::finish_storage_image_write_for_sampling_transition(
-                                     texture_image().handle()));
+                                     texture().handle()));
     }
 
     void create_descriptors(cubey::app::WindowedAppContext& context) {
@@ -416,7 +416,7 @@ class TexturedCubeApp {
                 descriptors().set(), 0, scene_uniform_buffer().handle(), sizeof(SceneUniforms));
         const cubey::vulkan::DescriptorImageWrite image_write =
             cubey::vulkan::combined_image_sampler_descriptor(
-                descriptors().set(), 1, texture_sampler().handle(), texture_image().view());
+                descriptors().set(), 1, texture().sampler().handle(), texture().view());
         const std::array<VkWriteDescriptorSet, 2> writes{
             scene_write.descriptor_write(),
             image_write.descriptor_write(),
@@ -518,18 +518,11 @@ class TexturedCubeApp {
         return scene_uniform_buffer_.value();
     }
 
-    [[nodiscard]] const cubey::vulkan::Image& texture_image() const {
-        if (!texture_image_.has_value()) {
-            throw std::runtime_error("texture image is not initialized");
+    [[nodiscard]] const cubey::render::Texture2D& texture() const {
+        if (!texture_.has_value()) {
+            throw std::runtime_error("texture is not initialized");
         }
-        return texture_image_.value();
-    }
-
-    [[nodiscard]] const cubey::vulkan::Sampler& texture_sampler() const {
-        if (!texture_sampler_.has_value()) {
-            throw std::runtime_error("texture sampler is not initialized");
-        }
-        return texture_sampler_.value();
+        return texture_.value();
     }
 
     [[nodiscard]] const cubey::vulkan::DescriptorSetBundle& descriptors() const {
@@ -588,8 +581,7 @@ class TexturedCubeApp {
     std::optional<cubey::vulkan::Buffer> vertex_buffer_;
     std::optional<cubey::vulkan::Buffer> index_buffer_;
     std::optional<cubey::vulkan::Buffer> scene_uniform_buffer_;
-    std::optional<cubey::vulkan::Image> texture_image_;
-    std::optional<cubey::vulkan::Sampler> texture_sampler_;
+    std::optional<cubey::render::Texture2D> texture_;
     std::optional<cubey::vulkan::DescriptorSetBundle> descriptors_;
     std::optional<cubey::vulkan::PipelineLayout> pipeline_layout_;
     std::optional<cubey::vulkan::GraphicsPipeline> pipeline_;
