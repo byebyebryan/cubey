@@ -13,6 +13,7 @@
 
 namespace cubey::math {
 
+using Mat3 = glm::mat3;
 using Mat4 = glm::mat4;
 using Vec2 = glm::vec2;
 using Vec3 = glm::vec3;
@@ -37,6 +38,14 @@ using Vec4 = glm::vec4;
 
 [[nodiscard]] inline Mat4 rotation_y(float radians) {
     return glm::rotate(identity(), radians, glm::vec3{0.0F, 1.0F, 0.0F});
+}
+
+[[nodiscard]] inline Mat4 rotation_z(float radians) {
+    return glm::rotate(identity(), radians, glm::vec3{0.0F, 0.0F, 1.0F});
+}
+
+[[nodiscard]] inline Mat4 scale(Vec3 scale) {
+    return glm::scale(identity(), scale);
 }
 
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)

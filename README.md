@@ -64,10 +64,10 @@ instanced screen-facing quads with procedural Gaussian splats.
 `projects/fluid_2d` is the first project target: a 2D dye-and-velocity field
 with compute injection/advection, pressure projection, fullscreen rendering,
 and deterministic headless PNG output.
-`cubey` owns the reusable GLM-backed math wrapper, Vulkan instance, device,
-buffer, image, sampler, swapchain, shader-module, command-pool,
-image-transition and dynamic-rendering helpers, frame clock, 2D/3D camera
-helpers, orbit-controller, CPU job facade, PNG capture queue,
+`cubey` owns the reusable GLM-backed math wrapper, explicit 2D/3D transform
+value types, Vulkan instance, device, buffer, image, sampler, swapchain,
+shader-module, command-pool, image-transition and dynamic-rendering helpers,
+frame clock, 2D/3D camera helpers, orbit-controller, CPU job facade, PNG capture queue,
 upload request queue,
 frame tickets/deferred destruction, async-ready project runtime vocabulary,
 project runtime services and adapter,
@@ -142,11 +142,12 @@ Use validation as a hard requirement when the validation layers are installed:
 ./build/dev/projects/fluid_2d/fluid_2d --headless --require-validation --frames 120 --width 640 --height 360 --output /tmp/cubey-fluid-2d.png
 ```
 
-`spinning_cube` and `textured_cube` share the reusable orbit-camera view and
-projection helper. `textured_cube` supports basic interaction: left-drag rotates
-the shaded compute-textured cube, Space pauses/resumes auto-rotation, `R` resets
-the view, and Escape closes the window. Its window title periodically reports
-FPS, frame time, swapchain extent, triangle count, and pixel rate.
+`spinning_cube` and `textured_cube` share the reusable `Transform3D` model
+matrix helper plus the orbit-camera view/projection helper. `textured_cube`
+supports basic interaction: left-drag rotates the shaded compute-textured cube,
+Space pauses/resumes auto-rotation, `R` resets the view, and Escape closes the
+window. Its window title periodically reports FPS, frame time, swapchain extent,
+triangle count, and pixel rate.
 
 `fractal` supports basic `Camera2D` navigation: left-drag pans, mouse wheel
 zooms around the cursor, `R` resets the view, and Escape closes the window.

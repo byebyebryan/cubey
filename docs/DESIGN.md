@@ -34,7 +34,7 @@ This is a ground-up rewrite carrying forward the same spirit with modern tools a
 | Optional future API | WebGPU (Dawn) | Browser showcases if the project earns that need |
 | Windowing | GLFW | Minimal, Vulkan-native surface creation |
 | UI | None yet; ImGui is the likely debug UI | Current telemetry stays lightweight until UI earns the dependency |
-| Math | GLM behind `cubey::math` | Share matrix/vector types, camera state, and Vulkan projection conventions without exposing ad hoc example math |
+| Math | GLM behind `cubey::math` | Share matrix/vector types, transform/camera state, and Vulkan projection conventions without exposing ad hoc example math |
 | Shader compilation | glslangValidator (build time) | GLSL → SPIR-V, no runtime dependency |
 | Image output | `stb_image_write` | Single-header dependency, enough for inspectable artifacts |
 | CPU async work | undecided behind `cubey::jobs` | Taskflow and `BS::thread_pool` are the first candidates |
@@ -253,6 +253,8 @@ cubey/
       pan_zoom_2d_controller.h -- input-driven 2D camera pan/zoom controller
       pointer_drag.h       -- shared pointer drag helper
       project_runtime.h    -- async-ready project vocabulary
+      transform_2d.h       -- explicit 2D model transform value type
+      transform_3d.h       -- explicit 3D model transform value type
       spirv_io.h           -- SPIR-V bytecode file loading
       upload_queue.h       -- CPU-owned upload request queue
       vulkan/

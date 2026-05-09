@@ -4,6 +4,7 @@
 #include <cubey/math.h>
 #include <cubey/orbit_camera_3d.h>
 #include <cubey/spirv_io.h>
+#include <cubey/transform_3d.h>
 #include <cubey/vulkan/buffer.h>
 #include <cubey/vulkan/command_pool.h>
 #include <cubey/vulkan/dynamic_rendering.h>
@@ -240,12 +241,13 @@ class SpinningCubeApp {
         const float seconds =
             static_cast<float>(std::chrono::duration<double>(now - start_time_).count());
 
-        const cubey::math::Mat4 model =
-            cubey::math::rotation_y(seconds * 0.9F) * cubey::math::rotation_x(seconds * 0.55F);
+        const cubey::Transform3D transform{
+            .rotation_radians = {seconds * 0.55F, seconds * 0.9F, 0.0F},
+        };
         const float aspect = static_cast<float>(extent.width) / static_cast<float>(extent.height);
 
         return {
-            camera_.view_projection_matrix(aspect) * model,
+            camera_.view_projection_matrix(aspect) * transform.model_matrix(),
         };
     }
 

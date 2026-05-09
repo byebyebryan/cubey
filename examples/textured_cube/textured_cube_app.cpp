@@ -7,6 +7,7 @@
 #include <cubey/orbit_camera_3d.h>
 #include <cubey/orbit_controller.h>
 #include <cubey/spirv_io.h>
+#include <cubey/transform_3d.h>
 #include <cubey/vulkan/buffer.h>
 #include <cubey/vulkan/command_pool.h>
 #include <cubey/vulkan/descriptors.h>
@@ -428,8 +429,10 @@ class TexturedCubeApp {
     }
 
     [[nodiscard]] SceneUniforms current_scene_uniforms(VkExtent2D extent) const {
-        const cubey::math::Mat4 model = cubey::math::rotation_y(orbit_controller_.yaw()) *
-                                        cubey::math::rotation_x(orbit_controller_.pitch());
+        const cubey::Transform3D transform{
+            .rotation_radians = {orbit_controller_.pitch(), orbit_controller_.yaw(), 0.0F},
+        };
+        const cubey::math::Mat4 model = transform.model_matrix();
         const float aspect = static_cast<float>(extent.width) / static_cast<float>(extent.height);
 
         return {
