@@ -21,6 +21,7 @@ add_executable(cubey_core_tests
     project_runtime_tests.cpp
     image_transitions_tests.cpp
     render_context_tests.cpp
+    render_target_tests.cpp
     resource_tests.cpp
     spirv_io_tests.cpp
     transform_tests.cpp

@@ -32,6 +32,7 @@ add_library(cubey STATIC
     pan_zoom_2d_controller.cpp
     pointer_drag.cpp
     project_runtime.cpp
+    render/target.cpp
     spirv_io.cpp
     upload_queue.cpp
     vulkan/buffer.cpp
