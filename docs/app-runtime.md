@@ -1,8 +1,9 @@
 # App Runtime
 
-Cubey has enough windowed examples to start extracting a real app/runtime core.
-This layer should reduce repeated host code without becoming a renderer, a
-backend abstraction, or a scene system.
+Cubey needs a deliberate app/runtime foundation for windowed and headless GPU
+work. This layer should make the core frame, input, surface, timing, and project
+boundaries explicit without becoming a renderer, backend abstraction, or scene
+system.
 
 ## Direction
 
@@ -150,21 +151,26 @@ resource creation/destruction, update, command recording, and shutdown.
   host-bridge behavior: convert `FrameTiming` to one `ProjectFrame` per host
   frame, expose `ProjectContext`, and retire deferred destruction on shutdown.
   `fluid_2d` uses the adapter in both windowed and headless modes.
-- A generic project host is still deferred; the current evidence only justifies
+- A generic project host is still deferred; the current contract is limited to
   shared service ownership and frame bridging.
 
-## Promotion Rules
+## Foundation Rules
 
-- Promote only repeated host mechanics.
+- Design small foundation contracts when the graphics/runtime concept is
+  durable, correctness-sensitive, or widely established. Do not require every
+  shared boundary to first appear as duplicated project code.
+- Use repeated host mechanics as useful evidence, not as the only reason to add
+  library code.
 - Keep command recording explicit in examples/projects.
 - Keep lifecycle APIs small enough that `window_clear` and `triangle` remain
   readable.
-- Prefer project-owned state over host-owned policy.
-- Add more input/UI hosting only as examples or projects need it.
+- Prefer project-owned render intent over host-owned render policy.
+- Add input/UI hosting when the contract is clear enough to keep projects
+  cleaner, not only after the projects become messy.
 - Keep the headless host narrow: no scene/render abstraction, no implicit
   project lifecycle, and no GLFW dependency.
-- Promote a full project lifecycle host only after another `projects/` target
-  repeats the same setup/update/render/shutdown bridge.
+- Build a full project lifecycle host only when its setup/update/render/resize
+  contract is explicit enough to serve more than one project shape.
 
 ## Current Non-Goals
 

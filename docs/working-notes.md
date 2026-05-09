@@ -5,6 +5,13 @@ are useful but not polished enough for the design document yet. Promote durable
 decisions into `docs/DESIGN.md`, `docs/roadmap.md`, or
 `docs/spike-findings.md` when they stabilize.
 
+Architectural note: older entries that say "wait for project pressure" reflect
+an earlier anti-sprawl bias. The current stance in `docs/DESIGN.md`,
+`docs/app-runtime.md`, and `docs/vulkan-abstractions.md` supersedes that:
+Cubey should build small, deliberate foundation contracts for established
+graphics/runtime concepts when the boundary is clear, while still avoiding a
+generic game engine or backend-agnostic renderer.
+
 ## Current Checkpoint
 
 As of 2026-05-06:

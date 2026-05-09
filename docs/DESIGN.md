@@ -23,6 +23,14 @@ This is a ground-up rewrite carrying forward the same spirit with modern tools a
 - **Async-ready before heavily threaded.** Shape project code around jobs,
   queued uploads, queued captures, and explicit GPU ownership before adding a
   dedicated render thread or parallel command recording.
+- **Intentional foundation, not accidental extraction.** Rendering engines are
+  inherently contract-heavy. Cubey should design small shared library
+  boundaries for durable graphics/runtime concepts early, then revise them as
+  projects sharpen the requirements.
+- **Established graphics vocabulary first.** Prefer industry terms and proven
+  API shapes over invented names. Before adding major concepts, compare
+  Filament, Godot, Unity, Unreal, Khronos/Vulkan guidance, and relevant papers
+  or engine notes.
 
 ## Technology Stack
 
@@ -102,9 +110,11 @@ Cubey now has two narrow hosts:
 - `cubey::HeadlessPngHost` owns no-window Vulkan setup, an offscreen RGBA
   target, capture transitions, readback, and PNG artifact writing.
 
-Examples and projects still own their shaders, resources, command recording,
-simulation, and render policy. The library only promotes reusable host pieces
-once repeated shape is clear.
+Examples and projects still own their shaders, simulation choices, and render
+intent. The library should own durable foundation contracts when those
+contracts are clearer and safer than ad hoc project code. Repetition is useful
+evidence, but it is not a required gate for graphics concepts that are already
+well-established or correctness-sensitive.
 
 Before this becomes a broad host, projects should move toward the async-ready
 shape described in [threading and async design](threading-and-async.md): app
@@ -162,10 +172,37 @@ This is critical for AI-assisted development — the agent gets structured pass/
 |------|--------|-------|
 | Fluid 2D | cubey1 rewrite warmup | First project target; compute-updated 2D dye/velocity field with headless PNG output |
 | Fluid Simulation 3D | cubey1 rewrite | Future Eulerian 3D fluid sim, compute-based, raymarched volume rendering |
-| Particle System | cubey1 rewrite | Prototype attractor particles now live under `examples/particles`; a larger project would need compute + indirect draw pressure before graduating |
+| Particle System | cubey1 rewrite | Prototype attractor particles now live under `examples/particles`; a larger project would need a clear compute + indirect draw contract before graduating |
 | Marching Cubes | cubey1 rewrite | Isosurface extraction via compute + indirect draw |
 | Fractal 2D | cubey1 rewrite | Mandelbrot/Julia renderer |
 | SDF Sculpting | projectR port | Sparse SDF brick tree, raymarched rendering, Morton-coded spatial indexing |
+
+## Reference Sources
+
+Graphics is specialized enough that Cubey should actively check precedent
+before inventing vocabulary or architecture. Preferred references:
+
+- [Filament](https://github.com/google/filament) and its
+  [public docs](https://google.github.io/filament/): primary practical
+  reference for engine/resource/view/material boundaries, explicit handles,
+  frame flow, and modern PBR terminology.
+- [Godot documentation](https://docs.godotengine.org/en/stable/): open-source
+  reference for 2D/3D transforms, scene/rendering-server boundaries, resources,
+  and editor-independent runtime concepts.
+- [Unity Manual](https://docs.unity.cn/Manual/) and
+  [Unreal Engine documentation](https://dev.epicgames.com/documentation/en-us/unreal-engine):
+  public API references for established contracts such as transforms,
+  components, cameras, renderers, materials, scenes, and assets.
+- [Khronos Vulkan documentation](https://docs.vulkan.org/): source of truth for
+  Vulkan names, synchronization, layouts, descriptor terminology, and valid
+  usage.
+- Graphics papers, GPUOpen/NVIDIA/Intel notes, and mature OSS renderers when a
+  topic is more specific than the engine-level references above.
+
+Use these sources for terminology and contract shape. Do not copy code, and do
+not import large engine architecture wholesale when Cubey only needs a narrow
+foundation type. For nontrivial foundation work, record the main precedents
+consulted in the design note, roadmap update, PR description, or working notes.
 
 ## Borrowing from Filament
 
@@ -175,9 +212,9 @@ Where applicable, borrow architectural patterns (not code) from Google's Filamen
 - Uniform arena / blob allocator for batching uniforms
 - Sampler caching to deduplicate identical VkSampler objects
 
-Do not copy Filament's backend/frontend split yet. Cubey does not currently
-need multiple production backends, and Dawn/WebGPU already provides an
-abstraction layer where browser portability is the goal.
+Filament is a strong reference, but not a template to clone. Cubey does not
+currently need Filament's full backend/frontend split or material system.
+Borrow the contract clarity and terminology; keep Cubey's implementation small.
 
 ## Repository Structure
 
@@ -372,4 +409,4 @@ cubey/
 - A cross-platform compatibility layer
 - A dual Vulkan/WebGPU backend abstraction before there is a concrete browser-facing project need
 - Runtime shader hot-reload
-- A material/render-graph/pipeline system
+- A full material/render-graph/pipeline system before its contract is clear

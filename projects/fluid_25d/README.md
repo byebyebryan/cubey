@@ -169,8 +169,8 @@ runtime pieces as `fluid_2d`:
   services.
 
 Keep the first solver buffers, shader schedule, terrain generator, and render
-policy project-local. Promote shared helpers only after `fluid_2d` and
-`fluid_25d` reveal a repeated shape.
+policy project-local. Promote shared helpers when `fluid_2d` and `fluid_25d`
+make the reusable solver/resource contract clear enough to test.
 
 ## First Checkpoint
 

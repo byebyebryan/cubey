@@ -1,10 +1,10 @@
 # Vulkan Abstraction Map
 
 This document maps the remaining Vulkan framework work for Cubey. It is a
-planning guide, not a promise to abstract every Vulkan concept. Promote code
-into `cubey::vulkan` only when it removes repeated setup, fixes a real lifetime
-or synchronization hazard, or gives projects a clearer vocabulary without
-hiding the constraints that matter.
+planning guide, not a promise to abstract every Vulkan concept. Add code to
+`cubey::vulkan` when it creates a deliberate foundation contract, fixes a real
+lifetime or synchronization hazard, removes repeated setup, or gives projects a
+clearer vocabulary without hiding the constraints that matter.
 
 ## Direction
 
@@ -19,17 +19,26 @@ The current boundary is:
   construction.
 - Examples and projects own rendering intent: shaders, meshes, descriptors,
   command recording, resize policy, and user interaction.
-- Higher-level renderer, material, and render-graph concepts should wait until
-  multiple projects create real pressure for them. A narrow app host is now
-  justified by repeated example host code, but it should live outside
+- Higher-level renderer, material, and render-graph concepts should be designed
+  from established graphics terminology and clear Cubey contracts. They do not
+  need duplicated project code as a prerequisite, but they do need a narrow
+  scope and an explicit reason to exist. App/window hosting lives outside
   `cubey::vulkan`.
 
-## Promotion Rules
+## Foundation Rules
 
 - Prefer narrow RAII wrappers and create-info helpers before policy-heavy
   abstractions.
-- Promote repeated code after at least two call sites or after one call site
-  exposes a real correctness hazard.
+- Add shared code after repeated call sites, after one call site exposes a real
+  correctness hazard, or when an established graphics concept has a clear
+  durable contract.
+- Search for precedent before naming or shaping new concepts. Start with the
+  [Vulkan specification/guide](https://docs.vulkan.org/),
+  [Filament](https://github.com/google/filament),
+  [Godot](https://docs.godotengine.org/en/stable/),
+  [Unity](https://docs.unity.cn/Manual/),
+  [Unreal](https://dev.epicgames.com/documentation/en-us/unreal-engine), and
+  mature graphics papers or engine notes relevant to the feature.
 - Keep synchronization and image layouts explicit unless the helper name makes
   the exact transition obvious.
 - Keep GLFW/platform code out of the low-level Vulkan library. If it becomes
@@ -61,13 +70,14 @@ Needed next:
 - Capability helpers for formats and optional features.
 - Queue-family model that can represent split graphics, compute, and present
   queues.
-- Submission coordinator only after queue submission paths repeat.
+- Submission coordinator once queue ownership and submission contracts are
+  concrete enough to test.
 
 Defer:
 
 - Sophisticated multi-GPU selection.
 - Full queue abstraction, split queues, and timeline-semaphore scheduling until
-  project evidence justifies them.
+  the ownership model and scheduling contract are clear.
 
 ### 2. Frame And Presentation
 
@@ -89,7 +99,9 @@ Needed next:
 
 Defer:
 
-- Renderer/material/scene abstractions until project pressure proves them.
+- Renderer/material/scene abstractions until the contract is narrow and
+  terminology-aligned enough to be useful foundation code rather than a generic
+  engine layer.
 
 ### 3. Commands And Submission
 
@@ -115,7 +127,7 @@ Needed next:
 Defer:
 
 - Parallel command recording and secondary command buffers until profiling or a
-  project proves command recording cost.
+  concrete renderer contract makes command recording cost worth addressing.
 - A general queue class until split queue families force the shape.
 
 ### 4. Resources And Memory
@@ -172,8 +184,8 @@ Needed next:
 
 - Sampled-image descriptor write helper if a sampled image without sampler gets
   a concrete use case.
-- Multi-set or resettable descriptor-pool helpers only after a project needs
-  more than the current one-set bundle shape.
+- Multi-set or resettable descriptor-pool helpers once the descriptor lifetime
+  and allocation contract is clearer than the current one-set bundle shape.
 
 Defer:
 
@@ -203,7 +215,7 @@ Needed next:
 Defer:
 
 - Shader reflection, hot reload, pipeline cache, materials, and pipeline
-  libraries until real projects create enough pressure.
+  libraries until Cubey has a narrow, terminology-aligned contract for them.
 
 ### 7. Render Attachments And Render Targets
 
@@ -242,9 +254,10 @@ Needed later:
 
 - Mesh upload helper for vertex/index buffers.
 - Texture object/helper for generated or uploaded sampled images.
-- Small geometry helpers only if repeated examples need the same primitives.
-- Storage-buffer or billboard helpers only after another example/project repeats
-  the particle shape.
+- Small geometry helpers once repeated examples or a clear primitive contract
+  justify them.
+- Storage-buffer or billboard helpers once the data layout and render contract
+  are clear enough to avoid baking in one particle demo's policy.
 
 Defer:
 
@@ -501,12 +514,13 @@ Goal: let a real project define the app/runtime seam.
 This is the point where a project interface around setup, update, render,
 resize, and shutdown may become worthwhile.
 
-Status: `projects/fluid_2d` now provides the first project-pressure checkpoint.
+Status: `projects/fluid_2d` now provides the first project-scale checkpoint.
 It uses storage-buffer ping-pong fields, compute injection/advection,
 project-local pressure projection, pointer injection, debug render modes,
 fullscreen rendering, and shared-host headless PNG output. The next useful
-pressure is solver tuning or another project with repeated lifecycle/resource
-needs, not a renderer abstraction.
+work is solver tuning, another project with different lifecycle/resource needs,
+or a clearly designed foundation boundary; it should not default to a broad
+renderer abstraction.
 
 ## Near-Term Recommendation
 

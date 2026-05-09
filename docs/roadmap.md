@@ -196,8 +196,11 @@ Current checkpoint:
 Alignment: the Vulkan layer now has visible windowed examples plus a minimal
 headless PNG path. Cubey has the first async-ready runtime vocabulary: CPU jobs
 behind Cubey APIs, queued upload/capture requests, frame tickets, deferred
-cleanup, and project lifecycle concepts. The full threaded renderer, split
-queues, and parallel command recording should still wait for project pressure.
+cleanup, and project lifecycle concepts. Larger systems such as a threaded
+renderer, split queues, or parallel command recording should be designed from
+clear contracts and established graphics precedent before implementation; they
+do not need duplicated project code as a prerequisite, but they must stay
+narrow and testable.
 
 ## Phase 2: Headless Output And Runtime Boundary
 
@@ -238,8 +241,8 @@ the headless artifact path without pretending to justify a project runtime.
 - Kept windowed setup, command recording, and navigation example-local.
 - Reused existing dynamic graphics pipeline helpers.
 - Reused the shared headless PNG host for deterministic output.
-- Did not promote fullscreen helpers; the example did not create enough pressure
-  to justify another abstraction yet.
+- Did not promote fullscreen helpers; no durable contract was clearer than the
+  current explicit example code yet.
 
 Exit criteria:
 
@@ -361,7 +364,8 @@ has proven useful.
 - Narrow no-GLFW headless PNG host that shares no-window instance/device,
   offscreen target, capture transitions, readback, and artifact writing. Status:
   complete for current headless examples and `fluid_2d`.
-- Input/UI hooks only after a project needs them.
+- Input/UI hooks once the contract is clear enough to keep project code cleaner
+  without becoming a generic editor or UI framework.
 
 Exit criteria:
 

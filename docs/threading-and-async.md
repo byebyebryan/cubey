@@ -15,7 +15,8 @@ Start the threading work now as an architecture boundary:
 - Keep examples simple and educational; require longer-lived `projects/` to use
   the async-ready structure.
 - Defer dedicated render threads, parallel command recording, and split GPU
-  queues until a project proves the pressure.
+  queues until their contracts are clear from profiling, project needs, or
+  established renderer architecture.
 
 This gives Cubey the structural benefits of multithreading early while keeping
 the first implementation understandable and testable.
@@ -383,10 +384,11 @@ Status: frame-ticket/deferred-destruction initial pass complete.
 
 ### Slice 5: Parallel Command Recording And Split Queues
 
-- Add only after profiling or project complexity proves the need.
+- Add after profiling, project complexity, or established renderer architecture
+  makes the contract clear.
 - Start with per-thread command pools and secondary command buffers.
-- Split queue families and timeline semaphores only after a concrete project
-  demonstrates benefit.
+- Split queue families and timeline semaphores once the benefit and ownership
+  model are concrete enough to test.
 
 ## Open Questions
 

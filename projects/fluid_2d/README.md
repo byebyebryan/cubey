@@ -131,8 +131,8 @@ headless modes.
 
 Status: pressure projection complete.
 
-Goal: improve solver quality without extracting a renderer, scene system, or
-generic simulation abstraction.
+Goal: improve solver quality without turning this checkpoint into a renderer,
+scene system, or generic simulation abstraction.
 
 - Add scalar storage buffers for divergence and pressure ping-pong.
 - Compute divergence from the advected velocity field and reset pressure each
@@ -140,8 +140,8 @@ generic simulation abstraction.
 - Run fixed-count Jacobi pressure iterations.
 - Subtract the pressure gradient from the velocity field in place so field A
   remains the next frame's source and the render source.
-- Keep pressure resources and dispatch policy project-local until another
-  project repeats the shape.
+- Keep pressure resources and dispatch policy project-local until the reusable
+  solver/resource boundary is clear enough to test.
 
 ### Checkpoint 3
 
@@ -189,6 +189,6 @@ creating a generic project host.
 - Improve advection quality before adding more visual polish.
 - Add obstacle masks and boundary-condition debug views.
 - Consider a project-local HUD only if title-bar stats are not enough.
-- Revisit reusable helpers only after `fluid_2d` and `fluid_25d` repeat buffer
-  ping-pong descriptors, fixed-step simulation orchestration, or GPU capture
-  polling.
+- Revisit reusable helpers when buffer ping-pong descriptors, fixed-step
+  simulation orchestration, or GPU capture polling have a clear shared contract
+  across the fluid projects.

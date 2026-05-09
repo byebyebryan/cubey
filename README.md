@@ -89,9 +89,19 @@ separate no-GLFW `HeadlessPngHost` used by current headless examples and the
 first project. The spike branches remain reference material for deeper compute
 and browser work.
 
-The next framework checkpoint should come from extending the first real project,
-`fluid_2d`, rather than extracting a renderer, scene system, or broad backend
-abstraction ahead of project pressure.
+Cubey's foundation should be designed deliberately. Graphics/runtime concepts
+with durable contracts, such as resources, synchronization, transforms,
+cameras, descriptors, render targets, frame flow, and project boundaries, may
+belong in the shared library before multiple projects duplicate them. The guard
+rail is not "wait for pressure"; it is "build explicit, tested graphics
+contracts without turning Cubey into a generic game engine, editor, or
+backend-agnostic renderer."
+
+When shaping new library boundaries, prefer established graphics terminology
+and public precedent over invented vocabulary. Useful references include
+Filament's engine/material/view/resource split, Godot's open rendering and
+scene APIs, Unity and Unreal's public component/transform/camera/rendering
+contracts, and Khronos Vulkan terminology.
 
 ## Development Setup
 

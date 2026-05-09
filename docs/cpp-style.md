@@ -61,6 +61,10 @@ Only add `vk_` when there is a real same-scope ambiguity.
   force `auto`.
 - Keep templates and generic abstractions narrow. Add them when they remove real
   duplication or clarify ownership.
+- Use established graphics terminology where it exists. Check Vulkan, Filament,
+  Godot, Unity, Unreal, and relevant graphics literature before inventing new
+  names for renderer, resource, scene, material, transform, camera, or frame
+  concepts.
 
 ## Vulkan Code
 
@@ -68,6 +72,9 @@ Only add `vk_` when there is a real same-scope ambiguity.
   boundaries visible near the code that needs them.
 - Prefer small Vulkan-native modules over a broad backend abstraction:
   `Device`, `Swapchain`, `Buffer`, `Image`, `Pipeline`, `CommandPool`.
+- Foundation modules are allowed before multiple projects duplicate them when
+  the contract is a well-known graphics/runtime boundary and the API remains
+  explicit, small, and testable.
 - Validation-layer and headless smoke paths are first-class workflows, not debug
   afterthoughts.
 - Use comments for synchronization reasoning, lifetime boundaries, and
