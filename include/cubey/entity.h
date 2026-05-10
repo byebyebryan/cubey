@@ -23,6 +23,13 @@ struct Entity {
     friend bool operator==(Entity lhs, Entity rhs) = default;
 };
 
+struct EntityHash {
+    [[nodiscard]] std::size_t operator()(Entity entity) const noexcept {
+        return (static_cast<std::size_t>(entity.index) * 16'777'619U) ^
+               static_cast<std::size_t>(entity.generation);
+    }
+};
+
 class EntityManager {
   public:
     EntityManager();

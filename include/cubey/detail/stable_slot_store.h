@@ -25,6 +25,13 @@ struct StableSlotId {
     friend bool operator==(StableSlotId lhs, StableSlotId rhs) = default;
 };
 
+struct StableSlotIdHash {
+    [[nodiscard]] std::size_t operator()(StableSlotId id) const noexcept {
+        return (static_cast<std::size_t>(id.index) * 16'777'619U) ^
+               static_cast<std::size_t>(id.generation);
+    }
+};
+
 template <typename T, std::size_t PageSize = 64> class StableSlotStore {
   public:
     static_assert(PageSize > 0);
