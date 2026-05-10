@@ -126,9 +126,9 @@ resource creation/destruction, update, command recording, and shutdown.
   types. `Transform2D` uses translation, scalar-radian rotation, and scale to
   produce a `Mat3`; `Transform3D` uses translation, quaternion rotation, and
   scale to produce a `Mat4`. Both expose `affine_matrix()` instead of
-  model-matrix terminology. `TransformHierarchy2D` and `TransformHierarchy3D`
-  compute cached local-to-world affine matrices without introducing scene
-  ownership, renderables, or entity IDs.
+  model-matrix terminology. `TransformManager2D` and `TransformManager3D` now
+  provide entity-backed parent/child transform components, cached local-to-world
+  affine matrices, scene edit queues, and epoch-local read-view snapshots.
 - `cubey::input::PointerDrag`, `PanZoom2DController`, and the input-aware
   `OrbitController` cover the current repeated 2D/3D pointer-control shapes
   without introducing a scene or action-binding system. The pan/zoom controller

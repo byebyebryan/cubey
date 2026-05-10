@@ -555,28 +555,27 @@ This batch keeps binary semaphores, one queue family, and one command pool.
 Timeline semaphores, split queues, deferred destruction integration, and
 parallel command recording remain separate slices.
 
-### Batch 10: Transform v2 And Lazy Hierarchy
+### Batch 10: Transform v2 And Entity-Backed Managers
 
 Goal: make transforms a durable foundation before scene/entity/renderable
 systems depend on them.
 
-- Status: first implementation complete.
+- Status: transform value types are complete; the standalone hierarchy was
+  superseded by entity-backed transform managers.
 - `Transform2D` now uses `translation`, scalar-radian rotation, and `scale`;
   `Transform3D` now uses `translation`, quaternion `rotation`, and `scale`.
 - Both transform types expose `affine_matrix()` instead of model-matrix
   terminology.
-- `TransformHierarchy2D` and `TransformHierarchy3D` provide transform-only
-  parent/child trees with `TransformNodeId`, cached local-to-world affine
-  matrices, lazy recomputation through `world_affine_matrix()`, and an explicit
-  `update_world_matrices()` pass.
-- Hierarchies reject invalid node IDs, self-parenting, and cycles. They
-  intentionally do not define scene ownership, renderables, entity IDs,
-  deletion/reuse policy, or transaction batching.
+- `TransformManager2D` and `TransformManager3D` provide entity-backed transform
+  components, parent links, cached local-to-world affine matrices, scene edit
+  queues, epoch-local read-view snapshots, and strict validation for
+  self-parenting, cycles, stale entities, and direct destruction of transforms
+  with children.
 
 ## Near-Term Recommendation
 
-Batch 1 through Batch 10 have their first passes on `main`. The next foundation
-decision should build on the explicit transform boundary: define whether Cubey
-needs scene/entity ownership next, or whether another project-facing rendering
-contract should come first. Use `fluid_2d` solver tuning and the next larger
-project candidate to decide broader project/runtime extractions.
+Batch 1 through Batch 10 have their first passes on `main`, and the entity/read
+view substrate has started. The next foundation decision should build on
+`Scene` and transform managers: add another manager contract such as renderable,
+camera, light, or bounds, or define the first render-packet path from
+`SceneReadView`.

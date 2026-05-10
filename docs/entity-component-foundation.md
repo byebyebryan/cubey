@@ -16,8 +16,8 @@ Cubey should use a manager-oriented ECS-lite design:
   concepts: transform, renderable, camera, light, and bounds.
 - `Scene` owns the entity manager, component managers, edit commits, and read
   view publication.
-- `TransformManager2D` and `TransformManager3D` replace the current
-  transform-only hierarchy once entity identity exists.
+- `TransformManager2D` and `TransformManager3D` are the first entity-backed
+  component managers and own parented local/world transform data.
 
 This borrows Filament's public architecture shape more than its internals:
 shared entity IDs, type-specific managers, component instances, parented
@@ -347,10 +347,10 @@ References:
 
 ## Relationship To Current Cubey Code
 
-The current `TransformHierarchy2D` and `TransformHierarchy3D` are useful
-stepping stones, but they are not the final entity/component shape. They should
-either be replaced by transform managers or moved behind transform manager
-implementations once `Entity` and `Scene` exist.
+The initial entity/component substrate now exists: `EntityManager`, stable slot
+storage, `Scene` edit/read epochs, and entity-backed 2D/3D transform managers.
+The older transform-only hierarchy has been retired in favor of the manager
+shape described here.
 
 `cubey::render` should continue to own low-level renderer-facing resources and
 draw metadata. It should not become the scene owner. Scene/component managers
@@ -395,7 +395,8 @@ Unit tests should cover:
 Integration tests should prove:
 
 - a render packet can be built from a `SceneReadView`;
-- transform managers can replace the current transform hierarchy tests;
+- transform managers cover parented world-transform behavior previously covered
+  by standalone hierarchy tests;
 - destroying entities retires attached components through the scene boundary;
 - old read views remain valid while newer commits publish updated data.
 
@@ -457,13 +458,13 @@ component arrays. That tradeoff matches the project's direction because Cubey
 already treats frame packets, uploads, captures, and GPU ownership as explicit
 boundaries.
 
-The next implementation plan should start with the smallest useful substrate:
+The smallest useful substrate is now in place:
 
 1. `Entity` and `EntityManager`.
 2. Internal stable paged slot store.
 3. `Scene` transaction/read-view epoch mechanics.
-4. `TransformManager3D` or a shared transform-manager template used by 2D/3D.
-5. Migration of current transform hierarchy tests to the manager shape.
+4. Shared transform-manager template used by 2D/3D.
+5. Migration of transform hierarchy behavior to the manager shape.
 
-Renderable, camera, light, and material managers should wait until the entity
-and transform manager contracts are implemented and reviewed.
+Renderable, camera, light, bounds, and material managers should build on this
+contract instead of reintroducing project-local ownership patterns.

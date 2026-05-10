@@ -106,11 +106,12 @@ Reusable spatial types should stay explicit and narrow:
   affine matrix.
 - `Transform3D` is translation, quaternion rotation, scale, and a `Mat4` affine
   matrix.
-- `TransformHierarchy2D` and `TransformHierarchy3D` are transform-only trees
-  with cached local-to-world affine matrices. They are not scene graphs and do
-  not own renderables, components, or entity identity.
+- `TransformManager2D` and `TransformManager3D` are entity-backed component
+  managers for parented local/world affine transforms. They publish read-view
+  snapshots through `Scene` commits and are the first scene/component managers,
+  not a full scene graph.
 - `Camera2D` and `OrbitCamera3D` own view/projection state separately from
-  transform hierarchy ownership.
+  transform component ownership.
 
 The broader entity/component shape is captured in
 [entity and component foundation](entity-component-foundation.md): Cubey should
