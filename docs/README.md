@@ -14,6 +14,9 @@ scratch material out of the main path.
   boundaries and planned framework slices.
 - [Renderer foundation](renderer-foundation.md): `cubey::render` contracts that
   sit above Vulkan without introducing scene, material, or render-graph policy.
+- [Entity and component foundation](entity-component-foundation.md):
+  manager-oriented entity/component shape, MT-stable storage, read views, edit
+  commits, and transform manager direction.
 - [App runtime](app-runtime.md): GLFW/windowed host, headless host, input, frame
   flow, and project lifecycle direction.
 - [Threading and async](threading-and-async.md): CPU jobs, queued GPU work,

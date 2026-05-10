@@ -112,6 +112,11 @@ Reusable spatial types should stay explicit and narrow:
 - `Camera2D` and `OrbitCamera3D` own view/projection state separately from
   transform hierarchy ownership.
 
+The broader entity/component shape is captured in
+[entity and component foundation](entity-component-foundation.md): Cubey should
+move toward manager-oriented, MT-stable component storage with explicit read
+views and edit commits before adding scene/renderable ownership.
+
 ### Current And Future App Interfaces
 
 Cubey now has two narrow hosts:
