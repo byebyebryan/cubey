@@ -6,6 +6,7 @@ add_executable(cubey_core_tests
     compute_pipeline_tests.cpp
     descriptor_tests.cpp
     dynamic_rendering_tests.cpp
+    entity_tests.cpp
     file_io_tests.cpp
     frame_clock_tests.cpp
     frame_resources_tests.cpp
