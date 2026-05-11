@@ -21,6 +21,8 @@ void test_descriptor_set_allocate_info_describes_multiple_sets();
 void test_dynamic_rendering_describes_attachment_setup();
 void test_engine_creates_independent_scenes();
 void test_engine_destroys_owned_scenes_and_rejects_foreign_scenes();
+void test_engine_exposes_render_resource_registry();
+void test_engine_created_scenes_validate_render_resource_handles();
 void test_engine_exposes_project_runtime_services();
 void test_engine_reuses_project_frame_for_same_timing();
 void test_entity_handles_track_null_reserved_and_alive_states();
@@ -111,6 +113,8 @@ int main() {
         test_engine_reuses_project_frame_for_same_timing();
         test_engine_creates_independent_scenes();
         test_engine_destroys_owned_scenes_and_rejects_foreign_scenes();
+        test_engine_exposes_render_resource_registry();
+        test_engine_created_scenes_validate_render_resource_handles();
         test_entity_handles_track_null_reserved_and_alive_states();
         test_entity_manager_invalidates_generations_and_defers_reuse();
         test_entity_manager_rolls_back_reserved_entities();

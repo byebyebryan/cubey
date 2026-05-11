@@ -161,6 +161,9 @@ void SceneReadView::release() noexcept {
     }
 }
 
+Scene::Scene(const render::RenderResourceRegistry* render_resources)
+    : render_resources_(render_resources) {}
+
 SceneEditQueue Scene::create_edit_queue() {
     return SceneEditQueue(entities_);
 }
@@ -197,7 +200,7 @@ void Scene::commit(SceneEditQueue& edits) {
         transforms3d_.validate(edits.transforms3d_, entities_);
         cameras2d_.validate(edits.cameras2d_, entities_);
         cameras3d_.validate(edits.cameras3d_, entities_);
-        renderables3d_.validate(edits.renderables3d_, entities_);
+        renderables3d_.validate(edits.renderables3d_, entities_, render_resources_);
 
         ++current_epoch_;
 

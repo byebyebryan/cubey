@@ -11,6 +11,10 @@
 
 namespace cubey {
 
+namespace render {
+class RenderResourceRegistry;
+} // namespace render
+
 class Scene;
 
 class SceneEditQueue {
@@ -144,6 +148,8 @@ class SceneReadView {
 
 class Scene {
   public:
+    explicit Scene(const render::RenderResourceRegistry* render_resources = nullptr);
+
     [[nodiscard]] EntityManager& entities() noexcept {
         return entities_;
     }
@@ -174,6 +180,7 @@ class Scene {
     CameraManager2D cameras2d_{};
     CameraManager3D cameras3d_{};
     RenderableManager3D renderables3d_{};
+    const render::RenderResourceRegistry* render_resources_ = nullptr;
     std::uint64_t current_epoch_ = 0;
     std::mutex edit_mutex_{};
     std::mutex read_mutex_{};

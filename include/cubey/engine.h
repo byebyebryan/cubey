@@ -2,6 +2,7 @@
 
 #include <cubey/frame_clock.h>
 #include <cubey/project_runtime.h>
+#include <cubey/render/resource_registry.h>
 #include <cubey/scene.h>
 
 #include <cstddef>
@@ -26,11 +27,20 @@ class Engine {
     [[nodiscard]] Scene& create_scene();
     void destroy_scene(Scene& scene);
 
+    [[nodiscard]] render::RenderResourceRegistry& render_resources() noexcept {
+        return render_resources_;
+    }
+
+    [[nodiscard]] const render::RenderResourceRegistry& render_resources() const noexcept {
+        return render_resources_;
+    }
+
     [[nodiscard]] ProjectContext project_context();
     [[nodiscard]] const ProjectFrame& frame_for_timing(const FrameTiming& timing);
     [[nodiscard]] std::size_t retire_deferred_destruction();
 
   private:
+    render::RenderResourceRegistry render_resources_{};
     ProjectRuntimeAdapter runtime_;
     std::vector<std::unique_ptr<Scene>> scenes_;
 };

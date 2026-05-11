@@ -1,7 +1,10 @@
 #include <cubey/engine.h>
+#include <cubey/renderable_manager.h>
+#include <cubey/transform_3d.h>
 
 #include <cstdint>
 #include <stdexcept>
+#include <string>
 
 namespace {
 
@@ -18,6 +21,23 @@ void require_throws(auto&& action, const char* message) {
         return;
     }
     throw std::runtime_error(message);
+}
+
+cubey::Renderable3D renderable_for(cubey::render::MeshHandle mesh,
+                                   cubey::render::MaterialHandle material) {
+    return cubey::Renderable3D{
+        .primitives =
+            {
+                cubey::RenderablePrimitive3D{
+                    .mesh = mesh,
+                    .material = material,
+                },
+            },
+        .local_bounds =
+            cubey::Bounds3D{
+                .half_extent = {1.0F, 1.0F, 1.0F},
+            },
+    };
 }
 
 } // namespace
@@ -91,4 +111,37 @@ void test_engine_destroys_owned_scenes_and_rejects_foreign_scenes() {
     cubey::Scene foreign_scene;
     require_throws([&engine, &foreign_scene] { engine.destroy_scene(foreign_scene); },
                    "engine should reject scenes it does not own");
+}
+
+void test_engine_exposes_render_resource_registry() {
+    cubey::Engine engine;
+
+    const cubey::render::MeshHandle mesh = engine.render_resources().create_mesh("engine mesh");
+    require(engine.render_resources().is_alive(mesh),
+            "engine should expose live mesh handles through render resources");
+    require(engine.render_resources().label(mesh) == "engine mesh",
+            "engine render resource labels should round-trip");
+}
+
+void test_engine_created_scenes_validate_render_resource_handles() {
+    cubey::Engine engine;
+    const cubey::render::MeshHandle mesh = engine.render_resources().create_mesh("cube mesh");
+    const cubey::render::MaterialHandle material =
+        engine.render_resources().create_material("cube material");
+    cubey::Scene& scene = engine.create_scene();
+
+    cubey::SceneTransaction setup = scene.begin_transaction();
+    const cubey::Entity entity = setup.entities().create();
+    setup.transforms3d().create(entity, cubey::Transform3D{});
+    setup.renderables3d().create(entity, renderable_for(mesh, material));
+    setup.commit();
+
+    engine.render_resources().destroy_mesh(mesh);
+
+    cubey::SceneTransaction stale_setup = scene.begin_transaction();
+    const cubey::Entity stale_entity = stale_setup.entities().create();
+    stale_setup.transforms3d().create(stale_entity, cubey::Transform3D{});
+    stale_setup.renderables3d().create(stale_entity, renderable_for(mesh, material));
+    require_throws([&stale_setup] { stale_setup.commit(); },
+                   "engine-created scenes should reject destroyed mesh handles");
 }

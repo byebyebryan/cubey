@@ -4,6 +4,7 @@
 #include <cubey/entity.h>
 #include <cubey/math.h>
 #include <cubey/render/resource_handle.h>
+#include <cubey/render/resource_registry.h>
 #include <cubey/transform_manager.h>
 
 #include <cstdint>
@@ -180,7 +181,8 @@ class RenderableManager3D {
         return snapshot_;
     }
 
-    void validate(const RenderableEditQueue3D& edits, const EntityManager& entities) const {
+    void validate(const RenderableEditQueue3D& edits, const EntityManager& entities,
+                  const render::RenderResourceRegistry* resources = nullptr) const {
         std::unordered_set<Entity, EntityHash> existing{};
         for (const detail::StableSlotId slot_id : slots_.active_instances()) {
             existing.insert(slots_.get(slot_id).entity);
@@ -193,7 +195,7 @@ class RenderableManager3D {
             if (existing.contains(create.entity)) {
                 throw std::runtime_error("entity already has a renderable component");
             }
-            validate_renderable(create.renderable);
+            validate_renderable(create.renderable, resources);
             existing.insert(create.entity);
         }
 
@@ -201,7 +203,7 @@ class RenderableManager3D {
             if (!existing.contains(update.entity)) {
                 throw std::runtime_error("renderable update requires an existing component");
             }
-            validate_renderable(update.renderable);
+            validate_renderable(update.renderable, resources);
         }
 
         for (const Entity entity : edits.destroys_) {
@@ -265,7 +267,8 @@ class RenderableManager3D {
         Renderable3D renderable{};
     };
 
-    static void validate_renderable(const Renderable3D& renderable) {
+    static void validate_renderable(const Renderable3D& renderable,
+                                    const render::RenderResourceRegistry* resources) {
         if (renderable.primitives.empty()) {
             throw std::runtime_error("renderable requires at least one primitive");
         }
@@ -275,6 +278,12 @@ class RenderableManager3D {
             }
             if (!primitive.material) {
                 throw std::runtime_error("renderable primitive requires a material handle");
+            }
+            if (resources != nullptr && !resources->is_alive(primitive.mesh)) {
+                throw std::runtime_error("renderable primitive mesh handle is not alive");
+            }
+            if (resources != nullptr && !resources->is_alive(primitive.material)) {
+                throw std::runtime_error("renderable primitive material handle is not alive");
             }
             if (primitive.instance_count == 0) {
                 throw std::runtime_error("renderable primitive instance count must be positive");

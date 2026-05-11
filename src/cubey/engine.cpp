@@ -8,7 +8,7 @@ namespace cubey {
 Engine::Engine(EngineConfig config) : runtime_(config.worker_count) {}
 
 Scene& Engine::create_scene() {
-    scenes_.push_back(std::make_unique<Scene>());
+    scenes_.push_back(std::make_unique<Scene>(&render_resources_));
     return *scenes_.back();
 }
 
