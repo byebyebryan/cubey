@@ -9,7 +9,7 @@
 #include <cubey/render/target.h>
 #include <cubey/spirv_io.h>
 #include <cubey/vulkan/buffer.h>
-#include <cubey/vulkan/command_pool.h>
+#include <cubey/vulkan/command_recorder.h>
 #include <cubey/vulkan/descriptors.h>
 #include <cubey/vulkan/device.h>
 #include <cubey/vulkan/dynamic_rendering.h>
@@ -173,8 +173,7 @@ class Fluid2DApp {
                     [this](cubey::app::WindowedAppContext& context,
                            const cubey::app::WindowedRenderFrame& frame) {
                         (void)context;
-                        const ProjectFrame& project_frame =
-                            runtime_.frame_for_timing(frame.timing);
+                        const ProjectFrame& project_frame = runtime_.frame_for_timing(frame.timing);
                         record_frame(frame, project_frame);
                     },
                 .frame_stats_sample =
@@ -686,6 +685,8 @@ class Fluid2DApp {
     }
 
     void record_fluid_compute(VkCommandBuffer command_buffer, const ProjectFrame& frame) {
+        const cubey::vulkan::CommandRecorder recorder(command_buffer);
+
         if (reset_requested_) {
             record_field_reset(command_buffer);
             reset_requested_ = false;
@@ -697,14 +698,12 @@ class Fluid2DApp {
         const SimulationPushConstants push_constants = simulation_push_constants(frame);
         const DispatchGroups groups = compute_dispatch_groups(fluid_config_);
 
-        vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE,
-                          inject_pipeline().handle());
-        vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE,
-                                compute_pipeline_layout().handle(), 0, 1, &inject_descriptor_set_,
-                                0, nullptr);
-        vkCmdPushConstants(command_buffer, compute_pipeline_layout().handle(),
-                           VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(push_constants), &push_constants);
-        vkCmdDispatch(command_buffer, groups.x, groups.y, 1);
+        recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_COMPUTE, inject_pipeline().handle());
+        recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_COMPUTE,
+                                     compute_pipeline_layout().handle(), 0, inject_descriptor_set_);
+        recorder.push_constants(compute_pipeline_layout().handle(), VK_SHADER_STAGE_COMPUTE_BIT, 0,
+                                push_constants);
+        recorder.dispatch(groups.x, groups.y, 1);
 
         record_shader_write_barrier(
             command_buffer,
@@ -713,14 +712,12 @@ class Fluid2DApp {
                 .dst_access = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
             });
 
-        vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE,
-                          advect_pipeline().handle());
-        vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE,
-                                compute_pipeline_layout().handle(), 0, 1, &advect_descriptor_set_,
-                                0, nullptr);
-        vkCmdPushConstants(command_buffer, compute_pipeline_layout().handle(),
-                           VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(push_constants), &push_constants);
-        vkCmdDispatch(command_buffer, groups.x, groups.y, 1);
+        recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_COMPUTE, advect_pipeline().handle());
+        recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_COMPUTE,
+                                     compute_pipeline_layout().handle(), 0, advect_descriptor_set_);
+        recorder.push_constants(compute_pipeline_layout().handle(), VK_SHADER_STAGE_COMPUTE_BIT, 0,
+                                push_constants);
+        recorder.dispatch(groups.x, groups.y, 1);
 
         record_shader_write_barrier(
             command_buffer,
@@ -729,14 +726,13 @@ class Fluid2DApp {
                 .dst_access = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
             });
 
-        vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE,
-                          divergence_pipeline().handle());
-        vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE,
-                                divergence_pipeline_layout().handle(), 0, 1,
-                                &divergence_descriptor_set_, 0, nullptr);
-        vkCmdPushConstants(command_buffer, divergence_pipeline_layout().handle(),
-                           VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(push_constants), &push_constants);
-        vkCmdDispatch(command_buffer, groups.x, groups.y, 1);
+        recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_COMPUTE, divergence_pipeline().handle());
+        recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_COMPUTE,
+                                     divergence_pipeline_layout().handle(), 0,
+                                     divergence_descriptor_set_);
+        recorder.push_constants(divergence_pipeline_layout().handle(), VK_SHADER_STAGE_COMPUTE_BIT,
+                                0, push_constants);
+        recorder.dispatch(groups.x, groups.y, 1);
 
         record_shader_write_barrier(
             command_buffer,
@@ -745,20 +741,17 @@ class Fluid2DApp {
                 .dst_access = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
             });
 
-        vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE,
-                          pressure_pipeline().handle());
+        recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_COMPUTE, pressure_pipeline().handle());
         for (std::uint32_t iteration = 0; iteration < fluid_config_.pressure_iterations;
              ++iteration) {
             const VkDescriptorSet descriptor_set = (iteration % 2U == 0)
                                                        ? pressure_a_to_b_descriptor_set_
                                                        : pressure_b_to_a_descriptor_set_;
-            vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE,
-                                    pressure_pipeline_layout().handle(), 0, 1, &descriptor_set, 0,
-                                    nullptr);
-            vkCmdPushConstants(command_buffer, pressure_pipeline_layout().handle(),
-                               VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(push_constants),
-                               &push_constants);
-            vkCmdDispatch(command_buffer, groups.x, groups.y, 1);
+            recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_COMPUTE,
+                                         pressure_pipeline_layout().handle(), 0, descriptor_set);
+            recorder.push_constants(pressure_pipeline_layout().handle(),
+                                    VK_SHADER_STAGE_COMPUTE_BIT, 0, push_constants);
+            recorder.dispatch(groups.x, groups.y, 1);
             record_shader_write_barrier(
                 command_buffer,
                 {
@@ -771,14 +764,13 @@ class Fluid2DApp {
         const VkDescriptorSet projection_descriptor_set =
             final_pressure_is_a ? projection_pressure_a_descriptor_set_
                                 : projection_pressure_b_descriptor_set_;
-        vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE,
-                          projection_pipeline().handle());
-        vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE,
-                                projection_pipeline_layout().handle(), 0, 1,
-                                &projection_descriptor_set, 0, nullptr);
-        vkCmdPushConstants(command_buffer, projection_pipeline_layout().handle(),
-                           VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(push_constants), &push_constants);
-        vkCmdDispatch(command_buffer, groups.x, groups.y, 1);
+        recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_COMPUTE, projection_pipeline().handle());
+        recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_COMPUTE,
+                                     projection_pipeline_layout().handle(), 0,
+                                     projection_descriptor_set);
+        recorder.push_constants(projection_pipeline_layout().handle(), VK_SHADER_STAGE_COMPUTE_BIT,
+                                0, push_constants);
+        recorder.dispatch(groups.x, groups.y, 1);
 
         record_shader_write_barrier(
             command_buffer,
@@ -791,6 +783,8 @@ class Fluid2DApp {
 
     void record_fullscreen_draw(VkCommandBuffer command_buffer, VkImageView image_view,
                                 VkExtent2D extent) const {
+        const cubey::vulkan::CommandRecorder recorder(command_buffer);
+
         VkClearValue clear{};
         clear.color = {{0.006F, 0.008F, 0.014F, 1.0F}};
         const VkRenderingAttachmentInfo color_attachment =
@@ -813,41 +807,35 @@ class Fluid2DApp {
                 },
         };
 
-        vkCmdBeginRendering(command_buffer, &rendering);
-        vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                          render_pipeline().handle());
+        recorder.begin_rendering(rendering);
+        recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, render_pipeline().handle());
         const VkDescriptorSet descriptor_set = render_descriptors().set();
-        vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                render_pipeline_layout().handle(), 0, 1, &descriptor_set, 0,
-                                nullptr);
-        vkCmdPushConstants(command_buffer, render_pipeline_layout().handle(),
-                           VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(push_constants),
-                           &push_constants);
-        vkCmdDraw(command_buffer, 3, 1, 0, 0);
-        vkCmdEndRendering(command_buffer);
+        recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                     render_pipeline_layout().handle(), 0, descriptor_set);
+        recorder.push_constants(render_pipeline_layout().handle(), VK_SHADER_STAGE_FRAGMENT_BIT, 0,
+                                push_constants);
+        recorder.draw(3);
+        recorder.end_rendering();
     }
 
     void record_frame(const cubey::app::WindowedRenderFrame& render_frame,
                       const ProjectFrame& frame) {
-        const VkCommandBuffer command_buffer = render_frame.command_buffer;
-        cubey::vulkan::begin_command_buffer(command_buffer,
-                                            VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+        const cubey::vulkan::CommandRecorder recorder(render_frame.command_buffer);
+        recorder.begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
-        record_fluid_compute(command_buffer, frame);
+        record_fluid_compute(recorder.handle(), frame);
 
-        cubey::vulkan::transition_image_layout(
-            command_buffer,
+        recorder.transition_image_layout(
             cubey::vulkan::begin_color_attachment_transition(render_frame.color_target.image));
 
-        record_fullscreen_draw(command_buffer, render_frame.color_target.view,
+        record_fullscreen_draw(recorder.handle(), render_frame.color_target.view,
                                render_frame.color_target.extent);
 
-        cubey::vulkan::transition_image_layout(
-            command_buffer,
+        recorder.transition_image_layout(
             cubey::vulkan::finish_color_attachment_for_present_transition(
                 render_frame.color_target.image));
 
-        check(vkEndCommandBuffer(command_buffer), "vkEndCommandBuffer fluid_2d");
+        recorder.end("vkEndCommandBuffer fluid_2d");
     }
 
     void record_headless_simulation_frame(cubey::vulkan::Device& device,
