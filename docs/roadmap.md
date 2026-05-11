@@ -105,6 +105,10 @@ Current checkpoint:
   examples and future projects.
 - Reusable `cubey::vulkan::ImmediateCommands` plus buffer helpers support
   one-shot setup uploads into device-local buffers.
+- Reusable `cubey::vulkan::CommandRecorder` wraps the repeated non-owning
+  command-buffer recording calls used by current examples and `fluid_2d`:
+  begin/end, dynamic rendering boundaries, image layout transitions, pipeline
+  and descriptor binding, push constants, draws, indexed draws, and dispatches.
 - Reusable `cubey::vulkan::DepthAttachment` owns depth image/view setup and
   shared depth format selection.
 - Reusable `cubey::vulkan` transfer/readback helpers cover readback buffers,
@@ -232,8 +236,8 @@ Current checkpoint:
   graphics, compute, and present capabilities. Split queue-family support is a
   future framework slice, not part of the current example-local compute path.
 - Windowed example host mechanics now live in `cubey_app`; swapchain-sized
-  render resources, pipeline layout choices, and command recording remain
-  example-local.
+  render resources, pipeline layout choices, and command recording sequence
+  remain example-local.
 - Dev CTest covers the target in graphical, no-display terminal, and headless
   artifact sessions through shared windowed and PNG smoke helpers.
 - Split graphics/compute/present queue-family support, GPU capture polling,
@@ -285,7 +289,8 @@ Goal: add a small fractal example that proves fullscreen rendering and reuses
 the headless artifact path without pretending to justify a project runtime.
 
 - Added `examples/fractal` as a fullscreen Mandelbrot-style shader smoke.
-- Kept windowed setup, command recording, and navigation example-local.
+- Kept windowed setup, command recording sequence, and navigation
+  example-local.
 - Reused existing dynamic graphics pipeline helpers.
 - Reused the shared headless PNG host for deterministic output.
 - Did not promote fullscreen helpers; no durable contract was clearer than the
@@ -340,9 +345,9 @@ building a full threaded renderer too early.
 - Added project runtime vocabulary for setup, update, render-packet, resize,
   and shutdown contracts.
 - Added `ProjectRuntimeServices` and moved `fluid_2d` simulation timing onto
-  `ProjectFrame` while keeping command recording project-local.
+  `ProjectFrame` while keeping command recording sequence project-local.
 - Added `ProjectRuntimeAdapter` and moved `fluid_2d` onto it while keeping host
-  callbacks and command recording project-local.
+  callbacks and command recording sequence project-local.
 - Shape GPU readbacks and deeper capture polling as queued work.
 - Keep GPU ownership and `VkQueue` submission serialized through one owner.
 - Keep examples direct; require longer-lived `projects/` to use the

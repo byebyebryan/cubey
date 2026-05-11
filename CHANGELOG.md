@@ -29,6 +29,9 @@ versioned section and use that section as the release notes.
 - Public Vulkan `Buffer`, `Image`, `DepthAttachment`, `Sampler`, and
   `ImmediateCommands` components for device resources, generated texture paths,
   depth attachments, and setup uploads.
+- Public Vulkan `CommandRecorder` helper for non-owning command-buffer
+  recording: begin/end, dynamic rendering, image transitions, pipeline and
+  descriptor binding, push constants, draws, indexed draws, and dispatches.
 - Public Vulkan transfer/readback helpers for readback buffers, sampled image
   configs, buffer-image copies, and storage, transfer, sampled-image readback,
   color-attachment readback, and sampling image layout transitions.
@@ -120,6 +123,9 @@ versioned section and use that section as the release notes.
 - Windowed examples now use dynamic rendering instead of classic render
   passes/framebuffers while keeping command recording and render-resource policy
   local.
+- Windowed examples, `headless_render`, and `fluid_2d` now use the shared
+  Vulkan command recorder for repeated command-buffer calls while keeping pass
+  order, barriers, descriptors, pipelines, and render policy local.
 - Graphics examples now share dynamic graphics pipeline create-info setup while
   retaining explicit example-local layout, shader, vertex-input, and descriptor
   choices.
@@ -150,13 +156,13 @@ versioned section and use that section as the release notes.
   program rather than a first-class `projects/` target.
 - `window_clear`, `triangle`, `spinning_cube`, `textured_cube`, `fractal`, and
   `particles` now use the shared GLFW/windowed app host while keeping command
-  recording and render resources example-local.
+  recording sequence and render resources example-local.
 - `headless_render`, `fractal --headless`, and `fluid_2d --headless` now use
   the shared no-GLFW headless PNG host while keeping resource setup, simulation,
-  and command recording local to each runnable.
+  and command recording sequence local to each runnable.
 - `fluid_2d` simulation steps now consume `ProjectFrame` values from shared
   project runtime adapter in both windowed and headless modes, while keeping
-  Vulkan command recording and resource policy project-local.
+  Vulkan command recording sequence and resource policy project-local.
 - `Camera3D` now supports orthographic projection in addition to perspective
   projection.
 

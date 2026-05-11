@@ -39,7 +39,7 @@ cubey_app
   GLFW window host and windowed app host
 
 examples / projects
-  project state, shaders, Vulkan resources, command recording
+  project state, shaders, Vulkan resources, command recording sequence
 ```
 
 `cubey_app` may depend on `cubey`, GLFW, and Vulkan headers. The base `cubey`
@@ -146,6 +146,9 @@ resource creation/destruction, update, command recording, and shutdown.
   resource ownership stays with examples/projects for now.
 - `ResourceTable` and CPU draw planning give examples a shared way to resolve
   mesh handles and sort/validate draw packets before command recording.
+- `cubey::vulkan::CommandRecorder` removes repeated low-level command-buffer
+  call boilerplate while keeping pass order, barriers, descriptors, pipelines,
+  and render intent in examples/projects.
 - `cubey::render::View3D` gives 3D examples a shared CPU frame-planning
   boundary: camera matrices, draw packets, light packets, ambient-only
   environment, and conservative frustum culling. It is not a scene manager,
@@ -164,16 +167,16 @@ resource creation/destruction, update, command recording, and shutdown.
   carries the command buffer, swapchain image index, timing, and
   `cubey::render::ColorTargetView` for the active swapchain image.
 - All current windowed examples use the app host: `window_clear`, `triangle`,
-  `spinning_cube`, `textured_cube`, `fractal`, and `particles`. They still own
-  their shaders, pipelines, descriptors, command recording, and example-specific
-  state.
+  `spinning_cube`, `textured_cube`, `shadow_cube`, `fractal`, and `particles`.
+  They still own their shaders, pipelines, descriptors, command recording
+  sequence, and example-specific state.
 - `cubey::HeadlessPngHost` owns the repeated no-window Vulkan instance/device,
   offscreen RGBA target, color-attachment/readback transitions, image readback,
   and PNG write path without depending on GLFW. Its target view uses the same
   `cubey::render::ColorTargetView` vocabulary as the windowed path.
 - `headless_render`, `fractal --headless`, and `fluid_2d --headless` use the
   headless host while keeping their resource setup, simulation/update work, and
-  capture command recording local.
+  capture command recording sequence local.
 - `cubey::Engine` is the first scoped root owner. It owns project runtime
   services, the render resource handle registry, and created `Scene` instances,
   but does not yet own window hosts, headless hosts, Vulkan instance/device
@@ -181,7 +184,7 @@ resource creation/destruction, update, command recording, and shutdown.
 - Engine-created scenes validate renderable mesh/material handles against the
   Engine registry. Current cube examples use Engine-owned scenes, mutate scene
   transforms during `update()`, build CPU render frame plans during render, and
-  keep Vulkan command recording local.
+  keep Vulkan command recording sequence local.
 - `cubey::ProjectRuntimeServices` now owns project-facing jobs, uploads,
   captures, frame tickets, and deferred destruction.
 - `cubey::ProjectRuntimeAdapter` wraps those services with the repeated

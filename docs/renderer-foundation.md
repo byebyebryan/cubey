@@ -40,8 +40,13 @@ Examples and projects still own render intent:
 - shader code and shader stage selection;
 - descriptor set layouts, descriptor writes, and binding order;
 - pipeline layout and graphics/compute pipeline setup;
-- image layout transitions, barriers, pass ordering, and command-buffer scope;
+- image layout transition choice, barriers, pass ordering, and command-buffer
+  scope;
 - camera, material, simulation, and interaction policy.
+
+Examples and projects may use `cubey::vulkan::CommandRecorder` for repeated
+command-buffer calls, but the render sequence and synchronization decisions
+remain their responsibility.
 
 The app layer owns host flow: GLFW, input, timing, swapchain lifecycle, and
 headless output. It may pass `cubey::render` target views to callbacks, but it
@@ -115,12 +120,15 @@ full engine architecture.
 - `RenderPassPlan3D` and `FrameRenderPlan3D` provide a small CPU-side pass list
   for multi-view and multi-pass examples. They preserve explicit pass order and
   pass kind without becoming a render graph or scheduler.
+- `cubey::vulkan::CommandRecorder` is the current low-level recording helper
+  used by examples and `fluid_2d` for common Vulkan command-buffer calls. It
+  does not own pass scheduling, automatic barriers, descriptor policy, or
+  renderer state.
 - `RenderableManager3D` lives in the scene/component layer and emits compact
   renderable packets with world matrices, world bounds, and resource handles.
-  The cube
-  examples now use Engine-owned scenes, registry-issued handles, mesh resource
-  tables, and CPU draw planning while still owning pipelines, descriptors, and
-  Vulkan command recording locally.
+  The cube examples now use Engine-owned scenes, registry-issued handles, mesh
+  resource tables, and CPU draw planning while still owning pipelines,
+  descriptors, and Vulkan command recording sequence locally.
 - `LightManager3D` lives in the scene/component layer and emits compact
   CPU-side light packets for directional and point lights. The packets provide
   light kind, color, intensity, direction or world position, and range; shader
@@ -138,5 +146,6 @@ build a shadow `View3D`, build a camera `View3D`, record a depth-only pass into
 a `DepthTexture`, transition that image for shader reads, then record the color
 pass that samples it. The reusable foundation intentionally stops at view/pass
 planning, target/texture ownership, layout-transition helpers, and depth-only
-rendering info. Render-graph scheduling, automatic resource barriers, material
+rendering info. `CommandRecorder` keeps the repeated command-buffer calls
+compact, but render-graph scheduling, automatic resource barriers, material
 binding, and shadow policy remain future work.

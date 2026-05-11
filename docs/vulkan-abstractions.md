@@ -20,7 +20,7 @@ The current boundary is:
 - `cubey::render` owns renderer-facing vocabulary above Vulkan: target views,
   narrow resource wrappers, and small draw helpers.
 - Examples and projects own rendering intent: shaders, meshes, descriptors,
-  command recording, resize policy, and user interaction.
+  command recording sequence, resize policy, and user interaction.
 - Higher-level renderer, material, and render-graph concepts should be designed
   from established graphics terminology and clear Cubey contracts. They do not
   need duplicated project code as a prerequisite, but they do need a narrow
@@ -115,6 +115,10 @@ Current state:
 - `ImmediateCommands` owns one-shot setup command submission.
 - `begin_command_buffer` removes repeated begin boilerplate.
 - `end_command_buffer` removes repeated end/check boilerplate.
+- `CommandRecorder` wraps a non-owning `VkCommandBuffer` for common recording
+  calls: begin/end, dynamic rendering boundaries, image layout transitions,
+  pipeline and descriptor binding, push constants, draws, indexed draws, and
+  dispatches.
 - `QueueSubmit`, `submit_to_queue`, and `submit_to_device_queue` centralize the
   current binary-semaphore `VkSubmitInfo` shape used by frame submit and
   immediate commands.
@@ -122,10 +126,13 @@ Current state:
   into device-local buffers.
 - `copy_buffer_to_image` and `copy_image_to_buffer` cover current one-shot
   image transfer/readback copies.
-- Command recording is single-threaded and owned by the current frame loop.
+- Command recording is single-threaded. Examples and projects own pass order,
+  barriers, descriptor binding policy, and render intent, while using
+  `CommandRecorder` for the repeated Vulkan call surface.
 
 Needed next:
 
+- Debug-label helpers once marker scope becomes useful during capture/debugging.
 - One-shot compute/transfer helper vocabulary.
 - Per-frame/per-thread command-pool sharding before any parallel command
   recording.
@@ -392,7 +399,7 @@ example frame loop.
   `ImmediateCommands`.
 - Moved `spinning_cube` and `textured_cube` onto the shared depth attachment and
   buffer upload helpers.
-- Kept command recording and resize policy example-local.
+- Kept command recording sequence and resize policy example-local.
 
 Remaining resource work, especially image upload and readback, belongs in Batch
 3 after descriptor and compute helper names prove themselves.
@@ -487,7 +494,7 @@ not a project runtime.
 
 - Status: initial pass complete on `main`.
 - Added `examples/fractal` with a fullscreen Mandelbrot-style fragment shader.
-- Kept windowed setup, command recording, and controls example-local.
+- Kept windowed setup, command recording sequence, and controls example-local.
 - Added a headless PNG path through the shared no-GLFW host.
 - Added example-local view math for drag pan, wheel zoom, reset, and push
   constants.

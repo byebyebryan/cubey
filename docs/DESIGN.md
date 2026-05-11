@@ -353,6 +353,7 @@ cubey/
         instance.h         -- instance, validation, debug messenger
         device.h           -- physical/logical device and queue ownership
         buffer.h           -- Vulkan buffer and memory ownership
+        command_recorder.h -- non-owning command-buffer recording helper
         command_pool.h     -- command pool ownership and command-buffer begin
         descriptors.h      -- descriptor set layout/pool ownership
         frame_resources.h  -- per-frame command/sync resources
@@ -393,6 +394,7 @@ cubey/
         instance.cpp       -- instance, validation, debug messenger
         device.cpp         -- physical/logical device, queues
         buffer.cpp         -- buffers and host-visible upload
+        command_recorder.cpp -- non-owning command-buffer recording helper
         command_pool.cpp   -- command pool ownership and command-buffer begin
         descriptors.cpp    -- descriptor set layout/pool ownership
         frame_resources.cpp -- command buffers and sync objects
