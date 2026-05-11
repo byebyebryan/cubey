@@ -21,7 +21,7 @@ SceneEditQueue::SceneEditQueue(SceneEditQueue&& other) noexcept
       destroyed_entities_(std::move(other.destroyed_entities_)),
       transforms2d_(std::move(other.transforms2d_)), transforms3d_(std::move(other.transforms3d_)),
       cameras2d_(std::move(other.cameras2d_)), cameras3d_(std::move(other.cameras3d_)),
-      renderables3d_(std::move(other.renderables3d_)),
+      renderables3d_(std::move(other.renderables3d_)), lights3d_(std::move(other.lights3d_)),
       committed_(std::exchange(other.committed_, true)) {}
 
 SceneEditQueue& SceneEditQueue::operator=(SceneEditQueue&& other) noexcept {
@@ -37,6 +37,7 @@ SceneEditQueue& SceneEditQueue::operator=(SceneEditQueue&& other) noexcept {
         cameras2d_ = std::move(other.cameras2d_);
         cameras3d_ = std::move(other.cameras3d_);
         renderables3d_ = std::move(other.renderables3d_);
+        lights3d_ = std::move(other.lights3d_);
         committed_ = std::exchange(other.committed_, true);
     }
     return *this;
@@ -82,6 +83,7 @@ void SceneEditQueue::mark_committed() noexcept {
     cameras2d_ = CameraEditQueue2D{};
     cameras3d_ = CameraEditQueue3D{};
     renderables3d_ = RenderableEditQueue3D{};
+    lights3d_ = LightEditQueue3D{};
 }
 
 SceneTransactionEntities::SceneTransactionEntities(SceneEditQueue& edits) : edits_(&edits) {}
@@ -116,6 +118,10 @@ RenderableEditQueue3D& SceneTransaction::renderables3d() noexcept {
     return edits_.renderables3d();
 }
 
+LightEditQueue3D& SceneTransaction::lights3d() noexcept {
+    return edits_.lights3d();
+}
+
 void SceneTransaction::commit() {
     if (scene_ == nullptr) {
         throw std::runtime_error("scene transaction is detached");
@@ -127,7 +133,8 @@ void SceneTransaction::commit() {
 SceneReadView::SceneReadView(Scene& scene, std::uint64_t epoch)
     : scene_(&scene), epoch_(epoch), transforms2d_(scene.transforms2d_.snapshot()),
       transforms3d_(scene.transforms3d_.snapshot()), cameras2d_(scene.cameras2d_.snapshot()),
-      cameras3d_(scene.cameras3d_.snapshot()), renderables3d_(scene.renderables3d_.snapshot()) {}
+      cameras3d_(scene.cameras3d_.snapshot()), renderables3d_(scene.renderables3d_.snapshot()),
+      lights3d_(scene.lights3d_.snapshot()) {}
 
 SceneReadView::~SceneReadView() {
     release();
@@ -137,7 +144,7 @@ SceneReadView::SceneReadView(SceneReadView&& other) noexcept
     : scene_(std::exchange(other.scene_, nullptr)), epoch_(std::exchange(other.epoch_, 0)),
       transforms2d_(std::move(other.transforms2d_)), transforms3d_(std::move(other.transforms3d_)),
       cameras2d_(std::move(other.cameras2d_)), cameras3d_(std::move(other.cameras3d_)),
-      renderables3d_(std::move(other.renderables3d_)) {}
+      renderables3d_(std::move(other.renderables3d_)), lights3d_(std::move(other.lights3d_)) {}
 
 SceneReadView& SceneReadView::operator=(SceneReadView&& other) noexcept {
     if (this != &other) {
@@ -149,6 +156,7 @@ SceneReadView& SceneReadView::operator=(SceneReadView&& other) noexcept {
         cameras2d_ = std::move(other.cameras2d_);
         cameras3d_ = std::move(other.cameras3d_);
         renderables3d_ = std::move(other.renderables3d_);
+        lights3d_ = std::move(other.lights3d_);
     }
     return *this;
 }
@@ -201,6 +209,7 @@ void Scene::commit(SceneEditQueue& edits) {
         cameras2d_.validate(edits.cameras2d_, entities_);
         cameras3d_.validate(edits.cameras3d_, entities_);
         renderables3d_.validate(edits.renderables3d_, entities_, render_resources_);
+        lights3d_.validate(edits.lights3d_, entities_);
 
         ++current_epoch_;
 
@@ -212,12 +221,14 @@ void Scene::commit(SceneEditQueue& edits) {
         cameras2d_.apply(edits.cameras2d_, current_epoch_);
         cameras3d_.apply(edits.cameras3d_, current_epoch_);
         renderables3d_.apply(edits.renderables3d_, current_epoch_);
+        lights3d_.apply(edits.lights3d_, current_epoch_);
         for (const Entity entity : edits.destroyed_entities_) {
             transforms2d_.destroy_entity_if_exists(entity, current_epoch_);
             transforms3d_.destroy_entity_if_exists(entity, current_epoch_);
             cameras2d_.destroy_entity_if_exists(entity, current_epoch_);
             cameras3d_.destroy_entity_if_exists(entity, current_epoch_);
             renderables3d_.destroy_entity_if_exists(entity, current_epoch_);
+            lights3d_.destroy_entity_if_exists(entity, current_epoch_);
             entities_.destroy(entity, current_epoch_);
         }
         transforms2d_.update_world_matrices();
@@ -227,6 +238,7 @@ void Scene::commit(SceneEditQueue& edits) {
         cameras2d_.publish_snapshot();
         cameras3d_.publish_snapshot();
         renderables3d_.publish_snapshot();
+        lights3d_.publish_snapshot();
         edits.mark_committed();
         retire_safe_entities();
     } catch (const std::exception&) {
@@ -260,6 +272,7 @@ void Scene::retire_safe_entities() noexcept {
     cameras2d_.retire_destroyed_up_to(safe_epoch);
     cameras3d_.retire_destroyed_up_to(safe_epoch);
     renderables3d_.retire_destroyed_up_to(safe_epoch);
+    lights3d_.retire_destroyed_up_to(safe_epoch);
 }
 
 } // namespace cubey

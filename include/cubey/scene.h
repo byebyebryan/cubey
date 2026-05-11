@@ -2,6 +2,7 @@
 
 #include <cubey/camera_manager.h>
 #include <cubey/entity.h>
+#include <cubey/light_manager.h>
 #include <cubey/renderable_manager.h>
 #include <cubey/transform_manager.h>
 
@@ -50,6 +51,10 @@ class SceneEditQueue {
         return renderables3d_;
     }
 
+    [[nodiscard]] LightEditQueue3D& lights3d() noexcept {
+        return lights3d_;
+    }
+
   private:
     friend class Scene;
 
@@ -64,6 +69,7 @@ class SceneEditQueue {
     CameraEditQueue2D cameras2d_{};
     CameraEditQueue3D cameras3d_{};
     RenderableEditQueue3D renderables3d_{};
+    LightEditQueue3D lights3d_{};
     bool committed_ = false;
 };
 
@@ -92,6 +98,7 @@ class SceneTransaction {
     [[nodiscard]] CameraEditQueue2D& cameras2d() noexcept;
     [[nodiscard]] CameraEditQueue3D& cameras3d() noexcept;
     [[nodiscard]] RenderableEditQueue3D& renderables3d() noexcept;
+    [[nodiscard]] LightEditQueue3D& lights3d() noexcept;
     void commit();
 
   private:
@@ -134,6 +141,10 @@ class SceneReadView {
         return renderables3d_;
     }
 
+    [[nodiscard]] const LightReadView3D& lights3d() const noexcept {
+        return lights3d_;
+    }
+
   private:
     void release() noexcept;
 
@@ -144,6 +155,7 @@ class SceneReadView {
     CameraReadView2D cameras2d_{};
     CameraReadView3D cameras3d_{};
     RenderableReadView3D renderables3d_{};
+    LightReadView3D lights3d_{};
 };
 
 class Scene {
@@ -180,6 +192,7 @@ class Scene {
     CameraManager2D cameras2d_{};
     CameraManager3D cameras3d_{};
     RenderableManager3D renderables3d_{};
+    LightManager3D lights3d_{};
     const render::RenderResourceRegistry* render_resources_ = nullptr;
     std::uint64_t current_epoch_ = 0;
     std::mutex edit_mutex_{};
