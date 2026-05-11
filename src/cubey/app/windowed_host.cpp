@@ -85,7 +85,7 @@ int WindowedHost::run() {
         WindowedAppContext active_context = context();
         callbacks_.on_ready(active_context);
     }
-    static_cast<void>(gpu().drain_inline());
+    static_cast<void>(gpu().drain());
 
     std::uint32_t frame = 0;
     frame_clock_.reset();
@@ -112,7 +112,7 @@ int WindowedHost::run() {
         if (callbacks_.update) {
             callbacks_.update(active_context, timing);
         }
-        static_cast<void>(gpu().drain_inline());
+        static_cast<void>(gpu().drain());
         if (window().should_close()) {
             break;
         }
@@ -146,11 +146,11 @@ int WindowedHost::run() {
     cubey::vulkan::check(vkDeviceWaitIdle(device().handle()),
                          "vkDeviceWaitIdle after windowed host");
     destroy_swapchain_resources();
-    static_cast<void>(gpu().drain_inline());
+    static_cast<void>(gpu().drain());
     if (callbacks_.shutdown) {
         WindowedAppContext active_context = context();
         callbacks_.shutdown(active_context);
-        static_cast<void>(gpu().drain_inline());
+        static_cast<void>(gpu().drain());
     }
     return 0;
 }
@@ -193,7 +193,11 @@ void WindowedHost::create_submission_coordinator() {
 }
 
 void WindowedHost::create_gpu_runtime() {
-    gpu_.emplace(device(), submission());
+    gpu_.emplace(cubey::vulkan::GpuRuntimeConfig{
+        .device = &device(),
+        .submission = &submission(),
+        .execution_mode = config_.gpu_execution_mode,
+    });
 }
 
 void WindowedHost::create_swapchain() {
@@ -221,17 +225,17 @@ void WindowedHost::create_swapchain_resources() {
         WindowedAppContext active_context = context();
         callbacks_.create_swapchain_resources(active_context);
     }
-    static_cast<void>(gpu().drain_inline());
+    static_cast<void>(gpu().drain());
 }
 
 void WindowedHost::destroy_swapchain_resources() {
     if (gpu_.has_value()) {
-        static_cast<void>(gpu().drain_inline());
+        static_cast<void>(gpu().drain());
     }
     if (swapchain_resources_created_ && callbacks_.destroy_swapchain_resources) {
         WindowedAppContext active_context = context();
         callbacks_.destroy_swapchain_resources(active_context);
-        static_cast<void>(gpu().drain_inline());
+        static_cast<void>(gpu().drain());
     }
     swapchain_resources_created_ = false;
 }

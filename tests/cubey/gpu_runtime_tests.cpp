@@ -64,6 +64,7 @@ void test_gpu_runtime_drains_inline_on_owner_thread() {
     cubey::vulkan::GpuRuntime runtime({
         .device = fake_device(),
         .submission = &submission,
+        .execution_mode = cubey::vulkan::GpuRuntimeExecutionMode::Inline,
     });
 
     std::vector<std::string> events;
@@ -100,6 +101,7 @@ void test_gpu_runtime_accepts_cross_thread_enqueue_but_rejects_cross_thread_drai
     cubey::vulkan::GpuRuntime runtime({
         .device = fake_device(),
         .submission = &submission,
+        .execution_mode = cubey::vulkan::GpuRuntimeExecutionMode::Inline,
     });
 
     std::atomic<bool> enqueued = false;
@@ -137,6 +139,7 @@ void test_gpu_runtime_preserves_pending_work_after_callback_failure() {
     cubey::vulkan::GpuRuntime runtime({
         .device = fake_device(),
         .submission = &submission,
+        .execution_mode = cubey::vulkan::GpuRuntimeExecutionMode::Inline,
     });
 
     std::vector<std::string> events;
@@ -173,4 +176,79 @@ void test_gpu_runtime_preserves_pending_work_after_callback_failure() {
     static_cast<void>(runtime.drain_inline());
     require(events.size() == 3, "remaining work should be drainable after failure");
     require(events[2] == "after failure", "remaining work should preserve FIFO order");
+}
+
+void test_gpu_runtime_defaults_to_threaded_execution() {
+    cubey::vulkan::SubmissionCoordinator submission = fake_submission();
+    cubey::vulkan::GpuRuntime runtime({
+        .device = fake_device(),
+        .submission = &submission,
+    });
+
+    const std::thread::id caller_thread = std::this_thread::get_id();
+    std::thread::id work_thread;
+    bool context_reported_owner_thread = false;
+
+    static_cast<void>(runtime.submit_and_wait({
+        .label = "threaded setup",
+        .work =
+            [&work_thread,
+             &context_reported_owner_thread](cubey::vulkan::GpuOwnerContext& context) {
+                work_thread = std::this_thread::get_id();
+                context_reported_owner_thread = context.is_owner_thread();
+            },
+    }));
+
+    require(context_reported_owner_thread,
+            "threaded runtime should execute work on the owner thread");
+    require(work_thread != caller_thread,
+            "default GPU runtime execution should happen on a background owner thread");
+    runtime.shutdown();
+}
+
+void test_gpu_runtime_submit_and_wait_propagates_threaded_failures() {
+    cubey::vulkan::SubmissionCoordinator submission = fake_submission();
+    cubey::vulkan::GpuRuntime runtime({
+        .device = fake_device(),
+        .submission = &submission,
+    });
+
+    bool threw = false;
+    try {
+        static_cast<void>(runtime.submit_and_wait({
+            .label = "failing setup",
+            .work =
+                [](cubey::vulkan::GpuOwnerContext&) {
+                    throw std::runtime_error("threaded GPU setup failed");
+                },
+        }));
+    } catch (const std::runtime_error& error) {
+        threw = std::string(error.what()) == "threaded GPU setup failed";
+    }
+
+    require(threw, "submit_and_wait should propagate threaded GPU work failures");
+    require(runtime.empty(), "failed submit_and_wait work should not leave pending work");
+    runtime.shutdown();
+}
+
+void test_gpu_runtime_shutdown_rejects_new_work() {
+    cubey::vulkan::SubmissionCoordinator submission = fake_submission();
+    cubey::vulkan::GpuRuntime runtime({
+        .device = fake_device(),
+        .submission = &submission,
+    });
+
+    runtime.shutdown();
+
+    bool rejected = false;
+    try {
+        static_cast<void>(runtime.enqueue({
+            .label = "after shutdown",
+            .work = [](cubey::vulkan::GpuOwnerContext&) {},
+        }));
+    } catch (const std::runtime_error&) {
+        rejected = true;
+    }
+
+    require(rejected, "GPU runtime should reject enqueue after shutdown");
 }

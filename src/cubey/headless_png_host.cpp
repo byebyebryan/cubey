@@ -135,11 +135,15 @@ void HeadlessPngHost::create_submission_coordinator() {
 }
 
 void HeadlessPngHost::create_gpu_runtime() {
-    gpu_.emplace(device(), submission());
+    gpu_.emplace(cubey::vulkan::GpuRuntimeConfig{
+        .device = &device(),
+        .submission = &submission(),
+        .execution_mode = config_.gpu_execution_mode,
+    });
 }
 
 void HeadlessPngHost::drain_gpu_work() {
-    static_cast<void>(gpu().drain_inline());
+    static_cast<void>(gpu().drain());
 }
 
 void HeadlessPngHost::record_capture(HeadlessPngContext& context,

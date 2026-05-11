@@ -354,7 +354,7 @@ class TexturedCubeApp {
 
     static void transition_texture_image(cubey::app::WindowedAppContext& context,
                                          const cubey::vulkan::ImageLayoutTransition& transition) {
-        static_cast<void>(context.gpu().enqueue(cubey::vulkan::GpuWorkRequest{
+        static_cast<void>(context.gpu().submit_and_wait(cubey::vulkan::GpuWorkRequest{
             .label = "textured cube texture transition",
             .work =
                 [transition](cubey::vulkan::GpuOwnerContext& gpu_context) {
@@ -365,7 +365,6 @@ class TexturedCubeApp {
                     commands.submit_and_wait();
                 },
         }));
-        static_cast<void>(context.gpu().drain_inline());
     }
 
     void create_compute_resources(cubey::app::WindowedAppContext& context) {
@@ -419,7 +418,7 @@ class TexturedCubeApp {
             (kTextureWidth + kTextureComputeGroupSize - 1U) / kTextureComputeGroupSize;
         constexpr std::uint32_t groups_y =
             (kTextureHeight + kTextureComputeGroupSize - 1U) / kTextureComputeGroupSize;
-        static_cast<void>(context.gpu().enqueue(cubey::vulkan::GpuWorkRequest{
+        static_cast<void>(context.gpu().submit_and_wait(cubey::vulkan::GpuWorkRequest{
             .label = "textured cube compute texture dispatch",
             .work =
                 [this](cubey::vulkan::GpuOwnerContext& gpu_context) {
@@ -436,7 +435,6 @@ class TexturedCubeApp {
                     commands.submit_and_wait();
                 },
         }));
-        static_cast<void>(context.gpu().drain_inline());
 
         transition_texture_image(
             context,

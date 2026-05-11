@@ -4,8 +4,10 @@
 #include <cubey/vulkan/device.h>
 #include <cubey/vulkan/submission_coordinator.h>
 
+#include <condition_variable>
 #include <cstddef>
 #include <cstdint>
+#include <exception>
 #include <functional>
 #include <mutex>
 #include <string>
@@ -52,6 +54,11 @@ struct GpuDrainResult {
     FrameTicket completed_submission;
 };
 
+enum class GpuRuntimeExecutionMode {
+    Threaded,
+    Inline,
+};
+
 class GpuWorkQueue {
   public:
     GpuWorkQueue() = default;
@@ -79,12 +86,14 @@ class GpuWorkQueue {
 struct GpuRuntimeConfig {
     Device* device = nullptr;
     SubmissionCoordinator* submission = nullptr;
+    GpuRuntimeExecutionMode execution_mode = GpuRuntimeExecutionMode::Threaded;
 };
 
 class GpuRuntime {
   public:
     explicit GpuRuntime(GpuRuntimeConfig config);
     GpuRuntime(Device& device, SubmissionCoordinator& submission);
+    ~GpuRuntime();
 
     GpuRuntime(const GpuRuntime&) = delete;
     GpuRuntime& operator=(const GpuRuntime&) = delete;
@@ -92,18 +101,44 @@ class GpuRuntime {
     GpuRuntime& operator=(GpuRuntime&&) = delete;
 
     [[nodiscard]] GpuWorkTicket enqueue(GpuWorkRequest request);
+    [[nodiscard]] GpuWorkTicket submit_and_wait(GpuWorkRequest request);
+    [[nodiscard]] GpuDrainResult drain();
     [[nodiscard]] GpuDrainResult drain_inline();
     [[nodiscard]] std::size_t pending_count() const;
     [[nodiscard]] bool empty() const;
+    void wait_until_idle();
+    void shutdown();
 
     [[nodiscard]] GpuOwnerContext owner_context() const;
+    [[nodiscard]] GpuRuntimeExecutionMode execution_mode() const noexcept {
+        return execution_mode_;
+    }
     void require_owner_thread(const char* label) const;
 
   private:
+    void start_threaded_owner();
+    void run_threaded_owner();
+    [[nodiscard]] GpuDrainResult drain_on_owner_thread();
+    void record_threaded_failure(std::exception_ptr failure);
+    void rethrow_threaded_failure_if_any();
+
     Device* device_ = nullptr;
     SubmissionCoordinator* submission_ = nullptr;
+    GpuRuntimeExecutionMode execution_mode_ = GpuRuntimeExecutionMode::Threaded;
     std::thread::id owner_thread_{};
     GpuWorkQueue queue_;
+    std::thread owner_thread_handle_;
+    mutable std::mutex state_mutex_;
+    std::condition_variable work_available_;
+    std::condition_variable idle_;
+    std::condition_variable owner_ready_;
+    GpuDrainResult last_drain_result_{};
+    std::exception_ptr threaded_failure_;
+    bool accepting_work_ = true;
+    bool stopping_ = false;
+    bool active_work_ = false;
+    bool owner_ready_flag_ = false;
+    bool shutdown_complete_ = false;
 };
 
 } // namespace cubey::vulkan

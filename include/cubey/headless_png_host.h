@@ -58,6 +58,8 @@ struct HeadlessPngHostConfig {
     VkQueueFlags required_queue_flags = VK_QUEUE_GRAPHICS_BIT;
     VkFormat output_format = VK_FORMAT_R8G8B8A8_UNORM;
     bool require_dynamic_rendering = true;
+    cubey::vulkan::GpuRuntimeExecutionMode gpu_execution_mode =
+        cubey::vulkan::GpuRuntimeExecutionMode::Threaded;
 };
 
 struct HeadlessPngHostCallbacks {

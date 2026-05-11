@@ -1,5 +1,6 @@
 #include <cubey/vulkan/gpu_runtime.h>
 
+#include <future>
 #include <stdexcept>
 #include <utility>
 
@@ -83,24 +84,204 @@ void GpuWorkQueue::restore_front(std::vector<QueuedGpuWork> work) {
 
 GpuRuntime::GpuRuntime(GpuRuntimeConfig config)
     : device_(config.device), submission_(config.submission),
-      owner_thread_(std::this_thread::get_id()) {
+      execution_mode_(config.execution_mode), owner_thread_(std::this_thread::get_id()) {
     if (device_ == nullptr) {
         throw std::runtime_error("GPU runtime requires a device");
     }
     if (submission_ == nullptr) {
         throw std::runtime_error("GPU runtime requires a submission coordinator");
     }
+    last_drain_result_.completed_submission = submission_->completed();
+    if (execution_mode_ == GpuRuntimeExecutionMode::Threaded) {
+        owner_thread_ = {};
+        start_threaded_owner();
+    }
 }
 
 GpuRuntime::GpuRuntime(Device& device, SubmissionCoordinator& submission)
     : GpuRuntime({.device = &device, .submission = &submission}) {}
 
+GpuRuntime::~GpuRuntime() {
+    try {
+        shutdown();
+    } catch (...) {
+    }
+}
+
 GpuWorkTicket GpuRuntime::enqueue(GpuWorkRequest request) {
-    return queue_.enqueue(std::move(request));
+    GpuWorkTicket ticket;
+    {
+        std::scoped_lock lock(state_mutex_);
+        if (!accepting_work_) {
+            throw std::runtime_error("GPU runtime is shut down");
+        }
+        ticket = queue_.enqueue(std::move(request));
+    }
+    if (execution_mode_ == GpuRuntimeExecutionMode::Threaded) {
+        work_available_.notify_one();
+    }
+    return ticket;
+}
+
+GpuWorkTicket GpuRuntime::submit_and_wait(GpuWorkRequest request) {
+    if (!request.work) {
+        throw std::runtime_error("GPU work request requires a callback");
+    }
+
+    auto finished = std::make_shared<std::promise<void>>();
+    std::future<void> future = finished->get_future();
+    std::function<void(GpuOwnerContext&)> work = std::move(request.work);
+    request.work = [work = std::move(work), finished](GpuOwnerContext& context) mutable {
+        try {
+            work(context);
+            finished->set_value();
+        } catch (...) {
+            finished->set_exception(std::current_exception());
+        }
+    };
+
+    GpuWorkTicket ticket = enqueue(std::move(request));
+    if (execution_mode_ == GpuRuntimeExecutionMode::Inline) {
+        static_cast<void>(drain_inline());
+    } else {
+        future.wait();
+    }
+    future.get();
+    return ticket;
+}
+
+GpuDrainResult GpuRuntime::drain() {
+    if (execution_mode_ == GpuRuntimeExecutionMode::Inline) {
+        return drain_inline();
+    }
+    wait_until_idle();
+    std::scoped_lock lock(state_mutex_);
+    return last_drain_result_;
 }
 
 GpuDrainResult GpuRuntime::drain_inline() {
     require_owner_thread("GPU runtime inline drain requires the owner thread");
+    return drain_on_owner_thread();
+}
+
+std::size_t GpuRuntime::pending_count() const {
+    return queue_.pending_count();
+}
+
+bool GpuRuntime::empty() const {
+    return queue_.empty();
+}
+
+void GpuRuntime::wait_until_idle() {
+    if (execution_mode_ == GpuRuntimeExecutionMode::Inline) {
+        static_cast<void>(drain_inline());
+        return;
+    }
+
+    {
+        std::unique_lock lock(state_mutex_);
+        idle_.wait(lock, [this] { return !active_work_ && queue_.empty(); });
+    }
+    rethrow_threaded_failure_if_any();
+}
+
+void GpuRuntime::shutdown() {
+    if (execution_mode_ == GpuRuntimeExecutionMode::Inline) {
+        {
+            std::scoped_lock lock(state_mutex_);
+            if (shutdown_complete_) {
+                return;
+            }
+            accepting_work_ = false;
+        }
+        static_cast<void>(drain_inline());
+        std::scoped_lock lock(state_mutex_);
+        stopping_ = true;
+        shutdown_complete_ = true;
+        return;
+    }
+
+    std::exception_ptr failure;
+    {
+        std::scoped_lock lock(state_mutex_);
+        if (shutdown_complete_) {
+            return;
+        }
+        accepting_work_ = false;
+    }
+
+    try {
+        wait_until_idle();
+    } catch (...) {
+        failure = std::current_exception();
+    }
+
+    {
+        std::scoped_lock lock(state_mutex_);
+        stopping_ = true;
+    }
+    work_available_.notify_all();
+    if (owner_thread_handle_.joinable()) {
+        owner_thread_handle_.join();
+    }
+    {
+        std::scoped_lock lock(state_mutex_);
+        shutdown_complete_ = true;
+    }
+    if (failure != nullptr) {
+        std::rethrow_exception(failure);
+    }
+}
+
+GpuOwnerContext GpuRuntime::owner_context() const {
+    return {*device_, *submission_, owner_thread_};
+}
+
+void GpuRuntime::require_owner_thread(const char* label) const {
+    if (std::this_thread::get_id() != owner_thread_) {
+        throw std::runtime_error(label);
+    }
+}
+
+void GpuRuntime::start_threaded_owner() {
+    owner_thread_handle_ = std::thread([this] { run_threaded_owner(); });
+    std::unique_lock lock(state_mutex_);
+    owner_ready_.wait(lock, [this] { return owner_ready_flag_; });
+}
+
+void GpuRuntime::run_threaded_owner() {
+    {
+        std::scoped_lock lock(state_mutex_);
+        owner_thread_ = std::this_thread::get_id();
+        owner_ready_flag_ = true;
+    }
+    owner_ready_.notify_all();
+
+    while (true) {
+        {
+            std::unique_lock lock(state_mutex_);
+            work_available_.wait(lock, [this] { return stopping_ || !queue_.empty(); });
+            if (stopping_ && queue_.empty()) {
+                return;
+            }
+            active_work_ = true;
+        }
+
+        try {
+            const GpuDrainResult result = drain_on_owner_thread();
+            std::scoped_lock lock(state_mutex_);
+            last_drain_result_ = result;
+            active_work_ = false;
+        } catch (...) {
+            record_threaded_failure(std::current_exception());
+            std::scoped_lock lock(state_mutex_);
+            active_work_ = false;
+        }
+        idle_.notify_all();
+    }
+}
+
+GpuDrainResult GpuRuntime::drain_on_owner_thread() {
 
     GpuDrainResult result{
         .completed_count = 0,
@@ -132,21 +313,21 @@ GpuDrainResult GpuRuntime::drain_inline() {
     return result;
 }
 
-std::size_t GpuRuntime::pending_count() const {
-    return queue_.pending_count();
+void GpuRuntime::record_threaded_failure(std::exception_ptr failure) {
+    std::scoped_lock lock(state_mutex_);
+    if (threaded_failure_ == nullptr) {
+        threaded_failure_ = failure;
+    }
 }
 
-bool GpuRuntime::empty() const {
-    return queue_.empty();
-}
-
-GpuOwnerContext GpuRuntime::owner_context() const {
-    return {*device_, *submission_, owner_thread_};
-}
-
-void GpuRuntime::require_owner_thread(const char* label) const {
-    if (std::this_thread::get_id() != owner_thread_) {
-        throw std::runtime_error(label);
+void GpuRuntime::rethrow_threaded_failure_if_any() {
+    std::exception_ptr failure;
+    {
+        std::scoped_lock lock(state_mutex_);
+        failure = std::exchange(threaded_failure_, nullptr);
+    }
+    if (failure != nullptr) {
+        std::rethrow_exception(failure);
     }
 }
 
