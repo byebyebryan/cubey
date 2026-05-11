@@ -144,15 +144,23 @@ void HeadlessPngHost::drain_gpu_work() {
 
 void HeadlessPngHost::record_capture(HeadlessPngContext& context,
                                      const HeadlessRenderTarget& target) {
-    cubey::vulkan::ImmediateCommands commands(device());
-    const VkCommandBuffer command_buffer = commands.command_buffer();
-    cubey::vulkan::transition_image_layout(
-        command_buffer, cubey::vulkan::begin_color_attachment_transition(target.image));
-    callbacks_.record_capture(context, command_buffer, target);
-    cubey::vulkan::transition_image_layout(
-        command_buffer,
-        cubey::vulkan::finish_color_attachment_for_readback_transition(target.image));
-    commands.submit_and_wait();
+    static_cast<void>(gpu().enqueue(cubey::vulkan::GpuWorkRequest{
+        .label = "headless PNG capture",
+        .work =
+            [this, &context, target](cubey::vulkan::GpuOwnerContext& gpu_context) {
+                cubey::vulkan::ImmediateCommands commands(gpu_context.device(),
+                                                          gpu_context.submission());
+                const VkCommandBuffer command_buffer = commands.command_buffer();
+                cubey::vulkan::transition_image_layout(
+                    command_buffer, cubey::vulkan::begin_color_attachment_transition(target.image));
+                callbacks_.record_capture(context, command_buffer, target);
+                cubey::vulkan::transition_image_layout(
+                    command_buffer,
+                    cubey::vulkan::finish_color_attachment_for_readback_transition(target.image));
+                commands.submit_and_wait();
+            },
+    }));
+    drain_gpu_work();
 }
 
 void HeadlessPngHost::write_png(const HeadlessRenderTarget& target) {

@@ -20,6 +20,7 @@
 #include <cubey/transform_3d.h>
 #include <cubey/vulkan/command_recorder.h>
 #include <cubey/vulkan/descriptors.h>
+#include <cubey/vulkan/gpu_runtime.h>
 #include <cubey/vulkan/image.h>
 #include <cubey/vulkan/image_transitions.h>
 #include <cubey/vulkan/immediate_commands.h>
@@ -353,10 +354,18 @@ class TexturedCubeApp {
 
     static void transition_texture_image(cubey::app::WindowedAppContext& context,
                                          const cubey::vulkan::ImageLayoutTransition& transition) {
-        cubey::vulkan::ImmediateCommands commands(context.device(), context.submission());
-        const cubey::vulkan::CommandRecorder recorder(commands.command_buffer());
-        recorder.transition_image_layout(transition);
-        commands.submit_and_wait();
+        static_cast<void>(context.gpu().enqueue(cubey::vulkan::GpuWorkRequest{
+            .label = "textured cube texture transition",
+            .work =
+                [transition](cubey::vulkan::GpuOwnerContext& gpu_context) {
+                    cubey::vulkan::ImmediateCommands commands(gpu_context.device(),
+                                                              gpu_context.submission());
+                    const cubey::vulkan::CommandRecorder recorder(commands.command_buffer());
+                    recorder.transition_image_layout(transition);
+                    commands.submit_and_wait();
+                },
+        }));
+        static_cast<void>(context.gpu().drain_inline());
     }
 
     void create_compute_resources(cubey::app::WindowedAppContext& context) {
@@ -406,18 +415,28 @@ class TexturedCubeApp {
         transition_texture_image(
             context, cubey::vulkan::begin_storage_image_write_transition(texture().handle()));
 
-        cubey::vulkan::ImmediateCommands commands(context.device(), context.submission());
-        const cubey::vulkan::CommandRecorder recorder(commands.command_buffer());
-        recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_COMPUTE, compute_pipeline().handle());
-        const VkDescriptorSet descriptor_set = compute_descriptors().set();
-        recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_COMPUTE,
-                                     compute_pipeline_layout().handle(), 0, descriptor_set);
         constexpr std::uint32_t groups_x =
             (kTextureWidth + kTextureComputeGroupSize - 1U) / kTextureComputeGroupSize;
         constexpr std::uint32_t groups_y =
             (kTextureHeight + kTextureComputeGroupSize - 1U) / kTextureComputeGroupSize;
-        recorder.dispatch(groups_x, groups_y, 1);
-        commands.submit_and_wait();
+        static_cast<void>(context.gpu().enqueue(cubey::vulkan::GpuWorkRequest{
+            .label = "textured cube compute texture dispatch",
+            .work =
+                [this](cubey::vulkan::GpuOwnerContext& gpu_context) {
+                    cubey::vulkan::ImmediateCommands commands(gpu_context.device(),
+                                                              gpu_context.submission());
+                    const cubey::vulkan::CommandRecorder recorder(commands.command_buffer());
+                    recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_COMPUTE,
+                                           compute_pipeline().handle());
+                    const VkDescriptorSet descriptor_set = compute_descriptors().set();
+                    recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_COMPUTE,
+                                                 compute_pipeline_layout().handle(), 0,
+                                                 descriptor_set);
+                    recorder.dispatch(groups_x, groups_y, 1);
+                    commands.submit_and_wait();
+                },
+        }));
+        static_cast<void>(context.gpu().drain_inline());
 
         transition_texture_image(
             context,
