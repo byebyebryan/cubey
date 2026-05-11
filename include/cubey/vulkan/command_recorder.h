@@ -1,0 +1,54 @@
+#pragma once
+
+#include <cubey/vulkan/image_transitions.h>
+
+#include <vulkan/vulkan.h>
+
+#include <cstdint>
+#include <span>
+
+namespace cubey::vulkan {
+
+class CommandRecorder {
+  public:
+    explicit CommandRecorder(VkCommandBuffer command_buffer);
+
+    [[nodiscard]] VkCommandBuffer handle() const noexcept {
+        return command_buffer_;
+    }
+
+    void begin(VkCommandBufferUsageFlags flags) const;
+    void end(const char* label) const;
+    void transition_image_layout(const ImageLayoutTransition& transition) const;
+    void begin_rendering(const VkRenderingInfo& rendering) const;
+    void end_rendering() const;
+    void bind_pipeline(VkPipelineBindPoint bind_point, VkPipeline pipeline) const;
+    void bind_descriptor_set(VkPipelineBindPoint bind_point, VkPipelineLayout layout,
+                             std::uint32_t first_set, VkDescriptorSet set,
+                             std::span<const std::uint32_t> dynamic_offsets = {}) const;
+    void bind_descriptor_sets(VkPipelineBindPoint bind_point, VkPipelineLayout layout,
+                              std::uint32_t first_set, std::span<const VkDescriptorSet> sets,
+                              std::span<const std::uint32_t> dynamic_offsets = {}) const;
+    void push_constants_bytes(VkPipelineLayout layout, VkShaderStageFlags stage_flags,
+                              std::uint32_t offset, std::uint32_t size, const void* data) const;
+
+    template <typename T>
+    void push_constants(VkPipelineLayout layout, VkShaderStageFlags stage_flags,
+                        std::uint32_t offset, const T& value) const {
+        push_constants_bytes(layout, stage_flags, offset, static_cast<std::uint32_t>(sizeof(T)),
+                             &value);
+    }
+
+    void draw(std::uint32_t vertex_count, std::uint32_t instance_count = 1,
+              std::uint32_t first_vertex = 0, std::uint32_t first_instance = 0) const;
+    void draw_indexed(std::uint32_t index_count, std::uint32_t instance_count = 1,
+                      std::uint32_t first_index = 0, std::int32_t vertex_offset = 0,
+                      std::uint32_t first_instance = 0) const;
+    void dispatch(std::uint32_t group_count_x, std::uint32_t group_count_y,
+                  std::uint32_t group_count_z) const;
+
+  private:
+    VkCommandBuffer command_buffer_ = VK_NULL_HANDLE;
+};
+
+} // namespace cubey::vulkan

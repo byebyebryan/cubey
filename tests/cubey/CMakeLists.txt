@@ -4,6 +4,7 @@ add_executable(cubey_core_tests
     camera_tests.cpp
     capture_queue_tests.cpp
     command_pool_tests.cpp
+    command_recorder_tests.cpp
     compute_pipeline_tests.cpp
     descriptor_tests.cpp
     dynamic_rendering_tests.cpp

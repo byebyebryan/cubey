@@ -44,6 +44,7 @@ add_library(cubey STATIC
     upload_queue.cpp
     vulkan/buffer.cpp
     vulkan/command_pool.cpp
+    vulkan/command_recorder.cpp
     vulkan/descriptors.cpp
     vulkan/device.cpp
     vulkan/dynamic_rendering.cpp

@@ -14,6 +14,8 @@ void test_camera_managers_publish_2d_and_3d_camera_snapshots();
 void test_capture_queue_encodes_png_with_inline_executor();
 void test_capture_queue_propagates_encoding_errors();
 void test_command_pool_exposes_command_buffer_ownership();
+void test_command_recorder_exposes_non_owning_command_buffer_contract();
+void test_command_recorder_rejects_invalid_recording_inputs_before_vulkan_calls();
 void test_compute_helpers_describe_pipeline_and_layout_setup();
 void test_deferred_destruction_queue_retires_completed_tickets();
 void test_descriptor_helpers_describe_layout_pool_and_writes();
@@ -131,6 +133,8 @@ int main() {
         test_capture_queue_encodes_png_with_inline_executor();
         test_capture_queue_propagates_encoding_errors();
         test_command_pool_exposes_command_buffer_ownership();
+        test_command_recorder_exposes_non_owning_command_buffer_contract();
+        test_command_recorder_rejects_invalid_recording_inputs_before_vulkan_calls();
         test_compute_helpers_describe_pipeline_and_layout_setup();
         test_deferred_destruction_queue_retires_completed_tickets();
         test_descriptor_helpers_describe_layout_pool_and_writes();
