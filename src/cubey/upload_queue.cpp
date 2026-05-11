@@ -18,6 +18,7 @@ UploadTicket UploadQueue::enqueue(UploadRequest request) {
         .ticket = ticket,
         .bytes = std::move(request.bytes),
     });
+    statuses_.emplace(ticket.id, UploadStatus{});
     return ticket;
 }
 
@@ -27,6 +28,36 @@ std::vector<QueuedUpload> UploadQueue::drain() {
     std::vector<QueuedUpload> uploads;
     uploads.swap(uploads_);
     return uploads;
+}
+
+UploadStatus UploadQueue::status(const UploadTicket& ticket) const {
+    std::scoped_lock lock(mutex_);
+
+    const auto it = statuses_.find(ticket.id);
+    if (it == statuses_.end()) {
+        return UploadStatus{};
+    }
+    return it->second;
+}
+
+void UploadQueue::mark_completed(const UploadTicket& ticket, FrameTicket completed_submission) {
+    std::scoped_lock lock(mutex_);
+
+    statuses_[ticket.id] = UploadStatus{
+        .state = UploadState::Completed,
+        .completed_submission = completed_submission,
+        .error = {},
+    };
+}
+
+void UploadQueue::mark_failed(const UploadTicket& ticket, std::string error) {
+    std::scoped_lock lock(mutex_);
+
+    statuses_[ticket.id] = UploadStatus{
+        .state = UploadState::Failed,
+        .completed_submission = {},
+        .error = std::move(error),
+    };
 }
 
 std::size_t UploadQueue::pending_count() const {

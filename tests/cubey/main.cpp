@@ -128,6 +128,7 @@ void test_transform_3d_matches_existing_cube_rotation_order();
 void test_transfer_helpers_describe_texture_and_readback_paths();
 void test_upload_queue_drains_in_submission_order();
 void test_upload_queue_owns_payload_until_drain();
+void test_upload_queue_tracks_failed_uploads();
 void test_windowed_host_config_defaults_to_two_frame_slots();
 
 int main() {
@@ -259,6 +260,7 @@ int main() {
         test_transfer_helpers_describe_texture_and_readback_paths();
         test_upload_queue_owns_payload_until_drain();
         test_upload_queue_drains_in_submission_order();
+        test_upload_queue_tracks_failed_uploads();
         test_windowed_host_config_defaults_to_two_frame_slots();
     } catch (const std::exception& error) {
         std::fprintf(stderr, "cubey_core_tests: %s\n", error.what());
