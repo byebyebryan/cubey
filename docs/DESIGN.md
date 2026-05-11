@@ -81,8 +81,9 @@ The near-term Vulkan layer should split around real ownership boundaries:
   allocation, sync objects, and per-frame-slot submitted GPU tickets
 - `SubmissionCoordinator` — serialized queue submission helper and monotonic
   GPU submission tickets
-- `GpuRuntime` — host-owned GPU work queue and owner-thread context; inline
-  today, strict enough to move behind a render/submission thread later
+- `GpuRuntime` — host-owned GPU work queue and owner-thread context; threaded
+  by default, with an explicit inline mode for deterministic tests and narrow
+  bring-up paths
 - project/pass code — the actual procedural experiments
 
 These seams should be practical C++ modules first. Portability work should be
@@ -174,10 +175,11 @@ Before this becomes a broad host, projects should move toward the async-ready
 shape described in [threading and async design](threading-and-async.md): app
 state produces render packets, CPU jobs run behind Cubey APIs, upload/capture
 requests are queued, and one GPU owner serializes queue submission and resource
-lifetime decisions. Today that GPU owner is inline through
-`cubey::vulkan::GpuRuntime`, backed by `SubmissionCoordinator` for actual queue
-submission; a dedicated render thread should be an executor change behind the
-same boundary.
+lifetime decisions. Today that GPU owner is `cubey::vulkan::GpuRuntime`, backed
+by `SubmissionCoordinator` for actual queue submission and threaded by default
+in hosts. `cubey::ProjectGpuServices` is the project-facing bridge for queued
+uploads, upload completion status, owner-thread queue-idle waits, and deferred
+GPU retirement without handing project code the raw submission coordinator.
 
 ```cpp
 struct App {
@@ -373,7 +375,7 @@ cubey/
         render_context.h   -- surface-backed begin/end frame lifecycle
         sampler.h          -- Vulkan sampler ownership
         shader_module.h    -- shader module lifetime
-        submission_coordinator.h -- inline GPU submission owner
+        submission_coordinator.h -- serialized GPU submission helper
         swapchain.h        -- swapchain images and image views
   src/
     cubey/
@@ -407,7 +409,7 @@ cubey/
         command_pool.cpp   -- command pool ownership and command-buffer begin
         descriptors.cpp    -- descriptor set layout/pool ownership
         frame_resources.cpp -- command buffers and sync objects
-        gpu_runtime.cpp    -- queued GPU work and inline runtime drain
+        gpu_runtime.cpp    -- queued GPU work and owner-thread runtime
         image.cpp          -- images, memory, and image views
         immediate_commands.cpp -- one-shot setup command submission
         dynamic_rendering.cpp -- dynamic-rendering attachment helpers
@@ -416,7 +418,7 @@ cubey/
         render_context.cpp -- surface-backed begin/end frame lifecycle
         sampler.cpp        -- samplers
         shader_module.cpp  -- shader module lifetime
-        submission_coordinator.cpp -- inline GPU submission owner
+        submission_coordinator.cpp -- serialized GPU submission helper
         swapchain.cpp      -- surface extent, swapchain images/views
   examples/
     window_clear/          -- minimal windowed Vulkan clear/present path; owns

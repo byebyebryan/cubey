@@ -149,10 +149,11 @@ resource creation/destruction, update, command recording, and shutdown.
 - `cubey::vulkan::CommandRecorder` removes repeated low-level command-buffer
   call boilerplate while keeping pass order, barriers, descriptors, pipelines,
   and render intent in examples/projects.
-- `cubey::vulkan::GpuRuntime` is the host-visible GPU owner. It drains labeled
-  work inline on the app thread today and uses `SubmissionCoordinator` for
-  serialized queue submission, so app/project setup work enters through the
-  runtime queue rather than owning queue submission directly.
+- `cubey::vulkan::GpuRuntime` is the host-visible GPU owner. It runs a threaded
+  owner by default, keeps inline mode explicit for tests/bring-up, and uses
+  `SubmissionCoordinator` for serialized queue submission, so app/project setup
+  work enters through the runtime queue rather than owning queue submission
+  directly.
 - `cubey::render::View3D` gives 3D examples a shared CPU frame-planning
   boundary: camera matrices, draw packets, light packets, ambient-only
   environment, and conservative frustum culling. It is not a scene manager,
@@ -165,10 +166,11 @@ resource creation/destruction, update, command recording, and shutdown.
   object rotation.
 - `cubey::app::GlfwSurface` owns the GLFW-created `VkSurfaceKHR`.
 - `cubey::app::WindowedHost` owns the current windowed loop: instance, surface,
-  device, inline submission coordinator, GPU runtime, swapchain, frame
+  device, submission coordinator, GPU runtime, swapchain, frame
   resources, frame timing, optional frame stats, acquire/record/submit/present,
-  and swapchain recreation. It drains queued GPU work at host-owned setup,
-  update, swapchain-resource, and shutdown boundaries.
+  and swapchain recreation. It runs the GPU runtime threaded by default and uses
+  explicit drain/wait calls at host-owned setup, update, swapchain-resource, and
+  shutdown boundaries.
 - Windowed render callbacks receive `cubey::app::WindowedRenderFrame`, which
   carries the command buffer, swapchain image index, timing, and
   `cubey::render::ColorTargetView` for the active swapchain image.
@@ -198,6 +200,10 @@ resource creation/destruction, update, command recording, and shutdown.
   host-bridge behavior: convert `FrameTiming` to one `ProjectFrame` per host
   frame, expose `ProjectContext`, and retire deferred destruction on shutdown.
   `fluid_2d` uses the adapter in both windowed and headless modes.
+- `cubey::ProjectGpuServices` is the optional GPU-facing project bridge for
+  draining queued uploads into owner-thread GPU work, marking upload completion
+  or failure, routing queue-idle waits through `GpuRuntime`, and retiring
+  deferred work by completed GPU submission tickets.
 - A generic project host is still deferred; the current contract is limited to
   shared service ownership and frame bridging.
 

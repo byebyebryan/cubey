@@ -86,10 +86,11 @@ one.
   the main loop. Today this is the example loop.
 - **GPU owner:** owns Vulkan object mutation, queue submission, in-flight frame
   tracking, and deferred destruction. `GpuRuntime` is the current strict owner
-  boundary: callers enqueue `GpuWorkRequest` values, and the host drains them
-  inline on the app thread today. `SubmissionCoordinator` is the lower-level
+  boundary: callers enqueue `GpuWorkRequest` values, and hosts run a dedicated
+  owner thread by default. `SubmissionCoordinator` is the lower-level
   serialized queue-submission helper used by that runtime and by frame
-  submission.
+  submission. Inline execution remains an explicit deterministic mode for tests
+  and narrow bring-up paths.
 - **Worker executor:** runs CPU-only jobs. Worker jobs must not mutate Vulkan
   objects or call Vulkan submission APIs unless a future API explicitly grants a
   thread-local recording context.
@@ -118,9 +119,9 @@ Vulkan wrapper policy:
 - `Device` owns device and queue handles, but submission should flow through the
   GPU owner rather than arbitrary worker threads.
 - `GpuRuntime` owns the work queue and owner-thread context. Enqueue is
-  thread-safe; `drain_inline()` is owner-thread-only so the same contract can
-  move to a dedicated render/submission thread later without changing
-  app/project call sites.
+  thread-safe; `drain_inline()` is owner-thread-only and `wait_queue_idle()`
+  routes queue-idle waits through the owner. The default host path already uses
+  a threaded owner, while inline mode preserves deterministic tests.
 - `CommandPool` remains single-thread-owned. Future parallel recording should
   allocate command pools by frame and worker index.
 - `DescriptorPool` remains single-owner unless a future allocator explicitly
@@ -219,27 +220,28 @@ readback is still direct in current examples; later slices should move the GPU
 copy/poll side behind the same request/ticket vocabulary.
 
 `cubey::UploadQueue` is the first upload-side request queue. It owns submitted
-CPU bytes, returns monotonic `UploadTicket` values, and lets the future GPU
-owner drain queued uploads in submission order. The queue is guarded internally
-so worker jobs can safely submit CPU-side upload requests before any Vulkan
-staging/copy work is introduced.
+CPU bytes, returns monotonic `UploadTicket` values, and tracks pending,
+completed, and failed `UploadStatus` for each ticket. The queue is guarded
+internally so worker jobs can safely submit CPU-side upload requests before any
+Vulkan staging/copy work is introduced.
 
 `cubey::FrameTicketIssuer` and `DeferredDestructionQueue` are the first
 CPU-side lifetime primitives. `cubey::vulkan::SubmissionCoordinator` now issues
 monotonic GPU submission tickets and marks frame-slot tickets completed after
-their fence wait. Project-runtime deferred destruction is still intentionally
-separate until a project host owns the mapping from project frame tickets to GPU
-completion.
+their fence wait. `cubey::ProjectGpuServices` now owns the project-facing bridge
+from upload tickets and deferred destruction to GPU submission completion. It
+drains pending uploads into owner-thread GPU work, marks upload tickets
+completed or failed, and retires deferred destruction using the completed GPU
+submission ticket reported by `GpuRuntime`.
 
 `cubey::vulkan::GpuRuntime` is now the first host-owned GPU work queue. It
 accepts labeled `GpuWorkRequest` callbacks from any thread, exposes a
 `GpuOwnerContext` containing the device and submission coordinator only while
 draining, and restores undrained work if a callback throws. Windowed and
-headless hosts drain it inline after setup/update/capture boundaries today, so
-the path is strict without requiring a separate render thread yet. Direct
-`ImmediateCommands` remain a low-level building block inside owner-context
-callbacks and transfer helpers; app/project setup code should prefer
-`context.gpu().enqueue(...)`.
+headless hosts run it threaded by default and use explicit drain/wait calls only
+at host-owned synchronization points. Direct `ImmediateCommands` remain a
+low-level building block inside owner-context callbacks and transfer helpers;
+app/project setup code should prefer host or project GPU services.
 
 ## Command Recording
 
@@ -309,10 +311,11 @@ submission as a casual escape hatch.
 Examples can stay explicit. Projects should use this boundary once it exists.
 
 Initial implementation: `ProjectContext` exposes jobs, uploads, captures, frame
-tickets, and deferred destruction as services. `ProjectRuntimeServices` owns
-those services and issues `ProjectFrame` values from `FrameTiming`.
-`ProjectRuntimeAdapter` adds the thin host bridge for same-frame project-frame
-reuse, project context access, and deferred destruction retirement.
+tickets, deferred destruction, and optionally `ProjectGpuServices` as services.
+`ProjectRuntimeServices` owns the CPU-side services and issues `ProjectFrame`
+values from `FrameTiming`. `ProjectRuntimeAdapter` adds the thin host bridge for
+same-frame project-frame reuse, project context access, and CPU-side deferred
+destruction retirement.
 `ProjectFrame`, `ProjectExtent`, `RenderPacket`, and the `ProjectLike` concept
 define the first compile-time checked lifecycle shape for future `projects/`
 code. `fluid_2d` now consumes `ProjectFrame` for simulation timing, but
@@ -407,7 +410,7 @@ Status: frame-ticket/deferred-destruction initial pass complete.
 
 ### Slice 5: Strict GPU Runtime Boundary
 
-Status: inline implementation complete.
+Status: threaded default plus inline test mode complete.
 
 - Added `GpuWorkQueue`, `GpuRuntime`, `GpuWorkRequest`, `GpuWorkTicket`, and
   `GpuOwnerContext`.
@@ -415,10 +418,16 @@ Status: inline implementation complete.
   draining is owner-thread-only.
 - Windowed and headless hosts own the runtime and expose it through their
   contexts.
-- Hosts drain queued GPU work at setup/update/capture/shutdown boundaries.
+- Hosts run a threaded GPU owner by default, with inline mode available through
+  host config for tests and deterministic bring-up.
+- Hosts drain or wait for queued GPU work at setup/update/capture/shutdown
+  boundaries.
 - `textured_cube` setup-time texture transitions/compute dispatch and
   `HeadlessPngHost` capture recording now route through the runtime while still
-  executing inline.
+  preserving a synchronous setup/capture shape at the call site.
+- Added `ProjectGpuServices` for project-facing upload draining, upload
+  completion/failure status, and deferred destruction retirement from completed
+  GPU submission tickets.
 
 ### Slice 6: Parallel Command Recording And Split Queues
 

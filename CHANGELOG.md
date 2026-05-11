@@ -36,7 +36,7 @@ versioned section and use that section as the release notes.
   and monotonic GPU submission tickets.
 - Public Vulkan `GpuRuntime` helper as the host-owned GPU work queue and
   owner-thread context. Windowed and headless hosts expose it through their
-  contexts and drain it inline today.
+  contexts and run it threaded by default, with explicit inline mode for tests.
 - Public Vulkan transfer/readback helpers for readback buffers, sampled image
   configs, buffer-image copies, and storage, transfer, sampled-image readback,
   color-attachment readback, and sampling image layout transitions.
@@ -70,7 +70,7 @@ versioned section and use that section as the release notes.
   offscreen RGBA render target, capture transitions, readback, and PNG artifact
   writing behind project-provided render callbacks.
 - Public upload request queue that owns submitted CPU bytes until the GPU owner
-  drains them.
+  drains them and tracks pending/completed/failed ticket status.
 - Public frame ticket issuer and deferred destruction queue for retiring
   CPU-side cleanup actions after completed frame/submission points.
 - Public async-ready project runtime vocabulary: project frames, extents,
@@ -81,6 +81,9 @@ versioned section and use that section as the release notes.
 - Public `ProjectRuntimeAdapter` for the narrow host bridge: same-frame
   `ProjectFrame` reuse, new-frame ticket issue, project context access, and
   deferred destruction retirement.
+- Public `ProjectGpuServices` bridge for project-facing upload draining,
+  upload completion/failure status, owner-thread GPU work submission, and
+  deferred destruction retirement from completed GPU submission tickets.
 - Public frame timing, orbit-controller, and frame-stat types for interactive
   windowed examples.
 - `examples/window_clear`, a minimal Vulkan/GLFW dynamic-rendering windowed
@@ -131,10 +134,11 @@ versioned section and use that section as the release notes.
 - Windowed examples, `headless_render`, and `fluid_2d` now use the shared
   Vulkan command recorder for repeated command-buffer calls while keeping pass
   order, barriers, descriptors, pipelines, and render policy local.
-- Frame submission routes through the inline Vulkan submission coordinator, and
+- Frame submission routes through the Vulkan submission coordinator, and
   host-visible setup/capture GPU work now routes through `GpuRuntime` before
-  reaching immediate commands. The current execution is still same-thread; a
-  dedicated render thread remains future work.
+  reaching immediate commands. `GpuRuntime` now defaults to a threaded GPU owner
+  while keeping inline execution explicit for deterministic tests and narrow
+  bring-up paths.
 - Graphics examples now share dynamic graphics pipeline create-info setup while
   retaining explicit example-local layout, shader, vertex-input, and descriptor
   choices.

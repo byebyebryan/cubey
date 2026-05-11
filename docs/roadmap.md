@@ -114,7 +114,8 @@ Current checkpoint:
   frame-slot tickets completed after the matching fence wait.
 - Reusable `cubey::vulkan::GpuRuntime` is the first strict GPU-owner work
   queue: host contexts expose `gpu()`, worker threads can enqueue labeled work,
-  and hosts drain it inline at setup/update/capture/shutdown boundaries today.
+  and hosts run a threaded owner by default while keeping inline execution as an
+  explicit deterministic mode.
 - Reusable `cubey::vulkan::DepthAttachment` owns depth image/view setup and
   shared depth format selection.
 - Reusable `cubey::vulkan` transfer/readback helpers cover readback buffers,
@@ -132,7 +133,8 @@ Current checkpoint:
 - Reusable `cubey::CaptureQueue` and `CaptureTicket` provide the first
   async-shaped PNG encoding path over completed RGBA pixel buffers.
 - Reusable `cubey::UploadQueue`, `UploadTicket`, and `QueuedUpload` provide the
-  first CPU-owned upload request queue for future GPU-owner draining.
+  first CPU-owned upload request queue for GPU-owner draining, with pending,
+  completed, and failed ticket status.
 - Reusable `cubey::FrameTicketIssuer`, `FrameTicket`, and
   `DeferredDestructionQueue` provide the first frame-ticket retirement
   vocabulary.
@@ -144,6 +146,10 @@ Current checkpoint:
   `RenderPacket`, `ProjectRuntimeServices`, `ProjectRuntimeAdapter`, and
   `ProjectLike` provide the first async-ready project runtime vocabulary,
   service ownership bundle, and thin host bridge.
+- Reusable `cubey::ProjectGpuServices` provides the optional project-facing GPU
+  bridge for draining pending uploads into owner-thread GPU work, marking upload
+  completion/failure, and retiring deferred work from completed GPU submission
+  tickets.
 - Reusable `cubey::render` target, texture, mesh, and draw-item contracts now
   sit above `cubey::vulkan`: windowed/headless color target views,
   dynamic-rendering target setup, generated/uploaded sampled texture ownership,
@@ -348,18 +354,20 @@ building a full threaded renderer too early.
 - Added CPU-owned upload requests that can be drained by the GPU owner.
 - Added frame tickets and deferred destruction helpers for future in-flight GPU
   lifetime tracking.
-- Added an inline `SubmissionCoordinator` for serialized queue submission and
-  frame-slot GPU completion marking. A dedicated render thread remains a later
-  executor change, not part of this phase.
-- Added `GpuRuntime` as the public GPU-owner work queue over the inline
-  submission coordinator; windowed/headless hosts expose it through their
-  contexts and drain it inline.
+- Added `SubmissionCoordinator` for serialized queue submission and frame-slot
+  GPU completion marking.
+- Added `GpuRuntime` as the public GPU-owner work queue over the submission
+  coordinator; windowed/headless hosts expose it through their contexts and run
+  it threaded by default, with inline mode remaining explicit for tests.
 - Added project runtime vocabulary for setup, update, render-packet, resize,
   and shutdown contracts.
 - Added `ProjectRuntimeServices` and moved `fluid_2d` simulation timing onto
   `ProjectFrame` while keeping command recording sequence project-local.
 - Added `ProjectRuntimeAdapter` and moved `fluid_2d` onto it while keeping host
   callbacks and command recording sequence project-local.
+- Added `ProjectGpuServices` for project-facing upload draining, upload
+  completion/failure status, and deferred destruction retirement from completed
+  GPU submission tickets.
 - Shape GPU readbacks and deeper capture polling as queued work.
 - Keep GPU ownership and `VkQueue` submission serialized through one owner.
 - Keep examples direct; require longer-lived `projects/` to use the
@@ -426,9 +434,8 @@ has proven useful.
 - Thin project runtime adapter for one project frame per host frame, context
   access, and deferred destruction retirement. Status: complete.
 - Strict GPU runtime exposed through windowed/headless host contexts, with
-  setup-time GPU work entering through a queue even while execution remains
-  inline. Status: complete for current headless capture and textured-cube setup
-  work.
+  setup-time GPU work entering through a queue and running on the runtime owner.
+  Status: complete for current headless capture and textured-cube setup work.
 - Narrow no-GLFW headless PNG host that shares no-window instance/device,
   offscreen target, capture transitions, readback, and artifact writing. Status:
   complete for current headless examples and `fluid_2d`.

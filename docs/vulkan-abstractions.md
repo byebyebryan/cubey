@@ -64,10 +64,10 @@ Current state:
 - `Device` owns physical-device selection, logical-device lifetime, one queue
   family, queue access, feature checks, and memory-type selection.
 - `choose_depth_format` centralizes the current supported depth format probe.
-- The current submission model has an inline GPU owner:
-  `GpuRuntime` accepts queued owner-thread work and drains inline on the app
-  thread today, while `SubmissionCoordinator` serializes the actual queue
-  submissions and can move behind a render/submission thread later.
+- The current submission model has a strict GPU owner: `GpuRuntime` accepts
+  queued owner-thread work, runs threaded by default in hosts, and keeps inline
+  execution explicit for tests, while `SubmissionCoordinator` serializes the
+  actual queue submissions.
 
 Needed next:
 
@@ -130,11 +130,11 @@ Current state:
   submission tickets. `RenderContext` submits frames through it and marks
   frame-slot tickets completed after the matching fence wait.
 - `GpuRuntime` is the host-owned GPU work queue and owner-thread context.
-  Windowed/headless hosts expose it through their contexts and drain it inline
-  after setup/update/capture/shutdown boundaries. It is the public boundary for
-  app/project setup-time GPU work; `ImmediateCommands` remains the low-level
-  one-shot command helper used inside owner-context callbacks and transfer
-  helpers.
+  Windowed/headless hosts expose it through their contexts and run it threaded
+  by default, with explicit drain/wait calls at host-owned synchronization
+  points. It is the public boundary for app/project setup-time GPU work;
+  `ImmediateCommands` remains the low-level one-shot command helper used inside
+  owner-context callbacks and transfer helpers.
 - `copy_buffer` and `upload_device_buffer` cover current setup-time transfers
   into device-local buffers.
 - `copy_buffer_to_image` and `copy_image_to_buffer` cover current one-shot
@@ -187,7 +187,7 @@ Current state:
   readback are used.
 - GPU upload/readback behavior is still direct/blocking in low-level transfer
   helpers; the host-visible capture-record path now goes through `GpuRuntime`
-  while retaining inline execution.
+  and uses inline execution only when explicitly configured.
 
 Needed next:
 
@@ -364,13 +364,16 @@ Current state:
 - `SubmissionCoordinator` provides GPU submission tickets and serialized queue
   submission for frames and immediate work.
 - `GpuRuntime` provides the host-owned GPU work queue and owner-context boundary
-  that can move from inline drain to a dedicated render/submission thread later.
+  with a threaded default and explicit inline mode.
 - `Engine` is the first scoped root owner for project runtime services and
   scene creation; it intentionally does not own host/device setup yet.
 - `ProjectContext`, `ProjectFrame`, `ProjectExtent`, `RenderPacket`, and
   `ProjectRuntimeServices`, `ProjectRuntimeAdapter`, and `ProjectLike` provide
   the first async-ready project runtime vocabulary, service ownership bundle,
   and thin host bridge.
+- `ProjectGpuServices` provides the optional project-facing GPU bridge for
+  upload draining, upload ticket status, and deferred retirement by completed
+  GPU submission ticket.
 - `ImmediateCommands`, readback helpers, and PNG output are still synchronous
   where they wait for immediate GPU work or process completed pixels.
 
