@@ -109,6 +109,10 @@ Current checkpoint:
   command-buffer recording calls used by current examples and `fluid_2d`:
   begin/end, dynamic rendering boundaries, image layout transitions, pipeline
   and descriptor binding, push constants, draws, indexed draws, and dispatches.
+- Reusable `cubey::vulkan::SubmissionCoordinator` is the first inline GPU owner:
+  it serializes queue submission, issues monotonic GPU submission tickets, and
+  lets `RenderContext` mark frame-slot tickets completed after the matching
+  fence wait.
 - Reusable `cubey::vulkan::DepthAttachment` owns depth image/view setup and
   shared depth format selection.
 - Reusable `cubey::vulkan` transfer/readback helpers cover readback buffers,
@@ -180,11 +184,11 @@ Current checkpoint:
   dynamic-rendering helpers build color/depth attachment descriptors without
   owning render policy.
 - Reusable `cubey::vulkan::QueueSubmit` centralizes the current binary-semaphore
-  queue-submit shape used by frame submit and immediate commands.
+  queue-submit shape used by the submission coordinator.
 - Reusable `cubey::vulkan::RenderContext` exposes explicit `begin_frame` and
   `end_frame` calls for the common surface-backed acquire, command reset,
-  submit, present, frame-slot advance, per-image in-flight fence wait, and
-  out-of-date result path used by all current windowed examples.
+  coordinator-backed submit, present, frame-slot advance, per-image in-flight
+  fence wait, and out-of-date result path used by all current windowed examples.
 - Reusable `cubey::vulkan::SwapchainRecreateTracker` guards repeated
   out-of-date/suboptimal recreate loops across all current windowed examples.
 - Optional `cubey_app` target owns the first GLFW-backed app/runtime layer:
@@ -342,6 +346,9 @@ building a full threaded renderer too early.
 - Added CPU-owned upload requests that can be drained by the GPU owner.
 - Added frame tickets and deferred destruction helpers for future in-flight GPU
   lifetime tracking.
+- Added an inline `SubmissionCoordinator` as the current GPU owner for serialized
+  queue submission and frame-slot GPU completion marking. A dedicated render
+  thread remains a later executor change, not part of this phase.
 - Added project runtime vocabulary for setup, update, render-packet, resize,
   and shutdown contracts.
 - Added `ProjectRuntimeServices` and moved `fluid_2d` simulation timing onto

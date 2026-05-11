@@ -85,8 +85,9 @@ one.
 - **App thread:** owns window events, user input, high-level project state, and
   the main loop. Today this is the example loop.
 - **GPU owner:** owns Vulkan object mutation, queue submission, in-flight frame
-  tracking, and deferred destruction. Initially this can run on the app thread.
-  Later it may become a dedicated render/submission thread.
+  tracking, and deferred destruction. `SubmissionCoordinator` is the first
+  inline implementation: it runs on the app thread today and can move behind a
+  dedicated render/submission thread later.
 - **Worker executor:** runs CPU-only jobs. Worker jobs must not mutate Vulkan
   objects or call Vulkan submission APIs unless a future API explicitly grants a
   thread-local recording context.
@@ -98,8 +99,10 @@ one.
   GPU owner to stage, copy, transition, and publish.
 - **Capture request:** a request to copy GPU output into a readback buffer,
   later poll completion, then optionally encode on a worker.
-- **Frame ticket:** a monotonically increasing frame or submission identifier
-  used for deferred destruction and readback readiness.
+- **Frame ticket:** a monotonically increasing frame or submission identifier.
+  Project frames and GPU submissions currently issue separate tickets; a later
+  project-host pass should decide how deferred destruction and readback
+  readiness consume GPU completion.
 
 ## Ownership Model
 
@@ -216,9 +219,11 @@ so worker jobs can safely submit CPU-side upload requests before any Vulkan
 staging/copy work is introduced.
 
 `cubey::FrameTicketIssuer` and `DeferredDestructionQueue` are the first
-CPU-side lifetime primitives. They do not yet query Vulkan fences; they provide
-the monotonic ticket and retire-after-ticket vocabulary that later
-N-frames-in-flight and readback polling can connect to real GPU completion.
+CPU-side lifetime primitives. `cubey::vulkan::SubmissionCoordinator` now issues
+monotonic GPU submission tickets and marks frame-slot tickets completed after
+their fence wait. Project-runtime deferred destruction is still intentionally
+separate until a project host owns the mapping from project frame tickets to GPU
+completion.
 
 ## Command Recording
 
@@ -243,8 +248,10 @@ present. Keep that as the default until a project benefits from split queues.
 Future queue work should proceed in this order:
 
 1. Represent queue families explicitly in `Device`.
-2. Centralize queue submission through a submission coordinator.
-3. Add timeline-semaphore or fence-backed frame tickets.
+2. Add timeline-semaphore or broader fence-backed completion if binary
+   frame-slot fences become too limiting.
+3. Connect GPU submission tickets to project-runtime deferred destruction and
+   readback/capture readiness.
 4. Add transfer/compute queues only when an upload-heavy or compute-heavy
    project has evidence that a separate queue helps.
 
@@ -399,5 +406,5 @@ Status: frame-ticket/deferred-destruction initial pass complete.
   `BS::thread_pool` behind the same API?
 - Should `ProjectRuntimeAdapter` grow into a project host, or should the next
   project keep using the windowed/headless hosts directly?
-- Should GPU capture polling or queued uploads become the first real
-  Vulkan-backed async path?
+- Should GPU capture polling, queued uploads, or project-runtime deferred
+  destruction become the first consumer of GPU submission tickets?

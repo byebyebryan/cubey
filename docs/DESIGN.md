@@ -78,7 +78,9 @@ The near-term Vulkan layer should split around real ownership boundaries:
 - `Buffer` / `Image` — allocation, views, staging uploads, readback
 - `Shader` / `Pipeline` — build-time shader paths, compute and graphics pipelines
 - `CommandPool` / `FrameResources` — command pool ownership, command-buffer
-  allocation, semaphores, fences, and eventual N-frames-in-flight
+  allocation, sync objects, and per-frame-slot submitted GPU tickets
+- `SubmissionCoordinator` — inline GPU owner for serialized queue submission
+  and monotonic GPU submission tickets
 - project/pass code — the actual procedural experiments
 
 These seams should be practical C++ modules first. Portability work should be
@@ -170,7 +172,9 @@ Before this becomes a broad host, projects should move toward the async-ready
 shape described in [threading and async design](threading-and-async.md): app
 state produces render packets, CPU jobs run behind Cubey APIs, upload/capture
 requests are queued, and one GPU owner serializes queue submission and resource
-lifetime decisions.
+lifetime decisions. Today that GPU owner is inline through
+`cubey::vulkan::SubmissionCoordinator`; a dedicated render thread should be an
+executor change behind the same boundary.
 
 ```cpp
 struct App {
@@ -365,6 +369,7 @@ cubey/
         render_context.h   -- surface-backed begin/end frame lifecycle
         sampler.h          -- Vulkan sampler ownership
         shader_module.h    -- shader module lifetime
+        submission_coordinator.h -- inline GPU submission owner
         swapchain.h        -- swapchain images and image views
   src/
     cubey/
@@ -406,6 +411,7 @@ cubey/
         render_context.cpp -- surface-backed begin/end frame lifecycle
         sampler.cpp        -- samplers
         shader_module.cpp  -- shader module lifetime
+        submission_coordinator.cpp -- inline GPU submission owner
         swapchain.cpp      -- surface extent, swapchain images/views
   examples/
     window_clear/          -- minimal windowed Vulkan clear/present path; owns

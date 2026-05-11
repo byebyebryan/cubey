@@ -32,6 +32,9 @@ versioned section and use that section as the release notes.
 - Public Vulkan `CommandRecorder` helper for non-owning command-buffer
   recording: begin/end, dynamic rendering, image transitions, pipeline and
   descriptor binding, push constants, draws, indexed draws, and dispatches.
+- Public Vulkan `SubmissionCoordinator` helper as the first inline GPU-owner
+  boundary for serialized queue submission and monotonic GPU submission
+  tickets.
 - Public Vulkan transfer/readback helpers for readback buffers, sampled image
   configs, buffer-image copies, and storage, transfer, sampled-image readback,
   color-attachment readback, and sampling image layout transitions.
@@ -126,6 +129,9 @@ versioned section and use that section as the release notes.
 - Windowed examples, `headless_render`, and `fluid_2d` now use the shared
   Vulkan command recorder for repeated command-buffer calls while keeping pass
   order, barriers, descriptors, pipelines, and render policy local.
+- Frame submission and immediate-command submission now route through the
+  inline Vulkan submission coordinator. The current execution is still
+  same-thread; a dedicated render thread remains future work.
 - Graphics examples now share dynamic graphics pipeline create-info setup while
   retaining explicit example-local layout, shader, vertex-input, and descriptor
   choices.

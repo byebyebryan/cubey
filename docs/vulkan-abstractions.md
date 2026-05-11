@@ -49,7 +49,7 @@ The current boundary is:
 - Keep threading and async work shaped by
   [threading and async design](threading-and-async.md): one GPU owner first,
   CPU jobs behind Cubey APIs, queued upload/capture requests, and explicit
-  explicit contracts for parallel command recording or split queues.
+  contracts for parallel command recording or split queues.
 - Do not invent portability-layer vocabulary unless Cubey code has naturally
   arrived there. Descriptors may eventually look like bind groups, but the
   Vulkan ownership model comes first.
@@ -64,16 +64,17 @@ Current state:
 - `Device` owns physical-device selection, logical-device lifetime, one queue
   family, queue access, feature checks, and memory-type selection.
 - `choose_depth_format` centralizes the current supported depth format probe.
-- The current submission model assumes one GPU owner that serializes queue
-  submission.
+- The current submission model has an inline GPU owner:
+  `SubmissionCoordinator` serializes queue submission on the app thread today,
+  and can move behind a render/submission thread later.
 
 Needed next:
 
 - Capability helpers for formats and optional features.
 - Queue-family model that can represent split graphics, compute, and present
   queues.
-- Submission coordinator once queue ownership and submission contracts are
-  concrete enough to test.
+- Fence/timeline-backed completion once GPU submission tickets need to feed
+  project-runtime deferred destruction directly.
 
 Defer:
 
@@ -87,7 +88,8 @@ Current state:
 
 - `Swapchain` owns swapchain images and views.
 - `FrameResources` owns per-frame-slot command buffers, acquire semaphores, and
-  fences, plus per-image present-ready semaphores.
+  fences, per-slot submitted GPU tickets, plus per-image present-ready
+  semaphores.
 - `RenderContext` owns the surface-backed `begin_frame` / `end_frame`
   acquire, submit, present, frame-slot advance, and recreate result path.
 - `SwapchainRecreateTracker` owns bounded consecutive recreate-attempt tracking.
@@ -112,7 +114,8 @@ Current state:
 
 - `CommandPool` owns command-pool lifetime and primary command-buffer
   allocation.
-- `ImmediateCommands` owns one-shot setup command submission.
+- `ImmediateCommands` owns one-shot setup command recording and submits through
+  `SubmissionCoordinator`.
 - `begin_command_buffer` removes repeated begin boilerplate.
 - `end_command_buffer` removes repeated end/check boilerplate.
 - `CommandRecorder` wraps a non-owning `VkCommandBuffer` for common recording
@@ -122,6 +125,10 @@ Current state:
 - `QueueSubmit`, `submit_to_queue`, and `submit_to_device_queue` centralize the
   current binary-semaphore `VkSubmitInfo` shape used by frame submit and
   immediate commands.
+- `SubmissionCoordinator` is the current inline GPU owner for serialized queue
+  submission and monotonic GPU submission tickets. `RenderContext` submits
+  frames through it and marks frame-slot tickets completed after the matching
+  fence wait; immediate commands submit-and-wait through it.
 - `copy_buffer` and `upload_device_buffer` cover current setup-time transfers
   into device-local buffers.
 - `copy_buffer_to_image` and `copy_image_to_buffer` cover current one-shot
@@ -344,20 +351,23 @@ Current state:
   upload request queue.
 - `FrameTicketIssuer`, `FrameTicket`, and `DeferredDestructionQueue` provide
   CPU-side ticket retirement vocabulary.
+- `SubmissionCoordinator` provides GPU submission tickets and an inline GPU
+  owner boundary for frame and immediate queue submission.
 - `Engine` is the first scoped root owner for project runtime services and
   scene creation; it intentionally does not own host/device setup yet.
 - `ProjectContext`, `ProjectFrame`, `ProjectExtent`, `RenderPacket`, and
   `ProjectRuntimeServices`, `ProjectRuntimeAdapter`, and `ProjectLike` provide
   the first async-ready project runtime vocabulary, service ownership bundle,
   and thin host bridge.
-- `ImmediateCommands`, readback helpers, and PNG output are synchronous.
+- `ImmediateCommands`, readback helpers, and PNG output are still synchronous
+  where they wait for immediate GPU work or process completed pixels.
 
 Needed next:
 
 - GPU readback/capture polling APIs.
-- Explicit GPU-owner vocabulary for serialized queue submission and GPU
-  lifetime decisions.
-- Vulkan fence/timeline integration for frame tickets.
+- Project-runtime integration between GPU submission tickets and deferred
+  destruction/readback readiness.
+- Vulkan timeline-semaphore integration if binary fences stop being enough.
 
 Defer:
 

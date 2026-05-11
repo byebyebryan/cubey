@@ -149,6 +149,9 @@ resource creation/destruction, update, command recording, and shutdown.
 - `cubey::vulkan::CommandRecorder` removes repeated low-level command-buffer
   call boilerplate while keeping pass order, barriers, descriptors, pipelines,
   and render intent in examples/projects.
+- `cubey::vulkan::SubmissionCoordinator` is the inline GPU owner exposed by the
+  windowed app context. Frame submit and setup-time immediate commands route
+  through it while still running on the app thread.
 - `cubey::render::View3D` gives 3D examples a shared CPU frame-planning
   boundary: camera matrices, draw packets, light packets, ambient-only
   environment, and conservative frustum culling. It is not a scene manager,
@@ -161,8 +164,9 @@ resource creation/destruction, update, command recording, and shutdown.
   object rotation.
 - `cubey::app::GlfwSurface` owns the GLFW-created `VkSurfaceKHR`.
 - `cubey::app::WindowedHost` owns the current windowed loop: instance, surface,
-  device, swapchain, frame resources, frame timing, optional frame stats,
-  acquire/record/submit/present, and swapchain recreation.
+  device, inline submission coordinator, swapchain, frame resources, frame
+  timing, optional frame stats, acquire/record/submit/present, and swapchain
+  recreation.
 - Windowed render callbacks receive `cubey::app::WindowedRenderFrame`, which
   carries the command buffer, swapchain image index, timing, and
   `cubey::render::ColorTargetView` for the active swapchain image.
