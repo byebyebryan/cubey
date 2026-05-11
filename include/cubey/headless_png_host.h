@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cubey/project_gpu_services.h>
 #include <cubey/render/target.h>
 #include <cubey/run_config.h>
 #include <cubey/vulkan/device.h>
@@ -82,6 +83,7 @@ class HeadlessPngHost {
     void create_device();
     void create_submission_coordinator();
     void create_gpu_runtime();
+    void create_project_gpu_services();
     void drain_gpu_work();
     void record_capture(HeadlessPngContext& context, const HeadlessRenderTarget& target);
     void write_png(const HeadlessRenderTarget& target);
@@ -90,13 +92,17 @@ class HeadlessPngHost {
     [[nodiscard]] cubey::vulkan::Device& device();
     [[nodiscard]] cubey::vulkan::SubmissionCoordinator& submission();
     [[nodiscard]] cubey::vulkan::GpuRuntime& gpu();
+    [[nodiscard]] ProjectGpuServices& project_gpu();
 
     HeadlessPngHostConfig config_;
     HeadlessPngHostCallbacks callbacks_;
+    UploadQueue uploads_;
+    DeferredDestructionQueue deferred_destruction_;
     std::optional<cubey::vulkan::Instance> instance_;
     std::optional<cubey::vulkan::Device> device_;
     std::optional<cubey::vulkan::SubmissionCoordinator> submission_;
     std::optional<cubey::vulkan::GpuRuntime> gpu_;
+    std::optional<ProjectGpuServices> project_gpu_;
 };
 
 } // namespace cubey

@@ -181,3 +181,70 @@ void test_project_gpu_services_mark_failed_uploads() {
             "failed GPU upload should mark ticket failed");
     require(failed.error == "copy failed", "failed GPU upload should preserve failure message");
 }
+
+void test_project_gpu_services_tracks_failed_rgba8_readbacks() {
+    cubey::UploadQueue uploads;
+    cubey::DeferredDestructionQueue deferred;
+    cubey::vulkan::SubmissionCoordinator submission = fake_submission();
+    cubey::vulkan::GpuRuntime runtime({
+        .device = fake_device(),
+        .submission = &submission,
+        .execution_mode = cubey::vulkan::GpuRuntimeExecutionMode::Inline,
+    });
+    cubey::ProjectGpuServices gpu(runtime, uploads, deferred);
+
+    cubey::ProjectGpuReadbackTicket ticket =
+        gpu.enqueue_rgba8_image_readback(VK_NULL_HANDLE, {2, 3}, "broken readback");
+    cubey::ProjectGpuReadbackStatus pending = gpu.readback_status(ticket);
+    require(ticket.id != 0, "readback ticket should receive an id");
+    require(ticket.label == "broken readback", "readback ticket should preserve its label");
+    require(ticket.byte_count == 24, "readback ticket should describe RGBA8 byte count");
+    require(pending.state == cubey::ProjectGpuReadbackState::Pending,
+            "readback should stay pending until GPU work executes");
+    require(pending.byte_count == 24, "pending readback status should expose byte count");
+
+    bool saw_failure = false;
+    try {
+        static_cast<void>(gpu.drain());
+    } catch (const std::runtime_error& error) {
+        saw_failure = std::string(error.what()) == "project GPU readback requires a source image";
+    }
+
+    require(saw_failure, "GPU services should propagate readback execution failures");
+    const cubey::ProjectGpuReadbackStatus failed = gpu.readback_status(ticket);
+    require(failed.state == cubey::ProjectGpuReadbackState::Failed,
+            "failed readback should update ticket status");
+    require(failed.error == "project GPU readback requires a source image",
+            "failed readback should preserve failure message");
+}
+
+void test_project_gpu_services_rejects_invalid_rgba8_readback_requests() {
+    cubey::UploadQueue uploads;
+    cubey::DeferredDestructionQueue deferred;
+    cubey::vulkan::SubmissionCoordinator submission = fake_submission();
+    cubey::vulkan::GpuRuntime runtime({
+        .device = fake_device(),
+        .submission = &submission,
+        .execution_mode = cubey::vulkan::GpuRuntimeExecutionMode::Inline,
+    });
+    cubey::ProjectGpuServices gpu(runtime, uploads, deferred);
+
+    bool rejected_extent = false;
+    try {
+        static_cast<void>(
+            gpu.enqueue_rgba8_image_readback(reinterpret_cast<VkImage>(0x58), {0, 3}, "empty"));
+    } catch (const std::runtime_error& error) {
+        rejected_extent =
+            std::string(error.what()) == "project GPU readback extent must be positive";
+    }
+    require(rejected_extent, "readback should reject zero-width extents before enqueue");
+
+    bool rejected_unknown = false;
+    try {
+        static_cast<void>(
+            gpu.readback_status(cubey::ProjectGpuReadbackTicket{.id = 404, .label = "missing"}));
+    } catch (const std::runtime_error& error) {
+        rejected_unknown = std::string(error.what()) == "unknown project GPU readback ticket";
+    }
+    require(rejected_unknown, "readback status should reject unknown tickets");
+}

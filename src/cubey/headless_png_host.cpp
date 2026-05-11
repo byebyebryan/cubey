@@ -1,7 +1,6 @@
 #include <cubey/headless_png_host.h>
 
 #include <cubey/image_io.h>
-#include <cubey/vulkan/buffer.h>
 #include <cubey/vulkan/image.h>
 #include <cubey/vulkan/image_transitions.h>
 #include <cubey/vulkan/immediate_commands.h>
@@ -78,6 +77,7 @@ int HeadlessPngHost::run() {
     create_device();
     create_submission_coordinator();
     create_gpu_runtime();
+    create_project_gpu_services();
 
     const VkExtent2D extent{config_.run_config.width, config_.run_config.height};
     cubey::vulkan::Image render_target_image(
@@ -139,6 +139,10 @@ void HeadlessPngHost::create_gpu_runtime() {
     });
 }
 
+void HeadlessPngHost::create_project_gpu_services() {
+    project_gpu_.emplace(gpu(), uploads_, deferred_destruction_);
+}
+
 void HeadlessPngHost::drain_gpu_work() {
     static_cast<void>(gpu().drain());
 }
@@ -165,17 +169,12 @@ void HeadlessPngHost::record_capture(HeadlessPngContext& context,
 }
 
 void HeadlessPngHost::write_png(const HeadlessRenderTarget& target) {
-    const std::size_t byte_size = headless_png_byte_size(target.extent.width, target.extent.height);
-    const VkDeviceSize readback_byte_size = static_cast<VkDeviceSize>(byte_size);
-    cubey::vulkan::Buffer readback(device(),
-                                   cubey::vulkan::readback_buffer_config(readback_byte_size));
-    cubey::vulkan::copy_image_to_buffer(gpu(), target.image, readback.handle(),
-                                        {target.extent.width, target.extent.height, 1});
-
-    std::vector<std::uint8_t> pixels(byte_size);
-    readback.download(pixels.data(), readback_byte_size);
-    cubey::write_png_rgba8(config_.run_config.output_path, target.extent.width,
-                           target.extent.height, pixels);
+    const ProjectGpuReadbackTicket ticket = project_gpu().enqueue_rgba8_image_readback(
+        target.image, target.extent, "headless PNG RGBA8 readback");
+    static_cast<void>(project_gpu().drain());
+    const ProjectGpuReadbackResult readback = project_gpu().take_completed_readback(ticket);
+    cubey::write_png_rgba8(config_.run_config.output_path, readback.width, readback.height,
+                           readback.rgba8);
 
     const std::string output_path = config_.run_config.output_path.string();
     std::printf("headless_png: %s wrote %s at %ux%u\n", device().device_name(), output_path.c_str(),
@@ -208,6 +207,13 @@ cubey::vulkan::GpuRuntime& HeadlessPngHost::gpu() {
         throw std::runtime_error("headless PNG Vulkan GPU runtime is not initialized");
     }
     return gpu_.value();
+}
+
+ProjectGpuServices& HeadlessPngHost::project_gpu() {
+    if (!project_gpu_.has_value()) {
+        throw std::runtime_error("headless PNG project GPU services are not initialized");
+    }
+    return project_gpu_.value();
 }
 
 } // namespace cubey
