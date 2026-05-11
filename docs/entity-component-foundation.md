@@ -13,6 +13,8 @@ Cubey should use a manager-oriented ECS-lite design:
 - `Entity` is a small generational identity handle with no behavior.
 - `EntityManager` owns entity creation, destruction, liveness, and generation
   validation.
+- `RenderResourceRegistry` owns CPU-side mesh/material handle identity and
+  liveness labels for scene renderables, without owning Vulkan resources.
 - Type-specific component managers own storage and APIs for durable rendering
   concepts: transform, renderable, camera, light, and bounds.
 - `Scene` owns the entity manager, component managers, edit commits, and read
@@ -72,8 +74,9 @@ cross-manager destruction.
 
 `Engine`:
 The non-singleton root owner for engine-wide services and `Scene` instances.
-It creates and destroys scenes, exposes project runtime contexts, and gives
-future engine-wide managers a stable home without making access global.
+It creates and destroys scenes, owns render resource handle identity, exposes
+project runtime contexts, and gives future engine-wide managers a stable home
+without making access global.
 
 `SceneEditQueue`:
 A thread-friendly list of requested structural changes and component writes.
@@ -206,6 +209,25 @@ This is less compact than a packed dense vector, but it makes MT behavior
 predictable. When a renderer needs denser data, build compact frame packets or
 GPU upload buffers from the read view rather than changing the manager's stable
 storage contract.
+
+Simple one-component-per-entity managers can share internal stable-slot,
+entity lookup, snapshot publication, destroy, and retire machinery. The shared
+helper is an implementation detail; public managers remain type-specific and
+domain-shaped. Transform managers intentionally keep custom storage because
+parent/child links, dirty propagation, and local/world affine cache updates are
+part of the transform domain.
+
+## Render Resource Handles
+
+`MeshHandle` and `MaterialHandle` are CPU-side typed IDs carried by renderable
+components and render packets. `RenderResourceRegistry` issues, validates, and
+destroys those handles with generations and optional labels. It does not own
+Vulkan meshes, textures, descriptors, materials, or pipelines.
+
+Scenes created through `Engine` receive the registry and reject renderable
+creates/updates that reference destroyed or stale mesh/material handles. A bare
+`Scene` remains usable for focused tests and simple code; without a registry it
+only enforces non-null handles and primitive validity.
 
 ## Mutation Model
 

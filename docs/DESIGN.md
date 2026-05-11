@@ -115,8 +115,8 @@ Reusable spatial types should stay explicit and narrow:
   helpers layered on top of `Camera3D`, not camera primitives.
 - `RenderableManager3D` owns entity-backed 3D renderable components and builds
   CPU-side renderable packets from committed scene read views. Renderables use
-  opaque mesh/material handles so scene snapshots do not expose mutable Vulkan
-  resources.
+  registry-issued opaque mesh/material handles so scene snapshots do not expose
+  mutable Vulkan resources.
 
 The broader entity/component shape is captured in
 [entity and component foundation](entity-component-foundation.md): Cubey should
@@ -125,8 +125,9 @@ views and edit commits before adding broader light, material, or renderer
 ownership.
 
 `cubey::Engine` is the scoped root owner for engine services and scene
-creation. It is intentionally not a singleton: apps pass `Engine&`, `Scene&`,
-or narrower contexts through the boundaries that need them.
+creation. It owns project runtime services, render resource handle identity,
+and created scenes. It is intentionally not a singleton: apps pass `Engine&`,
+`Scene&`, or narrower contexts through the boundaries that need them.
 
 ### Current And Future App Interfaces
 
@@ -137,7 +138,8 @@ Cubey now has two narrow hosts:
   target, capture transitions, readback, and PNG artifact writing.
 - `cubey::Engine` owns project runtime services and created scenes. Windowed
   and headless hosts still own platform and Vulkan setup until a later renderer
-  ownership pass.
+  ownership pass. Engine-created scenes validate renderable mesh/material
+  handles against the Engine-owned render resource registry.
 
 Examples and projects still own their shaders, simulation choices, and render
 intent. The library should own durable foundation contracts when those

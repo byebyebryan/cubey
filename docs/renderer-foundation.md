@@ -18,8 +18,9 @@ stable across the repo:
 - explicit frame slots and per-frame uniform buffers for CPU-updated render
   data;
 - draw packet metadata for simple indexed draws;
-- opaque render resource handles that scene snapshots can carry without owning
-  Vulkan resources.
+- opaque render resource handles that scene snapshots can carry, plus a small
+  CPU-side registry for handle identity/liveness that does not own Vulkan
+  resources.
 
 `cubey::render` may depend on `cubey::vulkan`. `cubey::vulkan` must not depend
 on `cubey::render`.
@@ -89,11 +90,13 @@ full engine architecture.
   record the minimal bind/draw sequence. Vertex layout, pipeline state,
   descriptors, materials, transforms, and push constants remain caller-owned.
 - `MeshHandle` and `MaterialHandle` are opaque CPU-side values used by scene
-  renderables and renderable packets. They are not a resource registry yet.
+  renderables and renderable packets. `RenderResourceRegistry` issues and
+  destroys those handles, validates liveness, and stores optional labels. It
+  does not own `Mesh`, textures, descriptors, pipelines, or material data.
 - `RenderableManager3D` lives in the scene/component layer and emits compact
   renderable packets with world matrices and resource handles. The cube
-  examples now use those packets while still owning pipelines, descriptors, and
-  Vulkan command recording locally.
+  examples now use Engine-owned scenes and registry-issued handles while still
+  owning pipelines, descriptors, and Vulkan command recording locally.
 - `FrameSlot` gives render callbacks a stable frame-data index, and
   `FrameUniformBuffer<T>` owns one host-visible uniform buffer per frame slot.
   The current windowed host uses real frame slots for overlapping frame
