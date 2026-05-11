@@ -59,6 +59,8 @@ void test_frame_slot_wraps_frame_indices();
 void test_frame_slot_rejects_invalid_slots();
 void test_frame_uniform_buffer_config_describes_host_visible_uniform_storage();
 void test_frame_uniform_buffer_contract_is_slot_based_and_move_only();
+void test_render_resource_registry_tracks_handle_lifetime_and_labels();
+void test_render_resource_handles_are_hashable_keys();
 void test_renderable_manager_emits_multiple_visible_primitives();
 void test_renderable_manager_entity_destroy_retires_attached_components();
 void test_renderable_manager_publishes_3d_packets_from_scene_read_view();
@@ -145,6 +147,8 @@ int main() {
         test_frame_slot_rejects_invalid_slots();
         test_frame_uniform_buffer_config_describes_host_visible_uniform_storage();
         test_frame_uniform_buffer_contract_is_slot_based_and_move_only();
+        test_render_resource_registry_tracks_handle_lifetime_and_labels();
+        test_render_resource_handles_are_hashable_keys();
         test_renderable_manager_publishes_3d_packets_from_scene_read_view();
         test_renderable_manager_emits_multiple_visible_primitives();
         test_renderable_manager_skips_invisible_renderables_without_transform();

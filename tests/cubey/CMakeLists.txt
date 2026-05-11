@@ -27,6 +27,7 @@ add_executable(cubey_core_tests
     render_context_tests.cpp
     render_frame_data_tests.cpp
     render_mesh_tests.cpp
+    render_resource_registry_tests.cpp
     render_target_tests.cpp
     render_texture_tests.cpp
     render_uniform_buffer_tests.cpp
