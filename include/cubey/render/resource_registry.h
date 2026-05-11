@@ -13,15 +13,41 @@
 
 namespace cubey::render {
 
+struct MeshInfo {
+    std::string label{};
+};
+
+enum class MaterialDomain : std::uint8_t {
+    Surface3D,
+};
+
+enum class MaterialBlendMode : std::uint8_t {
+    Opaque,
+    AlphaBlend,
+};
+
+struct MaterialInfo {
+    std::string label{};
+    MaterialDomain domain = MaterialDomain::Surface3D;
+    MaterialBlendMode blend = MaterialBlendMode::Opaque;
+    std::uint32_t sort_key = 0;
+};
+
 namespace detail {
 
-template <typename HandleT> class ResourceHandleStore {
+template <typename HandleT, typename InfoT> class ResourceHandleStore {
   public:
     ResourceHandleStore() {
         slots_.resize(1);
     }
 
     [[nodiscard]] HandleT create(std::string label = {}) {
+        InfoT info{};
+        info.label = std::move(label);
+        return create(std::move(info));
+    }
+
+    [[nodiscard]] HandleT create(InfoT info) {
         std::lock_guard const lock(mutex_);
 
         std::uint32_t index = 0;
@@ -43,7 +69,7 @@ template <typename HandleT> class ResourceHandleStore {
             slot.generation = 1;
         }
         slot.alive = true;
-        slot.label = std::move(label);
+        slot.info = std::move(info);
         return HandleT{.index = index, .generation = slot.generation};
     }
 
@@ -52,7 +78,7 @@ template <typename HandleT> class ResourceHandleStore {
         Slot& slot = validated_slot(handle);
         advance_generation(slot);
         slot.alive = false;
-        slot.label.clear();
+        slot.info = InfoT{};
         free_indices_.push_back(handle.index);
     }
 
@@ -63,14 +89,19 @@ template <typename HandleT> class ResourceHandleStore {
 
     [[nodiscard]] std::string label(HandleT handle) const {
         std::lock_guard const lock(mutex_);
-        return validated_slot(handle).label;
+        return validated_slot(handle).info.label;
+    }
+
+    [[nodiscard]] InfoT info(HandleT handle) const {
+        std::lock_guard const lock(mutex_);
+        return validated_slot(handle).info;
     }
 
   private:
     struct Slot {
         std::uint32_t generation = 0;
         bool alive = false;
-        std::string label{};
+        InfoT info{};
     };
 
     static void advance_generation(Slot& slot) {
@@ -115,8 +146,16 @@ class RenderResourceRegistry {
         return meshes_.create(std::move(label));
     }
 
+    [[nodiscard]] MeshHandle create_mesh(MeshInfo info) {
+        return meshes_.create(std::move(info));
+    }
+
     [[nodiscard]] MaterialHandle create_material(std::string label = {}) {
         return materials_.create(std::move(label));
+    }
+
+    [[nodiscard]] MaterialHandle create_material(MaterialInfo info) {
+        return materials_.create(std::move(info));
     }
 
     void destroy_mesh(MeshHandle handle) {
@@ -143,9 +182,17 @@ class RenderResourceRegistry {
         return materials_.label(handle);
     }
 
+    [[nodiscard]] MeshInfo mesh_info(MeshHandle handle) const {
+        return meshes_.info(handle);
+    }
+
+    [[nodiscard]] MaterialInfo material_info(MaterialHandle handle) const {
+        return materials_.info(handle);
+    }
+
   private:
-    detail::ResourceHandleStore<MeshHandle> meshes_{};
-    detail::ResourceHandleStore<MaterialHandle> materials_{};
+    detail::ResourceHandleStore<MeshHandle, MeshInfo> meshes_{};
+    detail::ResourceHandleStore<MaterialHandle, MaterialInfo> materials_{};
 };
 
 } // namespace cubey::render

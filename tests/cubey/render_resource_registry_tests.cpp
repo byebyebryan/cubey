@@ -82,3 +82,43 @@ void test_render_resource_handles_are_hashable_keys() {
     require(materials.at(material) == "material",
             "material handles should work as hash keys");
 }
+
+void test_render_resource_registry_round_trips_mesh_and_material_info() {
+    cubey::render::RenderResourceRegistry registry;
+
+    const cubey::render::MeshHandle mesh = registry.create_mesh(cubey::render::MeshInfo{
+        .label = "main cube mesh",
+    });
+    const cubey::render::MaterialHandle material =
+        registry.create_material(cubey::render::MaterialInfo{
+            .label = "transparent surface",
+            .domain = cubey::render::MaterialDomain::Surface3D,
+            .blend = cubey::render::MaterialBlendMode::AlphaBlend,
+            .sort_key = 42,
+        });
+    const cubey::render::MaterialHandle default_material =
+        registry.create_material("default material");
+
+    const cubey::render::MeshInfo mesh_info = registry.mesh_info(mesh);
+    const cubey::render::MaterialInfo material_info = registry.material_info(material);
+    const cubey::render::MaterialInfo default_info = registry.material_info(default_material);
+
+    require(mesh_info.label == "main cube mesh", "mesh info label should round-trip");
+    require(material_info.label == "transparent surface",
+            "material info label should round-trip");
+    require(material_info.domain == cubey::render::MaterialDomain::Surface3D,
+            "material domain should round-trip");
+    require(material_info.blend == cubey::render::MaterialBlendMode::AlphaBlend,
+            "material blend mode should round-trip");
+    require(material_info.sort_key == 42, "material sort key should round-trip");
+    require(default_info.blend == cubey::render::MaterialBlendMode::Opaque,
+            "string material creation should use opaque blend by default");
+
+    registry.destroy_mesh(mesh);
+    registry.destroy_material(material);
+
+    require_throws([&registry, mesh] { (void)registry.mesh_info(mesh); },
+                   "destroyed mesh info lookup should reject stale handles");
+    require_throws([&registry, material] { (void)registry.material_info(material); },
+                   "destroyed material info lookup should reject stale handles");
+}
