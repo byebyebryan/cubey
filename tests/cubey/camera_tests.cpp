@@ -1,7 +1,8 @@
 #include <cubey/camera_2d.h>
+#include <cubey/camera_3d.h>
 #include <cubey/math.h>
-#include <cubey/orbit_camera_3d.h>
 #include <cubey/orbit_controller.h>
+#include <cubey/transform_3d.h>
 
 #include <cmath>
 #include <numbers>
@@ -67,38 +68,52 @@ void test_camera_2d_clamps_scale() {
     require_close(camera.scale(), 2.0F, "2D camera should clamp maximum scale");
 }
 
-void test_orbit_camera_3d_matches_current_cube_view_projection() {
-    cubey::OrbitCamera3D camera({
-        .distance = 4.2F,
+void test_camera_3d_builds_projection_and_view_from_world_transform() {
+    cubey::Camera3D camera({
         .fovy_radians = std::numbers::pi_v<float> / 3.0F,
         .near_z = 0.1F,
         .far_z = 100.0F,
     });
+    const cubey::Transform3D world_transform{
+        .translation = {0.0F, 0.0F, 4.2F},
+    };
 
     const cubey::math::Mat4 expected_view = cubey::math::translation(0.0F, 0.0F, -4.2F);
-    require_matrix_close(camera.view_matrix(), expected_view,
-                         "orbit camera default view should match existing cube view");
+    require_matrix_close(camera.view_matrix(world_transform), expected_view,
+                         "3D camera view should invert the camera world transform");
 
     const float aspect = 16.0F / 9.0F;
     const cubey::math::Mat4 expected_projection =
         cubey::math::perspective(std::numbers::pi_v<float> / 3.0F, aspect, 0.1F, 100.0F);
     require_matrix_close(camera.projection_matrix(aspect), expected_projection,
-                         "orbit camera projection should use shared Vulkan perspective helper");
-    require_matrix_close(camera.view_projection_matrix(aspect), expected_projection * expected_view,
-                         "orbit camera should compose projection and view matrices");
+                         "3D camera projection should use shared Vulkan perspective helper");
+    require_matrix_close(camera.view_projection_matrix(world_transform, aspect),
+                         expected_projection * expected_view,
+                         "3D camera should compose projection and view matrices");
 }
 
-void test_orbit_camera_3d_accepts_orbit_state() {
-    cubey::OrbitCamera3D camera({.distance = 4.2F});
+void test_camera_3d_orbit_helper_matches_existing_cube_view() {
+    cubey::Camera3D camera;
+    const cubey::Transform3D default_orbit =
+        cubey::orbit_camera_transform(cubey::OrbitCameraState{.distance = 4.2F});
+
+    require_matrix_close(camera.view_matrix(default_orbit),
+                         cubey::math::translation(0.0F, 0.0F, -4.2F),
+                         "orbit helper should reproduce the old default cube view");
+
     cubey::OrbitController controller;
     controller.begin_drag(0.0, 0.0);
     controller.drag_to(25.0, -50.0);
     controller.end_drag();
-    camera.set_orbit(controller);
+    const cubey::Transform3D orbit_transform = cubey::orbit_camera_transform({
+        .distance = 4.2F,
+        .yaw = controller.yaw(),
+        .pitch = controller.pitch(),
+    });
 
     const cubey::math::Mat4 expected_view = cubey::math::translation(0.0F, 0.0F, -4.2F) *
                                             cubey::math::rotation_x(0.5F) *
                                             cubey::math::rotation_y(-0.25F);
-    require_matrix_close(camera.view_matrix(), expected_view,
-                         "orbit camera should derive view orientation from orbit state");
+    require_matrix_close(camera.view_matrix(orbit_transform), expected_view,
+                         "orbit helper should derive camera world transform from orbit state");
 }

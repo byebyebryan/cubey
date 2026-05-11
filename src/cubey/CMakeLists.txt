@@ -18,7 +18,7 @@ add_library(cubey STATIC
     $<TARGET_OBJECTS:cubey_stb_image_write>
     run_config.cpp
     camera_2d.cpp
-    orbit_camera_3d.cpp
+    camera_3d.cpp
     capture_queue.cpp
     engine.cpp
     entity.cpp

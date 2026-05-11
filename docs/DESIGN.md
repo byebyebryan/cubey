@@ -110,8 +110,9 @@ Reusable spatial types should stay explicit and narrow:
   managers for parented local/world affine transforms. They publish read-view
   snapshots through `Scene` commits and are the first scene/component managers,
   not a full scene graph.
-- `Camera2D` and `OrbitCamera3D` own view/projection state separately from
-  transform component ownership.
+- `Camera2D` and `Camera3D` own view/projection state separately from transform
+  component ownership. `OrbitCameraState` and `OrbitController` are control
+  helpers layered on top of `Camera3D`, not camera primitives.
 
 The broader entity/component shape is captured in
 [entity and component foundation](entity-component-foundation.md): Cubey should
@@ -301,12 +302,13 @@ cubey/
       frame_stats.h        -- lightweight telemetry formatting
       frame_tickets.h      -- frame tickets and deferred destruction
       camera_2d.h          -- reusable 2D camera view state
+      camera_3d.h          -- reusable 3D camera projection and orbit helpers
+      camera_manager.h     -- entity-backed 2D/3D camera components
       headless_png_host.h  -- no-window offscreen PNG capture host
       image_io.h           -- PNG artifact output
       input.h              -- shared keyboard and mouse input snapshot
       jobs.h               -- CPU job facade
       math.h               -- GLM-backed math aliases and Vulkan projection helpers
-      orbit_camera_3d.h    -- reusable 3D orbit camera view/projection state
       orbit_controller.h   -- basic orbit input state
       pan_zoom_2d_controller.h -- input-driven 2D camera pan/zoom controller
       pointer_drag.h       -- shared pointer drag helper
@@ -337,6 +339,7 @@ cubey/
       run_config.cpp
       capture_queue.cpp
       camera_2d.cpp
+      camera_3d.cpp
       file_io.cpp
       frame_clock.cpp
       frame_stats.cpp
@@ -345,7 +348,6 @@ cubey/
       image_io.cpp
       input.cpp
       jobs.cpp
-      orbit_camera_3d.cpp
       orbit_controller.cpp
       pan_zoom_2d_controller.cpp
       pointer_drag.cpp

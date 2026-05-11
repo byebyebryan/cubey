@@ -1,5 +1,6 @@
 add_executable(cubey_core_tests
     run_config_tests.cpp
+    camera_manager_tests.cpp
     camera_tests.cpp
     capture_queue_tests.cpp
     command_pool_tests.cpp

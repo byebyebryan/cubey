@@ -84,10 +84,11 @@ Current checkpoint:
   command/sync resources, and per-image present synchronization.
 - Reusable `cubey::FrameClock`, `cubey::Transform2D`, `cubey::Transform3D`,
   `cubey::TransformManager2D`, `cubey::TransformManager3D`, `cubey::Camera2D`,
-  `cubey::OrbitCamera3D`, and `cubey::OrbitController` cover basic frame
-  timing, explicit 2D/3D affine transform boundaries, quaternion-backed 3D
-  rotation, entity-backed parent/child world transforms, shared 2D/3D camera
-  state, and mouse-driven orbit input.
+  `cubey::Camera3D`, `cubey::CameraManager2D`, `cubey::CameraManager3D`, and
+  `cubey::OrbitController` cover basic frame timing, explicit 2D/3D affine
+  transform boundaries, quaternion-backed 3D rotation, entity-backed
+  parent/child world transforms, shared 2D/3D camera state, and mouse-driven
+  orbit input.
 - Reusable `cubey::input::InputState`/`InputFrame` provide per-frame keyboard
   and mouse polling over the GLFW callback stream, with shared pointer-drag,
   camera-backed 2D pan/zoom, and input-aware orbit-control helpers.

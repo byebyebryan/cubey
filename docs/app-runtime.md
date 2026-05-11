@@ -119,9 +119,10 @@ resource creation/destruction, update, command recording, and shutdown.
   for keyboard, mouse button, cursor, drag, and scroll state. Windowed examples
   and projects now read input during `update()` instead of installing local
   callback-driven state machines.
-- `cubey::Camera2D` and `OrbitCamera3D` hold reusable 2D view state and 3D
-  view/projection state. The current examples still own when and how those
-  cameras are applied.
+- `cubey::Camera2D` and `Camera3D` hold reusable 2D view state and 3D
+  projection/view helpers. `OrbitController` and `OrbitCameraState` are layered
+  control helpers for camera orbit behavior rather than standalone camera
+  primitives.
 - `cubey::Transform2D` and `Transform3D` are explicit affine transform value
   types. `Transform2D` uses translation, scalar-radian rotation, and scale to
   produce a `Mat3`; `Transform3D` uses translation, quaternion rotation, and
@@ -129,6 +130,8 @@ resource creation/destruction, update, command recording, and shutdown.
   model-matrix terminology. `TransformManager2D` and `TransformManager3D` now
   provide entity-backed parent/child transform components, cached local-to-world
   affine matrices, scene edit queues, and epoch-local read-view snapshots.
+- `CameraManager2D` and `CameraManager3D` provide entity-backed camera
+  components through the same scene edit/read-view boundary.
 - `cubey::input::PointerDrag`, `PanZoom2DController`, and the input-aware
   `OrbitController` cover the current repeated 2D/3D pointer-control shapes
   without introducing a scene or action-binding system. The pan/zoom controller

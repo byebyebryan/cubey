@@ -291,7 +291,8 @@ Each manager should be explicit:
 ```cpp
 class TransformManager3D;
 class RenderableManager;
-class CameraManager;
+class CameraManager2D;
+class CameraManager3D;
 class LightManager;
 ```
 

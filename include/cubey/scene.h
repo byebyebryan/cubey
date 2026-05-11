@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cubey/camera_manager.h>
 #include <cubey/entity.h>
 #include <cubey/transform_manager.h>
 
@@ -32,6 +33,14 @@ class SceneEditQueue {
         return transforms3d_;
     }
 
+    [[nodiscard]] CameraEditQueue2D& cameras2d() noexcept {
+        return cameras2d_;
+    }
+
+    [[nodiscard]] CameraEditQueue3D& cameras3d() noexcept {
+        return cameras3d_;
+    }
+
   private:
     friend class Scene;
 
@@ -43,6 +52,8 @@ class SceneEditQueue {
     std::vector<Entity> destroyed_entities_{};
     TransformEditQueue2D transforms2d_{};
     TransformEditQueue3D transforms3d_{};
+    CameraEditQueue2D cameras2d_{};
+    CameraEditQueue3D cameras3d_{};
     bool committed_ = false;
 };
 
@@ -68,6 +79,8 @@ class SceneTransaction {
     [[nodiscard]] SceneTransactionEntities entities();
     [[nodiscard]] TransformEditQueue2D& transforms2d() noexcept;
     [[nodiscard]] TransformEditQueue3D& transforms3d() noexcept;
+    [[nodiscard]] CameraEditQueue2D& cameras2d() noexcept;
+    [[nodiscard]] CameraEditQueue3D& cameras3d() noexcept;
     void commit();
 
   private:
@@ -98,6 +111,14 @@ class SceneReadView {
         return transforms3d_;
     }
 
+    [[nodiscard]] const CameraReadView2D& cameras2d() const noexcept {
+        return cameras2d_;
+    }
+
+    [[nodiscard]] const CameraReadView3D& cameras3d() const noexcept {
+        return cameras3d_;
+    }
+
   private:
     void release() noexcept;
 
@@ -105,6 +126,8 @@ class SceneReadView {
     std::uint64_t epoch_ = 0;
     TransformReadView2D transforms2d_{};
     TransformReadView3D transforms3d_{};
+    CameraReadView2D cameras2d_{};
+    CameraReadView3D cameras3d_{};
 };
 
 class Scene {
@@ -136,6 +159,8 @@ class Scene {
     EntityManager entities_{};
     TransformManager2D transforms2d_{};
     TransformManager3D transforms3d_{};
+    CameraManager2D cameras2d_{};
+    CameraManager3D cameras3d_{};
     std::uint64_t current_epoch_ = 0;
     std::mutex edit_mutex_{};
     std::mutex read_mutex_{};

@@ -2,9 +2,9 @@
 
 #include <cubey/app/glfw_window.h>
 #include <cubey/app/windowed_host.h>
+#include <cubey/camera_3d.h>
 #include <cubey/frame_stats.h>
 #include <cubey/math.h>
-#include <cubey/orbit_camera_3d.h>
 #include <cubey/orbit_controller.h>
 #include <cubey/render/mesh.h>
 #include <cubey/render/target.h>
@@ -271,8 +271,8 @@ class TexturedCubeApp {
     }
 
     void create_cube_mesh(cubey::app::WindowedAppContext& context) {
-        mesh_.emplace(context.device(), cubey::render::indexed_mesh_config(kCubeVertices,
-                                                                           kCubeIndices));
+        mesh_.emplace(context.device(),
+                      cubey::render::indexed_mesh_config(kCubeVertices, kCubeIndices));
     }
 
     void create_scene_uniforms(cubey::app::WindowedAppContext& context) {
@@ -377,9 +377,9 @@ class TexturedCubeApp {
         vkCmdDispatch(commands.command_buffer(), groups_x, groups_y, 1);
         commands.submit_and_wait();
 
-        transition_texture_image(context,
-                                 cubey::vulkan::finish_storage_image_write_for_sampling_transition(
-                                     texture().handle()));
+        transition_texture_image(
+            context,
+            cubey::vulkan::finish_storage_image_write_for_sampling_transition(texture().handle()));
     }
 
     void create_descriptors(cubey::app::WindowedAppContext& context) {
@@ -431,15 +431,16 @@ class TexturedCubeApp {
 
     [[nodiscard]] SceneUniforms current_scene_uniforms(VkExtent2D extent) const {
         const cubey::Transform3D transform{
-            .rotation =
-                cubey::math::euler_xyz_quat({orbit_controller_.pitch(), orbit_controller_.yaw(),
-                                             0.0F}),
+            .rotation = cubey::math::euler_xyz_quat(
+                {orbit_controller_.pitch(), orbit_controller_.yaw(), 0.0F}),
         };
         const cubey::math::Mat4 model = transform.affine_matrix();
         const float aspect = static_cast<float>(extent.width) / static_cast<float>(extent.height);
+        const cubey::Transform3D camera_transform =
+            cubey::orbit_camera_transform(cubey::OrbitCameraState{.distance = 4.2F});
 
         return {
-            .mvp = camera_.view_projection_matrix(aspect) * model,
+            .mvp = camera_.view_projection_matrix(camera_transform, aspect) * model,
             .model = model,
             .light_direction = {0.35F, -0.55F, 0.76F, 0.0F},
             .light_color = {0.76F, 0.76F, 0.76F, 1.0F},
@@ -494,9 +495,8 @@ class TexturedCubeApp {
         vkCmdEndRendering(command_buffer);
 
         cubey::vulkan::transition_image_layout(
-            command_buffer,
-            cubey::vulkan::finish_color_attachment_for_present_transition(
-                frame.color_target.image));
+            command_buffer, cubey::vulkan::finish_color_attachment_for_present_transition(
+                                frame.color_target.image));
 
         check(vkEndCommandBuffer(command_buffer), "vkEndCommandBuffer textured_cube");
     }
@@ -572,7 +572,7 @@ class TexturedCubeApp {
     }
 
     RunConfig config_;
-    cubey::OrbitCamera3D camera_;
+    cubey::Camera3D camera_;
     OrbitController orbit_controller_;
 
     std::optional<cubey::render::Mesh> mesh_;

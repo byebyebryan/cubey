@@ -1,8 +1,8 @@
 #include "spinning_cube_app.h"
 
 #include <cubey/app/windowed_host.h>
+#include <cubey/camera_3d.h>
 #include <cubey/math.h>
-#include <cubey/orbit_camera_3d.h>
 #include <cubey/render/mesh.h>
 #include <cubey/render/target.h>
 #include <cubey/spirv_io.h>
@@ -223,8 +223,8 @@ class SpinningCubeApp {
     }
 
     void create_cube_mesh(cubey::app::WindowedAppContext& context) {
-        mesh_.emplace(context.device(), cubey::render::indexed_mesh_config(kCubeVertices,
-                                                                           kCubeIndices));
+        mesh_.emplace(context.device(),
+                      cubey::render::indexed_mesh_config(kCubeVertices, kCubeIndices));
     }
 
     [[nodiscard]] PushConstants current_push_constants(VkExtent2D extent) const {
@@ -236,9 +236,11 @@ class SpinningCubeApp {
             .rotation = cubey::math::euler_xyz_quat({seconds * 0.55F, seconds * 0.9F, 0.0F}),
         };
         const float aspect = static_cast<float>(extent.width) / static_cast<float>(extent.height);
+        const cubey::Transform3D camera_transform =
+            cubey::orbit_camera_transform(cubey::OrbitCameraState{.distance = 4.2F});
 
         return {
-            camera_.view_projection_matrix(aspect) * transform.affine_matrix(),
+            camera_.view_projection_matrix(camera_transform, aspect) * transform.affine_matrix(),
         };
     }
 
@@ -283,9 +285,8 @@ class SpinningCubeApp {
         vkCmdEndRendering(command_buffer);
 
         cubey::vulkan::transition_image_layout(
-            command_buffer,
-            cubey::vulkan::finish_color_attachment_for_present_transition(
-                frame.color_target.image));
+            command_buffer, cubey::vulkan::finish_color_attachment_for_present_transition(
+                                frame.color_target.image));
 
         check(vkEndCommandBuffer(command_buffer), "vkEndCommandBuffer spinning_cube");
     }
@@ -319,7 +320,7 @@ class SpinningCubeApp {
     }
 
     RunConfig config_;
-    cubey::OrbitCamera3D camera_;
+    cubey::Camera3D camera_;
     std::chrono::steady_clock::time_point start_time_ = std::chrono::steady_clock::now();
 
     std::optional<cubey::render::Mesh> mesh_;
