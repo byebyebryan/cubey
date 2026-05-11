@@ -14,6 +14,8 @@
 
 namespace cubey {
 
+class ProjectGpuServices;
+
 struct ProjectExtent {
     std::uint32_t width = 0;
     std::uint32_t height = 0;
@@ -36,8 +38,8 @@ struct RenderPacket {
 class ProjectContext {
   public:
     ProjectContext(jobs::JobSystem& jobs, UploadQueue& uploads, CaptureQueue& captures,
-                   FrameTicketIssuer& frame_tickets,
-                   DeferredDestructionQueue& deferred_destruction);
+                   FrameTicketIssuer& frame_tickets, DeferredDestructionQueue& deferred_destruction,
+                   ProjectGpuServices* gpu = nullptr);
 
     ProjectContext(const ProjectContext&) = delete;
     ProjectContext& operator=(const ProjectContext&) = delete;
@@ -49,6 +51,8 @@ class ProjectContext {
     [[nodiscard]] CaptureQueue& capture_queue() const;
     [[nodiscard]] FrameTicketIssuer& frame_tickets() const;
     [[nodiscard]] DeferredDestructionQueue& deferred_destruction() const;
+    [[nodiscard]] bool has_gpu() const noexcept;
+    [[nodiscard]] ProjectGpuServices& gpu() const;
 
   private:
     jobs::JobSystem* jobs_;
@@ -56,6 +60,7 @@ class ProjectContext {
     CaptureQueue* captures_;
     FrameTicketIssuer* frame_tickets_;
     DeferredDestructionQueue* deferred_destruction_;
+    ProjectGpuServices* gpu_;
 };
 
 class ProjectRuntimeServices {

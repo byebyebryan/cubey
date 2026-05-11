@@ -1,12 +1,15 @@
 #include <cubey/project_runtime.h>
 
+#include <stdexcept>
+
 namespace cubey {
 
 ProjectContext::ProjectContext(jobs::JobSystem& jobs, UploadQueue& uploads, CaptureQueue& captures,
                                FrameTicketIssuer& frame_tickets,
-                               DeferredDestructionQueue& deferred_destruction)
+                               DeferredDestructionQueue& deferred_destruction,
+                               ProjectGpuServices* gpu)
     : jobs_(&jobs), uploads_(&uploads), captures_(&captures), frame_tickets_(&frame_tickets),
-      deferred_destruction_(&deferred_destruction) {}
+      deferred_destruction_(&deferred_destruction), gpu_(gpu) {}
 
 jobs::JobSystem& ProjectContext::jobs() const {
     return *jobs_;
@@ -26,6 +29,17 @@ FrameTicketIssuer& ProjectContext::frame_tickets() const {
 
 DeferredDestructionQueue& ProjectContext::deferred_destruction() const {
     return *deferred_destruction_;
+}
+
+bool ProjectContext::has_gpu() const noexcept {
+    return gpu_ != nullptr;
+}
+
+ProjectGpuServices& ProjectContext::gpu() const {
+    if (gpu_ == nullptr) {
+        throw std::runtime_error("project context has no GPU services");
+    }
+    return *gpu_;
 }
 
 ProjectRuntimeServices::ProjectRuntimeServices(std::size_t worker_count)

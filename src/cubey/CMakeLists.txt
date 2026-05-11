@@ -33,6 +33,7 @@ add_library(cubey STATIC
     orbit_controller.cpp
     pan_zoom_2d_controller.cpp
     pointer_drag.cpp
+    project_gpu_services.cpp
     project_runtime.cpp
     scene.cpp
     render/frame_data.cpp
