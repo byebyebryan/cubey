@@ -9,6 +9,7 @@ then implement narrow slices against it.
 
 Cubey should use a manager-oriented ECS-lite design:
 
+- `Engine` is the scoped root owner for engine services and scene creation.
 - `Entity` is a small generational identity handle with no behavior.
 - `EntityManager` owns entity creation, destruction, liveness, and generation
   validation.
@@ -68,6 +69,11 @@ domain-specific APIs.
 The owner and synchronization boundary for entity/component managers. It
 coordinates edit commits, read-view publication, component cleanup, and
 cross-manager destruction.
+
+`Engine`:
+The non-singleton root owner for engine-wide services and `Scene` instances.
+It creates and destroys scenes, exposes project runtime contexts, and gives
+future engine-wide managers a stable home without making access global.
 
 `SceneEditQueue`:
 A thread-friendly list of requested structural changes and component writes.
@@ -351,6 +357,11 @@ The initial entity/component substrate now exists: `EntityManager`, stable slot
 storage, `Scene` edit/read epochs, and entity-backed 2D/3D transform managers.
 The older transform-only hierarchy has been retired in favor of the manager
 shape described here.
+
+`Engine` now provides the first Filament-style root ownership boundary, but it
+does not own renderer/device setup yet. Windowed and headless hosts remain the
+GPU/platform owners until Cubey defines a higher-level renderer ownership
+contract.
 
 `cubey::render` should continue to own low-level renderer-facing resources and
 draw metadata. It should not become the scene owner. Scene/component managers

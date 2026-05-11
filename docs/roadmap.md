@@ -124,6 +124,9 @@ Current checkpoint:
 - Reusable `cubey::FrameTicketIssuer`, `FrameTicket`, and
   `DeferredDestructionQueue` provide the first frame-ticket retirement
   vocabulary.
+- Reusable `cubey::Engine` provides the first scoped root owner for project
+  runtime services and scene creation/destruction without becoming a singleton
+  or taking over host/device ownership yet.
 - Reusable `cubey::ProjectContext`, `ProjectFrame`, `ProjectExtent`,
   `RenderPacket`, `ProjectRuntimeServices`, `ProjectRuntimeAdapter`, and
   `ProjectLike` provide the first async-ready project runtime vocabulary,

@@ -153,6 +153,9 @@ resource creation/destruction, update, command recording, and shutdown.
 - `headless_render`, `fractal --headless`, and `fluid_2d --headless` use the
   headless host while keeping their resource setup, simulation/update work, and
   capture command recording local.
+- `cubey::Engine` is the first scoped root owner. It owns project runtime
+  services and creates/destroys `Scene` instances, but does not yet own window
+  hosts, headless hosts, Vulkan instance/device setup, or app simulation state.
 - `cubey::ProjectRuntimeServices` now owns project-facing jobs, uploads,
   captures, frame tickets, and deferred destruction.
 - `cubey::ProjectRuntimeAdapter` wraps those services with the repeated

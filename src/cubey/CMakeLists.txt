@@ -20,6 +20,7 @@ add_library(cubey STATIC
     camera_2d.cpp
     orbit_camera_3d.cpp
     capture_queue.cpp
+    engine.cpp
     entity.cpp
     file_io.cpp
     frame_clock.cpp

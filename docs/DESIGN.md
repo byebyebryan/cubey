@@ -118,6 +118,10 @@ The broader entity/component shape is captured in
 move toward manager-oriented, MT-stable component storage with explicit read
 views and edit commits before adding scene/renderable ownership.
 
+`cubey::Engine` is the scoped root owner for engine services and scene
+creation. It is intentionally not a singleton: apps pass `Engine&`, `Scene&`,
+or narrower contexts through the boundaries that need them.
+
 ### Current And Future App Interfaces
 
 Cubey now has two narrow hosts:
@@ -125,6 +129,9 @@ Cubey now has two narrow hosts:
 - `cubey_app` owns GLFW window/surface hosting and the shared windowed loop.
 - `cubey::HeadlessPngHost` owns no-window Vulkan setup, an offscreen RGBA
   target, capture transitions, readback, and PNG artifact writing.
+- `cubey::Engine` owns project runtime services and created scenes. Windowed
+  and headless hosts still own platform and Vulkan setup until a later renderer
+  ownership pass.
 
 Examples and projects still own their shaders, simulation choices, and render
 intent. The library should own durable foundation contracts when those

@@ -320,6 +320,8 @@ Current state:
   upload request queue.
 - `FrameTicketIssuer`, `FrameTicket`, and `DeferredDestructionQueue` provide
   CPU-side ticket retirement vocabulary.
+- `Engine` is the first scoped root owner for project runtime services and
+  scene creation; it intentionally does not own host/device setup yet.
 - `ProjectContext`, `ProjectFrame`, `ProjectExtent`, `RenderPacket`, and
   `ProjectRuntimeServices`, `ProjectRuntimeAdapter`, and `ProjectLike` provide
   the first async-ready project runtime vocabulary, service ownership bundle,
