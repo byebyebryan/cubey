@@ -61,8 +61,8 @@ rendering without turning the library into a generic app engine.
 Completed criteria:
 
 - `cubey` builds as the primary library target and examples link against it.
-- `window_clear`, `triangle`, `spinning_cube`, `textured_cube`, `fractal`, and
-  `particles` open windows and render through dynamic rendering.
+- `window_clear`, `triangle`, `spinning_cube`, `textured_cube`, `shadow_cube`,
+  `fractal`, and `particles` open windows and render through dynamic rendering.
 - Validation-layer smoke can be required from the command line.
 - Resize and swapchain recreation remain first-class tested behavior.
 - Headless smoke renders and writes an inspectable PNG.
@@ -137,9 +137,10 @@ Current checkpoint:
 - Reusable `cubey::render` target, texture, mesh, and draw-item contracts now
   sit above `cubey::vulkan`: windowed/headless color target views,
   dynamic-rendering target setup, generated/uploaded sampled texture ownership,
-  indexed mesh upload, minimal indexed draw recording, explicit frame-slot
-  identity, per-frame uniform buffers, and generational mesh/material handles
-  issued by `RenderResourceRegistry`.
+  sampled depth texture ownership, depth-only rendering setup, indexed mesh
+  upload, minimal indexed draw recording, explicit frame-slot identity,
+  per-frame uniform buffers, and generational mesh/material handles issued by
+  `RenderResourceRegistry`.
 - Reusable `cubey::render::ResourceTable`, `RenderDrawPacket3D`, and
   `build_render_draw_packets_3d` provide the first CPU render-planning layer:
   handle-to-resource resolution, live resource validation, material tag
@@ -149,6 +150,9 @@ Current checkpoint:
   `RenderFramePlan3D` provide the first CPU 3D view-planning boundary over
   `SceneReadView`: camera matrices, viewport aspect, ambient-only environment,
   draw packets, light packets, and conservative CPU frustum culling.
+- Reusable `cubey::render::RenderPassPlan3D` and `FrameRenderPlan3D` provide a
+  small explicit pass-list contract for multi-view and multi-pass command
+  recording without introducing a render graph.
 - Reusable `cubey::vulkan::PipelineLayout`, `GraphicsPipeline`,
   `ComputePipeline`, `DescriptorSetLayout`, and `DescriptorPool` own basic
   pipeline and descriptor lifetimes while still taking raw Vulkan create-info
@@ -163,13 +167,16 @@ Current checkpoint:
 - Reusable `cubey::vulkan::PipelineLayoutInfo` and `ComputePipelineInfo` build
   the current pipeline-layout and compute-pipeline create-info shapes.
 - Reusable `cubey::vulkan::DynamicGraphicsPipelineInfo` builds the current
-  dynamic-rendering graphics pipeline create-info shape for one color
-  attachment plus optional depth and blending, while examples still choose
-  shaders, layouts, vertex input, descriptors, and depth usage explicitly.
+  dynamic-rendering graphics pipeline create-info shape for color and
+  depth-only pipelines, optional depth, and blending, while examples still
+  choose shaders, layouts, vertex input, descriptors, and depth usage
+  explicitly.
 - Reusable `cubey::vulkan` image-transition helpers build the current
-  color/depth/storage/transfer layout transitions, while dynamic-rendering
-  helpers build color/depth attachment descriptors without owning render
-  policy.
+  color/depth/storage/transfer/sampled-depth layout transitions, while
+  dynamic-rendering helpers build color/depth attachment descriptors without
+  owning render policy.
+- Reusable `cubey::vulkan::QueueSubmit` centralizes the current binary-semaphore
+  queue-submit shape used by frame submit and immediate commands.
 - Reusable `cubey::vulkan::RenderContext` exposes explicit `begin_frame` and
   `end_frame` calls for the common surface-backed acquire, command reset,
   submit, present, frame-slot advance, per-image in-flight fence wait, and
@@ -205,6 +212,11 @@ Current checkpoint:
   packet, ambient-only `Environment3D`, dynamic rendering, per-face normals,
   shared GLSL Lambert lighting, shared transform/model matrices, shared camera
   projection, and shared math helpers through the shared app host.
+- `examples/shadow_cube` links against `cubey`, records a manual two-pass frame
+  with a depth-only directional shadow map pass followed by a color pass that
+  samples the depth texture, and exercises orthographic `Camera3D`, sampled
+  depth targets, depth-only dynamic rendering, explicit sampled-depth layout
+  transitions, and CPU pass planning.
 - `examples/headless_render` links against `cubey`, creates no GLFW window or
   surface, renders an offscreen color target through dynamic rendering, copies
   it into a readback buffer, and writes a PNG artifact.

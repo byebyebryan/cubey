@@ -114,6 +114,10 @@ Current state:
   allocation.
 - `ImmediateCommands` owns one-shot setup command submission.
 - `begin_command_buffer` removes repeated begin boilerplate.
+- `end_command_buffer` removes repeated end/check boilerplate.
+- `QueueSubmit`, `submit_to_queue`, and `submit_to_device_queue` centralize the
+  current binary-semaphore `VkSubmitInfo` shape used by frame submit and
+  immediate commands.
 - `copy_buffer` and `upload_device_buffer` cover current setup-time transfers
   into device-local buffers.
 - `copy_buffer_to_image` and `copy_image_to_buffer` cover current one-shot
@@ -123,7 +127,6 @@ Current state:
 Needed next:
 
 - One-shot compute/transfer helper vocabulary.
-- Queue submit wrappers once more submission paths repeat.
 - Per-frame/per-thread command-pool sharding before any parallel command
   recording.
 
@@ -152,6 +155,11 @@ Current state:
   transition, image readback, and PNG artifact write path.
 - `cubey::render::Texture2D` now owns the current generated/uploaded sampled
   texture image shape above the raw Vulkan `Image` and optional `Sampler`.
+- `cubey::render::DepthTexture` owns sampled depth image setup for shadow maps
+  and other depth-as-texture paths above the raw Vulkan `Image` and optional
+  `Sampler`.
+- `SamplerConfig` exposes border color, compare enable/op, and mipmap mode so
+  shadow and edge-clamped sampling policy can be explicit.
 - Examples still own some resource policy, including when transfers and
   readback are used.
 - GPU upload and capture behavior is still direct/blocking at the current
@@ -209,8 +217,9 @@ Current state:
   through `spirv_io` for shader module creation.
 - `PipelineLayout`, `GraphicsPipeline`, and `ComputePipeline` own pipeline
   lifetime.
-- `DynamicGraphicsPipelineInfo` builds the current single-color-attachment
-  dynamic graphics pipeline create-info shape with optional depth and blending.
+- `DynamicGraphicsPipelineInfo` builds the current dynamic graphics pipeline
+  create-info shape for color or depth-only dynamic-rendering targets, with
+  optional depth and blending where applicable.
 - `PipelineLayoutInfo` builds pipeline layout create-info for descriptor set
   layouts and push constants.
 - `ComputePipelineInfo` builds the current compute pipeline create-info shape.
@@ -238,6 +247,11 @@ Current state:
 - `cubey::render::ColorTargetView`, `DepthTargetView`, `RenderTargetView`, and
   `RenderTargetRenderingInfo` provide target vocabulary and dynamic-rendering
   setup above Vulkan without owning layout transitions.
+- `cubey::render::DepthOnlyRenderingInfo` provides depth-only dynamic-rendering
+  setup for sampled depth targets while preserving explicit command-buffer
+  scope and layout ownership.
+- `image_transitions` covers depth-attachment-to-sampled and
+  sampled-depth-to-depth-attachment transitions for repeated shadow-map writes.
 
 Needed next:
 
@@ -259,6 +273,9 @@ Current state:
   ownership and draw recording.
 - `examples/textured_cube` uses `cubey::render::Texture2D` for its
   compute-generated sampled texture ownership.
+- `examples/shadow_cube` uses `cubey::render::DepthTexture`,
+  `DepthOnlyRenderingInfo`, depth-only pipeline setup, and explicit sampled
+  depth transitions for a directional shadow map.
 - Cube examples use the shared GLM-backed `cubey::math` wrapper for MVP/model
   matrices and Vulkan clip-space projection conventions.
 - `examples/particles` still defines particle storage-buffer layout, seeding,
@@ -574,10 +591,36 @@ systems depend on them.
   self-parenting, cycles, stale entities, and direct destruction of transforms
   with children.
 
+### Batch 11: Multipass Shadow Foundation
+
+Goal: establish the smallest useful foundation for multi-view, multi-pass
+rendering without introducing a render graph.
+
+- Status: initial pass complete on `main`.
+- Added `FrameRenderPlan3D`, `RenderPassPlan3D`, and `RenderPassKind3D` as a
+  CPU pass-list contract over existing `RenderFramePlan3D` values.
+- Added `build_render_frame_plans_3d` for building multiple view plans from one
+  committed `SceneReadView`.
+- Centralized current queue submission create-info setup through
+  `QueueSubmit`.
+- Added sampled depth target support through `DepthTexture`,
+  `DepthOnlyRenderingInfo`, shadow-friendly sampler config, and sampled-depth
+  layout transitions.
+- Added orthographic `Camera3D` support for light views.
+- Added `examples/shadow_cube` as the reference: depth-only shadow pass into a
+  sampled depth texture, then a color pass that samples it.
+
+Still intentionally deferred:
+
+- render graph/frame graph scheduling;
+- automatic barrier insertion;
+- shadow atlas/cascades/filtering policy;
+- renderer-owned materials or light upload policy.
+
 ## Near-Term Recommendation
 
-Batch 1 through Batch 10 have their first passes on `main`, and the entity/read
-view substrate has started. The next foundation decision should build on
-`Scene` and transform managers: add another manager contract such as renderable,
-camera, light, or bounds, or define the first render-packet path from
-`SceneReadView`.
+Batch 1 through Batch 11 have their first passes on `main`. Cubey now has the
+first scene/read-view, render-packet, and multipass shadow-map foundation. The
+next foundation decision should either deepen render command ownership
+carefully, such as command buffer/request queues, or add a narrow resource or
+manager contract that a larger project can immediately use.

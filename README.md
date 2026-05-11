@@ -24,6 +24,8 @@ Current examples:
 - `triangle`: build-time GLSL shaders and dynamic graphics pipeline setup.
 - `spinning_cube`: indexed cube with shared transform/camera math and depth.
 - `textured_cube`: compute-generated texture, descriptors, scene lighting, and input.
+- `shadow_cube`: two-pass directional shadow map using sampled depth and
+  depth-only dynamic rendering.
 - `headless_render`: no-window offscreen PNG path.
 - `fractal`: fullscreen Mandelbrot-style shader with windowed navigation and
   headless output.
@@ -73,6 +75,7 @@ Useful windowed smokes:
 ```bash
 ./build/dev/examples/spinning_cube/spinning_cube --frames 300 --width 1280 --height 720
 ./build/dev/examples/textured_cube/textured_cube --frames 300 --width 1280 --height 720
+./build/dev/examples/shadow_cube/shadow_cube --frames 300 --width 1280 --height 720
 ./build/dev/examples/fractal/fractal --frames 300 --width 1280 --height 720
 ./build/dev/examples/particles/particles --frames 300 --width 1280 --height 720
 ./build/dev/projects/fluid_2d/fluid_2d --frames 300 --width 1280 --height 720
@@ -93,6 +96,7 @@ layers are installed.
 
 - `textured_cube`: left-drag rotates, Space pauses/resumes auto-rotation, `R`
   resets, Escape closes.
+- `shadow_cube`: left-drag orbits the camera, Escape closes.
 - `fractal`: left-drag pans, mouse wheel zooms around the cursor, `R` resets,
   Escape closes.
 - `particles`: Space pauses/resumes compute updates, `R` resets, Escape closes.

@@ -11,7 +11,7 @@ The first renderer slice creates small contracts for concepts that are already
 stable across the repo:
 
 - render target views for swapchain and offscreen color targets, with optional
-  depth targets;
+  depth targets and sampled depth targets;
 - a frame-facing target contract that hosts can pass to examples and projects;
 - texture and mesh resource wrappers that own Vulkan resources without hiding
   layout transitions or descriptor updates;
@@ -80,12 +80,18 @@ full engine architecture.
   swapchain and offscreen targets without owning layout transitions.
 - `RenderTargetRenderingInfo` builds dynamic rendering attachment state from a
   target view and clear values while keeping command-buffer scope explicit.
+- `DepthOnlyRenderingInfo` builds the depth-only dynamic-rendering state needed
+  by shadow-map and prepass-style work. It deliberately stores depth so the
+  caller can transition and sample it later.
 - `WindowedHost` passes `WindowedRenderFrame` to render callbacks, including the
   command buffer, swapchain image index, timing, and color target view.
 - `HeadlessRenderTarget` is now the same target-view vocabulary as
   `cubey::render::ColorTargetView`.
 - `Texture2D` owns a Vulkan image plus an optional sampler for the current
   storage-sampled and transfer-sampled texture paths.
+- `DepthTexture` owns a sampled depth image plus an optional sampler for shadow
+  maps and other depth-as-texture paths. Layout transitions and descriptor
+  image layouts stay explicit at the call site.
 - `Mesh`, `DrawItem`, and `record_draw_item` own uploaded indexed geometry and
   record the minimal bind/draw sequence. Vertex layout, pipeline state,
   descriptors, materials, transforms, and push constants remain caller-owned.
@@ -106,6 +112,9 @@ full engine architecture.
   viewport size, ambient-only environment, draw packets, light packets, and
   conservative CPU frustum culling. Vulkan command recording, pipeline
   selection, descriptor binding, and pass ordering remain caller-owned.
+- `RenderPassPlan3D` and `FrameRenderPlan3D` provide a small CPU-side pass list
+  for multi-view and multi-pass examples. They preserve explicit pass order and
+  pass kind without becoming a render graph or scheduler.
 - `RenderableManager3D` lives in the scene/component layer and emits compact
   renderable packets with world matrices, world bounds, and resource handles.
   The cube
@@ -121,3 +130,13 @@ full engine architecture.
   `FrameUniformBuffer<T>` owns one host-visible uniform buffer per frame slot.
   The current windowed host uses real frame slots for overlapping frame
   resources, while swapchain image ownership stays Vulkan-visible.
+
+## Multipass Direction
+
+`examples/shadow_cube` is the current reference for manual multipass rendering:
+build a shadow `View3D`, build a camera `View3D`, record a depth-only pass into
+a `DepthTexture`, transition that image for shader reads, then record the color
+pass that samples it. The reusable foundation intentionally stops at view/pass
+planning, target/texture ownership, layout-transition helpers, and depth-only
+rendering info. Render-graph scheduling, automatic resource barriers, material
+binding, and shadow policy remain future work.

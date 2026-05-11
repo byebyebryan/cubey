@@ -111,7 +111,9 @@ Reusable spatial types should stay explicit and narrow:
   snapshots through `Scene` commits and are the first scene/component managers,
   not a full scene graph.
 - `Camera2D` and `Camera3D` own view/projection state separately from transform
-  component ownership. `OrbitCameraState` and `OrbitController` are control
+  component ownership. `Camera3D` supports perspective and orthographic
+  projection modes so normal scene cameras and light/shadow views share the
+  same camera contract. `OrbitCameraState` and `OrbitController` are control
   helpers layered on top of `Camera3D`, not camera primitives.
 - `RenderableManager3D` owns entity-backed 3D renderable components and builds
   CPU-side renderable packets from committed scene read views. Renderables use
@@ -123,6 +125,9 @@ Reusable spatial types should stay explicit and narrow:
 - `cubey::render::View3D` is the first renderer-facing view contract. It
   combines a scene read view, camera entity, viewport size, ambient-only
   environment, renderables, and lights into a CPU `RenderFramePlan3D`.
+- `cubey::render::FrameRenderPlan3D` is the first renderer-facing pass-list
+  contract. It can describe manual multi-view/multi-pass work such as a shadow
+  pass plus a camera pass while leaving scheduling and synchronization explicit.
 - `cubey::render` can turn renderable packets into CPU draw packets by
   validating resource handles, attaching material tags, sorting them, computing
   world bounds, and frustum-culling visible renderables. This is a planning

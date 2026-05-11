@@ -36,8 +36,8 @@ versioned section and use that section as the release notes.
   `stb_image_write`.
 - Public Vulkan pipeline and descriptor RAII types, plus descriptor write
   helpers, pipeline-layout create-info helpers, a compute pipeline create-info
-  helper, and a dynamic graphics pipeline create-info helper for the current
-  single-color-attachment path.
+  helper, and a dynamic graphics pipeline create-info helper for current color
+  and depth-only dynamic-rendering paths.
 - Public Vulkan descriptor set info and bundle helpers that own the repeated
   descriptor layout, pool, and single descriptor-set allocation path.
 - Public Vulkan dynamic graphics pipeline blend controls and a storage-buffer
@@ -85,6 +85,9 @@ versioned section and use that section as the release notes.
 - `examples/textured_cube`, an interactive shaded cube that generates texture
   data through a setup-time compute shader and samples it in the graphics pass
   with descriptor-backed scene uniforms and dynamic rendering.
+- `examples/shadow_cube`, a two-pass directional shadow-map example using a
+  sampled depth texture, depth-only dynamic rendering, orthographic light view,
+  and explicit sampled-depth layout transitions.
 - `examples/headless_render`, a no-window Vulkan smoke that renders an
   offscreen color target, reads it back, and writes a PNG artifact.
 - `examples/fractal`, a fullscreen Mandelbrot-style shader smoke with
@@ -103,6 +106,10 @@ versioned section and use that section as the release notes.
 - Shared CMake CTest smoke helpers for windowed and headless example targets.
 - Optional `cubey_app` target with a GLFW window/surface host, pointer/key input
   dispatch, and the shared windowed app loop.
+- Public `cubey::render` pass planning, sampled depth texture, and depth-only
+  rendering-info helpers for multi-view/multipass examples.
+- Public Vulkan queue submit, sampled-depth transition, sampler config, and
+  depth-only dynamic graphics pipeline support for shadow-map style work.
 
 ### Changed
 
@@ -150,6 +157,8 @@ versioned section and use that section as the release notes.
 - `fluid_2d` simulation steps now consume `ProjectFrame` values from shared
   project runtime adapter in both windowed and headless modes, while keeping
   Vulkan command recording and resource policy project-local.
+- `Camera3D` now supports orthographic projection in addition to perspective
+  projection.
 
 ## Pre-2.0 History
 
