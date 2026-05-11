@@ -7,9 +7,11 @@
 #include <cubey/math.h>
 #include <cubey/orbit_controller.h>
 #include <cubey/render/mesh.h>
+#include <cubey/render/resource_handle.h>
 #include <cubey/render/target.h>
 #include <cubey/render/texture.h>
 #include <cubey/render/uniform_buffer.h>
+#include <cubey/scene.h>
 #include <cubey/spirv_io.h>
 #include <cubey/transform_3d.h>
 #include <cubey/vulkan/command_pool.h>
@@ -102,6 +104,9 @@ constexpr std::array<std::uint16_t, 36> kCubeIndices{{
     12, 13, 14, 12, 14, 15, 16, 17, 18, 16, 18, 19, 20, 21, 22, 20, 22, 23,
 }};
 
+constexpr cubey::render::MeshHandle kCubeMeshHandle{.index = 1, .generation = 1};
+constexpr cubey::render::MaterialHandle kCubeMaterialHandle{.index = 1, .generation = 1};
+
 class TexturedCubeApp {
   public:
     explicit TexturedCubeApp(RunConfig config) : config_(std::move(config)) {}
@@ -180,6 +185,7 @@ class TexturedCubeApp {
             return;
         }
         create_cube_mesh(context);
+        create_scene();
         create_scene_uniforms(context);
         create_texture_resources(context);
     }
@@ -273,6 +279,31 @@ class TexturedCubeApp {
     void create_cube_mesh(cubey::app::WindowedAppContext& context) {
         mesh_.emplace(context.device(),
                       cubey::render::indexed_mesh_config(kCubeVertices, kCubeIndices));
+    }
+
+    void create_scene() {
+        cubey::SceneTransaction setup = scene_.begin_transaction();
+        cube_entity_ = setup.entities().create();
+        camera_entity_ = setup.entities().create();
+        setup.transforms3d().create(cube_entity_, cubey::Transform3D{});
+        setup.renderables3d().create(cube_entity_, cubey::Renderable3D{
+                                                       .primitives =
+                                                           {
+                                                               cubey::RenderablePrimitive3D{
+                                                                   .mesh = kCubeMeshHandle,
+                                                                   .material = kCubeMaterialHandle,
+                                                               },
+                                                           },
+                                                       .local_bounds =
+                                                           cubey::Bounds3D{
+                                                               .center = {0.0F, 0.0F, 0.0F},
+                                                               .half_extent = {1.0F, 1.0F, 1.0F},
+                                                           },
+                                                   });
+        setup.transforms3d().create(camera_entity_, cubey::orbit_camera_transform(
+                                                        cubey::OrbitCameraState{.distance = 4.2F}));
+        setup.cameras3d().create(camera_entity_, cubey::Camera3D{});
+        setup.commit();
     }
 
     void create_scene_uniforms(cubey::app::WindowedAppContext& context) {
@@ -429,33 +460,56 @@ class TexturedCubeApp {
         descriptors_.reset();
     }
 
-    [[nodiscard]] SceneUniforms current_scene_uniforms(VkExtent2D extent) const {
+    void update_scene_transform() {
         const cubey::Transform3D transform{
             .rotation = cubey::math::euler_xyz_quat(
                 {orbit_controller_.pitch(), orbit_controller_.yaw(), 0.0F}),
         };
-        const cubey::math::Mat4 model = transform.affine_matrix();
+        cubey::SceneEditQueue edits = scene_.create_edit_queue();
+        edits.transforms3d().set_local_transform(cube_entity_, transform);
+        scene_.commit(edits);
+    }
+
+    [[nodiscard]] SceneUniforms current_scene_uniforms(const cubey::SceneReadView& view,
+                                                       const cubey::RenderablePacket3D& packet,
+                                                       VkExtent2D extent) const {
         const float aspect = static_cast<float>(extent.width) / static_cast<float>(extent.height);
-        const cubey::Transform3D camera_transform =
-            cubey::orbit_camera_transform(cubey::OrbitCameraState{.distance = 4.2F});
+        const cubey::CameraInstance3D camera = view.cameras3d().instance(camera_entity_);
 
         return {
-            .mvp = camera_.view_projection_matrix(camera_transform, aspect) * model,
-            .model = model,
+            .mvp = view.cameras3d().view_projection_matrix(camera, view.transforms3d(), aspect) *
+                   packet.world_affine_matrix,
+            .model = packet.world_affine_matrix,
             .light_direction = {0.35F, -0.55F, 0.76F, 0.0F},
             .light_color = {0.76F, 0.76F, 0.76F, 1.0F},
             .ambient_color = {0.24F, 0.24F, 0.24F, 1.0F},
         };
     }
 
-    void update_scene_uniforms(VkExtent2D extent, cubey::render::FrameSlot frame_slot) {
-        const SceneUniforms uniforms = current_scene_uniforms(extent);
+    void update_scene_uniforms(const cubey::SceneReadView& view,
+                               const cubey::RenderablePacket3D& packet, VkExtent2D extent,
+                               cubey::render::FrameSlot frame_slot) {
+        const SceneUniforms uniforms = current_scene_uniforms(view, packet, extent);
         scene_uniforms().upload(frame_slot, uniforms);
+    }
+
+    [[nodiscard]] cubey::RenderablePacket3D
+    current_render_packet(const cubey::SceneReadView& view) const {
+        const std::vector<cubey::RenderablePacket3D> packets =
+            cubey::build_renderable_packets_3d(view.renderables3d(), view.transforms3d());
+        if (packets.size() != 1) {
+            throw std::runtime_error("textured_cube scene should produce one renderable packet");
+        }
+        return packets[0];
     }
 
     void record_cube_frame(const cubey::app::WindowedRenderFrame& frame) {
         const VkCommandBuffer command_buffer = frame.command_buffer;
-        update_scene_uniforms(frame.color_target.extent, frame.frame_slot);
+        update_scene_transform();
+        cubey::SceneReadView scene_view = scene_.read();
+        const cubey::RenderablePacket3D render_packet = current_render_packet(scene_view);
+        update_scene_uniforms(scene_view, render_packet, frame.color_target.extent,
+                              frame.frame_slot);
 
         cubey::vulkan::begin_command_buffer(command_buffer,
                                             VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
@@ -485,11 +539,11 @@ class TexturedCubeApp {
         vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
                                 pipeline_layout().handle(), 0, 1, &descriptor_set, 0, nullptr);
         const cubey::render::DrawItem draw_item{
-            .mesh = &mesh(),
-            .instance_count = 1,
-            .first_index = 0,
-            .vertex_offset = 0,
-            .first_instance = 0,
+            .mesh = &mesh(render_packet.mesh),
+            .instance_count = render_packet.instance_count,
+            .first_index = render_packet.first_index,
+            .vertex_offset = render_packet.vertex_offset,
+            .first_instance = render_packet.first_instance,
         };
         cubey::render::record_draw_item(command_buffer, draw_item);
         vkCmdEndRendering(command_buffer);
@@ -501,7 +555,10 @@ class TexturedCubeApp {
         check(vkEndCommandBuffer(command_buffer), "vkEndCommandBuffer textured_cube");
     }
 
-    [[nodiscard]] const cubey::render::Mesh& mesh() const {
+    [[nodiscard]] const cubey::render::Mesh& mesh(cubey::render::MeshHandle handle) const {
+        if (handle != kCubeMeshHandle) {
+            throw std::runtime_error("unknown textured_cube mesh handle");
+        }
         if (!mesh_.has_value()) {
             throw std::runtime_error("cube mesh is not initialized");
         }
@@ -572,7 +629,9 @@ class TexturedCubeApp {
     }
 
     RunConfig config_;
-    cubey::Camera3D camera_;
+    cubey::Scene scene_;
+    cubey::Entity cube_entity_;
+    cubey::Entity camera_entity_;
     OrbitController orbit_controller_;
 
     std::optional<cubey::render::Mesh> mesh_;

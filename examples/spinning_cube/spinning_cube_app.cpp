@@ -4,7 +4,9 @@
 #include <cubey/camera_3d.h>
 #include <cubey/math.h>
 #include <cubey/render/mesh.h>
+#include <cubey/render/resource_handle.h>
 #include <cubey/render/target.h>
+#include <cubey/scene.h>
 #include <cubey/spirv_io.h>
 #include <cubey/transform_3d.h>
 #include <cubey/vulkan/command_pool.h>
@@ -82,6 +84,9 @@ constexpr std::array<std::uint16_t, 36> kCubeIndices{{
     12, 13, 14, 12, 14, 15, 16, 17, 18, 16, 18, 19, 20, 21, 22, 20, 22, 23,
 }};
 
+constexpr cubey::render::MeshHandle kCubeMeshHandle{.index = 1, .generation = 1};
+constexpr cubey::render::MaterialHandle kCubeMaterialHandle{.index = 1, .generation = 1};
+
 class SpinningCubeApp {
   public:
     explicit SpinningCubeApp(RunConfig config) : config_(std::move(config)) {}
@@ -142,6 +147,7 @@ class SpinningCubeApp {
             return;
         }
         create_cube_mesh(context);
+        create_scene();
     }
 
     void create_swapchain_resources(cubey::app::WindowedAppContext& context) {
@@ -227,7 +233,32 @@ class SpinningCubeApp {
                       cubey::render::indexed_mesh_config(kCubeVertices, kCubeIndices));
     }
 
-    [[nodiscard]] PushConstants current_push_constants(VkExtent2D extent) const {
+    void create_scene() {
+        cubey::SceneTransaction setup = scene_.begin_transaction();
+        cube_entity_ = setup.entities().create();
+        camera_entity_ = setup.entities().create();
+        setup.transforms3d().create(cube_entity_, cubey::Transform3D{});
+        setup.renderables3d().create(cube_entity_, cubey::Renderable3D{
+                                                       .primitives =
+                                                           {
+                                                               cubey::RenderablePrimitive3D{
+                                                                   .mesh = kCubeMeshHandle,
+                                                                   .material = kCubeMaterialHandle,
+                                                               },
+                                                           },
+                                                       .local_bounds =
+                                                           cubey::Bounds3D{
+                                                               .center = {0.0F, 0.0F, 0.0F},
+                                                               .half_extent = {1.0F, 1.0F, 1.0F},
+                                                           },
+                                                   });
+        setup.transforms3d().create(camera_entity_, cubey::orbit_camera_transform(
+                                                        cubey::OrbitCameraState{.distance = 4.2F}));
+        setup.cameras3d().create(camera_entity_, cubey::Camera3D{});
+        setup.commit();
+    }
+
+    void update_scene_transform() {
         const auto now = std::chrono::steady_clock::now();
         const float seconds =
             static_cast<float>(std::chrono::duration<double>(now - start_time_).count());
@@ -235,16 +266,37 @@ class SpinningCubeApp {
         const cubey::Transform3D transform{
             .rotation = cubey::math::euler_xyz_quat({seconds * 0.55F, seconds * 0.9F, 0.0F}),
         };
+        cubey::SceneEditQueue edits = scene_.create_edit_queue();
+        edits.transforms3d().set_local_transform(cube_entity_, transform);
+        scene_.commit(edits);
+    }
+
+    [[nodiscard]] PushConstants current_push_constants(const cubey::SceneReadView& view,
+                                                       const cubey::RenderablePacket3D& packet,
+                                                       VkExtent2D extent) const {
         const float aspect = static_cast<float>(extent.width) / static_cast<float>(extent.height);
-        const cubey::Transform3D camera_transform =
-            cubey::orbit_camera_transform(cubey::OrbitCameraState{.distance = 4.2F});
+        const cubey::CameraInstance3D camera = view.cameras3d().instance(camera_entity_);
 
         return {
-            camera_.view_projection_matrix(camera_transform, aspect) * transform.affine_matrix(),
+            view.cameras3d().view_projection_matrix(camera, view.transforms3d(), aspect) *
+                packet.world_affine_matrix,
         };
     }
 
+    [[nodiscard]] cubey::RenderablePacket3D
+    current_render_packet(const cubey::SceneReadView& view) const {
+        const std::vector<cubey::RenderablePacket3D> packets =
+            cubey::build_renderable_packets_3d(view.renderables3d(), view.transforms3d());
+        if (packets.size() != 1) {
+            throw std::runtime_error("spinning_cube scene should produce one renderable packet");
+        }
+        return packets[0];
+    }
+
     void record_cube_frame(const cubey::app::WindowedRenderFrame& frame) {
+        update_scene_transform();
+        cubey::SceneReadView scene_view = scene_.read();
+        const cubey::RenderablePacket3D render_packet = current_render_packet(scene_view);
         const VkCommandBuffer command_buffer = frame.command_buffer;
         cubey::vulkan::begin_command_buffer(command_buffer,
                                             VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
@@ -268,16 +320,17 @@ class SpinningCubeApp {
         };
         const cubey::render::RenderTargetRenderingInfo rendering(target, clear_values);
 
-        const PushConstants push_constants = current_push_constants(frame.color_target.extent);
+        const PushConstants push_constants =
+            current_push_constants(scene_view, render_packet, frame.color_target.extent);
 
         vkCmdBeginRendering(command_buffer, &rendering.info());
         vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline().handle());
         const cubey::render::DrawItem draw_item{
-            .mesh = &mesh(),
-            .instance_count = 1,
-            .first_index = 0,
-            .vertex_offset = 0,
-            .first_instance = 0,
+            .mesh = &mesh(render_packet.mesh),
+            .instance_count = render_packet.instance_count,
+            .first_index = render_packet.first_index,
+            .vertex_offset = render_packet.vertex_offset,
+            .first_instance = render_packet.first_instance,
         };
         vkCmdPushConstants(command_buffer, pipeline_layout().handle(), VK_SHADER_STAGE_VERTEX_BIT,
                            0, sizeof(PushConstants), &push_constants);
@@ -291,7 +344,10 @@ class SpinningCubeApp {
         check(vkEndCommandBuffer(command_buffer), "vkEndCommandBuffer spinning_cube");
     }
 
-    [[nodiscard]] const cubey::render::Mesh& mesh() const {
+    [[nodiscard]] const cubey::render::Mesh& mesh(cubey::render::MeshHandle handle) const {
+        if (handle != kCubeMeshHandle) {
+            throw std::runtime_error("unknown spinning_cube mesh handle");
+        }
         if (!mesh_.has_value()) {
             throw std::runtime_error("cube mesh is not initialized");
         }
@@ -320,7 +376,9 @@ class SpinningCubeApp {
     }
 
     RunConfig config_;
-    cubey::Camera3D camera_;
+    cubey::Scene scene_;
+    cubey::Entity cube_entity_;
+    cubey::Entity camera_entity_;
     std::chrono::steady_clock::time_point start_time_ = std::chrono::steady_clock::now();
 
     std::optional<cubey::render::Mesh> mesh_;
