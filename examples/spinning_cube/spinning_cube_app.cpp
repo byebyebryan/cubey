@@ -5,7 +5,9 @@
 #include <cubey/engine.h>
 #include <cubey/math.h>
 #include <cubey/render/mesh.h>
+#include <cubey/render/render_plan.h>
 #include <cubey/render/resource_handle.h>
+#include <cubey/render/resource_table.h>
 #include <cubey/render/target.h>
 #include <cubey/scene.h>
 #include <cubey/spirv_io.h>
@@ -146,13 +148,13 @@ class SpinningCubeApp {
 
   private:
     void create_global_resources_if_needed(cubey::app::WindowedAppContext& context) {
-        if (mesh_.has_value()) {
+        if (meshes_.contains(cube_mesh_handle_)) {
             return;
         }
-        create_cube_mesh(context);
         cube_mesh_handle_ = engine_.render_resources().create_mesh("spinning_cube.cube");
         cube_material_handle_ =
             engine_.render_resources().create_material("spinning_cube.material");
+        create_cube_mesh(context);
         create_scene();
     }
 
@@ -171,7 +173,6 @@ class SpinningCubeApp {
         destroy_swapchain_resources();
         destroy_scene_if_needed();
         destroy_render_handles();
-        mesh_.reset();
     }
 
     void create_pipeline(cubey::app::WindowedAppContext& context) {
@@ -237,8 +238,8 @@ class SpinningCubeApp {
     }
 
     void create_cube_mesh(cubey::app::WindowedAppContext& context) {
-        mesh_.emplace(context.device(),
-                      cubey::render::indexed_mesh_config(kCubeVertices, kCubeIndices));
+        meshes_.emplace(cube_mesh_handle_, context.device(),
+                        cubey::render::indexed_mesh_config(kCubeVertices, kCubeIndices));
     }
 
     void create_scene() {
@@ -281,9 +282,10 @@ class SpinningCubeApp {
         scene().commit(edits);
     }
 
-    [[nodiscard]] PushConstants current_push_constants(const cubey::SceneReadView& view,
-                                                       const cubey::RenderablePacket3D& packet,
-                                                       VkExtent2D extent) const {
+    [[nodiscard]] PushConstants
+    current_push_constants(const cubey::SceneReadView& view,
+                           const cubey::render::RenderDrawPacket3D& packet,
+                           VkExtent2D extent) const {
         const float aspect = static_cast<float>(extent.width) / static_cast<float>(extent.height);
         const cubey::CameraInstance3D camera = view.cameras3d().instance(camera_entity_);
 
@@ -293,19 +295,22 @@ class SpinningCubeApp {
         };
     }
 
-    [[nodiscard]] cubey::RenderablePacket3D
-    current_render_packet(const cubey::SceneReadView& view) const {
-        const std::vector<cubey::RenderablePacket3D> packets =
+    [[nodiscard]] cubey::render::RenderDrawPacket3D
+    current_draw_packet(const cubey::SceneReadView& view) const {
+        const std::vector<cubey::RenderablePacket3D> renderable_packets =
             cubey::build_renderable_packets_3d(view.renderables3d(), view.transforms3d());
-        if (packets.size() != 1) {
-            throw std::runtime_error("spinning_cube scene should produce one renderable packet");
+        const std::vector<cubey::render::RenderDrawPacket3D> draw_packets =
+            cubey::render::build_render_draw_packets_3d(renderable_packets,
+                                                        engine_.render_resources());
+        if (draw_packets.size() != 1) {
+            throw std::runtime_error("spinning_cube scene should produce one draw packet");
         }
-        return packets[0];
+        return draw_packets[0];
     }
 
     void record_cube_frame(const cubey::app::WindowedRenderFrame& frame) {
         cubey::SceneReadView scene_view = scene().read();
-        const cubey::RenderablePacket3D render_packet = current_render_packet(scene_view);
+        const cubey::render::RenderDrawPacket3D draw_packet = current_draw_packet(scene_view);
         const VkCommandBuffer command_buffer = frame.command_buffer;
         cubey::vulkan::begin_command_buffer(command_buffer,
                                             VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
@@ -330,16 +335,16 @@ class SpinningCubeApp {
         const cubey::render::RenderTargetRenderingInfo rendering(target, clear_values);
 
         const PushConstants push_constants =
-            current_push_constants(scene_view, render_packet, frame.color_target.extent);
+            current_push_constants(scene_view, draw_packet, frame.color_target.extent);
 
         vkCmdBeginRendering(command_buffer, &rendering.info());
         vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline().handle());
         const cubey::render::DrawItem draw_item{
-            .mesh = &mesh(render_packet.mesh),
-            .instance_count = render_packet.instance_count,
-            .first_index = render_packet.first_index,
-            .vertex_offset = render_packet.vertex_offset,
-            .first_instance = render_packet.first_instance,
+            .mesh = &mesh(draw_packet.mesh),
+            .instance_count = draw_packet.instance_count,
+            .first_index = draw_packet.first_index,
+            .vertex_offset = draw_packet.vertex_offset,
+            .first_instance = draw_packet.first_instance,
         };
         vkCmdPushConstants(command_buffer, pipeline_layout().handle(), VK_SHADER_STAGE_VERTEX_BIT,
                            0, sizeof(PushConstants), &push_constants);
@@ -354,13 +359,7 @@ class SpinningCubeApp {
     }
 
     [[nodiscard]] const cubey::render::Mesh& mesh(cubey::render::MeshHandle handle) const {
-        if (handle != cube_mesh_handle_) {
-            throw std::runtime_error("unknown spinning_cube mesh handle");
-        }
-        if (!mesh_.has_value()) {
-            throw std::runtime_error("cube mesh is not initialized");
-        }
-        return mesh_.value();
+        return meshes_.at(handle);
     }
 
     [[nodiscard]] cubey::Scene& scene() {
@@ -381,6 +380,9 @@ class SpinningCubeApp {
     }
 
     void destroy_render_handles() {
+        if (meshes_.contains(cube_mesh_handle_)) {
+            meshes_.erase(cube_mesh_handle_);
+        }
         if (engine_.render_resources().is_alive(cube_mesh_handle_)) {
             engine_.render_resources().destroy_mesh(cube_mesh_handle_);
             cube_mesh_handle_ = {};
@@ -421,7 +423,7 @@ class SpinningCubeApp {
     cubey::render::MaterialHandle cube_material_handle_{};
     std::chrono::steady_clock::time_point start_time_ = std::chrono::steady_clock::now();
 
-    std::optional<cubey::render::Mesh> mesh_;
+    cubey::render::MeshResourceTable<cubey::render::Mesh> meshes_;
     std::optional<cubey::vulkan::PipelineLayout> pipeline_layout_;
     std::optional<cubey::vulkan::GraphicsPipeline> pipeline_;
     std::optional<cubey::vulkan::DepthAttachment> depth_attachment_;

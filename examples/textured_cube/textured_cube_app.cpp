@@ -8,7 +8,9 @@
 #include <cubey/math.h>
 #include <cubey/orbit_controller.h>
 #include <cubey/render/mesh.h>
+#include <cubey/render/render_plan.h>
 #include <cubey/render/resource_handle.h>
+#include <cubey/render/resource_table.h>
 #include <cubey/render/target.h>
 #include <cubey/render/texture.h>
 #include <cubey/render/uniform_buffer.h>
@@ -180,13 +182,13 @@ class TexturedCubeApp {
 
   private:
     void create_global_resources_if_needed(cubey::app::WindowedAppContext& context) {
-        if (mesh_.has_value()) {
+        if (meshes_.contains(cube_mesh_handle_)) {
             return;
         }
-        create_cube_mesh(context);
         cube_mesh_handle_ = engine_.render_resources().create_mesh("textured_cube.cube");
         cube_material_handle_ =
             engine_.render_resources().create_material("textured_cube.material");
+        create_cube_mesh(context);
         create_scene();
         create_scene_uniforms(context);
         create_texture_resources(context);
@@ -211,7 +213,6 @@ class TexturedCubeApp {
         destroy_render_handles();
         texture_.reset();
         scene_uniforms_.reset();
-        mesh_.reset();
     }
 
     void create_pipeline(cubey::app::WindowedAppContext& context) {
@@ -281,8 +282,8 @@ class TexturedCubeApp {
     }
 
     void create_cube_mesh(cubey::app::WindowedAppContext& context) {
-        mesh_.emplace(context.device(),
-                      cubey::render::indexed_mesh_config(kCubeVertices, kCubeIndices));
+        meshes_.emplace(cube_mesh_handle_, context.device(),
+                        cubey::render::indexed_mesh_config(kCubeVertices, kCubeIndices));
     }
 
     void create_scene() {
@@ -476,9 +477,10 @@ class TexturedCubeApp {
         scene().commit(edits);
     }
 
-    [[nodiscard]] SceneUniforms current_scene_uniforms(const cubey::SceneReadView& view,
-                                                       const cubey::RenderablePacket3D& packet,
-                                                       VkExtent2D extent) const {
+    [[nodiscard]] SceneUniforms
+    current_scene_uniforms(const cubey::SceneReadView& view,
+                           const cubey::render::RenderDrawPacket3D& packet,
+                           VkExtent2D extent) const {
         const float aspect = static_cast<float>(extent.width) / static_cast<float>(extent.height);
         const cubey::CameraInstance3D camera = view.cameras3d().instance(camera_entity_);
 
@@ -493,28 +495,30 @@ class TexturedCubeApp {
     }
 
     void update_scene_uniforms(const cubey::SceneReadView& view,
-                               const cubey::RenderablePacket3D& packet, VkExtent2D extent,
+                               const cubey::render::RenderDrawPacket3D& packet, VkExtent2D extent,
                                cubey::render::FrameSlot frame_slot) {
         const SceneUniforms uniforms = current_scene_uniforms(view, packet, extent);
         scene_uniforms().upload(frame_slot, uniforms);
     }
 
-    [[nodiscard]] cubey::RenderablePacket3D
-    current_render_packet(const cubey::SceneReadView& view) const {
-        const std::vector<cubey::RenderablePacket3D> packets =
+    [[nodiscard]] cubey::render::RenderDrawPacket3D
+    current_draw_packet(const cubey::SceneReadView& view) const {
+        const std::vector<cubey::RenderablePacket3D> renderable_packets =
             cubey::build_renderable_packets_3d(view.renderables3d(), view.transforms3d());
-        if (packets.size() != 1) {
-            throw std::runtime_error("textured_cube scene should produce one renderable packet");
+        const std::vector<cubey::render::RenderDrawPacket3D> draw_packets =
+            cubey::render::build_render_draw_packets_3d(renderable_packets,
+                                                        engine_.render_resources());
+        if (draw_packets.size() != 1) {
+            throw std::runtime_error("textured_cube scene should produce one draw packet");
         }
-        return packets[0];
+        return draw_packets[0];
     }
 
     void record_cube_frame(const cubey::app::WindowedRenderFrame& frame) {
         const VkCommandBuffer command_buffer = frame.command_buffer;
         cubey::SceneReadView scene_view = scene().read();
-        const cubey::RenderablePacket3D render_packet = current_render_packet(scene_view);
-        update_scene_uniforms(scene_view, render_packet, frame.color_target.extent,
-                              frame.frame_slot);
+        const cubey::render::RenderDrawPacket3D draw_packet = current_draw_packet(scene_view);
+        update_scene_uniforms(scene_view, draw_packet, frame.color_target.extent, frame.frame_slot);
 
         cubey::vulkan::begin_command_buffer(command_buffer,
                                             VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
@@ -544,11 +548,11 @@ class TexturedCubeApp {
         vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
                                 pipeline_layout().handle(), 0, 1, &descriptor_set, 0, nullptr);
         const cubey::render::DrawItem draw_item{
-            .mesh = &mesh(render_packet.mesh),
-            .instance_count = render_packet.instance_count,
-            .first_index = render_packet.first_index,
-            .vertex_offset = render_packet.vertex_offset,
-            .first_instance = render_packet.first_instance,
+            .mesh = &mesh(draw_packet.mesh),
+            .instance_count = draw_packet.instance_count,
+            .first_index = draw_packet.first_index,
+            .vertex_offset = draw_packet.vertex_offset,
+            .first_instance = draw_packet.first_instance,
         };
         cubey::render::record_draw_item(command_buffer, draw_item);
         vkCmdEndRendering(command_buffer);
@@ -561,13 +565,7 @@ class TexturedCubeApp {
     }
 
     [[nodiscard]] const cubey::render::Mesh& mesh(cubey::render::MeshHandle handle) const {
-        if (handle != cube_mesh_handle_) {
-            throw std::runtime_error("unknown textured_cube mesh handle");
-        }
-        if (!mesh_.has_value()) {
-            throw std::runtime_error("cube mesh is not initialized");
-        }
-        return mesh_.value();
+        return meshes_.at(handle);
     }
 
     [[nodiscard]] cubey::Scene& scene() {
@@ -588,6 +586,9 @@ class TexturedCubeApp {
     }
 
     void destroy_render_handles() {
+        if (meshes_.contains(cube_mesh_handle_)) {
+            meshes_.erase(cube_mesh_handle_);
+        }
         if (engine_.render_resources().is_alive(cube_mesh_handle_)) {
             engine_.render_resources().destroy_mesh(cube_mesh_handle_);
             cube_mesh_handle_ = {};
@@ -670,7 +671,7 @@ class TexturedCubeApp {
     cubey::render::MaterialHandle cube_material_handle_{};
     OrbitController orbit_controller_;
 
-    std::optional<cubey::render::Mesh> mesh_;
+    cubey::render::MeshResourceTable<cubey::render::Mesh> meshes_;
     std::optional<cubey::render::FrameUniformBuffer<SceneUniforms>> scene_uniforms_;
     std::optional<cubey::render::Texture2D> texture_;
     std::optional<cubey::vulkan::DescriptorSetArray> descriptors_;
