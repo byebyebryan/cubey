@@ -30,6 +30,7 @@ add_executable(cubey_core_tests
     render_target_tests.cpp
     render_texture_tests.cpp
     render_uniform_buffer_tests.cpp
+    renderable_manager_tests.cpp
     resource_tests.cpp
     scene_tests.cpp
     spirv_io_tests.cpp
