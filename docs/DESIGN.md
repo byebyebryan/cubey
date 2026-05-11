@@ -117,16 +117,20 @@ Reusable spatial types should stay explicit and narrow:
   CPU-side renderable packets from committed scene read views. Renderables use
   registry-issued opaque mesh/material handles so scene snapshots do not expose
   mutable Vulkan resources.
+- `LightManager3D` owns entity-backed 3D light components and builds CPU-side
+  light packets from committed scene read views. Directional lights carry
+  normalized directions; point lights derive world position from `Transform3D`.
 - `cubey::render` can turn renderable packets into CPU draw packets by
   validating resource handles, attaching material tags, and sorting them. This
   is a planning layer only; Vulkan command recording, descriptors, pipelines,
-  and shader/material binding stay owned by examples/projects for now.
+  light upload, and shader/material binding stay owned by examples/projects for
+  now.
 
 The broader entity/component shape is captured in
 [entity and component foundation](entity-component-foundation.md): Cubey should
 move toward manager-oriented, MT-stable component storage with explicit read
-views and edit commits before adding broader light, material, or renderer
-ownership.
+views and edit commits before adding broader material, environment, culling, or
+renderer ownership.
 
 `cubey::Engine` is the scoped root owner for engine services and scene
 creation. It owns project runtime services, render resource handle identity,
@@ -327,6 +331,7 @@ cubey/
       pan_zoom_2d_controller.h -- input-driven 2D camera pan/zoom controller
       pointer_drag.h       -- shared pointer drag helper
       project_runtime.h    -- async-ready project vocabulary
+      light_manager.h      -- entity-backed 3D light components
       renderable_manager.h -- entity-backed 3D renderable components
       transform_2d.h       -- explicit 2D model transform value type
       transform_3d.h       -- explicit 3D model transform value type

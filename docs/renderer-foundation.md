@@ -108,6 +108,11 @@ full engine architecture.
   examples now use Engine-owned scenes, registry-issued handles, mesh resource
   tables, and CPU draw planning while still owning pipelines, descriptors, and
   Vulkan command recording locally.
+- `LightManager3D` lives in the scene/component layer and emits compact
+  CPU-side light packets for directional and point lights. The packets provide
+  light kind, color, intensity, direction or world position, and range; shader
+  interpretation, light limits, descriptor layout, and GPU upload policy remain
+  outside `cubey::render` for now.
 - `FrameSlot` gives render callbacks a stable frame-data index, and
   `FrameUniformBuffer<T>` owns one host-visible uniform buffer per frame slot.
   The current windowed host uses real frame slots for overlapping frame

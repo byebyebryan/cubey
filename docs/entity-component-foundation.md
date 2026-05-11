@@ -21,6 +21,9 @@ Cubey should use a manager-oriented ECS-lite design:
   view publication.
 - `TransformManager2D` and `TransformManager3D` are the first entity-backed
   component managers and own parented local/world transform data.
+- `CameraManager2D`, `CameraManager3D`, `RenderableManager3D`, and
+  `LightManager3D` build on the same stable read-view/edit-queue pattern for
+  single-instance scene components.
 
 This borrows Filament's public architecture shape more than its internals:
 shared entity IDs, type-specific managers, component instances, parented
@@ -320,7 +323,7 @@ class TransformManager3D;
 class RenderableManager3D;
 class CameraManager2D;
 class CameraManager3D;
-class LightManager;
+class LightManager3D;
 ```
 
 Managers may share internal utilities such as `StableSlotStore`, but public
@@ -383,9 +386,9 @@ References:
 
 The initial entity/component substrate now exists: `EntityManager`, stable slot
 storage, `Scene` edit/read epochs, entity-backed 2D/3D transform managers,
-entity-backed 2D/3D camera managers, and the first 3D renderable manager. The
-older transform-only hierarchy has been retired in favor of the manager shape
-described here.
+entity-backed 2D/3D camera managers, the first 3D renderable manager, and the
+first 3D light manager. The older transform-only hierarchy has been retired in
+favor of the manager shape described here.
 
 `Engine` now provides the first Filament-style root ownership boundary, but it
 does not own renderer/device setup yet. Windowed and headless hosts remain the
@@ -395,8 +398,9 @@ contract.
 `cubey::render` should continue to own low-level renderer-facing resources,
 opaque resource handles, and draw metadata. It should not become the scene
 owner. Scene/component managers can build renderable packets that reference
-`cubey::render` resource handles, and the GPU owner resolves those handles to
-live resources during command recording.
+`cubey::render` resource handles plus light packets that carry CPU-side light
+data, and the GPU owner resolves or interprets those packets during command
+recording.
 
 The existing threading direction still applies: one GPU owner serializes
 Vulkan mutation and submission, while worker threads prepare CPU-side data and
@@ -416,6 +420,8 @@ Public debug/development APIs should fail loudly on invalid structural edits:
   policy in the same edit batch.
 - creating or updating a renderable with no primitives, null mesh/material
   handles, or zero draw instances.
+- creating or updating a light with a zero directional vector, negative
+  color/intensity, or a non-positive point-light range.
 
 The first implementation can use exceptions consistently with current Cubey
 tests. Later hot paths can add no-throw validation or result-code variants if a
@@ -434,12 +440,14 @@ Unit tests should cover:
 - invalid parenting, self-parenting, and cycle rejection;
 - strict child policy on transform destruction;
 - renderable packet extraction from committed transforms;
+- light packet extraction from committed lights and transforms;
 - concurrent edit-queue construction feeding a serialized commit;
 - thread sanitizer coverage once real concurrent access lands.
 
 Integration tests should prove:
 
 - a renderable packet can be built from a `SceneReadView`;
+- a light packet can be built from a `SceneReadView`;
 - transform managers cover parented world-transform behavior previously covered
   by standalone hierarchy tests;
 - destroying entities retires attached components through the scene boundary;
@@ -511,6 +519,7 @@ The smallest useful substrate is now in place:
 4. Shared transform-manager template used by 2D/3D.
 5. Migration of transform hierarchy behavior to the manager shape.
 
-Camera and renderable managers now build on this contract. Light, material,
-bounds/culling, and resource-registry managers should follow the same pattern
-instead of reintroducing project-local ownership patterns.
+Camera, renderable, and light managers now build on this contract. Material,
+bounds/culling, environment, and resource-registry-adjacent managers should
+follow the same pattern instead of reintroducing project-local ownership
+patterns.

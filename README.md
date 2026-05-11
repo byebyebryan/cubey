@@ -23,7 +23,7 @@ Current examples:
 - `window_clear`: minimal dynamic-rendering clear/present path.
 - `triangle`: build-time GLSL shaders and dynamic graphics pipeline setup.
 - `spinning_cube`: indexed cube with shared transform/camera math and depth.
-- `textured_cube`: compute-generated texture, descriptors, lighting, and input.
+- `textured_cube`: compute-generated texture, descriptors, scene lighting, and input.
 - `headless_render`: no-window offscreen PNG path.
 - `fractal`: fullscreen Mandelbrot-style shader with windowed navigation and
   headless output.

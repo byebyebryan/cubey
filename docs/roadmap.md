@@ -85,10 +85,11 @@ Current checkpoint:
 - Reusable `cubey::FrameClock`, `cubey::Transform2D`, `cubey::Transform3D`,
   `cubey::TransformManager2D`, `cubey::TransformManager3D`, `cubey::Camera2D`,
   `cubey::Camera3D`, `cubey::CameraManager2D`, `cubey::CameraManager3D`,
-  `cubey::RenderableManager3D`, and `cubey::OrbitController` cover basic frame
-  timing, explicit 2D/3D affine transform boundaries, quaternion-backed 3D
-  rotation, entity-backed parent/child world transforms, shared 2D/3D camera
-  state, entity-backed 3D renderable packets, and mouse-driven orbit input.
+  `cubey::RenderableManager3D`, `cubey::LightManager3D`, and
+  `cubey::OrbitController` cover basic frame timing, explicit 2D/3D affine
+  transform boundaries, quaternion-backed 3D rotation, entity-backed
+  parent/child world transforms, shared 2D/3D camera state, entity-backed 3D
+  renderable/light packets, and mouse-driven orbit input.
 - Reusable `cubey::input::InputState`/`InputFrame` provide per-frame keyboard
   and mouse polling over the GLFW callback stream, with shared pointer-drag,
   camera-backed 2D pan/zoom, and input-aware orbit-control helpers.
@@ -196,9 +197,10 @@ Current checkpoint:
   through shared descriptor/compute helpers, and draws an interactive shaded
   textured indexed cube through `cubey::render::Mesh`, `DrawItem`,
   `MeshResourceTable`, registry-issued mesh/material handles, CPU draw packets
-  built from scene renderables, dynamic rendering, per-face normals, shared
-  GLSL Lambert lighting, shared transform/model matrices, shared camera
-  projection, and shared math helpers through the shared app host.
+  built from scene renderables, a scene-owned directional light packet, dynamic
+  rendering, per-face normals, shared GLSL Lambert lighting, shared
+  transform/model matrices, shared camera projection, and shared math helpers
+  through the shared app host.
 - `examples/headless_render` links against `cubey`, creates no GLFW window or
   surface, renders an offscreen color target through dynamic rendering, copies
   it into a readback buffer, and writes a PNG artifact.

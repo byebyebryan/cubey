@@ -136,6 +136,10 @@ resource creation/destruction, update, command recording, and shutdown.
   builds CPU-side renderable packets from scene read views. Packets carry
   transform matrices plus opaque mesh/material handles; examples still resolve
   those handles to their own Vulkan resources and pipelines.
+- `LightManager3D` provides entity-backed directional and point light
+  components and builds CPU-side light packets from scene read views. Light
+  packets are render input data; shader binding, lighting model, and GPU upload
+  policy remain example/project-owned.
 - `cubey::render::RenderResourceRegistry` is owned by `Engine` and issues the
   generational mesh/material handles used by renderable components. It tracks
   CPU-side identity, liveness, mesh labels, and material tags only; Vulkan
@@ -172,8 +176,8 @@ resource creation/destruction, update, command recording, and shutdown.
   setup, or app simulation state.
 - Engine-created scenes validate renderable mesh/material handles against the
   Engine registry. Current cube examples use Engine-owned scenes, mutate scene
-  transforms during `update()`, build CPU draw packets during render, and keep
-  Vulkan command recording local.
+  transforms during `update()`, build CPU draw/light packets during render, and
+  keep Vulkan command recording local.
 - `cubey::ProjectRuntimeServices` now owns project-facing jobs, uploads,
   captures, frame tickets, and deferred destruction.
 - `cubey::ProjectRuntimeAdapter` wraps those services with the repeated
