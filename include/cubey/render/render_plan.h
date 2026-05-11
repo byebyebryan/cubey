@@ -22,6 +22,7 @@ struct RenderDrawPacket3D {
     MaterialInfo material_info{};
     math::Mat4 world_affine_matrix{1.0F};
     Bounds3D local_bounds{};
+    Bounds3D world_bounds{};
     bool cast_shadows = true;
     bool receive_shadows = true;
     std::uint32_t instance_count = 1;
@@ -68,6 +69,7 @@ build_render_draw_packets_3d(std::span<const RenderablePacket3D> packets,
             .material_info = material_info,
             .world_affine_matrix = packet.world_affine_matrix,
             .local_bounds = packet.local_bounds,
+            .world_bounds = packet.world_bounds,
             .cast_shadows = packet.cast_shadows,
             .receive_shadows = packet.receive_shadows,
             .instance_count = packet.instance_count,

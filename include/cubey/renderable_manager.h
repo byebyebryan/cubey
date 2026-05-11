@@ -8,6 +8,7 @@
 #include <cubey/render/resource_registry.h>
 #include <cubey/transform_manager.h>
 
+#include <cmath>
 #include <cstdint>
 #include <memory>
 #include <stdexcept>
@@ -46,6 +47,7 @@ struct RenderablePacket3D {
     render::MaterialHandle material{};
     math::Mat4 world_affine_matrix{1.0F};
     Bounds3D local_bounds{};
+    Bounds3D world_bounds{};
     bool cast_shadows = true;
     bool receive_shadows = true;
     std::uint32_t instance_count = 1;
@@ -285,6 +287,26 @@ class RenderableManager3D {
     Store store_{};
 };
 
+[[nodiscard]] inline Bounds3D transform_bounds_3d(const Bounds3D& bounds,
+                                                  const math::Mat4& transform) {
+    const math::Vec4 center = transform * math::Vec4{bounds.center, 1.0F};
+    const math::Vec3 half_extent{
+        (std::fabs(transform[0][0]) * bounds.half_extent.x) +
+            (std::fabs(transform[1][0]) * bounds.half_extent.y) +
+            (std::fabs(transform[2][0]) * bounds.half_extent.z),
+        (std::fabs(transform[0][1]) * bounds.half_extent.x) +
+            (std::fabs(transform[1][1]) * bounds.half_extent.y) +
+            (std::fabs(transform[2][1]) * bounds.half_extent.z),
+        (std::fabs(transform[0][2]) * bounds.half_extent.x) +
+            (std::fabs(transform[1][2]) * bounds.half_extent.y) +
+            (std::fabs(transform[2][2]) * bounds.half_extent.z),
+    };
+    return Bounds3D{
+        .center = {center.x, center.y, center.z},
+        .half_extent = half_extent,
+    };
+}
+
 [[nodiscard]] inline std::vector<RenderablePacket3D>
 build_renderable_packets_3d(const RenderableReadView3D& renderables,
                             const TransformReadView3D& transforms) {
@@ -297,6 +319,7 @@ build_renderable_packets_3d(const RenderableReadView3D& renderables,
 
         const Entity entity = renderables.entity(instance);
         const math::Mat4& world = transforms.world_affine_matrix(transforms.instance(entity));
+        const Bounds3D world_bounds = transform_bounds_3d(renderable.local_bounds, world);
         packets.reserve(packets.size() + renderable.primitives.size());
         for (const RenderablePrimitive3D& primitive : renderable.primitives) {
             packets.push_back(RenderablePacket3D{
@@ -305,6 +328,7 @@ build_renderable_packets_3d(const RenderableReadView3D& renderables,
                 .material = primitive.material,
                 .world_affine_matrix = world,
                 .local_bounds = renderable.local_bounds,
+                .world_bounds = world_bounds,
                 .cast_shadows = renderable.cast_shadows,
                 .receive_shadows = renderable.receive_shadows,
                 .instance_count = primitive.instance_count,

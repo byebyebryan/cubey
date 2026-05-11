@@ -1,0 +1,246 @@
+#include <cubey/render/view_3d.h>
+#include <cubey/scene.h>
+#include <cubey/transform_3d.h>
+
+#include <cmath>
+#include <functional>
+#include <stdexcept>
+#include <vector>
+
+namespace {
+
+void require(bool condition, const char* message) {
+    if (!condition) {
+        throw std::runtime_error(message);
+    }
+}
+
+void require_close(float actual, float expected, const char* message) {
+    constexpr float kTolerance = 0.00001F;
+    if (std::fabs(actual - expected) > kTolerance) {
+        throw std::runtime_error(message);
+    }
+}
+
+void require_throws(const std::function<void()>& action, const char* message) {
+    try {
+        action();
+    } catch (const std::exception&) {
+        return;
+    }
+    throw std::runtime_error(message);
+}
+
+cubey::Renderable3D renderable_for(cubey::render::MeshHandle mesh,
+                                   cubey::render::MaterialHandle material,
+                                   cubey::Bounds3D bounds = cubey::Bounds3D{
+                                       .center = {0.0F, 0.0F, 0.0F},
+                                       .half_extent = {0.5F, 0.5F, 0.5F},
+                                   }) {
+    return cubey::Renderable3D{
+        .primitives =
+            {
+                cubey::RenderablePrimitive3D{
+                    .mesh = mesh,
+                    .material = material,
+                },
+            },
+        .local_bounds = bounds,
+    };
+}
+
+bool contains_entity(const std::vector<cubey::render::RenderDrawPacket3D>& packets,
+                     cubey::Entity entity) {
+    for (const cubey::render::RenderDrawPacket3D& packet : packets) {
+        if (packet.entity == entity) {
+            return true;
+        }
+    }
+    return false;
+}
+
+} // namespace
+
+void test_render_view_3d_builds_frame_plan_with_environment_draws_and_lights() {
+    cubey::render::RenderResourceRegistry registry;
+    const cubey::render::MeshHandle mesh = registry.create_mesh("cube");
+    const cubey::render::MaterialHandle material = registry.create_material("material");
+
+    cubey::Scene scene(&registry);
+    cubey::SceneTransaction setup = scene.begin_transaction();
+    const cubey::Entity camera_entity = setup.entities().create();
+    const cubey::Entity renderable_entity = setup.entities().create();
+    const cubey::Entity light_entity = setup.entities().create();
+    setup.transforms3d().create(camera_entity, cubey::Transform3D{});
+    setup.cameras3d().create(camera_entity, cubey::Camera3D{});
+    setup.transforms3d().create(renderable_entity, cubey::Transform3D{
+                                                       .translation = {1.0F, 2.0F, -6.0F},
+                                                       .scale = {2.0F, 3.0F, 4.0F},
+                                                   });
+    setup.renderables3d().create(renderable_entity,
+                                 renderable_for(mesh, material,
+                                                cubey::Bounds3D{
+                                                    .center = {0.0F, 0.0F, 0.0F},
+                                                    .half_extent = {1.0F, 1.0F, 1.0F},
+                                                }));
+    setup.lights3d().create(light_entity, cubey::directional_light_3d({0.0F, -2.0F, 0.0F}));
+    setup.commit();
+
+    cubey::SceneReadView scene_view = scene.read();
+    const cubey::render::View3D view{
+        .camera_entity = camera_entity,
+        .width = 640,
+        .height = 320,
+        .environment =
+            cubey::render::Environment3D{
+                .ambient_color = {0.1F, 0.2F, 0.3F},
+                .ambient_intensity = 2.0F,
+            },
+    };
+    const cubey::render::RenderFramePlan3D plan =
+        cubey::render::build_render_frame_plan_3d(view, scene_view, registry);
+
+    require(plan.camera_entity == camera_entity, "frame plan should carry camera entity");
+    require(plan.draw_packets.size() == 1, "frame plan should carry visible draw packets");
+    require(plan.light_packets.size() == 1, "frame plan should carry scene light packets");
+    require_close(plan.environment.ambient_color.y, 0.2F, "frame plan should carry ambient color");
+    require_close(plan.environment.ambient_intensity, 2.0F,
+                  "frame plan should carry ambient intensity");
+    require_close(plan.draw_packets[0].world_bounds.center.x, 1.0F,
+                  "draw packet should carry world bounds center x");
+    require_close(plan.draw_packets[0].world_bounds.center.z, -6.0F,
+                  "draw packet should carry world bounds center z");
+    require_close(plan.draw_packets[0].world_bounds.half_extent.x, 2.0F,
+                  "draw packet should carry scaled world bounds half extent x");
+    require_close(plan.draw_packets[0].world_bounds.half_extent.y, 3.0F,
+                  "draw packet should carry scaled world bounds half extent y");
+    require_close(plan.draw_packets[0].world_bounds.half_extent.z, 4.0F,
+                  "draw packet should carry scaled world bounds half extent z");
+}
+
+void test_render_view_3d_rejects_invalid_view_or_missing_camera_transform() {
+    cubey::render::RenderResourceRegistry registry;
+    cubey::Scene scene(&registry);
+    cubey::SceneTransaction setup = scene.begin_transaction();
+    const cubey::Entity camera_entity = setup.entities().create();
+    setup.cameras3d().create(camera_entity, cubey::Camera3D{});
+    setup.commit();
+
+    cubey::SceneReadView scene_view = scene.read();
+    require_throws(
+        [&scene_view, &registry, camera_entity] {
+            const cubey::render::View3D view{
+                .camera_entity = camera_entity,
+                .width = 0,
+                .height = 320,
+            };
+            (void)cubey::render::build_render_frame_plan_3d(view, scene_view, registry);
+        },
+        "render view should reject zero width");
+
+    require_throws(
+        [&scene_view, &registry, camera_entity] {
+            const cubey::render::View3D view{
+                .camera_entity = camera_entity,
+                .width = 640,
+                .height = 320,
+            };
+            (void)cubey::render::build_render_frame_plan_3d(view, scene_view, registry);
+        },
+        "render view should require a camera transform");
+}
+
+void test_render_view_3d_frustum_culls_world_bounds_and_can_be_disabled() {
+    cubey::render::RenderResourceRegistry registry;
+    const cubey::render::MeshHandle mesh = registry.create_mesh("cube");
+    const cubey::render::MaterialHandle material = registry.create_material("material");
+
+    cubey::Scene scene(&registry);
+    cubey::SceneTransaction setup = scene.begin_transaction();
+    const cubey::Entity camera_entity = setup.entities().create();
+    const cubey::Entity visible_entity = setup.entities().create();
+    const cubey::Entity offscreen_entity = setup.entities().create();
+    setup.transforms3d().create(camera_entity, cubey::Transform3D{});
+    setup.cameras3d().create(camera_entity, cubey::Camera3D{});
+    setup.transforms3d().create(visible_entity,
+                                cubey::Transform3D{.translation = {0.0F, 0.0F, -3.0F}});
+    setup.renderables3d().create(visible_entity, renderable_for(mesh, material));
+    setup.transforms3d().create(offscreen_entity,
+                                cubey::Transform3D{.translation = {100.0F, 0.0F, -3.0F}});
+    setup.renderables3d().create(offscreen_entity, renderable_for(mesh, material));
+    setup.commit();
+
+    cubey::SceneReadView scene_view = scene.read();
+    const cubey::render::View3D culling_view{
+        .camera_entity = camera_entity,
+        .width = 640,
+        .height = 320,
+        .culling_enabled = true,
+    };
+    const cubey::render::RenderFramePlan3D culled_plan =
+        cubey::render::build_render_frame_plan_3d(culling_view, scene_view, registry);
+    require(culled_plan.draw_packets.size() == 1,
+            "culling should keep only the visible renderable");
+    require(contains_entity(culled_plan.draw_packets, visible_entity),
+            "culling should keep visible entity");
+    require(!contains_entity(culled_plan.draw_packets, offscreen_entity),
+            "culling should remove offscreen entity");
+
+    cubey::render::View3D unculled_view = culling_view;
+    unculled_view.culling_enabled = false;
+    const cubey::render::RenderFramePlan3D unculled_plan =
+        cubey::render::build_render_frame_plan_3d(unculled_view, scene_view, registry);
+    require(unculled_plan.draw_packets.size() == 2,
+            "disabled culling should keep all renderables");
+}
+
+void test_render_view_3d_preserves_draw_sorting_and_stale_handle_validation() {
+    cubey::render::RenderResourceRegistry registry;
+    const cubey::render::MeshHandle mesh = registry.create_mesh("cube");
+    const cubey::render::MaterialHandle late_material =
+        registry.create_material(cubey::render::MaterialInfo{
+            .label = "late",
+            .sort_key = 20,
+        });
+    const cubey::render::MaterialHandle early_material =
+        registry.create_material(cubey::render::MaterialInfo{
+            .label = "early",
+            .sort_key = 10,
+        });
+
+    cubey::Scene scene(&registry);
+    cubey::SceneTransaction setup = scene.begin_transaction();
+    const cubey::Entity camera_entity = setup.entities().create();
+    const cubey::Entity late_entity = setup.entities().create();
+    const cubey::Entity early_entity = setup.entities().create();
+    setup.transforms3d().create(camera_entity, cubey::Transform3D{});
+    setup.cameras3d().create(camera_entity, cubey::Camera3D{});
+    setup.transforms3d().create(late_entity,
+                                cubey::Transform3D{.translation = {-0.5F, 0.0F, -3.0F}});
+    setup.renderables3d().create(late_entity, renderable_for(mesh, late_material));
+    setup.transforms3d().create(early_entity,
+                                cubey::Transform3D{.translation = {0.5F, 0.0F, -3.0F}});
+    setup.renderables3d().create(early_entity, renderable_for(mesh, early_material));
+    setup.commit();
+
+    cubey::SceneReadView scene_view = scene.read();
+    const cubey::render::View3D view{
+        .camera_entity = camera_entity,
+        .width = 640,
+        .height = 320,
+    };
+    const cubey::render::RenderFramePlan3D plan =
+        cubey::render::build_render_frame_plan_3d(view, scene_view, registry);
+    require(plan.draw_packets.size() == 2, "view plan should produce draw packets");
+    require(plan.draw_packets[0].material == early_material,
+            "view plan should preserve draw packet material sorting");
+    require(plan.draw_packets[1].material == late_material,
+            "view plan should preserve draw packet material sorting");
+
+    registry.destroy_mesh(mesh);
+    require_throws(
+        [&view, &scene_view, &registry] {
+            (void)cubey::render::build_render_frame_plan_3d(view, scene_view, registry);
+        },
+        "view planning should reject stale mesh handles");
+}
