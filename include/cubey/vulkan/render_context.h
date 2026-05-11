@@ -2,6 +2,7 @@
 
 #include <cubey/vulkan/device.h>
 #include <cubey/vulkan/frame_resources.h>
+#include <cubey/vulkan/submission_coordinator.h>
 #include <cubey/vulkan/swapchain.h>
 
 #include <vulkan/vulkan.h>
@@ -27,6 +28,7 @@ struct RenderContextConfig {
     Device* device = nullptr;
     Swapchain* swapchain = nullptr;
     FrameResources* frame_resources = nullptr;
+    SubmissionCoordinator* submission = nullptr;
 };
 
 class SwapchainRecreateTracker {

@@ -30,34 +30,40 @@ void test_frame_resources_expose_slot_based_contract() {
     require(slot.image_available == VK_NULL_HANDLE,
             "frame resource slot should default acquire semaphore to null");
     require(slot.fence == VK_NULL_HANDLE, "frame resource slot should default fence to null");
+    require(slot.submitted_ticket.value == 0,
+            "frame resource slot should default submitted ticket to zero");
 
-    static_assert(std::is_constructible_v<cubey::vulkan::FrameResources,
-                                          const cubey::vulkan::Device&,
-                                          const cubey::vulkan::FrameResourcesConfig&>);
+    static_assert(
+        std::is_constructible_v<cubey::vulkan::FrameResources, const cubey::vulkan::Device&,
+                                const cubey::vulkan::FrameResourcesConfig&>);
     static_assert(!std::is_copy_constructible_v<cubey::vulkan::FrameResources>);
     static_assert(!std::is_copy_assignable_v<cubey::vulkan::FrameResources>);
     static_assert(std::is_same_v<decltype(&cubey::vulkan::FrameResources::frame_slot_count),
                                  std::uint32_t (cubey::vulkan::FrameResources::*)() const>);
-    static_assert(
-        std::is_same_v<decltype(&cubey::vulkan::FrameResources::current_frame_slot_index),
-                       std::uint32_t (cubey::vulkan::FrameResources::*)() const>);
+    static_assert(std::is_same_v<decltype(&cubey::vulkan::FrameResources::current_frame_slot_index),
+                                 std::uint32_t (cubey::vulkan::FrameResources::*)() const>);
     static_assert(std::is_same_v<decltype(&cubey::vulkan::FrameResources::advance_frame_slot),
                                  void (cubey::vulkan::FrameResources::*)()>);
     static_assert(std::is_same_v<decltype(&cubey::vulkan::FrameResources::slot),
                                  const cubey::vulkan::FrameResourceSlot& (
                                      cubey::vulkan::FrameResources::*)(std::uint32_t) const>);
-    static_assert(std::is_same_v<decltype(&cubey::vulkan::FrameResources::present_ready),
-                                 VkSemaphore (cubey::vulkan::FrameResources::*)(
-                                     std::size_t) const>);
+    static_assert(
+        std::is_same_v<decltype(&cubey::vulkan::FrameResources::present_ready),
+                       VkSemaphore (cubey::vulkan::FrameResources::*)(std::size_t) const>);
     static_assert(std::is_same_v<decltype(&cubey::vulkan::FrameResources::image_in_flight),
                                  VkFence (cubey::vulkan::FrameResources::*)(std::size_t) const>);
     static_assert(std::is_same_v<decltype(&cubey::vulkan::FrameResources::mark_image_in_flight),
                                  void (cubey::vulkan::FrameResources::*)(std::size_t, VkFence)>);
+    static_assert(
+        std::is_same_v<decltype(&cubey::vulkan::FrameResources::submitted_ticket),
+                       cubey::FrameTicket (cubey::vulkan::FrameResources::*)(std::uint32_t) const>);
+    static_assert(
+        std::is_same_v<decltype(&cubey::vulkan::FrameResources::mark_submitted),
+                       void (cubey::vulkan::FrameResources::*)(std::uint32_t, cubey::FrameTicket)>);
     static_assert(std::is_same_v<decltype(&cubey::vulkan::FrameResources::wait_for_frame),
                                  void (cubey::vulkan::FrameResources::*)(std::uint32_t) const>);
     static_assert(std::is_same_v<decltype(&cubey::vulkan::FrameResources::reset_fence),
                                  void (cubey::vulkan::FrameResources::*)(std::uint32_t) const>);
     static_assert(std::is_same_v<decltype(&cubey::vulkan::FrameResources::reset_command_buffer),
-                                 void (cubey::vulkan::FrameResources::*)(
-                                     std::uint32_t) const>);
+                                 void (cubey::vulkan::FrameResources::*)(std::uint32_t) const>);
 }

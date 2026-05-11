@@ -40,6 +40,7 @@ void test_frame_ticket_issuer_returns_monotonic_tickets();
 void test_headless_png_host_validates_capture_shape();
 void test_image_io_writes_rgba_png();
 void test_image_transitions_describe_layout_barriers();
+void test_immediate_commands_accepts_submission_coordinator();
 void test_input_state_accumulates_cursor_and_scroll_per_frame();
 void test_input_state_ignores_unknown_inputs();
 void test_input_state_tracks_key_and_button_edges();
@@ -163,6 +164,7 @@ int main() {
         test_headless_png_host_validates_capture_shape();
         test_image_io_writes_rgba_png();
         test_image_transitions_describe_layout_barriers();
+        test_immediate_commands_accepts_submission_coordinator();
         test_input_state_tracks_key_and_button_edges();
         test_input_state_accumulates_cursor_and_scroll_per_frame();
         test_input_state_ignores_unknown_inputs();

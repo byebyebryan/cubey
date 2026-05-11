@@ -52,6 +52,14 @@ void FrameResources::mark_image_in_flight(std::size_t image_index, VkFence fence
     images_in_flight_.at(image_index) = fence;
 }
 
+FrameTicket FrameResources::submitted_ticket(std::uint32_t frame_slot_index) const {
+    return slot(frame_slot_index).submitted_ticket;
+}
+
+void FrameResources::mark_submitted(std::uint32_t frame_slot_index, FrameTicket ticket) {
+    frame_slots_.at(frame_slot_index).submitted_ticket = ticket;
+}
+
 void FrameResources::wait_for_frame(std::uint32_t frame_slot_index) const {
     const VkFence frame_fence = slot(frame_slot_index).fence;
     check(vkWaitForFences(device_, 1, &frame_fence, VK_TRUE, UINT64_MAX), "vkWaitForFences frame");

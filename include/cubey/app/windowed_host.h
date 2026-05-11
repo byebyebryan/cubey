@@ -11,6 +11,7 @@
 #include <cubey/vulkan/frame_resources.h>
 #include <cubey/vulkan/instance.h>
 #include <cubey/vulkan/render_context.h>
+#include <cubey/vulkan/submission_coordinator.h>
 #include <cubey/vulkan/swapchain.h>
 
 #include <vulkan/vulkan.h>
@@ -27,8 +28,8 @@ class WindowedAppContext {
                        cubey::vulkan::Instance& instance, GlfwSurface& surface,
                        cubey::vulkan::Device& device, cubey::vulkan::Swapchain& swapchain,
                        cubey::vulkan::FrameResources& frame_resources,
-                       const cubey::input::InputFrame& input,
-                       std::uint32_t frame_slot_count);
+                       cubey::vulkan::SubmissionCoordinator& submission,
+                       const cubey::input::InputFrame& input, std::uint32_t frame_slot_count);
 
     [[nodiscard]] const RunConfig& config() const {
         return config_;
@@ -51,6 +52,9 @@ class WindowedAppContext {
     [[nodiscard]] cubey::vulkan::FrameResources& frame_resources() const {
         return frame_resources_;
     }
+    [[nodiscard]] cubey::vulkan::SubmissionCoordinator& submission() const {
+        return submission_;
+    }
     [[nodiscard]] const cubey::input::InputFrame& input() const {
         return input_;
     }
@@ -66,6 +70,7 @@ class WindowedAppContext {
     cubey::vulkan::Device& device_;
     cubey::vulkan::Swapchain& swapchain_;
     cubey::vulkan::FrameResources& frame_resources_;
+    cubey::vulkan::SubmissionCoordinator& submission_;
     const cubey::input::InputFrame& input_;
     std::uint32_t frame_slot_count_ = cubey::render::kSingleFrameSlotCount;
 };
@@ -112,6 +117,7 @@ class WindowedHost {
     void create_instance();
     void create_surface();
     void create_device();
+    void create_submission_coordinator();
     void create_swapchain();
     void create_frame_resources();
     void create_swapchain_resources();
@@ -126,6 +132,7 @@ class WindowedHost {
     [[nodiscard]] cubey::vulkan::Device& device();
     [[nodiscard]] cubey::vulkan::Swapchain& swapchain();
     [[nodiscard]] cubey::vulkan::FrameResources& frame_resources();
+    [[nodiscard]] cubey::vulkan::SubmissionCoordinator& submission();
 
     WindowedHostConfig config_;
     WindowedHostCallbacks callbacks_;
@@ -135,6 +142,7 @@ class WindowedHost {
     std::optional<cubey::vulkan::Instance> instance_;
     std::optional<GlfwSurface> surface_;
     std::optional<cubey::vulkan::Device> device_;
+    std::optional<cubey::vulkan::SubmissionCoordinator> submission_;
     std::optional<cubey::vulkan::Swapchain> swapchain_;
     std::optional<cubey::vulkan::FrameResources> frame_resources_;
     FrameClock frame_clock_;

@@ -2,16 +2,19 @@
 
 #include <cubey/vulkan/command_pool.h>
 #include <cubey/vulkan/device.h>
+#include <cubey/vulkan/submission_coordinator.h>
 
 #include <vulkan/vulkan.h>
 
 #include <cstdint>
+#include <optional>
 
 namespace cubey::vulkan {
 
 class ImmediateCommands {
   public:
     explicit ImmediateCommands(const Device& device);
+    ImmediateCommands(const Device& device, SubmissionCoordinator& submission);
     ~ImmediateCommands();
 
     ImmediateCommands(const ImmediateCommands&) = delete;
@@ -28,7 +31,8 @@ class ImmediateCommands {
     void destroy();
 
     VkDevice device_ = VK_NULL_HANDLE;
-    VkQueue queue_ = VK_NULL_HANDLE;
+    std::optional<SubmissionCoordinator> owned_submission_;
+    SubmissionCoordinator* submission_ = nullptr;
     CommandPool command_pool_;
     VkCommandBuffer command_buffer_ = VK_NULL_HANDLE;
     bool submitted_ = false;

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cubey/frame_tickets.h>
 #include <cubey/vulkan/command_pool.h>
 #include <cubey/vulkan/device.h>
 
@@ -20,6 +21,7 @@ struct FrameResourceSlot {
     VkCommandBuffer command_buffer = VK_NULL_HANDLE;
     VkSemaphore image_available = VK_NULL_HANDLE;
     VkFence fence = VK_NULL_HANDLE;
+    FrameTicket submitted_ticket;
 };
 
 class FrameResources {
@@ -55,6 +57,8 @@ class FrameResources {
     }
     VkFence image_in_flight(std::size_t image_index) const;
     void mark_image_in_flight(std::size_t image_index, VkFence fence);
+    FrameTicket submitted_ticket(std::uint32_t frame_slot_index) const;
+    void mark_submitted(std::uint32_t frame_slot_index, FrameTicket ticket);
 
     void wait_for_frame(std::uint32_t frame_slot_index) const;
     void reset_fence(std::uint32_t frame_slot_index) const;

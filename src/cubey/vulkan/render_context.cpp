@@ -1,6 +1,5 @@
 #include <cubey/vulkan/render_context.h>
 
-#include <cubey/vulkan/queue_submit.h>
 #include <cubey/vulkan/vk_check.h>
 
 #include <cstddef>
@@ -18,6 +17,9 @@ void validate_config(const RenderContextConfig& config) {
     }
     if (config.frame_resources == nullptr) {
         throw std::runtime_error("render context requires frame resources");
+    }
+    if (config.submission == nullptr) {
+        throw std::runtime_error("render context requires a submission coordinator");
     }
 }
 
@@ -57,6 +59,7 @@ RenderFrameResult RenderContext::begin_frame(RenderFrame* frame) const {
     const std::uint32_t frame_slot_index = frame_resources.current_frame_slot_index();
     const FrameResourceSlot& frame_slot = frame_resources.slot(frame_slot_index);
     frame_resources.wait_for_frame(frame_slot_index);
+    config_.submission->mark_completed(frame_resources.submitted_ticket(frame_slot_index));
 
     std::uint32_t image_index = 0;
     VkResult acquired =
@@ -101,8 +104,7 @@ RenderFrameResult RenderContext::end_frame(const RenderFrame& frame) const {
 
     VkSemaphore present_ready =
         frame_resources.present_ready(static_cast<std::size_t>(frame.image_index));
-    submit_to_device_queue(
-        device,
+    const FrameTicket submitted = config_.submission->submit(
         {
             .waits =
                 {
@@ -116,6 +118,7 @@ RenderFrameResult RenderContext::end_frame(const RenderFrame& frame) const {
             .fence = frame_slot.fence,
         },
         "vkQueueSubmit frame");
+    frame_resources.mark_submitted(frame.frame_slot_index, submitted);
 
     auto present = vk_struct<VkPresentInfoKHR>(VK_STRUCTURE_TYPE_PRESENT_INFO_KHR);
     present.waitSemaphoreCount = 1;

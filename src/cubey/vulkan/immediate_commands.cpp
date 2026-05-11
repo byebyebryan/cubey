@@ -1,6 +1,5 @@
 #include <cubey/vulkan/immediate_commands.h>
 
-#include <cubey/vulkan/queue_submit.h>
 #include <cubey/vulkan/vk_check.h>
 
 #include <stdexcept>
@@ -8,10 +7,26 @@
 namespace cubey::vulkan {
 
 ImmediateCommands::ImmediateCommands(const Device& device)
-    : device_(device.handle()), queue_(device.queue()),
+    : device_(device.handle()), owned_submission_(std::in_place, device),
+      submission_(&owned_submission_.value()),
       command_pool_(device, {.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT}) {
-    if (device_ == VK_NULL_HANDLE || queue_ == VK_NULL_HANDLE) {
-        throw std::runtime_error("immediate commands require a valid Vulkan device and queue");
+    if (device_ == VK_NULL_HANDLE) {
+        throw std::runtime_error("immediate commands require a valid Vulkan device");
+    }
+
+    try {
+        create();
+    } catch (...) {
+        destroy();
+        throw;
+    }
+}
+
+ImmediateCommands::ImmediateCommands(const Device& device, SubmissionCoordinator& submission)
+    : device_(device.handle()), submission_(&submission),
+      command_pool_(device, {.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT}) {
+    if (device_ == VK_NULL_HANDLE) {
+        throw std::runtime_error("immediate commands require a valid Vulkan device");
     }
 
     try {
@@ -32,8 +47,9 @@ void ImmediateCommands::submit_and_wait() {
     }
 
     end_command_buffer(command_buffer_, "vkEndCommandBuffer immediate");
-    submit_to_queue(queue_, {.command_buffers = {command_buffer_}}, "vkQueueSubmit immediate");
-    check(vkQueueWaitIdle(queue_), "vkQueueWaitIdle immediate");
+    static_cast<void>(submission_->submit_and_wait({.command_buffers = {command_buffer_}},
+                                                   "vkQueueSubmit immediate",
+                                                   "vkQueueWaitIdle immediate"));
     submitted_ = true;
 }
 

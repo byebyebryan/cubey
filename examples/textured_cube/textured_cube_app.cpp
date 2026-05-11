@@ -353,7 +353,7 @@ class TexturedCubeApp {
 
     static void transition_texture_image(cubey::app::WindowedAppContext& context,
                                          const cubey::vulkan::ImageLayoutTransition& transition) {
-        cubey::vulkan::ImmediateCommands commands(context.device());
+        cubey::vulkan::ImmediateCommands commands(context.device(), context.submission());
         const cubey::vulkan::CommandRecorder recorder(commands.command_buffer());
         recorder.transition_image_layout(transition);
         commands.submit_and_wait();
@@ -406,7 +406,7 @@ class TexturedCubeApp {
         transition_texture_image(
             context, cubey::vulkan::begin_storage_image_write_transition(texture().handle()));
 
-        cubey::vulkan::ImmediateCommands commands(context.device());
+        cubey::vulkan::ImmediateCommands commands(context.device(), context.submission());
         const cubey::vulkan::CommandRecorder recorder(commands.command_buffer());
         recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_COMPUTE, compute_pipeline().handle());
         const VkDescriptorSet descriptor_set = compute_descriptors().set();

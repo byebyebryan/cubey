@@ -39,11 +39,12 @@ WindowedAppContext::WindowedAppContext(const RunConfig& config, GlfwWindow& wind
                                        cubey::vulkan::Device& device,
                                        cubey::vulkan::Swapchain& swapchain,
                                        cubey::vulkan::FrameResources& frame_resources,
+                                       cubey::vulkan::SubmissionCoordinator& submission,
                                        const cubey::input::InputFrame& input,
                                        std::uint32_t frame_slot_count)
     : config_(config), window_(window), instance_(instance), surface_(surface), device_(device),
-      swapchain_(swapchain), frame_resources_(frame_resources), input_(input),
-      frame_slot_count_(frame_slot_count) {
+      swapchain_(swapchain), frame_resources_(frame_resources), submission_(submission),
+      input_(input), frame_slot_count_(frame_slot_count) {
     cubey::render::validate_frame_slot({.index = 0, .count = frame_slot_count_});
 }
 
@@ -65,6 +66,7 @@ WindowedHost::~WindowedHost() {
     }
     frame_resources_.reset();
     swapchain_.reset();
+    submission_.reset();
     device_.reset();
     surface_.reset();
     instance_.reset();
@@ -76,6 +78,7 @@ int WindowedHost::run() {
     create_instance();
     create_surface();
     create_device();
+    create_submission_coordinator();
     create_swapchain_resources();
 
     if (callbacks_.on_ready) {
@@ -181,6 +184,10 @@ void WindowedHost::create_device() {
     device_.emplace(instance(), device_config);
 }
 
+void WindowedHost::create_submission_coordinator() {
+    submission_.emplace(device());
+}
+
 void WindowedHost::create_swapchain() {
     window().wait_for_presentable_framebuffer();
 
@@ -230,6 +237,7 @@ cubey::vulkan::RenderFrameResult WindowedHost::draw_frame(const FrameTiming& tim
         .device = &device(),
         .swapchain = &swapchain(),
         .frame_resources = &frame_resources(),
+        .submission = &submission(),
     });
 
     cubey::vulkan::RenderFrame frame;
@@ -247,8 +255,7 @@ cubey::vulkan::RenderFrameResult WindowedHost::draw_frame(const FrameTiming& tim
                 .index = frame.frame_slot_index,
                 .count = frame.frame_slot_count,
             },
-        .color_target =
-            cubey::render::swapchain_color_target_view(swapchain(), frame.image_index),
+        .color_target = cubey::render::swapchain_color_target_view(swapchain(), frame.image_index),
         .timing = timing,
     };
     callbacks_.record_frame(active_context, render_frame);
@@ -256,8 +263,15 @@ cubey::vulkan::RenderFrameResult WindowedHost::draw_frame(const FrameTiming& tim
 }
 
 WindowedAppContext WindowedHost::context() {
-    return {config_.run_config, window(),    instance(),        surface(),
-            device(),           swapchain(), frame_resources(), input_state_.frame(),
+    return {config_.run_config,
+            window(),
+            instance(),
+            surface(),
+            device(),
+            swapchain(),
+            frame_resources(),
+            submission(),
+            input_state_.frame(),
             frame_resources().frame_slot_count()};
 }
 
@@ -301,6 +315,13 @@ cubey::vulkan::FrameResources& WindowedHost::frame_resources() {
         throw std::runtime_error("frame resources are not initialized");
     }
     return frame_resources_.value();
+}
+
+cubey::vulkan::SubmissionCoordinator& WindowedHost::submission() {
+    if (!submission_.has_value()) {
+        throw std::runtime_error("Vulkan submission coordinator is not initialized");
+    }
+    return submission_.value();
 }
 
 } // namespace cubey::app

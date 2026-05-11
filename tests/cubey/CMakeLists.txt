@@ -17,6 +17,7 @@ add_executable(cubey_core_tests
     frame_ticket_tests.cpp
     headless_png_host_tests.cpp
     image_io_tests.cpp
+    immediate_commands_tests.cpp
     jobs_tests.cpp
     light_manager_tests.cpp
     input_tests.cpp
