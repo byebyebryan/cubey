@@ -1,5 +1,7 @@
 #include <cubey/engine.h>
 
+#include <cubey/project_gpu_services.h>
+
 #include <algorithm>
 #include <stdexcept>
 
@@ -33,6 +35,22 @@ const ProjectFrame& Engine::frame_for_timing(const FrameTiming& timing) {
 
 std::size_t Engine::retire_deferred_destruction() {
     return runtime_.retire_deferred_destruction();
+}
+
+void Engine::attach_gpu(vulkan::GpuRuntime& gpu) {
+    runtime_.attach_gpu(gpu);
+}
+
+void Engine::detach_gpu() {
+    runtime_.detach_gpu();
+}
+
+bool Engine::has_gpu() const noexcept {
+    return runtime_.has_gpu();
+}
+
+ProjectGpuServices& Engine::gpu() const {
+    return runtime_.gpu();
 }
 
 } // namespace cubey

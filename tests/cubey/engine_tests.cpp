@@ -1,6 +1,9 @@
 #include <cubey/engine.h>
+#include <cubey/project_gpu_services.h>
 #include <cubey/renderable_manager.h>
 #include <cubey/transform_3d.h>
+
+#include <vulkan/vulkan.h>
 
 #include <cstdint>
 #include <stdexcept>
@@ -40,6 +43,17 @@ cubey::Renderable3D renderable_for(cubey::render::MeshHandle mesh,
     };
 }
 
+cubey::vulkan::Device* fake_device() {
+    return reinterpret_cast<cubey::vulkan::Device*>(0x55);
+}
+
+cubey::vulkan::SubmissionCoordinator fake_submission() {
+    return cubey::vulkan::SubmissionCoordinator(
+        reinterpret_cast<VkQueue>(0x56),
+        [](VkQueue, const cubey::vulkan::QueueSubmitInfo&, const char*) {},
+        [](VkQueue, const char*) {});
+}
+
 } // namespace
 
 void test_engine_exposes_project_runtime_services() {
@@ -63,6 +77,38 @@ void test_engine_exposes_project_runtime_services() {
     context.deferred_destruction().defer_after(frame.ticket, [] {});
     require(engine.retire_deferred_destruction() == 1,
             "engine should retire project deferred destruction through runtime adapter");
+}
+
+void test_engine_attaches_gpu_services_to_project_context() {
+    cubey::Engine engine;
+    cubey::ProjectContext detached_context = engine.project_context();
+    require(!engine.has_gpu(), "engine should start without attached GPU services");
+    require(!detached_context.has_gpu(),
+            "engine project context should start without GPU services");
+    require_throws([&detached_context] { static_cast<void>(detached_context.gpu()); },
+                   "detached engine project context should reject GPU access");
+
+    cubey::vulkan::SubmissionCoordinator submission = fake_submission();
+    cubey::vulkan::GpuRuntime runtime({
+        .device = fake_device(),
+        .submission = &submission,
+        .execution_mode = cubey::vulkan::GpuRuntimeExecutionMode::Inline,
+    });
+    engine.attach_gpu(runtime);
+
+    cubey::ProjectContext attached_context = engine.project_context();
+    require(engine.has_gpu(), "engine should report attached GPU services");
+    require(attached_context.has_gpu(), "engine project context should expose GPU services");
+    require(&attached_context.gpu() == &engine.gpu(),
+            "engine project context should reference engine GPU services");
+
+    engine.detach_gpu();
+    cubey::ProjectContext detached_again = engine.project_context();
+    require(!engine.has_gpu(), "engine should report detached GPU services");
+    require(!detached_again.has_gpu(),
+            "engine project context should lose GPU services after detach");
+    require_throws([&detached_again] { static_cast<void>(detached_again.gpu()); },
+                   "detached-again engine project context should reject GPU access");
 }
 
 void test_engine_reuses_project_frame_for_same_timing() {

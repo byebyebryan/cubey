@@ -11,6 +11,11 @@
 
 namespace cubey {
 
+class ProjectGpuServices;
+namespace vulkan {
+class GpuRuntime;
+} // namespace vulkan
+
 struct EngineConfig {
     std::size_t worker_count = 0;
 };
@@ -38,6 +43,10 @@ class Engine {
     [[nodiscard]] ProjectContext project_context();
     [[nodiscard]] const ProjectFrame& frame_for_timing(const FrameTiming& timing);
     [[nodiscard]] std::size_t retire_deferred_destruction();
+    void attach_gpu(vulkan::GpuRuntime& gpu);
+    void detach_gpu();
+    [[nodiscard]] bool has_gpu() const noexcept;
+    [[nodiscard]] ProjectGpuServices& gpu() const;
 
   private:
     render::RenderResourceRegistry render_resources_{};

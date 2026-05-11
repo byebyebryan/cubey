@@ -1,4 +1,7 @@
+#include <cubey/project_gpu_services.h>
 #include <cubey/project_runtime.h>
+
+#include <vulkan/vulkan.h>
 
 #include <stdexcept>
 #include <string>
@@ -9,6 +12,26 @@ void require(bool condition, const char* message) {
     if (!condition) {
         throw std::runtime_error(message);
     }
+}
+
+cubey::vulkan::Device* fake_device() {
+    return reinterpret_cast<cubey::vulkan::Device*>(0x55);
+}
+
+cubey::vulkan::SubmissionCoordinator fake_submission() {
+    return cubey::vulkan::SubmissionCoordinator(
+        reinterpret_cast<VkQueue>(0x56),
+        [](VkQueue, const cubey::vulkan::QueueSubmitInfo&, const char*) {},
+        [](VkQueue, const char*) {});
+}
+
+void require_throws(auto&& action, const char* message) {
+    try {
+        action();
+    } catch (const std::exception&) {
+        return;
+    }
+    throw std::runtime_error(message);
 }
 
 struct TestProject {
@@ -185,4 +208,34 @@ void test_project_runtime_adapter_exposes_context_and_retirement() {
     require(adapter.retire_deferred_destruction() == 1,
             "runtime adapter should retire deferred actions through the current frame ticket");
     require(retired, "runtime adapter should run retired deferred actions");
+}
+
+void test_project_runtime_adapter_attaches_gpu_services_to_context() {
+    cubey::ProjectRuntimeAdapter adapter(0);
+    cubey::ProjectContext detached_context = adapter.context();
+    require(!detached_context.has_gpu(),
+            "runtime adapter context should start without GPU services");
+    require_throws([&detached_context] { static_cast<void>(detached_context.gpu()); },
+                   "detached runtime context should reject GPU access");
+
+    cubey::vulkan::SubmissionCoordinator submission = fake_submission();
+    cubey::vulkan::GpuRuntime runtime({
+        .device = fake_device(),
+        .submission = &submission,
+        .execution_mode = cubey::vulkan::GpuRuntimeExecutionMode::Inline,
+    });
+    adapter.attach_gpu(runtime);
+
+    cubey::ProjectContext attached_context = adapter.context();
+    require(adapter.has_gpu(), "runtime adapter should report attached GPU services");
+    require(attached_context.has_gpu(), "attached runtime context should expose GPU services");
+    require(&attached_context.gpu() == &adapter.gpu(),
+            "attached runtime context should reference adapter GPU services");
+
+    adapter.detach_gpu();
+    cubey::ProjectContext detached_again = adapter.context();
+    require(!adapter.has_gpu(), "runtime adapter should report detached GPU services");
+    require(!detached_again.has_gpu(), "runtime context should lose GPU services after detach");
+    require_throws([&detached_again] { static_cast<void>(detached_again.gpu()); },
+                   "detached-again runtime context should reject GPU access");
 }

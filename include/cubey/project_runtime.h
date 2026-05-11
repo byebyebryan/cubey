@@ -9,12 +9,16 @@
 #include <concepts>
 #include <cstddef>
 #include <cstdint>
+#include <memory>
 #include <string>
 #include <vector>
 
 namespace cubey {
 
 class ProjectGpuServices;
+namespace vulkan {
+class GpuRuntime;
+} // namespace vulkan
 
 struct ProjectExtent {
     std::uint32_t width = 0;
@@ -72,7 +76,7 @@ class ProjectRuntimeServices {
     ProjectRuntimeServices(ProjectRuntimeServices&&) = delete;
     ProjectRuntimeServices& operator=(ProjectRuntimeServices&&) = delete;
 
-    [[nodiscard]] ProjectContext context();
+    [[nodiscard]] ProjectContext context(ProjectGpuServices* gpu = nullptr);
     [[nodiscard]] ProjectFrame begin_frame(const FrameTiming& timing);
 
   private:
@@ -86,6 +90,7 @@ class ProjectRuntimeServices {
 class ProjectRuntimeAdapter {
   public:
     explicit ProjectRuntimeAdapter(std::size_t worker_count = 0);
+    ~ProjectRuntimeAdapter();
 
     ProjectRuntimeAdapter(const ProjectRuntimeAdapter&) = delete;
     ProjectRuntimeAdapter& operator=(const ProjectRuntimeAdapter&) = delete;
@@ -95,9 +100,14 @@ class ProjectRuntimeAdapter {
     [[nodiscard]] ProjectContext context();
     [[nodiscard]] const ProjectFrame& frame_for_timing(const FrameTiming& timing);
     [[nodiscard]] std::size_t retire_deferred_destruction();
+    void attach_gpu(vulkan::GpuRuntime& gpu);
+    void detach_gpu();
+    [[nodiscard]] bool has_gpu() const noexcept;
+    [[nodiscard]] ProjectGpuServices& gpu() const;
 
   private:
     ProjectRuntimeServices services_;
+    std::unique_ptr<ProjectGpuServices> gpu_services_;
     ProjectFrame active_frame_;
     bool has_active_frame_ = false;
 };
