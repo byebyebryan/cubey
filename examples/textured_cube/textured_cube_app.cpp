@@ -5,6 +5,7 @@
 #include <cubey/camera_3d.h>
 #include <cubey/engine.h>
 #include <cubey/frame_stats.h>
+#include <cubey/light_manager.h>
 #include <cubey/math.h>
 #include <cubey/orbit_controller.h>
 #include <cubey/render/mesh.h>
@@ -291,25 +292,29 @@ class TexturedCubeApp {
         cubey::SceneTransaction setup = scene().begin_transaction();
         cube_entity_ = setup.entities().create();
         camera_entity_ = setup.entities().create();
+        light_entity_ = setup.entities().create();
         setup.transforms3d().create(cube_entity_, cubey::Transform3D{});
-        setup.renderables3d().create(cube_entity_, cubey::Renderable3D{
-                                                       .primitives =
-                                                           {
-                                                               cubey::RenderablePrimitive3D{
-                                                                   .mesh = cube_mesh_handle_,
-                                                                   .material =
-                                                                       cube_material_handle_,
-                                                               },
-                                                           },
-                                                       .local_bounds =
-                                                           cubey::Bounds3D{
-                                                               .center = {0.0F, 0.0F, 0.0F},
-                                                               .half_extent = {1.0F, 1.0F, 1.0F},
-                                                           },
-                                                   });
+        setup.renderables3d().create(cube_entity_,
+                                     cubey::Renderable3D{
+                                         .primitives =
+                                             {
+                                                 cubey::RenderablePrimitive3D{
+                                                     .mesh = cube_mesh_handle_,
+                                                     .material = cube_material_handle_,
+                                                 },
+                                             },
+                                         .local_bounds =
+                                             cubey::Bounds3D{
+                                                 .center = {0.0F, 0.0F, 0.0F},
+                                                 .half_extent = {1.0F, 1.0F, 1.0F},
+                                             },
+                                     });
         setup.transforms3d().create(camera_entity_, cubey::orbit_camera_transform(
                                                         cubey::OrbitCameraState{.distance = 4.2F}));
         setup.cameras3d().create(camera_entity_, cubey::Camera3D{});
+        setup.lights3d().create(
+            light_entity_,
+            cubey::directional_light_3d({0.35F, -0.55F, 0.76F}, {0.76F, 0.76F, 0.76F}, 1.0F));
         setup.commit();
     }
 
@@ -483,15 +488,32 @@ class TexturedCubeApp {
                            VkExtent2D extent) const {
         const float aspect = static_cast<float>(extent.width) / static_cast<float>(extent.height);
         const cubey::CameraInstance3D camera = view.cameras3d().instance(camera_entity_);
+        const cubey::LightPacket3D light = current_light_packet(view);
 
         return {
             .mvp = view.cameras3d().view_projection_matrix(camera, view.transforms3d(), aspect) *
                    packet.world_affine_matrix,
             .model = packet.world_affine_matrix,
-            .light_direction = {0.35F, -0.55F, 0.76F, 0.0F},
-            .light_color = {0.76F, 0.76F, 0.76F, 1.0F},
+            .light_direction = {light.direction.x, light.direction.y, light.direction.z, 0.0F},
+            .light_color = {light.color.x * light.intensity, light.color.y * light.intensity,
+                            light.color.z * light.intensity, 1.0F},
             .ambient_color = {0.24F, 0.24F, 0.24F, 1.0F},
         };
+    }
+
+    [[nodiscard]] cubey::LightPacket3D
+    current_light_packet(const cubey::SceneReadView& view) const {
+        const std::vector<cubey::LightPacket3D> light_packets =
+            cubey::build_light_packets_3d(view.lights3d(), view.transforms3d());
+        for (const cubey::LightPacket3D& light : light_packets) {
+            if (light.entity == light_entity_) {
+                if (light.kind != cubey::LightKind3D::Directional) {
+                    throw std::runtime_error("textured_cube scene light should be directional");
+                }
+                return light;
+            }
+        }
+        throw std::runtime_error("textured_cube scene should produce one directional light packet");
     }
 
     void update_scene_uniforms(const cubey::SceneReadView& view,
@@ -583,6 +605,7 @@ class TexturedCubeApp {
         scene_ = nullptr;
         cube_entity_ = {};
         camera_entity_ = {};
+        light_entity_ = {};
     }
 
     void destroy_render_handles() {
@@ -667,6 +690,7 @@ class TexturedCubeApp {
     cubey::Scene* scene_ = nullptr;
     cubey::Entity cube_entity_;
     cubey::Entity camera_entity_;
+    cubey::Entity light_entity_;
     cubey::render::MeshHandle cube_mesh_handle_{};
     cubey::render::MaterialHandle cube_material_handle_{};
     OrbitController orbit_controller_;
