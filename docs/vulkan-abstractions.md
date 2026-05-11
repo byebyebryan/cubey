@@ -65,8 +65,9 @@ Current state:
   family, queue access, feature checks, and memory-type selection.
 - `choose_depth_format` centralizes the current supported depth format probe.
 - The current submission model has an inline GPU owner:
-  `SubmissionCoordinator` serializes queue submission on the app thread today,
-  and can move behind a render/submission thread later.
+  `GpuRuntime` accepts queued owner-thread work and drains inline on the app
+  thread today, while `SubmissionCoordinator` serializes the actual queue
+  submissions and can move behind a render/submission thread later.
 
 Needed next:
 
@@ -125,10 +126,15 @@ Current state:
 - `QueueSubmit`, `submit_to_queue`, and `submit_to_device_queue` centralize the
   current binary-semaphore `VkSubmitInfo` shape used by frame submit and
   immediate commands.
-- `SubmissionCoordinator` is the current inline GPU owner for serialized queue
-  submission and monotonic GPU submission tickets. `RenderContext` submits
-  frames through it and marks frame-slot tickets completed after the matching
-  fence wait; immediate commands submit-and-wait through it.
+- `SubmissionCoordinator` serializes queue submission and issues monotonic GPU
+  submission tickets. `RenderContext` submits frames through it and marks
+  frame-slot tickets completed after the matching fence wait.
+- `GpuRuntime` is the host-owned GPU work queue and owner-thread context.
+  Windowed/headless hosts expose it through their contexts and drain it inline
+  after setup/update/capture/shutdown boundaries. It is the public boundary for
+  app/project setup-time GPU work; `ImmediateCommands` remains the low-level
+  one-shot command helper used inside owner-context callbacks and transfer
+  helpers.
 - `copy_buffer` and `upload_device_buffer` cover current setup-time transfers
   into device-local buffers.
 - `copy_buffer_to_image` and `copy_image_to_buffer` cover current one-shot
@@ -141,6 +147,8 @@ Needed next:
 
 - Debug-label helpers once marker scope becomes useful during capture/debugging.
 - One-shot compute/transfer helper vocabulary.
+- Move remaining app/project upload, readback, and capture requests toward
+  runtime-queued work and explicit completion tickets.
 - Per-frame/per-thread command-pool sharding before any parallel command
   recording.
 
@@ -166,7 +174,8 @@ Current state:
   render target and color-attachment-to-readback transition used by headless
   output.
 - `HeadlessPngHost` owns the repeated no-window offscreen target, capture
-  transition, image readback, and PNG artifact write path.
+  transition, runtime-queued capture recording, image readback, and PNG
+  artifact write path.
 - `cubey::render::Texture2D` now owns the current generated/uploaded sampled
   texture image shape above the raw Vulkan `Image` and optional `Sampler`.
 - `cubey::render::DepthTexture` owns sampled depth image setup for shadow maps
@@ -176,8 +185,9 @@ Current state:
   shadow and edge-clamped sampling policy can be explicit.
 - Examples still own some resource policy, including when transfers and
   readback are used.
-- GPU upload and capture behavior is still direct/blocking at the current
-  runnable/host level.
+- GPU upload/readback behavior is still direct/blocking in low-level transfer
+  helpers; the host-visible capture-record path now goes through `GpuRuntime`
+  while retaining inline execution.
 
 Needed next:
 
@@ -351,8 +361,10 @@ Current state:
   upload request queue.
 - `FrameTicketIssuer`, `FrameTicket`, and `DeferredDestructionQueue` provide
   CPU-side ticket retirement vocabulary.
-- `SubmissionCoordinator` provides GPU submission tickets and an inline GPU
-  owner boundary for frame and immediate queue submission.
+- `SubmissionCoordinator` provides GPU submission tickets and serialized queue
+  submission for frames and immediate work.
+- `GpuRuntime` provides the host-owned GPU work queue and owner-context boundary
+  that can move from inline drain to a dedicated render/submission thread later.
 - `Engine` is the first scoped root owner for project runtime services and
   scene creation; it intentionally does not own host/device setup yet.
 - `ProjectContext`, `ProjectFrame`, `ProjectExtent`, `RenderPacket`, and

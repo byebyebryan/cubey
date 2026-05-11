@@ -85,9 +85,11 @@ one.
 - **App thread:** owns window events, user input, high-level project state, and
   the main loop. Today this is the example loop.
 - **GPU owner:** owns Vulkan object mutation, queue submission, in-flight frame
-  tracking, and deferred destruction. `SubmissionCoordinator` is the first
-  inline implementation: it runs on the app thread today and can move behind a
-  dedicated render/submission thread later.
+  tracking, and deferred destruction. `GpuRuntime` is the current strict owner
+  boundary: callers enqueue `GpuWorkRequest` values, and the host drains them
+  inline on the app thread today. `SubmissionCoordinator` is the lower-level
+  serialized queue-submission helper used by that runtime and by frame
+  submission.
 - **Worker executor:** runs CPU-only jobs. Worker jobs must not mutate Vulkan
   objects or call Vulkan submission APIs unless a future API explicitly grants a
   thread-local recording context.
@@ -115,6 +117,10 @@ Vulkan wrapper policy:
 
 - `Device` owns device and queue handles, but submission should flow through the
   GPU owner rather than arbitrary worker threads.
+- `GpuRuntime` owns the work queue and owner-thread context. Enqueue is
+  thread-safe; `drain_inline()` is owner-thread-only so the same contract can
+  move to a dedicated render/submission thread later without changing
+  app/project call sites.
 - `CommandPool` remains single-thread-owned. Future parallel recording should
   allocate command pools by frame and worker index.
 - `DescriptorPool` remains single-owner unless a future allocator explicitly
@@ -224,6 +230,16 @@ monotonic GPU submission tickets and marks frame-slot tickets completed after
 their fence wait. Project-runtime deferred destruction is still intentionally
 separate until a project host owns the mapping from project frame tickets to GPU
 completion.
+
+`cubey::vulkan::GpuRuntime` is now the first host-owned GPU work queue. It
+accepts labeled `GpuWorkRequest` callbacks from any thread, exposes a
+`GpuOwnerContext` containing the device and submission coordinator only while
+draining, and restores undrained work if a callback throws. Windowed and
+headless hosts drain it inline after setup/update/capture boundaries today, so
+the path is strict without requiring a separate render thread yet. Direct
+`ImmediateCommands` remain a low-level building block inside owner-context
+callbacks and transfer helpers; app/project setup code should prefer
+`context.gpu().enqueue(...)`.
 
 ## Command Recording
 
@@ -389,7 +405,22 @@ Status: frame-ticket/deferred-destruction initial pass complete.
 - Added deferred destruction actions retired by completed ticket.
 - Kept this CPU-side; Vulkan fence/timeline integration remains future work.
 
-### Slice 5: Parallel Command Recording And Split Queues
+### Slice 5: Strict GPU Runtime Boundary
+
+Status: inline implementation complete.
+
+- Added `GpuWorkQueue`, `GpuRuntime`, `GpuWorkRequest`, `GpuWorkTicket`, and
+  `GpuOwnerContext`.
+- Enqueue is mutex-protected so worker threads can submit future GPU-owner work;
+  draining is owner-thread-only.
+- Windowed and headless hosts own the runtime and expose it through their
+  contexts.
+- Hosts drain queued GPU work at setup/update/capture/shutdown boundaries.
+- `textured_cube` setup-time texture transitions/compute dispatch and
+  `HeadlessPngHost` capture recording now route through the runtime while still
+  executing inline.
+
+### Slice 6: Parallel Command Recording And Split Queues
 
 - Add after profiling, project complexity, or established renderer architecture
   makes the contract clear.
@@ -407,4 +438,4 @@ Status: frame-ticket/deferred-destruction initial pass complete.
 - Should `ProjectRuntimeAdapter` grow into a project host, or should the next
   project keep using the windowed/headless hosts directly?
 - Should GPU capture polling, queued uploads, or project-runtime deferred
-  destruction become the first consumer of GPU submission tickets?
+  destruction become the next consumer of GPU submission tickets?

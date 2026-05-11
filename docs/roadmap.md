@@ -109,10 +109,12 @@ Current checkpoint:
   command-buffer recording calls used by current examples and `fluid_2d`:
   begin/end, dynamic rendering boundaries, image layout transitions, pipeline
   and descriptor binding, push constants, draws, indexed draws, and dispatches.
-- Reusable `cubey::vulkan::SubmissionCoordinator` is the first inline GPU owner:
-  it serializes queue submission, issues monotonic GPU submission tickets, and
-  lets `RenderContext` mark frame-slot tickets completed after the matching
-  fence wait.
+- Reusable `cubey::vulkan::SubmissionCoordinator` serializes queue submission,
+  issues monotonic GPU submission tickets, and lets `RenderContext` mark
+  frame-slot tickets completed after the matching fence wait.
+- Reusable `cubey::vulkan::GpuRuntime` is the first strict GPU-owner work
+  queue: host contexts expose `gpu()`, worker threads can enqueue labeled work,
+  and hosts drain it inline at setup/update/capture/shutdown boundaries today.
 - Reusable `cubey::vulkan::DepthAttachment` owns depth image/view setup and
   shared depth format selection.
 - Reusable `cubey::vulkan` transfer/readback helpers cover readback buffers,
@@ -346,9 +348,12 @@ building a full threaded renderer too early.
 - Added CPU-owned upload requests that can be drained by the GPU owner.
 - Added frame tickets and deferred destruction helpers for future in-flight GPU
   lifetime tracking.
-- Added an inline `SubmissionCoordinator` as the current GPU owner for serialized
-  queue submission and frame-slot GPU completion marking. A dedicated render
-  thread remains a later executor change, not part of this phase.
+- Added an inline `SubmissionCoordinator` for serialized queue submission and
+  frame-slot GPU completion marking. A dedicated render thread remains a later
+  executor change, not part of this phase.
+- Added `GpuRuntime` as the public GPU-owner work queue over the inline
+  submission coordinator; windowed/headless hosts expose it through their
+  contexts and drain it inline.
 - Added project runtime vocabulary for setup, update, render-packet, resize,
   and shutdown contracts.
 - Added `ProjectRuntimeServices` and moved `fluid_2d` simulation timing onto
@@ -420,6 +425,10 @@ has proven useful.
   destruction, and `ProjectFrame` creation. Status: complete.
 - Thin project runtime adapter for one project frame per host frame, context
   access, and deferred destruction retirement. Status: complete.
+- Strict GPU runtime exposed through windowed/headless host contexts, with
+  setup-time GPU work entering through a queue even while execution remains
+  inline. Status: complete for current headless capture and textured-cube setup
+  work.
 - Narrow no-GLFW headless PNG host that shares no-window instance/device,
   offscreen target, capture transitions, readback, and artifact writing. Status:
   complete for current headless examples and `fluid_2d`.

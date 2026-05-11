@@ -149,9 +149,10 @@ resource creation/destruction, update, command recording, and shutdown.
 - `cubey::vulkan::CommandRecorder` removes repeated low-level command-buffer
   call boilerplate while keeping pass order, barriers, descriptors, pipelines,
   and render intent in examples/projects.
-- `cubey::vulkan::SubmissionCoordinator` is the inline GPU owner exposed by the
-  windowed app context. Frame submit and setup-time immediate commands route
-  through it while still running on the app thread.
+- `cubey::vulkan::GpuRuntime` is the host-visible GPU owner. It drains labeled
+  work inline on the app thread today and uses `SubmissionCoordinator` for
+  serialized queue submission, so app/project setup work enters through the
+  runtime queue rather than owning queue submission directly.
 - `cubey::render::View3D` gives 3D examples a shared CPU frame-planning
   boundary: camera matrices, draw packets, light packets, ambient-only
   environment, and conservative frustum culling. It is not a scene manager,
@@ -164,9 +165,10 @@ resource creation/destruction, update, command recording, and shutdown.
   object rotation.
 - `cubey::app::GlfwSurface` owns the GLFW-created `VkSurfaceKHR`.
 - `cubey::app::WindowedHost` owns the current windowed loop: instance, surface,
-  device, inline submission coordinator, swapchain, frame resources, frame
-  timing, optional frame stats, acquire/record/submit/present, and swapchain
-  recreation.
+  device, inline submission coordinator, GPU runtime, swapchain, frame
+  resources, frame timing, optional frame stats, acquire/record/submit/present,
+  and swapchain recreation. It drains queued GPU work at host-owned setup,
+  update, swapchain-resource, and shutdown boundaries.
 - Windowed render callbacks receive `cubey::app::WindowedRenderFrame`, which
   carries the command buffer, swapchain image index, timing, and
   `cubey::render::ColorTargetView` for the active swapchain image.
@@ -175,8 +177,9 @@ resource creation/destruction, update, command recording, and shutdown.
   They still own their shaders, pipelines, descriptors, command recording
   sequence, and example-specific state.
 - `cubey::HeadlessPngHost` owns the repeated no-window Vulkan instance/device,
-  offscreen RGBA target, color-attachment/readback transitions, image readback,
-  and PNG write path without depending on GLFW. Its target view uses the same
+  submission coordinator, GPU runtime, offscreen RGBA target,
+  color-attachment/readback transitions, image readback, and PNG write path
+  without depending on GLFW. Its target view uses the same
   `cubey::render::ColorTargetView` vocabulary as the windowed path.
 - `headless_render`, `fractal --headless`, and `fluid_2d --headless` use the
   headless host while keeping their resource setup, simulation/update work, and

@@ -79,8 +79,10 @@ The near-term Vulkan layer should split around real ownership boundaries:
 - `Shader` / `Pipeline` — build-time shader paths, compute and graphics pipelines
 - `CommandPool` / `FrameResources` — command pool ownership, command-buffer
   allocation, sync objects, and per-frame-slot submitted GPU tickets
-- `SubmissionCoordinator` — inline GPU owner for serialized queue submission
-  and monotonic GPU submission tickets
+- `SubmissionCoordinator` — serialized queue submission helper and monotonic
+  GPU submission tickets
+- `GpuRuntime` — host-owned GPU work queue and owner-thread context; inline
+  today, strict enough to move behind a render/submission thread later
 - project/pass code — the actual procedural experiments
 
 These seams should be practical C++ modules first. Portability work should be
@@ -173,8 +175,9 @@ shape described in [threading and async design](threading-and-async.md): app
 state produces render packets, CPU jobs run behind Cubey APIs, upload/capture
 requests are queued, and one GPU owner serializes queue submission and resource
 lifetime decisions. Today that GPU owner is inline through
-`cubey::vulkan::SubmissionCoordinator`; a dedicated render thread should be an
-executor change behind the same boundary.
+`cubey::vulkan::GpuRuntime`, backed by `SubmissionCoordinator` for actual queue
+submission; a dedicated render thread should be an executor change behind the
+same boundary.
 
 ```cpp
 struct App {
@@ -361,6 +364,7 @@ cubey/
         command_pool.h     -- command pool ownership and command-buffer begin
         descriptors.h      -- descriptor set layout/pool ownership
         frame_resources.h  -- per-frame command/sync resources
+        gpu_runtime.h      -- queued GPU work and owner-thread context
         image.h            -- Vulkan image, memory, and image-view ownership
         immediate_commands.h -- one-shot setup command submission
         dynamic_rendering.h -- dynamic-rendering attachment helpers
@@ -403,6 +407,7 @@ cubey/
         command_pool.cpp   -- command pool ownership and command-buffer begin
         descriptors.cpp    -- descriptor set layout/pool ownership
         frame_resources.cpp -- command buffers and sync objects
+        gpu_runtime.cpp    -- queued GPU work and inline runtime drain
         image.cpp          -- images, memory, and image views
         immediate_commands.cpp -- one-shot setup command submission
         dynamic_rendering.cpp -- dynamic-rendering attachment helpers
