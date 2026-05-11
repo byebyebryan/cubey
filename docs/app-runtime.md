@@ -132,6 +132,10 @@ resource creation/destruction, update, command recording, and shutdown.
   affine matrices, scene edit queues, and epoch-local read-view snapshots.
 - `CameraManager2D` and `CameraManager3D` provide entity-backed camera
   components through the same scene edit/read-view boundary.
+- `RenderableManager3D` provides entity-backed mesh renderable components and
+  builds CPU-side renderable packets from scene read views. Packets carry
+  transform matrices plus opaque mesh/material handles; examples still resolve
+  those handles to their own Vulkan resources and pipelines.
 - `cubey::input::PointerDrag`, `PanZoom2DController`, and the input-aware
   `OrbitController` cover the current repeated 2D/3D pointer-control shapes
   without introducing a scene or action-binding system. The pan/zoom controller

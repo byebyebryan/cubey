@@ -290,7 +290,7 @@ Each manager should be explicit:
 
 ```cpp
 class TransformManager3D;
-class RenderableManager;
+class RenderableManager3D;
 class CameraManager2D;
 class CameraManager3D;
 class LightManager;
@@ -355,18 +355,21 @@ References:
 ## Relationship To Current Cubey Code
 
 The initial entity/component substrate now exists: `EntityManager`, stable slot
-storage, `Scene` edit/read epochs, and entity-backed 2D/3D transform managers.
-The older transform-only hierarchy has been retired in favor of the manager
-shape described here.
+storage, `Scene` edit/read epochs, entity-backed 2D/3D transform managers,
+entity-backed 2D/3D camera managers, and the first 3D renderable manager. The
+older transform-only hierarchy has been retired in favor of the manager shape
+described here.
 
 `Engine` now provides the first Filament-style root ownership boundary, but it
 does not own renderer/device setup yet. Windowed and headless hosts remain the
 GPU/platform owners until Cubey defines a higher-level renderer ownership
 contract.
 
-`cubey::render` should continue to own low-level renderer-facing resources and
-draw metadata. It should not become the scene owner. Scene/component managers
-can build render packets that reference `cubey::render` resources.
+`cubey::render` should continue to own low-level renderer-facing resources,
+opaque resource handles, and draw metadata. It should not become the scene
+owner. Scene/component managers can build renderable packets that reference
+`cubey::render` resource handles, and the GPU owner resolves those handles to
+live resources during command recording.
 
 The existing threading direction still applies: one GPU owner serializes
 Vulkan mutation and submission, while worker threads prepare CPU-side data and
@@ -384,6 +387,8 @@ Public debug/development APIs should fail loudly on invalid structural edits:
 - creating a transform cycle;
 - destroying a transform that still has children without an explicit child
   policy in the same edit batch.
+- creating or updating a renderable with no primitives, null mesh/material
+  handles, or zero draw instances.
 
 The first implementation can use exceptions consistently with current Cubey
 tests. Later hot paths can add no-throw validation or result-code variants if a
@@ -401,12 +406,13 @@ Unit tests should cover:
 - transform parent/child world matrix updates during commit;
 - invalid parenting, self-parenting, and cycle rejection;
 - strict child policy on transform destruction;
+- renderable packet extraction from committed transforms;
 - concurrent edit-queue construction feeding a serialized commit;
 - thread sanitizer coverage once real concurrent access lands.
 
 Integration tests should prove:
 
-- a render packet can be built from a `SceneReadView`;
+- a renderable packet can be built from a `SceneReadView`;
 - transform managers cover parented world-transform behavior previously covered
   by standalone hierarchy tests;
 - destroying entities retires attached components through the scene boundary;
@@ -478,5 +484,6 @@ The smallest useful substrate is now in place:
 4. Shared transform-manager template used by 2D/3D.
 5. Migration of transform hierarchy behavior to the manager shape.
 
-Renderable, camera, light, bounds, and material managers should build on this
-contract instead of reintroducing project-local ownership patterns.
+Camera and renderable managers now build on this contract. Light, material,
+bounds/culling, and resource-registry managers should follow the same pattern
+instead of reintroducing project-local ownership patterns.

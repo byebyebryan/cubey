@@ -98,7 +98,7 @@ Core operations: create resources, dispatch compute, draw, synchronize, submit,
 present, and read back. In the first version, those operations map directly to
 Vulkan and remain free to expose Vulkan-specific requirements where useful.
 
-### Transform And Camera Vocabulary
+### Transform, Camera, And Renderable Vocabulary
 
 Reusable spatial types should stay explicit and narrow:
 
@@ -113,11 +113,16 @@ Reusable spatial types should stay explicit and narrow:
 - `Camera2D` and `Camera3D` own view/projection state separately from transform
   component ownership. `OrbitCameraState` and `OrbitController` are control
   helpers layered on top of `Camera3D`, not camera primitives.
+- `RenderableManager3D` owns entity-backed 3D renderable components and builds
+  CPU-side renderable packets from committed scene read views. Renderables use
+  opaque mesh/material handles so scene snapshots do not expose mutable Vulkan
+  resources.
 
 The broader entity/component shape is captured in
 [entity and component foundation](entity-component-foundation.md): Cubey should
 move toward manager-oriented, MT-stable component storage with explicit read
-views and edit commits before adding scene/renderable ownership.
+views and edit commits before adding broader light, material, or renderer
+ownership.
 
 `cubey::Engine` is the scoped root owner for engine services and scene
 creation. It is intentionally not a singleton: apps pass `Engine&`, `Scene&`,
@@ -313,10 +318,13 @@ cubey/
       pan_zoom_2d_controller.h -- input-driven 2D camera pan/zoom controller
       pointer_drag.h       -- shared pointer drag helper
       project_runtime.h    -- async-ready project vocabulary
+      renderable_manager.h -- entity-backed 3D renderable components
       transform_2d.h       -- explicit 2D model transform value type
       transform_3d.h       -- explicit 3D model transform value type
       spirv_io.h           -- SPIR-V bytecode file loading
       upload_queue.h       -- CPU-owned upload request queue
+      render/
+        resource_handle.h  -- opaque render resource handle values
       vulkan/
         vk_check.h         -- Vulkan result helpers
         instance.h         -- instance, validation, debug messenger

@@ -84,11 +84,11 @@ Current checkpoint:
   command/sync resources, and per-image present synchronization.
 - Reusable `cubey::FrameClock`, `cubey::Transform2D`, `cubey::Transform3D`,
   `cubey::TransformManager2D`, `cubey::TransformManager3D`, `cubey::Camera2D`,
-  `cubey::Camera3D`, `cubey::CameraManager2D`, `cubey::CameraManager3D`, and
-  `cubey::OrbitController` cover basic frame timing, explicit 2D/3D affine
-  transform boundaries, quaternion-backed 3D rotation, entity-backed
-  parent/child world transforms, shared 2D/3D camera state, and mouse-driven
-  orbit input.
+  `cubey::Camera3D`, `cubey::CameraManager2D`, `cubey::CameraManager3D`,
+  `cubey::RenderableManager3D`, and `cubey::OrbitController` cover basic frame
+  timing, explicit 2D/3D affine transform boundaries, quaternion-backed 3D
+  rotation, entity-backed parent/child world transforms, shared 2D/3D camera
+  state, entity-backed 3D renderable packets, and mouse-driven orbit input.
 - Reusable `cubey::input::InputState`/`InputFrame` provide per-frame keyboard
   and mouse polling over the GLFW callback stream, with shared pointer-drag,
   camera-backed 2D pan/zoom, and input-aware orbit-control helpers.
@@ -177,17 +177,19 @@ Current checkpoint:
   shared pipeline helper, and draws a `gl_VertexIndex` triangle without a render
   pass or framebuffer through the shared app host.
 - `examples/spinning_cube` links against `cubey`, compiles vertex/fragment
-  shaders at build time, draws an indexed cube through `cubey::render::Mesh`
-  and `DrawItem`, updates an MVP matrix from shared transform, camera, and math
-  helpers through push constants, and uses dynamic rendering with a shared depth
-  attachment helper through the shared app host.
+  shaders at build time, draws an indexed cube through `cubey::render::Mesh`,
+  `DrawItem`, and a scene-derived 3D renderable packet, updates an MVP matrix
+  from shared transform, camera, and math helpers through push constants, and
+  uses dynamic rendering with a shared depth attachment helper through the
+  shared app host.
 - `examples/textured_cube` links against `cubey`, generates a `Texture2D` with a
   compute shader writing a storage image, transitions it for shader sampling,
   binds per-frame scene uniforms plus a combined image sampler descriptor
   through shared descriptor/compute helpers, and draws an interactive shaded textured indexed
-  cube through `cubey::render::Mesh`, `DrawItem`, dynamic rendering, per-face
-  normals, shared GLSL Lambert lighting, shared transform/model matrices,
-  shared camera projection, and shared math helpers through the shared app host.
+  cube through `cubey::render::Mesh`, `DrawItem`, a scene-derived 3D renderable
+  packet, dynamic rendering, per-face normals, shared GLSL Lambert lighting,
+  shared transform/model matrices, shared camera projection, and shared math
+  helpers through the shared app host.
 - `examples/headless_render` links against `cubey`, creates no GLFW window or
   surface, renders an offscreen color target through dynamic rendering, copies
   it into a readback buffer, and writes a PNG artifact.
