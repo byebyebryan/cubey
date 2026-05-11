@@ -59,4 +59,12 @@ void submit_to_device_queue(const Device& device, const QueueSubmitInfo& submit_
     submit_to_queue(device.queue(), submit_info, label);
 }
 
+void wait_for_queue_idle(VkQueue queue, const char* label) {
+    if (queue == VK_NULL_HANDLE) {
+        throw std::runtime_error("queue wait idle requires a queue");
+    }
+
+    check(vkQueueWaitIdle(queue), label);
+}
+
 } // namespace cubey::vulkan

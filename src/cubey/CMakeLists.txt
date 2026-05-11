@@ -58,6 +58,7 @@ add_library(cubey STATIC
     vulkan/render_context.cpp
     vulkan/sampler.cpp
     vulkan/shader_module.cpp
+    vulkan/submission_coordinator.cpp
     vulkan/swapchain.cpp
 )
 add_library(cubey::cubey ALIAS cubey)

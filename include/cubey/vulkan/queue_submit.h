@@ -48,5 +48,6 @@ class QueueSubmit {
 void submit_to_queue(VkQueue queue, const QueueSubmitInfo& submit_info, const char* label);
 void submit_to_device_queue(const Device& device, const QueueSubmitInfo& submit_info,
                             const char* label);
+void wait_for_queue_idle(VkQueue queue, const char* label);
 
 } // namespace cubey::vulkan
