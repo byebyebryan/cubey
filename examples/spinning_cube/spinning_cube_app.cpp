@@ -5,10 +5,10 @@
 #include <cubey/engine.h>
 #include <cubey/math.h>
 #include <cubey/render/mesh.h>
-#include <cubey/render/render_plan.h>
 #include <cubey/render/resource_handle.h>
 #include <cubey/render/resource_table.h>
 #include <cubey/render/target.h>
+#include <cubey/render/view_3d.h>
 #include <cubey/scene.h>
 #include <cubey/spirv_io.h>
 #include <cubey/transform_3d.h>
@@ -248,21 +248,21 @@ class SpinningCubeApp {
         cube_entity_ = setup.entities().create();
         camera_entity_ = setup.entities().create();
         setup.transforms3d().create(cube_entity_, cubey::Transform3D{});
-        setup.renderables3d().create(cube_entity_, cubey::Renderable3D{
-                                                       .primitives =
-                                                           {
-                                                               cubey::RenderablePrimitive3D{
-                                                                   .mesh = cube_mesh_handle_,
-                                                                   .material =
-                                                                       cube_material_handle_,
-                                                               },
-                                                           },
-                                                       .local_bounds =
-                                                           cubey::Bounds3D{
-                                                               .center = {0.0F, 0.0F, 0.0F},
-                                                               .half_extent = {1.0F, 1.0F, 1.0F},
-                                                           },
-                                                   });
+        setup.renderables3d().create(cube_entity_,
+                                     cubey::Renderable3D{
+                                         .primitives =
+                                             {
+                                                 cubey::RenderablePrimitive3D{
+                                                     .mesh = cube_mesh_handle_,
+                                                     .material = cube_material_handle_,
+                                                 },
+                                             },
+                                         .local_bounds =
+                                             cubey::Bounds3D{
+                                                 .center = {0.0F, 0.0F, 0.0F},
+                                                 .half_extent = {1.0F, 1.0F, 1.0F},
+                                             },
+                                     });
         setup.transforms3d().create(camera_entity_, cubey::orbit_camera_transform(
                                                         cubey::OrbitCameraState{.distance = 4.2F}));
         setup.cameras3d().create(camera_entity_, cubey::Camera3D{});
@@ -283,34 +283,33 @@ class SpinningCubeApp {
     }
 
     [[nodiscard]] PushConstants
-    current_push_constants(const cubey::SceneReadView& view,
-                           const cubey::render::RenderDrawPacket3D& packet,
-                           VkExtent2D extent) const {
-        const float aspect = static_cast<float>(extent.width) / static_cast<float>(extent.height);
-        const cubey::CameraInstance3D camera = view.cameras3d().instance(camera_entity_);
-
+    current_push_constants(const cubey::render::RenderFramePlan3D& plan,
+                           const cubey::render::RenderDrawPacket3D& packet) const {
         return {
-            view.cameras3d().view_projection_matrix(camera, view.transforms3d(), aspect) *
-                packet.world_affine_matrix,
+            plan.view_projection_matrix * packet.world_affine_matrix,
         };
     }
 
-    [[nodiscard]] cubey::render::RenderDrawPacket3D
-    current_draw_packet(const cubey::SceneReadView& view) const {
-        const std::vector<cubey::RenderablePacket3D> renderable_packets =
-            cubey::build_renderable_packets_3d(view.renderables3d(), view.transforms3d());
-        const std::vector<cubey::render::RenderDrawPacket3D> draw_packets =
-            cubey::render::build_render_draw_packets_3d(renderable_packets,
-                                                        engine_.render_resources());
-        if (draw_packets.size() != 1) {
+    [[nodiscard]] cubey::render::RenderFramePlan3D
+    current_frame_plan(const cubey::SceneReadView& view, VkExtent2D extent) const {
+        const cubey::render::View3D render_view{
+            .camera_entity = camera_entity_,
+            .width = extent.width,
+            .height = extent.height,
+        };
+        cubey::render::RenderFramePlan3D plan = cubey::render::build_render_frame_plan_3d(
+            render_view, view, engine_.render_resources());
+        if (plan.draw_packets.size() != 1) {
             throw std::runtime_error("spinning_cube scene should produce one draw packet");
         }
-        return draw_packets[0];
+        return plan;
     }
 
     void record_cube_frame(const cubey::app::WindowedRenderFrame& frame) {
         cubey::SceneReadView scene_view = scene().read();
-        const cubey::render::RenderDrawPacket3D draw_packet = current_draw_packet(scene_view);
+        const cubey::render::RenderFramePlan3D frame_plan =
+            current_frame_plan(scene_view, frame.color_target.extent);
+        const cubey::render::RenderDrawPacket3D& draw_packet = frame_plan.draw_packets[0];
         const VkCommandBuffer command_buffer = frame.command_buffer;
         cubey::vulkan::begin_command_buffer(command_buffer,
                                             VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
@@ -334,8 +333,7 @@ class SpinningCubeApp {
         };
         const cubey::render::RenderTargetRenderingInfo rendering(target, clear_values);
 
-        const PushConstants push_constants =
-            current_push_constants(scene_view, draw_packet, frame.color_target.extent);
+        const PushConstants push_constants = current_push_constants(frame_plan, draw_packet);
 
         vkCmdBeginRendering(command_buffer, &rendering.info());
         vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline().handle());

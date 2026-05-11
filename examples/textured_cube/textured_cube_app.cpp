@@ -9,12 +9,12 @@
 #include <cubey/math.h>
 #include <cubey/orbit_controller.h>
 #include <cubey/render/mesh.h>
-#include <cubey/render/render_plan.h>
 #include <cubey/render/resource_handle.h>
 #include <cubey/render/resource_table.h>
 #include <cubey/render/target.h>
 #include <cubey/render/texture.h>
 #include <cubey/render/uniform_buffer.h>
+#include <cubey/render/view_3d.h>
 #include <cubey/scene.h>
 #include <cubey/spirv_io.h>
 #include <cubey/transform_3d.h>
@@ -483,29 +483,25 @@ class TexturedCubeApp {
     }
 
     [[nodiscard]] SceneUniforms
-    current_scene_uniforms(const cubey::SceneReadView& view,
-                           const cubey::render::RenderDrawPacket3D& packet,
-                           VkExtent2D extent) const {
-        const float aspect = static_cast<float>(extent.width) / static_cast<float>(extent.height);
-        const cubey::CameraInstance3D camera = view.cameras3d().instance(camera_entity_);
-        const cubey::LightPacket3D light = current_light_packet(view);
+    current_scene_uniforms(const cubey::render::RenderFramePlan3D& plan,
+                           const cubey::render::RenderDrawPacket3D& packet) const {
+        const cubey::LightPacket3D light = current_light_packet(plan);
+        const cubey::math::Vec3 ambient =
+            plan.environment.ambient_color * plan.environment.ambient_intensity;
 
         return {
-            .mvp = view.cameras3d().view_projection_matrix(camera, view.transforms3d(), aspect) *
-                   packet.world_affine_matrix,
+            .mvp = plan.view_projection_matrix * packet.world_affine_matrix,
             .model = packet.world_affine_matrix,
             .light_direction = {light.direction.x, light.direction.y, light.direction.z, 0.0F},
             .light_color = {light.color.x * light.intensity, light.color.y * light.intensity,
                             light.color.z * light.intensity, 1.0F},
-            .ambient_color = {0.24F, 0.24F, 0.24F, 1.0F},
+            .ambient_color = {ambient.x, ambient.y, ambient.z, 1.0F},
         };
     }
 
     [[nodiscard]] cubey::LightPacket3D
-    current_light_packet(const cubey::SceneReadView& view) const {
-        const std::vector<cubey::LightPacket3D> light_packets =
-            cubey::build_light_packets_3d(view.lights3d(), view.transforms3d());
-        for (const cubey::LightPacket3D& light : light_packets) {
+    current_light_packet(const cubey::render::RenderFramePlan3D& plan) const {
+        for (const cubey::LightPacket3D& light : plan.light_packets) {
             if (light.entity == light_entity_) {
                 if (light.kind != cubey::LightKind3D::Directional) {
                     throw std::runtime_error("textured_cube scene light should be directional");
@@ -516,31 +512,40 @@ class TexturedCubeApp {
         throw std::runtime_error("textured_cube scene should produce one directional light packet");
     }
 
-    void update_scene_uniforms(const cubey::SceneReadView& view,
-                               const cubey::render::RenderDrawPacket3D& packet, VkExtent2D extent,
+    void update_scene_uniforms(const cubey::render::RenderFramePlan3D& plan,
+                               const cubey::render::RenderDrawPacket3D& packet,
                                cubey::render::FrameSlot frame_slot) {
-        const SceneUniforms uniforms = current_scene_uniforms(view, packet, extent);
+        const SceneUniforms uniforms = current_scene_uniforms(plan, packet);
         scene_uniforms().upload(frame_slot, uniforms);
     }
 
-    [[nodiscard]] cubey::render::RenderDrawPacket3D
-    current_draw_packet(const cubey::SceneReadView& view) const {
-        const std::vector<cubey::RenderablePacket3D> renderable_packets =
-            cubey::build_renderable_packets_3d(view.renderables3d(), view.transforms3d());
-        const std::vector<cubey::render::RenderDrawPacket3D> draw_packets =
-            cubey::render::build_render_draw_packets_3d(renderable_packets,
-                                                        engine_.render_resources());
-        if (draw_packets.size() != 1) {
+    [[nodiscard]] cubey::render::RenderFramePlan3D
+    current_frame_plan(const cubey::SceneReadView& view, VkExtent2D extent) const {
+        const cubey::render::View3D render_view{
+            .camera_entity = camera_entity_,
+            .width = extent.width,
+            .height = extent.height,
+            .environment =
+                cubey::render::Environment3D{
+                    .ambient_color = {0.24F, 0.24F, 0.24F},
+                    .ambient_intensity = 1.0F,
+                },
+        };
+        cubey::render::RenderFramePlan3D plan = cubey::render::build_render_frame_plan_3d(
+            render_view, view, engine_.render_resources());
+        if (plan.draw_packets.size() != 1) {
             throw std::runtime_error("textured_cube scene should produce one draw packet");
         }
-        return draw_packets[0];
+        return plan;
     }
 
     void record_cube_frame(const cubey::app::WindowedRenderFrame& frame) {
         const VkCommandBuffer command_buffer = frame.command_buffer;
         cubey::SceneReadView scene_view = scene().read();
-        const cubey::render::RenderDrawPacket3D draw_packet = current_draw_packet(scene_view);
-        update_scene_uniforms(scene_view, draw_packet, frame.color_target.extent, frame.frame_slot);
+        const cubey::render::RenderFramePlan3D frame_plan =
+            current_frame_plan(scene_view, frame.color_target.extent);
+        const cubey::render::RenderDrawPacket3D& draw_packet = frame_plan.draw_packets[0];
+        update_scene_uniforms(frame_plan, draw_packet, frame.frame_slot);
 
         cubey::vulkan::begin_command_buffer(command_buffer,
                                             VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
