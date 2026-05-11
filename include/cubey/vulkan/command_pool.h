@@ -30,5 +30,6 @@ class CommandPool {
 };
 
 void begin_command_buffer(VkCommandBuffer command_buffer, VkCommandBufferUsageFlags flags);
+void end_command_buffer(VkCommandBuffer command_buffer, const char* label);
 
 } // namespace cubey::vulkan

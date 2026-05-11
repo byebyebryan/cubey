@@ -1,5 +1,6 @@
 #include <cubey/vulkan/render_context.h>
 
+#include <cubey/vulkan/queue_submit.h>
 #include <cubey/vulkan/vk_check.h>
 
 #include <cstddef>
@@ -98,20 +99,23 @@ RenderFrameResult RenderContext::end_frame(const RenderFrame& frame) const {
     FrameResources& frame_resources = *config_.frame_resources;
     const FrameResourceSlot& frame_slot = frame_resources.slot(frame.frame_slot_index);
 
-    VkPipelineStageFlags wait_stage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-    auto submit = vk_struct<VkSubmitInfo>(VK_STRUCTURE_TYPE_SUBMIT_INFO);
-    submit.waitSemaphoreCount = 1;
-    VkSemaphore image_available = frame_slot.image_available;
-    submit.pWaitSemaphores = &image_available;
-    submit.pWaitDstStageMask = &wait_stage;
-    submit.commandBufferCount = 1;
-    VkCommandBuffer command_buffer = frame.command_buffer;
-    submit.pCommandBuffers = &command_buffer;
-    submit.signalSemaphoreCount = 1;
     VkSemaphore present_ready =
         frame_resources.present_ready(static_cast<std::size_t>(frame.image_index));
-    submit.pSignalSemaphores = &present_ready;
-    check(vkQueueSubmit(device.queue(), 1, &submit, frame_slot.fence), "vkQueueSubmit frame");
+    submit_to_device_queue(
+        device,
+        {
+            .waits =
+                {
+                    QueueWait{
+                        .semaphore = frame_slot.image_available,
+                        .stage_mask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                    },
+                },
+            .command_buffers = {frame.command_buffer},
+            .signals = {QueueSignal{.semaphore = present_ready}},
+            .fence = frame_slot.fence,
+        },
+        "vkQueueSubmit frame");
 
     auto present = vk_struct<VkPresentInfoKHR>(VK_STRUCTURE_TYPE_PRESENT_INFO_KHR);
     present.waitSemaphoreCount = 1;

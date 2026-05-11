@@ -1,5 +1,6 @@
 #include <cubey/vulkan/immediate_commands.h>
 
+#include <cubey/vulkan/queue_submit.h>
 #include <cubey/vulkan/vk_check.h>
 
 #include <stdexcept>
@@ -30,12 +31,8 @@ void ImmediateCommands::submit_and_wait() {
         throw std::runtime_error("immediate commands were already submitted");
     }
 
-    check(vkEndCommandBuffer(command_buffer_), "vkEndCommandBuffer immediate");
-
-    auto submit = vk_struct<VkSubmitInfo>(VK_STRUCTURE_TYPE_SUBMIT_INFO);
-    submit.commandBufferCount = 1;
-    submit.pCommandBuffers = &command_buffer_;
-    check(vkQueueSubmit(queue_, 1, &submit, VK_NULL_HANDLE), "vkQueueSubmit immediate");
+    end_command_buffer(command_buffer_, "vkEndCommandBuffer immediate");
+    submit_to_queue(queue_, {.command_buffers = {command_buffer_}}, "vkQueueSubmit immediate");
     check(vkQueueWaitIdle(queue_), "vkQueueWaitIdle immediate");
     submitted_ = true;
 }

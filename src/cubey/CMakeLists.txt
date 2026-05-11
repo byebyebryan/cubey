@@ -53,6 +53,7 @@ add_library(cubey STATIC
     vulkan/instance.cpp
     vulkan/pipeline.cpp
     vulkan/image_transitions.cpp
+    vulkan/queue_submit.cpp
     vulkan/render_context.cpp
     vulkan/sampler.cpp
     vulkan/shader_module.cpp

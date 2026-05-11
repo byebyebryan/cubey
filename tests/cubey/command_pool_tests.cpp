@@ -19,4 +19,6 @@ void test_command_pool_exposes_command_buffer_ownership() {
                                  VkCommandBuffer (cubey::vulkan::CommandPool::*)() const>);
     static_assert(std::is_same_v<decltype(&cubey::vulkan::begin_command_buffer),
                                  void (*)(VkCommandBuffer, VkCommandBufferUsageFlags)>);
+    static_assert(std::is_same_v<decltype(&cubey::vulkan::end_command_buffer),
+                                 void (*)(VkCommandBuffer, const char*)>);
 }

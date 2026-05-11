@@ -61,6 +61,8 @@ void test_project_runtime_contract_supports_lifecycle_shape();
 void test_project_runtime_adapter_exposes_context_and_retirement();
 void test_project_runtime_adapter_reuses_frame_for_same_timing();
 void test_project_runtime_services_create_project_frames_and_context();
+void test_queue_submit_info_describes_waits_commands_signals_and_fence();
+void test_queue_submit_rejects_empty_command_buffer_list();
 void test_render_context_exposes_explicit_frame_boundary();
 void test_frame_slot_defaults_to_single_frame_slot();
 void test_frame_slot_wraps_frame_indices();
@@ -167,6 +169,8 @@ int main() {
         test_project_runtime_adapter_reuses_frame_for_same_timing();
         test_project_runtime_adapter_exposes_context_and_retirement();
         test_project_runtime_services_create_project_frames_and_context();
+        test_queue_submit_info_describes_waits_commands_signals_and_fence();
+        test_queue_submit_rejects_empty_command_buffer_list();
         test_render_context_exposes_explicit_frame_boundary();
         test_frame_slot_defaults_to_single_frame_slot();
         test_frame_slot_wraps_frame_indices();

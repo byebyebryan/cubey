@@ -24,6 +24,7 @@ add_executable(cubey_core_tests
     orbit_controller_tests.cpp
     pipeline_tests.cpp
     project_runtime_tests.cpp
+    queue_submit_tests.cpp
     image_transitions_tests.cpp
     render_context_tests.cpp
     render_frame_data_tests.cpp

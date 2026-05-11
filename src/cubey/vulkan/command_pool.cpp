@@ -46,4 +46,11 @@ void begin_command_buffer(VkCommandBuffer command_buffer, VkCommandBufferUsageFl
     check(vkBeginCommandBuffer(command_buffer, &begin), "vkBeginCommandBuffer");
 }
 
+void end_command_buffer(VkCommandBuffer command_buffer, const char* label) {
+    if (command_buffer == VK_NULL_HANDLE) {
+        throw std::runtime_error("end command buffer requires a command buffer");
+    }
+    check(vkEndCommandBuffer(command_buffer), label);
+}
+
 } // namespace cubey::vulkan
