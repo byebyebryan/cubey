@@ -5,6 +5,7 @@
 #include <cubey/frame_stats.h>
 #include <cubey/headless_png_host.h>
 #include <cubey/pointer_drag.h>
+#include <cubey/project_gpu_services.h>
 #include <cubey/project_runtime.h>
 #include <cubey/render/target.h>
 #include <cubey/spirv_io.h>
@@ -126,6 +127,21 @@ struct FrameInjection {
     std::array<float, 2> force{};
 };
 
+[[nodiscard]] cubey::vulkan::Buffer
+upload_project_device_buffer(cubey::ProjectGpuServices& gpu, const void* data,
+                             VkDeviceSize byte_size, VkBufferUsageFlags usage, std::string label) {
+    std::optional<cubey::vulkan::Buffer> uploaded;
+    static_cast<void>(gpu.submit_and_wait({
+        .label = std::move(label),
+        .work =
+            [&uploaded, data, byte_size, usage](cubey::vulkan::GpuOwnerContext& owner) {
+                uploaded.emplace(
+                    cubey::vulkan::upload_device_buffer(owner, data, byte_size, usage));
+            },
+    }));
+    return std::move(uploaded.value());
+}
+
 class Fluid2DApp {
   public:
     explicit Fluid2DApp(RunConfig config) : config_(std::move(config)), runtime_(1) {}
@@ -191,7 +207,8 @@ class Fluid2DApp {
                     [this](cubey::app::WindowedAppContext& context) {
                         (void)context;
                         destroy_all_resources();
-                        static_cast<void>(runtime_.retire_deferred_destruction());
+                        retire_project_gpu_work();
+                        detach_project_gpu();
                     },
             });
         return host.run();
@@ -282,32 +299,58 @@ class Fluid2DApp {
 
     void create_global_resources_if_needed(cubey::vulkan::Device& device,
                                            cubey::vulkan::GpuRuntime& gpu) {
+        attach_project_gpu(gpu);
         if (field_a_.has_value()) {
             return;
         }
 
-        create_field_buffers(gpu);
+        create_field_buffers(runtime_.gpu());
         create_descriptor_resources(device);
         create_compute_pipelines(device);
     }
 
-    void create_field_buffers(cubey::vulkan::GpuRuntime& gpu) {
+    void attach_project_gpu(cubey::vulkan::GpuRuntime& gpu) {
+        if (!runtime_.has_gpu()) {
+            runtime_.attach_gpu(gpu);
+        }
+    }
+
+    void detach_project_gpu() {
+        if (runtime_.has_gpu()) {
+            runtime_.detach_gpu();
+        }
+    }
+
+    void retire_project_gpu_work() {
+        if (runtime_.has_gpu()) {
+            static_cast<void>(runtime_.gpu().retire_deferred_destruction());
+            return;
+        }
+        static_cast<void>(runtime_.retire_deferred_destruction());
+    }
+
+    void create_field_buffers(cubey::ProjectGpuServices& gpu) {
         const std::vector<FluidCellGpu> initial(field_cell_count(fluid_config_));
         const VkDeviceSize byte_size = static_cast<VkDeviceSize>(field_byte_size(fluid_config_));
-        field_a_.emplace(cubey::vulkan::upload_device_buffer(gpu, initial.data(), byte_size,
-                                                             VK_BUFFER_USAGE_STORAGE_BUFFER_BIT));
-        field_b_.emplace(cubey::vulkan::upload_device_buffer(gpu, initial.data(), byte_size,
-                                                             VK_BUFFER_USAGE_STORAGE_BUFFER_BIT));
+        field_a_.emplace(upload_project_device_buffer(gpu, initial.data(), byte_size,
+                                                      VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                                                      "fluid_2d field A upload"));
+        field_b_.emplace(upload_project_device_buffer(gpu, initial.data(), byte_size,
+                                                      VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                                                      "fluid_2d field B upload"));
 
         const std::vector<float> scalar_initial(field_cell_count(fluid_config_), 0.0F);
         const VkDeviceSize scalar_byte_size =
             static_cast<VkDeviceSize>(scalar_field_byte_size(fluid_config_));
-        divergence_.emplace(cubey::vulkan::upload_device_buffer(
-            gpu, scalar_initial.data(), scalar_byte_size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT));
-        pressure_a_.emplace(cubey::vulkan::upload_device_buffer(
-            gpu, scalar_initial.data(), scalar_byte_size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT));
-        pressure_b_.emplace(cubey::vulkan::upload_device_buffer(
-            gpu, scalar_initial.data(), scalar_byte_size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT));
+        divergence_.emplace(upload_project_device_buffer(
+            gpu, scalar_initial.data(), scalar_byte_size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+            "fluid_2d divergence upload"));
+        pressure_a_.emplace(upload_project_device_buffer(
+            gpu, scalar_initial.data(), scalar_byte_size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+            "fluid_2d pressure A upload"));
+        pressure_b_.emplace(upload_project_device_buffer(
+            gpu, scalar_initial.data(), scalar_byte_size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+            "fluid_2d pressure B upload"));
     }
 
     void create_descriptor_resources(cubey::vulkan::Device& device) {
@@ -839,7 +882,7 @@ class Fluid2DApp {
         recorder.end("vkEndCommandBuffer fluid_2d");
     }
 
-    void record_headless_simulation_frame(cubey::vulkan::GpuRuntime& gpu,
+    void record_headless_simulation_frame(cubey::ProjectGpuServices& gpu,
                                           const ProjectFrame& frame) {
         static_cast<void>(gpu.submit_and_wait({
             .label = "fluid_2d headless simulation frame",
@@ -863,12 +906,12 @@ class Fluid2DApp {
             create_global_resources_if_needed(context.device(), context.gpu());
             create_render_pipeline(context.device(), target.format, target.extent);
         };
-        callbacks.before_capture = [this](cubey::HeadlessPngContext& context) {
+        callbacks.before_capture = [this](cubey::HeadlessPngContext&) {
             const std::uint32_t frames = headless_frame_count(config_);
             for (std::uint32_t frame = 1; frame <= frames; ++frame) {
                 const ProjectFrame project_frame =
                     runtime_.frame_for_timing(fixed_headless_timing(fluid_config_, frame));
-                record_headless_simulation_frame(context.gpu(), project_frame);
+                record_headless_simulation_frame(runtime_.gpu(), project_frame);
             }
         };
         callbacks.record_capture = [this](cubey::HeadlessPngContext&,
@@ -878,7 +921,8 @@ class Fluid2DApp {
         };
         callbacks.shutdown = [this](cubey::HeadlessPngContext&) {
             destroy_all_resources();
-            static_cast<void>(runtime_.retire_deferred_destruction());
+            retire_project_gpu_work();
+            detach_project_gpu();
         };
 
         cubey::HeadlessPngHost host(std::move(host_config), std::move(callbacks));
