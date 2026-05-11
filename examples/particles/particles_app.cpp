@@ -223,13 +223,7 @@ class ParticlesApp {
     }
 
     void reset_particle_buffer(cubey::app::WindowedAppContext& context) {
-        static_cast<void>(context.gpu().submit_and_wait({
-            .label = "particle reset wait idle",
-            .work =
-                [](cubey::vulkan::GpuOwnerContext& gpu_context) {
-                    gpu_context.submission().wait_idle("vkQueueWaitIdle before particle reset");
-                },
-        }));
+        context.gpu().wait_queue_idle("vkQueueWaitIdle before particle reset");
         particle_buffer_.reset();
         create_particle_buffer(context);
         update_particle_descriptor(context);

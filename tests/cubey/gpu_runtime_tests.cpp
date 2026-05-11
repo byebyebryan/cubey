@@ -231,6 +231,25 @@ void test_gpu_runtime_submit_and_wait_propagates_threaded_failures() {
     runtime.shutdown();
 }
 
+void test_gpu_runtime_wait_queue_idle_runs_on_owner_thread() {
+    std::thread::id caller_thread = std::this_thread::get_id();
+    std::thread::id wait_thread{};
+    cubey::vulkan::SubmissionCoordinator submission(
+        reinterpret_cast<VkQueue>(0x56),
+        [](VkQueue, const cubey::vulkan::QueueSubmitInfo&, const char*) {},
+        [&wait_thread](VkQueue, const char*) { wait_thread = std::this_thread::get_id(); });
+    cubey::vulkan::GpuRuntime runtime({
+        .device = fake_device(),
+        .submission = &submission,
+    });
+
+    runtime.wait_queue_idle("test queue idle");
+
+    require(wait_thread != std::thread::id{}, "queue idle should call the wait function");
+    require(wait_thread != caller_thread,
+            "threaded queue idle should execute on the GPU owner thread");
+}
+
 void test_gpu_runtime_shutdown_rejects_new_work() {
     cubey::vulkan::SubmissionCoordinator submission = fake_submission();
     cubey::vulkan::GpuRuntime runtime({

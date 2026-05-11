@@ -172,6 +172,19 @@ bool GpuRuntime::empty() const {
     return queue_.empty();
 }
 
+void GpuRuntime::wait_queue_idle(std::string label) {
+    if (label.empty()) {
+        label = "GPU queue idle";
+    }
+    static_cast<void>(submit_and_wait({
+        .label = label,
+        .work =
+            [wait_label = std::move(label)](GpuOwnerContext& context) {
+                context.submission().wait_idle(wait_label.c_str());
+            },
+    }));
+}
+
 void GpuRuntime::wait_until_idle() {
     if (execution_mode_ == GpuRuntimeExecutionMode::Inline) {
         static_cast<void>(drain_inline());
