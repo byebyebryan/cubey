@@ -49,6 +49,18 @@ ProjectGpuServices::enqueue_pending_uploads(ProjectGpuUploadHandler handler) {
     return result;
 }
 
+vulkan::GpuWorkTicket ProjectGpuServices::enqueue(vulkan::GpuWorkRequest request) {
+    return gpu_->enqueue(std::move(request));
+}
+
+vulkan::GpuWorkTicket ProjectGpuServices::submit_and_wait(vulkan::GpuWorkRequest request) {
+    return gpu_->submit_and_wait(std::move(request));
+}
+
+void ProjectGpuServices::wait_queue_idle(std::string label) {
+    gpu_->wait_queue_idle(std::move(label));
+}
+
 vulkan::GpuDrainResult ProjectGpuServices::drain() {
     return gpu_->drain();
 }

@@ -5,6 +5,7 @@
 
 #include <stdexcept>
 #include <string>
+#include <thread>
 #include <vector>
 
 namespace {
@@ -46,6 +47,55 @@ void test_project_context_exposes_optional_gpu_services() {
 
     require(context.has_gpu(), "project context should report attached GPU services");
     require(&context.gpu() == &gpu, "project context should expose attached GPU services");
+}
+
+void test_project_gpu_services_submit_and_wait_runs_on_owner_thread() {
+    cubey::UploadQueue uploads;
+    cubey::DeferredDestructionQueue deferred;
+    cubey::vulkan::SubmissionCoordinator submission = fake_submission();
+    cubey::vulkan::GpuRuntime runtime({
+        .device = fake_device(),
+        .submission = &submission,
+    });
+    cubey::ProjectGpuServices gpu(runtime, uploads, deferred);
+    std::thread::id caller_thread = std::this_thread::get_id();
+    std::thread::id work_thread{};
+
+    static_cast<void>(gpu.submit_and_wait({
+        .label = "project gpu work",
+        .work =
+            [&work_thread](cubey::vulkan::GpuOwnerContext& owner) {
+                require(owner.is_owner_thread(),
+                        "project GPU work should execute on the owner thread");
+                work_thread = std::this_thread::get_id();
+            },
+    }));
+
+    require(work_thread != std::thread::id{}, "project GPU work should run");
+    require(work_thread != caller_thread,
+            "project GPU work should not run on the caller thread by default");
+}
+
+void test_project_gpu_services_wait_queue_idle_runs_on_owner_thread() {
+    cubey::UploadQueue uploads;
+    cubey::DeferredDestructionQueue deferred;
+    std::thread::id caller_thread = std::this_thread::get_id();
+    std::thread::id wait_thread{};
+    cubey::vulkan::SubmissionCoordinator submission(
+        reinterpret_cast<VkQueue>(0x56),
+        [](VkQueue, const cubey::vulkan::QueueSubmitInfo&, const char*) {},
+        [&wait_thread](VkQueue, const char*) { wait_thread = std::this_thread::get_id(); });
+    cubey::vulkan::GpuRuntime runtime({
+        .device = fake_device(),
+        .submission = &submission,
+    });
+    cubey::ProjectGpuServices gpu(runtime, uploads, deferred);
+
+    gpu.wait_queue_idle("project queue idle");
+
+    require(wait_thread != std::thread::id{}, "project GPU queue idle should wait");
+    require(wait_thread != caller_thread,
+            "project GPU queue idle should execute on the owner thread by default");
 }
 
 void test_project_gpu_services_enqueue_uploads_and_retire_completed_gpu_work() {

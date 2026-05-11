@@ -6,6 +6,7 @@
 
 #include <cstddef>
 #include <functional>
+#include <string>
 #include <vector>
 
 namespace cubey {
@@ -29,6 +30,9 @@ class ProjectGpuServices {
 
     [[nodiscard]] ProjectGpuUploadDrainResult
     enqueue_pending_uploads(ProjectGpuUploadHandler handler);
+    [[nodiscard]] vulkan::GpuWorkTicket enqueue(vulkan::GpuWorkRequest request);
+    [[nodiscard]] vulkan::GpuWorkTicket submit_and_wait(vulkan::GpuWorkRequest request);
+    void wait_queue_idle(std::string label);
     [[nodiscard]] vulkan::GpuDrainResult drain();
     [[nodiscard]] std::size_t retire_deferred_destruction();
 

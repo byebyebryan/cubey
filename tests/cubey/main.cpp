@@ -73,6 +73,8 @@ void test_project_context_exposes_async_runtime_services();
 void test_project_context_exposes_optional_gpu_services();
 void test_project_gpu_services_enqueue_uploads_and_retire_completed_gpu_work();
 void test_project_gpu_services_mark_failed_uploads();
+void test_project_gpu_services_submit_and_wait_runs_on_owner_thread();
+void test_project_gpu_services_wait_queue_idle_runs_on_owner_thread();
 void test_project_runtime_contract_supports_lifecycle_shape();
 void test_project_runtime_adapter_exposes_context_and_retirement();
 void test_project_runtime_adapter_reuses_frame_for_same_timing();
@@ -207,6 +209,8 @@ int main() {
         test_pipeline_helpers_describe_depth_only_dynamic_graphics_pipeline_setup();
         test_project_context_exposes_async_runtime_services();
         test_project_context_exposes_optional_gpu_services();
+        test_project_gpu_services_submit_and_wait_runs_on_owner_thread();
+        test_project_gpu_services_wait_queue_idle_runs_on_owner_thread();
         test_project_gpu_services_enqueue_uploads_and_retire_completed_gpu_work();
         test_project_gpu_services_mark_failed_uploads();
         test_project_runtime_contract_supports_lifecycle_shape();
