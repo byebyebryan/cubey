@@ -2,9 +2,8 @@
 
 #include <cubey/app/windowed_host.h>
 #include <cubey/render/target.h>
-#include <cubey/vulkan/command_pool.h>
+#include <cubey/vulkan/command_recorder.h>
 #include <cubey/vulkan/image_transitions.h>
-#include <cubey/vulkan/vk_check.h>
 
 #include <vulkan/vulkan.h>
 
@@ -17,7 +16,6 @@
 namespace cubey::examples::window_clear {
 namespace {
 
-using cubey::vulkan::check;
 class WindowClearApp {
   public:
     explicit WindowClearApp(RunConfig config) : config_(std::move(config)) {}
@@ -62,12 +60,10 @@ class WindowClearApp {
 
   private:
     static void record_clear_frame(const cubey::app::WindowedRenderFrame& frame) {
-        const VkCommandBuffer command_buffer = frame.command_buffer;
-        cubey::vulkan::begin_command_buffer(command_buffer,
-                                            VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+        const cubey::vulkan::CommandRecorder recorder(frame.command_buffer);
+        recorder.begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
-        cubey::vulkan::transition_image_layout(
-            command_buffer,
+        recorder.transition_image_layout(
             cubey::vulkan::begin_color_attachment_transition(frame.color_target.image));
 
         VkClearValue clear{};
@@ -78,15 +74,14 @@ class WindowClearApp {
         clear_values.color = clear;
         const cubey::render::RenderTargetRenderingInfo rendering(target, clear_values);
 
-        vkCmdBeginRendering(command_buffer, &rendering.info());
-        vkCmdEndRendering(command_buffer);
+        recorder.begin_rendering(rendering.info());
+        recorder.end_rendering();
 
-        cubey::vulkan::transition_image_layout(
-            command_buffer,
+        recorder.transition_image_layout(
             cubey::vulkan::finish_color_attachment_for_present_transition(
                 frame.color_target.image));
 
-        check(vkEndCommandBuffer(command_buffer), "vkEndCommandBuffer window_clear");
+        recorder.end("vkEndCommandBuffer window_clear");
     }
 
     RunConfig config_;

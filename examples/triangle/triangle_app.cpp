@@ -3,7 +3,7 @@
 #include <cubey/app/windowed_host.h>
 #include <cubey/render/target.h>
 #include <cubey/spirv_io.h>
-#include <cubey/vulkan/command_pool.h>
+#include <cubey/vulkan/command_recorder.h>
 #include <cubey/vulkan/image_transitions.h>
 #include <cubey/vulkan/pipeline.h>
 #include <cubey/vulkan/shader_module.h>
@@ -28,7 +28,6 @@
 namespace cubey::examples::triangle {
 namespace {
 
-using cubey::vulkan::check;
 using cubey::vulkan::vk_struct;
 
 std::filesystem::path shader_path(const char* filename) {
@@ -120,12 +119,10 @@ class TriangleApp {
     }
 
     void record_triangle_frame(const cubey::app::WindowedRenderFrame& frame) {
-        const VkCommandBuffer command_buffer = frame.command_buffer;
-        cubey::vulkan::begin_command_buffer(command_buffer,
-                                            VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+        const cubey::vulkan::CommandRecorder recorder(frame.command_buffer);
+        recorder.begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
-        cubey::vulkan::transition_image_layout(
-            command_buffer,
+        recorder.transition_image_layout(
             cubey::vulkan::begin_color_attachment_transition(frame.color_target.image));
 
         VkClearValue clear{};
@@ -136,17 +133,16 @@ class TriangleApp {
         clear_values.color = clear;
         const cubey::render::RenderTargetRenderingInfo rendering(target, clear_values);
 
-        vkCmdBeginRendering(command_buffer, &rendering.info());
-        vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline().handle());
-        vkCmdDraw(command_buffer, 3, 1, 0, 0);
-        vkCmdEndRendering(command_buffer);
+        recorder.begin_rendering(rendering.info());
+        recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline().handle());
+        recorder.draw(3);
+        recorder.end_rendering();
 
-        cubey::vulkan::transition_image_layout(
-            command_buffer,
+        recorder.transition_image_layout(
             cubey::vulkan::finish_color_attachment_for_present_transition(
                 frame.color_target.image));
 
-        check(vkEndCommandBuffer(command_buffer), "vkEndCommandBuffer triangle");
+        recorder.end("vkEndCommandBuffer triangle");
     }
 
     [[nodiscard]] const cubey::vulkan::PipelineLayout& pipeline_layout() const {

@@ -18,7 +18,7 @@
 #include <cubey/scene.h>
 #include <cubey/spirv_io.h>
 #include <cubey/transform_3d.h>
-#include <cubey/vulkan/command_pool.h>
+#include <cubey/vulkan/command_recorder.h>
 #include <cubey/vulkan/descriptors.h>
 #include <cubey/vulkan/image.h>
 #include <cubey/vulkan/image_transitions.h>
@@ -46,7 +46,6 @@
 namespace cubey::examples::textured_cube {
 namespace {
 
-using cubey::vulkan::check;
 using cubey::vulkan::vk_struct;
 
 constexpr std::uint32_t kTextureWidth = 64;
@@ -355,7 +354,8 @@ class TexturedCubeApp {
     static void transition_texture_image(cubey::app::WindowedAppContext& context,
                                          const cubey::vulkan::ImageLayoutTransition& transition) {
         cubey::vulkan::ImmediateCommands commands(context.device());
-        cubey::vulkan::transition_image_layout(commands.command_buffer(), transition);
+        const cubey::vulkan::CommandRecorder recorder(commands.command_buffer());
+        recorder.transition_image_layout(transition);
         commands.submit_and_wait();
     }
 
@@ -407,17 +407,16 @@ class TexturedCubeApp {
             context, cubey::vulkan::begin_storage_image_write_transition(texture().handle()));
 
         cubey::vulkan::ImmediateCommands commands(context.device());
-        vkCmdBindPipeline(commands.command_buffer(), VK_PIPELINE_BIND_POINT_COMPUTE,
-                          compute_pipeline().handle());
+        const cubey::vulkan::CommandRecorder recorder(commands.command_buffer());
+        recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_COMPUTE, compute_pipeline().handle());
         const VkDescriptorSet descriptor_set = compute_descriptors().set();
-        vkCmdBindDescriptorSets(commands.command_buffer(), VK_PIPELINE_BIND_POINT_COMPUTE,
-                                compute_pipeline_layout().handle(), 0, 1, &descriptor_set, 0,
-                                nullptr);
+        recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_COMPUTE,
+                                     compute_pipeline_layout().handle(), 0, descriptor_set);
         constexpr std::uint32_t groups_x =
             (kTextureWidth + kTextureComputeGroupSize - 1U) / kTextureComputeGroupSize;
         constexpr std::uint32_t groups_y =
             (kTextureHeight + kTextureComputeGroupSize - 1U) / kTextureComputeGroupSize;
-        vkCmdDispatch(commands.command_buffer(), groups_x, groups_y, 1);
+        recorder.dispatch(groups_x, groups_y, 1);
         commands.submit_and_wait();
 
         transition_texture_image(
@@ -540,21 +539,18 @@ class TexturedCubeApp {
     }
 
     void record_cube_frame(const cubey::app::WindowedRenderFrame& frame) {
-        const VkCommandBuffer command_buffer = frame.command_buffer;
+        const cubey::vulkan::CommandRecorder recorder(frame.command_buffer);
         cubey::SceneReadView scene_view = scene().read();
         const cubey::render::RenderFramePlan3D frame_plan =
             current_frame_plan(scene_view, frame.color_target.extent);
         const cubey::render::RenderDrawPacket3D& draw_packet = frame_plan.draw_packets[0];
         update_scene_uniforms(frame_plan, draw_packet, frame.frame_slot);
 
-        cubey::vulkan::begin_command_buffer(command_buffer,
-                                            VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+        recorder.begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
-        cubey::vulkan::transition_image_layout(
-            command_buffer,
+        recorder.transition_image_layout(
             cubey::vulkan::begin_color_attachment_transition(frame.color_target.image));
-        cubey::vulkan::transition_image_layout(
-            command_buffer,
+        recorder.transition_image_layout(
             cubey::vulkan::begin_depth_attachment_transition(depth_attachment().handle()));
 
         VkClearValue color_clear{};
@@ -569,11 +565,11 @@ class TexturedCubeApp {
         };
         const cubey::render::RenderTargetRenderingInfo rendering(target, clear_values);
 
-        vkCmdBeginRendering(command_buffer, &rendering.info());
-        vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline().handle());
+        recorder.begin_rendering(rendering.info());
+        recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline().handle());
         const VkDescriptorSet descriptor_set = descriptors().set(frame.frame_slot.index);
-        vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                pipeline_layout().handle(), 0, 1, &descriptor_set, 0, nullptr);
+        recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout().handle(), 0,
+                                     descriptor_set);
         const cubey::render::DrawItem draw_item{
             .mesh = &mesh(draw_packet.mesh),
             .instance_count = draw_packet.instance_count,
@@ -581,14 +577,14 @@ class TexturedCubeApp {
             .vertex_offset = draw_packet.vertex_offset,
             .first_instance = draw_packet.first_instance,
         };
-        cubey::render::record_draw_item(command_buffer, draw_item);
-        vkCmdEndRendering(command_buffer);
+        cubey::render::record_draw_item(recorder.handle(), draw_item);
+        recorder.end_rendering();
 
-        cubey::vulkan::transition_image_layout(
-            command_buffer, cubey::vulkan::finish_color_attachment_for_present_transition(
-                                frame.color_target.image));
+        recorder.transition_image_layout(
+            cubey::vulkan::finish_color_attachment_for_present_transition(
+                frame.color_target.image));
 
-        check(vkEndCommandBuffer(command_buffer), "vkEndCommandBuffer textured_cube");
+        recorder.end("vkEndCommandBuffer textured_cube");
     }
 
     [[nodiscard]] const cubey::render::Mesh& mesh(cubey::render::MeshHandle handle) const {

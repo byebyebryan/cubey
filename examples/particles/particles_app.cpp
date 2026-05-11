@@ -6,7 +6,7 @@
 #include <cubey/render/target.h>
 #include <cubey/spirv_io.h>
 #include <cubey/vulkan/buffer.h>
-#include <cubey/vulkan/command_pool.h>
+#include <cubey/vulkan/command_recorder.h>
 #include <cubey/vulkan/descriptors.h>
 #include <cubey/vulkan/image_transitions.h>
 #include <cubey/vulkan/pipeline.h>
@@ -316,6 +316,7 @@ class ParticlesApp {
     }
 
     void record_particle_compute(VkCommandBuffer command_buffer, const FrameTiming& timing) const {
+        const cubey::vulkan::CommandRecorder recorder(command_buffer);
         const float time = static_cast<float>(timing.elapsed_seconds);
         const float delta_seconds =
             std::min(static_cast<float>(timing.delta_seconds), 1.0F / 30.0F);
@@ -336,17 +337,13 @@ class ParticlesApp {
                 },
         };
 
-        vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE,
-                          compute_pipeline().handle());
+        recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_COMPUTE, compute_pipeline().handle());
         const VkDescriptorSet descriptor_set = descriptors().set();
-        vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE,
-                                compute_pipeline_layout().handle(), 0, 1, &descriptor_set, 0,
-                                nullptr);
-        vkCmdPushConstants(command_buffer, compute_pipeline_layout().handle(),
-                           VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(ComputePushConstants),
-                           &push_constants);
-        vkCmdDispatch(command_buffer, (kParticleCount + kComputeGroupSize - 1U) / kComputeGroupSize,
-                      1, 1);
+        recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_COMPUTE,
+                                     compute_pipeline_layout().handle(), 0, descriptor_set);
+        recorder.push_constants(compute_pipeline_layout().handle(), VK_SHADER_STAGE_COMPUTE_BIT, 0,
+                                push_constants);
+        recorder.dispatch((kParticleCount + kComputeGroupSize - 1U) / kComputeGroupSize, 1, 1);
 
         auto particle_barrier = vk_struct<VkMemoryBarrier>(VK_STRUCTURE_TYPE_MEMORY_BARRIER);
         particle_barrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
@@ -357,16 +354,14 @@ class ParticlesApp {
     }
 
     void record_particles_frame(const cubey::app::WindowedRenderFrame& frame) {
-        const VkCommandBuffer command_buffer = frame.command_buffer;
-        cubey::vulkan::begin_command_buffer(command_buffer,
-                                            VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+        const cubey::vulkan::CommandRecorder recorder(frame.command_buffer);
+        recorder.begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
         if (!paused_) {
-            record_particle_compute(command_buffer, frame.timing);
+            record_particle_compute(recorder.handle(), frame.timing);
         }
 
-        cubey::vulkan::transition_image_layout(
-            command_buffer,
+        recorder.transition_image_layout(
             cubey::vulkan::begin_color_attachment_transition(frame.color_target.image));
 
         VkClearValue clear{};
@@ -388,23 +383,22 @@ class ParticlesApp {
                 },
         };
 
-        vkCmdBeginRendering(command_buffer, &rendering.info());
-        vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline().handle());
+        recorder.begin_rendering(rendering.info());
+        recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline().handle());
         const VkDescriptorSet descriptor_set = descriptors().set();
-        vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                pipeline_layout().handle(), 0, 1, &descriptor_set, 0, nullptr);
-        vkCmdPushConstants(command_buffer, pipeline_layout().handle(),
-                           VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
-                           sizeof(DrawPushConstants), &push_constants);
-        vkCmdDraw(command_buffer, 6, kParticleCount, 0, 0);
-        vkCmdEndRendering(command_buffer);
+        recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout().handle(), 0,
+                                     descriptor_set);
+        recorder.push_constants(pipeline_layout().handle(),
+                                VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
+                                push_constants);
+        recorder.draw(6, kParticleCount);
+        recorder.end_rendering();
 
-        cubey::vulkan::transition_image_layout(
-            command_buffer,
+        recorder.transition_image_layout(
             cubey::vulkan::finish_color_attachment_for_present_transition(
                 frame.color_target.image));
 
-        check(vkEndCommandBuffer(command_buffer), "vkEndCommandBuffer particles");
+        recorder.end("vkEndCommandBuffer particles");
     }
 
     [[nodiscard]] const cubey::vulkan::DescriptorSetBundle& descriptors() const {

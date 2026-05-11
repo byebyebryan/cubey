@@ -12,7 +12,7 @@
 #include <cubey/scene.h>
 #include <cubey/spirv_io.h>
 #include <cubey/transform_3d.h>
-#include <cubey/vulkan/command_pool.h>
+#include <cubey/vulkan/command_recorder.h>
 #include <cubey/vulkan/image.h>
 #include <cubey/vulkan/image_transitions.h>
 #include <cubey/vulkan/pipeline.h>
@@ -39,7 +39,6 @@
 namespace cubey::examples::spinning_cube {
 namespace {
 
-using cubey::vulkan::check;
 using cubey::vulkan::vk_struct;
 
 std::filesystem::path shader_path(const char* filename) {
@@ -310,15 +309,12 @@ class SpinningCubeApp {
         const cubey::render::RenderFramePlan3D frame_plan =
             current_frame_plan(scene_view, frame.color_target.extent);
         const cubey::render::RenderDrawPacket3D& draw_packet = frame_plan.draw_packets[0];
-        const VkCommandBuffer command_buffer = frame.command_buffer;
-        cubey::vulkan::begin_command_buffer(command_buffer,
-                                            VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+        const cubey::vulkan::CommandRecorder recorder(frame.command_buffer);
+        recorder.begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
-        cubey::vulkan::transition_image_layout(
-            command_buffer,
+        recorder.transition_image_layout(
             cubey::vulkan::begin_color_attachment_transition(frame.color_target.image));
-        cubey::vulkan::transition_image_layout(
-            command_buffer,
+        recorder.transition_image_layout(
             cubey::vulkan::begin_depth_attachment_transition(depth_attachment().handle()));
 
         VkClearValue color_clear{};
@@ -335,8 +331,8 @@ class SpinningCubeApp {
 
         const PushConstants push_constants = current_push_constants(frame_plan, draw_packet);
 
-        vkCmdBeginRendering(command_buffer, &rendering.info());
-        vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline().handle());
+        recorder.begin_rendering(rendering.info());
+        recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline().handle());
         const cubey::render::DrawItem draw_item{
             .mesh = &mesh(draw_packet.mesh),
             .instance_count = draw_packet.instance_count,
@@ -344,16 +340,16 @@ class SpinningCubeApp {
             .vertex_offset = draw_packet.vertex_offset,
             .first_instance = draw_packet.first_instance,
         };
-        vkCmdPushConstants(command_buffer, pipeline_layout().handle(), VK_SHADER_STAGE_VERTEX_BIT,
-                           0, sizeof(PushConstants), &push_constants);
-        cubey::render::record_draw_item(command_buffer, draw_item);
-        vkCmdEndRendering(command_buffer);
+        recorder.push_constants(pipeline_layout().handle(), VK_SHADER_STAGE_VERTEX_BIT, 0,
+                                push_constants);
+        cubey::render::record_draw_item(recorder.handle(), draw_item);
+        recorder.end_rendering();
 
-        cubey::vulkan::transition_image_layout(
-            command_buffer, cubey::vulkan::finish_color_attachment_for_present_transition(
-                                frame.color_target.image));
+        recorder.transition_image_layout(
+            cubey::vulkan::finish_color_attachment_for_present_transition(
+                frame.color_target.image));
 
-        check(vkEndCommandBuffer(command_buffer), "vkEndCommandBuffer spinning_cube");
+        recorder.end("vkEndCommandBuffer spinning_cube");
     }
 
     [[nodiscard]] const cubey::render::Mesh& mesh(cubey::render::MeshHandle handle) const {

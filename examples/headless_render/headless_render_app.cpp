@@ -1,6 +1,7 @@
 #include "headless_render_app.h"
 
 #include <cubey/headless_png_host.h>
+#include <cubey/vulkan/command_recorder.h>
 #include <cubey/vulkan/dynamic_rendering.h>
 #include <cubey/vulkan/vk_check.h>
 
@@ -24,8 +25,9 @@ void record_clear(VkCommandBuffer command_buffer, const cubey::HeadlessRenderTar
     rendering.colorAttachmentCount = 1;
     rendering.pColorAttachments = &color_attachment;
 
-    vkCmdBeginRendering(command_buffer, &rendering);
-    vkCmdEndRendering(command_buffer);
+    const cubey::vulkan::CommandRecorder recorder(command_buffer);
+    recorder.begin_rendering(rendering);
+    recorder.end_rendering();
 }
 
 } // namespace
