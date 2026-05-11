@@ -3,6 +3,7 @@
 #include <cubey/app/glfw_window.h>
 #include <cubey/app/windowed_host.h>
 #include <cubey/camera_3d.h>
+#include <cubey/engine.h>
 #include <cubey/frame_stats.h>
 #include <cubey/math.h>
 #include <cubey/orbit_controller.h>
@@ -104,9 +105,6 @@ constexpr std::array<std::uint16_t, 36> kCubeIndices{{
     12, 13, 14, 12, 14, 15, 16, 17, 18, 16, 18, 19, 20, 21, 22, 20, 22, 23,
 }};
 
-constexpr cubey::render::MeshHandle kCubeMeshHandle{.index = 1, .generation = 1};
-constexpr cubey::render::MaterialHandle kCubeMaterialHandle{.index = 1, .generation = 1};
-
 class TexturedCubeApp {
   public:
     explicit TexturedCubeApp(RunConfig config) : config_(std::move(config)) {}
@@ -152,6 +150,7 @@ class TexturedCubeApp {
                             context.window().request_close();
                         }
                         orbit_controller_.update_from_input(context.input(), timing.delta_seconds);
+                        update_scene_transform();
                     },
                 .record_frame =
                     [this](cubey::app::WindowedAppContext& context,
@@ -185,6 +184,9 @@ class TexturedCubeApp {
             return;
         }
         create_cube_mesh(context);
+        cube_mesh_handle_ = engine_.render_resources().create_mesh("textured_cube.cube");
+        cube_material_handle_ =
+            engine_.render_resources().create_material("textured_cube.material");
         create_scene();
         create_scene_uniforms(context);
         create_texture_resources(context);
@@ -205,6 +207,8 @@ class TexturedCubeApp {
         destroy_swapchain_resources();
         destroy_descriptors();
         destroy_compute_resources();
+        destroy_scene_if_needed();
+        destroy_render_handles();
         texture_.reset();
         scene_uniforms_.reset();
         mesh_.reset();
@@ -282,7 +286,8 @@ class TexturedCubeApp {
     }
 
     void create_scene() {
-        cubey::SceneTransaction setup = scene_.begin_transaction();
+        scene_ = &engine_.create_scene();
+        cubey::SceneTransaction setup = scene().begin_transaction();
         cube_entity_ = setup.entities().create();
         camera_entity_ = setup.entities().create();
         setup.transforms3d().create(cube_entity_, cubey::Transform3D{});
@@ -290,8 +295,9 @@ class TexturedCubeApp {
                                                        .primitives =
                                                            {
                                                                cubey::RenderablePrimitive3D{
-                                                                   .mesh = kCubeMeshHandle,
-                                                                   .material = kCubeMaterialHandle,
+                                                                   .mesh = cube_mesh_handle_,
+                                                                   .material =
+                                                                       cube_material_handle_,
                                                                },
                                                            },
                                                        .local_bounds =
@@ -465,9 +471,9 @@ class TexturedCubeApp {
             .rotation = cubey::math::euler_xyz_quat(
                 {orbit_controller_.pitch(), orbit_controller_.yaw(), 0.0F}),
         };
-        cubey::SceneEditQueue edits = scene_.create_edit_queue();
+        cubey::SceneEditQueue edits = scene().create_edit_queue();
         edits.transforms3d().set_local_transform(cube_entity_, transform);
-        scene_.commit(edits);
+        scene().commit(edits);
     }
 
     [[nodiscard]] SceneUniforms current_scene_uniforms(const cubey::SceneReadView& view,
@@ -505,8 +511,7 @@ class TexturedCubeApp {
 
     void record_cube_frame(const cubey::app::WindowedRenderFrame& frame) {
         const VkCommandBuffer command_buffer = frame.command_buffer;
-        update_scene_transform();
-        cubey::SceneReadView scene_view = scene_.read();
+        cubey::SceneReadView scene_view = scene().read();
         const cubey::RenderablePacket3D render_packet = current_render_packet(scene_view);
         update_scene_uniforms(scene_view, render_packet, frame.color_target.extent,
                               frame.frame_slot);
@@ -556,13 +561,41 @@ class TexturedCubeApp {
     }
 
     [[nodiscard]] const cubey::render::Mesh& mesh(cubey::render::MeshHandle handle) const {
-        if (handle != kCubeMeshHandle) {
+        if (handle != cube_mesh_handle_) {
             throw std::runtime_error("unknown textured_cube mesh handle");
         }
         if (!mesh_.has_value()) {
             throw std::runtime_error("cube mesh is not initialized");
         }
         return mesh_.value();
+    }
+
+    [[nodiscard]] cubey::Scene& scene() {
+        if (scene_ == nullptr) {
+            throw std::runtime_error("textured_cube scene is not initialized");
+        }
+        return *scene_;
+    }
+
+    void destroy_scene_if_needed() {
+        if (scene_ == nullptr) {
+            return;
+        }
+        engine_.destroy_scene(*scene_);
+        scene_ = nullptr;
+        cube_entity_ = {};
+        camera_entity_ = {};
+    }
+
+    void destroy_render_handles() {
+        if (engine_.render_resources().is_alive(cube_mesh_handle_)) {
+            engine_.render_resources().destroy_mesh(cube_mesh_handle_);
+            cube_mesh_handle_ = {};
+        }
+        if (engine_.render_resources().is_alive(cube_material_handle_)) {
+            engine_.render_resources().destroy_material(cube_material_handle_);
+            cube_material_handle_ = {};
+        }
     }
 
     [[nodiscard]] const cubey::render::FrameUniformBuffer<SceneUniforms>& scene_uniforms() const {
@@ -629,9 +662,12 @@ class TexturedCubeApp {
     }
 
     RunConfig config_;
-    cubey::Scene scene_;
+    cubey::Engine engine_;
+    cubey::Scene* scene_ = nullptr;
     cubey::Entity cube_entity_;
     cubey::Entity camera_entity_;
+    cubey::render::MeshHandle cube_mesh_handle_{};
+    cubey::render::MaterialHandle cube_material_handle_{};
     OrbitController orbit_controller_;
 
     std::optional<cubey::render::Mesh> mesh_;

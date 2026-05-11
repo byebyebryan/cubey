@@ -2,6 +2,7 @@
 
 #include <cubey/app/windowed_host.h>
 #include <cubey/camera_3d.h>
+#include <cubey/engine.h>
 #include <cubey/math.h>
 #include <cubey/render/mesh.h>
 #include <cubey/render/resource_handle.h>
@@ -84,9 +85,6 @@ constexpr std::array<std::uint16_t, 36> kCubeIndices{{
     12, 13, 14, 12, 14, 15, 16, 17, 18, 16, 18, 19, 20, 21, 22, 20, 22, 23,
 }};
 
-constexpr cubey::render::MeshHandle kCubeMeshHandle{.index = 1, .generation = 1};
-constexpr cubey::render::MaterialHandle kCubeMaterialHandle{.index = 1, .generation = 1};
-
 class SpinningCubeApp {
   public:
     explicit SpinningCubeApp(RunConfig config) : config_(std::move(config)) {}
@@ -124,7 +122,12 @@ class SpinningCubeApp {
                                     context.swapchain().extent().width,
                                     context.swapchain().extent().height);
                     },
-                .update = {},
+                .update =
+                    [this](cubey::app::WindowedAppContext& context, const FrameTiming& timing) {
+                        (void)context;
+                        (void)timing;
+                        update_scene_transform();
+                    },
                 .record_frame =
                     [this](cubey::app::WindowedAppContext& context,
                            const cubey::app::WindowedRenderFrame& frame) {
@@ -147,6 +150,9 @@ class SpinningCubeApp {
             return;
         }
         create_cube_mesh(context);
+        cube_mesh_handle_ = engine_.render_resources().create_mesh("spinning_cube.cube");
+        cube_material_handle_ =
+            engine_.render_resources().create_material("spinning_cube.material");
         create_scene();
     }
 
@@ -163,6 +169,8 @@ class SpinningCubeApp {
 
     void destroy_all_resources() {
         destroy_swapchain_resources();
+        destroy_scene_if_needed();
+        destroy_render_handles();
         mesh_.reset();
     }
 
@@ -234,7 +242,8 @@ class SpinningCubeApp {
     }
 
     void create_scene() {
-        cubey::SceneTransaction setup = scene_.begin_transaction();
+        scene_ = &engine_.create_scene();
+        cubey::SceneTransaction setup = scene().begin_transaction();
         cube_entity_ = setup.entities().create();
         camera_entity_ = setup.entities().create();
         setup.transforms3d().create(cube_entity_, cubey::Transform3D{});
@@ -242,8 +251,9 @@ class SpinningCubeApp {
                                                        .primitives =
                                                            {
                                                                cubey::RenderablePrimitive3D{
-                                                                   .mesh = kCubeMeshHandle,
-                                                                   .material = kCubeMaterialHandle,
+                                                                   .mesh = cube_mesh_handle_,
+                                                                   .material =
+                                                                       cube_material_handle_,
                                                                },
                                                            },
                                                        .local_bounds =
@@ -266,9 +276,9 @@ class SpinningCubeApp {
         const cubey::Transform3D transform{
             .rotation = cubey::math::euler_xyz_quat({seconds * 0.55F, seconds * 0.9F, 0.0F}),
         };
-        cubey::SceneEditQueue edits = scene_.create_edit_queue();
+        cubey::SceneEditQueue edits = scene().create_edit_queue();
         edits.transforms3d().set_local_transform(cube_entity_, transform);
-        scene_.commit(edits);
+        scene().commit(edits);
     }
 
     [[nodiscard]] PushConstants current_push_constants(const cubey::SceneReadView& view,
@@ -294,8 +304,7 @@ class SpinningCubeApp {
     }
 
     void record_cube_frame(const cubey::app::WindowedRenderFrame& frame) {
-        update_scene_transform();
-        cubey::SceneReadView scene_view = scene_.read();
+        cubey::SceneReadView scene_view = scene().read();
         const cubey::RenderablePacket3D render_packet = current_render_packet(scene_view);
         const VkCommandBuffer command_buffer = frame.command_buffer;
         cubey::vulkan::begin_command_buffer(command_buffer,
@@ -345,13 +354,41 @@ class SpinningCubeApp {
     }
 
     [[nodiscard]] const cubey::render::Mesh& mesh(cubey::render::MeshHandle handle) const {
-        if (handle != kCubeMeshHandle) {
+        if (handle != cube_mesh_handle_) {
             throw std::runtime_error("unknown spinning_cube mesh handle");
         }
         if (!mesh_.has_value()) {
             throw std::runtime_error("cube mesh is not initialized");
         }
         return mesh_.value();
+    }
+
+    [[nodiscard]] cubey::Scene& scene() {
+        if (scene_ == nullptr) {
+            throw std::runtime_error("spinning_cube scene is not initialized");
+        }
+        return *scene_;
+    }
+
+    void destroy_scene_if_needed() {
+        if (scene_ == nullptr) {
+            return;
+        }
+        engine_.destroy_scene(*scene_);
+        scene_ = nullptr;
+        cube_entity_ = {};
+        camera_entity_ = {};
+    }
+
+    void destroy_render_handles() {
+        if (engine_.render_resources().is_alive(cube_mesh_handle_)) {
+            engine_.render_resources().destroy_mesh(cube_mesh_handle_);
+            cube_mesh_handle_ = {};
+        }
+        if (engine_.render_resources().is_alive(cube_material_handle_)) {
+            engine_.render_resources().destroy_material(cube_material_handle_);
+            cube_material_handle_ = {};
+        }
     }
 
     [[nodiscard]] const cubey::vulkan::PipelineLayout& pipeline_layout() const {
@@ -376,9 +413,12 @@ class SpinningCubeApp {
     }
 
     RunConfig config_;
-    cubey::Scene scene_;
+    cubey::Engine engine_;
+    cubey::Scene* scene_ = nullptr;
     cubey::Entity cube_entity_;
     cubey::Entity camera_entity_;
+    cubey::render::MeshHandle cube_mesh_handle_{};
+    cubey::render::MaterialHandle cube_material_handle_{};
     std::chrono::steady_clock::time_point start_time_ = std::chrono::steady_clock::now();
 
     std::optional<cubey::render::Mesh> mesh_;
