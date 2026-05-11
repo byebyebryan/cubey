@@ -40,8 +40,11 @@ void validate_config(const HeadlessPngHostConfig& config,
 
 HeadlessPngContext::HeadlessPngContext(const RunConfig& config, cubey::vulkan::Instance& instance,
                                        cubey::vulkan::Device& device,
+                                       cubey::vulkan::SubmissionCoordinator& submission,
+                                       cubey::vulkan::GpuRuntime& gpu,
                                        const HeadlessRenderTarget& target)
-    : config_(config), instance_(instance), device_(device), target_(target) {}
+    : config_(config), instance_(instance), device_(device), submission_(submission), gpu_(gpu),
+      target_(target) {}
 
 std::size_t headless_png_byte_size(std::uint32_t width, std::uint32_t height) {
     if (width == 0 || height == 0) {
@@ -75,6 +78,8 @@ HeadlessPngHost::~HeadlessPngHost() {
 int HeadlessPngHost::run() {
     create_instance();
     create_device();
+    create_submission_coordinator();
+    create_gpu_runtime();
 
     const VkExtent2D extent{config_.run_config.width, config_.run_config.height};
     cubey::vulkan::Image render_target_image(
@@ -85,21 +90,26 @@ int HeadlessPngHost::run() {
         .image = render_target_image.handle(),
         .view = render_target_image.view(),
     };
-    HeadlessPngContext context(config_.run_config, instance(), device(), target);
+    HeadlessPngContext context(config_.run_config, instance(), device(), submission(), gpu(),
+                               target);
 
     if (callbacks_.create_resources) {
         callbacks_.create_resources(context);
     }
+    drain_gpu_work();
     if (callbacks_.before_capture) {
         callbacks_.before_capture(context);
     }
+    drain_gpu_work();
 
     record_capture(context, target);
     write_png(target);
     device().wait_idle();
 
+    drain_gpu_work();
     if (callbacks_.shutdown) {
         callbacks_.shutdown(context);
+        drain_gpu_work();
     }
     return 0;
 }
@@ -118,6 +128,18 @@ void HeadlessPngHost::create_device() {
     device_config.require_present = false;
     device_config.require_dynamic_rendering = config_.require_dynamic_rendering;
     device_.emplace(instance(), device_config);
+}
+
+void HeadlessPngHost::create_submission_coordinator() {
+    submission_.emplace(device());
+}
+
+void HeadlessPngHost::create_gpu_runtime() {
+    gpu_.emplace(device(), submission());
+}
+
+void HeadlessPngHost::drain_gpu_work() {
+    static_cast<void>(gpu().drain_inline());
 }
 
 void HeadlessPngHost::record_capture(HeadlessPngContext& context,
@@ -163,6 +185,20 @@ cubey::vulkan::Device& HeadlessPngHost::device() {
         throw std::runtime_error("headless PNG Vulkan device is not initialized");
     }
     return device_.value();
+}
+
+cubey::vulkan::SubmissionCoordinator& HeadlessPngHost::submission() {
+    if (!submission_.has_value()) {
+        throw std::runtime_error("headless PNG Vulkan submission coordinator is not initialized");
+    }
+    return submission_.value();
+}
+
+cubey::vulkan::GpuRuntime& HeadlessPngHost::gpu() {
+    if (!gpu_.has_value()) {
+        throw std::runtime_error("headless PNG Vulkan GPU runtime is not initialized");
+    }
+    return gpu_.value();
 }
 
 } // namespace cubey

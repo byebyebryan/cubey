@@ -34,16 +34,14 @@ void validate_config(const WindowedHostConfig& config, const WindowedHostCallbac
 
 } // namespace
 
-WindowedAppContext::WindowedAppContext(const RunConfig& config, GlfwWindow& window,
-                                       cubey::vulkan::Instance& instance, GlfwSurface& surface,
-                                       cubey::vulkan::Device& device,
-                                       cubey::vulkan::Swapchain& swapchain,
-                                       cubey::vulkan::FrameResources& frame_resources,
-                                       cubey::vulkan::SubmissionCoordinator& submission,
-                                       const cubey::input::InputFrame& input,
-                                       std::uint32_t frame_slot_count)
+WindowedAppContext::WindowedAppContext(
+    const RunConfig& config, GlfwWindow& window, cubey::vulkan::Instance& instance,
+    GlfwSurface& surface, cubey::vulkan::Device& device, cubey::vulkan::Swapchain& swapchain,
+    cubey::vulkan::FrameResources& frame_resources,
+    cubey::vulkan::SubmissionCoordinator& submission, cubey::vulkan::GpuRuntime& gpu,
+    const cubey::input::InputFrame& input, std::uint32_t frame_slot_count)
     : config_(config), window_(window), instance_(instance), surface_(surface), device_(device),
-      swapchain_(swapchain), frame_resources_(frame_resources), submission_(submission),
+      swapchain_(swapchain), frame_resources_(frame_resources), submission_(submission), gpu_(gpu),
       input_(input), frame_slot_count_(frame_slot_count) {
     cubey::render::validate_frame_slot({.index = 0, .count = frame_slot_count_});
 }
@@ -66,6 +64,7 @@ WindowedHost::~WindowedHost() {
     }
     frame_resources_.reset();
     swapchain_.reset();
+    gpu_.reset();
     submission_.reset();
     device_.reset();
     surface_.reset();
@@ -79,12 +78,14 @@ int WindowedHost::run() {
     create_surface();
     create_device();
     create_submission_coordinator();
+    create_gpu_runtime();
     create_swapchain_resources();
 
     if (callbacks_.on_ready) {
         WindowedAppContext active_context = context();
         callbacks_.on_ready(active_context);
     }
+    static_cast<void>(gpu().drain_inline());
 
     std::uint32_t frame = 0;
     frame_clock_.reset();
@@ -111,6 +112,7 @@ int WindowedHost::run() {
         if (callbacks_.update) {
             callbacks_.update(active_context, timing);
         }
+        static_cast<void>(gpu().drain_inline());
         if (window().should_close()) {
             break;
         }
@@ -144,9 +146,11 @@ int WindowedHost::run() {
     cubey::vulkan::check(vkDeviceWaitIdle(device().handle()),
                          "vkDeviceWaitIdle after windowed host");
     destroy_swapchain_resources();
+    static_cast<void>(gpu().drain_inline());
     if (callbacks_.shutdown) {
         WindowedAppContext active_context = context();
         callbacks_.shutdown(active_context);
+        static_cast<void>(gpu().drain_inline());
     }
     return 0;
 }
@@ -188,6 +192,10 @@ void WindowedHost::create_submission_coordinator() {
     submission_.emplace(device());
 }
 
+void WindowedHost::create_gpu_runtime() {
+    gpu_.emplace(device(), submission());
+}
+
 void WindowedHost::create_swapchain() {
     window().wait_for_presentable_framebuffer();
 
@@ -213,12 +221,17 @@ void WindowedHost::create_swapchain_resources() {
         WindowedAppContext active_context = context();
         callbacks_.create_swapchain_resources(active_context);
     }
+    static_cast<void>(gpu().drain_inline());
 }
 
 void WindowedHost::destroy_swapchain_resources() {
+    if (gpu_.has_value()) {
+        static_cast<void>(gpu().drain_inline());
+    }
     if (swapchain_resources_created_ && callbacks_.destroy_swapchain_resources) {
         WindowedAppContext active_context = context();
         callbacks_.destroy_swapchain_resources(active_context);
+        static_cast<void>(gpu().drain_inline());
     }
     swapchain_resources_created_ = false;
 }
@@ -271,6 +284,7 @@ WindowedAppContext WindowedHost::context() {
             swapchain(),
             frame_resources(),
             submission(),
+            gpu(),
             input_state_.frame(),
             frame_resources().frame_slot_count()};
 }
@@ -322,6 +336,13 @@ cubey::vulkan::SubmissionCoordinator& WindowedHost::submission() {
         throw std::runtime_error("Vulkan submission coordinator is not initialized");
     }
     return submission_.value();
+}
+
+cubey::vulkan::GpuRuntime& WindowedHost::gpu() {
+    if (!gpu_.has_value()) {
+        throw std::runtime_error("Vulkan GPU runtime is not initialized");
+    }
+    return gpu_.value();
 }
 
 } // namespace cubey::app

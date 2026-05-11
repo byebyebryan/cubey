@@ -1,6 +1,7 @@
 #include <cubey/headless_png_host.h>
 
 #include <stdexcept>
+#include <type_traits>
 
 namespace {
 
@@ -40,4 +41,11 @@ void test_headless_png_host_validates_capture_shape() {
                                   const cubey::HeadlessRenderTarget&) {};
     cubey::HeadlessPngHost host(config, callbacks);
     (void)host;
+
+    static_assert(std::is_same_v<decltype(&cubey::HeadlessPngContext::submission),
+                                 cubey::vulkan::SubmissionCoordinator& (
+                                     cubey::HeadlessPngContext::*)() const>);
+    static_assert(
+        std::is_same_v<decltype(&cubey::HeadlessPngContext::gpu),
+                       cubey::vulkan::GpuRuntime& (cubey::HeadlessPngContext::*)() const>);
 }

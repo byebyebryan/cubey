@@ -22,4 +22,7 @@ void test_windowed_host_config_defaults_to_two_frame_slots() {
     static_assert(std::is_same_v<decltype(&cubey::app::WindowedAppContext::submission),
                                  cubey::vulkan::SubmissionCoordinator& (
                                      cubey::app::WindowedAppContext::*)() const>);
+    static_assert(
+        std::is_same_v<decltype(&cubey::app::WindowedAppContext::gpu),
+                       cubey::vulkan::GpuRuntime& (cubey::app::WindowedAppContext::*)() const>);
 }
