@@ -10,7 +10,9 @@
 
 #include <array>
 #include <cstdint>
+#include <initializer_list>
 #include <stdexcept>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -41,6 +43,33 @@ struct RenderFramePlan3D {
     std::vector<RenderDrawPacket3D> draw_packets{};
     std::vector<LightPacket3D> light_packets{};
     Environment3D environment{};
+};
+
+enum class RenderPassKind3D : std::uint8_t {
+    DepthOnly,
+    Color,
+};
+
+struct RenderPassPlan3D {
+    std::string label{};
+    RenderPassKind3D kind = RenderPassKind3D::Color;
+    RenderFramePlan3D frame_plan{};
+};
+
+class FrameRenderPlan3D {
+  public:
+    FrameRenderPlan3D() = default;
+
+    explicit FrameRenderPlan3D(std::vector<RenderPassPlan3D> passes) : passes_(std::move(passes)) {}
+
+    FrameRenderPlan3D(std::initializer_list<RenderPassPlan3D> passes) : passes_(passes) {}
+
+    [[nodiscard]] const std::vector<RenderPassPlan3D>& passes() const noexcept {
+        return passes_;
+    }
+
+  private:
+    std::vector<RenderPassPlan3D> passes_{};
 };
 
 [[nodiscard]] inline Frustum3D
@@ -141,6 +170,17 @@ build_render_frame_plan_3d(const View3D& view, const SceneReadView& scene,
         .light_packets = build_light_packets_3d(scene.lights3d(), scene.transforms3d()),
         .environment = view.environment,
     };
+}
+
+[[nodiscard]] inline std::vector<RenderFramePlan3D>
+build_render_frame_plans_3d(const std::vector<View3D>& views, const SceneReadView& scene,
+                            const RenderResourceRegistry& resources) {
+    std::vector<RenderFramePlan3D> plans;
+    plans.reserve(views.size());
+    for (const View3D& view : views) {
+        plans.push_back(build_render_frame_plan_3d(view, scene, resources));
+    }
+    return plans;
 }
 
 } // namespace cubey::render

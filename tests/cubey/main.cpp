@@ -74,6 +74,8 @@ void test_render_resource_handles_are_hashable_keys();
 void test_render_resource_registry_round_trips_mesh_and_material_info();
 void test_render_resource_table_resolves_move_only_resources_by_handle();
 void test_render_view_3d_builds_frame_plan_with_environment_draws_and_lights();
+void test_render_view_3d_builds_multiple_view_plans_from_one_scene_read_view();
+void test_render_view_3d_frame_pass_plan_preserves_explicit_pass_order();
 void test_render_view_3d_frustum_culls_world_bounds_and_can_be_disabled();
 void test_render_view_3d_preserves_draw_sorting_and_stale_handle_validation();
 void test_render_view_3d_rejects_invalid_view_or_missing_camera_transform();
@@ -178,6 +180,8 @@ int main() {
         test_render_resource_registry_round_trips_mesh_and_material_info();
         test_render_resource_table_resolves_move_only_resources_by_handle();
         test_render_view_3d_builds_frame_plan_with_environment_draws_and_lights();
+        test_render_view_3d_builds_multiple_view_plans_from_one_scene_read_view();
+        test_render_view_3d_frame_pass_plan_preserves_explicit_pass_order();
         test_render_view_3d_rejects_invalid_view_or_missing_camera_transform();
         test_render_view_3d_frustum_culls_world_bounds_and_can_be_disabled();
         test_render_view_3d_preserves_draw_sorting_and_stale_handle_validation();

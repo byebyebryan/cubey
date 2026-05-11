@@ -190,8 +190,7 @@ void test_render_view_3d_frustum_culls_world_bounds_and_can_be_disabled() {
     unculled_view.culling_enabled = false;
     const cubey::render::RenderFramePlan3D unculled_plan =
         cubey::render::build_render_frame_plan_3d(unculled_view, scene_view, registry);
-    require(unculled_plan.draw_packets.size() == 2,
-            "disabled culling should keep all renderables");
+    require(unculled_plan.draw_packets.size() == 2, "disabled culling should keep all renderables");
 }
 
 void test_render_view_3d_preserves_draw_sorting_and_stale_handle_validation() {
@@ -243,4 +242,82 @@ void test_render_view_3d_preserves_draw_sorting_and_stale_handle_validation() {
             (void)cubey::render::build_render_frame_plan_3d(view, scene_view, registry);
         },
         "view planning should reject stale mesh handles");
+}
+
+void test_render_view_3d_builds_multiple_view_plans_from_one_scene_read_view() {
+    cubey::render::RenderResourceRegistry registry;
+    const cubey::render::MeshHandle mesh = registry.create_mesh("cube");
+    const cubey::render::MaterialHandle material = registry.create_material("material");
+
+    cubey::Scene scene(&registry);
+    cubey::SceneTransaction setup = scene.begin_transaction();
+    const cubey::Entity first_camera = setup.entities().create();
+    const cubey::Entity second_camera = setup.entities().create();
+    const cubey::Entity renderable_entity = setup.entities().create();
+    setup.transforms3d().create(first_camera, cubey::Transform3D{});
+    setup.cameras3d().create(first_camera, cubey::Camera3D{});
+    setup.transforms3d().create(second_camera,
+                                cubey::Transform3D{.translation = {0.0F, 0.0F, 4.0F}});
+    setup.cameras3d().create(second_camera, cubey::Camera3D{});
+    setup.transforms3d().create(renderable_entity,
+                                cubey::Transform3D{.translation = {0.0F, 0.0F, -3.0F}});
+    setup.renderables3d().create(renderable_entity, renderable_for(mesh, material));
+    setup.commit();
+
+    cubey::SceneReadView scene_view = scene.read();
+    const std::vector<cubey::render::View3D> views{
+        cubey::render::View3D{
+            .camera_entity = first_camera,
+            .width = 640,
+            .height = 320,
+        },
+        cubey::render::View3D{
+            .camera_entity = second_camera,
+            .width = 320,
+            .height = 320,
+            .culling_enabled = false,
+        },
+    };
+
+    const std::vector<cubey::render::RenderFramePlan3D> plans =
+        cubey::render::build_render_frame_plans_3d(views, scene_view, registry);
+    require(plans.size() == 2, "multi-view planning should build one frame plan per view");
+    require(plans[0].camera_entity == first_camera,
+            "multi-view planning should preserve first camera entity");
+    require(plans[1].camera_entity == second_camera,
+            "multi-view planning should preserve second camera entity");
+    require(plans[0].draw_packets.size() == 1, "first view should include visible draw packet");
+    require(plans[1].draw_packets.size() == 1, "second view should include visible draw packet");
+}
+
+void test_render_view_3d_frame_pass_plan_preserves_explicit_pass_order() {
+    cubey::render::RenderFramePlan3D shadow_plan{
+        .camera_entity = cubey::Entity{.index = 1, .generation = 1},
+    };
+    cubey::render::RenderFramePlan3D color_plan{
+        .camera_entity = cubey::Entity{.index = 2, .generation = 1},
+    };
+
+    const cubey::render::FrameRenderPlan3D frame_plan({
+        cubey::render::RenderPassPlan3D{
+            .label = "shadow",
+            .kind = cubey::render::RenderPassKind3D::DepthOnly,
+            .frame_plan = shadow_plan,
+        },
+        cubey::render::RenderPassPlan3D{
+            .label = "main",
+            .kind = cubey::render::RenderPassKind3D::Color,
+            .frame_plan = color_plan,
+        },
+    });
+
+    require(frame_plan.passes().size() == 2, "frame pass plan should keep all passes");
+    require(frame_plan.passes()[0].label == "shadow",
+            "frame pass plan should preserve explicit first pass");
+    require(frame_plan.passes()[0].kind == cubey::render::RenderPassKind3D::DepthOnly,
+            "frame pass plan should preserve first pass kind");
+    require(frame_plan.passes()[1].label == "main",
+            "frame pass plan should preserve explicit second pass");
+    require(frame_plan.passes()[1].frame_plan.camera_entity.index == 2,
+            "frame pass plan should preserve pass frame plan data");
 }
