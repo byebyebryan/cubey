@@ -15,8 +15,9 @@ void validate_dynamic_graphics_pipeline_config(const DynamicGraphicsPipelineConf
     if (config.extent.width == 0 || config.extent.height == 0) {
         throw std::runtime_error("dynamic graphics pipeline requires a non-empty extent");
     }
-    if (config.color_format == VK_FORMAT_UNDEFINED) {
-        throw std::runtime_error("dynamic graphics pipeline requires a color format");
+    if (config.color_format == VK_FORMAT_UNDEFINED && config.depth_format == VK_FORMAT_UNDEFINED) {
+        throw std::runtime_error(
+            "dynamic graphics pipeline requires at least one attachment format");
     }
     if (config.shader_stages.empty()) {
         throw std::runtime_error("dynamic graphics pipeline requires at least one shader stage");
@@ -84,12 +85,13 @@ DynamicGraphicsPipelineInfo::DynamicGraphicsPipelineInfo(
     shader_stages_.assign(config.shader_stages.begin(), config.shader_stages.end());
     vertex_bindings_.assign(config.vertex_bindings.begin(), config.vertex_bindings.end());
     vertex_attributes_.assign(config.vertex_attributes.begin(), config.vertex_attributes.end());
+    const bool has_color_attachment = config.color_format != VK_FORMAT_UNDEFINED;
     color_format_ = config.color_format;
 
     rendering_info_ =
         vk_struct<VkPipelineRenderingCreateInfo>(VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO);
-    rendering_info_.colorAttachmentCount = 1;
-    rendering_info_.pColorAttachmentFormats = &color_format_;
+    rendering_info_.colorAttachmentCount = has_color_attachment ? 1U : 0U;
+    rendering_info_.pColorAttachmentFormats = has_color_attachment ? &color_format_ : nullptr;
     rendering_info_.depthAttachmentFormat = config.depth_format;
 
     vertex_input_ = vk_struct<VkPipelineVertexInputStateCreateInfo>(
@@ -151,8 +153,8 @@ DynamicGraphicsPipelineInfo::DynamicGraphicsPipelineInfo(
 
     color_blend_ = vk_struct<VkPipelineColorBlendStateCreateInfo>(
         VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO);
-    color_blend_.attachmentCount = 1;
-    color_blend_.pAttachments = &color_blend_attachment_;
+    color_blend_.attachmentCount = has_color_attachment ? 1U : 0U;
+    color_blend_.pAttachments = has_color_attachment ? &color_blend_attachment_ : nullptr;
 
     create_info_ =
         vk_struct<VkGraphicsPipelineCreateInfo>(VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO);

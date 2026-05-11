@@ -144,3 +144,44 @@ void test_pipeline_helpers_describe_dynamic_graphics_pipeline_setup() {
                 VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
             "color blending should preserve the destination alpha factor");
 }
+
+void test_pipeline_helpers_describe_depth_only_dynamic_graphics_pipeline_setup() {
+    const VkPipelineShaderStageCreateInfo vertex_stage = cubey::vulkan::shader_stage(
+        VK_SHADER_STAGE_VERTEX_BIT, reinterpret_cast<VkShaderModule>(0x40));
+
+    VkVertexInputBindingDescription vertex_binding{};
+    vertex_binding.binding = 0;
+    vertex_binding.stride = 12;
+    vertex_binding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+    VkVertexInputAttributeDescription vertex_attribute{};
+    vertex_attribute.location = 0;
+    vertex_attribute.binding = 0;
+    vertex_attribute.format = VK_FORMAT_R32G32B32_SFLOAT;
+    vertex_attribute.offset = 0;
+
+    cubey::vulkan::DynamicGraphicsPipelineConfig config;
+    config.layout = reinterpret_cast<VkPipelineLayout>(0x50);
+    config.extent = {1024, 1024};
+    config.color_format = VK_FORMAT_UNDEFINED;
+    config.depth_format = VK_FORMAT_D32_SFLOAT;
+    config.shader_stages = {&vertex_stage, 1};
+    config.vertex_bindings = {&vertex_binding, 1};
+    config.vertex_attributes = {&vertex_attribute, 1};
+    config.depth_test = true;
+    config.depth_write = true;
+
+    const cubey::vulkan::DynamicGraphicsPipelineInfo info(config);
+    const auto* rendering_info =
+        static_cast<const VkPipelineRenderingCreateInfo*>(info.create_info().pNext);
+    require(rendering_info->colorAttachmentCount == 0,
+            "depth-only pipeline should not describe color attachments");
+    require(rendering_info->pColorAttachmentFormats == nullptr,
+            "depth-only pipeline should not point at color formats");
+    require(rendering_info->depthAttachmentFormat == VK_FORMAT_D32_SFLOAT,
+            "depth-only pipeline should preserve depth format");
+    require(info.create_info().pColorBlendState->attachmentCount == 0,
+            "depth-only pipeline should not describe color blend attachments");
+    require(info.create_info().pColorBlendState->pAttachments == nullptr,
+            "depth-only pipeline should not point at color blend attachments");
+}

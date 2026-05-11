@@ -57,6 +57,7 @@ void test_math_quaternion_helpers_match_rotation_matrices();
 void test_orbit_controller_tracks_rotation_drag_pause_and_reset();
 void test_orbit_controller_updates_from_input_snapshot();
 void test_pipeline_helpers_describe_dynamic_graphics_pipeline_setup();
+void test_pipeline_helpers_describe_depth_only_dynamic_graphics_pipeline_setup();
 void test_project_context_exposes_async_runtime_services();
 void test_project_runtime_contract_supports_lifecycle_shape();
 void test_project_runtime_adapter_exposes_context_and_retirement();
@@ -173,6 +174,7 @@ int main() {
         test_orbit_controller_tracks_rotation_drag_pause_and_reset();
         test_orbit_controller_updates_from_input_snapshot();
         test_pipeline_helpers_describe_dynamic_graphics_pipeline_setup();
+        test_pipeline_helpers_describe_depth_only_dynamic_graphics_pipeline_setup();
         test_project_context_exposes_async_runtime_services();
         test_project_runtime_contract_supports_lifecycle_shape();
         test_project_runtime_adapter_reuses_frame_for_same_timing();
