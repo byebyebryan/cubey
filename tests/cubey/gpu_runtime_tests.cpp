@@ -250,6 +250,42 @@ void test_gpu_runtime_wait_queue_idle_runs_on_owner_thread() {
             "threaded queue idle should execute on the GPU owner thread");
 }
 
+void test_gpu_runtime_mark_submission_completed_updates_completed_ticket() {
+    cubey::FrameTicket submitted{};
+    std::thread::id caller_thread = std::this_thread::get_id();
+    std::thread::id completion_thread{};
+    cubey::vulkan::SubmissionCoordinator submission(
+        reinterpret_cast<VkQueue>(0x56),
+        [&submitted](VkQueue, const cubey::vulkan::QueueSubmitInfo&, const char*) {
+            submitted = cubey::FrameTicket{.value = 1};
+        },
+        [](VkQueue, const char*) {});
+    submitted = submission.submit({.command_buffers = {reinterpret_cast<VkCommandBuffer>(0x57)}},
+                                  "submit frame");
+    cubey::vulkan::GpuRuntime runtime({
+        .device = fake_device(),
+        .submission = &submission,
+    });
+
+    runtime.mark_submission_completed(submitted);
+    static_cast<void>(runtime.submit_and_wait({
+        .label = "observe completion thread",
+        .work =
+            [&completion_thread, submitted](cubey::vulkan::GpuOwnerContext& owner) {
+                completion_thread = std::this_thread::get_id();
+                require(owner.completed_submission() == submitted,
+                        "GPU runtime should mark submitted ticket completed");
+            },
+    }));
+    runtime.mark_submission_completed(cubey::FrameTicket{.value = 0});
+
+    require(completion_thread != std::thread::id{}, "completion observer should run");
+    require(completion_thread != caller_thread,
+            "submission completion should be observable on the owner thread by default");
+    require(submission.completed() == submitted,
+            "mark_submission_completed should not regress completed tickets");
+}
+
 void test_gpu_runtime_shutdown_rejects_new_work() {
     cubey::vulkan::SubmissionCoordinator submission = fake_submission();
     cubey::vulkan::GpuRuntime runtime({

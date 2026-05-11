@@ -172,6 +172,13 @@ bool GpuRuntime::empty() const {
     return queue_.empty();
 }
 
+void GpuRuntime::mark_submission_completed(FrameTicket ticket) {
+    static_cast<void>(submit_and_wait({
+        .label = "mark GPU submission completed",
+        .work = [ticket](GpuOwnerContext& context) { context.submission().mark_completed(ticket); },
+    }));
+}
+
 void GpuRuntime::wait_queue_idle(std::string label) {
     if (label.empty()) {
         label = "GPU queue idle";

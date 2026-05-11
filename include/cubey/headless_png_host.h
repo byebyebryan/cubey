@@ -21,9 +21,8 @@ using HeadlessRenderTarget = cubey::render::ColorTargetView;
 class HeadlessPngContext {
   public:
     HeadlessPngContext(const RunConfig& config, cubey::vulkan::Instance& instance,
-                       cubey::vulkan::Device& device,
-                       cubey::vulkan::SubmissionCoordinator& submission,
-                       cubey::vulkan::GpuRuntime& gpu, const HeadlessRenderTarget& target);
+                       cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu,
+                       const HeadlessRenderTarget& target);
 
     [[nodiscard]] const RunConfig& config() const {
         return config_;
@@ -33,9 +32,6 @@ class HeadlessPngContext {
     }
     [[nodiscard]] cubey::vulkan::Device& device() const {
         return device_;
-    }
-    [[nodiscard]] cubey::vulkan::SubmissionCoordinator& submission() const {
-        return submission_;
     }
     [[nodiscard]] cubey::vulkan::GpuRuntime& gpu() const {
         return gpu_;
@@ -48,7 +44,6 @@ class HeadlessPngContext {
     const RunConfig& config_;
     cubey::vulkan::Instance& instance_;
     cubey::vulkan::Device& device_;
-    cubey::vulkan::SubmissionCoordinator& submission_;
     cubey::vulkan::GpuRuntime& gpu_;
     const HeadlessRenderTarget& target_;
 };

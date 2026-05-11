@@ -40,11 +40,9 @@ void validate_config(const HeadlessPngHostConfig& config,
 
 HeadlessPngContext::HeadlessPngContext(const RunConfig& config, cubey::vulkan::Instance& instance,
                                        cubey::vulkan::Device& device,
-                                       cubey::vulkan::SubmissionCoordinator& submission,
                                        cubey::vulkan::GpuRuntime& gpu,
                                        const HeadlessRenderTarget& target)
-    : config_(config), instance_(instance), device_(device), submission_(submission), gpu_(gpu),
-      target_(target) {}
+    : config_(config), instance_(instance), device_(device), gpu_(gpu), target_(target) {}
 
 std::size_t headless_png_byte_size(std::uint32_t width, std::uint32_t height) {
     if (width == 0 || height == 0) {
@@ -90,8 +88,7 @@ int HeadlessPngHost::run() {
         .image = render_target_image.handle(),
         .view = render_target_image.view(),
     };
-    HeadlessPngContext context(config_.run_config, instance(), device(), submission(), gpu(),
-                               target);
+    HeadlessPngContext context(config_.run_config, instance(), device(), gpu(), target);
 
     if (callbacks_.create_resources) {
         callbacks_.create_resources(context);

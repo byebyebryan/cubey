@@ -41,6 +41,7 @@ void test_frame_ticket_issuer_returns_monotonic_tickets();
 void test_gpu_runtime_accepts_cross_thread_enqueue_but_rejects_cross_thread_drain();
 void test_gpu_runtime_defaults_to_threaded_execution();
 void test_gpu_runtime_drains_inline_on_owner_thread();
+void test_gpu_runtime_mark_submission_completed_updates_completed_ticket();
 void test_gpu_runtime_preserves_pending_work_after_callback_failure();
 void test_gpu_runtime_shutdown_rejects_new_work();
 void test_gpu_runtime_submit_and_wait_propagates_threaded_failures();
@@ -182,6 +183,7 @@ int main() {
         test_gpu_runtime_defaults_to_threaded_execution();
         test_gpu_runtime_submit_and_wait_propagates_threaded_failures();
         test_gpu_runtime_wait_queue_idle_runs_on_owner_thread();
+        test_gpu_runtime_mark_submission_completed_updates_completed_ticket();
         test_gpu_runtime_shutdown_rejects_new_work();
         test_gpu_runtime_drains_inline_on_owner_thread();
         test_gpu_runtime_accepts_cross_thread_enqueue_but_rejects_cross_thread_drain();

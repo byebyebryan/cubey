@@ -36,7 +36,7 @@ void test_render_context_exposes_explicit_frame_boundary() {
 
     cubey::vulkan::RenderContextConfig config;
     if (config.device != nullptr || config.swapchain != nullptr ||
-        config.frame_resources != nullptr || config.submission != nullptr) {
+        config.frame_resources != nullptr || config.gpu != nullptr) {
         throw std::runtime_error("render context config should default to null handles");
     }
 

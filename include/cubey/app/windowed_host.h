@@ -29,7 +29,6 @@ class WindowedAppContext {
                        cubey::vulkan::Instance& instance, GlfwSurface& surface,
                        cubey::vulkan::Device& device, cubey::vulkan::Swapchain& swapchain,
                        cubey::vulkan::FrameResources& frame_resources,
-                       cubey::vulkan::SubmissionCoordinator& submission,
                        cubey::vulkan::GpuRuntime& gpu, const cubey::input::InputFrame& input,
                        std::uint32_t frame_slot_count);
 
@@ -54,9 +53,6 @@ class WindowedAppContext {
     [[nodiscard]] cubey::vulkan::FrameResources& frame_resources() const {
         return frame_resources_;
     }
-    [[nodiscard]] cubey::vulkan::SubmissionCoordinator& submission() const {
-        return submission_;
-    }
     [[nodiscard]] cubey::vulkan::GpuRuntime& gpu() const {
         return gpu_;
     }
@@ -75,7 +71,6 @@ class WindowedAppContext {
     cubey::vulkan::Device& device_;
     cubey::vulkan::Swapchain& swapchain_;
     cubey::vulkan::FrameResources& frame_resources_;
-    cubey::vulkan::SubmissionCoordinator& submission_;
     cubey::vulkan::GpuRuntime& gpu_;
     const cubey::input::InputFrame& input_;
     std::uint32_t frame_slot_count_ = cubey::render::kSingleFrameSlotCount;

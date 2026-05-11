@@ -18,8 +18,8 @@ void validate_config(const RenderContextConfig& config) {
     if (config.frame_resources == nullptr) {
         throw std::runtime_error("render context requires frame resources");
     }
-    if (config.submission == nullptr) {
-        throw std::runtime_error("render context requires a submission coordinator");
+    if (config.gpu == nullptr) {
+        throw std::runtime_error("render context requires a GPU runtime");
     }
 }
 
@@ -59,7 +59,7 @@ RenderFrameResult RenderContext::begin_frame(RenderFrame* frame) const {
     const std::uint32_t frame_slot_index = frame_resources.current_frame_slot_index();
     const FrameResourceSlot& frame_slot = frame_resources.slot(frame_slot_index);
     frame_resources.wait_for_frame(frame_slot_index);
-    config_.submission->mark_completed(frame_resources.submitted_ticket(frame_slot_index));
+    config_.gpu->mark_submission_completed(frame_resources.submitted_ticket(frame_slot_index));
 
     std::uint32_t image_index = 0;
     VkResult acquired =
@@ -97,37 +97,44 @@ RenderFrameResult RenderContext::end_frame(const RenderFrame& frame) const {
         throw std::runtime_error("end_frame requires a recorded command buffer");
     }
 
-    Device& device = *config_.device;
     Swapchain& active_swapchain = *config_.swapchain;
     FrameResources& frame_resources = *config_.frame_resources;
     const FrameResourceSlot& frame_slot = frame_resources.slot(frame.frame_slot_index);
 
     VkSemaphore present_ready =
         frame_resources.present_ready(static_cast<std::size_t>(frame.image_index));
-    const FrameTicket submitted = config_.submission->submit(
-        {
-            .waits =
-                {
-                    QueueWait{
-                        .semaphore = frame_slot.image_available,
-                        .stage_mask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+    FrameTicket submitted{};
+    VkResult presented = VK_SUCCESS;
+    static_cast<void>(config_.gpu->submit_and_wait({
+        .label = "submit and present frame",
+        .work =
+            [&](GpuOwnerContext& gpu_context) {
+                submitted = gpu_context.submission().submit(
+                    {
+                        .waits =
+                            {
+                                QueueWait{
+                                    .semaphore = frame_slot.image_available,
+                                    .stage_mask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                },
+                            },
+                        .command_buffers = {frame.command_buffer},
+                        .signals = {QueueSignal{.semaphore = present_ready}},
+                        .fence = frame_slot.fence,
                     },
-                },
-            .command_buffers = {frame.command_buffer},
-            .signals = {QueueSignal{.semaphore = present_ready}},
-            .fence = frame_slot.fence,
-        },
-        "vkQueueSubmit frame");
-    frame_resources.mark_submitted(frame.frame_slot_index, submitted);
+                    "vkQueueSubmit frame");
 
-    auto present = vk_struct<VkPresentInfoKHR>(VK_STRUCTURE_TYPE_PRESENT_INFO_KHR);
-    present.waitSemaphoreCount = 1;
-    present.pWaitSemaphores = &present_ready;
-    present.swapchainCount = 1;
-    VkSwapchainKHR swapchain_handle = active_swapchain.handle();
-    present.pSwapchains = &swapchain_handle;
-    present.pImageIndices = &frame.image_index;
-    VkResult presented = vkQueuePresentKHR(device.queue(), &present);
+                auto present = vk_struct<VkPresentInfoKHR>(VK_STRUCTURE_TYPE_PRESENT_INFO_KHR);
+                present.waitSemaphoreCount = 1;
+                present.pWaitSemaphores = &present_ready;
+                present.swapchainCount = 1;
+                VkSwapchainKHR swapchain_handle = active_swapchain.handle();
+                present.pSwapchains = &swapchain_handle;
+                present.pImageIndices = &frame.image_index;
+                presented = vkQueuePresentKHR(gpu_context.device().queue(), &present);
+            },
+    }));
+    frame_resources.mark_submitted(frame.frame_slot_index, submitted);
 
     bool recreate_after_present = frame.suboptimal;
     if (presented == VK_ERROR_OUT_OF_DATE_KHR || presented == VK_SUBOPTIMAL_KHR) {

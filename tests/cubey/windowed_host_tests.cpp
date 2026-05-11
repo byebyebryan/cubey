@@ -12,6 +12,9 @@ void require(bool condition, const char* message) {
     }
 }
 
+template <typename T>
+concept HasSubmissionAccessor = requires { &T::submission; };
+
 } // namespace
 
 void test_windowed_host_config_defaults_to_two_frame_slots() {
@@ -21,9 +24,7 @@ void test_windowed_host_config_defaults_to_two_frame_slots() {
     require(config.gpu_execution_mode == cubey::vulkan::GpuRuntimeExecutionMode::Threaded,
             "windowed host config should default to threaded GPU runtime");
     static_assert(std::is_same_v<decltype(config.frame_slot_count), std::uint32_t>);
-    static_assert(std::is_same_v<decltype(&cubey::app::WindowedAppContext::submission),
-                                 cubey::vulkan::SubmissionCoordinator& (
-                                     cubey::app::WindowedAppContext::*)() const>);
+    static_assert(!HasSubmissionAccessor<cubey::app::WindowedAppContext>);
     static_assert(
         std::is_same_v<decltype(&cubey::app::WindowedAppContext::gpu),
                        cubey::vulkan::GpuRuntime& (cubey::app::WindowedAppContext::*)() const>);

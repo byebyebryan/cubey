@@ -106,6 +106,7 @@ class GpuRuntime {
     [[nodiscard]] GpuDrainResult drain_inline();
     [[nodiscard]] std::size_t pending_count() const;
     [[nodiscard]] bool empty() const;
+    void mark_submission_completed(FrameTicket ticket);
     void wait_queue_idle(std::string label);
     void wait_until_idle();
     void shutdown();

@@ -21,6 +21,9 @@ template <typename Func> void require_throws(Func&& func, const char* message) {
     require(threw, message);
 }
 
+template <typename T>
+concept HasSubmissionAccessor = requires { &T::submission; };
+
 } // namespace
 
 void test_headless_png_host_validates_capture_shape() {
@@ -44,9 +47,7 @@ void test_headless_png_host_validates_capture_shape() {
     cubey::HeadlessPngHost host(config, callbacks);
     (void)host;
 
-    static_assert(std::is_same_v<decltype(&cubey::HeadlessPngContext::submission),
-                                 cubey::vulkan::SubmissionCoordinator& (
-                                     cubey::HeadlessPngContext::*)() const>);
+    static_assert(!HasSubmissionAccessor<cubey::HeadlessPngContext>);
     static_assert(
         std::is_same_v<decltype(&cubey::HeadlessPngContext::gpu),
                        cubey::vulkan::GpuRuntime& (cubey::HeadlessPngContext::*)() const>);

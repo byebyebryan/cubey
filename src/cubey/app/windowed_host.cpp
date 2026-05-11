@@ -37,12 +37,11 @@ void validate_config(const WindowedHostConfig& config, const WindowedHostCallbac
 WindowedAppContext::WindowedAppContext(
     const RunConfig& config, GlfwWindow& window, cubey::vulkan::Instance& instance,
     GlfwSurface& surface, cubey::vulkan::Device& device, cubey::vulkan::Swapchain& swapchain,
-    cubey::vulkan::FrameResources& frame_resources,
-    cubey::vulkan::SubmissionCoordinator& submission, cubey::vulkan::GpuRuntime& gpu,
+    cubey::vulkan::FrameResources& frame_resources, cubey::vulkan::GpuRuntime& gpu,
     const cubey::input::InputFrame& input, std::uint32_t frame_slot_count)
     : config_(config), window_(window), instance_(instance), surface_(surface), device_(device),
-      swapchain_(swapchain), frame_resources_(frame_resources), submission_(submission), gpu_(gpu),
-      input_(input), frame_slot_count_(frame_slot_count) {
+      swapchain_(swapchain), frame_resources_(frame_resources), gpu_(gpu), input_(input),
+      frame_slot_count_(frame_slot_count) {
     cubey::render::validate_frame_slot({.index = 0, .count = frame_slot_count_});
 }
 
@@ -254,7 +253,7 @@ cubey::vulkan::RenderFrameResult WindowedHost::draw_frame(const FrameTiming& tim
         .device = &device(),
         .swapchain = &swapchain(),
         .frame_resources = &frame_resources(),
-        .submission = &submission(),
+        .gpu = &gpu(),
     });
 
     cubey::vulkan::RenderFrame frame;
@@ -287,7 +286,6 @@ WindowedAppContext WindowedHost::context() {
             device(),
             swapchain(),
             frame_resources(),
-            submission(),
             gpu(),
             input_state_.frame(),
             frame_resources().frame_slot_count()};
