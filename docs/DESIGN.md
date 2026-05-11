@@ -120,17 +120,20 @@ Reusable spatial types should stay explicit and narrow:
 - `LightManager3D` owns entity-backed 3D light components and builds CPU-side
   light packets from committed scene read views. Directional lights carry
   normalized directions; point lights derive world position from `Transform3D`.
+- `cubey::render::View3D` is the first renderer-facing view contract. It
+  combines a scene read view, camera entity, viewport size, ambient-only
+  environment, renderables, and lights into a CPU `RenderFramePlan3D`.
 - `cubey::render` can turn renderable packets into CPU draw packets by
-  validating resource handles, attaching material tags, and sorting them. This
-  is a planning layer only; Vulkan command recording, descriptors, pipelines,
-  light upload, and shader/material binding stay owned by examples/projects for
-  now.
+  validating resource handles, attaching material tags, sorting them, computing
+  world bounds, and frustum-culling visible renderables. This is a planning
+  layer only; Vulkan command recording, descriptors, pipelines, light upload,
+  and shader/material binding stay owned by examples/projects for now.
 
 The broader entity/component shape is captured in
 [entity and component foundation](entity-component-foundation.md): Cubey should
 move toward manager-oriented, MT-stable component storage with explicit read
-views and edit commits before adding broader material, environment, culling, or
-renderer ownership.
+views and edit commits before adding broader material, environment, or renderer
+ownership.
 
 `cubey::Engine` is the scoped root owner for engine services and scene
 creation. It owns project runtime services, render resource handle identity,
@@ -339,6 +342,7 @@ cubey/
       upload_queue.h       -- CPU-owned upload request queue
       render/
         resource_handle.h  -- opaque render resource handle values
+        view_3d.h          -- CPU 3D render frame planning and culling
       vulkan/
         vk_check.h         -- Vulkan result helpers
         instance.h         -- instance, validation, debug messenger

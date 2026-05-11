@@ -146,6 +146,10 @@ resource creation/destruction, update, command recording, and shutdown.
   resource ownership stays with examples/projects for now.
 - `ResourceTable` and CPU draw planning give examples a shared way to resolve
   mesh handles and sort/validate draw packets before command recording.
+- `cubey::render::View3D` gives 3D examples a shared CPU frame-planning
+  boundary: camera matrices, draw packets, light packets, ambient-only
+  environment, and conservative frustum culling. It is not a scene manager,
+  renderer service, or Vulkan command recorder.
 - `cubey::input::PointerDrag`, `PanZoom2DController`, and the input-aware
   `OrbitController` cover the current repeated 2D/3D pointer-control shapes
   without introducing a scene or action-binding system. The pan/zoom controller
@@ -176,7 +180,7 @@ resource creation/destruction, update, command recording, and shutdown.
   setup, or app simulation state.
 - Engine-created scenes validate renderable mesh/material handles against the
   Engine registry. Current cube examples use Engine-owned scenes, mutate scene
-  transforms during `update()`, build CPU draw/light packets during render, and
+  transforms during `update()`, build CPU render frame plans during render, and
   keep Vulkan command recording local.
 - `cubey::ProjectRuntimeServices` now owns project-facing jobs, uploads,
   captures, frame tickets, and deferred destruction.

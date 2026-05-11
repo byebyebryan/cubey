@@ -98,13 +98,17 @@ full engine architecture.
 - `ResourceTable` maps typed render handles to app-owned resources such as
   `Mesh`, so examples can resolve registry-issued handles without hardcoded
   one-off checks.
-- `RenderDrawPacket3D` and `build_render_draw_packets_3d` form the current
-  CPU planning boundary. They validate live mesh/material handles, attach
-  material metadata, and sort draw packets deterministically. Vulkan command
-  recording, pipeline selection, descriptor binding, and pass ordering remain
-  caller-owned.
+- `RenderDrawPacket3D` and `build_render_draw_packets_3d` validate live
+  mesh/material handles, attach material metadata, preserve world bounds, and
+  sort draw packets deterministically.
+- `View3D`, `Environment3D`, and `RenderFramePlan3D` form the current CPU
+  view-planning boundary. They combine a scene read view, camera entity,
+  viewport size, ambient-only environment, draw packets, light packets, and
+  conservative CPU frustum culling. Vulkan command recording, pipeline
+  selection, descriptor binding, and pass ordering remain caller-owned.
 - `RenderableManager3D` lives in the scene/component layer and emits compact
-  renderable packets with world matrices and resource handles. The cube
+  renderable packets with world matrices, world bounds, and resource handles.
+  The cube
   examples now use Engine-owned scenes, registry-issued handles, mesh resource
   tables, and CPU draw planning while still owning pipelines, descriptors, and
   Vulkan command recording locally.
