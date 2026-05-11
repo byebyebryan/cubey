@@ -189,30 +189,52 @@ VkBufferImageCopy buffer_image_copy(VkExtent3D extent) {
     return copy;
 }
 
-void copy_buffer_to_image(const Device& device, VkBuffer source, VkImage destination,
+void copy_buffer_to_image(GpuOwnerContext& context, VkBuffer source, VkImage destination,
                           VkExtent3D extent) {
     if (source == VK_NULL_HANDLE || destination == VK_NULL_HANDLE) {
         throw std::runtime_error("buffer-to-image copy requires valid source and destination");
     }
 
-    ImmediateCommands commands(device);
+    ImmediateCommands commands(context);
     const VkBufferImageCopy copy = buffer_image_copy(extent);
     vkCmdCopyBufferToImage(commands.command_buffer(), source, destination,
                            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy);
     commands.submit_and_wait();
 }
 
-void copy_image_to_buffer(const Device& device, VkImage source, VkBuffer destination,
+void copy_buffer_to_image(GpuRuntime& gpu, VkBuffer source, VkImage destination,
+                          VkExtent3D extent) {
+    static_cast<void>(gpu.submit_and_wait({
+        .label = "copy buffer to image",
+        .work =
+            [source, destination, extent](GpuOwnerContext& context) {
+                copy_buffer_to_image(context, source, destination, extent);
+            },
+    }));
+}
+
+void copy_image_to_buffer(GpuOwnerContext& context, VkImage source, VkBuffer destination,
                           VkExtent3D extent) {
     if (source == VK_NULL_HANDLE || destination == VK_NULL_HANDLE) {
         throw std::runtime_error("image-to-buffer copy requires valid source and destination");
     }
 
-    ImmediateCommands commands(device);
+    ImmediateCommands commands(context);
     const VkBufferImageCopy copy = buffer_image_copy(extent);
     vkCmdCopyImageToBuffer(commands.command_buffer(), source, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
                            destination, 1, &copy);
     commands.submit_and_wait();
+}
+
+void copy_image_to_buffer(GpuRuntime& gpu, VkImage source, VkBuffer destination,
+                          VkExtent3D extent) {
+    static_cast<void>(gpu.submit_and_wait({
+        .label = "copy image to buffer",
+        .work =
+            [source, destination, extent](GpuOwnerContext& context) {
+                copy_image_to_buffer(context, source, destination, extent);
+            },
+    }));
 }
 
 DepthAttachment::DepthAttachment(const Device& device, VkExtent2D extent)

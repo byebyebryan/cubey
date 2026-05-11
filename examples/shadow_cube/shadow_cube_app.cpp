@@ -191,9 +191,9 @@ class ShadowCubeApp {
         cube_mesh_handle_ = engine_.render_resources().create_mesh("shadow_cube.cube");
         floor_mesh_handle_ = engine_.render_resources().create_mesh("shadow_cube.floor");
         material_handle_ = engine_.render_resources().create_material("shadow_cube.material");
-        meshes_.emplace(cube_mesh_handle_, context.device(),
+        meshes_.emplace(cube_mesh_handle_, context.gpu(),
                         cubey::render::indexed_mesh_config(kCubeVertices, kCubeIndices));
-        meshes_.emplace(floor_mesh_handle_, context.device(),
+        meshes_.emplace(floor_mesh_handle_, context.gpu(),
                         cubey::render::indexed_mesh_config(kFloorVertices, kFloorIndices));
         create_scene();
         create_shadow_depth_resources(context);

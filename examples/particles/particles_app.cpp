@@ -35,7 +35,6 @@ namespace {
 
 using cubey::FrameStatsSample;
 using cubey::FrameTiming;
-using cubey::vulkan::check;
 using cubey::vulkan::vk_struct;
 
 constexpr std::uint32_t kParticleCount = 8192;
@@ -199,7 +198,7 @@ class ParticlesApp {
         const VkDeviceSize byte_size =
             static_cast<VkDeviceSize>(particles.size() * sizeof(ParticleGpu));
         particle_buffer_.emplace(cubey::vulkan::upload_device_buffer(
-            context.device(), particles.data(), byte_size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT));
+            context.gpu(), particles.data(), byte_size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT));
     }
 
     void create_descriptor_resources(cubey::app::WindowedAppContext& context) {
@@ -224,8 +223,13 @@ class ParticlesApp {
     }
 
     void reset_particle_buffer(cubey::app::WindowedAppContext& context) {
-        check(vkDeviceWaitIdle(context.device().handle()),
-              "vkDeviceWaitIdle before particle reset");
+        static_cast<void>(context.gpu().submit_and_wait({
+            .label = "particle reset wait idle",
+            .work =
+                [](cubey::vulkan::GpuOwnerContext& gpu_context) {
+                    gpu_context.submission().wait_idle("vkQueueWaitIdle before particle reset");
+                },
+        }));
         particle_buffer_.reset();
         create_particle_buffer(context);
         update_particle_descriptor(context);

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cubey/vulkan/device.h>
+#include <cubey/vulkan/gpu_runtime.h>
 
 #include <vulkan/vulkan.h>
 
@@ -49,9 +50,11 @@ class Buffer {
 [[nodiscard]] BufferConfig readback_buffer_config(VkDeviceSize byte_size);
 [[nodiscard]] BufferConfig device_local_buffer_config(VkDeviceSize byte_size,
                                                       VkBufferUsageFlags usage);
-void copy_buffer(const Device& device, VkBuffer source, VkBuffer destination,
+void copy_buffer(GpuOwnerContext& context, VkBuffer source, VkBuffer destination,
                  VkDeviceSize byte_size);
-[[nodiscard]] Buffer upload_device_buffer(const Device& device, const void* data,
+[[nodiscard]] Buffer upload_device_buffer(GpuOwnerContext& context, const void* data,
                                           VkDeviceSize byte_size, VkBufferUsageFlags usage);
+[[nodiscard]] Buffer upload_device_buffer(GpuRuntime& gpu, const void* data, VkDeviceSize byte_size,
+                                          VkBufferUsageFlags usage);
 
 } // namespace cubey::vulkan

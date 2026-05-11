@@ -283,7 +283,7 @@ class TexturedCubeApp {
     }
 
     void create_cube_mesh(cubey::app::WindowedAppContext& context) {
-        meshes_.emplace(cube_mesh_handle_, context.device(),
+        meshes_.emplace(cube_mesh_handle_, context.gpu(),
                         cubey::render::indexed_mesh_config(kCubeVertices, kCubeIndices));
     }
 

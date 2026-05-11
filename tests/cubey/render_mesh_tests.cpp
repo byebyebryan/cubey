@@ -49,4 +49,8 @@ void test_indexed_mesh_config_describes_u32_geometry() {
 
     static_assert(!std::is_copy_constructible_v<cubey::render::Mesh>);
     static_assert(std::is_move_constructible_v<cubey::render::Mesh>);
+    static_assert(std::is_constructible_v<cubey::render::Mesh, cubey::vulkan::GpuRuntime&,
+                                          const cubey::render::MeshConfig&>);
+    static_assert(!std::is_constructible_v<cubey::render::Mesh, const cubey::vulkan::Device&,
+                                           const cubey::render::MeshConfig&>);
 }

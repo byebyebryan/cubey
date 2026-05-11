@@ -148,7 +148,7 @@ class Fluid2DApp {
             {
                 .create_swapchain_resources =
                     [this](cubey::app::WindowedAppContext& context) {
-                        create_global_resources_if_needed(context.device());
+                        create_global_resources_if_needed(context.device(), context.gpu());
                         create_render_pipeline(context.device(), context.swapchain().format(),
                                                context.swapchain().extent());
                     },
@@ -280,33 +280,34 @@ class Fluid2DApp {
         field_a_.reset();
     }
 
-    void create_global_resources_if_needed(cubey::vulkan::Device& device) {
+    void create_global_resources_if_needed(cubey::vulkan::Device& device,
+                                           cubey::vulkan::GpuRuntime& gpu) {
         if (field_a_.has_value()) {
             return;
         }
 
-        create_field_buffers(device);
+        create_field_buffers(gpu);
         create_descriptor_resources(device);
         create_compute_pipelines(device);
     }
 
-    void create_field_buffers(cubey::vulkan::Device& device) {
+    void create_field_buffers(cubey::vulkan::GpuRuntime& gpu) {
         const std::vector<FluidCellGpu> initial(field_cell_count(fluid_config_));
         const VkDeviceSize byte_size = static_cast<VkDeviceSize>(field_byte_size(fluid_config_));
-        field_a_.emplace(cubey::vulkan::upload_device_buffer(device, initial.data(), byte_size,
+        field_a_.emplace(cubey::vulkan::upload_device_buffer(gpu, initial.data(), byte_size,
                                                              VK_BUFFER_USAGE_STORAGE_BUFFER_BIT));
-        field_b_.emplace(cubey::vulkan::upload_device_buffer(device, initial.data(), byte_size,
+        field_b_.emplace(cubey::vulkan::upload_device_buffer(gpu, initial.data(), byte_size,
                                                              VK_BUFFER_USAGE_STORAGE_BUFFER_BIT));
 
         const std::vector<float> scalar_initial(field_cell_count(fluid_config_), 0.0F);
         const VkDeviceSize scalar_byte_size =
             static_cast<VkDeviceSize>(scalar_field_byte_size(fluid_config_));
         divergence_.emplace(cubey::vulkan::upload_device_buffer(
-            device, scalar_initial.data(), scalar_byte_size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT));
+            gpu, scalar_initial.data(), scalar_byte_size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT));
         pressure_a_.emplace(cubey::vulkan::upload_device_buffer(
-            device, scalar_initial.data(), scalar_byte_size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT));
+            gpu, scalar_initial.data(), scalar_byte_size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT));
         pressure_b_.emplace(cubey::vulkan::upload_device_buffer(
-            device, scalar_initial.data(), scalar_byte_size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT));
+            gpu, scalar_initial.data(), scalar_byte_size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT));
     }
 
     void create_descriptor_resources(cubey::vulkan::Device& device) {
@@ -838,11 +839,17 @@ class Fluid2DApp {
         recorder.end("vkEndCommandBuffer fluid_2d");
     }
 
-    void record_headless_simulation_frame(cubey::vulkan::Device& device,
+    void record_headless_simulation_frame(cubey::vulkan::GpuRuntime& gpu,
                                           const ProjectFrame& frame) {
-        cubey::vulkan::ImmediateCommands commands(device);
-        record_fluid_compute(commands.command_buffer(), frame);
-        commands.submit_and_wait();
+        static_cast<void>(gpu.submit_and_wait({
+            .label = "fluid_2d headless simulation frame",
+            .work =
+                [this, frame](cubey::vulkan::GpuOwnerContext& gpu_context) {
+                    cubey::vulkan::ImmediateCommands commands(gpu_context);
+                    record_fluid_compute(commands.command_buffer(), frame);
+                    commands.submit_and_wait();
+                },
+        }));
     }
 
     int run_headless() {
@@ -853,7 +860,7 @@ class Fluid2DApp {
         cubey::HeadlessPngHostCallbacks callbacks;
         callbacks.create_resources = [this](cubey::HeadlessPngContext& context) {
             const cubey::HeadlessRenderTarget& target = context.render_target();
-            create_global_resources_if_needed(context.device());
+            create_global_resources_if_needed(context.device(), context.gpu());
             create_render_pipeline(context.device(), target.format, target.extent);
         };
         callbacks.before_capture = [this](cubey::HeadlessPngContext& context) {
@@ -861,7 +868,7 @@ class Fluid2DApp {
             for (std::uint32_t frame = 1; frame <= frames; ++frame) {
                 const ProjectFrame project_frame =
                     runtime_.frame_for_timing(fixed_headless_timing(fluid_config_, frame));
-                record_headless_simulation_frame(context.device(), project_frame);
+                record_headless_simulation_frame(context.gpu(), project_frame);
             }
         };
         callbacks.record_capture = [this](cubey::HeadlessPngContext&,

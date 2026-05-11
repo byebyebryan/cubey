@@ -2,6 +2,7 @@
 
 #include <cubey/vulkan/command_pool.h>
 #include <cubey/vulkan/device.h>
+#include <cubey/vulkan/gpu_runtime.h>
 #include <cubey/vulkan/submission_coordinator.h>
 
 #include <vulkan/vulkan.h>
@@ -13,7 +14,7 @@ namespace cubey::vulkan {
 
 class ImmediateCommands {
   public:
-    explicit ImmediateCommands(const Device& device);
+    explicit ImmediateCommands(GpuOwnerContext& context);
     ImmediateCommands(const Device& device, SubmissionCoordinator& submission);
     ~ImmediateCommands();
 

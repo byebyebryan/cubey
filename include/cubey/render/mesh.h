@@ -27,8 +27,7 @@ struct MeshConfig {
 
 namespace detail {
 
-template <typename>
-inline constexpr bool always_false = false;
+template <typename> inline constexpr bool always_false = false;
 
 template <typename Index> [[nodiscard]] constexpr VkIndexType mesh_index_type() {
     if constexpr (std::is_same_v<Index, std::uint16_t>) {
@@ -63,7 +62,7 @@ template <typename Vertex, std::size_t VertexCount, typename Index, std::size_t 
 
 class Mesh {
   public:
-    Mesh(const cubey::vulkan::Device& device, const MeshConfig& config);
+    Mesh(cubey::vulkan::GpuRuntime& gpu, const MeshConfig& config);
     ~Mesh() = default;
 
     Mesh(const Mesh&) = delete;

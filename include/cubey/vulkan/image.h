@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cubey/vulkan/device.h>
+#include <cubey/vulkan/gpu_runtime.h>
 
 #include <vulkan/vulkan.h>
 
@@ -59,10 +60,12 @@ class Image {
 [[nodiscard]] ImageConfig storage_sampled_image_config(VkExtent2D extent, VkFormat format);
 [[nodiscard]] ImageConfig transfer_sampled_image_config(VkExtent2D extent, VkFormat format);
 [[nodiscard]] VkBufferImageCopy buffer_image_copy(VkExtent3D extent);
-void copy_buffer_to_image(const Device& device, VkBuffer source, VkImage destination,
+void copy_buffer_to_image(GpuOwnerContext& context, VkBuffer source, VkImage destination,
                           VkExtent3D extent);
-void copy_image_to_buffer(const Device& device, VkImage source, VkBuffer destination,
+void copy_buffer_to_image(GpuRuntime& gpu, VkBuffer source, VkImage destination, VkExtent3D extent);
+void copy_image_to_buffer(GpuOwnerContext& context, VkImage source, VkBuffer destination,
                           VkExtent3D extent);
+void copy_image_to_buffer(GpuRuntime& gpu, VkImage source, VkBuffer destination, VkExtent3D extent);
 
 class DepthAttachment {
   public:

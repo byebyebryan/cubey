@@ -4,6 +4,7 @@
 #include <cubey/vulkan/vk_check.h>
 
 #include <cstring>
+#include <optional>
 #include <stdexcept>
 
 namespace cubey::vulkan {
@@ -174,7 +175,7 @@ BufferConfig device_local_buffer_config(VkDeviceSize byte_size, VkBufferUsageFla
     };
 }
 
-void copy_buffer(const Device& device, VkBuffer source, VkBuffer destination,
+void copy_buffer(GpuOwnerContext& context, VkBuffer source, VkBuffer destination,
                  VkDeviceSize byte_size) {
     if (source == VK_NULL_HANDLE || destination == VK_NULL_HANDLE) {
         throw std::runtime_error("buffer copy requires valid source and destination buffers");
@@ -183,14 +184,14 @@ void copy_buffer(const Device& device, VkBuffer source, VkBuffer destination,
         throw std::runtime_error("buffer copy size must be positive");
     }
 
-    ImmediateCommands commands(device);
+    ImmediateCommands commands(context);
     VkBufferCopy copy{};
     copy.size = byte_size;
     vkCmdCopyBuffer(commands.command_buffer(), source, destination, 1, &copy);
     commands.submit_and_wait();
 }
 
-Buffer upload_device_buffer(const Device& device, const void* data, VkDeviceSize byte_size,
+Buffer upload_device_buffer(GpuOwnerContext& context, const void* data, VkDeviceSize byte_size,
                             VkBufferUsageFlags usage) {
     if (data == nullptr) {
         throw std::runtime_error("device buffer upload requires data");
@@ -199,12 +200,25 @@ Buffer upload_device_buffer(const Device& device, const void* data, VkDeviceSize
         throw std::runtime_error("device buffer upload size must be positive");
     }
 
-    Buffer staging(device, staging_buffer_config(byte_size));
+    Buffer staging(context.device(), staging_buffer_config(byte_size));
     staging.upload(data, byte_size);
 
-    Buffer destination(device, device_local_buffer_config(byte_size, usage));
-    copy_buffer(device, staging.handle(), destination.handle(), byte_size);
+    Buffer destination(context.device(), device_local_buffer_config(byte_size, usage));
+    copy_buffer(context, staging.handle(), destination.handle(), byte_size);
     return destination;
+}
+
+Buffer upload_device_buffer(GpuRuntime& gpu, const void* data, VkDeviceSize byte_size,
+                            VkBufferUsageFlags usage) {
+    std::optional<Buffer> uploaded;
+    static_cast<void>(gpu.submit_and_wait({
+        .label = "upload device buffer",
+        .work =
+            [&uploaded, data, byte_size, usage](GpuOwnerContext& context) {
+                uploaded.emplace(upload_device_buffer(context, data, byte_size, usage));
+            },
+    }));
+    return std::move(uploaded.value());
 }
 
 } // namespace cubey::vulkan

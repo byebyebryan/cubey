@@ -172,7 +172,7 @@ void HeadlessPngHost::write_png(const HeadlessRenderTarget& target) {
     const VkDeviceSize readback_byte_size = static_cast<VkDeviceSize>(byte_size);
     cubey::vulkan::Buffer readback(device(),
                                    cubey::vulkan::readback_buffer_config(readback_byte_size));
-    cubey::vulkan::copy_image_to_buffer(device(), target.image, readback.handle(),
+    cubey::vulkan::copy_image_to_buffer(gpu(), target.image, readback.handle(),
                                         {target.extent.width, target.extent.height, 1});
 
     std::vector<std::uint8_t> pixels(byte_size);

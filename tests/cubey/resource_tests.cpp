@@ -70,13 +70,14 @@ void test_resource_helpers_describe_device_local_upload_and_depth_setup() {
     static_assert(std::is_move_constructible_v<cubey::vulkan::Sampler>);
     static_assert(!std::is_copy_constructible_v<cubey::vulkan::DepthAttachment>);
     static_assert(std::is_move_constructible_v<cubey::vulkan::DepthAttachment>);
-    static_assert(
-        std::is_same_v<decltype(&cubey::vulkan::copy_buffer),
-                       void (*)(const cubey::vulkan::Device&, VkBuffer, VkBuffer, VkDeviceSize)>);
-    static_assert(
-        std::is_same_v<decltype(&cubey::vulkan::upload_device_buffer),
-                       cubey::vulkan::Buffer (*)(const cubey::vulkan::Device&, const void*,
-                                                 VkDeviceSize, VkBufferUsageFlags)>);
+    static_assert(std::is_same_v<decltype(&cubey::vulkan::copy_buffer),
+                                 void (*)(cubey::vulkan::GpuOwnerContext&, VkBuffer, VkBuffer,
+                                          VkDeviceSize)>);
+    using UploadDeviceBufferRuntime = cubey::vulkan::Buffer (*)(
+        cubey::vulkan::GpuRuntime&, const void*, VkDeviceSize, VkBufferUsageFlags);
+    static_assert(std::is_same_v<decltype(static_cast<UploadDeviceBufferRuntime>(
+                                     &cubey::vulkan::upload_device_buffer)),
+                                 UploadDeviceBufferRuntime>);
     static_assert(std::is_same_v<decltype(&cubey::vulkan::choose_depth_format),
                                  VkFormat (*)(const cubey::vulkan::Device&)>);
     static_assert(std::is_constructible_v<cubey::vulkan::DepthAttachment,
@@ -127,12 +128,16 @@ void test_transfer_helpers_describe_texture_and_readback_paths() {
             "copy region should target color aspect");
     require(copy.imageSubresource.layerCount == 1, "copy region should target one layer");
 
-    static_assert(
-        std::is_same_v<decltype(&cubey::vulkan::copy_buffer_to_image),
-                       void (*)(const cubey::vulkan::Device&, VkBuffer, VkImage, VkExtent3D)>);
-    static_assert(
-        std::is_same_v<decltype(&cubey::vulkan::copy_image_to_buffer),
-                       void (*)(const cubey::vulkan::Device&, VkImage, VkBuffer, VkExtent3D)>);
+    using CopyBufferToImageRuntime =
+        void (*)(cubey::vulkan::GpuRuntime&, VkBuffer, VkImage, VkExtent3D);
+    static_assert(std::is_same_v<decltype(static_cast<CopyBufferToImageRuntime>(
+                                     &cubey::vulkan::copy_buffer_to_image)),
+                                 CopyBufferToImageRuntime>);
+    using CopyImageToBufferRuntime =
+        void (*)(cubey::vulkan::GpuRuntime&, VkImage, VkBuffer, VkExtent3D);
+    static_assert(std::is_same_v<decltype(static_cast<CopyImageToBufferRuntime>(
+                                     &cubey::vulkan::copy_image_to_buffer)),
+                                 CopyImageToBufferRuntime>);
     static_assert(
         std::is_same_v<decltype(&cubey::vulkan::Buffer::download),
                        void (cubey::vulkan::Buffer::*)(void*, VkDeviceSize, VkDeviceSize) const>);

@@ -6,21 +6,8 @@
 
 namespace cubey::vulkan {
 
-ImmediateCommands::ImmediateCommands(const Device& device)
-    : device_(device.handle()), owned_submission_(std::in_place, device),
-      submission_(&owned_submission_.value()),
-      command_pool_(device, {.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT}) {
-    if (device_ == VK_NULL_HANDLE) {
-        throw std::runtime_error("immediate commands require a valid Vulkan device");
-    }
-
-    try {
-        create();
-    } catch (...) {
-        destroy();
-        throw;
-    }
-}
+ImmediateCommands::ImmediateCommands(GpuOwnerContext& context)
+    : ImmediateCommands(context.device(), context.submission()) {}
 
 ImmediateCommands::ImmediateCommands(const Device& device, SubmissionCoordinator& submission)
     : device_(device.handle()), submission_(&submission),
