@@ -138,8 +138,10 @@ resource creation/destruction, update, command recording, and shutdown.
   those handles to their own Vulkan resources and pipelines.
 - `cubey::render::RenderResourceRegistry` is owned by `Engine` and issues the
   generational mesh/material handles used by renderable components. It tracks
-  CPU-side identity, liveness, and labels only; Vulkan resource ownership stays
-  with examples/projects for now.
+  CPU-side identity, liveness, mesh labels, and material tags only; Vulkan
+  resource ownership stays with examples/projects for now.
+- `ResourceTable` and CPU draw planning give examples a shared way to resolve
+  mesh handles and sort/validate draw packets before command recording.
 - `cubey::input::PointerDrag`, `PanZoom2DController`, and the input-aware
   `OrbitController` cover the current repeated 2D/3D pointer-control shapes
   without introducing a scene or action-binding system. The pan/zoom controller
@@ -170,8 +172,8 @@ resource creation/destruction, update, command recording, and shutdown.
   setup, or app simulation state.
 - Engine-created scenes validate renderable mesh/material handles against the
   Engine registry. Current cube examples use Engine-owned scenes, mutate scene
-  transforms during `update()`, and keep render callbacks to read-view packet
-  extraction plus Vulkan command recording.
+  transforms during `update()`, build CPU draw packets during render, and keep
+  Vulkan command recording local.
 - `cubey::ProjectRuntimeServices` now owns project-facing jobs, uploads,
   captures, frame tickets, and deferred destruction.
 - `cubey::ProjectRuntimeAdapter` wraps those services with the repeated

@@ -139,6 +139,11 @@ Current checkpoint:
   indexed mesh upload, minimal indexed draw recording, explicit frame-slot
   identity, per-frame uniform buffers, and generational mesh/material handles
   issued by `RenderResourceRegistry`.
+- Reusable `cubey::render::ResourceTable`, `RenderDrawPacket3D`, and
+  `build_render_draw_packets_3d` provide the first CPU render-planning layer:
+  handle-to-resource resolution, live resource validation, material tag
+  attachment, and deterministic draw sorting without owning Vulkan command
+  recording, descriptors, or pipelines.
 - Reusable `cubey::vulkan::PipelineLayout`, `GraphicsPipeline`,
   `ComputePipeline`, `DescriptorSetLayout`, and `DescriptorPool` own basic
   pipeline and descriptor lifetimes while still taking raw Vulkan create-info
@@ -180,20 +185,20 @@ Current checkpoint:
   pass or framebuffer through the shared app host.
 - `examples/spinning_cube` links against `cubey`, compiles vertex/fragment
   shaders at build time, draws an indexed cube through `cubey::render::Mesh`,
-  `DrawItem`, registry-issued mesh/material handles, and a scene-derived 3D
-  renderable packet, updates scene transforms during the app `update()` phase,
-  builds an MVP matrix from shared transform, camera, and math helpers through
-  push constants, and uses dynamic rendering with a shared depth attachment
-  helper through the shared app host.
+  `DrawItem`, `MeshResourceTable`, registry-issued mesh/material handles, and
+  CPU draw packets built from scene renderables, updates scene transforms
+  during the app `update()` phase, builds an MVP matrix from shared transform,
+  camera, and math helpers through push constants, and uses dynamic rendering
+  with a shared depth attachment helper through the shared app host.
 - `examples/textured_cube` links against `cubey`, generates a `Texture2D` with a
   compute shader writing a storage image, transitions it for shader sampling,
   binds per-frame scene uniforms plus a combined image sampler descriptor
   through shared descriptor/compute helpers, and draws an interactive shaded
   textured indexed cube through `cubey::render::Mesh`, `DrawItem`,
-  registry-issued mesh/material handles, a scene-derived 3D renderable packet,
-  dynamic rendering, per-face normals, shared GLSL Lambert lighting, shared
-  transform/model matrices, shared camera projection, and shared math helpers
-  through the shared app host.
+  `MeshResourceTable`, registry-issued mesh/material handles, CPU draw packets
+  built from scene renderables, dynamic rendering, per-face normals, shared
+  GLSL Lambert lighting, shared transform/model matrices, shared camera
+  projection, and shared math helpers through the shared app host.
 - `examples/headless_render` links against `cubey`, creates no GLFW window or
   surface, renders an offscreen color target through dynamic rendering, copies
   it into a readback buffer, and writes a PNG artifact.

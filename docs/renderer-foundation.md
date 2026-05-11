@@ -91,12 +91,23 @@ full engine architecture.
   descriptors, materials, transforms, and push constants remain caller-owned.
 - `MeshHandle` and `MaterialHandle` are opaque CPU-side values used by scene
   renderables and renderable packets. `RenderResourceRegistry` issues and
-  destroys those handles, validates liveness, and stores optional labels. It
-  does not own `Mesh`, textures, descriptors, pipelines, or material data.
+  destroys those handles, validates liveness, and stores CPU metadata:
+  mesh labels plus material domain, blend mode, label, and sort key. It does
+  not own `Mesh`, textures, descriptors, pipelines, or shader/material binding
+  data.
+- `ResourceTable` maps typed render handles to app-owned resources such as
+  `Mesh`, so examples can resolve registry-issued handles without hardcoded
+  one-off checks.
+- `RenderDrawPacket3D` and `build_render_draw_packets_3d` form the current
+  CPU planning boundary. They validate live mesh/material handles, attach
+  material metadata, and sort draw packets deterministically. Vulkan command
+  recording, pipeline selection, descriptor binding, and pass ordering remain
+  caller-owned.
 - `RenderableManager3D` lives in the scene/component layer and emits compact
   renderable packets with world matrices and resource handles. The cube
-  examples now use Engine-owned scenes and registry-issued handles while still
-  owning pipelines, descriptors, and Vulkan command recording locally.
+  examples now use Engine-owned scenes, registry-issued handles, mesh resource
+  tables, and CPU draw planning while still owning pipelines, descriptors, and
+  Vulkan command recording locally.
 - `FrameSlot` gives render callbacks a stable frame-data index, and
   `FrameUniformBuffer<T>` owns one host-visible uniform buffer per frame slot.
   The current windowed host uses real frame slots for overlapping frame

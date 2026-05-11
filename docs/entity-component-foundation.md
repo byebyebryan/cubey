@@ -221,13 +221,18 @@ part of the transform domain.
 
 `MeshHandle` and `MaterialHandle` are CPU-side typed IDs carried by renderable
 components and render packets. `RenderResourceRegistry` issues, validates, and
-destroys those handles with generations and optional labels. It does not own
-Vulkan meshes, textures, descriptors, materials, or pipelines.
+destroys those handles with generations, mesh labels, and material tags. It
+does not own Vulkan meshes, textures, descriptors, materials, or pipelines.
 
 Scenes created through `Engine` receive the registry and reject renderable
 creates/updates that reference destroyed or stale mesh/material handles. A bare
 `Scene` remains usable for focused tests and simple code; without a registry it
 only enforces non-null handles and primitive validity.
+
+Concrete resource objects stay outside the registry. Examples/projects can map
+handles to their own `Mesh` or future material resources through
+`ResourceTable`, and CPU draw planning can attach registry metadata to
+renderable packets before a project records Vulkan commands.
 
 ## Mutation Model
 
