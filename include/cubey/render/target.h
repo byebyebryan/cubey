@@ -10,6 +10,8 @@
 
 namespace cubey::render {
 
+class DepthTexture;
+
 struct ColorTargetView {
     VkExtent2D extent{};
     VkFormat format = VK_FORMAT_UNDEFINED;
@@ -38,7 +40,10 @@ struct RenderClearValues {
                                                 VkImageView view);
 [[nodiscard]] ColorTargetView swapchain_color_target_view(const cubey::vulkan::Swapchain& swapchain,
                                                           std::uint32_t image_index);
+[[nodiscard]] DepthTargetView depth_target_view(VkExtent2D extent, VkFormat format, VkImage image,
+                                                VkImageView view);
 [[nodiscard]] DepthTargetView depth_target_view(const cubey::vulkan::DepthAttachment& attachment);
+[[nodiscard]] DepthTargetView depth_target_view(const DepthTexture& texture);
 [[nodiscard]] RenderTargetView render_target_view(ColorTargetView color);
 [[nodiscard]] RenderTargetView render_target_view(ColorTargetView color, DepthTargetView depth);
 
@@ -62,6 +67,27 @@ class RenderTargetRenderingInfo {
   private:
     VkRenderingAttachmentInfo color_attachment_{};
     std::optional<VkRenderingAttachmentInfo> depth_attachment_;
+    VkRenderingInfo info_{};
+};
+
+class DepthOnlyRenderingInfo {
+  public:
+    DepthOnlyRenderingInfo(const DepthTargetView& target, VkClearValue clear);
+
+    DepthOnlyRenderingInfo(const DepthOnlyRenderingInfo&) = delete;
+    DepthOnlyRenderingInfo& operator=(const DepthOnlyRenderingInfo&) = delete;
+    DepthOnlyRenderingInfo(DepthOnlyRenderingInfo&&) = delete;
+    DepthOnlyRenderingInfo& operator=(DepthOnlyRenderingInfo&&) = delete;
+
+    [[nodiscard]] const VkRenderingInfo& info() const {
+        return info_;
+    }
+    [[nodiscard]] const VkRenderingAttachmentInfo& depth_attachment() const {
+        return depth_attachment_;
+    }
+
+  private:
+    VkRenderingAttachmentInfo depth_attachment_{};
     VkRenderingInfo info_{};
 };
 

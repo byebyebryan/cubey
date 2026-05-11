@@ -9,6 +9,7 @@ namespace {
 
 constexpr float kMinimumDistance = 0.000001F;
 constexpr float kMinimumNearZ = 0.000001F;
+constexpr float kMinimumOrthographicHeight = 0.000001F;
 
 } // namespace
 
@@ -17,18 +18,34 @@ Camera3D::Camera3D(Camera3DConfig config) : config_(config) {
 }
 
 void Camera3D::reset() {
+    projection_ = config_.projection;
     fovy_radians_ = config_.fovy_radians;
+    orthographic_height_ = std::max(config_.orthographic_height, kMinimumOrthographicHeight);
     near_z_ = std::max(config_.near_z, kMinimumNearZ);
     far_z_ = std::max(config_.far_z, near_z_ + kMinimumNearZ);
 }
 
 void Camera3D::set_projection(float fovy_radians, float near_z, float far_z) {
+    projection_ = Camera3DProjection::Perspective;
     fovy_radians_ = fovy_radians;
     near_z_ = std::max(near_z, kMinimumNearZ);
     far_z_ = std::max(far_z, near_z_ + kMinimumNearZ);
 }
 
+void Camera3D::set_orthographic(float orthographic_height, float near_z, float far_z) {
+    projection_ = Camera3DProjection::Orthographic;
+    orthographic_height_ = std::max(orthographic_height, kMinimumOrthographicHeight);
+    near_z_ = std::max(near_z, kMinimumNearZ);
+    far_z_ = std::max(far_z, near_z_ + kMinimumNearZ);
+}
+
 math::Mat4 Camera3D::projection_matrix(float aspect) const {
+    if (projection_ == Camera3DProjection::Orthographic) {
+        const float half_height = orthographic_height_ * 0.5F;
+        const float half_width = half_height * aspect;
+        return math::orthographic(-half_width, half_width, -half_height, half_height, near_z_,
+                                  far_z_);
+    }
     return math::perspective(fovy_radians_, aspect, near_z_, far_z_);
 }
 

@@ -39,6 +39,7 @@ add_executable(cubey_core_tests
     renderable_manager_tests.cpp
     resource_tests.cpp
     scene_tests.cpp
+    sampler_tests.cpp
     spirv_io_tests.cpp
     transform_manager_tests.cpp
     transform_tests.cpp

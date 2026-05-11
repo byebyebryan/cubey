@@ -1,5 +1,6 @@
 #include <cubey/render/target.h>
 
+#include <cubey/render/texture.h>
 #include <cubey/vulkan/dynamic_rendering.h>
 #include <cubey/vulkan/vk_check.h>
 
@@ -56,14 +57,24 @@ ColorTargetView swapchain_color_target_view(const cubey::vulkan::Swapchain& swap
 
 DepthTargetView depth_target_view(const cubey::vulkan::DepthAttachment& attachment) {
     const VkExtent3D extent = attachment.extent();
+    return depth_target_view({extent.width, extent.height}, attachment.format(),
+                             attachment.handle(), attachment.view());
+}
+
+DepthTargetView depth_target_view(VkExtent2D extent, VkFormat format, VkImage image,
+                                  VkImageView view) {
     DepthTargetView target{
-        .extent = {extent.width, extent.height},
-        .format = attachment.format(),
-        .image = attachment.handle(),
-        .view = attachment.view(),
+        .extent = extent,
+        .format = format,
+        .image = image,
+        .view = view,
     };
     validate_depth_target(target);
     return target;
+}
+
+DepthTargetView depth_target_view(const DepthTexture& texture) {
+    return depth_target_view(texture.extent(), texture.format(), texture.handle(), texture.view());
 }
 
 RenderTargetView render_target_view(ColorTargetView color) {
@@ -112,6 +123,26 @@ const VkRenderingAttachmentInfo& RenderTargetRenderingInfo::depth_attachment() c
         throw std::runtime_error("render target has no depth attachment");
     }
     return depth_attachment_.value();
+}
+
+DepthOnlyRenderingInfo::DepthOnlyRenderingInfo(const DepthTargetView& target, VkClearValue clear) {
+    validate_depth_target(target);
+
+    depth_attachment_ = cubey::vulkan::vk_struct<VkRenderingAttachmentInfo>(
+        VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO);
+    depth_attachment_.imageView = target.view;
+    depth_attachment_.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    depth_attachment_.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    depth_attachment_.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    depth_attachment_.clearValue = clear;
+
+    info_ = cubey::vulkan::vk_struct<VkRenderingInfo>(VK_STRUCTURE_TYPE_RENDERING_INFO);
+    info_.renderArea.offset = {0, 0};
+    info_.renderArea.extent = target.extent;
+    info_.layerCount = 1;
+    info_.colorAttachmentCount = 0;
+    info_.pColorAttachments = nullptr;
+    info_.pDepthAttachment = &depth_attachment_;
 }
 
 } // namespace cubey::render

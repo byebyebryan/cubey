@@ -78,4 +78,12 @@ using Vec4 = glm::vec4;
     return projection;
 }
 
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+[[nodiscard]] inline Mat4 orthographic(float left, float right, float bottom, float top,
+                                       float near_z, float far_z) {
+    Mat4 projection = glm::ortho(left, right, bottom, top, near_z, far_z);
+    projection[1][1] *= -1.0F;
+    return projection;
+}
+
 } // namespace cubey::math

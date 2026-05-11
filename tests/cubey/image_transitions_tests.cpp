@@ -69,6 +69,33 @@ void test_image_transitions_describe_layout_barriers() {
     require(begin_depth.dst_stage_mask == VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
             "depth transition should end at early fragment tests");
 
+    const cubey::vulkan::ImageLayoutTransition depth_sampled =
+        cubey::vulkan::finish_depth_attachment_for_sampling_transition(image);
+    require(depth_sampled.aspect_mask == VK_IMAGE_ASPECT_DEPTH_BIT,
+            "sampled depth transition should target depth aspect");
+    require(depth_sampled.old_layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+            "sampled depth transition should start from depth attachment layout");
+    require(depth_sampled.new_layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
+            "sampled depth transition should target read-only depth layout");
+    require((depth_sampled.src_access_mask & VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT) != 0,
+            "sampled depth transition should wait on depth writes");
+    require(depth_sampled.dst_access_mask == VK_ACCESS_SHADER_READ_BIT,
+            "sampled depth transition should allow shader reads");
+    require(depth_sampled.dst_stage_mask == VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+            "sampled depth transition should target fragment shader stage");
+
+    const cubey::vulkan::ImageLayoutTransition sampled_depth_write =
+        cubey::vulkan::begin_sampled_depth_attachment_transition(image);
+    require(sampled_depth_write.old_layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
+            "sampled depth write transition should start from read-only depth layout");
+    require(sampled_depth_write.new_layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+            "sampled depth write transition should target depth attachment layout");
+    require(sampled_depth_write.src_access_mask == VK_ACCESS_SHADER_READ_BIT,
+            "sampled depth write transition should wait on shader reads");
+    require((sampled_depth_write.dst_access_mask & VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT) !=
+                0,
+            "sampled depth write transition should allow depth writes");
+
     const cubey::vulkan::ImageLayoutTransition storage_write =
         cubey::vulkan::begin_storage_image_write_transition(image);
     require(storage_write.old_layout == VK_IMAGE_LAYOUT_UNDEFINED,

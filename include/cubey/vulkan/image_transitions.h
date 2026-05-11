@@ -19,6 +19,8 @@ struct ImageLayoutTransition {
 [[nodiscard]] ImageLayoutTransition finish_color_attachment_for_present_transition(VkImage image);
 [[nodiscard]] ImageLayoutTransition finish_color_attachment_for_readback_transition(VkImage image);
 [[nodiscard]] ImageLayoutTransition begin_depth_attachment_transition(VkImage image);
+[[nodiscard]] ImageLayoutTransition begin_sampled_depth_attachment_transition(VkImage image);
+[[nodiscard]] ImageLayoutTransition finish_depth_attachment_for_sampling_transition(VkImage image);
 [[nodiscard]] ImageLayoutTransition begin_storage_image_write_transition(VkImage image);
 [[nodiscard]] ImageLayoutTransition
 finish_storage_image_write_for_sampling_transition(VkImage image);

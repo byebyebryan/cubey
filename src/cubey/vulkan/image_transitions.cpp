@@ -57,6 +57,34 @@ ImageLayoutTransition begin_depth_attachment_transition(VkImage image) {
     };
 }
 
+ImageLayoutTransition begin_sampled_depth_attachment_transition(VkImage image) {
+    return {
+        .image = image,
+        .aspect_mask = VK_IMAGE_ASPECT_DEPTH_BIT,
+        .old_layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
+        .new_layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+        .src_access_mask = VK_ACCESS_SHADER_READ_BIT,
+        .dst_access_mask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
+                           VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+        .src_stage_mask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+        .dst_stage_mask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
+    };
+}
+
+ImageLayoutTransition finish_depth_attachment_for_sampling_transition(VkImage image) {
+    return {
+        .image = image,
+        .aspect_mask = VK_IMAGE_ASPECT_DEPTH_BIT,
+        .old_layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+        .new_layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
+        .src_access_mask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
+                           VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+        .dst_access_mask = VK_ACCESS_SHADER_READ_BIT,
+        .src_stage_mask = VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+        .dst_stage_mask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+    };
+}
+
 ImageLayoutTransition begin_storage_image_write_transition(VkImage image) {
     return {
         .image = image,

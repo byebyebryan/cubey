@@ -17,6 +17,12 @@ void require_close(float actual, float expected, const char* message) {
     }
 }
 
+void require(bool condition, const char* message) {
+    if (!condition) {
+        throw std::runtime_error(message);
+    }
+}
+
 void require_matrix_close(const cubey::math::Mat4& actual, const cubey::math::Mat4& expected,
                           const char* message) {
     for (int column = 0; column < 4; ++column) {
@@ -90,6 +96,35 @@ void test_camera_3d_builds_projection_and_view_from_world_transform() {
     require_matrix_close(camera.view_projection_matrix(world_transform, aspect),
                          expected_projection * expected_view,
                          "3D camera should compose projection and view matrices");
+}
+
+void test_camera_3d_supports_orthographic_projection() {
+    cubey::Camera3D camera({
+        .projection = cubey::Camera3DProjection::Orthographic,
+        .orthographic_height = 4.0F,
+        .near_z = 0.5F,
+        .far_z = 8.5F,
+    });
+
+    require_close(camera.orthographic_height(), 4.0F,
+                  "orthographic camera should preserve configured height");
+    const float aspect = 2.0F;
+    const cubey::math::Mat4 expected_projection =
+        cubey::math::orthographic(-4.0F, 4.0F, -2.0F, 2.0F, 0.5F, 8.5F);
+    require_matrix_close(camera.projection_matrix(aspect), expected_projection,
+                         "3D camera should build orthographic projection for shadow views");
+
+    camera.set_projection(std::numbers::pi_v<float> / 4.0F, 0.25F, 50.0F);
+    require(camera.projection() == cubey::Camera3DProjection::Perspective,
+            "set_projection should switch back to perspective projection");
+    require_close(camera.fovy_radians(), std::numbers::pi_v<float> / 4.0F,
+                  "perspective camera should preserve updated fovy");
+
+    camera.set_orthographic(6.0F, 1.0F, 12.0F);
+    require(camera.projection() == cubey::Camera3DProjection::Orthographic,
+            "set_orthographic should switch to orthographic projection");
+    require_close(camera.near_z(), 1.0F, "orthographic camera should preserve near plane");
+    require_close(camera.far_z(), 12.0F, "orthographic camera should preserve far plane");
 }
 
 void test_camera_3d_orbit_helper_matches_existing_cube_view() {

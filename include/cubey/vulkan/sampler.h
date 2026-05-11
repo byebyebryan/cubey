@@ -10,7 +10,13 @@ struct SamplerConfig {
     VkFilter min_filter = VK_FILTER_LINEAR;
     VkFilter mag_filter = VK_FILTER_LINEAR;
     VkSamplerAddressMode address_mode = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    VkBorderColor border_color = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+    VkBool32 compare_enable = VK_FALSE;
+    VkCompareOp compare_op = VK_COMPARE_OP_ALWAYS;
+    VkSamplerMipmapMode mipmap_mode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
 };
+
+[[nodiscard]] VkSamplerCreateInfo sampler_create_info(const SamplerConfig& config);
 
 class Sampler {
   public:

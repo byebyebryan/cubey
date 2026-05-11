@@ -25,8 +25,7 @@ void test_render_target_views_describe_color_only_targets() {
 
     require(target.color.extent.width == extent.width, "color target should preserve width");
     require(target.color.extent.height == extent.height, "color target should preserve height");
-    require(target.color.format == VK_FORMAT_R8G8B8A8_UNORM,
-            "color target should preserve format");
+    require(target.color.format == VK_FORMAT_R8G8B8A8_UNORM, "color target should preserve format");
     require(target.color.image == image, "color target should preserve image handle");
     require(target.color.view == view, "color target should preserve view handle");
     require(!target.depth.has_value(), "color-only target should not report depth");
@@ -71,4 +70,38 @@ void test_render_target_rendering_info_describes_dynamic_rendering() {
             "color attachment should preserve color view");
     require(rendering.depth_attachment().imageView == depth.view,
             "depth attachment should preserve depth view");
+}
+
+void test_depth_only_rendering_info_describes_sampled_depth_target() {
+    const VkExtent2D extent{1024, 1024};
+    const VkImage image = reinterpret_cast<VkImage>(0x07);
+    const VkImageView view = reinterpret_cast<VkImageView>(0x08);
+    const cubey::render::DepthTargetView depth =
+        cubey::render::depth_target_view(extent, VK_FORMAT_D32_SFLOAT, image, view);
+
+    require(depth.extent.width == extent.width, "depth target should preserve width");
+    require(depth.extent.height == extent.height, "depth target should preserve height");
+    require(depth.format == VK_FORMAT_D32_SFLOAT, "depth target should preserve format");
+    require(depth.image == image, "depth target should preserve image handle");
+    require(depth.view == view, "depth target should preserve view handle");
+
+    VkClearValue depth_clear{};
+    depth_clear.depthStencil = {1.0F, 0};
+    const cubey::render::DepthOnlyRenderingInfo rendering(depth, depth_clear);
+    const VkRenderingInfo& info = rendering.info();
+
+    require(info.sType == VK_STRUCTURE_TYPE_RENDERING_INFO,
+            "depth-only rendering should use VkRenderingInfo");
+    require(info.renderArea.extent.width == extent.width,
+            "depth-only rendering should preserve width");
+    require(info.renderArea.extent.height == extent.height,
+            "depth-only rendering should preserve height");
+    require(info.colorAttachmentCount == 0, "depth-only rendering should not expose color");
+    require(info.pColorAttachments == nullptr, "depth-only rendering should not point at color");
+    require(info.pDepthAttachment == &rendering.depth_attachment(),
+            "depth-only rendering should point at owned depth attachment");
+    require(rendering.depth_attachment().imageView == depth.view,
+            "depth-only attachment should preserve depth view");
+    require(rendering.depth_attachment().storeOp == VK_ATTACHMENT_STORE_OP_STORE,
+            "sampled depth target should store rendered depth");
 }

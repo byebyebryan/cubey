@@ -6,11 +6,7 @@
 
 namespace cubey::vulkan {
 
-Sampler::Sampler(const Device& device, const SamplerConfig& config) : device_(device.handle()) {
-    if (device_ == VK_NULL_HANDLE) {
-        throw std::runtime_error("sampler creation requires a valid Vulkan device");
-    }
-
+VkSamplerCreateInfo sampler_create_info(const SamplerConfig& config) {
     auto info = vk_struct<VkSamplerCreateInfo>(VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO);
     info.magFilter = config.mag_filter;
     info.minFilter = config.min_filter;
@@ -19,14 +15,23 @@ Sampler::Sampler(const Device& device, const SamplerConfig& config) : device_(de
     info.addressModeW = config.address_mode;
     info.anisotropyEnable = VK_FALSE;
     info.maxAnisotropy = 1.0F;
-    info.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+    info.borderColor = config.border_color;
     info.unnormalizedCoordinates = VK_FALSE;
-    info.compareEnable = VK_FALSE;
-    info.compareOp = VK_COMPARE_OP_ALWAYS;
-    info.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+    info.compareEnable = config.compare_enable;
+    info.compareOp = config.compare_op;
+    info.mipmapMode = config.mipmap_mode;
     info.minLod = 0.0F;
     info.maxLod = 0.0F;
     info.mipLodBias = 0.0F;
+    return info;
+}
+
+Sampler::Sampler(const Device& device, const SamplerConfig& config) : device_(device.handle()) {
+    if (device_ == VK_NULL_HANDLE) {
+        throw std::runtime_error("sampler creation requires a valid Vulkan device");
+    }
+
+    const VkSamplerCreateInfo info = sampler_create_info(config);
     check(vkCreateSampler(device_, &info, nullptr, &sampler_), "vkCreateSampler");
 }
 
