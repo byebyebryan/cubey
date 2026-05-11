@@ -2,6 +2,7 @@
 
 #include <cubey/camera_2d.h>
 #include <cubey/camera_3d.h>
+#include <cubey/detail/single_instance_component_store.h>
 #include <cubey/detail/stable_slot_store.h>
 #include <cubey/entity.h>
 #include <cubey/transform_manager.h>
@@ -178,22 +179,30 @@ template <typename CameraT> class BasicCameraManager {
     using SnapshotComponent = typename ReadView::Component;
     using Snapshot = typename ReadView::Snapshot;
 
+  private:
+    struct Component {
+        Entity entity{};
+        CameraT camera{};
+    };
+    using Store = detail::SingleInstanceComponentStore<Component, Instance, Snapshot>;
+
+  public:
     [[nodiscard]] bool has_component(Entity entity) const {
-        return entity_to_slot_.contains(entity);
+        return store_.has_component(entity);
     }
 
     [[nodiscard]] Instance instance(Entity entity) const {
-        return Instance{.slot = slot_for(entity)};
+        return store_.instance(entity);
     }
 
     [[nodiscard]] std::shared_ptr<const Snapshot> snapshot() const {
-        return snapshot_;
+        return store_.snapshot();
     }
 
     void validate(const BasicCameraEditQueue<CameraT>& edits, const EntityManager& entities) const {
         std::unordered_set<Entity, EntityHash> existing{};
-        for (const detail::StableSlotId slot_id : slots_.active_instances()) {
-            existing.insert(slots_.get(slot_id).entity);
+        for (const Entity entity : store_.active_entities()) {
+            existing.insert(entity);
         }
 
         for (const auto& create : edits.creates_) {
@@ -222,15 +231,14 @@ template <typename CameraT> class BasicCameraManager {
 
     void apply(const BasicCameraEditQueue<CameraT>& edits, std::uint64_t retire_epoch) {
         for (const auto& create : edits.creates_) {
-            const detail::StableSlotId slot_id = slots_.create(Component{
+            store_.create(create.entity, Component{
                 .entity = create.entity,
                 .camera = create.camera,
             });
-            entity_to_slot_[create.entity] = slot_id;
         }
 
         for (const auto& update : edits.updates_) {
-            component_for(update.entity).camera = update.camera;
+            store_.component_for(update.entity).camera = update.camera;
         }
 
         for (const Entity entity : edits.destroys_) {
@@ -239,55 +247,24 @@ template <typename CameraT> class BasicCameraManager {
     }
 
     void destroy_entity_if_exists(Entity entity, std::uint64_t retire_epoch) {
-        const auto position = entity_to_slot_.find(entity);
-        if (position == entity_to_slot_.end()) {
-            return;
-        }
-        slots_.destroy(position->second, retire_epoch);
-        entity_to_slot_.erase(position);
+        store_.destroy_entity_if_exists(entity, retire_epoch);
     }
 
     void publish_snapshot() {
-        auto next_snapshot = std::make_shared<Snapshot>();
-        for (const detail::StableSlotId slot_id : slots_.active_instances()) {
-            const Component& component = slots_.get(slot_id);
-            const std::size_t index = next_snapshot->components.size();
-            next_snapshot->components.push_back(SnapshotComponent{
+        store_.publish_snapshot([](const Component& component) {
+            return SnapshotComponent{
                 .entity = component.entity,
                 .camera = component.camera,
-            });
-            next_snapshot->active_instances.push_back(Instance{.slot = slot_id});
-            next_snapshot->entity_to_component[component.entity] = index;
-            next_snapshot->slot_to_component[slot_id] = index;
-        }
-        snapshot_ = std::move(next_snapshot);
+            };
+        });
     }
 
     void retire_destroyed_up_to(std::uint64_t epoch) {
-        static_cast<void>(slots_.retire_destroyed_up_to(epoch));
+        store_.retire_destroyed_up_to(epoch);
     }
 
   private:
-    struct Component {
-        Entity entity{};
-        CameraT camera{};
-    };
-
-    [[nodiscard]] detail::StableSlotId slot_for(Entity entity) const {
-        const auto position = entity_to_slot_.find(entity);
-        if (position == entity_to_slot_.end()) {
-            throw std::runtime_error("entity does not have a camera component");
-        }
-        return position->second;
-    }
-
-    [[nodiscard]] Component& component_for(Entity entity) {
-        return slots_.get(slot_for(entity));
-    }
-
-    detail::StableSlotStore<Component> slots_{};
-    std::unordered_map<Entity, detail::StableSlotId, EntityHash> entity_to_slot_{};
-    std::shared_ptr<const Snapshot> snapshot_ = std::make_shared<Snapshot>();
+    Store store_{};
 };
 
 using CameraManager2D = BasicCameraManager<Camera2D>;
