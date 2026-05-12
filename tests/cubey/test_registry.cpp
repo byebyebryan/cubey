@@ -109,8 +109,10 @@ void test_render_graph_declares_compute_storage_buffer_flow();
 void test_render_graph_declares_shadow_map_then_scene_sample_flow();
 void test_render_graph_execute_propagates_callback_exceptions();
 void test_render_graph_execute_rejects_missing_callbacks_but_compile_allows_declarations();
+void test_render_graph_execute_with_recorder_exposes_command_recorder();
 void test_render_graph_executes_callbacks_in_pass_order_and_exposes_context();
 void test_render_graph_execution_resolves_bound_transient_resources();
+void test_render_graph_frame_executor_tracks_slots_and_rejects_invalid_record_info();
 void test_render_graph_frame_resources_manage_frame_slots();
 void test_render_graph_frame_resources_reject_invalid_slots();
 void test_render_graph_frame_resources_replace_one_slot_without_disturbing_another();
@@ -125,6 +127,7 @@ void test_render_graph_resolves_sampled_depth_texture_view();
 void test_render_graph_sampled_texture_view_rejects_unallocated_transient();
 void test_render_graph_rejects_incompatible_same_pass_resource_access();
 void test_render_graph_rejects_invalid_resource_descriptors_and_handles();
+void test_render_graph_recorder_access_rejects_recorderless_execution();
 void test_render_graph_rejects_transient_texture_read_before_write();
 void test_render_graph_storage_read_write_initializes_transient_buffers();
 void test_render_graph_transfer_pass_accepts_only_transfer_usages();
@@ -313,6 +316,8 @@ std::span<const TestCase> core_tests() {
         CUBEY_TEST(
             test_render_graph_execute_rejects_missing_callbacks_but_compile_allows_declarations),
         CUBEY_TEST(test_render_graph_execute_propagates_callback_exceptions),
+        CUBEY_TEST(test_render_graph_execute_with_recorder_exposes_command_recorder),
+        CUBEY_TEST(test_render_graph_recorder_access_rejects_recorderless_execution),
         CUBEY_TEST(test_render_graph_rejects_transient_texture_read_before_write),
         CUBEY_TEST(test_render_graph_allows_imported_texture_read_without_prior_write),
         CUBEY_TEST(test_render_graph_rejects_invalid_resource_descriptors_and_handles),
@@ -320,6 +325,7 @@ std::span<const TestCase> core_tests() {
         CUBEY_TEST(test_render_graph_rejects_incompatible_same_pass_resource_access),
         CUBEY_TEST(test_render_graph_declares_compute_storage_buffer_flow),
         CUBEY_TEST(test_render_graph_transfer_pass_accepts_only_transfer_usages),
+        CUBEY_TEST(test_render_graph_frame_executor_tracks_slots_and_rejects_invalid_record_info),
         CUBEY_TEST(test_render_item_validates_required_draw_identity),
         CUBEY_TEST(test_render_item_resolves_draw_item_fields),
         CUBEY_TEST(test_render_plan_builds_sorted_3d_draw_packets_with_material_metadata),

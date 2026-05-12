@@ -126,8 +126,10 @@ CompiledRenderGraph::CompiledRenderGraph(std::vector<RenderGraphTextureResource>
 
 RenderGraphExecutionContext::RenderGraphExecutionContext(const CompiledRenderGraph& graph,
                                                          std::size_t pass_index,
-                                                         const RenderGraphResourceSet* resources)
-    : graph_(&graph), resources_(resources), pass_index_(pass_index) {}
+                                                         const RenderGraphResourceSet* resources,
+                                                         const cubey::vulkan::CommandRecorder*
+                                                             recorder)
+    : graph_(&graph), resources_(resources), recorder_(recorder), pass_index_(pass_index) {}
 
 const CompiledRenderGraph& RenderGraphExecutionContext::graph() const {
     if (graph_ == nullptr) {
@@ -142,6 +144,13 @@ const RenderGraphCompiledPass& RenderGraphExecutionContext::pass() const {
         throw std::runtime_error("render graph execution pass index is invalid");
     }
     return compiled.passes()[pass_index_];
+}
+
+const cubey::vulkan::CommandRecorder& RenderGraphExecutionContext::recorder() const {
+    if (recorder_ == nullptr) {
+        throw std::runtime_error("render graph execution context has no command recorder");
+    }
+    return *recorder_;
 }
 
 const RenderGraphTextureResource&
@@ -206,20 +215,26 @@ const RenderGraphBufferResource& CompiledRenderGraph::buffer(RenderGraphBufferHa
 }
 
 void CompiledRenderGraph::execute() const {
-    execute(nullptr);
+    execute(nullptr, nullptr);
 }
 
 void CompiledRenderGraph::execute(const RenderGraphResourceSet& resources) const {
-    execute(&resources);
+    execute(&resources, nullptr);
 }
 
-void CompiledRenderGraph::execute(const RenderGraphResourceSet* resources) const {
+void CompiledRenderGraph::execute(const RenderGraphResourceSet& resources,
+                                  const cubey::vulkan::CommandRecorder& recorder) const {
+    execute(&resources, &recorder);
+}
+
+void CompiledRenderGraph::execute(const RenderGraphResourceSet* resources,
+                                  const cubey::vulkan::CommandRecorder* recorder) const {
     for (std::size_t pass_index = 0; pass_index < passes_.size(); ++pass_index) {
         const RenderGraphCompiledPass& pass = passes_[pass_index];
         if (!pass.execute) {
             throw std::runtime_error("render graph pass has no execute callback");
         }
-        pass.execute(RenderGraphExecutionContext(*this, pass_index, resources));
+        pass.execute(RenderGraphExecutionContext(*this, pass_index, resources, recorder));
     }
 }
 
@@ -377,6 +392,43 @@ void RenderGraphFrameResources::validate_slot(FrameSlot slot) const {
     if (slot.count != frame_slot_count()) {
         throw std::runtime_error("render graph frame resource slot count does not match");
     }
+}
+
+RenderGraphFrameExecutor::RenderGraphFrameExecutor(std::uint32_t frame_slot_count)
+    : resources_(frame_slot_count) {}
+
+void RenderGraphFrameExecutor::resize(std::uint32_t frame_slot_count) {
+    resources_.resize(frame_slot_count);
+}
+
+void RenderGraphFrameExecutor::clear() {
+    resources_.clear();
+}
+
+std::uint32_t RenderGraphFrameExecutor::frame_slot_count() const {
+    return resources_.frame_slot_count();
+}
+
+void RenderGraphFrameExecutor::record(const RenderGraphFrameRecordInfo& info,
+                                      const CompiledRenderGraph& graph,
+                                      RenderGraphPrepareCallback prepare) {
+    if (info.device == nullptr) {
+        throw std::runtime_error("render graph frame executor requires a device");
+    }
+    if (info.command_buffer == VK_NULL_HANDLE) {
+        throw std::runtime_error("render graph frame executor requires a command buffer");
+    }
+    validate_frame_slot(info.frame_slot);
+
+    RenderGraphResourceSet& resources = resources_.emplace(info.frame_slot, *info.device, graph);
+    if (prepare) {
+        prepare(resources);
+    }
+
+    const cubey::vulkan::CommandRecorder recorder(info.command_buffer);
+    recorder.begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+    graph.execute(resources, recorder);
+    recorder.end(info.label != nullptr ? info.label : "vkEndCommandBuffer render graph");
 }
 
 void record_render_graph_barriers(const cubey::vulkan::CommandRecorder& recorder,

@@ -252,6 +252,45 @@ void test_render_graph_execute_propagates_callback_exceptions() {
     throw std::runtime_error("graph execution should propagate callback exceptions");
 }
 
+void test_render_graph_execute_with_recorder_exposes_command_recorder() {
+    cubey::render::RenderGraphBuilder graph;
+    const cubey::render::RenderGraphTextureHandle color =
+        graph.import_texture(color_texture_desc("color"), image(0x95), view(0x96));
+    const VkCommandBuffer command_buffer = reinterpret_cast<VkCommandBuffer>(0x97);
+    const cubey::vulkan::CommandRecorder recorder(command_buffer);
+
+    bool saw_recorder = false;
+    graph.add_pass("record", cubey::render::RenderGraphQueueDomain::Graphics)
+        .read_texture(color)
+        .execute([&](const cubey::render::RenderGraphExecutionContext& context) {
+            require(context.recorder().handle() == command_buffer,
+                    "recorder-aware execution should expose the active command recorder");
+            saw_recorder = true;
+        });
+
+    const cubey::render::CompiledRenderGraph compiled = graph.compile();
+    const cubey::render::RenderGraphResourceSet resources(compiled);
+    compiled.execute(resources, recorder);
+
+    require(saw_recorder, "recorder-aware execution should run the pass callback");
+}
+
+void test_render_graph_recorder_access_rejects_recorderless_execution() {
+    cubey::render::RenderGraphBuilder graph;
+    const cubey::render::RenderGraphTextureHandle color =
+        graph.import_texture(color_texture_desc("color"), image(0x98), view(0x99));
+    graph.add_pass("record", cubey::render::RenderGraphQueueDomain::Graphics)
+        .read_texture(color)
+        .execute([](const cubey::render::RenderGraphExecutionContext& context) {
+            (void)context.recorder();
+        });
+
+    const cubey::render::CompiledRenderGraph compiled = graph.compile();
+
+    require_throws([&compiled] { compiled.execute(); },
+                   "recorder-less graph execution should reject recorder access");
+}
+
 void test_render_graph_rejects_transient_texture_read_before_write() {
     cubey::render::RenderGraphBuilder graph;
     const cubey::render::RenderGraphTextureHandle transient =
@@ -759,6 +798,58 @@ void test_render_graph_frame_resources_replace_one_slot_without_disturbing_anoth
             "replacing one frame slot should update that slot");
     require(frame_resources.resource_set(slot_one).buffer(transient)->buffer == buffer(0x912),
             "replacing one frame slot should not disturb other slots");
+}
+
+void test_render_graph_frame_executor_tracks_slots_and_rejects_invalid_record_info() {
+    cubey::render::RenderGraphBuilder graph;
+    graph.add_pass("noop", cubey::render::RenderGraphQueueDomain::Graphics)
+        .execute([](const cubey::render::RenderGraphExecutionContext&) {});
+    const cubey::render::CompiledRenderGraph compiled = graph.compile();
+    cubey::render::RenderGraphFrameExecutor executor;
+
+    require(executor.frame_slot_count() == 0, "graph frame executor should start with no slots");
+    executor.resize(2);
+    require(executor.frame_slot_count() == 2, "graph frame executor should report resized slots");
+
+    const VkCommandBuffer command_buffer = reinterpret_cast<VkCommandBuffer>(0x914);
+    const auto* fake_device = reinterpret_cast<const cubey::vulkan::Device*>(0x915);
+
+    require_throws(
+        [&] {
+            executor.record(cubey::render::RenderGraphFrameRecordInfo{
+                                .device = nullptr,
+                                .command_buffer = command_buffer,
+                                .frame_slot = {.index = 0, .count = 2},
+                                .label = "test",
+                            },
+                            compiled);
+        },
+        "graph frame executor should require a device");
+    require_throws(
+        [&] {
+            executor.record(cubey::render::RenderGraphFrameRecordInfo{
+                                .device = fake_device,
+                                .command_buffer = VK_NULL_HANDLE,
+                                .frame_slot = {.index = 0, .count = 2},
+                                .label = "test",
+                            },
+                            compiled);
+        },
+        "graph frame executor should require a command buffer");
+    require_throws(
+        [&] {
+            executor.record(cubey::render::RenderGraphFrameRecordInfo{
+                                .device = fake_device,
+                                .command_buffer = command_buffer,
+                                .frame_slot = {.index = 0, .count = 0},
+                                .label = "test",
+                            },
+                            compiled);
+        },
+        "graph frame executor should reject invalid frame slots before Vulkan calls");
+
+    executor.clear();
+    require(executor.frame_slot_count() == 0, "cleared graph frame executor should report no slots");
 }
 
 void test_render_graph_resolves_sampled_color_texture_view() {

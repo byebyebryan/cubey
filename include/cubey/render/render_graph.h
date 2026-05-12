@@ -180,6 +180,7 @@ class RenderGraphExecutionContext {
   public:
     [[nodiscard]] const CompiledRenderGraph& graph() const;
     [[nodiscard]] const RenderGraphCompiledPass& pass() const;
+    [[nodiscard]] const cubey::vulkan::CommandRecorder& recorder() const;
     [[nodiscard]] std::size_t pass_index() const noexcept {
         return pass_index_;
     }
@@ -193,10 +194,12 @@ class RenderGraphExecutionContext {
     friend class CompiledRenderGraph;
 
     RenderGraphExecutionContext(const CompiledRenderGraph& graph, std::size_t pass_index,
-                                const RenderGraphResourceSet* resources);
+                                const RenderGraphResourceSet* resources,
+                                const cubey::vulkan::CommandRecorder* recorder);
 
     const CompiledRenderGraph* graph_ = nullptr;
     const RenderGraphResourceSet* resources_ = nullptr;
+    const cubey::vulkan::CommandRecorder* recorder_ = nullptr;
     std::size_t pass_index_ = 0;
 };
 
@@ -238,9 +241,12 @@ class CompiledRenderGraph {
     [[nodiscard]] const RenderGraphBufferResource& buffer(RenderGraphBufferHandle handle) const;
     void execute() const;
     void execute(const RenderGraphResourceSet& resources) const;
+    void execute(const RenderGraphResourceSet& resources,
+                 const cubey::vulkan::CommandRecorder& recorder) const;
 
   private:
-    void execute(const RenderGraphResourceSet* resources) const;
+    void execute(const RenderGraphResourceSet* resources,
+                 const cubey::vulkan::CommandRecorder* recorder) const;
 
     std::vector<RenderGraphTextureResource> textures_{};
     std::vector<RenderGraphBufferResource> buffers_{};
@@ -296,6 +302,32 @@ class RenderGraphFrameResources {
     void validate_slot(FrameSlot slot) const;
 
     std::vector<std::optional<RenderGraphResourceSet>> slots_{};
+};
+
+struct RenderGraphFrameRecordInfo {
+    const cubey::vulkan::Device* device = nullptr;
+    VkCommandBuffer command_buffer = VK_NULL_HANDLE;
+    FrameSlot frame_slot{};
+    const char* label = "vkEndCommandBuffer render graph";
+};
+
+using RenderGraphPrepareCallback = std::function<void(const RenderGraphResourceSet&)>;
+
+class RenderGraphFrameExecutor {
+  public:
+    RenderGraphFrameExecutor() = default;
+    explicit RenderGraphFrameExecutor(std::uint32_t frame_slot_count);
+
+    void resize(std::uint32_t frame_slot_count);
+    void clear();
+
+    [[nodiscard]] std::uint32_t frame_slot_count() const;
+
+    void record(const RenderGraphFrameRecordInfo& info, const CompiledRenderGraph& graph,
+                RenderGraphPrepareCallback prepare = {});
+
+  private:
+    RenderGraphFrameResources resources_{};
 };
 
 class RenderGraphBuilder;
