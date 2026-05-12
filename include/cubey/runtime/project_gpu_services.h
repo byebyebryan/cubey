@@ -7,9 +7,8 @@
 #include <cstddef>
 #include <cstdint>
 #include <functional>
-#include <mutex>
+#include <memory>
 #include <string>
-#include <unordered_map>
 #include <vector>
 
 #include <vulkan/vulkan.h>
@@ -53,6 +52,7 @@ class ProjectGpuServices {
   public:
     ProjectGpuServices(vulkan::GpuRuntime& gpu, UploadQueue& uploads,
                        DeferredDestructionQueue& deferred_destruction);
+    ~ProjectGpuServices();
 
     ProjectGpuServices(const ProjectGpuServices&) = delete;
     ProjectGpuServices& operator=(const ProjectGpuServices&) = delete;
@@ -74,18 +74,14 @@ class ProjectGpuServices {
     take_completed_readback(const ProjectGpuReadbackTicket& ticket);
 
   private:
+    struct Impl;
+
     void mark_readback_completed(const ProjectGpuReadbackTicket& ticket, std::uint32_t width,
                                  std::uint32_t height, std::vector<std::uint8_t> rgba8,
                                  FrameTicket completed_submission);
     void mark_readback_failed(const ProjectGpuReadbackTicket& ticket, std::string error);
 
-    vulkan::GpuRuntime* gpu_;
-    UploadQueue* uploads_;
-    DeferredDestructionQueue* deferred_destruction_;
-    mutable std::mutex readback_mutex_;
-    std::uint64_t next_readback_id_ = 1;
-    std::unordered_map<std::uint64_t, ProjectGpuReadbackStatus> readback_statuses_;
-    std::unordered_map<std::uint64_t, ProjectGpuReadbackResult> readback_results_;
+    std::unique_ptr<Impl> impl_;
 };
 
 } // namespace cubey

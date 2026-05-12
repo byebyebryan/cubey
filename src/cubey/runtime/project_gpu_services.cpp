@@ -5,8 +5,11 @@
 
 #include <exception>
 #include <limits>
+#include <memory>
+#include <mutex>
 #include <stdexcept>
 #include <string>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -35,9 +38,25 @@ std::size_t rgba8_readback_byte_count(VkExtent2D extent) {
 
 } // namespace
 
+struct ProjectGpuServices::Impl {
+    Impl(vulkan::GpuRuntime& gpu_runtime, UploadQueue& upload_queue,
+         DeferredDestructionQueue& deferred_queue)
+        : gpu(&gpu_runtime), uploads(&upload_queue), deferred_destruction(&deferred_queue) {}
+
+    vulkan::GpuRuntime* gpu = nullptr;
+    UploadQueue* uploads = nullptr;
+    DeferredDestructionQueue* deferred_destruction = nullptr;
+    mutable std::mutex readback_mutex;
+    std::uint64_t next_readback_id = 1;
+    std::unordered_map<std::uint64_t, ProjectGpuReadbackStatus> readback_statuses;
+    std::unordered_map<std::uint64_t, ProjectGpuReadbackResult> readback_results;
+};
+
 ProjectGpuServices::ProjectGpuServices(vulkan::GpuRuntime& gpu, UploadQueue& uploads,
                                        DeferredDestructionQueue& deferred_destruction)
-    : gpu_(&gpu), uploads_(&uploads), deferred_destruction_(&deferred_destruction) {}
+    : impl_(std::make_unique<Impl>(gpu, uploads, deferred_destruction)) {}
+
+ProjectGpuServices::~ProjectGpuServices() = default;
 
 ProjectGpuUploadDrainResult
 ProjectGpuServices::enqueue_pending_uploads(ProjectGpuUploadHandler handler) {
@@ -45,7 +64,7 @@ ProjectGpuServices::enqueue_pending_uploads(ProjectGpuUploadHandler handler) {
         throw std::runtime_error("project GPU upload drain requires a handler");
     }
 
-    std::vector<QueuedUpload> pending_uploads = uploads_->drain();
+    std::vector<QueuedUpload> pending_uploads = impl_->uploads->drain();
     ProjectGpuUploadDrainResult result{
         .upload_count = pending_uploads.size(),
         .work_tickets = {},
@@ -54,19 +73,19 @@ ProjectGpuServices::enqueue_pending_uploads(ProjectGpuUploadHandler handler) {
 
     for (QueuedUpload& upload : pending_uploads) {
         UploadTicket upload_ticket = upload.ticket;
-        result.work_tickets.push_back(gpu_->enqueue({
+        result.work_tickets.push_back(impl_->gpu->enqueue({
             .label = upload_ticket.label,
             .work =
                 [this, handler, upload = std::move(upload),
                  upload_ticket](vulkan::GpuOwnerContext& owner) mutable {
                     try {
                         handler(upload, owner);
-                        uploads_->mark_completed(upload_ticket, owner.completed_submission());
+                        impl_->uploads->mark_completed(upload_ticket, owner.completed_submission());
                     } catch (const std::exception& error) {
-                        uploads_->mark_failed(upload_ticket, error.what());
+                        impl_->uploads->mark_failed(upload_ticket, error.what());
                         throw;
                     } catch (...) {
-                        uploads_->mark_failed(upload_ticket, "unknown GPU upload failure");
+                        impl_->uploads->mark_failed(upload_ticket, "unknown GPU upload failure");
                         throw;
                     }
                 },
@@ -77,24 +96,24 @@ ProjectGpuServices::enqueue_pending_uploads(ProjectGpuUploadHandler handler) {
 }
 
 vulkan::GpuWorkTicket ProjectGpuServices::enqueue(vulkan::GpuWorkRequest request) {
-    return gpu_->enqueue(std::move(request));
+    return impl_->gpu->enqueue(std::move(request));
 }
 
 vulkan::GpuWorkTicket ProjectGpuServices::submit_and_wait(vulkan::GpuWorkRequest request) {
-    return gpu_->submit_and_wait(std::move(request));
+    return impl_->gpu->submit_and_wait(std::move(request));
 }
 
 void ProjectGpuServices::wait_queue_idle(std::string label) {
-    gpu_->wait_queue_idle(std::move(label));
+    impl_->gpu->wait_queue_idle(std::move(label));
 }
 
 vulkan::GpuDrainResult ProjectGpuServices::drain() {
-    return gpu_->drain();
+    return impl_->gpu->drain();
 }
 
 std::size_t ProjectGpuServices::retire_deferred_destruction() {
-    const vulkan::GpuDrainResult result = gpu_->drain();
-    return deferred_destruction_->retire_completed(result.completed_submission);
+    const vulkan::GpuDrainResult result = impl_->gpu->drain();
+    return impl_->deferred_destruction->retire_completed(result.completed_submission);
 }
 
 ProjectGpuReadbackTicket ProjectGpuServices::enqueue_rgba8_image_readback(VkImage source,
@@ -103,23 +122,23 @@ ProjectGpuReadbackTicket ProjectGpuServices::enqueue_rgba8_image_readback(VkImag
     const std::size_t byte_count = rgba8_readback_byte_count(extent);
     ProjectGpuReadbackTicket ticket;
     {
-        std::scoped_lock lock(readback_mutex_);
+        std::scoped_lock lock(impl_->readback_mutex);
         ticket = {
-            .id = next_readback_id_,
+            .id = impl_->next_readback_id,
             .label = std::move(label),
             .byte_count = byte_count,
         };
-        ++next_readback_id_;
-        readback_statuses_.emplace(ticket.id, ProjectGpuReadbackStatus{
-                                                  .state = ProjectGpuReadbackState::Pending,
-                                                  .completed_submission = {},
-                                                  .byte_count = byte_count,
-                                                  .error = {},
-                                              });
+        ++impl_->next_readback_id;
+        impl_->readback_statuses.emplace(ticket.id, ProjectGpuReadbackStatus{
+                                                        .state = ProjectGpuReadbackState::Pending,
+                                                        .completed_submission = {},
+                                                        .byte_count = byte_count,
+                                                        .error = {},
+                                                    });
     }
 
     try {
-        static_cast<void>(gpu_->enqueue({
+        static_cast<void>(impl_->gpu->enqueue({
             .label = ticket.label,
             .work =
                 [this, ticket, source, extent](vulkan::GpuOwnerContext& owner) {
@@ -162,9 +181,9 @@ ProjectGpuReadbackTicket ProjectGpuServices::enqueue_rgba8_image_readback(VkImag
 
 ProjectGpuReadbackStatus
 ProjectGpuServices::readback_status(const ProjectGpuReadbackTicket& ticket) const {
-    std::scoped_lock lock(readback_mutex_);
-    auto found = readback_statuses_.find(ticket.id);
-    if (found == readback_statuses_.end()) {
+    std::scoped_lock lock(impl_->readback_mutex);
+    auto found = impl_->readback_statuses.find(ticket.id);
+    if (found == impl_->readback_statuses.end()) {
         throw std::runtime_error("unknown project GPU readback ticket");
     }
     return found->second;
@@ -172,9 +191,9 @@ ProjectGpuServices::readback_status(const ProjectGpuReadbackTicket& ticket) cons
 
 ProjectGpuReadbackResult
 ProjectGpuServices::take_completed_readback(const ProjectGpuReadbackTicket& ticket) {
-    std::scoped_lock lock(readback_mutex_);
-    auto status = readback_statuses_.find(ticket.id);
-    if (status == readback_statuses_.end()) {
+    std::scoped_lock lock(impl_->readback_mutex);
+    auto status = impl_->readback_statuses.find(ticket.id);
+    if (status == impl_->readback_statuses.end()) {
         throw std::runtime_error("unknown project GPU readback ticket");
     }
     if (status->second.state == ProjectGpuReadbackState::Pending) {
@@ -184,13 +203,13 @@ ProjectGpuServices::take_completed_readback(const ProjectGpuReadbackTicket& tick
         throw std::runtime_error("project GPU readback failed: " + status->second.error);
     }
 
-    auto result = readback_results_.find(ticket.id);
-    if (result == readback_results_.end()) {
+    auto result = impl_->readback_results.find(ticket.id);
+    if (result == impl_->readback_results.end()) {
         throw std::runtime_error("project GPU readback result was already taken");
     }
 
     ProjectGpuReadbackResult completed = std::move(result->second);
-    readback_results_.erase(result);
+    impl_->readback_results.erase(result);
     return completed;
 }
 
@@ -198,9 +217,9 @@ void ProjectGpuServices::mark_readback_completed(const ProjectGpuReadbackTicket&
                                                  std::uint32_t width, std::uint32_t height,
                                                  std::vector<std::uint8_t> rgba8,
                                                  FrameTicket completed_submission) {
-    std::scoped_lock lock(readback_mutex_);
-    auto status = readback_statuses_.find(ticket.id);
-    if (status == readback_statuses_.end()) {
+    std::scoped_lock lock(impl_->readback_mutex);
+    auto status = impl_->readback_statuses.find(ticket.id);
+    if (status == impl_->readback_statuses.end()) {
         throw std::runtime_error("unknown project GPU readback ticket");
     }
 
@@ -210,7 +229,7 @@ void ProjectGpuServices::mark_readback_completed(const ProjectGpuReadbackTicket&
         .byte_count = rgba8.size(),
         .error = {},
     };
-    readback_results_[ticket.id] = {
+    impl_->readback_results[ticket.id] = {
         .ticket = ticket,
         .width = width,
         .height = height,
@@ -220,14 +239,14 @@ void ProjectGpuServices::mark_readback_completed(const ProjectGpuReadbackTicket&
 
 void ProjectGpuServices::mark_readback_failed(const ProjectGpuReadbackTicket& ticket,
                                               std::string error) {
-    std::scoped_lock lock(readback_mutex_);
-    auto status = readback_statuses_.find(ticket.id);
-    if (status == readback_statuses_.end()) {
+    std::scoped_lock lock(impl_->readback_mutex);
+    auto status = impl_->readback_statuses.find(ticket.id);
+    if (status == impl_->readback_statuses.end()) {
         return;
     }
     status->second.state = ProjectGpuReadbackState::Failed;
     status->second.error = std::move(error);
-    readback_results_.erase(ticket.id);
+    impl_->readback_results.erase(ticket.id);
 }
 
 } // namespace cubey

@@ -153,6 +153,8 @@ target_link_libraries(
 add_library(cubey_scene STATIC
     scene/engine.cpp
     scene/entity.cpp
+    scene/light_manager.cpp
+    scene/renderable_manager.cpp
     scene/scene.cpp
 )
 add_library(cubey::scene ALIAS cubey_scene)
