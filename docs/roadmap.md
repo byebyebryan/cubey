@@ -186,10 +186,13 @@ Current checkpoint:
 - Reusable `cubey::render::RenderGraphBuilder` and `CompiledRenderGraph`
   provide the first render graph declaration, validation, and synchronous
   execution shell for imported/transient texture and buffer resources, ordered
-  graphics/compute/transfer passes, and pass/resource usage. `shadow_cube`
-  now declares and executes its shadow-depth and scene-color flow through this
-  layer, while pass callbacks still own explicit Vulkan resources, layout
-  transitions, command recording, and the final present transition.
+  graphics/compute/transfer passes, pass/resource usage, optional material pass
+  metadata, and in-graph sync requirements. `shadow_cube` now uses
+  graph-derived shadow-depth sync between its depth and scene passes, while pass
+  callbacks still own explicit Vulkan resources, first-use transitions, command
+  recording, and the final present transition. `fluid_2d` declares a coarse
+  simulation-compute to fullscreen-render graph and records graph-derived buffer
+  barriers at that boundary.
 - Reusable `cubey::vulkan::PipelineLayout`, `GraphicsPipeline`,
   `ComputePipeline`, `DescriptorSetLayout`, and `DescriptorPool` own basic
   pipeline and descriptor lifetimes while still taking raw Vulkan create-info
@@ -254,8 +257,8 @@ Current checkpoint:
   with a depth-only directional shadow map pass followed by a color pass that
   samples the depth texture, executes those pass bodies through
   `CompiledRenderGraph`, and exercises orthographic `Camera3D`, sampled depth
-  targets, depth-only dynamic rendering, explicit sampled-depth layout
-  transitions, render-graph pass declarations, and CPU pass planning.
+  targets, depth-only dynamic rendering, graph-derived sampled-depth sync,
+  render-graph pass declarations, and CPU pass planning.
 - `examples/headless_render` links against `cubey`, creates no GLFW window or
   surface, renders an offscreen color target through dynamic rendering, copies
   it into a readback buffer, and writes a PNG artifact.
@@ -422,7 +425,10 @@ Current project:
   injection/advection, pressure projection, pointer injection, pause/reset,
   debug render modes, fullscreen rendering, a windowed smoke, and
   deterministic headless PNG output. Simulation timing now flows through
-  `ProjectFrame` in both windowed and headless modes.
+  `ProjectFrame` in both windowed and headless modes. The windowed frame now
+  declares a coarse render graph for simulation compute followed by fullscreen
+  rendering; solver-internal barriers remain project-owned, while the
+  compute-to-render boundary uses graph-derived buffer barriers.
 
 Candidate follow-ups:
 

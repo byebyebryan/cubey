@@ -194,6 +194,22 @@ generic project host.
 - Windowed frame command recording remains project-local because pass order,
   barriers, descriptors, and shader policy are still part of the fluid project.
 
+### Checkpoint 6
+
+Status: coarse render graph declaration complete.
+
+Goal: prove the render graph sync boundary on a compute-plus-graphics project
+without moving fluid simulation policy into the renderer.
+
+- Windowed frames now declare a coarse graph: simulation compute pass followed
+  by fullscreen render pass.
+- The compute pass still owns solver-internal storage-buffer barriers.
+- The render pass records graph-derived buffer barriers for the
+  compute-to-fragment-read boundary before drawing.
+- Headless simulation keeps its direct project GPU services path and explicit
+  final visibility barrier because capture rendering happens in a separate
+  host-owned command path.
+
 ## Commands
 
 ```bash

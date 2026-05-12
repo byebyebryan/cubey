@@ -2,8 +2,8 @@
 
 This note maps Cubey's render graph direction before the renderer grows more
 pass-heavy. It is both a design checkpoint and the current implementation
-boundary for the declaration, validation, and synchronous execution shell. The
-near-term goal is to keep
+boundary for declaration, validation, synchronous execution, and explicit
+sync-requirement derivation. The near-term goal is to keep
 upcoming renderer, material, shadow, postprocess, readback, and async work
 compatible with a future graph without forcing every example through a graph
 executor now.
@@ -51,13 +51,16 @@ render vocabulary, not replace the Vulkan layer or move scene policy into
 `cubey::render::RenderGraphBuilder` is the first graph declaration layer. It
 can import swapchain/offscreen color targets, depth targets, textures, and
 buffers; create transient texture and buffer declarations; declare ordered
-graphics, compute, and transfer passes; attach optional pass callbacks; and
-compile those declarations into a validated `CompiledRenderGraph`.
+graphics, compute, and transfer passes; attach optional material pass metadata
+and pass callbacks; and compile those declarations into a validated
+`CompiledRenderGraph`.
 
 The compiled graph preserves pass insertion order and resource usage
 declarations. It validates graph-local handles, imported versus transient
 resource availability, queue-domain restrictions, attachment/storage aspect
-rules, and incompatible same-pass resource access.
+rules, incompatible same-pass resource access, and in-graph texture/buffer
+sync requirements for read-after-write, write-after-read, and write-after-write
+hazards.
 
 `CompiledRenderGraph::execute()` runs each compiled pass callback in order and
 passes a `RenderGraphExecutionContext` that exposes the graph, current pass,
@@ -65,12 +68,18 @@ pass index, and declared resources. Missing callbacks fail at execute time, not
 compile time, so declaration-only tests and diagnostics can still compile a
 graph without recording work. The callback body still captures the app-owned
 command recorder, pipelines, descriptors, and concrete resources it needs.
+`record_render_graph_barriers` records the current pass's derived requirements
+through `CommandRecorder`; this is explicit command recording, not hidden graph
+execution.
 
-It does not create Vulkan resources, generate barriers, infer layouts, allocate
-descriptors, reorder passes, cull passes, alias transient memory, or schedule
-async work. `examples/shadow_cube` is the first reference migration: the graph
-now executes its shadow pass and scene pass callbacks, while those callbacks
-still record explicit Vulkan layout transitions and draw commands.
+It does not create Vulkan resources, infer first-use or cross-frame layouts,
+allocate descriptors, reorder passes, cull passes, alias transient memory, or
+schedule async work. `examples/shadow_cube` is the first reference migration:
+the graph now executes its shadow pass and scene pass callbacks and records the
+shadow-depth write-to-sampled-read transition from graph-derived requirements.
+`projects/fluid_2d` declares a coarse simulation-compute to fullscreen-render
+graph and uses graph-derived buffer barriers at that boundary while keeping
+solver-internal barriers manual.
 
 ## Boundary
 
@@ -114,9 +123,9 @@ resolved resources + explicit command recording through cubey::vulkan
   or transfer source/destination. In v1, present remains host/swapchain-owned:
   the backbuffer is declared as a color attachment write, then explicit Vulkan
   code transitions it for presentation.
-- **Compile**: validation and derivation of pass order plus declared resource
-  lifetime from graph declarations. Synchronization requirements are not derived
-  yet.
+- **Compile**: validation and derivation of pass order, declared resource
+  lifetime, optional material pass metadata, and in-graph sync requirements
+  from graph declarations.
 - **Execute**: synchronous pass-callback invocation in compiled pass order.
   Callbacks receive declaration context and record Vulkan commands explicitly.
 - **Queue domain**: the queue class a pass expects, initially graphics or
@@ -129,11 +138,11 @@ The eventual API should look like a setup/execute split:
 ```cpp
 auto backbuffer = graph.import_color_target("swapchain", frame.color_target);
 auto depth = graph.import_depth_target("depth", depth_target);
-auto shadow_map = graph.create_texture("shadow map", shadow_desc);
+auto shadow_map = graph.import_depth_target("shadow map", shadow_target);
 
 graph.add_pass("shadow")
     .write_depth(shadow_map)
-    .execute([](const RenderGraphExecutionContext& ctx) {
+    .execute([&recorder](const RenderGraphExecutionContext& ctx) {
         // Record depth-only commands with app-owned resources.
     });
 
@@ -141,7 +150,8 @@ graph.add_pass("scene")
     .read_texture(shadow_map)
     .write_color(backbuffer)
     .write_depth(depth)
-    .execute([](const RenderGraphExecutionContext& ctx) {
+    .execute([&recorder](const RenderGraphExecutionContext& ctx) {
+        record_render_graph_barriers(recorder, ctx);
         // Record color pass commands with app-owned resources.
     });
 ```
@@ -166,11 +176,14 @@ Completed slices:
 5. Synchronous execution callbacks on compiled passes.
 6. `shadow_cube` migration to execute the shadow and scene pass bodies through
    the graph shell.
+7. In-graph sync requirement derivation for texture transitions and buffer
+   barriers, with explicit recording through `CommandRecorder`.
+8. Coarse `fluid_2d` simulation-to-render graph declaration.
 
-This keeps the graph as a validation, vocabulary, and pass-ordering shell
-rather than a renderer rewrite. Barrier generation should either stay explicit
-or emit named transition requirements that still map directly to
-`cubey::vulkan::ImageLayoutTransition`.
+This keeps the graph as a validation, vocabulary, pass-ordering, and
+sync-requirement shell rather than a renderer rewrite. Barriers stay explicit:
+the graph derives named requirements, and command callbacks decide where to
+record them.
 
 ## Adoption Triggers
 

@@ -121,8 +121,8 @@ Current state:
 - `end_command_buffer` removes repeated end/check boilerplate.
 - `CommandRecorder` wraps a non-owning `VkCommandBuffer` for common recording
   calls: begin/end, dynamic rendering boundaries, image layout transitions,
-  pipeline and descriptor binding, push constants, draws, indexed draws, and
-  dispatches.
+  pipeline barriers, pipeline and descriptor binding, push constants, draws,
+  indexed draws, and dispatches.
 - `QueueSubmit`, `submit_to_queue`, and `submit_to_device_queue` centralize the
   current binary-semaphore `VkSubmitInfo` shape used by frame submit and
   immediate commands.
@@ -300,8 +300,9 @@ Current state:
 - `examples/textured_cube` uses `cubey::render::Texture2D` for its
   compute-generated sampled texture ownership.
 - `examples/shadow_cube` uses `cubey::render::DepthTexture`,
-  `DepthOnlyRenderingInfo`, depth-only pipeline setup, and explicit sampled
-  depth transitions for a directional shadow map.
+  `DepthOnlyRenderingInfo`, depth-only pipeline setup, and graph-derived
+  sampled-depth sync for a directional shadow map while keeping first-use
+  transitions explicit.
 - Cube examples use the shared GLM-backed `cubey::math` wrapper for MVP/model
   matrices and Vulkan clip-space projection conventions.
 - `examples/particles` still defines particle storage-buffer layout, seeding,
