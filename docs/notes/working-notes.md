@@ -8,7 +8,7 @@ doc when they stabilize. Historical decision records belong under
 
 Architectural note: older entries that say "wait for project pressure" reflect
 an earlier anti-sprawl bias. The current stance in `docs/DESIGN.md`,
-`docs/app-runtime.md`, and `docs/vulkan-abstractions.md` supersedes that:
+`docs/architecture/app-runtime.md`, and `docs/architecture/vulkan-abstractions.md` supersedes that:
 Cubey should build small, deliberate foundation contracts for established
 graphics/runtime concepts when the boundary is clear, while still avoiding a
 generic game engine or backend-agnostic renderer.
@@ -412,7 +412,7 @@ env XDG_RUNTIME_DIR=/run/user/1000 WAYLAND_DISPLAY=wayland-1 DISPLAY=:1 XDG_CURR
   smoke checks now live in `cmake/CubeySmokeTests.cmake`. Individual examples
   declare only the target, test name, and expected success pattern or output
   path.
-- Captured `docs/threading-and-async.md` so the first real project can start
+- Captured `docs/architecture/threading-and-async.md` so the first real project can start
   from an async-ready shape instead of growing around direct blocking
   upload/readback/PNG paths. The doc records Taskflow and `BS::thread_pool` as
   first candidates, but keeps either dependency hidden behind future

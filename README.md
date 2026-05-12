@@ -12,7 +12,9 @@ precedent when shaping new foundation contracts.
 ## Current Direction
 
 - Primary target: native Vulkan on desktop.
-- Primary library: `cubey`, with public headers under `include/cubey/`.
+- Primary library: layered `cubey::*` targets with public headers under
+  `include/cubey/` and an aggregate `cubey::cubey` target for examples and
+  projects.
 - Optional app layer: `cubey_app`, for GLFW-backed window hosting.
 - Runnable targets live under `examples/` or `projects/`.
 - Headless PNG output is a first-class verification path for projects that can
@@ -44,10 +46,13 @@ Authoritative current docs:
 
 - [Design](docs/DESIGN.md)
 - [Roadmap](docs/roadmap.md)
-- [Vulkan abstraction map](docs/vulkan-abstractions.md)
-- [App runtime](docs/app-runtime.md)
-- [Threading and async](docs/threading-and-async.md)
-- [Fluid simulation direction](docs/fluid-simulation.md)
+- [Architecture notes](docs/architecture/README.md)
+- [Vulkan abstraction map](docs/architecture/vulkan-abstractions.md)
+- [Renderer foundation](docs/architecture/renderer-foundation.md)
+- [Entity and component foundation](docs/architecture/entity-component-foundation.md)
+- [App runtime](docs/architecture/app-runtime.md)
+- [Threading and async](docs/architecture/threading-and-async.md)
+- [Fluid simulation direction](docs/architecture/fluid-simulation.md)
 - [C++ style guide](docs/cpp-style.md)
 - [Changelog / release notes](CHANGELOG.md)
 

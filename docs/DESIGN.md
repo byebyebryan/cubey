@@ -139,11 +139,11 @@ Reusable spatial types should stay explicit and narrow:
   layer only; Vulkan command recording, descriptors, pipelines, light upload,
   and shader/material binding stay owned by examples/projects for now.
 
-The broader entity/component shape is captured in
-[entity and component foundation](entity-component-foundation.md): Cubey should
-move toward manager-oriented, MT-stable component storage with explicit read
-views and edit commits before adding broader material, environment, or renderer
-ownership.
+The broader entity/component shape is captured in the
+[entity and component foundation](architecture/entity-component-foundation.md):
+Cubey should move toward manager-oriented, MT-stable component storage with
+explicit read views and edit commits before adding broader material,
+environment, or renderer ownership.
 
 `cubey::Engine` is the scoped root owner for engine services and scene
 creation. It owns project runtime services, render resource handle identity,
@@ -173,15 +173,15 @@ evidence, but it is not a required gate for graphics concepts that are already
 well-established or correctness-sensitive.
 
 Before this becomes a broad host, projects should move toward the async-ready
-shape described in [threading and async design](threading-and-async.md): app
-state produces render packets, CPU jobs run behind Cubey APIs, upload/capture
-requests are queued, and one GPU owner serializes queue submission and resource
-lifetime decisions. Today that GPU owner is `cubey::vulkan::GpuRuntime`, backed
-by `SubmissionCoordinator` for actual queue submission and threaded by default
-in hosts. `cubey::ProjectGpuServices` is the project-facing bridge for queued
-uploads, upload completion status, RGBA8 image readback tickets, owner-thread
-queue-idle waits, and deferred GPU retirement without handing project code the
-raw submission coordinator.
+shape described in [threading and async design](architecture/threading-and-async.md):
+app state produces render packets, CPU jobs run behind Cubey APIs,
+upload/capture requests are queued, and one GPU owner serializes queue
+submission and resource lifetime decisions. Today that GPU owner is
+`cubey::vulkan::GpuRuntime`, backed by `SubmissionCoordinator` for actual queue
+submission and threaded by default in hosts. `cubey::ProjectGpuServices` is the
+project-facing bridge for queued uploads, upload completion status, RGBA8 image
+readback tickets, owner-thread queue-idle waits, and deferred GPU retirement
+without handing project code the raw submission coordinator.
 
 ```cpp
 struct App {
@@ -277,9 +277,11 @@ Borrow the contract clarity and terminology; keep Cubey's implementation small.
 
 ## Repository Structure
 
-Cubey is becoming a small C++ monorepo. The primary target is the `cubey`
-library. Runnable binaries should be named explicitly and live in either
-`examples/` or `projects/`:
+Cubey is becoming a small C++ monorepo. The public foundation is modeled as
+layered `cubey::*` targets (`core`, `vulkan`, `render`, `runtime`, and `scene`)
+plus the aggregate `cubey::cubey` target for examples and projects that do not
+need a narrower dependency. Runnable binaries should be named explicitly and
+live in either `examples/` or `projects/`:
 
 - `include/cubey/` - public library headers. These define the include discipline
   used by examples, projects, and tests.
@@ -299,22 +301,28 @@ library. Runnable binaries should be named explicitly and live in either
   measure.
 
 CMake should model this as explicit targets, not source-folder convention. The
-dependency direction is:
+layering order is:
 
 ```
-cubey library
+cubey::core
+  -> cubey::vulkan
+  -> cubey::render
+  -> cubey::runtime
+  -> cubey::scene
+  -> cubey::cubey aggregate
   ^
   |
 examples / projects / tools / tests / benchmarks
 ```
 
-Projects can depend on `cubey`; `cubey` must not depend on projects. Shared code
-either graduates into `cubey` or stays local to the project that needs it.
-Example-specific app behavior should stay in that example. The `cubey` library
-should contain reusable runtime/platform pieces, not named examples such as
-`window_clear`.
+Projects can depend on the aggregate `cubey::cubey` target or a narrower
+`cubey::*` layer; Cubey library targets must not depend on projects. Shared
+code either graduates into the appropriate Cubey layer or stays local to the
+project that needs it. Example-specific app behavior should stay in that
+example. The Cubey library should contain reusable runtime/platform pieces, not
+named examples such as `window_clear`.
 
-The `cubey` target should expose public headers now, but it should not gain
+Cubey targets should expose public headers now, but they should not gain
 install/export/package rules until the project genuinely needs external
 consumption and versioning.
 
@@ -332,113 +340,94 @@ cubey/
       app/
         glfw_window.h      -- GLFW window and surface host
         windowed_host.h    -- shared windowed app loop
-      run_config.h         -- shared run configuration
-      capture_queue.h      -- job-backed PNG capture encoding queue
-      file_io.h            -- generic binary file reads/writes
-      frame_clock.h        -- frame timing
-      frame_stats.h        -- lightweight telemetry formatting
-      frame_tickets.h      -- frame tickets and deferred destruction
-      camera_2d.h          -- reusable 2D camera view state
-      camera_3d.h          -- reusable 3D camera projection and orbit helpers
-      camera_manager.h     -- entity-backed 2D/3D camera components
-      headless_png_host.h  -- no-window offscreen PNG capture host
-      image_io.h           -- PNG artifact output
-      input.h              -- shared keyboard and mouse input snapshot
-      jobs.h               -- CPU job facade
-      math.h               -- GLM-backed math aliases and Vulkan projection helpers
-      orbit_controller.h   -- basic orbit input state
-      pan_zoom_2d_controller.h -- input-driven 2D camera pan/zoom controller
-      pointer_drag.h       -- shared pointer drag helper
-      project_gpu_services.h -- project-facing GPU uploads/readbacks/retirement
-      project_runtime.h    -- async-ready project vocabulary
-      light_manager.h      -- entity-backed 3D light components
-      renderable_manager.h -- entity-backed 3D renderable components
-      transform_2d.h       -- explicit 2D model transform value type
-      transform_3d.h       -- explicit 3D model transform value type
-      spirv_io.h           -- SPIR-V bytecode file loading
-      upload_queue.h       -- CPU-owned upload request queue
+      core/
+        run_config.h       -- shared run configuration
+        jobs.h             -- CPU job facade
+        frame_*.h          -- frame timing, stats, tickets, and deferred destruction
+        file_io.h          -- generic binary file reads/writes
+        image_io.h         -- PNG artifact output
+        math.h             -- GLM-backed math aliases and Vulkan projection helpers
+        spirv_io.h         -- SPIR-V bytecode file loading
+      detail/
+        stable_slot_store.h -- MT-stable slot storage internals
+      input/
+        input.h            -- shared keyboard and mouse input snapshot
+        pointer_drag.h     -- shared pointer drag helper
+        pan_zoom_2d_controller.h -- input-driven 2D camera controller
+        orbit_controller.h -- basic orbit input state
       render/
+        target.h           -- color/depth render target views
+        mesh.h             -- indexed mesh buffers and draw item vocabulary
+        texture.h          -- sampled color/depth texture ownership helpers
         resource_handle.h  -- opaque render resource handle values
+        resource_registry.h -- Engine-owned render handle identity
+        resource_table.h   -- project-owned move-only render resources
         view_3d.h          -- CPU 3D render frame planning and culling
+      runtime/
+        capture_queue.h    -- job-backed PNG capture encoding queue
+        headless_png_host.h -- no-window offscreen PNG capture host
+        project_gpu_services.h -- project-facing GPU uploads/readbacks/retirement
+        project_runtime.h  -- async-ready project vocabulary
+        upload_queue.h     -- CPU-owned upload request queue
+      scene/
+        engine.h           -- scoped root owner for runtime, scenes, and registries
+        entity.h           -- generational entity handles and stable manager
+        scene.h            -- scene edit/read-view contract
+        camera_*.h         -- 2D/3D cameras and entity-backed camera managers
+        transform_*.h      -- explicit 2D/3D affine transform value types
+        transform_manager.h -- parented transform components and snapshots
+        light_manager.h    -- entity-backed 3D light components
+        renderable_manager.h -- entity-backed 3D renderable components
       vulkan/
-        vk_check.h         -- Vulkan result helpers
-        instance.h         -- instance, validation, debug messenger
-        device.h           -- physical/logical device and queue ownership
         buffer.h           -- Vulkan buffer and memory ownership
-        command_recorder.h -- non-owning command-buffer recording helper
         command_pool.h     -- command pool ownership and command-buffer begin
+        command_recorder.h -- non-owning command-buffer recording helper
         descriptors.h      -- descriptor set layout/pool ownership
+        device.h           -- physical/logical device and queue ownership
+        dynamic_rendering.h -- dynamic-rendering attachment helpers
         frame_resources.h  -- per-frame command/sync resources
         gpu_runtime.h      -- queued GPU work and owner-thread context
         image.h            -- Vulkan image, memory, and image-view ownership
-        immediate_commands.h -- one-shot setup command submission
-        dynamic_rendering.h -- dynamic-rendering attachment helpers
         image_transitions.h -- image layout transitions and barriers
+        immediate_commands.h -- one-shot setup command submission
+        instance.h         -- instance, validation, debug messenger
         pipeline.h         -- pipeline ownership and graphics setup helpers
+        queue_submit.h     -- binary-semaphore queue-submit description
         render_context.h   -- surface-backed begin/end frame lifecycle
         sampler.h          -- Vulkan sampler ownership
         shader_module.h    -- shader module lifetime
         submission_coordinator.h -- serialized GPU submission helper
         swapchain.h        -- swapchain images and image views
+        vk_check.h         -- Vulkan result helpers
   src/
     cubey/
-      run_config.cpp
-      capture_queue.cpp
-      camera_2d.cpp
-      camera_3d.cpp
-      file_io.cpp
-      frame_clock.cpp
-      frame_stats.cpp
-      frame_tickets.cpp
-      headless_png_host.cpp
-      image_io.cpp
-      input.cpp
-      jobs.cpp
-      orbit_controller.cpp
-      pan_zoom_2d_controller.cpp
-      pointer_drag.cpp
-      project_gpu_services.cpp
-      project_runtime.cpp
-      spirv_io.cpp
-      upload_queue.cpp
+      CMakeLists.txt       -- layered cubey::* library targets
       app/
         glfw_window.cpp    -- GLFW window and surface host
         windowed_host.cpp  -- shared windowed app loop
-      stb_image_write.cpp -- isolated vendored PNG writer implementation
+      core/                -- run config, jobs, frame state, I/O, and PNG writer
+      input/               -- input snapshot and camera-control helpers
+      render/              -- renderer-facing CPU resource/view helpers
+      runtime/             -- project runtime, queues, headless host, GPU services
+      scene/               -- engine, scene/entity, and component managers
       vulkan/
-        instance.cpp       -- instance, validation, debug messenger
-        device.cpp         -- physical/logical device, queues
-        buffer.cpp         -- buffers and host-visible upload
-        command_recorder.cpp -- non-owning command-buffer recording helper
-        command_pool.cpp   -- command pool ownership and command-buffer begin
-        descriptors.cpp    -- descriptor set layout/pool ownership
-        frame_resources.cpp -- command buffers and sync objects
-        gpu_runtime.cpp    -- queued GPU work and owner-thread runtime
-        image.cpp          -- images, memory, and image views
-        immediate_commands.cpp -- one-shot setup command submission
-        dynamic_rendering.cpp -- dynamic-rendering attachment helpers
-        image_transitions.cpp -- image layout transitions and barriers
-        pipeline.cpp       -- pipeline ownership and graphics setup helpers
-        render_context.cpp -- surface-backed begin/end frame lifecycle
-        sampler.cpp        -- samplers
-        shader_module.cpp  -- shader module lifetime
-        submission_coordinator.cpp -- serialized GPU submission helper
-        swapchain.cpp      -- surface extent, swapchain images/views
+        *.cpp              -- Vulkan object, command, submission, and swapchain helpers
   examples/
-    window_clear/          -- minimal windowed Vulkan clear/present path; owns
-                              example-specific app code
+    window_clear/          -- minimal windowed Vulkan clear/present path
     triangle/              -- minimal shader-backed graphics pipeline path
     spinning_cube/         -- indexed cube, push constants, depth
-    textured_cube/         -- compute texture generation, uniforms, descriptors,
-                              sampling
+    textured_cube/         -- compute texture generation, uniforms, sampling
+    shadow_cube/           -- depth pass plus camera pass shadow example
     headless_render/       -- minimal offscreen image path
     fractal/               -- fullscreen fractal shader smoke and headless PNG
-    particles/             -- compute-updated attractor particles with
-                              instanced billboard splats
+    particles/             -- compute-updated attractor particles
   projects/
       fluid_2d/
         CMakeLists.txt
         main.cpp
+        fluid_2d_app.*     -- host/runtime/input orchestration
+        fluid_2d_commands.* -- simulation and fullscreen draw command recording
+        fluid_2d_gpu_resources.* -- project-owned GPU buffers/descriptors/pipelines
         shaders/
           fluid_2d_inject.comp
           fluid_2d_advect.comp
@@ -447,9 +436,7 @@ cubey/
           fluid_2d_projection.comp
           fluid_2d.vert
           fluid_2d_render.frag
-      fluid_sim/
-      sdf_sculpt/
-      marching_cubes/
+      fluid_25d/
   tools/
   tests/
   benchmarks/
@@ -460,9 +447,13 @@ cubey/
     README.md              -- docs index and taxonomy
     DESIGN.md              -- current design and tenets
     roadmap.md             -- living implementation plan
-    app-runtime.md         -- app/window/headless host direction
-    threading-and-async.md -- CPU jobs, queued GPU work, and MT boundaries
-    vulkan-abstractions.md -- Vulkan foundation map
+    architecture/          -- detailed current foundation notes
+      app-runtime.md
+      entity-component-foundation.md
+      fluid-simulation.md
+      renderer-foundation.md
+      threading-and-async.md
+      vulkan-abstractions.md
     cpp-style.md           -- C++ naming, formatting, and review conventions
     notes/                 -- scratch context and working notes
     archive/               -- historical decisions and superseded context

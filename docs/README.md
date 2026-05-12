@@ -10,21 +10,28 @@ scratch material out of the main path.
 - [Design](DESIGN.md): project purpose, tenets, reference sources, architecture,
   and repository structure.
 - [Roadmap](roadmap.md): current implementation phases and next work.
-- [Vulkan abstraction map](vulkan-abstractions.md): reusable Vulkan foundation
-  boundaries and planned framework slices.
-- [Renderer foundation](renderer-foundation.md): `cubey::render` contracts that
-  sit above Vulkan without introducing scene, material, or render-graph policy.
-- [Entity and component foundation](entity-component-foundation.md):
-  manager-oriented entity/component shape, MT-stable storage, read views, edit
-  commits, and transform manager direction.
-- [App runtime](app-runtime.md): GLFW/windowed host, headless host, input, frame
-  flow, and project lifecycle direction.
-- [Threading and async](threading-and-async.md): CPU jobs, queued GPU work,
-  ownership, and future threading boundaries.
-- [Fluid simulation direction](fluid-simulation.md): project direction for
-  2D/2.5D/3D fluid work.
 - [C++ style guide](cpp-style.md): naming, ownership, formatting, and review
   standards.
+
+## Architecture Notes
+
+Detailed current foundation notes live under
+[architecture/](architecture/README.md):
+
+- [Vulkan abstraction map](architecture/vulkan-abstractions.md): reusable
+  Vulkan foundation boundaries and planned framework slices.
+- [Renderer foundation](architecture/renderer-foundation.md): `cubey::render`
+  contracts that sit above Vulkan without introducing scene, material, or
+  render-graph policy.
+- [Entity and component foundation](architecture/entity-component-foundation.md):
+  manager-oriented entity/component shape, MT-stable storage, read views, edit
+  commits, and transform manager direction.
+- [App runtime](architecture/app-runtime.md): GLFW/windowed host, headless
+  host, input, frame flow, and project lifecycle direction.
+- [Threading and async](architecture/threading-and-async.md): CPU jobs, queued
+  GPU work, ownership, and future threading boundaries.
+- [Fluid simulation direction](architecture/fluid-simulation.md): project
+  direction for 2D/2.5D/3D fluid work.
 
 ## Project Docs
 

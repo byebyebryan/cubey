@@ -3,7 +3,7 @@
 Status: design first. No CMake target or implementation exists yet.
 
 The broader fluid technique map lives in
-[`docs/fluid-simulation.md`](../../docs/fluid-simulation.md).
+[`docs/architecture/fluid-simulation.md`](../../docs/architecture/fluid-simulation.md).
 
 `fluid_25d` is the filesystem and target-friendly name for a 2.5D fluid project:
 a 2D shallow-water simulation over a heightmap terrain. The goal is water that

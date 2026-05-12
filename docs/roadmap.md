@@ -10,12 +10,14 @@ Cubey 2.0 is a native Vulkan desktop GPU workbench for procedural graphics
 experiments. Vulkan is the architecture driver for the shared runtime and
 graphics foundation.
 
-See [Vulkan abstraction map](vulkan-abstractions.md) for the planned framework
-layers and foundation rules, [renderer foundation](renderer-foundation.md) for
-the first `cubey::render` contracts above Vulkan, [app runtime](app-runtime.md)
+See the [architecture notes](architecture/README.md), especially the
+[Vulkan abstraction map](architecture/vulkan-abstractions.md) for planned
+framework layers and foundation rules,
+[renderer foundation](architecture/renderer-foundation.md) for the first
+`cubey::render` contracts above Vulkan, [app runtime](architecture/app-runtime.md)
 for the GLFW/windowed host extraction path, and
-[threading and async design](threading-and-async.md) for the async-ready runtime
-boundary.
+[threading and async design](architecture/threading-and-async.md) for the
+async-ready runtime boundary.
 
 ## Phase 0: Repo Foundation
 
@@ -28,7 +30,7 @@ runtime foundation.
 - Formatting, linting, editor, Git text-normalization, and warning defaults.
 - License, changelog/release-note source, roadmap, and working notes.
 - C++ style guide for formatting, naming, ownership, and Vulkan structure.
-- Explicit monorepo shape: `cubey` as the primary library, `examples/` for
+- Explicit monorepo shape: layered `cubey::*` library targets, `examples/` for
   focused reference programs, and `projects/` for first-class graphics work.
 
 Exit criteria:
@@ -45,7 +47,8 @@ complete; frame overlap remains open.
 Goal: build maintainable mainline Vulkan modules and prove visible desktop
 rendering without turning the library into a generic app engine.
 
-- Primary `cubey` static library with public headers under `include/cubey/`.
+- Layered `cubey::*` library targets with public headers under `include/cubey/`
+  and an aggregate `cubey::cubey` target.
 - First runnable example under `examples/window_clear/`, not a generic `cubey`
   executable.
 - CLI/config surface for windowed examples and future headless modes.
@@ -60,7 +63,8 @@ rendering without turning the library into a generic app engine.
 
 Completed criteria:
 
-- `cubey` builds as the primary library target and examples link against it.
+- `cubey::cubey` builds as the aggregate library target and examples link
+  against it.
 - `window_clear`, `triangle`, `spinning_cube`, `textured_cube`, `shadow_cube`,
   `fractal`, and `particles` open windows and render through dynamic rendering.
 - Validation-layer smoke can be required from the command line.
@@ -74,7 +78,8 @@ Open criteria:
 
 Current checkpoint:
 
-- `cubey` static library target exists.
+- Layered `cubey::*` static library targets exist, with aggregate
+  `cubey::cubey` for convenience.
 - Reusable `cubey::vulkan::Instance`, `Device`, `Buffer`, `Image`, `Sampler`,
   `Swapchain`, `CommandPool`, and `FrameResources` components now own
   validation/debug-utils setup,

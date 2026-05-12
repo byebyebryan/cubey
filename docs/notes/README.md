@@ -4,7 +4,8 @@ Notes are living scratch context: progress logs, gotchas, rough ideas, and
 temporary investigation records that are useful but not polished enough to be
 current design guidance.
 
-When a decision stabilizes, promote it into the top-level docs under `docs/`.
+When a decision stabilizes, promote it into the current docs under `docs/` or
+the detailed foundation notes under `docs/architecture/`.
 
 ## Entries
 

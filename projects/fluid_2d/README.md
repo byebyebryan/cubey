@@ -12,7 +12,7 @@ and tuning.
 This README is the source of truth for `fluid_2d` design notes and checkpoint
 history. Cross-project runtime decisions still belong under `docs/`.
 The broader fluid technique map lives in
-[`docs/fluid-simulation.md`](../../docs/fluid-simulation.md).
+[`docs/architecture/fluid-simulation.md`](../../docs/architecture/fluid-simulation.md).
 
 ## Current Status
 
