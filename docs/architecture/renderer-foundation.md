@@ -15,6 +15,8 @@ stable across the repo:
 - a frame-facing target contract that hosts can pass to examples and projects;
 - texture and mesh resource wrappers that own Vulkan resources without hiding
   layout transitions or descriptor updates;
+- CPU-side primitive mesh data for common world-space shapes, plus vertex
+  input layouts matching current shader contracts;
 - explicit frame slots and per-frame uniform buffers for CPU-updated render
   data;
 - draw packet metadata for simple indexed draws;
@@ -101,6 +103,12 @@ full engine architecture.
 - `Mesh`, `DrawItem`, and `record_draw_item` own uploaded indexed geometry and
   record the minimal bind/draw sequence. Vertex layout, pipeline state,
   descriptors, materials, transforms, and push constants remain caller-owned.
+- `PrimitiveMeshData`, `VertexPositionColor`,
+  `VertexPositionColorNormal`, and `VertexPositionColorNormalUv` provide
+  CPU-side cube and XZ-plane mesh data for the existing `Mesh` upload path.
+  The primitive layer also exposes reusable vertex input layouts for those
+  vertex contracts. It does not create renderables, materials, descriptors,
+  pipelines, or scene entities.
 - `MeshHandle` and `MaterialHandle` are opaque CPU-side values used by scene
   renderables and renderable packets. `RenderResourceRegistry` issues and
   destroys those handles, validates liveness, and stores CPU metadata:
@@ -173,6 +181,10 @@ full engine architecture.
   `FrameUniformBuffer<T>` owns one host-visible uniform buffer per frame slot.
   The current windowed host uses real frame slots for overlapping frame
   resources, while swapchain image ownership stays Vulkan-visible.
+- Fullscreen passes are not modeled as quad primitives. `fractal`, `fluid_2d`,
+  and `shadow_cube` use the oversized single-triangle pattern generated from
+  `gl_VertexIndex`, avoiding vertex/index buffers and the internal diagonal of
+  a two-triangle fullscreen quad.
 
 ## Multipass Direction
 

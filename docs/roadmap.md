@@ -165,8 +165,9 @@ Current checkpoint:
   dynamic-rendering target setup, generated/uploaded sampled texture ownership,
   sampled depth texture ownership, depth-only rendering setup, indexed mesh
   upload, minimal indexed draw recording, explicit frame-slot identity,
-  per-frame uniform buffers, and generational mesh/material handles issued by
-  `RenderResourceRegistry`.
+  per-frame uniform buffers, CPU-side cube/XZ-plane primitive mesh data with
+  matching vertex input layouts, and generational mesh/material handles issued
+  by `RenderResourceRegistry`.
 - Reusable `cubey::render::ResourceTable`,
   `cubey::render::RenderItem`,
   `cubey::render::MaterialPassInfo`,
@@ -216,8 +217,10 @@ Current checkpoint:
   dynamic-rendering graphics pipeline create-info shape for color and
   depth-only pipelines, optional depth, and blending. Cube examples now source
   descriptor layout shape, push constants, depth state, blend state, and pass
-  participation from `MaterialPassInfo`, while still choosing shaders, Vulkan
-  resource ownership, vertex input, and command binding explicitly.
+  participation from `MaterialPassInfo`, and source standard cube/plane vertex
+  data and input layouts from `cubey::render` primitives, while still choosing
+  shaders, Vulkan resource ownership, descriptors, and command binding
+  explicitly.
 - Reusable `cubey::vulkan` image-transition helpers build the current
   color/depth/storage/transfer/sampled-depth layout transitions, while
   dynamic-rendering helpers build color/depth attachment descriptors without

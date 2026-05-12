@@ -24,10 +24,11 @@ Current examples:
 
 - `window_clear`: host smoke target for the bare clear/present path.
 - `triangle`: minimal shader-backed dynamic graphics pipeline setup.
-- `spinning_cube`: indexed cube with shared transform/camera math and depth.
-- `textured_cube`: compute-generated texture, descriptors, scene lighting, and input.
-- `shadow_cube`: graph-declared directional shadow map with a transient scene
-  color target and fullscreen present pass.
+- `spinning_cube`: primitive cube mesh with shared transform/camera math and depth.
+- `textured_cube`: primitive cube mesh, compute-generated texture, descriptors,
+  scene lighting, and input.
+- `shadow_cube`: primitive cube/plane meshes, graph-declared directional shadow
+  map, transient scene color target, and fullscreen triangle present pass.
 - `headless_render`: no-window offscreen PNG path.
 - `fractal`: fullscreen Mandelbrot-style shader with windowed navigation and
   headless output.
