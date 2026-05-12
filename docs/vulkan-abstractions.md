@@ -127,7 +127,8 @@ Current state:
   current binary-semaphore `VkSubmitInfo` shape used by frame submit and
   immediate commands.
 - `SubmissionCoordinator` serializes queue submission and issues monotonic GPU
-  submission tickets. `RenderContext` submits frames through it and marks
+  submission tickets. `RenderContext` routes frame submission/present through
+  `GpuRuntime`, which uses the coordinator on the GPU owner thread and marks
   frame-slot tickets completed after the matching fence wait.
 - `GpuRuntime` is the host-owned GPU work queue and owner-thread context.
   Windowed/headless hosts expose it through their contexts and run it threaded
@@ -147,7 +148,7 @@ Needed next:
 
 - Debug-label helpers once marker scope becomes useful during capture/debugging.
 - One-shot compute/transfer helper vocabulary.
-- Move remaining app/project upload, readback, and capture requests toward
+- Move remaining direct app/project transfer and capture requests toward
   runtime-queued work and explicit completion tickets.
 - Per-frame/per-thread command-pool sharding before any parallel command
   recording.
@@ -174,8 +175,8 @@ Current state:
   render target and color-attachment-to-readback transition used by headless
   output.
 - `HeadlessPngHost` owns the repeated no-window offscreen target, capture
-  transition, runtime-queued capture recording, image readback, and PNG
-  artifact write path.
+  transition, runtime-queued capture recording, project-GPU readback ticket,
+  and PNG artifact write path.
 - `cubey::render::Texture2D` now owns the current generated/uploaded sampled
   texture image shape above the raw Vulkan `Image` and optional `Sampler`.
 - `cubey::render::DepthTexture` owns sampled depth image setup for shadow maps
@@ -185,9 +186,10 @@ Current state:
   shadow and edge-clamped sampling policy can be explicit.
 - Examples still own some resource policy, including when transfers and
   readback are used.
-- GPU upload/readback behavior is still direct/blocking in low-level transfer
-  helpers; the host-visible capture-record path now goes through `GpuRuntime`
-  and uses inline execution only when explicitly configured.
+- Low-level upload/readback helpers remain synchronous building blocks. The
+  host-visible capture-record path now goes through `GpuRuntime`, and
+  project-facing RGBA8 image readback goes through `ProjectGpuServices`
+  tickets.
 
 Needed next:
 
@@ -372,16 +374,16 @@ Current state:
   the first async-ready project runtime vocabulary, service ownership bundle,
   and thin host bridge.
 - `ProjectGpuServices` provides the optional project-facing GPU bridge for
-  upload draining, upload ticket status, and deferred retirement by completed
-  GPU submission ticket.
+  upload draining, upload ticket status, RGBA8 image readback tickets, and
+  deferred retirement by completed GPU submission ticket.
 - `ImmediateCommands`, readback helpers, and PNG output are still synchronous
   where they wait for immediate GPU work or process completed pixels.
 
 Needed next:
 
-- GPU readback/capture polling APIs.
-- Project-runtime integration between GPU submission tickets and deferred
-  destruction/readback readiness.
+- GPU readback/capture polling APIs beyond explicit drain/take handoff.
+- Broader project-runtime integration between GPU submission tickets,
+  readback/capture readiness, and deferred destruction.
 - Vulkan timeline-semaphore integration if binary fences stop being enough.
 
 Defer:

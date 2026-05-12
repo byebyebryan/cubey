@@ -177,6 +177,23 @@ creating a generic project host.
 - A broader project host remains deferred until another `projects/` target
   repeats the same lifecycle bridge.
 
+### Checkpoint 5
+
+Status: project GPU services integration complete.
+
+Goal: keep `fluid_2d` on the async-ready runtime path without introducing a
+generic project host.
+
+- The project runtime adapter now attaches to the host `GpuRuntime` in windowed
+  and headless modes.
+- Project-owned field uploads run through `cubey::ProjectGpuServices` instead
+  of using the host GPU runtime directly.
+- Headless simulation frame work runs through `ProjectGpuServices`; the
+  headless host still owns the offscreen target, capture transition, and PNG
+  artifact path.
+- Windowed frame command recording remains project-local because pass order,
+  barriers, descriptors, and shader policy are still part of the fluid project.
+
 ## Commands
 
 ```bash
@@ -190,5 +207,5 @@ creating a generic project host.
 - Add obstacle masks and boundary-condition debug views.
 - Consider a project-local HUD only if title-bar stats are not enough.
 - Revisit reusable helpers when buffer ping-pong descriptors, fixed-step
-  simulation orchestration, or GPU capture polling have a clear shared contract
-  across the fluid projects.
+  simulation orchestration, or capture/readback polling have a clear shared
+  contract across the fluid projects.

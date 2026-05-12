@@ -215,9 +215,10 @@ interactive path non-stalling.
 
 Initial implementation: `cubey::CaptureQueue` accepts completed RGBA8 pixel
 buffers and schedules PNG encoding through `cubey::jobs`, returning a
-`CaptureTicket` whose `finish()` call makes the blocking wait explicit. GPU
-readback is still direct in current examples; later slices should move the GPU
-copy/poll side behind the same request/ticket vocabulary.
+`CaptureTicket` whose `finish()` call makes the blocking wait explicit.
+`cubey::ProjectGpuServices` now provides the GPU-side counterpart for RGBA8
+image readback: enqueue a readback ticket, drain the GPU runtime at an explicit
+boundary, then take the completed pixel payload.
 
 `cubey::UploadQueue` is the first upload-side request queue. It owns submitted
 CPU bytes, returns monotonic `UploadTicket` values, and tracks pending,
@@ -231,8 +232,8 @@ monotonic GPU submission tickets and marks frame-slot tickets completed after
 their fence wait. `cubey::ProjectGpuServices` now owns the project-facing bridge
 from upload tickets and deferred destruction to GPU submission completion. It
 drains pending uploads into owner-thread GPU work, marks upload tickets
-completed or failed, and retires deferred destruction using the completed GPU
-submission ticket reported by `GpuRuntime`.
+completed or failed, tracks RGBA8 image readback tickets, and retires deferred
+destruction using the completed GPU submission ticket reported by `GpuRuntime`.
 
 `cubey::vulkan::GpuRuntime` is now the first host-owned GPU work queue. It
 accepts labeled `GpuWorkRequest` callbacks from any thread, exposes a
@@ -426,8 +427,11 @@ Status: threaded default plus inline test mode complete.
   `HeadlessPngHost` capture recording now route through the runtime while still
   preserving a synchronous setup/capture shape at the call site.
 - Added `ProjectGpuServices` for project-facing upload draining, upload
-  completion/failure status, and deferred destruction retirement from completed
-  GPU submission tickets.
+  completion/failure status, RGBA8 image readback tickets, and deferred
+  destruction retirement from completed GPU submission tickets.
+- `fluid_2d` now attaches its `ProjectRuntimeAdapter` to the host GPU runtime
+  and routes project-owned field uploads plus headless simulation work through
+  `ProjectGpuServices`.
 
 ### Slice 6: Parallel Command Recording And Split Queues
 
@@ -446,5 +450,6 @@ Status: threaded default plus inline test mode complete.
   `BS::thread_pool` behind the same API?
 - Should `ProjectRuntimeAdapter` grow into a project host, or should the next
   project keep using the windowed/headless hosts directly?
-- Should GPU capture polling, queued uploads, or project-runtime deferred
-  destruction become the next consumer of GPU submission tickets?
+- Should GPU capture polling integrate directly with `CaptureQueue`, or remain
+  a separate project-facing ticket API that hands completed pixels to the
+  capture queue?

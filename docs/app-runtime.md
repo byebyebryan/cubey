@@ -107,6 +107,9 @@ resource creation/destruction, update, command recording, and shutdown.
 13. Extract `ProjectRuntimeAdapter` for the repeated host bridge: one project
     frame per host frame, context access, and deferred destruction retirement.
     Status: complete.
+14. Attach host GPU runtimes to `ProjectRuntimeAdapter`, add
+    `ProjectGpuServices` readback tickets, and migrate `fluid_2d` project-owned
+    GPU setup/headless simulation work through that bridge. Status: complete.
 
 ## Current Checkpoint
 
@@ -180,9 +183,10 @@ resource creation/destruction, update, command recording, and shutdown.
   sequence, and example-specific state.
 - `cubey::HeadlessPngHost` owns the repeated no-window Vulkan instance/device,
   submission coordinator, GPU runtime, offscreen RGBA target,
-  color-attachment/readback transitions, image readback, and PNG write path
-  without depending on GLFW. Its target view uses the same
-  `cubey::render::ColorTargetView` vocabulary as the windowed path.
+  color-attachment/readback transitions, ticketed RGBA8 image readback through
+  `ProjectGpuServices`, and PNG write path without depending on GLFW. Its
+  target view uses the same `cubey::render::ColorTargetView` vocabulary as the
+  windowed path.
 - `headless_render`, `fractal --headless`, and `fluid_2d --headless` use the
   headless host while keeping their resource setup, simulation/update work, and
   capture command recording sequence local.
@@ -203,9 +207,11 @@ resource creation/destruction, update, command recording, and shutdown.
 - `cubey::ProjectGpuServices` is the optional GPU-facing project bridge for
   draining queued uploads into owner-thread GPU work, marking upload completion
   or failure, routing queue-idle waits through `GpuRuntime`, and retiring
-  deferred work by completed GPU submission tickets.
+  deferred work by completed GPU submission tickets. It also owns project-level
+  RGBA8 image readback tickets with pending/completed/failed status and
+  completed pixel payload handoff.
 - A generic project host is still deferred; the current contract is limited to
-  shared service ownership and frame bridging.
+  shared service ownership, GPU bridge attachment, and frame bridging.
 
 ## Foundation Rules
 

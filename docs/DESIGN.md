@@ -157,7 +157,8 @@ Cubey now has two narrow hosts:
 
 - `cubey_app` owns GLFW window/surface hosting and the shared windowed loop.
 - `cubey::HeadlessPngHost` owns no-window Vulkan setup, an offscreen RGBA
-  target, capture transitions, readback, and PNG artifact writing.
+  target, capture transitions, ticketed RGBA8 readback, and PNG artifact
+  writing.
 - `cubey::Engine` owns project runtime services and created scenes. Windowed
   and headless hosts still own platform and Vulkan setup until a later renderer
   ownership pass. Engine-created scenes validate renderable mesh/material
@@ -178,8 +179,9 @@ requests are queued, and one GPU owner serializes queue submission and resource
 lifetime decisions. Today that GPU owner is `cubey::vulkan::GpuRuntime`, backed
 by `SubmissionCoordinator` for actual queue submission and threaded by default
 in hosts. `cubey::ProjectGpuServices` is the project-facing bridge for queued
-uploads, upload completion status, owner-thread queue-idle waits, and deferred
-GPU retirement without handing project code the raw submission coordinator.
+uploads, upload completion status, RGBA8 image readback tickets, owner-thread
+queue-idle waits, and deferred GPU retirement without handing project code the
+raw submission coordinator.
 
 ```cpp
 struct App {
@@ -347,6 +349,7 @@ cubey/
       orbit_controller.h   -- basic orbit input state
       pan_zoom_2d_controller.h -- input-driven 2D camera pan/zoom controller
       pointer_drag.h       -- shared pointer drag helper
+      project_gpu_services.h -- project-facing GPU uploads/readbacks/retirement
       project_runtime.h    -- async-ready project vocabulary
       light_manager.h      -- entity-backed 3D light components
       renderable_manager.h -- entity-backed 3D renderable components
@@ -394,6 +397,7 @@ cubey/
       orbit_controller.cpp
       pan_zoom_2d_controller.cpp
       pointer_drag.cpp
+      project_gpu_services.cpp
       project_runtime.cpp
       spirv_io.cpp
       upload_queue.cpp
