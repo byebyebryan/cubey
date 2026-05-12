@@ -5,6 +5,7 @@
 #include <cubey/host/windowed_host.h>
 #include <cubey/render/material.h>
 #include <cubey/render/mesh.h>
+#include <cubey/render/primitive_mesh.h>
 #include <cubey/render/render_item.h>
 #include <cubey/render/resource_handle.h>
 #include <cubey/render/resource_table.h>
@@ -62,43 +63,6 @@ cubey::render::MaterialPassInfo spinning_cube_forward_pass_info() {
         .depth_write = true,
     };
 }
-
-struct Vertex {
-    std::array<float, 3> position;
-    std::array<float, 3> color;
-};
-
-constexpr std::array<Vertex, 24> kCubeVertices{{
-    Vertex{{-1.0F, -1.0F, 1.0F}, {0.95F, 0.25F, 0.18F}},
-    Vertex{{1.0F, -1.0F, 1.0F}, {0.95F, 0.25F, 0.18F}},
-    Vertex{{1.0F, 1.0F, 1.0F}, {0.95F, 0.25F, 0.18F}},
-    Vertex{{-1.0F, 1.0F, 1.0F}, {0.95F, 0.25F, 0.18F}},
-    Vertex{{1.0F, -1.0F, -1.0F}, {0.18F, 0.56F, 0.95F}},
-    Vertex{{-1.0F, -1.0F, -1.0F}, {0.18F, 0.56F, 0.95F}},
-    Vertex{{-1.0F, 1.0F, -1.0F}, {0.18F, 0.56F, 0.95F}},
-    Vertex{{1.0F, 1.0F, -1.0F}, {0.18F, 0.56F, 0.95F}},
-    Vertex{{-1.0F, -1.0F, -1.0F}, {0.22F, 0.78F, 0.42F}},
-    Vertex{{-1.0F, -1.0F, 1.0F}, {0.22F, 0.78F, 0.42F}},
-    Vertex{{-1.0F, 1.0F, 1.0F}, {0.22F, 0.78F, 0.42F}},
-    Vertex{{-1.0F, 1.0F, -1.0F}, {0.22F, 0.78F, 0.42F}},
-    Vertex{{1.0F, -1.0F, 1.0F}, {0.96F, 0.76F, 0.18F}},
-    Vertex{{1.0F, -1.0F, -1.0F}, {0.96F, 0.76F, 0.18F}},
-    Vertex{{1.0F, 1.0F, -1.0F}, {0.96F, 0.76F, 0.18F}},
-    Vertex{{1.0F, 1.0F, 1.0F}, {0.96F, 0.76F, 0.18F}},
-    Vertex{{-1.0F, 1.0F, 1.0F}, {0.65F, 0.34F, 0.95F}},
-    Vertex{{1.0F, 1.0F, 1.0F}, {0.65F, 0.34F, 0.95F}},
-    Vertex{{1.0F, 1.0F, -1.0F}, {0.65F, 0.34F, 0.95F}},
-    Vertex{{-1.0F, 1.0F, -1.0F}, {0.65F, 0.34F, 0.95F}},
-    Vertex{{-1.0F, -1.0F, -1.0F}, {0.18F, 0.82F, 0.82F}},
-    Vertex{{1.0F, -1.0F, -1.0F}, {0.18F, 0.82F, 0.82F}},
-    Vertex{{1.0F, -1.0F, 1.0F}, {0.18F, 0.82F, 0.82F}},
-    Vertex{{-1.0F, -1.0F, 1.0F}, {0.18F, 0.82F, 0.82F}},
-}};
-
-constexpr std::array<std::uint16_t, 36> kCubeIndices{{
-    0,  1,  2,  0,  2,  3,  4,  5,  6,  4,  6,  7,  8,  9,  10, 8,  10, 11,
-    12, 13, 14, 12, 14, 15, 16, 17, 18, 16, 18, 19, 20, 21, 22, 20, 22, 23,
-}};
 
 class SpinningCubeApp {
   public:
@@ -206,20 +170,8 @@ class SpinningCubeApp {
             fragment_stage,
         };
 
-        VkVertexInputBindingDescription vertex_binding{};
-        vertex_binding.binding = 0;
-        vertex_binding.stride = sizeof(Vertex);
-        vertex_binding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-
-        std::array<VkVertexInputAttributeDescription, 2> vertex_attributes{};
-        vertex_attributes[0].location = 0;
-        vertex_attributes[0].binding = 0;
-        vertex_attributes[0].format = VK_FORMAT_R32G32B32_SFLOAT;
-        vertex_attributes[0].offset = offsetof(Vertex, position);
-        vertex_attributes[1].location = 1;
-        vertex_attributes[1].binding = 0;
-        vertex_attributes[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-        vertex_attributes[1].offset = offsetof(Vertex, color);
+        const cubey::render::VertexInputLayout vertex_input =
+            cubey::render::vertex_position_color_input_layout();
 
         const cubey::render::MaterialPassInfo material_pass =
             spinning_cube_forward_pass_info();
@@ -236,8 +188,8 @@ class SpinningCubeApp {
         pipeline_config.color_format = context.swapchain().format();
         pipeline_config.depth_format = depth_attachment().format();
         pipeline_config.shader_stages = shader_stages;
-        pipeline_config.vertex_bindings = {&vertex_binding, 1};
-        pipeline_config.vertex_attributes = vertex_attributes;
+        pipeline_config.vertex_bindings = vertex_input.bindings();
+        pipeline_config.vertex_attributes = vertex_input.attribute_descriptions();
         cubey::render::apply_material_pass_state(material_pass, pipeline_config);
         const cubey::vulkan::DynamicGraphicsPipelineInfo pipeline_info(pipeline_config);
         pipeline_.emplace(context.device(), pipeline_info.create_info());
@@ -248,8 +200,9 @@ class SpinningCubeApp {
     }
 
     void create_cube_mesh(cubey::host::WindowedAppContext& context) {
-        meshes_.emplace(cube_mesh_handle_, context.gpu(),
-                        cubey::render::indexed_mesh_config(kCubeVertices, kCubeIndices));
+        const cubey::render::PrimitiveMeshData<cubey::render::VertexPositionColor> cube =
+            cubey::render::make_cube_position_color_mesh();
+        meshes_.emplace(cube_mesh_handle_, context.gpu(), cube.mesh_config());
     }
 
     void create_scene() {
