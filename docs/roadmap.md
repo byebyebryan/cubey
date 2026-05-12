@@ -15,9 +15,10 @@ See the [architecture notes](architecture/README.md), especially the
 framework layers and foundation rules,
 [renderer foundation](architecture/renderer-foundation.md) for the first
 `cubey::render` contracts above Vulkan,
-[render graph direction](architecture/render-graph.md) for future pass/resource
-graph vocabulary, [host and engine](architecture/host-engine.md) for the
-GLFW/windowed host and scoped engine ownership path, and
+[render graph direction](architecture/render-graph.md) for current and future
+pass/resource graph vocabulary,
+[host and engine](architecture/host-engine.md) for the GLFW/windowed host and
+scoped engine ownership path, and
 [threading and async design](architecture/threading-and-async.md) for the
 async-ready runtime boundary.
 
@@ -183,12 +184,12 @@ Current checkpoint:
   small explicit pass-list contract for multi-view and multi-pass command
   recording without introducing a render graph.
 - Reusable `cubey::render::RenderGraphBuilder` and `CompiledRenderGraph`
-  provide the first render graph declaration and validation layer for
-  imported/transient texture and buffer resources, ordered
+  provide the first render graph declaration, validation, and synchronous
+  execution shell for imported/transient texture and buffer resources, ordered
   graphics/compute/transfer passes, and pass/resource usage. `shadow_cube`
-  now declares its shadow-depth and scene-color flow through this layer, while
-  explicit Vulkan code still executes passes, owns resources, records layout
-  transitions, and handles the final present transition.
+  now declares and executes its shadow-depth and scene-color flow through this
+  layer, while pass callbacks still own explicit Vulkan resources, layout
+  transitions, command recording, and the final present transition.
 - Reusable `cubey::vulkan::PipelineLayout`, `GraphicsPipeline`,
   `ComputePipeline`, `DescriptorSetLayout`, and `DescriptorPool` own basic
   pipeline and descriptor lifetimes while still taking raw Vulkan create-info
@@ -251,9 +252,10 @@ Current checkpoint:
   projection, and shared math helpers through the shared host layer.
 - `examples/shadow_cube` links against `cubey`, records a manual two-pass frame
   with a depth-only directional shadow map pass followed by a color pass that
-  samples the depth texture, and exercises orthographic `Camera3D`, sampled
-  depth targets, depth-only dynamic rendering, explicit sampled-depth layout
-  transitions, and CPU pass planning.
+  samples the depth texture, executes those pass bodies through
+  `CompiledRenderGraph`, and exercises orthographic `Camera3D`, sampled depth
+  targets, depth-only dynamic rendering, explicit sampled-depth layout
+  transitions, render-graph pass declarations, and CPU pass planning.
 - `examples/headless_render` links against `cubey`, creates no GLFW window or
   surface, renders an offscreen color target through dynamic rendering, copies
   it into a readback buffer, and writes a PNG artifact.

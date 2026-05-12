@@ -135,10 +135,12 @@ full engine architecture.
 - `cubey::render::RenderGraphBuilder` provides the first graph declaration and
   validation layer for imported/transient texture and buffer resources,
   graphics/compute/transfer passes, and ordered pass/resource usage. It
-  compiles declarations only; execution, barrier generation, resource
-  allocation, and pass reordering remain future work. `shadow_cube` now
-  declares its shadow-depth and scene-color pass/resource flow through this
-  layer while keeping explicit Vulkan transitions and recording.
+  compiles declarations and `CompiledRenderGraph::execute()` invokes pass
+  callbacks synchronously in compiled order. Barrier generation, resource
+  allocation, pass reordering, and async scheduling remain future work.
+  `shadow_cube` now declares and executes its shadow-depth and scene-color
+  pass/resource flow through this layer while keeping explicit Vulkan
+  transitions and command recording inside the callbacks.
 - `cubey::vulkan::CommandRecorder` is the current low-level recording helper
   used by examples and `fluid_2d` for common Vulkan command-buffer calls. It
   does not own pass scheduling, automatic barriers, descriptor policy, or
@@ -170,10 +172,11 @@ full engine architecture.
 build a shadow `cubey::scene::View3D`, build a camera `cubey::scene::View3D`,
 record a depth-only pass into a `DepthTexture`, transition that image for shader
 reads, then record the color pass that samples it. The example also declares
-the same pass/resource flow through `RenderGraphBuilder`, proving the graph
-vocabulary without handing execution to the graph. The reusable foundation
+the same pass/resource flow through `RenderGraphBuilder` and enters those
+passes through `CompiledRenderGraph::execute()`. The reusable foundation
 intentionally stops at view/pass planning, render-item draw intent,
 target/texture ownership, layout-transition helpers, material pass metadata,
-and depth-only rendering info. `CommandRecorder` keeps the repeated
-command-buffer calls compact. Render-graph scheduling, automatic resource
-barriers, automatic material binding, and shadow policy remain future work.
+depth-only rendering info, and synchronous pass-callback execution.
+`CommandRecorder` keeps the repeated command-buffer calls compact.
+Render-graph scheduling, automatic resource barriers, automatic material
+binding, and shadow policy remain future work.

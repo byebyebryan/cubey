@@ -2,7 +2,8 @@
 
 This note maps Cubey's render graph direction before the renderer grows more
 pass-heavy. It is both a design checkpoint and the current implementation
-boundary for the declaration/validation layer. The near-term goal is to keep
+boundary for the declaration, validation, and synchronous execution shell. The
+near-term goal is to keep
 upcoming renderer, material, shadow, postprocess, readback, and async work
 compatible with a future graph without forcing every example through a graph
 executor now.
@@ -50,17 +51,26 @@ render vocabulary, not replace the Vulkan layer or move scene policy into
 `cubey::render::RenderGraphBuilder` is the first graph declaration layer. It
 can import swapchain/offscreen color targets, depth targets, textures, and
 buffers; create transient texture and buffer declarations; declare ordered
-graphics, compute, and transfer passes; and compile those declarations into a
-validated `CompiledRenderGraph`.
+graphics, compute, and transfer passes; attach optional pass callbacks; and
+compile those declarations into a validated `CompiledRenderGraph`.
 
 The compiled graph preserves pass insertion order and resource usage
 declarations. It validates graph-local handles, imported versus transient
 resource availability, queue-domain restrictions, attachment/storage aspect
 rules, and incompatible same-pass resource access.
 
-It does not execute passes, create Vulkan resources, generate barriers, infer
-layouts, allocate descriptors, reorder passes, cull passes, alias transient
-memory, or migrate existing examples.
+`CompiledRenderGraph::execute()` runs each compiled pass callback in order and
+passes a `RenderGraphExecutionContext` that exposes the graph, current pass,
+pass index, and declared resources. Missing callbacks fail at execute time, not
+compile time, so declaration-only tests and diagnostics can still compile a
+graph without recording work. The callback body still captures the app-owned
+command recorder, pipelines, descriptors, and concrete resources it needs.
+
+It does not create Vulkan resources, generate barriers, infer layouts, allocate
+descriptors, reorder passes, cull passes, alias transient memory, or schedule
+async work. `examples/shadow_cube` is the first reference migration: the graph
+now executes its shadow pass and scene pass callbacks, while those callbacks
+still record explicit Vulkan layout transitions and draw commands.
 
 ## Boundary
 
@@ -104,9 +114,11 @@ resolved resources + explicit command recording through cubey::vulkan
   or transfer source/destination. In v1, present remains host/swapchain-owned:
   the backbuffer is declared as a color attachment write, then explicit Vulkan
   code transitions it for presentation.
-- **Compile**: validation and derivation of pass order, resource lifetime, and
-  synchronization needs from declarations.
-- **Execute**: command recording using resolved resources.
+- **Compile**: validation and derivation of pass order plus declared resource
+  lifetime from graph declarations. Synchronization requirements are not derived
+  yet.
+- **Execute**: synchronous pass-callback invocation in compiled pass order.
+  Callbacks receive declaration context and record Vulkan commands explicitly.
 - **Queue domain**: the queue class a pass expects, initially graphics or
   compute. Split queues remain future work.
 
@@ -121,50 +133,48 @@ auto shadow_map = graph.create_texture("shadow map", shadow_desc);
 
 graph.add_pass("shadow")
     .write_depth(shadow_map)
-    .execute([](RenderGraphExecutionContext& ctx) {
-        // Record depth-only commands with resolved resources.
+    .execute([](const RenderGraphExecutionContext& ctx) {
+        // Record depth-only commands with app-owned resources.
     });
 
 graph.add_pass("scene")
     .read_texture(shadow_map)
     .write_color(backbuffer)
     .write_depth(depth)
-    .execute([](RenderGraphExecutionContext& ctx) {
-        // Record color pass commands with resolved resources.
+    .execute([](const RenderGraphExecutionContext& ctx) {
+        // Record color pass commands with app-owned resources.
     });
 ```
 
-This is illustrative vocabulary, not a committed header design. The important
-contract is that setup declares resource use before execution records commands.
-That matches the established pattern in Filament FrameGraph and Unity Render
-Graph while preserving Cubey's Vulkan-first command recording. `shadow_cube`
-now exercises this declaration shape for its depth-only shadow pass and color
-scene pass while still recording commands and layout transitions manually.
+The important contract is that setup declares resource use before execution
+records commands. That matches the established pattern in Filament FrameGraph
+and Unity Render Graph while preserving Cubey's Vulkan-first command recording.
+`shadow_cube` now exercises this declaration and execution shape for its
+depth-only shadow pass and color scene pass while still recording commands and
+layout transitions manually.
 
 ## Implementation Slices
 
-The first implementation slice is intentionally small:
+Completed slices:
 
-1. Declaration types and unit tests only. No executor.
+1. Declaration types and unit tests.
 2. Imported color/depth targets, imported textures, transient textures, and
    buffer handles.
 3. Preserved pass insertion order in compile output.
 4. Validation for missing resources, invalid handles, read-before-write for
    non-imported resources, and duplicate incompatible same-pass access.
-5. Pass culling disabled by default.
+5. Synchronous execution callbacks on compiled passes.
+6. `shadow_cube` migration to execute the shadow and scene pass bodies through
+   the graph shell.
 
-This makes the first code slice a validation and vocabulary layer rather than a
-renderer rewrite.
-
-Future slices should add an execution callback shell only after declaration
-validation is useful on its own, then migrate `shadow_cube` or a postprocess
-example as the first reference graph. Barrier generation should either stay
-explicit or emit named transition requirements that still map directly to
+This keeps the graph as a validation, vocabulary, and pass-ordering shell
+rather than a renderer rewrite. Barrier generation should either stay explicit
+or emit named transition requirements that still map directly to
 `cubey::vulkan::ImageLayoutTransition`.
 
 ## Adoption Triggers
 
-Implement graph code when at least one of these becomes active work:
+Expand graph code when at least one of these becomes active work:
 
 - a second multipass example repeats shadow-map target and barrier plumbing;
 - bloom, tone mapping, TAA, or another postprocess chain introduces

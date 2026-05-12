@@ -10,8 +10,9 @@ than the root design and roadmap.
   commits, and transform manager direction.
 - [Fluid simulation direction](fluid-simulation.md): project direction for
   2D/2.5D/3D fluid work.
-- [Render graph direction](render-graph.md): future pass/resource graph
-  vocabulary, adoption triggers, and deferred complexity.
+- [Render graph direction](render-graph.md): current and future pass/resource
+  graph vocabulary, execution boundary, adoption triggers, and deferred
+  complexity.
 - [Renderer foundation](renderer-foundation.md): `cubey::render` contracts
   that sit above Vulkan.
 - [Threading and async](threading-and-async.md): CPU jobs, queued GPU work,
