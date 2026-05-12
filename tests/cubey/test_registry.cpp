@@ -66,6 +66,10 @@ void test_light_manager_rejects_invalid_edits();
 void test_light_manager_skips_invisible_lights_without_transform();
 void test_light_manager_updates_keep_epoch_local_snapshots();
 void test_light_packets_require_transform_for_point_lights();
+void test_material_info_defaults_to_depth_and_forward_passes();
+void test_material_pass_info_applies_graphics_pipeline_state();
+void test_material_pass_info_validates_descriptor_and_push_constant_shape();
+void test_material_pass_masks_include_requested_passes();
 void test_math_helpers_match_vulkan_projection_conventions();
 void test_math_quaternion_helpers_match_rotation_matrices();
 void test_orbit_controller_tracks_rotation_drag_pause_and_reset();
@@ -232,6 +236,10 @@ std::span<const TestCase> core_tests() {
         CUBEY_TEST(test_light_manager_rejects_invalid_edits),
         CUBEY_TEST(test_light_manager_skips_invisible_lights_without_transform),
         CUBEY_TEST(test_light_packets_require_transform_for_point_lights),
+        CUBEY_TEST(test_material_info_defaults_to_depth_and_forward_passes),
+        CUBEY_TEST(test_material_pass_masks_include_requested_passes),
+        CUBEY_TEST(test_material_pass_info_validates_descriptor_and_push_constant_shape),
+        CUBEY_TEST(test_material_pass_info_applies_graphics_pipeline_state),
         CUBEY_TEST(test_math_helpers_match_vulkan_projection_conventions),
         CUBEY_TEST(test_math_quaternion_helpers_match_rotation_matrices),
         CUBEY_TEST(test_orbit_controller_tracks_rotation_drag_pause_and_reset),

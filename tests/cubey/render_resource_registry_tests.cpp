@@ -111,8 +111,28 @@ void test_render_resource_registry_round_trips_mesh_and_material_info() {
     require(material_info.blend == cubey::render::MaterialBlendMode::AlphaBlend,
             "material blend mode should round-trip");
     require(material_info.sort_key == 42, "material sort key should round-trip");
+    require(cubey::render::material_supports_pass(
+                material_info, cubey::render::MaterialPassKind::DepthOnly),
+            "material pass mask should default to depth-only support");
+    require(cubey::render::material_supports_pass(
+                material_info, cubey::render::MaterialPassKind::ForwardColor),
+            "material pass mask should default to forward-color support");
     require(default_info.blend == cubey::render::MaterialBlendMode::Opaque,
             "string material creation should use opaque blend by default");
+
+    const cubey::render::MaterialHandle forward_material =
+        registry.create_material(cubey::render::MaterialInfo{
+            .label = "forward only",
+            .pass_mask =
+                cubey::render::material_pass_mask(cubey::render::MaterialPassKind::ForwardColor),
+        });
+    const cubey::render::MaterialInfo forward_info = registry.material_info(forward_material);
+    require(!cubey::render::material_supports_pass(
+                forward_info, cubey::render::MaterialPassKind::DepthOnly),
+            "custom material pass mask should round-trip excluded depth-only pass");
+    require(cubey::render::material_supports_pass(
+                forward_info, cubey::render::MaterialPassKind::ForwardColor),
+            "custom material pass mask should round-trip included forward pass");
 
     registry.destroy_mesh(mesh);
     registry.destroy_material(material);

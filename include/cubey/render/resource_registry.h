@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cubey/render/material.h>
 #include <cubey/render/resource_handle.h>
 
 #include <cstdint>
@@ -15,22 +16,6 @@ namespace cubey::render {
 
 struct MeshInfo {
     std::string label{};
-};
-
-enum class MaterialDomain : std::uint8_t {
-    Surface3D,
-};
-
-enum class MaterialBlendMode : std::uint8_t {
-    Opaque,
-    AlphaBlend,
-};
-
-struct MaterialInfo {
-    std::string label{};
-    MaterialDomain domain = MaterialDomain::Surface3D;
-    MaterialBlendMode blend = MaterialBlendMode::Opaque;
-    std::uint32_t sort_key = 0;
 };
 
 namespace detail {

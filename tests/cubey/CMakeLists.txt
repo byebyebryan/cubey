@@ -23,6 +23,7 @@ add_executable(cubey_core_tests
     light_manager_tests.cpp
     input_tests.cpp
     main.cpp
+    material_pass_tests.cpp
     math_tests.cpp
     orbit_controller_tests.cpp
     pipeline_tests.cpp
