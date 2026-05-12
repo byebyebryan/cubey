@@ -8,6 +8,7 @@
 #include <cubey/input/orbit_controller.h>
 #include <cubey/render/material.h>
 #include <cubey/render/mesh.h>
+#include <cubey/render/primitive_mesh.h>
 #include <cubey/render/render_item.h>
 #include <cubey/render/resource_handle.h>
 #include <cubey/render/resource_table.h>
@@ -56,6 +57,7 @@ constexpr std::uint32_t kTextureWidth = 64;
 constexpr std::uint32_t kTextureHeight = 64;
 constexpr VkFormat kTextureFormat = VK_FORMAT_R8G8B8A8_UNORM;
 constexpr std::uint32_t kTextureComputeGroupSize = 8;
+constexpr std::uint32_t kCubeTriangleCount = 12;
 
 std::filesystem::path shader_path(const char* filename) {
     return std::filesystem::path(CUBEY_TEXTURED_CUBE_SHADER_DIR) / filename;
@@ -101,44 +103,14 @@ cubey::render::MaterialPassInfo textured_cube_forward_pass_info() {
     };
 }
 
-struct Vertex {
-    std::array<float, 3> position;
-    std::array<float, 3> color;
-    std::array<float, 3> normal;
-    std::array<float, 2> uv;
+constexpr std::array<cubey::render::PrimitiveVec3, 6> kCubeFaceColors{
+    cubey::render::PrimitiveVec3{1.0F, 0.92F, 0.86F},
+    cubey::render::PrimitiveVec3{0.86F, 0.94F, 1.0F},
+    cubey::render::PrimitiveVec3{0.9F, 1.0F, 0.9F},
+    cubey::render::PrimitiveVec3{1.0F, 0.96F, 0.78F},
+    cubey::render::PrimitiveVec3{0.96F, 0.9F, 1.0F},
+    cubey::render::PrimitiveVec3{0.86F, 1.0F, 1.0F},
 };
-
-constexpr std::array<Vertex, 24> kCubeVertices{{
-    Vertex{{-1.0F, -1.0F, 1.0F}, {1.0F, 0.92F, 0.86F}, {0.0F, 0.0F, 1.0F}, {0.0F, 0.0F}},
-    Vertex{{1.0F, -1.0F, 1.0F}, {1.0F, 0.92F, 0.86F}, {0.0F, 0.0F, 1.0F}, {1.0F, 0.0F}},
-    Vertex{{1.0F, 1.0F, 1.0F}, {1.0F, 0.92F, 0.86F}, {0.0F, 0.0F, 1.0F}, {1.0F, 1.0F}},
-    Vertex{{-1.0F, 1.0F, 1.0F}, {1.0F, 0.92F, 0.86F}, {0.0F, 0.0F, 1.0F}, {0.0F, 1.0F}},
-    Vertex{{1.0F, -1.0F, -1.0F}, {0.86F, 0.94F, 1.0F}, {0.0F, 0.0F, -1.0F}, {0.0F, 0.0F}},
-    Vertex{{-1.0F, -1.0F, -1.0F}, {0.86F, 0.94F, 1.0F}, {0.0F, 0.0F, -1.0F}, {1.0F, 0.0F}},
-    Vertex{{-1.0F, 1.0F, -1.0F}, {0.86F, 0.94F, 1.0F}, {0.0F, 0.0F, -1.0F}, {1.0F, 1.0F}},
-    Vertex{{1.0F, 1.0F, -1.0F}, {0.86F, 0.94F, 1.0F}, {0.0F, 0.0F, -1.0F}, {0.0F, 1.0F}},
-    Vertex{{-1.0F, -1.0F, -1.0F}, {0.9F, 1.0F, 0.9F}, {-1.0F, 0.0F, 0.0F}, {0.0F, 0.0F}},
-    Vertex{{-1.0F, -1.0F, 1.0F}, {0.9F, 1.0F, 0.9F}, {-1.0F, 0.0F, 0.0F}, {1.0F, 0.0F}},
-    Vertex{{-1.0F, 1.0F, 1.0F}, {0.9F, 1.0F, 0.9F}, {-1.0F, 0.0F, 0.0F}, {1.0F, 1.0F}},
-    Vertex{{-1.0F, 1.0F, -1.0F}, {0.9F, 1.0F, 0.9F}, {-1.0F, 0.0F, 0.0F}, {0.0F, 1.0F}},
-    Vertex{{1.0F, -1.0F, 1.0F}, {1.0F, 0.96F, 0.78F}, {1.0F, 0.0F, 0.0F}, {0.0F, 0.0F}},
-    Vertex{{1.0F, -1.0F, -1.0F}, {1.0F, 0.96F, 0.78F}, {1.0F, 0.0F, 0.0F}, {1.0F, 0.0F}},
-    Vertex{{1.0F, 1.0F, -1.0F}, {1.0F, 0.96F, 0.78F}, {1.0F, 0.0F, 0.0F}, {1.0F, 1.0F}},
-    Vertex{{1.0F, 1.0F, 1.0F}, {1.0F, 0.96F, 0.78F}, {1.0F, 0.0F, 0.0F}, {0.0F, 1.0F}},
-    Vertex{{-1.0F, 1.0F, 1.0F}, {0.96F, 0.9F, 1.0F}, {0.0F, 1.0F, 0.0F}, {0.0F, 0.0F}},
-    Vertex{{1.0F, 1.0F, 1.0F}, {0.96F, 0.9F, 1.0F}, {0.0F, 1.0F, 0.0F}, {1.0F, 0.0F}},
-    Vertex{{1.0F, 1.0F, -1.0F}, {0.96F, 0.9F, 1.0F}, {0.0F, 1.0F, 0.0F}, {1.0F, 1.0F}},
-    Vertex{{-1.0F, 1.0F, -1.0F}, {0.96F, 0.9F, 1.0F}, {0.0F, 1.0F, 0.0F}, {0.0F, 1.0F}},
-    Vertex{{-1.0F, -1.0F, -1.0F}, {0.86F, 1.0F, 1.0F}, {0.0F, -1.0F, 0.0F}, {0.0F, 0.0F}},
-    Vertex{{1.0F, -1.0F, -1.0F}, {0.86F, 1.0F, 1.0F}, {0.0F, -1.0F, 0.0F}, {1.0F, 0.0F}},
-    Vertex{{1.0F, -1.0F, 1.0F}, {0.86F, 1.0F, 1.0F}, {0.0F, -1.0F, 0.0F}, {1.0F, 1.0F}},
-    Vertex{{-1.0F, -1.0F, 1.0F}, {0.86F, 1.0F, 1.0F}, {0.0F, -1.0F, 0.0F}, {0.0F, 1.0F}},
-}};
-
-constexpr std::array<std::uint16_t, 36> kCubeIndices{{
-    0,  1,  2,  0,  2,  3,  4,  5,  6,  4,  6,  7,  8,  9,  10, 8,  10, 11,
-    12, 13, 14, 12, 14, 15, 16, 17, 18, 16, 18, 19, 20, 21, 22, 20, 22, 23,
-}};
 
 class TexturedCubeApp {
   public:
@@ -201,7 +173,7 @@ class TexturedCubeApp {
                         .delta_seconds = timing.delta_seconds,
                         .width = extent.width,
                         .height = extent.height,
-                        .triangles = static_cast<std::uint32_t>(kCubeIndices.size() / 3U),
+                        .triangles = kCubeTriangleCount,
                     };
                 },
                 .shutdown =
@@ -266,28 +238,8 @@ class TexturedCubeApp {
             fragment_stage,
         };
 
-        VkVertexInputBindingDescription vertex_binding{};
-        vertex_binding.binding = 0;
-        vertex_binding.stride = sizeof(Vertex);
-        vertex_binding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-
-        std::array<VkVertexInputAttributeDescription, 4> vertex_attributes{};
-        vertex_attributes[0].location = 0;
-        vertex_attributes[0].binding = 0;
-        vertex_attributes[0].format = VK_FORMAT_R32G32B32_SFLOAT;
-        vertex_attributes[0].offset = offsetof(Vertex, position);
-        vertex_attributes[1].location = 1;
-        vertex_attributes[1].binding = 0;
-        vertex_attributes[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-        vertex_attributes[1].offset = offsetof(Vertex, color);
-        vertex_attributes[2].location = 2;
-        vertex_attributes[2].binding = 0;
-        vertex_attributes[2].format = VK_FORMAT_R32G32B32_SFLOAT;
-        vertex_attributes[2].offset = offsetof(Vertex, normal);
-        vertex_attributes[3].location = 3;
-        vertex_attributes[3].binding = 0;
-        vertex_attributes[3].format = VK_FORMAT_R32G32_SFLOAT;
-        vertex_attributes[3].offset = offsetof(Vertex, uv);
+        const cubey::render::VertexInputLayout vertex_input =
+            cubey::render::vertex_position_color_normal_uv_input_layout();
 
         const cubey::render::MaterialPassInfo material_pass =
             textured_cube_forward_pass_info();
@@ -305,8 +257,8 @@ class TexturedCubeApp {
         pipeline_config.color_format = context.swapchain().format();
         pipeline_config.depth_format = depth_attachment().format();
         pipeline_config.shader_stages = shader_stages;
-        pipeline_config.vertex_bindings = {&vertex_binding, 1};
-        pipeline_config.vertex_attributes = vertex_attributes;
+        pipeline_config.vertex_bindings = vertex_input.bindings();
+        pipeline_config.vertex_attributes = vertex_input.attribute_descriptions();
         cubey::render::apply_material_pass_state(material_pass, pipeline_config);
         const cubey::vulkan::DynamicGraphicsPipelineInfo pipeline_info(pipeline_config);
         pipeline_.emplace(context.device(), pipeline_info.create_info());
@@ -317,8 +269,11 @@ class TexturedCubeApp {
     }
 
     void create_cube_mesh(cubey::host::WindowedAppContext& context) {
-        meshes_.emplace(cube_mesh_handle_, context.gpu(),
-                        cubey::render::indexed_mesh_config(kCubeVertices, kCubeIndices));
+        const cubey::render::PrimitiveMeshData<cubey::render::VertexPositionColorNormalUv> cube =
+            cubey::render::make_cube_position_color_normal_uv_mesh({
+                .face_colors = kCubeFaceColors,
+            });
+        meshes_.emplace(cube_mesh_handle_, context.gpu(), cube.mesh_config());
     }
 
     void create_scene() {
