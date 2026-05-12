@@ -78,6 +78,7 @@ struct PlaneMeshConfig {
 [[nodiscard]] VertexInputLayout vertex_position_color_input_layout();
 [[nodiscard]] VertexInputLayout vertex_position_color_normal_input_layout();
 [[nodiscard]] VertexInputLayout vertex_position_color_normal_uv_input_layout();
+[[nodiscard]] VertexInputLayout vertex_position_only_input_layout(std::uint32_t vertex_stride);
 
 [[nodiscard]] PrimitiveMeshData<VertexPositionColor>
 make_cube_position_color_mesh(CubeMeshConfig config = {});

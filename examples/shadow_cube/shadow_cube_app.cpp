@@ -404,7 +404,8 @@ class ShadowCubeApp {
             cubey::vulkan::shader_stage(VK_SHADER_STAGE_VERTEX_BIT, vertex_shader.handle());
 
         const cubey::render::VertexInputLayout vertex_input =
-            cubey::render::vertex_position_color_normal_input_layout();
+            cubey::render::vertex_position_only_input_layout(
+                sizeof(cubey::render::VertexPositionColorNormal));
 
         const cubey::render::MaterialPassInfo material_pass = shadow_depth_pass_info();
 

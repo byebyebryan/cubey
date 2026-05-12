@@ -134,6 +134,25 @@ VertexInputLayout vertex_position_color_normal_uv_input_layout() {
     };
 }
 
+VertexInputLayout vertex_position_only_input_layout(std::uint32_t vertex_stride) {
+    if (vertex_stride == 0) {
+        throw std::runtime_error("position-only vertex input layout requires a positive stride");
+    }
+
+    return {
+        .binding =
+            {
+                .binding = 0,
+                .stride = vertex_stride,
+                .inputRate = VK_VERTEX_INPUT_RATE_VERTEX,
+            },
+        .attributes =
+            {
+                vertex_attribute(0, VK_FORMAT_R32G32B32_SFLOAT, 0),
+            },
+    };
+}
+
 PrimitiveMeshData<VertexPositionColor> make_cube_position_color_mesh(CubeMeshConfig config) {
     validate_cube_config(config);
 

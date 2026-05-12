@@ -76,6 +76,22 @@ void test_primitive_vertex_layouts_match_shader_contracts() {
     require(position_color_normal_uv.attributes[3].offset ==
                 offsetof(cubey::render::VertexPositionColorNormalUv, uv),
             "uv offset should match vertex field");
+
+    const cubey::render::VertexInputLayout position_only =
+        cubey::render::vertex_position_only_input_layout(
+            sizeof(cubey::render::VertexPositionColorNormal));
+    require(position_only.binding.stride == sizeof(cubey::render::VertexPositionColorNormal),
+            "position-only binding stride should use caller-provided vertex size");
+    require(position_only.binding.inputRate == VK_VERTEX_INPUT_RATE_VERTEX,
+            "position-only binding should be per-vertex");
+    require(position_only.attributes.size() == 1,
+            "position-only layout should expose only position");
+    require(position_only.attributes[0].location == 0,
+            "position-only attribute should use shader location 0");
+    require(position_only.attributes[0].format == VK_FORMAT_R32G32B32_SFLOAT,
+            "position-only attribute should use vec3 float format");
+    require(position_only.attributes[0].offset == 0,
+            "position-only attribute should assume position is the first vertex field");
 }
 
 void test_primitive_cube_position_color_mesh_uses_face_colors_and_indices() {
