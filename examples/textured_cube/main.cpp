@@ -1,4 +1,4 @@
-#include <cubey/run_config.h>
+#include <cubey/core/run_config.h>
 
 #include "textured_cube_app.h"
 

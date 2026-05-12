@@ -4,10 +4,10 @@
 
 #include <cubey/app/glfw_window.h>
 #include <cubey/app/windowed_host.h>
-#include <cubey/headless_png_host.h>
-#include <cubey/pan_zoom_2d_controller.h>
+#include <cubey/runtime/headless_png_host.h>
+#include <cubey/input/pan_zoom_2d_controller.h>
 #include <cubey/render/target.h>
-#include <cubey/spirv_io.h>
+#include <cubey/core/spirv_io.h>
 #include <cubey/vulkan/command_recorder.h>
 #include <cubey/vulkan/device.h>
 #include <cubey/vulkan/image_transitions.h>

@@ -1,5 +1,5 @@
-#include <cubey/file_io.h>
-#include <cubey/image_io.h>
+#include <cubey/core/file_io.h>
+#include <cubey/core/image_io.h>
 
 #include <algorithm>
 #include <array>

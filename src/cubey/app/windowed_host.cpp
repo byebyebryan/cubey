@@ -1,6 +1,6 @@
 #include <cubey/app/windowed_host.h>
 
-#include <cubey/frame_stats.h>
+#include <cubey/core/frame_stats.h>
 #include <cubey/vulkan/render_context.h>
 #include <cubey/vulkan/vk_check.h>
 

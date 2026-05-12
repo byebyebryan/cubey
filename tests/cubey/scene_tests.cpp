@@ -1,5 +1,5 @@
 #include <cubey/detail/stable_slot_store.h>
-#include <cubey/scene.h>
+#include <cubey/scene/scene.h>
 
 #include <functional>
 #include <stdexcept>

@@ -1,6 +1,6 @@
 #include <cubey/render/view_3d.h>
-#include <cubey/scene.h>
-#include <cubey/transform_3d.h>
+#include <cubey/scene/scene.h>
+#include <cubey/scene/transform_3d.h>
 
 #include <cmath>
 #include <functional>

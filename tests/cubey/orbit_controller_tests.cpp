@@ -1,6 +1,6 @@
-#include <cubey/orbit_controller.h>
+#include <cubey/input/orbit_controller.h>
 
-#include <cubey/input.h>
+#include <cubey/input/input.h>
 
 #include <cmath>
 #include <stdexcept>

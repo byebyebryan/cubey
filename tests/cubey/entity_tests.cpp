@@ -1,4 +1,4 @@
-#include <cubey/entity.h>
+#include <cubey/scene/entity.h>
 
 #include <algorithm>
 #include <cstddef>

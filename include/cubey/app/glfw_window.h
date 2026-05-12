@@ -1,6 +1,6 @@
 #pragma once
 
-#include <cubey/input.h>
+#include <cubey/input/input.h>
 
 #include <vulkan/vulkan.h>
 

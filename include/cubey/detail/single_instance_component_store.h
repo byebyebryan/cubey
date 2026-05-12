@@ -1,7 +1,7 @@
 #pragma once
 
 #include <cubey/detail/stable_slot_store.h>
-#include <cubey/entity.h>
+#include <cubey/scene/entity.h>
 
 #include <cstddef>
 #include <cstdint>

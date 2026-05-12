@@ -1,7 +1,7 @@
-#include <cubey/camera_2d.h>
-#include <cubey/input.h>
-#include <cubey/pan_zoom_2d_controller.h>
-#include <cubey/pointer_drag.h>
+#include <cubey/scene/camera_2d.h>
+#include <cubey/input/input.h>
+#include <cubey/input/pan_zoom_2d_controller.h>
+#include <cubey/input/pointer_drag.h>
 
 #include <stdexcept>
 

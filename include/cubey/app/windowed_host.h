@@ -1,12 +1,12 @@
 #pragma once
 
 #include <cubey/app/glfw_window.h>
-#include <cubey/frame_clock.h>
-#include <cubey/frame_stats.h>
-#include <cubey/input.h>
+#include <cubey/core/frame_clock.h>
+#include <cubey/core/frame_stats.h>
+#include <cubey/input/input.h>
 #include <cubey/render/frame_data.h>
 #include <cubey/render/target.h>
-#include <cubey/run_config.h>
+#include <cubey/core/run_config.h>
 #include <cubey/vulkan/device.h>
 #include <cubey/vulkan/frame_resources.h>
 #include <cubey/vulkan/gpu_runtime.h>

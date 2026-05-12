@@ -1,6 +1,6 @@
 #pragma once
 
-#include <cubey/frame_tickets.h>
+#include <cubey/core/frame_tickets.h>
 #include <cubey/vulkan/device.h>
 #include <cubey/vulkan/queue_submit.h>
 

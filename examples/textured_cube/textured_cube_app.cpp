@@ -2,12 +2,12 @@
 
 #include <cubey/app/glfw_window.h>
 #include <cubey/app/windowed_host.h>
-#include <cubey/camera_3d.h>
-#include <cubey/engine.h>
-#include <cubey/frame_stats.h>
-#include <cubey/light_manager.h>
-#include <cubey/math.h>
-#include <cubey/orbit_controller.h>
+#include <cubey/scene/camera_3d.h>
+#include <cubey/scene/engine.h>
+#include <cubey/core/frame_stats.h>
+#include <cubey/scene/light_manager.h>
+#include <cubey/core/math.h>
+#include <cubey/input/orbit_controller.h>
 #include <cubey/render/mesh.h>
 #include <cubey/render/resource_handle.h>
 #include <cubey/render/resource_table.h>
@@ -15,9 +15,9 @@
 #include <cubey/render/texture.h>
 #include <cubey/render/uniform_buffer.h>
 #include <cubey/render/view_3d.h>
-#include <cubey/scene.h>
-#include <cubey/spirv_io.h>
-#include <cubey/transform_3d.h>
+#include <cubey/scene/scene.h>
+#include <cubey/core/spirv_io.h>
+#include <cubey/scene/transform_3d.h>
 #include <cubey/vulkan/command_recorder.h>
 #include <cubey/vulkan/descriptors.h>
 #include <cubey/vulkan/gpu_runtime.h>

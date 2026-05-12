@@ -1,10 +1,10 @@
 #pragma once
 
-#include <cubey/entity.h>
-#include <cubey/math.h>
+#include <cubey/scene/entity.h>
+#include <cubey/core/math.h>
 #include <cubey/render/resource_handle.h>
 #include <cubey/render/resource_registry.h>
-#include <cubey/renderable_manager.h>
+#include <cubey/scene/renderable_manager.h>
 
 #include <algorithm>
 #include <cstdint>

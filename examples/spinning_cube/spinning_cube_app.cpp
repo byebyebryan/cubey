@@ -1,17 +1,17 @@
 #include "spinning_cube_app.h"
 
 #include <cubey/app/windowed_host.h>
-#include <cubey/camera_3d.h>
-#include <cubey/engine.h>
-#include <cubey/math.h>
+#include <cubey/scene/camera_3d.h>
+#include <cubey/scene/engine.h>
+#include <cubey/core/math.h>
 #include <cubey/render/mesh.h>
 #include <cubey/render/resource_handle.h>
 #include <cubey/render/resource_table.h>
 #include <cubey/render/target.h>
 #include <cubey/render/view_3d.h>
-#include <cubey/scene.h>
-#include <cubey/spirv_io.h>
-#include <cubey/transform_3d.h>
+#include <cubey/scene/scene.h>
+#include <cubey/core/spirv_io.h>
+#include <cubey/scene/transform_3d.h>
 #include <cubey/vulkan/command_recorder.h>
 #include <cubey/vulkan/image.h>
 #include <cubey/vulkan/image_transitions.h>

@@ -1,4 +1,4 @@
-#include <cubey/frame_stats.h>
+#include <cubey/core/frame_stats.h>
 
 #include <cmath>
 #include <stdexcept>

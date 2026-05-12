@@ -1,5 +1,5 @@
-#include <cubey/file_io.h>
-#include <cubey/spirv_io.h>
+#include <cubey/core/file_io.h>
+#include <cubey/core/spirv_io.h>
 
 #include <array>
 #include <cstdint>

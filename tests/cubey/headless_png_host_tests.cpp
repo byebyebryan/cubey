@@ -1,4 +1,4 @@
-#include <cubey/headless_png_host.h>
+#include <cubey/runtime/headless_png_host.h>
 
 #include <stdexcept>
 #include <type_traits>

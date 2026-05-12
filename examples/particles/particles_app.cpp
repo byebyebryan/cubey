@@ -2,9 +2,9 @@
 
 #include <cubey/app/glfw_window.h>
 #include <cubey/app/windowed_host.h>
-#include <cubey/frame_stats.h>
+#include <cubey/core/frame_stats.h>
 #include <cubey/render/target.h>
-#include <cubey/spirv_io.h>
+#include <cubey/core/spirv_io.h>
 #include <cubey/vulkan/buffer.h>
 #include <cubey/vulkan/command_recorder.h>
 #include <cubey/vulkan/descriptors.h>

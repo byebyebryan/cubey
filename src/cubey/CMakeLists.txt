@@ -1,5 +1,5 @@
 add_library(cubey_stb_image_write OBJECT
-    stb_image_write.cpp
+    core/stb_image_write.cpp
 )
 target_include_directories(
     cubey_stb_image_write
@@ -16,20 +16,20 @@ set_target_properties(cubey_stb_image_write PROPERTIES CXX_CLANG_TIDY "")
 
 add_library(cubey_core STATIC
     $<TARGET_OBJECTS:cubey_stb_image_write>
-    run_config.cpp
-    camera_2d.cpp
-    camera_3d.cpp
-    file_io.cpp
-    frame_clock.cpp
-    frame_stats.cpp
-    frame_tickets.cpp
-    image_io.cpp
-    input.cpp
-    jobs.cpp
-    orbit_controller.cpp
-    pan_zoom_2d_controller.cpp
-    pointer_drag.cpp
-    spirv_io.cpp
+    core/run_config.cpp
+    scene/camera_2d.cpp
+    scene/camera_3d.cpp
+    core/file_io.cpp
+    core/frame_clock.cpp
+    core/frame_stats.cpp
+    core/frame_tickets.cpp
+    core/image_io.cpp
+    input/input.cpp
+    core/jobs.cpp
+    input/orbit_controller.cpp
+    input/pan_zoom_2d_controller.cpp
+    input/pointer_drag.cpp
+    core/spirv_io.cpp
 )
 add_library(cubey::core ALIAS cubey_core)
 
@@ -126,11 +126,11 @@ target_link_libraries(
 )
 
 add_library(cubey_runtime STATIC
-    capture_queue.cpp
-    headless_png_host.cpp
-    project_gpu_services.cpp
-    project_runtime.cpp
-    upload_queue.cpp
+    runtime/capture_queue.cpp
+    runtime/headless_png_host.cpp
+    runtime/project_gpu_services.cpp
+    runtime/project_runtime.cpp
+    runtime/upload_queue.cpp
 )
 add_library(cubey::runtime ALIAS cubey_runtime)
 
@@ -151,9 +151,9 @@ target_link_libraries(
 )
 
 add_library(cubey_scene STATIC
-    engine.cpp
-    entity.cpp
-    scene.cpp
+    scene/engine.cpp
+    scene/entity.cpp
+    scene/scene.cpp
 )
 add_library(cubey::scene ALIAS cubey_scene)
 

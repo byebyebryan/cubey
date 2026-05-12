@@ -1,7 +1,7 @@
-#include <cubey/light_manager.h>
-#include <cubey/math.h>
-#include <cubey/scene.h>
-#include <cubey/transform_3d.h>
+#include <cubey/scene/light_manager.h>
+#include <cubey/core/math.h>
+#include <cubey/scene/scene.h>
+#include <cubey/scene/transform_3d.h>
 
 #include <cmath>
 #include <functional>

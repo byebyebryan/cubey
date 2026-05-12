@@ -1,8 +1,8 @@
-#include <cubey/math.h>
+#include <cubey/core/math.h>
 #include <cubey/render/resource_handle.h>
-#include <cubey/renderable_manager.h>
-#include <cubey/scene.h>
-#include <cubey/transform_3d.h>
+#include <cubey/scene/renderable_manager.h>
+#include <cubey/scene/scene.h>
+#include <cubey/scene/transform_3d.h>
 
 #include <cmath>
 #include <functional>

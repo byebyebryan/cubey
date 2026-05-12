@@ -1,4 +1,4 @@
-#include <cubey/math.h>
+#include <cubey/core/math.h>
 
 #include <array>
 #include <cmath>

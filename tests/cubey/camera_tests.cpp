@@ -1,8 +1,8 @@
-#include <cubey/camera_2d.h>
-#include <cubey/camera_3d.h>
-#include <cubey/math.h>
-#include <cubey/orbit_controller.h>
-#include <cubey/transform_3d.h>
+#include <cubey/scene/camera_2d.h>
+#include <cubey/scene/camera_3d.h>
+#include <cubey/core/math.h>
+#include <cubey/input/orbit_controller.h>
+#include <cubey/scene/transform_3d.h>
 
 #include <cmath>
 #include <numbers>

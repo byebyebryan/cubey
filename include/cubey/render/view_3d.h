@@ -1,12 +1,12 @@
 #pragma once
 
-#include <cubey/entity.h>
-#include <cubey/light_manager.h>
-#include <cubey/math.h>
+#include <cubey/scene/entity.h>
+#include <cubey/scene/light_manager.h>
+#include <cubey/core/math.h>
 #include <cubey/render/render_plan.h>
 #include <cubey/render/resource_registry.h>
-#include <cubey/renderable_manager.h>
-#include <cubey/scene.h>
+#include <cubey/scene/renderable_manager.h>
+#include <cubey/scene/scene.h>
 
 #include <array>
 #include <cstdint>

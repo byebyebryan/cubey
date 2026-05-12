@@ -1,5 +1,5 @@
-#include <cubey/project_gpu_services.h>
-#include <cubey/project_runtime.h>
+#include <cubey/runtime/project_gpu_services.h>
+#include <cubey/runtime/project_runtime.h>
 
 #include <vulkan/vulkan.h>
 

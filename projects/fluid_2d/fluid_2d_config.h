@@ -1,7 +1,7 @@
 #pragma once
 
-#include <cubey/frame_clock.h>
-#include <cubey/run_config.h>
+#include <cubey/core/frame_clock.h>
+#include <cubey/core/run_config.h>
 
 #include <array>
 #include <cstddef>

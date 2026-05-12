@@ -1,7 +1,7 @@
-#include <cubey/engine.h>
-#include <cubey/project_gpu_services.h>
-#include <cubey/renderable_manager.h>
-#include <cubey/transform_3d.h>
+#include <cubey/scene/engine.h>
+#include <cubey/runtime/project_gpu_services.h>
+#include <cubey/scene/renderable_manager.h>
+#include <cubey/scene/transform_3d.h>
 
 #include <vulkan/vulkan.h>
 

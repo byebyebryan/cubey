@@ -1,6 +1,6 @@
 #pragma once
 
-#include <cubey/camera_2d.h>
+#include <cubey/scene/camera_2d.h>
 
 #include <cstdint>
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <cubey/run_config.h>
+#include <cubey/core/run_config.h>
 
 namespace cubey::examples::textured_cube {
 

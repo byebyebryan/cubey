@@ -1,4 +1,4 @@
-#include <cubey/run_config.h>
+#include <cubey/core/run_config.h>
 
 #include "fluid_2d_app.h"
 

@@ -1,4 +1,4 @@
-#include <cubey/frame_tickets.h>
+#include <cubey/core/frame_tickets.h>
 
 #include <stdexcept>
 #include <vector>

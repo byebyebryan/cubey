@@ -1,8 +1,8 @@
-#include <cubey/camera_2d.h>
-#include <cubey/camera_3d.h>
-#include <cubey/math.h>
-#include <cubey/scene.h>
-#include <cubey/transform_3d.h>
+#include <cubey/scene/camera_2d.h>
+#include <cubey/scene/camera_3d.h>
+#include <cubey/core/math.h>
+#include <cubey/scene/scene.h>
+#include <cubey/scene/transform_3d.h>
 
 #include <cmath>
 #include <functional>

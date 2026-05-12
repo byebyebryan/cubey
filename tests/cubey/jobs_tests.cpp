@@ -1,4 +1,4 @@
-#include <cubey/jobs.h>
+#include <cubey/core/jobs.h>
 
 #include <atomic>
 #include <stdexcept>

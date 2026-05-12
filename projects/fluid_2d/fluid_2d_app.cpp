@@ -2,13 +2,13 @@
 
 #include <cubey/app/glfw_window.h>
 #include <cubey/app/windowed_host.h>
-#include <cubey/frame_stats.h>
-#include <cubey/headless_png_host.h>
-#include <cubey/pointer_drag.h>
-#include <cubey/project_gpu_services.h>
-#include <cubey/project_runtime.h>
+#include <cubey/core/frame_stats.h>
+#include <cubey/runtime/headless_png_host.h>
+#include <cubey/input/pointer_drag.h>
+#include <cubey/runtime/project_gpu_services.h>
+#include <cubey/runtime/project_runtime.h>
 #include <cubey/render/target.h>
-#include <cubey/spirv_io.h>
+#include <cubey/core/spirv_io.h>
 #include <cubey/vulkan/buffer.h>
 #include <cubey/vulkan/command_recorder.h>
 #include <cubey/vulkan/descriptors.h>

@@ -2,7 +2,7 @@
 
 #include <cubey/app/windowed_host.h>
 #include <cubey/render/target.h>
-#include <cubey/spirv_io.h>
+#include <cubey/core/spirv_io.h>
 #include <cubey/vulkan/command_recorder.h>
 #include <cubey/vulkan/image_transitions.h>
 #include <cubey/vulkan/pipeline.h>

@@ -1,7 +1,7 @@
 #include "fluid_2d_config.h"
 
-#include <cubey/frame_clock.h>
-#include <cubey/run_config.h>
+#include <cubey/core/frame_clock.h>
+#include <cubey/core/run_config.h>
 
 #include <cstdio>
 #include <exception>

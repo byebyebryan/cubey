@@ -1,4 +1,4 @@
-#include <cubey/frame_clock.h>
+#include <cubey/core/frame_clock.h>
 
 #include <chrono>
 #include <cmath>
