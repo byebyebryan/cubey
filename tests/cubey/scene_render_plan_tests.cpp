@@ -51,6 +51,8 @@ void test_render_plan_builds_sorted_3d_draw_packets_with_material_metadata() {
             .label = "transparent",
             .blend = cubey::render::MaterialBlendMode::AlphaBlend,
             .sort_key = 0,
+            .pass_mask =
+                cubey::render::material_pass_mask(cubey::render::MaterialPassKind::ForwardColor),
         });
 
     std::vector<cubey::RenderablePacket3D> packets{
@@ -88,6 +90,12 @@ void test_render_plan_builds_sorted_3d_draw_packets_with_material_metadata() {
             "transparent material should sort after opaque materials");
     require(draw_packets[0].material_info.label == "early opaque",
             "draw packets should carry material metadata");
+    require(!cubey::render::material_supports_pass(
+                draw_packets[2].material_info, cubey::render::MaterialPassKind::DepthOnly),
+            "draw packets should carry material pass masks");
+    require(cubey::render::material_supports_pass(
+                draw_packets[2].material_info, cubey::render::MaterialPassKind::ForwardColor),
+            "draw packets should preserve included material passes");
     require(draw_packets[2].instance_count == 5, "draw packet should preserve instance count");
     require(draw_packets[2].first_index == 9, "draw packet should preserve first index");
     require(draw_packets[2].vertex_offset == -2, "draw packet should preserve vertex offset");

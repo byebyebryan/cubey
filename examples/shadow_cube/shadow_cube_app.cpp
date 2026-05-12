@@ -4,6 +4,7 @@
 #include <cubey/engine/engine.h>
 #include <cubey/host/windowed_host.h>
 #include <cubey/input/orbit_controller.h>
+#include <cubey/render/material.h>
 #include <cubey/render/mesh.h>
 #include <cubey/render/render_graph.h>
 #include <cubey/render/render_item.h>
@@ -63,6 +64,50 @@ struct ScenePushConstants {
 
 static_assert(sizeof(ShadowPushConstants) == sizeof(cubey::math::Mat4));
 static_assert(sizeof(ScenePushConstants) == sizeof(cubey::math::Mat4) * 2U);
+
+cubey::render::MaterialPassInfo shadow_depth_pass_info() {
+    const VkPushConstantRange push_constant_range{
+        .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+        .offset = 0,
+        .size = sizeof(ShadowPushConstants),
+    };
+    return cubey::render::MaterialPassInfo{
+        .label = "shadow_cube.depth",
+        .kind = cubey::render::MaterialPassKind::DepthOnly,
+        .push_constants = {push_constant_range},
+        .depth_test = true,
+        .depth_write = true,
+    };
+}
+
+cubey::render::MaterialPassInfo shadow_scene_pass_info() {
+    const VkPushConstantRange push_constant_range{
+        .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+        .offset = 0,
+        .size = sizeof(ScenePushConstants),
+    };
+    return cubey::render::MaterialPassInfo{
+        .label = "shadow_cube.forward",
+        .kind = cubey::render::MaterialPassKind::ForwardColor,
+        .descriptor_sets =
+            {
+                cubey::render::MaterialDescriptorSetLayout{
+                    .set = 0,
+                    .bindings =
+                        {
+                            cubey::vulkan::DescriptorSetBindingConfig{
+                                .binding = 0,
+                                .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
+                            },
+                        },
+                },
+            },
+        .push_constants = {push_constant_range},
+        .depth_test = true,
+        .depth_write = true,
+    };
+}
 
 struct Vertex {
     std::array<float, 3> position;
@@ -307,14 +352,15 @@ class ShadowCubeApp {
     }
 
     void create_descriptors(cubey::host::WindowedAppContext& context) {
-        const std::array<cubey::vulkan::DescriptorSetBindingConfig, 1> bindings{{
-            {
-                .binding = 0,
-                .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
-            },
-        }};
-        descriptors_.emplace(context.device(), cubey::vulkan::DescriptorSetInfo(bindings));
+        const cubey::render::MaterialPassInfo material_pass = shadow_scene_pass_info();
+        cubey::render::validate_material_pass_info(material_pass);
+        if (material_pass.descriptor_sets.size() != 1 ||
+            material_pass.descriptor_sets[0].set != 0) {
+            throw std::runtime_error("shadow_cube scene pass should declare descriptor set 0");
+        }
+        descriptors_.emplace(
+            context.device(),
+            cubey::vulkan::DescriptorSetInfo(material_pass.descriptor_sets[0].bindings));
 
         const cubey::vulkan::DescriptorImageWrite shadow_write =
             cubey::vulkan::combined_image_sampler_descriptor(
@@ -347,14 +393,12 @@ class ShadowCubeApp {
         vertex_attribute.format = VK_FORMAT_R32G32B32_SFLOAT;
         vertex_attribute.offset = offsetof(Vertex, position);
 
-        VkPushConstantRange push_constant_range{};
-        push_constant_range.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-        push_constant_range.offset = 0;
-        push_constant_range.size = sizeof(ShadowPushConstants);
+        const cubey::render::MaterialPassInfo material_pass = shadow_depth_pass_info();
 
         const cubey::vulkan::PipelineLayoutInfo layout_info({
             .set_layouts = {},
-            .push_constants = {&push_constant_range, 1},
+            .push_constants = {material_pass.push_constants.data(),
+                               material_pass.push_constants.size()},
         });
         shadow_pipeline_layout_.emplace(context.device(), layout_info.create_info());
 
@@ -366,8 +410,7 @@ class ShadowCubeApp {
         pipeline_config.shader_stages = {&vertex_stage, 1};
         pipeline_config.vertex_bindings = {&vertex_binding, 1};
         pipeline_config.vertex_attributes = {&vertex_attribute, 1};
-        pipeline_config.depth_test = true;
-        pipeline_config.depth_write = true;
+        cubey::render::apply_material_pass_state(material_pass, pipeline_config);
         const cubey::vulkan::DynamicGraphicsPipelineInfo pipeline_info(pipeline_config);
         shadow_pipeline_.emplace(context.device(), pipeline_info.create_info());
     }
@@ -403,15 +446,13 @@ class ShadowCubeApp {
         vertex_attributes[2].format = VK_FORMAT_R32G32B32_SFLOAT;
         vertex_attributes[2].offset = offsetof(Vertex, normal);
 
-        VkPushConstantRange push_constant_range{};
-        push_constant_range.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-        push_constant_range.offset = 0;
-        push_constant_range.size = sizeof(ScenePushConstants);
+        const cubey::render::MaterialPassInfo material_pass = shadow_scene_pass_info();
 
         const std::array<VkDescriptorSetLayout, 1> set_layouts{descriptors().layout()};
         const cubey::vulkan::PipelineLayoutInfo layout_info({
             .set_layouts = set_layouts,
-            .push_constants = {&push_constant_range, 1},
+            .push_constants = {material_pass.push_constants.data(),
+                               material_pass.push_constants.size()},
         });
         scene_pipeline_layout_.emplace(context.device(), layout_info.create_info());
 
@@ -423,8 +464,7 @@ class ShadowCubeApp {
         pipeline_config.shader_stages = shader_stages;
         pipeline_config.vertex_bindings = {&vertex_binding, 1};
         pipeline_config.vertex_attributes = vertex_attributes;
-        pipeline_config.depth_test = true;
-        pipeline_config.depth_write = true;
+        cubey::render::apply_material_pass_state(material_pass, pipeline_config);
         const cubey::vulkan::DynamicGraphicsPipelineInfo pipeline_info(pipeline_config);
         scene_pipeline_.emplace(context.device(), pipeline_info.create_info());
     }
@@ -575,6 +615,11 @@ class ShadowCubeApp {
         recorder.begin_rendering(rendering.info());
         recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, shadow_pipeline().handle());
         for (const cubey::scene::RenderDrawPacket3D& packet : shadow_plan.draw_packets) {
+            if (!packet.cast_shadows ||
+                !cubey::render::material_supports_pass(
+                    packet.material_info, cubey::render::MaterialPassKind::DepthOnly)) {
+                continue;
+            }
             const ShadowPushConstants push_constants{
                 .light_mvp = shadow_plan.view_projection_matrix * packet.world_affine_matrix,
             };
@@ -611,6 +656,10 @@ class ShadowCubeApp {
         recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS,
                                      scene_pipeline_layout().handle(), 0, descriptor_set);
         for (const cubey::scene::RenderDrawPacket3D& packet : scene_plan.draw_packets) {
+            if (!cubey::render::material_supports_pass(
+                    packet.material_info, cubey::render::MaterialPassKind::ForwardColor)) {
+                continue;
+            }
             const ScenePushConstants push_constants{
                 .mvp = scene_plan.view_projection_matrix * packet.world_affine_matrix,
                 .light_mvp = shadow_plan.view_projection_matrix * packet.world_affine_matrix,

@@ -3,6 +3,7 @@
 #include <cubey/core/math.h>
 #include <cubey/engine/engine.h>
 #include <cubey/host/windowed_host.h>
+#include <cubey/render/material.h>
 #include <cubey/render/mesh.h>
 #include <cubey/render/render_item.h>
 #include <cubey/render/resource_handle.h>
@@ -18,7 +19,6 @@
 #include <cubey/vulkan/pipeline.h>
 #include <cubey/vulkan/shader_bytecode.h>
 #include <cubey/vulkan/shader_module.h>
-#include <cubey/vulkan/vk_check.h>
 
 #include <vulkan/vulkan.h>
 
@@ -40,8 +40,6 @@
 namespace cubey::examples::spinning_cube {
 namespace {
 
-using cubey::vulkan::vk_struct;
-
 std::filesystem::path shader_path(const char* filename) {
     return std::filesystem::path(CUBEY_SPINNING_CUBE_SHADER_DIR) / filename;
 }
@@ -49,6 +47,21 @@ std::filesystem::path shader_path(const char* filename) {
 struct PushConstants {
     cubey::math::Mat4 mvp;
 };
+
+cubey::render::MaterialPassInfo spinning_cube_forward_pass_info() {
+    const VkPushConstantRange push_constant_range{
+        .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+        .offset = 0,
+        .size = sizeof(PushConstants),
+    };
+    return cubey::render::MaterialPassInfo{
+        .label = "spinning_cube.forward",
+        .kind = cubey::render::MaterialPassKind::ForwardColor,
+        .push_constants = {push_constant_range},
+        .depth_test = true,
+        .depth_write = true,
+    };
+}
 
 struct Vertex {
     std::array<float, 3> position;
@@ -208,16 +221,14 @@ class SpinningCubeApp {
         vertex_attributes[1].format = VK_FORMAT_R32G32B32_SFLOAT;
         vertex_attributes[1].offset = offsetof(Vertex, color);
 
-        VkPushConstantRange push_constant_range{};
-        push_constant_range.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-        push_constant_range.offset = 0;
-        push_constant_range.size = sizeof(PushConstants);
-
-        auto layout_info =
-            vk_struct<VkPipelineLayoutCreateInfo>(VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO);
-        layout_info.pushConstantRangeCount = 1;
-        layout_info.pPushConstantRanges = &push_constant_range;
-        pipeline_layout_.emplace(context.device(), layout_info);
+        const cubey::render::MaterialPassInfo material_pass =
+            spinning_cube_forward_pass_info();
+        const cubey::vulkan::PipelineLayoutInfo layout_info({
+            .set_layouts = {},
+            .push_constants = {material_pass.push_constants.data(),
+                               material_pass.push_constants.size()},
+        });
+        pipeline_layout_.emplace(context.device(), layout_info.create_info());
 
         cubey::vulkan::DynamicGraphicsPipelineConfig pipeline_config;
         pipeline_config.layout = pipeline_layout().handle();
@@ -227,8 +238,7 @@ class SpinningCubeApp {
         pipeline_config.shader_stages = shader_stages;
         pipeline_config.vertex_bindings = {&vertex_binding, 1};
         pipeline_config.vertex_attributes = vertex_attributes;
-        pipeline_config.depth_test = true;
-        pipeline_config.depth_write = true;
+        cubey::render::apply_material_pass_state(material_pass, pipeline_config);
         const cubey::vulkan::DynamicGraphicsPipelineInfo pipeline_info(pipeline_config);
         pipeline_.emplace(context.device(), pipeline_info.create_info());
     }
