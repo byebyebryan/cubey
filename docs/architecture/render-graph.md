@@ -70,6 +70,10 @@ graph without recording work. The callback body still captures the app-owned
 command recorder, pipelines, descriptors, and app-specific resource owners it
 needs. `RenderGraphResourceSet` can bind resolved resources and create simple
 non-aliased transient textures/buffers for graph-created resources.
+`RenderGraphFrameResources` owns one resource set per frame slot so examples
+can replace only the slot whose fence has already been waited. Resolved target
+and sampled-texture helpers translate graph texture declarations into
+dynamic-rendering target views or descriptor-ready image/view/layout triples.
 `record_render_graph_barriers` records a pass's before/after derived
 requirements through `CommandRecorder`; this is explicit command recording,
 not hidden graph execution.
@@ -201,6 +205,7 @@ Completed slices:
    execution-time resource resolution, and non-aliased transient allocation.
 10. `shadow_cube` transient scene-color allocation, resolved color target views,
     and a graph-declared fullscreen present pass.
+11. Per-frame-slot graph resource ownership and sampled texture view resolution.
 
 This keeps the graph as a validation, vocabulary, pass-ordering, and
 sync-requirement shell rather than a renderer rewrite. Barriers stay explicit:

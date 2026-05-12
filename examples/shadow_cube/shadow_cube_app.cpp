@@ -662,17 +662,15 @@ class ShadowCubeApp {
 
     void update_present_descriptor(cubey::host::WindowedAppContext& context,
                                    std::uint32_t frame_slot_index,
+                                   const cubey::render::CompiledRenderGraph& graph,
                                    const cubey::render::RenderGraphResourceSet& resources,
                                    cubey::render::RenderGraphTextureHandle scene_color) const {
-        const std::optional<cubey::render::RenderGraphResolvedTexture> resolved =
-            resources.texture(scene_color);
-        if (!resolved.has_value()) {
-            throw std::runtime_error("shadow_cube scene color was not allocated");
-        }
+        const cubey::render::RenderGraphSampledTextureView sampled =
+            cubey::render::resolved_sampled_texture_view(graph, resources, scene_color);
         const cubey::vulkan::DescriptorImageWrite image_write =
             cubey::vulkan::combined_image_sampler_descriptor(
                 present_descriptors().set(frame_slot_index), 0, present_sampler().handle(),
-                resolved->view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+                sampled.view, sampled.layout);
         const std::array<VkWriteDescriptorSet, 1> writes{image_write.descriptor_write()};
         cubey::vulkan::update_descriptor_sets(context.device(), writes);
     }
@@ -691,17 +689,13 @@ class ShadowCubeApp {
         const cubey::vulkan::CommandRecorder recorder(frame.command_buffer);
         const ShadowRenderGraph render_graph =
             current_render_graph(frame, recorder, shadow_plan, scene_plan);
-        if (frame.frame_slot.index >= graph_resources_.size()) {
-            throw std::runtime_error("shadow_cube frame slot is out of range");
-        }
-        std::optional<cubey::render::RenderGraphResourceSet>& resources =
-            graph_resources_.at(frame.frame_slot.index);
-        resources.emplace(context.device(), render_graph.graph);
-        update_present_descriptor(context, frame.frame_slot.index, *resources,
+        cubey::render::RenderGraphResourceSet& resources =
+            graph_resources_.emplace(frame.frame_slot, context.device(), render_graph.graph);
+        update_present_descriptor(context, frame.frame_slot.index, render_graph.graph, resources,
                                   render_graph.scene_color);
 
         recorder.begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-        render_graph.graph.execute(*resources);
+        render_graph.graph.execute(resources);
         recorder.end("vkEndCommandBuffer shadow_cube");
         shadow_depth_is_sampled_ = true;
     }
@@ -927,7 +921,7 @@ class ShadowCubeApp {
     bool shadow_depth_is_sampled_ = false;
 
     cubey::render::MeshResourceTable<cubey::render::Mesh> meshes_;
-    std::vector<std::optional<cubey::render::RenderGraphResourceSet>> graph_resources_;
+    cubey::render::RenderGraphFrameResources graph_resources_;
     std::optional<cubey::render::DepthTexture> shadow_depth_;
     std::optional<cubey::vulkan::DescriptorSetBundle> descriptors_;
     std::optional<cubey::vulkan::Sampler> present_sampler_;

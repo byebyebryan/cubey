@@ -189,13 +189,14 @@ Current checkpoint:
   graphics/compute/transfer passes, pass/resource usage, optional material pass
   metadata, imported initial/final state, transient first-use transitions,
   execution-time resource resolution, non-aliased transient allocation, and
-  in-graph sync requirements. `shadow_cube` now uses a graph-created transient
-  scene color target plus graph-derived shadow-depth, scene-depth, scene-color,
-  backbuffer, and present transitions while pass callbacks still own command
-  recording, descriptors, pipelines, and app-specific resource policy.
-  `fluid_2d` declares a coarse simulation-compute to fullscreen-render graph
-  and records graph-derived buffer barriers plus backbuffer acquire/release at
-  that boundary.
+  in-graph sync requirements. It also provides per-frame-slot graph resource
+  ownership and sampled-texture resolution helpers for descriptor updates.
+  `shadow_cube` now uses a graph-created transient scene color target plus
+  graph-derived shadow-depth, scene-depth, scene-color, backbuffer, and present
+  transitions while pass callbacks still own command recording, descriptors,
+  pipelines, and app-specific resource policy. `fluid_2d` declares a coarse
+  simulation-compute to fullscreen-render graph and records graph-derived
+  buffer barriers plus backbuffer acquire/release at that boundary.
 - Reusable `cubey::vulkan::PipelineLayout`, `GraphicsPipeline`,
   `ComputePipeline`, `DescriptorSetLayout`, and `DescriptorPool` own basic
   pipeline and descriptor lifetimes while still taking raw Vulkan create-info
