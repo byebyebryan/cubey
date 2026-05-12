@@ -272,14 +272,14 @@ class ShadowCubeApp {
 
     void create_swapchain_resources(cubey::host::WindowedAppContext& context) {
         depth_attachment_.emplace(context.device(), context.swapchain().extent());
-        graph_resources_.clear();
-        graph_resources_.resize(context.frame_slot_count());
+        graph_executor_.clear();
+        graph_executor_.resize(context.frame_slot_count());
         create_present_resources(context);
         create_pipelines(context);
     }
 
     void destroy_swapchain_resources() {
-        graph_resources_.clear();
+        graph_executor_.clear();
         present_pipeline_.reset();
         present_pipeline_layout_.reset();
         present_descriptors_.reset();
@@ -596,7 +596,6 @@ class ShadowCubeApp {
 
     [[nodiscard]] ShadowRenderGraph
     current_render_graph(const cubey::host::WindowedRenderFrame& frame,
-                         const cubey::vulkan::CommandRecorder& recorder,
                          const cubey::scene::RenderFramePlan3D& shadow_plan,
                          const cubey::scene::RenderFramePlan3D& scene_plan) const {
         cubey::render::RenderGraphBuilder graph;
@@ -623,8 +622,9 @@ class ShadowCubeApp {
         graph.add_pass("shadow", cubey::render::RenderGraphQueueDomain::Graphics)
             .write_depth(shadow_depth_handle)
             .material_pass(shadow_depth_pass_info())
-            .execute([this, &recorder,
+            .execute([this,
                       &shadow_plan](const cubey::render::RenderGraphExecutionContext& context) {
+                const cubey::vulkan::CommandRecorder& recorder = context.recorder();
                 cubey::render::record_render_graph_barriers(
                     recorder, context, cubey::render::RenderGraphBarrierPhase::BeforePass);
                 record_shadow_pass(recorder, shadow_plan);
@@ -634,8 +634,9 @@ class ShadowCubeApp {
             .write_color(scene_color_handle)
             .write_depth(scene_depth_handle)
             .material_pass(shadow_scene_pass_info())
-            .execute([this, &recorder, scene_color_handle, &scene_plan,
+            .execute([this, scene_color_handle, &scene_plan,
                       &shadow_plan](const cubey::render::RenderGraphExecutionContext& context) {
+                const cubey::vulkan::CommandRecorder& recorder = context.recorder();
                 cubey::render::record_render_graph_barriers(
                     recorder, context, cubey::render::RenderGraphBarrierPhase::BeforePass);
                 const cubey::render::ColorTargetView target =
@@ -645,8 +646,9 @@ class ShadowCubeApp {
         graph.add_pass("present", cubey::render::RenderGraphQueueDomain::Graphics)
             .read_texture(scene_color_handle)
             .write_color(backbuffer_handle)
-            .execute([this, &recorder,
+            .execute([this,
                       &frame](const cubey::render::RenderGraphExecutionContext& context) {
+                const cubey::vulkan::CommandRecorder& recorder = context.recorder();
                 cubey::render::record_render_graph_barriers(
                     recorder, context, cubey::render::RenderGraphBarrierPhase::BeforePass);
                 record_present_pass(recorder, frame);
@@ -686,17 +688,20 @@ class ShadowCubeApp {
         const cubey::scene::RenderFramePlan3D& shadow_plan = frame_plan.passes()[0].frame_plan;
         const cubey::scene::RenderFramePlan3D& scene_plan = frame_plan.passes()[1].frame_plan;
 
-        const cubey::vulkan::CommandRecorder recorder(frame.command_buffer);
-        const ShadowRenderGraph render_graph =
-            current_render_graph(frame, recorder, shadow_plan, scene_plan);
-        cubey::render::RenderGraphResourceSet& resources =
-            graph_resources_.emplace(frame.frame_slot, context.device(), render_graph.graph);
-        update_present_descriptor(context, frame.frame_slot.index, render_graph.graph, resources,
-                                  render_graph.scene_color);
-
-        recorder.begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-        render_graph.graph.execute(resources);
-        recorder.end("vkEndCommandBuffer shadow_cube");
+        const ShadowRenderGraph render_graph = current_render_graph(frame, shadow_plan, scene_plan);
+        graph_executor_.record(cubey::render::RenderGraphFrameRecordInfo{
+                                   .device = &context.device(),
+                                   .command_buffer = frame.command_buffer,
+                                   .frame_slot = frame.frame_slot,
+                                   .label = "vkEndCommandBuffer shadow_cube",
+                               },
+                               render_graph.graph,
+                               [this, &context, &frame, &render_graph](
+                                   const cubey::render::RenderGraphResourceSet& resources) {
+                                   update_present_descriptor(
+                                       context, frame.frame_slot.index, render_graph.graph,
+                                       resources, render_graph.scene_color);
+                               });
         shadow_depth_is_sampled_ = true;
     }
 
@@ -921,7 +926,7 @@ class ShadowCubeApp {
     bool shadow_depth_is_sampled_ = false;
 
     cubey::render::MeshResourceTable<cubey::render::Mesh> meshes_;
-    cubey::render::RenderGraphFrameResources graph_resources_;
+    cubey::render::RenderGraphFrameExecutor graph_executor_;
     std::optional<cubey::render::DepthTexture> shadow_depth_;
     std::optional<cubey::vulkan::DescriptorSetBundle> descriptors_;
     std::optional<cubey::vulkan::Sampler> present_sampler_;
