@@ -48,6 +48,7 @@ add_executable(cubey_core_tests
     submission_coordinator_tests.cpp
     transform_manager_tests.cpp
     transform_tests.cpp
+    test_registry.cpp
     upload_queue_tests.cpp
     windowed_host_tests.cpp
 )
