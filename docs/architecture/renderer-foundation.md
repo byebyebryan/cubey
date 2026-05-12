@@ -137,12 +137,14 @@ full engine architecture.
   graphics/compute/transfer passes, and ordered pass/resource usage. It
   compiles declarations and `CompiledRenderGraph::execute()` invokes pass
   callbacks synchronously in compiled order. It now derives in-graph
-  texture-transition and buffer-barrier requirements, and
-  `record_render_graph_barriers` records those requirements explicitly through
-  `CommandRecorder`. Resource allocation, pass reordering, pass culling, hidden
-  barrier insertion, and async scheduling remain future work. `shadow_cube` now
-  uses graph-derived shadow-depth sync, and `fluid_2d` declares a coarse
-  simulation-to-render graph boundary.
+  texture-transition and buffer-barrier requirements, imported acquire/release
+  barriers, and transient first-use barriers. `RenderGraphResourceSet` resolves
+  imported resources and can allocate simple non-aliased transient resources;
+  `record_render_graph_barriers` records before/after requirements explicitly
+  through `CommandRecorder`. Pass reordering, pass culling, hidden barrier
+  insertion, descriptor allocation, aliasing, and async scheduling remain future
+  work. `shadow_cube` now uses graph-derived shadow-depth/backbuffer/depth sync,
+  and `fluid_2d` declares a coarse simulation-to-render graph boundary.
 - `cubey::vulkan::CommandRecorder` is the current low-level recording helper
   used by examples and `fluid_2d` for common Vulkan command-buffer calls. It
   does not own pass scheduling, automatic barriers, descriptor policy, or
@@ -170,16 +172,16 @@ full engine architecture.
 
 ## Multipass Direction
 
-`examples/shadow_cube` is the current reference for manual multipass rendering:
+`examples/shadow_cube` is the current reference for graph-declared multipass rendering:
 build a shadow `cubey::scene::View3D`, build a camera `cubey::scene::View3D`,
-record a depth-only pass into a `DepthTexture`, transition that image for shader
-reads, then record the color pass that samples it. The example also declares
-the same pass/resource flow through `RenderGraphBuilder` and enters those
-passes through `CompiledRenderGraph::execute()`. The depth-to-sampled transition
-between graph passes is graph-derived and explicitly recorded by the scene-pass
-callback. The reusable foundation intentionally stops at view/pass planning,
-render-item draw intent, target/texture ownership, layout-transition helpers,
-material pass metadata, depth-only rendering info, synchronous pass-callback
-execution, and explicit graph barrier recording. Render-graph scheduling,
-automatic material binding, shadow policy, and transient resource allocation
-remain future work.
+record a depth-only pass into a `DepthTexture`, then record the color pass that
+samples it. The example declares the pass/resource flow through
+`RenderGraphBuilder` and enters those passes through
+`CompiledRenderGraph::execute()`. Shadow-depth, scene-depth, backbuffer acquire,
+and present release transitions are graph-derived and explicitly recorded by
+pass callbacks. The reusable foundation intentionally stops at view/pass
+planning, render-item draw intent, target/texture ownership, material pass
+metadata, depth-only rendering info, synchronous pass-callback execution,
+execution-time resource resolution, simple transient allocation, and explicit
+graph barrier recording. Render-graph scheduling, automatic material binding,
+shadow policy, descriptor ownership, and transient aliasing remain future work.

@@ -196,7 +196,7 @@ generic project host.
 
 ### Checkpoint 6
 
-Status: coarse render graph declaration complete.
+Status: coarse render graph declaration and frame-boundary sync complete.
 
 Goal: prove the render graph sync boundary on a compute-plus-graphics project
 without moving fluid simulation policy into the renderer.
@@ -206,6 +206,9 @@ without moving fluid simulation policy into the renderer.
 - The compute pass still owns solver-internal storage-buffer barriers.
 - The render pass records graph-derived buffer barriers for the
   compute-to-fragment-read boundary before drawing.
+- The render pass also records graph-derived backbuffer acquire/release
+  barriers instead of spelling out the color attachment and present transitions
+  locally.
 - Headless simulation keeps its direct project GPU services path and explicit
   final visibility barrier because capture rendering happens in a separate
   host-owned command path.

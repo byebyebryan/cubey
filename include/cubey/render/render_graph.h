@@ -2,8 +2,9 @@
 
 #include <cubey/render/material.h>
 #include <cubey/render/target.h>
+#include <cubey/vulkan/buffer.h>
 #include <cubey/vulkan/command_recorder.h>
-#include <cubey/vulkan/image_transitions.h>
+#include <cubey/vulkan/image.h>
 
 #include <vulkan/vulkan.h>
 
@@ -27,8 +28,7 @@ struct RenderGraphTextureHandle {
         return !is_null();
     }
 
-    friend bool operator==(RenderGraphTextureHandle lhs,
-                           RenderGraphTextureHandle rhs) = default;
+    friend bool operator==(RenderGraphTextureHandle lhs, RenderGraphTextureHandle rhs) = default;
 };
 
 struct RenderGraphBufferHandle {
@@ -76,6 +76,26 @@ enum class RenderGraphBufferUsage : std::uint8_t {
     TransferWrite,
 };
 
+enum class RenderGraphBarrierPhase : std::uint8_t {
+    BeforePass,
+    AfterPass,
+};
+
+struct RenderGraphTextureState {
+    VkImageLayout layout = VK_IMAGE_LAYOUT_UNDEFINED;
+    VkAccessFlags access_mask = 0;
+    VkPipelineStageFlags stage_mask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+
+    friend bool operator==(RenderGraphTextureState lhs, RenderGraphTextureState rhs) = default;
+};
+
+struct RenderGraphBufferState {
+    VkAccessFlags access_mask = 0;
+    VkPipelineStageFlags stage_mask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+
+    friend bool operator==(RenderGraphBufferState lhs, RenderGraphBufferState rhs) = default;
+};
+
 struct RenderGraphTextureDesc {
     std::string label{};
     VkExtent2D extent{};
@@ -94,6 +114,8 @@ struct RenderGraphTextureResource {
     RenderGraphTextureDesc desc{};
     VkImage imported_image = VK_NULL_HANDLE;
     VkImageView imported_view = VK_NULL_HANDLE;
+    std::optional<RenderGraphTextureState> initial_state{};
+    std::optional<RenderGraphTextureState> final_state{};
 };
 
 struct RenderGraphBufferResource {
@@ -101,6 +123,8 @@ struct RenderGraphBufferResource {
     RenderGraphResourceLifetime lifetime = RenderGraphResourceLifetime::Transient;
     RenderGraphBufferDesc desc{};
     VkBuffer imported_buffer = VK_NULL_HANDLE;
+    std::optional<RenderGraphBufferState> initial_state{};
+    std::optional<RenderGraphBufferState> final_state{};
 };
 
 struct RenderGraphTextureAccess {
@@ -115,24 +139,35 @@ struct RenderGraphBufferAccess {
 
 struct RenderGraphTextureBarrier {
     RenderGraphTextureHandle handle{};
-    std::size_t source_pass_index = 0;
-    RenderGraphTextureUsage source_usage = RenderGraphTextureUsage::SampledRead;
-    RenderGraphTextureUsage destination_usage = RenderGraphTextureUsage::SampledRead;
-    cubey::vulkan::ImageLayoutTransition transition{};
+    std::optional<std::size_t> source_pass_index{};
+    std::optional<RenderGraphTextureUsage> source_usage{};
+    std::optional<RenderGraphTextureUsage> destination_usage{};
+    RenderGraphTextureState source_state{};
+    RenderGraphTextureState destination_state{};
 };
 
 struct RenderGraphBufferBarrier {
     RenderGraphBufferHandle handle{};
-    std::size_t source_pass_index = 0;
-    RenderGraphBufferUsage source_usage = RenderGraphBufferUsage::UniformRead;
-    RenderGraphBufferUsage destination_usage = RenderGraphBufferUsage::UniformRead;
-    VkPipelineStageFlags src_stage_mask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-    VkPipelineStageFlags dst_stage_mask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
-    VkBufferMemoryBarrier barrier{};
+    std::optional<std::size_t> source_pass_index{};
+    std::optional<RenderGraphBufferUsage> source_usage{};
+    std::optional<RenderGraphBufferUsage> destination_usage{};
+    RenderGraphBufferState source_state{};
+    RenderGraphBufferState destination_state{};
 };
 
 class CompiledRenderGraph;
+class RenderGraphResourceSet;
 struct RenderGraphCompiledPass;
+
+struct RenderGraphResolvedTexture {
+    VkImage image = VK_NULL_HANDLE;
+    VkImageView view = VK_NULL_HANDLE;
+};
+
+struct RenderGraphResolvedBuffer {
+    VkBuffer buffer = VK_NULL_HANDLE;
+    VkDeviceSize byte_size = 0;
+};
 
 class RenderGraphExecutionContext {
   public:
@@ -141,16 +176,20 @@ class RenderGraphExecutionContext {
     [[nodiscard]] std::size_t pass_index() const noexcept {
         return pass_index_;
     }
-    [[nodiscard]] const RenderGraphTextureResource&
-    texture(RenderGraphTextureHandle handle) const;
+    [[nodiscard]] const RenderGraphTextureResource& texture(RenderGraphTextureHandle handle) const;
     [[nodiscard]] const RenderGraphBufferResource& buffer(RenderGraphBufferHandle handle) const;
+    [[nodiscard]] RenderGraphResolvedTexture
+    resolved_texture(RenderGraphTextureHandle handle) const;
+    [[nodiscard]] RenderGraphResolvedBuffer resolved_buffer(RenderGraphBufferHandle handle) const;
 
   private:
     friend class CompiledRenderGraph;
 
-    RenderGraphExecutionContext(const CompiledRenderGraph& graph, std::size_t pass_index);
+    RenderGraphExecutionContext(const CompiledRenderGraph& graph, std::size_t pass_index,
+                                const RenderGraphResourceSet* resources);
 
     const CompiledRenderGraph* graph_ = nullptr;
+    const RenderGraphResourceSet* resources_ = nullptr;
     std::size_t pass_index_ = 0;
 };
 
@@ -161,8 +200,10 @@ struct RenderGraphCompiledPass {
     RenderGraphQueueDomain queue_domain = RenderGraphQueueDomain::Graphics;
     std::vector<RenderGraphTextureAccess> texture_accesses{};
     std::vector<RenderGraphBufferAccess> buffer_accesses{};
-    std::vector<RenderGraphTextureBarrier> texture_barriers{};
-    std::vector<RenderGraphBufferBarrier> buffer_barriers{};
+    std::vector<RenderGraphTextureBarrier> before_texture_barriers{};
+    std::vector<RenderGraphBufferBarrier> before_buffer_barriers{};
+    std::vector<RenderGraphTextureBarrier> after_texture_barriers{};
+    std::vector<RenderGraphBufferBarrier> after_buffer_barriers{};
     std::optional<MaterialPassInfo> material_pass{};
     RenderGraphExecuteCallback execute{};
 };
@@ -186,15 +227,45 @@ class CompiledRenderGraph {
         return passes_;
     }
 
-    [[nodiscard]] const RenderGraphTextureResource&
-    texture(RenderGraphTextureHandle handle) const;
+    [[nodiscard]] const RenderGraphTextureResource& texture(RenderGraphTextureHandle handle) const;
     [[nodiscard]] const RenderGraphBufferResource& buffer(RenderGraphBufferHandle handle) const;
     void execute() const;
+    void execute(const RenderGraphResourceSet& resources) const;
 
   private:
+    void execute(const RenderGraphResourceSet* resources) const;
+
     std::vector<RenderGraphTextureResource> textures_{};
     std::vector<RenderGraphBufferResource> buffers_{};
     std::vector<RenderGraphCompiledPass> passes_{};
+};
+
+class RenderGraphResourceSet {
+  public:
+    explicit RenderGraphResourceSet(const CompiledRenderGraph& graph);
+    RenderGraphResourceSet(const cubey::vulkan::Device& device, const CompiledRenderGraph& graph);
+    ~RenderGraphResourceSet() = default;
+
+    RenderGraphResourceSet(const RenderGraphResourceSet&) = delete;
+    RenderGraphResourceSet& operator=(const RenderGraphResourceSet&) = delete;
+    RenderGraphResourceSet(RenderGraphResourceSet&& other) noexcept = default;
+    RenderGraphResourceSet& operator=(RenderGraphResourceSet&& other) noexcept = default;
+
+    void bind_texture(RenderGraphTextureHandle handle, RenderGraphResolvedTexture texture);
+    void bind_buffer(RenderGraphBufferHandle handle, RenderGraphResolvedBuffer buffer);
+
+    [[nodiscard]] std::optional<RenderGraphResolvedTexture>
+    texture(RenderGraphTextureHandle handle) const;
+    [[nodiscard]] std::optional<RenderGraphResolvedBuffer>
+    buffer(RenderGraphBufferHandle handle) const;
+
+  private:
+    void allocate_transients(const cubey::vulkan::Device& device, const CompiledRenderGraph& graph);
+
+    std::vector<std::optional<RenderGraphResolvedTexture>> textures_{};
+    std::vector<std::optional<RenderGraphResolvedBuffer>> buffers_{};
+    std::vector<cubey::vulkan::Image> transient_textures_{};
+    std::vector<cubey::vulkan::Buffer> transient_buffers_{};
 };
 
 class RenderGraphBuilder;
@@ -230,20 +301,27 @@ class RenderGraphPassBuilder {
 
 class RenderGraphBuilder {
   public:
-    [[nodiscard]] RenderGraphTextureHandle import_color_target(std::string label,
-                                                               ColorTargetView target);
-    [[nodiscard]] RenderGraphTextureHandle import_depth_target(std::string label,
-                                                               DepthTargetView target);
-    [[nodiscard]] RenderGraphTextureHandle import_texture(RenderGraphTextureDesc desc,
-                                                          VkImage image, VkImageView view);
+    [[nodiscard]] RenderGraphTextureHandle
+    import_color_target(std::string label, ColorTargetView target,
+                        std::optional<RenderGraphTextureState> initial_state = std::nullopt,
+                        std::optional<RenderGraphTextureState> final_state = std::nullopt);
+    [[nodiscard]] RenderGraphTextureHandle
+    import_depth_target(std::string label, DepthTargetView target,
+                        std::optional<RenderGraphTextureState> initial_state = std::nullopt,
+                        std::optional<RenderGraphTextureState> final_state = std::nullopt);
+    [[nodiscard]] RenderGraphTextureHandle
+    import_texture(RenderGraphTextureDesc desc, VkImage image, VkImageView view,
+                   std::optional<RenderGraphTextureState> initial_state = std::nullopt,
+                   std::optional<RenderGraphTextureState> final_state = std::nullopt);
     [[nodiscard]] RenderGraphTextureHandle create_texture(RenderGraphTextureDesc desc);
 
-    [[nodiscard]] RenderGraphBufferHandle import_buffer(RenderGraphBufferDesc desc,
-                                                        VkBuffer buffer);
+    [[nodiscard]] RenderGraphBufferHandle
+    import_buffer(RenderGraphBufferDesc desc, VkBuffer buffer,
+                  std::optional<RenderGraphBufferState> initial_state = std::nullopt,
+                  std::optional<RenderGraphBufferState> final_state = std::nullopt);
     [[nodiscard]] RenderGraphBufferHandle create_buffer(RenderGraphBufferDesc desc);
 
-    [[nodiscard]] RenderGraphPassBuilder add_pass(std::string label,
-                                                  RenderGraphQueueDomain domain);
+    [[nodiscard]] RenderGraphPassBuilder add_pass(std::string label, RenderGraphQueueDomain domain);
     [[nodiscard]] CompiledRenderGraph compile() const;
 
   private:
@@ -267,6 +345,7 @@ class RenderGraphBuilder {
 };
 
 void record_render_graph_barriers(const cubey::vulkan::CommandRecorder& recorder,
-                                  const RenderGraphExecutionContext& context);
+                                  const RenderGraphExecutionContext& context,
+                                  RenderGraphBarrierPhase phase);
 
 } // namespace cubey::render

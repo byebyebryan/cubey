@@ -3,7 +3,6 @@
 #include <cubey/render/render_graph.h>
 #include <cubey/vulkan/command_recorder.h>
 #include <cubey/vulkan/dynamic_rendering.h>
-#include <cubey/vulkan/image_transitions.h>
 #include <cubey/vulkan/vk_check.h>
 
 #include <algorithm>
@@ -47,6 +46,22 @@ struct TransferWriteBarrier {
     VkPipelineStageFlags dst_stage = 0;
     VkAccessFlags dst_access = 0;
 };
+
+[[nodiscard]] cubey::render::RenderGraphTextureState undefined_texture_state() {
+    return {
+        .layout = VK_IMAGE_LAYOUT_UNDEFINED,
+        .access_mask = 0,
+        .stage_mask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+    };
+}
+
+[[nodiscard]] cubey::render::RenderGraphTextureState present_texture_state() {
+    return {
+        .layout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+        .access_mask = 0,
+        .stage_mask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+    };
+}
 
 [[nodiscard]] DispatchGroups compute_dispatch_groups(const Fluid2DConfig& config) {
     return {
@@ -243,8 +258,8 @@ void record_fluid_compute(VkCommandBuffer command_buffer, Fluid2DGpuResources& r
         record_shader_write_barrier(
             command_buffer,
             {
-                .dst_stage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT |
-                             VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                .dst_stage =
+                    VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
                 .dst_access = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
             });
     }
@@ -297,23 +312,20 @@ void record_fluid_frame(const cubey::host::WindowedRenderFrame& render_frame,
 
     cubey::render::RenderGraphBuilder graph;
     const cubey::render::RenderGraphBufferHandle field =
-        graph.import_buffer({.label = "fluid field",
-                             .byte_size = resources.field_a().size()},
+        graph.import_buffer({.label = "fluid field", .byte_size = resources.field_a().size()},
                             resources.field_a().handle());
-    const cubey::render::RenderGraphBufferHandle divergence =
-        graph.import_buffer({.label = "fluid divergence",
-                             .byte_size = resources.divergence().size()},
-                            resources.divergence().handle());
-    const cubey::render::RenderGraphBufferHandle pressure_a =
-        graph.import_buffer({.label = "fluid pressure A",
-                             .byte_size = resources.pressure_a().size()},
-                            resources.pressure_a().handle());
-    const cubey::render::RenderGraphBufferHandle pressure_b =
-        graph.import_buffer({.label = "fluid pressure B",
-                             .byte_size = resources.pressure_b().size()},
-                            resources.pressure_b().handle());
+    const cubey::render::RenderGraphBufferHandle divergence = graph.import_buffer(
+        {.label = "fluid divergence", .byte_size = resources.divergence().size()},
+        resources.divergence().handle());
+    const cubey::render::RenderGraphBufferHandle pressure_a = graph.import_buffer(
+        {.label = "fluid pressure A", .byte_size = resources.pressure_a().size()},
+        resources.pressure_a().handle());
+    const cubey::render::RenderGraphBufferHandle pressure_b = graph.import_buffer(
+        {.label = "fluid pressure B", .byte_size = resources.pressure_b().size()},
+        resources.pressure_b().handle());
     const cubey::render::RenderGraphTextureHandle backbuffer =
-        graph.import_color_target("backbuffer", render_frame.color_target);
+        graph.import_color_target("backbuffer", render_frame.color_target,
+                                  undefined_texture_state(), present_texture_state());
 
     graph.add_pass("fluid simulation", cubey::render::RenderGraphQueueDomain::Compute)
         .read_write_storage_buffer(field)
@@ -331,15 +343,13 @@ void record_fluid_frame(const cubey::host::WindowedRenderFrame& render_frame,
         .read_storage_buffer(pressure_b)
         .write_color(backbuffer)
         .execute([&](const cubey::render::RenderGraphExecutionContext& context) {
-            cubey::render::record_render_graph_barriers(recorder, context);
-            recorder.transition_image_layout(
-                cubey::vulkan::begin_color_attachment_transition(render_frame.color_target.image));
+            cubey::render::record_render_graph_barriers(
+                recorder, context, cubey::render::RenderGraphBarrierPhase::BeforePass);
             record_fullscreen_draw(recorder.handle(), resources, config, debug_view,
                                    render_frame.color_target.view,
                                    render_frame.color_target.extent);
-            recorder.transition_image_layout(
-                cubey::vulkan::finish_color_attachment_for_present_transition(
-                    render_frame.color_target.image));
+            cubey::render::record_render_graph_barriers(
+                recorder, context, cubey::render::RenderGraphBarrierPhase::AfterPass);
         });
 
     const cubey::render::CompiledRenderGraph frame_graph = graph.compile();

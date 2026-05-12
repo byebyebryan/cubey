@@ -99,6 +99,8 @@ add_library(cubey_render STATIC
     render/material.cpp
     render/mesh.cpp
     render/render_graph.cpp
+    render/render_graph_resources.cpp
+    render/render_graph_sync.cpp
     render/render_item.cpp
     render/target.cpp
     render/texture.cpp

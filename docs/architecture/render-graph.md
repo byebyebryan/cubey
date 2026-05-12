@@ -58,27 +58,29 @@ and pass callbacks; and compile those declarations into a validated
 The compiled graph preserves pass insertion order and resource usage
 declarations. It validates graph-local handles, imported versus transient
 resource availability, queue-domain restrictions, attachment/storage aspect
-rules, incompatible same-pass resource access, and in-graph texture/buffer
-sync requirements for read-after-write, write-after-read, and write-after-write
-hazards.
+rules, incompatible same-pass resource access, explicit imported resource
+state, transient first use, and texture/buffer sync requirements for
+read-after-write, write-after-read, and write-after-write hazards.
 
 `CompiledRenderGraph::execute()` runs each compiled pass callback in order and
 passes a `RenderGraphExecutionContext` that exposes the graph, current pass,
 pass index, and declared resources. Missing callbacks fail at execute time, not
 compile time, so declaration-only tests and diagnostics can still compile a
 graph without recording work. The callback body still captures the app-owned
-command recorder, pipelines, descriptors, and concrete resources it needs.
-`record_render_graph_barriers` records the current pass's derived requirements
-through `CommandRecorder`; this is explicit command recording, not hidden graph
-execution.
+command recorder, pipelines, descriptors, and app-specific resource owners it
+needs. `RenderGraphResourceSet` can bind resolved resources and create simple
+non-aliased transient textures/buffers for graph-created resources.
+`record_render_graph_barriers` records a pass's before/after derived
+requirements through `CommandRecorder`; this is explicit command recording,
+not hidden graph execution.
 
-It does not create Vulkan resources, infer first-use or cross-frame layouts,
-allocate descriptors, reorder passes, cull passes, alias transient memory, or
-schedule async work. `examples/shadow_cube` is the first reference migration:
-the graph now executes its shadow pass and scene pass callbacks and records the
-shadow-depth write-to-sampled-read transition from graph-derived requirements.
-`projects/fluid_2d` declares a coarse simulation-compute to fullscreen-render
-graph and uses graph-derived buffer barriers at that boundary while keeping
+It does not allocate descriptors, reorder passes, cull passes, alias transient
+memory, or schedule async work. `examples/shadow_cube` is the first reference
+migration: the graph now executes its shadow pass and scene pass callbacks and
+records shadow-depth, scene-depth, backbuffer acquire, and present release
+transitions from graph-derived requirements. `projects/fluid_2d` declares a
+coarse simulation-compute to fullscreen-render graph and uses graph-derived
+buffer barriers plus backbuffer acquire/release transitions while keeping
 solver-internal barriers manual.
 
 ## Boundary
@@ -117,12 +119,15 @@ resolved resources + explicit command recording through cubey::vulkan
   as the swapchain image, a persistent depth texture, a material texture, or a
   temporal history target.
 - **Transient resource**: a resource whose lifetime is limited to one graph
-  execution.
+  execution. The first implementation can allocate non-aliased Vulkan image or
+  buffer resources through `RenderGraphResourceSet`.
+- **Imported resource state**: optional initial/final texture or buffer state
+  declared with an imported resource so the graph can derive acquire and
+  release barriers at frame boundaries.
 - **Usage declaration**: a pass statement that it reads or writes a resource as
   color attachment, depth attachment, sampled input, storage input/output,
-  or transfer source/destination. In v1, present remains host/swapchain-owned:
-  the backbuffer is declared as a color attachment write, then explicit Vulkan
-  code transitions it for presentation.
+  or transfer source/destination. Present remains host/swapchain-owned, but a
+  swapchain target can declare a final present state for graph-derived release.
 - **Compile**: validation and derivation of pass order, declared resource
   lifetime, optional material pass metadata, and in-graph sync requirements
   from graph declarations.
@@ -151,8 +156,9 @@ graph.add_pass("scene")
     .write_color(backbuffer)
     .write_depth(depth)
     .execute([&recorder](const RenderGraphExecutionContext& ctx) {
-        record_render_graph_barriers(recorder, ctx);
+        record_render_graph_barriers(recorder, ctx, RenderGraphBarrierPhase::BeforePass);
         // Record color pass commands with app-owned resources.
+        record_render_graph_barriers(recorder, ctx, RenderGraphBarrierPhase::AfterPass);
     });
 ```
 
@@ -160,8 +166,8 @@ The important contract is that setup declares resource use before execution
 records commands. That matches the established pattern in Filament FrameGraph
 and Unity Render Graph while preserving Cubey's Vulkan-first command recording.
 `shadow_cube` now exercises this declaration and execution shape for its
-depth-only shadow pass and color scene pass while still recording commands and
-layout transitions manually.
+depth-only shadow pass and color scene pass while still recording commands
+explicitly.
 
 ## Implementation Slices
 
@@ -179,6 +185,8 @@ Completed slices:
 7. In-graph sync requirement derivation for texture transitions and buffer
    barriers, with explicit recording through `CommandRecorder`.
 8. Coarse `fluid_2d` simulation-to-render graph declaration.
+9. Imported initial/final resource state, transient first-use transitions,
+   execution-time resource resolution, and non-aliased transient allocation.
 
 This keeps the graph as a validation, vocabulary, pass-ordering, and
 sync-requirement shell rather than a renderer rewrite. Barriers stay explicit:

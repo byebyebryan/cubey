@@ -288,7 +288,8 @@ Needed next:
 Defer:
 
 - Classic render pass abstraction.
-- Render graph until multiple dependent passes make manual ordering painful.
+- Render-graph scheduling, culling, aliasing, descriptor ownership, and async
+  execution beyond the current declaration/sync/resource-resolution boundary.
 
 ### 8. Mesh, Texture, And Scene Convenience
 
@@ -301,8 +302,7 @@ Current state:
   compute-generated sampled texture ownership.
 - `examples/shadow_cube` uses `cubey::render::DepthTexture`,
   `DepthOnlyRenderingInfo`, depth-only pipeline setup, and graph-derived
-  sampled-depth sync for a directional shadow map while keeping first-use
-  transitions explicit.
+  sampled-depth/backbuffer sync for a directional shadow map.
 - Cube examples use the shared GLM-backed `cubey::math` wrapper for MVP/model
   matrices and Vulkan clip-space projection conventions.
 - `examples/particles` still defines particle storage-buffer layout, seeding,
