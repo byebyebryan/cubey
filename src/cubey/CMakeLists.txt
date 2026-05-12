@@ -97,6 +97,7 @@ target_link_libraries(
 add_library(cubey_render STATIC
     render/frame_data.cpp
     render/mesh.cpp
+    render/render_graph.cpp
     render/target.cpp
     render/texture.cpp
     render/uniform_buffer.cpp

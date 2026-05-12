@@ -1,10 +1,11 @@
 # Render Graph Direction
 
 This note maps Cubey's render graph direction before the renderer grows more
-pass-heavy. It is a design checkpoint, not an active implementation contract.
-The near-term goal is to keep upcoming renderer, material, shadow, postprocess,
-readback, and async work compatible with a future graph without forcing every
-example through a graph executor now.
+pass-heavy. It is both a design checkpoint and the current implementation
+boundary for the declaration/validation layer. The near-term goal is to keep
+upcoming renderer, material, shadow, postprocess, readback, and async work
+compatible with a future graph without forcing every example through a graph
+executor now.
 
 ## Why Map It Now
 
@@ -43,6 +44,23 @@ command recording sequence.
 That current split is intentional. A render graph should grow above the narrow
 render vocabulary, not replace the Vulkan layer or move scene policy into
 `cubey::render`.
+
+## Current Checkpoint
+
+`cubey::render::RenderGraphBuilder` is the first graph declaration layer. It
+can import swapchain/offscreen color targets, depth targets, textures, and
+buffers; create transient texture and buffer declarations; declare ordered
+graphics, compute, and transfer passes; and compile those declarations into a
+validated `CompiledRenderGraph`.
+
+The compiled graph preserves pass insertion order and resource usage
+declarations. It validates graph-local handles, imported versus transient
+resource availability, queue-domain restrictions, attachment/storage aspect
+rules, and incompatible same-pass resource access.
+
+It does not execute passes, create Vulkan resources, generate barriers, infer
+layouts, allocate descriptors, reorder passes, cull passes, alias transient
+memory, or migrate existing examples.
 
 ## Boundary
 
@@ -119,24 +137,26 @@ contract is that setup declares resource use before execution records commands.
 That matches the established pattern in Filament FrameGraph and Unity Render
 Graph while preserving Cubey's Vulkan-first command recording.
 
-## First Implementation Slice
+## Implementation Slices
 
-When implementation becomes worthwhile, start with the smallest useful graph:
+The first implementation slice is intentionally small:
 
-1. Add declaration types and unit tests only. No executor.
-2. Support imported color/depth targets, imported textures, transient textures,
-   and buffer handles if `fluid_2d` needs them.
-3. Preserve pass insertion order in compile output.
-4. Validate missing resources, invalid handles, read-before-write for
-   non-imported resources, and duplicate incompatible writes.
-5. Keep pass culling disabled by default.
-6. Keep barriers explicit at first, or emit named transition requirements that
-   still map directly to `cubey::vulkan::ImageLayoutTransition`.
-7. Add an executor only after declaration validation is useful on its own.
-8. Migrate `shadow_cube` or a postprocess example as the first reference graph.
+1. Declaration types and unit tests only. No executor.
+2. Imported color/depth targets, imported textures, transient textures, and
+   buffer handles.
+3. Preserved pass insertion order in compile output.
+4. Validation for missing resources, invalid handles, read-before-write for
+   non-imported resources, and duplicate incompatible same-pass access.
+5. Pass culling disabled by default.
 
 This makes the first code slice a validation and vocabulary layer rather than a
 renderer rewrite.
+
+Future slices should add an execution callback shell only after declaration
+validation is useful on its own, then migrate `shadow_cube` or a postprocess
+example as the first reference graph. Barrier generation should either stay
+explicit or emit named transition requirements that still map directly to
+`cubey::vulkan::ImageLayoutTransition`.
 
 ## Adoption Triggers
 

@@ -93,6 +93,15 @@ void test_frame_slot_wraps_frame_indices();
 void test_frame_slot_rejects_invalid_slots();
 void test_frame_uniform_buffer_config_describes_host_visible_uniform_storage();
 void test_frame_uniform_buffer_contract_is_slot_based_and_move_only();
+void test_render_graph_allows_imported_texture_read_without_prior_write();
+void test_render_graph_creates_transient_texture_and_preserves_pass_order();
+void test_render_graph_declares_compute_storage_buffer_flow();
+void test_render_graph_imports_color_and_depth_targets();
+void test_render_graph_rejects_attachment_usage_outside_graphics_pass();
+void test_render_graph_rejects_incompatible_same_pass_resource_access();
+void test_render_graph_rejects_invalid_resource_descriptors_and_handles();
+void test_render_graph_rejects_transient_texture_read_before_write();
+void test_render_graph_transfer_pass_accepts_only_transfer_usages();
 void test_render_plan_builds_sorted_3d_draw_packets_with_material_metadata();
 void test_render_plan_rejects_stale_resource_handles();
 void test_render_resource_registry_tracks_handle_lifetime_and_labels();
@@ -246,6 +255,15 @@ std::span<const TestCase> core_tests() {
         CUBEY_TEST(test_frame_slot_rejects_invalid_slots),
         CUBEY_TEST(test_frame_uniform_buffer_config_describes_host_visible_uniform_storage),
         CUBEY_TEST(test_frame_uniform_buffer_contract_is_slot_based_and_move_only),
+        CUBEY_TEST(test_render_graph_imports_color_and_depth_targets),
+        CUBEY_TEST(test_render_graph_creates_transient_texture_and_preserves_pass_order),
+        CUBEY_TEST(test_render_graph_rejects_transient_texture_read_before_write),
+        CUBEY_TEST(test_render_graph_allows_imported_texture_read_without_prior_write),
+        CUBEY_TEST(test_render_graph_rejects_invalid_resource_descriptors_and_handles),
+        CUBEY_TEST(test_render_graph_rejects_attachment_usage_outside_graphics_pass),
+        CUBEY_TEST(test_render_graph_rejects_incompatible_same_pass_resource_access),
+        CUBEY_TEST(test_render_graph_declares_compute_storage_buffer_flow),
+        CUBEY_TEST(test_render_graph_transfer_pass_accepts_only_transfer_usages),
         CUBEY_TEST(test_render_plan_builds_sorted_3d_draw_packets_with_material_metadata),
         CUBEY_TEST(test_render_plan_rejects_stale_resource_handles),
         CUBEY_TEST(test_render_resource_registry_tracks_handle_lifetime_and_labels),

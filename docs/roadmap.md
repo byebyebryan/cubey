@@ -180,6 +180,12 @@ Current checkpoint:
 - Reusable `cubey::scene::RenderPassPlan3D` and `FrameRenderPlan3D` provide a
   small explicit pass-list contract for multi-view and multi-pass command
   recording without introducing a render graph.
+- Reusable `cubey::render::RenderGraphBuilder` and `CompiledRenderGraph`
+  provide the first render graph declaration and validation layer for
+  imported/transient texture and buffer resources, ordered
+  graphics/compute/transfer passes, and pass/resource usage. This layer does
+  not execute passes, allocate resources, generate barriers, reorder passes, or
+  migrate examples yet.
 - Reusable `cubey::vulkan::PipelineLayout`, `GraphicsPipeline`,
   `ComputePipeline`, `DescriptorSetLayout`, and `DescriptorPool` own basic
   pipeline and descriptor lifetimes while still taking raw Vulkan create-info

@@ -123,6 +123,11 @@ full engine architecture.
   CPU-side pass list for multi-view and multi-pass examples. They preserve
   explicit pass order and pass kind without becoming a render graph or
   scheduler.
+- `cubey::render::RenderGraphBuilder` provides the first graph declaration and
+  validation layer for imported/transient texture and buffer resources,
+  graphics/compute/transfer passes, and ordered pass/resource usage. It
+  compiles declarations only; execution, barrier generation, resource
+  allocation, pass reordering, and example migration remain future work.
 - `cubey::vulkan::CommandRecorder` is the current low-level recording helper
   used by examples and `fluid_2d` for common Vulkan command-buffer calls. It
   does not own pass scheduling, automatic barriers, descriptor policy, or
