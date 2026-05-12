@@ -44,9 +44,9 @@ void test_submission_coordinator_issues_monotonic_gpu_tickets() {
         },
         [](VkQueue, const char*) {});
 
-    const cubey::FrameTicket first =
+    const cubey::vulkan::GpuSubmissionTicket first =
         coordinator.submit({.command_buffers = {first_command_buffer}}, "submit first");
-    const cubey::FrameTicket second = coordinator.submit(
+    const cubey::vulkan::GpuSubmissionTicket second = coordinator.submit(
         {.command_buffers = {second_command_buffer}, .fence = second_fence}, "submit second");
 
     require(first.value == 1, "first GPU submission ticket should start at one");
@@ -89,7 +89,7 @@ void test_submission_coordinator_submit_and_wait_marks_completion() {
             events.push_back(std::string("wait:") + label);
         });
 
-    const cubey::FrameTicket ticket = coordinator.submit_and_wait(
+    const cubey::vulkan::GpuSubmissionTicket ticket = coordinator.submit_and_wait(
         {.command_buffers = {command_buffer}}, "vkQueueSubmit immediate", "vkQueueWaitIdle");
 
     require(ticket.value == 1, "submit_and_wait should return the submitted ticket");
@@ -113,9 +113,9 @@ void test_submission_coordinator_completion_tracking_rejects_future_tickets() {
         queue, [](VkQueue, const cubey::vulkan::QueueSubmitInfo&, const char*) {},
         [](VkQueue, const char*) {});
 
-    const cubey::FrameTicket first =
+    const cubey::vulkan::GpuSubmissionTicket first =
         coordinator.submit({.command_buffers = {first_command_buffer}}, "submit first");
-    const cubey::FrameTicket second =
+    const cubey::vulkan::GpuSubmissionTicket second =
         coordinator.submit({.command_buffers = {second_command_buffer}}, "submit second");
 
     coordinator.mark_completed(second);
@@ -126,7 +126,7 @@ void test_submission_coordinator_completion_tracking_rejects_future_tickets() {
 
     bool threw = false;
     try {
-        coordinator.mark_completed(cubey::FrameTicket{.value = second.value + 1U});
+        coordinator.mark_completed(cubey::vulkan::GpuSubmissionTicket{.value = second.value + 1U});
     } catch (const std::runtime_error&) {
         threw = true;
     }

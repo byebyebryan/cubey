@@ -115,8 +115,8 @@ versioned section and use that section as the release notes.
   no-display GLFW failure in terminal sessions.
 - CTest smoke for headless PNG artifact creation and PNG signature validation.
 - Shared CMake CTest smoke helpers for windowed and headless example targets.
-- Optional `cubey_app` target with a GLFW window/surface host, pointer/key input
-  dispatch, and the shared windowed app loop.
+- Optional `cubey_host` target with a GLFW window/surface host, pointer/key input
+  dispatch, and the shared windowed host loop.
 - Public `cubey::render` pass planning, sampled depth texture, and depth-only
   rendering-info helpers for multi-view/multipass examples.
 - Public Vulkan queue submit, sampled-depth transition, sampler config, and
@@ -155,20 +155,20 @@ versioned section and use that section as the release notes.
   of carrying duplicate local matrix code.
 - Windowed examples now share GLFW windowing, Vulkan surface creation,
   acquire/present behavior, resize handling, frame timing, and swapchain
-  recreation through `cubey_app`.
+  recreation through `cubey_host`.
 - Shader-backed examples now share SPIR-V I/O layered on generic binary file
   reads instead of carrying local file readers.
 - Example CTest targets now use shared CMake smoke helpers instead of repeated
   shell snippets.
 - Headless PNG smoke tests now apply a narrow LeakSanitizer suppression for
   DBus allocations left alive by the Vulkan loader/driver path on Linux.
-- Roadmap and Vulkan abstraction docs now frame the app/runtime host as the
+- Roadmap and Vulkan abstraction docs now frame the host/engine host as the
   standard windowed-example path while still deferring renderer and scene-system
   abstractions.
 - The particle rewrite is currently categorized as an example-sized reference
   program rather than a first-class `projects/` target.
 - `window_clear`, `triangle`, `spinning_cube`, `textured_cube`, `fractal`, and
-  `particles` now use the shared GLFW/windowed app host while keeping command
+  `particles` now use the shared GLFW/windowed host layer while keeping command
   recording sequence and render resources example-local.
 - `headless_render`, `fractal --headless`, and `fluid_2d --headless` now use
   the shared no-GLFW headless PNG host while keeping resource setup, simulation,

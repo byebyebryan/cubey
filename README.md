@@ -2,7 +2,7 @@
 
 Cubey is a native desktop GPU workbench for procedural graphics experiments and
 projects. The goal is a small, deliberate C++/Vulkan foundation that keeps
-runtime, resource, input, camera, transform, and project boundaries explicit
+engine, host, resource, input, camera, transform, and project boundaries explicit
 while leaving the interesting work in shaders, compute, and project code.
 
 Cubey is not a generic game engine, editor, SDK, or backend-agnostic renderer.
@@ -15,7 +15,7 @@ precedent when shaping new foundation contracts.
 - Primary library: layered `cubey::*` targets with public headers under
   `include/cubey/` and an aggregate `cubey::cubey` target for examples and
   projects.
-- Optional app layer: `cubey_app`, for GLFW-backed window hosting.
+- Optional host layer: `cubey_host`, for GLFW-backed window hosting.
 - Runnable targets live under `examples/` or `projects/`.
 - Headless PNG output is a first-class verification path for projects that can
   render without a window.
@@ -50,7 +50,7 @@ Authoritative current docs:
 - [Vulkan abstraction map](docs/architecture/vulkan-abstractions.md)
 - [Renderer foundation](docs/architecture/renderer-foundation.md)
 - [Entity and component foundation](docs/architecture/entity-component-foundation.md)
-- [App runtime](docs/architecture/app-runtime.md)
+- [Host and engine](docs/architecture/host-engine.md)
 - [Threading and async](docs/architecture/threading-and-async.md)
 - [Fluid simulation direction](docs/architecture/fluid-simulation.md)
 - [C++ style guide](docs/cpp-style.md)

@@ -1,5 +1,5 @@
-#include <cubey/runtime/project_gpu_services.h>
-#include <cubey/runtime/project_runtime.h>
+#include <cubey/engine/project_gpu_services.h>
+#include <cubey/engine/project_runtime.h>
 
 #include <vulkan/vulkan.h>
 
@@ -33,8 +33,8 @@ void test_project_context_exposes_optional_gpu_services() {
     cubey::jobs::JobSystem jobs(0);
     cubey::UploadQueue uploads;
     cubey::CaptureQueue captures(jobs);
-    cubey::FrameTicketIssuer tickets;
-    cubey::DeferredDestructionQueue deferred;
+    cubey::vulkan::GpuSubmissionTicketIssuer tickets;
+    cubey::vulkan::DeferredGpuDestructionQueue deferred;
     cubey::vulkan::SubmissionCoordinator submission = fake_submission();
     cubey::vulkan::GpuRuntime runtime({
         .device = fake_device(),
@@ -51,7 +51,7 @@ void test_project_context_exposes_optional_gpu_services() {
 
 void test_project_gpu_services_submit_and_wait_runs_on_owner_thread() {
     cubey::UploadQueue uploads;
-    cubey::DeferredDestructionQueue deferred;
+    cubey::vulkan::DeferredGpuDestructionQueue deferred;
     cubey::vulkan::SubmissionCoordinator submission = fake_submission();
     cubey::vulkan::GpuRuntime runtime({
         .device = fake_device(),
@@ -78,7 +78,7 @@ void test_project_gpu_services_submit_and_wait_runs_on_owner_thread() {
 
 void test_project_gpu_services_wait_queue_idle_runs_on_owner_thread() {
     cubey::UploadQueue uploads;
-    cubey::DeferredDestructionQueue deferred;
+    cubey::vulkan::DeferredGpuDestructionQueue deferred;
     std::thread::id caller_thread = std::this_thread::get_id();
     std::thread::id wait_thread{};
     cubey::vulkan::SubmissionCoordinator submission(
@@ -100,7 +100,7 @@ void test_project_gpu_services_wait_queue_idle_runs_on_owner_thread() {
 
 void test_project_gpu_services_enqueue_uploads_and_retire_completed_gpu_work() {
     cubey::UploadQueue uploads;
-    cubey::DeferredDestructionQueue deferred;
+    cubey::vulkan::DeferredGpuDestructionQueue deferred;
     cubey::vulkan::SubmissionCoordinator submission = fake_submission();
     cubey::vulkan::GpuRuntime runtime({
         .device = fake_device(),
@@ -114,7 +114,7 @@ void test_project_gpu_services_enqueue_uploads_and_retire_completed_gpu_work() {
     });
 
     std::vector<std::string> copied_labels;
-    cubey::FrameTicket submitted{};
+    cubey::vulkan::GpuSubmissionTicket submitted{};
     cubey::ProjectGpuUploadDrainResult enqueued = gpu.enqueue_pending_uploads(
         [&](const cubey::QueuedUpload& queued, cubey::vulkan::GpuOwnerContext& owner) {
             require(owner.is_owner_thread(), "uploads should execute on the GPU owner thread");
@@ -153,7 +153,7 @@ void test_project_gpu_services_enqueue_uploads_and_retire_completed_gpu_work() {
 
 void test_project_gpu_services_mark_failed_uploads() {
     cubey::UploadQueue uploads;
-    cubey::DeferredDestructionQueue deferred;
+    cubey::vulkan::DeferredGpuDestructionQueue deferred;
     cubey::vulkan::SubmissionCoordinator submission = fake_submission();
     cubey::vulkan::GpuRuntime runtime({
         .device = fake_device(),
@@ -184,7 +184,7 @@ void test_project_gpu_services_mark_failed_uploads() {
 
 void test_project_gpu_services_tracks_failed_rgba8_readbacks() {
     cubey::UploadQueue uploads;
-    cubey::DeferredDestructionQueue deferred;
+    cubey::vulkan::DeferredGpuDestructionQueue deferred;
     cubey::vulkan::SubmissionCoordinator submission = fake_submission();
     cubey::vulkan::GpuRuntime runtime({
         .device = fake_device(),
@@ -220,7 +220,7 @@ void test_project_gpu_services_tracks_failed_rgba8_readbacks() {
 
 void test_project_gpu_services_rejects_invalid_rgba8_readback_requests() {
     cubey::UploadQueue uploads;
-    cubey::DeferredDestructionQueue deferred;
+    cubey::vulkan::DeferredGpuDestructionQueue deferred;
     cubey::vulkan::SubmissionCoordinator submission = fake_submission();
     cubey::vulkan::GpuRuntime runtime({
         .device = fake_device(),

@@ -54,8 +54,8 @@ current design.
                     +----------+----------+
                                |
                     +----------v----------+
-                    |   Cubey Runtime     |  <-- frame/input/resource helpers now;
-                    |                     |      app/window/UI layers stay narrow
+                    | Cubey Foundation    |  <-- frame/input/resource helpers now;
+                    |                     |      host/window/UI layers stay narrow
                     +----------+----------+
                                |
                     +----------v----------+
@@ -127,13 +127,14 @@ Reusable spatial types should stay explicit and narrow:
 - `LightManager3D` owns entity-backed 3D light components and builds CPU-side
   light packets from committed scene read views. Directional lights carry
   normalized directions; point lights derive world position from `Transform3D`.
-- `cubey::render::View3D` is the first renderer-facing view contract. It
-  combines a scene read view, camera entity, viewport size, ambient-only
-  environment, renderables, and lights into a CPU `RenderFramePlan3D`.
-- `cubey::render::FrameRenderPlan3D` is the first renderer-facing pass-list
-  contract. It can describe manual multi-view/multi-pass work such as a shadow
-  pass plus a camera pass while leaving scheduling and synchronization explicit.
-- `cubey::render` can turn renderable packets into CPU draw packets by
+- Scene render-planning helpers expose the first renderer-facing 3D view and
+  pass-list contracts. They combine a scene read view, camera entity, viewport
+  size, ambient environment, renderables, and lights into CPU
+  `RenderFramePlan3D` values.
+- The planning helpers can describe manual multi-view/multi-pass work such as a
+  shadow pass plus a camera pass while leaving scheduling and synchronization
+  explicit.
+- The scene layer can turn renderable packets into CPU draw packets by
   validating resource handles, attaching material tags, sorting them, computing
   world bounds, and frustum-culling visible renderables. This is a planning
   layer only; Vulkan command recording, descriptors, pipelines, light upload,
@@ -148,15 +149,15 @@ environment, or renderer ownership.
 `cubey::Engine` is the scoped root owner for engine services and scene
 creation. It owns project runtime services, render resource handle identity,
 material metadata, and created scenes. It is intentionally not a singleton:
-apps pass `Engine&`, `Scene&`, or narrower contexts through the boundaries that
-need them.
+applications pass `Engine&`, `Scene&`, or narrower contexts through the
+boundaries that need them.
 
-### Current And Future App Interfaces
+### Host And Project Interfaces
 
 Cubey now has two narrow hosts:
 
-- `cubey_app` owns GLFW window/surface hosting and the shared windowed loop.
-- `cubey::HeadlessPngHost` owns no-window Vulkan setup, an offscreen RGBA
+- `cubey_host` owns GLFW window/surface hosting and the shared windowed loop.
+- `cubey::host::HeadlessPngHost` owns no-window Vulkan setup, an offscreen RGBA
   target, capture transitions, ticketed RGBA8 readback, and PNG artifact
   writing.
 - `cubey::Engine` owns project runtime services and created scenes. Windowed
@@ -174,7 +175,7 @@ well-established or correctness-sensitive.
 
 Before this becomes a broad host, projects should move toward the async-ready
 shape described in [threading and async design](architecture/threading-and-async.md):
-app state produces render packets, CPU jobs run behind Cubey APIs,
+project/application state produces render packets, CPU jobs run behind Cubey APIs,
 upload/capture requests are queued, and one GPU owner serializes queue
 submission and resource lifetime decisions. Today that GPU owner is
 `cubey::vulkan::GpuRuntime`, backed by `SubmissionCoordinator` for actual queue
@@ -278,10 +279,10 @@ Borrow the contract clarity and terminology; keep Cubey's implementation small.
 ## Repository Structure
 
 Cubey is becoming a small C++ monorepo. The public foundation is modeled as
-layered `cubey::*` targets (`core`, `vulkan`, `render`, `runtime`, and `scene`)
-plus the aggregate `cubey::cubey` target for examples and projects that do not
-need a narrower dependency. Runnable binaries should be named explicitly and
-live in either `examples/` or `projects/`:
+layered `cubey::*` targets (`core`, `vulkan`, `render`, `scene`, `engine`, and
+optional `host`) plus the aggregate `cubey::cubey` target for examples and
+projects that do not need a narrower dependency. Runnable binaries should be
+named explicitly and live in either `examples/` or `projects/`:
 
 - `include/cubey/` - public library headers. These define the include discipline
   used by examples, projects, and tests.
@@ -307,9 +308,11 @@ layering order is:
 cubey::core
   -> cubey::vulkan
   -> cubey::render
-  -> cubey::runtime
   -> cubey::scene
+  -> cubey::engine
   -> cubey::cubey aggregate
+        + cubey::input
+        + optional cubey::host for concrete hosts
   ^
   |
 examples / projects / tools / tests / benchmarks
@@ -318,9 +321,9 @@ examples / projects / tools / tests / benchmarks
 Projects can depend on the aggregate `cubey::cubey` target or a narrower
 `cubey::*` layer; Cubey library targets must not depend on projects. Shared
 code either graduates into the appropriate Cubey layer or stays local to the
-project that needs it. Example-specific app behavior should stay in that
-example. The Cubey library should contain reusable runtime/platform pieces, not
-named examples such as `window_clear`.
+project that needs it. Example-specific host behavior should stay in that
+example. The Cubey library should contain reusable engine/host pieces, not named
+examples such as `window_clear`.
 
 Cubey targets should expose public headers now, but they should not gain
 install/export/package rules until the project genuinely needs external
@@ -337,43 +340,44 @@ cubey/
     CubeyWarnings.cmake    -- compiler warning helper
   include/
     cubey/
-      app/
-        glfw_window.h      -- GLFW window and surface host
-        windowed_host.h    -- shared windowed app loop
       core/
         run_config.h       -- shared run configuration
         jobs.h             -- CPU job facade
-        frame_*.h          -- frame timing, stats, tickets, and deferred destruction
+        frame_clock.h      -- frame timing
         file_io.h          -- generic binary file reads/writes
         image_io.h         -- PNG artifact output
         math.h             -- GLM-backed math aliases and Vulkan projection helpers
-        spirv_io.h         -- SPIR-V bytecode file loading
-      detail/
-        stable_slot_store.h -- MT-stable slot storage internals
       input/
         input.h            -- shared keyboard and mouse input snapshot
         pointer_drag.h     -- shared pointer drag helper
         pan_zoom_2d_controller.h -- input-driven 2D camera controller
         orbit_controller.h -- basic orbit input state
+      engine/
+        capture_queue.h    -- job-backed PNG capture encoding queue
+        engine.h           -- scoped root owner for runtime, scenes, and registries
+        project_gpu_services.h -- project-facing GPU uploads/readbacks/retirement
+        project_runtime.h  -- async-ready project vocabulary
+        upload_queue.h     -- CPU-owned upload request queue
+      host/
+        frame_stats.h      -- windowed telemetry sampling and title formatting
+        glfw_window.h      -- GLFW window and surface host
+        headless_png_host.h -- no-window offscreen PNG capture host
+        windowed_host.h    -- shared windowed host loop
       render/
         target.h           -- color/depth render target views
         mesh.h             -- indexed mesh buffers and draw item vocabulary
         texture.h          -- sampled color/depth texture ownership helpers
         resource_handle.h  -- opaque render resource handle values
-        resource_registry.h -- Engine-owned render handle identity
+        resource_registry.h -- render handle identity and material tags
         resource_table.h   -- project-owned move-only render resources
-        view_3d.h          -- CPU 3D render frame planning and culling
-      runtime/
-        capture_queue.h    -- job-backed PNG capture encoding queue
-        headless_png_host.h -- no-window offscreen PNG capture host
-        project_gpu_services.h -- project-facing GPU uploads/readbacks/retirement
-        project_runtime.h  -- async-ready project vocabulary
-        upload_queue.h     -- CPU-owned upload request queue
       scene/
-        engine.h           -- scoped root owner for runtime, scenes, and registries
         entity.h           -- generational entity handles and stable manager
         scene.h            -- scene edit/read-view contract
         camera_*.h         -- 2D/3D cameras and entity-backed camera managers
+        render_plan.h      -- scene-backed CPU 3D draw-packet planning
+        view_3d.h          -- scene-backed CPU 3D view/pass planning and culling
+        stable_slot_store.h -- MT-stable scene/component slot storage
+        single_instance_component_store.h -- one-component-per-entity storage
         transform_*.h      -- explicit 2D/3D affine transform value types
         transform_manager.h -- parented transform components and snapshots
         light_manager.h    -- entity-backed 3D light components
@@ -395,21 +399,21 @@ cubey/
         queue_submit.h     -- binary-semaphore queue-submit description
         render_context.h   -- surface-backed begin/end frame lifecycle
         sampler.h          -- Vulkan sampler ownership
+        shader_bytecode.h  -- SPIR-V bytecode file loading
         shader_module.h    -- shader module lifetime
+        submission_tickets.h -- monotonic GPU submission tickets and retirement
         submission_coordinator.h -- serialized GPU submission helper
         swapchain.h        -- swapchain images and image views
         vk_check.h         -- Vulkan result helpers
   src/
     cubey/
       CMakeLists.txt       -- layered cubey::* library targets
-      app/
-        glfw_window.cpp    -- GLFW window and surface host
-        windowed_host.cpp  -- shared windowed app loop
-      core/                -- run config, jobs, frame state, I/O, and PNG writer
+      core/                -- run config, jobs, frame timing, I/O, and PNG writer
+      engine/              -- engine root, project runtime, queues, GPU services
+      host/                -- concrete GLFW/windowed/headless hosts
       input/               -- input snapshot and camera-control helpers
-      render/              -- renderer-facing CPU resource/view helpers
-      runtime/             -- project runtime, queues, headless host, GPU services
-      scene/               -- engine, scene/entity, and component managers
+      render/              -- renderer-facing CPU resource and target helpers
+      scene/               -- scene/entity, planning helpers, and component managers
       vulkan/
         *.cpp              -- Vulkan object, command, submission, and swapchain helpers
   examples/
@@ -425,7 +429,7 @@ cubey/
       fluid_2d/
         CMakeLists.txt
         main.cpp
-        fluid_2d_app.*     -- host/runtime/input orchestration
+        fluid_2d_app.*     -- host/engine/input orchestration
         fluid_2d_commands.* -- simulation and fullscreen draw command recording
         fluid_2d_gpu_resources.* -- project-owned GPU buffers/descriptors/pipelines
         shaders/
@@ -448,7 +452,7 @@ cubey/
     DESIGN.md              -- current design and tenets
     roadmap.md             -- living implementation plan
     architecture/          -- detailed current foundation notes
-      app-runtime.md
+      host-engine.md
       entity-component-foundation.md
       fluid-simulation.md
       renderer-foundation.md

@@ -1,11 +1,11 @@
 #pragma once
 
 #include <cubey/core/math.h>
-#include <cubey/detail/single_instance_component_store.h>
-#include <cubey/detail/stable_slot_store.h>
 #include <cubey/render/resource_handle.h>
 #include <cubey/render/resource_registry.h>
 #include <cubey/scene/entity.h>
+#include <cubey/scene/single_instance_component_store.h>
+#include <cubey/scene/stable_slot_store.h>
 #include <cubey/scene/transform_manager.h>
 
 #include <cstdint>
@@ -55,7 +55,7 @@ struct RenderablePacket3D {
 struct Renderable3DManagerTag {};
 
 template <typename Tag> struct RenderableInstance {
-    detail::StableSlotId slot{};
+    StableSlotId slot{};
 
     [[nodiscard]] bool is_null() const noexcept {
         return slot.is_null();
@@ -102,8 +102,7 @@ class RenderableReadView3D {
         std::vector<Component> components{};
         std::vector<RenderableInstance3D> active_instances{};
         std::unordered_map<Entity, std::size_t, EntityHash> entity_to_component{};
-        std::unordered_map<detail::StableSlotId, std::size_t, detail::StableSlotIdHash>
-            slot_to_component{};
+        std::unordered_map<StableSlotId, std::size_t, StableSlotIdHash> slot_to_component{};
     };
 
     RenderableReadView3D() = default;
@@ -133,7 +132,7 @@ class RenderableManager3D {
         Entity entity{};
         Renderable3D renderable{};
     };
-    using Store = detail::SingleInstanceComponentStore<Component, Instance, Snapshot>;
+    using Store = SingleInstanceComponentStore<Component, Instance, Snapshot>;
 
   public:
     [[nodiscard]] bool has_component(Entity entity) const;

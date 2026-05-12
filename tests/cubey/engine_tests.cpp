@@ -1,5 +1,5 @@
-#include <cubey/scene/engine.h>
-#include <cubey/runtime/project_gpu_services.h>
+#include <cubey/engine/engine.h>
+#include <cubey/engine/project_gpu_services.h>
 #include <cubey/scene/renderable_manager.h>
 #include <cubey/scene/transform_3d.h>
 
@@ -74,7 +74,7 @@ void test_engine_exposes_project_runtime_services() {
         .elapsed_seconds = 0.25,
         .frame_index = 2,
     });
-    context.deferred_destruction().defer_after(frame.ticket, [] {});
+    context.deferred_destruction().defer_after(frame.submission_ticket, [] {});
     require(engine.retire_deferred_destruction() == 1,
             "engine should retire project deferred destruction through runtime adapter");
 }
@@ -121,16 +121,16 @@ void test_engine_reuses_project_frame_for_same_timing() {
     };
     const cubey::ProjectFrame& first = engine.frame_for_timing(timing);
     const cubey::ProjectFrame& repeated = engine.frame_for_timing(timing);
-    require(first.ticket.value == repeated.ticket.value,
+    require(first.submission_ticket.value == repeated.submission_ticket.value,
             "engine should reuse runtime frame for the same host timing");
-    const std::uint64_t first_ticket = first.ticket.value;
+    const std::uint64_t first_ticket = first.submission_ticket.value;
 
     const cubey::ProjectFrame& next = engine.frame_for_timing({
         .delta_seconds = 0.02,
         .elapsed_seconds = 1.02,
         .frame_index = 11,
     });
-    require(next.ticket.value == first_ticket + 1,
+    require(next.submission_ticket.value == first_ticket + 1,
             "engine should issue a new runtime frame for a new host timing");
 }
 

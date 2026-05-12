@@ -2,7 +2,7 @@
 
 #include "fluid_2d_config.h"
 
-#include <cubey/runtime/project_gpu_services.h>
+#include <cubey/engine/project_gpu_services.h>
 #include <cubey/vulkan/buffer.h>
 #include <cubey/vulkan/descriptors.h>
 #include <cubey/vulkan/device.h>

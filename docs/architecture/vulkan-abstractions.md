@@ -44,7 +44,7 @@ The current boundary is:
 - Keep synchronization and image layouts explicit unless the helper name makes
   the exact transition obvious.
 - Keep GLFW/platform code out of the low-level Vulkan library. If it becomes
-  reusable, split it into a platform/app layer rather than mixing it into
+  reusable, split it into a platform/host layer rather than mixing it into
   `cubey::vulkan`.
 - Keep threading and async work shaped by
   [threading and async design](threading-and-async.md): one GPU owner first,
@@ -94,7 +94,7 @@ Current state:
 - `RenderContext` owns the surface-backed `begin_frame` / `end_frame`
   acquire, submit, present, frame-slot advance, and recreate result path.
 - `SwapchainRecreateTracker` owns bounded consecutive recreate-attempt tracking.
-- The app host exposes the active render frame slot to callbacks. Frame slot,
+- The host layer exposes the active render frame slot to callbacks. Frame slot,
   frame index, and swapchain image index are separate concepts.
 
 Needed next:
@@ -133,7 +133,7 @@ Current state:
 - `GpuRuntime` is the host-owned GPU work queue and owner-thread context.
   Windowed/headless hosts expose it through their contexts and run it threaded
   by default, with explicit drain/wait calls at host-owned synchronization
-  points. It is the public boundary for app/project setup-time GPU work;
+  points. It is the public boundary for host/project setup-time GPU work;
   `ImmediateCommands` remains the low-level one-shot command helper used inside
   owner-context callbacks and transfer helpers.
 - `copy_buffer` and `upload_device_buffer` cover current setup-time transfers
@@ -148,7 +148,7 @@ Needed next:
 
 - Debug-label helpers once marker scope becomes useful during capture/debugging.
 - One-shot compute/transfer helper vocabulary.
-- Move remaining direct app/project transfer and capture requests toward
+- Move remaining direct host/project transfer and capture requests toward
   runtime-queued work and explicit completion tickets.
 - Per-frame/per-thread command-pool sharding before any parallel command
   recording.
@@ -174,9 +174,9 @@ Current state:
 - Shared image and image-transition helpers now cover the first offscreen color
   render target and color-attachment-to-readback transition used by headless
   output.
-- `HeadlessPngHost` owns the repeated no-window offscreen target, capture
-  transition, runtime-queued capture recording, project-GPU readback ticket,
-  and PNG artifact write path.
+- `cubey::host::HeadlessPngHost` owns the repeated no-window offscreen target,
+  capture transition, runtime-queued capture recording, project-GPU readback
+  ticket, and PNG artifact write path.
 - `cubey::render::Texture2D` now owns the current generated/uploaded sampled
   texture image shape above the raw Vulkan `Image` and optional `Sampler`.
 - `cubey::render::DepthTexture` owns sampled depth image setup for shadow maps
@@ -240,7 +240,7 @@ Current state:
 - `ShaderModule` owns shader module lifetime.
 - CMake compiles GLSL to SPIR-V with shared include support.
 - `read_spirv_file` loads compiled SPIR-V bytecode into aligned 32-bit words
-  through `spirv_io` for shader module creation.
+  through the Vulkan `shader_bytecode` helper for shader module creation.
 - `PipelineLayout`, `GraphicsPipeline`, and `ComputePipeline` own pipeline
   lifetime.
 - `DynamicGraphicsPipelineInfo` builds the current dynamic graphics pipeline
@@ -324,12 +324,12 @@ Defer:
 
 Current state:
 
-- `cubey_app` owns GLFW/window/surface hosting, key/pointer input dispatch, the
+- `cubey_host` owns GLFW/window/surface hosting, key/pointer input dispatch, the
   shared windowed loop, frame timing/stats hooks, and swapchain recreation for
   all current windowed examples.
 - Windowed examples still own shaders, pipelines, descriptors, swapchain-sized
   render resources, command recording, and example behavior.
-- `cubey::HeadlessPngHost` owns the repeated no-window Vulkan setup, offscreen
+- `cubey::host::HeadlessPngHost` owns the repeated no-window Vulkan setup, offscreen
   RGBA render target, capture transitions, readback buffer copy, and PNG write
   path for current headless examples/projects.
 - Shared non-platform helpers cover frame timing, frame stats, and orbit
@@ -361,8 +361,8 @@ Current state:
   completed RGBA pixel buffers.
 - `UploadQueue`, `UploadTicket`, and `QueuedUpload` provide the first CPU-owned
   upload request queue.
-- `FrameTicketIssuer`, `FrameTicket`, and `DeferredDestructionQueue` provide
-  CPU-side ticket retirement vocabulary.
+- `GpuSubmissionTicketIssuer`, `GpuSubmissionTicket`, and
+  `DeferredGpuDestructionQueue` provide GPU submission retirement vocabulary.
 - `SubmissionCoordinator` provides GPU submission tickets and serialized queue
   submission for frames and immediate work.
 - `GpuRuntime` provides the host-owned GPU work queue and owner-context boundary
@@ -478,13 +478,13 @@ stable.
 - Deferred a generic rebuild callback/coordinator because the actual resource
   creation/destruction order still differs by example.
 
-This batch stayed platform-light. GLFW should now move into a separate app host
+This batch stayed platform-light. GLFW should now move into a separate host
 layer rather than into `cubey::vulkan`.
 
 ### Batch 5: Headless Artifact Path
 
-Goal: prove no-window rendering and artifact readback before abstracting the app
-host.
+Goal: prove no-window rendering and artifact readback before abstracting the
+host layer.
 
 - Status: initial pass complete on `main`.
 - Added `examples/headless_render` as an explicit no-window target.
@@ -494,12 +494,12 @@ host.
 - Added the missing transition helper for the exact render-target readback path.
 - Copied the image into a readback buffer and wrote a deterministic PNG artifact.
 - Added CTest coverage for artifact creation in no-display terminal sessions.
-- Follow-up extraction added `cubey::HeadlessPngHost` and migrated
+- Follow-up extraction added `cubey::host::HeadlessPngHost` and migrated
   `headless_render`, `fractal --headless`, and `fluid_2d --headless` onto the
   shared no-GLFW host.
 
 Keep this batch intentionally small. It should pressure render-target/readback
-vocabulary, not create a general app shell.
+vocabulary, not create a general host shell.
 
 Implemented work loop:
 
@@ -544,7 +544,7 @@ compute-to-graphics storage-buffer use without promoting a project host.
   helper as narrow reusable pressure from the example.
 - Kept particle seeding, simulation constants, billboard generation, command
   recording, and controls example-local.
-- Deferred particle-system helpers, indirect draw, and app/runtime host work.
+- Deferred particle-system helpers, indirect draw, and host/engine host work.
 
 This is still example work. A future particle system should move under
 `projects/` only if it needs longer-lived state, headless capture, indirect
@@ -567,7 +567,7 @@ around blocking helper calls.
 
 ### Batch 8: First Project And Runtime Pressure
 
-Goal: let a real project define the app/runtime seam.
+Goal: let a real project define the host/engine seam.
 
 - Start with fluid simulation, marching cubes, SDF sculpting, or a larger
   particle system only if it grows beyond the current example-sized attractor

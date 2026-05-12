@@ -1,15 +1,15 @@
 #include "particles_app.h"
 
-#include <cubey/app/glfw_window.h>
-#include <cubey/app/windowed_host.h>
-#include <cubey/core/frame_stats.h>
+#include <cubey/host/frame_stats.h>
+#include <cubey/host/glfw_window.h>
+#include <cubey/host/windowed_host.h>
 #include <cubey/render/target.h>
-#include <cubey/core/spirv_io.h>
 #include <cubey/vulkan/buffer.h>
 #include <cubey/vulkan/command_recorder.h>
 #include <cubey/vulkan/descriptors.h>
 #include <cubey/vulkan/image_transitions.h>
 #include <cubey/vulkan/pipeline.h>
+#include <cubey/vulkan/shader_bytecode.h>
 #include <cubey/vulkan/shader_module.h>
 #include <cubey/vulkan/vk_check.h>
 
@@ -33,8 +33,8 @@
 namespace cubey::examples::particles {
 namespace {
 
-using cubey::FrameStatsSample;
 using cubey::FrameTiming;
+using cubey::host::FrameStatsSample;
 using cubey::vulkan::vk_struct;
 
 constexpr std::uint32_t kParticleCount = 8192;
@@ -115,7 +115,7 @@ class ParticlesApp {
             throw std::runtime_error("particles does not support --headless yet");
         }
 
-        cubey::app::WindowedHost host(
+        cubey::host::WindowedHost host(
             {
                 .run_config = config_,
                 .required_queue_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
@@ -124,24 +124,24 @@ class ParticlesApp {
             },
             {
                 .create_swapchain_resources =
-                    [this](cubey::app::WindowedAppContext& context) {
+                    [this](cubey::host::WindowedAppContext& context) {
                         create_global_resources_if_needed(context);
                         create_pipeline(context);
                     },
                 .destroy_swapchain_resources =
-                    [this](cubey::app::WindowedAppContext& context) {
+                    [this](cubey::host::WindowedAppContext& context) {
                         (void)context;
                         destroy_swapchain_resources();
                     },
                 .on_ready =
-                    [](cubey::app::WindowedAppContext& context) {
+                    [](cubey::host::WindowedAppContext& context) {
                         std::printf(
                             "particles: %s rendering compute attractor particles at %ux%u\n",
                             context.device().device_name(), context.swapchain().extent().width,
                             context.swapchain().extent().height);
                     },
                 .update =
-                    [this](cubey::app::WindowedAppContext& context, const FrameTiming& timing) {
+                    [this](cubey::host::WindowedAppContext& context, const FrameTiming& timing) {
                         (void)timing;
                         if (context.input().key_pressed(cubey::input::Key::Escape)) {
                             context.window().request_close();
@@ -157,13 +157,13 @@ class ParticlesApp {
                         }
                     },
                 .record_frame =
-                    [this](cubey::app::WindowedAppContext& context,
-                           const cubey::app::WindowedRenderFrame& frame) {
+                    [this](cubey::host::WindowedAppContext& context,
+                           const cubey::host::WindowedRenderFrame& frame) {
                         (void)context;
                         record_particles_frame(frame);
                     },
                 .frame_stats_sample =
-                    [](cubey::app::WindowedAppContext& context,
+                    [](cubey::host::WindowedAppContext& context,
                        const FrameTiming& timing) -> std::optional<FrameStatsSample> {
                     const VkExtent2D extent = context.swapchain().extent();
                     return FrameStatsSample{
@@ -174,7 +174,7 @@ class ParticlesApp {
                     };
                 },
                 .shutdown =
-                    [this](cubey::app::WindowedAppContext& context) {
+                    [this](cubey::host::WindowedAppContext& context) {
                         (void)context;
                         destroy_all_resources();
                     },
@@ -183,7 +183,7 @@ class ParticlesApp {
     }
 
   private:
-    void create_global_resources_if_needed(cubey::app::WindowedAppContext& context) {
+    void create_global_resources_if_needed(cubey::host::WindowedAppContext& context) {
         if (particle_buffer_.has_value()) {
             return;
         }
@@ -193,7 +193,7 @@ class ParticlesApp {
         create_compute_resources(context);
     }
 
-    void create_particle_buffer(cubey::app::WindowedAppContext& context) {
+    void create_particle_buffer(cubey::host::WindowedAppContext& context) {
         const std::vector<ParticleGpu> particles = make_initial_particles();
         const VkDeviceSize byte_size =
             static_cast<VkDeviceSize>(particles.size() * sizeof(ParticleGpu));
@@ -201,7 +201,7 @@ class ParticlesApp {
             context.gpu(), particles.data(), byte_size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT));
     }
 
-    void create_descriptor_resources(cubey::app::WindowedAppContext& context) {
+    void create_descriptor_resources(cubey::host::WindowedAppContext& context) {
         const std::array<cubey::vulkan::DescriptorSetBindingConfig, 1> bindings{{
             {
                 .binding = 0,
@@ -214,7 +214,7 @@ class ParticlesApp {
         update_particle_descriptor(context);
     }
 
-    void update_particle_descriptor(cubey::app::WindowedAppContext& context) {
+    void update_particle_descriptor(cubey::host::WindowedAppContext& context) {
         const cubey::vulkan::DescriptorBufferWrite particle_write =
             cubey::vulkan::storage_buffer_descriptor(
                 descriptors().set(), 0, particle_buffer().handle(), particle_buffer().size());
@@ -222,7 +222,7 @@ class ParticlesApp {
         cubey::vulkan::update_descriptor_sets(context.device(), {&write, 1});
     }
 
-    void reset_particle_buffer(cubey::app::WindowedAppContext& context) {
+    void reset_particle_buffer(cubey::host::WindowedAppContext& context) {
         context.gpu().wait_queue_idle("vkQueueWaitIdle before particle reset");
         particle_buffer_.reset();
         create_particle_buffer(context);
@@ -230,9 +230,9 @@ class ParticlesApp {
         reset_particles_requested_ = false;
     }
 
-    void create_compute_resources(cubey::app::WindowedAppContext& context) {
+    void create_compute_resources(cubey::host::WindowedAppContext& context) {
         const std::vector<std::uint32_t> compute_code =
-            cubey::read_spirv_file(shader_path("particles.comp.spv"));
+            cubey::vulkan::read_spirv_file(shader_path("particles.comp.spv"));
         cubey::vulkan::ShaderModule compute_shader(context.device(), compute_code);
 
         VkPushConstantRange compute_push_constant{};
@@ -269,11 +269,11 @@ class ParticlesApp {
         particle_buffer_.reset();
     }
 
-    void create_pipeline(cubey::app::WindowedAppContext& context) {
+    void create_pipeline(cubey::host::WindowedAppContext& context) {
         const std::vector<std::uint32_t> vertex_code =
-            cubey::read_spirv_file(shader_path("particles.vert.spv"));
+            cubey::vulkan::read_spirv_file(shader_path("particles.vert.spv"));
         const std::vector<std::uint32_t> fragment_code =
-            cubey::read_spirv_file(shader_path("particles.frag.spv"));
+            cubey::vulkan::read_spirv_file(shader_path("particles.frag.spv"));
         cubey::vulkan::ShaderModule vertex_shader(context.device(), vertex_code);
         cubey::vulkan::ShaderModule fragment_shader(context.device(), fragment_code);
 
@@ -351,7 +351,7 @@ class ParticlesApp {
                              nullptr, 0, nullptr);
     }
 
-    void record_particles_frame(const cubey::app::WindowedRenderFrame& frame) {
+    void record_particles_frame(const cubey::host::WindowedRenderFrame& frame) {
         const cubey::vulkan::CommandRecorder recorder(frame.command_buffer);
         recorder.begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 

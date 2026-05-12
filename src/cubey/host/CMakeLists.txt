@@ -1,0 +1,32 @@
+add_library(cubey_host STATIC
+    frame_stats.cpp
+    glfw_window.cpp
+    headless_png_host.cpp
+    windowed_host.cpp
+)
+add_library(cubey::host ALIAS cubey_host)
+
+target_include_directories(
+    cubey_host
+    PUBLIC
+        "${PROJECT_SOURCE_DIR}/include"
+)
+
+target_compile_definitions(
+    cubey_host
+    PRIVATE
+        GLFW_INCLUDE_NONE
+)
+
+target_link_libraries(
+    cubey_host
+    PUBLIC
+        cubey::core
+        cubey::input
+        cubey::render
+        cubey::engine
+        cubey::vulkan
+    PRIVATE
+        cubey_project_warnings
+        glfw
+)

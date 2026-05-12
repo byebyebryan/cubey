@@ -1,21 +1,21 @@
 #include "spinning_cube_app.h"
 
-#include <cubey/app/windowed_host.h>
-#include <cubey/scene/camera_3d.h>
-#include <cubey/scene/engine.h>
 #include <cubey/core/math.h>
+#include <cubey/engine/engine.h>
+#include <cubey/host/windowed_host.h>
 #include <cubey/render/mesh.h>
 #include <cubey/render/resource_handle.h>
 #include <cubey/render/resource_table.h>
 #include <cubey/render/target.h>
-#include <cubey/render/view_3d.h>
+#include <cubey/scene/camera_3d.h>
 #include <cubey/scene/scene.h>
-#include <cubey/core/spirv_io.h>
 #include <cubey/scene/transform_3d.h>
+#include <cubey/scene/view_3d.h>
 #include <cubey/vulkan/command_recorder.h>
 #include <cubey/vulkan/image.h>
 #include <cubey/vulkan/image_transitions.h>
 #include <cubey/vulkan/pipeline.h>
+#include <cubey/vulkan/shader_bytecode.h>
 #include <cubey/vulkan/shader_module.h>
 #include <cubey/vulkan/vk_check.h>
 
@@ -98,7 +98,7 @@ class SpinningCubeApp {
             throw std::runtime_error("spinning_cube does not support --headless yet");
         }
 
-        cubey::app::WindowedHost host(
+        cubey::host::WindowedHost host(
             {
                 .run_config = config_,
                 .required_queue_flags = VK_QUEUE_GRAPHICS_BIT,
@@ -107,37 +107,37 @@ class SpinningCubeApp {
             },
             {
                 .create_swapchain_resources =
-                    [this](cubey::app::WindowedAppContext& context) {
+                    [this](cubey::host::WindowedAppContext& context) {
                         create_global_resources_if_needed(context);
                         create_swapchain_resources(context);
                     },
                 .destroy_swapchain_resources =
-                    [this](cubey::app::WindowedAppContext& context) {
+                    [this](cubey::host::WindowedAppContext& context) {
                         (void)context;
                         destroy_swapchain_resources();
                     },
                 .on_ready =
-                    [](cubey::app::WindowedAppContext& context) {
+                    [](cubey::host::WindowedAppContext& context) {
                         std::printf("spinning_cube: %s rendering indexed cube at %ux%u\n",
                                     context.device().device_name(),
                                     context.swapchain().extent().width,
                                     context.swapchain().extent().height);
                     },
                 .update =
-                    [this](cubey::app::WindowedAppContext& context, const FrameTiming& timing) {
+                    [this](cubey::host::WindowedAppContext& context, const FrameTiming& timing) {
                         (void)context;
                         (void)timing;
                         update_scene_transform();
                     },
                 .record_frame =
-                    [this](cubey::app::WindowedAppContext& context,
-                           const cubey::app::WindowedRenderFrame& frame) {
+                    [this](cubey::host::WindowedAppContext& context,
+                           const cubey::host::WindowedRenderFrame& frame) {
                         (void)context;
                         record_cube_frame(frame);
                     },
                 .frame_stats_sample = {},
                 .shutdown =
-                    [this](cubey::app::WindowedAppContext& context) {
+                    [this](cubey::host::WindowedAppContext& context) {
                         (void)context;
                         destroy_all_resources();
                     },
@@ -146,7 +146,7 @@ class SpinningCubeApp {
     }
 
   private:
-    void create_global_resources_if_needed(cubey::app::WindowedAppContext& context) {
+    void create_global_resources_if_needed(cubey::host::WindowedAppContext& context) {
         if (meshes_.contains(cube_mesh_handle_)) {
             return;
         }
@@ -157,7 +157,7 @@ class SpinningCubeApp {
         create_scene();
     }
 
-    void create_swapchain_resources(cubey::app::WindowedAppContext& context) {
+    void create_swapchain_resources(cubey::host::WindowedAppContext& context) {
         create_depth_resources(context);
         create_pipeline(context);
     }
@@ -174,11 +174,11 @@ class SpinningCubeApp {
         destroy_render_handles();
     }
 
-    void create_pipeline(cubey::app::WindowedAppContext& context) {
+    void create_pipeline(cubey::host::WindowedAppContext& context) {
         const std::vector<std::uint32_t> vertex_code =
-            cubey::read_spirv_file(shader_path("spinning_cube.vert.spv"));
+            cubey::vulkan::read_spirv_file(shader_path("spinning_cube.vert.spv"));
         const std::vector<std::uint32_t> fragment_code =
-            cubey::read_spirv_file(shader_path("spinning_cube.frag.spv"));
+            cubey::vulkan::read_spirv_file(shader_path("spinning_cube.frag.spv"));
         cubey::vulkan::ShaderModule vertex_shader(context.device(), vertex_code);
         cubey::vulkan::ShaderModule fragment_shader(context.device(), fragment_code);
 
@@ -232,11 +232,11 @@ class SpinningCubeApp {
         pipeline_.emplace(context.device(), pipeline_info.create_info());
     }
 
-    void create_depth_resources(cubey::app::WindowedAppContext& context) {
+    void create_depth_resources(cubey::host::WindowedAppContext& context) {
         depth_attachment_.emplace(context.device(), context.swapchain().extent());
     }
 
-    void create_cube_mesh(cubey::app::WindowedAppContext& context) {
+    void create_cube_mesh(cubey::host::WindowedAppContext& context) {
         meshes_.emplace(cube_mesh_handle_, context.gpu(),
                         cubey::render::indexed_mesh_config(kCubeVertices, kCubeIndices));
     }
@@ -282,33 +282,33 @@ class SpinningCubeApp {
     }
 
     [[nodiscard]] PushConstants
-    current_push_constants(const cubey::render::RenderFramePlan3D& plan,
-                           const cubey::render::RenderDrawPacket3D& packet) const {
+    current_push_constants(const cubey::scene::RenderFramePlan3D& plan,
+                           const cubey::scene::RenderDrawPacket3D& packet) const {
         return {
             plan.view_projection_matrix * packet.world_affine_matrix,
         };
     }
 
-    [[nodiscard]] cubey::render::RenderFramePlan3D
+    [[nodiscard]] cubey::scene::RenderFramePlan3D
     current_frame_plan(const cubey::SceneReadView& view, VkExtent2D extent) const {
-        const cubey::render::View3D render_view{
+        const cubey::scene::View3D render_view{
             .camera_entity = camera_entity_,
             .width = extent.width,
             .height = extent.height,
         };
-        cubey::render::RenderFramePlan3D plan = cubey::render::build_render_frame_plan_3d(
-            render_view, view, engine_.render_resources());
+        cubey::scene::RenderFramePlan3D plan =
+            cubey::scene::build_render_frame_plan_3d(render_view, view, engine_.render_resources());
         if (plan.draw_packets.size() != 1) {
             throw std::runtime_error("spinning_cube scene should produce one draw packet");
         }
         return plan;
     }
 
-    void record_cube_frame(const cubey::app::WindowedRenderFrame& frame) {
+    void record_cube_frame(const cubey::host::WindowedRenderFrame& frame) {
         cubey::SceneReadView scene_view = scene().read();
-        const cubey::render::RenderFramePlan3D frame_plan =
+        const cubey::scene::RenderFramePlan3D frame_plan =
             current_frame_plan(scene_view, frame.color_target.extent);
-        const cubey::render::RenderDrawPacket3D& draw_packet = frame_plan.draw_packets[0];
+        const cubey::scene::RenderDrawPacket3D& draw_packet = frame_plan.draw_packets[0];
         const cubey::vulkan::CommandRecorder recorder(frame.command_buffer);
         recorder.begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 

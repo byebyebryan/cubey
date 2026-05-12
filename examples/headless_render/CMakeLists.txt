@@ -8,6 +8,7 @@ target_link_libraries(
     cubey_example_headless_render
     PRIVATE
         cubey::cubey
+        cubey::host
         cubey_project_warnings
 )
 

@@ -1,6 +1,6 @@
 #include "headless_render_app.h"
 
-#include <cubey/runtime/headless_png_host.h>
+#include <cubey/host/headless_png_host.h>
 #include <cubey/vulkan/command_recorder.h>
 #include <cubey/vulkan/dynamic_rendering.h>
 #include <cubey/vulkan/vk_check.h>
@@ -12,7 +12,7 @@ namespace {
 
 using cubey::vulkan::vk_struct;
 
-void record_clear(VkCommandBuffer command_buffer, const cubey::HeadlessRenderTarget& target) {
+void record_clear(VkCommandBuffer command_buffer, const cubey::host::HeadlessRenderTarget& target) {
     VkClearValue clear{};
     clear.color = {{0.12F, 0.18F, 0.26F, 1.0F}};
     const VkRenderingAttachmentInfo color_attachment =
@@ -33,16 +33,16 @@ void record_clear(VkCommandBuffer command_buffer, const cubey::HeadlessRenderTar
 } // namespace
 
 int run_headless_render(const RunConfig& config) {
-    cubey::HeadlessPngHostConfig host_config;
+    cubey::host::HeadlessPngHostConfig host_config;
     host_config.run_config = config;
 
-    cubey::HeadlessPngHostCallbacks callbacks;
-    callbacks.record_capture = [](cubey::HeadlessPngContext&, VkCommandBuffer command_buffer,
-                                  const cubey::HeadlessRenderTarget& target) {
+    cubey::host::HeadlessPngHostCallbacks callbacks;
+    callbacks.record_capture = [](cubey::host::HeadlessPngContext&, VkCommandBuffer command_buffer,
+                                  const cubey::host::HeadlessRenderTarget& target) {
         record_clear(command_buffer, target);
     };
 
-    cubey::HeadlessPngHost host(std::move(host_config), std::move(callbacks));
+    cubey::host::HeadlessPngHost host(std::move(host_config), std::move(callbacks));
     return host.run();
 }
 

@@ -1,4 +1,4 @@
-#include <cubey/runtime/upload_queue.h>
+#include <cubey/engine/upload_queue.h>
 
 #include <cstdint>
 #include <stdexcept>
@@ -36,7 +36,7 @@ void test_upload_queue_owns_payload_until_drain() {
             "queue should own uploaded bytes until drain");
     require(queue.empty(), "drain should leave queue empty");
 
-    queue.mark_completed(ticket, cubey::FrameTicket{.value = 7});
+    queue.mark_completed(ticket, cubey::vulkan::GpuSubmissionTicket{.value = 7});
     const cubey::UploadStatus completed = queue.status(ticket);
     require(completed.state == cubey::UploadState::Completed,
             "upload queue should track completed tickets");

@@ -2,9 +2,9 @@
 
 #include <cubey/scene/camera_2d.h>
 #include <cubey/scene/camera_3d.h>
-#include <cubey/detail/single_instance_component_store.h>
-#include <cubey/detail/stable_slot_store.h>
 #include <cubey/scene/entity.h>
+#include <cubey/scene/single_instance_component_store.h>
+#include <cubey/scene/stable_slot_store.h>
 #include <cubey/scene/transform_manager.h>
 
 #include <cstdint>
@@ -21,7 +21,7 @@ struct Camera2DManagerTag {};
 struct Camera3DManagerTag {};
 
 template <typename Tag> struct CameraInstance {
-    detail::StableSlotId slot{};
+    StableSlotId slot{};
 
     [[nodiscard]] bool is_null() const noexcept {
         return slot.is_null();
@@ -86,8 +86,7 @@ template <typename CameraT, typename InstanceT> class BasicCameraReadViewBase {
         std::vector<Component> components{};
         std::vector<InstanceT> active_instances{};
         std::unordered_map<Entity, std::size_t, EntityHash> entity_to_component{};
-        std::unordered_map<detail::StableSlotId, std::size_t, detail::StableSlotIdHash>
-            slot_to_component{};
+        std::unordered_map<StableSlotId, std::size_t, StableSlotIdHash> slot_to_component{};
     };
 
     BasicCameraReadViewBase() = default;
@@ -184,7 +183,7 @@ template <typename CameraT> class BasicCameraManager {
         Entity entity{};
         CameraT camera{};
     };
-    using Store = detail::SingleInstanceComponentStore<Component, Instance, Snapshot>;
+    using Store = SingleInstanceComponentStore<Component, Instance, Snapshot>;
 
   public:
     [[nodiscard]] bool has_component(Entity entity) const {
@@ -232,9 +231,9 @@ template <typename CameraT> class BasicCameraManager {
     void apply(const BasicCameraEditQueue<CameraT>& edits, std::uint64_t retire_epoch) {
         for (const auto& create : edits.creates_) {
             store_.create(create.entity, Component{
-                .entity = create.entity,
-                .camera = create.camera,
-            });
+                                             .entity = create.entity,
+                                             .camera = create.camera,
+                                         });
         }
 
         for (const auto& update : edits.updates_) {

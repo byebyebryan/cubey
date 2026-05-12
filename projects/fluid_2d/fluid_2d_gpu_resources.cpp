@@ -1,7 +1,7 @@
 #include "fluid_2d_gpu_resources.h"
 
-#include <cubey/core/spirv_io.h>
 #include <cubey/vulkan/dynamic_rendering.h>
+#include <cubey/vulkan/shader_bytecode.h>
 #include <cubey/vulkan/shader_module.h>
 
 #include <array>
@@ -63,7 +63,7 @@ void create_compute_pipeline_from_shader(
     cubey::vulkan::Device& device, const char* filename,
     const cubey::vulkan::PipelineLayout& pipeline_layout,
     std::optional<cubey::vulkan::ComputePipeline>& destination) {
-    const std::vector<std::uint32_t> code = cubey::read_spirv_file(shader_path(filename));
+    const std::vector<std::uint32_t> code = cubey::vulkan::read_spirv_file(shader_path(filename));
     cubey::vulkan::ShaderModule shader(device, code);
     const VkPipelineShaderStageCreateInfo stage =
         cubey::vulkan::shader_stage(VK_SHADER_STAGE_COMPUTE_BIT, shader.handle());
@@ -387,9 +387,9 @@ void Fluid2DGpuResources::create_compute_pipelines(cubey::vulkan::Device& device
 void Fluid2DGpuResources::create_render_pipeline(cubey::vulkan::Device& device,
                                                  VkFormat color_format, VkExtent2D extent) {
     const std::vector<std::uint32_t> vertex_code =
-        cubey::read_spirv_file(shader_path("fluid_2d.vert.spv"));
+        cubey::vulkan::read_spirv_file(shader_path("fluid_2d.vert.spv"));
     const std::vector<std::uint32_t> fragment_code =
-        cubey::read_spirv_file(shader_path("fluid_2d_render.frag.spv"));
+        cubey::vulkan::read_spirv_file(shader_path("fluid_2d_render.frag.spv"));
     cubey::vulkan::ShaderModule vertex_shader(device, vertex_code);
     cubey::vulkan::ShaderModule fragment_shader(device, fragment_code);
 

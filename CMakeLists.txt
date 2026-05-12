@@ -10,7 +10,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 option(CUBEY_ENABLE_WARNINGS "Enable project warning flags" ON)
 option(CUBEY_WARNINGS_AS_ERRORS "Treat project warnings as errors" OFF)
 option(CUBEY_ENABLE_CLANG_TIDY "Run clang-tidy during builds" OFF)
-option(CUBEY_BUILD_APP "Build Cubey GLFW app runtime" ON)
+option(CUBEY_BUILD_HOST "Build Cubey concrete host layer" ON)
 option(CUBEY_BUILD_EXAMPLES "Build Cubey examples" ON)
 option(CUBEY_BUILD_PROJECTS "Build Cubey projects" ON)
 
@@ -56,15 +56,19 @@ include(CTest)
 
 add_subdirectory(src/cubey)
 
-if (CUBEY_BUILD_EXAMPLES AND NOT CUBEY_BUILD_APP)
-    message(FATAL_ERROR "CUBEY_BUILD_EXAMPLES requires CUBEY_BUILD_APP")
+if (CUBEY_BUILD_EXAMPLES AND NOT CUBEY_BUILD_HOST)
+    message(FATAL_ERROR "CUBEY_BUILD_EXAMPLES requires CUBEY_BUILD_HOST")
 endif()
 
-if (CUBEY_BUILD_PROJECTS AND NOT CUBEY_BUILD_APP)
-    message(FATAL_ERROR "CUBEY_BUILD_PROJECTS requires CUBEY_BUILD_APP")
+if (CUBEY_BUILD_PROJECTS AND NOT CUBEY_BUILD_HOST)
+    message(FATAL_ERROR "CUBEY_BUILD_PROJECTS requires CUBEY_BUILD_HOST")
 endif()
 
-if (CUBEY_BUILD_APP)
+if (BUILD_TESTING AND NOT CUBEY_BUILD_HOST)
+    message(FATAL_ERROR "BUILD_TESTING requires CUBEY_BUILD_HOST")
+endif()
+
+if (CUBEY_BUILD_HOST)
     FetchContent_Declare(
         glfw
         GIT_REPOSITORY https://github.com/glfw/glfw
@@ -75,7 +79,7 @@ if (CUBEY_BUILD_APP)
     set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
     FetchContent_MakeAvailable(glfw)
 
-    add_subdirectory(src/cubey/app)
+    add_subdirectory(src/cubey/host)
 endif()
 
 if (BUILD_TESTING)

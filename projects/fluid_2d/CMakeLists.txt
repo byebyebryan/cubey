@@ -16,7 +16,7 @@ target_link_libraries(
     cubey_project_fluid_2d
     PRIVATE
         cubey::cubey
-        cubey::app
+        cubey::host
         cubey_project_warnings
 )
 

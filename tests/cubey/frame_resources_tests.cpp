@@ -54,12 +54,12 @@ void test_frame_resources_expose_slot_based_contract() {
                                  VkFence (cubey::vulkan::FrameResources::*)(std::size_t) const>);
     static_assert(std::is_same_v<decltype(&cubey::vulkan::FrameResources::mark_image_in_flight),
                                  void (cubey::vulkan::FrameResources::*)(std::size_t, VkFence)>);
-    static_assert(
-        std::is_same_v<decltype(&cubey::vulkan::FrameResources::submitted_ticket),
-                       cubey::FrameTicket (cubey::vulkan::FrameResources::*)(std::uint32_t) const>);
-    static_assert(
-        std::is_same_v<decltype(&cubey::vulkan::FrameResources::mark_submitted),
-                       void (cubey::vulkan::FrameResources::*)(std::uint32_t, cubey::FrameTicket)>);
+    static_assert(std::is_same_v<decltype(&cubey::vulkan::FrameResources::submitted_ticket),
+                                 cubey::vulkan::GpuSubmissionTicket (
+                                     cubey::vulkan::FrameResources::*)(std::uint32_t) const>);
+    static_assert(std::is_same_v<decltype(&cubey::vulkan::FrameResources::mark_submitted),
+                                 void (cubey::vulkan::FrameResources::*)(
+                                     std::uint32_t, cubey::vulkan::GpuSubmissionTicket)>);
     static_assert(std::is_same_v<decltype(&cubey::vulkan::FrameResources::wait_for_frame),
                                  void (cubey::vulkan::FrameResources::*)(std::uint32_t) const>);
     static_assert(std::is_same_v<decltype(&cubey::vulkan::FrameResources::reset_fence),

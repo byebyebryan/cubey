@@ -1,6 +1,6 @@
 #include "window_clear_app.h"
 
-#include <cubey/app/windowed_host.h>
+#include <cubey/host/windowed_host.h>
 #include <cubey/render/target.h>
 #include <cubey/vulkan/command_recorder.h>
 #include <cubey/vulkan/image_transitions.h>
@@ -28,7 +28,7 @@ class WindowClearApp {
             throw std::runtime_error("window_clear does not support --headless yet");
         }
 
-        cubey::app::WindowedHost host(
+        cubey::host::WindowedHost host(
             {
                 .run_config = config_,
                 .required_queue_flags = VK_QUEUE_GRAPHICS_BIT,
@@ -39,7 +39,7 @@ class WindowClearApp {
                 .create_swapchain_resources = {},
                 .destroy_swapchain_resources = {},
                 .on_ready =
-                    [](cubey::app::WindowedAppContext& context) {
+                    [](cubey::host::WindowedAppContext& context) {
                         std::printf("window_clear: %s clearing swapchain at %ux%u\n",
                                     context.device().device_name(),
                                     context.swapchain().extent().width,
@@ -47,8 +47,8 @@ class WindowClearApp {
                     },
                 .update = {},
                 .record_frame =
-                    [](cubey::app::WindowedAppContext& context,
-                       const cubey::app::WindowedRenderFrame& frame) {
+                    [](cubey::host::WindowedAppContext& context,
+                       const cubey::host::WindowedRenderFrame& frame) {
                         (void)context;
                         record_clear_frame(frame);
                     },
@@ -59,7 +59,7 @@ class WindowClearApp {
     }
 
   private:
-    static void record_clear_frame(const cubey::app::WindowedRenderFrame& frame) {
+    static void record_clear_frame(const cubey::host::WindowedRenderFrame& frame) {
         const cubey::vulkan::CommandRecorder recorder(frame.command_buffer);
         recorder.begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 

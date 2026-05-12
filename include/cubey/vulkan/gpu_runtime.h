@@ -1,8 +1,8 @@
 #pragma once
 
-#include <cubey/core/frame_tickets.h>
 #include <cubey/vulkan/device.h>
 #include <cubey/vulkan/submission_coordinator.h>
+#include <cubey/vulkan/submission_tickets.h>
 
 #include <condition_variable>
 #include <cstddef>
@@ -23,7 +23,7 @@ class GpuOwnerContext {
 
     [[nodiscard]] Device& device() const;
     [[nodiscard]] SubmissionCoordinator& submission() const;
-    [[nodiscard]] FrameTicket completed_submission() const;
+    [[nodiscard]] GpuSubmissionTicket completed_submission() const;
     [[nodiscard]] bool is_owner_thread() const;
     void require_owner_thread(const char* label) const;
 
@@ -51,7 +51,7 @@ struct QueuedGpuWork {
 struct GpuDrainResult {
     std::size_t completed_count = 0;
     GpuWorkTicket last_completed;
-    FrameTicket completed_submission;
+    GpuSubmissionTicket completed_submission;
 };
 
 enum class GpuRuntimeExecutionMode {
@@ -106,7 +106,7 @@ class GpuRuntime {
     [[nodiscard]] GpuDrainResult drain_inline();
     [[nodiscard]] std::size_t pending_count() const;
     [[nodiscard]] bool empty() const;
-    void mark_submission_completed(FrameTicket ticket);
+    void mark_submission_completed(GpuSubmissionTicket ticket);
     void wait_queue_idle(std::string label);
     void wait_until_idle();
     void shutdown();

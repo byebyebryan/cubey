@@ -1,9 +1,9 @@
 #pragma once
 
 #include <cubey/core/math.h>
-#include <cubey/detail/single_instance_component_store.h>
-#include <cubey/detail/stable_slot_store.h>
 #include <cubey/scene/entity.h>
+#include <cubey/scene/single_instance_component_store.h>
+#include <cubey/scene/stable_slot_store.h>
 #include <cubey/scene/transform_manager.h>
 
 #include <cstdint>
@@ -49,7 +49,7 @@ struct LightPacket3D {
 struct Light3DManagerTag {};
 
 template <typename Tag> struct LightInstance {
-    detail::StableSlotId slot{};
+    StableSlotId slot{};
 
     [[nodiscard]] bool is_null() const noexcept {
         return slot.is_null();
@@ -96,8 +96,7 @@ class LightReadView3D {
         std::vector<Component> components{};
         std::vector<LightInstance3D> active_instances{};
         std::unordered_map<Entity, std::size_t, EntityHash> entity_to_component{};
-        std::unordered_map<detail::StableSlotId, std::size_t, detail::StableSlotIdHash>
-            slot_to_component{};
+        std::unordered_map<StableSlotId, std::size_t, StableSlotIdHash> slot_to_component{};
     };
 
     LightReadView3D() = default;
@@ -127,7 +126,7 @@ class LightManager3D {
         Entity entity{};
         Light3D light{};
     };
-    using Store = detail::SingleInstanceComponentStore<Component, Instance, Snapshot>;
+    using Store = SingleInstanceComponentStore<Component, Instance, Snapshot>;
 
   public:
     [[nodiscard]] bool has_component(Entity entity) const;

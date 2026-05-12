@@ -18,7 +18,7 @@ SubmissionCoordinator& GpuOwnerContext::submission() const {
     return *submission_;
 }
 
-FrameTicket GpuOwnerContext::completed_submission() const {
+GpuSubmissionTicket GpuOwnerContext::completed_submission() const {
     return submission().completed();
 }
 
@@ -172,7 +172,7 @@ bool GpuRuntime::empty() const {
     return queue_.empty();
 }
 
-void GpuRuntime::mark_submission_completed(FrameTicket ticket) {
+void GpuRuntime::mark_submission_completed(GpuSubmissionTicket ticket) {
     static_cast<void>(submit_and_wait({
         .label = "mark GPU submission completed",
         .work = [ticket](GpuOwnerContext& context) { context.submission().mark_completed(ticket); },

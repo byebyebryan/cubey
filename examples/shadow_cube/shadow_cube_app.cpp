@@ -1,24 +1,24 @@
 #include "shadow_cube_app.h"
 
-#include <cubey/app/windowed_host.h>
-#include <cubey/scene/camera_3d.h>
-#include <cubey/scene/engine.h>
 #include <cubey/core/math.h>
+#include <cubey/engine/engine.h>
+#include <cubey/host/windowed_host.h>
 #include <cubey/input/orbit_controller.h>
 #include <cubey/render/mesh.h>
 #include <cubey/render/resource_handle.h>
 #include <cubey/render/resource_table.h>
 #include <cubey/render/target.h>
 #include <cubey/render/texture.h>
-#include <cubey/render/view_3d.h>
+#include <cubey/scene/camera_3d.h>
 #include <cubey/scene/scene.h>
-#include <cubey/core/spirv_io.h>
 #include <cubey/scene/transform_3d.h>
+#include <cubey/scene/view_3d.h>
 #include <cubey/vulkan/command_recorder.h>
 #include <cubey/vulkan/descriptors.h>
 #include <cubey/vulkan/image.h>
 #include <cubey/vulkan/image_transitions.h>
 #include <cubey/vulkan/pipeline.h>
+#include <cubey/vulkan/shader_bytecode.h>
 #include <cubey/vulkan/shader_module.h>
 
 #include <glm/geometric.hpp>
@@ -133,7 +133,7 @@ class ShadowCubeApp {
             throw std::runtime_error("shadow_cube does not support --headless yet");
         }
 
-        cubey::app::WindowedHost host(
+        cubey::host::WindowedHost host(
             {
                 .run_config = config_,
                 .required_queue_flags = VK_QUEUE_GRAPHICS_BIT,
@@ -142,24 +142,24 @@ class ShadowCubeApp {
             },
             {
                 .create_swapchain_resources =
-                    [this](cubey::app::WindowedAppContext& context) {
+                    [this](cubey::host::WindowedAppContext& context) {
                         create_global_resources_if_needed(context);
                         create_swapchain_resources(context);
                     },
                 .destroy_swapchain_resources =
-                    [this](cubey::app::WindowedAppContext& context) {
+                    [this](cubey::host::WindowedAppContext& context) {
                         (void)context;
                         destroy_swapchain_resources();
                     },
                 .on_ready =
-                    [](cubey::app::WindowedAppContext& context) {
+                    [](cubey::host::WindowedAppContext& context) {
                         std::printf("shadow_cube: %s rendering directional shadow cube at %ux%u\n",
                                     context.device().device_name(),
                                     context.swapchain().extent().width,
                                     context.swapchain().extent().height);
                     },
                 .update =
-                    [this](cubey::app::WindowedAppContext& context, const FrameTiming& timing) {
+                    [this](cubey::host::WindowedAppContext& context, const FrameTiming& timing) {
                         if (context.input().key_pressed(cubey::input::Key::Escape)) {
                             context.window().request_close();
                         }
@@ -167,14 +167,14 @@ class ShadowCubeApp {
                         update_camera_transform();
                     },
                 .record_frame =
-                    [this](cubey::app::WindowedAppContext& context,
-                           const cubey::app::WindowedRenderFrame& frame) {
+                    [this](cubey::host::WindowedAppContext& context,
+                           const cubey::host::WindowedRenderFrame& frame) {
                         (void)context;
                         record_shadow_frame(frame);
                     },
                 .frame_stats_sample = {},
                 .shutdown =
-                    [this](cubey::app::WindowedAppContext& context) {
+                    [this](cubey::host::WindowedAppContext& context) {
                         (void)context;
                         destroy_all_resources();
                     },
@@ -183,7 +183,7 @@ class ShadowCubeApp {
     }
 
   private:
-    void create_global_resources_if_needed(cubey::app::WindowedAppContext& context) {
+    void create_global_resources_if_needed(cubey::host::WindowedAppContext& context) {
         if (scene_ != nullptr) {
             return;
         }
@@ -200,7 +200,7 @@ class ShadowCubeApp {
         create_descriptors(context);
     }
 
-    void create_swapchain_resources(cubey::app::WindowedAppContext& context) {
+    void create_swapchain_resources(cubey::host::WindowedAppContext& context) {
         depth_attachment_.emplace(context.device(), context.swapchain().extent());
         create_pipelines(context);
     }
@@ -287,7 +287,7 @@ class ShadowCubeApp {
         setup.commit();
     }
 
-    void create_shadow_depth_resources(cubey::app::WindowedAppContext& context) {
+    void create_shadow_depth_resources(cubey::host::WindowedAppContext& context) {
         const VkFormat shadow_format = cubey::vulkan::choose_depth_format(context.device());
         shadow_depth_.emplace(context.device(),
                               cubey::render::DepthTextureConfig{
@@ -304,7 +304,7 @@ class ShadowCubeApp {
                               });
     }
 
-    void create_descriptors(cubey::app::WindowedAppContext& context) {
+    void create_descriptors(cubey::host::WindowedAppContext& context) {
         const std::array<cubey::vulkan::DescriptorSetBindingConfig, 1> bindings{{
             {
                 .binding = 0,
@@ -322,14 +322,14 @@ class ShadowCubeApp {
         cubey::vulkan::update_descriptor_sets(context.device(), writes);
     }
 
-    void create_pipelines(cubey::app::WindowedAppContext& context) {
+    void create_pipelines(cubey::host::WindowedAppContext& context) {
         create_shadow_pipeline(context);
         create_scene_pipeline(context);
     }
 
-    void create_shadow_pipeline(cubey::app::WindowedAppContext& context) {
+    void create_shadow_pipeline(cubey::host::WindowedAppContext& context) {
         const std::vector<std::uint32_t> vertex_code =
-            cubey::read_spirv_file(shader_path("shadow_depth.vert.spv"));
+            cubey::vulkan::read_spirv_file(shader_path("shadow_depth.vert.spv"));
         cubey::vulkan::ShaderModule vertex_shader(context.device(), vertex_code);
         const VkPipelineShaderStageCreateInfo vertex_stage =
             cubey::vulkan::shader_stage(VK_SHADER_STAGE_VERTEX_BIT, vertex_shader.handle());
@@ -370,11 +370,11 @@ class ShadowCubeApp {
         shadow_pipeline_.emplace(context.device(), pipeline_info.create_info());
     }
 
-    void create_scene_pipeline(cubey::app::WindowedAppContext& context) {
+    void create_scene_pipeline(cubey::host::WindowedAppContext& context) {
         const std::vector<std::uint32_t> vertex_code =
-            cubey::read_spirv_file(shader_path("shadow_cube.vert.spv"));
+            cubey::vulkan::read_spirv_file(shader_path("shadow_cube.vert.spv"));
         const std::vector<std::uint32_t> fragment_code =
-            cubey::read_spirv_file(shader_path("shadow_cube.frag.spv"));
+            cubey::vulkan::read_spirv_file(shader_path("shadow_cube.frag.spv"));
         cubey::vulkan::ShaderModule vertex_shader(context.device(), vertex_code);
         cubey::vulkan::ShaderModule fragment_shader(context.device(), fragment_code);
         const std::array<VkPipelineShaderStageCreateInfo, 2> shader_stages{
@@ -438,49 +438,49 @@ class ShadowCubeApp {
         scene().commit(edits);
     }
 
-    [[nodiscard]] cubey::render::FrameRenderPlan3D
+    [[nodiscard]] cubey::scene::FrameRenderPlan3D
     current_frame_plan(const cubey::SceneReadView& view, VkExtent2D color_extent) const {
-        const cubey::render::View3D shadow_view{
+        const cubey::scene::View3D shadow_view{
             .camera_entity = light_camera_entity_,
             .width = kShadowMapSize,
             .height = kShadowMapSize,
             .culling_enabled = false,
         };
-        const cubey::render::View3D scene_view{
+        const cubey::scene::View3D scene_view{
             .camera_entity = camera_entity_,
             .width = color_extent.width,
             .height = color_extent.height,
             .environment =
-                cubey::render::Environment3D{
+                cubey::scene::Environment3D{
                     .ambient_color = {0.22F, 0.22F, 0.22F},
                     .ambient_intensity = 1.0F,
                 },
         };
-        return cubey::render::FrameRenderPlan3D({
-            cubey::render::RenderPassPlan3D{
+        return cubey::scene::FrameRenderPlan3D({
+            cubey::scene::RenderPassPlan3D{
                 .label = "shadow",
-                .kind = cubey::render::RenderPassKind3D::DepthOnly,
-                .frame_plan = cubey::render::build_render_frame_plan_3d(shadow_view, view,
-                                                                        engine_.render_resources()),
+                .kind = cubey::scene::RenderPassKind3D::DepthOnly,
+                .frame_plan = cubey::scene::build_render_frame_plan_3d(shadow_view, view,
+                                                                       engine_.render_resources()),
             },
-            cubey::render::RenderPassPlan3D{
+            cubey::scene::RenderPassPlan3D{
                 .label = "scene",
-                .kind = cubey::render::RenderPassKind3D::Color,
-                .frame_plan = cubey::render::build_render_frame_plan_3d(scene_view, view,
-                                                                        engine_.render_resources()),
+                .kind = cubey::scene::RenderPassKind3D::Color,
+                .frame_plan = cubey::scene::build_render_frame_plan_3d(scene_view, view,
+                                                                       engine_.render_resources()),
             },
         });
     }
 
-    void record_shadow_frame(const cubey::app::WindowedRenderFrame& frame) {
+    void record_shadow_frame(const cubey::host::WindowedRenderFrame& frame) {
         cubey::SceneReadView scene_view = scene().read();
-        const cubey::render::FrameRenderPlan3D frame_plan =
+        const cubey::scene::FrameRenderPlan3D frame_plan =
             current_frame_plan(scene_view, frame.color_target.extent);
         if (frame_plan.passes().size() != 2) {
             throw std::runtime_error("shadow_cube frame plan should have two passes");
         }
-        const cubey::render::RenderFramePlan3D& shadow_plan = frame_plan.passes()[0].frame_plan;
-        const cubey::render::RenderFramePlan3D& scene_plan = frame_plan.passes()[1].frame_plan;
+        const cubey::scene::RenderFramePlan3D& shadow_plan = frame_plan.passes()[0].frame_plan;
+        const cubey::scene::RenderFramePlan3D& scene_plan = frame_plan.passes()[1].frame_plan;
 
         const cubey::vulkan::CommandRecorder recorder(frame.command_buffer);
         recorder.begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
@@ -508,7 +508,7 @@ class ShadowCubeApp {
     }
 
     void record_shadow_pass(const cubey::vulkan::CommandRecorder& recorder,
-                            const cubey::render::RenderFramePlan3D& shadow_plan) const {
+                            const cubey::scene::RenderFramePlan3D& shadow_plan) const {
         VkClearValue depth_clear{};
         depth_clear.depthStencil = {1.0F, 0};
         const cubey::render::DepthOnlyRenderingInfo rendering(
@@ -516,7 +516,7 @@ class ShadowCubeApp {
 
         recorder.begin_rendering(rendering.info());
         recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, shadow_pipeline().handle());
-        for (const cubey::render::RenderDrawPacket3D& packet : shadow_plan.draw_packets) {
+        for (const cubey::scene::RenderDrawPacket3D& packet : shadow_plan.draw_packets) {
             const ShadowPushConstants push_constants{
                 .light_mvp = shadow_plan.view_projection_matrix * packet.world_affine_matrix,
             };
@@ -528,9 +528,9 @@ class ShadowCubeApp {
     }
 
     void record_scene_pass(const cubey::vulkan::CommandRecorder& recorder,
-                           const cubey::app::WindowedRenderFrame& frame,
-                           const cubey::render::RenderFramePlan3D& scene_plan,
-                           const cubey::render::RenderFramePlan3D& shadow_plan) const {
+                           const cubey::host::WindowedRenderFrame& frame,
+                           const cubey::scene::RenderFramePlan3D& scene_plan,
+                           const cubey::scene::RenderFramePlan3D& shadow_plan) const {
         VkClearValue color_clear{};
         color_clear.color = {{0.026F, 0.029F, 0.034F, 1.0F}};
         VkClearValue depth_clear{};
@@ -548,7 +548,7 @@ class ShadowCubeApp {
         const VkDescriptorSet descriptor_set = descriptors().set();
         recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS,
                                      scene_pipeline_layout().handle(), 0, descriptor_set);
-        for (const cubey::render::RenderDrawPacket3D& packet : scene_plan.draw_packets) {
+        for (const cubey::scene::RenderDrawPacket3D& packet : scene_plan.draw_packets) {
             const ScenePushConstants push_constants{
                 .mvp = scene_plan.view_projection_matrix * packet.world_affine_matrix,
                 .light_mvp = shadow_plan.view_projection_matrix * packet.world_affine_matrix,
@@ -561,7 +561,7 @@ class ShadowCubeApp {
     }
 
     [[nodiscard]] cubey::render::DrawItem
-    draw_item(const cubey::render::RenderDrawPacket3D& packet) const {
+    draw_item(const cubey::scene::RenderDrawPacket3D& packet) const {
         return {
             .mesh = &mesh(packet.mesh),
             .instance_count = packet.instance_count,

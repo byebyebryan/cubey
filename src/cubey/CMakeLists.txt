@@ -17,19 +17,10 @@ set_target_properties(cubey_stb_image_write PROPERTIES CXX_CLANG_TIDY "")
 add_library(cubey_core STATIC
     $<TARGET_OBJECTS:cubey_stb_image_write>
     core/run_config.cpp
-    scene/camera_2d.cpp
-    scene/camera_3d.cpp
     core/file_io.cpp
     core/frame_clock.cpp
-    core/frame_stats.cpp
-    core/frame_tickets.cpp
     core/image_io.cpp
-    input/input.cpp
     core/jobs.cpp
-    input/orbit_controller.cpp
-    input/pan_zoom_2d_controller.cpp
-    input/pointer_drag.cpp
-    core/spirv_io.cpp
 )
 add_library(cubey::core ALIAS cubey_core)
 
@@ -80,6 +71,8 @@ add_library(cubey_vulkan STATIC
     vulkan/render_context.cpp
     vulkan/sampler.cpp
     vulkan/shader_module.cpp
+    vulkan/shader_bytecode.cpp
+    vulkan/submission_tickets.cpp
     vulkan/submission_coordinator.cpp
     vulkan/swapchain.cpp
 )
@@ -125,33 +118,9 @@ target_link_libraries(
         cubey_project_warnings
 )
 
-add_library(cubey_runtime STATIC
-    runtime/capture_queue.cpp
-    runtime/headless_png_host.cpp
-    runtime/project_gpu_services.cpp
-    runtime/project_runtime.cpp
-    runtime/upload_queue.cpp
-)
-add_library(cubey::runtime ALIAS cubey_runtime)
-
-target_include_directories(
-    cubey_runtime
-    PUBLIC
-        "${PROJECT_SOURCE_DIR}/include"
-)
-
-target_link_libraries(
-    cubey_runtime
-    PUBLIC
-        cubey::core
-        cubey::vulkan
-        cubey::render
-    PRIVATE
-        cubey_project_warnings
-)
-
 add_library(cubey_scene STATIC
-    scene/engine.cpp
+    scene/camera_2d.cpp
+    scene/camera_3d.cpp
     scene/entity.cpp
     scene/light_manager.cpp
     scene/renderable_manager.cpp
@@ -170,7 +139,55 @@ target_link_libraries(
     PUBLIC
         cubey::core
         cubey::render
-        cubey::runtime
+    PRIVATE
+        cubey_project_warnings
+)
+
+add_library(cubey_engine STATIC
+    engine/capture_queue.cpp
+    engine/engine.cpp
+    engine/project_gpu_services.cpp
+    engine/project_runtime.cpp
+    engine/upload_queue.cpp
+)
+add_library(cubey::engine ALIAS cubey_engine)
+
+target_include_directories(
+    cubey_engine
+    PUBLIC
+        "${PROJECT_SOURCE_DIR}/include"
+)
+
+target_link_libraries(
+    cubey_engine
+    PUBLIC
+        cubey::core
+        cubey::vulkan
+        cubey::render
+        cubey::scene
+    PRIVATE
+        cubey_project_warnings
+)
+
+add_library(cubey_input STATIC
+    input/input.cpp
+    input/orbit_controller.cpp
+    input/pan_zoom_2d_controller.cpp
+    input/pointer_drag.cpp
+)
+add_library(cubey::input ALIAS cubey_input)
+
+target_include_directories(
+    cubey_input
+    PUBLIC
+        "${PROJECT_SOURCE_DIR}/include"
+)
+
+target_link_libraries(
+    cubey_input
+    PUBLIC
+        cubey::core
+        cubey::scene
     PRIVATE
         cubey_project_warnings
 )
@@ -184,6 +201,7 @@ target_link_libraries(
         cubey::core
         cubey::vulkan
         cubey::render
-        cubey::runtime
         cubey::scene
+        cubey::engine
+        cubey::input
 )

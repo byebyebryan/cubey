@@ -24,7 +24,7 @@ Implemented:
 - Advection/fade compute pass.
 - Divergence, Jacobi pressure solve, and pressure-gradient projection.
 - Fullscreen rendering with dye, velocity, divergence, and pressure debug views.
-- Integration with `cubey::WindowedHost`, `cubey::HeadlessPngHost`, and
+- Integration with `cubey::host::WindowedHost`, `cubey::host::HeadlessPngHost`, and
   `cubey::ProjectRuntimeAdapter`.
 
 Deferred:
@@ -156,9 +156,9 @@ output deterministic.
 - `D` cycles render modes: dye, velocity, divergence, pressure.
 - Headless mode continues to use the procedural injector and fixed timing so
   smoke output remains stable.
-- Headless output runs through `cubey::HeadlessPngHost`; the project still owns
-  field resources, compute simulation, render pipeline setup, and the fullscreen
-  capture draw.
+- Headless output runs through `cubey::host::HeadlessPngHost`; the project still
+  owns field resources, compute simulation, render pipeline setup, and the
+  fullscreen capture draw.
 
 ### Checkpoint 4
 
@@ -169,7 +169,7 @@ creating a generic project host.
 
 - `fluid_2d` owns a `cubey::ProjectRuntimeAdapter` instance.
 - Windowed and headless simulation steps now use `cubey::ProjectFrame` for
-  delta time, elapsed time, frame index, and frame tickets.
+  delta time, elapsed time, frame index, and GPU submission tickets.
 - The adapter owns runtime services, caches one project frame per host frame,
   exposes project context, and retires deferred destruction during shutdown.
 - Vulkan resource setup, compute dispatch recording, fullscreen draw recording,

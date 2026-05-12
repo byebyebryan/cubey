@@ -1,4 +1,4 @@
-#include <cubey/app/windowed_host.h>
+#include <cubey/host/windowed_host.h>
 
 #include <cstdint>
 #include <stdexcept>
@@ -18,14 +18,14 @@ concept HasSubmissionAccessor = requires { &T::submission; };
 } // namespace
 
 void test_windowed_host_config_defaults_to_two_frame_slots() {
-    const cubey::app::WindowedHostConfig config;
+    const cubey::host::WindowedHostConfig config;
 
     require(config.frame_slot_count == 2, "windowed host config should default to two frame slots");
     require(config.gpu_execution_mode == cubey::vulkan::GpuRuntimeExecutionMode::Threaded,
             "windowed host config should default to threaded GPU runtime");
     static_assert(std::is_same_v<decltype(config.frame_slot_count), std::uint32_t>);
-    static_assert(!HasSubmissionAccessor<cubey::app::WindowedAppContext>);
+    static_assert(!HasSubmissionAccessor<cubey::host::WindowedAppContext>);
     static_assert(
-        std::is_same_v<decltype(&cubey::app::WindowedAppContext::gpu),
-                       cubey::vulkan::GpuRuntime& (cubey::app::WindowedAppContext::*)() const>);
+        std::is_same_v<decltype(&cubey::host::WindowedAppContext::gpu),
+                       cubey::vulkan::GpuRuntime& (cubey::host::WindowedAppContext::*)() const>);
 }

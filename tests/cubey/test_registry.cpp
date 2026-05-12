@@ -18,7 +18,7 @@ void test_command_pool_exposes_command_buffer_ownership();
 void test_command_recorder_exposes_non_owning_command_buffer_contract();
 void test_command_recorder_rejects_invalid_recording_inputs_before_vulkan_calls();
 void test_compute_helpers_describe_pipeline_and_layout_setup();
-void test_deferred_destruction_queue_retires_completed_tickets();
+void test_deferred_gpu_destruction_queue_retires_completed_tickets();
 void test_descriptor_helpers_describe_layout_pool_and_writes();
 void test_descriptor_set_info_copies_bindings_and_aggregates_pool_sizes();
 void test_descriptor_set_allocate_info_describes_multiple_sets();
@@ -37,8 +37,8 @@ void test_entity_manager_rolls_back_reserved_entities();
 void test_file_io_round_trips_binary_bytes();
 void test_frame_clock_tracks_delta_elapsed_and_index();
 void test_frame_resources_expose_slot_based_contract();
-void test_frame_stats_publish_window_title_metrics();
-void test_frame_ticket_issuer_returns_monotonic_tickets();
+void test_host_frame_stats_publish_window_title_metrics();
+void test_gpu_submission_ticket_issuer_returns_monotonic_tickets();
 void test_gpu_runtime_accepts_cross_thread_enqueue_but_rejects_cross_thread_drain();
 void test_gpu_runtime_defaults_to_threaded_execution();
 void test_gpu_runtime_drains_inline_on_owner_thread();
@@ -122,8 +122,8 @@ void test_sampler_config_describes_shadow_sampling();
 void test_scene_edit_queue_publishes_reserved_entities_on_commit();
 void test_scene_failed_commit_rolls_back_reserved_entities();
 void test_scene_read_views_defer_destroyed_entity_reuse_until_release();
-void test_spirv_io_reads_aligned_words();
-void test_spirv_io_rejects_misaligned_byte_count();
+void test_shader_bytecode_reads_aligned_spirv_words();
+void test_shader_bytecode_rejects_misaligned_spirv_byte_count();
 void test_submission_coordinator_completion_tracking_rejects_future_tickets();
 void test_submission_coordinator_failed_submit_does_not_issue_ticket();
 void test_submission_coordinator_issues_monotonic_gpu_tickets();
@@ -171,7 +171,7 @@ std::span<const TestCase> core_tests() {
         CUBEY_TEST(test_command_recorder_exposes_non_owning_command_buffer_contract),
         CUBEY_TEST(test_command_recorder_rejects_invalid_recording_inputs_before_vulkan_calls),
         CUBEY_TEST(test_compute_helpers_describe_pipeline_and_layout_setup),
-        CUBEY_TEST(test_deferred_destruction_queue_retires_completed_tickets),
+        CUBEY_TEST(test_deferred_gpu_destruction_queue_retires_completed_tickets),
         CUBEY_TEST(test_descriptor_helpers_describe_layout_pool_and_writes),
         CUBEY_TEST(test_descriptor_set_info_copies_bindings_and_aggregates_pool_sizes),
         CUBEY_TEST(test_descriptor_set_allocate_info_describes_multiple_sets),
@@ -190,8 +190,8 @@ std::span<const TestCase> core_tests() {
         CUBEY_TEST(test_file_io_round_trips_binary_bytes),
         CUBEY_TEST(test_frame_clock_tracks_delta_elapsed_and_index),
         CUBEY_TEST(test_frame_resources_expose_slot_based_contract),
-        CUBEY_TEST(test_frame_stats_publish_window_title_metrics),
-        CUBEY_TEST(test_frame_ticket_issuer_returns_monotonic_tickets),
+        CUBEY_TEST(test_host_frame_stats_publish_window_title_metrics),
+        CUBEY_TEST(test_gpu_submission_ticket_issuer_returns_monotonic_tickets),
         CUBEY_TEST(test_gpu_work_queue_drains_fifo_and_owns_requests),
         CUBEY_TEST(test_gpu_runtime_defaults_to_threaded_execution),
         CUBEY_TEST(test_gpu_runtime_submit_and_wait_propagates_threaded_failures),
@@ -276,8 +276,8 @@ std::span<const TestCase> core_tests() {
         CUBEY_TEST(test_scene_edit_queue_publishes_reserved_entities_on_commit),
         CUBEY_TEST(test_scene_failed_commit_rolls_back_reserved_entities),
         CUBEY_TEST(test_scene_read_views_defer_destroyed_entity_reuse_until_release),
-        CUBEY_TEST(test_spirv_io_reads_aligned_words),
-        CUBEY_TEST(test_spirv_io_rejects_misaligned_byte_count),
+        CUBEY_TEST(test_shader_bytecode_reads_aligned_spirv_words),
+        CUBEY_TEST(test_shader_bytecode_rejects_misaligned_spirv_byte_count),
         CUBEY_TEST(test_submission_coordinator_issues_monotonic_gpu_tickets),
         CUBEY_TEST(test_submission_coordinator_submit_and_wait_marks_completion),
         CUBEY_TEST(test_submission_coordinator_completion_tracking_rejects_future_tickets),

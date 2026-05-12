@@ -58,7 +58,7 @@ void test_gpu_work_queue_drains_fifo_and_owns_requests() {
 
 void test_gpu_runtime_drains_inline_on_owner_thread() {
     cubey::vulkan::SubmissionCoordinator submission = fake_submission();
-    const cubey::FrameTicket completed = submission.submit_and_wait(
+    const cubey::vulkan::GpuSubmissionTicket completed = submission.submit_and_wait(
         {.command_buffers = {reinterpret_cast<VkCommandBuffer>(0x57)}}, "submit fake", "wait fake");
 
     cubey::vulkan::GpuRuntime runtime({
@@ -251,13 +251,13 @@ void test_gpu_runtime_wait_queue_idle_runs_on_owner_thread() {
 }
 
 void test_gpu_runtime_mark_submission_completed_updates_completed_ticket() {
-    cubey::FrameTicket submitted{};
+    cubey::vulkan::GpuSubmissionTicket submitted{};
     std::thread::id caller_thread = std::this_thread::get_id();
     std::thread::id completion_thread{};
     cubey::vulkan::SubmissionCoordinator submission(
         reinterpret_cast<VkQueue>(0x56),
         [&submitted](VkQueue, const cubey::vulkan::QueueSubmitInfo&, const char*) {
-            submitted = cubey::FrameTicket{.value = 1};
+            submitted = cubey::vulkan::GpuSubmissionTicket{.value = 1};
         },
         [](VkQueue, const char*) {});
     submitted = submission.submit({.command_buffers = {reinterpret_cast<VkCommandBuffer>(0x57)}},
@@ -277,7 +277,7 @@ void test_gpu_runtime_mark_submission_completed_updates_completed_ticket() {
                         "GPU runtime should mark submitted ticket completed");
             },
     }));
-    runtime.mark_submission_completed(cubey::FrameTicket{.value = 0});
+    runtime.mark_submission_completed(cubey::vulkan::GpuSubmissionTicket{.value = 0});
 
     require(completion_thread != std::thread::id{}, "completion observer should run");
     require(completion_thread != caller_thread,

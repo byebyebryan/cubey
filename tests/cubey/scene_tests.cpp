@@ -1,5 +1,5 @@
-#include <cubey/detail/stable_slot_store.h>
 #include <cubey/scene/scene.h>
+#include <cubey/scene/stable_slot_store.h>
 
 #include <functional>
 #include <stdexcept>
@@ -24,9 +24,9 @@ void require_throws(const std::function<void()>& action, const char* message) {
 } // namespace
 
 void test_stable_slot_store_rejects_stale_handles_without_moving_other_slots() {
-    cubey::detail::StableSlotStore<int, 2> store;
-    const cubey::detail::StableSlotId first = store.create(10);
-    const cubey::detail::StableSlotId second = store.create(20);
+    cubey::StableSlotStore<int, 2> store;
+    const cubey::StableSlotId first = store.create(10);
+    const cubey::StableSlotId second = store.create(20);
     const int* second_address = &store.get(second);
 
     store.destroy(first, 3);
@@ -35,14 +35,14 @@ void test_stable_slot_store_rejects_stale_handles_without_moving_other_slots() {
     require(&store.get(second) == second_address,
             "Destroying one stable slot should not move another slot");
 
-    const cubey::detail::StableSlotId third = store.create(30);
+    const cubey::StableSlotId third = store.create(30);
     require(third.index != first.index,
             "Destroyed stable slot should not be reused before retirement");
     require(store.retire_destroyed_up_to(2) == 0,
             "Stable slot should not retire before its retire epoch");
     require(store.retire_destroyed_up_to(3) == 1, "Stable slot should retire at its retire epoch");
 
-    const cubey::detail::StableSlotId reused = store.create(40);
+    const cubey::StableSlotId reused = store.create(40);
     require(reused.index == first.index, "Retired stable slot should be reusable");
     require(reused.generation != first.generation, "Reused stable slot should advance generation");
 }

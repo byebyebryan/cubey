@@ -1,8 +1,8 @@
 #pragma once
 
-#include <cubey/core/frame_tickets.h>
 #include <cubey/vulkan/device.h>
 #include <cubey/vulkan/queue_submit.h>
+#include <cubey/vulkan/submission_tickets.h>
 
 #include <vulkan/vulkan.h>
 
@@ -22,16 +22,17 @@ class SubmissionCoordinator {
     SubmissionCoordinator(const SubmissionCoordinator&) = delete;
     SubmissionCoordinator& operator=(const SubmissionCoordinator&) = delete;
 
-    [[nodiscard]] FrameTicket submit(const QueueSubmitInfo& submit_info, const char* label);
-    [[nodiscard]] FrameTicket submit_and_wait(const QueueSubmitInfo& submit_info,
-                                              const char* submit_label, const char* wait_label);
+    [[nodiscard]] GpuSubmissionTicket submit(const QueueSubmitInfo& submit_info, const char* label);
+    [[nodiscard]] GpuSubmissionTicket submit_and_wait(const QueueSubmitInfo& submit_info,
+                                                      const char* submit_label,
+                                                      const char* wait_label);
     void wait_idle(const char* label) const;
-    void mark_completed(FrameTicket ticket);
+    void mark_completed(GpuSubmissionTicket ticket);
 
-    [[nodiscard]] FrameTicket last_submitted() const noexcept {
+    [[nodiscard]] GpuSubmissionTicket last_submitted() const noexcept {
         return last_submitted_;
     }
-    [[nodiscard]] FrameTicket completed() const noexcept {
+    [[nodiscard]] GpuSubmissionTicket completed() const noexcept {
         return completed_;
     }
 
@@ -39,9 +40,9 @@ class SubmissionCoordinator {
     VkQueue queue_ = VK_NULL_HANDLE;
     SubmitFunction submit_;
     WaitFunction wait_;
-    FrameTicketIssuer tickets_;
-    FrameTicket last_submitted_{};
-    FrameTicket completed_{};
+    GpuSubmissionTicketIssuer tickets_;
+    GpuSubmissionTicket last_submitted_{};
+    GpuSubmissionTicket completed_{};
 };
 
 } // namespace cubey::vulkan

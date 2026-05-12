@@ -48,7 +48,7 @@ Examples and projects may use `cubey::vulkan::CommandRecorder` for repeated
 command-buffer calls, but the render sequence and synchronization decisions
 remain their responsibility.
 
-The app layer owns host flow: GLFW, input, timing, swapchain lifecycle, and
+The host layer owns host flow: GLFW, input, timing, swapchain lifecycle, and
 headless output. It may pass `cubey::render` target views to callbacks, but it
 should not become a renderer.
 
@@ -90,7 +90,7 @@ full engine architecture.
   caller can transition and sample it later.
 - `WindowedHost` passes `WindowedRenderFrame` to render callbacks, including the
   command buffer, swapchain image index, timing, and color target view.
-- `HeadlessRenderTarget` is now the same target-view vocabulary as
+- `cubey::host::HeadlessRenderTarget` is now the same target-view vocabulary as
   `cubey::render::ColorTargetView`.
 - `Texture2D` owns a Vulkan image plus an optional sampler for the current
   storage-sampled and transfer-sampled texture paths.
@@ -109,21 +109,27 @@ full engine architecture.
 - `ResourceTable` maps typed render handles to app-owned resources such as
   `Mesh`, so examples can resolve registry-issued handles without hardcoded
   one-off checks.
-- `RenderDrawPacket3D` and `build_render_draw_packets_3d` validate live
-  mesh/material handles, attach material metadata, preserve world bounds, and
-  sort draw packets deterministically.
-- `View3D`, `Environment3D`, and `RenderFramePlan3D` form the current CPU
-  view-planning boundary. They combine a scene read view, camera entity,
-  viewport size, ambient-only environment, draw packets, light packets, and
-  conservative CPU frustum culling. Vulkan command recording, pipeline
+- `cubey::scene::RenderDrawPacket3D` and
+  `cubey::scene::build_render_draw_packets_3d` validate live mesh/material
+  handles, attach material metadata, preserve world bounds, and sort draw
+  packets deterministically.
+- `cubey::scene::View3D`, `Environment3D`, and `RenderFramePlan3D` form the
+  current CPU view-planning boundary. They combine a scene read view, camera
+  entity, viewport size, ambient-only environment, draw packets, light packets,
+  and conservative CPU frustum culling. Vulkan command recording, pipeline
   selection, descriptor binding, and pass ordering remain caller-owned.
-- `RenderPassPlan3D` and `FrameRenderPlan3D` provide a small CPU-side pass list
-  for multi-view and multi-pass examples. They preserve explicit pass order and
-  pass kind without becoming a render graph or scheduler.
+- `cubey::scene::RenderPassPlan3D` and `FrameRenderPlan3D` provide a small
+  CPU-side pass list for multi-view and multi-pass examples. They preserve
+  explicit pass order and pass kind without becoming a render graph or
+  scheduler.
 - `cubey::vulkan::CommandRecorder` is the current low-level recording helper
   used by examples and `fluid_2d` for common Vulkan command-buffer calls. It
   does not own pass scheduling, automatic barriers, descriptor policy, or
   renderer state.
+- Scene render-planning helpers live with the scene/component layer and emit
+  sorted CPU draw plans from committed scene read views. They use
+  `cubey::scene` even though the output feeds rendering, because the helpers
+  depend on `SceneReadView` and sit above `cubey::render` in the target graph.
 - `RenderableManager3D` lives in the scene/component layer and emits compact
   renderable packets with world matrices, world bounds, and resource handles.
   The cube examples now use Engine-owned scenes, registry-issued handles, mesh
@@ -142,10 +148,11 @@ full engine architecture.
 ## Multipass Direction
 
 `examples/shadow_cube` is the current reference for manual multipass rendering:
-build a shadow `View3D`, build a camera `View3D`, record a depth-only pass into
-a `DepthTexture`, transition that image for shader reads, then record the color
-pass that samples it. The reusable foundation intentionally stops at view/pass
-planning, target/texture ownership, layout-transition helpers, and depth-only
-rendering info. `CommandRecorder` keeps the repeated command-buffer calls
-compact, but render-graph scheduling, automatic resource barriers, material
-binding, and shadow policy remain future work.
+build a shadow `cubey::scene::View3D`, build a camera `cubey::scene::View3D`,
+record a depth-only pass into a `DepthTexture`, transition that image for shader
+reads, then record the color pass that samples it. The reusable foundation
+intentionally stops at view/pass planning, target/texture ownership,
+layout-transition helpers, and depth-only rendering info. `CommandRecorder`
+keeps the repeated command-buffer calls compact, but render-graph scheduling,
+automatic resource barriers, material binding, and shadow policy remain future
+work.

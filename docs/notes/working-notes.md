@@ -8,7 +8,7 @@ doc when they stabilize. Historical decision records belong under
 
 Architectural note: older entries that say "wait for project pressure" reflect
 an earlier anti-sprawl bias. The current stance in `docs/DESIGN.md`,
-`docs/architecture/app-runtime.md`, and `docs/architecture/vulkan-abstractions.md` supersedes that:
+`docs/architecture/host-engine.md`, and `docs/architecture/vulkan-abstractions.md` supersedes that:
 Cubey should build small, deliberate foundation contracts for established
 graphics/runtime concepts when the boundary is clear, while still avoiding a
 generic game engine or backend-agnostic renderer.
@@ -44,7 +44,7 @@ As of 2026-05-06:
   submit, present, and out-of-date/suboptimal reporting.
 - Promoted `cubey::FrameClock` and `cubey::OrbitController` for deterministic
   frame timing, auto-rotation, pause/reset, and mouse-drag rotation.
-- Promoted `cubey::FrameStats` for lightweight FPS, frame-time, extent,
+- Promoted `cubey::host::FrameStats` for lightweight FPS, frame-time, extent,
   triangle-count, and pixel-rate telemetry.
 - Promoted `cubey::math` as a narrow GLM-backed math wrapper. It exposes the
   current `Mat4`/`Vec4` types plus transform helpers and a Vulkan projection
@@ -52,9 +52,10 @@ As of 2026-05-06:
 - Promoted `cubey::vulkan::ShaderModule` and added CMake GLSL-to-SPIR-V shader
   compilation with `glslangValidator`, including shared shader include
   directories and dependency tracking.
-- Promoted `cubey::file_io` for generic binary reads/writes and
-  `cubey::spirv_io` for tested SPIR-V word loading. Shader-backed examples
-  share `cubey::read_spirv_file` instead of carrying local file readers.
+- Promoted `cubey::file_io` for generic binary reads/writes and a Vulkan
+  `shader_bytecode` helper for tested SPIR-V word loading. Shader-backed
+  examples share `cubey::vulkan::read_spirv_file` instead of carrying local
+  file readers.
 - Promoted `cubey::jobs::JobSystem`, `InlineExecutor`, and `JobHandle` as the
   first CPU job facade. The implementation is standard-library-only for now,
   keeping Taskflow or `BS::thread_pool` swappable behind Cubey APIs later.
@@ -65,15 +66,15 @@ As of 2026-05-06:
 - Promoted `cubey::UploadQueue`, `UploadTicket`, and `QueuedUpload` as the
   first upload-side request queue. It owns submitted CPU bytes and can be
   drained by the future GPU owner without exposing Vulkan staging yet.
-- Promoted `cubey::FrameTicketIssuer`, `FrameTicket`, and
-  `DeferredDestructionQueue` as CPU-side frame-ticket vocabulary for deferred
-  cleanup. They are not tied to Vulkan fences yet.
+- Promoted `cubey::vulkan::GpuSubmissionTicketIssuer`, `GpuSubmissionTicket`,
+  and `DeferredGpuDestructionQueue` as Vulkan submission-ticket vocabulary for
+  deferred cleanup.
 - Promoted `cubey::ProjectContext`, `ProjectFrame`, `ProjectExtent`,
   `RenderPacket`, and `ProjectLike` as the first async-ready project runtime
   vocabulary. Existing examples remain direct; future `projects/` should use
   the new boundary.
 - Promoted `cubey::ProjectRuntimeServices` as the first project-facing owner for
-  jobs, uploads, captures, frame tickets, deferred destruction, and
+  jobs, uploads, captures, GPU submission tickets, deferred destruction, and
   `ProjectFrame` creation from frame timing.
 - Promoted `cubey::ProjectRuntimeAdapter` as the thin reusable bridge between
   concrete hosts and project frame vocabulary. It does not own window/headless
@@ -113,7 +114,7 @@ As of 2026-05-06:
 - Promoted the narrow pieces needed for the first headless artifact path:
   offscreen color render-target config, color-attachment-to-readback transition,
   and `cubey::image_io` PNG writing backed by vendored `stb_image_write`.
-- Promoted `cubey::HeadlessPngHost` after `headless_render`,
+- Promoted `cubey::host::HeadlessPngHost` after `headless_render`,
   `fractal --headless`, and `fluid_2d --headless` repeated the same no-window
   host mechanics. It owns instance/device setup, offscreen target creation,
   capture transitions, readback, and PNG writing without pulling GLFW into the
@@ -158,7 +159,7 @@ As of 2026-05-06:
   CMake smoke helpers.
 - Roadmap alignment: the next framework driver should be a real project. The
   lightweight fractal and particle work stayed under `examples/` and did not
-  justify a broad app/runtime layer.
+  justify a broad host/engine layer.
 - Threading/async alignment: before the first real project grows, add an
   async-ready boundary rather than a full threaded renderer. The intended shape
   is CPU jobs behind Cubey APIs, queued upload/capture requests, explicit GPU
@@ -386,7 +387,7 @@ env XDG_RUNTIME_DIR=/run/user/1000 WAYLAND_DISPLAY=wayland-1 DISPLAY=:1 XDG_CURR
 - The no-window artifact path proved useful only after it stayed concrete:
   offscreen color target, explicit color-attachment-to-readback transition,
   image-to-buffer copy, `stb_image_write` PNG output, and a no-display CTest
-  smoke. That is still not enough evidence to justify a broad app host.
+  smoke. That is still not enough evidence to justify a broad host layer.
 
 ### 2026-05-05
 
@@ -395,7 +396,7 @@ env XDG_RUNTIME_DIR=/run/user/1000 WAYLAND_DISPLAY=wayland-1 DISPLAY=:1 XDG_CURR
   `examples/headless_render`.
 - `headless_render` intentionally renders a deterministic clear first. A
   fullscreen shader could add signal later, but the current value is proving
-  the no-window Vulkan path and PNG artifact loop without creating an app host.
+  the no-window Vulkan path and PNG artifact loop without creating a broad host.
 - CTest now includes `headless_render_writes_png`, which writes into the build
   tree and validates the PNG signature. The manual validation smoke produced a
   `128 x 72` RGBA PNG on the RTX 5070 Ti.
@@ -406,8 +407,9 @@ env XDG_RUNTIME_DIR=/run/user/1000 WAYLAND_DISPLAY=wayland-1 DISPLAY=:1 XDG_CURR
   zoom, reset, and push constants. That kept input math testable without moving
   fractal-specific behavior into `cubey`.
 - Repo-wide cleanup after the fractal slice promoted generic binary reads and
-  writes into `cubey::file_io`, kept SPIR-V word loading in `cubey::spirv_io`,
-  and renamed PNG artifact helpers to `cubey::image_io`.
+  writes into `cubey::file_io`, kept SPIR-V word loading in a Vulkan
+  `shader_bytecode` helper, and renamed PNG artifact helpers to
+  `cubey::image_io`.
 - The repeated CTest shell snippets for windowed/no-display and headless PNG
   smoke checks now live in `cmake/CubeySmokeTests.cmake`. Individual examples
   declare only the target, test name, and expected success pattern or output
@@ -426,13 +428,13 @@ env XDG_RUNTIME_DIR=/run/user/1000 WAYLAND_DISPLAY=wayland-1 DISPLAY=:1 XDG_CURR
 - Batch 3 added the CPU-side upload queue. It deliberately stops before Vulkan
   staging/copy integration so the first project can submit upload intent without
   forcing the final GPU scheduling shape.
-- Batch 4 added frame tickets and deferred destruction. This gives future
-  in-flight GPU lifetime work a vocabulary before N-frames-in-flight or timeline
-  semaphore integration exists.
+- Batch 4 added GPU submission tickets and deferred destruction. This gives
+  future in-flight GPU lifetime work a vocabulary before N-frames-in-flight or
+  timeline semaphore integration exists.
 - Batch 5 added the project runtime vocabulary without migrating examples. This
   keeps reference examples readable while letting `fluid_2d` start using
-  service-based access to jobs, uploads, captures, frame tickets, deferred
-  cleanup, and project-frame timing.
+  service-based access to jobs, uploads, captures, GPU submission tickets,
+  deferred cleanup, and project-frame timing.
 - The particle slice stayed intentionally under `examples/particles`: the useful
   signal was graphics-plus-compute command recording, storage-buffer
   descriptors, additive blending, and GPU-updated billboard rendering. It does
@@ -441,18 +443,18 @@ env XDG_RUNTIME_DIR=/run/user/1000 WAYLAND_DISPLAY=wayland-1 DISPLAY=:1 XDG_CURR
   `gl_VertexIndex` and `gl_InstanceIndex`; this avoids geometry shaders while
   keeping the particle storage buffer directly readable by both compute and
   graphics stages.
-- The first app/runtime extraction landed as `cubey_app`, not as part of
+- The first host/engine extraction landed as `cubey_host`, not as part of
   `cubey::vulkan`. `GlfwWindow` and `GlfwSurface` own the platform/surface
   handoff, and `WindowedHost` owns the repeated windowed loop. `window_clear`,
   `triangle`, and `particles` now use it while keeping Vulkan command recording
   and render resources example-local.
 - The follow-up windowed-host migration moved `window_clear`, `spinning_cube`,
   `textured_cube`, and the windowed `fractal` path onto `WindowedHost` too.
-  Direct GLFW use is now isolated to `cubey_app`; examples depend on
-  `cubey::app` for window hosting and keep their own shader, pipeline,
+  Direct GLFW use is now isolated to `cubey_host`; examples depend on
+  `cubey::host` for window hosting and keep their own shader, pipeline,
   descriptor, render-resource, and command-recording policy. At that point,
   `headless_render` and `fractal --headless` still owned explicit no-window
-  paths; they later moved onto `HeadlessPngHost`.
+  paths; they later moved onto `cubey::host::HeadlessPngHost`.
 
 ### 2026-05-06
 
@@ -486,8 +488,8 @@ env XDG_RUNTIME_DIR=/run/user/1000 WAYLAND_DISPLAY=wayland-1 DISPLAY=:1 XDG_CURR
   injector and fixed timing.
 - `fluid_2d` now owns `ProjectRuntimeAdapter` and records simulation from
   `ProjectFrame` in both windowed and headless modes. This makes frame timing
-  and frame tickets real project vocabulary without introducing a generic
-  project host or moving Vulkan command recording out of the project.
+  and GPU submission tickets real project vocabulary without introducing a
+  generic project host or moving Vulkan command recording out of the project.
 - This still should not promote renderer, scene, or generic solver
   abstractions. The next useful pressure is solver tuning or a second project
   that repeats the same resource shape.

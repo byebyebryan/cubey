@@ -26,7 +26,7 @@ Detailed current foundation notes live under
 - [Entity and component foundation](architecture/entity-component-foundation.md):
   manager-oriented entity/component shape, MT-stable storage, read views, edit
   commits, and transform manager direction.
-- [App runtime](architecture/app-runtime.md): GLFW/windowed host, headless
+- [Host and engine](architecture/host-engine.md): GLFW/windowed host, headless
   host, input, frame flow, and project lifecycle direction.
 - [Threading and async](architecture/threading-and-async.md): CPU jobs, queued
   GPU work, ownership, and future threading boundaries.

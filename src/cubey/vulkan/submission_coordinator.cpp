@@ -25,17 +25,18 @@ SubmissionCoordinator::SubmissionCoordinator(VkQueue queue, SubmitFunction submi
     }
 }
 
-FrameTicket SubmissionCoordinator::submit(const QueueSubmitInfo& submit_info, const char* label) {
+GpuSubmissionTicket SubmissionCoordinator::submit(const QueueSubmitInfo& submit_info,
+                                                  const char* label) {
     submit_(queue_, submit_info, label);
 
     last_submitted_ = tickets_.issue();
     return last_submitted_;
 }
 
-FrameTicket SubmissionCoordinator::submit_and_wait(const QueueSubmitInfo& submit_info,
-                                                   const char* submit_label,
-                                                   const char* wait_label) {
-    const FrameTicket ticket = submit(submit_info, submit_label);
+GpuSubmissionTicket SubmissionCoordinator::submit_and_wait(const QueueSubmitInfo& submit_info,
+                                                           const char* submit_label,
+                                                           const char* wait_label) {
+    const GpuSubmissionTicket ticket = submit(submit_info, submit_label);
     wait_idle(wait_label);
     mark_completed(ticket);
     return ticket;
@@ -45,7 +46,7 @@ void SubmissionCoordinator::wait_idle(const char* label) const {
     wait_(queue_, label);
 }
 
-void SubmissionCoordinator::mark_completed(FrameTicket ticket) {
+void SubmissionCoordinator::mark_completed(GpuSubmissionTicket ticket) {
     if (last_submitted_ < ticket) {
         throw std::runtime_error("submission coordinator cannot complete unsubmitted work");
     }

@@ -14,8 +14,8 @@ See the [architecture notes](architecture/README.md), especially the
 [Vulkan abstraction map](architecture/vulkan-abstractions.md) for planned
 framework layers and foundation rules,
 [renderer foundation](architecture/renderer-foundation.md) for the first
-`cubey::render` contracts above Vulkan, [app runtime](architecture/app-runtime.md)
-for the GLFW/windowed host extraction path, and
+`cubey::render` contracts above Vulkan, [host and engine](architecture/host-engine.md)
+for the GLFW/windowed host and scoped engine ownership path, and
 [threading and async design](architecture/threading-and-async.md) for the
 async-ready runtime boundary.
 
@@ -45,7 +45,7 @@ Status: windowed framework checkpoint and first headless artifact checkpoint
 complete; frame overlap remains open.
 
 Goal: build maintainable mainline Vulkan modules and prove visible desktop
-rendering without turning the library into a generic app engine.
+rendering without turning the library into a generic game engine.
 
 - Layered `cubey::*` library targets with public headers under `include/cubey/`
   and an aggregate `cubey::cubey` target.
@@ -98,16 +98,16 @@ Current checkpoint:
 - Reusable `cubey::input::InputState`/`InputFrame` provide per-frame keyboard
   and mouse polling over the GLFW callback stream, with shared pointer-drag,
   camera-backed 2D pan/zoom, and input-aware orbit-control helpers.
-- Reusable `cubey::FrameStats` covers lightweight FPS/frame-time/extent/triangle
-  telemetry formatting for windowed examples.
+- Reusable `cubey::host::FrameStats` covers lightweight
+  FPS/frame-time/extent/triangle telemetry formatting for windowed examples.
 - Reusable `cubey::math` wraps GLM matrix/vector/quaternion types and the
   current Vulkan transform/projection conventions used by the shared
   transform/camera helpers and cube examples.
 - Reusable `cubey::vulkan::ShaderModule` exists, and CMake can compile GLSL to
   SPIR-V with `glslangValidator` for example targets, including shared include
-  directories and dependency tracking. Reusable `cubey::read_spirv_file` loads
-  compiled shader bytecode through the `spirv_io` layer for shader-backed
-  examples and future projects.
+  directories and dependency tracking. Reusable `cubey::vulkan::read_spirv_file`
+  loads compiled shader bytecode through the Vulkan `shader_bytecode` helper
+  for shader-backed examples and future projects.
 - Reusable `cubey::vulkan::ImmediateCommands` plus buffer helpers support
   one-shot setup uploads into device-local buffers.
 - Reusable `cubey::vulkan::CommandRecorder` wraps the repeated non-owning
@@ -140,13 +140,15 @@ Current checkpoint:
 - Reusable `cubey::UploadQueue`, `UploadTicket`, and `QueuedUpload` provide the
   first CPU-owned upload request queue for GPU-owner draining, with pending,
   completed, and failed ticket status.
-- Reusable `cubey::FrameTicketIssuer`, `FrameTicket`, and
-  `DeferredDestructionQueue` provide the first frame-ticket retirement
-  vocabulary.
+- Reusable Vulkan submission primitives
+  `cubey::vulkan::GpuSubmissionTicketIssuer`, `GpuSubmissionTicket`, and
+  `DeferredGpuDestructionQueue` provide the first GPU submission retirement
+  vocabulary outside the core target.
 - Reusable `cubey::Engine` provides the first scoped root owner for project
   runtime services, render resource handle identity, and scene
   creation/destruction without becoming a singleton or taking over host/device
-  ownership yet.
+  ownership yet. It lives in the engine layer because it composes runtime,
+  scene, and render-registry services rather than being scene state itself.
 - Reusable `cubey::ProjectContext`, `ProjectFrame`, `ProjectExtent`,
   `RenderPacket`, `ProjectRuntimeServices`, `ProjectRuntimeAdapter`, and
   `ProjectLike` provide the first async-ready project runtime vocabulary,
@@ -162,16 +164,18 @@ Current checkpoint:
   upload, minimal indexed draw recording, explicit frame-slot identity,
   per-frame uniform buffers, and generational mesh/material handles issued by
   `RenderResourceRegistry`.
-- Reusable `cubey::render::ResourceTable`, `RenderDrawPacket3D`, and
-  `build_render_draw_packets_3d` provide the first CPU render-planning layer:
-  handle-to-resource resolution, live resource validation, material tag
-  attachment, world bounds propagation, and deterministic draw sorting without
-  owning Vulkan command recording, descriptors, or pipelines.
-- Reusable `cubey::render::View3D`, `Environment3D`, and
+- Reusable `cubey::render::ResourceTable`,
+  `cubey::scene::RenderDrawPacket3D`, and
+  `cubey::scene::build_render_draw_packets_3d` provide the first CPU
+  render-planning layer: handle-to-resource resolution, live resource
+  validation, material tag attachment, world bounds propagation, and
+  deterministic draw sorting without owning Vulkan command recording,
+  descriptors, or pipelines.
+- Reusable `cubey::scene::View3D`, `Environment3D`, and
   `RenderFramePlan3D` provide the first CPU 3D view-planning boundary over
   `SceneReadView`: camera matrices, viewport aspect, ambient-only environment,
   draw packets, light packets, and conservative CPU frustum culling.
-- Reusable `cubey::render::RenderPassPlan3D` and `FrameRenderPlan3D` provide a
+- Reusable `cubey::scene::RenderPassPlan3D` and `FrameRenderPlan3D` provide a
   small explicit pass-list contract for multi-view and multi-pass command
   recording without introducing a render graph.
 - Reusable `cubey::vulkan::PipelineLayout`, `GraphicsPipeline`,
@@ -204,25 +208,25 @@ Current checkpoint:
   fence wait, and out-of-date result path used by all current windowed examples.
 - Reusable `cubey::vulkan::SwapchainRecreateTracker` guards repeated
   out-of-date/suboptimal recreate loops across all current windowed examples.
-- Optional `cubey_app` target owns the first GLFW-backed app/runtime layer:
+- Optional `cubey_host` target owns the first GLFW-backed host/engine layer:
   window lifetime, surface creation/destruction, key/pointer dispatch, windowed
   frame loop, frame timing, optional frame stats, and swapchain recreate
   orchestration. Render callbacks receive `WindowedRenderFrame`, including the
   active frame slot and swapchain color target view. The windowed host defaults
   to two frame slots.
 - `examples/window_clear` links against `cubey` and clears/presents a swapchain
-  image through the shared app host using dynamic rendering.
+  image through the shared host layer using dynamic rendering.
 - `examples/triangle` links against `cubey`, compiles vertex/fragment shaders
   at build time, creates a dynamic-rendering graphics pipeline through the
   shared pipeline helper, and draws a `gl_VertexIndex` triangle without a render
-  pass or framebuffer through the shared app host.
+  pass or framebuffer through the shared host layer.
 - `examples/spinning_cube` links against `cubey`, compiles vertex/fragment
   shaders at build time, draws an indexed cube through `cubey::render::Mesh`,
   `DrawItem`, `MeshResourceTable`, registry-issued mesh/material handles, and
   CPU render frame plans built from scene renderables, updates scene transforms
-  during the app `update()` phase, builds an MVP matrix from `View3D` camera
+  during the project `update()` phase, builds an MVP matrix from `View3D` camera
   planning through push constants, and uses dynamic rendering with a shared
-  depth attachment helper through the shared app host.
+  depth attachment helper through the shared host layer.
 - `examples/textured_cube` links against `cubey`, generates a `Texture2D` with a
   compute shader writing a storage image, transitions it for shader sampling,
   binds per-frame scene uniforms plus a combined image sampler descriptor
@@ -232,7 +236,7 @@ Current checkpoint:
   plans built from scene renderables and a scene-owned directional light
   packet, ambient-only `Environment3D`, dynamic rendering, per-face normals,
   shared GLSL Lambert lighting, shared transform/model matrices, shared camera
-  projection, and shared math helpers through the shared app host.
+  projection, and shared math helpers through the shared host layer.
 - `examples/shadow_cube` links against `cubey`, records a manual two-pass frame
   with a depth-only directional shadow map pass followed by a color pass that
   samples the depth texture, and exercises orthographic `Camera3D`, sampled
@@ -243,16 +247,16 @@ Current checkpoint:
   it into a readback buffer, and writes a PNG artifact.
 - `examples/fractal` links against `cubey`, renders a fullscreen
   Mandelbrot-style fragment shader, supports camera-backed pan/zoom/reset
-  navigation through the shared app host, and reuses the shared headless PNG
+  navigation through the shared host layer, and reuses the shared headless PNG
   host for no-window output.
 - `examples/particles` links against `cubey`, updates a storage-buffer particle
   field with a per-frame compute shader, inserts an explicit compute-to-vertex
   memory barrier, and renders the result as instanced screen-facing quads with
-  additive Gaussian splats through the shared app host.
+  additive Gaussian splats through the shared host layer.
 - The current device model intentionally selects one queue family for required
   graphics, compute, and present capabilities. Split queue-family support is a
   future framework slice, not part of the current example-local compute path.
-- Windowed example host mechanics now live in `cubey_app`; swapchain-sized
+- Windowed example host mechanics now live in `cubey_host`; swapchain-sized
   render resources, pipeline layout choices, and command recording sequence
   remain example-local.
 - Dev CTest covers the target in graphical, no-display terminal, and headless
@@ -263,12 +267,12 @@ Current checkpoint:
 
 Alignment: the Vulkan layer now has visible windowed examples plus a minimal
 headless PNG path. Cubey has the first async-ready runtime vocabulary: CPU jobs
-behind Cubey APIs, queued upload/capture requests, frame tickets, deferred
-cleanup, and project lifecycle concepts. Larger systems such as a threaded
-renderer, split queues, or parallel command recording should be designed from
-clear contracts and established graphics precedent before implementation; they
-do not need duplicated project code as a prerequisite, but they must stay
-narrow and testable.
+behind Cubey APIs, queued upload/capture requests, GPU submission tickets,
+deferred cleanup, and project lifecycle concepts. Larger systems such as a
+threaded renderer, split queues, or parallel command recording should be
+designed from clear contracts and established graphics precedent before
+implementation; they do not need duplicated project code as a prerequisite, but
+they must stay narrow and testable.
 
 ## Phase 2: Headless Output And Runtime Boundary
 
@@ -286,8 +290,9 @@ surface while keeping the runtime boundary concrete.
 - Wrote a simple deterministic PNG artifact.
 - Added CTest coverage for the no-display success path, including output-file
   existence and PNG signature checks.
-- Follow-up extraction added the shared no-GLFW `HeadlessPngHost` once repeated
-  examples and the first project revealed a concrete reusable shape.
+- Follow-up extraction added the shared no-GLFW `cubey::host::HeadlessPngHost`
+  once repeated examples and the first project revealed a concrete reusable
+  shape.
 
 Exit criteria:
 
@@ -336,7 +341,7 @@ particle feel while staying below the threshold for a `projects/` runtime.
   then rendered the same buffer in the graphics pass.
 - Kept controls example-local: Space pauses updates, `R` resets the field, and
   Escape closes the window.
-- Did not promote particle simulation, billboard, or app-host abstractions; this
+- Did not promote particle simulation, billboard, or host abstractions; this
   remains reference example code until a real project repeats the shape.
 
 Exit criteria:
@@ -357,8 +362,8 @@ building a full threaded renderer too early.
 - Keep third-party task/executor types out of public Cubey APIs.
 - Added job-backed PNG capture encoding as the first queued work consumer.
 - Added CPU-owned upload requests that can be drained by the GPU owner.
-- Added frame tickets and deferred destruction helpers for future in-flight GPU
-  lifetime tracking.
+- Added GPU submission tickets and deferred destruction helpers for future
+  in-flight GPU lifetime tracking.
 - Added `SubmissionCoordinator` for serialized queue submission and frame-slot
   GPU completion marking.
 - Added `GpuRuntime` as the public GPU-owner work queue over the submission
@@ -381,7 +386,7 @@ building a full threaded renderer too early.
 Exit criteria:
 
 - Docs identify the app thread, GPU owner, worker executor, frame packet,
-  upload request, capture request, and frame ticket concepts.
+  upload request, capture request, and GPU submission ticket concepts.
 - The job facade can run CPU work, propagate errors, shut down cleanly, and
   provide deterministic test behavior.
 - Upload/capture APIs can start synchronous internally while exposing queued
@@ -394,7 +399,7 @@ Exit criteria:
 Status: active; first `fluid_2d` solver checkpoints complete.
 
 Goal: prove the framework with one non-trivial procedural graphics project and
-let repeated project needs shape the app/runtime API.
+let repeated project needs shape the host/engine API.
 
 Current project:
 
@@ -434,8 +439,8 @@ has proven useful.
 - Initial windowed host outside `cubey::vulkan`. Status: complete for current
   windowed examples.
 - Project lifecycle vocabulary: setup, update, render packet, resize, shutdown.
-- Project runtime services for jobs, uploads, captures, frame tickets, deferred
-  destruction, and `ProjectFrame` creation. Status: complete.
+- Project runtime services for jobs, uploads, captures, GPU submission tickets,
+  deferred destruction, and `ProjectFrame` creation. Status: complete.
 - Thin project runtime adapter for one project frame per host frame, context
   access, and deferred destruction retirement. Status: complete.
 - Strict GPU runtime exposed through windowed/headless host contexts, with

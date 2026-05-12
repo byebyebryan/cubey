@@ -13,10 +13,10 @@ add_executable(cubey_core_tests
     file_io_tests.cpp
     frame_clock_tests.cpp
     frame_resources_tests.cpp
-    frame_stats_tests.cpp
-    frame_ticket_tests.cpp
+    host_headless_png_host_tests.cpp
+    host_frame_stats_tests.cpp
+    submission_tickets_tests.cpp
     gpu_runtime_tests.cpp
-    headless_png_host_tests.cpp
     image_io_tests.cpp
     immediate_commands_tests.cpp
     jobs_tests.cpp
@@ -33,18 +33,18 @@ add_executable(cubey_core_tests
     render_context_tests.cpp
     render_frame_data_tests.cpp
     render_mesh_tests.cpp
-    render_plan_tests.cpp
     render_resource_registry_tests.cpp
     render_resource_table_tests.cpp
     render_target_tests.cpp
     render_texture_tests.cpp
     render_uniform_buffer_tests.cpp
-    render_view_3d_tests.cpp
     renderable_manager_tests.cpp
     resource_tests.cpp
     scene_tests.cpp
+    scene_render_plan_tests.cpp
+    scene_view_3d_tests.cpp
     sampler_tests.cpp
-    spirv_io_tests.cpp
+    shader_bytecode_tests.cpp
     submission_coordinator_tests.cpp
     transform_manager_tests.cpp
     transform_tests.cpp
@@ -57,6 +57,7 @@ target_link_libraries(
     cubey_core_tests
     PRIVATE
         cubey::cubey
+        cubey::host
         cubey_project_warnings
 )
 

@@ -103,7 +103,7 @@ RenderFrameResult RenderContext::end_frame(const RenderFrame& frame) const {
 
     VkSemaphore present_ready =
         frame_resources.present_ready(static_cast<std::size_t>(frame.image_index));
-    FrameTicket submitted{};
+    GpuSubmissionTicket submitted{};
     VkResult presented = VK_SUCCESS;
     static_cast<void>(config_.gpu->submit_and_wait({
         .label = "submit and present frame",

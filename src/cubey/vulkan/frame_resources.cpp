@@ -52,11 +52,11 @@ void FrameResources::mark_image_in_flight(std::size_t image_index, VkFence fence
     images_in_flight_.at(image_index) = fence;
 }
 
-FrameTicket FrameResources::submitted_ticket(std::uint32_t frame_slot_index) const {
+GpuSubmissionTicket FrameResources::submitted_ticket(std::uint32_t frame_slot_index) const {
     return slot(frame_slot_index).submitted_ticket;
 }
 
-void FrameResources::mark_submitted(std::uint32_t frame_slot_index, FrameTicket ticket) {
+void FrameResources::mark_submitted(std::uint32_t frame_slot_index, GpuSubmissionTicket ticket) {
     frame_slots_.at(frame_slot_index).submitted_ticket = ticket;
 }
 

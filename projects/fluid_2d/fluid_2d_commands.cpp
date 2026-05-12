@@ -283,7 +283,7 @@ void record_fullscreen_draw(VkCommandBuffer command_buffer, const Fluid2DGpuReso
     recorder.end_rendering();
 }
 
-void record_fluid_frame(const cubey::app::WindowedRenderFrame& render_frame,
+void record_fluid_frame(const cubey::host::WindowedRenderFrame& render_frame,
                         Fluid2DGpuResources& resources, const Fluid2DConfig& config,
                         FluidDebugView debug_view, const FrameInjection& injection, bool paused,
                         bool& reset_requested, const ProjectFrame& frame) {

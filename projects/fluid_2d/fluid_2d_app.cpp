@@ -4,13 +4,13 @@
 #include "fluid_2d_config.h"
 #include "fluid_2d_gpu_resources.h"
 
-#include <cubey/app/glfw_window.h>
-#include <cubey/app/windowed_host.h>
-#include <cubey/core/frame_stats.h>
+#include <cubey/engine/project_gpu_services.h>
+#include <cubey/engine/project_runtime.h>
+#include <cubey/host/frame_stats.h>
+#include <cubey/host/glfw_window.h>
+#include <cubey/host/headless_png_host.h>
+#include <cubey/host/windowed_host.h>
 #include <cubey/input/pointer_drag.h>
-#include <cubey/runtime/headless_png_host.h>
-#include <cubey/runtime/project_gpu_services.h>
-#include <cubey/runtime/project_runtime.h>
 #include <cubey/vulkan/device.h>
 #include <cubey/vulkan/gpu_runtime.h>
 #include <cubey/vulkan/immediate_commands.h>
@@ -26,9 +26,9 @@
 namespace cubey::projects::fluid_2d {
 namespace {
 
-using cubey::FrameStatsSample;
 using cubey::FrameTiming;
 using cubey::ProjectFrame;
+using cubey::host::FrameStatsSample;
 
 class Fluid2DApp {
   public:
@@ -42,7 +42,7 @@ class Fluid2DApp {
             return run_headless();
         }
 
-        cubey::app::WindowedHost host(
+        cubey::host::WindowedHost host(
             {
                 .run_config = config_,
                 .required_queue_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
@@ -51,37 +51,37 @@ class Fluid2DApp {
             },
             {
                 .create_swapchain_resources =
-                    [this](cubey::app::WindowedAppContext& context) {
+                    [this](cubey::host::WindowedAppContext& context) {
                         create_global_resources_if_needed(context.device(), context.gpu());
                         create_render_pipeline(context.device(), context.swapchain().format(),
                                                context.swapchain().extent());
                     },
                 .destroy_swapchain_resources =
-                    [this](cubey::app::WindowedAppContext& context) {
+                    [this](cubey::host::WindowedAppContext& context) {
                         (void)context;
                         destroy_swapchain_resources();
                     },
                 .on_ready =
-                    [](cubey::app::WindowedAppContext& context) {
+                    [](cubey::host::WindowedAppContext& context) {
                         std::printf("fluid_2d: %s rendering 2D fluid project at %ux%u\n",
                                     context.device().device_name(),
                                     context.swapchain().extent().width,
                                     context.swapchain().extent().height);
                     },
                 .update =
-                    [this](cubey::app::WindowedAppContext& context, const FrameTiming& timing) {
+                    [this](cubey::host::WindowedAppContext& context, const FrameTiming& timing) {
                         const ProjectFrame& project_frame = runtime_.frame_for_timing(timing);
                         update_interaction(context, project_frame);
                     },
                 .record_frame =
-                    [this](cubey::app::WindowedAppContext& context,
-                           const cubey::app::WindowedRenderFrame& frame) {
+                    [this](cubey::host::WindowedAppContext& context,
+                           const cubey::host::WindowedRenderFrame& frame) {
                         (void)context;
                         const ProjectFrame& project_frame = runtime_.frame_for_timing(frame.timing);
                         record_frame(frame, project_frame);
                     },
                 .frame_stats_sample =
-                    [](cubey::app::WindowedAppContext& context,
+                    [](cubey::host::WindowedAppContext& context,
                        const FrameTiming& timing) -> std::optional<FrameStatsSample> {
                     const VkExtent2D extent = context.swapchain().extent();
                     return FrameStatsSample{
@@ -92,7 +92,7 @@ class Fluid2DApp {
                     };
                 },
                 .shutdown =
-                    [this](cubey::app::WindowedAppContext& context) {
+                    [this](cubey::host::WindowedAppContext& context) {
                         (void)context;
                         destroy_all_resources();
                         retire_project_gpu_work();
@@ -103,7 +103,7 @@ class Fluid2DApp {
     }
 
   private:
-    void update_interaction(cubey::app::WindowedAppContext& context,
+    void update_interaction(cubey::host::WindowedAppContext& context,
                             const ProjectFrame& project_frame) {
         (void)project_frame;
         const cubey::input::InputFrame& input = context.input();
@@ -192,7 +192,7 @@ class Fluid2DApp {
         resources_.create_render_pipeline(device, color_format, extent);
     }
 
-    void record_frame(const cubey::app::WindowedRenderFrame& render_frame,
+    void record_frame(const cubey::host::WindowedRenderFrame& render_frame,
                       const ProjectFrame& frame) {
         record_fluid_frame(render_frame, resources_, fluid_config_, debug_view_, frame_injection_,
                            paused_, reset_requested_, frame);
@@ -213,17 +213,17 @@ class Fluid2DApp {
     }
 
     int run_headless() {
-        cubey::HeadlessPngHostConfig host_config;
+        cubey::host::HeadlessPngHostConfig host_config;
         host_config.run_config = config_;
         host_config.required_queue_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT;
 
-        cubey::HeadlessPngHostCallbacks callbacks;
-        callbacks.create_resources = [this](cubey::HeadlessPngContext& context) {
-            const cubey::HeadlessRenderTarget& target = context.render_target();
+        cubey::host::HeadlessPngHostCallbacks callbacks;
+        callbacks.create_resources = [this](cubey::host::HeadlessPngContext& context) {
+            const cubey::host::HeadlessRenderTarget& target = context.render_target();
             create_global_resources_if_needed(context.device(), context.gpu());
             create_render_pipeline(context.device(), target.format, target.extent);
         };
-        callbacks.before_capture = [this](cubey::HeadlessPngContext&) {
+        callbacks.before_capture = [this](cubey::host::HeadlessPngContext&) {
             const std::uint32_t frames = headless_frame_count(config_);
             for (std::uint32_t frame = 1; frame <= frames; ++frame) {
                 const ProjectFrame project_frame =
@@ -231,19 +231,19 @@ class Fluid2DApp {
                 record_headless_simulation_frame(runtime_.gpu(), project_frame);
             }
         };
-        callbacks.record_capture = [this](cubey::HeadlessPngContext&,
+        callbacks.record_capture = [this](cubey::host::HeadlessPngContext&,
                                           VkCommandBuffer command_buffer,
-                                          const cubey::HeadlessRenderTarget& target) {
+                                          const cubey::host::HeadlessRenderTarget& target) {
             record_fullscreen_draw(command_buffer, resources_, fluid_config_, debug_view_,
                                    target.view, target.extent);
         };
-        callbacks.shutdown = [this](cubey::HeadlessPngContext&) {
+        callbacks.shutdown = [this](cubey::host::HeadlessPngContext&) {
             destroy_all_resources();
             retire_project_gpu_work();
             detach_project_gpu();
         };
 
-        cubey::HeadlessPngHost host(std::move(host_config), std::move(callbacks));
+        cubey::host::HeadlessPngHost host(std::move(host_config), std::move(callbacks));
         return host.run();
     }
 

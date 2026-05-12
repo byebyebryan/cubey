@@ -1,11 +1,11 @@
 #include "triangle_app.h"
 
-#include <cubey/app/windowed_host.h>
+#include <cubey/host/windowed_host.h>
 #include <cubey/render/target.h>
-#include <cubey/core/spirv_io.h>
 #include <cubey/vulkan/command_recorder.h>
 #include <cubey/vulkan/image_transitions.h>
 #include <cubey/vulkan/pipeline.h>
+#include <cubey/vulkan/shader_bytecode.h>
 #include <cubey/vulkan/shader_module.h>
 #include <cubey/vulkan/vk_check.h>
 
@@ -46,7 +46,7 @@ class TriangleApp {
             throw std::runtime_error("triangle does not support --headless yet");
         }
 
-        cubey::app::WindowedHost host(
+        cubey::host::WindowedHost host(
             {
                 .run_config = config_,
                 .required_queue_flags = VK_QUEUE_GRAPHICS_BIT,
@@ -55,14 +55,14 @@ class TriangleApp {
             },
             {
                 .create_swapchain_resources =
-                    [this](cubey::app::WindowedAppContext& context) { create_pipeline(context); },
+                    [this](cubey::host::WindowedAppContext& context) { create_pipeline(context); },
                 .destroy_swapchain_resources =
-                    [this](cubey::app::WindowedAppContext& context) {
+                    [this](cubey::host::WindowedAppContext& context) {
                         (void)context;
                         destroy_swapchain_resources();
                     },
                 .on_ready =
-                    [](cubey::app::WindowedAppContext& context) {
+                    [](cubey::host::WindowedAppContext& context) {
                         std::printf("triangle: %s rendering dynamic triangle at %ux%u\n",
                                     context.device().device_name(),
                                     context.swapchain().extent().width,
@@ -70,8 +70,8 @@ class TriangleApp {
                     },
                 .update = {},
                 .record_frame =
-                    [this](cubey::app::WindowedAppContext& context,
-                           const cubey::app::WindowedRenderFrame& frame) {
+                    [this](cubey::host::WindowedAppContext& context,
+                           const cubey::host::WindowedRenderFrame& frame) {
                         (void)context;
                         record_triangle_frame(frame);
                     },
@@ -87,11 +87,11 @@ class TriangleApp {
         pipeline_layout_.reset();
     }
 
-    void create_pipeline(cubey::app::WindowedAppContext& context) {
+    void create_pipeline(cubey::host::WindowedAppContext& context) {
         const std::vector<std::uint32_t> vertex_code =
-            cubey::read_spirv_file(shader_path("triangle.vert.spv"));
+            cubey::vulkan::read_spirv_file(shader_path("triangle.vert.spv"));
         const std::vector<std::uint32_t> fragment_code =
-            cubey::read_spirv_file(shader_path("triangle.frag.spv"));
+            cubey::vulkan::read_spirv_file(shader_path("triangle.frag.spv"));
         cubey::vulkan::ShaderModule vertex_shader(context.device(), vertex_code);
         cubey::vulkan::ShaderModule fragment_shader(context.device(), fragment_code);
 
@@ -118,7 +118,7 @@ class TriangleApp {
         pipeline_.emplace(context.device(), pipeline_info.create_info());
     }
 
-    void record_triangle_frame(const cubey::app::WindowedRenderFrame& frame) {
+    void record_triangle_frame(const cubey::host::WindowedRenderFrame& frame) {
         const cubey::vulkan::CommandRecorder recorder(frame.command_buffer);
         recorder.begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 

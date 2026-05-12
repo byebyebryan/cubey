@@ -163,10 +163,10 @@ it targets a much more scene-relevant problem.
 Create this as `projects/fluid_25d`, not as an example. It should reuse the same
 runtime pieces as `fluid_2d`:
 
-- `cubey::WindowedHost` for visible runs.
-- `cubey::HeadlessPngHost` for deterministic artifact output.
-- `cubey::ProjectRuntimeAdapter` for frame timing, frame tickets, and runtime
-  services.
+- `cubey::host::WindowedHost` for visible runs.
+- `cubey::host::HeadlessPngHost` for deterministic artifact output.
+- `cubey::ProjectRuntimeAdapter` for frame timing, GPU submission tickets, and
+  runtime services.
 
 Keep the first solver buffers, shader schedule, terrain generator, and render
 policy project-local. Promote shared helpers when `fluid_2d` and `fluid_25d`

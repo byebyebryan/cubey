@@ -1,8 +1,8 @@
 #pragma once
 
-#include <cubey/detail/stable_slot_store.h>
-#include <cubey/scene/entity.h>
 #include <cubey/core/math.h>
+#include <cubey/scene/entity.h>
+#include <cubey/scene/stable_slot_store.h>
 #include <cubey/scene/transform_2d.h>
 #include <cubey/scene/transform_3d.h>
 
@@ -21,7 +21,7 @@ struct Transform2DManagerTag {};
 struct Transform3DManagerTag {};
 
 template <typename Tag> struct TransformInstance {
-    detail::StableSlotId slot{};
+    StableSlotId slot{};
 
     [[nodiscard]] bool is_null() const noexcept {
         return slot.is_null();
@@ -113,8 +113,7 @@ template <typename TransformT, typename MatrixT, typename InstanceT> class Basic
         std::vector<Component> components{};
         std::vector<InstanceT> active_instances{};
         std::unordered_map<Entity, std::size_t, EntityHash> entity_to_component{};
-        std::unordered_map<detail::StableSlotId, std::size_t, detail::StableSlotIdHash>
-            slot_to_component{};
+        std::unordered_map<StableSlotId, std::size_t, StableSlotIdHash> slot_to_component{};
     };
 
     BasicTransformReadView() = default;
@@ -203,7 +202,7 @@ template <typename TransformT> class BasicTransformManager {
                   const EntityManager& entities) const {
         std::unordered_set<Entity, EntityHash> existing{};
         std::unordered_map<Entity, Entity, EntityHash> parent_of{};
-        for (const detail::StableSlotId slot_id : slots_.active_instances()) {
+        for (const StableSlotId slot_id : slots_.active_instances()) {
             const Component& component = slots_.get(slot_id);
             existing.insert(component.entity);
             if (component.parent) {
@@ -283,7 +282,7 @@ template <typename TransformT> class BasicTransformManager {
                 .world_affine_matrix = Matrix{1.0F},
                 .parent = create.parent,
             };
-            const detail::StableSlotId slot_id = slots_.create(component);
+            const StableSlotId slot_id = slots_.create(component);
             entity_to_slot_[create.entity] = slot_id;
             attach_to_parent(create.entity, create.parent);
         }
@@ -324,7 +323,7 @@ template <typename TransformT> class BasicTransformManager {
     }
 
     void update_world_matrices() {
-        for (const detail::StableSlotId slot_id : slots_.active_instances()) {
+        for (const StableSlotId slot_id : slots_.active_instances()) {
             const Component& component = slots_.get(slot_id);
             if (!component.parent) {
                 update_world_matrix(component.entity, Matrix{1.0F});
@@ -334,7 +333,7 @@ template <typename TransformT> class BasicTransformManager {
 
     void publish_snapshot() {
         auto next_snapshot = std::make_shared<Snapshot>();
-        for (const detail::StableSlotId slot_id : slots_.active_instances()) {
+        for (const StableSlotId slot_id : slots_.active_instances()) {
             const Component& component = slots_.get(slot_id);
             const std::size_t index = next_snapshot->components.size();
             next_snapshot->components.push_back(SnapshotComponent{
@@ -391,7 +390,7 @@ template <typename TransformT> class BasicTransformManager {
         }
     }
 
-    [[nodiscard]] detail::StableSlotId slot_for(Entity entity) const {
+    [[nodiscard]] StableSlotId slot_for(Entity entity) const {
         const auto position = entity_to_slot_.find(entity);
         if (position == entity_to_slot_.end()) {
             throw std::runtime_error("entity does not have a transform component");
@@ -447,8 +446,8 @@ template <typename TransformT> class BasicTransformManager {
         }
     }
 
-    detail::StableSlotStore<Component> slots_{};
-    std::unordered_map<Entity, detail::StableSlotId, EntityHash> entity_to_slot_{};
+    StableSlotStore<Component> slots_{};
+    std::unordered_map<Entity, StableSlotId, EntityHash> entity_to_slot_{};
     std::shared_ptr<const Snapshot> snapshot_ = std::make_shared<Snapshot>();
 };
 

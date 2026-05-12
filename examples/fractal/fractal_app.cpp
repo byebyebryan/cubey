@@ -2,16 +2,16 @@
 
 #include "fractal_view.h"
 
-#include <cubey/app/glfw_window.h>
-#include <cubey/app/windowed_host.h>
-#include <cubey/runtime/headless_png_host.h>
+#include <cubey/host/glfw_window.h>
+#include <cubey/host/headless_png_host.h>
+#include <cubey/host/windowed_host.h>
 #include <cubey/input/pan_zoom_2d_controller.h>
 #include <cubey/render/target.h>
-#include <cubey/core/spirv_io.h>
 #include <cubey/vulkan/command_recorder.h>
 #include <cubey/vulkan/device.h>
 #include <cubey/vulkan/image_transitions.h>
 #include <cubey/vulkan/pipeline.h>
+#include <cubey/vulkan/shader_bytecode.h>
 #include <cubey/vulkan/shader_module.h>
 #include <cubey/vulkan/vk_check.h>
 
@@ -57,7 +57,7 @@ class FractalApp {
             return run_headless();
         }
 
-        cubey::app::WindowedHost host(
+        cubey::host::WindowedHost host(
             {
                 .run_config = config_,
                 .required_queue_flags = VK_QUEUE_GRAPHICS_BIT,
@@ -66,36 +66,36 @@ class FractalApp {
             },
             {
                 .create_swapchain_resources =
-                    [this](cubey::app::WindowedAppContext& context) {
+                    [this](cubey::host::WindowedAppContext& context) {
                         create_pipeline(context.device(), context.swapchain().format(),
                                         context.swapchain().extent());
                     },
                 .destroy_swapchain_resources =
-                    [this](cubey::app::WindowedAppContext& context) {
+                    [this](cubey::host::WindowedAppContext& context) {
                         (void)context;
                         destroy_swapchain_resources();
                     },
                 .on_ready =
-                    [](cubey::app::WindowedAppContext& context) {
+                    [](cubey::host::WindowedAppContext& context) {
                         std::printf("fractal: %s rendering fullscreen fractal at %ux%u\n",
                                     context.device().device_name(),
                                     context.swapchain().extent().width,
                                     context.swapchain().extent().height);
                     },
                 .update =
-                    [this](cubey::app::WindowedAppContext& context, const FrameTiming& timing) {
+                    [this](cubey::host::WindowedAppContext& context, const FrameTiming& timing) {
                         (void)timing;
                         update_input(context);
                     },
                 .record_frame =
-                    [this](cubey::app::WindowedAppContext& context,
-                           const cubey::app::WindowedRenderFrame& frame) {
+                    [this](cubey::host::WindowedAppContext& context,
+                           const cubey::host::WindowedRenderFrame& frame) {
                         (void)context;
                         record_fractal_frame(frame);
                     },
                 .frame_stats_sample = {},
                 .shutdown =
-                    [this](cubey::app::WindowedAppContext& context) {
+                    [this](cubey::host::WindowedAppContext& context) {
                         (void)context;
                         destroy_swapchain_resources();
                     },
@@ -105,27 +105,29 @@ class FractalApp {
 
   private:
     int run_headless() {
-        cubey::HeadlessPngHostConfig host_config;
+        cubey::host::HeadlessPngHostConfig host_config;
         host_config.run_config = config_;
         host_config.required_queue_flags = VK_QUEUE_GRAPHICS_BIT;
 
-        cubey::HeadlessPngHostCallbacks callbacks;
-        callbacks.create_resources = [this](cubey::HeadlessPngContext& context) {
-            const cubey::HeadlessRenderTarget& target = context.render_target();
+        cubey::host::HeadlessPngHostCallbacks callbacks;
+        callbacks.create_resources = [this](cubey::host::HeadlessPngContext& context) {
+            const cubey::host::HeadlessRenderTarget& target = context.render_target();
             create_pipeline(context.device(), target.format, target.extent);
         };
-        callbacks.record_capture = [this](cubey::HeadlessPngContext&,
+        callbacks.record_capture = [this](cubey::host::HeadlessPngContext&,
                                           VkCommandBuffer command_buffer,
-                                          const cubey::HeadlessRenderTarget& target) {
+                                          const cubey::host::HeadlessRenderTarget& target) {
             record_fractal_draw(command_buffer, target);
         };
-        callbacks.shutdown = [this](cubey::HeadlessPngContext&) { destroy_swapchain_resources(); };
+        callbacks.shutdown = [this](cubey::host::HeadlessPngContext&) {
+            destroy_swapchain_resources();
+        };
 
-        cubey::HeadlessPngHost host(std::move(host_config), std::move(callbacks));
+        cubey::host::HeadlessPngHost host(std::move(host_config), std::move(callbacks));
         return host.run();
     }
 
-    void update_input(cubey::app::WindowedAppContext& context) {
+    void update_input(cubey::host::WindowedAppContext& context) {
         if (context.input().key_pressed(cubey::input::Key::Escape)) {
             context.window().request_close();
         }
@@ -145,9 +147,9 @@ class FractalApp {
 
     void create_pipeline(cubey::vulkan::Device& device, VkFormat color_format, VkExtent2D extent) {
         const std::vector<std::uint32_t> vertex_code =
-            cubey::read_spirv_file(shader_path("fractal.vert.spv"));
+            cubey::vulkan::read_spirv_file(shader_path("fractal.vert.spv"));
         const std::vector<std::uint32_t> fragment_code =
-            cubey::read_spirv_file(shader_path("fractal.frag.spv"));
+            cubey::vulkan::read_spirv_file(shader_path("fractal.frag.spv"));
         cubey::vulkan::ShaderModule vertex_shader(device, vertex_code);
         cubey::vulkan::ShaderModule fragment_shader(device, fragment_code);
 
@@ -204,7 +206,7 @@ class FractalApp {
         recorder.end_rendering();
     }
 
-    void record_fractal_frame(const cubey::app::WindowedRenderFrame& frame) {
+    void record_fractal_frame(const cubey::host::WindowedRenderFrame& frame) {
         const cubey::vulkan::CommandRecorder recorder(frame.command_buffer);
         recorder.begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 

@@ -53,7 +53,7 @@ References:
 
 ## Goals
 
-- Prevent app/project code from directly blocking on GPU readback, image
+- Prevent host/project code from directly blocking on GPU readback, image
   encoding, or setup-time upload paths when a queued shape would be easy.
 - Keep GPU ownership and queue submission explicit enough that validation
   errors and synchronization bugs remain debuggable.
@@ -146,7 +146,7 @@ GPU owner:
   record commands
   enqueue readback/capture copies
   submit/present
-  retire completed frame tickets
+  retire completed GPU submission tickets
 workers:
   decode assets
   generate CPU data
@@ -226,14 +226,15 @@ completed, and failed `UploadStatus` for each ticket. The queue is guarded
 internally so worker jobs can safely submit CPU-side upload requests before any
 Vulkan staging/copy work is introduced.
 
-`cubey::FrameTicketIssuer` and `DeferredDestructionQueue` are the first
-CPU-side lifetime primitives. `cubey::vulkan::SubmissionCoordinator` now issues
-monotonic GPU submission tickets and marks frame-slot tickets completed after
-their fence wait. `cubey::ProjectGpuServices` now owns the project-facing bridge
-from upload tickets and deferred destruction to GPU submission completion. It
-drains pending uploads into owner-thread GPU work, marks upload tickets
-completed or failed, tracks RGBA8 image readback tickets, and retires deferred
-destruction using the completed GPU submission ticket reported by `GpuRuntime`.
+`cubey::vulkan::GpuSubmissionTicketIssuer` and `DeferredGpuDestructionQueue`
+are the first Vulkan submission lifetime primitives.
+`cubey::vulkan::SubmissionCoordinator` now issues monotonic GPU submission
+tickets and marks frame-slot tickets completed after their fence wait.
+`cubey::ProjectGpuServices` now owns the project-facing bridge from upload
+tickets and deferred destruction to GPU submission completion. It drains
+pending uploads into owner-thread GPU work, marks upload tickets completed or
+failed, tracks RGBA8 image readback tickets, and retires deferred destruction
+using the completed GPU submission ticket reported by `GpuRuntime`.
 
 `cubey::vulkan::GpuRuntime` is now the first host-owned GPU work queue. It
 accepts labeled `GpuWorkRequest` callbacks from any thread, exposes a
@@ -242,7 +243,7 @@ draining, and restores undrained work if a callback throws. Windowed and
 headless hosts run it threaded by default and use explicit drain/wait calls only
 at host-owned synchronization points. Direct `ImmediateCommands` remain a
 low-level building block inside owner-context callbacks and transfer helpers;
-app/project setup code should prefer host or project GPU services.
+host/project setup code should prefer host or project GPU services.
 
 ## Command Recording
 
@@ -288,7 +289,7 @@ struct ProjectFrame {
     double delta_seconds;
     double elapsed_seconds;
     std::uint64_t frame_index;
-    FrameTicket ticket;
+    GpuSubmissionTicket submission_ticket;
 };
 
 struct RenderPacket {
@@ -390,10 +391,10 @@ Status: initial pass complete.
 
 - Added a small project runtime vocabulary for `projects/`, not existing
   examples.
-- Added `ProjectContext` service access to jobs, uploads, captures, frame
-  tickets, and deferred destruction.
+- Added `ProjectContext` service access to jobs, uploads, captures, GPU
+  submission tickets, and deferred destruction.
 - Added `ProjectRuntimeServices` as the first project-owned service bundle and
-  frame-ticket issuer.
+  GPU submission-ticket issuer.
 - Added `ProjectRuntimeAdapter` as the first thin host bridge over those
   services without owning project lifecycle callbacks.
 - Added a `ProjectLike` concept for setup/update/render-packet/resize/shutdown
@@ -403,11 +404,12 @@ Status: initial pass complete.
 
 ### Slice 4: Frame Overlap And Deferred Destruction
 
-Status: frame-ticket/deferred-destruction initial pass complete.
+Status: GPU submission-ticket/deferred-destruction initial pass complete.
 
-- Added frame ticket issuance and comparison.
+- Added GPU submission ticket issuance and comparison.
 - Added deferred destruction actions retired by completed ticket.
-- Kept this CPU-side; Vulkan fence/timeline integration remains future work.
+- Kept the public vocabulary narrow; broader timeline-semaphore integration
+  remains future work.
 
 ### Slice 5: Strict GPU Runtime Boundary
 
@@ -424,8 +426,8 @@ Status: threaded default plus inline test mode complete.
 - Hosts drain or wait for queued GPU work at setup/update/capture/shutdown
   boundaries.
 - `textured_cube` setup-time texture transitions/compute dispatch and
-  `HeadlessPngHost` capture recording now route through the runtime while still
-  preserving a synchronous setup/capture shape at the call site.
+  `cubey::host::HeadlessPngHost` capture recording now route through the runtime
+  while still preserving a synchronous setup/capture shape at the call site.
 - Added `ProjectGpuServices` for project-facing upload draining, upload
   completion/failure status, RGBA8 image readback tickets, and deferred
   destruction retirement from completed GPU submission tickets.
