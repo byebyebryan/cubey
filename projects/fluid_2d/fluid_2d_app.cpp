@@ -55,6 +55,8 @@ class Fluid2DApp {
                         create_global_resources_if_needed(context.device(), context.gpu());
                         create_render_pipeline(context.device(), context.swapchain().format(),
                                                context.swapchain().extent());
+                        graph_executor_.clear();
+                        graph_executor_.resize(context.frame_slot_count());
                     },
                 .destroy_swapchain_resources =
                     [this](cubey::host::WindowedAppContext& context) {
@@ -76,9 +78,8 @@ class Fluid2DApp {
                 .record_frame =
                     [this](cubey::host::WindowedAppContext& context,
                            const cubey::host::WindowedRenderFrame& frame) {
-                        (void)context;
                         const ProjectFrame& project_frame = runtime_.frame_for_timing(frame.timing);
-                        record_frame(frame, project_frame);
+                        record_frame(context, frame, project_frame);
                     },
                 .frame_stats_sample =
                     [](cubey::host::WindowedAppContext& context,
@@ -154,6 +155,7 @@ class Fluid2DApp {
     }
 
     void destroy_swapchain_resources() {
+        graph_executor_.clear();
         resources_.destroy_swapchain_resources();
     }
 
@@ -192,10 +194,20 @@ class Fluid2DApp {
         resources_.create_render_pipeline(device, color_format, extent);
     }
 
-    void record_frame(const cubey::host::WindowedRenderFrame& render_frame,
+    void record_frame(cubey::host::WindowedAppContext& context,
+                      const cubey::host::WindowedRenderFrame& render_frame,
                       const ProjectFrame& frame) {
-        record_fluid_frame(render_frame, resources_, fluid_config_, debug_view_, frame_injection_,
-                           paused_, reset_requested_, frame);
+        const cubey::render::CompiledRenderGraph frame_graph =
+            build_fluid_frame_graph(render_frame.color_target, resources_, fluid_config_,
+                                    debug_view_, frame_injection_, paused_, reset_requested_,
+                                    frame);
+        graph_executor_.record(cubey::render::RenderGraphFrameRecordInfo{
+                                   .device = &context.device(),
+                                   .command_buffer = render_frame.command_buffer,
+                                   .frame_slot = render_frame.frame_slot,
+                                   .label = "vkEndCommandBuffer fluid_2d",
+                               },
+                               frame_graph);
     }
 
     void record_headless_simulation_frame(cubey::ProjectGpuServices& gpu,
@@ -253,6 +265,7 @@ class Fluid2DApp {
     cubey::input::PointerDrag pointer_drag_;
     FrameInjection frame_injection_;
     Fluid2DGpuResources resources_;
+    cubey::render::RenderGraphFrameExecutor graph_executor_;
     FluidDebugView debug_view_ = FluidDebugView::Dye;
     bool paused_ = false;
     bool reset_requested_ = false;

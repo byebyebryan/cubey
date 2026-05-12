@@ -4,7 +4,7 @@
 #include "fluid_2d_gpu_resources.h"
 
 #include <cubey/engine/project_runtime.h>
-#include <cubey/host/windowed_host.h>
+#include <cubey/render/render_graph.h>
 
 #include <vulkan/vulkan.h>
 
@@ -27,7 +27,8 @@ void record_fullscreen_draw(VkCommandBuffer command_buffer, const Fluid2DGpuReso
                             const Fluid2DConfig& config, FluidDebugView debug_view,
                             VkImageView image_view, VkExtent2D extent);
 
-void record_fluid_frame(const cubey::host::WindowedRenderFrame& render_frame,
+[[nodiscard]] cubey::render::CompiledRenderGraph
+build_fluid_frame_graph(cubey::render::ColorTargetView color_target,
                         Fluid2DGpuResources& resources, const Fluid2DConfig& config,
                         FluidDebugView debug_view, const FrameInjection& injection, bool paused,
                         bool& reset_requested, const ProjectFrame& frame);
