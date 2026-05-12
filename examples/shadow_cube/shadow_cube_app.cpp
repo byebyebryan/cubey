@@ -531,7 +531,9 @@ class ShadowCubeApp {
 
         graph.add_pass("shadow", cubey::render::RenderGraphQueueDomain::Graphics)
             .write_depth(shadow_depth_handle)
-            .execute([this, &recorder, &shadow_plan](const cubey::render::RenderGraphExecutionContext&) {
+            .material_pass(shadow_depth_pass_info())
+            .execute([this, &recorder, &shadow_plan](
+                         const cubey::render::RenderGraphExecutionContext&) {
                 recorder.transition_image_layout(
                     shadow_depth_is_sampled_
                         ? cubey::vulkan::begin_sampled_depth_attachment_transition(
@@ -539,16 +541,15 @@ class ShadowCubeApp {
                         : cubey::vulkan::begin_depth_attachment_transition(
                               shadow_depth().handle()));
                 record_shadow_pass(recorder, shadow_plan);
-                recorder.transition_image_layout(
-                    cubey::vulkan::finish_depth_attachment_for_sampling_transition(
-                        shadow_depth().handle()));
             });
         graph.add_pass("scene", cubey::render::RenderGraphQueueDomain::Graphics)
             .read_texture(shadow_depth_handle)
             .write_color(backbuffer_handle)
             .write_depth(scene_depth_handle)
+            .material_pass(shadow_scene_pass_info())
             .execute([this, &recorder, &frame, &scene_plan,
-                      &shadow_plan](const cubey::render::RenderGraphExecutionContext&) {
+                      &shadow_plan](const cubey::render::RenderGraphExecutionContext& context) {
+                cubey::render::record_render_graph_barriers(recorder, context);
                 recorder.transition_image_layout(
                     cubey::vulkan::begin_color_attachment_transition(frame.color_target.image));
                 recorder.transition_image_layout(
