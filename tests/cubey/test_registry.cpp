@@ -133,6 +133,10 @@ void test_render_graph_storage_read_write_initializes_transient_buffers();
 void test_render_graph_transfer_pass_accepts_only_transfer_usages();
 void test_render_item_resolves_draw_item_fields();
 void test_render_item_validates_required_draw_identity();
+void test_primitive_cube_normal_uv_mesh_preserves_normals_and_face_uvs();
+void test_primitive_cube_position_color_mesh_uses_face_colors_and_indices();
+void test_primitive_vertex_layouts_match_shader_contracts();
+void test_primitive_xz_plane_mesh_uses_center_half_extents_and_up_normal();
 void test_render_plan_builds_sorted_3d_draw_packets_with_material_metadata();
 void test_render_plan_converts_draw_packets_to_render_items();
 void test_render_plan_rejects_stale_resource_handles();
@@ -326,6 +330,10 @@ std::span<const TestCase> core_tests() {
         CUBEY_TEST(test_render_graph_declares_compute_storage_buffer_flow),
         CUBEY_TEST(test_render_graph_transfer_pass_accepts_only_transfer_usages),
         CUBEY_TEST(test_render_graph_frame_executor_tracks_slots_and_rejects_invalid_record_info),
+        CUBEY_TEST(test_primitive_vertex_layouts_match_shader_contracts),
+        CUBEY_TEST(test_primitive_cube_position_color_mesh_uses_face_colors_and_indices),
+        CUBEY_TEST(test_primitive_cube_normal_uv_mesh_preserves_normals_and_face_uvs),
+        CUBEY_TEST(test_primitive_xz_plane_mesh_uses_center_half_extents_and_up_normal),
         CUBEY_TEST(test_render_item_validates_required_draw_identity),
         CUBEY_TEST(test_render_item_resolves_draw_item_fields),
         CUBEY_TEST(test_render_plan_builds_sorted_3d_draw_packets_with_material_metadata),
