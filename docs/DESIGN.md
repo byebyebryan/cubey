@@ -293,7 +293,8 @@ named explicitly and live in either `examples/` or `projects/`:
   targets.
 - `examples/` - small, focused reference programs that prove one concept or API
   path. Current examples are `window_clear`, `triangle`, `spinning_cube`,
-  `textured_cube`, `headless_render`, `fractal`, and `particles`.
+  `textured_cube`, `shadow_cube`, `headless_render`, `fractal`, and
+  `particles`.
 - `projects/` - first-class graphics experiments and longer-lived creative
   work, starting with `fluid_2d` and later candidates such as `fluid_sim`,
   `marching_cubes`, and `sdf_sculpt`.
@@ -420,7 +421,7 @@ cubey/
       vulkan/
         *.cpp              -- Vulkan object, command, submission, and swapchain helpers
   examples/
-    window_clear/          -- minimal windowed Vulkan clear/present path
+    window_clear/          -- host smoke target for clear/present
     triangle/              -- minimal shader-backed graphics pipeline path
     spinning_cube/         -- indexed cube, push constants, depth
     textured_cube/         -- compute texture generation, uniforms, sampling

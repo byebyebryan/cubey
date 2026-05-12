@@ -188,6 +188,10 @@ resource creation/destruction, update, command recording, and shutdown.
 - Windowed render callbacks receive `cubey::host::WindowedRenderFrame`, which
   carries the command buffer, swapchain image index, timing, and
   `cubey::render::ColorTargetView` for the active swapchain image.
+- `record_frame` remains the host's acquired-frame callback, not a renderer
+  policy hook. Graph-backed examples build per-frame declarations there and
+  immediately delegate command-buffer begin/end, frame-slot graph resources,
+  and pass execution to `cubey::render::RenderGraphFrameExecutor`.
 - All current windowed examples use the host layer: `window_clear`, `triangle`,
   `spinning_cube`, `textured_cube`, `shadow_cube`, `fractal`, and `particles`.
   They still own their shaders, pipelines, descriptors, command recording

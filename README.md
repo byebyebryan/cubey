@@ -22,8 +22,8 @@ precedent when shaping new foundation contracts.
 
 Current examples:
 
-- `window_clear`: minimal dynamic-rendering clear/present path.
-- `triangle`: build-time GLSL shaders and dynamic graphics pipeline setup.
+- `window_clear`: host smoke target for the bare clear/present path.
+- `triangle`: minimal shader-backed dynamic graphics pipeline setup.
 - `spinning_cube`: indexed cube with shared transform/camera math and depth.
 - `textured_cube`: compute-generated texture, descriptors, scene lighting, and input.
 - `shadow_cube`: graph-declared directional shadow map with a transient scene

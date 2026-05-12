@@ -5,8 +5,8 @@ pass-heavy. It is both a design checkpoint and the current implementation
 boundary for declaration, validation, synchronous execution, and explicit
 sync-requirement derivation. The near-term goal is to keep
 upcoming renderer, material, shadow, postprocess, readback, and async work
-compatible with a future graph without forcing every example through a graph
-executor now.
+compatible with a graph path without forcing simple direct-command examples
+through it prematurely.
 
 ## Why Map It Now
 
@@ -39,8 +39,10 @@ barriers, or schedule GPU work.
 mesh/draw helpers, frame slots, uniform buffers, and render resource handles.
 `cubey::vulkan` owns Vulkan object lifetime, command recording helpers, image
 transition helpers, queue submission, and GPU-owner work. Examples and projects
-still own pipeline selection, descriptor policy, pass order, barriers, and
-command recording sequence.
+still own pipeline selection, descriptor policy, pass order, and pass-local
+render intent. Graph-backed examples delegate command-buffer begin/end and
+per-frame graph resource ownership to the render graph frame executor; simpler
+examples can still record commands directly.
 
 That current split is intentional. A render graph should grow above the narrow
 render vocabulary, not replace the Vulkan layer or move scene policy into
@@ -64,30 +66,35 @@ read-after-write, write-after-read, and write-after-write hazards.
 
 `CompiledRenderGraph::execute()` runs each compiled pass callback in order and
 passes a `RenderGraphExecutionContext` that exposes the graph, current pass,
-pass index, and declared resources. Missing callbacks fail at execute time, not
-compile time, so declaration-only tests and diagnostics can still compile a
-graph without recording work. The callback body still captures the app-owned
-command recorder, pipelines, descriptors, and app-specific resource owners it
-needs. `RenderGraphResourceSet` can bind resolved resources and create simple
+pass index, declared resources, and, when supplied, the active
+`CommandRecorder`. Missing callbacks fail at execute time, not compile time, so
+declaration-only tests and diagnostics can still compile a graph without
+recording work. Recorder-less execution remains valid until a pass asks for
+`context.recorder()`, which fails clearly.
+
+`RenderGraphResourceSet` can bind resolved resources and create simple
 non-aliased transient textures/buffers for graph-created resources.
 `RenderGraphFrameResources` owns one resource set per frame slot so examples
-can replace only the slot whose fence has already been waited. Resolved target
-and sampled-texture helpers translate graph texture declarations into
-dynamic-rendering target views or descriptor-ready image/view/layout triples.
-`record_render_graph_barriers` records a pass's before/after derived
-requirements through `CommandRecorder`; this is explicit command recording,
-not hidden graph execution.
+can replace only the slot whose fence has already been waited.
+`RenderGraphFrameExecutor` wraps that slot ownership with command-buffer
+begin/end and recorder-aware graph execution. Its prepare hook runs after graph
+resources are allocated and before command recording, so descriptor updates can
+point at graph-created images. Resolved target and sampled-texture helpers
+translate graph texture declarations into dynamic-rendering target views or
+descriptor-ready image/view/layout triples. `record_render_graph_barriers`
+records a pass's before/after derived requirements through `CommandRecorder`;
+this is explicit command recording, not hidden render policy.
 
 It does not allocate descriptors, reorder passes, cull passes, alias transient
-memory, or schedule async work. `examples/shadow_cube` is the first reference
-migration: the graph now executes shadow, scene, and present pass callbacks,
-allocates a non-aliased transient scene color target, resolves that target into
-dynamic-rendering and descriptor inputs during execution, and records
-shadow-depth, scene-depth, scene-color, backbuffer acquire, and present release
-transitions from graph-derived requirements. `projects/fluid_2d` declares a
-coarse simulation-compute to fullscreen-render graph and uses graph-derived
-buffer barriers plus backbuffer acquire/release transitions while keeping
-solver-internal barriers manual.
+memory, or schedule async work. `examples/shadow_cube` is the first multipass
+reference migration: the graph now executes shadow, scene, and present pass
+callbacks through `RenderGraphFrameExecutor`, allocates a non-aliased transient
+scene color target, resolves that target into dynamic-rendering and descriptor
+inputs, and records shadow-depth, scene-depth, scene-color, backbuffer acquire,
+and present release transitions from graph-derived requirements.
+`projects/fluid_2d` builds a coarse simulation-compute to fullscreen-render
+graph and records it through the same executor while keeping solver-internal
+barriers manual.
 
 ## Boundary
 
@@ -154,7 +161,8 @@ auto scene_color = graph.create_texture(scene_color_desc);
 
 graph.add_pass("shadow")
     .write_depth(shadow_map)
-    .execute([&recorder](const RenderGraphExecutionContext& ctx) {
+    .execute([](const RenderGraphExecutionContext& ctx) {
+        const auto& recorder = ctx.recorder();
         // Record depth-only commands with app-owned resources.
     });
 
@@ -162,7 +170,8 @@ graph.add_pass("scene")
     .read_texture(shadow_map)
     .write_color(scene_color)
     .write_depth(depth)
-    .execute([&recorder](const RenderGraphExecutionContext& ctx) {
+    .execute([](const RenderGraphExecutionContext& ctx) {
+        const auto& recorder = ctx.recorder();
         record_render_graph_barriers(recorder, ctx, RenderGraphBarrierPhase::BeforePass);
         auto target = resolved_color_target_view(ctx, scene_color);
         // Record color pass commands into the graph-created target.
@@ -171,11 +180,19 @@ graph.add_pass("scene")
 graph.add_pass("present")
     .read_texture(scene_color)
     .write_color(backbuffer)
-    .execute([&recorder](const RenderGraphExecutionContext& ctx) {
+    .execute([](const RenderGraphExecutionContext& ctx) {
+        const auto& recorder = ctx.recorder();
         record_render_graph_barriers(recorder, ctx, RenderGraphBarrierPhase::BeforePass);
         // Record fullscreen present/copy commands with app-owned descriptors.
         record_render_graph_barriers(recorder, ctx, RenderGraphBarrierPhase::AfterPass);
     });
+
+graph_executor.record({
+    .device = &device,
+    .command_buffer = frame.command_buffer,
+    .frame_slot = frame.frame_slot,
+    .label = "vkEndCommandBuffer example",
+}, compiled_graph);
 ```
 
 The important contract is that setup declares resource use before execution
@@ -206,6 +223,9 @@ Completed slices:
 10. `shadow_cube` transient scene-color allocation, resolved color target views,
     and a graph-declared fullscreen present pass.
 11. Per-frame-slot graph resource ownership and sampled texture view resolution.
+12. Recorder-aware graph execution plus `RenderGraphFrameExecutor`, now used by
+    `shadow_cube` and `fluid_2d` to keep app `record_frame` callbacks focused
+    on building per-frame data and graph declarations.
 
 This keeps the graph as a validation, vocabulary, pass-ordering, and
 sync-requirement shell rather than a renderer rewrite. Barriers stay explicit:
