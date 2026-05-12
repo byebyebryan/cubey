@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cubey/render/frame_data.h>
 #include <cubey/render/material.h>
 #include <cubey/render/target.h>
 #include <cubey/vulkan/buffer.h>
@@ -164,6 +165,12 @@ struct RenderGraphResolvedTexture {
     VkImageView view = VK_NULL_HANDLE;
 };
 
+struct RenderGraphSampledTextureView {
+    VkImage image = VK_NULL_HANDLE;
+    VkImageView view = VK_NULL_HANDLE;
+    VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+};
+
 struct RenderGraphResolvedBuffer {
     VkBuffer buffer = VK_NULL_HANDLE;
     VkDeviceSize byte_size = 0;
@@ -268,6 +275,29 @@ class RenderGraphResourceSet {
     std::vector<cubey::vulkan::Buffer> transient_buffers_{};
 };
 
+class RenderGraphFrameResources {
+  public:
+    RenderGraphFrameResources() = default;
+    explicit RenderGraphFrameResources(std::uint32_t frame_slot_count);
+
+    void resize(std::uint32_t frame_slot_count);
+    void clear();
+
+    [[nodiscard]] std::uint32_t frame_slot_count() const;
+
+    RenderGraphResourceSet& emplace(FrameSlot slot, const CompiledRenderGraph& graph);
+    RenderGraphResourceSet& emplace(FrameSlot slot, const cubey::vulkan::Device& device,
+                                    const CompiledRenderGraph& graph);
+
+    [[nodiscard]] RenderGraphResourceSet& resource_set(FrameSlot slot);
+    [[nodiscard]] const RenderGraphResourceSet& resource_set(FrameSlot slot) const;
+
+  private:
+    void validate_slot(FrameSlot slot) const;
+
+    std::vector<std::optional<RenderGraphResourceSet>> slots_{};
+};
+
 class RenderGraphBuilder;
 
 class RenderGraphPassBuilder {
@@ -349,5 +379,12 @@ void record_render_graph_barriers(const cubey::vulkan::CommandRecorder& recorder
                                   RenderGraphBarrierPhase phase);
 [[nodiscard]] ColorTargetView resolved_color_target_view(const RenderGraphExecutionContext& context,
                                                          RenderGraphTextureHandle handle);
+[[nodiscard]] RenderGraphSampledTextureView
+resolved_sampled_texture_view(const RenderGraphExecutionContext& context,
+                              RenderGraphTextureHandle handle);
+[[nodiscard]] RenderGraphSampledTextureView
+resolved_sampled_texture_view(const CompiledRenderGraph& graph,
+                              const RenderGraphResourceSet& resources,
+                              RenderGraphTextureHandle handle);
 
 } // namespace cubey::render

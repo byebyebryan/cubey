@@ -2,6 +2,7 @@
 
 #include <vulkan/vulkan.h>
 
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -642,6 +643,193 @@ void test_render_graph_resolved_color_target_view_rejects_depth_texture() {
     compiled.execute();
 
     require(rejected_depth, "resolved color target depth rejection test should execute");
+}
+
+void test_render_graph_frame_resources_manage_frame_slots() {
+    cubey::render::RenderGraphBuilder graph;
+    const cubey::render::RenderGraphBufferHandle transient =
+        graph.create_buffer(buffer_desc("slot buffer"));
+    graph.add_pass("simulate", cubey::render::RenderGraphQueueDomain::Compute)
+        .read_write_storage_buffer(transient)
+        .execute([](const cubey::render::RenderGraphExecutionContext&) {});
+    const cubey::render::CompiledRenderGraph compiled = graph.compile();
+
+    cubey::render::RenderGraphFrameResources frame_resources;
+    require(frame_resources.frame_slot_count() == 0,
+            "default graph frame resources should start empty");
+
+    frame_resources.resize(2);
+    require(frame_resources.frame_slot_count() == 2,
+            "graph frame resources should report resized slot count");
+
+    const cubey::render::FrameSlot slot{
+        .index = 1,
+        .count = 2,
+    };
+    cubey::render::RenderGraphResourceSet& resources = frame_resources.emplace(slot, compiled);
+    resources.bind_buffer(transient, cubey::render::RenderGraphResolvedBuffer{
+                                         .buffer = buffer(0x901),
+                                         .byte_size = buffer_desc("slot buffer").byte_size,
+                                     });
+
+    const std::optional<cubey::render::RenderGraphResolvedBuffer> resolved =
+        frame_resources.resource_set(slot).buffer(transient);
+    require(resolved.has_value(), "frame resource set should expose inserted slot resources");
+    require(resolved->buffer == buffer(0x901),
+            "frame resource set should preserve slot-specific resolved buffer");
+
+    frame_resources.clear();
+    require(frame_resources.frame_slot_count() == 0,
+            "cleared graph frame resources should report no slots");
+}
+
+void test_render_graph_frame_resources_reject_invalid_slots() {
+    cubey::render::RenderGraphFrameResources frame_resources(2);
+
+    require_throws(
+        [&] {
+            (void)frame_resources.resource_set(cubey::render::FrameSlot{
+                .index = 0,
+                .count = 0,
+            });
+        },
+        "graph frame resources should reject zero-count frame slots");
+    require_throws(
+        [&] {
+            (void)frame_resources.resource_set(cubey::render::FrameSlot{
+                .index = 2,
+                .count = 2,
+            });
+        },
+        "graph frame resources should reject out-of-range frame slots");
+    require_throws(
+        [&] {
+            (void)frame_resources.resource_set(cubey::render::FrameSlot{
+                .index = 0,
+                .count = 1,
+            });
+        },
+        "graph frame resources should reject mismatched frame slot counts");
+    require_throws(
+        [&] {
+            (void)frame_resources.resource_set(cubey::render::FrameSlot{
+                .index = 0,
+                .count = 2,
+            });
+        },
+        "graph frame resources should reject empty but valid slots");
+}
+
+void test_render_graph_frame_resources_replace_one_slot_without_disturbing_another() {
+    cubey::render::RenderGraphBuilder graph;
+    const cubey::render::RenderGraphBufferHandle transient =
+        graph.create_buffer(buffer_desc("slot buffer"));
+    graph.add_pass("simulate", cubey::render::RenderGraphQueueDomain::Compute)
+        .read_write_storage_buffer(transient)
+        .execute([](const cubey::render::RenderGraphExecutionContext&) {});
+    const cubey::render::CompiledRenderGraph compiled = graph.compile();
+
+    cubey::render::RenderGraphFrameResources frame_resources(2);
+    const cubey::render::FrameSlot slot_zero{
+        .index = 0,
+        .count = 2,
+    };
+    const cubey::render::FrameSlot slot_one{
+        .index = 1,
+        .count = 2,
+    };
+
+    frame_resources.emplace(slot_zero, compiled)
+        .bind_buffer(transient, cubey::render::RenderGraphResolvedBuffer{
+                                    .buffer = buffer(0x911),
+                                    .byte_size = buffer_desc("slot buffer").byte_size,
+                                });
+    frame_resources.emplace(slot_one, compiled)
+        .bind_buffer(transient, cubey::render::RenderGraphResolvedBuffer{
+                                    .buffer = buffer(0x912),
+                                    .byte_size = buffer_desc("slot buffer").byte_size,
+                                });
+    frame_resources.emplace(slot_zero, compiled)
+        .bind_buffer(transient, cubey::render::RenderGraphResolvedBuffer{
+                                    .buffer = buffer(0x913),
+                                    .byte_size = buffer_desc("slot buffer").byte_size,
+                                });
+
+    require(frame_resources.resource_set(slot_zero).buffer(transient)->buffer == buffer(0x913),
+            "replacing one frame slot should update that slot");
+    require(frame_resources.resource_set(slot_one).buffer(transient)->buffer == buffer(0x912),
+            "replacing one frame slot should not disturb other slots");
+}
+
+void test_render_graph_resolves_sampled_color_texture_view() {
+    cubey::render::RenderGraphBuilder graph;
+    const cubey::render::RenderGraphTextureHandle color =
+        graph.create_texture(color_texture_desc("scene color"));
+
+    bool resolved_sampled = false;
+    graph.add_pass("scene", cubey::render::RenderGraphQueueDomain::Graphics)
+        .write_color(color)
+        .execute([&](const cubey::render::RenderGraphExecutionContext& context) {
+            const cubey::render::RenderGraphSampledTextureView sampled =
+                cubey::render::resolved_sampled_texture_view(context, color);
+            require(sampled.image == image(0x921),
+                    "sampled color view should use bound transient image");
+            require(sampled.view == view(0x922),
+                    "sampled color view should use bound transient view");
+            require(sampled.layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                    "sampled color view should use shader-read layout");
+            resolved_sampled = true;
+        });
+
+    const cubey::render::CompiledRenderGraph compiled = graph.compile();
+    cubey::render::RenderGraphResourceSet resources(compiled);
+    resources.bind_texture(color, cubey::render::RenderGraphResolvedTexture{
+                                      .image = image(0x921),
+                                      .view = view(0x922),
+                                  });
+    compiled.execute(resources);
+
+    require(resolved_sampled, "sampled color view test should execute");
+}
+
+void test_render_graph_resolves_sampled_depth_texture_view() {
+    cubey::render::RenderGraphBuilder graph;
+    const cubey::render::RenderGraphTextureHandle depth =
+        graph.import_texture(depth_texture_desc("shadow depth"), image(0x931), view(0x932));
+    graph.add_pass("sample", cubey::render::RenderGraphQueueDomain::Graphics)
+        .read_texture(depth)
+        .execute([](const cubey::render::RenderGraphExecutionContext&) {});
+
+    const cubey::render::CompiledRenderGraph compiled = graph.compile();
+    const cubey::render::RenderGraphResourceSet resources(compiled);
+    const cubey::render::RenderGraphSampledTextureView sampled =
+        cubey::render::resolved_sampled_texture_view(compiled, resources, depth);
+
+    require(sampled.image == image(0x931), "sampled depth view should preserve imported image");
+    require(sampled.view == view(0x932), "sampled depth view should preserve imported view");
+    require(sampled.layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
+            "sampled depth view should use depth read-only layout");
+}
+
+void test_render_graph_sampled_texture_view_rejects_unallocated_transient() {
+    cubey::render::RenderGraphBuilder graph;
+    const cubey::render::RenderGraphTextureHandle transient =
+        graph.create_texture(color_texture_desc("scene color"));
+
+    bool rejected_unallocated = false;
+    graph.add_pass("scene", cubey::render::RenderGraphQueueDomain::Graphics)
+        .write_color(transient)
+        .execute([&](const cubey::render::RenderGraphExecutionContext& context) {
+            require_throws(
+                [&] { (void)cubey::render::resolved_sampled_texture_view(context, transient); },
+                "sampled transient texture view should require an allocated resource");
+            rejected_unallocated = true;
+        });
+
+    const cubey::render::CompiledRenderGraph compiled = graph.compile();
+    compiled.execute();
+
+    require(rejected_unallocated, "sampled transient rejection test should execute");
 }
 
 void test_render_graph_omits_read_after_read_barriers() {

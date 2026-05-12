@@ -7,6 +7,14 @@
 namespace cubey::render {
 namespace {
 
+[[nodiscard]] bool is_color_aspect(VkImageAspectFlags aspects) {
+    return aspects == VK_IMAGE_ASPECT_COLOR_BIT;
+}
+
+[[nodiscard]] bool is_depth_aspect(VkImageAspectFlags aspects) {
+    return aspects == VK_IMAGE_ASPECT_DEPTH_BIT;
+}
+
 [[nodiscard]] VkImageUsageFlags image_usage_flags(RenderGraphTextureUsage usage) {
     switch (usage) {
     case RenderGraphTextureUsage::SampledRead:
@@ -67,6 +75,46 @@ namespace {
         }
     }
     return usage_flags;
+}
+
+[[nodiscard]] VkImageLayout sampled_texture_layout(const RenderGraphTextureResource& resource) {
+    if (is_color_aspect(resource.desc.aspects)) {
+        return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    }
+    if (is_depth_aspect(resource.desc.aspects)) {
+        return VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+    }
+    throw std::runtime_error("render graph sampled texture requires color or depth aspect");
+}
+
+[[nodiscard]] RenderGraphSampledTextureView
+sampled_texture_view(const RenderGraphTextureResource& resource,
+                     RenderGraphResolvedTexture resolved) {
+    if (resolved.image == VK_NULL_HANDLE || resolved.view == VK_NULL_HANDLE) {
+        throw std::runtime_error("render graph sampled texture requires an allocated texture");
+    }
+    return {
+        .image = resolved.image,
+        .view = resolved.view,
+        .layout = sampled_texture_layout(resource),
+    };
+}
+
+[[nodiscard]] RenderGraphResolvedTexture resolved_texture(const CompiledRenderGraph& graph,
+                                                          const RenderGraphResourceSet& resources,
+                                                          RenderGraphTextureHandle handle) {
+    const RenderGraphTextureResource& resource = graph.texture(handle);
+    const std::optional<RenderGraphResolvedTexture> resolved = resources.texture(handle);
+    if (resolved.has_value()) {
+        return resolved.value();
+    }
+    if (resource.lifetime == RenderGraphResourceLifetime::Imported) {
+        return {
+            .image = resource.imported_image,
+            .view = resource.imported_view,
+        };
+    }
+    throw std::runtime_error("render graph texture requires a resolved resource");
 }
 
 } // namespace
@@ -268,6 +316,69 @@ void RenderGraphResourceSet::allocate_transients(const cubey::vulkan::Device& de
     }
 }
 
+RenderGraphFrameResources::RenderGraphFrameResources(std::uint32_t frame_slot_count) {
+    resize(frame_slot_count);
+}
+
+void RenderGraphFrameResources::resize(std::uint32_t frame_slot_count) {
+    if (frame_slot_count == 0) {
+        throw std::runtime_error("render graph frame resources require at least one frame slot");
+    }
+    slots_.clear();
+    slots_.resize(frame_slot_count);
+}
+
+void RenderGraphFrameResources::clear() {
+    slots_.clear();
+}
+
+std::uint32_t RenderGraphFrameResources::frame_slot_count() const {
+    return static_cast<std::uint32_t>(slots_.size());
+}
+
+RenderGraphResourceSet& RenderGraphFrameResources::emplace(FrameSlot slot,
+                                                           const CompiledRenderGraph& graph) {
+    validate_slot(slot);
+    std::optional<RenderGraphResourceSet>& resources = slots_[static_cast<std::size_t>(slot.index)];
+    resources.emplace(graph);
+    return resources.value();
+}
+
+RenderGraphResourceSet& RenderGraphFrameResources::emplace(FrameSlot slot,
+                                                           const cubey::vulkan::Device& device,
+                                                           const CompiledRenderGraph& graph) {
+    validate_slot(slot);
+    std::optional<RenderGraphResourceSet>& resources = slots_[static_cast<std::size_t>(slot.index)];
+    resources.emplace(device, graph);
+    return resources.value();
+}
+
+RenderGraphResourceSet& RenderGraphFrameResources::resource_set(FrameSlot slot) {
+    validate_slot(slot);
+    std::optional<RenderGraphResourceSet>& resources = slots_[static_cast<std::size_t>(slot.index)];
+    if (!resources.has_value()) {
+        throw std::runtime_error("render graph frame resource slot has no resource set");
+    }
+    return resources.value();
+}
+
+const RenderGraphResourceSet& RenderGraphFrameResources::resource_set(FrameSlot slot) const {
+    validate_slot(slot);
+    const std::optional<RenderGraphResourceSet>& resources =
+        slots_[static_cast<std::size_t>(slot.index)];
+    if (!resources.has_value()) {
+        throw std::runtime_error("render graph frame resource slot has no resource set");
+    }
+    return resources.value();
+}
+
+void RenderGraphFrameResources::validate_slot(FrameSlot slot) const {
+    validate_frame_slot(slot);
+    if (slot.count != frame_slot_count()) {
+        throw std::runtime_error("render graph frame resource slot count does not match");
+    }
+}
+
 void record_render_graph_barriers(const cubey::vulkan::CommandRecorder& recorder,
                                   const RenderGraphExecutionContext& context,
                                   RenderGraphBarrierPhase phase) {
@@ -329,6 +440,20 @@ ColorTargetView resolved_color_target_view(const RenderGraphExecutionContext& co
     const RenderGraphResolvedTexture resolved = context.resolved_texture(handle);
     return color_target_view(resource.desc.extent, resource.desc.format, resolved.image,
                              resolved.view);
+}
+
+RenderGraphSampledTextureView
+resolved_sampled_texture_view(const RenderGraphExecutionContext& context,
+                              RenderGraphTextureHandle handle) {
+    const RenderGraphTextureResource& resource = context.texture(handle);
+    return sampled_texture_view(resource, context.resolved_texture(handle));
+}
+
+RenderGraphSampledTextureView resolved_sampled_texture_view(const CompiledRenderGraph& graph,
+                                                            const RenderGraphResourceSet& resources,
+                                                            RenderGraphTextureHandle handle) {
+    const RenderGraphTextureResource& resource = graph.texture(handle);
+    return sampled_texture_view(resource, resolved_texture(graph, resources, handle));
 }
 
 } // namespace cubey::render
