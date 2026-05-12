@@ -1,6 +1,8 @@
 add_executable(cubey_project_fluid_2d
     fluid_2d_app.cpp
+    fluid_2d_commands.cpp
     main.cpp
+    fluid_2d_gpu_resources.cpp
 )
 set_target_properties(cubey_project_fluid_2d PROPERTIES OUTPUT_NAME fluid_2d)
 
