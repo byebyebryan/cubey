@@ -19,7 +19,9 @@ target_compile_definitions(
 target_link_libraries(
     cubey_app
     PUBLIC
-        cubey::cubey
+        cubey::core
+        cubey::vulkan
+        cubey::render
     PRIVATE
         cubey_project_warnings
         glfw
