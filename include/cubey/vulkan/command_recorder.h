@@ -20,6 +20,12 @@ class CommandRecorder {
     void begin(VkCommandBufferUsageFlags flags) const;
     void end(const char* label) const;
     void transition_image_layout(const ImageLayoutTransition& transition) const;
+    void pipeline_barrier(VkPipelineStageFlags src_stage_mask,
+                          VkPipelineStageFlags dst_stage_mask,
+                          VkDependencyFlags dependency_flags,
+                          std::span<const VkMemoryBarrier> memory_barriers = {},
+                          std::span<const VkBufferMemoryBarrier> buffer_barriers = {},
+                          std::span<const VkImageMemoryBarrier> image_barriers = {}) const;
     void begin_rendering(const VkRenderingInfo& rendering) const;
     void end_rendering() const;
     void bind_pipeline(VkPipelineBindPoint bind_point, VkPipeline pipeline) const;

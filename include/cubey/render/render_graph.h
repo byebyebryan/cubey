@@ -2,6 +2,7 @@
 
 #include <cubey/render/material.h>
 #include <cubey/render/target.h>
+#include <cubey/vulkan/command_recorder.h>
 #include <cubey/vulkan/image_transitions.h>
 
 #include <vulkan/vulkan.h>
@@ -264,5 +265,8 @@ class RenderGraphBuilder {
     std::vector<RenderGraphBufferResource> buffers_{};
     std::vector<RenderGraphCompiledPass> passes_{};
 };
+
+void record_render_graph_barriers(const cubey::vulkan::CommandRecorder& recorder,
+                                  const RenderGraphExecutionContext& context);
 
 } // namespace cubey::render

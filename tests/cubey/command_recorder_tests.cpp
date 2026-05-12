@@ -3,6 +3,7 @@
 #include <vulkan/vulkan.h>
 
 #include <array>
+#include <span>
 #include <stdexcept>
 #include <type_traits>
 
@@ -96,4 +97,48 @@ void test_command_recorder_rejects_invalid_recording_inputs_before_vulkan_calls(
     VkRenderingInfo rendering{};
     require_runtime_error([&] { recorder.begin_rendering(rendering); },
                           "command recorder should reject rendering info without an sType");
+
+    VkMemoryBarrier memory_barrier{};
+    memory_barrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
+    require_runtime_error(
+        [&] {
+            recorder.pipeline_barrier(0, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
+                                      std::span<const VkMemoryBarrier>(&memory_barrier, 1), {}, {});
+        },
+        "command recorder should reject empty source stage masks");
+    require_runtime_error(
+        [&] {
+            recorder.pipeline_barrier(VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 0,
+                                      std::span<const VkMemoryBarrier>(&memory_barrier, 1), {}, {});
+        },
+        "command recorder should reject empty destination stage masks");
+    require_runtime_error(
+        [&] {
+            recorder.pipeline_barrier(VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                                      VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, {}, {}, {});
+        },
+        "command recorder should reject empty barrier batches");
+
+    VkBufferMemoryBarrier buffer_barrier{};
+    buffer_barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+    buffer_barrier.size = 4;
+    require_runtime_error(
+        [&] {
+            recorder.pipeline_barrier(VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                                      VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, {},
+                                      std::span<const VkBufferMemoryBarrier>(&buffer_barrier, 1),
+                                      {});
+        },
+        "command recorder should reject buffer barriers without buffers");
+
+    VkImageMemoryBarrier image_barrier{};
+    image_barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    image_barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    require_runtime_error(
+        [&] {
+            recorder.pipeline_barrier(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                      VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, {}, {},
+                                      std::span<const VkImageMemoryBarrier>(&image_barrier, 1));
+        },
+        "command recorder should reject image barriers without images");
 }

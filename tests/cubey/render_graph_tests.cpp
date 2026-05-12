@@ -510,6 +510,33 @@ void test_render_graph_preserves_material_pass_metadata() {
             "material pass metadata should preserve depth state");
 }
 
+void test_render_graph_barrier_recording_rejects_unallocated_transient_resources() {
+    cubey::render::RenderGraphBuilder graph;
+    const cubey::render::RenderGraphBufferHandle transient =
+        graph.create_buffer(buffer_desc("transient field"));
+
+    graph.add_pass("simulate", cubey::render::RenderGraphQueueDomain::Compute)
+        .read_write_storage_buffer(transient)
+        .execute([](const cubey::render::RenderGraphExecutionContext&) {});
+
+    bool rejected_transient_barrier = false;
+    graph.add_pass("render", cubey::render::RenderGraphQueueDomain::Graphics)
+        .read_storage_buffer(transient)
+        .execute([&](const cubey::render::RenderGraphExecutionContext& context) {
+            const cubey::vulkan::CommandRecorder recorder(
+                reinterpret_cast<VkCommandBuffer>(0x501));
+            require_throws(
+                [&] { cubey::render::record_render_graph_barriers(recorder, context); },
+                "recording barriers should reject transient resources without allocations");
+            rejected_transient_barrier = true;
+        });
+
+    const cubey::render::CompiledRenderGraph compiled = graph.compile();
+    compiled.execute();
+
+    require(rejected_transient_barrier, "transient barrier recording test should run");
+}
+
 void test_render_graph_transfer_pass_accepts_only_transfer_usages() {
     cubey::render::RenderGraphBuilder graph;
     const cubey::render::RenderGraphTextureHandle source =

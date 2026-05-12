@@ -98,6 +98,7 @@ void test_frame_slot_rejects_invalid_slots();
 void test_frame_uniform_buffer_config_describes_host_visible_uniform_storage();
 void test_frame_uniform_buffer_contract_is_slot_based_and_move_only();
 void test_render_graph_allows_imported_texture_read_without_prior_write();
+void test_render_graph_barrier_recording_rejects_unallocated_transient_resources();
 void test_render_graph_creates_transient_texture_and_preserves_pass_order();
 void test_render_graph_derives_compute_to_graphics_storage_buffer_barrier();
 void test_render_graph_derives_depth_to_sampled_texture_barrier();
@@ -283,6 +284,7 @@ std::span<const TestCase> core_tests() {
         CUBEY_TEST(test_render_graph_omits_read_after_read_barriers),
         CUBEY_TEST(test_render_graph_storage_read_write_initializes_transient_buffers),
         CUBEY_TEST(test_render_graph_preserves_material_pass_metadata),
+        CUBEY_TEST(test_render_graph_barrier_recording_rejects_unallocated_transient_resources),
         CUBEY_TEST(test_render_graph_executes_callbacks_in_pass_order_and_exposes_context),
         CUBEY_TEST(test_render_graph_execute_rejects_missing_callbacks_but_compile_allows_declarations),
         CUBEY_TEST(test_render_graph_execute_propagates_callback_exceptions),

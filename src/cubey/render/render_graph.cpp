@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <limits>
+#include <span>
 #include <stdexcept>
 #include <utility>
 #include <vector>
@@ -385,6 +386,30 @@ void CompiledRenderGraph::execute() const {
             throw std::runtime_error("render graph pass has no execute callback");
         }
         pass.execute(RenderGraphExecutionContext(*this, pass_index));
+    }
+}
+
+void record_render_graph_barriers(const cubey::vulkan::CommandRecorder& recorder,
+                                  const RenderGraphExecutionContext& context) {
+    const RenderGraphCompiledPass& pass = context.pass();
+    for (const RenderGraphTextureBarrier& barrier : pass.texture_barriers) {
+        if (barrier.transition.image == VK_NULL_HANDLE) {
+            throw std::runtime_error(
+                "render graph texture barrier requires an allocated texture");
+        }
+        const VkImageMemoryBarrier image_barrier =
+            cubey::vulkan::image_memory_barrier(barrier.transition);
+        recorder.pipeline_barrier(
+            barrier.transition.src_stage_mask, barrier.transition.dst_stage_mask, 0, {}, {},
+            std::span<const VkImageMemoryBarrier>(&image_barrier, 1));
+    }
+    for (const RenderGraphBufferBarrier& barrier : pass.buffer_barriers) {
+        if (barrier.barrier.buffer == VK_NULL_HANDLE) {
+            throw std::runtime_error("render graph buffer barrier requires an allocated buffer");
+        }
+        recorder.pipeline_barrier(barrier.src_stage_mask, barrier.dst_stage_mask, 0, {},
+                                  std::span<const VkBufferMemoryBarrier>(&barrier.barrier, 1),
+                                  {});
     }
 }
 

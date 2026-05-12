@@ -44,6 +44,57 @@ void CommandRecorder::transition_image_layout(const ImageLayoutTransition& trans
     cubey::vulkan::transition_image_layout(command_buffer_, transition);
 }
 
+void CommandRecorder::pipeline_barrier(
+    VkPipelineStageFlags src_stage_mask, VkPipelineStageFlags dst_stage_mask,
+    VkDependencyFlags dependency_flags, std::span<const VkMemoryBarrier> memory_barriers,
+    std::span<const VkBufferMemoryBarrier> buffer_barriers,
+    std::span<const VkImageMemoryBarrier> image_barriers) const {
+    if (src_stage_mask == 0) {
+        throw std::runtime_error("command recorder pipeline barrier requires source stages");
+    }
+    if (dst_stage_mask == 0) {
+        throw std::runtime_error("command recorder pipeline barrier requires destination stages");
+    }
+    if (memory_barriers.empty() && buffer_barriers.empty() && image_barriers.empty()) {
+        throw std::runtime_error("command recorder pipeline barrier requires barriers");
+    }
+    for (const VkMemoryBarrier& barrier : memory_barriers) {
+        if (barrier.sType != VK_STRUCTURE_TYPE_MEMORY_BARRIER) {
+            throw std::runtime_error("command recorder pipeline barrier requires memory sType");
+        }
+    }
+    for (const VkBufferMemoryBarrier& barrier : buffer_barriers) {
+        if (barrier.sType != VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER) {
+            throw std::runtime_error("command recorder pipeline barrier requires buffer sType");
+        }
+        if (barrier.buffer == VK_NULL_HANDLE) {
+            throw std::runtime_error("command recorder pipeline barrier requires buffer handles");
+        }
+        if (barrier.size == 0) {
+            throw std::runtime_error("command recorder pipeline barrier requires buffer size");
+        }
+    }
+    for (const VkImageMemoryBarrier& barrier : image_barriers) {
+        if (barrier.sType != VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER) {
+            throw std::runtime_error("command recorder pipeline barrier requires image sType");
+        }
+        if (barrier.image == VK_NULL_HANDLE) {
+            throw std::runtime_error("command recorder pipeline barrier requires image handles");
+        }
+        if (barrier.subresourceRange.aspectMask == 0) {
+            throw std::runtime_error("command recorder pipeline barrier requires image aspects");
+        }
+    }
+
+    vkCmdPipelineBarrier(command_buffer_, src_stage_mask, dst_stage_mask, dependency_flags,
+                         span_size_u32(memory_barriers.size(), "memory barrier count overflow"),
+                         memory_barriers.data(),
+                         span_size_u32(buffer_barriers.size(), "buffer barrier count overflow"),
+                         buffer_barriers.data(),
+                         span_size_u32(image_barriers.size(), "image barrier count overflow"),
+                         image_barriers.data());
+}
+
 void CommandRecorder::begin_rendering(const VkRenderingInfo& rendering) const {
     if (rendering.sType != VK_STRUCTURE_TYPE_RENDERING_INFO) {
         throw std::runtime_error("command recorder begin rendering requires VkRenderingInfo");
