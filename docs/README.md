@@ -23,6 +23,8 @@ Detailed current foundation notes live under
 - [Renderer foundation](architecture/renderer-foundation.md): `cubey::render`
   contracts that sit above Vulkan without introducing scene, material, or
   render-graph policy.
+- [Render graph direction](architecture/render-graph.md): future pass/resource
+  graph vocabulary, adoption triggers, and deferred complexity.
 - [Entity and component foundation](architecture/entity-component-foundation.md):
   manager-oriented entity/component shape, MT-stable storage, read views, edit
   commits, and transform manager direction.

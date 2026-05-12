@@ -56,7 +56,8 @@ should not become a renderer.
 
 - Full scene graph, node update system, or renderer-owned scene traversal.
 - Material system, shader reflection, shader hot reload, or pipeline cache.
-- Render graph/frame graph/pass scheduler.
+- Render graph/frame graph/pass scheduler. The future graph vocabulary is
+  mapped separately in [render graph direction](render-graph.md).
 - VMA or another memory allocator.
 - Dedicated render thread, split graphics/compute/present queues, or parallel
   command recording.
@@ -153,6 +154,7 @@ record a depth-only pass into a `DepthTexture`, transition that image for shader
 reads, then record the color pass that samples it. The reusable foundation
 intentionally stops at view/pass planning, target/texture ownership,
 layout-transition helpers, and depth-only rendering info. `CommandRecorder`
-keeps the repeated command-buffer calls compact, but render-graph scheduling,
-automatic resource barriers, material binding, and shadow policy remain future
-work.
+keeps the repeated command-buffer calls compact. The
+[render graph direction](render-graph.md) captures how a future pass/resource
+graph should grow from this pressure, but render-graph scheduling, automatic
+resource barriers, material binding, and shadow policy remain future work.

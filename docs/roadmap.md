@@ -14,8 +14,10 @@ See the [architecture notes](architecture/README.md), especially the
 [Vulkan abstraction map](architecture/vulkan-abstractions.md) for planned
 framework layers and foundation rules,
 [renderer foundation](architecture/renderer-foundation.md) for the first
-`cubey::render` contracts above Vulkan, [host and engine](architecture/host-engine.md)
-for the GLFW/windowed host and scoped engine ownership path, and
+`cubey::render` contracts above Vulkan,
+[render graph direction](architecture/render-graph.md) for future pass/resource
+graph vocabulary, [host and engine](architecture/host-engine.md) for the
+GLFW/windowed host and scoped engine ownership path, and
 [threading and async design](architecture/threading-and-async.md) for the
 async-ready runtime boundary.
 

@@ -49,6 +49,7 @@ Authoritative current docs:
 - [Architecture notes](docs/architecture/README.md)
 - [Vulkan abstraction map](docs/architecture/vulkan-abstractions.md)
 - [Renderer foundation](docs/architecture/renderer-foundation.md)
+- [Render graph direction](docs/architecture/render-graph.md)
 - [Entity and component foundation](docs/architecture/entity-component-foundation.md)
 - [Host and engine](docs/architecture/host-engine.md)
 - [Threading and async](docs/architecture/threading-and-async.md)
