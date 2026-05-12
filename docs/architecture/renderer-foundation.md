@@ -104,9 +104,9 @@ full engine architecture.
 - `MeshHandle` and `MaterialHandle` are opaque CPU-side values used by scene
   renderables and renderable packets. `RenderResourceRegistry` issues and
   destroys those handles, validates liveness, and stores CPU metadata:
-  mesh labels plus material domain, blend mode, label, and sort key. It does
-  not own `Mesh`, textures, descriptors, pipelines, or shader/material binding
-  data.
+  mesh labels plus material domain, blend mode, label, sort key, and pass
+  participation mask. It does not own `Mesh`, textures, descriptors, pipelines,
+  or shader/material binding data.
 - `ResourceTable` maps typed render handles to app-owned resources such as
   `Mesh`, so examples can resolve registry-issued handles without hardcoded
   one-off checks.
@@ -118,6 +118,11 @@ full engine architecture.
   scene draw packets and examples. It carries mesh/material handles plus draw
   range fields, and `resolve_draw_item` converts it to the lower-level
   `DrawItem` once the caller resolves app-owned mesh resources.
+- `cubey::render::MaterialPassInfo` is the first explicit material/pass
+  metadata contract. It describes pass kind, descriptor layout shape,
+  push-constant ranges, and reusable graphics pipeline state; examples still
+  own shader modules, concrete descriptor sets, pipeline objects, and binding
+  order.
 - `cubey::scene::View3D`, `Environment3D`, and `RenderFramePlan3D` form the
   current CPU view-planning boundary. They combine a scene read view, camera
   entity, viewport size, ambient-only environment, draw packets, light packets,
@@ -146,7 +151,9 @@ full engine architecture.
   renderable packets with world matrices, world bounds, and resource handles.
   The cube examples now use Engine-owned scenes, registry-issued handles, mesh
   resource tables, and CPU draw planning while still owning pipelines,
-  descriptors, and Vulkan command recording sequence locally.
+  descriptors, and Vulkan command recording sequence locally. Cube pipelines
+  now read pass metadata from `MaterialPassInfo` instead of spelling descriptor
+  layouts, push constants, and depth/blend state entirely ad hoc.
 - `LightManager3D` lives in the scene/component layer and emits compact
   CPU-side light packets for directional and point lights. The packets provide
   light kind, color, intensity, direction or world position, and range; shader
@@ -166,7 +173,7 @@ reads, then record the color pass that samples it. The example also declares
 the same pass/resource flow through `RenderGraphBuilder`, proving the graph
 vocabulary without handing execution to the graph. The reusable foundation
 intentionally stops at view/pass planning, render-item draw intent,
-target/texture ownership, layout-transition helpers, and depth-only rendering
-info. `CommandRecorder` keeps the repeated command-buffer calls compact.
-Render-graph scheduling, automatic resource barriers, material binding, and
-shadow policy remain future work.
+target/texture ownership, layout-transition helpers, material pass metadata,
+and depth-only rendering info. `CommandRecorder` keeps the repeated
+command-buffer calls compact. Render-graph scheduling, automatic resource
+barriers, automatic material binding, and shadow policy remain future work.

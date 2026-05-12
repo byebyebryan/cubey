@@ -168,12 +168,13 @@ Current checkpoint:
   `RenderResourceRegistry`.
 - Reusable `cubey::render::ResourceTable`,
   `cubey::render::RenderItem`,
+  `cubey::render::MaterialPassInfo`,
   `cubey::scene::RenderDrawPacket3D`, and
   `cubey::scene::build_render_draw_packets_3d` provide the first CPU
   render-planning layer: renderer-facing draw intent, handle-to-resource
-  resolution, live resource validation, material tag attachment, world bounds
-  propagation, and deterministic draw sorting without owning Vulkan command
-  recording, descriptors, or pipelines.
+  resolution, live resource validation, material tag attachment, material/pass
+  metadata, world bounds propagation, and deterministic draw sorting without
+  owning Vulkan command recording, descriptors, or pipelines.
 - Reusable `cubey::scene::View3D`, `Environment3D`, and
   `RenderFramePlan3D` provide the first CPU 3D view-planning boundary over
   `SceneReadView`: camera matrices, viewport aspect, ambient-only environment,
@@ -203,9 +204,10 @@ Current checkpoint:
   the current pipeline-layout and compute-pipeline create-info shapes.
 - Reusable `cubey::vulkan::DynamicGraphicsPipelineInfo` builds the current
   dynamic-rendering graphics pipeline create-info shape for color and
-  depth-only pipelines, optional depth, and blending, while examples still
-  choose shaders, layouts, vertex input, descriptors, and depth usage
-  explicitly.
+  depth-only pipelines, optional depth, and blending. Cube examples now source
+  descriptor layout shape, push constants, depth state, blend state, and pass
+  participation from `MaterialPassInfo`, while still choosing shaders, Vulkan
+  resource ownership, vertex input, and command binding explicitly.
 - Reusable `cubey::vulkan` image-transition helpers build the current
   color/depth/storage/transfer/sampled-depth layout transitions, while
   dynamic-rendering helpers build color/depth attachment descriptors without

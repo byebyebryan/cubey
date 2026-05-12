@@ -137,8 +137,10 @@ Reusable spatial types should stay explicit and narrow:
 - The scene layer can turn renderable packets into CPU draw packets by
   validating resource handles, attaching material tags, sorting them, computing
   world bounds, and frustum-culling visible renderables. This is a planning
-  layer only; Vulkan command recording, descriptors, pipelines, light upload,
-  and shader/material binding stay owned by examples/projects for now.
+  layer only; material pass metadata can describe pass participation,
+  descriptor layout shape, push constants, and reusable pipeline state, but
+  Vulkan command recording, concrete descriptors, pipelines, light upload, and
+  shader/material binding stay owned by examples/projects for now.
 
 The broader entity/component shape is captured in the
 [entity and component foundation](architecture/entity-component-foundation.md):
@@ -364,6 +366,7 @@ cubey/
         headless_png_host.h -- no-window offscreen PNG capture host
         windowed_host.h    -- shared windowed host loop
       render/
+        material.h         -- material metadata and material/pass contracts
         target.h           -- color/depth render target views
         mesh.h             -- indexed mesh buffers and draw item vocabulary
         texture.h          -- sampled color/depth texture ownership helpers
