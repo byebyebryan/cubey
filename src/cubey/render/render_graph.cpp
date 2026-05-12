@@ -138,6 +138,35 @@ CompiledRenderGraph::CompiledRenderGraph(std::vector<RenderGraphTextureResource>
                                          std::vector<RenderGraphCompiledPass> passes)
     : textures_(std::move(textures)), buffers_(std::move(buffers)), passes_(std::move(passes)) {}
 
+RenderGraphExecutionContext::RenderGraphExecutionContext(const CompiledRenderGraph& graph,
+                                                         std::size_t pass_index)
+    : graph_(&graph), pass_index_(pass_index) {}
+
+const CompiledRenderGraph& RenderGraphExecutionContext::graph() const {
+    if (graph_ == nullptr) {
+        throw std::runtime_error("render graph execution context is not initialized");
+    }
+    return *graph_;
+}
+
+const RenderGraphCompiledPass& RenderGraphExecutionContext::pass() const {
+    const CompiledRenderGraph& compiled = graph();
+    if (pass_index_ >= compiled.passes().size()) {
+        throw std::runtime_error("render graph execution pass index is invalid");
+    }
+    return compiled.passes()[pass_index_];
+}
+
+const RenderGraphTextureResource&
+RenderGraphExecutionContext::texture(RenderGraphTextureHandle handle) const {
+    return graph().texture(handle);
+}
+
+const RenderGraphBufferResource&
+RenderGraphExecutionContext::buffer(RenderGraphBufferHandle handle) const {
+    return graph().buffer(handle);
+}
+
 const RenderGraphTextureResource&
 CompiledRenderGraph::texture(RenderGraphTextureHandle handle) const {
     if (!handle || handle.index > textures_.size()) {
@@ -152,6 +181,16 @@ CompiledRenderGraph::buffer(RenderGraphBufferHandle handle) const {
         throw std::runtime_error("render graph buffer handle is invalid");
     }
     return buffers_[static_cast<std::size_t>(handle.index - 1U)];
+}
+
+void CompiledRenderGraph::execute() const {
+    for (std::size_t pass_index = 0; pass_index < passes_.size(); ++pass_index) {
+        const RenderGraphCompiledPass& pass = passes_[pass_index];
+        if (!pass.execute) {
+            throw std::runtime_error("render graph pass has no execute callback");
+        }
+        pass.execute(RenderGraphExecutionContext(*this, pass_index));
+    }
 }
 
 RenderGraphPassBuilder::RenderGraphPassBuilder(RenderGraphBuilder& graph,
@@ -224,6 +263,11 @@ RenderGraphPassBuilder::transfer_read_buffer(RenderGraphBufferHandle handle) {
 RenderGraphPassBuilder&
 RenderGraphPassBuilder::transfer_write_buffer(RenderGraphBufferHandle handle) {
     graph_->add_buffer_access(pass_index_, handle, RenderGraphBufferUsage::TransferWrite);
+    return *this;
+}
+
+RenderGraphPassBuilder& RenderGraphPassBuilder::execute(RenderGraphExecuteCallback callback) {
+    graph_->set_execute_callback(pass_index_, std::move(callback));
     return *this;
 }
 
@@ -418,6 +462,14 @@ void RenderGraphBuilder::add_buffer_access(std::uint32_t pass_index, RenderGraph
         .handle = handle,
         .usage = usage,
     });
+}
+
+void RenderGraphBuilder::set_execute_callback(std::uint32_t pass_index,
+                                              RenderGraphExecuteCallback callback) {
+    if (pass_index >= passes_.size()) {
+        throw std::runtime_error("render graph pass handle is invalid");
+    }
+    passes_[pass_index].execute = std::move(callback);
 }
 
 const RenderGraphTextureResource&

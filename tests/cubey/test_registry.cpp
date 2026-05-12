@@ -101,6 +101,9 @@ void test_render_graph_allows_imported_texture_read_without_prior_write();
 void test_render_graph_creates_transient_texture_and_preserves_pass_order();
 void test_render_graph_declares_shadow_map_then_scene_sample_flow();
 void test_render_graph_declares_compute_storage_buffer_flow();
+void test_render_graph_execute_propagates_callback_exceptions();
+void test_render_graph_execute_rejects_missing_callbacks_but_compile_allows_declarations();
+void test_render_graph_executes_callbacks_in_pass_order_and_exposes_context();
 void test_render_graph_imports_color_and_depth_targets();
 void test_render_graph_rejects_attachment_usage_outside_graphics_pass();
 void test_render_graph_rejects_incompatible_same_pass_resource_access();
@@ -270,6 +273,9 @@ std::span<const TestCase> core_tests() {
         CUBEY_TEST(test_render_graph_imports_color_and_depth_targets),
         CUBEY_TEST(test_render_graph_creates_transient_texture_and_preserves_pass_order),
         CUBEY_TEST(test_render_graph_declares_shadow_map_then_scene_sample_flow),
+        CUBEY_TEST(test_render_graph_executes_callbacks_in_pass_order_and_exposes_context),
+        CUBEY_TEST(test_render_graph_execute_rejects_missing_callbacks_but_compile_allows_declarations),
+        CUBEY_TEST(test_render_graph_execute_propagates_callback_exceptions),
         CUBEY_TEST(test_render_graph_rejects_transient_texture_read_before_write),
         CUBEY_TEST(test_render_graph_allows_imported_texture_read_without_prior_write),
         CUBEY_TEST(test_render_graph_rejects_invalid_resource_descriptors_and_handles),

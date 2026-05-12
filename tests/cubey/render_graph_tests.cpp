@@ -3,6 +3,8 @@
 #include <vulkan/vulkan.h>
 
 #include <stdexcept>
+#include <string>
+#include <vector>
 
 namespace {
 
@@ -153,6 +155,77 @@ void test_render_graph_declares_shadow_map_then_scene_sample_flow() {
     require(compiled.passes()[1].texture_accesses[2].usage ==
                 cubey::render::RenderGraphTextureUsage::DepthAttachment,
             "scene pass should write scene depth");
+}
+
+void test_render_graph_executes_callbacks_in_pass_order_and_exposes_context() {
+    cubey::render::RenderGraphBuilder graph;
+    const cubey::render::RenderGraphTextureHandle color =
+        graph.import_texture(color_texture_desc("color"), image(0x81), view(0x82));
+    const cubey::render::RenderGraphBufferHandle constants =
+        graph.import_buffer(buffer_desc("constants"), buffer(0x83));
+
+    std::vector<std::string> executed_labels;
+    graph.add_pass("first", cubey::render::RenderGraphQueueDomain::Graphics)
+        .read_texture(color)
+        .read_uniform_buffer(constants)
+        .execute([&](const cubey::render::RenderGraphExecutionContext& context) {
+            require(context.pass_index() == 0, "first context should expose pass index");
+            require(context.pass().label == "first", "context should expose compiled pass");
+            require(context.texture(color).imported_image == image(0x81),
+                    "context should resolve texture resources");
+            require(context.buffer(constants).imported_buffer == buffer(0x83),
+                    "context should resolve buffer resources");
+            executed_labels.push_back(context.pass().label);
+        });
+    graph.add_pass("second", cubey::render::RenderGraphQueueDomain::Graphics)
+        .read_texture(color)
+        .execute([&](const cubey::render::RenderGraphExecutionContext& context) {
+            require(context.pass_index() == 1, "second context should expose pass index");
+            executed_labels.push_back(context.pass().label);
+        });
+
+    const cubey::render::CompiledRenderGraph compiled = graph.compile();
+    compiled.execute();
+
+    require(executed_labels.size() == 2, "graph execution should run both pass callbacks");
+    require(executed_labels[0] == "first", "graph execution should preserve first pass order");
+    require(executed_labels[1] == "second", "graph execution should preserve second pass order");
+}
+
+void test_render_graph_execute_rejects_missing_callbacks_but_compile_allows_declarations() {
+    cubey::render::RenderGraphBuilder graph;
+    const cubey::render::RenderGraphTextureHandle color =
+        graph.import_texture(color_texture_desc("color"), image(0x91), view(0x92));
+    graph.add_pass("declaration only", cubey::render::RenderGraphQueueDomain::Graphics)
+        .write_color(color);
+
+    const cubey::render::CompiledRenderGraph compiled = graph.compile();
+
+    require(compiled.passes().size() == 1, "declaration-only graph should still compile");
+    require_throws([&compiled] { compiled.execute(); },
+                   "graph execution should require execute callbacks");
+}
+
+void test_render_graph_execute_propagates_callback_exceptions() {
+    cubey::render::RenderGraphBuilder graph;
+    const cubey::render::RenderGraphTextureHandle color =
+        graph.import_texture(color_texture_desc("color"), image(0x93), view(0x94));
+    graph.add_pass("failing", cubey::render::RenderGraphQueueDomain::Graphics)
+        .read_texture(color)
+        .execute([](const cubey::render::RenderGraphExecutionContext&) {
+            throw std::runtime_error("callback failure");
+        });
+
+    const cubey::render::CompiledRenderGraph compiled = graph.compile();
+
+    try {
+        compiled.execute();
+    } catch (const std::runtime_error& error) {
+        require(std::string(error.what()) == "callback failure",
+                "graph execution should propagate callback exceptions");
+        return;
+    }
+    throw std::runtime_error("graph execution should propagate callback exceptions");
 }
 
 void test_render_graph_rejects_transient_texture_read_before_write() {

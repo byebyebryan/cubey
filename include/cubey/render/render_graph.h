@@ -4,7 +4,9 @@
 
 #include <vulkan/vulkan.h>
 
+#include <cstddef>
 #include <cstdint>
+#include <functional>
 #include <string>
 #include <vector>
 
@@ -105,11 +107,37 @@ struct RenderGraphBufferAccess {
     RenderGraphBufferUsage usage = RenderGraphBufferUsage::UniformRead;
 };
 
+class CompiledRenderGraph;
+struct RenderGraphCompiledPass;
+
+class RenderGraphExecutionContext {
+  public:
+    [[nodiscard]] const CompiledRenderGraph& graph() const;
+    [[nodiscard]] const RenderGraphCompiledPass& pass() const;
+    [[nodiscard]] std::size_t pass_index() const noexcept {
+        return pass_index_;
+    }
+    [[nodiscard]] const RenderGraphTextureResource&
+    texture(RenderGraphTextureHandle handle) const;
+    [[nodiscard]] const RenderGraphBufferResource& buffer(RenderGraphBufferHandle handle) const;
+
+  private:
+    friend class CompiledRenderGraph;
+
+    RenderGraphExecutionContext(const CompiledRenderGraph& graph, std::size_t pass_index);
+
+    const CompiledRenderGraph* graph_ = nullptr;
+    std::size_t pass_index_ = 0;
+};
+
+using RenderGraphExecuteCallback = std::function<void(const RenderGraphExecutionContext&)>;
+
 struct RenderGraphCompiledPass {
     std::string label{};
     RenderGraphQueueDomain queue_domain = RenderGraphQueueDomain::Graphics;
     std::vector<RenderGraphTextureAccess> texture_accesses{};
     std::vector<RenderGraphBufferAccess> buffer_accesses{};
+    RenderGraphExecuteCallback execute{};
 };
 
 class CompiledRenderGraph {
@@ -134,6 +162,7 @@ class CompiledRenderGraph {
     [[nodiscard]] const RenderGraphTextureResource&
     texture(RenderGraphTextureHandle handle) const;
     [[nodiscard]] const RenderGraphBufferResource& buffer(RenderGraphBufferHandle handle) const;
+    void execute() const;
 
   private:
     std::vector<RenderGraphTextureResource> textures_{};
@@ -158,6 +187,7 @@ class RenderGraphPassBuilder {
     RenderGraphPassBuilder& write_storage_buffer(RenderGraphBufferHandle handle);
     RenderGraphPassBuilder& transfer_read_buffer(RenderGraphBufferHandle handle);
     RenderGraphPassBuilder& transfer_write_buffer(RenderGraphBufferHandle handle);
+    RenderGraphPassBuilder& execute(RenderGraphExecuteCallback callback);
 
   private:
     friend class RenderGraphBuilder;
@@ -193,6 +223,7 @@ class RenderGraphBuilder {
                             RenderGraphTextureUsage usage);
     void add_buffer_access(std::uint32_t pass_index, RenderGraphBufferHandle handle,
                            RenderGraphBufferUsage usage);
+    void set_execute_callback(std::uint32_t pass_index, RenderGraphExecuteCallback callback);
 
     [[nodiscard]] const RenderGraphTextureResource&
     texture_resource(RenderGraphTextureHandle handle) const;
