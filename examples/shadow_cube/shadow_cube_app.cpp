@@ -5,6 +5,8 @@
 #include <cubey/host/windowed_host.h>
 #include <cubey/input/orbit_controller.h>
 #include <cubey/render/mesh.h>
+#include <cubey/render/render_graph.h>
+#include <cubey/render/render_item.h>
 #include <cubey/render/resource_handle.h>
 #include <cubey/render/resource_table.h>
 #include <cubey/render/target.h>
@@ -472,6 +474,61 @@ class ShadowCubeApp {
         });
     }
 
+    [[nodiscard]] cubey::render::CompiledRenderGraph
+    current_render_graph(const cubey::host::WindowedRenderFrame& frame) const {
+        cubey::render::RenderGraphBuilder graph;
+        const cubey::render::RenderGraphTextureHandle backbuffer_handle =
+            graph.import_color_target("backbuffer", frame.color_target);
+        const cubey::render::RenderGraphTextureHandle scene_depth_handle =
+            graph.import_depth_target("scene depth",
+                                      cubey::render::depth_target_view(depth_attachment()));
+        const cubey::render::RenderGraphTextureHandle shadow_depth_handle =
+            graph.import_depth_target("shadow depth",
+                                      cubey::render::depth_target_view(shadow_depth()));
+
+        graph.add_pass("shadow", cubey::render::RenderGraphQueueDomain::Graphics)
+            .write_depth(shadow_depth_handle);
+        graph.add_pass("scene", cubey::render::RenderGraphQueueDomain::Graphics)
+            .read_texture(shadow_depth_handle)
+            .write_color(backbuffer_handle)
+            .write_depth(scene_depth_handle);
+
+        return graph.compile();
+    }
+
+    void validate_render_graph(const cubey::render::CompiledRenderGraph& graph) const {
+        if (graph.passes().size() != 2) {
+            throw std::runtime_error("shadow_cube render graph should have two passes");
+        }
+        const cubey::render::RenderGraphCompiledPass& shadow_pass = graph.passes()[0];
+        const cubey::render::RenderGraphCompiledPass& scene_pass = graph.passes()[1];
+        if (shadow_pass.label != "shadow" || scene_pass.label != "scene") {
+            throw std::runtime_error("shadow_cube render graph pass order is invalid");
+        }
+        if (shadow_pass.texture_accesses.size() != 1 ||
+            shadow_pass.texture_accesses[0].usage !=
+                cubey::render::RenderGraphTextureUsage::DepthAttachment) {
+            throw std::runtime_error("shadow_cube shadow pass should write depth");
+        }
+        if (scene_pass.texture_accesses.size() != 3 ||
+            scene_pass.texture_accesses[0].usage !=
+                cubey::render::RenderGraphTextureUsage::SampledRead ||
+            scene_pass.texture_accesses[1].usage !=
+                cubey::render::RenderGraphTextureUsage::ColorAttachment ||
+            scene_pass.texture_accesses[2].usage !=
+                cubey::render::RenderGraphTextureUsage::DepthAttachment) {
+            throw std::runtime_error(
+                "shadow_cube scene pass should sample shadow depth and write color/depth");
+        }
+        if (scene_pass.texture_accesses[0].handle != shadow_pass.texture_accesses[0].handle) {
+            throw std::runtime_error("shadow_cube scene pass should sample shadow pass output");
+        }
+        if (graph.texture(scene_pass.texture_accesses[1].handle).desc.label != "backbuffer" ||
+            graph.texture(scene_pass.texture_accesses[2].handle).desc.label != "scene depth") {
+            throw std::runtime_error("shadow_cube scene pass target resources are invalid");
+        }
+    }
+
     void record_shadow_frame(const cubey::host::WindowedRenderFrame& frame) {
         cubey::SceneReadView scene_view = scene().read();
         const cubey::scene::FrameRenderPlan3D frame_plan =
@@ -481,6 +538,7 @@ class ShadowCubeApp {
         }
         const cubey::scene::RenderFramePlan3D& shadow_plan = frame_plan.passes()[0].frame_plan;
         const cubey::scene::RenderFramePlan3D& scene_plan = frame_plan.passes()[1].frame_plan;
+        validate_render_graph(current_render_graph(frame));
 
         const cubey::vulkan::CommandRecorder recorder(frame.command_buffer);
         recorder.begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
@@ -522,7 +580,11 @@ class ShadowCubeApp {
             };
             recorder.push_constants(shadow_pipeline_layout().handle(), VK_SHADER_STAGE_VERTEX_BIT,
                                     0, push_constants);
-            cubey::render::record_draw_item(recorder.handle(), draw_item(packet));
+            const cubey::render::RenderItem render_item =
+                cubey::scene::render_item_from_packet(packet);
+            const cubey::render::DrawItem draw_item =
+                cubey::render::resolve_draw_item(render_item, meshes_);
+            cubey::render::record_draw_item(recorder.handle(), draw_item);
         }
         recorder.end_rendering();
     }
@@ -555,24 +617,13 @@ class ShadowCubeApp {
             };
             recorder.push_constants(scene_pipeline_layout().handle(), VK_SHADER_STAGE_VERTEX_BIT, 0,
                                     push_constants);
-            cubey::render::record_draw_item(recorder.handle(), draw_item(packet));
+            const cubey::render::RenderItem render_item =
+                cubey::scene::render_item_from_packet(packet);
+            const cubey::render::DrawItem draw_item =
+                cubey::render::resolve_draw_item(render_item, meshes_);
+            cubey::render::record_draw_item(recorder.handle(), draw_item);
         }
         recorder.end_rendering();
-    }
-
-    [[nodiscard]] cubey::render::DrawItem
-    draw_item(const cubey::scene::RenderDrawPacket3D& packet) const {
-        return {
-            .mesh = &mesh(packet.mesh),
-            .instance_count = packet.instance_count,
-            .first_index = packet.first_index,
-            .vertex_offset = packet.vertex_offset,
-            .first_instance = packet.first_instance,
-        };
-    }
-
-    [[nodiscard]] const cubey::render::Mesh& mesh(cubey::render::MeshHandle handle) const {
-        return meshes_.at(handle);
     }
 
     [[nodiscard]] cubey::Scene& scene() {

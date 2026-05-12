@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cubey/core/math.h>
+#include <cubey/render/render_item.h>
 #include <cubey/render/resource_handle.h>
 #include <cubey/render/resource_registry.h>
 #include <cubey/scene/entity.h>
@@ -52,6 +53,18 @@ template <typename EnumT> [[nodiscard]] constexpr auto enum_sort_key(EnumT value
 }
 
 } // namespace detail
+
+[[nodiscard]] inline render::RenderItem
+render_item_from_packet(const RenderDrawPacket3D& packet) {
+    return render::RenderItem{
+        .mesh = packet.mesh,
+        .material = packet.material,
+        .instance_count = packet.instance_count,
+        .first_index = packet.first_index,
+        .vertex_offset = packet.vertex_offset,
+        .first_instance = packet.first_instance,
+    };
+}
 
 [[nodiscard]] inline std::vector<RenderDrawPacket3D>
 build_render_draw_packets_3d(std::span<const RenderablePacket3D> packets,

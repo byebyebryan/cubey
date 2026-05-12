@@ -7,6 +7,7 @@
 #include <cubey/host/windowed_host.h>
 #include <cubey/input/orbit_controller.h>
 #include <cubey/render/mesh.h>
+#include <cubey/render/render_item.h>
 #include <cubey/render/resource_handle.h>
 #include <cubey/render/resource_table.h>
 #include <cubey/render/target.h>
@@ -588,13 +589,10 @@ class TexturedCubeApp {
         const VkDescriptorSet descriptor_set = descriptors().set(frame.frame_slot.index);
         recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout().handle(), 0,
                                      descriptor_set);
-        const cubey::render::DrawItem draw_item{
-            .mesh = &mesh(draw_packet.mesh),
-            .instance_count = draw_packet.instance_count,
-            .first_index = draw_packet.first_index,
-            .vertex_offset = draw_packet.vertex_offset,
-            .first_instance = draw_packet.first_instance,
-        };
+        const cubey::render::RenderItem render_item =
+            cubey::scene::render_item_from_packet(draw_packet);
+        const cubey::render::DrawItem draw_item =
+            cubey::render::resolve_draw_item(render_item, meshes_);
         cubey::render::record_draw_item(recorder.handle(), draw_item);
         recorder.end_rendering();
 
@@ -603,10 +601,6 @@ class TexturedCubeApp {
                 frame.color_target.image));
 
         recorder.end("vkEndCommandBuffer textured_cube");
-    }
-
-    [[nodiscard]] const cubey::render::Mesh& mesh(cubey::render::MeshHandle handle) const {
-        return meshes_.at(handle);
     }
 
     [[nodiscard]] cubey::Scene& scene() {

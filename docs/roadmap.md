@@ -167,12 +167,13 @@ Current checkpoint:
   per-frame uniform buffers, and generational mesh/material handles issued by
   `RenderResourceRegistry`.
 - Reusable `cubey::render::ResourceTable`,
+  `cubey::render::RenderItem`,
   `cubey::scene::RenderDrawPacket3D`, and
   `cubey::scene::build_render_draw_packets_3d` provide the first CPU
-  render-planning layer: handle-to-resource resolution, live resource
-  validation, material tag attachment, world bounds propagation, and
-  deterministic draw sorting without owning Vulkan command recording,
-  descriptors, or pipelines.
+  render-planning layer: renderer-facing draw intent, handle-to-resource
+  resolution, live resource validation, material tag attachment, world bounds
+  propagation, and deterministic draw sorting without owning Vulkan command
+  recording, descriptors, or pipelines.
 - Reusable `cubey::scene::View3D`, `Environment3D`, and
   `RenderFramePlan3D` provide the first CPU 3D view-planning boundary over
   `SceneReadView`: camera matrices, viewport aspect, ambient-only environment,
@@ -183,9 +184,10 @@ Current checkpoint:
 - Reusable `cubey::render::RenderGraphBuilder` and `CompiledRenderGraph`
   provide the first render graph declaration and validation layer for
   imported/transient texture and buffer resources, ordered
-  graphics/compute/transfer passes, and pass/resource usage. This layer does
-  not execute passes, allocate resources, generate barriers, reorder passes, or
-  migrate examples yet.
+  graphics/compute/transfer passes, and pass/resource usage. `shadow_cube`
+  now declares its shadow-depth and scene-color flow through this layer, while
+  explicit Vulkan code still executes passes, owns resources, records layout
+  transitions, and handles the final present transition.
 - Reusable `cubey::vulkan::PipelineLayout`, `GraphicsPipeline`,
   `ComputePipeline`, `DescriptorSetLayout`, and `DescriptorPool` own basic
   pipeline and descriptor lifetimes while still taking raw Vulkan create-info

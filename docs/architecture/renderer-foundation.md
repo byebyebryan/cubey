@@ -114,6 +114,10 @@ full engine architecture.
   `cubey::scene::build_render_draw_packets_3d` validate live mesh/material
   handles, attach material metadata, preserve world bounds, and sort draw
   packets deterministically.
+- `cubey::render::RenderItem` is the renderer-facing draw intent shared by
+  scene draw packets and examples. It carries mesh/material handles plus draw
+  range fields, and `resolve_draw_item` converts it to the lower-level
+  `DrawItem` once the caller resolves app-owned mesh resources.
 - `cubey::scene::View3D`, `Environment3D`, and `RenderFramePlan3D` form the
   current CPU view-planning boundary. They combine a scene read view, camera
   entity, viewport size, ambient-only environment, draw packets, light packets,
@@ -127,7 +131,9 @@ full engine architecture.
   validation layer for imported/transient texture and buffer resources,
   graphics/compute/transfer passes, and ordered pass/resource usage. It
   compiles declarations only; execution, barrier generation, resource
-  allocation, pass reordering, and example migration remain future work.
+  allocation, and pass reordering remain future work. `shadow_cube` now
+  declares its shadow-depth and scene-color pass/resource flow through this
+  layer while keeping explicit Vulkan transitions and recording.
 - `cubey::vulkan::CommandRecorder` is the current low-level recording helper
   used by examples and `fluid_2d` for common Vulkan command-buffer calls. It
   does not own pass scheduling, automatic barriers, descriptor policy, or
@@ -156,10 +162,11 @@ full engine architecture.
 `examples/shadow_cube` is the current reference for manual multipass rendering:
 build a shadow `cubey::scene::View3D`, build a camera `cubey::scene::View3D`,
 record a depth-only pass into a `DepthTexture`, transition that image for shader
-reads, then record the color pass that samples it. The reusable foundation
-intentionally stops at view/pass planning, target/texture ownership,
-layout-transition helpers, and depth-only rendering info. `CommandRecorder`
-keeps the repeated command-buffer calls compact. The
-[render graph direction](render-graph.md) captures how a future pass/resource
-graph should grow from this pressure, but render-graph scheduling, automatic
-resource barriers, material binding, and shadow policy remain future work.
+reads, then record the color pass that samples it. The example also declares
+the same pass/resource flow through `RenderGraphBuilder`, proving the graph
+vocabulary without handing execution to the graph. The reusable foundation
+intentionally stops at view/pass planning, render-item draw intent,
+target/texture ownership, layout-transition helpers, and depth-only rendering
+info. `CommandRecorder` keeps the repeated command-buffer calls compact.
+Render-graph scheduling, automatic resource barriers, material binding, and
+shadow policy remain future work.

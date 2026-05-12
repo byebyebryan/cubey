@@ -118,6 +118,43 @@ void test_render_graph_creates_transient_texture_and_preserves_pass_order() {
             "scene pass should preserve sampled read usage");
 }
 
+void test_render_graph_declares_shadow_map_then_scene_sample_flow() {
+    cubey::render::RenderGraphBuilder graph;
+    const cubey::render::RenderGraphTextureHandle backbuffer =
+        graph.import_texture(color_texture_desc("backbuffer"), image(0x71), view(0x72));
+    const cubey::render::RenderGraphTextureHandle scene_depth =
+        graph.import_texture(depth_texture_desc("scene depth"), image(0x73), view(0x74));
+    const cubey::render::RenderGraphTextureHandle shadow_depth =
+        graph.import_texture(depth_texture_desc("shadow depth"), image(0x75), view(0x76));
+
+    graph.add_pass("shadow", cubey::render::RenderGraphQueueDomain::Graphics)
+        .write_depth(shadow_depth);
+    graph.add_pass("scene", cubey::render::RenderGraphQueueDomain::Graphics)
+        .read_texture(shadow_depth)
+        .write_color(backbuffer)
+        .write_depth(scene_depth);
+
+    const cubey::render::CompiledRenderGraph compiled = graph.compile();
+
+    require(compiled.textures().size() == 3,
+            "shadow graph should preserve imported frame resources");
+    require(compiled.passes().size() == 2, "shadow graph should preserve both passes");
+    require(compiled.passes()[0].label == "shadow", "shadow pass should stay first");
+    require(compiled.passes()[0].texture_accesses[0].usage ==
+                cubey::render::RenderGraphTextureUsage::DepthAttachment,
+            "shadow pass should write the shadow depth target");
+    require(compiled.passes()[1].label == "scene", "scene pass should stay second");
+    require(compiled.passes()[1].texture_accesses[0].usage ==
+                cubey::render::RenderGraphTextureUsage::SampledRead,
+            "scene pass should sample the shadow depth target");
+    require(compiled.passes()[1].texture_accesses[1].usage ==
+                cubey::render::RenderGraphTextureUsage::ColorAttachment,
+            "scene pass should write the backbuffer");
+    require(compiled.passes()[1].texture_accesses[2].usage ==
+                cubey::render::RenderGraphTextureUsage::DepthAttachment,
+            "scene pass should write scene depth");
+}
+
 void test_render_graph_rejects_transient_texture_read_before_write() {
     cubey::render::RenderGraphBuilder graph;
     const cubey::render::RenderGraphTextureHandle transient =

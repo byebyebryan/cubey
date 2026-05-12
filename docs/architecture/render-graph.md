@@ -101,7 +101,9 @@ resolved resources + explicit command recording through cubey::vulkan
   execution.
 - **Usage declaration**: a pass statement that it reads or writes a resource as
   color attachment, depth attachment, sampled input, storage input/output,
-  transfer source/destination, or present output.
+  or transfer source/destination. In v1, present remains host/swapchain-owned:
+  the backbuffer is declared as a color attachment write, then explicit Vulkan
+  code transitions it for presentation.
 - **Compile**: validation and derivation of pass order, resource lifetime, and
   synchronization needs from declarations.
 - **Execute**: command recording using resolved resources.
@@ -135,7 +137,9 @@ graph.add_pass("scene")
 This is illustrative vocabulary, not a committed header design. The important
 contract is that setup declares resource use before execution records commands.
 That matches the established pattern in Filament FrameGraph and Unity Render
-Graph while preserving Cubey's Vulkan-first command recording.
+Graph while preserving Cubey's Vulkan-first command recording. `shadow_cube`
+now exercises this declaration shape for its depth-only shadow pass and color
+scene pass while still recording commands and layout transitions manually.
 
 ## Implementation Slices
 

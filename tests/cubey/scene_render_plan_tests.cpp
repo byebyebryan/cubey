@@ -131,3 +131,24 @@ void test_render_plan_rejects_stale_resource_handles() {
         },
         "draw planning should reject stale material handles");
 }
+
+void test_render_plan_converts_draw_packets_to_render_items() {
+    const cubey::scene::RenderDrawPacket3D packet{
+        .entity = cubey::Entity{.index = 7, .generation = 1},
+        .mesh = cubey::render::MeshHandle{.index = 2, .generation = 3},
+        .material = cubey::render::MaterialHandle{.index = 4, .generation = 5},
+        .instance_count = 6,
+        .first_index = 8,
+        .vertex_offset = -3,
+        .first_instance = 10,
+    };
+
+    const cubey::render::RenderItem item = cubey::scene::render_item_from_packet(packet);
+
+    require(item.mesh == packet.mesh, "render item should preserve mesh handle");
+    require(item.material == packet.material, "render item should preserve material handle");
+    require(item.instance_count == 6, "render item should preserve instance count");
+    require(item.first_index == 8, "render item should preserve first index");
+    require(item.vertex_offset == -3, "render item should preserve vertex offset");
+    require(item.first_instance == 10, "render item should preserve first instance");
+}
