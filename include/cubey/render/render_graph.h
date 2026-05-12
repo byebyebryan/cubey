@@ -1,12 +1,15 @@
 #pragma once
 
+#include <cubey/render/material.h>
 #include <cubey/render/target.h>
+#include <cubey/vulkan/image_transitions.h>
 
 #include <vulkan/vulkan.h>
 
 #include <cstddef>
 #include <cstdint>
 #include <functional>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -56,6 +59,7 @@ enum class RenderGraphTextureUsage : std::uint8_t {
     SampledRead,
     StorageRead,
     StorageWrite,
+    StorageReadWrite,
     ColorAttachment,
     DepthAttachment,
     TransferRead,
@@ -66,6 +70,7 @@ enum class RenderGraphBufferUsage : std::uint8_t {
     UniformRead,
     StorageRead,
     StorageWrite,
+    StorageReadWrite,
     TransferRead,
     TransferWrite,
 };
@@ -107,6 +112,24 @@ struct RenderGraphBufferAccess {
     RenderGraphBufferUsage usage = RenderGraphBufferUsage::UniformRead;
 };
 
+struct RenderGraphTextureBarrier {
+    RenderGraphTextureHandle handle{};
+    std::size_t source_pass_index = 0;
+    RenderGraphTextureUsage source_usage = RenderGraphTextureUsage::SampledRead;
+    RenderGraphTextureUsage destination_usage = RenderGraphTextureUsage::SampledRead;
+    cubey::vulkan::ImageLayoutTransition transition{};
+};
+
+struct RenderGraphBufferBarrier {
+    RenderGraphBufferHandle handle{};
+    std::size_t source_pass_index = 0;
+    RenderGraphBufferUsage source_usage = RenderGraphBufferUsage::UniformRead;
+    RenderGraphBufferUsage destination_usage = RenderGraphBufferUsage::UniformRead;
+    VkPipelineStageFlags src_stage_mask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+    VkPipelineStageFlags dst_stage_mask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+    VkBufferMemoryBarrier barrier{};
+};
+
 class CompiledRenderGraph;
 struct RenderGraphCompiledPass;
 
@@ -137,6 +160,9 @@ struct RenderGraphCompiledPass {
     RenderGraphQueueDomain queue_domain = RenderGraphQueueDomain::Graphics;
     std::vector<RenderGraphTextureAccess> texture_accesses{};
     std::vector<RenderGraphBufferAccess> buffer_accesses{};
+    std::vector<RenderGraphTextureBarrier> texture_barriers{};
+    std::vector<RenderGraphBufferBarrier> buffer_barriers{};
+    std::optional<MaterialPassInfo> material_pass{};
     RenderGraphExecuteCallback execute{};
 };
 
@@ -177,6 +203,7 @@ class RenderGraphPassBuilder {
     RenderGraphPassBuilder& read_texture(RenderGraphTextureHandle handle);
     RenderGraphPassBuilder& read_storage_texture(RenderGraphTextureHandle handle);
     RenderGraphPassBuilder& write_storage_texture(RenderGraphTextureHandle handle);
+    RenderGraphPassBuilder& read_write_storage_texture(RenderGraphTextureHandle handle);
     RenderGraphPassBuilder& write_color(RenderGraphTextureHandle handle);
     RenderGraphPassBuilder& write_depth(RenderGraphTextureHandle handle);
     RenderGraphPassBuilder& transfer_read_texture(RenderGraphTextureHandle handle);
@@ -185,8 +212,10 @@ class RenderGraphPassBuilder {
     RenderGraphPassBuilder& read_uniform_buffer(RenderGraphBufferHandle handle);
     RenderGraphPassBuilder& read_storage_buffer(RenderGraphBufferHandle handle);
     RenderGraphPassBuilder& write_storage_buffer(RenderGraphBufferHandle handle);
+    RenderGraphPassBuilder& read_write_storage_buffer(RenderGraphBufferHandle handle);
     RenderGraphPassBuilder& transfer_read_buffer(RenderGraphBufferHandle handle);
     RenderGraphPassBuilder& transfer_write_buffer(RenderGraphBufferHandle handle);
+    RenderGraphPassBuilder& material_pass(MaterialPassInfo info);
     RenderGraphPassBuilder& execute(RenderGraphExecuteCallback callback);
 
   private:
@@ -223,6 +252,7 @@ class RenderGraphBuilder {
                             RenderGraphTextureUsage usage);
     void add_buffer_access(std::uint32_t pass_index, RenderGraphBufferHandle handle,
                            RenderGraphBufferUsage usage);
+    void set_material_pass(std::uint32_t pass_index, MaterialPassInfo info);
     void set_execute_callback(std::uint32_t pass_index, RenderGraphExecuteCallback callback);
 
     [[nodiscard]] const RenderGraphTextureResource&

@@ -373,6 +373,143 @@ void test_render_graph_declares_compute_storage_buffer_flow() {
             "storage buffer read usage should be preserved");
 }
 
+void test_render_graph_derives_depth_to_sampled_texture_barrier() {
+    cubey::render::RenderGraphBuilder graph;
+    const cubey::render::RenderGraphTextureHandle shadow_depth =
+        graph.import_texture(depth_texture_desc("shadow depth"), image(0x101), view(0x102));
+
+    graph.add_pass("shadow", cubey::render::RenderGraphQueueDomain::Graphics)
+        .write_depth(shadow_depth);
+    graph.add_pass("scene", cubey::render::RenderGraphQueueDomain::Graphics)
+        .read_texture(shadow_depth);
+
+    const cubey::render::CompiledRenderGraph compiled = graph.compile();
+
+    require(compiled.passes()[0].texture_barriers.empty(),
+            "first in-graph writer should not need an incoming texture barrier");
+    require(compiled.passes()[1].texture_barriers.size() == 1,
+            "sampled read after depth write should derive one texture barrier");
+
+    const cubey::render::RenderGraphTextureBarrier& barrier =
+        compiled.passes()[1].texture_barriers[0];
+    require(barrier.handle == shadow_depth, "texture barrier should identify the resource");
+    require(barrier.source_pass_index == 0, "texture barrier should point at producer pass");
+    require(barrier.source_usage == cubey::render::RenderGraphTextureUsage::DepthAttachment,
+            "texture barrier should preserve producer usage");
+    require(barrier.destination_usage == cubey::render::RenderGraphTextureUsage::SampledRead,
+            "texture barrier should preserve consumer usage");
+    require(barrier.transition.image == image(0x101),
+            "imported texture barrier should preserve image handle");
+    require(barrier.transition.old_layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+            "depth producer should transition from depth attachment layout");
+    require(barrier.transition.new_layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
+            "sampled depth consumer should transition to read-only depth layout");
+    require(barrier.transition.src_access_mask ==
+                (VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
+                 VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT),
+            "depth producer should expose depth attachment access");
+    require(barrier.transition.dst_access_mask == VK_ACCESS_SHADER_READ_BIT,
+            "sampled consumer should request shader read access");
+}
+
+void test_render_graph_derives_compute_to_graphics_storage_buffer_barrier() {
+    cubey::render::RenderGraphBuilder graph;
+    const cubey::render::RenderGraphBufferHandle field =
+        graph.import_buffer(buffer_desc("field"), buffer(0x201));
+
+    graph.add_pass("simulate", cubey::render::RenderGraphQueueDomain::Compute)
+        .read_write_storage_buffer(field);
+    graph.add_pass("render", cubey::render::RenderGraphQueueDomain::Graphics)
+        .read_storage_buffer(field);
+
+    const cubey::render::CompiledRenderGraph compiled = graph.compile();
+
+    require(compiled.passes()[1].buffer_barriers.size() == 1,
+            "graphics read after compute storage write should derive one buffer barrier");
+    const cubey::render::RenderGraphBufferBarrier& barrier =
+        compiled.passes()[1].buffer_barriers[0];
+    require(barrier.handle == field, "buffer barrier should identify the resource");
+    require(barrier.source_pass_index == 0, "buffer barrier should point at producer pass");
+    require(barrier.source_usage == cubey::render::RenderGraphBufferUsage::StorageReadWrite,
+            "buffer barrier should preserve read-write producer usage");
+    require(barrier.destination_usage == cubey::render::RenderGraphBufferUsage::StorageRead,
+            "buffer barrier should preserve storage-read consumer usage");
+    require(barrier.barrier.buffer == buffer(0x201),
+            "imported buffer barrier should preserve buffer handle");
+    require(barrier.barrier.offset == 0, "buffer barrier should cover from offset zero");
+    require(barrier.barrier.size == buffer_desc("field").byte_size,
+            "buffer barrier should cover the declared buffer size");
+    require(barrier.src_stage_mask == VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+            "compute producer should use compute shader source stage");
+    require(barrier.dst_stage_mask == VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+            "graphics storage read should use fragment shader destination stage");
+    require(barrier.barrier.srcAccessMask ==
+                (VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT),
+            "read-write producer should expose shader read and write access");
+    require(barrier.barrier.dstAccessMask == VK_ACCESS_SHADER_READ_BIT,
+            "storage read consumer should request shader read access");
+}
+
+void test_render_graph_omits_read_after_read_barriers() {
+    cubey::render::RenderGraphBuilder graph;
+    const cubey::render::RenderGraphBufferHandle constants =
+        graph.import_buffer(buffer_desc("constants"), buffer(0x301));
+
+    graph.add_pass("first", cubey::render::RenderGraphQueueDomain::Graphics)
+        .read_uniform_buffer(constants);
+    graph.add_pass("second", cubey::render::RenderGraphQueueDomain::Graphics)
+        .read_uniform_buffer(constants);
+
+    const cubey::render::CompiledRenderGraph compiled = graph.compile();
+
+    require(compiled.passes()[1].buffer_barriers.empty(),
+            "read-after-read should not derive a buffer barrier");
+}
+
+void test_render_graph_storage_read_write_initializes_transient_buffers() {
+    cubey::render::RenderGraphBuilder graph;
+    const cubey::render::RenderGraphBufferHandle field =
+        graph.create_buffer(buffer_desc("transient field"));
+
+    graph.add_pass("simulate", cubey::render::RenderGraphQueueDomain::Compute)
+        .read_write_storage_buffer(field);
+    graph.add_pass("render", cubey::render::RenderGraphQueueDomain::Graphics)
+        .read_storage_buffer(field);
+
+    const cubey::render::CompiledRenderGraph compiled = graph.compile();
+
+    require(compiled.passes()[0].buffer_accesses[0].usage ==
+                cubey::render::RenderGraphBufferUsage::StorageReadWrite,
+            "read-write storage usage should be preserved");
+    require(compiled.passes()[1].buffer_barriers.size() == 1,
+            "transient read-write producer should satisfy later storage reads");
+}
+
+void test_render_graph_preserves_material_pass_metadata() {
+    cubey::render::RenderGraphBuilder graph;
+    const cubey::render::RenderGraphTextureHandle target =
+        graph.import_texture(color_texture_desc("target"), image(0x401), view(0x402));
+    cubey::render::MaterialPassInfo pass_info{
+        .label = "test.forward",
+        .kind = cubey::render::MaterialPassKind::ForwardColor,
+        .depth_test = true,
+        .depth_write = true,
+    };
+
+    graph.add_pass("forward", cubey::render::RenderGraphQueueDomain::Graphics)
+        .write_color(target)
+        .material_pass(pass_info);
+
+    const cubey::render::CompiledRenderGraph compiled = graph.compile();
+
+    require(compiled.passes()[0].material_pass.has_value(),
+            "graph pass should preserve material pass metadata");
+    require(compiled.passes()[0].material_pass->label == "test.forward",
+            "material pass metadata should preserve label");
+    require(compiled.passes()[0].material_pass->depth_test,
+            "material pass metadata should preserve depth state");
+}
+
 void test_render_graph_transfer_pass_accepts_only_transfer_usages() {
     cubey::render::RenderGraphBuilder graph;
     const cubey::render::RenderGraphTextureHandle source =

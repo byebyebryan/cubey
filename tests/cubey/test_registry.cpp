@@ -99,16 +99,21 @@ void test_frame_uniform_buffer_config_describes_host_visible_uniform_storage();
 void test_frame_uniform_buffer_contract_is_slot_based_and_move_only();
 void test_render_graph_allows_imported_texture_read_without_prior_write();
 void test_render_graph_creates_transient_texture_and_preserves_pass_order();
-void test_render_graph_declares_shadow_map_then_scene_sample_flow();
+void test_render_graph_derives_compute_to_graphics_storage_buffer_barrier();
+void test_render_graph_derives_depth_to_sampled_texture_barrier();
 void test_render_graph_declares_compute_storage_buffer_flow();
+void test_render_graph_declares_shadow_map_then_scene_sample_flow();
 void test_render_graph_execute_propagates_callback_exceptions();
 void test_render_graph_execute_rejects_missing_callbacks_but_compile_allows_declarations();
 void test_render_graph_executes_callbacks_in_pass_order_and_exposes_context();
 void test_render_graph_imports_color_and_depth_targets();
+void test_render_graph_omits_read_after_read_barriers();
+void test_render_graph_preserves_material_pass_metadata();
 void test_render_graph_rejects_attachment_usage_outside_graphics_pass();
 void test_render_graph_rejects_incompatible_same_pass_resource_access();
 void test_render_graph_rejects_invalid_resource_descriptors_and_handles();
 void test_render_graph_rejects_transient_texture_read_before_write();
+void test_render_graph_storage_read_write_initializes_transient_buffers();
 void test_render_graph_transfer_pass_accepts_only_transfer_usages();
 void test_render_item_resolves_draw_item_fields();
 void test_render_item_validates_required_draw_identity();
@@ -273,6 +278,11 @@ std::span<const TestCase> core_tests() {
         CUBEY_TEST(test_render_graph_imports_color_and_depth_targets),
         CUBEY_TEST(test_render_graph_creates_transient_texture_and_preserves_pass_order),
         CUBEY_TEST(test_render_graph_declares_shadow_map_then_scene_sample_flow),
+        CUBEY_TEST(test_render_graph_derives_depth_to_sampled_texture_barrier),
+        CUBEY_TEST(test_render_graph_derives_compute_to_graphics_storage_buffer_barrier),
+        CUBEY_TEST(test_render_graph_omits_read_after_read_barriers),
+        CUBEY_TEST(test_render_graph_storage_read_write_initializes_transient_buffers),
+        CUBEY_TEST(test_render_graph_preserves_material_pass_metadata),
         CUBEY_TEST(test_render_graph_executes_callbacks_in_pass_order_and_exposes_context),
         CUBEY_TEST(test_render_graph_execute_rejects_missing_callbacks_but_compile_allows_declarations),
         CUBEY_TEST(test_render_graph_execute_propagates_callback_exceptions),
