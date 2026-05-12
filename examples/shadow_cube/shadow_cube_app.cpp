@@ -6,6 +6,7 @@
 #include <cubey/input/orbit_controller.h>
 #include <cubey/render/material.h>
 #include <cubey/render/mesh.h>
+#include <cubey/render/primitive_mesh.h>
 #include <cubey/render/render_graph.h>
 #include <cubey/render/render_item.h>
 #include <cubey/render/resource_handle.h>
@@ -133,52 +134,16 @@ cubey::render::MaterialPassInfo shadow_scene_pass_info() {
     };
 }
 
-struct Vertex {
-    std::array<float, 3> position;
-    std::array<float, 3> color;
-    std::array<float, 3> normal;
+constexpr std::array<cubey::render::PrimitiveVec3, 6> kCubeFaceColors{
+    cubey::render::PrimitiveVec3{0.88F, 0.35F, 0.26F},
+    cubey::render::PrimitiveVec3{0.24F, 0.58F, 0.86F},
+    cubey::render::PrimitiveVec3{0.32F, 0.68F, 0.38F},
+    cubey::render::PrimitiveVec3{0.92F, 0.70F, 0.22F},
+    cubey::render::PrimitiveVec3{0.66F, 0.44F, 0.86F},
+    cubey::render::PrimitiveVec3{0.30F, 0.72F, 0.74F},
 };
 
-constexpr std::array<Vertex, 24> kCubeVertices{{
-    Vertex{{-1.0F, -1.0F, 1.0F}, {0.88F, 0.35F, 0.26F}, {0.0F, 0.0F, 1.0F}},
-    Vertex{{1.0F, -1.0F, 1.0F}, {0.88F, 0.35F, 0.26F}, {0.0F, 0.0F, 1.0F}},
-    Vertex{{1.0F, 1.0F, 1.0F}, {0.88F, 0.35F, 0.26F}, {0.0F, 0.0F, 1.0F}},
-    Vertex{{-1.0F, 1.0F, 1.0F}, {0.88F, 0.35F, 0.26F}, {0.0F, 0.0F, 1.0F}},
-    Vertex{{1.0F, -1.0F, -1.0F}, {0.24F, 0.58F, 0.86F}, {0.0F, 0.0F, -1.0F}},
-    Vertex{{-1.0F, -1.0F, -1.0F}, {0.24F, 0.58F, 0.86F}, {0.0F, 0.0F, -1.0F}},
-    Vertex{{-1.0F, 1.0F, -1.0F}, {0.24F, 0.58F, 0.86F}, {0.0F, 0.0F, -1.0F}},
-    Vertex{{1.0F, 1.0F, -1.0F}, {0.24F, 0.58F, 0.86F}, {0.0F, 0.0F, -1.0F}},
-    Vertex{{-1.0F, -1.0F, -1.0F}, {0.32F, 0.68F, 0.38F}, {-1.0F, 0.0F, 0.0F}},
-    Vertex{{-1.0F, -1.0F, 1.0F}, {0.32F, 0.68F, 0.38F}, {-1.0F, 0.0F, 0.0F}},
-    Vertex{{-1.0F, 1.0F, 1.0F}, {0.32F, 0.68F, 0.38F}, {-1.0F, 0.0F, 0.0F}},
-    Vertex{{-1.0F, 1.0F, -1.0F}, {0.32F, 0.68F, 0.38F}, {-1.0F, 0.0F, 0.0F}},
-    Vertex{{1.0F, -1.0F, 1.0F}, {0.92F, 0.70F, 0.22F}, {1.0F, 0.0F, 0.0F}},
-    Vertex{{1.0F, -1.0F, -1.0F}, {0.92F, 0.70F, 0.22F}, {1.0F, 0.0F, 0.0F}},
-    Vertex{{1.0F, 1.0F, -1.0F}, {0.92F, 0.70F, 0.22F}, {1.0F, 0.0F, 0.0F}},
-    Vertex{{1.0F, 1.0F, 1.0F}, {0.92F, 0.70F, 0.22F}, {1.0F, 0.0F, 0.0F}},
-    Vertex{{-1.0F, 1.0F, 1.0F}, {0.66F, 0.44F, 0.86F}, {0.0F, 1.0F, 0.0F}},
-    Vertex{{1.0F, 1.0F, 1.0F}, {0.66F, 0.44F, 0.86F}, {0.0F, 1.0F, 0.0F}},
-    Vertex{{1.0F, 1.0F, -1.0F}, {0.66F, 0.44F, 0.86F}, {0.0F, 1.0F, 0.0F}},
-    Vertex{{-1.0F, 1.0F, -1.0F}, {0.66F, 0.44F, 0.86F}, {0.0F, 1.0F, 0.0F}},
-    Vertex{{-1.0F, -1.0F, -1.0F}, {0.30F, 0.72F, 0.74F}, {0.0F, -1.0F, 0.0F}},
-    Vertex{{1.0F, -1.0F, -1.0F}, {0.30F, 0.72F, 0.74F}, {0.0F, -1.0F, 0.0F}},
-    Vertex{{1.0F, -1.0F, 1.0F}, {0.30F, 0.72F, 0.74F}, {0.0F, -1.0F, 0.0F}},
-    Vertex{{-1.0F, -1.0F, 1.0F}, {0.30F, 0.72F, 0.74F}, {0.0F, -1.0F, 0.0F}},
-}};
-
-constexpr std::array<std::uint16_t, 36> kCubeIndices{{
-    0,  1,  2,  0,  2,  3,  4,  5,  6,  4,  6,  7,  8,  9,  10, 8,  10, 11,
-    12, 13, 14, 12, 14, 15, 16, 17, 18, 16, 18, 19, 20, 21, 22, 20, 22, 23,
-}};
-
-constexpr std::array<Vertex, 4> kFloorVertices{{
-    Vertex{{-4.0F, -1.05F, -4.0F}, {0.58F, 0.58F, 0.52F}, {0.0F, 1.0F, 0.0F}},
-    Vertex{{4.0F, -1.05F, -4.0F}, {0.58F, 0.58F, 0.52F}, {0.0F, 1.0F, 0.0F}},
-    Vertex{{4.0F, -1.05F, 4.0F}, {0.58F, 0.58F, 0.52F}, {0.0F, 1.0F, 0.0F}},
-    Vertex{{-4.0F, -1.05F, 4.0F}, {0.58F, 0.58F, 0.52F}, {0.0F, 1.0F, 0.0F}},
-}};
-
-constexpr std::array<std::uint16_t, 6> kFloorIndices{{0, 1, 2, 0, 2, 3}};
+constexpr cubey::render::PrimitiveVec3 kFloorColor{0.58F, 0.58F, 0.52F};
 
 cubey::Transform3D look_at_transform(cubey::math::Vec3 eye, cubey::math::Vec3 target) {
     const cubey::math::Vec3 forward = glm::normalize(target - eye);
@@ -261,10 +226,19 @@ class ShadowCubeApp {
         cube_mesh_handle_ = engine_.render_resources().create_mesh("shadow_cube.cube");
         floor_mesh_handle_ = engine_.render_resources().create_mesh("shadow_cube.floor");
         material_handle_ = engine_.render_resources().create_material("shadow_cube.material");
-        meshes_.emplace(cube_mesh_handle_, context.gpu(),
-                        cubey::render::indexed_mesh_config(kCubeVertices, kCubeIndices));
-        meshes_.emplace(floor_mesh_handle_, context.gpu(),
-                        cubey::render::indexed_mesh_config(kFloorVertices, kFloorIndices));
+        const cubey::render::PrimitiveMeshData<cubey::render::VertexPositionColorNormal> cube =
+            cubey::render::make_cube_position_color_normal_mesh({
+                .face_colors = kCubeFaceColors,
+            });
+        const cubey::render::PrimitiveMeshData<cubey::render::VertexPositionColorNormal> floor =
+            cubey::render::make_xz_plane_position_color_normal_mesh({
+                .center = {0.0F, -1.05F, 0.0F},
+                .half_extent_x = 4.0F,
+                .half_extent_z = 4.0F,
+                .color = kFloorColor,
+            });
+        meshes_.emplace(cube_mesh_handle_, context.gpu(), cube.mesh_config());
+        meshes_.emplace(floor_mesh_handle_, context.gpu(), floor.mesh_config());
         create_scene();
         create_shadow_depth_resources(context);
         create_descriptors(context);
@@ -429,16 +403,8 @@ class ShadowCubeApp {
         const VkPipelineShaderStageCreateInfo vertex_stage =
             cubey::vulkan::shader_stage(VK_SHADER_STAGE_VERTEX_BIT, vertex_shader.handle());
 
-        VkVertexInputBindingDescription vertex_binding{};
-        vertex_binding.binding = 0;
-        vertex_binding.stride = sizeof(Vertex);
-        vertex_binding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-
-        VkVertexInputAttributeDescription vertex_attribute{};
-        vertex_attribute.location = 0;
-        vertex_attribute.binding = 0;
-        vertex_attribute.format = VK_FORMAT_R32G32B32_SFLOAT;
-        vertex_attribute.offset = offsetof(Vertex, position);
+        const cubey::render::VertexInputLayout vertex_input =
+            cubey::render::vertex_position_color_normal_input_layout();
 
         const cubey::render::MaterialPassInfo material_pass = shadow_depth_pass_info();
 
@@ -455,8 +421,8 @@ class ShadowCubeApp {
         pipeline_config.color_format = VK_FORMAT_UNDEFINED;
         pipeline_config.depth_format = shadow_depth().format();
         pipeline_config.shader_stages = {&vertex_stage, 1};
-        pipeline_config.vertex_bindings = {&vertex_binding, 1};
-        pipeline_config.vertex_attributes = {&vertex_attribute, 1};
+        pipeline_config.vertex_bindings = vertex_input.bindings();
+        pipeline_config.vertex_attributes = vertex_input.attribute_descriptions();
         cubey::render::apply_material_pass_state(material_pass, pipeline_config);
         const cubey::vulkan::DynamicGraphicsPipelineInfo pipeline_info(pipeline_config);
         shadow_pipeline_.emplace(context.device(), pipeline_info.create_info());
@@ -474,24 +440,8 @@ class ShadowCubeApp {
             cubey::vulkan::shader_stage(VK_SHADER_STAGE_FRAGMENT_BIT, fragment_shader.handle()),
         };
 
-        VkVertexInputBindingDescription vertex_binding{};
-        vertex_binding.binding = 0;
-        vertex_binding.stride = sizeof(Vertex);
-        vertex_binding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-
-        std::array<VkVertexInputAttributeDescription, 3> vertex_attributes{};
-        vertex_attributes[0].location = 0;
-        vertex_attributes[0].binding = 0;
-        vertex_attributes[0].format = VK_FORMAT_R32G32B32_SFLOAT;
-        vertex_attributes[0].offset = offsetof(Vertex, position);
-        vertex_attributes[1].location = 1;
-        vertex_attributes[1].binding = 0;
-        vertex_attributes[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-        vertex_attributes[1].offset = offsetof(Vertex, color);
-        vertex_attributes[2].location = 2;
-        vertex_attributes[2].binding = 0;
-        vertex_attributes[2].format = VK_FORMAT_R32G32B32_SFLOAT;
-        vertex_attributes[2].offset = offsetof(Vertex, normal);
+        const cubey::render::VertexInputLayout vertex_input =
+            cubey::render::vertex_position_color_normal_input_layout();
 
         const cubey::render::MaterialPassInfo material_pass = shadow_scene_pass_info();
 
@@ -509,8 +459,8 @@ class ShadowCubeApp {
         pipeline_config.color_format = context.swapchain().format();
         pipeline_config.depth_format = depth_attachment().format();
         pipeline_config.shader_stages = shader_stages;
-        pipeline_config.vertex_bindings = {&vertex_binding, 1};
-        pipeline_config.vertex_attributes = vertex_attributes;
+        pipeline_config.vertex_bindings = vertex_input.bindings();
+        pipeline_config.vertex_attributes = vertex_input.attribute_descriptions();
         cubey::render::apply_material_pass_state(material_pass, pipeline_config);
         const cubey::vulkan::DynamicGraphicsPipelineInfo pipeline_info(pipeline_config);
         scene_pipeline_.emplace(context.device(), pipeline_info.create_info());
