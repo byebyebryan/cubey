@@ -320,4 +320,15 @@ void record_render_graph_barriers(const cubey::vulkan::CommandRecorder& recorder
     }
 }
 
+ColorTargetView resolved_color_target_view(const RenderGraphExecutionContext& context,
+                                           RenderGraphTextureHandle handle) {
+    const RenderGraphTextureResource& resource = context.texture(handle);
+    if (resource.desc.aspects != VK_IMAGE_ASPECT_COLOR_BIT) {
+        throw std::runtime_error("render graph color target view requires a color texture");
+    }
+    const RenderGraphResolvedTexture resolved = context.resolved_texture(handle);
+    return color_target_view(resource.desc.extent, resource.desc.format, resolved.image,
+                             resolved.view);
+}
+
 } // namespace cubey::render

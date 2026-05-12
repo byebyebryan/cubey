@@ -188,13 +188,14 @@ Current checkpoint:
   execution shell for imported/transient texture and buffer resources, ordered
   graphics/compute/transfer passes, pass/resource usage, optional material pass
   metadata, imported initial/final state, transient first-use transitions,
-  execution-time resource resolution, and in-graph sync requirements.
-  `shadow_cube` now uses graph-derived shadow-depth, scene-depth, backbuffer,
-  and present transitions while pass callbacks still own command recording,
-  descriptors, pipelines, and app-specific resource policy. `fluid_2d` declares
-  a coarse simulation-compute to fullscreen-render graph and records
-  graph-derived buffer barriers plus backbuffer acquire/release at that
-  boundary.
+  execution-time resource resolution, non-aliased transient allocation, and
+  in-graph sync requirements. `shadow_cube` now uses a graph-created transient
+  scene color target plus graph-derived shadow-depth, scene-depth, scene-color,
+  backbuffer, and present transitions while pass callbacks still own command
+  recording, descriptors, pipelines, and app-specific resource policy.
+  `fluid_2d` declares a coarse simulation-compute to fullscreen-render graph
+  and records graph-derived buffer barriers plus backbuffer acquire/release at
+  that boundary.
 - Reusable `cubey::vulkan::PipelineLayout`, `GraphicsPipeline`,
   `ComputePipeline`, `DescriptorSetLayout`, and `DescriptorPool` own basic
   pipeline and descriptor lifetimes while still taking raw Vulkan create-info
@@ -256,11 +257,13 @@ Current checkpoint:
   shared GLSL Lambert lighting, shared transform/model matrices, shared camera
   projection, and shared math helpers through the shared host layer.
 - `examples/shadow_cube` links against `cubey`, records a graph-declared
-  two-pass frame with a depth-only directional shadow map pass followed by a
-  color pass that samples the depth texture, executes those pass bodies through
-  `CompiledRenderGraph`, and exercises orthographic `Camera3D`, sampled depth
-  targets, depth-only dynamic rendering, graph-derived sampled-depth/backbuffer
-  sync, render-graph pass declarations, and CPU pass planning.
+  three-pass frame with a depth-only directional shadow map pass, a scene pass
+  into a graph-created transient color target, and a fullscreen present pass
+  that samples the scene target into the swapchain. It executes those pass
+  bodies through `CompiledRenderGraph` and exercises orthographic `Camera3D`,
+  sampled depth targets, depth-only dynamic rendering, graph-derived
+  sampled-depth/scene-color/backbuffer sync, render-graph pass declarations,
+  transient allocation, and CPU pass planning.
 - `examples/headless_render` links against `cubey`, creates no GLFW window or
   surface, renders an offscreen color target through dynamic rendering, copies
   it into a readback buffer, and writes a PNG artifact.

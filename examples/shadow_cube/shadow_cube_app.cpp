@@ -20,6 +20,7 @@
 #include <cubey/vulkan/descriptors.h>
 #include <cubey/vulkan/image.h>
 #include <cubey/vulkan/pipeline.h>
+#include <cubey/vulkan/sampler.h>
 #include <cubey/vulkan/shader_bytecode.h>
 #include <cubey/vulkan/shader_module.h>
 
@@ -239,8 +240,7 @@ class ShadowCubeApp {
                 .record_frame =
                     [this](cubey::host::WindowedAppContext& context,
                            const cubey::host::WindowedRenderFrame& frame) {
-                        (void)context;
-                        record_shadow_frame(frame);
+                        record_shadow_frame(context, frame);
                     },
                 .frame_stats_sample = {},
                 .shutdown =
@@ -272,10 +272,18 @@ class ShadowCubeApp {
 
     void create_swapchain_resources(cubey::host::WindowedAppContext& context) {
         depth_attachment_.emplace(context.device(), context.swapchain().extent());
+        graph_resources_.clear();
+        graph_resources_.resize(context.frame_slot_count());
+        create_present_resources(context);
         create_pipelines(context);
     }
 
     void destroy_swapchain_resources() {
+        graph_resources_.clear();
+        present_pipeline_.reset();
+        present_pipeline_layout_.reset();
+        present_descriptors_.reset();
+        present_sampler_.reset();
         scene_pipeline_.reset();
         scene_pipeline_layout_.reset();
         shadow_pipeline_.reset();
@@ -392,9 +400,26 @@ class ShadowCubeApp {
         cubey::vulkan::update_descriptor_sets(context.device(), writes);
     }
 
+    void create_present_resources(cubey::host::WindowedAppContext& context) {
+        present_sampler_.emplace(context.device(),
+                                 cubey::vulkan::SamplerConfig{
+                                     .address_mode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+                                 });
+        const std::array<cubey::vulkan::DescriptorSetBindingConfig, 1> bindings{
+            cubey::vulkan::DescriptorSetBindingConfig{
+                .binding = 0,
+                .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
+            },
+        };
+        present_descriptors_.emplace(context.device(), cubey::vulkan::DescriptorSetInfo(
+                                                           bindings, context.frame_slot_count()));
+    }
+
     void create_pipelines(cubey::host::WindowedAppContext& context) {
         create_shadow_pipeline(context);
         create_scene_pipeline(context);
+        create_present_pipeline(context);
     }
 
     void create_shadow_pipeline(cubey::host::WindowedAppContext& context) {
@@ -491,6 +516,34 @@ class ShadowCubeApp {
         scene_pipeline_.emplace(context.device(), pipeline_info.create_info());
     }
 
+    void create_present_pipeline(cubey::host::WindowedAppContext& context) {
+        const std::vector<std::uint32_t> vertex_code =
+            cubey::vulkan::read_spirv_file(shader_path("shadow_present.vert.spv"));
+        const std::vector<std::uint32_t> fragment_code =
+            cubey::vulkan::read_spirv_file(shader_path("shadow_present.frag.spv"));
+        cubey::vulkan::ShaderModule vertex_shader(context.device(), vertex_code);
+        cubey::vulkan::ShaderModule fragment_shader(context.device(), fragment_code);
+        const std::array<VkPipelineShaderStageCreateInfo, 2> shader_stages{
+            cubey::vulkan::shader_stage(VK_SHADER_STAGE_VERTEX_BIT, vertex_shader.handle()),
+            cubey::vulkan::shader_stage(VK_SHADER_STAGE_FRAGMENT_BIT, fragment_shader.handle()),
+        };
+
+        const std::array<VkDescriptorSetLayout, 1> set_layouts{present_descriptors().layout()};
+        const cubey::vulkan::PipelineLayoutInfo layout_info({
+            .set_layouts = set_layouts,
+            .push_constants = {},
+        });
+        present_pipeline_layout_.emplace(context.device(), layout_info.create_info());
+
+        cubey::vulkan::DynamicGraphicsPipelineConfig pipeline_config;
+        pipeline_config.layout = present_pipeline_layout().handle();
+        pipeline_config.extent = context.swapchain().extent();
+        pipeline_config.color_format = context.swapchain().format();
+        pipeline_config.shader_stages = shader_stages;
+        const cubey::vulkan::DynamicGraphicsPipelineInfo pipeline_info(pipeline_config);
+        present_pipeline_.emplace(context.device(), pipeline_info.create_info());
+    }
+
     void update_camera_transform() {
         cubey::SceneEditQueue edits = scene().create_edit_queue();
         edits.transforms3d().set_local_transform(
@@ -536,7 +589,12 @@ class ShadowCubeApp {
         });
     }
 
-    [[nodiscard]] cubey::render::CompiledRenderGraph
+    struct ShadowRenderGraph {
+        cubey::render::CompiledRenderGraph graph;
+        cubey::render::RenderGraphTextureHandle scene_color;
+    };
+
+    [[nodiscard]] ShadowRenderGraph
     current_render_graph(const cubey::host::WindowedRenderFrame& frame,
                          const cubey::vulkan::CommandRecorder& recorder,
                          const cubey::scene::RenderFramePlan3D& shadow_plan,
@@ -544,6 +602,13 @@ class ShadowCubeApp {
         cubey::render::RenderGraphBuilder graph;
         const cubey::render::RenderGraphTextureHandle backbuffer_handle = graph.import_color_target(
             "backbuffer", frame.color_target, undefined_texture_state(), present_texture_state());
+        const cubey::render::RenderGraphTextureHandle scene_color_handle =
+            graph.create_texture(cubey::render::RenderGraphTextureDesc{
+                .label = "scene color",
+                .extent = frame.color_target.extent,
+                .format = frame.color_target.format,
+                .aspects = VK_IMAGE_ASPECT_COLOR_BIT,
+            });
         const cubey::render::RenderGraphTextureHandle scene_depth_handle =
             graph.import_depth_target("scene depth",
                                       cubey::render::depth_target_view(depth_attachment()),
@@ -566,22 +631,54 @@ class ShadowCubeApp {
             });
         graph.add_pass("scene", cubey::render::RenderGraphQueueDomain::Graphics)
             .read_texture(shadow_depth_handle)
-            .write_color(backbuffer_handle)
+            .write_color(scene_color_handle)
             .write_depth(scene_depth_handle)
             .material_pass(shadow_scene_pass_info())
-            .execute([this, &recorder, &frame, &scene_plan,
+            .execute([this, &recorder, scene_color_handle, &scene_plan,
                       &shadow_plan](const cubey::render::RenderGraphExecutionContext& context) {
                 cubey::render::record_render_graph_barriers(
                     recorder, context, cubey::render::RenderGraphBarrierPhase::BeforePass);
-                record_scene_pass(recorder, frame, scene_plan, shadow_plan);
+                const cubey::render::ColorTargetView target =
+                    cubey::render::resolved_color_target_view(context, scene_color_handle);
+                record_scene_pass(recorder, target, scene_plan, shadow_plan);
+            });
+        graph.add_pass("present", cubey::render::RenderGraphQueueDomain::Graphics)
+            .read_texture(scene_color_handle)
+            .write_color(backbuffer_handle)
+            .execute([this, &recorder,
+                      &frame](const cubey::render::RenderGraphExecutionContext& context) {
+                cubey::render::record_render_graph_barriers(
+                    recorder, context, cubey::render::RenderGraphBarrierPhase::BeforePass);
+                record_present_pass(recorder, frame);
                 cubey::render::record_render_graph_barriers(
                     recorder, context, cubey::render::RenderGraphBarrierPhase::AfterPass);
             });
 
-        return graph.compile();
+        return {
+            .graph = graph.compile(),
+            .scene_color = scene_color_handle,
+        };
     }
 
-    void record_shadow_frame(const cubey::host::WindowedRenderFrame& frame) {
+    void update_present_descriptor(cubey::host::WindowedAppContext& context,
+                                   std::uint32_t frame_slot_index,
+                                   const cubey::render::RenderGraphResourceSet& resources,
+                                   cubey::render::RenderGraphTextureHandle scene_color) const {
+        const std::optional<cubey::render::RenderGraphResolvedTexture> resolved =
+            resources.texture(scene_color);
+        if (!resolved.has_value()) {
+            throw std::runtime_error("shadow_cube scene color was not allocated");
+        }
+        const cubey::vulkan::DescriptorImageWrite image_write =
+            cubey::vulkan::combined_image_sampler_descriptor(
+                present_descriptors().set(frame_slot_index), 0, present_sampler().handle(),
+                resolved->view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+        const std::array<VkWriteDescriptorSet, 1> writes{image_write.descriptor_write()};
+        cubey::vulkan::update_descriptor_sets(context.device(), writes);
+    }
+
+    void record_shadow_frame(cubey::host::WindowedAppContext& context,
+                             const cubey::host::WindowedRenderFrame& frame) {
         cubey::SceneReadView scene_view = scene().read();
         const cubey::scene::FrameRenderPlan3D frame_plan =
             current_frame_plan(scene_view, frame.color_target.extent);
@@ -592,11 +689,19 @@ class ShadowCubeApp {
         const cubey::scene::RenderFramePlan3D& scene_plan = frame_plan.passes()[1].frame_plan;
 
         const cubey::vulkan::CommandRecorder recorder(frame.command_buffer);
-        recorder.begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-        const cubey::render::CompiledRenderGraph render_graph =
+        const ShadowRenderGraph render_graph =
             current_render_graph(frame, recorder, shadow_plan, scene_plan);
-        render_graph.execute();
+        if (frame.frame_slot.index >= graph_resources_.size()) {
+            throw std::runtime_error("shadow_cube frame slot is out of range");
+        }
+        std::optional<cubey::render::RenderGraphResourceSet>& resources =
+            graph_resources_.at(frame.frame_slot.index);
+        resources.emplace(context.device(), render_graph.graph);
+        update_present_descriptor(context, frame.frame_slot.index, *resources,
+                                  render_graph.scene_color);
 
+        recorder.begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+        render_graph.graph.execute(*resources);
         recorder.end("vkEndCommandBuffer shadow_cube");
         shadow_depth_is_sampled_ = true;
     }
@@ -631,7 +736,7 @@ class ShadowCubeApp {
     }
 
     void record_scene_pass(const cubey::vulkan::CommandRecorder& recorder,
-                           const cubey::host::WindowedRenderFrame& frame,
+                           cubey::render::ColorTargetView color_target,
                            const cubey::scene::RenderFramePlan3D& scene_plan,
                            const cubey::scene::RenderFramePlan3D& shadow_plan) const {
         VkClearValue color_clear{};
@@ -639,7 +744,7 @@ class ShadowCubeApp {
         VkClearValue depth_clear{};
         depth_clear.depthStencil = {1.0F, 0};
         const cubey::render::RenderTargetRenderingInfo rendering(
-            cubey::render::render_target_view(frame.color_target,
+            cubey::render::render_target_view(color_target,
                                               cubey::render::depth_target_view(depth_attachment())),
             cubey::render::RenderClearValues{
                 .color = color_clear,
@@ -668,6 +773,24 @@ class ShadowCubeApp {
                 cubey::render::resolve_draw_item(render_item, meshes_);
             cubey::render::record_draw_item(recorder.handle(), draw_item);
         }
+        recorder.end_rendering();
+    }
+
+    void record_present_pass(const cubey::vulkan::CommandRecorder& recorder,
+                             const cubey::host::WindowedRenderFrame& frame) const {
+        VkClearValue color_clear{};
+        color_clear.color = {{0.0F, 0.0F, 0.0F, 1.0F}};
+        const cubey::render::RenderTargetRenderingInfo rendering(
+            cubey::render::render_target_view(frame.color_target), cubey::render::RenderClearValues{
+                                                                       .color = color_clear,
+                                                                   });
+
+        recorder.begin_rendering(rendering.info());
+        recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, present_pipeline().handle());
+        const VkDescriptorSet descriptor_set = present_descriptors().set(frame.frame_slot.index);
+        recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                     present_pipeline_layout().handle(), 0, descriptor_set);
+        recorder.draw(3);
         recorder.end_rendering();
     }
 
@@ -726,6 +849,20 @@ class ShadowCubeApp {
         return descriptors_.value();
     }
 
+    [[nodiscard]] const cubey::vulkan::Sampler& present_sampler() const {
+        if (!present_sampler_.has_value()) {
+            throw std::runtime_error("present sampler is not initialized");
+        }
+        return present_sampler_.value();
+    }
+
+    [[nodiscard]] const cubey::vulkan::DescriptorSetArray& present_descriptors() const {
+        if (!present_descriptors_.has_value()) {
+            throw std::runtime_error("present descriptors are not initialized");
+        }
+        return present_descriptors_.value();
+    }
+
     [[nodiscard]] const cubey::vulkan::PipelineLayout& shadow_pipeline_layout() const {
         if (!shadow_pipeline_layout_.has_value()) {
             throw std::runtime_error("shadow pipeline layout is not initialized");
@@ -754,6 +891,20 @@ class ShadowCubeApp {
         return scene_pipeline_.value();
     }
 
+    [[nodiscard]] const cubey::vulkan::PipelineLayout& present_pipeline_layout() const {
+        if (!present_pipeline_layout_.has_value()) {
+            throw std::runtime_error("present pipeline layout is not initialized");
+        }
+        return present_pipeline_layout_.value();
+    }
+
+    [[nodiscard]] const cubey::vulkan::GraphicsPipeline& present_pipeline() const {
+        if (!present_pipeline_.has_value()) {
+            throw std::runtime_error("present pipeline is not initialized");
+        }
+        return present_pipeline_.value();
+    }
+
     [[nodiscard]] const cubey::vulkan::DepthAttachment& depth_attachment() const {
         if (!depth_attachment_.has_value()) {
             throw std::runtime_error("depth attachment is not initialized");
@@ -776,12 +927,17 @@ class ShadowCubeApp {
     bool shadow_depth_is_sampled_ = false;
 
     cubey::render::MeshResourceTable<cubey::render::Mesh> meshes_;
+    std::vector<std::optional<cubey::render::RenderGraphResourceSet>> graph_resources_;
     std::optional<cubey::render::DepthTexture> shadow_depth_;
     std::optional<cubey::vulkan::DescriptorSetBundle> descriptors_;
+    std::optional<cubey::vulkan::Sampler> present_sampler_;
+    std::optional<cubey::vulkan::DescriptorSetArray> present_descriptors_;
     std::optional<cubey::vulkan::PipelineLayout> shadow_pipeline_layout_;
     std::optional<cubey::vulkan::GraphicsPipeline> shadow_pipeline_;
     std::optional<cubey::vulkan::PipelineLayout> scene_pipeline_layout_;
     std::optional<cubey::vulkan::GraphicsPipeline> scene_pipeline_;
+    std::optional<cubey::vulkan::PipelineLayout> present_pipeline_layout_;
+    std::optional<cubey::vulkan::GraphicsPipeline> present_pipeline_;
     std::optional<cubey::vulkan::DepthAttachment> depth_attachment_;
 };
 

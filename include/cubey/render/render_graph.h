@@ -347,5 +347,7 @@ class RenderGraphBuilder {
 void record_render_graph_barriers(const cubey::vulkan::CommandRecorder& recorder,
                                   const RenderGraphExecutionContext& context,
                                   RenderGraphBarrierPhase phase);
+[[nodiscard]] ColorTargetView resolved_color_target_view(const RenderGraphExecutionContext& context,
+                                                         RenderGraphTextureHandle handle);
 
 } // namespace cubey::render

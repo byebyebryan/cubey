@@ -424,7 +424,7 @@ cubey/
     triangle/              -- minimal shader-backed graphics pipeline path
     spinning_cube/         -- indexed cube, push constants, depth
     textured_cube/         -- compute texture generation, uniforms, sampling
-    shadow_cube/           -- depth pass plus camera pass shadow example
+    shadow_cube/           -- graph-declared shadow/scene/present example
     headless_render/       -- minimal offscreen image path
     fractal/               -- fullscreen fractal shader smoke and headless PNG
     particles/             -- compute-updated attractor particles

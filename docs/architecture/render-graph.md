@@ -76,8 +76,10 @@ not hidden graph execution.
 
 It does not allocate descriptors, reorder passes, cull passes, alias transient
 memory, or schedule async work. `examples/shadow_cube` is the first reference
-migration: the graph now executes its shadow pass and scene pass callbacks and
-records shadow-depth, scene-depth, backbuffer acquire, and present release
+migration: the graph now executes shadow, scene, and present pass callbacks,
+allocates a non-aliased transient scene color target, resolves that target into
+dynamic-rendering and descriptor inputs during execution, and records
+shadow-depth, scene-depth, scene-color, backbuffer acquire, and present release
 transitions from graph-derived requirements. `projects/fluid_2d` declares a
 coarse simulation-compute to fullscreen-render graph and uses graph-derived
 buffer barriers plus backbuffer acquire/release transitions while keeping
@@ -144,6 +146,7 @@ The eventual API should look like a setup/execute split:
 auto backbuffer = graph.import_color_target("swapchain", frame.color_target);
 auto depth = graph.import_depth_target("depth", depth_target);
 auto shadow_map = graph.import_depth_target("shadow map", shadow_target);
+auto scene_color = graph.create_texture(scene_color_desc);
 
 graph.add_pass("shadow")
     .write_depth(shadow_map)
@@ -153,11 +156,20 @@ graph.add_pass("shadow")
 
 graph.add_pass("scene")
     .read_texture(shadow_map)
-    .write_color(backbuffer)
+    .write_color(scene_color)
     .write_depth(depth)
     .execute([&recorder](const RenderGraphExecutionContext& ctx) {
         record_render_graph_barriers(recorder, ctx, RenderGraphBarrierPhase::BeforePass);
-        // Record color pass commands with app-owned resources.
+        auto target = resolved_color_target_view(ctx, scene_color);
+        // Record color pass commands into the graph-created target.
+    });
+
+graph.add_pass("present")
+    .read_texture(scene_color)
+    .write_color(backbuffer)
+    .execute([&recorder](const RenderGraphExecutionContext& ctx) {
+        record_render_graph_barriers(recorder, ctx, RenderGraphBarrierPhase::BeforePass);
+        // Record fullscreen present/copy commands with app-owned descriptors.
         record_render_graph_barriers(recorder, ctx, RenderGraphBarrierPhase::AfterPass);
     });
 ```
@@ -165,9 +177,9 @@ graph.add_pass("scene")
 The important contract is that setup declares resource use before execution
 records commands. That matches the established pattern in Filament FrameGraph
 and Unity Render Graph while preserving Cubey's Vulkan-first command recording.
-`shadow_cube` now exercises this declaration and execution shape for its
-depth-only shadow pass and color scene pass while still recording commands
-explicitly.
+`shadow_cube` now exercises this declaration and execution shape for a
+depth-only shadow pass, a scene pass into a graph-created color target, and a
+fullscreen present pass while still recording commands explicitly.
 
 ## Implementation Slices
 
@@ -180,13 +192,15 @@ Completed slices:
 4. Validation for missing resources, invalid handles, read-before-write for
    non-imported resources, and duplicate incompatible same-pass access.
 5. Synchronous execution callbacks on compiled passes.
-6. `shadow_cube` migration to execute the shadow and scene pass bodies through
-   the graph shell.
+6. Initial `shadow_cube` migration to execute the shadow and scene pass bodies
+   through the graph shell.
 7. In-graph sync requirement derivation for texture transitions and buffer
    barriers, with explicit recording through `CommandRecorder`.
 8. Coarse `fluid_2d` simulation-to-render graph declaration.
 9. Imported initial/final resource state, transient first-use transitions,
    execution-time resource resolution, and non-aliased transient allocation.
+10. `shadow_cube` transient scene-color allocation, resolved color target views,
+    and a graph-declared fullscreen present pass.
 
 This keeps the graph as a validation, vocabulary, pass-ordering, and
 sync-requirement shell rather than a renderer rewrite. Barriers stay explicit:

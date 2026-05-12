@@ -30,7 +30,7 @@ Implemented:
 Deferred:
 
 - A reusable simulation abstraction.
-- A reusable render graph or scene system.
+- A full renderer-owned render graph or scene system.
 - Rich UI beyond title-bar stats and keyboard debug views.
 - External asset loading.
 

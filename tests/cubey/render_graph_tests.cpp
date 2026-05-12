@@ -589,6 +589,61 @@ void test_render_graph_execution_resolves_bound_transient_resources() {
     require(resolved_transient, "transient resource resolution test should execute");
 }
 
+void test_render_graph_resolves_color_target_view_from_bound_transient_texture() {
+    cubey::render::RenderGraphBuilder graph;
+    const cubey::render::RenderGraphTextureHandle transient =
+        graph.create_texture(color_texture_desc("scene color"));
+
+    bool resolved_target = false;
+    graph.add_pass("scene", cubey::render::RenderGraphQueueDomain::Graphics)
+        .write_color(transient)
+        .execute([&](const cubey::render::RenderGraphExecutionContext& context) {
+            const cubey::render::ColorTargetView target =
+                cubey::render::resolved_color_target_view(context, transient);
+            require(target.extent.width == color_texture_desc("scene color").extent.width,
+                    "resolved color target should preserve graph texture width");
+            require(target.extent.height == color_texture_desc("scene color").extent.height,
+                    "resolved color target should preserve graph texture height");
+            require(target.format == color_texture_desc("scene color").format,
+                    "resolved color target should preserve graph texture format");
+            require(target.image == image(0x801),
+                    "resolved color target should use bound transient image");
+            require(target.view == view(0x802),
+                    "resolved color target should use bound transient image view");
+            resolved_target = true;
+        });
+
+    const cubey::render::CompiledRenderGraph compiled = graph.compile();
+    cubey::render::RenderGraphResourceSet resources(compiled);
+    resources.bind_texture(transient, cubey::render::RenderGraphResolvedTexture{
+                                          .image = image(0x801),
+                                          .view = view(0x802),
+                                      });
+    compiled.execute(resources);
+
+    require(resolved_target, "resolved color target view test should execute");
+}
+
+void test_render_graph_resolved_color_target_view_rejects_depth_texture() {
+    cubey::render::RenderGraphBuilder graph;
+    const cubey::render::RenderGraphTextureHandle depth =
+        graph.import_texture(depth_texture_desc("depth"), image(0x811), view(0x812));
+
+    bool rejected_depth = false;
+    graph.add_pass("depth", cubey::render::RenderGraphQueueDomain::Graphics)
+        .write_depth(depth)
+        .execute([&](const cubey::render::RenderGraphExecutionContext& context) {
+            require_throws([&] { (void)cubey::render::resolved_color_target_view(context, depth); },
+                           "resolved color target view should reject depth textures");
+            rejected_depth = true;
+        });
+
+    const cubey::render::CompiledRenderGraph compiled = graph.compile();
+    compiled.execute();
+
+    require(rejected_depth, "resolved color target depth rejection test should execute");
+}
+
 void test_render_graph_omits_read_after_read_barriers() {
     cubey::render::RenderGraphBuilder graph;
     const cubey::render::RenderGraphBufferHandle constants =

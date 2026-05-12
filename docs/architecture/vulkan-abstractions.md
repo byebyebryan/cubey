@@ -278,12 +278,15 @@ Current state:
   scope and layout ownership.
 - `image_transitions` covers depth-attachment-to-sampled and
   sampled-depth-to-depth-attachment transitions for repeated shadow-map writes.
+- `RenderGraphResourceSet` can allocate simple non-aliased transient color
+  targets, and `shadow_cube` now uses that path for its scene color target
+  before a fullscreen present pass samples it into the swapchain.
 
 Needed next:
 
 - Clear/load/store options if examples stop clearing every frame.
 - Additional target shape only when a concrete project needs multiple color
-  targets, resolve attachments, or sampled offscreen render targets.
+  targets or resolve attachments.
 
 Defer:
 
@@ -301,8 +304,9 @@ Current state:
 - `examples/textured_cube` uses `cubey::render::Texture2D` for its
   compute-generated sampled texture ownership.
 - `examples/shadow_cube` uses `cubey::render::DepthTexture`,
-  `DepthOnlyRenderingInfo`, depth-only pipeline setup, and graph-derived
-  sampled-depth/backbuffer sync for a directional shadow map.
+  `DepthOnlyRenderingInfo`, depth-only pipeline setup, graph-derived
+  sampled-depth/scene-color/backbuffer sync, and a graph-created transient
+  scene target for a directional shadow map plus fullscreen present pass.
 - Cube examples use the shared GLM-backed `cubey::math` wrapper for MVP/model
   matrices and Vulkan clip-space projection conventions.
 - `examples/particles` still defines particle storage-buffer layout, seeding,

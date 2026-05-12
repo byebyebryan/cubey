@@ -25,6 +25,8 @@ cubey_add_glsl_shaders(
         shaders/shadow_depth.vert
         shaders/shadow_cube.vert
         shaders/shadow_cube.frag
+        shaders/shadow_present.vert
+        shaders/shadow_present.frag
 )
 
 if (BUILD_TESTING)

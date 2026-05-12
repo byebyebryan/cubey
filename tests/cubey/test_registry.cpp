@@ -115,6 +115,8 @@ void test_render_graph_imports_color_and_depth_targets();
 void test_render_graph_omits_read_after_read_barriers();
 void test_render_graph_preserves_material_pass_metadata();
 void test_render_graph_rejects_attachment_usage_outside_graphics_pass();
+void test_render_graph_resolved_color_target_view_rejects_depth_texture();
+void test_render_graph_resolves_color_target_view_from_bound_transient_texture();
 void test_render_graph_rejects_incompatible_same_pass_resource_access();
 void test_render_graph_rejects_invalid_resource_descriptors_and_handles();
 void test_render_graph_rejects_transient_texture_read_before_write();
@@ -294,6 +296,8 @@ std::span<const TestCase> core_tests() {
         CUBEY_TEST(test_render_graph_barrier_recording_rejects_unallocated_transient_resources),
         CUBEY_TEST(test_render_graph_executes_callbacks_in_pass_order_and_exposes_context),
         CUBEY_TEST(test_render_graph_execution_resolves_bound_transient_resources),
+        CUBEY_TEST(test_render_graph_resolves_color_target_view_from_bound_transient_texture),
+        CUBEY_TEST(test_render_graph_resolved_color_target_view_rejects_depth_texture),
         CUBEY_TEST(
             test_render_graph_execute_rejects_missing_callbacks_but_compile_allows_declarations),
         CUBEY_TEST(test_render_graph_execute_propagates_callback_exceptions),
