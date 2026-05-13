@@ -299,10 +299,24 @@ template <typename T>
     };
 }
 
+[[nodiscard]] float reflectance_from_ior(float ior) {
+    const float clamped_ior = std::max(ior, 1.0F);
+    const float root_f0 = (clamped_ior - 1.0F) / (clamped_ior + 1.0F);
+    return std::clamp(std::sqrt((root_f0 * root_f0) / 0.16F), 0.0F, 1.0F);
+}
+
 [[nodiscard]] GltfMaterial load_material(const cgltf_material& material,
                                          const cgltf_texture* texture_base,
                                          cgltf_size texture_count) {
     const cgltf_pbr_metallic_roughness& pbr = material.pbr_metallic_roughness;
+    const math::Vec3 specular_color =
+        material.has_specular != 0
+            ? math::Vec3{
+                  material.specular.specular_color_factor[0],
+                  material.specular.specular_color_factor[1],
+                  material.specular.specular_color_factor[2],
+              }
+            : math::Vec3{1.0F, 1.0F, 1.0F};
     return {
         .label = label_or_empty(material.name),
         .base_color_factor =
@@ -311,9 +325,13 @@ template <typename T>
                 pbr.base_color_factor[1],
                 pbr.base_color_factor[2],
                 pbr.base_color_factor[3],
-            },
+        },
         .metallic_factor = pbr.metallic_factor,
         .roughness_factor = pbr.roughness_factor,
+        .specular_color_factor = specular_color,
+        .specular_factor =
+            material.has_specular != 0 ? material.specular.specular_factor : 1.0F,
+        .reflectance = material.has_ior != 0 ? reflectance_from_ior(material.ior.ior) : 0.5F,
         .emissive_factor =
             {
                 material.emissive_factor[0],

@@ -354,6 +354,9 @@ void create_material_resources(Engine& engine, const vulkan::Device& device,
                           .roughness_factor = source.roughness_factor,
                           .normal_scale = source.normal_scale,
                           .occlusion_strength = source.occlusion_strength,
+                          .specular_color_factor = source.specular_color_factor,
+                          .specular_factor = source.specular_factor,
+                          .reflectance = source.reflectance,
                       });
         resources.material_instances.emplace(
             material, device,

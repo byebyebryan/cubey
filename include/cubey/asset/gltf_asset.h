@@ -70,6 +70,9 @@ struct GltfMaterial {
     math::Vec4 base_color_factor{1.0F, 1.0F, 1.0F, 1.0F};
     float metallic_factor = 1.0F;
     float roughness_factor = 1.0F;
+    math::Vec3 specular_color_factor{1.0F, 1.0F, 1.0F};
+    float specular_factor = 1.0F;
+    float reflectance = 0.5F;
     math::Vec3 emissive_factor{0.0F, 0.0F, 0.0F};
     float normal_scale = 1.0F;
     float occlusion_strength = 1.0F;

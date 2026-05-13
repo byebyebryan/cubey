@@ -86,6 +86,7 @@ std::filesystem::path write_triangle_gltf(const std::filesystem::path& dir) {
 
     const std::string gltf = std::string(R"JSON({
   "asset": {"version": "2.0"},
+  "extensionsUsed": ["KHR_materials_ior", "KHR_materials_specular"],
   "scene": 0,
   "scenes": [{"nodes": [0]}],
   "nodes": [{"name": "TriangleNode", "mesh": 0, "translation": [1.0, 2.0, 3.0]}],
@@ -130,7 +131,14 @@ std::filesystem::path write_triangle_gltf(const std::filesystem::path& dir) {
     },
     "alphaMode": "MASK",
     "alphaCutoff": 0.35,
-    "doubleSided": true
+    "doubleSided": true,
+    "extensions": {
+      "KHR_materials_ior": {"ior": 1.8},
+      "KHR_materials_specular": {
+        "specularFactor": 0.7,
+        "specularColorFactor": [0.9, 0.8, 0.7]
+      }
+    }
   }],
   "textures": [{"source": 0}],
   "images": [{
@@ -166,6 +174,14 @@ void test_gltf_asset_loads_static_pbr_triangle() {
     require_close(material.base_color_factor.r, 0.8F, "base color factor should load");
     require_close(material.metallic_factor, 0.2F, "metallic factor should load");
     require_close(material.roughness_factor, 0.4F, "roughness factor should load");
+    require_close(material.reflectance, 0.714285F, "IOR extension should load as reflectance");
+    require_close(material.specular_factor, 0.7F, "specular factor should load");
+    require_close(material.specular_color_factor.r, 0.9F,
+                  "specular color factor red should load");
+    require_close(material.specular_color_factor.g, 0.8F,
+                  "specular color factor green should load");
+    require_close(material.specular_color_factor.b, 0.7F,
+                  "specular color factor blue should load");
 
     const cubey::asset::GltfMeshPrimitive& primitive = asset.meshes[0].primitives[0];
     require(primitive.vertices.size() == 3, "primitive should load vertices");

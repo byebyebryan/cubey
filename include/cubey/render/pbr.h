@@ -37,6 +37,9 @@ struct PbrMaterialFactors {
     float roughness_factor = 1.0F;
     float normal_scale = 1.0F;
     float occlusion_strength = 1.0F;
+    math::Vec3 specular_color_factor{1.0F, 1.0F, 1.0F};
+    float specular_factor = 1.0F;
+    float reflectance = 0.5F;
 };
 
 struct PbrMaterialUniforms {
@@ -80,6 +83,8 @@ struct PbrForwardPassConfig {
 [[nodiscard]] VertexInputLayout pbr_vertex_input_layout();
 [[nodiscard]] MaterialPassInfo pbr_forward_pass_info();
 [[nodiscard]] MaterialPassInfo pbr_forward_pass_info(const PbrForwardPassConfig& config);
+[[nodiscard]] float pbr_f0_from_reflectance(float reflectance);
+[[nodiscard]] float pbr_reflectance_from_ior(float ior);
 [[nodiscard]] PbrMaterialUniforms pbr_material_uniforms(const PbrMaterialFactors& factors);
 [[nodiscard]] PbrPushConstants pbr_push_constants(math::Mat4 model);
 

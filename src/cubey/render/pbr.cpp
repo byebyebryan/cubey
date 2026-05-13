@@ -2,6 +2,9 @@
 
 #include <cubey/vulkan/descriptors.h>
 
+#include <algorithm>
+#include <cmath>
+
 namespace cubey::render {
 
 VertexInputLayout pbr_vertex_input_layout() {
@@ -135,6 +138,17 @@ MaterialPassInfo pbr_forward_pass_info(const PbrForwardPassConfig& config) {
     return pass;
 }
 
+float pbr_f0_from_reflectance(float reflectance) {
+    const float clamped = std::clamp(reflectance, 0.0F, 1.0F);
+    return 0.16F * clamped * clamped;
+}
+
+float pbr_reflectance_from_ior(float ior) {
+    const float clamped_ior = std::max(ior, 1.0F);
+    const float root_f0 = (clamped_ior - 1.0F) / (clamped_ior + 1.0F);
+    return std::clamp(std::sqrt((root_f0 * root_f0) / 0.16F), 0.0F, 1.0F);
+}
+
 PbrMaterialUniforms pbr_material_uniforms(const PbrMaterialFactors& factors) {
     return {
         .base_color_factor = factors.base_color_factor,
@@ -152,8 +166,14 @@ PbrMaterialUniforms pbr_material_uniforms(const PbrMaterialFactors& factors) {
                 factors.normal_scale,
                 factors.occlusion_strength,
             },
-        .specular_color_factor = {1.0F, 1.0F, 1.0F, 1.0F},
-        .material_model = {0.5F, 0.0F, 0.0F, 0.0F},
+        .specular_color_factor =
+            {
+                factors.specular_color_factor.r,
+                factors.specular_color_factor.g,
+                factors.specular_color_factor.b,
+                factors.specular_factor,
+            },
+        .material_model = {factors.reflectance, 0.0F, 0.0F, 0.0F},
     };
 }
 

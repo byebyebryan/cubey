@@ -106,6 +106,9 @@ void test_pbr_material_factors_are_uniforms_and_push_constants_are_model_only() 
     factors.roughness_factor = 0.75F;
     factors.normal_scale = 0.9F;
     factors.occlusion_strength = 0.8F;
+    factors.specular_color_factor = {0.7F, 0.8F, 0.9F};
+    factors.specular_factor = 0.65F;
+    factors.reflectance = 0.42F;
 
     const cubey::render::PbrMaterialUniforms uniforms =
         cubey::render::pbr_material_uniforms(factors);
@@ -121,18 +124,29 @@ void test_pbr_material_factors_are_uniforms_and_push_constants_are_model_only() 
                 uniforms.metallic_roughness_normal_occlusion.z == factors.normal_scale &&
                 uniforms.metallic_roughness_normal_occlusion.w == factors.occlusion_strength,
             "PBR material uniforms should pack metallic, roughness, normal scale, and AO");
-    require(uniforms.specular_color_factor.r == 1.0F &&
-                uniforms.specular_color_factor.g == 1.0F &&
-                uniforms.specular_color_factor.b == 1.0F &&
-                uniforms.specular_color_factor.a == 1.0F,
-            "PBR material uniforms should default to neutral specular extension factors");
-    require(uniforms.material_model.x == 0.5F,
-            "PBR material uniforms should default dielectric reflectance to 0.5");
+    require(uniforms.specular_color_factor.r == factors.specular_color_factor.r &&
+                uniforms.specular_color_factor.g == factors.specular_color_factor.g &&
+                uniforms.specular_color_factor.b == factors.specular_color_factor.b &&
+                uniforms.specular_color_factor.a == factors.specular_factor,
+            "PBR material uniforms should pack specular extension factors");
+    require(uniforms.material_model.x == factors.reflectance,
+            "PBR material uniforms should pack dielectric reflectance");
 
     const cubey::render::PbrPushConstants constants =
         cubey::render::pbr_push_constants(cubey::math::Mat4{1.0F});
     require(constants.model == cubey::math::Mat4{1.0F},
             "PBR push constants should carry only the model matrix");
+}
+
+void test_pbr_reflectance_helpers_match_filament_convention() {
+    require(cubey::render::pbr_f0_from_reflectance(0.5F) == 0.04F,
+            "reflectance 0.5 should map to dielectric F0 0.04");
+    require(cubey::render::pbr_reflectance_from_ior(1.5F) == 0.5F,
+            "IOR 1.5 should map to default reflectance 0.5");
+    require(cubey::render::pbr_f0_from_reflectance(0.0F) == 0.0F,
+            "minimum reflectance should map to zero F0");
+    require(cubey::render::pbr_f0_from_reflectance(1.0F) == 0.16F,
+            "maximum reflectance should map to F0 0.16");
 }
 
 void test_pbr_shaders_use_filament_style_material_remap() {
