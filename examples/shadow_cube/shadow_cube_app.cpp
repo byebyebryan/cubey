@@ -377,12 +377,11 @@ class ShadowCubeApp {
         descriptors_.emplace(context.device(),
                              cubey::render::material_descriptor_set_info(material_pass, 0));
 
-        const cubey::vulkan::DescriptorImageWrite shadow_write =
-            cubey::vulkan::combined_image_sampler_descriptor(
-                descriptors().set(), 0, shadow_depth().sampler().handle(), shadow_depth().view(),
-                VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL);
-        const std::array<VkWriteDescriptorSet, 1> writes{shadow_write.descriptor_write()};
-        cubey::vulkan::update_descriptor_sets(context.device(), writes);
+        cubey::vulkan::DescriptorWriteBatch descriptor_writes;
+        descriptor_writes.combined_image_sampler(
+            descriptors().set(), 0, shadow_depth().sampler().handle(), shadow_depth().view(),
+            VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL);
+        descriptor_writes.update(context.device());
     }
 
     void create_present_resources(cubey::host::WindowedAppContext& context) {
@@ -611,12 +610,11 @@ class ShadowCubeApp {
                                    cubey::render::RenderGraphTextureHandle scene_color) const {
         const cubey::render::RenderGraphSampledTextureView sampled =
             cubey::render::resolved_sampled_texture_view(graph, resources, scene_color);
-        const cubey::vulkan::DescriptorImageWrite image_write =
-            cubey::vulkan::combined_image_sampler_descriptor(
-                present_descriptors().set(frame_slot_index), 0, present_sampler().handle(),
-                sampled.view, sampled.layout);
-        const std::array<VkWriteDescriptorSet, 1> writes{image_write.descriptor_write()};
-        cubey::vulkan::update_descriptor_sets(context.device(), writes);
+        cubey::vulkan::DescriptorWriteBatch descriptor_writes;
+        descriptor_writes.combined_image_sampler(present_descriptors().set(frame_slot_index), 0,
+                                                 present_sampler().handle(), sampled.view,
+                                                 sampled.layout);
+        descriptor_writes.update(context.device());
     }
 
     void record_shadow_frame(cubey::host::WindowedAppContext& context,

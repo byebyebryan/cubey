@@ -4,6 +4,7 @@
 
 #include <vulkan/vulkan.h>
 
+#include <cstddef>
 #include <cstdint>
 #include <span>
 #include <vector>
@@ -62,6 +63,58 @@ combined_image_sampler_descriptor(VkDescriptorSet set, std::uint32_t binding, Vk
                                   VkImageView image_view,
                                   VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 void update_descriptor_sets(const Device& device, std::span<const VkWriteDescriptorSet> writes);
+
+class DescriptorWriteBatch {
+  public:
+    DescriptorWriteBatch() = default;
+
+    DescriptorWriteBatch(const DescriptorWriteBatch&) = delete;
+    DescriptorWriteBatch& operator=(const DescriptorWriteBatch&) = delete;
+    DescriptorWriteBatch(DescriptorWriteBatch&&) = delete;
+    DescriptorWriteBatch& operator=(DescriptorWriteBatch&&) = delete;
+
+    DescriptorWriteBatch& uniform_buffer(VkDescriptorSet set, std::uint32_t binding,
+                                         VkBuffer buffer, VkDeviceSize range,
+                                         VkDeviceSize offset = 0);
+    DescriptorWriteBatch& storage_buffer(VkDescriptorSet set, std::uint32_t binding,
+                                         VkBuffer buffer, VkDeviceSize range,
+                                         VkDeviceSize offset = 0);
+    DescriptorWriteBatch& storage_image(VkDescriptorSet set, std::uint32_t binding,
+                                        VkImageView image_view,
+                                        VkImageLayout layout = VK_IMAGE_LAYOUT_GENERAL);
+    DescriptorWriteBatch&
+    combined_image_sampler(VkDescriptorSet set, std::uint32_t binding, VkSampler sampler,
+                           VkImageView image_view,
+                           VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+    // The returned span points at batch-owned storage and is invalidated by
+    // any later batch mutation or writes() call.
+    [[nodiscard]] std::span<const VkWriteDescriptorSet> writes() const;
+    [[nodiscard]] bool empty() const {
+        return write_refs_.empty();
+    }
+    [[nodiscard]] std::size_t size() const {
+        return write_refs_.size();
+    }
+    void clear();
+    void update(const Device& device) const;
+
+  private:
+    enum class WriteKind {
+        Buffer,
+        Image,
+    };
+
+    struct WriteRef {
+        WriteKind kind = WriteKind::Buffer;
+        std::size_t index = 0;
+    };
+
+    std::vector<DescriptorBufferWrite> buffer_writes_;
+    std::vector<DescriptorImageWrite> image_writes_;
+    std::vector<WriteRef> write_refs_;
+    mutable std::vector<VkWriteDescriptorSet> cached_writes_;
+};
 
 struct DescriptorSetBindingConfig {
     std::uint32_t binding = 0;

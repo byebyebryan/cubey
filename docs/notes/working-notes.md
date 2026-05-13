@@ -384,6 +384,10 @@ env XDG_RUNTIME_DIR=/run/user/1000 WAYLAND_DISPLAY=wayland-1 DISPLAY=:1 XDG_CURR
   descriptor writes is acceptable for now, but the API must make pointer
   lifetimes hard to misuse. Naming also matters for transition helpers; generic
   names are risky when old-layout and source-stage assumptions are specific.
+- The descriptor write batch is the next narrow fix on that contract: examples
+  and projects still choose sets, bindings, buffers, images, samplers, and
+  layouts, but the Vulkan helper now owns mixed write backing storage until
+  `vkUpdateDescriptorSets`.
 - The no-window artifact path proved useful only after it stayed concrete:
   offscreen color target, explicit color-attachment-to-readback transition,
   image-to-buffer copy, `stb_image_write` PNG output, and a no-display CTest

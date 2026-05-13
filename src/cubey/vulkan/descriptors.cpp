@@ -197,6 +197,79 @@ void update_descriptor_sets(const Device& device, std::span<const VkWriteDescrip
                            writes.data(), 0, nullptr);
 }
 
+// NOLINTBEGIN(bugprone-easily-swappable-parameters)
+DescriptorWriteBatch& DescriptorWriteBatch::uniform_buffer(VkDescriptorSet set,
+                                                           std::uint32_t binding, VkBuffer buffer,
+                                                           VkDeviceSize range,
+                                                           VkDeviceSize offset) {
+    buffer_writes_.push_back(uniform_buffer_descriptor(set, binding, buffer, range, offset));
+    write_refs_.push_back({WriteKind::Buffer, buffer_writes_.size() - 1U});
+    cached_writes_.clear();
+    return *this;
+}
+
+DescriptorWriteBatch& DescriptorWriteBatch::storage_buffer(VkDescriptorSet set,
+                                                           std::uint32_t binding, VkBuffer buffer,
+                                                           VkDeviceSize range,
+                                                           VkDeviceSize offset) {
+    buffer_writes_.push_back(storage_buffer_descriptor(set, binding, buffer, range, offset));
+    write_refs_.push_back({WriteKind::Buffer, buffer_writes_.size() - 1U});
+    cached_writes_.clear();
+    return *this;
+}
+// NOLINTEND(bugprone-easily-swappable-parameters)
+
+DescriptorWriteBatch& DescriptorWriteBatch::storage_image(VkDescriptorSet set,
+                                                          std::uint32_t binding,
+                                                          VkImageView image_view,
+                                                          VkImageLayout layout) {
+    image_writes_.push_back(storage_image_descriptor(set, binding, image_view, layout));
+    write_refs_.push_back({WriteKind::Image, image_writes_.size() - 1U});
+    cached_writes_.clear();
+    return *this;
+}
+
+DescriptorWriteBatch& DescriptorWriteBatch::combined_image_sampler(VkDescriptorSet set,
+                                                                   std::uint32_t binding,
+                                                                   VkSampler sampler,
+                                                                   VkImageView image_view,
+                                                                   VkImageLayout layout) {
+    image_writes_.push_back(
+        combined_image_sampler_descriptor(set, binding, sampler, image_view, layout));
+    write_refs_.push_back({WriteKind::Image, image_writes_.size() - 1U});
+    cached_writes_.clear();
+    return *this;
+}
+
+std::span<const VkWriteDescriptorSet> DescriptorWriteBatch::writes() const {
+    cached_writes_.clear();
+    cached_writes_.reserve(write_refs_.size());
+
+    for (const WriteRef& ref : write_refs_) {
+        switch (ref.kind) {
+        case WriteKind::Buffer:
+            cached_writes_.push_back(buffer_writes_.at(ref.index).descriptor_write());
+            break;
+        case WriteKind::Image:
+            cached_writes_.push_back(image_writes_.at(ref.index).descriptor_write());
+            break;
+        }
+    }
+
+    return cached_writes_;
+}
+
+void DescriptorWriteBatch::clear() {
+    buffer_writes_.clear();
+    image_writes_.clear();
+    write_refs_.clear();
+    cached_writes_.clear();
+}
+
+void DescriptorWriteBatch::update(const Device& device) const {
+    update_descriptor_sets(device, writes());
+}
+
 DescriptorSetInfo::DescriptorSetInfo(std::span<const DescriptorSetBindingConfig> bindings,
                                      std::uint32_t max_sets) {
     if (bindings.empty()) {

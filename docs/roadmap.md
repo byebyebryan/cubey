@@ -208,6 +208,8 @@ Current checkpoint:
 - Reusable `cubey::vulkan` descriptor helpers build layout bindings, pool
   sizes, descriptor writes, and descriptor updates for current uniform-buffer,
   storage-buffer, storage-image, and combined image sampler paths.
+- Reusable `cubey::vulkan::DescriptorWriteBatch` stages mixed descriptor writes
+  in append order and owns their backing info storage until update submission.
 - Reusable `cubey::vulkan::DescriptorSetInfo` and `DescriptorSetBundle` cover
   the current one-layout/one-pool/one-set descriptor shape used by examples.
 - Reusable `cubey::vulkan::DescriptorSetArray` covers the same owned

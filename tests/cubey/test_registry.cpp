@@ -20,6 +20,7 @@ void test_command_recorder_rejects_invalid_recording_inputs_before_vulkan_calls(
 void test_compute_helpers_describe_pipeline_and_layout_setup();
 void test_deferred_gpu_destruction_queue_retires_completed_tickets();
 void test_descriptor_helpers_describe_layout_pool_and_writes();
+void test_descriptor_write_batch_owns_write_storage_and_preserves_order();
 void test_descriptor_set_info_copies_bindings_and_aggregates_pool_sizes();
 void test_descriptor_set_allocate_info_describes_multiple_sets();
 void test_dynamic_rendering_describes_attachment_setup();
@@ -221,6 +222,7 @@ std::span<const TestCase> core_tests() {
         CUBEY_TEST(test_compute_helpers_describe_pipeline_and_layout_setup),
         CUBEY_TEST(test_deferred_gpu_destruction_queue_retires_completed_tickets),
         CUBEY_TEST(test_descriptor_helpers_describe_layout_pool_and_writes),
+        CUBEY_TEST(test_descriptor_write_batch_owns_write_storage_and_preserves_order),
         CUBEY_TEST(test_descriptor_set_info_copies_bindings_and_aggregates_pool_sizes),
         CUBEY_TEST(test_descriptor_set_allocate_info_describes_multiple_sets),
         CUBEY_TEST(test_dynamic_rendering_describes_attachment_setup),

@@ -220,6 +220,8 @@ Current state:
 - Descriptor helper functions cover layout bindings, pool sizes, uniform-buffer
   writes, storage-buffer writes, storage-image writes, combined image sampler
   writes, and descriptor set updates.
+- `DescriptorWriteBatch` stages mixed descriptor writes in append order and
+  owns the backing buffer/image info storage until the Vulkan update call.
 
 Needed next:
 

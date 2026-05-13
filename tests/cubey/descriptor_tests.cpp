@@ -130,6 +130,92 @@ void test_descriptor_helpers_describe_layout_pool_and_writes() {
             "combined sampler write should use combined-image-sampler type");
 }
 
+void test_descriptor_write_batch_owns_write_storage_and_preserves_order() {
+    static_assert(!std::is_copy_constructible_v<cubey::vulkan::DescriptorWriteBatch>);
+    static_assert(!std::is_copy_assignable_v<cubey::vulkan::DescriptorWriteBatch>);
+    static_assert(!std::is_move_constructible_v<cubey::vulkan::DescriptorWriteBatch>);
+    static_assert(!std::is_move_assignable_v<cubey::vulkan::DescriptorWriteBatch>);
+
+    const VkDescriptorSet first_set = reinterpret_cast<VkDescriptorSet>(0xA0);
+    const VkDescriptorSet second_set = reinterpret_cast<VkDescriptorSet>(0xB0);
+    const VkBuffer uniform_buffer = reinterpret_cast<VkBuffer>(0xC0);
+    const VkBuffer storage_buffer = reinterpret_cast<VkBuffer>(0xD0);
+    const VkSampler sampler = reinterpret_cast<VkSampler>(0xE0);
+    const VkImageView sampled_view = reinterpret_cast<VkImageView>(0xF0);
+    const VkImageView storage_view = reinterpret_cast<VkImageView>(0x100);
+
+    cubey::vulkan::DescriptorWriteBatch batch;
+    require(batch.empty(), "descriptor write batch should start empty");
+    require(batch.size() == 0, "descriptor write batch should start with zero size");
+
+    batch.uniform_buffer(first_set, 0, uniform_buffer, 64, 16)
+        .combined_image_sampler(first_set, 1, sampler, sampled_view,
+                                VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL)
+        .storage_buffer(second_set, 2, storage_buffer, 128, 32)
+        .storage_image(second_set, 3, storage_view, VK_IMAGE_LAYOUT_GENERAL);
+
+    require(!batch.empty(), "descriptor write batch should report writes after append");
+    require(batch.size() == 4, "descriptor write batch should count appended writes");
+
+    const std::span<const VkWriteDescriptorSet> writes = batch.writes();
+    require(writes.size() == 4, "descriptor write batch should expose every write");
+
+    require(writes[0].dstSet == first_set, "first batch write should preserve descriptor set");
+    require(writes[0].dstBinding == 0, "first batch write should preserve binding order");
+    require(writes[0].descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+            "first batch write should be a uniform buffer");
+    require(writes[0].pBufferInfo != nullptr,
+            "first batch write should point at owned buffer info");
+    require(writes[0].pBufferInfo->buffer == uniform_buffer,
+            "first batch write should preserve uniform buffer");
+    require(writes[0].pBufferInfo->offset == 16,
+            "first batch write should preserve uniform offset");
+    require(writes[0].pBufferInfo->range == 64, "first batch write should preserve uniform range");
+
+    require(writes[1].dstSet == first_set, "second batch write should preserve descriptor set");
+    require(writes[1].dstBinding == 1, "second batch write should preserve binding order");
+    require(writes[1].descriptorType == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            "second batch write should be a combined image sampler");
+    require(writes[1].pImageInfo != nullptr, "second batch write should point at owned image info");
+    require(writes[1].pImageInfo->sampler == sampler, "second batch write should preserve sampler");
+    require(writes[1].pImageInfo->imageView == sampled_view,
+            "second batch write should preserve image view");
+    require(writes[1].pImageInfo->imageLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
+            "second batch write should preserve image layout");
+
+    require(writes[2].dstSet == second_set, "third batch write should preserve descriptor set");
+    require(writes[2].dstBinding == 2, "third batch write should preserve binding order");
+    require(writes[2].descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+            "third batch write should be a storage buffer");
+    require(writes[2].pBufferInfo != nullptr,
+            "third batch write should point at owned buffer info");
+    require(writes[2].pBufferInfo->buffer == storage_buffer,
+            "third batch write should preserve storage buffer");
+    require(writes[2].pBufferInfo->offset == 32,
+            "third batch write should preserve storage offset");
+    require(writes[2].pBufferInfo->range == 128, "third batch write should preserve storage range");
+
+    require(writes[3].dstSet == second_set, "fourth batch write should preserve descriptor set");
+    require(writes[3].dstBinding == 3, "fourth batch write should preserve binding order");
+    require(writes[3].descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+            "fourth batch write should be a storage image");
+    require(writes[3].pImageInfo != nullptr, "fourth batch write should point at owned image info");
+    require(writes[3].pImageInfo->imageView == storage_view,
+            "fourth batch write should preserve storage image view");
+    require(writes[3].pImageInfo->imageLayout == VK_IMAGE_LAYOUT_GENERAL,
+            "fourth batch write should preserve storage image layout");
+
+    const std::span<const VkWriteDescriptorSet> rebuilt_writes = batch.writes();
+    require(rebuilt_writes.size() == 4, "descriptor write batch should rebuild a stable count");
+    require(rebuilt_writes[0].pBufferInfo->buffer == uniform_buffer,
+            "descriptor write batch rebuilt writes should still point at owned storage");
+
+    batch.clear();
+    require(batch.empty(), "descriptor write batch should become empty after clear");
+    require(batch.size() == 0, "descriptor write batch should reset size after clear");
+    require(batch.writes().empty(), "descriptor write batch writes should be empty after clear");
+}
+
 void test_descriptor_set_info_copies_bindings_and_aggregates_pool_sizes() {
     static_assert(!std::is_copy_constructible_v<cubey::vulkan::DescriptorSetBundle>);
     static_assert(!std::is_copy_assignable_v<cubey::vulkan::DescriptorSetBundle>);
@@ -196,8 +282,7 @@ void test_descriptor_set_info_copies_bindings_and_aggregates_pool_sizes() {
     static_assert(!std::is_copy_constructible_v<cubey::vulkan::DescriptorSetArray>);
     static_assert(!std::is_copy_assignable_v<cubey::vulkan::DescriptorSetArray>);
     static_assert(std::is_same_v<decltype(&cubey::vulkan::DescriptorPool::allocate_many),
-                                 std::vector<VkDescriptorSet> (
-                                     cubey::vulkan::DescriptorPool::*)(
+                                 std::vector<VkDescriptorSet> (cubey::vulkan::DescriptorPool::*)(
                                      VkDescriptorSetLayout, std::uint32_t) const>);
     static_assert(std::is_same_v<decltype(&cubey::vulkan::DescriptorSetArray::set),
                                  VkDescriptorSet (cubey::vulkan::DescriptorSetArray::*)(

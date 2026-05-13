@@ -392,7 +392,7 @@ cubey/
         buffer.h           -- Vulkan buffer and memory ownership
         command_pool.h     -- command pool ownership and command-buffer begin
         command_recorder.h -- non-owning command-buffer recording helper
-        descriptors.h      -- descriptor set layout/pool ownership
+        descriptors.h      -- descriptor set layout/pool ownership and write batching
         device.h           -- physical/logical device and queue ownership
         dynamic_rendering.h -- dynamic-rendering attachment helpers
         frame_resources.h  -- per-frame command/sync resources

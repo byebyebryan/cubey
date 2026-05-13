@@ -266,102 +266,51 @@ void Fluid2DGpuResources::create_descriptor_resources(cubey::vulkan::Device& dev
 }
 
 void Fluid2DGpuResources::update_field_descriptors(cubey::vulkan::Device& device) {
-    const cubey::vulkan::DescriptorBufferWrite inject_source =
-        cubey::vulkan::storage_buffer_descriptor(inject_descriptor_set_, 0, field_a().handle(),
-                                                 field_a().size());
-    const cubey::vulkan::DescriptorBufferWrite inject_destination =
-        cubey::vulkan::storage_buffer_descriptor(inject_descriptor_set_, 1, field_b().handle(),
-                                                 field_b().size());
-    const cubey::vulkan::DescriptorBufferWrite advect_source =
-        cubey::vulkan::storage_buffer_descriptor(advect_descriptor_set_, 0, field_b().handle(),
-                                                 field_b().size());
-    const cubey::vulkan::DescriptorBufferWrite advect_destination =
-        cubey::vulkan::storage_buffer_descriptor(advect_descriptor_set_, 1, field_a().handle(),
-                                                 field_a().size());
-    const cubey::vulkan::DescriptorBufferWrite render_source =
-        cubey::vulkan::storage_buffer_descriptor(render_descriptors().set(), 0, field_a().handle(),
-                                                 field_a().size());
-    const cubey::vulkan::DescriptorBufferWrite render_divergence =
-        cubey::vulkan::storage_buffer_descriptor(render_descriptors().set(), 1,
-                                                 divergence().handle(), divergence().size());
-    const cubey::vulkan::DescriptorBufferWrite render_pressure_a =
-        cubey::vulkan::storage_buffer_descriptor(render_descriptors().set(), 2,
-                                                 pressure_a().handle(), pressure_a().size());
-    const cubey::vulkan::DescriptorBufferWrite render_pressure_b =
-        cubey::vulkan::storage_buffer_descriptor(render_descriptors().set(), 3,
-                                                 pressure_b().handle(), pressure_b().size());
-    const cubey::vulkan::DescriptorBufferWrite divergence_source =
-        cubey::vulkan::storage_buffer_descriptor(divergence_descriptor_set_, 0, field_a().handle(),
-                                                 field_a().size());
-    const cubey::vulkan::DescriptorBufferWrite divergence_destination =
-        cubey::vulkan::storage_buffer_descriptor(divergence_descriptor_set_, 1,
-                                                 divergence().handle(), divergence().size());
-    const cubey::vulkan::DescriptorBufferWrite divergence_pressure_a =
-        cubey::vulkan::storage_buffer_descriptor(divergence_descriptor_set_, 2,
-                                                 pressure_a().handle(), pressure_a().size());
-    const cubey::vulkan::DescriptorBufferWrite divergence_pressure_b =
-        cubey::vulkan::storage_buffer_descriptor(divergence_descriptor_set_, 3,
-                                                 pressure_b().handle(), pressure_b().size());
-    const cubey::vulkan::DescriptorBufferWrite pressure_a_to_b_divergence =
-        cubey::vulkan::storage_buffer_descriptor(pressure_a_to_b_descriptor_set_, 0,
-                                                 divergence().handle(), divergence().size());
-    const cubey::vulkan::DescriptorBufferWrite pressure_a_to_b_source =
-        cubey::vulkan::storage_buffer_descriptor(pressure_a_to_b_descriptor_set_, 1,
-                                                 pressure_a().handle(), pressure_a().size());
-    const cubey::vulkan::DescriptorBufferWrite pressure_a_to_b_destination =
-        cubey::vulkan::storage_buffer_descriptor(pressure_a_to_b_descriptor_set_, 2,
-                                                 pressure_b().handle(), pressure_b().size());
-    const cubey::vulkan::DescriptorBufferWrite pressure_b_to_a_divergence =
-        cubey::vulkan::storage_buffer_descriptor(pressure_b_to_a_descriptor_set_, 0,
-                                                 divergence().handle(), divergence().size());
-    const cubey::vulkan::DescriptorBufferWrite pressure_b_to_a_source =
-        cubey::vulkan::storage_buffer_descriptor(pressure_b_to_a_descriptor_set_, 1,
-                                                 pressure_b().handle(), pressure_b().size());
-    const cubey::vulkan::DescriptorBufferWrite pressure_b_to_a_destination =
-        cubey::vulkan::storage_buffer_descriptor(pressure_b_to_a_descriptor_set_, 2,
-                                                 pressure_a().handle(), pressure_a().size());
-    const cubey::vulkan::DescriptorBufferWrite projection_pressure_a_field =
-        cubey::vulkan::storage_buffer_descriptor(projection_pressure_a_descriptor_set_, 0,
-                                                 field_a().handle(), field_a().size());
-    const cubey::vulkan::DescriptorBufferWrite projection_pressure_a_pressure =
-        cubey::vulkan::storage_buffer_descriptor(projection_pressure_a_descriptor_set_, 1,
-                                                 pressure_a().handle(), pressure_a().size());
-    const cubey::vulkan::DescriptorBufferWrite projection_pressure_b_field =
-        cubey::vulkan::storage_buffer_descriptor(projection_pressure_b_descriptor_set_, 0,
-                                                 field_a().handle(), field_a().size());
-    const cubey::vulkan::DescriptorBufferWrite projection_pressure_b_pressure =
-        cubey::vulkan::storage_buffer_descriptor(projection_pressure_b_descriptor_set_, 1,
-                                                 pressure_b().handle(), pressure_b().size());
+    cubey::vulkan::DescriptorWriteBatch descriptor_writes;
 
-    const std::array<cubey::vulkan::DescriptorBufferWrite, 22> buffer_writes{
-        inject_source,
-        inject_destination,
-        advect_source,
-        advect_destination,
-        render_source,
-        render_divergence,
-        render_pressure_a,
-        render_pressure_b,
-        divergence_source,
-        divergence_destination,
-        divergence_pressure_a,
-        divergence_pressure_b,
-        pressure_a_to_b_divergence,
-        pressure_a_to_b_source,
-        pressure_a_to_b_destination,
-        pressure_b_to_a_divergence,
-        pressure_b_to_a_source,
-        pressure_b_to_a_destination,
-        projection_pressure_a_field,
-        projection_pressure_a_pressure,
-        projection_pressure_b_field,
-        projection_pressure_b_pressure,
-    };
-    std::array<VkWriteDescriptorSet, buffer_writes.size()> writes{};
-    for (std::size_t index = 0; index < buffer_writes.size(); ++index) {
-        writes[index] = buffer_writes[index].descriptor_write();
-    }
-    cubey::vulkan::update_descriptor_sets(device, writes);
+    descriptor_writes
+        .storage_buffer(inject_descriptor_set_, 0, field_a().handle(), field_a().size())
+        .storage_buffer(inject_descriptor_set_, 1, field_b().handle(), field_b().size())
+        .storage_buffer(advect_descriptor_set_, 0, field_b().handle(), field_b().size())
+        .storage_buffer(advect_descriptor_set_, 1, field_a().handle(), field_a().size());
+
+    descriptor_writes
+        .storage_buffer(render_descriptors().set(), 0, field_a().handle(), field_a().size())
+        .storage_buffer(render_descriptors().set(), 1, divergence().handle(), divergence().size())
+        .storage_buffer(render_descriptors().set(), 2, pressure_a().handle(), pressure_a().size())
+        .storage_buffer(render_descriptors().set(), 3, pressure_b().handle(), pressure_b().size());
+
+    descriptor_writes
+        .storage_buffer(divergence_descriptor_set_, 0, field_a().handle(), field_a().size())
+        .storage_buffer(divergence_descriptor_set_, 1, divergence().handle(), divergence().size())
+        .storage_buffer(divergence_descriptor_set_, 2, pressure_a().handle(), pressure_a().size())
+        .storage_buffer(divergence_descriptor_set_, 3, pressure_b().handle(), pressure_b().size());
+
+    descriptor_writes
+        .storage_buffer(pressure_a_to_b_descriptor_set_, 0, divergence().handle(),
+                        divergence().size())
+        .storage_buffer(pressure_a_to_b_descriptor_set_, 1, pressure_a().handle(),
+                        pressure_a().size())
+        .storage_buffer(pressure_a_to_b_descriptor_set_, 2, pressure_b().handle(),
+                        pressure_b().size())
+        .storage_buffer(pressure_b_to_a_descriptor_set_, 0, divergence().handle(),
+                        divergence().size())
+        .storage_buffer(pressure_b_to_a_descriptor_set_, 1, pressure_b().handle(),
+                        pressure_b().size())
+        .storage_buffer(pressure_b_to_a_descriptor_set_, 2, pressure_a().handle(),
+                        pressure_a().size());
+
+    descriptor_writes
+        .storage_buffer(projection_pressure_a_descriptor_set_, 0, field_a().handle(),
+                        field_a().size())
+        .storage_buffer(projection_pressure_a_descriptor_set_, 1, pressure_a().handle(),
+                        pressure_a().size())
+        .storage_buffer(projection_pressure_b_descriptor_set_, 0, field_a().handle(),
+                        field_a().size())
+        .storage_buffer(projection_pressure_b_descriptor_set_, 1, pressure_b().handle(),
+                        pressure_b().size());
+
+    descriptor_writes.update(device);
 }
 
 void Fluid2DGpuResources::create_compute_pipelines(cubey::vulkan::Device& device) {

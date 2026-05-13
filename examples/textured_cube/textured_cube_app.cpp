@@ -355,11 +355,9 @@ class TexturedCubeApp {
         const cubey::vulkan::DescriptorSetInfo descriptor_info(bindings);
         compute_descriptors_.emplace(context.device(), descriptor_info);
 
-        const cubey::vulkan::DescriptorImageWrite texture_write =
-            cubey::vulkan::storage_image_descriptor(compute_descriptors().set(), 0,
-                                                    texture().view());
-        const std::array<VkWriteDescriptorSet, 1> writes{texture_write.descriptor_write()};
-        cubey::vulkan::update_descriptor_sets(context.device(), writes);
+        cubey::vulkan::DescriptorWriteBatch descriptor_writes;
+        descriptor_writes.storage_image(compute_descriptors().set(), 0, texture().view());
+        descriptor_writes.update(context.device());
 
         const std::array<VkDescriptorSetLayout, 1> set_layouts{compute_descriptors().layout()};
         const cubey::vulkan::PipelineLayoutInfo pipeline_layout_info({
@@ -426,30 +424,20 @@ class TexturedCubeApp {
             cubey::render::material_descriptor_set_info(material_pass, 0, frame_slot_count));
         descriptors_.emplace(context.device(), descriptor_info);
 
-        std::vector<cubey::vulkan::DescriptorBufferWrite> scene_writes;
-        std::vector<cubey::vulkan::DescriptorImageWrite> image_writes;
-        scene_writes.reserve(frame_slot_count);
-        image_writes.reserve(frame_slot_count);
+        cubey::vulkan::DescriptorWriteBatch descriptor_writes;
         for (std::uint32_t slot_index = 0; slot_index < frame_slot_count; ++slot_index) {
             const cubey::render::FrameSlot frame_slot{
                 .index = slot_index,
                 .count = frame_slot_count,
             };
             const VkDescriptorSet descriptor_set = descriptors().set(slot_index);
-            scene_writes.push_back(cubey::vulkan::uniform_buffer_descriptor(
-                descriptor_set, 0, scene_uniforms().buffer(frame_slot).handle(),
-                scene_uniforms().range()));
-            image_writes.push_back(cubey::vulkan::combined_image_sampler_descriptor(
-                descriptor_set, 1, texture().sampler().handle(), texture().view()));
+            descriptor_writes
+                .uniform_buffer(descriptor_set, 0, scene_uniforms().buffer(frame_slot).handle(),
+                                scene_uniforms().range())
+                .combined_image_sampler(descriptor_set, 1, texture().sampler().handle(),
+                                        texture().view());
         }
-
-        std::vector<VkWriteDescriptorSet> writes;
-        writes.reserve(frame_slot_count * 2U);
-        for (std::uint32_t slot_index = 0; slot_index < frame_slot_count; ++slot_index) {
-            writes.push_back(scene_writes[slot_index].descriptor_write());
-            writes.push_back(image_writes[slot_index].descriptor_write());
-        }
-        cubey::vulkan::update_descriptor_sets(context.device(), writes);
+        descriptor_writes.update(context.device());
     }
 
     void destroy_descriptors() {

@@ -135,6 +135,9 @@ full engine architecture.
   descriptor set layouts, attachment formats, and `MaterialPassInfo`; they do
   not reflect shaders, cache pipelines, allocate descriptors, bind materials,
   or record commands.
+- `cubey::vulkan::DescriptorWriteBatch` is the current descriptor-update
+  boundary: callers still choose descriptor sets, bindings, resources, and
+  image layouts, while the batch owns write backing storage until submission.
 - `cubey::scene::View3D`, `Environment3D`, and `RenderFramePlan3D` form the
   current CPU view-planning boundary. They combine a scene read view, camera
   entity, viewport size, ambient-only environment, draw packets, light packets,

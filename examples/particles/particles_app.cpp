@@ -215,11 +215,10 @@ class ParticlesApp {
     }
 
     void update_particle_descriptor(cubey::host::WindowedAppContext& context) {
-        const cubey::vulkan::DescriptorBufferWrite particle_write =
-            cubey::vulkan::storage_buffer_descriptor(
-                descriptors().set(), 0, particle_buffer().handle(), particle_buffer().size());
-        const VkWriteDescriptorSet write = particle_write.descriptor_write();
-        cubey::vulkan::update_descriptor_sets(context.device(), {&write, 1});
+        cubey::vulkan::DescriptorWriteBatch descriptor_writes;
+        descriptor_writes.storage_buffer(descriptors().set(), 0, particle_buffer().handle(),
+                                         particle_buffer().size());
+        descriptor_writes.update(context.device());
     }
 
     void reset_particle_buffer(cubey::host::WindowedAppContext& context) {
