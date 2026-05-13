@@ -8,6 +8,7 @@
 #include <cubey/input/orbit_controller.h>
 #include <cubey/render/material.h>
 #include <cubey/render/mesh.h>
+#include <cubey/render/pipeline_resource.h>
 #include <cubey/render/primitive_mesh.h>
 #include <cubey/render/render_item.h>
 #include <cubey/render/resource_handle.h>
@@ -205,8 +206,7 @@ class TexturedCubeApp {
     }
 
     void destroy_swapchain_resources() {
-        pipeline_.reset();
-        pipeline_layout_.reset();
+        pipeline_resource_.reset();
         depth_attachment_.reset();
     }
 
@@ -221,22 +221,17 @@ class TexturedCubeApp {
     }
 
     void create_pipeline(cubey::host::WindowedAppContext& context) {
-        const std::vector<std::uint32_t> vertex_code =
-            cubey::vulkan::read_spirv_file(shader_path("textured_cube.vert.spv"));
-        const std::vector<std::uint32_t> fragment_code =
-            cubey::vulkan::read_spirv_file(shader_path("textured_cube.frag.spv"));
-        cubey::vulkan::ShaderModule vertex_shader(context.device(), vertex_code);
-        cubey::vulkan::ShaderModule fragment_shader(context.device(), fragment_code);
-
-        const VkPipelineShaderStageCreateInfo vertex_stage =
-            cubey::vulkan::shader_stage(VK_SHADER_STAGE_VERTEX_BIT, vertex_shader.handle());
-        const VkPipelineShaderStageCreateInfo fragment_stage =
-            cubey::vulkan::shader_stage(VK_SHADER_STAGE_FRAGMENT_BIT, fragment_shader.handle());
-
-        const std::array<VkPipelineShaderStageCreateInfo, 2> shader_stages{
-            vertex_stage,
-            fragment_stage,
+        const std::array<cubey::render::ShaderStageFile, 2> shader_stage_files{
+            cubey::render::ShaderStageFile{
+                .stage = VK_SHADER_STAGE_VERTEX_BIT,
+                .path = shader_path("textured_cube.vert.spv"),
+            },
+            cubey::render::ShaderStageFile{
+                .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
+                .path = shader_path("textured_cube.frag.spv"),
+            },
         };
+        const cubey::render::ShaderProgram shader_program(context.device(), shader_stage_files);
 
         const cubey::render::VertexInputLayout vertex_input =
             cubey::render::vertex_position_color_normal_uv_input_layout();
@@ -244,24 +239,17 @@ class TexturedCubeApp {
         const cubey::render::MaterialPassInfo material_pass =
             textured_cube_forward_pass_info();
         const std::array<VkDescriptorSetLayout, 1> set_layouts{descriptors().layout()};
-        const cubey::vulkan::PipelineLayoutInfo layout_info({
-            .set_layouts = set_layouts,
-            .push_constants = {material_pass.push_constants.data(),
-                               material_pass.push_constants.size()},
-        });
-        pipeline_layout_.emplace(context.device(), layout_info.create_info());
-
-        cubey::vulkan::DynamicGraphicsPipelineConfig pipeline_config;
-        pipeline_config.layout = pipeline_layout().handle();
-        pipeline_config.extent = context.swapchain().extent();
-        pipeline_config.color_format = context.swapchain().format();
-        pipeline_config.depth_format = depth_attachment().format();
-        pipeline_config.shader_stages = shader_stages;
-        pipeline_config.vertex_bindings = vertex_input.bindings();
-        pipeline_config.vertex_attributes = vertex_input.attribute_descriptions();
-        cubey::render::apply_material_pass_state(material_pass, pipeline_config);
-        const cubey::vulkan::DynamicGraphicsPipelineInfo pipeline_info(pipeline_config);
-        pipeline_.emplace(context.device(), pipeline_info.create_info());
+        pipeline_resource_.emplace(
+            context.device(), cubey::render::GraphicsPipelineResourceConfig{
+                                  .extent = context.swapchain().extent(),
+                                  .color_format = context.swapchain().format(),
+                                  .depth_format = depth_attachment().format(),
+                                  .shader_stages = shader_program.stages(),
+                                  .vertex_bindings = vertex_input.bindings(),
+                                  .vertex_attributes = vertex_input.attribute_descriptions(),
+                                  .descriptor_set_layouts = set_layouts,
+                                  .material_pass = material_pass,
+                              });
     }
 
     void create_depth_resources(cubey::host::WindowedAppContext& context) {
@@ -433,14 +421,9 @@ class TexturedCubeApp {
     void create_descriptors(cubey::host::WindowedAppContext& context) {
         const cubey::render::MaterialPassInfo material_pass =
             textured_cube_forward_pass_info();
-        cubey::render::validate_material_pass_info(material_pass);
-        if (material_pass.descriptor_sets.size() != 1 ||
-            material_pass.descriptor_sets[0].set != 0) {
-            throw std::runtime_error("textured_cube material pass should declare descriptor set 0");
-        }
         const std::uint32_t frame_slot_count = context.frame_slot_count();
         const cubey::vulkan::DescriptorSetInfo descriptor_info(
-            material_pass.descriptor_sets[0].bindings, frame_slot_count);
+            cubey::render::material_descriptor_set_info(material_pass, 0, frame_slot_count));
         descriptors_.emplace(context.device(), descriptor_info);
 
         std::vector<cubey::vulkan::DescriptorBufferWrite> scene_writes;
@@ -568,10 +551,10 @@ class TexturedCubeApp {
         const cubey::render::RenderTargetRenderingInfo rendering(target, clear_values);
 
         recorder.begin_rendering(rendering.info());
-        recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline().handle());
+        recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_resource().pipeline());
         const VkDescriptorSet descriptor_set = descriptors().set(frame.frame_slot.index);
-        recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout().handle(), 0,
-                                     descriptor_set);
+        recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_resource().layout(),
+                                     0, descriptor_set);
         const cubey::render::RenderItem render_item =
             cubey::scene::render_item_from_packet(draw_packet);
         const cubey::render::DrawItem draw_item =
@@ -646,18 +629,11 @@ class TexturedCubeApp {
         return compute_descriptors_.value();
     }
 
-    [[nodiscard]] const cubey::vulkan::PipelineLayout& pipeline_layout() const {
-        if (!pipeline_layout_.has_value()) {
-            throw std::runtime_error("pipeline layout is not initialized");
+    [[nodiscard]] const cubey::render::GraphicsPipelineResource& pipeline_resource() const {
+        if (!pipeline_resource_.has_value()) {
+            throw std::runtime_error("pipeline resource is not initialized");
         }
-        return pipeline_layout_.value();
-    }
-
-    [[nodiscard]] const cubey::vulkan::GraphicsPipeline& pipeline() const {
-        if (!pipeline_.has_value()) {
-            throw std::runtime_error("pipeline is not initialized");
-        }
-        return pipeline_.value();
+        return pipeline_resource_.value();
     }
 
     [[nodiscard]] const cubey::vulkan::PipelineLayout& compute_pipeline_layout() const {
@@ -695,8 +671,7 @@ class TexturedCubeApp {
     std::optional<cubey::render::FrameUniformBuffer<SceneUniforms>> scene_uniforms_;
     std::optional<cubey::render::Texture2D> texture_;
     std::optional<cubey::vulkan::DescriptorSetArray> descriptors_;
-    std::optional<cubey::vulkan::PipelineLayout> pipeline_layout_;
-    std::optional<cubey::vulkan::GraphicsPipeline> pipeline_;
+    std::optional<cubey::render::GraphicsPipelineResource> pipeline_resource_;
     std::optional<cubey::vulkan::DepthAttachment> depth_attachment_;
     std::optional<cubey::vulkan::DescriptorSetBundle> compute_descriptors_;
     std::optional<cubey::vulkan::PipelineLayout> compute_pipeline_layout_;
