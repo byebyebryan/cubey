@@ -33,6 +33,7 @@ struct GltfImportedPrimitive3D {
 
 struct GltfSceneImportConfig {
     std::uint32_t scene_index = asset::kInvalidAssetIndex;
+    std::uint32_t frame_slot_count = 1;
     std::string label_prefix = "gltf";
 };
 
@@ -47,7 +48,8 @@ struct GltfSceneImportResult {
 
 struct GltfSceneImportResources {
     render::MeshResourceTable<render::Mesh> meshes{};
-    render::MaterialResourceTable<render::MaterialInstance> material_instances{};
+    render::MaterialResourceTable<render::FrameUniformMaterialInstance<render::PbrMaterialUniforms>>
+        material_instances{};
     std::unordered_map<render::MaterialHandle, render::PbrMaterialFactors,
                        render::MaterialHandleHash>
         material_factors{};

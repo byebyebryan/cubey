@@ -279,7 +279,7 @@ class PbrFurnaceApp {
                                                    VK_FORMAT_R8G8B8A8_UNORM));
         white_environment_.emplace(create_white_pbr_environment(device, gpu));
         create_scene_material(device, frame_slot_count);
-        create_materials(device);
+        create_materials(device, frame_slot_count);
         create_mesh(gpu);
         create_scene();
     }
@@ -422,7 +422,7 @@ class PbrFurnaceApp {
                                         });
     }
 
-    void create_materials(const cubey::vulkan::Device& device) {
+    void create_materials(const cubey::vulkan::Device& device, std::uint32_t frame_slot_count) {
         const auto materials = pbr_furnace_material_grid();
         material_handles_.reserve(materials.size());
         for (const PbrFurnaceMaterial& furnace_material : materials) {
@@ -440,43 +440,36 @@ class PbrFurnaceApp {
                               .metallic_factor = furnace_material.metallic,
                               .roughness_factor = furnace_material.roughness,
                           });
-            cubey::render::MaterialInstance& instance =
-                material_instances_.emplace(material, device,
-                                            cubey::render::MaterialInstanceConfig{
-                                                .material_pass =
-                                                    cubey::render::pbr_forward_pass_info(),
-                                                .descriptor_set = 1,
-                                            });
-            write_material_descriptors(device, instance);
+            material_instances_.emplace(
+                material, device,
+                cubey::render::FrameUniformMaterialInstanceConfig{
+                    .material_pass = cubey::render::pbr_forward_pass_info(),
+                    .descriptor_set = 1,
+                    .frame_slot_count = frame_slot_count,
+                    .uniform_binding =
+                        static_cast<std::uint32_t>(cubey::render::PbrMaterialBinding::Uniforms),
+                    .sampled_images = material_sampled_images(),
+                });
         }
     }
 
-    void write_material_descriptors(const cubey::vulkan::Device& device,
-                                    cubey::render::MaterialInstance& instance) const {
-        cubey::render::MaterialDescriptorWriter(instance.set())
-            .combined_image_sampler(
-                static_cast<std::uint32_t>(cubey::render::PbrMaterialBinding::BaseColor),
-                default_texture(cubey::render::PbrMaterialBinding::BaseColor).sampler().handle(),
-                default_texture(cubey::render::PbrMaterialBinding::BaseColor).view())
-            .combined_image_sampler(
-                static_cast<std::uint32_t>(cubey::render::PbrMaterialBinding::MetallicRoughness),
-                default_texture(cubey::render::PbrMaterialBinding::MetallicRoughness)
-                    .sampler()
-                    .handle(),
-                default_texture(cubey::render::PbrMaterialBinding::MetallicRoughness).view())
-            .combined_image_sampler(
-                static_cast<std::uint32_t>(cubey::render::PbrMaterialBinding::Normal),
-                default_texture(cubey::render::PbrMaterialBinding::Normal).sampler().handle(),
-                default_texture(cubey::render::PbrMaterialBinding::Normal).view())
-            .combined_image_sampler(
-                static_cast<std::uint32_t>(cubey::render::PbrMaterialBinding::Occlusion),
-                default_texture(cubey::render::PbrMaterialBinding::Occlusion).sampler().handle(),
-                default_texture(cubey::render::PbrMaterialBinding::Occlusion).view())
-            .combined_image_sampler(
-                static_cast<std::uint32_t>(cubey::render::PbrMaterialBinding::Emissive),
-                default_texture(cubey::render::PbrMaterialBinding::Emissive).sampler().handle(),
-                default_texture(cubey::render::PbrMaterialBinding::Emissive).view())
-            .update(device);
+    [[nodiscard]] std::vector<cubey::render::SampledImageMaterialBinding>
+    material_sampled_images() const {
+        const auto sampled = [this](cubey::render::PbrMaterialBinding binding) {
+            const cubey::render::Texture2D& texture = default_texture(binding);
+            return cubey::render::SampledImageMaterialBinding{
+                .binding = static_cast<std::uint32_t>(binding),
+                .sampler = texture.sampler().handle(),
+                .image_view = texture.view(),
+            };
+        };
+        return {
+            sampled(cubey::render::PbrMaterialBinding::BaseColor),
+            sampled(cubey::render::PbrMaterialBinding::MetallicRoughness),
+            sampled(cubey::render::PbrMaterialBinding::Normal),
+            sampled(cubey::render::PbrMaterialBinding::Occlusion),
+            sampled(cubey::render::PbrMaterialBinding::Emissive),
+        };
     }
 
     void create_mesh(cubey::vulkan::GpuRuntime& gpu) {
@@ -604,16 +597,18 @@ class PbrFurnaceApp {
                             .blend_mode = cubey::render::MaterialBlendMode::Opaque,
                         },
                 },
-                [this](const cubey::vulkan::CommandRecorder& packet_recorder,
-                       const cubey::scene::RenderDrawPacket3D& packet) {
-                    cubey::render::bind_material_instance(
-                        packet_recorder, forward_pass().pipeline(),
-                        material_instances_.at(packet.material));
+                [this, frame_slot](const cubey::vulkan::CommandRecorder& packet_recorder,
+                                    const cubey::scene::RenderDrawPacket3D& packet) {
+                    const auto& material = material_instances_.at(packet.material);
+                    material.upload(frame_slot,
+                                    cubey::render::pbr_material_uniforms(
+                                        material_factors_.at(packet.material)));
+                    cubey::render::bind_material_instance(packet_recorder, forward_pass().pipeline(),
+                                                          material.material(), frame_slot);
                     packet_recorder.push_constants(
                         forward_pass().pipeline().layout(),
                         VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
-                        cubey::render::pbr_push_constants(
-                            packet.world_affine_matrix, material_factors_.at(packet.material)));
+                        cubey::render::pbr_push_constants(packet.world_affine_matrix));
                 });
         };
         if (present) {
@@ -672,6 +667,8 @@ class PbrFurnaceApp {
         case cubey::render::PbrMaterialBinding::Emissive:
             texture = &emissive_default_;
             break;
+        case cubey::render::PbrMaterialBinding::Uniforms:
+            break;
         }
         if (texture == nullptr || !texture->has_value()) {
             throw std::runtime_error("PBR furnace default texture is not initialized");
@@ -717,7 +714,9 @@ class PbrFurnaceApp {
     cubey::render::MeshHandle sphere_mesh_handle_{};
 
     cubey::render::MeshResourceTable<cubey::render::Mesh> meshes_;
-    cubey::render::MaterialResourceTable<cubey::render::MaterialInstance> material_instances_;
+    cubey::render::MaterialResourceTable<
+        cubey::render::FrameUniformMaterialInstance<cubey::render::PbrMaterialUniforms>>
+        material_instances_;
     std::vector<cubey::render::MaterialHandle> material_handles_;
     std::unordered_map<cubey::render::MaterialHandle, cubey::render::PbrMaterialFactors,
                        cubey::render::MaterialHandleHash>

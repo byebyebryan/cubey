@@ -39,14 +39,20 @@ struct PbrMaterialFactors {
     float occlusion_strength = 1.0F;
 };
 
-struct PbrPushConstants {
-    math::Mat4 model{1.0F};
+struct PbrMaterialUniforms {
     math::Vec4 base_color_factor{1.0F, 1.0F, 1.0F, 1.0F};
     math::Vec4 emissive_alpha_cutoff{0.0F, 0.0F, 0.0F, 0.0F};
     math::Vec4 metallic_roughness_normal_occlusion{1.0F, 1.0F, 1.0F, 1.0F};
+    math::Vec4 specular_color_factor{1.0F, 1.0F, 1.0F, 1.0F};
+    math::Vec4 material_model{0.5F, 0.0F, 0.0F, 0.0F};
 };
 
-static_assert(sizeof(PbrPushConstants) == sizeof(math::Mat4) + sizeof(math::Vec4) * 3U);
+struct PbrPushConstants {
+    math::Mat4 model{1.0F};
+};
+
+static_assert(sizeof(PbrMaterialUniforms) == sizeof(math::Vec4) * 5U);
+static_assert(sizeof(PbrPushConstants) == sizeof(math::Mat4));
 static_assert(sizeof(PbrPushConstants) <= 128U);
 
 enum class PbrSceneBinding : std::uint32_t {
@@ -63,6 +69,7 @@ enum class PbrMaterialBinding : std::uint32_t {
     Normal = 2,
     Occlusion = 3,
     Emissive = 4,
+    Uniforms = 5,
 };
 
 struct PbrForwardPassConfig {
@@ -73,7 +80,7 @@ struct PbrForwardPassConfig {
 [[nodiscard]] VertexInputLayout pbr_vertex_input_layout();
 [[nodiscard]] MaterialPassInfo pbr_forward_pass_info();
 [[nodiscard]] MaterialPassInfo pbr_forward_pass_info(const PbrForwardPassConfig& config);
-[[nodiscard]] PbrPushConstants pbr_push_constants(math::Mat4 model,
-                                                  const PbrMaterialFactors& factors);
+[[nodiscard]] PbrMaterialUniforms pbr_material_uniforms(const PbrMaterialFactors& factors);
+[[nodiscard]] PbrPushConstants pbr_push_constants(math::Mat4 model);
 
 } // namespace cubey::render

@@ -110,6 +110,12 @@ MaterialPassInfo pbr_forward_pass_info(const PbrForwardPassConfig& config) {
                                 .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
                                 .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
                             },
+                            cubey::vulkan::DescriptorSetBindingConfig{
+                                .binding =
+                                    static_cast<std::uint32_t>(PbrMaterialBinding::Uniforms),
+                                .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                                .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
+                            },
                         },
                 },
             },
@@ -129,9 +135,8 @@ MaterialPassInfo pbr_forward_pass_info(const PbrForwardPassConfig& config) {
     return pass;
 }
 
-PbrPushConstants pbr_push_constants(math::Mat4 model, const PbrMaterialFactors& factors) {
+PbrMaterialUniforms pbr_material_uniforms(const PbrMaterialFactors& factors) {
     return {
-        .model = model,
         .base_color_factor = factors.base_color_factor,
         .emissive_alpha_cutoff =
             {
@@ -147,6 +152,14 @@ PbrPushConstants pbr_push_constants(math::Mat4 model, const PbrMaterialFactors& 
                 factors.normal_scale,
                 factors.occlusion_strength,
             },
+        .specular_color_factor = {1.0F, 1.0F, 1.0F, 1.0F},
+        .material_model = {0.5F, 0.0F, 0.0F, 0.0F},
+    };
+}
+
+PbrPushConstants pbr_push_constants(math::Mat4 model) {
+    return {
+        .model = model,
     };
 }
 

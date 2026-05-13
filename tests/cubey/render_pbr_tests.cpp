@@ -69,8 +69,13 @@ void test_pbr_forward_pass_declares_scene_and_material_sets() {
     require(pass.descriptor_sets[0].bindings.size() == 5,
             "PBR scene descriptors should include uniform, shadow map, and IBL textures");
     require(pass.descriptor_sets[1].set == 1, "PBR material descriptors should use set 1");
-    require(pass.descriptor_sets[1].bindings.size() == 5,
-            "PBR material descriptors should include five texture slots");
+    require(pass.descriptor_sets[1].bindings.size() == 6,
+            "PBR material descriptors should include textures plus material uniforms");
+    require(pass.descriptor_sets[1].bindings[5].binding ==
+                static_cast<std::uint32_t>(cubey::render::PbrMaterialBinding::Uniforms),
+            "PBR material uniforms should use the final material descriptor binding");
+    require(pass.descriptor_sets[1].bindings[5].type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+            "PBR material uniforms should be a uniform buffer");
     require(pass.push_constants.size() == 1, "PBR pass should declare push constants");
     require(pass.push_constants[0].size == sizeof(cubey::render::PbrPushConstants),
             "PBR push constant range should match struct size");
@@ -88,6 +93,46 @@ void test_pbr_forward_pass_declares_scene_and_material_sets() {
             "PBR alpha pass should source blend from alpha");
     require(alpha_pass.dst_color_blend_factor == VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
             "PBR alpha pass should destination blend from inverse alpha");
+}
+
+void test_pbr_material_factors_are_uniforms_and_push_constants_are_model_only() {
+    static_assert(sizeof(cubey::render::PbrPushConstants) == sizeof(cubey::math::Mat4));
+
+    cubey::render::PbrMaterialFactors factors;
+    factors.base_color_factor = {0.8F, 0.7F, 0.6F, 0.5F};
+    factors.emissive_factor = {0.1F, 0.2F, 0.3F};
+    factors.alpha_cutoff = 0.4F;
+    factors.metallic_factor = 0.25F;
+    factors.roughness_factor = 0.75F;
+    factors.normal_scale = 0.9F;
+    factors.occlusion_strength = 0.8F;
+
+    const cubey::render::PbrMaterialUniforms uniforms =
+        cubey::render::pbr_material_uniforms(factors);
+    require(uniforms.base_color_factor == factors.base_color_factor,
+            "PBR material uniforms should preserve base color factor");
+    require(uniforms.emissive_alpha_cutoff.x == factors.emissive_factor.x &&
+                uniforms.emissive_alpha_cutoff.y == factors.emissive_factor.y &&
+                uniforms.emissive_alpha_cutoff.z == factors.emissive_factor.z &&
+                uniforms.emissive_alpha_cutoff.w == factors.alpha_cutoff,
+            "PBR material uniforms should pack emissive and alpha cutoff");
+    require(uniforms.metallic_roughness_normal_occlusion.x == factors.metallic_factor &&
+                uniforms.metallic_roughness_normal_occlusion.y == factors.roughness_factor &&
+                uniforms.metallic_roughness_normal_occlusion.z == factors.normal_scale &&
+                uniforms.metallic_roughness_normal_occlusion.w == factors.occlusion_strength,
+            "PBR material uniforms should pack metallic, roughness, normal scale, and AO");
+    require(uniforms.specular_color_factor.r == 1.0F &&
+                uniforms.specular_color_factor.g == 1.0F &&
+                uniforms.specular_color_factor.b == 1.0F &&
+                uniforms.specular_color_factor.a == 1.0F,
+            "PBR material uniforms should default to neutral specular extension factors");
+    require(uniforms.material_model.x == 0.5F,
+            "PBR material uniforms should default dielectric reflectance to 0.5");
+
+    const cubey::render::PbrPushConstants constants =
+        cubey::render::pbr_push_constants(cubey::math::Mat4{1.0F});
+    require(constants.model == cubey::math::Mat4{1.0F},
+            "PBR push constants should carry only the model matrix");
 }
 
 void test_pbr_shaders_use_filament_style_material_remap() {
@@ -108,6 +153,12 @@ void test_pbr_shaders_use_filament_style_material_remap() {
                      "PBR shader should expose a Lambert diffuse helper");
 
     for (const std::string* shader : {&furnace, &gltf}) {
+        require_contains(*shader, "uniform PbrMaterialUniforms",
+                         "PBR fragment shaders should read per-material uniforms");
+        require_not_contains(*shader, "push_constants.base_color_factor",
+                             "PBR fragment shaders should not read material factors from push constants");
+        require_not_contains(*shader, "push_constants.metallic_roughness_normal_occlusion",
+                             "PBR fragment shaders should not read material factors from push constants");
         require_contains(*shader, "vec3 diffuse_color = cubey_pbr_diffuse_color(albedo, metallic);",
                          "PBR fragment shaders should compute diffuseColor explicitly");
         require_contains(*shader, "vec3 f0 = cubey_pbr_f0(albedo, metallic);",

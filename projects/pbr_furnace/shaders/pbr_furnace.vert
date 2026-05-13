@@ -12,9 +12,6 @@ layout(set = 0, binding = 0) uniform PbrSceneUniforms {
 
 layout(push_constant) uniform PbrPushConstants {
     mat4 model;
-    vec4 base_color_factor;
-    vec4 emissive_alpha_cutoff;
-    vec4 metallic_roughness_normal_occlusion;
 } push_constants;
 
 layout(location = 0) in vec3 in_position;

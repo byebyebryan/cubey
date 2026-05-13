@@ -23,12 +23,13 @@ layout(set = 1, binding = 2) uniform sampler2D normal_texture;
 layout(set = 1, binding = 3) uniform sampler2D occlusion_texture;
 layout(set = 1, binding = 4) uniform sampler2D emissive_texture;
 
-layout(push_constant) uniform PbrPushConstants {
-    mat4 model;
+layout(set = 1, binding = 5) uniform PbrMaterialUniforms {
     vec4 base_color_factor;
     vec4 emissive_alpha_cutoff;
     vec4 metallic_roughness_normal_occlusion;
-} push_constants;
+    vec4 specular_color_factor;
+    vec4 material_model;
+} material;
 
 layout(location = 0) in vec3 frag_world_position;
 layout(location = 1) in vec3 frag_normal;
@@ -39,16 +40,16 @@ layout(location = 4) in vec2 frag_uv0;
 layout(location = 0) out vec4 out_color;
 
 void main() {
-    vec4 base_color = texture(base_color_texture, frag_uv0) * push_constants.base_color_factor;
+    vec4 base_color = texture(base_color_texture, frag_uv0) * material.base_color_factor;
     vec4 metallic_roughness_sample = texture(metallic_roughness_texture, frag_uv0);
-    float metallic = clamp(push_constants.metallic_roughness_normal_occlusion.x *
+    float metallic = clamp(material.metallic_roughness_normal_occlusion.x *
                                metallic_roughness_sample.b,
                            0.0, 1.0);
-    float roughness = clamp(push_constants.metallic_roughness_normal_occlusion.y *
+    float roughness = clamp(material.metallic_roughness_normal_occlusion.y *
                                 metallic_roughness_sample.g,
                             0.04, 1.0);
-    float normal_scale = push_constants.metallic_roughness_normal_occlusion.z;
-    float occlusion_strength = push_constants.metallic_roughness_normal_occlusion.w;
+    float normal_scale = material.metallic_roughness_normal_occlusion.z;
+    float occlusion_strength = material.metallic_roughness_normal_occlusion.w;
 
     vec3 geometric_normal = normalize(frag_normal);
     mat3 tbn = mat3(normalize(frag_tangent), normalize(frag_bitangent), geometric_normal);
@@ -77,7 +78,7 @@ void main() {
     vec3 specular_ibl =
         prefiltered * cubey_pbr_indirect_specular(f0, dfg) * specular_occlusion;
     vec3 emissive = texture(emissive_texture, frag_uv0).rgb *
-                    push_constants.emissive_alpha_cutoff.rgb;
+                    material.emissive_alpha_cutoff.rgb;
     vec3 color = (((diffuse_ibl * occlusion) + specular_ibl) *
                   scene.environment_intensity_mip_count.x) +
                  emissive;

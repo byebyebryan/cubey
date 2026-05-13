@@ -190,6 +190,8 @@ default_texture(const GltfSceneImportResources& resources, render::PbrMaterialBi
     case render::PbrMaterialBinding::Emissive:
         texture = &resources.emissive_default;
         break;
+    case render::PbrMaterialBinding::Uniforms:
+        break;
     }
     if (texture == nullptr || !texture->has_value()) {
         throw std::runtime_error("default PBR texture is not initialized");
@@ -259,12 +261,11 @@ default_texture(const GltfSceneImportResources& resources, render::PbrMaterialBi
     return texture_binding(resources.textures.back());
 }
 
-void write_material_descriptors(const vulkan::Device& device, vulkan::GpuRuntime& gpu,
+[[nodiscard]] std::vector<render::SampledImageMaterialBinding>
+material_sampled_image_bindings(const vulkan::Device& device, vulkan::GpuRuntime& gpu,
                                 GltfSceneImportResources& resources,
                                 const asset::GltfAsset& asset,
-                                const asset::GltfMaterial& source,
-                                render::MaterialInstance& instance,
-                                TextureCache& texture_cache) {
+                                const asset::GltfMaterial& source, TextureCache& texture_cache) {
     const TextureBinding base_color = texture_binding_for_ref(
         device, gpu, resources, asset, source.base_color_texture,
         asset::gltf_texture_color_space_for_base_color(), render::PbrMaterialBinding::BaseColor,
@@ -284,19 +285,33 @@ void write_material_descriptors(const vulkan::Device& device, vulkan::GpuRuntime
         device, gpu, resources, asset, source.emissive_texture, asset::GltfTextureColorSpace::Srgb,
         render::PbrMaterialBinding::Emissive, texture_cache);
 
-    render::MaterialDescriptorWriter(instance.set())
-        .combined_image_sampler(static_cast<std::uint32_t>(render::PbrMaterialBinding::BaseColor),
-                                base_color.sampler, base_color.view)
-        .combined_image_sampler(
-            static_cast<std::uint32_t>(render::PbrMaterialBinding::MetallicRoughness),
-            metallic_roughness.sampler, metallic_roughness.view)
-        .combined_image_sampler(static_cast<std::uint32_t>(render::PbrMaterialBinding::Normal),
-                                normal.sampler, normal.view)
-        .combined_image_sampler(static_cast<std::uint32_t>(render::PbrMaterialBinding::Occlusion),
-                                occlusion.sampler, occlusion.view)
-        .combined_image_sampler(static_cast<std::uint32_t>(render::PbrMaterialBinding::Emissive),
-                                emissive.sampler, emissive.view)
-        .update(device);
+    return {
+        render::SampledImageMaterialBinding{
+            .binding = static_cast<std::uint32_t>(render::PbrMaterialBinding::BaseColor),
+            .sampler = base_color.sampler,
+            .image_view = base_color.view,
+        },
+        render::SampledImageMaterialBinding{
+            .binding = static_cast<std::uint32_t>(render::PbrMaterialBinding::MetallicRoughness),
+            .sampler = metallic_roughness.sampler,
+            .image_view = metallic_roughness.view,
+        },
+        render::SampledImageMaterialBinding{
+            .binding = static_cast<std::uint32_t>(render::PbrMaterialBinding::Normal),
+            .sampler = normal.sampler,
+            .image_view = normal.view,
+        },
+        render::SampledImageMaterialBinding{
+            .binding = static_cast<std::uint32_t>(render::PbrMaterialBinding::Occlusion),
+            .sampler = occlusion.sampler,
+            .image_view = occlusion.view,
+        },
+        render::SampledImageMaterialBinding{
+            .binding = static_cast<std::uint32_t>(render::PbrMaterialBinding::Emissive),
+            .sampler = emissive.sampler,
+            .image_view = emissive.view,
+        },
+    };
 }
 
 [[nodiscard]] std::string import_label(const GltfSceneImportConfig& config, const char* kind,
@@ -340,13 +355,17 @@ void create_material_resources(Engine& engine, const vulkan::Device& device,
                           .normal_scale = source.normal_scale,
                           .occlusion_strength = source.occlusion_strength,
                       });
-        render::MaterialInstance& instance =
-            resources.material_instances.emplace(material, device,
-                                                 render::MaterialInstanceConfig{
-                                                     .material_pass = pass,
-                                                     .descriptor_set = 1,
-                                                 });
-        write_material_descriptors(device, gpu, resources, asset, source, instance, texture_cache);
+        resources.material_instances.emplace(
+            material, device,
+            render::FrameUniformMaterialInstanceConfig{
+                .material_pass = pass,
+                .descriptor_set = 1,
+                .frame_slot_count = config.frame_slot_count,
+                .uniform_binding = static_cast<std::uint32_t>(render::PbrMaterialBinding::Uniforms),
+                .sampled_images =
+                    material_sampled_image_bindings(device, gpu, resources, asset, source,
+                                                    texture_cache),
+            });
     }
     if (result.material_handles.empty()) {
         throw std::runtime_error("glTF scene import requires at least one material");

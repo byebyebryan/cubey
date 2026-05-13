@@ -261,10 +261,10 @@ class GltfViewerApp {
         const std::filesystem::path input = resolved_input_path();
         if (!input.empty()) {
             asset_.emplace(cubey::asset::load_gltf_asset(input));
-            create_imported_asset_scene(device, gpu, asset_.value());
+            create_imported_asset_scene(device, gpu, asset_.value(), frame_slot_count);
         } else {
             create_default_textures(device, gpu);
-            create_fallback_material(device);
+            create_fallback_material(device, frame_slot_count);
             create_fallback_mesh(gpu);
             scene_bounds_ = {
                 .center = {0.0F, 0.0F, 0.0F},
@@ -312,12 +312,14 @@ class GltfViewerApp {
 
     void create_imported_asset_scene(const cubey::vulkan::Device& device,
                                      cubey::vulkan::GpuRuntime& gpu,
-                                     const cubey::asset::GltfAsset& asset) {
+                                     const cubey::asset::GltfAsset& asset,
+                                     std::uint32_t frame_slot_count) {
         scene_ = &engine_.create_scene();
         cubey::SceneTransaction setup = scene().begin_transaction();
         import_result_ = cubey::import_gltf_scene(
             engine_, setup, asset, device, gpu, import_resources_,
             cubey::GltfSceneImportConfig{
+                .frame_slot_count = frame_slot_count,
                 .label_prefix = "gltf_viewer",
             });
         scene_bounds_ = import_result_.bounds;
@@ -370,7 +372,8 @@ class GltfViewerApp {
             });
     }
 
-    void create_fallback_material(const cubey::vulkan::Device& device) {
+    void create_fallback_material(const cubey::vulkan::Device& device,
+                                  std::uint32_t frame_slot_count) {
         const cubey::render::MaterialHandle material =
             engine_.render_resources().create_material("gltf_viewer.fallback.material");
         import_result_.material_handles.push_back(material);
@@ -381,37 +384,35 @@ class GltfViewerApp {
                           .metallic_factor = 0.0F,
                           .roughness_factor = 0.58F,
                       });
-        cubey::render::MaterialInstance& instance =
-            import_resources_.material_instances.emplace(
-                material, device,
-                cubey::render::MaterialInstanceConfig{
-                    .material_pass = cubey::render::pbr_forward_pass_info(),
-                    .descriptor_set = 1,
-                });
-        cubey::render::MaterialDescriptorWriter(instance.set())
-            .combined_image_sampler(
-                static_cast<std::uint32_t>(cubey::render::PbrMaterialBinding::BaseColor),
-                default_texture(cubey::render::PbrMaterialBinding::BaseColor).sampler().handle(),
-                default_texture(cubey::render::PbrMaterialBinding::BaseColor).view())
-            .combined_image_sampler(
-                static_cast<std::uint32_t>(cubey::render::PbrMaterialBinding::MetallicRoughness),
-                default_texture(cubey::render::PbrMaterialBinding::MetallicRoughness)
-                    .sampler()
-                    .handle(),
-                default_texture(cubey::render::PbrMaterialBinding::MetallicRoughness).view())
-            .combined_image_sampler(
-                static_cast<std::uint32_t>(cubey::render::PbrMaterialBinding::Normal),
-                default_texture(cubey::render::PbrMaterialBinding::Normal).sampler().handle(),
-                default_texture(cubey::render::PbrMaterialBinding::Normal).view())
-            .combined_image_sampler(
-                static_cast<std::uint32_t>(cubey::render::PbrMaterialBinding::Occlusion),
-                default_texture(cubey::render::PbrMaterialBinding::Occlusion).sampler().handle(),
-                default_texture(cubey::render::PbrMaterialBinding::Occlusion).view())
-            .combined_image_sampler(
-                static_cast<std::uint32_t>(cubey::render::PbrMaterialBinding::Emissive),
-                default_texture(cubey::render::PbrMaterialBinding::Emissive).sampler().handle(),
-                default_texture(cubey::render::PbrMaterialBinding::Emissive).view())
-            .update(device);
+        import_resources_.material_instances.emplace(
+            material, device,
+            cubey::render::FrameUniformMaterialInstanceConfig{
+                .material_pass = cubey::render::pbr_forward_pass_info(),
+                .descriptor_set = 1,
+                .frame_slot_count = frame_slot_count,
+                .uniform_binding =
+                    static_cast<std::uint32_t>(cubey::render::PbrMaterialBinding::Uniforms),
+                .sampled_images = fallback_material_sampled_images(),
+            });
+    }
+
+    [[nodiscard]] std::vector<cubey::render::SampledImageMaterialBinding>
+    fallback_material_sampled_images() const {
+        const auto sampled = [this](cubey::render::PbrMaterialBinding binding) {
+            const cubey::render::Texture2D& texture = default_texture(binding);
+            return cubey::render::SampledImageMaterialBinding{
+                .binding = static_cast<std::uint32_t>(binding),
+                .sampler = texture.sampler().handle(),
+                .image_view = texture.view(),
+            };
+        };
+        return {
+            sampled(cubey::render::PbrMaterialBinding::BaseColor),
+            sampled(cubey::render::PbrMaterialBinding::MetallicRoughness),
+            sampled(cubey::render::PbrMaterialBinding::Normal),
+            sampled(cubey::render::PbrMaterialBinding::Occlusion),
+            sampled(cubey::render::PbrMaterialBinding::Emissive),
+        };
     }
 
     [[nodiscard]] const cubey::render::Texture2D&
@@ -432,6 +433,8 @@ class GltfViewerApp {
             break;
         case cubey::render::PbrMaterialBinding::Emissive:
             texture = &emissive_default_;
+            break;
+        case cubey::render::PbrMaterialBinding::Uniforms:
             break;
         }
         if (texture == nullptr || !texture->has_value()) {
@@ -884,18 +887,21 @@ class GltfViewerApp {
                                         .blend_mode = blend,
                                     },
                             },
-                            [this, &pipeline](
+                            [this, &pipeline, frame_slot](
                                 const cubey::vulkan::CommandRecorder& packet_recorder,
                                 const cubey::scene::RenderDrawPacket3D& packet) {
-                        const cubey::render::MaterialInstance& material =
+                        const auto& material =
                             import_resources_.material_instances.at(packet.material);
-                        cubey::render::bind_material_instance(packet_recorder, pipeline, material);
+                        material.upload(
+                            frame_slot,
+                            cubey::render::pbr_material_uniforms(
+                                import_resources_.material_factors.at(packet.material)));
+                        cubey::render::bind_material_instance(packet_recorder, pipeline,
+                                                              material.material(), frame_slot);
                         packet_recorder.push_constants(
                             pipeline.layout(),
                             VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
-                            cubey::render::pbr_push_constants(
-                                packet.world_affine_matrix,
-                                import_resources_.material_factors.at(packet.material)));
+                            cubey::render::pbr_push_constants(packet.world_affine_matrix));
                     });
                     };
                 record_blend(opaque_pipeline(), cubey::render::MaterialBlendMode::Opaque);
