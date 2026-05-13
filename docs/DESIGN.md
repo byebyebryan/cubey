@@ -137,7 +137,7 @@ Reusable spatial types should stay explicit and narrow:
   mesh/material resources, uploaded textures, and imported bounds while leaving
   shader, pass, and renderer policy to the project.
 - `cubey::render` owns the current generated PBR IBL environment helper for
-  deterministic irradiance cube, prefiltered cube, and BRDF LUT resources.
+  deterministic irradiance cube, prefiltered cube, and DFG LUT resources.
   HDR/KTX environment import and filtering remain future asset-pipeline work.
 - Scene render-planning helpers expose the first renderer-facing 3D view and
   pass-list contracts. They combine a scene read view, camera entity, viewport

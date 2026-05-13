@@ -2,9 +2,9 @@
 
 Cubey's PBR path should use established glTF and Filament-style terminology:
 metallic-roughness materials, image-based lighting, irradiance, prefiltered
-radiance, and a split-sum BRDF lookup. The first goal is a small renderer
-foundation that can light imported static assets plausibly without taking on a
-complete material system.
+radiance, a DFG lookup, and multiscatter energy compensation. The first goal is
+a small renderer foundation that can light imported static assets plausibly
+without taking on a complete material system.
 
 ## Current Direction
 
@@ -12,13 +12,13 @@ The current IBL checkpoint uses generated cubemaps instead of external
 environment assets:
 
 - `cubey::render` owns the texture and PBR descriptor contracts for cube maps,
-  mip chains, samplers, and the BRDF lookup texture;
+  mip chains, samplers, and the DFG lookup texture;
 - a generated environment helper creates deterministic diffuse irradiance,
-  prefiltered specular radiance, BRDF LUT byte data, and uploaded GPU
-  resources;
+  prefiltered specular radiance, DFG LUT byte data, and uploaded GPU resources;
 - `gltf_viewer` binds those resources into the existing PBR scene material and
-  lights the glTF PBR shader with a split-sum-style ambient term while keeping
-  shader/pass selection project-owned;
+  lights the glTF PBR shader with DFG-based IBL, specular energy compensation,
+  correlated Smith direct visibility, and indirect specular occlusion while
+  keeping shader/pass selection project-owned;
 - `pbr_furnace` isolates the current IBL/specular behavior with a white sphere
   grid that sweeps roughness across columns and metallic across rows under a
   uniform white environment;
@@ -32,7 +32,9 @@ The first IBL contract is:
 
 - irradiance cube: low-resolution diffuse lighting, one mip;
 - prefiltered specular cube: roughness-addressed mip chain;
-- BRDF LUT: 2D lookup sampled by `NdotV` and roughness;
+- DFG LUT: 2D lookup sampled by `NdotV` and roughness. Red/green store
+  split-sum scale/bias terms, blue stores white-conductor single-scatter energy
+  for compensation, and alpha remains one;
 - scene uniforms: environment intensity plus prefiltered mip count;
 - material factors and glTF textures remain in the material descriptor set.
 

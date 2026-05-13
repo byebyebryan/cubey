@@ -11,6 +11,10 @@ cubey_add_app_target(
         shaders/gltf_pbr.vert
         shaders/gltf_pbr.frag
         shaders/gltf_shadow_depth.vert
+    SHADER_INCLUDE_DIRS
+        "${CMAKE_SOURCE_DIR}/shaders"
+    SHADER_DEPENDS
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/pbr.glsl"
 )
 
 if (CUBEY_GLTF_SAMPLE_ASSETS_DIR)

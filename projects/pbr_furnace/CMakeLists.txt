@@ -11,6 +11,10 @@ cubey_add_app_target(
     SHADERS
         shaders/pbr_furnace.vert
         shaders/pbr_furnace.frag
+    SHADER_INCLUDE_DIRS
+        "${CMAKE_SOURCE_DIR}/shaders"
+    SHADER_DEPENDS
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/pbr.glsl"
 )
 
 if (BUILD_TESTING)

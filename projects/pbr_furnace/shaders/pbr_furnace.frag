@@ -1,4 +1,7 @@
 #version 450
+#extension GL_GOOGLE_include_directive : require
+
+#include "cubey/pbr.glsl"
 
 layout(set = 0, binding = 0) uniform PbrSceneUniforms {
     mat4 view_projection;
@@ -35,11 +38,6 @@ layout(location = 4) in vec2 frag_uv0;
 
 layout(location = 0) out vec4 out_color;
 
-vec3 fresnel_schlick_roughness(float cos_theta, vec3 f0, float roughness) {
-    return f0 + (max(vec3(1.0 - roughness), f0) - f0) *
-                    pow(clamp(1.0 - cos_theta, 0.0, 1.0), 5.0);
-}
-
 void main() {
     vec4 base_color = texture(base_color_texture, frag_uv0) * push_constants.base_color_factor;
     vec4 metallic_roughness_sample = texture(metallic_roughness_texture, frag_uv0);
@@ -52,8 +50,8 @@ void main() {
     float normal_scale = push_constants.metallic_roughness_normal_occlusion.z;
     float occlusion_strength = push_constants.metallic_roughness_normal_occlusion.w;
 
-    mat3 tbn = mat3(normalize(frag_tangent), normalize(frag_bitangent),
-                    normalize(frag_normal));
+    vec3 geometric_normal = normalize(frag_normal);
+    mat3 tbn = mat3(normalize(frag_tangent), normalize(frag_bitangent), geometric_normal);
     vec3 sampled_normal = texture(normal_texture, frag_uv0).xyz * 2.0 - 1.0;
     sampled_normal.xy *= normal_scale;
     vec3 normal = normalize(tbn * sampled_normal);
@@ -62,7 +60,7 @@ void main() {
     float ndotv = max(dot(normal, view_direction), 0.0);
     vec3 albedo = base_color.rgb;
     vec3 f0 = mix(vec3(0.04), albedo, metallic);
-    vec3 ibl_f = fresnel_schlick_roughness(ndotv, f0, roughness);
+    vec3 ibl_f = cubey_pbr_fresnel_schlick_roughness(ndotv, f0, roughness);
     vec3 ibl_kd = (vec3(1.0) - ibl_f) * (1.0 - metallic);
 
     vec3 irradiance = texture(irradiance_cube, normal).rgb;
@@ -72,13 +70,17 @@ void main() {
     vec3 prefiltered = textureLod(prefiltered_cube, reflection,
                                   roughness * max_prefiltered_lod)
                            .rgb;
-    vec2 brdf = texture(brdf_lut, vec2(ndotv, roughness)).rg;
-    vec3 specular_ibl = prefiltered * ((ibl_f * brdf.x) + brdf.y);
+    vec3 dfg = texture(brdf_lut, vec2(ndotv, roughness)).rgb;
     float occlusion = mix(1.0, texture(occlusion_texture, frag_uv0).r, occlusion_strength);
+    float specular_occlusion =
+        cubey_pbr_specular_ao(ndotv, occlusion, roughness) *
+        cubey_pbr_horizon_specular_occlusion(reflection, geometric_normal);
+    vec3 specular_ibl =
+        prefiltered * cubey_pbr_indirect_specular(f0, dfg) * specular_occlusion;
     vec3 emissive = texture(emissive_texture, frag_uv0).rgb *
                     push_constants.emissive_alpha_cutoff.rgb;
-    vec3 color = (((ibl_kd * diffuse_ibl) + specular_ibl) *
-                  scene.environment_intensity_mip_count.x * occlusion) +
+    vec3 color = (((ibl_kd * diffuse_ibl * occlusion) + specular_ibl) *
+                  scene.environment_intensity_mip_count.x) +
                  emissive;
     out_color = vec4(color, base_color.a);
 }

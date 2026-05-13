@@ -16,7 +16,10 @@ namespace cubey::render {
 namespace {
 
 constexpr std::uint32_t kCubeFaceCount = 6;
+constexpr std::uint32_t kDfgSampleCount = 512;
 constexpr VkFormat kIblTextureFormat = VK_FORMAT_R32G32B32A32_SFLOAT;
+constexpr float kPi = 3.14159265359F;
+constexpr float kDfgEnergyEpsilon = 0.0001F;
 
 void append_rgba32f(std::vector<std::uint8_t>& bytes, std::array<float, 4> rgba) {
     const std::size_t offset = bytes.size();
@@ -69,6 +72,47 @@ void append_rgba32f(std::vector<std::uint8_t>& bytes, std::array<float, 4> rgba)
     return glm::mix(radiance, average, std::clamp(roughness * 0.82F, 0.0F, 1.0F));
 }
 
+[[nodiscard]] float radical_inverse_vdc(std::uint32_t bits) {
+    bits = (bits << 16U) | (bits >> 16U);
+    bits = ((bits & 0x55555555U) << 1U) | ((bits & 0xAAAAAAAAU) >> 1U);
+    bits = ((bits & 0x33333333U) << 2U) | ((bits & 0xCCCCCCCCU) >> 2U);
+    bits = ((bits & 0x0F0F0F0FU) << 4U) | ((bits & 0xF0F0F0F0U) >> 4U);
+    bits = ((bits & 0x00FF00FFU) << 8U) | ((bits & 0xFF00FF00U) >> 8U);
+    return static_cast<float>(bits) * 2.3283064365386963e-10F;
+}
+
+[[nodiscard]] std::array<float, 2> hammersley(std::uint32_t index, std::uint32_t count) {
+    return {
+        static_cast<float>(index) / static_cast<float>(count),
+        radical_inverse_vdc(index),
+    };
+}
+
+[[nodiscard]] math::Vec3 importance_sample_ggx(std::array<float, 2> xi, float roughness) {
+    const float alpha = roughness * roughness;
+    const float alpha2 = alpha * alpha;
+    const float phi = 2.0F * kPi * xi[0];
+    const float cos_theta =
+        std::sqrt((1.0F - xi[1]) / (1.0F + ((alpha2 - 1.0F) * xi[1])));
+    const float sin_theta = std::sqrt(std::max(1.0F - (cos_theta * cos_theta), 0.0F));
+    return {
+        std::cos(phi) * sin_theta,
+        std::sin(phi) * sin_theta,
+        cos_theta,
+    };
+}
+
+[[nodiscard]] float visibility_smith_ggx_correlated(float ndotv, float ndotl,
+                                                    float roughness) {
+    const float alpha = roughness * roughness;
+    const float alpha2 = alpha * alpha;
+    const float lambda_v =
+        ndotl * std::sqrt(std::max(((ndotv - (alpha2 * ndotv)) * ndotv) + alpha2, 0.0F));
+    const float lambda_l =
+        ndotv * std::sqrt(std::max(((ndotl - (alpha2 * ndotl)) * ndotl) + alpha2, 0.0F));
+    return 0.5F / std::max(lambda_v + lambda_l, 0.00001F);
+}
+
 void append_cube(std::vector<std::uint8_t>& bytes, std::uint32_t extent,
                  std::uint32_t mip_levels, auto&& sample) {
     for (std::uint32_t mip = 0; mip < mip_levels; ++mip) {
@@ -99,10 +143,35 @@ void append_brdf_lut(std::vector<std::uint8_t>& bytes, std::uint32_t extent) {
         for (std::uint32_t x = 0; x < extent; ++x) {
             const float ndotv =
                 (static_cast<float>(x) + 0.5F) / static_cast<float>(extent);
-            const float fresnel = std::pow(1.0F - ndotv, 5.0F);
-            const float scale = 1.0F - (roughness * 0.55F);
-            const float bias = fresnel * (1.0F - roughness) * 0.08F;
-            append_rgba32f(bytes, {scale, bias, 0.0F, 1.0F});
+            const math::Vec3 view{
+                std::sqrt(std::max(1.0F - (ndotv * ndotv), 0.0F)),
+                0.0F,
+                ndotv,
+            };
+            float scale = 0.0F;
+            float bias = 0.0F;
+            for (std::uint32_t sample = 0; sample < kDfgSampleCount; ++sample) {
+                const math::Vec3 half_vector =
+                    importance_sample_ggx(hammersley(sample, kDfgSampleCount), roughness);
+                const math::Vec3 light =
+                    glm::normalize((2.0F * glm::dot(view, half_vector) * half_vector) - view);
+                const float ndotl = std::max(light.z, 0.0F);
+                const float ndoth = std::max(half_vector.z, 0.0F);
+                const float vdoth = std::max(glm::dot(view, half_vector), 0.0F);
+                if (ndotl > 0.0F && ndoth > 0.0F && vdoth > 0.0F) {
+                    const float visibility =
+                        visibility_smith_ggx_correlated(ndotv, ndotl, roughness);
+                    const float geometry_visibility =
+                        (4.0F * visibility * ndotl * vdoth) / ndoth;
+                    const float fresnel = std::pow(1.0F - vdoth, 5.0F);
+                    scale += (1.0F - fresnel) * geometry_visibility;
+                    bias += fresnel * geometry_visibility;
+                }
+            }
+            scale /= static_cast<float>(kDfgSampleCount);
+            bias /= static_cast<float>(kDfgSampleCount);
+            const float white_conductor_energy = std::max(scale + bias, kDfgEnergyEpsilon);
+            append_rgba32f(bytes, {scale, bias, white_conductor_energy, 1.0F});
         }
     }
 }

@@ -10,6 +10,7 @@ void test_frame_uniform_buffer_config_describes_host_visible_uniform_storage();
 void test_frame_uniform_buffer_contract_is_slot_based_and_move_only();
 void test_generated_pbr_environment_config_rejects_zero_dimensions();
 void test_generated_pbr_environment_data_is_deterministic_and_sized();
+void test_generated_pbr_dfg_lut_stores_energy_compensation_term();
 void test_indexed_mesh_config_describes_u16_geometry();
 void test_indexed_mesh_config_describes_u32_geometry();
 void test_instance_buffer_helpers_describe_instance_vertex_data();
@@ -143,6 +144,7 @@ std::span<const TestCase> render_test_cases() {
         CUBEY_TEST(test_pbr_vertex_layout_matches_shader_contract),
         CUBEY_TEST(test_pbr_forward_pass_declares_scene_and_material_sets),
         CUBEY_TEST(test_generated_pbr_environment_data_is_deterministic_and_sized),
+        CUBEY_TEST(test_generated_pbr_dfg_lut_stores_energy_compensation_term),
         CUBEY_TEST(test_generated_pbr_environment_config_rejects_zero_dimensions),
         CUBEY_TEST(test_render_resource_registry_tracks_handle_lifetime_and_labels),
         CUBEY_TEST(test_render_resource_handles_are_hashable_keys),
