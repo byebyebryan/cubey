@@ -296,9 +296,9 @@ Current checkpoint:
   windowed and headless PNG output and falls back to a generated PBR cube when
   no input asset or sample-asset checkout is configured.
 - `projects/pbr_furnace` links against `cubey` and renders a white-furnace PBR
-  validation grid: shared UV-sphere primitive mesh, metallic and dielectric
-  roughness rows, uniform white IBL cubemaps, the current BRDF LUT path,
-  reusable PBR material descriptors, and windowed plus headless PNG output.
+  validation grid: shared UV-sphere primitive mesh, roughness columns, metallic
+  rows, uniform white IBL cubemaps, the current BRDF LUT path, reusable PBR
+  material descriptors, and windowed plus headless PNG output.
 - `examples/instanced_cubes` links against `cubey` and draws a cube grid through
   a single renderable packet, real instance-rate vertex input, one shared cube
   mesh, and `instance_count` propagation from scene primitive to Vulkan draw.

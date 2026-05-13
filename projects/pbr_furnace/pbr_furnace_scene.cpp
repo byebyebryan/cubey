@@ -15,6 +15,13 @@ constexpr float kRowSpacing = 1.25F;
     return kMinimumRoughness + ((1.0F - kMinimumRoughness) * t);
 }
 
+[[nodiscard]] float metallic_for_row(std::uint32_t row) {
+    if (kPbrFurnaceRowCount == 1U) {
+        return 0.0F;
+    }
+    return static_cast<float>(row) / static_cast<float>(kPbrFurnaceRowCount - 1U);
+}
+
 [[nodiscard]] math::Vec3 position_for_cell(std::uint32_t row, std::uint32_t column) {
     const float centered_column =
         static_cast<float>(column) - (static_cast<float>(kPbrFurnaceColumnCount - 1U) * 0.5F);
@@ -33,7 +40,7 @@ std::array<PbrFurnaceMaterial, kPbrFurnaceMaterialCount> pbr_furnace_material_gr
     std::array<PbrFurnaceMaterial, kPbrFurnaceMaterialCount> materials{};
     std::size_t index = 0;
     for (std::uint32_t row = 0; row < kPbrFurnaceRowCount; ++row) {
-        const float metallic = row == 0U ? 1.0F : 0.0F;
+        const float metallic = metallic_for_row(row);
         for (std::uint32_t column = 0; column < kPbrFurnaceColumnCount; ++column) {
             materials.at(index) = {
                 .row = row,
