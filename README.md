@@ -44,7 +44,7 @@ Current projects:
 - `fractal_2d`: fullscreen Mandelbrot-style shader with windowed navigation and
   headless output.
 - `gltf_viewer`: static glTF/glb viewer for the first imported-asset,
-  PBR-material, texture-upload, and shadow-map path.
+  PBR-material, texture-upload, shadow-map, and headless capture path.
 
 ## Documentation
 
@@ -57,6 +57,7 @@ Authoritative current docs:
 - [Architecture notes](docs/architecture/README.md)
 - [Vulkan abstraction map](docs/architecture/vulkan-abstractions.md)
 - [Renderer foundation](docs/architecture/renderer-foundation.md)
+- [PBR and IBL direction](docs/architecture/pbr-ibl.md)
 - [Render graph direction](docs/architecture/render-graph.md)
 - [Entity and component foundation](docs/architecture/entity-component-foundation.md)
 - [Host and engine](docs/architecture/host-engine.md)

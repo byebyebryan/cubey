@@ -132,6 +132,10 @@ Reusable spatial types should stay explicit and narrow:
   static glTF/glb meshes, nodes, images, samplers, and metallic-roughness
   materials; it does not create scenes, render handles, Vulkan resources, or a
   material system.
+- `cubey::engine` owns the current static glTF scene importer. It maps CPU
+  asset nodes into scene entities, registry-issued render handles, app-owned
+  mesh/material resources, uploaded textures, and imported bounds while leaving
+  shader, pass, and renderer policy to the project.
 - Scene render-planning helpers expose the first renderer-facing 3D view and
   pass-list contracts. They combine a scene read view, camera entity, viewport
   size, ambient environment, renderables, and lights into CPU
@@ -368,6 +372,7 @@ cubey/
       engine/
         capture_queue.h    -- job-backed PNG capture encoding queue
         engine.h           -- scoped root owner for runtime, scenes, and registries
+        gltf_scene_importer.h -- static glTF scene/resource bridge
         project_gpu_services.h -- project-facing GPU uploads/readbacks/retirement
         project_runtime.h  -- async-ready project vocabulary
         upload_queue.h     -- CPU-owned upload request queue
@@ -476,7 +481,7 @@ cubey/
       gltf_viewer/
         CMakeLists.txt
         main.cpp
-        gltf_viewer_app.*  -- static glTF/PBR/shadow viewer orchestration
+        gltf_viewer_app.*  -- static glTF/PBR/shadow/headless viewer orchestration
       fluid_25d/
   tools/
   tests/
@@ -491,6 +496,7 @@ cubey/
     roadmap.md             -- living implementation plan
     architecture/          -- detailed current foundation notes
       gltf-assets.md
+      pbr-ibl.md
       host-engine.md
       entity-component-foundation.md
       fluid-simulation.md

@@ -37,6 +37,8 @@ Detailed current foundation notes live under
   direction for 2D/2.5D/3D fluid work.
 - [glTF assets and PBR](architecture/gltf-assets.md): static glTF import, PBR
   material contract, texture upload, and viewer boundaries.
+- [PBR and IBL direction](architecture/pbr-ibl.md): generated cubemap IBL,
+  PBR shader contract, and environment asset boundaries.
 
 ## Project Docs
 

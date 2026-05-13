@@ -288,10 +288,12 @@ Current checkpoint:
   sampled-depth/scene-color/backbuffer sync, render-graph pass declarations,
   transient allocation, and CPU pass planning.
 - `projects/gltf_viewer` links against `cubey`, loads static glTF/glb assets
-  through `cubey::asset`, uploads PBR material textures, renders with the
+  through `cubey::asset`, imports scene/render resources through the shared
+  engine glTF scene importer, uploads PBR material textures, renders with the
   reusable PBR forward-pass contract, and records shadow plus scene passes
-  through the render graph. It falls back to a generated PBR cube when no input
-  asset or sample-asset checkout is configured.
+  through the render graph. It supports windowed and headless PNG output and
+  falls back to a generated PBR cube when no input asset or sample-asset
+  checkout is configured.
 - `examples/instanced_cubes` links against `cubey` and draws a cube grid through
   a single renderable packet, real instance-rate vertex input, one shared cube
   mesh, and `instance_count` propagation from scene primitive to Vulkan draw.
