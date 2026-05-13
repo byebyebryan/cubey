@@ -5,6 +5,7 @@
 #include <cubey/engine/engine.h>
 #include <cubey/engine/gltf_scene_importer.h>
 #include <cubey/host/frame_stats.h>
+#include <cubey/host/headless_png_host.h>
 #include <cubey/host/windowed_app.h>
 #include <cubey/input/orbit_controller.h>
 #include <cubey/render/material_instance.h>
@@ -107,6 +108,14 @@ cubey::render::RenderGraphTextureState present_texture_state() {
     };
 }
 
+cubey::render::RenderGraphTextureState color_attachment_texture_state() {
+    return {
+        .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+        .access_mask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+        .stage_mask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+    };
+}
+
 cubey::Transform3D look_at_transform(cubey::math::Vec3 eye, cubey::math::Vec3 target) {
     const cubey::math::Vec3 forward = glm::normalize(target - eye);
     cubey::math::Vec3 up{0.0F, 1.0F, 0.0F};
@@ -156,10 +165,24 @@ class GltfViewerApp {
     GltfViewerApp& operator=(const GltfViewerApp&) = delete;
 
     int run() {
+        if (config_.headless) {
+            return run_headless();
+        }
+        return run_windowed();
+    }
+
+  private:
+    struct ViewerRenderGraph {
+        cubey::render::CompiledRenderGraph graph;
+    };
+
+    int run_windowed() {
         cubey::host::WindowedAppCallbacks callbacks;
         callbacks.create_swapchain_resources = [this](cubey::host::WindowedAppContext& context) {
-            create_global_resources_if_needed(context);
-            create_swapchain_resources(context);
+            create_global_resources_if_needed(context.device(), context.gpu(),
+                                              context.frame_slot_count());
+            create_frame_resources(context.device(), context.swapchain().extent(),
+                                   context.swapchain().format(), context.frame_slot_count());
         };
         callbacks.destroy_swapchain_resources = [this](cubey::host::WindowedAppContext& context) {
             (void)context;
@@ -203,12 +226,33 @@ class GltfViewerApp {
             std::move(callbacks));
     }
 
-  private:
-    struct ViewerRenderGraph {
-        cubey::render::CompiledRenderGraph graph;
-    };
+    int run_headless() {
+        cubey::host::HeadlessPngHostConfig host_config;
+        host_config.run_config = config_;
+        host_config.required_queue_flags = VK_QUEUE_GRAPHICS_BIT;
+        host_config.output_format = VK_FORMAT_R8G8B8A8_UNORM;
+        host_config.require_dynamic_rendering = true;
 
-    void create_global_resources_if_needed(cubey::host::WindowedAppContext& context) {
+        cubey::host::HeadlessPngHostCallbacks callbacks;
+        callbacks.create_resources = [this](cubey::host::HeadlessPngContext& context) {
+            create_global_resources_if_needed(context.device(), context.gpu(), 1);
+            create_frame_resources(context.device(), context.render_target().extent,
+                                   context.render_target().format, 1);
+        };
+        callbacks.record_capture = [this](cubey::host::HeadlessPngContext& context,
+                                          VkCommandBuffer command_buffer,
+                                          const cubey::host::HeadlessRenderTarget& target) {
+            record_viewer_capture(context, command_buffer, target);
+        };
+        callbacks.shutdown = [this](cubey::host::HeadlessPngContext&) { destroy_all_resources(); };
+
+        cubey::host::HeadlessPngHost host(std::move(host_config), std::move(callbacks));
+        return host.run();
+    }
+
+    void create_global_resources_if_needed(const cubey::vulkan::Device& device,
+                                           cubey::vulkan::GpuRuntime& gpu,
+                                           std::uint32_t frame_slot_count) {
         if (scene_ != nullptr) {
             return;
         }
@@ -216,11 +260,11 @@ class GltfViewerApp {
         const std::filesystem::path input = resolved_input_path();
         if (!input.empty()) {
             asset_.emplace(cubey::asset::load_gltf_asset(input));
-            create_imported_asset_scene(context, asset_.value());
+            create_imported_asset_scene(device, gpu, asset_.value());
         } else {
-            create_default_textures(context);
-            create_fallback_material(context);
-            create_fallback_mesh(context);
+            create_default_textures(device, gpu);
+            create_fallback_material(device);
+            create_fallback_mesh(gpu);
             scene_bounds_ = {
                 .center = {0.0F, 0.0F, 0.0F},
                 .half_extent = {1.0F, 1.0F, 1.0F},
@@ -228,15 +272,16 @@ class GltfViewerApp {
             create_fallback_scene();
         }
 
-        create_shadow_resources(context);
-        create_scene_material(context);
+        create_shadow_resources(device);
+        create_scene_material(device, frame_slot_count);
     }
 
-    void create_swapchain_resources(cubey::host::WindowedAppContext& context) {
-        depth_attachment_.emplace(context.device(), context.swapchain().extent());
+    void create_frame_resources(const cubey::vulkan::Device& device, VkExtent2D extent,
+                                VkFormat color_format, std::uint32_t frame_slot_count) {
+        depth_attachment_.emplace(device, extent);
         graph_executor_.clear();
-        graph_executor_.resize(context.frame_slot_count());
-        create_forward_pipeline(context);
+        graph_executor_.resize(frame_slot_count);
+        create_forward_pipeline(device, extent, color_format);
     }
 
     void destroy_swapchain_resources() {
@@ -262,12 +307,13 @@ class GltfViewerApp {
         shadow_depth_is_sampled_ = false;
     }
 
-    void create_imported_asset_scene(cubey::host::WindowedAppContext& context,
+    void create_imported_asset_scene(const cubey::vulkan::Device& device,
+                                     cubey::vulkan::GpuRuntime& gpu,
                                      const cubey::asset::GltfAsset& asset) {
         scene_ = &engine_.create_scene();
         cubey::SceneTransaction setup = scene().begin_transaction();
         import_result_ = cubey::import_gltf_scene(
-            engine_, setup, asset, context.device(), context.gpu(), import_resources_,
+            engine_, setup, asset, device, gpu, import_resources_,
             cubey::GltfSceneImportConfig{
                 .label_prefix = "gltf_viewer",
             });
@@ -293,24 +339,25 @@ class GltfViewerApp {
         return {};
     }
 
-    void create_default_textures(cubey::host::WindowedAppContext& context) {
-        base_color_default_.emplace(create_solid_texture(context, {255, 255, 255, 255},
+    void create_default_textures(const cubey::vulkan::Device& device,
+                                 cubey::vulkan::GpuRuntime& gpu) {
+        base_color_default_.emplace(create_solid_texture(device, gpu, {255, 255, 255, 255},
                                                          VK_FORMAT_R8G8B8A8_SRGB));
-        metallic_roughness_default_.emplace(create_solid_texture(context, {255, 255, 0, 255},
+        metallic_roughness_default_.emplace(create_solid_texture(device, gpu, {255, 255, 0, 255},
                                                                  VK_FORMAT_R8G8B8A8_UNORM));
-        normal_default_.emplace(create_solid_texture(context, {128, 128, 255, 255},
+        normal_default_.emplace(create_solid_texture(device, gpu, {128, 128, 255, 255},
                                                      VK_FORMAT_R8G8B8A8_UNORM));
-        occlusion_default_.emplace(create_solid_texture(context, {255, 255, 255, 255},
+        occlusion_default_.emplace(create_solid_texture(device, gpu, {255, 255, 255, 255},
                                                         VK_FORMAT_R8G8B8A8_UNORM));
-        emissive_default_.emplace(create_solid_texture(context, {0, 0, 0, 255},
+        emissive_default_.emplace(create_solid_texture(device, gpu, {0, 0, 0, 255},
                                                        VK_FORMAT_R8G8B8A8_SRGB));
     }
 
     [[nodiscard]] cubey::render::Texture2D
-    create_solid_texture(cubey::host::WindowedAppContext& context,
+    create_solid_texture(const cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu,
                          std::array<std::uint8_t, 4> color, VkFormat format) {
         return cubey::render::create_uploaded_texture_2d(
-            context.device(), context.gpu(),
+            device, gpu,
             {
                 .extent = {1, 1},
                 .format = format,
@@ -320,7 +367,7 @@ class GltfViewerApp {
             });
     }
 
-    void create_fallback_material(cubey::host::WindowedAppContext& context) {
+    void create_fallback_material(const cubey::vulkan::Device& device) {
         const cubey::render::MaterialHandle material =
             engine_.render_resources().create_material("gltf_viewer.fallback.material");
         import_result_.material_handles.push_back(material);
@@ -333,7 +380,7 @@ class GltfViewerApp {
                       });
         cubey::render::MaterialInstance& instance =
             import_resources_.material_instances.emplace(
-                material, context.device(),
+                material, device,
                 cubey::render::MaterialInstanceConfig{
                     .material_pass = cubey::render::pbr_forward_pass_info(),
                     .descriptor_set = 1,
@@ -361,7 +408,7 @@ class GltfViewerApp {
                 static_cast<std::uint32_t>(cubey::render::PbrMaterialBinding::Emissive),
                 default_texture(cubey::render::PbrMaterialBinding::Emissive).sampler().handle(),
                 default_texture(cubey::render::PbrMaterialBinding::Emissive).view())
-            .update(context.device());
+            .update(device);
     }
 
     [[nodiscard]] const cubey::render::Texture2D&
@@ -390,13 +437,13 @@ class GltfViewerApp {
         return texture->value();
     }
 
-    void create_fallback_mesh(cubey::host::WindowedAppContext& context) {
+    void create_fallback_mesh(cubey::vulkan::GpuRuntime& gpu) {
         std::vector<cubey::render::PbrVertex> vertices = fallback_cube_vertices();
         std::vector<std::uint32_t> indices = fallback_cube_indices();
         const cubey::render::MeshHandle mesh =
             engine_.render_resources().create_mesh("gltf_viewer.fallback.cube");
         import_resources_.meshes.emplace(
-            mesh, context.gpu(),
+            mesh, gpu,
             cubey::render::indexed_mesh_config(std::span<const cubey::render::PbrVertex>{vertices},
                                                std::span<const std::uint32_t>{indices}));
         import_result_.mesh_handles.push_back(mesh);
@@ -472,7 +519,7 @@ class GltfViewerApp {
         light_entity_ = cubey::scene::create_directional_light_entity_3d(setup, sunlight);
     }
 
-    void create_shadow_resources(cubey::host::WindowedAppContext& context) {
+    void create_shadow_resources(const cubey::vulkan::Device& device) {
         const std::array<cubey::render::ShaderStageFile, 1> shader_stage_files{
             cubey::render::vertex_shader_file(shader_path("gltf_shadow_depth.vert.spv")),
         };
@@ -484,7 +531,7 @@ class GltfViewerApp {
             .size = sizeof(ShadowPushConstants),
         };
         shadow_pass_.emplace(
-            context.device(),
+            device,
             cubey::render::ShadowMapPass3DConfig{
                 .extent = {kShadowMapSize, kShadowMapSize},
                 .pipeline =
@@ -502,13 +549,14 @@ class GltfViewerApp {
             });
     }
 
-    void create_scene_material(cubey::host::WindowedAppContext& context) {
-        scene_material_.emplace(context.device(), cubey::render::FrameUniformMaterialInstanceConfig{
+    void create_scene_material(const cubey::vulkan::Device& device,
+                               std::uint32_t frame_slot_count) {
+        scene_material_.emplace(device, cubey::render::FrameUniformMaterialInstanceConfig{
                                                       .material_pass =
                                                           cubey::render::pbr_forward_pass_info(),
                                                       .descriptor_set = 0,
                                                       .frame_slot_count =
-                                                          context.frame_slot_count(),
+                                                          frame_slot_count,
                                                       .uniform_binding = static_cast<std::uint32_t>(
                                                           cubey::render::PbrSceneBinding::
                                                               SceneUniforms),
@@ -535,7 +583,8 @@ class GltfViewerApp {
                                                   });
     }
 
-    void create_forward_pipeline(cubey::host::WindowedAppContext& context) {
+    void create_forward_pipeline(const cubey::vulkan::Device& device, VkExtent2D extent,
+                                 VkFormat color_format) {
         const std::array<cubey::render::ShaderStageFile, 2> shader_stage_files{
             cubey::render::vertex_shader_file(shader_path("gltf_pbr.vert.spv")),
             cubey::render::fragment_shader_file(shader_path("gltf_pbr.frag.spv")),
@@ -547,11 +596,11 @@ class GltfViewerApp {
             import_resources_.material_instances.at(import_result_.first_material_handle).layout(),
         };
         opaque_pipeline_.emplace(
-            context.device(),
+            device,
             cubey::render::graphics_pipeline_file_resource_config(
                 {
-                    .extent = context.swapchain().extent(),
-                    .color_format = context.swapchain().format(),
+                    .extent = extent,
+                    .color_format = color_format,
                     .depth_format = depth_attachment().format(),
                 },
                 {
@@ -565,11 +614,11 @@ class GltfViewerApp {
                         }),
                 }));
         alpha_pipeline_.emplace(
-            context.device(),
+            device,
             cubey::render::graphics_pipeline_file_resource_config(
                 {
-                    .extent = context.swapchain().extent(),
-                    .color_format = context.swapchain().format(),
+                    .extent = extent,
+                    .color_format = color_format,
                     .depth_format = depth_attachment().format(),
                 },
                 {
@@ -631,12 +680,15 @@ class GltfViewerApp {
     }
 
     [[nodiscard]] ViewerRenderGraph
-    current_render_graph(const cubey::host::WindowedRenderFrame& frame,
+    current_render_graph(cubey::render::ColorTargetView color_target,
+                         cubey::render::FrameSlot frame_slot,
+                         cubey::render::RenderGraphTextureState color_initial_state,
+                         cubey::render::RenderGraphTextureState color_final_state,
                          const cubey::scene::RenderFramePlan3D& shadow_plan,
                          const cubey::scene::RenderFramePlan3D& scene_plan) {
         cubey::render::RenderGraphBuilder graph;
         const cubey::render::RenderGraphTextureHandle backbuffer = graph.import_color_target(
-            "backbuffer", frame.color_target, undefined_texture_state(), present_texture_state());
+            "backbuffer", color_target, color_initial_state, color_final_state);
         const cubey::render::RenderGraphTextureHandle scene_depth =
             graph.import_depth_target("scene depth", cubey::render::depth_target_view(
                                                          depth_attachment()),
@@ -659,10 +711,9 @@ class GltfViewerApp {
             .write_color(backbuffer)
             .write_depth(scene_depth)
             .material_pass(cubey::render::pbr_forward_pass_info())
-            .execute([this, &frame, &scene_plan](
+            .execute([this, color_target, frame_slot, &scene_plan](
                          const cubey::render::RenderGraphExecutionContext& context) {
-                record_scene_pass(context.recorder(), frame.color_target, scene_plan,
-                                  frame.frame_slot);
+                record_scene_pass(context.recorder(), color_target, scene_plan, frame_slot);
             });
 
         return {
@@ -670,29 +721,47 @@ class GltfViewerApp {
         };
     }
 
-    void record_viewer_frame(cubey::host::WindowedAppContext& context,
-                             const cubey::host::WindowedRenderFrame& frame) {
+    void record_viewer_target(const cubey::vulkan::Device& device, VkCommandBuffer command_buffer,
+                              cubey::render::ColorTargetView color_target,
+                              cubey::render::FrameSlot frame_slot,
+                              cubey::render::RenderGraphTextureState color_initial_state,
+                              cubey::render::RenderGraphTextureState color_final_state) {
         cubey::SceneReadView scene_view = scene().read();
         const cubey::scene::FrameRenderPlan3D frame_plan =
-            current_frame_plan(scene_view, frame.color_target.extent);
+            current_frame_plan(scene_view, color_target.extent);
         if (frame_plan.passes().size() != 2) {
             throw std::runtime_error("gltf_viewer frame plan should have two passes");
         }
         const cubey::scene::RenderFramePlan3D& shadow_plan = frame_plan.passes()[0].frame_plan;
         const cubey::scene::RenderFramePlan3D& scene_plan = frame_plan.passes()[1].frame_plan;
-        scene_material().upload(frame.frame_slot,
-                                scene_uniforms(scene_view, scene_plan, shadow_plan));
+        scene_material().upload(frame_slot, scene_uniforms(scene_view, scene_plan, shadow_plan));
 
-        const ViewerRenderGraph render_graph = current_render_graph(frame, shadow_plan, scene_plan);
+        const ViewerRenderGraph render_graph =
+            current_render_graph(color_target, frame_slot, color_initial_state, color_final_state,
+                                 shadow_plan, scene_plan);
         graph_executor_.record(
             cubey::render::RenderGraphFrameRecordInfo{
-                .device = &context.device(),
-                .command_buffer = frame.command_buffer,
-                .frame_slot = frame.frame_slot,
+                .device = &device,
+                .command_buffer = command_buffer,
+                .frame_slot = frame_slot,
                 .label = "vkEndCommandBuffer gltf_viewer",
             },
             render_graph.graph);
         shadow_depth_is_sampled_ = true;
+    }
+
+    void record_viewer_frame(cubey::host::WindowedAppContext& context,
+                             const cubey::host::WindowedRenderFrame& frame) {
+        record_viewer_target(context.device(), frame.command_buffer, frame.color_target,
+                             frame.frame_slot, undefined_texture_state(), present_texture_state());
+    }
+
+    void record_viewer_capture(cubey::host::HeadlessPngContext& context,
+                               VkCommandBuffer command_buffer,
+                               const cubey::host::HeadlessRenderTarget& target) {
+        record_viewer_target(context.device(), command_buffer, target,
+                             cubey::render::FrameSlot{.index = 0, .count = 1},
+                             color_attachment_texture_state(), color_attachment_texture_state());
     }
 
     [[nodiscard]] cubey::render::PbrSceneUniforms

@@ -20,3 +20,15 @@ if (CUBEY_GLTF_SAMPLE_ASSETS_DIR)
             CUBEY_GLTF_SAMPLE_ASSETS_DIR="${CUBEY_GLTF_SAMPLE_ASSETS_DIR}"
     )
 endif()
+
+if (BUILD_TESTING)
+    set(CUBEY_GLTF_VIEWER_HEADLESS_SMOKE_OUTPUT
+        "${CMAKE_CURRENT_BINARY_DIR}/gltf-viewer-headless-smoke.png"
+    )
+    cubey_add_png_smoke_test(
+        gltf_viewer_headless_writes_png
+        cubey_project_gltf_viewer
+        "${CUBEY_GLTF_VIEWER_HEADLESS_SMOKE_OUTPUT}"
+        --headless
+    )
+endif()
