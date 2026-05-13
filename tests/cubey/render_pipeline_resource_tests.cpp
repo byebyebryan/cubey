@@ -17,6 +17,15 @@ void require(bool condition, const char* message) {
     }
 }
 
+template <typename Action> void require_throws(Action&& action, const char* message) {
+    try {
+        action();
+    } catch (const std::runtime_error&) {
+        return;
+    }
+    throw std::runtime_error(message);
+}
+
 [[nodiscard]] cubey::render::MaterialPassInfo forward_pass_info() {
     return cubey::render::MaterialPassInfo{
         .label = "pipeline resource forward",
@@ -148,4 +157,74 @@ void test_render_pipeline_resource_allows_vertexless_fullscreen_pipeline_shape()
             "vertexless fullscreen pipeline should not require vertex attributes");
     require(pipeline_info.create_info().pColorBlendState->attachmentCount == 1,
             "fullscreen present pipeline should still describe the color target");
+}
+
+void test_render_pipeline_resource_builds_compute_pipeline_info() {
+    static_assert(!std::is_copy_constructible_v<cubey::render::ComputePipelineResource>);
+    static_assert(!std::is_copy_assignable_v<cubey::render::ComputePipelineResource>);
+
+    const VkDescriptorSetLayout descriptor_layout = reinterpret_cast<VkDescriptorSetLayout>(0x80);
+    const VkPushConstantRange push_constant{
+        .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
+        .offset = 0,
+        .size = 32,
+    };
+    const cubey::render::ComputePipelineResourceConfig config{
+        .shader_stage =
+            {
+                .stage = VK_SHADER_STAGE_COMPUTE_BIT,
+                .path = "particles.comp.spv",
+                .entry_point = "compute_main",
+            },
+        .descriptor_set_layouts = {&descriptor_layout, 1},
+        .push_constants = {&push_constant, 1},
+    };
+
+    const cubey::vulkan::PipelineLayoutInfo layout_info =
+        cubey::render::compute_pipeline_layout_info(config);
+    require(layout_info.create_info().setLayoutCount == 1,
+            "compute pipeline layout info should use descriptor set layouts");
+    require(layout_info.create_info().pSetLayouts != &descriptor_layout,
+            "compute pipeline layout info should copy descriptor set layouts");
+    require(layout_info.create_info().pSetLayouts[0] == descriptor_layout,
+            "compute pipeline layout info should preserve descriptor set layout");
+    require(layout_info.create_info().pushConstantRangeCount == 1,
+            "compute pipeline layout info should use push constants");
+    require(layout_info.create_info().pPushConstantRanges[0].size == 32,
+            "compute pipeline layout info should preserve push constant range");
+
+    const VkPipelineLayout pipeline_layout = reinterpret_cast<VkPipelineLayout>(0x90);
+    const VkPipelineShaderStageCreateInfo shader_stage = cubey::vulkan::shader_stage(
+        VK_SHADER_STAGE_COMPUTE_BIT, reinterpret_cast<VkShaderModule>(0xA0), "compute_main");
+    const cubey::vulkan::ComputePipelineConfig pipeline_config =
+        cubey::render::compute_pipeline_config(config, pipeline_layout, shader_stage);
+    require(pipeline_config.layout == pipeline_layout,
+            "compute pipeline config should use provided layout");
+    require(pipeline_config.shader_stage.stage == VK_SHADER_STAGE_COMPUTE_BIT,
+            "compute pipeline config should preserve compute stage");
+    require(std::string_view(pipeline_config.shader_stage.pName) == "compute_main",
+            "compute pipeline config should preserve shader entry point");
+
+    const cubey::vulkan::ComputePipelineInfo pipeline_info(pipeline_config);
+    require(pipeline_info.create_info().layout == pipeline_layout,
+            "compute pipeline info should accept pipeline resource config output");
+
+    require_throws(
+        [&config, shader_stage] {
+            (void)cubey::render::compute_pipeline_config(config, VK_NULL_HANDLE, shader_stage);
+        },
+        "compute pipeline config should reject a null pipeline layout");
+
+    const cubey::render::ComputePipelineResourceConfig wrong_stage_config{
+        .shader_stage =
+            {
+                .stage = VK_SHADER_STAGE_VERTEX_BIT,
+                .path = "wrong.vert.spv",
+            },
+    };
+    require_throws(
+        [&wrong_stage_config] {
+            (void)cubey::render::compute_pipeline_layout_info(wrong_stage_config);
+        },
+        "compute pipeline layout info should reject non-compute shader stages");
 }

@@ -91,6 +91,11 @@ full engine architecture.
 - `DepthOnlyRenderingInfo` builds the depth-only dynamic-rendering state needed
   by shadow-map and prepass-style work. It deliberately stores depth so the
   caller can transition and sample it later.
+- `record_render_target_pass`, `record_depth_only_pass`, and
+  `record_present_render_target_pass` are the current command-recording helpers
+  for dynamic-rendering scopes, clear values, fullscreen triangle draws, and
+  presentable swapchain color/depth layout sequencing. They keep pass contents
+  caller-owned and do not replace render graph resource/barrier ownership.
 - `WindowedHost` passes `WindowedRenderFrame` to render callbacks, including the
   command buffer, swapchain image index, timing, and color target view.
 - `cubey::host::HeadlessRenderTarget` is now the same target-view vocabulary as
@@ -129,12 +134,12 @@ full engine architecture.
 - `cubey::render::MaterialPassInfo` is the first explicit material/pass
   metadata contract. It describes pass kind, descriptor layout shape,
   push-constant ranges, and reusable graphics pipeline state.
-- `cubey::render::ShaderProgram` and `GraphicsPipelineResource` own the current
-  shader-module, pipeline-layout, and dynamic graphics pipeline lifetime shape
-  for graphics passes. They consume explicit shader stage files, vertex input,
-  descriptor set layouts, attachment formats, and `MaterialPassInfo`; they do
-  not reflect shaders, cache pipelines, allocate descriptors, bind materials,
-  or record commands.
+- `cubey::render::ShaderProgram`, `GraphicsPipelineResource`, and
+  `ComputePipelineResource` own the current shader-module, pipeline-layout, and
+  graphics/compute pipeline lifetime shapes. They consume explicit shader stage
+  files, descriptor set layouts, push constants, attachment formats, vertex
+  input, and `MaterialPassInfo` where applicable; they do not reflect shaders,
+  cache pipelines, allocate descriptors, bind materials, or record commands.
 - `cubey::vulkan::DescriptorWriteBatch` is the current descriptor-update
   boundary: callers still choose descriptor sets, bindings, resources, and
   image layouts, while the batch owns write backing storage until submission.

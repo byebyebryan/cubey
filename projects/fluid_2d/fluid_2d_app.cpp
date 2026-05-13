@@ -197,17 +197,17 @@ class Fluid2DApp {
     void record_frame(cubey::host::WindowedAppContext& context,
                       const cubey::host::WindowedRenderFrame& render_frame,
                       const ProjectFrame& frame) {
-        const cubey::render::CompiledRenderGraph frame_graph =
-            build_fluid_frame_graph(render_frame.color_target, resources_, fluid_config_,
-                                    debug_view_, frame_injection_, paused_, reset_requested_,
-                                    frame);
-        graph_executor_.record(cubey::render::RenderGraphFrameRecordInfo{
-                                   .device = &context.device(),
-                                   .command_buffer = render_frame.command_buffer,
-                                   .frame_slot = render_frame.frame_slot,
-                                   .label = "vkEndCommandBuffer fluid_2d",
-                               },
-                               frame_graph);
+        const cubey::render::CompiledRenderGraph frame_graph = build_fluid_frame_graph(
+            render_frame.color_target, resources_, fluid_config_, debug_view_, frame_injection_,
+            paused_, reset_requested_, frame);
+        graph_executor_.record(
+            cubey::render::RenderGraphFrameRecordInfo{
+                .device = &context.device(),
+                .command_buffer = render_frame.command_buffer,
+                .frame_slot = render_frame.frame_slot,
+                .label = "vkEndCommandBuffer fluid_2d",
+            },
+            frame_graph);
     }
 
     void record_headless_simulation_frame(cubey::ProjectGpuServices& gpu,
@@ -246,8 +246,7 @@ class Fluid2DApp {
         callbacks.record_capture = [this](cubey::host::HeadlessPngContext&,
                                           VkCommandBuffer command_buffer,
                                           const cubey::host::HeadlessRenderTarget& target) {
-            record_fullscreen_draw(command_buffer, resources_, fluid_config_, debug_view_,
-                                   target.view, target.extent);
+            record_fullscreen_draw(command_buffer, resources_, fluid_config_, debug_view_, target);
         };
         callbacks.shutdown = [this](cubey::host::HeadlessPngContext&) {
             destroy_all_resources();

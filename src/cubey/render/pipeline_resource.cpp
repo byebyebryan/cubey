@@ -3,9 +3,19 @@
 #include <cubey/vulkan/shader_bytecode.h>
 #include <cubey/vulkan/shader_module.h>
 
+#include <array>
 #include <stdexcept>
 
 namespace cubey::render {
+namespace {
+
+void validate_compute_pipeline_resource_config(const ComputePipelineResourceConfig& config) {
+    if (config.shader_stage.stage != VK_SHADER_STAGE_COMPUTE_BIT) {
+        throw std::runtime_error("compute pipeline resource requires a compute shader stage");
+    }
+}
+
+} // namespace
 
 ShaderProgram::ShaderProgram(const cubey::vulkan::Device& device,
                              std::span<const ShaderStageFile> stages) {
@@ -64,8 +74,8 @@ dynamic_graphics_pipeline_config(const GraphicsPipelineResourceConfig& config,
     return pipeline_config;
 }
 
-GraphicsPipelineResource::GraphicsPipelineResource(
-    const cubey::vulkan::Device& device, const GraphicsPipelineResourceConfig& config) {
+GraphicsPipelineResource::GraphicsPipelineResource(const cubey::vulkan::Device& device,
+                                                   const GraphicsPipelineResourceConfig& config) {
     const cubey::vulkan::PipelineLayoutInfo layout_info = graphics_pipeline_layout_info(config);
     layout_.emplace(device, layout_info.create_info());
 
@@ -85,6 +95,56 @@ VkPipelineLayout GraphicsPipelineResource::layout() const {
 VkPipeline GraphicsPipelineResource::pipeline() const {
     if (!pipeline_.has_value()) {
         throw std::runtime_error("graphics pipeline resource pipeline is not initialized");
+    }
+    return pipeline_->handle();
+}
+
+cubey::vulkan::PipelineLayoutInfo
+compute_pipeline_layout_info(const ComputePipelineResourceConfig& config) {
+    validate_compute_pipeline_resource_config(config);
+    return cubey::vulkan::PipelineLayoutInfo(cubey::vulkan::PipelineLayoutConfig{
+        .set_layouts = config.descriptor_set_layouts,
+        .push_constants = config.push_constants,
+    });
+}
+
+cubey::vulkan::ComputePipelineConfig
+compute_pipeline_config(const ComputePipelineResourceConfig& config, VkPipelineLayout layout,
+                        VkPipelineShaderStageCreateInfo shader_stage) {
+    validate_compute_pipeline_resource_config(config);
+    if (layout == VK_NULL_HANDLE) {
+        throw std::runtime_error("compute pipeline resource requires a pipeline layout");
+    }
+    return cubey::vulkan::ComputePipelineConfig{
+        .layout = layout,
+        .shader_stage = shader_stage,
+    };
+}
+
+ComputePipelineResource::ComputePipelineResource(const cubey::vulkan::Device& device,
+                                                 const ComputePipelineResourceConfig& config) {
+    validate_compute_pipeline_resource_config(config);
+
+    const cubey::vulkan::PipelineLayoutInfo layout_info = compute_pipeline_layout_info(config);
+    layout_.emplace(device, layout_info.create_info());
+
+    const std::array<ShaderStageFile, 1> shader_stages{config.shader_stage};
+    const ShaderProgram shader_program(device, shader_stages);
+    const cubey::vulkan::ComputePipelineInfo pipeline_info(
+        compute_pipeline_config(config, layout(), shader_program.stages().front()));
+    pipeline_.emplace(device, pipeline_info.create_info());
+}
+
+VkPipelineLayout ComputePipelineResource::layout() const {
+    if (!layout_.has_value()) {
+        throw std::runtime_error("compute pipeline resource layout is not initialized");
+    }
+    return layout_->handle();
+}
+
+VkPipeline ComputePipelineResource::pipeline() const {
+    if (!pipeline_.has_value()) {
+        throw std::runtime_error("compute pipeline resource pipeline is not initialized");
     }
     return pipeline_->handle();
 }

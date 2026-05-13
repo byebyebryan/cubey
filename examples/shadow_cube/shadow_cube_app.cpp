@@ -390,10 +390,9 @@ class ShadowCubeApp {
                                      .address_mode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
                                  });
         const cubey::render::MaterialPassInfo material_pass = shadow_present_pass_info();
-        present_descriptors_.emplace(
-            context.device(),
-            cubey::render::material_descriptor_set_info(material_pass, 0,
-                                                        context.frame_slot_count()));
+        present_descriptors_.emplace(context.device(),
+                                     cubey::render::material_descriptor_set_info(
+                                         material_pass, 0, context.frame_slot_count()));
     }
 
     void create_pipelines(cubey::host::WindowedAppContext& context) {
@@ -475,14 +474,14 @@ class ShadowCubeApp {
 
         const cubey::render::MaterialPassInfo material_pass = shadow_present_pass_info();
         const std::array<VkDescriptorSetLayout, 1> set_layouts{present_descriptors().layout()};
-        present_pipeline_resource_.emplace(
-            context.device(), cubey::render::GraphicsPipelineResourceConfig{
-                                  .extent = context.swapchain().extent(),
-                                  .color_format = context.swapchain().format(),
-                                  .shader_stages = shader_program.stages(),
-                                  .descriptor_set_layouts = set_layouts,
-                                  .material_pass = material_pass,
-                              });
+        present_pipeline_resource_.emplace(context.device(),
+                                           cubey::render::GraphicsPipelineResourceConfig{
+                                               .extent = context.swapchain().extent(),
+                                               .color_format = context.swapchain().format(),
+                                               .shader_stages = shader_program.stages(),
+                                               .descriptor_set_layouts = set_layouts,
+                                               .material_pass = material_pass,
+                                           });
     }
 
     void update_camera_transform() {
@@ -563,11 +562,11 @@ class ShadowCubeApp {
         graph.add_pass("shadow", cubey::render::RenderGraphQueueDomain::Graphics)
             .write_depth(shadow_depth_handle)
             .material_pass(shadow_depth_pass_info())
-            .execute([this,
-                      &shadow_plan](const cubey::render::RenderGraphExecutionContext& context) {
-                const cubey::vulkan::CommandRecorder& recorder = context.recorder();
-                record_shadow_pass(recorder, shadow_plan);
-            });
+            .execute(
+                [this, &shadow_plan](const cubey::render::RenderGraphExecutionContext& context) {
+                    const cubey::vulkan::CommandRecorder& recorder = context.recorder();
+                    record_shadow_pass(recorder, shadow_plan);
+                });
         graph.add_pass("scene", cubey::render::RenderGraphQueueDomain::Graphics)
             .read_texture(shadow_depth_handle)
             .write_color(scene_color_handle)
@@ -583,8 +582,7 @@ class ShadowCubeApp {
         graph.add_pass("present", cubey::render::RenderGraphQueueDomain::Graphics)
             .read_texture(scene_color_handle)
             .write_color(backbuffer_handle)
-            .execute([this,
-                      &frame](const cubey::render::RenderGraphExecutionContext& context) {
+            .execute([this, &frame](const cubey::render::RenderGraphExecutionContext& context) {
                 const cubey::vulkan::CommandRecorder& recorder = context.recorder();
                 record_present_pass(recorder, frame);
             });
@@ -621,111 +619,108 @@ class ShadowCubeApp {
         const cubey::scene::RenderFramePlan3D& scene_plan = frame_plan.passes()[1].frame_plan;
 
         const ShadowRenderGraph render_graph = current_render_graph(frame, shadow_plan, scene_plan);
-        graph_executor_.record(cubey::render::RenderGraphFrameRecordInfo{
-                                   .device = &context.device(),
-                                   .command_buffer = frame.command_buffer,
-                                   .frame_slot = frame.frame_slot,
-                                   .label = "vkEndCommandBuffer shadow_cube",
-                               },
-                               render_graph.graph,
-                               [this, &context, &frame, &render_graph](
-                                   const cubey::render::RenderGraphResourceSet& resources) {
-                                   update_present_descriptor(
-                                       context, frame.frame_slot.index, render_graph.graph,
-                                       resources, render_graph.scene_color);
-                               });
+        graph_executor_.record(
+            cubey::render::RenderGraphFrameRecordInfo{
+                .device = &context.device(),
+                .command_buffer = frame.command_buffer,
+                .frame_slot = frame.frame_slot,
+                .label = "vkEndCommandBuffer shadow_cube",
+            },
+            render_graph.graph,
+            [this, &context, &frame,
+             &render_graph](const cubey::render::RenderGraphResourceSet& resources) {
+                update_present_descriptor(context, frame.frame_slot.index, render_graph.graph,
+                                          resources, render_graph.scene_color);
+            });
         shadow_depth_is_sampled_ = true;
     }
 
     void record_shadow_pass(const cubey::vulkan::CommandRecorder& recorder,
                             const cubey::scene::RenderFramePlan3D& shadow_plan) const {
-        VkClearValue depth_clear{};
-        depth_clear.depthStencil = {1.0F, 0};
-        const cubey::render::DepthOnlyRenderingInfo rendering(
-            cubey::render::depth_target_view(shadow_depth()), depth_clear);
-
-        recorder.begin_rendering(rendering.info());
-        recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS,
-                               shadow_pipeline_resource().pipeline());
-        for (const cubey::scene::RenderDrawPacket3D& packet : shadow_plan.draw_packets) {
-            if (!packet.cast_shadows ||
-                !cubey::render::material_supports_pass(
-                    packet.material_info, cubey::render::MaterialPassKind::DepthOnly)) {
-                continue;
-            }
-            const ShadowPushConstants push_constants{
-                .light_mvp = shadow_plan.view_projection_matrix * packet.world_affine_matrix,
-            };
-            recorder.push_constants(shadow_pipeline_resource().layout(), VK_SHADER_STAGE_VERTEX_BIT,
-                                    0, push_constants);
-            const cubey::render::RenderItem render_item =
-                cubey::scene::render_item_from_packet(packet);
-            const cubey::render::DrawItem draw_item =
-                cubey::render::resolve_draw_item(render_item, meshes_);
-            cubey::render::record_draw_item(recorder.handle(), draw_item);
-        }
-        recorder.end_rendering();
+        cubey::render::record_depth_only_pass(
+            recorder, cubey::render::depth_target_view(shadow_depth()),
+            cubey::render::depth_clear_value(),
+            [this, &shadow_plan](const cubey::vulkan::CommandRecorder& pass_recorder) {
+                pass_recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                            shadow_pipeline_resource().pipeline());
+                for (const cubey::scene::RenderDrawPacket3D& packet : shadow_plan.draw_packets) {
+                    if (!packet.cast_shadows ||
+                        !cubey::render::material_supports_pass(
+                            packet.material_info, cubey::render::MaterialPassKind::DepthOnly)) {
+                        continue;
+                    }
+                    const ShadowPushConstants push_constants{
+                        .light_mvp =
+                            shadow_plan.view_projection_matrix * packet.world_affine_matrix,
+                    };
+                    pass_recorder.push_constants(shadow_pipeline_resource().layout(),
+                                                 VK_SHADER_STAGE_VERTEX_BIT, 0, push_constants);
+                    const cubey::render::RenderItem render_item =
+                        cubey::scene::render_item_from_packet(packet);
+                    const cubey::render::DrawItem draw_item =
+                        cubey::render::resolve_draw_item(render_item, meshes_);
+                    cubey::render::record_draw_item(pass_recorder.handle(), draw_item);
+                }
+            });
     }
 
     void record_scene_pass(const cubey::vulkan::CommandRecorder& recorder,
                            cubey::render::ColorTargetView color_target,
                            const cubey::scene::RenderFramePlan3D& scene_plan,
                            const cubey::scene::RenderFramePlan3D& shadow_plan) const {
-        VkClearValue color_clear{};
-        color_clear.color = {{0.026F, 0.029F, 0.034F, 1.0F}};
-        VkClearValue depth_clear{};
-        depth_clear.depthStencil = {1.0F, 0};
-        const cubey::render::RenderTargetRenderingInfo rendering(
+        cubey::render::record_render_target_pass(
+            recorder,
             cubey::render::render_target_view(color_target,
                                               cubey::render::depth_target_view(depth_attachment())),
             cubey::render::RenderClearValues{
-                .color = color_clear,
-                .depth = depth_clear,
+                .color = cubey::render::color_clear_value(0.026F, 0.029F, 0.034F, 1.0F),
+                .depth = cubey::render::depth_clear_value(),
+            },
+            [this, &scene_plan, &shadow_plan](const cubey::vulkan::CommandRecorder& pass_recorder) {
+                pass_recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                            scene_pipeline_resource().pipeline());
+                const VkDescriptorSet descriptor_set = descriptors().set();
+                pass_recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                                  scene_pipeline_resource().layout(), 0,
+                                                  descriptor_set);
+                for (const cubey::scene::RenderDrawPacket3D& packet : scene_plan.draw_packets) {
+                    if (!cubey::render::material_supports_pass(
+                            packet.material_info, cubey::render::MaterialPassKind::ForwardColor)) {
+                        continue;
+                    }
+                    const ScenePushConstants push_constants{
+                        .mvp = scene_plan.view_projection_matrix * packet.world_affine_matrix,
+                        .light_mvp =
+                            shadow_plan.view_projection_matrix * packet.world_affine_matrix,
+                    };
+                    pass_recorder.push_constants(scene_pipeline_resource().layout(),
+                                                 VK_SHADER_STAGE_VERTEX_BIT, 0, push_constants);
+                    const cubey::render::RenderItem render_item =
+                        cubey::scene::render_item_from_packet(packet);
+                    const cubey::render::DrawItem draw_item =
+                        cubey::render::resolve_draw_item(render_item, meshes_);
+                    cubey::render::record_draw_item(pass_recorder.handle(), draw_item);
+                }
             });
-
-        recorder.begin_rendering(rendering.info());
-        recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS,
-                               scene_pipeline_resource().pipeline());
-        const VkDescriptorSet descriptor_set = descriptors().set();
-        recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                     scene_pipeline_resource().layout(), 0, descriptor_set);
-        for (const cubey::scene::RenderDrawPacket3D& packet : scene_plan.draw_packets) {
-            if (!cubey::render::material_supports_pass(
-                    packet.material_info, cubey::render::MaterialPassKind::ForwardColor)) {
-                continue;
-            }
-            const ScenePushConstants push_constants{
-                .mvp = scene_plan.view_projection_matrix * packet.world_affine_matrix,
-                .light_mvp = shadow_plan.view_projection_matrix * packet.world_affine_matrix,
-            };
-            recorder.push_constants(scene_pipeline_resource().layout(), VK_SHADER_STAGE_VERTEX_BIT,
-                                    0, push_constants);
-            const cubey::render::RenderItem render_item =
-                cubey::scene::render_item_from_packet(packet);
-            const cubey::render::DrawItem draw_item =
-                cubey::render::resolve_draw_item(render_item, meshes_);
-            cubey::render::record_draw_item(recorder.handle(), draw_item);
-        }
-        recorder.end_rendering();
     }
 
     void record_present_pass(const cubey::vulkan::CommandRecorder& recorder,
                              const cubey::host::WindowedRenderFrame& frame) const {
-        VkClearValue color_clear{};
-        color_clear.color = {{0.0F, 0.0F, 0.0F, 1.0F}};
-        const cubey::render::RenderTargetRenderingInfo rendering(
-            cubey::render::render_target_view(frame.color_target), cubey::render::RenderClearValues{
-                                                                       .color = color_clear,
-                                                                   });
-
-        recorder.begin_rendering(rendering.info());
-        recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS,
-                               present_pipeline_resource().pipeline());
-        const VkDescriptorSet descriptor_set = present_descriptors().set(frame.frame_slot.index);
-        recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                     present_pipeline_resource().layout(), 0, descriptor_set);
-        recorder.draw(3);
-        recorder.end_rendering();
+        cubey::render::record_render_target_pass(
+            recorder, cubey::render::render_target_view(frame.color_target),
+            cubey::render::RenderClearValues{
+                .color = cubey::render::color_clear_value(0.0F, 0.0F, 0.0F, 1.0F),
+            },
+            [this,
+             frame_slot = frame.frame_slot](const cubey::vulkan::CommandRecorder& pass_recorder) {
+                pass_recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                            present_pipeline_resource().pipeline());
+                const VkDescriptorSet descriptor_set = present_descriptors().set(frame_slot.index);
+                pass_recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                                  present_pipeline_resource().layout(), 0,
+                                                  descriptor_set);
+                cubey::render::record_fullscreen_triangle(pass_recorder);
+            });
     }
 
     [[nodiscard]] cubey::Scene& scene() {

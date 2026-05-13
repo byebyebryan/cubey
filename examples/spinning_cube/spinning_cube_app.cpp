@@ -17,7 +17,6 @@
 #include <cubey/scene/view_3d.h>
 #include <cubey/vulkan/command_recorder.h>
 #include <cubey/vulkan/image.h>
-#include <cubey/vulkan/image_transitions.h>
 
 #include <vulkan/vulkan.h>
 
@@ -165,18 +164,17 @@ class SpinningCubeApp {
         const cubey::render::VertexInputLayout vertex_input =
             cubey::render::vertex_position_color_input_layout();
 
-        const cubey::render::MaterialPassInfo material_pass =
-            spinning_cube_forward_pass_info();
-        pipeline_resource_.emplace(
-            context.device(), cubey::render::GraphicsPipelineResourceConfig{
-                                  .extent = context.swapchain().extent(),
-                                  .color_format = context.swapchain().format(),
-                                  .depth_format = depth_attachment().format(),
-                                  .shader_stages = shader_program.stages(),
-                                  .vertex_bindings = vertex_input.bindings(),
-                                  .vertex_attributes = vertex_input.attribute_descriptions(),
-                                  .material_pass = material_pass,
-                              });
+        const cubey::render::MaterialPassInfo material_pass = spinning_cube_forward_pass_info();
+        pipeline_resource_.emplace(context.device(),
+                                   cubey::render::GraphicsPipelineResourceConfig{
+                                       .extent = context.swapchain().extent(),
+                                       .color_format = context.swapchain().format(),
+                                       .depth_format = depth_attachment().format(),
+                                       .shader_stages = shader_program.stages(),
+                                       .vertex_bindings = vertex_input.bindings(),
+                                       .vertex_attributes = vertex_input.attribute_descriptions(),
+                                       .material_pass = material_pass,
+                                   });
     }
 
     void create_depth_resources(cubey::host::WindowedAppContext& context) {
@@ -260,39 +258,29 @@ class SpinningCubeApp {
         const cubey::vulkan::CommandRecorder recorder(frame.command_buffer);
         recorder.begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
-        recorder.transition_image_layout(
-            cubey::vulkan::begin_color_attachment_transition(frame.color_target.image));
-        recorder.transition_image_layout(
-            cubey::vulkan::begin_depth_attachment_transition(depth_attachment().handle()));
-
-        VkClearValue color_clear{};
-        color_clear.color = {{0.015F, 0.017F, 0.024F, 1.0F}};
-        VkClearValue depth_clear{};
-        depth_clear.depthStencil = {1.0F, 0};
         const cubey::render::RenderTargetView target = cubey::render::render_target_view(
             frame.color_target, cubey::render::depth_target_view(depth_attachment()));
         const cubey::render::RenderClearValues clear_values{
-            .color = color_clear,
-            .depth = depth_clear,
+            .color = cubey::render::color_clear_value(0.015F, 0.017F, 0.024F, 1.0F),
+            .depth = cubey::render::depth_clear_value(),
         };
-        const cubey::render::RenderTargetRenderingInfo rendering(target, clear_values);
 
         const PushConstants push_constants = current_push_constants(frame_plan, draw_packet);
 
-        recorder.begin_rendering(rendering.info());
-        recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_resource().pipeline());
-        recorder.push_constants(pipeline_resource().layout(), VK_SHADER_STAGE_VERTEX_BIT, 0,
-                                push_constants);
-        const cubey::render::RenderItem render_item =
-            cubey::scene::render_item_from_packet(draw_packet);
-        const cubey::render::DrawItem draw_item =
-            cubey::render::resolve_draw_item(render_item, meshes_);
-        cubey::render::record_draw_item(recorder.handle(), draw_item);
-        recorder.end_rendering();
-
-        recorder.transition_image_layout(
-            cubey::vulkan::finish_color_attachment_for_present_transition(
-                frame.color_target.image));
+        cubey::render::record_present_render_target_pass(
+            recorder, target, clear_values,
+            [this, &draw_packet,
+             push_constants](const cubey::vulkan::CommandRecorder& pass_recorder) {
+                pass_recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                            pipeline_resource().pipeline());
+                pass_recorder.push_constants(pipeline_resource().layout(),
+                                             VK_SHADER_STAGE_VERTEX_BIT, 0, push_constants);
+                const cubey::render::RenderItem render_item =
+                    cubey::scene::render_item_from_packet(draw_packet);
+                const cubey::render::DrawItem draw_item =
+                    cubey::render::resolve_draw_item(render_item, meshes_);
+                cubey::render::record_draw_item(pass_recorder.handle(), draw_item);
+            });
 
         recorder.end("vkEndCommandBuffer spinning_cube");
     }

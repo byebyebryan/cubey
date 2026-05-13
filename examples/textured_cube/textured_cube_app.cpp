@@ -27,9 +27,6 @@
 #include <cubey/vulkan/image.h>
 #include <cubey/vulkan/image_transitions.h>
 #include <cubey/vulkan/immediate_commands.h>
-#include <cubey/vulkan/pipeline.h>
-#include <cubey/vulkan/shader_bytecode.h>
-#include <cubey/vulkan/shader_module.h>
 #include <cubey/vulkan/vk_check.h>
 
 #include <vulkan/vulkan.h>
@@ -52,7 +49,6 @@ namespace cubey::examples::textured_cube {
 namespace {
 
 using cubey::host::FrameStatsSample;
-using cubey::vulkan::vk_struct;
 
 constexpr std::uint32_t kTextureWidth = 64;
 constexpr std::uint32_t kTextureHeight = 64;
@@ -236,20 +232,19 @@ class TexturedCubeApp {
         const cubey::render::VertexInputLayout vertex_input =
             cubey::render::vertex_position_color_normal_uv_input_layout();
 
-        const cubey::render::MaterialPassInfo material_pass =
-            textured_cube_forward_pass_info();
+        const cubey::render::MaterialPassInfo material_pass = textured_cube_forward_pass_info();
         const std::array<VkDescriptorSetLayout, 1> set_layouts{descriptors().layout()};
-        pipeline_resource_.emplace(
-            context.device(), cubey::render::GraphicsPipelineResourceConfig{
-                                  .extent = context.swapchain().extent(),
-                                  .color_format = context.swapchain().format(),
-                                  .depth_format = depth_attachment().format(),
-                                  .shader_stages = shader_program.stages(),
-                                  .vertex_bindings = vertex_input.bindings(),
-                                  .vertex_attributes = vertex_input.attribute_descriptions(),
-                                  .descriptor_set_layouts = set_layouts,
-                                  .material_pass = material_pass,
-                              });
+        pipeline_resource_.emplace(context.device(),
+                                   cubey::render::GraphicsPipelineResourceConfig{
+                                       .extent = context.swapchain().extent(),
+                                       .color_format = context.swapchain().format(),
+                                       .depth_format = depth_attachment().format(),
+                                       .shader_stages = shader_program.stages(),
+                                       .vertex_bindings = vertex_input.bindings(),
+                                       .vertex_attributes = vertex_input.attribute_descriptions(),
+                                       .descriptor_set_layouts = set_layouts,
+                                       .material_pass = material_pass,
+                                   });
     }
 
     void create_depth_resources(cubey::host::WindowedAppContext& context) {
@@ -360,28 +355,19 @@ class TexturedCubeApp {
         descriptor_writes.update(context.device());
 
         const std::array<VkDescriptorSetLayout, 1> set_layouts{compute_descriptors().layout()};
-        const cubey::vulkan::PipelineLayoutInfo pipeline_layout_info({
-            .set_layouts = set_layouts,
-            .push_constants = {},
-        });
-        compute_pipeline_layout_.emplace(context.device(), pipeline_layout_info.create_info());
-
-        const std::vector<std::uint32_t> compute_code =
-            cubey::vulkan::read_spirv_file(shader_path("textured_cube.comp.spv"));
-        cubey::vulkan::ShaderModule compute_shader(context.device(), compute_code);
-
-        const VkPipelineShaderStageCreateInfo stage =
-            cubey::vulkan::shader_stage(VK_SHADER_STAGE_COMPUTE_BIT, compute_shader.handle());
-        const cubey::vulkan::ComputePipelineInfo pipeline_info({
-            .layout = compute_pipeline_layout().handle(),
-            .shader_stage = stage,
-        });
-        compute_pipeline_.emplace(context.device(), pipeline_info.create_info());
+        compute_pipeline_resource_.emplace(
+            context.device(), cubey::render::ComputePipelineResourceConfig{
+                                  .shader_stage =
+                                      {
+                                          .stage = VK_SHADER_STAGE_COMPUTE_BIT,
+                                          .path = shader_path("textured_cube.comp.spv"),
+                                      },
+                                  .descriptor_set_layouts = set_layouts,
+                              });
     }
 
     void destroy_compute_resources() {
-        compute_pipeline_.reset();
-        compute_pipeline_layout_.reset();
+        compute_pipeline_resource_.reset();
         compute_descriptors_.reset();
     }
 
@@ -401,10 +387,10 @@ class TexturedCubeApp {
                                                               gpu_context.submission());
                     const cubey::vulkan::CommandRecorder recorder(commands.command_buffer());
                     recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_COMPUTE,
-                                           compute_pipeline().handle());
+                                           compute_pipeline_resource().pipeline());
                     const VkDescriptorSet descriptor_set = compute_descriptors().set();
                     recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_COMPUTE,
-                                                 compute_pipeline_layout().handle(), 0,
+                                                 compute_pipeline_resource().layout(), 0,
                                                  descriptor_set);
                     recorder.dispatch(groups_x, groups_y, 1);
                     commands.submit_and_wait();
@@ -417,8 +403,7 @@ class TexturedCubeApp {
     }
 
     void create_descriptors(cubey::host::WindowedAppContext& context) {
-        const cubey::render::MaterialPassInfo material_pass =
-            textured_cube_forward_pass_info();
+        const cubey::render::MaterialPassInfo material_pass = textured_cube_forward_pass_info();
         const std::uint32_t frame_slot_count = context.frame_slot_count();
         const cubey::vulkan::DescriptorSetInfo descriptor_info(
             cubey::render::material_descriptor_set_info(material_pass, 0, frame_slot_count));
@@ -521,38 +506,28 @@ class TexturedCubeApp {
 
         recorder.begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
-        recorder.transition_image_layout(
-            cubey::vulkan::begin_color_attachment_transition(frame.color_target.image));
-        recorder.transition_image_layout(
-            cubey::vulkan::begin_depth_attachment_transition(depth_attachment().handle()));
-
-        VkClearValue color_clear{};
-        color_clear.color = {{0.014F, 0.016F, 0.022F, 1.0F}};
-        VkClearValue depth_clear{};
-        depth_clear.depthStencil = {1.0F, 0};
         const cubey::render::RenderTargetView target = cubey::render::render_target_view(
             frame.color_target, cubey::render::depth_target_view(depth_attachment()));
         const cubey::render::RenderClearValues clear_values{
-            .color = color_clear,
-            .depth = depth_clear,
+            .color = cubey::render::color_clear_value(0.014F, 0.016F, 0.022F, 1.0F),
+            .depth = cubey::render::depth_clear_value(),
         };
-        const cubey::render::RenderTargetRenderingInfo rendering(target, clear_values);
 
-        recorder.begin_rendering(rendering.info());
-        recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_resource().pipeline());
-        const VkDescriptorSet descriptor_set = descriptors().set(frame.frame_slot.index);
-        recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_resource().layout(),
-                                     0, descriptor_set);
-        const cubey::render::RenderItem render_item =
-            cubey::scene::render_item_from_packet(draw_packet);
-        const cubey::render::DrawItem draw_item =
-            cubey::render::resolve_draw_item(render_item, meshes_);
-        cubey::render::record_draw_item(recorder.handle(), draw_item);
-        recorder.end_rendering();
-
-        recorder.transition_image_layout(
-            cubey::vulkan::finish_color_attachment_for_present_transition(
-                frame.color_target.image));
+        cubey::render::record_present_render_target_pass(
+            recorder, target, clear_values,
+            [this, &draw_packet,
+             frame_slot = frame.frame_slot](const cubey::vulkan::CommandRecorder& pass_recorder) {
+                pass_recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                            pipeline_resource().pipeline());
+                const VkDescriptorSet descriptor_set = descriptors().set(frame_slot.index);
+                pass_recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                                  pipeline_resource().layout(), 0, descriptor_set);
+                const cubey::render::RenderItem render_item =
+                    cubey::scene::render_item_from_packet(draw_packet);
+                const cubey::render::DrawItem draw_item =
+                    cubey::render::resolve_draw_item(render_item, meshes_);
+                cubey::render::record_draw_item(pass_recorder.handle(), draw_item);
+            });
 
         recorder.end("vkEndCommandBuffer textured_cube");
     }
@@ -624,18 +599,11 @@ class TexturedCubeApp {
         return pipeline_resource_.value();
     }
 
-    [[nodiscard]] const cubey::vulkan::PipelineLayout& compute_pipeline_layout() const {
-        if (!compute_pipeline_layout_.has_value()) {
-            throw std::runtime_error("compute pipeline layout is not initialized");
+    [[nodiscard]] const cubey::render::ComputePipelineResource& compute_pipeline_resource() const {
+        if (!compute_pipeline_resource_.has_value()) {
+            throw std::runtime_error("compute pipeline resource is not initialized");
         }
-        return compute_pipeline_layout_.value();
-    }
-
-    [[nodiscard]] const cubey::vulkan::ComputePipeline& compute_pipeline() const {
-        if (!compute_pipeline_.has_value()) {
-            throw std::runtime_error("compute pipeline is not initialized");
-        }
-        return compute_pipeline_.value();
+        return compute_pipeline_resource_.value();
     }
 
     [[nodiscard]] const cubey::vulkan::DepthAttachment& depth_attachment() const {
@@ -662,8 +630,7 @@ class TexturedCubeApp {
     std::optional<cubey::render::GraphicsPipelineResource> pipeline_resource_;
     std::optional<cubey::vulkan::DepthAttachment> depth_attachment_;
     std::optional<cubey::vulkan::DescriptorSetBundle> compute_descriptors_;
-    std::optional<cubey::vulkan::PipelineLayout> compute_pipeline_layout_;
-    std::optional<cubey::vulkan::ComputePipeline> compute_pipeline_;
+    std::optional<cubey::render::ComputePipelineResource> compute_pipeline_resource_;
 };
 
 } // namespace

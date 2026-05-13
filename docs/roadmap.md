@@ -220,13 +220,14 @@ Current checkpoint:
 - Reusable `cubey::vulkan::DynamicGraphicsPipelineInfo` builds the current
   dynamic-rendering graphics pipeline create-info shape for color and
   depth-only pipelines, optional depth, and blending. `cubey::render`
-  `ShaderProgram` and `GraphicsPipelineResource` now package shader modules,
-  pipeline layouts, and graphics pipeline lifetime for the cube examples. Those
-  examples source descriptor layout shape, push constants, depth state, blend
-  state, and pass participation from `MaterialPassInfo`, and source standard
-  cube/plane vertex data and input layouts from `cubey::render` primitives,
-  while still owning descriptor writes, Vulkan resource ownership, and command
-  binding explicitly.
+  `ShaderProgram`, `GraphicsPipelineResource`, and `ComputePipelineResource`
+  now package shader modules, pipeline layouts, and graphics/compute pipeline
+  lifetime for the examples and `fluid_2d`. Those examples source descriptor
+  layout shape, push constants, depth state, blend state, and pass
+  participation from `MaterialPassInfo`, source standard cube/plane vertex data
+  and input layouts from `cubey::render` primitives, and use render-target pass
+  helpers for dynamic-rendering scopes while still owning descriptor writes,
+  Vulkan resource ownership, and command binding explicitly.
 - Reusable `cubey::vulkan` image-transition helpers build the current
   color/depth/storage/transfer/sampled-depth layout transitions, while
   dynamic-rendering helpers build color/depth attachment descriptors without

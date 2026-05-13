@@ -2,7 +2,6 @@
 
 #include <cubey/render/render_graph.h>
 #include <cubey/vulkan/command_recorder.h>
-#include <cubey/vulkan/dynamic_rendering.h>
 #include <cubey/vulkan/vk_check.h>
 
 #include <algorithm>
@@ -179,12 +178,13 @@ void record_fluid_compute(VkCommandBuffer command_buffer, Fluid2DGpuResources& r
         simulation_push_constants(config, injection, frame);
     const DispatchGroups groups = compute_dispatch_groups(config);
 
-    recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_COMPUTE, resources.inject_pipeline().handle());
-    recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_COMPUTE,
-                                 resources.compute_pipeline_layout().handle(), 0,
+    const cubey::render::ComputePipelineResource& inject_pipeline =
+        resources.inject_pipeline_resource();
+    recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_COMPUTE, inject_pipeline.pipeline());
+    recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_COMPUTE, inject_pipeline.layout(), 0,
                                  resources.inject_descriptor_set());
-    recorder.push_constants(resources.compute_pipeline_layout().handle(),
-                            VK_SHADER_STAGE_COMPUTE_BIT, 0, push_constants);
+    recorder.push_constants(inject_pipeline.layout(), VK_SHADER_STAGE_COMPUTE_BIT, 0,
+                            push_constants);
     recorder.dispatch(groups.x, groups.y, 1);
 
     record_shader_write_barrier(
@@ -193,12 +193,13 @@ void record_fluid_compute(VkCommandBuffer command_buffer, Fluid2DGpuResources& r
                             .dst_access = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
                         });
 
-    recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_COMPUTE, resources.advect_pipeline().handle());
-    recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_COMPUTE,
-                                 resources.compute_pipeline_layout().handle(), 0,
+    const cubey::render::ComputePipelineResource& advect_pipeline =
+        resources.advect_pipeline_resource();
+    recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_COMPUTE, advect_pipeline.pipeline());
+    recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_COMPUTE, advect_pipeline.layout(), 0,
                                  resources.advect_descriptor_set());
-    recorder.push_constants(resources.compute_pipeline_layout().handle(),
-                            VK_SHADER_STAGE_COMPUTE_BIT, 0, push_constants);
+    recorder.push_constants(advect_pipeline.layout(), VK_SHADER_STAGE_COMPUTE_BIT, 0,
+                            push_constants);
     recorder.dispatch(groups.x, groups.y, 1);
 
     record_shader_write_barrier(
@@ -207,13 +208,13 @@ void record_fluid_compute(VkCommandBuffer command_buffer, Fluid2DGpuResources& r
                             .dst_access = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
                         });
 
-    recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_COMPUTE,
-                           resources.divergence_pipeline().handle());
-    recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_COMPUTE,
-                                 resources.divergence_pipeline_layout().handle(), 0,
+    const cubey::render::ComputePipelineResource& divergence_pipeline =
+        resources.divergence_pipeline_resource();
+    recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_COMPUTE, divergence_pipeline.pipeline());
+    recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_COMPUTE, divergence_pipeline.layout(), 0,
                                  resources.divergence_descriptor_set());
-    recorder.push_constants(resources.divergence_pipeline_layout().handle(),
-                            VK_SHADER_STAGE_COMPUTE_BIT, 0, push_constants);
+    recorder.push_constants(divergence_pipeline.layout(), VK_SHADER_STAGE_COMPUTE_BIT, 0,
+                            push_constants);
     recorder.dispatch(groups.x, groups.y, 1);
 
     record_shader_write_barrier(
@@ -222,16 +223,17 @@ void record_fluid_compute(VkCommandBuffer command_buffer, Fluid2DGpuResources& r
                             .dst_access = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
                         });
 
-    recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_COMPUTE, resources.pressure_pipeline().handle());
+    const cubey::render::ComputePipelineResource& pressure_pipeline =
+        resources.pressure_pipeline_resource();
+    recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_COMPUTE, pressure_pipeline.pipeline());
     for (std::uint32_t iteration = 0; iteration < config.pressure_iterations; ++iteration) {
         const VkDescriptorSet descriptor_set = (iteration % 2U == 0)
                                                    ? resources.pressure_a_to_b_descriptor_set()
                                                    : resources.pressure_b_to_a_descriptor_set();
-        recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_COMPUTE,
-                                     resources.pressure_pipeline_layout().handle(), 0,
+        recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_COMPUTE, pressure_pipeline.layout(), 0,
                                      descriptor_set);
-        recorder.push_constants(resources.pressure_pipeline_layout().handle(),
-                                VK_SHADER_STAGE_COMPUTE_BIT, 0, push_constants);
+        recorder.push_constants(pressure_pipeline.layout(), VK_SHADER_STAGE_COMPUTE_BIT, 0,
+                                push_constants);
         recorder.dispatch(groups.x, groups.y, 1);
         record_shader_write_barrier(
             command_buffer,
@@ -245,13 +247,13 @@ void record_fluid_compute(VkCommandBuffer command_buffer, Fluid2DGpuResources& r
     const VkDescriptorSet projection_descriptor_set =
         final_pressure_is_a ? resources.projection_pressure_a_descriptor_set()
                             : resources.projection_pressure_b_descriptor_set();
-    recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_COMPUTE,
-                           resources.projection_pipeline().handle());
-    recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_COMPUTE,
-                                 resources.projection_pipeline_layout().handle(), 0,
+    const cubey::render::ComputePipelineResource& projection_pipeline =
+        resources.projection_pipeline_resource();
+    recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_COMPUTE, projection_pipeline.pipeline());
+    recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_COMPUTE, projection_pipeline.layout(), 0,
                                  projection_descriptor_set);
-    recorder.push_constants(resources.projection_pipeline_layout().handle(),
-                            VK_SHADER_STAGE_COMPUTE_BIT, 0, push_constants);
+    recorder.push_constants(projection_pipeline.layout(), VK_SHADER_STAGE_COMPUTE_BIT, 0,
+                            push_constants);
     recorder.dispatch(groups.x, groups.y, 1);
 
     if (include_render_visibility_barrier) {
@@ -267,21 +269,8 @@ void record_fluid_compute(VkCommandBuffer command_buffer, Fluid2DGpuResources& r
 
 void record_fullscreen_draw(VkCommandBuffer command_buffer, const Fluid2DGpuResources& resources,
                             const Fluid2DConfig& config, FluidDebugView debug_view,
-                            VkImageView image_view, VkExtent2D extent) {
+                            cubey::render::ColorTargetView color_target) {
     const cubey::vulkan::CommandRecorder recorder(command_buffer);
-
-    VkClearValue clear{};
-    clear.color = {{0.006F, 0.008F, 0.014F, 1.0F}};
-    const VkRenderingAttachmentInfo color_attachment =
-        cubey::vulkan::color_rendering_attachment(image_view, clear);
-
-    auto rendering = vk_struct<VkRenderingInfo>(VK_STRUCTURE_TYPE_RENDERING_INFO);
-    rendering.renderArea.offset = {0, 0};
-    rendering.renderArea.extent = extent;
-    rendering.layerCount = 1;
-    rendering.colorAttachmentCount = 1;
-    rendering.pColorAttachments = &color_attachment;
-
     const RenderPushConstants push_constants{
         .grid_debug =
             {
@@ -292,22 +281,28 @@ void record_fullscreen_draw(VkCommandBuffer command_buffer, const Fluid2DGpuReso
             },
     };
 
-    recorder.begin_rendering(rendering);
-    recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, resources.render_pipeline().handle());
-    recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                 resources.render_pipeline_layout().handle(), 0,
-                                 resources.render_descriptors().set());
-    recorder.push_constants(resources.render_pipeline_layout().handle(),
-                            VK_SHADER_STAGE_FRAGMENT_BIT, 0, push_constants);
-    recorder.draw(3);
-    recorder.end_rendering();
+    cubey::render::record_render_target_pass(
+        recorder, cubey::render::render_target_view(color_target),
+        cubey::render::RenderClearValues{
+            .color = cubey::render::color_clear_value(0.006F, 0.008F, 0.014F, 1.0F),
+        },
+        [&resources, push_constants](const cubey::vulkan::CommandRecorder& pass_recorder) {
+            pass_recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                        resources.render_pipeline().handle());
+            pass_recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                              resources.render_pipeline_layout().handle(), 0,
+                                              resources.render_descriptors().set());
+            pass_recorder.push_constants(resources.render_pipeline_layout().handle(),
+                                         VK_SHADER_STAGE_FRAGMENT_BIT, 0, push_constants);
+            cubey::render::record_fullscreen_triangle(pass_recorder);
+        });
 }
 
 [[nodiscard]] cubey::render::CompiledRenderGraph
-build_fluid_frame_graph(cubey::render::ColorTargetView color_target,
-                        Fluid2DGpuResources& resources, const Fluid2DConfig& config,
-                        FluidDebugView debug_view, const FrameInjection& injection, bool paused,
-                        bool& reset_requested, const ProjectFrame& frame) {
+build_fluid_frame_graph(cubey::render::ColorTargetView color_target, Fluid2DGpuResources& resources,
+                        const Fluid2DConfig& config, FluidDebugView debug_view,
+                        const FrameInjection& injection, bool paused, bool& reset_requested,
+                        const ProjectFrame& frame) {
     Fluid2DGpuResources* resource_ptr = &resources;
     const Fluid2DConfig* config_ptr = &config;
     bool* reset_requested_ptr = &reset_requested;
@@ -324,9 +319,8 @@ build_fluid_frame_graph(cubey::render::ColorTargetView color_target,
     const cubey::render::RenderGraphBufferHandle pressure_b = graph.import_buffer(
         {.label = "fluid pressure B", .byte_size = resources.pressure_b().size()},
         resources.pressure_b().handle());
-    const cubey::render::RenderGraphTextureHandle backbuffer =
-        graph.import_color_target("backbuffer", color_target, undefined_texture_state(),
-                                  present_texture_state());
+    const cubey::render::RenderGraphTextureHandle backbuffer = graph.import_color_target(
+        "backbuffer", color_target, undefined_texture_state(), present_texture_state());
 
     graph.add_pass("fluid simulation", cubey::render::RenderGraphQueueDomain::Compute)
         .read_write_storage_buffer(field)
@@ -335,8 +329,8 @@ build_fluid_frame_graph(cubey::render::ColorTargetView color_target,
         .read_write_storage_buffer(pressure_b)
         .execute([resource_ptr, config_ptr, injection, paused, reset_requested_ptr,
                   frame](const cubey::render::RenderGraphExecutionContext& context) {
-            record_fluid_compute(context.recorder().handle(), *resource_ptr, *config_ptr,
-                                 injection, paused, *reset_requested_ptr, frame, false);
+            record_fluid_compute(context.recorder().handle(), *resource_ptr, *config_ptr, injection,
+                                 paused, *reset_requested_ptr, frame, false);
         });
     graph.add_pass("fluid render", cubey::render::RenderGraphQueueDomain::Graphics)
         .read_storage_buffer(field)
@@ -344,11 +338,15 @@ build_fluid_frame_graph(cubey::render::ColorTargetView color_target,
         .read_storage_buffer(pressure_a)
         .read_storage_buffer(pressure_b)
         .write_color(backbuffer)
-        .execute([resource_ptr, config_ptr, debug_view,
+        .execute([resource_ptr, config_ptr, debug_view, backbuffer,
                   color_target](const cubey::render::RenderGraphExecutionContext& context) {
             const cubey::vulkan::CommandRecorder& recorder = context.recorder();
+            const cubey::render::RenderGraphResolvedTexture resolved =
+                context.resolved_texture(backbuffer);
             record_fullscreen_draw(recorder.handle(), *resource_ptr, *config_ptr, debug_view,
-                                   color_target.view, color_target.extent);
+                                   cubey::render::color_target_view(color_target.extent,
+                                                                    color_target.format,
+                                                                    resolved.image, resolved.view));
         });
 
     return graph.compile();

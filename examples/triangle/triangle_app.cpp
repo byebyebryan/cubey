@@ -3,7 +3,6 @@
 #include <cubey/host/windowed_host.h>
 #include <cubey/render/target.h>
 #include <cubey/vulkan/command_recorder.h>
-#include <cubey/vulkan/image_transitions.h>
 #include <cubey/vulkan/pipeline.h>
 #include <cubey/vulkan/shader_bytecode.h>
 #include <cubey/vulkan/shader_module.h>
@@ -122,25 +121,17 @@ class TriangleApp {
         const cubey::vulkan::CommandRecorder recorder(frame.command_buffer);
         recorder.begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
-        recorder.transition_image_layout(
-            cubey::vulkan::begin_color_attachment_transition(frame.color_target.image));
-
-        VkClearValue clear{};
-        clear.color = {{0.015F, 0.017F, 0.024F, 1.0F}};
         const cubey::render::RenderTargetView target =
             cubey::render::render_target_view(frame.color_target);
-        cubey::render::RenderClearValues clear_values;
-        clear_values.color = clear;
-        const cubey::render::RenderTargetRenderingInfo rendering(target, clear_values);
-
-        recorder.begin_rendering(rendering.info());
-        recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline().handle());
-        recorder.draw(3);
-        recorder.end_rendering();
-
-        recorder.transition_image_layout(
-            cubey::vulkan::finish_color_attachment_for_present_transition(
-                frame.color_target.image));
+        cubey::render::record_present_render_target_pass(
+            recorder, target,
+            cubey::render::RenderClearValues{
+                .color = cubey::render::color_clear_value(0.015F, 0.017F, 0.024F, 1.0F),
+            },
+            [this](const cubey::vulkan::CommandRecorder& pass_recorder) {
+                pass_recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline().handle());
+                cubey::render::record_fullscreen_triangle(pass_recorder);
+            });
 
         recorder.end("vkEndCommandBuffer triangle");
     }

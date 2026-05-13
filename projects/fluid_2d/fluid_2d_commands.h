@@ -25,12 +25,12 @@ void record_fluid_compute(VkCommandBuffer command_buffer, Fluid2DGpuResources& r
 
 void record_fullscreen_draw(VkCommandBuffer command_buffer, const Fluid2DGpuResources& resources,
                             const Fluid2DConfig& config, FluidDebugView debug_view,
-                            VkImageView image_view, VkExtent2D extent);
+                            cubey::render::ColorTargetView color_target);
 
 [[nodiscard]] cubey::render::CompiledRenderGraph
-build_fluid_frame_graph(cubey::render::ColorTargetView color_target,
-                        Fluid2DGpuResources& resources, const Fluid2DConfig& config,
-                        FluidDebugView debug_view, const FrameInjection& injection, bool paused,
-                        bool& reset_requested, const ProjectFrame& frame);
+build_fluid_frame_graph(cubey::render::ColorTargetView color_target, Fluid2DGpuResources& resources,
+                        const Fluid2DConfig& config, FluidDebugView debug_view,
+                        const FrameInjection& injection, bool paused, bool& reset_requested,
+                        const ProjectFrame& frame);
 
 } // namespace cubey::projects::fluid_2d

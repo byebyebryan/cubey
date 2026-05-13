@@ -9,7 +9,6 @@
 #include <cubey/render/target.h>
 #include <cubey/vulkan/command_recorder.h>
 #include <cubey/vulkan/device.h>
-#include <cubey/vulkan/image_transitions.h>
 #include <cubey/vulkan/pipeline.h>
 #include <cubey/vulkan/shader_bytecode.h>
 #include <cubey/vulkan/shader_module.h>
@@ -117,7 +116,8 @@ class FractalApp {
         callbacks.record_capture = [this](cubey::host::HeadlessPngContext&,
                                           VkCommandBuffer command_buffer,
                                           const cubey::host::HeadlessRenderTarget& target) {
-            record_fractal_draw(command_buffer, target);
+            const cubey::vulkan::CommandRecorder recorder(command_buffer);
+            record_fractal_draw(recorder, target);
         };
         callbacks.shutdown = [this](cubey::host::HeadlessPngContext&) {
             destroy_swapchain_resources();
@@ -186,38 +186,31 @@ class FractalApp {
         return view_.push_constants(view_controller_.camera(), extent.width, extent.height);
     }
 
-    void record_fractal_draw(VkCommandBuffer command_buffer,
+    void record_fractal_draw(const cubey::vulkan::CommandRecorder& recorder,
                              const cubey::render::ColorTargetView& target) const {
-        VkClearValue clear{};
-        clear.color = {{0.015F, 0.018F, 0.026F, 1.0F}};
-        const cubey::render::RenderTargetView render_target =
-            cubey::render::render_target_view(target);
-        cubey::render::RenderClearValues clear_values;
-        clear_values.color = clear;
-        const cubey::render::RenderTargetRenderingInfo rendering(render_target, clear_values);
-
         const FractalPushConstants constants = push_constants(target.extent);
-        const cubey::vulkan::CommandRecorder recorder(command_buffer);
-        recorder.begin_rendering(rendering.info());
-        recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline().handle());
-        recorder.push_constants(pipeline_layout().handle(), VK_SHADER_STAGE_FRAGMENT_BIT, 0,
-                                constants);
-        recorder.draw(3);
-        recorder.end_rendering();
+        cubey::render::record_render_target_pass(
+            recorder, cubey::render::render_target_view(target),
+            cubey::render::RenderClearValues{
+                .color = cubey::render::color_clear_value(0.015F, 0.018F, 0.026F, 1.0F),
+            },
+            [this, constants](const cubey::vulkan::CommandRecorder& pass_recorder) {
+                pass_recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline().handle());
+                pass_recorder.push_constants(pipeline_layout().handle(),
+                                             VK_SHADER_STAGE_FRAGMENT_BIT, 0, constants);
+                cubey::render::record_fullscreen_triangle(pass_recorder);
+            });
     }
 
     void record_fractal_frame(const cubey::host::WindowedRenderFrame& frame) {
         const cubey::vulkan::CommandRecorder recorder(frame.command_buffer);
         recorder.begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
-        recorder.transition_image_layout(
-            cubey::vulkan::begin_color_attachment_transition(frame.color_target.image));
-
-        record_fractal_draw(recorder.handle(), frame.color_target);
-
-        recorder.transition_image_layout(
-            cubey::vulkan::finish_color_attachment_for_present_transition(
-                frame.color_target.image));
+        cubey::render::record_present_render_target(
+            recorder, cubey::render::render_target_view(frame.color_target),
+            [this, &frame](const cubey::vulkan::CommandRecorder& present_recorder) {
+                record_fractal_draw(present_recorder, frame.color_target);
+            });
 
         recorder.end("vkEndCommandBuffer fractal");
     }

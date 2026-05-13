@@ -76,4 +76,34 @@ class GraphicsPipelineResource {
     std::optional<cubey::vulkan::GraphicsPipeline> pipeline_{};
 };
 
+struct ComputePipelineResourceConfig {
+    ShaderStageFile shader_stage{
+        .stage = VK_SHADER_STAGE_COMPUTE_BIT,
+    };
+    std::span<const VkDescriptorSetLayout> descriptor_set_layouts{};
+    std::span<const VkPushConstantRange> push_constants{};
+};
+
+[[nodiscard]] cubey::vulkan::PipelineLayoutInfo
+compute_pipeline_layout_info(const ComputePipelineResourceConfig& config);
+[[nodiscard]] cubey::vulkan::ComputePipelineConfig
+compute_pipeline_config(const ComputePipelineResourceConfig& config, VkPipelineLayout layout,
+                        VkPipelineShaderStageCreateInfo shader_stage);
+
+class ComputePipelineResource {
+  public:
+    ComputePipelineResource(const cubey::vulkan::Device& device,
+                            const ComputePipelineResourceConfig& config);
+
+    ComputePipelineResource(const ComputePipelineResource&) = delete;
+    ComputePipelineResource& operator=(const ComputePipelineResource&) = delete;
+
+    [[nodiscard]] VkPipelineLayout layout() const;
+    [[nodiscard]] VkPipeline pipeline() const;
+
+  private:
+    std::optional<cubey::vulkan::PipelineLayout> layout_{};
+    std::optional<cubey::vulkan::ComputePipeline> pipeline_{};
+};
+
 } // namespace cubey::render
