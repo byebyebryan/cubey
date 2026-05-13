@@ -17,9 +17,9 @@ environment assets:
   prefiltered specular radiance, DFG LUT byte data, and uploaded GPU resources;
 - `gltf_viewer` binds those resources into the existing PBR scene material and
   lights the glTF PBR shader with Filament-style base-color remapping,
-  DFG-based IBL, specular energy compensation, correlated Smith direct
-  visibility, and indirect specular occlusion while keeping shader/pass
-  selection project-owned;
+  factor-only IOR/specular material controls, DFG-based IBL, specular energy
+  compensation, correlated Smith direct visibility, and indirect specular
+  occlusion while keeping shader/pass selection project-owned;
 - `pbr_furnace` isolates the current IBL/specular behavior with a white sphere
   grid that sweeps roughness across columns and metallic across rows under a
   uniform white environment;
@@ -39,13 +39,18 @@ The first IBL contract is:
   split-sum scale/bias terms, blue stores white-conductor single-scatter energy
   for compensation, and alpha remains one;
 - scene uniforms: environment intensity plus prefiltered mip count;
-- material factors and glTF textures remain in the material descriptor set.
+- material descriptor set: base-color, metallic-roughness, normal, occlusion,
+  and emissive textures plus a per-material uniform block for factors.
 
 The shared shader include remaps `baseColor` into `diffuseColor =
-baseColor * (1 - metallic)` and `f0 = mix(0.04, baseColor, metallic)`.
-Diffuse lighting uses `diffuseColor` directly; Fresnel-derived attenuation is
-kept on the specular path, where the DFG blue channel provides the
-single-scatter energy term used for multiscatter compensation.
+baseColor * (1 - metallic)` and computes dielectric F0 from Filament-style
+reflectance (`F0 = 0.16 * reflectance^2`) plus factor-only glTF
+`KHR_materials_specular` controls before mixing toward metallic `baseColor`.
+Diffuse lighting uses `diffuseColor` directly; Fresnel-derived attenuation
+stays on the specular path, where the DFG blue channel provides the
+single-scatter energy term used for multiscatter compensation. Per-draw push
+constants now carry only the model transform; material factors live in the
+material descriptor set.
 
 This keeps the PBR shader contract close to common real-time renderer practice
 while leaving HDR/KTX import, offline filtering, environment selection, and
@@ -53,8 +58,8 @@ renderer-wide material management explicit future work.
 
 ## Remaining Gaps
 
-- Reflectance/IOR and glTF specular material extensions are still absent; the
-  dielectric F0 is fixed at 4%.
+- glTF specular textures are still absent; only factor-only
+  `KHR_materials_ior` and `KHR_materials_specular` are imported.
 - Color management is still minimal: no renderer-wide exposure, tone mapping,
   color grading, or HDR output policy.
 - Generated IBL proves the descriptor and shader contract, but real
@@ -67,6 +72,9 @@ renderer-wide material management explicit future work.
 ## Non-Goals
 
 - Do not add HDR or KTX loading to the generated-IBL checkpoint.
+- Do not add specular, clearcoat, transmission, or other extension textures to
+  the material descriptor set yet.
 - Do not turn `cubey::render` into a renderer singleton or material manager.
 - Do not hide Vulkan layout transitions, descriptor writes, or pass ordering.
-- Do not add glTF animation, skinning, or material extensions as part of IBL.
+- Do not add glTF animation, skinning, or additional material extensions as
+  part of IBL.

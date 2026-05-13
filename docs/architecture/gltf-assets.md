@@ -26,14 +26,15 @@ viewer project that keeps pressure on the renderer.
   `stb_image`;
 - mesh primitives with position, normal, tangent, and UV0;
 - metallic-roughness PBR material factors and texture references;
+- factor-only `KHR_materials_ior` and `KHR_materials_specular` controls;
 - sampler filtering and per-axis wrapping metadata;
 - scene roots and node hierarchy with decomposed TRS transforms.
 
 Unsupported features fail early instead of being silently ignored:
-animations, skins, and morph targets are rejected by the loader. Extensions,
-multiple UV sets, vertex colors, sparse accessors, material variants,
-transmission, clearcoat, IBL asset import, animation, skinning, and streaming
-remain future slices.
+animations, skins, and morph targets are rejected by the loader. Other
+extensions, multiple UV sets, vertex colors, sparse accessors, material
+variants, transmission, clearcoat, IBL asset import, animation, skinning, and
+streaming remain future slices.
 
 `cubey::engine` owns the current asset-to-scene bridge:
 
@@ -50,10 +51,12 @@ remain future slices.
 
 `cubey::render` owns the reusable GPU-facing pieces:
 
-- `PbrVertex`, `PbrSceneUniforms`, `PbrMaterialFactors`, and
-  `PbrPushConstants` define the current shader contract;
+- `PbrVertex`, `PbrSceneUniforms`, `PbrMaterialFactors`,
+  `PbrMaterialUniforms`, and `PbrPushConstants` define the current shader
+  contract;
 - `pbr_forward_pass_info()` declares the scene uniform/shadow/IBL set, material
-  texture set, push constants, and opaque/alpha forward pass state;
+  texture plus uniform set, model-only push constants, and opaque/alpha forward
+  pass state;
 - `create_uploaded_texture_2d()` and `create_uploaded_texture_cube()` handle
   setup-time sampled texture uploads for glTF textures and generated IBL
   cubemaps;
@@ -70,8 +73,9 @@ camera and light entities around imported bounds, records shadow and PBR scene
 passes through the render graph, binds generated IBL resources into the PBR
 scene material, supports opaque plus alpha forward pipelines, and can run
 windowed or headless PNG capture. Its PBR shader uses the shared Cubey PBR
-helper include for base-color-to-diffuse/F0 remapping, correlated Smith direct
-visibility, DFG-based IBL energy compensation, and indirect specular occlusion.
+helper include for base-color-to-diffuse/F0 remapping, reflectance/specular
+factor controls, correlated Smith direct visibility, DFG-based IBL energy
+compensation, and indirect specular occlusion.
 
 ## Boundaries
 
@@ -86,7 +90,8 @@ renderer-wide material policy.
 The render layer exposes contracts and helpers, not a full material system.
 Texture lifetime, descriptor writes, material sorting policy, alpha/shadow
 policy, shader selection, and environment selection still belong to the project
-or future renderer layer.
+or future renderer layer. Specular textures, clearcoat, transmission, and other
+glTF material extensions remain future slices.
 
 ## Next Slices
 

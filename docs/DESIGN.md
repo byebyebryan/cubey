@@ -139,9 +139,10 @@ Reusable spatial types should stay explicit and narrow:
 - `cubey::render` owns the current generated PBR IBL environment helper for
   deterministic irradiance cube, GGX-prefiltered cube, and DFG LUT resources.
   Shared PBR shader helpers follow the established metallic-roughness remap:
-  base color becomes diffuse color for non-metals and F0 for metals, with a
-  fixed 4% dielectric F0 for now. HDR/KTX environment import and filtering
-  remain future asset-pipeline work.
+  base color becomes diffuse color for non-metals and F0 for metals, while
+  dielectric F0 comes from Filament-style reflectance plus factor-only glTF
+  IOR/specular controls. HDR/KTX environment import and filtering remain future
+  asset-pipeline work.
 - Scene render-planning helpers expose the first renderer-facing 3D view and
   pass-list contracts. They combine a scene read view, camera entity, viewport
   size, ambient environment, renderables, and lights into CPU

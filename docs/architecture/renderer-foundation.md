@@ -160,18 +160,20 @@ full engine architecture.
 - `cubey::render::MaterialPassInfo` is the first explicit material/pass
   metadata contract. It describes pass kind, descriptor layout shape,
   push-constant ranges, and reusable graphics pipeline state.
-- `PbrVertex`, `PbrSceneUniforms`, `PbrMaterialFactors`, `PbrPushConstants`,
-  and `pbr_forward_pass_info()` define the current PBR forward-pass contract:
-  one scene uniform/shadow/IBL set, one material texture set, and explicit
-  per-draw material factors. The scene set includes irradiance cube,
-  prefiltered cube, and the DFG/BRDF lookup binding.
+- `PbrVertex`, `PbrSceneUniforms`, `PbrMaterialFactors`,
+  `PbrMaterialUniforms`, `PbrPushConstants`, and
+  `pbr_forward_pass_info()` define the current PBR forward-pass contract: one
+  scene uniform/shadow/IBL set, one material texture/uniform set, model-only
+  per-draw push constants, and factor-only reflectance/specular controls. The
+  scene set includes irradiance cube, prefiltered cube, and the DFG/BRDF lookup
+  binding.
 - `GeneratedPbrEnvironment` creates deterministic setup-time irradiance cube,
   GGX-prefiltered radiance cube, and DFG LUT resources. The shared PBR shader
-  helpers remap base color into diffuse color plus F0 before lighting. The DFG
-  lookup stores scale/bias terms plus a white-conductor energy term used for
-  Filament-style specular energy compensation. It is a checkpoint helper for
-  PBR quality and descriptor shape, not a replacement for future HDR/KTX
-  environment asset import and filtering.
+  helpers remap base color into diffuse color plus material-derived F0 before
+  lighting. The DFG lookup stores scale/bias terms plus a white-conductor
+  energy term used for Filament-style specular energy compensation. It is a
+  checkpoint helper for PBR quality and descriptor shape, not a replacement for
+  future HDR/KTX environment asset import and filtering.
 - `cubey::render::MaterialInstance` owns the descriptor set layout, pool, and
   one or per-frame descriptor sets for one declared `MaterialPassInfo`
   descriptor set. `MaterialDescriptorWriter` keeps descriptor writes tied to a
