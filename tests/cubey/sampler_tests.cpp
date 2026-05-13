@@ -20,6 +20,12 @@ void test_sampler_config_describes_shadow_sampling() {
     require(defaults.mag_filter == VK_FILTER_LINEAR, "sampler should default to linear mag");
     require(defaults.address_mode == VK_SAMPLER_ADDRESS_MODE_REPEAT,
             "sampler should default to repeat addressing");
+    require(defaults.address_mode_u == VK_SAMPLER_ADDRESS_MODE_MAX_ENUM,
+            "sampler should default U addressing to the shared fallback");
+    require(defaults.address_mode_v == VK_SAMPLER_ADDRESS_MODE_MAX_ENUM,
+            "sampler should default V addressing to the shared fallback");
+    require(defaults.address_mode_w == VK_SAMPLER_ADDRESS_MODE_MAX_ENUM,
+            "sampler should default W addressing to the shared fallback");
     require(defaults.compare_enable == VK_FALSE, "sampler compare should default off");
 
     const cubey::vulkan::SamplerConfig config{
@@ -50,4 +56,18 @@ void test_sampler_config_describes_shadow_sampling() {
             "sampler create info should preserve compare op");
     require(info.mipmapMode == VK_SAMPLER_MIPMAP_MODE_NEAREST,
             "sampler create info should preserve mipmap mode");
+
+    const cubey::vulkan::SamplerConfig axis_config{
+        .address_mode = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+        .address_mode_u = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+        .address_mode_v = VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT,
+        .address_mode_w = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER,
+    };
+    const VkSamplerCreateInfo axis_info = cubey::vulkan::sampler_create_info(axis_config);
+    require(axis_info.addressModeU == VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+            "sampler create info should preserve U-specific address mode");
+    require(axis_info.addressModeV == VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT,
+            "sampler create info should preserve V-specific address mode");
+    require(axis_info.addressModeW == VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER,
+            "sampler create info should preserve W-specific address mode");
 }

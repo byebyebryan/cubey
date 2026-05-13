@@ -5,14 +5,22 @@
 #include <stdexcept>
 
 namespace cubey::vulkan {
+namespace {
+
+VkSamplerAddressMode resolved_address_mode(VkSamplerAddressMode axis_mode,
+                                           VkSamplerAddressMode fallback) {
+    return axis_mode == VK_SAMPLER_ADDRESS_MODE_MAX_ENUM ? fallback : axis_mode;
+}
+
+} // namespace
 
 VkSamplerCreateInfo sampler_create_info(const SamplerConfig& config) {
     auto info = vk_struct<VkSamplerCreateInfo>(VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO);
     info.magFilter = config.mag_filter;
     info.minFilter = config.min_filter;
-    info.addressModeU = config.address_mode;
-    info.addressModeV = config.address_mode;
-    info.addressModeW = config.address_mode;
+    info.addressModeU = resolved_address_mode(config.address_mode_u, config.address_mode);
+    info.addressModeV = resolved_address_mode(config.address_mode_v, config.address_mode);
+    info.addressModeW = resolved_address_mode(config.address_mode_w, config.address_mode);
     info.anisotropyEnable = VK_FALSE;
     info.maxAnisotropy = 1.0F;
     info.borderColor = config.border_color;

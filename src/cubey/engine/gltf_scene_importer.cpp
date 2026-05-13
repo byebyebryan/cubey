@@ -17,6 +17,7 @@
 #include <span>
 #include <stdexcept>
 #include <string>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -27,6 +28,22 @@ struct TextureBinding {
     VkSampler sampler = VK_NULL_HANDLE;
     VkImageView view = VK_NULL_HANDLE;
 };
+
+struct TextureCacheKey {
+    std::uint32_t texture_index = asset::kInvalidAssetIndex;
+    asset::GltfTextureColorSpace color_space = asset::GltfTextureColorSpace::Linear;
+
+    friend bool operator==(TextureCacheKey lhs, TextureCacheKey rhs) = default;
+};
+
+struct TextureCacheKeyHash {
+    [[nodiscard]] std::size_t operator()(TextureCacheKey key) const noexcept {
+        return (static_cast<std::size_t>(key.texture_index) << 1U) ^
+               static_cast<std::size_t>(key.color_space);
+    }
+};
+
+using TextureCache = std::unordered_map<TextureCacheKey, std::size_t, TextureCacheKeyHash>;
 
 struct BoundsAccumulator {
     math::Vec3 min{0.0F};
@@ -196,20 +213,33 @@ default_texture(const GltfSceneImportResources& resources, render::PbrMaterialBi
     return {
         .min_filter = to_vk_filter(sampler.min_filter),
         .mag_filter = to_vk_filter(sampler.mag_filter),
-        .address_mode = to_vk_address_mode(sampler.wrap_s),
+        .address_mode = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+        .address_mode_u = to_vk_address_mode(sampler.wrap_s),
+        .address_mode_v = to_vk_address_mode(sampler.wrap_t),
+        .address_mode_w = VK_SAMPLER_ADDRESS_MODE_REPEAT,
     };
 }
 
 [[nodiscard]] TextureBinding texture_binding_for_ref(
     const vulkan::Device& device, vulkan::GpuRuntime& gpu, GltfSceneImportResources& resources,
     const asset::GltfAsset& asset, const asset::GltfTextureRef& ref,
-    asset::GltfTextureColorSpace color_space, render::PbrMaterialBinding fallback_slot) {
+    asset::GltfTextureColorSpace color_space, render::PbrMaterialBinding fallback_slot,
+    TextureCache& texture_cache) {
     if (!ref.has_value()) {
         return texture_binding(default_texture(resources, fallback_slot));
     }
     if (ref.texture_index >= asset.textures.size()) {
         throw std::runtime_error("glTF material texture index is out of range");
     }
+    const TextureCacheKey cache_key{
+        .texture_index = ref.texture_index,
+        .color_space = color_space,
+    };
+    const auto cached = texture_cache.find(cache_key);
+    if (cached != texture_cache.end()) {
+        return texture_binding(resources.textures.at(cached->second));
+    }
+
     const asset::GltfTexture& texture = asset.textures[ref.texture_index];
     if (texture.image_index >= asset.images.size()) {
         throw std::runtime_error("glTF texture image index is out of range");
@@ -225,6 +255,7 @@ default_texture(const GltfSceneImportResources& resources, render::PbrMaterialBi
             .sampler = sampler_config_for_texture(asset, texture),
         });
     resources.textures.push_back(std::move(uploaded));
+    texture_cache.emplace(cache_key, resources.textures.size() - 1U);
     return texture_binding(resources.textures.back());
 }
 
@@ -232,22 +263,26 @@ void write_material_descriptors(const vulkan::Device& device, vulkan::GpuRuntime
                                 GltfSceneImportResources& resources,
                                 const asset::GltfAsset& asset,
                                 const asset::GltfMaterial& source,
-                                render::MaterialInstance& instance) {
+                                render::MaterialInstance& instance,
+                                TextureCache& texture_cache) {
     const TextureBinding base_color = texture_binding_for_ref(
         device, gpu, resources, asset, source.base_color_texture,
-        asset::gltf_texture_color_space_for_base_color(), render::PbrMaterialBinding::BaseColor);
+        asset::gltf_texture_color_space_for_base_color(), render::PbrMaterialBinding::BaseColor,
+        texture_cache);
     const TextureBinding metallic_roughness = texture_binding_for_ref(
         device, gpu, resources, asset, source.metallic_roughness_texture,
-        asset::GltfTextureColorSpace::Linear, render::PbrMaterialBinding::MetallicRoughness);
+        asset::GltfTextureColorSpace::Linear, render::PbrMaterialBinding::MetallicRoughness,
+        texture_cache);
     const TextureBinding normal = texture_binding_for_ref(
         device, gpu, resources, asset, source.normal_texture, asset::GltfTextureColorSpace::Linear,
-        render::PbrMaterialBinding::Normal);
+        render::PbrMaterialBinding::Normal, texture_cache);
     const TextureBinding occlusion = texture_binding_for_ref(
         device, gpu, resources, asset, source.occlusion_texture,
-        asset::GltfTextureColorSpace::Linear, render::PbrMaterialBinding::Occlusion);
+        asset::GltfTextureColorSpace::Linear, render::PbrMaterialBinding::Occlusion,
+        texture_cache);
     const TextureBinding emissive = texture_binding_for_ref(
         device, gpu, resources, asset, source.emissive_texture, asset::GltfTextureColorSpace::Srgb,
-        render::PbrMaterialBinding::Emissive);
+        render::PbrMaterialBinding::Emissive, texture_cache);
 
     render::MaterialDescriptorWriter(instance.set())
         .combined_image_sampler(static_cast<std::uint32_t>(render::PbrMaterialBinding::BaseColor),
@@ -274,6 +309,7 @@ void create_material_resources(Engine& engine, const vulkan::Device& device,
                                GltfSceneImportResult& result, const asset::GltfAsset& asset,
                                const GltfSceneImportConfig& config) {
     const render::MaterialPassInfo pass = render::pbr_forward_pass_info();
+    TextureCache texture_cache;
     result.material_handles.reserve(asset.materials.size());
     for (std::size_t index = 0; index < asset.materials.size(); ++index) {
         const asset::GltfMaterial& source = asset.materials[index];
@@ -306,7 +342,7 @@ void create_material_resources(Engine& engine, const vulkan::Device& device,
                                                      .material_pass = pass,
                                                      .descriptor_set = 1,
                                                  });
-        write_material_descriptors(device, gpu, resources, asset, source, instance);
+        write_material_descriptors(device, gpu, resources, asset, source, instance, texture_cache);
     }
     if (result.material_handles.empty()) {
         throw std::runtime_error("glTF scene import requires at least one material");

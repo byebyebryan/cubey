@@ -10,6 +10,9 @@ struct SamplerConfig {
     VkFilter min_filter = VK_FILTER_LINEAR;
     VkFilter mag_filter = VK_FILTER_LINEAR;
     VkSamplerAddressMode address_mode = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    VkSamplerAddressMode address_mode_u = VK_SAMPLER_ADDRESS_MODE_MAX_ENUM;
+    VkSamplerAddressMode address_mode_v = VK_SAMPLER_ADDRESS_MODE_MAX_ENUM;
+    VkSamplerAddressMode address_mode_w = VK_SAMPLER_ADDRESS_MODE_MAX_ENUM;
     VkBorderColor border_color = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
     VkBool32 compare_enable = VK_FALSE;
     VkCompareOp compare_op = VK_COMPARE_OP_ALWAYS;
