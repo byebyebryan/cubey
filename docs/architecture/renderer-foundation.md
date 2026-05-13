@@ -166,11 +166,12 @@ full engine architecture.
   per-draw material factors. The scene set includes irradiance cube,
   prefiltered cube, and the DFG/BRDF lookup binding.
 - `GeneratedPbrEnvironment` creates deterministic setup-time irradiance cube,
-  prefiltered radiance cube, and DFG LUT resources. The DFG lookup stores
-  scale/bias terms plus a white-conductor energy term used by the shared PBR
-  shader helpers for Filament-style energy compensation. It is a checkpoint
-  helper for PBR quality and descriptor shape, not a replacement for future
-  HDR/KTX environment asset import and filtering.
+  GGX-prefiltered radiance cube, and DFG LUT resources. The shared PBR shader
+  helpers remap base color into diffuse color plus F0 before lighting. The DFG
+  lookup stores scale/bias terms plus a white-conductor energy term used for
+  Filament-style specular energy compensation. It is a checkpoint helper for
+  PBR quality and descriptor shape, not a replacement for future HDR/KTX
+  environment asset import and filtering.
 - `cubey::render::MaterialInstance` owns the descriptor set layout, pool, and
   one or per-frame descriptor sets for one declared `MaterialPassInfo`
   descriptor set. `MaterialDescriptorWriter` keeps descriptor writes tied to a

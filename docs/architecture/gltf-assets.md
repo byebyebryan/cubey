@@ -58,7 +58,7 @@ remain future slices.
   setup-time sampled texture uploads for glTF textures and generated IBL
   cubemaps;
 - `create_generated_pbr_environment()` provides deterministic irradiance,
-  prefiltered radiance, and DFG LUT resources for the current viewer
+  GGX-prefiltered radiance, and DFG LUT resources for the current viewer
   checkpoint;
 - `ShadowMapPass3D` owns a sampled depth texture plus depth-only pipeline for
   directional shadow passes.
@@ -70,8 +70,8 @@ camera and light entities around imported bounds, records shadow and PBR scene
 passes through the render graph, binds generated IBL resources into the PBR
 scene material, supports opaque plus alpha forward pipelines, and can run
 windowed or headless PNG capture. Its PBR shader uses the shared Cubey PBR
-helper include for correlated Smith direct visibility, DFG-based IBL energy
-compensation, and indirect specular occlusion.
+helper include for base-color-to-diffuse/F0 remapping, correlated Smith direct
+visibility, DFG-based IBL energy compensation, and indirect specular occlusion.
 
 ## Boundaries
 

@@ -297,8 +297,9 @@ Current checkpoint:
   no input asset or sample-asset checkout is configured.
 - `projects/pbr_furnace` links against `cubey` and renders a white-furnace PBR
   validation grid: shared UV-sphere primitive mesh, roughness columns, metallic
-  rows, uniform white IBL cubemaps, DFG-based energy compensation, reusable PBR
-  material descriptors, and windowed plus headless PNG output.
+  rows, uniform white IBL cubemaps, Filament-style base-color remapping,
+  DFG-based energy compensation, reusable PBR material descriptors, and
+  windowed plus headless PNG output.
 - `examples/instanced_cubes` links against `cubey` and draws a cube grid through
   a single renderable packet, real instance-rate vertex input, one shared cube
   mesh, and `instance_count` propagation from scene primitive to Vulkan draw.
