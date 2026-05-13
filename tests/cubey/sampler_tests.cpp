@@ -36,6 +36,9 @@ void test_sampler_config_describes_shadow_sampling() {
         .compare_enable = VK_TRUE,
         .compare_op = VK_COMPARE_OP_LESS_OR_EQUAL,
         .mipmap_mode = VK_SAMPLER_MIPMAP_MODE_NEAREST,
+        .min_lod = 1.0F,
+        .max_lod = 5.0F,
+        .mip_lod_bias = 0.25F,
     };
 
     const VkSamplerCreateInfo info = cubey::vulkan::sampler_create_info(config);
@@ -56,6 +59,9 @@ void test_sampler_config_describes_shadow_sampling() {
             "sampler create info should preserve compare op");
     require(info.mipmapMode == VK_SAMPLER_MIPMAP_MODE_NEAREST,
             "sampler create info should preserve mipmap mode");
+    require(info.minLod == 1.0F, "sampler create info should preserve min LOD");
+    require(info.maxLod == 5.0F, "sampler create info should preserve max LOD");
+    require(info.mipLodBias == 0.25F, "sampler create info should preserve mip LOD bias");
 
     const cubey::vulkan::SamplerConfig axis_config{
         .address_mode = VK_SAMPLER_ADDRESS_MODE_REPEAT,

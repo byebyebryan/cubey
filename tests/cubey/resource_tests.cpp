@@ -119,6 +119,17 @@ void test_transfer_helpers_describe_texture_and_readback_paths() {
     require((uploaded.usage & VK_IMAGE_USAGE_SAMPLED_BIT) != 0,
             "uploaded texture config should support sampling");
 
+    const cubey::vulkan::ImageConfig cube =
+        cubey::vulkan::transfer_sampled_cube_image_config(64, 5, format);
+    require(cube.extent.width == 64 && cube.extent.height == 64,
+            "cube texture config should preserve square extent");
+    require(cube.mip_levels == 5, "cube texture config should preserve mip count");
+    require(cube.array_layers == 6, "cube texture config should use six faces");
+    require((cube.flags & VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT) != 0,
+            "cube texture config should be cube compatible");
+    require(cube.view_type == VK_IMAGE_VIEW_TYPE_CUBE,
+            "cube texture config should create cube views");
+
     const VkExtent3D copy_extent{extent.width, extent.height, 1};
     const VkBufferImageCopy copy = cubey::vulkan::buffer_image_copy(copy_extent);
     require(copy.imageExtent.width == copy_extent.width, "copy region should preserve width");
@@ -127,6 +138,20 @@ void test_transfer_helpers_describe_texture_and_readback_paths() {
     require(copy.imageSubresource.aspectMask == VK_IMAGE_ASPECT_COLOR_BIT,
             "copy region should target color aspect");
     require(copy.imageSubresource.layerCount == 1, "copy region should target one layer");
+
+    const VkBufferImageCopy cube_copy = cubey::vulkan::buffer_image_copy(
+        cubey::vulkan::BufferImageCopyConfig{
+            .extent = {16, 16, 1},
+            .buffer_offset = 4096,
+            .mip_level = 2,
+            .base_array_layer = 4,
+            .layer_count = 1,
+        });
+    require(cube_copy.bufferOffset == 4096, "copy region should preserve buffer offset");
+    require(cube_copy.imageSubresource.mipLevel == 2,
+            "copy region should preserve mip level");
+    require(cube_copy.imageSubresource.baseArrayLayer == 4,
+            "copy region should preserve base array layer");
 
     using CopyBufferToImageRuntime =
         void (*)(cubey::vulkan::GpuRuntime&, VkBuffer, VkImage, VkExtent3D);

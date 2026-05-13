@@ -111,7 +111,8 @@ ImageLayoutTransition finish_storage_image_write_for_sampling_transition(VkImage
     };
 }
 
-ImageLayoutTransition begin_transfer_dst_transition(VkImage image) {
+ImageLayoutTransition begin_transfer_dst_transition(VkImage image, std::uint32_t level_count,
+                                                    std::uint32_t layer_count) {
     return {
         .image = image,
         .aspect_mask = VK_IMAGE_ASPECT_COLOR_BIT,
@@ -121,10 +122,14 @@ ImageLayoutTransition begin_transfer_dst_transition(VkImage image) {
         .dst_access_mask = VK_ACCESS_TRANSFER_WRITE_BIT,
         .src_stage_mask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
         .dst_stage_mask = VK_PIPELINE_STAGE_TRANSFER_BIT,
+        .level_count = level_count,
+        .layer_count = layer_count,
     };
 }
 
-ImageLayoutTransition finish_transfer_dst_for_sampling_transition(VkImage image) {
+ImageLayoutTransition finish_transfer_dst_for_sampling_transition(VkImage image,
+                                                                  std::uint32_t level_count,
+                                                                  std::uint32_t layer_count) {
     return {
         .image = image,
         .aspect_mask = VK_IMAGE_ASPECT_COLOR_BIT,
@@ -134,6 +139,8 @@ ImageLayoutTransition finish_transfer_dst_for_sampling_transition(VkImage image)
         .dst_access_mask = VK_ACCESS_SHADER_READ_BIT,
         .src_stage_mask = VK_PIPELINE_STAGE_TRANSFER_BIT,
         .dst_stage_mask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+        .level_count = level_count,
+        .layer_count = layer_count,
     };
 }
 
@@ -160,10 +167,10 @@ VkImageMemoryBarrier image_memory_barrier(const ImageLayoutTransition& transitio
     barrier.srcAccessMask = transition.src_access_mask;
     barrier.dstAccessMask = transition.dst_access_mask;
     barrier.subresourceRange.aspectMask = transition.aspect_mask;
-    barrier.subresourceRange.baseMipLevel = 0;
-    barrier.subresourceRange.levelCount = 1;
-    barrier.subresourceRange.baseArrayLayer = 0;
-    barrier.subresourceRange.layerCount = 1;
+    barrier.subresourceRange.baseMipLevel = transition.base_mip_level;
+    barrier.subresourceRange.levelCount = transition.level_count;
+    barrier.subresourceRange.baseArrayLayer = transition.base_array_layer;
+    barrier.subresourceRange.layerCount = transition.layer_count;
     return barrier;
 }
 

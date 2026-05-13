@@ -123,16 +123,20 @@ void test_image_transitions_describe_layout_barriers() {
             "sample transition should target fragment shader stage");
 
     const cubey::vulkan::ImageLayoutTransition transfer_dst =
-        cubey::vulkan::begin_transfer_dst_transition(image);
+        cubey::vulkan::begin_transfer_dst_transition(image, 5, 6);
     require(transfer_dst.new_layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
             "transfer dst transition should target transfer dst layout");
     require(transfer_dst.dst_access_mask == VK_ACCESS_TRANSFER_WRITE_BIT,
             "transfer dst transition should allow transfer writes");
     require(transfer_dst.dst_stage_mask == VK_PIPELINE_STAGE_TRANSFER_BIT,
             "transfer dst transition should target transfer stage");
+    require(transfer_dst.level_count == 5,
+            "transfer dst transition should preserve mip level count");
+    require(transfer_dst.layer_count == 6,
+            "transfer dst transition should preserve layer count");
 
     const cubey::vulkan::ImageLayoutTransition transfer_sampled =
-        cubey::vulkan::finish_transfer_dst_for_sampling_transition(image);
+        cubey::vulkan::finish_transfer_dst_for_sampling_transition(image, 5, 6);
     require(transfer_sampled.old_layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
             "transfer sampled transition should start from transfer dst layout");
     require(transfer_sampled.new_layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
@@ -155,4 +159,11 @@ void test_image_transitions_describe_layout_barriers() {
             "barrier should preserve aspect mask");
     require(barrier.subresourceRange.levelCount == 1, "barrier should target one mip level");
     require(barrier.subresourceRange.layerCount == 1, "barrier should target one array layer");
+
+    const VkImageMemoryBarrier cube_barrier =
+        cubey::vulkan::image_memory_barrier(transfer_dst);
+    require(cube_barrier.subresourceRange.levelCount == 5,
+            "cube transition barrier should preserve mip count");
+    require(cube_barrier.subresourceRange.layerCount == 6,
+            "cube transition barrier should preserve layer count");
 }

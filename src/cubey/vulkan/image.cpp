@@ -50,15 +50,27 @@ void Image::create(const Device& device, const ImageConfig& config) {
     if (config.aspect == 0) {
         throw std::runtime_error("image aspect must be nonzero");
     }
+    if (config.mip_levels == 0) {
+        throw std::runtime_error("image mip level count must be nonzero");
+    }
+    if (config.array_layers == 0) {
+        throw std::runtime_error("image array layer count must be nonzero");
+    }
+    if (config.view_type == VK_IMAGE_VIEW_TYPE_CUBE && config.array_layers != 6) {
+        throw std::runtime_error("cube image views require exactly six array layers");
+    }
 
     format_ = config.format;
     extent_ = config.extent;
+    mip_levels_ = config.mip_levels;
+    array_layers_ = config.array_layers;
 
     auto image_info = vk_struct<VkImageCreateInfo>(VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO);
+    image_info.flags = config.flags;
     image_info.imageType = VK_IMAGE_TYPE_2D;
     image_info.extent = extent_;
-    image_info.mipLevels = 1;
-    image_info.arrayLayers = 1;
+    image_info.mipLevels = mip_levels_;
+    image_info.arrayLayers = array_layers_;
     image_info.format = format_;
     image_info.tiling = config.tiling;
     image_info.initialLayout = config.initial_layout;
@@ -79,13 +91,13 @@ void Image::create(const Device& device, const ImageConfig& config) {
 
     auto view_info = vk_struct<VkImageViewCreateInfo>(VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO);
     view_info.image = image_;
-    view_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    view_info.viewType = config.view_type;
     view_info.format = format_;
     view_info.subresourceRange.aspectMask = config.aspect;
     view_info.subresourceRange.baseMipLevel = 0;
-    view_info.subresourceRange.levelCount = 1;
+    view_info.subresourceRange.levelCount = mip_levels_;
     view_info.subresourceRange.baseArrayLayer = 0;
-    view_info.subresourceRange.layerCount = 1;
+    view_info.subresourceRange.layerCount = array_layers_;
     check(vkCreateImageView(device_, &view_info, nullptr, &view_), "vkCreateImageView");
 }
 
@@ -111,6 +123,8 @@ void Image::move_from(Image& other) noexcept {
     view_ = other.view_;
     format_ = other.format_;
     extent_ = other.extent_;
+    mip_levels_ = other.mip_levels_;
+    array_layers_ = other.array_layers_;
 
     other.device_ = VK_NULL_HANDLE;
     other.image_ = VK_NULL_HANDLE;
@@ -118,6 +132,8 @@ void Image::move_from(Image& other) noexcept {
     other.view_ = VK_NULL_HANDLE;
     other.format_ = VK_FORMAT_UNDEFINED;
     other.extent_ = {};
+    other.mip_levels_ = 1;
+    other.array_layers_ = 1;
 }
 
 VkFormat choose_depth_format(const Device& device) {
@@ -175,16 +191,39 @@ ImageConfig transfer_sampled_image_config(VkExtent2D extent, VkFormat format) {
     };
 }
 
+ImageConfig transfer_sampled_cube_image_config(std::uint32_t extent, std::uint32_t mip_levels,
+                                               VkFormat format) {
+    return {
+        .extent = {extent, extent, 1},
+        .format = format,
+        .usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+        .aspect = VK_IMAGE_ASPECT_COLOR_BIT,
+        .flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT,
+        .mip_levels = mip_levels,
+        .array_layers = 6,
+        .view_type = VK_IMAGE_VIEW_TYPE_CUBE,
+    };
+}
+
 VkBufferImageCopy buffer_image_copy(VkExtent3D extent) {
+    return buffer_image_copy(BufferImageCopyConfig{.extent = extent});
+}
+
+VkBufferImageCopy buffer_image_copy(const BufferImageCopyConfig& config) {
+    const VkExtent3D extent = config.extent;
     if (extent.width == 0 || extent.height == 0 || extent.depth == 0) {
         throw std::runtime_error("buffer image copy extent must be nonzero");
     }
+    if (config.layer_count == 0) {
+        throw std::runtime_error("buffer image copy layer count must be nonzero");
+    }
 
     VkBufferImageCopy copy{};
-    copy.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    copy.imageSubresource.mipLevel = 0;
-    copy.imageSubresource.baseArrayLayer = 0;
-    copy.imageSubresource.layerCount = 1;
+    copy.bufferOffset = config.buffer_offset;
+    copy.imageSubresource.aspectMask = config.aspect;
+    copy.imageSubresource.mipLevel = config.mip_level;
+    copy.imageSubresource.baseArrayLayer = config.base_array_layer;
+    copy.imageSubresource.layerCount = config.layer_count;
     copy.imageExtent = extent;
     return copy;
 }

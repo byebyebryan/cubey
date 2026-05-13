@@ -28,9 +28,9 @@ VkSamplerCreateInfo sampler_create_info(const SamplerConfig& config) {
     info.compareEnable = config.compare_enable;
     info.compareOp = config.compare_op;
     info.mipmapMode = config.mipmap_mode;
-    info.minLod = 0.0F;
-    info.maxLod = 0.0F;
-    info.mipLodBias = 0.0F;
+    info.minLod = config.min_lod;
+    info.maxLod = config.max_lod;
+    info.mipLodBias = config.mip_lod_bias;
     return info;
 }
 

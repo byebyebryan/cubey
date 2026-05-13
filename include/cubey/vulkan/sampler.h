@@ -17,6 +17,9 @@ struct SamplerConfig {
     VkBool32 compare_enable = VK_FALSE;
     VkCompareOp compare_op = VK_COMPARE_OP_ALWAYS;
     VkSamplerMipmapMode mipmap_mode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+    float min_lod = 0.0F;
+    float max_lod = 0.0F;
+    float mip_lod_bias = 0.0F;
 };
 
 [[nodiscard]] VkSamplerCreateInfo sampler_create_info(const SamplerConfig& config);

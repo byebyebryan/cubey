@@ -88,6 +88,45 @@ void test_depth_texture_config_maps_sampled_depth_usage() {
     static_assert(std::is_move_constructible_v<cubey::render::DepthTexture>);
 }
 
+void test_texture_cube_config_maps_transfer_sampled_cube_usage() {
+    const cubey::render::TextureCubeConfig config{
+        .extent = 64,
+        .mip_levels = 5,
+        .format = VK_FORMAT_R32G32B32A32_SFLOAT,
+        .create_sampler = true,
+        .sampler =
+            {
+                .address_mode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+                .max_lod = 4.0F,
+            },
+    };
+
+    const cubey::vulkan::ImageConfig image_config =
+        cubey::render::texture_cube_image_config(config);
+    require(image_config.extent.width == 64, "cube texture should preserve width");
+    require(image_config.extent.height == 64, "cube texture should preserve height");
+    require(image_config.mip_levels == 5, "cube texture should preserve mip count");
+    require(image_config.array_layers == 6, "cube texture should use six array layers");
+    require((image_config.flags & VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT) != 0,
+            "cube texture should be cube compatible");
+    require(image_config.view_type == VK_IMAGE_VIEW_TYPE_CUBE,
+            "cube texture should use a cube view");
+    require(cubey::render::texture_format_byte_size(VK_FORMAT_R32G32B32A32_SFLOAT) == 16,
+            "RGBA32F texture format should report sixteen bytes per texel");
+    require(cubey::render::texture_cube_mip_extent(64, 0) == 64,
+            "cube mip 0 should preserve base extent");
+    require(cubey::render::texture_cube_mip_extent(64, 4) == 4,
+            "cube mip extent should halve by mip");
+    require(cubey::render::texture_cube_mip_extent(2, 4) == 1,
+            "cube mip extent should clamp to one");
+    require(cubey::render::texture_cube_byte_size(4, 3, 4) ==
+                ((4U * 4U * 6U) + (2U * 2U * 6U) + (1U * 1U * 6U)) * 4U,
+            "cube byte size should include all faces and mips");
+
+    static_assert(!std::is_copy_constructible_v<cubey::render::TextureCube>);
+    static_assert(std::is_move_constructible_v<cubey::render::TextureCube>);
+}
+
 void test_compute_generated_texture_config_validates_dispatch_shape() {
     require(cubey::render::compute_dispatch_group_count(64, 8) == 8,
             "compute generated texture dispatch should divide exact groups");
