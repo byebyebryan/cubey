@@ -76,6 +76,26 @@ dynamic_graphics_pipeline_config(const GraphicsPipelineResourceConfig& config,
 
 GraphicsPipelineResource::GraphicsPipelineResource(const cubey::vulkan::Device& device,
                                                    const GraphicsPipelineResourceConfig& config) {
+    create(device, config);
+}
+
+GraphicsPipelineResource::GraphicsPipelineResource(
+    const cubey::vulkan::Device& device, const GraphicsPipelineFileResourceConfig& config) {
+    const ShaderProgram shader_program(device, config.shader_stage_files);
+    create(device, GraphicsPipelineResourceConfig{
+                       .extent = config.extent,
+                       .color_format = config.color_format,
+                       .depth_format = config.depth_format,
+                       .shader_stages = shader_program.stages(),
+                       .vertex_bindings = config.vertex_bindings,
+                       .vertex_attributes = config.vertex_attributes,
+                       .descriptor_set_layouts = config.descriptor_set_layouts,
+                       .material_pass = config.material_pass,
+                   });
+}
+
+void GraphicsPipelineResource::create(const cubey::vulkan::Device& device,
+                                      const GraphicsPipelineResourceConfig& config) {
     const cubey::vulkan::PipelineLayoutInfo layout_info = graphics_pipeline_layout_info(config);
     layout_.emplace(device, layout_info.create_info());
 

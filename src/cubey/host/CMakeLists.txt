@@ -2,6 +2,7 @@ add_library(cubey_host STATIC
     frame_stats.cpp
     glfw_window.cpp
     headless_png_host.cpp
+    windowed_app.cpp
     windowed_host.cpp
 )
 add_library(cubey::host ALIAS cubey_host)

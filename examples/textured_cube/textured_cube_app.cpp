@@ -3,15 +3,13 @@
 #include <cubey/core/math.h>
 #include <cubey/engine/engine.h>
 #include <cubey/host/frame_stats.h>
-#include <cubey/host/glfw_window.h>
-#include <cubey/host/windowed_host.h>
+#include <cubey/host/windowed_app.h>
 #include <cubey/input/orbit_controller.h>
 #include <cubey/render/material.h>
 #include <cubey/render/mesh.h>
 #include <cubey/render/pass.h>
 #include <cubey/render/pipeline_resource.h>
 #include <cubey/render/primitive_mesh.h>
-#include <cubey/render/render_item.h>
 #include <cubey/render/resource_handle.h>
 #include <cubey/render/resource_table.h>
 #include <cubey/render/target.h>
@@ -19,6 +17,7 @@
 #include <cubey/render/uniform_buffer.h>
 #include <cubey/scene/camera_3d.h>
 #include <cubey/scene/light_manager.h>
+#include <cubey/scene/render_recording.h>
 #include <cubey/scene/scene.h>
 #include <cubey/scene/transform_3d.h>
 #include <cubey/scene/view_3d.h>
@@ -35,7 +34,6 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
-#include <cstdio>
 #include <filesystem>
 #include <optional>
 #include <stdexcept>
@@ -118,69 +116,56 @@ class TexturedCubeApp {
     TexturedCubeApp& operator=(const TexturedCubeApp&) = delete;
 
     int run() {
-        if (config_.headless) {
-            throw std::runtime_error("textured_cube does not support --headless yet");
-        }
+        cubey::host::WindowedAppCallbacks callbacks;
+        callbacks.create_swapchain_resources = [this](cubey::host::WindowedAppContext& context) {
+            create_global_resources_if_needed(context);
+            create_swapchain_resources(context);
+        };
+        callbacks.destroy_swapchain_resources = [this](cubey::host::WindowedAppContext& context) {
+            (void)context;
+            destroy_swapchain_resources();
+        };
+        callbacks.on_ready = [this](cubey::host::WindowedAppContext& context) {
+            (void)context;
+            orbit_controller_.set_auto_rotation_speed(0.9F);
+        };
+        callbacks.update = [this](cubey::host::WindowedAppContext& context,
+                                  const FrameTiming& timing) {
+            orbit_controller_.update_from_input(context.input(), timing.delta_seconds);
+            update_scene_transform();
+        };
+        callbacks.record_frame = [this](cubey::host::WindowedAppContext& context,
+                                        const cubey::host::WindowedRenderFrame& frame) {
+            (void)context;
+            record_cube_frame(frame);
+        };
+        callbacks.frame_stats_sample =
+            [](cubey::host::WindowedAppContext& context,
+               const FrameTiming& timing) -> std::optional<FrameStatsSample> {
+            const VkExtent2D extent = context.swapchain().extent();
+            return FrameStatsSample{
+                .delta_seconds = timing.delta_seconds,
+                .width = extent.width,
+                .height = extent.height,
+                .triangles = kCubeTriangleCount,
+            };
+        };
+        callbacks.shutdown = [this](cubey::host::WindowedAppContext& context) {
+            (void)context;
+            destroy_all_resources();
+        };
 
-        cubey::host::WindowedHost host(
+        return cubey::host::run_windowed_app(
             {
                 .run_config = config_,
+                .app_name = "textured_cube",
+                .ready_status = "rendering interactive compute shaded textured cube",
                 .required_queue_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
                 .swapchain_image_usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
                 .require_dynamic_rendering = true,
+                .close_on_escape = true,
             },
-            {
-                .create_swapchain_resources =
-                    [this](cubey::host::WindowedAppContext& context) {
-                        create_global_resources_if_needed(context);
-                        create_swapchain_resources(context);
-                    },
-                .destroy_swapchain_resources =
-                    [this](cubey::host::WindowedAppContext& context) {
-                        (void)context;
-                        destroy_swapchain_resources();
-                    },
-                .on_ready =
-                    [this](cubey::host::WindowedAppContext& context) {
-                        orbit_controller_.set_auto_rotation_speed(0.9F);
-                        std::printf("textured_cube: %s rendering interactive compute shaded "
-                                    "textured cube at %ux%u\n",
-                                    context.device().device_name(),
-                                    context.swapchain().extent().width,
-                                    context.swapchain().extent().height);
-                    },
-                .update =
-                    [this](cubey::host::WindowedAppContext& context, const FrameTiming& timing) {
-                        if (context.input().key_pressed(cubey::input::Key::Escape)) {
-                            context.window().request_close();
-                        }
-                        orbit_controller_.update_from_input(context.input(), timing.delta_seconds);
-                        update_scene_transform();
-                    },
-                .record_frame =
-                    [this](cubey::host::WindowedAppContext& context,
-                           const cubey::host::WindowedRenderFrame& frame) {
-                        (void)context;
-                        record_cube_frame(frame);
-                    },
-                .frame_stats_sample =
-                    [](cubey::host::WindowedAppContext& context,
-                       const FrameTiming& timing) -> std::optional<FrameStatsSample> {
-                    const VkExtent2D extent = context.swapchain().extent();
-                    return FrameStatsSample{
-                        .delta_seconds = timing.delta_seconds,
-                        .width = extent.width,
-                        .height = extent.height,
-                        .triangles = kCubeTriangleCount,
-                    };
-                },
-                .shutdown =
-                    [this](cubey::host::WindowedAppContext& context) {
-                        (void)context;
-                        destroy_all_resources();
-                    },
-            });
-        return host.run();
+            std::move(callbacks));
     }
 
   private:
@@ -228,7 +213,6 @@ class TexturedCubeApp {
                 .path = shader_path("textured_cube.frag.spv"),
             },
         };
-        const cubey::render::ShaderProgram shader_program(context.device(), shader_stage_files);
 
         const cubey::render::VertexInputLayout vertex_input =
             cubey::render::vertex_position_color_normal_uv_input_layout();
@@ -236,11 +220,11 @@ class TexturedCubeApp {
         const cubey::render::MaterialPassInfo material_pass = textured_cube_forward_pass_info();
         const std::array<VkDescriptorSetLayout, 1> set_layouts{descriptors().layout()};
         pipeline_resource_.emplace(context.device(),
-                                   cubey::render::GraphicsPipelineResourceConfig{
+                                   cubey::render::GraphicsPipelineFileResourceConfig{
                                        .extent = context.swapchain().extent(),
                                        .color_format = context.swapchain().format(),
                                        .depth_format = depth_attachment().format(),
-                                       .shader_stages = shader_program.stages(),
+                                       .shader_stage_files = shader_stage_files,
                                        .vertex_bindings = vertex_input.bindings(),
                                        .vertex_attributes = vertex_input.attribute_descriptions(),
                                        .descriptor_set_layouts = set_layouts,
@@ -516,18 +500,17 @@ class TexturedCubeApp {
 
         cubey::render::record_present_render_target_pass(
             recorder, target, clear_values,
-            [this, &draw_packet,
+            [this, &frame_plan,
              frame_slot = frame.frame_slot](const cubey::vulkan::CommandRecorder& pass_recorder) {
                 pass_recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS,
                                             pipeline_resource().pipeline());
                 const VkDescriptorSet descriptor_set = descriptors().set(frame_slot.index);
                 pass_recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS,
                                                   pipeline_resource().layout(), 0, descriptor_set);
-                const cubey::render::RenderItem render_item =
-                    cubey::scene::render_item_from_packet(draw_packet);
-                const cubey::render::DrawItem draw_item =
-                    cubey::render::resolve_draw_item(render_item, meshes_);
-                cubey::render::record_draw_item(pass_recorder.handle(), draw_item);
+                cubey::scene::record_draw_packets_3d(
+                    pass_recorder, frame_plan.draw_packets, meshes_, {},
+                    [](const cubey::vulkan::CommandRecorder&,
+                       const cubey::scene::RenderDrawPacket3D&) {});
             });
 
         recorder.end("vkEndCommandBuffer textured_cube");

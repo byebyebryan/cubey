@@ -54,6 +54,17 @@ struct GraphicsPipelineResourceConfig {
     MaterialPassInfo material_pass{};
 };
 
+struct GraphicsPipelineFileResourceConfig {
+    VkExtent2D extent{};
+    VkFormat color_format = VK_FORMAT_UNDEFINED;
+    VkFormat depth_format = VK_FORMAT_UNDEFINED;
+    std::span<const ShaderStageFile> shader_stage_files{};
+    std::span<const VkVertexInputBindingDescription> vertex_bindings{};
+    std::span<const VkVertexInputAttributeDescription> vertex_attributes{};
+    std::span<const VkDescriptorSetLayout> descriptor_set_layouts{};
+    MaterialPassInfo material_pass{};
+};
+
 [[nodiscard]] cubey::vulkan::PipelineLayoutInfo
 graphics_pipeline_layout_info(const GraphicsPipelineResourceConfig& config);
 [[nodiscard]] cubey::vulkan::DynamicGraphicsPipelineConfig
@@ -64,6 +75,8 @@ class GraphicsPipelineResource {
   public:
     GraphicsPipelineResource(const cubey::vulkan::Device& device,
                              const GraphicsPipelineResourceConfig& config);
+    GraphicsPipelineResource(const cubey::vulkan::Device& device,
+                             const GraphicsPipelineFileResourceConfig& config);
 
     GraphicsPipelineResource(const GraphicsPipelineResource&) = delete;
     GraphicsPipelineResource& operator=(const GraphicsPipelineResource&) = delete;
@@ -72,6 +85,8 @@ class GraphicsPipelineResource {
     [[nodiscard]] VkPipeline pipeline() const;
 
   private:
+    void create(const cubey::vulkan::Device& device, const GraphicsPipelineResourceConfig& config);
+
     std::optional<cubey::vulkan::PipelineLayout> layout_{};
     std::optional<cubey::vulkan::GraphicsPipeline> pipeline_{};
 };

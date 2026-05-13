@@ -1,4 +1,5 @@
 #include <cubey/scene/render_plan.h>
+#include <cubey/scene/render_recording.h>
 
 #include <cmath>
 #include <stdexcept>
@@ -90,11 +91,11 @@ void test_render_plan_builds_sorted_3d_draw_packets_with_material_metadata() {
             "transparent material should sort after opaque materials");
     require(draw_packets[0].material_info.label == "early opaque",
             "draw packets should carry material metadata");
-    require(!cubey::render::material_supports_pass(
-                draw_packets[2].material_info, cubey::render::MaterialPassKind::DepthOnly),
+    require(!cubey::render::material_supports_pass(draw_packets[2].material_info,
+                                                   cubey::render::MaterialPassKind::DepthOnly),
             "draw packets should carry material pass masks");
-    require(cubey::render::material_supports_pass(
-                draw_packets[2].material_info, cubey::render::MaterialPassKind::ForwardColor),
+    require(cubey::render::material_supports_pass(draw_packets[2].material_info,
+                                                  cubey::render::MaterialPassKind::ForwardColor),
             "draw packets should preserve included material passes");
     require(draw_packets[2].instance_count == 5, "draw packet should preserve instance count");
     require(draw_packets[2].first_index == 9, "draw packet should preserve first index");
@@ -159,4 +160,42 @@ void test_render_plan_converts_draw_packets_to_render_items() {
     require(item.first_index == 8, "render item should preserve first index");
     require(item.vertex_offset == -3, "render item should preserve vertex offset");
     require(item.first_instance == 10, "render item should preserve first instance");
+}
+
+void test_render_plan_filters_draw_packets_for_recording_policy() {
+    const cubey::scene::RenderDrawPacket3D depth_caster{
+        .material_info =
+            cubey::render::MaterialInfo{
+                .label = "depth caster",
+            },
+        .cast_shadows = true,
+    };
+    const cubey::scene::RenderDrawPacket3D forward_only_non_caster{
+        .material_info =
+            cubey::render::MaterialInfo{
+                .label = "forward only",
+                .pass_mask = cubey::render::material_pass_mask(
+                    cubey::render::MaterialPassKind::ForwardColor),
+            },
+        .cast_shadows = false,
+    };
+
+    require(cubey::scene::render_packet_matches_filter(
+                depth_caster,
+                {
+                    .material_pass = cubey::render::MaterialPassKind::DepthOnly,
+                    .require_shadow_caster = true,
+                }),
+            "recording filter should accept shadow-casting depth packets");
+    require(!cubey::scene::render_packet_matches_filter(
+                forward_only_non_caster,
+                {
+                    .material_pass = cubey::render::MaterialPassKind::DepthOnly,
+                    .require_shadow_caster = true,
+                }),
+            "recording filter should reject non-casting packets without the requested pass");
+    require(cubey::scene::render_packet_matches_filter(
+                forward_only_non_caster,
+                {.material_pass = cubey::render::MaterialPassKind::ForwardColor}),
+            "recording filter should accept packets with the requested forward pass");
 }

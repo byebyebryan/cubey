@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cubey/render/pipeline_resource.h>
 #include <cubey/render/target.h>
 #include <cubey/vulkan/command_recorder.h>
 #include <cubey/vulkan/image_transitions.h>
@@ -7,6 +8,7 @@
 #include <vulkan/vulkan.h>
 
 #include <cstdint>
+#include <stdexcept>
 #include <utility>
 
 namespace cubey::render {
@@ -18,6 +20,42 @@ namespace cubey::render {
 }
 
 void record_fullscreen_triangle(const cubey::vulkan::CommandRecorder& recorder);
+
+struct FullscreenPipelineDrawInfo {
+    const GraphicsPipelineResource* pipeline = nullptr;
+    VkDescriptorSet descriptor_set = VK_NULL_HANDLE;
+    std::uint32_t descriptor_set_index = 0;
+};
+
+inline void record_fullscreen_pipeline_draw(const cubey::vulkan::CommandRecorder& recorder,
+                                            const FullscreenPipelineDrawInfo& info) {
+    if (info.pipeline == nullptr) {
+        throw std::runtime_error("fullscreen pipeline draw requires a pipeline");
+    }
+    recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, info.pipeline->pipeline());
+    if (info.descriptor_set != VK_NULL_HANDLE) {
+        recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS, info.pipeline->layout(),
+                                     info.descriptor_set_index, info.descriptor_set);
+    }
+    record_fullscreen_triangle(recorder);
+}
+
+template <typename PushConstants>
+void record_fullscreen_pipeline_draw(const cubey::vulkan::CommandRecorder& recorder,
+                                     const FullscreenPipelineDrawInfo& info,
+                                     VkShaderStageFlags stage_flags,
+                                     const PushConstants& push_constants) {
+    if (info.pipeline == nullptr) {
+        throw std::runtime_error("fullscreen pipeline draw requires a pipeline");
+    }
+    recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, info.pipeline->pipeline());
+    if (info.descriptor_set != VK_NULL_HANDLE) {
+        recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS, info.pipeline->layout(),
+                                     info.descriptor_set_index, info.descriptor_set);
+    }
+    recorder.push_constants(info.pipeline->layout(), stage_flags, 0, push_constants);
+    record_fullscreen_triangle(recorder);
+}
 
 template <typename RecordCallback>
 void record_render_target_pass(const cubey::vulkan::CommandRecorder& recorder,

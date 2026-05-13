@@ -365,6 +365,7 @@ cubey/
         frame_stats.h      -- windowed telemetry sampling and title formatting
         glfw_window.h      -- GLFW window and surface host
         headless_png_host.h -- no-window offscreen PNG capture host
+        windowed_app.h     -- small app-facing shell over the windowed host loop
         windowed_host.h    -- shared windowed host loop
       render/
         material.h         -- material metadata and material/pass contracts
@@ -382,6 +383,7 @@ cubey/
         scene.h            -- scene edit/read-view contract
         camera_*.h         -- 2D/3D cameras and entity-backed camera managers
         render_plan.h      -- scene-backed CPU 3D draw-packet planning
+        render_recording.h -- scene packet filtering and draw recording helpers
         view_3d.h          -- scene-backed CPU 3D view/pass planning and culling
         stable_slot_store.h -- MT-stable scene/component slot storage
         single_instance_component_store.h -- one-component-per-entity storage

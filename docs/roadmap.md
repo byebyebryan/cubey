@@ -222,12 +222,13 @@ Current checkpoint:
   depth-only pipelines, optional depth, and blending. `cubey::render`
   `ShaderProgram`, `GraphicsPipelineResource`, and `ComputePipelineResource`
   now package shader modules, pipeline layouts, and graphics/compute pipeline
-  lifetime for the examples and `fluid_2d`. Those examples source descriptor
-  layout shape, push constants, depth state, blend state, and pass
-  participation from `MaterialPassInfo`, source standard cube/plane vertex data
-  and input layouts from `cubey::render` primitives, and use render-target pass
-  helpers for dynamic-rendering scopes while still owning descriptor writes,
-  Vulkan resource ownership, and command binding explicitly.
+  lifetime for the examples and `fluid_2d`. Those examples use file-backed
+  graphics pipeline configs, source descriptor layout shape, push constants,
+  depth state, blend state, and pass participation from `MaterialPassInfo`,
+  source standard cube/plane vertex data and input layouts from
+  `cubey::render` primitives, and use render-target/fullscreen/scene-draw
+  helpers while still owning descriptor writes, Vulkan resource ownership, and
+  command binding policy explicitly.
 - Reusable `cubey::vulkan` image-transition helpers build the current
   color/depth/storage/transfer/sampled-depth layout transitions, while
   dynamic-rendering helpers build color/depth attachment descriptors without

@@ -1,36 +1,14 @@
-add_executable(cubey_example_particles
-    main.cpp
-    particles_app.cpp
-)
-set_target_properties(cubey_example_particles PROPERTIES OUTPUT_NAME particles)
-
-target_compile_definitions(
+cubey_add_app_target(
     cubey_example_particles
-    PRIVATE
-        CUBEY_PARTICLES_SHADER_DIR="${CMAKE_CURRENT_BINARY_DIR}/shaders"
-)
-
-target_link_libraries(
-    cubey_example_particles
-    PRIVATE
-        cubey::cubey
-        cubey::host
-        cubey_project_warnings
-)
-
-cubey_add_glsl_shaders(
-    cubey_example_particles
-    OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/shaders"
+    OUTPUT_NAME particles
+    SHADER_DEFINE CUBEY_PARTICLES_SHADER_DIR
+    WINDOWED_SMOKE_TEST particles_reaches_glfw
+    WINDOWED_SMOKE_PATTERN "particles: .*rendering compute attractor particles"
     SOURCES
+        main.cpp
+        particles_app.cpp
+    SHADERS
         shaders/particles.comp
         shaders/particles.vert
         shaders/particles.frag
 )
-
-if (BUILD_TESTING)
-    cubey_add_windowed_smoke_test(
-        particles_reaches_glfw
-        cubey_example_particles
-        "particles: .*rendering compute attractor particles"
-    )
-endif()

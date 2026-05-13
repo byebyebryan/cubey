@@ -1,16 +1,12 @@
 #include "window_clear_app.h"
 
-#include <cubey/host/windowed_host.h>
+#include <cubey/host/windowed_app.h>
 #include <cubey/render/pass.h>
 #include <cubey/render/target.h>
 #include <cubey/vulkan/command_recorder.h>
 
 #include <vulkan/vulkan.h>
 
-#include <cstddef>
-#include <cstdint>
-#include <cstdio>
-#include <stdexcept>
 #include <utility>
 
 namespace cubey::examples::window_clear {
@@ -24,38 +20,23 @@ class WindowClearApp {
     WindowClearApp& operator=(const WindowClearApp&) = delete;
 
     int run() {
-        if (config_.headless) {
-            throw std::runtime_error("window_clear does not support --headless yet");
-        }
+        cubey::host::WindowedAppCallbacks callbacks;
+        callbacks.record_frame = [](cubey::host::WindowedAppContext& context,
+                                    const cubey::host::WindowedRenderFrame& frame) {
+            (void)context;
+            record_clear_frame(frame);
+        };
 
-        cubey::host::WindowedHost host(
+        return cubey::host::run_windowed_app(
             {
                 .run_config = config_,
+                .app_name = "window_clear",
+                .ready_status = "clearing swapchain",
                 .required_queue_flags = VK_QUEUE_GRAPHICS_BIT,
                 .swapchain_image_usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
                 .require_dynamic_rendering = true,
             },
-            {
-                .create_swapchain_resources = {},
-                .destroy_swapchain_resources = {},
-                .on_ready =
-                    [](cubey::host::WindowedAppContext& context) {
-                        std::printf("window_clear: %s clearing swapchain at %ux%u\n",
-                                    context.device().device_name(),
-                                    context.swapchain().extent().width,
-                                    context.swapchain().extent().height);
-                    },
-                .update = {},
-                .record_frame =
-                    [](cubey::host::WindowedAppContext& context,
-                       const cubey::host::WindowedRenderFrame& frame) {
-                        (void)context;
-                        record_clear_frame(frame);
-                    },
-                .frame_stats_sample = {},
-                .shutdown = {},
-            });
-        return host.run();
+            std::move(callbacks));
     }
 
   private:

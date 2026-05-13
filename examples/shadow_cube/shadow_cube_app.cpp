@@ -2,7 +2,7 @@
 
 #include <cubey/core/math.h>
 #include <cubey/engine/engine.h>
-#include <cubey/host/windowed_host.h>
+#include <cubey/host/windowed_app.h>
 #include <cubey/input/orbit_controller.h>
 #include <cubey/render/material.h>
 #include <cubey/render/mesh.h>
@@ -10,12 +10,12 @@
 #include <cubey/render/pipeline_resource.h>
 #include <cubey/render/primitive_mesh.h>
 #include <cubey/render/render_graph.h>
-#include <cubey/render/render_item.h>
 #include <cubey/render/resource_handle.h>
 #include <cubey/render/resource_table.h>
 #include <cubey/render/target.h>
 #include <cubey/render/texture.h>
 #include <cubey/scene/camera_3d.h>
+#include <cubey/scene/render_recording.h>
 #include <cubey/scene/scene.h>
 #include <cubey/scene/transform_3d.h>
 #include <cubey/scene/view_3d.h>
@@ -32,7 +32,6 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
-#include <cstdio>
 #include <filesystem>
 #include <optional>
 #include <stdexcept>
@@ -185,56 +184,40 @@ class ShadowCubeApp {
     ShadowCubeApp& operator=(const ShadowCubeApp&) = delete;
 
     int run() {
-        if (config_.headless) {
-            throw std::runtime_error("shadow_cube does not support --headless yet");
-        }
+        cubey::host::WindowedAppCallbacks callbacks;
+        callbacks.create_swapchain_resources = [this](cubey::host::WindowedAppContext& context) {
+            create_global_resources_if_needed(context);
+            create_swapchain_resources(context);
+        };
+        callbacks.destroy_swapchain_resources = [this](cubey::host::WindowedAppContext& context) {
+            (void)context;
+            destroy_swapchain_resources();
+        };
+        callbacks.update = [this](cubey::host::WindowedAppContext& context,
+                                  const FrameTiming& timing) {
+            orbit_controller_.update_from_input(context.input(), timing.delta_seconds);
+            update_camera_transform();
+        };
+        callbacks.record_frame = [this](cubey::host::WindowedAppContext& context,
+                                        const cubey::host::WindowedRenderFrame& frame) {
+            record_shadow_frame(context, frame);
+        };
+        callbacks.shutdown = [this](cubey::host::WindowedAppContext& context) {
+            (void)context;
+            destroy_all_resources();
+        };
 
-        cubey::host::WindowedHost host(
+        return cubey::host::run_windowed_app(
             {
                 .run_config = config_,
+                .app_name = "shadow_cube",
+                .ready_status = "rendering directional shadow cube",
                 .required_queue_flags = VK_QUEUE_GRAPHICS_BIT,
                 .swapchain_image_usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
                 .require_dynamic_rendering = true,
+                .close_on_escape = true,
             },
-            {
-                .create_swapchain_resources =
-                    [this](cubey::host::WindowedAppContext& context) {
-                        create_global_resources_if_needed(context);
-                        create_swapchain_resources(context);
-                    },
-                .destroy_swapchain_resources =
-                    [this](cubey::host::WindowedAppContext& context) {
-                        (void)context;
-                        destroy_swapchain_resources();
-                    },
-                .on_ready =
-                    [](cubey::host::WindowedAppContext& context) {
-                        std::printf("shadow_cube: %s rendering directional shadow cube at %ux%u\n",
-                                    context.device().device_name(),
-                                    context.swapchain().extent().width,
-                                    context.swapchain().extent().height);
-                    },
-                .update =
-                    [this](cubey::host::WindowedAppContext& context, const FrameTiming& timing) {
-                        if (context.input().key_pressed(cubey::input::Key::Escape)) {
-                            context.window().request_close();
-                        }
-                        orbit_controller_.update_from_input(context.input(), timing.delta_seconds);
-                        update_camera_transform();
-                    },
-                .record_frame =
-                    [this](cubey::host::WindowedAppContext& context,
-                           const cubey::host::WindowedRenderFrame& frame) {
-                        record_shadow_frame(context, frame);
-                    },
-                .frame_stats_sample = {},
-                .shutdown =
-                    [this](cubey::host::WindowedAppContext& context) {
-                        (void)context;
-                        destroy_all_resources();
-                    },
-            });
-        return host.run();
+            std::move(callbacks));
     }
 
   private:
@@ -409,7 +392,6 @@ class ShadowCubeApp {
                 .path = shader_path("shadow_depth.vert.spv"),
             },
         };
-        const cubey::render::ShaderProgram shader_program(context.device(), shader_stage_files);
 
         const cubey::render::VertexInputLayout vertex_input =
             cubey::render::vertex_position_only_input_layout(
@@ -417,11 +399,11 @@ class ShadowCubeApp {
 
         const cubey::render::MaterialPassInfo material_pass = shadow_depth_pass_info();
         shadow_pipeline_resource_.emplace(
-            context.device(), cubey::render::GraphicsPipelineResourceConfig{
+            context.device(), cubey::render::GraphicsPipelineFileResourceConfig{
                                   .extent = shadow_depth().extent(),
                                   .color_format = VK_FORMAT_UNDEFINED,
                                   .depth_format = shadow_depth().format(),
-                                  .shader_stages = shader_program.stages(),
+                                  .shader_stage_files = shader_stage_files,
                                   .vertex_bindings = vertex_input.bindings(),
                                   .vertex_attributes = vertex_input.attribute_descriptions(),
                                   .material_pass = material_pass,
@@ -439,7 +421,6 @@ class ShadowCubeApp {
                 .path = shader_path("shadow_cube.frag.spv"),
             },
         };
-        const cubey::render::ShaderProgram shader_program(context.device(), shader_stage_files);
 
         const cubey::render::VertexInputLayout vertex_input =
             cubey::render::vertex_position_color_normal_input_layout();
@@ -448,11 +429,11 @@ class ShadowCubeApp {
 
         const std::array<VkDescriptorSetLayout, 1> set_layouts{descriptors().layout()};
         scene_pipeline_resource_.emplace(
-            context.device(), cubey::render::GraphicsPipelineResourceConfig{
+            context.device(), cubey::render::GraphicsPipelineFileResourceConfig{
                                   .extent = context.swapchain().extent(),
                                   .color_format = context.swapchain().format(),
                                   .depth_format = depth_attachment().format(),
-                                  .shader_stages = shader_program.stages(),
+                                  .shader_stage_files = shader_stage_files,
                                   .vertex_bindings = vertex_input.bindings(),
                                   .vertex_attributes = vertex_input.attribute_descriptions(),
                                   .descriptor_set_layouts = set_layouts,
@@ -471,15 +452,14 @@ class ShadowCubeApp {
                 .path = shader_path("shadow_present.frag.spv"),
             },
         };
-        const cubey::render::ShaderProgram shader_program(context.device(), shader_stage_files);
 
         const cubey::render::MaterialPassInfo material_pass = shadow_present_pass_info();
         const std::array<VkDescriptorSetLayout, 1> set_layouts{present_descriptors().layout()};
         present_pipeline_resource_.emplace(context.device(),
-                                           cubey::render::GraphicsPipelineResourceConfig{
+                                           cubey::render::GraphicsPipelineFileResourceConfig{
                                                .extent = context.swapchain().extent(),
                                                .color_format = context.swapchain().format(),
-                                               .shader_stages = shader_program.stages(),
+                                               .shader_stage_files = shader_stage_files,
                                                .descriptor_set_layouts = set_layouts,
                                                .material_pass = material_pass,
                                            });
@@ -644,24 +624,22 @@ class ShadowCubeApp {
             [this, &shadow_plan](const cubey::vulkan::CommandRecorder& pass_recorder) {
                 pass_recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS,
                                             shadow_pipeline_resource().pipeline());
-                for (const cubey::scene::RenderDrawPacket3D& packet : shadow_plan.draw_packets) {
-                    if (!packet.cast_shadows ||
-                        !cubey::render::material_supports_pass(
-                            packet.material_info, cubey::render::MaterialPassKind::DepthOnly)) {
-                        continue;
-                    }
-                    const ShadowPushConstants push_constants{
-                        .light_mvp =
-                            shadow_plan.view_projection_matrix * packet.world_affine_matrix,
-                    };
-                    pass_recorder.push_constants(shadow_pipeline_resource().layout(),
-                                                 VK_SHADER_STAGE_VERTEX_BIT, 0, push_constants);
-                    const cubey::render::RenderItem render_item =
-                        cubey::scene::render_item_from_packet(packet);
-                    const cubey::render::DrawItem draw_item =
-                        cubey::render::resolve_draw_item(render_item, meshes_);
-                    cubey::render::record_draw_item(pass_recorder.handle(), draw_item);
-                }
+                cubey::scene::record_draw_packets_3d(
+                    pass_recorder, shadow_plan.draw_packets, meshes_,
+                    {
+                        .material_pass = cubey::render::MaterialPassKind::DepthOnly,
+                        .require_shadow_caster = true,
+                    },
+                    [this, &shadow_plan](const cubey::vulkan::CommandRecorder& packet_recorder,
+                                         const cubey::scene::RenderDrawPacket3D& packet) {
+                        const ShadowPushConstants push_constants{
+                            .light_mvp =
+                                shadow_plan.view_projection_matrix * packet.world_affine_matrix,
+                        };
+                        packet_recorder.push_constants(shadow_pipeline_resource().layout(),
+                                                       VK_SHADER_STAGE_VERTEX_BIT, 0,
+                                                       push_constants);
+                    });
             });
     }
 
@@ -684,24 +662,21 @@ class ShadowCubeApp {
                 pass_recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS,
                                                   scene_pipeline_resource().layout(), 0,
                                                   descriptor_set);
-                for (const cubey::scene::RenderDrawPacket3D& packet : scene_plan.draw_packets) {
-                    if (!cubey::render::material_supports_pass(
-                            packet.material_info, cubey::render::MaterialPassKind::ForwardColor)) {
-                        continue;
-                    }
-                    const ScenePushConstants push_constants{
-                        .mvp = scene_plan.view_projection_matrix * packet.world_affine_matrix,
-                        .light_mvp =
-                            shadow_plan.view_projection_matrix * packet.world_affine_matrix,
-                    };
-                    pass_recorder.push_constants(scene_pipeline_resource().layout(),
-                                                 VK_SHADER_STAGE_VERTEX_BIT, 0, push_constants);
-                    const cubey::render::RenderItem render_item =
-                        cubey::scene::render_item_from_packet(packet);
-                    const cubey::render::DrawItem draw_item =
-                        cubey::render::resolve_draw_item(render_item, meshes_);
-                    cubey::render::record_draw_item(pass_recorder.handle(), draw_item);
-                }
+                cubey::scene::record_draw_packets_3d(
+                    pass_recorder, scene_plan.draw_packets, meshes_,
+                    {.material_pass = cubey::render::MaterialPassKind::ForwardColor},
+                    [this, &scene_plan,
+                     &shadow_plan](const cubey::vulkan::CommandRecorder& packet_recorder,
+                                   const cubey::scene::RenderDrawPacket3D& packet) {
+                        const ScenePushConstants push_constants{
+                            .mvp = scene_plan.view_projection_matrix * packet.world_affine_matrix,
+                            .light_mvp =
+                                shadow_plan.view_projection_matrix * packet.world_affine_matrix,
+                        };
+                        packet_recorder.push_constants(scene_pipeline_resource().layout(),
+                                                       VK_SHADER_STAGE_VERTEX_BIT, 0,
+                                                       push_constants);
+                    });
             });
     }
 
@@ -714,13 +689,12 @@ class ShadowCubeApp {
             },
             [this,
              frame_slot = frame.frame_slot](const cubey::vulkan::CommandRecorder& pass_recorder) {
-                pass_recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                            present_pipeline_resource().pipeline());
-                const VkDescriptorSet descriptor_set = present_descriptors().set(frame_slot.index);
-                pass_recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                                  present_pipeline_resource().layout(), 0,
-                                                  descriptor_set);
-                cubey::render::record_fullscreen_triangle(pass_recorder);
+                cubey::render::record_fullscreen_pipeline_draw(
+                    pass_recorder,
+                    {
+                        .pipeline = &present_pipeline_resource(),
+                        .descriptor_set = present_descriptors().set(frame_slot.index),
+                    });
             });
     }
 

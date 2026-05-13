@@ -331,14 +331,13 @@ void Fluid2DGpuResources::create_render_pipeline(cubey::vulkan::Device& device,
             .path = shader_path("fluid_2d_render.frag.spv"),
         },
     };
-    const cubey::render::ShaderProgram shader_program(device, shader_stage_files);
 
     const std::array<VkDescriptorSetLayout, 1> set_layouts{render_descriptors().layout()};
     const cubey::render::MaterialPassInfo material_pass = fluid_render_pass_info();
-    render_pipeline_resource_.emplace(device, cubey::render::GraphicsPipelineResourceConfig{
+    render_pipeline_resource_.emplace(device, cubey::render::GraphicsPipelineFileResourceConfig{
                                                   .extent = extent,
                                                   .color_format = color_format,
-                                                  .shader_stages = shader_program.stages(),
+                                                  .shader_stage_files = shader_stage_files,
                                                   .descriptor_set_layouts = set_layouts,
                                                   .material_pass = material_pass,
                                               });

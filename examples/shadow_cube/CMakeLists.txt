@@ -1,38 +1,16 @@
-add_executable(cubey_example_shadow_cube
-    main.cpp
-    shadow_cube_app.cpp
-)
-set_target_properties(cubey_example_shadow_cube PROPERTIES OUTPUT_NAME shadow_cube)
-
-target_compile_definitions(
+cubey_add_app_target(
     cubey_example_shadow_cube
-    PRIVATE
-        CUBEY_SHADOW_CUBE_SHADER_DIR="${CMAKE_CURRENT_BINARY_DIR}/shaders"
-)
-
-target_link_libraries(
-    cubey_example_shadow_cube
-    PRIVATE
-        cubey::cubey
-        cubey::host
-        cubey_project_warnings
-)
-
-cubey_add_glsl_shaders(
-    cubey_example_shadow_cube
-    OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/shaders"
+    OUTPUT_NAME shadow_cube
+    SHADER_DEFINE CUBEY_SHADOW_CUBE_SHADER_DIR
+    WINDOWED_SMOKE_TEST shadow_cube_reaches_glfw
+    WINDOWED_SMOKE_PATTERN "shadow_cube: .*rendering directional shadow cube"
     SOURCES
+        main.cpp
+        shadow_cube_app.cpp
+    SHADERS
         shaders/shadow_depth.vert
         shaders/shadow_cube.vert
         shaders/shadow_cube.frag
         shaders/shadow_present.vert
         shaders/shadow_present.frag
 )
-
-if (BUILD_TESTING)
-    cubey_add_windowed_smoke_test(
-        shadow_cube_reaches_glfw
-        cubey_example_shadow_cube
-        "shadow_cube: .*rendering directional shadow cube"
-    )
-endif()

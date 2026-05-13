@@ -132,6 +132,10 @@ full engine architecture.
   scene draw packets and examples. It carries mesh/material handles plus draw
   range fields, and `resolve_draw_item` converts it to the lower-level
   `DrawItem` once the caller resolves app-owned mesh resources.
+- `cubey::scene::record_draw_packets_3d` is the current scene-side recording
+  helper for the repeated packet-filter, per-packet state, resolve, and draw
+  sequence used by 3D examples. It does not choose pipelines, descriptor sets,
+  pass order, or push-constant contents.
 - `cubey::render::MaterialPassInfo` is the first explicit material/pass
   metadata contract. It describes pass kind, descriptor layout shape,
   push-constant ranges, and reusable graphics pipeline state.
@@ -142,8 +146,9 @@ full engine architecture.
   input, and `MaterialPassInfo` where applicable; they do not reflect shaders,
   cache pipelines, allocate descriptors, bind materials, or record commands.
   Current examples and `fluid_2d` create app/project graphics pipelines through
-  this render-level wrapper; the lower-level Vulkan pipeline builders remain as
-  tested implementation details and escape hatches.
+  this render-level wrapper using file-backed shader stage configs; the
+  lower-level Vulkan pipeline builders remain as tested implementation details
+  and escape hatches.
 - `cubey::vulkan::DescriptorWriteBatch` is the current descriptor-update
   boundary: callers still choose descriptor sets, bindings, resources, and
   image layouts, while the batch owns write backing storage until submission.
@@ -188,7 +193,9 @@ full engine architecture.
   pipeline resources while still owning descriptor writes and Vulkan command
   recording sequence locally. Cube pipelines now read pass metadata from
   `MaterialPassInfo` instead of spelling descriptor layouts, push constants,
-  and depth/blend state entirely ad hoc.
+  and depth/blend state entirely ad hoc. Fullscreen examples use shared
+  pipeline-bind/descriptor/push-constant/fullscreen-triangle helpers for the
+  common fullscreen draw shape.
 - `LightManager3D` lives in the scene/component layer and emits compact
   CPU-side light packets for directional and point lights. The packets provide
   light kind, color, intensity, direction or world position, and range; shader

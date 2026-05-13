@@ -3,6 +3,7 @@
 #include <array>
 
 void test_run_config_parses_png_output_path();
+void test_run_cli_app_sets_default_title_and_returns_runner_status();
 void test_camera_2d_pans_zooms_and_reports_view();
 void test_camera_2d_clamps_scale();
 void test_camera_3d_builds_projection_and_view_from_world_transform();
@@ -145,6 +146,7 @@ void test_primitive_vertex_layouts_match_shader_contracts();
 void test_primitive_xz_plane_mesh_uses_center_half_extents_and_up_normal();
 void test_render_plan_builds_sorted_3d_draw_packets_with_material_metadata();
 void test_render_plan_converts_draw_packets_to_render_items();
+void test_render_plan_filters_draw_packets_for_recording_policy();
 void test_render_plan_rejects_stale_resource_handles();
 void test_render_resource_registry_tracks_handle_lifetime_and_labels();
 void test_render_resource_handles_are_hashable_keys();
@@ -193,6 +195,7 @@ void test_upload_queue_drains_in_submission_order();
 void test_upload_queue_owns_payload_until_drain();
 void test_upload_queue_tracks_failed_uploads();
 void test_windowed_host_config_defaults_to_two_frame_slots();
+void test_windowed_app_config_preserves_windowed_host_defaults();
 
 namespace cubey::tests {
 namespace {
@@ -207,6 +210,7 @@ namespace {
 std::span<const TestCase> core_tests() {
     static constexpr std::array tests{
         CUBEY_TEST(test_run_config_parses_png_output_path),
+        CUBEY_TEST(test_run_cli_app_sets_default_title_and_returns_runner_status),
         CUBEY_TEST(test_camera_2d_pans_zooms_and_reports_view),
         CUBEY_TEST(test_camera_2d_clamps_scale),
         CUBEY_TEST(test_camera_3d_builds_projection_and_view_from_world_transform),
@@ -350,6 +354,7 @@ std::span<const TestCase> core_tests() {
         CUBEY_TEST(test_render_pass_helpers_describe_clear_values_and_fullscreen_triangle),
         CUBEY_TEST(test_render_plan_builds_sorted_3d_draw_packets_with_material_metadata),
         CUBEY_TEST(test_render_plan_converts_draw_packets_to_render_items),
+        CUBEY_TEST(test_render_plan_filters_draw_packets_for_recording_policy),
         CUBEY_TEST(test_render_plan_rejects_stale_resource_handles),
         CUBEY_TEST(test_render_resource_registry_tracks_handle_lifetime_and_labels),
         CUBEY_TEST(test_render_resource_handles_are_hashable_keys),
@@ -398,6 +403,7 @@ std::span<const TestCase> core_tests() {
         CUBEY_TEST(test_upload_queue_drains_in_submission_order),
         CUBEY_TEST(test_upload_queue_tracks_failed_uploads),
         CUBEY_TEST(test_windowed_host_config_defaults_to_two_frame_slots),
+        CUBEY_TEST(test_windowed_app_config_preserves_windowed_host_defaults),
     };
     return tests;
 }

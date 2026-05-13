@@ -15,6 +15,7 @@ option(CUBEY_BUILD_EXAMPLES "Build Cubey examples" ON)
 option(CUBEY_BUILD_PROJECTS "Build Cubey projects" ON)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+include(CubeyApps)
 include(CubeyShaders)
 include(CubeySmokeTests)
 include(CubeyWarnings)

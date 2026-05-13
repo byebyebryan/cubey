@@ -87,6 +87,13 @@ Owns the common windowed loop once `GlfwWindow` is stable:
 This host should call into project/example code for setup, swapchain-sized
 resource creation/destruction, update, command recording, and shutdown.
 
+### `cubey::host::WindowedApp`
+
+`WindowedApp` is the app-facing shell over `WindowedHost`. It keeps the lower
+host loop explicit and reusable while removing repeated example glue: headless
+rejection, ready logging, optional Escape-to-close behavior, global resource
+setup before swapchain setup, and callback forwarding.
+
 ## Migration Order
 
 1. Extract `GlfwWindow`. Status: complete.
@@ -185,6 +192,9 @@ resource creation/destruction, update, command recording, and shutdown.
   and swapchain recreation. It runs the GPU runtime threaded by default and uses
   explicit drain/wait calls at host-owned setup, update, swapchain-resource, and
   shutdown boundaries.
+- `cubey::host::run_windowed_app` is the current convenience layer used by
+  examples/projects that need the standard windowed lifecycle without spelling
+  every `WindowedHostCallbacks` field directly.
 - Windowed render callbacks receive `cubey::host::WindowedRenderFrame`, which
   carries the command buffer, swapchain image index, timing, and
   `cubey::render::ColorTargetView` for the active swapchain image.
@@ -194,8 +204,8 @@ resource creation/destruction, update, command recording, and shutdown.
   and pass execution to `cubey::render::RenderGraphFrameExecutor`.
 - All current windowed examples use the host layer: `window_clear`, `triangle`,
   `spinning_cube`, `textured_cube`, `shadow_cube`, `fractal`, and `particles`.
-  They still own their shaders, pipelines, descriptors, command recording
-  sequence, and example-specific state.
+  They still own their shaders, descriptors, command recording sequence, and
+  example-specific state, but no longer repeat the common host callback shell.
 - `cubey::host::HeadlessPngHost` owns the repeated no-window Vulkan
   instance/device, submission coordinator, GPU runtime, offscreen RGBA target,
   color-attachment/readback transitions, ticketed RGBA8 image readback through

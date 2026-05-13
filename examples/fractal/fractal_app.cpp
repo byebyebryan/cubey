@@ -2,9 +2,8 @@
 
 #include "fractal_view.h"
 
-#include <cubey/host/glfw_window.h>
 #include <cubey/host/headless_png_host.h>
-#include <cubey/host/windowed_host.h>
+#include <cubey/host/windowed_app.h>
 #include <cubey/input/pan_zoom_2d_controller.h>
 #include <cubey/render/pass.h>
 #include <cubey/render/pipeline_resource.h>
@@ -16,7 +15,6 @@
 
 #include <array>
 #include <cstdint>
-#include <cstdio>
 #include <filesystem>
 #include <optional>
 #include <stdexcept>
@@ -61,50 +59,41 @@ class FractalApp {
             return run_headless();
         }
 
-        cubey::host::WindowedHost host(
+        cubey::host::WindowedAppCallbacks callbacks;
+        callbacks.create_swapchain_resources = [this](cubey::host::WindowedAppContext& context) {
+            create_pipeline(context.device(), context.swapchain().format(),
+                            context.swapchain().extent());
+        };
+        callbacks.destroy_swapchain_resources = [this](cubey::host::WindowedAppContext& context) {
+            (void)context;
+            destroy_swapchain_resources();
+        };
+        callbacks.update = [this](cubey::host::WindowedAppContext& context,
+                                  const FrameTiming& timing) {
+            (void)timing;
+            update_input(context);
+        };
+        callbacks.record_frame = [this](cubey::host::WindowedAppContext& context,
+                                        const cubey::host::WindowedRenderFrame& frame) {
+            (void)context;
+            record_fractal_frame(frame);
+        };
+        callbacks.shutdown = [this](cubey::host::WindowedAppContext& context) {
+            (void)context;
+            destroy_swapchain_resources();
+        };
+
+        return cubey::host::run_windowed_app(
             {
                 .run_config = config_,
+                .app_name = "fractal",
+                .ready_status = "rendering fullscreen fractal",
                 .required_queue_flags = VK_QUEUE_GRAPHICS_BIT,
                 .swapchain_image_usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
                 .require_dynamic_rendering = true,
+                .close_on_escape = true,
             },
-            {
-                .create_swapchain_resources =
-                    [this](cubey::host::WindowedAppContext& context) {
-                        create_pipeline(context.device(), context.swapchain().format(),
-                                        context.swapchain().extent());
-                    },
-                .destroy_swapchain_resources =
-                    [this](cubey::host::WindowedAppContext& context) {
-                        (void)context;
-                        destroy_swapchain_resources();
-                    },
-                .on_ready =
-                    [](cubey::host::WindowedAppContext& context) {
-                        std::printf("fractal: %s rendering fullscreen fractal at %ux%u\n",
-                                    context.device().device_name(),
-                                    context.swapchain().extent().width,
-                                    context.swapchain().extent().height);
-                    },
-                .update =
-                    [this](cubey::host::WindowedAppContext& context, const FrameTiming& timing) {
-                        (void)timing;
-                        update_input(context);
-                    },
-                .record_frame =
-                    [this](cubey::host::WindowedAppContext& context,
-                           const cubey::host::WindowedRenderFrame& frame) {
-                        (void)context;
-                        record_fractal_frame(frame);
-                    },
-                .frame_stats_sample = {},
-                .shutdown =
-                    [this](cubey::host::WindowedAppContext& context) {
-                        (void)context;
-                        destroy_swapchain_resources();
-                    },
-            });
-        return host.run();
+            std::move(callbacks));
     }
 
   private:
@@ -133,9 +122,6 @@ class FractalApp {
     }
 
     void update_input(cubey::host::WindowedAppContext& context) {
-        if (context.input().key_pressed(cubey::input::Key::Escape)) {
-            context.window().request_close();
-        }
         if (context.input().key_pressed(cubey::input::Key::R)) {
             view_controller_.reset();
         }
@@ -160,13 +146,12 @@ class FractalApp {
                 .path = shader_path("fractal.frag.spv"),
             },
         };
-        const cubey::render::ShaderProgram shader_program(device, shader_stage_files);
 
         const cubey::render::MaterialPassInfo material_pass = fractal_pass_info();
-        pipeline_resource_.emplace(device, cubey::render::GraphicsPipelineResourceConfig{
+        pipeline_resource_.emplace(device, cubey::render::GraphicsPipelineFileResourceConfig{
                                                .extent = extent,
                                                .color_format = color_format,
-                                               .shader_stages = shader_program.stages(),
+                                               .shader_stage_files = shader_stage_files,
                                                .material_pass = material_pass,
                                            });
     }
@@ -184,11 +169,9 @@ class FractalApp {
                 .color = cubey::render::color_clear_value(0.015F, 0.018F, 0.026F, 1.0F),
             },
             [this, constants](const cubey::vulkan::CommandRecorder& pass_recorder) {
-                const cubey::render::GraphicsPipelineResource& pipeline = pipeline_resource();
-                pass_recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.pipeline());
-                pass_recorder.push_constants(pipeline.layout(), VK_SHADER_STAGE_FRAGMENT_BIT, 0,
-                                             constants);
-                cubey::render::record_fullscreen_triangle(pass_recorder);
+                cubey::render::record_fullscreen_pipeline_draw(
+                    pass_recorder, {.pipeline = &pipeline_resource()}, VK_SHADER_STAGE_FRAGMENT_BIT,
+                    constants);
             });
     }
 

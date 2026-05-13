@@ -2,17 +2,17 @@
 
 #include <cubey/core/math.h>
 #include <cubey/engine/engine.h>
-#include <cubey/host/windowed_host.h>
+#include <cubey/host/windowed_app.h>
 #include <cubey/render/material.h>
 #include <cubey/render/mesh.h>
 #include <cubey/render/pass.h>
 #include <cubey/render/pipeline_resource.h>
 #include <cubey/render/primitive_mesh.h>
-#include <cubey/render/render_item.h>
 #include <cubey/render/resource_handle.h>
 #include <cubey/render/resource_table.h>
 #include <cubey/render/target.h>
 #include <cubey/scene/camera_3d.h>
+#include <cubey/scene/render_recording.h>
 #include <cubey/scene/scene.h>
 #include <cubey/scene/transform_3d.h>
 #include <cubey/scene/view_3d.h>
@@ -25,7 +25,6 @@
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
-#include <cstdio>
 #include <filesystem>
 #include <optional>
 #include <stdexcept>
@@ -70,55 +69,41 @@ class SpinningCubeApp {
     SpinningCubeApp& operator=(const SpinningCubeApp&) = delete;
 
     int run() {
-        if (config_.headless) {
-            throw std::runtime_error("spinning_cube does not support --headless yet");
-        }
+        cubey::host::WindowedAppCallbacks callbacks;
+        callbacks.create_swapchain_resources = [this](cubey::host::WindowedAppContext& context) {
+            create_global_resources_if_needed(context);
+            create_swapchain_resources(context);
+        };
+        callbacks.destroy_swapchain_resources = [this](cubey::host::WindowedAppContext& context) {
+            (void)context;
+            destroy_swapchain_resources();
+        };
+        callbacks.update = [this](cubey::host::WindowedAppContext& context,
+                                  const FrameTiming& timing) {
+            (void)context;
+            (void)timing;
+            update_scene_transform();
+        };
+        callbacks.record_frame = [this](cubey::host::WindowedAppContext& context,
+                                        const cubey::host::WindowedRenderFrame& frame) {
+            (void)context;
+            record_cube_frame(frame);
+        };
+        callbacks.shutdown = [this](cubey::host::WindowedAppContext& context) {
+            (void)context;
+            destroy_all_resources();
+        };
 
-        cubey::host::WindowedHost host(
+        return cubey::host::run_windowed_app(
             {
                 .run_config = config_,
+                .app_name = "spinning_cube",
+                .ready_status = "rendering indexed cube",
                 .required_queue_flags = VK_QUEUE_GRAPHICS_BIT,
                 .swapchain_image_usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
                 .require_dynamic_rendering = true,
             },
-            {
-                .create_swapchain_resources =
-                    [this](cubey::host::WindowedAppContext& context) {
-                        create_global_resources_if_needed(context);
-                        create_swapchain_resources(context);
-                    },
-                .destroy_swapchain_resources =
-                    [this](cubey::host::WindowedAppContext& context) {
-                        (void)context;
-                        destroy_swapchain_resources();
-                    },
-                .on_ready =
-                    [](cubey::host::WindowedAppContext& context) {
-                        std::printf("spinning_cube: %s rendering indexed cube at %ux%u\n",
-                                    context.device().device_name(),
-                                    context.swapchain().extent().width,
-                                    context.swapchain().extent().height);
-                    },
-                .update =
-                    [this](cubey::host::WindowedAppContext& context, const FrameTiming& timing) {
-                        (void)context;
-                        (void)timing;
-                        update_scene_transform();
-                    },
-                .record_frame =
-                    [this](cubey::host::WindowedAppContext& context,
-                           const cubey::host::WindowedRenderFrame& frame) {
-                        (void)context;
-                        record_cube_frame(frame);
-                    },
-                .frame_stats_sample = {},
-                .shutdown =
-                    [this](cubey::host::WindowedAppContext& context) {
-                        (void)context;
-                        destroy_all_resources();
-                    },
-            });
-        return host.run();
+            std::move(callbacks));
     }
 
   private:
@@ -160,18 +145,17 @@ class SpinningCubeApp {
                 .path = shader_path("spinning_cube.frag.spv"),
             },
         };
-        const cubey::render::ShaderProgram shader_program(context.device(), shader_stage_files);
 
         const cubey::render::VertexInputLayout vertex_input =
             cubey::render::vertex_position_color_input_layout();
 
         const cubey::render::MaterialPassInfo material_pass = spinning_cube_forward_pass_info();
         pipeline_resource_.emplace(context.device(),
-                                   cubey::render::GraphicsPipelineResourceConfig{
+                                   cubey::render::GraphicsPipelineFileResourceConfig{
                                        .extent = context.swapchain().extent(),
                                        .color_format = context.swapchain().format(),
                                        .depth_format = depth_attachment().format(),
-                                       .shader_stages = shader_program.stages(),
+                                       .shader_stage_files = shader_stage_files,
                                        .vertex_bindings = vertex_input.bindings(),
                                        .vertex_attributes = vertex_input.attribute_descriptions(),
                                        .material_pass = material_pass,
@@ -255,7 +239,6 @@ class SpinningCubeApp {
         cubey::SceneReadView scene_view = scene().read();
         const cubey::scene::RenderFramePlan3D frame_plan =
             current_frame_plan(scene_view, frame.color_target.extent);
-        const cubey::scene::RenderDrawPacket3D& draw_packet = frame_plan.draw_packets[0];
         const cubey::vulkan::CommandRecorder recorder(frame.command_buffer);
         recorder.begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
@@ -266,21 +249,21 @@ class SpinningCubeApp {
             .depth = cubey::render::depth_clear_value(),
         };
 
-        const PushConstants push_constants = current_push_constants(frame_plan, draw_packet);
-
         cubey::render::record_present_render_target_pass(
             recorder, target, clear_values,
-            [this, &draw_packet,
-             push_constants](const cubey::vulkan::CommandRecorder& pass_recorder) {
+            [this, &frame_plan](const cubey::vulkan::CommandRecorder& pass_recorder) {
                 pass_recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS,
                                             pipeline_resource().pipeline());
-                pass_recorder.push_constants(pipeline_resource().layout(),
-                                             VK_SHADER_STAGE_VERTEX_BIT, 0, push_constants);
-                const cubey::render::RenderItem render_item =
-                    cubey::scene::render_item_from_packet(draw_packet);
-                const cubey::render::DrawItem draw_item =
-                    cubey::render::resolve_draw_item(render_item, meshes_);
-                cubey::render::record_draw_item(pass_recorder.handle(), draw_item);
+                cubey::scene::record_draw_packets_3d(
+                    pass_recorder, frame_plan.draw_packets, meshes_, {},
+                    [this, &frame_plan](const cubey::vulkan::CommandRecorder& packet_recorder,
+                                        const cubey::scene::RenderDrawPacket3D& packet) {
+                        const PushConstants push_constants =
+                            current_push_constants(frame_plan, packet);
+                        packet_recorder.push_constants(pipeline_resource().layout(),
+                                                       VK_SHADER_STAGE_VERTEX_BIT, 0,
+                                                       push_constants);
+                    });
             });
 
         recorder.end("vkEndCommandBuffer spinning_cube");

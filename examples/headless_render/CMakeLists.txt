@@ -1,15 +1,9 @@
-add_executable(cubey_example_headless_render
-    headless_render_app.cpp
-    main.cpp
-)
-set_target_properties(cubey_example_headless_render PROPERTIES OUTPUT_NAME headless_render)
-
-target_link_libraries(
+cubey_add_app_target(
     cubey_example_headless_render
-    PRIVATE
-        cubey::cubey
-        cubey::host
-        cubey_project_warnings
+    OUTPUT_NAME headless_render
+    SOURCES
+        headless_render_app.cpp
+        main.cpp
 )
 
 if (BUILD_TESTING)
