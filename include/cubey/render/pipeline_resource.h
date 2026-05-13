@@ -11,6 +11,7 @@
 #include <optional>
 #include <span>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace cubey::vulkan {
@@ -24,6 +25,31 @@ struct ShaderStageFile {
     std::filesystem::path path{};
     std::string entry_point = "main";
 };
+
+[[nodiscard]] inline ShaderStageFile shader_stage_file(VkShaderStageFlagBits stage,
+                                                       std::filesystem::path path,
+                                                       std::string entry_point = "main") {
+    return {
+        .stage = stage,
+        .path = std::move(path),
+        .entry_point = std::move(entry_point),
+    };
+}
+
+[[nodiscard]] inline ShaderStageFile vertex_shader_file(std::filesystem::path path,
+                                                        std::string entry_point = "main") {
+    return shader_stage_file(VK_SHADER_STAGE_VERTEX_BIT, std::move(path), std::move(entry_point));
+}
+
+[[nodiscard]] inline ShaderStageFile fragment_shader_file(std::filesystem::path path,
+                                                          std::string entry_point = "main") {
+    return shader_stage_file(VK_SHADER_STAGE_FRAGMENT_BIT, std::move(path), std::move(entry_point));
+}
+
+[[nodiscard]] inline ShaderStageFile compute_shader_file(std::filesystem::path path,
+                                                         std::string entry_point = "main") {
+    return shader_stage_file(VK_SHADER_STAGE_COMPUTE_BIT, std::move(path), std::move(entry_point));
+}
 
 class ShaderProgram {
   public:
@@ -64,6 +90,35 @@ struct GraphicsPipelineFileResourceConfig {
     std::span<const VkDescriptorSetLayout> descriptor_set_layouts{};
     MaterialPassInfo material_pass{};
 };
+
+struct GraphicsPipelineTargetInfo {
+    VkExtent2D extent{};
+    VkFormat color_format = VK_FORMAT_UNDEFINED;
+    VkFormat depth_format = VK_FORMAT_UNDEFINED;
+};
+
+struct GraphicsPipelineFileRecipe {
+    std::span<const ShaderStageFile> shader_stage_files{};
+    std::span<const VkVertexInputBindingDescription> vertex_bindings{};
+    std::span<const VkVertexInputAttributeDescription> vertex_attributes{};
+    std::span<const VkDescriptorSetLayout> descriptor_set_layouts{};
+    MaterialPassInfo material_pass{};
+};
+
+[[nodiscard]] inline GraphicsPipelineFileResourceConfig
+graphics_pipeline_file_resource_config(const GraphicsPipelineTargetInfo& target,
+                                       const GraphicsPipelineFileRecipe& recipe) {
+    return {
+        .extent = target.extent,
+        .color_format = target.color_format,
+        .depth_format = target.depth_format,
+        .shader_stage_files = recipe.shader_stage_files,
+        .vertex_bindings = recipe.vertex_bindings,
+        .vertex_attributes = recipe.vertex_attributes,
+        .descriptor_set_layouts = recipe.descriptor_set_layouts,
+        .material_pass = recipe.material_pass,
+    };
+}
 
 [[nodiscard]] cubey::vulkan::PipelineLayoutInfo
 graphics_pipeline_layout_info(const GraphicsPipelineResourceConfig& config);

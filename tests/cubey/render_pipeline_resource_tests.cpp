@@ -228,3 +228,62 @@ void test_render_pipeline_resource_builds_compute_pipeline_info() {
         },
         "compute pipeline layout info should reject non-compute shader stages");
 }
+
+void test_render_pipeline_resource_helpers_build_file_recipe_config() {
+    const std::array<cubey::render::ShaderStageFile, 2> shader_stages{
+        cubey::render::vertex_shader_file("cube.vert.spv"),
+        cubey::render::fragment_shader_file("cube.frag.spv", "fragment_main"),
+    };
+    const VkDescriptorSetLayout descriptor_layout = reinterpret_cast<VkDescriptorSetLayout>(0xB0);
+    const cubey::render::VertexInputLayout vertex_input =
+        cubey::render::vertex_position_color_input_layout();
+    const cubey::render::MaterialPassInfo material_pass{
+        .label = "recipe forward",
+    };
+
+    const cubey::render::GraphicsPipelineFileRecipe recipe{
+        .shader_stage_files = shader_stages,
+        .vertex_bindings = vertex_input.bindings(),
+        .vertex_attributes = vertex_input.attribute_descriptions(),
+        .descriptor_set_layouts = {&descriptor_layout, 1},
+        .material_pass = material_pass,
+    };
+    const cubey::render::GraphicsPipelineFileResourceConfig config =
+        cubey::render::graphics_pipeline_file_resource_config(
+            {
+                .extent = {1024, 768},
+                .color_format = VK_FORMAT_B8G8R8A8_SRGB,
+                .depth_format = VK_FORMAT_D32_SFLOAT,
+            },
+            recipe);
+
+    require(config.extent.width == 1024 && config.extent.height == 768,
+            "pipeline file recipe helper should preserve target extent");
+    require(config.color_format == VK_FORMAT_B8G8R8A8_SRGB,
+            "pipeline file recipe helper should preserve color format");
+    require(config.depth_format == VK_FORMAT_D32_SFLOAT,
+            "pipeline file recipe helper should preserve depth format");
+    require(config.shader_stage_files.size() == 2,
+            "pipeline file recipe helper should preserve shader stages");
+    require(config.shader_stage_files[0].stage == VK_SHADER_STAGE_VERTEX_BIT,
+            "vertex shader helper should set vertex stage");
+    require(config.shader_stage_files[1].stage == VK_SHADER_STAGE_FRAGMENT_BIT,
+            "fragment shader helper should set fragment stage");
+    require(std::string_view(config.shader_stage_files[1].entry_point) == "fragment_main",
+            "shader stage helper should preserve custom entry point");
+    require(config.vertex_bindings.size() == 1,
+            "pipeline file recipe helper should preserve vertex bindings");
+    require(config.vertex_attributes.size() == 2,
+            "pipeline file recipe helper should preserve vertex attributes");
+    require(config.descriptor_set_layouts.size() == 1,
+            "pipeline file recipe helper should preserve descriptor layouts");
+    require(config.descriptor_set_layouts[0] == descriptor_layout,
+            "pipeline file recipe helper should preserve descriptor layout handle");
+    require(config.material_pass.label == "recipe forward",
+            "pipeline file recipe helper should preserve material pass");
+
+    const cubey::render::ShaderStageFile compute_stage =
+        cubey::render::compute_shader_file("generate.comp.spv");
+    require(compute_stage.stage == VK_SHADER_STAGE_COMPUTE_BIT,
+            "compute shader helper should set compute stage");
+}

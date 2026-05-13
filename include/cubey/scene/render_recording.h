@@ -1,7 +1,9 @@
 #pragma once
 
 #include <cubey/render/material.h>
+#include <cubey/render/material_instance.h>
 #include <cubey/render/mesh.h>
+#include <cubey/render/pipeline_resource.h>
 #include <cubey/render/render_item.h>
 #include <cubey/render/resource_table.h>
 #include <cubey/scene/render_plan.h>
@@ -9,6 +11,7 @@
 
 #include <optional>
 #include <span>
+#include <stdexcept>
 
 namespace cubey::scene {
 
@@ -29,6 +32,13 @@ struct RenderPacketFilter3D {
     return true;
 }
 
+struct PipelineDrawPackets3DInfo {
+    const render::GraphicsPipelineResource* pipeline = nullptr;
+    const render::MaterialInstance* material = nullptr;
+    std::optional<render::FrameSlot> frame_slot{};
+    RenderPacketFilter3D filter{};
+};
+
 template <typename RecordPacketCallback>
 void record_draw_packets_3d(const cubey::vulkan::CommandRecorder& recorder,
                             std::span<const RenderDrawPacket3D> packets,
@@ -43,6 +53,27 @@ void record_draw_packets_3d(const cubey::vulkan::CommandRecorder& recorder,
             render::resolve_draw_item(render_item_from_packet(packet), meshes);
         render::record_draw_item(recorder.handle(), draw_item);
     }
+}
+
+template <typename RecordPacketCallback>
+void record_pipeline_draw_packets_3d(const cubey::vulkan::CommandRecorder& recorder,
+                                     std::span<const RenderDrawPacket3D> packets,
+                                     const render::MeshResourceTable<render::Mesh>& meshes,
+                                     const PipelineDrawPackets3DInfo& info,
+                                     RecordPacketCallback&& record_packet) {
+    if (info.pipeline == nullptr) {
+        throw std::runtime_error("3D pipeline draw packet recording requires a pipeline");
+    }
+    recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, info.pipeline->pipeline());
+    if (info.material != nullptr) {
+        if (info.frame_slot.has_value()) {
+            render::bind_material_instance(recorder, *info.pipeline, *info.material,
+                                           info.frame_slot.value());
+        } else {
+            render::bind_material_instance(recorder, *info.pipeline, *info.material);
+        }
+    }
+    record_draw_packets_3d(recorder, packets, meshes, info.filter, record_packet);
 }
 
 } // namespace cubey::scene

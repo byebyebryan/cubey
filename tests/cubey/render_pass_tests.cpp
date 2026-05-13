@@ -12,6 +12,15 @@ void require(bool condition, const char* message) {
     }
 }
 
+void require_throws(auto&& action, const char* message) {
+    try {
+        action();
+    } catch (const std::exception&) {
+        return;
+    }
+    throw std::runtime_error(message);
+}
+
 } // namespace
 
 void test_render_pass_helpers_describe_clear_values_and_fullscreen_triangle() {
@@ -26,4 +35,19 @@ void test_render_pass_helpers_describe_clear_values_and_fullscreen_triangle() {
     require(depth_clear.depthStencil.stencil == 3, "depth clear helper should preserve stencil");
     require(cubey::render::fullscreen_triangle_vertex_count() == 3,
             "fullscreen triangle should use one vertexless triangle");
+
+    cubey::render::ComputePipelineDispatchInfo dispatch_info{
+        .group_count_x = 8,
+        .group_count_y = 4,
+        .group_count_z = 2,
+    };
+    require_throws(
+        [dispatch_info] { cubey::render::validate_compute_dispatch_info(dispatch_info); },
+        "compute dispatch helper should reject a missing pipeline");
+    dispatch_info.pipeline = reinterpret_cast<const cubey::render::ComputePipelineResource*>(0x10);
+    cubey::render::validate_compute_dispatch_info(dispatch_info);
+    dispatch_info.group_count_y = 0;
+    require_throws(
+        [dispatch_info] { cubey::render::validate_compute_dispatch_info(dispatch_info); },
+        "compute dispatch helper should reject zero group counts");
 }

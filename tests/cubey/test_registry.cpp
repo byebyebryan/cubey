@@ -69,6 +69,8 @@ void test_light_manager_skips_invisible_lights_without_transform();
 void test_light_manager_updates_keep_epoch_local_snapshots();
 void test_light_packets_require_transform_for_point_lights();
 void test_material_info_defaults_to_depth_and_forward_passes();
+void test_material_descriptor_writer_preserves_set_and_write_order();
+void test_material_instance_config_builds_descriptor_set_info();
 void test_material_pass_info_applies_graphics_pipeline_state();
 void test_material_pass_info_builds_descriptor_set_info();
 void test_material_pass_info_validates_descriptor_and_push_constant_shape();
@@ -140,6 +142,7 @@ void test_render_pass_helpers_describe_clear_values_and_fullscreen_triangle();
 void test_render_pipeline_resource_allows_vertexless_fullscreen_pipeline_shape();
 void test_render_pipeline_resource_builds_layout_and_dynamic_pipeline_info();
 void test_render_pipeline_resource_builds_compute_pipeline_info();
+void test_render_pipeline_resource_helpers_build_file_recipe_config();
 void test_primitive_cube_normal_uv_mesh_preserves_normals_and_face_uvs();
 void test_primitive_cube_position_color_mesh_uses_face_colors_and_indices();
 void test_primitive_vertex_layouts_match_shader_contracts();
@@ -173,6 +176,7 @@ void test_renderable_manager_updates_keep_epoch_local_snapshots();
 void test_resource_helpers_describe_device_local_upload_and_depth_setup();
 void test_sampler_config_describes_shadow_sampling();
 void test_scene_edit_queue_publishes_reserved_entities_on_commit();
+void test_scene_builder_creates_common_3d_entities();
 void test_scene_failed_commit_rolls_back_reserved_entities();
 void test_scene_read_views_defer_destroyed_entity_reuse_until_release();
 void test_shader_bytecode_reads_aligned_spirv_words();
@@ -276,6 +280,8 @@ std::span<const TestCase> core_tests() {
         CUBEY_TEST(test_light_manager_skips_invisible_lights_without_transform),
         CUBEY_TEST(test_light_packets_require_transform_for_point_lights),
         CUBEY_TEST(test_material_info_defaults_to_depth_and_forward_passes),
+        CUBEY_TEST(test_material_instance_config_builds_descriptor_set_info),
+        CUBEY_TEST(test_material_descriptor_writer_preserves_set_and_write_order),
         CUBEY_TEST(test_material_pass_masks_include_requested_passes),
         CUBEY_TEST(test_material_pass_info_validates_descriptor_and_push_constant_shape),
         CUBEY_TEST(test_material_pass_info_applies_graphics_pipeline_state),
@@ -345,6 +351,7 @@ std::span<const TestCase> core_tests() {
         CUBEY_TEST(test_render_pipeline_resource_builds_layout_and_dynamic_pipeline_info),
         CUBEY_TEST(test_render_pipeline_resource_allows_vertexless_fullscreen_pipeline_shape),
         CUBEY_TEST(test_render_pipeline_resource_builds_compute_pipeline_info),
+        CUBEY_TEST(test_render_pipeline_resource_helpers_build_file_recipe_config),
         CUBEY_TEST(test_primitive_vertex_layouts_match_shader_contracts),
         CUBEY_TEST(test_primitive_cube_position_color_mesh_uses_face_colors_and_indices),
         CUBEY_TEST(test_primitive_cube_normal_uv_mesh_preserves_normals_and_face_uvs),
@@ -381,6 +388,7 @@ std::span<const TestCase> core_tests() {
         CUBEY_TEST(test_resource_helpers_describe_device_local_upload_and_depth_setup),
         CUBEY_TEST(test_sampler_config_describes_shadow_sampling),
         CUBEY_TEST(test_stable_slot_store_rejects_stale_handles_without_moving_other_slots),
+        CUBEY_TEST(test_scene_builder_creates_common_3d_entities),
         CUBEY_TEST(test_scene_edit_queue_publishes_reserved_entities_on_commit),
         CUBEY_TEST(test_scene_failed_commit_rolls_back_reserved_entities),
         CUBEY_TEST(test_scene_read_views_defer_destroyed_entity_reuse_until_release),

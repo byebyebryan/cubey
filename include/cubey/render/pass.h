@@ -27,6 +27,24 @@ struct FullscreenPipelineDrawInfo {
     std::uint32_t descriptor_set_index = 0;
 };
 
+struct ComputePipelineDispatchInfo {
+    const ComputePipelineResource* pipeline = nullptr;
+    VkDescriptorSet descriptor_set = VK_NULL_HANDLE;
+    std::uint32_t descriptor_set_index = 0;
+    std::uint32_t group_count_x = 1;
+    std::uint32_t group_count_y = 1;
+    std::uint32_t group_count_z = 1;
+};
+
+inline void validate_compute_dispatch_info(const ComputePipelineDispatchInfo& info) {
+    if (info.pipeline == nullptr) {
+        throw std::runtime_error("compute pipeline dispatch requires a pipeline");
+    }
+    if (info.group_count_x == 0 || info.group_count_y == 0 || info.group_count_z == 0) {
+        throw std::runtime_error("compute pipeline dispatch requires positive group counts");
+    }
+}
+
 inline void record_fullscreen_pipeline_draw(const cubey::vulkan::CommandRecorder& recorder,
                                             const FullscreenPipelineDrawInfo& info) {
     if (info.pipeline == nullptr) {
@@ -38,6 +56,32 @@ inline void record_fullscreen_pipeline_draw(const cubey::vulkan::CommandRecorder
                                      info.descriptor_set_index, info.descriptor_set);
     }
     record_fullscreen_triangle(recorder);
+}
+
+inline void record_compute_pipeline_dispatch(const cubey::vulkan::CommandRecorder& recorder,
+                                             const ComputePipelineDispatchInfo& info) {
+    validate_compute_dispatch_info(info);
+    recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_COMPUTE, info.pipeline->pipeline());
+    if (info.descriptor_set != VK_NULL_HANDLE) {
+        recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_COMPUTE, info.pipeline->layout(),
+                                     info.descriptor_set_index, info.descriptor_set);
+    }
+    recorder.dispatch(info.group_count_x, info.group_count_y, info.group_count_z);
+}
+
+template <typename PushConstants>
+void record_compute_pipeline_dispatch(const cubey::vulkan::CommandRecorder& recorder,
+                                      const ComputePipelineDispatchInfo& info,
+                                      VkShaderStageFlags stage_flags,
+                                      const PushConstants& push_constants) {
+    validate_compute_dispatch_info(info);
+    recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_COMPUTE, info.pipeline->pipeline());
+    if (info.descriptor_set != VK_NULL_HANDLE) {
+        recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_COMPUTE, info.pipeline->layout(),
+                                     info.descriptor_set_index, info.descriptor_set);
+    }
+    recorder.push_constants(info.pipeline->layout(), stage_flags, 0, push_constants);
+    recorder.dispatch(info.group_count_x, info.group_count_y, info.group_count_z);
 }
 
 template <typename PushConstants>

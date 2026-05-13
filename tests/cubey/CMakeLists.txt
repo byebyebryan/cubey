@@ -23,6 +23,7 @@ add_executable(cubey_core_tests
     light_manager_tests.cpp
     input_tests.cpp
     main.cpp
+    material_instance_tests.cpp
     material_pass_tests.cpp
     math_tests.cpp
     orbit_controller_tests.cpp
@@ -47,6 +48,7 @@ add_executable(cubey_core_tests
     renderable_manager_tests.cpp
     resource_tests.cpp
     scene_tests.cpp
+    scene_builder_tests.cpp
     scene_render_plan_tests.cpp
     scene_view_3d_tests.cpp
     sampler_tests.cpp
