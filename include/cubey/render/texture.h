@@ -46,6 +46,7 @@ struct UploadedTexture2DConfig {
     VkExtent2D extent{1, 1};
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
     std::span<const std::uint8_t> rgba8{};
+    std::span<const std::uint8_t> bytes{};
     bool create_sampler = true;
     cubey::vulkan::SamplerConfig sampler;
 };

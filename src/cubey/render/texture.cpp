@@ -182,15 +182,17 @@ Texture2D create_uploaded_texture_2d(const cubey::vulkan::Device& device,
         .create_sampler = config.create_sampler,
         .sampler = config.sampler,
     });
-    if (config.format != VK_FORMAT_R8G8B8A8_UNORM &&
-        config.format != VK_FORMAT_R8G8B8A8_SRGB) {
-        throw std::runtime_error("uploaded texture helper currently requires RGBA8 format");
+    if (!config.bytes.empty() && !config.rgba8.empty()) {
+        throw std::runtime_error("uploaded texture helper accepts one source byte span");
     }
+    const std::span<const std::uint8_t> source =
+        config.bytes.empty() ? config.rgba8 : config.bytes;
+    const std::size_t texel_bytes = texture_format_byte_size(config.format);
     const std::size_t expected_size =
         static_cast<std::size_t>(config.extent.width) *
-        static_cast<std::size_t>(config.extent.height) * 4U;
-    if (config.rgba8.size() != expected_size) {
-        throw std::runtime_error("uploaded texture byte count must match RGBA8 extent");
+        static_cast<std::size_t>(config.extent.height) * texel_bytes;
+    if (source.size() != expected_size) {
+        throw std::runtime_error("uploaded texture byte count must match format and extent");
     }
 
     Texture2D texture(device, Texture2DConfig{
@@ -201,8 +203,8 @@ Texture2D create_uploaded_texture_2d(const cubey::vulkan::Device& device,
                                   .sampler = config.sampler,
                               });
     cubey::vulkan::Buffer staging(device, cubey::vulkan::staging_buffer_config(
-                                              static_cast<VkDeviceSize>(config.rgba8.size())));
-    staging.upload(config.rgba8.data(), static_cast<VkDeviceSize>(config.rgba8.size()));
+                                              static_cast<VkDeviceSize>(source.size())));
+    staging.upload(source.data(), static_cast<VkDeviceSize>(source.size()));
 
     static_cast<void>(gpu.submit_and_wait({
         .label = "upload texture 2D",

@@ -1,0 +1,45 @@
+#pragma once
+
+#include <cubey/render/texture.h>
+
+#include <cstdint>
+#include <vector>
+
+namespace cubey::vulkan {
+class Device;
+class GpuRuntime;
+} // namespace cubey::vulkan
+
+namespace cubey::render {
+
+struct GeneratedPbrEnvironmentConfig {
+    std::uint32_t irradiance_extent = 32;
+    std::uint32_t prefiltered_extent = 64;
+    std::uint32_t prefiltered_mip_levels = 5;
+    std::uint32_t brdf_lut_extent = 128;
+    float intensity = 1.0F;
+};
+
+struct GeneratedPbrEnvironmentData {
+    std::vector<std::uint8_t> irradiance_cube_rgba32f{};
+    std::vector<std::uint8_t> prefiltered_cube_rgba32f{};
+    std::vector<std::uint8_t> brdf_lut_rgba32f{};
+};
+
+struct GeneratedPbrEnvironment {
+    TextureCube irradiance_cube;
+    TextureCube prefiltered_cube;
+    Texture2D brdf_lut;
+    std::uint32_t prefiltered_mip_levels = 1;
+    float intensity = 1.0F;
+};
+
+void validate_generated_pbr_environment_config(const GeneratedPbrEnvironmentConfig& config);
+[[nodiscard]] GeneratedPbrEnvironmentData
+generate_pbr_environment_data(const GeneratedPbrEnvironmentConfig& config = {});
+[[nodiscard]] GeneratedPbrEnvironment
+create_generated_pbr_environment(const cubey::vulkan::Device& device,
+                                 cubey::vulkan::GpuRuntime& gpu,
+                                 const GeneratedPbrEnvironmentConfig& config = {});
+
+} // namespace cubey::render

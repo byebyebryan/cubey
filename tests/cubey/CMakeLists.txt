@@ -35,6 +35,7 @@ add_executable(cubey_core_tests
     image_transitions_tests.cpp
     render_context_tests.cpp
     render_frame_data_tests.cpp
+    render_generated_ibl_tests.cpp
     render_graph_tests.cpp
     render_item_tests.cpp
     render_mesh_tests.cpp

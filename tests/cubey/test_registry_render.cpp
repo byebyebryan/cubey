@@ -8,6 +8,8 @@ void test_frame_slot_rejects_invalid_slots();
 void test_frame_slot_wraps_frame_indices();
 void test_frame_uniform_buffer_config_describes_host_visible_uniform_storage();
 void test_frame_uniform_buffer_contract_is_slot_based_and_move_only();
+void test_generated_pbr_environment_config_rejects_zero_dimensions();
+void test_generated_pbr_environment_data_is_deterministic_and_sized();
 void test_indexed_mesh_config_describes_u16_geometry();
 void test_indexed_mesh_config_describes_u32_geometry();
 void test_instance_buffer_helpers_describe_instance_vertex_data();
@@ -76,6 +78,7 @@ void test_shadow_map_depth_texture_config_describes_sampled_depth_target();
 void test_shadow_map_sampler_uses_depth_texture_defaults();
 void test_texture_2d_config_maps_storage_sampled_usage();
 void test_texture_2d_config_maps_transfer_sampled_usage();
+void test_texture_cube_config_maps_transfer_sampled_cube_usage();
 
 namespace cubey::tests {
 
@@ -137,6 +140,8 @@ std::span<const TestCase> render_test_cases() {
         CUBEY_TEST(test_render_pass_helpers_describe_clear_values_and_fullscreen_triangle),
         CUBEY_TEST(test_pbr_vertex_layout_matches_shader_contract),
         CUBEY_TEST(test_pbr_forward_pass_declares_scene_and_material_sets),
+        CUBEY_TEST(test_generated_pbr_environment_data_is_deterministic_and_sized),
+        CUBEY_TEST(test_generated_pbr_environment_config_rejects_zero_dimensions),
         CUBEY_TEST(test_render_resource_registry_tracks_handle_lifetime_and_labels),
         CUBEY_TEST(test_render_resource_handles_are_hashable_keys),
         CUBEY_TEST(test_render_resource_registry_round_trips_mesh_and_material_info),
@@ -149,6 +154,7 @@ std::span<const TestCase> render_test_cases() {
         CUBEY_TEST(test_depth_only_rendering_info_describes_sampled_depth_target),
         CUBEY_TEST(test_texture_2d_config_maps_storage_sampled_usage),
         CUBEY_TEST(test_texture_2d_config_maps_transfer_sampled_usage),
+        CUBEY_TEST(test_texture_cube_config_maps_transfer_sampled_cube_usage),
         CUBEY_TEST(test_depth_texture_config_maps_sampled_depth_usage),
         CUBEY_TEST(test_compute_generated_texture_config_validates_dispatch_shape),
         CUBEY_TEST(test_material_info_defaults_to_depth_and_forward_passes),
