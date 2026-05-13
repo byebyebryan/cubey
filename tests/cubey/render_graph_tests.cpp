@@ -988,28 +988,29 @@ void test_render_graph_barrier_recording_rejects_unallocated_transient_resources
     const cubey::render::RenderGraphBufferHandle transient =
         graph.create_buffer(buffer_desc("transient field"));
 
+    bool simulate_executed = false;
     graph.add_pass("simulate", cubey::render::RenderGraphQueueDomain::Compute)
         .read_write_storage_buffer(transient)
-        .execute([](const cubey::render::RenderGraphExecutionContext&) {});
+        .execute([&](const cubey::render::RenderGraphExecutionContext&) {
+            simulate_executed = true;
+        });
 
-    bool rejected_transient_barrier = false;
+    bool render_executed = false;
     graph.add_pass("render", cubey::render::RenderGraphQueueDomain::Graphics)
         .read_storage_buffer(transient)
-        .execute([&](const cubey::render::RenderGraphExecutionContext& context) {
-            const cubey::vulkan::CommandRecorder recorder(reinterpret_cast<VkCommandBuffer>(0x501));
-            require_throws(
-                [&] {
-                    cubey::render::record_render_graph_barriers(
-                        recorder, context, cubey::render::RenderGraphBarrierPhase::BeforePass);
-                },
-                "recording barriers should reject transient resources without allocations");
-            rejected_transient_barrier = true;
+        .execute([&](const cubey::render::RenderGraphExecutionContext&) {
+            render_executed = true;
         });
 
     const cubey::render::CompiledRenderGraph compiled = graph.compile();
-    compiled.execute();
+    const cubey::render::RenderGraphResourceSet resources(compiled);
+    const cubey::vulkan::CommandRecorder recorder(reinterpret_cast<VkCommandBuffer>(0x501));
 
-    require(rejected_transient_barrier, "transient barrier recording test should run");
+    require_throws([&] { compiled.execute(resources, recorder); },
+                   "recorder-backed graph execution should reject unresolved transient barriers");
+
+    require(simulate_executed, "graph should execute passes before an unresolved barrier");
+    require(!render_executed, "graph should record before-pass barriers before pass callbacks");
 }
 
 void test_render_graph_transfer_pass_accepts_only_transfer_usages() {

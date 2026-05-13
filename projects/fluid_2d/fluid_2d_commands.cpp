@@ -347,12 +347,8 @@ build_fluid_frame_graph(cubey::render::ColorTargetView color_target,
         .execute([resource_ptr, config_ptr, debug_view,
                   color_target](const cubey::render::RenderGraphExecutionContext& context) {
             const cubey::vulkan::CommandRecorder& recorder = context.recorder();
-            cubey::render::record_render_graph_barriers(
-                recorder, context, cubey::render::RenderGraphBarrierPhase::BeforePass);
             record_fullscreen_draw(recorder.handle(), *resource_ptr, *config_ptr, debug_view,
                                    color_target.view, color_target.extent);
-            cubey::render::record_render_graph_barriers(
-                recorder, context, cubey::render::RenderGraphBarrierPhase::AfterPass);
         });
 
     return graph.compile();

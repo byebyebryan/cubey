@@ -229,12 +229,23 @@ void CompiledRenderGraph::execute(const RenderGraphResourceSet& resources,
 
 void CompiledRenderGraph::execute(const RenderGraphResourceSet* resources,
                                   const cubey::vulkan::CommandRecorder* recorder) const {
+    if (recorder != nullptr && resources == nullptr) {
+        throw std::runtime_error("recorder-backed render graph execution requires resources");
+    }
+
     for (std::size_t pass_index = 0; pass_index < passes_.size(); ++pass_index) {
         const RenderGraphCompiledPass& pass = passes_[pass_index];
         if (!pass.execute) {
             throw std::runtime_error("render graph pass has no execute callback");
         }
-        pass.execute(RenderGraphExecutionContext(*this, pass_index, resources, recorder));
+        const RenderGraphExecutionContext context(*this, pass_index, resources, recorder);
+        if (recorder != nullptr) {
+            record_render_graph_barriers(*recorder, context, RenderGraphBarrierPhase::BeforePass);
+        }
+        pass.execute(context);
+        if (recorder != nullptr) {
+            record_render_graph_barriers(*recorder, context, RenderGraphBarrierPhase::AfterPass);
+        }
     }
 }
 

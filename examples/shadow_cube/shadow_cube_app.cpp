@@ -566,8 +566,6 @@ class ShadowCubeApp {
             .execute([this,
                       &shadow_plan](const cubey::render::RenderGraphExecutionContext& context) {
                 const cubey::vulkan::CommandRecorder& recorder = context.recorder();
-                cubey::render::record_render_graph_barriers(
-                    recorder, context, cubey::render::RenderGraphBarrierPhase::BeforePass);
                 record_shadow_pass(recorder, shadow_plan);
             });
         graph.add_pass("scene", cubey::render::RenderGraphQueueDomain::Graphics)
@@ -578,8 +576,6 @@ class ShadowCubeApp {
             .execute([this, scene_color_handle, &scene_plan,
                       &shadow_plan](const cubey::render::RenderGraphExecutionContext& context) {
                 const cubey::vulkan::CommandRecorder& recorder = context.recorder();
-                cubey::render::record_render_graph_barriers(
-                    recorder, context, cubey::render::RenderGraphBarrierPhase::BeforePass);
                 const cubey::render::ColorTargetView target =
                     cubey::render::resolved_color_target_view(context, scene_color_handle);
                 record_scene_pass(recorder, target, scene_plan, shadow_plan);
@@ -590,11 +586,7 @@ class ShadowCubeApp {
             .execute([this,
                       &frame](const cubey::render::RenderGraphExecutionContext& context) {
                 const cubey::vulkan::CommandRecorder& recorder = context.recorder();
-                cubey::render::record_render_graph_barriers(
-                    recorder, context, cubey::render::RenderGraphBarrierPhase::BeforePass);
                 record_present_pass(recorder, frame);
-                cubey::render::record_render_graph_barriers(
-                    recorder, context, cubey::render::RenderGraphBarrierPhase::AfterPass);
             });
 
         return {

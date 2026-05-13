@@ -196,11 +196,12 @@ Current checkpoint:
   command-buffer begin/end plus graph resource allocation, and sampled-texture
   resolution helpers for descriptor updates. `shadow_cube` now uses a
   graph-created transient scene color target plus graph-derived shadow-depth,
-  scene-depth, scene-color, backbuffer, and present transitions while pass
-  callbacks still own descriptors, pipelines, and app-specific resource policy.
+  scene-depth, scene-color, backbuffer, and present transitions recorded by
+  graph execution while pass callbacks still own descriptors, pipelines, and
+  app-specific resource policy.
   `fluid_2d` builds a coarse simulation-compute to fullscreen-render graph and
-  records it through the same frame executor, with graph-derived buffer
-  barriers plus backbuffer acquire/release at that boundary.
+  records it through the same frame executor, with graph-owned buffer barriers
+  plus backbuffer acquire/release at that boundary.
 - Reusable `cubey::vulkan::PipelineLayout`, `GraphicsPipeline`,
   `ComputePipeline`, `DescriptorSetLayout`, and `DescriptorPool` own basic
   pipeline and descriptor lifetimes while still taking raw Vulkan create-info
@@ -444,7 +445,7 @@ Current project:
   `ProjectFrame` in both windowed and headless modes. The windowed frame now
   declares a coarse render graph for simulation compute followed by fullscreen
   rendering; solver-internal barriers remain project-owned, while the
-  compute-to-render boundary uses graph-derived buffer barriers and the
+  compute-to-render boundary uses graph-owned buffer barriers and the
   backbuffer acquire/release path.
 
 Candidate follow-ups:

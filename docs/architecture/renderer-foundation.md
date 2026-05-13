@@ -157,11 +157,11 @@ full engine architecture.
   imported resources and can allocate simple non-aliased transient resources.
   `RenderGraphFrameResources` owns one resource set per frame slot, and graph
   texture resolution helpers expose dynamic-rendering color targets and
-  descriptor-ready sampled image/view/layout triples;
-  `record_render_graph_barriers` records before/after requirements explicitly
-  through `CommandRecorder`. Pass reordering, pass culling, hidden barrier
-  insertion, descriptor allocation, aliasing, and async scheduling remain future
-  work. `shadow_cube` now uses graph-derived shadow-depth, transient
+  descriptor-ready sampled image/view/layout triples. Recorder-backed graph
+  execution records before/after requirements through `CommandRecorder` around
+  pass callbacks. Pass reordering, pass culling, descriptor allocation,
+  aliasing, and async scheduling remain future work. `shadow_cube` now uses
+  graph-derived shadow-depth, transient
   scene-color, backbuffer, and depth sync, and `fluid_2d` declares a coarse
   simulation-to-render graph boundary.
 - `cubey::vulkan::CommandRecorder` is the current low-level recording helper
@@ -204,11 +204,11 @@ samples that target into the swapchain. The example declares the pass/resource
 flow through `RenderGraphBuilder` and enters those passes through
 `CompiledRenderGraph::execute()`. Shadow-depth, scene-depth, scene-color,
 backbuffer acquire, and present release transitions are graph-derived and
-explicitly recorded by pass callbacks, while graph transient resources are held
-per frame slot. The reusable foundation intentionally stops at view/pass
+recorded by recorder-backed graph execution, while graph transient resources are
+held per frame slot. The reusable foundation intentionally stops at view/pass
 planning, render-item draw intent, target/texture ownership, material pass
 metadata, depth-only rendering info, synchronous pass-callback execution,
 execution-time resource resolution, simple transient allocation, frame-slot
-resource ownership, and explicit graph barrier recording. Render-graph
+resource ownership, and graph-owned barrier recording. Render-graph
 scheduling, automatic material binding, shadow policy, descriptor ownership, and
 transient aliasing remain future work.

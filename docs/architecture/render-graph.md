@@ -81,9 +81,10 @@ begin/end and recorder-aware graph execution. Its prepare hook runs after graph
 resources are allocated and before command recording, so descriptor updates can
 point at graph-created images. Resolved target and sampled-texture helpers
 translate graph texture declarations into dynamic-rendering target views or
-descriptor-ready image/view/layout triples. `record_render_graph_barriers`
-records a pass's before/after derived requirements through `CommandRecorder`;
-this is explicit command recording, not hidden render policy.
+descriptor-ready image/view/layout triples. Recorder-backed graph execution now
+records each pass's before/after derived requirements through `CommandRecorder`
+around the pass callback; this is graph-owned synchronization, not hidden render
+policy.
 
 It does not allocate descriptors, reorder passes, cull passes, alias transient
 memory, or schedule async work. `examples/shadow_cube` is the first multipass
@@ -172,7 +173,6 @@ graph.add_pass("scene")
     .write_depth(depth)
     .execute([](const RenderGraphExecutionContext& ctx) {
         const auto& recorder = ctx.recorder();
-        record_render_graph_barriers(recorder, ctx, RenderGraphBarrierPhase::BeforePass);
         auto target = resolved_color_target_view(ctx, scene_color);
         // Record color pass commands into the graph-created target.
     });
@@ -182,9 +182,7 @@ graph.add_pass("present")
     .write_color(backbuffer)
     .execute([](const RenderGraphExecutionContext& ctx) {
         const auto& recorder = ctx.recorder();
-        record_render_graph_barriers(recorder, ctx, RenderGraphBarrierPhase::BeforePass);
         // Record fullscreen present/copy commands with app-owned descriptors.
-        record_render_graph_barriers(recorder, ctx, RenderGraphBarrierPhase::AfterPass);
     });
 
 graph_executor.record({
@@ -216,7 +214,8 @@ Completed slices:
 6. Initial `shadow_cube` migration to execute the shadow and scene pass bodies
    through the graph shell.
 7. In-graph sync requirement derivation for texture transitions and buffer
-   barriers, with explicit recording through `CommandRecorder`.
+   barriers, with recorder-backed execution recording them through
+   `CommandRecorder`.
 8. Coarse `fluid_2d` simulation-to-render graph declaration.
 9. Imported initial/final resource state, transient first-use transitions,
    execution-time resource resolution, and non-aliased transient allocation.
@@ -228,9 +227,9 @@ Completed slices:
     on building per-frame data and graph declarations.
 
 This keeps the graph as a validation, vocabulary, pass-ordering, and
-sync-requirement shell rather than a renderer rewrite. Barriers stay explicit:
-the graph derives named requirements, and command callbacks decide where to
-record them.
+sync-requirement shell rather than a renderer rewrite. Barriers stay explicit in
+compiled graph data, and recorder-backed execution records them around pass
+callbacks.
 
 ## Adoption Triggers
 
