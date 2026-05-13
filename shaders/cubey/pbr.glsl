@@ -1,6 +1,4 @@
 const float CUBEY_PBR_PI = 3.14159265359;
-const vec3 CUBEY_PBR_DIELECTRIC_F0 = vec3(0.04);
-
 float cubey_pbr_saturate(float value) {
     return clamp(value, 0.0, 1.0);
 }
@@ -13,8 +11,19 @@ vec3 cubey_pbr_diffuse_color(vec3 base_color, float metallic) {
     return base_color * (1.0 - metallic);
 }
 
-vec3 cubey_pbr_f0(vec3 base_color, float metallic) {
-    return mix(CUBEY_PBR_DIELECTRIC_F0, base_color, metallic);
+float cubey_pbr_f0_from_reflectance(float reflectance) {
+    float clamped = cubey_pbr_saturate(reflectance);
+    return 0.16 * clamped * clamped;
+}
+
+vec3 cubey_pbr_dielectric_f0(vec3 specular_color_factor, float specular_factor,
+                             float reflectance) {
+    return vec3(cubey_pbr_f0_from_reflectance(reflectance)) *
+           cubey_pbr_saturate(specular_color_factor) * cubey_pbr_saturate(specular_factor);
+}
+
+vec3 cubey_pbr_f0(vec3 base_color, float metallic, vec3 dielectric_f0) {
+    return mix(dielectric_f0, base_color, metallic);
 }
 
 vec3 cubey_pbr_lambert_diffuse(vec3 diffuse_color) {

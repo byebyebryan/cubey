@@ -157,12 +157,14 @@ void test_pbr_shaders_use_filament_style_material_remap() {
     const std::string gltf =
         read_source_file(source_root / "projects/gltf_viewer/shaders/gltf_pbr.frag");
 
-    require_contains(pbr, "CUBEY_PBR_DIELECTRIC_F0",
-                     "PBR shader should define the dielectric F0 contract");
     require_contains(pbr, "cubey_pbr_diffuse_color",
                      "PBR shader should expose a baseColor-to-diffuse remap helper");
     require_contains(pbr, "cubey_pbr_f0",
                      "PBR shader should expose a baseColor-to-F0 remap helper");
+    require_contains(pbr, "cubey_pbr_f0_from_reflectance",
+                     "PBR shader should expose the Filament reflectance-to-F0 helper");
+    require_contains(pbr, "cubey_pbr_dielectric_f0",
+                     "PBR shader should expose dielectric F0 material extension helper");
     require_contains(pbr, "cubey_pbr_lambert_diffuse",
                      "PBR shader should expose a Lambert diffuse helper");
 
@@ -175,7 +177,11 @@ void test_pbr_shaders_use_filament_style_material_remap() {
                              "PBR fragment shaders should not read material factors from push constants");
         require_contains(*shader, "vec3 diffuse_color = cubey_pbr_diffuse_color(albedo, metallic);",
                          "PBR fragment shaders should compute diffuseColor explicitly");
-        require_contains(*shader, "vec3 f0 = cubey_pbr_f0(albedo, metallic);",
+        require_contains(*shader, "cubey_pbr_dielectric_f0",
+                         "PBR fragment shaders should compute dielectric F0 from material factors");
+        require_contains(*shader, "material.material_model.x",
+                         "PBR fragment shaders should read material reflectance");
+        require_contains(*shader, "vec3 f0 = cubey_pbr_f0(albedo, metallic, dielectric_f0);",
                          "PBR fragment shaders should compute F0 through the shared helper");
         require_contains(*shader, "irradiance * diffuse_color",
                          "PBR indirect diffuse should use diffuseColor without Fresnel attenuation");

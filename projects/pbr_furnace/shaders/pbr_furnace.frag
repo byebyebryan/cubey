@@ -61,7 +61,10 @@ void main() {
     float ndotv = max(dot(normal, view_direction), 0.0);
     vec3 albedo = base_color.rgb;
     vec3 diffuse_color = cubey_pbr_diffuse_color(albedo, metallic);
-    vec3 f0 = cubey_pbr_f0(albedo, metallic);
+    vec3 dielectric_f0 = cubey_pbr_dielectric_f0(
+        material.specular_color_factor.rgb, material.specular_color_factor.a,
+        material.material_model.x);
+    vec3 f0 = cubey_pbr_f0(albedo, metallic, dielectric_f0);
 
     vec3 irradiance = texture(irradiance_cube, normal).rgb;
     vec3 diffuse_ibl = irradiance * diffuse_color;
