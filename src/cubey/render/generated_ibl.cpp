@@ -17,6 +17,7 @@ namespace {
 
 constexpr std::uint32_t kCubeFaceCount = 6;
 constexpr std::uint32_t kDfgSampleCount = 512;
+constexpr std::uint32_t kPrefilterSampleCount = 128;
 constexpr VkFormat kIblTextureFormat = VK_FORMAT_R32G32B32A32_SFLOAT;
 constexpr float kPi = 3.14159265359F;
 constexpr float kDfgEnergyEpsilon = 0.0001F;
@@ -66,12 +67,6 @@ void append_rgba32f(std::vector<std::uint8_t>& bytes, std::array<float, 4> rgba)
     return glm::mix(math::Vec3{0.035F, 0.038F, 0.042F}, generated_radiance(direction), 0.34F);
 }
 
-[[nodiscard]] math::Vec3 generated_prefiltered(math::Vec3 direction, float roughness) {
-    const math::Vec3 radiance = generated_radiance(direction);
-    const math::Vec3 average{0.20F, 0.22F, 0.25F};
-    return glm::mix(radiance, average, std::clamp(roughness * 0.82F, 0.0F, 1.0F));
-}
-
 [[nodiscard]] float radical_inverse_vdc(std::uint32_t bits) {
     bits = (bits << 16U) | (bits >> 16U);
     bits = ((bits & 0x55555555U) << 1U) | ((bits & 0xAAAAAAAAU) >> 1U);
@@ -111,6 +106,43 @@ void append_rgba32f(std::vector<std::uint8_t>& bytes, std::array<float, 4> rgba)
     const float lambda_l =
         ndotv * std::sqrt(std::max(((ndotl - (alpha2 * ndotl)) * ndotl) + alpha2, 0.0F));
     return 0.5F / std::max(lambda_v + lambda_l, 0.00001F);
+}
+
+[[nodiscard]] math::Vec3 tangent_to_world(math::Vec3 sample, math::Vec3 normal) {
+    const math::Vec3 up =
+        std::fabs(normal.z) < 0.999F ? math::Vec3{0.0F, 0.0F, 1.0F}
+                                     : math::Vec3{0.0F, 1.0F, 0.0F};
+    const math::Vec3 tangent = glm::normalize(glm::cross(up, normal));
+    const math::Vec3 bitangent = glm::cross(normal, tangent);
+    return glm::normalize((tangent * sample.x) + (bitangent * sample.y) + (normal * sample.z));
+}
+
+[[nodiscard]] math::Vec3 generated_prefiltered(math::Vec3 direction, float roughness) {
+    const math::Vec3 normal = glm::normalize(direction);
+    if (roughness <= 0.0001F) {
+        return generated_radiance(normal);
+    }
+
+    const math::Vec3 view = normal;
+    math::Vec3 color{0.0F, 0.0F, 0.0F};
+    float total_weight = 0.0F;
+    for (std::uint32_t sample = 0; sample < kPrefilterSampleCount; ++sample) {
+        const math::Vec3 half_tangent =
+            importance_sample_ggx(hammersley(sample, kPrefilterSampleCount), roughness);
+        const math::Vec3 half_vector = tangent_to_world(half_tangent, normal);
+        const math::Vec3 light =
+            glm::normalize((2.0F * glm::dot(view, half_vector) * half_vector) - view);
+        const float ndotl = std::max(glm::dot(normal, light), 0.0F);
+        if (ndotl > 0.0F) {
+            color += generated_radiance(light) * ndotl;
+            total_weight += ndotl;
+        }
+    }
+
+    if (total_weight <= 0.0F) {
+        return generated_radiance(normal);
+    }
+    return color / total_weight;
 }
 
 void append_cube(std::vector<std::uint8_t>& bytes, std::uint32_t extent,
