@@ -52,8 +52,8 @@ rendering without turning the library into a generic game engine.
 
 - Layered `cubey::*` library targets with public headers under `include/cubey/`
   and an aggregate `cubey::cubey` target.
-- First runnable example under `examples/window_clear/`, not a generic `cubey`
-  executable.
+- First runnable targets under explicit `examples/` and `projects/`
+  directories, not a generic `cubey` executable.
 - CLI/config surface for windowed examples and future headless modes.
 - GLFW window creation and Vulkan surface ownership.
 - Vulkan instance, physical device, logical device, queues, validation layers,
@@ -68,8 +68,9 @@ Completed criteria:
 
 - `cubey::cubey` builds as the aggregate library target and examples link
   against it.
-- `window_clear`, `triangle`, `spinning_cube`, `textured_cube`, `shadow_cube`,
-  `fractal`, and `particles` open windows and render through dynamic rendering.
+- `spinning_cube`, `textured_cube`, `shadow_cube`, `instanced_cubes`,
+  `material_cubes`, `particle_cubes`, `fractal_2d`, and `fluid_2d` open
+  windows and render through dynamic rendering.
 - Validation-layer smoke can be required from the command line.
 - Resize and swapchain recreation remain first-class tested behavior.
 - Headless smoke renders and writes an inspectable PNG.
@@ -261,12 +262,6 @@ Current checkpoint:
   orchestration. Render callbacks receive `WindowedRenderFrame`, including the
   active frame slot and swapchain color target view. The windowed host defaults
   to two frame slots.
-- `examples/window_clear` links against `cubey` and clears/presents a swapchain
-  image through the shared host layer using dynamic rendering.
-- `examples/triangle` links against `cubey`, compiles vertex/fragment shaders
-  at build time, creates a dynamic-rendering graphics pipeline through the
-  shared pipeline helper, and draws a `gl_VertexIndex` triangle without a render
-  pass or framebuffer through the shared host layer.
 - `examples/spinning_cube` links against `cubey`, compiles vertex/fragment
   shaders at build time, draws an indexed cube through `cubey::render::Mesh`,
   `DrawItem`, `MeshResourceTable`, registry-issued mesh/material handles, and
@@ -298,17 +293,18 @@ Current checkpoint:
 - `examples/material_cubes` links against `cubey` and draws multiple cube
   entities with distinct material handles, per-material uniform data, and
   per-packet material instance binding.
-- `examples/headless_render` links against `cubey`, creates no GLFW window or
-  surface, renders an offscreen color target through dynamic rendering, copies
-  it into a readback buffer, and writes a PNG artifact.
-- `examples/fractal` links against `cubey`, renders a fullscreen
+- `examples/headless_cube` links against `cubey`, creates no GLFW window or
+  surface, renders an indexed cube into an offscreen color target through
+  dynamic rendering, copies it into a readback buffer, and writes a PNG
+  artifact.
+- `projects/fractal_2d` links against `cubey`, renders a fullscreen
   Mandelbrot-style fragment shader, supports camera-backed pan/zoom/reset
   navigation through the shared host layer, and reuses the shared headless PNG
   host for no-window output.
-- `examples/particles` links against `cubey`, updates a storage-buffer particle
-  field with a per-frame compute shader, inserts an explicit compute-to-vertex
-  memory barrier, and renders the result as instanced screen-facing quads with
-  additive Gaussian splats through the shared host layer.
+- `examples/particle_cubes` links against `cubey`, updates a storage-buffer
+  cube-particle field with a per-frame compute shader, inserts an explicit
+  compute-to-vertex memory barrier, and renders the result as indexed cube
+  instances through the shared host layer.
 - The current device model intentionally selects one queue family for required
   graphics, compute, and present capabilities. Split queue-family support is a
   future framework slice, not part of the current example-local compute path.
@@ -337,7 +333,7 @@ Status: initial pass complete.
 Goal: prove that Cubey can produce inspectable GPU artifacts without a desktop
 surface while keeping the runtime boundary concrete.
 
-- Added `examples/headless_render` as an explicit no-window smoke.
+- Added `examples/headless_cube` as an explicit no-window cube smoke.
 - Added `stb_image_write` as a small third-party dependency for PNG artifact
   output.
 - Created an offscreen color target through the existing Vulkan resource model.
@@ -359,14 +355,14 @@ Exit criteria:
 - The docs identify what belongs to examples/projects versus reusable host
   plumbing.
 
-## Phase 3: Fractal Example
+## Phase 3: Fractal Project
 
 Status: initial pass complete.
 
-Goal: add a small fractal example that proves fullscreen rendering and reuses
-the headless artifact path without pretending to justify a project runtime.
+Goal: keep the fullscreen fractal path as a project because it has interaction,
+camera state, tests, and headless output.
 
-- Added `examples/fractal` as a fullscreen Mandelbrot-style shader smoke.
+- Added `projects/fractal_2d` as a fullscreen Mandelbrot-style shader project.
 - Kept windowed setup, command recording sequence, and navigation
   example-local.
 - Reused existing dynamic graphics pipeline helpers.
@@ -376,28 +372,27 @@ the headless artifact path without pretending to justify a project runtime.
 
 Exit criteria:
 
-- The example runs interactively with a window.
-- The same example can run headlessly and produce a deterministic PNG artifact.
+- The project runs interactively with a window.
+- The same project can run headlessly and produce a deterministic PNG artifact.
 - README contains the exact commands for local smoke testing.
 
-## Phase 3.5: Particle Example
+## Phase 3.5: Particle Cube Example
 
 Status: initial pass complete.
 
-Goal: add a compact particle example that carries forward the original Cubey
-particle feel while staying below the threshold for a `projects/` runtime.
+Goal: keep the compact particle path as a cube-first example that carries
+forward the original Cubey attractor feel while staying below the threshold for
+a `projects/` runtime.
 
-- Added `examples/particles` with a deterministic attractor-style particle
-  field.
-- Rendered particles as instanced screen-facing quads, not points or geometry
+- Added `examples/particle_cubes` with a deterministic attractor-style cube
+  particle field.
+- Rendered particles as indexed cube instances, not points, quads, or geometry
   shader billboards.
-- Used a procedural Gaussian splat in the fragment shader with additive
-  blending.
 - Updated particle position/velocity in a compute shader over a storage buffer,
   then rendered the same buffer in the graphics pass.
 - Kept controls example-local: Space pauses updates, `R` resets the field, and
   Escape closes the window.
-- Did not promote particle simulation, billboard, or host abstractions; this
+- Did not promote particle simulation, storage-buffer, or host abstractions; this
   remains reference example code until a real project repeats the shape.
 
 Exit criteria:
@@ -514,9 +509,9 @@ has proven useful.
 
 Exit criteria:
 
-- `window_clear` and `triangle` get shorter without hiding Vulkan
-  synchronization, layout, descriptor, or resize constraints.
-- `particles` proves the host can support update/input/compute-plus-graphics
+- Cube examples remain short without hiding Vulkan synchronization, layout,
+  descriptor, or resize constraints.
+- `particle_cubes` proves the host can support update/input/compute-plus-graphics
   without becoming a particle system or renderer.
 - Examples remain useful as small reference programs rather than becoming hidden
   framework tests.
@@ -525,8 +520,9 @@ Exit criteria:
 
 - ImGui debug controls.
 - Orbit camera and common interaction helpers.
-- Ports of original Cubey projects: fluid simulation, marching cubes, fractals,
-  and camera/shadow tests. Particle work should stay in `examples/particles`
+- Ports of original Cubey projects: fluid simulation, marching cubes,
+  camera/shadow tests, and larger particle projects. Fractal 2D now lives under
+  `projects/fractal_2d`; particle smoke work stays in `examples/particle_cubes`
   unless it grows into a larger project.
 - SDF sculpting experiments from `projectR` if the resource model holds up.
 - Browser or alternate-backend work only after a concrete project earns the

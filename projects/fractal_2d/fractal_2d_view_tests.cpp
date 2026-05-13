@@ -1,4 +1,4 @@
-#include "fractal_view.h"
+#include "fractal_2d_view.h"
 
 #include <cmath>
 #include <cstdio>
@@ -16,12 +16,12 @@ void require_close(float actual, float expected, const char* message) {
 
 int main() {
     try {
-        cubey::examples::fractal::FractalView view;
+        cubey::projects::fractal_2d::FractalView view;
         cubey::Camera2D camera({
             .center = {-0.5F, 0.0F},
             .scale = 1.35F,
         });
-        cubey::examples::fractal::FractalPushConstants constants =
+        cubey::projects::fractal_2d::FractalPushConstants constants =
             view.push_constants(camera, 640, 360);
         require_close(constants.center_x, -0.5F, "initial center x should match Mandelbrot view");
         require_close(constants.center_y, 0.0F, "initial center y should match Mandelbrot view");
@@ -39,7 +39,7 @@ int main() {
         require_close(constants.center_x, -0.74F, "camera view should accept panned center x");
         require_close(constants.center_y, 0.135F, "camera view should accept panned center y");
     } catch (const std::exception& error) {
-        std::fprintf(stderr, "fractal_view_tests: %s\n", error.what());
+        std::fprintf(stderr, "fractal_2d_view_tests: %s\n", error.what());
         return 1;
     }
 }

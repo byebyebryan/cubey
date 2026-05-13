@@ -236,7 +236,7 @@ This is critical for AI-assisted development — the agent gets structured pass/
 |------|--------|-------|
 | Fluid 2D | cubey1 rewrite warmup | First project target; compute-updated 2D dye/velocity field with headless PNG output |
 | Fluid Simulation 3D | cubey1 rewrite | Future Eulerian 3D fluid sim, compute-based, raymarched volume rendering |
-| Particle System | cubey1 rewrite | Prototype attractor particles now live under `examples/particles`; a larger project would need a clear compute + indirect draw contract before graduating |
+| Particle System | cubey1 rewrite | Prototype attractor motion now lives under `examples/particle_cubes`; a larger project would need a clear compute + indirect draw contract before graduating |
 | Marching Cubes | cubey1 rewrite | Isosurface extraction via compute + indirect draw |
 | Fractal 2D | cubey1 rewrite | Mandelbrot/Julia renderer |
 | SDF Sculpting | projectR port | Sparse SDF brick tree, raymarched rendering, Morton-coded spatial indexing |
@@ -293,13 +293,13 @@ named explicitly and live in either `examples/` or `projects/`:
 - `src/cubey/` - library implementation and private headers.
 - `cmake/` - shared CMake helpers for shaders, warnings, and CTest smoke
   targets.
-- `examples/` - small, focused reference programs that prove one concept or API
-  path. Current examples are `window_clear`, `triangle`, `spinning_cube`,
+- `examples/` - small, focused cube-first reference programs that prove one
+  renderer concept or API path. Current examples are `spinning_cube`,
   `textured_cube`, `shadow_cube`, `instanced_cubes`, `material_cubes`,
-  `headless_render`, `fractal`, and `particles`.
+  `headless_cube`, and `particle_cubes`.
 - `projects/` - first-class graphics experiments and longer-lived creative
-  work, starting with `fluid_2d` and later candidates such as `fluid_sim`,
-  `marching_cubes`, and `sdf_sculpt`.
+  work, starting with `fluid_2d` and `fractal_2d`, plus later candidates such as
+  `fluid_sim`, `marching_cubes`, and `sdf_sculpt`.
 - `third_party/` - small vendored dependencies with explicit license notes.
 - `tools/` - repo utilities, asset processors, shader tools, or diagnostics.
 - `tests/` - unit and integration tests.
@@ -327,8 +327,8 @@ Projects can depend on the aggregate `cubey::cubey` target or a narrower
 `cubey::*` layer; Cubey library targets must not depend on projects. Shared
 code either graduates into the appropriate Cubey layer or stays local to the
 project that needs it. Example-specific host behavior should stay in that
-example. The Cubey library should contain reusable engine/host pieces, not named
-examples such as `window_clear`.
+example. The Cubey library should contain reusable engine/host pieces, not
+named-demo policy.
 
 Cubey targets should expose public headers now, but they should not gain
 install/export/package rules until the project genuinely needs external
@@ -428,17 +428,18 @@ cubey/
       vulkan/
         *.cpp              -- Vulkan object, command, submission, and swapchain helpers
   examples/
-    window_clear/          -- host smoke target for clear/present
-    triangle/              -- minimal shader-backed graphics pipeline path
     spinning_cube/         -- indexed cube, push constants, depth
     textured_cube/         -- compute texture generation, uniforms, sampling
     shadow_cube/           -- graph-declared shadow/scene/present example
     instanced_cubes/       -- instance-rate cube grid rendering
     material_cubes/        -- per-packet material instance binding
-    headless_render/       -- minimal offscreen image path
-    fractal/               -- fullscreen fractal shader smoke and headless PNG
-    particles/             -- compute-updated attractor particles
+    headless_cube/         -- no-window offscreen cube PNG path
+    particle_cubes/        -- compute-updated cube particles
   projects/
+      fractal_2d/
+        CMakeLists.txt
+        main.cpp
+        fractal_2d_app.*   -- fullscreen fractal host/headless orchestration
       fluid_2d/
         CMakeLists.txt
         main.cpp

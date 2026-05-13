@@ -86,10 +86,6 @@ versioned section and use that section as the release notes.
   deferred destruction retirement from completed GPU submission tickets.
 - Public frame timing, orbit-controller, and frame-stat types for interactive
   windowed examples.
-- `examples/window_clear`, a minimal Vulkan/GLFW dynamic-rendering windowed
-  clear/present smoke executable.
-- `examples/triangle`, a minimal shader-backed Vulkan graphics pipeline smoke
-  executable using dynamic rendering and `gl_VertexIndex`.
 - `examples/spinning_cube`, a shader-generated cube smoke executable with push
   constants, animation, dynamic rendering, device-local vertex/index buffers,
   and a shared depth attachment helper.
@@ -99,18 +95,17 @@ versioned section and use that section as the release notes.
 - `examples/shadow_cube`, a two-pass directional shadow-map example using a
   sampled depth texture, depth-only dynamic rendering, orthographic light view,
   and explicit sampled-depth layout transitions.
-- `examples/headless_render`, a no-window Vulkan smoke that renders an
-  offscreen color target, reads it back, and writes a PNG artifact.
-- `examples/fractal`, a fullscreen Mandelbrot-style shader smoke with
-  example-local pan/zoom/reset navigation and headless PNG output.
-- `examples/particles`, a compute-updated attractor particle smoke rendered as
-  instanced screen-facing quads with procedural Gaussian splats and additive
-  blending.
+- `examples/headless_cube`, a no-window Vulkan smoke that renders an indexed
+  cube into an offscreen color target, reads it back, and writes a PNG artifact.
+- `examples/particle_cubes`, a compute-updated attractor particle smoke
+  rendered as indexed cube instances.
 - `projects/fluid_2d`, the first project target: a 2D dye-and-velocity compute
   simulation with injection/advection passes, project-local pressure
   projection, pointer injection, pause/reset controls, debug render modes,
   fullscreen rendering, config tests, windowed smoke, and deterministic
   headless PNG smoke.
+- `projects/fractal_2d`, a fullscreen Mandelbrot-style shader project with
+  pan/zoom/reset navigation and headless PNG output.
 - CTest smoke that accepts either successful window startup or the known
   no-display GLFW failure in terminal sessions.
 - CTest smoke for headless PNG artifact creation and PNG signature validation.
@@ -136,7 +131,7 @@ versioned section and use that section as the release notes.
 - Windowed examples now use dynamic rendering instead of classic render
   passes/framebuffers while keeping command recording and render-resource policy
   local.
-- Windowed examples, `headless_render`, and `fluid_2d` now use the shared
+- Windowed examples, `headless_cube`, and `fluid_2d` now use the shared
   Vulkan command recorder for repeated command-buffer calls while keeping pass
   order, barriers, descriptors, pipelines, and render policy local.
 - Frame submission routes through the Vulkan submission coordinator, and
@@ -152,7 +147,7 @@ versioned section and use that section as the release notes.
 - `textured_cube` now shares descriptor layout/pool/write helpers plus compute
   pipeline and pipeline-layout create-info helpers instead of carrying raw
   descriptor and compute setup blocks.
-- `textured_cube` and `particles` now use the descriptor set bundle helper
+- `textured_cube` and `particle_cubes` now use the descriptor set bundle helper
   instead of carrying separate descriptor layout, pool, and allocation members.
 - `textured_cube` now uses shared storage-image transition and generated
   sampled-image config helpers for its compute-generated texture.
@@ -170,12 +165,13 @@ versioned section and use that section as the release notes.
 - Roadmap and Vulkan abstraction docs now frame the host/engine host as the
   standard windowed-example path while still deferring renderer and scene-system
   abstractions.
-- The particle rewrite is currently categorized as an example-sized reference
-  program rather than a first-class `projects/` target.
-- `window_clear`, `triangle`, `spinning_cube`, `textured_cube`, `fractal`, and
-  `particles` now use the shared GLFW/windowed host layer while keeping command
-  recording sequence and render resources example-local.
-- `headless_render`, `fractal --headless`, and `fluid_2d --headless` now use
+- The particle rewrite is currently categorized as a cube-first example-sized
+  reference program rather than a first-class `projects/` target.
+- `spinning_cube`, `textured_cube`, `shadow_cube`, `instanced_cubes`,
+  `material_cubes`, and `particle_cubes` now use the shared GLFW/windowed host
+  layer while keeping command recording sequence and render resources
+  example-local.
+- `headless_cube`, `fractal_2d --headless`, and `fluid_2d --headless` now use
   the shared no-GLFW headless PNG host while keeping resource setup, simulation,
   and command recording sequence local to each runnable.
 - `fluid_2d` simulation steps now consume `ProjectFrame` values from shared
@@ -185,6 +181,10 @@ versioned section and use that section as the release notes.
   projection.
 - Cube examples now share forward pass, generated texture, frame-uniform
   material, and example-local cube scene helpers where appropriate.
+- Public examples are now intentionally cube-focused: the old clear-only and
+  triangle-only app targets were removed, the headless smoke became
+  `headless_cube`, the particle smoke became `particle_cubes`, and the
+  fullscreen fractal moved to `projects/fractal_2d`.
 
 ## Pre-2.0 History
 

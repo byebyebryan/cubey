@@ -1,6 +1,6 @@
-#include "fractal_app.h"
+#include "fractal_2d_app.h"
 
-#include "fractal_view.h"
+#include "fractal_2d_view.h"
 
 #include <cubey/host/headless_png_host.h>
 #include <cubey/host/windowed_app.h>
@@ -20,15 +20,15 @@
 #include <stdexcept>
 #include <utility>
 
-#ifndef CUBEY_FRACTAL_SHADER_DIR
-#error "CUBEY_FRACTAL_SHADER_DIR must be defined by the fractal CMake target"
+#ifndef CUBEY_FRACTAL_2D_SHADER_DIR
+#error "CUBEY_FRACTAL_2D_SHADER_DIR must be defined by the fractal_2d CMake target"
 #endif
 
-namespace cubey::examples::fractal {
+namespace cubey::projects::fractal_2d {
 namespace {
 
 std::filesystem::path shader_path(const char* filename) {
-    return std::filesystem::path(CUBEY_FRACTAL_SHADER_DIR) / filename;
+    return std::filesystem::path(CUBEY_FRACTAL_2D_SHADER_DIR) / filename;
 }
 
 [[nodiscard]] cubey::render::MaterialPassInfo fractal_pass_info() {
@@ -86,7 +86,7 @@ class FractalApp {
         return cubey::host::run_windowed_app(
             {
                 .run_config = config_,
-                .app_name = "fractal",
+                .app_name = "fractal_2d",
                 .ready_status = "rendering fullscreen fractal",
                 .required_queue_flags = VK_QUEUE_GRAPHICS_BIT,
                 .swapchain_image_usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
@@ -185,7 +185,7 @@ class FractalApp {
                 record_fractal_draw(present_recorder, frame.color_target);
             });
 
-        recorder.end("vkEndCommandBuffer fractal");
+        recorder.end("vkEndCommandBuffer fractal_2d");
     }
 
     [[nodiscard]] const cubey::render::GraphicsPipelineResource& pipeline_resource() const {
@@ -207,9 +207,9 @@ class FractalApp {
 
 } // namespace
 
-int run_fractal(const RunConfig& config) {
+int run_fractal_2d(const RunConfig& config) {
     FractalApp app(config);
     return app.run();
 }
 
-} // namespace cubey::examples::fractal
+} // namespace cubey::projects::fractal_2d

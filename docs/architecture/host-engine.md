@@ -97,25 +97,25 @@ setup before swapchain setup, and callback forwarding.
 ## Migration Order
 
 1. Extract `GlfwWindow`. Status: complete.
-2. Migrate `examples/window_clear` to prove the platform layer. Status:
-   complete.
-3. Extract the first `WindowedHost` loop. Status: complete.
-4. Migrate `examples/triangle` to prove the minimal render callback path.
+2. Migrate the early clear-only smoke target to prove the platform layer.
    Status: complete.
-5. Migrate `examples/particles` to prove update/input/compute-plus-graphics
+3. Extract the first `WindowedHost` loop. Status: complete.
+4. Migrate the early triangle smoke target to prove the minimal render callback
+   path. Status: complete.
+5. Migrate `examples/particle_cubes` to prove update/input/compute-plus-graphics
    behavior. Status: complete.
 6. Migrate `examples/spinning_cube` to prove indexed geometry, depth, and
    per-frame push constants. Status: complete.
 7. Add pointer input and migrate `examples/textured_cube` to prove
    orbit-control input, frame stats, descriptors, setup-time compute, and
    texture sampling. Status: complete.
-8. Migrate the windowed `examples/fractal` path while preserving its headless
+8. Migrate the windowed `projects/fractal_2d` path while preserving its headless
    PNG path. Status: complete.
-9. Extract a narrow no-GLFW headless PNG host after `headless_render`,
-   `fractal --headless`, and `fluid_2d --headless` repeated the same offscreen
-   render/readback/write loop. Status: complete.
-10. Migrate `examples/headless_render` and `examples/fractal --headless` to the
-    shared headless host. Status: complete.
+9. Extract a narrow no-GLFW headless PNG host after `headless_cube`,
+   `fractal_2d --headless`, and `fluid_2d --headless` repeated the same
+   offscreen render/readback/write loop. Status: complete.
+10. Migrate `examples/headless_cube` and `projects/fractal_2d --headless` to
+    the shared headless host. Status: complete.
 11. Migrate `projects/fluid_2d --headless` to the shared headless host while
     preserving project-local compute simulation and fullscreen draw code.
     Status: complete.
@@ -202,9 +202,9 @@ setup before swapchain setup, and callback forwarding.
   policy hook. Graph-backed examples build per-frame declarations there and
   immediately delegate command-buffer begin/end, frame-slot graph resources,
   and pass execution to `cubey::render::RenderGraphFrameExecutor`.
-- All current windowed examples use the host layer: `window_clear`, `triangle`,
-  `spinning_cube`, `textured_cube`, `shadow_cube`, `instanced_cubes`,
-  `material_cubes`, `fractal`, and `particles`.
+- All current windowed examples/projects use the host layer: `spinning_cube`,
+  `textured_cube`, `shadow_cube`, `instanced_cubes`, `material_cubes`,
+  `particle_cubes`, `fractal_2d`, and `fluid_2d`.
   They still own their shaders, descriptors, command recording sequence, and
   example-specific state, but no longer repeat the common host callback shell.
 - `cubey::host::HeadlessPngHost` owns the repeated no-window Vulkan
@@ -213,7 +213,7 @@ setup before swapchain setup, and callback forwarding.
   `ProjectGpuServices`, and PNG write path without depending on GLFW. Its
   target view uses the same `cubey::render::ColorTargetView` vocabulary as the
   windowed path.
-- `headless_render`, `fractal --headless`, and `fluid_2d --headless` use the
+- `headless_cube`, `fractal_2d --headless`, and `fluid_2d --headless` use the
   headless host while keeping their resource setup, simulation/update work, and
   capture command recording sequence local.
 - `cubey::Engine` is the first scoped root owner. It lives in the engine layer
@@ -247,8 +247,7 @@ setup before swapchain setup, and callback forwarding.
 - Use repeated host mechanics as useful evidence, not as the only reason to add
   library code.
 - Keep command recording explicit in examples/projects.
-- Keep lifecycle APIs small enough that `window_clear` and `triangle` remain
-  readable.
+- Keep lifecycle APIs small enough that focused cube examples remain readable.
 - Prefer project-owned render intent over host-owned render policy.
 - Add input/UI hosting when the contract is clear enough to keep projects
   cleaner, not only after the projects become messy.

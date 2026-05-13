@@ -316,8 +316,9 @@ Current state:
   scene target for a directional shadow map plus fullscreen present pass.
 - Cube examples use the shared GLM-backed `cubey::math` wrapper for MVP/model
   matrices and Vulkan clip-space projection conventions.
-- `examples/particles` still defines particle storage-buffer layout, seeding,
-  simulation parameters, billboard generation, and blending policy locally.
+- `examples/particle_cubes` still defines particle storage-buffer layout,
+  seeding, simulation parameters, cube instance interpretation, and compute
+  barrier policy locally.
 
 Needed later:
 
@@ -457,7 +458,7 @@ explicit descriptor contracts.
 - Added pipeline-layout and compute-pipeline create-info helpers.
 - Moved `textured_cube`'s graphics descriptors and setup-time compute texture
   path onto the shared helpers while keeping layout and dispatch choices
-  explicit. `particles` and `textured_cube` now use descriptor bundles.
+  explicit. `particle_cubes` and `textured_cube` now use descriptor bundles.
 
 Remaining descriptor work should be driven by the next concrete resource path
 rather than a general bind-group abstraction.
@@ -499,7 +500,7 @@ Goal: prove no-window rendering and artifact readback before abstracting the
 host layer.
 
 - Status: initial pass complete on `main`.
-- Added `examples/headless_render` as an explicit no-window target.
+- Added `examples/headless_cube` as an explicit no-window target.
 - Added `stb_image_write` for PNG output, keeping dependency wiring isolated
   from the Vulkan layer behind `cubey::write_png_rgba8`.
 - Created an offscreen color target and rendered into it with dynamic rendering.
@@ -507,7 +508,7 @@ host layer.
 - Copied the image into a readback buffer and wrote a deterministic PNG artifact.
 - Added CTest coverage for artifact creation in no-display terminal sessions.
 - Follow-up extraction added `cubey::host::HeadlessPngHost` and migrated
-  `headless_render`, `fractal --headless`, and `fluid_2d --headless` onto the
+  `headless_cube`, `fractal_2d --headless`, and `fluid_2d --headless` onto the
   shared no-GLFW host.
 
 Keep this batch intentionally small. It should pressure render-target/readback
@@ -520,41 +521,43 @@ Implemented work loop:
 2. Vulkan helper slice: add the offscreen color image config and any explicitly
    named color-render-target readback transition helpers, with unit tests for the
    create-info and transition structs.
-3. Example slice: add `examples/headless_render` using a deterministic clear
-   first. Keep it no-window and no-GLFW.
+3. Example slice: add `examples/headless_cube` using a deterministic cube
+   render. Keep it no-window and no-GLFW.
 4. Artifact test slice: add CTest coverage that runs the example with validation
    enabled when available, writes into the build tree, and checks PNG signature.
-5. Review checkpoint: complete for the clear-based PNG smoke.
+5. Review checkpoint: complete for the cube-based PNG smoke.
 
-### Batch 6: Fractal Example
+### Batch 6: Fractal Project
 
-Goal: prove fullscreen rendering and headless artifact reuse with an example,
-not a project runtime.
+Goal: prove fullscreen rendering and headless artifact reuse with a small
+project.
 
 - Status: initial pass complete on `main`.
-- Added `examples/fractal` with a fullscreen Mandelbrot-style fragment shader.
+- Added `projects/fractal_2d` with a fullscreen Mandelbrot-style fragment
+  shader.
 - Kept windowed setup, command recording sequence, and controls example-local.
 - Added a headless PNG path through the shared no-GLFW host.
-- Added example-local view math for drag pan, wheel zoom, reset, and push
+- Added project-local view math for drag pan, wheel zoom, reset, and push
   constants.
 - Did not extract a fullscreen helper; the new code stayed clearer as explicit
-  example code for now.
+  project code for now.
 
-This is still example work. It should not create a project interface around
-setup, update, render, resize, or shutdown.
+This is still project-local work. It should not create a reusable project
+interface around setup, update, render, resize, or shutdown.
 
-### Batch 6.5: Particle Example
+### Batch 6.5: Particle Cube Example
 
 Goal: carry forward the original Cubey particle feel as an example and exercise
 compute-to-graphics storage-buffer use without promoting a project host.
 
 - Status: initial pass complete on `main`.
-- Added `examples/particles` with deterministic attractor-style particles.
+- Added `examples/particle_cubes` with deterministic attractor-style cube
+  particles.
 - Used compute to update a storage buffer and graphics to read the same buffer
-  as instanced screen-facing quads.
-- Added dynamic graphics pipeline blend controls and a storage-buffer descriptor
-  helper as narrow reusable pressure from the example.
-- Kept particle seeding, simulation constants, billboard generation, command
+  as indexed cube instances.
+- Kept storage-buffer descriptor use as narrow reusable pressure from the
+  example.
+- Kept particle seeding, simulation constants, cube interpretation, command
   recording, and controls example-local.
 - Deferred particle-system helpers, indirect draw, and host/engine host work.
 

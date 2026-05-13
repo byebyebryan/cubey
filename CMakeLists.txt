@@ -88,16 +88,13 @@ if (BUILD_TESTING)
 endif()
 
 if (CUBEY_BUILD_EXAMPLES)
-    add_subdirectory(examples/window_clear)
-    add_subdirectory(examples/triangle)
     add_subdirectory(examples/spinning_cube)
     add_subdirectory(examples/textured_cube)
     add_subdirectory(examples/shadow_cube)
     add_subdirectory(examples/instanced_cubes)
     add_subdirectory(examples/material_cubes)
-    add_subdirectory(examples/headless_render)
-    add_subdirectory(examples/fractal)
-    add_subdirectory(examples/particles)
+    add_subdirectory(examples/headless_cube)
+    add_subdirectory(examples/particle_cubes)
 
     if (BUILD_TESTING)
         set(CUBEY_CLASSIC_RENDERING_PATTERN
@@ -110,15 +107,14 @@ if (CUBEY_BUILD_EXAMPLES)
                 "pattern=\"$1\"; shift; grep -RE \"$pattern\" \"$@\"; status=$?; test \"$status\" -eq 1"
                 examples_use_dynamic_rendering
                 "${CUBEY_CLASSIC_RENDERING_PATTERN}"
-                "${CMAKE_SOURCE_DIR}/examples/window_clear"
-                "${CMAKE_SOURCE_DIR}/examples/triangle"
                 "${CMAKE_SOURCE_DIR}/examples/spinning_cube"
                 "${CMAKE_SOURCE_DIR}/examples/textured_cube"
+                "${CMAKE_SOURCE_DIR}/examples/shadow_cube"
                 "${CMAKE_SOURCE_DIR}/examples/instanced_cubes"
                 "${CMAKE_SOURCE_DIR}/examples/material_cubes"
-                "${CMAKE_SOURCE_DIR}/examples/headless_render"
-                "${CMAKE_SOURCE_DIR}/examples/fractal"
-                "${CMAKE_SOURCE_DIR}/examples/particles"
+                "${CMAKE_SOURCE_DIR}/examples/headless_cube"
+                "${CMAKE_SOURCE_DIR}/examples/particle_cubes"
+                "${CMAKE_SOURCE_DIR}/projects/fractal_2d"
         )
     endif()
 endif()

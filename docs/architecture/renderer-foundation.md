@@ -238,10 +238,10 @@ full engine architecture.
   `FrameUniformBuffer<T>` owns one host-visible uniform buffer per frame slot.
   The current windowed host uses real frame slots for overlapping frame
   resources, while swapchain image ownership stays Vulkan-visible.
-- Fullscreen passes are not modeled as quad primitives. `fractal`, `fluid_2d`,
-  and `shadow_cube` use the oversized single-triangle pattern generated from
-  `gl_VertexIndex`, avoiding vertex/index buffers and the internal diagonal of
-  a two-triangle fullscreen quad.
+- Fullscreen passes are not modeled as quad primitives. `fractal_2d`,
+  `fluid_2d`, and `shadow_cube` use the oversized single-triangle pattern
+  generated from `gl_VertexIndex`, avoiding vertex/index buffers and the
+  internal diagonal of a two-triangle fullscreen quad.
 
 ## Multipass Direction
 

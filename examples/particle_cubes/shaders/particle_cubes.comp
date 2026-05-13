@@ -1,0 +1,62 @@
+#version 450
+
+layout(local_size_x = 128) in;
+
+struct ParticleCube {
+    vec4 position_scale;
+    vec4 velocity_seed;
+    vec4 color;
+};
+
+layout(set = 0, binding = 0, std430) buffer ParticleCubeBuffer {
+    ParticleCube cubes[];
+};
+
+layout(push_constant) uniform ComputeParams {
+    vec4 attractor_dt;
+    vec4 bounds_damping_time;
+} params;
+
+void main() {
+    uint index = gl_GlobalInvocationID.x;
+    if (index >= cubes.length()) {
+        return;
+    }
+
+    ParticleCube cube = cubes[index];
+    vec3 position = cube.position_scale.xyz;
+    vec3 velocity = cube.velocity_seed.xyz;
+    float seed = cube.velocity_seed.w;
+
+    vec3 to_attractor = params.attractor_dt.xyz - position;
+    float distance2 = max(dot(to_attractor, to_attractor), 0.035);
+    vec3 direction = to_attractor * inversesqrt(distance2);
+    vec3 tangent = cross(direction, vec3(0.0, 1.0, 0.0));
+    if (dot(tangent, tangent) < 0.0001) {
+        tangent = vec3(1.0, 0.0, 0.0);
+    } else {
+        tangent = normalize(tangent);
+    }
+
+    float spin = seed < 0.5 ? -1.0 : 1.0;
+    float dt = params.attractor_dt.w;
+    vec3 acceleration =
+        direction * (0.58 / (distance2 + 0.20)) +
+        tangent * spin * (0.42 / (distance2 + 0.30));
+
+    velocity += acceleration * dt;
+    velocity *= pow(params.bounds_damping_time.y, dt * 60.0);
+    position += velocity * dt;
+
+    float bounds = params.bounds_damping_time.x;
+    for (int axis = 0; axis < 3; ++axis) {
+        if (position[axis] < -bounds || position[axis] > bounds) {
+            position[axis] = clamp(position[axis], -bounds, bounds);
+            velocity[axis] *= -0.58;
+        }
+    }
+
+    cube.position_scale.xyz = position;
+    cube.velocity_seed.xyz = velocity;
+    cubes[index] = cube;
+}

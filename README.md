@@ -16,14 +16,14 @@ precedent when shaping new foundation contracts.
   `include/cubey/` and an aggregate `cubey::cubey` target for examples and
   projects.
 - Optional host layer: `cubey_host`, for GLFW-backed window hosting.
-- Runnable targets live under `examples/` or `projects/`.
+- Runnable targets live under `examples/` or `projects/`; examples are
+  intentionally cube-focused renderer demos, while richer/non-cube work lives
+  under `projects/`.
 - Headless PNG output is a first-class verification path for projects that can
   render without a window.
 
 Current examples:
 
-- `window_clear`: host smoke target for the bare clear/present path.
-- `triangle`: minimal shader-backed dynamic graphics pipeline setup.
 - `spinning_cube`: primitive cube mesh with shared transform/camera math and depth.
 - `textured_cube`: primitive cube mesh, compute-generated texture, descriptors,
   scene lighting, and input.
@@ -33,15 +33,16 @@ Current examples:
   cube instances.
 - `material_cubes`: multiple material handles and material instances bound per
   scene draw packet.
-- `headless_render`: no-window offscreen PNG path.
-- `fractal`: fullscreen Mandelbrot-style shader with windowed navigation and
-  headless output.
-- `particles`: compute-updated attractor particles rendered as instanced splats.
+- `headless_cube`: no-window offscreen cube PNG path.
+- `particle_cubes`: compute-updated cube particles rendered as indexed cube
+  instances.
 
 Current projects:
 
 - `fluid_2d`: compute-updated dye/velocity field with injection, advection,
   pressure projection, debug views, and deterministic headless PNG output.
+- `fractal_2d`: fullscreen Mandelbrot-style shader with windowed navigation and
+  headless output.
 
 ## Documentation
 
@@ -89,16 +90,16 @@ Useful windowed smokes:
 ./build/dev/examples/shadow_cube/shadow_cube --frames 300 --width 1280 --height 720
 ./build/dev/examples/instanced_cubes/instanced_cubes --frames 300 --width 1280 --height 720
 ./build/dev/examples/material_cubes/material_cubes --frames 300 --width 1280 --height 720
-./build/dev/examples/fractal/fractal --frames 300 --width 1280 --height 720
-./build/dev/examples/particles/particles --frames 300 --width 1280 --height 720
+./build/dev/examples/particle_cubes/particle_cubes --frames 300 --width 1280 --height 720
+./build/dev/projects/fractal_2d/fractal_2d --frames 300 --width 1280 --height 720
 ./build/dev/projects/fluid_2d/fluid_2d --frames 300 --width 1280 --height 720
 ```
 
 Useful headless PNG smokes:
 
 ```bash
-./build/dev/examples/headless_render/headless_render --width 640 --height 360 --output /tmp/cubey-headless.png
-./build/dev/examples/fractal/fractal --headless --width 640 --height 360 --output /tmp/cubey-fractal.png
+./build/dev/examples/headless_cube/headless_cube --width 640 --height 360 --output /tmp/cubey-headless-cube.png
+./build/dev/projects/fractal_2d/fractal_2d --headless --width 640 --height 360 --output /tmp/cubey-fractal-2d.png
 ./build/dev/projects/fluid_2d/fluid_2d --headless --frames 120 --width 640 --height 360 --output /tmp/cubey-fluid-2d.png
 ```
 
@@ -114,9 +115,10 @@ layers are installed.
   auto-rotation, `R` resets, Escape closes.
 - `material_cubes`: left-drag orbits the camera, Space pauses/resumes
   auto-rotation, `R` resets, Escape closes.
-- `fractal`: left-drag pans, mouse wheel zooms around the cursor, `R` resets,
+- `particle_cubes`: Space pauses/resumes compute updates, `R` resets, Escape
+  closes.
+- `fractal_2d`: left-drag pans, mouse wheel zooms around the cursor, `R` resets,
   Escape closes.
-- `particles`: Space pauses/resumes compute updates, `R` resets, Escape closes.
 - `fluid_2d`: left-drag injects dye/force, Space pauses/resumes, `R` resets,
   `D` cycles dye/velocity/divergence/pressure views, Escape closes.
 

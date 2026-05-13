@@ -4,7 +4,7 @@
 
 #include <cstdint>
 
-namespace cubey::examples::fractal {
+namespace cubey::projects::fractal_2d {
 
 struct FractalPushConstants {
     float center_x = -0.5F;
@@ -33,4 +33,4 @@ class FractalView {
     std::int32_t max_iterations_ = 180;
 };
 
-} // namespace cubey::examples::fractal
+} // namespace cubey::projects::fractal_2d
