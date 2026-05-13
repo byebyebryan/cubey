@@ -137,6 +137,7 @@ add_library(cubey_scene STATIC
     scene/light_manager.cpp
     scene/renderable_manager.cpp
     scene/scene.cpp
+    scene/transform_manager.cpp
 )
 add_library(cubey::scene ALIAS cubey_scene)
 
