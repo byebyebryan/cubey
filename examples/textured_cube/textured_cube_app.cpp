@@ -6,10 +6,12 @@
 #include <cubey/host/windowed_app.h>
 #include <cubey/input/orbit_controller.h>
 #include <cubey/render/material.h>
+#include <cubey/render/material_instance.h>
 #include <cubey/render/mesh.h>
 #include <cubey/render/pass.h>
 #include <cubey/render/pipeline_resource.h>
 #include <cubey/render/primitive_mesh.h>
+#include <cubey/render/primitive_resource.h>
 #include <cubey/render/resource_handle.h>
 #include <cubey/render/resource_table.h>
 #include <cubey/render/target.h>
@@ -19,6 +21,7 @@
 #include <cubey/scene/light_manager.h>
 #include <cubey/scene/render_recording.h>
 #include <cubey/scene/scene.h>
+#include <cubey/scene/scene_builder.h>
 #include <cubey/scene/transform_3d.h>
 #include <cubey/scene/view_3d.h>
 #include <cubey/vulkan/command_recorder.h>
@@ -173,10 +176,13 @@ class TexturedCubeApp {
         if (meshes_.contains(cube_mesh_handle_)) {
             return;
         }
-        cube_mesh_handle_ = engine_.render_resources().create_mesh("textured_cube.cube");
         cube_material_handle_ =
             engine_.render_resources().create_material("textured_cube.material");
-        create_cube_mesh(context);
+        cube_mesh_handle_ = cubey::render::create_primitive_mesh_resource(
+            engine_.render_resources(), meshes_, context.gpu(), "textured_cube.cube",
+            cubey::render::make_cube_position_color_normal_uv_mesh({
+                .face_colors = kCubeFaceColors,
+            }));
         create_scene();
         create_scene_uniforms(context);
         create_texture_resources(context);
@@ -204,73 +210,49 @@ class TexturedCubeApp {
 
     void create_pipeline(cubey::host::WindowedAppContext& context) {
         const std::array<cubey::render::ShaderStageFile, 2> shader_stage_files{
-            cubey::render::ShaderStageFile{
-                .stage = VK_SHADER_STAGE_VERTEX_BIT,
-                .path = shader_path("textured_cube.vert.spv"),
-            },
-            cubey::render::ShaderStageFile{
-                .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
-                .path = shader_path("textured_cube.frag.spv"),
-            },
+            cubey::render::vertex_shader_file(shader_path("textured_cube.vert.spv")),
+            cubey::render::fragment_shader_file(shader_path("textured_cube.frag.spv")),
         };
-
         const cubey::render::VertexInputLayout vertex_input =
             cubey::render::vertex_position_color_normal_uv_input_layout();
-
-        const cubey::render::MaterialPassInfo material_pass = textured_cube_forward_pass_info();
-        const std::array<VkDescriptorSetLayout, 1> set_layouts{descriptors().layout()};
-        pipeline_resource_.emplace(context.device(),
-                                   cubey::render::GraphicsPipelineFileResourceConfig{
-                                       .extent = context.swapchain().extent(),
-                                       .color_format = context.swapchain().format(),
-                                       .depth_format = depth_attachment().format(),
-                                       .shader_stage_files = shader_stage_files,
-                                       .vertex_bindings = vertex_input.bindings(),
-                                       .vertex_attributes = vertex_input.attribute_descriptions(),
-                                       .descriptor_set_layouts = set_layouts,
-                                       .material_pass = material_pass,
-                                   });
+        const std::array<VkDescriptorSetLayout, 1> set_layouts{material_instance().layout()};
+        pipeline_resource_.emplace(
+            context.device(), cubey::render::graphics_pipeline_file_resource_config(
+                                  {
+                                      .extent = context.swapchain().extent(),
+                                      .color_format = context.swapchain().format(),
+                                      .depth_format = depth_attachment().format(),
+                                  },
+                                  {
+                                      .shader_stage_files = shader_stage_files,
+                                      .vertex_bindings = vertex_input.bindings(),
+                                      .vertex_attributes = vertex_input.attribute_descriptions(),
+                                      .descriptor_set_layouts = set_layouts,
+                                      .material_pass = textured_cube_forward_pass_info(),
+                                  }));
     }
 
     void create_depth_resources(cubey::host::WindowedAppContext& context) {
         depth_attachment_.emplace(context.device(), context.swapchain().extent());
     }
 
-    void create_cube_mesh(cubey::host::WindowedAppContext& context) {
-        const cubey::render::PrimitiveMeshData<cubey::render::VertexPositionColorNormalUv> cube =
-            cubey::render::make_cube_position_color_normal_uv_mesh({
-                .face_colors = kCubeFaceColors,
-            });
-        meshes_.emplace(cube_mesh_handle_, context.gpu(), cube.mesh_config());
-    }
-
     void create_scene() {
         scene_ = &engine_.create_scene();
         cubey::SceneTransaction setup = scene().begin_transaction();
-        cube_entity_ = setup.entities().create();
-        camera_entity_ = setup.entities().create();
-        light_entity_ = setup.entities().create();
-        setup.transforms3d().create(cube_entity_, cubey::Transform3D{});
-        setup.renderables3d().create(cube_entity_,
-                                     cubey::Renderable3D{
-                                         .primitives =
-                                             {
-                                                 cubey::RenderablePrimitive3D{
-                                                     .mesh = cube_mesh_handle_,
-                                                     .material = cube_material_handle_,
-                                                 },
-                                             },
-                                         .local_bounds =
-                                             cubey::Bounds3D{
-                                                 .center = {0.0F, 0.0F, 0.0F},
-                                                 .half_extent = {1.0F, 1.0F, 1.0F},
-                                             },
-                                     });
-        setup.transforms3d().create(camera_entity_, cubey::orbit_camera_transform(
-                                                        cubey::OrbitCameraState{.distance = 4.2F}));
-        setup.cameras3d().create(camera_entity_, cubey::Camera3D{});
-        setup.lights3d().create(
-            light_entity_,
+        cube_entity_ = cubey::scene::create_renderable_entity_3d(
+            setup, cubey::scene::RenderableEntity3DConfig{
+                       .mesh = cube_mesh_handle_,
+                       .material = cube_material_handle_,
+                       .local_bounds =
+                           cubey::Bounds3D{
+                               .center = {0.0F, 0.0F, 0.0F},
+                               .half_extent = {1.0F, 1.0F, 1.0F},
+                           },
+                   });
+        camera_entity_ = cubey::scene::create_camera_entity_3d(
+            setup, cubey::orbit_camera_transform(cubey::OrbitCameraState{.distance = 4.2F}));
+        light_entity_ = cubey::scene::create_directional_light_entity_3d(
+            setup,
             cubey::directional_light_3d({0.35F, -0.55F, 0.76F}, {0.76F, 0.76F, 0.76F}, 1.0F));
         setup.commit();
     }
@@ -340,15 +322,12 @@ class TexturedCubeApp {
         descriptor_writes.update(context.device());
 
         const std::array<VkDescriptorSetLayout, 1> set_layouts{compute_descriptors().layout()};
-        compute_pipeline_resource_.emplace(
-            context.device(), cubey::render::ComputePipelineResourceConfig{
-                                  .shader_stage =
-                                      {
-                                          .stage = VK_SHADER_STAGE_COMPUTE_BIT,
-                                          .path = shader_path("textured_cube.comp.spv"),
-                                      },
-                                  .descriptor_set_layouts = set_layouts,
-                              });
+        compute_pipeline_resource_.emplace(context.device(),
+                                           cubey::render::ComputePipelineResourceConfig{
+                                               .shader_stage = cubey::render::compute_shader_file(
+                                                   shader_path("textured_cube.comp.spv")),
+                                               .descriptor_set_layouts = set_layouts,
+                                           });
     }
 
     void destroy_compute_resources() {
@@ -371,13 +350,13 @@ class TexturedCubeApp {
                     cubey::vulkan::ImmediateCommands commands(gpu_context.device(),
                                                               gpu_context.submission());
                     const cubey::vulkan::CommandRecorder recorder(commands.command_buffer());
-                    recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_COMPUTE,
-                                           compute_pipeline_resource().pipeline());
-                    const VkDescriptorSet descriptor_set = compute_descriptors().set();
-                    recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_COMPUTE,
-                                                 compute_pipeline_resource().layout(), 0,
-                                                 descriptor_set);
-                    recorder.dispatch(groups_x, groups_y, 1);
+                    cubey::render::record_compute_pipeline_dispatch(
+                        recorder, {
+                                      .pipeline = &compute_pipeline_resource(),
+                                      .descriptor_set = compute_descriptors().set(),
+                                      .group_count_x = groups_x,
+                                      .group_count_y = groups_y,
+                                  });
                     commands.submit_and_wait();
                 },
         }));
@@ -388,30 +367,29 @@ class TexturedCubeApp {
     }
 
     void create_descriptors(cubey::host::WindowedAppContext& context) {
-        const cubey::render::MaterialPassInfo material_pass = textured_cube_forward_pass_info();
         const std::uint32_t frame_slot_count = context.frame_slot_count();
-        const cubey::vulkan::DescriptorSetInfo descriptor_info(
-            cubey::render::material_descriptor_set_info(material_pass, 0, frame_slot_count));
-        descriptors_.emplace(context.device(), descriptor_info);
+        material_instance_.emplace(context.device(),
+                                   cubey::render::MaterialInstanceConfig{
+                                       .material_pass = textured_cube_forward_pass_info(),
+                                       .descriptor_set = 0,
+                                       .set_count = frame_slot_count,
+                                   });
 
-        cubey::vulkan::DescriptorWriteBatch descriptor_writes;
         for (std::uint32_t slot_index = 0; slot_index < frame_slot_count; ++slot_index) {
             const cubey::render::FrameSlot frame_slot{
                 .index = slot_index,
                 .count = frame_slot_count,
             };
-            const VkDescriptorSet descriptor_set = descriptors().set(slot_index);
-            descriptor_writes
-                .uniform_buffer(descriptor_set, 0, scene_uniforms().buffer(frame_slot).handle(),
+            cubey::render::MaterialDescriptorWriter(material_instance().set(frame_slot))
+                .uniform_buffer(0, scene_uniforms().buffer(frame_slot).handle(),
                                 scene_uniforms().range())
-                .combined_image_sampler(descriptor_set, 1, texture().sampler().handle(),
-                                        texture().view());
+                .combined_image_sampler(1, texture().sampler().handle(), texture().view())
+                .update(context.device());
         }
-        descriptor_writes.update(context.device());
     }
 
     void destroy_descriptors() {
-        descriptors_.reset();
+        material_instance_.reset();
     }
 
     void update_scene_transform() {
@@ -502,13 +480,13 @@ class TexturedCubeApp {
             recorder, target, clear_values,
             [this, &frame_plan,
              frame_slot = frame.frame_slot](const cubey::vulkan::CommandRecorder& pass_recorder) {
-                pass_recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                            pipeline_resource().pipeline());
-                const VkDescriptorSet descriptor_set = descriptors().set(frame_slot.index);
-                pass_recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                                  pipeline_resource().layout(), 0, descriptor_set);
-                cubey::scene::record_draw_packets_3d(
-                    pass_recorder, frame_plan.draw_packets, meshes_, {},
+                cubey::scene::record_pipeline_draw_packets_3d(
+                    pass_recorder, frame_plan.draw_packets, meshes_,
+                    {
+                        .pipeline = &pipeline_resource(),
+                        .material = &material_instance(),
+                        .frame_slot = frame_slot,
+                    },
                     [](const cubey::vulkan::CommandRecorder&,
                        const cubey::scene::RenderDrawPacket3D&) {});
             });
@@ -535,13 +513,8 @@ class TexturedCubeApp {
     }
 
     void destroy_render_handles() {
-        if (meshes_.contains(cube_mesh_handle_)) {
-            meshes_.erase(cube_mesh_handle_);
-        }
-        if (engine_.render_resources().is_alive(cube_mesh_handle_)) {
-            engine_.render_resources().destroy_mesh(cube_mesh_handle_);
-            cube_mesh_handle_ = {};
-        }
+        cubey::render::destroy_mesh_resource(engine_.render_resources(), meshes_,
+                                             cube_mesh_handle_);
         if (engine_.render_resources().is_alive(cube_material_handle_)) {
             engine_.render_resources().destroy_material(cube_material_handle_);
             cube_material_handle_ = {};
@@ -562,11 +535,11 @@ class TexturedCubeApp {
         return texture_.value();
     }
 
-    [[nodiscard]] const cubey::vulkan::DescriptorSetArray& descriptors() const {
-        if (!descriptors_.has_value()) {
+    [[nodiscard]] const cubey::render::MaterialInstance& material_instance() const {
+        if (!material_instance_.has_value()) {
             throw std::runtime_error("texture descriptors are not initialized");
         }
-        return descriptors_.value();
+        return material_instance_.value();
     }
 
     [[nodiscard]] const cubey::vulkan::DescriptorSetBundle& compute_descriptors() const {
@@ -610,7 +583,7 @@ class TexturedCubeApp {
     cubey::render::MeshResourceTable<cubey::render::Mesh> meshes_;
     std::optional<cubey::render::FrameUniformBuffer<SceneUniforms>> scene_uniforms_;
     std::optional<cubey::render::Texture2D> texture_;
-    std::optional<cubey::vulkan::DescriptorSetArray> descriptors_;
+    std::optional<cubey::render::MaterialInstance> material_instance_;
     std::optional<cubey::render::GraphicsPipelineResource> pipeline_resource_;
     std::optional<cubey::vulkan::DepthAttachment> depth_attachment_;
     std::optional<cubey::vulkan::DescriptorSetBundle> compute_descriptors_;

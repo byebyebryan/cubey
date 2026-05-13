@@ -17,6 +17,8 @@ stable across the repo:
   layout transitions or descriptor updates;
 - CPU-side primitive mesh data for common world-space shapes, plus vertex
   input layouts matching current shader contracts;
+- material pass metadata, material descriptor instances, and small pipeline
+  recipe helpers for the descriptor/pipeline shapes already shared by examples;
 - explicit frame slots and per-frame uniform buffers for CPU-updated render
   data;
 - draw packet metadata for simple indexed draws;
@@ -40,8 +42,9 @@ on `cubey::render`.
 Examples and projects still own render intent:
 
 - shader code and shader stage selection;
-- descriptor set layouts, descriptor writes, and binding order;
-- pipeline layout and graphics/compute pipeline setup;
+- material pass declarations, descriptor resources, descriptor writes, and
+  binding order;
+- graphics/compute pipeline target choice and shader selection;
 - image layout transition choice, barriers, pass ordering, and command-buffer
   scope;
 - camera, material, simulation, and interaction policy.
@@ -57,7 +60,8 @@ should not become a renderer.
 ## Non-Goals For This Slice
 
 - Full scene graph, node update system, or renderer-owned scene traversal.
-- Material system, shader reflection, shader hot reload, or pipeline cache.
+- Full material asset graph, shader reflection, shader hot reload, or pipeline
+  cache.
 - Render graph/frame graph/pass scheduler. The future graph vocabulary is
   mapped separately in [render graph direction](render-graph.md).
 - VMA or another memory allocator.
@@ -113,8 +117,10 @@ full engine architecture.
   `VertexPositionColorNormal`, and `VertexPositionColorNormalUv` provide
   CPU-side cube and XZ-plane mesh data for the existing `Mesh` upload path.
   The primitive layer also exposes reusable vertex input layouts for those
-  vertex contracts. It does not create renderables, materials, descriptors,
-  pipelines, or scene entities.
+  vertex contracts. `create_primitive_mesh_resource` covers the common
+  registry-handle plus app-owned mesh-table upload path, while keeping table
+  ownership and GPU lifetime explicit. The primitive layer does not create
+  renderables, materials, descriptors, pipelines, or scene entities.
 - `MeshHandle` and `MaterialHandle` are opaque CPU-side values used by scene
   renderables and renderable packets. `RenderResourceRegistry` issues and
   destroys those handles, validates liveness, and stores CPU metadata:
@@ -132,26 +138,32 @@ full engine architecture.
   scene draw packets and examples. It carries mesh/material handles plus draw
   range fields, and `resolve_draw_item` converts it to the lower-level
   `DrawItem` once the caller resolves app-owned mesh resources.
-- `cubey::scene::record_draw_packets_3d` is the current scene-side recording
-  helper for the repeated packet-filter, per-packet state, resolve, and draw
-  sequence used by 3D examples. It does not choose pipelines, descriptor sets,
-  pass order, or push-constant contents.
+- `cubey::scene::record_draw_packets_3d` is the low-level scene-side helper
+  for packet filtering, per-packet state, resolve, and draw. The higher-level
+  `record_pipeline_draw_packets_3d` also binds a caller-selected graphics
+  pipeline and optional material instance before recording filtered packets.
+  Pass order and push-constant contents remain caller-owned.
 - `cubey::render::MaterialPassInfo` is the first explicit material/pass
   metadata contract. It describes pass kind, descriptor layout shape,
   push-constant ranges, and reusable graphics pipeline state.
+- `cubey::render::MaterialInstance` owns the descriptor set layout, pool, and
+  one or per-frame descriptor sets for one declared `MaterialPassInfo`
+  descriptor set. `MaterialDescriptorWriter` keeps descriptor writes tied to a
+  material instance set while still requiring callers to choose concrete
+  buffers, images, samplers, and image layouts.
 - `cubey::render::ShaderProgram`, `GraphicsPipelineResource`, and
   `ComputePipelineResource` own the current shader-module, pipeline-layout, and
   graphics/compute pipeline lifetime shapes. They consume explicit shader stage
   files, descriptor set layouts, push constants, attachment formats, vertex
   input, and `MaterialPassInfo` where applicable; they do not reflect shaders,
-  cache pipelines, allocate descriptors, bind materials, or record commands.
-  Current examples and `fluid_2d` create app/project graphics pipelines through
-  this render-level wrapper using file-backed shader stage configs; the
-  lower-level Vulkan pipeline builders remain as tested implementation details
-  and escape hatches.
-- `cubey::vulkan::DescriptorWriteBatch` is the current descriptor-update
-  boundary: callers still choose descriptor sets, bindings, resources, and
-  image layouts, while the batch owns write backing storage until submission.
+  cache pipelines, choose material resources, or record commands. Current
+  examples and `fluid_2d` create app/project graphics pipelines through this
+  render-level wrapper using file-backed shader stage configs and recipe
+  helpers; the lower-level Vulkan pipeline builders remain as tested
+  implementation details and escape hatches.
+- `cubey::vulkan::DescriptorWriteBatch` remains the lower-level descriptor
+  update primitive. `MaterialDescriptorWriter` layers material-instance set
+  selection on top of it for graphics material bindings.
 - `cubey::scene::View3D`, `Environment3D`, and `RenderFramePlan3D` form the
   current CPU view-planning boundary. They combine a scene read view, camera
   entity, viewport size, ambient-only environment, draw packets, light packets,
@@ -192,8 +204,9 @@ full engine architecture.
   resource tables, CPU draw planning, primitive mesh data, and shared graphics
   pipeline resources while still owning descriptor writes and Vulkan command
   recording sequence locally. Cube pipelines now read pass metadata from
-  `MaterialPassInfo` instead of spelling descriptor layouts, push constants,
-  and depth/blend state entirely ad hoc. Fullscreen examples use shared
+  `MaterialPassInfo` and `MaterialInstance` instead of spelling descriptor
+  layouts, descriptor-set ownership, push constants, and depth/blend state
+  entirely ad hoc. Fullscreen examples use shared
   pipeline-bind/descriptor/push-constant/fullscreen-triangle helpers for the
   common fullscreen draw shape.
 - `LightManager3D` lives in the scene/component layer and emits compact
@@ -201,6 +214,10 @@ full engine architecture.
   light kind, color, intensity, direction or world position, and range; shader
   interpretation, light limits, descriptor layout, and GPU upload policy remain
   outside `cubey::render` for now.
+- `cubey::scene::scene_builder.h` contains small transaction helpers for
+  common renderable, camera, and directional-light entity setup. They reduce
+  repeated example transaction boilerplate without replacing explicit
+  `SceneTransaction` ownership.
 - `FrameSlot` gives render callbacks a stable frame-data index, and
   `FrameUniformBuffer<T>` owns one host-visible uniform buffer per frame slot.
   The current windowed host uses real frame slots for overlapping frame
@@ -226,5 +243,5 @@ planning, render-item draw intent, target/texture ownership, material pass
 metadata, depth-only rendering info, synchronous pass-callback execution,
 execution-time resource resolution, simple transient allocation, frame-slot
 resource ownership, and graph-owned barrier recording. Render-graph
-scheduling, automatic material binding, shadow policy, descriptor ownership, and
-transient aliasing remain future work.
+scheduling, renderer-owned material binding policy, shadow policy, and transient
+aliasing remain future work.

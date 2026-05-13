@@ -138,9 +138,11 @@ Reusable spatial types should stay explicit and narrow:
   validating resource handles, attaching material tags, sorting them, computing
   world bounds, and frustum-culling visible renderables. This is a planning
   layer only; material pass metadata can describe pass participation,
-  descriptor layout shape, push constants, and reusable pipeline state, but
-  Vulkan command recording, concrete descriptors, pipelines, light upload, and
-  shader/material binding stay owned by examples/projects for now.
+  descriptor layout shape, push constants, and reusable pipeline state. The
+  render layer now owns small material-instance descriptor lifetimes and shared
+  draw-recording helpers, while concrete descriptor resources, pass order,
+  light upload, shader selection, and broader material policy stay owned by
+  examples/projects for now.
 
 The broader entity/component shape is captured in the
 [entity and component foundation](architecture/entity-component-foundation.md):

@@ -8,12 +8,14 @@
 #include <cubey/render/pass.h>
 #include <cubey/render/pipeline_resource.h>
 #include <cubey/render/primitive_mesh.h>
+#include <cubey/render/primitive_resource.h>
 #include <cubey/render/resource_handle.h>
 #include <cubey/render/resource_table.h>
 #include <cubey/render/target.h>
 #include <cubey/scene/camera_3d.h>
 #include <cubey/scene/render_recording.h>
 #include <cubey/scene/scene.h>
+#include <cubey/scene/scene_builder.h>
 #include <cubey/scene/transform_3d.h>
 #include <cubey/scene/view_3d.h>
 #include <cubey/vulkan/command_recorder.h>
@@ -111,10 +113,11 @@ class SpinningCubeApp {
         if (meshes_.contains(cube_mesh_handle_)) {
             return;
         }
-        cube_mesh_handle_ = engine_.render_resources().create_mesh("spinning_cube.cube");
         cube_material_handle_ =
             engine_.render_resources().create_material("spinning_cube.material");
-        create_cube_mesh(context);
+        cube_mesh_handle_ = cubey::render::create_primitive_mesh_resource(
+            engine_.render_resources(), meshes_, context.gpu(), "spinning_cube.cube",
+            cubey::render::make_cube_position_color_mesh());
         create_scene();
     }
 
@@ -136,66 +139,45 @@ class SpinningCubeApp {
 
     void create_pipeline(cubey::host::WindowedAppContext& context) {
         const std::array<cubey::render::ShaderStageFile, 2> shader_stage_files{
-            cubey::render::ShaderStageFile{
-                .stage = VK_SHADER_STAGE_VERTEX_BIT,
-                .path = shader_path("spinning_cube.vert.spv"),
-            },
-            cubey::render::ShaderStageFile{
-                .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
-                .path = shader_path("spinning_cube.frag.spv"),
-            },
+            cubey::render::vertex_shader_file(shader_path("spinning_cube.vert.spv")),
+            cubey::render::fragment_shader_file(shader_path("spinning_cube.frag.spv")),
         };
-
         const cubey::render::VertexInputLayout vertex_input =
             cubey::render::vertex_position_color_input_layout();
-
-        const cubey::render::MaterialPassInfo material_pass = spinning_cube_forward_pass_info();
-        pipeline_resource_.emplace(context.device(),
-                                   cubey::render::GraphicsPipelineFileResourceConfig{
-                                       .extent = context.swapchain().extent(),
-                                       .color_format = context.swapchain().format(),
-                                       .depth_format = depth_attachment().format(),
-                                       .shader_stage_files = shader_stage_files,
-                                       .vertex_bindings = vertex_input.bindings(),
-                                       .vertex_attributes = vertex_input.attribute_descriptions(),
-                                       .material_pass = material_pass,
-                                   });
+        pipeline_resource_.emplace(
+            context.device(), cubey::render::graphics_pipeline_file_resource_config(
+                                  {
+                                      .extent = context.swapchain().extent(),
+                                      .color_format = context.swapchain().format(),
+                                      .depth_format = depth_attachment().format(),
+                                  },
+                                  {
+                                      .shader_stage_files = shader_stage_files,
+                                      .vertex_bindings = vertex_input.bindings(),
+                                      .vertex_attributes = vertex_input.attribute_descriptions(),
+                                      .material_pass = spinning_cube_forward_pass_info(),
+                                  }));
     }
 
     void create_depth_resources(cubey::host::WindowedAppContext& context) {
         depth_attachment_.emplace(context.device(), context.swapchain().extent());
     }
 
-    void create_cube_mesh(cubey::host::WindowedAppContext& context) {
-        const cubey::render::PrimitiveMeshData<cubey::render::VertexPositionColor> cube =
-            cubey::render::make_cube_position_color_mesh();
-        meshes_.emplace(cube_mesh_handle_, context.gpu(), cube.mesh_config());
-    }
-
     void create_scene() {
         scene_ = &engine_.create_scene();
         cubey::SceneTransaction setup = scene().begin_transaction();
-        cube_entity_ = setup.entities().create();
-        camera_entity_ = setup.entities().create();
-        setup.transforms3d().create(cube_entity_, cubey::Transform3D{});
-        setup.renderables3d().create(cube_entity_,
-                                     cubey::Renderable3D{
-                                         .primitives =
-                                             {
-                                                 cubey::RenderablePrimitive3D{
-                                                     .mesh = cube_mesh_handle_,
-                                                     .material = cube_material_handle_,
-                                                 },
-                                             },
-                                         .local_bounds =
-                                             cubey::Bounds3D{
-                                                 .center = {0.0F, 0.0F, 0.0F},
-                                                 .half_extent = {1.0F, 1.0F, 1.0F},
-                                             },
-                                     });
-        setup.transforms3d().create(camera_entity_, cubey::orbit_camera_transform(
-                                                        cubey::OrbitCameraState{.distance = 4.2F}));
-        setup.cameras3d().create(camera_entity_, cubey::Camera3D{});
+        cube_entity_ = cubey::scene::create_renderable_entity_3d(
+            setup, cubey::scene::RenderableEntity3DConfig{
+                       .mesh = cube_mesh_handle_,
+                       .material = cube_material_handle_,
+                       .local_bounds =
+                           cubey::Bounds3D{
+                               .center = {0.0F, 0.0F, 0.0F},
+                               .half_extent = {1.0F, 1.0F, 1.0F},
+                           },
+                   });
+        camera_entity_ = cubey::scene::create_camera_entity_3d(
+            setup, cubey::orbit_camera_transform(cubey::OrbitCameraState{.distance = 4.2F}));
         setup.commit();
     }
 
@@ -252,10 +234,11 @@ class SpinningCubeApp {
         cubey::render::record_present_render_target_pass(
             recorder, target, clear_values,
             [this, &frame_plan](const cubey::vulkan::CommandRecorder& pass_recorder) {
-                pass_recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                            pipeline_resource().pipeline());
-                cubey::scene::record_draw_packets_3d(
-                    pass_recorder, frame_plan.draw_packets, meshes_, {},
+                cubey::scene::record_pipeline_draw_packets_3d(
+                    pass_recorder, frame_plan.draw_packets, meshes_,
+                    {
+                        .pipeline = &pipeline_resource(),
+                    },
                     [this, &frame_plan](const cubey::vulkan::CommandRecorder& packet_recorder,
                                         const cubey::scene::RenderDrawPacket3D& packet) {
                         const PushConstants push_constants =
@@ -287,13 +270,8 @@ class SpinningCubeApp {
     }
 
     void destroy_render_handles() {
-        if (meshes_.contains(cube_mesh_handle_)) {
-            meshes_.erase(cube_mesh_handle_);
-        }
-        if (engine_.render_resources().is_alive(cube_mesh_handle_)) {
-            engine_.render_resources().destroy_mesh(cube_mesh_handle_);
-            cube_mesh_handle_ = {};
-        }
+        cubey::render::destroy_mesh_resource(engine_.render_resources(), meshes_,
+                                             cube_mesh_handle_);
         if (engine_.render_resources().is_alive(cube_material_handle_)) {
             engine_.render_resources().destroy_material(cube_material_handle_);
             cube_material_handle_ = {};

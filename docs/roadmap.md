@@ -167,17 +167,20 @@ Current checkpoint:
   upload, minimal indexed draw recording, explicit frame-slot identity,
   per-frame uniform buffers, shader-program and graphics-pipeline resource
   ownership for graphics passes, CPU-side cube/XZ-plane primitive mesh data
-  with matching vertex input layouts, and generational mesh/material handles
-  issued by `RenderResourceRegistry`.
+  with matching vertex input layouts, a helper for primitive mesh
+  registry/table upload, and generational mesh/material handles issued by
+  `RenderResourceRegistry`.
 - Reusable `cubey::render::ResourceTable`,
   `cubey::render::RenderItem`,
   `cubey::render::MaterialPassInfo`,
+  `cubey::render::MaterialInstance`,
   `cubey::scene::RenderDrawPacket3D`, and
   `cubey::scene::build_render_draw_packets_3d` provide the first CPU
   render-planning layer: renderer-facing draw intent, handle-to-resource
   resolution, live resource validation, material tag attachment, material/pass
-  metadata, world bounds propagation, and deterministic draw sorting without
-  owning Vulkan command recording, descriptors, or pipelines.
+  metadata, material descriptor set ownership, world bounds propagation, and
+  deterministic draw sorting without owning pass order, shader selection, or
+  renderer policy.
 - Reusable `cubey::scene::View3D`, `Environment3D`, and
   `RenderFramePlan3D` provide the first CPU 3D view-planning boundary over
   `SceneReadView`: camera matrices, viewport aspect, ambient-only environment,
@@ -202,6 +205,9 @@ Current checkpoint:
   `fluid_2d` builds a coarse simulation-compute to fullscreen-render graph and
   records it through the same frame executor, with graph-owned buffer barriers
   plus backbuffer acquire/release at that boundary.
+- Reusable `cubey::scene` transaction helpers cover common renderable, camera,
+  and directional-light entity setup while keeping entity/component ownership
+  explicit.
 - Reusable `cubey::vulkan::PipelineLayout`, `GraphicsPipeline`,
   `ComputePipeline`, `DescriptorSetLayout`, and `DescriptorPool` own basic
   pipeline and descriptor lifetimes while still taking raw Vulkan create-info
@@ -210,7 +216,9 @@ Current checkpoint:
   sizes, descriptor writes, and descriptor updates for current uniform-buffer,
   storage-buffer, storage-image, and combined image sampler paths.
 - Reusable `cubey::vulkan::DescriptorWriteBatch` stages mixed descriptor writes
-  in append order and owns their backing info storage until update submission.
+  in append order and owns their backing info storage until update submission;
+  `cubey::render::MaterialDescriptorWriter` applies that lower-level primitive
+  to material-instance descriptor sets.
 - Reusable `cubey::vulkan::DescriptorSetInfo` and `DescriptorSetBundle` cover
   the current one-layout/one-pool/one-set descriptor shape used by examples.
 - Reusable `cubey::vulkan::DescriptorSetArray` covers the same owned
