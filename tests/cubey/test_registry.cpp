@@ -145,11 +145,14 @@ void test_render_pipeline_resource_builds_compute_pipeline_info();
 void test_render_pipeline_resource_helpers_build_file_recipe_config();
 void test_primitive_cube_normal_uv_mesh_preserves_normals_and_face_uvs();
 void test_primitive_cube_position_color_mesh_uses_face_colors_and_indices();
+void test_instance_buffer_helpers_describe_instance_vertex_data();
 void test_primitive_vertex_layouts_match_shader_contracts();
 void test_primitive_xz_plane_mesh_uses_center_half_extents_and_up_normal();
+void test_compute_generated_texture_config_validates_dispatch_shape();
 void test_render_plan_builds_sorted_3d_draw_packets_with_material_metadata();
 void test_render_plan_converts_draw_packets_to_render_items();
 void test_render_plan_filters_draw_packets_for_recording_policy();
+void test_render_recording_rejects_ambiguous_material_binding_sources();
 void test_render_plan_rejects_stale_resource_handles();
 void test_render_resource_registry_tracks_handle_lifetime_and_labels();
 void test_render_resource_handles_are_hashable_keys();
@@ -353,6 +356,7 @@ std::span<const TestCase> core_tests() {
         CUBEY_TEST(test_render_pipeline_resource_builds_compute_pipeline_info),
         CUBEY_TEST(test_render_pipeline_resource_helpers_build_file_recipe_config),
         CUBEY_TEST(test_primitive_vertex_layouts_match_shader_contracts),
+        CUBEY_TEST(test_instance_buffer_helpers_describe_instance_vertex_data),
         CUBEY_TEST(test_primitive_cube_position_color_mesh_uses_face_colors_and_indices),
         CUBEY_TEST(test_primitive_cube_normal_uv_mesh_preserves_normals_and_face_uvs),
         CUBEY_TEST(test_primitive_xz_plane_mesh_uses_center_half_extents_and_up_normal),
@@ -362,6 +366,7 @@ std::span<const TestCase> core_tests() {
         CUBEY_TEST(test_render_plan_builds_sorted_3d_draw_packets_with_material_metadata),
         CUBEY_TEST(test_render_plan_converts_draw_packets_to_render_items),
         CUBEY_TEST(test_render_plan_filters_draw_packets_for_recording_policy),
+        CUBEY_TEST(test_render_recording_rejects_ambiguous_material_binding_sources),
         CUBEY_TEST(test_render_plan_rejects_stale_resource_handles),
         CUBEY_TEST(test_render_resource_registry_tracks_handle_lifetime_and_labels),
         CUBEY_TEST(test_render_resource_handles_are_hashable_keys),
@@ -373,6 +378,7 @@ std::span<const TestCase> core_tests() {
         CUBEY_TEST(test_texture_2d_config_maps_storage_sampled_usage),
         CUBEY_TEST(test_texture_2d_config_maps_transfer_sampled_usage),
         CUBEY_TEST(test_depth_texture_config_maps_sampled_depth_usage),
+        CUBEY_TEST(test_compute_generated_texture_config_validates_dispatch_shape),
         CUBEY_TEST(test_render_view_3d_builds_frame_plan_with_environment_draws_and_lights),
         CUBEY_TEST(test_render_view_3d_builds_multiple_view_plans_from_one_scene_read_view),
         CUBEY_TEST(test_render_view_3d_frame_pass_plan_preserves_explicit_pass_order),

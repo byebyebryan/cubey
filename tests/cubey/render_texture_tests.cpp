@@ -1,3 +1,4 @@
+#include <cubey/render/generated_texture.h>
 #include <cubey/render/texture.h>
 
 #include <vulkan/vulkan.h>
@@ -85,4 +86,30 @@ void test_depth_texture_config_maps_sampled_depth_usage() {
 
     static_assert(!std::is_copy_constructible_v<cubey::render::DepthTexture>);
     static_assert(std::is_move_constructible_v<cubey::render::DepthTexture>);
+}
+
+void test_compute_generated_texture_config_validates_dispatch_shape() {
+    require(cubey::render::compute_dispatch_group_count(64, 8) == 8,
+            "compute generated texture dispatch should divide exact groups");
+    require(cubey::render::compute_dispatch_group_count(65, 8) == 9,
+            "compute generated texture dispatch should round up partial groups");
+
+    cubey::render::ComputeGeneratedTexture2DConfig config{
+        .extent = {64, 32},
+        .format = VK_FORMAT_R8G8B8A8_UNORM,
+        .shader = cubey::render::compute_shader_file("generated.comp.spv"),
+        .group_size_x = 8,
+        .group_size_y = 8,
+        .group_size_z = 1,
+    };
+    cubey::render::validate_compute_generated_texture_config(config);
+
+    config.group_size_x = 0;
+    bool threw = false;
+    try {
+        cubey::render::validate_compute_generated_texture_config(config);
+    } catch (const std::runtime_error&) {
+        threw = true;
+    }
+    require(threw, "compute generated texture config should reject zero group sizes");
 }

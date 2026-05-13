@@ -44,11 +44,12 @@ void CommandRecorder::transition_image_layout(const ImageLayoutTransition& trans
     cubey::vulkan::transition_image_layout(command_buffer_, transition);
 }
 
-void CommandRecorder::pipeline_barrier(
-    VkPipelineStageFlags src_stage_mask, VkPipelineStageFlags dst_stage_mask,
-    VkDependencyFlags dependency_flags, std::span<const VkMemoryBarrier> memory_barriers,
-    std::span<const VkBufferMemoryBarrier> buffer_barriers,
-    std::span<const VkImageMemoryBarrier> image_barriers) const {
+void CommandRecorder::pipeline_barrier(VkPipelineStageFlags src_stage_mask,
+                                       VkPipelineStageFlags dst_stage_mask,
+                                       VkDependencyFlags dependency_flags,
+                                       std::span<const VkMemoryBarrier> memory_barriers,
+                                       std::span<const VkBufferMemoryBarrier> buffer_barriers,
+                                       std::span<const VkImageMemoryBarrier> image_barriers) const {
     if (src_stage_mask == 0) {
         throw std::runtime_error("command recorder pipeline barrier requires source stages");
     }
@@ -111,6 +112,31 @@ void CommandRecorder::bind_pipeline(VkPipelineBindPoint bind_point, VkPipeline p
         throw std::runtime_error("command recorder bind pipeline requires a pipeline");
     }
     vkCmdBindPipeline(command_buffer_, bind_point, pipeline);
+}
+
+void CommandRecorder::bind_vertex_buffer(std::uint32_t first_binding, VkBuffer buffer,
+                                         VkDeviceSize offset) const {
+    bind_vertex_buffers(first_binding, std::span<const VkBuffer>(&buffer, 1),
+                        std::span<const VkDeviceSize>(&offset, 1));
+}
+
+void CommandRecorder::bind_vertex_buffers(std::uint32_t first_binding,
+                                          std::span<const VkBuffer> buffers,
+                                          std::span<const VkDeviceSize> offsets) const {
+    if (buffers.empty()) {
+        throw std::runtime_error("command recorder bind vertex buffers requires buffers");
+    }
+    if (buffers.size() != offsets.size()) {
+        throw std::runtime_error("command recorder bind vertex buffers requires matching offsets");
+    }
+    for (const VkBuffer buffer : buffers) {
+        if (buffer == VK_NULL_HANDLE) {
+            throw std::runtime_error("command recorder bind vertex buffers requires valid buffers");
+        }
+    }
+    vkCmdBindVertexBuffers(command_buffer_, first_binding,
+                           span_size_u32(buffers.size(), "vertex buffer count overflow"),
+                           buffers.data(), offsets.data());
 }
 
 void CommandRecorder::bind_descriptor_set(VkPipelineBindPoint bind_point, VkPipelineLayout layout,

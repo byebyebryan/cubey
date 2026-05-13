@@ -33,11 +33,11 @@ struct VertexPositionColorNormalUv {
 };
 
 struct VertexInputLayout {
-    VkVertexInputBindingDescription binding{};
+    std::vector<VkVertexInputBindingDescription> vertex_bindings{};
     std::vector<VkVertexInputAttributeDescription> attributes{};
 
     [[nodiscard]] std::span<const VkVertexInputBindingDescription> bindings() const {
-        return {&binding, 1};
+        return vertex_bindings;
     }
 
     [[nodiscard]] std::span<const VkVertexInputAttributeDescription>
@@ -52,8 +52,7 @@ template <typename Vertex> struct PrimitiveMeshData {
 
     [[nodiscard]] MeshConfig mesh_config() const {
         return indexed_mesh_config(std::span<const Vertex>(vertices.data(), vertices.size()),
-                                   std::span<const std::uint16_t>(indices.data(),
-                                                                  indices.size()));
+                                   std::span<const std::uint16_t>(indices.data(), indices.size()));
     }
 };
 
@@ -79,6 +78,12 @@ struct PlaneMeshConfig {
 [[nodiscard]] VertexInputLayout vertex_position_color_normal_input_layout();
 [[nodiscard]] VertexInputLayout vertex_position_color_normal_uv_input_layout();
 [[nodiscard]] VertexInputLayout vertex_position_only_input_layout(std::uint32_t vertex_stride);
+[[nodiscard]] VkVertexInputBindingDescription
+vertex_input_binding(std::uint32_t binding, std::uint32_t stride, VkVertexInputRate input_rate);
+[[nodiscard]] VkVertexInputAttributeDescription vertex_input_attribute(std::uint32_t location,
+                                                                       std::uint32_t binding,
+                                                                       VkFormat format,
+                                                                       std::uint32_t offset);
 
 [[nodiscard]] PrimitiveMeshData<VertexPositionColor>
 make_cube_position_color_mesh(CubeMeshConfig config = {});

@@ -35,6 +35,7 @@ struct RenderPacketFilter3D {
 struct PipelineDrawPackets3DInfo {
     const render::GraphicsPipelineResource* pipeline = nullptr;
     const render::MaterialInstance* material = nullptr;
+    const render::MaterialResourceTable<render::MaterialInstance>* material_instances = nullptr;
     std::optional<render::FrameSlot> frame_slot{};
     RenderPacketFilter3D filter{};
 };
@@ -64,6 +65,9 @@ void record_pipeline_draw_packets_3d(const cubey::vulkan::CommandRecorder& recor
     if (info.pipeline == nullptr) {
         throw std::runtime_error("3D pipeline draw packet recording requires a pipeline");
     }
+    if (info.material != nullptr && info.material_instances != nullptr) {
+        throw std::runtime_error("3D pipeline draw packet recording has ambiguous material source");
+    }
     recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, info.pipeline->pipeline());
     if (info.material != nullptr) {
         if (info.frame_slot.has_value()) {
@@ -73,7 +77,23 @@ void record_pipeline_draw_packets_3d(const cubey::vulkan::CommandRecorder& recor
             render::bind_material_instance(recorder, *info.pipeline, *info.material);
         }
     }
-    record_draw_packets_3d(recorder, packets, meshes, info.filter, record_packet);
+    record_draw_packets_3d(
+        recorder, packets, meshes, info.filter,
+        [&](const cubey::vulkan::CommandRecorder& packet_recorder,
+            const RenderDrawPacket3D& packet) {
+            if (info.material_instances != nullptr) {
+                const render::MaterialInstance& packet_material =
+                    info.material_instances->at(packet.material);
+                if (info.frame_slot.has_value()) {
+                    render::bind_material_instance(packet_recorder, *info.pipeline, packet_material,
+                                                   info.frame_slot.value());
+                } else {
+                    render::bind_material_instance(packet_recorder, *info.pipeline,
+                                                   packet_material);
+                }
+            }
+            record_packet(packet_recorder, packet);
+        });
 }
 
 } // namespace cubey::scene

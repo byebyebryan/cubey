@@ -20,22 +20,8 @@ struct CubeFaceVertex {
 
 template <typename Vertex>
 [[nodiscard]] VkVertexInputBindingDescription vertex_binding_description() {
-    return {
-        .binding = 0,
-        .stride = static_cast<std::uint32_t>(sizeof(Vertex)),
-        .inputRate = VK_VERTEX_INPUT_RATE_VERTEX,
-    };
-}
-
-[[nodiscard]] VkVertexInputAttributeDescription vertex_attribute(std::uint32_t location,
-                                                                 VkFormat format,
-                                                                 std::uint32_t offset) {
-    return {
-        .location = location,
-        .binding = 0,
-        .format = format,
-        .offset = offset,
-    };
+    return vertex_input_binding(0, static_cast<std::uint32_t>(sizeof(Vertex)),
+                                VK_VERTEX_INPUT_RATE_VERTEX);
 }
 
 [[nodiscard]] std::array<CubeFaceVertex, 24> cube_face_vertices(float half_extent) {
@@ -91,45 +77,45 @@ void validate_plane_config(const PlaneMeshConfig& config) {
 
 VertexInputLayout vertex_position_color_input_layout() {
     return {
-        .binding = vertex_binding_description<VertexPositionColor>(),
+        .vertex_bindings = {vertex_binding_description<VertexPositionColor>()},
         .attributes =
             {
-                vertex_attribute(0, VK_FORMAT_R32G32B32_SFLOAT,
-                                 offset_of(offsetof(VertexPositionColor, position))),
-                vertex_attribute(1, VK_FORMAT_R32G32B32_SFLOAT,
-                                 offset_of(offsetof(VertexPositionColor, color))),
+                vertex_input_attribute(0, 0, VK_FORMAT_R32G32B32_SFLOAT,
+                                       offset_of(offsetof(VertexPositionColor, position))),
+                vertex_input_attribute(1, 0, VK_FORMAT_R32G32B32_SFLOAT,
+                                       offset_of(offsetof(VertexPositionColor, color))),
             },
     };
 }
 
 VertexInputLayout vertex_position_color_normal_input_layout() {
     return {
-        .binding = vertex_binding_description<VertexPositionColorNormal>(),
+        .vertex_bindings = {vertex_binding_description<VertexPositionColorNormal>()},
         .attributes =
             {
-                vertex_attribute(0, VK_FORMAT_R32G32B32_SFLOAT,
-                                 offset_of(offsetof(VertexPositionColorNormal, position))),
-                vertex_attribute(1, VK_FORMAT_R32G32B32_SFLOAT,
-                                 offset_of(offsetof(VertexPositionColorNormal, color))),
-                vertex_attribute(2, VK_FORMAT_R32G32B32_SFLOAT,
-                                 offset_of(offsetof(VertexPositionColorNormal, normal))),
+                vertex_input_attribute(0, 0, VK_FORMAT_R32G32B32_SFLOAT,
+                                       offset_of(offsetof(VertexPositionColorNormal, position))),
+                vertex_input_attribute(1, 0, VK_FORMAT_R32G32B32_SFLOAT,
+                                       offset_of(offsetof(VertexPositionColorNormal, color))),
+                vertex_input_attribute(2, 0, VK_FORMAT_R32G32B32_SFLOAT,
+                                       offset_of(offsetof(VertexPositionColorNormal, normal))),
             },
     };
 }
 
 VertexInputLayout vertex_position_color_normal_uv_input_layout() {
     return {
-        .binding = vertex_binding_description<VertexPositionColorNormalUv>(),
+        .vertex_bindings = {vertex_binding_description<VertexPositionColorNormalUv>()},
         .attributes =
             {
-                vertex_attribute(0, VK_FORMAT_R32G32B32_SFLOAT,
-                                 offset_of(offsetof(VertexPositionColorNormalUv, position))),
-                vertex_attribute(1, VK_FORMAT_R32G32B32_SFLOAT,
-                                 offset_of(offsetof(VertexPositionColorNormalUv, color))),
-                vertex_attribute(2, VK_FORMAT_R32G32B32_SFLOAT,
-                                 offset_of(offsetof(VertexPositionColorNormalUv, normal))),
-                vertex_attribute(3, VK_FORMAT_R32G32_SFLOAT,
-                                 offset_of(offsetof(VertexPositionColorNormalUv, uv))),
+                vertex_input_attribute(0, 0, VK_FORMAT_R32G32B32_SFLOAT,
+                                       offset_of(offsetof(VertexPositionColorNormalUv, position))),
+                vertex_input_attribute(1, 0, VK_FORMAT_R32G32B32_SFLOAT,
+                                       offset_of(offsetof(VertexPositionColorNormalUv, color))),
+                vertex_input_attribute(2, 0, VK_FORMAT_R32G32B32_SFLOAT,
+                                       offset_of(offsetof(VertexPositionColorNormalUv, normal))),
+                vertex_input_attribute(3, 0, VK_FORMAT_R32G32_SFLOAT,
+                                       offset_of(offsetof(VertexPositionColorNormalUv, uv))),
             },
     };
 }
@@ -140,16 +126,37 @@ VertexInputLayout vertex_position_only_input_layout(std::uint32_t vertex_stride)
     }
 
     return {
-        .binding =
-            {
-                .binding = 0,
-                .stride = vertex_stride,
-                .inputRate = VK_VERTEX_INPUT_RATE_VERTEX,
-            },
+        .vertex_bindings = {vertex_input_binding(0, vertex_stride, VK_VERTEX_INPUT_RATE_VERTEX)},
         .attributes =
             {
-                vertex_attribute(0, VK_FORMAT_R32G32B32_SFLOAT, 0),
+                vertex_input_attribute(0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0),
             },
+    };
+}
+
+VkVertexInputBindingDescription vertex_input_binding(std::uint32_t binding, std::uint32_t stride,
+                                                     VkVertexInputRate input_rate) {
+    if (stride == 0) {
+        throw std::runtime_error("vertex input binding requires a positive stride");
+    }
+    return {
+        .binding = binding,
+        .stride = stride,
+        .inputRate = input_rate,
+    };
+}
+
+VkVertexInputAttributeDescription vertex_input_attribute(std::uint32_t location,
+                                                         std::uint32_t binding, VkFormat format,
+                                                         std::uint32_t offset) {
+    if (format == VK_FORMAT_UNDEFINED) {
+        throw std::runtime_error("vertex input attribute requires a defined format");
+    }
+    return {
+        .location = location,
+        .binding = binding,
+        .format = format,
+        .offset = offset,
     };
 }
 

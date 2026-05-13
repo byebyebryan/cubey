@@ -20,8 +20,7 @@ class CommandRecorder {
     void begin(VkCommandBufferUsageFlags flags) const;
     void end(const char* label) const;
     void transition_image_layout(const ImageLayoutTransition& transition) const;
-    void pipeline_barrier(VkPipelineStageFlags src_stage_mask,
-                          VkPipelineStageFlags dst_stage_mask,
+    void pipeline_barrier(VkPipelineStageFlags src_stage_mask, VkPipelineStageFlags dst_stage_mask,
                           VkDependencyFlags dependency_flags,
                           std::span<const VkMemoryBarrier> memory_barriers = {},
                           std::span<const VkBufferMemoryBarrier> buffer_barriers = {},
@@ -29,6 +28,10 @@ class CommandRecorder {
     void begin_rendering(const VkRenderingInfo& rendering) const;
     void end_rendering() const;
     void bind_pipeline(VkPipelineBindPoint bind_point, VkPipeline pipeline) const;
+    void bind_vertex_buffer(std::uint32_t first_binding, VkBuffer buffer,
+                            VkDeviceSize offset = 0) const;
+    void bind_vertex_buffers(std::uint32_t first_binding, std::span<const VkBuffer> buffers,
+                             std::span<const VkDeviceSize> offsets) const;
     void bind_descriptor_set(VkPipelineBindPoint bind_point, VkPipelineLayout layout,
                              std::uint32_t first_set, VkDescriptorSet set,
                              std::span<const std::uint32_t> dynamic_offsets = {}) const;

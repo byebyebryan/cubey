@@ -95,7 +95,10 @@ target_link_libraries(
 )
 
 add_library(cubey_render STATIC
+    render/forward_pass.cpp
     render/frame_data.cpp
+    render/generated_texture.cpp
+    render/instance_buffer.cpp
     render/material_instance.cpp
     render/material.cpp
     render/mesh.cpp

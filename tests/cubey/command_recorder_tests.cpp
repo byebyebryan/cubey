@@ -44,6 +44,12 @@ void test_command_recorder_rejects_invalid_recording_inputs_before_vulkan_calls(
     const cubey::vulkan::CommandRecorder recorder(reinterpret_cast<VkCommandBuffer>(0x01));
     require_runtime_error([&] { recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, {}); },
                           "command recorder should reject a null pipeline");
+    require_runtime_error([&] { recorder.bind_vertex_buffer(0, VK_NULL_HANDLE); },
+                          "command recorder should reject a null vertex buffer");
+    const VkBuffer valid_buffer = reinterpret_cast<VkBuffer>(0x02);
+    require_runtime_error(
+        [&] { recorder.bind_vertex_buffers(0, std::span<const VkBuffer>(&valid_buffer, 1), {}); },
+        "command recorder should reject mismatched vertex buffer offsets");
     require_runtime_error(
         [&] {
             recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS, {}, 0,
@@ -124,10 +130,9 @@ void test_command_recorder_rejects_invalid_recording_inputs_before_vulkan_calls(
     buffer_barrier.size = 4;
     require_runtime_error(
         [&] {
-            recorder.pipeline_barrier(VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-                                      VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, {},
-                                      std::span<const VkBufferMemoryBarrier>(&buffer_barrier, 1),
-                                      {});
+            recorder.pipeline_barrier(
+                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, {},
+                std::span<const VkBufferMemoryBarrier>(&buffer_barrier, 1), {});
         },
         "command recorder should reject buffer barriers without buffers");
 

@@ -199,3 +199,26 @@ void test_render_plan_filters_draw_packets_for_recording_policy() {
                 {.material_pass = cubey::render::MaterialPassKind::ForwardColor}),
             "recording filter should accept packets with the requested forward pass");
 }
+
+void test_render_recording_rejects_ambiguous_material_binding_sources() {
+    const cubey::vulkan::CommandRecorder recorder(reinterpret_cast<VkCommandBuffer>(0x01));
+    const cubey::render::MeshResourceTable<cubey::render::Mesh> meshes;
+    const std::vector<cubey::scene::RenderDrawPacket3D> packets;
+
+    require_throws(
+        [&] {
+            cubey::scene::record_pipeline_draw_packets_3d(
+                recorder, packets, meshes,
+                {
+                    .pipeline =
+                        reinterpret_cast<const cubey::render::GraphicsPipelineResource*>(0x02),
+                    .material = reinterpret_cast<const cubey::render::MaterialInstance*>(0x03),
+                    .material_instances =
+                        reinterpret_cast<const cubey::render::MaterialResourceTable<
+                            cubey::render::MaterialInstance>*>(0x04),
+                },
+                [](const cubey::vulkan::CommandRecorder&, const cubey::scene::RenderDrawPacket3D&) {
+                });
+        },
+        "recording should reject both fixed and per-packet material binding sources");
+}

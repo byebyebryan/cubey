@@ -6,6 +6,8 @@
 #include <cubey/scene/scene.h>
 #include <cubey/scene/transform_3d.h>
 
+#include <cstdint>
+
 namespace cubey::scene {
 
 struct RenderableEntity3DConfig {
@@ -16,25 +18,34 @@ struct RenderableEntity3DConfig {
     bool visible = true;
     bool cast_shadows = true;
     bool receive_shadows = true;
+    std::uint32_t instance_count = 1;
+    std::uint32_t first_index = 0;
+    std::int32_t vertex_offset = 0;
+    std::uint32_t first_instance = 0;
 };
 
 [[nodiscard]] inline Entity create_renderable_entity_3d(SceneTransaction& transaction,
                                                         const RenderableEntity3DConfig& config) {
     Entity entity = transaction.entities().create();
     transaction.transforms3d().create(entity, config.transform);
-    transaction.renderables3d().create(entity, Renderable3D{
-                                                   .primitives =
-                                                       {
-                                                           RenderablePrimitive3D{
-                                                               .mesh = config.mesh,
-                                                               .material = config.material,
-                                                           },
-                                                       },
-                                                   .local_bounds = config.local_bounds,
-                                                   .visible = config.visible,
-                                                   .cast_shadows = config.cast_shadows,
-                                                   .receive_shadows = config.receive_shadows,
-                                               });
+    transaction.renderables3d().create(entity,
+                                       Renderable3D{
+                                           .primitives =
+                                               {
+                                                   RenderablePrimitive3D{
+                                                       .mesh = config.mesh,
+                                                       .material = config.material,
+                                                       .instance_count = config.instance_count,
+                                                       .first_index = config.first_index,
+                                                       .vertex_offset = config.vertex_offset,
+                                                       .first_instance = config.first_instance,
+                                                   },
+                                               },
+                                           .local_bounds = config.local_bounds,
+                                           .visible = config.visible,
+                                           .cast_shadows = config.cast_shadows,
+                                           .receive_shadows = config.receive_shadows,
+                                       });
     return entity;
 }
 

@@ -55,6 +55,8 @@ void require_throws(auto&& action, const char* message) {
 void test_material_instance_config_builds_descriptor_set_info() {
     static_assert(!std::is_copy_constructible_v<cubey::render::MaterialInstance>);
     static_assert(!std::is_copy_assignable_v<cubey::render::MaterialInstance>);
+    static_assert(!std::is_copy_constructible_v<cubey::render::FrameUniformMaterialInstance<int>>);
+    static_assert(!std::is_move_constructible_v<cubey::render::FrameUniformMaterialInstance<int>>);
 
     const cubey::render::MaterialInstanceConfig config{
         .material_pass = textured_pass_info(),

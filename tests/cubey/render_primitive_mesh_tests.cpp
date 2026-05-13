@@ -1,3 +1,4 @@
+#include <cubey/render/instance_buffer.h>
 #include <cubey/render/primitive_mesh.h>
 
 #include <vulkan/vulkan.h>
@@ -14,13 +15,11 @@ void require(bool condition, const char* message) {
     }
 }
 
-void require_vec3(std::array<float, 3> value, std::array<float, 3> expected,
-                  const char* message) {
+void require_vec3(std::array<float, 3> value, std::array<float, 3> expected, const char* message) {
     require(value == expected, message);
 }
 
-void require_vec2(std::array<float, 2> value, std::array<float, 2> expected,
-                  const char* message) {
+void require_vec2(std::array<float, 2> value, std::array<float, 2> expected, const char* message) {
     require(value == expected, message);
 }
 
@@ -29,14 +28,15 @@ void require_vec2(std::array<float, 2> value, std::array<float, 2> expected,
 void test_primitive_vertex_layouts_match_shader_contracts() {
     const cubey::render::VertexInputLayout position_color =
         cubey::render::vertex_position_color_input_layout();
-    require(position_color.binding.stride == sizeof(cubey::render::VertexPositionColor),
+    require(position_color.bindings().size() == 1,
+            "position-color layout should expose one vertex binding");
+    require(position_color.bindings()[0].stride == sizeof(cubey::render::VertexPositionColor),
             "position-color binding stride should match vertex size");
-    require(position_color.binding.inputRate == VK_VERTEX_INPUT_RATE_VERTEX,
+    require(position_color.bindings()[0].inputRate == VK_VERTEX_INPUT_RATE_VERTEX,
             "position-color binding should be per-vertex");
     require(position_color.attributes.size() == 2,
             "position-color layout should expose position and color");
-    require(position_color.attributes[0].location == 0,
-            "position should use shader location 0");
+    require(position_color.attributes[0].location == 0, "position should use shader location 0");
     require(position_color.attributes[0].format == VK_FORMAT_R32G32B32_SFLOAT,
             "position should use vec3 float format");
     require(position_color.attributes[0].offset ==
@@ -45,13 +45,15 @@ void test_primitive_vertex_layouts_match_shader_contracts() {
     require(position_color.attributes[1].location == 1, "color should use shader location 1");
     require(position_color.attributes[1].format == VK_FORMAT_R32G32B32_SFLOAT,
             "color should use vec3 float format");
-    require(position_color.attributes[1].offset == offsetof(cubey::render::VertexPositionColor,
-                                                            color),
+    require(position_color.attributes[1].offset ==
+                offsetof(cubey::render::VertexPositionColor, color),
             "color offset should match vertex field");
 
     const cubey::render::VertexInputLayout position_color_normal =
         cubey::render::vertex_position_color_normal_input_layout();
-    require(position_color_normal.binding.stride ==
+    require(position_color_normal.bindings().size() == 1,
+            "position-color-normal layout should expose one vertex binding");
+    require(position_color_normal.bindings()[0].stride ==
                 sizeof(cubey::render::VertexPositionColorNormal),
             "position-color-normal binding stride should match vertex size");
     require(position_color_normal.attributes.size() == 3,
@@ -64,7 +66,9 @@ void test_primitive_vertex_layouts_match_shader_contracts() {
 
     const cubey::render::VertexInputLayout position_color_normal_uv =
         cubey::render::vertex_position_color_normal_uv_input_layout();
-    require(position_color_normal_uv.binding.stride ==
+    require(position_color_normal_uv.bindings().size() == 1,
+            "position-color-normal-uv layout should expose one vertex binding");
+    require(position_color_normal_uv.bindings()[0].stride ==
                 sizeof(cubey::render::VertexPositionColorNormalUv),
             "position-color-normal-uv binding stride should match vertex size");
     require(position_color_normal_uv.attributes.size() == 4,
@@ -80,9 +84,11 @@ void test_primitive_vertex_layouts_match_shader_contracts() {
     const cubey::render::VertexInputLayout position_only =
         cubey::render::vertex_position_only_input_layout(
             sizeof(cubey::render::VertexPositionColorNormal));
-    require(position_only.binding.stride == sizeof(cubey::render::VertexPositionColorNormal),
+    require(position_only.bindings().size() == 1,
+            "position-only layout should expose one vertex binding");
+    require(position_only.bindings()[0].stride == sizeof(cubey::render::VertexPositionColorNormal),
             "position-only binding stride should use caller-provided vertex size");
-    require(position_only.binding.inputRate == VK_VERTEX_INPUT_RATE_VERTEX,
+    require(position_only.bindings()[0].inputRate == VK_VERTEX_INPUT_RATE_VERTEX,
             "position-only binding should be per-vertex");
     require(position_only.attributes.size() == 1,
             "position-only layout should expose only position");
@@ -92,6 +98,36 @@ void test_primitive_vertex_layouts_match_shader_contracts() {
             "position-only attribute should use vec3 float format");
     require(position_only.attributes[0].offset == 0,
             "position-only attribute should assume position is the first vertex field");
+}
+
+void test_instance_buffer_helpers_describe_instance_vertex_data() {
+    struct InstanceData {
+        std::array<float, 4> color{};
+    };
+
+    const VkVertexInputBindingDescription binding =
+        cubey::render::instance_input_binding<InstanceData>(1);
+    require(binding.binding == 1, "instance input binding should preserve binding index");
+    require(binding.stride == sizeof(InstanceData),
+            "instance input binding should use instance data stride");
+    require(binding.inputRate == VK_VERTEX_INPUT_RATE_INSTANCE,
+            "instance input binding should be per-instance");
+
+    const VkVertexInputAttributeDescription attribute = cubey::render::vertex_input_attribute(
+        4, 1, VK_FORMAT_R32G32B32A32_SFLOAT, offsetof(InstanceData, color));
+    require(attribute.location == 4, "vertex input attribute should preserve location");
+    require(attribute.binding == 1, "vertex input attribute should preserve binding");
+    require(cubey::render::instance_buffer_byte_size(3, sizeof(InstanceData)) ==
+                sizeof(InstanceData) * 3,
+            "instance buffer byte size should scale by instance count");
+
+    bool threw = false;
+    try {
+        static_cast<void>(cubey::render::instance_buffer_byte_size(0, sizeof(InstanceData)));
+    } catch (const std::runtime_error&) {
+        threw = true;
+    }
+    require(threw, "instance buffer byte size should reject empty instance data");
 }
 
 void test_primitive_cube_position_color_mesh_uses_face_colors_and_indices() {
@@ -152,8 +188,7 @@ void test_primitive_xz_plane_mesh_uses_center_half_extents_and_up_normal() {
                  "plane first vertex should use center and half extents");
     require_vec3(plane.vertices[2].position, {5.0F, -2.0F, 8.0F},
                  "plane opposite vertex should use center and half extents");
-    require_vec3(plane.vertices[0].normal, {0.0F, 1.0F, 0.0F},
-                 "xz plane should use +Y normal");
+    require_vec3(plane.vertices[0].normal, {0.0F, 1.0F, 0.0F}, "xz plane should use +Y normal");
     require_vec3(plane.vertices[0].color, {0.6F, 0.7F, 0.8F},
                  "plane should apply configured color");
     require(plane.indices[0] == 0 && plane.indices[1] == 1 && plane.indices[2] == 2,
