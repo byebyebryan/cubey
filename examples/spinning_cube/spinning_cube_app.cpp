@@ -5,6 +5,7 @@
 #include <cubey/host/windowed_host.h>
 #include <cubey/render/material.h>
 #include <cubey/render/mesh.h>
+#include <cubey/render/pipeline_resource.h>
 #include <cubey/render/primitive_mesh.h>
 #include <cubey/render/render_item.h>
 #include <cubey/render/resource_handle.h>
@@ -17,9 +18,6 @@
 #include <cubey/vulkan/command_recorder.h>
 #include <cubey/vulkan/image.h>
 #include <cubey/vulkan/image_transitions.h>
-#include <cubey/vulkan/pipeline.h>
-#include <cubey/vulkan/shader_bytecode.h>
-#include <cubey/vulkan/shader_module.h>
 
 #include <vulkan/vulkan.h>
 
@@ -141,8 +139,7 @@ class SpinningCubeApp {
     }
 
     void destroy_swapchain_resources() {
-        pipeline_.reset();
-        pipeline_layout_.reset();
+        pipeline_resource_.reset();
         depth_attachment_.reset();
     }
 
@@ -153,46 +150,33 @@ class SpinningCubeApp {
     }
 
     void create_pipeline(cubey::host::WindowedAppContext& context) {
-        const std::vector<std::uint32_t> vertex_code =
-            cubey::vulkan::read_spirv_file(shader_path("spinning_cube.vert.spv"));
-        const std::vector<std::uint32_t> fragment_code =
-            cubey::vulkan::read_spirv_file(shader_path("spinning_cube.frag.spv"));
-        cubey::vulkan::ShaderModule vertex_shader(context.device(), vertex_code);
-        cubey::vulkan::ShaderModule fragment_shader(context.device(), fragment_code);
-
-        const VkPipelineShaderStageCreateInfo vertex_stage =
-            cubey::vulkan::shader_stage(VK_SHADER_STAGE_VERTEX_BIT, vertex_shader.handle());
-        const VkPipelineShaderStageCreateInfo fragment_stage =
-            cubey::vulkan::shader_stage(VK_SHADER_STAGE_FRAGMENT_BIT, fragment_shader.handle());
-
-        const std::array<VkPipelineShaderStageCreateInfo, 2> shader_stages{
-            vertex_stage,
-            fragment_stage,
+        const std::array<cubey::render::ShaderStageFile, 2> shader_stage_files{
+            cubey::render::ShaderStageFile{
+                .stage = VK_SHADER_STAGE_VERTEX_BIT,
+                .path = shader_path("spinning_cube.vert.spv"),
+            },
+            cubey::render::ShaderStageFile{
+                .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
+                .path = shader_path("spinning_cube.frag.spv"),
+            },
         };
+        const cubey::render::ShaderProgram shader_program(context.device(), shader_stage_files);
 
         const cubey::render::VertexInputLayout vertex_input =
             cubey::render::vertex_position_color_input_layout();
 
         const cubey::render::MaterialPassInfo material_pass =
             spinning_cube_forward_pass_info();
-        const cubey::vulkan::PipelineLayoutInfo layout_info({
-            .set_layouts = {},
-            .push_constants = {material_pass.push_constants.data(),
-                               material_pass.push_constants.size()},
-        });
-        pipeline_layout_.emplace(context.device(), layout_info.create_info());
-
-        cubey::vulkan::DynamicGraphicsPipelineConfig pipeline_config;
-        pipeline_config.layout = pipeline_layout().handle();
-        pipeline_config.extent = context.swapchain().extent();
-        pipeline_config.color_format = context.swapchain().format();
-        pipeline_config.depth_format = depth_attachment().format();
-        pipeline_config.shader_stages = shader_stages;
-        pipeline_config.vertex_bindings = vertex_input.bindings();
-        pipeline_config.vertex_attributes = vertex_input.attribute_descriptions();
-        cubey::render::apply_material_pass_state(material_pass, pipeline_config);
-        const cubey::vulkan::DynamicGraphicsPipelineInfo pipeline_info(pipeline_config);
-        pipeline_.emplace(context.device(), pipeline_info.create_info());
+        pipeline_resource_.emplace(
+            context.device(), cubey::render::GraphicsPipelineResourceConfig{
+                                  .extent = context.swapchain().extent(),
+                                  .color_format = context.swapchain().format(),
+                                  .depth_format = depth_attachment().format(),
+                                  .shader_stages = shader_program.stages(),
+                                  .vertex_bindings = vertex_input.bindings(),
+                                  .vertex_attributes = vertex_input.attribute_descriptions(),
+                                  .material_pass = material_pass,
+                              });
     }
 
     void create_depth_resources(cubey::host::WindowedAppContext& context) {
@@ -296,8 +280,8 @@ class SpinningCubeApp {
         const PushConstants push_constants = current_push_constants(frame_plan, draw_packet);
 
         recorder.begin_rendering(rendering.info());
-        recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline().handle());
-        recorder.push_constants(pipeline_layout().handle(), VK_SHADER_STAGE_VERTEX_BIT, 0,
+        recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_resource().pipeline());
+        recorder.push_constants(pipeline_resource().layout(), VK_SHADER_STAGE_VERTEX_BIT, 0,
                                 push_constants);
         const cubey::render::RenderItem render_item =
             cubey::scene::render_item_from_packet(draw_packet);
@@ -344,18 +328,11 @@ class SpinningCubeApp {
         }
     }
 
-    [[nodiscard]] const cubey::vulkan::PipelineLayout& pipeline_layout() const {
-        if (!pipeline_layout_.has_value()) {
-            throw std::runtime_error("pipeline layout is not initialized");
+    [[nodiscard]] const cubey::render::GraphicsPipelineResource& pipeline_resource() const {
+        if (!pipeline_resource_.has_value()) {
+            throw std::runtime_error("pipeline resource is not initialized");
         }
-        return pipeline_layout_.value();
-    }
-
-    [[nodiscard]] const cubey::vulkan::GraphicsPipeline& pipeline() const {
-        if (!pipeline_.has_value()) {
-            throw std::runtime_error("pipeline is not initialized");
-        }
-        return pipeline_.value();
+        return pipeline_resource_.value();
     }
 
     [[nodiscard]] const cubey::vulkan::DepthAttachment& depth_attachment() const {
@@ -375,8 +352,7 @@ class SpinningCubeApp {
     std::chrono::steady_clock::time_point start_time_ = std::chrono::steady_clock::now();
 
     cubey::render::MeshResourceTable<cubey::render::Mesh> meshes_;
-    std::optional<cubey::vulkan::PipelineLayout> pipeline_layout_;
-    std::optional<cubey::vulkan::GraphicsPipeline> pipeline_;
+    std::optional<cubey::render::GraphicsPipelineResource> pipeline_resource_;
     std::optional<cubey::vulkan::DepthAttachment> depth_attachment_;
 };
 
