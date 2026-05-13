@@ -36,6 +36,7 @@ add_executable(cubey_core_tests
     render_graph_tests.cpp
     render_item_tests.cpp
     render_mesh_tests.cpp
+    render_pass_tests.cpp
     render_pipeline_resource_tests.cpp
     render_primitive_mesh_tests.cpp
     render_resource_registry_tests.cpp

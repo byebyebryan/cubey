@@ -135,6 +135,7 @@ void test_render_graph_storage_read_write_initializes_transient_buffers();
 void test_render_graph_transfer_pass_accepts_only_transfer_usages();
 void test_render_item_resolves_draw_item_fields();
 void test_render_item_validates_required_draw_identity();
+void test_render_pass_helpers_describe_clear_values_and_fullscreen_triangle();
 void test_render_pipeline_resource_allows_vertexless_fullscreen_pipeline_shape();
 void test_render_pipeline_resource_builds_layout_and_dynamic_pipeline_info();
 void test_render_pipeline_resource_builds_compute_pipeline_info();
@@ -152,7 +153,6 @@ void test_render_resource_table_resolves_move_only_resources_by_handle();
 void test_render_target_views_describe_color_only_targets();
 void test_render_target_rendering_info_describes_dynamic_rendering();
 void test_depth_only_rendering_info_describes_sampled_depth_target();
-void test_render_target_helpers_describe_clear_values_and_fullscreen_triangle();
 void test_texture_2d_config_maps_storage_sampled_usage();
 void test_texture_2d_config_maps_transfer_sampled_usage();
 void test_depth_texture_config_maps_sampled_depth_usage();
@@ -347,6 +347,7 @@ std::span<const TestCase> core_tests() {
         CUBEY_TEST(test_primitive_xz_plane_mesh_uses_center_half_extents_and_up_normal),
         CUBEY_TEST(test_render_item_validates_required_draw_identity),
         CUBEY_TEST(test_render_item_resolves_draw_item_fields),
+        CUBEY_TEST(test_render_pass_helpers_describe_clear_values_and_fullscreen_triangle),
         CUBEY_TEST(test_render_plan_builds_sorted_3d_draw_packets_with_material_metadata),
         CUBEY_TEST(test_render_plan_converts_draw_packets_to_render_items),
         CUBEY_TEST(test_render_plan_rejects_stale_resource_handles),
@@ -357,7 +358,6 @@ std::span<const TestCase> core_tests() {
         CUBEY_TEST(test_render_target_views_describe_color_only_targets),
         CUBEY_TEST(test_render_target_rendering_info_describes_dynamic_rendering),
         CUBEY_TEST(test_depth_only_rendering_info_describes_sampled_depth_target),
-        CUBEY_TEST(test_render_target_helpers_describe_clear_values_and_fullscreen_triangle),
         CUBEY_TEST(test_texture_2d_config_maps_storage_sampled_usage),
         CUBEY_TEST(test_texture_2d_config_maps_transfer_sampled_usage),
         CUBEY_TEST(test_depth_texture_config_maps_sampled_depth_usage),

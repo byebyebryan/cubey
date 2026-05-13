@@ -3,6 +3,7 @@
 #include <cubey/host/frame_stats.h>
 #include <cubey/host/glfw_window.h>
 #include <cubey/host/windowed_host.h>
+#include <cubey/render/pass.h>
 #include <cubey/render/pipeline_resource.h>
 #include <cubey/render/target.h>
 #include <cubey/vulkan/buffer.h>

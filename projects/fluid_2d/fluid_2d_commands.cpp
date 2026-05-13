@@ -1,5 +1,6 @@
 #include "fluid_2d_commands.h"
 
+#include <cubey/render/pass.h>
 #include <cubey/render/render_graph.h>
 #include <cubey/vulkan/command_recorder.h>
 #include <cubey/vulkan/vk_check.h>

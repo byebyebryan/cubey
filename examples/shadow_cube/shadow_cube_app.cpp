@@ -6,6 +6,7 @@
 #include <cubey/input/orbit_controller.h>
 #include <cubey/render/material.h>
 #include <cubey/render/mesh.h>
+#include <cubey/render/pass.h>
 #include <cubey/render/pipeline_resource.h>
 #include <cubey/render/primitive_mesh.h>
 #include <cubey/render/render_graph.h>

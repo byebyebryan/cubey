@@ -368,7 +368,8 @@ cubey/
         windowed_host.h    -- shared windowed host loop
       render/
         material.h         -- material metadata and material/pass contracts
-        target.h           -- color/depth render target views and pass recording helpers
+        target.h           -- color/depth render target views
+        pass.h             -- dynamic-rendering pass recording helpers
         mesh.h             -- indexed mesh buffers and draw item vocabulary
         pipeline_resource.h -- shader modules and graphics/compute pipeline resources
         primitive_mesh.h   -- CPU primitive mesh data and vertex input layouts

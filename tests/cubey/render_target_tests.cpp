@@ -44,8 +44,10 @@ void test_render_target_rendering_info_describes_dynamic_rendering() {
     };
     const cubey::render::RenderTargetView target = cubey::render::render_target_view(color, depth);
 
-    const VkClearValue color_clear = cubey::render::color_clear_value(0.1F, 0.2F, 0.3F, 1.0F);
-    const VkClearValue depth_clear = cubey::render::depth_clear_value();
+    VkClearValue color_clear{};
+    color_clear.color = {{0.1F, 0.2F, 0.3F, 1.0F}};
+    VkClearValue depth_clear{};
+    depth_clear.depthStencil = {1.0F, 0};
     const cubey::render::RenderClearValues clear_values{
         .color = color_clear,
         .depth = depth_clear,
@@ -83,7 +85,8 @@ void test_depth_only_rendering_info_describes_sampled_depth_target() {
     require(depth.image == image, "depth target should preserve image handle");
     require(depth.view == view, "depth target should preserve view handle");
 
-    const VkClearValue depth_clear = cubey::render::depth_clear_value();
+    VkClearValue depth_clear{};
+    depth_clear.depthStencil = {1.0F, 0};
     const cubey::render::DepthOnlyRenderingInfo rendering(depth, depth_clear);
     const VkRenderingInfo& info = rendering.info();
 
@@ -101,18 +104,4 @@ void test_depth_only_rendering_info_describes_sampled_depth_target() {
             "depth-only attachment should preserve depth view");
     require(rendering.depth_attachment().storeOp == VK_ATTACHMENT_STORE_OP_STORE,
             "sampled depth target should store rendered depth");
-}
-
-void test_render_target_helpers_describe_clear_values_and_fullscreen_triangle() {
-    const VkClearValue color_clear = cubey::render::color_clear_value(0.2F, 0.4F, 0.6F, 0.8F);
-    require(color_clear.color.float32[0] == 0.2F, "color clear helper should preserve red");
-    require(color_clear.color.float32[1] == 0.4F, "color clear helper should preserve green");
-    require(color_clear.color.float32[2] == 0.6F, "color clear helper should preserve blue");
-    require(color_clear.color.float32[3] == 0.8F, "color clear helper should preserve alpha");
-
-    const VkClearValue depth_clear = cubey::render::depth_clear_value(0.75F, 3);
-    require(depth_clear.depthStencil.depth == 0.75F, "depth clear helper should preserve depth");
-    require(depth_clear.depthStencil.stencil == 3, "depth clear helper should preserve stencil");
-    require(cubey::render::fullscreen_triangle_vertex_count() == 3,
-            "fullscreen triangle should use one vertexless triangle");
 }

@@ -91,11 +91,12 @@ full engine architecture.
 - `DepthOnlyRenderingInfo` builds the depth-only dynamic-rendering state needed
   by shadow-map and prepass-style work. It deliberately stores depth so the
   caller can transition and sample it later.
-- `record_render_target_pass`, `record_depth_only_pass`, and
-  `record_present_render_target_pass` are the current command-recording helpers
-  for dynamic-rendering scopes, clear values, fullscreen triangle draws, and
-  presentable swapchain color/depth layout sequencing. They keep pass contents
-  caller-owned and do not replace render graph resource/barrier ownership.
+- `cubey::render::pass.h` exposes `record_render_target_pass`,
+  `record_depth_only_pass`, and `record_present_render_target_pass` as the
+  current command-recording helpers for dynamic-rendering scopes, clear values,
+  fullscreen triangle draws, and presentable swapchain color/depth layout
+  sequencing. They keep pass contents caller-owned and do not replace render
+  graph resource/barrier ownership.
 - `WindowedHost` passes `WindowedRenderFrame` to render callbacks, including the
   command buffer, swapchain image index, timing, and color target view.
 - `cubey::host::HeadlessRenderTarget` is now the same target-view vocabulary as
