@@ -26,6 +26,7 @@ struct PbrSceneUniforms {
     math::Vec4 light_direction{0.0F, -1.0F, 0.0F, 0.0F};
     math::Vec4 light_color_intensity{1.0F, 1.0F, 1.0F, 1.0F};
     math::Vec4 ambient_color_intensity{0.03F, 0.03F, 0.03F, 1.0F};
+    math::Vec4 environment_intensity_mip_count{1.0F, 1.0F, 0.0F, 0.0F};
 };
 
 struct PbrMaterialFactors {
@@ -51,6 +52,9 @@ static_assert(sizeof(PbrPushConstants) <= 128U);
 enum class PbrSceneBinding : std::uint32_t {
     SceneUniforms = 0,
     ShadowMap = 1,
+    IrradianceCube = 2,
+    PrefilteredCube = 3,
+    BrdfLut = 4,
 };
 
 enum class PbrMaterialBinding : std::uint32_t {

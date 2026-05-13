@@ -7,9 +7,13 @@ layout(set = 0, binding = 0) uniform PbrSceneUniforms {
     vec4 light_direction;
     vec4 light_color_intensity;
     vec4 ambient_color_intensity;
+    vec4 environment_intensity_mip_count;
 } scene;
 
 layout(set = 0, binding = 1) uniform sampler2D shadow_map;
+layout(set = 0, binding = 2) uniform samplerCube irradiance_cube;
+layout(set = 0, binding = 3) uniform samplerCube prefiltered_cube;
+layout(set = 0, binding = 4) uniform sampler2D brdf_lut;
 layout(set = 1, binding = 0) uniform sampler2D base_color_texture;
 layout(set = 1, binding = 1) uniform sampler2D metallic_roughness_texture;
 layout(set = 1, binding = 2) uniform sampler2D normal_texture;
@@ -58,6 +62,11 @@ float geometry_smith(vec3 normal, vec3 view_direction, vec3 light_direction, flo
 
 vec3 fresnel_schlick(float cos_theta, vec3 f0) {
     return f0 + (1.0 - f0) * pow(clamp(1.0 - cos_theta, 0.0, 1.0), 5.0);
+}
+
+vec3 fresnel_schlick_roughness(float cos_theta, vec3 f0, float roughness) {
+    return f0 + (max(vec3(1.0 - roughness), f0) - f0) *
+                    pow(clamp(1.0 - cos_theta, 0.0, 1.0), 5.0);
 }
 
 float shadow_visibility(vec4 shadow_position, vec3 normal, vec3 light_direction) {
@@ -121,10 +130,24 @@ void main() {
     vec3 radiance = scene.light_color_intensity.rgb * scene.light_color_intensity.a;
     float visibility = shadow_visibility(frag_shadow_position, normal, light_direction);
     vec3 direct = ((kd * albedo / kPi) + specular) * radiance * ndotl * visibility;
-    vec3 ambient = scene.ambient_color_intensity.rgb * scene.ambient_color_intensity.a *
-                   albedo * occlusion;
+
+    vec3 ibl_f = fresnel_schlick_roughness(ndotv, f0, roughness);
+    vec3 ibl_kd = (vec3(1.0) - ibl_f) * (1.0 - metallic);
+    vec3 irradiance = texture(irradiance_cube, normal).rgb;
+    vec3 diffuse_ibl = irradiance * albedo;
+    vec3 reflection = reflect(-view_direction, normal);
+    float max_prefiltered_lod = max(scene.environment_intensity_mip_count.y - 1.0, 0.0);
+    vec3 prefiltered = textureLod(prefiltered_cube, reflection,
+                                  roughness * max_prefiltered_lod)
+                           .rgb;
+    vec2 brdf = texture(brdf_lut, vec2(ndotv, roughness)).rg;
+    vec3 specular_ibl = prefiltered * ((ibl_f * brdf.x) + brdf.y);
+    vec3 ambient = ((ibl_kd * diffuse_ibl) + specular_ibl) *
+                   scene.environment_intensity_mip_count.x * occlusion;
+    ambient += scene.ambient_color_intensity.rgb * scene.ambient_color_intensity.a *
+               albedo * occlusion;
     vec3 emissive = texture(emissive_texture, frag_uv0).rgb *
                     push_constants.emissive_alpha_cutoff.rgb;
     vec3 color = ambient + direct + emissive;
-    out_color = vec4(color, 1.0);
+    out_color = vec4(color, base_color.a);
 }

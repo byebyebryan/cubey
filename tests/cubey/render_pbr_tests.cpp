@@ -44,8 +44,8 @@ void test_pbr_forward_pass_declares_scene_and_material_sets() {
     require(pass.depth_test && pass.depth_write, "PBR pass should enable depth");
     require(pass.descriptor_sets.size() == 2, "PBR pass should declare scene and material sets");
     require(pass.descriptor_sets[0].set == 0, "PBR scene descriptors should use set 0");
-    require(pass.descriptor_sets[0].bindings.size() == 2,
-            "PBR scene descriptors should include uniform and shadow map");
+    require(pass.descriptor_sets[0].bindings.size() == 5,
+            "PBR scene descriptors should include uniform, shadow map, and IBL textures");
     require(pass.descriptor_sets[1].set == 1, "PBR material descriptors should use set 1");
     require(pass.descriptor_sets[1].bindings.size() == 5,
             "PBR material descriptors should include five texture slots");

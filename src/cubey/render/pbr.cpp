@@ -57,6 +57,23 @@ MaterialPassInfo pbr_forward_pass_info(const PbrForwardPassConfig& config) {
                                 .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
                                 .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
                             },
+                            cubey::vulkan::DescriptorSetBindingConfig{
+                                .binding =
+                                    static_cast<std::uint32_t>(PbrSceneBinding::IrradianceCube),
+                                .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
+                            },
+                            cubey::vulkan::DescriptorSetBindingConfig{
+                                .binding =
+                                    static_cast<std::uint32_t>(PbrSceneBinding::PrefilteredCube),
+                                .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
+                            },
+                            cubey::vulkan::DescriptorSetBindingConfig{
+                                .binding = static_cast<std::uint32_t>(PbrSceneBinding::BrdfLut),
+                                .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
+                            },
                         },
                 },
                 MaterialDescriptorSetLayout{

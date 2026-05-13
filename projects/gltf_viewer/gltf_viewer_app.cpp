@@ -8,6 +8,7 @@
 #include <cubey/host/headless_png_host.h>
 #include <cubey/host/windowed_app.h>
 #include <cubey/input/orbit_controller.h>
+#include <cubey/render/generated_ibl.h>
 #include <cubey/render/material_instance.h>
 #include <cubey/render/mesh.h>
 #include <cubey/render/pass.h>
@@ -273,6 +274,7 @@ class GltfViewerApp {
         }
 
         create_shadow_resources(device);
+        create_ibl_resources(device, gpu);
         create_scene_material(device, frame_slot_count);
     }
 
@@ -294,6 +296,7 @@ class GltfViewerApp {
     void destroy_all_resources() {
         destroy_swapchain_resources();
         scene_material_.reset();
+        ibl_environment_.reset();
         shadow_pass_.reset();
         destroy_scene_if_needed();
         cubey::destroy_gltf_scene_import(engine_, import_resources_, import_result_);
@@ -549,38 +552,48 @@ class GltfViewerApp {
             });
     }
 
+    void create_ibl_resources(const cubey::vulkan::Device& device,
+                              cubey::vulkan::GpuRuntime& gpu) {
+        ibl_environment_.emplace(cubey::render::create_generated_pbr_environment(device, gpu));
+    }
+
     void create_scene_material(const cubey::vulkan::Device& device,
                                std::uint32_t frame_slot_count) {
+        const auto binding = [](cubey::render::PbrSceneBinding value) {
+            return static_cast<std::uint32_t>(value);
+        };
+        const cubey::render::DepthTexture& shadow_texture = shadow_pass().depth_texture();
+        const cubey::render::GeneratedPbrEnvironment& ibl = ibl_environment();
+        std::vector<cubey::render::SampledImageMaterialBinding> sampled_images{
+            cubey::render::SampledImageMaterialBinding{
+                .binding = binding(cubey::render::PbrSceneBinding::ShadowMap),
+                .sampler = shadow_texture.sampler().handle(),
+                .image_view = shadow_texture.view(),
+                .layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
+            },
+            cubey::render::SampledImageMaterialBinding{
+                .binding = binding(cubey::render::PbrSceneBinding::IrradianceCube),
+                .sampler = ibl.irradiance_cube.sampler().handle(),
+                .image_view = ibl.irradiance_cube.view(),
+            },
+            cubey::render::SampledImageMaterialBinding{
+                .binding = binding(cubey::render::PbrSceneBinding::PrefilteredCube),
+                .sampler = ibl.prefiltered_cube.sampler().handle(),
+                .image_view = ibl.prefiltered_cube.view(),
+            },
+            cubey::render::SampledImageMaterialBinding{
+                .binding = binding(cubey::render::PbrSceneBinding::BrdfLut),
+                .sampler = ibl.brdf_lut.sampler().handle(),
+                .image_view = ibl.brdf_lut.view(),
+            },
+        };
         scene_material_.emplace(device, cubey::render::FrameUniformMaterialInstanceConfig{
-                                                      .material_pass =
-                                                          cubey::render::pbr_forward_pass_info(),
-                                                      .descriptor_set = 0,
-                                                      .frame_slot_count =
-                                                          frame_slot_count,
-                                                      .uniform_binding = static_cast<std::uint32_t>(
-                                                          cubey::render::PbrSceneBinding::
-                                                              SceneUniforms),
-                                                      .sampled_images =
-                                                          {
-                                                              cubey::render::
-                                                                  SampledImageMaterialBinding{
-                                                                      .binding =
-                                                                          static_cast<std::uint32_t>(
-                                                                              cubey::render::
-                                                                                  PbrSceneBinding::
-                                                                                      ShadowMap),
-                                                                      .sampler = shadow_pass()
-                                                                                     .depth_texture()
-                                                                                     .sampler()
-                                                                                     .handle(),
-                                                                      .image_view = shadow_pass()
-                                                                                        .depth_texture()
-                                                                                        .view(),
-                                                                      .layout =
-                                                                          VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
-                                                                  },
-                                                          },
-                                                  });
+            .material_pass = cubey::render::pbr_forward_pass_info(),
+            .descriptor_set = 0,
+            .frame_slot_count = frame_slot_count,
+            .uniform_binding = binding(cubey::render::PbrSceneBinding::SceneUniforms),
+            .sampled_images = std::move(sampled_images),
+        });
     }
 
     void create_forward_pipeline(const cubey::vulkan::Device& device, VkExtent2D extent,
@@ -779,6 +792,13 @@ class GltfViewerApp {
             .light_direction = {light.direction, 0.0F},
             .light_color_intensity = {light.color, light.intensity},
             .ambient_color_intensity = {ambient, 1.0F},
+            .environment_intensity_mip_count =
+                {
+                    ibl_environment().intensity,
+                    static_cast<float>(ibl_environment().prefiltered_mip_levels),
+                    0.0F,
+                    0.0F,
+                },
         };
     }
 
@@ -915,6 +935,13 @@ class GltfViewerApp {
         return shadow_pass_.value();
     }
 
+    [[nodiscard]] const cubey::render::GeneratedPbrEnvironment& ibl_environment() const {
+        if (!ibl_environment_.has_value()) {
+            throw std::runtime_error("PBR IBL environment is not initialized");
+        }
+        return ibl_environment_.value();
+    }
+
     [[nodiscard]] const cubey::render::FrameUniformMaterialInstance<
         cubey::render::PbrSceneUniforms>&
     scene_material() const {
@@ -967,6 +994,7 @@ class GltfViewerApp {
     std::optional<cubey::render::Texture2D> occlusion_default_;
     std::optional<cubey::render::Texture2D> emissive_default_;
     std::optional<cubey::render::ShadowMapPass3D> shadow_pass_;
+    std::optional<cubey::render::GeneratedPbrEnvironment> ibl_environment_;
     std::optional<
         cubey::render::FrameUniformMaterialInstance<cubey::render::PbrSceneUniforms>>
         scene_material_;
