@@ -1,11 +1,13 @@
 #pragma once
 
 #include <cubey/vulkan/device.h>
+#include <cubey/vulkan/gpu_runtime.h>
 #include <cubey/vulkan/image.h>
 #include <cubey/vulkan/sampler.h>
 
 #include <vulkan/vulkan.h>
 
+#include <span>
 #include <cstdint>
 #include <optional>
 
@@ -28,6 +30,14 @@ struct DepthTextureConfig {
     VkExtent2D extent{1, 1};
     VkFormat format = VK_FORMAT_UNDEFINED;
     bool create_sampler = false;
+    cubey::vulkan::SamplerConfig sampler;
+};
+
+struct UploadedTexture2DConfig {
+    VkExtent2D extent{1, 1};
+    VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
+    std::span<const std::uint8_t> rgba8{};
+    bool create_sampler = true;
     cubey::vulkan::SamplerConfig sampler;
 };
 
@@ -100,5 +110,9 @@ class DepthTexture {
     cubey::vulkan::Image image_;
     std::optional<cubey::vulkan::Sampler> sampler_;
 };
+
+[[nodiscard]] Texture2D create_uploaded_texture_2d(const cubey::vulkan::Device& device,
+                                                   cubey::vulkan::GpuRuntime& gpu,
+                                                   const UploadedTexture2DConfig& config);
 
 } // namespace cubey::render

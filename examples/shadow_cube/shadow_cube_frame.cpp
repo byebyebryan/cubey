@@ -36,7 +36,7 @@ ShadowCubeApp::ShadowRenderGraph ShadowCubeApp::current_render_graph(
 
     graph.add_pass("shadow", cubey::render::RenderGraphQueueDomain::Graphics)
         .write_depth(shadow_depth_handle)
-        .material_pass(shadow_depth_pass_info())
+        .material_pass(shadow_pass().material_pass())
         .execute([this, &shadow_plan](const cubey::render::RenderGraphExecutionContext& context) {
             const cubey::vulkan::CommandRecorder& recorder = context.recorder();
             record_shadow_pass(recorder, shadow_plan);
@@ -111,9 +111,8 @@ void ShadowCubeApp::record_shadow_frame(cubey::host::WindowedAppContext& context
 void ShadowCubeApp::record_shadow_pass(
     const cubey::vulkan::CommandRecorder& recorder,
     const cubey::scene::RenderFramePlan3D& shadow_plan) const {
-    cubey::render::record_depth_only_pass(
-        recorder, cubey::render::depth_target_view(shadow_depth()),
-        cubey::render::depth_clear_value(),
+    shadow_pass().record(
+        recorder, cubey::render::depth_clear_value(),
         [this, &shadow_plan](const cubey::vulkan::CommandRecorder& pass_recorder) {
             cubey::scene::record_pipeline_draw_packets_3d(
                 pass_recorder, shadow_plan.draw_packets, meshes_,

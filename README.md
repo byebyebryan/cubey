@@ -43,6 +43,8 @@ Current projects:
   pressure projection, debug views, and deterministic headless PNG output.
 - `fractal_2d`: fullscreen Mandelbrot-style shader with windowed navigation and
   headless output.
+- `gltf_viewer`: static glTF/glb viewer for the first imported-asset,
+  PBR-material, texture-upload, and shadow-map path.
 
 ## Documentation
 
@@ -59,6 +61,7 @@ Authoritative current docs:
 - [Entity and component foundation](docs/architecture/entity-component-foundation.md)
 - [Host and engine](docs/architecture/host-engine.md)
 - [Threading and async](docs/architecture/threading-and-async.md)
+- [glTF assets and PBR](docs/architecture/gltf-assets.md)
 - [Fluid simulation direction](docs/architecture/fluid-simulation.md)
 - [C++ style guide](docs/cpp-style.md)
 - [Changelog / release notes](CHANGELOG.md)
@@ -93,6 +96,7 @@ Useful windowed smokes:
 ./build/dev/examples/particle_cubes/particle_cubes --frames 300 --width 1280 --height 720
 ./build/dev/projects/fractal_2d/fractal_2d --frames 300 --width 1280 --height 720
 ./build/dev/projects/fluid_2d/fluid_2d --frames 300 --width 1280 --height 720
+./build/dev/projects/gltf_viewer/gltf_viewer --input path/to/model.glb --frames 300 --width 1280 --height 720
 ```
 
 Useful headless PNG smokes:
@@ -121,6 +125,7 @@ layers are installed.
   Escape closes.
 - `fluid_2d`: left-drag injects dye/force, Space pauses/resumes, `R` resets,
   `D` cycles dye/velocity/divergence/pressure views, Escape closes.
+- `gltf_viewer`: left-drag orbits the camera, Escape closes.
 
 ## License
 

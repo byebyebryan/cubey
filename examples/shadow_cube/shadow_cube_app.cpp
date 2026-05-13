@@ -77,10 +77,14 @@ void ShadowCubeApp::destroy_render_handles() {
 }
 
 const cubey::render::DepthTexture& ShadowCubeApp::shadow_depth() const {
-    if (!shadow_depth_.has_value()) {
-        throw std::runtime_error("shadow depth texture is not initialized");
+    return shadow_pass().depth_texture();
+}
+
+const cubey::render::ShadowMapPass3D& ShadowCubeApp::shadow_pass() const {
+    if (!shadow_pass_.has_value()) {
+        throw std::runtime_error("shadow pass is not initialized");
     }
-    return shadow_depth_.value();
+    return shadow_pass_.value();
 }
 
 const cubey::render::MaterialInstance& ShadowCubeApp::scene_material_instance() const {
@@ -105,10 +109,7 @@ const cubey::render::MaterialInstance& ShadowCubeApp::present_material_instance(
 }
 
 const cubey::render::GraphicsPipelineResource& ShadowCubeApp::shadow_pipeline_resource() const {
-    if (!shadow_pipeline_resource_.has_value()) {
-        throw std::runtime_error("shadow pipeline resource is not initialized");
-    }
-    return shadow_pipeline_resource_.value();
+    return shadow_pass().pipeline();
 }
 
 const cubey::render::GraphicsPipelineResource& ShadowCubeApp::scene_pipeline_resource() const {

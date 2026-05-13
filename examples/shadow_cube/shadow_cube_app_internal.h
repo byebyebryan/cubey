@@ -11,6 +11,7 @@
 #include <cubey/render/render_graph.h>
 #include <cubey/render/resource_handle.h>
 #include <cubey/render/resource_table.h>
+#include <cubey/render/shadow_map.h>
 #include <cubey/render/target.h>
 #include <cubey/render/texture.h>
 #include <cubey/scene/entity.h>
@@ -45,11 +46,10 @@ class ShadowCubeApp {
     void destroy_all_resources();
 
     void create_scene();
-    void create_shadow_depth_resources(cubey::host::WindowedAppContext& context);
+    void create_shadow_resources(cubey::host::WindowedAppContext& context);
     void create_descriptors(cubey::host::WindowedAppContext& context);
     void create_present_resources(cubey::host::WindowedAppContext& context);
     void create_pipelines(cubey::host::WindowedAppContext& context);
-    void create_shadow_pipeline(cubey::host::WindowedAppContext& context);
     void create_scene_pipeline(cubey::host::WindowedAppContext& context);
     void create_present_pipeline(cubey::host::WindowedAppContext& context);
 
@@ -82,6 +82,7 @@ class ShadowCubeApp {
     void destroy_render_handles();
 
     [[nodiscard]] const cubey::render::DepthTexture& shadow_depth() const;
+    [[nodiscard]] const cubey::render::ShadowMapPass3D& shadow_pass() const;
     [[nodiscard]] const cubey::render::MaterialInstance& scene_material_instance() const;
     [[nodiscard]] const cubey::vulkan::Sampler& present_sampler() const;
     [[nodiscard]] const cubey::render::MaterialInstance& present_material_instance() const;
@@ -106,11 +107,10 @@ class ShadowCubeApp {
 
     cubey::render::MeshResourceTable<cubey::render::Mesh> meshes_;
     cubey::render::RenderGraphFrameExecutor graph_executor_;
-    std::optional<cubey::render::DepthTexture> shadow_depth_;
+    std::optional<cubey::render::ShadowMapPass3D> shadow_pass_;
     std::optional<cubey::render::MaterialInstance> scene_material_instance_;
     std::optional<cubey::vulkan::Sampler> present_sampler_;
     std::optional<cubey::render::MaterialInstance> present_material_instance_;
-    std::optional<cubey::render::GraphicsPipelineResource> shadow_pipeline_resource_;
     std::optional<cubey::render::GraphicsPipelineResource> scene_pipeline_resource_;
     std::optional<cubey::render::GraphicsPipelineResource> present_pipeline_resource_;
     std::optional<cubey::vulkan::DepthAttachment> depth_attachment_;

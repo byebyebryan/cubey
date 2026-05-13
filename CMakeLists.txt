@@ -13,6 +13,16 @@ option(CUBEY_ENABLE_CLANG_TIDY "Run clang-tidy during builds" OFF)
 option(CUBEY_BUILD_HOST "Build Cubey concrete host layer" ON)
 option(CUBEY_BUILD_EXAMPLES "Build Cubey examples" ON)
 option(CUBEY_BUILD_PROJECTS "Build Cubey projects" ON)
+option(
+    CUBEY_FETCH_GLTF_SAMPLE_ASSETS
+    "Fetch selected Khronos glTF sample assets into the build tree"
+    OFF
+)
+set(
+    CUBEY_GLTF_SAMPLE_ASSETS_DIR
+    ""
+    CACHE PATH "Existing Khronos glTF-Sample-Assets checkout"
+)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(CubeyApps)
@@ -41,6 +51,34 @@ FetchContent_Declare(
     GIT_TAG        v1.4.341
 )
 FetchContent_MakeAvailable(vulkan_headers)
+
+FetchContent_Declare(
+    cgltf
+    GIT_REPOSITORY https://github.com/jkuhlmann/cgltf.git
+    GIT_TAG        v1.15
+)
+FetchContent_MakeAvailable(cgltf)
+add_library(cubey_external_cgltf INTERFACE)
+target_include_directories(
+    cubey_external_cgltf
+    SYSTEM
+    INTERFACE
+        "${cgltf_SOURCE_DIR}"
+)
+
+FetchContent_Declare(
+    stb
+    GIT_REPOSITORY https://github.com/nothings/stb.git
+    GIT_TAG        31c1ad37456438565541f4919958214b6e762fb4
+)
+FetchContent_MakeAvailable(stb)
+add_library(cubey_external_stb_image INTERFACE)
+target_include_directories(
+    cubey_external_stb_image
+    SYSTEM
+    INTERFACE
+        "${stb_SOURCE_DIR}"
+)
 
 find_package(glm CONFIG QUIET)
 if (NOT glm_FOUND)
@@ -117,6 +155,17 @@ if (CUBEY_BUILD_EXAMPLES)
                 "${CMAKE_SOURCE_DIR}/projects/fractal_2d"
         )
     endif()
+endif()
+
+if (CUBEY_FETCH_GLTF_SAMPLE_ASSETS)
+    FetchContent_Declare(
+        gltf_sample_assets
+        GIT_REPOSITORY https://github.com/KhronosGroup/glTF-Sample-Assets.git
+        GIT_TAG        main
+        GIT_SHALLOW    TRUE
+    )
+    FetchContent_MakeAvailable(gltf_sample_assets)
+    set(CUBEY_GLTF_SAMPLE_ASSETS_DIR "${gltf_sample_assets_SOURCE_DIR}" CACHE PATH "" FORCE)
 endif()
 
 if (CUBEY_BUILD_PROJECTS)

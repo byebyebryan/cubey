@@ -1,0 +1,148 @@
+#pragma once
+
+#include <cubey/core/math.h>
+
+#include <cstddef>
+#include <cstdint>
+#include <filesystem>
+#include <limits>
+#include <string>
+#include <vector>
+
+namespace cubey::asset {
+
+inline constexpr std::uint32_t kInvalidAssetIndex = std::numeric_limits<std::uint32_t>::max();
+
+enum class GltfAlphaMode : std::uint8_t {
+    Opaque,
+    Mask,
+    Blend,
+};
+
+enum class GltfTextureFilter : std::uint8_t {
+    Nearest,
+    Linear,
+};
+
+enum class GltfTextureWrap : std::uint8_t {
+    Repeat,
+    ClampToEdge,
+    MirroredRepeat,
+};
+
+enum class GltfTextureColorSpace : std::uint8_t {
+    Linear,
+    Srgb,
+};
+
+struct GltfTextureRef {
+    std::uint32_t texture_index = kInvalidAssetIndex;
+    std::uint32_t texcoord = 0;
+
+    [[nodiscard]] bool has_value() const noexcept {
+        return texture_index != kInvalidAssetIndex;
+    }
+};
+
+struct GltfSampler {
+    std::string label{};
+    GltfTextureFilter min_filter = GltfTextureFilter::Linear;
+    GltfTextureFilter mag_filter = GltfTextureFilter::Linear;
+    GltfTextureWrap wrap_s = GltfTextureWrap::Repeat;
+    GltfTextureWrap wrap_t = GltfTextureWrap::Repeat;
+};
+
+struct GltfImage {
+    std::string label{};
+    std::uint32_t width = 0;
+    std::uint32_t height = 0;
+    std::vector<std::uint8_t> rgba8{};
+};
+
+struct GltfTexture {
+    std::string label{};
+    std::uint32_t image_index = kInvalidAssetIndex;
+    std::uint32_t sampler_index = kInvalidAssetIndex;
+};
+
+struct GltfMaterial {
+    std::string label{};
+    math::Vec4 base_color_factor{1.0F, 1.0F, 1.0F, 1.0F};
+    float metallic_factor = 1.0F;
+    float roughness_factor = 1.0F;
+    math::Vec3 emissive_factor{0.0F, 0.0F, 0.0F};
+    float normal_scale = 1.0F;
+    float occlusion_strength = 1.0F;
+    GltfTextureRef base_color_texture{};
+    GltfTextureRef metallic_roughness_texture{};
+    GltfTextureRef normal_texture{};
+    GltfTextureRef occlusion_texture{};
+    GltfTextureRef emissive_texture{};
+    GltfAlphaMode alpha_mode = GltfAlphaMode::Opaque;
+    float alpha_cutoff = 0.5F;
+    bool double_sided = false;
+};
+
+struct GltfVertex {
+    math::Vec3 position{0.0F, 0.0F, 0.0F};
+    math::Vec3 normal{0.0F, 1.0F, 0.0F};
+    math::Vec4 tangent{1.0F, 0.0F, 0.0F, 1.0F};
+    math::Vec2 texcoord0{0.0F, 0.0F};
+};
+
+struct GltfBounds3D {
+    math::Vec3 center{0.0F, 0.0F, 0.0F};
+    math::Vec3 half_extent{0.0F, 0.0F, 0.0F};
+};
+
+struct GltfMeshPrimitive {
+    std::vector<GltfVertex> vertices{};
+    std::vector<std::uint32_t> indices{};
+    std::uint32_t material_index = 0;
+    GltfBounds3D local_bounds{};
+};
+
+struct GltfMesh {
+    std::string label{};
+    std::vector<GltfMeshPrimitive> primitives{};
+};
+
+struct GltfNode {
+    std::string label{};
+    math::Vec3 translation{0.0F, 0.0F, 0.0F};
+    math::Quat rotation{1.0F, 0.0F, 0.0F, 0.0F};
+    math::Vec3 scale{1.0F, 1.0F, 1.0F};
+    math::Mat4 local_matrix{1.0F};
+    std::uint32_t mesh_index = kInvalidAssetIndex;
+    std::vector<std::uint32_t> children{};
+};
+
+struct GltfScene {
+    std::string label{};
+    std::vector<std::uint32_t> root_nodes{};
+};
+
+struct GltfAsset {
+    std::filesystem::path source_path{};
+    std::vector<GltfScene> scenes{};
+    std::uint32_t default_scene = 0;
+    std::vector<GltfNode> nodes{};
+    std::vector<GltfMesh> meshes{};
+    std::vector<GltfMaterial> materials{};
+    std::vector<GltfTexture> textures{};
+    std::vector<GltfSampler> samplers{};
+    std::vector<GltfImage> images{};
+};
+
+struct GltfLoadConfig {
+    bool generate_missing_tangents = true;
+};
+
+[[nodiscard]] GltfAsset load_gltf_asset(const std::filesystem::path& path,
+                                        GltfLoadConfig config = {});
+[[nodiscard]] const char* gltf_alpha_mode_name(GltfAlphaMode mode) noexcept;
+[[nodiscard]] GltfTextureColorSpace gltf_texture_color_space_for_base_color() noexcept;
+[[nodiscard]] GltfTextureColorSpace gltf_texture_color_space_for_material_slot(
+    const GltfTextureRef& texture, GltfTextureColorSpace default_space) noexcept;
+
+} // namespace cubey::asset

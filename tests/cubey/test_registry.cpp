@@ -16,6 +16,7 @@ std::span<const TestCase> core_tests() {
     static const std::vector<TestCase> tests = [] {
         std::vector<TestCase> result;
         append_cases(result, core_test_cases());
+        append_cases(result, asset_test_cases());
         append_cases(result, engine_host_input_test_cases());
         append_cases(result, vulkan_test_cases());
         append_cases(result, render_test_cases());

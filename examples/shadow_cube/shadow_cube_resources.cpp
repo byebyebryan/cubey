@@ -5,8 +5,10 @@
 #include <cubey/render/pipeline_resource.h>
 #include <cubey/render/primitive_mesh.h>
 #include <cubey/render/primitive_resource.h>
+#include <cubey/render/shadow_map.h>
 
 #include <array>
+#include <span>
 
 namespace cubey::examples::shadow_cube::detail {
 namespace {
@@ -44,7 +46,7 @@ void ShadowCubeApp::create_global_resources_if_needed(cubey::host::WindowedAppCo
             .color = kFloorColor,
         }));
     create_scene();
-    create_shadow_depth_resources(context);
+    create_shadow_resources(context);
     create_descriptors(context);
 }
 
@@ -62,34 +64,46 @@ void ShadowCubeApp::destroy_swapchain_resources() {
     present_material_instance_.reset();
     present_sampler_.reset();
     scene_pipeline_resource_.reset();
-    shadow_pipeline_resource_.reset();
     depth_attachment_.reset();
 }
 
 void ShadowCubeApp::destroy_all_resources() {
     destroy_swapchain_resources();
     scene_material_instance_.reset();
-    shadow_depth_.reset();
+    shadow_pass_.reset();
     shadow_depth_is_sampled_ = false;
     destroy_scene_if_needed();
     destroy_render_handles();
 }
 
-void ShadowCubeApp::create_shadow_depth_resources(cubey::host::WindowedAppContext& context) {
-    const VkFormat shadow_format = cubey::vulkan::choose_depth_format(context.device());
-    shadow_depth_.emplace(context.device(),
-                          cubey::render::DepthTextureConfig{
-                              .extent = {kShadowMapSize, kShadowMapSize},
-                              .format = shadow_format,
-                              .create_sampler = true,
-                              .sampler =
-                                  {
-                                      .min_filter = VK_FILTER_NEAREST,
-                                      .mag_filter = VK_FILTER_NEAREST,
-                                      .address_mode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER,
-                                      .border_color = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE,
-                                  },
-                          });
+void ShadowCubeApp::create_shadow_resources(cubey::host::WindowedAppContext& context) {
+    const std::array<cubey::render::ShaderStageFile, 1> shader_stage_files{
+        cubey::render::vertex_shader_file(shader_path("shadow_depth.vert.spv")),
+    };
+    const cubey::render::VertexInputLayout vertex_input =
+        cubey::render::vertex_position_only_input_layout(
+            sizeof(cubey::render::VertexPositionColorNormal));
+    const VkPushConstantRange push_constant_range{
+        .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+        .offset = 0,
+        .size = sizeof(ShadowPushConstants),
+    };
+    shadow_pass_.emplace(
+        context.device(),
+        cubey::render::ShadowMapPass3DConfig{
+            .extent = {kShadowMapSize, kShadowMapSize},
+            .pipeline =
+                {
+                    .shader_stage_files = shader_stage_files,
+                    .vertex_bindings = vertex_input.bindings(),
+                    .vertex_attributes = vertex_input.attribute_descriptions(),
+                    .material_pass = cubey::render::shadow_depth_pass_info({
+                        .label = "shadow_cube.depth",
+                        .push_constants =
+                            std::span<const VkPushConstantRange>{&push_constant_range, 1},
+                    }),
+                },
+        });
 }
 
 void ShadowCubeApp::create_descriptors(cubey::host::WindowedAppContext& context) {
@@ -118,30 +132,8 @@ void ShadowCubeApp::create_present_resources(cubey::host::WindowedAppContext& co
 }
 
 void ShadowCubeApp::create_pipelines(cubey::host::WindowedAppContext& context) {
-    create_shadow_pipeline(context);
     create_scene_pipeline(context);
     create_present_pipeline(context);
-}
-
-void ShadowCubeApp::create_shadow_pipeline(cubey::host::WindowedAppContext& context) {
-    const std::array<cubey::render::ShaderStageFile, 1> shader_stage_files{
-        cubey::render::vertex_shader_file(shader_path("shadow_depth.vert.spv")),
-    };
-    const cubey::render::VertexInputLayout vertex_input =
-        cubey::render::vertex_position_only_input_layout(
-            sizeof(cubey::render::VertexPositionColorNormal));
-    shadow_pipeline_resource_.emplace(
-        context.device(), cubey::render::graphics_pipeline_file_resource_config(
-                              {
-                                  .extent = shadow_depth().extent(),
-                                  .depth_format = shadow_depth().format(),
-                              },
-                              {
-                                  .shader_stage_files = shader_stage_files,
-                                  .vertex_bindings = vertex_input.bindings(),
-                                  .vertex_attributes = vertex_input.attribute_descriptions(),
-                                  .material_pass = shadow_depth_pass_info(),
-                              }));
 }
 
 void ShadowCubeApp::create_scene_pipeline(cubey::host::WindowedAppContext& context) {

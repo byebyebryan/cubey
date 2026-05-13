@@ -44,6 +44,7 @@ current design.
 | Math | GLM behind `cubey::math` | Share matrix/vector types, transform/camera state, and Vulkan projection conventions without exposing ad hoc example math |
 | Shader compilation | glslangValidator (build time) | GLSL → SPIR-V, no runtime dependency |
 | Image output | `stb_image_write` | Single-header dependency, enough for inspectable artifacts |
+| Asset import | `cgltf` + `stb_image` | Narrow static glTF/glb CPU loading and PNG/JPEG decode before a broader asset pipeline |
 | CPU async work | undecided behind `cubey::jobs` | Taskflow and `BS::thread_pool` are the first candidates |
 
 ## Architecture
@@ -127,6 +128,10 @@ Reusable spatial types should stay explicit and narrow:
 - `LightManager3D` owns entity-backed 3D light components and builds CPU-side
   light packets from committed scene read views. Directional lights carry
   normalized directions; point lights derive world position from `Transform3D`.
+- `cubey::asset` owns CPU-side imported asset data. The first slice supports
+  static glTF/glb meshes, nodes, images, samplers, and metallic-roughness
+  materials; it does not create scenes, render handles, Vulkan resources, or a
+  material system.
 - Scene render-planning helpers expose the first renderer-facing 3D view and
   pass-list contracts. They combine a scene read view, camera entity, viewport
   size, ambient environment, renderables, and lights into CPU
@@ -283,7 +288,7 @@ Borrow the contract clarity and terminology; keep Cubey's implementation small.
 ## Repository Structure
 
 Cubey is becoming a small C++ monorepo. The public foundation is modeled as
-layered `cubey::*` targets (`core`, `vulkan`, `render`, `scene`, `engine`, and
+layered `cubey::*` targets (`core`, `asset`, `vulkan`, `render`, `scene`, `engine`, and
 optional `host`) plus the aggregate `cubey::cubey` target for examples and
 projects that do not need a narrower dependency. Runnable binaries should be
 named explicitly and live in either `examples/` or `projects/`:
@@ -313,13 +318,14 @@ layering order is:
 
 ```
 cubey::core
-  -> cubey::vulkan
-  -> cubey::render
-  -> cubey::scene
-  -> cubey::engine
-  -> cubey::cubey aggregate
-        + cubey::input
-        + optional cubey::host for concrete hosts
+  +-> cubey::asset
+  +-> cubey::vulkan
+        -> cubey::render
+        -> cubey::scene
+        -> cubey::engine
+        -> cubey::cubey aggregate
+              + cubey::input
+              + optional cubey::host for concrete hosts
   ^
   |
 examples / projects / tools / tests / benchmarks
@@ -365,6 +371,8 @@ cubey/
         project_gpu_services.h -- project-facing GPU uploads/readbacks/retirement
         project_runtime.h  -- async-ready project vocabulary
         upload_queue.h     -- CPU-owned upload request queue
+      asset/
+        gltf_asset.h       -- static glTF/glb CPU asset data loader
       host/
         frame_stats.h      -- windowed telemetry sampling and title formatting
         glfw_window.h      -- GLFW window and surface host
@@ -373,6 +381,7 @@ cubey/
         windowed_host.h    -- shared windowed host loop
       render/
         material.h         -- material metadata and material/pass contracts
+        pbr.h              -- current PBR vertex, scene, material, and push-constant contract
         target.h           -- color/depth render target views
         pass.h             -- dynamic-rendering pass recording helpers
         mesh.h             -- indexed mesh buffers and draw item vocabulary
@@ -382,6 +391,7 @@ cubey/
         resource_handle.h  -- opaque render resource handle values
         resource_registry.h -- render handle identity and material tags
         resource_table.h   -- project-owned move-only render resources
+        shadow_map.h       -- reusable sampled-depth shadow-map pass resource
       scene/
         entity.h           -- generational entity handles and stable manager
         scene.h            -- scene edit/read-view contract
@@ -421,6 +431,7 @@ cubey/
   src/
     cubey/
       CMakeLists.txt       -- layered cubey::* library targets
+      asset/               -- static glTF/glb parsing and image decode
       core/                -- run config, jobs, frame timing, I/O, and PNG writer
       engine/              -- engine root, project runtime, queues, GPU services
       host/                -- concrete GLFW/windowed/headless hosts
@@ -462,6 +473,10 @@ cubey/
           fluid_2d_projection.comp
           fluid_2d.vert
           fluid_2d_render.frag
+      gltf_viewer/
+        CMakeLists.txt
+        main.cpp
+        gltf_viewer_app.*  -- static glTF/PBR/shadow viewer orchestration
       fluid_25d/
   tools/
   tests/
@@ -475,6 +490,7 @@ cubey/
     DESIGN.md              -- current design and tenets
     roadmap.md             -- living implementation plan
     architecture/          -- detailed current foundation notes
+      gltf-assets.md
       host-engine.md
       entity-component-foundation.md
       fluid-simulation.md

@@ -287,6 +287,11 @@ Current checkpoint:
   sampled depth targets, depth-only dynamic rendering, graph-derived
   sampled-depth/scene-color/backbuffer sync, render-graph pass declarations,
   transient allocation, and CPU pass planning.
+- `projects/gltf_viewer` links against `cubey`, loads static glTF/glb assets
+  through `cubey::asset`, uploads PBR material textures, renders with the
+  reusable PBR forward-pass contract, and records shadow plus scene passes
+  through the render graph. It falls back to a generated PBR cube when no input
+  asset or sample-asset checkout is configured.
 - `examples/instanced_cubes` links against `cubey` and draws a cube grid through
   a single renderable packet, real instance-rate vertex input, one shared cube
   mesh, and `instance_count` propagation from scene primitive to Vulkan draw.
@@ -314,7 +319,7 @@ Current checkpoint:
 - Dev CTest covers the target in graphical, no-display terminal, and headless
   artifact sessions through shared windowed and PNG smoke helpers.
 - Split graphics/compute/present queue-family support, GPU capture polling,
-  timeline semaphores, parallel command recording, and external asset loading
+  timeline semaphores, parallel command recording, and richer asset features
   remain future slices.
 
 Alignment: the Vulkan layer now has visible windowed examples plus a minimal

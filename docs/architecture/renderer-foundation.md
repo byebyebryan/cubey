@@ -114,6 +114,10 @@ full engine architecture.
 - `DepthTexture` owns a sampled depth image plus an optional sampler for shadow
   maps and other depth-as-texture paths. Layout transitions and descriptor
   image layouts stay explicit at the call site.
+- `ShadowMapPass3D` owns the repeated sampled-depth target plus depth-only
+  graphics pipeline shape for directional shadow-map passes. Callers still
+  choose the shadow view, shader, push constants, graph pass order, and packet
+  filtering.
 - `Mesh`, `DrawItem`, and `record_draw_item` own uploaded indexed geometry and
   record the minimal bind/draw sequence. Vertex layout, pipeline state,
   descriptors, materials, transforms, and push constants remain caller-owned.
@@ -154,6 +158,10 @@ full engine architecture.
 - `cubey::render::MaterialPassInfo` is the first explicit material/pass
   metadata contract. It describes pass kind, descriptor layout shape,
   push-constant ranges, and reusable graphics pipeline state.
+- `PbrVertex`, `PbrSceneUniforms`, `PbrMaterialFactors`, `PbrPushConstants`,
+  and `pbr_forward_pass_info()` define the current PBR forward-pass contract:
+  one scene uniform/shadow set, one material texture set, and explicit
+  per-draw material factors.
 - `cubey::render::MaterialInstance` owns the descriptor set layout, pool, and
   one or per-frame descriptor sets for one declared `MaterialPassInfo`
   descriptor set. `MaterialDescriptorWriter` keeps descriptor writes tied to a
@@ -247,10 +255,10 @@ full engine architecture.
 
 `examples/shadow_cube` is the current reference for graph-declared multipass rendering:
 build a shadow `cubey::scene::View3D`, build a camera `cubey::scene::View3D`,
-record a depth-only pass into a `DepthTexture`, record the scene pass into a
-graph-created transient color target, then record a fullscreen present pass that
-samples that target into the swapchain. The example declares the pass/resource
-flow through `RenderGraphBuilder` and enters those passes through
+record a depth-only pass through `ShadowMapPass3D`, record the scene pass into
+a graph-created transient color target, then record a fullscreen present pass
+that samples that target into the swapchain. The example declares the
+pass/resource flow through `RenderGraphBuilder` and enters those passes through
 `CompiledRenderGraph::execute()`. Shadow-depth, scene-depth, scene-color,
 backbuffer acquire, and present release transitions are graph-derived and
 recorded by recorder-backed graph execution, while graph transient resources are
@@ -260,7 +268,7 @@ metadata, depth-only rendering info, synchronous pass-callback execution,
 execution-time resource resolution, simple transient allocation, frame-slot
 resource ownership, and graph-owned barrier recording. Render-graph
 scheduling, renderer-owned material binding policy, shadow policy, and transient
-aliasing remain future work. The `shadow_cube` implementation is split into
-example-local modules for resource setup, scene/view setup, graph declaration,
-and pass recording; those files are a readability boundary for the reference
-example, not a reusable shadow subsystem.
+aliasing remain future work. `shadow_cube` now uses the reusable
+`ShadowMapPass3D` target/pipeline helper while keeping scene/view setup, graph
+declaration, shader-specific push constants, and pass recording local to the
+example.

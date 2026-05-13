@@ -54,6 +54,8 @@ RunConfig parse_run_config(int argc, char** argv) {
             config.height = parse_u32(need_value("--height"), "--height");
         } else if (arg == "--frames") {
             config.frames = parse_u32(need_value("--frames"), "--frames");
+        } else if (arg == "--input") {
+            config.input_path = std::string(need_value("--input"));
         } else if (arg == "--output") {
             config.output_path = std::string(need_value("--output"));
         } else {

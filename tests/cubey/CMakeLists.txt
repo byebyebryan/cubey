@@ -12,6 +12,7 @@ add_executable(cubey_core_tests
     entity_tests.cpp
     file_io_tests.cpp
     frame_clock_tests.cpp
+    gltf_asset_tests.cpp
     frame_resources_tests.cpp
     host_headless_png_host_tests.cpp
     host_frame_stats_tests.cpp
@@ -38,10 +39,12 @@ add_executable(cubey_core_tests
     render_item_tests.cpp
     render_mesh_tests.cpp
     render_pass_tests.cpp
+    render_pbr_tests.cpp
     render_pipeline_resource_tests.cpp
     render_primitive_mesh_tests.cpp
     render_resource_registry_tests.cpp
     render_resource_table_tests.cpp
+    render_shadow_map_tests.cpp
     render_target_tests.cpp
     render_texture_tests.cpp
     render_uniform_buffer_tests.cpp
@@ -57,6 +60,7 @@ add_executable(cubey_core_tests
     transform_manager_tests.cpp
     transform_tests.cpp
     test_registry.cpp
+    test_registry_asset.cpp
     test_registry_core.cpp
     test_registry_engine_host_input.cpp
     test_registry_render.cpp

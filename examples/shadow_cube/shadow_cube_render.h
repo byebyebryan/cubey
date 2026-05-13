@@ -28,7 +28,6 @@ static_assert(sizeof(ScenePushConstants) == sizeof(cubey::math::Mat4) * 2U);
 [[nodiscard]] const cubey::math::Vec3& light_direction();
 [[nodiscard]] std::filesystem::path shader_path(const char* filename);
 
-[[nodiscard]] cubey::render::MaterialPassInfo shadow_depth_pass_info();
 [[nodiscard]] cubey::render::MaterialPassInfo shadow_scene_pass_info();
 [[nodiscard]] cubey::render::MaterialPassInfo shadow_present_pass_info();
 

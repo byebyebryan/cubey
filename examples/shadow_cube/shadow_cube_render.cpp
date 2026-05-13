@@ -22,21 +22,6 @@ std::filesystem::path shader_path(const char* filename) {
     return std::filesystem::path(CUBEY_SHADOW_CUBE_SHADER_DIR) / filename;
 }
 
-cubey::render::MaterialPassInfo shadow_depth_pass_info() {
-    const VkPushConstantRange push_constant_range{
-        .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
-        .offset = 0,
-        .size = sizeof(ShadowPushConstants),
-    };
-    return cubey::render::MaterialPassInfo{
-        .label = "shadow_cube.depth",
-        .kind = cubey::render::MaterialPassKind::DepthOnly,
-        .push_constants = {push_constant_range},
-        .depth_test = true,
-        .depth_write = true,
-    };
-}
-
 cubey::render::MaterialPassInfo shadow_scene_pass_info() {
     const VkPushConstantRange push_constant_range{
         .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,

@@ -59,6 +59,8 @@ void test_render_graph_transfer_pass_accepts_only_transfer_usages();
 void test_render_item_resolves_draw_item_fields();
 void test_render_item_validates_required_draw_identity();
 void test_render_pass_helpers_describe_clear_values_and_fullscreen_triangle();
+void test_pbr_vertex_layout_matches_shader_contract();
+void test_pbr_forward_pass_declares_scene_and_material_sets();
 void test_render_pipeline_resource_allows_vertexless_fullscreen_pipeline_shape();
 void test_render_pipeline_resource_builds_compute_pipeline_info();
 void test_render_pipeline_resource_builds_layout_and_dynamic_pipeline_info();
@@ -69,6 +71,9 @@ void test_render_resource_registry_tracks_handle_lifetime_and_labels();
 void test_render_resource_table_resolves_move_only_resources_by_handle();
 void test_render_target_rendering_info_describes_dynamic_rendering();
 void test_render_target_views_describe_color_only_targets();
+void test_shadow_depth_pass_info_declares_depth_only_state();
+void test_shadow_map_depth_texture_config_describes_sampled_depth_target();
+void test_shadow_map_sampler_uses_depth_texture_defaults();
 void test_texture_2d_config_maps_storage_sampled_usage();
 void test_texture_2d_config_maps_transfer_sampled_usage();
 
@@ -130,10 +135,15 @@ std::span<const TestCase> render_test_cases() {
         CUBEY_TEST(test_render_item_validates_required_draw_identity),
         CUBEY_TEST(test_render_item_resolves_draw_item_fields),
         CUBEY_TEST(test_render_pass_helpers_describe_clear_values_and_fullscreen_triangle),
+        CUBEY_TEST(test_pbr_vertex_layout_matches_shader_contract),
+        CUBEY_TEST(test_pbr_forward_pass_declares_scene_and_material_sets),
         CUBEY_TEST(test_render_resource_registry_tracks_handle_lifetime_and_labels),
         CUBEY_TEST(test_render_resource_handles_are_hashable_keys),
         CUBEY_TEST(test_render_resource_registry_round_trips_mesh_and_material_info),
         CUBEY_TEST(test_render_resource_table_resolves_move_only_resources_by_handle),
+        CUBEY_TEST(test_shadow_map_sampler_uses_depth_texture_defaults),
+        CUBEY_TEST(test_shadow_map_depth_texture_config_describes_sampled_depth_target),
+        CUBEY_TEST(test_shadow_depth_pass_info_declares_depth_only_state),
         CUBEY_TEST(test_render_target_views_describe_color_only_targets),
         CUBEY_TEST(test_render_target_rendering_info_describes_dynamic_rendering),
         CUBEY_TEST(test_depth_only_rendering_info_describes_sampled_depth_target),

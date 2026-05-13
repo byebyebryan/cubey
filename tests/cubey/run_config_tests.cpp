@@ -28,6 +28,20 @@ void test_run_config_parses_png_output_path() {
             "run config should preserve PNG output path");
 }
 
+void test_run_config_parses_input_path() {
+    std::array<char, 6> program{'c', 'u', 'b', 'e', 'y', '\0'};
+    std::array<char, 8> input_flag{'-', '-', 'i', 'n', 'p', 'u', 't', '\0'};
+    std::array<char, 25> input_value{'a', 's', 's', 'e', 't', 's', '/', 'D',
+                                     'a', 'm', 'a', 'g', 'e', 'd', 'H', 'e',
+                                     'l', 'm', 'e', 't', '.', 'g', 'l', 'b',
+                                     '\0'};
+    std::array<char*, 3> argv{program.data(), input_flag.data(), input_value.data()};
+
+    const cubey::RunConfig config =
+        cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
+    require(config.input_path == input_value.data(), "run config should preserve input path");
+}
+
 void test_run_cli_app_sets_default_title_and_returns_runner_status() {
     std::array<char, 6> program{'c', 'u', 'b', 'e', 'y', '\0'};
     std::array<char*, 1> argv{program.data()};

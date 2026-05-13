@@ -94,6 +94,27 @@ target_link_libraries(
         cubey_project_warnings
 )
 
+add_library(cubey_asset STATIC
+    asset/gltf_asset.cpp
+)
+add_library(cubey::asset ALIAS cubey_asset)
+
+target_include_directories(
+    cubey_asset
+    PUBLIC
+        "${PROJECT_SOURCE_DIR}/include"
+)
+
+target_link_libraries(
+    cubey_asset
+    PUBLIC
+        cubey::core
+    PRIVATE
+        cubey_external_cgltf
+        cubey_external_stb_image
+        cubey_project_warnings
+)
+
 add_library(cubey_render STATIC
     render/forward_pass.cpp
     render/frame_data.cpp
@@ -103,12 +124,14 @@ add_library(cubey_render STATIC
     render/material.cpp
     render/mesh.cpp
     render/pass.cpp
+    render/pbr.cpp
     render/pipeline_resource.cpp
     render/primitive_mesh.cpp
     render/render_graph.cpp
     render/render_graph_resources.cpp
     render/render_graph_sync.cpp
     render/render_item.cpp
+    render/shadow_map.cpp
     render/target.cpp
     render/texture.cpp
     render/uniform_buffer.cpp
@@ -212,6 +235,7 @@ target_link_libraries(
     cubey
     INTERFACE
         cubey::core
+        cubey::asset
         cubey::vulkan
         cubey::render
         cubey::scene
