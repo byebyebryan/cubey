@@ -36,6 +36,9 @@ void test_submission_coordinator_completion_tracking_rejects_future_tickets();
 void test_submission_coordinator_failed_submit_does_not_issue_ticket();
 void test_submission_coordinator_issues_monotonic_gpu_tickets();
 void test_submission_coordinator_submit_and_wait_marks_completion();
+void test_swapchain_surface_format_falls_back_to_unorm_when_srgb_is_missing();
+void test_swapchain_surface_format_prefers_srgb_color_attachment();
+void test_swapchain_surface_format_uses_srgb_default_for_undefined_surface();
 void test_transfer_helpers_describe_texture_and_readback_paths();
 
 namespace cubey::tests {
@@ -78,6 +81,9 @@ std::span<const TestCase> vulkan_test_cases() {
         CUBEY_TEST(test_submission_coordinator_submit_and_wait_marks_completion),
         CUBEY_TEST(test_submission_coordinator_completion_tracking_rejects_future_tickets),
         CUBEY_TEST(test_submission_coordinator_failed_submit_does_not_issue_ticket),
+        CUBEY_TEST(test_swapchain_surface_format_prefers_srgb_color_attachment),
+        CUBEY_TEST(test_swapchain_surface_format_falls_back_to_unorm_when_srgb_is_missing),
+        CUBEY_TEST(test_swapchain_surface_format_uses_srgb_default_for_undefined_surface),
         CUBEY_TEST(test_transfer_helpers_describe_texture_and_readback_paths),
     };
     return tests;

@@ -38,7 +38,8 @@ The first IBL contract is:
 - DFG LUT: 2D lookup sampled by `NdotV` and roughness. Red/green store
   split-sum scale/bias terms, blue stores white-conductor single-scatter energy
   for compensation, and alpha remains one;
-- scene uniforms: environment intensity plus prefiltered mip count;
+- scene uniforms: environment intensity, prefiltered mip count, and final
+  display transform controls;
 - material descriptor set: base-color, metallic-roughness, normal, occlusion,
   and emissive textures plus a per-material uniform block for factors.
 
@@ -52,6 +53,12 @@ single-scatter energy term used for multiscatter compensation. Per-draw push
 constants now carry only the model transform; material factors live in the
 material descriptor set.
 
+The current display transform is intentionally small: exposure in stops, a
+linear-or-ACES tone-map selector, and an output-encoding selector. Windowed
+swapchains prefer sRGB attachment formats, so shaders leave encoding to the
+attachment when possible. UNORM final targets, including headless PNG capture,
+request shader-side linear-to-sRGB encoding.
+
 This keeps the PBR shader contract close to common real-time renderer practice
 while leaving HDR/KTX import, offline filtering, environment selection, and
 renderer-wide material management explicit future work.
@@ -60,8 +67,9 @@ renderer-wide material management explicit future work.
 
 - glTF specular textures are still absent; only factor-only
   `KHR_materials_ior` and `KHR_materials_specular` are imported.
-- Color management is still minimal: no renderer-wide exposure, tone mapping,
-  color grading, or HDR output policy.
+- Color management is still minimal: the PBR path now has a display-transform
+  contract, but no HDR scene color target, fullscreen present pass, color
+  grading, or HDR output policy.
 - Generated IBL proves the descriptor and shader contract, but real
   environment asset import and higher-quality offline filtering remain future
   work.

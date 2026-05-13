@@ -166,7 +166,8 @@ full engine architecture.
   scene uniform/shadow/IBL set, one material texture/uniform set, model-only
   per-draw push constants, and factor-only reflectance/specular controls. The
   scene set includes irradiance cube, prefiltered cube, and the DFG/BRDF lookup
-  binding.
+  binding. `PbrDisplayTransform` carries the final exposure, tone-map, and
+  output-encoding controls used by direct-to-target PBR passes.
 - `GeneratedPbrEnvironment` creates deterministic setup-time irradiance cube,
   GGX-prefiltered radiance cube, and DFG LUT resources. The shared PBR shader
   helpers remap base color into diffuse color plus material-derived F0 before

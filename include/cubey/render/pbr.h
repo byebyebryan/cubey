@@ -19,6 +19,22 @@ struct PbrVertex {
     math::Vec2 uv0{};
 };
 
+enum class PbrTonemap : std::uint32_t {
+    Linear = 0,
+    Aces = 1,
+};
+
+enum class PbrOutputEncoding : std::uint32_t {
+    Linear = 0,
+    Srgb = 1,
+};
+
+struct PbrDisplayTransform {
+    float exposure = 0.0F;
+    PbrTonemap tonemap = PbrTonemap::Aces;
+    PbrOutputEncoding output_encoding = PbrOutputEncoding::Linear;
+};
+
 struct PbrSceneUniforms {
     math::Mat4 view_projection{1.0F};
     math::Mat4 light_view_projection{1.0F};
@@ -27,6 +43,7 @@ struct PbrSceneUniforms {
     math::Vec4 light_color_intensity{1.0F, 1.0F, 1.0F, 1.0F};
     math::Vec4 ambient_color_intensity{0.03F, 0.03F, 0.03F, 1.0F};
     math::Vec4 environment_intensity_mip_count{1.0F, 1.0F, 0.0F, 0.0F};
+    math::Vec4 display_transform{0.0F, 1.0F, 0.0F, 0.0F};
 };
 
 struct PbrMaterialFactors {
@@ -83,6 +100,10 @@ struct PbrForwardPassConfig {
 [[nodiscard]] VertexInputLayout pbr_vertex_input_layout();
 [[nodiscard]] MaterialPassInfo pbr_forward_pass_info();
 [[nodiscard]] MaterialPassInfo pbr_forward_pass_info(const PbrForwardPassConfig& config);
+[[nodiscard]] PbrDisplayTransform
+pbr_display_transform_for_target(VkFormat target_format, float exposure = 0.0F,
+                                 PbrTonemap tonemap = PbrTonemap::Aces);
+[[nodiscard]] math::Vec4 pbr_display_transform_uniform(const PbrDisplayTransform& transform);
 [[nodiscard]] float pbr_f0_from_reflectance(float reflectance);
 [[nodiscard]] float pbr_reflectance_from_ior(float ior);
 [[nodiscard]] PbrMaterialUniforms pbr_material_uniforms(const PbrMaterialFactors& factors);

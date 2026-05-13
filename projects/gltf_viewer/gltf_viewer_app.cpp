@@ -750,7 +750,9 @@ class GltfViewerApp {
         }
         const cubey::scene::RenderFramePlan3D& shadow_plan = frame_plan.passes()[0].frame_plan;
         const cubey::scene::RenderFramePlan3D& scene_plan = frame_plan.passes()[1].frame_plan;
-        scene_material().upload(frame_slot, scene_uniforms(scene_view, scene_plan, shadow_plan));
+        scene_material().upload(
+            frame_slot,
+            scene_uniforms(scene_view, scene_plan, shadow_plan, color_target.format));
 
         const ViewerRenderGraph render_graph =
             current_render_graph(color_target, frame_slot, color_initial_state, color_final_state,
@@ -783,7 +785,8 @@ class GltfViewerApp {
     [[nodiscard]] cubey::render::PbrSceneUniforms
     scene_uniforms(const cubey::SceneReadView& scene_view,
                    const cubey::scene::RenderFramePlan3D& scene_plan,
-                   const cubey::scene::RenderFramePlan3D& shadow_plan) const {
+                   const cubey::scene::RenderFramePlan3D& shadow_plan,
+                   VkFormat color_format) const {
         const cubey::math::Vec3 camera_position = camera_world_position(scene_view, camera_entity_);
         const cubey::LightPacket3D light = current_light_packet(scene_plan);
         const cubey::math::Vec3 ambient =
@@ -802,6 +805,8 @@ class GltfViewerApp {
                     0.0F,
                     0.0F,
                 },
+            .display_transform = cubey::render::pbr_display_transform_uniform(
+                cubey::render::pbr_display_transform_for_target(color_format)),
         };
     }
 

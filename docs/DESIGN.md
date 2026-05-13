@@ -141,8 +141,9 @@ Reusable spatial types should stay explicit and narrow:
   Shared PBR shader helpers follow the established metallic-roughness remap:
   base color becomes diffuse color for non-metals and F0 for metals, while
   dielectric F0 comes from Filament-style reflectance plus factor-only glTF
-  IOR/specular controls. HDR/KTX environment import and filtering remain future
-  asset-pipeline work.
+  IOR/specular controls. The PBR scene uniform contract also carries final
+  display transform controls for exposure, tone mapping, and target encoding.
+  HDR/KTX environment import and filtering remain future asset-pipeline work.
 - Scene render-planning helpers expose the first renderer-facing 3D view and
   pass-list contracts. They combine a scene read view, camera entity, viewport
   size, ambient environment, renderables, and lights into CPU

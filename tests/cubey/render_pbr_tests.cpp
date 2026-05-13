@@ -138,6 +138,34 @@ void test_pbr_material_factors_are_uniforms_and_push_constants_are_model_only() 
             "PBR push constants should carry only the model matrix");
 }
 
+void test_pbr_scene_uniforms_carry_display_transform() {
+    const cubey::render::PbrDisplayTransform display{
+        .exposure = 1.25F,
+        .tonemap = cubey::render::PbrTonemap::Aces,
+        .output_encoding = cubey::render::PbrOutputEncoding::Srgb,
+    };
+
+    const cubey::math::Vec4 uniform = cubey::render::pbr_display_transform_uniform(display);
+    require(uniform.x == display.exposure, "PBR display transform should pack exposure stops");
+    require(uniform.y == 1.0F, "PBR display transform should pack ACES tonemap mode");
+    require(uniform.z == 1.0F, "PBR display transform should pack sRGB output encoding");
+
+    const cubey::render::PbrSceneUniforms scene_uniforms{
+        .display_transform = uniform,
+    };
+    require(scene_uniforms.display_transform == uniform,
+            "PBR scene uniforms should carry final display transform controls");
+
+    const cubey::render::PbrDisplayTransform unorm_transform =
+        cubey::render::pbr_display_transform_for_target(VK_FORMAT_R8G8B8A8_UNORM);
+    const cubey::render::PbrDisplayTransform srgb_transform =
+        cubey::render::pbr_display_transform_for_target(VK_FORMAT_B8G8R8A8_SRGB);
+    require(unorm_transform.output_encoding == cubey::render::PbrOutputEncoding::Srgb,
+            "UNORM final targets should request shader-side sRGB output encoding");
+    require(srgb_transform.output_encoding == cubey::render::PbrOutputEncoding::Linear,
+            "sRGB final targets should leave output encoding to the attachment");
+}
+
 void test_pbr_reflectance_helpers_match_filament_convention() {
     require(cubey::render::pbr_f0_from_reflectance(0.5F) == 0.04F,
             "reflectance 0.5 should map to dielectric F0 0.04");
@@ -167,8 +195,15 @@ void test_pbr_shaders_use_filament_style_material_remap() {
                      "PBR shader should expose dielectric F0 material extension helper");
     require_contains(pbr, "cubey_pbr_lambert_diffuse",
                      "PBR shader should expose a Lambert diffuse helper");
+    require_contains(pbr, "cubey_pbr_apply_display_transform",
+                     "PBR shader should expose a final display transform helper");
 
     for (const std::string* shader : {&furnace, &gltf}) {
+        require_contains(*shader, "vec4 display_transform",
+                         "PBR fragment shaders should read display transform controls");
+        require_contains(*shader,
+                         "cubey_pbr_apply_display_transform(color, scene.display_transform)",
+                         "PBR fragment shaders should apply display transform to final color");
         require_contains(*shader, "uniform PbrMaterialUniforms",
                          "PBR fragment shaders should read per-material uniforms");
         require_not_contains(*shader, "push_constants.base_color_factor",

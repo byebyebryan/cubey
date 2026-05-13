@@ -11,6 +11,7 @@ layout(set = 0, binding = 0) uniform PbrSceneUniforms {
     vec4 light_color_intensity;
     vec4 ambient_color_intensity;
     vec4 environment_intensity_mip_count;
+    vec4 display_transform;
 } scene;
 
 layout(set = 0, binding = 1) uniform sampler2D shadow_map;
@@ -127,5 +128,6 @@ void main() {
     vec3 emissive = texture(emissive_texture, frag_uv0).rgb *
                     material.emissive_alpha_cutoff.rgb;
     vec3 color = ambient + direct + emissive;
-    out_color = vec4(color, base_color.a);
+    out_color = vec4(cubey_pbr_apply_display_transform(color, scene.display_transform),
+                     base_color.a);
 }

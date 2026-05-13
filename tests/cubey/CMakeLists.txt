@@ -58,6 +58,7 @@ add_executable(cubey_core_tests
     sampler_tests.cpp
     shader_bytecode_tests.cpp
     submission_coordinator_tests.cpp
+    swapchain_tests.cpp
     transform_manager_tests.cpp
     transform_tests.cpp
     test_registry.cpp

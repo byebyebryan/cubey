@@ -6,6 +6,19 @@
 #include <cmath>
 
 namespace cubey::render {
+namespace {
+
+[[nodiscard]] bool color_target_is_srgb_encoded(VkFormat format) {
+    switch (format) {
+    case VK_FORMAT_B8G8R8A8_SRGB:
+    case VK_FORMAT_R8G8B8A8_SRGB:
+        return true;
+    default:
+        return false;
+    }
+}
+
+} // namespace
 
 VertexInputLayout pbr_vertex_input_layout() {
     return {
@@ -136,6 +149,25 @@ MaterialPassInfo pbr_forward_pass_info(const PbrForwardPassConfig& config) {
         pass.dst_alpha_blend_factor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
     }
     return pass;
+}
+
+PbrDisplayTransform pbr_display_transform_for_target(VkFormat target_format, float exposure,
+                                                     PbrTonemap tonemap) {
+    return {
+        .exposure = exposure,
+        .tonemap = tonemap,
+        .output_encoding = color_target_is_srgb_encoded(target_format) ? PbrOutputEncoding::Linear
+                                                                       : PbrOutputEncoding::Srgb,
+    };
+}
+
+math::Vec4 pbr_display_transform_uniform(const PbrDisplayTransform& transform) {
+    return {
+        transform.exposure,
+        static_cast<float>(transform.tonemap),
+        static_cast<float>(transform.output_encoding),
+        0.0F,
+    };
 }
 
 float pbr_f0_from_reflectance(float reflectance) {

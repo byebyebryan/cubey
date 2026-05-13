@@ -546,7 +546,7 @@ class PbrFurnaceApp {
 
     [[nodiscard]] cubey::render::PbrSceneUniforms
     scene_uniforms(const cubey::SceneReadView& scene_view,
-                   const cubey::scene::RenderFramePlan3D& plan) const {
+                   const cubey::scene::RenderFramePlan3D& plan, VkFormat color_format) const {
         const cubey::math::Vec3 camera_position = camera_world_position(scene_view);
         return {
             .view_projection = plan.view_projection_matrix,
@@ -562,6 +562,9 @@ class PbrFurnaceApp {
                     0.0F,
                     0.0F,
                 },
+            .display_transform = cubey::render::pbr_display_transform_uniform(
+                cubey::render::pbr_display_transform_for_target(
+                    color_format, 0.0F, cubey::render::PbrTonemap::Linear)),
         };
     }
 
@@ -577,7 +580,8 @@ class PbrFurnaceApp {
         cubey::SceneReadView scene_view = scene().read();
         const cubey::scene::RenderFramePlan3D frame_plan =
             current_frame_plan(scene_view, color_target.extent);
-        scene_material().upload(frame_slot, scene_uniforms(scene_view, frame_plan));
+        scene_material().upload(frame_slot,
+                                scene_uniforms(scene_view, frame_plan, color_target.format));
 
         const cubey::vulkan::CommandRecorder recorder(command_buffer);
         if (present) {

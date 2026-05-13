@@ -5,6 +5,7 @@
 #include <vulkan/vulkan.h>
 
 #include <cstddef>
+#include <span>
 #include <vector>
 
 namespace cubey::vulkan {
@@ -15,6 +16,9 @@ struct SwapchainConfig {
     VkImageUsageFlags image_usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     VkPresentModeKHR present_mode = VK_PRESENT_MODE_FIFO_KHR;
 };
+
+[[nodiscard]] VkSurfaceFormatKHR
+choose_swapchain_surface_format(std::span<const VkSurfaceFormatKHR> formats);
 
 class Swapchain {
   public:

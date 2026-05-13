@@ -68,6 +68,7 @@ void test_pbr_vertex_layout_matches_shader_contract();
 void test_pbr_forward_pass_declares_scene_and_material_sets();
 void test_pbr_material_factors_are_uniforms_and_push_constants_are_model_only();
 void test_pbr_reflectance_helpers_match_filament_convention();
+void test_pbr_scene_uniforms_carry_display_transform();
 void test_pbr_shaders_use_filament_style_material_remap();
 void test_render_pipeline_resource_allows_vertexless_fullscreen_pipeline_shape();
 void test_render_pipeline_resource_builds_compute_pipeline_info();
@@ -148,6 +149,7 @@ std::span<const TestCase> render_test_cases() {
         CUBEY_TEST(test_pbr_vertex_layout_matches_shader_contract),
         CUBEY_TEST(test_pbr_forward_pass_declares_scene_and_material_sets),
         CUBEY_TEST(test_pbr_material_factors_are_uniforms_and_push_constants_are_model_only),
+        CUBEY_TEST(test_pbr_scene_uniforms_carry_display_transform),
         CUBEY_TEST(test_pbr_reflectance_helpers_match_filament_convention),
         CUBEY_TEST(test_pbr_shaders_use_filament_style_material_remap),
         CUBEY_TEST(test_generated_pbr_environment_data_is_deterministic_and_sized),

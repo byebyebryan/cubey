@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <array>
 #include <cstdint>
+#include <span>
 #include <stdexcept>
 #include <vector>
 
@@ -42,14 +43,26 @@ VkExtent2D choose_extent(const VkSurfaceCapabilitiesKHR& caps, VkExtent2D desire
     };
 }
 
-VkSurfaceFormatKHR choose_surface_format(const std::vector<VkSurfaceFormatKHR>& formats) {
+} // namespace
+
+VkSurfaceFormatKHR choose_swapchain_surface_format(std::span<const VkSurfaceFormatKHR> formats) {
+    if (formats.empty()) {
+        throw std::runtime_error("surface reported no formats");
+    }
     if (formats.size() == 1 && formats[0].format == VK_FORMAT_UNDEFINED) {
         return {
-            VK_FORMAT_B8G8R8A8_UNORM,
+            VK_FORMAT_B8G8R8A8_SRGB,
             VK_COLOR_SPACE_SRGB_NONLINEAR_KHR,
         };
     }
 
+    for (const VkSurfaceFormatKHR& format : formats) {
+        if (format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR &&
+            (format.format == VK_FORMAT_B8G8R8A8_SRGB ||
+             format.format == VK_FORMAT_R8G8B8A8_SRGB)) {
+            return format;
+        }
+    }
     for (const VkSurfaceFormatKHR& format : formats) {
         if (format.format == VK_FORMAT_B8G8R8A8_UNORM ||
             format.format == VK_FORMAT_R8G8B8A8_UNORM) {
@@ -58,8 +71,6 @@ VkSurfaceFormatKHR choose_surface_format(const std::vector<VkSurfaceFormatKHR>& 
     }
     return formats[0];
 }
-
-} // namespace
 
 Swapchain::Swapchain(const Device& device, const SwapchainConfig& config)
     : physical_device_(device.physical_device()), device_(device.handle()),
@@ -118,7 +129,7 @@ void Swapchain::create(VkExtent2D desired_extent) {
         throw std::runtime_error("surface does not support requested swapchain present mode");
     }
 
-    surface_format_ = choose_surface_format(formats);
+    surface_format_ = choose_swapchain_surface_format(formats);
 
     extent_ = choose_extent(caps, desired_extent);
 
