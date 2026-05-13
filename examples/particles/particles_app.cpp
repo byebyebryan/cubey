@@ -9,9 +9,6 @@
 #include <cubey/vulkan/buffer.h>
 #include <cubey/vulkan/command_recorder.h>
 #include <cubey/vulkan/descriptors.h>
-#include <cubey/vulkan/pipeline.h>
-#include <cubey/vulkan/shader_bytecode.h>
-#include <cubey/vulkan/shader_module.h>
 #include <cubey/vulkan/vk_check.h>
 
 #include <vulkan/vulkan.h>
@@ -60,6 +57,23 @@ struct ComputePushConstants {
 static_assert(sizeof(ParticleGpu) == 48);
 static_assert(sizeof(DrawPushConstants) == 16);
 static_assert(sizeof(ComputePushConstants) == 32);
+
+[[nodiscard]] cubey::render::MaterialPassInfo particles_draw_pass_info() {
+    const VkPushConstantRange draw_push_constant{
+        .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+        .offset = 0,
+        .size = sizeof(DrawPushConstants),
+    };
+    return cubey::render::MaterialPassInfo{
+        .label = "particles.draw",
+        .push_constants = {draw_push_constant},
+        .blend_enable = true,
+        .src_color_blend_factor = VK_BLEND_FACTOR_ONE,
+        .dst_color_blend_factor = VK_BLEND_FACTOR_ONE,
+        .src_alpha_blend_factor = VK_BLEND_FACTOR_ONE,
+        .dst_alpha_blend_factor = VK_BLEND_FACTOR_ONE,
+    };
+}
 
 std::filesystem::path shader_path(const char* filename) {
     return std::filesystem::path(CUBEY_PARTICLES_SHADER_DIR) / filename;
@@ -250,8 +264,7 @@ class ParticlesApp {
     }
 
     void destroy_swapchain_resources() {
-        pipeline_.reset();
-        pipeline_layout_.reset();
+        pipeline_resource_.reset();
     }
 
     void destroy_all_resources() {
@@ -262,47 +275,28 @@ class ParticlesApp {
     }
 
     void create_pipeline(cubey::host::WindowedAppContext& context) {
-        const std::vector<std::uint32_t> vertex_code =
-            cubey::vulkan::read_spirv_file(shader_path("particles.vert.spv"));
-        const std::vector<std::uint32_t> fragment_code =
-            cubey::vulkan::read_spirv_file(shader_path("particles.frag.spv"));
-        cubey::vulkan::ShaderModule vertex_shader(context.device(), vertex_code);
-        cubey::vulkan::ShaderModule fragment_shader(context.device(), fragment_code);
-
-        const VkPipelineShaderStageCreateInfo vertex_stage =
-            cubey::vulkan::shader_stage(VK_SHADER_STAGE_VERTEX_BIT, vertex_shader.handle());
-        const VkPipelineShaderStageCreateInfo fragment_stage =
-            cubey::vulkan::shader_stage(VK_SHADER_STAGE_FRAGMENT_BIT, fragment_shader.handle());
-
-        const std::array<VkPipelineShaderStageCreateInfo, 2> shader_stages{
-            vertex_stage,
-            fragment_stage,
+        const std::array<cubey::render::ShaderStageFile, 2> shader_stage_files{
+            cubey::render::ShaderStageFile{
+                .stage = VK_SHADER_STAGE_VERTEX_BIT,
+                .path = shader_path("particles.vert.spv"),
+            },
+            cubey::render::ShaderStageFile{
+                .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
+                .path = shader_path("particles.frag.spv"),
+            },
         };
+        const cubey::render::ShaderProgram shader_program(context.device(), shader_stage_files);
 
-        VkPushConstantRange draw_push_constant{};
-        draw_push_constant.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
-        draw_push_constant.offset = 0;
-        draw_push_constant.size = sizeof(DrawPushConstants);
         const std::array<VkDescriptorSetLayout, 1> set_layouts{descriptors().layout()};
-        const std::array<VkPushConstantRange, 1> push_constants{draw_push_constant};
-        const cubey::vulkan::PipelineLayoutInfo layout_info({
-            .set_layouts = set_layouts,
-            .push_constants = push_constants,
-        });
-        pipeline_layout_.emplace(context.device(), layout_info.create_info());
-
-        cubey::vulkan::DynamicGraphicsPipelineConfig pipeline_config;
-        pipeline_config.layout = pipeline_layout().handle();
-        pipeline_config.extent = context.swapchain().extent();
-        pipeline_config.color_format = context.swapchain().format();
-        pipeline_config.shader_stages = shader_stages;
-        pipeline_config.blend_enable = true;
-        pipeline_config.src_color_blend_factor = VK_BLEND_FACTOR_ONE;
-        pipeline_config.dst_color_blend_factor = VK_BLEND_FACTOR_ONE;
-        pipeline_config.src_alpha_blend_factor = VK_BLEND_FACTOR_ONE;
-        pipeline_config.dst_alpha_blend_factor = VK_BLEND_FACTOR_ONE;
-        const cubey::vulkan::DynamicGraphicsPipelineInfo pipeline_info(pipeline_config);
-        pipeline_.emplace(context.device(), pipeline_info.create_info());
+        const cubey::render::MaterialPassInfo material_pass = particles_draw_pass_info();
+        pipeline_resource_.emplace(context.device(),
+                                   cubey::render::GraphicsPipelineResourceConfig{
+                                       .extent = context.swapchain().extent(),
+                                       .color_format = context.swapchain().format(),
+                                       .shader_stages = shader_program.stages(),
+                                       .descriptor_set_layouts = set_layouts,
+                                       .material_pass = material_pass,
+                                   });
     }
 
     void record_particle_compute(VkCommandBuffer command_buffer, const FrameTiming& timing) const {
@@ -371,13 +365,14 @@ class ParticlesApp {
                 .color = cubey::render::color_clear_value(0.006F, 0.007F, 0.012F, 1.0F),
             },
             [this, push_constants](const cubey::vulkan::CommandRecorder& pass_recorder) {
-                pass_recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline().handle());
+                const cubey::render::GraphicsPipelineResource& pipeline = pipeline_resource();
+                pass_recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.pipeline());
                 const VkDescriptorSet descriptor_set = descriptors().set();
                 pass_recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                                  pipeline_layout().handle(), 0, descriptor_set);
+                                                  pipeline.layout(), 0, descriptor_set);
                 pass_recorder.push_constants(
-                    pipeline_layout().handle(),
-                    VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, push_constants);
+                    pipeline.layout(), VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
+                    push_constants);
                 pass_recorder.draw(6, kParticleCount);
             });
 
@@ -405,18 +400,11 @@ class ParticlesApp {
         return compute_pipeline_resource_.value();
     }
 
-    [[nodiscard]] const cubey::vulkan::PipelineLayout& pipeline_layout() const {
-        if (!pipeline_layout_.has_value()) {
-            throw std::runtime_error("pipeline layout is not initialized");
+    [[nodiscard]] const cubey::render::GraphicsPipelineResource& pipeline_resource() const {
+        if (!pipeline_resource_.has_value()) {
+            throw std::runtime_error("pipeline resource is not initialized");
         }
-        return pipeline_layout_.value();
-    }
-
-    [[nodiscard]] const cubey::vulkan::GraphicsPipeline& pipeline() const {
-        if (!pipeline_.has_value()) {
-            throw std::runtime_error("pipeline is not initialized");
-        }
-        return pipeline_.value();
+        return pipeline_resource_.value();
     }
 
     RunConfig config_;
@@ -426,8 +414,7 @@ class ParticlesApp {
     std::optional<cubey::vulkan::Buffer> particle_buffer_;
     std::optional<cubey::vulkan::DescriptorSetBundle> descriptors_;
 
-    std::optional<cubey::vulkan::PipelineLayout> pipeline_layout_;
-    std::optional<cubey::vulkan::GraphicsPipeline> pipeline_;
+    std::optional<cubey::render::GraphicsPipelineResource> pipeline_resource_;
     std::optional<cubey::render::ComputePipelineResource> compute_pipeline_resource_;
 };
 

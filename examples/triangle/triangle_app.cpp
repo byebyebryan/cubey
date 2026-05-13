@@ -2,24 +2,18 @@
 
 #include <cubey/host/windowed_host.h>
 #include <cubey/render/pass.h>
+#include <cubey/render/pipeline_resource.h>
 #include <cubey/render/target.h>
 #include <cubey/vulkan/command_recorder.h>
-#include <cubey/vulkan/pipeline.h>
-#include <cubey/vulkan/shader_bytecode.h>
-#include <cubey/vulkan/shader_module.h>
-#include <cubey/vulkan/vk_check.h>
 
 #include <vulkan/vulkan.h>
 
 #include <array>
-#include <cstddef>
-#include <cstdint>
 #include <cstdio>
 #include <filesystem>
 #include <optional>
 #include <stdexcept>
 #include <utility>
-#include <vector>
 
 #ifndef CUBEY_TRIANGLE_SHADER_DIR
 #error "CUBEY_TRIANGLE_SHADER_DIR must be defined by the triangle CMake target"
@@ -28,10 +22,14 @@
 namespace cubey::examples::triangle {
 namespace {
 
-using cubey::vulkan::vk_struct;
-
 std::filesystem::path shader_path(const char* filename) {
     return std::filesystem::path(CUBEY_TRIANGLE_SHADER_DIR) / filename;
+}
+
+[[nodiscard]] cubey::render::MaterialPassInfo triangle_pass_info() {
+    return cubey::render::MaterialPassInfo{
+        .label = "triangle.fullscreen",
+    };
 }
 
 class TriangleApp {
@@ -83,39 +81,30 @@ class TriangleApp {
 
   private:
     void destroy_swapchain_resources() {
-        pipeline_.reset();
-        pipeline_layout_.reset();
+        pipeline_resource_.reset();
     }
 
     void create_pipeline(cubey::host::WindowedAppContext& context) {
-        const std::vector<std::uint32_t> vertex_code =
-            cubey::vulkan::read_spirv_file(shader_path("triangle.vert.spv"));
-        const std::vector<std::uint32_t> fragment_code =
-            cubey::vulkan::read_spirv_file(shader_path("triangle.frag.spv"));
-        cubey::vulkan::ShaderModule vertex_shader(context.device(), vertex_code);
-        cubey::vulkan::ShaderModule fragment_shader(context.device(), fragment_code);
-
-        const VkPipelineShaderStageCreateInfo vertex_stage =
-            cubey::vulkan::shader_stage(VK_SHADER_STAGE_VERTEX_BIT, vertex_shader.handle());
-        const VkPipelineShaderStageCreateInfo fragment_stage =
-            cubey::vulkan::shader_stage(VK_SHADER_STAGE_FRAGMENT_BIT, fragment_shader.handle());
-
-        const std::array<VkPipelineShaderStageCreateInfo, 2> shader_stages{
-            vertex_stage,
-            fragment_stage,
+        const std::array<cubey::render::ShaderStageFile, 2> shader_stage_files{
+            cubey::render::ShaderStageFile{
+                .stage = VK_SHADER_STAGE_VERTEX_BIT,
+                .path = shader_path("triangle.vert.spv"),
+            },
+            cubey::render::ShaderStageFile{
+                .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
+                .path = shader_path("triangle.frag.spv"),
+            },
         };
+        const cubey::render::ShaderProgram shader_program(context.device(), shader_stage_files);
 
-        auto layout_info =
-            vk_struct<VkPipelineLayoutCreateInfo>(VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO);
-        pipeline_layout_.emplace(context.device(), layout_info);
-
-        cubey::vulkan::DynamicGraphicsPipelineConfig pipeline_config;
-        pipeline_config.layout = pipeline_layout().handle();
-        pipeline_config.extent = context.swapchain().extent();
-        pipeline_config.color_format = context.swapchain().format();
-        pipeline_config.shader_stages = shader_stages;
-        const cubey::vulkan::DynamicGraphicsPipelineInfo pipeline_info(pipeline_config);
-        pipeline_.emplace(context.device(), pipeline_info.create_info());
+        const cubey::render::MaterialPassInfo material_pass = triangle_pass_info();
+        pipeline_resource_.emplace(context.device(),
+                                   cubey::render::GraphicsPipelineResourceConfig{
+                                       .extent = context.swapchain().extent(),
+                                       .color_format = context.swapchain().format(),
+                                       .shader_stages = shader_program.stages(),
+                                       .material_pass = material_pass,
+                                   });
     }
 
     void record_triangle_frame(const cubey::host::WindowedRenderFrame& frame) {
@@ -130,30 +119,23 @@ class TriangleApp {
                 .color = cubey::render::color_clear_value(0.015F, 0.017F, 0.024F, 1.0F),
             },
             [this](const cubey::vulkan::CommandRecorder& pass_recorder) {
-                pass_recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline().handle());
+                pass_recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                            pipeline_resource().pipeline());
                 cubey::render::record_fullscreen_triangle(pass_recorder);
             });
 
         recorder.end("vkEndCommandBuffer triangle");
     }
 
-    [[nodiscard]] const cubey::vulkan::PipelineLayout& pipeline_layout() const {
-        if (!pipeline_layout_.has_value()) {
-            throw std::runtime_error("pipeline layout is not initialized");
+    [[nodiscard]] const cubey::render::GraphicsPipelineResource& pipeline_resource() const {
+        if (!pipeline_resource_.has_value()) {
+            throw std::runtime_error("pipeline resource is not initialized");
         }
-        return pipeline_layout_.value();
-    }
-
-    [[nodiscard]] const cubey::vulkan::GraphicsPipeline& pipeline() const {
-        if (!pipeline_.has_value()) {
-            throw std::runtime_error("pipeline is not initialized");
-        }
-        return pipeline_.value();
+        return pipeline_resource_.value();
     }
 
     RunConfig config_;
-    std::optional<cubey::vulkan::PipelineLayout> pipeline_layout_;
-    std::optional<cubey::vulkan::GraphicsPipeline> pipeline_;
+    std::optional<cubey::render::GraphicsPipelineResource> pipeline_resource_;
 };
 
 } // namespace

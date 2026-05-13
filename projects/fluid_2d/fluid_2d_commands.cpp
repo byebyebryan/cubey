@@ -288,13 +288,15 @@ void record_fullscreen_draw(VkCommandBuffer command_buffer, const Fluid2DGpuReso
             .color = cubey::render::color_clear_value(0.006F, 0.008F, 0.014F, 1.0F),
         },
         [&resources, push_constants](const cubey::vulkan::CommandRecorder& pass_recorder) {
+            const cubey::render::GraphicsPipelineResource& render_pipeline =
+                resources.render_pipeline_resource();
             pass_recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                        resources.render_pipeline().handle());
+                                        render_pipeline.pipeline());
             pass_recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                              resources.render_pipeline_layout().handle(), 0,
+                                              render_pipeline.layout(), 0,
                                               resources.render_descriptors().set());
-            pass_recorder.push_constants(resources.render_pipeline_layout().handle(),
-                                         VK_SHADER_STAGE_FRAGMENT_BIT, 0, push_constants);
+            pass_recorder.push_constants(render_pipeline.layout(), VK_SHADER_STAGE_FRAGMENT_BIT, 0,
+                                         push_constants);
             cubey::render::record_fullscreen_triangle(pass_recorder);
         });
 }

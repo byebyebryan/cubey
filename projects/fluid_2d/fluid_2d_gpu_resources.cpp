@@ -1,9 +1,5 @@
 #include "fluid_2d_gpu_resources.h"
 
-#include <cubey/vulkan/dynamic_rendering.h>
-#include <cubey/vulkan/shader_bytecode.h>
-#include <cubey/vulkan/shader_module.h>
-
 #include <array>
 #include <cstddef>
 #include <filesystem>
@@ -47,6 +43,18 @@ upload_project_device_buffer(cubey::ProjectGpuServices& gpu, const void* data,
     };
 }
 
+[[nodiscard]] cubey::render::MaterialPassInfo fluid_render_pass_info() {
+    const VkPushConstantRange render_push_constant{
+        .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
+        .offset = 0,
+        .size = sizeof(float) * 4U,
+    };
+    return cubey::render::MaterialPassInfo{
+        .label = "fluid_2d.render",
+        .push_constants = {render_push_constant},
+    };
+}
+
 void create_compute_pipeline_resource(
     cubey::vulkan::Device& device, const char* filename, VkDescriptorSetLayout descriptor_layout,
     std::optional<cubey::render::ComputePipelineResource>& destination) {
@@ -80,8 +88,7 @@ void Fluid2DGpuResources::create_global_resources_if_needed(cubey::vulkan::Devic
 }
 
 void Fluid2DGpuResources::destroy_swapchain_resources() {
-    render_pipeline_.reset();
-    render_pipeline_layout_.reset();
+    render_pipeline_resource_.reset();
 }
 
 void Fluid2DGpuResources::destroy_all_resources() {
@@ -314,42 +321,27 @@ void Fluid2DGpuResources::create_compute_pipelines(cubey::vulkan::Device& device
 
 void Fluid2DGpuResources::create_render_pipeline(cubey::vulkan::Device& device,
                                                  VkFormat color_format, VkExtent2D extent) {
-    const std::vector<std::uint32_t> vertex_code =
-        cubey::vulkan::read_spirv_file(shader_path("fluid_2d.vert.spv"));
-    const std::vector<std::uint32_t> fragment_code =
-        cubey::vulkan::read_spirv_file(shader_path("fluid_2d_render.frag.spv"));
-    cubey::vulkan::ShaderModule vertex_shader(device, vertex_code);
-    cubey::vulkan::ShaderModule fragment_shader(device, fragment_code);
-
-    const VkPipelineShaderStageCreateInfo vertex_stage =
-        cubey::vulkan::shader_stage(VK_SHADER_STAGE_VERTEX_BIT, vertex_shader.handle());
-    const VkPipelineShaderStageCreateInfo fragment_stage =
-        cubey::vulkan::shader_stage(VK_SHADER_STAGE_FRAGMENT_BIT, fragment_shader.handle());
-    const std::array<VkPipelineShaderStageCreateInfo, 2> shader_stages{
-        vertex_stage,
-        fragment_stage,
+    const std::array<cubey::render::ShaderStageFile, 2> shader_stage_files{
+        cubey::render::ShaderStageFile{
+            .stage = VK_SHADER_STAGE_VERTEX_BIT,
+            .path = shader_path("fluid_2d.vert.spv"),
+        },
+        cubey::render::ShaderStageFile{
+            .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
+            .path = shader_path("fluid_2d_render.frag.spv"),
+        },
     };
+    const cubey::render::ShaderProgram shader_program(device, shader_stage_files);
 
-    const VkPushConstantRange render_push_constant{
-        .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
-        .offset = 0,
-        .size = sizeof(float) * 4U,
-    };
     const std::array<VkDescriptorSetLayout, 1> set_layouts{render_descriptors().layout()};
-    const std::array<VkPushConstantRange, 1> push_constants{render_push_constant};
-    const cubey::vulkan::PipelineLayoutInfo layout_info({
-        .set_layouts = set_layouts,
-        .push_constants = push_constants,
-    });
-    render_pipeline_layout_.emplace(device, layout_info.create_info());
-
-    cubey::vulkan::DynamicGraphicsPipelineConfig pipeline_config;
-    pipeline_config.layout = render_pipeline_layout().handle();
-    pipeline_config.extent = extent;
-    pipeline_config.color_format = color_format;
-    pipeline_config.shader_stages = shader_stages;
-    const cubey::vulkan::DynamicGraphicsPipelineInfo pipeline_info(pipeline_config);
-    render_pipeline_.emplace(device, pipeline_info.create_info());
+    const cubey::render::MaterialPassInfo material_pass = fluid_render_pass_info();
+    render_pipeline_resource_.emplace(device, cubey::render::GraphicsPipelineResourceConfig{
+                                                  .extent = extent,
+                                                  .color_format = color_format,
+                                                  .shader_stages = shader_program.stages(),
+                                                  .descriptor_set_layouts = set_layouts,
+                                                  .material_pass = material_pass,
+                                              });
 }
 
 const cubey::vulkan::Buffer& Fluid2DGpuResources::field_a() const {
@@ -490,18 +482,12 @@ Fluid2DGpuResources::projection_pipeline_resource() const {
     return projection_pipeline_resource_.value();
 }
 
-const cubey::vulkan::PipelineLayout& Fluid2DGpuResources::render_pipeline_layout() const {
-    if (!render_pipeline_layout_.has_value()) {
-        throw std::runtime_error("render pipeline layout is not initialized");
+const cubey::render::GraphicsPipelineResource&
+Fluid2DGpuResources::render_pipeline_resource() const {
+    if (!render_pipeline_resource_.has_value()) {
+        throw std::runtime_error("render pipeline resource is not initialized");
     }
-    return render_pipeline_layout_.value();
-}
-
-const cubey::vulkan::GraphicsPipeline& Fluid2DGpuResources::render_pipeline() const {
-    if (!render_pipeline_.has_value()) {
-        throw std::runtime_error("render pipeline is not initialized");
-    }
-    return render_pipeline_.value();
+    return render_pipeline_resource_.value();
 }
 
 } // namespace cubey::projects::fluid_2d

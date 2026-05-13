@@ -7,13 +7,10 @@
 #include <cubey/host/windowed_host.h>
 #include <cubey/input/pan_zoom_2d_controller.h>
 #include <cubey/render/pass.h>
+#include <cubey/render/pipeline_resource.h>
 #include <cubey/render/target.h>
 #include <cubey/vulkan/command_recorder.h>
 #include <cubey/vulkan/device.h>
-#include <cubey/vulkan/pipeline.h>
-#include <cubey/vulkan/shader_bytecode.h>
-#include <cubey/vulkan/shader_module.h>
-#include <cubey/vulkan/vk_check.h>
 
 #include <vulkan/vulkan.h>
 
@@ -22,10 +19,8 @@
 #include <cstdio>
 #include <filesystem>
 #include <optional>
-#include <span>
 #include <stdexcept>
 #include <utility>
-#include <vector>
 
 #ifndef CUBEY_FRACTAL_SHADER_DIR
 #error "CUBEY_FRACTAL_SHADER_DIR must be defined by the fractal CMake target"
@@ -34,10 +29,20 @@
 namespace cubey::examples::fractal {
 namespace {
 
-using cubey::vulkan::vk_struct;
-
 std::filesystem::path shader_path(const char* filename) {
     return std::filesystem::path(CUBEY_FRACTAL_SHADER_DIR) / filename;
+}
+
+[[nodiscard]] cubey::render::MaterialPassInfo fractal_pass_info() {
+    const VkPushConstantRange push_constant_range{
+        .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
+        .offset = 0,
+        .size = sizeof(FractalPushConstants),
+    };
+    return cubey::render::MaterialPassInfo{
+        .label = "fractal.fullscreen",
+        .push_constants = {push_constant_range},
+    };
 }
 
 class FractalApp {
@@ -48,8 +53,7 @@ class FractalApp {
     FractalApp& operator=(const FractalApp&) = delete;
 
     ~FractalApp() {
-        pipeline_.reset();
-        pipeline_layout_.reset();
+        pipeline_resource_.reset();
     }
 
     int run() {
@@ -142,45 +146,29 @@ class FractalApp {
     }
 
     void destroy_swapchain_resources() {
-        pipeline_.reset();
-        pipeline_layout_.reset();
+        pipeline_resource_.reset();
     }
 
     void create_pipeline(cubey::vulkan::Device& device, VkFormat color_format, VkExtent2D extent) {
-        const std::vector<std::uint32_t> vertex_code =
-            cubey::vulkan::read_spirv_file(shader_path("fractal.vert.spv"));
-        const std::vector<std::uint32_t> fragment_code =
-            cubey::vulkan::read_spirv_file(shader_path("fractal.frag.spv"));
-        cubey::vulkan::ShaderModule vertex_shader(device, vertex_code);
-        cubey::vulkan::ShaderModule fragment_shader(device, fragment_code);
-
-        const VkPipelineShaderStageCreateInfo vertex_stage =
-            cubey::vulkan::shader_stage(VK_SHADER_STAGE_VERTEX_BIT, vertex_shader.handle());
-        const VkPipelineShaderStageCreateInfo fragment_stage =
-            cubey::vulkan::shader_stage(VK_SHADER_STAGE_FRAGMENT_BIT, fragment_shader.handle());
-        const std::array<VkPipelineShaderStageCreateInfo, 2> shader_stages{
-            vertex_stage,
-            fragment_stage,
+        const std::array<cubey::render::ShaderStageFile, 2> shader_stage_files{
+            cubey::render::ShaderStageFile{
+                .stage = VK_SHADER_STAGE_VERTEX_BIT,
+                .path = shader_path("fractal.vert.spv"),
+            },
+            cubey::render::ShaderStageFile{
+                .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
+                .path = shader_path("fractal.frag.spv"),
+            },
         };
+        const cubey::render::ShaderProgram shader_program(device, shader_stage_files);
 
-        const VkPushConstantRange push_constants{
-            .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
-            .offset = 0,
-            .size = sizeof(FractalPushConstants),
-        };
-        const cubey::vulkan::PipelineLayoutInfo layout_info({
-            .set_layouts = std::span<const VkDescriptorSetLayout>{},
-            .push_constants = std::span<const VkPushConstantRange>(&push_constants, 1),
-        });
-        pipeline_layout_.emplace(device, layout_info.create_info());
-
-        cubey::vulkan::DynamicGraphicsPipelineConfig pipeline_config;
-        pipeline_config.layout = pipeline_layout().handle();
-        pipeline_config.extent = extent;
-        pipeline_config.color_format = color_format;
-        pipeline_config.shader_stages = shader_stages;
-        const cubey::vulkan::DynamicGraphicsPipelineInfo pipeline_info(pipeline_config);
-        pipeline_.emplace(device, pipeline_info.create_info());
+        const cubey::render::MaterialPassInfo material_pass = fractal_pass_info();
+        pipeline_resource_.emplace(device, cubey::render::GraphicsPipelineResourceConfig{
+                                               .extent = extent,
+                                               .color_format = color_format,
+                                               .shader_stages = shader_program.stages(),
+                                               .material_pass = material_pass,
+                                           });
     }
 
     [[nodiscard]] FractalPushConstants push_constants(VkExtent2D extent) const {
@@ -196,9 +184,10 @@ class FractalApp {
                 .color = cubey::render::color_clear_value(0.015F, 0.018F, 0.026F, 1.0F),
             },
             [this, constants](const cubey::vulkan::CommandRecorder& pass_recorder) {
-                pass_recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline().handle());
-                pass_recorder.push_constants(pipeline_layout().handle(),
-                                             VK_SHADER_STAGE_FRAGMENT_BIT, 0, constants);
+                const cubey::render::GraphicsPipelineResource& pipeline = pipeline_resource();
+                pass_recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.pipeline());
+                pass_recorder.push_constants(pipeline.layout(), VK_SHADER_STAGE_FRAGMENT_BIT, 0,
+                                             constants);
                 cubey::render::record_fullscreen_triangle(pass_recorder);
             });
     }
@@ -216,18 +205,11 @@ class FractalApp {
         recorder.end("vkEndCommandBuffer fractal");
     }
 
-    [[nodiscard]] const cubey::vulkan::PipelineLayout& pipeline_layout() const {
-        if (!pipeline_layout_.has_value()) {
-            throw std::runtime_error("pipeline layout is not initialized");
+    [[nodiscard]] const cubey::render::GraphicsPipelineResource& pipeline_resource() const {
+        if (!pipeline_resource_.has_value()) {
+            throw std::runtime_error("pipeline resource is not initialized");
         }
-        return pipeline_layout_.value();
-    }
-
-    [[nodiscard]] const cubey::vulkan::GraphicsPipeline& pipeline() const {
-        if (!pipeline_.has_value()) {
-            throw std::runtime_error("pipeline is not initialized");
-        }
-        return pipeline_.value();
+        return pipeline_resource_.value();
     }
 
     RunConfig config_;
@@ -237,8 +219,7 @@ class FractalApp {
         .scale = 1.35F,
     })};
 
-    std::optional<cubey::vulkan::PipelineLayout> pipeline_layout_;
-    std::optional<cubey::vulkan::GraphicsPipeline> pipeline_;
+    std::optional<cubey::render::GraphicsPipelineResource> pipeline_resource_;
 };
 
 } // namespace

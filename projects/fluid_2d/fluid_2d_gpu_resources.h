@@ -7,7 +7,6 @@
 #include <cubey/vulkan/buffer.h>
 #include <cubey/vulkan/descriptors.h>
 #include <cubey/vulkan/device.h>
-#include <cubey/vulkan/pipeline.h>
 
 #include <vulkan/vulkan.h>
 
@@ -39,8 +38,7 @@ class Fluid2DGpuResources {
     [[nodiscard]] const cubey::render::ComputePipelineResource& pressure_pipeline_resource() const;
     [[nodiscard]] const cubey::render::ComputePipelineResource&
     projection_pipeline_resource() const;
-    [[nodiscard]] const cubey::vulkan::PipelineLayout& render_pipeline_layout() const;
-    [[nodiscard]] const cubey::vulkan::GraphicsPipeline& render_pipeline() const;
+    [[nodiscard]] const cubey::render::GraphicsPipelineResource& render_pipeline_resource() const;
     [[nodiscard]] VkDescriptorSet inject_descriptor_set() const noexcept {
         return inject_descriptor_set_;
     }
@@ -104,8 +102,7 @@ class Fluid2DGpuResources {
     std::optional<cubey::render::ComputePipelineResource> divergence_pipeline_resource_;
     std::optional<cubey::render::ComputePipelineResource> pressure_pipeline_resource_;
     std::optional<cubey::render::ComputePipelineResource> projection_pipeline_resource_;
-    std::optional<cubey::vulkan::PipelineLayout> render_pipeline_layout_;
-    std::optional<cubey::vulkan::GraphicsPipeline> render_pipeline_;
+    std::optional<cubey::render::GraphicsPipelineResource> render_pipeline_resource_;
 };
 
 } // namespace cubey::projects::fluid_2d

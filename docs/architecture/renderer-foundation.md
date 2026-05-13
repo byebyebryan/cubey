@@ -141,6 +141,9 @@ full engine architecture.
   files, descriptor set layouts, push constants, attachment formats, vertex
   input, and `MaterialPassInfo` where applicable; they do not reflect shaders,
   cache pipelines, allocate descriptors, bind materials, or record commands.
+  Current examples and `fluid_2d` create app/project graphics pipelines through
+  this render-level wrapper; the lower-level Vulkan pipeline builders remain as
+  tested implementation details and escape hatches.
 - `cubey::vulkan::DescriptorWriteBatch` is the current descriptor-update
   boundary: callers still choose descriptor sets, bindings, resources, and
   image layouts, while the batch owns write backing storage until submission.
