@@ -220,6 +220,12 @@ domain-shaped. Transform managers intentionally keep custom storage because
 parent/child links, dirty propagation, and local/world affine cache updates are
 part of the transform domain.
 
+Current implementation note: the transform manager public header owns the
+contract, type aliases, read-view shape, and explicit 2D/3D instantiation
+declarations. The template member definitions live in `src/cubey/scene` and are
+explicitly instantiated for `Transform2D` and `Transform3D`, keeping parented
+hierarchy implementation detail out of the main public include surface.
+
 ## Render Resource Handles
 
 `MeshHandle` and `MaterialHandle` are CPU-side typed IDs carried by renderable

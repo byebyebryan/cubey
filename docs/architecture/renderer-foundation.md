@@ -260,4 +260,7 @@ metadata, depth-only rendering info, synchronous pass-callback execution,
 execution-time resource resolution, simple transient allocation, frame-slot
 resource ownership, and graph-owned barrier recording. Render-graph
 scheduling, renderer-owned material binding policy, shadow policy, and transient
-aliasing remain future work.
+aliasing remain future work. The `shadow_cube` implementation is split into
+example-local modules for resource setup, scene/view setup, graph declaration,
+and pass recording; those files are a readability boundary for the reference
+example, not a reusable shadow subsystem.

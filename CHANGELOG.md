@@ -185,6 +185,13 @@ versioned section and use that section as the release notes.
   triangle-only app targets were removed, the headless smoke became
   `headless_cube`, the particle smoke became `particle_cubes`, and the
   fullscreen fractal moved to `projects/fractal_2d`.
+- Core tests now register test cases through domain-specific registry files
+  rather than a single monolithic test registry translation unit.
+- Transform manager public headers now expose the component-manager contract
+  while the instantiated implementation lives under `src/cubey/scene`.
+- `shadow_cube` is split into example-local lifecycle, resource, scene, render
+  graph, and shadow-pass helper files so the example app stays orchestration
+  focused without promoting shadow policy into the Cubey library.
 
 ## Pre-2.0 History
 

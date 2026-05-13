@@ -296,7 +296,9 @@ named explicitly and live in either `examples/` or `projects/`:
 - `examples/` - small, focused cube-first reference programs that prove one
   renderer concept or API path. Current examples are `spinning_cube`,
   `textured_cube`, `shadow_cube`, `instanced_cubes`, `material_cubes`,
-  `headless_cube`, and `particle_cubes`.
+  `headless_cube`, and `particle_cubes`. Larger examples may split into
+  example-local private modules for lifecycle, resources, scene setup, and
+  command recording; that split is not automatically Cubey library API.
 - `projects/` - first-class graphics experiments and longer-lived creative
   work, starting with `fluid_2d` and `fractal_2d`, plus later candidates such as
   `fluid_sim`, `marching_cubes`, and `sdf_sculpt`.
@@ -425,12 +427,18 @@ cubey/
       input/               -- input snapshot and camera-control helpers
       render/              -- renderer-facing CPU resource and target helpers
       scene/               -- scene/entity, planning helpers, and component managers
+        transform_manager.cpp -- transform hierarchy implementation instantiations
       vulkan/
         *.cpp              -- Vulkan object, command, submission, and swapchain helpers
   examples/
     spinning_cube/         -- indexed cube, push constants, depth
     textured_cube/         -- compute texture generation, uniforms, sampling
     shadow_cube/           -- graph-declared shadow/scene/present example
+      shadow_cube_app.*    -- app lifecycle and resource accessors
+      shadow_cube_resources.* -- mesh, texture, descriptor, and pipeline setup
+      shadow_cube_scene.*  -- scene entities, light camera, and view plans
+      shadow_cube_frame.*  -- render-graph declaration and pass recording
+      shadow_cube_render.* -- shadow pass metadata and graph texture states
     instanced_cubes/       -- instance-rate cube grid rendering
     material_cubes/        -- per-packet material instance binding
     headless_cube/         -- no-window offscreen cube PNG path
@@ -457,6 +465,7 @@ cubey/
       fluid_25d/
   tools/
   tests/
+    cubey/                 -- domain-split test registry and focused unit tests
   benchmarks/
   shaders/                 -- shared GLSL includes (lighting, noise, math)
   assets/                  -- textures, meshes
