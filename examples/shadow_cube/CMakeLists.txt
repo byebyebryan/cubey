@@ -7,6 +7,10 @@ cubey_add_app_target(
     SOURCES
         main.cpp
         shadow_cube_app.cpp
+        shadow_cube_frame.cpp
+        shadow_cube_render.cpp
+        shadow_cube_resources.cpp
+        shadow_cube_scene.cpp
     SHADERS
         shaders/shadow_depth.vert
         shaders/shadow_cube.vert
