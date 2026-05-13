@@ -179,6 +179,13 @@ void test_render_plan_filters_draw_packets_for_recording_policy() {
             },
         .cast_shadows = false,
     };
+    const cubey::scene::RenderDrawPacket3D alpha_blend_packet{
+        .material_info =
+            cubey::render::MaterialInfo{
+                .label = "alpha",
+                .blend = cubey::render::MaterialBlendMode::AlphaBlend,
+            },
+    };
 
     require(cubey::scene::render_packet_matches_filter(
                 depth_caster,
@@ -198,6 +205,14 @@ void test_render_plan_filters_draw_packets_for_recording_policy() {
                 forward_only_non_caster,
                 {.material_pass = cubey::render::MaterialPassKind::ForwardColor}),
             "recording filter should accept packets with the requested forward pass");
+    require(cubey::scene::render_packet_matches_filter(
+                alpha_blend_packet,
+                {.blend_mode = cubey::render::MaterialBlendMode::AlphaBlend}),
+            "recording filter should accept packets with the requested blend mode");
+    require(!cubey::scene::render_packet_matches_filter(
+                alpha_blend_packet,
+                {.blend_mode = cubey::render::MaterialBlendMode::Opaque}),
+            "recording filter should reject packets with a different blend mode");
 }
 
 void test_render_recording_rejects_ambiguous_material_binding_sources() {

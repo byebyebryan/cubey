@@ -322,6 +322,10 @@ void create_material_resources(Engine& engine, const vulkan::Device& device,
                              ? render::MaterialBlendMode::AlphaBlend
                              : render::MaterialBlendMode::Opaque,
                 .sort_key = static_cast<std::uint32_t>(index),
+                .pass_mask = source.alpha_mode == asset::GltfAlphaMode::Blend
+                                 ? render::material_pass_mask(
+                                       render::MaterialPassKind::ForwardColor)
+                                 : render::default_material_pass_mask(),
             });
         result.material_handles.push_back(material);
         resources.material_factors.emplace(

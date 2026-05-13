@@ -23,13 +23,20 @@ VertexInputLayout pbr_vertex_input_layout() {
 }
 
 MaterialPassInfo pbr_forward_pass_info() {
+    return pbr_forward_pass_info({});
+}
+
+MaterialPassInfo pbr_forward_pass_info(const PbrForwardPassConfig& config) {
     const VkPushConstantRange push_constants{
         .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
         .offset = 0,
         .size = sizeof(PbrPushConstants),
     };
-    return {
-        .label = "pbr.forward",
+    MaterialPassInfo pass{
+        .label = config.label.empty()
+                     ? (config.blend == MaterialBlendMode::AlphaBlend ? "pbr.forward.alpha"
+                                                                      : "pbr.forward")
+                     : config.label,
         .kind = MaterialPassKind::ForwardColor,
         .descriptor_sets =
             {
@@ -94,6 +101,15 @@ MaterialPassInfo pbr_forward_pass_info() {
         .depth_test = true,
         .depth_write = true,
     };
+    if (config.blend == MaterialBlendMode::AlphaBlend) {
+        pass.depth_write = false;
+        pass.blend_enable = true;
+        pass.src_color_blend_factor = VK_BLEND_FACTOR_SRC_ALPHA;
+        pass.dst_color_blend_factor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+        pass.src_alpha_blend_factor = VK_BLEND_FACTOR_ONE;
+        pass.dst_alpha_blend_factor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+    }
+    return pass;
 }
 
 PbrPushConstants pbr_push_constants(math::Mat4 model, const PbrMaterialFactors& factors) {

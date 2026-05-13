@@ -52,4 +52,18 @@ void test_pbr_forward_pass_declares_scene_and_material_sets() {
     require(pass.push_constants.size() == 1, "PBR pass should declare push constants");
     require(pass.push_constants[0].size == sizeof(cubey::render::PbrPushConstants),
             "PBR push constant range should match struct size");
+
+    const cubey::render::MaterialPassInfo alpha_pass =
+        cubey::render::pbr_forward_pass_info(cubey::render::PbrForwardPassConfig{
+            .blend = cubey::render::MaterialBlendMode::AlphaBlend,
+        });
+    require(alpha_pass.label == "pbr.forward.alpha",
+            "PBR alpha pass should use a distinct label");
+    require(alpha_pass.depth_test && !alpha_pass.depth_write,
+            "PBR alpha pass should test but not write depth");
+    require(alpha_pass.blend_enable, "PBR alpha pass should enable color blending");
+    require(alpha_pass.src_color_blend_factor == VK_BLEND_FACTOR_SRC_ALPHA,
+            "PBR alpha pass should source blend from alpha");
+    require(alpha_pass.dst_color_blend_factor == VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
+            "PBR alpha pass should destination blend from inverse alpha");
 }

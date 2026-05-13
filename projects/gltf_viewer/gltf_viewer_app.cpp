@@ -241,7 +241,8 @@ class GltfViewerApp {
 
     void destroy_swapchain_resources() {
         graph_executor_.clear();
-        forward_pipeline_.reset();
+        alpha_pipeline_.reset();
+        opaque_pipeline_.reset();
         depth_attachment_.reset();
     }
 
@@ -545,7 +546,7 @@ class GltfViewerApp {
             scene_material().layout(),
             import_resources_.material_instances.at(import_result_.first_material_handle).layout(),
         };
-        forward_pipeline_.emplace(
+        opaque_pipeline_.emplace(
             context.device(),
             cubey::render::graphics_pipeline_file_resource_config(
                 {
@@ -558,7 +559,28 @@ class GltfViewerApp {
                     .vertex_bindings = vertex_input.bindings(),
                     .vertex_attributes = vertex_input.attribute_descriptions(),
                     .descriptor_set_layouts = set_layouts,
-                    .material_pass = cubey::render::pbr_forward_pass_info(),
+                    .material_pass =
+                        cubey::render::pbr_forward_pass_info(cubey::render::PbrForwardPassConfig{
+                            .blend = cubey::render::MaterialBlendMode::Opaque,
+                        }),
+                }));
+        alpha_pipeline_.emplace(
+            context.device(),
+            cubey::render::graphics_pipeline_file_resource_config(
+                {
+                    .extent = context.swapchain().extent(),
+                    .color_format = context.swapchain().format(),
+                    .depth_format = depth_attachment().format(),
+                },
+                {
+                    .shader_stage_files = shader_stage_files,
+                    .vertex_bindings = vertex_input.bindings(),
+                    .vertex_attributes = vertex_input.attribute_descriptions(),
+                    .descriptor_set_layouts = set_layouts,
+                    .material_pass =
+                        cubey::render::pbr_forward_pass_info(cubey::render::PbrForwardPassConfig{
+                            .blend = cubey::render::MaterialBlendMode::AlphaBlend,
+                        }),
                 }));
     }
 
@@ -756,30 +778,39 @@ class GltfViewerApp {
             },
             [this, &scene_plan, frame_slot](
                 const cubey::vulkan::CommandRecorder& pass_recorder) {
-                cubey::scene::record_pipeline_draw_packets_3d(
-                    pass_recorder, scene_plan.draw_packets, import_resources_.meshes,
-                    {
-                        .pipeline = &forward_pipeline(),
-                        .material = &scene_material().material(),
-                        .frame_slot = frame_slot,
-                        .filter =
+                const auto record_blend =
+                    [this, &pass_recorder, &scene_plan, frame_slot](
+                        const cubey::render::GraphicsPipelineResource& pipeline,
+                        cubey::render::MaterialBlendMode blend) {
+                        cubey::scene::record_pipeline_draw_packets_3d(
+                            pass_recorder, scene_plan.draw_packets, import_resources_.meshes,
                             {
-                                .material_pass = cubey::render::MaterialPassKind::ForwardColor,
+                                .pipeline = &pipeline,
+                                .material = &scene_material().material(),
+                                .frame_slot = frame_slot,
+                                .filter =
+                                    {
+                                        .material_pass =
+                                            cubey::render::MaterialPassKind::ForwardColor,
+                                        .blend_mode = blend,
+                                    },
                             },
-                    },
-                    [this](const cubey::vulkan::CommandRecorder& packet_recorder,
-                           const cubey::scene::RenderDrawPacket3D& packet) {
+                            [this, &pipeline](
+                                const cubey::vulkan::CommandRecorder& packet_recorder,
+                                const cubey::scene::RenderDrawPacket3D& packet) {
                         const cubey::render::MaterialInstance& material =
                             import_resources_.material_instances.at(packet.material);
-                        cubey::render::bind_material_instance(packet_recorder, forward_pipeline(),
-                                                              material);
+                        cubey::render::bind_material_instance(packet_recorder, pipeline, material);
                         packet_recorder.push_constants(
-                            forward_pipeline().layout(),
+                            pipeline.layout(),
                             VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
                             cubey::render::pbr_push_constants(
                                 packet.world_affine_matrix,
                                 import_resources_.material_factors.at(packet.material)));
                     });
+                    };
+                record_blend(opaque_pipeline(), cubey::render::MaterialBlendMode::Opaque);
+                record_blend(alpha_pipeline(), cubey::render::MaterialBlendMode::AlphaBlend);
             });
     }
 
@@ -824,11 +855,18 @@ class GltfViewerApp {
         return scene_material_.value();
     }
 
-    [[nodiscard]] const cubey::render::GraphicsPipelineResource& forward_pipeline() const {
-        if (!forward_pipeline_.has_value()) {
-            throw std::runtime_error("PBR forward pipeline is not initialized");
+    [[nodiscard]] const cubey::render::GraphicsPipelineResource& opaque_pipeline() const {
+        if (!opaque_pipeline_.has_value()) {
+            throw std::runtime_error("PBR opaque pipeline is not initialized");
         }
-        return forward_pipeline_.value();
+        return opaque_pipeline_.value();
+    }
+
+    [[nodiscard]] const cubey::render::GraphicsPipelineResource& alpha_pipeline() const {
+        if (!alpha_pipeline_.has_value()) {
+            throw std::runtime_error("PBR alpha pipeline is not initialized");
+        }
+        return alpha_pipeline_.value();
     }
 
     [[nodiscard]] const cubey::vulkan::DepthAttachment& depth_attachment() const {
@@ -863,7 +901,8 @@ class GltfViewerApp {
     std::optional<
         cubey::render::FrameUniformMaterialInstance<cubey::render::PbrSceneUniforms>>
         scene_material_;
-    std::optional<cubey::render::GraphicsPipelineResource> forward_pipeline_;
+    std::optional<cubey::render::GraphicsPipelineResource> opaque_pipeline_;
+    std::optional<cubey::render::GraphicsPipelineResource> alpha_pipeline_;
     std::optional<cubey::vulkan::DepthAttachment> depth_attachment_;
 };
 

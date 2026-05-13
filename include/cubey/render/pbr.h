@@ -8,6 +8,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <string>
 
 namespace cubey::render {
 
@@ -60,8 +61,14 @@ enum class PbrMaterialBinding : std::uint32_t {
     Emissive = 4,
 };
 
+struct PbrForwardPassConfig {
+    MaterialBlendMode blend = MaterialBlendMode::Opaque;
+    std::string label{};
+};
+
 [[nodiscard]] VertexInputLayout pbr_vertex_input_layout();
 [[nodiscard]] MaterialPassInfo pbr_forward_pass_info();
+[[nodiscard]] MaterialPassInfo pbr_forward_pass_info(const PbrForwardPassConfig& config);
 [[nodiscard]] PbrPushConstants pbr_push_constants(math::Mat4 model,
                                                   const PbrMaterialFactors& factors);
 
