@@ -89,24 +89,23 @@ void main() {
     float ndotv = max(dot(normal, view_direction), 0.0);
 
     vec3 albedo = base_color.rgb;
-    vec3 f0 = mix(vec3(0.04), albedo, metallic);
+    vec3 diffuse_color = cubey_pbr_diffuse_color(albedo, metallic);
+    vec3 f0 = cubey_pbr_f0(albedo, metallic);
     vec3 dfg = texture(brdf_lut, vec2(ndotv, roughness)).rgb;
     vec3 energy_compensation = cubey_pbr_energy_compensation(f0, dfg.b);
     float d = cubey_pbr_distribution_ggx(max(dot(normal, half_vector), 0.0), roughness);
     float v = cubey_pbr_visibility_smith_ggx_correlated(ndotv, ndotl, roughness);
     vec3 f = cubey_pbr_fresnel_schlick(max(dot(half_vector, view_direction), 0.0), f0);
     vec3 specular = d * v * f * energy_compensation;
-    vec3 kd = (vec3(1.0) - f) * (1.0 - metallic);
 
     float occlusion = mix(1.0, texture(occlusion_texture, frag_uv0).r, occlusion_strength);
     vec3 radiance = scene.light_color_intensity.rgb * scene.light_color_intensity.a;
     float visibility = shadow_visibility(frag_shadow_position, normal, light_direction);
-    vec3 direct = ((kd * albedo / CUBEY_PBR_PI) + specular) * radiance * ndotl * visibility;
+    vec3 direct =
+        (cubey_pbr_lambert_diffuse(diffuse_color) + specular) * radiance * ndotl * visibility;
 
-    vec3 ibl_f = cubey_pbr_fresnel_schlick_roughness(ndotv, f0, roughness);
-    vec3 ibl_kd = (vec3(1.0) - ibl_f) * (1.0 - metallic);
     vec3 irradiance = texture(irradiance_cube, normal).rgb;
-    vec3 diffuse_ibl = irradiance * albedo;
+    vec3 diffuse_ibl = irradiance * diffuse_color;
     vec3 reflection = reflect(-view_direction, normal);
     float max_prefiltered_lod = max(scene.environment_intensity_mip_count.y - 1.0, 0.0);
     vec3 prefiltered = textureLod(prefiltered_cube, reflection,
@@ -117,7 +116,7 @@ void main() {
         cubey_pbr_horizon_specular_occlusion(reflection, geometric_normal);
     vec3 specular_ibl =
         prefiltered * cubey_pbr_indirect_specular(f0, dfg) * specular_occlusion;
-    vec3 ambient = ((ibl_kd * diffuse_ibl * occlusion) + specular_ibl) *
+    vec3 ambient = ((diffuse_ibl * occlusion) + specular_ibl) *
                    scene.environment_intensity_mip_count.x;
     ambient += scene.ambient_color_intensity.rgb * scene.ambient_color_intensity.a *
                albedo * occlusion;

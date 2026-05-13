@@ -59,12 +59,11 @@ void main() {
     vec3 view_direction = normalize(scene.camera_position.xyz - frag_world_position);
     float ndotv = max(dot(normal, view_direction), 0.0);
     vec3 albedo = base_color.rgb;
-    vec3 f0 = mix(vec3(0.04), albedo, metallic);
-    vec3 ibl_f = cubey_pbr_fresnel_schlick_roughness(ndotv, f0, roughness);
-    vec3 ibl_kd = (vec3(1.0) - ibl_f) * (1.0 - metallic);
+    vec3 diffuse_color = cubey_pbr_diffuse_color(albedo, metallic);
+    vec3 f0 = cubey_pbr_f0(albedo, metallic);
 
     vec3 irradiance = texture(irradiance_cube, normal).rgb;
-    vec3 diffuse_ibl = irradiance * albedo;
+    vec3 diffuse_ibl = irradiance * diffuse_color;
     vec3 reflection = reflect(-view_direction, normal);
     float max_prefiltered_lod = max(scene.environment_intensity_mip_count.y - 1.0, 0.0);
     vec3 prefiltered = textureLod(prefiltered_cube, reflection,
@@ -79,7 +78,7 @@ void main() {
         prefiltered * cubey_pbr_indirect_specular(f0, dfg) * specular_occlusion;
     vec3 emissive = texture(emissive_texture, frag_uv0).rgb *
                     push_constants.emissive_alpha_cutoff.rgb;
-    vec3 color = (((ibl_kd * diffuse_ibl * occlusion) + specular_ibl) *
+    vec3 color = (((diffuse_ibl * occlusion) + specular_ibl) *
                   scene.environment_intensity_mip_count.x) +
                  emissive;
     out_color = vec4(color, base_color.a);

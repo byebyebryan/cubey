@@ -79,4 +79,10 @@ target_link_libraries(
         cubey_project_warnings
 )
 
+target_compile_definitions(
+    cubey_core_tests
+    PRIVATE
+        CUBEY_SOURCE_DIR="${CMAKE_SOURCE_DIR}"
+)
+
 add_test(NAME cubey_core_tests COMMAND cubey_core_tests)

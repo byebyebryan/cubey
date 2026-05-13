@@ -1,4 +1,5 @@
 const float CUBEY_PBR_PI = 3.14159265359;
+const vec3 CUBEY_PBR_DIELECTRIC_F0 = vec3(0.04);
 
 float cubey_pbr_saturate(float value) {
     return clamp(value, 0.0, 1.0);
@@ -6,6 +7,18 @@ float cubey_pbr_saturate(float value) {
 
 vec3 cubey_pbr_saturate(vec3 value) {
     return clamp(value, vec3(0.0), vec3(1.0));
+}
+
+vec3 cubey_pbr_diffuse_color(vec3 base_color, float metallic) {
+    return base_color * (1.0 - metallic);
+}
+
+vec3 cubey_pbr_f0(vec3 base_color, float metallic) {
+    return mix(CUBEY_PBR_DIELECTRIC_F0, base_color, metallic);
+}
+
+vec3 cubey_pbr_lambert_diffuse(vec3 diffuse_color) {
+    return diffuse_color / CUBEY_PBR_PI;
 }
 
 float cubey_pbr_distribution_ggx(float ndoth, float roughness) {

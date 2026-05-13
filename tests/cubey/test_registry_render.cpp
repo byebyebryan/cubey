@@ -65,6 +65,7 @@ void test_render_item_validates_required_draw_identity();
 void test_render_pass_helpers_describe_clear_values_and_fullscreen_triangle();
 void test_pbr_vertex_layout_matches_shader_contract();
 void test_pbr_forward_pass_declares_scene_and_material_sets();
+void test_pbr_shaders_use_filament_style_material_remap();
 void test_render_pipeline_resource_allows_vertexless_fullscreen_pipeline_shape();
 void test_render_pipeline_resource_builds_compute_pipeline_info();
 void test_render_pipeline_resource_builds_layout_and_dynamic_pipeline_info();
@@ -143,6 +144,7 @@ std::span<const TestCase> render_test_cases() {
         CUBEY_TEST(test_render_pass_helpers_describe_clear_values_and_fullscreen_triangle),
         CUBEY_TEST(test_pbr_vertex_layout_matches_shader_contract),
         CUBEY_TEST(test_pbr_forward_pass_declares_scene_and_material_sets),
+        CUBEY_TEST(test_pbr_shaders_use_filament_style_material_remap),
         CUBEY_TEST(test_generated_pbr_environment_data_is_deterministic_and_sized),
         CUBEY_TEST(test_generated_pbr_dfg_lut_stores_energy_compensation_term),
         CUBEY_TEST(test_generated_pbr_environment_config_rejects_zero_dimensions),
