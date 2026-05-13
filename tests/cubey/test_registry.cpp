@@ -68,6 +68,7 @@ void test_light_manager_updates_keep_epoch_local_snapshots();
 void test_light_packets_require_transform_for_point_lights();
 void test_material_info_defaults_to_depth_and_forward_passes();
 void test_material_pass_info_applies_graphics_pipeline_state();
+void test_material_pass_info_builds_descriptor_set_info();
 void test_material_pass_info_validates_descriptor_and_push_constant_shape();
 void test_material_pass_masks_include_requested_passes();
 void test_math_helpers_match_vulkan_projection_conventions();
@@ -133,6 +134,8 @@ void test_render_graph_storage_read_write_initializes_transient_buffers();
 void test_render_graph_transfer_pass_accepts_only_transfer_usages();
 void test_render_item_resolves_draw_item_fields();
 void test_render_item_validates_required_draw_identity();
+void test_render_pipeline_resource_allows_vertexless_fullscreen_pipeline_shape();
+void test_render_pipeline_resource_builds_layout_and_dynamic_pipeline_info();
 void test_primitive_cube_normal_uv_mesh_preserves_normals_and_face_uvs();
 void test_primitive_cube_position_color_mesh_uses_face_colors_and_indices();
 void test_primitive_vertex_layouts_match_shader_contracts();
@@ -268,6 +271,7 @@ std::span<const TestCase> core_tests() {
         CUBEY_TEST(test_material_pass_masks_include_requested_passes),
         CUBEY_TEST(test_material_pass_info_validates_descriptor_and_push_constant_shape),
         CUBEY_TEST(test_material_pass_info_applies_graphics_pipeline_state),
+        CUBEY_TEST(test_material_pass_info_builds_descriptor_set_info),
         CUBEY_TEST(test_math_helpers_match_vulkan_projection_conventions),
         CUBEY_TEST(test_math_quaternion_helpers_match_rotation_matrices),
         CUBEY_TEST(test_orbit_controller_tracks_rotation_drag_pause_and_reset),
@@ -330,6 +334,8 @@ std::span<const TestCase> core_tests() {
         CUBEY_TEST(test_render_graph_declares_compute_storage_buffer_flow),
         CUBEY_TEST(test_render_graph_transfer_pass_accepts_only_transfer_usages),
         CUBEY_TEST(test_render_graph_frame_executor_tracks_slots_and_rejects_invalid_record_info),
+        CUBEY_TEST(test_render_pipeline_resource_builds_layout_and_dynamic_pipeline_info),
+        CUBEY_TEST(test_render_pipeline_resource_allows_vertexless_fullscreen_pipeline_shape),
         CUBEY_TEST(test_primitive_vertex_layouts_match_shader_contracts),
         CUBEY_TEST(test_primitive_cube_position_color_mesh_uses_face_colors_and_indices),
         CUBEY_TEST(test_primitive_cube_normal_uv_mesh_preserves_normals_and_face_uvs),

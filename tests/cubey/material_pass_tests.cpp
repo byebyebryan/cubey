@@ -196,3 +196,64 @@ void test_material_pass_info_applies_graphics_pipeline_state() {
     require(config.dst_color_blend_factor == VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
             "material pass should apply destination color blend factor");
 }
+
+void test_material_pass_info_builds_descriptor_set_info() {
+    const cubey::render::MaterialPassInfo pass{
+        .label = "textured forward",
+        .descriptor_sets =
+            {
+                cubey::render::MaterialDescriptorSetLayout{
+                    .set = 1,
+                    .bindings =
+                        {
+                            cubey::vulkan::DescriptorSetBindingConfig{
+                                .binding = 0,
+                                .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                                .stage_flags =
+                                    VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+                            },
+                            cubey::vulkan::DescriptorSetBindingConfig{
+                                .binding = 1,
+                                .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
+                            },
+                        },
+                },
+            },
+    };
+
+    const cubey::render::MaterialDescriptorSetLayout& descriptor_set =
+        cubey::render::material_descriptor_set_layout(pass, 1);
+    require(descriptor_set.set == 1, "material descriptor set lookup should preserve set index");
+    require(descriptor_set.bindings.size() == 2,
+            "material descriptor set lookup should expose declared bindings");
+
+    const cubey::vulkan::DescriptorSetInfo descriptor_info =
+        cubey::render::material_descriptor_set_info(pass, 1, 3);
+    require(descriptor_info.max_sets() == 3,
+            "material descriptor set info should preserve max set count");
+    require(descriptor_info.bindings().size() == 2,
+            "material descriptor set info should preserve binding count");
+    require(descriptor_info.bindings()[0].binding == 0,
+            "material descriptor set info should preserve first binding");
+    require(descriptor_info.bindings()[1].descriptorType ==
+                VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            "material descriptor set info should preserve sampler binding type");
+    require(descriptor_info.pool_sizes().size() == 2,
+            "material descriptor set info should aggregate pool sizes");
+    require(descriptor_info.pool_sizes()[0].descriptorCount == 3,
+            "material descriptor set info should multiply uniform descriptors by max sets");
+    require(descriptor_info.pool_sizes()[1].descriptorCount == 3,
+            "material descriptor set info should multiply sampler descriptors by max sets");
+
+    require_throws(
+        [&pass] {
+            static_cast<void>(cubey::render::material_descriptor_set_layout(pass, 0));
+        },
+        "material descriptor set lookup should reject missing sets");
+    require_throws(
+        [&pass] {
+            static_cast<void>(cubey::render::material_descriptor_set_info(pass, 1, 0));
+        },
+        "material descriptor set info should reject zero max set count");
+}

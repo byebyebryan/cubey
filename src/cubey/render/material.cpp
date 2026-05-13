@@ -54,6 +54,27 @@ void validate_material_pass_info(const MaterialPassInfo& info) {
     }
 }
 
+const MaterialDescriptorSetLayout& material_descriptor_set_layout(const MaterialPassInfo& info,
+                                                                  std::uint32_t set) {
+    validate_material_pass_info(info);
+    const auto descriptor_set =
+        std::find_if(info.descriptor_sets.begin(), info.descriptor_sets.end(),
+                     [set](const MaterialDescriptorSetLayout& candidate) {
+                         return candidate.set == set;
+                     });
+    if (descriptor_set == info.descriptor_sets.end()) {
+        throw std::runtime_error("material pass descriptor set is not declared");
+    }
+    return *descriptor_set;
+}
+
+cubey::vulkan::DescriptorSetInfo material_descriptor_set_info(const MaterialPassInfo& info,
+                                                              std::uint32_t set,
+                                                              std::uint32_t max_sets) {
+    const MaterialDescriptorSetLayout& descriptor_set = material_descriptor_set_layout(info, set);
+    return cubey::vulkan::DescriptorSetInfo(descriptor_set.bindings, max_sets);
+}
+
 void apply_material_pass_state(const MaterialPassInfo& info,
                                cubey::vulkan::DynamicGraphicsPipelineConfig& config) {
     validate_material_pass_info(info);

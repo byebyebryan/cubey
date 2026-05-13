@@ -90,6 +90,11 @@ struct MaterialPassInfo {
 }
 
 void validate_material_pass_info(const MaterialPassInfo& info);
+[[nodiscard]] const MaterialDescriptorSetLayout&
+material_descriptor_set_layout(const MaterialPassInfo& info, std::uint32_t set);
+[[nodiscard]] cubey::vulkan::DescriptorSetInfo
+material_descriptor_set_info(const MaterialPassInfo& info, std::uint32_t set,
+                             std::uint32_t max_sets = 1);
 void apply_material_pass_state(const MaterialPassInfo& info,
                                cubey::vulkan::DynamicGraphicsPipelineConfig& config);
 
