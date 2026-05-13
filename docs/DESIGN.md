@@ -486,6 +486,11 @@ cubey/
         CMakeLists.txt
         main.cpp
         gltf_viewer_app.*  -- static glTF/PBR/IBL/shadow/headless viewer orchestration
+      pbr_furnace/
+        CMakeLists.txt
+        main.cpp
+        pbr_furnace_app.*  -- white-furnace PBR validation scene
+        pbr_furnace_scene.* -- material grid definition and tests
       fluid_25d/
   tools/
   tests/

@@ -74,6 +74,13 @@ struct PlaneMeshConfig {
     PrimitiveVec3 color{0.58F, 0.58F, 0.52F};
 };
 
+struct SphereMeshConfig {
+    float radius = 1.0F;
+    std::uint32_t latitude_segments = 16;
+    std::uint32_t longitude_segments = 32;
+    PrimitiveVec3 color{0.86F, 0.86F, 0.86F};
+};
+
 [[nodiscard]] VertexInputLayout vertex_position_color_input_layout();
 [[nodiscard]] VertexInputLayout vertex_position_color_normal_input_layout();
 [[nodiscard]] VertexInputLayout vertex_position_color_normal_uv_input_layout();
@@ -93,5 +100,7 @@ make_cube_position_color_normal_mesh(CubeMeshConfig config = {});
 make_cube_position_color_normal_uv_mesh(CubeMeshConfig config = {});
 [[nodiscard]] PrimitiveMeshData<VertexPositionColorNormal>
 make_xz_plane_position_color_normal_mesh(PlaneMeshConfig config);
+[[nodiscard]] PrimitiveMeshData<VertexPositionColorNormalUv>
+make_uv_sphere_position_color_normal_uv_mesh(SphereMeshConfig config = {});
 
 } // namespace cubey::render

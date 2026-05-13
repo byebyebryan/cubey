@@ -5,6 +5,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <cmath>
 #include <stdexcept>
 
 namespace {
@@ -21,6 +22,19 @@ void require_vec3(std::array<float, 3> value, std::array<float, 3> expected, con
 
 void require_vec2(std::array<float, 2> value, std::array<float, 2> expected, const char* message) {
     require(value == expected, message);
+}
+
+void require_close(float actual, float expected, const char* message) {
+    if (std::fabs(actual - expected) > 0.0001F) {
+        throw std::runtime_error(message);
+    }
+}
+
+void require_vec3_close(std::array<float, 3> value, std::array<float, 3> expected,
+                        const char* message) {
+    require_close(value[0], expected[0], message);
+    require_close(value[1], expected[1], message);
+    require_close(value[2], expected[2], message);
 }
 
 } // namespace
@@ -193,4 +207,37 @@ void test_primitive_xz_plane_mesh_uses_center_half_extents_and_up_normal() {
                  "plane should apply configured color");
     require(plane.indices[0] == 0 && plane.indices[1] == 1 && plane.indices[2] == 2,
             "plane should use the expected first triangle");
+}
+
+void test_primitive_uv_sphere_mesh_uses_smooth_normals_and_uv_grid() {
+    cubey::render::SphereMeshConfig config;
+    config.radius = 2.0F;
+    config.latitude_segments = 4;
+    config.longitude_segments = 8;
+    config.color = {0.7F, 0.8F, 0.9F};
+
+    const cubey::render::PrimitiveMeshData<cubey::render::VertexPositionColorNormalUv> sphere =
+        cubey::render::make_uv_sphere_position_color_normal_uv_mesh(config);
+
+    require(sphere.vertices.size() == 45,
+            "sphere should include one UV seam vertex per latitude row");
+    require(sphere.indices.size() == 192, "sphere should emit two triangles per grid cell");
+    require_vec3_close(sphere.vertices.front().position, {0.0F, 2.0F, 0.0F},
+                       "sphere first vertex should sit on the positive Y pole");
+    require_vec3_close(sphere.vertices.front().normal, {0.0F, 1.0F, 0.0F},
+                       "sphere pole normal should be unit length and radial");
+    require_vec2(sphere.vertices.front().uv, {0.0F, 0.0F},
+                 "sphere first vertex should start the UV domain");
+    require_vec2(sphere.vertices[8].uv, {1.0F, 0.0F},
+                 "sphere seam vertex should close each latitude row at u=1");
+    for (const auto& vertex : sphere.vertices) {
+        require_vec3(vertex.color, config.color, "sphere should apply configured vertex color");
+        const float normal_length =
+            std::sqrt(vertex.normal[0] * vertex.normal[0] + vertex.normal[1] * vertex.normal[1] +
+                      vertex.normal[2] * vertex.normal[2]);
+        require_close(normal_length, 1.0F, "sphere normals should be normalized");
+    }
+    for (const std::uint16_t index : sphere.indices) {
+        require(index < sphere.vertices.size(), "sphere indices should stay in vertex range");
+    }
 }

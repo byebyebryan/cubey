@@ -19,6 +19,9 @@ environment assets:
 - `gltf_viewer` binds those resources into the existing PBR scene material and
   lights the glTF PBR shader with a split-sum-style ambient term while keeping
   shader/pass selection project-owned;
+- `pbr_furnace` isolates the current IBL/specular behavior with white sphere
+  rows for metallic and dielectric roughness ramps under a uniform white
+  environment;
 - HDR equirectangular loading, KTX loading, offline convolution, environment
   selection UI, and glTF environment extensions remain future asset-pipeline
   slices.

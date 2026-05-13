@@ -45,6 +45,8 @@ Current projects:
   headless output.
 - `gltf_viewer`: static glTF/glb viewer for imported assets, PBR materials,
   texture upload, generated IBL, shadow maps, and headless capture.
+- `pbr_furnace`: white-furnace PBR validation scene for roughness/metallic
+  behavior under uniform generated IBL.
 
 ## Documentation
 
@@ -98,6 +100,7 @@ Useful windowed smokes:
 ./build/dev/projects/fractal_2d/fractal_2d --frames 300 --width 1280 --height 720
 ./build/dev/projects/fluid_2d/fluid_2d --frames 300 --width 1280 --height 720
 ./build/dev/projects/gltf_viewer/gltf_viewer --input path/to/model.glb --frames 300 --width 1280 --height 720
+./build/dev/projects/pbr_furnace/pbr_furnace --frames 300 --width 1280 --height 720
 ```
 
 Useful headless PNG smokes:
@@ -106,6 +109,7 @@ Useful headless PNG smokes:
 ./build/dev/examples/headless_cube/headless_cube --width 640 --height 360 --output /tmp/cubey-headless-cube.png
 ./build/dev/projects/fractal_2d/fractal_2d --headless --width 640 --height 360 --output /tmp/cubey-fractal-2d.png
 ./build/dev/projects/fluid_2d/fluid_2d --headless --frames 120 --width 640 --height 360 --output /tmp/cubey-fluid-2d.png
+./build/dev/projects/pbr_furnace/pbr_furnace --headless --width 640 --height 360 --output /tmp/cubey-pbr-furnace.png
 ```
 
 Use `--require-validation` on local smoke commands when Vulkan validation
@@ -127,6 +131,7 @@ layers are installed.
 - `fluid_2d`: left-drag injects dye/force, Space pauses/resumes, `R` resets,
   `D` cycles dye/velocity/divergence/pressure views, Escape closes.
 - `gltf_viewer`: left-drag orbits the camera, Escape closes.
+- `pbr_furnace`: left-drag orbits the camera, Escape closes.
 
 ## License
 

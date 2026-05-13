@@ -23,6 +23,7 @@ void test_material_pass_masks_include_requested_passes();
 void test_primitive_cube_normal_uv_mesh_preserves_normals_and_face_uvs();
 void test_primitive_cube_position_color_mesh_uses_face_colors_and_indices();
 void test_primitive_vertex_layouts_match_shader_contracts();
+void test_primitive_uv_sphere_mesh_uses_smooth_normals_and_uv_grid();
 void test_primitive_xz_plane_mesh_uses_center_half_extents_and_up_normal();
 void test_render_graph_allows_imported_texture_read_without_prior_write();
 void test_render_graph_barrier_recording_rejects_unallocated_transient_resources();
@@ -135,6 +136,7 @@ std::span<const TestCase> render_test_cases() {
         CUBEY_TEST(test_primitive_cube_position_color_mesh_uses_face_colors_and_indices),
         CUBEY_TEST(test_primitive_cube_normal_uv_mesh_preserves_normals_and_face_uvs),
         CUBEY_TEST(test_primitive_xz_plane_mesh_uses_center_half_extents_and_up_normal),
+        CUBEY_TEST(test_primitive_uv_sphere_mesh_uses_smooth_normals_and_uv_grid),
         CUBEY_TEST(test_render_item_validates_required_draw_identity),
         CUBEY_TEST(test_render_item_resolves_draw_item_fields),
         CUBEY_TEST(test_render_pass_helpers_describe_clear_values_and_fullscreen_triangle),

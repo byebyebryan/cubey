@@ -2,6 +2,9 @@
 
 #include <array>
 #include <cstddef>
+#include <cmath>
+#include <limits>
+#include <numbers>
 #include <stdexcept>
 
 namespace cubey::render {
@@ -71,6 +74,26 @@ void validate_plane_config(const PlaneMeshConfig& config) {
     if (config.half_extent_x <= 0.0F || config.half_extent_z <= 0.0F) {
         throw std::runtime_error("plane mesh half extents must be positive");
     }
+}
+
+void validate_sphere_config(const SphereMeshConfig& config) {
+    if (config.radius <= 0.0F) {
+        throw std::runtime_error("sphere mesh radius must be positive");
+    }
+    if (config.latitude_segments < 2U || config.longitude_segments < 3U) {
+        throw std::runtime_error("sphere mesh requires at least 2 latitude and 3 longitude segments");
+    }
+    const std::uint64_t vertex_count =
+        static_cast<std::uint64_t>(config.latitude_segments + 1U) *
+        static_cast<std::uint64_t>(config.longitude_segments + 1U);
+    if (vertex_count > static_cast<std::uint64_t>(std::numeric_limits<std::uint16_t>::max())) {
+        throw std::runtime_error("sphere mesh exceeds uint16 index range");
+    }
+}
+
+[[nodiscard]] std::uint16_t sphere_index(std::uint32_t latitude, std::uint32_t longitude,
+                                         std::uint32_t row_stride) {
+    return static_cast<std::uint16_t>((latitude * row_stride) + longitude);
 }
 
 } // namespace
@@ -231,6 +254,61 @@ make_xz_plane_position_color_normal_mesh(PlaneMeshConfig config) {
             },
         .indices = {0, 1, 2, 0, 2, 3},
     };
+}
+
+PrimitiveMeshData<VertexPositionColorNormalUv>
+make_uv_sphere_position_color_normal_uv_mesh(SphereMeshConfig config) {
+    validate_sphere_config(config);
+
+    constexpr float kPi = std::numbers::pi_v<float>;
+    constexpr float kTwoPi = kPi * 2.0F;
+    const std::uint32_t row_stride = config.longitude_segments + 1U;
+
+    PrimitiveMeshData<VertexPositionColorNormalUv> mesh;
+    mesh.vertices.reserve(static_cast<std::size_t>(config.latitude_segments + 1U) *
+                          static_cast<std::size_t>(row_stride));
+    mesh.indices.reserve(static_cast<std::size_t>(config.latitude_segments) *
+                         static_cast<std::size_t>(config.longitude_segments) * 6U);
+
+    for (std::uint32_t latitude = 0; latitude <= config.latitude_segments; ++latitude) {
+        const float v =
+            static_cast<float>(latitude) / static_cast<float>(config.latitude_segments);
+        const float theta = v * kPi;
+        const float sin_theta = std::sin(theta);
+        const float cos_theta = std::cos(theta);
+        for (std::uint32_t longitude = 0; longitude <= config.longitude_segments; ++longitude) {
+            const float u =
+                static_cast<float>(longitude) / static_cast<float>(config.longitude_segments);
+            const float phi = u * kTwoPi;
+            const PrimitiveVec3 normal{
+                sin_theta * std::cos(phi),
+                cos_theta,
+                sin_theta * std::sin(phi),
+            };
+            mesh.vertices.push_back({
+                .position =
+                    {
+                        normal[0] * config.radius,
+                        normal[1] * config.radius,
+                        normal[2] * config.radius,
+                    },
+                .color = config.color,
+                .normal = normal,
+                .uv = {u, v},
+            });
+        }
+    }
+
+    for (std::uint32_t latitude = 0; latitude < config.latitude_segments; ++latitude) {
+        for (std::uint32_t longitude = 0; longitude < config.longitude_segments; ++longitude) {
+            const std::uint16_t a = sphere_index(latitude, longitude, row_stride);
+            const std::uint16_t b = sphere_index(latitude + 1U, longitude, row_stride);
+            const std::uint16_t c = sphere_index(latitude + 1U, longitude + 1U, row_stride);
+            const std::uint16_t d = sphere_index(latitude, longitude + 1U, row_stride);
+            mesh.indices.insert(mesh.indices.end(), {a, b, d, d, b, c});
+        }
+    }
+    return mesh;
 }
 
 } // namespace cubey::render
