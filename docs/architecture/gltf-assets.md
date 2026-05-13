@@ -52,10 +52,14 @@ remain future slices.
 
 - `PbrVertex`, `PbrSceneUniforms`, `PbrMaterialFactors`, and
   `PbrPushConstants` define the current shader contract;
-- `pbr_forward_pass_info()` declares the scene set, material texture set, push
-  constants, and opaque/alpha forward pass state;
-- `create_uploaded_texture_2d()` handles setup-time RGBA8 texture upload into a
-  sampled image;
+- `pbr_forward_pass_info()` declares the scene uniform/shadow/IBL set, material
+  texture set, push constants, and opaque/alpha forward pass state;
+- `create_uploaded_texture_2d()` and `create_uploaded_texture_cube()` handle
+  setup-time sampled texture uploads for glTF textures and generated IBL
+  cubemaps;
+- `create_generated_pbr_environment()` provides deterministic irradiance,
+  prefiltered radiance, and BRDF LUT resources for the current viewer
+  checkpoint;
 - `ShadowMapPass3D` owns a sampled depth texture plus depth-only pipeline for
   directional shadow passes.
 
@@ -63,8 +67,9 @@ remain future slices.
 `--input`, falls back to the Khronos DamagedHelmet sample when the sample-assets
 directory is configured, and otherwise renders a generated PBR cube. It creates
 camera and light entities around imported bounds, records shadow and PBR scene
-passes through the render graph, supports opaque plus alpha forward pipelines,
-and can run windowed or headless PNG capture.
+passes through the render graph, binds generated IBL resources into the PBR
+scene material, supports opaque plus alpha forward pipelines, and can run
+windowed or headless PNG capture.
 
 ## Boundaries
 
@@ -83,12 +88,11 @@ or future renderer layer.
 
 ## Next Slices
 
-- Add real cube texture and generated IBL support before judging PBR quality.
 - Add validation assets from Khronos Sample Assets as optional tests when the
   CI/dev environment can afford the download.
 - Add alpha-mask support in the shadow pass instead of treating all shadow
   casters as opaque depth writers.
-- Add HDR/KTX environment asset loading after the generated IBL path proves the
-  renderer-side cubemap contract.
+- Add HDR/KTX environment asset loading and offline or setup-time filtering now
+  that the generated IBL path has proven the renderer-side cubemap contract.
 - Add vertex colors, multiple UV sets, and glTF material extension slices as
   real sample assets require them.

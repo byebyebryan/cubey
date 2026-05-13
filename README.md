@@ -43,8 +43,8 @@ Current projects:
   pressure projection, debug views, and deterministic headless PNG output.
 - `fractal_2d`: fullscreen Mandelbrot-style shader with windowed navigation and
   headless output.
-- `gltf_viewer`: static glTF/glb viewer for the first imported-asset,
-  PBR-material, texture-upload, shadow-map, and headless capture path.
+- `gltf_viewer`: static glTF/glb viewer for imported assets, PBR materials,
+  texture upload, generated IBL, shadow maps, and headless capture.
 
 ## Documentation
 

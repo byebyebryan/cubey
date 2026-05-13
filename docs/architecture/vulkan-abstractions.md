@@ -177,13 +177,15 @@ Current state:
 - `cubey::host::HeadlessPngHost` owns the repeated no-window offscreen target,
   capture transition, runtime-queued capture recording, project-GPU readback
   ticket, and PNG artifact write path.
-- `cubey::render::Texture2D` now owns the current generated/uploaded sampled
-  texture image shape above the raw Vulkan `Image` and optional `Sampler`.
+- `cubey::render::Texture2D` and `TextureCube` now own the current generated,
+  uploaded, and cubemap sampled texture image shapes above the raw Vulkan
+  `Image` and optional `Sampler`.
 - `cubey::render::DepthTexture` owns sampled depth image setup for shadow maps
   and other depth-as-texture paths above the raw Vulkan `Image` and optional
   `Sampler`.
-- `SamplerConfig` exposes border color, compare enable/op, and mipmap mode so
-  shadow and edge-clamped sampling policy can be explicit.
+- `SamplerConfig` exposes border color, compare enable/op, mipmap mode, LOD
+  bounds, and LOD bias so shadow, edge-clamped, and prefiltered cubemap
+  sampling policy can be explicit.
 - Examples still own some resource policy, including when transfers and
   readback are used.
 - Low-level upload/readback helpers remain synchronous building blocks. The
@@ -203,7 +205,8 @@ Defer:
 
 - VMA or another allocator until manual memory allocation becomes the limiting
   cost.
-- Asset import until generated resources no longer provide enough signal.
+- HDR/KTX environment import and filtering until generated PBR IBL resources
+  expose enough renderer-side contract pressure.
 
 ### 5. Descriptors And Bindings
 

@@ -96,7 +96,7 @@ Projects and examples should eventually interact with a small set of rendering
 concepts:
 
 - `Buffer` — GPU buffer (vertex, storage, uniform, index, indirect)
-- `Image` / future `Texture2D`, `Texture3D` — image data
+- `Image` / `Texture2D` / `TextureCube` — image and sampled texture data
 - `Pipeline` — compute or graphics pipeline
 - `DescriptorSet` — Vulkan resource binding set
 
@@ -136,6 +136,9 @@ Reusable spatial types should stay explicit and narrow:
   asset nodes into scene entities, registry-issued render handles, app-owned
   mesh/material resources, uploaded textures, and imported bounds while leaving
   shader, pass, and renderer policy to the project.
+- `cubey::render` owns the current generated PBR IBL environment helper for
+  deterministic irradiance cube, prefiltered cube, and BRDF LUT resources.
+  HDR/KTX environment import and filtering remain future asset-pipeline work.
 - Scene render-planning helpers expose the first renderer-facing 3D view and
   pass-list contracts. They combine a scene read view, camera entity, viewport
   size, ambient environment, renderables, and lights into CPU
@@ -385,6 +388,7 @@ cubey/
         windowed_app.h     -- small app-facing shell over the windowed host loop
         windowed_host.h    -- shared windowed host loop
       render/
+        generated_ibl.h    -- deterministic generated PBR IBL environment resources
         material.h         -- material metadata and material/pass contracts
         pbr.h              -- current PBR vertex, scene, material, and push-constant contract
         target.h           -- color/depth render target views
@@ -392,7 +396,7 @@ cubey/
         mesh.h             -- indexed mesh buffers and draw item vocabulary
         pipeline_resource.h -- shader modules and graphics/compute pipeline resources
         primitive_mesh.h   -- CPU primitive mesh data and vertex input layouts
-        texture.h          -- sampled color/depth texture ownership helpers
+        texture.h          -- sampled color/depth/cubemap texture ownership helpers
         resource_handle.h  -- opaque render resource handle values
         resource_registry.h -- render handle identity and material tags
         resource_table.h   -- project-owned move-only render resources
@@ -481,7 +485,7 @@ cubey/
       gltf_viewer/
         CMakeLists.txt
         main.cpp
-        gltf_viewer_app.*  -- static glTF/PBR/shadow/headless viewer orchestration
+        gltf_viewer_app.*  -- static glTF/PBR/IBL/shadow/headless viewer orchestration
       fluid_25d/
   tools/
   tests/

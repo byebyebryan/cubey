@@ -105,8 +105,10 @@ full engine architecture.
   command buffer, swapchain image index, timing, and color target view.
 - `cubey::host::HeadlessRenderTarget` is now the same target-view vocabulary as
   `cubey::render::ColorTargetView`.
-- `Texture2D` owns a Vulkan image plus an optional sampler for the current
-  storage-sampled and transfer-sampled texture paths.
+- `Texture2D` and `TextureCube` own Vulkan images plus optional samplers for
+  the current storage-sampled, transfer-sampled, and cubemap IBL texture paths.
+  Texture upload helpers cover tightly packed 2D data and mip-major,
+  face-major cubemap data.
 - `create_compute_generated_texture_2d` covers the setup-time storage-image
   generation path: texture creation, storage-image descriptor setup, compute
   pipeline creation, layout transitions, dispatch sizing, and final sampled
@@ -160,8 +162,13 @@ full engine architecture.
   push-constant ranges, and reusable graphics pipeline state.
 - `PbrVertex`, `PbrSceneUniforms`, `PbrMaterialFactors`, `PbrPushConstants`,
   and `pbr_forward_pass_info()` define the current PBR forward-pass contract:
-  one scene uniform/shadow set, one material texture set, and explicit
-  per-draw material factors.
+  one scene uniform/shadow/IBL set, one material texture set, and explicit
+  per-draw material factors. The scene set includes irradiance cube,
+  prefiltered cube, and BRDF LUT bindings.
+- `GeneratedPbrEnvironment` creates deterministic setup-time irradiance cube,
+  prefiltered radiance cube, and BRDF LUT resources. It is a checkpoint helper
+  for PBR quality and descriptor shape, not a replacement for future HDR/KTX
+  environment asset import and filtering.
 - `cubey::render::MaterialInstance` owns the descriptor set layout, pool, and
   one or per-frame descriptor sets for one declared `MaterialPassInfo`
   descriptor set. `MaterialDescriptorWriter` keeps descriptor writes tied to a
