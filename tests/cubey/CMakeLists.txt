@@ -57,6 +57,11 @@ add_executable(cubey_core_tests
     transform_manager_tests.cpp
     transform_tests.cpp
     test_registry.cpp
+    test_registry_core.cpp
+    test_registry_engine_host_input.cpp
+    test_registry_render.cpp
+    test_registry_scene.cpp
+    test_registry_vulkan.cpp
     upload_queue_tests.cpp
     windowed_host_tests.cpp
 )
