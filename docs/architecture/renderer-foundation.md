@@ -128,9 +128,13 @@ full engine architecture.
   `DrawItem` once the caller resolves app-owned mesh resources.
 - `cubey::render::MaterialPassInfo` is the first explicit material/pass
   metadata contract. It describes pass kind, descriptor layout shape,
-  push-constant ranges, and reusable graphics pipeline state; examples still
-  own shader modules, concrete descriptor sets, pipeline objects, and binding
-  order.
+  push-constant ranges, and reusable graphics pipeline state.
+- `cubey::render::ShaderProgram` and `GraphicsPipelineResource` own the current
+  shader-module, pipeline-layout, and dynamic graphics pipeline lifetime shape
+  for graphics passes. They consume explicit shader stage files, vertex input,
+  descriptor set layouts, attachment formats, and `MaterialPassInfo`; they do
+  not reflect shaders, cache pipelines, allocate descriptors, bind materials,
+  or record commands.
 - `cubey::scene::View3D`, `Environment3D`, and `RenderFramePlan3D` form the
   current CPU view-planning boundary. They combine a scene read view, camera
   entity, viewport size, ambient-only environment, draw packets, light packets,
@@ -168,10 +172,11 @@ full engine architecture.
 - `RenderableManager3D` lives in the scene/component layer and emits compact
   renderable packets with world matrices, world bounds, and resource handles.
   The cube examples now use Engine-owned scenes, registry-issued handles, mesh
-  resource tables, and CPU draw planning while still owning pipelines,
-  descriptors, and Vulkan command recording sequence locally. Cube pipelines
-  now read pass metadata from `MaterialPassInfo` instead of spelling descriptor
-  layouts, push constants, and depth/blend state entirely ad hoc.
+  resource tables, CPU draw planning, primitive mesh data, and shared graphics
+  pipeline resources while still owning descriptor writes and Vulkan command
+  recording sequence locally. Cube pipelines now read pass metadata from
+  `MaterialPassInfo` instead of spelling descriptor layouts, push constants,
+  and depth/blend state entirely ad hoc.
 - `LightManager3D` lives in the scene/component layer and emits compact
   CPU-side light packets for directional and point lights. The packets provide
   light kind, color, intensity, direction or world position, and range; shader

@@ -370,6 +370,7 @@ cubey/
         material.h         -- material metadata and material/pass contracts
         target.h           -- color/depth render target views
         mesh.h             -- indexed mesh buffers and draw item vocabulary
+        pipeline_resource.h -- shader modules and graphics pipeline resources
         primitive_mesh.h   -- CPU primitive mesh data and vertex input layouts
         texture.h          -- sampled color/depth texture ownership helpers
         resource_handle.h  -- opaque render resource handle values
