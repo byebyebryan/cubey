@@ -39,8 +39,8 @@ void test_orbit_controller_tracks_rotation_drag_pause_and_reset() {
     controller.begin_drag(10.0, 10.0);
     controller.drag_to(30.0, 5.0);
     controller.end_drag();
-    require_close(controller.yaw(), 1.2F, "horizontal drag should adjust yaw");
-    require_close(controller.pitch(), -0.05F, "vertical drag should adjust pitch");
+    require_close(controller.yaw(), 0.8F, "right drag should reduce orbit yaw");
+    require_close(controller.pitch(), 0.05F, "up drag should raise orbit pitch");
 
     controller.reset();
     require_close(controller.yaw(), 0.0F, "reset should clear yaw");
@@ -63,8 +63,8 @@ void test_orbit_controller_updates_from_input_snapshot() {
     input.record_cursor_position({.cursor = {.x = 30.0, .y = 5.0}});
     controller.update_from_input(input.frame(), 2.0);
 
-    require_close(controller.yaw(), 0.2F, "input drag should adjust yaw");
-    require_close(controller.pitch(), -0.05F, "input drag should adjust pitch");
+    require_close(controller.yaw(), -0.2F, "input right drag should reduce orbit yaw");
+    require_close(controller.pitch(), 0.05F, "input up drag should raise orbit pitch");
     require(controller.dragging(), "input button state should mark controller dragging");
 
     input.begin_frame();
@@ -75,6 +75,6 @@ void test_orbit_controller_updates_from_input_snapshot() {
     });
     controller.update_from_input(input.frame(), 2.0);
 
-    require_close(controller.yaw(), 1.2F, "auto rotation should resume after drag release");
+    require_close(controller.yaw(), 0.8F, "auto rotation should resume after drag release");
     require(!controller.dragging(), "input release should clear dragging");
 }

@@ -147,8 +147,8 @@ void test_camera_3d_orbit_helper_matches_existing_cube_view() {
     });
 
     const cubey::math::Mat4 expected_view = cubey::math::translation(0.0F, 0.0F, -4.2F) *
-                                            cubey::math::rotation_x(0.5F) *
-                                            cubey::math::rotation_y(-0.25F);
+                                            cubey::math::rotation_x(-0.5F) *
+                                            cubey::math::rotation_y(0.25F);
     require_matrix_close(camera.view_matrix(orbit_transform), expected_view,
                          "orbit helper should derive camera world transform from orbit state");
 }

@@ -47,8 +47,8 @@ void OrbitController::drag_to(double x, double y) {
         return;
     }
 
-    yaw_ += static_cast<float>(x - last_x_) * kDragRadiansPerPixel;
-    pitch_ += static_cast<float>(y - last_y_) * kDragRadiansPerPixel;
+    yaw_ -= static_cast<float>(x - last_x_) * kDragRadiansPerPixel;
+    pitch_ -= static_cast<float>(y - last_y_) * kDragRadiansPerPixel;
     pitch_ = std::clamp(pitch_, -kMaxPitchRadians, kMaxPitchRadians);
     last_x_ = x;
     last_y_ = y;
@@ -71,8 +71,8 @@ void OrbitController::update_from_input(const cubey::input::InputFrame& input,
     if (dragging_) {
         const cubey::input::PointerDelta delta =
             input.mouse_button_delta(cubey::input::MouseButton::Left);
-        yaw_ += static_cast<float>(delta.x) * kDragRadiansPerPixel;
-        pitch_ += static_cast<float>(delta.y) * kDragRadiansPerPixel;
+        yaw_ -= static_cast<float>(delta.x) * kDragRadiansPerPixel;
+        pitch_ -= static_cast<float>(delta.y) * kDragRadiansPerPixel;
         pitch_ = std::clamp(pitch_, -kMaxPitchRadians, kMaxPitchRadians);
     }
 
