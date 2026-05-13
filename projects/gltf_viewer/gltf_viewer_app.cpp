@@ -3,6 +3,7 @@
 #include <cubey/asset/gltf_asset.h>
 #include <cubey/core/math.h>
 #include <cubey/engine/engine.h>
+#include <cubey/engine/gltf_scene_importer.h>
 #include <cubey/host/frame_stats.h>
 #include <cubey/host/windowed_app.h>
 #include <cubey/input/orbit_controller.h>
@@ -69,49 +70,6 @@ struct ShadowPushConstants {
 static_assert(sizeof(ShadowPushConstants) == sizeof(cubey::math::Mat4));
 static_assert(std::is_trivially_copyable_v<cubey::render::PbrSceneUniforms>);
 
-struct PrimitiveResource {
-    cubey::render::MeshHandle mesh{};
-    cubey::render::MaterialHandle material{};
-    cubey::Bounds3D bounds{};
-};
-
-struct TextureBinding {
-    VkSampler sampler = VK_NULL_HANDLE;
-    VkImageView view = VK_NULL_HANDLE;
-};
-
-struct BoundsAccumulator {
-    cubey::math::Vec3 min{0.0F};
-    cubey::math::Vec3 max{0.0F};
-    bool has_value = false;
-
-    void add(const cubey::Bounds3D& bounds) {
-        const cubey::math::Vec3 bounds_min = bounds.center - bounds.half_extent;
-        const cubey::math::Vec3 bounds_max = bounds.center + bounds.half_extent;
-        if (!has_value) {
-            min = bounds_min;
-            max = bounds_max;
-            has_value = true;
-            return;
-        }
-        min = glm::min(min, bounds_min);
-        max = glm::max(max, bounds_max);
-    }
-
-    [[nodiscard]] cubey::Bounds3D bounds_or_default() const {
-        if (!has_value) {
-            return {
-                .center = {0.0F, 0.0F, 0.0F},
-                .half_extent = {1.0F, 1.0F, 1.0F},
-            };
-        }
-        return {
-            .center = (min + max) * 0.5F,
-            .half_extent = (max - min) * 0.5F,
-        };
-    }
-};
-
 std::filesystem::path shader_path(const char* filename) {
     return std::filesystem::path(CUBEY_GLTF_VIEWER_SHADER_DIR) / filename;
 }
@@ -159,88 +117,6 @@ cubey::Transform3D look_at_transform(cubey::math::Vec3 eye, cubey::math::Vec3 ta
         .translation = eye,
         .rotation = glm::quatLookAtRH(forward, up),
     };
-}
-
-cubey::Bounds3D to_scene_bounds(const cubey::asset::GltfBounds3D& bounds) {
-    return {
-        .center = bounds.center,
-        .half_extent = bounds.half_extent,
-    };
-}
-
-cubey::Bounds3D transform_bounds(const cubey::Bounds3D& bounds,
-                                 const cubey::math::Mat4& transform) {
-    const cubey::math::Vec4 center = transform * cubey::math::Vec4{bounds.center, 1.0F};
-    const cubey::math::Vec3 half_extent{
-        (std::abs(transform[0][0]) * bounds.half_extent.x) +
-            (std::abs(transform[1][0]) * bounds.half_extent.y) +
-            (std::abs(transform[2][0]) * bounds.half_extent.z),
-        (std::abs(transform[0][1]) * bounds.half_extent.x) +
-            (std::abs(transform[1][1]) * bounds.half_extent.y) +
-            (std::abs(transform[2][1]) * bounds.half_extent.z),
-        (std::abs(transform[0][2]) * bounds.half_extent.x) +
-            (std::abs(transform[1][2]) * bounds.half_extent.y) +
-            (std::abs(transform[2][2]) * bounds.half_extent.z),
-    };
-    return {
-        .center = {center.x, center.y, center.z},
-        .half_extent = half_extent,
-    };
-}
-
-cubey::Transform3D transform_from_node(const cubey::asset::GltfNode& node) {
-    return {
-        .translation = node.translation,
-        .rotation = node.rotation,
-        .scale = node.scale,
-    };
-}
-
-VkFilter to_vk_filter(cubey::asset::GltfTextureFilter filter) {
-    switch (filter) {
-    case cubey::asset::GltfTextureFilter::Nearest:
-        return VK_FILTER_NEAREST;
-    case cubey::asset::GltfTextureFilter::Linear:
-        return VK_FILTER_LINEAR;
-    }
-    return VK_FILTER_LINEAR;
-}
-
-VkSamplerAddressMode to_vk_address_mode(cubey::asset::GltfTextureWrap wrap) {
-    switch (wrap) {
-    case cubey::asset::GltfTextureWrap::Repeat:
-        return VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    case cubey::asset::GltfTextureWrap::ClampToEdge:
-        return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-    case cubey::asset::GltfTextureWrap::MirroredRepeat:
-        return VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
-    }
-    return VK_SAMPLER_ADDRESS_MODE_REPEAT;
-}
-
-VkFormat image_format_for_color_space(cubey::asset::GltfTextureColorSpace color_space) {
-    switch (color_space) {
-    case cubey::asset::GltfTextureColorSpace::Srgb:
-        return VK_FORMAT_R8G8B8A8_SRGB;
-    case cubey::asset::GltfTextureColorSpace::Linear:
-        return VK_FORMAT_R8G8B8A8_UNORM;
-    }
-    return VK_FORMAT_R8G8B8A8_UNORM;
-}
-
-std::vector<cubey::render::PbrVertex>
-to_pbr_vertices(std::span<const cubey::asset::GltfVertex> vertices) {
-    std::vector<cubey::render::PbrVertex> result;
-    result.reserve(vertices.size());
-    for (const cubey::asset::GltfVertex& vertex : vertices) {
-        result.push_back({
-            .position = vertex.position,
-            .normal = vertex.normal,
-            .tangent = vertex.tangent,
-            .uv0 = vertex.texcoord0,
-        });
-    }
-    return result;
 }
 
 std::vector<cubey::render::PbrVertex> fallback_cube_vertices() {
@@ -337,16 +213,12 @@ class GltfViewerApp {
             return;
         }
 
-        create_default_textures(context);
-
         const std::filesystem::path input = resolved_input_path();
         if (!input.empty()) {
             asset_.emplace(cubey::asset::load_gltf_asset(input));
-            create_asset_materials(context, asset_.value());
-            create_asset_meshes(context, asset_.value());
-            scene_bounds_ = calculate_asset_scene_bounds(asset_.value());
-            create_asset_scene(asset_.value());
+            create_imported_asset_scene(context, asset_.value());
         } else {
+            create_default_textures(context);
             create_fallback_material(context);
             create_fallback_mesh(context);
             scene_bounds_ = {
@@ -378,9 +250,8 @@ class GltfViewerApp {
         scene_material_.reset();
         shadow_pass_.reset();
         destroy_scene_if_needed();
-        destroy_material_resources();
-        destroy_render_handles();
-        material_textures_.clear();
+        cubey::destroy_gltf_scene_import(engine_, import_resources_, import_result_);
+        triangle_count_ = 0;
         normal_default_.reset();
         metallic_roughness_default_.reset();
         emissive_default_.reset();
@@ -388,6 +259,21 @@ class GltfViewerApp {
         base_color_default_.reset();
         asset_.reset();
         shadow_depth_is_sampled_ = false;
+    }
+
+    void create_imported_asset_scene(cubey::host::WindowedAppContext& context,
+                                     const cubey::asset::GltfAsset& asset) {
+        scene_ = &engine_.create_scene();
+        cubey::SceneTransaction setup = scene().begin_transaction();
+        import_result_ = cubey::import_gltf_scene(
+            engine_, setup, asset, context.device(), context.gpu(), import_resources_,
+            cubey::GltfSceneImportConfig{
+                .label_prefix = "gltf_viewer",
+            });
+        scene_bounds_ = import_result_.bounds;
+        triangle_count_ = import_result_.triangle_count;
+        create_camera_and_light(setup);
+        setup.commit();
     }
 
     [[nodiscard]] std::filesystem::path resolved_input_path() const {
@@ -433,67 +319,24 @@ class GltfViewerApp {
             });
     }
 
-    void create_asset_materials(cubey::host::WindowedAppContext& context,
-                                const cubey::asset::GltfAsset& asset) {
-        const cubey::render::MaterialPassInfo pass = cubey::render::pbr_forward_pass_info();
-        material_handles_.reserve(asset.materials.size());
-        for (std::size_t index = 0; index < asset.materials.size(); ++index) {
-            const cubey::asset::GltfMaterial& source = asset.materials[index];
-            const std::string label =
-                source.label.empty() ? "gltf_viewer.material." + std::to_string(index)
-                                     : source.label;
-            const cubey::render::MaterialHandle material =
-                engine_.render_resources().create_material(cubey::render::MaterialInfo{
-                    .label = label,
-                    .blend = source.alpha_mode == cubey::asset::GltfAlphaMode::Blend
-                                 ? cubey::render::MaterialBlendMode::AlphaBlend
-                                 : cubey::render::MaterialBlendMode::Opaque,
-                    .sort_key = static_cast<std::uint32_t>(index),
-                });
-            material_handles_.push_back(material);
-            material_factors_.emplace(
-                material, cubey::render::PbrMaterialFactors{
-                              .base_color_factor = source.base_color_factor,
-                              .emissive_factor = source.emissive_factor,
-                              .alpha_cutoff =
-                                  source.alpha_mode == cubey::asset::GltfAlphaMode::Mask
-                                      ? source.alpha_cutoff
-                                      : 0.0F,
-                              .metallic_factor = source.metallic_factor,
-                              .roughness_factor = source.roughness_factor,
-                              .normal_scale = source.normal_scale,
-                              .occlusion_strength = source.occlusion_strength,
-                          });
-            cubey::render::MaterialInstance& instance =
-                material_instances_.emplace(material, context.device(),
-                                            cubey::render::MaterialInstanceConfig{
-                                                .material_pass = pass,
-                                                .descriptor_set = 1,
-                                            });
-            write_material_descriptors(context, asset, source, instance);
-        }
-        if (material_handles_.empty()) {
-            throw std::runtime_error("gltf_viewer asset should provide a default material");
-        }
-        first_material_handle_ = material_handles_.front();
-    }
-
     void create_fallback_material(cubey::host::WindowedAppContext& context) {
         const cubey::render::MaterialHandle material =
             engine_.render_resources().create_material("gltf_viewer.fallback.material");
-        material_handles_.push_back(material);
-        first_material_handle_ = material;
-        material_factors_.emplace(material, cubey::render::PbrMaterialFactors{
-                                                .base_color_factor = {0.86F, 0.82F, 0.72F, 1.0F},
-                                                .metallic_factor = 0.0F,
-                                                .roughness_factor = 0.58F,
-                                            });
+        import_result_.material_handles.push_back(material);
+        import_result_.first_material_handle = material;
+        import_resources_.material_factors.emplace(
+            material, cubey::render::PbrMaterialFactors{
+                          .base_color_factor = {0.86F, 0.82F, 0.72F, 1.0F},
+                          .metallic_factor = 0.0F,
+                          .roughness_factor = 0.58F,
+                      });
         cubey::render::MaterialInstance& instance =
-            material_instances_.emplace(material, context.device(),
-                                        cubey::render::MaterialInstanceConfig{
-                                            .material_pass = cubey::render::pbr_forward_pass_info(),
-                                            .descriptor_set = 1,
-                                        });
+            import_resources_.material_instances.emplace(
+                material, context.device(),
+                cubey::render::MaterialInstanceConfig{
+                    .material_pass = cubey::render::pbr_forward_pass_info(),
+                    .descriptor_set = 1,
+                });
         cubey::render::MaterialDescriptorWriter(instance.set())
             .combined_image_sampler(
                 static_cast<std::uint32_t>(cubey::render::PbrMaterialBinding::BaseColor),
@@ -518,97 +361,6 @@ class GltfViewerApp {
                 default_texture(cubey::render::PbrMaterialBinding::Emissive).sampler().handle(),
                 default_texture(cubey::render::PbrMaterialBinding::Emissive).view())
             .update(context.device());
-    }
-
-    void write_material_descriptors(cubey::host::WindowedAppContext& context,
-                                    const cubey::asset::GltfAsset& asset,
-                                    const cubey::asset::GltfMaterial& source,
-                                    cubey::render::MaterialInstance& instance) {
-        const TextureBinding base_color = texture_binding_for_ref(
-            context, asset, source.base_color_texture,
-            cubey::asset::gltf_texture_color_space_for_base_color(),
-            cubey::render::PbrMaterialBinding::BaseColor);
-        const TextureBinding metallic_roughness = texture_binding_for_ref(
-            context, asset, source.metallic_roughness_texture,
-            cubey::asset::GltfTextureColorSpace::Linear,
-            cubey::render::PbrMaterialBinding::MetallicRoughness);
-        const TextureBinding normal = texture_binding_for_ref(
-            context, asset, source.normal_texture, cubey::asset::GltfTextureColorSpace::Linear,
-            cubey::render::PbrMaterialBinding::Normal);
-        const TextureBinding occlusion = texture_binding_for_ref(
-            context, asset, source.occlusion_texture, cubey::asset::GltfTextureColorSpace::Linear,
-            cubey::render::PbrMaterialBinding::Occlusion);
-        const TextureBinding emissive = texture_binding_for_ref(
-            context, asset, source.emissive_texture, cubey::asset::GltfTextureColorSpace::Srgb,
-            cubey::render::PbrMaterialBinding::Emissive);
-
-        cubey::render::MaterialDescriptorWriter(instance.set())
-            .combined_image_sampler(
-                static_cast<std::uint32_t>(cubey::render::PbrMaterialBinding::BaseColor),
-                base_color.sampler, base_color.view)
-            .combined_image_sampler(
-                static_cast<std::uint32_t>(cubey::render::PbrMaterialBinding::MetallicRoughness),
-                metallic_roughness.sampler, metallic_roughness.view)
-            .combined_image_sampler(
-                static_cast<std::uint32_t>(cubey::render::PbrMaterialBinding::Normal),
-                normal.sampler, normal.view)
-            .combined_image_sampler(
-                static_cast<std::uint32_t>(cubey::render::PbrMaterialBinding::Occlusion),
-                occlusion.sampler, occlusion.view)
-            .combined_image_sampler(
-                static_cast<std::uint32_t>(cubey::render::PbrMaterialBinding::Emissive),
-                emissive.sampler, emissive.view)
-            .update(context.device());
-    }
-
-    [[nodiscard]] TextureBinding texture_binding_for_ref(
-        cubey::host::WindowedAppContext& context, const cubey::asset::GltfAsset& asset,
-        const cubey::asset::GltfTextureRef& ref,
-        cubey::asset::GltfTextureColorSpace color_space,
-        cubey::render::PbrMaterialBinding fallback_slot) {
-        if (!ref.has_value()) {
-            return texture_binding(default_texture(fallback_slot));
-        }
-        if (ref.texture_index >= asset.textures.size()) {
-            throw std::runtime_error("glTF material texture index is out of range");
-        }
-        const cubey::asset::GltfTexture& texture = asset.textures[ref.texture_index];
-        if (texture.image_index >= asset.images.size()) {
-            throw std::runtime_error("glTF texture image index is out of range");
-        }
-        const cubey::asset::GltfImage& image = asset.images[texture.image_index];
-        cubey::render::Texture2D uploaded = cubey::render::create_uploaded_texture_2d(
-            context.device(), context.gpu(),
-            {
-                .extent = {image.width, image.height},
-                .format = image_format_for_color_space(color_space),
-                .rgba8 = std::span<const std::uint8_t>{image.rgba8.data(), image.rgba8.size()},
-                .create_sampler = true,
-                .sampler = sampler_config_for_texture(asset, texture),
-            });
-        material_textures_.push_back(std::move(uploaded));
-        return texture_binding(material_textures_.back());
-    }
-
-    [[nodiscard]] cubey::vulkan::SamplerConfig
-    sampler_config_for_texture(const cubey::asset::GltfAsset& asset,
-                               const cubey::asset::GltfTexture& texture) const {
-        if (texture.sampler_index >= asset.samplers.size()) {
-            return {};
-        }
-        const cubey::asset::GltfSampler& sampler = asset.samplers[texture.sampler_index];
-        return {
-            .min_filter = to_vk_filter(sampler.min_filter),
-            .mag_filter = to_vk_filter(sampler.mag_filter),
-            .address_mode = to_vk_address_mode(sampler.wrap_s),
-        };
-    }
-
-    [[nodiscard]] static TextureBinding texture_binding(const cubey::render::Texture2D& texture) {
-        return {
-            .sampler = texture.sampler().handle(),
-            .view = texture.view(),
-        };
     }
 
     [[nodiscard]] const cubey::render::Texture2D&
@@ -637,54 +389,21 @@ class GltfViewerApp {
         return texture->value();
     }
 
-    void create_asset_meshes(cubey::host::WindowedAppContext& context,
-                             const cubey::asset::GltfAsset& asset) {
-        mesh_primitives_.clear();
-        mesh_primitives_.resize(asset.meshes.size());
-        for (std::size_t mesh_index = 0; mesh_index < asset.meshes.size(); ++mesh_index) {
-            const cubey::asset::GltfMesh& mesh = asset.meshes[mesh_index];
-            std::vector<PrimitiveResource>& primitives = mesh_primitives_[mesh_index];
-            primitives.reserve(mesh.primitives.size());
-            for (std::size_t primitive_index = 0; primitive_index < mesh.primitives.size();
-                 ++primitive_index) {
-                const cubey::asset::GltfMeshPrimitive& primitive =
-                    mesh.primitives[primitive_index];
-                std::vector<cubey::render::PbrVertex> vertices =
-                    to_pbr_vertices(primitive.vertices);
-                const cubey::render::MeshHandle mesh_handle =
-                    engine_.render_resources().create_mesh(
-                        "gltf_viewer.mesh." + std::to_string(mesh_index) + "." +
-                        std::to_string(primitive_index));
-                meshes_.emplace(mesh_handle, context.gpu(),
-                                cubey::render::indexed_mesh_config(
-                                    std::span<const cubey::render::PbrVertex>{vertices},
-                                    std::span<const std::uint32_t>{primitive.indices}));
-                mesh_handles_.push_back(mesh_handle);
-                triangle_count_ += static_cast<std::uint32_t>(primitive.indices.size() / 3U);
-                primitives.push_back({
-                    .mesh = mesh_handle,
-                    .material = material_handle_for_index(primitive.material_index),
-                    .bounds = to_scene_bounds(primitive.local_bounds),
-                });
-            }
-        }
-    }
-
     void create_fallback_mesh(cubey::host::WindowedAppContext& context) {
         std::vector<cubey::render::PbrVertex> vertices = fallback_cube_vertices();
         std::vector<std::uint32_t> indices = fallback_cube_indices();
         const cubey::render::MeshHandle mesh =
             engine_.render_resources().create_mesh("gltf_viewer.fallback.cube");
-        meshes_.emplace(mesh, context.gpu(),
-                        cubey::render::indexed_mesh_config(
-                            std::span<const cubey::render::PbrVertex>{vertices},
-                            std::span<const std::uint32_t>{indices}));
-        mesh_handles_.push_back(mesh);
-        mesh_primitives_ = {{
-            PrimitiveResource{
+        import_resources_.meshes.emplace(
+            mesh, context.gpu(),
+            cubey::render::indexed_mesh_config(std::span<const cubey::render::PbrVertex>{vertices},
+                                               std::span<const std::uint32_t>{indices}));
+        import_result_.mesh_handles.push_back(mesh);
+        import_resources_.mesh_primitives = {{
+            cubey::GltfImportedPrimitive3D{
                 .mesh = mesh,
-                .material = first_material_handle_,
-                .bounds =
+                .material = import_result_.first_material_handle,
+                .local_bounds =
                     {
                         .center = {0.0F, 0.0F, 0.0F},
                         .half_extent = {1.0F, 1.0F, 1.0F},
@@ -692,51 +411,12 @@ class GltfViewerApp {
             },
         }};
         triangle_count_ = kFallbackCubeTriangleCount;
-    }
-
-    [[nodiscard]] cubey::Bounds3D
-    calculate_asset_scene_bounds(const cubey::asset::GltfAsset& asset) const {
-        BoundsAccumulator accumulator;
-        if (asset.scenes.empty() || asset.default_scene >= asset.scenes.size()) {
-            throw std::runtime_error("glTF asset has no default scene");
-        }
-        const cubey::asset::GltfScene& scene = asset.scenes[asset.default_scene];
-        for (const std::uint32_t root : scene.root_nodes) {
-            accumulate_node_bounds(asset, root, cubey::math::Mat4{1.0F}, accumulator);
-        }
-        return accumulator.bounds_or_default();
-    }
-
-    void accumulate_node_bounds(const cubey::asset::GltfAsset& asset, std::uint32_t node_index,
-                                const cubey::math::Mat4& parent_world,
-                                BoundsAccumulator& accumulator) const {
-        if (node_index >= asset.nodes.size()) {
-            throw std::runtime_error("glTF scene node index is out of range");
-        }
-        const cubey::asset::GltfNode& node = asset.nodes[node_index];
-        const cubey::math::Mat4 world = parent_world * transform_from_node(node).affine_matrix();
-        if (node.mesh_index != cubey::asset::kInvalidAssetIndex) {
-            if (node.mesh_index >= mesh_primitives_.size()) {
-                throw std::runtime_error("glTF node mesh index is out of range");
-            }
-            for (const PrimitiveResource& primitive : mesh_primitives_[node.mesh_index]) {
-                accumulator.add(transform_bounds(primitive.bounds, world));
-            }
-        }
-        for (const std::uint32_t child : node.children) {
-            accumulate_node_bounds(asset, child, world, accumulator);
-        }
-    }
-
-    void create_asset_scene(const cubey::asset::GltfAsset& asset) {
-        scene_ = &engine_.create_scene();
-        cubey::SceneTransaction setup = scene().begin_transaction();
-        const cubey::asset::GltfScene& scene = asset.scenes[asset.default_scene];
-        for (const std::uint32_t root : scene.root_nodes) {
-            create_asset_node(setup, asset, root, {});
-        }
-        create_camera_and_light(setup);
-        setup.commit();
+        import_result_.triangle_count = triangle_count_;
+        import_result_.bounds = {
+            .center = {0.0F, 0.0F, 0.0F},
+            .half_extent = {1.0F, 1.0F, 1.0F},
+        };
+        import_resources_.active = true;
     }
 
     void create_fallback_scene() {
@@ -750,52 +430,15 @@ class GltfViewerApp {
                 .primitives =
                     {
                         cubey::RenderablePrimitive3D{
-                            .mesh = mesh_primitives_.front().front().mesh,
-                            .material = first_material_handle_,
+                            .mesh = import_resources_.mesh_primitives.front().front().mesh,
+                            .material = import_result_.first_material_handle,
                         },
                     },
-                .local_bounds = mesh_primitives_.front().front().bounds,
+                .local_bounds = import_resources_.mesh_primitives.front().front().local_bounds,
             });
+        import_result_.root_entities.push_back(cube);
         create_camera_and_light(setup);
         setup.commit();
-    }
-
-    cubey::Entity create_asset_node(cubey::SceneTransaction& setup,
-                                    const cubey::asset::GltfAsset& asset,
-                                    std::uint32_t node_index, cubey::Entity parent) {
-        if (node_index >= asset.nodes.size()) {
-            throw std::runtime_error("glTF scene node index is out of range");
-        }
-        const cubey::asset::GltfNode& node = asset.nodes[node_index];
-        cubey::Entity entity = setup.entities().create();
-        setup.transforms3d().create(entity, transform_from_node(node), parent);
-
-        if (node.mesh_index != cubey::asset::kInvalidAssetIndex) {
-            if (node.mesh_index >= mesh_primitives_.size()) {
-                throw std::runtime_error("glTF node mesh index is out of range");
-            }
-            std::vector<cubey::RenderablePrimitive3D> primitives;
-            BoundsAccumulator bounds;
-            for (const PrimitiveResource& primitive : mesh_primitives_[node.mesh_index]) {
-                primitives.push_back({
-                    .mesh = primitive.mesh,
-                    .material = primitive.material,
-                });
-                bounds.add(primitive.bounds);
-            }
-            if (!primitives.empty()) {
-                setup.renderables3d().create(entity, cubey::Renderable3D{
-                                                         .primitives = std::move(primitives),
-                                                         .local_bounds =
-                                                             bounds.bounds_or_default(),
-                                                     });
-            }
-        }
-
-        for (const std::uint32_t child : node.children) {
-            create_asset_node(setup, asset, child, entity);
-        }
-        return entity;
     }
 
     void create_camera_and_light(cubey::SceneTransaction& setup) {
@@ -900,7 +543,7 @@ class GltfViewerApp {
             cubey::render::pbr_vertex_input_layout();
         const std::array<VkDescriptorSetLayout, 2> set_layouts{
             scene_material().layout(),
-            material_instances_.at(first_material_handle_).layout(),
+            import_resources_.material_instances.at(import_result_.first_material_handle).layout(),
         };
         forward_pipeline_.emplace(
             context.device(),
@@ -1077,7 +720,7 @@ class GltfViewerApp {
             recorder, cubey::render::depth_clear_value(),
             [this, &shadow_plan](const cubey::vulkan::CommandRecorder& pass_recorder) {
                 cubey::scene::record_pipeline_draw_packets_3d(
-                    pass_recorder, shadow_plan.draw_packets, meshes_,
+                    pass_recorder, shadow_plan.draw_packets, import_resources_.meshes,
                     {
                         .pipeline = &shadow_pass().pipeline(),
                         .filter =
@@ -1114,7 +757,7 @@ class GltfViewerApp {
             [this, &scene_plan, frame_slot](
                 const cubey::vulkan::CommandRecorder& pass_recorder) {
                 cubey::scene::record_pipeline_draw_packets_3d(
-                    pass_recorder, scene_plan.draw_packets, meshes_,
+                    pass_recorder, scene_plan.draw_packets, import_resources_.meshes,
                     {
                         .pipeline = &forward_pipeline(),
                         .material = &scene_material().material(),
@@ -1127,7 +770,7 @@ class GltfViewerApp {
                     [this](const cubey::vulkan::CommandRecorder& packet_recorder,
                            const cubey::scene::RenderDrawPacket3D& packet) {
                         const cubey::render::MaterialInstance& material =
-                            material_instances_.at(packet.material);
+                            import_resources_.material_instances.at(packet.material);
                         cubey::render::bind_material_instance(packet_recorder, forward_pipeline(),
                                                               material);
                         packet_recorder.push_constants(
@@ -1135,17 +778,9 @@ class GltfViewerApp {
                             VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
                             cubey::render::pbr_push_constants(
                                 packet.world_affine_matrix,
-                                material_factors_.at(packet.material)));
+                                import_resources_.material_factors.at(packet.material)));
                     });
             });
-    }
-
-    [[nodiscard]] cubey::render::MaterialHandle
-    material_handle_for_index(std::uint32_t index) const {
-        if (index >= material_handles_.size()) {
-            throw std::runtime_error("glTF primitive material index is out of range");
-        }
-        return material_handles_[index];
     }
 
     [[nodiscard]] cubey::Scene& scene() {
@@ -1171,34 +806,6 @@ class GltfViewerApp {
         camera_entity_ = {};
         light_camera_entity_ = {};
         light_entity_ = {};
-    }
-
-    void destroy_material_resources() {
-        for (const cubey::render::MaterialHandle material : material_handles_) {
-            if (material_instances_.contains(material)) {
-                material_instances_.erase(material);
-            }
-            if (engine_.render_resources().is_alive(material)) {
-                engine_.render_resources().destroy_material(material);
-            }
-        }
-        material_handles_.clear();
-        material_factors_.clear();
-        first_material_handle_ = {};
-    }
-
-    void destroy_render_handles() {
-        for (const cubey::render::MeshHandle mesh : mesh_handles_) {
-            if (meshes_.contains(mesh)) {
-                meshes_.erase(mesh);
-            }
-            if (engine_.render_resources().is_alive(mesh)) {
-                engine_.render_resources().destroy_mesh(mesh);
-            }
-        }
-        mesh_handles_.clear();
-        mesh_primitives_.clear();
-        triangle_count_ = 0;
     }
 
     [[nodiscard]] const cubey::render::ShadowMapPass3D& shadow_pass() const {
@@ -1244,17 +851,9 @@ class GltfViewerApp {
     bool shadow_depth_is_sampled_ = false;
     std::uint32_t triangle_count_ = 0;
 
-    cubey::render::MeshResourceTable<cubey::render::Mesh> meshes_;
-    cubey::render::MaterialResourceTable<cubey::render::MaterialInstance> material_instances_;
+    cubey::GltfSceneImportResources import_resources_{};
+    cubey::GltfSceneImportResult import_result_{};
     cubey::render::RenderGraphFrameExecutor graph_executor_;
-    std::vector<cubey::render::MeshHandle> mesh_handles_;
-    std::vector<cubey::render::MaterialHandle> material_handles_;
-    cubey::render::MaterialHandle first_material_handle_{};
-    std::unordered_map<cubey::render::MaterialHandle, cubey::render::PbrMaterialFactors,
-                       cubey::render::MaterialHandleHash>
-        material_factors_;
-    std::vector<std::vector<PrimitiveResource>> mesh_primitives_;
-    std::vector<cubey::render::Texture2D> material_textures_;
     std::optional<cubey::render::Texture2D> base_color_default_;
     std::optional<cubey::render::Texture2D> metallic_roughness_default_;
     std::optional<cubey::render::Texture2D> normal_default_;

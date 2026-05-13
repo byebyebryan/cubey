@@ -182,6 +182,7 @@ target_link_libraries(
 add_library(cubey_engine STATIC
     engine/capture_queue.cpp
     engine/engine.cpp
+    engine/gltf_scene_importer.cpp
     engine/project_gpu_services.cpp
     engine/project_runtime.cpp
     engine/upload_queue.cpp
