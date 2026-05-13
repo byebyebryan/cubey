@@ -1,25 +1,23 @@
 #include "spinning_cube_app.h"
 
+#include "../common/cube_scene.h"
+
 #include <cubey/core/math.h>
 #include <cubey/engine/engine.h>
 #include <cubey/host/windowed_app.h>
+#include <cubey/render/forward_pass.h>
 #include <cubey/render/material.h>
 #include <cubey/render/mesh.h>
-#include <cubey/render/pass.h>
 #include <cubey/render/pipeline_resource.h>
 #include <cubey/render/primitive_mesh.h>
 #include <cubey/render/primitive_resource.h>
 #include <cubey/render/resource_handle.h>
 #include <cubey/render/resource_table.h>
-#include <cubey/render/target.h>
-#include <cubey/scene/camera_3d.h>
 #include <cubey/scene/render_recording.h>
 #include <cubey/scene/scene.h>
-#include <cubey/scene/scene_builder.h>
 #include <cubey/scene/transform_3d.h>
 #include <cubey/scene/view_3d.h>
 #include <cubey/vulkan/command_recorder.h>
-#include <cubey/vulkan/image.h>
 
 #include <vulkan/vulkan.h>
 
@@ -122,13 +120,11 @@ class SpinningCubeApp {
     }
 
     void create_swapchain_resources(cubey::host::WindowedAppContext& context) {
-        create_depth_resources(context);
-        create_pipeline(context);
+        create_forward_pass(context);
     }
 
     void destroy_swapchain_resources() {
-        pipeline_resource_.reset();
-        depth_attachment_.reset();
+        forward_pass_.reset();
     }
 
     void destroy_all_resources() {
@@ -137,47 +133,47 @@ class SpinningCubeApp {
         destroy_render_handles();
     }
 
-    void create_pipeline(cubey::host::WindowedAppContext& context) {
+    void create_forward_pass(cubey::host::WindowedAppContext& context) {
         const std::array<cubey::render::ShaderStageFile, 2> shader_stage_files{
             cubey::render::vertex_shader_file(shader_path("spinning_cube.vert.spv")),
             cubey::render::fragment_shader_file(shader_path("spinning_cube.frag.spv")),
         };
         const cubey::render::VertexInputLayout vertex_input =
             cubey::render::vertex_position_color_input_layout();
-        pipeline_resource_.emplace(
-            context.device(), cubey::render::graphics_pipeline_file_resource_config(
-                                  {
-                                      .extent = context.swapchain().extent(),
-                                      .color_format = context.swapchain().format(),
-                                      .depth_format = depth_attachment().format(),
-                                  },
-                                  {
-                                      .shader_stage_files = shader_stage_files,
-                                      .vertex_bindings = vertex_input.bindings(),
-                                      .vertex_attributes = vertex_input.attribute_descriptions(),
-                                      .material_pass = spinning_cube_forward_pass_info(),
-                                  }));
-    }
-
-    void create_depth_resources(cubey::host::WindowedAppContext& context) {
-        depth_attachment_.emplace(context.device(), context.swapchain().extent());
+        forward_pass_.emplace(
+            context.device(),
+            cubey::render::GraphicsPipelineTargetInfo{
+                .extent = context.swapchain().extent(),
+                .color_format = context.swapchain().format(),
+            },
+            cubey::render::ForwardScenePass3DConfig{
+                .pipeline =
+                    {
+                        .shader_stage_files = shader_stage_files,
+                        .vertex_bindings = vertex_input.bindings(),
+                        .vertex_attributes = vertex_input.attribute_descriptions(),
+                        .material_pass = spinning_cube_forward_pass_info(),
+                    },
+                .clear =
+                    {
+                        .color = cubey::render::color_clear_value(0.015F, 0.017F, 0.024F, 1.0F),
+                        .depth = cubey::render::depth_clear_value(),
+                    },
+            });
     }
 
     void create_scene() {
         scene_ = &engine_.create_scene();
         cubey::SceneTransaction setup = scene().begin_transaction();
-        cube_entity_ = cubey::scene::create_renderable_entity_3d(
-            setup, cubey::scene::RenderableEntity3DConfig{
-                       .mesh = cube_mesh_handle_,
-                       .material = cube_material_handle_,
-                       .local_bounds =
-                           cubey::Bounds3D{
-                               .center = {0.0F, 0.0F, 0.0F},
-                               .half_extent = {1.0F, 1.0F, 1.0F},
-                           },
-                   });
-        camera_entity_ = cubey::scene::create_camera_entity_3d(
-            setup, cubey::orbit_camera_transform(cubey::OrbitCameraState{.distance = 4.2F}));
+        const cubey::examples::common::CubeScene3D cube_scene =
+            cubey::examples::common::create_cube_scene_3d(setup,
+                                                          {
+                                                              .mesh = cube_mesh_handle_,
+                                                              .material = cube_material_handle_,
+                                                              .camera_distance = 4.2F,
+                                                          });
+        cube_entity_ = cube_scene.cube;
+        camera_entity_ = cube_scene.camera;
         setup.commit();
     }
 
@@ -224,26 +220,19 @@ class SpinningCubeApp {
         const cubey::vulkan::CommandRecorder recorder(frame.command_buffer);
         recorder.begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
-        const cubey::render::RenderTargetView target = cubey::render::render_target_view(
-            frame.color_target, cubey::render::depth_target_view(depth_attachment()));
-        const cubey::render::RenderClearValues clear_values{
-            .color = cubey::render::color_clear_value(0.015F, 0.017F, 0.024F, 1.0F),
-            .depth = cubey::render::depth_clear_value(),
-        };
-
-        cubey::render::record_present_render_target_pass(
-            recorder, target, clear_values,
+        forward_pass().record_to_present(
+            recorder, frame.color_target,
             [this, &frame_plan](const cubey::vulkan::CommandRecorder& pass_recorder) {
                 cubey::scene::record_pipeline_draw_packets_3d(
                     pass_recorder, frame_plan.draw_packets, meshes_,
                     {
-                        .pipeline = &pipeline_resource(),
+                        .pipeline = &forward_pass().pipeline(),
                     },
                     [this, &frame_plan](const cubey::vulkan::CommandRecorder& packet_recorder,
                                         const cubey::scene::RenderDrawPacket3D& packet) {
                         const PushConstants push_constants =
                             current_push_constants(frame_plan, packet);
-                        packet_recorder.push_constants(pipeline_resource().layout(),
+                        packet_recorder.push_constants(forward_pass().pipeline().layout(),
                                                        VK_SHADER_STAGE_VERTEX_BIT, 0,
                                                        push_constants);
                     });
@@ -278,18 +267,11 @@ class SpinningCubeApp {
         }
     }
 
-    [[nodiscard]] const cubey::render::GraphicsPipelineResource& pipeline_resource() const {
-        if (!pipeline_resource_.has_value()) {
-            throw std::runtime_error("pipeline resource is not initialized");
+    [[nodiscard]] const cubey::render::ForwardScenePass3D& forward_pass() const {
+        if (!forward_pass_.has_value()) {
+            throw std::runtime_error("forward pass is not initialized");
         }
-        return pipeline_resource_.value();
-    }
-
-    [[nodiscard]] const cubey::vulkan::DepthAttachment& depth_attachment() const {
-        if (!depth_attachment_.has_value()) {
-            throw std::runtime_error("depth attachment is not initialized");
-        }
-        return depth_attachment_.value();
+        return forward_pass_.value();
     }
 
     RunConfig config_;
@@ -302,8 +284,7 @@ class SpinningCubeApp {
     std::chrono::steady_clock::time_point start_time_ = std::chrono::steady_clock::now();
 
     cubey::render::MeshResourceTable<cubey::render::Mesh> meshes_;
-    std::optional<cubey::render::GraphicsPipelineResource> pipeline_resource_;
-    std::optional<cubey::vulkan::DepthAttachment> depth_attachment_;
+    std::optional<cubey::render::ForwardScenePass3D> forward_pass_;
 };
 
 } // namespace
