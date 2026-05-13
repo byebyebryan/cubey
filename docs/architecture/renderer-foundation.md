@@ -107,12 +107,19 @@ full engine architecture.
   `cubey::render::ColorTargetView`.
 - `Texture2D` owns a Vulkan image plus an optional sampler for the current
   storage-sampled and transfer-sampled texture paths.
+- `create_compute_generated_texture_2d` covers the setup-time storage-image
+  generation path: texture creation, storage-image descriptor setup, compute
+  pipeline creation, layout transitions, dispatch sizing, and final sampled
+  layout.
 - `DepthTexture` owns a sampled depth image plus an optional sampler for shadow
   maps and other depth-as-texture paths. Layout transitions and descriptor
   image layouts stay explicit at the call site.
 - `Mesh`, `DrawItem`, and `record_draw_item` own uploaded indexed geometry and
   record the minimal bind/draw sequence. Vertex layout, pipeline state,
   descriptors, materials, transforms, and push constants remain caller-owned.
+- `InstanceBuffer<T>` owns device-local instance-rate vertex data for the same
+  mesh draw path. `VertexInputLayout` now supports multiple bindings so examples
+  can model real per-instance attributes instead of shader-only shortcuts.
 - `PrimitiveMeshData`, `VertexPositionColor`,
   `VertexPositionColorNormal`, and `VertexPositionColorNormalUv` provide
   CPU-side cube and XZ-plane mesh data for the existing `Mesh` upload path.
@@ -141,8 +148,9 @@ full engine architecture.
 - `cubey::scene::record_draw_packets_3d` is the low-level scene-side helper
   for packet filtering, per-packet state, resolve, and draw. The higher-level
   `record_pipeline_draw_packets_3d` also binds a caller-selected graphics
-  pipeline and optional material instance before recording filtered packets.
-  Pass order and push-constant contents remain caller-owned.
+  pipeline and either a fixed material instance or a material-instance table
+  keyed by packet material handle before recording filtered packets. Pass order
+  and push-constant contents remain caller-owned.
 - `cubey::render::MaterialPassInfo` is the first explicit material/pass
   metadata contract. It describes pass kind, descriptor layout shape,
   push-constant ranges, and reusable graphics pipeline state.
@@ -151,6 +159,13 @@ full engine architecture.
   descriptor set. `MaterialDescriptorWriter` keeps descriptor writes tied to a
   material instance set while still requiring callers to choose concrete
   buffers, images, samplers, and image layouts.
+- `FrameUniformMaterialInstance<T>` owns the common per-frame uniform buffer
+  plus per-frame material descriptor-set shape. It removes repeated descriptor
+  setup for simple forward materials without becoming a full material system.
+- `ForwardScenePass3D` owns the current forward-color pass resource shape:
+  swapchain-sized depth, a file-backed graphics pipeline, clear values, and
+  helpers for recording to present or graph-owned color targets. Scene packet
+  selection and per-packet state stay in `cubey::scene` and the caller.
 - `cubey::render::ShaderProgram`, `GraphicsPipelineResource`, and
   `ComputePipelineResource` own the current shader-module, pipeline-layout, and
   graphics/compute pipeline lifetime shapes. They consume explicit shader stage
@@ -201,12 +216,13 @@ full engine architecture.
 - `RenderableManager3D` lives in the scene/component layer and emits compact
   renderable packets with world matrices, world bounds, and resource handles.
   The cube examples now use Engine-owned scenes, registry-issued handles, mesh
-  resource tables, CPU draw planning, primitive mesh data, and shared graphics
-  pipeline resources while still owning descriptor writes and Vulkan command
-  recording sequence locally. Cube pipelines now read pass metadata from
-  `MaterialPassInfo` and `MaterialInstance` instead of spelling descriptor
-  layouts, descriptor-set ownership, push constants, and depth/blend state
-  entirely ad hoc. Fullscreen examples use shared
+  resource tables, CPU draw planning, primitive mesh data, shared forward-pass
+  resources, generated texture setup, frame-uniform materials, and instance
+  buffers while still owning shader-specific push constants and per-demo render
+  intent locally. Cube pipelines now read pass metadata from `MaterialPassInfo`
+  and `MaterialInstance` instead of spelling descriptor layouts,
+  descriptor-set ownership, push constants, and depth/blend state entirely ad
+  hoc. Fullscreen examples use shared
   pipeline-bind/descriptor/push-constant/fullscreen-triangle helpers for the
   common fullscreen draw shape.
 - `LightManager3D` lives in the scene/component layer and emits compact

@@ -29,6 +29,10 @@ Current examples:
   scene lighting, and input.
 - `shadow_cube`: primitive cube/plane meshes, graph-declared directional shadow
   map, transient scene color target, and fullscreen triangle present pass.
+- `instanced_cubes`: real instance-rate vertex input with one cube mesh and many
+  cube instances.
+- `material_cubes`: multiple material handles and material instances bound per
+  scene draw packet.
 - `headless_render`: no-window offscreen PNG path.
 - `fractal`: fullscreen Mandelbrot-style shader with windowed navigation and
   headless output.
@@ -83,6 +87,8 @@ Useful windowed smokes:
 ./build/dev/examples/spinning_cube/spinning_cube --frames 300 --width 1280 --height 720
 ./build/dev/examples/textured_cube/textured_cube --frames 300 --width 1280 --height 720
 ./build/dev/examples/shadow_cube/shadow_cube --frames 300 --width 1280 --height 720
+./build/dev/examples/instanced_cubes/instanced_cubes --frames 300 --width 1280 --height 720
+./build/dev/examples/material_cubes/material_cubes --frames 300 --width 1280 --height 720
 ./build/dev/examples/fractal/fractal --frames 300 --width 1280 --height 720
 ./build/dev/examples/particles/particles --frames 300 --width 1280 --height 720
 ./build/dev/projects/fluid_2d/fluid_2d --frames 300 --width 1280 --height 720
@@ -104,6 +110,10 @@ layers are installed.
 - `textured_cube`: left-drag rotates, Space pauses/resumes auto-rotation, `R`
   resets, Escape closes.
 - `shadow_cube`: left-drag orbits the camera, Escape closes.
+- `instanced_cubes`: left-drag orbits the camera, Space pauses/resumes
+  auto-rotation, `R` resets, Escape closes.
+- `material_cubes`: left-drag orbits the camera, Space pauses/resumes
+  auto-rotation, `R` resets, Escape closes.
 - `fractal`: left-drag pans, mouse wheel zooms around the cursor, `R` resets,
   Escape closes.
 - `particles`: Space pauses/resumes compute updates, `R` resets, Escape closes.

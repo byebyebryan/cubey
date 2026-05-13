@@ -165,9 +165,11 @@ Current checkpoint:
   dynamic-rendering target setup, generated/uploaded sampled texture ownership,
   sampled depth texture ownership, depth-only rendering setup, indexed mesh
   upload, minimal indexed draw recording, explicit frame-slot identity,
-  per-frame uniform buffers, shader-program and graphics-pipeline resource
+  per-frame uniform buffers, frame-uniform material instances, compute-generated
+  sampled textures, instance-rate vertex buffer helpers, shader-program and
+  graphics-pipeline resource
   ownership for graphics passes, CPU-side cube/XZ-plane primitive mesh data
-  with matching vertex input layouts, a helper for primitive mesh
+  with matching single- and multi-binding vertex input layouts, a helper for primitive mesh
   registry/table upload, and generational mesh/material handles issued by
   `RenderResourceRegistry`.
 - Reusable `cubey::render::ResourceTable`,
@@ -181,6 +183,10 @@ Current checkpoint:
   metadata, material descriptor set ownership, world bounds propagation, and
   deterministic draw sorting without owning pass order, shader selection, or
   renderer policy.
+- Reusable `cubey::render::ForwardScenePass3D` owns the current shared
+  forward-color pass shape: swapchain-sized depth, a file-backed graphics
+  pipeline, clear values, and record helpers for either present or graph-owned
+  color targets.
 - Reusable `cubey::scene::View3D`, `Environment3D`, and
   `RenderFramePlan3D` provide the first CPU 3D view-planning boundary over
   `SceneReadView`: camera matrices, viewport aspect, ambient-only environment,
@@ -266,12 +272,12 @@ Current checkpoint:
   `DrawItem`, `MeshResourceTable`, registry-issued mesh/material handles, and
   CPU render frame plans built from scene renderables, updates scene transforms
   during the project `update()` phase, builds an MVP matrix from `View3D` camera
-  planning through push constants, and uses dynamic rendering with a shared
-  depth attachment helper through the shared host layer.
+  planning through push constants, and uses `ForwardScenePass3D` through the
+  shared host layer.
 - `examples/textured_cube` links against `cubey`, generates a `Texture2D` with a
   compute shader writing a storage image, transitions it for shader sampling,
-  binds per-frame scene uniforms plus a combined image sampler descriptor
-  through shared descriptor/compute helpers, and draws an interactive shaded
+  binds per-frame scene uniforms plus a combined image sampler through
+  `FrameUniformMaterialInstance`, and draws an interactive shaded
   textured indexed cube through `cubey::render::Mesh`, `DrawItem`,
   `MeshResourceTable`, registry-issued mesh/material handles, CPU render frame
   plans built from scene renderables and a scene-owned directional light
@@ -286,6 +292,12 @@ Current checkpoint:
   sampled depth targets, depth-only dynamic rendering, graph-derived
   sampled-depth/scene-color/backbuffer sync, render-graph pass declarations,
   transient allocation, and CPU pass planning.
+- `examples/instanced_cubes` links against `cubey` and draws a cube grid through
+  a single renderable packet, real instance-rate vertex input, one shared cube
+  mesh, and `instance_count` propagation from scene primitive to Vulkan draw.
+- `examples/material_cubes` links against `cubey` and draws multiple cube
+  entities with distinct material handles, per-material uniform data, and
+  per-packet material instance binding.
 - `examples/headless_render` links against `cubey`, creates no GLFW window or
   surface, renders an offscreen color target through dynamic rendering, copies
   it into a readback buffer, and writes a PNG artifact.

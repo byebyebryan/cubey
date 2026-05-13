@@ -295,8 +295,8 @@ named explicitly and live in either `examples/` or `projects/`:
   targets.
 - `examples/` - small, focused reference programs that prove one concept or API
   path. Current examples are `window_clear`, `triangle`, `spinning_cube`,
-  `textured_cube`, `shadow_cube`, `headless_render`, `fractal`, and
-  `particles`.
+  `textured_cube`, `shadow_cube`, `instanced_cubes`, `material_cubes`,
+  `headless_render`, `fractal`, and `particles`.
 - `projects/` - first-class graphics experiments and longer-lived creative
   work, starting with `fluid_2d` and later candidates such as `fluid_sim`,
   `marching_cubes`, and `sdf_sculpt`.
@@ -433,6 +433,8 @@ cubey/
     spinning_cube/         -- indexed cube, push constants, depth
     textured_cube/         -- compute texture generation, uniforms, sampling
     shadow_cube/           -- graph-declared shadow/scene/present example
+    instanced_cubes/       -- instance-rate cube grid rendering
+    material_cubes/        -- per-packet material instance binding
     headless_render/       -- minimal offscreen image path
     fractal/               -- fullscreen fractal shader smoke and headless PNG
     particles/             -- compute-updated attractor particles

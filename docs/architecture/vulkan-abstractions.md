@@ -300,11 +300,16 @@ Defer:
 
 Current state:
 
-- Cube examples still define vertex data, index data, and vertex descriptions
-  locally, but use `cubey::render::Mesh` and `DrawItem` for indexed buffer
-  ownership and draw recording.
-- `examples/textured_cube` uses `cubey::render::Texture2D` for its
-  compute-generated sampled texture ownership.
+- Cube examples use shared primitive mesh data, vertex input layouts,
+  `cubey::render::Mesh`, `DrawItem`, and `ForwardScenePass3D` for indexed
+  forward rendering while keeping shader-specific push constants local.
+- `examples/textured_cube` uses `cubey::render::Texture2D` and
+  `create_compute_generated_texture_2d` for its compute-generated sampled
+  texture ownership.
+- `examples/instanced_cubes` uses `InstanceBuffer<T>` and a multi-binding vertex
+  layout for real instance-rate cube attributes.
+- `examples/material_cubes` uses multiple material handles and per-packet
+  material instance binding.
 - `examples/shadow_cube` uses `cubey::render::DepthTexture`,
   `DepthOnlyRenderingInfo`, depth-only pipeline setup, graph-derived
   sampled-depth/scene-color/backbuffer sync, and a graph-created transient

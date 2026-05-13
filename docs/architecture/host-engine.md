@@ -203,7 +203,8 @@ setup before swapchain setup, and callback forwarding.
   immediately delegate command-buffer begin/end, frame-slot graph resources,
   and pass execution to `cubey::render::RenderGraphFrameExecutor`.
 - All current windowed examples use the host layer: `window_clear`, `triangle`,
-  `spinning_cube`, `textured_cube`, `shadow_cube`, `fractal`, and `particles`.
+  `spinning_cube`, `textured_cube`, `shadow_cube`, `instanced_cubes`,
+  `material_cubes`, `fractal`, and `particles`.
   They still own their shaders, descriptors, command recording sequence, and
   example-specific state, but no longer repeat the common host callback shell.
 - `cubey::host::HeadlessPngHost` owns the repeated no-window Vulkan

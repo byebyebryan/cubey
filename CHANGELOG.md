@@ -121,6 +121,11 @@ versioned section and use that section as the release notes.
   rendering-info helpers for multi-view/multipass examples.
 - Public Vulkan queue submit, sampled-depth transition, sampler config, and
   depth-only dynamic graphics pipeline support for shadow-map style work.
+- Public `cubey::render::ForwardScenePass3D`, `FrameUniformMaterialInstance`,
+  `create_compute_generated_texture_2d`, and `InstanceBuffer` helpers for the
+  current forward cube rendering path.
+- `examples/instanced_cubes`, a real instance-rate cube grid example.
+- `examples/material_cubes`, a per-packet material instance binding example.
 
 ### Changed
 
@@ -178,6 +183,8 @@ versioned section and use that section as the release notes.
   Vulkan command recording sequence and resource policy project-local.
 - `Camera3D` now supports orthographic projection in addition to perspective
   projection.
+- Cube examples now share forward pass, generated texture, frame-uniform
+  material, and example-local cube scene helpers where appropriate.
 
 ## Pre-2.0 History
 
