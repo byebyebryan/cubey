@@ -29,6 +29,7 @@ add_executable(cubey_core_tests
     material_pass_tests.cpp
     math_tests.cpp
     orbit_controller_tests.cpp
+    pbr_view_renderer_tests.cpp
     pipeline_tests.cpp
     project_gpu_services_tests.cpp
     project_runtime_tests.cpp

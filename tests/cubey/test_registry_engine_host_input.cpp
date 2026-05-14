@@ -17,6 +17,10 @@ void test_input_state_tracks_key_and_button_edges();
 void test_orbit_controller_tracks_rotation_drag_pause_and_reset();
 void test_orbit_controller_updates_from_input_snapshot();
 void test_pan_zoom_2d_controller_pans_and_zooms_from_input();
+void test_pbr_view_renderer_config_requires_shader_paths_and_shadow_extent();
+void test_pbr_view_renderer_scene_uniforms_pack_view_light_environment_and_display();
+void test_pbr_view_renderer_selects_requested_light_or_fallback();
+void test_pbr_view_renderer_skybox_uniforms_pack_inverse_view_camera_environment_and_display();
 void test_pointer_drag_tracks_active_cursor_and_accumulated_delta();
 void test_project_context_exposes_async_runtime_services();
 void test_project_context_exposes_optional_gpu_services();
@@ -50,6 +54,11 @@ std::span<const TestCase> engine_host_input_test_cases() {
         CUBEY_TEST(test_engine_destroys_owned_scenes_and_rejects_foreign_scenes),
         CUBEY_TEST(test_engine_exposes_render_resource_registry),
         CUBEY_TEST(test_engine_created_scenes_validate_render_resource_handles),
+        CUBEY_TEST(test_pbr_view_renderer_config_requires_shader_paths_and_shadow_extent),
+        CUBEY_TEST(test_pbr_view_renderer_selects_requested_light_or_fallback),
+        CUBEY_TEST(test_pbr_view_renderer_scene_uniforms_pack_view_light_environment_and_display),
+        CUBEY_TEST(
+            test_pbr_view_renderer_skybox_uniforms_pack_inverse_view_camera_environment_and_display),
         CUBEY_TEST(test_headless_png_host_validates_capture_shape),
         CUBEY_TEST(test_host_frame_stats_publish_window_title_metrics),
         CUBEY_TEST(test_input_state_tracks_key_and_button_edges),
