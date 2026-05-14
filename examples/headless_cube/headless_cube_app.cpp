@@ -138,7 +138,7 @@ class HeadlessCubeApp {
         const cubey::vulkan::CommandRecorder recorder(command_buffer);
         recorder.transition_image_layout(cubey::vulkan::begin_depth_attachment_transition(
             forward_pass().depth_attachment().handle()));
-        forward_pass().record_to_target(
+        forward_pass().record_to_prepared_target(
             recorder, target, [this, &target](const cubey::vulkan::CommandRecorder& pass_recorder) {
                 pass_recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS,
                                             forward_pass().pipeline().pipeline());

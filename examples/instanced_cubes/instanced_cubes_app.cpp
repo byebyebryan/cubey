@@ -310,7 +310,7 @@ class InstancedCubesApp {
         const cubey::vulkan::CommandRecorder recorder(frame.command_buffer);
         recorder.begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
-        forward_pass().record_to_present(
+        forward_pass().record_to_present_target(
             recorder, frame.color_target,
             [this, &frame_plan, &cube_spin](
                 const cubey::vulkan::CommandRecorder& pass_recorder) {

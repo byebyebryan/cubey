@@ -374,7 +374,7 @@ class ParticleCubesApp {
             record_particle_compute(recorder, frame.timing);
         }
 
-        forward_pass().record_to_present(
+        forward_pass().record_to_present_target(
             recorder, frame.color_target,
             [this, &frame](const cubey::vulkan::CommandRecorder& pass_recorder) {
                 const cubey::render::GraphicsPipelineResource& pipeline =

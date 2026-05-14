@@ -42,15 +42,17 @@ class ForwardScenePass3D {
     }
 
     template <typename RecordCallback>
-    void record_to_target(const cubey::vulkan::CommandRecorder& recorder,
-                          ColorTargetView color_target, RecordCallback&& record_callback) const {
+    void record_to_prepared_target(const cubey::vulkan::CommandRecorder& recorder,
+                                   ColorTargetView color_target,
+                                   RecordCallback&& record_callback) const {
         record_render_target_pass(recorder, target(color_target), clear_,
                                   std::forward<RecordCallback>(record_callback));
     }
 
     template <typename RecordCallback>
-    void record_to_present(const cubey::vulkan::CommandRecorder& recorder,
-                           ColorTargetView color_target, RecordCallback&& record_callback) const {
+    void record_to_present_target(const cubey::vulkan::CommandRecorder& recorder,
+                                  ColorTargetView color_target,
+                                  RecordCallback&& record_callback) const {
         record_present_render_target_pass(recorder, target(color_target), clear_,
                                           std::forward<RecordCallback>(record_callback));
     }

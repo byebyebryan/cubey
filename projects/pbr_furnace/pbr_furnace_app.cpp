@@ -617,13 +617,13 @@ class PbrFurnaceApp {
                 });
         };
         if (present) {
-            forward_pass().record_to_present(recorder, color_target, record);
+            forward_pass().record_to_present_target(recorder, color_target, record);
             recorder.end("vkEndCommandBuffer pbr_furnace");
         } else {
             recorder.transition_image_layout(
                 cubey::vulkan::begin_depth_attachment_transition(
                     forward_pass().depth_attachment().handle()));
-            forward_pass().record_to_target(recorder, color_target, record);
+            forward_pass().record_to_prepared_target(recorder, color_target, record);
         }
     }
 

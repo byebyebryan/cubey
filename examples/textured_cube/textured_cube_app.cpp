@@ -355,7 +355,7 @@ class TexturedCubeApp {
 
         recorder.begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
-        forward_pass().record_to_present(recorder, frame.color_target,
+        forward_pass().record_to_present_target(recorder, frame.color_target,
                                          [this, &frame_plan, frame_slot = frame.frame_slot](
                                              const cubey::vulkan::CommandRecorder& pass_recorder) {
                                              cubey::scene::record_pipeline_draw_packets_3d(

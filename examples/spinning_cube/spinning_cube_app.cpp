@@ -218,7 +218,7 @@ class SpinningCubeApp {
         const cubey::vulkan::CommandRecorder recorder(frame.command_buffer);
         recorder.begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
-        forward_pass().record_to_present(
+        forward_pass().record_to_present_target(
             recorder, frame.color_target,
             [this, &frame_plan](const cubey::vulkan::CommandRecorder& pass_recorder) {
                 cubey::scene::record_pipeline_draw_packets_3d(
