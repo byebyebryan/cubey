@@ -124,15 +124,16 @@ layers are installed.
 
 ## Controls
 
-- `textured_cube`: left-drag rotates, Space pauses/resumes auto-rotation, `R`
-  resets, Escape closes.
-- `shadow_cube`: left-drag orbits the camera, Escape closes.
-- `instanced_cubes`: left-drag orbits the camera, Space pauses/resumes
-  auto-rotation, `R` resets, Escape closes.
-- `material_cubes`: left-drag orbits the camera, Space pauses/resumes
-  auto-rotation, `R` resets, Escape closes.
-- `particle_cubes`: Space pauses/resumes compute updates, `R` resets, Escape
+- `textured_cube`: left-drag orbits the camera, Space pauses/resumes
+  auto-orbit, `R` resets the camera, Escape closes.
+- `shadow_cube`: left-drag orbits the camera, `R` resets the camera, Escape
   closes.
+- `instanced_cubes`: left-drag orbits the camera, `R` resets the camera, Escape
+  closes.
+- `material_cubes`: left-drag orbits the camera, `R` resets the camera, Escape
+  closes.
+- `particle_cubes`: left-drag orbits the camera, Space pauses/resumes compute
+  updates, `R` resets the camera and cube field, Escape closes.
 - `fractal_2d`: left-drag pans, mouse wheel zooms around the cursor, `R` resets,
   Escape closes.
 - `fluid_2d`: left-drag injects dye/force, Space pauses/resumes, `R` resets,

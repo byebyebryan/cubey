@@ -12,6 +12,7 @@
 #include <cubey/scene/camera_3d.h>
 #include <cubey/scene/transform_3d.h>
 #include <cubey/vulkan/command_recorder.h>
+#include <cubey/vulkan/image_transitions.h>
 
 #include <vulkan/vulkan.h>
 
@@ -135,6 +136,8 @@ class HeadlessCubeApp {
     void record_cube(VkCommandBuffer command_buffer,
                      const cubey::host::HeadlessRenderTarget& target) const {
         const cubey::vulkan::CommandRecorder recorder(command_buffer);
+        recorder.transition_image_layout(cubey::vulkan::begin_depth_attachment_transition(
+            forward_pass().depth_attachment().handle()));
         forward_pass().record_to_target(
             recorder, target, [this, &target](const cubey::vulkan::CommandRecorder& pass_recorder) {
                 pass_recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS,

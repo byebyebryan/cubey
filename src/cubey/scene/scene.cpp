@@ -248,6 +248,7 @@ void Scene::commit(SceneEditQueue& edits) {
 }
 
 void Scene::release_read_view(std::uint64_t epoch) noexcept {
+    std::lock_guard const edit_lock(edit_mutex_);
     {
         std::lock_guard const lock(read_mutex_);
         auto position = std::find(active_read_epochs_.begin(), active_read_epochs_.end(), epoch);

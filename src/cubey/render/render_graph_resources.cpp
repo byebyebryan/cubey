@@ -437,9 +437,17 @@ void RenderGraphFrameExecutor::record(const RenderGraphFrameRecordInfo& info,
     }
 
     const cubey::vulkan::CommandRecorder recorder(info.command_buffer);
-    recorder.begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-    graph.execute(resources, recorder);
-    recorder.end(info.label != nullptr ? info.label : "vkEndCommandBuffer render graph");
+    switch (info.command_buffer_mode) {
+    case RenderGraphCommandBufferMode::BeginAndEnd:
+        recorder.begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+        graph.execute(resources, recorder);
+        recorder.end(info.label != nullptr ? info.label : "vkEndCommandBuffer render graph");
+        return;
+    case RenderGraphCommandBufferMode::AlreadyRecording:
+        graph.execute(resources, recorder);
+        return;
+    }
+    throw std::runtime_error("render graph command buffer mode is invalid");
 }
 
 void record_render_graph_barriers(const cubey::vulkan::CommandRecorder& recorder,

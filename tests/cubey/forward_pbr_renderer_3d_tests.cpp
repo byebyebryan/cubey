@@ -3,8 +3,12 @@
 #include <vulkan/vulkan.h>
 
 #include <cmath>
+#include <filesystem>
+#include <fstream>
+#include <iterator>
 #include <span>
 #include <stdexcept>
+#include <string>
 #include <unordered_map>
 
 namespace {
@@ -28,6 +32,19 @@ void require_throws(auto&& action, const char* message) {
         return;
     }
     throw std::runtime_error(message);
+}
+
+std::string read_source_file(const std::filesystem::path& path) {
+    std::ifstream file(path);
+    if (!file) {
+        throw std::runtime_error("failed to open source file: " + path.string());
+    }
+    return std::string{std::istreambuf_iterator<char>{file}, std::istreambuf_iterator<char>{}};
+}
+
+void require_contains(const std::string& text, const std::string& needle,
+                      const char* message) {
+    require(text.find(needle) != std::string::npos, message);
 }
 
 cubey::ForwardPbrRenderer3DConfig valid_config() {
@@ -246,6 +263,17 @@ void test_forward_pbr_renderer_3d_shadow_vertex_layout_matches_pbr_vertices() {
             "forward PBR shadow vertex layout should bind position at location 0");
     require(layout.attributes[0].offset == offsetof(cubey::render::PbrVertex, position),
             "forward PBR shadow vertex layout should read PBR vertex position");
+}
+
+void test_forward_pbr_renderer_3d_binds_shadow_depth_with_depth_read_layout() {
+    const std::filesystem::path root{CUBEY_SOURCE_DIR};
+    const std::string source =
+        read_source_file(root / "src/cubey/engine/forward_pbr_renderer_3d.cpp");
+
+    require_contains(source, "PbrSceneBinding::ShadowMap",
+                     "forward PBR renderer should bind the shadow map in the scene set");
+    require_contains(source, ".layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL",
+                     "forward PBR shadow map descriptor should match sampled depth layout");
 }
 
 void test_forward_pbr_renderer_3d_scene_uniforms_pack_view_light_environment_and_display() {

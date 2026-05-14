@@ -3,6 +3,9 @@
 #include <vulkan/vulkan.h>
 
 #include <atomic>
+#include <filesystem>
+#include <fstream>
+#include <iterator>
 #include <stdexcept>
 #include <string>
 #include <thread>
@@ -14,6 +17,19 @@ void require(bool condition, const char* message) {
     if (!condition) {
         throw std::runtime_error(message);
     }
+}
+
+std::string read_source_file(const std::filesystem::path& path) {
+    std::ifstream file(path);
+    if (!file) {
+        throw std::runtime_error("failed to open source file: " + path.string());
+    }
+    return std::string{std::istreambuf_iterator<char>{file}, std::istreambuf_iterator<char>{}};
+}
+
+void require_contains(const std::string& text, const std::string& needle,
+                      const char* message) {
+    require(text.find(needle) != std::string::npos, message);
 }
 
 cubey::vulkan::Device* fake_device() {
@@ -229,6 +245,16 @@ void test_gpu_runtime_submit_and_wait_propagates_threaded_failures() {
     require(threw, "submit_and_wait should propagate threaded GPU work failures");
     require(runtime.empty(), "failed submit_and_wait work should not leave pending work");
     runtime.shutdown();
+}
+
+void test_gpu_runtime_threaded_submit_and_wait_handles_owner_thread_calls() {
+    const std::filesystem::path root{CUBEY_SOURCE_DIR};
+    const std::string source = read_source_file(root / "src/cubey/vulkan/gpu_runtime.cpp");
+
+    require_contains(source, "std::this_thread::get_id() == owner_thread_",
+                     "threaded submit_and_wait should detect owner-thread callers");
+    require_contains(source, "drain_on_owner_thread();",
+                     "owner-thread submit_and_wait should drain directly instead of waiting");
 }
 
 void test_gpu_runtime_wait_queue_idle_runs_on_owner_thread() {

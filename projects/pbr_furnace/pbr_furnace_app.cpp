@@ -23,6 +23,7 @@
 #include <cubey/scene/transform_3d.h>
 #include <cubey/scene/view_3d.h>
 #include <cubey/vulkan/command_recorder.h>
+#include <cubey/vulkan/image_transitions.h>
 
 #include <vulkan/vulkan.h>
 
@@ -619,6 +620,9 @@ class PbrFurnaceApp {
             forward_pass().record_to_present(recorder, color_target, record);
             recorder.end("vkEndCommandBuffer pbr_furnace");
         } else {
+            recorder.transition_image_layout(
+                cubey::vulkan::begin_depth_attachment_transition(
+                    forward_pass().depth_attachment().handle()));
             forward_pass().record_to_target(recorder, color_target, record);
         }
     }

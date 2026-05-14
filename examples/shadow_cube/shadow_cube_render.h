@@ -20,10 +20,11 @@ struct ShadowPushConstants {
 struct ScenePushConstants {
     cubey::math::Mat4 mvp;
     cubey::math::Mat4 light_mvp;
+    cubey::math::Mat4 model;
 };
 
 static_assert(sizeof(ShadowPushConstants) == sizeof(cubey::math::Mat4));
-static_assert(sizeof(ScenePushConstants) == sizeof(cubey::math::Mat4) * 2U);
+static_assert(sizeof(ScenePushConstants) == sizeof(cubey::math::Mat4) * 3U);
 
 [[nodiscard]] const cubey::math::Vec3& light_direction();
 [[nodiscard]] std::filesystem::path shader_path(const char* filename);

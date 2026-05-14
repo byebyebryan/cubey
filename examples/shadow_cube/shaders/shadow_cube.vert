@@ -3,6 +3,7 @@
 layout(push_constant) uniform ScenePushConstants {
     mat4 mvp;
     mat4 light_mvp;
+    mat4 model;
 } push_constants;
 
 layout(location = 0) in vec3 in_position;
@@ -16,6 +17,6 @@ layout(location = 2) out vec4 frag_shadow_position;
 void main() {
     gl_Position = push_constants.mvp * vec4(in_position, 1.0);
     frag_color = in_color;
-    frag_normal = normalize(in_normal);
+    frag_normal = normalize(transpose(inverse(mat3(push_constants.model))) * in_normal);
     frag_shadow_position = push_constants.light_mvp * vec4(in_position, 1.0);
 }

@@ -84,6 +84,8 @@ struct ForwardPbrRenderer3DTargetInfo {
     render::RenderGraphTextureState color_initial_state{};
     render::RenderGraphTextureState color_final_state{};
     const char* command_buffer_label = "vkEndCommandBuffer forward pbr renderer";
+    render::RenderGraphCommandBufferMode command_buffer_mode =
+        render::RenderGraphCommandBufferMode::BeginAndEnd;
 };
 
 struct ForwardPbrRenderer3DViewInfo {

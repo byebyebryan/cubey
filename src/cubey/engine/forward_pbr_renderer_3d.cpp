@@ -253,6 +253,7 @@ void ForwardPbrRenderer3D::create_global_resources(
                         .binding = binding(render::PbrSceneBinding::ShadowMap),
                         .sampler = shadow_texture.sampler().handle(),
                         .image_view = shadow_texture.view(),
+                        .layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
                     },
                     render::SampledImageMaterialBinding{
                         .binding = binding(render::PbrSceneBinding::IrradianceCube),
@@ -461,11 +462,12 @@ void ForwardPbrRenderer3D::record(const ForwardPbrRenderer3DRenderRequest& reque
             .command_buffer = target.command_buffer,
             .frame_slot = target.frame_slot,
             .label = target.command_buffer_label,
+            .command_buffer_mode = target.command_buffer_mode,
         },
         render_graph.graph,
         [this, device = target.device, frame_slot = target.frame_slot,
-         &render_graph](const render::RenderGraphResourceSet& resources) {
-            update_post_descriptor(*device, frame_slot, render_graph.graph, resources,
+         &render_graph](const render::RenderGraphResourceSet& graph_resources) {
+            update_post_descriptor(*device, frame_slot, render_graph.graph, graph_resources,
                                    render_graph.scene_color);
         });
     shadow_depth_is_sampled_ = true;

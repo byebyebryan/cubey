@@ -607,7 +607,8 @@ class GltfViewerApp {
                               cubey::render::ColorTargetView color_target,
                               cubey::render::FrameSlot frame_slot,
                               cubey::render::RenderGraphTextureState color_initial_state,
-                              cubey::render::RenderGraphTextureState color_final_state) {
+                              cubey::render::RenderGraphTextureState color_final_state,
+                              cubey::render::RenderGraphCommandBufferMode command_buffer_mode) {
         cubey::SceneReadView scene_view = scene().read();
         const cubey::scene::FrameRenderPlan3D frame_plan =
             current_frame_plan(scene_view, color_target.extent);
@@ -626,6 +627,7 @@ class GltfViewerApp {
                     .color_initial_state = color_initial_state,
                     .color_final_state = color_final_state,
                     .command_buffer_label = "vkEndCommandBuffer gltf_viewer",
+                    .command_buffer_mode = command_buffer_mode,
                 },
             .view =
                 {
@@ -654,7 +656,8 @@ class GltfViewerApp {
     void record_viewer_frame(cubey::host::WindowedAppContext& context,
                              const cubey::host::WindowedRenderFrame& frame) {
         record_viewer_target(context.device(), frame.command_buffer, frame.color_target,
-                             frame.frame_slot, undefined_texture_state(), present_texture_state());
+                             frame.frame_slot, undefined_texture_state(), present_texture_state(),
+                             cubey::render::RenderGraphCommandBufferMode::BeginAndEnd);
     }
 
     void record_viewer_capture(cubey::host::HeadlessPngContext& context,
@@ -662,7 +665,8 @@ class GltfViewerApp {
                                const cubey::host::HeadlessRenderTarget& target) {
         record_viewer_target(context.device(), command_buffer, target,
                              cubey::render::FrameSlot{.index = 0, .count = 1},
-                             color_attachment_texture_state(), color_attachment_texture_state());
+                             color_attachment_texture_state(), color_attachment_texture_state(),
+                             cubey::render::RenderGraphCommandBufferMode::AlreadyRecording);
     }
 
     [[nodiscard]] cubey::LightPacket3D fallback_light_packet() const {

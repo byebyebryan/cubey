@@ -11,8 +11,8 @@ option(CUBEY_ENABLE_WARNINGS "Enable project warning flags" ON)
 option(CUBEY_WARNINGS_AS_ERRORS "Treat project warnings as errors" OFF)
 option(CUBEY_ENABLE_CLANG_TIDY "Run clang-tidy during builds" OFF)
 option(CUBEY_BUILD_HOST "Build Cubey concrete host layer" ON)
-option(CUBEY_BUILD_EXAMPLES "Build Cubey examples" ON)
-option(CUBEY_BUILD_PROJECTS "Build Cubey projects" ON)
+option(CUBEY_BUILD_EXAMPLES "Build Cubey examples" ${CUBEY_BUILD_HOST})
+option(CUBEY_BUILD_PROJECTS "Build Cubey projects" ${CUBEY_BUILD_HOST})
 option(
     CUBEY_FETCH_GLTF_SAMPLE_ASSETS
     "Fetch selected Khronos glTF sample assets into the build tree"
@@ -102,6 +102,9 @@ if (NOT glm_FOUND)
     FetchContent_MakeAvailable(glm)
 endif()
 
+if (NOT DEFINED BUILD_TESTING)
+    set(BUILD_TESTING ${CUBEY_BUILD_HOST} CACHE BOOL "Build tests")
+endif()
 include(CTest)
 
 add_subdirectory(src/cubey)

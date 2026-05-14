@@ -142,6 +142,23 @@ void test_shadow_cube_ground_plane_sits_below_spinning_cube() {
                      "shadow_cube should clear the ground entity on teardown");
 }
 
+void test_shadow_cube_transforms_normals_with_rotating_model_matrix() {
+    const std::filesystem::path root{CUBEY_SOURCE_DIR};
+    const std::string header =
+        read_source_file(root / "examples/shadow_cube/shadow_cube_render.h");
+    const std::string shader =
+        read_source_file(root / "examples/shadow_cube/shaders/shadow_cube.vert");
+    const std::string frame =
+        read_source_file(root / "examples/shadow_cube/shadow_cube_frame.cpp");
+
+    require_contains(header, "cubey::math::Mat4 model;",
+                     "shadow_cube scene push constants should carry the model matrix");
+    require_contains(frame, ".model = packet.world_affine_matrix",
+                     "shadow_cube should push each packet model matrix");
+    require_contains(shader, "transpose(inverse(mat3(push_constants.model)))",
+                     "shadow_cube shader should transform normals by the model normal matrix");
+}
+
 void test_material_cubes_show_real_material_variant_grid() {
     const std::filesystem::path root{CUBEY_SOURCE_DIR};
     const std::string app = read_source_file(root / "examples/material_cubes/material_cubes_app.cpp");

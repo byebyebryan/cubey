@@ -5,8 +5,12 @@ void test_depth_only_rendering_info_describes_sampled_depth_target();
 void test_depth_texture_config_maps_sampled_depth_usage();
 void test_cube_examples_share_spinning_cube_motion();
 void test_shadow_cube_ground_plane_sits_below_spinning_cube();
+void test_shadow_cube_transforms_normals_with_rotating_model_matrix();
 void test_material_cubes_show_real_material_variant_grid();
 void test_example_lighting_uses_low_linear_ambient_terms();
+void test_pbr_furnace_headless_path_transitions_depth_attachment();
+void test_smoke_tests_fail_on_vulkan_validation_errors();
+void test_hostless_cmake_defaults_disable_host_dependent_targets();
 void test_frame_slot_defaults_to_single_frame_slot();
 void test_frame_slot_rejects_invalid_slots();
 void test_frame_slot_wraps_frame_indices();
@@ -50,6 +54,7 @@ void test_render_graph_execute_with_recorder_exposes_command_recorder();
 void test_render_graph_executes_callbacks_in_pass_order_and_exposes_context();
 void test_render_graph_execution_resolves_bound_transient_resources();
 void test_render_graph_frame_executor_tracks_slots_and_rejects_invalid_record_info();
+void test_render_graph_frame_record_info_separates_command_buffer_ownership();
 void test_render_graph_frame_resources_manage_frame_slots();
 void test_render_graph_frame_resources_reject_invalid_slots();
 void test_render_graph_frame_resources_replace_one_slot_without_disturbing_another();
@@ -104,8 +109,12 @@ std::span<const TestCase> render_test_cases() {
         CUBEY_TEST(test_frame_slot_defaults_to_single_frame_slot),
         CUBEY_TEST(test_cube_examples_share_spinning_cube_motion),
         CUBEY_TEST(test_shadow_cube_ground_plane_sits_below_spinning_cube),
+        CUBEY_TEST(test_shadow_cube_transforms_normals_with_rotating_model_matrix),
         CUBEY_TEST(test_material_cubes_show_real_material_variant_grid),
         CUBEY_TEST(test_example_lighting_uses_low_linear_ambient_terms),
+        CUBEY_TEST(test_pbr_furnace_headless_path_transitions_depth_attachment),
+        CUBEY_TEST(test_smoke_tests_fail_on_vulkan_validation_errors),
+        CUBEY_TEST(test_hostless_cmake_defaults_disable_host_dependent_targets),
         CUBEY_TEST(test_frame_slot_wraps_frame_indices),
         CUBEY_TEST(test_frame_slot_rejects_invalid_slots),
         CUBEY_TEST(test_frame_uniform_buffer_config_describes_host_visible_uniform_storage),
@@ -145,6 +154,7 @@ std::span<const TestCase> render_test_cases() {
         CUBEY_TEST(test_render_graph_declares_compute_storage_buffer_flow),
         CUBEY_TEST(test_render_graph_transfer_pass_accepts_only_transfer_usages),
         CUBEY_TEST(test_render_graph_frame_executor_tracks_slots_and_rejects_invalid_record_info),
+        CUBEY_TEST(test_render_graph_frame_record_info_separates_command_buffer_ownership),
         CUBEY_TEST(test_render_pipeline_resource_builds_layout_and_dynamic_pipeline_info),
         CUBEY_TEST(test_render_pipeline_resource_allows_vertexless_fullscreen_pipeline_shape),
         CUBEY_TEST(test_render_pipeline_resource_builds_compute_pipeline_info),

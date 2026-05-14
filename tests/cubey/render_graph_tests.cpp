@@ -852,6 +852,18 @@ void test_render_graph_frame_executor_tracks_slots_and_rejects_invalid_record_in
     require(executor.frame_slot_count() == 0, "cleared graph frame executor should report no slots");
 }
 
+void test_render_graph_frame_record_info_separates_command_buffer_ownership() {
+    cubey::render::RenderGraphFrameRecordInfo info;
+    require(info.command_buffer_mode ==
+                cubey::render::RenderGraphCommandBufferMode::BeginAndEnd,
+            "render graph frame recording should own begin/end by default");
+
+    info.command_buffer_mode = cubey::render::RenderGraphCommandBufferMode::AlreadyRecording;
+    require(info.command_buffer_mode ==
+                cubey::render::RenderGraphCommandBufferMode::AlreadyRecording,
+            "render graph frame recording should support caller-owned command buffers");
+}
+
 void test_render_graph_resolves_sampled_color_texture_view() {
     cubey::render::RenderGraphBuilder graph;
     const cubey::render::RenderGraphTextureHandle color =

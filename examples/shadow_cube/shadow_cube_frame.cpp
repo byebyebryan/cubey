@@ -168,6 +168,7 @@ void ShadowCubeApp::record_scene_pass(
                         .mvp = scene_plan.view_projection_matrix * packet.world_affine_matrix,
                         .light_mvp =
                             shadow_plan.view_projection_matrix * packet.world_affine_matrix,
+                        .model = packet.world_affine_matrix,
                     };
                     packet_recorder.push_constants(scene_pipeline_resource().layout(),
                                                    VK_SHADER_STAGE_VERTEX_BIT, 0,

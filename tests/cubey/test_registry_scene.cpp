@@ -41,6 +41,7 @@ void test_scene_builder_creates_common_3d_entities();
 void test_scene_edit_queue_publishes_reserved_entities_on_commit();
 void test_scene_failed_commit_rolls_back_reserved_entities();
 void test_scene_read_views_defer_destroyed_entity_reuse_until_release();
+void test_scene_read_view_release_serializes_retirement_with_commits();
 void test_stable_slot_store_rejects_stale_handles_without_moving_other_slots();
 void test_transform_2d_builds_affine_matrix();
 void test_transform_3d_builds_affine_matrix();
@@ -97,6 +98,7 @@ std::span<const TestCase> scene_test_cases() {
         CUBEY_TEST(test_scene_edit_queue_publishes_reserved_entities_on_commit),
         CUBEY_TEST(test_scene_failed_commit_rolls_back_reserved_entities),
         CUBEY_TEST(test_scene_read_views_defer_destroyed_entity_reuse_until_release),
+        CUBEY_TEST(test_scene_read_view_release_serializes_retirement_with_commits),
         CUBEY_TEST(test_transform_manager_2d_publishes_parented_world_matrices),
         CUBEY_TEST(test_transform_manager_3d_publishes_parented_world_matrices),
         CUBEY_TEST(test_transform_manager_reparenting_preserves_local_transform),

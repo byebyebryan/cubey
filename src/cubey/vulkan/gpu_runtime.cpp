@@ -143,6 +143,10 @@ GpuWorkTicket GpuRuntime::submit_and_wait(GpuWorkRequest request) {
     GpuWorkTicket ticket = enqueue(std::move(request));
     if (execution_mode_ == GpuRuntimeExecutionMode::Inline) {
         static_cast<void>(drain_inline());
+    } else if (std::this_thread::get_id() == owner_thread_) {
+        const GpuDrainResult result = drain_on_owner_thread();
+        std::scoped_lock lock(state_mutex_);
+        last_drain_result_ = result;
     } else {
         future.wait();
     }

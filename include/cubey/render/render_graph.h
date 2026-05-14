@@ -304,11 +304,17 @@ class RenderGraphFrameResources {
     std::vector<std::optional<RenderGraphResourceSet>> slots_{};
 };
 
+enum class RenderGraphCommandBufferMode : std::uint8_t {
+    BeginAndEnd,
+    AlreadyRecording,
+};
+
 struct RenderGraphFrameRecordInfo {
     const cubey::vulkan::Device* device = nullptr;
     VkCommandBuffer command_buffer = VK_NULL_HANDLE;
     FrameSlot frame_slot{};
     const char* label = "vkEndCommandBuffer render graph";
+    RenderGraphCommandBufferMode command_buffer_mode = RenderGraphCommandBufferMode::BeginAndEnd;
 };
 
 using RenderGraphPrepareCallback = std::function<void(const RenderGraphResourceSet&)>;
