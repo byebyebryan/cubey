@@ -48,7 +48,7 @@ void ForwardPbrRenderer3D::record(const ForwardPbrRenderer3DRenderRequest& reque
     const CompiledGraph render_graph = current_render_graph(
         target.color_target, target.frame_slot, target.color_initial_state,
         target.color_final_state, *view.shadow_plan, *view.scene_plan, *resources.meshes,
-        *resources.material_instances, *resources.material_factors);
+        resources.frame_meshes, *resources.material_instances, *resources.material_factors);
     graph_executor_.record(
         render::RenderGraphFrameRecordInfo{
             .device = target.device,
@@ -72,6 +72,7 @@ ForwardPbrRenderer3D::CompiledGraph ForwardPbrRenderer3D::current_render_graph(
     render::RenderGraphTextureState color_final_state, const scene::RenderFramePlan3D& shadow_plan,
     const scene::RenderFramePlan3D& scene_plan,
     const render::MeshResourceTable<render::Mesh>& meshes,
+    const render::FrameMeshResourceTable* frame_meshes,
     const render::MaterialResourceTable<
         render::FrameUniformMaterialInstance<render::PbrMaterialUniforms>>& material_instances,
     const std::unordered_map<render::MaterialHandle, render::PbrMaterialFactors,
@@ -94,13 +95,18 @@ ForwardPbrRenderer3D::CompiledGraph ForwardPbrRenderer3D::current_render_graph(
                                  : forward_pbr_renderer_3d_undefined_texture_state();
     const render::RenderGraphTextureHandle shadow_depth = graph.import_depth_target(
         "shadow depth", shadow_pass().depth_target(), shadow_initial_state);
+    const render::MeshResolver mesh_resolver{
+        .meshes = &meshes,
+        .frame_meshes = frame_meshes,
+        .frame_slot = frame_slot,
+    };
 
     graph.add_pass("shadow", render::RenderGraphQueueDomain::Graphics)
         .write_depth(shadow_depth)
         .material_pass(shadow_pass().material_pass())
-        .execute([this, frame_slot, &shadow_plan, &meshes, &material_instances,
+        .execute([this, frame_slot, &shadow_plan, mesh_resolver, &material_instances,
                   &material_factors](const render::RenderGraphExecutionContext& context) {
-            record_shadow_pass(context.recorder(), shadow_plan, frame_slot, meshes,
+            record_shadow_pass(context.recorder(), shadow_plan, frame_slot, mesh_resolver,
                                material_instances, material_factors);
         });
     graph.add_pass("scene", render::RenderGraphQueueDomain::Graphics)
@@ -108,11 +114,11 @@ ForwardPbrRenderer3D::CompiledGraph ForwardPbrRenderer3D::current_render_graph(
         .write_color(scene_color)
         .write_depth(scene_depth)
         .material_pass(render::pbr_forward_pass_info())
-        .execute([this, scene_color, frame_slot, &scene_plan, &meshes, &material_instances,
+        .execute([this, scene_color, frame_slot, &scene_plan, mesh_resolver, &material_instances,
                   &material_factors](const render::RenderGraphExecutionContext& context) {
             const render::ColorTargetView target =
                 render::resolved_color_target_view(context, scene_color);
-            record_scene_pass(context.recorder(), target, scene_plan, frame_slot, meshes,
+            record_scene_pass(context.recorder(), target, scene_plan, frame_slot, mesh_resolver,
                               material_instances, material_factors);
         });
     graph.add_pass("post", render::RenderGraphQueueDomain::Graphics)

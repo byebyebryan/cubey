@@ -8,6 +8,7 @@
 #include <cubey/render/pbr.h>
 #include <cubey/render/pipeline_resource.h>
 #include <cubey/render/render_graph.h>
+#include <cubey/render/render_item.h>
 #include <cubey/render/resource_table.h>
 #include <cubey/render/shadow_map.h>
 #include <cubey/render/target.h>
@@ -100,6 +101,7 @@ struct ForwardPbrRenderer3DViewInfo {
 
 struct ForwardPbrRenderer3DResourceInfo {
     const render::MeshResourceTable<render::Mesh>* meshes = nullptr;
+    const render::FrameMeshResourceTable* frame_meshes = nullptr;
     const render::MaterialResourceTable<
         render::FrameUniformMaterialInstance<render::PbrMaterialUniforms>>* material_instances =
         nullptr;
@@ -166,13 +168,14 @@ class ForwardPbrRenderer3D {
         render::RenderGraphTextureState color_final_state,
         const scene::RenderFramePlan3D& shadow_plan, const scene::RenderFramePlan3D& scene_plan,
         const render::MeshResourceTable<render::Mesh>& meshes,
+        const render::FrameMeshResourceTable* frame_meshes,
         const render::MaterialResourceTable<
             render::FrameUniformMaterialInstance<render::PbrMaterialUniforms>>& material_instances,
         const std::unordered_map<render::MaterialHandle, render::PbrMaterialFactors,
                                  render::MaterialHandleHash>& material_factors);
     void record_shadow_pass(
         const vulkan::CommandRecorder& recorder, const scene::RenderFramePlan3D& shadow_plan,
-        render::FrameSlot frame_slot, const render::MeshResourceTable<render::Mesh>& meshes,
+        render::FrameSlot frame_slot, const render::MeshResolver& mesh_resolver,
         const render::MaterialResourceTable<
             render::FrameUniformMaterialInstance<render::PbrMaterialUniforms>>& material_instances,
         const std::unordered_map<render::MaterialHandle, render::PbrMaterialFactors,
@@ -180,7 +183,7 @@ class ForwardPbrRenderer3D {
     void record_scene_pass(
         const vulkan::CommandRecorder& recorder, render::ColorTargetView color_target,
         const scene::RenderFramePlan3D& scene_plan, render::FrameSlot frame_slot,
-        const render::MeshResourceTable<render::Mesh>& meshes,
+        const render::MeshResolver& mesh_resolver,
         const render::MaterialResourceTable<
             render::FrameUniformMaterialInstance<render::PbrMaterialUniforms>>& material_instances,
         const std::unordered_map<render::MaterialHandle, render::PbrMaterialFactors,

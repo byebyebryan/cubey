@@ -12,6 +12,7 @@
 #include <optional>
 #include <span>
 #include <stdexcept>
+#include <utility>
 
 namespace cubey::scene {
 
@@ -52,7 +53,7 @@ struct PipelineDrawPackets3DInfo {
 template <typename RecordPacketCallback>
 void record_draw_packets_3d(const cubey::vulkan::CommandRecorder& recorder,
                             std::span<const RenderDrawPacket3D> packets,
-                            const render::MeshResourceTable<render::Mesh>& meshes,
+                            const render::MeshResolver& mesh_resolver,
                             RenderPacketFilter3D filter, RecordPacketCallback&& record_packet) {
     for (const RenderDrawPacket3D& packet : packets) {
         if (!render_packet_matches_filter(packet, filter)) {
@@ -60,15 +61,27 @@ void record_draw_packets_3d(const cubey::vulkan::CommandRecorder& recorder,
         }
         record_packet(recorder, packet);
         const render::DrawItem draw_item =
-            render::resolve_draw_item(render_item_from_packet(packet), meshes);
+            render::resolve_draw_item(render_item_from_packet(packet), mesh_resolver);
         render::record_draw_item(recorder.handle(), draw_item);
     }
 }
 
 template <typename RecordPacketCallback>
+void record_draw_packets_3d(const cubey::vulkan::CommandRecorder& recorder,
+                            std::span<const RenderDrawPacket3D> packets,
+                            const render::MeshResourceTable<render::Mesh>& meshes,
+                            RenderPacketFilter3D filter, RecordPacketCallback&& record_packet) {
+    record_draw_packets_3d(recorder, packets,
+                           render::MeshResolver{
+                               .meshes = &meshes,
+                           },
+                           filter, std::forward<RecordPacketCallback>(record_packet));
+}
+
+template <typename RecordPacketCallback>
 void record_pipeline_draw_packets_3d(const cubey::vulkan::CommandRecorder& recorder,
                                      std::span<const RenderDrawPacket3D> packets,
-                                     const render::MeshResourceTable<render::Mesh>& meshes,
+                                     const render::MeshResolver& mesh_resolver,
                                      const PipelineDrawPackets3DInfo& info,
                                      RecordPacketCallback&& record_packet) {
     if (info.pipeline == nullptr) {
@@ -87,7 +100,7 @@ void record_pipeline_draw_packets_3d(const cubey::vulkan::CommandRecorder& recor
         }
     }
     record_draw_packets_3d(
-        recorder, packets, meshes, info.filter,
+        recorder, packets, mesh_resolver, info.filter,
         [&](const cubey::vulkan::CommandRecorder& packet_recorder,
             const RenderDrawPacket3D& packet) {
             if (info.material_instances != nullptr) {
@@ -103,6 +116,19 @@ void record_pipeline_draw_packets_3d(const cubey::vulkan::CommandRecorder& recor
             }
             record_packet(packet_recorder, packet);
         });
+}
+
+template <typename RecordPacketCallback>
+void record_pipeline_draw_packets_3d(const cubey::vulkan::CommandRecorder& recorder,
+                                     std::span<const RenderDrawPacket3D> packets,
+                                     const render::MeshResourceTable<render::Mesh>& meshes,
+                                     const PipelineDrawPackets3DInfo& info,
+                                     RecordPacketCallback&& record_packet) {
+    record_pipeline_draw_packets_3d(recorder, packets,
+                                    render::MeshResolver{
+                                        .meshes = &meshes,
+                                    },
+                                    info, std::forward<RecordPacketCallback>(record_packet));
 }
 
 } // namespace cubey::scene

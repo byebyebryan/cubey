@@ -77,7 +77,9 @@ void test_render_graph_sampled_texture_view_rejects_unallocated_transient();
 void test_render_graph_storage_read_write_initializes_transient_buffers();
 void test_render_graph_transfer_pass_accepts_only_transfer_usages();
 void test_render_item_resolves_draw_item_fields();
+void test_render_item_resolves_draw_item_from_frame_mesh_override();
 void test_render_item_validates_required_draw_identity();
+void test_frame_mesh_table_resolves_per_frame_override();
 void test_gpu_deformation_descriptor_set_declares_storage_buffers();
 void test_gpu_deformation_dispatch_groups_round_up_vertices();
 void test_gpu_deformation_pipeline_config_uses_compute_stage_and_push_constants();
@@ -179,6 +181,8 @@ std::span<const TestCase> render_test_cases() {
         CUBEY_TEST(test_primitive_uv_sphere_mesh_uses_smooth_normals_and_uv_grid),
         CUBEY_TEST(test_render_item_validates_required_draw_identity),
         CUBEY_TEST(test_render_item_resolves_draw_item_fields),
+        CUBEY_TEST(test_frame_mesh_table_resolves_per_frame_override),
+        CUBEY_TEST(test_render_item_resolves_draw_item_from_frame_mesh_override),
         CUBEY_TEST(test_gpu_deformation_descriptor_set_declares_storage_buffers),
         CUBEY_TEST(test_gpu_deformation_dispatch_groups_round_up_vertices),
         CUBEY_TEST(test_gpu_deformation_pipeline_config_uses_compute_stage_and_push_constants),

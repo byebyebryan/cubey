@@ -9,17 +9,17 @@ namespace cubey {
 
 void ForwardPbrRenderer3D::record_shadow_pass(
     const vulkan::CommandRecorder& recorder, const scene::RenderFramePlan3D& shadow_plan,
-    render::FrameSlot frame_slot, const render::MeshResourceTable<render::Mesh>& meshes,
+    render::FrameSlot frame_slot, const render::MeshResolver& mesh_resolver,
     const render::MaterialResourceTable<
         render::FrameUniformMaterialInstance<render::PbrMaterialUniforms>>& material_instances,
     const std::unordered_map<render::MaterialHandle, render::PbrMaterialFactors,
                              render::MaterialHandleHash>& material_factors) const {
     shadow_pass().record(
         recorder, render::depth_clear_value(),
-        [this, &shadow_plan, &meshes, &material_instances, &material_factors,
+        [this, &shadow_plan, mesh_resolver, &material_instances, &material_factors,
          frame_slot](const vulkan::CommandRecorder& pass_recorder) {
             scene::record_pipeline_draw_packets_3d(
-                pass_recorder, shadow_plan.draw_packets, meshes,
+                pass_recorder, shadow_plan.draw_packets, mesh_resolver,
                 {
                     .pipeline = &shadow_pass().pipeline(),
                     .filter =
@@ -39,7 +39,7 @@ void ForwardPbrRenderer3D::record_shadow_pass(
                         });
                 });
             scene::record_pipeline_draw_packets_3d(
-                pass_recorder, shadow_plan.draw_packets, meshes,
+                pass_recorder, shadow_plan.draw_packets, mesh_resolver,
                 {
                     .pipeline = &mask_shadow_pipeline(),
                     .frame_slot = frame_slot,
@@ -73,7 +73,7 @@ void ForwardPbrRenderer3D::record_shadow_pass(
 void ForwardPbrRenderer3D::record_scene_pass(
     const vulkan::CommandRecorder& recorder, render::ColorTargetView color_target,
     const scene::RenderFramePlan3D& scene_plan, render::FrameSlot frame_slot,
-    const render::MeshResourceTable<render::Mesh>& meshes,
+    const render::MeshResolver& mesh_resolver,
     const render::MaterialResourceTable<
         render::FrameUniformMaterialInstance<render::PbrMaterialUniforms>>& material_instances,
     const std::unordered_map<render::MaterialHandle, render::PbrMaterialFactors,
@@ -82,7 +82,7 @@ void ForwardPbrRenderer3D::record_scene_pass(
         recorder,
         render::render_target_view(color_target, render::depth_target_view(depth_attachment())),
         config_.scene_clear,
-        [this, &scene_plan, &meshes, &material_instances, &material_factors,
+        [this, &scene_plan, mesh_resolver, &material_instances, &material_factors,
          frame_slot](const vulkan::CommandRecorder& pass_recorder) {
             render::record_fullscreen_pipeline_draw(
                 pass_recorder, render::FullscreenPipelineDrawInfo{
@@ -90,12 +90,12 @@ void ForwardPbrRenderer3D::record_scene_pass(
                                    .descriptor_set = skybox_material().set(frame_slot),
                                    .descriptor_set_index = 0,
                                });
-            const auto record_blend = [this, &pass_recorder, &scene_plan, &meshes,
+            const auto record_blend = [this, &pass_recorder, &scene_plan, mesh_resolver,
                                        &material_instances, &material_factors,
                                        frame_slot](const render::GraphicsPipelineResource& pipeline,
                                                    render::MaterialBlendMode blend) {
                 scene::record_pipeline_draw_packets_3d(
-                    pass_recorder, scene_plan.draw_packets, meshes,
+                    pass_recorder, scene_plan.draw_packets, mesh_resolver,
                     {
                         .pipeline = &pipeline,
                         .material = &scene_material().material(),
