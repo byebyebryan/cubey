@@ -176,11 +176,10 @@ template <typename T>
     };
 }
 
-[[nodiscard]] const cgltf_accessor* find_attribute(const cgltf_primitive& primitive,
+[[nodiscard]] const cgltf_accessor* find_attribute(std::span<const cgltf_attribute> attributes,
                                                    cgltf_attribute_type type,
                                                    cgltf_int index = 0) noexcept {
-    for (cgltf_size i = 0; i < primitive.attributes_count; ++i) {
-        const cgltf_attribute& attribute = primitive.attributes[i];
+    for (const cgltf_attribute& attribute : attributes) {
         if (attribute.type == type && attribute.index == index) {
             return attribute.data;
         }
@@ -188,16 +187,73 @@ template <typename T>
     return nullptr;
 }
 
+[[nodiscard]] const cgltf_accessor* find_attribute(const cgltf_primitive& primitive,
+                                                   cgltf_attribute_type type,
+                                                   cgltf_int index = 0) noexcept {
+    return find_attribute(std::span<const cgltf_attribute>{primitive.attributes,
+                                                           primitive.attributes_count},
+                          type, index);
+}
+
 void require_accessor_components(const cgltf_accessor* accessor, cgltf_size components,
                                  const char* label) {
     if (accessor == nullptr) {
         throw gltf_error(std::string("primitive is missing required ") + label + " attribute");
+    }
+    if (accessor->is_sparse != 0) {
+        throw gltf_error(std::string(label) + " sparse accessors are not supported");
     }
     if (cgltf_num_components(accessor->type) != components) {
         throw gltf_error(std::string(label) + " attribute has unsupported component count");
     }
     if (accessor->component_type != cgltf_component_type_r_32f) {
         throw gltf_error(std::string(label) + " attribute must use FLOAT components");
+    }
+}
+
+void require_optional_accessor_components(const cgltf_accessor* accessor, cgltf_size components,
+                                          const char* label) {
+    if (accessor == nullptr) {
+        return;
+    }
+    if (accessor->is_sparse != 0) {
+        throw gltf_error(std::string(label) + " sparse accessors are not supported");
+    }
+    if (cgltf_num_components(accessor->type) != components) {
+        throw gltf_error(std::string(label) + " attribute has unsupported component count");
+    }
+}
+
+void require_float_accessor(const cgltf_accessor* accessor, cgltf_type type, const char* label) {
+    if (accessor == nullptr) {
+        throw gltf_error(std::string(label) + " accessor is missing");
+    }
+    if (accessor->is_sparse != 0) {
+        throw gltf_error(std::string(label) + " sparse accessors are not supported");
+    }
+    if (accessor->type != type) {
+        throw gltf_error(std::string(label) + " accessor has unsupported type");
+    }
+    if (accessor->component_type != cgltf_component_type_r_32f) {
+        throw gltf_error(std::string(label) + " accessor must use FLOAT components");
+    }
+}
+
+void require_optional_float_accessor(const cgltf_accessor* accessor, cgltf_type type,
+                                     const char* label) {
+    if (accessor == nullptr) {
+        return;
+    }
+    require_float_accessor(accessor, type, label);
+}
+
+void require_optional_morph_accessor_count(const cgltf_accessor* accessor, cgltf_size vertex_count,
+                                           const char* label) {
+    if (accessor == nullptr) {
+        return;
+    }
+    if (accessor->count != vertex_count) {
+        throw gltf_error(std::string(label) + " morph target count must match POSITION count");
     }
 }
 
@@ -223,6 +279,55 @@ void require_accessor_components(const cgltf_accessor* accessor, cgltf_size comp
         throw gltf_error("failed to read VEC4 accessor");
     }
     return {values[0], values[1], values[2], values[3]};
+}
+
+[[nodiscard]] std::array<std::uint16_t, 4> read_u16_vec4(const cgltf_accessor* accessor,
+                                                         cgltf_size index) {
+    cgltf_uint values[4]{};
+    if (cgltf_accessor_read_uint(accessor, index, values, 4) == 0) {
+        throw gltf_error("failed to read VEC4 unsigned accessor");
+    }
+    for (const cgltf_uint value : values) {
+        if (value > std::numeric_limits<std::uint16_t>::max()) {
+            throw gltf_error("JOINTS_0 value is out of range");
+        }
+    }
+    return {
+        static_cast<std::uint16_t>(values[0]),
+        static_cast<std::uint16_t>(values[1]),
+        static_cast<std::uint16_t>(values[2]),
+        static_cast<std::uint16_t>(values[3]),
+    };
+}
+
+[[nodiscard]] math::Mat4 read_mat4(const cgltf_accessor* accessor, cgltf_size index) {
+    cgltf_float values[16]{};
+    if (cgltf_accessor_read_float(accessor, index, values, 16) == 0) {
+        throw gltf_error("failed to read MAT4 accessor");
+    }
+
+    math::Mat4 matrix{1.0F};
+    std::memcpy(&matrix[0][0], values, sizeof(values));
+    return matrix;
+}
+
+[[nodiscard]] std::vector<float> read_float_accessor_values(const cgltf_accessor* accessor,
+                                                            cgltf_size component_count,
+                                                            const char* label) {
+    if (accessor == nullptr) {
+        throw gltf_error(std::string(label) + " accessor is missing");
+    }
+    if (accessor->is_sparse != 0) {
+        throw gltf_error(std::string(label) + " sparse accessors are not supported");
+    }
+    std::vector<float> values(accessor->count * component_count);
+    for (cgltf_size index = 0; index < accessor->count; ++index) {
+        if (cgltf_accessor_read_float(accessor, index, values.data() + (index * component_count),
+                                      component_count) == 0) {
+            throw gltf_error(std::string("failed to read ") + label + " accessor");
+        }
+    }
+    return values;
 }
 
 [[nodiscard]] GltfBounds3D bounds_for_positions(std::span<const GltfVertex> vertices) {
@@ -282,6 +387,88 @@ void generate_tangents(GltfMeshPrimitive& primitive) {
     }
 }
 
+void require_supported_skin_attributes(const cgltf_primitive& primitive) {
+    if (find_attribute(primitive, cgltf_attribute_type_joints, 1) != nullptr ||
+        find_attribute(primitive, cgltf_attribute_type_weights, 1) != nullptr) {
+        throw gltf_error("JOINTS_1 and WEIGHTS_1 are not supported");
+    }
+}
+
+void require_supported_morph_target_attributes(const cgltf_morph_target& target) {
+    for (cgltf_size i = 0; i < target.attributes_count; ++i) {
+        const cgltf_attribute& attribute = target.attributes[i];
+        const bool supported = attribute.index == 0 &&
+                               (attribute.type == cgltf_attribute_type_position ||
+                                attribute.type == cgltf_attribute_type_normal ||
+                                attribute.type == cgltf_attribute_type_tangent);
+        if (!supported) {
+            throw gltf_error("unsupported morph target attribute");
+        }
+    }
+}
+
+[[nodiscard]] std::vector<math::Vec3>
+read_vec3_accessor_values(const cgltf_accessor* accessor, const char* label) {
+    require_optional_float_accessor(accessor, cgltf_type_vec3, label);
+    if (accessor == nullptr) {
+        return {};
+    }
+    std::vector<math::Vec3> values;
+    values.reserve(accessor->count);
+    for (cgltf_size i = 0; i < accessor->count; ++i) {
+        values.push_back(read_vec3(accessor, i));
+    }
+    return values;
+}
+
+[[nodiscard]] GltfMorphTarget load_morph_target(const cgltf_morph_target& target,
+                                                cgltf_size vertex_count) {
+    require_supported_morph_target_attributes(target);
+    const auto attributes =
+        std::span<const cgltf_attribute>{target.attributes, target.attributes_count};
+    const cgltf_accessor* positions =
+        find_attribute(attributes, cgltf_attribute_type_position);
+    const cgltf_accessor* normals = find_attribute(attributes, cgltf_attribute_type_normal);
+    const cgltf_accessor* tangents = find_attribute(attributes, cgltf_attribute_type_tangent);
+    require_optional_morph_accessor_count(positions, vertex_count, "POSITION");
+    require_optional_morph_accessor_count(normals, vertex_count, "NORMAL");
+    require_optional_morph_accessor_count(tangents, vertex_count, "TANGENT");
+    return {
+        .position_deltas = read_vec3_accessor_values(positions, "POSITION morph target"),
+        .normal_deltas = read_vec3_accessor_values(normals, "NORMAL morph target"),
+        .tangent_deltas = read_vec3_accessor_values(tangents, "TANGENT morph target"),
+    };
+}
+
+void expand_bounds_for_morph_targets(GltfMeshPrimitive& primitive) {
+    if (primitive.vertices.empty() || primitive.morph_targets.empty()) {
+        return;
+    }
+
+    math::Vec3 min_position = primitive.vertices.front().position;
+    math::Vec3 max_position = primitive.vertices.front().position;
+    const auto add_position = [&](math::Vec3 position) {
+        min_position = glm::min(min_position, position);
+        max_position = glm::max(max_position, position);
+    };
+
+    for (std::size_t vertex_index = 0; vertex_index < primitive.vertices.size(); ++vertex_index) {
+        const math::Vec3 base_position = primitive.vertices[vertex_index].position;
+        add_position(base_position);
+        for (const GltfMorphTarget& target : primitive.morph_targets) {
+            if (target.position_deltas.empty()) {
+                continue;
+            }
+            add_position(base_position + target.position_deltas[vertex_index]);
+        }
+    }
+
+    primitive.local_bounds = {
+        .center = (min_position + max_position) * 0.5F,
+        .half_extent = (max_position - min_position) * 0.5F,
+    };
+}
+
 [[nodiscard]] GltfMeshPrimitive load_primitive(const cgltf_primitive& primitive,
                                                const cgltf_material* material_base,
                                                cgltf_size material_count,
@@ -294,6 +481,8 @@ void generate_tangents(GltfMeshPrimitive& primitive) {
     const cgltf_accessor* normals = find_attribute(primitive, cgltf_attribute_type_normal);
     const cgltf_accessor* tangents = find_attribute(primitive, cgltf_attribute_type_tangent);
     const cgltf_accessor* texcoord0 = find_attribute(primitive, cgltf_attribute_type_texcoord, 0);
+    const cgltf_accessor* joints0 = find_attribute(primitive, cgltf_attribute_type_joints, 0);
+    const cgltf_accessor* weights0 = find_attribute(primitive, cgltf_attribute_type_weights, 0);
 
     require_accessor_components(positions, 3, "POSITION");
     require_accessor_components(normals, 3, "NORMAL");
@@ -302,6 +491,17 @@ void generate_tangents(GltfMeshPrimitive& primitive) {
     }
     if (texcoord0 != nullptr) {
         require_accessor_components(texcoord0, 2, "TEXCOORD_0");
+    }
+    require_supported_skin_attributes(primitive);
+    require_optional_accessor_components(joints0, 4, "JOINTS_0");
+    require_optional_accessor_components(weights0, 4, "WEIGHTS_0");
+    if ((joints0 == nullptr) != (weights0 == nullptr)) {
+        throw gltf_error("JOINTS_0 and WEIGHTS_0 must be provided together");
+    }
+    if (joints0 != nullptr &&
+        (joints0->component_type != cgltf_component_type_r_8u &&
+         joints0->component_type != cgltf_component_type_r_16u)) {
+        throw gltf_error("JOINTS_0 must use UNSIGNED_BYTE or UNSIGNED_SHORT components");
     }
 
     GltfMeshPrimitive result;
@@ -314,6 +514,10 @@ void generate_tangents(GltfMeshPrimitive& primitive) {
         }
         if (texcoord0 != nullptr) {
             result.vertices[i].texcoord0 = read_vec2(texcoord0, i);
+        }
+        if (joints0 != nullptr) {
+            result.vertices[i].joints0 = read_u16_vec4(joints0, i);
+            result.vertices[i].weights0 = read_vec4(weights0, i);
         }
     }
 
@@ -345,6 +549,11 @@ void generate_tangents(GltfMeshPrimitive& primitive) {
         ++result.material_index;
     }
     result.local_bounds = bounds_for_positions(result.vertices);
+    result.morph_targets.reserve(primitive.targets_count);
+    for (cgltf_size i = 0; i < primitive.targets_count; ++i) {
+        result.morph_targets.push_back(load_morph_target(primitive.targets[i], positions->count));
+    }
+    expand_bounds_for_morph_targets(result);
     return result;
 }
 
@@ -357,6 +566,10 @@ void generate_tangents(GltfMeshPrimitive& primitive) {
     for (cgltf_size i = 0; i < mesh.primitives_count; ++i) {
         result.primitives.push_back(
             load_primitive(mesh.primitives[i], material_base, material_count, config));
+    }
+    result.weights.reserve(mesh.weights_count);
+    for (cgltf_size i = 0; i < mesh.weights_count; ++i) {
+        result.weights.push_back(mesh.weights[i]);
     }
     return result;
 }
@@ -371,7 +584,8 @@ void generate_tangents(GltfMeshPrimitive& primitive) {
 
 [[nodiscard]] GltfNode load_node(const cgltf_node& node, const cgltf_node* node_base,
                                  cgltf_size node_count, const cgltf_mesh* mesh_base,
-                                 cgltf_size mesh_count) {
+                                 cgltf_size mesh_count, const cgltf_skin* skin_base,
+                                 cgltf_size skin_count) {
     GltfNode result{
         .label = label_or_empty(node.name),
     };
@@ -399,9 +613,45 @@ void generate_tangents(GltfMeshPrimitive& primitive) {
     }
 
     result.mesh_index = pointer_index(node.mesh, mesh_base, mesh_count, "mesh");
+    result.skin_index = pointer_index(node.skin, skin_base, skin_count, "skin");
+    result.weights.reserve(node.weights_count);
+    for (cgltf_size i = 0; i < node.weights_count; ++i) {
+        result.weights.push_back(node.weights[i]);
+    }
     result.children.reserve(node.children_count);
     for (cgltf_size i = 0; i < node.children_count; ++i) {
         result.children.push_back(pointer_index(node.children[i], node_base, node_count, "node"));
+    }
+    return result;
+}
+
+[[nodiscard]] GltfSkin load_skin(const cgltf_skin& skin, const cgltf_skin* skin_base,
+                                 cgltf_size skin_count, const cgltf_node* node_base,
+                                 cgltf_size node_count) {
+    static_cast<void>(skin_base);
+    static_cast<void>(skin_count);
+    GltfSkin result{
+        .label = label_or_empty(skin.name),
+        .skeleton_node_index = pointer_index(skin.skeleton, node_base, node_count, "node"),
+    };
+
+    result.joints.reserve(skin.joints_count);
+    for (cgltf_size i = 0; i < skin.joints_count; ++i) {
+        result.joints.push_back(pointer_index(skin.joints[i], node_base, node_count, "node"));
+    }
+
+    if (skin.inverse_bind_matrices != nullptr) {
+        require_float_accessor(skin.inverse_bind_matrices, cgltf_type_mat4,
+                               "inverseBindMatrices");
+        if (skin.inverse_bind_matrices->count != skin.joints_count) {
+            throw gltf_error("inverseBindMatrices count must match skin joint count");
+        }
+        result.inverse_bind_matrices.reserve(skin.inverse_bind_matrices->count);
+        for (cgltf_size i = 0; i < skin.inverse_bind_matrices->count; ++i) {
+            result.inverse_bind_matrices.push_back(read_mat4(skin.inverse_bind_matrices, i));
+        }
+    } else {
+        result.inverse_bind_matrices.resize(skin.joints_count, math::Mat4{1.0F});
     }
     return result;
 }
@@ -418,23 +668,99 @@ void generate_tangents(GltfMeshPrimitive& primitive) {
     return result;
 }
 
+[[nodiscard]] GltfAnimationInterpolation
+load_animation_interpolation(cgltf_interpolation_type interpolation) {
+    switch (interpolation) {
+    case cgltf_interpolation_type_step:
+        return GltfAnimationInterpolation::Step;
+    case cgltf_interpolation_type_cubic_spline:
+        return GltfAnimationInterpolation::CubicSpline;
+    case cgltf_interpolation_type_linear:
+    default:
+        return GltfAnimationInterpolation::Linear;
+    }
+}
+
+[[nodiscard]] GltfAnimationTargetPath load_animation_target_path(cgltf_animation_path_type path) {
+    switch (path) {
+    case cgltf_animation_path_type_translation:
+        return GltfAnimationTargetPath::Translation;
+    case cgltf_animation_path_type_rotation:
+        return GltfAnimationTargetPath::Rotation;
+    case cgltf_animation_path_type_scale:
+        return GltfAnimationTargetPath::Scale;
+    case cgltf_animation_path_type_weights:
+        return GltfAnimationTargetPath::Weights;
+    case cgltf_animation_path_type_invalid:
+    default:
+        throw gltf_error("unsupported animation target path");
+    }
+}
+
+[[nodiscard]] GltfAnimationSampler load_animation_sampler(const cgltf_animation_sampler& sampler) {
+    require_float_accessor(sampler.input, cgltf_type_scalar, "animation input");
+    if (sampler.output == nullptr) {
+        throw gltf_error("animation output accessor is missing");
+    }
+    if (sampler.output->is_sparse != 0) {
+        throw gltf_error("animation output sparse accessors are not supported");
+    }
+    if (sampler.output->component_type != cgltf_component_type_r_32f) {
+        throw gltf_error("animation output accessor must use FLOAT components");
+    }
+    const cgltf_size component_count = cgltf_num_components(sampler.output->type);
+    if (component_count == 0) {
+        throw gltf_error("animation output accessor has unsupported type");
+    }
+    if (component_count > std::numeric_limits<std::uint32_t>::max()) {
+        throw gltf_error("animation output component count is out of range");
+    }
+
+    return {
+        .interpolation = load_animation_interpolation(sampler.interpolation),
+        .input_times = read_float_accessor_values(sampler.input, 1, "animation input"),
+        .output_values =
+            read_float_accessor_values(sampler.output, component_count, "animation output"),
+        .component_count = static_cast<std::uint32_t>(component_count),
+    };
+}
+
+[[nodiscard]] GltfAnimation load_animation(const cgltf_animation& animation,
+                                           const cgltf_node* node_base,
+                                           cgltf_size node_count) {
+    GltfAnimation result{
+        .label = label_or_empty(animation.name),
+    };
+
+    result.samplers.reserve(animation.samplers_count);
+    for (cgltf_size i = 0; i < animation.samplers_count; ++i) {
+        GltfAnimationSampler sampler = load_animation_sampler(animation.samplers[i]);
+        if (!sampler.input_times.empty()) {
+            result.duration_seconds =
+                std::max(result.duration_seconds,
+                         *std::max_element(sampler.input_times.begin(), sampler.input_times.end()));
+        }
+        result.samplers.push_back(std::move(sampler));
+    }
+
+    result.channels.reserve(animation.channels_count);
+    for (cgltf_size i = 0; i < animation.channels_count; ++i) {
+        const cgltf_animation_channel& channel = animation.channels[i];
+        result.channels.push_back(GltfAnimationChannel{
+            .sampler_index = pointer_index(channel.sampler, animation.samplers,
+                                           animation.samplers_count, "animation sampler"),
+            .node_index = pointer_index(channel.target_node, node_base, node_count, "node"),
+            .target_path = load_animation_target_path(channel.target_path),
+        });
+    }
+    return result;
+}
+
 void reject_unsupported_features(const cgltf_data& data) {
-    for (cgltf_size i = 0; i < data.meshes_count; ++i) {
-        const cgltf_mesh& mesh = data.meshes[i];
-        if (mesh.weights_count != 0) {
-            throw gltf_error("morph targets are not supported");
+    for (cgltf_size i = 0; i < data.accessors_count; ++i) {
+        if (data.accessors[i].is_sparse != 0) {
+            throw gltf_error("sparse accessors are not supported");
         }
-        for (cgltf_size j = 0; j < mesh.primitives_count; ++j) {
-            if (mesh.primitives[j].targets_count != 0) {
-                throw gltf_error("morph target primitives are not supported");
-            }
-        }
-    }
-    if (data.animations_count != 0) {
-        throw gltf_error("animations are not supported");
-    }
-    if (data.skins_count != 0) {
-        throw gltf_error("skins are not supported");
     }
 }
 
@@ -511,12 +837,26 @@ GltfAsset load_gltf_asset(const std::filesystem::path& path, GltfLoadConfig conf
     asset.nodes.reserve(data->nodes_count);
     for (cgltf_size i = 0; i < data->nodes_count; ++i) {
         asset.nodes.push_back(load_node(data->nodes[i], data->nodes, data->nodes_count,
-                                        data->meshes, data->meshes_count));
+                                        data->meshes, data->meshes_count, data->skins,
+                                        data->skins_count));
+    }
+
+    asset.skins.reserve(data->skins_count);
+    for (cgltf_size i = 0; i < data->skins_count; ++i) {
+        asset.skins.push_back(
+            load_skin(data->skins[i], data->skins, data->skins_count, data->nodes,
+                      data->nodes_count));
     }
 
     asset.scenes.reserve(data->scenes_count);
     for (cgltf_size i = 0; i < data->scenes_count; ++i) {
         asset.scenes.push_back(load_scene(data->scenes[i], data->nodes, data->nodes_count));
+    }
+
+    asset.animations.reserve(data->animations_count);
+    for (cgltf_size i = 0; i < data->animations_count; ++i) {
+        asset.animations.push_back(
+            load_animation(data->animations[i], data->nodes, data->nodes_count));
     }
 
     asset.default_scene = pointer_index(data->scene, data->scenes, data->scenes_count, "scene");

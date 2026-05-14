@@ -12,6 +12,8 @@ than the root design and roadmap.
   2D/2.5D/3D fluid work.
 - [glTF assets and PBR](gltf-assets.md): static glTF import, PBR material
   contract, texture upload, HDR environments, and viewer boundaries.
+- [Animation and deformation](animation-deformation.md): glTF animation,
+  morph targets, skinning, GPU deformation, and validation asset direction.
 - [PBR and IBL direction](pbr-ibl.md): generated and HDR-backed cubemap IBL,
   PBR shader contract, and future environment asset boundaries.
 - [Render graph direction](render-graph.md): current and future pass/resource

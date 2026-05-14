@@ -2,6 +2,7 @@
 
 #include <cubey/core/math.h>
 
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
@@ -33,6 +34,19 @@ enum class GltfTextureWrap : std::uint8_t {
 enum class GltfTextureColorSpace : std::uint8_t {
     Linear,
     Srgb,
+};
+
+enum class GltfAnimationInterpolation : std::uint8_t {
+    Step,
+    Linear,
+    CubicSpline,
+};
+
+enum class GltfAnimationTargetPath : std::uint8_t {
+    Translation,
+    Rotation,
+    Scale,
+    Weights,
 };
 
 struct GltfTextureRef {
@@ -91,6 +105,8 @@ struct GltfVertex {
     math::Vec3 normal{0.0F, 1.0F, 0.0F};
     math::Vec4 tangent{1.0F, 0.0F, 0.0F, 1.0F};
     math::Vec2 texcoord0{0.0F, 0.0F};
+    std::array<std::uint16_t, 4> joints0{0, 0, 0, 0};
+    math::Vec4 weights0{0.0F, 0.0F, 0.0F, 0.0F};
 };
 
 struct GltfBounds3D {
@@ -98,9 +114,16 @@ struct GltfBounds3D {
     math::Vec3 half_extent{0.0F, 0.0F, 0.0F};
 };
 
+struct GltfMorphTarget {
+    std::vector<math::Vec3> position_deltas{};
+    std::vector<math::Vec3> normal_deltas{};
+    std::vector<math::Vec3> tangent_deltas{};
+};
+
 struct GltfMeshPrimitive {
     std::vector<GltfVertex> vertices{};
     std::vector<std::uint32_t> indices{};
+    std::vector<GltfMorphTarget> morph_targets{};
     std::uint32_t material_index = 0;
     GltfBounds3D local_bounds{};
 };
@@ -108,6 +131,7 @@ struct GltfMeshPrimitive {
 struct GltfMesh {
     std::string label{};
     std::vector<GltfMeshPrimitive> primitives{};
+    std::vector<float> weights{};
 };
 
 struct GltfNode {
@@ -117,7 +141,36 @@ struct GltfNode {
     math::Vec3 scale{1.0F, 1.0F, 1.0F};
     math::Mat4 local_matrix{1.0F};
     std::uint32_t mesh_index = kInvalidAssetIndex;
+    std::uint32_t skin_index = kInvalidAssetIndex;
+    std::vector<float> weights{};
     std::vector<std::uint32_t> children{};
+};
+
+struct GltfSkin {
+    std::string label{};
+    std::uint32_t skeleton_node_index = kInvalidAssetIndex;
+    std::vector<std::uint32_t> joints{};
+    std::vector<math::Mat4> inverse_bind_matrices{};
+};
+
+struct GltfAnimationSampler {
+    GltfAnimationInterpolation interpolation = GltfAnimationInterpolation::Linear;
+    std::vector<float> input_times{};
+    std::vector<float> output_values{};
+    std::uint32_t component_count = 0;
+};
+
+struct GltfAnimationChannel {
+    std::uint32_t sampler_index = kInvalidAssetIndex;
+    std::uint32_t node_index = kInvalidAssetIndex;
+    GltfAnimationTargetPath target_path = GltfAnimationTargetPath::Translation;
+};
+
+struct GltfAnimation {
+    std::string label{};
+    std::vector<GltfAnimationSampler> samplers{};
+    std::vector<GltfAnimationChannel> channels{};
+    float duration_seconds = 0.0F;
 };
 
 struct GltfScene {
@@ -131,6 +184,8 @@ struct GltfAsset {
     std::uint32_t default_scene = 0;
     std::vector<GltfNode> nodes{};
     std::vector<GltfMesh> meshes{};
+    std::vector<GltfSkin> skins{};
+    std::vector<GltfAnimation> animations{};
     std::vector<GltfMaterial> materials{};
     std::vector<GltfTexture> textures{};
     std::vector<GltfSampler> samplers{};

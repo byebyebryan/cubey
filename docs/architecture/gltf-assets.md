@@ -24,18 +24,22 @@ viewer project that keeps pressure on the renderer.
 - static glTF/glb parsing through `cgltf`;
 - external buffers, data URIs, image buffer views, PNG/JPEG decode for glTF
   textures, and standalone Radiance HDR decode through `stb_image`;
-- mesh primitives with position, normal, tangent, and UV0;
+- mesh primitives with position, normal, tangent, UV0, optional `JOINTS_0` /
+  `WEIGHTS_0`, and optional morph target deltas;
 - metallic-roughness PBR material factors and texture references;
 - factor-only `KHR_materials_ior` and `KHR_materials_specular` controls;
 - core glTF alpha modes: `OPAQUE`, `MASK`, and `BLEND`;
 - sampler filtering and per-axis wrapping metadata;
-- scene roots and node hierarchy with decomposed TRS transforms.
+- scene roots and node hierarchy with decomposed TRS transforms;
+- core glTF animations, skins, node skin bindings, node/mesh morph weights, and
+  inverse bind matrices.
 
 Unsupported features fail early instead of being silently ignored:
-animations, skins, and morph targets are rejected by the loader. Other
-extensions, multiple UV sets, vertex colors, sparse accessors, material
-variants, transmission, clearcoat, glTF environment extensions, animation,
-skinning, and streaming remain future slices.
+additional skin influence sets, sparse accessors, unsupported morph target
+attributes, and extension-only animation paths are rejected by the loader.
+Other extensions, multiple UV sets, vertex colors, material variants,
+transmission, clearcoat, glTF environment extensions, advanced animation
+runtime features, and streaming remain future slices.
 
 `cubey::engine` owns the current asset-to-scene bridge and renderer instance
 service:
