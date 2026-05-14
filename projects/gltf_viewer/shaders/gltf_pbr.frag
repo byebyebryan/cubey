@@ -77,6 +77,11 @@ void main() {
     if (alpha_cutoff > 0.0 && base_color.a < alpha_cutoff) {
         discard;
     }
+    float output_alpha = material.material_model.y > 1.5 ? base_color.a : 1.0;
+    if (material.material_model.z > 0.5) {
+        out_color = vec4(base_color.rgb * output_alpha, output_alpha);
+        return;
+    }
 
     vec4 metallic_roughness_sample = texture(metallic_roughness_texture, frag_uv0);
     float metallic = clamp(material.metallic_roughness_normal_occlusion.x *
@@ -138,6 +143,5 @@ void main() {
     vec3 emissive = texture(emissive_texture, frag_uv0).rgb *
                     material.emissive_alpha_cutoff.rgb;
     vec3 color = ambient + direct + emissive;
-    float output_alpha = material.material_model.y > 1.5 ? base_color.a : 1.0;
     out_color = vec4(color * output_alpha, output_alpha);
 }

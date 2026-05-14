@@ -100,6 +100,7 @@ void test_pbr_material_factors_are_uniforms_and_push_constants_are_model_only() 
     factors.specular_factor = 0.65F;
     factors.reflectance = 0.42F;
     factors.alpha_mode = cubey::render::MaterialAlphaMode::Blend;
+    factors.unlit = true;
 
     const cubey::render::PbrMaterialUniforms uniforms =
         cubey::render::pbr_material_uniforms(factors);
@@ -126,6 +127,7 @@ void test_pbr_material_factors_are_uniforms_and_push_constants_are_model_only() 
                 static_cast<float>(static_cast<std::underlying_type_t<
                                    cubey::render::MaterialAlphaMode>>(factors.alpha_mode)),
             "PBR material uniforms should pack alpha mode");
+    require(uniforms.material_model.z == 1.0F, "PBR material uniforms should pack unlit flag");
     const cubey::render::PbrMaterialUniforms opaque_uniforms =
         cubey::render::pbr_material_uniforms(factors, cubey::render::MaterialAlphaMode::Opaque);
     require(opaque_uniforms.material_model.y == 0.0F,
@@ -327,6 +329,8 @@ void test_pbr_shaders_use_filament_style_material_remap() {
     require_contains(gltf, "float output_alpha = material.material_model.y > 1.5 ? "
                            "base_color.a : 1.0;",
                      "glTF PBR shader should only use base alpha for blended materials");
+    require_contains(gltf, "material.material_model.z > 0.5",
+                     "glTF PBR shader should branch for unlit materials");
     require_contains(gltf, "out_color = vec4(color * output_alpha, output_alpha);",
                      "glTF PBR shader should emit premultiplied alpha for blending");
     require_contains(gltf, "if (alpha_cutoff > 0.0 && base_color.a < alpha_cutoff)",

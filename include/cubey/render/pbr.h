@@ -69,6 +69,7 @@ struct PbrMaterialFactors {
     math::Vec3 specular_color_factor{1.0F, 1.0F, 1.0F};
     float specular_factor = 1.0F;
     float reflectance = 0.5F;
+    bool unlit = false;
 };
 
 struct PbrMaterialUniforms {

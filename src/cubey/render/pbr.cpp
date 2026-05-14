@@ -268,7 +268,8 @@ PbrMaterialUniforms pbr_material_uniforms(const PbrMaterialFactors& factors,
                 factors.specular_color_factor.b,
                 factors.specular_factor,
             },
-        .material_model = {factors.reflectance, material_alpha_mode_uniform(alpha_mode), 0.0F,
+        .material_model = {factors.reflectance, material_alpha_mode_uniform(alpha_mode),
+                           factors.unlit ? 1.0F : 0.0F,
                            0.0F},
     };
 }
