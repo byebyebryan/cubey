@@ -1,11 +1,11 @@
+#include "source_file_test_helpers.h"
+
 #include <cubey/vulkan/gpu_runtime.h>
 
 #include <vulkan/vulkan.h>
 
 #include <atomic>
 #include <filesystem>
-#include <fstream>
-#include <iterator>
 #include <stdexcept>
 #include <string>
 #include <thread>
@@ -19,18 +19,8 @@ void require(bool condition, const char* message) {
     }
 }
 
-std::string read_source_file(const std::filesystem::path& path) {
-    std::ifstream file(path);
-    if (!file) {
-        throw std::runtime_error("failed to open source file: " + path.string());
-    }
-    return std::string{std::istreambuf_iterator<char>{file}, std::istreambuf_iterator<char>{}};
-}
-
-void require_contains(const std::string& text, const std::string& needle,
-                      const char* message) {
-    require(text.find(needle) != std::string::npos, message);
-}
+using cubey::tests::read_source_file;
+using cubey::tests::require_contains;
 
 cubey::vulkan::Device* fake_device() {
     return reinterpret_cast<cubey::vulkan::Device*>(0x55);

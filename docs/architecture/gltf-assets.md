@@ -57,6 +57,12 @@ service:
   groups target state, view plans, material/resource tables, and
   display/environment settings.
 
+Implementation ownership follows the same boundary: `gltf_asset.cpp` owns
+`cgltf` parsing and CPU asset construction, while `gltf_asset_io.cpp` owns URI,
+data-URI, and image decode helpers. `gltf_scene_importer.cpp` owns entity,
+transform, mesh, and scene import, while `gltf_scene_importer_materials.cpp`
+owns default textures, texture upload, and material instance creation.
+
 `cubey::render` owns the reusable GPU-facing pieces:
 
 - `PbrVertex`, `PbrSceneUniforms`, `PbrPostUniforms`, `PbrMaterialFactors`,

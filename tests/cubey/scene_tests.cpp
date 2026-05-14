@@ -1,10 +1,10 @@
+#include "source_file_test_helpers.h"
+
 #include <cubey/scene/scene.h>
 #include <cubey/scene/stable_slot_store.h>
 
 #include <filesystem>
-#include <fstream>
 #include <functional>
-#include <iterator>
 #include <stdexcept>
 #include <string>
 
@@ -25,18 +25,8 @@ void require_throws(const std::function<void()>& action, const char* message) {
     throw std::runtime_error(message);
 }
 
-std::string read_source_file(const std::filesystem::path& path) {
-    std::ifstream file(path);
-    if (!file) {
-        throw std::runtime_error("failed to open source file: " + path.string());
-    }
-    return std::string{std::istreambuf_iterator<char>{file}, std::istreambuf_iterator<char>{}};
-}
-
-void require_contains(const std::string& text, const std::string& needle,
-                      const char* message) {
-    require(text.find(needle) != std::string::npos, message);
-}
+using cubey::tests::read_source_file;
+using cubey::tests::require_contains;
 
 } // namespace
 
@@ -122,9 +112,8 @@ void test_scene_read_views_defer_destroyed_entity_reuse_until_release() {
 void test_scene_read_view_release_serializes_retirement_with_commits() {
     const std::filesystem::path root{CUBEY_SOURCE_DIR};
     const std::string source = read_source_file(root / "src/cubey/scene/scene.cpp");
-    const std::string expected =
-        "void Scene::release_read_view(std::uint64_t epoch) noexcept {\n"
-        "    std::lock_guard const edit_lock(edit_mutex_);";
+    const std::string expected = "void Scene::release_read_view(std::uint64_t epoch) noexcept {\n"
+                                 "    std::lock_guard const edit_lock(edit_mutex_);";
 
     require_contains(source, expected,
                      "scene read-view release should hold edit_mutex_ before retiring stores");

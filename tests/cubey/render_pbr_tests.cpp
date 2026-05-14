@@ -1,3 +1,5 @@
+#include "source_file_test_helpers.h"
+
 #include <cubey/render/material.h>
 #include <cubey/render/pbr.h>
 
@@ -5,8 +7,6 @@
 
 #include <cstddef>
 #include <filesystem>
-#include <fstream>
-#include <iterator>
 #include <stdexcept>
 #include <string>
 #include <type_traits>
@@ -19,23 +19,9 @@ void require(bool condition, const char* message) {
     }
 }
 
-std::string read_source_file(const std::filesystem::path& path) {
-    std::ifstream file(path);
-    if (!file) {
-        throw std::runtime_error("failed to open source file: " + path.string());
-    }
-    return std::string{std::istreambuf_iterator<char>{file}, std::istreambuf_iterator<char>{}};
-}
-
-void require_contains(const std::string& text, const std::string& needle,
-                      const char* message) {
-    require(text.find(needle) != std::string::npos, message);
-}
-
-void require_not_contains(const std::string& text, const std::string& needle,
-                          const char* message) {
-    require(text.find(needle) == std::string::npos, message);
-}
+using cubey::tests::read_source_file;
+using cubey::tests::require_contains;
+using cubey::tests::require_not_contains;
 
 } // namespace
 
@@ -85,8 +71,7 @@ void test_pbr_forward_pass_declares_scene_and_material_sets() {
         cubey::render::pbr_forward_pass_info(cubey::render::PbrForwardPassConfig{
             .blend = cubey::render::MaterialBlendMode::AlphaBlend,
         });
-    require(alpha_pass.label == "pbr.forward.alpha",
-            "PBR alpha pass should use a distinct label");
+    require(alpha_pass.label == "pbr.forward.alpha", "PBR alpha pass should use a distinct label");
     require(alpha_pass.depth_test && !alpha_pass.depth_write,
             "PBR alpha pass should test but not write depth");
     require(alpha_pass.blend_enable, "PBR alpha pass should enable color blending");
@@ -187,8 +172,7 @@ void test_pbr_post_pass_declares_uniforms_and_scene_color() {
     require(pass.descriptor_sets[0].bindings[1].binding ==
                 static_cast<std::uint32_t>(cubey::render::PbrPostBinding::SceneColor),
             "PBR post scene color should use binding 1");
-    require(pass.descriptor_sets[0].bindings[1].type ==
-                VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+    require(pass.descriptor_sets[0].bindings[1].type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
             "PBR post scene color should be sampled");
     require(pass.push_constants.empty(), "PBR post pass should not use push constants");
 
@@ -241,8 +225,7 @@ void test_pbr_skybox_pass_declares_scene_set() {
             "PBR skybox uniforms should be visible to vertex and fragment shaders");
     require(pass.descriptor_sets[0].bindings[1].binding == 1,
             "PBR skybox environment should use binding 1");
-    require(pass.descriptor_sets[0].bindings[1].type ==
-                VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+    require(pass.descriptor_sets[0].bindings[1].type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
             "PBR skybox environment should be a sampled image");
     require(pass.descriptor_sets[0].bindings[1].stage_flags == VK_SHADER_STAGE_FRAGMENT_BIT,
             "PBR skybox environment should be fragment-only");
@@ -290,8 +273,7 @@ void test_pbr_shaders_use_filament_style_material_remap() {
 
     require_contains(furnace, "vec4 display_transform",
                      "PBR furnace should keep direct display transform controls");
-    require_contains(furnace,
-                     "cubey_pbr_apply_display_transform(color, scene.display_transform)",
+    require_contains(furnace, "cubey_pbr_apply_display_transform(color, scene.display_transform)",
                      "PBR furnace should keep direct display transform output");
 
     require_not_contains(gltf, "cubey_pbr_apply_display_transform",
@@ -302,10 +284,12 @@ void test_pbr_shaders_use_filament_style_material_remap() {
     for (const std::string* shader : {&furnace, &gltf}) {
         require_contains(*shader, "uniform PbrMaterialUniforms",
                          "PBR fragment shaders should read per-material uniforms");
-        require_not_contains(*shader, "push_constants.base_color_factor",
-                             "PBR fragment shaders should not read material factors from push constants");
-        require_not_contains(*shader, "push_constants.metallic_roughness_normal_occlusion",
-                             "PBR fragment shaders should not read material factors from push constants");
+        require_not_contains(
+            *shader, "push_constants.base_color_factor",
+            "PBR fragment shaders should not read material factors from push constants");
+        require_not_contains(
+            *shader, "push_constants.metallic_roughness_normal_occlusion",
+            "PBR fragment shaders should not read material factors from push constants");
         require_contains(*shader, "vec3 diffuse_color = cubey_pbr_diffuse_color(albedo, metallic);",
                          "PBR fragment shaders should compute diffuseColor explicitly");
         require_contains(*shader, "cubey_pbr_dielectric_f0",
@@ -314,8 +298,9 @@ void test_pbr_shaders_use_filament_style_material_remap() {
                          "PBR fragment shaders should read material reflectance");
         require_contains(*shader, "vec3 f0 = cubey_pbr_f0(albedo, metallic, dielectric_f0);",
                          "PBR fragment shaders should compute F0 through the shared helper");
-        require_contains(*shader, "irradiance * diffuse_color",
-                         "PBR indirect diffuse should use diffuseColor without Fresnel attenuation");
+        require_contains(
+            *shader, "irradiance * diffuse_color",
+            "PBR indirect diffuse should use diffuseColor without Fresnel attenuation");
         require_not_contains(*shader, "(vec3(1.0) - ibl_f) * (1.0 - metallic)",
                              "PBR indirect diffuse should not double-attenuate metallic values");
         require_not_contains(*shader, "(vec3(1.0) - f) * (1.0 - metallic)",

@@ -1,11 +1,11 @@
+#include "source_file_test_helpers.h"
+
 #include <cubey/engine/forward_pbr_renderer_3d.h>
 
 #include <vulkan/vulkan.h>
 
 #include <cmath>
 #include <filesystem>
-#include <fstream>
-#include <iterator>
 #include <span>
 #include <stdexcept>
 #include <string>
@@ -34,18 +34,8 @@ void require_throws(auto&& action, const char* message) {
     throw std::runtime_error(message);
 }
 
-std::string read_source_file(const std::filesystem::path& path) {
-    std::ifstream file(path);
-    if (!file) {
-        throw std::runtime_error("failed to open source file: " + path.string());
-    }
-    return std::string{std::istreambuf_iterator<char>{file}, std::istreambuf_iterator<char>{}};
-}
-
-void require_contains(const std::string& text, const std::string& needle,
-                      const char* message) {
-    require(text.find(needle) != std::string::npos, message);
-}
+using cubey::tests::read_source_file;
+using cubey::tests::require_contains;
 
 cubey::ForwardPbrRenderer3DConfig valid_config() {
     return {
@@ -107,14 +97,12 @@ cubey::ForwardPbrRenderer3DRenderRequest valid_render_request() {
                 .meshes =
                     reinterpret_cast<const cubey::render::MeshResourceTable<cubey::render::Mesh>*>(
                         0x30),
-                .material_instances = reinterpret_cast<
-                    const cubey::render::MaterialResourceTable<
-                        cubey::render::FrameUniformMaterialInstance<
-                            cubey::render::PbrMaterialUniforms>>*>(0x31),
-                .material_factors =
-                    reinterpret_cast<const std::unordered_map<
-                        cubey::render::MaterialHandle, cubey::render::PbrMaterialFactors,
-                        cubey::render::MaterialHandleHash>*>(0x32),
+                .material_instances = reinterpret_cast<const cubey::render::MaterialResourceTable<
+                    cubey::render::FrameUniformMaterialInstance<
+                        cubey::render::PbrMaterialUniforms>>*>(0x31),
+                .material_factors = reinterpret_cast<const std::unordered_map<
+                    cubey::render::MaterialHandle, cubey::render::PbrMaterialFactors,
+                    cubey::render::MaterialHandleHash>*>(0x32),
             },
     };
 }
@@ -241,9 +229,8 @@ void test_forward_pbr_renderer_3d_selects_requested_light_or_fallback() {
     require(selected.intensity == 2.5F,
             "forward PBR renderer should preserve selected light intensity");
 
-    const cubey::LightPacket3D missing =
-        cubey::forward_pbr_renderer_3d_selected_light(
-            std::span<const cubey::LightPacket3D>{}, requested, fallback);
+    const cubey::LightPacket3D missing = cubey::forward_pbr_renderer_3d_selected_light(
+        std::span<const cubey::LightPacket3D>{}, requested, fallback);
     require(missing.entity == fallback.entity,
             "forward PBR renderer should fall back when the requested light is absent");
     require(missing.intensity == fallback.intensity,
@@ -304,11 +291,9 @@ void test_forward_pbr_renderer_3d_scene_uniforms_pack_view_light_environment_and
             "forward PBR scene uniforms should preserve light view-projection");
     require(uniforms.camera_position == cubey::math::Vec4{1.0F, 2.0F, 3.0F, 1.0F},
             "forward PBR scene uniforms should pack camera position");
-    require(uniforms.light_color_intensity ==
-                cubey::math::Vec4{0.6F, 0.7F, 0.8F, 3.5F},
+    require(uniforms.light_color_intensity == cubey::math::Vec4{0.6F, 0.7F, 0.8F, 3.5F},
             "forward PBR scene uniforms should pack light color and intensity");
-    require(uniforms.ambient_color_intensity ==
-                cubey::math::Vec4{0.4F, 0.6F, 0.8F, 1.0F},
+    require(uniforms.ambient_color_intensity == cubey::math::Vec4{0.4F, 0.6F, 0.8F, 1.0F},
             "forward PBR scene uniforms should pack ambient color times intensity");
     require(uniforms.environment_intensity_mip_count.x == 5.0F,
             "forward PBR scene uniforms should pack environment intensity");
@@ -323,12 +308,13 @@ void test_forward_pbr_renderer_3d_scene_uniforms_pack_view_light_environment_and
 }
 
 void test_forward_pbr_renderer_3d_skybox_uniforms_pack_inverse_view_camera_environment_and_display() {
-    const cubey::render::PbrSkyboxUniforms uniforms = cubey::forward_pbr_renderer_3d_skybox_uniforms({
-        .view_projection = cubey::math::Mat4{1.0F},
-        .camera_position = {4.0F, 5.0F, 6.0F},
-        .environment_intensity = 2.25F,
-        .environment_rotation_degrees = 180.0F,
-    });
+    const cubey::render::PbrSkyboxUniforms uniforms =
+        cubey::forward_pbr_renderer_3d_skybox_uniforms({
+            .view_projection = cubey::math::Mat4{1.0F},
+            .camera_position = {4.0F, 5.0F, 6.0F},
+            .environment_intensity = 2.25F,
+            .environment_rotation_degrees = 180.0F,
+        });
 
     require(uniforms.inverse_view_projection == cubey::math::Mat4{1.0F},
             "forward PBR skybox uniforms should invert the view-projection matrix");
@@ -345,21 +331,19 @@ void test_forward_pbr_renderer_3d_skybox_uniforms_pack_inverse_view_camera_envir
 }
 
 void test_forward_pbr_renderer_3d_post_uniforms_pack_display_transform() {
-    const cubey::render::PbrPostUniforms unorm =
-        cubey::forward_pbr_renderer_3d_post_uniforms({
-            .color_format = VK_FORMAT_R8G8B8A8_UNORM,
-            .exposure = 1.25F,
-            .tonemap = cubey::render::PbrTonemap::Linear,
-        });
+    const cubey::render::PbrPostUniforms unorm = cubey::forward_pbr_renderer_3d_post_uniforms({
+        .color_format = VK_FORMAT_R8G8B8A8_UNORM,
+        .exposure = 1.25F,
+        .tonemap = cubey::render::PbrTonemap::Linear,
+    });
     require(unorm.display_transform == cubey::math::Vec4{1.25F, 0.0F, 1.0F, 0.0F},
             "forward PBR post uniforms should request shader-side sRGB for UNORM targets");
 
-    const cubey::render::PbrPostUniforms srgb =
-        cubey::forward_pbr_renderer_3d_post_uniforms({
-            .color_format = VK_FORMAT_B8G8R8A8_SRGB,
-            .exposure = -0.5F,
-            .tonemap = cubey::render::PbrTonemap::Aces,
-        });
+    const cubey::render::PbrPostUniforms srgb = cubey::forward_pbr_renderer_3d_post_uniforms({
+        .color_format = VK_FORMAT_B8G8R8A8_SRGB,
+        .exposure = -0.5F,
+        .tonemap = cubey::render::PbrTonemap::Aces,
+    });
     require(srgb.display_transform == cubey::math::Vec4{-0.5F, 1.0F, 0.0F, 0.0F},
             "forward PBR post uniforms should leave encoding to sRGB targets");
 }

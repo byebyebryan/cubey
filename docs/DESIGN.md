@@ -458,9 +458,10 @@ cubey/
   src/
     cubey/
       CMakeLists.txt       -- layered cubey::* library targets
-      asset/               -- static glTF/glb parsing and image decode
+      asset/               -- static glTF/glb parsing, URI loading, and image decode
       core/                -- run config, jobs, frame timing, I/O, and PNG writer
-      engine/              -- engine root, project runtime, queues, GPU services
+      engine/              -- engine root, project runtime, queues, GPU services,
+                             -- glTF scene import, and reusable renderer internals
       host/                -- concrete GLFW/windowed/headless hosts
       input/               -- input snapshot and camera-control helpers
       render/              -- renderer-facing CPU resource and target helpers
@@ -503,11 +504,17 @@ cubey/
       gltf_viewer/
         CMakeLists.txt
         main.cpp
-        gltf_viewer_app.*  -- static glTF/PBR/IBL/headless viewer orchestration
+        gltf_viewer_app.*  -- viewer lifecycle and host orchestration
+        gltf_viewer_assets.* -- asset/fallback/IBL resource setup
+        gltf_viewer_scene.* -- camera, light, bounds, and scene setup
+        gltf_viewer_render.* -- render request assembly
       pbr_furnace/
         CMakeLists.txt
         main.cpp
-        pbr_furnace_app.*  -- white-furnace PBR validation scene
+        pbr_furnace_app.*  -- white-furnace app lifecycle
+        pbr_furnace_resources.* -- mesh, material, and render resource setup
+        pbr_furnace_scene_runtime.* -- scene entities and frame plans
+        pbr_furnace_render.* -- render request assembly and headless target path
         pbr_furnace_scene.* -- material grid definition and tests
       fluid_25d/
   tools/

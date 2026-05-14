@@ -304,4 +304,7 @@ work. `shadow_cube` still uses the lower-level `ShadowMapPass3D` helper
 directly, while `gltf_viewer` now creates an engine-owned
 `ForwardPbrRenderer3D` through `RendererService` and records each frame through
 `ForwardPbrRenderer3DRenderRequest` for reusable shadow, skybox, HDR scene
-color, PBR forward, and post-pass graph recording.
+color, PBR forward, and post-pass graph recording. Its implementation is split
+by responsibility: resource lifetime, graph declaration/execution, and pass
+recording stay in separate source files behind the public renderer/request
+contract.

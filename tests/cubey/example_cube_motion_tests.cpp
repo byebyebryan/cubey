@@ -1,34 +1,13 @@
+#include "source_file_test_helpers.h"
+
 #include <filesystem>
-#include <fstream>
-#include <iterator>
-#include <stdexcept>
 #include <string>
 
 namespace {
 
-void require(bool condition, const char* message) {
-    if (!condition) {
-        throw std::runtime_error(message);
-    }
-}
-
-std::string read_source_file(const std::filesystem::path& path) {
-    std::ifstream file(path);
-    if (!file) {
-        throw std::runtime_error("failed to open source file: " + path.string());
-    }
-    return std::string{std::istreambuf_iterator<char>{file}, std::istreambuf_iterator<char>{}};
-}
-
-void require_contains(const std::string& text, const std::string& needle,
-                      const char* message) {
-    require(text.find(needle) != std::string::npos, message);
-}
-
-void require_not_contains(const std::string& text, const std::string& needle,
-                          const char* message) {
-    require(text.find(needle) == std::string::npos, message);
-}
+using cubey::tests::read_source_file;
+using cubey::tests::require_contains;
+using cubey::tests::require_not_contains;
 
 } // namespace
 
@@ -56,10 +35,8 @@ void test_cube_examples_share_spinning_cube_motion() {
 
     require_contains(common, "cube_spin_rotation",
                      "cube examples should share the spinning-cube rotation helper");
-    require_contains(common, "0.55F",
-                     "common cube spin should preserve spinning_cube pitch speed");
-    require_contains(common, "0.9F",
-                     "common cube spin should preserve spinning_cube yaw speed");
+    require_contains(common, "0.55F", "common cube spin should preserve spinning_cube pitch speed");
+    require_contains(common, "0.9F", "common cube spin should preserve spinning_cube yaw speed");
 
     for (const std::string* source : {&spinning, &textured, &material, &shadow_scene}) {
         require_contains(*source, "cubey::examples::common::cube_spin_transform",
@@ -116,16 +93,14 @@ void test_shadow_cube_ground_plane_sits_below_spinning_cube() {
     const std::filesystem::path root{CUBEY_SOURCE_DIR};
     const std::string resources =
         read_source_file(root / "examples/shadow_cube/shadow_cube_resources.cpp");
-    const std::string scene =
-        read_source_file(root / "examples/shadow_cube/shadow_cube_scene.cpp");
+    const std::string scene = read_source_file(root / "examples/shadow_cube/shadow_cube_scene.cpp");
     const std::string app = read_source_file(root / "examples/shadow_cube/shadow_cube_app.cpp");
     const std::string header =
         read_source_file(root / "examples/shadow_cube/shadow_cube_app_internal.h");
 
     require_contains(header, "kShadowCubeGroundPlaneY = -1.5F",
                      "shadow_cube ground plane should sit below the rotating cube");
-    require_contains(header, "floor_entity_",
-                     "shadow_cube should keep a ground plane entity");
+    require_contains(header, "floor_entity_", "shadow_cube should keep a ground plane entity");
     require_contains(header, "floor_mesh_handle_",
                      "shadow_cube should keep a ground plane mesh handle");
     require_contains(resources, "shadow_cube.floor",
@@ -144,12 +119,10 @@ void test_shadow_cube_ground_plane_sits_below_spinning_cube() {
 
 void test_shadow_cube_transforms_normals_with_rotating_model_matrix() {
     const std::filesystem::path root{CUBEY_SOURCE_DIR};
-    const std::string header =
-        read_source_file(root / "examples/shadow_cube/shadow_cube_render.h");
+    const std::string header = read_source_file(root / "examples/shadow_cube/shadow_cube_render.h");
     const std::string shader =
         read_source_file(root / "examples/shadow_cube/shaders/shadow_cube.vert");
-    const std::string frame =
-        read_source_file(root / "examples/shadow_cube/shadow_cube_frame.cpp");
+    const std::string frame = read_source_file(root / "examples/shadow_cube/shadow_cube_frame.cpp");
 
     require_contains(header, "cubey::math::Mat4 model;",
                      "shadow_cube scene push constants should carry the model matrix");
@@ -161,7 +134,8 @@ void test_shadow_cube_transforms_normals_with_rotating_model_matrix() {
 
 void test_material_cubes_show_real_material_variant_grid() {
     const std::filesystem::path root{CUBEY_SOURCE_DIR};
-    const std::string app = read_source_file(root / "examples/material_cubes/material_cubes_app.cpp");
+    const std::string app =
+        read_source_file(root / "examples/material_cubes/material_cubes_app.cpp");
     const std::string cmake = read_source_file(root / "examples/material_cubes/CMakeLists.txt");
 
     require_contains(app, "kMaterialGridColumns = 7",
