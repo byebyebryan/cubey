@@ -78,9 +78,25 @@ void validate_forward_pbr_renderer_3d_config(const ForwardPbrRenderer3DConfig& c
     }
 }
 
+void validate_forward_pbr_renderer_3d_render_request(
+    const ForwardPbrRenderer3DRenderRequest& request) {
+    if (request.target.device == nullptr ||
+        request.target.command_buffer == VK_NULL_HANDLE) {
+        throw std::runtime_error("forward PBR render request requires device and command buffer");
+    }
+    if (request.view.scene == nullptr || request.view.shadow_plan == nullptr ||
+        request.view.scene_plan == nullptr) {
+        throw std::runtime_error("forward PBR render request requires scene and frame plans");
+    }
+    if (request.resources.meshes == nullptr || request.resources.material_instances == nullptr ||
+        request.resources.material_factors == nullptr) {
+        throw std::runtime_error("forward PBR render request requires render resource tables");
+    }
+}
+
 LightPacket3D forward_pbr_renderer_3d_selected_light(std::span<const LightPacket3D> lights,
-                                      Entity requested_light,
-                                      LightPacket3D fallback_light) {
+                                                      Entity requested_light,
+                                                      LightPacket3D fallback_light) {
     for (const LightPacket3D& light : lights) {
         if (light.entity == requested_light) {
             return light;
@@ -326,57 +342,56 @@ void ForwardPbrRenderer3D::destroy_all_resources() {
     shadow_depth_is_sampled_ = false;
 }
 
-void ForwardPbrRenderer3D::record(const ForwardPbrRenderer3DRecordInfo& info) {
-    if (info.device == nullptr || info.command_buffer == VK_NULL_HANDLE) {
-        throw std::runtime_error("forward PBR renderer record requires device and command buffer");
-    }
-    if (info.scene == nullptr || info.shadow_plan == nullptr || info.scene_plan == nullptr) {
-        throw std::runtime_error("forward PBR renderer record requires scene and frame plans");
-    }
-    if (info.meshes == nullptr || info.material_instances == nullptr ||
-        info.material_factors == nullptr) {
-        throw std::runtime_error("forward PBR renderer record requires render resource tables");
-    }
+void ForwardPbrRenderer3D::record(const ForwardPbrRenderer3DRenderRequest& request) {
+    validate_forward_pbr_renderer_3d_render_request(request);
 
-    const math::Vec3 camera_position = camera_world_position(*info.scene, info.camera_entity);
+    const ForwardPbrRenderer3DTargetInfo& target = request.target;
+    const ForwardPbrRenderer3DViewInfo& view = request.view;
+    const ForwardPbrRenderer3DResourceInfo& resources = request.resources;
+    const ForwardPbrRenderer3DSettings& settings = request.settings;
+
+    const math::Vec3 camera_position = camera_world_position(*view.scene, view.camera_entity);
     const LightPacket3D light = forward_pbr_renderer_3d_selected_light(
-        info.scene_plan->light_packets, info.light_entity, info.fallback_light);
+        view.scene_plan->light_packets, view.light_entity, view.fallback_light);
 
     scene_material().upload(
-        info.frame_slot,
+        target.frame_slot,
         forward_pbr_renderer_3d_scene_uniforms({
-            .view_projection = info.scene_plan->view_projection_matrix,
-            .light_view_projection = info.shadow_plan->view_projection_matrix,
+            .view_projection = view.scene_plan->view_projection_matrix,
+            .light_view_projection = view.shadow_plan->view_projection_matrix,
             .camera_position = camera_position,
             .light = light,
-            .environment = info.scene_plan->environment,
+            .environment = view.scene_plan->environment,
             .environment_intensity = environment().intensity,
             .prefiltered_mip_levels = environment().prefiltered_mip_levels,
-            .environment_rotation_degrees = info.environment_rotation_degrees,
-            .color_format = info.color_target.format,
-            .exposure = info.exposure,
+            .environment_rotation_degrees = settings.environment_rotation_degrees,
+            .color_format = target.color_target.format,
+            .exposure = settings.exposure,
+            .tonemap = settings.tonemap,
         }));
     skybox_material().upload(
-        info.frame_slot,
+        target.frame_slot,
         forward_pbr_renderer_3d_skybox_uniforms({
-            .view_projection = info.scene_plan->view_projection_matrix,
+            .view_projection = view.scene_plan->view_projection_matrix,
             .camera_position = camera_position,
             .environment_intensity = environment().intensity,
-            .environment_rotation_degrees = info.environment_rotation_degrees,
-            .color_format = info.color_target.format,
-            .exposure = info.exposure,
+            .environment_rotation_degrees = settings.environment_rotation_degrees,
+            .color_format = target.color_target.format,
+            .exposure = settings.exposure,
+            .tonemap = settings.tonemap,
         }));
 
     const CompiledGraph render_graph =
-        current_render_graph(info.color_target, info.frame_slot, info.color_initial_state,
-                             info.color_final_state, *info.shadow_plan, *info.scene_plan,
-                             *info.meshes, *info.material_instances, *info.material_factors);
+        current_render_graph(target.color_target, target.frame_slot, target.color_initial_state,
+                             target.color_final_state, *view.shadow_plan, *view.scene_plan,
+                             *resources.meshes, *resources.material_instances,
+                             *resources.material_factors);
     graph_executor_.record(
         render::RenderGraphFrameRecordInfo{
-            .device = info.device,
-            .command_buffer = info.command_buffer,
-            .frame_slot = info.frame_slot,
-            .label = info.command_buffer_label,
+            .device = target.device,
+            .command_buffer = target.command_buffer,
+            .frame_slot = target.frame_slot,
+            .label = target.command_buffer_label,
         },
         render_graph.graph);
     shadow_depth_is_sampled_ = true;

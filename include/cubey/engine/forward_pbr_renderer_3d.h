@@ -72,30 +72,49 @@ struct ForwardPbrRenderer3DSkyboxUniformInfo {
     render::PbrTonemap tonemap = render::PbrTonemap::Aces;
 };
 
-struct ForwardPbrRenderer3DRecordInfo {
+struct ForwardPbrRenderer3DTargetInfo {
     const vulkan::Device* device = nullptr;
     VkCommandBuffer command_buffer = VK_NULL_HANDLE;
     render::ColorTargetView color_target{};
     render::FrameSlot frame_slot{};
     render::RenderGraphTextureState color_initial_state{};
     render::RenderGraphTextureState color_final_state{};
+    const char* command_buffer_label = "vkEndCommandBuffer forward pbr renderer";
+};
+
+struct ForwardPbrRenderer3DViewInfo {
     const SceneReadView* scene = nullptr;
     const scene::RenderFramePlan3D* shadow_plan = nullptr;
     const scene::RenderFramePlan3D* scene_plan = nullptr;
+    Entity camera_entity{};
+    Entity light_entity{};
+    LightPacket3D fallback_light{};
+};
+
+struct ForwardPbrRenderer3DResourceInfo {
     const render::MeshResourceTable<render::Mesh>* meshes = nullptr;
     const render::MaterialResourceTable<render::FrameUniformMaterialInstance<
         render::PbrMaterialUniforms>>* material_instances = nullptr;
     const std::unordered_map<render::MaterialHandle, render::PbrMaterialFactors,
                              render::MaterialHandleHash>* material_factors = nullptr;
-    Entity camera_entity{};
-    Entity light_entity{};
-    LightPacket3D fallback_light{};
+};
+
+struct ForwardPbrRenderer3DSettings {
     float environment_rotation_degrees = 0.0F;
     float exposure = 0.0F;
-    const char* command_buffer_label = "vkEndCommandBuffer forward pbr renderer";
+    render::PbrTonemap tonemap = render::PbrTonemap::Aces;
+};
+
+struct ForwardPbrRenderer3DRenderRequest {
+    ForwardPbrRenderer3DTargetInfo target{};
+    ForwardPbrRenderer3DViewInfo view{};
+    ForwardPbrRenderer3DResourceInfo resources{};
+    ForwardPbrRenderer3DSettings settings{};
 };
 
 void validate_forward_pbr_renderer_3d_config(const ForwardPbrRenderer3DConfig& config);
+void validate_forward_pbr_renderer_3d_render_request(
+    const ForwardPbrRenderer3DRenderRequest& request);
 [[nodiscard]] render::VertexInputLayout forward_pbr_renderer_3d_shadow_vertex_input_layout();
 [[nodiscard]] LightPacket3D
 forward_pbr_renderer_3d_selected_light(std::span<const LightPacket3D> lights,
@@ -122,7 +141,7 @@ class ForwardPbrRenderer3D {
                                     const ForwardPbrRenderer3DTargetResourcesInfo& info);
     void destroy_swapchain_resources();
     void destroy_all_resources();
-    void record(const ForwardPbrRenderer3DRecordInfo& info);
+    void record(const ForwardPbrRenderer3DRenderRequest& request);
 
     [[nodiscard]] const render::GeneratedPbrEnvironment& environment() const;
 

@@ -40,7 +40,7 @@ if (BUILD_TESTING)
         NAME gltf_viewer_uses_forward_pbr_renderer_3d
         COMMAND
             /bin/sh -c
-            "grep -q 'engine_\\.renderers()\\.create_forward_pbr_renderer_3d' \"$1\" && ! grep -q 'ForwardPbrRenderer3D pbr_renderer_' \"$1\" && ! grep -q '<cubey/render/shadow_map.h>' \"$1\""
+            "grep -q 'engine_\\.renderers()\\.create_forward_pbr_renderer_3d' \"$1\" && grep -q 'ForwardPbrRenderer3DRenderRequest' \"$1\" && ! grep -q 'ForwardPbrRenderer3D pbr_renderer_' \"$1\" && ! grep -q '<cubey/render/shadow_map.h>' \"$1\""
             gltf_viewer_uses_forward_pbr_renderer_3d
             "${CMAKE_CURRENT_SOURCE_DIR}/gltf_viewer_app.cpp"
     )

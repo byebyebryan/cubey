@@ -614,26 +614,39 @@ class GltfViewerApp {
         }
         const cubey::scene::RenderFramePlan3D& shadow_plan = frame_plan.passes()[0].frame_plan;
         const cubey::scene::RenderFramePlan3D& scene_plan = frame_plan.passes()[1].frame_plan;
-        forward_pbr_renderer().record({
-            .device = &device,
-            .command_buffer = command_buffer,
-            .color_target = color_target,
-            .frame_slot = frame_slot,
-            .color_initial_state = color_initial_state,
-            .color_final_state = color_final_state,
-            .scene = &scene_view,
-            .shadow_plan = &shadow_plan,
-            .scene_plan = &scene_plan,
-            .meshes = &import_resources_.meshes,
-            .material_instances = &import_resources_.material_instances,
-            .material_factors = &import_resources_.material_factors,
-            .camera_entity = camera_entity_,
-            .light_entity = light_entity_,
-            .fallback_light = fallback_light_packet(),
-            .environment_rotation_degrees = config_.environment_rotation_degrees,
-            .exposure = config_.exposure,
-            .command_buffer_label = "vkEndCommandBuffer gltf_viewer",
-        });
+        const cubey::ForwardPbrRenderer3DRenderRequest request{
+            .target =
+                {
+                    .device = &device,
+                    .command_buffer = command_buffer,
+                    .color_target = color_target,
+                    .frame_slot = frame_slot,
+                    .color_initial_state = color_initial_state,
+                    .color_final_state = color_final_state,
+                    .command_buffer_label = "vkEndCommandBuffer gltf_viewer",
+                },
+            .view =
+                {
+                    .scene = &scene_view,
+                    .shadow_plan = &shadow_plan,
+                    .scene_plan = &scene_plan,
+                    .camera_entity = camera_entity_,
+                    .light_entity = light_entity_,
+                    .fallback_light = fallback_light_packet(),
+                },
+            .resources =
+                {
+                    .meshes = &import_resources_.meshes,
+                    .material_instances = &import_resources_.material_instances,
+                    .material_factors = &import_resources_.material_factors,
+                },
+            .settings =
+                {
+                    .environment_rotation_degrees = config_.environment_rotation_degrees,
+                    .exposure = config_.exposure,
+                },
+        };
+        forward_pbr_renderer().record(request);
     }
 
     void record_viewer_frame(cubey::host::WindowedAppContext& context,

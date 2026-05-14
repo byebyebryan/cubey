@@ -22,8 +22,12 @@ void test_orbit_controller_tracks_rotation_drag_pause_and_reset();
 void test_orbit_controller_updates_from_input_snapshot();
 void test_pan_zoom_2d_controller_pans_and_zooms_from_input();
 void test_forward_pbr_renderer_3d_config_requires_shader_paths_and_shadow_extent();
+void test_forward_pbr_renderer_3d_render_request_validates_required_resource_fields();
+void test_forward_pbr_renderer_3d_render_request_validates_required_target_fields();
+void test_forward_pbr_renderer_3d_render_request_validates_required_view_fields();
 void test_forward_pbr_renderer_3d_scene_uniforms_pack_view_light_environment_and_display();
 void test_forward_pbr_renderer_3d_selects_requested_light_or_fallback();
+void test_forward_pbr_renderer_3d_settings_defaults_to_aces_display_transform();
 void test_forward_pbr_renderer_3d_shadow_vertex_layout_matches_pbr_vertices();
 void test_forward_pbr_renderer_3d_skybox_uniforms_pack_inverse_view_camera_environment_and_display();
 void test_pointer_drag_tracks_active_cursor_and_accumulated_delta();
@@ -64,6 +68,10 @@ std::span<const TestCase> engine_host_input_test_cases() {
         CUBEY_TEST(test_renderer_service_rejects_foreign_forward_pbr_renderer),
         CUBEY_TEST(test_renderer_service_resource_lifecycle_is_safe_without_renderers),
         CUBEY_TEST(test_forward_pbr_renderer_3d_config_requires_shader_paths_and_shadow_extent),
+        CUBEY_TEST(test_forward_pbr_renderer_3d_render_request_validates_required_target_fields),
+        CUBEY_TEST(test_forward_pbr_renderer_3d_render_request_validates_required_view_fields),
+        CUBEY_TEST(test_forward_pbr_renderer_3d_render_request_validates_required_resource_fields),
+        CUBEY_TEST(test_forward_pbr_renderer_3d_settings_defaults_to_aces_display_transform),
         CUBEY_TEST(test_forward_pbr_renderer_3d_selects_requested_light_or_fallback),
         CUBEY_TEST(test_forward_pbr_renderer_3d_shadow_vertex_layout_matches_pbr_vertices),
         CUBEY_TEST(
