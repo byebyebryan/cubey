@@ -77,6 +77,14 @@ RunConfig parse_run_config(int argc, char** argv) {
                             "--environment-rotation-degrees");
         } else if (arg == "--exposure") {
             config.exposure = parse_float(need_value("--exposure"), "--exposure");
+        } else if (arg == "--animation-index") {
+            config.animation_index = parse_u32(need_value("--animation-index"),
+                                               "--animation-index");
+        } else if (arg == "--animation-speed") {
+            config.animation_speed = parse_float(need_value("--animation-speed"),
+                                                 "--animation-speed");
+        } else if (arg == "--pause-animation") {
+            config.animation_paused = true;
         } else if (arg == "--output") {
             config.output_path = std::string(need_value("--output"));
         } else {

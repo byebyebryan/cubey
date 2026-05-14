@@ -73,6 +73,26 @@ void test_run_config_parses_pbr_environment_options() {
     require(config.exposure == -0.5F, "run config should parse exposure");
 }
 
+void test_run_config_parses_animation_options() {
+    std::array<char, 6> program{'c', 'u', 'b', 'e', 'y', '\0'};
+    std::array<char, 18> index_flag{'-', '-', 'a', 'n', 'i', 'm', 'a', 't', 'i',
+                                    'o', 'n', '-', 'i', 'n', 'd', 'e', 'x', '\0'};
+    std::array<char, 2> index_value{'2', '\0'};
+    std::array<char, 18> speed_flag{'-', '-', 'a', 'n', 'i', 'm', 'a', 't', 'i',
+                                    'o', 'n', '-', 's', 'p', 'e', 'e', 'd', '\0'};
+    std::array<char, 4> speed_value{'0', '.', '5', '\0'};
+    std::array<char, 18> pause_flag{'-', '-', 'p', 'a', 'u', 's', 'e', '-', 'a',
+                                    'n', 'i', 'm', 'a', 't', 'i', 'o', 'n', '\0'};
+    std::array<char*, 6> argv{program.data(), index_flag.data(), index_value.data(),
+                              speed_flag.data(), speed_value.data(), pause_flag.data()};
+
+    const cubey::RunConfig config =
+        cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
+    require(config.animation_index == 2, "run config should parse animation index");
+    require(config.animation_speed == 0.5F, "run config should parse animation speed");
+    require(config.animation_paused, "run config should parse animation pause flag");
+}
+
 void test_run_cli_app_sets_default_title_and_returns_runner_status() {
     std::array<char, 6> program{'c', 'u', 'b', 'e', 'y', '\0'};
     std::array<char*, 1> argv{program.data()};

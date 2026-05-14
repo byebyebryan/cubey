@@ -1,7 +1,9 @@
 #include "gltf_scene_importer_internal.h"
 
+#include <cubey/animation/gltf_animation.h>
 #include <cubey/render/deformation.h>
 #include <cubey/render/pbr.h>
+#include <cubey/scene/scene.h>
 #include <cubey/vulkan/descriptors.h>
 
 #include <vulkan/vulkan.h>
@@ -154,8 +156,59 @@ default_morph_weights(const asset::GltfAsset& asset, const GltfDeformablePrimiti
     return weights;
 }
 
+[[nodiscard]] std::vector<float>
+frame_morph_weights(const asset::GltfAsset& asset, const GltfDeformablePrimitive3D& primitive,
+                    std::uint32_t morph_target_count,
+                    const animation::GltfAnimationSample* sample) {
+    std::vector<float> weights = default_morph_weights(asset, primitive, morph_target_count);
+    if (sample == nullptr || primitive.node_index >= sample->nodes.size()) {
+        return weights;
+    }
+
+    const animation::GltfNodeAnimationSample& node_sample = sample->nodes[primitive.node_index];
+    if (!node_sample.has_weights) {
+        return weights;
+    }
+    const std::size_t copy_count =
+        std::min<std::size_t>(node_sample.weights.size(), morph_target_count);
+    std::copy_n(node_sample.weights.begin(), copy_count, weights.begin());
+    return weights;
+}
+
 [[nodiscard]] std::vector<math::Mat4> default_joint_palette(std::uint32_t joint_count) {
     return std::vector<math::Mat4>(std::max(1U, joint_count), math::Mat4{1.0F});
+}
+
+[[nodiscard]] std::vector<math::Mat4>
+node_world_matrices(const asset::GltfAsset& asset, const GltfSceneImportResult& result,
+                    const SceneReadView& scene_view) {
+    std::vector<math::Mat4> matrices(asset.nodes.size(), math::Mat4{1.0F});
+    const std::size_t node_count = std::min(asset.nodes.size(), result.node_entities.size());
+    for (std::size_t node_index = 0; node_index < node_count; ++node_index) {
+        const Entity entity = result.node_entities[node_index];
+        if (!entity) {
+            continue;
+        }
+        const TransformInstance3D transform = scene_view.transforms3d().instance(entity);
+        matrices[node_index] = scene_view.transforms3d().world_affine_matrix(transform);
+    }
+    return matrices;
+}
+
+void upload_frame_morph_weights(GltfDeformationPrimitiveResources& resource,
+                                render::FrameSlot frame_slot, std::span<const float> weights) {
+    if (frame_slot.index >= resource.morph_weights.size()) {
+        throw std::runtime_error("glTF morph weight frame slot is out of range");
+    }
+    resource.morph_weights.at(frame_slot.index).upload(weights.data(), span_byte_size(weights));
+}
+
+void upload_frame_joint_palette(GltfDeformationPrimitiveResources& resource,
+                                render::FrameSlot frame_slot, std::span<const math::Mat4> joints) {
+    if (frame_slot.index >= resource.joint_palettes.size()) {
+        throw std::runtime_error("glTF joint palette frame slot is out of range");
+    }
+    resource.joint_palettes.at(frame_slot.index).upload(joints.data(), span_byte_size(joints));
 }
 
 [[nodiscard]] std::uint32_t deformation_flags(GltfPrimitiveDeformationKind kind) {
@@ -348,6 +401,44 @@ gltf_deformation_commands_for_frame(const GltfSceneImportResources& resources,
         });
     }
     return commands;
+}
+
+void update_gltf_deformation_frame(GltfSceneImportResources& resources,
+                                   const asset::GltfAsset& asset,
+                                   const GltfSceneImportResult& result,
+                                   const SceneReadView& scene_view,
+                                   render::FrameSlot frame_slot,
+                                   const animation::GltfAnimationSample* sample) {
+    if (resources.deformation.primitives.empty()) {
+        return;
+    }
+    render::validate_frame_slot(frame_slot);
+
+    const std::vector<math::Mat4> world_matrices =
+        node_world_matrices(asset, result, scene_view);
+    for (GltfDeformationPrimitiveResources& resource : resources.deformation.primitives) {
+        if (frame_slot.count != resource.morph_weights.size() ||
+            frame_slot.count != resource.joint_palettes.size()) {
+            throw std::runtime_error("glTF deformation frame slot count does not match resources");
+        }
+
+        const std::vector<float> weights =
+            frame_morph_weights(asset, resource.primitive,
+                                resource.push_constants.morph_target_count, sample);
+        upload_frame_morph_weights(resource, frame_slot, weights);
+
+        std::vector<math::Mat4> joints =
+            default_joint_palette(resource.push_constants.joint_count);
+        if (deformation_has_skin(resource.primitive.deformation)) {
+            const asset::GltfSkin& skin = asset.skins.at(resource.primitive.skin_index);
+            joints = animation::compute_gltf_joint_palette(skin, world_matrices,
+                                                           resource.primitive.node_index);
+            if (joints.empty()) {
+                joints = default_joint_palette(0);
+            }
+        }
+        upload_frame_joint_palette(resource, frame_slot, joints);
+    }
 }
 
 } // namespace cubey

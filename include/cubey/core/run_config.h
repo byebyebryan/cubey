@@ -25,7 +25,10 @@ struct RunConfig {
     float ibl_intensity = 1.0F;
     float environment_rotation_degrees = 0.0F;
     float exposure = 0.0F;
+    std::uint32_t animation_index = 0;
+    float animation_speed = 1.0F;
     bool headless = false;
+    bool animation_paused = false;
     bool validation = true;
     bool require_validation = false;
 };

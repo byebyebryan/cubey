@@ -52,11 +52,28 @@ void GltfViewerApp::create_imported_asset_scene(const cubey::vulkan::Device& dev
                                                       shader_path("gltf_deform.comp.spv"),
                                                   .label_prefix = "gltf_viewer",
                                               });
-    animation_playback_ = {};
+    animation_playback_ = {
+        .animation_index = config_.animation_index,
+        .speed = config_.animation_speed,
+    };
+    animation_sample_.reset();
     scene_bounds_ = import_result_.bounds;
     triangle_count_ = import_result_.triangle_count;
     create_camera_and_light(setup);
     setup.commit();
+    if (!asset.animations.empty()) {
+        if (animation_playback_.animation_index >= asset.animations.size()) {
+            throw std::runtime_error("requested glTF animation index is out of range");
+        }
+        const cubey::asset::GltfAnimation& animation =
+            asset.animations[animation_playback_.animation_index];
+        animation_sample_ = cubey::animation::sample_gltf_animation(
+            asset, animation, animation_playback_.time_seconds);
+        cubey::SceneEditQueue edits = scene().create_edit_queue();
+        cubey::apply_gltf_rigid_animation_sample(edits, asset, import_result_,
+                                                 animation_sample_.value());
+        scene().commit(edits);
+    }
 }
 
 std::filesystem::path GltfViewerApp::resolved_input_path() const {

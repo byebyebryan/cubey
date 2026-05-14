@@ -26,6 +26,7 @@ void GltfViewerApp::destroy_all_resources() {
     destroy_scene_if_needed();
     cubey::destroy_gltf_scene_import(engine_, import_resources_, import_result_);
     animation_playback_ = {};
+    animation_sample_.reset();
     triangle_count_ = 0;
     normal_default_.reset();
     metallic_roughness_default_.reset();
@@ -49,6 +50,11 @@ void GltfViewerApp::record_viewer_target(
     }
     const cubey::scene::RenderFramePlan3D& shadow_plan = frame_plan.passes()[0].frame_plan;
     const cubey::scene::RenderFramePlan3D& scene_plan = frame_plan.passes()[1].frame_plan;
+    if (asset_.has_value()) {
+        cubey::update_gltf_deformation_frame(
+            import_resources_, asset_.value(), import_result_, scene_view, frame_slot,
+            animation_sample_.has_value() ? &animation_sample_.value() : nullptr);
+    }
     const std::vector<cubey::render::GpuDeformationCommand> deformation_commands =
         cubey::gltf_deformation_commands_for_frame(import_resources_, frame_slot);
     const cubey::render::FrameMeshResourceTable* frame_meshes =

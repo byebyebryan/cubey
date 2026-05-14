@@ -43,9 +43,9 @@ Current projects:
   pressure projection, debug views, and deterministic headless PNG output.
 - `fractal_2d`: fullscreen Mandelbrot-style shader with windowed navigation and
   headless output.
-- `gltf_viewer`: static glTF/glb viewer for imported assets, PBR materials,
-  texture upload, generated or HDR-backed IBL, skybox rendering, shadow maps,
-  and headless capture.
+- `gltf_viewer`: glTF/glb viewer for imported assets, PBR materials, texture
+  upload, rigid/morph/skinned animation, generated or HDR-backed IBL, skybox
+  rendering, shadow maps, and headless capture.
 - `pbr_furnace`: white-furnace PBR validation scene for roughness/metallic
   behavior under uniform generated IBL.
 
@@ -106,7 +106,7 @@ Useful windowed smokes:
 ./build/dev/examples/particle_cubes/particle_cubes --frames 300 --width 1280 --height 720
 ./build/dev/projects/fractal_2d/fractal_2d --frames 300 --width 1280 --height 720
 ./build/dev/projects/fluid_2d/fluid_2d --frames 300 --width 1280 --height 720
-./build/dev/projects/gltf_viewer/gltf_viewer --input path/to/model.glb --environment path/to/env.hdr --frames 300 --width 1280 --height 720
+./build/dev/projects/gltf_viewer/gltf_viewer --input path/to/model.glb --environment path/to/env.hdr --animation-index 0 --animation-speed 1.0 --frames 300 --width 1280 --height 720
 ./build/dev/projects/pbr_furnace/pbr_furnace --frames 300 --width 1280 --height 720
 ```
 

@@ -13,9 +13,9 @@ handles, and GPU-side deformation buffers where vertex work becomes expensive.
 - Morph animation samples weights on CPU, but applies target deltas on GPU.
 - Skinning samples node transforms on CPU and builds joint palettes from scene
   world transforms plus inverse bind matrices.
-- Skin-only meshes may use vertex-shader skinning as the simple path.
-- Morph-plus-skin meshes use one compute deformation pass: morph in mesh space,
-  then skin into a per-frame output vertex buffer.
+- Skin-only, morph-only, and morph-plus-skin meshes use one compute deformation
+  path. Morphing runs first in mesh space; skinning then writes into a per-frame
+  output vertex buffer.
 
 The output of GPU deformation is an ordinary render mesh stream. Shadow,
 depth, and PBR passes should not need to know whether a mesh was static,
@@ -42,7 +42,9 @@ pipelines, and mesh resolution by `FrameSlot`.
 
 ## V1 Limits
 
-- One active animation clip per imported asset in the viewer.
+- One active animation clip per imported asset in the viewer; select it with
+  `--animation-index`, scale playback with `--animation-speed`, or hold the
+  first sampled pose with `--pause-animation`.
 - No blending, retargeting, state machines, or additive clips yet.
 - Core glTF `translation`, `rotation`, `scale`, and `weights` channels only.
 - `STEP`, `LINEAR`, and `CUBICSPLINE` interpolation are part of the contract.

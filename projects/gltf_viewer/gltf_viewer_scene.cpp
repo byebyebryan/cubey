@@ -66,7 +66,10 @@ void GltfViewerApp::update_animation(float delta_seconds) {
         return;
     }
     if (animation_playback_.animation_index >= asset_->animations.size()) {
-        animation_playback_.animation_index = 0;
+        throw std::runtime_error("requested glTF animation index is out of range");
+    }
+    if (config_.animation_paused) {
+        return;
     }
 
     const cubey::asset::GltfAnimation& animation =
@@ -76,9 +79,11 @@ void GltfViewerApp::update_animation(float delta_seconds) {
     const cubey::animation::GltfAnimationSample sample =
         cubey::animation::sample_gltf_animation(asset_.value(), animation,
                                                 animation_playback_.time_seconds);
+    animation_sample_ = sample;
 
     cubey::SceneEditQueue edits = scene().create_edit_queue();
-    cubey::apply_gltf_rigid_animation_sample(edits, asset_.value(), import_result_, sample);
+    cubey::apply_gltf_rigid_animation_sample(edits, asset_.value(), import_result_,
+                                             animation_sample_.value());
     scene().commit(edits);
 }
 

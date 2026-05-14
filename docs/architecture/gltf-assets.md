@@ -1,9 +1,10 @@
 # glTF Assets And PBR
 
-Cubey has a narrow static glTF 2.0 path for imported assets. The goal is not a
+Cubey has a narrow glTF 2.0 path for imported assets. The goal is not a
 complete DCC/runtime pipeline yet; it is a foundation contract for common
-runtime asset data, PBR material inputs, texture upload, scene import, and a
-viewer project that keeps pressure on the renderer.
+runtime asset data, PBR material inputs, texture upload, scene import,
+animation/deformation, and a viewer project that keeps pressure on the
+renderer.
 
 ## Precedent
 
@@ -21,7 +22,7 @@ viewer project that keeps pressure on the renderer.
 
 `cubey::asset` owns CPU-side loaded asset data:
 
-- static glTF/glb parsing through `cgltf`;
+- glTF/glb parsing through `cgltf`;
 - external buffers, data URIs, image buffer views, PNG/JPEG decode for glTF
   textures, and standalone Radiance HDR decode through `stb_image`;
 - mesh primitives with position, normal, tangent, UV0, optional `JOINTS_0` /
@@ -45,11 +46,11 @@ runtime features, and streaming remain future slices.
 service:
 
 - `GltfSceneImportResources` stores app-owned mesh resources, material
-  instances, material factors, uploaded material textures, and default PBR
-  textures;
-- `import_gltf_scene()` maps static glTF nodes into scene entities, 3D
-  transforms, renderables, registry-issued mesh/material handles, imported
-  bounds, and triangle counts;
+  instances, material factors, uploaded material textures, default PBR textures,
+  and per-import deformation resources;
+- `import_gltf_scene()` maps glTF nodes into scene entities, 3D transforms,
+  renderables, registry-issued mesh/material handles, imported bounds, triangle
+  counts, and per-node output mesh handles for morph/skinning deformation;
 - glTF alpha modes map into explicit render material alpha policy: `MASK`
   stays depth-writing and shadow-casting with alpha cutoff, while `BLEND`
   renders forward-only with premultiplied source-over alpha blending and no
@@ -110,6 +111,9 @@ indirect specular occlusion. Material texture and factor alpha remain
 straight/unassociated inputs; blended fragments emit premultiplied RGB at
 shader output, while opaque and kept masked fragments output alpha 1. Display
 transform is applied by the shared post shader.
+The viewer plays one active glTF animation clip, applies rigid TRS channels to
+scene transforms, uploads morph weights and skin joint palettes per frame, and
+records a compute deformation pass before shadow and PBR scene passes.
 
 ## Boundaries
 

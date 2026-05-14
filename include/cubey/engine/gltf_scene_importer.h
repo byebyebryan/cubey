@@ -27,6 +27,7 @@ namespace cubey {
 
 class Engine;
 class SceneEditQueue;
+class SceneReadView;
 class SceneTransaction;
 
 namespace vulkan {
@@ -131,6 +132,12 @@ gltf_primitive_deformation_kind(const asset::GltfNode& node,
 [[nodiscard]] std::vector<render::GpuDeformationCommand>
 gltf_deformation_commands_for_frame(const GltfSceneImportResources& resources,
                                     render::FrameSlot frame_slot);
+void update_gltf_deformation_frame(GltfSceneImportResources& resources,
+                                   const asset::GltfAsset& asset,
+                                   const GltfSceneImportResult& result,
+                                   const SceneReadView& scene_view,
+                                   render::FrameSlot frame_slot,
+                                   const animation::GltfAnimationSample* sample = nullptr);
 
 [[nodiscard]] GltfSceneImportResult
 import_gltf_scene(Engine& engine, SceneTransaction& transaction, const asset::GltfAsset& asset,
