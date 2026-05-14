@@ -2,15 +2,21 @@
 
 #include <cubey/animation/gltf_animation.h>
 #include <cubey/asset/gltf_asset.h>
+#include <cubey/render/deformation.h>
 #include <cubey/render/material_instance.h>
 #include <cubey/render/mesh.h>
 #include <cubey/render/pbr.h>
+#include <cubey/render/render_item.h>
 #include <cubey/render/resource_table.h>
 #include <cubey/render/texture.h>
 #include <cubey/scene/entity.h>
 #include <cubey/scene/renderable_manager.h>
+#include <cubey/vulkan/buffer.h>
+#include <cubey/vulkan/descriptors.h>
 
+#include <array>
 #include <cstdint>
+#include <memory>
 #include <optional>
 #include <string>
 #include <unordered_map>
@@ -56,6 +62,30 @@ struct GltfDeformablePrimitive3D {
     Bounds3D local_bounds{};
 };
 
+struct GltfSkinInfluence {
+    std::array<std::uint32_t, 4> joints{0, 0, 0, 0};
+    math::Vec4 weights{0.0F, 0.0F, 0.0F, 0.0F};
+};
+
+static_assert(sizeof(GltfSkinInfluence) == sizeof(float) * 8U);
+
+struct GltfDeformationPrimitiveResources {
+    GltfDeformablePrimitive3D primitive{};
+    render::GpuDeformationPushConstants push_constants{};
+    std::optional<vulkan::Buffer> base_vertices{};
+    std::optional<vulkan::Buffer> morph_targets{};
+    std::optional<vulkan::Buffer> skin_influences{};
+    std::vector<vulkan::Buffer> morph_weights{};
+    std::vector<vulkan::Buffer> joint_palettes{};
+    std::vector<render::Mesh> output_meshes{};
+    std::unique_ptr<vulkan::DescriptorSetArray> descriptor_sets{};
+};
+
+struct GltfDeformationResources {
+    render::FrameMeshResourceTable frame_meshes{};
+    std::vector<GltfDeformationPrimitiveResources> primitives{};
+};
+
 struct GltfSceneImportConfig {
     std::uint32_t scene_index = asset::kInvalidAssetIndex;
     std::uint32_t frame_slot_count = 1;
@@ -81,6 +111,7 @@ struct GltfSceneImportResources {
         material_factors{};
     std::vector<std::vector<GltfImportedPrimitive3D>> mesh_primitives{};
     std::vector<GltfDeformablePrimitive3D> deformable_primitives{};
+    GltfDeformationResources deformation{};
     std::vector<render::Texture2D> textures{};
     std::optional<render::Texture2D> base_color_default{};
     std::optional<render::Texture2D> metallic_roughness_default{};

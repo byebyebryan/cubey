@@ -35,6 +35,15 @@ void test_gpu_deformation_descriptor_set_declares_storage_buffers() {
     }
 }
 
+void test_gpu_deformation_descriptor_set_scales_for_frame_slots() {
+    const cubey::vulkan::DescriptorSetInfo info =
+        cubey::render::gpu_deformation_descriptor_set_info(3);
+
+    require(info.max_sets() == 3, "deformation descriptor set should support frame slots");
+    require(info.pool_info().maxSets == 3,
+            "deformation descriptor pool should allocate one set per frame slot");
+}
+
 void test_gpu_deformation_dispatch_groups_round_up_vertices() {
     const cubey::render::GpuDeformationDispatch dispatch =
         cubey::render::gpu_deformation_dispatch_groups(130, 64);

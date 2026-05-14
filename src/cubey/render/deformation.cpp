@@ -21,6 +21,10 @@ namespace {
 } // namespace
 
 vulkan::DescriptorSetInfo gpu_deformation_descriptor_set_info() {
+    return gpu_deformation_descriptor_set_info(1);
+}
+
+vulkan::DescriptorSetInfo gpu_deformation_descriptor_set_info(std::uint32_t max_sets) {
     const std::array<vulkan::DescriptorSetBindingConfig, 6> bindings{
         storage_binding(GpuDeformationBinding::BaseVertices),
         storage_binding(GpuDeformationBinding::MorphTargets),
@@ -29,7 +33,7 @@ vulkan::DescriptorSetInfo gpu_deformation_descriptor_set_info() {
         storage_binding(GpuDeformationBinding::JointPalette),
         storage_binding(GpuDeformationBinding::OutputVertices),
     };
-    return vulkan::DescriptorSetInfo(bindings);
+    return vulkan::DescriptorSetInfo(bindings, max_sets);
 }
 
 ComputePipelineResourceConfig

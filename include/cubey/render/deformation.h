@@ -41,6 +41,8 @@ struct GpuDeformationDispatch {
 };
 
 [[nodiscard]] vulkan::DescriptorSetInfo gpu_deformation_descriptor_set_info();
+[[nodiscard]] vulkan::DescriptorSetInfo
+gpu_deformation_descriptor_set_info(std::uint32_t max_sets);
 [[nodiscard]] ComputePipelineResourceConfig
 gpu_deformation_pipeline_config(std::filesystem::path compute_shader);
 [[nodiscard]] GpuDeformationDispatch

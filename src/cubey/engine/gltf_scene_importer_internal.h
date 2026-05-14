@@ -15,4 +15,9 @@ void create_material_resources(Engine& engine, const vulkan::Device& device,
                                GltfSceneImportResult& result, const asset::GltfAsset& asset,
                                const GltfSceneImportConfig& config);
 
+void create_deformation_resources(const vulkan::Device& device, vulkan::GpuRuntime& gpu,
+                                  GltfSceneImportResources& resources,
+                                  const asset::GltfAsset& asset,
+                                  const GltfSceneImportConfig& config);
+
 } // namespace cubey

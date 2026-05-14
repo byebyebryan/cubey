@@ -298,6 +298,7 @@ GltfSceneImportResult import_gltf_scene(Engine& engine, SceneTransaction& transa
             result.root_entities.push_back(
                 create_node(engine, transaction, asset, resources, result, config, root, {}));
         }
+        create_deformation_resources(device, gpu, resources, asset, config);
 
         resources.active = true;
         return result;
@@ -324,6 +325,9 @@ void destroy_gltf_scene_import(Engine& engine, GltfSceneImportResources& resourc
     }
     resources.material_factors.clear();
 
+    resources.deformation = {};
+    resources.deformable_primitives.clear();
+
     for (const render::MeshHandle mesh : result.mesh_handles) {
         if (resources.meshes.contains(mesh)) {
             resources.meshes.erase(mesh);
@@ -334,7 +338,6 @@ void destroy_gltf_scene_import(Engine& engine, GltfSceneImportResources& resourc
     }
 
     resources.mesh_primitives.clear();
-    resources.deformable_primitives.clear();
     resources.textures.clear();
     resources.emissive_default.reset();
     resources.occlusion_default.reset();
