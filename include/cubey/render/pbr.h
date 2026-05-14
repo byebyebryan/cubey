@@ -46,6 +46,13 @@ struct PbrSceneUniforms {
     math::Vec4 display_transform{0.0F, 1.0F, 0.0F, 0.0F};
 };
 
+struct PbrSkyboxUniforms {
+    math::Mat4 inverse_view_projection{1.0F};
+    math::Vec4 camera_position{0.0F, 0.0F, 0.0F, 1.0F};
+    math::Vec4 environment_rotation_intensity{1.0F, 0.0F, 1.0F, 0.0F};
+    math::Vec4 display_transform{0.0F, 1.0F, 0.0F, 0.0F};
+};
+
 struct PbrMaterialFactors {
     math::Vec4 base_color_factor{1.0F, 1.0F, 1.0F, 1.0F};
     math::Vec3 emissive_factor{0.0F, 0.0F, 0.0F};
@@ -72,6 +79,7 @@ struct PbrPushConstants {
 };
 
 static_assert(sizeof(PbrMaterialUniforms) == sizeof(math::Vec4) * 5U);
+static_assert(sizeof(PbrSkyboxUniforms) == sizeof(math::Mat4) + (sizeof(math::Vec4) * 3U));
 static_assert(sizeof(PbrPushConstants) == sizeof(math::Mat4));
 static_assert(sizeof(PbrPushConstants) <= 128U);
 
@@ -92,6 +100,11 @@ enum class PbrMaterialBinding : std::uint32_t {
     Uniforms = 5,
 };
 
+enum class PbrSkyboxBinding : std::uint32_t {
+    SkyboxUniforms = 0,
+    EnvironmentCube = 1,
+};
+
 struct PbrForwardPassConfig {
     MaterialBlendMode blend = MaterialBlendMode::Opaque;
     std::string label{};
@@ -100,6 +113,7 @@ struct PbrForwardPassConfig {
 [[nodiscard]] VertexInputLayout pbr_vertex_input_layout();
 [[nodiscard]] MaterialPassInfo pbr_forward_pass_info();
 [[nodiscard]] MaterialPassInfo pbr_forward_pass_info(const PbrForwardPassConfig& config);
+[[nodiscard]] MaterialPassInfo pbr_skybox_pass_info();
 [[nodiscard]] PbrDisplayTransform
 pbr_display_transform_for_target(VkFormat target_format, float exposure = 0.0F,
                                  PbrTonemap tonemap = PbrTonemap::Aces);

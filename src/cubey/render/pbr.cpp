@@ -151,6 +151,35 @@ MaterialPassInfo pbr_forward_pass_info(const PbrForwardPassConfig& config) {
     return pass;
 }
 
+MaterialPassInfo pbr_skybox_pass_info() {
+    return {
+        .label = "pbr.skybox",
+        .kind = MaterialPassKind::ForwardColor,
+        .descriptor_sets =
+            {
+                MaterialDescriptorSetLayout{
+                    .set = 0,
+                    .bindings =
+                        {
+                            cubey::vulkan::DescriptorSetBindingConfig{
+                                .binding =
+                                    static_cast<std::uint32_t>(PbrSkyboxBinding::SkyboxUniforms),
+                                .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                                .stage_flags =
+                                    VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+                            },
+                            cubey::vulkan::DescriptorSetBindingConfig{
+                                .binding =
+                                    static_cast<std::uint32_t>(PbrSkyboxBinding::EnvironmentCube),
+                                .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
+                            },
+                        },
+                },
+            },
+    };
+}
+
 PbrDisplayTransform pbr_display_transform_for_target(VkFormat target_format, float exposure,
                                                      PbrTonemap tonemap) {
     return {

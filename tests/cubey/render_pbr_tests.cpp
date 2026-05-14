@@ -9,6 +9,7 @@
 #include <iterator>
 #include <stdexcept>
 #include <string>
+#include <type_traits>
 
 namespace {
 
@@ -164,6 +165,56 @@ void test_pbr_scene_uniforms_carry_display_transform() {
             "UNORM final targets should request shader-side sRGB output encoding");
     require(srgb_transform.output_encoding == cubey::render::PbrOutputEncoding::Linear,
             "sRGB final targets should leave output encoding to the attachment");
+}
+
+void test_pbr_skybox_uniforms_are_uniform_buffer_safe() {
+    static_assert(std::is_trivially_copyable_v<cubey::render::PbrSkyboxUniforms>);
+    static_assert(sizeof(cubey::render::PbrSkyboxUniforms) ==
+                  (sizeof(cubey::math::Mat4) + (sizeof(cubey::math::Vec4) * 3U)));
+
+    const cubey::render::PbrSkyboxUniforms uniforms{
+        .inverse_view_projection = cubey::math::Mat4{1.0F},
+        .camera_position = {1.0F, 2.0F, 3.0F, 1.0F},
+        .environment_rotation_intensity = {0.0F, 1.0F, 2.0F, 0.0F},
+        .display_transform = {0.5F, 1.0F, 0.0F, 0.0F},
+    };
+
+    require(uniforms.camera_position.x == 1.0F && uniforms.camera_position.y == 2.0F &&
+                uniforms.camera_position.z == 3.0F && uniforms.camera_position.w == 1.0F,
+            "PBR skybox uniforms should carry the camera world position");
+    require(uniforms.environment_rotation_intensity.x == 0.0F &&
+                uniforms.environment_rotation_intensity.y == 1.0F &&
+                uniforms.environment_rotation_intensity.z == 2.0F,
+            "PBR skybox uniforms should carry environment rotation and intensity");
+    require(uniforms.display_transform.x == 0.5F && uniforms.display_transform.y == 1.0F,
+            "PBR skybox uniforms should carry display transform controls");
+}
+
+void test_pbr_skybox_pass_declares_scene_set() {
+    const cubey::render::MaterialPassInfo pass = cubey::render::pbr_skybox_pass_info();
+    require(pass.label == "pbr.skybox", "PBR skybox pass should use stable label");
+    require(pass.kind == cubey::render::MaterialPassKind::ForwardColor,
+            "PBR skybox pass should be forward color");
+    require(!pass.depth_test && !pass.depth_write, "PBR skybox pass should not use depth");
+    require(pass.descriptor_sets.size() == 1, "PBR skybox pass should declare one set");
+    require(pass.descriptor_sets[0].set == 0, "PBR skybox descriptors should use set 0");
+    require(pass.descriptor_sets[0].bindings.size() == 2,
+            "PBR skybox pass should declare uniforms and environment cube");
+    require(pass.descriptor_sets[0].bindings[0].binding == 0,
+            "PBR skybox uniforms should use binding 0");
+    require(pass.descriptor_sets[0].bindings[0].type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+            "PBR skybox uniforms should be a uniform buffer");
+    require(pass.descriptor_sets[0].bindings[0].stage_flags ==
+                (VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT),
+            "PBR skybox uniforms should be visible to vertex and fragment shaders");
+    require(pass.descriptor_sets[0].bindings[1].binding == 1,
+            "PBR skybox environment should use binding 1");
+    require(pass.descriptor_sets[0].bindings[1].type ==
+                VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            "PBR skybox environment should be a sampled image");
+    require(pass.descriptor_sets[0].bindings[1].stage_flags == VK_SHADER_STAGE_FRAGMENT_BIT,
+            "PBR skybox environment should be fragment-only");
+    require(pass.push_constants.empty(), "PBR skybox pass should not use push constants");
 }
 
 void test_pbr_reflectance_helpers_match_filament_convention() {
