@@ -10,6 +10,7 @@
 #include <cstring>
 #include <span>
 #include <stdexcept>
+#include <vector>
 
 namespace {
 
@@ -265,4 +266,101 @@ void test_generated_pbr_prefilter_uses_ggx_convolution_not_legacy_average_mix() 
                                   std::fabs(actual_b - legacy.z);
     require(legacy_distance > 0.001F,
             "rough prefiltered mip should not use the legacy radiance-to-average mix");
+}
+
+void test_pbr_equirectangular_sampling_maps_cardinal_directions() {
+    std::vector<float> pixels(8U * 2U * 4U, 0.02F);
+    const auto set_pixel = [&pixels](std::uint32_t x, std::uint32_t y, TestVec3 color) {
+        const std::size_t offset = ((static_cast<std::size_t>(y) * 8U) +
+                                    static_cast<std::size_t>(x)) *
+                                   4U;
+        pixels[offset + 0U] = color.x;
+        pixels[offset + 1U] = color.y;
+        pixels[offset + 2U] = color.z;
+        pixels[offset + 3U] = 1.0F;
+    };
+    for (std::uint32_t y = 0; y < 2; ++y) {
+        set_pixel(3, y, {1.0F, 0.2F, 0.1F});
+        set_pixel(4, y, {1.0F, 0.2F, 0.1F});
+        set_pixel(5, y, {0.1F, 1.0F, 0.2F});
+        set_pixel(6, y, {0.1F, 1.0F, 0.2F});
+    }
+
+    const cubey::render::PbrEquirectangularImage image{
+        .width = 8,
+        .height = 2,
+        .rgba32f = pixels,
+    };
+
+    const cubey::math::Vec3 forward =
+        cubey::render::sample_pbr_equirectangular_radiance(
+            image, cubey::math::Vec3{0.0F, 0.0F, 1.0F});
+    const cubey::math::Vec3 right =
+        cubey::render::sample_pbr_equirectangular_radiance(
+            image, cubey::math::Vec3{1.0F, 0.0F, 0.0F});
+
+    require(std::fabs(forward.r - 1.0F) < 0.0001F,
+            "equirectangular +Z should sample the center longitude");
+    require(std::fabs(forward.g - 0.2F) < 0.0001F,
+            "equirectangular +Z should preserve center color");
+    require(std::fabs(right.r - 0.1F) < 0.0001F,
+            "equirectangular +X should sample the three-quarter longitude");
+    require(std::fabs(right.g - 1.0F) < 0.0001F,
+            "equirectangular +X should preserve side color");
+}
+
+void test_pbr_environment_data_can_be_generated_from_equirectangular_hdr() {
+    std::vector<float> pixels(8U * 2U * 4U, 0.1F);
+    const auto set_pixel = [&pixels](std::uint32_t x, std::uint32_t y, TestVec3 color) {
+        const std::size_t offset = ((static_cast<std::size_t>(y) * 8U) +
+                                    static_cast<std::size_t>(x)) *
+                                   4U;
+        pixels[offset + 0U] = color.x;
+        pixels[offset + 1U] = color.y;
+        pixels[offset + 2U] = color.z;
+        pixels[offset + 3U] = 1.0F;
+    };
+    for (std::uint32_t y = 0; y < 2; ++y) {
+        set_pixel(3, y, {0.7F, 0.3F, 0.2F});
+        set_pixel(4, y, {0.7F, 0.3F, 0.2F});
+    }
+
+    const cubey::render::PbrEquirectangularImage image{
+        .width = 8,
+        .height = 2,
+        .rgba32f = pixels,
+    };
+    const cubey::render::GeneratedPbrEnvironmentConfig config{
+        .irradiance_extent = 1,
+        .prefiltered_extent = 1,
+        .prefiltered_mip_levels = 1,
+        .brdf_lut_extent = 2,
+        .intensity = 1.0F,
+    };
+
+    const cubey::render::GeneratedPbrEnvironmentData data =
+        cubey::render::generate_pbr_environment_data_from_equirectangular(image, config);
+
+    require(data.irradiance_cube_rgba32f.size() ==
+                cubey::render::texture_cube_byte_size(
+                    config.irradiance_extent, 1,
+                    cubey::render::texture_format_byte_size(VK_FORMAT_R32G32B32A32_SFLOAT)),
+            "HDR irradiance cube should match expected byte size");
+    require(data.prefiltered_cube_rgba32f.size() ==
+                cubey::render::texture_cube_byte_size(
+                    config.prefiltered_extent, config.prefiltered_mip_levels,
+                    cubey::render::texture_format_byte_size(VK_FORMAT_R32G32B32A32_SFLOAT)),
+            "HDR prefiltered cube should match expected byte size");
+    require(data.brdf_lut_rgba32f.size() ==
+                static_cast<std::size_t>(config.brdf_lut_extent) *
+                    static_cast<std::size_t>(config.brdf_lut_extent) *
+                    cubey::render::texture_format_byte_size(VK_FORMAT_R32G32B32A32_SFLOAT),
+            "HDR DFG LUT should match expected byte size");
+    require(std::fabs(read_cube_channel(data.prefiltered_cube_rgba32f,
+                                        config.prefiltered_extent, 0, 4, 0, 0, 0) -
+                      0.7F) < 0.0001F,
+            "sharp HDR prefiltered +Z texel should sample source radiance");
+    require(read_cube_channel(data.prefiltered_cube_rgba32f,
+                              config.prefiltered_extent, 0, 4, 0, 0, 3) == 1.0F,
+            "HDR prefiltered alpha should remain one");
 }

@@ -17,6 +17,7 @@ namespace {
 
 constexpr std::uint32_t kCubeFaceCount = 6;
 constexpr std::uint32_t kDfgSampleCount = 512;
+constexpr std::uint32_t kIrradianceSampleCount = 64;
 constexpr std::uint32_t kPrefilterSampleCount = 128;
 constexpr VkFormat kIblTextureFormat = VK_FORMAT_R32G32B32A32_SFLOAT;
 constexpr float kPi = 3.14159265359F;
@@ -65,6 +66,65 @@ void append_rgba32f(std::vector<std::uint8_t>& bytes, std::array<float, 4> rgba)
 
 [[nodiscard]] math::Vec3 generated_irradiance(math::Vec3 direction) {
     return glm::mix(math::Vec3{0.035F, 0.038F, 0.042F}, generated_radiance(direction), 0.34F);
+}
+
+[[nodiscard]] std::size_t checked_equirectangular_value_count(
+    const PbrEquirectangularImage& image) {
+    if (image.width == 0 || image.height == 0) {
+        throw std::runtime_error("PBR equirectangular image dimensions must be nonzero");
+    }
+    const std::size_t pixel_count = static_cast<std::size_t>(image.width) *
+                                    static_cast<std::size_t>(image.height);
+    if (pixel_count > std::numeric_limits<std::size_t>::max() / 4U) {
+        throw std::runtime_error("PBR equirectangular image is too large");
+    }
+    return pixel_count * 4U;
+}
+
+[[nodiscard]] math::Vec3 equirectangular_texel(const PbrEquirectangularImage& image,
+                                               std::uint32_t x, std::uint32_t y) {
+    const std::size_t offset = ((static_cast<std::size_t>(y) *
+                                 static_cast<std::size_t>(image.width)) +
+                                static_cast<std::size_t>(x)) *
+                               4U;
+    return {
+        image.rgba32f[offset + 0U],
+        image.rgba32f[offset + 1U],
+        image.rgba32f[offset + 2U],
+    };
+}
+
+[[nodiscard]] math::Vec3 sample_pbr_equirectangular_radiance_unchecked(
+    const PbrEquirectangularImage& image, math::Vec3 direction) {
+    const math::Vec3 normal = glm::normalize(direction);
+    float u = (std::atan2(normal.x, normal.z) / (2.0F * kPi)) + 0.5F;
+    u -= std::floor(u);
+    const float v = std::acos(std::clamp(normal.y, -1.0F, 1.0F)) / kPi;
+
+    const float sample_x = (u * static_cast<float>(image.width)) - 0.5F;
+    const float sample_y = (v * static_cast<float>(image.height)) - 0.5F;
+    const float floor_x = std::floor(sample_x);
+    const float floor_y = std::floor(sample_y);
+    const std::uint32_t width = image.width;
+    const std::uint32_t height = image.height;
+    const std::uint32_t x0 =
+        static_cast<std::uint32_t>(static_cast<std::int64_t>(floor_x) %
+                                   static_cast<std::int64_t>(width) +
+                                   static_cast<std::int64_t>(width)) %
+        width;
+    const std::uint32_t x1 = (x0 + 1U) % width;
+    const std::uint32_t y0 =
+        static_cast<std::uint32_t>(std::clamp(floor_y, 0.0F,
+                                              static_cast<float>(height - 1U)));
+    const std::uint32_t y1 = std::min(y0 + 1U, height - 1U);
+    const float tx = sample_x - floor_x;
+    const float ty = std::clamp(sample_y - floor_y, 0.0F, 1.0F);
+
+    const math::Vec3 c00 = equirectangular_texel(image, x0, y0);
+    const math::Vec3 c10 = equirectangular_texel(image, x1, y0);
+    const math::Vec3 c01 = equirectangular_texel(image, x0, y1);
+    const math::Vec3 c11 = equirectangular_texel(image, x1, y1);
+    return glm::mix(glm::mix(c00, c10, tx), glm::mix(c01, c11, tx), ty);
 }
 
 [[nodiscard]] float radical_inverse_vdc(std::uint32_t bits) {
@@ -145,6 +205,59 @@ void append_rgba32f(std::vector<std::uint8_t>& bytes, std::array<float, 4> rgba)
     return color / total_weight;
 }
 
+[[nodiscard]] math::Vec3 sample_cosine_hemisphere(std::array<float, 2> xi) {
+    const float phi = 2.0F * kPi * xi[0];
+    const float cos_theta = std::sqrt(std::max(1.0F - xi[1], 0.0F));
+    const float sin_theta = std::sqrt(std::max(xi[1], 0.0F));
+    return {
+        std::cos(phi) * sin_theta,
+        std::sin(phi) * sin_theta,
+        cos_theta,
+    };
+}
+
+[[nodiscard]] math::Vec3 equirectangular_irradiance(const PbrEquirectangularImage& image,
+                                                    math::Vec3 direction) {
+    const math::Vec3 normal = glm::normalize(direction);
+    math::Vec3 color{0.0F, 0.0F, 0.0F};
+    for (std::uint32_t sample = 0; sample < kIrradianceSampleCount; ++sample) {
+        const math::Vec3 hemisphere =
+            sample_cosine_hemisphere(hammersley(sample, kIrradianceSampleCount));
+        color += sample_pbr_equirectangular_radiance_unchecked(
+            image, tangent_to_world(hemisphere, normal));
+    }
+    return color / static_cast<float>(kIrradianceSampleCount);
+}
+
+[[nodiscard]] math::Vec3 equirectangular_prefiltered(const PbrEquirectangularImage& image,
+                                                     math::Vec3 direction, float roughness) {
+    const math::Vec3 normal = glm::normalize(direction);
+    if (roughness <= 0.0001F) {
+        return sample_pbr_equirectangular_radiance_unchecked(image, normal);
+    }
+
+    const math::Vec3 view = normal;
+    math::Vec3 color{0.0F, 0.0F, 0.0F};
+    float total_weight = 0.0F;
+    for (std::uint32_t sample = 0; sample < kPrefilterSampleCount; ++sample) {
+        const math::Vec3 half_tangent =
+            importance_sample_ggx(hammersley(sample, kPrefilterSampleCount), roughness);
+        const math::Vec3 half_vector = tangent_to_world(half_tangent, normal);
+        const math::Vec3 light =
+            glm::normalize((2.0F * glm::dot(view, half_vector) * half_vector) - view);
+        const float ndotl = std::max(glm::dot(normal, light), 0.0F);
+        if (ndotl > 0.0F) {
+            color += sample_pbr_equirectangular_radiance_unchecked(image, light) * ndotl;
+            total_weight += ndotl;
+        }
+    }
+
+    if (total_weight <= 0.0F) {
+        return sample_pbr_equirectangular_radiance_unchecked(image, normal);
+    }
+    return color / total_weight;
+}
+
 void append_cube(std::vector<std::uint8_t>& bytes, std::uint32_t extent,
                  std::uint32_t mip_levels, auto&& sample) {
     for (std::uint32_t mip = 0; mip < mip_levels; ++mip) {
@@ -218,51 +331,9 @@ void append_brdf_lut(std::vector<std::uint8_t>& bytes, std::uint32_t extent) {
     };
 }
 
-} // namespace
-
-void validate_generated_pbr_environment_config(const GeneratedPbrEnvironmentConfig& config) {
-    if (config.irradiance_extent == 0 || config.prefiltered_extent == 0 ||
-        config.prefiltered_mip_levels == 0 || config.brdf_lut_extent == 0) {
-        throw std::runtime_error("generated PBR environment dimensions must be nonzero");
-    }
-}
-
-GeneratedPbrEnvironmentData
-generate_pbr_environment_data(const GeneratedPbrEnvironmentConfig& config) {
-    validate_generated_pbr_environment_config(config);
-    GeneratedPbrEnvironmentData data;
-    data.irradiance_cube_rgba32f.reserve(texture_cube_byte_size(
-        config.irradiance_extent, 1, texture_format_byte_size(kIblTextureFormat)));
-    append_cube(data.irradiance_cube_rgba32f, config.irradiance_extent, 1,
-                [](math::Vec3 direction, std::uint32_t) {
-        return generated_irradiance(direction);
-    });
-
-    data.prefiltered_cube_rgba32f.reserve(texture_cube_byte_size(
-        config.prefiltered_extent, config.prefiltered_mip_levels,
-        texture_format_byte_size(kIblTextureFormat)));
-    append_cube(data.prefiltered_cube_rgba32f, config.prefiltered_extent,
-                config.prefiltered_mip_levels,
-                [&config](math::Vec3 direction, std::uint32_t mip) {
-        const float roughness = config.prefiltered_mip_levels == 1
-                                    ? 0.0F
-                                    : static_cast<float>(mip) /
-                                          static_cast<float>(config.prefiltered_mip_levels - 1U);
-        return generated_prefiltered(direction, roughness);
-    });
-
-    const std::size_t brdf_bytes = static_cast<std::size_t>(config.brdf_lut_extent) *
-                                   static_cast<std::size_t>(config.brdf_lut_extent) *
-                                   texture_format_byte_size(kIblTextureFormat);
-    data.brdf_lut_rgba32f.reserve(brdf_bytes);
-    append_brdf_lut(data.brdf_lut_rgba32f, config.brdf_lut_extent);
-    return data;
-}
-
-GeneratedPbrEnvironment create_generated_pbr_environment(
+[[nodiscard]] GeneratedPbrEnvironment create_pbr_environment_from_data(
     const cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu,
-    const GeneratedPbrEnvironmentConfig& config) {
-    const GeneratedPbrEnvironmentData data = generate_pbr_environment_data(config);
+    const GeneratedPbrEnvironmentConfig& config, const GeneratedPbrEnvironmentData& data) {
     TextureCube irradiance = create_uploaded_texture_cube(
         device, gpu,
         {
@@ -303,6 +374,111 @@ GeneratedPbrEnvironment create_generated_pbr_environment(
         .prefiltered_mip_levels = config.prefiltered_mip_levels,
         .intensity = config.intensity,
     };
+}
+
+} // namespace
+
+void validate_generated_pbr_environment_config(const GeneratedPbrEnvironmentConfig& config) {
+    if (config.irradiance_extent == 0 || config.prefiltered_extent == 0 ||
+        config.prefiltered_mip_levels == 0 || config.brdf_lut_extent == 0) {
+        throw std::runtime_error("generated PBR environment dimensions must be nonzero");
+    }
+}
+
+void validate_pbr_equirectangular_image(const PbrEquirectangularImage& image) {
+    const std::size_t value_count = checked_equirectangular_value_count(image);
+    if (image.rgba32f.size() != value_count) {
+        throw std::runtime_error("PBR equirectangular image must contain RGBA32F pixels");
+    }
+}
+
+math::Vec3 sample_pbr_equirectangular_radiance(const PbrEquirectangularImage& image,
+                                               math::Vec3 direction) {
+    validate_pbr_equirectangular_image(image);
+    if (glm::dot(direction, direction) <= 0.0F) {
+        throw std::runtime_error("PBR equirectangular sample direction must be nonzero");
+    }
+    return sample_pbr_equirectangular_radiance_unchecked(image, direction);
+}
+
+GeneratedPbrEnvironmentData
+generate_pbr_environment_data(const GeneratedPbrEnvironmentConfig& config) {
+    validate_generated_pbr_environment_config(config);
+    GeneratedPbrEnvironmentData data;
+    data.irradiance_cube_rgba32f.reserve(texture_cube_byte_size(
+        config.irradiance_extent, 1, texture_format_byte_size(kIblTextureFormat)));
+    append_cube(data.irradiance_cube_rgba32f, config.irradiance_extent, 1,
+                [](math::Vec3 direction, std::uint32_t) {
+        return generated_irradiance(direction);
+    });
+
+    data.prefiltered_cube_rgba32f.reserve(texture_cube_byte_size(
+        config.prefiltered_extent, config.prefiltered_mip_levels,
+        texture_format_byte_size(kIblTextureFormat)));
+    append_cube(data.prefiltered_cube_rgba32f, config.prefiltered_extent,
+                config.prefiltered_mip_levels,
+                [&config](math::Vec3 direction, std::uint32_t mip) {
+        const float roughness = config.prefiltered_mip_levels == 1
+                                    ? 0.0F
+                                    : static_cast<float>(mip) /
+                                          static_cast<float>(config.prefiltered_mip_levels - 1U);
+        return generated_prefiltered(direction, roughness);
+    });
+
+    const std::size_t brdf_bytes = static_cast<std::size_t>(config.brdf_lut_extent) *
+                                   static_cast<std::size_t>(config.brdf_lut_extent) *
+                                   texture_format_byte_size(kIblTextureFormat);
+    data.brdf_lut_rgba32f.reserve(brdf_bytes);
+    append_brdf_lut(data.brdf_lut_rgba32f, config.brdf_lut_extent);
+    return data;
+}
+
+GeneratedPbrEnvironmentData generate_pbr_environment_data_from_equirectangular(
+    const PbrEquirectangularImage& image, const GeneratedPbrEnvironmentConfig& config) {
+    validate_generated_pbr_environment_config(config);
+    validate_pbr_equirectangular_image(image);
+    GeneratedPbrEnvironmentData data;
+    data.irradiance_cube_rgba32f.reserve(texture_cube_byte_size(
+        config.irradiance_extent, 1, texture_format_byte_size(kIblTextureFormat)));
+    append_cube(data.irradiance_cube_rgba32f, config.irradiance_extent, 1,
+                [&image](math::Vec3 direction, std::uint32_t) {
+        return equirectangular_irradiance(image, direction);
+    });
+
+    data.prefiltered_cube_rgba32f.reserve(texture_cube_byte_size(
+        config.prefiltered_extent, config.prefiltered_mip_levels,
+        texture_format_byte_size(kIblTextureFormat)));
+    append_cube(data.prefiltered_cube_rgba32f, config.prefiltered_extent,
+                config.prefiltered_mip_levels,
+                [&image, &config](math::Vec3 direction, std::uint32_t mip) {
+        const float roughness = config.prefiltered_mip_levels == 1
+                                    ? 0.0F
+                                    : static_cast<float>(mip) /
+                                          static_cast<float>(config.prefiltered_mip_levels - 1U);
+        return equirectangular_prefiltered(image, direction, roughness);
+    });
+
+    const std::size_t brdf_bytes = static_cast<std::size_t>(config.brdf_lut_extent) *
+                                   static_cast<std::size_t>(config.brdf_lut_extent) *
+                                   texture_format_byte_size(kIblTextureFormat);
+    data.brdf_lut_rgba32f.reserve(brdf_bytes);
+    append_brdf_lut(data.brdf_lut_rgba32f, config.brdf_lut_extent);
+    return data;
+}
+
+GeneratedPbrEnvironment create_generated_pbr_environment(
+    const cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu,
+    const GeneratedPbrEnvironmentConfig& config) {
+    const GeneratedPbrEnvironmentData data = generate_pbr_environment_data(config);
+    return create_pbr_environment_from_data(device, gpu, config, data);
+}
+
+GeneratedPbrEnvironment create_pbr_environment_from_equirectangular(
+    const cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu,
+    const PbrEquirectangularImage& image, const GeneratedPbrEnvironmentConfig& config) {
+    const GeneratedPbrEnvironmentData data =
+        generate_pbr_environment_data_from_equirectangular(image, config);
+    return create_pbr_environment_from_data(device, gpu, config, data);
 }
 
 } // namespace cubey::render

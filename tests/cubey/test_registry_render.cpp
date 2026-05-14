@@ -12,6 +12,8 @@ void test_generated_pbr_environment_config_rejects_zero_dimensions();
 void test_generated_pbr_environment_data_is_deterministic_and_sized();
 void test_generated_pbr_dfg_lut_stores_energy_compensation_term();
 void test_generated_pbr_prefilter_uses_ggx_convolution_not_legacy_average_mix();
+void test_pbr_environment_data_can_be_generated_from_equirectangular_hdr();
+void test_pbr_equirectangular_sampling_maps_cardinal_directions();
 void test_indexed_mesh_config_describes_u16_geometry();
 void test_indexed_mesh_config_describes_u32_geometry();
 void test_instance_buffer_helpers_describe_instance_vertex_data();
@@ -155,6 +157,8 @@ std::span<const TestCase> render_test_cases() {
         CUBEY_TEST(test_generated_pbr_environment_data_is_deterministic_and_sized),
         CUBEY_TEST(test_generated_pbr_dfg_lut_stores_energy_compensation_term),
         CUBEY_TEST(test_generated_pbr_prefilter_uses_ggx_convolution_not_legacy_average_mix),
+        CUBEY_TEST(test_pbr_equirectangular_sampling_maps_cardinal_directions),
+        CUBEY_TEST(test_pbr_environment_data_can_be_generated_from_equirectangular_hdr),
         CUBEY_TEST(test_generated_pbr_environment_config_rejects_zero_dimensions),
         CUBEY_TEST(test_render_resource_registry_tracks_handle_lifetime_and_labels),
         CUBEY_TEST(test_render_resource_handles_are_hashable_keys),
