@@ -18,14 +18,25 @@ option(
     "Fetch selected Khronos glTF sample assets into the build tree"
     OFF
 )
+option(
+    CUBEY_FETCH_HDR_SAMPLE_ASSETS
+    "Fetch selected Filament HDR environment samples into the build tree"
+    OFF
+)
 set(
     CUBEY_GLTF_SAMPLE_ASSETS_DIR
     ""
     CACHE PATH "Existing Khronos glTF-Sample-Assets checkout"
 )
+set(
+    CUBEY_HDR_SAMPLE_ASSETS_DIR
+    ""
+    CACHE PATH "Existing Cubey HDR sample asset directory"
+)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(CubeyApps)
+include(CubeyHdrSamples)
 include(CubeyShaders)
 include(CubeySmokeTests)
 include(CubeyWarnings)
@@ -167,6 +178,10 @@ if (CUBEY_FETCH_GLTF_SAMPLE_ASSETS)
     )
     FetchContent_MakeAvailable(gltf_sample_assets)
     set(CUBEY_GLTF_SAMPLE_ASSETS_DIR "${gltf_sample_assets_SOURCE_DIR}" CACHE PATH "" FORCE)
+endif()
+
+if (CUBEY_FETCH_HDR_SAMPLE_ASSETS)
+    cubey_fetch_hdr_sample_assets()
 endif()
 
 if (CUBEY_BUILD_PROJECTS)
