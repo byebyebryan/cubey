@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <type_traits>
 
 namespace cubey::render {
 namespace {
@@ -16,6 +17,10 @@ namespace {
     default:
         return false;
     }
+}
+
+[[nodiscard]] float material_alpha_mode_uniform(MaterialAlphaMode mode) noexcept {
+    return static_cast<float>(static_cast<std::underlying_type_t<MaterialAlphaMode>>(mode));
 }
 
 } // namespace
@@ -143,7 +148,7 @@ MaterialPassInfo pbr_forward_pass_info(const PbrForwardPassConfig& config) {
     if (config.blend == MaterialBlendMode::AlphaBlend) {
         pass.depth_write = false;
         pass.blend_enable = true;
-        pass.src_color_blend_factor = VK_BLEND_FACTOR_SRC_ALPHA;
+        pass.src_color_blend_factor = VK_BLEND_FACTOR_ONE;
         pass.dst_color_blend_factor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
         pass.src_alpha_blend_factor = VK_BLEND_FACTOR_ONE;
         pass.dst_alpha_blend_factor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
@@ -238,7 +243,8 @@ float pbr_reflectance_from_ior(float ior) {
     return std::clamp(std::sqrt((root_f0 * root_f0) / 0.16F), 0.0F, 1.0F);
 }
 
-PbrMaterialUniforms pbr_material_uniforms(const PbrMaterialFactors& factors) {
+PbrMaterialUniforms pbr_material_uniforms(const PbrMaterialFactors& factors,
+                                          MaterialAlphaMode alpha_mode) {
     return {
         .base_color_factor = factors.base_color_factor,
         .emissive_alpha_cutoff =
@@ -262,8 +268,13 @@ PbrMaterialUniforms pbr_material_uniforms(const PbrMaterialFactors& factors) {
                 factors.specular_color_factor.b,
                 factors.specular_factor,
             },
-        .material_model = {factors.reflectance, 0.0F, 0.0F, 0.0F},
+        .material_model = {factors.reflectance, material_alpha_mode_uniform(alpha_mode), 0.0F,
+                           0.0F},
     };
+}
+
+PbrMaterialUniforms pbr_material_uniforms(const PbrMaterialFactors& factors) {
+    return pbr_material_uniforms(factors, factors.alpha_mode);
 }
 
 PbrPushConstants pbr_push_constants(math::Mat4 model) {

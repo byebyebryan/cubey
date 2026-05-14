@@ -48,7 +48,8 @@ service:
   bounds, and triangle counts;
 - glTF alpha modes map into explicit render material alpha policy: `MASK`
   stays depth-writing and shadow-casting with alpha cutoff, while `BLEND`
-  renders forward-only with alpha blending and no depth writes;
+  renders forward-only with premultiplied source-over alpha blending and no
+  depth writes;
 - texture upload is deduplicated per glTF texture plus color space, and
   sampler `wrapS` / `wrapT` are preserved through Vulkan sampler axes;
 - `destroy_gltf_scene_import()` tears down imported resources without making
@@ -101,8 +102,10 @@ recording. Its PBR shader writes linear HDR scene color and uses the shared
 Cubey PBR helper include for
 base-color-to-diffuse/F0 remapping, reflectance/specular factor controls,
 correlated Smith direct visibility, DFG-based IBL energy compensation, and
-indirect specular occlusion; display transform is applied by the shared post
-shader.
+indirect specular occlusion. Material texture and factor alpha remain
+straight/unassociated inputs; blended fragments emit premultiplied RGB at
+shader output, while opaque and kept masked fragments output alpha 1. Display
+transform is applied by the shared post shader.
 
 ## Boundaries
 

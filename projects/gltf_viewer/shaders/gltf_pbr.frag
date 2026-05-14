@@ -138,5 +138,6 @@ void main() {
     vec3 emissive = texture(emissive_texture, frag_uv0).rgb *
                     material.emissive_alpha_cutoff.rgb;
     vec3 color = ambient + direct + emissive;
-    out_color = vec4(color, base_color.a);
+    float output_alpha = material.material_model.y > 1.5 ? base_color.a : 1.0;
+    out_color = vec4(color * output_alpha, output_alpha);
 }

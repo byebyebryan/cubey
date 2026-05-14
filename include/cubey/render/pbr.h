@@ -61,6 +61,7 @@ struct PbrMaterialFactors {
     math::Vec4 base_color_factor{1.0F, 1.0F, 1.0F, 1.0F};
     math::Vec3 emissive_factor{0.0F, 0.0F, 0.0F};
     float alpha_cutoff = 0.0F;
+    MaterialAlphaMode alpha_mode = MaterialAlphaMode::Opaque;
     float metallic_factor = 1.0F;
     float roughness_factor = 1.0F;
     float normal_scale = 1.0F;
@@ -131,6 +132,8 @@ pbr_display_transform_for_target(VkFormat target_format, float exposure = 0.0F,
 [[nodiscard]] math::Vec4 pbr_display_transform_uniform(const PbrDisplayTransform& transform);
 [[nodiscard]] float pbr_f0_from_reflectance(float reflectance);
 [[nodiscard]] float pbr_reflectance_from_ior(float ior);
+[[nodiscard]] PbrMaterialUniforms pbr_material_uniforms(const PbrMaterialFactors& factors,
+                                                        MaterialAlphaMode alpha_mode);
 [[nodiscard]] PbrMaterialUniforms pbr_material_uniforms(const PbrMaterialFactors& factors);
 [[nodiscard]] PbrPushConstants pbr_push_constants(math::Mat4 model);
 

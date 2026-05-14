@@ -290,6 +290,7 @@ void create_material_resources(Engine& engine, const vulkan::Device& device,
                 .emissive_factor = source.emissive_factor,
                 .alpha_cutoff =
                     source.alpha_mode == asset::GltfAlphaMode::Mask ? source.alpha_cutoff : 0.0F,
+                .alpha_mode = alpha_mode,
                 .metallic_factor = source.metallic_factor,
                 .roughness_factor = source.roughness_factor,
                 .normal_scale = source.normal_scale,

@@ -54,8 +54,10 @@ void ForwardPbrRenderer3D::record_shadow_pass(
                  frame_slot](const vulkan::CommandRecorder& packet_recorder,
                              const scene::RenderDrawPacket3D& packet) {
                     const auto& material = material_instances.at(packet.material);
-                    material.upload(frame_slot, render::pbr_material_uniforms(
-                                                    material_factors.at(packet.material)));
+                    material.upload(frame_slot,
+                                    render::pbr_material_uniforms(
+                                        material_factors.at(packet.material),
+                                        packet.material_info.alpha_mode));
                     render::bind_material_instance(packet_recorder, mask_shadow_pipeline(),
                                                    material.material(), frame_slot);
                     packet_recorder.push_constants(
@@ -108,8 +110,10 @@ void ForwardPbrRenderer3D::record_scene_pass(
                      frame_slot](const vulkan::CommandRecorder& packet_recorder,
                                  const scene::RenderDrawPacket3D& packet) {
                         const auto& material = material_instances.at(packet.material);
-                        material.upload(frame_slot, render::pbr_material_uniforms(
-                                                        material_factors.at(packet.material)));
+                        material.upload(frame_slot,
+                                        render::pbr_material_uniforms(
+                                            material_factors.at(packet.material),
+                                            packet.material_info.alpha_mode));
                         render::bind_material_instance(packet_recorder, pipeline,
                                                        material.material(), frame_slot);
                         packet_recorder.push_constants(

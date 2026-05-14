@@ -75,10 +75,14 @@ void test_pbr_forward_pass_declares_scene_and_material_sets() {
     require(alpha_pass.depth_test && !alpha_pass.depth_write,
             "PBR alpha pass should test but not write depth");
     require(alpha_pass.blend_enable, "PBR alpha pass should enable color blending");
-    require(alpha_pass.src_color_blend_factor == VK_BLEND_FACTOR_SRC_ALPHA,
-            "PBR alpha pass should source blend from alpha");
+    require(alpha_pass.src_color_blend_factor == VK_BLEND_FACTOR_ONE,
+            "PBR alpha pass should use premultiplied source color");
     require(alpha_pass.dst_color_blend_factor == VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
             "PBR alpha pass should destination blend from inverse alpha");
+    require(alpha_pass.src_alpha_blend_factor == VK_BLEND_FACTOR_ONE,
+            "PBR alpha pass should preserve source alpha");
+    require(alpha_pass.dst_alpha_blend_factor == VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
+            "PBR alpha pass should composite alpha with inverse source alpha");
 }
 
 void test_pbr_material_factors_are_uniforms_and_push_constants_are_model_only() {
@@ -95,6 +99,7 @@ void test_pbr_material_factors_are_uniforms_and_push_constants_are_model_only() 
     factors.specular_color_factor = {0.7F, 0.8F, 0.9F};
     factors.specular_factor = 0.65F;
     factors.reflectance = 0.42F;
+    factors.alpha_mode = cubey::render::MaterialAlphaMode::Blend;
 
     const cubey::render::PbrMaterialUniforms uniforms =
         cubey::render::pbr_material_uniforms(factors);
@@ -117,6 +122,14 @@ void test_pbr_material_factors_are_uniforms_and_push_constants_are_model_only() 
             "PBR material uniforms should pack specular extension factors");
     require(uniforms.material_model.x == factors.reflectance,
             "PBR material uniforms should pack dielectric reflectance");
+    require(uniforms.material_model.y ==
+                static_cast<float>(static_cast<std::underlying_type_t<
+                                   cubey::render::MaterialAlphaMode>>(factors.alpha_mode)),
+            "PBR material uniforms should pack alpha mode");
+    const cubey::render::PbrMaterialUniforms opaque_uniforms =
+        cubey::render::pbr_material_uniforms(factors, cubey::render::MaterialAlphaMode::Opaque);
+    require(opaque_uniforms.material_model.y == 0.0F,
+            "PBR material uniforms should allow render policy to override factor alpha mode");
 
     const cubey::render::PbrPushConstants constants =
         cubey::render::pbr_push_constants(cubey::math::Mat4{1.0F});
@@ -311,6 +324,11 @@ void test_pbr_shaders_use_filament_style_material_remap() {
 
     require_contains(gltf, "cubey_pbr_lambert_diffuse(diffuse_color)",
                      "glTF direct diffuse should use the shared Lambert helper");
+    require_contains(gltf, "float output_alpha = material.material_model.y > 1.5 ? "
+                           "base_color.a : 1.0;",
+                     "glTF PBR shader should only use base alpha for blended materials");
+    require_contains(gltf, "out_color = vec4(color * output_alpha, output_alpha);",
+                     "glTF PBR shader should emit premultiplied alpha for blending");
     require_contains(gltf, "if (alpha_cutoff > 0.0 && base_color.a < alpha_cutoff)",
                      "glTF PBR shader should discard masked fragments by alpha cutoff");
     require_contains(gltf_shadow, "uniform sampler2D base_color_texture",

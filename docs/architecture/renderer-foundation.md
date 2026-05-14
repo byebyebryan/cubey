@@ -310,4 +310,6 @@ recording stay in separate source files behind the public renderer/request
 contract. The PBR path now treats material alpha policy as render policy:
 masked materials still write depth and cast cutout shadows through an
 alpha-tested shadow path, while blended materials render after opaque/masked
-packets with depth testing enabled and depth writes disabled.
+packets with depth testing enabled and depth writes disabled. PBR blended
+materials use premultiplied source-over blending; material textures and factors
+stay straight alpha until the fragment shader emits final premultiplied color.

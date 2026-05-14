@@ -17,6 +17,7 @@ enum class MaterialDomain : std::uint8_t {
 
 enum class MaterialBlendMode : std::uint8_t {
     Opaque,
+    // Premultiplied source-over blending; material inputs remain straight alpha.
     AlphaBlend,
 };
 
