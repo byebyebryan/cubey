@@ -69,7 +69,7 @@ void test_smoke_tests_fail_on_vulkan_validation_errors() {
 void test_pbr_furnace_headless_path_transitions_depth_attachment() {
     const std::filesystem::path root{CUBEY_SOURCE_DIR};
     const std::string app =
-        read_source_file(root / "projects/pbr_furnace/pbr_furnace_app.cpp");
+        read_source_file(root / "projects/pbr_furnace/pbr_furnace_render.cpp");
 
     require_contains(app, "begin_depth_attachment_transition",
                      "pbr_furnace headless target path should transition its depth attachment");

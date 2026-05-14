@@ -7,7 +7,10 @@ cubey_add_app_target(
     SOURCES
         main.cpp
         pbr_furnace_app.cpp
+        pbr_furnace_render.cpp
+        pbr_furnace_resources.cpp
         pbr_furnace_scene.cpp
+        pbr_furnace_scene_runtime.cpp
     SHADERS
         shaders/pbr_furnace.vert
         shaders/pbr_furnace.frag
