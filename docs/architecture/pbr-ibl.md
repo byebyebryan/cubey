@@ -18,12 +18,13 @@ Radiance HDR equirectangular environment assets:
 - an HDR image loader decodes Radiance `.hdr` images into linear `RGBA32F`
   CPU data, and the render layer can build setup-time irradiance and
   GGX-prefiltered cubemaps from equirectangular radiance;
-- `gltf_viewer` binds those resources into the existing PBR scene material and
-  lights the glTF PBR shader with Filament-style base-color remapping,
-  factor-only IOR/specular material controls, DFG-based IBL, specular energy
-  compensation, correlated Smith direct visibility, indirect specular
-  occlusion, environment rotation, exposure, and a skybox pass while keeping
-  shader/pass selection project-owned;
+- `PbrViewRenderer3D` binds those resources for reusable shadow, skybox, and
+  PBR forward rendering of a caller-provided 3D frame plan. It lights the glTF
+  PBR shader with Filament-style base-color remapping, factor-only IOR/specular
+  material controls, DFG-based IBL, specular energy compensation, correlated
+  Smith direct visibility, indirect specular occlusion, environment rotation,
+  and exposure while keeping asset loading, shader paths, and environment
+  selection project-owned;
 - `pbr_furnace` isolates the current IBL/specular behavior with a white sphere
   grid that sweeps roughness across columns and metallic across rows under a
   uniform white environment;

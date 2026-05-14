@@ -160,14 +160,20 @@ full engine architecture.
 - `cubey::render::MaterialPassInfo` is the first explicit material/pass
   metadata contract. It describes pass kind, descriptor layout shape,
   push-constant ranges, and reusable graphics pipeline state.
-- `PbrVertex`, `PbrSceneUniforms`, `PbrMaterialFactors`,
-  `PbrMaterialUniforms`, `PbrPushConstants`, and
+- `PbrVertex`, `PbrSceneUniforms`, `PbrSkyboxUniforms`, `PbrMaterialFactors`,
+  `PbrMaterialUniforms`, `PbrPushConstants`, `pbr_skybox_pass_info()`, and
   `pbr_forward_pass_info()` define the current PBR forward-pass contract: one
   scene uniform/shadow/IBL set, one material texture/uniform set, model-only
-  per-draw push constants, and factor-only reflectance/specular controls. The
-  scene set includes irradiance cube, prefiltered cube, and the DFG/BRDF lookup
-  binding. `PbrDisplayTransform` carries the final exposure, tone-map, and
-  output-encoding controls used by direct-to-target PBR passes.
+  per-draw push constants, a skybox environment set, and factor-only
+  reflectance/specular controls. The scene set includes irradiance cube,
+  prefiltered cube, and the DFG/BRDF lookup binding. `PbrDisplayTransform`
+  carries the final exposure, tone-map, and output-encoding controls used by
+  direct-to-target PBR passes.
+- `cubey::engine::PbrViewRenderer3D` is the first reusable renderer policy
+  layer above scene/render/vulkan. It owns the repeated shadow map, skybox,
+  forward PBR pipelines, scene/skybox material descriptors, depth attachment,
+  and render-graph recording for a 3D PBR view while still taking shader paths,
+  material tables, frame plans, and environment choice from the project.
 - `GeneratedPbrEnvironment` creates setup-time irradiance cube,
   GGX-prefiltered radiance cube, and DFG LUT resources from either deterministic
   generated radiance or equirectangular HDR image data. The shared PBR shader
@@ -281,8 +287,7 @@ planning, render-item draw intent, target/texture ownership, material pass
 metadata, depth-only rendering info, synchronous pass-callback execution,
 execution-time resource resolution, simple transient allocation, frame-slot
 resource ownership, and graph-owned barrier recording. Render-graph
-scheduling, renderer-owned material binding policy, shadow policy, and transient
-aliasing remain future work. `shadow_cube` now uses the reusable
-`ShadowMapPass3D` target/pipeline helper while keeping scene/view setup, graph
-declaration, shader-specific push constants, and pass recording local to the
-example.
+scheduling, transient aliasing, and broader material systems remain future
+work. `shadow_cube` still uses the lower-level `ShadowMapPass3D` helper
+directly, while `gltf_viewer` now uses `PbrViewRenderer3D` for reusable
+shadow/skybox/PBR graph recording.

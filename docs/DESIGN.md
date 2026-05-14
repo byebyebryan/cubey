@@ -132,10 +132,13 @@ Reusable spatial types should stay explicit and narrow:
   static glTF/glb meshes, nodes, images, samplers, and metallic-roughness
   materials, plus standalone Radiance HDR image decode for IBL inputs; it does
   not create scenes, render handles, Vulkan resources, or a material system.
-- `cubey::engine` owns the current static glTF scene importer. It maps CPU
-  asset nodes into scene entities, registry-issued render handles, app-owned
-  mesh/material resources, uploaded textures, and imported bounds while leaving
-  shader, pass, and renderer policy to the project.
+- `cubey::engine` owns the current static glTF scene importer and reusable PBR
+  view renderer. The importer maps CPU asset nodes into scene entities,
+  registry-issued render handles, app-owned mesh/material resources, uploaded
+  textures, and imported bounds. `PbrViewRenderer3D` owns the repeated
+  shadow/skybox/PBR forward pass resources and render-graph recording while
+  keeping shader paths, asset loading, environment choice, and view setup
+  project-owned.
 - `cubey::render` owns the current generated and HDR equirectangular PBR IBL
   environment helpers for irradiance cube, GGX-prefiltered cube, and DFG LUT
   resources.
@@ -159,9 +162,10 @@ Reusable spatial types should stay explicit and narrow:
   layer only; material pass metadata can describe pass participation,
   descriptor layout shape, push constants, and reusable pipeline state. The
   render layer now owns small material-instance descriptor lifetimes and shared
-  draw-recording helpers, while concrete descriptor resources, pass order,
-  light upload, shader selection, and broader material policy stay owned by
-  examples/projects for now.
+  draw-recording helpers. The engine-layer PBR view renderer owns the first
+  reusable renderer policy for shadow, skybox, and PBR forward passes, while
+  asset loading, shader selection, environment selection, and broader material
+  policy stay owned by projects for now.
 
 The broader entity/component shape is captured in the
 [entity and component foundation](architecture/entity-component-foundation.md):
@@ -383,6 +387,7 @@ cubey/
         capture_queue.h    -- job-backed PNG capture encoding queue
         engine.h           -- scoped root owner for runtime, scenes, and registries
         gltf_scene_importer.h -- static glTF scene/resource bridge
+        pbr_view_renderer.h -- reusable shadow/skybox/PBR view renderer
         project_gpu_services.h -- project-facing GPU uploads/readbacks/retirement
         project_runtime.h  -- async-ready project vocabulary
         upload_queue.h     -- CPU-owned upload request queue
@@ -398,7 +403,7 @@ cubey/
       render/
         generated_ibl.h    -- generated and HDR-backed PBR IBL environment resources
         material.h         -- material metadata and material/pass contracts
-        pbr.h              -- current PBR vertex, scene, material, and push-constant contract
+        pbr.h              -- current PBR vertex, scene, skybox, material, and push-constant contract
         target.h           -- color/depth render target views
         pass.h             -- dynamic-rendering pass recording helpers
         mesh.h             -- indexed mesh buffers and draw item vocabulary
@@ -493,7 +498,7 @@ cubey/
       gltf_viewer/
         CMakeLists.txt
         main.cpp
-        gltf_viewer_app.*  -- static glTF/PBR/IBL/shadow/headless viewer orchestration
+        gltf_viewer_app.*  -- static glTF/PBR/IBL/headless viewer orchestration
       pbr_furnace/
         CMakeLists.txt
         main.cpp

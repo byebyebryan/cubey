@@ -36,7 +36,8 @@ extensions, multiple UV sets, vertex colors, sparse accessors, material
 variants, transmission, clearcoat, glTF environment extensions, animation,
 skinning, and streaming remain future slices.
 
-`cubey::engine` owns the current asset-to-scene bridge:
+`cubey::engine` owns the current asset-to-scene bridge and reusable PBR view
+renderer:
 
 - `GltfSceneImportResources` stores app-owned mesh resources, material
   instances, material factors, uploaded material textures, and default PBR
@@ -47,7 +48,10 @@ skinning, and streaming remain future slices.
 - texture upload is deduplicated per glTF texture plus color space, and
   sampler `wrapS` / `wrapT` are preserved through Vulkan sampler axes;
 - `destroy_gltf_scene_import()` tears down imported resources without making
-  the engine own Vulkan texture or mesh lifetime globally.
+  the engine own Vulkan texture or mesh lifetime globally;
+- `PbrViewRenderer3D` owns the reusable shadow map, skybox, forward PBR
+  pipelines, scene/skybox material descriptors, depth attachment, and render
+  graph recording for a 3D PBR view.
 
 `cubey::render` owns the reusable GPU-facing pieces:
 
@@ -71,10 +75,9 @@ directory is configured, and otherwise renders a generated PBR cube. It can use
 `--environment path/to/env.hdr` or the optional fetched Filament
 `lightroom_14b.hdr` sample for HDR-backed IBL and skybox rendering; without
 one, it falls back to the generated environment. It creates camera and light
-entities around imported bounds, records shadow, skybox, and PBR scene passes
-through the render graph, binds IBL resources into the PBR scene material,
-supports opaque plus alpha forward pipelines, and can run windowed or headless
-PNG capture. Its PBR shader uses the shared Cubey PBR helper include for
+entities around imported bounds, builds shadow and scene frame plans, and hands
+those plans plus material/resource tables to `PbrViewRenderer3D` for pass
+recording. Its PBR shader uses the shared Cubey PBR helper include for
 base-color-to-diffuse/F0 remapping, reflectance/specular factor controls,
 correlated Smith direct visibility, DFG-based IBL energy compensation, and
 indirect specular occlusion.
@@ -87,13 +90,15 @@ handles, textures, descriptors, pipelines, or scenes.
 The engine importer is the current bridge between asset data and runtime scene
 resources. It creates scene/render handles and app-owned resource tables, but
 it does not choose shaders, record passes, allocate pipelines, or define
-renderer-wide material policy.
+renderer-wide material policy. `PbrViewRenderer3D` is a separate engine-layer
+renderer helper: it records one PBR view using caller-provided shader paths,
+frame plans, material tables, and environment resources.
 
 The render layer exposes contracts and helpers, not a full material system.
-Texture lifetime, descriptor writes, material sorting policy, alpha/shadow
-policy, shader selection, and environment selection still belong to the project
-or future renderer layer. Specular textures, clearcoat, transmission, and other
-glTF material extensions remain future slices.
+Texture lifetime, descriptor writes, material sorting policy, shader selection,
+and environment selection still belong to the project or future renderer layer.
+Specular textures, clearcoat, transmission, and other glTF material extensions
+remain future slices.
 
 ## Next Slices
 

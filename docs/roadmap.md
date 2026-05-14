@@ -290,10 +290,10 @@ Current checkpoint:
   transient allocation, and CPU pass planning.
 - `projects/gltf_viewer` links against `cubey`, loads static glTF/glb assets
   through `cubey::asset`, imports scene/render resources through the shared
-  engine glTF scene importer, uploads PBR material textures, renders with the
-  reusable PBR forward-pass contract, binds generated or HDR-backed IBL
-  resources, and records shadow, skybox, and scene passes through the render
-  graph. It supports windowed and headless PNG output and falls back to a
+  engine glTF scene importer, uploads PBR material textures, builds shadow and
+  scene frame plans, and delegates reusable shadow/skybox/PBR graph recording
+  to `PbrViewRenderer3D`. It binds generated or HDR-backed IBL resources,
+  supports windowed and headless PNG output, and falls back to a
   generated PBR cube when no input asset or sample-asset checkout is configured.
 - `projects/pbr_furnace` links against `cubey` and renders a white-furnace PBR
   validation grid: shared UV-sphere primitive mesh, roughness columns, metallic
