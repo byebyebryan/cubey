@@ -16,6 +16,7 @@ add_executable(cubey_core_tests
     file_io_tests.cpp
     frame_clock_tests.cpp
     gltf_asset_tests.cpp
+    gltf_scene_importer_animation_tests.cpp
     frame_resources_tests.cpp
     host_headless_png_host_tests.cpp
     host_frame_stats_tests.cpp

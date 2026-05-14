@@ -50,6 +50,7 @@ void GltfViewerApp::create_imported_asset_scene(const cubey::vulkan::Device& dev
                                                   .frame_slot_count = frame_slot_count,
                                                   .label_prefix = "gltf_viewer",
                                               });
+    animation_playback_ = {};
     scene_bounds_ = import_result_.bounds;
     triangle_count_ = import_result_.triangle_count;
     create_camera_and_light(setup);

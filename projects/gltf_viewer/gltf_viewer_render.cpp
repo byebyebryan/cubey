@@ -24,6 +24,7 @@ void GltfViewerApp::destroy_all_resources() {
     ibl_environment_.reset();
     destroy_scene_if_needed();
     cubey::destroy_gltf_scene_import(engine_, import_resources_, import_result_);
+    animation_playback_ = {};
     triangle_count_ = 0;
     normal_default_.reset();
     metallic_roughness_default_.reset();

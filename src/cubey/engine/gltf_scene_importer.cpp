@@ -184,13 +184,16 @@ void accumulate_node_bounds(const asset::GltfAsset& asset,
 }
 
 Entity create_node(SceneTransaction& transaction, const asset::GltfAsset& asset,
-                   const GltfSceneImportResources& resources, std::uint32_t node_index,
-                   Entity parent) {
+                   const GltfSceneImportResources& resources, GltfSceneImportResult& result,
+                   std::uint32_t node_index, Entity parent) {
     if (node_index >= asset.nodes.size()) {
         throw std::runtime_error("glTF scene node index is out of range");
     }
     const asset::GltfNode& node = asset.nodes[node_index];
     Entity entity = transaction.entities().create();
+    if (node_index < result.node_entities.size()) {
+        result.node_entities[node_index] = entity;
+    }
     transaction.transforms3d().create(entity, transform_from_node(node), parent);
 
     if (node.mesh_index != asset::kInvalidAssetIndex) {
@@ -217,7 +220,7 @@ Entity create_node(SceneTransaction& transaction, const asset::GltfAsset& asset,
     }
 
     for (const std::uint32_t child : node.children) {
-        create_node(transaction, asset, resources, child, entity);
+        create_node(transaction, asset, resources, result, child, entity);
     }
     return entity;
 }
@@ -240,11 +243,13 @@ GltfSceneImportResult import_gltf_scene(Engine& engine, SceneTransaction& transa
         create_material_resources(engine, device, gpu, resources, result, asset, config);
         create_mesh_resources(engine, gpu, resources, result, asset, config);
         result.bounds = calculate_scene_bounds(asset, resources, scene_index);
+        result.node_entities.resize(asset.nodes.size());
 
         const asset::GltfScene& scene = asset.scenes[scene_index];
         result.root_entities.reserve(scene.root_nodes.size());
         for (const std::uint32_t root : scene.root_nodes) {
-            result.root_entities.push_back(create_node(transaction, asset, resources, root, {}));
+            result.root_entities.push_back(
+                create_node(transaction, asset, resources, result, root, {}));
         }
 
         resources.active = true;
@@ -290,6 +295,40 @@ void destroy_gltf_scene_import(Engine& engine, GltfSceneImportResources& resourc
     resources.base_color_default.reset();
     resources.active = false;
     result = {};
+}
+
+void apply_gltf_rigid_animation_sample(SceneEditQueue& edits, const asset::GltfAsset& asset,
+                                       const GltfSceneImportResult& result,
+                                       const animation::GltfAnimationSample& sample) {
+    if (result.node_entities.size() < asset.nodes.size()) {
+        throw std::runtime_error("glTF import result does not contain node entity mapping");
+    }
+
+    const std::size_t sample_count = std::min(sample.nodes.size(), asset.nodes.size());
+    for (std::size_t node_index = 0; node_index < sample_count; ++node_index) {
+        const animation::GltfNodeAnimationSample& node_sample = sample.nodes[node_index];
+        if (!node_sample.has_translation && !node_sample.has_rotation && !node_sample.has_scale) {
+            continue;
+        }
+
+        const Entity entity = result.node_entities[node_index];
+        if (!entity) {
+            continue;
+        }
+
+        const asset::GltfNode& node = asset.nodes[node_index];
+        Transform3D transform = transform_from_node(node);
+        if (node_sample.has_translation) {
+            transform.translation = node_sample.translation;
+        }
+        if (node_sample.has_rotation) {
+            transform.rotation = node_sample.rotation;
+        }
+        if (node_sample.has_scale) {
+            transform.scale = node_sample.scale;
+        }
+        edits.transforms3d().set_local_transform(entity, transform);
+    }
 }
 
 } // namespace cubey

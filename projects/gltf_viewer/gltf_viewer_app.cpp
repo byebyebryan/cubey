@@ -144,6 +144,7 @@ int GltfViewerApp::run_windowed() {
         destroy_swapchain_resources();
     };
     callbacks.update = [this](cubey::host::WindowedAppContext& context, const FrameTiming& timing) {
+        update_animation(static_cast<float>(timing.delta_seconds));
         orbit_controller_.update_from_input(context.input(), timing.delta_seconds);
         update_camera_transform();
     };

@@ -3,6 +3,7 @@
 #include "gltf_viewer_app.h"
 
 #include <cubey/asset/gltf_asset.h>
+#include <cubey/animation/gltf_animation.h>
 #include <cubey/core/math.h>
 #include <cubey/engine/engine.h>
 #include <cubey/engine/forward_pbr_renderer_3d.h>
@@ -92,6 +93,7 @@ class GltfViewerApp {
 
     void create_fallback_scene();
     void create_camera_and_light(cubey::SceneTransaction& setup);
+    void update_animation(float delta_seconds);
     void update_camera_transform();
     [[nodiscard]] cubey::scene::FrameRenderPlan3D
     current_frame_plan(const cubey::SceneReadView& view, VkExtent2D color_extent) const;
@@ -126,6 +128,7 @@ class GltfViewerApp {
     cubey::Bounds3D scene_bounds_{};
     float camera_distance_ = 4.2F;
     cubey::OrbitController orbit_controller_;
+    cubey::animation::GltfAnimationPlayback animation_playback_{};
     std::uint32_t triangle_count_ = 0;
 
     cubey::GltfSceneImportResources import_resources_{};

@@ -53,6 +53,15 @@ if (BUILD_TESTING)
             "${CMAKE_CURRENT_SOURCE_DIR}"
     )
 
+    add_test(
+        NAME gltf_viewer_autoplays_first_gltf_animation
+        COMMAND
+            /bin/sh -c
+            "grep -R --include='*.cpp' --include='*.h' -q 'advance_gltf_animation_playback' \"$1\" && grep -R --include='*.cpp' --include='*.h' -q 'sample_gltf_animation' \"$1\" && grep -R --include='*.cpp' --include='*.h' -q 'apply_gltf_rigid_animation_sample' \"$1\""
+            gltf_viewer_autoplays_first_gltf_animation
+            "${CMAKE_CURRENT_SOURCE_DIR}"
+    )
+
     set(CUBEY_GLTF_VIEWER_HEADLESS_SMOKE_OUTPUT
         "${CMAKE_CURRENT_BINARY_DIR}/gltf-viewer-headless-smoke.png"
     )

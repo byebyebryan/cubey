@@ -61,6 +61,27 @@ void GltfViewerApp::create_camera_and_light(cubey::SceneTransaction& setup) {
     light_entity_ = cubey::scene::create_directional_light_entity_3d(setup, sunlight);
 }
 
+void GltfViewerApp::update_animation(float delta_seconds) {
+    if (!asset_.has_value() || asset_->animations.empty()) {
+        return;
+    }
+    if (animation_playback_.animation_index >= asset_->animations.size()) {
+        animation_playback_.animation_index = 0;
+    }
+
+    const cubey::asset::GltfAnimation& animation =
+        asset_->animations[animation_playback_.animation_index];
+    cubey::animation::advance_gltf_animation_playback(animation_playback_, delta_seconds,
+                                                      animation.duration_seconds);
+    const cubey::animation::GltfAnimationSample sample =
+        cubey::animation::sample_gltf_animation(asset_.value(), animation,
+                                                animation_playback_.time_seconds);
+
+    cubey::SceneEditQueue edits = scene().create_edit_queue();
+    cubey::apply_gltf_rigid_animation_sample(edits, asset_.value(), import_result_, sample);
+    scene().commit(edits);
+}
+
 void GltfViewerApp::update_camera_transform() {
     cubey::SceneEditQueue edits = scene().create_edit_queue();
     edits.transforms3d().set_local_transform(camera_entity_,

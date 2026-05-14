@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cubey/animation/gltf_animation.h>
 #include <cubey/asset/gltf_asset.h>
 #include <cubey/render/material_instance.h>
 #include <cubey/render/mesh.h>
@@ -18,6 +19,7 @@
 namespace cubey {
 
 class Engine;
+class SceneEditQueue;
 class SceneTransaction;
 
 namespace vulkan {
@@ -39,6 +41,7 @@ struct GltfSceneImportConfig {
 
 struct GltfSceneImportResult {
     std::vector<Entity> root_entities{};
+    std::vector<Entity> node_entities{};
     Bounds3D bounds{};
     std::uint32_t triangle_count = 0;
     std::vector<render::MeshHandle> mesh_handles{};
@@ -70,5 +73,9 @@ import_gltf_scene(Engine& engine, SceneTransaction& transaction, const asset::Gl
 
 void destroy_gltf_scene_import(Engine& engine, GltfSceneImportResources& resources,
                                GltfSceneImportResult& result);
+
+void apply_gltf_rigid_animation_sample(SceneEditQueue& edits, const asset::GltfAsset& asset,
+                                       const GltfSceneImportResult& result,
+                                       const animation::GltfAnimationSample& sample);
 
 } // namespace cubey

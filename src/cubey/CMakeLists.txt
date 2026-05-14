@@ -232,6 +232,7 @@ target_link_libraries(
     cubey_engine
     PUBLIC
         cubey::core
+        cubey::animation
         cubey::vulkan
         cubey::render
         cubey::scene
