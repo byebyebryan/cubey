@@ -16,6 +16,7 @@
 
 #include <array>
 #include <cstdint>
+#include <filesystem>
 #include <memory>
 #include <optional>
 #include <string>
@@ -83,12 +84,14 @@ struct GltfDeformationPrimitiveResources {
 
 struct GltfDeformationResources {
     render::FrameMeshResourceTable frame_meshes{};
+    std::unique_ptr<render::ComputePipelineResource> pipeline{};
     std::vector<GltfDeformationPrimitiveResources> primitives{};
 };
 
 struct GltfSceneImportConfig {
     std::uint32_t scene_index = asset::kInvalidAssetIndex;
     std::uint32_t frame_slot_count = 1;
+    std::filesystem::path deformation_compute_shader{};
     std::string label_prefix = "gltf";
 };
 
@@ -125,6 +128,9 @@ struct GltfSceneImportResources {
 gltf_primitive_deformation_kind(const asset::GltfNode& node,
                                 const asset::GltfMeshPrimitive& primitive);
 [[nodiscard]] bool gltf_primitive_requires_deformation(GltfPrimitiveDeformationKind kind);
+[[nodiscard]] std::vector<render::GpuDeformationCommand>
+gltf_deformation_commands_for_frame(const GltfSceneImportResources& resources,
+                                    render::FrameSlot frame_slot);
 
 [[nodiscard]] GltfSceneImportResult
 import_gltf_scene(Engine& engine, SceneTransaction& transaction, const asset::GltfAsset& asset,

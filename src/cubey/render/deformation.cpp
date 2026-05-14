@@ -39,6 +39,12 @@ vulkan::DescriptorSetInfo gpu_deformation_descriptor_set_info(std::uint32_t max_
 ComputePipelineResourceConfig
 gpu_deformation_pipeline_config(std::filesystem::path compute_shader) {
     static const std::array<VkDescriptorSetLayout, 0> kNoLayouts{};
+    return gpu_deformation_pipeline_config(std::move(compute_shader), kNoLayouts);
+}
+
+ComputePipelineResourceConfig gpu_deformation_pipeline_config(
+    std::filesystem::path compute_shader,
+    std::span<const VkDescriptorSetLayout> descriptor_set_layouts) {
     static const std::array<VkPushConstantRange, 1> kPushConstants{
         VkPushConstantRange{
             .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
@@ -48,7 +54,7 @@ gpu_deformation_pipeline_config(std::filesystem::path compute_shader) {
     };
     return {
         .shader_stage = compute_shader_file(std::move(compute_shader)),
-        .descriptor_set_layouts = kNoLayouts,
+        .descriptor_set_layouts = descriptor_set_layouts,
         .push_constants = kPushConstants,
     };
 }
@@ -83,6 +89,30 @@ void record_gpu_deformation_dispatch(const vulkan::CommandRecorder& recorder,
                                  descriptor_set);
     recorder.push_constants(pipeline.layout(), VK_SHADER_STAGE_COMPUTE_BIT, 0, push_constants);
     recorder.dispatch(dispatch.x, dispatch.y, dispatch.z);
+}
+
+void record_gpu_deformation_dispatch(const vulkan::CommandRecorder& recorder,
+                                     const GpuDeformationCommand& command,
+                                     std::uint32_t group_size) {
+    if (!command.mesh) {
+        throw std::runtime_error("deformation command requires a mesh handle");
+    }
+    if (command.output_mesh == nullptr) {
+        throw std::runtime_error("deformation command requires an output mesh");
+    }
+    if (command.pipeline == nullptr) {
+        throw std::runtime_error("deformation command requires a pipeline");
+    }
+    record_gpu_deformation_dispatch(recorder, *command.pipeline, command.descriptor_set,
+                                    command.push_constants, group_size);
+}
+
+void record_gpu_deformation_commands(const vulkan::CommandRecorder& recorder,
+                                     std::span<const GpuDeformationCommand> commands,
+                                     std::uint32_t group_size) {
+    for (const GpuDeformationCommand& command : commands) {
+        record_gpu_deformation_dispatch(recorder, command, group_size);
+    }
 }
 
 } // namespace cubey::render

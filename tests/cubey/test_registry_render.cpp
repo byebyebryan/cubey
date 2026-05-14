@@ -83,6 +83,7 @@ void test_frame_mesh_table_resolves_per_frame_override();
 void test_gpu_deformation_descriptor_set_declares_storage_buffers();
 void test_gpu_deformation_descriptor_set_scales_for_frame_slots();
 void test_gpu_deformation_dispatch_groups_round_up_vertices();
+void test_gpu_deformation_pipeline_config_accepts_descriptor_layouts();
 void test_gpu_deformation_pipeline_config_uses_compute_stage_and_push_constants();
 void test_gpu_deformation_shader_morphs_before_skinning();
 void test_render_pass_helpers_describe_clear_values_and_fullscreen_triangle();
@@ -188,6 +189,7 @@ std::span<const TestCase> render_test_cases() {
         CUBEY_TEST(test_gpu_deformation_descriptor_set_scales_for_frame_slots),
         CUBEY_TEST(test_gpu_deformation_dispatch_groups_round_up_vertices),
         CUBEY_TEST(test_gpu_deformation_pipeline_config_uses_compute_stage_and_push_constants),
+        CUBEY_TEST(test_gpu_deformation_pipeline_config_accepts_descriptor_layouts),
         CUBEY_TEST(test_gpu_deformation_shader_morphs_before_skinning),
         CUBEY_TEST(test_render_pass_helpers_describe_clear_values_and_fullscreen_triangle),
         CUBEY_TEST(test_pbr_vertex_layout_matches_shader_contract),

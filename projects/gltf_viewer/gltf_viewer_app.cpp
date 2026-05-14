@@ -173,7 +173,7 @@ int GltfViewerApp::run_windowed() {
             .run_config = config_,
             .app_name = "gltf_viewer",
             .ready_status = "rendering glTF/PBR viewer",
-            .required_queue_flags = VK_QUEUE_GRAPHICS_BIT,
+            .required_queue_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
             .swapchain_image_usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
             .require_dynamic_rendering = true,
             .close_on_escape = true,
@@ -184,7 +184,7 @@ int GltfViewerApp::run_windowed() {
 int GltfViewerApp::run_headless() {
     cubey::host::HeadlessPngHostConfig host_config;
     host_config.run_config = config_;
-    host_config.required_queue_flags = VK_QUEUE_GRAPHICS_BIT;
+    host_config.required_queue_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT;
     host_config.output_format = VK_FORMAT_R8G8B8A8_UNORM;
     host_config.require_dynamic_rendering = true;
 

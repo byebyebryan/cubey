@@ -1,6 +1,8 @@
 #pragma once
 
+#include <cubey/render/mesh.h>
 #include <cubey/render/pipeline_resource.h>
+#include <cubey/render/resource_handle.h>
 #include <cubey/vulkan/command_recorder.h>
 #include <cubey/vulkan/descriptors.h>
 
@@ -8,6 +10,7 @@
 
 #include <cstdint>
 #include <filesystem>
+#include <span>
 
 namespace cubey::render {
 
@@ -40,11 +43,22 @@ struct GpuDeformationDispatch {
     std::uint32_t z = 1;
 };
 
+struct GpuDeformationCommand {
+    MeshHandle mesh{};
+    const Mesh* output_mesh = nullptr;
+    const ComputePipelineResource* pipeline = nullptr;
+    VkDescriptorSet descriptor_set = VK_NULL_HANDLE;
+    GpuDeformationPushConstants push_constants{};
+};
+
 [[nodiscard]] vulkan::DescriptorSetInfo gpu_deformation_descriptor_set_info();
 [[nodiscard]] vulkan::DescriptorSetInfo
 gpu_deformation_descriptor_set_info(std::uint32_t max_sets);
 [[nodiscard]] ComputePipelineResourceConfig
 gpu_deformation_pipeline_config(std::filesystem::path compute_shader);
+[[nodiscard]] ComputePipelineResourceConfig gpu_deformation_pipeline_config(
+    std::filesystem::path compute_shader,
+    std::span<const VkDescriptorSetLayout> descriptor_set_layouts);
 [[nodiscard]] GpuDeformationDispatch
 gpu_deformation_dispatch_groups(std::uint32_t vertex_count, std::uint32_t group_size = 64);
 
@@ -52,6 +66,12 @@ void record_gpu_deformation_dispatch(const vulkan::CommandRecorder& recorder,
                                      const ComputePipelineResource& pipeline,
                                      VkDescriptorSet descriptor_set,
                                      const GpuDeformationPushConstants& push_constants,
+                                     std::uint32_t group_size = 64);
+void record_gpu_deformation_dispatch(const vulkan::CommandRecorder& recorder,
+                                     const GpuDeformationCommand& command,
+                                     std::uint32_t group_size = 64);
+void record_gpu_deformation_commands(const vulkan::CommandRecorder& recorder,
+                                     std::span<const GpuDeformationCommand> commands,
                                      std::uint32_t group_size = 64);
 
 } // namespace cubey::render

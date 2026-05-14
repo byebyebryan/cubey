@@ -48,6 +48,8 @@ void GltfViewerApp::create_imported_asset_scene(const cubey::vulkan::Device& dev
     import_result_ = cubey::import_gltf_scene(engine_, setup, asset, device, gpu, import_resources_,
                                               cubey::GltfSceneImportConfig{
                                                   .frame_slot_count = frame_slot_count,
+                                                  .deformation_compute_shader =
+                                                      shader_path("gltf_deform.comp.spv"),
                                                   .label_prefix = "gltf_viewer",
                                               });
     animation_playback_ = {};

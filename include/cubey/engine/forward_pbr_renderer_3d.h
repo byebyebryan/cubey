@@ -3,6 +3,7 @@
 #include <cubey/core/math.h>
 #include <cubey/render/frame_data.h>
 #include <cubey/render/generated_ibl.h>
+#include <cubey/render/deformation.h>
 #include <cubey/render/material_instance.h>
 #include <cubey/render/mesh.h>
 #include <cubey/render/pbr.h>
@@ -102,6 +103,7 @@ struct ForwardPbrRenderer3DViewInfo {
 struct ForwardPbrRenderer3DResourceInfo {
     const render::MeshResourceTable<render::Mesh>* meshes = nullptr;
     const render::FrameMeshResourceTable* frame_meshes = nullptr;
+    std::span<const render::GpuDeformationCommand> deformation_commands{};
     const render::MaterialResourceTable<
         render::FrameUniformMaterialInstance<render::PbrMaterialUniforms>>* material_instances =
         nullptr;
@@ -169,6 +171,7 @@ class ForwardPbrRenderer3D {
         const scene::RenderFramePlan3D& shadow_plan, const scene::RenderFramePlan3D& scene_plan,
         const render::MeshResourceTable<render::Mesh>& meshes,
         const render::FrameMeshResourceTable* frame_meshes,
+        std::span<const render::GpuDeformationCommand> deformation_commands,
         const render::MaterialResourceTable<
             render::FrameUniformMaterialInstance<render::PbrMaterialUniforms>>& material_instances,
         const std::unordered_map<render::MaterialHandle, render::PbrMaterialFactors,

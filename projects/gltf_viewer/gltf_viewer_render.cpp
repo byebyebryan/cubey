@@ -1,6 +1,7 @@
 #include "gltf_viewer_app_internal.h"
 
 #include <stdexcept>
+#include <vector>
 
 namespace cubey::projects::gltf_viewer {
 
@@ -48,6 +49,10 @@ void GltfViewerApp::record_viewer_target(
     }
     const cubey::scene::RenderFramePlan3D& shadow_plan = frame_plan.passes()[0].frame_plan;
     const cubey::scene::RenderFramePlan3D& scene_plan = frame_plan.passes()[1].frame_plan;
+    const std::vector<cubey::render::GpuDeformationCommand> deformation_commands =
+        cubey::gltf_deformation_commands_for_frame(import_resources_, frame_slot);
+    const cubey::render::FrameMeshResourceTable* frame_meshes =
+        deformation_commands.empty() ? nullptr : &import_resources_.deformation.frame_meshes;
     const cubey::ForwardPbrRenderer3DRenderRequest request{
         .target =
             {
@@ -72,6 +77,8 @@ void GltfViewerApp::record_viewer_target(
         .resources =
             {
                 .meshes = &import_resources_.meshes,
+                .frame_meshes = frame_meshes,
+                .deformation_commands = deformation_commands,
                 .material_instances = &import_resources_.material_instances,
                 .material_factors = &import_resources_.material_factors,
             },

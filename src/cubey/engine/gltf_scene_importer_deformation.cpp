@@ -7,6 +7,7 @@
 #include <vulkan/vulkan.h>
 
 #include <algorithm>
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <span>
@@ -304,6 +305,49 @@ void create_deformation_resources(const vulkan::Device& device, vulkan::GpuRunti
     for (const GltfDeformablePrimitive3D& primitive : resources.deformable_primitives) {
         create_deformation_primitive_resources(device, gpu, resources, asset, primitive, config);
     }
+    if (config.deformation_compute_shader.empty()) {
+        throw std::runtime_error("glTF deformation resources require a compute shader");
+    }
+    const std::array<VkDescriptorSetLayout, 1> descriptor_layouts{
+        resources.deformation.primitives.front().descriptor_sets->layout(),
+    };
+    resources.deformation.pipeline = std::make_unique<render::ComputePipelineResource>(
+        device,
+        render::gpu_deformation_pipeline_config(config.deformation_compute_shader,
+                                                descriptor_layouts));
+}
+
+std::vector<render::GpuDeformationCommand>
+gltf_deformation_commands_for_frame(const GltfSceneImportResources& resources,
+                                    render::FrameSlot frame_slot) {
+    if (resources.deformation.primitives.empty()) {
+        return {};
+    }
+    render::validate_frame_slot(frame_slot);
+    if (resources.deformation.pipeline == nullptr) {
+        throw std::runtime_error("glTF deformation commands require a compute pipeline");
+    }
+
+    std::vector<render::GpuDeformationCommand> commands;
+    commands.reserve(resources.deformation.primitives.size());
+    for (const GltfDeformationPrimitiveResources& resource :
+         resources.deformation.primitives) {
+        if (resource.descriptor_sets == nullptr) {
+            throw std::runtime_error("glTF deformation command requires descriptor sets");
+        }
+        if (frame_slot.count != resource.descriptor_sets->size() ||
+            frame_slot.index >= resource.output_meshes.size()) {
+            throw std::runtime_error("glTF deformation command frame slot is out of range");
+        }
+        commands.push_back({
+            .mesh = resource.primitive.output_mesh,
+            .output_mesh = &resource.output_meshes.at(frame_slot.index),
+            .pipeline = resources.deformation.pipeline.get(),
+            .descriptor_set = resource.descriptor_sets->set(frame_slot.index),
+            .push_constants = resource.push_constants,
+        });
+    }
+    return commands;
 }
 
 } // namespace cubey

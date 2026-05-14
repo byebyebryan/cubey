@@ -207,6 +207,7 @@ Entity create_node(Engine& engine, SceneTransaction& transaction, const asset::G
         BoundsAccumulator bounds;
         for (const GltfImportedPrimitive3D& primitive :
              resources.mesh_primitives[node.mesh_index]) {
+            render::MeshHandle render_mesh = primitive.mesh;
             const asset::GltfMeshPrimitive& asset_primitive =
                 asset.meshes[node.mesh_index].primitives[primitive.primitive_index];
             const GltfPrimitiveDeformationKind deformation =
@@ -229,9 +230,10 @@ Entity create_node(Engine& engine, SceneTransaction& transaction, const asset::G
                     .material = primitive.material,
                     .local_bounds = primitive.local_bounds,
                 });
+                render_mesh = output_mesh;
             }
             primitives.push_back({
-                .mesh = primitive.mesh,
+                .mesh = render_mesh,
                 .material = primitive.material,
             });
             bounds.add(primitive.local_bounds);

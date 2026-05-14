@@ -5,6 +5,7 @@
 
 #include <vulkan/vulkan.h>
 
+#include <array>
 #include <filesystem>
 #include <stdexcept>
 
@@ -62,6 +63,18 @@ void test_gpu_deformation_pipeline_config_uses_compute_stage_and_push_constants(
             "deformation pipeline should declare one push constant range");
     require(config.push_constants[0].size == sizeof(cubey::render::GpuDeformationPushConstants),
             "deformation push constant range should match CPU struct");
+}
+
+void test_gpu_deformation_pipeline_config_accepts_descriptor_layouts() {
+    const VkDescriptorSetLayout layout = reinterpret_cast<VkDescriptorSetLayout>(0x1234);
+    const std::array<VkDescriptorSetLayout, 1> layouts{layout};
+    const cubey::render::ComputePipelineResourceConfig config =
+        cubey::render::gpu_deformation_pipeline_config("gltf_deform.comp.spv", layouts);
+
+    require(config.descriptor_set_layouts.size() == 1,
+            "deformation pipeline should accept descriptor set layouts");
+    require(config.descriptor_set_layouts[0] == layout,
+            "deformation pipeline should preserve descriptor set layout handle");
 }
 
 void test_gpu_deformation_shader_morphs_before_skinning() {
