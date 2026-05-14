@@ -10,6 +10,8 @@ cubey_add_app_target(
     SHADERS
         shaders/gltf_pbr.vert
         shaders/gltf_pbr.frag
+        shaders/gltf_skybox.vert
+        shaders/gltf_skybox.frag
         shaders/gltf_shadow_depth.vert
     SHADER_INCLUDE_DIRS
         "${CMAKE_SOURCE_DIR}/shaders"
@@ -22,6 +24,14 @@ if (CUBEY_GLTF_SAMPLE_ASSETS_DIR)
         cubey_project_gltf_viewer
         PRIVATE
             CUBEY_GLTF_SAMPLE_ASSETS_DIR="${CUBEY_GLTF_SAMPLE_ASSETS_DIR}"
+    )
+endif()
+
+if (CUBEY_HDR_SAMPLE_ASSETS_DIR)
+    target_compile_definitions(
+        cubey_project_gltf_viewer
+        PRIVATE
+            CUBEY_HDR_SAMPLE_ASSETS_DIR="${CUBEY_HDR_SAMPLE_ASSETS_DIR}"
     )
 endif()
 

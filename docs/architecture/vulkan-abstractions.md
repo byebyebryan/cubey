@@ -205,8 +205,8 @@ Defer:
 
 - VMA or another allocator until manual memory allocation becomes the limiting
   cost.
-- HDR/KTX environment import and filtering until generated PBR IBL resources
-  expose enough renderer-side contract pressure.
+- Prefiltered KTX/KTX2 environment import and offline filtering until direct
+  HDR IBL resources expose enough quality and runtime-pressure evidence.
 
 ### 5. Descriptors And Bindings
 

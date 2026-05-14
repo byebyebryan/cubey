@@ -8,24 +8,30 @@ without taking on a complete material system.
 
 ## Current Direction
 
-The current IBL checkpoint uses generated cubemaps instead of external
-environment assets:
+The current IBL checkpoint supports both deterministic generated cubemaps and
+Radiance HDR equirectangular environment assets:
 
 - `cubey::render` owns the texture and PBR descriptor contracts for cube maps,
   mip chains, samplers, and the DFG lookup texture;
 - a generated environment helper creates deterministic diffuse irradiance,
   prefiltered specular radiance, DFG LUT byte data, and uploaded GPU resources;
+- an HDR image loader decodes Radiance `.hdr` images into linear `RGBA32F`
+  CPU data, and the render layer can build setup-time irradiance and
+  GGX-prefiltered cubemaps from equirectangular radiance;
 - `gltf_viewer` binds those resources into the existing PBR scene material and
   lights the glTF PBR shader with Filament-style base-color remapping,
   factor-only IOR/specular material controls, DFG-based IBL, specular energy
-  compensation, correlated Smith direct visibility, and indirect specular
-  occlusion while keeping shader/pass selection project-owned;
+  compensation, correlated Smith direct visibility, indirect specular
+  occlusion, environment rotation, exposure, and a skybox pass while keeping
+  shader/pass selection project-owned;
 - `pbr_furnace` isolates the current IBL/specular behavior with a white sphere
   grid that sweeps roughness across columns and metallic across rows under a
   uniform white environment;
-- HDR equirectangular loading, KTX loading, offline convolution, environment
-  selection UI, and glTF environment extensions remain future asset-pipeline
-  slices.
+- optional Filament sample HDR environments can be fetched by CMake for local
+  inspection, with `lightroom_14b.hdr` as the default viewer environment when
+  available;
+- KTX loading, offline convolution, environment selection UI, and glTF
+  environment extensions remain future asset-pipeline slices.
 
 ## Renderer Contract
 
@@ -33,8 +39,8 @@ The first IBL contract is:
 
 - irradiance cube: low-resolution diffuse lighting, one mip;
 - prefiltered specular cube: roughness-addressed mip chain generated with a
-  setup-time GGX importance-sampled convolution of the procedural radiance
-  environment;
+  setup-time GGX importance-sampled convolution of either the generated
+  radiance environment or an equirectangular HDR image;
 - DFG LUT: 2D lookup sampled by `NdotV` and roughness. Red/green store
   split-sum scale/bias terms, blue stores white-conductor single-scatter energy
   for compensation, and alpha remains one;
@@ -60,7 +66,7 @@ attachment when possible. UNORM final targets, including headless PNG capture,
 request shader-side linear-to-sRGB encoding.
 
 This keeps the PBR shader contract close to common real-time renderer practice
-while leaving HDR/KTX import, offline filtering, environment selection, and
+while leaving KTX import, offline filtering, environment selection UI, and
 renderer-wide material management explicit future work.
 
 ## Remaining Gaps
@@ -70,16 +76,17 @@ renderer-wide material management explicit future work.
 - Color management is still minimal: the PBR path now has a display-transform
   contract, but no HDR scene color target, fullscreen present pass, color
   grading, or HDR output policy.
-- Generated IBL proves the descriptor and shader contract, but real
-  environment asset import and higher-quality offline filtering remain future
-  work.
+- The current HDR path performs setup-time CPU filtering. It is useful for
+  development and material inspection, but higher-quality offline filtering and
+  prefiltered KTX/KTX2 deployment remain future work.
 - Additional material lobes such as clearcoat, sheen, anisotropy,
   transmission, and volume absorption are intentionally outside this
   checkpoint.
 
 ## Non-Goals
 
-- Do not add HDR or KTX loading to the generated-IBL checkpoint.
+- Do not add KTX loading or an offline IBL baking pipeline to the direct-HDR
+  checkpoint.
 - Do not add specular, clearcoat, transmission, or other extension textures to
   the material descriptor set yet.
 - Do not turn `cubey::render` into a renderer singleton or material manager.

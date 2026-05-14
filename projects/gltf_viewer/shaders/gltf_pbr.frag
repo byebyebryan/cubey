@@ -41,6 +41,16 @@ layout(location = 5) in vec4 frag_shadow_position;
 
 layout(location = 0) out vec4 out_color;
 
+vec3 rotate_environment_direction(vec3 direction) {
+    float c = scene.environment_intensity_mip_count.z;
+    float s = scene.environment_intensity_mip_count.w;
+    return vec3(
+        (c * direction.x) + (s * direction.z),
+        direction.y,
+        (-s * direction.x) + (c * direction.z)
+    );
+}
+
 float shadow_visibility(vec4 shadow_position, vec3 normal, vec3 light_direction) {
     vec3 shadow_ndc = shadow_position.xyz / shadow_position.w;
     vec2 uv = (shadow_ndc.xy * 0.5) + 0.5;
@@ -109,11 +119,11 @@ void main() {
     vec3 direct =
         (cubey_pbr_lambert_diffuse(diffuse_color) + specular) * radiance * ndotl * visibility;
 
-    vec3 irradiance = texture(irradiance_cube, normal).rgb;
+    vec3 irradiance = texture(irradiance_cube, rotate_environment_direction(normal)).rgb;
     vec3 diffuse_ibl = irradiance * diffuse_color;
     vec3 reflection = reflect(-view_direction, normal);
     float max_prefiltered_lod = max(scene.environment_intensity_mip_count.y - 1.0, 0.0);
-    vec3 prefiltered = textureLod(prefiltered_cube, reflection,
+    vec3 prefiltered = textureLod(prefiltered_cube, rotate_environment_direction(reflection),
                                   roughness * max_prefiltered_lod)
                            .rgb;
     float specular_occlusion =

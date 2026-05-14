@@ -36,9 +36,9 @@ Detailed current foundation notes live under
 - [Fluid simulation direction](architecture/fluid-simulation.md): project
   direction for 2D/2.5D/3D fluid work.
 - [glTF assets and PBR](architecture/gltf-assets.md): static glTF import, PBR
-  material contract, texture upload, and viewer boundaries.
-- [PBR and IBL direction](architecture/pbr-ibl.md): generated cubemap IBL,
-  PBR shader contract, and environment asset boundaries.
+  material contract, texture upload, HDR environments, and viewer boundaries.
+- [PBR and IBL direction](architecture/pbr-ibl.md): generated and HDR-backed
+  cubemap IBL, PBR shader contract, and environment asset boundaries.
 
 ## Project Docs
 

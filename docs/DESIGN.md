@@ -130,20 +130,22 @@ Reusable spatial types should stay explicit and narrow:
   normalized directions; point lights derive world position from `Transform3D`.
 - `cubey::asset` owns CPU-side imported asset data. The first slice supports
   static glTF/glb meshes, nodes, images, samplers, and metallic-roughness
-  materials; it does not create scenes, render handles, Vulkan resources, or a
-  material system.
+  materials, plus standalone Radiance HDR image decode for IBL inputs; it does
+  not create scenes, render handles, Vulkan resources, or a material system.
 - `cubey::engine` owns the current static glTF scene importer. It maps CPU
   asset nodes into scene entities, registry-issued render handles, app-owned
   mesh/material resources, uploaded textures, and imported bounds while leaving
   shader, pass, and renderer policy to the project.
-- `cubey::render` owns the current generated PBR IBL environment helper for
-  deterministic irradiance cube, GGX-prefiltered cube, and DFG LUT resources.
+- `cubey::render` owns the current generated and HDR equirectangular PBR IBL
+  environment helpers for irradiance cube, GGX-prefiltered cube, and DFG LUT
+  resources.
   Shared PBR shader helpers follow the established metallic-roughness remap:
   base color becomes diffuse color for non-metals and F0 for metals, while
   dielectric F0 comes from Filament-style reflectance plus factor-only glTF
   IOR/specular controls. The PBR scene uniform contract also carries final
   display transform controls for exposure, tone mapping, and target encoding.
-  HDR/KTX environment import and filtering remain future asset-pipeline work.
+  Prefiltered KTX/KTX2 environment import and offline filtering remain future
+  asset-pipeline work.
 - Scene render-planning helpers expose the first renderer-facing 3D view and
   pass-list contracts. They combine a scene read view, camera entity, viewport
   size, ambient environment, renderables, and lights into CPU
@@ -386,6 +388,7 @@ cubey/
         upload_queue.h     -- CPU-owned upload request queue
       asset/
         gltf_asset.h       -- static glTF/glb CPU asset data loader
+        hdr_image.h        -- standalone Radiance HDR CPU image loader
       host/
         frame_stats.h      -- windowed telemetry sampling and title formatting
         glfw_window.h      -- GLFW window and surface host
@@ -393,7 +396,7 @@ cubey/
         windowed_app.h     -- small app-facing shell over the windowed host loop
         windowed_host.h    -- shared windowed host loop
       render/
-        generated_ibl.h    -- deterministic generated PBR IBL environment resources
+        generated_ibl.h    -- generated and HDR-backed PBR IBL environment resources
         material.h         -- material metadata and material/pass contracts
         pbr.h              -- current PBR vertex, scene, material, and push-constant contract
         target.h           -- color/depth render target views

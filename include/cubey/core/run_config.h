@@ -20,7 +20,11 @@ struct RunConfig {
     std::uint32_t height = 720;
     std::uint32_t frames = 0;
     std::filesystem::path input_path{};
+    std::filesystem::path environment_path{};
     std::filesystem::path output_path = "cubey-output.png";
+    float ibl_intensity = 1.0F;
+    float environment_rotation_degrees = 0.0F;
+    float exposure = 0.0F;
     bool headless = false;
     bool validation = true;
     bool require_validation = false;

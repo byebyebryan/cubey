@@ -44,7 +44,8 @@ Current projects:
 - `fractal_2d`: fullscreen Mandelbrot-style shader with windowed navigation and
   headless output.
 - `gltf_viewer`: static glTF/glb viewer for imported assets, PBR materials,
-  texture upload, generated IBL, shadow maps, and headless capture.
+  texture upload, generated or HDR-backed IBL, skybox rendering, shadow maps,
+  and headless capture.
 - `pbr_furnace`: white-furnace PBR validation scene for roughness/metallic
   behavior under uniform generated IBL.
 
@@ -88,6 +89,12 @@ Shader examples require `glslangValidator` at build time. GLM is used through
 the public `cubey::math` wrapper and is resolved by CMake with `find_package`
 or a FetchContent fallback.
 
+Optional sample assets can be fetched at configure time:
+
+```bash
+cmake --preset dev -DCUBEY_FETCH_GLTF_SAMPLE_ASSETS=ON -DCUBEY_FETCH_HDR_SAMPLE_ASSETS=ON
+```
+
 Useful windowed smokes:
 
 ```bash
@@ -99,7 +106,7 @@ Useful windowed smokes:
 ./build/dev/examples/particle_cubes/particle_cubes --frames 300 --width 1280 --height 720
 ./build/dev/projects/fractal_2d/fractal_2d --frames 300 --width 1280 --height 720
 ./build/dev/projects/fluid_2d/fluid_2d --frames 300 --width 1280 --height 720
-./build/dev/projects/gltf_viewer/gltf_viewer --input path/to/model.glb --frames 300 --width 1280 --height 720
+./build/dev/projects/gltf_viewer/gltf_viewer --input path/to/model.glb --environment path/to/env.hdr --frames 300 --width 1280 --height 720
 ./build/dev/projects/pbr_furnace/pbr_furnace --frames 300 --width 1280 --height 720
 ```
 

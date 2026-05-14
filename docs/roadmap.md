@@ -164,8 +164,8 @@ Current checkpoint:
 - Reusable `cubey::render` target, texture, mesh, and draw-item contracts now
   sit above `cubey::vulkan`: windowed/headless color target views,
   dynamic-rendering target setup, generated/uploaded sampled 2D and cubemap
-  texture ownership, sampled depth texture ownership, generated PBR IBL
-  environment resources, depth-only rendering setup, indexed mesh upload,
+  texture ownership, sampled depth texture ownership, generated and HDR-backed
+  PBR IBL environment resources, depth-only rendering setup, indexed mesh upload,
   minimal indexed draw recording, explicit frame-slot identity, per-frame
   uniform buffers, frame-uniform material instances, compute-generated sampled
   textures, instance-rate vertex buffer helpers, shader-program and
@@ -291,10 +291,10 @@ Current checkpoint:
 - `projects/gltf_viewer` links against `cubey`, loads static glTF/glb assets
   through `cubey::asset`, imports scene/render resources through the shared
   engine glTF scene importer, uploads PBR material textures, renders with the
-  reusable PBR forward-pass contract, binds generated IBL resources, and
-  records shadow plus scene passes through the render graph. It supports
-  windowed and headless PNG output and falls back to a generated PBR cube when
-  no input asset or sample-asset checkout is configured.
+  reusable PBR forward-pass contract, binds generated or HDR-backed IBL
+  resources, and records shadow, skybox, and scene passes through the render
+  graph. It supports windowed and headless PNG output and falls back to a
+  generated PBR cube when no input asset or sample-asset checkout is configured.
 - `projects/pbr_furnace` links against `cubey` and renders a white-furnace PBR
   validation grid: shared UV-sphere primitive mesh, roughness columns, metallic
   rows, uniform white IBL cubemaps, Filament-style base-color/reflectance

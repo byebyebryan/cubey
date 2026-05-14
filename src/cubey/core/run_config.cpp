@@ -21,6 +21,17 @@ std::uint32_t parse_u32(std::string_view value, const char* name) {
     return static_cast<std::uint32_t>(parsed);
 }
 
+float parse_float(std::string_view value, const char* name) {
+    float parsed = 0.0F;
+    const char* begin = value.data();
+    const char* end = value.data() + value.size();
+    auto result = std::from_chars(begin, end, parsed);
+    if (result.ec != std::errc{} || result.ptr != end) {
+        throw std::runtime_error("invalid float for " + std::string(name));
+    }
+    return parsed;
+}
+
 } // namespace
 
 RunConfig parse_run_config(int argc, char** argv) {
@@ -56,6 +67,16 @@ RunConfig parse_run_config(int argc, char** argv) {
             config.frames = parse_u32(need_value("--frames"), "--frames");
         } else if (arg == "--input") {
             config.input_path = std::string(need_value("--input"));
+        } else if (arg == "--environment") {
+            config.environment_path = std::string(need_value("--environment"));
+        } else if (arg == "--ibl-intensity") {
+            config.ibl_intensity = parse_float(need_value("--ibl-intensity"), "--ibl-intensity");
+        } else if (arg == "--environment-rotation-degrees") {
+            config.environment_rotation_degrees =
+                parse_float(need_value("--environment-rotation-degrees"),
+                            "--environment-rotation-degrees");
+        } else if (arg == "--exposure") {
+            config.exposure = parse_float(need_value("--exposure"), "--exposure");
         } else if (arg == "--output") {
             config.output_path = std::string(need_value("--output"));
         } else {
@@ -65,6 +86,9 @@ RunConfig parse_run_config(int argc, char** argv) {
 
     if (config.width == 0 || config.height == 0) {
         throw std::runtime_error("width and height must be positive");
+    }
+    if (config.ibl_intensity < 0.0F) {
+        throw std::runtime_error("IBL intensity must be nonnegative");
     }
 
     return config;

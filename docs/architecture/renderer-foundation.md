@@ -168,13 +168,14 @@ full engine architecture.
   scene set includes irradiance cube, prefiltered cube, and the DFG/BRDF lookup
   binding. `PbrDisplayTransform` carries the final exposure, tone-map, and
   output-encoding controls used by direct-to-target PBR passes.
-- `GeneratedPbrEnvironment` creates deterministic setup-time irradiance cube,
-  GGX-prefiltered radiance cube, and DFG LUT resources. The shared PBR shader
+- `GeneratedPbrEnvironment` creates setup-time irradiance cube,
+  GGX-prefiltered radiance cube, and DFG LUT resources from either deterministic
+  generated radiance or equirectangular HDR image data. The shared PBR shader
   helpers remap base color into diffuse color plus material-derived F0 before
   lighting. The DFG lookup stores scale/bias terms plus a white-conductor
   energy term used for Filament-style specular energy compensation. It is a
   checkpoint helper for PBR quality and descriptor shape, not a replacement for
-  future HDR/KTX environment asset import and filtering.
+  future prefiltered KTX/KTX2 environment assets and offline filtering.
 - `cubey::render::MaterialInstance` owns the descriptor set layout, pool, and
   one or per-frame descriptor sets for one declared `MaterialPassInfo`
   descriptor set. `MaterialDescriptorWriter` keeps descriptor writes tied to a

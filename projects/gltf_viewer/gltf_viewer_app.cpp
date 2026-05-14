@@ -1,6 +1,7 @@
 #include "gltf_viewer_app.h"
 
 #include <cubey/asset/gltf_asset.h>
+#include <cubey/asset/hdr_image.h>
 #include <cubey/core/math.h>
 #include <cubey/engine/engine.h>
 #include <cubey/engine/gltf_scene_importer.h>
@@ -34,6 +35,7 @@
 #include <vulkan/vulkan.h>
 
 #include <glm/geometric.hpp>
+#include <glm/matrix.hpp>
 #include <glm/gtc/quaternion.hpp>
 
 #include <algorithm>
@@ -62,6 +64,7 @@ using cubey::host::FrameStatsSample;
 
 constexpr std::uint32_t kShadowMapSize = 2048;
 constexpr std::uint32_t kFallbackCubeTriangleCount = 12;
+constexpr float kDegreesToRadians = 0.017453292519943295769F;
 const cubey::math::Vec3 kLightDirection =
     glm::normalize(cubey::math::Vec3{0.45F, 0.82F, 0.35F});
 
@@ -69,7 +72,15 @@ struct ShadowPushConstants {
     cubey::math::Mat4 light_mvp{1.0F};
 };
 
+struct SkyboxUniforms {
+    cubey::math::Mat4 inverse_view_projection{1.0F};
+    cubey::math::Vec4 camera_position{0.0F, 0.0F, 0.0F, 1.0F};
+    cubey::math::Vec4 environment_rotation_intensity{1.0F, 0.0F, 1.0F, 0.0F};
+    cubey::math::Vec4 display_transform{0.0F, 1.0F, 0.0F, 0.0F};
+};
+
 static_assert(sizeof(ShadowPushConstants) == sizeof(cubey::math::Mat4));
+static_assert(std::is_trivially_copyable_v<SkyboxUniforms>);
 static_assert(std::is_trivially_copyable_v<cubey::render::PbrSceneUniforms>);
 
 std::filesystem::path shader_path(const char* filename) {
@@ -83,6 +94,41 @@ std::filesystem::path bundled_sample_asset_path() {
 #else
     return {};
 #endif
+}
+
+std::filesystem::path bundled_sample_environment_path() {
+#ifdef CUBEY_HDR_SAMPLE_ASSETS_DIR
+    return std::filesystem::path(CUBEY_HDR_SAMPLE_ASSETS_DIR) / "lightroom_14b.hdr";
+#else
+    return {};
+#endif
+}
+
+cubey::render::MaterialPassInfo skybox_pass_info() {
+    return {
+        .label = "gltf_viewer.skybox",
+        .kind = cubey::render::MaterialPassKind::ForwardColor,
+        .descriptor_sets =
+            {
+                cubey::render::MaterialDescriptorSetLayout{
+                    .set = 0,
+                    .bindings =
+                        {
+                            cubey::vulkan::DescriptorSetBindingConfig{
+                                .binding = 0,
+                                .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                                .stage_flags =
+                                    VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+                            },
+                            cubey::vulkan::DescriptorSetBindingConfig{
+                                .binding = 1,
+                                .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
+                            },
+                        },
+                },
+            },
+    };
 }
 
 cubey::render::RenderGraphTextureState undefined_texture_state() {
@@ -275,6 +321,7 @@ class GltfViewerApp {
 
         create_shadow_resources(device);
         create_ibl_resources(device, gpu);
+        create_skybox_material(device, frame_slot_count);
         create_scene_material(device, frame_slot_count);
     }
 
@@ -283,6 +330,7 @@ class GltfViewerApp {
         depth_attachment_.emplace(device, extent);
         graph_executor_.clear();
         graph_executor_.resize(frame_slot_count);
+        create_skybox_pipeline(device, extent, color_format);
         create_forward_pipeline(device, extent, color_format);
     }
 
@@ -290,11 +338,13 @@ class GltfViewerApp {
         graph_executor_.clear();
         alpha_pipeline_.reset();
         opaque_pipeline_.reset();
+        skybox_pipeline_.reset();
         depth_attachment_.reset();
     }
 
     void destroy_all_resources() {
         destroy_swapchain_resources();
+        skybox_material_.reset();
         scene_material_.reset();
         ibl_environment_.reset();
         shadow_pass_.reset();
@@ -338,6 +388,22 @@ class GltfViewerApp {
         }
 
         const std::filesystem::path sample = bundled_sample_asset_path();
+        if (!sample.empty() && std::filesystem::exists(sample)) {
+            return sample;
+        }
+        return {};
+    }
+
+    [[nodiscard]] std::filesystem::path resolved_environment_path() const {
+        if (!config_.environment_path.empty()) {
+            if (!std::filesystem::exists(config_.environment_path)) {
+                throw std::runtime_error("environment HDR does not exist: " +
+                                         config_.environment_path.string());
+            }
+            return config_.environment_path;
+        }
+
+        const std::filesystem::path sample = bundled_sample_environment_path();
         if (!sample.empty() && std::filesystem::exists(sample)) {
             return sample;
         }
@@ -557,7 +623,45 @@ class GltfViewerApp {
 
     void create_ibl_resources(const cubey::vulkan::Device& device,
                               cubey::vulkan::GpuRuntime& gpu) {
-        ibl_environment_.emplace(cubey::render::create_generated_pbr_environment(device, gpu));
+        cubey::render::GeneratedPbrEnvironmentConfig ibl_config;
+        ibl_config.intensity = config_.ibl_intensity;
+
+        const std::filesystem::path environment = resolved_environment_path();
+        if (!environment.empty()) {
+            const cubey::asset::HdrImage image = cubey::asset::load_hdr_image(environment);
+            ibl_environment_.emplace(cubey::render::create_pbr_environment_from_equirectangular(
+                device, gpu,
+                cubey::render::PbrEquirectangularImage{
+                    .width = image.width,
+                    .height = image.height,
+                    .rgba32f = image.rgba32f,
+                },
+                ibl_config));
+            return;
+        }
+
+        ibl_environment_.emplace(
+            cubey::render::create_generated_pbr_environment(device, gpu, ibl_config));
+    }
+
+    void create_skybox_material(const cubey::vulkan::Device& device,
+                                std::uint32_t frame_slot_count) {
+        const cubey::render::GeneratedPbrEnvironment& ibl = ibl_environment();
+        skybox_material_.emplace(
+            device, cubey::render::FrameUniformMaterialInstanceConfig{
+                        .material_pass = skybox_pass_info(),
+                        .descriptor_set = 0,
+                        .frame_slot_count = frame_slot_count,
+                        .uniform_binding = 0,
+                        .sampled_images =
+                            {
+                                cubey::render::SampledImageMaterialBinding{
+                                    .binding = 1,
+                                    .sampler = ibl.prefiltered_cube.sampler().handle(),
+                                    .image_view = ibl.prefiltered_cube.view(),
+                                },
+                            },
+                    });
     }
 
     void create_scene_material(const cubey::vulkan::Device& device,
@@ -646,6 +750,30 @@ class GltfViewerApp {
                         cubey::render::pbr_forward_pass_info(cubey::render::PbrForwardPassConfig{
                             .blend = cubey::render::MaterialBlendMode::AlphaBlend,
                         }),
+                }));
+    }
+
+    void create_skybox_pipeline(const cubey::vulkan::Device& device, VkExtent2D extent,
+                                VkFormat color_format) {
+        const std::array<cubey::render::ShaderStageFile, 2> shader_stage_files{
+            cubey::render::vertex_shader_file(shader_path("gltf_skybox.vert.spv")),
+            cubey::render::fragment_shader_file(shader_path("gltf_skybox.frag.spv")),
+        };
+        const std::array<VkDescriptorSetLayout, 1> set_layouts{
+            skybox_material().layout(),
+        };
+        skybox_pipeline_.emplace(
+            device,
+            cubey::render::graphics_pipeline_file_resource_config(
+                {
+                    .extent = extent,
+                    .color_format = color_format,
+                    .depth_format = depth_attachment().format(),
+                },
+                {
+                    .shader_stage_files = shader_stage_files,
+                    .descriptor_set_layouts = set_layouts,
+                    .material_pass = skybox_pass_info(),
                 }));
     }
 
@@ -753,6 +881,8 @@ class GltfViewerApp {
         scene_material().upload(
             frame_slot,
             scene_uniforms(scene_view, scene_plan, shadow_plan, color_target.format));
+        skybox_material().upload(frame_slot,
+                                 skybox_uniforms(scene_view, scene_plan, color_target.format));
 
         const ViewerRenderGraph render_graph =
             current_render_graph(color_target, frame_slot, color_initial_state, color_final_state,
@@ -791,6 +921,9 @@ class GltfViewerApp {
         const cubey::LightPacket3D light = current_light_packet(scene_plan);
         const cubey::math::Vec3 ambient =
             scene_plan.environment.ambient_color * scene_plan.environment.ambient_intensity;
+        const float rotation_radians = config_.environment_rotation_degrees * kDegreesToRadians;
+        const cubey::render::PbrDisplayTransform display_transform =
+            cubey::render::pbr_display_transform_for_target(color_format, config_.exposure);
         return {
             .view_projection = scene_plan.view_projection_matrix,
             .light_view_projection = shadow_plan.view_projection_matrix,
@@ -802,11 +935,33 @@ class GltfViewerApp {
                 {
                     ibl_environment().intensity,
                     static_cast<float>(ibl_environment().prefiltered_mip_levels),
-                    0.0F,
-                    0.0F,
+                    std::cos(rotation_radians),
+                    std::sin(rotation_radians),
                 },
             .display_transform = cubey::render::pbr_display_transform_uniform(
-                cubey::render::pbr_display_transform_for_target(color_format)),
+                display_transform),
+        };
+    }
+
+    [[nodiscard]] SkyboxUniforms
+    skybox_uniforms(const cubey::SceneReadView& scene_view,
+                    const cubey::scene::RenderFramePlan3D& scene_plan,
+                    VkFormat color_format) const {
+        const float rotation_radians = config_.environment_rotation_degrees * kDegreesToRadians;
+        const cubey::render::PbrDisplayTransform display_transform =
+            cubey::render::pbr_display_transform_for_target(color_format, config_.exposure);
+        return {
+            .inverse_view_projection = glm::inverse(scene_plan.view_projection_matrix),
+            .camera_position = {camera_world_position(scene_view, camera_entity_), 1.0F},
+            .environment_rotation_intensity =
+                {
+                    std::cos(rotation_radians),
+                    std::sin(rotation_radians),
+                    ibl_environment().intensity,
+                    0.0F,
+                },
+            .display_transform =
+                cubey::render::pbr_display_transform_uniform(display_transform),
         };
     }
 
@@ -875,6 +1030,13 @@ class GltfViewerApp {
             },
             [this, &scene_plan, frame_slot](
                 const cubey::vulkan::CommandRecorder& pass_recorder) {
+                cubey::render::record_fullscreen_pipeline_draw(
+                    pass_recorder,
+                    cubey::render::FullscreenPipelineDrawInfo{
+                        .pipeline = &skybox_pipeline(),
+                        .descriptor_set = skybox_material().set(frame_slot),
+                        .descriptor_set_index = 0,
+                    });
                 const auto record_blend =
                     [this, &pass_recorder, &scene_plan, frame_slot](
                         const cubey::render::GraphicsPipelineResource& pipeline,
@@ -962,6 +1124,14 @@ class GltfViewerApp {
         return scene_material_.value();
     }
 
+    [[nodiscard]] const cubey::render::FrameUniformMaterialInstance<SkyboxUniforms>&
+    skybox_material() const {
+        if (!skybox_material_.has_value()) {
+            throw std::runtime_error("PBR skybox material is not initialized");
+        }
+        return skybox_material_.value();
+    }
+
     [[nodiscard]] const cubey::render::GraphicsPipelineResource& opaque_pipeline() const {
         if (!opaque_pipeline_.has_value()) {
             throw std::runtime_error("PBR opaque pipeline is not initialized");
@@ -974,6 +1144,13 @@ class GltfViewerApp {
             throw std::runtime_error("PBR alpha pipeline is not initialized");
         }
         return alpha_pipeline_.value();
+    }
+
+    [[nodiscard]] const cubey::render::GraphicsPipelineResource& skybox_pipeline() const {
+        if (!skybox_pipeline_.has_value()) {
+            throw std::runtime_error("PBR skybox pipeline is not initialized");
+        }
+        return skybox_pipeline_.value();
     }
 
     [[nodiscard]] const cubey::vulkan::DepthAttachment& depth_attachment() const {
@@ -1009,8 +1186,10 @@ class GltfViewerApp {
     std::optional<
         cubey::render::FrameUniformMaterialInstance<cubey::render::PbrSceneUniforms>>
         scene_material_;
+    std::optional<cubey::render::FrameUniformMaterialInstance<SkyboxUniforms>> skybox_material_;
     std::optional<cubey::render::GraphicsPipelineResource> opaque_pipeline_;
     std::optional<cubey::render::GraphicsPipelineResource> alpha_pipeline_;
+    std::optional<cubey::render::GraphicsPipelineResource> skybox_pipeline_;
     std::optional<cubey::vulkan::DepthAttachment> depth_attachment_;
 };
 
