@@ -6,6 +6,7 @@
 
 #include <glm/matrix.hpp>
 
+#include <cstddef>
 #include <stdexcept>
 #include <utility>
 
@@ -32,6 +33,9 @@ void validate_forward_pbr_renderer_3d_config(const ForwardPbrRenderer3DConfig& c
     }
     if (config.shadow_depth_vertex_shader.empty()) {
         throw std::runtime_error("forward PBR renderer requires a shadow depth vertex shader");
+    }
+    if (config.shadow_depth_fragment_shader.empty()) {
+        throw std::runtime_error("forward PBR renderer requires a shadow depth fragment shader");
     }
     if (config.shadow_extent == 0) {
         throw std::runtime_error("forward PBR renderer requires a nonzero shadow extent");
@@ -68,7 +72,20 @@ LightPacket3D forward_pbr_renderer_3d_selected_light(std::span<const LightPacket
 }
 
 render::VertexInputLayout forward_pbr_renderer_3d_shadow_vertex_input_layout() {
-    return render::vertex_position_only_input_layout(sizeof(render::PbrVertex));
+    return {
+        .vertex_bindings =
+            {
+                render::vertex_input_binding(0, sizeof(render::PbrVertex),
+                                             VK_VERTEX_INPUT_RATE_VERTEX),
+            },
+        .attributes =
+            {
+                render::vertex_input_attribute(0, 0, VK_FORMAT_R32G32B32_SFLOAT,
+                                               offsetof(render::PbrVertex, position)),
+                render::vertex_input_attribute(3, 0, VK_FORMAT_R32G32_SFLOAT,
+                                               offsetof(render::PbrVertex, uv0)),
+            },
+    };
 }
 
 render::PbrSceneUniforms
@@ -174,6 +191,13 @@ const render::GraphicsPipelineResource& ForwardPbrRenderer3D::alpha_pipeline() c
         throw std::runtime_error("forward PBR renderer alpha pipeline is not initialized");
     }
     return alpha_pipeline_.value();
+}
+
+const render::GraphicsPipelineResource& ForwardPbrRenderer3D::mask_shadow_pipeline() const {
+    if (!mask_shadow_pipeline_.has_value()) {
+        throw std::runtime_error("forward PBR renderer mask shadow pipeline is not initialized");
+    }
+    return mask_shadow_pipeline_.value();
 }
 
 const render::GraphicsPipelineResource& ForwardPbrRenderer3D::skybox_pipeline() const {

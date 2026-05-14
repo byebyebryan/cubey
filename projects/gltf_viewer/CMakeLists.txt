@@ -18,6 +18,7 @@ cubey_add_app_target(
         "${CMAKE_SOURCE_DIR}/shaders/cubey/pbr_post.vert"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/pbr_post.frag"
         shaders/gltf_shadow_depth.vert
+        shaders/gltf_shadow_depth.frag
     SHADER_INCLUDE_DIRS
         "${CMAKE_SOURCE_DIR}/shaders"
     SHADER_DEPENDS
@@ -61,4 +62,34 @@ if (BUILD_TESTING)
         "${CUBEY_GLTF_VIEWER_HEADLESS_SMOKE_OUTPUT}"
         --headless
     )
+
+    if (CUBEY_GLTF_SAMPLE_ASSETS_DIR)
+        set(
+            CUBEY_GLTF_ALPHA_MASK_SAMPLE
+            "${CUBEY_GLTF_SAMPLE_ASSETS_DIR}/Models/AlphaMaskModeTest/glTF/AlphaMaskModeTest.gltf"
+        )
+        if (EXISTS "${CUBEY_GLTF_ALPHA_MASK_SAMPLE}")
+            cubey_add_png_smoke_test(
+                gltf_viewer_alpha_mask_headless_writes_png
+                cubey_project_gltf_viewer
+                "${CMAKE_CURRENT_BINARY_DIR}/gltf-viewer-alpha-mask-smoke.png"
+                --headless
+                --input "${CUBEY_GLTF_ALPHA_MASK_SAMPLE}"
+            )
+        endif()
+
+        set(
+            CUBEY_GLTF_ALPHA_BLEND_SAMPLE
+            "${CUBEY_GLTF_SAMPLE_ASSETS_DIR}/Models/AlphaBlendModeTest/glTF/AlphaBlendModeTest.gltf"
+        )
+        if (EXISTS "${CUBEY_GLTF_ALPHA_BLEND_SAMPLE}")
+            cubey_add_png_smoke_test(
+                gltf_viewer_alpha_blend_headless_writes_png
+                cubey_project_gltf_viewer
+                "${CMAKE_CURRENT_BINARY_DIR}/gltf-viewer-alpha-blend-smoke.png"
+                --headless
+                --input "${CUBEY_GLTF_ALPHA_BLEND_SAMPLE}"
+            )
+        endif()
+    endif()
 endif()

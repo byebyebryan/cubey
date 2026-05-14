@@ -307,4 +307,7 @@ directly, while `gltf_viewer` now creates an engine-owned
 color, PBR forward, and post-pass graph recording. Its implementation is split
 by responsibility: resource lifetime, graph declaration/execution, and pass
 recording stay in separate source files behind the public renderer/request
-contract.
+contract. The PBR path now treats material alpha policy as render policy:
+masked materials still write depth and cast cutout shadows through an
+alpha-tested shadow path, while blended materials render after opaque/masked
+packets with depth testing enabled and depth writes disabled.

@@ -70,6 +70,18 @@ using TextureCache = std::unordered_map<TextureCacheKey, std::size_t, TextureCac
     return VK_FORMAT_R8G8B8A8_UNORM;
 }
 
+[[nodiscard]] render::MaterialAlphaMode gltf_alpha_mode(asset::GltfAlphaMode mode) {
+    switch (mode) {
+    case asset::GltfAlphaMode::Mask:
+        return render::MaterialAlphaMode::Mask;
+    case asset::GltfAlphaMode::Blend:
+        return render::MaterialAlphaMode::Blend;
+    case asset::GltfAlphaMode::Opaque:
+    default:
+        return render::MaterialAlphaMode::Opaque;
+    }
+}
+
 [[nodiscard]] render::Texture2D create_solid_texture(const vulkan::Device& device,
                                                      vulkan::GpuRuntime& gpu,
                                                      std::array<std::uint8_t, 4> color,
@@ -259,19 +271,16 @@ void create_material_resources(Engine& engine, const vulkan::Device& device,
     result.material_handles.reserve(asset.materials.size());
     for (std::size_t index = 0; index < asset.materials.size(); ++index) {
         const asset::GltfMaterial& source = asset.materials[index];
+        const render::MaterialAlphaMode alpha_mode = gltf_alpha_mode(source.alpha_mode);
         const std::string label =
             source.label.empty() ? import_label(config, "material", index) : source.label;
         const render::MaterialHandle material =
             engine.render_resources().create_material(render::MaterialInfo{
                 .label = label,
-                .blend = source.alpha_mode == asset::GltfAlphaMode::Blend
-                             ? render::MaterialBlendMode::AlphaBlend
-                             : render::MaterialBlendMode::Opaque,
+                .alpha_mode = gltf_alpha_mode(source.alpha_mode),
+                .blend = render::material_blend_mode_for_alpha_mode(alpha_mode),
                 .sort_key = static_cast<std::uint32_t>(index),
-                .pass_mask =
-                    source.alpha_mode == asset::GltfAlphaMode::Blend
-                        ? render::material_pass_mask(render::MaterialPassKind::ForwardColor)
-                        : render::default_material_pass_mask(),
+                .pass_mask = render::material_pass_mask_for_alpha_mode(alpha_mode),
             });
         result.material_handles.push_back(material);
         resources.material_factors.emplace(

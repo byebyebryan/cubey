@@ -46,6 +46,7 @@ cubey::ForwardPbrRenderer3DConfig valid_config() {
         .post_vertex_shader = "post.vert.spv",
         .post_fragment_shader = "post.frag.spv",
         .shadow_depth_vertex_shader = "shadow.vert.spv",
+        .shadow_depth_fragment_shader = "shadow.frag.spv",
     };
 }
 
@@ -244,12 +245,16 @@ void test_forward_pbr_renderer_3d_shadow_vertex_layout_matches_pbr_vertices() {
             "forward PBR shadow vertex layout should expose one binding");
     require(layout.bindings()[0].stride == sizeof(cubey::render::PbrVertex),
             "forward PBR shadow vertex layout should use the PBR vertex stride");
-    require(layout.attributes.size() == 1,
-            "forward PBR shadow vertex layout should expose only position");
+    require(layout.attributes.size() == 2,
+            "forward PBR shadow vertex layout should expose position and UV for alpha masks");
     require(layout.attributes[0].location == 0,
             "forward PBR shadow vertex layout should bind position at location 0");
     require(layout.attributes[0].offset == offsetof(cubey::render::PbrVertex, position),
             "forward PBR shadow vertex layout should read PBR vertex position");
+    require(layout.attributes[1].location == 3,
+            "forward PBR shadow vertex layout should bind UV0 at the PBR UV location");
+    require(layout.attributes[1].offset == offsetof(cubey::render::PbrVertex, uv0),
+            "forward PBR shadow vertex layout should read PBR vertex UV0");
 }
 
 void test_forward_pbr_renderer_3d_binds_shadow_depth_with_depth_read_layout() {
@@ -261,6 +266,33 @@ void test_forward_pbr_renderer_3d_binds_shadow_depth_with_depth_read_layout() {
                      "forward PBR renderer should bind the shadow map in the scene set");
     require_contains(source, ".layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL",
                      "forward PBR shadow map descriptor should match sampled depth layout");
+}
+
+void test_forward_pbr_renderer_3d_records_masked_shadow_path_with_material_alpha() {
+    const std::filesystem::path root{CUBEY_SOURCE_DIR};
+    const std::string header =
+        read_source_file(root / "include/cubey/engine/forward_pbr_renderer_3d.h");
+    const std::string resources =
+        read_source_file(root / "src/cubey/engine/forward_pbr_renderer_3d_resources.cpp");
+    const std::string recording =
+        read_source_file(root / "src/cubey/engine/forward_pbr_renderer_3d_recording.cpp");
+    const std::string importer =
+        read_source_file(root / "src/cubey/engine/gltf_scene_importer_materials.cpp");
+
+    require_contains(header, "shadow_depth_fragment_shader",
+                     "forward PBR config should expose a mask-capable shadow fragment shader");
+    require_contains(resources, "mask_shadow_pipeline_",
+                     "forward PBR renderer should own a mask-capable shadow pipeline");
+    require_contains(resources, "fragment_shader_file(config_.shadow_depth_fragment_shader)",
+                     "mask shadow pipeline should compile the configured fragment shader");
+    require_contains(recording, "render::MaterialAlphaMode::Opaque",
+                     "shadow recording should keep a cheap opaque depth path");
+    require_contains(recording, "render::MaterialAlphaMode::Mask",
+                     "shadow recording should record a mask-aware depth path");
+    require_contains(recording, "bind_material_instance",
+                     "masked shadow recording should bind material textures and uniforms");
+    require_contains(importer, ".alpha_mode = gltf_alpha_mode(source.alpha_mode)",
+                     "glTF importer should map source alpha modes into render material policy");
 }
 
 void test_forward_pbr_renderer_3d_scene_uniforms_pack_view_light_environment_and_display() {

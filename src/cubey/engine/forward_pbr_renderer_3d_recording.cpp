@@ -9,10 +9,15 @@ namespace cubey {
 
 void ForwardPbrRenderer3D::record_shadow_pass(
     const vulkan::CommandRecorder& recorder, const scene::RenderFramePlan3D& shadow_plan,
-    const render::MeshResourceTable<render::Mesh>& meshes) const {
+    render::FrameSlot frame_slot, const render::MeshResourceTable<render::Mesh>& meshes,
+    const render::MaterialResourceTable<
+        render::FrameUniformMaterialInstance<render::PbrMaterialUniforms>>& material_instances,
+    const std::unordered_map<render::MaterialHandle, render::PbrMaterialFactors,
+                             render::MaterialHandleHash>& material_factors) const {
     shadow_pass().record(
         recorder, render::depth_clear_value(),
-        [this, &shadow_plan, &meshes](const vulkan::CommandRecorder& pass_recorder) {
+        [this, &shadow_plan, &meshes, &material_instances, &material_factors,
+         frame_slot](const vulkan::CommandRecorder& pass_recorder) {
             scene::record_pipeline_draw_packets_3d(
                 pass_recorder, shadow_plan.draw_packets, meshes,
                 {
@@ -20,6 +25,7 @@ void ForwardPbrRenderer3D::record_shadow_pass(
                     .filter =
                         {
                             .material_pass = render::MaterialPassKind::DepthOnly,
+                            .alpha_mode = render::MaterialAlphaMode::Opaque,
                             .require_shadow_caster = true,
                         },
                 },
@@ -27,6 +33,33 @@ void ForwardPbrRenderer3D::record_shadow_pass(
                                      const scene::RenderDrawPacket3D& packet) {
                     packet_recorder.push_constants(
                         shadow_pass().pipeline().layout(), VK_SHADER_STAGE_VERTEX_BIT, 0,
+                        ForwardPbrRenderer3DShadowPushConstants{
+                            .light_mvp =
+                                shadow_plan.view_projection_matrix * packet.world_affine_matrix,
+                        });
+                });
+            scene::record_pipeline_draw_packets_3d(
+                pass_recorder, shadow_plan.draw_packets, meshes,
+                {
+                    .pipeline = &mask_shadow_pipeline(),
+                    .frame_slot = frame_slot,
+                    .filter =
+                        {
+                            .material_pass = render::MaterialPassKind::DepthOnly,
+                            .alpha_mode = render::MaterialAlphaMode::Mask,
+                            .require_shadow_caster = true,
+                        },
+                },
+                [this, &shadow_plan, &material_instances, &material_factors,
+                 frame_slot](const vulkan::CommandRecorder& packet_recorder,
+                             const scene::RenderDrawPacket3D& packet) {
+                    const auto& material = material_instances.at(packet.material);
+                    material.upload(frame_slot, render::pbr_material_uniforms(
+                                                    material_factors.at(packet.material)));
+                    render::bind_material_instance(packet_recorder, mask_shadow_pipeline(),
+                                                   material.material(), frame_slot);
+                    packet_recorder.push_constants(
+                        mask_shadow_pipeline().layout(), VK_SHADER_STAGE_VERTEX_BIT, 0,
                         ForwardPbrRenderer3DShadowPushConstants{
                             .light_mvp =
                                 shadow_plan.view_projection_matrix * packet.world_affine_matrix,

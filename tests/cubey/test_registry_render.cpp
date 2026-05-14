@@ -26,6 +26,7 @@ void test_indexed_mesh_config_describes_u16_geometry();
 void test_indexed_mesh_config_describes_u32_geometry();
 void test_instance_buffer_helpers_describe_instance_vertex_data();
 void test_material_descriptor_writer_preserves_set_and_write_order();
+void test_material_alpha_modes_map_to_blend_and_pass_policy();
 void test_material_info_defaults_to_depth_and_forward_passes();
 void test_material_instance_config_builds_descriptor_set_info();
 void test_material_pass_info_applies_graphics_pipeline_state();
@@ -201,6 +202,7 @@ std::span<const TestCase> render_test_cases() {
         CUBEY_TEST(test_texture_cube_config_maps_transfer_sampled_cube_usage),
         CUBEY_TEST(test_depth_texture_config_maps_sampled_depth_usage),
         CUBEY_TEST(test_compute_generated_texture_config_validates_dispatch_shape),
+        CUBEY_TEST(test_material_alpha_modes_map_to_blend_and_pass_policy),
         CUBEY_TEST(test_material_info_defaults_to_depth_and_forward_passes),
         CUBEY_TEST(test_material_instance_config_builds_descriptor_set_info),
         CUBEY_TEST(test_material_descriptor_writer_preserves_set_and_write_order),

@@ -98,8 +98,10 @@ ForwardPbrRenderer3D::CompiledGraph ForwardPbrRenderer3D::current_render_graph(
     graph.add_pass("shadow", render::RenderGraphQueueDomain::Graphics)
         .write_depth(shadow_depth)
         .material_pass(shadow_pass().material_pass())
-        .execute([this, &shadow_plan, &meshes](const render::RenderGraphExecutionContext& context) {
-            record_shadow_pass(context.recorder(), shadow_plan, meshes);
+        .execute([this, frame_slot, &shadow_plan, &meshes, &material_instances,
+                  &material_factors](const render::RenderGraphExecutionContext& context) {
+            record_shadow_pass(context.recorder(), shadow_plan, frame_slot, meshes,
+                               material_instances, material_factors);
         });
     graph.add_pass("scene", render::RenderGraphQueueDomain::Graphics)
         .read_texture(shadow_depth)

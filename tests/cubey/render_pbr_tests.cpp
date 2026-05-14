@@ -253,6 +253,8 @@ void test_pbr_shaders_use_filament_style_material_remap() {
         read_source_file(source_root / "projects/gltf_viewer/shaders/gltf_pbr.frag");
     const std::string gltf_skybox =
         read_source_file(source_root / "projects/gltf_viewer/shaders/gltf_skybox.frag");
+    const std::string gltf_shadow =
+        read_source_file(source_root / "projects/gltf_viewer/shaders/gltf_shadow_depth.frag");
 
     require_contains(pbr, "cubey_pbr_diffuse_color",
                      "PBR shader should expose a baseColor-to-diffuse remap helper");
@@ -309,4 +311,12 @@ void test_pbr_shaders_use_filament_style_material_remap() {
 
     require_contains(gltf, "cubey_pbr_lambert_diffuse(diffuse_color)",
                      "glTF direct diffuse should use the shared Lambert helper");
+    require_contains(gltf, "if (alpha_cutoff > 0.0 && base_color.a < alpha_cutoff)",
+                     "glTF PBR shader should discard masked fragments by alpha cutoff");
+    require_contains(gltf_shadow, "uniform sampler2D base_color_texture",
+                     "glTF shadow mask shader should sample base color alpha");
+    require_contains(gltf_shadow, "uniform PbrMaterialUniforms",
+                     "glTF shadow mask shader should read per-material alpha cutoff");
+    require_contains(gltf_shadow, "discard",
+                     "glTF shadow mask shader should discard fragments below alpha cutoff");
 }

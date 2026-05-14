@@ -79,8 +79,7 @@ void test_render_resource_handles_are_hashable_keys() {
     materials[material] = "material";
 
     require(meshes.at(mesh) == "mesh", "mesh handles should work as hash keys");
-    require(materials.at(material) == "material",
-            "material handles should work as hash keys");
+    require(materials.at(material) == "material", "material handles should work as hash keys");
 }
 
 void test_render_resource_registry_round_trips_mesh_and_material_info() {
@@ -93,6 +92,7 @@ void test_render_resource_registry_round_trips_mesh_and_material_info() {
         registry.create_material(cubey::render::MaterialInfo{
             .label = "transparent surface",
             .domain = cubey::render::MaterialDomain::Surface3D,
+            .alpha_mode = cubey::render::MaterialAlphaMode::Blend,
             .blend = cubey::render::MaterialBlendMode::AlphaBlend,
             .sort_key = 42,
         });
@@ -104,21 +104,24 @@ void test_render_resource_registry_round_trips_mesh_and_material_info() {
     const cubey::render::MaterialInfo default_info = registry.material_info(default_material);
 
     require(mesh_info.label == "main cube mesh", "mesh info label should round-trip");
-    require(material_info.label == "transparent surface",
-            "material info label should round-trip");
+    require(material_info.label == "transparent surface", "material info label should round-trip");
     require(material_info.domain == cubey::render::MaterialDomain::Surface3D,
             "material domain should round-trip");
+    require(material_info.alpha_mode == cubey::render::MaterialAlphaMode::Blend,
+            "material alpha mode should round-trip");
     require(material_info.blend == cubey::render::MaterialBlendMode::AlphaBlend,
             "material blend mode should round-trip");
     require(material_info.sort_key == 42, "material sort key should round-trip");
-    require(cubey::render::material_supports_pass(
-                material_info, cubey::render::MaterialPassKind::DepthOnly),
+    require(cubey::render::material_supports_pass(material_info,
+                                                  cubey::render::MaterialPassKind::DepthOnly),
             "material pass mask should default to depth-only support");
-    require(cubey::render::material_supports_pass(
-                material_info, cubey::render::MaterialPassKind::ForwardColor),
+    require(cubey::render::material_supports_pass(material_info,
+                                                  cubey::render::MaterialPassKind::ForwardColor),
             "material pass mask should default to forward-color support");
     require(default_info.blend == cubey::render::MaterialBlendMode::Opaque,
             "string material creation should use opaque blend by default");
+    require(default_info.alpha_mode == cubey::render::MaterialAlphaMode::Opaque,
+            "string material creation should use opaque alpha mode by default");
 
     const cubey::render::MaterialHandle forward_material =
         registry.create_material(cubey::render::MaterialInfo{
@@ -127,11 +130,11 @@ void test_render_resource_registry_round_trips_mesh_and_material_info() {
                 cubey::render::material_pass_mask(cubey::render::MaterialPassKind::ForwardColor),
         });
     const cubey::render::MaterialInfo forward_info = registry.material_info(forward_material);
-    require(!cubey::render::material_supports_pass(
-                forward_info, cubey::render::MaterialPassKind::DepthOnly),
+    require(!cubey::render::material_supports_pass(forward_info,
+                                                   cubey::render::MaterialPassKind::DepthOnly),
             "custom material pass mask should round-trip excluded depth-only pass");
-    require(cubey::render::material_supports_pass(
-                forward_info, cubey::render::MaterialPassKind::ForwardColor),
+    require(cubey::render::material_supports_pass(forward_info,
+                                                  cubey::render::MaterialPassKind::ForwardColor),
             "custom material pass mask should round-trip included forward pass");
 
     registry.destroy_mesh(mesh);

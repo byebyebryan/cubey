@@ -15,6 +15,7 @@ cubey_add_app_target(
         "${CMAKE_SOURCE_DIR}/shaders/cubey/pbr_post.vert"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/pbr_post.frag"
         "${CMAKE_SOURCE_DIR}/projects/gltf_viewer/shaders/gltf_shadow_depth.vert"
+        "${CMAKE_SOURCE_DIR}/projects/gltf_viewer/shaders/gltf_shadow_depth.frag"
     SHADER_INCLUDE_DIRS
         "${CMAKE_SOURCE_DIR}/shaders"
     SHADER_DEPENDS

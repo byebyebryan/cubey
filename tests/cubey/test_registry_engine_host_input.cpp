@@ -24,6 +24,7 @@ void test_pan_zoom_2d_controller_pans_and_zooms_from_input();
 void test_forward_pbr_renderer_3d_config_requires_shader_paths_and_shadow_extent();
 void test_forward_pbr_renderer_3d_config_defaults_to_hdr_scene_color();
 void test_forward_pbr_renderer_3d_binds_shadow_depth_with_depth_read_layout();
+void test_forward_pbr_renderer_3d_records_masked_shadow_path_with_material_alpha();
 void test_forward_pbr_renderer_3d_post_uniforms_pack_display_transform();
 void test_forward_pbr_renderer_3d_render_request_validates_required_resource_fields();
 void test_forward_pbr_renderer_3d_render_request_validates_required_target_fields();
@@ -73,6 +74,7 @@ std::span<const TestCase> engine_host_input_test_cases() {
         CUBEY_TEST(test_forward_pbr_renderer_3d_config_requires_shader_paths_and_shadow_extent),
         CUBEY_TEST(test_forward_pbr_renderer_3d_config_defaults_to_hdr_scene_color),
         CUBEY_TEST(test_forward_pbr_renderer_3d_binds_shadow_depth_with_depth_read_layout),
+        CUBEY_TEST(test_forward_pbr_renderer_3d_records_masked_shadow_path_with_material_alpha),
         CUBEY_TEST(test_forward_pbr_renderer_3d_render_request_validates_required_target_fields),
         CUBEY_TEST(test_forward_pbr_renderer_3d_render_request_validates_required_view_fields),
         CUBEY_TEST(test_forward_pbr_renderer_3d_render_request_validates_required_resource_fields),

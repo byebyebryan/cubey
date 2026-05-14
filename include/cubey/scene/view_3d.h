@@ -166,7 +166,7 @@ build_render_frame_plan_3d(const View3D& view, const SceneReadView& scene,
         .view_matrix = view_matrix,
         .projection_matrix = projection_matrix,
         .view_projection_matrix = view_projection_matrix,
-        .draw_packets = build_render_draw_packets_3d(renderable_packets, resources),
+        .draw_packets = build_render_draw_packets_3d(renderable_packets, resources, view_matrix),
         .light_packets = build_light_packets_3d(scene.lights3d(), scene.transforms3d()),
         .environment = view.environment,
     };

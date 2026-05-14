@@ -27,6 +27,7 @@ viewer project that keeps pressure on the renderer.
 - mesh primitives with position, normal, tangent, and UV0;
 - metallic-roughness PBR material factors and texture references;
 - factor-only `KHR_materials_ior` and `KHR_materials_specular` controls;
+- core glTF alpha modes: `OPAQUE`, `MASK`, and `BLEND`;
 - sampler filtering and per-axis wrapping metadata;
 - scene roots and node hierarchy with decomposed TRS transforms.
 
@@ -45,6 +46,9 @@ service:
 - `import_gltf_scene()` maps static glTF nodes into scene entities, 3D
   transforms, renderables, registry-issued mesh/material handles, imported
   bounds, and triangle counts;
+- glTF alpha modes map into explicit render material alpha policy: `MASK`
+  stays depth-writing and shadow-casting with alpha cutoff, while `BLEND`
+  renders forward-only with alpha blending and no depth writes;
 - texture upload is deduplicated per glTF texture plus color space, and
   sampler `wrapS` / `wrapT` are preserved through Vulkan sampler axes;
 - `destroy_gltf_scene_import()` tears down imported resources without making
@@ -71,6 +75,9 @@ owns default textures, texture upload, and material instance creation.
 - `pbr_forward_pass_info()` declares the scene uniform/shadow/IBL set, material
   texture plus uniform set, model-only push constants, and opaque/alpha forward
   pass state;
+- `ForwardPbrRenderer3D` records opaque/masked PBR packets before blended
+  packets; blended packets are sorted back-to-front by view-space depth for
+  basic source-over transparency;
 - `pbr_post_pass_info()` declares the fullscreen post set that samples linear
   HDR scene color and applies display transform before writing the final target;
 - `create_uploaded_texture_2d()` and `create_uploaded_texture_cube()` handle
@@ -111,17 +118,17 @@ implementation: it records one PBR view using caller-provided shader paths,
 frame plans, material tables, environment resources, and render settings.
 
 The render layer exposes contracts and helpers, not a full material system.
-Texture lifetime, descriptor writes, material sorting policy, shader selection,
-and environment selection still belong to the project or future renderer layer.
-Specular textures, clearcoat, transmission, and other glTF material extensions
-remain future slices.
+Texture lifetime, descriptor writes, shader selection, and environment
+selection still belong to the project or future renderer layer. Transparency V1
+supports glTF alpha mask and alpha blend, but not refraction, transmission,
+transparent shadow opacity, weighted blended transparency, or order-independent
+transparency. Specular textures, clearcoat, transmission, and other glTF
+material extensions remain future slices.
 
 ## Next Slices
 
 - Add validation assets from Khronos Sample Assets as optional tests when the
   CI/dev environment can afford the download.
-- Add alpha-mask support in the shadow pass instead of treating all shadow
-  casters as opaque depth writers.
 - Add prefiltered KTX/KTX2 environment loading and offline filtering now that
   generated and direct-HDR setup-time IBL paths have proven the renderer-side
   cubemap contract.

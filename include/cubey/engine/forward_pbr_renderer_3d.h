@@ -37,6 +37,7 @@ struct ForwardPbrRenderer3DConfig {
     std::filesystem::path post_vertex_shader{};
     std::filesystem::path post_fragment_shader{};
     std::filesystem::path shadow_depth_vertex_shader{};
+    std::filesystem::path shadow_depth_fragment_shader{};
     std::uint32_t shadow_extent = 2048;
     VkFormat shadow_depth_format = VK_FORMAT_UNDEFINED;
     VkFormat scene_color_format = VK_FORMAT_R16G16B16A16_SFLOAT;
@@ -99,8 +100,9 @@ struct ForwardPbrRenderer3DViewInfo {
 
 struct ForwardPbrRenderer3DResourceInfo {
     const render::MeshResourceTable<render::Mesh>* meshes = nullptr;
-    const render::MaterialResourceTable<render::FrameUniformMaterialInstance<
-        render::PbrMaterialUniforms>>* material_instances = nullptr;
+    const render::MaterialResourceTable<
+        render::FrameUniformMaterialInstance<render::PbrMaterialUniforms>>* material_instances =
+        nullptr;
     const std::unordered_map<render::MaterialHandle, render::PbrMaterialFactors,
                              render::MaterialHandleHash>* material_factors = nullptr;
 };
@@ -124,8 +126,7 @@ void validate_forward_pbr_renderer_3d_render_request(
 [[nodiscard]] render::VertexInputLayout forward_pbr_renderer_3d_shadow_vertex_input_layout();
 [[nodiscard]] LightPacket3D
 forward_pbr_renderer_3d_selected_light(std::span<const LightPacket3D> lights,
-                                       Entity requested_light,
-                                       LightPacket3D fallback_light);
+                                       Entity requested_light, LightPacket3D fallback_light);
 [[nodiscard]] render::PbrSceneUniforms
 forward_pbr_renderer_3d_scene_uniforms(const ForwardPbrRenderer3DSceneUniformInfo& info);
 [[nodiscard]] render::PbrSkyboxUniforms
@@ -163,30 +164,29 @@ class ForwardPbrRenderer3D {
         render::ColorTargetView color_target, render::FrameSlot frame_slot,
         render::RenderGraphTextureState color_initial_state,
         render::RenderGraphTextureState color_final_state,
-        const scene::RenderFramePlan3D& shadow_plan,
-        const scene::RenderFramePlan3D& scene_plan,
+        const scene::RenderFramePlan3D& shadow_plan, const scene::RenderFramePlan3D& scene_plan,
         const render::MeshResourceTable<render::Mesh>& meshes,
-        const render::MaterialResourceTable<render::FrameUniformMaterialInstance<
-            render::PbrMaterialUniforms>>& material_instances,
+        const render::MaterialResourceTable<
+            render::FrameUniformMaterialInstance<render::PbrMaterialUniforms>>& material_instances,
         const std::unordered_map<render::MaterialHandle, render::PbrMaterialFactors,
                                  render::MaterialHandleHash>& material_factors);
-    void record_shadow_pass(const vulkan::CommandRecorder& recorder,
-                            const scene::RenderFramePlan3D& shadow_plan,
-                            const render::MeshResourceTable<render::Mesh>& meshes) const;
-    void record_scene_pass(const vulkan::CommandRecorder& recorder,
-                           render::ColorTargetView color_target,
-                           const scene::RenderFramePlan3D& scene_plan,
-                           render::FrameSlot frame_slot,
-                           const render::MeshResourceTable<render::Mesh>& meshes,
-                           const render::MaterialResourceTable<render::FrameUniformMaterialInstance<
-                               render::PbrMaterialUniforms>>& material_instances,
-                           const std::unordered_map<render::MaterialHandle,
-                                                    render::PbrMaterialFactors,
-                                                    render::MaterialHandleHash>& material_factors)
-        const;
+    void record_shadow_pass(
+        const vulkan::CommandRecorder& recorder, const scene::RenderFramePlan3D& shadow_plan,
+        render::FrameSlot frame_slot, const render::MeshResourceTable<render::Mesh>& meshes,
+        const render::MaterialResourceTable<
+            render::FrameUniformMaterialInstance<render::PbrMaterialUniforms>>& material_instances,
+        const std::unordered_map<render::MaterialHandle, render::PbrMaterialFactors,
+                                 render::MaterialHandleHash>& material_factors) const;
+    void record_scene_pass(
+        const vulkan::CommandRecorder& recorder, render::ColorTargetView color_target,
+        const scene::RenderFramePlan3D& scene_plan, render::FrameSlot frame_slot,
+        const render::MeshResourceTable<render::Mesh>& meshes,
+        const render::MaterialResourceTable<
+            render::FrameUniformMaterialInstance<render::PbrMaterialUniforms>>& material_instances,
+        const std::unordered_map<render::MaterialHandle, render::PbrMaterialFactors,
+                                 render::MaterialHandleHash>& material_factors) const;
     void record_post_pass(const vulkan::CommandRecorder& recorder,
-                          render::ColorTargetView color_target,
-                          render::FrameSlot frame_slot) const;
+                          render::ColorTargetView color_target, render::FrameSlot frame_slot) const;
     void update_post_descriptor(const vulkan::Device& device, render::FrameSlot frame_slot,
                                 const render::CompiledRenderGraph& graph,
                                 const render::RenderGraphResourceSet& resources,
@@ -201,6 +201,7 @@ class ForwardPbrRenderer3D {
     post_material() const;
     [[nodiscard]] const render::GraphicsPipelineResource& opaque_pipeline() const;
     [[nodiscard]] const render::GraphicsPipelineResource& alpha_pipeline() const;
+    [[nodiscard]] const render::GraphicsPipelineResource& mask_shadow_pipeline() const;
     [[nodiscard]] const render::GraphicsPipelineResource& skybox_pipeline() const;
     [[nodiscard]] const render::GraphicsPipelineResource& post_pipeline() const;
     [[nodiscard]] const vulkan::Sampler& post_sampler() const;
@@ -210,14 +211,12 @@ class ForwardPbrRenderer3D {
     const render::GeneratedPbrEnvironment* environment_ = nullptr;
     render::RenderGraphFrameExecutor graph_executor_;
     std::optional<render::ShadowMapPass3D> shadow_pass_;
-    std::optional<render::FrameUniformMaterialInstance<render::PbrSceneUniforms>>
-        scene_material_;
-    std::optional<render::FrameUniformMaterialInstance<render::PbrSkyboxUniforms>>
-        skybox_material_;
-    std::optional<render::FrameUniformMaterialInstance<render::PbrPostUniforms>>
-        post_material_;
+    std::optional<render::FrameUniformMaterialInstance<render::PbrSceneUniforms>> scene_material_;
+    std::optional<render::FrameUniformMaterialInstance<render::PbrSkyboxUniforms>> skybox_material_;
+    std::optional<render::FrameUniformMaterialInstance<render::PbrPostUniforms>> post_material_;
     std::optional<render::GraphicsPipelineResource> opaque_pipeline_;
     std::optional<render::GraphicsPipelineResource> alpha_pipeline_;
+    std::optional<render::GraphicsPipelineResource> mask_shadow_pipeline_;
     std::optional<render::GraphicsPipelineResource> skybox_pipeline_;
     std::optional<render::GraphicsPipelineResource> post_pipeline_;
     std::optional<vulkan::Sampler> post_sampler_;

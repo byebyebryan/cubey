@@ -35,12 +35,46 @@ void require_throws(auto&& action, const char* message) {
 void test_material_info_defaults_to_depth_and_forward_passes() {
     const cubey::render::MaterialInfo material{};
 
-    require(cubey::render::material_supports_pass(
-                material, cubey::render::MaterialPassKind::DepthOnly),
-            "default material should support depth-only passes");
-    require(cubey::render::material_supports_pass(
-                material, cubey::render::MaterialPassKind::ForwardColor),
+    require(material.alpha_mode == cubey::render::MaterialAlphaMode::Opaque,
+            "default material should be opaque alpha mode");
+    require(
+        cubey::render::material_supports_pass(material, cubey::render::MaterialPassKind::DepthOnly),
+        "default material should support depth-only passes");
+    require(cubey::render::material_supports_pass(material,
+                                                  cubey::render::MaterialPassKind::ForwardColor),
             "default material should support forward color passes");
+}
+
+void test_material_alpha_modes_map_to_blend_and_pass_policy() {
+    require(cubey::render::material_blend_mode_for_alpha_mode(
+                cubey::render::MaterialAlphaMode::Opaque) ==
+                cubey::render::MaterialBlendMode::Opaque,
+            "opaque alpha mode should use opaque pipeline blending");
+    require(cubey::render::material_blend_mode_for_alpha_mode(
+                cubey::render::MaterialAlphaMode::Mask) == cubey::render::MaterialBlendMode::Opaque,
+            "masked alpha mode should use opaque pipeline blending");
+    require(cubey::render::material_blend_mode_for_alpha_mode(
+                cubey::render::MaterialAlphaMode::Blend) ==
+                cubey::render::MaterialBlendMode::AlphaBlend,
+            "blended alpha mode should use alpha blending");
+
+    const cubey::render::MaterialPassMask masked =
+        cubey::render::material_pass_mask_for_alpha_mode(cubey::render::MaterialAlphaMode::Mask);
+    require(
+        cubey::render::material_supports_pass(masked, cubey::render::MaterialPassKind::DepthOnly),
+        "masked alpha mode should still write depth and shadows");
+    require(cubey::render::material_supports_pass(masked,
+                                                  cubey::render::MaterialPassKind::ForwardColor),
+            "masked alpha mode should still draw in the forward color pass");
+
+    const cubey::render::MaterialPassMask blended =
+        cubey::render::material_pass_mask_for_alpha_mode(cubey::render::MaterialAlphaMode::Blend);
+    require(
+        !cubey::render::material_supports_pass(blended, cubey::render::MaterialPassKind::DepthOnly),
+        "blended alpha mode should not participate in depth-only passes");
+    require(cubey::render::material_supports_pass(blended,
+                                                  cubey::render::MaterialPassKind::ForwardColor),
+            "blended alpha mode should draw in the forward color pass");
 }
 
 void test_material_pass_masks_include_requested_passes() {
@@ -54,18 +88,17 @@ void test_material_pass_masks_include_requested_passes() {
         .pass_mask = forward_only,
     };
 
-    require(!cubey::render::material_supports_pass(
-                material, cubey::render::MaterialPassKind::DepthOnly),
+    require(!cubey::render::material_supports_pass(material,
+                                                   cubey::render::MaterialPassKind::DepthOnly),
             "custom material pass mask should exclude missing passes");
-    require(cubey::render::material_supports_pass(
-                material, cubey::render::MaterialPassKind::ForwardColor),
+    require(cubey::render::material_supports_pass(material,
+                                                  cubey::render::MaterialPassKind::ForwardColor),
             "custom material pass mask should include requested passes");
-    require(cubey::render::material_supports_pass(
-                both, cubey::render::MaterialPassKind::DepthOnly),
+    require(cubey::render::material_supports_pass(both, cubey::render::MaterialPassKind::DepthOnly),
             "combined material pass mask should include depth-only passes");
-    require(cubey::render::material_supports_pass(
-                both, cubey::render::MaterialPassKind::ForwardColor),
-            "combined material pass mask should include forward color passes");
+    require(
+        cubey::render::material_supports_pass(both, cubey::render::MaterialPassKind::ForwardColor),
+        "combined material pass mask should include forward color passes");
 }
 
 void test_material_pass_info_validates_descriptor_and_push_constant_shape() {
@@ -90,9 +123,7 @@ void test_material_pass_info_validates_descriptor_and_push_constant_shape() {
     cubey::render::validate_material_pass_info(valid);
 
     require_throws(
-        [] {
-            cubey::render::validate_material_pass_info(cubey::render::MaterialPassInfo{});
-        },
+        [] { cubey::render::validate_material_pass_info(cubey::render::MaterialPassInfo{}); },
         "material pass info should require a label");
     require_throws(
         [] {
@@ -184,8 +215,7 @@ void test_material_pass_info_applies_graphics_pipeline_state() {
     require(config.topology == VK_PRIMITIVE_TOPOLOGY_LINE_LIST,
             "material pass should apply topology");
     require(config.cull_mode == VK_CULL_MODE_BACK_BIT, "material pass should apply cull mode");
-    require(config.front_face == VK_FRONT_FACE_CLOCKWISE,
-            "material pass should apply front face");
+    require(config.front_face == VK_FRONT_FACE_CLOCKWISE, "material pass should apply front face");
     require(config.depth_test, "material pass should apply depth test");
     require(!config.depth_write, "material pass should apply depth write");
     require(config.depth_compare_op == VK_COMPARE_OP_LESS_OR_EQUAL,
@@ -247,13 +277,9 @@ void test_material_pass_info_builds_descriptor_set_info() {
             "material descriptor set info should multiply sampler descriptors by max sets");
 
     require_throws(
-        [&pass] {
-            static_cast<void>(cubey::render::material_descriptor_set_layout(pass, 0));
-        },
+        [&pass] { static_cast<void>(cubey::render::material_descriptor_set_layout(pass, 0)); },
         "material descriptor set lookup should reject missing sets");
     require_throws(
-        [&pass] {
-            static_cast<void>(cubey::render::material_descriptor_set_info(pass, 1, 0));
-        },
+        [&pass] { static_cast<void>(cubey::render::material_descriptor_set_info(pass, 1, 0)); },
         "material descriptor set info should reject zero max set count");
 }

@@ -5,6 +5,7 @@
 #include <cubey/render/pass.h>
 
 #include <array>
+#include <span>
 #include <stdexcept>
 
 namespace cubey {
@@ -206,6 +207,39 @@ void ForwardPbrRenderer3D::create_swapchain_resources(
                         }),
                     }));
 
+    const VkPushConstantRange shadow_push_constants{
+        .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+        .offset = 0,
+        .size = sizeof(ForwardPbrRenderer3DShadowPushConstants),
+    };
+    const std::array<render::ShaderStageFile, 2> mask_shadow_shaders{
+        render::vertex_shader_file(config_.shadow_depth_vertex_shader),
+        render::fragment_shader_file(config_.shadow_depth_fragment_shader),
+    };
+    const std::array<VkDescriptorSetLayout, 2> mask_shadow_layouts{
+        scene_material().layout(),
+        info.material_descriptor_set_layout,
+    };
+    const render::VertexInputLayout shadow_vertex_input =
+        forward_pbr_renderer_3d_shadow_vertex_input_layout();
+    mask_shadow_pipeline_.emplace(
+        device, render::graphics_pipeline_file_resource_config(
+                    {
+                        .extent = shadow_pass().depth_target().extent,
+                        .depth_format = shadow_pass().depth_target().format,
+                    },
+                    {
+                        .shader_stage_files = mask_shadow_shaders,
+                        .vertex_bindings = shadow_vertex_input.bindings(),
+                        .vertex_attributes = shadow_vertex_input.attribute_descriptions(),
+                        .descriptor_set_layouts = mask_shadow_layouts,
+                        .material_pass = render::shadow_depth_pass_info({
+                            .label = "forward_pbr.shadow.mask",
+                            .push_constants =
+                                std::span<const VkPushConstantRange>{&shadow_push_constants, 1},
+                        }),
+                    }));
+
     const std::array<render::ShaderStageFile, 2> post_shaders{
         render::vertex_shader_file(config_.post_vertex_shader),
         render::fragment_shader_file(config_.post_fragment_shader),
@@ -231,6 +265,7 @@ void ForwardPbrRenderer3D::destroy_swapchain_resources() {
     }
     post_pipeline_.reset();
     post_sampler_.reset();
+    mask_shadow_pipeline_.reset();
     alpha_pipeline_.reset();
     opaque_pipeline_.reset();
     skybox_pipeline_.reset();

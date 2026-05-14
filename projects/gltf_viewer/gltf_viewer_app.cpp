@@ -54,6 +54,7 @@ cubey::ForwardPbrRenderer3DConfig forward_pbr_renderer_3d_config() {
         .post_vertex_shader = shader_path("pbr_post.vert.spv"),
         .post_fragment_shader = shader_path("pbr_post.frag.spv"),
         .shadow_depth_vertex_shader = shader_path("gltf_shadow_depth.vert.spv"),
+        .shadow_depth_fragment_shader = shader_path("gltf_shadow_depth.frag.spv"),
         .shadow_extent = kShadowMapSize,
     };
 }

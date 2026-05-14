@@ -65,6 +65,7 @@ cubey::ForwardPbrRenderer3DConfig valid_forward_pbr_renderer_config() {
         .post_vertex_shader = "post.vert.spv",
         .post_fragment_shader = "post.frag.spv",
         .shadow_depth_vertex_shader = "shadow.vert.spv",
+        .shadow_depth_fragment_shader = "shadow.frag.spv",
     };
 }
 

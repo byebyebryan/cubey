@@ -50,6 +50,7 @@ void test_render_plan_builds_sorted_3d_draw_packets_with_material_metadata() {
     const cubey::render::MaterialHandle transparent =
         registry.create_material(cubey::render::MaterialInfo{
             .label = "transparent",
+            .alpha_mode = cubey::render::MaterialAlphaMode::Blend,
             .blend = cubey::render::MaterialBlendMode::AlphaBlend,
             .sort_key = 0,
             .pass_mask =
@@ -103,6 +104,78 @@ void test_render_plan_builds_sorted_3d_draw_packets_with_material_metadata() {
     require(draw_packets[2].first_instance == 4, "draw packet should preserve first instance");
     require_close(draw_packets[2].local_bounds.half_extent.z, 5.0F,
                   "draw packet should preserve bounds");
+}
+
+void test_render_plan_sorts_blended_packets_back_to_front_for_view() {
+    cubey::render::RenderResourceRegistry registry;
+    const cubey::render::MeshHandle mesh = registry.create_mesh("mesh");
+    const cubey::render::MaterialHandle opaque =
+        registry.create_material(cubey::render::MaterialInfo{
+            .label = "opaque",
+            .alpha_mode = cubey::render::MaterialAlphaMode::Opaque,
+            .blend = cubey::render::MaterialBlendMode::Opaque,
+            .sort_key = 0,
+        });
+    const cubey::render::MaterialHandle masked =
+        registry.create_material(cubey::render::MaterialInfo{
+            .label = "masked",
+            .alpha_mode = cubey::render::MaterialAlphaMode::Mask,
+            .blend = cubey::render::MaterialBlendMode::Opaque,
+            .sort_key = 0,
+        });
+    const cubey::render::MaterialHandle blended_near =
+        registry.create_material(cubey::render::MaterialInfo{
+            .label = "blended near",
+            .alpha_mode = cubey::render::MaterialAlphaMode::Blend,
+            .blend = cubey::render::MaterialBlendMode::AlphaBlend,
+            .pass_mask =
+                cubey::render::material_pass_mask(cubey::render::MaterialPassKind::ForwardColor),
+        });
+    const cubey::render::MaterialHandle blended_far =
+        registry.create_material(cubey::render::MaterialInfo{
+            .label = "blended far",
+            .alpha_mode = cubey::render::MaterialAlphaMode::Blend,
+            .blend = cubey::render::MaterialBlendMode::AlphaBlend,
+            .pass_mask =
+                cubey::render::material_pass_mask(cubey::render::MaterialPassKind::ForwardColor),
+        });
+
+    const std::vector<cubey::RenderablePacket3D> packets{
+        cubey::RenderablePacket3D{
+            .entity = cubey::Entity{.index = 1, .generation = 1},
+            .mesh = mesh,
+            .material = blended_near,
+            .world_bounds = cubey::Bounds3D{.center = {0.0F, 0.0F, -2.0F}},
+        },
+        cubey::RenderablePacket3D{
+            .entity = cubey::Entity{.index = 2, .generation = 1},
+            .mesh = mesh,
+            .material = masked,
+            .world_bounds = cubey::Bounds3D{.center = {0.0F, 0.0F, -4.0F}},
+        },
+        cubey::RenderablePacket3D{
+            .entity = cubey::Entity{.index = 3, .generation = 1},
+            .mesh = mesh,
+            .material = blended_far,
+            .world_bounds = cubey::Bounds3D{.center = {0.0F, 0.0F, -10.0F}},
+        },
+        cubey::RenderablePacket3D{
+            .entity = cubey::Entity{.index = 4, .generation = 1},
+            .mesh = mesh,
+            .material = opaque,
+            .world_bounds = cubey::Bounds3D{.center = {0.0F, 0.0F, -1.0F}},
+        },
+    };
+
+    const std::vector<cubey::scene::RenderDrawPacket3D> draw_packets =
+        cubey::scene::build_render_draw_packets_3d(packets, registry, cubey::math::Mat4{1.0F});
+
+    require(draw_packets.size() == 4, "all packets should remain visible to sorting");
+    require(draw_packets[0].material == opaque, "opaque packets should render before alpha");
+    require(draw_packets[1].material == masked, "masked packets should render before blended");
+    require(draw_packets[2].material == blended_far,
+            "blended packets should sort far-to-near for source-over blending");
+    require(draw_packets[3].material == blended_near, "nearest blended packet should render last");
 }
 
 void test_render_plan_rejects_stale_resource_handles() {
@@ -183,6 +256,7 @@ void test_render_plan_filters_draw_packets_for_recording_policy() {
         .material_info =
             cubey::render::MaterialInfo{
                 .label = "alpha",
+                .alpha_mode = cubey::render::MaterialAlphaMode::Blend,
                 .blend = cubey::render::MaterialBlendMode::AlphaBlend,
             },
     };
@@ -206,12 +280,10 @@ void test_render_plan_filters_draw_packets_for_recording_policy() {
                 {.material_pass = cubey::render::MaterialPassKind::ForwardColor}),
             "recording filter should accept packets with the requested forward pass");
     require(cubey::scene::render_packet_matches_filter(
-                alpha_blend_packet,
-                {.blend_mode = cubey::render::MaterialBlendMode::AlphaBlend}),
+                alpha_blend_packet, {.blend_mode = cubey::render::MaterialBlendMode::AlphaBlend}),
             "recording filter should accept packets with the requested blend mode");
     require(!cubey::scene::render_packet_matches_filter(
-                alpha_blend_packet,
-                {.blend_mode = cubey::render::MaterialBlendMode::Opaque}),
+                alpha_blend_packet, {.blend_mode = cubey::render::MaterialBlendMode::Opaque}),
             "recording filter should reject packets with a different blend mode");
 }
 

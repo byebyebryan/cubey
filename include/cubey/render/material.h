@@ -20,6 +20,12 @@ enum class MaterialBlendMode : std::uint8_t {
     AlphaBlend,
 };
 
+enum class MaterialAlphaMode : std::uint8_t {
+    Opaque,
+    Mask,
+    Blend,
+};
+
 enum class MaterialPassKind : std::uint8_t {
     DepthOnly,
     ForwardColor,
@@ -48,10 +54,35 @@ struct MaterialPassMask {
 struct MaterialInfo {
     std::string label{};
     MaterialDomain domain = MaterialDomain::Surface3D;
+    MaterialAlphaMode alpha_mode = MaterialAlphaMode::Opaque;
     MaterialBlendMode blend = MaterialBlendMode::Opaque;
     std::uint32_t sort_key = 0;
     MaterialPassMask pass_mask = default_material_pass_mask();
 };
+
+[[nodiscard]] constexpr MaterialBlendMode
+material_blend_mode_for_alpha_mode(MaterialAlphaMode mode) noexcept {
+    switch (mode) {
+    case MaterialAlphaMode::Blend:
+        return MaterialBlendMode::AlphaBlend;
+    case MaterialAlphaMode::Opaque:
+    case MaterialAlphaMode::Mask:
+    default:
+        return MaterialBlendMode::Opaque;
+    }
+}
+
+[[nodiscard]] constexpr MaterialPassMask
+material_pass_mask_for_alpha_mode(MaterialAlphaMode mode) noexcept {
+    switch (mode) {
+    case MaterialAlphaMode::Blend:
+        return material_pass_mask(MaterialPassKind::ForwardColor);
+    case MaterialAlphaMode::Opaque:
+    case MaterialAlphaMode::Mask:
+    default:
+        return default_material_pass_mask();
+    }
+}
 
 struct MaterialDescriptorSetLayout {
     std::uint32_t set = 0;

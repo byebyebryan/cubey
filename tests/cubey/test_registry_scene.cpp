@@ -24,6 +24,7 @@ void test_render_plan_builds_sorted_3d_draw_packets_with_material_metadata();
 void test_render_plan_converts_draw_packets_to_render_items();
 void test_render_plan_filters_draw_packets_for_recording_policy();
 void test_render_plan_rejects_stale_resource_handles();
+void test_render_plan_sorts_blended_packets_back_to_front_for_view();
 void test_render_recording_rejects_ambiguous_material_binding_sources();
 void test_render_view_3d_builds_frame_plan_with_environment_draws_and_lights();
 void test_render_view_3d_builds_multiple_view_plans_from_one_scene_read_view();
@@ -77,6 +78,7 @@ std::span<const TestCase> scene_test_cases() {
         CUBEY_TEST(test_light_packets_require_transform_for_point_lights),
         CUBEY_TEST(test_environment_3d_defaults_to_low_linear_ambient),
         CUBEY_TEST(test_render_plan_builds_sorted_3d_draw_packets_with_material_metadata),
+        CUBEY_TEST(test_render_plan_sorts_blended_packets_back_to_front_for_view),
         CUBEY_TEST(test_render_plan_converts_draw_packets_to_render_items),
         CUBEY_TEST(test_render_plan_filters_draw_packets_for_recording_policy),
         CUBEY_TEST(test_render_recording_rejects_ambiguous_material_binding_sources),
