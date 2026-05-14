@@ -130,6 +130,10 @@ add_library(cubey_render STATIC
     render/pipeline_resource.cpp
     render/primitive_mesh.cpp
     render/render_graph.cpp
+    render/render_graph_barriers.cpp
+    render/render_graph_execution.cpp
+    render/render_graph_frame.cpp
+    render/render_graph_resolve.cpp
     render/render_graph_resources.cpp
     render/render_graph_sync.cpp
     render/render_item.cpp
