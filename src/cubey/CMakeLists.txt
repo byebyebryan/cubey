@@ -96,6 +96,7 @@ target_link_libraries(
 
 add_library(cubey_asset STATIC
     asset/gltf_asset.cpp
+    asset/gltf_asset_io.cpp
     asset/hdr_image.cpp
 )
 add_library(cubey::asset ALIAS cubey_asset)
@@ -189,6 +190,7 @@ add_library(cubey_engine STATIC
     engine/capture_queue.cpp
     engine/engine.cpp
     engine/gltf_scene_importer.cpp
+    engine/gltf_scene_importer_materials.cpp
     engine/forward_pbr_renderer_3d.cpp
     engine/forward_pbr_renderer_3d_graph.cpp
     engine/forward_pbr_renderer_3d_recording.cpp
