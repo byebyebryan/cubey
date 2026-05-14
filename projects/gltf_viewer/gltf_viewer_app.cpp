@@ -157,8 +157,7 @@ std::vector<std::uint32_t> fallback_cube_indices() {
 
 class GltfViewerApp {
   public:
-    explicit GltfViewerApp(RunConfig config)
-        : config_(std::move(config)), pbr_renderer_(forward_pbr_renderer_3d_config()) {}
+    explicit GltfViewerApp(RunConfig config) : config_(std::move(config)) {}
 
     GltfViewerApp(const GltfViewerApp&) = delete;
     GltfViewerApp& operator=(const GltfViewerApp&) = delete;
@@ -268,12 +267,14 @@ class GltfViewerApp {
         }
 
         create_ibl_resources(device, gpu);
-        pbr_renderer_.create_global_resources(device, ibl_environment(), frame_slot_count);
+        forward_pbr_renderer_ =
+            &engine_.renderers().create_forward_pbr_renderer_3d(forward_pbr_renderer_3d_config());
+        forward_pbr_renderer().create_global_resources(device, ibl_environment(), frame_slot_count);
     }
 
     void create_frame_resources(const cubey::vulkan::Device& device, VkExtent2D extent,
                                 VkFormat color_format) {
-        pbr_renderer_.create_swapchain_resources(
+        forward_pbr_renderer().create_swapchain_resources(
             device, cubey::ForwardPbrRenderer3DTargetResourcesInfo{
                         .extent = extent,
                         .color_format = color_format,
@@ -282,12 +283,12 @@ class GltfViewerApp {
     }
 
     void destroy_swapchain_resources() {
-        pbr_renderer_.destroy_swapchain_resources();
+        engine_.renderers().destroy_swapchain_resources();
     }
 
     void destroy_all_resources() {
-        destroy_swapchain_resources();
-        pbr_renderer_.destroy_all_resources();
+        engine_.renderers().destroy_all_resources();
+        forward_pbr_renderer_ = nullptr;
         ibl_environment_.reset();
         destroy_scene_if_needed();
         cubey::destroy_gltf_scene_import(engine_, import_resources_, import_result_);
@@ -613,7 +614,7 @@ class GltfViewerApp {
         }
         const cubey::scene::RenderFramePlan3D& shadow_plan = frame_plan.passes()[0].frame_plan;
         const cubey::scene::RenderFramePlan3D& scene_plan = frame_plan.passes()[1].frame_plan;
-        pbr_renderer_.record({
+        forward_pbr_renderer().record({
             .device = &device,
             .command_buffer = command_buffer,
             .color_target = color_target,
@@ -691,14 +692,21 @@ class GltfViewerApp {
         return ibl_environment_.value();
     }
 
+    [[nodiscard]] cubey::ForwardPbrRenderer3D& forward_pbr_renderer() const {
+        if (forward_pbr_renderer_ == nullptr) {
+            throw std::runtime_error("forward PBR renderer is not initialized");
+        }
+        return *forward_pbr_renderer_;
+    }
+
     [[nodiscard]] VkDescriptorSetLayout material_descriptor_set_layout() const {
         return import_resources_.material_instances.at(import_result_.first_material_handle)
             .layout();
     }
 
     RunConfig config_;
-    cubey::ForwardPbrRenderer3D pbr_renderer_;
     cubey::Engine engine_;
+    cubey::ForwardPbrRenderer3D* forward_pbr_renderer_ = nullptr;
     cubey::Scene* scene_ = nullptr;
     std::optional<cubey::asset::GltfAsset> asset_{};
     cubey::Entity camera_entity_{};
