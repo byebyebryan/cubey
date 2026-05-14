@@ -1,6 +1,7 @@
 #include "spinning_cube_app.h"
 
 #include "../common/cube_scene.h"
+#include "../common/forward_pass.h"
 
 #include <cubey/core/math.h>
 #include <cubey/engine/engine.h>
@@ -134,26 +135,15 @@ class SpinningCubeApp {
     }
 
     void create_forward_pass(cubey::host::WindowedAppContext& context) {
-        const std::array<cubey::render::ShaderStageFile, 2> shader_stage_files{
-            cubey::render::vertex_shader_file(shader_path("spinning_cube.vert.spv")),
-            cubey::render::fragment_shader_file(shader_path("spinning_cube.frag.spv")),
-        };
-        const cubey::render::VertexInputLayout vertex_input =
-            cubey::render::vertex_position_color_input_layout();
-        forward_pass_.emplace(
-            context.device(),
-            cubey::render::GraphicsPipelineTargetInfo{
+        cubey::examples::common::emplace_forward_scene_pass_3d(
+            forward_pass_, context.device(),
+            {
                 .extent = context.swapchain().extent(),
                 .color_format = context.swapchain().format(),
-            },
-            cubey::render::ForwardScenePass3DConfig{
-                .pipeline =
-                    {
-                        .shader_stage_files = shader_stage_files,
-                        .vertex_bindings = vertex_input.bindings(),
-                        .vertex_attributes = vertex_input.attribute_descriptions(),
-                        .material_pass = spinning_cube_forward_pass_info(),
-                    },
+                .vertex_shader = shader_path("spinning_cube.vert.spv"),
+                .fragment_shader = shader_path("spinning_cube.frag.spv"),
+                .vertex_input = cubey::render::vertex_position_color_input_layout(),
+                .material_pass = spinning_cube_forward_pass_info(),
                 .clear =
                     {
                         .color = cubey::render::color_clear_value(0.015F, 0.017F, 0.024F, 1.0F),

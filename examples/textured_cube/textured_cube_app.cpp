@@ -1,6 +1,7 @@
 #include "textured_cube_app.h"
 
 #include "../common/cube_scene.h"
+#include "../common/forward_pass.h"
 
 #include <cubey/core/math.h>
 #include <cubey/engine/engine.h>
@@ -197,28 +198,17 @@ class TexturedCubeApp {
     }
 
     void create_forward_pass(cubey::host::WindowedAppContext& context) {
-        const std::array<cubey::render::ShaderStageFile, 2> shader_stage_files{
-            cubey::render::vertex_shader_file(shader_path("textured_cube.vert.spv")),
-            cubey::render::fragment_shader_file(shader_path("textured_cube.frag.spv")),
-        };
-        const cubey::render::VertexInputLayout vertex_input =
-            cubey::render::vertex_position_color_normal_uv_input_layout();
         const std::array<VkDescriptorSetLayout, 1> set_layouts{material().layout()};
-        forward_pass_.emplace(
-            context.device(),
-            cubey::render::GraphicsPipelineTargetInfo{
+        cubey::examples::common::emplace_forward_scene_pass_3d(
+            forward_pass_, context.device(),
+            {
                 .extent = context.swapchain().extent(),
                 .color_format = context.swapchain().format(),
-            },
-            cubey::render::ForwardScenePass3DConfig{
-                .pipeline =
-                    {
-                        .shader_stage_files = shader_stage_files,
-                        .vertex_bindings = vertex_input.bindings(),
-                        .vertex_attributes = vertex_input.attribute_descriptions(),
-                        .descriptor_set_layouts = set_layouts,
-                        .material_pass = textured_cube_forward_pass_info(),
-                    },
+                .vertex_shader = shader_path("textured_cube.vert.spv"),
+                .fragment_shader = shader_path("textured_cube.frag.spv"),
+                .vertex_input = cubey::render::vertex_position_color_normal_uv_input_layout(),
+                .descriptor_set_layouts = set_layouts,
+                .material_pass = textured_cube_forward_pass_info(),
                 .clear =
                     {
                         .color = cubey::render::color_clear_value(0.014F, 0.016F, 0.022F, 1.0F),
@@ -355,19 +345,20 @@ class TexturedCubeApp {
 
         recorder.begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
-        forward_pass().record_to_present_target(recorder, frame.color_target,
-                                         [this, &frame_plan, frame_slot = frame.frame_slot](
-                                             const cubey::vulkan::CommandRecorder& pass_recorder) {
-                                             cubey::scene::record_pipeline_draw_packets_3d(
-                                                 pass_recorder, frame_plan.draw_packets, meshes_,
-                                                 {
-                                                     .pipeline = &forward_pass().pipeline(),
-                                                     .material = &material().material(),
-                                                     .frame_slot = frame_slot,
-                                                 },
-                                                 [](const cubey::vulkan::CommandRecorder&,
-                                                    const cubey::scene::RenderDrawPacket3D&) {});
-                                         });
+        forward_pass().record_to_present_target(
+            recorder, frame.color_target,
+            [this, &frame_plan,
+             frame_slot = frame.frame_slot](const cubey::vulkan::CommandRecorder& pass_recorder) {
+                cubey::scene::record_pipeline_draw_packets_3d(
+                    pass_recorder, frame_plan.draw_packets, meshes_,
+                    {
+                        .pipeline = &forward_pass().pipeline(),
+                        .material = &material().material(),
+                        .frame_slot = frame_slot,
+                    },
+                    [](const cubey::vulkan::CommandRecorder&,
+                       const cubey::scene::RenderDrawPacket3D&) {});
+            });
 
         recorder.end("vkEndCommandBuffer textured_cube");
     }

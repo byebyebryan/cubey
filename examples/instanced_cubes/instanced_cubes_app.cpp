@@ -1,6 +1,7 @@
 #include "instanced_cubes_app.h"
 
 #include "../common/cube_scene.h"
+#include "../common/forward_pass.h"
 
 #include <cubey/core/math.h>
 #include <cubey/engine/engine.h>
@@ -218,25 +219,15 @@ class InstancedCubesApp {
     }
 
     void create_forward_pass(cubey::host::WindowedAppContext& context) {
-        const std::array<cubey::render::ShaderStageFile, 2> shader_stage_files{
-            cubey::render::vertex_shader_file(shader_path("instanced_cubes.vert.spv")),
-            cubey::render::fragment_shader_file(shader_path("instanced_cubes.frag.spv")),
-        };
-        const cubey::render::VertexInputLayout vertex_input = instanced_cube_vertex_input_layout();
-        forward_pass_.emplace(
-            context.device(),
-            cubey::render::GraphicsPipelineTargetInfo{
+        cubey::examples::common::emplace_forward_scene_pass_3d(
+            forward_pass_, context.device(),
+            {
                 .extent = context.swapchain().extent(),
                 .color_format = context.swapchain().format(),
-            },
-            cubey::render::ForwardScenePass3DConfig{
-                .pipeline =
-                    {
-                        .shader_stage_files = shader_stage_files,
-                        .vertex_bindings = vertex_input.bindings(),
-                        .vertex_attributes = vertex_input.attribute_descriptions(),
-                        .material_pass = instanced_cubes_forward_pass_info(),
-                    },
+                .vertex_shader = shader_path("instanced_cubes.vert.spv"),
+                .fragment_shader = shader_path("instanced_cubes.frag.spv"),
+                .vertex_input = instanced_cube_vertex_input_layout(),
+                .material_pass = instanced_cubes_forward_pass_info(),
                 .clear =
                     {
                         .color = cubey::render::color_clear_value(0.018F, 0.02F, 0.026F, 1.0F),
@@ -312,16 +303,15 @@ class InstancedCubesApp {
 
         forward_pass().record_to_present_target(
             recorder, frame.color_target,
-            [this, &frame_plan, &cube_spin](
-                const cubey::vulkan::CommandRecorder& pass_recorder) {
+            [this, &frame_plan, &cube_spin](const cubey::vulkan::CommandRecorder& pass_recorder) {
                 cubey::scene::record_pipeline_draw_packets_3d(
                     pass_recorder, frame_plan.draw_packets, meshes_,
                     {
                         .pipeline = &forward_pass().pipeline(),
                     },
-                    [this, &frame_plan, &cube_spin](
-                        const cubey::vulkan::CommandRecorder& packet_recorder,
-                        const cubey::scene::RenderDrawPacket3D&) {
+                    [this, &frame_plan,
+                     &cube_spin](const cubey::vulkan::CommandRecorder& packet_recorder,
+                                 const cubey::scene::RenderDrawPacket3D&) {
                         instance_buffer().bind(packet_recorder, 1);
                         packet_recorder.push_constants(
                             forward_pass().pipeline().layout(), VK_SHADER_STAGE_VERTEX_BIT, 0,

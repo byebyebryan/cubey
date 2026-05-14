@@ -1,6 +1,7 @@
 #include "headless_cube_app.h"
 
 #include "../common/cube_scene.h"
+#include "../common/forward_pass.h"
 
 #include <cubey/core/math.h>
 #include <cubey/host/headless_png_host.h>
@@ -89,26 +90,15 @@ class HeadlessCubeApp {
 
     void create_forward_pass(cubey::vulkan::Device& device,
                              const cubey::host::HeadlessRenderTarget& target) {
-        const std::array<cubey::render::ShaderStageFile, 2> shader_stage_files{
-            cubey::render::vertex_shader_file(shader_path("headless_cube.vert.spv")),
-            cubey::render::fragment_shader_file(shader_path("headless_cube.frag.spv")),
-        };
-        const cubey::render::VertexInputLayout vertex_input =
-            cubey::render::vertex_position_color_input_layout();
-        forward_pass_.emplace(
-            device,
-            cubey::render::GraphicsPipelineTargetInfo{
+        cubey::examples::common::emplace_forward_scene_pass_3d(
+            forward_pass_, device,
+            {
                 .extent = target.extent,
                 .color_format = target.format,
-            },
-            cubey::render::ForwardScenePass3DConfig{
-                .pipeline =
-                    {
-                        .shader_stage_files = shader_stage_files,
-                        .vertex_bindings = vertex_input.bindings(),
-                        .vertex_attributes = vertex_input.attribute_descriptions(),
-                        .material_pass = headless_cube_pass_info(),
-                    },
+                .vertex_shader = shader_path("headless_cube.vert.spv"),
+                .fragment_shader = shader_path("headless_cube.frag.spv"),
+                .vertex_input = cubey::render::vertex_position_color_input_layout(),
+                .material_pass = headless_cube_pass_info(),
                 .clear =
                     {
                         .color = cubey::render::color_clear_value(0.04F, 0.055F, 0.075F, 1.0F),
