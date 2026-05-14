@@ -8,7 +8,11 @@ void test_engine_creates_independent_scenes();
 void test_engine_destroys_owned_scenes_and_rejects_foreign_scenes();
 void test_engine_exposes_project_runtime_services();
 void test_engine_exposes_render_resource_registry();
+void test_engine_exposes_renderer_service();
 void test_engine_reuses_project_frame_for_same_timing();
+void test_renderer_service_owns_pbr_view_renderer_instances();
+void test_renderer_service_rejects_foreign_pbr_view_renderer();
+void test_renderer_service_resource_lifecycle_is_safe_without_renderers();
 void test_headless_png_host_validates_capture_shape();
 void test_host_frame_stats_publish_window_title_metrics();
 void test_input_state_accumulates_cursor_and_scroll_per_frame();
@@ -55,6 +59,10 @@ std::span<const TestCase> engine_host_input_test_cases() {
         CUBEY_TEST(test_engine_destroys_owned_scenes_and_rejects_foreign_scenes),
         CUBEY_TEST(test_engine_exposes_render_resource_registry),
         CUBEY_TEST(test_engine_created_scenes_validate_render_resource_handles),
+        CUBEY_TEST(test_engine_exposes_renderer_service),
+        CUBEY_TEST(test_renderer_service_owns_pbr_view_renderer_instances),
+        CUBEY_TEST(test_renderer_service_rejects_foreign_pbr_view_renderer),
+        CUBEY_TEST(test_renderer_service_resource_lifecycle_is_safe_without_renderers),
         CUBEY_TEST(test_pbr_view_renderer_config_requires_shader_paths_and_shadow_extent),
         CUBEY_TEST(test_pbr_view_renderer_selects_requested_light_or_fallback),
         CUBEY_TEST(test_pbr_view_renderer_shadow_vertex_layout_matches_pbr_vertices),

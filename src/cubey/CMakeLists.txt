@@ -188,6 +188,7 @@ add_library(cubey_engine STATIC
     engine/pbr_view_renderer.cpp
     engine/project_gpu_services.cpp
     engine/project_runtime.cpp
+    engine/renderer_service.cpp
     engine/upload_queue.cpp
 )
 add_library(cubey::engine ALIAS cubey_engine)
