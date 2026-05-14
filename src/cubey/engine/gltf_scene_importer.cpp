@@ -116,6 +116,9 @@ void create_mesh_resources(Engine& engine, vulkan::GpuRuntime& gpu,
                 .mesh = mesh_handle,
                 .material = material_handle_for_index(result, primitive.material_index),
                 .local_bounds = to_scene_bounds(primitive.local_bounds),
+                .mesh_index = static_cast<std::uint32_t>(mesh_index),
+                .primitive_index = static_cast<std::uint32_t>(primitive_index),
+                .deformation = gltf_primitive_deformation_kind(asset::GltfNode{}, primitive),
             });
         }
     }
@@ -183,9 +186,9 @@ void accumulate_node_bounds(const asset::GltfAsset& asset,
     return accumulator.bounds_or_default();
 }
 
-Entity create_node(SceneTransaction& transaction, const asset::GltfAsset& asset,
-                   const GltfSceneImportResources& resources, GltfSceneImportResult& result,
-                   std::uint32_t node_index, Entity parent) {
+Entity create_node(Engine& engine, SceneTransaction& transaction, const asset::GltfAsset& asset,
+                   GltfSceneImportResources& resources, GltfSceneImportResult& result,
+                   const GltfSceneImportConfig& config, std::uint32_t node_index, Entity parent) {
     if (node_index >= asset.nodes.size()) {
         throw std::runtime_error("glTF scene node index is out of range");
     }
@@ -204,6 +207,29 @@ Entity create_node(SceneTransaction& transaction, const asset::GltfAsset& asset,
         BoundsAccumulator bounds;
         for (const GltfImportedPrimitive3D& primitive :
              resources.mesh_primitives[node.mesh_index]) {
+            const asset::GltfMeshPrimitive& asset_primitive =
+                asset.meshes[node.mesh_index].primitives[primitive.primitive_index];
+            const GltfPrimitiveDeformationKind deformation =
+                gltf_primitive_deformation_kind(node, asset_primitive);
+            if (gltf_primitive_requires_deformation(deformation)) {
+                const render::MeshHandle output_mesh = engine.render_resources().create_mesh(
+                    config.label_prefix + ".node." + std::to_string(node_index) + ".mesh." +
+                    std::to_string(node.mesh_index) + ".primitive." +
+                    std::to_string(primitive.primitive_index) + ".deformed");
+                result.mesh_handles.push_back(output_mesh);
+                resources.deformable_primitives.push_back({
+                    .entity = entity,
+                    .node_index = node_index,
+                    .mesh_index = primitive.mesh_index,
+                    .primitive_index = primitive.primitive_index,
+                    .skin_index = node.skin_index,
+                    .deformation = deformation,
+                    .source_mesh = primitive.mesh,
+                    .output_mesh = output_mesh,
+                    .material = primitive.material,
+                    .local_bounds = primitive.local_bounds,
+                });
+            }
             primitives.push_back({
                 .mesh = primitive.mesh,
                 .material = primitive.material,
@@ -220,12 +246,33 @@ Entity create_node(SceneTransaction& transaction, const asset::GltfAsset& asset,
     }
 
     for (const std::uint32_t child : node.children) {
-        create_node(transaction, asset, resources, result, child, entity);
+        create_node(engine, transaction, asset, resources, result, config, child, entity);
     }
     return entity;
 }
 
 } // namespace
+
+GltfPrimitiveDeformationKind
+gltf_primitive_deformation_kind(const asset::GltfNode& node,
+                                const asset::GltfMeshPrimitive& primitive) {
+    const bool has_morph_targets = !primitive.morph_targets.empty();
+    const bool has_skin = node.skin_index != asset::kInvalidAssetIndex;
+    if (has_morph_targets && has_skin) {
+        return GltfPrimitiveDeformationKind::MorphSkin;
+    }
+    if (has_morph_targets) {
+        return GltfPrimitiveDeformationKind::Morph;
+    }
+    if (has_skin) {
+        return GltfPrimitiveDeformationKind::Skin;
+    }
+    return GltfPrimitiveDeformationKind::Static;
+}
+
+bool gltf_primitive_requires_deformation(GltfPrimitiveDeformationKind kind) {
+    return kind != GltfPrimitiveDeformationKind::Static;
+}
 
 GltfSceneImportResult import_gltf_scene(Engine& engine, SceneTransaction& transaction,
                                         const asset::GltfAsset& asset, const vulkan::Device& device,
@@ -249,7 +296,7 @@ GltfSceneImportResult import_gltf_scene(Engine& engine, SceneTransaction& transa
         result.root_entities.reserve(scene.root_nodes.size());
         for (const std::uint32_t root : scene.root_nodes) {
             result.root_entities.push_back(
-                create_node(transaction, asset, resources, result, root, {}));
+                create_node(engine, transaction, asset, resources, result, config, root, {}));
         }
 
         resources.active = true;
@@ -287,6 +334,7 @@ void destroy_gltf_scene_import(Engine& engine, GltfSceneImportResources& resourc
     }
 
     resources.mesh_primitives.clear();
+    resources.deformable_primitives.clear();
     resources.textures.clear();
     resources.emissive_default.reset();
     resources.occlusion_default.reset();

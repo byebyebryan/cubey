@@ -27,8 +27,31 @@ class Device;
 class GpuRuntime;
 } // namespace vulkan
 
+enum class GltfPrimitiveDeformationKind : std::uint8_t {
+    Static,
+    Morph,
+    Skin,
+    MorphSkin,
+};
+
 struct GltfImportedPrimitive3D {
     render::MeshHandle mesh{};
+    render::MaterialHandle material{};
+    Bounds3D local_bounds{};
+    std::uint32_t mesh_index = asset::kInvalidAssetIndex;
+    std::uint32_t primitive_index = asset::kInvalidAssetIndex;
+    GltfPrimitiveDeformationKind deformation = GltfPrimitiveDeformationKind::Static;
+};
+
+struct GltfDeformablePrimitive3D {
+    Entity entity{};
+    std::uint32_t node_index = asset::kInvalidAssetIndex;
+    std::uint32_t mesh_index = asset::kInvalidAssetIndex;
+    std::uint32_t primitive_index = asset::kInvalidAssetIndex;
+    std::uint32_t skin_index = asset::kInvalidAssetIndex;
+    GltfPrimitiveDeformationKind deformation = GltfPrimitiveDeformationKind::Static;
+    render::MeshHandle source_mesh{};
+    render::MeshHandle output_mesh{};
     render::MaterialHandle material{};
     Bounds3D local_bounds{};
 };
@@ -57,6 +80,7 @@ struct GltfSceneImportResources {
                        render::MaterialHandleHash>
         material_factors{};
     std::vector<std::vector<GltfImportedPrimitive3D>> mesh_primitives{};
+    std::vector<GltfDeformablePrimitive3D> deformable_primitives{};
     std::vector<render::Texture2D> textures{};
     std::optional<render::Texture2D> base_color_default{};
     std::optional<render::Texture2D> metallic_roughness_default{};
@@ -65,6 +89,11 @@ struct GltfSceneImportResources {
     std::optional<render::Texture2D> emissive_default{};
     bool active = false;
 };
+
+[[nodiscard]] GltfPrimitiveDeformationKind
+gltf_primitive_deformation_kind(const asset::GltfNode& node,
+                                const asset::GltfMeshPrimitive& primitive);
+[[nodiscard]] bool gltf_primitive_requires_deformation(GltfPrimitiveDeformationKind kind);
 
 [[nodiscard]] GltfSceneImportResult
 import_gltf_scene(Engine& engine, SceneTransaction& transaction, const asset::GltfAsset& asset,

@@ -8,6 +8,12 @@
 
 namespace {
 
+void require(bool condition, const char* message) {
+    if (!condition) {
+        throw std::runtime_error(message);
+    }
+}
+
 void require_close(float value, float expected, const char* message) {
     constexpr float kTolerance = 0.0001F;
     if (value < expected - kTolerance || value > expected + kTolerance) {
@@ -66,4 +72,31 @@ void test_gltf_scene_importer_applies_rigid_animation_samples_to_imported_nodes(
         view.transforms3d().local_transform(view.transforms3d().instance(untouched));
     require_close(untouched_transform.translation.x, 9.0F,
                   "nodes without sampled TRS channels should remain untouched");
+}
+
+void test_gltf_scene_importer_classifies_deformable_primitives() {
+    cubey::asset::GltfNode static_node;
+    cubey::asset::GltfNode skinned_node;
+    skinned_node.skin_index = 0;
+    cubey::asset::GltfMeshPrimitive static_primitive;
+    cubey::asset::GltfMeshPrimitive morph_primitive;
+    morph_primitive.morph_targets.resize(1);
+
+    require(cubey::gltf_primitive_deformation_kind(static_node, static_primitive) ==
+                cubey::GltfPrimitiveDeformationKind::Static,
+            "static primitive should not require deformation");
+    require(cubey::gltf_primitive_deformation_kind(static_node, morph_primitive) ==
+                cubey::GltfPrimitiveDeformationKind::Morph,
+            "morph targets should require morph deformation");
+    require(cubey::gltf_primitive_deformation_kind(skinned_node, static_primitive) ==
+                cubey::GltfPrimitiveDeformationKind::Skin,
+            "skin node should require skin deformation");
+    require(cubey::gltf_primitive_deformation_kind(skinned_node, morph_primitive) ==
+                cubey::GltfPrimitiveDeformationKind::MorphSkin,
+            "skinned morph primitive should require combined deformation");
+
+    require(!cubey::gltf_primitive_requires_deformation(cubey::GltfPrimitiveDeformationKind::Static),
+            "static primitive should not require deformation resources");
+    require(cubey::gltf_primitive_requires_deformation(cubey::GltfPrimitiveDeformationKind::Skin),
+            "skinned primitive should require deformation resources");
 }
