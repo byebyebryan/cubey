@@ -34,8 +34,6 @@ void require_not_contains(const std::string& text, const std::string& needle,
 
 void test_example_lighting_uses_low_linear_ambient_terms() {
     const std::filesystem::path root{CUBEY_SOURCE_DIR};
-    const std::string material =
-        read_source_file(root / "examples/material_cubes/shaders/material_cubes.frag");
     const std::string instanced =
         read_source_file(root / "examples/instanced_cubes/shaders/instanced_cubes.frag");
     const std::string particle =
@@ -45,15 +43,13 @@ void test_example_lighting_uses_low_linear_ambient_terms() {
     const std::string textured_app =
         read_source_file(root / "examples/textured_cube/textured_cube_app.cpp");
 
-    for (const std::string* shader : {&material, &instanced, &particle, &shadow}) {
+    for (const std::string* shader : {&instanced, &particle, &shadow}) {
         require_contains(*shader, "kAmbientRadiance",
                          "simple example shaders should name their linear ambient term");
         require_contains(*shader, "0.045",
                          "simple example shaders should use a low linear ambient term");
         require_not_contains(*shader, "vec3(0.22)",
                              "simple example shaders should not use old display-space ambient");
-        require_not_contains(*shader, "0.24 + 0.88",
-                             "material cubes should not use old display-space lighting factors");
     }
 
     require_contains(textured_app, ".ambient_color = {0.045F, 0.045F, 0.045F}",

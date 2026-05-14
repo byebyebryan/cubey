@@ -128,7 +128,7 @@ class TexturedCubeApp {
         callbacks.update = [this](cubey::host::WindowedAppContext& context,
                                   const FrameTiming& timing) {
             orbit_controller_.update_from_input(context.input(), timing.delta_seconds);
-            update_scene_transform();
+            update_scene_transform(timing);
         };
         callbacks.record_frame = [this](cubey::host::WindowedAppContext& context,
                                         const cubey::host::WindowedRenderFrame& frame) {
@@ -274,13 +274,17 @@ class TexturedCubeApp {
                                             });
     }
 
-    void update_scene_transform() {
-        const cubey::Transform3D transform{
-            .rotation = cubey::math::euler_xyz_quat(
-                {orbit_controller_.pitch(), orbit_controller_.yaw(), 0.0F}),
-        };
+    void update_scene_transform(const FrameTiming& timing) {
+        const float seconds = static_cast<float>(timing.elapsed_seconds);
         cubey::SceneEditQueue edits = scene().create_edit_queue();
-        edits.transforms3d().set_local_transform(cube_entity_, transform);
+        edits.transforms3d().set_local_transform(
+            cube_entity_, cubey::examples::common::cube_spin_transform(seconds));
+        edits.transforms3d().set_local_transform(
+            camera_entity_, cubey::orbit_camera_transform(cubey::OrbitCameraState{
+                                .distance = 4.2F,
+                                .yaw = orbit_controller_.yaw(),
+                                .pitch = orbit_controller_.pitch(),
+                            }));
         scene().commit(edits);
     }
 

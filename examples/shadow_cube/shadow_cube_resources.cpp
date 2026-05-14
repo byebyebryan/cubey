@@ -40,7 +40,7 @@ void ShadowCubeApp::create_global_resources_if_needed(cubey::host::WindowedAppCo
     floor_mesh_handle_ = cubey::render::create_primitive_mesh_resource(
         engine_.render_resources(), meshes_, context.gpu(), "shadow_cube.floor",
         cubey::render::make_xz_plane_position_color_normal_mesh({
-            .center = {0.0F, -1.05F, 0.0F},
+            .center = {0.0F, kShadowCubeGroundPlaneY, 0.0F},
             .half_extent_x = 4.0F,
             .half_extent_z = 4.0F,
             .color = kFloorColor,

@@ -8,6 +8,15 @@ cubey_add_app_target(
         main.cpp
         material_cubes_app.cpp
     SHADERS
-        shaders/material_cubes.vert
-        shaders/material_cubes.frag
+        "${CMAKE_SOURCE_DIR}/projects/gltf_viewer/shaders/gltf_pbr.vert"
+        "${CMAKE_SOURCE_DIR}/projects/gltf_viewer/shaders/gltf_pbr.frag"
+        "${CMAKE_SOURCE_DIR}/projects/gltf_viewer/shaders/gltf_skybox.vert"
+        "${CMAKE_SOURCE_DIR}/projects/gltf_viewer/shaders/gltf_skybox.frag"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/pbr_post.vert"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/pbr_post.frag"
+        "${CMAKE_SOURCE_DIR}/projects/gltf_viewer/shaders/gltf_shadow_depth.vert"
+    SHADER_INCLUDE_DIRS
+        "${CMAKE_SOURCE_DIR}/shaders"
+    SHADER_DEPENDS
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/pbr.glsl"
 )

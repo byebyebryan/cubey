@@ -12,6 +12,27 @@
 
 namespace cubey::examples::common {
 
+constexpr float kCubeSpinPitchRadiansPerSecond = 0.55F;
+constexpr float kCubeSpinYawRadiansPerSecond = 0.9F;
+
+[[nodiscard]] inline math::Quat cube_spin_rotation(float seconds) {
+    return math::euler_xyz_quat({
+        seconds * kCubeSpinPitchRadiansPerSecond,
+        seconds * kCubeSpinYawRadiansPerSecond,
+        0.0F,
+    });
+}
+
+[[nodiscard]] inline Transform3D cube_spin_transform(
+    float seconds, math::Vec3 translation = math::Vec3{0.0F, 0.0F, 0.0F},
+    math::Vec3 scale = math::Vec3{1.0F, 1.0F, 1.0F}) {
+    return {
+        .translation = translation,
+        .rotation = cube_spin_rotation(seconds),
+        .scale = scale,
+    };
+}
+
 struct CubeScene3DConfig {
     render::MeshHandle mesh{};
     render::MaterialHandle material{};

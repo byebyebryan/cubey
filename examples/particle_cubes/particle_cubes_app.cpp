@@ -3,6 +3,7 @@
 #include <cubey/core/math.h>
 #include <cubey/host/frame_stats.h>
 #include <cubey/host/windowed_app.h>
+#include <cubey/input/orbit_controller.h>
 #include <cubey/render/color_space.h>
 #include <cubey/render/forward_pass.h>
 #include <cubey/render/material.h>
@@ -38,10 +39,14 @@ using cubey::FrameTiming;
 using cubey::host::FrameStatsSample;
 using cubey::vulkan::vk_struct;
 
-constexpr std::uint32_t kParticleCubeCount = 2048;
+constexpr std::uint32_t kParticleCubeCount = 4096;
 constexpr std::uint32_t kComputeGroupSize = 128;
 constexpr std::uint32_t kCubeTriangleCount = 12;
 constexpr float kGoldenAngle = 2.39996314F;
+constexpr float kParticleCubeMinScale = 0.01F;
+constexpr float kParticleCubeScaleRange = 0.03F;
+constexpr float kCameraDistance = 6.4F;
+constexpr float kCameraBasePitch = -0.32F;
 
 struct ParticleCubeGpu {
     std::array<float, 4> position_scale{};
@@ -103,7 +108,9 @@ cubey::render::MaterialPassInfo particle_cubes_forward_pass_info() {
         const float x = std::cos(angle) * radius;
         const float z = std::sin(angle) * radius;
         const float y = (hash01((i * 747796405U) + 2891336453U) - 0.5F) * 1.4F;
-        const float scale = 0.045F + (hash01((i * 1597334677U) + 3812015801U) * 0.075F);
+        const float scale =
+            kParticleCubeMinScale +
+            (hash01((i * 1597334677U) + 3812015801U) * kParticleCubeScaleRange);
         const cubey::math::Vec4 color = cubey::render::srgb_to_linear_rgba({
             0.38F + (heat * 0.45F),
             0.74F - (heat * 0.22F),
@@ -140,7 +147,7 @@ class ParticleCubesApp {
         };
         callbacks.update = [this](cubey::host::WindowedAppContext& context,
                                   const FrameTiming& timing) {
-            (void)timing;
+            orbit_controller_.update_from_input(context.input(), timing.delta_seconds);
             if (context.input().key_pressed(cubey::input::Key::Space)) {
                 paused_ = !paused_;
             }
@@ -346,12 +353,12 @@ class ParticleCubesApp {
 
     [[nodiscard]] DrawPushConstants draw_push_constants(const FrameTiming& timing,
                                                         VkExtent2D extent) const {
+        (void)timing;
         const float aspect = static_cast<float>(extent.width) / static_cast<float>(extent.height);
-        const float orbit_time = static_cast<float>(timing.elapsed_seconds) * 0.18F;
         const cubey::Transform3D camera_transform = cubey::orbit_camera_transform({
-            .distance = 6.4F,
-            .yaw = orbit_time,
-            .pitch = -0.32F,
+            .distance = kCameraDistance,
+            .yaw = orbit_controller_.yaw(),
+            .pitch = kCameraBasePitch + orbit_controller_.pitch(),
         });
         const cubey::Camera3D camera;
         return {
@@ -424,6 +431,7 @@ class ParticleCubesApp {
     }
 
     RunConfig config_;
+    OrbitController orbit_controller_;
     bool paused_ = false;
     bool reset_cubes_requested_ = false;
 

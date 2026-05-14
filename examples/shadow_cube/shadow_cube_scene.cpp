@@ -1,6 +1,8 @@
 #include "shadow_cube_app_internal.h"
 #include "shadow_cube_render.h"
 
+#include "../common/cube_scene.h"
+
 #include <cubey/input/orbit_controller.h>
 #include <cubey/scene/camera_3d.h>
 #include <cubey/scene/scene_builder.h>
@@ -43,7 +45,7 @@ void ShadowCubeApp::create_scene() {
                        cubey::Bounds3D{
                            .center = {0.0F, 0.0F, 0.0F},
                            .half_extent = {1.0F, 1.0F, 1.0F},
-                       },
+                   },
                });
     floor_entity_ = cubey::scene::create_renderable_entity_3d(
         setup, cubey::scene::RenderableEntity3DConfig{
@@ -51,7 +53,7 @@ void ShadowCubeApp::create_scene() {
                    .material = material_handle_,
                    .local_bounds =
                        cubey::Bounds3D{
-                           .center = {0.0F, -1.05F, 0.0F},
+                           .center = {0.0F, kShadowCubeGroundPlaneY, 0.0F},
                            .half_extent = {4.0F, 0.01F, 4.0F},
                        },
                });
@@ -75,8 +77,12 @@ void ShadowCubeApp::create_scene() {
     setup.commit();
 }
 
-void ShadowCubeApp::update_camera_transform() {
+void ShadowCubeApp::update_scene_transform(const cubey::FrameTiming& timing) {
+    const float seconds = static_cast<float>(timing.elapsed_seconds);
     cubey::SceneEditQueue edits = scene().create_edit_queue();
+    edits.transforms3d().set_local_transform(
+        cube_entity_, cubey::examples::common::cube_spin_transform(
+                          seconds, {0.0F, 0.0F, 0.0F}, {0.82F, 0.82F, 0.82F}));
     edits.transforms3d().set_local_transform(
         camera_entity_, cubey::orbit_camera_transform(cubey::OrbitCameraState{
                             .distance = 5.2F,

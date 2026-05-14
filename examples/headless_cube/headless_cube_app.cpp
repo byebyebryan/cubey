@@ -1,5 +1,7 @@
 #include "headless_cube_app.h"
 
+#include "../common/cube_scene.h"
+
 #include <cubey/core/math.h>
 #include <cubey/host/headless_png_host.h>
 #include <cubey/render/forward_pass.h>
@@ -122,9 +124,8 @@ class HeadlessCubeApp {
             .pitch = -0.34F,
         });
         const cubey::Camera3D camera;
-        const cubey::Transform3D cube_transform{
-            .rotation = cubey::math::euler_xyz_quat({-0.32F, 0.68F, 0.0F}),
-        };
+        const cubey::Transform3D cube_transform =
+            cubey::examples::common::cube_spin_transform(0.75F);
         return {
             .mvp = camera.view_projection_matrix(camera_transform, aspect) *
                    cube_transform.affine_matrix(),

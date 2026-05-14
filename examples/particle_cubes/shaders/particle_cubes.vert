@@ -27,5 +27,5 @@ void main() {
 
     gl_Position = params.view_projection * vec4(world_position, 1.0);
     frag_color = in_color * cube.color.rgb;
-    frag_normal = in_normal;
+    frag_normal = normalize(in_normal);
 }

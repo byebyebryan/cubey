@@ -48,6 +48,8 @@ constexpr std::uint32_t kGridColumns = 9;
 constexpr std::uint32_t kGridRows = 5;
 constexpr std::uint32_t kInstanceCount = kGridColumns * kGridRows;
 constexpr std::uint32_t kCubeTriangleCount = 12;
+constexpr float kGridSpacing = 1.28F;
+constexpr float kCameraDistance = 10.2F;
 
 std::filesystem::path shader_path(const char* filename) {
     return std::filesystem::path(CUBEY_INSTANCED_CUBES_SHADER_DIR) / filename;
@@ -55,6 +57,7 @@ std::filesystem::path shader_path(const char* filename) {
 
 struct PushConstants {
     cubey::math::Mat4 view_projection;
+    cubey::math::Mat4 cube_spin;
 };
 
 struct CubeInstanceData {
@@ -105,10 +108,10 @@ std::vector<CubeInstanceData> make_cube_instances() {
     instances.reserve(kInstanceCount);
     for (std::uint32_t row = 0; row < kGridRows; ++row) {
         for (std::uint32_t column = 0; column < kGridColumns; ++column) {
-            const float x = (static_cast<float>(column) - 4.0F) * 1.38F;
-            const float z = (static_cast<float>(row) - 2.0F) * 1.38F;
+            const float x = (static_cast<float>(column) - 4.0F) * kGridSpacing;
+            const float y = (2.0F - static_cast<float>(row)) * kGridSpacing;
             const float phase = static_cast<float>((row * kGridColumns) + column) * 0.19F;
-            const cubey::math::Mat4 model = cubey::math::translation(x, 0.0F, z) *
+            const cubey::math::Mat4 model = cubey::math::translation(x, y, 0.0F) *
                                             cubey::math::rotation_y(phase) *
                                             cubey::math::scale({0.42F, 0.42F, 0.42F});
             const float mix_x = static_cast<float>(column) / static_cast<float>(kGridColumns - 1U);
@@ -144,10 +147,6 @@ class InstancedCubesApp {
         callbacks.destroy_swapchain_resources = [this](cubey::host::WindowedAppContext& context) {
             (void)context;
             destroy_swapchain_resources();
-        };
-        callbacks.on_ready = [this](cubey::host::WindowedAppContext& context) {
-            (void)context;
-            orbit_controller_.set_auto_rotation_speed(0.35F);
         };
         callbacks.update = [this](cubey::host::WindowedAppContext& context,
                                   const FrameTiming& timing) {
@@ -257,9 +256,9 @@ class InstancedCubesApp {
                            .cube_bounds =
                                cubey::Bounds3D{
                                    .center = {0.0F, 0.0F, 0.0F},
-                                   .half_extent = {6.6F, 0.5F, 3.8F},
+                                   .half_extent = {5.6F, 3.0F, 0.6F},
                                },
-                           .camera_distance = 9.5F,
+                           .camera_distance = kCameraDistance,
                            .instance_count = instance_buffer().count(),
                        });
         cube_entity_ = cube_scene.cube;
@@ -271,7 +270,7 @@ class InstancedCubesApp {
         cubey::SceneEditQueue edits = scene().create_edit_queue();
         edits.transforms3d().set_local_transform(
             camera_entity_, cubey::orbit_camera_transform(cubey::OrbitCameraState{
-                                .distance = 9.5F,
+                                .distance = kCameraDistance,
                                 .yaw = orbit_controller_.yaw(),
                                 .pitch = orbit_controller_.pitch(),
                             }));
@@ -298,27 +297,38 @@ class InstancedCubesApp {
         return plan;
     }
 
+    [[nodiscard]] cubey::math::Mat4 cube_spin_matrix(const FrameTiming& timing) const {
+        const float seconds = static_cast<float>(timing.elapsed_seconds);
+        return cubey::examples::common::cube_spin_transform(seconds).affine_matrix();
+    }
+
     void record_cube_frame(const cubey::host::WindowedRenderFrame& frame) {
         cubey::SceneReadView scene_view = scene().read();
         const cubey::scene::RenderFramePlan3D frame_plan =
             current_frame_plan(scene_view, frame.color_target.extent);
+        const cubey::math::Mat4 cube_spin = cube_spin_matrix(frame.timing);
         const cubey::vulkan::CommandRecorder recorder(frame.command_buffer);
         recorder.begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
         forward_pass().record_to_present(
             recorder, frame.color_target,
-            [this, &frame_plan](const cubey::vulkan::CommandRecorder& pass_recorder) {
+            [this, &frame_plan, &cube_spin](
+                const cubey::vulkan::CommandRecorder& pass_recorder) {
                 cubey::scene::record_pipeline_draw_packets_3d(
                     pass_recorder, frame_plan.draw_packets, meshes_,
                     {
                         .pipeline = &forward_pass().pipeline(),
                     },
-                    [this, &frame_plan](const cubey::vulkan::CommandRecorder& packet_recorder,
-                                        const cubey::scene::RenderDrawPacket3D&) {
+                    [this, &frame_plan, &cube_spin](
+                        const cubey::vulkan::CommandRecorder& packet_recorder,
+                        const cubey::scene::RenderDrawPacket3D&) {
                         instance_buffer().bind(packet_recorder, 1);
                         packet_recorder.push_constants(
                             forward_pass().pipeline().layout(), VK_SHADER_STAGE_VERTEX_BIT, 0,
-                            PushConstants{.view_projection = frame_plan.view_projection_matrix});
+                            PushConstants{
+                                .view_projection = frame_plan.view_projection_matrix,
+                                .cube_spin = cube_spin,
+                            });
                     });
             });
 

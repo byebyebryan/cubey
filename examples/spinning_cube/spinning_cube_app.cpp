@@ -182,11 +182,9 @@ class SpinningCubeApp {
         const float seconds =
             static_cast<float>(std::chrono::duration<double>(now - start_time_).count());
 
-        const cubey::Transform3D transform{
-            .rotation = cubey::math::euler_xyz_quat({seconds * 0.55F, seconds * 0.9F, 0.0F}),
-        };
         cubey::SceneEditQueue edits = scene().create_edit_queue();
-        edits.transforms3d().set_local_transform(cube_entity_, transform);
+        edits.transforms3d().set_local_transform(
+            cube_entity_, cubey::examples::common::cube_spin_transform(seconds));
         scene().commit(edits);
     }
 

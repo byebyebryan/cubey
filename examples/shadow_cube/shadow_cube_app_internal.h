@@ -25,6 +25,8 @@
 
 namespace cubey::examples::shadow_cube::detail {
 
+inline constexpr float kShadowCubeGroundPlaneY = -1.5F;
+
 class ShadowCubeApp {
   public:
     explicit ShadowCubeApp(RunConfig config);
@@ -53,7 +55,7 @@ class ShadowCubeApp {
     void create_scene_pipeline(cubey::host::WindowedAppContext& context);
     void create_present_pipeline(cubey::host::WindowedAppContext& context);
 
-    void update_camera_transform();
+    void update_scene_transform(const cubey::FrameTiming& timing);
     [[nodiscard]] cubey::scene::FrameRenderPlan3D
     current_frame_plan(const cubey::SceneReadView& view, VkExtent2D color_extent) const;
 
