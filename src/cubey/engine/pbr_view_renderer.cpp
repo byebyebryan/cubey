@@ -89,6 +89,10 @@ LightPacket3D pbr_view_selected_light(std::span<const LightPacket3D> lights,
     return fallback_light;
 }
 
+render::VertexInputLayout pbr_view_shadow_vertex_input_layout() {
+    return render::vertex_position_only_input_layout(sizeof(render::PbrVertex));
+}
+
 render::PbrSceneUniforms pbr_view_scene_uniforms(const PbrViewSceneUniformInfo& info) {
     const math::Vec3 ambient =
         info.environment.ambient_color * info.environment.ambient_intensity;
@@ -153,6 +157,7 @@ void PbrViewRenderer3D::create_global_resources(
     const std::array<render::ShaderStageFile, 1> shadow_shaders{
         render::vertex_shader_file(config_.shadow_depth_vertex_shader),
     };
+    const render::VertexInputLayout shadow_vertex_input = pbr_view_shadow_vertex_input_layout();
     shadow_pass_.emplace(
         device, render::ShadowMapPass3DConfig{
                     .extent = {config_.shadow_extent, config_.shadow_extent},
@@ -160,6 +165,8 @@ void PbrViewRenderer3D::create_global_resources(
                     .pipeline =
                         {
                             .shader_stage_files = shadow_shaders,
+                            .vertex_bindings = shadow_vertex_input.bindings(),
+                            .vertex_attributes = shadow_vertex_input.attribute_descriptions(),
                             .material_pass = render::shadow_depth_pass_info({
                                 .label = "pbr_view.shadow",
                                 .push_constants =

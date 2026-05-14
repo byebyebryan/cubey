@@ -94,6 +94,21 @@ void test_pbr_view_renderer_selects_requested_light_or_fallback() {
             "PBR view renderer should preserve fallback light intensity");
 }
 
+void test_pbr_view_renderer_shadow_vertex_layout_matches_pbr_vertices() {
+    const cubey::render::VertexInputLayout layout =
+        cubey::pbr_view_shadow_vertex_input_layout();
+    require(layout.bindings().size() == 1,
+            "PBR view shadow vertex layout should expose one binding");
+    require(layout.bindings()[0].stride == sizeof(cubey::render::PbrVertex),
+            "PBR view shadow vertex layout should use the PBR vertex stride");
+    require(layout.attributes.size() == 1,
+            "PBR view shadow vertex layout should expose only position");
+    require(layout.attributes[0].location == 0,
+            "PBR view shadow vertex layout should bind position at location 0");
+    require(layout.attributes[0].offset == offsetof(cubey::render::PbrVertex, position),
+            "PBR view shadow vertex layout should read PBR vertex position");
+}
+
 void test_pbr_view_renderer_scene_uniforms_pack_view_light_environment_and_display() {
     const cubey::LightPacket3D light{
         .entity = cubey::Entity{.index = 2, .generation = 1},

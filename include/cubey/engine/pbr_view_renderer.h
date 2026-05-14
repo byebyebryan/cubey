@@ -96,6 +96,7 @@ struct PbrViewRenderer3DRecordInfo {
 };
 
 void validate_pbr_view_renderer_config(const PbrViewRenderer3DConfig& config);
+[[nodiscard]] render::VertexInputLayout pbr_view_shadow_vertex_input_layout();
 [[nodiscard]] LightPacket3D pbr_view_selected_light(std::span<const LightPacket3D> lights,
                                                     Entity requested_light,
                                                     LightPacket3D fallback_light);

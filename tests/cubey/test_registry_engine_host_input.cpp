@@ -20,6 +20,7 @@ void test_pan_zoom_2d_controller_pans_and_zooms_from_input();
 void test_pbr_view_renderer_config_requires_shader_paths_and_shadow_extent();
 void test_pbr_view_renderer_scene_uniforms_pack_view_light_environment_and_display();
 void test_pbr_view_renderer_selects_requested_light_or_fallback();
+void test_pbr_view_renderer_shadow_vertex_layout_matches_pbr_vertices();
 void test_pbr_view_renderer_skybox_uniforms_pack_inverse_view_camera_environment_and_display();
 void test_pointer_drag_tracks_active_cursor_and_accumulated_delta();
 void test_project_context_exposes_async_runtime_services();
@@ -56,6 +57,7 @@ std::span<const TestCase> engine_host_input_test_cases() {
         CUBEY_TEST(test_engine_created_scenes_validate_render_resource_handles),
         CUBEY_TEST(test_pbr_view_renderer_config_requires_shader_paths_and_shadow_extent),
         CUBEY_TEST(test_pbr_view_renderer_selects_requested_light_or_fallback),
+        CUBEY_TEST(test_pbr_view_renderer_shadow_vertex_layout_matches_pbr_vertices),
         CUBEY_TEST(test_pbr_view_renderer_scene_uniforms_pack_view_light_environment_and_display),
         CUBEY_TEST(
             test_pbr_view_renderer_skybox_uniforms_pack_inverse_view_camera_environment_and_display),
