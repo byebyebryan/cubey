@@ -201,9 +201,6 @@ void require_accessor_components(const cgltf_accessor* accessor, cgltf_size comp
     if (accessor == nullptr) {
         throw gltf_error(std::string("primitive is missing required ") + label + " attribute");
     }
-    if (accessor->is_sparse != 0) {
-        throw gltf_error(std::string(label) + " sparse accessors are not supported");
-    }
     if (cgltf_num_components(accessor->type) != components) {
         throw gltf_error(std::string(label) + " attribute has unsupported component count");
     }
@@ -217,9 +214,6 @@ void require_optional_accessor_components(const cgltf_accessor* accessor, cgltf_
     if (accessor == nullptr) {
         return;
     }
-    if (accessor->is_sparse != 0) {
-        throw gltf_error(std::string(label) + " sparse accessors are not supported");
-    }
     if (cgltf_num_components(accessor->type) != components) {
         throw gltf_error(std::string(label) + " attribute has unsupported component count");
     }
@@ -228,9 +222,6 @@ void require_optional_accessor_components(const cgltf_accessor* accessor, cgltf_
 void require_float_accessor(const cgltf_accessor* accessor, cgltf_type type, const char* label) {
     if (accessor == nullptr) {
         throw gltf_error(std::string(label) + " accessor is missing");
-    }
-    if (accessor->is_sparse != 0) {
-        throw gltf_error(std::string(label) + " sparse accessors are not supported");
     }
     if (accessor->type != type) {
         throw gltf_error(std::string(label) + " accessor has unsupported type");
@@ -258,77 +249,77 @@ void require_optional_morph_accessor_count(const cgltf_accessor* accessor, cgltf
     }
 }
 
-[[nodiscard]] math::Vec2 read_vec2(const cgltf_accessor* accessor, cgltf_size index) {
-    cgltf_float values[2]{};
-    if (cgltf_accessor_read_float(accessor, index, values, 2) == 0) {
-        throw gltf_error("failed to read VEC2 accessor");
-    }
-    return {values[0], values[1]};
-}
-
-[[nodiscard]] math::Vec3 read_vec3(const cgltf_accessor* accessor, cgltf_size index) {
-    cgltf_float values[3]{};
-    if (cgltf_accessor_read_float(accessor, index, values, 3) == 0) {
-        throw gltf_error("failed to read VEC3 accessor");
-    }
-    return {values[0], values[1], values[2]};
-}
-
-[[nodiscard]] math::Vec4 read_vec4(const cgltf_accessor* accessor, cgltf_size index) {
-    cgltf_float values[4]{};
-    if (cgltf_accessor_read_float(accessor, index, values, 4) == 0) {
-        throw gltf_error("failed to read VEC4 accessor");
-    }
-    return {values[0], values[1], values[2], values[3]};
-}
-
-[[nodiscard]] std::array<std::uint16_t, 4> read_u16_vec4(const cgltf_accessor* accessor,
-                                                         cgltf_size index) {
-    cgltf_uint values[4]{};
-    if (cgltf_accessor_read_uint(accessor, index, values, 4) == 0) {
-        throw gltf_error("failed to read VEC4 unsigned accessor");
-    }
-    for (const cgltf_uint value : values) {
-        if (value > std::numeric_limits<std::uint16_t>::max()) {
-            throw gltf_error("JOINTS_0 value is out of range");
-        }
-    }
-    return {
-        static_cast<std::uint16_t>(values[0]),
-        static_cast<std::uint16_t>(values[1]),
-        static_cast<std::uint16_t>(values[2]),
-        static_cast<std::uint16_t>(values[3]),
-    };
-}
-
-[[nodiscard]] math::Mat4 read_mat4(const cgltf_accessor* accessor, cgltf_size index) {
-    cgltf_float values[16]{};
-    if (cgltf_accessor_read_float(accessor, index, values, 16) == 0) {
-        throw gltf_error("failed to read MAT4 accessor");
-    }
-
-    math::Mat4 matrix{1.0F};
-    std::memcpy(&matrix[0][0], values, sizeof(values));
-    return matrix;
-}
-
 [[nodiscard]] std::vector<float> read_float_accessor_values(const cgltf_accessor* accessor,
                                                             cgltf_size component_count,
                                                             const char* label) {
     if (accessor == nullptr) {
         throw gltf_error(std::string(label) + " accessor is missing");
     }
-    if (accessor->is_sparse != 0) {
-        throw gltf_error(std::string(label) + " sparse accessors are not supported");
-    }
     std::vector<float> values(accessor->count * component_count);
-    for (cgltf_size index = 0; index < accessor->count; ++index) {
-        if (cgltf_accessor_read_float(accessor, index, values.data() + (index * component_count),
-                                      component_count) == 0) {
-            throw gltf_error(std::string("failed to read ") + label + " accessor");
-        }
+    if (values.empty()) {
+        return values;
+    }
+    const cgltf_size read_count =
+        cgltf_accessor_unpack_floats(accessor, values.data(), values.size());
+    if (read_count != values.size()) {
+        throw gltf_error(std::string("failed to read ") + label + " accessor");
     }
     return values;
+}
+
+[[nodiscard]] math::Vec2 vec2_at(std::span<const float> values, std::size_t index) {
+    const std::size_t offset = index * 2U;
+    return {values[offset + 0U], values[offset + 1U]};
+}
+
+[[nodiscard]] math::Vec3 vec3_at(std::span<const float> values, std::size_t index) {
+    const std::size_t offset = index * 3U;
+    return {values[offset + 0U], values[offset + 1U], values[offset + 2U]};
+}
+
+[[nodiscard]] math::Vec4 vec4_at(std::span<const float> values, std::size_t index) {
+    const std::size_t offset = index * 4U;
+    return {values[offset + 0U], values[offset + 1U], values[offset + 2U],
+            values[offset + 3U]};
+}
+
+[[nodiscard]] std::array<std::uint16_t, 4> u16_vec4_at(std::span<const float> values,
+                                                       std::size_t index,
+                                                       const char* label) {
+    const std::size_t offset = index * 4U;
+    std::array<std::uint16_t, 4> result{};
+    for (std::size_t component = 0; component < result.size(); ++component) {
+        const float value = values[offset + component];
+        if (value < 0.0F || value > static_cast<float>(std::numeric_limits<std::uint16_t>::max()) ||
+            std::floor(value) != value) {
+            throw gltf_error(std::string(label) + " value is out of range");
+        }
+        result[component] = static_cast<std::uint16_t>(value);
+    }
+    return result;
+}
+
+[[nodiscard]] std::vector<std::array<std::uint16_t, 4>>
+read_u16_vec4_accessor_values(const cgltf_accessor* accessor, const char* label) {
+    const std::vector<float> values = read_float_accessor_values(accessor, 4, label);
+    std::vector<std::array<std::uint16_t, 4>> result;
+    result.reserve(accessor->count);
+    for (cgltf_size index = 0; index < accessor->count; ++index) {
+        result.push_back(u16_vec4_at(values, index, label));
+    }
+    return result;
+}
+
+[[nodiscard]] math::Mat4 read_mat4(const cgltf_accessor* accessor, cgltf_size index) {
+    cgltf_float values[16]{};
+    if (cgltf_accessor_read_float(accessor, index, values, 16) == 0) {
+        const std::vector<float> unpacked = read_float_accessor_values(accessor, 16, "MAT4");
+        std::memcpy(values, unpacked.data() + (index * 16U), sizeof(values));
+    }
+
+    math::Mat4 matrix{1.0F};
+    std::memcpy(&matrix[0][0], values, sizeof(values));
+    return matrix;
 }
 
 [[nodiscard]] GltfBounds3D bounds_for_positions(std::span<const GltfVertex> vertices) {
@@ -489,10 +480,11 @@ read_vec3_accessor_values(const cgltf_accessor* accessor, const char* label) {
     if (accessor == nullptr) {
         return {};
     }
+    const std::vector<float> unpacked = read_float_accessor_values(accessor, 3, label);
     std::vector<math::Vec3> values;
     values.reserve(accessor->count);
     for (cgltf_size i = 0; i < accessor->count; ++i) {
-        values.push_back(read_vec3(accessor, i));
+        values.push_back(vec3_at(unpacked, i));
     }
     return values;
 }
@@ -584,26 +576,44 @@ void expand_bounds_for_morph_targets(GltfMeshPrimitive& primitive) {
         throw gltf_error("JOINTS_0 must use UNSIGNED_BYTE or UNSIGNED_SHORT components");
     }
 
+    const std::vector<float> position_values = read_float_accessor_values(positions, 3, "POSITION");
+    const std::vector<float> normal_values =
+        normals != nullptr ? read_float_accessor_values(normals, 3, "NORMAL") : std::vector<float>{};
+    const std::vector<float> tangent_values =
+        tangents != nullptr ? read_float_accessor_values(tangents, 4, "TANGENT") : std::vector<float>{};
+    const std::vector<float> texcoord0_values =
+        texcoord0 != nullptr ? read_float_accessor_values(texcoord0, 2, "TEXCOORD_0")
+                             : std::vector<float>{};
+    const std::vector<std::array<std::uint16_t, 4>> joints0_values =
+        joints0 != nullptr ? read_u16_vec4_accessor_values(joints0, "JOINTS_0")
+                           : std::vector<std::array<std::uint16_t, 4>>{};
+    const std::vector<float> weights0_values =
+        weights0 != nullptr ? read_float_accessor_values(weights0, 4, "WEIGHTS_0")
+                            : std::vector<float>{};
+
     GltfMeshPrimitive result;
     result.vertices.resize(positions->count);
     for (cgltf_size i = 0; i < positions->count; ++i) {
-        result.vertices[i].position = read_vec3(positions, i);
+        result.vertices[i].position = vec3_at(position_values, i);
         if (normals != nullptr) {
-            result.vertices[i].normal = glm::normalize(read_vec3(normals, i));
+            result.vertices[i].normal = glm::normalize(vec3_at(normal_values, i));
         }
         if (tangents != nullptr) {
-            result.vertices[i].tangent = read_vec4(tangents, i);
+            result.vertices[i].tangent = vec4_at(tangent_values, i);
         }
         if (texcoord0 != nullptr) {
-            result.vertices[i].texcoord0 = read_vec2(texcoord0, i);
+            result.vertices[i].texcoord0 = vec2_at(texcoord0_values, i);
         }
         if (joints0 != nullptr) {
-            result.vertices[i].joints0 = read_u16_vec4(joints0, i);
-            result.vertices[i].weights0 = read_vec4(weights0, i);
+            result.vertices[i].joints0 = joints0_values[i];
+            result.vertices[i].weights0 = vec4_at(weights0_values, i);
         }
     }
 
     if (primitive.indices != nullptr) {
+        if (primitive.indices->is_sparse != 0) {
+            throw gltf_error("primitive index sparse accessors are not supported");
+        }
         result.indices.resize(primitive.indices->count);
         for (cgltf_size i = 0; i < primitive.indices->count; ++i) {
             const cgltf_size index = cgltf_accessor_read_index(primitive.indices, i);
@@ -786,9 +796,6 @@ load_animation_interpolation(cgltf_interpolation_type interpolation) {
     if (sampler.output == nullptr) {
         throw gltf_error("animation output accessor is missing");
     }
-    if (sampler.output->is_sparse != 0) {
-        throw gltf_error("animation output sparse accessors are not supported");
-    }
     if (sampler.output->component_type != cgltf_component_type_r_32f) {
         throw gltf_error("animation output accessor must use FLOAT components");
     }
@@ -857,11 +864,6 @@ void reject_unsupported_features(const cgltf_data& data) {
         if (!supports_required_extension(extension)) {
             throw gltf_error("required glTF extension is not supported: " +
                              std::string(extension));
-        }
-    }
-    for (cgltf_size i = 0; i < data.accessors_count; ++i) {
-        if (data.accessors[i].is_sparse != 0) {
-            throw gltf_error("sparse accessors are not supported");
         }
     }
 }

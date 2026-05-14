@@ -41,6 +41,10 @@ void append_f32(std::vector<std::uint8_t>& bytes, float value) {
     std::memcpy(bytes.data() + offset, &value, sizeof(float));
 }
 
+void append_u8(std::vector<std::uint8_t>& bytes, std::uint8_t value) {
+    bytes.push_back(value);
+}
+
 void append_u16(std::vector<std::uint8_t>& bytes, std::uint16_t value) {
     const std::size_t offset = bytes.size();
     bytes.resize(offset + sizeof(std::uint16_t));
@@ -71,6 +75,20 @@ void append_u16_vec4(std::vector<std::uint8_t>& bytes, std::uint16_t x, std::uin
     append_u16(bytes, y);
     append_u16(bytes, z);
     append_u16(bytes, w);
+}
+
+void append_u8_vec4(std::vector<std::uint8_t>& bytes, std::uint8_t x, std::uint8_t y,
+                    std::uint8_t z, std::uint8_t w) {
+    append_u8(bytes, x);
+    append_u8(bytes, y);
+    append_u8(bytes, z);
+    append_u8(bytes, w);
+}
+
+void pad_to_alignment(std::vector<std::uint8_t>& bytes, std::size_t alignment) {
+    while (bytes.size() % alignment != 0) {
+        bytes.push_back(0);
+    }
 }
 
 void append_mat4_identity(std::vector<std::uint8_t>& bytes) {
@@ -593,5 +611,184 @@ void test_gltf_asset_accepts_supported_required_extensions() {
     require(asset.materials.size() == 2, "loader should preserve material with required extension");
     require_close(asset.materials[1].reflectance, 0.714285F,
                   "supported required material extension should load");
+    std::filesystem::remove_all(dir);
+}
+
+void test_gltf_asset_loads_sparse_mesh_accessors() {
+    const std::filesystem::path dir = test_dir("cubey_gltf_asset_sparse_mesh");
+
+    std::vector<std::uint8_t> bytes;
+    const std::size_t normal_offset = bytes.size();
+    append_vec3(bytes, 0.0F, 0.0F, 1.0F);
+    append_vec3(bytes, 0.0F, 0.0F, 1.0F);
+    append_vec3(bytes, 0.0F, 0.0F, 1.0F);
+    const std::size_t weights_offset = bytes.size();
+    append_vec4(bytes, 1.0F, 0.0F, 0.0F, 0.0F);
+    append_vec4(bytes, 1.0F, 0.0F, 0.0F, 0.0F);
+    append_vec4(bytes, 1.0F, 0.0F, 0.0F, 0.0F);
+    const std::size_t position_sparse_indices_offset = bytes.size();
+    append_u8(bytes, 1);
+    append_u8(bytes, 2);
+    pad_to_alignment(bytes, 4);
+    const std::size_t position_sparse_values_offset = bytes.size();
+    append_vec3(bytes, 1.0F, 0.0F, 0.0F);
+    append_vec3(bytes, 0.0F, 1.0F, 0.0F);
+    const std::size_t joints_sparse_indices_offset = bytes.size();
+    append_u8(bytes, 2);
+    pad_to_alignment(bytes, 4);
+    const std::size_t joints_sparse_values_offset = bytes.size();
+    append_u8_vec4(bytes, 3, 4, 5, 6);
+    pad_to_alignment(bytes, 4);
+    const std::size_t morph_sparse_indices_offset = bytes.size();
+    append_u8(bytes, 1);
+    pad_to_alignment(bytes, 4);
+    const std::size_t morph_sparse_values_offset = bytes.size();
+    append_vec3(bytes, 0.25F, 0.0F, 0.0F);
+
+    cubey::write_binary_file(dir / "sparse_mesh.bin", bytes);
+
+    const std::string gltf = std::string(R"JSON({
+  "asset": {"version": "2.0"},
+  "scene": 0,
+  "scenes": [{"nodes": [0]}],
+  "nodes": [{"name": "SparseMeshNode", "mesh": 0}],
+  "meshes": [{
+    "name": "SparseMesh",
+    "primitives": [{
+      "attributes": {"POSITION": 0, "NORMAL": 1, "JOINTS_0": 2, "WEIGHTS_0": 3},
+      "targets": [{"POSITION": 4}]
+    }]
+  }],
+  "buffers": [{"uri": "sparse_mesh.bin", "byteLength": )JSON") +
+                             std::to_string(bytes.size()) + R"JSON(}],
+  "bufferViews": [
+    {"buffer": 0, "byteOffset": )JSON" +
+                             std::to_string(normal_offset) +
+                             R"JSON(, "byteLength": 36},
+    {"buffer": 0, "byteOffset": )JSON" +
+                             std::to_string(weights_offset) +
+                             R"JSON(, "byteLength": 48},
+    {"buffer": 0, "byteOffset": )JSON" +
+                             std::to_string(position_sparse_indices_offset) +
+                             R"JSON(, "byteLength": 2},
+    {"buffer": 0, "byteOffset": )JSON" +
+                             std::to_string(position_sparse_values_offset) +
+                             R"JSON(, "byteLength": 24},
+    {"buffer": 0, "byteOffset": )JSON" +
+                             std::to_string(joints_sparse_indices_offset) +
+                             R"JSON(, "byteLength": 1},
+    {"buffer": 0, "byteOffset": )JSON" +
+                             std::to_string(joints_sparse_values_offset) +
+                             R"JSON(, "byteLength": 4},
+    {"buffer": 0, "byteOffset": )JSON" +
+                             std::to_string(morph_sparse_indices_offset) +
+                             R"JSON(, "byteLength": 1},
+    {"buffer": 0, "byteOffset": )JSON" +
+                             std::to_string(morph_sparse_values_offset) +
+                             R"JSON(, "byteLength": 12}
+  ],
+  "accessors": [
+    {"componentType": 5126, "count": 3, "type": "VEC3",
+     "min": [0.0, 0.0, 0.0], "max": [1.0, 1.0, 0.0],
+     "sparse": {
+       "count": 2,
+       "indices": {"bufferView": 2, "componentType": 5121},
+       "values": {"bufferView": 3}
+     }},
+    {"bufferView": 0, "componentType": 5126, "count": 3, "type": "VEC3"},
+    {"componentType": 5121, "count": 3, "type": "VEC4",
+     "sparse": {
+       "count": 1,
+       "indices": {"bufferView": 4, "componentType": 5121},
+       "values": {"bufferView": 5}
+     }},
+    {"bufferView": 1, "componentType": 5126, "count": 3, "type": "VEC4"},
+    {"componentType": 5126, "count": 3, "type": "VEC3",
+     "sparse": {
+       "count": 1,
+       "indices": {"bufferView": 6, "componentType": 5121},
+       "values": {"bufferView": 7}
+     }}
+  ]
+})JSON";
+    const std::filesystem::path path = dir / "sparse_mesh.gltf";
+    write_text_file(path, gltf);
+
+    const cubey::asset::GltfAsset asset = cubey::asset::load_gltf_asset(path);
+
+    const cubey::asset::GltfMeshPrimitive& primitive = asset.meshes[0].primitives[0];
+    require_close(primitive.vertices[1].position.x, 1.0F,
+                  "sparse POSITION should override base zero values");
+    require_close(primitive.vertices[2].position.y, 1.0F,
+                  "sparse POSITION should load every override");
+    require(primitive.vertices[2].joints0 == std::array<std::uint16_t, 4>({3, 4, 5, 6}),
+            "sparse JOINTS_0 should load unsigned byte overrides");
+    require(primitive.morph_targets.size() == 1, "sparse morph target should load");
+    require_close(primitive.morph_targets[0].position_deltas[1].x, 0.25F,
+                  "sparse morph deltas should override base zero values");
+
+    std::filesystem::remove_all(dir);
+}
+
+void test_gltf_asset_loads_sparse_animation_output() {
+    const std::filesystem::path dir = test_dir("cubey_gltf_asset_sparse_animation");
+
+    std::vector<std::uint8_t> bytes;
+    const std::size_t time_offset = bytes.size();
+    append_f32(bytes, 0.0F);
+    append_f32(bytes, 1.0F);
+    const std::size_t translation_sparse_indices_offset = bytes.size();
+    append_u8(bytes, 1);
+    pad_to_alignment(bytes, 4);
+    const std::size_t translation_sparse_values_offset = bytes.size();
+    append_vec3(bytes, 4.0F, 5.0F, 6.0F);
+
+    cubey::write_binary_file(dir / "sparse_animation.bin", bytes);
+
+    const std::string gltf = std::string(R"JSON({
+  "asset": {"version": "2.0"},
+  "nodes": [{"name": "Animated"}],
+  "animations": [{
+    "name": "SparseMove",
+    "samplers": [{"input": 0, "output": 1, "interpolation": "LINEAR"}],
+    "channels": [{"sampler": 0, "target": {"node": 0, "path": "translation"}}]
+  }],
+  "buffers": [{"uri": "sparse_animation.bin", "byteLength": )JSON") +
+                             std::to_string(bytes.size()) + R"JSON(}],
+  "bufferViews": [
+    {"buffer": 0, "byteOffset": )JSON" +
+                             std::to_string(time_offset) +
+                             R"JSON(, "byteLength": 8},
+    {"buffer": 0, "byteOffset": )JSON" +
+                             std::to_string(translation_sparse_indices_offset) +
+                             R"JSON(, "byteLength": 1},
+    {"buffer": 0, "byteOffset": )JSON" +
+                             std::to_string(translation_sparse_values_offset) +
+                             R"JSON(, "byteLength": 12}
+  ],
+  "accessors": [
+    {"bufferView": 0, "componentType": 5126, "count": 2, "type": "SCALAR",
+     "min": [0.0], "max": [1.0]},
+    {"componentType": 5126, "count": 2, "type": "VEC3",
+     "sparse": {
+       "count": 1,
+       "indices": {"bufferView": 1, "componentType": 5121},
+       "values": {"bufferView": 2}
+     }}
+  ]
+})JSON";
+    const std::filesystem::path path = dir / "sparse_animation.gltf";
+    write_text_file(path, gltf);
+
+    const cubey::asset::GltfAsset asset = cubey::asset::load_gltf_asset(path);
+
+    require(asset.animations.size() == 1, "sparse animation should load");
+    const std::vector<float>& output = asset.animations[0].samplers[0].output_values;
+    require(output.size() == 6, "sparse animation output should flatten vec3 samples");
+    require_close(output[0], 0.0F, "missing sparse base output should default to zero");
+    require_close(output[3], 4.0F, "sparse animation output x should load");
+    require_close(output[4], 5.0F, "sparse animation output y should load");
+    require_close(output[5], 6.0F, "sparse animation output z should load");
+
     std::filesystem::remove_all(dir);
 }
