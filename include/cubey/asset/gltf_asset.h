@@ -115,6 +115,7 @@ struct GltfBounds3D {
 };
 
 struct GltfMorphTarget {
+    std::string label{};
     std::vector<math::Vec3> position_deltas{};
     std::vector<math::Vec3> normal_deltas{};
     std::vector<math::Vec3> tangent_deltas{};

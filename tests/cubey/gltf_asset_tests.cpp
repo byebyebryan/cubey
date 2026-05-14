@@ -491,6 +491,7 @@ void test_gltf_asset_loads_skinning_and_morph_data() {
   "meshes": [{
     "name": "MorphMesh",
     "weights": [0.25],
+    "extras": {"targetNames": ["Smile"]},
     "primitives": [{
       "attributes": {"POSITION": 0, "NORMAL": 1, "JOINTS_0": 2, "WEIGHTS_0": 3},
       "targets": [{"POSITION": 4}],
@@ -556,6 +557,8 @@ void test_gltf_asset_loads_skinning_and_morph_data() {
             "vertex joints should load");
     require_close(primitive.vertices[0].weights0.x, 1.0F, "vertex weights should load");
     require(primitive.morph_targets.size() == 1, "primitive morph target should load");
+    require(primitive.morph_targets[0].label == "Smile",
+            "mesh targetNames extras should name morph targets");
     require(primitive.morph_targets[0].position_deltas.size() == 3,
             "morph position deltas should load");
     require_close(primitive.morph_targets[0].position_deltas[1].x, 0.1F,

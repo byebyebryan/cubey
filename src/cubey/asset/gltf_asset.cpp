@@ -489,8 +489,18 @@ read_vec3_accessor_values(const cgltf_accessor* accessor, const char* label) {
     return values;
 }
 
+[[nodiscard]] std::string morph_target_label(char* const* target_names,
+                                             cgltf_size target_names_count,
+                                             cgltf_size target_index) {
+    if (target_index >= target_names_count) {
+        return {};
+    }
+    return label_or_empty(target_names[target_index]);
+}
+
 [[nodiscard]] GltfMorphTarget load_morph_target(const cgltf_morph_target& target,
-                                                cgltf_size vertex_count) {
+                                                cgltf_size vertex_count,
+                                                std::string label) {
     require_supported_morph_target_attributes(target);
     const auto attributes =
         std::span<const cgltf_attribute>{target.attributes, target.attributes_count};
@@ -502,6 +512,7 @@ read_vec3_accessor_values(const cgltf_accessor* accessor, const char* label) {
     require_optional_morph_accessor_count(normals, vertex_count, "NORMAL");
     require_optional_morph_accessor_count(tangents, vertex_count, "TANGENT");
     return {
+        .label = std::move(label),
         .position_deltas = read_vec3_accessor_values(positions, "POSITION morph target"),
         .normal_deltas = read_vec3_accessor_values(normals, "NORMAL morph target"),
         .tangent_deltas = read_vec3_accessor_values(tangents, "TANGENT morph target"),
@@ -540,6 +551,8 @@ void expand_bounds_for_morph_targets(GltfMeshPrimitive& primitive) {
 [[nodiscard]] GltfMeshPrimitive load_primitive(const cgltf_primitive& primitive,
                                                const cgltf_material* material_base,
                                                cgltf_size material_count,
+                                               char* const* target_names,
+                                               cgltf_size target_names_count,
                                                const GltfLoadConfig& config) {
     if (primitive.type != cgltf_primitive_type_triangles) {
         throw gltf_error("only triangle primitives are supported");
@@ -638,7 +651,9 @@ void expand_bounds_for_morph_targets(GltfMeshPrimitive& primitive) {
     }
     result.morph_targets.reserve(primitive.targets_count);
     for (cgltf_size i = 0; i < primitive.targets_count; ++i) {
-        result.morph_targets.push_back(load_morph_target(primitive.targets[i], positions->count));
+        result.morph_targets.push_back(load_morph_target(
+            primitive.targets[i], positions->count,
+            morph_target_label(target_names, target_names_count, i)));
     }
     if (normals == nullptr) {
         generate_flat_normals(result);
@@ -658,8 +673,9 @@ void expand_bounds_for_morph_targets(GltfMeshPrimitive& primitive) {
     };
     result.primitives.reserve(mesh.primitives_count);
     for (cgltf_size i = 0; i < mesh.primitives_count; ++i) {
-        result.primitives.push_back(
-            load_primitive(mesh.primitives[i], material_base, material_count, config));
+        result.primitives.push_back(load_primitive(mesh.primitives[i], material_base,
+                                                  material_count, mesh.target_names,
+                                                  mesh.target_names_count, config));
     }
     result.weights.reserve(mesh.weights_count);
     for (cgltf_size i = 0; i < mesh.weights_count; ++i) {
