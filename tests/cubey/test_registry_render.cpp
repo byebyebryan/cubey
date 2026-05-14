@@ -78,6 +78,10 @@ void test_render_graph_storage_read_write_initializes_transient_buffers();
 void test_render_graph_transfer_pass_accepts_only_transfer_usages();
 void test_render_item_resolves_draw_item_fields();
 void test_render_item_validates_required_draw_identity();
+void test_gpu_deformation_descriptor_set_declares_storage_buffers();
+void test_gpu_deformation_dispatch_groups_round_up_vertices();
+void test_gpu_deformation_pipeline_config_uses_compute_stage_and_push_constants();
+void test_gpu_deformation_shader_morphs_before_skinning();
 void test_render_pass_helpers_describe_clear_values_and_fullscreen_triangle();
 void test_pbr_vertex_layout_matches_shader_contract();
 void test_pbr_forward_pass_declares_scene_and_material_sets();
@@ -175,6 +179,10 @@ std::span<const TestCase> render_test_cases() {
         CUBEY_TEST(test_primitive_uv_sphere_mesh_uses_smooth_normals_and_uv_grid),
         CUBEY_TEST(test_render_item_validates_required_draw_identity),
         CUBEY_TEST(test_render_item_resolves_draw_item_fields),
+        CUBEY_TEST(test_gpu_deformation_descriptor_set_declares_storage_buffers),
+        CUBEY_TEST(test_gpu_deformation_dispatch_groups_round_up_vertices),
+        CUBEY_TEST(test_gpu_deformation_pipeline_config_uses_compute_stage_and_push_constants),
+        CUBEY_TEST(test_gpu_deformation_shader_morphs_before_skinning),
         CUBEY_TEST(test_render_pass_helpers_describe_clear_values_and_fullscreen_triangle),
         CUBEY_TEST(test_pbr_vertex_layout_matches_shader_contract),
         CUBEY_TEST(test_pbr_forward_pass_declares_scene_and_material_sets),

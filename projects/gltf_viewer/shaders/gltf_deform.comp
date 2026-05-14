@@ -1,0 +1,139 @@
+#version 450
+
+layout(local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
+
+const uint kFlagMorph = 1u << 0u;
+const uint kFlagSkin = 1u << 1u;
+const uint kPbrVertexFloatCount = 12u;
+const uint kMorphTargetFloatCount = 9u;
+
+layout(push_constant) uniform PushConstants {
+    uint vertex_count;
+    uint morph_target_count;
+    uint joint_count;
+    uint flags;
+}
+pc;
+
+layout(std430, set = 0, binding = 0) readonly buffer BaseVertices {
+    float base_vertices[];
+};
+
+layout(std430, set = 0, binding = 1) readonly buffer MorphTargets {
+    float morph_targets[];
+};
+
+layout(std430, set = 0, binding = 2) readonly buffer MorphWeights {
+    float morph_weights[];
+};
+
+struct SkinInfluence {
+    uvec4 joints;
+    vec4 weights;
+};
+
+layout(std430, set = 0, binding = 3) readonly buffer SkinInfluences {
+    SkinInfluence skin_influences[];
+};
+
+layout(std430, set = 0, binding = 4) readonly buffer JointPalette {
+    mat4 joint_palette[];
+};
+
+layout(std430, set = 0, binding = 5) writeonly buffer OutputVertices {
+    float output_vertices[];
+};
+
+struct DeformedVertex {
+    vec3 position;
+    vec3 normal;
+    vec4 tangent;
+    vec2 uv0;
+};
+
+uint vertexBase(uint vertex_index) {
+    return vertex_index * kPbrVertexFloatCount;
+}
+
+DeformedVertex readBaseVertex(uint vertex_index) {
+    const uint base = vertexBase(vertex_index);
+    DeformedVertex vertex;
+    vertex.position = vec3(base_vertices[base + 0u], base_vertices[base + 1u],
+                           base_vertices[base + 2u]);
+    vertex.normal = vec3(base_vertices[base + 3u], base_vertices[base + 4u],
+                         base_vertices[base + 5u]);
+    vertex.tangent = vec4(base_vertices[base + 6u], base_vertices[base + 7u],
+                          base_vertices[base + 8u], base_vertices[base + 9u]);
+    vertex.uv0 = vec2(base_vertices[base + 10u], base_vertices[base + 11u]);
+    return vertex;
+}
+
+void writeOutputVertex(uint vertex_index, DeformedVertex vertex) {
+    const uint base = vertexBase(vertex_index);
+    output_vertices[base + 0u] = vertex.position.x;
+    output_vertices[base + 1u] = vertex.position.y;
+    output_vertices[base + 2u] = vertex.position.z;
+    output_vertices[base + 3u] = vertex.normal.x;
+    output_vertices[base + 4u] = vertex.normal.y;
+    output_vertices[base + 5u] = vertex.normal.z;
+    output_vertices[base + 6u] = vertex.tangent.x;
+    output_vertices[base + 7u] = vertex.tangent.y;
+    output_vertices[base + 8u] = vertex.tangent.z;
+    output_vertices[base + 9u] = vertex.tangent.w;
+    output_vertices[base + 10u] = vertex.uv0.x;
+    output_vertices[base + 11u] = vertex.uv0.y;
+}
+
+void applyMorphTargets(inout DeformedVertex vertex, uint vertex_index) {
+    if ((pc.flags & kFlagMorph) == 0u) {
+        return;
+    }
+
+    for (uint target_index = 0u; target_index < pc.morph_target_count; ++target_index) {
+        const float weight = morph_weights[target_index];
+        const uint target_base =
+            ((target_index * pc.vertex_count) + vertex_index) * kMorphTargetFloatCount;
+        vertex.position += weight * vec3(morph_targets[target_base + 0u],
+                                         morph_targets[target_base + 1u],
+                                         morph_targets[target_base + 2u]);
+        vertex.normal += weight * vec3(morph_targets[target_base + 3u],
+                                       morph_targets[target_base + 4u],
+                                       morph_targets[target_base + 5u]);
+        vertex.tangent.xyz += weight * vec3(morph_targets[target_base + 6u],
+                                            morph_targets[target_base + 7u],
+                                            morph_targets[target_base + 8u]);
+    }
+
+    vertex.normal = normalize(vertex.normal);
+    vertex.tangent.xyz = normalize(vertex.tangent.xyz);
+}
+
+void applySkinning(inout DeformedVertex vertex, uint vertex_index) {
+    if ((pc.flags & kFlagSkin) == 0u || pc.joint_count == 0u) {
+        return;
+    }
+
+    const SkinInfluence influence = skin_influences[vertex_index];
+    mat4 skin_matrix = mat4(0.0);
+    for (uint influence_index = 0u; influence_index < 4u; ++influence_index) {
+        const uint joint = min(influence.joints[influence_index], pc.joint_count - 1u);
+        skin_matrix += influence.weights[influence_index] * joint_palette[joint];
+    }
+
+    vertex.position = (skin_matrix * vec4(vertex.position, 1.0)).xyz;
+    mat3 normal_matrix = mat3(skin_matrix);
+    vertex.normal = normalize(normal_matrix * vertex.normal);
+    vertex.tangent.xyz = normalize(normal_matrix * vertex.tangent.xyz);
+}
+
+void main() {
+    const uint vertex_index = gl_GlobalInvocationID.x;
+    if (vertex_index >= pc.vertex_count) {
+        return;
+    }
+
+    DeformedVertex vertex = readBaseVertex(vertex_index);
+    applyMorphTargets(vertex, vertex_index);
+    applySkinning(vertex, vertex_index);
+    writeOutputVertex(vertex_index, vertex);
+}
