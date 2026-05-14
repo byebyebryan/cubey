@@ -1,0 +1,251 @@
+#include <cubey/engine/forward_pbr_renderer_3d.h>
+
+#include "forward_pbr_renderer_3d_common.h"
+
+#include <cubey/render/pass.h>
+
+#include <array>
+#include <stdexcept>
+
+namespace cubey {
+namespace {
+
+void validate_scene_color_format(const vulkan::Device& device, VkFormat format) {
+    if (format == VK_FORMAT_UNDEFINED) {
+        throw std::runtime_error("forward PBR renderer requires a scene color format");
+    }
+    VkFormatProperties properties{};
+    vkGetPhysicalDeviceFormatProperties(device.physical_device(), format, &properties);
+    constexpr VkFormatFeatureFlags kRequired =
+        VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT | VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT;
+    if ((properties.optimalTilingFeatures & kRequired) != kRequired) {
+        throw std::runtime_error(
+            "forward PBR scene color format does not support color attachment sampling");
+    }
+}
+
+} // namespace
+
+void ForwardPbrRenderer3D::create_global_resources(
+    const vulkan::Device& device, const render::GeneratedPbrEnvironment& environment,
+    std::uint32_t frame_slot_count) {
+    if (frame_slot_count == 0) {
+        throw std::runtime_error("forward PBR renderer requires at least one frame slot");
+    }
+    environment_ = &environment;
+    graph_executor_.resize(frame_slot_count);
+
+    const VkPushConstantRange shadow_push_constants{
+        .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+        .offset = 0,
+        .size = sizeof(ForwardPbrRenderer3DShadowPushConstants),
+    };
+    const std::array<render::ShaderStageFile, 1> shadow_shaders{
+        render::vertex_shader_file(config_.shadow_depth_vertex_shader),
+    };
+    const render::VertexInputLayout shadow_vertex_input =
+        forward_pbr_renderer_3d_shadow_vertex_input_layout();
+    shadow_pass_.emplace(
+        device, render::ShadowMapPass3DConfig{
+                    .extent = {config_.shadow_extent, config_.shadow_extent},
+                    .depth_format = config_.shadow_depth_format,
+                    .pipeline =
+                        {
+                            .shader_stage_files = shadow_shaders,
+                            .vertex_bindings = shadow_vertex_input.bindings(),
+                            .vertex_attributes = shadow_vertex_input.attribute_descriptions(),
+                            .material_pass = render::shadow_depth_pass_info({
+                                .label = "forward_pbr.shadow",
+                                .push_constants =
+                                    std::span<const VkPushConstantRange>{&shadow_push_constants, 1},
+                            }),
+                        },
+                });
+
+    skybox_material_.emplace(
+        device, render::FrameUniformMaterialInstanceConfig{
+                    .material_pass = render::pbr_skybox_pass_info(),
+                    .descriptor_set = 0,
+                    .frame_slot_count = frame_slot_count,
+                    .uniform_binding =
+                        forward_pbr_renderer_3d_binding(render::PbrSkyboxBinding::SkyboxUniforms),
+                    .sampled_images =
+                        {
+                            render::SampledImageMaterialBinding{
+                                .binding = forward_pbr_renderer_3d_binding(
+                                    render::PbrSkyboxBinding::EnvironmentCube),
+                                .sampler = environment.prefiltered_cube.sampler().handle(),
+                                .image_view = environment.prefiltered_cube.view(),
+                            },
+                        },
+                });
+
+    const render::DepthTexture& shadow_texture = shadow_pass().depth_texture();
+    scene_material_.emplace(
+        device,
+        render::FrameUniformMaterialInstanceConfig{
+            .material_pass = render::pbr_forward_pass_info(),
+            .descriptor_set = 0,
+            .frame_slot_count = frame_slot_count,
+            .uniform_binding =
+                forward_pbr_renderer_3d_binding(render::PbrSceneBinding::SceneUniforms),
+            .sampled_images =
+                {
+                    render::SampledImageMaterialBinding{
+                        .binding =
+                            forward_pbr_renderer_3d_binding(render::PbrSceneBinding::ShadowMap),
+                        .sampler = shadow_texture.sampler().handle(),
+                        .image_view = shadow_texture.view(),
+                        .layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
+                    },
+                    render::SampledImageMaterialBinding{
+                        .binding = forward_pbr_renderer_3d_binding(
+                            render::PbrSceneBinding::IrradianceCube),
+                        .sampler = environment.irradiance_cube.sampler().handle(),
+                        .image_view = environment.irradiance_cube.view(),
+                    },
+                    render::SampledImageMaterialBinding{
+                        .binding = forward_pbr_renderer_3d_binding(
+                            render::PbrSceneBinding::PrefilteredCube),
+                        .sampler = environment.prefiltered_cube.sampler().handle(),
+                        .image_view = environment.prefiltered_cube.view(),
+                    },
+                    render::SampledImageMaterialBinding{
+                        .binding =
+                            forward_pbr_renderer_3d_binding(render::PbrSceneBinding::BrdfLut),
+                        .sampler = environment.brdf_lut.sampler().handle(),
+                        .image_view = environment.brdf_lut.view(),
+                    },
+                },
+        });
+    post_material_.emplace(device, render::FrameUniformMaterialInstanceConfig{
+                                       .material_pass = render::pbr_post_pass_info(),
+                                       .descriptor_set = 0,
+                                       .frame_slot_count = frame_slot_count,
+                                       .uniform_binding = forward_pbr_renderer_3d_binding(
+                                           render::PbrPostBinding::PostUniforms),
+                                   });
+}
+
+void ForwardPbrRenderer3D::create_swapchain_resources(
+    const vulkan::Device& device, const ForwardPbrRenderer3DTargetResourcesInfo& info) {
+    if (info.extent.width == 0 || info.extent.height == 0) {
+        throw std::runtime_error("forward PBR renderer requires a nonzero target extent");
+    }
+    if (info.color_format == VK_FORMAT_UNDEFINED) {
+        throw std::runtime_error("forward PBR renderer requires a color format");
+    }
+    if (info.material_descriptor_set_layout == VK_NULL_HANDLE) {
+        throw std::runtime_error("forward PBR renderer requires a material descriptor set layout");
+    }
+    validate_scene_color_format(device, config_.scene_color_format);
+
+    depth_attachment_.emplace(device, info.extent);
+    post_sampler_.emplace(device, vulkan::SamplerConfig{
+                                      .address_mode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+                                  });
+
+    const std::array<render::ShaderStageFile, 2> skybox_shaders{
+        render::vertex_shader_file(config_.skybox_vertex_shader),
+        render::fragment_shader_file(config_.skybox_fragment_shader),
+    };
+    const std::array<VkDescriptorSetLayout, 1> skybox_layouts{skybox_material().layout()};
+    skybox_pipeline_.emplace(device, render::graphics_pipeline_file_resource_config(
+                                         {
+                                             .extent = info.extent,
+                                             .color_format = config_.scene_color_format,
+                                             .depth_format = depth_attachment().format(),
+                                         },
+                                         {
+                                             .shader_stage_files = skybox_shaders,
+                                             .descriptor_set_layouts = skybox_layouts,
+                                             .material_pass = render::pbr_skybox_pass_info(),
+                                         }));
+
+    const render::VertexInputLayout vertex_input = render::pbr_vertex_input_layout();
+    const std::array<render::ShaderStageFile, 2> pbr_shaders{
+        render::vertex_shader_file(config_.pbr_vertex_shader),
+        render::fragment_shader_file(config_.pbr_fragment_shader),
+    };
+    const std::array<VkDescriptorSetLayout, 2> pbr_layouts{
+        scene_material().layout(),
+        info.material_descriptor_set_layout,
+    };
+
+    opaque_pipeline_.emplace(
+        device, render::graphics_pipeline_file_resource_config(
+                    {
+                        .extent = info.extent,
+                        .color_format = config_.scene_color_format,
+                        .depth_format = depth_attachment().format(),
+                    },
+                    {
+                        .shader_stage_files = pbr_shaders,
+                        .vertex_bindings = vertex_input.bindings(),
+                        .vertex_attributes = vertex_input.attribute_descriptions(),
+                        .descriptor_set_layouts = pbr_layouts,
+                        .material_pass = render::pbr_forward_pass_info(render::PbrForwardPassConfig{
+                            .label = "forward_pbr.forward.opaque",
+                        }),
+                    }));
+    alpha_pipeline_.emplace(
+        device, render::graphics_pipeline_file_resource_config(
+                    {
+                        .extent = info.extent,
+                        .color_format = config_.scene_color_format,
+                        .depth_format = depth_attachment().format(),
+                    },
+                    {
+                        .shader_stage_files = pbr_shaders,
+                        .vertex_bindings = vertex_input.bindings(),
+                        .vertex_attributes = vertex_input.attribute_descriptions(),
+                        .descriptor_set_layouts = pbr_layouts,
+                        .material_pass = render::pbr_forward_pass_info(render::PbrForwardPassConfig{
+                            .blend = render::MaterialBlendMode::AlphaBlend,
+                            .label = "forward_pbr.forward.alpha",
+                        }),
+                    }));
+
+    const std::array<render::ShaderStageFile, 2> post_shaders{
+        render::vertex_shader_file(config_.post_vertex_shader),
+        render::fragment_shader_file(config_.post_fragment_shader),
+    };
+    const std::array<VkDescriptorSetLayout, 1> post_layouts{post_material().layout()};
+    post_pipeline_.emplace(device, render::graphics_pipeline_file_resource_config(
+                                       {
+                                           .extent = info.extent,
+                                           .color_format = info.color_format,
+                                       },
+                                       {
+                                           .shader_stage_files = post_shaders,
+                                           .descriptor_set_layouts = post_layouts,
+                                           .material_pass = render::pbr_post_pass_info(),
+                                       }));
+}
+
+void ForwardPbrRenderer3D::destroy_swapchain_resources() {
+    const std::uint32_t frame_slot_count = graph_executor_.frame_slot_count();
+    graph_executor_.clear();
+    if (frame_slot_count != 0) {
+        graph_executor_.resize(frame_slot_count);
+    }
+    post_pipeline_.reset();
+    post_sampler_.reset();
+    alpha_pipeline_.reset();
+    opaque_pipeline_.reset();
+    skybox_pipeline_.reset();
+    depth_attachment_.reset();
+}
+
+void ForwardPbrRenderer3D::destroy_all_resources() {
+    destroy_swapchain_resources();
+    graph_executor_.clear();
+    post_material_.reset();
+    scene_material_.reset();
+    skybox_material_.reset();
+    shadow_pass_.reset();
+    environment_ = nullptr;
+    shadow_depth_is_sampled_ = false;
+}
+
+} // namespace cubey

@@ -268,7 +268,7 @@ void test_forward_pbr_renderer_3d_shadow_vertex_layout_matches_pbr_vertices() {
 void test_forward_pbr_renderer_3d_binds_shadow_depth_with_depth_read_layout() {
     const std::filesystem::path root{CUBEY_SOURCE_DIR};
     const std::string source =
-        read_source_file(root / "src/cubey/engine/forward_pbr_renderer_3d.cpp");
+        read_source_file(root / "src/cubey/engine/forward_pbr_renderer_3d_resources.cpp");
 
     require_contains(source, "PbrSceneBinding::ShadowMap",
                      "forward PBR renderer should bind the shadow map in the scene set");

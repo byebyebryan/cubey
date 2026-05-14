@@ -190,6 +190,9 @@ add_library(cubey_engine STATIC
     engine/engine.cpp
     engine/gltf_scene_importer.cpp
     engine/forward_pbr_renderer_3d.cpp
+    engine/forward_pbr_renderer_3d_graph.cpp
+    engine/forward_pbr_renderer_3d_recording.cpp
+    engine/forward_pbr_renderer_3d_resources.cpp
     engine/project_gpu_services.cpp
     engine/project_runtime.cpp
     engine/renderer_service.cpp
