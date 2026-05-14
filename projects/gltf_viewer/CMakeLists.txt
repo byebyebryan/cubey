@@ -36,6 +36,15 @@ if (CUBEY_HDR_SAMPLE_ASSETS_DIR)
 endif()
 
 if (BUILD_TESTING)
+    add_test(
+        NAME gltf_viewer_uses_pbr_view_renderer
+        COMMAND
+            /bin/sh -c
+            "grep -q '<cubey/engine/pbr_view_renderer.h>' \"$1\" && ! grep -q '<cubey/render/shadow_map.h>' \"$1\""
+            gltf_viewer_uses_pbr_view_renderer
+            "${CMAKE_CURRENT_SOURCE_DIR}/gltf_viewer_app.cpp"
+    )
+
     set(CUBEY_GLTF_VIEWER_HEADLESS_SMOKE_OUTPUT
         "${CMAKE_CURRENT_BINARY_DIR}/gltf-viewer-headless-smoke.png"
     )
