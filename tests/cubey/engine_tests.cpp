@@ -56,7 +56,7 @@ cubey::vulkan::SubmissionCoordinator fake_submission() {
         [](VkQueue, const char*) {});
 }
 
-cubey::PbrViewRenderer3DConfig valid_pbr_renderer_config() {
+cubey::ForwardPbrRenderer3DConfig valid_forward_pbr_renderer_config() {
     return {
         .pbr_vertex_shader = "pbr.vert.spv",
         .pbr_fragment_shader = "pbr.frag.spv",
@@ -213,19 +213,19 @@ void test_engine_exposes_renderer_service() {
             "engine should expose the same renderer service through const and mutable access");
 }
 
-void test_renderer_service_owns_pbr_view_renderer_instances() {
+void test_renderer_service_owns_forward_pbr_renderer_instances() {
     cubey::Engine engine;
 
-    cubey::PbrViewRenderer3D& first =
-        engine.renderers().create_pbr_view_renderer_3d(valid_pbr_renderer_config());
-    cubey::PbrViewRenderer3D& second =
-        engine.renderers().create_pbr_view_renderer_3d(valid_pbr_renderer_config());
+    cubey::ForwardPbrRenderer3D& first =
+        engine.renderers().create_forward_pbr_renderer_3d(valid_forward_pbr_renderer_config());
+    cubey::ForwardPbrRenderer3D& second =
+        engine.renderers().create_forward_pbr_renderer_3d(valid_forward_pbr_renderer_config());
 
     require(engine.renderers().renderer_count() == 2,
             "renderer service should count engine-owned renderer instances");
     require(&first != &second, "renderer service should return distinct renderer instances");
 
-    engine.renderers().destroy_pbr_view_renderer_3d(first);
+    engine.renderers().destroy_forward_pbr_renderer_3d(first);
     require(engine.renderers().renderer_count() == 1,
             "renderer service should destroy one renderer at a time");
 
@@ -234,12 +234,13 @@ void test_renderer_service_owns_pbr_view_renderer_instances() {
             "renderer service destroy_all_resources should release renderer instances");
 }
 
-void test_renderer_service_rejects_foreign_pbr_view_renderer() {
+void test_renderer_service_rejects_foreign_forward_pbr_renderer() {
     cubey::Engine engine;
-    cubey::PbrViewRenderer3D foreign(valid_pbr_renderer_config());
+    cubey::ForwardPbrRenderer3D foreign(valid_forward_pbr_renderer_config());
 
-    require_throws([&engine, &foreign] { engine.renderers().destroy_pbr_view_renderer_3d(foreign); },
-                   "renderer service should reject renderers it does not own");
+    require_throws(
+        [&engine, &foreign] { engine.renderers().destroy_forward_pbr_renderer_3d(foreign); },
+        "renderer service should reject renderers it does not own");
 }
 
 void test_renderer_service_resource_lifecycle_is_safe_without_renderers() {

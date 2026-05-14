@@ -9,40 +9,41 @@ namespace cubey {
 
 RendererService::~RendererService() = default;
 
-PbrViewRenderer3D& RendererService::create_pbr_view_renderer_3d(PbrViewRenderer3DConfig config) {
-    pbr_view_renderers_.push_back(std::make_unique<PbrViewRenderer3D>(std::move(config)));
-    return *pbr_view_renderers_.back();
+ForwardPbrRenderer3D&
+RendererService::create_forward_pbr_renderer_3d(ForwardPbrRenderer3DConfig config) {
+    forward_pbr_renderers_.push_back(std::make_unique<ForwardPbrRenderer3D>(std::move(config)));
+    return *forward_pbr_renderers_.back();
 }
 
-void RendererService::destroy_pbr_view_renderer_3d(PbrViewRenderer3D& renderer) {
+void RendererService::destroy_forward_pbr_renderer_3d(ForwardPbrRenderer3D& renderer) {
     const auto position =
-        std::find_if(pbr_view_renderers_.begin(), pbr_view_renderers_.end(),
-                     [&renderer](const std::unique_ptr<PbrViewRenderer3D>& owned_renderer) {
+        std::find_if(forward_pbr_renderers_.begin(), forward_pbr_renderers_.end(),
+                     [&renderer](const std::unique_ptr<ForwardPbrRenderer3D>& owned_renderer) {
                          return owned_renderer.get() == &renderer;
                      });
-    if (position == pbr_view_renderers_.end()) {
-        throw std::runtime_error("renderer service does not own PBR view renderer");
+    if (position == forward_pbr_renderers_.end()) {
+        throw std::runtime_error("renderer service does not own forward PBR renderer");
     }
 
     (*position)->destroy_all_resources();
-    pbr_view_renderers_.erase(position);
+    forward_pbr_renderers_.erase(position);
 }
 
 void RendererService::destroy_swapchain_resources() {
-    for (const std::unique_ptr<PbrViewRenderer3D>& renderer : pbr_view_renderers_) {
+    for (const std::unique_ptr<ForwardPbrRenderer3D>& renderer : forward_pbr_renderers_) {
         renderer->destroy_swapchain_resources();
     }
 }
 
 void RendererService::destroy_all_resources() {
-    for (const std::unique_ptr<PbrViewRenderer3D>& renderer : pbr_view_renderers_) {
+    for (const std::unique_ptr<ForwardPbrRenderer3D>& renderer : forward_pbr_renderers_) {
         renderer->destroy_all_resources();
     }
-    pbr_view_renderers_.clear();
+    forward_pbr_renderers_.clear();
 }
 
 std::size_t RendererService::renderer_count() const noexcept {
-    return pbr_view_renderers_.size();
+    return forward_pbr_renderers_.size();
 }
 
 } // namespace cubey

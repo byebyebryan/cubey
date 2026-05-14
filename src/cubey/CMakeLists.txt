@@ -185,7 +185,7 @@ add_library(cubey_engine STATIC
     engine/capture_queue.cpp
     engine/engine.cpp
     engine/gltf_scene_importer.cpp
-    engine/pbr_view_renderer.cpp
+    engine/forward_pbr_renderer_3d.cpp
     engine/project_gpu_services.cpp
     engine/project_runtime.cpp
     engine/renderer_service.cpp

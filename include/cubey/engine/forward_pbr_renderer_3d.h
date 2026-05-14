@@ -28,7 +28,7 @@
 
 namespace cubey {
 
-struct PbrViewRenderer3DConfig {
+struct ForwardPbrRenderer3DConfig {
     std::filesystem::path pbr_vertex_shader{};
     std::filesystem::path pbr_fragment_shader{};
     std::filesystem::path skybox_vertex_shader{};
@@ -42,13 +42,13 @@ struct PbrViewRenderer3DConfig {
     };
 };
 
-struct PbrViewRenderer3DSwapchainResourcesInfo {
+struct ForwardPbrRenderer3DTargetResourcesInfo {
     VkExtent2D extent{};
     VkFormat color_format = VK_FORMAT_UNDEFINED;
     VkDescriptorSetLayout material_descriptor_set_layout = VK_NULL_HANDLE;
 };
 
-struct PbrViewSceneUniformInfo {
+struct ForwardPbrRenderer3DSceneUniformInfo {
     math::Mat4 view_projection{1.0F};
     math::Mat4 light_view_projection{1.0F};
     math::Vec3 camera_position{0.0F, 0.0F, 0.0F};
@@ -62,7 +62,7 @@ struct PbrViewSceneUniformInfo {
     render::PbrTonemap tonemap = render::PbrTonemap::Aces;
 };
 
-struct PbrViewSkyboxUniformInfo {
+struct ForwardPbrRenderer3DSkyboxUniformInfo {
     math::Mat4 view_projection{1.0F};
     math::Vec3 camera_position{0.0F, 0.0F, 0.0F};
     float environment_intensity = 1.0F;
@@ -72,7 +72,7 @@ struct PbrViewSkyboxUniformInfo {
     render::PbrTonemap tonemap = render::PbrTonemap::Aces;
 };
 
-struct PbrViewRenderer3DRecordInfo {
+struct ForwardPbrRenderer3DRecordInfo {
     const vulkan::Device* device = nullptr;
     VkCommandBuffer command_buffer = VK_NULL_HANDLE;
     render::ColorTargetView color_target{};
@@ -92,36 +92,37 @@ struct PbrViewRenderer3DRecordInfo {
     LightPacket3D fallback_light{};
     float environment_rotation_degrees = 0.0F;
     float exposure = 0.0F;
-    const char* command_buffer_label = "vkEndCommandBuffer pbr view renderer";
+    const char* command_buffer_label = "vkEndCommandBuffer forward pbr renderer";
 };
 
-void validate_pbr_view_renderer_config(const PbrViewRenderer3DConfig& config);
-[[nodiscard]] render::VertexInputLayout pbr_view_shadow_vertex_input_layout();
-[[nodiscard]] LightPacket3D pbr_view_selected_light(std::span<const LightPacket3D> lights,
-                                                    Entity requested_light,
-                                                    LightPacket3D fallback_light);
+void validate_forward_pbr_renderer_3d_config(const ForwardPbrRenderer3DConfig& config);
+[[nodiscard]] render::VertexInputLayout forward_pbr_renderer_3d_shadow_vertex_input_layout();
+[[nodiscard]] LightPacket3D
+forward_pbr_renderer_3d_selected_light(std::span<const LightPacket3D> lights,
+                                       Entity requested_light,
+                                       LightPacket3D fallback_light);
 [[nodiscard]] render::PbrSceneUniforms
-pbr_view_scene_uniforms(const PbrViewSceneUniformInfo& info);
+forward_pbr_renderer_3d_scene_uniforms(const ForwardPbrRenderer3DSceneUniformInfo& info);
 [[nodiscard]] render::PbrSkyboxUniforms
-pbr_view_skybox_uniforms(const PbrViewSkyboxUniformInfo& info);
+forward_pbr_renderer_3d_skybox_uniforms(const ForwardPbrRenderer3DSkyboxUniformInfo& info);
 
-class PbrViewRenderer3D {
+class ForwardPbrRenderer3D {
   public:
-    explicit PbrViewRenderer3D(PbrViewRenderer3DConfig config);
+    explicit ForwardPbrRenderer3D(ForwardPbrRenderer3DConfig config);
 
-    PbrViewRenderer3D(const PbrViewRenderer3D&) = delete;
-    PbrViewRenderer3D& operator=(const PbrViewRenderer3D&) = delete;
-    PbrViewRenderer3D(PbrViewRenderer3D&&) = delete;
-    PbrViewRenderer3D& operator=(PbrViewRenderer3D&&) = delete;
+    ForwardPbrRenderer3D(const ForwardPbrRenderer3D&) = delete;
+    ForwardPbrRenderer3D& operator=(const ForwardPbrRenderer3D&) = delete;
+    ForwardPbrRenderer3D(ForwardPbrRenderer3D&&) = delete;
+    ForwardPbrRenderer3D& operator=(ForwardPbrRenderer3D&&) = delete;
 
     void create_global_resources(const vulkan::Device& device,
                                  const render::GeneratedPbrEnvironment& environment,
                                  std::uint32_t frame_slot_count);
     void create_swapchain_resources(const vulkan::Device& device,
-                                    const PbrViewRenderer3DSwapchainResourcesInfo& info);
+                                    const ForwardPbrRenderer3DTargetResourcesInfo& info);
     void destroy_swapchain_resources();
     void destroy_all_resources();
-    void record(const PbrViewRenderer3DRecordInfo& info);
+    void record(const ForwardPbrRenderer3DRecordInfo& info);
 
     [[nodiscard]] const render::GeneratedPbrEnvironment& environment() const;
 
@@ -166,7 +167,7 @@ class PbrViewRenderer3D {
     [[nodiscard]] const render::GraphicsPipelineResource& skybox_pipeline() const;
     [[nodiscard]] const vulkan::DepthAttachment& depth_attachment() const;
 
-    PbrViewRenderer3DConfig config_;
+    ForwardPbrRenderer3DConfig config_;
     const render::GeneratedPbrEnvironment* environment_ = nullptr;
     render::RenderGraphFrameExecutor graph_executor_;
     std::optional<render::ShadowMapPass3D> shadow_pass_;

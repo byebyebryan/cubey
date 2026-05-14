@@ -1,4 +1,4 @@
-#include <cubey/engine/pbr_view_renderer.h>
+#include <cubey/engine/forward_pbr_renderer_3d.h>
 
 #include <vulkan/vulkan.h>
 
@@ -29,7 +29,7 @@ void require_throws(auto&& action, const char* message) {
     throw std::runtime_error(message);
 }
 
-cubey::PbrViewRenderer3DConfig valid_config() {
+cubey::ForwardPbrRenderer3DConfig valid_config() {
     return {
         .pbr_vertex_shader = "pbr.vert.spv",
         .pbr_fragment_shader = "pbr.frag.spv",
@@ -41,20 +41,20 @@ cubey::PbrViewRenderer3DConfig valid_config() {
 
 } // namespace
 
-void test_pbr_view_renderer_config_requires_shader_paths_and_shadow_extent() {
-    require_throws([] { cubey::validate_pbr_view_renderer_config({}); },
-                   "PBR view renderer config should reject missing shader paths");
+void test_forward_pbr_renderer_3d_config_requires_shader_paths_and_shadow_extent() {
+    require_throws([] { cubey::validate_forward_pbr_renderer_3d_config({}); },
+                   "forward PBR renderer config should reject missing shader paths");
 
-    cubey::PbrViewRenderer3DConfig config = valid_config();
+    cubey::ForwardPbrRenderer3DConfig config = valid_config();
     config.shadow_extent = 0;
-    require_throws([&config] { cubey::validate_pbr_view_renderer_config(config); },
-                   "PBR view renderer config should reject zero shadow extent");
+    require_throws([&config] { cubey::validate_forward_pbr_renderer_3d_config(config); },
+                   "forward PBR renderer config should reject zero shadow extent");
 
     config.shadow_extent = 1024;
-    cubey::validate_pbr_view_renderer_config(config);
+    cubey::validate_forward_pbr_renderer_3d_config(config);
 }
 
-void test_pbr_view_renderer_selects_requested_light_or_fallback() {
+void test_forward_pbr_renderer_3d_selects_requested_light_or_fallback() {
     const cubey::Entity requested{.index = 2, .generation = 1};
     const cubey::Entity other{.index = 3, .generation = 1};
     const cubey::LightPacket3D fallback{
@@ -78,45 +78,45 @@ void test_pbr_view_renderer_selects_requested_light_or_fallback() {
     };
 
     const cubey::LightPacket3D selected =
-        cubey::pbr_view_selected_light(packets, requested, fallback);
-    require(selected.entity == requested, "PBR view renderer should select the requested light");
+        cubey::forward_pbr_renderer_3d_selected_light(packets, requested, fallback);
+    require(selected.entity == requested, "forward PBR renderer should select the requested light");
     require(selected.color == cubey::math::Vec3{0.7F, 0.8F, 0.9F},
-            "PBR view renderer should preserve selected light color");
+            "forward PBR renderer should preserve selected light color");
     require(selected.intensity == 2.5F,
-            "PBR view renderer should preserve selected light intensity");
+            "forward PBR renderer should preserve selected light intensity");
 
     const cubey::LightPacket3D missing =
-        cubey::pbr_view_selected_light(std::span<const cubey::LightPacket3D>{}, requested,
-                                       fallback);
+        cubey::forward_pbr_renderer_3d_selected_light(
+            std::span<const cubey::LightPacket3D>{}, requested, fallback);
     require(missing.entity == fallback.entity,
-            "PBR view renderer should fall back when the requested light is absent");
+            "forward PBR renderer should fall back when the requested light is absent");
     require(missing.intensity == fallback.intensity,
-            "PBR view renderer should preserve fallback light intensity");
+            "forward PBR renderer should preserve fallback light intensity");
 }
 
-void test_pbr_view_renderer_shadow_vertex_layout_matches_pbr_vertices() {
+void test_forward_pbr_renderer_3d_shadow_vertex_layout_matches_pbr_vertices() {
     const cubey::render::VertexInputLayout layout =
-        cubey::pbr_view_shadow_vertex_input_layout();
+        cubey::forward_pbr_renderer_3d_shadow_vertex_input_layout();
     require(layout.bindings().size() == 1,
-            "PBR view shadow vertex layout should expose one binding");
+            "forward PBR shadow vertex layout should expose one binding");
     require(layout.bindings()[0].stride == sizeof(cubey::render::PbrVertex),
-            "PBR view shadow vertex layout should use the PBR vertex stride");
+            "forward PBR shadow vertex layout should use the PBR vertex stride");
     require(layout.attributes.size() == 1,
-            "PBR view shadow vertex layout should expose only position");
+            "forward PBR shadow vertex layout should expose only position");
     require(layout.attributes[0].location == 0,
-            "PBR view shadow vertex layout should bind position at location 0");
+            "forward PBR shadow vertex layout should bind position at location 0");
     require(layout.attributes[0].offset == offsetof(cubey::render::PbrVertex, position),
-            "PBR view shadow vertex layout should read PBR vertex position");
+            "forward PBR shadow vertex layout should read PBR vertex position");
 }
 
-void test_pbr_view_renderer_scene_uniforms_pack_view_light_environment_and_display() {
+void test_forward_pbr_renderer_3d_scene_uniforms_pack_view_light_environment_and_display() {
     const cubey::LightPacket3D light{
         .entity = cubey::Entity{.index = 2, .generation = 1},
         .color = {0.6F, 0.7F, 0.8F},
         .intensity = 3.5F,
         .direction = {0.0F, -1.0F, 0.0F},
     };
-    const cubey::render::PbrSceneUniforms uniforms = cubey::pbr_view_scene_uniforms({
+    const cubey::render::PbrSceneUniforms uniforms = cubey::forward_pbr_renderer_3d_scene_uniforms({
         .view_projection = cubey::math::Mat4{2.0F},
         .light_view_projection = cubey::math::Mat4{3.0F},
         .camera_position = {1.0F, 2.0F, 3.0F},
@@ -134,31 +134,31 @@ void test_pbr_view_renderer_scene_uniforms_pack_view_light_environment_and_displ
     });
 
     require(uniforms.view_projection == cubey::math::Mat4{2.0F},
-            "PBR view scene uniforms should preserve scene view-projection");
+            "forward PBR scene uniforms should preserve scene view-projection");
     require(uniforms.light_view_projection == cubey::math::Mat4{3.0F},
-            "PBR view scene uniforms should preserve light view-projection");
+            "forward PBR scene uniforms should preserve light view-projection");
     require(uniforms.camera_position == cubey::math::Vec4{1.0F, 2.0F, 3.0F, 1.0F},
-            "PBR view scene uniforms should pack camera position");
+            "forward PBR scene uniforms should pack camera position");
     require(uniforms.light_color_intensity ==
                 cubey::math::Vec4{0.6F, 0.7F, 0.8F, 3.5F},
-            "PBR view scene uniforms should pack light color and intensity");
+            "forward PBR scene uniforms should pack light color and intensity");
     require(uniforms.ambient_color_intensity ==
                 cubey::math::Vec4{0.4F, 0.6F, 0.8F, 1.0F},
-            "PBR view scene uniforms should pack ambient color times intensity");
+            "forward PBR scene uniforms should pack ambient color times intensity");
     require(uniforms.environment_intensity_mip_count.x == 5.0F,
-            "PBR view scene uniforms should pack environment intensity");
+            "forward PBR scene uniforms should pack environment intensity");
     require(uniforms.environment_intensity_mip_count.y == 6.0F,
-            "PBR view scene uniforms should pack prefiltered mip count");
+            "forward PBR scene uniforms should pack prefiltered mip count");
     require_near(uniforms.environment_intensity_mip_count.z, 0.0F,
-                 "PBR view scene uniforms should pack rotation cosine");
+                 "forward PBR scene uniforms should pack rotation cosine");
     require_near(uniforms.environment_intensity_mip_count.w, 1.0F,
-                 "PBR view scene uniforms should pack rotation sine");
+                 "forward PBR scene uniforms should pack rotation sine");
     require(uniforms.display_transform == cubey::math::Vec4{1.25F, 1.0F, 1.0F, 0.0F},
-            "PBR view scene uniforms should pack display transform");
+            "forward PBR scene uniforms should pack display transform");
 }
 
-void test_pbr_view_renderer_skybox_uniforms_pack_inverse_view_camera_environment_and_display() {
-    const cubey::render::PbrSkyboxUniforms uniforms = cubey::pbr_view_skybox_uniforms({
+void test_forward_pbr_renderer_3d_skybox_uniforms_pack_inverse_view_camera_environment_and_display() {
+    const cubey::render::PbrSkyboxUniforms uniforms = cubey::forward_pbr_renderer_3d_skybox_uniforms({
         .view_projection = cubey::math::Mat4{1.0F},
         .camera_position = {4.0F, 5.0F, 6.0F},
         .environment_intensity = 2.25F,
@@ -168,15 +168,15 @@ void test_pbr_view_renderer_skybox_uniforms_pack_inverse_view_camera_environment
     });
 
     require(uniforms.inverse_view_projection == cubey::math::Mat4{1.0F},
-            "PBR view skybox uniforms should invert the view-projection matrix");
+            "forward PBR skybox uniforms should invert the view-projection matrix");
     require(uniforms.camera_position == cubey::math::Vec4{4.0F, 5.0F, 6.0F, 1.0F},
-            "PBR view skybox uniforms should pack camera position");
+            "forward PBR skybox uniforms should pack camera position");
     require_near(uniforms.environment_rotation_intensity.x, -1.0F,
-                 "PBR view skybox uniforms should pack rotation cosine");
+                 "forward PBR skybox uniforms should pack rotation cosine");
     require_near(uniforms.environment_rotation_intensity.y, 0.0F,
-                 "PBR view skybox uniforms should pack rotation sine");
+                 "forward PBR skybox uniforms should pack rotation sine");
     require(uniforms.environment_rotation_intensity.z == 2.25F,
-            "PBR view skybox uniforms should pack environment intensity");
+            "forward PBR skybox uniforms should pack environment intensity");
     require(uniforms.display_transform == cubey::math::Vec4{-0.5F, 1.0F, 0.0F, 0.0F},
-            "PBR view skybox uniforms should pack display transform");
+            "forward PBR skybox uniforms should pack display transform");
 }

@@ -37,11 +37,11 @@ endif()
 
 if (BUILD_TESTING)
     add_test(
-        NAME gltf_viewer_uses_pbr_view_renderer
+        NAME gltf_viewer_uses_forward_pbr_renderer_3d
         COMMAND
             /bin/sh -c
-            "grep -q '<cubey/engine/pbr_view_renderer.h>' \"$1\" && ! grep -q '<cubey/render/shadow_map.h>' \"$1\""
-            gltf_viewer_uses_pbr_view_renderer
+            "grep -q '<cubey/engine/forward_pbr_renderer_3d.h>' \"$1\" && ! grep -q '<cubey/render/shadow_map.h>' \"$1\""
+            gltf_viewer_uses_forward_pbr_renderer_3d
             "${CMAKE_CURRENT_SOURCE_DIR}/gltf_viewer_app.cpp"
     )
 

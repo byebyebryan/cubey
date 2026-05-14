@@ -1,6 +1,6 @@
 #pragma once
 
-#include <cubey/engine/pbr_view_renderer.h>
+#include <cubey/engine/forward_pbr_renderer_3d.h>
 
 #include <cstddef>
 #include <memory>
@@ -18,9 +18,9 @@ class RendererService {
     RendererService(RendererService&&) = delete;
     RendererService& operator=(RendererService&&) = delete;
 
-    [[nodiscard]] PbrViewRenderer3D&
-    create_pbr_view_renderer_3d(PbrViewRenderer3DConfig config);
-    void destroy_pbr_view_renderer_3d(PbrViewRenderer3D& renderer);
+    [[nodiscard]] ForwardPbrRenderer3D&
+    create_forward_pbr_renderer_3d(ForwardPbrRenderer3DConfig config);
+    void destroy_forward_pbr_renderer_3d(ForwardPbrRenderer3D& renderer);
 
     void destroy_swapchain_resources();
     void destroy_all_resources();
@@ -28,7 +28,7 @@ class RendererService {
     [[nodiscard]] std::size_t renderer_count() const noexcept;
 
   private:
-    std::vector<std::unique_ptr<PbrViewRenderer3D>> pbr_view_renderers_;
+    std::vector<std::unique_ptr<ForwardPbrRenderer3D>> forward_pbr_renderers_;
 };
 
 } // namespace cubey

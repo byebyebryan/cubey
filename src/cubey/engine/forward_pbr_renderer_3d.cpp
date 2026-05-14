@@ -1,4 +1,4 @@
-#include <cubey/engine/pbr_view_renderer.h>
+#include <cubey/engine/forward_pbr_renderer_3d.h>
 
 #include <cubey/render/pass.h>
 #include <cubey/scene/render_recording.h>
@@ -57,28 +57,28 @@ static_assert(sizeof(ShadowPushConstants) == sizeof(math::Mat4));
 
 } // namespace
 
-void validate_pbr_view_renderer_config(const PbrViewRenderer3DConfig& config) {
+void validate_forward_pbr_renderer_3d_config(const ForwardPbrRenderer3DConfig& config) {
     if (config.pbr_vertex_shader.empty()) {
-        throw std::runtime_error("PBR view renderer requires a PBR vertex shader");
+        throw std::runtime_error("forward PBR renderer requires a PBR vertex shader");
     }
     if (config.pbr_fragment_shader.empty()) {
-        throw std::runtime_error("PBR view renderer requires a PBR fragment shader");
+        throw std::runtime_error("forward PBR renderer requires a PBR fragment shader");
     }
     if (config.skybox_vertex_shader.empty()) {
-        throw std::runtime_error("PBR view renderer requires a skybox vertex shader");
+        throw std::runtime_error("forward PBR renderer requires a skybox vertex shader");
     }
     if (config.skybox_fragment_shader.empty()) {
-        throw std::runtime_error("PBR view renderer requires a skybox fragment shader");
+        throw std::runtime_error("forward PBR renderer requires a skybox fragment shader");
     }
     if (config.shadow_depth_vertex_shader.empty()) {
-        throw std::runtime_error("PBR view renderer requires a shadow depth vertex shader");
+        throw std::runtime_error("forward PBR renderer requires a shadow depth vertex shader");
     }
     if (config.shadow_extent == 0) {
-        throw std::runtime_error("PBR view renderer requires a nonzero shadow extent");
+        throw std::runtime_error("forward PBR renderer requires a nonzero shadow extent");
     }
 }
 
-LightPacket3D pbr_view_selected_light(std::span<const LightPacket3D> lights,
+LightPacket3D forward_pbr_renderer_3d_selected_light(std::span<const LightPacket3D> lights,
                                       Entity requested_light,
                                       LightPacket3D fallback_light) {
     for (const LightPacket3D& light : lights) {
@@ -89,11 +89,11 @@ LightPacket3D pbr_view_selected_light(std::span<const LightPacket3D> lights,
     return fallback_light;
 }
 
-render::VertexInputLayout pbr_view_shadow_vertex_input_layout() {
+render::VertexInputLayout forward_pbr_renderer_3d_shadow_vertex_input_layout() {
     return render::vertex_position_only_input_layout(sizeof(render::PbrVertex));
 }
 
-render::PbrSceneUniforms pbr_view_scene_uniforms(const PbrViewSceneUniformInfo& info) {
+render::PbrSceneUniforms forward_pbr_renderer_3d_scene_uniforms(const ForwardPbrRenderer3DSceneUniformInfo& info) {
     const math::Vec3 ambient =
         info.environment.ambient_color * info.environment.ambient_intensity;
     const float radians = rotation_radians(info.environment_rotation_degrees);
@@ -117,7 +117,7 @@ render::PbrSceneUniforms pbr_view_scene_uniforms(const PbrViewSceneUniformInfo& 
     };
 }
 
-render::PbrSkyboxUniforms pbr_view_skybox_uniforms(const PbrViewSkyboxUniformInfo& info) {
+render::PbrSkyboxUniforms forward_pbr_renderer_3d_skybox_uniforms(const ForwardPbrRenderer3DSkyboxUniformInfo& info) {
     const float radians = rotation_radians(info.environment_rotation_degrees);
     const render::PbrDisplayTransform display_transform =
         render::pbr_display_transform_for_target(info.color_format, info.exposure, info.tonemap);
@@ -135,16 +135,16 @@ render::PbrSkyboxUniforms pbr_view_skybox_uniforms(const PbrViewSkyboxUniformInf
     };
 }
 
-PbrViewRenderer3D::PbrViewRenderer3D(PbrViewRenderer3DConfig config)
+ForwardPbrRenderer3D::ForwardPbrRenderer3D(ForwardPbrRenderer3DConfig config)
     : config_(std::move(config)) {
-    validate_pbr_view_renderer_config(config_);
+    validate_forward_pbr_renderer_3d_config(config_);
 }
 
-void PbrViewRenderer3D::create_global_resources(
+void ForwardPbrRenderer3D::create_global_resources(
     const vulkan::Device& device, const render::GeneratedPbrEnvironment& environment,
     std::uint32_t frame_slot_count) {
     if (frame_slot_count == 0) {
-        throw std::runtime_error("PBR view renderer requires at least one frame slot");
+        throw std::runtime_error("forward PBR renderer requires at least one frame slot");
     }
     environment_ = &environment;
     graph_executor_.resize(frame_slot_count);
@@ -157,7 +157,7 @@ void PbrViewRenderer3D::create_global_resources(
     const std::array<render::ShaderStageFile, 1> shadow_shaders{
         render::vertex_shader_file(config_.shadow_depth_vertex_shader),
     };
-    const render::VertexInputLayout shadow_vertex_input = pbr_view_shadow_vertex_input_layout();
+    const render::VertexInputLayout shadow_vertex_input = forward_pbr_renderer_3d_shadow_vertex_input_layout();
     shadow_pass_.emplace(
         device, render::ShadowMapPass3DConfig{
                     .extent = {config_.shadow_extent, config_.shadow_extent},
@@ -168,7 +168,7 @@ void PbrViewRenderer3D::create_global_resources(
                             .vertex_bindings = shadow_vertex_input.bindings(),
                             .vertex_attributes = shadow_vertex_input.attribute_descriptions(),
                             .material_pass = render::shadow_depth_pass_info({
-                                .label = "pbr_view.shadow",
+                                .label = "forward_pbr.shadow",
                                 .push_constants =
                                     std::span<const VkPushConstantRange>{&shadow_push_constants,
                                                                          1},
@@ -227,16 +227,16 @@ void PbrViewRenderer3D::create_global_resources(
         });
 }
 
-void PbrViewRenderer3D::create_swapchain_resources(
-    const vulkan::Device& device, const PbrViewRenderer3DSwapchainResourcesInfo& info) {
+void ForwardPbrRenderer3D::create_swapchain_resources(
+    const vulkan::Device& device, const ForwardPbrRenderer3DTargetResourcesInfo& info) {
     if (info.extent.width == 0 || info.extent.height == 0) {
-        throw std::runtime_error("PBR view renderer requires a nonzero target extent");
+        throw std::runtime_error("forward PBR renderer requires a nonzero target extent");
     }
     if (info.color_format == VK_FORMAT_UNDEFINED) {
-        throw std::runtime_error("PBR view renderer requires a color format");
+        throw std::runtime_error("forward PBR renderer requires a color format");
     }
     if (info.material_descriptor_set_layout == VK_NULL_HANDLE) {
-        throw std::runtime_error("PBR view renderer requires a material descriptor set layout");
+        throw std::runtime_error("forward PBR renderer requires a material descriptor set layout");
     }
 
     depth_attachment_.emplace(device, info.extent);
@@ -285,7 +285,7 @@ void PbrViewRenderer3D::create_swapchain_resources(
                 .descriptor_set_layouts = pbr_layouts,
                 .material_pass =
                     render::pbr_forward_pass_info(render::PbrForwardPassConfig{
-                        .label = "pbr_view.forward.opaque",
+                        .label = "forward_pbr.forward.opaque",
                     }),
             }));
     alpha_pipeline_.emplace(
@@ -304,12 +304,12 @@ void PbrViewRenderer3D::create_swapchain_resources(
                 .material_pass =
                     render::pbr_forward_pass_info(render::PbrForwardPassConfig{
                         .blend = render::MaterialBlendMode::AlphaBlend,
-                        .label = "pbr_view.forward.alpha",
+                        .label = "forward_pbr.forward.alpha",
                     }),
             }));
 }
 
-void PbrViewRenderer3D::destroy_swapchain_resources() {
+void ForwardPbrRenderer3D::destroy_swapchain_resources() {
     graph_executor_.clear();
     alpha_pipeline_.reset();
     opaque_pipeline_.reset();
@@ -317,7 +317,7 @@ void PbrViewRenderer3D::destroy_swapchain_resources() {
     depth_attachment_.reset();
 }
 
-void PbrViewRenderer3D::destroy_all_resources() {
+void ForwardPbrRenderer3D::destroy_all_resources() {
     destroy_swapchain_resources();
     scene_material_.reset();
     skybox_material_.reset();
@@ -326,25 +326,25 @@ void PbrViewRenderer3D::destroy_all_resources() {
     shadow_depth_is_sampled_ = false;
 }
 
-void PbrViewRenderer3D::record(const PbrViewRenderer3DRecordInfo& info) {
+void ForwardPbrRenderer3D::record(const ForwardPbrRenderer3DRecordInfo& info) {
     if (info.device == nullptr || info.command_buffer == VK_NULL_HANDLE) {
-        throw std::runtime_error("PBR view renderer record requires device and command buffer");
+        throw std::runtime_error("forward PBR renderer record requires device and command buffer");
     }
     if (info.scene == nullptr || info.shadow_plan == nullptr || info.scene_plan == nullptr) {
-        throw std::runtime_error("PBR view renderer record requires scene and frame plans");
+        throw std::runtime_error("forward PBR renderer record requires scene and frame plans");
     }
     if (info.meshes == nullptr || info.material_instances == nullptr ||
         info.material_factors == nullptr) {
-        throw std::runtime_error("PBR view renderer record requires render resource tables");
+        throw std::runtime_error("forward PBR renderer record requires render resource tables");
     }
 
     const math::Vec3 camera_position = camera_world_position(*info.scene, info.camera_entity);
-    const LightPacket3D light = pbr_view_selected_light(
+    const LightPacket3D light = forward_pbr_renderer_3d_selected_light(
         info.scene_plan->light_packets, info.light_entity, info.fallback_light);
 
     scene_material().upload(
         info.frame_slot,
-        pbr_view_scene_uniforms({
+        forward_pbr_renderer_3d_scene_uniforms({
             .view_projection = info.scene_plan->view_projection_matrix,
             .light_view_projection = info.shadow_plan->view_projection_matrix,
             .camera_position = camera_position,
@@ -358,7 +358,7 @@ void PbrViewRenderer3D::record(const PbrViewRenderer3DRecordInfo& info) {
         }));
     skybox_material().upload(
         info.frame_slot,
-        pbr_view_skybox_uniforms({
+        forward_pbr_renderer_3d_skybox_uniforms({
             .view_projection = info.scene_plan->view_projection_matrix,
             .camera_position = camera_position,
             .environment_intensity = environment().intensity,
@@ -382,14 +382,14 @@ void PbrViewRenderer3D::record(const PbrViewRenderer3DRecordInfo& info) {
     shadow_depth_is_sampled_ = true;
 }
 
-const render::GeneratedPbrEnvironment& PbrViewRenderer3D::environment() const {
+const render::GeneratedPbrEnvironment& ForwardPbrRenderer3D::environment() const {
     if (environment_ == nullptr) {
-        throw std::runtime_error("PBR view renderer environment is not initialized");
+        throw std::runtime_error("forward PBR renderer environment is not initialized");
     }
     return *environment_;
 }
 
-PbrViewRenderer3D::CompiledGraph PbrViewRenderer3D::current_render_graph(
+ForwardPbrRenderer3D::CompiledGraph ForwardPbrRenderer3D::current_render_graph(
     render::ColorTargetView color_target, render::FrameSlot frame_slot,
     render::RenderGraphTextureState color_initial_state,
     render::RenderGraphTextureState color_final_state,
@@ -435,7 +435,7 @@ PbrViewRenderer3D::CompiledGraph PbrViewRenderer3D::current_render_graph(
     };
 }
 
-void PbrViewRenderer3D::record_shadow_pass(const vulkan::CommandRecorder& recorder,
+void ForwardPbrRenderer3D::record_shadow_pass(const vulkan::CommandRecorder& recorder,
                                            const scene::RenderFramePlan3D& shadow_plan,
                                            const render::MeshResourceTable<render::Mesh>& meshes)
     const {
@@ -464,7 +464,7 @@ void PbrViewRenderer3D::record_shadow_pass(const vulkan::CommandRecorder& record
         });
 }
 
-void PbrViewRenderer3D::record_scene_pass(
+void ForwardPbrRenderer3D::record_scene_pass(
     const vulkan::CommandRecorder& recorder, render::ColorTargetView color_target,
     const scene::RenderFramePlan3D& scene_plan, render::FrameSlot frame_slot,
     const render::MeshResourceTable<render::Mesh>& meshes,
@@ -520,53 +520,53 @@ void PbrViewRenderer3D::record_scene_pass(
         });
 }
 
-const render::ShadowMapPass3D& PbrViewRenderer3D::shadow_pass() const {
+const render::ShadowMapPass3D& ForwardPbrRenderer3D::shadow_pass() const {
     if (!shadow_pass_.has_value()) {
-        throw std::runtime_error("PBR view renderer shadow pass is not initialized");
+        throw std::runtime_error("forward PBR renderer shadow pass is not initialized");
     }
     return shadow_pass_.value();
 }
 
 const render::FrameUniformMaterialInstance<render::PbrSceneUniforms>&
-PbrViewRenderer3D::scene_material() const {
+ForwardPbrRenderer3D::scene_material() const {
     if (!scene_material_.has_value()) {
-        throw std::runtime_error("PBR view renderer scene material is not initialized");
+        throw std::runtime_error("forward PBR renderer scene material is not initialized");
     }
     return scene_material_.value();
 }
 
 const render::FrameUniformMaterialInstance<render::PbrSkyboxUniforms>&
-PbrViewRenderer3D::skybox_material() const {
+ForwardPbrRenderer3D::skybox_material() const {
     if (!skybox_material_.has_value()) {
-        throw std::runtime_error("PBR view renderer skybox material is not initialized");
+        throw std::runtime_error("forward PBR renderer skybox material is not initialized");
     }
     return skybox_material_.value();
 }
 
-const render::GraphicsPipelineResource& PbrViewRenderer3D::opaque_pipeline() const {
+const render::GraphicsPipelineResource& ForwardPbrRenderer3D::opaque_pipeline() const {
     if (!opaque_pipeline_.has_value()) {
-        throw std::runtime_error("PBR view renderer opaque pipeline is not initialized");
+        throw std::runtime_error("forward PBR renderer opaque pipeline is not initialized");
     }
     return opaque_pipeline_.value();
 }
 
-const render::GraphicsPipelineResource& PbrViewRenderer3D::alpha_pipeline() const {
+const render::GraphicsPipelineResource& ForwardPbrRenderer3D::alpha_pipeline() const {
     if (!alpha_pipeline_.has_value()) {
-        throw std::runtime_error("PBR view renderer alpha pipeline is not initialized");
+        throw std::runtime_error("forward PBR renderer alpha pipeline is not initialized");
     }
     return alpha_pipeline_.value();
 }
 
-const render::GraphicsPipelineResource& PbrViewRenderer3D::skybox_pipeline() const {
+const render::GraphicsPipelineResource& ForwardPbrRenderer3D::skybox_pipeline() const {
     if (!skybox_pipeline_.has_value()) {
-        throw std::runtime_error("PBR view renderer skybox pipeline is not initialized");
+        throw std::runtime_error("forward PBR renderer skybox pipeline is not initialized");
     }
     return skybox_pipeline_.value();
 }
 
-const vulkan::DepthAttachment& PbrViewRenderer3D::depth_attachment() const {
+const vulkan::DepthAttachment& ForwardPbrRenderer3D::depth_attachment() const {
     if (!depth_attachment_.has_value()) {
-        throw std::runtime_error("PBR view renderer depth attachment is not initialized");
+        throw std::runtime_error("forward PBR renderer depth attachment is not initialized");
     }
     return depth_attachment_.value();
 }

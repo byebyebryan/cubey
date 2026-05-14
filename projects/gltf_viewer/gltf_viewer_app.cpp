@@ -5,7 +5,7 @@
 #include <cubey/core/math.h>
 #include <cubey/engine/engine.h>
 #include <cubey/engine/gltf_scene_importer.h>
-#include <cubey/engine/pbr_view_renderer.h>
+#include <cubey/engine/forward_pbr_renderer_3d.h>
 #include <cubey/host/frame_stats.h>
 #include <cubey/host/headless_png_host.h>
 #include <cubey/host/windowed_app.h>
@@ -79,7 +79,7 @@ std::filesystem::path bundled_sample_environment_path() {
 #endif
 }
 
-cubey::PbrViewRenderer3DConfig pbr_view_renderer_config() {
+cubey::ForwardPbrRenderer3DConfig forward_pbr_renderer_3d_config() {
     return {
         .pbr_vertex_shader = shader_path("gltf_pbr.vert.spv"),
         .pbr_fragment_shader = shader_path("gltf_pbr.frag.spv"),
@@ -158,7 +158,7 @@ std::vector<std::uint32_t> fallback_cube_indices() {
 class GltfViewerApp {
   public:
     explicit GltfViewerApp(RunConfig config)
-        : config_(std::move(config)), pbr_renderer_(pbr_view_renderer_config()) {}
+        : config_(std::move(config)), pbr_renderer_(forward_pbr_renderer_3d_config()) {}
 
     GltfViewerApp(const GltfViewerApp&) = delete;
     GltfViewerApp& operator=(const GltfViewerApp&) = delete;
@@ -274,7 +274,7 @@ class GltfViewerApp {
     void create_frame_resources(const cubey::vulkan::Device& device, VkExtent2D extent,
                                 VkFormat color_format) {
         pbr_renderer_.create_swapchain_resources(
-            device, cubey::PbrViewRenderer3DSwapchainResourcesInfo{
+            device, cubey::ForwardPbrRenderer3DTargetResourcesInfo{
                         .extent = extent,
                         .color_format = color_format,
                         .material_descriptor_set_layout = material_descriptor_set_layout(),
@@ -697,7 +697,7 @@ class GltfViewerApp {
     }
 
     RunConfig config_;
-    cubey::PbrViewRenderer3D pbr_renderer_;
+    cubey::ForwardPbrRenderer3D pbr_renderer_;
     cubey::Engine engine_;
     cubey::Scene* scene_ = nullptr;
     std::optional<cubey::asset::GltfAsset> asset_{};
