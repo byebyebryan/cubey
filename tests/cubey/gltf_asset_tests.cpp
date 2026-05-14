@@ -26,6 +26,15 @@ void require_close(float value, float expected, const char* message) {
     }
 }
 
+template <typename Action> void require_throws(Action&& action, const char* message) {
+    try {
+        action();
+    } catch (const std::exception&) {
+        return;
+    }
+    throw std::runtime_error(message);
+}
+
 void append_f32(std::vector<std::uint8_t>& bytes, float value) {
     const std::size_t offset = bytes.size();
     bytes.resize(offset + sizeof(float));
@@ -172,6 +181,84 @@ std::filesystem::path write_triangle_gltf(const std::filesystem::path& dir) {
     return gltf_path;
 }
 
+std::filesystem::path write_missing_normal_wedge_gltf(const std::filesystem::path& dir) {
+    std::vector<std::uint8_t> bytes;
+    const std::size_t position_offset = bytes.size();
+    append_vec3(bytes, 0.0F, 0.0F, 0.0F);
+    append_vec3(bytes, 1.0F, 0.0F, 0.0F);
+    append_vec3(bytes, 0.0F, 1.0F, 0.0F);
+    append_vec3(bytes, 0.0F, 0.0F, 1.0F);
+    const std::size_t joints_offset = bytes.size();
+    append_u16_vec4(bytes, 0, 1, 0, 0);
+    append_u16_vec4(bytes, 1, 0, 0, 0);
+    append_u16_vec4(bytes, 0, 1, 0, 0);
+    append_u16_vec4(bytes, 1, 0, 0, 0);
+    const std::size_t weights_offset = bytes.size();
+    append_vec4(bytes, 0.75F, 0.25F, 0.0F, 0.0F);
+    append_vec4(bytes, 1.0F, 0.0F, 0.0F, 0.0F);
+    append_vec4(bytes, 0.5F, 0.5F, 0.0F, 0.0F);
+    append_vec4(bytes, 0.25F, 0.75F, 0.0F, 0.0F);
+    const std::size_t morph_position_offset = bytes.size();
+    append_vec3(bytes, 0.0F, 0.0F, 0.0F);
+    append_vec3(bytes, 0.1F, 0.0F, 0.0F);
+    append_vec3(bytes, 0.0F, 0.2F, 0.0F);
+    append_vec3(bytes, 0.0F, 0.0F, 0.3F);
+    const std::size_t index_offset = bytes.size();
+    append_u16(bytes, 0);
+    append_u16(bytes, 1);
+    append_u16(bytes, 2);
+    append_u16(bytes, 0);
+    append_u16(bytes, 2);
+    append_u16(bytes, 3);
+
+    cubey::write_binary_file(dir / "missing_normals.bin", bytes);
+
+    const std::string gltf = std::string(R"JSON({
+  "asset": {"version": "2.0"},
+  "scene": 0,
+  "scenes": [{"nodes": [0]}],
+  "nodes": [{"name": "MissingNormals", "mesh": 0}],
+  "meshes": [{
+    "name": "Wedge",
+    "primitives": [{
+      "attributes": {"POSITION": 0, "JOINTS_0": 1, "WEIGHTS_0": 2},
+      "targets": [{"POSITION": 3}],
+      "indices": 4
+    }]
+  }],
+  "buffers": [{"uri": "missing_normals.bin", "byteLength": )JSON") +
+                             std::to_string(bytes.size()) + R"JSON(}],
+  "bufferViews": [
+    {"buffer": 0, "byteOffset": )JSON" +
+                             std::to_string(position_offset) +
+                             R"JSON(, "byteLength": 48},
+    {"buffer": 0, "byteOffset": )JSON" +
+                             std::to_string(joints_offset) +
+                             R"JSON(, "byteLength": 32},
+    {"buffer": 0, "byteOffset": )JSON" +
+                             std::to_string(weights_offset) +
+                             R"JSON(, "byteLength": 64},
+    {"buffer": 0, "byteOffset": )JSON" +
+                             std::to_string(morph_position_offset) +
+                             R"JSON(, "byteLength": 48},
+    {"buffer": 0, "byteOffset": )JSON" +
+                             std::to_string(index_offset) +
+                             R"JSON(, "byteLength": 12}
+  ],
+  "accessors": [
+    {"bufferView": 0, "componentType": 5126, "count": 4, "type": "VEC3",
+     "min": [0.0, 0.0, 0.0], "max": [1.0, 1.0, 1.0]},
+    {"bufferView": 1, "componentType": 5123, "count": 4, "type": "VEC4"},
+    {"bufferView": 2, "componentType": 5126, "count": 4, "type": "VEC4"},
+    {"bufferView": 3, "componentType": 5126, "count": 4, "type": "VEC3"},
+    {"bufferView": 4, "componentType": 5123, "count": 6, "type": "SCALAR"}
+  ]
+})JSON";
+    const std::filesystem::path gltf_path = dir / "missing_normals.gltf";
+    write_text_file(gltf_path, gltf);
+    return gltf_path;
+}
+
 } // namespace
 
 void test_gltf_asset_loads_static_pbr_triangle() {
@@ -215,6 +302,47 @@ void test_gltf_asset_loads_static_pbr_triangle() {
     require_close(primitive.vertices[0].tangent.x, 1.0F,
                   "loader should generate missing tangents");
     require_close(primitive.local_bounds.center.x, 0.5F, "bounds center should be computed");
+
+    std::filesystem::remove_all(dir);
+}
+
+void test_gltf_asset_generates_flat_normals_when_missing() {
+    const std::filesystem::path dir = test_dir("cubey_gltf_asset_missing_normals");
+    const cubey::asset::GltfAsset asset =
+        cubey::asset::load_gltf_asset(write_missing_normal_wedge_gltf(dir));
+
+    const cubey::asset::GltfMeshPrimitive& primitive = asset.meshes[0].primitives[0];
+    require(primitive.vertices.size() == 6,
+            "missing normals should expand indexed triangles for flat normals");
+    require(primitive.indices == std::vector<std::uint32_t>({0, 1, 2, 3, 4, 5}),
+            "expanded flat-normal primitive should use sequential indices");
+    require_close(primitive.vertices[0].normal.z, 1.0F,
+                  "first generated face normal should point along +Z");
+    require_close(primitive.vertices[3].normal.x, 1.0F,
+                  "second generated face normal should point along +X");
+    require_close(primitive.vertices[3].position.x, 0.0F,
+                  "expanded vertex should preserve source position");
+    require(primitive.vertices[3].joints0 == std::array<std::uint16_t, 4>({0, 1, 0, 0}),
+            "expanded vertex should preserve source joints");
+    require_close(primitive.vertices[3].weights0.y, 0.25F,
+                  "expanded vertex should preserve source weights");
+    require(primitive.morph_targets.size() == 1, "morph target should survive expansion");
+    require(primitive.morph_targets[0].position_deltas.size() == 6,
+            "morph deltas should expand with generated normals");
+    require_close(primitive.morph_targets[0].position_deltas[5].z, 0.3F,
+                  "expanded morph delta should preserve source vertex delta");
+
+    std::filesystem::remove_all(dir);
+}
+
+void test_gltf_asset_can_reject_missing_normals_when_generation_is_disabled() {
+    const std::filesystem::path dir = test_dir("cubey_gltf_asset_missing_normals_disabled");
+    const std::filesystem::path path = write_missing_normal_wedge_gltf(dir);
+    cubey::asset::GltfLoadConfig config;
+    config.generate_missing_normals = false;
+
+    require_throws([&path, config] { (void)cubey::asset::load_gltf_asset(path, config); },
+                   "loader should reject missing normals when generation is disabled");
 
     std::filesystem::remove_all(dir);
 }

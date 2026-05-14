@@ -194,6 +194,7 @@ struct GltfAsset {
 
 struct GltfLoadConfig {
     bool generate_missing_tangents = true;
+    bool generate_missing_normals = true;
 };
 
 [[nodiscard]] GltfAsset load_gltf_asset(const std::filesystem::path& path,

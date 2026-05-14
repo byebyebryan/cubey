@@ -387,6 +387,81 @@ void generate_tangents(GltfMeshPrimitive& primitive) {
     }
 }
 
+[[nodiscard]] math::Vec3 triangle_normal(const GltfVertex& v0, const GltfVertex& v1,
+                                         const GltfVertex& v2) {
+    const math::Vec3 edge1 = v1.position - v0.position;
+    const math::Vec3 edge2 = v2.position - v0.position;
+    const math::Vec3 normal = glm::cross(edge1, edge2);
+    const float length = glm::length(normal);
+    if (length < 1.0e-6F) {
+        return {0.0F, 1.0F, 0.0F};
+    }
+    return normal / length;
+}
+
+void remap_morph_values(std::vector<math::Vec3>& values,
+                        std::span<const std::uint32_t> source_indices, const char* label) {
+    if (values.empty()) {
+        return;
+    }
+
+    std::vector<math::Vec3> remapped;
+    remapped.reserve(source_indices.size());
+    for (const std::uint32_t source_index : source_indices) {
+        if (source_index >= values.size()) {
+            throw gltf_error(std::string(label) + " morph target source index is out of range");
+        }
+        remapped.push_back(values[source_index]);
+    }
+    values = std::move(remapped);
+}
+
+void generate_flat_normals(GltfMeshPrimitive& primitive) {
+    if (primitive.indices.size() % 3 != 0) {
+        throw gltf_error("triangle primitive index count must be divisible by 3");
+    }
+
+    std::vector<GltfVertex> expanded_vertices;
+    std::vector<std::uint32_t> expanded_indices;
+    std::vector<std::uint32_t> source_indices;
+    expanded_vertices.reserve(primitive.indices.size());
+    expanded_indices.reserve(primitive.indices.size());
+    source_indices.reserve(primitive.indices.size());
+
+    for (std::size_t i = 0; i < primitive.indices.size(); i += 3) {
+        const std::uint32_t i0 = primitive.indices[i + 0];
+        const std::uint32_t i1 = primitive.indices[i + 1];
+        const std::uint32_t i2 = primitive.indices[i + 2];
+        if (i0 >= primitive.vertices.size() || i1 >= primitive.vertices.size() ||
+            i2 >= primitive.vertices.size()) {
+            throw gltf_error("primitive index is out of vertex range");
+        }
+
+        const math::Vec3 normal =
+            triangle_normal(primitive.vertices[i0], primitive.vertices[i1], primitive.vertices[i2]);
+        for (const std::uint32_t source_index : {i0, i1, i2}) {
+            GltfVertex vertex = primitive.vertices[source_index];
+            vertex.normal = normal;
+            expanded_vertices.push_back(vertex);
+            const std::size_t expanded_index = expanded_vertices.size() - 1;
+            if (expanded_index > std::numeric_limits<std::uint32_t>::max()) {
+                throw gltf_error("expanded primitive vertex count is out of range");
+            }
+            expanded_indices.push_back(static_cast<std::uint32_t>(expanded_index));
+            source_indices.push_back(source_index);
+        }
+    }
+
+    for (GltfMorphTarget& target : primitive.morph_targets) {
+        remap_morph_values(target.position_deltas, source_indices, "POSITION");
+        remap_morph_values(target.normal_deltas, source_indices, "NORMAL");
+        remap_morph_values(target.tangent_deltas, source_indices, "TANGENT");
+    }
+
+    primitive.vertices = std::move(expanded_vertices);
+    primitive.indices = std::move(expanded_indices);
+}
+
 void require_supported_skin_attributes(const cgltf_primitive& primitive) {
     if (find_attribute(primitive, cgltf_attribute_type_joints, 1) != nullptr ||
         find_attribute(primitive, cgltf_attribute_type_weights, 1) != nullptr) {
@@ -485,7 +560,11 @@ void expand_bounds_for_morph_targets(GltfMeshPrimitive& primitive) {
     const cgltf_accessor* weights0 = find_attribute(primitive, cgltf_attribute_type_weights, 0);
 
     require_accessor_components(positions, 3, "POSITION");
-    require_accessor_components(normals, 3, "NORMAL");
+    if (normals != nullptr) {
+        require_accessor_components(normals, 3, "NORMAL");
+    } else if (!config.generate_missing_normals) {
+        throw gltf_error("primitive is missing required NORMAL attribute");
+    }
     if (tangents != nullptr) {
         require_accessor_components(tangents, 4, "TANGENT");
     }
@@ -508,7 +587,9 @@ void expand_bounds_for_morph_targets(GltfMeshPrimitive& primitive) {
     result.vertices.resize(positions->count);
     for (cgltf_size i = 0; i < positions->count; ++i) {
         result.vertices[i].position = read_vec3(positions, i);
-        result.vertices[i].normal = glm::normalize(read_vec3(normals, i));
+        if (normals != nullptr) {
+            result.vertices[i].normal = glm::normalize(read_vec3(normals, i));
+        }
         if (tangents != nullptr) {
             result.vertices[i].tangent = read_vec4(tangents, i);
         }
@@ -537,10 +618,6 @@ void expand_bounds_for_morph_targets(GltfMeshPrimitive& primitive) {
         }
     }
 
-    if (tangents == nullptr && config.generate_missing_tangents && texcoord0 != nullptr) {
-        generate_tangents(result);
-    }
-
     result.material_index =
         pointer_index(primitive.material, material_base, material_count, "material");
     if (result.material_index == kInvalidAssetIndex) {
@@ -548,11 +625,17 @@ void expand_bounds_for_morph_targets(GltfMeshPrimitive& primitive) {
     } else {
         ++result.material_index;
     }
-    result.local_bounds = bounds_for_positions(result.vertices);
     result.morph_targets.reserve(primitive.targets_count);
     for (cgltf_size i = 0; i < primitive.targets_count; ++i) {
         result.morph_targets.push_back(load_morph_target(primitive.targets[i], positions->count));
     }
+    if (normals == nullptr) {
+        generate_flat_normals(result);
+    }
+    if (tangents == nullptr && config.generate_missing_tangents && texcoord0 != nullptr) {
+        generate_tangents(result);
+    }
+    result.local_bounds = bounds_for_positions(result.vertices);
     expand_bounds_for_morph_targets(result);
     return result;
 }
