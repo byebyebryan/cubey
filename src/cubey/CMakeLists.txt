@@ -117,6 +117,26 @@ target_link_libraries(
         cubey_project_warnings
 )
 
+add_library(cubey_animation STATIC
+    animation/gltf_animation.cpp
+)
+add_library(cubey::animation ALIAS cubey_animation)
+
+target_include_directories(
+    cubey_animation
+    PUBLIC
+        "${PROJECT_SOURCE_DIR}/include"
+)
+
+target_link_libraries(
+    cubey_animation
+    PUBLIC
+        cubey::core
+        cubey::asset
+    PRIVATE
+        cubey_project_warnings
+)
+
 add_library(cubey_render STATIC
     render/forward_pass.cpp
     render/generated_ibl.cpp
@@ -250,6 +270,7 @@ target_link_libraries(
     INTERFACE
         cubey::core
         cubey::asset
+        cubey::animation
         cubey::vulkan
         cubey::render
         cubey::scene
