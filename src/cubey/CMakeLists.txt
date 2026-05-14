@@ -96,6 +96,7 @@ target_link_libraries(
 
 add_library(cubey_asset STATIC
     asset/gltf_asset.cpp
+    asset/hdr_image.cpp
 )
 add_library(cubey::asset ALIAS cubey_asset)
 
