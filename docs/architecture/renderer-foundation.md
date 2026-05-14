@@ -169,7 +169,11 @@ full engine architecture.
   prefiltered cube, and the DFG/BRDF lookup binding. `PbrDisplayTransform`
   carries the final exposure, tone-map, and output-encoding controls used by
   direct-to-target PBR passes.
-- `cubey::engine::PbrViewRenderer3D` is the first reusable renderer policy
+- `cubey::engine::RendererService` is the Engine-owned renderer instance
+  service. It creates, destroys, and fan-outs lifecycle calls to renderer
+  instances without owning assets, shader packages, material tables, or render
+  settings.
+- `cubey::engine::ForwardPbrRenderer3D` is the first reusable renderer policy
   layer above scene/render/vulkan. It owns the repeated shadow map, skybox,
   forward PBR pipelines, scene/skybox material descriptors, depth attachment,
   and render-graph recording for a 3D PBR view while still taking shader paths,
@@ -289,5 +293,6 @@ execution-time resource resolution, simple transient allocation, frame-slot
 resource ownership, and graph-owned barrier recording. Render-graph
 scheduling, transient aliasing, and broader material systems remain future
 work. `shadow_cube` still uses the lower-level `ShadowMapPass3D` helper
-directly, while `gltf_viewer` now uses `PbrViewRenderer3D` for reusable
-shadow/skybox/PBR graph recording.
+directly, while `gltf_viewer` now creates an engine-owned
+`ForwardPbrRenderer3D` through `RendererService` for reusable shadow/skybox/PBR
+graph recording.
