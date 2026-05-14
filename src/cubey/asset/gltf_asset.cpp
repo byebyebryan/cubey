@@ -141,6 +141,8 @@ template <typename T>
                   material.specular.specular_color_factor[2],
               }
             : math::Vec3{1.0F, 1.0F, 1.0F};
+    const float emissive_strength =
+        material.has_emissive_strength != 0 ? material.emissive_strength.emissive_strength : 1.0F;
     return {
         .label = label_or_empty(material.name),
         .base_color_factor =
@@ -157,9 +159,9 @@ template <typename T>
         .reflectance = material.has_ior != 0 ? reflectance_from_ior(material.ior.ior) : 0.5F,
         .emissive_factor =
             {
-                material.emissive_factor[0],
-                material.emissive_factor[1],
-                material.emissive_factor[2],
+                material.emissive_factor[0] * emissive_strength,
+                material.emissive_factor[1] * emissive_strength,
+                material.emissive_factor[2] * emissive_strength,
             },
         .normal_scale = material.normal_texture.scale,
         .occlusion_strength = material.occlusion_texture.scale,
@@ -174,6 +176,7 @@ template <typename T>
         .alpha_mode = load_alpha_mode(material.alpha_mode),
         .alpha_cutoff = material.alpha_cutoff,
         .double_sided = material.double_sided != 0,
+        .unlit = material.unlit != 0,
     };
 }
 
@@ -864,9 +867,11 @@ load_animation_interpolation(cgltf_interpolation_type interpolation) {
 }
 
 [[nodiscard]] bool supports_required_extension(std::string_view extension) noexcept {
-    static constexpr std::array<std::string_view, 2> kSupportedRequiredExtensions{
+    static constexpr std::array<std::string_view, 4> kSupportedRequiredExtensions{
+        "KHR_materials_emissive_strength",
         "KHR_materials_ior",
         "KHR_materials_specular",
+        "KHR_materials_unlit",
     };
     return std::ranges::find(kSupportedRequiredExtensions, extension) !=
            kSupportedRequiredExtensions.end();

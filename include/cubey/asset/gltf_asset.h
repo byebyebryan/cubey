@@ -98,6 +98,7 @@ struct GltfMaterial {
     GltfAlphaMode alpha_mode = GltfAlphaMode::Opaque;
     float alpha_cutoff = 0.5F;
     bool double_sided = false;
+    bool unlit = false;
 };
 
 struct GltfVertex {

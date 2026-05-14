@@ -135,7 +135,12 @@ std::filesystem::path write_triangle_gltf(const std::filesystem::path& dir) {
 
     const std::string gltf = std::string(R"JSON({
   "asset": {"version": "2.0"},
-  "extensionsUsed": ["KHR_materials_ior", "KHR_materials_specular"],
+  "extensionsUsed": [
+    "KHR_materials_ior",
+    "KHR_materials_specular",
+    "KHR_materials_emissive_strength",
+    "KHR_materials_unlit"
+  ],
   "scene": 0,
   "scenes": [{"nodes": [0]}],
   "nodes": [{"name": "TriangleNode", "mesh": 0, "translation": [1.0, 2.0, 3.0]}],
@@ -178,6 +183,7 @@ std::filesystem::path write_triangle_gltf(const std::filesystem::path& dir) {
       "roughnessFactor": 0.4,
       "baseColorTexture": {"index": 0}
     },
+    "emissiveFactor": [0.1, 0.2, 0.3],
     "alphaMode": "MASK",
     "alphaCutoff": 0.35,
     "doubleSided": true,
@@ -186,7 +192,9 @@ std::filesystem::path write_triangle_gltf(const std::filesystem::path& dir) {
       "KHR_materials_specular": {
         "specularFactor": 0.7,
         "specularColorFactor": [0.9, 0.8, 0.7]
-      }
+      },
+      "KHR_materials_emissive_strength": {"emissiveStrength": 2.0},
+      "KHR_materials_unlit": {}
     }
   }],
   "textures": [{"source": 0}],
@@ -309,6 +317,10 @@ void test_gltf_asset_loads_static_pbr_triangle() {
                   "specular color factor green should load");
     require_close(material.specular_color_factor.b, 0.7F,
                   "specular color factor blue should load");
+    require_close(material.emissive_factor.r, 0.2F, "emissive strength should scale red");
+    require_close(material.emissive_factor.g, 0.4F, "emissive strength should scale green");
+    require_close(material.emissive_factor.b, 0.6F, "emissive strength should scale blue");
+    require(material.unlit, "unlit material extension should load");
 
     const cubey::asset::GltfMeshPrimitive& primitive = asset.meshes[0].primitives[0];
     require(primitive.vertices.size() == 3, "primitive should load vertices");
@@ -600,11 +612,22 @@ void test_gltf_asset_accepts_supported_required_extensions() {
     const std::filesystem::path path = dir / "supported_required_extension.gltf";
     write_text_file(path, R"JSON({
   "asset": {"version": "2.0"},
-  "extensionsUsed": ["KHR_materials_ior"],
-  "extensionsRequired": ["KHR_materials_ior"],
+  "extensionsUsed": [
+    "KHR_materials_ior",
+    "KHR_materials_emissive_strength",
+    "KHR_materials_unlit"
+  ],
+  "extensionsRequired": [
+    "KHR_materials_ior",
+    "KHR_materials_emissive_strength",
+    "KHR_materials_unlit"
+  ],
   "materials": [{
+    "emissiveFactor": [0.2, 0.3, 0.4],
     "extensions": {
-      "KHR_materials_ior": {"ior": 1.8}
+      "KHR_materials_ior": {"ior": 1.8},
+      "KHR_materials_emissive_strength": {"emissiveStrength": 3.0},
+      "KHR_materials_unlit": {}
     }
   }]
 })JSON");
@@ -614,6 +637,9 @@ void test_gltf_asset_accepts_supported_required_extensions() {
     require(asset.materials.size() == 2, "loader should preserve material with required extension");
     require_close(asset.materials[1].reflectance, 0.714285F,
                   "supported required material extension should load");
+    require_close(asset.materials[1].emissive_factor.g, 0.9F,
+                  "supported required emissive strength should load");
+    require(asset.materials[1].unlit, "supported required unlit extension should load");
     std::filesystem::remove_all(dir);
 }
 
