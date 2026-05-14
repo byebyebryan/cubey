@@ -33,6 +33,10 @@ namespace {
     case RenderGraphBufferUsage::StorageWrite:
     case RenderGraphBufferUsage::StorageReadWrite:
         return VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+    case RenderGraphBufferUsage::VertexRead:
+        return VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+    case RenderGraphBufferUsage::IndexRead:
+        return VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
     case RenderGraphBufferUsage::TransferRead:
         return VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
     case RenderGraphBufferUsage::TransferWrite:

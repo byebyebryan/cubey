@@ -30,6 +30,8 @@ namespace {
     return usage == RenderGraphBufferUsage::UniformRead ||
            usage == RenderGraphBufferUsage::StorageRead ||
            usage == RenderGraphBufferUsage::StorageReadWrite ||
+           usage == RenderGraphBufferUsage::VertexRead ||
+           usage == RenderGraphBufferUsage::IndexRead ||
            usage == RenderGraphBufferUsage::TransferRead;
 }
 
@@ -128,6 +130,16 @@ texture_usage_state(const RenderGraphCompiledPass& pass, const RenderGraphTextur
         return {
             .access_mask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
             .stage_mask = shader_stage_for_pass(pass.queue_domain),
+        };
+    case RenderGraphBufferUsage::VertexRead:
+        return {
+            .access_mask = VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT,
+            .stage_mask = VK_PIPELINE_STAGE_VERTEX_INPUT_BIT,
+        };
+    case RenderGraphBufferUsage::IndexRead:
+        return {
+            .access_mask = VK_ACCESS_INDEX_READ_BIT,
+            .stage_mask = VK_PIPELINE_STAGE_VERTEX_INPUT_BIT,
         };
     case RenderGraphBufferUsage::TransferRead:
         return {

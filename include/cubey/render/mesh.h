@@ -16,6 +16,7 @@ namespace cubey::render {
 struct MeshConfig {
     const void* vertex_data = nullptr;
     VkDeviceSize vertex_bytes = 0;
+    VkBufferUsageFlags vertex_usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
     const void* index_data = nullptr;
     VkDeviceSize index_bytes = 0;
     VkIndexType index_type = VK_INDEX_TYPE_UINT16;
@@ -43,10 +44,13 @@ template <typename Index> [[nodiscard]] constexpr VkIndexType mesh_index_type() 
 
 template <typename Vertex, typename Index>
 [[nodiscard]] MeshConfig indexed_mesh_config(std::span<const Vertex> vertices,
-                                             std::span<const Index> indices) {
+                                             std::span<const Index> indices,
+                                             VkBufferUsageFlags vertex_usage =
+                                                 VK_BUFFER_USAGE_VERTEX_BUFFER_BIT) {
     return {
         .vertex_data = vertices.data(),
         .vertex_bytes = mesh_byte_size(vertices.size(), sizeof(Vertex)),
+        .vertex_usage = vertex_usage,
         .index_data = indices.data(),
         .index_bytes = mesh_byte_size(indices.size(), sizeof(Index)),
         .index_type = detail::mesh_index_type<Index>(),
@@ -56,8 +60,11 @@ template <typename Vertex, typename Index>
 
 template <typename Vertex, std::size_t VertexCount, typename Index, std::size_t IndexCount>
 [[nodiscard]] MeshConfig indexed_mesh_config(const std::array<Vertex, VertexCount>& vertices,
-                                             const std::array<Index, IndexCount>& indices) {
-    return indexed_mesh_config(std::span<const Vertex>(vertices), std::span<const Index>(indices));
+                                             const std::array<Index, IndexCount>& indices,
+                                             VkBufferUsageFlags vertex_usage =
+                                                 VK_BUFFER_USAGE_VERTEX_BUFFER_BIT) {
+    return indexed_mesh_config(std::span<const Vertex>(vertices), std::span<const Index>(indices),
+                               vertex_usage);
 }
 
 class Mesh {

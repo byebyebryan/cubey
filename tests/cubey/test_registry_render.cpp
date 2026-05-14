@@ -24,6 +24,7 @@ void test_pbr_environment_data_can_be_generated_from_equirectangular_hdr();
 void test_pbr_equirectangular_sampling_maps_cardinal_directions();
 void test_indexed_mesh_config_describes_u16_geometry();
 void test_indexed_mesh_config_describes_u32_geometry();
+void test_indexed_mesh_config_allows_storage_capable_vertex_buffers();
 void test_instance_buffer_helpers_describe_instance_vertex_data();
 void test_material_descriptor_writer_preserves_set_and_write_order();
 void test_material_alpha_modes_map_to_blend_and_pass_policy();
@@ -45,6 +46,7 @@ void test_render_graph_creates_transient_texture_and_preserves_pass_order();
 void test_render_graph_declares_compute_storage_buffer_flow();
 void test_render_graph_declares_shadow_map_then_scene_sample_flow();
 void test_render_graph_derives_compute_to_graphics_storage_buffer_barrier();
+void test_render_graph_derives_compute_to_vertex_buffer_barrier();
 void test_render_graph_derives_depth_to_sampled_texture_barrier();
 void test_render_graph_derives_imported_buffer_acquire_and_release_barriers();
 void test_render_graph_derives_imported_texture_acquire_and_release_barriers();
@@ -125,6 +127,7 @@ std::span<const TestCase> render_test_cases() {
         CUBEY_TEST(test_render_graph_declares_shadow_map_then_scene_sample_flow),
         CUBEY_TEST(test_render_graph_derives_depth_to_sampled_texture_barrier),
         CUBEY_TEST(test_render_graph_derives_compute_to_graphics_storage_buffer_barrier),
+        CUBEY_TEST(test_render_graph_derives_compute_to_vertex_buffer_barrier),
         CUBEY_TEST(test_render_graph_derives_imported_texture_acquire_and_release_barriers),
         CUBEY_TEST(test_render_graph_derives_transient_texture_first_use_barrier),
         CUBEY_TEST(test_render_graph_derives_imported_buffer_acquire_and_release_barriers),
@@ -162,6 +165,7 @@ std::span<const TestCase> render_test_cases() {
         CUBEY_TEST(test_render_pipeline_resource_helpers_build_file_recipe_config),
         CUBEY_TEST(test_indexed_mesh_config_describes_u16_geometry),
         CUBEY_TEST(test_indexed_mesh_config_describes_u32_geometry),
+        CUBEY_TEST(test_indexed_mesh_config_allows_storage_capable_vertex_buffers),
         CUBEY_TEST(test_primitive_vertex_layouts_match_shader_contracts),
         CUBEY_TEST(test_instance_buffer_helpers_describe_instance_vertex_data),
         CUBEY_TEST(test_color_space_converts_srgb_authored_values_to_linear),

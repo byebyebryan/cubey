@@ -87,6 +87,11 @@ void validate_buffer_usage_for_pass(const RenderGraphCompiledPass& pass,
     if (pass.queue_domain == RenderGraphQueueDomain::Transfer && !is_transfer_buffer_usage(usage)) {
         throw std::runtime_error("render graph transfer pass can only use transfer buffer usages");
     }
+    if ((usage == RenderGraphBufferUsage::VertexRead ||
+         usage == RenderGraphBufferUsage::IndexRead) &&
+        pass.queue_domain != RenderGraphQueueDomain::Graphics) {
+        throw std::runtime_error("render graph vertex/index buffer usage requires a graphics pass");
+    }
 }
 
 } // namespace
@@ -160,6 +165,18 @@ RenderGraphPassBuilder::write_storage_buffer(RenderGraphBufferHandle handle) {
 RenderGraphPassBuilder&
 RenderGraphPassBuilder::read_write_storage_buffer(RenderGraphBufferHandle handle) {
     graph_->add_buffer_access(pass_index_, handle, RenderGraphBufferUsage::StorageReadWrite);
+    return *this;
+}
+
+RenderGraphPassBuilder&
+RenderGraphPassBuilder::read_vertex_buffer(RenderGraphBufferHandle handle) {
+    graph_->add_buffer_access(pass_index_, handle, RenderGraphBufferUsage::VertexRead);
+    return *this;
+}
+
+RenderGraphPassBuilder&
+RenderGraphPassBuilder::read_index_buffer(RenderGraphBufferHandle handle) {
+    graph_->add_buffer_access(pass_index_, handle, RenderGraphBufferUsage::IndexRead);
     return *this;
 }
 

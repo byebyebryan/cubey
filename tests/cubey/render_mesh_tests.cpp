@@ -54,3 +54,16 @@ void test_indexed_mesh_config_describes_u32_geometry() {
     static_assert(!std::is_constructible_v<cubey::render::Mesh, const cubey::vulkan::Device&,
                                            const cubey::render::MeshConfig&>);
 }
+
+void test_indexed_mesh_config_allows_storage_capable_vertex_buffers() {
+    const std::array<TestVertex, 3> vertices{};
+    const std::array<std::uint32_t, 3> indices{0, 1, 2};
+
+    const cubey::render::MeshConfig config = cubey::render::indexed_mesh_config(
+        vertices, indices, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+
+    require((config.vertex_usage & VK_BUFFER_USAGE_VERTEX_BUFFER_BIT) != 0,
+            "mesh config should preserve vertex-buffer usage");
+    require((config.vertex_usage & VK_BUFFER_USAGE_STORAGE_BUFFER_BIT) != 0,
+            "mesh config should allow storage-capable deformation output");
+}

@@ -76,6 +76,34 @@ void test_render_graph_derives_compute_to_graphics_storage_buffer_barrier() {
             "storage read consumer should request shader read access");
 }
 
+void test_render_graph_derives_compute_to_vertex_buffer_barrier() {
+    cubey::render::RenderGraphBuilder graph;
+    const cubey::render::RenderGraphBufferHandle vertices =
+        graph.import_buffer(buffer_desc("deformed vertices"), buffer(0x251));
+
+    graph.add_pass("deform", cubey::render::RenderGraphQueueDomain::Compute)
+        .write_storage_buffer(vertices);
+    graph.add_pass("draw", cubey::render::RenderGraphQueueDomain::Graphics)
+        .read_vertex_buffer(vertices);
+
+    const cubey::render::CompiledRenderGraph compiled = graph.compile();
+
+    require(compiled.passes()[1].before_buffer_barriers.size() == 1,
+            "vertex read after compute storage write should derive one buffer barrier");
+    const cubey::render::RenderGraphBufferBarrier& barrier =
+        compiled.passes()[1].before_buffer_barriers[0];
+    require(barrier.source_usage == cubey::render::RenderGraphBufferUsage::StorageWrite,
+            "buffer barrier should preserve storage-write producer usage");
+    require(barrier.destination_usage == cubey::render::RenderGraphBufferUsage::VertexRead,
+            "buffer barrier should preserve vertex-read consumer usage");
+    require(barrier.source_state.stage_mask == VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+            "deformation producer should use compute shader source stage");
+    require(barrier.destination_state.stage_mask == VK_PIPELINE_STAGE_VERTEX_INPUT_BIT,
+            "vertex consumer should use vertex input destination stage");
+    require(barrier.destination_state.access_mask == VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT,
+            "vertex consumer should request vertex attribute read access");
+}
+
 void test_render_graph_derives_imported_texture_acquire_and_release_barriers() {
     cubey::render::RenderGraphBuilder graph;
     const cubey::render::RenderGraphTextureHandle backbuffer =

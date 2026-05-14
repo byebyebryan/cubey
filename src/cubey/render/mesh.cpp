@@ -27,7 +27,8 @@ std::uint32_t mesh_index_count(std::size_t index_count) {
 
 Mesh::Mesh(cubey::vulkan::GpuRuntime& gpu, const MeshConfig& config)
     : vertex_buffer_(cubey::vulkan::upload_device_buffer(
-          gpu, config.vertex_data, config.vertex_bytes, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT)),
+          gpu, config.vertex_data, config.vertex_bytes,
+          config.vertex_usage | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT)),
       index_buffer_(cubey::vulkan::upload_device_buffer(gpu, config.index_data, config.index_bytes,
                                                         VK_BUFFER_USAGE_INDEX_BUFFER_BIT)),
       index_type_(config.index_type), index_count_(config.index_count) {

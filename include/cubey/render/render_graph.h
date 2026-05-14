@@ -73,6 +73,8 @@ enum class RenderGraphBufferUsage : std::uint8_t {
     StorageRead,
     StorageWrite,
     StorageReadWrite,
+    VertexRead,
+    IndexRead,
     TransferRead,
     TransferWrite,
 };
@@ -353,6 +355,8 @@ class RenderGraphPassBuilder {
     RenderGraphPassBuilder& read_storage_buffer(RenderGraphBufferHandle handle);
     RenderGraphPassBuilder& write_storage_buffer(RenderGraphBufferHandle handle);
     RenderGraphPassBuilder& read_write_storage_buffer(RenderGraphBufferHandle handle);
+    RenderGraphPassBuilder& read_vertex_buffer(RenderGraphBufferHandle handle);
+    RenderGraphPassBuilder& read_index_buffer(RenderGraphBufferHandle handle);
     RenderGraphPassBuilder& transfer_read_buffer(RenderGraphBufferHandle handle);
     RenderGraphPassBuilder& transfer_write_buffer(RenderGraphBufferHandle handle);
     RenderGraphPassBuilder& material_pass(MaterialPassInfo info);
