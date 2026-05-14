@@ -1,4 +1,7 @@
 #version 450
+#extension GL_GOOGLE_include_directive : require
+
+#include "cubey/color_space.glsl"
 
 layout(push_constant) uniform RenderParams {
     vec4 grid_debug;
@@ -101,19 +104,26 @@ void main() {
     float speed = clamp(length(cell.velocity.xy) * 0.45, 0.0, 1.0);
     if (debug_mode == 1) {
         vec2 direction = speed > 0.001 ? normalize(cell.velocity.xy) : vec2(0.0);
-        out_color = vec4(vec3(direction * 0.35 + 0.5, speed), 1.0);
+        out_color = vec4(cubey_srgb_to_linear(vec3(direction * 0.35 + 0.5, speed)), 1.0);
         return;
     }
     if (debug_mode == 2) {
-        out_color = vec4(signed_scalar_color(sample_divergence(uv, width, height), 24.0), 1.0);
+        out_color =
+            vec4(cubey_srgb_to_linear(signed_scalar_color(sample_divergence(uv, width, height),
+                                                          24.0)),
+                 1.0);
         return;
     }
     if (debug_mode == 3) {
-        out_color = vec4(signed_scalar_color(sample_pressure(uv, width, height), 5.0), 1.0);
+        out_color = vec4(cubey_srgb_to_linear(signed_scalar_color(sample_pressure(uv, width,
+                                                                                  height),
+                                                                  5.0)),
+                         1.0);
         return;
     }
 
     vec3 dye = clamp(cell.dye.rgb, vec3(0.0), vec3(1.0));
-    vec3 velocity_tint = vec3(0.04, 0.10, 0.16) + vec3(0.05, 0.12, 0.20) * speed;
+    vec3 velocity_tint =
+        cubey_srgb_to_linear(vec3(0.04, 0.10, 0.16) + vec3(0.05, 0.12, 0.20) * speed);
     out_color = vec4(dye + velocity_tint, 1.0);
 }

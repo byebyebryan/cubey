@@ -1,5 +1,7 @@
 #include <cubey/render/primitive_mesh.h>
 
+#include <cubey/render/color_space.h>
+
 #include <array>
 #include <cstddef>
 #include <cmath>
@@ -191,7 +193,7 @@ PrimitiveMeshData<VertexPositionColor> make_cube_position_color_mesh(CubeMeshCon
     for (const CubeFaceVertex& vertex : cube_face_vertices(config.half_extent)) {
         mesh.vertices.push_back({
             .position = vertex.position,
-            .color = config.face_colors[vertex.face],
+            .color = srgb_to_linear_rgb(config.face_colors[vertex.face]),
         });
     }
     mesh.indices = cube_indices();
@@ -207,7 +209,7 @@ make_cube_position_color_normal_mesh(CubeMeshConfig config) {
     for (const CubeFaceVertex& vertex : cube_face_vertices(config.half_extent)) {
         mesh.vertices.push_back({
             .position = vertex.position,
-            .color = config.face_colors[vertex.face],
+            .color = srgb_to_linear_rgb(config.face_colors[vertex.face]),
             .normal = vertex.normal,
         });
     }
@@ -224,7 +226,7 @@ make_cube_position_color_normal_uv_mesh(CubeMeshConfig config) {
     for (const CubeFaceVertex& vertex : cube_face_vertices(config.half_extent)) {
         mesh.vertices.push_back({
             .position = vertex.position,
-            .color = config.face_colors[vertex.face],
+            .color = srgb_to_linear_rgb(config.face_colors[vertex.face]),
             .normal = vertex.normal,
             .uv = vertex.uv,
         });
@@ -243,14 +245,15 @@ make_xz_plane_position_color_normal_mesh(PlaneMeshConfig config) {
     const float min_z = config.center[2] - config.half_extent_z;
     const float max_z = config.center[2] + config.half_extent_z;
     constexpr PrimitiveVec3 kUpNormal{0.0F, 1.0F, 0.0F};
+    const PrimitiveVec3 linear_color = srgb_to_linear_rgb(config.color);
 
     return {
         .vertices =
             {
-                {.position = {min_x, y, min_z}, .color = config.color, .normal = kUpNormal},
-                {.position = {max_x, y, min_z}, .color = config.color, .normal = kUpNormal},
-                {.position = {max_x, y, max_z}, .color = config.color, .normal = kUpNormal},
-                {.position = {min_x, y, max_z}, .color = config.color, .normal = kUpNormal},
+                {.position = {min_x, y, min_z}, .color = linear_color, .normal = kUpNormal},
+                {.position = {max_x, y, min_z}, .color = linear_color, .normal = kUpNormal},
+                {.position = {max_x, y, max_z}, .color = linear_color, .normal = kUpNormal},
+                {.position = {min_x, y, max_z}, .color = linear_color, .normal = kUpNormal},
             },
         .indices = {0, 1, 2, 0, 2, 3},
     };
@@ -265,6 +268,7 @@ make_uv_sphere_position_color_normal_uv_mesh(SphereMeshConfig config) {
     const std::uint32_t row_stride = config.longitude_segments + 1U;
 
     PrimitiveMeshData<VertexPositionColorNormalUv> mesh;
+    const PrimitiveVec3 linear_color = srgb_to_linear_rgb(config.color);
     mesh.vertices.reserve(static_cast<std::size_t>(config.latitude_segments + 1U) *
                           static_cast<std::size_t>(row_stride));
     mesh.indices.reserve(static_cast<std::size_t>(config.latitude_segments) *
@@ -292,7 +296,7 @@ make_uv_sphere_position_color_normal_uv_mesh(SphereMeshConfig config) {
                         normal[1] * config.radius,
                         normal[2] * config.radius,
                     },
-                .color = config.color,
+                .color = linear_color,
                 .normal = normal,
                 .uv = {u, v},
             });

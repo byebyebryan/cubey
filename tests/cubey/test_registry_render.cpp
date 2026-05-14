@@ -3,6 +3,7 @@
 void test_compute_generated_texture_config_validates_dispatch_shape();
 void test_depth_only_rendering_info_describes_sampled_depth_target();
 void test_depth_texture_config_maps_sampled_depth_usage();
+void test_example_lighting_uses_low_linear_ambient_terms();
 void test_frame_slot_defaults_to_single_frame_slot();
 void test_frame_slot_rejects_invalid_slots();
 void test_frame_slot_wraps_frame_indices();
@@ -29,6 +30,7 @@ void test_primitive_cube_position_color_mesh_uses_face_colors_and_indices();
 void test_primitive_vertex_layouts_match_shader_contracts();
 void test_primitive_uv_sphere_mesh_uses_smooth_normals_and_uv_grid();
 void test_primitive_xz_plane_mesh_uses_center_half_extents_and_up_normal();
+void test_color_space_converts_srgb_authored_values_to_linear();
 void test_render_graph_allows_imported_texture_read_without_prior_write();
 void test_render_graph_barrier_recording_rejects_unallocated_transient_resources();
 void test_render_graph_creates_transient_texture_and_preserves_pass_order();
@@ -69,6 +71,7 @@ void test_render_pass_helpers_describe_clear_values_and_fullscreen_triangle();
 void test_pbr_vertex_layout_matches_shader_contract();
 void test_pbr_forward_pass_declares_scene_and_material_sets();
 void test_pbr_material_factors_are_uniforms_and_push_constants_are_model_only();
+void test_pbr_post_pass_declares_uniforms_and_scene_color();
 void test_pbr_reflectance_helpers_match_filament_convention();
 void test_pbr_scene_uniforms_carry_display_transform();
 void test_pbr_skybox_pass_declares_scene_set();
@@ -96,6 +99,7 @@ namespace cubey::tests {
 std::span<const TestCase> render_test_cases() {
     static constexpr std::array tests{
         CUBEY_TEST(test_frame_slot_defaults_to_single_frame_slot),
+        CUBEY_TEST(test_example_lighting_uses_low_linear_ambient_terms),
         CUBEY_TEST(test_frame_slot_wraps_frame_indices),
         CUBEY_TEST(test_frame_slot_rejects_invalid_slots),
         CUBEY_TEST(test_frame_uniform_buffer_config_describes_host_visible_uniform_storage),
@@ -143,6 +147,7 @@ std::span<const TestCase> render_test_cases() {
         CUBEY_TEST(test_indexed_mesh_config_describes_u32_geometry),
         CUBEY_TEST(test_primitive_vertex_layouts_match_shader_contracts),
         CUBEY_TEST(test_instance_buffer_helpers_describe_instance_vertex_data),
+        CUBEY_TEST(test_color_space_converts_srgb_authored_values_to_linear),
         CUBEY_TEST(test_primitive_cube_position_color_mesh_uses_face_colors_and_indices),
         CUBEY_TEST(test_primitive_cube_normal_uv_mesh_preserves_normals_and_face_uvs),
         CUBEY_TEST(test_primitive_xz_plane_mesh_uses_center_half_extents_and_up_normal),
@@ -154,6 +159,7 @@ std::span<const TestCase> render_test_cases() {
         CUBEY_TEST(test_pbr_forward_pass_declares_scene_and_material_sets),
         CUBEY_TEST(test_pbr_material_factors_are_uniforms_and_push_constants_are_model_only),
         CUBEY_TEST(test_pbr_scene_uniforms_carry_display_transform),
+        CUBEY_TEST(test_pbr_post_pass_declares_uniforms_and_scene_color),
         CUBEY_TEST(test_pbr_skybox_uniforms_are_uniform_buffer_safe),
         CUBEY_TEST(test_pbr_skybox_pass_declares_scene_set),
         CUBEY_TEST(test_pbr_reflectance_helpers_match_filament_convention),

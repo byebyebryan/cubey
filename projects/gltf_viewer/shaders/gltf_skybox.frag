@@ -31,5 +31,5 @@ void main() {
     vec3 environment_direction = rotate_environment_direction(direction);
     vec3 color = textureLod(environment_cube, environment_direction, 0.0).rgb *
                  skybox.environment_rotation_intensity.z;
-    out_color = vec4(cubey_pbr_apply_display_transform(color, skybox.display_transform), 1.0);
+    out_color = vec4(color, 1.0);
 }

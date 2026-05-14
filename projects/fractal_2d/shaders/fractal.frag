@@ -1,4 +1,7 @@
 #version 450
+#extension GL_GOOGLE_include_directive : require
+
+#include "cubey/color_space.glsl"
 
 layout(push_constant) uniform FractalParams {
     vec2 center;
@@ -29,11 +32,11 @@ void main() {
     }
 
     if (iteration >= params.max_iterations) {
-        out_color = vec4(0.015, 0.018, 0.026, 1.0);
+        out_color = vec4(cubey_srgb_to_linear(vec3(0.015, 0.018, 0.026)), 1.0);
         return;
     }
 
     float t = float(iteration) / float(params.max_iterations);
     vec3 color = palette(t) * (0.35 + 0.65 * smoothstep(0.0, 1.0, t));
-    out_color = vec4(color, 1.0);
+    out_color = vec4(cubey_srgb_to_linear(color), 1.0);
 }

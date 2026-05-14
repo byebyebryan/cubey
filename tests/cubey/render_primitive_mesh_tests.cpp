@@ -1,3 +1,4 @@
+#include <cubey/render/color_space.h>
 #include <cubey/render/instance_buffer.h>
 #include <cubey/render/primitive_mesh.h>
 
@@ -144,6 +145,29 @@ void test_instance_buffer_helpers_describe_instance_vertex_data() {
     require(threw, "instance buffer byte size should reject empty instance data");
 }
 
+void test_color_space_converts_srgb_authored_values_to_linear() {
+    require_close(cubey::render::srgb_channel_to_linear(0.0F), 0.0F,
+                  "black should stay black");
+    require_close(cubey::render::srgb_channel_to_linear(1.0F), 1.0F,
+                  "white should stay white");
+    require_close(cubey::render::srgb_channel_to_linear(0.5F), 0.214041F,
+                  "middle gray should be converted from sRGB to linear");
+    require_close(cubey::render::srgb_channel_to_linear(0.04045F), 0.0031308F,
+                  "sRGB knee should use the linear segment");
+
+    const std::array<float, 3> linear =
+        cubey::render::srgb_to_linear_rgb({0.5F, 0.25F, 1.0F});
+    require_vec3_close(linear, {0.214041F, 0.050876F, 1.0F},
+                       "sRGB RGB helper should convert each color channel");
+
+    const cubey::math::Vec4 rgba =
+        cubey::render::srgb_to_linear_rgba({0.5F, 0.25F, 1.0F, 0.75F});
+    require_close(rgba.r, 0.214041F, "sRGB RGBA helper should convert red");
+    require_close(rgba.g, 0.050876F, "sRGB RGBA helper should convert green");
+    require_close(rgba.b, 1.0F, "sRGB RGBA helper should convert blue");
+    require_close(rgba.a, 0.75F, "sRGB RGBA helper should preserve alpha");
+}
+
 void test_primitive_cube_position_color_mesh_uses_face_colors_and_indices() {
     cubey::render::CubeMeshConfig config;
     config.face_colors[0] = {0.1F, 0.2F, 0.3F};
@@ -154,8 +178,9 @@ void test_primitive_cube_position_color_mesh_uses_face_colors_and_indices() {
     require(cube.indices.size() == 36, "cube should have two triangles per face");
     require_vec3(cube.vertices[0].position, {-1.0F, -1.0F, 1.0F},
                  "cube should preserve front-bottom-left position");
-    require_vec3(cube.vertices[0].color, {0.1F, 0.2F, 0.3F},
-                 "cube should apply configured face color");
+    require_vec3_close(cube.vertices[0].color,
+                       cubey::render::srgb_to_linear_rgb({0.1F, 0.2F, 0.3F}),
+                       "cube should linearize authored face color");
     for (const std::uint16_t index : cube.indices) {
         require(index < cube.vertices.size(), "cube indices should stay in vertex range");
     }
@@ -203,8 +228,9 @@ void test_primitive_xz_plane_mesh_uses_center_half_extents_and_up_normal() {
     require_vec3(plane.vertices[2].position, {5.0F, -2.0F, 8.0F},
                  "plane opposite vertex should use center and half extents");
     require_vec3(plane.vertices[0].normal, {0.0F, 1.0F, 0.0F}, "xz plane should use +Y normal");
-    require_vec3(plane.vertices[0].color, {0.6F, 0.7F, 0.8F},
-                 "plane should apply configured color");
+    require_vec3_close(plane.vertices[0].color,
+                       cubey::render::srgb_to_linear_rgb({0.6F, 0.7F, 0.8F}),
+                       "plane should linearize authored color");
     require(plane.indices[0] == 0 && plane.indices[1] == 1 && plane.indices[2] == 2,
             "plane should use the expected first triangle");
 }
@@ -231,7 +257,8 @@ void test_primitive_uv_sphere_mesh_uses_smooth_normals_and_uv_grid() {
     require_vec2(sphere.vertices[8].uv, {1.0F, 0.0F},
                  "sphere seam vertex should close each latitude row at u=1");
     for (const auto& vertex : sphere.vertices) {
-        require_vec3(vertex.color, config.color, "sphere should apply configured vertex color");
+        require_vec3_close(vertex.color, cubey::render::srgb_to_linear_rgb(config.color),
+                           "sphere should linearize authored vertex color");
         const float normal_length =
             std::sqrt(vertex.normal[0] * vertex.normal[0] + vertex.normal[1] * vertex.normal[1] +
                       vertex.normal[2] * vertex.normal[2]);

@@ -20,12 +20,14 @@ Radiance HDR equirectangular environment assets:
   GGX-prefiltered cubemaps from equirectangular radiance;
 - `RendererService` owns renderer instance lifetime, and
   `ForwardPbrRenderer3D` binds those resources for reusable shadow, skybox, and
-  PBR forward rendering of a caller-provided 3D frame plan. It lights the glTF
-  PBR shader with Filament-style base-color remapping, factor-only IOR/specular
-  material controls, DFG-based IBL, specular energy compensation, correlated
-  Smith direct visibility, indirect specular occlusion, environment rotation,
-  exposure, and tone mapping from the per-frame render request while keeping
-  asset loading, shader paths, and environment selection project-owned;
+  PBR forward rendering of a caller-provided 3D frame plan. It renders glTF PBR
+  and skybox shading into a linear HDR scene color target, then applies
+  exposure, tone mapping, and output encoding in a fullscreen post pass. The
+  shader model uses Filament-style base-color remapping, factor-only
+  IOR/specular material controls, DFG-based IBL, specular energy compensation,
+  correlated Smith direct visibility, indirect specular occlusion, environment
+  rotation, exposure, and tone mapping from the per-frame render request while
+  keeping asset loading, shader paths, and environment selection project-owned;
 - `pbr_furnace` isolates the current IBL/specular behavior with a white sphere
   grid that sweeps roughness across columns and metallic across rows under a
   uniform white environment;
@@ -46,8 +48,9 @@ The first IBL contract is:
 - DFG LUT: 2D lookup sampled by `NdotV` and roughness. Red/green store
   split-sum scale/bias terms, blue stores white-conductor single-scatter energy
   for compensation, and alpha remains one;
-- scene uniforms: environment intensity, prefiltered mip count, and final
-  display transform controls;
+- scene uniforms: environment intensity and prefiltered mip count;
+- post uniforms: final exposure, tone-map, and output-encoding controls applied
+  to the HDR scene color before writing the caller's target;
 - material descriptor set: base-color, metallic-roughness, normal, occlusion,
   and emissive textures plus a per-material uniform block for factors.
 
@@ -62,10 +65,12 @@ constants now carry only the model transform; material factors live in the
 material descriptor set.
 
 The current display transform is intentionally small: exposure in stops, a
-linear-or-ACES tone-map selector, and an output-encoding selector. Windowed
-swapchains prefer sRGB attachment formats, so shaders leave encoding to the
-attachment when possible. UNORM final targets, including headless PNG capture,
-request shader-side linear-to-sRGB encoding.
+linear-or-ACES tone-map selector, and an output-encoding selector. The reusable
+forward PBR renderer applies it in a post pass after shading into an
+`R16G16B16A16_SFLOAT` scene color target. Windowed swapchains prefer sRGB
+attachment formats, so the post shader leaves encoding to the attachment when
+possible. UNORM final targets, including headless PNG capture, request
+shader-side linear-to-sRGB encoding.
 
 This keeps the PBR shader contract close to common real-time renderer practice
 while leaving KTX import, offline filtering, environment selection UI, and
@@ -75,9 +80,9 @@ renderer-wide material management explicit future work.
 
 - glTF specular textures are still absent; only factor-only
   `KHR_materials_ior` and `KHR_materials_specular` are imported.
-- Color management is still minimal: the PBR path now has a display-transform
-  contract, but no HDR scene color target, fullscreen present pass, color
-  grading, or HDR output policy.
+- Color management is still minimal: the reusable PBR renderer now has an HDR
+  scene color target and fullscreen post pass, but no color grading, bloom,
+  HDR10/output-device policy, or automatic exposure.
 - The current HDR path performs setup-time CPU filtering. It is useful for
   development and material inspection, but higher-quality offline filtering and
   prefiltered KTX/KTX2 deployment remain future work.

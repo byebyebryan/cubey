@@ -1,5 +1,6 @@
 #include "fluid_2d_commands.h"
 
+#include <cubey/render/color_space.h>
 #include <cubey/render/pass.h>
 #include <cubey/render/render_graph.h>
 #include <cubey/vulkan/command_recorder.h>
@@ -107,6 +108,8 @@ void record_transfer_write_barrier(VkCommandBuffer command_buffer, TransferWrite
         pointer_active
             ? std::array<float, 3>{0.98F, 0.32F, 0.13F}
             : std::array<float, 3>{0.12F + (0.18F * std::sin(time * 0.47F)), 0.46F, 0.92F};
+    const std::array<float, 3> linear_injection_dye =
+        cubey::render::srgb_to_linear_rgb(injection_dye);
     const float force_x = pointer_active ? injection.force[0] : -std::sin(time * 0.91F) * 1.8F;
     const float force_y = pointer_active ? injection.force[1] : std::cos(time * 0.73F) * 1.8F;
 
@@ -127,9 +130,9 @@ void record_transfer_write_barrier(VkCommandBuffer command_buffer, TransferWrite
             },
         .injection_dye_active =
             {
-                injection_dye[0],
-                injection_dye[1],
-                injection_dye[2],
+                linear_injection_dye[0],
+                linear_injection_dye[1],
+                linear_injection_dye[2],
                 1.0F,
             },
         .force_decay =

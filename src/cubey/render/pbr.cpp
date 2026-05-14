@@ -180,6 +180,34 @@ MaterialPassInfo pbr_skybox_pass_info() {
     };
 }
 
+MaterialPassInfo pbr_post_pass_info() {
+    return {
+        .label = "pbr.post",
+        .kind = MaterialPassKind::ForwardColor,
+        .descriptor_sets =
+            {
+                MaterialDescriptorSetLayout{
+                    .set = 0,
+                    .bindings =
+                        {
+                            cubey::vulkan::DescriptorSetBindingConfig{
+                                .binding =
+                                    static_cast<std::uint32_t>(PbrPostBinding::PostUniforms),
+                                .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                                .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
+                            },
+                            cubey::vulkan::DescriptorSetBindingConfig{
+                                .binding =
+                                    static_cast<std::uint32_t>(PbrPostBinding::SceneColor),
+                                .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
+                            },
+                        },
+                },
+            },
+    };
+}
+
 PbrDisplayTransform pbr_display_transform_for_target(VkFormat target_format, float exposure,
                                                      PbrTonemap tonemap) {
     return {

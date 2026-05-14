@@ -138,6 +138,5 @@ void main() {
     vec3 emissive = texture(emissive_texture, frag_uv0).rgb *
                     material.emissive_alpha_cutoff.rgb;
     vec3 color = ambient + direct + emissive;
-    out_color = vec4(cubey_pbr_apply_display_transform(color, scene.display_transform),
-                     base_color.a);
+    out_color = vec4(color, base_color.a);
 }

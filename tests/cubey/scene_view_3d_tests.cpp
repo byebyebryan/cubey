@@ -61,6 +61,18 @@ bool contains_entity(const std::vector<cubey::scene::RenderDrawPacket3D>& packet
 
 } // namespace
 
+void test_environment_3d_defaults_to_low_linear_ambient() {
+    const cubey::scene::Environment3D environment;
+    require_close(environment.ambient_color.x, 0.045F,
+                  "default 3D ambient red should be a low linear radiance");
+    require_close(environment.ambient_color.y, 0.045F,
+                  "default 3D ambient green should be a low linear radiance");
+    require_close(environment.ambient_color.z, 0.045F,
+                  "default 3D ambient blue should be a low linear radiance");
+    require_close(environment.ambient_intensity, 1.0F,
+                  "default 3D ambient intensity should stay neutral");
+}
+
 void test_render_view_3d_builds_frame_plan_with_environment_draws_and_lights() {
     cubey::render::RenderResourceRegistry registry;
     const cubey::render::MeshHandle mesh = registry.create_mesh("cube");

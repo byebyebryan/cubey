@@ -137,17 +137,18 @@ Reusable spatial types should stay explicit and narrow:
   registry-issued render handles, app-owned mesh/material resources, uploaded
   textures, and imported bounds. `RendererService` owns renderer instance
   lifetime, and `ForwardPbrRenderer3D` owns the repeated shadow/skybox/PBR
-  forward pass resources and render-graph recording. Per-frame renderer inputs
-  are grouped into `ForwardPbrRenderer3DRenderRequest`, while shader paths,
-  asset loading, environment choice, and view setup stay project-owned.
+  forward pass resources, HDR scene-color target, post pass, and render-graph
+  recording. Per-frame renderer inputs are grouped into
+  `ForwardPbrRenderer3DRenderRequest`, while shader paths, asset loading,
+  environment choice, and view setup stay project-owned.
 - `cubey::render` owns the current generated and HDR equirectangular PBR IBL
   environment helpers for irradiance cube, GGX-prefiltered cube, and DFG LUT
   resources.
   Shared PBR shader helpers follow the established metallic-roughness remap:
   base color becomes diffuse color for non-metals and F0 for metals, while
   dielectric F0 comes from Filament-style reflectance plus factor-only glTF
-  IOR/specular controls. The PBR scene uniform contract also carries final
-  display transform controls for exposure, tone mapping, and target encoding.
+  IOR/specular controls. The PBR post contract carries final display transform
+  controls for exposure, tone mapping, and target encoding.
   Prefiltered KTX/KTX2 environment import and offline filtering remain future
   asset-pipeline work.
 - Scene render-planning helpers expose the first renderer-facing 3D view and

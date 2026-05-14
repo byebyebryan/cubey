@@ -167,6 +167,38 @@ void test_pbr_scene_uniforms_carry_display_transform() {
             "sRGB final targets should leave output encoding to the attachment");
 }
 
+void test_pbr_post_pass_declares_uniforms_and_scene_color() {
+    const cubey::render::MaterialPassInfo pass = cubey::render::pbr_post_pass_info();
+    require(pass.label == "pbr.post", "PBR post pass should use a stable label");
+    require(pass.kind == cubey::render::MaterialPassKind::ForwardColor,
+            "PBR post pass should be a forward color pass");
+    require(!pass.depth_test && !pass.depth_write, "PBR post pass should not use depth");
+    require(pass.descriptor_sets.size() == 1, "PBR post pass should declare one set");
+    require(pass.descriptor_sets[0].set == 0, "PBR post descriptors should use set 0");
+    require(pass.descriptor_sets[0].bindings.size() == 2,
+            "PBR post pass should declare uniforms and scene color");
+    require(pass.descriptor_sets[0].bindings[0].binding ==
+                static_cast<std::uint32_t>(cubey::render::PbrPostBinding::PostUniforms),
+            "PBR post uniforms should use binding 0");
+    require(pass.descriptor_sets[0].bindings[0].type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+            "PBR post uniforms should be a uniform buffer");
+    require(pass.descriptor_sets[0].bindings[0].stage_flags == VK_SHADER_STAGE_FRAGMENT_BIT,
+            "PBR post uniforms should be fragment-only");
+    require(pass.descriptor_sets[0].bindings[1].binding ==
+                static_cast<std::uint32_t>(cubey::render::PbrPostBinding::SceneColor),
+            "PBR post scene color should use binding 1");
+    require(pass.descriptor_sets[0].bindings[1].type ==
+                VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            "PBR post scene color should be sampled");
+    require(pass.push_constants.empty(), "PBR post pass should not use push constants");
+
+    const cubey::render::PbrPostUniforms uniforms{
+        .display_transform = {1.0F, 1.0F, 0.0F, 0.0F},
+    };
+    require(uniforms.display_transform == cubey::math::Vec4{1.0F, 1.0F, 0.0F, 0.0F},
+            "PBR post uniforms should carry final display transform controls");
+}
+
 void test_pbr_skybox_uniforms_are_uniform_buffer_safe() {
     static_assert(std::is_trivially_copyable_v<cubey::render::PbrSkyboxUniforms>);
     static_assert(sizeof(cubey::render::PbrSkyboxUniforms) ==
@@ -231,10 +263,13 @@ void test_pbr_reflectance_helpers_match_filament_convention() {
 void test_pbr_shaders_use_filament_style_material_remap() {
     const std::filesystem::path source_root{CUBEY_SOURCE_DIR};
     const std::string pbr = read_source_file(source_root / "shaders/cubey/pbr.glsl");
+    const std::string post = read_source_file(source_root / "shaders/cubey/pbr_post.frag");
     const std::string furnace =
         read_source_file(source_root / "projects/pbr_furnace/shaders/pbr_furnace.frag");
     const std::string gltf =
         read_source_file(source_root / "projects/gltf_viewer/shaders/gltf_pbr.frag");
+    const std::string gltf_skybox =
+        read_source_file(source_root / "projects/gltf_viewer/shaders/gltf_skybox.frag");
 
     require_contains(pbr, "cubey_pbr_diffuse_color",
                      "PBR shader should expose a baseColor-to-diffuse remap helper");
@@ -248,13 +283,23 @@ void test_pbr_shaders_use_filament_style_material_remap() {
                      "PBR shader should expose a Lambert diffuse helper");
     require_contains(pbr, "cubey_pbr_apply_display_transform",
                      "PBR shader should expose a final display transform helper");
+    require_contains(post, "cubey_pbr_apply_display_transform(color, post.display_transform)",
+                     "PBR post shader should apply display transform to the HDR scene color");
+    require_contains(post, "uniform sampler2D scene_color",
+                     "PBR post shader should sample the scene color texture");
+
+    require_contains(furnace, "vec4 display_transform",
+                     "PBR furnace should keep direct display transform controls");
+    require_contains(furnace,
+                     "cubey_pbr_apply_display_transform(color, scene.display_transform)",
+                     "PBR furnace should keep direct display transform output");
+
+    require_not_contains(gltf, "cubey_pbr_apply_display_transform",
+                         "glTF PBR shader should leave display transform to the post pass");
+    require_not_contains(gltf_skybox, "cubey_pbr_apply_display_transform",
+                         "glTF skybox shader should leave display transform to the post pass");
 
     for (const std::string* shader : {&furnace, &gltf}) {
-        require_contains(*shader, "vec4 display_transform",
-                         "PBR fragment shaders should read display transform controls");
-        require_contains(*shader,
-                         "cubey_pbr_apply_display_transform(color, scene.display_transform)",
-                         "PBR fragment shaders should apply display transform to final color");
         require_contains(*shader, "uniform PbrMaterialUniforms",
                          "PBR fragment shaders should read per-material uniforms");
         require_not_contains(*shader, "push_constants.base_color_factor",

@@ -101,7 +101,7 @@ ShadowCubeApp::current_frame_plan(const cubey::SceneReadView& view,
         .height = color_extent.height,
         .environment =
             cubey::scene::Environment3D{
-                .ambient_color = {0.22F, 0.22F, 0.22F},
+                .ambient_color = {0.045F, 0.045F, 0.045F},
                 .ambient_intensity = 1.0F,
             },
     };

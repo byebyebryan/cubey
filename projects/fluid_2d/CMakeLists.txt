@@ -17,6 +17,10 @@ cubey_add_app_target(
         shaders/fluid_2d_divergence.comp
         shaders/fluid_2d_pressure.comp
         shaders/fluid_2d_projection.comp
+    SHADER_INCLUDE_DIRS
+        "${CMAKE_SOURCE_DIR}/shaders"
+    SHADER_DEPENDS
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/color_space.glsl"
 )
 
 if (BUILD_TESTING)

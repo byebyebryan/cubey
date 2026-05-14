@@ -85,6 +85,8 @@ cubey::ForwardPbrRenderer3DConfig forward_pbr_renderer_3d_config() {
         .pbr_fragment_shader = shader_path("gltf_pbr.frag.spv"),
         .skybox_vertex_shader = shader_path("gltf_skybox.vert.spv"),
         .skybox_fragment_shader = shader_path("gltf_skybox.frag.spv"),
+        .post_vertex_shader = shader_path("pbr_post.vert.spv"),
+        .post_fragment_shader = shader_path("pbr_post.frag.spv"),
         .shadow_depth_vertex_shader = shader_path("gltf_shadow_depth.vert.spv"),
         .shadow_extent = kShadowMapSize,
     };

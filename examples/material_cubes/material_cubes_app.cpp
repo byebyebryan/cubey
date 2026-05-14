@@ -5,6 +5,7 @@
 #include <cubey/host/frame_stats.h>
 #include <cubey/host/windowed_app.h>
 #include <cubey/input/orbit_controller.h>
+#include <cubey/render/color_space.h>
 #include <cubey/render/forward_pass.h>
 #include <cubey/render/material.h>
 #include <cubey/render/material_instance.h>
@@ -303,7 +304,9 @@ class MaterialCubesApp {
     void upload_material_uniforms(cubey::render::FrameSlot frame_slot) {
         for (const MaterialCube& cube : cubes_) {
             material_instances_.at(cube.material)
-                .upload(frame_slot, MaterialUniforms{.base_color = cube.color});
+                .upload(frame_slot,
+                        MaterialUniforms{.base_color = cubey::render::srgb_to_linear_rgba(
+                                             cube.color)});
         }
     }
 

@@ -64,6 +64,7 @@ inline constexpr std::array<PrimitiveVec3, 6> kDefaultCubeFaceColors{
 
 struct CubeMeshConfig {
     float half_extent = 1.0F;
+    // Authored display/sRGB colors; primitive builders linearize before storing vertices.
     std::array<PrimitiveVec3, 6> face_colors = kDefaultCubeFaceColors;
 };
 
@@ -71,6 +72,7 @@ struct PlaneMeshConfig {
     PrimitiveVec3 center{0.0F, 0.0F, 0.0F};
     float half_extent_x = 1.0F;
     float half_extent_z = 1.0F;
+    // Authored display/sRGB color; primitive builders linearize before storing vertices.
     PrimitiveVec3 color{0.58F, 0.58F, 0.52F};
 };
 
@@ -78,6 +80,7 @@ struct SphereMeshConfig {
     float radius = 1.0F;
     std::uint32_t latitude_segments = 16;
     std::uint32_t longitude_segments = 32;
+    // Authored display/sRGB color; primitive builders linearize before storing vertices.
     PrimitiveVec3 color{0.86F, 0.86F, 0.86F};
 };
 

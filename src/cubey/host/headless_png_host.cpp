@@ -27,7 +27,8 @@ void validate_config(const HeadlessPngHostConfig& config,
     if (config.required_queue_flags == 0) {
         throw std::runtime_error("headless PNG host requires at least one queue flag");
     }
-    if (config.output_format != VK_FORMAT_R8G8B8A8_UNORM) {
+    if (config.output_format != VK_FORMAT_R8G8B8A8_SRGB &&
+        config.output_format != VK_FORMAT_R8G8B8A8_UNORM) {
         throw std::runtime_error("headless PNG host currently supports only RGBA8 output");
     }
     if (!callbacks.record_capture) {

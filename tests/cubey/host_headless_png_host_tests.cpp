@@ -36,6 +36,8 @@ void test_headless_png_host_validates_capture_shape() {
 
     cubey::host::HeadlessPngHostConfig config;
     config.run_config.title = "headless-png-host-test";
+    require(config.output_format == VK_FORMAT_R8G8B8A8_SRGB,
+            "headless PNG host should default to an sRGB RGBA8 render target");
     require(config.gpu_execution_mode == cubey::vulkan::GpuRuntimeExecutionMode::Threaded,
             "headless PNG host config should default to threaded GPU runtime");
     cubey::host::HeadlessPngHostCallbacks callbacks;
@@ -46,6 +48,10 @@ void test_headless_png_host_validates_capture_shape() {
                                   const cubey::host::HeadlessRenderTarget&) {};
     cubey::host::HeadlessPngHost host(config, callbacks);
     (void)host;
+
+    config.output_format = VK_FORMAT_R8G8B8A8_UNORM;
+    cubey::host::HeadlessPngHost unorm_host(config, callbacks);
+    (void)unorm_host;
 
     static_assert(!HasSubmissionAccessor<cubey::host::HeadlessPngContext>);
     static_assert(

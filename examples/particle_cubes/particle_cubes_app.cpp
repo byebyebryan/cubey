@@ -3,6 +3,7 @@
 #include <cubey/core/math.h>
 #include <cubey/host/frame_stats.h>
 #include <cubey/host/windowed_app.h>
+#include <cubey/render/color_space.h>
 #include <cubey/render/forward_pass.h>
 #include <cubey/render/material.h>
 #include <cubey/render/mesh.h>
@@ -103,17 +104,17 @@ cubey::render::MaterialPassInfo particle_cubes_forward_pass_info() {
         const float z = std::sin(angle) * radius;
         const float y = (hash01((i * 747796405U) + 2891336453U) - 0.5F) * 1.4F;
         const float scale = 0.045F + (hash01((i * 1597334677U) + 3812015801U) * 0.075F);
+        const cubey::math::Vec4 color = cubey::render::srgb_to_linear_rgba({
+            0.38F + (heat * 0.45F),
+            0.74F - (heat * 0.22F),
+            0.92F - (heat * 0.38F),
+            1.0F,
+        });
 
         cubes.push_back({
             .position_scale = {x, y, z, scale},
             .velocity_seed = {-z * 0.055F, 0.0F, x * 0.055F, heat},
-            .color =
-                {
-                    0.38F + (heat * 0.45F),
-                    0.74F - (heat * 0.22F),
-                    0.92F - (heat * 0.38F),
-                    1.0F,
-                },
+            .color = {color.r, color.g, color.b, color.a},
         });
     }
 

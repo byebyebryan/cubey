@@ -19,6 +19,7 @@ void test_light_manager_rejects_invalid_edits();
 void test_light_manager_skips_invisible_lights_without_transform();
 void test_light_manager_updates_keep_epoch_local_snapshots();
 void test_light_packets_require_transform_for_point_lights();
+void test_environment_3d_defaults_to_low_linear_ambient();
 void test_render_plan_builds_sorted_3d_draw_packets_with_material_metadata();
 void test_render_plan_converts_draw_packets_to_render_items();
 void test_render_plan_filters_draw_packets_for_recording_policy();
@@ -73,6 +74,7 @@ std::span<const TestCase> scene_test_cases() {
         CUBEY_TEST(test_light_manager_rejects_invalid_edits),
         CUBEY_TEST(test_light_manager_skips_invisible_lights_without_transform),
         CUBEY_TEST(test_light_packets_require_transform_for_point_lights),
+        CUBEY_TEST(test_environment_3d_defaults_to_low_linear_ambient),
         CUBEY_TEST(test_render_plan_builds_sorted_3d_draw_packets_with_material_metadata),
         CUBEY_TEST(test_render_plan_converts_draw_packets_to_render_items),
         CUBEY_TEST(test_render_plan_filters_draw_packets_for_recording_policy),

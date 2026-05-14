@@ -51,19 +51,22 @@ service:
   the engine own Vulkan texture or mesh lifetime globally;
 - `RendererService` owns renderer instance lifetime, and
   `ForwardPbrRenderer3D` owns the reusable shadow map, skybox, forward PBR
-  pipelines, scene/skybox material descriptors, depth attachment, and render
-  graph recording for a 3D PBR view. Per-frame rendering enters through
-  `ForwardPbrRenderer3DRenderRequest`, which groups target state, view plans,
-  material/resource tables, and display/environment settings.
+  pipelines, HDR scene-color target, post pipeline, scene/skybox/post material
+  descriptors, depth attachment, and render graph recording for a 3D PBR view.
+  Per-frame rendering enters through `ForwardPbrRenderer3DRenderRequest`, which
+  groups target state, view plans, material/resource tables, and
+  display/environment settings.
 
 `cubey::render` owns the reusable GPU-facing pieces:
 
-- `PbrVertex`, `PbrSceneUniforms`, `PbrMaterialFactors`,
+- `PbrVertex`, `PbrSceneUniforms`, `PbrPostUniforms`, `PbrMaterialFactors`,
   `PbrMaterialUniforms`, and `PbrPushConstants` define the current shader
   contract;
 - `pbr_forward_pass_info()` declares the scene uniform/shadow/IBL set, material
   texture plus uniform set, model-only push constants, and opaque/alpha forward
   pass state;
+- `pbr_post_pass_info()` declares the fullscreen post set that samples linear
+  HDR scene color and applies display transform before writing the final target;
 - `create_uploaded_texture_2d()` and `create_uploaded_texture_cube()` handle
   setup-time sampled texture uploads for glTF textures and IBL cubemaps;
 - generated and equirectangular HDR PBR environment helpers provide
@@ -81,10 +84,12 @@ one, it falls back to the generated environment. It creates camera and light
 entities around imported bounds, builds shadow and scene frame plans, and hands
 those plans plus material/resource tables to an engine-owned
 `ForwardPbrRenderer3D` through `ForwardPbrRenderer3DRenderRequest` for pass
-recording. Its PBR shader uses the shared Cubey PBR helper include for
+recording. Its PBR shader writes linear HDR scene color and uses the shared
+Cubey PBR helper include for
 base-color-to-diffuse/F0 remapping, reflectance/specular factor controls,
 correlated Smith direct visibility, DFG-based IBL energy compensation, and
-indirect specular occlusion.
+indirect specular occlusion; display transform is applied by the shared post
+shader.
 
 ## Boundaries
 

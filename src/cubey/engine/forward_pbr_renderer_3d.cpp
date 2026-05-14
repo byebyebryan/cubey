@@ -55,6 +55,24 @@ static_assert(sizeof(ShadowPushConstants) == sizeof(math::Mat4));
     return static_cast<std::uint32_t>(value);
 }
 
+[[nodiscard]] std::uint32_t binding(render::PbrPostBinding value) {
+    return static_cast<std::uint32_t>(value);
+}
+
+void validate_scene_color_format(const vulkan::Device& device, VkFormat format) {
+    if (format == VK_FORMAT_UNDEFINED) {
+        throw std::runtime_error("forward PBR renderer requires a scene color format");
+    }
+    VkFormatProperties properties{};
+    vkGetPhysicalDeviceFormatProperties(device.physical_device(), format, &properties);
+    constexpr VkFormatFeatureFlags kRequired =
+        VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT | VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT;
+    if ((properties.optimalTilingFeatures & kRequired) != kRequired) {
+        throw std::runtime_error(
+            "forward PBR scene color format does not support color attachment sampling");
+    }
+}
+
 } // namespace
 
 void validate_forward_pbr_renderer_3d_config(const ForwardPbrRenderer3DConfig& config) {
@@ -70,11 +88,20 @@ void validate_forward_pbr_renderer_3d_config(const ForwardPbrRenderer3DConfig& c
     if (config.skybox_fragment_shader.empty()) {
         throw std::runtime_error("forward PBR renderer requires a skybox fragment shader");
     }
+    if (config.post_vertex_shader.empty()) {
+        throw std::runtime_error("forward PBR renderer requires a post vertex shader");
+    }
+    if (config.post_fragment_shader.empty()) {
+        throw std::runtime_error("forward PBR renderer requires a post fragment shader");
+    }
     if (config.shadow_depth_vertex_shader.empty()) {
         throw std::runtime_error("forward PBR renderer requires a shadow depth vertex shader");
     }
     if (config.shadow_extent == 0) {
         throw std::runtime_error("forward PBR renderer requires a nonzero shadow extent");
+    }
+    if (config.scene_color_format == VK_FORMAT_UNDEFINED) {
+        throw std::runtime_error("forward PBR renderer requires a scene color format");
     }
 }
 
@@ -113,8 +140,6 @@ render::PbrSceneUniforms forward_pbr_renderer_3d_scene_uniforms(const ForwardPbr
     const math::Vec3 ambient =
         info.environment.ambient_color * info.environment.ambient_intensity;
     const float radians = rotation_radians(info.environment_rotation_degrees);
-    const render::PbrDisplayTransform display_transform =
-        render::pbr_display_transform_for_target(info.color_format, info.exposure, info.tonemap);
     return {
         .view_projection = info.view_projection,
         .light_view_projection = info.light_view_projection,
@@ -129,14 +154,11 @@ render::PbrSceneUniforms forward_pbr_renderer_3d_scene_uniforms(const ForwardPbr
                 std::cos(radians),
                 std::sin(radians),
             },
-        .display_transform = render::pbr_display_transform_uniform(display_transform),
     };
 }
 
 render::PbrSkyboxUniforms forward_pbr_renderer_3d_skybox_uniforms(const ForwardPbrRenderer3DSkyboxUniformInfo& info) {
     const float radians = rotation_radians(info.environment_rotation_degrees);
-    const render::PbrDisplayTransform display_transform =
-        render::pbr_display_transform_for_target(info.color_format, info.exposure, info.tonemap);
     return {
         .inverse_view_projection = glm::inverse(info.view_projection),
         .camera_position = {info.camera_position, 1.0F},
@@ -147,6 +169,14 @@ render::PbrSkyboxUniforms forward_pbr_renderer_3d_skybox_uniforms(const ForwardP
                 info.environment_intensity,
                 0.0F,
             },
+    };
+}
+
+render::PbrPostUniforms
+forward_pbr_renderer_3d_post_uniforms(const ForwardPbrRenderer3DPostUniformInfo& info) {
+    const render::PbrDisplayTransform display_transform =
+        render::pbr_display_transform_for_target(info.color_format, info.exposure, info.tonemap);
+    return {
         .display_transform = render::pbr_display_transform_uniform(display_transform),
     };
 }
@@ -241,6 +271,14 @@ void ForwardPbrRenderer3D::create_global_resources(
                     },
                 },
         });
+    post_material_.emplace(
+        device,
+        render::FrameUniformMaterialInstanceConfig{
+            .material_pass = render::pbr_post_pass_info(),
+            .descriptor_set = 0,
+            .frame_slot_count = frame_slot_count,
+            .uniform_binding = binding(render::PbrPostBinding::PostUniforms),
+        });
 }
 
 void ForwardPbrRenderer3D::create_swapchain_resources(
@@ -254,8 +292,12 @@ void ForwardPbrRenderer3D::create_swapchain_resources(
     if (info.material_descriptor_set_layout == VK_NULL_HANDLE) {
         throw std::runtime_error("forward PBR renderer requires a material descriptor set layout");
     }
+    validate_scene_color_format(device, config_.scene_color_format);
 
     depth_attachment_.emplace(device, info.extent);
+    post_sampler_.emplace(device, vulkan::SamplerConfig{
+                                      .address_mode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+                                  });
 
     const std::array<render::ShaderStageFile, 2> skybox_shaders{
         render::vertex_shader_file(config_.skybox_vertex_shader),
@@ -267,7 +309,7 @@ void ForwardPbrRenderer3D::create_swapchain_resources(
         render::graphics_pipeline_file_resource_config(
             {
                 .extent = info.extent,
-                .color_format = info.color_format,
+                .color_format = config_.scene_color_format,
                 .depth_format = depth_attachment().format(),
             },
             {
@@ -291,7 +333,7 @@ void ForwardPbrRenderer3D::create_swapchain_resources(
         render::graphics_pipeline_file_resource_config(
             {
                 .extent = info.extent,
-                .color_format = info.color_format,
+                .color_format = config_.scene_color_format,
                 .depth_format = depth_attachment().format(),
             },
             {
@@ -309,7 +351,7 @@ void ForwardPbrRenderer3D::create_swapchain_resources(
         render::graphics_pipeline_file_resource_config(
             {
                 .extent = info.extent,
-                .color_format = info.color_format,
+                .color_format = config_.scene_color_format,
                 .depth_format = depth_attachment().format(),
             },
             {
@@ -323,10 +365,34 @@ void ForwardPbrRenderer3D::create_swapchain_resources(
                         .label = "forward_pbr.forward.alpha",
                     }),
             }));
+
+    const std::array<render::ShaderStageFile, 2> post_shaders{
+        render::vertex_shader_file(config_.post_vertex_shader),
+        render::fragment_shader_file(config_.post_fragment_shader),
+    };
+    const std::array<VkDescriptorSetLayout, 1> post_layouts{post_material().layout()};
+    post_pipeline_.emplace(
+        device,
+        render::graphics_pipeline_file_resource_config(
+            {
+                .extent = info.extent,
+                .color_format = info.color_format,
+            },
+            {
+                .shader_stage_files = post_shaders,
+                .descriptor_set_layouts = post_layouts,
+                .material_pass = render::pbr_post_pass_info(),
+            }));
 }
 
 void ForwardPbrRenderer3D::destroy_swapchain_resources() {
+    const std::uint32_t frame_slot_count = graph_executor_.frame_slot_count();
     graph_executor_.clear();
+    if (frame_slot_count != 0) {
+        graph_executor_.resize(frame_slot_count);
+    }
+    post_pipeline_.reset();
+    post_sampler_.reset();
     alpha_pipeline_.reset();
     opaque_pipeline_.reset();
     skybox_pipeline_.reset();
@@ -335,6 +401,8 @@ void ForwardPbrRenderer3D::destroy_swapchain_resources() {
 
 void ForwardPbrRenderer3D::destroy_all_resources() {
     destroy_swapchain_resources();
+    graph_executor_.clear();
+    post_material_.reset();
     scene_material_.reset();
     skybox_material_.reset();
     shadow_pass_.reset();
@@ -365,9 +433,6 @@ void ForwardPbrRenderer3D::record(const ForwardPbrRenderer3DRenderRequest& reque
             .environment_intensity = environment().intensity,
             .prefiltered_mip_levels = environment().prefiltered_mip_levels,
             .environment_rotation_degrees = settings.environment_rotation_degrees,
-            .color_format = target.color_target.format,
-            .exposure = settings.exposure,
-            .tonemap = settings.tonemap,
         }));
     skybox_material().upload(
         target.frame_slot,
@@ -376,6 +441,10 @@ void ForwardPbrRenderer3D::record(const ForwardPbrRenderer3DRenderRequest& reque
             .camera_position = camera_position,
             .environment_intensity = environment().intensity,
             .environment_rotation_degrees = settings.environment_rotation_degrees,
+        }));
+    post_material().upload(
+        target.frame_slot,
+        forward_pbr_renderer_3d_post_uniforms({
             .color_format = target.color_target.format,
             .exposure = settings.exposure,
             .tonemap = settings.tonemap,
@@ -393,7 +462,12 @@ void ForwardPbrRenderer3D::record(const ForwardPbrRenderer3DRenderRequest& reque
             .frame_slot = target.frame_slot,
             .label = target.command_buffer_label,
         },
-        render_graph.graph);
+        render_graph.graph,
+        [this, device = target.device, frame_slot = target.frame_slot,
+         &render_graph](const render::RenderGraphResourceSet& resources) {
+            update_post_descriptor(*device, frame_slot, render_graph.graph, resources,
+                                   render_graph.scene_color);
+        });
     shadow_depth_is_sampled_ = true;
 }
 
@@ -419,6 +493,13 @@ ForwardPbrRenderer3D::CompiledGraph ForwardPbrRenderer3D::current_render_graph(
     const render::RenderGraphTextureHandle backbuffer =
         graph.import_color_target("backbuffer", color_target, color_initial_state,
                                   color_final_state);
+    const render::RenderGraphTextureHandle scene_color =
+        graph.create_texture(render::RenderGraphTextureDesc{
+            .label = "scene color",
+            .extent = color_target.extent,
+            .format = config_.scene_color_format,
+            .aspects = VK_IMAGE_ASPECT_COLOR_BIT,
+        });
     const render::RenderGraphTextureHandle scene_depth = graph.import_depth_target(
         "scene depth", render::depth_target_view(depth_attachment()), undefined_texture_state());
     const std::optional<render::RenderGraphTextureState> shadow_initial_state =
@@ -435,18 +516,29 @@ ForwardPbrRenderer3D::CompiledGraph ForwardPbrRenderer3D::current_render_graph(
         });
     graph.add_pass("scene", render::RenderGraphQueueDomain::Graphics)
         .read_texture(shadow_depth)
-        .write_color(backbuffer)
+        .write_color(scene_color)
         .write_depth(scene_depth)
         .material_pass(render::pbr_forward_pass_info())
-        .execute([this, color_target, frame_slot, &scene_plan, &meshes, &material_instances,
+        .execute([this, scene_color, frame_slot, &scene_plan, &meshes, &material_instances,
                   &material_factors](
                      const render::RenderGraphExecutionContext& context) {
-            record_scene_pass(context.recorder(), color_target, scene_plan, frame_slot, meshes,
+            const render::ColorTargetView target =
+                render::resolved_color_target_view(context, scene_color);
+            record_scene_pass(context.recorder(), target, scene_plan, frame_slot, meshes,
                               material_instances, material_factors);
+        });
+    graph.add_pass("post", render::RenderGraphQueueDomain::Graphics)
+        .read_texture(scene_color)
+        .write_color(backbuffer)
+        .material_pass(render::pbr_post_pass_info())
+        .execute([this, color_target, frame_slot](
+                     const render::RenderGraphExecutionContext& context) {
+            record_post_pass(context.recorder(), color_target, frame_slot);
         });
 
     return {
         .graph = graph.compile(),
+        .scene_color = scene_color,
     };
 }
 
@@ -535,6 +627,37 @@ void ForwardPbrRenderer3D::record_scene_pass(
         });
 }
 
+void ForwardPbrRenderer3D::record_post_pass(const vulkan::CommandRecorder& recorder,
+                                            render::ColorTargetView color_target,
+                                            render::FrameSlot frame_slot) const {
+    render::record_render_target_pass(
+        recorder, render::render_target_view(color_target),
+        render::RenderClearValues{
+            .color = render::color_clear_value(0.0F, 0.0F, 0.0F, 1.0F),
+        },
+        [this, frame_slot](const vulkan::CommandRecorder& pass_recorder) {
+            render::record_fullscreen_pipeline_draw(
+                pass_recorder,
+                render::FullscreenPipelineDrawInfo{
+                    .pipeline = &post_pipeline(),
+                    .descriptor_set = post_material().set(frame_slot),
+                    .descriptor_set_index = 0,
+                });
+        });
+}
+
+void ForwardPbrRenderer3D::update_post_descriptor(
+    const vulkan::Device& device, render::FrameSlot frame_slot,
+    const render::CompiledRenderGraph& graph, const render::RenderGraphResourceSet& resources,
+    render::RenderGraphTextureHandle scene_color) const {
+    const render::RenderGraphSampledTextureView sampled =
+        render::resolved_sampled_texture_view(graph, resources, scene_color);
+    render::MaterialDescriptorWriter(post_material().set(frame_slot))
+        .combined_image_sampler(binding(render::PbrPostBinding::SceneColor),
+                                post_sampler().handle(), sampled.view, sampled.layout)
+        .update(device);
+}
+
 const render::ShadowMapPass3D& ForwardPbrRenderer3D::shadow_pass() const {
     if (!shadow_pass_.has_value()) {
         throw std::runtime_error("forward PBR renderer shadow pass is not initialized");
@@ -558,6 +681,14 @@ ForwardPbrRenderer3D::skybox_material() const {
     return skybox_material_.value();
 }
 
+const render::FrameUniformMaterialInstance<render::PbrPostUniforms>&
+ForwardPbrRenderer3D::post_material() const {
+    if (!post_material_.has_value()) {
+        throw std::runtime_error("forward PBR renderer post material is not initialized");
+    }
+    return post_material_.value();
+}
+
 const render::GraphicsPipelineResource& ForwardPbrRenderer3D::opaque_pipeline() const {
     if (!opaque_pipeline_.has_value()) {
         throw std::runtime_error("forward PBR renderer opaque pipeline is not initialized");
@@ -577,6 +708,20 @@ const render::GraphicsPipelineResource& ForwardPbrRenderer3D::skybox_pipeline() 
         throw std::runtime_error("forward PBR renderer skybox pipeline is not initialized");
     }
     return skybox_pipeline_.value();
+}
+
+const render::GraphicsPipelineResource& ForwardPbrRenderer3D::post_pipeline() const {
+    if (!post_pipeline_.has_value()) {
+        throw std::runtime_error("forward PBR renderer post pipeline is not initialized");
+    }
+    return post_pipeline_.value();
+}
+
+const vulkan::Sampler& ForwardPbrRenderer3D::post_sampler() const {
+    if (!post_sampler_.has_value()) {
+        throw std::runtime_error("forward PBR renderer post sampler is not initialized");
+    }
+    return post_sampler_.value();
 }
 
 const vulkan::DepthAttachment& ForwardPbrRenderer3D::depth_attachment() const {

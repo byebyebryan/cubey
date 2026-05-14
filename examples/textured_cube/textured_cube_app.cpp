@@ -237,7 +237,7 @@ class TexturedCubeApp {
                            .material = cube_material_handle_,
                            .camera_distance = 4.2F,
                            .directional_light = cubey::directional_light_3d(
-                               {0.35F, -0.55F, 0.76F}, {0.76F, 0.76F, 0.76F}, 1.0F),
+                               {0.35F, -0.55F, 0.76F}, {0.72F, 0.72F, 0.72F}, 1.0F),
                        });
         cube_entity_ = cube_scene.cube;
         camera_entity_ = cube_scene.camera;
@@ -329,7 +329,7 @@ class TexturedCubeApp {
             .height = extent.height,
             .environment =
                 cubey::scene::Environment3D{
-                    .ambient_color = {0.24F, 0.24F, 0.24F},
+                    .ambient_color = {0.045F, 0.045F, 0.045F},
                     .ambient_intensity = 1.0F,
                 },
         };

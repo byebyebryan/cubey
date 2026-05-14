@@ -7,6 +7,7 @@
 #include <cubey/host/frame_stats.h>
 #include <cubey/host/windowed_app.h>
 #include <cubey/input/orbit_controller.h>
+#include <cubey/render/color_space.h>
 #include <cubey/render/forward_pass.h>
 #include <cubey/render/instance_buffer.h>
 #include <cubey/render/material.h>
@@ -112,10 +113,15 @@ std::vector<CubeInstanceData> make_cube_instances() {
                                             cubey::math::scale({0.42F, 0.42F, 0.42F});
             const float mix_x = static_cast<float>(column) / static_cast<float>(kGridColumns - 1U);
             const float mix_z = static_cast<float>(row) / static_cast<float>(kGridRows - 1U);
+            const cubey::math::Vec4 color = cubey::render::srgb_to_linear_rgba({
+                0.45F + (0.45F * mix_x),
+                0.72F - (0.26F * mix_z),
+                0.62F + (0.28F * mix_z),
+                1.0F,
+            });
             instances.push_back({
                 .model = model,
-                .color = {0.45F + (0.45F * mix_x), 0.72F - (0.26F * mix_z), 0.62F + (0.28F * mix_z),
-                          1.0F},
+                .color = color,
             });
         }
     }
@@ -280,7 +286,7 @@ class InstancedCubesApp {
             .height = extent.height,
             .environment =
                 cubey::scene::Environment3D{
-                    .ambient_color = {0.18F, 0.18F, 0.18F},
+                    .ambient_color = {0.045F, 0.045F, 0.045F},
                     .ambient_intensity = 1.0F,
                 },
         };

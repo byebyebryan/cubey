@@ -160,25 +160,28 @@ full engine architecture.
 - `cubey::render::MaterialPassInfo` is the first explicit material/pass
   metadata contract. It describes pass kind, descriptor layout shape,
   push-constant ranges, and reusable graphics pipeline state.
-- `PbrVertex`, `PbrSceneUniforms`, `PbrSkyboxUniforms`, `PbrMaterialFactors`,
-  `PbrMaterialUniforms`, `PbrPushConstants`, `pbr_skybox_pass_info()`, and
-  `pbr_forward_pass_info()` define the current PBR forward-pass contract: one
-  scene uniform/shadow/IBL set, one material texture/uniform set, model-only
-  per-draw push constants, a skybox environment set, and factor-only
-  reflectance/specular controls. The scene set includes irradiance cube,
-  prefiltered cube, and the DFG/BRDF lookup binding. `PbrDisplayTransform`
-  carries the final exposure, tone-map, and output-encoding controls used by
-  direct-to-target PBR passes.
+- `PbrVertex`, `PbrSceneUniforms`, `PbrSkyboxUniforms`, `PbrPostUniforms`,
+  `PbrMaterialFactors`, `PbrMaterialUniforms`, `PbrPushConstants`,
+  `pbr_skybox_pass_info()`, `pbr_forward_pass_info()`, and
+  `pbr_post_pass_info()` define the current PBR contract: one scene
+  uniform/shadow/IBL set, one material texture/uniform set, model-only per-draw
+  push constants, a skybox environment set, a fullscreen post set, and
+  factor-only reflectance/specular controls. The scene set includes irradiance
+  cube, prefiltered cube, and the DFG/BRDF lookup binding. `PbrDisplayTransform`
+  carries final exposure, tone-map, and output-encoding controls; the reusable
+  forward PBR renderer applies it in the post pass after HDR scene-color
+  shading.
 - `cubey::engine::RendererService` is the Engine-owned renderer instance
   service. It creates, destroys, and fan-outs lifecycle calls to renderer
   instances without owning assets, shader packages, material tables, or render
   settings.
 - `cubey::engine::ForwardPbrRenderer3D` is the first reusable renderer policy
   layer above scene/render/vulkan. It owns the repeated shadow map, skybox,
-  forward PBR pipelines, scene/skybox material descriptors, depth attachment,
-  and render-graph recording for a 3D PBR view while still taking shader paths
-  at construction and material tables, frame plans, target state, and settings
-  through a per-frame render request from the project.
+  forward PBR pipelines, HDR scene-color graph target, post pipeline,
+  scene/skybox/post material descriptors, depth attachment, and render-graph
+  recording for a 3D PBR view while still taking shader paths at construction
+  and material tables, frame plans, target state, and settings through a
+  per-frame render request from the project.
 - `ForwardPbrRenderer3DRenderRequest` is the first explicit renderer request
   boundary. It groups target state, scene/view plans, resource tables, and
   display/environment settings so renderer call sites do not depend on a long
@@ -300,5 +303,5 @@ scheduling, transient aliasing, and broader material systems remain future
 work. `shadow_cube` still uses the lower-level `ShadowMapPass3D` helper
 directly, while `gltf_viewer` now creates an engine-owned
 `ForwardPbrRenderer3D` through `RendererService` and records each frame through
-`ForwardPbrRenderer3DRenderRequest` for reusable shadow/skybox/PBR graph
-recording.
+`ForwardPbrRenderer3DRenderRequest` for reusable shadow, skybox, HDR scene
+color, PBR forward, and post-pass graph recording.

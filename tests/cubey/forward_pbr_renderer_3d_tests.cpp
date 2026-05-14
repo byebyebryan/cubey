@@ -36,6 +36,8 @@ cubey::ForwardPbrRenderer3DConfig valid_config() {
         .pbr_fragment_shader = "pbr.frag.spv",
         .skybox_vertex_shader = "skybox.vert.spv",
         .skybox_fragment_shader = "skybox.frag.spv",
+        .post_vertex_shader = "post.vert.spv",
+        .post_fragment_shader = "post.frag.spv",
         .shadow_depth_vertex_shader = "shadow.vert.spv",
     };
 }
@@ -107,12 +109,29 @@ void test_forward_pbr_renderer_3d_config_requires_shader_paths_and_shadow_extent
                    "forward PBR renderer config should reject missing shader paths");
 
     cubey::ForwardPbrRenderer3DConfig config = valid_config();
+    config.post_vertex_shader.clear();
+    require_throws([&config] { cubey::validate_forward_pbr_renderer_3d_config(config); },
+                   "forward PBR renderer config should reject missing post vertex shader");
+
+    config = valid_config();
+    config.post_fragment_shader.clear();
+    require_throws([&config] { cubey::validate_forward_pbr_renderer_3d_config(config); },
+                   "forward PBR renderer config should reject missing post fragment shader");
+
+    config = valid_config();
     config.shadow_extent = 0;
     require_throws([&config] { cubey::validate_forward_pbr_renderer_3d_config(config); },
                    "forward PBR renderer config should reject zero shadow extent");
 
     config.shadow_extent = 1024;
     cubey::validate_forward_pbr_renderer_3d_config(config);
+}
+
+void test_forward_pbr_renderer_3d_config_defaults_to_hdr_scene_color() {
+    const cubey::ForwardPbrRenderer3DConfig config;
+
+    require(config.scene_color_format == VK_FORMAT_R16G16B16A16_SFLOAT,
+            "forward PBR renderer should default to a float HDR scene color target");
 }
 
 void test_forward_pbr_renderer_3d_render_request_validates_required_target_fields() {
@@ -249,9 +268,6 @@ void test_forward_pbr_renderer_3d_scene_uniforms_pack_view_light_environment_and
         .environment_intensity = 5.0F,
         .prefiltered_mip_levels = 6,
         .environment_rotation_degrees = 90.0F,
-        .color_format = VK_FORMAT_R8G8B8A8_UNORM,
-        .exposure = 1.25F,
-        .tonemap = cubey::render::PbrTonemap::Linear,
     });
 
     require(uniforms.view_projection == cubey::math::Mat4{2.0F},
@@ -274,8 +290,8 @@ void test_forward_pbr_renderer_3d_scene_uniforms_pack_view_light_environment_and
                  "forward PBR scene uniforms should pack rotation cosine");
     require_near(uniforms.environment_intensity_mip_count.w, 1.0F,
                  "forward PBR scene uniforms should pack rotation sine");
-    require(uniforms.display_transform == cubey::math::Vec4{1.25F, 0.0F, 1.0F, 0.0F},
-            "forward PBR scene uniforms should pack display transform");
+    require(uniforms.display_transform == cubey::math::Vec4{0.0F, 1.0F, 0.0F, 0.0F},
+            "forward PBR scene uniforms should leave display transform neutral");
 }
 
 void test_forward_pbr_renderer_3d_skybox_uniforms_pack_inverse_view_camera_environment_and_display() {
@@ -284,9 +300,6 @@ void test_forward_pbr_renderer_3d_skybox_uniforms_pack_inverse_view_camera_envir
         .camera_position = {4.0F, 5.0F, 6.0F},
         .environment_intensity = 2.25F,
         .environment_rotation_degrees = 180.0F,
-        .color_format = VK_FORMAT_B8G8R8A8_SRGB,
-        .exposure = -0.5F,
-        .tonemap = cubey::render::PbrTonemap::Linear,
     });
 
     require(uniforms.inverse_view_projection == cubey::math::Mat4{1.0F},
@@ -299,6 +312,26 @@ void test_forward_pbr_renderer_3d_skybox_uniforms_pack_inverse_view_camera_envir
                  "forward PBR skybox uniforms should pack rotation sine");
     require(uniforms.environment_rotation_intensity.z == 2.25F,
             "forward PBR skybox uniforms should pack environment intensity");
-    require(uniforms.display_transform == cubey::math::Vec4{-0.5F, 0.0F, 0.0F, 0.0F},
-            "forward PBR skybox uniforms should pack display transform");
+    require(uniforms.display_transform == cubey::math::Vec4{0.0F, 1.0F, 0.0F, 0.0F},
+            "forward PBR skybox uniforms should leave display transform neutral");
+}
+
+void test_forward_pbr_renderer_3d_post_uniforms_pack_display_transform() {
+    const cubey::render::PbrPostUniforms unorm =
+        cubey::forward_pbr_renderer_3d_post_uniforms({
+            .color_format = VK_FORMAT_R8G8B8A8_UNORM,
+            .exposure = 1.25F,
+            .tonemap = cubey::render::PbrTonemap::Linear,
+        });
+    require(unorm.display_transform == cubey::math::Vec4{1.25F, 0.0F, 1.0F, 0.0F},
+            "forward PBR post uniforms should request shader-side sRGB for UNORM targets");
+
+    const cubey::render::PbrPostUniforms srgb =
+        cubey::forward_pbr_renderer_3d_post_uniforms({
+            .color_format = VK_FORMAT_B8G8R8A8_SRGB,
+            .exposure = -0.5F,
+            .tonemap = cubey::render::PbrTonemap::Aces,
+        });
+    require(srgb.display_transform == cubey::math::Vec4{-0.5F, 1.0F, 0.0F, 0.0F},
+            "forward PBR post uniforms should leave encoding to sRGB targets");
 }

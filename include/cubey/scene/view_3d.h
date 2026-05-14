@@ -19,7 +19,7 @@
 namespace cubey::scene {
 
 struct Environment3D {
-    math::Vec3 ambient_color{0.24F, 0.24F, 0.24F};
+    math::Vec3 ambient_color{0.045F, 0.045F, 0.045F};
     float ambient_intensity = 1.0F;
 };
 

@@ -12,6 +12,8 @@ cubey_add_app_target(
         shaders/gltf_pbr.frag
         shaders/gltf_skybox.vert
         shaders/gltf_skybox.frag
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/pbr_post.vert"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/pbr_post.frag"
         shaders/gltf_shadow_depth.vert
     SHADER_INCLUDE_DIRS
         "${CMAKE_SOURCE_DIR}/shaders"

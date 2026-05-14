@@ -10,6 +10,7 @@ add_executable(cubey_core_tests
     dynamic_rendering_tests.cpp
     engine_tests.cpp
     entity_tests.cpp
+    example_lighting_tests.cpp
     file_io_tests.cpp
     frame_clock_tests.cpp
     gltf_asset_tests.cpp
