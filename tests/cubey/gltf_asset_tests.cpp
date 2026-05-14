@@ -545,3 +545,53 @@ void test_gltf_asset_loads_skinning_and_morph_data() {
 
     std::filesystem::remove_all(dir);
 }
+
+void test_gltf_asset_ignores_unknown_optional_extensions() {
+    const std::filesystem::path dir = test_dir("cubey_gltf_asset_optional_extension");
+    const std::filesystem::path path = dir / "optional_extension.gltf";
+    write_text_file(path, R"JSON({
+  "asset": {"version": "2.0"},
+  "extensionsUsed": ["VENDOR_optional_debug_data"]
+})JSON");
+
+    const cubey::asset::GltfAsset asset = cubey::asset::load_gltf_asset(path);
+
+    require(asset.materials.size() == 1, "loader should still create the default material");
+    std::filesystem::remove_all(dir);
+}
+
+void test_gltf_asset_rejects_unknown_required_extensions() {
+    const std::filesystem::path dir = test_dir("cubey_gltf_asset_required_extension");
+    const std::filesystem::path path = dir / "required_extension.gltf";
+    write_text_file(path, R"JSON({
+  "asset": {"version": "2.0"},
+  "extensionsUsed": ["VENDOR_required_geometry"],
+  "extensionsRequired": ["VENDOR_required_geometry"]
+})JSON");
+
+    require_throws([&path] { (void)cubey::asset::load_gltf_asset(path); },
+                   "loader should reject unknown required extensions");
+    std::filesystem::remove_all(dir);
+}
+
+void test_gltf_asset_accepts_supported_required_extensions() {
+    const std::filesystem::path dir = test_dir("cubey_gltf_asset_supported_required_extension");
+    const std::filesystem::path path = dir / "supported_required_extension.gltf";
+    write_text_file(path, R"JSON({
+  "asset": {"version": "2.0"},
+  "extensionsUsed": ["KHR_materials_ior"],
+  "extensionsRequired": ["KHR_materials_ior"],
+  "materials": [{
+    "extensions": {
+      "KHR_materials_ior": {"ior": 1.8}
+    }
+  }]
+})JSON");
+
+    const cubey::asset::GltfAsset asset = cubey::asset::load_gltf_asset(path);
+
+    require(asset.materials.size() == 2, "loader should preserve material with required extension");
+    require_close(asset.materials[1].reflectance, 0.714285F,
+                  "supported required material extension should load");
+    std::filesystem::remove_all(dir);
+}

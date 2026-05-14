@@ -10,6 +10,7 @@
 #include <glm/gtx/matrix_decompose.hpp>
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <cstring>
 #include <filesystem>
@@ -839,7 +840,25 @@ load_animation_interpolation(cgltf_interpolation_type interpolation) {
     return result;
 }
 
+[[nodiscard]] bool supports_required_extension(std::string_view extension) noexcept {
+    static constexpr std::array<std::string_view, 2> kSupportedRequiredExtensions{
+        "KHR_materials_ior",
+        "KHR_materials_specular",
+    };
+    return std::ranges::find(kSupportedRequiredExtensions, extension) !=
+           kSupportedRequiredExtensions.end();
+}
+
 void reject_unsupported_features(const cgltf_data& data) {
+    for (cgltf_size i = 0; i < data.extensions_required_count; ++i) {
+        const std::string_view extension = data.extensions_required[i] != nullptr
+                                               ? std::string_view{data.extensions_required[i]}
+                                               : std::string_view{};
+        if (!supports_required_extension(extension)) {
+            throw gltf_error("required glTF extension is not supported: " +
+                             std::string(extension));
+        }
+    }
     for (cgltf_size i = 0; i < data.accessors_count; ++i) {
         if (data.accessors[i].is_sparse != 0) {
             throw gltf_error("sparse accessors are not supported");
