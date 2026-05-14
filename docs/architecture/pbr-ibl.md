@@ -24,8 +24,8 @@ Radiance HDR equirectangular environment assets:
   PBR shader with Filament-style base-color remapping, factor-only IOR/specular
   material controls, DFG-based IBL, specular energy compensation, correlated
   Smith direct visibility, indirect specular occlusion, environment rotation,
-  and exposure while keeping asset loading, shader paths, and environment
-  selection project-owned;
+  exposure, and tone mapping from the per-frame render request while keeping
+  asset loading, shader paths, and environment selection project-owned;
 - `pbr_furnace` isolates the current IBL/specular behavior with a white sphere
   grid that sweeps roughness across columns and metallic across rows under a
   uniform white environment;

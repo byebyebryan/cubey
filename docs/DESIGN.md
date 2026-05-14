@@ -137,8 +137,9 @@ Reusable spatial types should stay explicit and narrow:
   registry-issued render handles, app-owned mesh/material resources, uploaded
   textures, and imported bounds. `RendererService` owns renderer instance
   lifetime, and `ForwardPbrRenderer3D` owns the repeated shadow/skybox/PBR
-  forward pass resources and render-graph recording while keeping shader paths,
-  asset loading, environment choice, and view setup project-owned.
+  forward pass resources and render-graph recording. Per-frame renderer inputs
+  are grouped into `ForwardPbrRenderer3DRenderRequest`, while shader paths,
+  asset loading, environment choice, and view setup stay project-owned.
 - `cubey::render` owns the current generated and HDR equirectangular PBR IBL
   environment helpers for irradiance cube, GGX-prefiltered cube, and DFG LUT
   resources.
@@ -389,6 +390,7 @@ cubey/
         engine.h           -- scoped root owner for runtime, scenes, and registries
         gltf_scene_importer.h -- static glTF scene/resource bridge
         forward_pbr_renderer_3d.h -- reusable shadow/skybox/PBR forward renderer
+                             -- and its explicit render request contract
         renderer_service.h -- engine-owned renderer instance lifetime
         project_gpu_services.h -- project-facing GPU uploads/readbacks/retirement
         project_runtime.h  -- async-ready project vocabulary

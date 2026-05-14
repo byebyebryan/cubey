@@ -176,8 +176,13 @@ full engine architecture.
 - `cubey::engine::ForwardPbrRenderer3D` is the first reusable renderer policy
   layer above scene/render/vulkan. It owns the repeated shadow map, skybox,
   forward PBR pipelines, scene/skybox material descriptors, depth attachment,
-  and render-graph recording for a 3D PBR view while still taking shader paths,
-  material tables, frame plans, and environment choice from the project.
+  and render-graph recording for a 3D PBR view while still taking shader paths
+  at construction and material tables, frame plans, target state, and settings
+  through a per-frame render request from the project.
+- `ForwardPbrRenderer3DRenderRequest` is the first explicit renderer request
+  boundary. It groups target state, scene/view plans, resource tables, and
+  display/environment settings so renderer call sites do not depend on a long
+  flat parameter list.
 - `GeneratedPbrEnvironment` creates setup-time irradiance cube,
   GGX-prefiltered radiance cube, and DFG LUT resources from either deterministic
   generated radiance or equirectangular HDR image data. The shared PBR shader
@@ -294,5 +299,6 @@ resource ownership, and graph-owned barrier recording. Render-graph
 scheduling, transient aliasing, and broader material systems remain future
 work. `shadow_cube` still uses the lower-level `ShadowMapPass3D` helper
 directly, while `gltf_viewer` now creates an engine-owned
-`ForwardPbrRenderer3D` through `RendererService` for reusable shadow/skybox/PBR
-graph recording.
+`ForwardPbrRenderer3D` through `RendererService` and records each frame through
+`ForwardPbrRenderer3DRenderRequest` for reusable shadow/skybox/PBR graph
+recording.

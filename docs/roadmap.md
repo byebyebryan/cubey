@@ -293,8 +293,9 @@ Current checkpoint:
   engine glTF scene importer, uploads PBR material textures, builds shadow and
   scene frame plans, and delegates reusable shadow/skybox/PBR graph recording
   to an engine-owned `ForwardPbrRenderer3D` created by `RendererService`. It
-  binds generated or HDR-backed IBL resources, supports windowed and headless
-  PNG output, and falls back to a
+  submits per-frame target, view, resource, and display settings through
+  `ForwardPbrRenderer3DRenderRequest`, binds generated or HDR-backed IBL
+  resources, supports windowed and headless PNG output, and falls back to a
   generated PBR cube when no input asset or sample-asset checkout is configured.
 - `projects/pbr_furnace` links against `cubey` and renders a white-furnace PBR
   validation grid: shared UV-sphere primitive mesh, roughness columns, metallic

@@ -22,14 +22,17 @@ The engine layer is responsible for scoped foundation ownership:
 - Render resource handle identity and material metadata.
 - Scene creation/destruction and scene-backed manager validation.
 - Shared project/GPU service bridges.
+- Renderer instance lifetime through `RendererService`.
 
-The host and engine layers are not responsible for rendering policy:
+The host layer and base engine ownership layer are not responsible for render
+intent. Engine-owned renderers may own renderer policy internally, but projects
+still choose what to render and which resources/settings to pass in:
 
 - No material system.
-- No render graph.
+- No renderer-wide asset ownership.
 - No scene graph.
 - No particle system abstraction.
-- No descriptor, pipeline, pass, or resource policy beyond host-owned
+- No host-owned descriptor, pipeline, pass, or resource policy beyond
   surface/swapchain/frame services.
 - No backend abstraction over Vulkan.
 
@@ -218,8 +221,13 @@ setup before swapchain setup, and callback forwarding.
   capture command recording sequence local.
 - `cubey::Engine` is the first scoped root owner. It lives in the engine layer
   because it composes project runtime services, the render resource handle
-  registry, and created `Scene` instances, but does not yet own window hosts,
-  headless hosts, Vulkan instance/device setup, or app simulation state.
+  registry, renderer instance lifetime, and created `Scene` instances, but does
+  not yet own window hosts, headless hosts, Vulkan instance/device setup, or app
+  simulation state.
+- `RendererService` creates and destroys renderer instances. It currently owns
+  `ForwardPbrRenderer3D` lifetimes while projects still provide frame plans,
+  resource tables, target state, and render settings through explicit render
+  requests.
 - Engine-created scenes validate renderable mesh/material handles against the
   Engine registry. Current cube examples use Engine-owned scenes, mutate scene
   transforms during `update()`, build CPU render frame plans during render, and

@@ -52,7 +52,9 @@ service:
 - `RendererService` owns renderer instance lifetime, and
   `ForwardPbrRenderer3D` owns the reusable shadow map, skybox, forward PBR
   pipelines, scene/skybox material descriptors, depth attachment, and render
-  graph recording for a 3D PBR view.
+  graph recording for a 3D PBR view. Per-frame rendering enters through
+  `ForwardPbrRenderer3DRenderRequest`, which groups target state, view plans,
+  material/resource tables, and display/environment settings.
 
 `cubey::render` owns the reusable GPU-facing pieces:
 
@@ -78,8 +80,8 @@ directory is configured, and otherwise renders a generated PBR cube. It can use
 one, it falls back to the generated environment. It creates camera and light
 entities around imported bounds, builds shadow and scene frame plans, and hands
 those plans plus material/resource tables to an engine-owned
-`ForwardPbrRenderer3D` for pass recording. Its PBR shader uses the shared Cubey
-PBR helper include for
+`ForwardPbrRenderer3D` through `ForwardPbrRenderer3DRenderRequest` for pass
+recording. Its PBR shader uses the shared Cubey PBR helper include for
 base-color-to-diffuse/F0 remapping, reflectance/specular factor controls,
 correlated Smith direct visibility, DFG-based IBL energy compensation, and
 indirect specular occlusion.
@@ -95,7 +97,7 @@ it does not choose shaders, record passes, allocate pipelines, or define
 renderer-wide material policy. `RendererService` owns renderer instance
 lifetime only. `ForwardPbrRenderer3D` is a separate engine-layer renderer
 implementation: it records one PBR view using caller-provided shader paths,
-frame plans, material tables, and environment resources.
+frame plans, material tables, environment resources, and render settings.
 
 The render layer exposes contracts and helpers, not a full material system.
 Texture lifetime, descriptor writes, material sorting policy, shader selection,
