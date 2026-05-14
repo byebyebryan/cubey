@@ -25,10 +25,12 @@ renderer.
 - glTF/glb parsing through `cgltf`;
 - external buffers, data URIs, image buffer views, PNG/JPEG decode for glTF
   textures, and standalone Radiance HDR decode through `stb_image`;
-- mesh primitives with position, normal, tangent, UV0, optional `JOINTS_0` /
-  `WEIGHTS_0`, and optional morph target deltas;
+- triangle mesh primitives with position, normal, tangent, UV0, optional
+  `JOINTS_0` / `WEIGHTS_0`, sparse accessor expansion, and optional named
+  morph target deltas from `mesh.extras.targetNames`;
 - metallic-roughness PBR material factors and texture references;
-- factor-only `KHR_materials_ior` and `KHR_materials_specular` controls;
+- factor-only `KHR_materials_ior`, factor-only `KHR_materials_specular`,
+  `KHR_materials_emissive_strength`, and `KHR_materials_unlit` controls;
 - core glTF alpha modes: `OPAQUE`, `MASK`, and `BLEND`;
 - sampler filtering and per-axis wrapping metadata;
 - scene roots and node hierarchy with decomposed TRS transforms;
@@ -36,11 +38,13 @@ renderer.
   inverse bind matrices.
 
 Unsupported features fail early instead of being silently ignored:
-additional skin influence sets, sparse accessors, unsupported morph target
-attributes, and extension-only animation paths are rejected by the loader.
-Other extensions, multiple UV sets, vertex colors, material variants,
-transmission, clearcoat, glTF environment extensions, advanced animation
-runtime features, and streaming remain future slices.
+unknown `extensionsRequired`, non-triangle primitive modes, additional skin
+influence sets, unsupported morph target attributes, sparse index accessors, and
+extension-only animation paths are rejected by the loader. Multiple UV sets,
+vertex colors, material variants, KTX2/Basis textures, Draco/meshopt
+compression, transmission, volume, clearcoat, sheen, anisotropy, glTF
+cameras/lights, glTF environment extensions, advanced animation runtime
+features, and streaming remain future slices.
 
 `cubey::engine` owns the current asset-to-scene bridge and renderer instance
 service:
@@ -110,7 +114,9 @@ correlated Smith direct visibility, DFG-based IBL energy compensation, and
 indirect specular occlusion. Material texture and factor alpha remain
 straight/unassociated inputs; blended fragments emit premultiplied RGB at
 shader output, while opaque and kept masked fragments output alpha 1. Display
-transform is applied by the shared post shader.
+transform is applied by the shared post shader. Unlit glTF materials preserve
+the same alpha policy but skip direct lighting, IBL, normal mapping, AO,
+metallic, roughness, and specular shading.
 The viewer plays one active glTF animation clip, applies rigid TRS channels to
 scene transforms, uploads morph weights and skin joint palettes per frame, and
 records a compute deformation pass before shadow and PBR scene passes.
@@ -133,15 +139,17 @@ Texture lifetime, descriptor writes, shader selection, and environment
 selection still belong to the project or future renderer layer. Transparency V1
 supports glTF alpha mask and alpha blend, but not refraction, transmission,
 transparent shadow opacity, weighted blended transparency, or order-independent
-transparency. Specular textures, clearcoat, transmission, and other glTF
-material extensions remain future slices.
+transparency. Specular textures, texture transforms, clearcoat, transmission,
+and other glTF material extension lobes remain future slices.
 
 ## Next Slices
 
 - Add validation assets from Khronos Sample Assets as optional tests when the
   CI/dev environment can afford the download.
-- Add prefiltered KTX/KTX2 environment loading and offline filtering now that
-  generated and direct-HDR setup-time IBL paths have proven the renderer-side
-  cubemap contract.
-- Add vertex colors, multiple UV sets, and glTF material extension slices as
-  real sample assets require them.
+- Add `KHR_texture_transform`, UV1, vertex colors, and specular texture support
+  as the next model-fidelity imports that do not require a new decompression
+  dependency.
+- Add prefiltered KTX/KTX2 environment or `KHR_texture_basisu` loading only with
+  an explicit dependency boundary such as `libktx` or a Basis transcoder.
+- Keep MikkTSpace tangent generation deferred until authored normal-map assets
+  show visible tangent-basis artifacts.
