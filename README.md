@@ -77,6 +77,41 @@ Project-local docs:
 
 ## Development Setup
 
+Cubey needs a native C++20 toolchain plus system Vulkan development packages.
+CMake fetches several project dependencies when needed, but it does not provide
+the Vulkan SDK/loader, GPU driver, compiler toolchain, or shader compiler.
+
+Required system dependencies:
+
+- C++20 compiler and standard build tools.
+- CMake, Ninja, and Git.
+- Vulkan headers.
+- Vulkan loader / ICD loader (`libvulkan.so` on Linux).
+- A Vulkan-capable GPU driver / ICD for your hardware.
+- `glslangValidator` for build-time GLSL to SPIR-V shader compilation.
+
+Package names vary by distro. Examples:
+
+```bash
+# Arch Linux
+sudo pacman -S --needed base-devel cmake ninja git vulkan-headers vulkan-icd-loader vulkan-tools glslang
+# Also install one Vulkan driver package for your GPU, such as vulkan-radeon,
+# vulkan-intel, amdvlk, or the NVIDIA driver stack.
+
+# Ubuntu / Debian
+sudo apt install build-essential cmake ninja-build git libvulkan-dev vulkan-tools glslang-tools
+# Also install the Vulkan driver package for your GPU, such as
+# mesa-vulkan-drivers or the vendor driver stack.
+
+# Fedora
+sudo dnf install gcc-c++ cmake ninja-build git vulkan-headers vulkan-loader-devel vulkan-tools glslang
+# Also install the Vulkan driver package for your GPU, such as
+# mesa-vulkan-drivers or the vendor driver stack.
+```
+
+Optional but useful: Vulkan validation layers for local smoke runs with
+`--require-validation`.
+
 Use the CMake presets as the default entrypoint:
 
 ```bash
@@ -85,9 +120,9 @@ cmake --build --preset dev
 ctest --preset dev
 ```
 
-Shader examples require `glslangValidator` at build time. GLM is used through
-the public `cubey::math` wrapper and is resolved by CMake with `find_package`
-or a FetchContent fallback.
+GLFW, cgltf, stb, Basis Universal, and GLM fallback sources are resolved by
+CMake through `FetchContent` or `find_package` where appropriate; they are not
+the system packages that make Vulkan itself available.
 
 Optional sample assets can be fetched at configure time:
 
