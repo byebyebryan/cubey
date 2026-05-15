@@ -227,8 +227,8 @@ setup before swapchain setup, and callback forwarding.
   simulation state.
 - `RendererService` creates and destroys renderer instances. It currently owns
   `ForwardPbrRenderer3D` lifetimes while projects still provide frame plans,
-  resource tables, target state, and render settings through explicit render
-  requests.
+  `ForwardPbrRenderer3DSceneResources`, target state, and render settings
+  through explicit render requests.
 - Engine-created scenes validate renderable mesh/material handles against the
   Engine registry. Current cube examples use Engine-owned scenes, mutate scene
   transforms during `update()`, build CPU render frame plans during render, and

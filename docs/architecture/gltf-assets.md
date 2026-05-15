@@ -83,9 +83,9 @@ service:
   `ForwardPbrRenderer3D` owns the reusable shadow map, skybox, forward PBR
   pipelines, HDR scene-color target, post pipeline, scene/skybox/post material
   descriptors, depth attachment, and render graph recording for a 3D PBR view.
-  Per-frame rendering enters through `ForwardPbrRenderer3DRenderRequest`, which
-  groups target state, view plans, material/resource tables, and
-  display/environment settings.
+  Per-frame rendering enters through `ForwardPbrRenderer3DFrameRequestInfo` and
+  `ForwardPbrRenderer3DRenderRequest`, with mesh/material/deformation inputs
+  grouped as `ForwardPbrRenderer3DSceneResources`.
 
 Implementation ownership follows the same boundary: `gltf_asset.cpp` owns
 `cgltf` parsing and CPU asset construction, while `gltf_asset_io.cpp` owns URI,
@@ -121,10 +121,10 @@ directory is configured, and otherwise renders a generated PBR cube. It can use
 `lightroom_14b.hdr` sample for HDR-backed IBL and skybox rendering; without
 one, it falls back to the generated environment. It creates camera and light
 entities around imported bounds, builds shadow and scene frame plans, and hands
-those plans plus material/resource tables to an engine-owned
-`ForwardPbrRenderer3D` through `ForwardPbrRenderer3DRenderRequest` for pass
-recording. Its PBR shader writes linear HDR scene color and uses the shared
-Cubey PBR helper include for
+those plans plus scene resources to an engine-owned `ForwardPbrRenderer3D`
+through the shared forward-PBR request helper for pass recording. Its reusable
+forward-PBR shader package under `shaders/cubey/forward_pbr` writes linear HDR
+scene color and uses the shared Cubey PBR helper include for
 base-color-to-diffuse/F0 remapping, reflectance/specular factor controls,
 correlated Smith direct visibility, DFG-based IBL energy compensation, and
 indirect specular occlusion. The glTF PBR shader also evaluates the current
@@ -166,8 +166,9 @@ resources. It creates scene/render handles and app-owned resource tables, but
 it does not choose shaders, record passes, allocate pipelines, or define
 renderer-wide material policy. `RendererService` owns renderer instance
 lifetime only. `ForwardPbrRenderer3D` is a separate engine-layer renderer
-implementation: it records one PBR view using caller-provided shader paths,
-frame plans, material tables, environment resources, and render settings.
+implementation: it records one PBR view using the shared forward-PBR shader
+package, caller-provided frame plans, scene resources, environment resources,
+and render settings.
 
 The render layer exposes contracts and helpers, not a full material system.
 Texture lifetime, descriptor writes, shader selection, and environment

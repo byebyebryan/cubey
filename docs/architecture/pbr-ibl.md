@@ -27,9 +27,10 @@ Radiance HDR equirectangular environment assets:
   controls, `KHR_materials_specular` factors/textures, clearcoat, sheen,
   anisotropy, iridescence, DFG-based IBL, specular energy compensation,
   correlated Smith direct visibility, indirect specular occlusion, environment
-  rotation, exposure, and tone mapping from the
-  per-frame render request while keeping asset loading, shader paths, and
-  environment selection project-owned;
+  rotation, exposure, and tone mapping from the per-frame render request. The
+  reusable GLSL sources live in the shared forward-PBR shader package, while
+  asset loading, compiled shader output paths, and environment selection stay
+  project-owned;
 - `pbr_furnace` isolates the current IBL/specular behavior with a white sphere
   grid that sweeps roughness across columns and metallic across rows under a
   uniform white environment;

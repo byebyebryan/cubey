@@ -137,12 +137,14 @@ Reusable spatial types should stay explicit and narrow:
 - `cubey::engine` owns the current glTF scene importer and the renderer service.
   The importer maps CPU asset nodes into scene entities, registry-issued render
   handles, app-owned mesh/material resources, uploaded textures, deformation
-  resources, animation update hooks, and imported bounds. `RendererService` owns renderer instance
-  lifetime, and `ForwardPbrRenderer3D` owns the repeated shadow/skybox/PBR
-  forward pass resources, HDR scene-color target, post pass, and render-graph
-  recording. Per-frame renderer inputs are grouped into
-  `ForwardPbrRenderer3DRenderRequest`, while shader paths, asset loading,
-  environment choice, and view setup stay project-owned.
+  resources, animation update hooks, and imported bounds. `RendererService`
+  owns renderer instance lifetime, and `ForwardPbrRenderer3D` owns the repeated
+  shadow/skybox/PBR forward pass resources, HDR scene-color target, post pass,
+  render-graph recording, and shared forward-PBR shader package wiring.
+  Per-frame renderer inputs are grouped by
+  `ForwardPbrRenderer3DFrameRequestInfo`, `ForwardPbrRenderer3DSceneResources`,
+  and `ForwardPbrRenderer3DRenderRequest`, while asset loading, environment
+  choice, and view setup stay project-owned.
 - `cubey::render` owns the current generated and HDR equirectangular PBR IBL
   environment helpers for irradiance cube, GGX-prefiltered cube, and DFG LUT
   resources.

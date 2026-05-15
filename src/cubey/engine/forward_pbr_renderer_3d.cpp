@@ -82,7 +82,7 @@ void validate_forward_pbr_renderer_3d_render_request(
     }
     (void)forward_pbr_renderer_3d_frame_plans(*request.view.frame_plan);
     if (request.scene_resources.meshes == nullptr || request.scene_resources.materials == nullptr) {
-        throw std::runtime_error("forward PBR render request requires render resource tables");
+        throw std::runtime_error("forward PBR render request requires scene resources");
     }
 }
 

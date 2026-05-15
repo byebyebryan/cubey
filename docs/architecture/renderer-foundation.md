@@ -183,13 +183,16 @@ full engine architecture.
   layer above scene/render/vulkan. It owns the repeated shadow map, skybox,
   forward PBR pipelines, HDR scene-color graph target, post pipeline,
   scene/skybox/post material descriptors, depth attachment, and render-graph
-  recording for a 3D PBR view while still taking shader paths at construction
-  and material tables, frame plans, target state, and settings through a
-  per-frame render request from the project.
-- `ForwardPbrRenderer3DRenderRequest` is the first explicit renderer request
-  boundary. It groups target state, scene/view plans, resource tables, and
+  recording for a 3D PBR view. The reusable GLSL package lives under
+  `shaders/cubey/forward_pbr`; projects still decide when to create the
+  renderer and which frame plans, scene resources, targets, environment
+  settings, and display settings to submit.
+- `ForwardPbrRenderer3DFrameRequestInfo`,
+  `ForwardPbrRenderer3DSceneResources`, and `ForwardPbrRenderer3DRenderRequest`
+  are the first explicit renderer request boundary. They group target state,
+  scene/view plans, mesh/material/deformation resources, and
   display/environment settings so renderer call sites do not depend on a long
-  flat parameter list.
+  nested parameter list or raw material descriptor layout plumbing.
 - `GeneratedPbrEnvironment` creates setup-time irradiance cube,
   GGX-prefiltered radiance cube, and DFG LUT resources from either deterministic
   generated radiance or equirectangular HDR image data. The shared PBR shader
@@ -307,11 +310,12 @@ scheduling, transient aliasing, and broader material systems remain future
 work. `shadow_cube` still uses the lower-level `ShadowMapPass3D` helper
 directly, while `gltf_viewer` now creates an engine-owned
 `ForwardPbrRenderer3D` through `RendererService` and records each frame through
-`ForwardPbrRenderer3DRenderRequest` for reusable shadow, skybox, HDR scene
-color, PBR forward, and post-pass graph recording. Its implementation is split
-by responsibility: resource lifetime, graph declaration/execution, and pass
-recording stay in separate source files behind the public renderer/request
-contract. The PBR path now treats material alpha policy as render policy:
+`ForwardPbrRenderer3DFrameRequestInfo` and `ForwardPbrRenderer3DRenderRequest`
+for reusable shadow, skybox, HDR scene color, PBR forward, and post-pass graph
+recording. Its implementation is split by responsibility: resource lifetime,
+graph declaration/execution, and pass recording stay in separate source files
+behind the public renderer/request contract. The PBR path now treats material
+alpha policy as render policy:
 masked materials still write depth and cast cutout shadows through an
 alpha-tested shadow path, while blended materials render after opaque/masked
 packets with depth testing enabled and depth writes disabled. PBR blended
