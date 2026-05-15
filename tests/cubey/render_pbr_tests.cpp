@@ -463,17 +463,18 @@ void test_pbr_reflectance_helpers_match_filament_convention() {
 void test_pbr_shaders_use_filament_style_material_remap() {
     const std::filesystem::path source_root{CUBEY_SOURCE_DIR};
     const std::string pbr = read_source_file(source_root / "shaders/cubey/pbr.glsl");
-    const std::string post = read_source_file(source_root / "shaders/cubey/pbr_post.frag");
+    const std::string post =
+        read_source_file(source_root / "shaders/cubey/forward_pbr/pbr_post.frag");
     const std::string furnace =
         read_source_file(source_root / "projects/pbr_furnace/shaders/pbr_furnace.frag");
     const std::string gltf =
-        read_source_file(source_root / "projects/gltf_viewer/shaders/gltf_pbr.frag");
+        read_source_file(source_root / "shaders/cubey/forward_pbr/gltf_pbr.frag");
     const std::string gltf_vertex =
-        read_source_file(source_root / "projects/gltf_viewer/shaders/gltf_pbr.vert");
+        read_source_file(source_root / "shaders/cubey/forward_pbr/gltf_pbr.vert");
     const std::string gltf_skybox =
-        read_source_file(source_root / "projects/gltf_viewer/shaders/gltf_skybox.frag");
+        read_source_file(source_root / "shaders/cubey/forward_pbr/gltf_skybox.frag");
     const std::string gltf_shadow =
-        read_source_file(source_root / "projects/gltf_viewer/shaders/gltf_shadow_depth.frag");
+        read_source_file(source_root / "shaders/cubey/forward_pbr/gltf_shadow_depth.frag");
 
     require_contains(pbr, "cubey_pbr_diffuse_color",
                      "PBR shader should expose a baseColor-to-diffuse remap helper");

@@ -179,4 +179,8 @@ void test_material_cubes_show_real_material_variant_grid() {
                      "material_cubes should compile the PBR post/display transform shader");
     require_contains(cmake, "gltf_skybox.frag",
                      "material_cubes should compile the PBR skybox shader");
+    require_contains(cmake, "shaders/cubey/forward_pbr/gltf_pbr.frag",
+                     "material_cubes should compile the shared forward PBR material shader");
+    require_not_contains(cmake, "projects/gltf_viewer/shaders",
+                         "material_cubes should not depend on glTF viewer project shaders");
 }
