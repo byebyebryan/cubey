@@ -105,6 +105,10 @@ void validate_sampler_values(const asset::GltfAnimationSampler& sampler, std::si
     return sampler.output_values.data() + (((key * 3U) + 2U) * width);
 }
 
+[[nodiscard]] math::Quat quat_from_gltf_sample(std::span<const float> values);
+[[nodiscard]] std::vector<float> slerp_gltf_rotation(const float* first, const float* second,
+                                                     float t);
+
 [[nodiscard]] std::vector<float> sample_vector(const asset::GltfAnimationSampler& sampler,
                                                asset::GltfAnimationTargetPath path,
                                                float time_seconds) {
@@ -122,6 +126,10 @@ void validate_sampler_values(const asset::GltfAnimationSampler& sampler, std::si
 
     const float t = normalized_time(sampler.input_times, key, time_seconds);
     const float* second = key_value(sampler, key + 1U, width);
+    if (path == asset::GltfAnimationTargetPath::Rotation &&
+        sampler.interpolation == asset::GltfAnimationInterpolation::Linear) {
+        return slerp_gltf_rotation(first, second, t);
+    }
     if (sampler.interpolation != asset::GltfAnimationInterpolation::CubicSpline) {
         for (std::size_t component = 0; component < width; ++component) {
             result[component] = glm::mix(first[component], second[component], t);
@@ -159,8 +167,23 @@ void validate_sampler_values(const asset::GltfAnimationSampler& sampler, std::si
     return glm::normalize(math::Quat{values[3], values[0], values[1], values[2]});
 }
 
-void apply_channel_sample(GltfNodeAnimationSample& node_sample,
-                          asset::GltfAnimationTargetPath path, std::vector<float> values) {
+[[nodiscard]] std::vector<float> gltf_sample_from_quat(math::Quat value) {
+    const math::Quat normalized = glm::normalize(value);
+    return {normalized.x, normalized.y, normalized.z, normalized.w};
+}
+
+[[nodiscard]] std::vector<float> slerp_gltf_rotation(const float* first, const float* second,
+                                                     float t) {
+    math::Quat start = quat_from_gltf_sample(std::span<const float>{first, 4});
+    math::Quat end = quat_from_gltf_sample(std::span<const float>{second, 4});
+    if (glm::dot(start, end) < 0.0F) {
+        end = -end;
+    }
+    return gltf_sample_from_quat(glm::slerp(start, end, t));
+}
+
+void apply_channel_sample(GltfNodeAnimationSample& node_sample, asset::GltfAnimationTargetPath path,
+                          std::vector<float> values) {
     switch (path) {
     case asset::GltfAnimationTargetPath::Translation:
         node_sample.has_translation = true;
@@ -241,9 +264,9 @@ std::vector<math::Mat4> compute_gltf_joint_palette(const asset::GltfSkin& skin,
         if (joint >= node_world.size()) {
             throw std::runtime_error("skin joint index is out of range for joint palette");
         }
-        const math::Mat4 inverse_bind =
-            skin.inverse_bind_matrices.empty() ? math::Mat4{1.0F}
-                                               : skin.inverse_bind_matrices[index];
+        const math::Mat4 inverse_bind = skin.inverse_bind_matrices.empty()
+                                            ? math::Mat4{1.0F}
+                                            : skin.inverse_bind_matrices[index];
         palette.push_back(inverse_mesh_world * node_world[joint] * inverse_bind);
     }
     return palette;

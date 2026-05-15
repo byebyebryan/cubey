@@ -30,8 +30,7 @@ namespace {
     return static_cast<VkDeviceSize>(count * element_size);
 }
 
-template <typename T>
-[[nodiscard]] VkDeviceSize span_byte_size(std::span<const T> values) {
+template <typename T> [[nodiscard]] VkDeviceSize span_byte_size(std::span<const T> values) {
     return byte_size(values.size(), sizeof(T));
 }
 
@@ -56,14 +55,12 @@ template <typename T>
 template <typename T>
 [[nodiscard]] vulkan::Buffer create_host_storage_buffer(const vulkan::Device& device,
                                                         std::span<const T> initial_values) {
-    vulkan::Buffer buffer(
-        device, vulkan::BufferConfig{
-                    .size = span_byte_size(initial_values),
-                    .usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                    .memory_properties =
-                        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-                        VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                });
+    vulkan::Buffer buffer(device, vulkan::BufferConfig{
+                                      .size = span_byte_size(initial_values),
+                                      .usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                                      .memory_properties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+                                                           VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                                  });
     buffer.upload(initial_values.data(), span_byte_size(initial_values));
     return buffer;
 }
@@ -99,8 +96,40 @@ void append_vec3(std::vector<float>& values, math::Vec3 value) {
     return values[vertex_index];
 }
 
-[[nodiscard]] std::vector<float>
-pack_morph_targets(const asset::GltfMeshPrimitive& primitive) {
+void validate_skin_influences(const asset::GltfMeshPrimitive& primitive,
+                              std::uint32_t joint_count) {
+    if (joint_count == 0) {
+        throw std::runtime_error("glTF skin requires at least one joint");
+    }
+
+    for (const asset::GltfVertex& vertex : primitive.vertices) {
+        float weight_sum = 0.0F;
+        for (int component = 0; component < 4; ++component) {
+            const float weight = vertex.weights0[component];
+            if (weight < 0.0F) {
+                throw std::runtime_error("glTF skin influence weights must be non-negative");
+            }
+            weight_sum += weight;
+            if (weight > 0.0F &&
+                vertex.joints0[static_cast<std::size_t>(component)] >= joint_count) {
+                throw std::runtime_error("glTF skin influence joint index is out of range");
+            }
+        }
+        if (weight_sum <= 1.0e-6F) {
+            throw std::runtime_error("glTF skin influence weights must be nonzero");
+        }
+    }
+}
+
+[[nodiscard]] math::Vec4 normalized_skin_weights(math::Vec4 weights) {
+    const float sum = weights.x + weights.y + weights.z + weights.w;
+    if (sum <= 1.0e-6F) {
+        throw std::runtime_error("glTF skin influence weights must be nonzero");
+    }
+    return weights / sum;
+}
+
+[[nodiscard]] std::vector<float> pack_morph_targets(const asset::GltfMeshPrimitive& primitive) {
     if (primitive.morph_targets.empty()) {
         return {0.0F};
     }
@@ -119,10 +148,12 @@ pack_morph_targets(const asset::GltfMeshPrimitive& primitive) {
 }
 
 [[nodiscard]] std::vector<GltfSkinInfluence>
-pack_skin_influences(const asset::GltfMeshPrimitive& primitive, bool has_skin) {
+pack_skin_influences(const asset::GltfMeshPrimitive& primitive, bool has_skin,
+                     std::uint32_t joint_count) {
     if (!has_skin) {
         return {GltfSkinInfluence{}};
     }
+    validate_skin_influences(primitive, joint_count);
 
     std::vector<GltfSkinInfluence> result;
     result.reserve(primitive.vertices.size());
@@ -135,15 +166,21 @@ pack_skin_influences(const asset::GltfMeshPrimitive& primitive, bool has_skin) {
                     static_cast<std::uint32_t>(vertex.joints0[2]),
                     static_cast<std::uint32_t>(vertex.joints0[3]),
                 },
-            .weights = vertex.weights0,
+            .weights = normalized_skin_weights(vertex.weights0),
         });
     }
     return result;
 }
 
-[[nodiscard]] std::vector<float>
-default_morph_weights(const asset::GltfAsset& asset, const GltfDeformablePrimitive3D& primitive,
-                      std::uint32_t morph_target_count) {
+void require_morph_weight_count(std::span<const float> weights, std::uint32_t morph_target_count) {
+    if (!weights.empty() && weights.size() != morph_target_count) {
+        throw std::runtime_error("glTF morph weight count must match primitive morph target count");
+    }
+}
+
+[[nodiscard]] std::vector<float> default_morph_weights(const asset::GltfAsset& asset,
+                                                       const GltfDeformablePrimitive3D& primitive,
+                                                       std::uint32_t morph_target_count) {
     std::vector<float> weights(std::max(1U, morph_target_count), 0.0F);
     if (morph_target_count == 0) {
         return weights;
@@ -152,16 +189,16 @@ default_morph_weights(const asset::GltfAsset& asset, const GltfDeformablePrimiti
     const asset::GltfNode& node = asset.nodes.at(primitive.node_index);
     const asset::GltfMesh& mesh = asset.meshes.at(primitive.mesh_index);
     const std::vector<float>& source_weights = node.weights.empty() ? mesh.weights : node.weights;
-    const std::size_t copy_count =
-        std::min<std::size_t>(source_weights.size(), morph_target_count);
+    require_morph_weight_count(source_weights, morph_target_count);
+    const std::size_t copy_count = std::min<std::size_t>(source_weights.size(), morph_target_count);
     std::copy_n(source_weights.begin(), copy_count, weights.begin());
     return weights;
 }
 
-[[nodiscard]] std::vector<float>
-frame_morph_weights(const asset::GltfAsset& asset, const GltfDeformablePrimitive3D& primitive,
-                    std::uint32_t morph_target_count,
-                    const animation::GltfAnimationSample* sample) {
+[[nodiscard]] std::vector<float> frame_morph_weights(const asset::GltfAsset& asset,
+                                                     const GltfDeformablePrimitive3D& primitive,
+                                                     std::uint32_t morph_target_count,
+                                                     const animation::GltfAnimationSample* sample) {
     std::vector<float> weights = default_morph_weights(asset, primitive, morph_target_count);
     if (sample == nullptr || primitive.node_index >= sample->nodes.size()) {
         return weights;
@@ -171,6 +208,7 @@ frame_morph_weights(const asset::GltfAsset& asset, const GltfDeformablePrimitive
     if (!node_sample.has_weights) {
         return weights;
     }
+    require_morph_weight_count(node_sample.weights, morph_target_count);
     const std::size_t copy_count =
         std::min<std::size_t>(node_sample.weights.size(), morph_target_count);
     std::copy_n(node_sample.weights.begin(), copy_count, weights.begin());
@@ -181,9 +219,9 @@ frame_morph_weights(const asset::GltfAsset& asset, const GltfDeformablePrimitive
     return std::vector<math::Mat4>(std::max(1U, joint_count), math::Mat4{1.0F});
 }
 
-[[nodiscard]] std::vector<math::Mat4>
-node_world_matrices(const asset::GltfAsset& asset, const GltfSceneImportResult& result,
-                    const SceneReadView& scene_view) {
+[[nodiscard]] std::vector<math::Mat4> node_world_matrices(const asset::GltfAsset& asset,
+                                                          const GltfSceneImportResult& result,
+                                                          const SceneReadView& scene_view) {
     std::vector<math::Mat4> matrices(asset.nodes.size(), math::Mat4{1.0F});
     const std::size_t node_count = std::min(asset.nodes.size(), result.node_entities.size());
     for (std::size_t node_index = 0; node_index < node_count; ++node_index) {
@@ -251,8 +289,7 @@ void update_deformation_descriptors(const vulkan::Device& device,
                             resource.morph_weights.at(frame_index).handle(),
                             resource.morph_weights.at(frame_index).size())
             .storage_buffer(set, binding(render::GpuDeformationBinding::SkinInfluences),
-                            resource.skin_influences->handle(),
-                            resource.skin_influences->size())
+                            resource.skin_influences->handle(), resource.skin_influences->size())
             .storage_buffer(set, binding(render::GpuDeformationBinding::JointPalette),
                             resource.joint_palettes.at(frame_index).handle(),
                             resource.joint_palettes.at(frame_index).size())
@@ -290,8 +327,8 @@ void create_deformation_primitive_resources(const vulkan::Device& device, vulkan
         if (primitive_record.skin_index >= asset.skins.size()) {
             throw std::runtime_error("glTF deformation primitive skin index is out of range");
         }
-        joint_count = static_cast<std::uint32_t>(
-            asset.skins[primitive_record.skin_index].joints.size());
+        joint_count =
+            static_cast<std::uint32_t>(asset.skins[primitive_record.skin_index].joints.size());
     }
 
     GltfDeformationPrimitiveResources& resource = resources.deformation.primitives.emplace_back();
@@ -306,11 +343,10 @@ void create_deformation_primitive_resources(const vulkan::Device& device, vulkan
     const std::vector<render::PbrVertex> base_vertices = to_pbr_vertices(primitive.vertices);
     const std::vector<float> morph_targets = pack_morph_targets(primitive);
     const std::vector<GltfSkinInfluence> skin_influences =
-        pack_skin_influences(primitive, has_skin);
-    resource.base_vertices = upload_storage_buffer(gpu, std::span<const render::PbrVertex>{
-                                                            base_vertices});
-    resource.morph_targets =
-        upload_storage_buffer(gpu, std::span<const float>{morph_targets});
+        pack_skin_influences(primitive, has_skin, joint_count);
+    resource.base_vertices =
+        upload_storage_buffer(gpu, std::span<const render::PbrVertex>{base_vertices});
+    resource.morph_targets = upload_storage_buffer(gpu, std::span<const float>{morph_targets});
     resource.skin_influences =
         upload_storage_buffer(gpu, std::span<const GltfSkinInfluence>{skin_influences});
 
@@ -322,8 +358,8 @@ void create_deformation_primitive_resources(const vulkan::Device& device, vulkan
     resource.joint_palettes.reserve(config.frame_slot_count);
     resource.output_meshes.reserve(config.frame_slot_count);
     for (std::uint32_t frame_index = 0; frame_index < config.frame_slot_count; ++frame_index) {
-        resource.morph_weights.push_back(create_host_storage_buffer(
-            device, std::span<const float>{initial_weights}));
+        resource.morph_weights.push_back(
+            create_host_storage_buffer(device, std::span<const float>{initial_weights}));
         resource.joint_palettes.push_back(
             create_host_storage_buffer(device, std::span<const math::Mat4>{initial_joints}));
         resource.output_meshes.emplace_back(
@@ -367,9 +403,8 @@ void create_deformation_resources(const vulkan::Device& device, vulkan::GpuRunti
         resources.deformation.primitives.front().descriptor_sets->layout(),
     };
     resources.deformation.pipeline = std::make_unique<render::ComputePipelineResource>(
-        device,
-        render::gpu_deformation_pipeline_config(config.deformation_compute_shader,
-                                                descriptor_layouts));
+        device, render::gpu_deformation_pipeline_config(config.deformation_compute_shader,
+                                                        descriptor_layouts));
 }
 
 std::vector<render::GpuDeformationCommand>
@@ -385,8 +420,7 @@ gltf_deformation_commands_for_frame(const GltfSceneImportResources& resources,
 
     std::vector<render::GpuDeformationCommand> commands;
     commands.reserve(resources.deformation.primitives.size());
-    for (const GltfDeformationPrimitiveResources& resource :
-         resources.deformation.primitives) {
+    for (const GltfDeformationPrimitiveResources& resource : resources.deformation.primitives) {
         if (resource.descriptor_sets == nullptr) {
             throw std::runtime_error("glTF deformation command requires descriptor sets");
         }
@@ -408,29 +442,25 @@ gltf_deformation_commands_for_frame(const GltfSceneImportResources& resources,
 void update_gltf_deformation_frame(GltfSceneImportResources& resources,
                                    const asset::GltfAsset& asset,
                                    const GltfSceneImportResult& result,
-                                   const SceneReadView& scene_view,
-                                   render::FrameSlot frame_slot,
+                                   const SceneReadView& scene_view, render::FrameSlot frame_slot,
                                    const animation::GltfAnimationSample* sample) {
     if (resources.deformation.primitives.empty()) {
         return;
     }
     render::validate_frame_slot(frame_slot);
 
-    const std::vector<math::Mat4> world_matrices =
-        node_world_matrices(asset, result, scene_view);
+    const std::vector<math::Mat4> world_matrices = node_world_matrices(asset, result, scene_view);
     for (GltfDeformationPrimitiveResources& resource : resources.deformation.primitives) {
         if (frame_slot.count != resource.morph_weights.size() ||
             frame_slot.count != resource.joint_palettes.size()) {
             throw std::runtime_error("glTF deformation frame slot count does not match resources");
         }
 
-        const std::vector<float> weights =
-            frame_morph_weights(asset, resource.primitive,
-                                resource.push_constants.morph_target_count, sample);
+        const std::vector<float> weights = frame_morph_weights(
+            asset, resource.primitive, resource.push_constants.morph_target_count, sample);
         upload_frame_morph_weights(resource, frame_slot, weights);
 
-        std::vector<math::Mat4> joints =
-            default_joint_palette(resource.push_constants.joint_count);
+        std::vector<math::Mat4> joints = default_joint_palette(resource.push_constants.joint_count);
         if (deformation_has_skin(resource.primitive.deformation)) {
             const asset::GltfSkin& skin = asset.skins.at(resource.primitive.skin_index);
             joints = animation::compute_gltf_joint_palette(skin, world_matrices,

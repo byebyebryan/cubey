@@ -15,6 +15,7 @@
 #include <cstring>
 #include <filesystem>
 #include <memory>
+#include <optional>
 #include <span>
 #include <stdexcept>
 #include <string_view>
@@ -503,7 +504,11 @@ read_u16_vec4_accessor_values(const cgltf_accessor* accessor, const char* label)
     };
 }
 
-void generate_tangents(GltfMeshPrimitive& primitive) {
+[[nodiscard]] math::Vec2 tangent_texcoord(const GltfVertex& vertex, std::uint32_t texcoord_set) {
+    return texcoord_set == 1U ? vertex.texcoord1 : vertex.texcoord0;
+}
+
+void generate_tangents(GltfMeshPrimitive& primitive, std::uint32_t texcoord_set) {
     std::vector<math::Vec3> tangent_accum(primitive.vertices.size(), math::Vec3{0.0F, 0.0F, 0.0F});
     std::vector<math::Vec3> bitangent_accum(primitive.vertices.size(),
                                             math::Vec3{0.0F, 0.0F, 0.0F});
@@ -520,8 +525,10 @@ void generate_tangents(GltfMeshPrimitive& primitive) {
         const GltfVertex& v2 = primitive.vertices[i2];
         const math::Vec3 edge1 = v1.position - v0.position;
         const math::Vec3 edge2 = v2.position - v0.position;
-        const math::Vec2 delta_uv1 = v1.texcoord0 - v0.texcoord0;
-        const math::Vec2 delta_uv2 = v2.texcoord0 - v0.texcoord0;
+        const math::Vec2 delta_uv1 =
+            tangent_texcoord(v1, texcoord_set) - tangent_texcoord(v0, texcoord_set);
+        const math::Vec2 delta_uv2 =
+            tangent_texcoord(v2, texcoord_set) - tangent_texcoord(v0, texcoord_set);
         const float determinant = delta_uv1.x * delta_uv2.y - delta_uv1.y * delta_uv2.x;
         if (std::abs(determinant) < 1.0e-6F) {
             continue;
@@ -695,6 +702,21 @@ void require_supported_morph_target_attributes(const cgltf_morph_target& target)
     };
 }
 
+[[nodiscard]] std::uint32_t normal_texture_texcoord_set(const cgltf_primitive& primitive) {
+    if (primitive.material == nullptr || primitive.material->normal_texture.texture == nullptr) {
+        return 0U;
+    }
+    const cgltf_texture_view& view = primitive.material->normal_texture;
+    cgltf_int texcoord = view.texcoord;
+    if (view.has_transform != 0 && view.transform.has_texcoord != 0) {
+        texcoord = view.transform.texcoord;
+    }
+    if (texcoord < 0 || texcoord > 1) {
+        throw gltf_error("normal texture coordinate sets above TEXCOORD_1 are not supported");
+    }
+    return static_cast<std::uint32_t>(texcoord);
+}
+
 void expand_bounds_for_morph_targets(GltfMeshPrimitive& primitive) {
     if (primitive.vertices.empty() || primitive.morph_targets.empty()) {
         return;
@@ -846,8 +868,11 @@ void expand_bounds_for_morph_targets(GltfMeshPrimitive& primitive) {
     if (normals == nullptr) {
         generate_flat_normals(result);
     }
-    if (tangents == nullptr && config.generate_missing_tangents && texcoord0 != nullptr) {
-        generate_tangents(result);
+    const std::uint32_t tangent_texcoord_set = normal_texture_texcoord_set(primitive);
+    const bool has_tangent_texcoords =
+        tangent_texcoord_set == 1U ? texcoord1 != nullptr : texcoord0 != nullptr;
+    if (tangents == nullptr && config.generate_missing_tangents && has_tangent_texcoords) {
+        generate_tangents(result, tangent_texcoord_set);
     }
     result.local_bounds = bounds_for_positions(result.vertices);
     expand_bounds_for_morph_targets(result);
@@ -994,14 +1019,79 @@ load_animation_interpolation(cgltf_interpolation_type interpolation) {
     }
 }
 
-[[nodiscard]] GltfAnimationSampler load_animation_sampler(const cgltf_animation_sampler& sampler) {
-    require_float_accessor(sampler.input, cgltf_type_scalar, "animation input");
-    if (sampler.output == nullptr) {
+[[nodiscard]] bool normalized_signed_animation_accessor(const cgltf_accessor* accessor) noexcept {
+    return accessor != nullptr && accessor->normalized != 0 &&
+           (accessor->component_type == cgltf_component_type_r_8 ||
+            accessor->component_type == cgltf_component_type_r_16);
+}
+
+[[nodiscard]] bool normalized_unsigned_animation_accessor(const cgltf_accessor* accessor) noexcept {
+    return accessor != nullptr && accessor->normalized != 0 &&
+           (accessor->component_type == cgltf_component_type_r_8u ||
+            accessor->component_type == cgltf_component_type_r_16u);
+}
+
+void require_animation_output_component_type(const cgltf_accessor* accessor,
+                                             GltfAnimationTargetPath path) {
+    if (accessor->component_type == cgltf_component_type_r_32f) {
+        return;
+    }
+    if (path == GltfAnimationTargetPath::Rotation &&
+        normalized_signed_animation_accessor(accessor)) {
+        return;
+    }
+    if (path == GltfAnimationTargetPath::Weights &&
+        normalized_unsigned_animation_accessor(accessor)) {
+        return;
+    }
+    throw gltf_error("animation output accessor has unsupported component type for target path");
+}
+
+[[nodiscard]] cgltf_size animation_output_factor(GltfAnimationInterpolation interpolation) {
+    return interpolation == GltfAnimationInterpolation::CubicSpline ? 3U : 1U;
+}
+
+void require_animation_output_shape(const cgltf_animation_sampler& source,
+                                    GltfAnimationInterpolation interpolation,
+                                    GltfAnimationTargetPath path) {
+    if (source.output == nullptr) {
         throw gltf_error("animation output accessor is missing");
     }
-    if (sampler.output->component_type != cgltf_component_type_r_32f) {
-        throw gltf_error("animation output accessor must use FLOAT components");
+    require_animation_output_component_type(source.output, path);
+    const cgltf_size input_count = source.input != nullptr ? source.input->count : 0U;
+    const cgltf_size factor = animation_output_factor(interpolation);
+    const cgltf_size output_count = source.output->count;
+    if (input_count == 0U) {
+        throw gltf_error("animation input accessor must contain at least one key");
     }
+    switch (path) {
+    case GltfAnimationTargetPath::Translation:
+    case GltfAnimationTargetPath::Scale:
+        if (source.output->type != cgltf_type_vec3 || output_count != input_count * factor) {
+            throw gltf_error("animation translation/scale output must be a matching VEC3 accessor");
+        }
+        return;
+    case GltfAnimationTargetPath::Rotation:
+        if (source.output->type != cgltf_type_vec4 || output_count != input_count * factor) {
+            throw gltf_error("animation rotation output must be a matching VEC4 accessor");
+        }
+        return;
+    case GltfAnimationTargetPath::Weights:
+        if (source.output->type != cgltf_type_scalar || output_count == 0U ||
+            output_count % (input_count * factor) != 0U) {
+            throw gltf_error("animation weights output must be matching scalar samples");
+        }
+        return;
+    }
+    throw gltf_error("unsupported animation target path");
+}
+
+[[nodiscard]] GltfAnimationSampler load_animation_sampler(const cgltf_animation_sampler& sampler,
+                                                          GltfAnimationTargetPath target_path) {
+    require_float_accessor(sampler.input, cgltf_type_scalar, "animation input");
+    const GltfAnimationInterpolation interpolation =
+        load_animation_interpolation(sampler.interpolation);
+    require_animation_output_shape(sampler, interpolation, target_path);
     const cgltf_size component_count = cgltf_num_components(sampler.output->type);
     if (component_count == 0) {
         throw gltf_error("animation output accessor has unsupported type");
@@ -1011,7 +1101,7 @@ load_animation_interpolation(cgltf_interpolation_type interpolation) {
     }
 
     return {
-        .interpolation = load_animation_interpolation(sampler.interpolation),
+        .interpolation = interpolation,
         .input_times = read_float_accessor_values(sampler.input, 1, "animation input"),
         .output_values =
             read_float_accessor_values(sampler.output, component_count, "animation output"),
@@ -1025,9 +1115,34 @@ load_animation_interpolation(cgltf_interpolation_type interpolation) {
         .label = label_or_empty(animation.name),
     };
 
+    std::vector<std::optional<GltfAnimationTargetPath>> sampler_targets(animation.samplers_count);
+    for (cgltf_size i = 0; i < animation.channels_count; ++i) {
+        const cgltf_animation_channel& channel = animation.channels[i];
+        const std::uint32_t sampler_index = pointer_index(
+            channel.sampler, animation.samplers, animation.samplers_count, "animation sampler");
+        const GltfAnimationTargetPath target_path = load_animation_target_path(channel.target_path);
+        std::optional<GltfAnimationTargetPath>& prior = sampler_targets[sampler_index];
+        if (prior.has_value()) {
+            const bool compatible = prior.value() == target_path ||
+                                    ((prior.value() == GltfAnimationTargetPath::Translation ||
+                                      prior.value() == GltfAnimationTargetPath::Scale) &&
+                                     (target_path == GltfAnimationTargetPath::Translation ||
+                                      target_path == GltfAnimationTargetPath::Scale));
+            if (!compatible) {
+                throw gltf_error("animation sampler is shared across incompatible target paths");
+            }
+            continue;
+        }
+        prior = target_path;
+    }
+
     result.samplers.reserve(animation.samplers_count);
     for (cgltf_size i = 0; i < animation.samplers_count; ++i) {
-        GltfAnimationSampler sampler = load_animation_sampler(animation.samplers[i]);
+        if (!sampler_targets[i].has_value()) {
+            throw gltf_error("animation sampler is not referenced by any channel");
+        }
+        GltfAnimationSampler sampler =
+            load_animation_sampler(animation.samplers[i], sampler_targets[i].value());
         if (!sampler.input_times.empty()) {
             result.duration_seconds =
                 std::max(result.duration_seconds,
@@ -1051,15 +1166,9 @@ load_animation_interpolation(cgltf_interpolation_type interpolation) {
 
 [[nodiscard]] bool supports_required_extension(std::string_view extension) noexcept {
     static constexpr std::array<std::string_view, 10> kSupportedRequiredExtensions{
-        "KHR_materials_emissive_strength",
-        "KHR_materials_ior",
-        "KHR_materials_specular",
-        "KHR_texture_transform",
-        "KHR_texture_basisu",
-        "KHR_materials_unlit",
-        "KHR_materials_clearcoat",
-        "KHR_materials_sheen",
-        "KHR_materials_anisotropy",
+        "KHR_materials_emissive_strength", "KHR_materials_ior",   "KHR_materials_specular",
+        "KHR_texture_transform",           "KHR_texture_basisu",  "KHR_materials_unlit",
+        "KHR_materials_clearcoat",         "KHR_materials_sheen", "KHR_materials_anisotropy",
         "KHR_materials_iridescence",
     };
     return std::ranges::find(kSupportedRequiredExtensions, extension) !=

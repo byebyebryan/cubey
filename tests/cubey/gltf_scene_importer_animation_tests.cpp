@@ -4,7 +4,11 @@
 
 #include <glm/gtc/constants.hpp>
 
+#include <filesystem>
 #include <stdexcept>
+#include <string>
+
+#include "source_file_test_helpers.h"
 
 namespace {
 
@@ -95,8 +99,27 @@ void test_gltf_scene_importer_classifies_deformable_primitives() {
                 cubey::GltfPrimitiveDeformationKind::MorphSkin,
             "skinned morph primitive should require combined deformation");
 
-    require(!cubey::gltf_primitive_requires_deformation(cubey::GltfPrimitiveDeformationKind::Static),
-            "static primitive should not require deformation resources");
+    require(
+        !cubey::gltf_primitive_requires_deformation(cubey::GltfPrimitiveDeformationKind::Static),
+        "static primitive should not require deformation resources");
     require(cubey::gltf_primitive_requires_deformation(cubey::GltfPrimitiveDeformationKind::Skin),
             "skinned primitive should require deformation resources");
+}
+
+void test_gltf_scene_importer_validates_deformation_inputs_and_culling_policy() {
+    const std::filesystem::path root = CUBEY_SOURCE_DIR;
+    const std::string deformation = cubey::tests::read_source_file(
+        root / "src/cubey/engine/gltf_scene_importer_deformation.cpp");
+    const std::string importer =
+        cubey::tests::read_source_file(root / "src/cubey/engine/gltf_scene_importer.cpp");
+
+    cubey::tests::require_contains(
+        deformation, "validate_skin_influences",
+        "glTF deformation import should reject unusable joint/weight data before upload");
+    cubey::tests::require_contains(
+        deformation, "morph weight count must match primitive morph target count",
+        "glTF deformation import should reject malformed morph weight arrays");
+    cubey::tests::require_contains(
+        importer, ".culling_enabled = !has_deformable_primitive",
+        "glTF deformable renderables should opt out of static bounds frustum culling");
 }

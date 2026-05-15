@@ -31,12 +31,22 @@ layout(location = 5) out vec2 frag_uv1;
 layout(location = 6) out vec4 frag_color0;
 layout(location = 7) out vec4 frag_shadow_position;
 
+vec3 safeNormalize(vec3 value, vec3 fallback) {
+    const float length_squared = dot(value, value);
+    return length_squared > 1.0e-10 ? value * inversesqrt(length_squared) : fallback;
+}
+
+vec3 orthogonalizeTangent(vec3 tangent, vec3 normal) {
+    return safeNormalize(tangent - normal * dot(normal, tangent), vec3(1.0, 0.0, 0.0));
+}
+
 void main() {
     vec4 world_position = push_constants.model * vec4(in_position, 1.0);
+    mat3 model = mat3(push_constants.model);
     mat3 normal_matrix = transpose(inverse(mat3(push_constants.model)));
-    vec3 normal = normalize(normal_matrix * in_normal);
-    vec3 tangent = normalize(normal_matrix * in_tangent.xyz);
-    vec3 bitangent = normalize(cross(normal, tangent) * in_tangent.w);
+    vec3 normal = safeNormalize(normal_matrix * in_normal, vec3(0.0, 1.0, 0.0));
+    vec3 tangent = orthogonalizeTangent(mat3(model) * in_tangent.xyz, normal);
+    vec3 bitangent = safeNormalize(cross(normal, tangent) * in_tangent.w, vec3(0.0, 0.0, 1.0));
 
     gl_Position = scene.view_projection * world_position;
     frag_world_position = world_position.xyz;

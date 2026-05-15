@@ -25,16 +25,14 @@ void require_close(float value, float expected, const char* message) {
     }
 }
 
-void require_vec3_close(cubey::math::Vec3 value, cubey::math::Vec3 expected,
-                        const char* message) {
+void require_vec3_close(cubey::math::Vec3 value, cubey::math::Vec3 expected, const char* message) {
     require_close(value.x, expected.x, message);
     require_close(value.y, expected.y, message);
     require_close(value.z, expected.z, message);
 }
 
-cubey::asset::GltfAnimationSampler linear_sampler(std::vector<float> times,
-                                                  std::vector<float> values,
-                                                  std::uint32_t components) {
+cubey::asset::GltfAnimationSampler
+linear_sampler(std::vector<float> times, std::vector<float> values, std::uint32_t components) {
     return {
         .interpolation = cubey::asset::GltfAnimationInterpolation::Linear,
         .input_times = std::move(times),
@@ -61,9 +59,8 @@ void test_gltf_animation_samples_linear_translation() {
     cubey::asset::GltfAsset asset;
     asset.nodes.resize(1);
     cubey::asset::GltfAnimation animation;
-    animation.samplers.push_back(linear_sampler({0.0F, 1.0F}, {0.0F, 0.0F, 0.0F, 2.0F, 4.0F,
-                                                               6.0F},
-                                                3));
+    animation.samplers.push_back(
+        linear_sampler({0.0F, 1.0F}, {0.0F, 0.0F, 0.0F, 2.0F, 4.0F, 6.0F}, 3));
     animation.channels.push_back({
         .sampler_index = 0,
         .node_index = 0,
@@ -106,13 +103,13 @@ void test_gltf_animation_samples_step_scale() {
 void test_gltf_animation_slerps_rotation_and_normalizes() {
     cubey::asset::GltfAsset asset;
     asset.nodes.resize(1);
+    const cubey::math::Quat start =
+        cubey::math::angle_axis_quat(glm::half_pi<float>(), {1.0F, 0.0F, 0.0F});
     const cubey::math::Quat end =
         cubey::math::angle_axis_quat(glm::half_pi<float>(), {0.0F, 1.0F, 0.0F});
     cubey::asset::GltfAnimation animation;
-    animation.samplers.push_back(linear_sampler({0.0F, 1.0F},
-                                                {0.0F, 0.0F, 0.0F, 1.0F, end.x, end.y, end.z,
-                                                 end.w},
-                                                4));
+    animation.samplers.push_back(linear_sampler(
+        {0.0F, 1.0F}, {start.x, start.y, start.z, start.w, end.x, end.y, end.z, end.w}, 4));
     animation.channels.push_back({
         .sampler_index = 0,
         .node_index = 0,
@@ -125,6 +122,15 @@ void test_gltf_animation_slerps_rotation_and_normalizes() {
     require(sample.nodes[0].has_rotation, "sample should mark rotation as present");
     require_close(glm::length(sample.nodes[0].rotation), 1.0F,
                   "sampled rotation should be normalized");
+    const cubey::math::Quat expected = glm::slerp(start, end, 0.5F);
+    require_close(sample.nodes[0].rotation.x, expected.x,
+                  "linear rotation animation should use spherical interpolation x");
+    require_close(sample.nodes[0].rotation.y, expected.y,
+                  "linear rotation animation should use spherical interpolation y");
+    require_close(sample.nodes[0].rotation.z, expected.z,
+                  "linear rotation animation should use spherical interpolation z");
+    require_close(sample.nodes[0].rotation.w, expected.w,
+                  "linear rotation animation should use spherical interpolation w");
 }
 
 void test_gltf_animation_samples_cubic_translation() {
@@ -136,12 +142,24 @@ void test_gltf_animation_samples_cubic_translation() {
         .input_times = {0.0F, 1.0F},
         .output_values =
             {
-                0.0F, 0.0F, 0.0F, // key 0 in tangent
-                0.0F, 0.0F, 0.0F, // key 0 value
-                0.0F, 0.0F, 0.0F, // key 0 out tangent
-                0.0F, 0.0F, 0.0F, // key 1 in tangent
-                2.0F, 0.0F, 0.0F, // key 1 value
-                0.0F, 0.0F, 0.0F, // key 1 out tangent
+                0.0F,
+                0.0F,
+                0.0F, // key 0 in tangent
+                0.0F,
+                0.0F,
+                0.0F, // key 0 value
+                0.0F,
+                0.0F,
+                0.0F, // key 0 out tangent
+                0.0F,
+                0.0F,
+                0.0F, // key 1 in tangent
+                2.0F,
+                0.0F,
+                0.0F, // key 1 value
+                0.0F,
+                0.0F,
+                0.0F, // key 1 out tangent
             },
         .component_count = 3,
     });

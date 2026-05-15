@@ -95,6 +95,19 @@ void writeOutputVertex(uint vertex_index, DeformedVertex vertex) {
     output_vertices[base + 17u] = vertex.color0.w;
 }
 
+vec3 safeNormalize(vec3 value, vec3 fallback) {
+    const float length_squared = dot(value, value);
+    return length_squared > 1.0e-10 ? value * inversesqrt(length_squared) : fallback;
+}
+
+vec3 orthogonalizeTangent(vec3 tangent, vec3 normal) {
+    return safeNormalize(tangent - normal * dot(normal, tangent), vec3(1.0, 0.0, 0.0));
+}
+
+mat3 skinNormalMatrix(mat4 skin_matrix) {
+    return transpose(inverse(mat3(skin_matrix)));
+}
+
 void applyMorphTargets(inout DeformedVertex vertex, uint vertex_index) {
     if ((pc.flags & kFlagMorph) == 0u) {
         return;
@@ -115,8 +128,8 @@ void applyMorphTargets(inout DeformedVertex vertex, uint vertex_index) {
                                             morph_targets[target_base + 8u]);
     }
 
-    vertex.normal = normalize(vertex.normal);
-    vertex.tangent.xyz = normalize(vertex.tangent.xyz);
+    vertex.normal = safeNormalize(vertex.normal, vec3(0.0, 1.0, 0.0));
+    vertex.tangent.xyz = orthogonalizeTangent(vertex.tangent.xyz, vertex.normal);
 }
 
 void applySkinning(inout DeformedVertex vertex, uint vertex_index) {
@@ -132,9 +145,11 @@ void applySkinning(inout DeformedVertex vertex, uint vertex_index) {
     }
 
     vertex.position = (skin_matrix * vec4(vertex.position, 1.0)).xyz;
-    mat3 normal_matrix = mat3(skin_matrix);
-    vertex.normal = normalize(normal_matrix * vertex.normal);
-    vertex.tangent.xyz = normalize(normal_matrix * vertex.tangent.xyz);
+    const mat3 linear_skin_matrix = mat3(skin_matrix);
+    const mat3 normal_matrix = skinNormalMatrix(skin_matrix);
+    vertex.normal = safeNormalize(normal_matrix * vertex.normal, vec3(0.0, 1.0, 0.0));
+    vertex.tangent.xyz = orthogonalizeTangent(linear_skin_matrix * vertex.tangent.xyz,
+                                              vertex.normal);
 }
 
 void main() {

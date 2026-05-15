@@ -36,6 +36,7 @@ void test_forward_pbr_renderer_3d_shadow_vertex_layout_matches_pbr_vertices();
 void test_forward_pbr_renderer_3d_skybox_uniforms_pack_inverse_view_camera_environment_and_display();
 void test_gltf_scene_importer_applies_rigid_animation_samples_to_imported_nodes();
 void test_gltf_scene_importer_classifies_deformable_primitives();
+void test_gltf_scene_importer_validates_deformation_inputs_and_culling_policy();
 void test_pointer_drag_tracks_active_cursor_and_accumulated_delta();
 void test_project_context_exposes_async_runtime_services();
 void test_project_context_exposes_optional_gpu_services();
@@ -90,6 +91,7 @@ std::span<const TestCase> engine_host_input_test_cases() {
         CUBEY_TEST(test_forward_pbr_renderer_3d_post_uniforms_pack_display_transform),
         CUBEY_TEST(test_gltf_scene_importer_applies_rigid_animation_samples_to_imported_nodes),
         CUBEY_TEST(test_gltf_scene_importer_classifies_deformable_primitives),
+        CUBEY_TEST(test_gltf_scene_importer_validates_deformation_inputs_and_culling_policy),
         CUBEY_TEST(test_headless_png_host_validates_capture_shape),
         CUBEY_TEST(test_host_frame_stats_publish_window_title_metrics),
         CUBEY_TEST(test_input_state_tracks_key_and_button_edges),

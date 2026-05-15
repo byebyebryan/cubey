@@ -207,6 +207,7 @@ Entity create_node(Engine& engine, SceneTransaction& transaction, const asset::G
         }
         std::vector<RenderablePrimitive3D> primitives;
         BoundsAccumulator bounds;
+        bool has_deformable_primitive = false;
         for (const GltfImportedPrimitive3D& primitive :
              resources.mesh_primitives[node.mesh_index]) {
             render::MeshHandle render_mesh = primitive.mesh;
@@ -215,6 +216,7 @@ Entity create_node(Engine& engine, SceneTransaction& transaction, const asset::G
             const GltfPrimitiveDeformationKind deformation =
                 gltf_primitive_deformation_kind(node, asset_primitive);
             if (gltf_primitive_requires_deformation(deformation)) {
+                has_deformable_primitive = true;
                 const render::MeshHandle output_mesh = engine.render_resources().create_mesh(
                     config.label_prefix + ".node." + std::to_string(node_index) + ".mesh." +
                     std::to_string(node.mesh_index) + ".primitive." +
@@ -245,6 +247,7 @@ Entity create_node(Engine& engine, SceneTransaction& transaction, const asset::G
                                                Renderable3D{
                                                    .primitives = std::move(primitives),
                                                    .local_bounds = bounds.bounds_or_default(),
+                                                   .culling_enabled = !has_deformable_primitive,
                                                });
         }
     }

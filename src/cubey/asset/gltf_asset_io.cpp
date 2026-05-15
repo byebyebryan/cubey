@@ -40,8 +40,7 @@ bool starts_with(std::string_view value, std::string_view prefix) noexcept {
 }
 
 [[nodiscard]] bool ends_with(std::string_view value, std::string_view suffix) noexcept {
-    return value.size() >= suffix.size() &&
-           value.substr(value.size() - suffix.size()) == suffix;
+    return value.size() >= suffix.size() && value.substr(value.size() - suffix.size()) == suffix;
 }
 
 [[nodiscard]] std::uint8_t hex_value(char value) {
@@ -57,8 +56,7 @@ bool starts_with(std::string_view value, std::string_view prefix) noexcept {
     throw gltf_error("invalid percent-encoded URI");
 }
 
-[[nodiscard]] std::uint32_t read_le_u32(std::span<const std::uint8_t> bytes,
-                                        std::size_t offset) {
+[[nodiscard]] std::uint32_t read_le_u32(std::span<const std::uint8_t> bytes, std::size_t offset) {
     if (offset + 4U > bytes.size()) {
         throw gltf_error("truncated KTX2 header");
     }
@@ -91,14 +89,26 @@ bool starts_with(std::string_view value, std::string_view prefix) noexcept {
         throw gltf_error("KTX2 image has invalid identifier");
     }
 
+    const std::uint32_t vk_format = read_le_u32(bytes, 12U);
+    const std::uint32_t type_size = read_le_u32(bytes, 16U);
     const std::uint32_t width = read_le_u32(bytes, 20U);
     const std::uint32_t height = read_le_u32(bytes, 24U);
     const std::uint32_t depth = read_le_u32(bytes, 28U);
     const std::uint32_t layer_count = read_le_u32(bytes, 32U);
     const std::uint32_t face_count = read_le_u32(bytes, 36U);
     std::uint32_t mip_levels = read_le_u32(bytes, 40U);
+    const std::uint32_t supercompression_scheme = read_le_u32(bytes, 44U);
+    if (vk_format != 0) {
+        throw gltf_error("KTX2 BasisU image must use VK_FORMAT_UNDEFINED");
+    }
+    if (type_size != 1) {
+        throw gltf_error("KTX2 BasisU image must use typeSize 1");
+    }
     if (width == 0 || height == 0 || depth != 0 || layer_count != 0 || face_count != 1) {
         throw gltf_error("KTX2 glTF material image must be a nonzero 2D texture");
+    }
+    if (supercompression_scheme > 2U) {
+        throw gltf_error("KTX2 BasisU image uses unsupported supercompression");
     }
     if (mip_levels == 0) {
         mip_levels = 1;
