@@ -482,7 +482,7 @@ void test_forward_pbr_renderer_3d_records_masked_shadow_path_with_material_alpha
     const std::string header =
         read_source_file(root / "include/cubey/engine/forward_pbr_renderer_3d.h");
     const std::string internal_header =
-        read_source_file(root / "src/cubey/engine/forward_pbr_renderer_3d_common.h");
+        read_source_file(root / "src/cubey/engine/forward_pbr_renderer_3d_internal.h");
     const std::string resources =
         read_source_file(root / "src/cubey/engine/forward_pbr_renderer_3d_resources.cpp");
     const std::string recording =
@@ -502,7 +502,9 @@ void test_forward_pbr_renderer_3d_records_masked_shadow_path_with_material_alpha
                          "forward PBR public header should not expose the shadow-map helper");
     require_contains(internal_header, "enum class ForwardPbrPipelineVariant",
                      "forward PBR internals should key pass/cull/blend pipeline variants");
-    require_contains(internal_header, "pipeline_variants_",
+    require_contains(internal_header, "SwapchainResources",
+                     "forward PBR internals should group swapchain-lifetime renderer state");
+    require_contains(internal_header, "pipeline_variants",
                      "forward PBR internals should store keyed pipeline variants together");
     require_contains(resources, "pipeline_variant_slot(ForwardPbrPipelineVariant::MaskShadow)",
                      "forward PBR renderer should own a mask-capable shadow pipeline variant");

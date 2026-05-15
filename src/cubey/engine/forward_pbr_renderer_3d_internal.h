@@ -140,21 +140,33 @@ struct ForwardPbrRenderer3D::Impl {
     [[nodiscard]] const vulkan::Sampler& post_sampler() const;
     [[nodiscard]] const vulkan::DepthAttachment& depth_attachment() const;
 
+    struct GlobalResources {
+        const render::GeneratedPbrEnvironment* environment = nullptr;
+        render::RenderGraphFrameExecutor graph_executor{};
+        std::optional<render::ShadowMapPass3D> shadow_pass{};
+        std::optional<render::GraphicsPipelineResource> shadow_double_sided_pipeline{};
+        std::optional<render::FrameUniformMaterialInstance<render::PbrSceneUniforms>>
+            scene_material{};
+        std::optional<render::FrameUniformMaterialInstance<render::PbrSkyboxUniforms>>
+            skybox_material{};
+        std::optional<render::FrameUniformMaterialInstance<render::PbrPostUniforms>>
+            post_material{};
+    };
+
+    struct SwapchainResources {
+        std::array<std::optional<render::GraphicsPipelineResource>,
+                   static_cast<std::size_t>(ForwardPbrPipelineVariant::Count)>
+            pipeline_variants{};
+        std::optional<render::GraphicsPipelineResource> skybox_pipeline{};
+        std::optional<render::GraphicsPipelineResource> post_pipeline{};
+        std::optional<vulkan::Sampler> post_sampler{};
+        std::optional<vulkan::DepthAttachment> depth_attachment{};
+        bool shadow_depth_is_sampled = false;
+    };
+
     ForwardPbrRenderer3DConfig config_;
-    const render::GeneratedPbrEnvironment* environment_ = nullptr;
-    render::RenderGraphFrameExecutor graph_executor_;
-    std::optional<render::ShadowMapPass3D> shadow_pass_;
-    std::optional<render::FrameUniformMaterialInstance<render::PbrSceneUniforms>> scene_material_;
-    std::optional<render::FrameUniformMaterialInstance<render::PbrSkyboxUniforms>> skybox_material_;
-    std::optional<render::FrameUniformMaterialInstance<render::PbrPostUniforms>> post_material_;
-    std::array<std::optional<render::GraphicsPipelineResource>,
-               static_cast<std::size_t>(ForwardPbrPipelineVariant::Count)>
-        pipeline_variants_{};
-    std::optional<render::GraphicsPipelineResource> skybox_pipeline_;
-    std::optional<render::GraphicsPipelineResource> post_pipeline_;
-    std::optional<vulkan::Sampler> post_sampler_;
-    std::optional<vulkan::DepthAttachment> depth_attachment_;
-    bool shadow_depth_is_sampled_ = false;
+    GlobalResources global_{};
+    SwapchainResources swapchain_{};
 };
 
 } // namespace cubey

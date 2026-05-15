@@ -1,6 +1,6 @@
 #include <cubey/engine/forward_pbr_renderer_3d.h>
 
-#include "forward_pbr_renderer_3d_common.h"
+#include "forward_pbr_renderer_3d_internal.h"
 
 #include <cubey/render/pass.h>
 #include <cubey/scene/render_recording.h>

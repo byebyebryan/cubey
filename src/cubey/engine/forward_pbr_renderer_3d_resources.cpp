@@ -1,6 +1,6 @@
 #include <cubey/engine/forward_pbr_renderer_3d.h>
 
-#include "forward_pbr_renderer_3d_common.h"
+#include "forward_pbr_renderer_3d_internal.h"
 
 #include <cubey/render/pass.h>
 
@@ -39,8 +39,8 @@ void ForwardPbrRenderer3D::Impl::create_global_resources(
     if (frame_slot_count == 0) {
         throw std::runtime_error("forward PBR renderer requires at least one frame slot");
     }
-    environment_ = &environment;
-    graph_executor_.resize(frame_slot_count);
+    global_.environment = &environment;
+    global_.graph_executor.resize(frame_slot_count);
 
     const VkPushConstantRange shadow_push_constants{
         .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
@@ -52,7 +52,7 @@ void ForwardPbrRenderer3D::Impl::create_global_resources(
     };
     const render::VertexInputLayout shadow_vertex_input =
         forward_pbr_renderer_3d_shadow_vertex_input_layout();
-    shadow_pass_.emplace(
+    global_.shadow_pass.emplace(
         device, render::ShadowMapPass3DConfig{
                     .extent = {config_.shadow_extent, config_.shadow_extent},
                     .depth_format = config_.shadow_depth_format,
@@ -88,7 +88,7 @@ void ForwardPbrRenderer3D::Impl::create_global_resources(
                          }),
                      }));
 
-    skybox_material_.emplace(
+    global_.skybox_material.emplace(
         device, render::FrameUniformMaterialInstanceConfig{
                     .material_pass = render::pbr_skybox_pass_info(),
                     .descriptor_set = 0,
@@ -107,7 +107,7 @@ void ForwardPbrRenderer3D::Impl::create_global_resources(
                 });
 
     const render::DepthTexture& shadow_texture = shadow_pass().depth_texture();
-    scene_material_.emplace(
+    global_.scene_material.emplace(
         device,
         render::FrameUniformMaterialInstanceConfig{
             .material_pass = render::pbr_forward_pass_info(),
@@ -144,7 +144,7 @@ void ForwardPbrRenderer3D::Impl::create_global_resources(
                     },
                 },
         });
-    post_material_.emplace(device, render::FrameUniformMaterialInstanceConfig{
+    global_.post_material.emplace(device, render::FrameUniformMaterialInstanceConfig{
                                        .material_pass = render::pbr_post_pass_info(),
                                        .descriptor_set = 0,
                                        .frame_slot_count = frame_slot_count,
@@ -171,8 +171,8 @@ void ForwardPbrRenderer3D::Impl::create_swapchain_resources(
     }
     validate_scene_color_format(device, config_.scene_color_format);
 
-    depth_attachment_.emplace(device, info.extent);
-    post_sampler_.emplace(device, vulkan::SamplerConfig{
+    swapchain_.depth_attachment.emplace(device, info.extent);
+    swapchain_.post_sampler.emplace(device, vulkan::SamplerConfig{
                                       .address_mode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
                                   });
 
@@ -181,7 +181,7 @@ void ForwardPbrRenderer3D::Impl::create_swapchain_resources(
         render::fragment_shader_file(config_.skybox_fragment_shader),
     };
     const std::array<VkDescriptorSetLayout, 1> skybox_layouts{skybox_material().layout()};
-    skybox_pipeline_.emplace(device, render::graphics_pipeline_file_resource_config(
+    swapchain_.skybox_pipeline.emplace(device, render::graphics_pipeline_file_resource_config(
                                          {
                                              .extent = info.extent,
                                              .color_format = config_.scene_color_format,
@@ -296,7 +296,7 @@ void ForwardPbrRenderer3D::Impl::create_swapchain_resources(
         render::fragment_shader_file(config_.post_fragment_shader),
     };
     const std::array<VkDescriptorSetLayout, 1> post_layouts{post_material().layout()};
-    post_pipeline_.emplace(device, render::graphics_pipeline_file_resource_config(
+    swapchain_.post_pipeline.emplace(device, render::graphics_pipeline_file_resource_config(
                                        {
                                            .extent = info.extent,
                                            .color_format = info.color_format,
@@ -313,21 +313,21 @@ void ForwardPbrRenderer3D::destroy_swapchain_resources() {
 }
 
 void ForwardPbrRenderer3D::Impl::destroy_swapchain_resources() {
-    const std::uint32_t frame_slot_count = graph_executor_.frame_slot_count();
-    graph_executor_.clear();
+    const std::uint32_t frame_slot_count = global_.graph_executor.frame_slot_count();
+    global_.graph_executor.clear();
     if (frame_slot_count != 0) {
-        graph_executor_.resize(frame_slot_count);
+        global_.graph_executor.resize(frame_slot_count);
     }
-    post_pipeline_.reset();
-    post_sampler_.reset();
+    swapchain_.post_pipeline.reset();
+    swapchain_.post_sampler.reset();
     pipeline_variant_slot(ForwardPbrPipelineVariant::MaskShadowDoubleSided).reset();
     pipeline_variant_slot(ForwardPbrPipelineVariant::MaskShadow).reset();
     pipeline_variant_slot(ForwardPbrPipelineVariant::AlphaDoubleSided).reset();
     pipeline_variant_slot(ForwardPbrPipelineVariant::Alpha).reset();
     pipeline_variant_slot(ForwardPbrPipelineVariant::OpaqueDoubleSided).reset();
     pipeline_variant_slot(ForwardPbrPipelineVariant::Opaque).reset();
-    skybox_pipeline_.reset();
-    depth_attachment_.reset();
+    swapchain_.skybox_pipeline.reset();
+    swapchain_.depth_attachment.reset();
 }
 
 void ForwardPbrRenderer3D::destroy_all_resources() {
@@ -336,16 +336,17 @@ void ForwardPbrRenderer3D::destroy_all_resources() {
 
 void ForwardPbrRenderer3D::Impl::destroy_all_resources() {
     destroy_swapchain_resources();
-    graph_executor_.clear();
-    post_material_.reset();
-    scene_material_.reset();
-    skybox_material_.reset();
-    for (std::optional<render::GraphicsPipelineResource>& pipeline : pipeline_variants_) {
+    global_.graph_executor.clear();
+    global_.post_material.reset();
+    global_.scene_material.reset();
+    global_.skybox_material.reset();
+    for (std::optional<render::GraphicsPipelineResource>& pipeline : swapchain_.pipeline_variants) {
         pipeline.reset();
     }
-    shadow_pass_.reset();
-    environment_ = nullptr;
-    shadow_depth_is_sampled_ = false;
+    global_.shadow_double_sided_pipeline.reset();
+    global_.shadow_pass.reset();
+    global_.environment = nullptr;
+    swapchain_.shadow_depth_is_sampled = false;
 }
 
 } // namespace cubey

@@ -1,6 +1,6 @@
 #include <cubey/engine/forward_pbr_renderer_3d.h>
 
-#include "forward_pbr_renderer_3d_common.h"
+#include "forward_pbr_renderer_3d_internal.h"
 
 #include <cubey/render/pass.h>
 
@@ -223,41 +223,41 @@ const render::GeneratedPbrEnvironment& ForwardPbrRenderer3D::environment() const
 }
 
 const render::GeneratedPbrEnvironment& ForwardPbrRenderer3D::Impl::environment() const {
-    if (environment_ == nullptr) {
+    if (global_.environment == nullptr) {
         throw std::runtime_error("forward PBR renderer environment is not initialized");
     }
-    return *environment_;
+    return *global_.environment;
 }
 
 const render::ShadowMapPass3D& ForwardPbrRenderer3D::Impl::shadow_pass() const {
-    if (!shadow_pass_.has_value()) {
+    if (!global_.shadow_pass.has_value()) {
         throw std::runtime_error("forward PBR renderer shadow pass is not initialized");
     }
-    return shadow_pass_.value();
+    return global_.shadow_pass.value();
 }
 
 const render::FrameUniformMaterialInstance<render::PbrSceneUniforms>&
 ForwardPbrRenderer3D::Impl::scene_material() const {
-    if (!scene_material_.has_value()) {
+    if (!global_.scene_material.has_value()) {
         throw std::runtime_error("forward PBR renderer scene material is not initialized");
     }
-    return scene_material_.value();
+    return global_.scene_material.value();
 }
 
 const render::FrameUniformMaterialInstance<render::PbrSkyboxUniforms>&
 ForwardPbrRenderer3D::Impl::skybox_material() const {
-    if (!skybox_material_.has_value()) {
+    if (!global_.skybox_material.has_value()) {
         throw std::runtime_error("forward PBR renderer skybox material is not initialized");
     }
-    return skybox_material_.value();
+    return global_.skybox_material.value();
 }
 
 const render::FrameUniformMaterialInstance<render::PbrPostUniforms>&
 ForwardPbrRenderer3D::Impl::post_material() const {
-    if (!post_material_.has_value()) {
+    if (!global_.post_material.has_value()) {
         throw std::runtime_error("forward PBR renderer post material is not initialized");
     }
-    return post_material_.value();
+    return global_.post_material.value();
 }
 
 const render::GraphicsPipelineResource& ForwardPbrRenderer3D::Impl::opaque_pipeline() const {
@@ -294,13 +294,22 @@ ForwardPbrRenderer3D::Impl::shadow_double_sided_pipeline() const {
 
 std::optional<render::GraphicsPipelineResource>&
 ForwardPbrRenderer3D::Impl::pipeline_variant_slot(ForwardPbrPipelineVariant variant) {
-    return pipeline_variants_[static_cast<std::size_t>(variant)];
+    if (variant == ForwardPbrPipelineVariant::ShadowDoubleSided) {
+        return global_.shadow_double_sided_pipeline;
+    }
+    return swapchain_.pipeline_variants[static_cast<std::size_t>(variant)];
 }
 
 const render::GraphicsPipelineResource&
 ForwardPbrRenderer3D::Impl::pipeline_variant(ForwardPbrPipelineVariant variant) const {
+    if (variant == ForwardPbrPipelineVariant::ShadowDoubleSided) {
+        if (!global_.shadow_double_sided_pipeline.has_value()) {
+            throw std::runtime_error("forward PBR renderer pipeline variant is not initialized");
+        }
+        return global_.shadow_double_sided_pipeline.value();
+    }
     const std::optional<render::GraphicsPipelineResource>& pipeline =
-        pipeline_variants_[static_cast<std::size_t>(variant)];
+        swapchain_.pipeline_variants[static_cast<std::size_t>(variant)];
     if (!pipeline.has_value()) {
         throw std::runtime_error("forward PBR renderer pipeline variant is not initialized");
     }
@@ -308,31 +317,31 @@ ForwardPbrRenderer3D::Impl::pipeline_variant(ForwardPbrPipelineVariant variant) 
 }
 
 const render::GraphicsPipelineResource& ForwardPbrRenderer3D::Impl::skybox_pipeline() const {
-    if (!skybox_pipeline_.has_value()) {
+    if (!swapchain_.skybox_pipeline.has_value()) {
         throw std::runtime_error("forward PBR renderer skybox pipeline is not initialized");
     }
-    return skybox_pipeline_.value();
+    return swapchain_.skybox_pipeline.value();
 }
 
 const render::GraphicsPipelineResource& ForwardPbrRenderer3D::Impl::post_pipeline() const {
-    if (!post_pipeline_.has_value()) {
+    if (!swapchain_.post_pipeline.has_value()) {
         throw std::runtime_error("forward PBR renderer post pipeline is not initialized");
     }
-    return post_pipeline_.value();
+    return swapchain_.post_pipeline.value();
 }
 
 const vulkan::Sampler& ForwardPbrRenderer3D::Impl::post_sampler() const {
-    if (!post_sampler_.has_value()) {
+    if (!swapchain_.post_sampler.has_value()) {
         throw std::runtime_error("forward PBR renderer post sampler is not initialized");
     }
-    return post_sampler_.value();
+    return swapchain_.post_sampler.value();
 }
 
 const vulkan::DepthAttachment& ForwardPbrRenderer3D::Impl::depth_attachment() const {
-    if (!depth_attachment_.has_value()) {
+    if (!swapchain_.depth_attachment.has_value()) {
         throw std::runtime_error("forward PBR renderer depth attachment is not initialized");
     }
-    return depth_attachment_.value();
+    return swapchain_.depth_attachment.value();
 }
 
 } // namespace cubey

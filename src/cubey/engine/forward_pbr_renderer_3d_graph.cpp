@@ -1,6 +1,6 @@
 #include <cubey/engine/forward_pbr_renderer_3d.h>
 
-#include "forward_pbr_renderer_3d_common.h"
+#include "forward_pbr_renderer_3d_internal.h"
 
 #include <cubey/render/pass.h>
 
@@ -108,7 +108,7 @@ void ForwardPbrRenderer3D::Impl::record(const ForwardPbrRenderer3DRenderRequest&
         target.color_target, target.frame_slot, target.color_initial_state,
         target.color_final_state, shadow_plan, scene_plan, *resources.meshes,
         resources.frame_meshes, resources.deformation_commands, *resources.materials);
-    graph_executor_.record(
+    global_.graph_executor.record(
         render::RenderGraphFrameRecordInfo{
             .device = target.device,
             .command_buffer = target.command_buffer,
@@ -122,7 +122,7 @@ void ForwardPbrRenderer3D::Impl::record(const ForwardPbrRenderer3DRenderRequest&
             update_post_descriptor(*device, frame_slot, render_graph.graph, graph_resources,
                                    render_graph.scene_color);
         });
-    shadow_depth_is_sampled_ = true;
+    swapchain_.shadow_depth_is_sampled = true;
 }
 
 ForwardPbrRenderer3D::Impl::CompiledGraph ForwardPbrRenderer3D::Impl::current_render_graph(
@@ -148,7 +148,7 @@ ForwardPbrRenderer3D::Impl::CompiledGraph ForwardPbrRenderer3D::Impl::current_re
         graph.import_depth_target("scene depth", render::depth_target_view(depth_attachment()),
                                   render::render_graph_undefined_texture_state());
     const std::optional<render::RenderGraphTextureState> shadow_initial_state =
-        shadow_depth_is_sampled_ ? render::render_graph_sampled_depth_texture_state()
+        swapchain_.shadow_depth_is_sampled ? render::render_graph_sampled_depth_texture_state()
                                  : render::render_graph_undefined_texture_state();
     const render::RenderGraphTextureHandle shadow_depth = graph.import_depth_target(
         "shadow depth", shadow_pass().depth_target(), shadow_initial_state);
