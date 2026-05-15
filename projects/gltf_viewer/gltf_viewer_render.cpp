@@ -74,17 +74,17 @@ void GltfViewerApp::record_viewer_target(
             {
                 .environment_rotation_degrees = config_.environment_rotation_degrees,
                 .exposure = config_.exposure,
+                .debug_view = debug_view_,
             },
     });
 }
 
 void GltfViewerApp::record_viewer_frame(cubey::host::WindowedAppContext& context,
                                         const cubey::host::WindowedRenderFrame& frame) {
-    record_viewer_target(
-        context.device(), frame.command_buffer, frame.color_target, frame.frame_slot,
-        cubey::render::render_graph_undefined_texture_state(),
-        cubey::render::render_graph_present_texture_state(),
-        cubey::render::RenderGraphCommandBufferMode::BeginAndEnd);
+    record_viewer_target(context.device(), frame.command_buffer, frame.color_target,
+                         frame.frame_slot, cubey::render::render_graph_undefined_texture_state(),
+                         cubey::render::render_graph_present_texture_state(),
+                         cubey::render::RenderGraphCommandBufferMode::BeginAndEnd);
 }
 
 void GltfViewerApp::record_viewer_capture(cubey::host::HeadlessPngContext& context,

@@ -5,9 +5,9 @@
 #include <cubey/render/frame_data.h>
 #include <cubey/render/generated_ibl.h>
 #include <cubey/render/mesh.h>
+#include <cubey/render/pass.h>
 #include <cubey/render/pbr.h>
 #include <cubey/render/pbr_material_resources.h>
-#include <cubey/render/pass.h>
 #include <cubey/render/render_graph.h>
 #include <cubey/render/resource_table.h>
 #include <cubey/render/target.h>
@@ -60,6 +60,7 @@ struct ForwardPbrRenderer3DSceneUniformInfo {
     float environment_intensity = 1.0F;
     std::uint32_t prefiltered_mip_levels = 1;
     float environment_rotation_degrees = 0.0F;
+    render::PbrDebugView debug_view = render::PbrDebugView::Final;
 };
 
 struct ForwardPbrRenderer3DSkyboxUniformInfo {
@@ -106,6 +107,7 @@ struct ForwardPbrRenderer3DSettings {
     float environment_rotation_degrees = 0.0F;
     float exposure = 0.0F;
     render::PbrTonemap tonemap = render::PbrTonemap::Aces;
+    render::PbrDebugView debug_view = render::PbrDebugView::Final;
 };
 
 struct ForwardPbrRenderer3DRenderRequest {
@@ -140,8 +142,9 @@ struct ForwardPbrRenderer3DFramePlans {
 };
 
 void validate_forward_pbr_renderer_3d_config(const ForwardPbrRenderer3DConfig& config);
-[[nodiscard]] ForwardPbrRenderer3DConfig forward_pbr_renderer_3d_config_from_shader_directory(
-    std::filesystem::path shader_directory, ForwardPbrRenderer3DConfig base = {});
+[[nodiscard]] ForwardPbrRenderer3DConfig
+forward_pbr_renderer_3d_config_from_shader_directory(std::filesystem::path shader_directory,
+                                                     ForwardPbrRenderer3DConfig base = {});
 [[nodiscard]] ForwardPbrRenderer3DRenderRequest
 forward_pbr_renderer_3d_render_request(const ForwardPbrRenderer3DFrameRequestInfo& info);
 void validate_forward_pbr_renderer_3d_render_request(

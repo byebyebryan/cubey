@@ -9,6 +9,7 @@
 #include <cubey/input/orbit_controller.h>
 #include <cubey/render/generated_ibl.h>
 #include <cubey/render/mesh.h>
+#include <cubey/render/pbr.h>
 #include <cubey/render/pbr_material_resources.h>
 #include <cubey/render/resource_handle.h>
 #include <cubey/render/resource_table.h>
@@ -91,6 +92,7 @@ class MaterialCubesApp {
     cubey::Entity light_camera_entity_{};
     cubey::Entity light_entity_{};
     OrbitController orbit_controller_;
+    cubey::render::PbrDebugView debug_view_ = cubey::render::PbrDebugView::Final;
     cubey::render::MeshHandle cube_mesh_handle_{};
 
     cubey::render::MeshResourceTable<cubey::render::Mesh> meshes_;

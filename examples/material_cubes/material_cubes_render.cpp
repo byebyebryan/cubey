@@ -31,6 +31,7 @@ void MaterialCubesApp::record_cube_frame(cubey::host::WindowedAppContext& contex
             {
                 .environment_rotation_degrees = config_.environment_rotation_degrees,
                 .exposure = config_.exposure,
+                .debug_view = debug_view_,
             },
     });
 }

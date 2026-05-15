@@ -42,6 +42,7 @@ void test_forward_pbr_renderer_3d_selects_requested_light_or_fallback();
 void test_forward_pbr_renderer_3d_settings_defaults_to_aces_display_transform();
 void test_forward_pbr_renderer_3d_shadow_vertex_layout_matches_pbr_vertices();
 void test_forward_pbr_renderer_3d_skybox_uniforms_pack_inverse_view_camera_environment_and_display();
+void test_forward_pbr_renderer_3d_threads_debug_view_into_shader_and_scene_pass();
 void test_gltf_scene_importer_applies_rigid_animation_samples_to_imported_nodes();
 void test_gltf_scene_importer_preserves_matrix_nodes_and_animation_returns_to_trs();
 void test_gltf_scene_importer_classifies_deformable_primitives();
@@ -86,7 +87,8 @@ std::span<const TestCase> engine_host_input_test_cases() {
         CUBEY_TEST(test_forward_pbr_renderer_3d_config_requires_shader_paths_and_shadow_extent),
         CUBEY_TEST(test_forward_pbr_renderer_3d_config_defaults_to_hdr_scene_color),
         CUBEY_TEST(test_forward_pbr_renderer_3d_config_from_shader_directory_fills_package_paths),
-        CUBEY_TEST(test_forward_pbr_renderer_3d_config_from_shader_directory_rejects_empty_directory),
+        CUBEY_TEST(
+            test_forward_pbr_renderer_3d_config_from_shader_directory_rejects_empty_directory),
         CUBEY_TEST(test_forward_pbr_renderer_3d_target_resources_use_material_table),
         CUBEY_TEST(test_forward_pbr_renderer_3d_builds_render_request_from_frame_info),
         CUBEY_TEST(test_forward_pbr_renderer_3d_record_accepts_frame_request_info),
@@ -105,6 +107,7 @@ std::span<const TestCase> engine_host_input_test_cases() {
             test_forward_pbr_renderer_3d_scene_uniforms_pack_view_light_environment_and_display),
         CUBEY_TEST(
             test_forward_pbr_renderer_3d_skybox_uniforms_pack_inverse_view_camera_environment_and_display),
+        CUBEY_TEST(test_forward_pbr_renderer_3d_threads_debug_view_into_shader_and_scene_pass),
         CUBEY_TEST(test_forward_pbr_renderer_3d_post_uniforms_pack_display_transform),
         CUBEY_TEST(test_gltf_scene_importer_applies_rigid_animation_samples_to_imported_nodes),
         CUBEY_TEST(test_gltf_scene_importer_preserves_matrix_nodes_and_animation_returns_to_trs),

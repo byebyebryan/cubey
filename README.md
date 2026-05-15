@@ -138,10 +138,12 @@ Useful windowed smokes:
 ./build/dev/examples/shadow_cube/shadow_cube --frames 300 --width 1280 --height 720
 ./build/dev/examples/instanced_cubes/instanced_cubes --frames 300 --width 1280 --height 720
 ./build/dev/examples/material_cubes/material_cubes --frames 300 --width 1280 --height 720
+./build/dev/examples/material_cubes/material_cubes --debug-view normal --frames 300 --width 1280 --height 720
 ./build/dev/examples/particle_cubes/particle_cubes --frames 300 --width 1280 --height 720
 ./build/dev/projects/fractal_2d/fractal_2d --frames 300 --width 1280 --height 720
 ./build/dev/projects/fluid_2d/fluid_2d --frames 300 --width 1280 --height 720
 ./build/dev/projects/gltf_viewer/gltf_viewer --input path/to/model.glb --environment path/to/env.hdr --animation-index 0 --animation-speed 1.0 --frames 300 --width 1280 --height 720
+./build/dev/projects/gltf_viewer/gltf_viewer --input path/to/model.glb --debug-view roughness --frames 300 --width 1280 --height 720
 ./build/dev/projects/pbr_furnace/pbr_furnace --frames 300 --width 1280 --height 720
 ```
 
@@ -165,16 +167,21 @@ layers are installed.
   closes.
 - `instanced_cubes`: left-drag orbits the camera, `R` resets the camera, Escape
   closes.
-- `material_cubes`: left-drag orbits the camera, `R` resets the camera, Escape
-  closes.
+- `material_cubes`: left-drag orbits the camera, `R` resets the camera, `D`
+  cycles PBR debug views, Escape closes.
 - `particle_cubes`: left-drag orbits the camera, Space pauses/resumes compute
   updates, `R` resets the camera and cube field, Escape closes.
 - `fractal_2d`: left-drag pans, mouse wheel zooms around the cursor, `R` resets,
   Escape closes.
 - `fluid_2d`: left-drag injects dye/force, Space pauses/resumes, `R` resets,
   `D` cycles dye/velocity/divergence/pressure views, Escape closes.
-- `gltf_viewer`: left-drag orbits the camera, Escape closes.
+- `gltf_viewer`: left-drag orbits the camera, `D` cycles PBR debug views,
+  Escape closes.
 - `pbr_furnace`: left-drag orbits the camera, Escape closes.
+
+`--debug-view` currently accepts `final`, `base-color`, `normal`,
+`geometric-normal`, `roughness`, `metallic`, `occlusion`, `emissive`, `shadow`,
+`alpha`, and `uv0` on the shared forward-PBR path.
 
 ## License
 

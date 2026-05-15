@@ -10,7 +10,9 @@ namespace detail {
 
 using cubey::host::FrameStatsSample;
 
-MaterialCubesApp::MaterialCubesApp(RunConfig config) : config_(std::move(config)) {}
+MaterialCubesApp::MaterialCubesApp(RunConfig config)
+    : config_(std::move(config)),
+      debug_view_(render::pbr_debug_view_from_name(config_.debug_view)) {}
 
 int MaterialCubesApp::run() {
     cubey::host::WindowedAppCallbacks callbacks;
@@ -24,8 +26,10 @@ int MaterialCubesApp::run() {
         (void)context;
         destroy_swapchain_resources();
     };
-    callbacks.update = [this](cubey::host::WindowedAppContext& context,
-                              const FrameTiming& timing) {
+    callbacks.update = [this](cubey::host::WindowedAppContext& context, const FrameTiming& timing) {
+        if (context.input().key_pressed(cubey::input::Key::D)) {
+            debug_view_ = render::next_pbr_debug_view(debug_view_);
+        }
         orbit_controller_.update_from_input(context.input(), timing.delta_seconds);
         update_scene_transform(timing);
     };

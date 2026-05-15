@@ -43,65 +43,68 @@ void ForwardPbrRenderer3D::Impl::record_shadow_pass(
             record_opaque_shadow(shadow_pass().pipeline(), VK_CULL_MODE_BACK_BIT);
             record_opaque_shadow(shadow_double_sided_pipeline(), VK_CULL_MODE_NONE);
 
-            const auto record_mask_shadow = [&pass_recorder, &shadow_plan, mesh_resolver,
-                                             &materials, frame_slot](
-                                                const render::GraphicsPipelineResource& pipeline,
-                                                VkCullModeFlags cull_mode) {
-                scene::record_pipeline_draw_packets_3d(
-                    pass_recorder, shadow_plan.draw_packets, mesh_resolver,
-                    {
-                        .pipeline = &pipeline,
-                        .frame_slot = frame_slot,
-                        .filter =
-                            {
-                                .material_pass = render::MaterialPassKind::DepthOnly,
-                                .alpha_mode = render::MaterialAlphaMode::Mask,
-                                .cull_mode = cull_mode,
-                                .require_shadow_caster = true,
-                            },
-                    },
-                    [&pipeline, &shadow_plan, &materials, frame_slot](
-                        const vulkan::CommandRecorder& packet_recorder,
-                        const scene::RenderDrawPacket3D& packet) {
-                        const auto& material = materials.instance(packet.material);
-                        materials.upload(packet.material, frame_slot,
-                                         packet.material_info.alpha_mode);
-                        render::bind_material_instance(packet_recorder, pipeline,
-                                                       material.material(), frame_slot);
-                        packet_recorder.push_constants(
-                            pipeline.layout(), VK_SHADER_STAGE_VERTEX_BIT, 0,
-                            ForwardPbrRenderer3DShadowPushConstants{
-                                .light_mvp =
-                                    shadow_plan.view_projection_matrix * packet.world_affine_matrix,
-                            });
-                    });
-            };
+            const auto record_mask_shadow =
+                [&pass_recorder, &shadow_plan, mesh_resolver, &materials, frame_slot](
+                    const render::GraphicsPipelineResource& pipeline, VkCullModeFlags cull_mode) {
+                    scene::record_pipeline_draw_packets_3d(
+                        pass_recorder, shadow_plan.draw_packets, mesh_resolver,
+                        {
+                            .pipeline = &pipeline,
+                            .frame_slot = frame_slot,
+                            .filter =
+                                {
+                                    .material_pass = render::MaterialPassKind::DepthOnly,
+                                    .alpha_mode = render::MaterialAlphaMode::Mask,
+                                    .cull_mode = cull_mode,
+                                    .require_shadow_caster = true,
+                                },
+                        },
+                        [&pipeline, &shadow_plan, &materials,
+                         frame_slot](const vulkan::CommandRecorder& packet_recorder,
+                                     const scene::RenderDrawPacket3D& packet) {
+                            const auto& material = materials.instance(packet.material);
+                            materials.upload(packet.material, frame_slot,
+                                             packet.material_info.alpha_mode);
+                            render::bind_material_instance(packet_recorder, pipeline,
+                                                           material.material(), frame_slot);
+                            packet_recorder.push_constants(
+                                pipeline.layout(), VK_SHADER_STAGE_VERTEX_BIT, 0,
+                                ForwardPbrRenderer3DShadowPushConstants{
+                                    .light_mvp = shadow_plan.view_projection_matrix *
+                                                 packet.world_affine_matrix,
+                                });
+                        });
+                };
             record_mask_shadow(mask_shadow_pipeline(), VK_CULL_MODE_BACK_BIT);
             record_mask_shadow(mask_shadow_double_sided_pipeline(), VK_CULL_MODE_NONE);
         });
 }
 
-void ForwardPbrRenderer3D::Impl::record_scene_pass(
-    const vulkan::CommandRecorder& recorder, render::ColorTargetView color_target,
-    const scene::RenderFramePlan3D& scene_plan, render::FrameSlot frame_slot,
-    const render::MeshResolver& mesh_resolver, const render::PbrMaterialTable& materials) const {
+void ForwardPbrRenderer3D::Impl::record_scene_pass(const vulkan::CommandRecorder& recorder,
+                                                   render::ColorTargetView color_target,
+                                                   const scene::RenderFramePlan3D& scene_plan,
+                                                   render::FrameSlot frame_slot,
+                                                   const render::MeshResolver& mesh_resolver,
+                                                   const render::PbrMaterialTable& materials,
+                                                   render::PbrDebugView debug_view) const {
     render::record_render_target_pass(
         recorder,
         render::render_target_view(color_target, render::depth_target_view(depth_attachment())),
         config_.scene_clear,
-        [this, &scene_plan, mesh_resolver, &materials,
+        [this, &scene_plan, mesh_resolver, &materials, debug_view,
          frame_slot](const vulkan::CommandRecorder& pass_recorder) {
-            render::record_fullscreen_pipeline_draw(
-                pass_recorder, render::FullscreenPipelineDrawInfo{
-                                   .pipeline = &skybox_pipeline(),
-                                   .descriptor_set = skybox_material().set(frame_slot),
-                                   .descriptor_set_index = 0,
-                               });
-            const auto record_blend = [this, &pass_recorder, &scene_plan, mesh_resolver,
-                                       &materials, frame_slot](
-                                          const render::GraphicsPipelineResource& pipeline,
-                                          render::MaterialBlendMode blend,
-                                          VkCullModeFlags cull_mode) {
+            if (debug_view == render::PbrDebugView::Final) {
+                render::record_fullscreen_pipeline_draw(
+                    pass_recorder, render::FullscreenPipelineDrawInfo{
+                                       .pipeline = &skybox_pipeline(),
+                                       .descriptor_set = skybox_material().set(frame_slot),
+                                       .descriptor_set_index = 0,
+                                   });
+            }
+            const auto record_blend = [this, &pass_recorder, &scene_plan, mesh_resolver, &materials,
+                                       frame_slot](const render::GraphicsPipelineResource& pipeline,
+                                                   render::MaterialBlendMode blend,
+                                                   VkCullModeFlags cull_mode) {
                 scene::record_pipeline_draw_packets_3d(
                     pass_recorder, scene_plan.draw_packets, mesh_resolver,
                     {
@@ -115,9 +118,9 @@ void ForwardPbrRenderer3D::Impl::record_scene_pass(
                                 .cull_mode = cull_mode,
                             },
                     },
-                    [&pipeline, &materials, frame_slot](
-                        const vulkan::CommandRecorder& packet_recorder,
-                        const scene::RenderDrawPacket3D& packet) {
+                    [&pipeline, &materials,
+                     frame_slot](const vulkan::CommandRecorder& packet_recorder,
+                                 const scene::RenderDrawPacket3D& packet) {
                         const auto& material = materials.instance(packet.material);
                         materials.upload(packet.material, frame_slot,
                                          packet.material_info.alpha_mode);

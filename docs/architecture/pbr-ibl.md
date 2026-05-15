@@ -31,8 +31,11 @@ Radiance HDR equirectangular environment assets:
   reusable GLSL sources live in the shared forward-PBR shader package, and the
   shader-directory config helper maps that package to compiled shader output
   paths. Asset loading and environment selection stay project-owned. The
-  renderer's public contract is request-shaped; pipeline, shadow, graph,
-  sampler, and attachment state stay internal to the engine implementation;
+  renderer's public contract is request-shaped and includes a lightweight PBR
+  debug-view selector for final, base color, normals, roughness, metallic,
+  occlusion, emissive, shadow, alpha, and UV0 inspection; pipeline, shadow,
+  graph, sampler, and attachment state stay internal to the engine
+  implementation;
 - `pbr_furnace` isolates the current IBL/specular behavior with a white sphere
   grid that sweeps roughness across columns and metallic across rows under a
   uniform white environment;
@@ -61,6 +64,12 @@ The first IBL contract is:
   clearcoat normal, sheen color, sheen roughness, anisotropy, iridescence, and
   iridescence thickness textures plus a per-material uniform block for factors
   and optional texture-presence flags.
+
+PBR diagnostics are intentionally renderer-facing rather than UI-owned for now.
+`--debug-view` initializes the requested mode in `gltf_viewer` and
+`material_cubes`, and `D` cycles the same enum interactively. Non-final debug
+views skip skybox rendering so material channels are visible against the scene
+clear color before the normal post transform.
 
 The shared shader include remaps `baseColor` into `diffuseColor =
 baseColor * (1 - metallic)` and computes dielectric F0 from Filament-style

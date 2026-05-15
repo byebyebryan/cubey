@@ -12,6 +12,7 @@ layout(set = 0, binding = 0) uniform PbrSceneUniforms {
     vec4 ambient_color_intensity;
     vec4 environment_intensity_mip_count;
     vec4 display_transform;
+    vec4 debug_options;
 } scene;
 
 layout(set = 0, binding = 1) uniform sampler2D shadow_map;
@@ -77,6 +78,18 @@ const uint CUBEY_PBR_TEXTURE_ANISOTROPY = 128u;
 const uint CUBEY_PBR_TEXTURE_IRIDESCENCE = 256u;
 const uint CUBEY_PBR_TEXTURE_IRIDESCENCE_THICKNESS = 512u;
 
+const uint CUBEY_PBR_DEBUG_FINAL = 0u;
+const uint CUBEY_PBR_DEBUG_BASE_COLOR = 1u;
+const uint CUBEY_PBR_DEBUG_NORMAL = 2u;
+const uint CUBEY_PBR_DEBUG_GEOMETRIC_NORMAL = 3u;
+const uint CUBEY_PBR_DEBUG_ROUGHNESS = 4u;
+const uint CUBEY_PBR_DEBUG_METALLIC = 5u;
+const uint CUBEY_PBR_DEBUG_OCCLUSION = 6u;
+const uint CUBEY_PBR_DEBUG_EMISSIVE = 7u;
+const uint CUBEY_PBR_DEBUG_SHADOW = 8u;
+const uint CUBEY_PBR_DEBUG_ALPHA = 9u;
+const uint CUBEY_PBR_DEBUG_UV0 = 10u;
+
 bool cubey_pbr_has_material_texture(uint flag) {
     return (uint(material.material_model.w + 0.5) & flag) != 0u;
 }
@@ -112,6 +125,42 @@ vec3 rotate_environment_direction(vec3 direction) {
     );
 }
 
+vec4 cubey_pbr_debug_output(uint debug_view, vec4 base_color, float metallic,
+                            float roughness, vec3 geometric_normal, vec3 normal,
+                            float occlusion, vec3 emissive, float shadow) {
+    if (debug_view == CUBEY_PBR_DEBUG_BASE_COLOR) {
+        return vec4(base_color.rgb, 1.0);
+    }
+    if (debug_view == CUBEY_PBR_DEBUG_NORMAL) {
+        return vec4((normal * 0.5) + 0.5, 1.0);
+    }
+    if (debug_view == CUBEY_PBR_DEBUG_GEOMETRIC_NORMAL) {
+        return vec4((geometric_normal * 0.5) + 0.5, 1.0);
+    }
+    if (debug_view == CUBEY_PBR_DEBUG_ROUGHNESS) {
+        return vec4(vec3(roughness), 1.0);
+    }
+    if (debug_view == CUBEY_PBR_DEBUG_METALLIC) {
+        return vec4(vec3(metallic), 1.0);
+    }
+    if (debug_view == CUBEY_PBR_DEBUG_OCCLUSION) {
+        return vec4(vec3(occlusion), 1.0);
+    }
+    if (debug_view == CUBEY_PBR_DEBUG_EMISSIVE) {
+        return vec4(emissive, 1.0);
+    }
+    if (debug_view == CUBEY_PBR_DEBUG_SHADOW) {
+        return vec4(vec3(shadow), 1.0);
+    }
+    if (debug_view == CUBEY_PBR_DEBUG_ALPHA) {
+        return vec4(vec3(base_color.a), 1.0);
+    }
+    if (debug_view == CUBEY_PBR_DEBUG_UV0) {
+        return vec4(fract(frag_uv0), 0.0, 1.0);
+    }
+    return vec4(base_color.rgb, 1.0);
+}
+
 float shadow_visibility(vec4 shadow_position, vec3 normal, vec3 light_direction) {
     vec3 shadow_ndc = shadow_position.xyz / shadow_position.w;
     vec2 uv = (shadow_ndc.xy * 0.5) + 0.5;
@@ -133,6 +182,7 @@ float shadow_visibility(vec4 shadow_position, vec3 normal, vec3 light_direction)
 }
 
 void main() {
+    uint debug_view = uint(scene.debug_options.x + 0.5);
     vec4 base_color =
         texture(base_color_texture, cubey_pbr_transformed_uv(material.base_color_transform)) *
         material.base_color_factor;
@@ -142,7 +192,7 @@ void main() {
         discard;
     }
     float output_alpha = material.material_model.y > 1.5 ? base_color.a : 1.0;
-    if (material.material_model.z > 0.5) {
+    if (debug_view == CUBEY_PBR_DEBUG_FINAL && material.material_model.z > 0.5) {
         out_color = vec4(base_color.rgb * output_alpha, output_alpha);
         return;
     }
@@ -169,6 +219,9 @@ void main() {
         1.0;
     sampled_normal.xy *= normal_scale;
     vec3 normal = normalize(tbn * sampled_normal);
+    float occlusion = mix(
+        1.0, texture(occlusion_texture, cubey_pbr_transformed_uv(material.occlusion_transform)).r,
+        occlusion_strength);
 
     float clearcoat_factor = clamp(material.clearcoat_factor_roughness_normal.x, 0.0, 1.0);
     if (cubey_pbr_has_material_texture(CUBEY_PBR_TEXTURE_CLEARCOAT)) {
@@ -288,11 +341,17 @@ void main() {
     vec3 f = cubey_pbr_fresnel_schlick(vdoth, f0);
     vec3 specular = d * v * f * energy_compensation;
 
-    float occlusion = mix(
-        1.0, texture(occlusion_texture, cubey_pbr_transformed_uv(material.occlusion_transform)).r,
-        occlusion_strength);
     vec3 radiance = scene.light_color_intensity.rgb * scene.light_color_intensity.a;
     float visibility = shadow_visibility(frag_shadow_position, normal, light_direction);
+    vec3 emissive =
+        texture(emissive_texture, cubey_pbr_transformed_uv(material.emissive_transform)).rgb *
+        material.emissive_alpha_cutoff.rgb;
+    if (debug_view != CUBEY_PBR_DEBUG_FINAL) {
+        out_color = cubey_pbr_debug_output(debug_view, base_color, metallic, roughness,
+                                           geometric_normal, normal, occlusion, emissive,
+                                           visibility);
+        return;
+    }
     float clearcoat_ndotv = max(dot(clearcoat_normal, view_direction), 0.0);
     float clearcoat_ndotl = max(dot(clearcoat_normal, light_direction), 0.0);
     float clearcoat_ndoth = max(dot(clearcoat_normal, half_vector), 0.0);
@@ -342,9 +401,6 @@ void main() {
                    scene.environment_intensity_mip_count.x;
     ambient += scene.ambient_color_intensity.rgb * scene.ambient_color_intensity.a *
                albedo * occlusion;
-    vec3 emissive =
-        texture(emissive_texture, cubey_pbr_transformed_uv(material.emissive_transform)).rgb *
-        material.emissive_alpha_cutoff.rgb;
     vec3 color = ambient + direct + emissive;
     out_color = vec4(color * output_alpha, output_alpha);
 }

@@ -135,6 +135,10 @@ shader output, while opaque and kept masked fragments output alpha 1. Display
 transform is applied by the shared post shader. Unlit glTF materials preserve
 the same alpha policy but skip direct lighting, IBL, normal mapping, AO,
 metallic, roughness, and specular shading.
+`--debug-view` can select forward-PBR material diagnostics at startup, and `D`
+cycles the same views in the windowed viewer. The current views cover final
+shading, base color, tangent-space and geometric normals, roughness, metallic,
+occlusion, emissive, shadow, alpha, and UV0.
 The viewer plays one active glTF animation clip, applies rigid TRS channels to
 scene transforms, uploads morph weights and skin joint palettes per frame, and
 records a compute deformation pass before shadow and PBR scene passes.

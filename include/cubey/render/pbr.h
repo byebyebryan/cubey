@@ -102,6 +102,7 @@ struct PbrSceneUniforms {
     math::Vec4 ambient_color_intensity{0.03F, 0.03F, 0.03F, 1.0F};
     math::Vec4 environment_intensity_mip_count{1.0F, 1.0F, 0.0F, 0.0F};
     math::Vec4 display_transform{0.0F, 1.0F, 0.0F, 0.0F};
+    math::Vec4 debug_options{0.0F, 0.0F, 0.0F, 0.0F};
 };
 
 struct PbrSkyboxUniforms {
@@ -163,6 +164,7 @@ struct PbrPushConstants {
 static_assert(sizeof(PbrTextureTransform) == sizeof(math::Vec4) * 2U);
 static_assert(sizeof(PbrMaterialTextureTransforms) == sizeof(math::Vec4) * 30U);
 static_assert(sizeof(PbrVertex) == sizeof(float) * 18U);
+static_assert(sizeof(PbrSceneUniforms) == (sizeof(math::Mat4) * 2U) + (sizeof(math::Vec4) * 7U));
 static_assert(sizeof(PbrMaterialUniforms) == sizeof(math::Vec4) * 39U);
 static_assert(sizeof(PbrSkyboxUniforms) == sizeof(math::Mat4) + (sizeof(math::Vec4) * 3U));
 static_assert(sizeof(PbrPostUniforms) == sizeof(math::Vec4));

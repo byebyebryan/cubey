@@ -46,8 +46,9 @@ void validate_forward_pbr_renderer_3d_config(const ForwardPbrRenderer3DConfig& c
     }
 }
 
-ForwardPbrRenderer3DConfig forward_pbr_renderer_3d_config_from_shader_directory(
-    std::filesystem::path shader_directory, ForwardPbrRenderer3DConfig base) {
+ForwardPbrRenderer3DConfig
+forward_pbr_renderer_3d_config_from_shader_directory(std::filesystem::path shader_directory,
+                                                     ForwardPbrRenderer3DConfig base) {
     if (shader_directory.empty()) {
         throw std::runtime_error("forward PBR renderer requires a shader directory");
     }
@@ -179,6 +180,7 @@ forward_pbr_renderer_3d_scene_uniforms(const ForwardPbrRenderer3DSceneUniformInf
                 std::cos(radians),
                 std::sin(radians),
             },
+        .debug_options = {static_cast<float>(info.debug_view), 0.0F, 0.0F, 0.0F},
     };
 }
 
@@ -213,8 +215,7 @@ ForwardPbrRenderer3D::ForwardPbrRenderer3D(ForwardPbrRenderer3DConfig config)
 
 ForwardPbrRenderer3D::~ForwardPbrRenderer3D() = default;
 
-ForwardPbrRenderer3D::Impl::Impl(ForwardPbrRenderer3DConfig config)
-    : config_(std::move(config)) {
+ForwardPbrRenderer3D::Impl::Impl(ForwardPbrRenderer3DConfig config) : config_(std::move(config)) {
     validate_forward_pbr_renderer_3d_config(config_);
 }
 
@@ -231,8 +232,7 @@ const render::GeneratedPbrEnvironment& ForwardPbrRenderer3D::Impl::environment()
 
 bool ForwardPbrRenderer3D::Impl::has_global_resources() const {
     return global_.environment != nullptr || global_.graph_executor.frame_slot_count() != 0 ||
-           global_.shadow_pass.has_value() ||
-           global_.shadow_double_sided_pipeline.has_value() ||
+           global_.shadow_pass.has_value() || global_.shadow_double_sided_pipeline.has_value() ||
            global_.scene_material.has_value() || global_.skybox_material.has_value() ||
            global_.post_material.has_value();
 }
@@ -284,7 +284,8 @@ void ForwardPbrRenderer3D::Impl::require_no_global_resources() const {
 
 void ForwardPbrRenderer3D::Impl::require_no_swapchain_resources() const {
     if (has_swapchain_resources()) {
-        throw std::runtime_error("forward PBR renderer swapchain resources are already initialized");
+        throw std::runtime_error(
+            "forward PBR renderer swapchain resources are already initialized");
     }
 }
 

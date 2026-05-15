@@ -216,29 +216,29 @@ void test_forward_pbr_renderer_3d_config_from_shader_directory_fills_package_pat
     const cubey::ForwardPbrRenderer3DConfig config =
         cubey::forward_pbr_renderer_3d_config_from_shader_directory("build/shaders", base);
 
-    require(config.pbr_vertex_shader == std::filesystem::path{"build/shaders"} /
-                                            "forward_pbr.vert.spv",
+    require(config.pbr_vertex_shader ==
+                std::filesystem::path{"build/shaders"} / "forward_pbr.vert.spv",
             "forward PBR shader directory helper should fill the material vertex shader path");
-    require(config.pbr_fragment_shader == std::filesystem::path{"build/shaders"} /
-                                              "forward_pbr.frag.spv",
+    require(config.pbr_fragment_shader ==
+                std::filesystem::path{"build/shaders"} / "forward_pbr.frag.spv",
             "forward PBR shader directory helper should fill the material fragment shader path");
-    require(config.skybox_vertex_shader == std::filesystem::path{"build/shaders"} /
-                                                "forward_pbr_skybox.vert.spv",
+    require(config.skybox_vertex_shader ==
+                std::filesystem::path{"build/shaders"} / "forward_pbr_skybox.vert.spv",
             "forward PBR shader directory helper should fill the skybox vertex shader path");
-    require(config.skybox_fragment_shader == std::filesystem::path{"build/shaders"} /
-                                                  "forward_pbr_skybox.frag.spv",
+    require(config.skybox_fragment_shader ==
+                std::filesystem::path{"build/shaders"} / "forward_pbr_skybox.frag.spv",
             "forward PBR shader directory helper should fill the skybox fragment shader path");
-    require(config.post_vertex_shader == std::filesystem::path{"build/shaders"} /
-                                             "forward_pbr_post.vert.spv",
+    require(config.post_vertex_shader ==
+                std::filesystem::path{"build/shaders"} / "forward_pbr_post.vert.spv",
             "forward PBR shader directory helper should fill the post vertex shader path");
-    require(config.post_fragment_shader == std::filesystem::path{"build/shaders"} /
-                                               "forward_pbr_post.frag.spv",
+    require(config.post_fragment_shader ==
+                std::filesystem::path{"build/shaders"} / "forward_pbr_post.frag.spv",
             "forward PBR shader directory helper should fill the post fragment shader path");
-    require(config.shadow_depth_vertex_shader == std::filesystem::path{"build/shaders"} /
-                                                    "forward_pbr_shadow_depth.vert.spv",
+    require(config.shadow_depth_vertex_shader ==
+                std::filesystem::path{"build/shaders"} / "forward_pbr_shadow_depth.vert.spv",
             "forward PBR shader directory helper should fill the shadow vertex shader path");
-    require(config.shadow_depth_fragment_shader == std::filesystem::path{"build/shaders"} /
-                                                      "forward_pbr_shadow_depth.frag.spv",
+    require(config.shadow_depth_fragment_shader ==
+                std::filesystem::path{"build/shaders"} / "forward_pbr_shadow_depth.frag.spv",
             "forward PBR shader directory helper should fill the shadow fragment shader path");
     require(config.shadow_extent == 1024,
             "forward PBR shader directory helper should preserve shadow extent");
@@ -250,9 +250,7 @@ void test_forward_pbr_renderer_3d_config_from_shader_directory_fills_package_pat
 
 void test_forward_pbr_renderer_3d_config_from_shader_directory_rejects_empty_directory() {
     require_throws(
-        [] {
-            static_cast<void>(cubey::forward_pbr_renderer_3d_config_from_shader_directory({}));
-        },
+        [] { static_cast<void>(cubey::forward_pbr_renderer_3d_config_from_shader_directory({})); },
         "forward PBR shader directory helper should reject an empty shader directory");
 }
 
@@ -432,6 +430,8 @@ void test_forward_pbr_renderer_3d_settings_defaults_to_aces_display_transform() 
             "forward PBR renderer settings should default to neutral exposure");
     require(settings.tonemap == cubey::render::PbrTonemap::Aces,
             "forward PBR renderer settings should default to ACES tonemap");
+    require(settings.debug_view == cubey::render::PbrDebugView::Final,
+            "forward PBR renderer settings should default to final shaded output");
 }
 
 void test_forward_pbr_renderer_3d_selects_requested_light_or_fallback() {
@@ -596,6 +596,7 @@ void test_forward_pbr_renderer_3d_scene_uniforms_pack_view_light_environment_and
         .environment_intensity = 5.0F,
         .prefiltered_mip_levels = 6,
         .environment_rotation_degrees = 90.0F,
+        .debug_view = cubey::render::PbrDebugView::Shadow,
     });
 
     require(uniforms.view_projection == cubey::math::Mat4{2.0F},
@@ -618,6 +619,50 @@ void test_forward_pbr_renderer_3d_scene_uniforms_pack_view_light_environment_and
                  "forward PBR scene uniforms should pack rotation sine");
     require(uniforms.display_transform == cubey::math::Vec4{0.0F, 1.0F, 0.0F, 0.0F},
             "forward PBR scene uniforms should leave display transform neutral");
+    require(uniforms.debug_options.x == static_cast<float>(cubey::render::PbrDebugView::Shadow),
+            "forward PBR scene uniforms should pack the requested debug view");
+    require(uniforms.debug_options.y == 0.0F && uniforms.debug_options.z == 0.0F &&
+                uniforms.debug_options.w == 0.0F,
+            "forward PBR scene uniforms should keep spare debug options neutral");
+}
+
+void test_forward_pbr_renderer_3d_threads_debug_view_into_shader_and_scene_pass() {
+    const std::filesystem::path root{CUBEY_SOURCE_DIR};
+    const std::string header =
+        read_source_file(root / "include/cubey/engine/forward_pbr_renderer_3d.h");
+    const std::string graph =
+        read_source_file(root / "src/cubey/engine/forward_pbr_renderer_3d_graph.cpp");
+    const std::string internal_header =
+        read_source_file(root / "src/cubey/engine/forward_pbr_renderer_3d_internal.h");
+    const std::string recording =
+        read_source_file(root / "src/cubey/engine/forward_pbr_renderer_3d_recording.cpp");
+    const std::string vertex_shader =
+        read_source_file(root / "shaders/cubey/forward_pbr/forward_pbr.vert");
+    const std::string fragment_shader =
+        read_source_file(root / "shaders/cubey/forward_pbr/forward_pbr.frag");
+
+    require_contains(header, "render::PbrDebugView debug_view = render::PbrDebugView::Final",
+                     "forward PBR settings should expose the PBR debug view");
+    require_contains(graph, ".debug_view = settings.debug_view",
+                     "forward PBR record path should pack settings debug view into uniforms");
+    require_contains(graph, "settings.debug_view",
+                     "forward PBR render graph should receive the requested debug view");
+    require_contains(graph, "settings.debug_view == render::PbrDebugView::Final",
+                     "forward PBR debug views should bypass creative display transforms");
+    require_contains(graph, "render::PbrTonemap::Linear",
+                     "forward PBR debug views should preserve diagnostic channel values");
+    require_contains(internal_header, "render::PbrDebugView debug_view",
+                     "forward PBR scene pass should accept the requested debug view");
+    require_contains(recording, "debug_view == render::PbrDebugView::Final",
+                     "forward PBR scene pass should suppress the skybox for debug views");
+    require_contains(vertex_shader, "vec4 debug_options",
+                     "forward PBR vertex shader uniform block should match scene uniforms");
+    require_contains(fragment_shader, "vec4 debug_options",
+                     "forward PBR fragment shader uniform block should match scene uniforms");
+    require_contains(fragment_shader, "CUBEY_PBR_DEBUG_ROUGHNESS",
+                     "forward PBR fragment shader should expose named debug view constants");
+    require_contains(fragment_shader, "cubey_pbr_debug_output",
+                     "forward PBR fragment shader should centralize debug output mapping");
 }
 
 void test_forward_pbr_renderer_3d_skybox_uniforms_pack_inverse_view_camera_environment_and_display() {

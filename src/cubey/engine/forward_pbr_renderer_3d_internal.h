@@ -97,16 +97,15 @@ struct ForwardPbrRenderer3D::Impl {
         Count,
     };
 
-    [[nodiscard]] CompiledGraph
-    current_render_graph(render::ColorTargetView color_target, render::FrameSlot frame_slot,
-                         render::RenderGraphTextureState color_initial_state,
-                         render::RenderGraphTextureState color_final_state,
-                         const scene::RenderFramePlan3D& shadow_plan,
-                         const scene::RenderFramePlan3D& scene_plan,
-                         const render::MeshResourceTable<render::Mesh>& meshes,
-                         const render::FrameMeshResourceTable* frame_meshes,
-                         std::span<const render::GpuDeformationCommand> deformation_commands,
-                         const render::PbrMaterialTable& materials);
+    [[nodiscard]] CompiledGraph current_render_graph(
+        render::ColorTargetView color_target, render::FrameSlot frame_slot,
+        render::RenderGraphTextureState color_initial_state,
+        render::RenderGraphTextureState color_final_state,
+        const scene::RenderFramePlan3D& shadow_plan, const scene::RenderFramePlan3D& scene_plan,
+        const render::MeshResourceTable<render::Mesh>& meshes,
+        const render::FrameMeshResourceTable* frame_meshes,
+        std::span<const render::GpuDeformationCommand> deformation_commands,
+        const render::PbrMaterialTable& materials, render::PbrDebugView debug_view);
     void record_shadow_pass(const vulkan::CommandRecorder& recorder,
                             const scene::RenderFramePlan3D& shadow_plan,
                             render::FrameSlot frame_slot, const render::MeshResolver& mesh_resolver,
@@ -115,7 +114,8 @@ struct ForwardPbrRenderer3D::Impl {
                            render::ColorTargetView color_target,
                            const scene::RenderFramePlan3D& scene_plan, render::FrameSlot frame_slot,
                            const render::MeshResolver& mesh_resolver,
-                           const render::PbrMaterialTable& materials) const;
+                           const render::PbrMaterialTable& materials,
+                           render::PbrDebugView debug_view) const;
     void record_post_pass(const vulkan::CommandRecorder& recorder,
                           render::ColorTargetView color_target, render::FrameSlot frame_slot) const;
     void update_post_descriptor(const vulkan::Device& device, render::FrameSlot frame_slot,

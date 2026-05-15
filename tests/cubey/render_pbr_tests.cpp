@@ -84,9 +84,8 @@ void test_pbr_debug_view_names_parse_and_cycle() {
     require(cubey::render::next_pbr_debug_view(cubey::render::PbrDebugView::Uv0) ==
                 cubey::render::PbrDebugView::Final,
             "PBR debug cycling should wrap from uv0 to final");
-    require_throws(
-        [] { (void)cubey::render::pbr_debug_view_from_name("not-a-view"); },
-        "PBR debug parser should reject unknown view names");
+    require_throws([] { (void)cubey::render::pbr_debug_view_from_name("not-a-view"); },
+                   "PBR debug parser should reject unknown view names");
 }
 
 void test_pbr_forward_pass_declares_scene_and_material_sets() {
@@ -394,8 +393,9 @@ void test_pbr_material_table_tracks_descriptor_layout_explicitly() {
                      "PBR material table should reject null descriptor layouts");
     require_contains(source, "return descriptor_set_layout_;",
                      "PBR material table descriptor layout should return the stored layout");
-    require_not_contains(source, "descriptor_set_layout_ != layout",
-                         "PBR material table should allow equivalent layouts with distinct handles");
+    require_not_contains(
+        source, "descriptor_set_layout_ != layout",
+        "PBR material table should allow equivalent layouts with distinct handles");
     require_not_contains(source, "instances_.first().layout()",
                          "PBR material table descriptor layout should not depend on map order");
 }
@@ -814,6 +814,32 @@ void test_pbr_examples_and_gltf_importer_share_material_resources() {
                          "material cubes should not carry a parallel factor map");
     require_not_contains(material_cubes, "base_color_default_",
                          "material cubes should not carry duplicated PBR default textures");
+}
+
+void test_pbr_diagnostics_are_exposed_in_gltf_viewer_and_material_cubes() {
+    const std::filesystem::path source_root = std::filesystem::path{CUBEY_SOURCE_DIR};
+    const std::string gltf_viewer =
+        read_source_file(source_root / "projects/gltf_viewer/gltf_viewer_app_internal.h") +
+        read_source_file(source_root / "projects/gltf_viewer/gltf_viewer_app.cpp") +
+        read_source_file(source_root / "projects/gltf_viewer/gltf_viewer_render.cpp");
+    const std::string material_cubes =
+        read_source_file(source_root / "examples/material_cubes/material_cubes_app_internal.h") +
+        read_source_file(source_root / "examples/material_cubes/material_cubes_app.cpp") +
+        read_source_file(source_root / "examples/material_cubes/material_cubes_render.cpp");
+
+    require_contains(gltf_viewer, "render::pbr_debug_view_from_name(config_.debug_view)",
+                     "glTF viewer should initialize PBR diagnostics from --debug-view");
+    require_contains(gltf_viewer, "render::next_pbr_debug_view(debug_view_)",
+                     "glTF viewer should let D cycle PBR diagnostics");
+    require_contains(gltf_viewer, ".debug_view = debug_view_",
+                     "glTF viewer should pass the current debug view to the renderer");
+
+    require_contains(material_cubes, "render::pbr_debug_view_from_name(config_.debug_view)",
+                     "material_cubes should initialize PBR diagnostics from --debug-view");
+    require_contains(material_cubes, "render::next_pbr_debug_view(debug_view_)",
+                     "material_cubes should let D cycle PBR diagnostics");
+    require_contains(material_cubes, ".debug_view = debug_view_",
+                     "material_cubes should pass the current debug view to the renderer");
 }
 
 void test_gltf_basisu_transcoder_policy_uses_bc7_and_rgba_fallback() {

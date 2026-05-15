@@ -89,7 +89,9 @@ std::vector<std::uint32_t> fallback_cube_indices() {
     return indices;
 }
 
-GltfViewerApp::GltfViewerApp(RunConfig config) : config_(std::move(config)) {}
+GltfViewerApp::GltfViewerApp(RunConfig config)
+    : config_(std::move(config)),
+      debug_view_(render::pbr_debug_view_from_name(config_.debug_view)) {}
 
 int GltfViewerApp::run() {
     if (config_.headless) {
@@ -112,6 +114,9 @@ int GltfViewerApp::run_windowed() {
     };
     callbacks.update = [this](cubey::host::WindowedAppContext& context, const FrameTiming& timing) {
         update_animation(static_cast<float>(timing.delta_seconds));
+        if (context.input().key_pressed(cubey::input::Key::D)) {
+            debug_view_ = render::next_pbr_debug_view(debug_view_);
+        }
         orbit_controller_.update_from_input(context.input(), timing.delta_seconds);
         update_camera_transform();
     };

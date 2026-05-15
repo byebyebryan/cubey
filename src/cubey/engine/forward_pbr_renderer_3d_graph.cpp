@@ -91,6 +91,7 @@ void ForwardPbrRenderer3D::Impl::record(const ForwardPbrRenderer3DRenderRequest&
             .environment_intensity = environment().intensity,
             .prefiltered_mip_levels = environment().prefiltered_mip_levels,
             .environment_rotation_degrees = settings.environment_rotation_degrees,
+            .debug_view = settings.debug_view,
         }));
     skybox_material().upload(
         target.frame_slot,
@@ -100,16 +101,20 @@ void ForwardPbrRenderer3D::Impl::record(const ForwardPbrRenderer3DRenderRequest&
             .environment_intensity = environment().intensity,
             .environment_rotation_degrees = settings.environment_rotation_degrees,
         }));
-    post_material().upload(target.frame_slot, forward_pbr_renderer_3d_post_uniforms({
-                                                  .color_format = target.color_target.format,
-                                                  .exposure = settings.exposure,
-                                                  .tonemap = settings.tonemap,
-                                              }));
+    const bool uses_final_display_transform = settings.debug_view == render::PbrDebugView::Final;
+    post_material().upload(
+        target.frame_slot,
+        forward_pbr_renderer_3d_post_uniforms({
+            .color_format = target.color_target.format,
+            .exposure = uses_final_display_transform ? settings.exposure : 0.0F,
+            .tonemap = uses_final_display_transform ? settings.tonemap : render::PbrTonemap::Linear,
+        }));
 
-    const CompiledGraph render_graph = current_render_graph(
-        target.color_target, target.frame_slot, target.color_initial_state,
-        target.color_final_state, shadow_plan, scene_plan, *resources.meshes,
-        resources.frame_meshes, resources.deformation_commands, *resources.materials);
+    const CompiledGraph render_graph =
+        current_render_graph(target.color_target, target.frame_slot, target.color_initial_state,
+                             target.color_final_state, shadow_plan, scene_plan, *resources.meshes,
+                             resources.frame_meshes, resources.deformation_commands,
+                             *resources.materials, settings.debug_view);
     global_.graph_executor.record(
         render::RenderGraphFrameRecordInfo{
             .device = target.device,
@@ -135,7 +140,7 @@ ForwardPbrRenderer3D::Impl::CompiledGraph ForwardPbrRenderer3D::Impl::current_re
     const render::MeshResourceTable<render::Mesh>& meshes,
     const render::FrameMeshResourceTable* frame_meshes,
     std::span<const render::GpuDeformationCommand> deformation_commands,
-    const render::PbrMaterialTable& materials) {
+    const render::PbrMaterialTable& materials, render::PbrDebugView debug_view) {
     render::RenderGraphBuilder graph;
     const render::RenderGraphTextureHandle backbuffer = graph.import_color_target(
         "backbuffer", color_target, color_initial_state, color_final_state);
@@ -151,7 +156,7 @@ ForwardPbrRenderer3D::Impl::CompiledGraph ForwardPbrRenderer3D::Impl::current_re
                                   render::render_graph_undefined_texture_state());
     const std::optional<render::RenderGraphTextureState> shadow_initial_state =
         swapchain_.shadow_depth_is_sampled ? render::render_graph_sampled_depth_texture_state()
-                                 : render::render_graph_undefined_texture_state();
+                                           : render::render_graph_undefined_texture_state();
     const render::RenderGraphTextureHandle shadow_depth = graph.import_depth_target(
         "shadow depth", shadow_pass().depth_target(), shadow_initial_state);
     const DeformationBufferMap deformation_vertex_buffers =
@@ -189,11 +194,12 @@ ForwardPbrRenderer3D::Impl::CompiledGraph ForwardPbrRenderer3D::Impl::current_re
                                   .material_pass(render::pbr_forward_pass_info());
     declare_deformation_vertex_reads(scene_pass_builder, deformation_vertex_buffers);
     scene_pass_builder.execute([this, scene_color, frame_slot, &scene_plan, mesh_resolver,
-                                &materials](const render::RenderGraphExecutionContext& context) {
+                                &materials,
+                                debug_view](const render::RenderGraphExecutionContext& context) {
         const render::ColorTargetView target =
             render::resolved_color_target_view(context, scene_color);
         record_scene_pass(context.recorder(), target, scene_plan, frame_slot, mesh_resolver,
-                          materials);
+                          materials, debug_view);
     });
     graph.add_pass("post", render::RenderGraphQueueDomain::Graphics)
         .read_texture(scene_color)
