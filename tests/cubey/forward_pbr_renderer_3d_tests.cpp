@@ -114,7 +114,7 @@ cubey::ForwardPbrRenderer3DRenderRequest valid_render_request() {
                         .intensity = 1.0F,
                     },
             },
-        .resources =
+        .scene_resources =
             {
                 .meshes =
                     reinterpret_cast<const cubey::render::MeshResourceTable<cubey::render::Mesh>*>(
@@ -160,8 +160,8 @@ cubey::ForwardPbrRenderer3DFrameRequestInfo valid_frame_request_info() {
                 .color = {1.0F, 1.0F, 1.0F},
                 .intensity = 1.0F,
             },
-        .resources =
-            {
+        .scene_resources =
+            cubey::ForwardPbrRenderer3DSceneResources{
                 .meshes =
                     reinterpret_cast<const cubey::render::MeshResourceTable<cubey::render::Mesh>*>(
                         0x30),
@@ -238,7 +238,7 @@ void test_forward_pbr_renderer_3d_builds_render_request_from_frame_info() {
     require(request.view.scene == info.scene, "forward PBR request helper should copy scene view");
     require(request.view.frame_plan == info.frame_plan,
             "forward PBR request helper should copy frame plan");
-    require(request.resources.materials == info.resources.materials,
+    require(request.scene_resources.materials == info.scene_resources.materials,
             "forward PBR request helper should copy resources");
     require_near(request.settings.exposure, 1.25F,
                  "forward PBR request helper should copy display settings");
@@ -272,12 +272,12 @@ void test_forward_pbr_renderer_3d_render_request_validates_required_view_fields(
 
 void test_forward_pbr_renderer_3d_render_request_validates_required_resource_fields() {
     cubey::ForwardPbrRenderer3DRenderRequest request = valid_render_request();
-    request.resources.meshes = nullptr;
+    request.scene_resources.meshes = nullptr;
     require_throws([&request] { cubey::validate_forward_pbr_renderer_3d_render_request(request); },
                    "forward PBR render request should reject missing mesh table");
 
     request = valid_render_request();
-    request.resources.materials = nullptr;
+    request.scene_resources.materials = nullptr;
     require_throws([&request] { cubey::validate_forward_pbr_renderer_3d_render_request(request); },
                    "forward PBR render request should reject missing material table");
 }

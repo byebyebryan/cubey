@@ -101,7 +101,7 @@ struct ForwardPbrRenderer3DViewInfo {
     LightPacket3D fallback_light{};
 };
 
-struct ForwardPbrRenderer3DResourceInfo {
+struct ForwardPbrRenderer3DSceneResources {
     const render::MeshResourceTable<render::Mesh>* meshes = nullptr;
     const render::FrameMeshResourceTable* frame_meshes = nullptr;
     std::span<const render::GpuDeformationCommand> deformation_commands{};
@@ -117,7 +117,7 @@ struct ForwardPbrRenderer3DSettings {
 struct ForwardPbrRenderer3DRenderRequest {
     ForwardPbrRenderer3DTargetInfo target{};
     ForwardPbrRenderer3DViewInfo view{};
-    ForwardPbrRenderer3DResourceInfo resources{};
+    ForwardPbrRenderer3DSceneResources scene_resources{};
     ForwardPbrRenderer3DSettings settings{};
 };
 
@@ -136,7 +136,7 @@ struct ForwardPbrRenderer3DFrameRequestInfo {
     Entity camera_entity{};
     Entity light_entity{};
     LightPacket3D fallback_light{};
-    ForwardPbrRenderer3DResourceInfo resources{};
+    ForwardPbrRenderer3DSceneResources scene_resources{};
     ForwardPbrRenderer3DSettings settings{};
 };
 

@@ -63,7 +63,7 @@ void GltfViewerApp::record_viewer_target(
         .camera_entity = camera_entity_,
         .light_entity = light_entity_,
         .fallback_light = fallback_light_packet(),
-        .resources =
+        .scene_resources =
             {
                 .meshes = &import_resources_.meshes,
                 .frame_meshes = frame_meshes,

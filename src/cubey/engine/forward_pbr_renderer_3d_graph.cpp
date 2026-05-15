@@ -12,8 +12,7 @@ namespace cubey {
 namespace {
 
 using DeformationBufferMap =
-    std::unordered_map<render::MeshHandle, render::RenderGraphBufferHandle,
-                       render::MeshHandleHash>;
+    std::unordered_map<render::MeshHandle, render::RenderGraphBufferHandle, render::MeshHandleHash>;
 
 [[nodiscard]] render::RenderGraphBufferDesc
 deformation_output_buffer_desc(const render::GpuDeformationCommand& command,
@@ -32,8 +31,7 @@ deformation_output_buffer_desc(const render::GpuDeformationCommand& command,
     std::span<const render::GpuDeformationCommand> deformation_commands) {
     DeformationBufferMap buffers;
     for (std::uint32_t command_index = 0;
-         command_index < static_cast<std::uint32_t>(deformation_commands.size());
-         ++command_index) {
+         command_index < static_cast<std::uint32_t>(deformation_commands.size()); ++command_index) {
         const render::GpuDeformationCommand& command = deformation_commands[command_index];
         if (buffers.contains(command.mesh)) {
             continue;
@@ -60,7 +58,7 @@ void ForwardPbrRenderer3D::record(const ForwardPbrRenderer3DRenderRequest& reque
 
     const ForwardPbrRenderer3DTargetInfo& target = request.target;
     const ForwardPbrRenderer3DViewInfo& view = request.view;
-    const ForwardPbrRenderer3DResourceInfo& resources = request.resources;
+    const ForwardPbrRenderer3DSceneResources& resources = request.scene_resources;
     const ForwardPbrRenderer3DSettings& settings = request.settings;
     const ForwardPbrRenderer3DFramePlans frame_plans =
         forward_pbr_renderer_3d_frame_plans(*view.frame_plan);
@@ -100,8 +98,8 @@ void ForwardPbrRenderer3D::record(const ForwardPbrRenderer3DRenderRequest& reque
 
     const CompiledGraph render_graph = current_render_graph(
         target.color_target, target.frame_slot, target.color_initial_state,
-        target.color_final_state, shadow_plan, scene_plan, *resources.meshes, resources.frame_meshes,
-        resources.deformation_commands, *resources.materials);
+        target.color_final_state, shadow_plan, scene_plan, *resources.meshes,
+        resources.frame_meshes, resources.deformation_commands, *resources.materials);
     graph_executor_.record(
         render::RenderGraphFrameRecordInfo{
             .device = target.device,
@@ -160,38 +158,33 @@ ForwardPbrRenderer3D::CompiledGraph ForwardPbrRenderer3D::current_render_graph(
             (void)mesh;
             deformation_pass.write_storage_buffer(buffer);
         }
-        deformation_pass.execute([deformation_commands](
-                                     const render::RenderGraphExecutionContext& context) {
-            render::record_gpu_deformation_commands(context.recorder(), deformation_commands);
-        });
+        deformation_pass.execute(
+            [deformation_commands](const render::RenderGraphExecutionContext& context) {
+                render::record_gpu_deformation_commands(context.recorder(), deformation_commands);
+            });
     }
 
-    auto shadow_pass_builder =
-        graph.add_pass("shadow", render::RenderGraphQueueDomain::Graphics)
-            .write_depth(shadow_depth)
-            .material_pass(shadow_pass().material_pass());
+    auto shadow_pass_builder = graph.add_pass("shadow", render::RenderGraphQueueDomain::Graphics)
+                                   .write_depth(shadow_depth)
+                                   .material_pass(shadow_pass().material_pass());
     declare_deformation_vertex_reads(shadow_pass_builder, deformation_vertex_buffers);
-    shadow_pass_builder.execute(
-        [this, frame_slot, &shadow_plan, mesh_resolver, &materials](
-            const render::RenderGraphExecutionContext& context) {
-            record_shadow_pass(context.recorder(), shadow_plan, frame_slot, mesh_resolver,
-                               materials);
-        });
-    auto scene_pass_builder =
-        graph.add_pass("scene", render::RenderGraphQueueDomain::Graphics)
-            .read_texture(shadow_depth)
-            .write_color(scene_color)
-            .write_depth(scene_depth)
-            .material_pass(render::pbr_forward_pass_info());
+    shadow_pass_builder.execute([this, frame_slot, &shadow_plan, mesh_resolver,
+                                 &materials](const render::RenderGraphExecutionContext& context) {
+        record_shadow_pass(context.recorder(), shadow_plan, frame_slot, mesh_resolver, materials);
+    });
+    auto scene_pass_builder = graph.add_pass("scene", render::RenderGraphQueueDomain::Graphics)
+                                  .read_texture(shadow_depth)
+                                  .write_color(scene_color)
+                                  .write_depth(scene_depth)
+                                  .material_pass(render::pbr_forward_pass_info());
     declare_deformation_vertex_reads(scene_pass_builder, deformation_vertex_buffers);
-    scene_pass_builder.execute(
-        [this, scene_color, frame_slot, &scene_plan, mesh_resolver,
-         &materials](const render::RenderGraphExecutionContext& context) {
-            const render::ColorTargetView target =
-                render::resolved_color_target_view(context, scene_color);
-            record_scene_pass(context.recorder(), target, scene_plan, frame_slot, mesh_resolver,
-                              materials);
-        });
+    scene_pass_builder.execute([this, scene_color, frame_slot, &scene_plan, mesh_resolver,
+                                &materials](const render::RenderGraphExecutionContext& context) {
+        const render::ColorTargetView target =
+            render::resolved_color_target_view(context, scene_color);
+        record_scene_pass(context.recorder(), target, scene_plan, frame_slot, mesh_resolver,
+                          materials);
+    });
     graph.add_pass("post", render::RenderGraphQueueDomain::Graphics)
         .read_texture(scene_color)
         .write_color(backbuffer)

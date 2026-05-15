@@ -472,7 +472,7 @@ class MaterialCubesApp {
             .camera_entity = camera_entity_,
             .light_entity = light_entity_,
             .fallback_light = fallback_light_packet(),
-            .resources =
+            .scene_resources =
                 {
                     .meshes = &meshes_,
                     .materials = &materials_,

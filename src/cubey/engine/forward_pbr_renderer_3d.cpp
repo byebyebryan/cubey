@@ -67,7 +67,7 @@ forward_pbr_renderer_3d_render_request(const ForwardPbrRenderer3DFrameRequestInf
                 .light_entity = info.light_entity,
                 .fallback_light = info.fallback_light,
             },
-        .resources = info.resources,
+        .scene_resources = info.scene_resources,
         .settings = info.settings,
     };
 }
@@ -81,7 +81,7 @@ void validate_forward_pbr_renderer_3d_render_request(
         throw std::runtime_error("forward PBR render request requires scene and frame plans");
     }
     (void)forward_pbr_renderer_3d_frame_plans(*request.view.frame_plan);
-    if (request.resources.meshes == nullptr || request.resources.materials == nullptr) {
+    if (request.scene_resources.meshes == nullptr || request.scene_resources.materials == nullptr) {
         throw std::runtime_error("forward PBR render request requires render resource tables");
     }
 }
