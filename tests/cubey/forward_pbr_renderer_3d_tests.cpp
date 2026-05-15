@@ -306,6 +306,40 @@ void test_forward_pbr_renderer_3d_record_accepts_frame_request_info() {
                      "direct frame-info recording should delegate through the validated request");
 }
 
+void test_forward_pbr_renderer_3d_record_requires_created_resources() {
+    cubey::ForwardPbrRenderer3D renderer(valid_config());
+
+    require_throws([&renderer] { renderer.record(valid_render_request()); },
+                   "forward PBR record should reject calls before renderer resources exist");
+}
+
+void test_forward_pbr_renderer_3d_lifecycle_guards_resource_ordering() {
+    const std::filesystem::path source_root{CUBEY_SOURCE_DIR};
+    const std::string internal_header =
+        read_source_file(source_root / "src/cubey/engine/forward_pbr_renderer_3d_internal.h");
+    const std::string lifecycle =
+        read_source_file(source_root / "src/cubey/engine/forward_pbr_renderer_3d.cpp");
+    const std::string resources =
+        read_source_file(source_root / "src/cubey/engine/forward_pbr_renderer_3d_resources.cpp");
+    const std::string graph =
+        read_source_file(source_root / "src/cubey/engine/forward_pbr_renderer_3d_graph.cpp");
+
+    require_contains(internal_header, "has_global_resources",
+                     "forward PBR internals should expose a global-resource lifecycle query");
+    require_contains(internal_header, "has_swapchain_resources",
+                     "forward PBR internals should expose a swapchain-resource lifecycle query");
+    require_contains(lifecycle, "require_no_global_resources",
+                     "forward PBR lifecycle should reject repeated global creation");
+    require_contains(lifecycle, "require_no_swapchain_resources",
+                     "forward PBR lifecycle should reject repeated swapchain creation");
+    require_contains(resources, "require_global_resources();",
+                     "forward PBR swapchain creation should require global resources first");
+    require_contains(resources, "require_no_swapchain_resources();",
+                     "forward PBR swapchain creation should reject duplicate create calls");
+    require_contains(graph, "require_swapchain_resources();",
+                     "forward PBR record should require swapchain resources before recording");
+}
+
 void test_forward_pbr_renderer_3d_render_request_validates_required_target_fields() {
     cubey::ForwardPbrRenderer3DRenderRequest request = valid_render_request();
     cubey::validate_forward_pbr_renderer_3d_render_request(request);

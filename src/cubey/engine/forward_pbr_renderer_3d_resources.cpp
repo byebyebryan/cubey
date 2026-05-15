@@ -39,6 +39,7 @@ void ForwardPbrRenderer3D::Impl::create_global_resources(
     if (frame_slot_count == 0) {
         throw std::runtime_error("forward PBR renderer requires at least one frame slot");
     }
+    require_no_global_resources();
     global_.environment = &environment;
     global_.graph_executor.resize(frame_slot_count);
 
@@ -169,6 +170,8 @@ void ForwardPbrRenderer3D::Impl::create_swapchain_resources(
     if (info.materials == nullptr) {
         throw std::runtime_error("forward PBR renderer requires a PBR material table");
     }
+    require_global_resources();
+    require_no_swapchain_resources();
     validate_scene_color_format(device, config_.scene_color_format);
 
     swapchain_.depth_attachment.emplace(device, info.extent);

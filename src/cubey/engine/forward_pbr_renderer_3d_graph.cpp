@@ -62,6 +62,8 @@ void ForwardPbrRenderer3D::record(const ForwardPbrRenderer3DRenderRequest& reque
 }
 
 void ForwardPbrRenderer3D::Impl::record(const ForwardPbrRenderer3DRenderRequest& request) {
+    require_global_resources();
+    require_swapchain_resources();
     validate_forward_pbr_renderer_3d_render_request(request);
 
     const ForwardPbrRenderer3DTargetInfo& target = request.target;

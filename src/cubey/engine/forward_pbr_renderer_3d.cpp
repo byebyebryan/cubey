@@ -229,6 +229,65 @@ const render::GeneratedPbrEnvironment& ForwardPbrRenderer3D::Impl::environment()
     return *global_.environment;
 }
 
+bool ForwardPbrRenderer3D::Impl::has_global_resources() const {
+    return global_.environment != nullptr || global_.graph_executor.frame_slot_count() != 0 ||
+           global_.shadow_pass.has_value() ||
+           global_.shadow_double_sided_pipeline.has_value() ||
+           global_.scene_material.has_value() || global_.skybox_material.has_value() ||
+           global_.post_material.has_value();
+}
+
+bool ForwardPbrRenderer3D::Impl::has_swapchain_resources() const {
+    if (swapchain_.depth_attachment.has_value() || swapchain_.post_sampler.has_value() ||
+        swapchain_.skybox_pipeline.has_value() || swapchain_.post_pipeline.has_value()) {
+        return true;
+    }
+    for (std::size_t index = 0; index < swapchain_.pipeline_variants.size(); ++index) {
+        if (index == static_cast<std::size_t>(ForwardPbrPipelineVariant::ShadowDoubleSided)) {
+            continue;
+        }
+        if (swapchain_.pipeline_variants[index].has_value()) {
+            return true;
+        }
+    }
+    return false;
+}
+
+void ForwardPbrRenderer3D::Impl::require_global_resources() const {
+    if (!has_global_resources()) {
+        throw std::runtime_error("forward PBR renderer global resources are not initialized");
+    }
+}
+
+void ForwardPbrRenderer3D::Impl::require_swapchain_resources() const {
+    require_global_resources();
+    const auto has_pipeline = [this](ForwardPbrPipelineVariant variant) {
+        return swapchain_.pipeline_variants[static_cast<std::size_t>(variant)].has_value();
+    };
+    if (!swapchain_.depth_attachment.has_value() || !swapchain_.post_sampler.has_value() ||
+        !swapchain_.skybox_pipeline.has_value() || !swapchain_.post_pipeline.has_value() ||
+        !has_pipeline(ForwardPbrPipelineVariant::Opaque) ||
+        !has_pipeline(ForwardPbrPipelineVariant::OpaqueDoubleSided) ||
+        !has_pipeline(ForwardPbrPipelineVariant::Alpha) ||
+        !has_pipeline(ForwardPbrPipelineVariant::AlphaDoubleSided) ||
+        !has_pipeline(ForwardPbrPipelineVariant::MaskShadow) ||
+        !has_pipeline(ForwardPbrPipelineVariant::MaskShadowDoubleSided)) {
+        throw std::runtime_error("forward PBR renderer swapchain resources are not initialized");
+    }
+}
+
+void ForwardPbrRenderer3D::Impl::require_no_global_resources() const {
+    if (has_global_resources()) {
+        throw std::runtime_error("forward PBR renderer global resources are already initialized");
+    }
+}
+
+void ForwardPbrRenderer3D::Impl::require_no_swapchain_resources() const {
+    if (has_swapchain_resources()) {
+        throw std::runtime_error("forward PBR renderer swapchain resources are already initialized");
+    }
+}
+
 const render::ShadowMapPass3D& ForwardPbrRenderer3D::Impl::shadow_pass() const {
     if (!global_.shadow_pass.has_value()) {
         throw std::runtime_error("forward PBR renderer shadow pass is not initialized");

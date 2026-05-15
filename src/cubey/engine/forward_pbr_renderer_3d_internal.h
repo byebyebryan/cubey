@@ -75,6 +75,12 @@ struct ForwardPbrRenderer3D::Impl {
     void record(const ForwardPbrRenderer3DRenderRequest& request);
 
     [[nodiscard]] const render::GeneratedPbrEnvironment& environment() const;
+    [[nodiscard]] bool has_global_resources() const;
+    [[nodiscard]] bool has_swapchain_resources() const;
+    void require_global_resources() const;
+    void require_swapchain_resources() const;
+    void require_no_global_resources() const;
+    void require_no_swapchain_resources() const;
 
     struct CompiledGraph {
         render::CompiledRenderGraph graph;
