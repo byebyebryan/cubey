@@ -7,6 +7,9 @@ cubey_add_app_target(
     SOURCES
         main.cpp
         particle_cubes_app.cpp
+        particle_cubes_render.cpp
+        particle_cubes_resources.cpp
+        particle_cubes_simulation.cpp
     SHADERS
         shaders/particle_cubes.comp
         shaders/particle_cubes.vert
