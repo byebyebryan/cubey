@@ -351,13 +351,15 @@ void test_pbr_material_table_tracks_descriptor_layout_explicitly() {
     require_contains(header, "VkDescriptorSetLayout descriptor_set_layout_",
                      "PBR material table should store a table-level descriptor layout");
     require_contains(header, "register_descriptor_set_layout(instance.layout())",
-                     "PBR material table should validate inserted instance layouts");
+                     "PBR material table should register inserted instance layouts");
     require_contains(source, "PbrMaterialTable::register_descriptor_set_layout",
-                     "PBR material table should centralize descriptor layout validation");
-    require_contains(source, "instances must share one descriptor layout",
-                     "PBR material table should reject mismatched descriptor layouts");
+                     "PBR material table should centralize descriptor layout registration");
+    require_contains(source, "instance requires a descriptor set layout",
+                     "PBR material table should reject null descriptor layouts");
     require_contains(source, "return descriptor_set_layout_;",
                      "PBR material table descriptor layout should return the stored layout");
+    require_not_contains(source, "descriptor_set_layout_ != layout",
+                         "PBR material table should allow equivalent layouts with distinct handles");
     require_not_contains(source, "instances_.first().layout()",
                          "PBR material table descriptor layout should not depend on map order");
 }

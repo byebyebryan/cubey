@@ -250,10 +250,6 @@ void PbrMaterialTable::register_descriptor_set_layout(VkDescriptorSetLayout layo
     }
     if (descriptor_set_layout_ == VK_NULL_HANDLE) {
         descriptor_set_layout_ = layout;
-        return;
-    }
-    if (descriptor_set_layout_ != layout) {
-        throw std::runtime_error("PBR material table instances must share one descriptor layout");
     }
 }
 
