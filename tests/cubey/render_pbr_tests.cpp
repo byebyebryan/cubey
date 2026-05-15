@@ -732,7 +732,8 @@ void test_pbr_examples_and_gltf_importer_share_material_resources() {
     const std::string furnace =
         read_source_file(source_root / "projects/pbr_furnace/pbr_furnace_resources.cpp");
     const std::string material_cubes =
-        read_source_file(source_root / "examples/material_cubes/material_cubes_app.cpp");
+        read_source_file(source_root / "examples/material_cubes/material_cubes_app_internal.h") +
+        read_source_file(source_root / "examples/material_cubes/material_cubes_resources.cpp");
 
     require_contains(importer_header, "render::PbrMaterialTable materials",
                      "glTF import resources should expose a shared PBR material table");

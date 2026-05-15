@@ -22,8 +22,13 @@ void test_cube_examples_share_spinning_cube_motion() {
         read_source_file(root / "examples/instanced_cubes/instanced_cubes_app.cpp");
     const std::string instanced_shader =
         read_source_file(root / "examples/instanced_cubes/shaders/instanced_cubes.vert");
+    const std::string material_scene =
+        read_source_file(root / "examples/material_cubes/material_cubes_scene.cpp");
     const std::string material =
-        read_source_file(root / "examples/material_cubes/material_cubes_app.cpp");
+        read_source_file(root / "examples/material_cubes/material_cubes_app_internal.h") +
+        read_source_file(root / "examples/material_cubes/material_cubes_resources.cpp") +
+        read_source_file(root / "examples/material_cubes/material_cubes_render.cpp") +
+        material_scene;
     const std::string shadow_scene =
         read_source_file(root / "examples/shadow_cube/shadow_cube_scene.cpp");
     const std::string shadow_app =
@@ -38,7 +43,7 @@ void test_cube_examples_share_spinning_cube_motion() {
     require_contains(common, "0.55F", "common cube spin should preserve spinning_cube pitch speed");
     require_contains(common, "0.9F", "common cube spin should preserve spinning_cube yaw speed");
 
-    for (const std::string* source : {&spinning, &textured, &material, &shadow_scene}) {
+    for (const std::string* source : {&spinning, &textured, &material_scene, &shadow_scene}) {
         require_contains(*source, "cubey::examples::common::cube_spin_transform",
                          "scene-backed cube examples should use the common spin transform");
     }
@@ -60,9 +65,9 @@ void test_cube_examples_share_spinning_cube_motion() {
                          "instanced cube rows should not be laid out in depth");
     require_not_contains(instanced, "set_auto_rotation_speed",
                          "instanced cube camera should not auto-orbit the static grid");
-    require_contains(material, "cubey::math::Vec3 material_cube_translation",
+    require_contains(material_scene, "cubey::math::Vec3 material_cube_translation",
                      "material cube grid should keep explicit front-facing cell placement");
-    require_contains(material, "0.0F,",
+    require_contains(material_scene, "0.0F,",
                      "material cube grid should keep cells on the front-facing XY plane");
     require_contains(material, ".distance = kCameraDistance",
                      "material cube camera should use shared front-facing framing distance");
@@ -135,7 +140,9 @@ void test_shadow_cube_transforms_normals_with_rotating_model_matrix() {
 void test_material_cubes_show_real_material_variant_grid() {
     const std::filesystem::path root{CUBEY_SOURCE_DIR};
     const std::string app =
-        read_source_file(root / "examples/material_cubes/material_cubes_app.cpp");
+        read_source_file(root / "examples/material_cubes/material_cubes_app_internal.h") +
+        read_source_file(root / "examples/material_cubes/material_cubes_resources.cpp") +
+        read_source_file(root / "examples/material_cubes/material_cubes_render.cpp");
     const std::string cmake = read_source_file(root / "examples/material_cubes/CMakeLists.txt");
 
     require_contains(app, "kMaterialGridColumns = 7",

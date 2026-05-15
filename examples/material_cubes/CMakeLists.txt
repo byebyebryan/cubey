@@ -9,6 +9,9 @@ cubey_add_app_target(
     SOURCES
         main.cpp
         material_cubes_app.cpp
+        material_cubes_render.cpp
+        material_cubes_resources.cpp
+        material_cubes_scene.cpp
     SHADERS
         ${CUBEY_FORWARD_PBR_SHADERS}
     SHADER_INCLUDE_DIRS
