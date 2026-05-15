@@ -148,6 +148,7 @@ add_library(cubey_render STATIC
     render/mesh.cpp
     render/pass.cpp
     render/pbr.cpp
+    render/pbr_material_resources.cpp
     render/pipeline_resource.cpp
     render/primitive_mesh.cpp
     render/render_graph.cpp

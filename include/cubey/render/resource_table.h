@@ -33,6 +33,10 @@ template <typename HandleT, typename ResourceT, typename HashT> class ResourceTa
         }
     }
 
+    void clear() {
+        resources_.clear();
+    }
+
     [[nodiscard]] ResourceT& at(HandleT handle) {
         const auto position = resources_.find(handle);
         if (position == resources_.end()) {

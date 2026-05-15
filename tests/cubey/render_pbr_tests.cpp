@@ -2,9 +2,11 @@
 
 #include <cubey/render/material.h>
 #include <cubey/render/pbr.h>
+#include <cubey/render/pbr_material_resources.h>
 
 #include <vulkan/vulkan.h>
 
+#include <array>
 #include <cstddef>
 #include <filesystem>
 #include <stdexcept>
@@ -277,6 +279,66 @@ void test_pbr_material_factors_are_uniforms_and_push_constants_are_model_only() 
         cubey::render::pbr_push_constants(cubey::math::Mat4{1.0F});
     require(constants.model == cubey::math::Mat4{1.0F},
             "PBR push constants should carry only the model matrix");
+}
+
+void test_pbr_default_texture_specs_cover_all_sampled_material_bindings() {
+    const std::span<const cubey::render::PbrMaterialBinding> bindings =
+        cubey::render::pbr_sampled_material_bindings();
+    const std::span<const cubey::render::PbrDefaultTextureSpec> specs =
+        cubey::render::pbr_default_texture_specs();
+
+    require(bindings.size() == 15, "PBR should expose every sampled material binding");
+    require(specs.size() == bindings.size(), "PBR default specs should cover every texture slot");
+    for (std::size_t i = 0; i < bindings.size(); ++i) {
+        require(specs[i].binding == bindings[i],
+                "PBR default texture specs should follow sampled binding order");
+    }
+
+    require(specs[0].binding == cubey::render::PbrMaterialBinding::BaseColor,
+            "PBR default specs should start with base color");
+    require(specs[0].format == VK_FORMAT_R8G8B8A8_SRGB,
+            "base-color default should be sampled as sRGB");
+    require(specs[0].rgba8 == std::array<std::uint8_t, 4>{255, 255, 255, 255},
+            "base-color default should be opaque white");
+
+    require(specs[1].binding == cubey::render::PbrMaterialBinding::MetallicRoughness,
+            "PBR default specs should include metallic-roughness");
+    require(specs[1].format == VK_FORMAT_R8G8B8A8_UNORM,
+            "metallic-roughness default should be linear");
+    require(specs[1].rgba8 == std::array<std::uint8_t, 4>{255, 255, 255, 255},
+            "metallic-roughness default should preserve roughness and metallic at one");
+
+    require(specs[2].binding == cubey::render::PbrMaterialBinding::Normal,
+            "PBR default specs should include normal");
+    require(specs[2].rgba8 == std::array<std::uint8_t, 4>{128, 128, 255, 255},
+            "normal default should be the flat tangent-space normal");
+
+    require(specs[4].binding == cubey::render::PbrMaterialBinding::Emissive,
+            "PBR default specs should include emissive");
+    require(specs[4].format == VK_FORMAT_R8G8B8A8_SRGB,
+            "emissive default should be sampled as sRGB");
+    require(specs[4].rgba8 == std::array<std::uint8_t, 4>{0, 0, 0, 255},
+            "emissive default should be black");
+}
+
+void test_pbr_material_table_groups_factors_and_supports_lifetime_operations() {
+    cubey::render::PbrMaterialTable table;
+    const cubey::render::MaterialHandle material{.index = 4, .generation = 2};
+
+    cubey::render::PbrMaterialFactors factors;
+    factors.base_color_factor = {0.2F, 0.3F, 0.4F, 0.5F};
+    table.set_factors(material, factors);
+
+    require(table.contains_factors(material), "PBR material table should store material factors");
+    require(table.factors(material).base_color_factor == factors.base_color_factor,
+            "PBR material table should retrieve material factors by handle");
+
+    table.erase(material);
+    require(!table.contains_factors(material), "PBR material erase should remove factors");
+
+    table.set_factors(material, factors);
+    table.clear();
+    require(!table.contains_factors(material), "PBR material clear should remove all factors");
 }
 
 void test_pbr_scene_uniforms_carry_display_transform() {
