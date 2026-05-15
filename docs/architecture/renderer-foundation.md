@@ -184,15 +184,20 @@ full engine architecture.
   forward PBR pipelines, HDR scene-color graph target, post pipeline,
   scene/skybox/post material descriptors, depth attachment, and render-graph
   recording for a 3D PBR view. The reusable GLSL package lives under
-  `shaders/cubey/forward_pbr`; projects still decide when to create the
-  renderer and which frame plans, scene resources, targets, environment
-  settings, and display settings to submit.
+  `shaders/cubey/forward_pbr`, and the shader-directory config helper maps
+  that package to compiled `.spv` paths. The public renderer header exposes
+  config, resource, and request contracts while keeping shadow, pipeline,
+  graph, sampler, and attachment runtime state behind the engine
+  implementation boundary. Projects still decide when to create the renderer
+  and which frame plans, scene resources, targets, environment settings, and
+  display settings to submit.
 - `ForwardPbrRenderer3DFrameRequestInfo`,
   `ForwardPbrRenderer3DSceneResources`, and `ForwardPbrRenderer3DRenderRequest`
   are the first explicit renderer request boundary. They group target state,
   scene/view plans, mesh/material/deformation resources, and
-  display/environment settings so renderer call sites do not depend on a long
-  nested parameter list or raw material descriptor layout plumbing.
+  display/environment settings so renderer call sites can submit one direct
+  frame request instead of depending on a long nested parameter list or raw
+  material descriptor layout plumbing.
 - `GeneratedPbrEnvironment` creates setup-time irradiance cube,
   GGX-prefiltered radiance cube, and DFG LUT resources from either deterministic
   generated radiance or equirectangular HDR image data. The shared PBR shader
@@ -245,7 +250,10 @@ full engine architecture.
   imported resources and can allocate simple non-aliased transient resources.
   `RenderGraphFrameResources` owns one resource set per frame slot, and graph
   texture resolution helpers expose dynamic-rendering color targets and
-  descriptor-ready sampled image/view/layout triples. Recorder-backed graph
+  descriptor-ready sampled image/view/layout triples. Shared texture-state
+  helpers cover common imported undefined, present, color-attachment, and
+  sampled-depth states so examples and reusable renderers do not duplicate
+  Vulkan layout/access/stage tuples. Recorder-backed graph
   execution records before/after requirements through `CommandRecorder` around
   pass callbacks. Pass reordering, pass culling, descriptor allocation,
   aliasing, and async scheduling remain future work. `shadow_cube` now uses

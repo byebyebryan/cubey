@@ -7,7 +7,7 @@
 
 namespace cubey {
 
-void ForwardPbrRenderer3D::record_shadow_pass(
+void ForwardPbrRenderer3D::Impl::record_shadow_pass(
     const vulkan::CommandRecorder& recorder, const scene::RenderFramePlan3D& shadow_plan,
     render::FrameSlot frame_slot, const render::MeshResolver& mesh_resolver,
     const render::PbrMaterialTable& materials) const {
@@ -81,7 +81,7 @@ void ForwardPbrRenderer3D::record_shadow_pass(
         });
 }
 
-void ForwardPbrRenderer3D::record_scene_pass(
+void ForwardPbrRenderer3D::Impl::record_scene_pass(
     const vulkan::CommandRecorder& recorder, render::ColorTargetView color_target,
     const scene::RenderFramePlan3D& scene_plan, render::FrameSlot frame_slot,
     const render::MeshResolver& mesh_resolver, const render::PbrMaterialTable& materials) const {
@@ -140,9 +140,9 @@ void ForwardPbrRenderer3D::record_scene_pass(
         });
 }
 
-void ForwardPbrRenderer3D::record_post_pass(const vulkan::CommandRecorder& recorder,
-                                            render::ColorTargetView color_target,
-                                            render::FrameSlot frame_slot) const {
+void ForwardPbrRenderer3D::Impl::record_post_pass(const vulkan::CommandRecorder& recorder,
+                                                  render::ColorTargetView color_target,
+                                                  render::FrameSlot frame_slot) const {
     render::record_render_target_pass(
         recorder, render::render_target_view(color_target),
         render::RenderClearValues{

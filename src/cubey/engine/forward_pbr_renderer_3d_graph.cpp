@@ -58,6 +58,10 @@ void ForwardPbrRenderer3D::record(const ForwardPbrRenderer3DFrameRequestInfo& in
 }
 
 void ForwardPbrRenderer3D::record(const ForwardPbrRenderer3DRenderRequest& request) {
+    impl_->record(request);
+}
+
+void ForwardPbrRenderer3D::Impl::record(const ForwardPbrRenderer3DRenderRequest& request) {
     validate_forward_pbr_renderer_3d_render_request(request);
 
     const ForwardPbrRenderer3DTargetInfo& target = request.target;
@@ -121,7 +125,7 @@ void ForwardPbrRenderer3D::record(const ForwardPbrRenderer3DRenderRequest& reque
     shadow_depth_is_sampled_ = true;
 }
 
-ForwardPbrRenderer3D::CompiledGraph ForwardPbrRenderer3D::current_render_graph(
+ForwardPbrRenderer3D::Impl::CompiledGraph ForwardPbrRenderer3D::Impl::current_render_graph(
     render::ColorTargetView color_target, render::FrameSlot frame_slot,
     render::RenderGraphTextureState color_initial_state,
     render::RenderGraphTextureState color_final_state, const scene::RenderFramePlan3D& shadow_plan,
@@ -204,7 +208,7 @@ ForwardPbrRenderer3D::CompiledGraph ForwardPbrRenderer3D::current_render_graph(
     };
 }
 
-void ForwardPbrRenderer3D::update_post_descriptor(
+void ForwardPbrRenderer3D::Impl::update_post_descriptor(
     const vulkan::Device& device, render::FrameSlot frame_slot,
     const render::CompiledRenderGraph& graph, const render::RenderGraphResourceSet& resources,
     render::RenderGraphTextureHandle scene_color) const {

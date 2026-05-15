@@ -170,9 +170,9 @@ Reusable spatial types should stay explicit and narrow:
   render layer now owns small material-instance descriptor lifetimes and shared
   draw-recording helpers. The engine-owned renderer service owns renderer
   instance lifetime, and the first forward PBR renderer owns reusable shadow,
-  skybox, and PBR forward pass resources. Asset loading, shader selection,
-  environment selection, and broader material policy stay owned by projects for
-  now.
+  skybox, and PBR forward pass resources behind a request-shaped public
+  contract. Asset loading, shader package selection, environment selection, and
+  broader material policy stay owned by projects for now.
 
 The broader entity/component shape is captured in the
 [entity and component foundation](architecture/entity-component-foundation.md):

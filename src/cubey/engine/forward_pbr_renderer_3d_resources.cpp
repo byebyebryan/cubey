@@ -30,6 +30,12 @@ void validate_scene_color_format(const vulkan::Device& device, VkFormat format) 
 void ForwardPbrRenderer3D::create_global_resources(
     const vulkan::Device& device, const render::GeneratedPbrEnvironment& environment,
     std::uint32_t frame_slot_count) {
+    impl_->create_global_resources(device, environment, frame_slot_count);
+}
+
+void ForwardPbrRenderer3D::Impl::create_global_resources(
+    const vulkan::Device& device, const render::GeneratedPbrEnvironment& environment,
+    std::uint32_t frame_slot_count) {
     if (frame_slot_count == 0) {
         throw std::runtime_error("forward PBR renderer requires at least one frame slot");
     }
@@ -148,6 +154,11 @@ void ForwardPbrRenderer3D::create_global_resources(
 }
 
 void ForwardPbrRenderer3D::create_swapchain_resources(
+    const vulkan::Device& device, const ForwardPbrRenderer3DTargetResourcesInfo& info) {
+    impl_->create_swapchain_resources(device, info);
+}
+
+void ForwardPbrRenderer3D::Impl::create_swapchain_resources(
     const vulkan::Device& device, const ForwardPbrRenderer3DTargetResourcesInfo& info) {
     if (info.extent.width == 0 || info.extent.height == 0) {
         throw std::runtime_error("forward PBR renderer requires a nonzero target extent");
@@ -298,6 +309,10 @@ void ForwardPbrRenderer3D::create_swapchain_resources(
 }
 
 void ForwardPbrRenderer3D::destroy_swapchain_resources() {
+    impl_->destroy_swapchain_resources();
+}
+
+void ForwardPbrRenderer3D::Impl::destroy_swapchain_resources() {
     const std::uint32_t frame_slot_count = graph_executor_.frame_slot_count();
     graph_executor_.clear();
     if (frame_slot_count != 0) {
@@ -316,6 +331,10 @@ void ForwardPbrRenderer3D::destroy_swapchain_resources() {
 }
 
 void ForwardPbrRenderer3D::destroy_all_resources() {
+    impl_->destroy_all_resources();
+}
+
+void ForwardPbrRenderer3D::Impl::destroy_all_resources() {
     destroy_swapchain_resources();
     graph_executor_.clear();
     post_material_.reset();
