@@ -146,6 +146,8 @@ struct ForwardPbrRenderer3DFramePlans {
 };
 
 void validate_forward_pbr_renderer_3d_config(const ForwardPbrRenderer3DConfig& config);
+[[nodiscard]] ForwardPbrRenderer3DConfig forward_pbr_renderer_3d_config_from_shader_directory(
+    std::filesystem::path shader_directory, ForwardPbrRenderer3DConfig base = {});
 [[nodiscard]] ForwardPbrRenderer3DRenderRequest
 forward_pbr_renderer_3d_render_request(const ForwardPbrRenderer3DFrameRequestInfo& info);
 void validate_forward_pbr_renderer_3d_render_request(

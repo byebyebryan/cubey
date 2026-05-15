@@ -45,6 +45,22 @@ void validate_forward_pbr_renderer_3d_config(const ForwardPbrRenderer3DConfig& c
     }
 }
 
+ForwardPbrRenderer3DConfig forward_pbr_renderer_3d_config_from_shader_directory(
+    std::filesystem::path shader_directory, ForwardPbrRenderer3DConfig base) {
+    if (shader_directory.empty()) {
+        throw std::runtime_error("forward PBR renderer requires a shader directory");
+    }
+    base.pbr_vertex_shader = shader_directory / "forward_pbr.vert.spv";
+    base.pbr_fragment_shader = shader_directory / "forward_pbr.frag.spv";
+    base.skybox_vertex_shader = shader_directory / "forward_pbr_skybox.vert.spv";
+    base.skybox_fragment_shader = shader_directory / "forward_pbr_skybox.frag.spv";
+    base.post_vertex_shader = shader_directory / "forward_pbr_post.vert.spv";
+    base.post_fragment_shader = shader_directory / "forward_pbr_post.frag.spv";
+    base.shadow_depth_vertex_shader = shader_directory / "forward_pbr_shadow_depth.vert.spv";
+    base.shadow_depth_fragment_shader = shader_directory / "forward_pbr_shadow_depth.frag.spv";
+    return base;
+}
+
 ForwardPbrRenderer3DRenderRequest
 forward_pbr_renderer_3d_render_request(const ForwardPbrRenderer3DFrameRequestInfo& info) {
     return {

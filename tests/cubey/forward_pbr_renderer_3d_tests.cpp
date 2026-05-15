@@ -207,6 +207,55 @@ void test_forward_pbr_renderer_3d_config_defaults_to_hdr_scene_color() {
             "forward PBR renderer should default to a float HDR scene color target");
 }
 
+void test_forward_pbr_renderer_3d_config_from_shader_directory_fills_package_paths() {
+    cubey::ForwardPbrRenderer3DConfig base;
+    base.shadow_extent = 1024;
+    base.shadow_depth_format = VK_FORMAT_D32_SFLOAT;
+    base.scene_color_format = VK_FORMAT_R32G32B32A32_SFLOAT;
+
+    const cubey::ForwardPbrRenderer3DConfig config =
+        cubey::forward_pbr_renderer_3d_config_from_shader_directory("build/shaders", base);
+
+    require(config.pbr_vertex_shader == std::filesystem::path{"build/shaders"} /
+                                            "forward_pbr.vert.spv",
+            "forward PBR shader directory helper should fill the material vertex shader path");
+    require(config.pbr_fragment_shader == std::filesystem::path{"build/shaders"} /
+                                              "forward_pbr.frag.spv",
+            "forward PBR shader directory helper should fill the material fragment shader path");
+    require(config.skybox_vertex_shader == std::filesystem::path{"build/shaders"} /
+                                                "forward_pbr_skybox.vert.spv",
+            "forward PBR shader directory helper should fill the skybox vertex shader path");
+    require(config.skybox_fragment_shader == std::filesystem::path{"build/shaders"} /
+                                                  "forward_pbr_skybox.frag.spv",
+            "forward PBR shader directory helper should fill the skybox fragment shader path");
+    require(config.post_vertex_shader == std::filesystem::path{"build/shaders"} /
+                                             "forward_pbr_post.vert.spv",
+            "forward PBR shader directory helper should fill the post vertex shader path");
+    require(config.post_fragment_shader == std::filesystem::path{"build/shaders"} /
+                                               "forward_pbr_post.frag.spv",
+            "forward PBR shader directory helper should fill the post fragment shader path");
+    require(config.shadow_depth_vertex_shader == std::filesystem::path{"build/shaders"} /
+                                                    "forward_pbr_shadow_depth.vert.spv",
+            "forward PBR shader directory helper should fill the shadow vertex shader path");
+    require(config.shadow_depth_fragment_shader == std::filesystem::path{"build/shaders"} /
+                                                      "forward_pbr_shadow_depth.frag.spv",
+            "forward PBR shader directory helper should fill the shadow fragment shader path");
+    require(config.shadow_extent == 1024,
+            "forward PBR shader directory helper should preserve shadow extent");
+    require(config.shadow_depth_format == VK_FORMAT_D32_SFLOAT,
+            "forward PBR shader directory helper should preserve shadow depth format");
+    require(config.scene_color_format == VK_FORMAT_R32G32B32A32_SFLOAT,
+            "forward PBR shader directory helper should preserve scene color format");
+}
+
+void test_forward_pbr_renderer_3d_config_from_shader_directory_rejects_empty_directory() {
+    require_throws(
+        [] {
+            static_cast<void>(cubey::forward_pbr_renderer_3d_config_from_shader_directory({}));
+        },
+        "forward PBR shader directory helper should reject an empty shader directory");
+}
+
 void test_forward_pbr_renderer_3d_target_resources_use_material_table() {
     const cubey::render::PbrMaterialTable* materials =
         reinterpret_cast<const cubey::render::PbrMaterialTable*>(0x40);

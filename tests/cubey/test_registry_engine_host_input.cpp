@@ -23,6 +23,8 @@ void test_orbit_controller_updates_from_input_snapshot();
 void test_pan_zoom_2d_controller_pans_and_zooms_from_input();
 void test_forward_pbr_renderer_3d_config_requires_shader_paths_and_shadow_extent();
 void test_forward_pbr_renderer_3d_config_defaults_to_hdr_scene_color();
+void test_forward_pbr_renderer_3d_config_from_shader_directory_fills_package_paths();
+void test_forward_pbr_renderer_3d_config_from_shader_directory_rejects_empty_directory();
 void test_forward_pbr_renderer_3d_target_resources_use_material_table();
 void test_forward_pbr_renderer_3d_builds_render_request_from_frame_info();
 void test_forward_pbr_renderer_3d_binds_shadow_depth_with_depth_read_layout();
@@ -80,6 +82,8 @@ std::span<const TestCase> engine_host_input_test_cases() {
         CUBEY_TEST(test_renderer_service_resource_lifecycle_is_safe_without_renderers),
         CUBEY_TEST(test_forward_pbr_renderer_3d_config_requires_shader_paths_and_shadow_extent),
         CUBEY_TEST(test_forward_pbr_renderer_3d_config_defaults_to_hdr_scene_color),
+        CUBEY_TEST(test_forward_pbr_renderer_3d_config_from_shader_directory_fills_package_paths),
+        CUBEY_TEST(test_forward_pbr_renderer_3d_config_from_shader_directory_rejects_empty_directory),
         CUBEY_TEST(test_forward_pbr_renderer_3d_target_resources_use_material_table),
         CUBEY_TEST(test_forward_pbr_renderer_3d_builds_render_request_from_frame_info),
         CUBEY_TEST(test_forward_pbr_renderer_3d_binds_shadow_depth_with_depth_read_layout),

@@ -67,22 +67,9 @@ constexpr cubey::math::Vec4 kNeutralMaterialBaseColor{0.56F, 0.55F, 0.52F, 1.0F}
 constexpr float kMinimumRoughness = 0.04F;
 const cubey::math::Vec3 kLightDirection = glm::normalize(cubey::math::Vec3{0.45F, 0.82F, 0.35F});
 
-std::filesystem::path shader_path(const char* filename) {
-    return std::filesystem::path(CUBEY_MATERIAL_CUBES_SHADER_DIR) / filename;
-}
-
 cubey::ForwardPbrRenderer3DConfig forward_pbr_renderer_3d_config() {
-    return {
-        .pbr_vertex_shader = shader_path("forward_pbr.vert.spv"),
-        .pbr_fragment_shader = shader_path("forward_pbr.frag.spv"),
-        .skybox_vertex_shader = shader_path("forward_pbr_skybox.vert.spv"),
-        .skybox_fragment_shader = shader_path("forward_pbr_skybox.frag.spv"),
-        .post_vertex_shader = shader_path("forward_pbr_post.vert.spv"),
-        .post_fragment_shader = shader_path("forward_pbr_post.frag.spv"),
-        .shadow_depth_vertex_shader = shader_path("forward_pbr_shadow_depth.vert.spv"),
-        .shadow_depth_fragment_shader = shader_path("forward_pbr_shadow_depth.frag.spv"),
-        .shadow_extent = kShadowMapSize,
-    };
+    return cubey::forward_pbr_renderer_3d_config_from_shader_directory(
+        CUBEY_MATERIAL_CUBES_SHADER_DIR, {.shadow_extent = kShadowMapSize});
 }
 
 cubey::render::RenderGraphTextureState undefined_texture_state() {
