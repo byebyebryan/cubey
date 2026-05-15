@@ -156,8 +156,8 @@ void test_material_cubes_show_real_material_variant_grid() {
                      "material_cubes should generate material factors from grid cells");
     require_contains(app, "cubey::ForwardPbrRenderer3D",
                      "material_cubes should use the shared forward PBR renderer");
-    require_contains(app, "ForwardPbrRenderer3DRenderRequest",
-                     "material_cubes should submit through the PBR renderer request path");
+    require_contains(app, "forward_pbr_renderer_3d_render_request",
+                     "material_cubes should use the PBR renderer request helper");
     require_contains(app, "cubey::render::PbrMaterialFactors",
                      "material_cubes should store variants as PBR material factors");
     require_contains(app, "cubey::render::PbrVertex",

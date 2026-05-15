@@ -124,6 +124,57 @@ cubey::ForwardPbrRenderer3DRenderRequest valid_render_request() {
     };
 }
 
+cubey::ForwardPbrRenderer3DFrameRequestInfo valid_frame_request_info() {
+    return {
+        .device = reinterpret_cast<const cubey::vulkan::Device*>(0x10),
+        .command_buffer = reinterpret_cast<VkCommandBuffer>(0x11),
+        .color_target =
+            cubey::render::ColorTargetView{
+                .extent = {1280, 720},
+                .format = VK_FORMAT_R8G8B8A8_UNORM,
+                .image = reinterpret_cast<VkImage>(0x12),
+                .view = reinterpret_cast<VkImageView>(0x13),
+            },
+        .frame_slot = cubey::render::FrameSlot{.index = 0, .count = 2},
+        .color_initial_state =
+            {
+                .layout = VK_IMAGE_LAYOUT_UNDEFINED,
+                .access_mask = 0,
+                .stage_mask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+            },
+        .color_final_state =
+            {
+                .layout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+                .access_mask = 0,
+                .stage_mask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+            },
+        .command_buffer_label = "vkEndCommandBuffer test helper",
+        .scene = reinterpret_cast<const cubey::SceneReadView*>(0x20),
+        .frame_plan = &valid_frame_plan(),
+        .camera_entity = cubey::Entity{.index = 1, .generation = 1},
+        .light_entity = cubey::Entity{.index = 2, .generation = 1},
+        .fallback_light =
+            cubey::LightPacket3D{
+                .entity = cubey::Entity{.index = 2, .generation = 1},
+                .kind = cubey::LightKind3D::Directional,
+                .color = {1.0F, 1.0F, 1.0F},
+                .intensity = 1.0F,
+            },
+        .resources =
+            {
+                .meshes =
+                    reinterpret_cast<const cubey::render::MeshResourceTable<cubey::render::Mesh>*>(
+                        0x30),
+                .materials = reinterpret_cast<const cubey::render::PbrMaterialTable*>(0x31),
+            },
+        .settings =
+            {
+                .environment_rotation_degrees = 15.0F,
+                .exposure = 1.25F,
+            },
+    };
+}
+
 } // namespace
 
 void test_forward_pbr_renderer_3d_config_requires_shader_paths_and_shadow_extent() {
@@ -173,6 +224,24 @@ void test_forward_pbr_renderer_3d_target_resources_use_material_table() {
         read_source_file(source_root / "include/cubey/engine/forward_pbr_renderer_3d.h");
     require_not_contains(header, "material_descriptor_set_layout",
                          "forward PBR callers should not pass a raw material descriptor layout");
+}
+
+void test_forward_pbr_renderer_3d_builds_render_request_from_frame_info() {
+    const cubey::ForwardPbrRenderer3DFrameRequestInfo info = valid_frame_request_info();
+    const cubey::ForwardPbrRenderer3DRenderRequest request =
+        cubey::forward_pbr_renderer_3d_render_request(info);
+
+    require(request.target.device == info.device,
+            "forward PBR request helper should copy the target device");
+    require(request.target.command_buffer_label == info.command_buffer_label,
+            "forward PBR request helper should copy the command buffer label");
+    require(request.view.scene == info.scene, "forward PBR request helper should copy scene view");
+    require(request.view.frame_plan == info.frame_plan,
+            "forward PBR request helper should copy frame plan");
+    require(request.resources.materials == info.resources.materials,
+            "forward PBR request helper should copy resources");
+    require_near(request.settings.exposure, 1.25F,
+                 "forward PBR request helper should copy display settings");
 }
 
 void test_forward_pbr_renderer_3d_render_request_validates_required_target_fields() {

@@ -121,12 +121,33 @@ struct ForwardPbrRenderer3DRenderRequest {
     ForwardPbrRenderer3DSettings settings{};
 };
 
+struct ForwardPbrRenderer3DFrameRequestInfo {
+    const vulkan::Device* device = nullptr;
+    VkCommandBuffer command_buffer = VK_NULL_HANDLE;
+    render::ColorTargetView color_target{};
+    render::FrameSlot frame_slot{};
+    render::RenderGraphTextureState color_initial_state{};
+    render::RenderGraphTextureState color_final_state{};
+    const char* command_buffer_label = "vkEndCommandBuffer forward pbr renderer";
+    render::RenderGraphCommandBufferMode command_buffer_mode =
+        render::RenderGraphCommandBufferMode::BeginAndEnd;
+    const SceneReadView* scene = nullptr;
+    const scene::FrameRenderPlan3D* frame_plan = nullptr;
+    Entity camera_entity{};
+    Entity light_entity{};
+    LightPacket3D fallback_light{};
+    ForwardPbrRenderer3DResourceInfo resources{};
+    ForwardPbrRenderer3DSettings settings{};
+};
+
 struct ForwardPbrRenderer3DFramePlans {
     const scene::RenderFramePlan3D* shadow = nullptr;
     const scene::RenderFramePlan3D* scene = nullptr;
 };
 
 void validate_forward_pbr_renderer_3d_config(const ForwardPbrRenderer3DConfig& config);
+[[nodiscard]] ForwardPbrRenderer3DRenderRequest
+forward_pbr_renderer_3d_render_request(const ForwardPbrRenderer3DFrameRequestInfo& info);
 void validate_forward_pbr_renderer_3d_render_request(
     const ForwardPbrRenderer3DRenderRequest& request);
 [[nodiscard]] ForwardPbrRenderer3DFramePlans

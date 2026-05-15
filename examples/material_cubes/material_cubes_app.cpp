@@ -459,25 +459,19 @@ class MaterialCubesApp {
         cubey::SceneReadView scene_view = scene().read();
         const cubey::scene::FrameRenderPlan3D frame_plan =
             current_frame_plan(scene_view, frame.color_target.extent);
-        const cubey::ForwardPbrRenderer3DRenderRequest request{
-            .target =
-                {
-                    .device = &context.device(),
-                    .command_buffer = frame.command_buffer,
-                    .color_target = frame.color_target,
-                    .frame_slot = frame.frame_slot,
-                    .color_initial_state = undefined_texture_state(),
-                    .color_final_state = present_texture_state(),
-                    .command_buffer_label = "vkEndCommandBuffer material_cubes",
-                },
-            .view =
-                {
-                    .scene = &scene_view,
-                    .frame_plan = &frame_plan,
-                    .camera_entity = camera_entity_,
-                    .light_entity = light_entity_,
-                    .fallback_light = fallback_light_packet(),
-                },
+        const auto request = cubey::forward_pbr_renderer_3d_render_request({
+            .device = &context.device(),
+            .command_buffer = frame.command_buffer,
+            .color_target = frame.color_target,
+            .frame_slot = frame.frame_slot,
+            .color_initial_state = undefined_texture_state(),
+            .color_final_state = present_texture_state(),
+            .command_buffer_label = "vkEndCommandBuffer material_cubes",
+            .scene = &scene_view,
+            .frame_plan = &frame_plan,
+            .camera_entity = camera_entity_,
+            .light_entity = light_entity_,
+            .fallback_light = fallback_light_packet(),
             .resources =
                 {
                     .meshes = &meshes_,
@@ -488,7 +482,7 @@ class MaterialCubesApp {
                     .environment_rotation_degrees = config_.environment_rotation_degrees,
                     .exposure = config_.exposure,
                 },
-        };
+        });
         forward_pbr_renderer().record(request);
     }
 

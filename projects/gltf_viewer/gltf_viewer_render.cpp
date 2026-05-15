@@ -49,26 +49,20 @@ void GltfViewerApp::record_viewer_target(
         cubey::gltf_deformation_commands_for_frame(import_resources_, frame_slot);
     const cubey::render::FrameMeshResourceTable* frame_meshes =
         deformation_commands.empty() ? nullptr : &import_resources_.deformation.frame_meshes;
-    const cubey::ForwardPbrRenderer3DRenderRequest request{
-        .target =
-            {
-                .device = &device,
-                .command_buffer = command_buffer,
-                .color_target = color_target,
-                .frame_slot = frame_slot,
-                .color_initial_state = color_initial_state,
-                .color_final_state = color_final_state,
-                .command_buffer_label = "vkEndCommandBuffer gltf_viewer",
-                .command_buffer_mode = command_buffer_mode,
-            },
-        .view =
-            {
-                .scene = &scene_view,
-                .frame_plan = &frame_plan,
-                .camera_entity = camera_entity_,
-                .light_entity = light_entity_,
-                .fallback_light = fallback_light_packet(),
-            },
+    const auto request = cubey::forward_pbr_renderer_3d_render_request({
+        .device = &device,
+        .command_buffer = command_buffer,
+        .color_target = color_target,
+        .frame_slot = frame_slot,
+        .color_initial_state = color_initial_state,
+        .color_final_state = color_final_state,
+        .command_buffer_label = "vkEndCommandBuffer gltf_viewer",
+        .command_buffer_mode = command_buffer_mode,
+        .scene = &scene_view,
+        .frame_plan = &frame_plan,
+        .camera_entity = camera_entity_,
+        .light_entity = light_entity_,
+        .fallback_light = fallback_light_packet(),
         .resources =
             {
                 .meshes = &import_resources_.meshes,
@@ -81,7 +75,7 @@ void GltfViewerApp::record_viewer_target(
                 .environment_rotation_degrees = config_.environment_rotation_degrees,
                 .exposure = config_.exposure,
             },
-    };
+    });
     forward_pbr_renderer().record(request);
 }
 
