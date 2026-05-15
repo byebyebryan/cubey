@@ -9,7 +9,6 @@
 #include <span>
 #include <stdexcept>
 #include <string>
-#include <unordered_map>
 
 namespace {
 
@@ -50,6 +49,28 @@ cubey::ForwardPbrRenderer3DConfig valid_config() {
     };
 }
 
+const cubey::scene::FrameRenderPlan3D& valid_frame_plan() {
+    static const cubey::scene::FrameRenderPlan3D plan({
+        cubey::scene::RenderPassPlan3D{
+            .label = "shadow",
+            .kind = cubey::scene::RenderPassKind3D::DepthOnly,
+            .frame_plan =
+                cubey::scene::RenderFramePlan3D{
+                    .view_projection_matrix = cubey::math::Mat4{2.0F},
+                },
+        },
+        cubey::scene::RenderPassPlan3D{
+            .label = "scene",
+            .kind = cubey::scene::RenderPassKind3D::Color,
+            .frame_plan =
+                cubey::scene::RenderFramePlan3D{
+                    .view_projection_matrix = cubey::math::Mat4{3.0F},
+                },
+        },
+    });
+    return plan;
+}
+
 cubey::ForwardPbrRenderer3DRenderRequest valid_render_request() {
     return {
         .target =
@@ -81,8 +102,7 @@ cubey::ForwardPbrRenderer3DRenderRequest valid_render_request() {
         .view =
             {
                 .scene = reinterpret_cast<const cubey::SceneReadView*>(0x20),
-                .shadow_plan = reinterpret_cast<const cubey::scene::RenderFramePlan3D*>(0x21),
-                .scene_plan = reinterpret_cast<const cubey::scene::RenderFramePlan3D*>(0x22),
+                .frame_plan = &valid_frame_plan(),
                 .camera_entity = cubey::Entity{.index = 1, .generation = 1},
                 .light_entity = cubey::Entity{.index = 2, .generation = 1},
                 .fallback_light =
@@ -98,12 +118,7 @@ cubey::ForwardPbrRenderer3DRenderRequest valid_render_request() {
                 .meshes =
                     reinterpret_cast<const cubey::render::MeshResourceTable<cubey::render::Mesh>*>(
                         0x30),
-                .material_instances = reinterpret_cast<const cubey::render::MaterialResourceTable<
-                    cubey::render::FrameUniformMaterialInstance<
-                        cubey::render::PbrMaterialUniforms>>*>(0x31),
-                .material_factors = reinterpret_cast<const std::unordered_map<
-                    cubey::render::MaterialHandle, cubey::render::PbrMaterialFactors,
-                    cubey::render::MaterialHandleHash>*>(0x32),
+                .materials = reinterpret_cast<const cubey::render::PbrMaterialTable*>(0x31),
             },
     };
 }
@@ -161,14 +176,9 @@ void test_forward_pbr_renderer_3d_render_request_validates_required_view_fields(
                    "forward PBR render request should reject missing scene read view");
 
     request = valid_render_request();
-    request.view.shadow_plan = nullptr;
+    request.view.frame_plan = nullptr;
     require_throws([&request] { cubey::validate_forward_pbr_renderer_3d_render_request(request); },
-                   "forward PBR render request should reject missing shadow plan");
-
-    request = valid_render_request();
-    request.view.scene_plan = nullptr;
-    require_throws([&request] { cubey::validate_forward_pbr_renderer_3d_render_request(request); },
-                   "forward PBR render request should reject missing scene plan");
+                   "forward PBR render request should reject missing frame plan");
 }
 
 void test_forward_pbr_renderer_3d_render_request_validates_required_resource_fields() {
@@ -178,14 +188,54 @@ void test_forward_pbr_renderer_3d_render_request_validates_required_resource_fie
                    "forward PBR render request should reject missing mesh table");
 
     request = valid_render_request();
-    request.resources.material_instances = nullptr;
+    request.resources.materials = nullptr;
     require_throws([&request] { cubey::validate_forward_pbr_renderer_3d_render_request(request); },
-                   "forward PBR render request should reject missing material instances");
+                   "forward PBR render request should reject missing material table");
+}
 
-    request = valid_render_request();
-    request.resources.material_factors = nullptr;
-    require_throws([&request] { cubey::validate_forward_pbr_renderer_3d_render_request(request); },
-                   "forward PBR render request should reject missing material factors");
+void test_forward_pbr_renderer_3d_frame_plan_selects_required_passes() {
+    const cubey::scene::FrameRenderPlan3D valid({
+        cubey::scene::RenderPassPlan3D{
+            .label = "shadow",
+            .kind = cubey::scene::RenderPassKind3D::DepthOnly,
+            .frame_plan = cubey::scene::RenderFramePlan3D{.view_projection_matrix =
+                                                              cubey::math::Mat4{2.0F}},
+        },
+        cubey::scene::RenderPassPlan3D{
+            .label = "scene",
+            .kind = cubey::scene::RenderPassKind3D::Color,
+            .frame_plan = cubey::scene::RenderFramePlan3D{.view_projection_matrix =
+                                                              cubey::math::Mat4{3.0F}},
+        },
+    });
+    const cubey::ForwardPbrRenderer3DFramePlans plans =
+        cubey::forward_pbr_renderer_3d_frame_plans(valid);
+    require(plans.shadow == &valid.passes()[0].frame_plan,
+            "forward PBR renderer should select the depth-only pass as shadow");
+    require(plans.scene == &valid.passes()[1].frame_plan,
+            "forward PBR renderer should select the color pass as scene");
+
+    const cubey::scene::FrameRenderPlan3D missing_shadow({
+        cubey::scene::RenderPassPlan3D{.kind = cubey::scene::RenderPassKind3D::Color},
+    });
+    require_throws(
+        [&] {
+            const auto plans = cubey::forward_pbr_renderer_3d_frame_plans(missing_shadow);
+            (void)plans;
+        },
+        "forward PBR renderer should reject a plan without a depth-only pass");
+
+    const cubey::scene::FrameRenderPlan3D duplicate_scene({
+        cubey::scene::RenderPassPlan3D{.kind = cubey::scene::RenderPassKind3D::DepthOnly},
+        cubey::scene::RenderPassPlan3D{.kind = cubey::scene::RenderPassKind3D::Color},
+        cubey::scene::RenderPassPlan3D{.kind = cubey::scene::RenderPassKind3D::Color},
+    });
+    require_throws(
+        [&] {
+            const auto plans = cubey::forward_pbr_renderer_3d_frame_plans(duplicate_scene);
+            (void)plans;
+        },
+        "forward PBR renderer should reject duplicate color passes");
 }
 
 void test_forward_pbr_renderer_3d_settings_defaults_to_aces_display_transform() {

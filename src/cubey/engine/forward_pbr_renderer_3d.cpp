@@ -50,14 +50,38 @@ void validate_forward_pbr_renderer_3d_render_request(
     if (request.target.device == nullptr || request.target.command_buffer == VK_NULL_HANDLE) {
         throw std::runtime_error("forward PBR render request requires device and command buffer");
     }
-    if (request.view.scene == nullptr || request.view.shadow_plan == nullptr ||
-        request.view.scene_plan == nullptr) {
+    if (request.view.scene == nullptr || request.view.frame_plan == nullptr) {
         throw std::runtime_error("forward PBR render request requires scene and frame plans");
     }
-    if (request.resources.meshes == nullptr || request.resources.material_instances == nullptr ||
-        request.resources.material_factors == nullptr) {
+    (void)forward_pbr_renderer_3d_frame_plans(*request.view.frame_plan);
+    if (request.resources.meshes == nullptr || request.resources.materials == nullptr) {
         throw std::runtime_error("forward PBR render request requires render resource tables");
     }
+}
+
+ForwardPbrRenderer3DFramePlans
+forward_pbr_renderer_3d_frame_plans(const scene::FrameRenderPlan3D& frame_plan) {
+    ForwardPbrRenderer3DFramePlans result;
+    for (const scene::RenderPassPlan3D& pass : frame_plan.passes()) {
+        switch (pass.kind) {
+        case scene::RenderPassKind3D::DepthOnly:
+            if (result.shadow != nullptr) {
+                throw std::runtime_error("forward PBR frame plan has duplicate shadow passes");
+            }
+            result.shadow = &pass.frame_plan;
+            break;
+        case scene::RenderPassKind3D::Color:
+            if (result.scene != nullptr) {
+                throw std::runtime_error("forward PBR frame plan has duplicate scene passes");
+            }
+            result.scene = &pass.frame_plan;
+            break;
+        }
+    }
+    if (result.shadow == nullptr || result.scene == nullptr) {
+        throw std::runtime_error("forward PBR frame plan requires one shadow and one scene pass");
+    }
+    return result;
 }
 
 LightPacket3D forward_pbr_renderer_3d_selected_light(std::span<const LightPacket3D> lights,

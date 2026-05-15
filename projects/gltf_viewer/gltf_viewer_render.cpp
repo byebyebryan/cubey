@@ -40,11 +40,6 @@ void GltfViewerApp::record_viewer_target(
     cubey::SceneReadView scene_view = scene().read();
     const cubey::scene::FrameRenderPlan3D frame_plan =
         current_frame_plan(scene_view, color_target.extent);
-    if (frame_plan.passes().size() != 2) {
-        throw std::runtime_error("gltf_viewer frame plan should have two passes");
-    }
-    const cubey::scene::RenderFramePlan3D& shadow_plan = frame_plan.passes()[0].frame_plan;
-    const cubey::scene::RenderFramePlan3D& scene_plan = frame_plan.passes()[1].frame_plan;
     if (asset_.has_value()) {
         cubey::update_gltf_deformation_frame(
             import_resources_, asset_.value(), import_result_, scene_view, frame_slot,
@@ -69,8 +64,7 @@ void GltfViewerApp::record_viewer_target(
         .view =
             {
                 .scene = &scene_view,
-                .shadow_plan = &shadow_plan,
-                .scene_plan = &scene_plan,
+                .frame_plan = &frame_plan,
                 .camera_entity = camera_entity_,
                 .light_entity = light_entity_,
                 .fallback_light = fallback_light_packet(),
@@ -80,8 +74,7 @@ void GltfViewerApp::record_viewer_target(
                 .meshes = &import_resources_.meshes,
                 .frame_meshes = frame_meshes,
                 .deformation_commands = deformation_commands,
-                .material_instances = &import_resources_.materials.instances(),
-                .material_factors = &import_resources_.materials.factors_map(),
+                .materials = &import_resources_.materials,
             },
         .settings =
             {

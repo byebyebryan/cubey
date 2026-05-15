@@ -459,11 +459,6 @@ class MaterialCubesApp {
         cubey::SceneReadView scene_view = scene().read();
         const cubey::scene::FrameRenderPlan3D frame_plan =
             current_frame_plan(scene_view, frame.color_target.extent);
-        if (frame_plan.passes().size() != 2) {
-            throw std::runtime_error("material_cubes frame plan should have two passes");
-        }
-        const cubey::scene::RenderFramePlan3D& shadow_plan = frame_plan.passes()[0].frame_plan;
-        const cubey::scene::RenderFramePlan3D& scene_plan = frame_plan.passes()[1].frame_plan;
         const cubey::ForwardPbrRenderer3DRenderRequest request{
             .target =
                 {
@@ -478,8 +473,7 @@ class MaterialCubesApp {
             .view =
                 {
                     .scene = &scene_view,
-                    .shadow_plan = &shadow_plan,
-                    .scene_plan = &scene_plan,
+                    .frame_plan = &frame_plan,
                     .camera_entity = camera_entity_,
                     .light_entity = light_entity_,
                     .fallback_light = fallback_light_packet(),
@@ -487,8 +481,7 @@ class MaterialCubesApp {
             .resources =
                 {
                     .meshes = &meshes_,
-                    .material_instances = &materials_.instances(),
-                    .material_factors = &materials_.factors_map(),
+                    .materials = &materials_,
                 },
             .settings =
                 {

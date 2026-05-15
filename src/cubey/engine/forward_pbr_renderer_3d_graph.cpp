@@ -62,20 +62,24 @@ void ForwardPbrRenderer3D::record(const ForwardPbrRenderer3DRenderRequest& reque
     const ForwardPbrRenderer3DViewInfo& view = request.view;
     const ForwardPbrRenderer3DResourceInfo& resources = request.resources;
     const ForwardPbrRenderer3DSettings& settings = request.settings;
+    const ForwardPbrRenderer3DFramePlans frame_plans =
+        forward_pbr_renderer_3d_frame_plans(*view.frame_plan);
+    const scene::RenderFramePlan3D& shadow_plan = *frame_plans.shadow;
+    const scene::RenderFramePlan3D& scene_plan = *frame_plans.scene;
 
     const math::Vec3 camera_position =
         forward_pbr_renderer_3d_camera_world_position(*view.scene, view.camera_entity);
     const LightPacket3D light = forward_pbr_renderer_3d_selected_light(
-        view.scene_plan->light_packets, view.light_entity, view.fallback_light);
+        scene_plan.light_packets, view.light_entity, view.fallback_light);
 
     scene_material().upload(
         target.frame_slot,
         forward_pbr_renderer_3d_scene_uniforms({
-            .view_projection = view.scene_plan->view_projection_matrix,
-            .light_view_projection = view.shadow_plan->view_projection_matrix,
+            .view_projection = scene_plan.view_projection_matrix,
+            .light_view_projection = shadow_plan.view_projection_matrix,
             .camera_position = camera_position,
             .light = light,
-            .environment = view.scene_plan->environment,
+            .environment = scene_plan.environment,
             .environment_intensity = environment().intensity,
             .prefiltered_mip_levels = environment().prefiltered_mip_levels,
             .environment_rotation_degrees = settings.environment_rotation_degrees,
@@ -83,7 +87,7 @@ void ForwardPbrRenderer3D::record(const ForwardPbrRenderer3DRenderRequest& reque
     skybox_material().upload(
         target.frame_slot,
         forward_pbr_renderer_3d_skybox_uniforms({
-            .view_projection = view.scene_plan->view_projection_matrix,
+            .view_projection = scene_plan.view_projection_matrix,
             .camera_position = camera_position,
             .environment_intensity = environment().intensity,
             .environment_rotation_degrees = settings.environment_rotation_degrees,
@@ -96,9 +100,8 @@ void ForwardPbrRenderer3D::record(const ForwardPbrRenderer3DRenderRequest& reque
 
     const CompiledGraph render_graph = current_render_graph(
         target.color_target, target.frame_slot, target.color_initial_state,
-        target.color_final_state, *view.shadow_plan, *view.scene_plan, *resources.meshes,
-        resources.frame_meshes, resources.deformation_commands, *resources.material_instances,
-        *resources.material_factors);
+        target.color_final_state, shadow_plan, scene_plan, *resources.meshes, resources.frame_meshes,
+        resources.deformation_commands, *resources.materials);
     graph_executor_.record(
         render::RenderGraphFrameRecordInfo{
             .device = target.device,
@@ -124,10 +127,7 @@ ForwardPbrRenderer3D::CompiledGraph ForwardPbrRenderer3D::current_render_graph(
     const render::MeshResourceTable<render::Mesh>& meshes,
     const render::FrameMeshResourceTable* frame_meshes,
     std::span<const render::GpuDeformationCommand> deformation_commands,
-    const render::MaterialResourceTable<
-        render::FrameUniformMaterialInstance<render::PbrMaterialUniforms>>& material_instances,
-    const std::unordered_map<render::MaterialHandle, render::PbrMaterialFactors,
-                             render::MaterialHandleHash>& material_factors) {
+    const render::PbrMaterialTable& materials) {
     render::RenderGraphBuilder graph;
     const render::RenderGraphTextureHandle backbuffer = graph.import_color_target(
         "backbuffer", color_target, color_initial_state, color_final_state);
@@ -172,10 +172,10 @@ ForwardPbrRenderer3D::CompiledGraph ForwardPbrRenderer3D::current_render_graph(
             .material_pass(shadow_pass().material_pass());
     declare_deformation_vertex_reads(shadow_pass_builder, deformation_vertex_buffers);
     shadow_pass_builder.execute(
-        [this, frame_slot, &shadow_plan, mesh_resolver, &material_instances, &material_factors](
+        [this, frame_slot, &shadow_plan, mesh_resolver, &materials](
             const render::RenderGraphExecutionContext& context) {
             record_shadow_pass(context.recorder(), shadow_plan, frame_slot, mesh_resolver,
-                               material_instances, material_factors);
+                               materials);
         });
     auto scene_pass_builder =
         graph.add_pass("scene", render::RenderGraphQueueDomain::Graphics)
@@ -185,12 +185,12 @@ ForwardPbrRenderer3D::CompiledGraph ForwardPbrRenderer3D::current_render_graph(
             .material_pass(render::pbr_forward_pass_info());
     declare_deformation_vertex_reads(scene_pass_builder, deformation_vertex_buffers);
     scene_pass_builder.execute(
-        [this, scene_color, frame_slot, &scene_plan, mesh_resolver, &material_instances,
-         &material_factors](const render::RenderGraphExecutionContext& context) {
+        [this, scene_color, frame_slot, &scene_plan, mesh_resolver,
+         &materials](const render::RenderGraphExecutionContext& context) {
             const render::ColorTargetView target =
                 render::resolved_color_target_view(context, scene_color);
             record_scene_pass(context.recorder(), target, scene_plan, frame_slot, mesh_resolver,
-                              material_instances, material_factors);
+                              materials);
         });
     graph.add_pass("post", render::RenderGraphQueueDomain::Graphics)
         .read_texture(scene_color)

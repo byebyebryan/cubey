@@ -7,6 +7,7 @@
 #include <cubey/render/material_instance.h>
 #include <cubey/render/mesh.h>
 #include <cubey/render/pbr.h>
+#include <cubey/render/pbr_material_resources.h>
 #include <cubey/render/pipeline_resource.h>
 #include <cubey/render/render_graph.h>
 #include <cubey/render/render_item.h>
@@ -27,7 +28,6 @@
 #include <filesystem>
 #include <optional>
 #include <span>
-#include <unordered_map>
 
 namespace cubey {
 
@@ -93,8 +93,7 @@ struct ForwardPbrRenderer3DTargetInfo {
 
 struct ForwardPbrRenderer3DViewInfo {
     const SceneReadView* scene = nullptr;
-    const scene::RenderFramePlan3D* shadow_plan = nullptr;
-    const scene::RenderFramePlan3D* scene_plan = nullptr;
+    const scene::FrameRenderPlan3D* frame_plan = nullptr;
     Entity camera_entity{};
     Entity light_entity{};
     LightPacket3D fallback_light{};
@@ -104,11 +103,7 @@ struct ForwardPbrRenderer3DResourceInfo {
     const render::MeshResourceTable<render::Mesh>* meshes = nullptr;
     const render::FrameMeshResourceTable* frame_meshes = nullptr;
     std::span<const render::GpuDeformationCommand> deformation_commands{};
-    const render::MaterialResourceTable<
-        render::FrameUniformMaterialInstance<render::PbrMaterialUniforms>>* material_instances =
-        nullptr;
-    const std::unordered_map<render::MaterialHandle, render::PbrMaterialFactors,
-                             render::MaterialHandleHash>* material_factors = nullptr;
+    const render::PbrMaterialTable* materials = nullptr;
 };
 
 struct ForwardPbrRenderer3DSettings {
@@ -124,9 +119,16 @@ struct ForwardPbrRenderer3DRenderRequest {
     ForwardPbrRenderer3DSettings settings{};
 };
 
+struct ForwardPbrRenderer3DFramePlans {
+    const scene::RenderFramePlan3D* shadow = nullptr;
+    const scene::RenderFramePlan3D* scene = nullptr;
+};
+
 void validate_forward_pbr_renderer_3d_config(const ForwardPbrRenderer3DConfig& config);
 void validate_forward_pbr_renderer_3d_render_request(
     const ForwardPbrRenderer3DRenderRequest& request);
+[[nodiscard]] ForwardPbrRenderer3DFramePlans
+forward_pbr_renderer_3d_frame_plans(const scene::FrameRenderPlan3D& frame_plan);
 [[nodiscard]] render::VertexInputLayout forward_pbr_renderer_3d_shadow_vertex_input_layout();
 [[nodiscard]] LightPacket3D
 forward_pbr_renderer_3d_selected_light(std::span<const LightPacket3D> lights,
@@ -172,25 +174,15 @@ class ForwardPbrRenderer3D {
         const render::MeshResourceTable<render::Mesh>& meshes,
         const render::FrameMeshResourceTable* frame_meshes,
         std::span<const render::GpuDeformationCommand> deformation_commands,
-        const render::MaterialResourceTable<
-            render::FrameUniformMaterialInstance<render::PbrMaterialUniforms>>& material_instances,
-        const std::unordered_map<render::MaterialHandle, render::PbrMaterialFactors,
-                                 render::MaterialHandleHash>& material_factors);
+        const render::PbrMaterialTable& materials);
     void record_shadow_pass(
         const vulkan::CommandRecorder& recorder, const scene::RenderFramePlan3D& shadow_plan,
         render::FrameSlot frame_slot, const render::MeshResolver& mesh_resolver,
-        const render::MaterialResourceTable<
-            render::FrameUniformMaterialInstance<render::PbrMaterialUniforms>>& material_instances,
-        const std::unordered_map<render::MaterialHandle, render::PbrMaterialFactors,
-                                 render::MaterialHandleHash>& material_factors) const;
+        const render::PbrMaterialTable& materials) const;
     void record_scene_pass(
         const vulkan::CommandRecorder& recorder, render::ColorTargetView color_target,
         const scene::RenderFramePlan3D& scene_plan, render::FrameSlot frame_slot,
-        const render::MeshResolver& mesh_resolver,
-        const render::MaterialResourceTable<
-            render::FrameUniformMaterialInstance<render::PbrMaterialUniforms>>& material_instances,
-        const std::unordered_map<render::MaterialHandle, render::PbrMaterialFactors,
-                                 render::MaterialHandleHash>& material_factors) const;
+        const render::MeshResolver& mesh_resolver, const render::PbrMaterialTable& materials) const;
     void record_post_pass(const vulkan::CommandRecorder& recorder,
                           render::ColorTargetView color_target, render::FrameSlot frame_slot) const;
     void update_post_descriptor(const vulkan::Device& device, render::FrameSlot frame_slot,
