@@ -208,57 +208,47 @@ ForwardPbrRenderer3D::post_material() const {
 }
 
 const render::GraphicsPipelineResource& ForwardPbrRenderer3D::opaque_pipeline() const {
-    if (!opaque_pipeline_.has_value()) {
-        throw std::runtime_error("forward PBR renderer opaque pipeline is not initialized");
-    }
-    return opaque_pipeline_.value();
+    return pipeline_variant(ForwardPbrPipelineVariant::Opaque);
 }
 
 const render::GraphicsPipelineResource& ForwardPbrRenderer3D::opaque_double_sided_pipeline() const {
-    if (!opaque_double_sided_pipeline_.has_value()) {
-        throw std::runtime_error(
-            "forward PBR renderer double-sided opaque pipeline is not initialized");
-    }
-    return opaque_double_sided_pipeline_.value();
+    return pipeline_variant(ForwardPbrPipelineVariant::OpaqueDoubleSided);
 }
 
 const render::GraphicsPipelineResource& ForwardPbrRenderer3D::alpha_pipeline() const {
-    if (!alpha_pipeline_.has_value()) {
-        throw std::runtime_error("forward PBR renderer alpha pipeline is not initialized");
-    }
-    return alpha_pipeline_.value();
+    return pipeline_variant(ForwardPbrPipelineVariant::Alpha);
 }
 
 const render::GraphicsPipelineResource& ForwardPbrRenderer3D::alpha_double_sided_pipeline() const {
-    if (!alpha_double_sided_pipeline_.has_value()) {
-        throw std::runtime_error(
-            "forward PBR renderer double-sided alpha pipeline is not initialized");
-    }
-    return alpha_double_sided_pipeline_.value();
+    return pipeline_variant(ForwardPbrPipelineVariant::AlphaDoubleSided);
 }
 
 const render::GraphicsPipelineResource& ForwardPbrRenderer3D::mask_shadow_pipeline() const {
-    if (!mask_shadow_pipeline_.has_value()) {
-        throw std::runtime_error("forward PBR renderer mask shadow pipeline is not initialized");
-    }
-    return mask_shadow_pipeline_.value();
+    return pipeline_variant(ForwardPbrPipelineVariant::MaskShadow);
 }
 
 const render::GraphicsPipelineResource&
 ForwardPbrRenderer3D::mask_shadow_double_sided_pipeline() const {
-    if (!mask_shadow_double_sided_pipeline_.has_value()) {
-        throw std::runtime_error(
-            "forward PBR renderer double-sided mask shadow pipeline is not initialized");
-    }
-    return mask_shadow_double_sided_pipeline_.value();
+    return pipeline_variant(ForwardPbrPipelineVariant::MaskShadowDoubleSided);
 }
 
 const render::GraphicsPipelineResource& ForwardPbrRenderer3D::shadow_double_sided_pipeline() const {
-    if (!shadow_double_sided_pipeline_.has_value()) {
-        throw std::runtime_error(
-            "forward PBR renderer double-sided shadow pipeline is not initialized");
+    return pipeline_variant(ForwardPbrPipelineVariant::ShadowDoubleSided);
+}
+
+std::optional<render::GraphicsPipelineResource>&
+ForwardPbrRenderer3D::pipeline_variant_slot(ForwardPbrPipelineVariant variant) {
+    return pipeline_variants_[static_cast<std::size_t>(variant)];
+}
+
+const render::GraphicsPipelineResource&
+ForwardPbrRenderer3D::pipeline_variant(ForwardPbrPipelineVariant variant) const {
+    const std::optional<render::GraphicsPipelineResource>& pipeline =
+        pipeline_variants_[static_cast<std::size_t>(variant)];
+    if (!pipeline.has_value()) {
+        throw std::runtime_error("forward PBR renderer pipeline variant is not initialized");
     }
-    return shadow_double_sided_pipeline_.value();
+    return pipeline.value();
 }
 
 const render::GraphicsPipelineResource& ForwardPbrRenderer3D::skybox_pipeline() const {

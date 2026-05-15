@@ -35,6 +35,7 @@ void require_throws(auto&& action, const char* message) {
 
 using cubey::tests::read_source_file;
 using cubey::tests::require_contains;
+using cubey::tests::require_not_contains;
 
 cubey::ForwardPbrRenderer3DConfig valid_config() {
     return {
@@ -198,14 +199,14 @@ void test_forward_pbr_renderer_3d_frame_plan_selects_required_passes() {
         cubey::scene::RenderPassPlan3D{
             .label = "shadow",
             .kind = cubey::scene::RenderPassKind3D::DepthOnly,
-            .frame_plan = cubey::scene::RenderFramePlan3D{.view_projection_matrix =
-                                                              cubey::math::Mat4{2.0F}},
+            .frame_plan =
+                cubey::scene::RenderFramePlan3D{.view_projection_matrix = cubey::math::Mat4{2.0F}},
         },
         cubey::scene::RenderPassPlan3D{
             .label = "scene",
             .kind = cubey::scene::RenderPassKind3D::Color,
-            .frame_plan = cubey::scene::RenderFramePlan3D{.view_projection_matrix =
-                                                              cubey::math::Mat4{3.0F}},
+            .frame_plan =
+                cubey::scene::RenderFramePlan3D{.view_projection_matrix = cubey::math::Mat4{3.0F}},
         },
     });
     const cubey::ForwardPbrRenderer3DFramePlans plans =
@@ -339,14 +340,27 @@ void test_forward_pbr_renderer_3d_records_masked_shadow_path_with_material_alpha
 
     require_contains(header, "shadow_depth_fragment_shader",
                      "forward PBR config should expose a mask-capable shadow fragment shader");
-    require_contains(resources, "mask_shadow_pipeline_",
-                     "forward PBR renderer should own a mask-capable shadow pipeline");
-    require_contains(resources, "opaque_double_sided_pipeline_",
-                     "forward PBR renderer should own a double-sided opaque pipeline");
-    require_contains(resources, "alpha_double_sided_pipeline_",
-                     "forward PBR renderer should own a double-sided alpha pipeline");
-    require_contains(resources, "mask_shadow_double_sided_pipeline_",
-                     "forward PBR renderer should own a double-sided masked shadow pipeline");
+    require_contains(header, "enum class ForwardPbrPipelineVariant",
+                     "forward PBR renderer should key pass/cull/blend pipeline variants");
+    require_contains(header, "pipeline_variants_",
+                     "forward PBR renderer should store keyed pipeline variants together");
+    require_contains(resources, "pipeline_variant_slot(ForwardPbrPipelineVariant::MaskShadow)",
+                     "forward PBR renderer should own a mask-capable shadow pipeline variant");
+    require_contains(resources,
+                     "pipeline_variant_slot(ForwardPbrPipelineVariant::OpaqueDoubleSided)",
+                     "forward PBR renderer should own a double-sided opaque pipeline variant");
+    require_contains(resources,
+                     "pipeline_variant_slot(ForwardPbrPipelineVariant::AlphaDoubleSided)",
+                     "forward PBR renderer should own a double-sided alpha pipeline variant");
+    require_contains(
+        resources, "pipeline_variant_slot(ForwardPbrPipelineVariant::MaskShadowDoubleSided)",
+        "forward PBR renderer should own a double-sided masked shadow pipeline variant");
+    require_not_contains(header, "opaque_double_sided_pipeline_",
+                         "forward PBR renderer should not store named pipeline optionals");
+    require_not_contains(header, "alpha_double_sided_pipeline_",
+                         "forward PBR renderer should not store named alpha optionals");
+    require_not_contains(header, "mask_shadow_double_sided_pipeline_",
+                         "forward PBR renderer should not store named mask optionals");
     require_contains(resources, "fragment_shader_file(config_.shadow_depth_fragment_shader)",
                      "mask shadow pipeline should compile the configured fragment shader");
     require_contains(recording, "VK_CULL_MODE_BACK_BIT",

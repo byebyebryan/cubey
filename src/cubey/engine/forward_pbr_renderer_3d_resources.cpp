@@ -63,23 +63,24 @@ void ForwardPbrRenderer3D::create_global_resources(
                             }),
                         },
                 });
-    shadow_double_sided_pipeline_.emplace(
-        device, render::graphics_pipeline_file_resource_config(
-                    {
-                        .extent = shadow_pass().depth_target().extent,
-                        .depth_format = shadow_pass().depth_target().format,
-                    },
-                    {
-                        .shader_stage_files = shadow_shaders,
-                        .vertex_bindings = shadow_vertex_input.bindings(),
-                        .vertex_attributes = shadow_vertex_input.attribute_descriptions(),
-                        .material_pass = render::shadow_depth_pass_info({
-                            .label = "forward_pbr.shadow.double_sided",
-                            .push_constants =
-                                std::span<const VkPushConstantRange>{&shadow_push_constants, 1},
-                            .cull_mode = VK_CULL_MODE_NONE,
-                        }),
-                    }));
+    pipeline_variant_slot(ForwardPbrPipelineVariant::ShadowDoubleSided)
+        .emplace(device,
+                 render::graphics_pipeline_file_resource_config(
+                     {
+                         .extent = shadow_pass().depth_target().extent,
+                         .depth_format = shadow_pass().depth_target().format,
+                     },
+                     {
+                         .shader_stage_files = shadow_shaders,
+                         .vertex_bindings = shadow_vertex_input.bindings(),
+                         .vertex_attributes = shadow_vertex_input.attribute_descriptions(),
+                         .material_pass = render::shadow_depth_pass_info({
+                             .label = "forward_pbr.shadow.double_sided",
+                             .push_constants =
+                                 std::span<const VkPushConstantRange>{&shadow_push_constants, 1},
+                             .cull_mode = VK_CULL_MODE_NONE,
+                         }),
+                     }));
 
     skybox_material_.emplace(
         device, render::FrameUniformMaterialInstanceConfig{
@@ -191,10 +192,10 @@ void ForwardPbrRenderer3D::create_swapchain_resources(
         info.material_descriptor_set_layout,
     };
 
-    const auto create_pbr_pipeline = [&](std::optional<render::GraphicsPipelineResource>& pipeline,
-                                         const char* label, render::MaterialBlendMode blend,
+    const auto create_pbr_pipeline = [&](ForwardPbrPipelineVariant variant, const char* label,
+                                         render::MaterialBlendMode blend,
                                          VkCullModeFlags cull_mode) {
-        pipeline.emplace(
+        pipeline_variant_slot(variant).emplace(
             device,
             render::graphics_pipeline_file_resource_config(
                 {
@@ -214,13 +215,15 @@ void ForwardPbrRenderer3D::create_swapchain_resources(
                     }),
                 }));
     };
-    create_pbr_pipeline(opaque_pipeline_, "forward_pbr.forward.opaque",
+    create_pbr_pipeline(ForwardPbrPipelineVariant::Opaque, "forward_pbr.forward.opaque",
                         render::MaterialBlendMode::Opaque, VK_CULL_MODE_BACK_BIT);
-    create_pbr_pipeline(opaque_double_sided_pipeline_, "forward_pbr.forward.opaque.double_sided",
+    create_pbr_pipeline(ForwardPbrPipelineVariant::OpaqueDoubleSided,
+                        "forward_pbr.forward.opaque.double_sided",
                         render::MaterialBlendMode::Opaque, VK_CULL_MODE_NONE);
-    create_pbr_pipeline(alpha_pipeline_, "forward_pbr.forward.alpha",
+    create_pbr_pipeline(ForwardPbrPipelineVariant::Alpha, "forward_pbr.forward.alpha",
                         render::MaterialBlendMode::AlphaBlend, VK_CULL_MODE_BACK_BIT);
-    create_pbr_pipeline(alpha_double_sided_pipeline_, "forward_pbr.forward.alpha.double_sided",
+    create_pbr_pipeline(ForwardPbrPipelineVariant::AlphaDoubleSided,
+                        "forward_pbr.forward.alpha.double_sided",
                         render::MaterialBlendMode::AlphaBlend, VK_CULL_MODE_NONE);
 
     const VkPushConstantRange shadow_push_constants{
@@ -238,42 +241,44 @@ void ForwardPbrRenderer3D::create_swapchain_resources(
     };
     const render::VertexInputLayout shadow_vertex_input =
         forward_pbr_renderer_3d_shadow_vertex_input_layout();
-    mask_shadow_pipeline_.emplace(
-        device, render::graphics_pipeline_file_resource_config(
-                    {
-                        .extent = shadow_pass().depth_target().extent,
-                        .depth_format = shadow_pass().depth_target().format,
-                    },
-                    {
-                        .shader_stage_files = mask_shadow_shaders,
-                        .vertex_bindings = shadow_vertex_input.bindings(),
-                        .vertex_attributes = shadow_vertex_input.attribute_descriptions(),
-                        .descriptor_set_layouts = mask_shadow_layouts,
-                        .material_pass = render::shadow_depth_pass_info({
-                            .label = "forward_pbr.shadow.mask",
-                            .push_constants =
-                                std::span<const VkPushConstantRange>{&shadow_push_constants, 1},
-                            .cull_mode = VK_CULL_MODE_BACK_BIT,
-                        }),
-                    }));
-    mask_shadow_double_sided_pipeline_.emplace(
-        device, render::graphics_pipeline_file_resource_config(
-                    {
-                        .extent = shadow_pass().depth_target().extent,
-                        .depth_format = shadow_pass().depth_target().format,
-                    },
-                    {
-                        .shader_stage_files = mask_shadow_shaders,
-                        .vertex_bindings = shadow_vertex_input.bindings(),
-                        .vertex_attributes = shadow_vertex_input.attribute_descriptions(),
-                        .descriptor_set_layouts = mask_shadow_layouts,
-                        .material_pass = render::shadow_depth_pass_info({
-                            .label = "forward_pbr.shadow.mask.double_sided",
-                            .push_constants =
-                                std::span<const VkPushConstantRange>{&shadow_push_constants, 1},
-                            .cull_mode = VK_CULL_MODE_NONE,
-                        }),
-                    }));
+    pipeline_variant_slot(ForwardPbrPipelineVariant::MaskShadow)
+        .emplace(device,
+                 render::graphics_pipeline_file_resource_config(
+                     {
+                         .extent = shadow_pass().depth_target().extent,
+                         .depth_format = shadow_pass().depth_target().format,
+                     },
+                     {
+                         .shader_stage_files = mask_shadow_shaders,
+                         .vertex_bindings = shadow_vertex_input.bindings(),
+                         .vertex_attributes = shadow_vertex_input.attribute_descriptions(),
+                         .descriptor_set_layouts = mask_shadow_layouts,
+                         .material_pass = render::shadow_depth_pass_info({
+                             .label = "forward_pbr.shadow.mask",
+                             .push_constants =
+                                 std::span<const VkPushConstantRange>{&shadow_push_constants, 1},
+                             .cull_mode = VK_CULL_MODE_BACK_BIT,
+                         }),
+                     }));
+    pipeline_variant_slot(ForwardPbrPipelineVariant::MaskShadowDoubleSided)
+        .emplace(device,
+                 render::graphics_pipeline_file_resource_config(
+                     {
+                         .extent = shadow_pass().depth_target().extent,
+                         .depth_format = shadow_pass().depth_target().format,
+                     },
+                     {
+                         .shader_stage_files = mask_shadow_shaders,
+                         .vertex_bindings = shadow_vertex_input.bindings(),
+                         .vertex_attributes = shadow_vertex_input.attribute_descriptions(),
+                         .descriptor_set_layouts = mask_shadow_layouts,
+                         .material_pass = render::shadow_depth_pass_info({
+                             .label = "forward_pbr.shadow.mask.double_sided",
+                             .push_constants =
+                                 std::span<const VkPushConstantRange>{&shadow_push_constants, 1},
+                             .cull_mode = VK_CULL_MODE_NONE,
+                         }),
+                     }));
 
     const std::array<render::ShaderStageFile, 2> post_shaders{
         render::vertex_shader_file(config_.post_vertex_shader),
@@ -300,12 +305,12 @@ void ForwardPbrRenderer3D::destroy_swapchain_resources() {
     }
     post_pipeline_.reset();
     post_sampler_.reset();
-    mask_shadow_double_sided_pipeline_.reset();
-    mask_shadow_pipeline_.reset();
-    alpha_double_sided_pipeline_.reset();
-    alpha_pipeline_.reset();
-    opaque_double_sided_pipeline_.reset();
-    opaque_pipeline_.reset();
+    pipeline_variant_slot(ForwardPbrPipelineVariant::MaskShadowDoubleSided).reset();
+    pipeline_variant_slot(ForwardPbrPipelineVariant::MaskShadow).reset();
+    pipeline_variant_slot(ForwardPbrPipelineVariant::AlphaDoubleSided).reset();
+    pipeline_variant_slot(ForwardPbrPipelineVariant::Alpha).reset();
+    pipeline_variant_slot(ForwardPbrPipelineVariant::OpaqueDoubleSided).reset();
+    pipeline_variant_slot(ForwardPbrPipelineVariant::Opaque).reset();
     skybox_pipeline_.reset();
     depth_attachment_.reset();
 }
@@ -316,7 +321,9 @@ void ForwardPbrRenderer3D::destroy_all_resources() {
     post_material_.reset();
     scene_material_.reset();
     skybox_material_.reset();
-    shadow_double_sided_pipeline_.reset();
+    for (std::optional<render::GraphicsPipelineResource>& pipeline : pipeline_variants_) {
+        pipeline.reset();
+    }
     shadow_pass_.reset();
     environment_ = nullptr;
     shadow_depth_is_sampled_ = false;

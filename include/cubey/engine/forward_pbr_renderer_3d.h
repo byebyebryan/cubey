@@ -24,6 +24,8 @@
 
 #include <vulkan/vulkan.h>
 
+#include <array>
+#include <cstddef>
 #include <cstdint>
 #include <filesystem>
 #include <optional>
@@ -165,24 +167,36 @@ class ForwardPbrRenderer3D {
         render::CompiledRenderGraph graph;
         render::RenderGraphTextureHandle scene_color;
     };
+    enum class ForwardPbrPipelineVariant : std::uint8_t {
+        Opaque,
+        OpaqueDoubleSided,
+        Alpha,
+        AlphaDoubleSided,
+        MaskShadow,
+        MaskShadowDoubleSided,
+        ShadowDoubleSided,
+        Count,
+    };
 
-    [[nodiscard]] CompiledGraph current_render_graph(
-        render::ColorTargetView color_target, render::FrameSlot frame_slot,
-        render::RenderGraphTextureState color_initial_state,
-        render::RenderGraphTextureState color_final_state,
-        const scene::RenderFramePlan3D& shadow_plan, const scene::RenderFramePlan3D& scene_plan,
-        const render::MeshResourceTable<render::Mesh>& meshes,
-        const render::FrameMeshResourceTable* frame_meshes,
-        std::span<const render::GpuDeformationCommand> deformation_commands,
-        const render::PbrMaterialTable& materials);
-    void record_shadow_pass(
-        const vulkan::CommandRecorder& recorder, const scene::RenderFramePlan3D& shadow_plan,
-        render::FrameSlot frame_slot, const render::MeshResolver& mesh_resolver,
-        const render::PbrMaterialTable& materials) const;
-    void record_scene_pass(
-        const vulkan::CommandRecorder& recorder, render::ColorTargetView color_target,
-        const scene::RenderFramePlan3D& scene_plan, render::FrameSlot frame_slot,
-        const render::MeshResolver& mesh_resolver, const render::PbrMaterialTable& materials) const;
+    [[nodiscard]] CompiledGraph
+    current_render_graph(render::ColorTargetView color_target, render::FrameSlot frame_slot,
+                         render::RenderGraphTextureState color_initial_state,
+                         render::RenderGraphTextureState color_final_state,
+                         const scene::RenderFramePlan3D& shadow_plan,
+                         const scene::RenderFramePlan3D& scene_plan,
+                         const render::MeshResourceTable<render::Mesh>& meshes,
+                         const render::FrameMeshResourceTable* frame_meshes,
+                         std::span<const render::GpuDeformationCommand> deformation_commands,
+                         const render::PbrMaterialTable& materials);
+    void record_shadow_pass(const vulkan::CommandRecorder& recorder,
+                            const scene::RenderFramePlan3D& shadow_plan,
+                            render::FrameSlot frame_slot, const render::MeshResolver& mesh_resolver,
+                            const render::PbrMaterialTable& materials) const;
+    void record_scene_pass(const vulkan::CommandRecorder& recorder,
+                           render::ColorTargetView color_target,
+                           const scene::RenderFramePlan3D& scene_plan, render::FrameSlot frame_slot,
+                           const render::MeshResolver& mesh_resolver,
+                           const render::PbrMaterialTable& materials) const;
     void record_post_pass(const vulkan::CommandRecorder& recorder,
                           render::ColorTargetView color_target, render::FrameSlot frame_slot) const;
     void update_post_descriptor(const vulkan::Device& device, render::FrameSlot frame_slot,
@@ -204,6 +218,10 @@ class ForwardPbrRenderer3D {
     [[nodiscard]] const render::GraphicsPipelineResource& mask_shadow_pipeline() const;
     [[nodiscard]] const render::GraphicsPipelineResource& mask_shadow_double_sided_pipeline() const;
     [[nodiscard]] const render::GraphicsPipelineResource& shadow_double_sided_pipeline() const;
+    [[nodiscard]] std::optional<render::GraphicsPipelineResource>&
+    pipeline_variant_slot(ForwardPbrPipelineVariant variant);
+    [[nodiscard]] const render::GraphicsPipelineResource&
+    pipeline_variant(ForwardPbrPipelineVariant variant) const;
     [[nodiscard]] const render::GraphicsPipelineResource& skybox_pipeline() const;
     [[nodiscard]] const render::GraphicsPipelineResource& post_pipeline() const;
     [[nodiscard]] const vulkan::Sampler& post_sampler() const;
@@ -216,13 +234,9 @@ class ForwardPbrRenderer3D {
     std::optional<render::FrameUniformMaterialInstance<render::PbrSceneUniforms>> scene_material_;
     std::optional<render::FrameUniformMaterialInstance<render::PbrSkyboxUniforms>> skybox_material_;
     std::optional<render::FrameUniformMaterialInstance<render::PbrPostUniforms>> post_material_;
-    std::optional<render::GraphicsPipelineResource> opaque_pipeline_;
-    std::optional<render::GraphicsPipelineResource> opaque_double_sided_pipeline_;
-    std::optional<render::GraphicsPipelineResource> alpha_pipeline_;
-    std::optional<render::GraphicsPipelineResource> alpha_double_sided_pipeline_;
-    std::optional<render::GraphicsPipelineResource> mask_shadow_pipeline_;
-    std::optional<render::GraphicsPipelineResource> mask_shadow_double_sided_pipeline_;
-    std::optional<render::GraphicsPipelineResource> shadow_double_sided_pipeline_;
+    std::array<std::optional<render::GraphicsPipelineResource>,
+               static_cast<std::size_t>(ForwardPbrPipelineVariant::Count)>
+        pipeline_variants_{};
     std::optional<render::GraphicsPipelineResource> skybox_pipeline_;
     std::optional<render::GraphicsPipelineResource> post_pipeline_;
     std::optional<vulkan::Sampler> post_sampler_;
