@@ -272,6 +272,14 @@ class MaterialCubesApp {
         destroy_scene_if_needed();
         destroy_material_resources();
         destroy_render_handles();
+        iridescence_thickness_default_.reset();
+        iridescence_default_.reset();
+        anisotropy_default_.reset();
+        sheen_roughness_default_.reset();
+        sheen_color_default_.reset();
+        clearcoat_normal_default_.reset();
+        clearcoat_roughness_default_.reset();
+        clearcoat_default_.reset();
         normal_default_.reset();
         metallic_roughness_default_.reset();
         emissive_default_.reset();
@@ -297,6 +305,22 @@ class MaterialCubesApp {
             create_solid_texture(device, gpu, {255, 255, 255, 255}, VK_FORMAT_R8G8B8A8_UNORM));
         specular_color_default_.emplace(
             create_solid_texture(device, gpu, {255, 255, 255, 255}, VK_FORMAT_R8G8B8A8_SRGB));
+        clearcoat_default_.emplace(
+            create_solid_texture(device, gpu, {255, 255, 255, 255}, VK_FORMAT_R8G8B8A8_UNORM));
+        clearcoat_roughness_default_.emplace(
+            create_solid_texture(device, gpu, {255, 255, 255, 255}, VK_FORMAT_R8G8B8A8_UNORM));
+        clearcoat_normal_default_.emplace(
+            create_solid_texture(device, gpu, {128, 128, 255, 255}, VK_FORMAT_R8G8B8A8_UNORM));
+        sheen_color_default_.emplace(
+            create_solid_texture(device, gpu, {255, 255, 255, 255}, VK_FORMAT_R8G8B8A8_SRGB));
+        sheen_roughness_default_.emplace(
+            create_solid_texture(device, gpu, {255, 255, 255, 255}, VK_FORMAT_R8G8B8A8_UNORM));
+        anisotropy_default_.emplace(
+            create_solid_texture(device, gpu, {255, 128, 255, 255}, VK_FORMAT_R8G8B8A8_UNORM));
+        iridescence_default_.emplace(
+            create_solid_texture(device, gpu, {255, 255, 255, 255}, VK_FORMAT_R8G8B8A8_UNORM));
+        iridescence_thickness_default_.emplace(
+            create_solid_texture(device, gpu, {255, 255, 255, 255}, VK_FORMAT_R8G8B8A8_UNORM));
     }
 
     [[nodiscard]] cubey::render::Texture2D create_solid_texture(const cubey::vulkan::Device& device,
@@ -360,6 +384,14 @@ class MaterialCubesApp {
             sampled(cubey::render::PbrMaterialBinding::Emissive),
             sampled(cubey::render::PbrMaterialBinding::Specular),
             sampled(cubey::render::PbrMaterialBinding::SpecularColor),
+            sampled(cubey::render::PbrMaterialBinding::Clearcoat),
+            sampled(cubey::render::PbrMaterialBinding::ClearcoatRoughness),
+            sampled(cubey::render::PbrMaterialBinding::ClearcoatNormal),
+            sampled(cubey::render::PbrMaterialBinding::SheenColor),
+            sampled(cubey::render::PbrMaterialBinding::SheenRoughness),
+            sampled(cubey::render::PbrMaterialBinding::Anisotropy),
+            sampled(cubey::render::PbrMaterialBinding::Iridescence),
+            sampled(cubey::render::PbrMaterialBinding::IridescenceThickness),
         };
     }
 
@@ -615,6 +647,30 @@ class MaterialCubesApp {
         case cubey::render::PbrMaterialBinding::SpecularColor:
             texture = &specular_color_default_;
             break;
+        case cubey::render::PbrMaterialBinding::Clearcoat:
+            texture = &clearcoat_default_;
+            break;
+        case cubey::render::PbrMaterialBinding::ClearcoatRoughness:
+            texture = &clearcoat_roughness_default_;
+            break;
+        case cubey::render::PbrMaterialBinding::ClearcoatNormal:
+            texture = &clearcoat_normal_default_;
+            break;
+        case cubey::render::PbrMaterialBinding::SheenColor:
+            texture = &sheen_color_default_;
+            break;
+        case cubey::render::PbrMaterialBinding::SheenRoughness:
+            texture = &sheen_roughness_default_;
+            break;
+        case cubey::render::PbrMaterialBinding::Anisotropy:
+            texture = &anisotropy_default_;
+            break;
+        case cubey::render::PbrMaterialBinding::Iridescence:
+            texture = &iridescence_default_;
+            break;
+        case cubey::render::PbrMaterialBinding::IridescenceThickness:
+            texture = &iridescence_thickness_default_;
+            break;
         case cubey::render::PbrMaterialBinding::Uniforms:
             break;
         }
@@ -668,6 +724,14 @@ class MaterialCubesApp {
     std::optional<cubey::render::Texture2D> emissive_default_;
     std::optional<cubey::render::Texture2D> specular_default_;
     std::optional<cubey::render::Texture2D> specular_color_default_;
+    std::optional<cubey::render::Texture2D> clearcoat_default_;
+    std::optional<cubey::render::Texture2D> clearcoat_roughness_default_;
+    std::optional<cubey::render::Texture2D> clearcoat_normal_default_;
+    std::optional<cubey::render::Texture2D> sheen_color_default_;
+    std::optional<cubey::render::Texture2D> sheen_roughness_default_;
+    std::optional<cubey::render::Texture2D> anisotropy_default_;
+    std::optional<cubey::render::Texture2D> iridescence_default_;
+    std::optional<cubey::render::Texture2D> iridescence_thickness_default_;
     std::optional<cubey::render::GeneratedPbrEnvironment> ibl_environment_;
 };
 

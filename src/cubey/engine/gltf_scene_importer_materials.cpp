@@ -106,6 +106,14 @@ pbr_texture_transforms(const asset::GltfMaterial& material) {
         .emissive = pbr_texture_transform(material.emissive_texture),
         .specular = pbr_texture_transform(material.specular_texture),
         .specular_color = pbr_texture_transform(material.specular_color_texture),
+        .clearcoat = pbr_texture_transform(material.clearcoat_texture),
+        .clearcoat_roughness = pbr_texture_transform(material.clearcoat_roughness_texture),
+        .clearcoat_normal = pbr_texture_transform(material.clearcoat_normal_texture),
+        .sheen_color = pbr_texture_transform(material.sheen_color_texture),
+        .sheen_roughness = pbr_texture_transform(material.sheen_roughness_texture),
+        .anisotropy = pbr_texture_transform(material.anisotropy_texture),
+        .iridescence = pbr_texture_transform(material.iridescence_texture),
+        .iridescence_thickness = pbr_texture_transform(material.iridescence_thickness_texture),
     };
 }
 
@@ -116,6 +124,32 @@ pbr_texture_transforms(const asset::GltfMaterial& material) {
     }
     if (material.specular_color_texture.has_value()) {
         flags |= render::pbr_material_texture_flag(render::PbrMaterialTextureFlag::SpecularColor);
+    }
+    if (material.clearcoat_texture.has_value()) {
+        flags |= render::pbr_material_texture_flag(render::PbrMaterialTextureFlag::Clearcoat);
+    }
+    if (material.clearcoat_roughness_texture.has_value()) {
+        flags |=
+            render::pbr_material_texture_flag(render::PbrMaterialTextureFlag::ClearcoatRoughness);
+    }
+    if (material.clearcoat_normal_texture.has_value()) {
+        flags |= render::pbr_material_texture_flag(render::PbrMaterialTextureFlag::ClearcoatNormal);
+    }
+    if (material.sheen_color_texture.has_value()) {
+        flags |= render::pbr_material_texture_flag(render::PbrMaterialTextureFlag::SheenColor);
+    }
+    if (material.sheen_roughness_texture.has_value()) {
+        flags |= render::pbr_material_texture_flag(render::PbrMaterialTextureFlag::SheenRoughness);
+    }
+    if (material.anisotropy_texture.has_value()) {
+        flags |= render::pbr_material_texture_flag(render::PbrMaterialTextureFlag::Anisotropy);
+    }
+    if (material.iridescence_texture.has_value()) {
+        flags |= render::pbr_material_texture_flag(render::PbrMaterialTextureFlag::Iridescence);
+    }
+    if (material.iridescence_thickness_texture.has_value()) {
+        flags |=
+            render::pbr_material_texture_flag(render::PbrMaterialTextureFlag::IridescenceThickness);
     }
     return flags;
 }
@@ -159,6 +193,30 @@ pbr_texture_transforms(const asset::GltfMaterial& material) {
         break;
     case render::PbrMaterialBinding::SpecularColor:
         texture = &resources.specular_color_default;
+        break;
+    case render::PbrMaterialBinding::Clearcoat:
+        texture = &resources.clearcoat_default;
+        break;
+    case render::PbrMaterialBinding::ClearcoatRoughness:
+        texture = &resources.clearcoat_roughness_default;
+        break;
+    case render::PbrMaterialBinding::ClearcoatNormal:
+        texture = &resources.clearcoat_normal_default;
+        break;
+    case render::PbrMaterialBinding::SheenColor:
+        texture = &resources.sheen_color_default;
+        break;
+    case render::PbrMaterialBinding::SheenRoughness:
+        texture = &resources.sheen_roughness_default;
+        break;
+    case render::PbrMaterialBinding::Anisotropy:
+        texture = &resources.anisotropy_default;
+        break;
+    case render::PbrMaterialBinding::Iridescence:
+        texture = &resources.iridescence_default;
+        break;
+    case render::PbrMaterialBinding::IridescenceThickness:
+        texture = &resources.iridescence_thickness_default;
         break;
     case render::PbrMaterialBinding::Uniforms:
         break;
@@ -259,6 +317,36 @@ material_sampled_image_bindings(const vulkan::Device& device, vulkan::GpuRuntime
         texture_binding_for_ref(device, gpu, resources, asset, source.specular_color_texture,
                                 asset::GltfTextureColorSpace::Srgb,
                                 render::PbrMaterialBinding::SpecularColor, texture_cache);
+    const TextureBinding clearcoat = texture_binding_for_ref(
+        device, gpu, resources, asset, source.clearcoat_texture,
+        asset::GltfTextureColorSpace::Linear, render::PbrMaterialBinding::Clearcoat, texture_cache);
+    const TextureBinding clearcoat_roughness =
+        texture_binding_for_ref(device, gpu, resources, asset, source.clearcoat_roughness_texture,
+                                asset::GltfTextureColorSpace::Linear,
+                                render::PbrMaterialBinding::ClearcoatRoughness, texture_cache);
+    const TextureBinding clearcoat_normal =
+        texture_binding_for_ref(device, gpu, resources, asset, source.clearcoat_normal_texture,
+                                asset::GltfTextureColorSpace::Linear,
+                                render::PbrMaterialBinding::ClearcoatNormal, texture_cache);
+    const TextureBinding sheen_color = texture_binding_for_ref(
+        device, gpu, resources, asset, source.sheen_color_texture,
+        asset::GltfTextureColorSpace::Srgb, render::PbrMaterialBinding::SheenColor, texture_cache);
+    const TextureBinding sheen_roughness =
+        texture_binding_for_ref(device, gpu, resources, asset, source.sheen_roughness_texture,
+                                asset::GltfTextureColorSpace::Linear,
+                                render::PbrMaterialBinding::SheenRoughness, texture_cache);
+    const TextureBinding anisotropy =
+        texture_binding_for_ref(device, gpu, resources, asset, source.anisotropy_texture,
+                                asset::GltfTextureColorSpace::Linear,
+                                render::PbrMaterialBinding::Anisotropy, texture_cache);
+    const TextureBinding iridescence =
+        texture_binding_for_ref(device, gpu, resources, asset, source.iridescence_texture,
+                                asset::GltfTextureColorSpace::Linear,
+                                render::PbrMaterialBinding::Iridescence, texture_cache);
+    const TextureBinding iridescence_thickness =
+        texture_binding_for_ref(device, gpu, resources, asset, source.iridescence_thickness_texture,
+                                asset::GltfTextureColorSpace::Linear,
+                                render::PbrMaterialBinding::IridescenceThickness, texture_cache);
 
     return {
         render::SampledImageMaterialBinding{
@@ -296,6 +384,46 @@ material_sampled_image_bindings(const vulkan::Device& device, vulkan::GpuRuntime
             .sampler = specular_color.sampler,
             .image_view = specular_color.view,
         },
+        render::SampledImageMaterialBinding{
+            .binding = static_cast<std::uint32_t>(render::PbrMaterialBinding::Clearcoat),
+            .sampler = clearcoat.sampler,
+            .image_view = clearcoat.view,
+        },
+        render::SampledImageMaterialBinding{
+            .binding = static_cast<std::uint32_t>(render::PbrMaterialBinding::ClearcoatRoughness),
+            .sampler = clearcoat_roughness.sampler,
+            .image_view = clearcoat_roughness.view,
+        },
+        render::SampledImageMaterialBinding{
+            .binding = static_cast<std::uint32_t>(render::PbrMaterialBinding::ClearcoatNormal),
+            .sampler = clearcoat_normal.sampler,
+            .image_view = clearcoat_normal.view,
+        },
+        render::SampledImageMaterialBinding{
+            .binding = static_cast<std::uint32_t>(render::PbrMaterialBinding::SheenColor),
+            .sampler = sheen_color.sampler,
+            .image_view = sheen_color.view,
+        },
+        render::SampledImageMaterialBinding{
+            .binding = static_cast<std::uint32_t>(render::PbrMaterialBinding::SheenRoughness),
+            .sampler = sheen_roughness.sampler,
+            .image_view = sheen_roughness.view,
+        },
+        render::SampledImageMaterialBinding{
+            .binding = static_cast<std::uint32_t>(render::PbrMaterialBinding::Anisotropy),
+            .sampler = anisotropy.sampler,
+            .image_view = anisotropy.view,
+        },
+        render::SampledImageMaterialBinding{
+            .binding = static_cast<std::uint32_t>(render::PbrMaterialBinding::Iridescence),
+            .sampler = iridescence.sampler,
+            .image_view = iridescence.view,
+        },
+        render::SampledImageMaterialBinding{
+            .binding = static_cast<std::uint32_t>(render::PbrMaterialBinding::IridescenceThickness),
+            .sampler = iridescence_thickness.sampler,
+            .image_view = iridescence_thickness.view,
+        },
     };
 }
 
@@ -325,6 +453,22 @@ void create_default_textures(const vulkan::Device& device, vulkan::GpuRuntime& g
         create_solid_texture(device, gpu, {255, 255, 255, 255}, VK_FORMAT_R8G8B8A8_UNORM));
     resources.specular_color_default.emplace(
         create_solid_texture(device, gpu, {255, 255, 255, 255}, VK_FORMAT_R8G8B8A8_SRGB));
+    resources.clearcoat_default.emplace(
+        create_solid_texture(device, gpu, {255, 255, 255, 255}, VK_FORMAT_R8G8B8A8_UNORM));
+    resources.clearcoat_roughness_default.emplace(
+        create_solid_texture(device, gpu, {255, 255, 255, 255}, VK_FORMAT_R8G8B8A8_UNORM));
+    resources.clearcoat_normal_default.emplace(
+        create_solid_texture(device, gpu, {128, 128, 255, 255}, VK_FORMAT_R8G8B8A8_UNORM));
+    resources.sheen_color_default.emplace(
+        create_solid_texture(device, gpu, {255, 255, 255, 255}, VK_FORMAT_R8G8B8A8_SRGB));
+    resources.sheen_roughness_default.emplace(
+        create_solid_texture(device, gpu, {255, 255, 255, 255}, VK_FORMAT_R8G8B8A8_UNORM));
+    resources.anisotropy_default.emplace(
+        create_solid_texture(device, gpu, {255, 128, 255, 255}, VK_FORMAT_R8G8B8A8_UNORM));
+    resources.iridescence_default.emplace(
+        create_solid_texture(device, gpu, {255, 255, 255, 255}, VK_FORMAT_R8G8B8A8_UNORM));
+    resources.iridescence_thickness_default.emplace(
+        create_solid_texture(device, gpu, {255, 255, 255, 255}, VK_FORMAT_R8G8B8A8_UNORM));
 }
 
 void create_material_resources(Engine& engine, const vulkan::Device& device,
@@ -363,6 +507,17 @@ void create_material_resources(Engine& engine, const vulkan::Device& device,
                 .specular_color_factor = source.specular_color_factor,
                 .specular_factor = source.specular_factor,
                 .reflectance = source.reflectance,
+                .clearcoat_factor = source.clearcoat_factor,
+                .clearcoat_roughness_factor = source.clearcoat_roughness_factor,
+                .clearcoat_normal_scale = source.clearcoat_normal_scale,
+                .sheen_color_factor = source.sheen_color_factor,
+                .sheen_roughness_factor = source.sheen_roughness_factor,
+                .anisotropy_strength = source.anisotropy_strength,
+                .anisotropy_rotation = source.anisotropy_rotation,
+                .iridescence_factor = source.iridescence_factor,
+                .iridescence_ior = source.iridescence_ior,
+                .iridescence_thickness_minimum = source.iridescence_thickness_minimum,
+                .iridescence_thickness_maximum = source.iridescence_thickness_maximum,
                 .unlit = source.unlit,
                 .texture_flags = pbr_texture_flags(source),
                 .texture_transforms = pbr_texture_transforms(source),

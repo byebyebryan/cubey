@@ -139,7 +139,11 @@ std::filesystem::path write_triangle_gltf(const std::filesystem::path& dir) {
     "KHR_materials_ior",
     "KHR_materials_specular",
     "KHR_materials_emissive_strength",
-    "KHR_materials_unlit"
+    "KHR_materials_unlit",
+    "KHR_materials_clearcoat",
+    "KHR_materials_sheen",
+    "KHR_materials_anisotropy",
+    "KHR_materials_iridescence"
   ],
   "scene": 0,
   "scenes": [{"nodes": [0]}],
@@ -196,10 +200,40 @@ std::filesystem::path write_triangle_gltf(const std::filesystem::path& dir) {
         "specularColorTexture": {"index": 2}
       },
       "KHR_materials_emissive_strength": {"emissiveStrength": 2.0},
-      "KHR_materials_unlit": {}
+      "KHR_materials_unlit": {},
+      "KHR_materials_clearcoat": {
+        "clearcoatFactor": 0.6,
+        "clearcoatTexture": {"index": 3},
+        "clearcoatRoughnessFactor": 0.25,
+        "clearcoatRoughnessTexture": {"index": 4},
+        "clearcoatNormalTexture": {"index": 5, "scale": 0.8}
+      },
+      "KHR_materials_sheen": {
+        "sheenColorFactor": [0.2, 0.3, 0.4],
+        "sheenColorTexture": {"index": 6},
+        "sheenRoughnessFactor": 0.45,
+        "sheenRoughnessTexture": {"index": 7}
+      },
+      "KHR_materials_anisotropy": {
+        "anisotropyStrength": 0.55,
+        "anisotropyRotation": 1.25,
+        "anisotropyTexture": {"index": 8}
+      },
+      "KHR_materials_iridescence": {
+        "iridescenceFactor": 0.65,
+        "iridescenceTexture": {"index": 9},
+        "iridescenceIor": 1.4,
+        "iridescenceThicknessMinimum": 120.0,
+        "iridescenceThicknessMaximum": 520.0,
+        "iridescenceThicknessTexture": {"index": 10}
+      }
     }
   }],
-  "textures": [{"source": 0}, {"source": 0}, {"source": 0}],
+  "textures": [
+    {"source": 0}, {"source": 0}, {"source": 0}, {"source": 0},
+    {"source": 0}, {"source": 0}, {"source": 0}, {"source": 0},
+    {"source": 0}, {"source": 0}, {"source": 0}
+  ],
   "images": [{
     "uri": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII="
   }]
@@ -502,6 +536,39 @@ void test_gltf_asset_loads_static_pbr_triangle() {
     require_close(material.emissive_factor.g, 0.4F, "emissive strength should scale green");
     require_close(material.emissive_factor.b, 0.6F, "emissive strength should scale blue");
     require(material.unlit, "unlit material extension should load");
+    require_close(material.clearcoat_factor, 0.6F, "clearcoat factor should load");
+    require_close(material.clearcoat_roughness_factor, 0.25F,
+                  "clearcoat roughness factor should load");
+    require(material.clearcoat_texture.texture_index == 3,
+            "clearcoat texture should load from KHR_materials_clearcoat");
+    require(material.clearcoat_roughness_texture.texture_index == 4,
+            "clearcoat roughness texture should load from KHR_materials_clearcoat");
+    require(material.clearcoat_normal_texture.texture_index == 5,
+            "clearcoat normal texture should load from KHR_materials_clearcoat");
+    require_close(material.clearcoat_normal_scale, 0.8F,
+                  "clearcoat normal texture scale should load");
+    require_close(material.sheen_color_factor.r, 0.2F, "sheen color factor red should load");
+    require_close(material.sheen_color_factor.g, 0.3F, "sheen color factor green should load");
+    require_close(material.sheen_color_factor.b, 0.4F, "sheen color factor blue should load");
+    require_close(material.sheen_roughness_factor, 0.45F, "sheen roughness factor should load");
+    require(material.sheen_color_texture.texture_index == 6,
+            "sheen color texture should load from KHR_materials_sheen");
+    require(material.sheen_roughness_texture.texture_index == 7,
+            "sheen roughness texture should load from KHR_materials_sheen");
+    require_close(material.anisotropy_strength, 0.55F, "anisotropy strength should load");
+    require_close(material.anisotropy_rotation, 1.25F, "anisotropy rotation should load");
+    require(material.anisotropy_texture.texture_index == 8,
+            "anisotropy texture should load from KHR_materials_anisotropy");
+    require_close(material.iridescence_factor, 0.65F, "iridescence factor should load");
+    require_close(material.iridescence_ior, 1.4F, "iridescence IOR should load");
+    require_close(material.iridescence_thickness_minimum, 120.0F,
+                  "iridescence thickness minimum should load");
+    require_close(material.iridescence_thickness_maximum, 520.0F,
+                  "iridescence thickness maximum should load");
+    require(material.iridescence_texture.texture_index == 9,
+            "iridescence texture should load from KHR_materials_iridescence");
+    require(material.iridescence_thickness_texture.texture_index == 10,
+            "iridescence thickness texture should load from KHR_materials_iridescence");
 
     const cubey::asset::GltfMeshPrimitive& primitive = asset.meshes[0].primitives[0];
     require(primitive.vertices.size() == 3, "primitive should load vertices");
@@ -862,19 +929,31 @@ void test_gltf_asset_accepts_supported_required_extensions() {
   "extensionsUsed": [
     "KHR_materials_ior",
     "KHR_materials_emissive_strength",
-    "KHR_materials_unlit"
+    "KHR_materials_unlit",
+    "KHR_materials_clearcoat",
+    "KHR_materials_sheen",
+    "KHR_materials_anisotropy",
+    "KHR_materials_iridescence"
   ],
   "extensionsRequired": [
     "KHR_materials_ior",
     "KHR_materials_emissive_strength",
-    "KHR_materials_unlit"
+    "KHR_materials_unlit",
+    "KHR_materials_clearcoat",
+    "KHR_materials_sheen",
+    "KHR_materials_anisotropy",
+    "KHR_materials_iridescence"
   ],
   "materials": [{
     "emissiveFactor": [0.2, 0.3, 0.4],
     "extensions": {
       "KHR_materials_ior": {"ior": 1.8},
       "KHR_materials_emissive_strength": {"emissiveStrength": 3.0},
-      "KHR_materials_unlit": {}
+      "KHR_materials_unlit": {},
+      "KHR_materials_clearcoat": {"clearcoatFactor": 0.4},
+      "KHR_materials_sheen": {"sheenRoughnessFactor": 0.35},
+      "KHR_materials_anisotropy": {"anisotropyStrength": 0.25},
+      "KHR_materials_iridescence": {"iridescenceFactor": 0.2}
     }
   }]
 })JSON");
@@ -887,6 +966,14 @@ void test_gltf_asset_accepts_supported_required_extensions() {
     require_close(asset.materials[1].emissive_factor.g, 0.9F,
                   "supported required emissive strength should load");
     require(asset.materials[1].unlit, "supported required unlit extension should load");
+    require_close(asset.materials[1].clearcoat_factor, 0.4F,
+                  "supported required clearcoat extension should load");
+    require_close(asset.materials[1].sheen_roughness_factor, 0.35F,
+                  "supported required sheen extension should load");
+    require_close(asset.materials[1].anisotropy_strength, 0.25F,
+                  "supported required anisotropy extension should load");
+    require_close(asset.materials[1].iridescence_factor, 0.2F,
+                  "supported required iridescence extension should load");
     std::filesystem::remove_all(dir);
 }
 

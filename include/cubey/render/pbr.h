@@ -34,6 +34,14 @@ enum class PbrOutputEncoding : std::uint32_t {
 enum class PbrMaterialTextureFlag : std::uint32_t {
     Specular = 1U << 0U,
     SpecularColor = 1U << 1U,
+    Clearcoat = 1U << 2U,
+    ClearcoatRoughness = 1U << 3U,
+    ClearcoatNormal = 1U << 4U,
+    SheenColor = 1U << 5U,
+    SheenRoughness = 1U << 6U,
+    Anisotropy = 1U << 7U,
+    Iridescence = 1U << 8U,
+    IridescenceThickness = 1U << 9U,
 };
 
 [[nodiscard]] constexpr std::uint32_t
@@ -60,6 +68,14 @@ struct PbrMaterialTextureTransforms {
     PbrTextureTransform emissive{};
     PbrTextureTransform specular{};
     PbrTextureTransform specular_color{};
+    PbrTextureTransform clearcoat{};
+    PbrTextureTransform clearcoat_roughness{};
+    PbrTextureTransform clearcoat_normal{};
+    PbrTextureTransform sheen_color{};
+    PbrTextureTransform sheen_roughness{};
+    PbrTextureTransform anisotropy{};
+    PbrTextureTransform iridescence{};
+    PbrTextureTransform iridescence_thickness{};
 };
 
 struct PbrSceneUniforms {
@@ -96,6 +112,17 @@ struct PbrMaterialFactors {
     math::Vec3 specular_color_factor{1.0F, 1.0F, 1.0F};
     float specular_factor = 1.0F;
     float reflectance = 0.5F;
+    float clearcoat_factor = 0.0F;
+    float clearcoat_roughness_factor = 0.0F;
+    float clearcoat_normal_scale = 1.0F;
+    math::Vec3 sheen_color_factor{0.0F, 0.0F, 0.0F};
+    float sheen_roughness_factor = 0.0F;
+    float anisotropy_strength = 0.0F;
+    float anisotropy_rotation = 0.0F;
+    float iridescence_factor = 0.0F;
+    float iridescence_ior = 1.3F;
+    float iridescence_thickness_minimum = 100.0F;
+    float iridescence_thickness_maximum = 400.0F;
     bool unlit = false;
     std::uint32_t texture_flags = 0U;
     PbrMaterialTextureTransforms texture_transforms{};
@@ -107,6 +134,10 @@ struct PbrMaterialUniforms {
     math::Vec4 metallic_roughness_normal_occlusion{1.0F, 1.0F, 1.0F, 1.0F};
     math::Vec4 specular_color_factor{1.0F, 1.0F, 1.0F, 1.0F};
     math::Vec4 material_model{0.5F, 0.0F, 0.0F, 0.0F};
+    math::Vec4 clearcoat_factor_roughness_normal{0.0F, 0.0F, 1.0F, 0.0F};
+    math::Vec4 sheen_color_roughness{0.0F, 0.0F, 0.0F, 0.0F};
+    math::Vec4 anisotropy_iridescence{0.0F, 1.0F, 0.0F, 0.0F};
+    math::Vec4 iridescence_ior_thickness{1.3F, 100.0F, 400.0F, 0.0F};
     PbrMaterialTextureTransforms texture_transforms{};
 };
 
@@ -115,9 +146,9 @@ struct PbrPushConstants {
 };
 
 static_assert(sizeof(PbrTextureTransform) == sizeof(math::Vec4) * 2U);
-static_assert(sizeof(PbrMaterialTextureTransforms) == sizeof(math::Vec4) * 14U);
+static_assert(sizeof(PbrMaterialTextureTransforms) == sizeof(math::Vec4) * 30U);
 static_assert(sizeof(PbrVertex) == sizeof(float) * 18U);
-static_assert(sizeof(PbrMaterialUniforms) == sizeof(math::Vec4) * 19U);
+static_assert(sizeof(PbrMaterialUniforms) == sizeof(math::Vec4) * 39U);
 static_assert(sizeof(PbrSkyboxUniforms) == sizeof(math::Mat4) + (sizeof(math::Vec4) * 3U));
 static_assert(sizeof(PbrPostUniforms) == sizeof(math::Vec4));
 static_assert(sizeof(PbrPushConstants) == sizeof(math::Mat4));
@@ -140,6 +171,14 @@ enum class PbrMaterialBinding : std::uint32_t {
     Specular = 5,
     SpecularColor = 6,
     Uniforms = 7,
+    Clearcoat = 8,
+    ClearcoatRoughness = 9,
+    ClearcoatNormal = 10,
+    SheenColor = 11,
+    SheenRoughness = 12,
+    Anisotropy = 13,
+    Iridescence = 14,
+    IridescenceThickness = 15,
 };
 
 enum class PbrSkyboxBinding : std::uint32_t {

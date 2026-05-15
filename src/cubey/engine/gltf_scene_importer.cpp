@@ -343,6 +343,14 @@ void destroy_gltf_scene_import(Engine& engine, GltfSceneImportResources& resourc
 
     resources.mesh_primitives.clear();
     resources.textures.clear();
+    resources.iridescence_thickness_default.reset();
+    resources.iridescence_default.reset();
+    resources.anisotropy_default.reset();
+    resources.sheen_roughness_default.reset();
+    resources.sheen_color_default.reset();
+    resources.clearcoat_normal_default.reset();
+    resources.clearcoat_roughness_default.reset();
+    resources.clearcoat_default.reset();
     resources.emissive_default.reset();
     resources.specular_color_default.reset();
     resources.specular_default.reset();

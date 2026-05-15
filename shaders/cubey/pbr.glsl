@@ -38,6 +38,15 @@ float cubey_pbr_distribution_ggx(float ndoth, float roughness) {
     return alpha2 / max(CUBEY_PBR_PI * denom * denom, 0.00001);
 }
 
+float cubey_pbr_distribution_ggx_anisotropic(float tdoth, float bdoth, float ndoth,
+                                             float alpha_t, float alpha_b) {
+    float at = max(alpha_t, 0.001);
+    float ab = max(alpha_b, 0.001);
+    float denom = ((tdoth * tdoth) / (at * at)) + ((bdoth * bdoth) / (ab * ab)) +
+                  (ndoth * ndoth);
+    return 1.0 / max(CUBEY_PBR_PI * at * ab * denom * denom, 0.00001);
+}
+
 float cubey_pbr_visibility_smith_ggx_correlated(float ndotv, float ndotl, float roughness) {
     float alpha = roughness * roughness;
     float alpha2 = alpha * alpha;
@@ -48,6 +57,45 @@ float cubey_pbr_visibility_smith_ggx_correlated(float ndotv, float ndotl, float 
 
 vec3 cubey_pbr_fresnel_schlick(float cos_theta, vec3 f0) {
     return f0 + (1.0 - f0) * pow(cubey_pbr_saturate(1.0 - cos_theta), 5.0);
+}
+
+float cubey_pbr_clearcoat_direct(float ndotv, float ndotl, float ndoth, float vdoth,
+                                 float roughness) {
+    if (ndotv <= 0.0 || ndotl <= 0.0) {
+        return 0.0;
+    }
+    float d = cubey_pbr_distribution_ggx(ndoth, roughness);
+    float v = cubey_pbr_visibility_smith_ggx_correlated(ndotv, ndotl, roughness);
+    float f = cubey_pbr_fresnel_schlick(vdoth, vec3(0.04)).r;
+    return d * v * f;
+}
+
+float cubey_pbr_distribution_charlie(float ndoth, float roughness) {
+    float alpha_g = max(roughness * roughness, 0.0001);
+    float inv_r = 1.0 / alpha_g;
+    float sin2h = max(1.0 - (ndoth * ndoth), 0.0);
+    return ((2.0 + inv_r) * pow(sin2h, inv_r * 0.5)) / (2.0 * CUBEY_PBR_PI);
+}
+
+vec3 cubey_pbr_sheen_direct(vec3 sheen_color, float sheen_roughness, float ndotv, float ndotl,
+                            float ndoth) {
+    if (ndotv <= 0.0 || ndotl <= 0.0) {
+        return vec3(0.0);
+    }
+    float d = cubey_pbr_distribution_charlie(ndoth, clamp(sheen_roughness, 0.01, 1.0));
+    float v = 1.0 / max(4.0 * (ndotl + ndotv - (ndotl * ndotv)), 0.00001);
+    return sheen_color * d * v;
+}
+
+vec3 cubey_pbr_iridescence_f0(vec3 base_f0, float factor, float ior, float thickness_nm) {
+    float strength = cubey_pbr_saturate(factor);
+    float clamped_ior = max(ior, 1.0);
+    float root_f0 = (clamped_ior - 1.0) / (clamped_ior + 1.0);
+    float film_f0 = root_f0 * root_f0;
+    vec3 phase = vec3(0.0, 2.0943951, 4.1887902) + (thickness_nm * 0.024);
+    vec3 film_color = 0.5 + (0.5 * cos(phase));
+    vec3 iridescent_f0 = cubey_pbr_saturate(base_f0 + (film_color * film_f0));
+    return mix(base_f0, iridescent_f0, strength);
 }
 
 vec3 cubey_pbr_fresnel_schlick_roughness(float cos_theta, vec3 f0, float roughness) {

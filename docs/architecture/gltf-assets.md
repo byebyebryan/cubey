@@ -31,8 +31,10 @@ renderer.
   `mesh.extras.targetNames`;
 - metallic-roughness PBR material factors and texture references, including
   texture coordinate selection and `KHR_texture_transform` metadata;
-- `KHR_materials_ior`, `KHR_materials_specular` factors/textures,
-  `KHR_materials_emissive_strength`, and `KHR_materials_unlit` controls;
+- `KHR_materials_ior`, `KHR_materials_specular`, `KHR_materials_clearcoat`,
+  `KHR_materials_sheen`, `KHR_materials_anisotropy`,
+  `KHR_materials_iridescence`, `KHR_materials_emissive_strength`, and
+  `KHR_materials_unlit` controls;
 - core glTF alpha modes: `OPAQUE`, `MASK`, and `BLEND`;
 - sampler filtering and per-axis wrapping metadata;
 - scene roots and node hierarchy with decomposed TRS transforms;
@@ -45,8 +47,8 @@ sets above UV1, additional skin influence sets, unsupported morph target
 attributes, sparse index accessors, and extension-only animation paths are
 rejected by the loader. Arbitrary additional UV/color sets, material variants,
 KTX2/Basis textures, Draco/meshopt compression, transmission, volume,
-clearcoat, sheen, anisotropy, glTF cameras/lights, glTF environment extensions,
-advanced animation runtime features, and streaming remain future slices.
+dispersion, glTF cameras/lights, glTF environment extensions, advanced
+animation runtime features, and streaming remain future slices.
 
 `cubey::engine` owns the current asset-to-scene bridge and renderer instance
 service:
@@ -65,6 +67,9 @@ service:
   sampler `wrapS` / `wrapT` are preserved through Vulkan sampler axes;
 - material texture coordinate selection, `KHR_texture_transform`, and vertex
   colors are propagated into the PBR material uniform and vertex contracts;
+- clearcoat, sheen, anisotropy, and iridescence texture bindings use fixed PBR
+  descriptor slots with per-material flags so the common path avoids sampling
+  absent textures;
 - `destroy_gltf_scene_import()` tears down imported resources without making
   the engine own Vulkan texture or mesh lifetime globally;
 - `RendererService` owns renderer instance lifetime, and
@@ -115,7 +120,9 @@ recording. Its PBR shader writes linear HDR scene color and uses the shared
 Cubey PBR helper include for
 base-color-to-diffuse/F0 remapping, reflectance/specular factor controls,
 correlated Smith direct visibility, DFG-based IBL energy compensation, and
-indirect specular occlusion. Material texture and factor alpha remain
+indirect specular occlusion. The glTF PBR shader also evaluates the current
+opaque material extension lobes: clearcoat, sheen, anisotropic GGX, and a
+lightweight iridescence Fresnel tint. Material texture and factor alpha remain
 straight/unassociated inputs; blended fragments emit premultiplied RGB at
 shader output, while opaque and kept masked fragments output alpha 1. Display
 transform is applied by the shared post shader. Unlit glTF materials preserve
@@ -160,8 +167,8 @@ Texture lifetime, descriptor writes, shader selection, and environment
 selection still belong to the project or future renderer layer. Transparency V1
 supports glTF alpha mask and alpha blend, but not refraction, transmission,
 transparent shadow opacity, weighted blended transparency, or order-independent
-transparency. Clearcoat, transmission, and other glTF material extension lobes
-remain future slices.
+transparency. Transmission, volume absorption, dispersion, and other
+transmissive glTF material extension lobes remain future slices.
 
 ## Next Slices
 

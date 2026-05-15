@@ -55,6 +55,14 @@ void PbrFurnaceApp::destroy_all_resources() {
     cubey::render::destroy_mesh_resource(engine_.render_resources(), meshes_, sphere_mesh_handle_);
     white_environment_.reset();
     dummy_shadow_.reset();
+    iridescence_thickness_default_.reset();
+    iridescence_default_.reset();
+    anisotropy_default_.reset();
+    sheen_roughness_default_.reset();
+    sheen_color_default_.reset();
+    clearcoat_normal_default_.reset();
+    clearcoat_roughness_default_.reset();
+    clearcoat_default_.reset();
     normal_default_.reset();
     metallic_roughness_default_.reset();
     emissive_default_.reset();

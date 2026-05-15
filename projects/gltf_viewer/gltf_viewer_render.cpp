@@ -28,6 +28,14 @@ void GltfViewerApp::destroy_all_resources() {
     animation_playback_ = {};
     animation_sample_.reset();
     triangle_count_ = 0;
+    iridescence_thickness_default_.reset();
+    iridescence_default_.reset();
+    anisotropy_default_.reset();
+    sheen_roughness_default_.reset();
+    sheen_color_default_.reset();
+    clearcoat_normal_default_.reset();
+    clearcoat_roughness_default_.reset();
+    clearcoat_default_.reset();
     normal_default_.reset();
     metallic_roughness_default_.reset();
     emissive_default_.reset();

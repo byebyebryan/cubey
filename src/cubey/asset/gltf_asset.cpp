@@ -217,6 +217,14 @@ void require_optional_color_accessor(const cgltf_accessor* accessor, const char*
             : math::Vec3{1.0F, 1.0F, 1.0F};
     const float emissive_strength =
         material.has_emissive_strength != 0 ? material.emissive_strength.emissive_strength : 1.0F;
+    const math::Vec3 sheen_color =
+        material.has_sheen != 0
+            ? math::Vec3{
+                  material.sheen.sheen_color_factor[0],
+                  material.sheen.sheen_color_factor[1],
+                  material.sheen.sheen_color_factor[2],
+              }
+            : math::Vec3{0.0F, 0.0F, 0.0F};
     return {
         .label = label_or_empty(material.name),
         .base_color_factor =
@@ -245,6 +253,62 @@ void require_optional_color_accessor(const cgltf_accessor* accessor, const char*
                 material.emissive_factor[1] * emissive_strength,
                 material.emissive_factor[2] * emissive_strength,
             },
+        .clearcoat_factor =
+            material.has_clearcoat != 0 ? material.clearcoat.clearcoat_factor : 0.0F,
+        .clearcoat_roughness_factor =
+            material.has_clearcoat != 0 ? material.clearcoat.clearcoat_roughness_factor : 0.0F,
+        .clearcoat_normal_scale =
+            material.has_clearcoat != 0 ? material.clearcoat.clearcoat_normal_texture.scale : 1.0F,
+        .clearcoat_texture = material.has_clearcoat != 0
+                                 ? load_texture_ref(material.clearcoat.clearcoat_texture,
+                                                    texture_base, texture_count)
+                                 : GltfTextureRef{},
+        .clearcoat_roughness_texture =
+            material.has_clearcoat != 0
+                ? load_texture_ref(material.clearcoat.clearcoat_roughness_texture, texture_base,
+                                   texture_count)
+                : GltfTextureRef{},
+        .clearcoat_normal_texture =
+            material.has_clearcoat != 0
+                ? load_texture_ref(material.clearcoat.clearcoat_normal_texture, texture_base,
+                                   texture_count)
+                : GltfTextureRef{},
+        .sheen_color_factor = sheen_color,
+        .sheen_roughness_factor =
+            material.has_sheen != 0 ? material.sheen.sheen_roughness_factor : 0.0F,
+        .sheen_color_texture =
+            material.has_sheen != 0
+                ? load_texture_ref(material.sheen.sheen_color_texture, texture_base, texture_count)
+                : GltfTextureRef{},
+        .sheen_roughness_texture = material.has_sheen != 0
+                                       ? load_texture_ref(material.sheen.sheen_roughness_texture,
+                                                          texture_base, texture_count)
+                                       : GltfTextureRef{},
+        .anisotropy_strength =
+            material.has_anisotropy != 0 ? material.anisotropy.anisotropy_strength : 0.0F,
+        .anisotropy_rotation =
+            material.has_anisotropy != 0 ? material.anisotropy.anisotropy_rotation : 0.0F,
+        .anisotropy_texture = material.has_anisotropy != 0
+                                  ? load_texture_ref(material.anisotropy.anisotropy_texture,
+                                                     texture_base, texture_count)
+                                  : GltfTextureRef{},
+        .iridescence_factor =
+            material.has_iridescence != 0 ? material.iridescence.iridescence_factor : 0.0F,
+        .iridescence_ior =
+            material.has_iridescence != 0 ? material.iridescence.iridescence_ior : 1.3F,
+        .iridescence_thickness_minimum =
+            material.has_iridescence != 0 ? material.iridescence.iridescence_thickness_min : 100.0F,
+        .iridescence_thickness_maximum =
+            material.has_iridescence != 0 ? material.iridescence.iridescence_thickness_max : 400.0F,
+        .iridescence_texture = material.has_iridescence != 0
+                                   ? load_texture_ref(material.iridescence.iridescence_texture,
+                                                      texture_base, texture_count)
+                                   : GltfTextureRef{},
+        .iridescence_thickness_texture =
+            material.has_iridescence != 0
+                ? load_texture_ref(material.iridescence.iridescence_thickness_texture, texture_base,
+                                   texture_count)
+                : GltfTextureRef{},
         .normal_scale = material.normal_texture.scale,
         .occlusion_strength = material.occlusion_texture.scale,
         .base_color_texture = load_texture_ref(pbr.base_color_texture, texture_base, texture_count),
@@ -970,9 +1034,16 @@ load_animation_interpolation(cgltf_interpolation_type interpolation) {
 }
 
 [[nodiscard]] bool supports_required_extension(std::string_view extension) noexcept {
-    static constexpr std::array<std::string_view, 5> kSupportedRequiredExtensions{
-        "KHR_materials_emissive_strength", "KHR_materials_ior",   "KHR_materials_specular",
-        "KHR_texture_transform",           "KHR_materials_unlit",
+    static constexpr std::array<std::string_view, 9> kSupportedRequiredExtensions{
+        "KHR_materials_emissive_strength",
+        "KHR_materials_ior",
+        "KHR_materials_specular",
+        "KHR_texture_transform",
+        "KHR_materials_unlit",
+        "KHR_materials_clearcoat",
+        "KHR_materials_sheen",
+        "KHR_materials_anisotropy",
+        "KHR_materials_iridescence",
     };
     return std::ranges::find(kSupportedRequiredExtensions, extension) !=
            kSupportedRequiredExtensions.end();

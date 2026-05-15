@@ -37,6 +37,10 @@ layout(set = 1, binding = 7) uniform PbrMaterialUniforms {
     vec4 metallic_roughness_normal_occlusion;
     vec4 specular_color_factor;
     vec4 material_model;
+    vec4 clearcoat_factor_roughness_normal;
+    vec4 sheen_color_roughness;
+    vec4 anisotropy_iridescence;
+    vec4 iridescence_ior_thickness;
     PbrTextureTransform base_color_transform;
     PbrTextureTransform metallic_roughness_transform;
     PbrTextureTransform normal_transform;
@@ -44,6 +48,14 @@ layout(set = 1, binding = 7) uniform PbrMaterialUniforms {
     PbrTextureTransform emissive_transform;
     PbrTextureTransform specular_transform;
     PbrTextureTransform specular_color_transform;
+    PbrTextureTransform clearcoat_transform;
+    PbrTextureTransform clearcoat_roughness_transform;
+    PbrTextureTransform clearcoat_normal_transform;
+    PbrTextureTransform sheen_color_transform;
+    PbrTextureTransform sheen_roughness_transform;
+    PbrTextureTransform anisotropy_transform;
+    PbrTextureTransform iridescence_transform;
+    PbrTextureTransform iridescence_thickness_transform;
 } material;
 
 const uint CUBEY_PBR_TEXTURE_SPECULAR = 1u;

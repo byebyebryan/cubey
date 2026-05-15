@@ -124,6 +124,14 @@ struct GltfSceneImportResources {
     std::optional<render::Texture2D> emissive_default{};
     std::optional<render::Texture2D> specular_default{};
     std::optional<render::Texture2D> specular_color_default{};
+    std::optional<render::Texture2D> clearcoat_default{};
+    std::optional<render::Texture2D> clearcoat_roughness_default{};
+    std::optional<render::Texture2D> clearcoat_normal_default{};
+    std::optional<render::Texture2D> sheen_color_default{};
+    std::optional<render::Texture2D> sheen_roughness_default{};
+    std::optional<render::Texture2D> anisotropy_default{};
+    std::optional<render::Texture2D> iridescence_default{};
+    std::optional<render::Texture2D> iridescence_thickness_default{};
     bool active = false;
 };
 

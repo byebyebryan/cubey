@@ -62,8 +62,8 @@ void test_pbr_forward_pass_declares_scene_and_material_sets() {
     require(pass.descriptor_sets[0].bindings.size() == 5,
             "PBR scene descriptors should include uniform, shadow map, and IBL textures");
     require(pass.descriptor_sets[1].set == 1, "PBR material descriptors should use set 1");
-    require(pass.descriptor_sets[1].bindings.size() == 8,
-            "PBR material descriptors should include textures plus material uniforms");
+    require(pass.descriptor_sets[1].bindings.size() == 16,
+            "PBR material descriptors should include base and extension textures plus uniforms");
     require(pass.descriptor_sets[1].bindings[5].binding ==
                 static_cast<std::uint32_t>(cubey::render::PbrMaterialBinding::Specular),
             "PBR specular texture should use binding 5");
@@ -79,6 +79,35 @@ void test_pbr_forward_pass_declares_scene_and_material_sets() {
             "PBR specular color texture should be sampled");
     require(pass.descriptor_sets[1].bindings[7].type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
             "PBR material uniforms should be a uniform buffer");
+    require(pass.descriptor_sets[1].bindings[8].binding ==
+                static_cast<std::uint32_t>(cubey::render::PbrMaterialBinding::Clearcoat),
+            "PBR clearcoat texture should use binding 8");
+    require(pass.descriptor_sets[1].bindings[9].binding ==
+                static_cast<std::uint32_t>(cubey::render::PbrMaterialBinding::ClearcoatRoughness),
+            "PBR clearcoat roughness texture should use binding 9");
+    require(pass.descriptor_sets[1].bindings[10].binding ==
+                static_cast<std::uint32_t>(cubey::render::PbrMaterialBinding::ClearcoatNormal),
+            "PBR clearcoat normal texture should use binding 10");
+    require(pass.descriptor_sets[1].bindings[11].binding ==
+                static_cast<std::uint32_t>(cubey::render::PbrMaterialBinding::SheenColor),
+            "PBR sheen color texture should use binding 11");
+    require(pass.descriptor_sets[1].bindings[12].binding ==
+                static_cast<std::uint32_t>(cubey::render::PbrMaterialBinding::SheenRoughness),
+            "PBR sheen roughness texture should use binding 12");
+    require(pass.descriptor_sets[1].bindings[13].binding ==
+                static_cast<std::uint32_t>(cubey::render::PbrMaterialBinding::Anisotropy),
+            "PBR anisotropy texture should use binding 13");
+    require(pass.descriptor_sets[1].bindings[14].binding ==
+                static_cast<std::uint32_t>(cubey::render::PbrMaterialBinding::Iridescence),
+            "PBR iridescence texture should use binding 14");
+    require(pass.descriptor_sets[1].bindings[15].binding ==
+                static_cast<std::uint32_t>(cubey::render::PbrMaterialBinding::IridescenceThickness),
+            "PBR iridescence thickness texture should use binding 15");
+    for (std::size_t i = 8; i < pass.descriptor_sets[1].bindings.size(); ++i) {
+        require(pass.descriptor_sets[1].bindings[i].type ==
+                    VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                "PBR extension textures should be sampled");
+    }
     require(pass.push_constants.size() == 1, "PBR pass should declare push constants");
     require(pass.push_constants[0].size == sizeof(cubey::render::PbrPushConstants),
             "PBR push constant range should match struct size");
@@ -115,16 +144,45 @@ void test_pbr_material_factors_are_uniforms_and_push_constants_are_model_only() 
     factors.specular_color_factor = {0.7F, 0.8F, 0.9F};
     factors.specular_factor = 0.65F;
     factors.reflectance = 0.42F;
+    factors.clearcoat_factor = 0.6F;
+    factors.clearcoat_roughness_factor = 0.35F;
+    factors.clearcoat_normal_scale = 0.8F;
+    factors.sheen_color_factor = {0.2F, 0.3F, 0.4F};
+    factors.sheen_roughness_factor = 0.45F;
+    factors.anisotropy_strength = 0.55F;
+    factors.anisotropy_rotation = 1.570796F;
+    factors.iridescence_factor = 0.65F;
+    factors.iridescence_ior = 1.4F;
+    factors.iridescence_thickness_minimum = 120.0F;
+    factors.iridescence_thickness_maximum = 520.0F;
     factors.alpha_mode = cubey::render::MaterialAlphaMode::Blend;
     factors.unlit = true;
     factors.texture_flags =
         cubey::render::pbr_material_texture_flag(cubey::render::PbrMaterialTextureFlag::Specular) |
         cubey::render::pbr_material_texture_flag(
-            cubey::render::PbrMaterialTextureFlag::SpecularColor);
+            cubey::render::PbrMaterialTextureFlag::SpecularColor) |
+        cubey::render::pbr_material_texture_flag(cubey::render::PbrMaterialTextureFlag::Clearcoat) |
+        cubey::render::pbr_material_texture_flag(
+            cubey::render::PbrMaterialTextureFlag::ClearcoatRoughness) |
+        cubey::render::pbr_material_texture_flag(
+            cubey::render::PbrMaterialTextureFlag::ClearcoatNormal) |
+        cubey::render::pbr_material_texture_flag(
+            cubey::render::PbrMaterialTextureFlag::SheenColor) |
+        cubey::render::pbr_material_texture_flag(
+            cubey::render::PbrMaterialTextureFlag::SheenRoughness) |
+        cubey::render::pbr_material_texture_flag(
+            cubey::render::PbrMaterialTextureFlag::Anisotropy) |
+        cubey::render::pbr_material_texture_flag(
+            cubey::render::PbrMaterialTextureFlag::Iridescence) |
+        cubey::render::pbr_material_texture_flag(
+            cubey::render::PbrMaterialTextureFlag::IridescenceThickness);
     factors.texture_transforms.base_color.offset_scale = {0.25F, 0.5F, 2.0F, 3.0F};
     factors.texture_transforms.base_color.rotation_texcoord = {0.0F, 1.0F, 1.0F, 0.0F};
     factors.texture_transforms.normal.offset_scale = {0.1F, 0.2F, 0.5F, 0.75F};
     factors.texture_transforms.normal.rotation_texcoord = {1.0F, 0.0F, 0.0F, 0.0F};
+    factors.texture_transforms.clearcoat.offset_scale = {0.3F, 0.4F, 0.5F, 0.6F};
+    factors.texture_transforms.sheen_color.rotation_texcoord = {0.0F, 1.0F, 0.0F, 0.0F};
+    factors.texture_transforms.iridescence_thickness.offset_scale = {0.7F, 0.8F, 0.9F, 1.0F};
 
     const cubey::render::PbrMaterialUniforms uniforms =
         cubey::render::pbr_material_uniforms(factors);
@@ -155,6 +213,29 @@ void test_pbr_material_factors_are_uniforms_and_push_constants_are_model_only() 
     require(uniforms.material_model.z == 1.0F, "PBR material uniforms should pack unlit flag");
     require(uniforms.material_model.w == static_cast<float>(factors.texture_flags),
             "PBR material uniforms should pack optional texture flags");
+    require(uniforms.clearcoat_factor_roughness_normal.x == factors.clearcoat_factor &&
+                uniforms.clearcoat_factor_roughness_normal.y ==
+                    factors.clearcoat_roughness_factor &&
+                uniforms.clearcoat_factor_roughness_normal.z == factors.clearcoat_normal_scale,
+            "PBR material uniforms should pack clearcoat factors");
+    require(uniforms.sheen_color_roughness.x == factors.sheen_color_factor.x &&
+                uniforms.sheen_color_roughness.y == factors.sheen_color_factor.y &&
+                uniforms.sheen_color_roughness.z == factors.sheen_color_factor.z &&
+                uniforms.sheen_color_roughness.w == factors.sheen_roughness_factor,
+            "PBR material uniforms should pack sheen factors");
+    require(uniforms.anisotropy_iridescence.x == factors.anisotropy_strength,
+            "PBR material uniforms should pack anisotropy strength");
+    require(uniforms.anisotropy_iridescence.y < 0.0001F &&
+                uniforms.anisotropy_iridescence.y > -0.0001F,
+            "PBR material uniforms should pack anisotropy rotation cosine");
+    require(uniforms.anisotropy_iridescence.z > 0.9999F,
+            "PBR material uniforms should pack anisotropy rotation sine");
+    require(uniforms.anisotropy_iridescence.w == factors.iridescence_factor,
+            "PBR material uniforms should pack iridescence factor");
+    require(uniforms.iridescence_ior_thickness.x == factors.iridescence_ior &&
+                uniforms.iridescence_ior_thickness.y == factors.iridescence_thickness_minimum &&
+                uniforms.iridescence_ior_thickness.z == factors.iridescence_thickness_maximum,
+            "PBR material uniforms should pack iridescence IOR and thickness range");
     require(uniforms.texture_transforms.base_color.offset_scale ==
                 factors.texture_transforms.base_color.offset_scale,
             "PBR material uniforms should pack base color texture offset and scale");
@@ -167,6 +248,15 @@ void test_pbr_material_factors_are_uniforms_and_push_constants_are_model_only() 
     require(uniforms.texture_transforms.normal.rotation_texcoord ==
                 factors.texture_transforms.normal.rotation_texcoord,
             "PBR material uniforms should pack normal texture rotation and UV set");
+    require(uniforms.texture_transforms.clearcoat.offset_scale ==
+                factors.texture_transforms.clearcoat.offset_scale,
+            "PBR material uniforms should pack clearcoat texture transform");
+    require(uniforms.texture_transforms.sheen_color.rotation_texcoord ==
+                factors.texture_transforms.sheen_color.rotation_texcoord,
+            "PBR material uniforms should pack sheen texture transform");
+    require(uniforms.texture_transforms.iridescence_thickness.offset_scale ==
+                factors.texture_transforms.iridescence_thickness.offset_scale,
+            "PBR material uniforms should pack iridescence texture transform");
     const cubey::render::PbrMaterialUniforms opaque_uniforms =
         cubey::render::pbr_material_uniforms(factors, cubey::render::MaterialAlphaMode::Opaque);
     require(opaque_uniforms.material_model.y == 0.0F,
@@ -391,10 +481,34 @@ void test_pbr_shaders_use_filament_style_material_remap() {
                      "glTF PBR shader should bind KHR_materials_specular strength texture");
     require_contains(gltf, "uniform sampler2D specular_color_texture",
                      "glTF PBR shader should bind KHR_materials_specular color texture");
+    require_contains(gltf, "uniform sampler2D clearcoat_texture",
+                     "glTF PBR shader should bind KHR_materials_clearcoat texture");
+    require_contains(gltf, "uniform sampler2D clearcoat_roughness_texture",
+                     "glTF PBR shader should bind KHR_materials_clearcoat roughness texture");
+    require_contains(gltf, "uniform sampler2D clearcoat_normal_texture",
+                     "glTF PBR shader should bind KHR_materials_clearcoat normal texture");
+    require_contains(gltf, "uniform sampler2D sheen_color_texture",
+                     "glTF PBR shader should bind KHR_materials_sheen color texture");
+    require_contains(gltf, "uniform sampler2D sheen_roughness_texture",
+                     "glTF PBR shader should bind KHR_materials_sheen roughness texture");
+    require_contains(gltf, "uniform sampler2D anisotropy_texture",
+                     "glTF PBR shader should bind KHR_materials_anisotropy texture");
+    require_contains(gltf, "uniform sampler2D iridescence_texture",
+                     "glTF PBR shader should bind KHR_materials_iridescence texture");
+    require_contains(gltf, "uniform sampler2D iridescence_thickness_texture",
+                     "glTF PBR shader should bind KHR_materials_iridescence thickness texture");
     require_contains(gltf, "cubey_pbr_transformed_uv(material.specular_transform)",
                      "glTF PBR shader should sample specular strength through transformed UVs");
     require_contains(gltf, "cubey_pbr_transformed_uv(material.specular_color_transform)",
                      "glTF PBR shader should sample specular color through transformed UVs");
+    require_contains(gltf, "cubey_pbr_clearcoat_direct",
+                     "glTF PBR shader should evaluate clearcoat direct lighting");
+    require_contains(gltf, "cubey_pbr_sheen_direct",
+                     "glTF PBR shader should evaluate sheen direct lighting");
+    require_contains(gltf, "cubey_pbr_distribution_ggx_anisotropic",
+                     "glTF PBR shader should evaluate anisotropic specular");
+    require_contains(gltf, "cubey_pbr_iridescence_f0",
+                     "glTF PBR shader should evaluate iridescence Fresnel tint");
     require_contains(gltf, "if (cubey_pbr_has_material_texture(CUBEY_PBR_TEXTURE_SPECULAR))",
                      "glTF PBR shader should skip specular strength texture when absent");
     require_contains(gltf, "if (cubey_pbr_has_material_texture(CUBEY_PBR_TEXTURE_SPECULAR_COLOR))",
