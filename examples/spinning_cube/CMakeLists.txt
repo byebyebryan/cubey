@@ -7,6 +7,9 @@ cubey_add_app_target(
     SOURCES
         main.cpp
         spinning_cube_app.cpp
+        spinning_cube_render.cpp
+        spinning_cube_resources.cpp
+        spinning_cube_scene.cpp
     SHADERS
         shaders/spinning_cube.vert
         shaders/spinning_cube.frag

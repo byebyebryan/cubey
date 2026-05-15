@@ -4,6 +4,8 @@ cubey_add_app_target(
     SHADER_DEFINE CUBEY_HEADLESS_CUBE_SHADER_DIR
     SOURCES
         headless_cube_app.cpp
+        headless_cube_render.cpp
+        headless_cube_resources.cpp
         main.cpp
     SHADERS
         shaders/headless_cube.vert
