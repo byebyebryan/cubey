@@ -408,3 +408,38 @@ void test_pbr_shaders_use_filament_style_material_remap() {
     require_contains(gltf_shadow, "discard",
                      "glTF shadow mask shader should discard fragments below alpha cutoff");
 }
+
+void test_gltf_viewer_sample_asset_smoke_tests_cover_material_and_tangent_cases() {
+    const std::filesystem::path source_root = std::filesystem::path{CUBEY_SOURCE_DIR};
+    const std::string cmake = read_source_file(source_root / "projects/gltf_viewer/CMakeLists.txt");
+    const std::string gltf_docs =
+        read_source_file(source_root / "docs/architecture/gltf-assets.md");
+
+    require_contains(cmake, "function(cubey_add_gltf_viewer_sample_smoke_test",
+                     "glTF viewer sample smoke tests should use a helper");
+    require_contains(cmake, "if (NOT CUBEY_GLTF_SAMPLE_ASSETS_DIR)",
+                     "glTF viewer sample smoke tests should stay optional");
+    require_contains(cmake, "AlphaBlendModeTest/glTF/AlphaBlendModeTest.gltf",
+                     "glTF viewer sample smoke tests should cover alpha blending");
+    require_contains(cmake, "SpecularTest/glTF/SpecularTest.gltf",
+                     "glTF viewer sample smoke tests should cover specular materials");
+    require_contains(cmake, "TextureTransformTest/glTF/TextureTransformTest.gltf",
+                     "glTF viewer sample smoke tests should cover texture transforms");
+    require_contains(cmake, "TextureTransformMultiTest/glTF/TextureTransformMultiTest.gltf",
+                     "glTF viewer sample smoke tests should cover multi-texture transforms");
+    require_contains(cmake, "NormalTangentTest/glTF/NormalTangentTest.gltf",
+                     "glTF viewer sample smoke tests should cover tangent-space normals");
+    require_contains(cmake, "NormalTangentMirrorTest/glTF/NormalTangentMirrorTest.gltf",
+                     "glTF viewer sample smoke tests should cover mirrored tangent spaces");
+    require_contains(cmake, "DamagedHelmet/glTF/DamagedHelmet.gltf",
+                     "glTF viewer sample smoke tests should cover the default PBR sample");
+
+    require_contains(gltf_docs, "MikkTSpace",
+                     "glTF docs should record the tangent-space reference");
+    require_contains(gltf_docs, "current fallback tangent generator",
+                     "glTF docs should keep the current tangent generator policy explicit");
+    require_contains(gltf_docs, "not a trivial swap",
+                     "glTF docs should capture why MikkTSpace is not added immediately");
+    require_contains(gltf_docs, "NormalTangentTest",
+                     "glTF docs should point tangent validation at Khronos sample assets");
+}

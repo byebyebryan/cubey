@@ -96,6 +96,7 @@ void test_pbr_scene_uniforms_carry_display_transform();
 void test_pbr_skybox_pass_declares_scene_set();
 void test_pbr_skybox_uniforms_are_uniform_buffer_safe();
 void test_pbr_shaders_use_filament_style_material_remap();
+void test_gltf_viewer_sample_asset_smoke_tests_cover_material_and_tangent_cases();
 void test_render_pipeline_resource_allows_vertexless_fullscreen_pipeline_shape();
 void test_render_pipeline_resource_builds_compute_pipeline_info();
 void test_render_pipeline_resource_builds_layout_and_dynamic_pipeline_info();
@@ -201,6 +202,7 @@ std::span<const TestCase> render_test_cases() {
         CUBEY_TEST(test_pbr_skybox_pass_declares_scene_set),
         CUBEY_TEST(test_pbr_reflectance_helpers_match_filament_convention),
         CUBEY_TEST(test_pbr_shaders_use_filament_style_material_remap),
+        CUBEY_TEST(test_gltf_viewer_sample_asset_smoke_tests_cover_material_and_tangent_cases),
         CUBEY_TEST(test_generated_pbr_environment_data_is_deterministic_and_sized),
         CUBEY_TEST(test_generated_pbr_dfg_lut_stores_energy_compensation_term),
         CUBEY_TEST(test_generated_pbr_prefilter_uses_ggx_convolution_not_legacy_average_mix),

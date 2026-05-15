@@ -424,7 +424,9 @@ read_u16_vec4_accessor_values(const cgltf_accessor* accessor, const char* label)
 }
 
 void generate_tangents(GltfMeshPrimitive& primitive) {
-    std::vector<math::Vec3> accum(primitive.vertices.size(), math::Vec3{0.0F, 0.0F, 0.0F});
+    std::vector<math::Vec3> tangent_accum(primitive.vertices.size(), math::Vec3{0.0F, 0.0F, 0.0F});
+    std::vector<math::Vec3> bitangent_accum(primitive.vertices.size(),
+                                            math::Vec3{0.0F, 0.0F, 0.0F});
     for (std::size_t i = 0; i + 2 < primitive.indices.size(); i += 3) {
         const std::uint32_t i0 = primitive.indices[i + 0];
         const std::uint32_t i1 = primitive.indices[i + 1];
@@ -445,20 +447,33 @@ void generate_tangents(GltfMeshPrimitive& primitive) {
             continue;
         }
         const math::Vec3 tangent = (edge1 * delta_uv2.y - edge2 * delta_uv1.y) / determinant;
-        accum[i0] += tangent;
-        accum[i1] += tangent;
-        accum[i2] += tangent;
+        const math::Vec3 bitangent = (edge2 * delta_uv1.x - edge1 * delta_uv2.x) / determinant;
+        tangent_accum[i0] += tangent;
+        tangent_accum[i1] += tangent;
+        tangent_accum[i2] += tangent;
+        bitangent_accum[i0] += bitangent;
+        bitangent_accum[i1] += bitangent;
+        bitangent_accum[i2] += bitangent;
     }
 
     for (std::size_t i = 0; i < primitive.vertices.size(); ++i) {
         const math::Vec3 normal = primitive.vertices[i].normal;
-        math::Vec3 tangent = accum[i] - normal * glm::dot(normal, accum[i]);
-        if (glm::length(tangent) < 1.0e-6F) {
+        math::Vec3 tangent = tangent_accum[i] - normal * glm::dot(normal, tangent_accum[i]);
+        const bool has_triangle_tangent = glm::length(tangent) >= 1.0e-6F;
+        if (!has_triangle_tangent) {
             tangent = std::abs(normal.y) < 0.9F ? glm::cross(normal, math::Vec3{0.0F, 1.0F, 0.0F})
                                                 : glm::cross(normal, math::Vec3{1.0F, 0.0F, 0.0F});
         }
         tangent = glm::normalize(tangent);
-        primitive.vertices[i].tangent = {tangent.x, tangent.y, tangent.z, 1.0F};
+        float handedness = 1.0F;
+        if (has_triangle_tangent && glm::length(bitangent_accum[i]) >= 1.0e-6F) {
+            // glTF normal maps use +Y up while UV V starts at the top of the image. Emit the
+            // handedness that makes the shader's cross(normal, tangent) basis match that
+            // convention.
+            handedness =
+                glm::dot(glm::cross(normal, tangent), bitangent_accum[i]) < 0.0F ? 1.0F : -1.0F;
+        }
+        primitive.vertices[i].tangent = {tangent.x, tangent.y, tangent.z, handedness};
     }
 }
 

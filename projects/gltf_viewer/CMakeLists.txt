@@ -73,33 +73,63 @@ if (BUILD_TESTING)
         --headless
     )
 
-    if (CUBEY_GLTF_SAMPLE_ASSETS_DIR)
-        set(
-            CUBEY_GLTF_ALPHA_MASK_SAMPLE
-            "${CUBEY_GLTF_SAMPLE_ASSETS_DIR}/Models/AlphaMaskModeTest/glTF/AlphaMaskModeTest.gltf"
-        )
-        if (EXISTS "${CUBEY_GLTF_ALPHA_MASK_SAMPLE}")
-            cubey_add_png_smoke_test(
-                gltf_viewer_alpha_mask_headless_writes_png
-                cubey_project_gltf_viewer
-                "${CMAKE_CURRENT_BINARY_DIR}/gltf-viewer-alpha-mask-smoke.png"
-                --headless
-                --input "${CUBEY_GLTF_ALPHA_MASK_SAMPLE}"
-            )
+    function(cubey_add_gltf_viewer_sample_smoke_test test_name sample_relative_path output_name)
+        if (NOT CUBEY_GLTF_SAMPLE_ASSETS_DIR)
+            return()
         endif()
 
-        set(
-            CUBEY_GLTF_ALPHA_BLEND_SAMPLE
-            "${CUBEY_GLTF_SAMPLE_ASSETS_DIR}/Models/AlphaBlendModeTest/glTF/AlphaBlendModeTest.gltf"
+        set(CUBEY_GLTF_VIEWER_SAMPLE_PATH
+            "${CUBEY_GLTF_SAMPLE_ASSETS_DIR}/Models/${sample_relative_path}"
         )
-        if (EXISTS "${CUBEY_GLTF_ALPHA_BLEND_SAMPLE}")
+        if (EXISTS "${CUBEY_GLTF_VIEWER_SAMPLE_PATH}")
             cubey_add_png_smoke_test(
-                gltf_viewer_alpha_blend_headless_writes_png
+                "${test_name}"
                 cubey_project_gltf_viewer
-                "${CMAKE_CURRENT_BINARY_DIR}/gltf-viewer-alpha-blend-smoke.png"
+                "${CMAKE_CURRENT_BINARY_DIR}/${output_name}"
                 --headless
-                --input "${CUBEY_GLTF_ALPHA_BLEND_SAMPLE}"
+                --input "${CUBEY_GLTF_VIEWER_SAMPLE_PATH}"
             )
         endif()
-    endif()
+    endfunction()
+
+    cubey_add_gltf_viewer_sample_smoke_test(
+        gltf_viewer_alpha_mask_headless_writes_png
+        "AlphaMaskModeTest/glTF/AlphaMaskModeTest.gltf"
+        "gltf-viewer-alpha-mask-smoke.png"
+    )
+    cubey_add_gltf_viewer_sample_smoke_test(
+        gltf_viewer_alpha_blend_headless_writes_png
+        "AlphaBlendModeTest/glTF/AlphaBlendModeTest.gltf"
+        "gltf-viewer-alpha-blend-smoke.png"
+    )
+    cubey_add_gltf_viewer_sample_smoke_test(
+        gltf_viewer_damaged_helmet_headless_writes_png
+        "DamagedHelmet/glTF/DamagedHelmet.gltf"
+        "gltf-viewer-damaged-helmet-smoke.png"
+    )
+    cubey_add_gltf_viewer_sample_smoke_test(
+        gltf_viewer_specular_test_headless_writes_png
+        "SpecularTest/glTF/SpecularTest.gltf"
+        "gltf-viewer-specular-test-smoke.png"
+    )
+    cubey_add_gltf_viewer_sample_smoke_test(
+        gltf_viewer_texture_transform_headless_writes_png
+        "TextureTransformTest/glTF/TextureTransformTest.gltf"
+        "gltf-viewer-texture-transform-smoke.png"
+    )
+    cubey_add_gltf_viewer_sample_smoke_test(
+        gltf_viewer_texture_transform_multi_headless_writes_png
+        "TextureTransformMultiTest/glTF/TextureTransformMultiTest.gltf"
+        "gltf-viewer-texture-transform-multi-smoke.png"
+    )
+    cubey_add_gltf_viewer_sample_smoke_test(
+        gltf_viewer_normal_tangent_headless_writes_png
+        "NormalTangentTest/glTF/NormalTangentTest.gltf"
+        "gltf-viewer-normal-tangent-smoke.png"
+    )
+    cubey_add_gltf_viewer_sample_smoke_test(
+        gltf_viewer_normal_tangent_mirror_headless_writes_png
+        "NormalTangentMirrorTest/glTF/NormalTangentMirrorTest.gltf"
+        "gltf-viewer-normal-tangent-mirror-smoke.png"
+    )
 endif()

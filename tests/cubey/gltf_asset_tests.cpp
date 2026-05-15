@@ -209,6 +209,76 @@ std::filesystem::path write_triangle_gltf(const std::filesystem::path& dir) {
     return gltf_path;
 }
 
+std::filesystem::path write_mirrored_uv_tangent_gltf(const std::filesystem::path& dir) {
+    std::vector<std::uint8_t> bytes;
+    const std::size_t position_offset = bytes.size();
+    append_vec3(bytes, 0.0F, 0.0F, 0.0F);
+    append_vec3(bytes, 1.0F, 0.0F, 0.0F);
+    append_vec3(bytes, 0.0F, 1.0F, 0.0F);
+    append_vec3(bytes, 2.0F, 0.0F, 0.0F);
+    append_vec3(bytes, 3.0F, 0.0F, 0.0F);
+    append_vec3(bytes, 2.0F, 1.0F, 0.0F);
+    const std::size_t normal_offset = bytes.size();
+    for (std::size_t i = 0; i < 6; ++i) {
+        append_vec3(bytes, 0.0F, 0.0F, 1.0F);
+    }
+    const std::size_t uv_offset = bytes.size();
+    append_vec2(bytes, 0.0F, 0.0F);
+    append_vec2(bytes, 1.0F, 0.0F);
+    append_vec2(bytes, 0.0F, 1.0F);
+    append_vec2(bytes, 0.0F, 0.0F);
+    append_vec2(bytes, 0.0F, 1.0F);
+    append_vec2(bytes, 1.0F, 0.0F);
+    const std::size_t index_offset = bytes.size();
+    append_u16(bytes, 0);
+    append_u16(bytes, 1);
+    append_u16(bytes, 2);
+    append_u16(bytes, 3);
+    append_u16(bytes, 4);
+    append_u16(bytes, 5);
+
+    cubey::write_binary_file(dir / "mirrored_uv_tangent.bin", bytes);
+
+    const std::string gltf = std::string(R"JSON({
+  "asset": {"version": "2.0"},
+  "scene": 0,
+  "scenes": [{"nodes": [0]}],
+  "nodes": [{"mesh": 0}],
+  "meshes": [{
+    "primitives": [{
+      "attributes": {"POSITION": 0, "NORMAL": 1, "TEXCOORD_0": 2},
+      "indices": 3
+    }]
+  }],
+  "buffers": [{"uri": "mirrored_uv_tangent.bin", "byteLength": )JSON") +
+                             std::to_string(bytes.size()) + R"JSON(}],
+  "bufferViews": [
+    {"buffer": 0, "byteOffset": )JSON" +
+                             std::to_string(position_offset) +
+                             R"JSON(, "byteLength": 72},
+    {"buffer": 0, "byteOffset": )JSON" +
+                             std::to_string(normal_offset) +
+                             R"JSON(, "byteLength": 72},
+    {"buffer": 0, "byteOffset": )JSON" +
+                             std::to_string(uv_offset) +
+                             R"JSON(, "byteLength": 48},
+    {"buffer": 0, "byteOffset": )JSON" +
+                             std::to_string(index_offset) +
+                             R"JSON(, "byteLength": 12}
+  ],
+  "accessors": [
+    {"bufferView": 0, "componentType": 5126, "count": 6, "type": "VEC3",
+     "min": [0.0, 0.0, 0.0], "max": [3.0, 1.0, 0.0]},
+    {"bufferView": 1, "componentType": 5126, "count": 6, "type": "VEC3"},
+    {"bufferView": 2, "componentType": 5126, "count": 6, "type": "VEC2"},
+    {"bufferView": 3, "componentType": 5123, "count": 6, "type": "SCALAR"}
+  ]
+})JSON";
+    const std::filesystem::path gltf_path = dir / "mirrored_uv_tangent.gltf";
+    write_text_file(gltf_path, gltf);
+    return gltf_path;
+}
+
 std::filesystem::path write_uv1_color_transform_gltf(const std::filesystem::path& dir) {
     std::vector<std::uint8_t> bytes;
     const std::size_t position_offset = bytes.size();
@@ -442,6 +512,21 @@ void test_gltf_asset_loads_static_pbr_triangle() {
     require_close(primitive.vertices[2].texcoord0.y, 1.0F, "uv accessor should load");
     require_close(primitive.vertices[0].tangent.x, 1.0F, "loader should generate missing tangents");
     require_close(primitive.local_bounds.center.x, 0.5F, "bounds center should be computed");
+
+    std::filesystem::remove_all(dir);
+}
+
+void test_gltf_asset_generates_tangent_handedness_from_mirrored_uvs() {
+    const std::filesystem::path dir = test_dir("cubey_gltf_asset_mirrored_uv_tangent");
+    const cubey::asset::GltfAsset asset =
+        cubey::asset::load_gltf_asset(write_mirrored_uv_tangent_gltf(dir));
+
+    const cubey::asset::GltfMeshPrimitive& primitive = asset.meshes[0].primitives[0];
+    require(primitive.vertices.size() == 6, "mirrored UV tangent test should load vertices");
+    require_close(primitive.vertices[0].tangent.w, -1.0F,
+                  "generated tangent should preserve standard UV handedness");
+    require_close(primitive.vertices[3].tangent.w, 1.0F,
+                  "generated tangent should mark mirrored UV handedness");
 
     std::filesystem::remove_all(dir);
 }

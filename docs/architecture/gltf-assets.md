@@ -124,6 +124,23 @@ metallic, roughness, and specular shading.
 The viewer plays one active glTF animation clip, applies rigid TRS channels to
 scene transforms, uploads morph weights and skin joint palettes per frame, and
 records a compute deformation pass before shadow and PBR scene passes.
+When Khronos Sample Assets are configured, optional headless smoke tests cover
+material, texture transform, alpha, and tangent-space validation scenes,
+including `SpecularTest`, `TextureTransformTest`, `TextureTransformMultiTest`,
+`NormalTangentTest`, `NormalTangentMirrorTest`, and `DamagedHelmet`.
+
+Cubey's tangent-space policy is validate-first. glTF recommends MikkTSpace for
+missing tangents, and Filament exposes MikkTSpace generation as an optional
+extended loader path, but Cubey keeps the current fallback tangent generator for
+now. MikkTSpace is not a trivial swap because it can require unindexed tangent
+output and vertex/index remapping instead of preserving authored index buffers.
+The fallback generator still emits a complete glTF tangent vector by accumulating
+both tangent and bitangent directions and deriving mirrored-UV handedness into
+`tangent.w`. Its handedness matches glTF's upper-left UV origin and OpenGL-style
+normal-map convention, which means the emitted `tangent.w` is opposite the raw
+UV-derivative bitangent sign.
+The `NormalTangentTest` and `NormalTangentMirrorTest` sample smokes are the
+current pressure for deciding when that integration is worth doing.
 
 ## Boundaries
 
@@ -148,11 +165,9 @@ remain future slices.
 
 ## Next Slices
 
-- Add validation assets from Khronos Sample Assets as optional tests when the
-  CI/dev environment can afford the download.
 - Add the next model-fidelity import only when it stays within the current
   dependency boundary or clearly justifies a new one.
 - Add prefiltered KTX/KTX2 environment or `KHR_texture_basisu` loading only with
   an explicit dependency boundary such as `libktx` or a Basis transcoder.
-- Keep MikkTSpace tangent generation deferred until authored normal-map assets
-  show visible tangent-basis artifacts.
+- Keep MikkTSpace tangent generation deferred until the tangent-space validation
+  scenes or authored normal-map assets show visible tangent-basis artifacts.
