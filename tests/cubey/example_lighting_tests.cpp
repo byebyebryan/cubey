@@ -1,6 +1,7 @@
 #include "source_file_test_helpers.h"
 
 #include <filesystem>
+#include <initializer_list>
 #include <string>
 
 namespace {
@@ -8,6 +9,15 @@ namespace {
 using cubey::tests::read_source_file;
 using cubey::tests::require_contains;
 using cubey::tests::require_not_contains;
+
+std::string read_example_sources(const std::filesystem::path& root,
+                                 std::initializer_list<const char*> paths) {
+    std::string result;
+    for (const char* path : paths) {
+        result += read_source_file(root / path);
+    }
+    return result;
+}
 
 } // namespace
 
@@ -19,8 +29,11 @@ void test_example_lighting_uses_low_linear_ambient_terms() {
         read_source_file(root / "examples/particle_cubes/shaders/particle_cubes.frag");
     const std::string shadow =
         read_source_file(root / "examples/shadow_cube/shaders/shadow_cube.frag");
-    const std::string textured_app =
-        read_source_file(root / "examples/textured_cube/textured_cube_app.cpp");
+    const std::string textured_app = read_example_sources(
+        root, {"examples/textured_cube/textured_cube_app_internal.h",
+               "examples/textured_cube/textured_cube_resources.cpp",
+               "examples/textured_cube/textured_cube_scene.cpp",
+               "examples/textured_cube/textured_cube_render.cpp"});
 
     for (const std::string* shader : {&instanced, &particle, &shadow}) {
         require_contains(*shader, "kAmbientRadiance",

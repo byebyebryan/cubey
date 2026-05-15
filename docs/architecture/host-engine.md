@@ -209,8 +209,10 @@ setup before swapchain setup, and callback forwarding.
 - All current windowed examples/projects use the host layer: `spinning_cube`,
   `textured_cube`, `shadow_cube`, `instanced_cubes`, `material_cubes`,
   `particle_cubes`, `fractal_2d`, and `fluid_2d`.
-  They still own their shaders, descriptors, command recording sequence, and
-  example-specific state, but no longer repeat the common host callback shell.
+  Cube examples keep the app callback shell thin and split resources, scene
+  updates, render recording, and compute simulation into local implementation
+  files. They still own their shaders, descriptors, command recording sequence,
+  and example-specific state.
 - `cubey::host::HeadlessPngHost` owns the repeated no-window Vulkan
   instance/device, submission coordinator, GPU runtime, offscreen RGBA target,
   color-attachment/readback transitions, ticketed RGBA8 image readback through

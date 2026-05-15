@@ -1,6 +1,7 @@
 #include "source_file_test_helpers.h"
 
 #include <filesystem>
+#include <initializer_list>
 #include <string>
 
 namespace {
@@ -9,17 +10,35 @@ using cubey::tests::read_source_file;
 using cubey::tests::require_contains;
 using cubey::tests::require_not_contains;
 
+std::string read_example_sources(const std::filesystem::path& root,
+                                 std::initializer_list<const char*> paths) {
+    std::string result;
+    for (const char* path : paths) {
+        result += read_source_file(root / path);
+    }
+    return result;
+}
+
 } // namespace
 
 void test_cube_examples_share_spinning_cube_motion() {
     const std::filesystem::path root{CUBEY_SOURCE_DIR};
     const std::string common = read_source_file(root / "examples/common/cube_scene.h");
-    const std::string spinning =
-        read_source_file(root / "examples/spinning_cube/spinning_cube_app.cpp");
-    const std::string textured =
-        read_source_file(root / "examples/textured_cube/textured_cube_app.cpp");
-    const std::string instanced =
-        read_source_file(root / "examples/instanced_cubes/instanced_cubes_app.cpp");
+    const std::string spinning = read_example_sources(
+        root, {"examples/spinning_cube/spinning_cube_app_internal.h",
+               "examples/spinning_cube/spinning_cube_resources.cpp",
+               "examples/spinning_cube/spinning_cube_scene.cpp",
+               "examples/spinning_cube/spinning_cube_render.cpp"});
+    const std::string textured = read_example_sources(
+        root, {"examples/textured_cube/textured_cube_app_internal.h",
+               "examples/textured_cube/textured_cube_resources.cpp",
+               "examples/textured_cube/textured_cube_scene.cpp",
+               "examples/textured_cube/textured_cube_render.cpp"});
+    const std::string instanced = read_example_sources(
+        root, {"examples/instanced_cubes/instanced_cubes_app_internal.h",
+               "examples/instanced_cubes/instanced_cubes_resources.cpp",
+               "examples/instanced_cubes/instanced_cubes_scene.cpp",
+               "examples/instanced_cubes/instanced_cubes_render.cpp"});
     const std::string instanced_shader =
         read_source_file(root / "examples/instanced_cubes/shaders/instanced_cubes.vert");
     const std::string material_scene =
@@ -33,8 +52,12 @@ void test_cube_examples_share_spinning_cube_motion() {
         read_source_file(root / "examples/shadow_cube/shadow_cube_scene.cpp");
     const std::string shadow_app =
         read_source_file(root / "examples/shadow_cube/shadow_cube_app.cpp");
-    const std::string particle_app =
-        read_source_file(root / "examples/particle_cubes/particle_cubes_app.cpp");
+    const std::string particle_app = read_example_sources(
+        root, {"examples/particle_cubes/particle_cubes_app.cpp",
+               "examples/particle_cubes/particle_cubes_app_internal.h",
+               "examples/particle_cubes/particle_cubes_resources.cpp",
+               "examples/particle_cubes/particle_cubes_simulation.cpp",
+               "examples/particle_cubes/particle_cubes_render.cpp"});
     const std::string particle_shader =
         read_source_file(root / "examples/particle_cubes/shaders/particle_cubes.vert");
 
@@ -92,6 +115,127 @@ void test_cube_examples_share_spinning_cube_motion() {
                          "particle cubes should not pass a local cube spin time");
     require_not_contains(particle_shader, "cube_spin_rotation",
                          "particle cubes should not rotate individual cubes in the vertex shader");
+}
+
+void test_cube_examples_split_app_lifecycle_from_resources_scene_and_rendering() {
+    const std::filesystem::path root{CUBEY_SOURCE_DIR};
+
+    const std::string spinning_app =
+        read_source_file(root / "examples/spinning_cube/spinning_cube_app.cpp");
+    const std::string spinning_internal =
+        read_source_file(root / "examples/spinning_cube/spinning_cube_app_internal.h");
+    const std::string spinning_resources =
+        read_source_file(root / "examples/spinning_cube/spinning_cube_resources.cpp");
+    const std::string spinning_scene =
+        read_source_file(root / "examples/spinning_cube/spinning_cube_scene.cpp");
+    const std::string spinning_render =
+        read_source_file(root / "examples/spinning_cube/spinning_cube_render.cpp");
+    const std::string spinning_cmake =
+        read_source_file(root / "examples/spinning_cube/CMakeLists.txt");
+
+    require_contains(spinning_app, "#include \"spinning_cube_app_internal.h\"",
+                     "spinning_cube app shell should include its internal split header");
+    require_not_contains(spinning_app, "void create_forward_pass",
+                         "spinning_cube app shell should not own forward pass setup");
+    require_not_contains(spinning_app, "void record_cube_frame",
+                         "spinning_cube app shell should not own frame recording");
+    require_contains(spinning_internal, "class SpinningCubeApp",
+                     "spinning_cube internal header should own private app state");
+    require_contains(spinning_resources, "create_global_resources_if_needed",
+                     "spinning_cube resources file should own resource creation");
+    require_contains(spinning_scene, "create_scene",
+                     "spinning_cube scene file should own scene construction");
+    require_contains(spinning_render, "record_cube_frame",
+                     "spinning_cube render file should own frame recording");
+    require_contains(spinning_cmake, "spinning_cube_resources.cpp",
+                     "spinning_cube target should build the resources file");
+    require_contains(spinning_cmake, "spinning_cube_scene.cpp",
+                     "spinning_cube target should build the scene file");
+    require_contains(spinning_cmake, "spinning_cube_render.cpp",
+                     "spinning_cube target should build the render file");
+
+    const std::string textured_app =
+        read_source_file(root / "examples/textured_cube/textured_cube_app.cpp");
+    const std::string textured_sources = read_example_sources(
+        root, {"examples/textured_cube/textured_cube_app_internal.h",
+               "examples/textured_cube/textured_cube_resources.cpp",
+               "examples/textured_cube/textured_cube_scene.cpp",
+               "examples/textured_cube/textured_cube_render.cpp",
+               "examples/textured_cube/CMakeLists.txt"});
+    require_contains(textured_app, "#include \"textured_cube_app_internal.h\"",
+                     "textured_cube app shell should include its internal split header");
+    require_not_contains(textured_app, "void create_texture_resources",
+                         "textured_cube app shell should not own generated texture resources");
+    require_contains(textured_sources, "create_texture_resources",
+                     "textured_cube resources file should own generated texture setup");
+    require_contains(textured_sources, "textured_cube_resources.cpp",
+                     "textured_cube target should build the resources file");
+    require_contains(textured_sources, "textured_cube_scene.cpp",
+                     "textured_cube target should build the scene file");
+    require_contains(textured_sources, "textured_cube_render.cpp",
+                     "textured_cube target should build the render file");
+
+    const std::string instanced_app =
+        read_source_file(root / "examples/instanced_cubes/instanced_cubes_app.cpp");
+    const std::string instanced_sources = read_example_sources(
+        root, {"examples/instanced_cubes/instanced_cubes_app_internal.h",
+               "examples/instanced_cubes/instanced_cubes_resources.cpp",
+               "examples/instanced_cubes/instanced_cubes_scene.cpp",
+               "examples/instanced_cubes/instanced_cubes_render.cpp",
+               "examples/instanced_cubes/CMakeLists.txt"});
+    require_contains(instanced_app, "#include \"instanced_cubes_app_internal.h\"",
+                     "instanced_cubes app shell should include its internal split header");
+    require_not_contains(instanced_app, "void create_forward_pass",
+                         "instanced_cubes app shell should not own forward pass setup");
+    require_contains(instanced_sources, "create_instance_data",
+                     "instanced_cubes resources file should keep instance setup discoverable");
+    require_contains(instanced_sources, "instanced_cubes_resources.cpp",
+                     "instanced_cubes target should build the resources file");
+    require_contains(instanced_sources, "instanced_cubes_scene.cpp",
+                     "instanced_cubes target should build the scene file");
+    require_contains(instanced_sources, "instanced_cubes_render.cpp",
+                     "instanced_cubes target should build the render file");
+
+    const std::string particle_app =
+        read_source_file(root / "examples/particle_cubes/particle_cubes_app.cpp");
+    const std::string particle_sources = read_example_sources(
+        root, {"examples/particle_cubes/particle_cubes_app_internal.h",
+               "examples/particle_cubes/particle_cubes_resources.cpp",
+               "examples/particle_cubes/particle_cubes_simulation.cpp",
+               "examples/particle_cubes/particle_cubes_render.cpp",
+               "examples/particle_cubes/CMakeLists.txt"});
+    require_contains(particle_app, "#include \"particle_cubes_app_internal.h\"",
+                     "particle_cubes app shell should include its internal split header");
+    require_not_contains(particle_app, "void record_particle_compute",
+                         "particle_cubes app shell should not own compute recording");
+    require_contains(particle_sources, "record_particle_compute",
+                     "particle_cubes simulation file should own compute recording");
+    require_contains(particle_sources, "particle_cubes_resources.cpp",
+                     "particle_cubes target should build the resources file");
+    require_contains(particle_sources, "particle_cubes_simulation.cpp",
+                     "particle_cubes target should build the simulation file");
+    require_contains(particle_sources, "particle_cubes_render.cpp",
+                     "particle_cubes target should build the render file");
+
+    const std::string headless_app =
+        read_source_file(root / "examples/headless_cube/headless_cube_app.cpp");
+    const std::string headless_sources = read_example_sources(
+        root, {"examples/headless_cube/headless_cube_app_internal.h",
+               "examples/headless_cube/headless_cube_resources.cpp",
+               "examples/headless_cube/headless_cube_render.cpp",
+               "examples/headless_cube/CMakeLists.txt"});
+    require_contains(headless_app, "#include \"headless_cube_app_internal.h\"",
+                     "headless_cube app shell should include its internal split header");
+    require_not_contains(headless_app, "void render_png",
+                         "headless_cube app shell should not own render recording");
+    require_contains(headless_sources, "create_global_resources_if_needed",
+                     "headless_cube resources file should own resource creation");
+    require_contains(headless_sources, "render_png",
+                     "headless_cube render file should own png rendering");
+    require_contains(headless_sources, "headless_cube_resources.cpp",
+                     "headless_cube target should build the resources file");
+    require_contains(headless_sources, "headless_cube_render.cpp",
+                     "headless_cube target should build the render file");
 }
 
 void test_shadow_cube_ground_plane_sits_below_spinning_cube() {

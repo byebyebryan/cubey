@@ -238,6 +238,8 @@ full engine architecture.
   helpers for recording to present or graph-owned color targets. It is useful
   for focused examples and validation scenes that want direct control. Scene
   packet selection and per-packet state stay in `cubey::scene` and the caller.
+  The cube examples share small `examples/common/` setup helpers, but those are
+  example-local conveniences rather than a second engine renderer.
 - `cubey::render::ShaderProgram`, `GraphicsPipelineResource`, and
   `ComputePipelineResource` own the current shader-module, pipeline-layout, and
   graphics/compute pipeline lifetime shapes. They consume explicit shader stage

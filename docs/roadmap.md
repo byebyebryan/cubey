@@ -196,7 +196,8 @@ Current checkpoint:
   forward-color pass helper: swapchain-sized depth, a file-backed graphics
   pipeline, clear values, and record helpers for either present or graph-owned
   color targets. Reusable PBR renderer policy lives above it in
-  `ForwardPbrRenderer3D`.
+  `ForwardPbrRenderer3D`; cube examples use example-local common helpers for
+  repeated simple pass setup without promoting that glue into engine policy.
 - Reusable `cubey::scene::View3D`, `Environment3D`, and
   `RenderFramePlan3D` provide the first CPU 3D view-planning boundary over
   `SceneReadView`: camera matrices, viewport aspect, ambient-only environment,
@@ -277,7 +278,9 @@ Current checkpoint:
   CPU render frame plans built from scene renderables, updates scene transforms
   during the project `update()` phase, builds an MVP matrix from `View3D` camera
   planning through push constants, and uses `ForwardScenePass3D` through the
-  shared host layer.
+  shared host layer. It follows the current cube-example split: app callback
+  shell, resource setup, scene/update code, and frame recording live in separate
+  local files.
 - `examples/textured_cube` links against `cubey`, generates a `Texture2D` with a
   compute shader writing a storage image, transitions it for shader sampling,
   binds per-frame scene uniforms plus a combined image sampler through

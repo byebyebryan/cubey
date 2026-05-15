@@ -4,6 +4,7 @@ void test_compute_generated_texture_config_validates_dispatch_shape();
 void test_depth_only_rendering_info_describes_sampled_depth_target();
 void test_depth_texture_config_maps_sampled_depth_usage();
 void test_cube_examples_share_spinning_cube_motion();
+void test_cube_examples_split_app_lifecycle_from_resources_scene_and_rendering();
 void test_shadow_cube_ground_plane_sits_below_spinning_cube();
 void test_shadow_cube_transforms_normals_with_rotating_model_matrix();
 void test_material_cubes_show_real_material_variant_grid();
@@ -132,6 +133,7 @@ std::span<const TestCase> render_test_cases() {
     static constexpr std::array tests{
         CUBEY_TEST(test_frame_slot_defaults_to_single_frame_slot),
         CUBEY_TEST(test_cube_examples_share_spinning_cube_motion),
+        CUBEY_TEST(test_cube_examples_split_app_lifecycle_from_resources_scene_and_rendering),
         CUBEY_TEST(test_shadow_cube_ground_plane_sits_below_spinning_cube),
         CUBEY_TEST(test_shadow_cube_transforms_normals_with_rotating_model_matrix),
         CUBEY_TEST(test_material_cubes_show_real_material_variant_grid),
