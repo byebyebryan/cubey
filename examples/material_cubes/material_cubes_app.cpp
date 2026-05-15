@@ -257,7 +257,7 @@ class MaterialCubesApp {
             device, cubey::ForwardPbrRenderer3DTargetResourcesInfo{
                         .extent = extent,
                         .color_format = color_format,
-                        .material_descriptor_set_layout = material_descriptor_set_layout(),
+                        .materials = &materials_,
                     });
     }
 
@@ -291,7 +291,7 @@ class MaterialCubesApp {
                 engine_.render_resources().create_material(cubey::render::MaterialInfo{
                     .label = "material_cubes.material." + std::to_string(index),
                     .sort_key = index,
-            });
+                });
             material_handles_.push_back(material);
             materials_.set_factors(material, cubey::render::PbrMaterialFactors{
                                                  .base_color_factor = variant.base_color,
@@ -551,10 +551,6 @@ class MaterialCubesApp {
             throw std::runtime_error("material_cubes forward PBR renderer is not initialized");
         }
         return *forward_pbr_renderer_;
-    }
-
-    [[nodiscard]] VkDescriptorSetLayout material_descriptor_set_layout() const {
-        return materials_.layout(material_handles_.front());
     }
 
     RunConfig config_;

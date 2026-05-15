@@ -156,6 +156,25 @@ void test_forward_pbr_renderer_3d_config_defaults_to_hdr_scene_color() {
             "forward PBR renderer should default to a float HDR scene color target");
 }
 
+void test_forward_pbr_renderer_3d_target_resources_use_material_table() {
+    const cubey::render::PbrMaterialTable* materials =
+        reinterpret_cast<const cubey::render::PbrMaterialTable*>(0x40);
+    const cubey::ForwardPbrRenderer3DTargetResourcesInfo info{
+        .extent = {640, 360},
+        .color_format = VK_FORMAT_R8G8B8A8_UNORM,
+        .materials = materials,
+    };
+
+    require(info.materials == materials,
+            "forward PBR target resources should keep the PBR material table");
+
+    const std::filesystem::path source_root{CUBEY_SOURCE_DIR};
+    const std::string header =
+        read_source_file(source_root / "include/cubey/engine/forward_pbr_renderer_3d.h");
+    require_not_contains(header, "material_descriptor_set_layout",
+                         "forward PBR callers should not pass a raw material descriptor layout");
+}
+
 void test_forward_pbr_renderer_3d_render_request_validates_required_target_fields() {
     cubey::ForwardPbrRenderer3DRenderRequest request = valid_render_request();
     cubey::validate_forward_pbr_renderer_3d_render_request(request);

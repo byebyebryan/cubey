@@ -155,8 +155,8 @@ void ForwardPbrRenderer3D::create_swapchain_resources(
     if (info.color_format == VK_FORMAT_UNDEFINED) {
         throw std::runtime_error("forward PBR renderer requires a color format");
     }
-    if (info.material_descriptor_set_layout == VK_NULL_HANDLE) {
-        throw std::runtime_error("forward PBR renderer requires a material descriptor set layout");
+    if (info.materials == nullptr) {
+        throw std::runtime_error("forward PBR renderer requires a PBR material table");
     }
     validate_scene_color_format(device, config_.scene_color_format);
 
@@ -189,7 +189,7 @@ void ForwardPbrRenderer3D::create_swapchain_resources(
     };
     const std::array<VkDescriptorSetLayout, 2> pbr_layouts{
         scene_material().layout(),
-        info.material_descriptor_set_layout,
+        info.materials->descriptor_set_layout(),
     };
 
     const auto create_pbr_pipeline = [&](ForwardPbrPipelineVariant variant, const char* label,
@@ -237,7 +237,7 @@ void ForwardPbrRenderer3D::create_swapchain_resources(
     };
     const std::array<VkDescriptorSetLayout, 2> mask_shadow_layouts{
         scene_material().layout(),
-        info.material_descriptor_set_layout,
+        info.materials->descriptor_set_layout(),
     };
     const render::VertexInputLayout shadow_vertex_input =
         forward_pbr_renderer_3d_shadow_vertex_input_layout();

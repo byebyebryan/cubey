@@ -54,7 +54,7 @@ struct ForwardPbrRenderer3DConfig {
 struct ForwardPbrRenderer3DTargetResourcesInfo {
     VkExtent2D extent{};
     VkFormat color_format = VK_FORMAT_UNDEFINED;
-    VkDescriptorSetLayout material_descriptor_set_layout = VK_NULL_HANDLE;
+    const render::PbrMaterialTable* materials = nullptr;
 };
 
 struct ForwardPbrRenderer3DSceneUniformInfo {

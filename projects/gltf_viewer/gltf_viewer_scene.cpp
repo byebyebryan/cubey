@@ -76,9 +76,8 @@ void GltfViewerApp::update_animation(float delta_seconds) {
         asset_->animations[animation_playback_.animation_index];
     cubey::animation::advance_gltf_animation_playback(animation_playback_, delta_seconds,
                                                       animation.duration_seconds);
-    const cubey::animation::GltfAnimationSample sample =
-        cubey::animation::sample_gltf_animation(asset_.value(), animation,
-                                                animation_playback_.time_seconds);
+    const cubey::animation::GltfAnimationSample sample = cubey::animation::sample_gltf_animation(
+        asset_.value(), animation, animation_playback_.time_seconds);
     animation_sample_ = sample;
 
     cubey::SceneEditQueue edits = scene().create_edit_queue();
@@ -180,10 +179,6 @@ cubey::ForwardPbrRenderer3D& GltfViewerApp::forward_pbr_renderer() const {
         throw std::runtime_error("forward PBR renderer is not initialized");
     }
     return *forward_pbr_renderer_;
-}
-
-VkDescriptorSetLayout GltfViewerApp::material_descriptor_set_layout() const {
-    return import_resources_.materials.layout(import_result_.first_material_handle);
 }
 
 } // namespace cubey::projects::gltf_viewer

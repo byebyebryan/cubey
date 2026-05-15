@@ -14,12 +14,15 @@ template <typename HandleT, typename ResourceT, typename HashT> class ResourceTa
         return resources_.contains(handle);
     }
 
+    [[nodiscard]] bool empty() const noexcept {
+        return resources_.empty();
+    }
+
     template <typename... Args> ResourceT& emplace(HandleT handle, Args&&... args) {
         if (!handle) {
             throw std::runtime_error("resource table insert requires a non-null handle");
         }
-        auto [position, inserted] =
-            resources_.try_emplace(handle, std::forward<Args>(args)...);
+        auto [position, inserted] = resources_.try_emplace(handle, std::forward<Args>(args)...);
         if (!inserted) {
             throw std::runtime_error("resource table already contains handle");
         }
@@ -51,6 +54,13 @@ template <typename HandleT, typename ResourceT, typename HashT> class ResourceTa
             throw std::runtime_error("resource table does not contain handle");
         }
         return position->second;
+    }
+
+    [[nodiscard]] const ResourceT& first() const {
+        if (resources_.empty()) {
+            throw std::runtime_error("resource table is empty");
+        }
+        return resources_.begin()->second;
     }
 
   private:

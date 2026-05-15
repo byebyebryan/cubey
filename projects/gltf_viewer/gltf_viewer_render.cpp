@@ -11,7 +11,7 @@ void GltfViewerApp::create_frame_resources(const cubey::vulkan::Device& device, 
         device, cubey::ForwardPbrRenderer3DTargetResourcesInfo{
                     .extent = extent,
                     .color_format = color_format,
-                    .material_descriptor_set_layout = material_descriptor_set_layout(),
+                    .materials = &import_resources_.materials,
                 });
 }
 

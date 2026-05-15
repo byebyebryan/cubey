@@ -47,8 +47,7 @@ struct PbrDefaultTextureSet {
 [[nodiscard]] std::span<const PbrMaterialBinding> pbr_sampled_material_bindings() noexcept;
 [[nodiscard]] std::span<const PbrDefaultTextureSpec> pbr_default_texture_specs() noexcept;
 [[nodiscard]] PbrDefaultTextureSet
-create_pbr_default_texture_set(const cubey::vulkan::Device& device,
-                               cubey::vulkan::GpuRuntime& gpu);
+create_pbr_default_texture_set(const cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu);
 [[nodiscard]] const Texture2D& pbr_default_texture(const PbrDefaultTextureSet& set,
                                                    PbrMaterialBinding binding);
 [[nodiscard]] std::vector<SampledImageMaterialBinding>
@@ -70,10 +69,11 @@ class PbrMaterialTable {
         return instances_.emplace(material, std::forward<Args>(args)...);
     }
 
-    [[nodiscard]] FrameUniformMaterialInstance<PbrMaterialUniforms>& instance(
-        MaterialHandle material);
-    [[nodiscard]] const FrameUniformMaterialInstance<PbrMaterialUniforms>& instance(
-        MaterialHandle material) const;
+    [[nodiscard]] FrameUniformMaterialInstance<PbrMaterialUniforms>&
+    instance(MaterialHandle material);
+    [[nodiscard]] const FrameUniformMaterialInstance<PbrMaterialUniforms>&
+    instance(MaterialHandle material) const;
+    [[nodiscard]] VkDescriptorSetLayout descriptor_set_layout() const;
     [[nodiscard]] VkDescriptorSetLayout layout(MaterialHandle material) const;
     void upload(MaterialHandle material, FrameSlot frame_slot) const;
     void upload(MaterialHandle material, FrameSlot frame_slot, MaterialAlphaMode alpha_mode) const;

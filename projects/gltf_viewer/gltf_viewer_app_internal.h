@@ -97,7 +97,6 @@ class GltfViewerApp {
     void destroy_scene_if_needed();
     [[nodiscard]] const cubey::render::GeneratedPbrEnvironment& ibl_environment() const;
     [[nodiscard]] cubey::ForwardPbrRenderer3D& forward_pbr_renderer() const;
-    [[nodiscard]] VkDescriptorSetLayout material_descriptor_set_layout() const;
 
     void record_viewer_target(const cubey::vulkan::Device& device, VkCommandBuffer command_buffer,
                               cubey::render::ColorTargetView color_target,

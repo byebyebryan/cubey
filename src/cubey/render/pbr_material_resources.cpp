@@ -234,14 +234,21 @@ const PbrMaterialFactors& PbrMaterialTable::factors(MaterialHandle material) con
     return position->second;
 }
 
-FrameUniformMaterialInstance<PbrMaterialUniforms>& PbrMaterialTable::instance(
-    MaterialHandle material) {
+FrameUniformMaterialInstance<PbrMaterialUniforms>&
+PbrMaterialTable::instance(MaterialHandle material) {
     return instances_.at(material);
 }
 
-const FrameUniformMaterialInstance<PbrMaterialUniforms>& PbrMaterialTable::instance(
-    MaterialHandle material) const {
+const FrameUniformMaterialInstance<PbrMaterialUniforms>&
+PbrMaterialTable::instance(MaterialHandle material) const {
     return instances_.at(material);
+}
+
+VkDescriptorSetLayout PbrMaterialTable::descriptor_set_layout() const {
+    if (instances_.empty()) {
+        throw std::runtime_error("PBR material table requires at least one material instance");
+    }
+    return instances_.first().layout();
 }
 
 VkDescriptorSetLayout PbrMaterialTable::layout(MaterialHandle material) const {
