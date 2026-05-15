@@ -7,6 +7,9 @@ cubey_add_app_target(
     SOURCES
         main.cpp
         instanced_cubes_app.cpp
+        instanced_cubes_render.cpp
+        instanced_cubes_resources.cpp
+        instanced_cubes_scene.cpp
     SHADERS
         shaders/instanced_cubes.vert
         shaders/instanced_cubes.frag

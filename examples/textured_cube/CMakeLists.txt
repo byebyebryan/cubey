@@ -7,6 +7,9 @@ cubey_add_app_target(
     SOURCES
         main.cpp
         textured_cube_app.cpp
+        textured_cube_render.cpp
+        textured_cube_resources.cpp
+        textured_cube_scene.cpp
     SHADERS
         shaders/textured_cube.vert
         shaders/textured_cube.frag
