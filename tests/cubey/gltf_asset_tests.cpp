@@ -207,6 +207,113 @@ std::filesystem::path write_triangle_gltf(const std::filesystem::path& dir) {
     return gltf_path;
 }
 
+std::filesystem::path write_uv1_color_transform_gltf(const std::filesystem::path& dir) {
+    std::vector<std::uint8_t> bytes;
+    const std::size_t position_offset = bytes.size();
+    append_vec3(bytes, 0.0F, 0.0F, 0.0F);
+    append_vec3(bytes, 1.0F, 0.0F, 0.0F);
+    append_vec3(bytes, 0.0F, 1.0F, 0.0F);
+    const std::size_t normal_offset = bytes.size();
+    append_vec3(bytes, 0.0F, 0.0F, 1.0F);
+    append_vec3(bytes, 0.0F, 0.0F, 1.0F);
+    append_vec3(bytes, 0.0F, 0.0F, 1.0F);
+    const std::size_t uv0_offset = bytes.size();
+    append_vec2(bytes, 0.0F, 0.0F);
+    append_vec2(bytes, 1.0F, 0.0F);
+    append_vec2(bytes, 0.0F, 1.0F);
+    const std::size_t uv1_offset = bytes.size();
+    append_vec2(bytes, 0.25F, 0.25F);
+    append_vec2(bytes, 0.75F, 0.25F);
+    append_vec2(bytes, 0.25F, 0.75F);
+    const std::size_t color_offset = bytes.size();
+    append_u8_vec4(bytes, 255, 0, 0, 255);
+    append_u8_vec4(bytes, 0, 128, 255, 64);
+    append_u8_vec4(bytes, 64, 255, 0, 128);
+    pad_to_alignment(bytes, 4);
+    const std::size_t index_offset = bytes.size();
+    append_u16(bytes, 0);
+    append_u16(bytes, 1);
+    append_u16(bytes, 2);
+
+    cubey::write_binary_file(dir / "uv1_color_transform.bin", bytes);
+
+    const std::string gltf = std::string(R"JSON({
+  "asset": {"version": "2.0"},
+  "extensionsUsed": ["KHR_texture_transform"],
+  "extensionsRequired": ["KHR_texture_transform"],
+  "scene": 0,
+  "scenes": [{"nodes": [0]}],
+  "nodes": [{"mesh": 0}],
+  "meshes": [{
+    "primitives": [{
+      "attributes": {
+        "POSITION": 0,
+        "NORMAL": 1,
+        "TEXCOORD_0": 2,
+        "TEXCOORD_1": 3,
+        "COLOR_0": 4
+      },
+      "indices": 5,
+      "material": 0
+    }]
+  }],
+  "buffers": [{"uri": "uv1_color_transform.bin", "byteLength": )JSON") +
+                             std::to_string(bytes.size()) + R"JSON(}],
+  "bufferViews": [
+    {"buffer": 0, "byteOffset": )JSON" +
+                             std::to_string(position_offset) +
+                             R"JSON(, "byteLength": 36},
+    {"buffer": 0, "byteOffset": )JSON" +
+                             std::to_string(normal_offset) +
+                             R"JSON(, "byteLength": 36},
+    {"buffer": 0, "byteOffset": )JSON" +
+                             std::to_string(uv0_offset) +
+                             R"JSON(, "byteLength": 24},
+    {"buffer": 0, "byteOffset": )JSON" +
+                             std::to_string(uv1_offset) +
+                             R"JSON(, "byteLength": 24},
+    {"buffer": 0, "byteOffset": )JSON" +
+                             std::to_string(color_offset) +
+                             R"JSON(, "byteLength": 12},
+    {"buffer": 0, "byteOffset": )JSON" +
+                             std::to_string(index_offset) +
+                             R"JSON(, "byteLength": 6}
+  ],
+  "accessors": [
+    {"bufferView": 0, "componentType": 5126, "count": 3, "type": "VEC3",
+     "min": [0.0, 0.0, 0.0], "max": [1.0, 1.0, 0.0]},
+    {"bufferView": 1, "componentType": 5126, "count": 3, "type": "VEC3"},
+    {"bufferView": 2, "componentType": 5126, "count": 3, "type": "VEC2"},
+    {"bufferView": 3, "componentType": 5126, "count": 3, "type": "VEC2"},
+    {"bufferView": 4, "componentType": 5121, "count": 3, "type": "VEC4", "normalized": true},
+    {"bufferView": 5, "componentType": 5123, "count": 3, "type": "SCALAR"}
+  ],
+  "materials": [{
+    "pbrMetallicRoughness": {
+      "baseColorTexture": {
+        "index": 0,
+        "texCoord": 0,
+        "extensions": {
+          "KHR_texture_transform": {
+            "offset": [0.25, 0.5],
+            "rotation": 1.570796,
+            "scale": [2.0, 3.0],
+            "texCoord": 1
+          }
+        }
+      }
+    }
+  }],
+  "textures": [{"source": 0}],
+  "images": [{
+    "uri": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII="
+  }]
+})JSON";
+    const std::filesystem::path gltf_path = dir / "uv1_color_transform.gltf";
+    write_text_file(gltf_path, gltf);
+    return gltf_path;
+}
+
 std::filesystem::path write_missing_normal_wedge_gltf(const std::filesystem::path& dir) {
     std::vector<std::uint8_t> bytes;
     const std::size_t position_offset = bytes.size();
@@ -333,6 +440,61 @@ void test_gltf_asset_loads_static_pbr_triangle() {
                   "loader should generate missing tangents");
     require_close(primitive.local_bounds.center.x, 0.5F, "bounds center should be computed");
 
+    std::filesystem::remove_all(dir);
+}
+
+void test_gltf_asset_loads_uv1_vertex_color_and_texture_transform() {
+    const std::filesystem::path dir = test_dir("cubey_gltf_asset_uv1_color_transform");
+    const cubey::asset::GltfAsset asset =
+        cubey::asset::load_gltf_asset(write_uv1_color_transform_gltf(dir));
+
+    const cubey::asset::GltfMaterial& material = asset.materials[1];
+    require(material.base_color_texture.texture_index == 0,
+            "texture transform material should preserve texture index");
+    require(material.base_color_texture.texcoord == 1,
+            "texture transform should override the base texture coordinate set");
+    require_close(material.base_color_texture.offset.x, 0.25F,
+                  "texture transform offset x should load");
+    require_close(material.base_color_texture.offset.y, 0.5F,
+                  "texture transform offset y should load");
+    require_close(material.base_color_texture.rotation, 1.570796F,
+                  "texture transform rotation should load");
+    require_close(material.base_color_texture.scale.x, 2.0F,
+                  "texture transform scale x should load");
+    require_close(material.base_color_texture.scale.y, 3.0F,
+                  "texture transform scale y should load");
+
+    const cubey::asset::GltfMeshPrimitive& primitive = asset.meshes[0].primitives[0];
+    require_close(primitive.vertices[1].texcoord1.x, 0.75F, "UV1 x should load");
+    require_close(primitive.vertices[2].texcoord1.y, 0.75F, "UV1 y should load");
+    require_close(primitive.vertices[1].color0.g, 128.0F / 255.0F,
+                  "normalized vertex color should unpack to float");
+    require_close(primitive.vertices[1].color0.b, 1.0F,
+                  "normalized vertex color blue should unpack to float");
+    require_close(primitive.vertices[1].color0.a, 64.0F / 255.0F,
+                  "normalized vertex color alpha should unpack to float");
+
+    std::filesystem::remove_all(dir);
+}
+
+void test_gltf_asset_rejects_unsupported_texture_coordinate_set() {
+    const std::filesystem::path dir = test_dir("cubey_gltf_asset_unsupported_texcoord");
+    const std::filesystem::path path = dir / "unsupported_texcoord.gltf";
+    write_text_file(path, R"JSON({
+  "asset": {"version": "2.0"},
+  "materials": [{
+    "pbrMetallicRoughness": {
+      "baseColorTexture": {"index": 0, "texCoord": 2}
+    }
+  }],
+  "textures": [{"source": 0}],
+  "images": [{
+    "uri": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII="
+  }]
+})JSON");
+
+    require_throws([&path] { (void)cubey::asset::load_gltf_asset(path); },
+                   "loader should reject texture coordinate sets above UV1");
     std::filesystem::remove_all(dir);
 }
 

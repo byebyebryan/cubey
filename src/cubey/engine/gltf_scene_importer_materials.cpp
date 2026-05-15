@@ -6,6 +6,7 @@
 #include <cubey/vulkan/sampler.h>
 
 #include <array>
+#include <cmath>
 #include <cstdint>
 #include <span>
 #include <stdexcept>
@@ -80,6 +81,31 @@ using TextureCache = std::unordered_map<TextureCacheKey, std::size_t, TextureCac
     default:
         return render::MaterialAlphaMode::Opaque;
     }
+}
+
+[[nodiscard]] render::PbrTextureTransform
+pbr_texture_transform(const asset::GltfTextureRef& ref) {
+    return {
+        .offset_scale = {ref.offset.x, ref.offset.y, ref.scale.x, ref.scale.y},
+        .rotation_texcoord =
+            {
+                std::cos(ref.rotation),
+                std::sin(ref.rotation),
+                static_cast<float>(ref.texcoord),
+                0.0F,
+            },
+    };
+}
+
+[[nodiscard]] render::PbrMaterialTextureTransforms
+pbr_texture_transforms(const asset::GltfMaterial& material) {
+    return {
+        .base_color = pbr_texture_transform(material.base_color_texture),
+        .metallic_roughness = pbr_texture_transform(material.metallic_roughness_texture),
+        .normal = pbr_texture_transform(material.normal_texture),
+        .occlusion = pbr_texture_transform(material.occlusion_texture),
+        .emissive = pbr_texture_transform(material.emissive_texture),
+    };
 }
 
 [[nodiscard]] render::Texture2D create_solid_texture(const vulkan::Device& device,
@@ -299,6 +325,7 @@ void create_material_resources(Engine& engine, const vulkan::Device& device,
                 .specular_factor = source.specular_factor,
                 .reflectance = source.reflectance,
                 .unlit = source.unlit,
+                .texture_transforms = pbr_texture_transforms(source),
             });
         resources.material_instances.emplace(
             material, device,

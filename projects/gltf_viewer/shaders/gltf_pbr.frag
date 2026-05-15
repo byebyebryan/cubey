@@ -24,12 +24,22 @@ layout(set = 1, binding = 2) uniform sampler2D normal_texture;
 layout(set = 1, binding = 3) uniform sampler2D occlusion_texture;
 layout(set = 1, binding = 4) uniform sampler2D emissive_texture;
 
+struct PbrTextureTransform {
+    vec4 offset_scale;
+    vec4 rotation_texcoord;
+};
+
 layout(set = 1, binding = 5) uniform PbrMaterialUniforms {
     vec4 base_color_factor;
     vec4 emissive_alpha_cutoff;
     vec4 metallic_roughness_normal_occlusion;
     vec4 specular_color_factor;
     vec4 material_model;
+    PbrTextureTransform base_color_transform;
+    PbrTextureTransform metallic_roughness_transform;
+    PbrTextureTransform normal_transform;
+    PbrTextureTransform occlusion_transform;
+    PbrTextureTransform emissive_transform;
 } material;
 
 layout(location = 0) in vec3 frag_world_position;
@@ -37,9 +47,21 @@ layout(location = 1) in vec3 frag_normal;
 layout(location = 2) in vec3 frag_tangent;
 layout(location = 3) in vec3 frag_bitangent;
 layout(location = 4) in vec2 frag_uv0;
-layout(location = 5) in vec4 frag_shadow_position;
+layout(location = 5) in vec2 frag_uv1;
+layout(location = 6) in vec4 frag_color0;
+layout(location = 7) in vec4 frag_shadow_position;
 
 layout(location = 0) out vec4 out_color;
+
+vec2 cubey_pbr_transformed_uv(PbrTextureTransform transform) {
+    vec2 uv = transform.rotation_texcoord.z > 0.5 ? frag_uv1 : frag_uv0;
+    vec2 scaled = uv * transform.offset_scale.zw;
+    float c = transform.rotation_texcoord.x;
+    float s = transform.rotation_texcoord.y;
+    vec2 rotated = vec2((c * scaled.x) - (s * scaled.y),
+                        (s * scaled.x) + (c * scaled.y));
+    return rotated + transform.offset_scale.xy;
+}
 
 vec3 rotate_environment_direction(vec3 direction) {
     float c = scene.environment_intensity_mip_count.z;
@@ -72,7 +94,10 @@ float shadow_visibility(vec4 shadow_position, vec3 normal, vec3 light_direction)
 }
 
 void main() {
-    vec4 base_color = texture(base_color_texture, frag_uv0) * material.base_color_factor;
+    vec4 base_color =
+        texture(base_color_texture, cubey_pbr_transformed_uv(material.base_color_transform)) *
+        material.base_color_factor;
+    base_color *= frag_color0;
     float alpha_cutoff = material.emissive_alpha_cutoff.w;
     if (alpha_cutoff > 0.0 && base_color.a < alpha_cutoff) {
         discard;
@@ -83,7 +108,9 @@ void main() {
         return;
     }
 
-    vec4 metallic_roughness_sample = texture(metallic_roughness_texture, frag_uv0);
+    vec4 metallic_roughness_sample = texture(
+        metallic_roughness_texture,
+        cubey_pbr_transformed_uv(material.metallic_roughness_transform));
     float metallic = clamp(material.metallic_roughness_normal_occlusion.x *
                                metallic_roughness_sample.b,
                            0.0, 1.0);
@@ -95,7 +122,10 @@ void main() {
 
     vec3 geometric_normal = normalize(frag_normal);
     mat3 tbn = mat3(normalize(frag_tangent), normalize(frag_bitangent), geometric_normal);
-    vec3 sampled_normal = texture(normal_texture, frag_uv0).xyz * 2.0 - 1.0;
+    vec3 sampled_normal =
+        texture(normal_texture, cubey_pbr_transformed_uv(material.normal_transform)).xyz *
+            2.0 -
+        1.0;
     sampled_normal.xy *= normal_scale;
     vec3 normal = normalize(tbn * sampled_normal);
 
@@ -118,7 +148,9 @@ void main() {
     vec3 f = cubey_pbr_fresnel_schlick(max(dot(half_vector, view_direction), 0.0), f0);
     vec3 specular = d * v * f * energy_compensation;
 
-    float occlusion = mix(1.0, texture(occlusion_texture, frag_uv0).r, occlusion_strength);
+    float occlusion = mix(
+        1.0, texture(occlusion_texture, cubey_pbr_transformed_uv(material.occlusion_transform)).r,
+        occlusion_strength);
     vec3 radiance = scene.light_color_intensity.rgb * scene.light_color_intensity.a;
     float visibility = shadow_visibility(frag_shadow_position, normal, light_direction);
     vec3 direct =
@@ -140,8 +172,9 @@ void main() {
                    scene.environment_intensity_mip_count.x;
     ambient += scene.ambient_color_intensity.rgb * scene.ambient_color_intensity.a *
                albedo * occlusion;
-    vec3 emissive = texture(emissive_texture, frag_uv0).rgb *
-                    material.emissive_alpha_cutoff.rgb;
+    vec3 emissive =
+        texture(emissive_texture, cubey_pbr_transformed_uv(material.emissive_transform)).rgb *
+        material.emissive_alpha_cutoff.rgb;
     vec3 color = ambient + direct + emissive;
     out_color = vec4(color * output_alpha, output_alpha);
 }

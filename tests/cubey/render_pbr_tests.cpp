@@ -30,7 +30,7 @@ void test_pbr_vertex_layout_matches_shader_contract() {
     require(layout.bindings().size() == 1, "PBR vertex layout should expose one binding");
     require(layout.bindings()[0].stride == sizeof(cubey::render::PbrVertex),
             "PBR vertex stride should match vertex type");
-    require(layout.attributes.size() == 4, "PBR vertex layout should expose four attributes");
+    require(layout.attributes.size() == 6, "PBR vertex layout should expose six attributes");
     require(layout.attributes[0].location == 0 &&
                 layout.attributes[0].offset == offsetof(cubey::render::PbrVertex, position),
             "PBR position attribute should match shader location 0");
@@ -43,6 +43,12 @@ void test_pbr_vertex_layout_matches_shader_contract() {
     require(layout.attributes[3].location == 3 &&
                 layout.attributes[3].offset == offsetof(cubey::render::PbrVertex, uv0),
             "PBR UV0 attribute should match shader location 3");
+    require(layout.attributes[4].location == 4 &&
+                layout.attributes[4].offset == offsetof(cubey::render::PbrVertex, uv1),
+            "PBR UV1 attribute should match shader location 4");
+    require(layout.attributes[5].location == 5 &&
+                layout.attributes[5].offset == offsetof(cubey::render::PbrVertex, color0),
+            "PBR COLOR0 attribute should match shader location 5");
 }
 
 void test_pbr_forward_pass_declares_scene_and_material_sets() {
@@ -101,6 +107,10 @@ void test_pbr_material_factors_are_uniforms_and_push_constants_are_model_only() 
     factors.reflectance = 0.42F;
     factors.alpha_mode = cubey::render::MaterialAlphaMode::Blend;
     factors.unlit = true;
+    factors.texture_transforms.base_color.offset_scale = {0.25F, 0.5F, 2.0F, 3.0F};
+    factors.texture_transforms.base_color.rotation_texcoord = {0.0F, 1.0F, 1.0F, 0.0F};
+    factors.texture_transforms.normal.offset_scale = {0.1F, 0.2F, 0.5F, 0.75F};
+    factors.texture_transforms.normal.rotation_texcoord = {1.0F, 0.0F, 0.0F, 0.0F};
 
     const cubey::render::PbrMaterialUniforms uniforms =
         cubey::render::pbr_material_uniforms(factors);
@@ -128,6 +138,18 @@ void test_pbr_material_factors_are_uniforms_and_push_constants_are_model_only() 
                                    cubey::render::MaterialAlphaMode>>(factors.alpha_mode)),
             "PBR material uniforms should pack alpha mode");
     require(uniforms.material_model.z == 1.0F, "PBR material uniforms should pack unlit flag");
+    require(uniforms.texture_transforms.base_color.offset_scale ==
+                factors.texture_transforms.base_color.offset_scale,
+            "PBR material uniforms should pack base color texture offset and scale");
+    require(uniforms.texture_transforms.base_color.rotation_texcoord ==
+                factors.texture_transforms.base_color.rotation_texcoord,
+            "PBR material uniforms should pack base color texture rotation and UV set");
+    require(uniforms.texture_transforms.normal.offset_scale ==
+                factors.texture_transforms.normal.offset_scale,
+            "PBR material uniforms should pack normal texture offset and scale");
+    require(uniforms.texture_transforms.normal.rotation_texcoord ==
+                factors.texture_transforms.normal.rotation_texcoord,
+            "PBR material uniforms should pack normal texture rotation and UV set");
     const cubey::render::PbrMaterialUniforms opaque_uniforms =
         cubey::render::pbr_material_uniforms(factors, cubey::render::MaterialAlphaMode::Opaque);
     require(opaque_uniforms.material_model.y == 0.0F,
@@ -335,10 +357,22 @@ void test_pbr_shaders_use_filament_style_material_remap() {
                      "glTF PBR shader should emit premultiplied alpha for blending");
     require_contains(gltf, "if (alpha_cutoff > 0.0 && base_color.a < alpha_cutoff)",
                      "glTF PBR shader should discard masked fragments by alpha cutoff");
+    require_contains(gltf, "layout(location = 5) in vec2 frag_uv1",
+                     "glTF PBR shader should receive the second UV set");
+    require_contains(gltf, "layout(location = 6) in vec4 frag_color0",
+                     "glTF PBR shader should receive vertex colors");
+    require_contains(gltf, "vec2 cubey_pbr_transformed_uv",
+                     "glTF PBR shader should transform texture coordinates per slot");
+    require_contains(gltf, "base_color *= frag_color0",
+                     "glTF PBR shader should multiply vertex color into base color");
+    require_contains(gltf, "texture(base_color_texture, cubey_pbr_transformed_uv",
+                     "glTF PBR shader should sample base color through transformed UVs");
     require_contains(gltf_shadow, "uniform sampler2D base_color_texture",
                      "glTF shadow mask shader should sample base color alpha");
     require_contains(gltf_shadow, "uniform PbrMaterialUniforms",
                      "glTF shadow mask shader should read per-material alpha cutoff");
+    require_contains(gltf_shadow, "cubey_pbr_transformed_uv",
+                     "glTF shadow mask shader should apply base-color texture transform");
     require_contains(gltf_shadow, "discard",
                      "glTF shadow mask shader should discard fragments below alpha cutoff");
 }

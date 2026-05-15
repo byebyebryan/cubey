@@ -86,4 +86,10 @@ void test_gpu_deformation_shader_morphs_before_skinning() {
     require_contains(shader, "applySkinning", "deformation shader should skin vertices");
     require(shader.find("applyMorphTargets") < shader.find("applySkinning"),
             "deformation shader should morph before skinning");
+    require_contains(shader, "const uint kPbrVertexFloatCount = 18u",
+                     "deformation shader should match the expanded PBR vertex layout");
+    require_contains(shader, "vertex.uv1",
+                     "deformation shader should preserve the second UV set");
+    require_contains(shader, "vertex.color0",
+                     "deformation shader should preserve vertex colors");
 }

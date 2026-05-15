@@ -39,6 +39,10 @@ VertexInputLayout pbr_vertex_input_layout() {
                                        offsetof(PbrVertex, tangent)),
                 vertex_input_attribute(3, 0, VK_FORMAT_R32G32_SFLOAT,
                                        offsetof(PbrVertex, uv0)),
+                vertex_input_attribute(4, 0, VK_FORMAT_R32G32_SFLOAT,
+                                       offsetof(PbrVertex, uv1)),
+                vertex_input_attribute(5, 0, VK_FORMAT_R32G32B32A32_SFLOAT,
+                                       offsetof(PbrVertex, color0)),
             },
     };
 }
@@ -271,6 +275,7 @@ PbrMaterialUniforms pbr_material_uniforms(const PbrMaterialFactors& factors,
         .material_model = {factors.reflectance, material_alpha_mode_uniform(alpha_mode),
                            factors.unlit ? 1.0F : 0.0F,
                            0.0F},
+        .texture_transforms = factors.texture_transforms,
     };
 }
 

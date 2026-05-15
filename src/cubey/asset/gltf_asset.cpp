@@ -96,10 +96,83 @@ template <typename T>
 [[nodiscard]] GltfTextureRef load_texture_ref(const cgltf_texture_view& view,
                                               const cgltf_texture* texture_base,
                                               cgltf_size texture_count) {
-    return {
+    GltfTextureRef ref{
         .texture_index = pointer_index(view.texture, texture_base, texture_count, "texture"),
         .texcoord = static_cast<std::uint32_t>(view.texcoord),
     };
+    if (view.has_transform != 0) {
+        ref.offset = {view.transform.offset[0], view.transform.offset[1]};
+        ref.rotation = view.transform.rotation;
+        ref.scale = {view.transform.scale[0], view.transform.scale[1]};
+        if (view.transform.has_texcoord != 0) {
+            ref.texcoord = static_cast<std::uint32_t>(view.transform.texcoord);
+        }
+    }
+    if (ref.has_value() && ref.texcoord > 1U) {
+        throw gltf_error("texture coordinate sets above TEXCOORD_1 are not supported");
+    }
+    return ref;
+}
+
+[[nodiscard]] bool normalized_unsigned_accessor(const cgltf_accessor* accessor) noexcept {
+    return accessor != nullptr && accessor->normalized != 0 &&
+           (accessor->component_type == cgltf_component_type_r_8u ||
+            accessor->component_type == cgltf_component_type_r_16u);
+}
+
+void require_optional_texcoord_accessor(const cgltf_accessor* accessor, const char* label) {
+    if (accessor == nullptr) {
+        return;
+    }
+    if (cgltf_num_components(accessor->type) != 2) {
+        throw gltf_error(std::string(label) + " attribute has unsupported component count");
+    }
+    if (accessor->component_type != cgltf_component_type_r_32f &&
+        !normalized_unsigned_accessor(accessor)) {
+        throw gltf_error(std::string(label) +
+                         " attribute must use FLOAT or normalized unsigned components");
+    }
+}
+
+void require_optional_color_accessor(const cgltf_accessor* accessor, const char* label) {
+    if (accessor == nullptr) {
+        return;
+    }
+    const cgltf_size component_count = cgltf_num_components(accessor->type);
+    if (component_count != 3 && component_count != 4) {
+        throw gltf_error(std::string(label) + " attribute has unsupported component count");
+    }
+    if (accessor->component_type != cgltf_component_type_r_32f &&
+        !normalized_unsigned_accessor(accessor)) {
+        throw gltf_error(std::string(label) +
+                         " attribute must use FLOAT or normalized unsigned components");
+    }
+}
+
+[[nodiscard]] std::vector<float> read_float_accessor_values(const cgltf_accessor* accessor,
+                                                            cgltf_size component_count,
+                                                            const char* label);
+
+[[nodiscard]] std::vector<math::Vec4>
+read_color_accessor_values(const cgltf_accessor* accessor, const char* label) {
+    require_optional_color_accessor(accessor, label);
+    if (accessor == nullptr) {
+        return {};
+    }
+    const cgltf_size component_count = cgltf_num_components(accessor->type);
+    const std::vector<float> unpacked = read_float_accessor_values(accessor, component_count, label);
+    std::vector<math::Vec4> values;
+    values.reserve(accessor->count);
+    for (cgltf_size i = 0; i < accessor->count; ++i) {
+        const std::size_t offset = static_cast<std::size_t>(i * component_count);
+        values.push_back({
+            unpacked[offset + 0U],
+            unpacked[offset + 1U],
+            unpacked[offset + 2U],
+            component_count == 4 ? unpacked[offset + 3U] : 1.0F,
+        });
+    }
+    return values;
 }
 
 [[nodiscard]] GltfAlphaMode load_alpha_mode(cgltf_alpha_mode mode) {
@@ -565,6 +638,8 @@ void expand_bounds_for_morph_targets(GltfMeshPrimitive& primitive) {
     const cgltf_accessor* normals = find_attribute(primitive, cgltf_attribute_type_normal);
     const cgltf_accessor* tangents = find_attribute(primitive, cgltf_attribute_type_tangent);
     const cgltf_accessor* texcoord0 = find_attribute(primitive, cgltf_attribute_type_texcoord, 0);
+    const cgltf_accessor* texcoord1 = find_attribute(primitive, cgltf_attribute_type_texcoord, 1);
+    const cgltf_accessor* color0 = find_attribute(primitive, cgltf_attribute_type_color, 0);
     const cgltf_accessor* joints0 = find_attribute(primitive, cgltf_attribute_type_joints, 0);
     const cgltf_accessor* weights0 = find_attribute(primitive, cgltf_attribute_type_weights, 0);
 
@@ -577,9 +652,9 @@ void expand_bounds_for_morph_targets(GltfMeshPrimitive& primitive) {
     if (tangents != nullptr) {
         require_accessor_components(tangents, 4, "TANGENT");
     }
-    if (texcoord0 != nullptr) {
-        require_accessor_components(texcoord0, 2, "TEXCOORD_0");
-    }
+    require_optional_texcoord_accessor(texcoord0, "TEXCOORD_0");
+    require_optional_texcoord_accessor(texcoord1, "TEXCOORD_1");
+    require_optional_color_accessor(color0, "COLOR_0");
     require_supported_skin_attributes(primitive);
     require_optional_accessor_components(joints0, 4, "JOINTS_0");
     require_optional_accessor_components(weights0, 4, "WEIGHTS_0");
@@ -600,6 +675,10 @@ void expand_bounds_for_morph_targets(GltfMeshPrimitive& primitive) {
     const std::vector<float> texcoord0_values =
         texcoord0 != nullptr ? read_float_accessor_values(texcoord0, 2, "TEXCOORD_0")
                              : std::vector<float>{};
+    const std::vector<float> texcoord1_values =
+        texcoord1 != nullptr ? read_float_accessor_values(texcoord1, 2, "TEXCOORD_1")
+                             : std::vector<float>{};
+    const std::vector<math::Vec4> color0_values = read_color_accessor_values(color0, "COLOR_0");
     const std::vector<std::array<std::uint16_t, 4>> joints0_values =
         joints0 != nullptr ? read_u16_vec4_accessor_values(joints0, "JOINTS_0")
                            : std::vector<std::array<std::uint16_t, 4>>{};
@@ -619,6 +698,12 @@ void expand_bounds_for_morph_targets(GltfMeshPrimitive& primitive) {
         }
         if (texcoord0 != nullptr) {
             result.vertices[i].texcoord0 = vec2_at(texcoord0_values, i);
+        }
+        if (texcoord1 != nullptr) {
+            result.vertices[i].texcoord1 = vec2_at(texcoord1_values, i);
+        }
+        if (color0 != nullptr) {
+            result.vertices[i].color0 = color0_values[i];
         }
         if (joints0 != nullptr) {
             result.vertices[i].joints0 = joints0_values[i];
@@ -867,10 +952,11 @@ load_animation_interpolation(cgltf_interpolation_type interpolation) {
 }
 
 [[nodiscard]] bool supports_required_extension(std::string_view extension) noexcept {
-    static constexpr std::array<std::string_view, 4> kSupportedRequiredExtensions{
+    static constexpr std::array<std::string_view, 5> kSupportedRequiredExtensions{
         "KHR_materials_emissive_strength",
         "KHR_materials_ior",
         "KHR_materials_specular",
+        "KHR_texture_transform",
         "KHR_materials_unlit",
     };
     return std::ranges::find(kSupportedRequiredExtensions, extension) !=

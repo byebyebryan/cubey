@@ -17,6 +17,8 @@ struct PbrVertex {
     math::Vec3 normal{};
     math::Vec4 tangent{};
     math::Vec2 uv0{};
+    math::Vec2 uv1{};
+    math::Vec4 color0{1.0F, 1.0F, 1.0F, 1.0F};
 };
 
 enum class PbrTonemap : std::uint32_t {
@@ -33,6 +35,19 @@ struct PbrDisplayTransform {
     float exposure = 0.0F;
     PbrTonemap tonemap = PbrTonemap::Aces;
     PbrOutputEncoding output_encoding = PbrOutputEncoding::Linear;
+};
+
+struct PbrTextureTransform {
+    math::Vec4 offset_scale{0.0F, 0.0F, 1.0F, 1.0F};
+    math::Vec4 rotation_texcoord{1.0F, 0.0F, 0.0F, 0.0F};
+};
+
+struct PbrMaterialTextureTransforms {
+    PbrTextureTransform base_color{};
+    PbrTextureTransform metallic_roughness{};
+    PbrTextureTransform normal{};
+    PbrTextureTransform occlusion{};
+    PbrTextureTransform emissive{};
 };
 
 struct PbrSceneUniforms {
@@ -70,6 +85,7 @@ struct PbrMaterialFactors {
     float specular_factor = 1.0F;
     float reflectance = 0.5F;
     bool unlit = false;
+    PbrMaterialTextureTransforms texture_transforms{};
 };
 
 struct PbrMaterialUniforms {
@@ -78,13 +94,17 @@ struct PbrMaterialUniforms {
     math::Vec4 metallic_roughness_normal_occlusion{1.0F, 1.0F, 1.0F, 1.0F};
     math::Vec4 specular_color_factor{1.0F, 1.0F, 1.0F, 1.0F};
     math::Vec4 material_model{0.5F, 0.0F, 0.0F, 0.0F};
+    PbrMaterialTextureTransforms texture_transforms{};
 };
 
 struct PbrPushConstants {
     math::Mat4 model{1.0F};
 };
 
-static_assert(sizeof(PbrMaterialUniforms) == sizeof(math::Vec4) * 5U);
+static_assert(sizeof(PbrTextureTransform) == sizeof(math::Vec4) * 2U);
+static_assert(sizeof(PbrMaterialTextureTransforms) == sizeof(math::Vec4) * 10U);
+static_assert(sizeof(PbrVertex) == sizeof(float) * 18U);
+static_assert(sizeof(PbrMaterialUniforms) == sizeof(math::Vec4) * 15U);
 static_assert(sizeof(PbrSkyboxUniforms) == sizeof(math::Mat4) + (sizeof(math::Vec4) * 3U));
 static_assert(sizeof(PbrPostUniforms) == sizeof(math::Vec4));
 static_assert(sizeof(PbrPushConstants) == sizeof(math::Mat4));

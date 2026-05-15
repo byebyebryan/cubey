@@ -25,10 +25,12 @@ renderer.
 - glTF/glb parsing through `cgltf`;
 - external buffers, data URIs, image buffer views, PNG/JPEG decode for glTF
   textures, and standalone Radiance HDR decode through `stb_image`;
-- triangle mesh primitives with position, normal, tangent, UV0, optional
-  `JOINTS_0` / `WEIGHTS_0`, sparse accessor expansion, and optional named
-  morph target deltas from `mesh.extras.targetNames`;
-- metallic-roughness PBR material factors and texture references;
+- triangle mesh primitives with position, normal, tangent, UV0, optional UV1,
+  optional `COLOR_0`, optional `JOINTS_0` / `WEIGHTS_0`, sparse accessor
+  expansion, and optional named morph target deltas from
+  `mesh.extras.targetNames`;
+- metallic-roughness PBR material factors and texture references, including
+  texture coordinate selection and `KHR_texture_transform` metadata;
 - factor-only `KHR_materials_ior`, factor-only `KHR_materials_specular`,
   `KHR_materials_emissive_strength`, and `KHR_materials_unlit` controls;
 - core glTF alpha modes: `OPAQUE`, `MASK`, and `BLEND`;
@@ -38,13 +40,13 @@ renderer.
   inverse bind matrices.
 
 Unsupported features fail early instead of being silently ignored:
-unknown `extensionsRequired`, non-triangle primitive modes, additional skin
-influence sets, unsupported morph target attributes, sparse index accessors, and
-extension-only animation paths are rejected by the loader. Multiple UV sets,
-vertex colors, material variants, KTX2/Basis textures, Draco/meshopt
-compression, transmission, volume, clearcoat, sheen, anisotropy, glTF
-cameras/lights, glTF environment extensions, advanced animation runtime
-features, and streaming remain future slices.
+unknown `extensionsRequired`, non-triangle primitive modes, texture coordinate
+sets above UV1, additional skin influence sets, unsupported morph target
+attributes, sparse index accessors, and extension-only animation paths are
+rejected by the loader. Arbitrary additional UV/color sets, material variants,
+KTX2/Basis textures, Draco/meshopt compression, transmission, volume,
+clearcoat, sheen, anisotropy, glTF cameras/lights, glTF environment extensions,
+advanced animation runtime features, and streaming remain future slices.
 
 `cubey::engine` owns the current asset-to-scene bridge and renderer instance
 service:
@@ -61,6 +63,8 @@ service:
   depth writes;
 - texture upload is deduplicated per glTF texture plus color space, and
   sampler `wrapS` / `wrapT` are preserved through Vulkan sampler axes;
+- material texture coordinate selection, `KHR_texture_transform`, and vertex
+  colors are propagated into the PBR material uniform and vertex contracts;
 - `destroy_gltf_scene_import()` tears down imported resources without making
   the engine own Vulkan texture or mesh lifetime globally;
 - `RendererService` owns renderer instance lifetime, and
@@ -139,16 +143,15 @@ Texture lifetime, descriptor writes, shader selection, and environment
 selection still belong to the project or future renderer layer. Transparency V1
 supports glTF alpha mask and alpha blend, but not refraction, transmission,
 transparent shadow opacity, weighted blended transparency, or order-independent
-transparency. Specular textures, texture transforms, clearcoat, transmission,
-and other glTF material extension lobes remain future slices.
+transparency. Specular textures, clearcoat, transmission, and other glTF
+material extension lobes remain future slices.
 
 ## Next Slices
 
 - Add validation assets from Khronos Sample Assets as optional tests when the
   CI/dev environment can afford the download.
-- Add `KHR_texture_transform`, UV1, vertex colors, and specular texture support
-  as the next model-fidelity imports that do not require a new decompression
-  dependency.
+- Add specular texture support as the next model-fidelity import that does not
+  require a new decompression dependency.
 - Add prefiltered KTX/KTX2 environment or `KHR_texture_basisu` loading only with
   an explicit dependency boundary such as `libktx` or a Basis transcoder.
 - Keep MikkTSpace tangent generation deferred until authored normal-map assets

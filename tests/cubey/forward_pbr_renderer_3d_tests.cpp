@@ -245,8 +245,8 @@ void test_forward_pbr_renderer_3d_shadow_vertex_layout_matches_pbr_vertices() {
             "forward PBR shadow vertex layout should expose one binding");
     require(layout.bindings()[0].stride == sizeof(cubey::render::PbrVertex),
             "forward PBR shadow vertex layout should use the PBR vertex stride");
-    require(layout.attributes.size() == 2,
-            "forward PBR shadow vertex layout should expose position and UV for alpha masks");
+    require(layout.attributes.size() == 4,
+            "forward PBR shadow vertex layout should expose position, UVs, and vertex color");
     require(layout.attributes[0].location == 0,
             "forward PBR shadow vertex layout should bind position at location 0");
     require(layout.attributes[0].offset == offsetof(cubey::render::PbrVertex, position),
@@ -255,6 +255,14 @@ void test_forward_pbr_renderer_3d_shadow_vertex_layout_matches_pbr_vertices() {
             "forward PBR shadow vertex layout should bind UV0 at the PBR UV location");
     require(layout.attributes[1].offset == offsetof(cubey::render::PbrVertex, uv0),
             "forward PBR shadow vertex layout should read PBR vertex UV0");
+    require(layout.attributes[2].location == 4,
+            "forward PBR shadow vertex layout should bind UV1 at the PBR UV1 location");
+    require(layout.attributes[2].offset == offsetof(cubey::render::PbrVertex, uv1),
+            "forward PBR shadow vertex layout should read PBR vertex UV1");
+    require(layout.attributes[3].location == 5,
+            "forward PBR shadow vertex layout should bind COLOR0 at the PBR color location");
+    require(layout.attributes[3].offset == offsetof(cubey::render::PbrVertex, color0),
+            "forward PBR shadow vertex layout should read PBR vertex COLOR0");
 }
 
 void test_forward_pbr_renderer_3d_binds_shadow_depth_with_depth_read_layout() {

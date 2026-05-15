@@ -52,6 +52,9 @@ enum class GltfAnimationTargetPath : std::uint8_t {
 struct GltfTextureRef {
     std::uint32_t texture_index = kInvalidAssetIndex;
     std::uint32_t texcoord = 0;
+    math::Vec2 offset{0.0F, 0.0F};
+    float rotation = 0.0F;
+    math::Vec2 scale{1.0F, 1.0F};
 
     [[nodiscard]] bool has_value() const noexcept {
         return texture_index != kInvalidAssetIndex;
@@ -106,6 +109,8 @@ struct GltfVertex {
     math::Vec3 normal{0.0F, 1.0F, 0.0F};
     math::Vec4 tangent{1.0F, 0.0F, 0.0F, 1.0F};
     math::Vec2 texcoord0{0.0F, 0.0F};
+    math::Vec2 texcoord1{0.0F, 0.0F};
+    math::Vec4 color0{1.0F, 1.0F, 1.0F, 1.0F};
     std::array<std::uint16_t, 4> joints0{0, 0, 0, 0};
     math::Vec4 weights0{0.0F, 0.0F, 0.0F, 0.0F};
 };

@@ -84,6 +84,10 @@ render::VertexInputLayout forward_pbr_renderer_3d_shadow_vertex_input_layout() {
                                                offsetof(render::PbrVertex, position)),
                 render::vertex_input_attribute(3, 0, VK_FORMAT_R32G32_SFLOAT,
                                                offsetof(render::PbrVertex, uv0)),
+                render::vertex_input_attribute(4, 0, VK_FORMAT_R32G32_SFLOAT,
+                                               offsetof(render::PbrVertex, uv1)),
+                render::vertex_input_attribute(5, 0, VK_FORMAT_R32G32B32A32_SFLOAT,
+                                               offsetof(render::PbrVertex, color0)),
             },
     };
 }

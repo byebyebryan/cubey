@@ -4,7 +4,7 @@ layout(local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
 
 const uint kFlagMorph = 1u << 0u;
 const uint kFlagSkin = 1u << 1u;
-const uint kPbrVertexFloatCount = 12u;
+const uint kPbrVertexFloatCount = 18u;
 const uint kMorphTargetFloatCount = 9u;
 
 layout(push_constant) uniform PushConstants {
@@ -49,6 +49,8 @@ struct DeformedVertex {
     vec3 normal;
     vec4 tangent;
     vec2 uv0;
+    vec2 uv1;
+    vec4 color0;
 };
 
 uint vertexBase(uint vertex_index) {
@@ -65,6 +67,9 @@ DeformedVertex readBaseVertex(uint vertex_index) {
     vertex.tangent = vec4(base_vertices[base + 6u], base_vertices[base + 7u],
                           base_vertices[base + 8u], base_vertices[base + 9u]);
     vertex.uv0 = vec2(base_vertices[base + 10u], base_vertices[base + 11u]);
+    vertex.uv1 = vec2(base_vertices[base + 12u], base_vertices[base + 13u]);
+    vertex.color0 = vec4(base_vertices[base + 14u], base_vertices[base + 15u],
+                         base_vertices[base + 16u], base_vertices[base + 17u]);
     return vertex;
 }
 
@@ -82,6 +87,12 @@ void writeOutputVertex(uint vertex_index, DeformedVertex vertex) {
     output_vertices[base + 9u] = vertex.tangent.w;
     output_vertices[base + 10u] = vertex.uv0.x;
     output_vertices[base + 11u] = vertex.uv0.y;
+    output_vertices[base + 12u] = vertex.uv1.x;
+    output_vertices[base + 13u] = vertex.uv1.y;
+    output_vertices[base + 14u] = vertex.color0.x;
+    output_vertices[base + 15u] = vertex.color0.y;
+    output_vertices[base + 16u] = vertex.color0.z;
+    output_vertices[base + 17u] = vertex.color0.w;
 }
 
 void applyMorphTargets(inout DeformedVertex vertex, uint vertex_index) {

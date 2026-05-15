@@ -77,6 +77,8 @@ to_pbr_vertices(std::span<const asset::GltfVertex> vertices) {
             .normal = vertex.normal,
             .tangent = vertex.tangent,
             .uv0 = vertex.texcoord0,
+            .uv1 = vertex.texcoord1,
+            .color0 = vertex.color0,
         });
     }
     return result;
