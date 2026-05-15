@@ -23,13 +23,15 @@ layout(set = 1, binding = 1) uniform sampler2D metallic_roughness_texture;
 layout(set = 1, binding = 2) uniform sampler2D normal_texture;
 layout(set = 1, binding = 3) uniform sampler2D occlusion_texture;
 layout(set = 1, binding = 4) uniform sampler2D emissive_texture;
+layout(set = 1, binding = 5) uniform sampler2D specular_texture;
+layout(set = 1, binding = 6) uniform sampler2D specular_color_texture;
 
 struct PbrTextureTransform {
     vec4 offset_scale;
     vec4 rotation_texcoord;
 };
 
-layout(set = 1, binding = 5) uniform PbrMaterialUniforms {
+layout(set = 1, binding = 7) uniform PbrMaterialUniforms {
     vec4 base_color_factor;
     vec4 emissive_alpha_cutoff;
     vec4 metallic_roughness_normal_occlusion;
@@ -40,7 +42,16 @@ layout(set = 1, binding = 5) uniform PbrMaterialUniforms {
     PbrTextureTransform normal_transform;
     PbrTextureTransform occlusion_transform;
     PbrTextureTransform emissive_transform;
+    PbrTextureTransform specular_transform;
+    PbrTextureTransform specular_color_transform;
 } material;
+
+const uint CUBEY_PBR_TEXTURE_SPECULAR = 1u;
+const uint CUBEY_PBR_TEXTURE_SPECULAR_COLOR = 2u;
+
+bool cubey_pbr_has_material_texture(uint flag) {
+    return (uint(material.material_model.w + 0.5) & flag) != 0u;
+}
 
 layout(location = 0) in vec3 frag_world_position;
 layout(location = 1) in vec3 frag_normal;
@@ -137,9 +148,19 @@ void main() {
 
     vec3 albedo = base_color.rgb;
     vec3 diffuse_color = cubey_pbr_diffuse_color(albedo, metallic);
+    float specular_strength = material.specular_color_factor.a;
+    if (cubey_pbr_has_material_texture(CUBEY_PBR_TEXTURE_SPECULAR)) {
+        specular_strength *=
+            texture(specular_texture, cubey_pbr_transformed_uv(material.specular_transform)).a;
+    }
+    vec3 specular_color_factor = material.specular_color_factor.rgb;
+    if (cubey_pbr_has_material_texture(CUBEY_PBR_TEXTURE_SPECULAR_COLOR)) {
+        vec2 specular_color_uv =
+            cubey_pbr_transformed_uv(material.specular_color_transform);
+        specular_color_factor *= texture(specular_color_texture, specular_color_uv).rgb;
+    }
     vec3 dielectric_f0 = cubey_pbr_dielectric_f0(
-        material.specular_color_factor.rgb, material.specular_color_factor.a,
-        material.material_model.x);
+        specular_color_factor, specular_strength, material.material_model.x);
     vec3 f0 = cubey_pbr_f0(albedo, metallic, dielectric_f0);
     vec3 dfg = texture(brdf_lut, vec2(ndotv, roughness)).rgb;
     vec3 energy_compensation = cubey_pbr_energy_compensation(f0, dfg.b);

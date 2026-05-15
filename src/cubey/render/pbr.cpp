@@ -37,10 +37,8 @@ VertexInputLayout pbr_vertex_input_layout() {
                                        offsetof(PbrVertex, normal)),
                 vertex_input_attribute(2, 0, VK_FORMAT_R32G32B32A32_SFLOAT,
                                        offsetof(PbrVertex, tangent)),
-                vertex_input_attribute(3, 0, VK_FORMAT_R32G32_SFLOAT,
-                                       offsetof(PbrVertex, uv0)),
-                vertex_input_attribute(4, 0, VK_FORMAT_R32G32_SFLOAT,
-                                       offsetof(PbrVertex, uv1)),
+                vertex_input_attribute(3, 0, VK_FORMAT_R32G32_SFLOAT, offsetof(PbrVertex, uv0)),
+                vertex_input_attribute(4, 0, VK_FORMAT_R32G32_SFLOAT, offsetof(PbrVertex, uv1)),
                 vertex_input_attribute(5, 0, VK_FORMAT_R32G32B32A32_SFLOAT,
                                        offsetof(PbrVertex, color0)),
             },
@@ -70,15 +68,14 @@ MaterialPassInfo pbr_forward_pass_info(const PbrForwardPassConfig& config) {
                     .bindings =
                         {
                             cubey::vulkan::DescriptorSetBindingConfig{
-                                .binding = static_cast<std::uint32_t>(
-                                    PbrSceneBinding::SceneUniforms),
+                                .binding =
+                                    static_cast<std::uint32_t>(PbrSceneBinding::SceneUniforms),
                                 .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
                                 .stage_flags =
                                     VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
                             },
                             cubey::vulkan::DescriptorSetBindingConfig{
-                                .binding =
-                                    static_cast<std::uint32_t>(PbrSceneBinding::ShadowMap),
+                                .binding = static_cast<std::uint32_t>(PbrSceneBinding::ShadowMap),
                                 .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
                                 .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
                             },
@@ -118,8 +115,7 @@ MaterialPassInfo pbr_forward_pass_info(const PbrForwardPassConfig& config) {
                                 .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
                             },
                             cubey::vulkan::DescriptorSetBindingConfig{
-                                .binding =
-                                    static_cast<std::uint32_t>(PbrMaterialBinding::Normal),
+                                .binding = static_cast<std::uint32_t>(PbrMaterialBinding::Normal),
                                 .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
                                 .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
                             },
@@ -130,14 +126,23 @@ MaterialPassInfo pbr_forward_pass_info(const PbrForwardPassConfig& config) {
                                 .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
                             },
                             cubey::vulkan::DescriptorSetBindingConfig{
-                                .binding =
-                                    static_cast<std::uint32_t>(PbrMaterialBinding::Emissive),
+                                .binding = static_cast<std::uint32_t>(PbrMaterialBinding::Emissive),
+                                .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
+                            },
+                            cubey::vulkan::DescriptorSetBindingConfig{
+                                .binding = static_cast<std::uint32_t>(PbrMaterialBinding::Specular),
                                 .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
                                 .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
                             },
                             cubey::vulkan::DescriptorSetBindingConfig{
                                 .binding =
-                                    static_cast<std::uint32_t>(PbrMaterialBinding::Uniforms),
+                                    static_cast<std::uint32_t>(PbrMaterialBinding::SpecularColor),
+                                .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
+                            },
+                            cubey::vulkan::DescriptorSetBindingConfig{
+                                .binding = static_cast<std::uint32_t>(PbrMaterialBinding::Uniforms),
                                 .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
                                 .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
                             },
@@ -200,14 +205,12 @@ MaterialPassInfo pbr_post_pass_info() {
                     .bindings =
                         {
                             cubey::vulkan::DescriptorSetBindingConfig{
-                                .binding =
-                                    static_cast<std::uint32_t>(PbrPostBinding::PostUniforms),
+                                .binding = static_cast<std::uint32_t>(PbrPostBinding::PostUniforms),
                                 .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
                                 .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
                             },
                             cubey::vulkan::DescriptorSetBindingConfig{
-                                .binding =
-                                    static_cast<std::uint32_t>(PbrPostBinding::SceneColor),
+                                .binding = static_cast<std::uint32_t>(PbrPostBinding::SceneColor),
                                 .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
                                 .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
                             },
@@ -273,8 +276,7 @@ PbrMaterialUniforms pbr_material_uniforms(const PbrMaterialFactors& factors,
                 factors.specular_factor,
             },
         .material_model = {factors.reflectance, material_alpha_mode_uniform(alpha_mode),
-                           factors.unlit ? 1.0F : 0.0F,
-                           0.0F},
+                           factors.unlit ? 1.0F : 0.0F, static_cast<float>(factors.texture_flags)},
         .texture_transforms = factors.texture_transforms,
     };
 }

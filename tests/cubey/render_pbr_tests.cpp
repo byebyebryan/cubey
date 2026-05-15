@@ -62,12 +62,22 @@ void test_pbr_forward_pass_declares_scene_and_material_sets() {
     require(pass.descriptor_sets[0].bindings.size() == 5,
             "PBR scene descriptors should include uniform, shadow map, and IBL textures");
     require(pass.descriptor_sets[1].set == 1, "PBR material descriptors should use set 1");
-    require(pass.descriptor_sets[1].bindings.size() == 6,
+    require(pass.descriptor_sets[1].bindings.size() == 8,
             "PBR material descriptors should include textures plus material uniforms");
     require(pass.descriptor_sets[1].bindings[5].binding ==
+                static_cast<std::uint32_t>(cubey::render::PbrMaterialBinding::Specular),
+            "PBR specular texture should use binding 5");
+    require(pass.descriptor_sets[1].bindings[6].binding ==
+                static_cast<std::uint32_t>(cubey::render::PbrMaterialBinding::SpecularColor),
+            "PBR specular color texture should use binding 6");
+    require(pass.descriptor_sets[1].bindings[7].binding ==
                 static_cast<std::uint32_t>(cubey::render::PbrMaterialBinding::Uniforms),
             "PBR material uniforms should use the final material descriptor binding");
-    require(pass.descriptor_sets[1].bindings[5].type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+    require(pass.descriptor_sets[1].bindings[5].type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            "PBR specular texture should be sampled");
+    require(pass.descriptor_sets[1].bindings[6].type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            "PBR specular color texture should be sampled");
+    require(pass.descriptor_sets[1].bindings[7].type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
             "PBR material uniforms should be a uniform buffer");
     require(pass.push_constants.size() == 1, "PBR pass should declare push constants");
     require(pass.push_constants[0].size == sizeof(cubey::render::PbrPushConstants),
@@ -107,6 +117,10 @@ void test_pbr_material_factors_are_uniforms_and_push_constants_are_model_only() 
     factors.reflectance = 0.42F;
     factors.alpha_mode = cubey::render::MaterialAlphaMode::Blend;
     factors.unlit = true;
+    factors.texture_flags =
+        cubey::render::pbr_material_texture_flag(cubey::render::PbrMaterialTextureFlag::Specular) |
+        cubey::render::pbr_material_texture_flag(
+            cubey::render::PbrMaterialTextureFlag::SpecularColor);
     factors.texture_transforms.base_color.offset_scale = {0.25F, 0.5F, 2.0F, 3.0F};
     factors.texture_transforms.base_color.rotation_texcoord = {0.0F, 1.0F, 1.0F, 0.0F};
     factors.texture_transforms.normal.offset_scale = {0.1F, 0.2F, 0.5F, 0.75F};
@@ -134,10 +148,13 @@ void test_pbr_material_factors_are_uniforms_and_push_constants_are_model_only() 
     require(uniforms.material_model.x == factors.reflectance,
             "PBR material uniforms should pack dielectric reflectance");
     require(uniforms.material_model.y ==
-                static_cast<float>(static_cast<std::underlying_type_t<
-                                   cubey::render::MaterialAlphaMode>>(factors.alpha_mode)),
+                static_cast<float>(
+                    static_cast<std::underlying_type_t<cubey::render::MaterialAlphaMode>>(
+                        factors.alpha_mode)),
             "PBR material uniforms should pack alpha mode");
     require(uniforms.material_model.z == 1.0F, "PBR material uniforms should pack unlit flag");
+    require(uniforms.material_model.w == static_cast<float>(factors.texture_flags),
+            "PBR material uniforms should pack optional texture flags");
     require(uniforms.texture_transforms.base_color.offset_scale ==
                 factors.texture_transforms.base_color.offset_scale,
             "PBR material uniforms should pack base color texture offset and scale");
@@ -335,6 +352,8 @@ void test_pbr_shaders_use_filament_style_material_remap() {
                          "PBR fragment shaders should compute dielectric F0 from material factors");
         require_contains(*shader, "material.material_model.x",
                          "PBR fragment shaders should read material reflectance");
+        require_contains(*shader, "cubey_pbr_has_material_texture",
+                         "PBR fragment shaders should branch optional texture reads by flag");
         require_contains(*shader, "vec3 f0 = cubey_pbr_f0(albedo, metallic, dielectric_f0);",
                          "PBR fragment shaders should compute F0 through the shared helper");
         require_contains(
@@ -348,8 +367,9 @@ void test_pbr_shaders_use_filament_style_material_remap() {
 
     require_contains(gltf, "cubey_pbr_lambert_diffuse(diffuse_color)",
                      "glTF direct diffuse should use the shared Lambert helper");
-    require_contains(gltf, "float output_alpha = material.material_model.y > 1.5 ? "
-                           "base_color.a : 1.0;",
+    require_contains(gltf,
+                     "float output_alpha = material.material_model.y > 1.5 ? "
+                     "base_color.a : 1.0;",
                      "glTF PBR shader should only use base alpha for blended materials");
     require_contains(gltf, "material.material_model.z > 0.5",
                      "glTF PBR shader should branch for unlit materials");
@@ -367,6 +387,18 @@ void test_pbr_shaders_use_filament_style_material_remap() {
                      "glTF PBR shader should multiply vertex color into base color");
     require_contains(gltf, "texture(base_color_texture, cubey_pbr_transformed_uv",
                      "glTF PBR shader should sample base color through transformed UVs");
+    require_contains(gltf, "uniform sampler2D specular_texture",
+                     "glTF PBR shader should bind KHR_materials_specular strength texture");
+    require_contains(gltf, "uniform sampler2D specular_color_texture",
+                     "glTF PBR shader should bind KHR_materials_specular color texture");
+    require_contains(gltf, "cubey_pbr_transformed_uv(material.specular_transform)",
+                     "glTF PBR shader should sample specular strength through transformed UVs");
+    require_contains(gltf, "cubey_pbr_transformed_uv(material.specular_color_transform)",
+                     "glTF PBR shader should sample specular color through transformed UVs");
+    require_contains(gltf, "if (cubey_pbr_has_material_texture(CUBEY_PBR_TEXTURE_SPECULAR))",
+                     "glTF PBR shader should skip specular strength texture when absent");
+    require_contains(gltf, "if (cubey_pbr_has_material_texture(CUBEY_PBR_TEXTURE_SPECULAR_COLOR))",
+                     "glTF PBR shader should skip specular color texture when absent");
     require_contains(gltf_shadow, "uniform sampler2D base_color_texture",
                      "glTF shadow mask shader should sample base color alpha");
     require_contains(gltf_shadow, "uniform PbrMaterialUniforms",

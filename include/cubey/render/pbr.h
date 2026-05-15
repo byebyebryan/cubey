@@ -31,6 +31,16 @@ enum class PbrOutputEncoding : std::uint32_t {
     Srgb = 1,
 };
 
+enum class PbrMaterialTextureFlag : std::uint32_t {
+    Specular = 1U << 0U,
+    SpecularColor = 1U << 1U,
+};
+
+[[nodiscard]] constexpr std::uint32_t
+pbr_material_texture_flag(PbrMaterialTextureFlag flag) noexcept {
+    return static_cast<std::uint32_t>(flag);
+}
+
 struct PbrDisplayTransform {
     float exposure = 0.0F;
     PbrTonemap tonemap = PbrTonemap::Aces;
@@ -48,6 +58,8 @@ struct PbrMaterialTextureTransforms {
     PbrTextureTransform normal{};
     PbrTextureTransform occlusion{};
     PbrTextureTransform emissive{};
+    PbrTextureTransform specular{};
+    PbrTextureTransform specular_color{};
 };
 
 struct PbrSceneUniforms {
@@ -85,6 +97,7 @@ struct PbrMaterialFactors {
     float specular_factor = 1.0F;
     float reflectance = 0.5F;
     bool unlit = false;
+    std::uint32_t texture_flags = 0U;
     PbrMaterialTextureTransforms texture_transforms{};
 };
 
@@ -102,9 +115,9 @@ struct PbrPushConstants {
 };
 
 static_assert(sizeof(PbrTextureTransform) == sizeof(math::Vec4) * 2U);
-static_assert(sizeof(PbrMaterialTextureTransforms) == sizeof(math::Vec4) * 10U);
+static_assert(sizeof(PbrMaterialTextureTransforms) == sizeof(math::Vec4) * 14U);
 static_assert(sizeof(PbrVertex) == sizeof(float) * 18U);
-static_assert(sizeof(PbrMaterialUniforms) == sizeof(math::Vec4) * 15U);
+static_assert(sizeof(PbrMaterialUniforms) == sizeof(math::Vec4) * 19U);
 static_assert(sizeof(PbrSkyboxUniforms) == sizeof(math::Mat4) + (sizeof(math::Vec4) * 3U));
 static_assert(sizeof(PbrPostUniforms) == sizeof(math::Vec4));
 static_assert(sizeof(PbrPushConstants) == sizeof(math::Mat4));
@@ -124,7 +137,9 @@ enum class PbrMaterialBinding : std::uint32_t {
     Normal = 2,
     Occlusion = 3,
     Emissive = 4,
-    Uniforms = 5,
+    Specular = 5,
+    SpecularColor = 6,
+    Uniforms = 7,
 };
 
 enum class PbrSkyboxBinding : std::uint32_t {

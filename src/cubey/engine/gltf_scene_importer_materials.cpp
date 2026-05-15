@@ -83,8 +83,7 @@ using TextureCache = std::unordered_map<TextureCacheKey, std::size_t, TextureCac
     }
 }
 
-[[nodiscard]] render::PbrTextureTransform
-pbr_texture_transform(const asset::GltfTextureRef& ref) {
+[[nodiscard]] render::PbrTextureTransform pbr_texture_transform(const asset::GltfTextureRef& ref) {
     return {
         .offset_scale = {ref.offset.x, ref.offset.y, ref.scale.x, ref.scale.y},
         .rotation_texcoord =
@@ -105,7 +104,20 @@ pbr_texture_transforms(const asset::GltfMaterial& material) {
         .normal = pbr_texture_transform(material.normal_texture),
         .occlusion = pbr_texture_transform(material.occlusion_texture),
         .emissive = pbr_texture_transform(material.emissive_texture),
+        .specular = pbr_texture_transform(material.specular_texture),
+        .specular_color = pbr_texture_transform(material.specular_color_texture),
     };
+}
+
+[[nodiscard]] std::uint32_t pbr_texture_flags(const asset::GltfMaterial& material) {
+    std::uint32_t flags = 0U;
+    if (material.specular_texture.has_value()) {
+        flags |= render::pbr_material_texture_flag(render::PbrMaterialTextureFlag::Specular);
+    }
+    if (material.specular_color_texture.has_value()) {
+        flags |= render::pbr_material_texture_flag(render::PbrMaterialTextureFlag::SpecularColor);
+    }
+    return flags;
 }
 
 [[nodiscard]] render::Texture2D create_solid_texture(const vulkan::Device& device,
@@ -141,6 +153,12 @@ pbr_texture_transforms(const asset::GltfMaterial& material) {
         break;
     case render::PbrMaterialBinding::Emissive:
         texture = &resources.emissive_default;
+        break;
+    case render::PbrMaterialBinding::Specular:
+        texture = &resources.specular_default;
+        break;
+    case render::PbrMaterialBinding::SpecularColor:
+        texture = &resources.specular_color_default;
         break;
     case render::PbrMaterialBinding::Uniforms:
         break;
@@ -234,6 +252,13 @@ material_sampled_image_bindings(const vulkan::Device& device, vulkan::GpuRuntime
     const TextureBinding emissive = texture_binding_for_ref(
         device, gpu, resources, asset, source.emissive_texture, asset::GltfTextureColorSpace::Srgb,
         render::PbrMaterialBinding::Emissive, texture_cache);
+    const TextureBinding specular = texture_binding_for_ref(
+        device, gpu, resources, asset, source.specular_texture,
+        asset::GltfTextureColorSpace::Linear, render::PbrMaterialBinding::Specular, texture_cache);
+    const TextureBinding specular_color =
+        texture_binding_for_ref(device, gpu, resources, asset, source.specular_color_texture,
+                                asset::GltfTextureColorSpace::Srgb,
+                                render::PbrMaterialBinding::SpecularColor, texture_cache);
 
     return {
         render::SampledImageMaterialBinding{
@@ -261,6 +286,16 @@ material_sampled_image_bindings(const vulkan::Device& device, vulkan::GpuRuntime
             .sampler = emissive.sampler,
             .image_view = emissive.view,
         },
+        render::SampledImageMaterialBinding{
+            .binding = static_cast<std::uint32_t>(render::PbrMaterialBinding::Specular),
+            .sampler = specular.sampler,
+            .image_view = specular.view,
+        },
+        render::SampledImageMaterialBinding{
+            .binding = static_cast<std::uint32_t>(render::PbrMaterialBinding::SpecularColor),
+            .sampler = specular_color.sampler,
+            .image_view = specular_color.view,
+        },
     };
 }
 
@@ -286,6 +321,10 @@ void create_default_textures(const vulkan::Device& device, vulkan::GpuRuntime& g
         create_solid_texture(device, gpu, {255, 255, 255, 255}, VK_FORMAT_R8G8B8A8_UNORM));
     resources.emissive_default.emplace(
         create_solid_texture(device, gpu, {0, 0, 0, 255}, VK_FORMAT_R8G8B8A8_SRGB));
+    resources.specular_default.emplace(
+        create_solid_texture(device, gpu, {255, 255, 255, 255}, VK_FORMAT_R8G8B8A8_UNORM));
+    resources.specular_color_default.emplace(
+        create_solid_texture(device, gpu, {255, 255, 255, 255}, VK_FORMAT_R8G8B8A8_SRGB));
 }
 
 void create_material_resources(Engine& engine, const vulkan::Device& device,
@@ -325,6 +364,7 @@ void create_material_resources(Engine& engine, const vulkan::Device& device,
                 .specular_factor = source.specular_factor,
                 .reflectance = source.reflectance,
                 .unlit = source.unlit,
+                .texture_flags = pbr_texture_flags(source),
                 .texture_transforms = pbr_texture_transforms(source),
             });
         resources.material_instances.emplace(

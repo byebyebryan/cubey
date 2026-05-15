@@ -31,7 +31,7 @@ renderer.
   `mesh.extras.targetNames`;
 - metallic-roughness PBR material factors and texture references, including
   texture coordinate selection and `KHR_texture_transform` metadata;
-- factor-only `KHR_materials_ior`, factor-only `KHR_materials_specular`,
+- `KHR_materials_ior`, `KHR_materials_specular` factors/textures,
   `KHR_materials_emissive_strength`, and `KHR_materials_unlit` controls;
 - core glTF alpha modes: `OPAQUE`, `MASK`, and `BLEND`;
 - sampler filtering and per-axis wrapping metadata;
@@ -143,15 +143,15 @@ Texture lifetime, descriptor writes, shader selection, and environment
 selection still belong to the project or future renderer layer. Transparency V1
 supports glTF alpha mask and alpha blend, but not refraction, transmission,
 transparent shadow opacity, weighted blended transparency, or order-independent
-transparency. Specular textures, clearcoat, transmission, and other glTF
-material extension lobes remain future slices.
+transparency. Clearcoat, transmission, and other glTF material extension lobes
+remain future slices.
 
 ## Next Slices
 
 - Add validation assets from Khronos Sample Assets as optional tests when the
   CI/dev environment can afford the download.
-- Add specular texture support as the next model-fidelity import that does not
-  require a new decompression dependency.
+- Add the next model-fidelity import only when it stays within the current
+  dependency boundary or clearly justifies a new one.
 - Add prefiltered KTX/KTX2 environment or `KHR_texture_basisu` loading only with
   an explicit dependency boundary such as `libktx` or a Basis transcoder.
 - Keep MikkTSpace tangent generation deferred until authored normal-map assets

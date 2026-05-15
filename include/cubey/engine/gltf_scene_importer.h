@@ -122,6 +122,8 @@ struct GltfSceneImportResources {
     std::optional<render::Texture2D> normal_default{};
     std::optional<render::Texture2D> occlusion_default{};
     std::optional<render::Texture2D> emissive_default{};
+    std::optional<render::Texture2D> specular_default{};
+    std::optional<render::Texture2D> specular_color_default{};
     bool active = false;
 };
 
@@ -135,8 +137,7 @@ gltf_deformation_commands_for_frame(const GltfSceneImportResources& resources,
 void update_gltf_deformation_frame(GltfSceneImportResources& resources,
                                    const asset::GltfAsset& asset,
                                    const GltfSceneImportResult& result,
-                                   const SceneReadView& scene_view,
-                                   render::FrameSlot frame_slot,
+                                   const SceneReadView& scene_view, render::FrameSlot frame_slot,
                                    const animation::GltfAnimationSample* sample = nullptr);
 
 [[nodiscard]] GltfSceneImportResult

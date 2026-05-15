@@ -45,13 +45,13 @@ void GltfViewerApp::create_imported_asset_scene(const cubey::vulkan::Device& dev
                                                 std::uint32_t frame_slot_count) {
     scene_ = &engine_.create_scene();
     cubey::SceneTransaction setup = scene().begin_transaction();
-    import_result_ = cubey::import_gltf_scene(engine_, setup, asset, device, gpu, import_resources_,
-                                              cubey::GltfSceneImportConfig{
-                                                  .frame_slot_count = frame_slot_count,
-                                                  .deformation_compute_shader =
-                                                      shader_path("gltf_deform.comp.spv"),
-                                                  .label_prefix = "gltf_viewer",
-                                              });
+    import_result_ = cubey::import_gltf_scene(
+        engine_, setup, asset, device, gpu, import_resources_,
+        cubey::GltfSceneImportConfig{
+            .frame_slot_count = frame_slot_count,
+            .deformation_compute_shader = shader_path("gltf_deform.comp.spv"),
+            .label_prefix = "gltf_viewer",
+        });
     animation_playback_ = {
         .animation_index = config_.animation_index,
         .speed = config_.animation_speed,
@@ -120,6 +120,10 @@ void GltfViewerApp::create_default_textures(const cubey::vulkan::Device& device,
         create_solid_texture(device, gpu, {255, 255, 255, 255}, VK_FORMAT_R8G8B8A8_UNORM));
     emissive_default_.emplace(
         create_solid_texture(device, gpu, {0, 0, 0, 255}, VK_FORMAT_R8G8B8A8_SRGB));
+    specular_default_.emplace(
+        create_solid_texture(device, gpu, {255, 255, 255, 255}, VK_FORMAT_R8G8B8A8_UNORM));
+    specular_color_default_.emplace(
+        create_solid_texture(device, gpu, {255, 255, 255, 255}, VK_FORMAT_R8G8B8A8_SRGB));
 }
 
 cubey::render::Texture2D GltfViewerApp::create_solid_texture(const cubey::vulkan::Device& device,
@@ -177,6 +181,8 @@ GltfViewerApp::fallback_material_sampled_images() const {
         sampled(cubey::render::PbrMaterialBinding::Normal),
         sampled(cubey::render::PbrMaterialBinding::Occlusion),
         sampled(cubey::render::PbrMaterialBinding::Emissive),
+        sampled(cubey::render::PbrMaterialBinding::Specular),
+        sampled(cubey::render::PbrMaterialBinding::SpecularColor),
     };
 }
 
@@ -198,6 +204,12 @@ GltfViewerApp::default_texture(cubey::render::PbrMaterialBinding binding) const 
         break;
     case cubey::render::PbrMaterialBinding::Emissive:
         texture = &emissive_default_;
+        break;
+    case cubey::render::PbrMaterialBinding::Specular:
+        texture = &specular_default_;
+        break;
+    case cubey::render::PbrMaterialBinding::SpecularColor:
+        texture = &specular_color_default_;
         break;
     case cubey::render::PbrMaterialBinding::Uniforms:
         break;

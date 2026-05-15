@@ -191,13 +191,15 @@ std::filesystem::path write_triangle_gltf(const std::filesystem::path& dir) {
       "KHR_materials_ior": {"ior": 1.8},
       "KHR_materials_specular": {
         "specularFactor": 0.7,
-        "specularColorFactor": [0.9, 0.8, 0.7]
+        "specularColorFactor": [0.9, 0.8, 0.7],
+        "specularTexture": {"index": 1},
+        "specularColorTexture": {"index": 2}
       },
       "KHR_materials_emissive_strength": {"emissiveStrength": 2.0},
       "KHR_materials_unlit": {}
     }
   }],
-  "textures": [{"source": 0}],
+  "textures": [{"source": 0}, {"source": 0}, {"source": 0}],
   "images": [{
     "uri": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII="
   }]
@@ -418,12 +420,14 @@ void test_gltf_asset_loads_static_pbr_triangle() {
     require_close(material.roughness_factor, 0.4F, "roughness factor should load");
     require_close(material.reflectance, 0.714285F, "IOR extension should load as reflectance");
     require_close(material.specular_factor, 0.7F, "specular factor should load");
-    require_close(material.specular_color_factor.r, 0.9F,
-                  "specular color factor red should load");
+    require_close(material.specular_color_factor.r, 0.9F, "specular color factor red should load");
     require_close(material.specular_color_factor.g, 0.8F,
                   "specular color factor green should load");
-    require_close(material.specular_color_factor.b, 0.7F,
-                  "specular color factor blue should load");
+    require_close(material.specular_color_factor.b, 0.7F, "specular color factor blue should load");
+    require(material.specular_texture.texture_index == 1,
+            "specular texture should load from KHR_materials_specular");
+    require(material.specular_color_texture.texture_index == 2,
+            "specular color texture should load from KHR_materials_specular");
     require_close(material.emissive_factor.r, 0.2F, "emissive strength should scale red");
     require_close(material.emissive_factor.g, 0.4F, "emissive strength should scale green");
     require_close(material.emissive_factor.b, 0.6F, "emissive strength should scale blue");
@@ -436,8 +440,7 @@ void test_gltf_asset_loads_static_pbr_triangle() {
     require(primitive.material_index == 1, "primitive material should account for default slot");
     require_close(primitive.vertices[1].position.x, 1.0F, "position accessor should load");
     require_close(primitive.vertices[2].texcoord0.y, 1.0F, "uv accessor should load");
-    require_close(primitive.vertices[0].tangent.x, 1.0F,
-                  "loader should generate missing tangents");
+    require_close(primitive.vertices[0].tangent.x, 1.0F, "loader should generate missing tangents");
     require_close(primitive.local_bounds.center.x, 0.5F, "bounds center should be computed");
 
     std::filesystem::remove_all(dir);
@@ -601,8 +604,7 @@ void test_gltf_asset_loads_rigid_animation_channels() {
     require_close(animation.duration_seconds, 1.0F, "animation duration should come from inputs");
     require(animation.samplers.size() == 1, "animation sampler should load");
     require(animation.channels.size() == 1, "animation channel should load");
-    require(animation.samplers[0].interpolation ==
-                cubey::asset::GltfAnimationInterpolation::Linear,
+    require(animation.samplers[0].interpolation == cubey::asset::GltfAnimationInterpolation::Linear,
             "animation interpolation should load");
     require(animation.samplers[0].component_count == 3,
             "translation sampler should expose vec3 component count");
@@ -613,8 +615,7 @@ void test_gltf_asset_loads_rigid_animation_channels() {
     require_close(animation.samplers[0].output_values[5], 3.0F,
                   "translation output values should load");
     require(animation.channels[0].node_index == 0, "animation channel target node should load");
-    require(animation.channels[0].target_path ==
-                cubey::asset::GltfAnimationTargetPath::Translation,
+    require(animation.channels[0].target_path == cubey::asset::GltfAnimationTargetPath::Translation,
             "animation channel target path should load");
 
     std::filesystem::remove_all(dir);
@@ -717,8 +718,7 @@ void test_gltf_asset_loads_skinning_and_morph_data() {
     require(asset.skins[0].label == "OneJoint", "skin name should load");
     require(asset.skins[0].joints == std::vector<std::uint32_t>({1}),
             "skin joints should map to node indices");
-    require(asset.skins[0].inverse_bind_matrices.size() == 1,
-            "inverse bind matrices should load");
+    require(asset.skins[0].inverse_bind_matrices.size() == 1, "inverse bind matrices should load");
     require_close(asset.skins[0].inverse_bind_matrices[0][0][0], 1.0F,
                   "inverse bind matrix should load as identity");
 

@@ -165,9 +165,12 @@ full engine architecture.
   `pbr_skybox_pass_info()`, `pbr_forward_pass_info()`, and
   `pbr_post_pass_info()` define the current PBR contract: one scene
   uniform/shadow/IBL set, one material texture/uniform set, model-only per-draw
-  push constants, a skybox environment set, a fullscreen post set, and
-  factor-only reflectance/specular controls. The scene set includes irradiance
-  cube, prefiltered cube, and the DFG/BRDF lookup binding. `PbrDisplayTransform`
+  push constants, a skybox environment set, a fullscreen post set, reflectance
+  controls, and `KHR_materials_specular` factors/textures. Optional extension
+  texture slots stay fixed in the descriptor layout, while material texture
+  flags gate shader fetches for absent textures. The scene set includes
+  irradiance cube, prefiltered cube, and the DFG/BRDF lookup binding.
+  `PbrDisplayTransform`
   carries final exposure, tone-map, and output-encoding controls; the reusable
   forward PBR renderer applies it in the post pass after HDR scene-color
   shading.

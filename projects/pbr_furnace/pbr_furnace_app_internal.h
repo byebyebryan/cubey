@@ -127,6 +127,8 @@ class PbrFurnaceApp {
     std::optional<cubey::render::Texture2D> normal_default_;
     std::optional<cubey::render::Texture2D> occlusion_default_;
     std::optional<cubey::render::Texture2D> emissive_default_;
+    std::optional<cubey::render::Texture2D> specular_default_;
+    std::optional<cubey::render::Texture2D> specular_color_default_;
     std::optional<cubey::render::Texture2D> dummy_shadow_;
     std::optional<WhitePbrEnvironment> white_environment_;
     std::optional<cubey::render::FrameUniformMaterialInstance<cubey::render::PbrSceneUniforms>>

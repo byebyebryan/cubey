@@ -2,8 +2,8 @@
 
 #include "gltf_viewer_app.h"
 
-#include <cubey/asset/gltf_asset.h>
 #include <cubey/animation/gltf_animation.h>
+#include <cubey/asset/gltf_asset.h>
 #include <cubey/core/math.h>
 #include <cubey/engine/engine.h>
 #include <cubey/engine/forward_pbr_renderer_3d.h>
@@ -139,6 +139,8 @@ class GltfViewerApp {
     std::optional<cubey::render::Texture2D> normal_default_;
     std::optional<cubey::render::Texture2D> occlusion_default_;
     std::optional<cubey::render::Texture2D> emissive_default_;
+    std::optional<cubey::render::Texture2D> specular_default_;
+    std::optional<cubey::render::Texture2D> specular_color_default_;
     std::optional<cubey::render::GeneratedPbrEnvironment> ibl_environment_;
 };
 

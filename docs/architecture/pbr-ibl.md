@@ -23,11 +23,12 @@ Radiance HDR equirectangular environment assets:
   PBR forward rendering of a caller-provided 3D frame plan. It renders glTF PBR
   and skybox shading into a linear HDR scene color target, then applies
   exposure, tone mapping, and output encoding in a fullscreen post pass. The
-  shader model uses Filament-style base-color remapping, factor-only
-  IOR/specular material controls, DFG-based IBL, specular energy compensation,
-  correlated Smith direct visibility, indirect specular occlusion, environment
-  rotation, exposure, and tone mapping from the per-frame render request while
-  keeping asset loading, shader paths, and environment selection project-owned;
+  shader model uses Filament-style base-color remapping, factor-only IOR
+  controls, `KHR_materials_specular` factors/textures, DFG-based IBL, specular
+  energy compensation, correlated Smith direct visibility, indirect specular
+  occlusion, environment rotation, exposure, and tone mapping from the
+  per-frame render request while keeping asset loading, shader paths, and
+  environment selection project-owned;
 - `pbr_furnace` isolates the current IBL/specular behavior with a white sphere
   grid that sweeps roughness across columns and metallic across rows under a
   uniform white environment;
@@ -52,17 +53,22 @@ The first IBL contract is:
 - post uniforms: final exposure, tone-map, and output-encoding controls applied
   to the HDR scene color before writing the caller's target;
 - material descriptor set: base-color, metallic-roughness, normal, occlusion,
-  and emissive textures plus a per-material uniform block for factors.
+  emissive, specular strength, and specular color textures plus a per-material
+  uniform block for factors and optional texture-presence flags.
 
 The shared shader include remaps `baseColor` into `diffuseColor =
 baseColor * (1 - metallic)` and computes dielectric F0 from Filament-style
-reflectance (`F0 = 0.16 * reflectance^2`) plus factor-only glTF
-`KHR_materials_specular` controls before mixing toward metallic `baseColor`.
+reflectance (`F0 = 0.16 * reflectance^2`) plus glTF
+`KHR_materials_specular` controls and extension textures before mixing toward
+metallic `baseColor`.
 Diffuse lighting uses `diffuseColor` directly; Fresnel-derived attenuation
 stays on the specular path, where the DFG blue channel provides the
 single-scatter energy term used for multiscatter compensation. Per-draw push
 constants now carry only the model transform; material factors live in the
 material descriptor set.
+Optional extension textures still use fixed descriptor slots with default
+fallback textures, but shader fetches are gated by per-material flags so the
+common path does not sample absent specular textures.
 
 The current display transform is intentionally small: exposure in stops, a
 linear-or-ACES tone-map selector, and an output-encoding selector. The reusable
@@ -78,8 +84,6 @@ renderer-wide material management explicit future work.
 
 ## Remaining Gaps
 
-- glTF specular textures are still absent; only factor-only
-  `KHR_materials_ior` and `KHR_materials_specular` are imported.
 - Color management is still minimal: the reusable PBR renderer now has an HDR
   scene color target and fullscreen post pass, but no color grading, bloom,
   HDR10/output-device policy, or automatic exposure.
@@ -94,8 +98,8 @@ renderer-wide material management explicit future work.
 
 - Do not add KTX loading or an offline IBL baking pipeline to the direct-HDR
   checkpoint.
-- Do not add specular, clearcoat, transmission, or other extension textures to
-  the material descriptor set yet.
+- Do not add clearcoat, transmission, or other extension textures to the
+  material descriptor set yet.
 - Do not turn `cubey::render` into a renderer singleton or material manager.
 - Do not hide Vulkan layout transitions, descriptor writes, or pass ordering.
 - Do not add glTF animation, skinning, or additional material extensions as

@@ -58,6 +58,8 @@ void PbrFurnaceApp::destroy_all_resources() {
     normal_default_.reset();
     metallic_roughness_default_.reset();
     emissive_default_.reset();
+    specular_color_default_.reset();
+    specular_default_.reset();
     occlusion_default_.reset();
     base_color_default_.reset();
 }

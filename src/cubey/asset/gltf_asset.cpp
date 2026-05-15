@@ -153,14 +153,15 @@ void require_optional_color_accessor(const cgltf_accessor* accessor, const char*
                                                             cgltf_size component_count,
                                                             const char* label);
 
-[[nodiscard]] std::vector<math::Vec4>
-read_color_accessor_values(const cgltf_accessor* accessor, const char* label) {
+[[nodiscard]] std::vector<math::Vec4> read_color_accessor_values(const cgltf_accessor* accessor,
+                                                                 const char* label) {
     require_optional_color_accessor(accessor, label);
     if (accessor == nullptr) {
         return {};
     }
     const cgltf_size component_count = cgltf_num_components(accessor->type);
-    const std::vector<float> unpacked = read_float_accessor_values(accessor, component_count, label);
+    const std::vector<float> unpacked =
+        read_float_accessor_values(accessor, component_count, label);
     std::vector<math::Vec4> values;
     values.reserve(accessor->count);
     for (cgltf_size i = 0; i < accessor->count; ++i) {
@@ -229,6 +230,14 @@ read_color_accessor_values(const cgltf_accessor* accessor, const char* label) {
         .roughness_factor = pbr.roughness_factor,
         .specular_color_factor = specular_color,
         .specular_factor = material.has_specular != 0 ? material.specular.specular_factor : 1.0F,
+        .specular_texture =
+            material.has_specular != 0
+                ? load_texture_ref(material.specular.specular_texture, texture_base, texture_count)
+                : GltfTextureRef{},
+        .specular_color_texture = material.has_specular != 0
+                                      ? load_texture_ref(material.specular.specular_color_texture,
+                                                         texture_base, texture_count)
+                                      : GltfTextureRef{},
         .reflectance = material.has_ior != 0 ? reflectance_from_ior(material.ior.ior) : 0.5F,
         .emissive_factor =
             {
@@ -267,9 +276,9 @@ read_color_accessor_values(const cgltf_accessor* accessor, const char* label) {
 [[nodiscard]] const cgltf_accessor* find_attribute(const cgltf_primitive& primitive,
                                                    cgltf_attribute_type type,
                                                    cgltf_int index = 0) noexcept {
-    return find_attribute(std::span<const cgltf_attribute>{primitive.attributes,
-                                                           primitive.attributes_count},
-                          type, index);
+    return find_attribute(
+        std::span<const cgltf_attribute>{primitive.attributes, primitive.attributes_count}, type,
+        index);
 }
 
 void require_accessor_components(const cgltf_accessor* accessor, cgltf_size components,
@@ -355,13 +364,11 @@ void require_optional_morph_accessor_count(const cgltf_accessor* accessor, cgltf
 
 [[nodiscard]] math::Vec4 vec4_at(std::span<const float> values, std::size_t index) {
     const std::size_t offset = index * 4U;
-    return {values[offset + 0U], values[offset + 1U], values[offset + 2U],
-            values[offset + 3U]};
+    return {values[offset + 0U], values[offset + 1U], values[offset + 2U], values[offset + 3U]};
 }
 
 [[nodiscard]] std::array<std::uint16_t, 4> u16_vec4_at(std::span<const float> values,
-                                                       std::size_t index,
-                                                       const char* label) {
+                                                       std::size_t index, const char* label) {
     const std::size_t offset = index * 4U;
     std::array<std::uint16_t, 4> result{};
     for (std::size_t component = 0; component < result.size(); ++component) {
@@ -540,18 +547,18 @@ void require_supported_skin_attributes(const cgltf_primitive& primitive) {
 void require_supported_morph_target_attributes(const cgltf_morph_target& target) {
     for (cgltf_size i = 0; i < target.attributes_count; ++i) {
         const cgltf_attribute& attribute = target.attributes[i];
-        const bool supported = attribute.index == 0 &&
-                               (attribute.type == cgltf_attribute_type_position ||
-                                attribute.type == cgltf_attribute_type_normal ||
-                                attribute.type == cgltf_attribute_type_tangent);
+        const bool supported =
+            attribute.index == 0 && (attribute.type == cgltf_attribute_type_position ||
+                                     attribute.type == cgltf_attribute_type_normal ||
+                                     attribute.type == cgltf_attribute_type_tangent);
         if (!supported) {
             throw gltf_error("unsupported morph target attribute");
         }
     }
 }
 
-[[nodiscard]] std::vector<math::Vec3>
-read_vec3_accessor_values(const cgltf_accessor* accessor, const char* label) {
+[[nodiscard]] std::vector<math::Vec3> read_vec3_accessor_values(const cgltf_accessor* accessor,
+                                                                const char* label) {
     require_optional_float_accessor(accessor, cgltf_type_vec3, label);
     if (accessor == nullptr) {
         return {};
@@ -575,13 +582,11 @@ read_vec3_accessor_values(const cgltf_accessor* accessor, const char* label) {
 }
 
 [[nodiscard]] GltfMorphTarget load_morph_target(const cgltf_morph_target& target,
-                                                cgltf_size vertex_count,
-                                                std::string label) {
+                                                cgltf_size vertex_count, std::string label) {
     require_supported_morph_target_attributes(target);
     const auto attributes =
         std::span<const cgltf_attribute>{target.attributes, target.attributes_count};
-    const cgltf_accessor* positions =
-        find_attribute(attributes, cgltf_attribute_type_position);
+    const cgltf_accessor* positions = find_attribute(attributes, cgltf_attribute_type_position);
     const cgltf_accessor* normals = find_attribute(attributes, cgltf_attribute_type_normal);
     const cgltf_accessor* tangents = find_attribute(attributes, cgltf_attribute_type_tangent);
     require_optional_morph_accessor_count(positions, vertex_count, "POSITION");
@@ -626,8 +631,7 @@ void expand_bounds_for_morph_targets(GltfMeshPrimitive& primitive) {
 
 [[nodiscard]] GltfMeshPrimitive load_primitive(const cgltf_primitive& primitive,
                                                const cgltf_material* material_base,
-                                               cgltf_size material_count,
-                                               char* const* target_names,
+                                               cgltf_size material_count, char* const* target_names,
                                                cgltf_size target_names_count,
                                                const GltfLoadConfig& config) {
     if (primitive.type != cgltf_primitive_type_triangles) {
@@ -661,17 +665,18 @@ void expand_bounds_for_morph_targets(GltfMeshPrimitive& primitive) {
     if ((joints0 == nullptr) != (weights0 == nullptr)) {
         throw gltf_error("JOINTS_0 and WEIGHTS_0 must be provided together");
     }
-    if (joints0 != nullptr &&
-        (joints0->component_type != cgltf_component_type_r_8u &&
-         joints0->component_type != cgltf_component_type_r_16u)) {
+    if (joints0 != nullptr && (joints0->component_type != cgltf_component_type_r_8u &&
+                               joints0->component_type != cgltf_component_type_r_16u)) {
         throw gltf_error("JOINTS_0 must use UNSIGNED_BYTE or UNSIGNED_SHORT components");
     }
 
     const std::vector<float> position_values = read_float_accessor_values(positions, 3, "POSITION");
-    const std::vector<float> normal_values =
-        normals != nullptr ? read_float_accessor_values(normals, 3, "NORMAL") : std::vector<float>{};
+    const std::vector<float> normal_values = normals != nullptr
+                                                 ? read_float_accessor_values(normals, 3, "NORMAL")
+                                                 : std::vector<float>{};
     const std::vector<float> tangent_values =
-        tangents != nullptr ? read_float_accessor_values(tangents, 4, "TANGENT") : std::vector<float>{};
+        tangents != nullptr ? read_float_accessor_values(tangents, 4, "TANGENT")
+                            : std::vector<float>{};
     const std::vector<float> texcoord0_values =
         texcoord0 != nullptr ? read_float_accessor_values(texcoord0, 2, "TEXCOORD_0")
                              : std::vector<float>{};
@@ -739,9 +744,9 @@ void expand_bounds_for_morph_targets(GltfMeshPrimitive& primitive) {
     }
     result.morph_targets.reserve(primitive.targets_count);
     for (cgltf_size i = 0; i < primitive.targets_count; ++i) {
-        result.morph_targets.push_back(load_morph_target(
-            primitive.targets[i], positions->count,
-            morph_target_label(target_names, target_names_count, i)));
+        result.morph_targets.push_back(
+            load_morph_target(primitive.targets[i], positions->count,
+                              morph_target_label(target_names, target_names_count, i)));
     }
     if (normals == nullptr) {
         generate_flat_normals(result);
@@ -762,8 +767,8 @@ void expand_bounds_for_morph_targets(GltfMeshPrimitive& primitive) {
     result.primitives.reserve(mesh.primitives_count);
     for (cgltf_size i = 0; i < mesh.primitives_count; ++i) {
         result.primitives.push_back(load_primitive(mesh.primitives[i], material_base,
-                                                  material_count, mesh.target_names,
-                                                  mesh.target_names_count, config));
+                                                   material_count, mesh.target_names,
+                                                   mesh.target_names_count, config));
     }
     result.weights.reserve(mesh.weights_count);
     for (cgltf_size i = 0; i < mesh.weights_count; ++i) {
@@ -839,8 +844,7 @@ void expand_bounds_for_morph_targets(GltfMeshPrimitive& primitive) {
     }
 
     if (skin.inverse_bind_matrices != nullptr) {
-        require_float_accessor(skin.inverse_bind_matrices, cgltf_type_mat4,
-                               "inverseBindMatrices");
+        require_float_accessor(skin.inverse_bind_matrices, cgltf_type_mat4, "inverseBindMatrices");
         if (skin.inverse_bind_matrices->count != skin.joints_count) {
             throw gltf_error("inverseBindMatrices count must match skin joint count");
         }
@@ -921,8 +925,7 @@ load_animation_interpolation(cgltf_interpolation_type interpolation) {
 }
 
 [[nodiscard]] GltfAnimation load_animation(const cgltf_animation& animation,
-                                           const cgltf_node* node_base,
-                                           cgltf_size node_count) {
+                                           const cgltf_node* node_base, cgltf_size node_count) {
     GltfAnimation result{
         .label = label_or_empty(animation.name),
     };
@@ -953,11 +956,8 @@ load_animation_interpolation(cgltf_interpolation_type interpolation) {
 
 [[nodiscard]] bool supports_required_extension(std::string_view extension) noexcept {
     static constexpr std::array<std::string_view, 5> kSupportedRequiredExtensions{
-        "KHR_materials_emissive_strength",
-        "KHR_materials_ior",
-        "KHR_materials_specular",
-        "KHR_texture_transform",
-        "KHR_materials_unlit",
+        "KHR_materials_emissive_strength", "KHR_materials_ior",   "KHR_materials_specular",
+        "KHR_texture_transform",           "KHR_materials_unlit",
     };
     return std::ranges::find(kSupportedRequiredExtensions, extension) !=
            kSupportedRequiredExtensions.end();
@@ -969,8 +969,7 @@ void reject_unsupported_features(const cgltf_data& data) {
                                                ? std::string_view{data.extensions_required[i]}
                                                : std::string_view{};
         if (!supports_required_extension(extension)) {
-            throw gltf_error("required glTF extension is not supported: " +
-                             std::string(extension));
+            throw gltf_error("required glTF extension is not supported: " + std::string(extension));
         }
     }
 }
@@ -1054,9 +1053,8 @@ GltfAsset load_gltf_asset(const std::filesystem::path& path, GltfLoadConfig conf
 
     asset.skins.reserve(data->skins_count);
     for (cgltf_size i = 0; i < data->skins_count; ++i) {
-        asset.skins.push_back(
-            load_skin(data->skins[i], data->skins, data->skins_count, data->nodes,
-                      data->nodes_count));
+        asset.skins.push_back(load_skin(data->skins[i], data->skins, data->skins_count, data->nodes,
+                                        data->nodes_count));
     }
 
     asset.scenes.reserve(data->scenes_count);

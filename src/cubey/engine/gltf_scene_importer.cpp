@@ -344,6 +344,8 @@ void destroy_gltf_scene_import(Engine& engine, GltfSceneImportResources& resourc
     resources.mesh_primitives.clear();
     resources.textures.clear();
     resources.emissive_default.reset();
+    resources.specular_color_default.reset();
+    resources.specular_default.reset();
     resources.occlusion_default.reset();
     resources.normal_default.reset();
     resources.metallic_roughness_default.reset();

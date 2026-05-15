@@ -7,7 +7,7 @@ struct PbrTextureTransform {
     vec4 rotation_texcoord;
 };
 
-layout(set = 1, binding = 5) uniform PbrMaterialUniforms {
+layout(set = 1, binding = 7) uniform PbrMaterialUniforms {
     vec4 base_color_factor;
     vec4 emissive_alpha_cutoff;
     vec4 metallic_roughness_normal_occlusion;
@@ -18,6 +18,8 @@ layout(set = 1, binding = 5) uniform PbrMaterialUniforms {
     PbrTextureTransform normal_transform;
     PbrTextureTransform occlusion_transform;
     PbrTextureTransform emissive_transform;
+    PbrTextureTransform specular_transform;
+    PbrTextureTransform specular_color_transform;
 } material;
 
 layout(location = 0) in vec2 frag_uv0;

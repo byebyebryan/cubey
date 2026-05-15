@@ -65,8 +65,7 @@ constexpr float kMaterialGridSpacingY = 1.12F;
 constexpr cubey::math::Vec3 kMaterialCubeScale{0.42F, 0.42F, 0.42F};
 constexpr cubey::math::Vec4 kNeutralMaterialBaseColor{0.56F, 0.55F, 0.52F, 1.0F};
 constexpr float kMinimumRoughness = 0.04F;
-const cubey::math::Vec3 kLightDirection =
-    glm::normalize(cubey::math::Vec3{0.45F, 0.82F, 0.35F});
+const cubey::math::Vec3 kLightDirection = glm::normalize(cubey::math::Vec3{0.45F, 0.82F, 0.35F});
 
 std::filesystem::path shader_path(const char* filename) {
     return std::filesystem::path(CUBEY_MATERIAL_CUBES_SHADER_DIR) / filename;
@@ -127,8 +126,7 @@ struct MaterialVariant {
     return static_cast<float>(index) / static_cast<float>(count - 1U);
 }
 
-[[nodiscard]] MaterialVariant material_variant_for_cell(std::uint32_t row,
-                                                        std::uint32_t column) {
+[[nodiscard]] MaterialVariant material_variant_for_cell(std::uint32_t row, std::uint32_t column) {
     const float column_t = material_grid_t(column, kMaterialGridColumns);
     const float row_t = material_grid_t(row, kMaterialGridRows);
     return {
@@ -156,8 +154,7 @@ struct MaterialVariant {
     };
 }
 
-[[nodiscard]] cubey::render::PrimitiveMeshData<cubey::render::PbrVertex>
-make_pbr_cube_mesh() {
+[[nodiscard]] cubey::render::PrimitiveMeshData<cubey::render::PbrVertex> make_pbr_cube_mesh() {
     const cubey::render::PrimitiveMeshData<cubey::render::VertexPositionColorNormalUv> cube =
         cubey::render::make_cube_position_color_normal_uv_mesh();
 
@@ -278,27 +275,34 @@ class MaterialCubesApp {
         normal_default_.reset();
         metallic_roughness_default_.reset();
         emissive_default_.reset();
+        specular_color_default_.reset();
+        specular_default_.reset();
         occlusion_default_.reset();
         base_color_default_.reset();
     }
 
     void create_default_textures(const cubey::vulkan::Device& device,
                                  cubey::vulkan::GpuRuntime& gpu) {
-        base_color_default_.emplace(create_solid_texture(device, gpu, {255, 255, 255, 255},
-                                                         VK_FORMAT_R8G8B8A8_SRGB));
-        metallic_roughness_default_.emplace(create_solid_texture(device, gpu, {255, 255, 255, 255},
-                                                                 VK_FORMAT_R8G8B8A8_UNORM));
-        normal_default_.emplace(create_solid_texture(device, gpu, {128, 128, 255, 255},
-                                                     VK_FORMAT_R8G8B8A8_UNORM));
-        occlusion_default_.emplace(create_solid_texture(device, gpu, {255, 255, 255, 255},
-                                                        VK_FORMAT_R8G8B8A8_UNORM));
-        emissive_default_.emplace(create_solid_texture(device, gpu, {0, 0, 0, 255},
-                                                       VK_FORMAT_R8G8B8A8_SRGB));
+        base_color_default_.emplace(
+            create_solid_texture(device, gpu, {255, 255, 255, 255}, VK_FORMAT_R8G8B8A8_SRGB));
+        metallic_roughness_default_.emplace(
+            create_solid_texture(device, gpu, {255, 255, 255, 255}, VK_FORMAT_R8G8B8A8_UNORM));
+        normal_default_.emplace(
+            create_solid_texture(device, gpu, {128, 128, 255, 255}, VK_FORMAT_R8G8B8A8_UNORM));
+        occlusion_default_.emplace(
+            create_solid_texture(device, gpu, {255, 255, 255, 255}, VK_FORMAT_R8G8B8A8_UNORM));
+        emissive_default_.emplace(
+            create_solid_texture(device, gpu, {0, 0, 0, 255}, VK_FORMAT_R8G8B8A8_SRGB));
+        specular_default_.emplace(
+            create_solid_texture(device, gpu, {255, 255, 255, 255}, VK_FORMAT_R8G8B8A8_UNORM));
+        specular_color_default_.emplace(
+            create_solid_texture(device, gpu, {255, 255, 255, 255}, VK_FORMAT_R8G8B8A8_SRGB));
     }
 
-    [[nodiscard]] cubey::render::Texture2D
-    create_solid_texture(const cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu,
-                         std::array<std::uint8_t, 4> color, VkFormat format) {
+    [[nodiscard]] cubey::render::Texture2D create_solid_texture(const cubey::vulkan::Device& device,
+                                                                cubey::vulkan::GpuRuntime& gpu,
+                                                                std::array<std::uint8_t, 4> color,
+                                                                VkFormat format) {
         return cubey::render::create_uploaded_texture_2d(
             device, gpu,
             {
@@ -320,23 +324,21 @@ class MaterialCubesApp {
                     .sort_key = index,
                 });
             material_handles_.push_back(material);
-            material_factors_.emplace(
-                material, cubey::render::PbrMaterialFactors{
-                              .base_color_factor = variant.base_color,
-                              .metallic_factor = variant.metallic,
-                              .roughness_factor = variant.roughness,
-                              .reflectance = 0.5F,
-                          });
-            material_instances_.emplace(
-                material, device,
-                cubey::render::FrameUniformMaterialInstanceConfig{
-                    .material_pass = cubey::render::pbr_forward_pass_info(),
-                    .descriptor_set = 1,
-                    .frame_slot_count = frame_slot_count,
-                    .uniform_binding =
-                        static_cast<std::uint32_t>(cubey::render::PbrMaterialBinding::Uniforms),
-                    .sampled_images = material_sampled_images(),
-                });
+            material_factors_.emplace(material, cubey::render::PbrMaterialFactors{
+                                                    .base_color_factor = variant.base_color,
+                                                    .metallic_factor = variant.metallic,
+                                                    .roughness_factor = variant.roughness,
+                                                    .reflectance = 0.5F,
+                                                });
+            material_instances_.emplace(material, device,
+                                        cubey::render::FrameUniformMaterialInstanceConfig{
+                                            .material_pass = cubey::render::pbr_forward_pass_info(),
+                                            .descriptor_set = 1,
+                                            .frame_slot_count = frame_slot_count,
+                                            .uniform_binding = static_cast<std::uint32_t>(
+                                                cubey::render::PbrMaterialBinding::Uniforms),
+                                            .sampled_images = material_sampled_images(),
+                                        });
         }
     }
 
@@ -356,6 +358,8 @@ class MaterialCubesApp {
             sampled(cubey::render::PbrMaterialBinding::Normal),
             sampled(cubey::render::PbrMaterialBinding::Occlusion),
             sampled(cubey::render::PbrMaterialBinding::Emissive),
+            sampled(cubey::render::PbrMaterialBinding::Specular),
+            sampled(cubey::render::PbrMaterialBinding::SpecularColor),
         };
     }
 
@@ -411,8 +415,7 @@ class MaterialCubesApp {
         setup.commit();
     }
 
-    void create_ibl_resources(const cubey::vulkan::Device& device,
-                              cubey::vulkan::GpuRuntime& gpu) {
+    void create_ibl_resources(const cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu) {
         cubey::render::GeneratedPbrEnvironmentConfig ibl_config;
         ibl_config.intensity = config_.ibl_intensity;
 
@@ -421,8 +424,8 @@ class MaterialCubesApp {
                 throw std::runtime_error("environment HDR does not exist: " +
                                          config_.environment_path.string());
             }
-            const cubey::asset::HdrImage image = cubey::asset::load_hdr_image(
-                config_.environment_path);
+            const cubey::asset::HdrImage image =
+                cubey::asset::load_hdr_image(config_.environment_path);
             ibl_environment_.emplace(cubey::render::create_pbr_environment_from_equirectangular(
                 device, gpu,
                 cubey::render::PbrEquirectangularImage{
@@ -479,14 +482,14 @@ class MaterialCubesApp {
             cubey::scene::RenderPassPlan3D{
                 .label = "shadow",
                 .kind = cubey::scene::RenderPassKind3D::DepthOnly,
-                .frame_plan = cubey::scene::build_render_frame_plan_3d(
-                    shadow_view, view, engine_.render_resources()),
+                .frame_plan = cubey::scene::build_render_frame_plan_3d(shadow_view, view,
+                                                                       engine_.render_resources()),
             },
             cubey::scene::RenderPassPlan3D{
                 .label = "scene",
                 .kind = cubey::scene::RenderPassKind3D::Color,
-                .frame_plan = cubey::scene::build_render_frame_plan_3d(
-                    scene_view, view, engine_.render_resources()),
+                .frame_plan = cubey::scene::build_render_frame_plan_3d(scene_view, view,
+                                                                       engine_.render_resources()),
             },
         });
         if (frame_plan.passes()[1].frame_plan.draw_packets.size() != kMaterialCubeCount) {
@@ -606,6 +609,12 @@ class MaterialCubesApp {
         case cubey::render::PbrMaterialBinding::Emissive:
             texture = &emissive_default_;
             break;
+        case cubey::render::PbrMaterialBinding::Specular:
+            texture = &specular_default_;
+            break;
+        case cubey::render::PbrMaterialBinding::SpecularColor:
+            texture = &specular_color_default_;
+            break;
         case cubey::render::PbrMaterialBinding::Uniforms:
             break;
         }
@@ -657,6 +666,8 @@ class MaterialCubesApp {
     std::optional<cubey::render::Texture2D> normal_default_;
     std::optional<cubey::render::Texture2D> occlusion_default_;
     std::optional<cubey::render::Texture2D> emissive_default_;
+    std::optional<cubey::render::Texture2D> specular_default_;
+    std::optional<cubey::render::Texture2D> specular_color_default_;
     std::optional<cubey::render::GeneratedPbrEnvironment> ibl_environment_;
 };
 

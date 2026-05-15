@@ -89,6 +89,8 @@ struct GltfMaterial {
     float roughness_factor = 1.0F;
     math::Vec3 specular_color_factor{1.0F, 1.0F, 1.0F};
     float specular_factor = 1.0F;
+    GltfTextureRef specular_texture{};
+    GltfTextureRef specular_color_texture{};
     float reflectance = 0.5F;
     math::Vec3 emissive_factor{0.0F, 0.0F, 0.0F};
     float normal_scale = 1.0F;
@@ -208,7 +210,8 @@ struct GltfLoadConfig {
                                         GltfLoadConfig config = {});
 [[nodiscard]] const char* gltf_alpha_mode_name(GltfAlphaMode mode) noexcept;
 [[nodiscard]] GltfTextureColorSpace gltf_texture_color_space_for_base_color() noexcept;
-[[nodiscard]] GltfTextureColorSpace gltf_texture_color_space_for_material_slot(
-    const GltfTextureRef& texture, GltfTextureColorSpace default_space) noexcept;
+[[nodiscard]] GltfTextureColorSpace
+gltf_texture_color_space_for_material_slot(const GltfTextureRef& texture,
+                                           GltfTextureColorSpace default_space) noexcept;
 
 } // namespace cubey::asset

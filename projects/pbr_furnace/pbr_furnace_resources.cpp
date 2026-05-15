@@ -37,6 +37,10 @@ void PbrFurnaceApp::create_default_textures(const cubey::vulkan::Device& device,
         create_solid_texture(device, gpu, {255, 255, 255, 255}, VK_FORMAT_R8G8B8A8_UNORM));
     emissive_default_.emplace(
         create_solid_texture(device, gpu, {0, 0, 0, 255}, VK_FORMAT_R8G8B8A8_SRGB));
+    specular_default_.emplace(
+        create_solid_texture(device, gpu, {255, 255, 255, 255}, VK_FORMAT_R8G8B8A8_UNORM));
+    specular_color_default_.emplace(
+        create_solid_texture(device, gpu, {255, 255, 255, 255}, VK_FORMAT_R8G8B8A8_SRGB));
 }
 
 cubey::render::Texture2D PbrFurnaceApp::create_solid_texture(const cubey::vulkan::Device& device,
@@ -138,6 +142,8 @@ PbrFurnaceApp::material_sampled_images() const {
         sampled(cubey::render::PbrMaterialBinding::Normal),
         sampled(cubey::render::PbrMaterialBinding::Occlusion),
         sampled(cubey::render::PbrMaterialBinding::Emissive),
+        sampled(cubey::render::PbrMaterialBinding::Specular),
+        sampled(cubey::render::PbrMaterialBinding::SpecularColor),
     };
 }
 
@@ -178,6 +184,12 @@ PbrFurnaceApp::default_texture(cubey::render::PbrMaterialBinding binding) const 
         break;
     case cubey::render::PbrMaterialBinding::Emissive:
         texture = &emissive_default_;
+        break;
+    case cubey::render::PbrMaterialBinding::Specular:
+        texture = &specular_default_;
+        break;
+    case cubey::render::PbrMaterialBinding::SpecularColor:
+        texture = &specular_color_default_;
         break;
     case cubey::render::PbrMaterialBinding::Uniforms:
         break;
