@@ -72,22 +72,6 @@ cubey::ForwardPbrRenderer3DConfig forward_pbr_renderer_3d_config() {
         CUBEY_MATERIAL_CUBES_SHADER_DIR, {.shadow_extent = kShadowMapSize});
 }
 
-cubey::render::RenderGraphTextureState undefined_texture_state() {
-    return {
-        .layout = VK_IMAGE_LAYOUT_UNDEFINED,
-        .access_mask = 0,
-        .stage_mask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-    };
-}
-
-cubey::render::RenderGraphTextureState present_texture_state() {
-    return {
-        .layout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
-        .access_mask = 0,
-        .stage_mask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
-    };
-}
-
 cubey::Transform3D look_at_transform(cubey::math::Vec3 eye, cubey::math::Vec3 target) {
     const cubey::math::Vec3 forward = glm::normalize(target - eye);
     cubey::math::Vec3 up{0.0F, 1.0F, 0.0F};
@@ -451,8 +435,8 @@ class MaterialCubesApp {
             .command_buffer = frame.command_buffer,
             .color_target = frame.color_target,
             .frame_slot = frame.frame_slot,
-            .color_initial_state = undefined_texture_state(),
-            .color_final_state = present_texture_state(),
+            .color_initial_state = cubey::render::render_graph_undefined_texture_state(),
+            .color_final_state = cubey::render::render_graph_present_texture_state(),
             .command_buffer_label = "vkEndCommandBuffer material_cubes",
             .scene = &scene_view,
             .frame_plan = &frame_plan,

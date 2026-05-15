@@ -19,24 +19,6 @@ struct ForwardPbrRenderer3DShadowPushConstants {
 
 static_assert(sizeof(ForwardPbrRenderer3DShadowPushConstants) == sizeof(math::Mat4));
 
-[[nodiscard]] inline render::RenderGraphTextureState
-forward_pbr_renderer_3d_undefined_texture_state() {
-    return {
-        .layout = VK_IMAGE_LAYOUT_UNDEFINED,
-        .access_mask = 0,
-        .stage_mask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-    };
-}
-
-[[nodiscard]] inline render::RenderGraphTextureState
-forward_pbr_renderer_3d_sampled_depth_texture_state() {
-    return {
-        .layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
-        .access_mask = VK_ACCESS_SHADER_READ_BIT,
-        .stage_mask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-    };
-}
-
 [[nodiscard]] inline math::Vec3
 forward_pbr_renderer_3d_camera_world_position(const SceneReadView& view, Entity camera) {
     const TransformInstance3D instance = view.transforms3d().instance(camera);

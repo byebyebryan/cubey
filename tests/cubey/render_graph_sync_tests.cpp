@@ -108,7 +108,8 @@ void test_render_graph_derives_imported_texture_acquire_and_release_barriers() {
     cubey::render::RenderGraphBuilder graph;
     const cubey::render::RenderGraphTextureHandle backbuffer =
         graph.import_texture(color_texture_desc("backbuffer"), image(0x601), view(0x602),
-                             undefined_texture_state(), present_texture_state());
+                             cubey::render::render_graph_undefined_texture_state(),
+                             cubey::render::render_graph_present_texture_state());
 
     graph.add_pass("scene", cubey::render::RenderGraphQueueDomain::Graphics)
         .write_color(backbuffer);

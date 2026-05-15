@@ -99,6 +99,11 @@ struct RenderGraphBufferState {
     friend bool operator==(RenderGraphBufferState lhs, RenderGraphBufferState rhs) = default;
 };
 
+[[nodiscard]] RenderGraphTextureState render_graph_undefined_texture_state() noexcept;
+[[nodiscard]] RenderGraphTextureState render_graph_present_texture_state() noexcept;
+[[nodiscard]] RenderGraphTextureState render_graph_color_attachment_texture_state() noexcept;
+[[nodiscard]] RenderGraphTextureState render_graph_sampled_depth_texture_state() noexcept;
+
 struct RenderGraphTextureDesc {
     std::string label{};
     VkExtent2D extent{};

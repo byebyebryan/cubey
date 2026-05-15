@@ -6,6 +6,42 @@
 
 using namespace cubey::tests::render_graph;
 
+void test_render_graph_texture_state_helpers_describe_common_frame_states() {
+    const cubey::render::RenderGraphTextureState undefined =
+        cubey::render::render_graph_undefined_texture_state();
+    require(undefined.layout == VK_IMAGE_LAYOUT_UNDEFINED,
+            "undefined helper should describe undefined layout");
+    require(undefined.access_mask == 0, "undefined helper should not request access");
+    require(undefined.stage_mask == VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+            "undefined helper should use top-of-pipe stage");
+
+    const cubey::render::RenderGraphTextureState present =
+        cubey::render::render_graph_present_texture_state();
+    require(present.layout == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+            "present helper should describe swapchain present layout");
+    require(present.access_mask == 0, "present helper should not request access");
+    require(present.stage_mask == VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+            "present helper should use bottom-of-pipe stage");
+
+    const cubey::render::RenderGraphTextureState color =
+        cubey::render::render_graph_color_attachment_texture_state();
+    require(color.layout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+            "color helper should describe color attachment layout");
+    require(color.access_mask == VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+            "color helper should request color attachment writes");
+    require(color.stage_mask == VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+            "color helper should use color attachment output stage");
+
+    const cubey::render::RenderGraphTextureState sampled_depth =
+        cubey::render::render_graph_sampled_depth_texture_state();
+    require(sampled_depth.layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
+            "sampled depth helper should describe sampled depth layout");
+    require(sampled_depth.access_mask == VK_ACCESS_SHADER_READ_BIT,
+            "sampled depth helper should request shader reads");
+    require(sampled_depth.stage_mask == VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+            "sampled depth helper should use fragment shader stage");
+}
+
 void test_render_graph_imports_color_and_depth_targets() {
     cubey::render::RenderGraphBuilder graph;
     const cubey::render::ColorTargetView color = cubey::render::color_target_view(

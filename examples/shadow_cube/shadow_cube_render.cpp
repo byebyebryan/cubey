@@ -72,28 +72,4 @@ cubey::render::MaterialPassInfo shadow_present_pass_info() {
     };
 }
 
-cubey::render::RenderGraphTextureState undefined_texture_state() {
-    return {
-        .layout = VK_IMAGE_LAYOUT_UNDEFINED,
-        .access_mask = 0,
-        .stage_mask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-    };
-}
-
-cubey::render::RenderGraphTextureState sampled_depth_texture_state() {
-    return {
-        .layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
-        .access_mask = VK_ACCESS_SHADER_READ_BIT,
-        .stage_mask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-    };
-}
-
-cubey::render::RenderGraphTextureState present_texture_state() {
-    return {
-        .layout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
-        .access_mask = 0,
-        .stage_mask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
-    };
-}
-
 } // namespace cubey::examples::shadow_cube::detail

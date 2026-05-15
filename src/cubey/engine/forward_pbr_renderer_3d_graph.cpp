@@ -138,10 +138,10 @@ ForwardPbrRenderer3D::CompiledGraph ForwardPbrRenderer3D::current_render_graph(
         });
     const render::RenderGraphTextureHandle scene_depth =
         graph.import_depth_target("scene depth", render::depth_target_view(depth_attachment()),
-                                  forward_pbr_renderer_3d_undefined_texture_state());
+                                  render::render_graph_undefined_texture_state());
     const std::optional<render::RenderGraphTextureState> shadow_initial_state =
-        shadow_depth_is_sampled_ ? forward_pbr_renderer_3d_sampled_depth_texture_state()
-                                 : forward_pbr_renderer_3d_undefined_texture_state();
+        shadow_depth_is_sampled_ ? render::render_graph_sampled_depth_texture_state()
+                                 : render::render_graph_undefined_texture_state();
     const render::RenderGraphTextureHandle shadow_depth = graph.import_depth_target(
         "shadow depth", shadow_pass().depth_target(), shadow_initial_state);
     const DeformationBufferMap deformation_vertex_buffers =

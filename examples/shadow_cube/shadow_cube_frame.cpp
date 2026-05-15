@@ -15,8 +15,10 @@ ShadowCubeApp::ShadowRenderGraph ShadowCubeApp::current_render_graph(
     const cubey::scene::RenderFramePlan3D& shadow_plan,
     const cubey::scene::RenderFramePlan3D& scene_plan) const {
     cubey::render::RenderGraphBuilder graph;
-    const cubey::render::RenderGraphTextureHandle backbuffer_handle = graph.import_color_target(
-        "backbuffer", frame.color_target, undefined_texture_state(), present_texture_state());
+    const cubey::render::RenderGraphTextureHandle backbuffer_handle =
+        graph.import_color_target("backbuffer", frame.color_target,
+                                  cubey::render::render_graph_undefined_texture_state(),
+                                  cubey::render::render_graph_present_texture_state());
     const cubey::render::RenderGraphTextureHandle scene_color_handle =
         graph.create_texture(cubey::render::RenderGraphTextureDesc{
             .label = "scene color",
@@ -27,9 +29,10 @@ ShadowCubeApp::ShadowRenderGraph ShadowCubeApp::current_render_graph(
     const cubey::render::RenderGraphTextureHandle scene_depth_handle =
         graph.import_depth_target("scene depth",
                                   cubey::render::depth_target_view(depth_attachment()),
-                                  undefined_texture_state());
+                                  cubey::render::render_graph_undefined_texture_state());
     const std::optional<cubey::render::RenderGraphTextureState> shadow_initial_state =
-        shadow_depth_is_sampled_ ? sampled_depth_texture_state() : undefined_texture_state();
+        shadow_depth_is_sampled_ ? cubey::render::render_graph_sampled_depth_texture_state()
+                                 : cubey::render::render_graph_undefined_texture_state();
     const cubey::render::RenderGraphTextureHandle shadow_depth_handle =
         graph.import_depth_target("shadow depth", cubey::render::depth_target_view(shadow_depth()),
                                   shadow_initial_state);

@@ -50,30 +50,6 @@ cubey::ForwardPbrRenderer3DConfig forward_pbr_renderer_3d_config() {
         CUBEY_GLTF_VIEWER_SHADER_DIR, {.shadow_extent = kShadowMapSize});
 }
 
-cubey::render::RenderGraphTextureState undefined_texture_state() {
-    return {
-        .layout = VK_IMAGE_LAYOUT_UNDEFINED,
-        .access_mask = 0,
-        .stage_mask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-    };
-}
-
-cubey::render::RenderGraphTextureState present_texture_state() {
-    return {
-        .layout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
-        .access_mask = 0,
-        .stage_mask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
-    };
-}
-
-cubey::render::RenderGraphTextureState color_attachment_texture_state() {
-    return {
-        .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-        .access_mask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-        .stage_mask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-    };
-}
-
 cubey::Transform3D look_at_transform(cubey::math::Vec3 eye, cubey::math::Vec3 target) {
     const cubey::math::Vec3 forward = glm::normalize(target - eye);
     cubey::math::Vec3 up{0.0F, 1.0F, 0.0F};

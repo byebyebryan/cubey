@@ -32,8 +32,4 @@ static_assert(sizeof(ScenePushConstants) == sizeof(cubey::math::Mat4) * 3U);
 [[nodiscard]] cubey::render::MaterialPassInfo shadow_scene_pass_info();
 [[nodiscard]] cubey::render::MaterialPassInfo shadow_present_pass_info();
 
-[[nodiscard]] cubey::render::RenderGraphTextureState undefined_texture_state();
-[[nodiscard]] cubey::render::RenderGraphTextureState sampled_depth_texture_state();
-[[nodiscard]] cubey::render::RenderGraphTextureState present_texture_state();
-
 } // namespace cubey::examples::shadow_cube::detail

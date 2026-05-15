@@ -69,6 +69,7 @@ void test_render_graph_rejects_attachment_usage_outside_graphics_pass();
 void test_render_graph_rejects_incompatible_same_pass_resource_access();
 void test_render_graph_rejects_invalid_resource_descriptors_and_handles();
 void test_render_graph_rejects_transient_texture_read_before_write();
+void test_render_graph_texture_state_helpers_describe_common_frame_states();
 void test_render_graph_resolved_color_target_view_rejects_depth_texture();
 void test_render_graph_resolves_color_target_view_from_bound_transient_texture();
 void test_render_graph_resolves_sampled_color_texture_view();
@@ -142,6 +143,7 @@ std::span<const TestCase> render_test_cases() {
         CUBEY_TEST(test_frame_slot_rejects_invalid_slots),
         CUBEY_TEST(test_frame_uniform_buffer_config_describes_host_visible_uniform_storage),
         CUBEY_TEST(test_frame_uniform_buffer_contract_is_slot_based_and_move_only),
+        CUBEY_TEST(test_render_graph_texture_state_helpers_describe_common_frame_states),
         CUBEY_TEST(test_render_graph_imports_color_and_depth_targets),
         CUBEY_TEST(test_render_graph_creates_transient_texture_and_preserves_pass_order),
         CUBEY_TEST(test_render_graph_declares_shadow_map_then_scene_sample_flow),

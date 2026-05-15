@@ -62,22 +62,6 @@ inline void require_throws(auto&& action, const char* message) {
     };
 }
 
-[[nodiscard]] inline cubey::render::RenderGraphTextureState undefined_texture_state() {
-    return {
-        .layout = VK_IMAGE_LAYOUT_UNDEFINED,
-        .access_mask = 0,
-        .stage_mask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-    };
-}
-
-[[nodiscard]] inline cubey::render::RenderGraphTextureState present_texture_state() {
-    return {
-        .layout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
-        .access_mask = 0,
-        .stage_mask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
-    };
-}
-
 [[nodiscard]] inline cubey::render::RenderGraphBufferState host_written_buffer_state() {
     return {
         .access_mask = VK_ACCESS_HOST_WRITE_BIT,

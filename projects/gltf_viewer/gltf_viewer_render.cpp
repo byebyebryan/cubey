@@ -81,9 +81,11 @@ void GltfViewerApp::record_viewer_target(
 
 void GltfViewerApp::record_viewer_frame(cubey::host::WindowedAppContext& context,
                                         const cubey::host::WindowedRenderFrame& frame) {
-    record_viewer_target(context.device(), frame.command_buffer, frame.color_target,
-                         frame.frame_slot, undefined_texture_state(), present_texture_state(),
-                         cubey::render::RenderGraphCommandBufferMode::BeginAndEnd);
+    record_viewer_target(
+        context.device(), frame.command_buffer, frame.color_target, frame.frame_slot,
+        cubey::render::render_graph_undefined_texture_state(),
+        cubey::render::render_graph_present_texture_state(),
+        cubey::render::RenderGraphCommandBufferMode::BeginAndEnd);
 }
 
 void GltfViewerApp::record_viewer_capture(cubey::host::HeadlessPngContext& context,
@@ -91,7 +93,8 @@ void GltfViewerApp::record_viewer_capture(cubey::host::HeadlessPngContext& conte
                                           const cubey::host::HeadlessRenderTarget& target) {
     record_viewer_target(context.device(), command_buffer, target,
                          cubey::render::FrameSlot{.index = 0, .count = 1},
-                         color_attachment_texture_state(), color_attachment_texture_state(),
+                         cubey::render::render_graph_color_attachment_texture_state(),
+                         cubey::render::render_graph_color_attachment_texture_state(),
                          cubey::render::RenderGraphCommandBufferMode::AlreadyRecording);
 }
 

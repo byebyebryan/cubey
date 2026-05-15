@@ -48,22 +48,6 @@ struct TransferWriteBarrier {
     VkAccessFlags dst_access = 0;
 };
 
-[[nodiscard]] cubey::render::RenderGraphTextureState undefined_texture_state() {
-    return {
-        .layout = VK_IMAGE_LAYOUT_UNDEFINED,
-        .access_mask = 0,
-        .stage_mask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-    };
-}
-
-[[nodiscard]] cubey::render::RenderGraphTextureState present_texture_state() {
-    return {
-        .layout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
-        .access_mask = 0,
-        .stage_mask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
-    };
-}
-
 [[nodiscard]] DispatchGroups compute_dispatch_groups(const Fluid2DConfig& config) {
     return {
         .x = (config.grid_width + config.compute_group_size - 1U) / config.compute_group_size,
@@ -322,8 +306,10 @@ build_fluid_frame_graph(cubey::render::ColorTargetView color_target, Fluid2DGpuR
     const cubey::render::RenderGraphBufferHandle pressure_b = graph.import_buffer(
         {.label = "fluid pressure B", .byte_size = resources.pressure_b().size()},
         resources.pressure_b().handle());
-    const cubey::render::RenderGraphTextureHandle backbuffer = graph.import_color_target(
-        "backbuffer", color_target, undefined_texture_state(), present_texture_state());
+    const cubey::render::RenderGraphTextureHandle backbuffer =
+        graph.import_color_target("backbuffer", color_target,
+                                  cubey::render::render_graph_undefined_texture_state(),
+                                  cubey::render::render_graph_present_texture_state());
 
     graph.add_pass("fluid simulation", cubey::render::RenderGraphQueueDomain::Compute)
         .read_write_storage_buffer(field)
