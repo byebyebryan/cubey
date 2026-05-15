@@ -69,6 +69,8 @@ RunConfig parse_run_config(int argc, char** argv) {
             config.input_path = std::string(need_value("--input"));
         } else if (arg == "--environment") {
             config.environment_path = std::string(need_value("--environment"));
+        } else if (arg == "--debug-view") {
+            config.debug_view = std::string(need_value("--debug-view"));
         } else if (arg == "--ibl-intensity") {
             config.ibl_intensity = parse_float(need_value("--ibl-intensity"), "--ibl-intensity");
         } else if (arg == "--environment-rotation-degrees") {

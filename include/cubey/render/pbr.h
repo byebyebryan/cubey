@@ -9,6 +9,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <string>
+#include <string_view>
 
 namespace cubey::render {
 
@@ -29,6 +30,20 @@ enum class PbrTonemap : std::uint32_t {
 enum class PbrOutputEncoding : std::uint32_t {
     Linear = 0,
     Srgb = 1,
+};
+
+enum class PbrDebugView : std::uint32_t {
+    Final = 0,
+    BaseColor = 1,
+    Normal = 2,
+    GeometricNormal = 3,
+    Roughness = 4,
+    Metallic = 5,
+    Occlusion = 6,
+    Emissive = 7,
+    Shadow = 8,
+    Alpha = 9,
+    Uv0 = 10,
 };
 
 enum class PbrMaterialTextureFlag : std::uint32_t {
@@ -202,6 +217,9 @@ struct PbrForwardPassConfig {
 [[nodiscard]] MaterialPassInfo pbr_forward_pass_info(const PbrForwardPassConfig& config);
 [[nodiscard]] MaterialPassInfo pbr_skybox_pass_info();
 [[nodiscard]] MaterialPassInfo pbr_post_pass_info();
+[[nodiscard]] std::string_view pbr_debug_view_name(PbrDebugView view);
+[[nodiscard]] PbrDebugView pbr_debug_view_from_name(std::string_view name);
+[[nodiscard]] PbrDebugView next_pbr_debug_view(PbrDebugView view);
 [[nodiscard]] PbrDisplayTransform
 pbr_display_transform_for_target(VkFormat target_format, float exposure = 0.0F,
                                  PbrTonemap tonemap = PbrTonemap::Aces);

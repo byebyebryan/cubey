@@ -22,6 +22,7 @@ struct RunConfig {
     std::filesystem::path input_path{};
     std::filesystem::path environment_path{};
     std::filesystem::path output_path = "cubey-output.png";
+    std::string debug_view{};
     float ibl_intensity = 1.0F;
     float environment_rotation_degrees = 0.0F;
     float exposure = 0.0F;

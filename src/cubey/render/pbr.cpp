@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <stdexcept>
 #include <type_traits>
 
 namespace cubey::render {
@@ -299,6 +300,78 @@ math::Vec4 pbr_display_transform_uniform(const PbrDisplayTransform& transform) {
         static_cast<float>(transform.output_encoding),
         0.0F,
     };
+}
+
+std::string_view pbr_debug_view_name(PbrDebugView view) {
+    switch (view) {
+    case PbrDebugView::Final:
+        return "final";
+    case PbrDebugView::BaseColor:
+        return "base-color";
+    case PbrDebugView::Normal:
+        return "normal";
+    case PbrDebugView::GeometricNormal:
+        return "geometric-normal";
+    case PbrDebugView::Roughness:
+        return "roughness";
+    case PbrDebugView::Metallic:
+        return "metallic";
+    case PbrDebugView::Occlusion:
+        return "occlusion";
+    case PbrDebugView::Emissive:
+        return "emissive";
+    case PbrDebugView::Shadow:
+        return "shadow";
+    case PbrDebugView::Alpha:
+        return "alpha";
+    case PbrDebugView::Uv0:
+        return "uv0";
+    }
+    return "final";
+}
+
+PbrDebugView pbr_debug_view_from_name(std::string_view name) {
+    if (name.empty()) {
+        return PbrDebugView::Final;
+    }
+    for (const PbrDebugView view :
+         {PbrDebugView::Final, PbrDebugView::BaseColor, PbrDebugView::Normal,
+          PbrDebugView::GeometricNormal, PbrDebugView::Roughness, PbrDebugView::Metallic,
+          PbrDebugView::Occlusion, PbrDebugView::Emissive, PbrDebugView::Shadow,
+          PbrDebugView::Alpha, PbrDebugView::Uv0}) {
+        if (name == pbr_debug_view_name(view)) {
+            return view;
+        }
+    }
+    throw std::runtime_error("unknown PBR debug view: " + std::string(name));
+}
+
+PbrDebugView next_pbr_debug_view(PbrDebugView view) {
+    switch (view) {
+    case PbrDebugView::Final:
+        return PbrDebugView::BaseColor;
+    case PbrDebugView::BaseColor:
+        return PbrDebugView::Normal;
+    case PbrDebugView::Normal:
+        return PbrDebugView::GeometricNormal;
+    case PbrDebugView::GeometricNormal:
+        return PbrDebugView::Roughness;
+    case PbrDebugView::Roughness:
+        return PbrDebugView::Metallic;
+    case PbrDebugView::Metallic:
+        return PbrDebugView::Occlusion;
+    case PbrDebugView::Occlusion:
+        return PbrDebugView::Emissive;
+    case PbrDebugView::Emissive:
+        return PbrDebugView::Shadow;
+    case PbrDebugView::Shadow:
+        return PbrDebugView::Alpha;
+    case PbrDebugView::Alpha:
+        return PbrDebugView::Uv0;
+    case PbrDebugView::Uv0:
+        return PbrDebugView::Final;
+    }
+    return PbrDebugView::Final;
 }
 
 float pbr_f0_from_reflectance(float reflectance) {

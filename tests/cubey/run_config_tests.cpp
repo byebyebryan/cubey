@@ -93,6 +93,20 @@ void test_run_config_parses_animation_options() {
     require(config.animation_paused, "run config should parse animation pause flag");
 }
 
+void test_run_config_parses_pbr_debug_view_name() {
+    std::array<char, 6> program{'c', 'u', 'b', 'e', 'y', '\0'};
+    std::array<char, 13> debug_flag{'-', '-', 'd', 'e', 'b', 'u', 'g',
+                                    '-', 'v', 'i', 'e', 'w', '\0'};
+    std::array<char, 15> debug_value{'g', 'e', 'o', 'm', 'e', 't', 'r',
+                                     'i', 'c', '-', 'n', 'o', 'r', 'm', '\0'};
+    std::array<char*, 3> argv{program.data(), debug_flag.data(), debug_value.data()};
+
+    const cubey::RunConfig config =
+        cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
+    require(config.debug_view == debug_value.data(),
+            "run config should preserve renderer debug view name");
+}
+
 void test_run_cli_app_sets_default_title_and_returns_runner_status() {
     std::array<char, 6> program{'c', 'u', 'b', 'e', 'y', '\0'};
     std::array<char*, 1> argv{program.data()};

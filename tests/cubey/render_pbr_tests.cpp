@@ -21,6 +21,15 @@ void require(bool condition, const char* message) {
     }
 }
 
+void require_throws(auto&& action, const char* message) {
+    try {
+        action();
+    } catch (const std::exception&) {
+        return;
+    }
+    throw std::runtime_error(message);
+}
+
 using cubey::tests::read_source_file;
 using cubey::tests::require_contains;
 using cubey::tests::require_not_contains;
@@ -51,6 +60,33 @@ void test_pbr_vertex_layout_matches_shader_contract() {
     require(layout.attributes[5].location == 5 &&
                 layout.attributes[5].offset == offsetof(cubey::render::PbrVertex, color0),
             "PBR COLOR0 attribute should match shader location 5");
+}
+
+void test_pbr_debug_view_names_parse_and_cycle() {
+    require(cubey::render::pbr_debug_view_name(cubey::render::PbrDebugView::Final) == "final",
+            "PBR final debug view should have a stable CLI name");
+    require(cubey::render::pbr_debug_view_name(cubey::render::PbrDebugView::BaseColor) ==
+                "base-color",
+            "PBR base-color debug view should use kebab-case");
+    require(cubey::render::pbr_debug_view_name(cubey::render::PbrDebugView::GeometricNormal) ==
+                "geometric-normal",
+            "PBR geometric normal debug view should use kebab-case");
+    require(cubey::render::pbr_debug_view_from_name("") == cubey::render::PbrDebugView::Final,
+            "empty PBR debug view name should mean final shading");
+    require(cubey::render::pbr_debug_view_from_name("normal") ==
+                cubey::render::PbrDebugView::Normal,
+            "PBR debug parser should accept normal");
+    require(cubey::render::pbr_debug_view_from_name("uv0") == cubey::render::PbrDebugView::Uv0,
+            "PBR debug parser should accept uv0");
+    require(cubey::render::next_pbr_debug_view(cubey::render::PbrDebugView::Final) ==
+                cubey::render::PbrDebugView::BaseColor,
+            "PBR debug cycling should start from base color after final");
+    require(cubey::render::next_pbr_debug_view(cubey::render::PbrDebugView::Uv0) ==
+                cubey::render::PbrDebugView::Final,
+            "PBR debug cycling should wrap from uv0 to final");
+    require_throws(
+        [] { (void)cubey::render::pbr_debug_view_from_name("not-a-view"); },
+        "PBR debug parser should reject unknown view names");
 }
 
 void test_pbr_forward_pass_declares_scene_and_material_sets() {
