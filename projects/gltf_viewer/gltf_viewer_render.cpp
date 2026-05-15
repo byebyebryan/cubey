@@ -28,21 +28,6 @@ void GltfViewerApp::destroy_all_resources() {
     animation_playback_ = {};
     animation_sample_.reset();
     triangle_count_ = 0;
-    iridescence_thickness_default_.reset();
-    iridescence_default_.reset();
-    anisotropy_default_.reset();
-    sheen_roughness_default_.reset();
-    sheen_color_default_.reset();
-    clearcoat_normal_default_.reset();
-    clearcoat_roughness_default_.reset();
-    clearcoat_default_.reset();
-    normal_default_.reset();
-    metallic_roughness_default_.reset();
-    emissive_default_.reset();
-    specular_color_default_.reset();
-    specular_default_.reset();
-    occlusion_default_.reset();
-    base_color_default_.reset();
     asset_.reset();
 }
 
@@ -95,8 +80,8 @@ void GltfViewerApp::record_viewer_target(
                 .meshes = &import_resources_.meshes,
                 .frame_meshes = frame_meshes,
                 .deformation_commands = deformation_commands,
-                .material_instances = &import_resources_.material_instances,
-                .material_factors = &import_resources_.material_factors,
+                .material_instances = &import_resources_.materials.instances(),
+                .material_factors = &import_resources_.materials.factors_map(),
             },
         .settings =
             {

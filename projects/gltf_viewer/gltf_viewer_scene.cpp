@@ -183,7 +183,7 @@ cubey::ForwardPbrRenderer3D& GltfViewerApp::forward_pbr_renderer() const {
 }
 
 VkDescriptorSetLayout GltfViewerApp::material_descriptor_set_layout() const {
-    return import_resources_.material_instances.at(import_result_.first_material_handle).layout();
+    return import_resources_.materials.layout(import_result_.first_material_handle);
 }
 
 } // namespace cubey::projects::gltf_viewer

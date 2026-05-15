@@ -7,7 +7,6 @@
 #include <cubey/render/texture.h>
 #include <cubey/vulkan/sampler.h>
 
-#include <array>
 #include <cmath>
 #include <cstdint>
 #include <span>
@@ -167,77 +166,12 @@ pbr_texture_transforms(const asset::GltfMaterial& material) {
     return flags;
 }
 
-[[nodiscard]] render::Texture2D create_solid_texture(const vulkan::Device& device,
-                                                     vulkan::GpuRuntime& gpu,
-                                                     std::array<std::uint8_t, 4> color,
-                                                     VkFormat format) {
-    return render::create_uploaded_texture_2d(
-        device, gpu,
-        {
-            .extent = {1, 1},
-            .format = format,
-            .rgba8 = std::span<const std::uint8_t>{color.data(), color.size()},
-            .create_sampler = true,
-            .sampler = {},
-        });
-}
-
 [[nodiscard]] const render::Texture2D& default_texture(const GltfSceneImportResources& resources,
                                                        render::PbrMaterialBinding binding) {
-    const std::optional<render::Texture2D>* texture = nullptr;
-    switch (binding) {
-    case render::PbrMaterialBinding::BaseColor:
-        texture = &resources.base_color_default;
-        break;
-    case render::PbrMaterialBinding::MetallicRoughness:
-        texture = &resources.metallic_roughness_default;
-        break;
-    case render::PbrMaterialBinding::Normal:
-        texture = &resources.normal_default;
-        break;
-    case render::PbrMaterialBinding::Occlusion:
-        texture = &resources.occlusion_default;
-        break;
-    case render::PbrMaterialBinding::Emissive:
-        texture = &resources.emissive_default;
-        break;
-    case render::PbrMaterialBinding::Specular:
-        texture = &resources.specular_default;
-        break;
-    case render::PbrMaterialBinding::SpecularColor:
-        texture = &resources.specular_color_default;
-        break;
-    case render::PbrMaterialBinding::Clearcoat:
-        texture = &resources.clearcoat_default;
-        break;
-    case render::PbrMaterialBinding::ClearcoatRoughness:
-        texture = &resources.clearcoat_roughness_default;
-        break;
-    case render::PbrMaterialBinding::ClearcoatNormal:
-        texture = &resources.clearcoat_normal_default;
-        break;
-    case render::PbrMaterialBinding::SheenColor:
-        texture = &resources.sheen_color_default;
-        break;
-    case render::PbrMaterialBinding::SheenRoughness:
-        texture = &resources.sheen_roughness_default;
-        break;
-    case render::PbrMaterialBinding::Anisotropy:
-        texture = &resources.anisotropy_default;
-        break;
-    case render::PbrMaterialBinding::Iridescence:
-        texture = &resources.iridescence_default;
-        break;
-    case render::PbrMaterialBinding::IridescenceThickness:
-        texture = &resources.iridescence_thickness_default;
-        break;
-    case render::PbrMaterialBinding::Uniforms:
-        break;
-    }
-    if (texture == nullptr || !texture->has_value()) {
+    if (!resources.default_textures.has_value()) {
         throw std::runtime_error("default PBR texture is not initialized");
     }
-    return texture->value();
+    return render::pbr_default_texture(resources.default_textures.value(), binding);
 }
 
 [[nodiscard]] TextureBinding texture_binding(const render::Texture2D& texture) {
@@ -479,39 +413,10 @@ material_sampled_image_bindings(const vulkan::Device& device, vulkan::GpuRuntime
 
 void create_default_textures(const vulkan::Device& device, vulkan::GpuRuntime& gpu,
                              GltfSceneImportResources& resources) {
-    if (resources.base_color_default.has_value()) {
+    if (resources.default_textures.has_value()) {
         return;
     }
-    resources.base_color_default.emplace(
-        create_solid_texture(device, gpu, {255, 255, 255, 255}, VK_FORMAT_R8G8B8A8_SRGB));
-    resources.metallic_roughness_default.emplace(
-        create_solid_texture(device, gpu, {255, 255, 255, 255}, VK_FORMAT_R8G8B8A8_UNORM));
-    resources.normal_default.emplace(
-        create_solid_texture(device, gpu, {128, 128, 255, 255}, VK_FORMAT_R8G8B8A8_UNORM));
-    resources.occlusion_default.emplace(
-        create_solid_texture(device, gpu, {255, 255, 255, 255}, VK_FORMAT_R8G8B8A8_UNORM));
-    resources.emissive_default.emplace(
-        create_solid_texture(device, gpu, {0, 0, 0, 255}, VK_FORMAT_R8G8B8A8_SRGB));
-    resources.specular_default.emplace(
-        create_solid_texture(device, gpu, {255, 255, 255, 255}, VK_FORMAT_R8G8B8A8_UNORM));
-    resources.specular_color_default.emplace(
-        create_solid_texture(device, gpu, {255, 255, 255, 255}, VK_FORMAT_R8G8B8A8_SRGB));
-    resources.clearcoat_default.emplace(
-        create_solid_texture(device, gpu, {255, 255, 255, 255}, VK_FORMAT_R8G8B8A8_UNORM));
-    resources.clearcoat_roughness_default.emplace(
-        create_solid_texture(device, gpu, {255, 255, 255, 255}, VK_FORMAT_R8G8B8A8_UNORM));
-    resources.clearcoat_normal_default.emplace(
-        create_solid_texture(device, gpu, {128, 128, 255, 255}, VK_FORMAT_R8G8B8A8_UNORM));
-    resources.sheen_color_default.emplace(
-        create_solid_texture(device, gpu, {255, 255, 255, 255}, VK_FORMAT_R8G8B8A8_SRGB));
-    resources.sheen_roughness_default.emplace(
-        create_solid_texture(device, gpu, {255, 255, 255, 255}, VK_FORMAT_R8G8B8A8_UNORM));
-    resources.anisotropy_default.emplace(
-        create_solid_texture(device, gpu, {255, 128, 255, 255}, VK_FORMAT_R8G8B8A8_UNORM));
-    resources.iridescence_default.emplace(
-        create_solid_texture(device, gpu, {255, 255, 255, 255}, VK_FORMAT_R8G8B8A8_UNORM));
-    resources.iridescence_thickness_default.emplace(
-        create_solid_texture(device, gpu, {255, 255, 255, 255}, VK_FORMAT_R8G8B8A8_UNORM));
+    resources.default_textures.emplace(render::create_pbr_default_texture_set(device, gpu));
 }
 
 void create_material_resources(Engine& engine, const vulkan::Device& device,
@@ -536,37 +441,37 @@ void create_material_resources(Engine& engine, const vulkan::Device& device,
                 .pass_mask = render::material_pass_mask_for_alpha_mode(alpha_mode),
             });
         result.material_handles.push_back(material);
-        resources.material_factors.emplace(
-            material,
-            render::PbrMaterialFactors{
-                .base_color_factor = source.base_color_factor,
-                .emissive_factor = source.emissive_factor,
-                .alpha_cutoff =
-                    source.alpha_mode == asset::GltfAlphaMode::Mask ? source.alpha_cutoff : 0.0F,
-                .alpha_mode = alpha_mode,
-                .metallic_factor = source.metallic_factor,
-                .roughness_factor = source.roughness_factor,
-                .normal_scale = source.normal_scale,
-                .occlusion_strength = source.occlusion_strength,
-                .specular_color_factor = source.specular_color_factor,
-                .specular_factor = source.specular_factor,
-                .reflectance = source.reflectance,
-                .clearcoat_factor = source.clearcoat_factor,
-                .clearcoat_roughness_factor = source.clearcoat_roughness_factor,
-                .clearcoat_normal_scale = source.clearcoat_normal_scale,
-                .sheen_color_factor = source.sheen_color_factor,
-                .sheen_roughness_factor = source.sheen_roughness_factor,
-                .anisotropy_strength = source.anisotropy_strength,
-                .anisotropy_rotation = source.anisotropy_rotation,
-                .iridescence_factor = source.iridescence_factor,
-                .iridescence_ior = source.iridescence_ior,
-                .iridescence_thickness_minimum = source.iridescence_thickness_minimum,
-                .iridescence_thickness_maximum = source.iridescence_thickness_maximum,
-                .unlit = source.unlit,
-                .texture_flags = pbr_texture_flags(source),
-                .texture_transforms = pbr_texture_transforms(source),
-            });
-        resources.material_instances.emplace(
+        resources.materials.set_factors(
+            material, render::PbrMaterialFactors{
+                          .base_color_factor = source.base_color_factor,
+                          .emissive_factor = source.emissive_factor,
+                          .alpha_cutoff = source.alpha_mode == asset::GltfAlphaMode::Mask
+                                              ? source.alpha_cutoff
+                                              : 0.0F,
+                          .alpha_mode = alpha_mode,
+                          .metallic_factor = source.metallic_factor,
+                          .roughness_factor = source.roughness_factor,
+                          .normal_scale = source.normal_scale,
+                          .occlusion_strength = source.occlusion_strength,
+                          .specular_color_factor = source.specular_color_factor,
+                          .specular_factor = source.specular_factor,
+                          .reflectance = source.reflectance,
+                          .clearcoat_factor = source.clearcoat_factor,
+                          .clearcoat_roughness_factor = source.clearcoat_roughness_factor,
+                          .clearcoat_normal_scale = source.clearcoat_normal_scale,
+                          .sheen_color_factor = source.sheen_color_factor,
+                          .sheen_roughness_factor = source.sheen_roughness_factor,
+                          .anisotropy_strength = source.anisotropy_strength,
+                          .anisotropy_rotation = source.anisotropy_rotation,
+                          .iridescence_factor = source.iridescence_factor,
+                          .iridescence_ior = source.iridescence_ior,
+                          .iridescence_thickness_minimum = source.iridescence_thickness_minimum,
+                          .iridescence_thickness_maximum = source.iridescence_thickness_maximum,
+                          .unlit = source.unlit,
+                          .texture_flags = pbr_texture_flags(source),
+                          .texture_transforms = pbr_texture_transforms(source),
+                      });
+        resources.materials.emplace_instance(
             material, device,
             render::FrameUniformMaterialInstanceConfig{
                 .material_pass = pass,

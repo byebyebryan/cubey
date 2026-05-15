@@ -323,14 +323,15 @@ void destroy_gltf_scene_import(Engine& engine, GltfSceneImportResources& resourc
     }
 
     for (const render::MaterialHandle material : result.material_handles) {
-        if (resources.material_instances.contains(material)) {
-            resources.material_instances.erase(material);
+        if (resources.materials.contains_instance(material) ||
+            resources.materials.contains_factors(material)) {
+            resources.materials.erase(material);
         }
         if (engine.render_resources().is_alive(material)) {
             engine.render_resources().destroy_material(material);
         }
     }
-    resources.material_factors.clear();
+    resources.materials.clear();
 
     resources.deformation = {};
     resources.deformable_primitives.clear();
@@ -346,21 +347,7 @@ void destroy_gltf_scene_import(Engine& engine, GltfSceneImportResources& resourc
 
     resources.mesh_primitives.clear();
     resources.textures.clear();
-    resources.iridescence_thickness_default.reset();
-    resources.iridescence_default.reset();
-    resources.anisotropy_default.reset();
-    resources.sheen_roughness_default.reset();
-    resources.sheen_color_default.reset();
-    resources.clearcoat_normal_default.reset();
-    resources.clearcoat_roughness_default.reset();
-    resources.clearcoat_default.reset();
-    resources.emissive_default.reset();
-    resources.specular_color_default.reset();
-    resources.specular_default.reset();
-    resources.occlusion_default.reset();
-    resources.normal_default.reset();
-    resources.metallic_roughness_default.reset();
-    resources.base_color_default.reset();
+    resources.default_textures.reset();
     resources.active = false;
     result = {};
 }

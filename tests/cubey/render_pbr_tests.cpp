@@ -649,22 +649,78 @@ void test_gltf_viewer_sample_asset_smoke_tests_cover_material_and_tangent_cases(
 
 void test_gltf_material_fallback_textures_preserve_pbr_factor_channels() {
     const std::filesystem::path source_root = std::filesystem::path{CUBEY_SOURCE_DIR};
+    const std::string resources =
+        read_source_file(source_root / "src/cubey/render/pbr_material_resources.cpp");
+
+    require_contains(resources, ".binding = PbrMaterialBinding::MetallicRoughness",
+                     "shared PBR defaults should create a metallic-roughness fallback texture");
+    require_contains(
+        resources,
+        ".binding = PbrMaterialBinding::MetallicRoughness,\n        .rgba8 = {255, 255, 255, "
+        "255},\n        .format = VK_FORMAT_R8G8B8A8_UNORM",
+        "metallic-roughness fallback should leave roughness and metallic channels at one");
+}
+
+void test_pbr_examples_and_gltf_importer_share_material_resources() {
+    const std::filesystem::path source_root = std::filesystem::path{CUBEY_SOURCE_DIR};
+    const std::string importer_header =
+        read_source_file(source_root / "include/cubey/engine/gltf_scene_importer.h");
     const std::string importer =
         read_source_file(source_root / "src/cubey/engine/gltf_scene_importer_materials.cpp");
+    const std::string viewer_header =
+        read_source_file(source_root / "projects/gltf_viewer/gltf_viewer_app_internal.h");
     const std::string viewer =
         read_source_file(source_root / "projects/gltf_viewer/gltf_viewer_assets.cpp");
+    const std::string furnace_header =
+        read_source_file(source_root / "projects/pbr_furnace/pbr_furnace_app_internal.h");
+    const std::string furnace =
+        read_source_file(source_root / "projects/pbr_furnace/pbr_furnace_resources.cpp");
+    const std::string material_cubes =
+        read_source_file(source_root / "examples/material_cubes/material_cubes_app.cpp");
 
-    require_contains(importer, "resources.metallic_roughness_default.emplace(",
-                     "glTF importer should create a fallback metallic-roughness texture");
-    require_contains(
-        importer,
-        "create_solid_texture(device, gpu, {255, 255, 255, 255}, "
-        "VK_FORMAT_R8G8B8A8_UNORM)",
-        "metallic-roughness fallback should leave roughness and metallic channels at one");
-    require_contains(viewer,
-                     "create_solid_texture(device, gpu, {255, 255, 255, 255}, "
-                     "VK_FORMAT_R8G8B8A8_UNORM)",
-                     "viewer fallback material should match importer metallic-roughness defaults");
+    require_contains(importer_header, "render::PbrMaterialTable materials",
+                     "glTF import resources should expose a shared PBR material table");
+    require_contains(importer_header, "std::optional<render::PbrDefaultTextureSet>",
+                     "glTF import resources should own the shared PBR default texture set");
+    require_contains(importer, "resources.materials.set_factors(",
+                     "glTF importer should store factors through the PBR material table");
+    require_contains(importer, "resources.materials.emplace_instance(",
+                     "glTF importer should store instances through the PBR material table");
+    require_contains(importer, "render::pbr_default_texture(",
+                     "glTF importer should resolve missing textures through shared defaults");
+    require_not_contains(importer_header, "material_factors",
+                         "glTF import resources should not expose a parallel factor map");
+    require_not_contains(importer_header, "base_color_default",
+                         "glTF import resources should not expose per-slot default textures");
+
+    require_contains(viewer, "import_resources_.default_textures",
+                     "glTF viewer fallback should use the import resource default texture set");
+    require_contains(viewer, "cubey::render::pbr_default_sampled_image_bindings(",
+                     "glTF viewer fallback material should use shared default sampled bindings");
+    require_not_contains(viewer_header, "base_color_default_",
+                         "glTF viewer should not carry duplicated PBR default textures");
+
+    require_contains(furnace_header, "render::PbrMaterialTable materials_",
+                     "PBR furnace should group material factors and instances in one table");
+    require_contains(furnace_header, "render::PbrDefaultTextureSet",
+                     "PBR furnace should own one shared default texture set");
+    require_contains(furnace, "cubey::render::pbr_default_sampled_image_bindings(",
+                     "PBR furnace materials should use shared default sampled bindings");
+    require_not_contains(furnace_header, "material_factors_",
+                         "PBR furnace should not carry a parallel factor map");
+    require_not_contains(furnace_header, "base_color_default_",
+                         "PBR furnace should not carry duplicated PBR default textures");
+
+    require_contains(material_cubes, "cubey::render::PbrMaterialTable materials_",
+                     "material cubes should group material factors and instances in one table");
+    require_contains(material_cubes, "cubey::render::PbrDefaultTextureSet",
+                     "material cubes should own one shared default texture set");
+    require_contains(material_cubes, "cubey::render::pbr_default_sampled_image_bindings(",
+                     "material cubes should use shared default sampled bindings");
+    require_not_contains(material_cubes, "material_factors_",
+                         "material cubes should not carry a parallel factor map");
+    require_not_contains(material_cubes, "base_color_default_",
+                         "material cubes should not carry duplicated PBR default textures");
 }
 
 void test_gltf_basisu_transcoder_policy_uses_bc7_and_rgba_fallback() {

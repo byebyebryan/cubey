@@ -63,6 +63,11 @@ class PbrMaterialTable {
     void set_factors(MaterialHandle material, const PbrMaterialFactors& factors);
     [[nodiscard]] PbrMaterialFactors& factors(MaterialHandle material);
     [[nodiscard]] const PbrMaterialFactors& factors(MaterialHandle material) const;
+    [[nodiscard]] const std::unordered_map<MaterialHandle, PbrMaterialFactors,
+                                           MaterialHandleHash>&
+    factors_map() const noexcept {
+        return factors_;
+    }
 
     template <typename... Args>
     FrameUniformMaterialInstance<PbrMaterialUniforms>& emplace_instance(MaterialHandle material,
@@ -74,6 +79,10 @@ class PbrMaterialTable {
         MaterialHandle material);
     [[nodiscard]] const FrameUniformMaterialInstance<PbrMaterialUniforms>& instance(
         MaterialHandle material) const;
+    [[nodiscard]] const MaterialResourceTable<FrameUniformMaterialInstance<PbrMaterialUniforms>>&
+    instances() const noexcept {
+        return instances_;
+    }
     [[nodiscard]] VkDescriptorSetLayout layout(MaterialHandle material) const;
     void upload(MaterialHandle material, FrameSlot frame_slot) const;
     void upload(MaterialHandle material, FrameSlot frame_slot, MaterialAlphaMode alpha_mode) const;

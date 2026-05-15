@@ -15,6 +15,7 @@
 #include <cubey/render/generated_ibl.h>
 #include <cubey/render/mesh.h>
 #include <cubey/render/pbr.h>
+#include <cubey/render/pbr_material_resources.h>
 #include <cubey/render/render_graph.h>
 #include <cubey/render/resource_table.h>
 #include <cubey/render/target.h>
@@ -26,7 +27,6 @@
 
 #include <vulkan/vulkan.h>
 
-#include <array>
 #include <cstdint>
 #include <filesystem>
 #include <optional>
@@ -78,16 +78,10 @@ class GltfViewerApp {
     [[nodiscard]] std::filesystem::path resolved_environment_path() const;
     void create_default_textures(const cubey::vulkan::Device& device,
                                  cubey::vulkan::GpuRuntime& gpu);
-    [[nodiscard]] cubey::render::Texture2D create_solid_texture(const cubey::vulkan::Device& device,
-                                                                cubey::vulkan::GpuRuntime& gpu,
-                                                                std::array<std::uint8_t, 4> color,
-                                                                VkFormat format);
     void create_fallback_material(const cubey::vulkan::Device& device,
                                   std::uint32_t frame_slot_count);
     [[nodiscard]] std::vector<cubey::render::SampledImageMaterialBinding>
     fallback_material_sampled_images() const;
-    [[nodiscard]] const cubey::render::Texture2D&
-    default_texture(cubey::render::PbrMaterialBinding binding) const;
     void create_fallback_mesh(cubey::vulkan::GpuRuntime& gpu);
     void create_ibl_resources(const cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu);
 
@@ -134,21 +128,6 @@ class GltfViewerApp {
 
     cubey::GltfSceneImportResources import_resources_{};
     cubey::GltfSceneImportResult import_result_{};
-    std::optional<cubey::render::Texture2D> base_color_default_;
-    std::optional<cubey::render::Texture2D> metallic_roughness_default_;
-    std::optional<cubey::render::Texture2D> normal_default_;
-    std::optional<cubey::render::Texture2D> occlusion_default_;
-    std::optional<cubey::render::Texture2D> emissive_default_;
-    std::optional<cubey::render::Texture2D> specular_default_;
-    std::optional<cubey::render::Texture2D> specular_color_default_;
-    std::optional<cubey::render::Texture2D> clearcoat_default_;
-    std::optional<cubey::render::Texture2D> clearcoat_roughness_default_;
-    std::optional<cubey::render::Texture2D> clearcoat_normal_default_;
-    std::optional<cubey::render::Texture2D> sheen_color_default_;
-    std::optional<cubey::render::Texture2D> sheen_roughness_default_;
-    std::optional<cubey::render::Texture2D> anisotropy_default_;
-    std::optional<cubey::render::Texture2D> iridescence_default_;
-    std::optional<cubey::render::Texture2D> iridescence_thickness_default_;
     std::optional<cubey::render::GeneratedPbrEnvironment> ibl_environment_;
 };
 

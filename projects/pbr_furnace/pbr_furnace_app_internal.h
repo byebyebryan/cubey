@@ -13,6 +13,7 @@
 #include <cubey/render/material_instance.h>
 #include <cubey/render/mesh.h>
 #include <cubey/render/pbr.h>
+#include <cubey/render/pbr_material_resources.h>
 #include <cubey/render/primitive_mesh.h>
 #include <cubey/render/primitive_resource.h>
 #include <cubey/render/resource_table.h>
@@ -22,11 +23,9 @@
 
 #include <vulkan/vulkan.h>
 
-#include <array>
 #include <cstdint>
 #include <filesystem>
 #include <optional>
-#include <unordered_map>
 #include <vector>
 
 namespace cubey::projects::pbr_furnace {
@@ -72,10 +71,6 @@ class PbrFurnaceApp {
 
     void create_default_textures(const cubey::vulkan::Device& device,
                                  cubey::vulkan::GpuRuntime& gpu);
-    [[nodiscard]] cubey::render::Texture2D create_solid_texture(const cubey::vulkan::Device& device,
-                                                                cubey::vulkan::GpuRuntime& gpu,
-                                                                std::array<std::uint8_t, 4> color,
-                                                                VkFormat format);
     void create_scene_material(const cubey::vulkan::Device& device, std::uint32_t frame_slot_count);
     void create_materials(const cubey::vulkan::Device& device, std::uint32_t frame_slot_count);
     [[nodiscard]] std::vector<cubey::render::SampledImageMaterialBinding>
@@ -98,8 +93,6 @@ class PbrFurnaceApp {
                               cubey::render::ColorTargetView color_target,
                               cubey::render::FrameSlot frame_slot, bool present);
 
-    [[nodiscard]] const cubey::render::Texture2D&
-    default_texture(cubey::render::PbrMaterialBinding binding) const;
     [[nodiscard]] const cubey::render::Texture2D& dummy_shadow() const;
     [[nodiscard]] const WhitePbrEnvironment& white_environment() const;
     [[nodiscard]] const cubey::render::FrameUniformMaterialInstance<
@@ -115,29 +108,9 @@ class PbrFurnaceApp {
     cubey::render::MeshHandle sphere_mesh_handle_{};
 
     cubey::render::MeshResourceTable<cubey::render::Mesh> meshes_;
-    cubey::render::MaterialResourceTable<
-        cubey::render::FrameUniformMaterialInstance<cubey::render::PbrMaterialUniforms>>
-        material_instances_;
+    cubey::render::PbrMaterialTable materials_;
     std::vector<cubey::render::MaterialHandle> material_handles_;
-    std::unordered_map<cubey::render::MaterialHandle, cubey::render::PbrMaterialFactors,
-                       cubey::render::MaterialHandleHash>
-        material_factors_;
-    std::optional<cubey::render::Texture2D> base_color_default_;
-    std::optional<cubey::render::Texture2D> metallic_roughness_default_;
-    std::optional<cubey::render::Texture2D> normal_default_;
-    std::optional<cubey::render::Texture2D> occlusion_default_;
-    std::optional<cubey::render::Texture2D> emissive_default_;
-    std::optional<cubey::render::Texture2D> specular_default_;
-    std::optional<cubey::render::Texture2D> specular_color_default_;
-    std::optional<cubey::render::Texture2D> clearcoat_default_;
-    std::optional<cubey::render::Texture2D> clearcoat_roughness_default_;
-    std::optional<cubey::render::Texture2D> clearcoat_normal_default_;
-    std::optional<cubey::render::Texture2D> sheen_color_default_;
-    std::optional<cubey::render::Texture2D> sheen_roughness_default_;
-    std::optional<cubey::render::Texture2D> anisotropy_default_;
-    std::optional<cubey::render::Texture2D> iridescence_default_;
-    std::optional<cubey::render::Texture2D> iridescence_thickness_default_;
-    std::optional<cubey::render::Texture2D> dummy_shadow_;
+    std::optional<cubey::render::PbrDefaultTextureSet> default_textures_;
     std::optional<WhitePbrEnvironment> white_environment_;
     std::optional<cubey::render::FrameUniformMaterialInstance<cubey::render::PbrSceneUniforms>>
         scene_material_;

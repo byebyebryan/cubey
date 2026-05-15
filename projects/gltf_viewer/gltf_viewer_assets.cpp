@@ -110,51 +110,11 @@ std::filesystem::path GltfViewerApp::resolved_environment_path() const {
 
 void GltfViewerApp::create_default_textures(const cubey::vulkan::Device& device,
                                             cubey::vulkan::GpuRuntime& gpu) {
-    base_color_default_.emplace(
-        create_solid_texture(device, gpu, {255, 255, 255, 255}, VK_FORMAT_R8G8B8A8_SRGB));
-    metallic_roughness_default_.emplace(
-        create_solid_texture(device, gpu, {255, 255, 255, 255}, VK_FORMAT_R8G8B8A8_UNORM));
-    normal_default_.emplace(
-        create_solid_texture(device, gpu, {128, 128, 255, 255}, VK_FORMAT_R8G8B8A8_UNORM));
-    occlusion_default_.emplace(
-        create_solid_texture(device, gpu, {255, 255, 255, 255}, VK_FORMAT_R8G8B8A8_UNORM));
-    emissive_default_.emplace(
-        create_solid_texture(device, gpu, {0, 0, 0, 255}, VK_FORMAT_R8G8B8A8_SRGB));
-    specular_default_.emplace(
-        create_solid_texture(device, gpu, {255, 255, 255, 255}, VK_FORMAT_R8G8B8A8_UNORM));
-    specular_color_default_.emplace(
-        create_solid_texture(device, gpu, {255, 255, 255, 255}, VK_FORMAT_R8G8B8A8_SRGB));
-    clearcoat_default_.emplace(
-        create_solid_texture(device, gpu, {255, 255, 255, 255}, VK_FORMAT_R8G8B8A8_UNORM));
-    clearcoat_roughness_default_.emplace(
-        create_solid_texture(device, gpu, {255, 255, 255, 255}, VK_FORMAT_R8G8B8A8_UNORM));
-    clearcoat_normal_default_.emplace(
-        create_solid_texture(device, gpu, {128, 128, 255, 255}, VK_FORMAT_R8G8B8A8_UNORM));
-    sheen_color_default_.emplace(
-        create_solid_texture(device, gpu, {255, 255, 255, 255}, VK_FORMAT_R8G8B8A8_SRGB));
-    sheen_roughness_default_.emplace(
-        create_solid_texture(device, gpu, {255, 255, 255, 255}, VK_FORMAT_R8G8B8A8_UNORM));
-    anisotropy_default_.emplace(
-        create_solid_texture(device, gpu, {255, 128, 255, 255}, VK_FORMAT_R8G8B8A8_UNORM));
-    iridescence_default_.emplace(
-        create_solid_texture(device, gpu, {255, 255, 255, 255}, VK_FORMAT_R8G8B8A8_UNORM));
-    iridescence_thickness_default_.emplace(
-        create_solid_texture(device, gpu, {255, 255, 255, 255}, VK_FORMAT_R8G8B8A8_UNORM));
-}
-
-cubey::render::Texture2D GltfViewerApp::create_solid_texture(const cubey::vulkan::Device& device,
-                                                             cubey::vulkan::GpuRuntime& gpu,
-                                                             std::array<std::uint8_t, 4> color,
-                                                             VkFormat format) {
-    return cubey::render::create_uploaded_texture_2d(
-        device, gpu,
-        {
-            .extent = {1, 1},
-            .format = format,
-            .rgba8 = std::span<const std::uint8_t>{color.data(), color.size()},
-            .create_sampler = true,
-            .sampler = {},
-        });
+    if (import_resources_.default_textures.has_value()) {
+        return;
+    }
+    import_resources_.default_textures.emplace(
+        cubey::render::create_pbr_default_texture_set(device, gpu));
 }
 
 void GltfViewerApp::create_fallback_material(const cubey::vulkan::Device& device,
@@ -163,13 +123,13 @@ void GltfViewerApp::create_fallback_material(const cubey::vulkan::Device& device
         engine_.render_resources().create_material("gltf_viewer.fallback.material");
     import_result_.material_handles.push_back(material);
     import_result_.first_material_handle = material;
-    import_resources_.material_factors.emplace(material,
-                                               cubey::render::PbrMaterialFactors{
-                                                   .base_color_factor = {0.86F, 0.82F, 0.72F, 1.0F},
-                                                   .metallic_factor = 0.0F,
-                                                   .roughness_factor = 0.58F,
-                                               });
-    import_resources_.material_instances.emplace(
+    import_resources_.materials.set_factors(
+        material, cubey::render::PbrMaterialFactors{
+                      .base_color_factor = {0.86F, 0.82F, 0.72F, 1.0F},
+                      .metallic_factor = 0.0F,
+                      .roughness_factor = 0.58F,
+                  });
+    import_resources_.materials.emplace_instance(
         material, device,
         cubey::render::FrameUniformMaterialInstanceConfig{
             .material_pass = cubey::render::pbr_forward_pass_info(),
@@ -183,89 +143,11 @@ void GltfViewerApp::create_fallback_material(const cubey::vulkan::Device& device
 
 std::vector<cubey::render::SampledImageMaterialBinding>
 GltfViewerApp::fallback_material_sampled_images() const {
-    const auto sampled = [this](cubey::render::PbrMaterialBinding binding) {
-        const cubey::render::Texture2D& texture = default_texture(binding);
-        return cubey::render::SampledImageMaterialBinding{
-            .binding = static_cast<std::uint32_t>(binding),
-            .sampler = texture.sampler().handle(),
-            .image_view = texture.view(),
-        };
-    };
-    return {
-        sampled(cubey::render::PbrMaterialBinding::BaseColor),
-        sampled(cubey::render::PbrMaterialBinding::MetallicRoughness),
-        sampled(cubey::render::PbrMaterialBinding::Normal),
-        sampled(cubey::render::PbrMaterialBinding::Occlusion),
-        sampled(cubey::render::PbrMaterialBinding::Emissive),
-        sampled(cubey::render::PbrMaterialBinding::Specular),
-        sampled(cubey::render::PbrMaterialBinding::SpecularColor),
-        sampled(cubey::render::PbrMaterialBinding::Clearcoat),
-        sampled(cubey::render::PbrMaterialBinding::ClearcoatRoughness),
-        sampled(cubey::render::PbrMaterialBinding::ClearcoatNormal),
-        sampled(cubey::render::PbrMaterialBinding::SheenColor),
-        sampled(cubey::render::PbrMaterialBinding::SheenRoughness),
-        sampled(cubey::render::PbrMaterialBinding::Anisotropy),
-        sampled(cubey::render::PbrMaterialBinding::Iridescence),
-        sampled(cubey::render::PbrMaterialBinding::IridescenceThickness),
-    };
-}
-
-const cubey::render::Texture2D&
-GltfViewerApp::default_texture(cubey::render::PbrMaterialBinding binding) const {
-    const std::optional<cubey::render::Texture2D>* texture = nullptr;
-    switch (binding) {
-    case cubey::render::PbrMaterialBinding::BaseColor:
-        texture = &base_color_default_;
-        break;
-    case cubey::render::PbrMaterialBinding::MetallicRoughness:
-        texture = &metallic_roughness_default_;
-        break;
-    case cubey::render::PbrMaterialBinding::Normal:
-        texture = &normal_default_;
-        break;
-    case cubey::render::PbrMaterialBinding::Occlusion:
-        texture = &occlusion_default_;
-        break;
-    case cubey::render::PbrMaterialBinding::Emissive:
-        texture = &emissive_default_;
-        break;
-    case cubey::render::PbrMaterialBinding::Specular:
-        texture = &specular_default_;
-        break;
-    case cubey::render::PbrMaterialBinding::SpecularColor:
-        texture = &specular_color_default_;
-        break;
-    case cubey::render::PbrMaterialBinding::Clearcoat:
-        texture = &clearcoat_default_;
-        break;
-    case cubey::render::PbrMaterialBinding::ClearcoatRoughness:
-        texture = &clearcoat_roughness_default_;
-        break;
-    case cubey::render::PbrMaterialBinding::ClearcoatNormal:
-        texture = &clearcoat_normal_default_;
-        break;
-    case cubey::render::PbrMaterialBinding::SheenColor:
-        texture = &sheen_color_default_;
-        break;
-    case cubey::render::PbrMaterialBinding::SheenRoughness:
-        texture = &sheen_roughness_default_;
-        break;
-    case cubey::render::PbrMaterialBinding::Anisotropy:
-        texture = &anisotropy_default_;
-        break;
-    case cubey::render::PbrMaterialBinding::Iridescence:
-        texture = &iridescence_default_;
-        break;
-    case cubey::render::PbrMaterialBinding::IridescenceThickness:
-        texture = &iridescence_thickness_default_;
-        break;
-    case cubey::render::PbrMaterialBinding::Uniforms:
-        break;
-    }
-    if (texture == nullptr || !texture->has_value()) {
+    if (!import_resources_.default_textures.has_value()) {
         throw std::runtime_error("default PBR texture is not initialized");
     }
-    return texture->value();
+    return cubey::render::pbr_default_sampled_image_bindings(
+        import_resources_.default_textures.value());
 }
 
 void GltfViewerApp::create_fallback_mesh(cubey::vulkan::GpuRuntime& gpu) {

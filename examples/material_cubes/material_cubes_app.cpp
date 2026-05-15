@@ -12,6 +12,7 @@
 #include <cubey/render/generated_ibl.h>
 #include <cubey/render/mesh.h>
 #include <cubey/render/pbr.h>
+#include <cubey/render/pbr_material_resources.h>
 #include <cubey/render/primitive_mesh.h>
 #include <cubey/render/primitive_resource.h>
 #include <cubey/render/render_graph.h>
@@ -41,7 +42,6 @@
 #include <span>
 #include <stdexcept>
 #include <string>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -272,70 +272,15 @@ class MaterialCubesApp {
         destroy_scene_if_needed();
         destroy_material_resources();
         destroy_render_handles();
-        iridescence_thickness_default_.reset();
-        iridescence_default_.reset();
-        anisotropy_default_.reset();
-        sheen_roughness_default_.reset();
-        sheen_color_default_.reset();
-        clearcoat_normal_default_.reset();
-        clearcoat_roughness_default_.reset();
-        clearcoat_default_.reset();
-        normal_default_.reset();
-        metallic_roughness_default_.reset();
-        emissive_default_.reset();
-        specular_color_default_.reset();
-        specular_default_.reset();
-        occlusion_default_.reset();
-        base_color_default_.reset();
+        default_textures_.reset();
     }
 
     void create_default_textures(const cubey::vulkan::Device& device,
                                  cubey::vulkan::GpuRuntime& gpu) {
-        base_color_default_.emplace(
-            create_solid_texture(device, gpu, {255, 255, 255, 255}, VK_FORMAT_R8G8B8A8_SRGB));
-        metallic_roughness_default_.emplace(
-            create_solid_texture(device, gpu, {255, 255, 255, 255}, VK_FORMAT_R8G8B8A8_UNORM));
-        normal_default_.emplace(
-            create_solid_texture(device, gpu, {128, 128, 255, 255}, VK_FORMAT_R8G8B8A8_UNORM));
-        occlusion_default_.emplace(
-            create_solid_texture(device, gpu, {255, 255, 255, 255}, VK_FORMAT_R8G8B8A8_UNORM));
-        emissive_default_.emplace(
-            create_solid_texture(device, gpu, {0, 0, 0, 255}, VK_FORMAT_R8G8B8A8_SRGB));
-        specular_default_.emplace(
-            create_solid_texture(device, gpu, {255, 255, 255, 255}, VK_FORMAT_R8G8B8A8_UNORM));
-        specular_color_default_.emplace(
-            create_solid_texture(device, gpu, {255, 255, 255, 255}, VK_FORMAT_R8G8B8A8_SRGB));
-        clearcoat_default_.emplace(
-            create_solid_texture(device, gpu, {255, 255, 255, 255}, VK_FORMAT_R8G8B8A8_UNORM));
-        clearcoat_roughness_default_.emplace(
-            create_solid_texture(device, gpu, {255, 255, 255, 255}, VK_FORMAT_R8G8B8A8_UNORM));
-        clearcoat_normal_default_.emplace(
-            create_solid_texture(device, gpu, {128, 128, 255, 255}, VK_FORMAT_R8G8B8A8_UNORM));
-        sheen_color_default_.emplace(
-            create_solid_texture(device, gpu, {255, 255, 255, 255}, VK_FORMAT_R8G8B8A8_SRGB));
-        sheen_roughness_default_.emplace(
-            create_solid_texture(device, gpu, {255, 255, 255, 255}, VK_FORMAT_R8G8B8A8_UNORM));
-        anisotropy_default_.emplace(
-            create_solid_texture(device, gpu, {255, 128, 255, 255}, VK_FORMAT_R8G8B8A8_UNORM));
-        iridescence_default_.emplace(
-            create_solid_texture(device, gpu, {255, 255, 255, 255}, VK_FORMAT_R8G8B8A8_UNORM));
-        iridescence_thickness_default_.emplace(
-            create_solid_texture(device, gpu, {255, 255, 255, 255}, VK_FORMAT_R8G8B8A8_UNORM));
-    }
-
-    [[nodiscard]] cubey::render::Texture2D create_solid_texture(const cubey::vulkan::Device& device,
-                                                                cubey::vulkan::GpuRuntime& gpu,
-                                                                std::array<std::uint8_t, 4> color,
-                                                                VkFormat format) {
-        return cubey::render::create_uploaded_texture_2d(
-            device, gpu,
-            {
-                .extent = {1, 1},
-                .format = format,
-                .rgba8 = std::span<const std::uint8_t>{color.data(), color.size()},
-                .create_sampler = true,
-                .sampler = {},
-            });
+        if (default_textures_.has_value()) {
+            return;
+        }
+        default_textures_.emplace(cubey::render::create_pbr_default_texture_set(device, gpu));
     }
 
     void create_materials(const cubey::vulkan::Device& device, std::uint32_t frame_slot_count) {
@@ -346,15 +291,15 @@ class MaterialCubesApp {
                 engine_.render_resources().create_material(cubey::render::MaterialInfo{
                     .label = "material_cubes.material." + std::to_string(index),
                     .sort_key = index,
-                });
+            });
             material_handles_.push_back(material);
-            material_factors_.emplace(material, cubey::render::PbrMaterialFactors{
-                                                    .base_color_factor = variant.base_color,
-                                                    .metallic_factor = variant.metallic,
-                                                    .roughness_factor = variant.roughness,
-                                                    .reflectance = 0.5F,
-                                                });
-            material_instances_.emplace(material, device,
+            materials_.set_factors(material, cubey::render::PbrMaterialFactors{
+                                                 .base_color_factor = variant.base_color,
+                                                 .metallic_factor = variant.metallic,
+                                                 .roughness_factor = variant.roughness,
+                                                 .reflectance = 0.5F,
+                                             });
+            materials_.emplace_instance(material, device,
                                         cubey::render::FrameUniformMaterialInstanceConfig{
                                             .material_pass = cubey::render::pbr_forward_pass_info(),
                                             .descriptor_set = 1,
@@ -368,31 +313,10 @@ class MaterialCubesApp {
 
     [[nodiscard]] std::vector<cubey::render::SampledImageMaterialBinding>
     material_sampled_images() const {
-        const auto sampled = [this](cubey::render::PbrMaterialBinding binding) {
-            const cubey::render::Texture2D& texture = default_texture(binding);
-            return cubey::render::SampledImageMaterialBinding{
-                .binding = static_cast<std::uint32_t>(binding),
-                .sampler = texture.sampler().handle(),
-                .image_view = texture.view(),
-            };
-        };
-        return {
-            sampled(cubey::render::PbrMaterialBinding::BaseColor),
-            sampled(cubey::render::PbrMaterialBinding::MetallicRoughness),
-            sampled(cubey::render::PbrMaterialBinding::Normal),
-            sampled(cubey::render::PbrMaterialBinding::Occlusion),
-            sampled(cubey::render::PbrMaterialBinding::Emissive),
-            sampled(cubey::render::PbrMaterialBinding::Specular),
-            sampled(cubey::render::PbrMaterialBinding::SpecularColor),
-            sampled(cubey::render::PbrMaterialBinding::Clearcoat),
-            sampled(cubey::render::PbrMaterialBinding::ClearcoatRoughness),
-            sampled(cubey::render::PbrMaterialBinding::ClearcoatNormal),
-            sampled(cubey::render::PbrMaterialBinding::SheenColor),
-            sampled(cubey::render::PbrMaterialBinding::SheenRoughness),
-            sampled(cubey::render::PbrMaterialBinding::Anisotropy),
-            sampled(cubey::render::PbrMaterialBinding::Iridescence),
-            sampled(cubey::render::PbrMaterialBinding::IridescenceThickness),
-        };
+        if (!default_textures_.has_value()) {
+            throw std::runtime_error("material_cubes default PBR texture set is not initialized");
+        }
+        return cubey::render::pbr_default_sampled_image_bindings(default_textures_.value());
     }
 
     void create_mesh(cubey::vulkan::GpuRuntime& gpu) {
@@ -563,8 +487,8 @@ class MaterialCubesApp {
             .resources =
                 {
                     .meshes = &meshes_,
-                    .material_instances = &material_instances_,
-                    .material_factors = &material_factors_,
+                    .material_instances = &materials_.instances(),
+                    .material_factors = &materials_.factors_map(),
                 },
             .settings =
                 {
@@ -606,78 +530,20 @@ class MaterialCubesApp {
 
     void destroy_material_resources() {
         for (const cubey::render::MaterialHandle material : material_handles_) {
-            if (material_instances_.contains(material)) {
-                material_instances_.erase(material);
+            if (materials_.contains_instance(material) || materials_.contains_factors(material)) {
+                materials_.erase(material);
             }
             if (engine_.render_resources().is_alive(material)) {
                 engine_.render_resources().destroy_material(material);
             }
         }
         material_handles_.clear();
-        material_factors_.clear();
+        materials_.clear();
     }
 
     void destroy_render_handles() {
         cubey::render::destroy_mesh_resource(engine_.render_resources(), meshes_,
                                              cube_mesh_handle_);
-    }
-
-    [[nodiscard]] const cubey::render::Texture2D&
-    default_texture(cubey::render::PbrMaterialBinding binding) const {
-        const std::optional<cubey::render::Texture2D>* texture = nullptr;
-        switch (binding) {
-        case cubey::render::PbrMaterialBinding::BaseColor:
-            texture = &base_color_default_;
-            break;
-        case cubey::render::PbrMaterialBinding::MetallicRoughness:
-            texture = &metallic_roughness_default_;
-            break;
-        case cubey::render::PbrMaterialBinding::Normal:
-            texture = &normal_default_;
-            break;
-        case cubey::render::PbrMaterialBinding::Occlusion:
-            texture = &occlusion_default_;
-            break;
-        case cubey::render::PbrMaterialBinding::Emissive:
-            texture = &emissive_default_;
-            break;
-        case cubey::render::PbrMaterialBinding::Specular:
-            texture = &specular_default_;
-            break;
-        case cubey::render::PbrMaterialBinding::SpecularColor:
-            texture = &specular_color_default_;
-            break;
-        case cubey::render::PbrMaterialBinding::Clearcoat:
-            texture = &clearcoat_default_;
-            break;
-        case cubey::render::PbrMaterialBinding::ClearcoatRoughness:
-            texture = &clearcoat_roughness_default_;
-            break;
-        case cubey::render::PbrMaterialBinding::ClearcoatNormal:
-            texture = &clearcoat_normal_default_;
-            break;
-        case cubey::render::PbrMaterialBinding::SheenColor:
-            texture = &sheen_color_default_;
-            break;
-        case cubey::render::PbrMaterialBinding::SheenRoughness:
-            texture = &sheen_roughness_default_;
-            break;
-        case cubey::render::PbrMaterialBinding::Anisotropy:
-            texture = &anisotropy_default_;
-            break;
-        case cubey::render::PbrMaterialBinding::Iridescence:
-            texture = &iridescence_default_;
-            break;
-        case cubey::render::PbrMaterialBinding::IridescenceThickness:
-            texture = &iridescence_thickness_default_;
-            break;
-        case cubey::render::PbrMaterialBinding::Uniforms:
-            break;
-        }
-        if (texture == nullptr || !texture->has_value()) {
-            throw std::runtime_error("material_cubes default PBR texture is not initialized");
-        }
-        return texture->value();
     }
 
     [[nodiscard]] const cubey::render::GeneratedPbrEnvironment& ibl_environment() const {
@@ -695,7 +561,7 @@ class MaterialCubesApp {
     }
 
     [[nodiscard]] VkDescriptorSetLayout material_descriptor_set_layout() const {
-        return material_instances_.at(material_handles_.front()).layout();
+        return materials_.layout(material_handles_.front());
     }
 
     RunConfig config_;
@@ -709,29 +575,10 @@ class MaterialCubesApp {
     cubey::render::MeshHandle cube_mesh_handle_{};
 
     cubey::render::MeshResourceTable<cubey::render::Mesh> meshes_;
-    cubey::render::MaterialResourceTable<
-        cubey::render::FrameUniformMaterialInstance<cubey::render::PbrMaterialUniforms>>
-        material_instances_;
+    cubey::render::PbrMaterialTable materials_;
     std::vector<cubey::render::MaterialHandle> material_handles_;
-    std::unordered_map<cubey::render::MaterialHandle, cubey::render::PbrMaterialFactors,
-                       cubey::render::MaterialHandleHash>
-        material_factors_;
     std::vector<MaterialCube> cubes_;
-    std::optional<cubey::render::Texture2D> base_color_default_;
-    std::optional<cubey::render::Texture2D> metallic_roughness_default_;
-    std::optional<cubey::render::Texture2D> normal_default_;
-    std::optional<cubey::render::Texture2D> occlusion_default_;
-    std::optional<cubey::render::Texture2D> emissive_default_;
-    std::optional<cubey::render::Texture2D> specular_default_;
-    std::optional<cubey::render::Texture2D> specular_color_default_;
-    std::optional<cubey::render::Texture2D> clearcoat_default_;
-    std::optional<cubey::render::Texture2D> clearcoat_roughness_default_;
-    std::optional<cubey::render::Texture2D> clearcoat_normal_default_;
-    std::optional<cubey::render::Texture2D> sheen_color_default_;
-    std::optional<cubey::render::Texture2D> sheen_roughness_default_;
-    std::optional<cubey::render::Texture2D> anisotropy_default_;
-    std::optional<cubey::render::Texture2D> iridescence_default_;
-    std::optional<cubey::render::Texture2D> iridescence_thickness_default_;
+    std::optional<cubey::render::PbrDefaultTextureSet> default_textures_;
     std::optional<cubey::render::GeneratedPbrEnvironment> ibl_environment_;
 };
 

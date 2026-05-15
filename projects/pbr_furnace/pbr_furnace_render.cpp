@@ -18,7 +18,7 @@ void PbrFurnaceApp::create_forward_pass(const cubey::vulkan::Device& device, VkE
     const cubey::render::VertexInputLayout vertex_input = cubey::render::pbr_vertex_input_layout();
     const std::array<VkDescriptorSetLayout, 2> set_layouts{
         scene_material().layout(),
-        material_instances_.at(material_handles_.front()).layout(),
+        materials_.layout(material_handles_.front()),
     };
     forward_pass_.emplace(
         device,
@@ -54,22 +54,7 @@ void PbrFurnaceApp::destroy_all_resources() {
     destroy_material_resources();
     cubey::render::destroy_mesh_resource(engine_.render_resources(), meshes_, sphere_mesh_handle_);
     white_environment_.reset();
-    dummy_shadow_.reset();
-    iridescence_thickness_default_.reset();
-    iridescence_default_.reset();
-    anisotropy_default_.reset();
-    sheen_roughness_default_.reset();
-    sheen_color_default_.reset();
-    clearcoat_normal_default_.reset();
-    clearcoat_roughness_default_.reset();
-    clearcoat_default_.reset();
-    normal_default_.reset();
-    metallic_roughness_default_.reset();
-    emissive_default_.reset();
-    specular_color_default_.reset();
-    specular_default_.reset();
-    occlusion_default_.reset();
-    base_color_default_.reset();
+    default_textures_.reset();
 }
 
 void PbrFurnaceApp::record_furnace_frame(VkCommandBuffer command_buffer,
@@ -101,9 +86,8 @@ void PbrFurnaceApp::record_furnace_frame(VkCommandBuffer command_buffer,
             },
             [this, frame_slot](const cubey::vulkan::CommandRecorder& packet_recorder,
                                const cubey::scene::RenderDrawPacket3D& packet) {
-                const auto& material = material_instances_.at(packet.material);
-                material.upload(frame_slot, cubey::render::pbr_material_uniforms(
-                                                material_factors_.at(packet.material)));
+                const auto& material = materials_.instance(packet.material);
+                materials_.upload(packet.material, frame_slot);
                 cubey::render::bind_material_instance(packet_recorder, forward_pass().pipeline(),
                                                       material.material(), frame_slot);
                 packet_recorder.push_constants(

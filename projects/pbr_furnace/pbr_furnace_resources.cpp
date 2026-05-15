@@ -16,8 +16,6 @@ void PbrFurnaceApp::create_global_resources_if_needed(const cubey::vulkan::Devic
         return;
     }
     create_default_textures(device, gpu);
-    dummy_shadow_.emplace(
-        create_solid_texture(device, gpu, {255, 255, 255, 255}, VK_FORMAT_R8G8B8A8_UNORM));
     white_environment_.emplace(create_white_pbr_environment(device, gpu));
     create_scene_material(device, frame_slot_count);
     create_materials(device, frame_slot_count);
@@ -27,51 +25,10 @@ void PbrFurnaceApp::create_global_resources_if_needed(const cubey::vulkan::Devic
 
 void PbrFurnaceApp::create_default_textures(const cubey::vulkan::Device& device,
                                             cubey::vulkan::GpuRuntime& gpu) {
-    base_color_default_.emplace(
-        create_solid_texture(device, gpu, {255, 255, 255, 255}, VK_FORMAT_R8G8B8A8_SRGB));
-    metallic_roughness_default_.emplace(
-        create_solid_texture(device, gpu, {255, 255, 255, 255}, VK_FORMAT_R8G8B8A8_UNORM));
-    normal_default_.emplace(
-        create_solid_texture(device, gpu, {128, 128, 255, 255}, VK_FORMAT_R8G8B8A8_UNORM));
-    occlusion_default_.emplace(
-        create_solid_texture(device, gpu, {255, 255, 255, 255}, VK_FORMAT_R8G8B8A8_UNORM));
-    emissive_default_.emplace(
-        create_solid_texture(device, gpu, {0, 0, 0, 255}, VK_FORMAT_R8G8B8A8_SRGB));
-    specular_default_.emplace(
-        create_solid_texture(device, gpu, {255, 255, 255, 255}, VK_FORMAT_R8G8B8A8_UNORM));
-    specular_color_default_.emplace(
-        create_solid_texture(device, gpu, {255, 255, 255, 255}, VK_FORMAT_R8G8B8A8_SRGB));
-    clearcoat_default_.emplace(
-        create_solid_texture(device, gpu, {255, 255, 255, 255}, VK_FORMAT_R8G8B8A8_UNORM));
-    clearcoat_roughness_default_.emplace(
-        create_solid_texture(device, gpu, {255, 255, 255, 255}, VK_FORMAT_R8G8B8A8_UNORM));
-    clearcoat_normal_default_.emplace(
-        create_solid_texture(device, gpu, {128, 128, 255, 255}, VK_FORMAT_R8G8B8A8_UNORM));
-    sheen_color_default_.emplace(
-        create_solid_texture(device, gpu, {255, 255, 255, 255}, VK_FORMAT_R8G8B8A8_SRGB));
-    sheen_roughness_default_.emplace(
-        create_solid_texture(device, gpu, {255, 255, 255, 255}, VK_FORMAT_R8G8B8A8_UNORM));
-    anisotropy_default_.emplace(
-        create_solid_texture(device, gpu, {255, 128, 255, 255}, VK_FORMAT_R8G8B8A8_UNORM));
-    iridescence_default_.emplace(
-        create_solid_texture(device, gpu, {255, 255, 255, 255}, VK_FORMAT_R8G8B8A8_UNORM));
-    iridescence_thickness_default_.emplace(
-        create_solid_texture(device, gpu, {255, 255, 255, 255}, VK_FORMAT_R8G8B8A8_UNORM));
-}
-
-cubey::render::Texture2D PbrFurnaceApp::create_solid_texture(const cubey::vulkan::Device& device,
-                                                             cubey::vulkan::GpuRuntime& gpu,
-                                                             std::array<std::uint8_t, 4> color,
-                                                             VkFormat format) {
-    return cubey::render::create_uploaded_texture_2d(
-        device, gpu,
-        {
-            .extent = {1, 1},
-            .format = format,
-            .rgba8 = std::span<const std::uint8_t>{color.data(), color.size()},
-            .create_sampler = true,
-            .sampler = {},
-        });
+    if (default_textures_.has_value()) {
+        return;
+    }
+    default_textures_.emplace(cubey::render::create_pbr_default_texture_set(device, gpu));
 }
 
 void PbrFurnaceApp::create_scene_material(const cubey::vulkan::Device& device,
@@ -123,14 +80,14 @@ void PbrFurnaceApp::create_materials(const cubey::vulkan::Device& device,
                          std::to_string(furnace_material.column),
                 .sort_key =
                     (furnace_material.row * kPbrFurnaceColumnCount) + furnace_material.column,
-            });
+        });
         material_handles_.push_back(material);
-        material_factors_.emplace(material, cubey::render::PbrMaterialFactors{
-                                                .base_color_factor = {1.0F, 1.0F, 1.0F, 1.0F},
-                                                .metallic_factor = furnace_material.metallic,
-                                                .roughness_factor = furnace_material.roughness,
-                                            });
-        material_instances_.emplace(material, device,
+        materials_.set_factors(material, cubey::render::PbrMaterialFactors{
+                                             .base_color_factor = {1.0F, 1.0F, 1.0F, 1.0F},
+                                             .metallic_factor = furnace_material.metallic,
+                                             .roughness_factor = furnace_material.roughness,
+                                         });
+        materials_.emplace_instance(material, device,
                                     cubey::render::FrameUniformMaterialInstanceConfig{
                                         .material_pass = cubey::render::pbr_forward_pass_info(),
                                         .descriptor_set = 1,
@@ -144,31 +101,10 @@ void PbrFurnaceApp::create_materials(const cubey::vulkan::Device& device,
 
 std::vector<cubey::render::SampledImageMaterialBinding>
 PbrFurnaceApp::material_sampled_images() const {
-    const auto sampled = [this](cubey::render::PbrMaterialBinding binding) {
-        const cubey::render::Texture2D& texture = default_texture(binding);
-        return cubey::render::SampledImageMaterialBinding{
-            .binding = static_cast<std::uint32_t>(binding),
-            .sampler = texture.sampler().handle(),
-            .image_view = texture.view(),
-        };
-    };
-    return {
-        sampled(cubey::render::PbrMaterialBinding::BaseColor),
-        sampled(cubey::render::PbrMaterialBinding::MetallicRoughness),
-        sampled(cubey::render::PbrMaterialBinding::Normal),
-        sampled(cubey::render::PbrMaterialBinding::Occlusion),
-        sampled(cubey::render::PbrMaterialBinding::Emissive),
-        sampled(cubey::render::PbrMaterialBinding::Specular),
-        sampled(cubey::render::PbrMaterialBinding::SpecularColor),
-        sampled(cubey::render::PbrMaterialBinding::Clearcoat),
-        sampled(cubey::render::PbrMaterialBinding::ClearcoatRoughness),
-        sampled(cubey::render::PbrMaterialBinding::ClearcoatNormal),
-        sampled(cubey::render::PbrMaterialBinding::SheenColor),
-        sampled(cubey::render::PbrMaterialBinding::SheenRoughness),
-        sampled(cubey::render::PbrMaterialBinding::Anisotropy),
-        sampled(cubey::render::PbrMaterialBinding::Iridescence),
-        sampled(cubey::render::PbrMaterialBinding::IridescenceThickness),
-    };
+    if (!default_textures_.has_value()) {
+        throw std::runtime_error("PBR furnace default texture set is not initialized");
+    }
+    return cubey::render::pbr_default_sampled_image_bindings(default_textures_.value());
 }
 
 void PbrFurnaceApp::create_mesh(cubey::vulkan::GpuRuntime& gpu) {
@@ -179,80 +115,23 @@ void PbrFurnaceApp::create_mesh(cubey::vulkan::GpuRuntime& gpu) {
 
 void PbrFurnaceApp::destroy_material_resources() {
     for (const cubey::render::MaterialHandle material : material_handles_) {
-        if (material_instances_.contains(material)) {
-            material_instances_.erase(material);
+        if (materials_.contains_instance(material) || materials_.contains_factors(material)) {
+            materials_.erase(material);
         }
         if (engine_.render_resources().is_alive(material)) {
             engine_.render_resources().destroy_material(material);
         }
     }
     material_handles_.clear();
-    material_factors_.clear();
-}
-
-const cubey::render::Texture2D&
-PbrFurnaceApp::default_texture(cubey::render::PbrMaterialBinding binding) const {
-    const std::optional<cubey::render::Texture2D>* texture = nullptr;
-    switch (binding) {
-    case cubey::render::PbrMaterialBinding::BaseColor:
-        texture = &base_color_default_;
-        break;
-    case cubey::render::PbrMaterialBinding::MetallicRoughness:
-        texture = &metallic_roughness_default_;
-        break;
-    case cubey::render::PbrMaterialBinding::Normal:
-        texture = &normal_default_;
-        break;
-    case cubey::render::PbrMaterialBinding::Occlusion:
-        texture = &occlusion_default_;
-        break;
-    case cubey::render::PbrMaterialBinding::Emissive:
-        texture = &emissive_default_;
-        break;
-    case cubey::render::PbrMaterialBinding::Specular:
-        texture = &specular_default_;
-        break;
-    case cubey::render::PbrMaterialBinding::SpecularColor:
-        texture = &specular_color_default_;
-        break;
-    case cubey::render::PbrMaterialBinding::Clearcoat:
-        texture = &clearcoat_default_;
-        break;
-    case cubey::render::PbrMaterialBinding::ClearcoatRoughness:
-        texture = &clearcoat_roughness_default_;
-        break;
-    case cubey::render::PbrMaterialBinding::ClearcoatNormal:
-        texture = &clearcoat_normal_default_;
-        break;
-    case cubey::render::PbrMaterialBinding::SheenColor:
-        texture = &sheen_color_default_;
-        break;
-    case cubey::render::PbrMaterialBinding::SheenRoughness:
-        texture = &sheen_roughness_default_;
-        break;
-    case cubey::render::PbrMaterialBinding::Anisotropy:
-        texture = &anisotropy_default_;
-        break;
-    case cubey::render::PbrMaterialBinding::Iridescence:
-        texture = &iridescence_default_;
-        break;
-    case cubey::render::PbrMaterialBinding::IridescenceThickness:
-        texture = &iridescence_thickness_default_;
-        break;
-    case cubey::render::PbrMaterialBinding::Uniforms:
-        break;
-    }
-    if (texture == nullptr || !texture->has_value()) {
-        throw std::runtime_error("PBR furnace default texture is not initialized");
-    }
-    return texture->value();
+    materials_.clear();
 }
 
 const cubey::render::Texture2D& PbrFurnaceApp::dummy_shadow() const {
-    if (!dummy_shadow_.has_value()) {
-        throw std::runtime_error("PBR furnace dummy shadow texture is not initialized");
+    if (!default_textures_.has_value()) {
+        throw std::runtime_error("PBR furnace default texture set is not initialized");
     }
-    return dummy_shadow_.value();
+    return cubey::render::pbr_default_texture(default_textures_.value(),
+                                              cubey::render::PbrMaterialBinding::Occlusion);
 }
 
 const WhitePbrEnvironment& PbrFurnaceApp::white_environment() const {

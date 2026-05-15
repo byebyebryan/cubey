@@ -3,9 +3,8 @@
 #include <cubey/animation/gltf_animation.h>
 #include <cubey/asset/gltf_asset.h>
 #include <cubey/render/deformation.h>
-#include <cubey/render/material_instance.h>
 #include <cubey/render/mesh.h>
-#include <cubey/render/pbr.h>
+#include <cubey/render/pbr_material_resources.h>
 #include <cubey/render/render_item.h>
 #include <cubey/render/resource_table.h>
 #include <cubey/render/texture.h>
@@ -20,7 +19,6 @@
 #include <memory>
 #include <optional>
 #include <string>
-#include <unordered_map>
 #include <vector>
 
 namespace cubey {
@@ -108,30 +106,12 @@ struct GltfSceneImportResult {
 
 struct GltfSceneImportResources {
     render::MeshResourceTable<render::Mesh> meshes{};
-    render::MaterialResourceTable<render::FrameUniformMaterialInstance<render::PbrMaterialUniforms>>
-        material_instances{};
-    std::unordered_map<render::MaterialHandle, render::PbrMaterialFactors,
-                       render::MaterialHandleHash>
-        material_factors{};
+    render::PbrMaterialTable materials{};
     std::vector<std::vector<GltfImportedPrimitive3D>> mesh_primitives{};
     std::vector<GltfDeformablePrimitive3D> deformable_primitives{};
     GltfDeformationResources deformation{};
     std::vector<render::Texture2D> textures{};
-    std::optional<render::Texture2D> base_color_default{};
-    std::optional<render::Texture2D> metallic_roughness_default{};
-    std::optional<render::Texture2D> normal_default{};
-    std::optional<render::Texture2D> occlusion_default{};
-    std::optional<render::Texture2D> emissive_default{};
-    std::optional<render::Texture2D> specular_default{};
-    std::optional<render::Texture2D> specular_color_default{};
-    std::optional<render::Texture2D> clearcoat_default{};
-    std::optional<render::Texture2D> clearcoat_roughness_default{};
-    std::optional<render::Texture2D> clearcoat_normal_default{};
-    std::optional<render::Texture2D> sheen_color_default{};
-    std::optional<render::Texture2D> sheen_roughness_default{};
-    std::optional<render::Texture2D> anisotropy_default{};
-    std::optional<render::Texture2D> iridescence_default{};
-    std::optional<render::Texture2D> iridescence_thickness_default{};
+    std::optional<render::PbrDefaultTextureSet> default_textures{};
     bool active = false;
 };
 

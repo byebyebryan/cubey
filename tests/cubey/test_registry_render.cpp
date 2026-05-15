@@ -99,6 +99,7 @@ void test_pbr_skybox_pass_declares_scene_set();
 void test_pbr_skybox_uniforms_are_uniform_buffer_safe();
 void test_pbr_shaders_use_filament_style_material_remap();
 void test_gltf_material_fallback_textures_preserve_pbr_factor_channels();
+void test_pbr_examples_and_gltf_importer_share_material_resources();
 void test_gltf_basisu_transcoder_policy_uses_bc7_and_rgba_fallback();
 void test_gltf_basisu_transcoder_uses_bundled_zstd();
 void test_vulkan_and_gltf_sample_asset_cmake_paths_are_portable_and_pinned();
@@ -213,6 +214,7 @@ std::span<const TestCase> render_test_cases() {
         CUBEY_TEST(test_pbr_reflectance_helpers_match_filament_convention),
         CUBEY_TEST(test_pbr_shaders_use_filament_style_material_remap),
         CUBEY_TEST(test_gltf_material_fallback_textures_preserve_pbr_factor_channels),
+        CUBEY_TEST(test_pbr_examples_and_gltf_importer_share_material_resources),
         CUBEY_TEST(test_gltf_basisu_transcoder_policy_uses_bc7_and_rgba_fallback),
         CUBEY_TEST(test_gltf_basisu_transcoder_uses_bundled_zstd),
         CUBEY_TEST(test_vulkan_and_gltf_sample_asset_cmake_paths_are_portable_and_pinned),
