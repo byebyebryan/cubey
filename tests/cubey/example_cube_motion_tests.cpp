@@ -173,14 +173,12 @@ void test_material_cubes_show_real_material_variant_grid() {
     require_not_contains(app, "struct MaterialUniforms",
                          "material_cubes should not keep the old custom material uniform path");
 
-    require_contains(cmake, "gltf_pbr.frag",
-                     "material_cubes should compile the shared PBR material shader");
-    require_contains(cmake, "pbr_post.frag",
-                     "material_cubes should compile the PBR post/display transform shader");
-    require_contains(cmake, "gltf_skybox.frag",
-                     "material_cubes should compile the PBR skybox shader");
-    require_contains(cmake, "shaders/cubey/forward_pbr/gltf_pbr.frag",
-                     "material_cubes should compile the shared forward PBR material shader");
+    require_contains(cmake, "cubey_forward_pbr_shader_sources",
+                     "material_cubes should compile the shared forward PBR shader package");
+    require_contains(cmake, "CUBEY_FORWARD_PBR_SHADERS",
+                     "material_cubes should use the shared forward PBR shader source list");
     require_not_contains(cmake, "projects/gltf_viewer/shaders",
                          "material_cubes should not depend on glTF viewer project shaders");
+    require_not_contains(cmake, "gltf_pbr",
+                         "material_cubes should not reference old glTF-named PBR shaders");
 }

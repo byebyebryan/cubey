@@ -1,3 +1,5 @@
+cubey_forward_pbr_shader_sources(CUBEY_FORWARD_PBR_SHADERS)
+
 cubey_add_app_target(
     cubey_project_gltf_viewer
     OUTPUT_NAME gltf_viewer
@@ -11,15 +13,8 @@ cubey_add_app_target(
         gltf_viewer_scene.cpp
         main.cpp
     SHADERS
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/forward_pbr/gltf_pbr.vert"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/forward_pbr/gltf_pbr.frag"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/forward_pbr/gltf_skybox.vert"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/forward_pbr/gltf_skybox.frag"
+        ${CUBEY_FORWARD_PBR_SHADERS}
         shaders/gltf_deform.comp
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/forward_pbr/pbr_post.vert"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/forward_pbr/pbr_post.frag"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/forward_pbr/gltf_shadow_depth.vert"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/forward_pbr/gltf_shadow_depth.frag"
     SHADER_INCLUDE_DIRS
         "${CMAKE_SOURCE_DIR}/shaders"
     SHADER_DEPENDS

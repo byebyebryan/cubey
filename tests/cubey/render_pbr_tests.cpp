@@ -464,17 +464,17 @@ void test_pbr_shaders_use_filament_style_material_remap() {
     const std::filesystem::path source_root{CUBEY_SOURCE_DIR};
     const std::string pbr = read_source_file(source_root / "shaders/cubey/pbr.glsl");
     const std::string post =
-        read_source_file(source_root / "shaders/cubey/forward_pbr/pbr_post.frag");
+        read_source_file(source_root / "shaders/cubey/forward_pbr/forward_pbr_post.frag");
     const std::string furnace =
         read_source_file(source_root / "projects/pbr_furnace/shaders/pbr_furnace.frag");
     const std::string gltf =
-        read_source_file(source_root / "shaders/cubey/forward_pbr/gltf_pbr.frag");
+        read_source_file(source_root / "shaders/cubey/forward_pbr/forward_pbr.frag");
     const std::string gltf_vertex =
-        read_source_file(source_root / "shaders/cubey/forward_pbr/gltf_pbr.vert");
-    const std::string gltf_skybox =
-        read_source_file(source_root / "shaders/cubey/forward_pbr/gltf_skybox.frag");
+        read_source_file(source_root / "shaders/cubey/forward_pbr/forward_pbr.vert");
+    const std::string forward_pbr_skybox =
+        read_source_file(source_root / "shaders/cubey/forward_pbr/forward_pbr_skybox.frag");
     const std::string gltf_shadow =
-        read_source_file(source_root / "shaders/cubey/forward_pbr/gltf_shadow_depth.frag");
+        read_source_file(source_root / "shaders/cubey/forward_pbr/forward_pbr_shadow_depth.frag");
 
     require_contains(pbr, "cubey_pbr_diffuse_color",
                      "PBR shader should expose a baseColor-to-diffuse remap helper");
@@ -500,7 +500,7 @@ void test_pbr_shaders_use_filament_style_material_remap() {
 
     require_not_contains(gltf, "cubey_pbr_apply_display_transform",
                          "glTF PBR shader should leave display transform to the post pass");
-    require_not_contains(gltf_skybox, "cubey_pbr_apply_display_transform",
+    require_not_contains(forward_pbr_skybox, "cubey_pbr_apply_display_transform",
                          "glTF skybox shader should leave display transform to the post pass");
 
     for (const std::string* shader : {&furnace, &gltf}) {
@@ -601,6 +601,38 @@ void test_pbr_shaders_use_filament_style_material_remap() {
                      "glTF shadow mask shader should apply base-color texture transform");
     require_contains(gltf_shadow, "discard",
                      "glTF shadow mask shader should discard fragments below alpha cutoff");
+}
+
+void test_forward_pbr_shader_package_uses_renderer_names() {
+    const std::filesystem::path source_root{CUBEY_SOURCE_DIR};
+    const std::string shader_cmake = read_source_file(source_root / "cmake/CubeyShaders.cmake");
+    const std::string viewer_cmake =
+        read_source_file(source_root / "projects/gltf_viewer/CMakeLists.txt");
+    const std::string material_cubes_cmake =
+        read_source_file(source_root / "examples/material_cubes/CMakeLists.txt");
+
+    require_contains(shader_cmake, "cubey_forward_pbr_shader_sources",
+                     "CMake should expose the shared forward PBR shader package");
+    require_contains(shader_cmake, "forward_pbr_shadow_depth.frag",
+                     "shared forward PBR package should include the shadow mask shader");
+    require_contains(viewer_cmake, "cubey_forward_pbr_shader_sources",
+                     "glTF viewer should consume the shared forward PBR shader package");
+    require_contains(material_cubes_cmake, "cubey_forward_pbr_shader_sources",
+                     "material_cubes should consume the shared forward PBR shader package");
+    require_not_contains(shader_cmake, "gltf_pbr",
+                         "shared forward PBR package should not use old glTF shader names");
+
+    std::size_t shader_count = 0;
+    for (const std::filesystem::directory_entry& entry :
+         std::filesystem::directory_iterator(source_root / "shaders/cubey/forward_pbr")) {
+        if (!entry.is_regular_file()) {
+            continue;
+        }
+        ++shader_count;
+        require_not_contains(entry.path().filename().string(), "gltf_",
+                             "shared forward PBR shader filenames should be renderer-named");
+    }
+    require(shader_count == 8, "shared forward PBR package should contain eight shader files");
 }
 
 void test_gltf_viewer_sample_asset_smoke_tests_cover_material_and_tangent_cases() {

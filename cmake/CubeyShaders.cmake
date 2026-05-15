@@ -48,3 +48,18 @@ function(cubey_add_glsl_shaders target)
     add_custom_target(${target}_shaders DEPENDS ${shader_outputs})
     add_dependencies(${target} ${target}_shaders)
 endfunction()
+
+function(cubey_forward_pbr_shader_sources out_var)
+    set(
+        forward_pbr_shaders
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/forward_pbr/forward_pbr.vert"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/forward_pbr/forward_pbr.frag"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/forward_pbr/forward_pbr_skybox.vert"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/forward_pbr/forward_pbr_skybox.frag"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/forward_pbr/forward_pbr_post.vert"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/forward_pbr/forward_pbr_post.frag"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/forward_pbr/forward_pbr_shadow_depth.vert"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/forward_pbr/forward_pbr_shadow_depth.frag"
+    )
+    set(${out_var} ${forward_pbr_shaders} PARENT_SCOPE)
+endfunction()

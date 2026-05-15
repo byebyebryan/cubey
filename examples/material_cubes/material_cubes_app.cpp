@@ -73,14 +73,14 @@ std::filesystem::path shader_path(const char* filename) {
 
 cubey::ForwardPbrRenderer3DConfig forward_pbr_renderer_3d_config() {
     return {
-        .pbr_vertex_shader = shader_path("gltf_pbr.vert.spv"),
-        .pbr_fragment_shader = shader_path("gltf_pbr.frag.spv"),
-        .skybox_vertex_shader = shader_path("gltf_skybox.vert.spv"),
-        .skybox_fragment_shader = shader_path("gltf_skybox.frag.spv"),
-        .post_vertex_shader = shader_path("pbr_post.vert.spv"),
-        .post_fragment_shader = shader_path("pbr_post.frag.spv"),
-        .shadow_depth_vertex_shader = shader_path("gltf_shadow_depth.vert.spv"),
-        .shadow_depth_fragment_shader = shader_path("gltf_shadow_depth.frag.spv"),
+        .pbr_vertex_shader = shader_path("forward_pbr.vert.spv"),
+        .pbr_fragment_shader = shader_path("forward_pbr.frag.spv"),
+        .skybox_vertex_shader = shader_path("forward_pbr_skybox.vert.spv"),
+        .skybox_fragment_shader = shader_path("forward_pbr_skybox.frag.spv"),
+        .post_vertex_shader = shader_path("forward_pbr_post.vert.spv"),
+        .post_fragment_shader = shader_path("forward_pbr_post.frag.spv"),
+        .shadow_depth_vertex_shader = shader_path("forward_pbr_shadow_depth.vert.spv"),
+        .shadow_depth_fragment_shader = shader_path("forward_pbr_shadow_depth.frag.spv"),
         .shadow_extent = kShadowMapSize,
     };
 }
