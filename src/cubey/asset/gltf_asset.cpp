@@ -72,6 +72,21 @@ template <typename T>
     return value == 9728 ? GltfTextureFilter::Nearest : GltfTextureFilter::Linear;
 }
 
+[[nodiscard]] GltfTextureMipFilter mip_filter(cgltf_int value) noexcept {
+    switch (value) {
+    case 9728:
+    case 9729:
+        return GltfTextureMipFilter::None;
+    case 9984:
+    case 9985:
+        return GltfTextureMipFilter::Nearest;
+    case 9986:
+    case 9987:
+    default:
+        return GltfTextureMipFilter::Linear;
+    }
+}
+
 [[nodiscard]] GltfTextureWrap wrap_mode(cgltf_int value) noexcept {
     switch (value) {
     case 33071:
@@ -88,6 +103,7 @@ template <typename T>
         .label = label_or_empty(sampler.name),
         .min_filter = min_filter(sampler.min_filter),
         .mag_filter = mag_filter(sampler.mag_filter),
+        .mip_filter = mip_filter(sampler.min_filter),
         .wrap_s = wrap_mode(sampler.wrap_s),
         .wrap_t = wrap_mode(sampler.wrap_t),
     };
@@ -1034,11 +1050,12 @@ load_animation_interpolation(cgltf_interpolation_type interpolation) {
 }
 
 [[nodiscard]] bool supports_required_extension(std::string_view extension) noexcept {
-    static constexpr std::array<std::string_view, 9> kSupportedRequiredExtensions{
+    static constexpr std::array<std::string_view, 10> kSupportedRequiredExtensions{
         "KHR_materials_emissive_strength",
         "KHR_materials_ior",
         "KHR_materials_specular",
         "KHR_texture_transform",
+        "KHR_texture_basisu",
         "KHR_materials_unlit",
         "KHR_materials_clearcoat",
         "KHR_materials_sheen",
@@ -1109,9 +1126,10 @@ GltfAsset load_gltf_asset(const std::filesystem::path& path, GltfLoadConfig conf
     asset.textures.reserve(data->textures_count);
     for (cgltf_size i = 0; i < data->textures_count; ++i) {
         const cgltf_texture& texture = data->textures[i];
+        const cgltf_image* image = texture.has_basisu ? texture.basisu_image : texture.image;
         asset.textures.push_back(GltfTexture{
             .label = label_or_empty(texture.name),
-            .image_index = pointer_index(texture.image, data->images, data->images_count, "image"),
+            .image_index = pointer_index(image, data->images, data->images_count, "image"),
             .sampler_index =
                 pointer_index(texture.sampler, data->samplers, data->samplers_count, "sampler"),
         });

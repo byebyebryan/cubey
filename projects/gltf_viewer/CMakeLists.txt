@@ -108,6 +108,16 @@ if (BUILD_TESTING)
         "gltf-viewer-damaged-helmet-smoke.png"
     )
     cubey_add_gltf_viewer_sample_smoke_test(
+        gltf_viewer_anisotropy_barn_lamp_ktx_basisu_headless_writes_png
+        "AnisotropyBarnLamp/glTF-KTX-BasisU/AnisotropyBarnLamp.gltf"
+        "gltf-viewer-anisotropy-barn-lamp-ktx-basisu-smoke.png"
+    )
+    cubey_add_gltf_viewer_sample_smoke_test(
+        gltf_viewer_stained_glass_lamp_ktx_basisu_headless_writes_png
+        "StainedGlassLamp/glTF-KTX-BasisU/StainedGlassLamp.gltf"
+        "gltf-viewer-stained-glass-lamp-ktx-basisu-smoke.png"
+    )
+    cubey_add_gltf_viewer_sample_smoke_test(
         gltf_viewer_specular_test_headless_writes_png
         "SpecularTest/glTF/SpecularTest.gltf"
         "gltf-viewer-specular-test-smoke.png"

@@ -44,7 +44,7 @@ current design.
 | Math | GLM behind `cubey::math` | Share matrix/vector types, transform/camera state, and Vulkan projection conventions without exposing ad hoc example math |
 | Shader compilation | glslangValidator (build time) | GLSL → SPIR-V, no runtime dependency |
 | Image output | `stb_image_write` | Single-header dependency, enough for inspectable artifacts |
-| Asset import | `cgltf` + `stb_image` | Narrow static glTF/glb CPU loading and PNG/JPEG decode before a broader asset pipeline |
+| Asset import | `cgltf` + `stb_image` + Basis Universal transcoder | Narrow static glTF/glb CPU loading, PNG/JPEG decode, and `KHR_texture_basisu` KTX2 upload support before a broader asset pipeline |
 | CPU async work | undecided behind `cubey::jobs` | Taskflow and `BS::thread_pool` are the first candidates |
 
 ## Architecture

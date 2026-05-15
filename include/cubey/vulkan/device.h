@@ -41,6 +41,9 @@ class Device {
     const char* device_name() const {
         return properties_.deviceName;
     }
+    bool supports_texture_compression_bc() const {
+        return enabled_features_.textureCompressionBC == VK_TRUE;
+    }
 
     [[nodiscard]] std::uint32_t find_memory_type(std::uint32_t type_bits,
                                                  VkMemoryPropertyFlags required) const;
@@ -53,6 +56,8 @@ class Device {
 
     VkPhysicalDevice physical_device_ = VK_NULL_HANDLE;
     VkPhysicalDeviceProperties properties_{};
+    VkPhysicalDeviceFeatures supported_features_{};
+    VkPhysicalDeviceFeatures enabled_features_{};
     VkDevice device_ = VK_NULL_HANDLE;
     VkQueue queue_ = VK_NULL_HANDLE;
     std::uint32_t queue_family_ = 0;

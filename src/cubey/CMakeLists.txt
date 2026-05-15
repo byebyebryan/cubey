@@ -210,6 +210,7 @@ target_link_libraries(
 add_library(cubey_engine STATIC
     engine/capture_queue.cpp
     engine/engine.cpp
+    engine/gltf_basisu_texture.cpp
     engine/gltf_scene_importer.cpp
     engine/gltf_scene_importer_deformation.cpp
     engine/gltf_scene_importer_materials.cpp
@@ -239,6 +240,7 @@ target_link_libraries(
         cubey::render
         cubey::scene
     PRIVATE
+        cubey_external_basisu_transcoder
         cubey_project_warnings
 )
 

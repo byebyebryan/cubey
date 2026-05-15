@@ -547,13 +547,52 @@ void test_gltf_viewer_sample_asset_smoke_tests_cover_material_and_tangent_cases(
                      "glTF viewer sample smoke tests should cover mirrored tangent spaces");
     require_contains(cmake, "DamagedHelmet/glTF/DamagedHelmet.gltf",
                      "glTF viewer sample smoke tests should cover the default PBR sample");
+    require_contains(cmake, "AnisotropyBarnLamp/glTF-KTX-BasisU/AnisotropyBarnLamp.gltf",
+                     "glTF viewer sample smoke tests should cover required KTX2 BasisU textures");
+    require_contains(cmake, "StainedGlassLamp/glTF-KTX-BasisU/StainedGlassLamp.gltf",
+                     "glTF viewer sample smoke tests should cover KTX2 alpha/emissive textures");
 
     require_contains(gltf_docs, "MikkTSpace",
                      "glTF docs should record the tangent-space reference");
+    require_contains(gltf_docs, "KHR_texture_basisu",
+                     "glTF docs should record the KTX2 BasisU import path");
+    require_contains(gltf_docs, "BC7",
+                     "glTF docs should record the desktop compressed texture target");
     require_contains(gltf_docs, "current fallback tangent generator",
                      "glTF docs should keep the current tangent generator policy explicit");
     require_contains(gltf_docs, "not a trivial swap",
                      "glTF docs should capture why MikkTSpace is not added immediately");
     require_contains(gltf_docs, "NormalTangentTest",
                      "glTF docs should point tangent validation at Khronos sample assets");
+}
+
+void test_gltf_basisu_transcoder_policy_uses_bc7_and_rgba_fallback() {
+    const std::filesystem::path source_root = std::filesystem::path{CUBEY_SOURCE_DIR};
+    const std::string basisu =
+        read_source_file(source_root / "src/cubey/engine/gltf_basisu_texture.cpp");
+
+    require_contains(basisu, "cTFBC7_RGBA",
+                     "BasisU transcode policy should use BC7 for compressed desktop upload");
+    require_contains(basisu, "cTFRGBA32",
+                     "BasisU transcode policy should keep an RGBA8 fallback path");
+    require_contains(basisu, "VK_FORMAT_BC7_SRGB_BLOCK",
+                     "sRGB KTX2 textures should use BC7 sRGB when compressed");
+    require_contains(basisu, "VK_FORMAT_R8G8B8A8_SRGB",
+                     "sRGB KTX2 textures should use RGBA8 sRGB for fallback upload");
+    require_contains(basisu, "bc7_available",
+                     "BasisU transcode policy should make compressed upload conditional");
+    require_contains(basisu, "basis_is_format_supported",
+                     "BasisU transcode policy should fall back when a payload cannot use BC7");
+}
+
+void test_gltf_basisu_transcoder_uses_bundled_zstd() {
+    const std::filesystem::path source_root = std::filesystem::path{CUBEY_SOURCE_DIR};
+    const std::string cmake = read_source_file(source_root / "CMakeLists.txt");
+
+    require_contains(cmake, "zstd/zstd.c",
+                     "BasisU transcoder should compile the pinned bundled Zstd source");
+    require_not_contains(cmake, "pkg_check_modules(ZSTD",
+                         "BasisU transcoder should not require a system Zstd package");
+    require_not_contains(cmake, "PkgConfig::ZSTD",
+                         "BasisU transcoder should not mix bundled headers with system Zstd");
 }

@@ -58,6 +58,40 @@ void test_texture_2d_config_maps_transfer_sampled_usage() {
     static_assert(std::is_move_constructible_v<cubey::render::Texture2D>);
 }
 
+void test_texture_2d_config_preserves_mip_count() {
+    const cubey::render::Texture2DConfig config{
+        .extent = {128, 64},
+        .mip_levels = 4,
+        .format = VK_FORMAT_R8G8B8A8_UNORM,
+        .usage = cubey::render::Texture2DUsage::TransferSampled,
+        .create_sampler = false,
+        .sampler = {},
+    };
+
+    const cubey::vulkan::ImageConfig image_config = cubey::render::texture_2d_image_config(config);
+
+    require(image_config.mip_levels == 4, "texture image config should preserve mip count");
+}
+
+void test_texture_2d_byte_size_uses_compressed_blocks() {
+    const cubey::render::TextureFormatLayout bc7 =
+        cubey::render::texture_format_layout(VK_FORMAT_BC7_UNORM_BLOCK);
+    require(bc7.block_width == 4, "BC7 should use four-wide blocks");
+    require(bc7.block_height == 4, "BC7 should use four-high blocks");
+    require(bc7.bytes_per_block == 16, "BC7 should use sixteen-byte blocks");
+    require(bc7.compressed, "BC7 should be marked compressed");
+
+    const VkExtent2D mip2 = cubey::render::texture_2d_mip_extent({8, 4}, 2);
+    require(mip2.width == 2 && mip2.height == 1, "2D mip extent should clamp to one texel");
+    const VkExtent2D far_mip = cubey::render::texture_2d_mip_extent({8, 4}, 40);
+    require(far_mip.width == 1 && far_mip.height == 1,
+            "2D mip extent should avoid overshifting and clamp distant mips");
+    require(cubey::render::texture_cube_mip_extent(8, 40) == 1,
+            "cube mip extent should avoid overshifting and clamp distant mips");
+    require(cubey::render::texture_2d_byte_size({8, 4}, 3, VK_FORMAT_BC7_UNORM_BLOCK) == 64,
+            "BC7 byte size should sum compressed block sizes across mips");
+}
+
 void test_depth_texture_config_maps_sampled_depth_usage() {
     const cubey::render::DepthTextureConfig config{
         .extent = {1024, 512},

@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.21)
 
-project(cubey VERSION 0.1.0 LANGUAGES CXX)
+project(cubey VERSION 0.1.0 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -90,6 +90,43 @@ target_include_directories(
     INTERFACE
         "${stb_SOURCE_DIR}"
 )
+
+FetchContent_Declare(
+    basis_universal
+    GIT_REPOSITORY https://github.com/BinomialLLC/basis_universal.git
+    GIT_TAG        v2_1_0
+)
+FetchContent_GetProperties(basis_universal)
+if (NOT basis_universal_POPULATED)
+    cmake_policy(PUSH)
+    if (POLICY CMP0169)
+        cmake_policy(SET CMP0169 OLD)
+    endif()
+    FetchContent_Populate(basis_universal)
+    cmake_policy(POP)
+endif()
+add_library(cubey_external_basisu_transcoder STATIC
+    "${basis_universal_SOURCE_DIR}/transcoder/basisu_transcoder.cpp"
+    "${basis_universal_SOURCE_DIR}/zstd/zstd.c"
+)
+target_include_directories(
+    cubey_external_basisu_transcoder
+    SYSTEM
+    PUBLIC
+        "${basis_universal_SOURCE_DIR}/transcoder"
+)
+target_compile_definitions(
+    cubey_external_basisu_transcoder
+    PRIVATE
+        BASISD_SUPPORT_KTX2=1
+        BASISD_SUPPORT_KTX2_ZSTD=1
+)
+target_compile_options(
+    cubey_external_basisu_transcoder
+    PRIVATE
+        "$<$<CXX_COMPILER_ID:Clang,GNU>:-w>"
+)
+set_target_properties(cubey_external_basisu_transcoder PROPERTIES CXX_CLANG_TIDY "")
 
 find_package(glm CONFIG QUIET)
 if (NOT glm_FOUND)

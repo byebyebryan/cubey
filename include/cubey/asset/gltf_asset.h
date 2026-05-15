@@ -25,6 +25,12 @@ enum class GltfTextureFilter : std::uint8_t {
     Linear,
 };
 
+enum class GltfTextureMipFilter : std::uint8_t {
+    None,
+    Nearest,
+    Linear,
+};
+
 enum class GltfTextureWrap : std::uint8_t {
     Repeat,
     ClampToEdge,
@@ -34,6 +40,11 @@ enum class GltfTextureWrap : std::uint8_t {
 enum class GltfTextureColorSpace : std::uint8_t {
     Linear,
     Srgb,
+};
+
+enum class GltfImageEncoding : std::uint8_t {
+    Rgba8,
+    Ktx2Basisu,
 };
 
 enum class GltfAnimationInterpolation : std::uint8_t {
@@ -65,15 +76,19 @@ struct GltfSampler {
     std::string label{};
     GltfTextureFilter min_filter = GltfTextureFilter::Linear;
     GltfTextureFilter mag_filter = GltfTextureFilter::Linear;
+    GltfTextureMipFilter mip_filter = GltfTextureMipFilter::Linear;
     GltfTextureWrap wrap_s = GltfTextureWrap::Repeat;
     GltfTextureWrap wrap_t = GltfTextureWrap::Repeat;
 };
 
 struct GltfImage {
     std::string label{};
+    GltfImageEncoding encoding = GltfImageEncoding::Rgba8;
     std::uint32_t width = 0;
     std::uint32_t height = 0;
+    std::uint32_t mip_levels = 1;
     std::vector<std::uint8_t> rgba8{};
+    std::vector<std::uint8_t> encoded_bytes{};
 };
 
 struct GltfTexture {

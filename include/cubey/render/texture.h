@@ -21,10 +21,18 @@ enum class Texture2DUsage : std::uint8_t {
 
 struct Texture2DConfig {
     VkExtent2D extent{1, 1};
+    std::uint32_t mip_levels = 1;
     VkFormat format = VK_FORMAT_UNDEFINED;
     Texture2DUsage usage = Texture2DUsage::TransferSampled;
     bool create_sampler = false;
     cubey::vulkan::SamplerConfig sampler;
+};
+
+struct TextureFormatLayout {
+    std::uint32_t block_width = 1;
+    std::uint32_t block_height = 1;
+    std::size_t bytes_per_block = 0;
+    bool compressed = false;
 };
 
 struct TextureCubeConfig {
@@ -42,11 +50,19 @@ struct DepthTextureConfig {
     cubey::vulkan::SamplerConfig sampler;
 };
 
+struct UploadedTexture2DMip {
+    VkExtent2D extent{1, 1};
+    VkDeviceSize byte_offset = 0;
+    std::size_t byte_count = 0;
+};
+
 struct UploadedTexture2DConfig {
     VkExtent2D extent{1, 1};
+    std::uint32_t mip_levels = 1;
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
     std::span<const std::uint8_t> rgba8{};
     std::span<const std::uint8_t> bytes{};
+    std::span<const UploadedTexture2DMip> mips{};
     bool create_sampler = true;
     cubey::vulkan::SamplerConfig sampler;
 };
@@ -65,7 +81,12 @@ struct UploadedTextureCubeConfig {
     const TextureCubeConfig& config);
 [[nodiscard]] cubey::vulkan::ImageConfig
 depth_texture_image_config(const DepthTextureConfig& config);
+[[nodiscard]] TextureFormatLayout texture_format_layout(VkFormat format);
 [[nodiscard]] std::size_t texture_format_byte_size(VkFormat format);
+[[nodiscard]] VkExtent2D texture_2d_mip_extent(VkExtent2D extent, std::uint32_t mip_level);
+[[nodiscard]] std::size_t texture_2d_byte_size(VkExtent2D extent,
+                                               std::uint32_t mip_levels,
+                                               VkFormat format);
 [[nodiscard]] std::uint32_t texture_cube_mip_extent(std::uint32_t extent,
                                                     std::uint32_t mip_level);
 [[nodiscard]] std::size_t texture_cube_byte_size(std::uint32_t extent,

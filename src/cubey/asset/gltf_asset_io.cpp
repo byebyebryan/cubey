@@ -16,11 +16,14 @@
 #pragma GCC diagnostic pop
 #endif
 
+#include <algorithm>
 #include <array>
 #include <cctype>
 #include <cstdint>
 #include <filesystem>
+#include <span>
 #include <string_view>
+#include <utility>
 
 namespace cubey::asset::gltf_internal {
 
@@ -36,6 +39,11 @@ bool starts_with(std::string_view value, std::string_view prefix) noexcept {
     return value.size() >= prefix.size() && value.substr(0, prefix.size()) == prefix;
 }
 
+[[nodiscard]] bool ends_with(std::string_view value, std::string_view suffix) noexcept {
+    return value.size() >= suffix.size() &&
+           value.substr(value.size() - suffix.size()) == suffix;
+}
+
 [[nodiscard]] std::uint8_t hex_value(char value) {
     if (value >= '0' && value <= '9') {
         return static_cast<std::uint8_t>(value - '0');
@@ -47,6 +55,63 @@ bool starts_with(std::string_view value, std::string_view prefix) noexcept {
         return static_cast<std::uint8_t>(value - 'A' + 10);
     }
     throw gltf_error("invalid percent-encoded URI");
+}
+
+[[nodiscard]] std::uint32_t read_le_u32(std::span<const std::uint8_t> bytes,
+                                        std::size_t offset) {
+    if (offset + 4U > bytes.size()) {
+        throw gltf_error("truncated KTX2 header");
+    }
+    return static_cast<std::uint32_t>(bytes[offset]) |
+           (static_cast<std::uint32_t>(bytes[offset + 1U]) << 8U) |
+           (static_cast<std::uint32_t>(bytes[offset + 2U]) << 16U) |
+           (static_cast<std::uint32_t>(bytes[offset + 3U]) << 24U);
+}
+
+[[nodiscard]] bool is_ktx2_image(const cgltf_image& source) {
+    if (source.mime_type != nullptr && std::string_view{source.mime_type} == "image/ktx2") {
+        return true;
+    }
+    if (source.uri == nullptr) {
+        return false;
+    }
+    const std::string_view uri(source.uri);
+    return starts_with(uri, "data:image/ktx2") || ends_with(uri, ".ktx2");
+}
+
+[[nodiscard]] GltfImage load_ktx2_image(const cgltf_image& source,
+                                        std::vector<std::uint8_t> bytes) {
+    static constexpr std::array<std::uint8_t, 12> kKtx2Identifier{
+        0xAB, 0x4B, 0x54, 0x58, 0x20, 0x32, 0x30, 0xBB, 0x0D, 0x0A, 0x1A, 0x0A,
+    };
+    if (bytes.size() < 48U) {
+        throw gltf_error("KTX2 image header is truncated");
+    }
+    if (!std::equal(kKtx2Identifier.begin(), kKtx2Identifier.end(), bytes.begin())) {
+        throw gltf_error("KTX2 image has invalid identifier");
+    }
+
+    const std::uint32_t width = read_le_u32(bytes, 20U);
+    const std::uint32_t height = read_le_u32(bytes, 24U);
+    const std::uint32_t depth = read_le_u32(bytes, 28U);
+    const std::uint32_t layer_count = read_le_u32(bytes, 32U);
+    const std::uint32_t face_count = read_le_u32(bytes, 36U);
+    std::uint32_t mip_levels = read_le_u32(bytes, 40U);
+    if (width == 0 || height == 0 || depth != 0 || layer_count != 0 || face_count != 1) {
+        throw gltf_error("KTX2 glTF material image must be a nonzero 2D texture");
+    }
+    if (mip_levels == 0) {
+        mip_levels = 1;
+    }
+
+    return GltfImage{
+        .label = label_or_empty(source.name),
+        .encoding = GltfImageEncoding::Ktx2Basisu,
+        .width = width,
+        .height = height,
+        .mip_levels = mip_levels,
+        .encoded_bytes = std::move(bytes),
+    };
 }
 
 std::string percent_decode(std::string_view uri) {
@@ -169,6 +234,10 @@ std::vector<std::uint8_t> decode_data_uri(std::string_view uri) {
 
 GltfImage decode_image(const cgltf_image& source, const std::filesystem::path& source_path) {
     std::vector<std::uint8_t> bytes = image_bytes(source, source_path);
+    if (is_ktx2_image(source)) {
+        return load_ktx2_image(source, std::move(bytes));
+    }
+
     int width = 0;
     int height = 0;
     int channels = 0;
@@ -186,8 +255,10 @@ GltfImage decode_image(const cgltf_image& source, const std::filesystem::path& s
         static_cast<std::size_t>(width) * static_cast<std::size_t>(height) * 4U;
     GltfImage image{
         .label = label_or_empty(source.name),
+        .encoding = GltfImageEncoding::Rgba8,
         .width = static_cast<std::uint32_t>(width),
         .height = static_cast<std::uint32_t>(height),
+        .mip_levels = 1,
         .rgba8 = std::vector<std::uint8_t>(decoded, decoded + byte_count),
     };
     stbi_image_free(decoded);

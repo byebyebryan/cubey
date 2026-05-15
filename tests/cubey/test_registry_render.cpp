@@ -96,6 +96,8 @@ void test_pbr_scene_uniforms_carry_display_transform();
 void test_pbr_skybox_pass_declares_scene_set();
 void test_pbr_skybox_uniforms_are_uniform_buffer_safe();
 void test_pbr_shaders_use_filament_style_material_remap();
+void test_gltf_basisu_transcoder_policy_uses_bc7_and_rgba_fallback();
+void test_gltf_basisu_transcoder_uses_bundled_zstd();
 void test_gltf_viewer_sample_asset_smoke_tests_cover_material_and_tangent_cases();
 void test_render_pipeline_resource_allows_vertexless_fullscreen_pipeline_shape();
 void test_render_pipeline_resource_builds_compute_pipeline_info();
@@ -112,6 +114,8 @@ void test_shadow_map_depth_texture_config_describes_sampled_depth_target();
 void test_shadow_map_sampler_uses_depth_texture_defaults();
 void test_texture_2d_config_maps_storage_sampled_usage();
 void test_texture_2d_config_maps_transfer_sampled_usage();
+void test_texture_2d_config_preserves_mip_count();
+void test_texture_2d_byte_size_uses_compressed_blocks();
 void test_texture_cube_config_maps_transfer_sampled_cube_usage();
 
 namespace cubey::tests {
@@ -202,6 +206,8 @@ std::span<const TestCase> render_test_cases() {
         CUBEY_TEST(test_pbr_skybox_pass_declares_scene_set),
         CUBEY_TEST(test_pbr_reflectance_helpers_match_filament_convention),
         CUBEY_TEST(test_pbr_shaders_use_filament_style_material_remap),
+        CUBEY_TEST(test_gltf_basisu_transcoder_policy_uses_bc7_and_rgba_fallback),
+        CUBEY_TEST(test_gltf_basisu_transcoder_uses_bundled_zstd),
         CUBEY_TEST(test_gltf_viewer_sample_asset_smoke_tests_cover_material_and_tangent_cases),
         CUBEY_TEST(test_generated_pbr_environment_data_is_deterministic_and_sized),
         CUBEY_TEST(test_generated_pbr_dfg_lut_stores_energy_compensation_term),
@@ -221,6 +227,8 @@ std::span<const TestCase> render_test_cases() {
         CUBEY_TEST(test_depth_only_rendering_info_describes_sampled_depth_target),
         CUBEY_TEST(test_texture_2d_config_maps_storage_sampled_usage),
         CUBEY_TEST(test_texture_2d_config_maps_transfer_sampled_usage),
+        CUBEY_TEST(test_texture_2d_config_preserves_mip_count),
+        CUBEY_TEST(test_texture_2d_byte_size_uses_compressed_blocks),
         CUBEY_TEST(test_texture_cube_config_maps_transfer_sampled_cube_usage),
         CUBEY_TEST(test_depth_texture_config_maps_sampled_depth_usage),
         CUBEY_TEST(test_compute_generated_texture_config_validates_dispatch_shape),

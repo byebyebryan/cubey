@@ -24,7 +24,8 @@ renderer.
 
 - glTF/glb parsing through `cgltf`;
 - external buffers, data URIs, image buffer views, PNG/JPEG decode for glTF
-  textures, and standalone Radiance HDR decode through `stb_image`;
+  textures through `stb_image`, `KHR_texture_basisu` KTX2 texture payloads
+  through the Basis Universal transcoder, and standalone Radiance HDR decode;
 - triangle mesh primitives with position, normal, tangent, UV0, optional UV1,
   optional `COLOR_0`, optional `JOINTS_0` / `WEIGHTS_0`, sparse accessor
   expansion, and optional named morph target deltas from
@@ -46,7 +47,7 @@ unknown `extensionsRequired`, non-triangle primitive modes, texture coordinate
 sets above UV1, additional skin influence sets, unsupported morph target
 attributes, sparse index accessors, and extension-only animation paths are
 rejected by the loader. Arbitrary additional UV/color sets, material variants,
-KTX2/Basis textures, Draco/meshopt compression, transmission, volume,
+non-Basis KTX2 payloads, Draco/meshopt compression, transmission, volume,
 dispersion, glTF cameras/lights, glTF environment extensions, advanced
 animation runtime features, and streaming remain future slices.
 
@@ -63,8 +64,10 @@ service:
   stays depth-writing and shadow-casting with alpha cutoff, while `BLEND`
   renders forward-only with premultiplied source-over alpha blending and no
   depth writes;
-- texture upload is deduplicated per glTF texture plus color space, and
-  sampler `wrapS` / `wrapT` are preserved through Vulkan sampler axes;
+- texture upload is deduplicated per glTF texture plus color space, sampler
+  `wrapS` / `wrapT` are preserved through Vulkan sampler axes, and
+  `KHR_texture_basisu` material textures transcode to BC7 when Vulkan BC
+  compression is enabled or to RGBA8 as a fallback;
 - material texture coordinate selection, `KHR_texture_transform`, and vertex
   colors are propagated into the PBR material uniform and vertex contracts;
 - clearcoat, sheen, anisotropy, and iridescence texture bindings use fixed PBR
@@ -174,7 +177,8 @@ transmissive glTF material extension lobes remain future slices.
 
 - Add the next model-fidelity import only when it stays within the current
   dependency boundary or clearly justifies a new one.
-- Add prefiltered KTX/KTX2 environment or `KHR_texture_basisu` loading only with
-  an explicit dependency boundary such as `libktx` or a Basis transcoder.
+- Add prefiltered KTX/KTX2 environment loading separately from glTF material
+  `KHR_texture_basisu`; IBL uses cubemaps and prefilter data, not the 2D
+  material-texture upload path.
 - Keep MikkTSpace tangent generation deferred until the tangent-space validation
   scenes or authored normal-map assets show visible tangent-basis artifacts.

@@ -14,6 +14,9 @@ void test_gltf_asset_loads_skinning_and_morph_data();
 void test_gltf_asset_ignores_unknown_optional_extensions();
 void test_gltf_asset_rejects_unknown_required_extensions();
 void test_gltf_asset_accepts_supported_required_extensions();
+void test_gltf_asset_loads_required_basisu_texture_source();
+void test_gltf_asset_rejects_layered_basisu_material_images();
+void test_gltf_asset_loads_sampler_mip_filter();
 void test_gltf_asset_loads_sparse_mesh_accessors();
 void test_gltf_asset_loads_sparse_animation_output();
 void test_hdr_image_loads_radiance_rgba32f_pixels();
@@ -22,7 +25,7 @@ void test_hdr_image_rejects_non_hdr_input();
 namespace cubey::tests {
 
 std::span<const TestCase> asset_test_cases() {
-    static constexpr std::array<TestCase, 16> tests{
+    static constexpr std::array<TestCase, 19> tests{
         CUBEY_TEST(test_gltf_asset_loads_static_pbr_triangle),
         CUBEY_TEST(test_gltf_asset_generates_tangent_handedness_from_mirrored_uvs),
         CUBEY_TEST(test_gltf_asset_loads_uv1_vertex_color_and_texture_transform),
@@ -35,6 +38,9 @@ std::span<const TestCase> asset_test_cases() {
         CUBEY_TEST(test_gltf_asset_ignores_unknown_optional_extensions),
         CUBEY_TEST(test_gltf_asset_rejects_unknown_required_extensions),
         CUBEY_TEST(test_gltf_asset_accepts_supported_required_extensions),
+        CUBEY_TEST(test_gltf_asset_loads_required_basisu_texture_source),
+        CUBEY_TEST(test_gltf_asset_rejects_layered_basisu_material_images),
+        CUBEY_TEST(test_gltf_asset_loads_sampler_mip_filter),
         CUBEY_TEST(test_gltf_asset_loads_sparse_mesh_accessors),
         CUBEY_TEST(test_gltf_asset_loads_sparse_animation_output),
         CUBEY_TEST(test_hdr_image_loads_radiance_rgba32f_pixels),

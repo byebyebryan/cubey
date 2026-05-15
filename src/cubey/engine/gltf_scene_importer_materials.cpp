@@ -1,5 +1,7 @@
 #include "gltf_scene_importer_internal.h"
 
+#include "gltf_basisu_texture.h"
+
 #include <cubey/engine/engine.h>
 #include <cubey/render/material.h>
 #include <cubey/render/texture.h>
@@ -47,6 +49,17 @@ using TextureCache = std::unordered_map<TextureCacheKey, std::size_t, TextureCac
         return VK_FILTER_LINEAR;
     }
     return VK_FILTER_LINEAR;
+}
+
+[[nodiscard]] VkSamplerMipmapMode to_vk_mipmap_mode(asset::GltfTextureMipFilter filter) {
+    switch (filter) {
+    case asset::GltfTextureMipFilter::None:
+    case asset::GltfTextureMipFilter::Nearest:
+        return VK_SAMPLER_MIPMAP_MODE_NEAREST;
+    case asset::GltfTextureMipFilter::Linear:
+        return VK_SAMPLER_MIPMAP_MODE_LINEAR;
+    }
+    return VK_SAMPLER_MIPMAP_MODE_LINEAR;
 }
 
 [[nodiscard]] VkSamplerAddressMode to_vk_address_mode(asset::GltfTextureWrap wrap) {
@@ -235,11 +248,17 @@ pbr_texture_transforms(const asset::GltfMaterial& material) {
 }
 
 [[nodiscard]] vulkan::SamplerConfig sampler_config_for_texture(const asset::GltfAsset& asset,
-                                                               const asset::GltfTexture& texture) {
+                                                               const asset::GltfTexture& texture,
+                                                               std::uint32_t mip_levels = 1) {
+    const float max_lod = static_cast<float>(mip_levels > 0 ? mip_levels - 1U : 0U);
     if (texture.sampler_index >= asset.samplers.size()) {
-        return {};
+        return {
+            .max_lod = max_lod,
+        };
     }
     const asset::GltfSampler& sampler = asset.samplers[texture.sampler_index];
+    const float sampled_max_lod =
+        sampler.mip_filter == asset::GltfTextureMipFilter::None ? 0.0F : max_lod;
     return {
         .min_filter = to_vk_filter(sampler.min_filter),
         .mag_filter = to_vk_filter(sampler.mag_filter),
@@ -247,6 +266,8 @@ pbr_texture_transforms(const asset::GltfMaterial& material) {
         .address_mode_u = to_vk_address_mode(sampler.wrap_s),
         .address_mode_v = to_vk_address_mode(sampler.wrap_t),
         .address_mode_w = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+        .mipmap_mode = to_vk_mipmap_mode(sampler.mip_filter),
+        .max_lod = sampled_max_lod,
     };
 }
 
@@ -275,15 +296,39 @@ texture_binding_for_ref(const vulkan::Device& device, vulkan::GpuRuntime& gpu,
         throw std::runtime_error("glTF texture image index is out of range");
     }
     const asset::GltfImage& image = asset.images[texture.image_index];
-    render::Texture2D uploaded = render::create_uploaded_texture_2d(
-        device, gpu,
-        {
-            .extent = {image.width, image.height},
-            .format = image_format_for_color_space(color_space),
-            .rgba8 = std::span<const std::uint8_t>{image.rgba8.data(), image.rgba8.size()},
-            .create_sampler = true,
-            .sampler = sampler_config_for_texture(asset, texture),
-        });
+    render::Texture2D uploaded = [&] {
+        if (image.encoding == asset::GltfImageEncoding::Ktx2Basisu) {
+            GltfBasisuTextureUpload transcoded =
+                transcode_gltf_basisu_texture(image, color_space,
+                                              device.supports_texture_compression_bc());
+            return render::create_uploaded_texture_2d(
+                device, gpu,
+                {
+                    .extent = transcoded.extent,
+                    .mip_levels = transcoded.mip_levels,
+                    .format = transcoded.format,
+                    .bytes = std::span<const std::uint8_t>{transcoded.bytes.data(),
+                                                           transcoded.bytes.size()},
+                    .mips = std::span<const render::UploadedTexture2DMip>{
+                        transcoded.mips.data(), transcoded.mips.size()},
+                    .create_sampler = true,
+                    .sampler =
+                        sampler_config_for_texture(asset, texture, transcoded.mip_levels),
+                });
+        }
+        if (image.encoding != asset::GltfImageEncoding::Rgba8) {
+            throw std::runtime_error("unsupported glTF image encoding");
+        }
+        return render::create_uploaded_texture_2d(
+            device, gpu,
+            {
+                .extent = {image.width, image.height},
+                .format = image_format_for_color_space(color_space),
+                .rgba8 = std::span<const std::uint8_t>{image.rgba8.data(), image.rgba8.size()},
+                .create_sampler = true,
+                .sampler = sampler_config_for_texture(asset, texture),
+            });
+    }();
     resources.textures.push_back(std::move(uploaded));
     texture_cache.emplace(cache_key, resources.textures.size() - 1U);
     return texture_binding(resources.textures.back());

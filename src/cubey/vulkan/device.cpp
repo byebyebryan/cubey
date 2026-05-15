@@ -127,6 +127,7 @@ void Device::select_physical_device(const Instance& instance, const DeviceConfig
                 physical_device_ = candidate;
                 queue_family_ = i;
                 vkGetPhysicalDeviceProperties(physical_device_, &properties_);
+                vkGetPhysicalDeviceFeatures(physical_device_, &supported_features_);
                 return;
             }
         }
@@ -156,6 +157,12 @@ void Device::create_device(const DeviceConfig& config) {
     auto info = vk_struct<VkDeviceCreateInfo>(VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO);
     info.queueCreateInfoCount = 1;
     info.pQueueCreateInfos = &queue_info;
+
+    enabled_features_ = {};
+    if (supported_features_.textureCompressionBC == VK_TRUE) {
+        enabled_features_.textureCompressionBC = VK_TRUE;
+    }
+    info.pEnabledFeatures = &enabled_features_;
 
     auto dynamic_rendering = vk_struct<VkPhysicalDeviceDynamicRenderingFeatures>(
         VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES);
