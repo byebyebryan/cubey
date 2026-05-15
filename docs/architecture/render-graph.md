@@ -247,7 +247,7 @@ Expand graph code when at least one of these becomes active work:
 
 ## Deferred Complexity
 
-Do not build these into the first graph slice:
+Do not fold these into the current minimal graph boundary:
 
 - full renderer ownership;
 - material system ownership;

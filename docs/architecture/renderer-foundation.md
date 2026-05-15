@@ -29,7 +29,23 @@ stable across the repo:
 `cubey::render` may depend on `cubey::vulkan`. `cubey::vulkan` must not depend
 on `cubey::render`.
 
-## Boundaries
+## Layer Boundaries
+
+The current renderer stack is intentionally split by ownership:
+
+- `cubey::vulkan` owns raw Vulkan objects, command recording primitives,
+  submission, synchronization helpers, swapchain state, and GPU lifetime.
+- `cubey::render` owns renderer-facing vocabulary: target views, resource
+  wrappers, material/pass metadata, graph declaration/execution, PBR shader
+  contracts, primitive meshes, and small command helpers.
+- `cubey::scene` owns entity/component data, scene snapshots, view planning,
+  renderable/light packets, and CPU draw plans.
+- `cubey::engine` owns reusable renderer policy and service lifetime:
+  `RendererService`, `ForwardPbrRenderer3D`, import integration, upload/capture
+  queues, and project runtime glue.
+- examples and projects own app-specific render intent: which scene to render,
+  which renderer or pass helpers to use, which assets/settings to submit, and
+  when resources are created or destroyed.
 
 `cubey::render` owns renderer-facing vocabulary:
 
@@ -62,8 +78,11 @@ should not become a renderer.
 - Full scene graph, node update system, or renderer-owned scene traversal.
 - Full material asset graph, shader reflection, shader hot reload, or pipeline
   cache.
-- Render graph/frame graph/pass scheduler. The future graph vocabulary is
-  mapped separately in [render graph direction](render-graph.md).
+- Full render-graph scheduler features: broad pass reordering, pass culling,
+  transient aliasing, automatic descriptor binding, async compute scheduling,
+  render-pass merging, or backend-agnostic graph vocabulary. The minimal graph
+  declaration/execution boundary is tracked separately in
+  [render graph direction](render-graph.md).
 - VMA or another memory allocator.
 - Dedicated render thread, split graphics/compute/present queues, or parallel
   command recording.
@@ -214,10 +233,11 @@ full engine architecture.
 - `FrameUniformMaterialInstance<T>` owns the common per-frame uniform buffer
   plus per-frame material descriptor-set shape. It removes repeated descriptor
   setup for simple forward materials without becoming a full material system.
-- `ForwardScenePass3D` owns the current forward-color pass resource shape:
+- `ForwardScenePass3D` is the lower-level/simple forward-color pass helper:
   swapchain-sized depth, a file-backed graphics pipeline, clear values, and
-  helpers for recording to present or graph-owned color targets. Scene packet
-  selection and per-packet state stay in `cubey::scene` and the caller.
+  helpers for recording to present or graph-owned color targets. It is useful
+  for focused examples and validation scenes that want direct control. Scene
+  packet selection and per-packet state stay in `cubey::scene` and the caller.
 - `cubey::render::ShaderProgram`, `GraphicsPipelineResource`, and
   `ComputePipelineResource` own the current shader-module, pipeline-layout, and
   graphics/compute pipeline lifetime shapes. They consume explicit shader stage

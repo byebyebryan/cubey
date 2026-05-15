@@ -145,6 +145,10 @@ Reusable spatial types should stay explicit and narrow:
   `ForwardPbrRenderer3DFrameRequestInfo`, `ForwardPbrRenderer3DSceneResources`,
   and `ForwardPbrRenderer3DRenderRequest`, while asset loading, environment
   choice, and view setup stay project-owned.
+- `cubey::render::ForwardScenePass3D` remains a lower-level/simple pass helper.
+  It is useful when an example or validation project needs direct control over
+  pass recording; reusable PBR renderer policy belongs in
+  `cubey::engine::ForwardPbrRenderer3D`.
 - `cubey::render` owns the current generated and HDR equirectangular PBR IBL
   environment helpers for irradiance cube, GGX-prefiltered cube, and DFG LUT
   resources.
