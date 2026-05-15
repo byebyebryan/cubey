@@ -113,7 +113,7 @@ void GltfViewerApp::create_default_textures(const cubey::vulkan::Device& device,
     base_color_default_.emplace(
         create_solid_texture(device, gpu, {255, 255, 255, 255}, VK_FORMAT_R8G8B8A8_SRGB));
     metallic_roughness_default_.emplace(
-        create_solid_texture(device, gpu, {255, 255, 0, 255}, VK_FORMAT_R8G8B8A8_UNORM));
+        create_solid_texture(device, gpu, {255, 255, 255, 255}, VK_FORMAT_R8G8B8A8_UNORM));
     normal_default_.emplace(
         create_solid_texture(device, gpu, {128, 128, 255, 255}, VK_FORMAT_R8G8B8A8_UNORM));
     occlusion_default_.emplace(

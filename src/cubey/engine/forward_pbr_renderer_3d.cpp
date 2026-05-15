@@ -190,6 +190,14 @@ const render::GraphicsPipelineResource& ForwardPbrRenderer3D::opaque_pipeline() 
     return opaque_pipeline_.value();
 }
 
+const render::GraphicsPipelineResource& ForwardPbrRenderer3D::opaque_double_sided_pipeline() const {
+    if (!opaque_double_sided_pipeline_.has_value()) {
+        throw std::runtime_error(
+            "forward PBR renderer double-sided opaque pipeline is not initialized");
+    }
+    return opaque_double_sided_pipeline_.value();
+}
+
 const render::GraphicsPipelineResource& ForwardPbrRenderer3D::alpha_pipeline() const {
     if (!alpha_pipeline_.has_value()) {
         throw std::runtime_error("forward PBR renderer alpha pipeline is not initialized");
@@ -197,11 +205,36 @@ const render::GraphicsPipelineResource& ForwardPbrRenderer3D::alpha_pipeline() c
     return alpha_pipeline_.value();
 }
 
+const render::GraphicsPipelineResource& ForwardPbrRenderer3D::alpha_double_sided_pipeline() const {
+    if (!alpha_double_sided_pipeline_.has_value()) {
+        throw std::runtime_error(
+            "forward PBR renderer double-sided alpha pipeline is not initialized");
+    }
+    return alpha_double_sided_pipeline_.value();
+}
+
 const render::GraphicsPipelineResource& ForwardPbrRenderer3D::mask_shadow_pipeline() const {
     if (!mask_shadow_pipeline_.has_value()) {
         throw std::runtime_error("forward PBR renderer mask shadow pipeline is not initialized");
     }
     return mask_shadow_pipeline_.value();
+}
+
+const render::GraphicsPipelineResource&
+ForwardPbrRenderer3D::mask_shadow_double_sided_pipeline() const {
+    if (!mask_shadow_double_sided_pipeline_.has_value()) {
+        throw std::runtime_error(
+            "forward PBR renderer double-sided mask shadow pipeline is not initialized");
+    }
+    return mask_shadow_double_sided_pipeline_.value();
+}
+
+const render::GraphicsPipelineResource& ForwardPbrRenderer3D::shadow_double_sided_pipeline() const {
+    if (!shadow_double_sided_pipeline_.has_value()) {
+        throw std::runtime_error(
+            "forward PBR renderer double-sided shadow pipeline is not initialized");
+    }
+    return shadow_double_sided_pipeline_.value();
 }
 
 const render::GraphicsPipelineResource& ForwardPbrRenderer3D::skybox_pipeline() const {

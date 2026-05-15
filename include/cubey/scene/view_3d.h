@@ -131,7 +131,7 @@ cull_renderable_packets_3d(std::vector<RenderablePacket3D> packets, const Frustu
     std::vector<RenderablePacket3D> visible;
     visible.reserve(packets.size());
     for (const RenderablePacket3D& packet : packets) {
-        if (intersects(frustum, packet.world_bounds)) {
+        if (!packet.culling_enabled || intersects(frustum, packet.world_bounds)) {
             visible.push_back(packet);
         }
     }

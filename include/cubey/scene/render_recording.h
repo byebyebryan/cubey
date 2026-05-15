@@ -20,6 +20,7 @@ struct RenderPacketFilter3D {
     std::optional<render::MaterialPassKind> material_pass{};
     std::optional<render::MaterialAlphaMode> alpha_mode{};
     std::optional<render::MaterialBlendMode> blend_mode{};
+    std::optional<VkCullModeFlags> cull_mode{};
     bool require_shadow_caster = false;
 };
 
@@ -39,6 +40,10 @@ struct RenderPacketFilter3D {
     if (filter.blend_mode.has_value() && packet.material_info.blend != filter.blend_mode.value()) {
         return false;
     }
+    if (filter.cull_mode.has_value() &&
+        packet.material_info.cull_mode != filter.cull_mode.value()) {
+        return false;
+    }
     return true;
 }
 
@@ -53,8 +58,8 @@ struct PipelineDrawPackets3DInfo {
 template <typename RecordPacketCallback>
 void record_draw_packets_3d(const cubey::vulkan::CommandRecorder& recorder,
                             std::span<const RenderDrawPacket3D> packets,
-                            const render::MeshResolver& mesh_resolver,
-                            RenderPacketFilter3D filter, RecordPacketCallback&& record_packet) {
+                            const render::MeshResolver& mesh_resolver, RenderPacketFilter3D filter,
+                            RecordPacketCallback&& record_packet) {
     for (const RenderDrawPacket3D& packet : packets) {
         if (!render_packet_matches_filter(packet, filter)) {
             continue;

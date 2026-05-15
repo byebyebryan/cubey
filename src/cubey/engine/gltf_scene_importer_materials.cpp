@@ -298,9 +298,8 @@ texture_binding_for_ref(const vulkan::Device& device, vulkan::GpuRuntime& gpu,
     const asset::GltfImage& image = asset.images[texture.image_index];
     render::Texture2D uploaded = [&] {
         if (image.encoding == asset::GltfImageEncoding::Ktx2Basisu) {
-            GltfBasisuTextureUpload transcoded =
-                transcode_gltf_basisu_texture(image, color_space,
-                                              device.supports_texture_compression_bc());
+            GltfBasisuTextureUpload transcoded = transcode_gltf_basisu_texture(
+                image, color_space, device.supports_texture_compression_bc());
             return render::create_uploaded_texture_2d(
                 device, gpu,
                 {
@@ -309,11 +308,10 @@ texture_binding_for_ref(const vulkan::Device& device, vulkan::GpuRuntime& gpu,
                     .format = transcoded.format,
                     .bytes = std::span<const std::uint8_t>{transcoded.bytes.data(),
                                                            transcoded.bytes.size()},
-                    .mips = std::span<const render::UploadedTexture2DMip>{
-                        transcoded.mips.data(), transcoded.mips.size()},
+                    .mips = std::span<const render::UploadedTexture2DMip>{transcoded.mips.data(),
+                                                                          transcoded.mips.size()},
                     .create_sampler = true,
-                    .sampler =
-                        sampler_config_for_texture(asset, texture, transcoded.mip_levels),
+                    .sampler = sampler_config_for_texture(asset, texture, transcoded.mip_levels),
                 });
         }
         if (image.encoding != asset::GltfImageEncoding::Rgba8) {
@@ -487,7 +485,7 @@ void create_default_textures(const vulkan::Device& device, vulkan::GpuRuntime& g
     resources.base_color_default.emplace(
         create_solid_texture(device, gpu, {255, 255, 255, 255}, VK_FORMAT_R8G8B8A8_SRGB));
     resources.metallic_roughness_default.emplace(
-        create_solid_texture(device, gpu, {255, 255, 0, 255}, VK_FORMAT_R8G8B8A8_UNORM));
+        create_solid_texture(device, gpu, {255, 255, 255, 255}, VK_FORMAT_R8G8B8A8_UNORM));
     resources.normal_default.emplace(
         create_solid_texture(device, gpu, {128, 128, 255, 255}, VK_FORMAT_R8G8B8A8_UNORM));
     resources.occlusion_default.emplace(
@@ -533,6 +531,7 @@ void create_material_resources(Engine& engine, const vulkan::Device& device,
                 .label = label,
                 .alpha_mode = gltf_alpha_mode(source.alpha_mode),
                 .blend = render::material_blend_mode_for_alpha_mode(alpha_mode),
+                .cull_mode = source.double_sided ? VK_CULL_MODE_NONE : VK_CULL_MODE_BACK_BIT,
                 .sort_key = static_cast<std::uint32_t>(index),
                 .pass_mask = render::material_pass_mask_for_alpha_mode(alpha_mode),
             });

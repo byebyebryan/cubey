@@ -172,6 +172,7 @@ void test_render_view_3d_frustum_culls_world_bounds_and_can_be_disabled() {
     const cubey::Entity camera_entity = setup.entities().create();
     const cubey::Entity visible_entity = setup.entities().create();
     const cubey::Entity offscreen_entity = setup.entities().create();
+    const cubey::Entity uncullable_entity = setup.entities().create();
     setup.transforms3d().create(camera_entity, cubey::Transform3D{});
     setup.cameras3d().create(camera_entity, cubey::Camera3D{});
     setup.transforms3d().create(visible_entity,
@@ -180,6 +181,11 @@ void test_render_view_3d_frustum_culls_world_bounds_and_can_be_disabled() {
     setup.transforms3d().create(offscreen_entity,
                                 cubey::Transform3D{.translation = {100.0F, 0.0F, -3.0F}});
     setup.renderables3d().create(offscreen_entity, renderable_for(mesh, material));
+    setup.transforms3d().create(uncullable_entity,
+                                cubey::Transform3D{.translation = {100.0F, 0.0F, -3.0F}});
+    cubey::Renderable3D uncullable_renderable = renderable_for(mesh, material);
+    uncullable_renderable.culling_enabled = false;
+    setup.renderables3d().create(uncullable_entity, uncullable_renderable);
     setup.commit();
 
     cubey::SceneReadView scene_view = scene.read();
@@ -191,18 +197,20 @@ void test_render_view_3d_frustum_culls_world_bounds_and_can_be_disabled() {
     };
     const cubey::scene::RenderFramePlan3D culled_plan =
         cubey::scene::build_render_frame_plan_3d(culling_view, scene_view, registry);
-    require(culled_plan.draw_packets.size() == 1,
-            "culling should keep only the visible renderable");
+    require(culled_plan.draw_packets.size() == 2,
+            "culling should keep visible and uncullable renderables");
     require(contains_entity(culled_plan.draw_packets, visible_entity),
             "culling should keep visible entity");
     require(!contains_entity(culled_plan.draw_packets, offscreen_entity),
             "culling should remove offscreen entity");
+    require(contains_entity(culled_plan.draw_packets, uncullable_entity),
+            "culling should keep renderables that disable culling");
 
     cubey::scene::View3D unculled_view = culling_view;
     unculled_view.culling_enabled = false;
     const cubey::scene::RenderFramePlan3D unculled_plan =
         cubey::scene::build_render_frame_plan_3d(unculled_view, scene_view, registry);
-    require(unculled_plan.draw_packets.size() == 2, "disabled culling should keep all renderables");
+    require(unculled_plan.draw_packets.size() == 3, "disabled culling should keep all renderables");
 }
 
 void test_render_view_3d_preserves_draw_sorting_and_stale_handle_validation() {

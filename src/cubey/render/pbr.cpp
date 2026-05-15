@@ -212,7 +212,7 @@ MaterialPassInfo pbr_forward_pass_info(const PbrForwardPassConfig& config) {
                     },
                 },
             .push_constants = {push_constants},
-            .cull_mode = VK_CULL_MODE_NONE,
+            .cull_mode = config.cull_mode,
             .depth_test = true,
             .depth_write = true,
         };

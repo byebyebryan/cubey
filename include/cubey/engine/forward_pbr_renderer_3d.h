@@ -1,9 +1,9 @@
 #pragma once
 
 #include <cubey/core/math.h>
+#include <cubey/render/deformation.h>
 #include <cubey/render/frame_data.h>
 #include <cubey/render/generated_ibl.h>
-#include <cubey/render/deformation.h>
 #include <cubey/render/material_instance.h>
 #include <cubey/render/mesh.h>
 #include <cubey/render/pbr.h>
@@ -206,8 +206,12 @@ class ForwardPbrRenderer3D {
     [[nodiscard]] const render::FrameUniformMaterialInstance<render::PbrPostUniforms>&
     post_material() const;
     [[nodiscard]] const render::GraphicsPipelineResource& opaque_pipeline() const;
+    [[nodiscard]] const render::GraphicsPipelineResource& opaque_double_sided_pipeline() const;
     [[nodiscard]] const render::GraphicsPipelineResource& alpha_pipeline() const;
+    [[nodiscard]] const render::GraphicsPipelineResource& alpha_double_sided_pipeline() const;
     [[nodiscard]] const render::GraphicsPipelineResource& mask_shadow_pipeline() const;
+    [[nodiscard]] const render::GraphicsPipelineResource& mask_shadow_double_sided_pipeline() const;
+    [[nodiscard]] const render::GraphicsPipelineResource& shadow_double_sided_pipeline() const;
     [[nodiscard]] const render::GraphicsPipelineResource& skybox_pipeline() const;
     [[nodiscard]] const render::GraphicsPipelineResource& post_pipeline() const;
     [[nodiscard]] const vulkan::Sampler& post_sampler() const;
@@ -221,8 +225,12 @@ class ForwardPbrRenderer3D {
     std::optional<render::FrameUniformMaterialInstance<render::PbrSkyboxUniforms>> skybox_material_;
     std::optional<render::FrameUniformMaterialInstance<render::PbrPostUniforms>> post_material_;
     std::optional<render::GraphicsPipelineResource> opaque_pipeline_;
+    std::optional<render::GraphicsPipelineResource> opaque_double_sided_pipeline_;
     std::optional<render::GraphicsPipelineResource> alpha_pipeline_;
+    std::optional<render::GraphicsPipelineResource> alpha_double_sided_pipeline_;
     std::optional<render::GraphicsPipelineResource> mask_shadow_pipeline_;
+    std::optional<render::GraphicsPipelineResource> mask_shadow_double_sided_pipeline_;
+    std::optional<render::GraphicsPipelineResource> shadow_double_sided_pipeline_;
     std::optional<render::GraphicsPipelineResource> skybox_pipeline_;
     std::optional<render::GraphicsPipelineResource> post_pipeline_;
     std::optional<vulkan::Sampler> post_sampler_;

@@ -42,6 +42,7 @@ template <typename EnumT> [[nodiscard]] constexpr auto enum_sort_key(EnumT value
     return std::tuple{
         enum_sort_key(packet.material_info.domain),
         enum_sort_key(packet.material_info.alpha_mode),
+        packet.material_info.cull_mode,
         packet.material_info.sort_key,
         packet.material.index,
         packet.material.generation,

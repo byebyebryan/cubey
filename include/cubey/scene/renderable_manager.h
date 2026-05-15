@@ -33,6 +33,7 @@ struct Renderable3D {
     std::vector<RenderablePrimitive3D> primitives{};
     Bounds3D local_bounds{};
     bool visible = true;
+    bool culling_enabled = true;
     bool cast_shadows = true;
     bool receive_shadows = true;
 };
@@ -44,6 +45,7 @@ struct RenderablePacket3D {
     math::Mat4 world_affine_matrix{1.0F};
     Bounds3D local_bounds{};
     Bounds3D world_bounds{};
+    bool culling_enabled = true;
     bool cast_shadows = true;
     bool receive_shadows = true;
     std::uint32_t instance_count = 1;

@@ -18,55 +18,70 @@ void ForwardPbrRenderer3D::record_shadow_pass(
         recorder, render::depth_clear_value(),
         [this, &shadow_plan, mesh_resolver, &material_instances, &material_factors,
          frame_slot](const vulkan::CommandRecorder& pass_recorder) {
-            scene::record_pipeline_draw_packets_3d(
-                pass_recorder, shadow_plan.draw_packets, mesh_resolver,
-                {
-                    .pipeline = &shadow_pass().pipeline(),
-                    .filter =
-                        {
-                            .material_pass = render::MaterialPassKind::DepthOnly,
-                            .alpha_mode = render::MaterialAlphaMode::Opaque,
-                            .require_shadow_caster = true,
-                        },
-                },
-                [this, &shadow_plan](const vulkan::CommandRecorder& packet_recorder,
-                                     const scene::RenderDrawPacket3D& packet) {
-                    packet_recorder.push_constants(
-                        shadow_pass().pipeline().layout(), VK_SHADER_STAGE_VERTEX_BIT, 0,
-                        ForwardPbrRenderer3DShadowPushConstants{
-                            .light_mvp =
-                                shadow_plan.view_projection_matrix * packet.world_affine_matrix,
-                        });
-                });
-            scene::record_pipeline_draw_packets_3d(
-                pass_recorder, shadow_plan.draw_packets, mesh_resolver,
-                {
-                    .pipeline = &mask_shadow_pipeline(),
-                    .frame_slot = frame_slot,
-                    .filter =
-                        {
-                            .material_pass = render::MaterialPassKind::DepthOnly,
-                            .alpha_mode = render::MaterialAlphaMode::Mask,
-                            .require_shadow_caster = true,
-                        },
-                },
-                [this, &shadow_plan, &material_instances, &material_factors,
-                 frame_slot](const vulkan::CommandRecorder& packet_recorder,
-                             const scene::RenderDrawPacket3D& packet) {
-                    const auto& material = material_instances.at(packet.material);
-                    material.upload(frame_slot,
-                                    render::pbr_material_uniforms(
-                                        material_factors.at(packet.material),
-                                        packet.material_info.alpha_mode));
-                    render::bind_material_instance(packet_recorder, mask_shadow_pipeline(),
-                                                   material.material(), frame_slot);
-                    packet_recorder.push_constants(
-                        mask_shadow_pipeline().layout(), VK_SHADER_STAGE_VERTEX_BIT, 0,
-                        ForwardPbrRenderer3DShadowPushConstants{
-                            .light_mvp =
-                                shadow_plan.view_projection_matrix * packet.world_affine_matrix,
-                        });
-                });
+            const auto record_opaque_shadow = [&pass_recorder, &shadow_plan, mesh_resolver](
+                                                  const render::GraphicsPipelineResource& pipeline,
+                                                  VkCullModeFlags cull_mode) {
+                scene::record_pipeline_draw_packets_3d(
+                    pass_recorder, shadow_plan.draw_packets, mesh_resolver,
+                    {
+                        .pipeline = &pipeline,
+                        .filter =
+                            {
+                                .material_pass = render::MaterialPassKind::DepthOnly,
+                                .alpha_mode = render::MaterialAlphaMode::Opaque,
+                                .cull_mode = cull_mode,
+                                .require_shadow_caster = true,
+                            },
+                    },
+                    [&pipeline, &shadow_plan](const vulkan::CommandRecorder& packet_recorder,
+                                              const scene::RenderDrawPacket3D& packet) {
+                        packet_recorder.push_constants(
+                            pipeline.layout(), VK_SHADER_STAGE_VERTEX_BIT, 0,
+                            ForwardPbrRenderer3DShadowPushConstants{
+                                .light_mvp =
+                                    shadow_plan.view_projection_matrix * packet.world_affine_matrix,
+                            });
+                    });
+            };
+            record_opaque_shadow(shadow_pass().pipeline(), VK_CULL_MODE_BACK_BIT);
+            record_opaque_shadow(shadow_double_sided_pipeline(), VK_CULL_MODE_NONE);
+
+            const auto record_mask_shadow = [&pass_recorder, &shadow_plan, mesh_resolver,
+                                             &material_instances, &material_factors, frame_slot](
+                                                const render::GraphicsPipelineResource& pipeline,
+                                                VkCullModeFlags cull_mode) {
+                scene::record_pipeline_draw_packets_3d(
+                    pass_recorder, shadow_plan.draw_packets, mesh_resolver,
+                    {
+                        .pipeline = &pipeline,
+                        .frame_slot = frame_slot,
+                        .filter =
+                            {
+                                .material_pass = render::MaterialPassKind::DepthOnly,
+                                .alpha_mode = render::MaterialAlphaMode::Mask,
+                                .cull_mode = cull_mode,
+                                .require_shadow_caster = true,
+                            },
+                    },
+                    [&pipeline, &shadow_plan, &material_instances, &material_factors,
+                     frame_slot](const vulkan::CommandRecorder& packet_recorder,
+                                 const scene::RenderDrawPacket3D& packet) {
+                        const auto& material = material_instances.at(packet.material);
+                        material.upload(frame_slot, render::pbr_material_uniforms(
+                                                        material_factors.at(packet.material),
+                                                        packet.material_info.alpha_mode));
+                        render::bind_material_instance(packet_recorder, pipeline,
+                                                       material.material(), frame_slot);
+                        packet_recorder.push_constants(
+                            pipeline.layout(), VK_SHADER_STAGE_VERTEX_BIT, 0,
+                            ForwardPbrRenderer3DShadowPushConstants{
+                                .light_mvp =
+                                    shadow_plan.view_projection_matrix * packet.world_affine_matrix,
+                            });
+                    });
+            };
+            record_mask_shadow(mask_shadow_pipeline(), VK_CULL_MODE_BACK_BIT);
+            record_mask_shadow(mask_shadow_double_sided_pipeline(), VK_CULL_MODE_NONE);
         });
 }
 
@@ -93,7 +108,8 @@ void ForwardPbrRenderer3D::record_scene_pass(
             const auto record_blend = [this, &pass_recorder, &scene_plan, mesh_resolver,
                                        &material_instances, &material_factors,
                                        frame_slot](const render::GraphicsPipelineResource& pipeline,
-                                                   render::MaterialBlendMode blend) {
+                                                   render::MaterialBlendMode blend,
+                                                   VkCullModeFlags cull_mode) {
                 scene::record_pipeline_draw_packets_3d(
                     pass_recorder, scene_plan.draw_packets, mesh_resolver,
                     {
@@ -104,16 +120,16 @@ void ForwardPbrRenderer3D::record_scene_pass(
                             {
                                 .material_pass = render::MaterialPassKind::ForwardColor,
                                 .blend_mode = blend,
+                                .cull_mode = cull_mode,
                             },
                     },
                     [&pipeline, &material_instances, &material_factors,
                      frame_slot](const vulkan::CommandRecorder& packet_recorder,
                                  const scene::RenderDrawPacket3D& packet) {
                         const auto& material = material_instances.at(packet.material);
-                        material.upload(frame_slot,
-                                        render::pbr_material_uniforms(
-                                            material_factors.at(packet.material),
-                                            packet.material_info.alpha_mode));
+                        material.upload(frame_slot, render::pbr_material_uniforms(
+                                                        material_factors.at(packet.material),
+                                                        packet.material_info.alpha_mode));
                         render::bind_material_instance(packet_recorder, pipeline,
                                                        material.material(), frame_slot);
                         packet_recorder.push_constants(
@@ -122,8 +138,14 @@ void ForwardPbrRenderer3D::record_scene_pass(
                             render::pbr_push_constants(packet.world_affine_matrix));
                     });
             };
-            record_blend(opaque_pipeline(), render::MaterialBlendMode::Opaque);
-            record_blend(alpha_pipeline(), render::MaterialBlendMode::AlphaBlend);
+            record_blend(opaque_pipeline(), render::MaterialBlendMode::Opaque,
+                         VK_CULL_MODE_BACK_BIT);
+            record_blend(opaque_double_sided_pipeline(), render::MaterialBlendMode::Opaque,
+                         VK_CULL_MODE_NONE);
+            record_blend(alpha_pipeline(), render::MaterialBlendMode::AlphaBlend,
+                         VK_CULL_MODE_BACK_BIT);
+            record_blend(alpha_double_sided_pipeline(), render::MaterialBlendMode::AlphaBlend,
+                         VK_CULL_MODE_NONE);
         });
 }
 

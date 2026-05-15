@@ -37,6 +37,8 @@ void test_material_info_defaults_to_depth_and_forward_passes() {
 
     require(material.alpha_mode == cubey::render::MaterialAlphaMode::Opaque,
             "default material should be opaque alpha mode");
+    require(material.cull_mode == VK_CULL_MODE_BACK_BIT,
+            "default material should use single-sided back-face culling");
     require(
         cubey::render::material_supports_pass(material, cubey::render::MaterialPassKind::DepthOnly),
         "default material should support depth-only passes");

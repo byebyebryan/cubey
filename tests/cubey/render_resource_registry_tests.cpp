@@ -111,6 +111,8 @@ void test_render_resource_registry_round_trips_mesh_and_material_info() {
             "material alpha mode should round-trip");
     require(material_info.blend == cubey::render::MaterialBlendMode::AlphaBlend,
             "material blend mode should round-trip");
+    require(material_info.cull_mode == VK_CULL_MODE_BACK_BIT,
+            "material cull mode should default to single-sided back-face culling");
     require(material_info.sort_key == 42, "material sort key should round-trip");
     require(cubey::render::material_supports_pass(material_info,
                                                   cubey::render::MaterialPassKind::DepthOnly),

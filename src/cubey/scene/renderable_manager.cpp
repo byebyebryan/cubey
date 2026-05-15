@@ -205,6 +205,7 @@ std::vector<RenderablePacket3D> build_renderable_packets_3d(const RenderableRead
                 .world_affine_matrix = world,
                 .local_bounds = renderable.local_bounds,
                 .world_bounds = world_bounds,
+                .culling_enabled = renderable.culling_enabled,
                 .cast_shadows = renderable.cast_shadows,
                 .receive_shadows = renderable.receive_shadows,
                 .instance_count = primitive.instance_count,

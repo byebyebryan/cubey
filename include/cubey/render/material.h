@@ -57,6 +57,7 @@ struct MaterialInfo {
     MaterialDomain domain = MaterialDomain::Surface3D;
     MaterialAlphaMode alpha_mode = MaterialAlphaMode::Opaque;
     MaterialBlendMode blend = MaterialBlendMode::Opaque;
+    VkCullModeFlags cull_mode = VK_CULL_MODE_BACK_BIT;
     std::uint32_t sort_key = 0;
     MaterialPassMask pass_mask = default_material_pass_mask();
 };

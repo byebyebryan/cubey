@@ -291,8 +291,18 @@ void test_forward_pbr_renderer_3d_records_masked_shadow_path_with_material_alpha
                      "forward PBR config should expose a mask-capable shadow fragment shader");
     require_contains(resources, "mask_shadow_pipeline_",
                      "forward PBR renderer should own a mask-capable shadow pipeline");
+    require_contains(resources, "opaque_double_sided_pipeline_",
+                     "forward PBR renderer should own a double-sided opaque pipeline");
+    require_contains(resources, "alpha_double_sided_pipeline_",
+                     "forward PBR renderer should own a double-sided alpha pipeline");
+    require_contains(resources, "mask_shadow_double_sided_pipeline_",
+                     "forward PBR renderer should own a double-sided masked shadow pipeline");
     require_contains(resources, "fragment_shader_file(config_.shadow_depth_fragment_shader)",
                      "mask shadow pipeline should compile the configured fragment shader");
+    require_contains(recording, "VK_CULL_MODE_BACK_BIT",
+                     "forward recording should filter single-sided materials by cull policy");
+    require_contains(recording, "VK_CULL_MODE_NONE",
+                     "forward recording should route double-sided materials to no-cull pipelines");
     require_contains(recording, "render::MaterialAlphaMode::Opaque",
                      "shadow recording should keep a cheap opaque depth path");
     require_contains(recording, "render::MaterialAlphaMode::Mask",
@@ -301,6 +311,9 @@ void test_forward_pbr_renderer_3d_records_masked_shadow_path_with_material_alpha
                      "masked shadow recording should bind material textures and uniforms");
     require_contains(importer, ".alpha_mode = gltf_alpha_mode(source.alpha_mode)",
                      "glTF importer should map source alpha modes into render material policy");
+    require_contains(importer,
+                     ".cull_mode = source.double_sided ? VK_CULL_MODE_NONE : VK_CULL_MODE_BACK_BIT",
+                     "glTF importer should map doubleSided into render culling policy");
 }
 
 void test_forward_pbr_renderer_3d_scene_uniforms_pack_view_light_environment_and_display() {

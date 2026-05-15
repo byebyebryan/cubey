@@ -193,6 +193,7 @@ enum class PbrPostBinding : std::uint32_t {
 
 struct PbrForwardPassConfig {
     MaterialBlendMode blend = MaterialBlendMode::Opaque;
+    VkCullModeFlags cull_mode = VK_CULL_MODE_BACK_BIT;
     std::string label{};
 };
 
