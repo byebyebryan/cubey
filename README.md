@@ -19,8 +19,8 @@ precedent when shaping new foundation contracts.
 - Runnable targets live under `examples/` or `projects/`; examples are
   intentionally cube-focused renderer demos, while richer/non-cube work lives
   under `projects/`.
-- Headless PNG output is a first-class verification path for projects that can
-  render without a window.
+- Headless PNG and optional MP4 output are first-class verification/capture
+  paths for projects that can render without a window.
 
 Current examples:
 
@@ -33,14 +33,14 @@ Current examples:
   cube instances.
 - `material_cubes`: multiple material handles and material instances bound per
   scene draw packet.
-- `headless_cube`: no-window offscreen cube PNG path.
+- `headless_cube`: no-window offscreen cube PNG/MP4 capture path.
 - `particle_cubes`: compute-updated cube particles rendered as indexed cube
   instances.
 
 Current projects:
 
 - `fluid_2d`: compute-updated dye/velocity field with injection, advection,
-  pressure projection, debug views, and deterministic headless PNG output.
+  pressure projection, debug views, and deterministic headless capture output.
 - `fractal_2d`: fullscreen Mandelbrot-style shader with windowed navigation and
   headless output.
 - `gltf_viewer`: glTF/glb viewer for imported assets, PBR materials, texture
@@ -97,20 +97,29 @@ Package names vary by distro. Examples:
 sudo pacman -S --needed base-devel cmake ninja git vulkan-headers vulkan-icd-loader vulkan-tools glslang
 # Also install one Vulkan driver package for your GPU, such as vulkan-radeon,
 # vulkan-intel, amdvlk, or the NVIDIA driver stack.
+# Optional for MP4 capture: sudo pacman -S --needed pkgconf ffmpeg
 
 # Ubuntu / Debian
 sudo apt install build-essential cmake ninja-build git libvulkan-dev vulkan-tools glslang-tools
 # Also install the Vulkan driver package for your GPU, such as
 # mesa-vulkan-drivers or the vendor driver stack.
+# Optional for MP4 capture: sudo apt install pkg-config libavcodec-dev libavformat-dev libavutil-dev libswscale-dev
 
 # Fedora
 sudo dnf install gcc-c++ cmake ninja-build git vulkan-headers vulkan-loader-devel vulkan-tools glslang
 # Also install the Vulkan driver package for your GPU, such as
 # mesa-vulkan-drivers or the vendor driver stack.
+# Optional for MP4 capture: install pkgconf-pkg-config and FFmpeg/libav
+# development packages from your enabled repositories.
 ```
 
-Optional but useful: Vulkan validation layers for local smoke runs with
-`--require-validation`.
+Optional but useful:
+
+- Vulkan validation layers for local smoke runs with `--require-validation`.
+- `pkg-config` plus FFmpeg/libav development packages for in-process H.264 MP4
+  capture. CMake controls this with `CUBEY_VIDEO_CAPTURE=AUTO|ON|OFF`; `AUTO`
+  enables it when `libavcodec`, `libavformat`, `libavutil`, and `libswscale`
+  are found.
 
 Use the CMake presets as the default entrypoint:
 
@@ -154,6 +163,14 @@ Useful headless PNG smokes:
 ./build/dev/projects/fractal_2d/fractal_2d --headless --width 640 --height 360 --output /tmp/cubey-fractal-2d.png
 ./build/dev/projects/fluid_2d/fluid_2d --headless --frames 120 --width 640 --height 360 --output /tmp/cubey-fluid-2d.png
 ./build/dev/projects/pbr_furnace/pbr_furnace --headless --width 640 --height 360 --output /tmp/cubey-pbr-furnace.png
+```
+
+Useful headless video captures when FFmpeg/libav support is enabled:
+
+```bash
+./build/dev/examples/headless_cube/headless_cube --headless --capture video --frames 180 --fps 60 --width 1280 --height 720 --output /tmp/cubey-headless-cube.mp4
+./build/dev/projects/gltf_viewer/gltf_viewer --headless --capture video --frames 180 --fps 60 --input path/to/model.glb --environment path/to/env.hdr --output /tmp/cubey-gltf-viewer.mp4
+./build/dev/projects/fluid_2d/fluid_2d --headless --capture video --frames 180 --fps 60 --width 1280 --height 720 --output /tmp/cubey-fluid-2d.mp4
 ```
 
 Use `--require-validation` on local smoke commands when Vulkan validation

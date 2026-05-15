@@ -32,9 +32,11 @@ class HeadlessCubeApp {
                              const cubey::host::HeadlessRenderTarget& target);
     void destroy_resources();
 
-    [[nodiscard]] cubey::math::Mat4 cube_mvp(VkExtent2D extent) const;
-    void render_png(VkCommandBuffer command_buffer,
-                    const cubey::host::HeadlessRenderTarget& target) const;
+    [[nodiscard]] cubey::math::Mat4
+    cube_mvp(VkExtent2D extent, const cubey::host::HeadlessCaptureFrame& frame) const;
+    void render_capture(VkCommandBuffer command_buffer,
+                        const cubey::host::HeadlessRenderTarget& target,
+                        const cubey::host::HeadlessCaptureFrame& frame) const;
     [[nodiscard]] const cubey::render::Mesh& cube_mesh() const;
     [[nodiscard]] const cubey::render::ForwardScenePass3D& forward_pass() const;
 

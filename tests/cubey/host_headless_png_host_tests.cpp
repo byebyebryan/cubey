@@ -58,3 +58,44 @@ void test_headless_png_host_validates_capture_shape() {
         std::is_same_v<decltype(&cubey::host::HeadlessPngContext::gpu),
                        cubey::vulkan::GpuRuntime& (cubey::host::HeadlessPngContext::*)() const>);
 }
+
+void test_headless_capture_frame_helpers_select_png_or_video_timing() {
+    cubey::RunConfig config;
+    config.capture_mode = cubey::CaptureMode::Png;
+    config.frames = 99;
+    config.fps = 24;
+    require(cubey::host::headless_capture_frame_count(config) == 1,
+            "PNG capture should always render one output frame");
+
+    const cubey::host::HeadlessCaptureFrame png_frame =
+        cubey::host::headless_capture_frame(config, 0);
+    require(png_frame.index == 0, "PNG capture frame should start at index zero");
+    require(png_frame.count == 1, "PNG capture frame should report one frame");
+    require(png_frame.frame_slot.index == 0, "PNG capture should use frame slot zero");
+    require(png_frame.frame_slot.count == 1, "PNG capture should use a single frame slot");
+    require(png_frame.timing.frame_index == 0, "PNG timing should use frame index zero");
+    require(png_frame.timing.delta_seconds == 0.0, "PNG timing should be static");
+
+    config.capture_mode = cubey::CaptureMode::Video;
+    config.frames = 0;
+    config.fps = 30;
+    require(cubey::host::headless_capture_frame_count(config) == 300,
+            "video capture should resolve zero frames to the default duration");
+    require(cubey::host::headless_capture_frame_slot_count(config) == 3,
+            "video capture should use a small in-flight slot ring");
+
+    config.frames = 12;
+    const cubey::host::HeadlessCaptureFrame video_frame =
+        cubey::host::headless_capture_frame(config, 3);
+    require(video_frame.index == 3, "video capture frame should preserve frame index");
+    require(video_frame.count == 12, "video capture frame should report configured count");
+    require(video_frame.frame_slot.index == 0,
+            "video frame slot should wrap through the capture slot ring");
+    require(video_frame.frame_slot.count == 3,
+            "video frame slot should report capture slot ring count");
+    require(video_frame.timing.frame_index == 3, "video timing should mirror frame index");
+    require(video_frame.timing.delta_seconds == 1.0 / 30.0,
+            "video timing should use fixed fps delta");
+    require(video_frame.timing.elapsed_seconds == 3.0 / 30.0,
+            "video timing should use deterministic elapsed time");
+}

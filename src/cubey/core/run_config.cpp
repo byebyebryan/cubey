@@ -36,6 +36,7 @@ float parse_float(std::string_view value, const char* name) {
 
 RunConfig parse_run_config(int argc, char** argv) {
     RunConfig config;
+    bool output_path_explicit = false;
 
     for (int i = 1; i < argc; ++i) {
         std::string_view arg(argv[i]);
@@ -65,6 +66,17 @@ RunConfig parse_run_config(int argc, char** argv) {
             config.height = parse_u32(need_value("--height"), "--height");
         } else if (arg == "--frames") {
             config.frames = parse_u32(need_value("--frames"), "--frames");
+        } else if (arg == "--fps") {
+            config.fps = parse_u32(need_value("--fps"), "--fps");
+        } else if (arg == "--capture") {
+            const std::string_view mode = need_value("--capture");
+            if (mode == "png") {
+                config.capture_mode = CaptureMode::Png;
+            } else if (mode == "video") {
+                config.capture_mode = CaptureMode::Video;
+            } else {
+                throw std::runtime_error("capture mode must be png or video");
+            }
         } else if (arg == "--input") {
             config.input_path = std::string(need_value("--input"));
         } else if (arg == "--environment") {
@@ -89,6 +101,7 @@ RunConfig parse_run_config(int argc, char** argv) {
             config.animation_paused = true;
         } else if (arg == "--output") {
             config.output_path = std::string(need_value("--output"));
+            output_path_explicit = true;
         } else {
             throw std::runtime_error("unknown argument: " + std::string(arg));
         }
@@ -99,6 +112,20 @@ RunConfig parse_run_config(int argc, char** argv) {
     }
     if (config.ibl_intensity < 0.0F) {
         throw std::runtime_error("IBL intensity must be nonnegative");
+    }
+    if (config.fps == 0) {
+        throw std::runtime_error("fps must be positive");
+    }
+    if (config.capture_mode == CaptureMode::Video) {
+        if (!config.headless) {
+            throw std::runtime_error("video capture requires --headless");
+        }
+        if (config.frames == 0) {
+            config.frames = 300;
+        }
+        if (!output_path_explicit) {
+            config.output_path = "cubey-output.mp4";
+        }
     }
 
     return config;

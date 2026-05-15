@@ -17,15 +17,25 @@ void test_math_helpers_match_vulkan_projection_conventions();
 void test_math_quaternion_helpers_match_rotation_matrices();
 void test_run_cli_app_sets_default_title_and_returns_runner_status();
 void test_run_config_parses_animation_options();
+void test_run_config_parses_video_capture_defaults();
 void test_run_config_parses_pbr_debug_view_name();
 void test_run_config_parses_input_path();
 void test_run_config_parses_png_output_path();
+void test_run_config_preserves_explicit_video_capture_timing_and_output();
+void test_run_config_rejects_invalid_capture_options();
+void test_video_encoder_validates_config_and_frame_size();
+void test_video_encoder_writes_mp4_when_backend_is_available();
 
 namespace cubey::tests {
 
 std::span<const TestCase> core_test_cases() {
     static constexpr std::array tests{
         CUBEY_TEST(test_run_config_parses_png_output_path),
+        CUBEY_TEST(test_run_config_parses_video_capture_defaults),
+        CUBEY_TEST(test_run_config_preserves_explicit_video_capture_timing_and_output),
+        CUBEY_TEST(test_run_config_rejects_invalid_capture_options),
+        CUBEY_TEST(test_video_encoder_validates_config_and_frame_size),
+        CUBEY_TEST(test_video_encoder_writes_mp4_when_backend_is_available),
         CUBEY_TEST(test_run_config_parses_input_path),
         CUBEY_TEST(test_run_config_parses_animation_options),
         CUBEY_TEST(test_run_config_parses_pbr_debug_view_name),

@@ -21,4 +21,14 @@ if (BUILD_TESTING)
         cubey_example_headless_cube
         "${CUBEY_HEADLESS_CUBE_SMOKE_OUTPUT}"
     )
+    if (CUBEY_HAS_LIBAV)
+        set(CUBEY_HEADLESS_CUBE_VIDEO_SMOKE_OUTPUT
+            "${CMAKE_CURRENT_BINARY_DIR}/headless-cube-smoke.mp4"
+        )
+        cubey_add_video_smoke_test(
+            headless_cube_writes_video
+            cubey_example_headless_cube
+            "${CUBEY_HEADLESS_CUBE_VIDEO_SMOKE_OUTPUT}"
+        )
+    endif()
 endif()

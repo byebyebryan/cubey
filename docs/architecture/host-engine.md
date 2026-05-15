@@ -215,13 +215,15 @@ setup before swapchain setup, and callback forwarding.
   and example-specific state.
 - `cubey::host::HeadlessPngHost` owns the repeated no-window Vulkan
   instance/device, submission coordinator, GPU runtime, offscreen RGBA target,
-  color-attachment/readback transitions, ticketed RGBA8 image readback through
-  `ProjectGpuServices`, and PNG write path without depending on GLFW. Its
-  target view uses the same `cubey::render::ColorTargetView` vocabulary as the
+  deterministic `HeadlessCaptureFrame` timing, color-attachment/readback
+  transitions, ticketed RGBA8 image readback through `ProjectGpuServices`, PNG
+  writing, and optional MP4 video writing without depending on GLFW. Its target
+  view uses the same `cubey::render::ColorTargetView` vocabulary as the
   windowed path.
-- `headless_cube`, `fractal_2d --headless`, and `fluid_2d --headless` use the
-  headless host while keeping their resource setup, simulation/update work, and
-  capture command recording sequence local.
+- `headless_cube`, `fractal_2d --headless`, `fluid_2d --headless`,
+  `gltf_viewer --headless`, and `pbr_furnace --headless` use the headless host
+  while keeping their resource setup, simulation/update work, and capture
+  command recording sequence local.
 - `cubey::Engine` is the first scoped root owner. It lives in the engine layer
   because it composes project runtime services, the render resource handle
   registry, renderer instance lifetime, and created `Scene` instances, but does
@@ -263,7 +265,9 @@ setup before swapchain setup, and callback forwarding.
 - Add input/UI hosting when the contract is clear enough to keep projects
   cleaner, not only after the projects become messy.
 - Keep the headless host narrow: no scene/render abstraction, no implicit
-  project lifecycle, and no GLFW dependency.
+  project lifecycle, and no GLFW dependency. Video capture may provide frame
+  timing and artifact writing, but projects still own animation/simulation
+  updates and render command recording.
 - Build a full project lifecycle host only when its setup/update/render/resize
   contract is explicit enough to serve more than one project shape.
 

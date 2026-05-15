@@ -226,12 +226,12 @@ void test_cube_examples_split_app_lifecycle_from_resources_scene_and_rendering()
                "examples/headless_cube/CMakeLists.txt"});
     require_contains(headless_app, "#include \"headless_cube_app_internal.h\"",
                      "headless_cube app shell should include its internal split header");
-    require_not_contains(headless_app, "void render_png",
+    require_not_contains(headless_app, "void render_capture",
                          "headless_cube app shell should not own render recording");
     require_contains(headless_sources, "create_global_resources_if_needed",
                      "headless_cube resources file should own resource creation");
-    require_contains(headless_sources, "render_png",
-                     "headless_cube render file should own png rendering");
+    require_contains(headless_sources, "render_capture",
+                     "headless_cube render file should own headless capture rendering");
     require_contains(headless_sources, "headless_cube_resources.cpp",
                      "headless_cube target should build the resources file");
     require_contains(headless_sources, "headless_cube_render.cpp",

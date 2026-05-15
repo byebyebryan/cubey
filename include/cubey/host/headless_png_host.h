@@ -1,7 +1,9 @@
 #pragma once
 
+#include <cubey/core/frame_clock.h>
 #include <cubey/core/run_config.h>
 #include <cubey/engine/project_gpu_services.h>
+#include <cubey/render/frame_data.h>
 #include <cubey/render/target.h>
 #include <cubey/vulkan/device.h>
 #include <cubey/vulkan/gpu_runtime.h>
@@ -18,6 +20,13 @@
 namespace cubey::host {
 
 using HeadlessRenderTarget = cubey::render::ColorTargetView;
+
+struct HeadlessCaptureFrame {
+    std::uint32_t index = 0;
+    std::uint32_t count = 1;
+    cubey::render::FrameSlot frame_slot{};
+    FrameTiming timing{};
+};
 
 class HeadlessPngContext {
   public:
@@ -61,12 +70,20 @@ struct HeadlessPngHostConfig {
 struct HeadlessPngHostCallbacks {
     std::function<void(HeadlessPngContext&)> create_resources;
     std::function<void(HeadlessPngContext&)> before_capture;
+    std::function<void(HeadlessPngContext&, const HeadlessCaptureFrame&)> before_frame;
     std::function<void(HeadlessPngContext&, VkCommandBuffer, const HeadlessRenderTarget&)>
         record_capture;
+    std::function<void(HeadlessPngContext&, const HeadlessCaptureFrame&, VkCommandBuffer,
+                       const HeadlessRenderTarget&)>
+        record_frame;
     std::function<void(HeadlessPngContext&)> shutdown;
 };
 
 [[nodiscard]] std::size_t headless_png_byte_size(std::uint32_t width, std::uint32_t height);
+[[nodiscard]] std::uint32_t headless_capture_frame_slot_count(const RunConfig& config);
+[[nodiscard]] std::uint32_t headless_capture_frame_count(const RunConfig& config);
+[[nodiscard]] HeadlessCaptureFrame headless_capture_frame(const RunConfig& config,
+                                                         std::uint32_t frame_index);
 
 class HeadlessPngHost {
   public:
@@ -85,8 +102,12 @@ class HeadlessPngHost {
     void create_gpu_runtime();
     void create_project_gpu_services();
     void drain_gpu_work();
-    void record_capture(HeadlessPngContext& context, const HeadlessRenderTarget& target);
+    void record_capture(HeadlessPngContext& context, const HeadlessRenderTarget& target,
+                        const HeadlessCaptureFrame& frame);
+    [[nodiscard]] ProjectGpuReadbackResult readback_target(const HeadlessRenderTarget& target,
+                                                           const char* label);
     void write_png(const HeadlessRenderTarget& target);
+    void write_video(HeadlessPngContext& context, const HeadlessRenderTarget& target);
 
     [[nodiscard]] cubey::vulkan::Instance& instance();
     [[nodiscard]] cubey::vulkan::Device& device();

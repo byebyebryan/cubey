@@ -88,10 +88,10 @@ void GltfViewerApp::record_viewer_frame(cubey::host::WindowedAppContext& context
 }
 
 void GltfViewerApp::record_viewer_capture(cubey::host::HeadlessPngContext& context,
+                                          const cubey::host::HeadlessCaptureFrame& frame,
                                           VkCommandBuffer command_buffer,
                                           const cubey::host::HeadlessRenderTarget& target) {
-    record_viewer_target(context.device(), command_buffer, target,
-                         cubey::render::FrameSlot{.index = 0, .count = 1},
+    record_viewer_target(context.device(), command_buffer, target, frame.frame_slot,
                          cubey::render::render_graph_color_attachment_texture_state(),
                          cubey::render::render_graph_color_attachment_texture_state(),
                          cubey::render::RenderGraphCommandBufferMode::AlreadyRecording);

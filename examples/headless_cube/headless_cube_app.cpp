@@ -15,10 +15,11 @@ int HeadlessCubeApp::run() {
     callbacks.create_resources = [this](cubey::host::HeadlessPngContext& context) {
         create_global_resources_if_needed(context);
     };
-    callbacks.record_capture = [this](cubey::host::HeadlessPngContext&,
-                                      VkCommandBuffer command_buffer,
-                                      const cubey::host::HeadlessRenderTarget& target) {
-        render_png(command_buffer, target);
+    callbacks.record_frame = [this](cubey::host::HeadlessPngContext&,
+                                    const cubey::host::HeadlessCaptureFrame& frame,
+                                    VkCommandBuffer command_buffer,
+                                    const cubey::host::HeadlessRenderTarget& target) {
+        render_capture(command_buffer, target, frame);
     };
     callbacks.shutdown = [this](cubey::host::HeadlessPngContext&) { destroy_resources(); };
 

@@ -201,15 +201,17 @@ int PbrFurnaceApp::run_headless() {
 
     cubey::host::HeadlessPngHostCallbacks callbacks;
     callbacks.create_resources = [this](cubey::host::HeadlessPngContext& context) {
-        create_global_resources_if_needed(context.device(), context.gpu(), 1);
+        create_global_resources_if_needed(
+            context.device(), context.gpu(),
+            cubey::host::headless_capture_frame_slot_count(config_));
         create_forward_pass(context.device(), context.render_target().extent,
                             context.render_target().format);
     };
-    callbacks.record_capture = [this](cubey::host::HeadlessPngContext&,
-                                      VkCommandBuffer command_buffer,
-                                      const cubey::host::HeadlessRenderTarget& target) {
-        record_furnace_frame(command_buffer, target,
-                             cubey::render::FrameSlot{.index = 0, .count = 1}, false);
+    callbacks.record_frame = [this](cubey::host::HeadlessPngContext&,
+                                    const cubey::host::HeadlessCaptureFrame& frame,
+                                    VkCommandBuffer command_buffer,
+                                    const cubey::host::HeadlessRenderTarget& target) {
+        record_furnace_frame(command_buffer, target, frame.frame_slot, false);
     };
     callbacks.shutdown = [this](cubey::host::HeadlessPngContext&) { destroy_all_resources(); };
 

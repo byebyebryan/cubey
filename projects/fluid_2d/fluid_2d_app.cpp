@@ -224,14 +224,29 @@ class Fluid2DApp {
             create_global_resources_if_needed(context.device(), context.gpu());
             create_render_pipeline(context.device(), target.format, target.extent);
         };
-        callbacks.before_capture = [this](cubey::host::HeadlessPngContext&) {
-            const std::uint32_t frames = headless_frame_count(config_);
-            for (std::uint32_t frame = 1; frame <= frames; ++frame) {
-                const ProjectFrame project_frame =
-                    runtime_.frame_for_timing(fixed_headless_timing(fluid_config_, frame));
+        if (config_.capture_mode == CaptureMode::Png) {
+            callbacks.before_capture = [this](cubey::host::HeadlessPngContext&) {
+                const std::uint32_t frames = headless_frame_count(config_);
+                for (std::uint32_t frame = 1; frame <= frames; ++frame) {
+                    const ProjectFrame project_frame =
+                        runtime_.frame_for_timing(fixed_headless_timing(fluid_config_, frame));
+                    record_headless_simulation_frame(runtime_.gpu(), project_frame);
+                }
+            };
+        } else {
+            callbacks.before_frame = [this](cubey::host::HeadlessPngContext&,
+                                            const cubey::host::HeadlessCaptureFrame& frame) {
+                const std::uint64_t simulation_frame = static_cast<std::uint64_t>(frame.index) + 1;
+                const FrameTiming timing{
+                    .delta_seconds = frame.timing.delta_seconds,
+                    .elapsed_seconds = frame.timing.delta_seconds *
+                                       static_cast<double>(simulation_frame),
+                    .frame_index = simulation_frame,
+                };
+                const ProjectFrame project_frame = runtime_.frame_for_timing(timing);
                 record_headless_simulation_frame(runtime_.gpu(), project_frame);
-            }
-        };
+            };
+        }
         callbacks.record_capture = [this](cubey::host::HeadlessPngContext&,
                                           VkCommandBuffer command_buffer,
                                           const cubey::host::HeadlessRenderTarget& target) {

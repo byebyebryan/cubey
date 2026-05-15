@@ -13,6 +13,7 @@ void test_engine_reuses_project_frame_for_same_timing();
 void test_renderer_service_owns_forward_pbr_renderer_instances();
 void test_renderer_service_rejects_foreign_forward_pbr_renderer();
 void test_renderer_service_resource_lifecycle_is_safe_without_renderers();
+void test_headless_capture_frame_helpers_select_png_or_video_timing();
 void test_headless_png_host_validates_capture_shape();
 void test_host_frame_stats_publish_window_title_metrics();
 void test_input_state_accumulates_cursor_and_scroll_per_frame();
@@ -114,6 +115,7 @@ std::span<const TestCase> engine_host_input_test_cases() {
         CUBEY_TEST(test_gltf_scene_importer_classifies_deformable_primitives),
         CUBEY_TEST(test_gltf_scene_importer_validates_deformation_inputs_and_culling_policy),
         CUBEY_TEST(test_headless_png_host_validates_capture_shape),
+        CUBEY_TEST(test_headless_capture_frame_helpers_select_png_or_video_timing),
         CUBEY_TEST(test_host_frame_stats_publish_window_title_metrics),
         CUBEY_TEST(test_input_state_tracks_key_and_button_edges),
         CUBEY_TEST(test_input_state_accumulates_cursor_and_scroll_per_frame),

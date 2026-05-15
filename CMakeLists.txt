@@ -13,6 +13,12 @@ option(CUBEY_ENABLE_CLANG_TIDY "Run clang-tidy during builds" OFF)
 option(CUBEY_BUILD_HOST "Build Cubey concrete host layer" ON)
 option(CUBEY_BUILD_EXAMPLES "Build Cubey examples" ${CUBEY_BUILD_HOST})
 option(CUBEY_BUILD_PROJECTS "Build Cubey projects" ${CUBEY_BUILD_HOST})
+set(
+    CUBEY_VIDEO_CAPTURE
+    "AUTO"
+    CACHE STRING "Enable in-process video capture through libav/FFmpeg: AUTO, ON, or OFF"
+)
+set_property(CACHE CUBEY_VIDEO_CAPTURE PROPERTY STRINGS AUTO ON OFF)
 option(
     CUBEY_FETCH_GLTF_SAMPLE_ASSETS
     "Fetch selected Khronos glTF sample assets into the build tree"
@@ -54,6 +60,36 @@ cubey_configure_warnings(cubey_project_warnings)
 
 include(FetchContent)
 find_package(Vulkan REQUIRED)
+
+string(TOUPPER "${CUBEY_VIDEO_CAPTURE}" CUBEY_VIDEO_CAPTURE_MODE)
+if (NOT CUBEY_VIDEO_CAPTURE_MODE MATCHES "^(AUTO|ON|OFF)$")
+    message(FATAL_ERROR "CUBEY_VIDEO_CAPTURE must be AUTO, ON, or OFF")
+endif()
+
+set(CUBEY_HAS_LIBAV OFF)
+if (NOT CUBEY_VIDEO_CAPTURE_MODE STREQUAL "OFF")
+    find_package(PkgConfig QUIET)
+    if (PkgConfig_FOUND)
+        pkg_check_modules(
+            CUBEY_LIBAV
+            QUIET
+            IMPORTED_TARGET
+            libavcodec
+            libavformat
+            libavutil
+            libswscale
+        )
+    endif()
+
+    if (CUBEY_LIBAV_FOUND)
+        set(CUBEY_HAS_LIBAV ON)
+        message(STATUS "Cubey video capture: enabled with libav/FFmpeg")
+    elseif (CUBEY_VIDEO_CAPTURE_MODE STREQUAL "ON")
+        message(FATAL_ERROR "CUBEY_VIDEO_CAPTURE=ON requires libavcodec, libavformat, libavutil, and libswscale")
+    else()
+        message(STATUS "Cubey video capture: disabled, libav/FFmpeg development packages not found")
+    endif()
+endif()
 
 FetchContent_Declare(
     cgltf

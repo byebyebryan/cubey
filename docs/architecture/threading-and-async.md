@@ -218,7 +218,11 @@ buffers and schedules PNG encoding through `cubey::jobs`, returning a
 `CaptureTicket` whose `finish()` call makes the blocking wait explicit.
 `cubey::ProjectGpuServices` now provides the GPU-side counterpart for RGBA8
 image readback: enqueue a readback ticket, drain the GPU runtime at an explicit
-boundary, then take the completed pixel payload.
+boundary, then take the completed pixel payload. Headless video capture uses a
+small capture-slot ring with per-slot render targets, readback buffers, and
+fences, then moves CPU H.264 encoding to a worker so frame production does not
+also perform MP4 packet writing inline. PNG capture remains a single-artifact
+blocking path.
 
 `cubey::UploadQueue` is the first upload-side request queue. It owns submitted
 CPU bytes, returns monotonic `UploadTicket` values, and tracks pending,

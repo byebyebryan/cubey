@@ -142,6 +142,9 @@ Current checkpoint:
   executor.
 - Reusable `cubey::CaptureQueue` and `CaptureTicket` provide the first
   async-shaped PNG encoding path over completed RGBA pixel buffers.
+- Reusable `cubey::VideoEncoder` provides optional libav/FFmpeg-backed H.264
+  MP4 output for headless captures when the system development packages are
+  available.
 - Reusable `cubey::UploadQueue`, `UploadTicket`, and `QueuedUpload` provide the
   first CPU-owned upload request queue for GPU-owner draining, with pending,
   completed, and failed ticket status.
@@ -439,6 +442,9 @@ building a full threaded renderer too early.
 - Added a small `cubey::jobs` facade around a standard-library worker executor.
 - Keep third-party task/executor types out of public Cubey APIs.
 - Added job-backed PNG capture encoding as the first queued work consumer.
+- Added optional headless MP4 capture: deterministic capture-frame timing,
+  `--capture video`, `--fps`, default `cubey-output.mp4`, and CPU video encoding
+  on a worker behind the headless host.
 - Added CPU-owned upload requests that can be drained by the GPU owner.
 - Added GPU submission tickets and deferred destruction helpers for future
   in-flight GPU lifetime tracking.

@@ -12,6 +12,16 @@ void require(bool condition, const char* message) {
     }
 }
 
+template <typename Fn>
+void require_throws(Fn&& fn, const char* message) {
+    try {
+        fn();
+    } catch (const std::exception&) {
+        return;
+    }
+    throw std::runtime_error(message);
+}
+
 } // namespace
 
 void test_run_config_parses_png_output_path() {
@@ -26,6 +36,92 @@ void test_run_config_parses_png_output_path() {
         cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
     require(config.output_path == output_value.data(),
             "run config should preserve PNG output path");
+}
+
+void test_run_config_parses_video_capture_defaults() {
+    std::array<char, 6> program{'c', 'u', 'b', 'e', 'y', '\0'};
+    std::array<char, 11> headless_flag{'-', '-', 'h', 'e', 'a', 'd', 'l', 'e', 's', 's',
+                                       '\0'};
+    std::array<char, 10> capture_flag{'-', '-', 'c', 'a', 'p', 't', 'u', 'r', 'e',
+                                      '\0'};
+    std::array<char, 6> capture_value{'v', 'i', 'd', 'e', 'o', '\0'};
+    std::array<char*, 4> argv{program.data(), headless_flag.data(), capture_flag.data(),
+                              capture_value.data()};
+
+    const cubey::RunConfig config =
+        cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
+    require(config.capture_mode == cubey::CaptureMode::Video,
+            "video capture flag should select video capture mode");
+    require(config.fps == 60, "video capture should default to 60 fps");
+    require(config.frames == 300, "video capture should default to 300 frames");
+    require(config.output_path == "cubey-output.mp4",
+            "video capture should default to an mp4 output path");
+}
+
+void test_run_config_preserves_explicit_video_capture_timing_and_output() {
+    std::array<char, 6> program{'c', 'u', 'b', 'e', 'y', '\0'};
+    std::array<char, 11> headless_flag{'-', '-', 'h', 'e', 'a', 'd', 'l', 'e', 's', 's',
+                                       '\0'};
+    std::array<char, 10> capture_flag{'-', '-', 'c', 'a', 'p', 't', 'u', 'r', 'e',
+                                      '\0'};
+    std::array<char, 6> capture_value{'v', 'i', 'd', 'e', 'o', '\0'};
+    std::array<char, 9> frames_flag{'-', '-', 'f', 'r', 'a', 'm', 'e', 's',
+                                    '\0'};
+    std::array<char, 3> frames_value{'4', '2', '\0'};
+    std::array<char, 6> fps_flag{'-', '-', 'f', 'p', 's', '\0'};
+    std::array<char, 3> fps_value{'2', '4', '\0'};
+    std::array<char, 9> output_flag{'-', '-', 'o', 'u', 't', 'p', 'u', 't', '\0'};
+    std::array<char, 21> output_value{'/', 't', 'm', 'p', '/', 'c', 'u', 'b',
+                                      'e', 'y', '-', 'v', 'i', 'd', 'e', 'o',
+                                      '.', 'm', 'p', '4', '\0'};
+    std::array<char*, 10> argv{program.data(),      headless_flag.data(), capture_flag.data(),
+                               capture_value.data(), frames_flag.data(),   frames_value.data(),
+                               fps_flag.data(),      fps_value.data(),     output_flag.data(),
+                               output_value.data()};
+
+    const cubey::RunConfig config =
+        cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
+    require(config.capture_mode == cubey::CaptureMode::Video,
+            "video capture flag should select video capture mode");
+    require(config.frames == 42, "video capture should preserve explicit frame count");
+    require(config.fps == 24, "video capture should preserve explicit fps");
+    require(config.output_path == output_value.data(),
+            "video capture should preserve explicit output path");
+}
+
+void test_run_config_rejects_invalid_capture_options() {
+    {
+        std::array<char, 6> program{'c', 'u', 'b', 'e', 'y', '\0'};
+        std::array<char, 10> capture_flag{'-', '-', 'c', 'a', 'p', 't', 'u', 'r', 'e',
+                                          '\0'};
+        std::array<char, 4> capture_value{'g', 'i', 'f', '\0'};
+        std::array<char*, 3> argv{program.data(), capture_flag.data(), capture_value.data()};
+        require_throws(
+            [&argv]() { cubey::parse_run_config(static_cast<int>(argv.size()), argv.data()); },
+            "run config should reject unknown capture modes");
+    }
+    {
+        std::array<char, 6> program{'c', 'u', 'b', 'e', 'y', '\0'};
+        std::array<char, 11> headless_flag{'-', '-', 'h', 'e', 'a', 'd', 'l', 'e', 's', 's',
+                                           '\0'};
+        std::array<char, 6> fps_flag{'-', '-', 'f', 'p', 's', '\0'};
+        std::array<char, 2> fps_value{'0', '\0'};
+        std::array<char*, 4> argv{program.data(), headless_flag.data(), fps_flag.data(),
+                                  fps_value.data()};
+        require_throws(
+            [&argv]() { cubey::parse_run_config(static_cast<int>(argv.size()), argv.data()); },
+            "run config should reject zero fps");
+    }
+    {
+        std::array<char, 6> program{'c', 'u', 'b', 'e', 'y', '\0'};
+        std::array<char, 10> capture_flag{'-', '-', 'c', 'a', 'p', 't', 'u', 'r', 'e',
+                                          '\0'};
+        std::array<char, 6> capture_value{'v', 'i', 'd', 'e', 'o', '\0'};
+        std::array<char*, 3> argv{program.data(), capture_flag.data(), capture_value.data()};
+        require_throws(
+            [&argv]() { cubey::parse_run_config(static_cast<int>(argv.size()), argv.data()); },
+            "run config should reject video capture without headless mode");
+    }
 }
 
 void test_run_config_parses_input_path() {

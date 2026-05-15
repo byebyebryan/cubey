@@ -71,6 +71,7 @@ add_executable(cubey_core_tests
     swapchain_tests.cpp
     transform_manager_tests.cpp
     transform_tests.cpp
+    video_encoder_tests.cpp
     test_registry.cpp
     test_registry_asset.cpp
     test_registry_core.cpp

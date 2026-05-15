@@ -223,8 +223,13 @@ add_library(cubey_engine STATIC
     engine/project_runtime.cpp
     engine/renderer_service.cpp
     engine/upload_queue.cpp
+    engine/video_encoder.cpp
 )
 add_library(cubey::engine ALIAS cubey_engine)
+
+if (CUBEY_HAS_LIBAV)
+    target_sources(cubey_engine PRIVATE engine/libav_video_encoder.cpp)
+endif()
 
 target_include_directories(
     cubey_engine
@@ -244,6 +249,16 @@ target_link_libraries(
         cubey_external_basisu_transcoder
         cubey_project_warnings
 )
+
+target_compile_definitions(
+    cubey_engine
+    PUBLIC
+        CUBEY_HAS_LIBAV=$<BOOL:${CUBEY_HAS_LIBAV}>
+)
+
+if (CUBEY_HAS_LIBAV)
+    target_link_libraries(cubey_engine PRIVATE PkgConfig::CUBEY_LIBAV)
+endif()
 
 add_library(cubey_input STATIC
     input/input.cpp

@@ -104,6 +104,7 @@ class GltfViewerApp {
     void record_viewer_frame(cubey::host::WindowedAppContext& context,
                              const cubey::host::WindowedRenderFrame& frame);
     void record_viewer_capture(cubey::host::HeadlessPngContext& context,
+                               const cubey::host::HeadlessCaptureFrame& frame,
                                VkCommandBuffer command_buffer,
                                const cubey::host::HeadlessRenderTarget& target);
 

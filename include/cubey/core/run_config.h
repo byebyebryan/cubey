@@ -14,15 +14,22 @@ struct CliAppInfo {
     const char* default_title = "cubey";
 };
 
+enum class CaptureMode {
+    Png,
+    Video,
+};
+
 struct RunConfig {
     std::string title = "cubey";
     std::uint32_t width = 1280;
     std::uint32_t height = 720;
     std::uint32_t frames = 0;
+    std::uint32_t fps = 60;
     std::filesystem::path input_path{};
     std::filesystem::path environment_path{};
     std::filesystem::path output_path = "cubey-output.png";
     std::string debug_view{};
+    CaptureMode capture_mode = CaptureMode::Png;
     float ibl_intensity = 1.0F;
     float environment_rotation_degrees = 0.0F;
     float exposure = 0.0F;
