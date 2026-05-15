@@ -81,15 +81,19 @@ if (BUILD_TESTING)
         set(CUBEY_GLTF_VIEWER_SAMPLE_PATH
             "${CUBEY_GLTF_SAMPLE_ASSETS_DIR}/Models/${sample_relative_path}"
         )
-        if (EXISTS "${CUBEY_GLTF_VIEWER_SAMPLE_PATH}")
-            cubey_add_png_smoke_test(
-                "${test_name}"
-                cubey_project_gltf_viewer
-                "${CMAKE_CURRENT_BINARY_DIR}/${output_name}"
-                --headless
-                --input "${CUBEY_GLTF_VIEWER_SAMPLE_PATH}"
+        if (NOT EXISTS "${CUBEY_GLTF_VIEWER_SAMPLE_PATH}")
+            message(
+                FATAL_ERROR
+                "Configured glTF sample asset is missing: ${CUBEY_GLTF_VIEWER_SAMPLE_PATH}"
             )
         endif()
+        cubey_add_png_smoke_test(
+            "${test_name}"
+            cubey_project_gltf_viewer
+            "${CMAKE_CURRENT_BINARY_DIR}/${output_name}"
+            --headless
+            --input "${CUBEY_GLTF_VIEWER_SAMPLE_PATH}"
+        )
     endfunction()
 
     cubey_add_gltf_viewer_sample_smoke_test(

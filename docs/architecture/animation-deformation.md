@@ -50,10 +50,11 @@ pipelines, and mesh resolution by `FrameSlot`.
 - `STEP`, `LINEAR`, and `CUBICSPLINE` interpolation are part of the contract.
 - `JOINTS_0` and `WEIGHTS_0` are supported; additional influence sets are
   rejected until the skinning contract needs them.
-- Sparse accessors are rejected until the loader has a deliberate expansion
-  path.
-- Animated/deformed bounds are conservative CPU-side bounds in V1; no GPU
-  bounds reduction or readback is planned for this slice.
+- Sparse mesh attribute accessors and sparse animation outputs are expanded by
+  the loader; sparse primitive index accessors remain rejected.
+- Deformable renderables opt out of static-bounds frustum culling in V1. A later
+  bounds slice can replace that with conservative CPU deformation bounds or GPU
+  bounds reduction.
 
 ## Validation Assets
 

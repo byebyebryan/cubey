@@ -44,7 +44,7 @@ current design.
 | Math | GLM behind `cubey::math` | Share matrix/vector types, transform/camera state, and Vulkan projection conventions without exposing ad hoc example math |
 | Shader compilation | glslangValidator (build time) | GLSL → SPIR-V, no runtime dependency |
 | Image output | `stb_image_write` | Single-header dependency, enough for inspectable artifacts |
-| Asset import | `cgltf` + `stb_image` + Basis Universal transcoder | Narrow static glTF/glb CPU loading, PNG/JPEG decode, and `KHR_texture_basisu` KTX2 upload support before a broader asset pipeline |
+| Asset import | `cgltf` + `stb_image` + Basis Universal transcoder | Narrow glTF/glb CPU loading for meshes, materials, textures, animation/deformation data, PNG/JPEG decode, and `KHR_texture_basisu` KTX2 upload support before a broader asset pipeline |
 | CPU async work | undecided behind `cubey::jobs` | Taskflow and `BS::thread_pool` are the first candidates |
 
 ## Architecture
@@ -128,14 +128,15 @@ Reusable spatial types should stay explicit and narrow:
 - `LightManager3D` owns entity-backed 3D light components and builds CPU-side
   light packets from committed scene read views. Directional lights carry
   normalized directions; point lights derive world position from `Transform3D`.
-- `cubey::asset` owns CPU-side imported asset data. The first slice supports
-  static glTF/glb meshes, nodes, images, samplers, and metallic-roughness
-  materials, plus standalone Radiance HDR image decode for IBL inputs; it does
-  not create scenes, render handles, Vulkan resources, or a material system.
-- `cubey::engine` owns the current static glTF scene importer and the renderer
-  service. The importer maps CPU asset nodes into scene entities,
-  registry-issued render handles, app-owned mesh/material resources, uploaded
-  textures, and imported bounds. `RendererService` owns renderer instance
+- `cubey::asset` owns CPU-side imported asset data. The current slice supports
+  glTF/glb meshes, nodes, images, samplers, PBR materials, KTX2 BasisU image
+  payloads, one animation/deformation data path, and standalone Radiance HDR
+  image decode for IBL inputs; it does not create scenes, render handles, Vulkan
+  resources, or a material system.
+- `cubey::engine` owns the current glTF scene importer and the renderer service.
+  The importer maps CPU asset nodes into scene entities, registry-issued render
+  handles, app-owned mesh/material resources, uploaded textures, deformation
+  resources, animation update hooks, and imported bounds. `RendererService` owns renderer instance
   lifetime, and `ForwardPbrRenderer3D` owns the repeated shadow/skybox/PBR
   forward pass resources, HDR scene-color target, post pass, and render-graph
   recording. Per-frame renderer inputs are grouped into
@@ -389,7 +390,7 @@ cubey/
       engine/
         capture_queue.h    -- job-backed PNG capture encoding queue
         engine.h           -- scoped root owner for runtime, scenes, and registries
-        gltf_scene_importer.h -- static glTF scene/resource bridge
+        gltf_scene_importer.h -- glTF scene/resource/deformation bridge
         forward_pbr_renderer_3d.h -- reusable shadow/skybox/PBR forward renderer
                              -- and its explicit render request contract
         renderer_service.h -- engine-owned renderer instance lifetime
@@ -397,7 +398,7 @@ cubey/
         project_runtime.h  -- async-ready project vocabulary
         upload_queue.h     -- CPU-owned upload request queue
       asset/
-        gltf_asset.h       -- static glTF/glb CPU asset data loader
+        gltf_asset.h       -- glTF/glb CPU asset data loader
         hdr_image.h        -- standalone Radiance HDR CPU image loader
       host/
         frame_stats.h      -- windowed telemetry sampling and title formatting
@@ -458,7 +459,7 @@ cubey/
   src/
     cubey/
       CMakeLists.txt       -- layered cubey::* library targets
-      asset/               -- static glTF/glb parsing, URI loading, and image decode
+      asset/               -- glTF/glb parsing, URI loading, and image decode
       core/                -- run config, jobs, frame timing, I/O, and PNG writer
       engine/              -- engine root, project runtime, queues, GPU services,
                              -- glTF scene import, and reusable renderer internals

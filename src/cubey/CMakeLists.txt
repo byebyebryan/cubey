@@ -82,14 +82,13 @@ target_include_directories(
     cubey_vulkan
     PUBLIC
         "${PROJECT_SOURCE_DIR}/include"
-        "${vulkan_headers_SOURCE_DIR}/include"
 )
 
 target_link_libraries(
     cubey_vulkan
     PUBLIC
         cubey::core
-        PkgConfig::VULKAN_LOADER
+        Vulkan::Vulkan
     PRIVATE
         cubey_project_warnings
 )

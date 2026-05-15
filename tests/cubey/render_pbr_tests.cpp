@@ -57,6 +57,8 @@ void test_pbr_forward_pass_declares_scene_and_material_sets() {
     require(pass.kind == cubey::render::MaterialPassKind::ForwardColor,
             "PBR pass should be forward color");
     require(pass.depth_test && pass.depth_write, "PBR pass should enable depth");
+    require(pass.cull_mode == VK_CULL_MODE_BACK_BIT,
+            "PBR forward pass should cull back faces by default");
     require(pass.descriptor_sets.size() == 2, "PBR pass should declare scene and material sets");
     require(pass.descriptor_sets[0].set == 0, "PBR scene descriptors should use set 0");
     require(pass.descriptor_sets[0].bindings.size() == 5,
@@ -119,6 +121,8 @@ void test_pbr_forward_pass_declares_scene_and_material_sets() {
     require(alpha_pass.label == "pbr.forward.alpha", "PBR alpha pass should use a distinct label");
     require(alpha_pass.depth_test && !alpha_pass.depth_write,
             "PBR alpha pass should test but not write depth");
+    require(alpha_pass.cull_mode == VK_CULL_MODE_BACK_BIT,
+            "PBR alpha pass should keep the default single-sided cull policy");
     require(alpha_pass.blend_enable, "PBR alpha pass should enable color blending");
     require(alpha_pass.src_color_blend_factor == VK_BLEND_FACTOR_ONE,
             "PBR alpha pass should use premultiplied source color");
@@ -128,6 +132,13 @@ void test_pbr_forward_pass_declares_scene_and_material_sets() {
             "PBR alpha pass should preserve source alpha");
     require(alpha_pass.dst_alpha_blend_factor == VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
             "PBR alpha pass should composite alpha with inverse source alpha");
+
+    const cubey::render::MaterialPassInfo double_sided_pass =
+        cubey::render::pbr_forward_pass_info(cubey::render::PbrForwardPassConfig{
+            .cull_mode = VK_CULL_MODE_NONE,
+        });
+    require(double_sided_pass.cull_mode == VK_CULL_MODE_NONE,
+            "PBR pass config should allow double-sided material pipelines");
 }
 
 void test_pbr_material_factors_are_uniforms_and_push_constants_are_model_only() {
@@ -395,6 +406,8 @@ void test_pbr_shaders_use_filament_style_material_remap() {
         read_source_file(source_root / "projects/pbr_furnace/shaders/pbr_furnace.frag");
     const std::string gltf =
         read_source_file(source_root / "projects/gltf_viewer/shaders/gltf_pbr.frag");
+    const std::string gltf_vertex =
+        read_source_file(source_root / "projects/gltf_viewer/shaders/gltf_pbr.vert");
     const std::string gltf_skybox =
         read_source_file(source_root / "projects/gltf_viewer/shaders/gltf_skybox.frag");
     const std::string gltf_shadow =
@@ -509,6 +522,10 @@ void test_pbr_shaders_use_filament_style_material_remap() {
                      "glTF PBR shader should evaluate anisotropic specular");
     require_contains(gltf, "cubey_pbr_iridescence_f0",
                      "glTF PBR shader should evaluate iridescence Fresnel tint");
+    require_contains(gltf_vertex, "orthogonalizeTangent",
+                     "glTF PBR vertex shader should re-orthogonalize normal-map tangent frames");
+    require_contains(gltf_vertex, "mat3(model) * in_tangent.xyz",
+                     "glTF PBR vertex shader should transform tangents with the model linear part");
     require_contains(gltf, "if (cubey_pbr_has_material_texture(CUBEY_PBR_TEXTURE_SPECULAR))",
                      "glTF PBR shader should skip specular strength texture when absent");
     require_contains(gltf, "if (cubey_pbr_has_material_texture(CUBEY_PBR_TEXTURE_SPECULAR_COLOR))",
@@ -533,6 +550,8 @@ void test_gltf_viewer_sample_asset_smoke_tests_cover_material_and_tangent_cases(
                      "glTF viewer sample smoke tests should use a helper");
     require_contains(cmake, "if (NOT CUBEY_GLTF_SAMPLE_ASSETS_DIR)",
                      "glTF viewer sample smoke tests should stay optional");
+    require_contains(cmake, "FATAL_ERROR",
+                     "configured glTF sample asset directories should fail on missing samples");
     require_contains(cmake, "AlphaBlendModeTest/glTF/AlphaBlendModeTest.gltf",
                      "glTF viewer sample smoke tests should cover alpha blending");
     require_contains(cmake, "SpecularTest/glTF/SpecularTest.gltf",
@@ -566,6 +585,26 @@ void test_gltf_viewer_sample_asset_smoke_tests_cover_material_and_tangent_cases(
                      "glTF docs should point tangent validation at Khronos sample assets");
 }
 
+void test_gltf_material_fallback_textures_preserve_pbr_factor_channels() {
+    const std::filesystem::path source_root = std::filesystem::path{CUBEY_SOURCE_DIR};
+    const std::string importer =
+        read_source_file(source_root / "src/cubey/engine/gltf_scene_importer_materials.cpp");
+    const std::string viewer =
+        read_source_file(source_root / "projects/gltf_viewer/gltf_viewer_assets.cpp");
+
+    require_contains(importer, "resources.metallic_roughness_default.emplace(",
+                     "glTF importer should create a fallback metallic-roughness texture");
+    require_contains(
+        importer,
+        "create_solid_texture(device, gpu, {255, 255, 255, 255}, "
+        "VK_FORMAT_R8G8B8A8_UNORM)",
+        "metallic-roughness fallback should leave roughness and metallic channels at one");
+    require_contains(viewer,
+                     "create_solid_texture(device, gpu, {255, 255, 255, 255}, "
+                     "VK_FORMAT_R8G8B8A8_UNORM)",
+                     "viewer fallback material should match importer metallic-roughness defaults");
+}
+
 void test_gltf_basisu_transcoder_policy_uses_bc7_and_rgba_fallback() {
     const std::filesystem::path source_root = std::filesystem::path{CUBEY_SOURCE_DIR};
     const std::string basisu =
@@ -595,4 +634,21 @@ void test_gltf_basisu_transcoder_uses_bundled_zstd() {
                          "BasisU transcoder should not require a system Zstd package");
     require_not_contains(cmake, "PkgConfig::ZSTD",
                          "BasisU transcoder should not mix bundled headers with system Zstd");
+}
+
+void test_vulkan_and_gltf_sample_asset_cmake_paths_are_portable_and_pinned() {
+    const std::filesystem::path source_root = std::filesystem::path{CUBEY_SOURCE_DIR};
+    const std::string root_cmake = read_source_file(source_root / "CMakeLists.txt");
+    const std::string cubey_cmake = read_source_file(source_root / "src/cubey/CMakeLists.txt");
+
+    require_contains(root_cmake, "find_package(Vulkan REQUIRED)",
+                     "Vulkan discovery should use CMake's Vulkan package");
+    require_not_contains(root_cmake, "pkg_check_modules(VULKAN_LOADER",
+                         "Vulkan discovery should not require a vulkan.pc file");
+    require_contains(cubey_cmake, "Vulkan::Vulkan",
+                     "Vulkan library targets should link through the CMake Vulkan target");
+    require_contains(root_cmake, "2bac6f8c57bf471df0d2a1e8a8ec023c7801dddf",
+                     "fetched glTF sample assets should be pinned to a known-good commit");
+    require_not_contains(root_cmake, "GIT_TAG        main",
+                         "glTF sample assets should not follow upstream main implicitly");
 }

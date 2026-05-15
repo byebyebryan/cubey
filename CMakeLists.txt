@@ -53,15 +53,7 @@ add_library(cubey_project_warnings INTERFACE)
 cubey_configure_warnings(cubey_project_warnings)
 
 include(FetchContent)
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(VULKAN_LOADER REQUIRED IMPORTED_TARGET vulkan)
-
-FetchContent_Declare(
-    vulkan_headers
-    GIT_REPOSITORY https://github.com/KhronosGroup/Vulkan-Headers.git
-    GIT_TAG        v1.4.341
-)
-FetchContent_MakeAvailable(vulkan_headers)
+find_package(Vulkan REQUIRED)
 
 FetchContent_Declare(
     cgltf
@@ -213,8 +205,7 @@ if (CUBEY_FETCH_GLTF_SAMPLE_ASSETS)
     FetchContent_Declare(
         gltf_sample_assets
         GIT_REPOSITORY https://github.com/KhronosGroup/glTF-Sample-Assets.git
-        GIT_TAG        main
-        GIT_SHALLOW    TRUE
+        GIT_TAG        2bac6f8c57bf471df0d2a1e8a8ec023c7801dddf
     )
     FetchContent_MakeAvailable(gltf_sample_assets)
     set(CUBEY_GLTF_SAMPLE_ASSETS_DIR "${gltf_sample_assets_SOURCE_DIR}" CACHE PATH "" FORCE)
