@@ -66,7 +66,15 @@ class PbrMaterialTable {
     template <typename... Args>
     FrameUniformMaterialInstance<PbrMaterialUniforms>& emplace_instance(MaterialHandle material,
                                                                         Args&&... args) {
-        return instances_.emplace(material, std::forward<Args>(args)...);
+        FrameUniformMaterialInstance<PbrMaterialUniforms>& instance =
+            instances_.emplace(material, std::forward<Args>(args)...);
+        try {
+            register_descriptor_set_layout(instance.layout());
+        } catch (...) {
+            instances_.erase(material);
+            throw;
+        }
+        return instance;
     }
 
     [[nodiscard]] FrameUniformMaterialInstance<PbrMaterialUniforms>&
@@ -81,8 +89,11 @@ class PbrMaterialTable {
     void clear();
 
   private:
+    void register_descriptor_set_layout(VkDescriptorSetLayout layout);
+
     MaterialResourceTable<FrameUniformMaterialInstance<PbrMaterialUniforms>> instances_{};
     std::unordered_map<MaterialHandle, PbrMaterialFactors, MaterialHandleHash> factors_{};
+    VkDescriptorSetLayout descriptor_set_layout_ = VK_NULL_HANDLE;
 };
 
 } // namespace cubey::render

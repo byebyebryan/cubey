@@ -341,6 +341,27 @@ void test_pbr_material_table_groups_factors_and_supports_lifetime_operations() {
     require(!table.contains_factors(material), "PBR material clear should remove all factors");
 }
 
+void test_pbr_material_table_tracks_descriptor_layout_explicitly() {
+    const std::filesystem::path source_root{CUBEY_SOURCE_DIR};
+    const std::string header =
+        read_source_file(source_root / "include/cubey/render/pbr_material_resources.h");
+    const std::string source =
+        read_source_file(source_root / "src/cubey/render/pbr_material_resources.cpp");
+
+    require_contains(header, "VkDescriptorSetLayout descriptor_set_layout_",
+                     "PBR material table should store a table-level descriptor layout");
+    require_contains(header, "register_descriptor_set_layout(instance.layout())",
+                     "PBR material table should validate inserted instance layouts");
+    require_contains(source, "PbrMaterialTable::register_descriptor_set_layout",
+                     "PBR material table should centralize descriptor layout validation");
+    require_contains(source, "instances must share one descriptor layout",
+                     "PBR material table should reject mismatched descriptor layouts");
+    require_contains(source, "return descriptor_set_layout_;",
+                     "PBR material table descriptor layout should return the stored layout");
+    require_not_contains(source, "instances_.first().layout()",
+                         "PBR material table descriptor layout should not depend on map order");
+}
+
 void test_pbr_scene_uniforms_carry_display_transform() {
     const cubey::render::PbrDisplayTransform display{
         .exposure = 1.25F,

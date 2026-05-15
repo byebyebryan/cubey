@@ -244,11 +244,24 @@ PbrMaterialTable::instance(MaterialHandle material) const {
     return instances_.at(material);
 }
 
+void PbrMaterialTable::register_descriptor_set_layout(VkDescriptorSetLayout layout) {
+    if (layout == VK_NULL_HANDLE) {
+        throw std::runtime_error("PBR material table instance requires a descriptor set layout");
+    }
+    if (descriptor_set_layout_ == VK_NULL_HANDLE) {
+        descriptor_set_layout_ = layout;
+        return;
+    }
+    if (descriptor_set_layout_ != layout) {
+        throw std::runtime_error("PBR material table instances must share one descriptor layout");
+    }
+}
+
 VkDescriptorSetLayout PbrMaterialTable::descriptor_set_layout() const {
-    if (instances_.empty()) {
+    if (descriptor_set_layout_ == VK_NULL_HANDLE) {
         throw std::runtime_error("PBR material table requires at least one material instance");
     }
-    return instances_.first().layout();
+    return descriptor_set_layout_;
 }
 
 VkDescriptorSetLayout PbrMaterialTable::layout(MaterialHandle material) const {
@@ -269,6 +282,9 @@ void PbrMaterialTable::erase(MaterialHandle material) {
     bool erased = false;
     if (instances_.contains(material)) {
         instances_.erase(material);
+        if (instances_.empty()) {
+            descriptor_set_layout_ = VK_NULL_HANDLE;
+        }
         erased = true;
     }
     erased = factors_.erase(material) > 0 || erased;
@@ -280,6 +296,7 @@ void PbrMaterialTable::erase(MaterialHandle material) {
 void PbrMaterialTable::clear() {
     instances_.clear();
     factors_.clear();
+    descriptor_set_layout_ = VK_NULL_HANDLE;
 }
 
 } // namespace cubey::render
