@@ -27,6 +27,7 @@ void test_forward_pbr_renderer_3d_config_from_shader_directory_fills_package_pat
 void test_forward_pbr_renderer_3d_config_from_shader_directory_rejects_empty_directory();
 void test_forward_pbr_renderer_3d_target_resources_use_material_table();
 void test_forward_pbr_renderer_3d_builds_render_request_from_frame_info();
+void test_forward_pbr_renderer_3d_record_accepts_frame_request_info();
 void test_forward_pbr_renderer_3d_binds_shadow_depth_with_depth_read_layout();
 void test_forward_pbr_renderer_3d_records_masked_shadow_path_with_material_alpha();
 void test_forward_pbr_renderer_3d_post_uniforms_pack_display_transform();
@@ -86,6 +87,7 @@ std::span<const TestCase> engine_host_input_test_cases() {
         CUBEY_TEST(test_forward_pbr_renderer_3d_config_from_shader_directory_rejects_empty_directory),
         CUBEY_TEST(test_forward_pbr_renderer_3d_target_resources_use_material_table),
         CUBEY_TEST(test_forward_pbr_renderer_3d_builds_render_request_from_frame_info),
+        CUBEY_TEST(test_forward_pbr_renderer_3d_record_accepts_frame_request_info),
         CUBEY_TEST(test_forward_pbr_renderer_3d_binds_shadow_depth_with_depth_read_layout),
         CUBEY_TEST(test_forward_pbr_renderer_3d_records_masked_shadow_path_with_material_alpha),
         CUBEY_TEST(test_forward_pbr_renderer_3d_render_request_validates_required_target_fields),

@@ -49,7 +49,7 @@ void GltfViewerApp::record_viewer_target(
         cubey::gltf_deformation_commands_for_frame(import_resources_, frame_slot);
     const cubey::render::FrameMeshResourceTable* frame_meshes =
         deformation_commands.empty() ? nullptr : &import_resources_.deformation.frame_meshes;
-    const auto request = cubey::forward_pbr_renderer_3d_render_request({
+    forward_pbr_renderer().record({
         .device = &device,
         .command_buffer = command_buffer,
         .color_target = color_target,
@@ -76,7 +76,6 @@ void GltfViewerApp::record_viewer_target(
                 .exposure = config_.exposure,
             },
     });
-    forward_pbr_renderer().record(request);
 }
 
 void GltfViewerApp::record_viewer_frame(cubey::host::WindowedAppContext& context,

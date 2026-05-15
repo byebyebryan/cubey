@@ -430,7 +430,7 @@ class MaterialCubesApp {
         cubey::SceneReadView scene_view = scene().read();
         const cubey::scene::FrameRenderPlan3D frame_plan =
             current_frame_plan(scene_view, frame.color_target.extent);
-        const auto request = cubey::forward_pbr_renderer_3d_render_request({
+        forward_pbr_renderer().record({
             .device = &context.device(),
             .command_buffer = frame.command_buffer,
             .color_target = frame.color_target,
@@ -454,7 +454,6 @@ class MaterialCubesApp {
                     .exposure = config_.exposure,
                 },
         });
-        forward_pbr_renderer().record(request);
     }
 
     [[nodiscard]] cubey::LightPacket3D fallback_light_packet() const {

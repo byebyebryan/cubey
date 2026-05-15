@@ -181,6 +181,7 @@ class ForwardPbrRenderer3D {
                                     const ForwardPbrRenderer3DTargetResourcesInfo& info);
     void destroy_swapchain_resources();
     void destroy_all_resources();
+    void record(const ForwardPbrRenderer3DFrameRequestInfo& info);
     void record(const ForwardPbrRenderer3DRenderRequest& request);
 
     [[nodiscard]] const render::GeneratedPbrEnvironment& environment() const;

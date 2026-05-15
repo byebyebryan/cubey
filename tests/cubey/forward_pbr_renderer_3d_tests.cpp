@@ -293,6 +293,19 @@ void test_forward_pbr_renderer_3d_builds_render_request_from_frame_info() {
                  "forward PBR request helper should copy display settings");
 }
 
+void test_forward_pbr_renderer_3d_record_accepts_frame_request_info() {
+    const std::filesystem::path source_root{CUBEY_SOURCE_DIR};
+    const std::string header =
+        read_source_file(source_root / "include/cubey/engine/forward_pbr_renderer_3d.h");
+    const std::string source =
+        read_source_file(source_root / "src/cubey/engine/forward_pbr_renderer_3d_graph.cpp");
+
+    require_contains(header, "void record(const ForwardPbrRenderer3DFrameRequestInfo& info);",
+                     "forward PBR renderer should expose direct frame-info recording");
+    require_contains(source, "record(forward_pbr_renderer_3d_render_request(info));",
+                     "direct frame-info recording should delegate through the validated request");
+}
+
 void test_forward_pbr_renderer_3d_render_request_validates_required_target_fields() {
     cubey::ForwardPbrRenderer3DRenderRequest request = valid_render_request();
     cubey::validate_forward_pbr_renderer_3d_render_request(request);
