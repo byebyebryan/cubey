@@ -1,5 +1,6 @@
 #include <cubey/render/render_graph.h>
 
+#include <cubey/vulkan/command_recorder.h>
 #include <cubey/vulkan/image_transitions.h>
 
 #include <span>

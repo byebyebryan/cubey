@@ -1,5 +1,7 @@
 #include <cubey/render/render_graph.h>
 
+#include <cubey/vulkan/command_recorder.h>
+
 #include <stdexcept>
 
 namespace cubey::render {

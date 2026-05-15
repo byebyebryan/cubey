@@ -153,6 +153,7 @@ add_library(cubey_render STATIC
     render/primitive_mesh.cpp
     render/render_graph.cpp
     render/render_graph_barriers.cpp
+    render/render_graph_builder.cpp
     render/render_graph_execution.cpp
     render/render_graph_frame.cpp
     render/render_graph_resolve.cpp
