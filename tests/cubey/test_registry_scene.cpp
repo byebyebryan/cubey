@@ -46,6 +46,7 @@ void test_scene_read_view_release_serializes_retirement_with_commits();
 void test_stable_slot_store_rejects_stale_handles_without_moving_other_slots();
 void test_transform_2d_builds_affine_matrix();
 void test_transform_3d_builds_affine_matrix();
+void test_transform_3d_can_use_explicit_affine_matrix();
 void test_transform_3d_matches_existing_cube_rotation_order();
 void test_transform_manager_2d_publishes_parented_world_matrices();
 void test_transform_manager_3d_publishes_parented_world_matrices();
@@ -108,6 +109,7 @@ std::span<const TestCase> scene_test_cases() {
         CUBEY_TEST(test_transform_manager_rejects_invalid_parenting_and_child_destroy),
         CUBEY_TEST(test_transform_2d_builds_affine_matrix),
         CUBEY_TEST(test_transform_3d_builds_affine_matrix),
+        CUBEY_TEST(test_transform_3d_can_use_explicit_affine_matrix),
         CUBEY_TEST(test_transform_3d_matches_existing_cube_rotation_order),
     };
     return tests;

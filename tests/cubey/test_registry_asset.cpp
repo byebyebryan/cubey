@@ -3,6 +3,7 @@
 #include <array>
 
 void test_gltf_asset_loads_static_pbr_triangle();
+void test_gltf_asset_marks_nodes_authored_with_matrix();
 void test_gltf_asset_generates_tangent_handedness_from_mirrored_uvs();
 void test_gltf_asset_loads_uv1_vertex_color_and_texture_transform();
 void test_gltf_asset_generates_tangents_from_normal_texture_uv_set();
@@ -28,8 +29,9 @@ void test_hdr_image_rejects_non_hdr_input();
 namespace cubey::tests {
 
 std::span<const TestCase> asset_test_cases() {
-    static constexpr std::array<TestCase, 22> tests{
+    static constexpr std::array<TestCase, 23> tests{
         CUBEY_TEST(test_gltf_asset_loads_static_pbr_triangle),
+        CUBEY_TEST(test_gltf_asset_marks_nodes_authored_with_matrix),
         CUBEY_TEST(test_gltf_asset_generates_tangent_handedness_from_mirrored_uvs),
         CUBEY_TEST(test_gltf_asset_loads_uv1_vertex_color_and_texture_transform),
         CUBEY_TEST(test_gltf_asset_generates_tangents_from_normal_texture_uv_set),

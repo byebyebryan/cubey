@@ -634,7 +634,8 @@ systems depend on them.
 - Status: transform value types are complete; the standalone hierarchy was
   superseded by entity-backed transform managers.
 - `Transform2D` now uses `translation`, scalar-radian rotation, and `scale`;
-  `Transform3D` now uses `translation`, quaternion `rotation`, and `scale`.
+  `Transform3D` now uses `translation`, quaternion `rotation`, `scale`, and an
+  optional explicit affine matrix override for imported node matrices.
 - Both transform types expose `affine_matrix()` instead of model-matrix
   terminology.
 - `TransformManager2D` and `TransformManager3D` provide entity-backed transform

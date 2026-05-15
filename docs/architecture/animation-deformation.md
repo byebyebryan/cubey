@@ -9,7 +9,9 @@ handles, and GPU-side deformation buffers where vertex work becomes expensive.
 ## Shape
 
 - Rigid animation is sampled on CPU and written into `TransformManager3D` as
-  local TRS edits.
+  local TRS edits. If a glTF node was originally authored with a matrix, the
+  sampled TRS edit intentionally clears that matrix override and starts from the
+  loader's decomposed base TRS values.
 - Morph animation samples weights on CPU, but applies target deltas on GPU.
 - Skinning samples node transforms on CPU and builds joint palettes from scene
   world transforms plus inverse bind matrices.

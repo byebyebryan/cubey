@@ -111,7 +111,8 @@ Reusable spatial types should stay explicit and narrow:
 - `Transform2D` is translation, scalar-radian rotation, scale, and a `Mat3`
   affine matrix.
 - `Transform3D` is translation, quaternion rotation, scale, and a `Mat4` affine
-  matrix.
+  matrix. It also supports an explicit affine matrix override for imported
+  authoring data that cannot be represented faithfully as Cubey TRS.
 - `TransformManager2D` and `TransformManager3D` are entity-backed component
   managers for parented local/world affine transforms. They publish read-view
   snapshots through `Scene` commits and are the first scene/component managers,
@@ -129,10 +130,10 @@ Reusable spatial types should stay explicit and narrow:
   light packets from committed scene read views. Directional lights carry
   normalized directions; point lights derive world position from `Transform3D`.
 - `cubey::asset` owns CPU-side imported asset data. The current slice supports
-  glTF/glb meshes, nodes, images, samplers, PBR materials, KTX2 BasisU image
-  payloads, one animation/deformation data path, and standalone Radiance HDR
-  image decode for IBL inputs; it does not create scenes, render handles, Vulkan
-  resources, or a material system.
+  glTF/glb meshes, nodes, matrix-authored node transforms, images, samplers, PBR
+  materials, KTX2 BasisU image payloads, one animation/deformation data path,
+  and standalone Radiance HDR image decode for IBL inputs; it does not create
+  scenes, render handles, Vulkan resources, or a material system.
 - `cubey::engine` owns the current glTF scene importer and the renderer service.
   The importer maps CPU asset nodes into scene entities, registry-issued render
   handles, app-owned mesh/material resources, uploaded textures, deformation

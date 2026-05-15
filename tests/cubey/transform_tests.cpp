@@ -8,6 +8,12 @@
 
 namespace {
 
+void require(bool condition, const char* message) {
+    if (!condition) {
+        throw std::runtime_error(message);
+    }
+}
+
 void require_close(float actual, float expected, const char* message) {
     constexpr float kTolerance = 0.00001F;
     if (std::fabs(actual - expected) > kTolerance) {
@@ -63,8 +69,8 @@ void test_transform_2d_builds_affine_matrix() {
 void test_transform_3d_builds_affine_matrix() {
     const cubey::Transform3D transform{
         .translation = {2.0F, 3.0F, 4.0F},
-        .rotation = cubey::math::angle_axis_quat(std::numbers::pi_v<float> / 2.0F,
-                                                 {1.0F, 0.0F, 0.0F}),
+        .rotation =
+            cubey::math::angle_axis_quat(std::numbers::pi_v<float> / 2.0F, {1.0F, 0.0F, 0.0F}),
         .scale = {2.0F, 3.0F, 4.0F},
     };
 
@@ -90,4 +96,29 @@ void test_transform_3d_matches_existing_cube_rotation_order() {
         cubey::math::rotation_y(yaw) * cubey::math::rotation_x(pitch);
     require_matrix_close(transform.affine_matrix(), expected,
                          "3D transform should preserve existing cube rotation order");
+}
+
+void test_transform_3d_can_use_explicit_affine_matrix() {
+    cubey::math::Mat4 explicit_matrix{1.0F};
+    explicit_matrix[0][0] = 2.0F;
+    explicit_matrix[1][1] = 3.0F;
+    explicit_matrix[2][2] = 4.0F;
+    explicit_matrix[3][0] = 5.0F;
+    explicit_matrix[3][1] = 6.0F;
+    explicit_matrix[3][2] = 7.0F;
+
+    cubey::Transform3D transform = cubey::Transform3D::from_affine_matrix(explicit_matrix);
+    transform.translation = {-1.0F, -2.0F, -3.0F};
+    transform.scale = {9.0F, 9.0F, 9.0F};
+
+    require(transform.has_affine_matrix(),
+            "3D transform should report an explicit affine matrix override");
+    require_matrix_close(transform.affine_matrix(), explicit_matrix,
+                         "3D transform should return the explicit affine matrix");
+
+    transform.clear_affine_matrix();
+    require(!transform.has_affine_matrix(),
+            "3D transform should clear an explicit affine matrix override");
+    require_close(transform.affine_matrix()[3][0], -1.0F,
+                  "cleared 3D transform should return to TRS evaluation");
 }

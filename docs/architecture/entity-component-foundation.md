@@ -38,6 +38,8 @@ component manager as the public foundation.
 - Use established renderer terminology: entity, component, manager, instance,
   scene, transform, renderable, camera, light.
 - Keep `Transform2D` and `Transform3D` as plain local affine value types.
+  `Transform3D` may carry an explicit affine matrix override when imported data
+  cannot be represented as TRS without losing authoring intent.
 - Let managers expose high-level operations without exposing their storage
   mechanics.
 - Support efficient iteration and cache-aware storage without invalidating
@@ -291,8 +293,10 @@ Commit should be responsible for:
 
 ## Transform Manager Shape
 
-`Transform2D` and `Transform3D` remain local affine values. Parenting belongs
-to transform managers:
+`Transform2D` and `Transform3D` remain local affine values. `Transform3D` can
+also carry an explicit affine matrix override for imported static transforms;
+sampled animation writes normal TRS values again. Parenting belongs to transform
+managers:
 
 ```cpp
 Entity parent = scene.entities().create();

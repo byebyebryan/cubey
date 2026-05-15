@@ -10,6 +10,7 @@
 #include <cubey/render/texture.h>
 #include <cubey/scene/entity.h>
 #include <cubey/scene/renderable_manager.h>
+#include <cubey/scene/transform_3d.h>
 #include <cubey/vulkan/buffer.h>
 #include <cubey/vulkan/descriptors.h>
 
@@ -118,6 +119,7 @@ struct GltfSceneImportResources {
 [[nodiscard]] GltfPrimitiveDeformationKind
 gltf_primitive_deformation_kind(const asset::GltfNode& node,
                                 const asset::GltfMeshPrimitive& primitive);
+[[nodiscard]] Transform3D gltf_node_transform_3d(const asset::GltfNode& node);
 [[nodiscard]] bool gltf_primitive_requires_deformation(GltfPrimitiveDeformationKind kind);
 [[nodiscard]] std::vector<render::GpuDeformationCommand>
 gltf_deformation_commands_for_frame(const GltfSceneImportResources& resources,

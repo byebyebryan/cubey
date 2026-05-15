@@ -38,7 +38,9 @@ renderer.
   `KHR_materials_unlit` controls;
 - core glTF alpha modes: `OPAQUE`, `MASK`, and `BLEND`;
 - sampler filtering and per-axis wrapping metadata;
-- scene roots and node hierarchy with decomposed TRS transforms;
+- scene roots and node hierarchy with decomposed TRS transforms, plus explicit
+  matrix-authored node transforms for import paths that need exact local matrix
+  preservation;
 - core glTF animations, skins, node skin bindings, node/mesh morph weights, and
   inverse bind matrices.
 
@@ -59,7 +61,9 @@ service:
   and per-import deformation resources;
 - `import_gltf_scene()` maps glTF nodes into scene entities, 3D transforms,
   renderables, registry-issued mesh/material handles, imported bounds, triangle
-  counts, and per-node output mesh handles for morph/skinning deformation;
+  counts, and per-node output mesh handles for morph/skinning deformation. Nodes
+  authored with a glTF `matrix` import as explicit affine `Transform3D` values
+  so static hierarchy evaluation and bounds use the authored matrix;
 - glTF alpha modes map into explicit render material alpha policy: `MASK`
   stays depth-writing and shadow-casting with alpha cutoff, while `BLEND`
   renders forward-only with premultiplied source-over alpha blending and no

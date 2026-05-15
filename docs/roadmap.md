@@ -97,7 +97,8 @@ Current checkpoint:
   `cubey::RenderableManager3D`, `cubey::LightManager3D`, and
   `cubey::OrbitController` cover basic frame timing, explicit 2D/3D affine
   transform boundaries, quaternion-backed 3D rotation, entity-backed
-  parent/child world transforms, shared 2D/3D camera state, entity-backed 3D
+  parent/child world transforms, explicit 3D affine matrix overrides for
+  imported node transforms, shared 2D/3D camera state, entity-backed 3D
   renderable/light packets, and mouse-driven orbit input.
 - Reusable `cubey::input::InputState`/`InputFrame` provide per-frame keyboard
   and mouse polling over the GLFW callback stream, with shared pointer-drag,

@@ -59,7 +59,7 @@ struct BoundsAccumulator {
     };
 }
 
-[[nodiscard]] Transform3D transform_from_node(const asset::GltfNode& node) {
+[[nodiscard]] Transform3D trs_transform_from_node(const asset::GltfNode& node) {
     return {
         .translation = node.translation,
         .rotation = node.rotation,
@@ -152,7 +152,7 @@ void accumulate_node_bounds(const asset::GltfAsset& asset,
         throw std::runtime_error("glTF scene node index is out of range");
     }
     const asset::GltfNode& node = asset.nodes[node_index];
-    const math::Mat4 world = parent_world * transform_from_node(node).affine_matrix();
+    const math::Mat4 world = parent_world * gltf_node_transform_3d(node).affine_matrix();
     if (node.mesh_index != asset::kInvalidAssetIndex) {
         if (node.mesh_index >= resources.mesh_primitives.size()) {
             throw std::runtime_error("glTF node mesh index is out of range");
@@ -199,7 +199,7 @@ Entity create_node(Engine& engine, SceneTransaction& transaction, const asset::G
     if (node_index < result.node_entities.size()) {
         result.node_entities[node_index] = entity;
     }
-    transaction.transforms3d().create(entity, transform_from_node(node), parent);
+    transaction.transforms3d().create(entity, gltf_node_transform_3d(node), parent);
 
     if (node.mesh_index != asset::kInvalidAssetIndex) {
         if (node.mesh_index >= resources.mesh_primitives.size()) {
@@ -275,6 +275,13 @@ gltf_primitive_deformation_kind(const asset::GltfNode& node,
         return GltfPrimitiveDeformationKind::Skin;
     }
     return GltfPrimitiveDeformationKind::Static;
+}
+
+Transform3D gltf_node_transform_3d(const asset::GltfNode& node) {
+    if (node.has_matrix) {
+        return Transform3D::from_affine_matrix(node.local_matrix);
+    }
+    return trs_transform_from_node(node);
 }
 
 bool gltf_primitive_requires_deformation(GltfPrimitiveDeformationKind kind) {
@@ -372,7 +379,7 @@ void apply_gltf_rigid_animation_sample(SceneEditQueue& edits, const asset::GltfA
         }
 
         const asset::GltfNode& node = asset.nodes[node_index];
-        Transform3D transform = transform_from_node(node);
+        Transform3D transform = trs_transform_from_node(node);
         if (node_sample.has_translation) {
             transform.translation = node_sample.translation;
         }

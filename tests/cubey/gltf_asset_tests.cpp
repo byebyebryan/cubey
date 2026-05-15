@@ -716,6 +716,36 @@ void test_gltf_asset_loads_static_pbr_triangle() {
     std::filesystem::remove_all(dir);
 }
 
+void test_gltf_asset_marks_nodes_authored_with_matrix() {
+    const std::filesystem::path dir = test_dir("cubey-gltf-matrix-node");
+    const std::filesystem::path path = dir / "matrix_node.gltf";
+    write_text_file(path, R"JSON({
+  "asset": {"version": "2.0"},
+  "scene": 0,
+  "scenes": [{"nodes": [0]}],
+  "nodes": [{
+    "name": "MatrixNode",
+    "matrix": [
+      1.0, 0.0, 0.0, 0.0,
+      0.0, 2.0, 0.0, 0.0,
+      0.0, 0.0, 3.0, 0.0,
+      4.0, 5.0, 6.0, 1.0
+    ]
+  }]
+})JSON");
+
+    const cubey::asset::GltfAsset asset = cubey::asset::load_gltf_asset(path);
+
+    require(asset.nodes.size() == 1, "matrix-node asset should load one node");
+    require(asset.nodes[0].has_matrix, "glTF node should remember matrix-authored transforms");
+    require_close(asset.nodes[0].local_matrix[3][0], 4.0F,
+                  "glTF matrix node should preserve authored matrix translation X");
+    require_close(asset.nodes[0].local_matrix[3][1], 5.0F,
+                  "glTF matrix node should preserve authored matrix translation Y");
+    require_close(asset.nodes[0].local_matrix[3][2], 6.0F,
+                  "glTF matrix node should preserve authored matrix translation Z");
+}
+
 void test_gltf_asset_generates_tangent_handedness_from_mirrored_uvs() {
     const std::filesystem::path dir = test_dir("cubey_gltf_asset_mirrored_uv_tangent");
     const cubey::asset::GltfAsset asset =

@@ -150,7 +150,8 @@ setup before swapchain setup, and callback forwarding.
 - `cubey::Transform2D` and `Transform3D` are explicit affine transform value
   types. `Transform2D` uses translation, scalar-radian rotation, and scale to
   produce a `Mat3`; `Transform3D` uses translation, quaternion rotation, and
-  scale to produce a `Mat4`. Both expose `affine_matrix()` instead of
+  scale to produce a `Mat4`, with an optional explicit affine matrix override
+  for exact imported transforms. Both expose `affine_matrix()` instead of
   model-matrix terminology. `TransformManager2D` and `TransformManager3D` now
   provide entity-backed parent/child transform components, cached local-to-world
   affine matrices, scene edit queues, and epoch-local read-view snapshots.

@@ -182,6 +182,7 @@ struct GltfNode {
     math::Vec3 translation{0.0F, 0.0F, 0.0F};
     math::Quat rotation{1.0F, 0.0F, 0.0F, 0.0F};
     math::Vec3 scale{1.0F, 1.0F, 1.0F};
+    bool has_matrix = false;
     math::Mat4 local_matrix{1.0F};
     std::uint32_t mesh_index = kInvalidAssetIndex;
     std::uint32_t skin_index = kInvalidAssetIndex;

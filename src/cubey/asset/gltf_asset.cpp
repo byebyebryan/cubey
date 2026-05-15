@@ -927,6 +927,7 @@ void expand_bounds_for_morph_targets(GltfMeshPrimitive& primitive) {
     if (node.has_matrix) {
         math::Mat4 matrix{1.0F};
         std::memcpy(&matrix[0][0], node.matrix, sizeof(node.matrix));
+        result.has_matrix = true;
         result.local_matrix = matrix;
 
         math::Vec3 skew{};

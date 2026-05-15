@@ -25,6 +25,15 @@ void require_close(float value, float expected, const char* message) {
     }
 }
 
+void require_matrix_close(const cubey::math::Mat4& actual, const cubey::math::Mat4& expected,
+                          const char* message) {
+    for (int column = 0; column < 4; ++column) {
+        for (int row = 0; row < 4; ++row) {
+            require_close(actual[column][row], expected[column][row], message);
+        }
+    }
+}
+
 } // namespace
 
 void test_gltf_scene_importer_applies_rigid_animation_samples_to_imported_nodes() {
@@ -76,6 +85,58 @@ void test_gltf_scene_importer_applies_rigid_animation_samples_to_imported_nodes(
         view.transforms3d().local_transform(view.transforms3d().instance(untouched));
     require_close(untouched_transform.translation.x, 9.0F,
                   "nodes without sampled TRS channels should remain untouched");
+}
+
+void test_gltf_scene_importer_preserves_matrix_nodes_and_animation_returns_to_trs() {
+    cubey::math::Mat4 matrix{1.0F};
+    matrix[0][0] = 2.0F;
+    matrix[1][1] = 3.0F;
+    matrix[2][2] = 4.0F;
+    matrix[3][0] = 5.0F;
+    matrix[3][1] = 6.0F;
+    matrix[3][2] = 7.0F;
+
+    cubey::asset::GltfNode node;
+    node.has_matrix = true;
+    node.local_matrix = matrix;
+    node.translation = {1.0F, 2.0F, 3.0F};
+
+    const cubey::Transform3D imported = cubey::gltf_node_transform_3d(node);
+    require(imported.has_affine_matrix(), "matrix-authored glTF nodes should import as affine");
+    require_matrix_close(imported.affine_matrix(), matrix,
+                         "matrix-authored glTF nodes should preserve authored matrix");
+
+    cubey::asset::GltfAsset asset;
+    asset.nodes.resize(1);
+    asset.nodes[0] = node;
+
+    cubey::Scene scene;
+    cubey::SceneTransaction setup = scene.begin_transaction();
+    const cubey::Entity animated = setup.entities().create();
+    setup.transforms3d().create(animated, imported);
+    setup.commit();
+
+    cubey::GltfSceneImportResult result;
+    result.node_entities = {animated};
+
+    cubey::animation::GltfAnimationSample sample;
+    sample.nodes.resize(1);
+    sample.nodes[0].has_translation = true;
+    sample.nodes[0].translation = {8.0F, 9.0F, 10.0F};
+
+    cubey::SceneEditQueue edits = scene.create_edit_queue();
+    cubey::apply_gltf_rigid_animation_sample(edits, asset, result, sample);
+    scene.commit(edits);
+
+    cubey::SceneReadView view = scene.read();
+    const cubey::Transform3D& animated_transform =
+        view.transforms3d().local_transform(view.transforms3d().instance(animated));
+    require(!animated_transform.has_affine_matrix(),
+            "sampled TRS animation should clear matrix-authored affine override");
+    require_close(animated_transform.translation.x, 8.0F,
+                  "sampled TRS animation should apply sampled translation");
+    require_close(animated_transform.scale.x, 1.0F,
+                  "sampled TRS animation should preserve decomposed base scale");
 }
 
 void test_gltf_scene_importer_classifies_deformable_primitives() {
