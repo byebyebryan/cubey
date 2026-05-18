@@ -8,7 +8,6 @@
 
 #include <algorithm>
 #include <array>
-#include <cmath>
 #include <cstdint>
 
 namespace cubey::projects::fluid_2d {
@@ -73,35 +72,6 @@ void record_transfer_write_barrier(VkCommandBuffer command_buffer, TransferWrite
     return static_cast<float>(static_cast<std::uint32_t>(view));
 }
 
-[[nodiscard]] float wrap_unit(float value) {
-    float wrapped = std::fmod(value, 1.0F);
-    if (wrapped < 0.0F) {
-        wrapped += 1.0F;
-    }
-    return wrapped;
-}
-
-[[nodiscard]] std::array<float, 3> hue_to_srgb(float hue) {
-    const float h = wrap_unit(hue) * 6.0F;
-    const float x = 1.0F - std::fabs(std::fmod(h, 2.0F) - 1.0F);
-    if (h < 1.0F) {
-        return {1.0F, x, 0.0F};
-    }
-    if (h < 2.0F) {
-        return {x, 1.0F, 0.0F};
-    }
-    if (h < 3.0F) {
-        return {0.0F, 1.0F, x};
-    }
-    if (h < 4.0F) {
-        return {0.0F, x, 1.0F};
-    }
-    if (h < 5.0F) {
-        return {x, 0.0F, 1.0F};
-    }
-    return {1.0F, 0.0F, x};
-}
-
 [[nodiscard]] SimulationPushConstants simulation_push_constants(const Fluid2DConfig& config,
                                                                 const FrameInjection& injection,
                                                                 const ProjectFrame& frame) {
@@ -110,9 +80,10 @@ void record_transfer_write_barrier(VkCommandBuffer command_buffer, TransferWrite
     const bool pointer_active = injection.active;
     const float injection_x = pointer_active ? injection.xy[0] : 0.0F;
     const float injection_y = pointer_active ? injection.xy[1] : 0.0F;
-    const std::array<float, 3> injection_dye = hue_to_srgb((time * 0.18F) + 0.08F);
     const std::array<float, 3> linear_injection_dye =
-        cubey::render::srgb_to_linear_rgb(injection_dye);
+        cubey::render::hsv_to_linear_rgb({.hue = (time * 0.18F) + 0.08F,
+                                          .saturation = 1.0F,
+                                          .value = 1.0F});
     const float force_x = pointer_active ? injection.force[0] * 1.25F : 0.0F;
     const float force_y = pointer_active ? injection.force[1] * 1.25F : 0.0F;
 
@@ -150,7 +121,7 @@ void record_transfer_write_barrier(VkCommandBuffer command_buffer, TransferWrite
                 config.vorticity_strength,
                 config.fallback_injection_radius,
                 config.fallback_injection_strength,
-                0.0F,
+                static_cast<float>(config.procedural_injector_count),
             },
     };
 }

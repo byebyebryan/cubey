@@ -160,9 +160,10 @@ Useful windowed smokes:
 Windowed `--frames` runs print a final `windowed_perf` FPS/frame-time summary.
 Use `--print-frame-stats` for periodic stdout samples while a window remains
 open; the window title also shows the latest sampled FPS and frame time.
-`fluid_2d` defaults to a `1024x1024` solver grid; use `--grid-width` and
-`--grid-height` to compare other simulation resolutions, and `--obstacles` to
-enable the static obstacle mask.
+`fluid_2d` defaults to a `1024x1024` solver grid and three procedural
+injectors; use `--grid-width`, `--grid-height`, and `--injectors 1..16` to
+compare other simulation/demo shapes, and `--obstacles` to enable the static
+obstacle mask.
 
 Useful headless PNG smokes:
 

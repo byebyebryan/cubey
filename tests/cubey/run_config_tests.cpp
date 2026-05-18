@@ -232,6 +232,18 @@ void test_run_config_parses_grid_dimensions() {
     require(config.grid_height == 768, "run config should parse grid height");
 }
 
+void test_run_config_parses_injector_count() {
+    std::array<char, 6> program{'c', 'u', 'b', 'e', 'y', '\0'};
+    std::array<char, 12> injectors_flag{'-', '-', 'i', 'n', 'j', 'e',
+                                        'c', 't', 'o', 'r', 's', '\0'};
+    std::array<char, 2> injectors_value{'8', '\0'};
+    std::array<char*, 3> argv{program.data(), injectors_flag.data(), injectors_value.data()};
+
+    const cubey::RunConfig config =
+        cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
+    require(config.injectors == 8, "run config should parse procedural injector count");
+}
+
 void test_run_config_parses_obstacle_flag() {
     std::array<char, 6> program{'c', 'u', 'b', 'e', 'y', '\0'};
     std::array<char, 12> obstacles_flag{'-', '-', 'o', 'b', 's', 't',

@@ -168,6 +168,51 @@ void test_color_space_converts_srgb_authored_values_to_linear() {
     require_close(rgba.a, 0.75F, "sRGB RGBA helper should preserve alpha");
 }
 
+void test_color_space_converts_hsv_and_hsl_authored_values() {
+    require_close(cubey::render::wrap_unit(1.25F), 0.25F,
+                  "unit wrapping should wrap positive hue values");
+    require_close(cubey::render::wrap_unit(-0.25F), 0.75F,
+                  "unit wrapping should wrap negative hue values");
+
+    require_vec3_close(cubey::render::hsv_to_srgb({.hue = 0.0F, .saturation = 1.0F,
+                                                   .value = 1.0F}),
+                       {1.0F, 0.0F, 0.0F}, "HSV hue 0 should produce red");
+    require_vec3_close(cubey::render::hsv_to_srgb({.hue = 1.0F / 3.0F, .saturation = 1.0F,
+                                                   .value = 1.0F}),
+                       {0.0F, 1.0F, 0.0F}, "HSV hue one-third should produce green");
+    require_vec3_close(cubey::render::hsv_to_srgb({.hue = 2.0F / 3.0F, .saturation = 1.0F,
+                                                   .value = 1.0F}),
+                       {0.0F, 0.0F, 1.0F}, "HSV hue two-thirds should produce blue");
+    require_vec3_close(cubey::render::hsv_to_srgb({.hue = 1.25F, .saturation = 0.5F,
+                                                   .value = 0.8F}),
+                       {0.6F, 0.8F, 0.4F}, "HSV helper should wrap hue and preserve value");
+    require_vec3_close(cubey::render::hsv_to_srgb({.hue = 0.8F, .saturation = 0.0F,
+                                                   .value = 0.35F}),
+                       {0.35F, 0.35F, 0.35F}, "HSV zero saturation should be grayscale");
+
+    require_vec3_close(cubey::render::hsl_to_srgb({.hue = 0.0F, .saturation = 1.0F,
+                                                   .lightness = 0.5F}),
+                       {1.0F, 0.0F, 0.0F}, "HSL hue 0 should produce red at mid lightness");
+    require_vec3_close(cubey::render::hsl_to_srgb({.hue = 1.0F / 3.0F, .saturation = 1.0F,
+                                                   .lightness = 0.5F}),
+                       {0.0F, 1.0F, 0.0F}, "HSL hue one-third should produce green");
+    require_vec3_close(cubey::render::hsl_to_srgb({.hue = 2.0F / 3.0F, .saturation = 1.0F,
+                                                   .lightness = 0.5F}),
+                       {0.0F, 0.0F, 1.0F}, "HSL hue two-thirds should produce blue");
+    require_vec3_close(cubey::render::hsl_to_srgb({.hue = 0.5F, .saturation = 0.5F,
+                                                   .lightness = 0.4F}),
+                       {0.2F, 0.6F, 0.6F}, "HSL helper should preserve authored lightness");
+
+    require_vec3_close(cubey::render::hsv_to_linear_rgb({.hue = 0.0F, .saturation = 0.0F,
+                                                         .value = 0.5F}),
+                       {0.214041F, 0.214041F, 0.214041F},
+                       "HSV linear helper should convert generated sRGB values to linear");
+    require_vec3_close(cubey::render::hsl_to_linear_rgb({.hue = 0.0F, .saturation = 0.0F,
+                                                         .lightness = 0.5F}),
+                       {0.214041F, 0.214041F, 0.214041F},
+                       "HSL linear helper should convert generated sRGB values to linear");
+}
+
 void test_primitive_cube_position_color_mesh_uses_face_colors_and_indices() {
     cubey::render::CubeMeshConfig config;
     config.face_colors[0] = {0.1F, 0.2F, 0.3F};

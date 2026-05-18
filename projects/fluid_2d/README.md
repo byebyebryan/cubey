@@ -49,10 +49,12 @@ Deferred:
 ## Runtime Shape
 
 The default solver grid is `1024x1024`. Override it with `--grid-width` and
-`--grid-height` when comparing quality or performance. Static obstacles are
-disabled by default; enable them with `--obstacles`. The procedural injectors
-continue running while the pointer injects, so manual interaction layers into
-the same flow instead of replacing the background sources.
+`--grid-height` when comparing quality or performance. The default procedural
+injector count is three; override it with `--injectors` from `1` to `16` to
+spread more sources around the hue wheel. Static obstacles are disabled by
+default; enable them with `--obstacles`. The procedural injectors continue
+running while the pointer injects, so manual interaction layers into the same
+flow instead of replacing the background sources.
 
 ```text
 field A -> advect predict -> field temp
@@ -302,20 +304,22 @@ Status: multi-source visual injection complete.
 Goal: make the default windowed and headless output read more like a deliberate
 fluid demo without adding another solver stage.
 
-- The old single fallback source was replaced with three deterministic moving
-  red, green, and blue procedural sources with stronger force paths.
+- The old single fallback source was replaced with configurable deterministic
+  moving procedural sources, spread evenly around the hue wheel and organized
+  into orbital rings at higher counts.
 - Pointer injection is now additive: dragging injects cursor dye and force
   without pausing the procedural sources.
 - Pointer dye now cycles through the hue wheel so separate drags naturally lay
   down different colors.
-- Dye and velocity decay are tuned to linger longer, while procedural sources
-  stay narrow enough to keep the RGB streams separated.
+- Dye and velocity decay are tuned for a controlled linger, while procedural
+  sources stay narrow enough to keep the color streams separated.
 
 ## Commands
 
 ```bash
 ./build/dev/projects/fluid_2d/fluid_2d --require-validation --frames 300 --width 1280 --height 720
 ./build/dev/projects/fluid_2d/fluid_2d --frames 300 --print-frame-stats --grid-width 512 --grid-height 512 --width 1280 --height 720
+./build/dev/projects/fluid_2d/fluid_2d --frames 300 --injectors 8 --width 1280 --height 720
 ./build/dev/projects/fluid_2d/fluid_2d --frames 300 --obstacles --width 1280 --height 720
 ./build/dev/projects/fluid_2d/fluid_2d --headless --require-validation --frames 120 --width 640 --height 360 --output /tmp/cubey-fluid-2d.png
 ./build/dev/projects/fluid_2d/fluid_2d --headless --capture video --frames 180 --fps 60 --width 1280 --height 720 --output /tmp/cubey-fluid-2d.mp4

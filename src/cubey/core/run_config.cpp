@@ -76,6 +76,8 @@ RunConfig parse_run_config(int argc, char** argv) {
             config.grid_width = parse_positive_u32(need_value("--grid-width"), "--grid-width");
         } else if (arg == "--grid-height") {
             config.grid_height = parse_positive_u32(need_value("--grid-height"), "--grid-height");
+        } else if (arg == "--injectors") {
+            config.injectors = parse_positive_u32(need_value("--injectors"), "--injectors");
         } else if (arg == "--frames") {
             config.frames = parse_u32(need_value("--frames"), "--frames");
         } else if (arg == "--fps") {

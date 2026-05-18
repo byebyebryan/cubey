@@ -28,14 +28,17 @@ enum class FluidDebugView : std::uint32_t {
     Obstacle = 6,
 };
 
+inline constexpr std::uint32_t kMaxProceduralInjectorCount = 16;
+
 struct Fluid2DConfig {
     std::uint32_t grid_width = 1024;
     std::uint32_t grid_height = 1024;
+    std::uint32_t procedural_injector_count = 3;
     std::uint32_t compute_group_size = 8;
     std::uint32_t pressure_iterations = 32;
     float fixed_delta_seconds = 1.0F / 60.0F;
-    float dye_decay_per_second = 0.993F;
-    float velocity_decay_per_second = 0.996F;
+    float dye_decay_per_second = 0.990F;
+    float velocity_decay_per_second = 0.993F;
     float pointer_injection_radius = 0.035F;
     float fallback_injection_radius = 0.032F;
     float pointer_injection_strength = 18.0F;
@@ -100,6 +103,12 @@ struct Fluid2DConfig {
     }
     if (config.grid_height != 0) {
         fluid_config.grid_height = config.grid_height;
+    }
+    if (config.injectors != 0) {
+        if (config.injectors > kMaxProceduralInjectorCount) {
+            throw std::runtime_error("fluid injector count must be 1..16");
+        }
+        fluid_config.procedural_injector_count = config.injectors;
     }
     fluid_config.obstacles_enabled = config.obstacles;
     static_cast<void>(field_cell_count(fluid_config));

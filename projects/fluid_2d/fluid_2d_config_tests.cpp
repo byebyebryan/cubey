@@ -31,6 +31,8 @@ int main() {
         constexpr std::size_t kExpectedCellCount = std::size_t{1024} * std::size_t{1024};
         require(config.grid_width == 1024, "fluid grid should default to 1024 columns");
         require(config.grid_height == 1024, "fluid grid should default to 1024 rows");
+        require(config.procedural_injector_count == 3,
+                "fluid should default to three procedural injectors");
         require(cubey::projects::fluid_2d::field_cell_count(config) == kExpectedCellCount,
                 "field cell count should multiply dimensions");
         require(cubey::projects::fluid_2d::field_byte_size(config) ==
@@ -38,10 +40,10 @@ int main() {
                 "field byte size should cover one cell per grid location");
         require(config.pressure_iterations == 32,
                 "fluid pressure solve should default to 32 Jacobi iterations");
-        require(config.dye_decay_per_second == 0.993F,
-                "fluid dye decay should default to a longer linger");
-        require(config.velocity_decay_per_second == 0.996F,
-                "fluid velocity decay should default to a longer linger");
+        require(config.dye_decay_per_second == 0.990F,
+                "fluid dye decay should default to controlled linger");
+        require(config.velocity_decay_per_second == 0.993F,
+                "fluid velocity decay should default to controlled linger");
         require(config.pointer_injection_radius == 0.035F,
                 "fluid pointer injection radius should be tuned for sharper sources");
         require(config.fallback_injection_radius == 0.032F,
@@ -88,12 +90,15 @@ int main() {
         cubey::RunConfig run_config;
         run_config.grid_width = 1024;
         run_config.grid_height = 768;
+        run_config.injectors = 8;
         const cubey::projects::fluid_2d::Fluid2DConfig configured =
             cubey::projects::fluid_2d::fluid_config_from_run_config(run_config);
         require(configured.grid_width == 1024,
                 "fluid config should honor run config grid width");
         require(configured.grid_height == 768,
                 "fluid config should honor run config grid height");
+        require(configured.procedural_injector_count == 8,
+                "fluid config should honor run config injector count");
         require(!configured.obstacles_enabled,
                 "fluid config should keep obstacles disabled unless requested");
         run_config.obstacles = true;
@@ -101,6 +106,19 @@ int main() {
             cubey::projects::fluid_2d::fluid_config_from_run_config(run_config);
         require(configured_with_obstacles.obstacles_enabled,
                 "fluid config should honor run config obstacle toggle");
+
+        bool threw_for_too_many_injectors = false;
+        try {
+            cubey::RunConfig invalid_injector_config;
+            invalid_injector_config.injectors =
+                cubey::projects::fluid_2d::kMaxProceduralInjectorCount + 1U;
+            static_cast<void>(
+                cubey::projects::fluid_2d::fluid_config_from_run_config(invalid_injector_config));
+        } catch (const std::runtime_error&) {
+            threw_for_too_many_injectors = true;
+        }
+        require(threw_for_too_many_injectors,
+                "fluid config should reject injector counts above the shader policy limit");
 
         require(cubey::projects::fluid_2d::headless_frame_count(run_config) == 120,
                 "headless frame count should default to 120 frames");
