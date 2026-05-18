@@ -57,6 +57,9 @@ int main() {
                 "fluid fallback injection strength should default to a visible multi-source impulse");
         require(config.vorticity_strength == 18.0F,
                 "fluid vorticity strength should have a visible default");
+        require(config.injector_motion ==
+                    cubey::projects::fluid_2d::Fluid2DInjectorMotion::TwoRings,
+                "fluid injector motion should default to two-rings");
         require(!config.obstacles_enabled, "fluid obstacles should default disabled");
         require(cubey::projects::fluid_2d::scalar_field_byte_size(config) ==
                     sizeof(float) * kExpectedCellCount,
@@ -94,6 +97,7 @@ int main() {
         run_config.grid_width = 1024;
         run_config.grid_height = 768;
         run_config.injectors = 8;
+        run_config.injector_motion = "random-orbit";
         const cubey::projects::fluid_2d::Fluid2DConfig configured =
             cubey::projects::fluid_2d::fluid_config_from_run_config(run_config);
         require(configured.grid_width == 1024,
@@ -102,6 +106,9 @@ int main() {
                 "fluid config should honor run config grid height");
         require(configured.procedural_injector_count == 8,
                 "fluid config should honor run config injector count");
+        require(configured.injector_motion ==
+                    cubey::projects::fluid_2d::Fluid2DInjectorMotion::RandomOrbit,
+                "fluid config should honor run config injector motion");
         require(!configured.obstacles_enabled,
                 "fluid config should keep obstacles disabled unless requested");
         run_config.obstacles = true;
@@ -123,9 +130,24 @@ int main() {
         require(threw_for_too_many_injectors,
                 "fluid config should reject injector counts above the shader policy limit");
 
+        bool threw_for_unknown_motion = false;
+        try {
+            cubey::RunConfig invalid_motion_config;
+            invalid_motion_config.injector_motion = "crossflow";
+            static_cast<void>(
+                cubey::projects::fluid_2d::fluid_config_from_run_config(invalid_motion_config));
+        } catch (const std::runtime_error&) {
+            threw_for_unknown_motion = true;
+        }
+        require(threw_for_unknown_motion,
+                "fluid config should reject unknown injector motion names");
+
         std::vector<cubey::projects::fluid_2d::Fluid2DInjectorState> injectors =
             cubey::projects::fluid_2d::create_fluid_2d_injectors(configured);
         require(injectors.size() == 8, "fluid injector state should match configured count");
+        require(injectors[0].motion ==
+                    cubey::projects::fluid_2d::Fluid2DInjectorMotion::RandomOrbit,
+                "fluid injector state should remember its configured motion");
         require_close(injectors[0].hue, 0.0F, "first injector hue should start at red");
         require_close(injectors[1].hue, 0.125F, "injector hues should spread evenly");
         const std::array<float, 2> initial_position = injectors[0].position;
@@ -150,6 +172,26 @@ int main() {
         require(cubey::projects::fluid_2d::fluid_2d_injector_byte_size(configured) ==
                     sizeof(cubey::projects::fluid_2d::Fluid2DInjectorGpu) * 8U,
                 "fluid injector byte size should cover one GPU record per injector");
+
+        cubey::projects::fluid_2d::Fluid2DConfig one_ring_config = configured;
+        one_ring_config.injector_motion =
+            cubey::projects::fluid_2d::Fluid2DInjectorMotion::OneRing;
+        const std::vector<cubey::projects::fluid_2d::Fluid2DInjectorState> one_ring =
+            cubey::projects::fluid_2d::create_fluid_2d_injectors(one_ring_config);
+        require_close(one_ring[0].orbit_radius, one_ring[1].orbit_radius,
+                      "one-ring injector motion should keep every source on one radius");
+        require_close(one_ring[0].orbit_direction, one_ring[1].orbit_direction,
+                      "one-ring injector motion should keep every source moving together");
+
+        cubey::projects::fluid_2d::Fluid2DConfig two_ring_config = configured;
+        two_ring_config.injector_motion =
+            cubey::projects::fluid_2d::Fluid2DInjectorMotion::TwoRings;
+        const std::vector<cubey::projects::fluid_2d::Fluid2DInjectorState> two_rings =
+            cubey::projects::fluid_2d::create_fluid_2d_injectors(two_ring_config);
+        require(two_rings[1].orbit_radius < two_rings[0].orbit_radius,
+                "two-rings injector motion should put odd sources on the inner ring");
+        require(two_rings[1].orbit_direction < 0.0F,
+                "two-rings injector motion should counter-rotate inner sources");
 
         require(cubey::projects::fluid_2d::headless_frame_count(run_config) == 120,
                 "headless frame count should default to 120 frames");

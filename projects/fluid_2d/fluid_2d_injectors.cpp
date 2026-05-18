@@ -14,6 +14,13 @@ namespace {
 constexpr float kTau = 6.28318530718F;
 constexpr std::array<float, 2> kCenter{0.5F, 0.5F};
 
+struct InjectorGpuTuning {
+    float radius_scale = 1.0F;
+    float strength_scale = 1.0F;
+    float carry_scale = 6.0F;
+    float propulsion_scale = 1.25F;
+};
+
 [[nodiscard]] std::array<float, 2> add(std::array<float, 2> lhs, std::array<float, 2> rhs) {
     return {lhs[0] + rhs[0], lhs[1] + rhs[1]};
 }
@@ -66,9 +73,25 @@ void integrate_boundary(std::array<float, 2>& position, std::array<float, 2>& ve
     }
 }
 
-[[nodiscard]] std::array<float, 2> target_for_injector(const Fluid2DInjectorState& injector,
-                                                       float time) {
-    const float orbit_speed = injector.orbit_radius < 0.2F ? 0.23F : 0.17F;
+[[nodiscard]] float hash01(std::uint32_t value) {
+    value ^= value >> 16U;
+    value *= 0x7feb352dU;
+    value ^= value >> 15U;
+    value *= 0x846ca68bU;
+    value ^= value >> 16U;
+    return static_cast<float>(value & 0x00ffffffU) / static_cast<float>(0x01000000U);
+}
+
+[[nodiscard]] std::array<float, 2> clamp_uv(std::array<float, 2> value) {
+    return {
+        std::clamp(value[0], 0.08F, 0.92F),
+        std::clamp(value[1], 0.08F, 0.92F),
+    };
+}
+
+[[nodiscard]] std::array<float, 2> ring_target(const Fluid2DInjectorState& injector,
+                                               float time) {
+    const float orbit_speed = injector.orbit_radius < 0.2F ? 0.36F : 0.28F;
     const float angle = injector.anchor_angle + (injector.orbit_direction * time * orbit_speed);
     const float breath = 0.018F * std::sin((time * 0.42F) + (injector.anchor_angle * 2.0F));
     return {
@@ -77,23 +100,121 @@ void integrate_boundary(std::array<float, 2>& position, std::array<float, 2>& ve
     };
 }
 
-[[nodiscard]] std::array<float, 2> tangent_for_injector(const Fluid2DInjectorState& injector,
+[[nodiscard]] std::array<float, 2> random_orbit_target(const Fluid2DInjectorState& injector,
+                                                       float time) {
+    const std::uint32_t seed = 0x9e3779b9U * (injector.seed + 1U);
+    const float base_radius = 0.14F + (hash01(seed ^ 0x45d9f3bU) * 0.22F);
+    const float radius_t = (base_radius - 0.14F) / 0.22F;
+    const float aspect_variation = (hash01(seed ^ 0x119de1f3U) - 0.5F) * 0.32F;
+    const float x_radius = base_radius * (1.0F + aspect_variation);
+    const float y_radius = base_radius * (1.0F - aspect_variation);
+    const float phase = injector.anchor_angle + (hash01(seed ^ 0x3449b1dU) * kTau);
+    const float speed = (0.42F - (radius_t * 0.16F)) *
+                        (0.88F + (hash01(seed ^ 0x9f3a179U) * 0.24F));
+    const float direction = injector.orbit_direction;
+    const float angle = phase + (direction * time * speed);
+    return clamp_uv({
+        kCenter[0] + (std::cos(angle) * x_radius),
+        kCenter[1] + (std::sin(angle) * y_radius),
+    });
+}
+
+[[nodiscard]] std::array<float, 2> lissajous_target(const Fluid2DInjectorState& injector,
+                                                    float time) {
+    const float phase = injector.anchor_angle;
+    return clamp_uv({
+        0.5F + (0.34F * std::sin((time * 0.42F) + phase)) +
+            (0.045F * std::sin((time * 1.02F) + (phase * 0.7F))),
+        0.5F + (0.29F * std::sin((time * 0.62F) + (phase * 1.7F))),
+    });
+}
+
+[[nodiscard]] std::array<float, 2> target_for_injector(const Fluid2DConfig& config,
+                                                       const Fluid2DInjectorState& injector,
+                                                       float time) {
+    switch (config.injector_motion) {
+    case Fluid2DInjectorMotion::OneRing:
+    case Fluid2DInjectorMotion::TwoRings:
+        return ring_target(injector, time);
+    case Fluid2DInjectorMotion::RandomOrbit:
+        return random_orbit_target(injector, time);
+    case Fluid2DInjectorMotion::Lissajous:
+        return lissajous_target(injector, time);
+    }
+    return ring_target(injector, time);
+}
+
+[[nodiscard]] std::array<float, 2> tangent_for_injector(const Fluid2DConfig& config,
+                                                        const Fluid2DInjectorState& injector,
                                                         float time) {
-    const float orbit_speed = injector.orbit_radius < 0.2F ? 0.23F : 0.17F;
-    const float angle = injector.anchor_angle + (injector.orbit_direction * time * orbit_speed);
-    const std::array<float, 2> radial{std::cos(angle), std::sin(angle)};
-    return scale({-radial[1], radial[0]}, injector.orbit_direction);
+    constexpr float kDerivativeStep = 0.25F;
+    const float previous_time = std::max(0.0F, time - kDerivativeStep);
+    return normalize_or_zero(
+        subtract(target_for_injector(config, injector, time + kDerivativeStep),
+                 target_for_injector(config, injector, previous_time)));
+}
+
+[[nodiscard]] float stiffness_for_motion(Fluid2DInjectorMotion motion) {
+    switch (motion) {
+    case Fluid2DInjectorMotion::OneRing:
+    case Fluid2DInjectorMotion::TwoRings:
+        return 16.0F;
+    case Fluid2DInjectorMotion::RandomOrbit:
+        return 11.0F;
+    case Fluid2DInjectorMotion::Lissajous:
+        return 15.0F;
+    }
+    return 16.0F;
+}
+
+[[nodiscard]] float tangent_drive_for_motion(Fluid2DInjectorMotion motion) {
+    switch (motion) {
+    case Fluid2DInjectorMotion::OneRing:
+    case Fluid2DInjectorMotion::TwoRings:
+        return 0.055F;
+    case Fluid2DInjectorMotion::RandomOrbit:
+        return 0.055F;
+    case Fluid2DInjectorMotion::Lissajous:
+        return 0.080F;
+    }
+    return 0.055F;
+}
+
+[[nodiscard]] float damping_for_motion(Fluid2DInjectorMotion motion) {
+    switch (motion) {
+    case Fluid2DInjectorMotion::RandomOrbit:
+        return 3.2F;
+    case Fluid2DInjectorMotion::OneRing:
+    case Fluid2DInjectorMotion::TwoRings:
+    case Fluid2DInjectorMotion::Lissajous:
+        return 4.2F;
+    }
+    return 4.2F;
+}
+
+[[nodiscard]] float max_speed_for_motion(Fluid2DInjectorMotion motion) {
+    switch (motion) {
+    case Fluid2DInjectorMotion::RandomOrbit:
+        return 0.46F;
+    case Fluid2DInjectorMotion::OneRing:
+    case Fluid2DInjectorMotion::TwoRings:
+    case Fluid2DInjectorMotion::Lissajous:
+        return 0.50F;
+    }
+    return 0.50F;
 }
 
 [[nodiscard]] std::array<float, 2>
-injector_acceleration(const std::vector<Fluid2DInjectorState>& injectors, std::size_t index,
-                      float time) {
+injector_acceleration(const std::vector<Fluid2DInjectorState>& injectors,
+                      const Fluid2DConfig& config, std::size_t index, float time) {
     const Fluid2DInjectorState& injector = injectors[index];
-    const std::array<float, 2> target = target_for_injector(injector, time);
+    const std::array<float, 2> target = target_for_injector(config, injector, time);
     std::array<float, 2> acceleration =
-        add(scale(subtract(target, injector.position), 16.0F),
-            scale(tangent_for_injector(injector, time), 0.055F));
-    add_to(acceleration, scale(injector.velocity, -4.2F));
+        add(scale(subtract(target, injector.position),
+                  stiffness_for_motion(config.injector_motion)),
+            scale(tangent_for_injector(config, injector, time),
+                  tangent_drive_for_motion(config.injector_motion)));
+    add_to(acceleration, scale(injector.velocity, -damping_for_motion(config.injector_motion)));
 
     for (std::size_t other_index = 0; other_index < injectors.size(); ++other_index) {
         if (other_index == index) {
@@ -126,6 +247,73 @@ injector_acceleration(const std::vector<Fluid2DInjectorState>& injectors, std::s
     return acceleration;
 }
 
+[[nodiscard]] bool two_ring_inner(const Fluid2DConfig& config, std::uint32_t index) {
+    return config.injector_motion == Fluid2DInjectorMotion::TwoRings &&
+           config.procedural_injector_count > 4U && (index % 2U) == 1U;
+}
+
+[[nodiscard]] float initial_orbit_radius(const Fluid2DConfig& config, std::uint32_t index) {
+    if (config.injector_motion == Fluid2DInjectorMotion::OneRing) {
+        return 0.29F;
+    }
+    if (two_ring_inner(config, index)) {
+        return 0.18F;
+    }
+    if (config.injector_motion == Fluid2DInjectorMotion::TwoRings) {
+        return 0.29F;
+    }
+    return 0.0F;
+}
+
+[[nodiscard]] float initial_orbit_direction(const Fluid2DConfig& config, std::uint32_t index) {
+    if (config.injector_motion == Fluid2DInjectorMotion::TwoRings && two_ring_inner(config, index)) {
+        return -1.0F;
+    }
+    if (config.injector_motion == Fluid2DInjectorMotion::RandomOrbit && (index % 2U) == 1U) {
+        return -1.0F;
+    }
+    return 1.0F;
+}
+
+[[nodiscard]] std::array<float, 2> initial_velocity_for_injector(
+    const Fluid2DConfig& config, const Fluid2DInjectorState& injector) {
+    switch (config.injector_motion) {
+    case Fluid2DInjectorMotion::OneRing:
+    case Fluid2DInjectorMotion::TwoRings:
+        return {
+            -std::sin(injector.anchor_angle) * injector.orbit_direction * 0.070F,
+            std::cos(injector.anchor_angle) * injector.orbit_direction * 0.070F,
+        };
+    case Fluid2DInjectorMotion::RandomOrbit:
+    case Fluid2DInjectorMotion::Lissajous:
+        return scale(tangent_for_injector(config, injector, 0.0F), 0.075F);
+    }
+    return {};
+}
+
+[[nodiscard]] InjectorGpuTuning gpu_tuning_for_injector(const Fluid2DConfig& config,
+                                                        const Fluid2DInjectorState& injector) {
+    switch (config.injector_motion) {
+    case Fluid2DInjectorMotion::OneRing:
+        return {.radius_scale = 0.86F, .strength_scale = 0.88F,
+                .carry_scale = 6.0F, .propulsion_scale = 1.25F};
+    case Fluid2DInjectorMotion::TwoRings:
+        if (injector.orbit_radius < 0.2F) {
+            return {.radius_scale = 0.92F, .strength_scale = 0.90F,
+                    .carry_scale = 6.0F, .propulsion_scale = 1.15F};
+        }
+        return {.radius_scale = 0.84F, .strength_scale = 0.84F,
+                .carry_scale = 6.0F, .propulsion_scale = 1.35F};
+    case Fluid2DInjectorMotion::RandomOrbit:
+        return {.radius_scale = 0.82F, .strength_scale = 0.86F,
+                .carry_scale = 5.5F, .propulsion_scale = 1.15F};
+    case Fluid2DInjectorMotion::Lissajous:
+        return {.radius_scale = 0.84F, .strength_scale = 0.88F,
+                .carry_scale = 6.0F, .propulsion_scale = 1.25F};
+    }
+    return {};
+}
+
 } // namespace
 
 std::vector<Fluid2DInjectorState> create_fluid_2d_injectors(const Fluid2DConfig& config) {
@@ -139,26 +327,20 @@ std::vector<Fluid2DInjectorState> create_fluid_2d_injectors(const Fluid2DConfig&
     for (std::uint32_t index = 0; index < config.procedural_injector_count; ++index) {
         const float hue = static_cast<float>(index) /
                           static_cast<float>(config.procedural_injector_count);
-        const bool inner_ring = config.procedural_injector_count > 4U && (index % 2U) == 1U;
-        const float orbit_radius = inner_ring ? 0.18F : 0.29F;
-        const float orbit_direction = inner_ring ? -1.0F : 1.0F;
         const float angle = hue * kTau;
-        injectors.push_back({
-            .position =
-                {
-                    kCenter[0] + (std::cos(angle) * orbit_radius),
-                    kCenter[1] + (std::sin(angle) * orbit_radius),
-                },
-            .velocity =
-                {
-                    -std::sin(angle) * orbit_direction * 0.045F,
-                    std::cos(angle) * orbit_direction * 0.045F,
-                },
+        Fluid2DInjectorState injector{
+            .position = {},
+            .velocity = {},
             .hue = hue,
             .anchor_angle = angle,
-            .orbit_radius = orbit_radius,
-            .orbit_direction = orbit_direction,
-        });
+            .orbit_radius = initial_orbit_radius(config, index),
+            .orbit_direction = initial_orbit_direction(config, index),
+            .motion = config.injector_motion,
+            .seed = index,
+        };
+        injector.position = target_for_injector(config, injector, 0.0F);
+        injector.velocity = initial_velocity_for_injector(config, injector);
+        injectors.push_back(injector);
     }
     return injectors;
 }
@@ -173,21 +355,21 @@ fluid_2d_injectors_to_gpu(const std::vector<Fluid2DInjectorState>& injectors,
             cubey::render::hsv_to_linear_rgb({.hue = injector.hue,
                                               .saturation = 1.0F,
                                               .value = 1.0F});
-        const bool inner_ring = injector.orbit_radius < 0.2F;
+        const InjectorGpuTuning tuning = gpu_tuning_for_injector(config, injector);
         gpu_injectors.push_back({
             .position_radius_strength =
                 {
                     injector.position[0],
                     injector.position[1],
-                    config.fallback_injection_radius * (inner_ring ? 0.92F : 0.84F),
-                    config.fallback_injection_strength * (inner_ring ? 0.90F : 0.84F),
+                    config.fallback_injection_radius * tuning.radius_scale,
+                    config.fallback_injection_strength * tuning.strength_scale,
                 },
             .velocity_carry_propulsion =
                 {
                     injector.velocity[0],
                     injector.velocity[1],
-                    6.0F,
-                    inner_ring ? 1.15F : 1.35F,
+                    tuning.carry_scale,
+                    tuning.propulsion_scale,
                 },
             .dye_active =
                 {
@@ -204,7 +386,11 @@ fluid_2d_injectors_to_gpu(const std::vector<Fluid2DInjectorState>& injectors,
 std::vector<Fluid2DInjectorGpu>
 update_fluid_2d_injectors(std::vector<Fluid2DInjectorState>& injectors,
                           const Fluid2DConfig& config, const cubey::FrameTiming& timing) {
-    if (injectors.size() != config.procedural_injector_count) {
+    const bool stale_motion = std::any_of(
+        injectors.begin(), injectors.end(), [&config](const Fluid2DInjectorState& injector) {
+            return injector.motion != config.injector_motion;
+        });
+    if (injectors.size() != config.procedural_injector_count || stale_motion) {
         injectors = create_fluid_2d_injectors(config);
     }
 
@@ -212,9 +398,10 @@ update_fluid_2d_injectors(std::vector<Fluid2DInjectorState>& injectors,
         std::min(static_cast<float>(timing.delta_seconds), config.fixed_delta_seconds);
     const float time = static_cast<float>(timing.elapsed_seconds);
     for (std::size_t index = 0; index < injectors.size(); ++index) {
-        const std::array<float, 2> acceleration = injector_acceleration(injectors, index, time);
+        const std::array<float, 2> acceleration =
+            injector_acceleration(injectors, config, index, time);
         add_to(injectors[index].velocity, scale(acceleration, dt));
-        clamp_speed(injectors[index].velocity, 0.38F);
+        clamp_speed(injectors[index].velocity, max_speed_for_motion(config.injector_motion));
     }
     for (Fluid2DInjectorState& injector : injectors) {
         add_to(injector.position, scale(injector.velocity, dt));

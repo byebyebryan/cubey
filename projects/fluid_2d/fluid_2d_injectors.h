@@ -6,6 +6,7 @@
 
 #include <array>
 #include <cstddef>
+#include <cstdint>
 #include <vector>
 
 namespace cubey::projects::fluid_2d {
@@ -17,6 +18,8 @@ struct Fluid2DInjectorState {
     float anchor_angle = 0.0F;
     float orbit_radius = 0.0F;
     float orbit_direction = 1.0F;
+    Fluid2DInjectorMotion motion = Fluid2DInjectorMotion::TwoRings;
+    std::uint32_t seed = 0;
 };
 
 struct Fluid2DInjectorGpu {

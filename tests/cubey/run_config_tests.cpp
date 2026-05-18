@@ -244,6 +244,20 @@ void test_run_config_parses_injector_count() {
     require(config.injectors == 8, "run config should parse procedural injector count");
 }
 
+void test_run_config_parses_injector_motion() {
+    std::array<char, 6> program{'c', 'u', 'b', 'e', 'y', '\0'};
+    std::array<char, 18> motion_flag{'-', '-', 'i', 'n', 'j', 'e', 'c', 't', 'o',
+                                     'r', '-', 'm', 'o', 't', 'i', 'o', 'n', '\0'};
+    std::array<char, 13> motion_value{'r', 'a', 'n', 'd', 'o', 'm', '-',
+                                      'o', 'r', 'b', 'i', 't', '\0'};
+    std::array<char*, 3> argv{program.data(), motion_flag.data(), motion_value.data()};
+
+    const cubey::RunConfig config =
+        cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
+    require(config.injector_motion == "random-orbit",
+            "run config should parse procedural injector motion");
+}
+
 void test_run_config_parses_obstacle_flag() {
     std::array<char, 6> program{'c', 'u', 'b', 'e', 'y', '\0'};
     std::array<char, 12> obstacles_flag{'-', '-', 'o', 'b', 's', 't',

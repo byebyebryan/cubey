@@ -78,6 +78,8 @@ RunConfig parse_run_config(int argc, char** argv) {
             config.grid_height = parse_positive_u32(need_value("--grid-height"), "--grid-height");
         } else if (arg == "--injectors") {
             config.injectors = parse_positive_u32(need_value("--injectors"), "--injectors");
+        } else if (arg == "--injector-motion") {
+            config.injector_motion = std::string(need_value("--injector-motion"));
         } else if (arg == "--frames") {
             config.frames = parse_u32(need_value("--frames"), "--frames");
         } else if (arg == "--fps") {

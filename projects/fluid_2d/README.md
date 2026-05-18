@@ -20,7 +20,8 @@ Implemented:
 
 - Windowed mode plus deterministic headless PNG and optional MP4 capture modes.
 - Configurable GPU storage-buffer grid for dye and velocity.
-- Three moving procedural dye/force injectors plus pointer-driven injection.
+- Configurable moving procedural dye/force injectors plus pointer-driven
+  injection.
 - MacCormack advection with local clamping and fade.
 - Optional static obstacle mask plus solid-cell boundary handling.
 - Curl, vorticity confinement, divergence, Jacobi pressure solve, and
@@ -51,10 +52,13 @@ Deferred:
 The default solver grid is `1024x1024`. Override it with `--grid-width` and
 `--grid-height` when comparing quality or performance. The default procedural
 injector count is three; override it with `--injectors` from `1` to `16` to
-spread more sources around the hue wheel. Static obstacles are disabled by
-default; enable them with `--obstacles`. The procedural injectors continue
-running while the pointer injects, so manual interaction layers into the same
-flow instead of replacing the background sources.
+spread more sources around the hue wheel. The default injector motion is
+`two-rings`; override it with
+`--injector-motion one-ring|two-rings|random-orbit|lissajous`.
+Static obstacles are disabled by default; enable them with `--obstacles`. The
+procedural injectors continue running while the pointer injects, so manual
+interaction layers into the same flow instead of replacing the background
+sources.
 
 ```text
 field A -> advect predict -> field temp
@@ -305,11 +309,16 @@ Goal: make the default windowed and headless output read more like a deliberate
 fluid demo without adding another solver stage.
 
 - The old single fallback source was replaced with configurable stateful
-  procedural sources, spread evenly around the hue wheel and organized into
-  orbital rings at higher counts.
+  procedural sources, spread evenly around the hue wheel and driven by
+  selectable motion presets.
 - Built-in source motion is updated as simple project-local physics: each
-  injector chases a moving ring target with damping, boundary repulsion, and
+  injector chases a mode-specific target with damping, boundary repulsion, and
   light separation from neighboring sources.
+- Injector motion is configurable. `one-ring` is a stable baseline,
+  `two-rings` counter-rotates inner sources, `random-orbit` assigns each source
+  a deterministic mostly circular orbit around center with varied radius,
+  direction, speed, and a controlled elliptical band, `lissajous` traces
+  looping figure-eight paths.
 - Built-in sources inject dye plus velocity. New dye carries the source's
   current velocity, while an opposite-direction propulsion term pushes a wake
   behind the moving injector.
@@ -326,6 +335,8 @@ fluid demo without adding another solver stage.
 ./build/dev/projects/fluid_2d/fluid_2d --require-validation --frames 300 --width 1280 --height 720
 ./build/dev/projects/fluid_2d/fluid_2d --frames 300 --print-frame-stats --grid-width 512 --grid-height 512 --width 1280 --height 720
 ./build/dev/projects/fluid_2d/fluid_2d --frames 300 --injectors 8 --width 1280 --height 720
+./build/dev/projects/fluid_2d/fluid_2d --frames 300 --injectors 8 --injector-motion random-orbit \
+    --width 1280 --height 720
 ./build/dev/projects/fluid_2d/fluid_2d --frames 300 --obstacles --width 1280 --height 720
 ./build/dev/projects/fluid_2d/fluid_2d --headless --require-validation --frames 120 --width 640 --height 360 --output /tmp/cubey-fluid-2d.png
 ./build/dev/projects/fluid_2d/fluid_2d --headless --capture video --frames 180 --fps 60 --width 1280 --height 720 --output /tmp/cubey-fluid-2d.mp4

@@ -26,6 +26,7 @@ struct RunConfig {
     std::uint32_t grid_width = 0;
     std::uint32_t grid_height = 0;
     std::uint32_t injectors = 0;
+    std::string injector_motion{};
     std::uint32_t frames = 0;
     std::uint32_t fps = 60;
     std::filesystem::path input_path{};

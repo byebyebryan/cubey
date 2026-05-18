@@ -8,6 +8,7 @@
 #include <cstdint>
 #include <limits>
 #include <stdexcept>
+#include <string_view>
 
 namespace cubey::projects::fluid_2d {
 
@@ -28,6 +29,13 @@ enum class FluidDebugView : std::uint32_t {
     Obstacle = 6,
 };
 
+enum class Fluid2DInjectorMotion : std::uint32_t {
+    OneRing = 0,
+    TwoRings = 1,
+    RandomOrbit = 2,
+    Lissajous = 3,
+};
+
 inline constexpr std::uint32_t kMaxProceduralInjectorCount = 16;
 
 struct Fluid2DConfig {
@@ -44,8 +52,42 @@ struct Fluid2DConfig {
     float pointer_injection_strength = 18.0F;
     float fallback_injection_strength = 6.0F;
     float vorticity_strength = 18.0F;
+    Fluid2DInjectorMotion injector_motion = Fluid2DInjectorMotion::TwoRings;
     bool obstacles_enabled = false;
 };
+
+[[nodiscard]] inline std::string_view fluid_2d_injector_motion_name(
+    Fluid2DInjectorMotion motion) {
+    switch (motion) {
+    case Fluid2DInjectorMotion::OneRing:
+        return "one-ring";
+    case Fluid2DInjectorMotion::TwoRings:
+        return "two-rings";
+    case Fluid2DInjectorMotion::RandomOrbit:
+        return "random-orbit";
+    case Fluid2DInjectorMotion::Lissajous:
+        return "lissajous";
+    }
+    return "two-rings";
+}
+
+[[nodiscard]] inline Fluid2DInjectorMotion parse_fluid_2d_injector_motion(
+    std::string_view value) {
+    if (value == "one-ring") {
+        return Fluid2DInjectorMotion::OneRing;
+    }
+    if (value == "two-rings") {
+        return Fluid2DInjectorMotion::TwoRings;
+    }
+    if (value == "random-orbit" || value == "random") {
+        return Fluid2DInjectorMotion::RandomOrbit;
+    }
+    if (value == "lissajous") {
+        return Fluid2DInjectorMotion::Lissajous;
+    }
+    throw std::runtime_error("fluid injector motion must be one-ring, two-rings, "
+                             "random-orbit, or lissajous");
+}
 
 [[nodiscard]] inline FluidDebugView next_debug_view(FluidDebugView view) {
     switch (view) {
@@ -109,6 +151,10 @@ struct Fluid2DConfig {
             throw std::runtime_error("fluid injector count must be 1..16");
         }
         fluid_config.procedural_injector_count = config.injectors;
+    }
+    if (!config.injector_motion.empty()) {
+        fluid_config.injector_motion =
+            parse_fluid_2d_injector_motion(config.injector_motion);
     }
     fluid_config.obstacles_enabled = config.obstacles;
     static_cast<void>(field_cell_count(fluid_config));
