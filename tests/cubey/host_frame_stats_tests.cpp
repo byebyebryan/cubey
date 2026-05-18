@@ -51,4 +51,15 @@ void test_host_frame_stats_publish_window_title_metrics() {
     const std::string title = cubey::host::format_window_title("cubey textured_cube", snapshot);
     require(title == "cubey textured_cube | 4.0 fps | 250.00 ms | 100x50 | 12 tris | 0.02 Mpix/s",
             "stats title should be stable");
+
+    const std::string line = cubey::host::format_frame_stats_line("frame_stats", snapshot);
+    require(line == "frame_stats: 4.0 fps | 250.00 ms | 100x50 | 12 tris | 0.02 Mpix/s",
+            "stats log line should be stable");
+
+    const std::string summary =
+        cubey::host::format_frame_stats_summary("windowed_perf", snapshot, 0.5);
+    require(summary ==
+                "windowed_perf: 2 frames in 0.500 s | 4.0 fps | 250.00 ms | 100x50 | "
+                "12 tris | 0.02 Mpix/s",
+            "stats summary line should be stable");
 }

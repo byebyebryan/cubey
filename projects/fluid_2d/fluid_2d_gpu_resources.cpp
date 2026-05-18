@@ -75,6 +75,9 @@ void create_compute_pipeline_resource(
 
 [[nodiscard]] std::vector<float> create_obstacle_mask(const Fluid2DConfig& config) {
     std::vector<float> mask(field_cell_count(config), 0.0F);
+    if (!config.obstacles_enabled) {
+        return mask;
+    }
     const float aspect =
         static_cast<float>(config.grid_width) / static_cast<float>(config.grid_height);
     for (std::uint32_t y = 0; y < config.grid_height; ++y) {

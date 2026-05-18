@@ -203,6 +203,46 @@ void test_run_config_parses_pbr_debug_view_name() {
             "run config should preserve renderer debug view name");
 }
 
+void test_run_config_parses_frame_stats_flag() {
+    std::array<char, 6> program{'c', 'u', 'b', 'e', 'y', '\0'};
+    std::array<char, 20> stats_flag{'-', '-', 'p', 'r', 'i', 'n', 't',
+                                    '-', 'f', 'r', 'a', 'm', 'e', '-',
+                                    's', 't', 'a', 't', 's', '\0'};
+    std::array<char*, 2> argv{program.data(), stats_flag.data()};
+
+    const cubey::RunConfig config =
+        cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
+    require(config.print_frame_stats, "run config should parse frame stats logging flag");
+}
+
+void test_run_config_parses_grid_dimensions() {
+    std::array<char, 6> program{'c', 'u', 'b', 'e', 'y', '\0'};
+    std::array<char, 13> grid_width_flag{'-', '-', 'g', 'r', 'i', 'd', '-',
+                                         'w', 'i', 'd', 't', 'h', '\0'};
+    std::array<char, 5> grid_width_value{'1', '0', '2', '4', '\0'};
+    std::array<char, 14> grid_height_flag{'-', '-', 'g', 'r', 'i', 'd', '-',
+                                          'h', 'e', 'i', 'g', 'h', 't', '\0'};
+    std::array<char, 4> grid_height_value{'7', '6', '8', '\0'};
+    std::array<char*, 5> argv{program.data(), grid_width_flag.data(), grid_width_value.data(),
+                              grid_height_flag.data(), grid_height_value.data()};
+
+    const cubey::RunConfig config =
+        cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
+    require(config.grid_width == 1024, "run config should parse grid width");
+    require(config.grid_height == 768, "run config should parse grid height");
+}
+
+void test_run_config_parses_obstacle_flag() {
+    std::array<char, 6> program{'c', 'u', 'b', 'e', 'y', '\0'};
+    std::array<char, 12> obstacles_flag{'-', '-', 'o', 'b', 's', 't',
+                                        'a', 'c', 'l', 'e', 's', '\0'};
+    std::array<char*, 2> argv{program.data(), obstacles_flag.data()};
+
+    const cubey::RunConfig config =
+        cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
+    require(config.obstacles, "run config should parse obstacle flag");
+}
+
 void test_run_cli_app_sets_default_title_and_returns_runner_status() {
     std::array<char, 6> program{'c', 'u', 'b', 'e', 'y', '\0'};
     std::array<char*, 1> argv{program.data()};

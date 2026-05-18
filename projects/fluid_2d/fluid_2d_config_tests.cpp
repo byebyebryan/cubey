@@ -28,9 +28,9 @@ void require_close(float actual, float expected, const char* message) {
 int main() {
     try {
         const cubey::projects::fluid_2d::Fluid2DConfig config;
-        constexpr std::size_t kExpectedCellCount = std::size_t{384} * std::size_t{216};
-        require(config.grid_width == 384, "fluid grid should default to 384 columns");
-        require(config.grid_height == 216, "fluid grid should default to 216 rows");
+        constexpr std::size_t kExpectedCellCount = std::size_t{1024} * std::size_t{1024};
+        require(config.grid_width == 1024, "fluid grid should default to 1024 columns");
+        require(config.grid_height == 1024, "fluid grid should default to 1024 rows");
         require(cubey::projects::fluid_2d::field_cell_count(config) == kExpectedCellCount,
                 "field cell count should multiply dimensions");
         require(cubey::projects::fluid_2d::field_byte_size(config) ==
@@ -48,6 +48,7 @@ int main() {
                 "fluid fallback injection strength should default to a stronger impulse");
         require(config.vorticity_strength == 18.0F,
                 "fluid vorticity strength should have a visible default");
+        require(!config.obstacles_enabled, "fluid obstacles should default disabled");
         require(cubey::projects::fluid_2d::scalar_field_byte_size(config) ==
                     sizeof(float) * kExpectedCellCount,
                 "scalar field byte size should cover one float per grid location");
@@ -81,6 +82,22 @@ int main() {
                 "debug view should cycle from obstacle to dye");
 
         cubey::RunConfig run_config;
+        run_config.grid_width = 1024;
+        run_config.grid_height = 768;
+        const cubey::projects::fluid_2d::Fluid2DConfig configured =
+            cubey::projects::fluid_2d::fluid_config_from_run_config(run_config);
+        require(configured.grid_width == 1024,
+                "fluid config should honor run config grid width");
+        require(configured.grid_height == 768,
+                "fluid config should honor run config grid height");
+        require(!configured.obstacles_enabled,
+                "fluid config should keep obstacles disabled unless requested");
+        run_config.obstacles = true;
+        const cubey::projects::fluid_2d::Fluid2DConfig configured_with_obstacles =
+            cubey::projects::fluid_2d::fluid_config_from_run_config(run_config);
+        require(configured_with_obstacles.obstacles_enabled,
+                "fluid config should honor run config obstacle toggle");
+
         require(cubey::projects::fluid_2d::headless_frame_count(run_config) == 120,
                 "headless frame count should default to 120 frames");
         run_config.frames = 8;

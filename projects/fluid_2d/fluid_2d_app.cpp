@@ -30,7 +30,9 @@ using cubey::host::FrameStatsSample;
 
 class Fluid2DApp {
   public:
-    explicit Fluid2DApp(RunConfig config) : config_(std::move(config)), runtime_(1) {}
+    explicit Fluid2DApp(RunConfig config)
+        : config_(std::move(config)), runtime_(1),
+          fluid_config_(fluid_config_from_run_config(config_)) {}
 
     Fluid2DApp(const Fluid2DApp&) = delete;
     Fluid2DApp& operator=(const Fluid2DApp&) = delete;

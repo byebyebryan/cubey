@@ -271,7 +271,8 @@ Current checkpoint:
   out-of-date/suboptimal recreate loops across all current windowed examples.
 - Optional `cubey_host` target owns the first GLFW-backed host/engine layer:
   window lifetime, surface creation/destruction, key/pointer dispatch, windowed
-  frame loop, frame timing, optional frame stats, and swapchain recreate
+  frame loop, frame timing, window-title stats, stdout frame-stat summaries for
+  bounded runs, optional periodic frame-stat logging, and swapchain recreate
   orchestration. Render callbacks receive `WindowedRenderFrame`, including the
   active frame slot and swapchain color target view. The windowed host defaults
   to two frame slots.
@@ -489,7 +490,7 @@ Current project:
 
 - `projects/fluid_2d` starts the fluid simulation rewrite as a smaller 2D
   dye-and-velocity field. The current checkpoint has compute injection,
-  MacCormack advection, static obstacles, vorticity confinement, pressure
+  MacCormack advection, optional static obstacles, vorticity confinement, pressure
   projection, pointer injection, pause/reset, debug render modes, fullscreen
   rendering, a windowed smoke, and deterministic headless PNG/MP4 output.
   Simulation timing now flows through `ProjectFrame` in both windowed and

@@ -23,6 +23,8 @@ struct RunConfig {
     std::string title = "cubey";
     std::uint32_t width = 1280;
     std::uint32_t height = 720;
+    std::uint32_t grid_width = 0;
+    std::uint32_t grid_height = 0;
     std::uint32_t frames = 0;
     std::uint32_t fps = 60;
     std::filesystem::path input_path{};
@@ -37,6 +39,8 @@ struct RunConfig {
     float animation_speed = 1.0F;
     bool headless = false;
     bool animation_paused = false;
+    bool obstacles = false;
+    bool print_frame_stats = false;
     bool validation = true;
     bool require_validation = false;
 };

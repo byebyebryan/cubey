@@ -19,10 +19,10 @@ The broader fluid technique map lives in
 Implemented:
 
 - Windowed mode plus deterministic headless PNG and optional MP4 capture modes.
-- GPU storage-buffer fields for dye and velocity.
+- Configurable GPU storage-buffer grid for dye and velocity.
 - Procedural and pointer-driven dye/force injection.
 - MacCormack advection with local clamping and fade.
-- Static obstacle mask plus solid-cell boundary handling.
+- Optional static obstacle mask plus solid-cell boundary handling.
 - Curl, vorticity confinement, divergence, Jacobi pressure solve, and
   pressure-gradient projection.
 - Fullscreen rendering with dye, velocity, divergence, pressure, speed,
@@ -48,11 +48,15 @@ Deferred:
 
 ## Runtime Shape
 
+The default solver grid is `1024x1024`. Override it with `--grid-width` and
+`--grid-height` when comparing quality or performance. Static obstacles are
+disabled by default; enable them with `--obstacles`.
+
 ```text
 field A -> advect predict -> field temp
 field A + field temp -> MacCormack correction/clamp/fade -> field B
 field B -> inject fresh dye/force -> field A
-static obstacle mask constrains injection/advection/pressure/projection
+optional static obstacle mask constrains injection/advection/pressure/projection
 field A -> curl -> vorticity confinement -> field A
 field A -> divergence + pressure reset
 pressure A/B -> Jacobi iterations
@@ -270,7 +274,7 @@ Goal: make the CFD nature more legible by giving the flow geometry to move
 around instead of only fading across an open rectangle.
 
 - The project now uploads a static obstacle mask with solid borders and a few
-  interior shapes.
+  interior shapes when `--obstacles` is set.
 - Injection, advection, curl, vorticity, divergence, pressure, and projection
   all read the mask so solid cells stay empty and pressure solve neighbors use a
   wall-aware fallback.
@@ -293,6 +297,8 @@ sharper without adding another simulation pass.
 
 ```bash
 ./build/dev/projects/fluid_2d/fluid_2d --require-validation --frames 300 --width 1280 --height 720
+./build/dev/projects/fluid_2d/fluid_2d --frames 300 --print-frame-stats --grid-width 512 --grid-height 512 --width 1280 --height 720
+./build/dev/projects/fluid_2d/fluid_2d --frames 300 --obstacles --width 1280 --height 720
 ./build/dev/projects/fluid_2d/fluid_2d --headless --require-validation --frames 120 --width 640 --height 360 --output /tmp/cubey-fluid-2d.png
 ./build/dev/projects/fluid_2d/fluid_2d --headless --capture video --frames 180 --fps 60 --width 1280 --height 720 --output /tmp/cubey-fluid-2d.mp4
 ```

@@ -21,6 +21,14 @@ std::uint32_t parse_u32(std::string_view value, const char* name) {
     return static_cast<std::uint32_t>(parsed);
 }
 
+std::uint32_t parse_positive_u32(std::string_view value, const char* name) {
+    const std::uint32_t parsed = parse_u32(value, name);
+    if (parsed == 0) {
+        throw std::runtime_error(std::string(name) + " must be positive");
+    }
+    return parsed;
+}
+
 float parse_float(std::string_view value, const char* name) {
     float parsed = 0.0F;
     const char* begin = value.data();
@@ -64,10 +72,16 @@ RunConfig parse_run_config(int argc, char** argv) {
             config.width = parse_u32(need_value("--width"), "--width");
         } else if (arg == "--height") {
             config.height = parse_u32(need_value("--height"), "--height");
+        } else if (arg == "--grid-width") {
+            config.grid_width = parse_positive_u32(need_value("--grid-width"), "--grid-width");
+        } else if (arg == "--grid-height") {
+            config.grid_height = parse_positive_u32(need_value("--grid-height"), "--grid-height");
         } else if (arg == "--frames") {
             config.frames = parse_u32(need_value("--frames"), "--frames");
         } else if (arg == "--fps") {
             config.fps = parse_u32(need_value("--fps"), "--fps");
+        } else if (arg == "--print-frame-stats") {
+            config.print_frame_stats = true;
         } else if (arg == "--capture") {
             const std::string_view mode = need_value("--capture");
             if (mode == "png") {
@@ -99,6 +113,8 @@ RunConfig parse_run_config(int argc, char** argv) {
                                                  "--animation-speed");
         } else if (arg == "--pause-animation") {
             config.animation_paused = true;
+        } else if (arg == "--obstacles") {
+            config.obstacles = true;
         } else if (arg == "--output") {
             config.output_path = std::string(need_value("--output"));
             output_path_explicit = true;

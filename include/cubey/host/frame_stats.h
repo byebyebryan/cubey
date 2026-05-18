@@ -37,6 +37,12 @@ class FrameStats {
     std::uint64_t accumulated_frames_ = 0;
 };
 
+FrameStatsSnapshot make_frame_stats_snapshot(const FrameStatsSample& sample,
+                                             double accumulated_seconds,
+                                             std::uint64_t accumulated_frames);
 std::string format_window_title(std::string_view base_title, const FrameStatsSnapshot& stats);
+std::string format_frame_stats_line(std::string_view label, const FrameStatsSnapshot& stats);
+std::string format_frame_stats_summary(std::string_view label, const FrameStatsSnapshot& stats,
+                                       double accumulated_seconds);
 
 } // namespace cubey::host

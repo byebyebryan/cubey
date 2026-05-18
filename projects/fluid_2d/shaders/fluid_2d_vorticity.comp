@@ -59,9 +59,11 @@ void main() {
     float up = abs(curl.values[cell_index(coord + ivec2(0, 1), width, height)]);
     vec2 gradient = vec2(right - left, up - down) * 0.5;
     float gradient_length = length(gradient);
-    if (gradient_length > 0.00001) {
-        vec2 direction = gradient / gradient_length;
-        vec2 force = vec2(direction.y, -direction.x) * center * params.solver_options.x;
+    float curl_gate = abs(center) / (abs(center) + 0.01);
+    if (gradient_length > 0.000001 && curl_gate > 0.001) {
+        vec2 direction = gradient / (gradient_length + 0.002);
+        vec2 force = vec2(direction.y, -direction.x) * center * params.solver_options.x *
+                     curl_gate;
         cell.velocity.xy += force * params.grid_dt_time.z;
     }
     cell.velocity.xy = clamp(cell.velocity.xy, vec2(-12.0), vec2(12.0));

@@ -87,6 +87,9 @@ int WindowedHost::run() {
     static_cast<void>(gpu().drain());
 
     std::uint32_t frame = 0;
+    double total_stats_seconds = 0.0;
+    std::uint64_t total_stats_frames = 0;
+    std::optional<FrameStatsSample> latest_stats_sample;
     frame_clock_.reset();
     cubey::vulkan::SwapchainRecreateTracker recreate_tracker;
     while (!window().should_close() &&
@@ -131,15 +134,33 @@ int WindowedHost::run() {
             std::optional<FrameStatsSample> sample =
                 callbacks_.frame_stats_sample(active_context, timing);
             if (sample.has_value()) {
+                total_stats_seconds += sample->delta_seconds;
+                ++total_stats_frames;
+                latest_stats_sample = sample.value();
                 std::optional<FrameStatsSnapshot> stats = frame_stats_.record_frame(sample.value());
                 if (stats.has_value()) {
                     const std::string title =
                         format_window_title(config_.run_config.title, stats.value());
                     window().set_title(title.c_str());
+                    if (config_.run_config.print_frame_stats) {
+                        const std::string line =
+                            format_frame_stats_line("frame_stats", stats.value());
+                        std::puts(line.c_str());
+                    }
                 }
             }
         }
         ++frame;
+    }
+
+    if ((config_.run_config.print_frame_stats || config_.run_config.frames != 0) &&
+        latest_stats_sample.has_value() && total_stats_seconds > 0.0 && total_stats_frames > 0) {
+        const FrameStatsSnapshot summary =
+            make_frame_stats_snapshot(latest_stats_sample.value(), total_stats_seconds,
+                                      total_stats_frames);
+        const std::string line =
+            format_frame_stats_summary("windowed_perf", summary, total_stats_seconds);
+        std::puts(line.c_str());
     }
 
     cubey::vulkan::check(vkDeviceWaitIdle(device().handle()),

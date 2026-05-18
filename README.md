@@ -40,7 +40,7 @@ Current examples:
 Current projects:
 
 - `fluid_2d`: compute-updated dye/velocity field with MacCormack advection,
-  vorticity, static obstacles, pressure projection, debug views, and
+  vorticity, optional static obstacles, pressure projection, debug views, and
   deterministic headless capture output.
 - `fractal_2d`: fullscreen Mandelbrot-style shader with windowed navigation and
   headless output.
@@ -156,6 +156,13 @@ Useful windowed smokes:
 ./build/dev/projects/gltf_viewer/gltf_viewer --input path/to/model.glb --debug-view roughness --frames 300 --width 1280 --height 720
 ./build/dev/projects/pbr_furnace/pbr_furnace --frames 300 --width 1280 --height 720
 ```
+
+Windowed `--frames` runs print a final `windowed_perf` FPS/frame-time summary.
+Use `--print-frame-stats` for periodic stdout samples while a window remains
+open; the window title also shows the latest sampled FPS and frame time.
+`fluid_2d` defaults to a `1024x1024` solver grid; use `--grid-width` and
+`--grid-height` to compare other simulation resolutions, and `--obstacles` to
+enable the static obstacle mask.
 
 Useful headless PNG smokes:
 

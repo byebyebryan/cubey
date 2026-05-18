@@ -29,8 +29,8 @@ enum class FluidDebugView : std::uint32_t {
 };
 
 struct Fluid2DConfig {
-    std::uint32_t grid_width = 384;
-    std::uint32_t grid_height = 216;
+    std::uint32_t grid_width = 1024;
+    std::uint32_t grid_height = 1024;
     std::uint32_t compute_group_size = 8;
     std::uint32_t pressure_iterations = 32;
     float fixed_delta_seconds = 1.0F / 60.0F;
@@ -41,6 +41,7 @@ struct Fluid2DConfig {
     float pointer_injection_strength = 14.0F;
     float fallback_injection_strength = 9.0F;
     float vorticity_strength = 18.0F;
+    bool obstacles_enabled = false;
 };
 
 [[nodiscard]] inline FluidDebugView next_debug_view(FluidDebugView view) {
@@ -90,6 +91,19 @@ struct Fluid2DConfig {
         throw std::runtime_error("fluid scalar field is too large");
     }
     return cell_count * sizeof(float);
+}
+
+[[nodiscard]] inline Fluid2DConfig fluid_config_from_run_config(const RunConfig& config) {
+    Fluid2DConfig fluid_config;
+    if (config.grid_width != 0) {
+        fluid_config.grid_width = config.grid_width;
+    }
+    if (config.grid_height != 0) {
+        fluid_config.grid_height = config.grid_height;
+    }
+    fluid_config.obstacles_enabled = config.obstacles;
+    static_cast<void>(field_cell_count(fluid_config));
+    return fluid_config;
 }
 
 [[nodiscard]] inline std::uint32_t headless_frame_count(const RunConfig& config) {

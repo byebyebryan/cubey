@@ -12,7 +12,10 @@ The host layer is responsible for host flow:
 - GLFW window lifetime and Vulkan surface handoff.
 - Presentable framebuffer extent queries and minimized-window waiting.
 - Input collection, per-frame input snapshots, and low-level event dispatch.
-- Windowed frame loop, frame timing, frame stats, and frame limits.
+- Windowed frame loop, frame timing, window-title/stdout frame stats, and frame
+  limits.
+- Shared CLI parsing for common window, frame-limit, capture, diagnostics, and
+  project-tuning options such as simulation grid dimensions and obstacle masks.
 - Swapchain resize/out-of-date recreation orchestration.
 - Project lifecycle calls.
 
