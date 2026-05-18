@@ -304,9 +304,15 @@ Status: multi-source visual injection complete.
 Goal: make the default windowed and headless output read more like a deliberate
 fluid demo without adding another solver stage.
 
-- The old single fallback source was replaced with configurable deterministic
-  moving procedural sources, spread evenly around the hue wheel and organized
-  into orbital rings at higher counts.
+- The old single fallback source was replaced with configurable stateful
+  procedural sources, spread evenly around the hue wheel and organized into
+  orbital rings at higher counts.
+- Built-in source motion is updated as simple project-local physics: each
+  injector chases a moving ring target with damping, boundary repulsion, and
+  light separation from neighboring sources.
+- Built-in sources inject dye plus velocity. New dye carries the source's
+  current velocity, while an opposite-direction propulsion term pushes a wake
+  behind the moving injector.
 - Pointer injection is now additive: dragging injects cursor dye and force
   without pausing the procedural sources.
 - Pointer dye now cycles through the hue wheel so separate drags naturally lay

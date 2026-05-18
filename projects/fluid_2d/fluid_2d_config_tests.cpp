@@ -1,12 +1,15 @@
 #include "fluid_2d_config.h"
 #include "fluid_2d_interaction.h"
+#include "fluid_2d_injectors.h"
 
 #include <cubey/core/frame_clock.h>
 #include <cubey/core/run_config.h>
 
+#include <array>
 #include <cstdio>
 #include <exception>
 #include <stdexcept>
+#include <vector>
 
 namespace {
 
@@ -119,6 +122,34 @@ int main() {
         }
         require(threw_for_too_many_injectors,
                 "fluid config should reject injector counts above the shader policy limit");
+
+        std::vector<cubey::projects::fluid_2d::Fluid2DInjectorState> injectors =
+            cubey::projects::fluid_2d::create_fluid_2d_injectors(configured);
+        require(injectors.size() == 8, "fluid injector state should match configured count");
+        require_close(injectors[0].hue, 0.0F, "first injector hue should start at red");
+        require_close(injectors[1].hue, 0.125F, "injector hues should spread evenly");
+        const std::array<float, 2> initial_position = injectors[0].position;
+        const std::vector<cubey::projects::fluid_2d::Fluid2DInjectorGpu> initial_gpu =
+            cubey::projects::fluid_2d::fluid_2d_injectors_to_gpu(injectors, configured);
+        require(initial_gpu.size() == 8, "fluid GPU injector state should match state count");
+        require(initial_gpu[0].velocity_carry_propulsion[2] > 1.0F,
+                "fluid GPU injector should carry source velocity into the fluid");
+        require(initial_gpu[0].velocity_carry_propulsion[3] > 0.0F,
+                "fluid GPU injector should expose opposite-direction propulsion force");
+        const std::vector<cubey::projects::fluid_2d::Fluid2DInjectorGpu> advanced_gpu =
+            cubey::projects::fluid_2d::update_fluid_2d_injectors(
+                injectors, configured,
+                {
+                    .delta_seconds = configured.fixed_delta_seconds,
+                    .elapsed_seconds = configured.fixed_delta_seconds,
+                    .frame_index = 1,
+                });
+        require(advanced_gpu.size() == 8, "fluid injector update should keep configured count");
+        require(injectors[0].position != initial_position,
+                "fluid injector physics should advance source positions");
+        require(cubey::projects::fluid_2d::fluid_2d_injector_byte_size(configured) ==
+                    sizeof(cubey::projects::fluid_2d::Fluid2DInjectorGpu) * 8U,
+                "fluid injector byte size should cover one GPU record per injector");
 
         require(cubey::projects::fluid_2d::headless_frame_count(run_config) == 120,
                 "headless frame count should default to 120 frames");

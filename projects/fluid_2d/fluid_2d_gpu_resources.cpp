@@ -148,6 +148,7 @@ void Fluid2DGpuResources::destroy_all_resources() {
     compute_descriptor_layout_.reset();
     pressure_b_.reset();
     pressure_a_.reset();
+    injectors_.reset();
     obstacle_.reset();
     curl_.reset();
     divergence_.reset();
@@ -182,6 +183,12 @@ void Fluid2DGpuResources::create_field_buffers(cubey::ProjectGpuServices& gpu,
     obstacle_.emplace(upload_project_device_buffer(gpu, obstacle_initial.data(), scalar_byte_size,
                                                    VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
                                                    "fluid_2d obstacle upload"));
+    const std::vector<Fluid2DInjectorGpu> injector_initial =
+        fluid_2d_injectors_to_gpu(create_fluid_2d_injectors(config), config);
+    injectors_.emplace(upload_project_device_buffer(
+        gpu, injector_initial.data(), static_cast<VkDeviceSize>(fluid_2d_injector_byte_size(config)),
+        VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+        "fluid_2d injector upload"));
     pressure_a_.emplace(upload_project_device_buffer(gpu, scalar_initial.data(), scalar_byte_size,
                                                      VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
                                                      "fluid_2d pressure A upload"));
@@ -191,7 +198,7 @@ void Fluid2DGpuResources::create_field_buffers(cubey::ProjectGpuServices& gpu,
 }
 
 void Fluid2DGpuResources::create_descriptor_resources(cubey::vulkan::Device& device) {
-    const std::array<cubey::vulkan::DescriptorSetBindingConfig, 3> compute_bindings{{
+    const std::array<cubey::vulkan::DescriptorSetBindingConfig, 4> compute_bindings{{
         {
             .binding = 0,
             .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
@@ -204,6 +211,11 @@ void Fluid2DGpuResources::create_descriptor_resources(cubey::vulkan::Device& dev
         },
         {
             .binding = 2,
+            .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+            .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT,
+        },
+        {
+            .binding = 3,
             .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
             .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT,
         },
@@ -377,6 +389,7 @@ void Fluid2DGpuResources::update_field_descriptors(cubey::vulkan::Device& device
         .storage_buffer(advect_descriptor_set_, 0, field_a().handle(), field_a().size())
         .storage_buffer(advect_descriptor_set_, 1, field_temp().handle(), field_temp().size())
         .storage_buffer(advect_descriptor_set_, 2, obstacle().handle(), obstacle().size())
+        .storage_buffer(advect_descriptor_set_, 3, injectors().handle(), injectors().size())
         .storage_buffer(advect_correct_descriptor_set_, 0, field_a().handle(), field_a().size())
         .storage_buffer(advect_correct_descriptor_set_, 1, field_temp().handle(),
                         field_temp().size())
@@ -385,12 +398,15 @@ void Fluid2DGpuResources::update_field_descriptors(cubey::vulkan::Device& device
         .storage_buffer(inject_descriptor_set_, 0, field_b().handle(), field_b().size())
         .storage_buffer(inject_descriptor_set_, 1, field_a().handle(), field_a().size())
         .storage_buffer(inject_descriptor_set_, 2, obstacle().handle(), obstacle().size())
+        .storage_buffer(inject_descriptor_set_, 3, injectors().handle(), injectors().size())
         .storage_buffer(curl_descriptor_set_, 0, field_a().handle(), field_a().size())
         .storage_buffer(curl_descriptor_set_, 1, curl().handle(), curl().size())
         .storage_buffer(curl_descriptor_set_, 2, obstacle().handle(), obstacle().size())
+        .storage_buffer(curl_descriptor_set_, 3, injectors().handle(), injectors().size())
         .storage_buffer(vorticity_descriptor_set_, 0, field_a().handle(), field_a().size())
         .storage_buffer(vorticity_descriptor_set_, 1, curl().handle(), curl().size())
-        .storage_buffer(vorticity_descriptor_set_, 2, obstacle().handle(), obstacle().size());
+        .storage_buffer(vorticity_descriptor_set_, 2, obstacle().handle(), obstacle().size())
+        .storage_buffer(vorticity_descriptor_set_, 3, injectors().handle(), injectors().size());
 
     descriptor_writes
         .storage_buffer(render_descriptors().set(), 0, field_a().handle(), field_a().size())
@@ -524,6 +540,13 @@ const cubey::vulkan::Buffer& Fluid2DGpuResources::obstacle() const {
         throw std::runtime_error("fluid obstacle field is not initialized");
     }
     return obstacle_.value();
+}
+
+const cubey::vulkan::Buffer& Fluid2DGpuResources::injectors() const {
+    if (!injectors_.has_value()) {
+        throw std::runtime_error("fluid injector buffer is not initialized");
+    }
+    return injectors_.value();
 }
 
 const cubey::vulkan::Buffer& Fluid2DGpuResources::pressure_a() const {

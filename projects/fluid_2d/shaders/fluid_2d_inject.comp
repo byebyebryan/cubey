@@ -1,13 +1,16 @@
 #version 450
-#extension GL_GOOGLE_include_directive : require
-
-#include "cubey/color_space.glsl"
 
 layout(local_size_x = 8, local_size_y = 8) in;
 
 struct Cell {
     vec4 dye;
     vec4 velocity;
+};
+
+struct Injector {
+    vec4 position_radius_strength;
+    vec4 velocity_carry_propulsion;
+    vec4 dye_active;
 };
 
 layout(set = 0, binding = 0, std430) readonly buffer SourceField {
@@ -21,6 +24,10 @@ layout(set = 0, binding = 1, std430) buffer DestinationField {
 layout(set = 0, binding = 2, std430) readonly buffer ObstacleField {
     float values[];
 } obstacle_field;
+
+layout(set = 0, binding = 3, std430) readonly buffer InjectorField {
+    Injector injectors[];
+} injector_field;
 
 layout(push_constant) uniform SimulationParams {
     vec4 grid_dt_time;
@@ -60,9 +67,6 @@ void main() {
 
     vec2 uv = (vec2(x, y) + vec2(0.5)) / vec2(width, height);
     float dt = params.grid_dt_time.z;
-    float time = params.grid_dt_time.w;
-    float procedural_radius = params.solver_options.y;
-    float procedural_strength = params.solver_options.z;
     uint procedural_count = uint(max(params.solver_options.w, 0.0));
 
     apply_source(cell, uv, params.injection_xy_radius_strength.xy,
@@ -71,28 +75,17 @@ void main() {
                  clamp(params.injection_dye_active.w, 0.0, 1.0), dt);
 
     for (uint i = 0; i < procedural_count; ++i) {
-        const float tau = 6.28318530718;
-        float source_index = float(i);
-        float source_count = max(float(procedural_count), 1.0);
-        float hue = source_index / source_count;
-        float base_angle = hue * tau;
-        bool inner_ring = procedural_count > 4U && (i % 2U) == 1U;
-        float direction = inner_ring ? -1.0 : 1.0;
-        float ring_radius = inner_ring ? 0.18 : 0.29;
-        float orbit_speed = inner_ring ? 0.22 : 0.16;
-        float angle = base_angle + (direction * time * orbit_speed);
-        float radius_breath = 0.018 * sin((time * 0.42) + (base_angle * 2.0));
-        vec2 radial = vec2(cos(angle), sin(angle));
-        vec2 tangent = direction * vec2(-radial.y, radial.x);
-        vec2 center = vec2(0.5) + radial * (ring_radius + radius_breath);
-        float force_scale = inner_ring ? 1.70 : 2.05;
-        vec2 force = (tangent * force_scale) +
-                     (radial * (0.28 * sin((time * 0.54) + base_angle)));
-        float radius_scale = inner_ring ? 0.92 : 0.84;
-        float strength_scale = inner_ring ? 0.90 : 0.84;
-        vec3 dye = cubey_hsv_to_linear(vec3(hue, 1.0, 1.0));
-        apply_source(cell, uv, center, procedural_radius * radius_scale,
-                     procedural_strength * strength_scale, dye, force, 1.0, dt);
+        Injector injector = injector_field.injectors[i];
+        vec2 injector_velocity = injector.velocity_carry_propulsion.xy;
+        float injector_speed = length(injector_velocity);
+        vec2 injector_direction =
+            injector_speed > 0.00001 ? injector_velocity / injector_speed : vec2(0.0);
+        vec2 carry_velocity = injector_velocity * injector.velocity_carry_propulsion.z;
+        vec2 propulsion_force = -injector_direction * injector.velocity_carry_propulsion.w;
+        apply_source(cell, uv, injector.position_radius_strength.xy,
+                     injector.position_radius_strength.z, injector.position_radius_strength.w,
+                     max(injector.dye_active.rgb, vec3(0.0)), carry_velocity + propulsion_force,
+                     clamp(injector.dye_active.w, 0.0, 1.0), dt);
     }
 
     cell.dye.a = 1.0;

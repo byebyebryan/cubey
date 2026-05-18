@@ -9,6 +9,9 @@
 #include <algorithm>
 #include <array>
 #include <cstdint>
+#include <span>
+#include <stdexcept>
+#include <vector>
 
 namespace cubey::projects::fluid_2d {
 namespace {
@@ -66,6 +69,26 @@ void record_transfer_write_barrier(VkCommandBuffer command_buffer, TransferWrite
     barrier.dstAccessMask = config.dst_access;
     vkCmdPipelineBarrier(command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, config.dst_stage, 0, 1,
                          &barrier, 0, nullptr, 0, nullptr);
+}
+
+void record_injector_buffer_update(VkCommandBuffer command_buffer,
+                                   const Fluid2DGpuResources& resources,
+                                   std::span<const Fluid2DInjectorGpu> injectors) {
+    if (injectors.empty()) {
+        return;
+    }
+    const VkDeviceSize byte_size =
+        static_cast<VkDeviceSize>(injectors.size() * sizeof(Fluid2DInjectorGpu));
+    if (byte_size > resources.injectors().size()) {
+        throw std::runtime_error("fluid injector update exceeds injector buffer size");
+    }
+    vkCmdUpdateBuffer(command_buffer, resources.injectors().handle(), 0, byte_size,
+                      injectors.data());
+    record_transfer_write_barrier(
+        command_buffer, {
+                            .dst_stage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                            .dst_access = VK_ACCESS_SHADER_READ_BIT,
+                        });
 }
 
 [[nodiscard]] float debug_view_push_value(FluidDebugView view) {
@@ -151,6 +174,7 @@ void record_field_reset(VkCommandBuffer command_buffer, const Fluid2DGpuResource
 void record_fluid_compute(VkCommandBuffer command_buffer, Fluid2DGpuResources& resources,
                           const Fluid2DConfig& config, const FrameInjection& injection, bool paused,
                           bool& reset_requested, const ProjectFrame& frame,
+                          std::span<const Fluid2DInjectorGpu> injectors,
                           bool include_render_visibility_barrier) {
     const cubey::vulkan::CommandRecorder recorder(command_buffer);
 
@@ -161,6 +185,8 @@ void record_fluid_compute(VkCommandBuffer command_buffer, Fluid2DGpuResources& r
     if (paused) {
         return;
     }
+
+    record_injector_buffer_update(command_buffer, resources, injectors);
 
     const SimulationPushConstants push_constants =
         simulation_push_constants(config, injection, frame);
@@ -333,10 +359,12 @@ void record_fullscreen_draw(VkCommandBuffer command_buffer, const Fluid2DGpuReso
 build_fluid_frame_graph(cubey::render::ColorTargetView color_target, Fluid2DGpuResources& resources,
                         const Fluid2DConfig& config, FluidDebugView debug_view,
                         const FrameInjection& injection, bool paused, bool& reset_requested,
-                        const ProjectFrame& frame) {
+                        const ProjectFrame& frame,
+                        std::span<const Fluid2DInjectorGpu> injectors) {
     Fluid2DGpuResources* resource_ptr = &resources;
     const Fluid2DConfig* config_ptr = &config;
     bool* reset_requested_ptr = &reset_requested;
+    std::vector<Fluid2DInjectorGpu> injector_snapshot(injectors.begin(), injectors.end());
     cubey::render::RenderGraphBuilder graph;
     const cubey::render::RenderGraphBufferHandle field_a =
         graph.import_buffer({.label = "fluid field A", .byte_size = resources.field_a().size()},
@@ -357,6 +385,9 @@ build_fluid_frame_graph(cubey::render::ColorTargetView color_target, Fluid2DGpuR
     const cubey::render::RenderGraphBufferHandle obstacle =
         graph.import_buffer({.label = "fluid obstacle", .byte_size = resources.obstacle().size()},
                             resources.obstacle().handle());
+    const cubey::render::RenderGraphBufferHandle injector_buffer = graph.import_buffer(
+        {.label = "fluid injectors", .byte_size = resources.injectors().size()},
+        resources.injectors().handle());
     const cubey::render::RenderGraphBufferHandle pressure_a = graph.import_buffer(
         {.label = "fluid pressure A", .byte_size = resources.pressure_a().size()},
         resources.pressure_a().handle());
@@ -375,12 +406,14 @@ build_fluid_frame_graph(cubey::render::ColorTargetView color_target, Fluid2DGpuR
         .read_write_storage_buffer(divergence)
         .read_write_storage_buffer(curl)
         .read_storage_buffer(obstacle)
+        .read_write_storage_buffer(injector_buffer)
         .read_write_storage_buffer(pressure_a)
         .read_write_storage_buffer(pressure_b)
         .execute([resource_ptr, config_ptr, injection, paused, reset_requested_ptr,
-                  frame](const cubey::render::RenderGraphExecutionContext& context) {
+                  frame,
+                  injector_snapshot](const cubey::render::RenderGraphExecutionContext& context) {
             record_fluid_compute(context.recorder().handle(), *resource_ptr, *config_ptr, injection,
-                                 paused, *reset_requested_ptr, frame, false);
+                                 paused, *reset_requested_ptr, frame, injector_snapshot, false);
         });
     graph.add_pass("fluid render", cubey::render::RenderGraphQueueDomain::Graphics)
         .read_storage_buffer(field_a)

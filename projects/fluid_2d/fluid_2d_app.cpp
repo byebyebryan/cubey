@@ -4,6 +4,7 @@
 #include "fluid_2d_config.h"
 #include "fluid_2d_gpu_resources.h"
 #include "fluid_2d_interaction.h"
+#include "fluid_2d_injectors.h"
 
 #include <cubey/engine/project_gpu_services.h>
 #include <cubey/engine/project_runtime.h>
@@ -19,6 +20,7 @@
 
 #include <cstdint>
 #include <optional>
+#include <vector>
 #include <utility>
 
 namespace cubey::projects::fluid_2d {
@@ -32,7 +34,9 @@ class Fluid2DApp {
   public:
     explicit Fluid2DApp(RunConfig config)
         : config_(std::move(config)), runtime_(1),
-          fluid_config_(fluid_config_from_run_config(config_)) {}
+          fluid_config_(fluid_config_from_run_config(config_)),
+          injector_states_(create_fluid_2d_injectors(fluid_config_)),
+          injector_gpu_(fluid_2d_injectors_to_gpu(injector_states_, fluid_config_)) {}
 
     Fluid2DApp(const Fluid2DApp&) = delete;
     Fluid2DApp& operator=(const Fluid2DApp&) = delete;
@@ -107,12 +111,16 @@ class Fluid2DApp {
         }
         if (input.key_pressed(cubey::input::Key::R)) {
             reset_requested_ = true;
+            reset_injectors();
         }
         if (input.key_pressed(cubey::input::Key::D)) {
             debug_view_ = next_debug_view(debug_view_);
         }
 
         pointer_drag_.update(input);
+        if (!paused_) {
+            update_injectors(project_frame);
+        }
         const VkExtent2D extent = context.window().window_extent();
         frame_injection_ = {};
         if (!pointer_drag_.active() || !pointer_drag_.has_cursor() || extent.width == 0 ||
@@ -124,6 +132,20 @@ class Fluid2DApp {
         const cubey::input::CursorPosition cursor = pointer_drag_.cursor();
         const cubey::input::PointerDelta delta = pointer_drag_.consume_accumulated_delta();
         frame_injection_ = frame_injection_from_pointer(cursor, delta, extent);
+    }
+
+    void reset_injectors() {
+        injector_states_ = create_fluid_2d_injectors(fluid_config_);
+        injector_gpu_ = fluid_2d_injectors_to_gpu(injector_states_, fluid_config_);
+    }
+
+    void update_injectors(const ProjectFrame& frame) {
+        const FrameTiming timing{
+            .delta_seconds = frame.delta_seconds,
+            .elapsed_seconds = frame.elapsed_seconds,
+            .frame_index = frame.frame_index,
+        };
+        injector_gpu_ = update_fluid_2d_injectors(injector_states_, fluid_config_, timing);
     }
 
     void destroy_swapchain_resources() {
@@ -171,7 +193,7 @@ class Fluid2DApp {
                       const ProjectFrame& frame) {
         const cubey::render::CompiledRenderGraph frame_graph = build_fluid_frame_graph(
             render_frame.color_target, resources_, fluid_config_, debug_view_, frame_injection_,
-            paused_, reset_requested_, frame);
+            paused_, reset_requested_, frame, injector_gpu_);
         graph_executor_.record(
             cubey::render::RenderGraphFrameRecordInfo{
                 .device = &context.device(),
@@ -184,13 +206,15 @@ class Fluid2DApp {
 
     void record_headless_simulation_frame(cubey::ProjectGpuServices& gpu,
                                           const ProjectFrame& frame) {
+        update_injectors(frame);
         static_cast<void>(gpu.submit_and_wait({
             .label = "fluid_2d headless simulation frame",
             .work =
                 [this, frame](cubey::vulkan::GpuOwnerContext& gpu_context) {
                     cubey::vulkan::ImmediateCommands commands(gpu_context);
                     record_fluid_compute(commands.command_buffer(), resources_, fluid_config_,
-                                         frame_injection_, paused_, reset_requested_, frame);
+                                         frame_injection_, paused_, reset_requested_, frame,
+                                         injector_gpu_);
                     commands.submit_and_wait();
                 },
         }));
@@ -250,6 +274,8 @@ class Fluid2DApp {
     Fluid2DConfig fluid_config_;
     cubey::input::PointerDrag pointer_drag_;
     FrameInjection frame_injection_;
+    std::vector<Fluid2DInjectorState> injector_states_;
+    std::vector<Fluid2DInjectorGpu> injector_gpu_;
     Fluid2DGpuResources resources_;
     cubey::render::RenderGraphFrameExecutor graph_executor_;
     FluidDebugView debug_view_ = FluidDebugView::Dye;

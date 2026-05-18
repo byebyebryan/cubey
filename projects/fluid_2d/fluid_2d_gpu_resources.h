@@ -1,6 +1,7 @@
 #pragma once
 
 #include "fluid_2d_config.h"
+#include "fluid_2d_injectors.h"
 
 #include <cubey/engine/project_gpu_services.h>
 #include <cubey/render/pipeline_resource.h>
@@ -31,6 +32,7 @@ class Fluid2DGpuResources {
     [[nodiscard]] const cubey::vulkan::Buffer& divergence() const;
     [[nodiscard]] const cubey::vulkan::Buffer& curl() const;
     [[nodiscard]] const cubey::vulkan::Buffer& obstacle() const;
+    [[nodiscard]] const cubey::vulkan::Buffer& injectors() const;
     [[nodiscard]] const cubey::vulkan::Buffer& pressure_a() const;
     [[nodiscard]] const cubey::vulkan::Buffer& pressure_b() const;
     [[nodiscard]] const cubey::vulkan::DescriptorSetBundle& render_descriptors() const;
@@ -101,6 +103,7 @@ class Fluid2DGpuResources {
     std::optional<cubey::vulkan::Buffer> divergence_;
     std::optional<cubey::vulkan::Buffer> curl_;
     std::optional<cubey::vulkan::Buffer> obstacle_;
+    std::optional<cubey::vulkan::Buffer> injectors_;
     std::optional<cubey::vulkan::Buffer> pressure_a_;
     std::optional<cubey::vulkan::Buffer> pressure_b_;
     std::optional<cubey::vulkan::DescriptorSetLayout> compute_descriptor_layout_;
