@@ -137,6 +137,20 @@ vec3 signed_scalar_color(float value, float scale) {
            vec3(0.10, 0.42, 0.92) * negative;
 }
 
+float dye_luminance(vec3 dye) {
+    return dot(dye, vec3(0.2126, 0.7152, 0.0722));
+}
+
+float dye_edge_strength(vec2 uv, uint width, uint height) {
+    vec2 texel = 1.0 / vec2(width, height);
+    float left = dye_luminance(sample_field(uv - vec2(texel.x, 0.0), width, height).dye.rgb);
+    float right = dye_luminance(sample_field(uv + vec2(texel.x, 0.0), width, height).dye.rgb);
+    float down = dye_luminance(sample_field(uv - vec2(0.0, texel.y), width, height).dye.rgb);
+    float up = dye_luminance(sample_field(uv + vec2(0.0, texel.y), width, height).dye.rgb);
+    float gradient = length(vec2(right - left, up - down));
+    return smoothstep(0.015, 0.18, gradient);
+}
+
 void main() {
     vec2 uv = frag_position * 0.5 + 0.5;
     uint width = uint(params.grid_debug.x);
@@ -187,7 +201,9 @@ void main() {
     }
 
     vec3 dye = clamp(cell.dye.rgb, vec3(0.0), vec3(1.0));
+    float dye_edge = dye_edge_strength(uv, width, height);
     vec3 velocity_tint =
         cubey_srgb_to_linear(vec3(0.04, 0.10, 0.16) + vec3(0.05, 0.12, 0.20) * speed);
-    out_color = vec4(dye + velocity_tint, 1.0);
+    vec3 edge_tint = cubey_srgb_to_linear(vec3(0.16, 0.22, 0.28)) * dye_edge * 0.35;
+    out_color = vec4(clamp(dye + velocity_tint + edge_tint, vec3(0.0), vec3(1.0)), 1.0);
 }

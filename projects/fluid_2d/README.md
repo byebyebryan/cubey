@@ -21,9 +21,12 @@ Implemented:
 - Windowed mode plus deterministic headless PNG and optional MP4 capture modes.
 - GPU storage-buffer fields for dye and velocity.
 - Procedural and pointer-driven dye/force injection.
-- Advection/fade compute pass.
-- Divergence, Jacobi pressure solve, and pressure-gradient projection.
-- Fullscreen rendering with dye, velocity, divergence, and pressure debug views.
+- MacCormack advection with local clamping and fade.
+- Static obstacle mask plus solid-cell boundary handling.
+- Curl, vorticity confinement, divergence, Jacobi pressure solve, and
+  pressure-gradient projection.
+- Fullscreen rendering with dye, velocity, divergence, pressure, speed,
+  vorticity, and obstacle debug views.
 - Integration with `cubey::host::WindowedHost`, `cubey::host::HeadlessPngHost`, and
   `cubey::ProjectRuntimeAdapter`.
 
@@ -39,7 +42,8 @@ Deferred:
 - Left-drag: inject dye and cursor-derived force.
 - Space: pause or resume simulation.
 - `R`: reset dye, velocity, divergence, and pressure buffers.
-- `D`: cycle dye, velocity, divergence, and pressure views.
+- `D`: cycle dye, velocity, divergence, pressure, speed, vorticity, and
+  obstacle views.
 - Escape: close the window.
 
 ## Runtime Shape
@@ -68,12 +72,12 @@ become the general answer to all water simulation.
 
 Near-term improvements worth trying:
 
-- Better advection: MacCormack or BFECC to reduce numerical diffusion.
-- Obstacles and boundaries: solid masks, moving obstacle velocity injection, and
-  no-slip/free-slip boundary modes.
-- Vorticity confinement: cheap visual energy for smoke-like dye motion.
 - Pressure solver upgrades: red-black Gauss-Seidel, conjugate gradient, or later
   multigrid instead of only fixed-count Jacobi.
+- Moving obstacle velocity injection and explicit no-slip/free-slip boundary
+  modes.
+- Richer injectors, turbulence/detail synthesis, and more deliberate smoke or
+  dye shading.
 
 Separate experiments worth considering once the current grid path is cleaner:
 
@@ -273,6 +277,18 @@ around instead of only fading across an open rectangle.
 - The obstacle mask is available in the debug-view cycle and is lightly visible
   in the default dye view.
 
+### Checkpoint 11
+
+Status: render diagnostics and documentation sync complete.
+
+Goal: keep the solver changes inspectable and make the default image read a bit
+sharper without adding another simulation pass.
+
+- The default dye view now applies a small render-only edge highlight from the
+  dye gradient.
+- Status, controls, current direction, and cross-project fluid docs now describe
+  the MacCormack, vorticity, obstacle, and expanded debug-view state.
+
 ## Commands
 
 ```bash
@@ -283,8 +299,10 @@ around instead of only fading across an open rectangle.
 
 ## Next Slices
 
-- Improve advection quality before adding more visual polish.
-- Add obstacle masks and boundary-condition debug views.
+- Upgrade the pressure solver beyond fixed-count Jacobi.
+- Add moving obstacles or obstacle velocity coupling.
+- Decide whether `fluid_2d` should lean smoke/dye, free-surface liquid, or split
+  those into separate project modes.
 - Consider a project-local HUD only if title-bar stats are not enough.
 - Revisit reusable helpers when buffer ping-pong descriptors, fixed-step
   simulation orchestration, or capture/readback polling have a clear shared

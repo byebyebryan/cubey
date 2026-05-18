@@ -39,8 +39,9 @@ Current examples:
 
 Current projects:
 
-- `fluid_2d`: compute-updated dye/velocity field with injection, advection,
-  pressure projection, debug views, and deterministic headless capture output.
+- `fluid_2d`: compute-updated dye/velocity field with MacCormack advection,
+  vorticity, static obstacles, pressure projection, debug views, and
+  deterministic headless capture output.
 - `fractal_2d`: fullscreen Mandelbrot-style shader with windowed navigation and
   headless output.
 - `gltf_viewer`: glTF/glb viewer for imported assets, PBR materials, texture
@@ -191,7 +192,8 @@ layers are installed.
 - `fractal_2d`: left-drag pans, mouse wheel zooms around the cursor, `R` resets,
   Escape closes.
 - `fluid_2d`: left-drag injects dye/force, Space pauses/resumes, `R` resets,
-  `D` cycles dye/velocity/divergence/pressure views, Escape closes.
+  `D` cycles dye/velocity/divergence/pressure/speed/vorticity/obstacle views,
+  Escape closes.
 - `gltf_viewer`: left-drag orbits the camera, `D` cycles PBR debug views,
   Escape closes.
 - `pbr_furnace`: left-drag orbits the camera, Escape closes.

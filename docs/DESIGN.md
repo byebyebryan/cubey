@@ -507,7 +507,10 @@ cubey/
         fluid_2d_gpu_resources.* -- project-owned GPU buffers/descriptors/pipelines
         shaders/
           fluid_2d_inject.comp
-          fluid_2d_advect.comp
+          fluid_2d_advect_predict.comp
+          fluid_2d_advect_correct.comp
+          fluid_2d_curl.comp
+          fluid_2d_vorticity.comp
           fluid_2d_divergence.comp
           fluid_2d_pressure.comp
           fluid_2d_projection.comp

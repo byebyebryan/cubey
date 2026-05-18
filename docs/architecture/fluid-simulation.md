@@ -225,8 +225,9 @@ project is worth the complexity.
 ## Suggested Order
 
 1. Continue `fluid_25d` with virtual-pipes shallow water over terrain.
-2. Improve `fluid_2d` with better advection, obstacles, vorticity, and pressure
-   solver experiments.
+2. Continue `fluid_2d` with pressure-solver experiments, moving obstacles,
+   stronger diagnostics, and a clearer smoke/dye versus free-surface-liquid
+   direction.
 3. Try a separate 2D level-set liquid slice once `fluid_2d` is cleaner.
 4. Try `liquid_particles_2d` with PBF/simple SPH to prove GPU neighbor search
    and particle-liquid rendering.

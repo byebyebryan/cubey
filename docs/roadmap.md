@@ -488,20 +488,20 @@ let repeated project needs shape the host/engine API.
 Current project:
 
 - `projects/fluid_2d` starts the fluid simulation rewrite as a smaller 2D
-  dye-and-velocity field. The current checkpoint has compute
-  injection/advection, pressure projection, pointer injection, pause/reset,
-  debug render modes, fullscreen rendering, a windowed smoke, and
-  deterministic headless PNG output. Simulation timing now flows through
-  `ProjectFrame` in both windowed and headless modes. The windowed frame now
-  declares a coarse render graph for simulation compute followed by fullscreen
-  rendering; solver-internal barriers remain project-owned, while the
-  compute-to-render boundary uses graph-owned buffer barriers and the
-  backbuffer acquire/release path.
+  dye-and-velocity field. The current checkpoint has compute injection,
+  MacCormack advection, static obstacles, vorticity confinement, pressure
+  projection, pointer injection, pause/reset, debug render modes, fullscreen
+  rendering, a windowed smoke, and deterministic headless PNG/MP4 output.
+  Simulation timing now flows through `ProjectFrame` in both windowed and
+  headless modes. The windowed frame now declares a coarse render graph for
+  simulation compute followed by fullscreen rendering; solver-internal barriers
+  remain project-owned, while the compute-to-render boundary uses graph-owned
+  buffer barriers and the backbuffer acquire/release path.
 
 Candidate follow-ups:
 
-- Solver tuning for `fluid_2d` now that velocity/divergence/pressure views are
-  inspectable.
+- Pressure solver upgrades, moving obstacles, or a clearer smoke/liquid split
+  for `fluid_2d`.
 - Marching cubes for compute-generated geometry and indirect draw pressure.
 - SDF sculpting if the sparse resource model becomes the more interesting
   framework driver.
