@@ -7,6 +7,7 @@ cubey_add_app_target(
     SOURCES
         fluid_2d_app.cpp
         fluid_2d_commands.cpp
+        fluid_2d_interaction.cpp
         main.cpp
         fluid_2d_gpu_resources.cpp
     SHADERS
@@ -25,6 +26,7 @@ cubey_add_app_target(
 
 if (BUILD_TESTING)
     add_executable(cubey_project_fluid_2d_tests
+        fluid_2d_interaction.cpp
         fluid_2d_config_tests.cpp
     )
     target_include_directories(cubey_project_fluid_2d_tests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")

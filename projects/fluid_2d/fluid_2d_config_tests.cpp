@@ -1,4 +1,5 @@
 #include "fluid_2d_config.h"
+#include "fluid_2d_interaction.h"
 
 #include <cubey/core/frame_clock.h>
 #include <cubey/core/run_config.h>
@@ -11,6 +12,13 @@ namespace {
 
 void require(bool condition, const char* message) {
     if (!condition) {
+        throw std::runtime_error(message);
+    }
+}
+
+void require_close(float actual, float expected, const char* message) {
+    constexpr float kTolerance = 0.00001F;
+    if (actual < expected - kTolerance || actual > expected + kTolerance) {
         throw std::runtime_error(message);
     }
 }
@@ -64,6 +72,24 @@ int main() {
                 "fixed headless timing should use fixed simulation delta");
         require(timing.elapsed_seconds == config.fixed_delta_seconds * 5.0,
                 "fixed headless timing should use deterministic elapsed time");
+
+        const cubey::projects::fluid_2d::FrameInjection injection =
+            cubey::projects::fluid_2d::frame_injection_from_pointer(
+                {.x = 25.0, .y = 10.0}, {.x = 5.0, .y = -2.0}, {.width = 100, .height = 50});
+        require(injection.active, "pointer injection should become active for a nonzero window");
+        require_close(injection.xy[0], 0.25F,
+                      "pointer injection x should normalize in window coordinates");
+        require_close(injection.xy[1], 0.2F,
+                      "pointer injection y should follow GLFW top-left window coordinates");
+        require_close(injection.force[0], 4.5F,
+                      "pointer force x should normalize from drag delta");
+        require_close(injection.force[1], -3.6F,
+                      "pointer force y should preserve GLFW drag direction");
+
+        const cubey::projects::fluid_2d::FrameInjection inactive =
+            cubey::projects::fluid_2d::frame_injection_from_pointer(
+                {.x = 25.0, .y = 10.0}, {.x = 5.0, .y = -2.0}, {.width = 0, .height = 50});
+        require(!inactive.active, "pointer injection should stay inactive for zero-size windows");
     } catch (const std::exception& error) {
         std::fprintf(stderr, "fluid_2d_config_tests: %s\n", error.what());
         return 1;

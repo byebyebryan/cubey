@@ -38,6 +38,7 @@ class GlfwWindow {
     GlfwWindow& operator=(const GlfwWindow&) = delete;
 
     [[nodiscard]] std::vector<const char*> required_instance_extensions() const;
+    [[nodiscard]] VkExtent2D window_extent() const;
     [[nodiscard]] VkExtent2D framebuffer_extent() const;
     void wait_for_presentable_framebuffer() const;
 

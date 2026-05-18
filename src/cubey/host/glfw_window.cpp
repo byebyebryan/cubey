@@ -91,6 +91,20 @@ std::vector<const char*> GlfwWindow::required_instance_extensions() const {
     return {required_extensions, required_extensions + extension_count};
 }
 
+VkExtent2D GlfwWindow::window_extent() const {
+    if (window_ == nullptr) {
+        throw std::runtime_error("GLFW window extent requires a window");
+    }
+
+    int width = 0;
+    int height = 0;
+    glfwGetWindowSize(window_, &width, &height);
+    return {
+        width > 0 ? static_cast<std::uint32_t>(width) : 0U,
+        height > 0 ? static_cast<std::uint32_t>(height) : 0U,
+    };
+}
+
 VkExtent2D GlfwWindow::framebuffer_extent() const {
     if (window_ == nullptr) {
         throw std::runtime_error("GLFW framebuffer extent requires a window");

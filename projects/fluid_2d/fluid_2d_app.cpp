@@ -3,6 +3,7 @@
 #include "fluid_2d_commands.h"
 #include "fluid_2d_config.h"
 #include "fluid_2d_gpu_resources.h"
+#include "fluid_2d_interaction.h"
 
 #include <cubey/engine/project_gpu_services.h>
 #include <cubey/engine/project_runtime.h>
@@ -16,7 +17,6 @@
 
 #include <vulkan/vulkan.h>
 
-#include <algorithm>
 #include <cstdint>
 #include <optional>
 #include <utility>
@@ -111,7 +111,7 @@ class Fluid2DApp {
         }
 
         pointer_drag_.update(input);
-        const VkExtent2D extent = context.swapchain().extent();
+        const VkExtent2D extent = context.window().window_extent();
         frame_injection_ = {};
         if (!pointer_drag_.active() || !pointer_drag_.has_cursor() || extent.width == 0 ||
             extent.height == 0) {
@@ -119,28 +119,9 @@ class Fluid2DApp {
             return;
         }
 
-        const float width = static_cast<float>(extent.width);
-        const float height = static_cast<float>(extent.height);
         const cubey::input::CursorPosition cursor = pointer_drag_.cursor();
         const cubey::input::PointerDelta delta = pointer_drag_.consume_accumulated_delta();
-        const float cursor_x = static_cast<float>(cursor.x);
-        const float cursor_y = static_cast<float>(cursor.y);
-        const float delta_x = static_cast<float>(delta.x);
-        const float delta_y = static_cast<float>(delta.y);
-
-        frame_injection_ = {
-            .active = true,
-            .xy =
-                {
-                    std::clamp(cursor_x / width, 0.0F, 1.0F),
-                    std::clamp(1.0F - (cursor_y / height), 0.0F, 1.0F),
-                },
-            .force =
-                {
-                    std::clamp((delta_x / width) * 90.0F, -8.0F, 8.0F),
-                    std::clamp((-delta_y / height) * 90.0F, -8.0F, 8.0F),
-                },
-        };
+        frame_injection_ = frame_injection_from_pointer(cursor, delta, extent);
     }
 
     void destroy_swapchain_resources() {
