@@ -14,7 +14,8 @@ cubey_add_app_target(
         shaders/fluid_2d.vert
         shaders/fluid_2d_render.frag
         shaders/fluid_2d_inject.comp
-        shaders/fluid_2d_advect.comp
+        shaders/fluid_2d_advect_predict.comp
+        shaders/fluid_2d_advect_correct.comp
         shaders/fluid_2d_divergence.comp
         shaders/fluid_2d_pressure.comp
         shaders/fluid_2d_projection.comp

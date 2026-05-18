@@ -130,6 +130,8 @@ void record_transfer_write_barrier(VkCommandBuffer command_buffer, TransferWrite
 void record_field_reset(VkCommandBuffer command_buffer, const Fluid2DGpuResources& resources) {
     vkCmdFillBuffer(command_buffer, resources.field_a().handle(), 0, resources.field_a().size(), 0);
     vkCmdFillBuffer(command_buffer, resources.field_b().handle(), 0, resources.field_b().size(), 0);
+    vkCmdFillBuffer(command_buffer, resources.field_temp().handle(), 0, resources.field_temp().size(),
+                    0);
     vkCmdFillBuffer(command_buffer, resources.divergence().handle(), 0,
                     resources.divergence().size(), 0);
     vkCmdFillBuffer(command_buffer, resources.pressure_a().handle(), 0,
@@ -170,6 +172,21 @@ void record_fluid_compute(VkCommandBuffer command_buffer, Fluid2DGpuResources& r
     recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_COMPUTE, advect_pipeline.layout(), 0,
                                  resources.advect_descriptor_set());
     recorder.push_constants(advect_pipeline.layout(), VK_SHADER_STAGE_COMPUTE_BIT, 0,
+                            push_constants);
+    recorder.dispatch(groups.x, groups.y, 1);
+
+    record_shader_write_barrier(
+        command_buffer, {
+                            .dst_stage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                            .dst_access = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
+                        });
+
+    const cubey::render::ComputePipelineResource& advect_correct_pipeline =
+        resources.advect_correct_pipeline_resource();
+    recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_COMPUTE, advect_correct_pipeline.pipeline());
+    recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_COMPUTE, advect_correct_pipeline.layout(),
+                                 0, resources.advect_correct_descriptor_set());
+    recorder.push_constants(advect_correct_pipeline.layout(), VK_SHADER_STAGE_COMPUTE_BIT, 0,
                             push_constants);
     recorder.dispatch(groups.x, groups.y, 1);
 
@@ -298,6 +315,10 @@ build_fluid_frame_graph(cubey::render::ColorTargetView color_target, Fluid2DGpuR
     const cubey::render::RenderGraphBufferHandle field_b =
         graph.import_buffer({.label = "fluid field B", .byte_size = resources.field_b().size()},
                             resources.field_b().handle());
+    const cubey::render::RenderGraphBufferHandle field_temp =
+        graph.import_buffer(
+            {.label = "fluid field temp", .byte_size = resources.field_temp().size()},
+            resources.field_temp().handle());
     const cubey::render::RenderGraphBufferHandle divergence = graph.import_buffer(
         {.label = "fluid divergence", .byte_size = resources.divergence().size()},
         resources.divergence().handle());
@@ -315,6 +336,7 @@ build_fluid_frame_graph(cubey::render::ColorTargetView color_target, Fluid2DGpuR
     graph.add_pass("fluid simulation", cubey::render::RenderGraphQueueDomain::Compute)
         .read_write_storage_buffer(field_a)
         .read_write_storage_buffer(field_b)
+        .read_write_storage_buffer(field_temp)
         .read_write_storage_buffer(divergence)
         .read_write_storage_buffer(pressure_a)
         .read_write_storage_buffer(pressure_b)

@@ -45,7 +45,8 @@ Deferred:
 ## Runtime Shape
 
 ```text
-field A -> advect/fade -> field B
+field A -> advect predict -> field temp
+field A + field temp -> MacCormack correction/clamp/fade -> field B
 field B -> inject fresh dye/force -> field A
 field A -> divergence + pressure reset
 pressure A/B -> Jacobi iterations
@@ -225,6 +226,21 @@ being immediately blurred by the advection pass.
   projection.
 - The render graph declaration now names both ping-pong field buffers so graph
   sync sees the full compute write set.
+
+### Checkpoint 8
+
+Status: MacCormack advection complete.
+
+Goal: reduce numerical diffusion so solver-driven motion stays crisp instead of
+quickly becoming blurry dye.
+
+- Advection now records a prediction pass into a temporary field, then a
+  correction pass that reverse-advects the predicted field and applies a local
+  neighborhood clamp.
+- Dye and velocity decay moved to the correction pass so both use the corrected
+  value.
+- The render graph now imports the temporary field explicitly as simulation
+  scratch storage.
 
 ## Commands
 
