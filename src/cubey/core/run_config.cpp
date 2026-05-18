@@ -80,6 +80,15 @@ RunConfig parse_run_config(int argc, char** argv) {
             config.injectors = parse_positive_u32(need_value("--injectors"), "--injectors");
         } else if (arg == "--injector-motion") {
             config.injector_motion = std::string(need_value("--injector-motion"));
+        } else if (arg == "--injector-force") {
+            config.injector_force = parse_float(need_value("--injector-force"),
+                                                "--injector-force");
+        } else if (arg == "--injector-propulsion") {
+            config.injector_propulsion = parse_float(need_value("--injector-propulsion"),
+                                                     "--injector-propulsion");
+        } else if (arg == "--injector-speed") {
+            config.injector_speed = parse_float(need_value("--injector-speed"),
+                                                "--injector-speed");
         } else if (arg == "--frames") {
             config.frames = parse_u32(need_value("--frames"), "--frames");
         } else if (arg == "--fps") {
@@ -135,6 +144,15 @@ RunConfig parse_run_config(int argc, char** argv) {
     }
     if (config.fps == 0) {
         throw std::runtime_error("fps must be positive");
+    }
+    if (config.injector_speed <= 0.0F) {
+        throw std::runtime_error("injector speed must be positive");
+    }
+    if (config.injector_force < 0.0F) {
+        throw std::runtime_error("injector force must be nonnegative");
+    }
+    if (config.injector_propulsion < 0.0F) {
+        throw std::runtime_error("injector propulsion must be nonnegative");
     }
     if (config.capture_mode == CaptureMode::Video) {
         if (!config.headless) {

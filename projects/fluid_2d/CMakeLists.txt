@@ -33,6 +33,10 @@ if (BUILD_TESTING)
         fluid_2d_config_tests.cpp
     )
     target_include_directories(cubey_project_fluid_2d_tests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
+    target_compile_definitions(cubey_project_fluid_2d_tests
+        PRIVATE
+            CUBEY_FLUID_2D_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}"
+    )
     target_link_libraries(
         cubey_project_fluid_2d_tests
         PRIVATE

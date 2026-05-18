@@ -47,7 +47,7 @@ Deferred:
 
 The windowed build also exposes a small debug UI for live demo tuning: pause,
 reset, debug view, injector count/motion, pressure iterations, vorticity,
-decay, and injection radius/strength.
+decay, and injection radius/force/propulsion/speed.
 
 ## Runtime Shape
 
@@ -56,7 +56,9 @@ The default solver grid is `1024x1024`. Override it with `--grid-width` and
 injector count is three; override it with `--injectors` from `1` to `16` to
 spread more sources around the hue wheel. The default injector motion is
 `two-rings`; override it with
-`--injector-motion one-ring|two-rings|random-orbit|lissajous`.
+`--injector-motion one-ring|two-rings|same-direction-orbits|alternating-direction-orbits|lissajous`.
+Use `--injector-speed`, `--injector-force`, and `--injector-propulsion` to
+scale procedural source motion and force for captures.
 Static obstacles are disabled by default; enable them with `--obstacles`.
 
 ```text
@@ -314,13 +316,15 @@ fluid demo without adding another solver stage.
   injector chases a mode-specific target with damping, boundary repulsion, and
   light separation from neighboring sources.
 - Injector motion is configurable. `one-ring` is a stable baseline,
-  `two-rings` counter-rotates inner sources, `random-orbit` assigns each source
-  a deterministic mostly circular orbit around center with varied radius,
-  direction, speed, and a controlled elliptical band, `lissajous` traces
-  looping figure-eight paths.
+  `two-rings` counter-rotates inner sources, same-direction and alternating
+  orbit modes assign each source a deterministic mostly circular orbit around
+  center, spread evenly across an inner-to-outer radius band with small seeded
+  jitter plus a controlled elliptical variation, and `lissajous` traces looping
+  figure-eight paths.
 - Built-in sources inject dye plus velocity. New dye carries the source's
   current velocity, while an opposite-direction propulsion term pushes a wake
-  behind the moving injector.
+  behind the moving injector. Injection force scales both dye and velocity
+  injection; propulsion controls the opposite-direction wake term.
 - Dye and velocity decay are tuned for a controlled linger, while procedural
   sources stay narrow enough to keep the color streams separated.
 
@@ -336,13 +340,29 @@ demo UI owns live tuning controls.
 - The remaining source controls now tune procedural injector radius and strength
   directly instead of carrying the old fallback-source naming.
 
+### Checkpoint 14
+
+Status: injector motion tuning expanded.
+
+Goal: make the procedural sources easier to art-direct without changing the
+solver.
+
+- Two-ring motion now keeps a clearer distance between the inner and outer
+  source rings and splits sources evenly between them.
+- Injector speed is configurable from the demo UI and `--injector-speed`, while
+  injection force and propulsion are configurable from the demo UI,
+  `--injector-force`, and `--injector-propulsion`.
+- The older `random-orbit` mode is now explicit as two presets:
+  `same-direction-orbits` and `alternating-direction-orbits`; the old
+  `random-orbit` flag remains accepted as an alias for the alternating mode.
+
 ## Commands
 
 ```bash
 ./build/dev/projects/fluid_2d/fluid_2d --require-validation --frames 300 --width 1280 --height 720
 ./build/dev/projects/fluid_2d/fluid_2d --frames 300 --print-frame-stats --grid-width 512 --grid-height 512 --width 1280 --height 720
-./build/dev/projects/fluid_2d/fluid_2d --frames 300 --injectors 8 --width 1280 --height 720
-./build/dev/projects/fluid_2d/fluid_2d --frames 300 --injectors 8 --injector-motion random-orbit \
+./build/dev/projects/fluid_2d/fluid_2d --frames 300 --injectors 8 --injector-speed 1.5 --injector-force 7.5 --injector-propulsion 1.4 --width 1280 --height 720
+./build/dev/projects/fluid_2d/fluid_2d --frames 300 --injectors 8 --injector-motion alternating-direction-orbits \
     --width 1280 --height 720
 ./build/dev/projects/fluid_2d/fluid_2d --frames 300 --obstacles --width 1280 --height 720
 ./build/dev/projects/fluid_2d/fluid_2d --headless --require-validation --frames 120 --width 640 --height 360 --output /tmp/cubey-fluid-2d.png

@@ -42,7 +42,7 @@ void apply_source(inout Cell cell, vec2 uv, vec2 center, float radius, float str
     float splat = exp(-dot(to_injection, to_injection) / (safe_radius * safe_radius));
     float source = splat * strength * source_active * dt;
     cell.dye.rgb += dye * source;
-    cell.velocity.xy += force * splat * source_active * dt;
+    cell.velocity.xy += force * source;
 }
 
 void main() {

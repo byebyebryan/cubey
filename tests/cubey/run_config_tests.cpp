@@ -258,6 +258,39 @@ void test_run_config_parses_injector_motion() {
             "run config should parse procedural injector motion");
 }
 
+void test_run_config_parses_injector_speed() {
+    std::array<char, 6> program{'c', 'u', 'b', 'e', 'y', '\0'};
+    std::array<char, 17> speed_flag{'-', '-', 'i', 'n', 'j', 'e', 'c', 't', 'o',
+                                    'r', '-', 's', 'p', 'e', 'e', 'd', '\0'};
+    std::array<char, 5> speed_value{'1', '.', '7', '5', '\0'};
+    std::array<char*, 3> argv{program.data(), speed_flag.data(), speed_value.data()};
+
+    const cubey::RunConfig config =
+        cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
+    require(config.injector_speed == 1.75F,
+            "run config should parse procedural injector speed");
+}
+
+void test_run_config_parses_injector_force_controls() {
+    std::array<char, 6> program{'c', 'u', 'b', 'e', 'y', '\0'};
+    std::array<char, 17> force_flag{'-', '-', 'i', 'n', 'j', 'e', 'c', 't', 'o',
+                                    'r', '-', 'f', 'o', 'r', 'c', 'e', '\0'};
+    std::array<char, 4> force_value{'7', '.', '5', '\0'};
+    std::array<char, 22> propulsion_flag{'-', '-', 'i', 'n', 'j', 'e', 'c', 't',
+                                         'o',  'r',  '-', 'p', 'r', 'o', 'p',
+                                         'u',  'l',  's', 'i', 'o', 'n', '\0'};
+    std::array<char, 4> propulsion_value{'1', '.', '6', '\0'};
+    std::array<char*, 5> argv{program.data(), force_flag.data(), force_value.data(),
+                              propulsion_flag.data(), propulsion_value.data()};
+
+    const cubey::RunConfig config =
+        cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
+    require(config.injector_force == 7.5F,
+            "run config should parse procedural injector force");
+    require(config.injector_propulsion == 1.6F,
+            "run config should parse procedural injector propulsion");
+}
+
 void test_run_config_parses_obstacle_flag() {
     std::array<char, 6> program{'c', 'u', 'b', 'e', 'y', '\0'};
     std::array<char, 12> obstacles_flag{'-', '-', 'o', 'b', 's', 't',

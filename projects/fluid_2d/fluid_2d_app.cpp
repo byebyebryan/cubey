@@ -56,8 +56,10 @@ using cubey::host::FrameStatsSample;
         return "One ring";
     case Fluid2DInjectorMotion::TwoRings:
         return "Two rings";
-    case Fluid2DInjectorMotion::RandomOrbit:
-        return "Random orbit";
+    case Fluid2DInjectorMotion::SameDirectionOrbits:
+        return "Same-direction orbits";
+    case Fluid2DInjectorMotion::AlternatingDirectionOrbits:
+        return "Alternating orbits";
     case Fluid2DInjectorMotion::Lissajous:
         return "Lissajous";
     }
@@ -70,10 +72,11 @@ constexpr std::array<FluidDebugView, 7> kDebugViews{
     FluidDebugView::Obstacle,
 };
 
-constexpr std::array<Fluid2DInjectorMotion, 4> kInjectorMotions{
+constexpr std::array<Fluid2DInjectorMotion, 5> kInjectorMotions{
     Fluid2DInjectorMotion::OneRing,
     Fluid2DInjectorMotion::TwoRings,
-    Fluid2DInjectorMotion::RandomOrbit,
+    Fluid2DInjectorMotion::SameDirectionOrbits,
+    Fluid2DInjectorMotion::AlternatingDirectionOrbits,
     Fluid2DInjectorMotion::Lissajous,
 };
 
@@ -235,8 +238,11 @@ class Fluid2DApp {
                            1.0F, "%.4f");
         ImGui::SliderFloat("Injector radius", &fluid_config_.injector_injection_radius, 0.005F,
                            0.080F, "%.3f");
-        ImGui::SliderFloat("Injector strength", &fluid_config_.injector_injection_strength, 0.0F,
+        ImGui::SliderFloat("Injection force", &fluid_config_.injector_injection_strength, 0.0F,
                            20.0F, "%.1f");
+        ImGui::SliderFloat("Propulsion", &fluid_config_.injector_propulsion_strength, 0.0F, 3.0F,
+                           "%.2f");
+        ImGui::SliderFloat("Injector speed", &fluid_config_.injector_speed, 0.10F, 3.0F, "%.2f");
 
         ImGui::Text("Grid: %u x %u", fluid_config_.grid_width, fluid_config_.grid_height);
         ImGui::End();
