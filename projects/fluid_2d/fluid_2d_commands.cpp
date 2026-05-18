@@ -363,6 +363,9 @@ build_fluid_frame_graph(cubey::render::ColorTargetView color_target, Fluid2DGpuR
     const cubey::render::RenderGraphBufferHandle curl =
         graph.import_buffer({.label = "fluid curl", .byte_size = resources.curl().size()},
                             resources.curl().handle());
+    const cubey::render::RenderGraphBufferHandle obstacle =
+        graph.import_buffer({.label = "fluid obstacle", .byte_size = resources.obstacle().size()},
+                            resources.obstacle().handle());
     const cubey::render::RenderGraphBufferHandle pressure_a = graph.import_buffer(
         {.label = "fluid pressure A", .byte_size = resources.pressure_a().size()},
         resources.pressure_a().handle());
@@ -380,6 +383,7 @@ build_fluid_frame_graph(cubey::render::ColorTargetView color_target, Fluid2DGpuR
         .read_write_storage_buffer(field_temp)
         .read_write_storage_buffer(divergence)
         .read_write_storage_buffer(curl)
+        .read_storage_buffer(obstacle)
         .read_write_storage_buffer(pressure_a)
         .read_write_storage_buffer(pressure_b)
         .execute([resource_ptr, config_ptr, injection, paused, reset_requested_ptr,
@@ -391,6 +395,7 @@ build_fluid_frame_graph(cubey::render::ColorTargetView color_target, Fluid2DGpuR
         .read_storage_buffer(field_a)
         .read_storage_buffer(divergence)
         .read_storage_buffer(curl)
+        .read_storage_buffer(obstacle)
         .read_storage_buffer(pressure_a)
         .read_storage_buffer(pressure_b)
         .write_color(backbuffer)

@@ -15,6 +15,10 @@ layout(set = 0, binding = 1, std430) readonly buffer PressureField {
     float values[];
 } pressure;
 
+layout(set = 0, binding = 2, std430) readonly buffer ObstacleField {
+    float values[];
+} obstacle_field;
+
 layout(push_constant) uniform SimulationParams {
     vec4 grid_dt_time;
     vec4 injection_xy_radius_strength;
@@ -28,6 +32,17 @@ uint cell_index(ivec2 coord, uint width, uint height) {
     return (uint(clamped.y) * width) + uint(clamped.x);
 }
 
+bool is_solid(ivec2 coord, uint width, uint height) {
+    return obstacle_field.values[cell_index(coord, width, height)] > 0.5;
+}
+
+float neighbor_pressure_or_center(ivec2 coord, uint width, uint height, float center) {
+    if (is_solid(coord, width, height)) {
+        return center;
+    }
+    return pressure.values[cell_index(coord, width, height)];
+}
+
 void main() {
     uint width = uint(params.grid_dt_time.x);
     uint height = uint(params.grid_dt_time.y);
@@ -39,17 +54,20 @@ void main() {
 
     uint index = (y * width) + x;
     Cell cell = field.cells[index];
-    if (x == 0 || y == 0 || x + 1 >= width || y + 1 >= height) {
+    ivec2 coord = ivec2(int(x), int(y));
+    if (x == 0 || y == 0 || x + 1 >= width || y + 1 >= height ||
+        is_solid(coord, width, height)) {
+        cell.dye = vec4(0.0);
         cell.velocity.xy = vec2(0.0);
         field.cells[index] = cell;
         return;
     }
 
-    ivec2 coord = ivec2(int(x), int(y));
-    float left = pressure.values[cell_index(coord + ivec2(-1, 0), width, height)];
-    float right = pressure.values[cell_index(coord + ivec2(1, 0), width, height)];
-    float down = pressure.values[cell_index(coord + ivec2(0, -1), width, height)];
-    float up = pressure.values[cell_index(coord + ivec2(0, 1), width, height)];
+    float center = pressure.values[index];
+    float left = neighbor_pressure_or_center(coord + ivec2(-1, 0), width, height, center);
+    float right = neighbor_pressure_or_center(coord + ivec2(1, 0), width, height, center);
+    float down = neighbor_pressure_or_center(coord + ivec2(0, -1), width, height, center);
+    float up = neighbor_pressure_or_center(coord + ivec2(0, 1), width, height, center);
 
     cell.velocity.xy -= 0.5 * vec2(right - left, up - down);
     field.cells[index] = cell;

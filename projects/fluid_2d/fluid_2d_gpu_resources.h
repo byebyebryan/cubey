@@ -30,6 +30,7 @@ class Fluid2DGpuResources {
     [[nodiscard]] const cubey::vulkan::Buffer& field_temp() const;
     [[nodiscard]] const cubey::vulkan::Buffer& divergence() const;
     [[nodiscard]] const cubey::vulkan::Buffer& curl() const;
+    [[nodiscard]] const cubey::vulkan::Buffer& obstacle() const;
     [[nodiscard]] const cubey::vulkan::Buffer& pressure_a() const;
     [[nodiscard]] const cubey::vulkan::Buffer& pressure_b() const;
     [[nodiscard]] const cubey::vulkan::DescriptorSetBundle& render_descriptors() const;
@@ -99,6 +100,7 @@ class Fluid2DGpuResources {
     std::optional<cubey::vulkan::Buffer> field_temp_;
     std::optional<cubey::vulkan::Buffer> divergence_;
     std::optional<cubey::vulkan::Buffer> curl_;
+    std::optional<cubey::vulkan::Buffer> obstacle_;
     std::optional<cubey::vulkan::Buffer> pressure_a_;
     std::optional<cubey::vulkan::Buffer> pressure_b_;
     std::optional<cubey::vulkan::DescriptorSetLayout> compute_descriptor_layout_;

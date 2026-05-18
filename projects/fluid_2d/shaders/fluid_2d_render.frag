@@ -32,6 +32,10 @@ layout(set = 0, binding = 4, std430) readonly buffer CurlField {
     float values[];
 } curl_field;
 
+layout(set = 0, binding = 5, std430) readonly buffer ObstacleField {
+    float values[];
+} obstacle_field;
+
 layout(location = 0) in vec2 frag_position;
 layout(location = 0) out vec4 out_color;
 
@@ -109,6 +113,23 @@ float sample_curl(vec2 uv, uint width, uint height) {
     return mix(mix(a, b, fraction.x), mix(c, d, fraction.x), fraction.y);
 }
 
+float sample_obstacle(vec2 uv, uint width, uint height) {
+    vec2 position = uv * vec2(width, height) - vec2(0.5);
+    ivec2 base = ivec2(floor(position));
+    vec2 fraction = fract(position);
+
+    uint index_a = cell_index(base, width, height);
+    uint index_b = cell_index(base + ivec2(1, 0), width, height);
+    uint index_c = cell_index(base + ivec2(0, 1), width, height);
+    uint index_d = cell_index(base + ivec2(1, 1), width, height);
+
+    float a = obstacle_field.values[index_a];
+    float b = obstacle_field.values[index_b];
+    float c = obstacle_field.values[index_c];
+    float d = obstacle_field.values[index_d];
+    return mix(mix(a, b, fraction.x), mix(c, d, fraction.x), fraction.y);
+}
+
 vec3 signed_scalar_color(float value, float scale) {
     float positive = clamp(value * scale, 0.0, 1.0);
     float negative = clamp(-value * scale, 0.0, 1.0);
@@ -122,6 +143,7 @@ void main() {
     uint height = uint(params.grid_debug.y);
     int debug_mode = int(params.grid_debug.z + 0.5);
     Cell cell = sample_field(uv, width, height);
+    float obstacle = sample_obstacle(uv, width, height);
     float speed = clamp(length(cell.velocity.xy) * 0.45, 0.0, 1.0);
     if (debug_mode == 1) {
         vec2 direction = speed > 0.001 ? normalize(cell.velocity.xy) : vec2(0.0);
@@ -150,6 +172,17 @@ void main() {
         out_color = vec4(cubey_srgb_to_linear(signed_scalar_color(sample_curl(uv, width, height),
                                                                   5.0)),
                          1.0);
+        return;
+    }
+    if (debug_mode == 6) {
+        out_color = vec4(cubey_srgb_to_linear(mix(vec3(0.05, 0.06, 0.07),
+                                                  vec3(0.92, 0.94, 0.98),
+                                                  clamp(obstacle, 0.0, 1.0))),
+                         1.0);
+        return;
+    }
+    if (obstacle > 0.45) {
+        out_color = vec4(cubey_srgb_to_linear(vec3(0.025, 0.030, 0.034)), 1.0);
         return;
     }
 

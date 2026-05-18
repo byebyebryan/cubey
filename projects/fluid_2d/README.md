@@ -48,6 +48,7 @@ Deferred:
 field A -> advect predict -> field temp
 field A + field temp -> MacCormack correction/clamp/fade -> field B
 field B -> inject fresh dye/force -> field A
+static obstacle mask constrains injection/advection/pressure/projection
 field A -> curl -> vorticity confinement -> field A
 field A -> divergence + pressure reset
 pressure A/B -> Jacobi iterations
@@ -256,6 +257,21 @@ motion from the velocity field itself.
   cycle.
 - Push constants now reserve a solver-options vector so simulation controls can
   grow without stealing fields from source/injection state.
+
+### Checkpoint 10
+
+Status: static obstacles and boundary handling complete.
+
+Goal: make the CFD nature more legible by giving the flow geometry to move
+around instead of only fading across an open rectangle.
+
+- The project now uploads a static obstacle mask with solid borders and a few
+  interior shapes.
+- Injection, advection, curl, vorticity, divergence, pressure, and projection
+  all read the mask so solid cells stay empty and pressure solve neighbors use a
+  wall-aware fallback.
+- The obstacle mask is available in the debug-view cycle and is lightly visible
+  in the default dye view.
 
 ## Commands
 

@@ -23,6 +23,10 @@ layout(set = 0, binding = 3, std430) buffer PressureBField {
     float values[];
 } pressure_b;
 
+layout(set = 0, binding = 4, std430) readonly buffer ObstacleField {
+    float values[];
+} obstacle_field;
+
 layout(push_constant) uniform SimulationParams {
     vec4 grid_dt_time;
     vec4 injection_xy_radius_strength;
@@ -34,6 +38,24 @@ layout(push_constant) uniform SimulationParams {
 uint cell_index(ivec2 coord, uint width, uint height) {
     ivec2 clamped = clamp(coord, ivec2(0), ivec2(int(width) - 1, int(height) - 1));
     return (uint(clamped.y) * width) + uint(clamped.x);
+}
+
+bool is_solid(ivec2 coord, uint width, uint height) {
+    return obstacle_field.values[cell_index(coord, width, height)] > 0.5;
+}
+
+float velocity_x_or_zero(ivec2 coord, uint width, uint height) {
+    if (is_solid(coord, width, height)) {
+        return 0.0;
+    }
+    return field.cells[cell_index(coord, width, height)].velocity.x;
+}
+
+float velocity_y_or_zero(ivec2 coord, uint width, uint height) {
+    if (is_solid(coord, width, height)) {
+        return 0.0;
+    }
+    return field.cells[cell_index(coord, width, height)].velocity.y;
 }
 
 void main() {
@@ -49,15 +71,16 @@ void main() {
     pressure_a.values[index] = 0.0;
     pressure_b.values[index] = 0.0;
 
-    if (x == 0 || y == 0 || x + 1 >= width || y + 1 >= height) {
+    ivec2 coord = ivec2(int(x), int(y));
+    if (x == 0 || y == 0 || x + 1 >= width || y + 1 >= height ||
+        is_solid(coord, width, height)) {
         divergence.values[index] = 0.0;
         return;
     }
 
-    ivec2 coord = ivec2(int(x), int(y));
-    float left = field.cells[cell_index(coord + ivec2(-1, 0), width, height)].velocity.x;
-    float right = field.cells[cell_index(coord + ivec2(1, 0), width, height)].velocity.x;
-    float down = field.cells[cell_index(coord + ivec2(0, -1), width, height)].velocity.y;
-    float up = field.cells[cell_index(coord + ivec2(0, 1), width, height)].velocity.y;
+    float left = velocity_x_or_zero(coord + ivec2(-1, 0), width, height);
+    float right = velocity_x_or_zero(coord + ivec2(1, 0), width, height);
+    float down = velocity_y_or_zero(coord + ivec2(0, -1), width, height);
+    float up = velocity_y_or_zero(coord + ivec2(0, 1), width, height);
     divergence.values[index] = 0.5 * ((right - left) + (up - down));
 }

@@ -15,6 +15,10 @@ layout(set = 0, binding = 1, std430) readonly buffer CurlField {
     float values[];
 } curl;
 
+layout(set = 0, binding = 2, std430) readonly buffer ObstacleField {
+    float values[];
+} obstacle_field;
+
 layout(push_constant) uniform SimulationParams {
     vec4 grid_dt_time;
     vec4 injection_xy_radius_strength;
@@ -39,7 +43,9 @@ void main() {
 
     uint index = (y * width) + x;
     Cell cell = field.cells[index];
-    if (x == 0 || y == 0 || x + 1 >= width || y + 1 >= height) {
+    if (x == 0 || y == 0 || x + 1 >= width || y + 1 >= height ||
+        obstacle_field.values[index] > 0.5) {
+        cell.dye = vec4(0.0);
         cell.velocity.xy = vec2(0.0);
         field.cells[index] = cell;
         return;
