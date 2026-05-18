@@ -23,16 +23,24 @@ enum class FluidDebugView : std::uint32_t {
     Velocity = 1,
     Divergence = 2,
     Pressure = 3,
+    Speed = 4,
+    Vorticity = 5,
+    Obstacle = 6,
 };
 
 struct Fluid2DConfig {
-    std::uint32_t grid_width = 256;
-    std::uint32_t grid_height = 144;
+    std::uint32_t grid_width = 384;
+    std::uint32_t grid_height = 216;
     std::uint32_t compute_group_size = 8;
-    std::uint32_t pressure_iterations = 24;
+    std::uint32_t pressure_iterations = 32;
     float fixed_delta_seconds = 1.0F / 60.0F;
     float dye_decay_per_second = 0.985F;
     float velocity_decay_per_second = 0.992F;
+    float pointer_injection_radius = 0.035F;
+    float fallback_injection_radius = 0.045F;
+    float pointer_injection_strength = 14.0F;
+    float fallback_injection_strength = 9.0F;
+    float vorticity_strength = 18.0F;
 };
 
 [[nodiscard]] inline FluidDebugView next_debug_view(FluidDebugView view) {
@@ -44,6 +52,12 @@ struct Fluid2DConfig {
     case FluidDebugView::Divergence:
         return FluidDebugView::Pressure;
     case FluidDebugView::Pressure:
+        return FluidDebugView::Speed;
+    case FluidDebugView::Speed:
+        return FluidDebugView::Vorticity;
+    case FluidDebugView::Vorticity:
+        return FluidDebugView::Obstacle;
+    case FluidDebugView::Obstacle:
         return FluidDebugView::Dye;
     }
     return FluidDebugView::Dye;

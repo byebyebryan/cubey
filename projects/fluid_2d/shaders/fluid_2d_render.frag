@@ -121,6 +121,10 @@ void main() {
                          1.0);
         return;
     }
+    if (debug_mode == 4) {
+        out_color = vec4(cubey_srgb_to_linear(vec3(speed)), 1.0);
+        return;
+    }
 
     vec3 dye = clamp(cell.dye.rgb, vec3(0.0), vec3(1.0));
     vec3 velocity_tint =

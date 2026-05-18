@@ -16,9 +16,6 @@ namespace {
 
 using cubey::vulkan::vk_struct;
 
-constexpr float kFallbackInjectionRadius = 0.08F;
-constexpr float kPointerInjectionRadius = 0.065F;
-
 struct RenderPushConstants {
     std::array<float, 4> grid_debug{};
 };
@@ -86,8 +83,9 @@ void record_transfer_write_barrier(VkCommandBuffer command_buffer, TransferWrite
     const float injection_y =
         pointer_active ? injection.xy[1] : 0.5F + (std::sin(time * 0.91F) * 0.18F);
     const float injection_radius =
-        pointer_active ? kPointerInjectionRadius : kFallbackInjectionRadius;
-    const float injection_strength = pointer_active ? 11.0F : 8.0F;
+        pointer_active ? config.pointer_injection_radius : config.fallback_injection_radius;
+    const float injection_strength =
+        pointer_active ? config.pointer_injection_strength : config.fallback_injection_strength;
     const std::array<float, 3> injection_dye =
         pointer_active
             ? std::array<float, 3>{0.98F, 0.32F, 0.13F}

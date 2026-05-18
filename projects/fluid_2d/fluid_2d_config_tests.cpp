@@ -28,16 +28,26 @@ void require_close(float actual, float expected, const char* message) {
 int main() {
     try {
         const cubey::projects::fluid_2d::Fluid2DConfig config;
-        constexpr std::size_t kExpectedCellCount = std::size_t{256} * std::size_t{144};
-        require(config.grid_width == 256, "fluid grid should default to 256 columns");
-        require(config.grid_height == 144, "fluid grid should default to 144 rows");
+        constexpr std::size_t kExpectedCellCount = std::size_t{384} * std::size_t{216};
+        require(config.grid_width == 384, "fluid grid should default to 384 columns");
+        require(config.grid_height == 216, "fluid grid should default to 216 rows");
         require(cubey::projects::fluid_2d::field_cell_count(config) == kExpectedCellCount,
                 "field cell count should multiply dimensions");
         require(cubey::projects::fluid_2d::field_byte_size(config) ==
                     sizeof(cubey::projects::fluid_2d::FluidCellGpu) * kExpectedCellCount,
                 "field byte size should cover one cell per grid location");
-        require(config.pressure_iterations == 24,
-                "fluid pressure solve should default to 24 Jacobi iterations");
+        require(config.pressure_iterations == 32,
+                "fluid pressure solve should default to 32 Jacobi iterations");
+        require(config.pointer_injection_radius == 0.035F,
+                "fluid pointer injection radius should be tuned for sharper sources");
+        require(config.fallback_injection_radius == 0.045F,
+                "fluid fallback injection radius should be tuned for sharper sources");
+        require(config.pointer_injection_strength == 14.0F,
+                "fluid pointer injection strength should default to a stronger impulse");
+        require(config.fallback_injection_strength == 9.0F,
+                "fluid fallback injection strength should default to a stronger impulse");
+        require(config.vorticity_strength == 18.0F,
+                "fluid vorticity strength should have a visible default");
         require(cubey::projects::fluid_2d::scalar_field_byte_size(config) ==
                     sizeof(float) * kExpectedCellCount,
                 "scalar field byte size should cover one float per grid location");
@@ -55,8 +65,20 @@ int main() {
                 "debug view should cycle from divergence to pressure");
         require(cubey::projects::fluid_2d::next_debug_view(
                     cubey::projects::fluid_2d::FluidDebugView::Pressure) ==
+                    cubey::projects::fluid_2d::FluidDebugView::Speed,
+                "debug view should cycle from pressure to speed");
+        require(cubey::projects::fluid_2d::next_debug_view(
+                    cubey::projects::fluid_2d::FluidDebugView::Speed) ==
+                    cubey::projects::fluid_2d::FluidDebugView::Vorticity,
+                "debug view should cycle from speed to vorticity");
+        require(cubey::projects::fluid_2d::next_debug_view(
+                    cubey::projects::fluid_2d::FluidDebugView::Vorticity) ==
+                    cubey::projects::fluid_2d::FluidDebugView::Obstacle,
+                "debug view should cycle from vorticity to obstacle");
+        require(cubey::projects::fluid_2d::next_debug_view(
+                    cubey::projects::fluid_2d::FluidDebugView::Obstacle) ==
                     cubey::projects::fluid_2d::FluidDebugView::Dye,
-                "debug view should cycle from pressure to dye");
+                "debug view should cycle from obstacle to dye");
 
         cubey::RunConfig run_config;
         require(cubey::projects::fluid_2d::headless_frame_count(run_config) == 120,
