@@ -73,28 +73,48 @@ void record_transfer_write_barrier(VkCommandBuffer command_buffer, TransferWrite
     return static_cast<float>(static_cast<std::uint32_t>(view));
 }
 
+[[nodiscard]] float wrap_unit(float value) {
+    float wrapped = std::fmod(value, 1.0F);
+    if (wrapped < 0.0F) {
+        wrapped += 1.0F;
+    }
+    return wrapped;
+}
+
+[[nodiscard]] std::array<float, 3> hue_to_srgb(float hue) {
+    const float h = wrap_unit(hue) * 6.0F;
+    const float x = 1.0F - std::fabs(std::fmod(h, 2.0F) - 1.0F);
+    if (h < 1.0F) {
+        return {1.0F, x, 0.0F};
+    }
+    if (h < 2.0F) {
+        return {x, 1.0F, 0.0F};
+    }
+    if (h < 3.0F) {
+        return {0.0F, 1.0F, x};
+    }
+    if (h < 4.0F) {
+        return {0.0F, x, 1.0F};
+    }
+    if (h < 5.0F) {
+        return {x, 0.0F, 1.0F};
+    }
+    return {1.0F, 0.0F, x};
+}
+
 [[nodiscard]] SimulationPushConstants simulation_push_constants(const Fluid2DConfig& config,
                                                                 const FrameInjection& injection,
                                                                 const ProjectFrame& frame) {
     const float time = static_cast<float>(frame.elapsed_seconds);
     const float dt = std::min(static_cast<float>(frame.delta_seconds), config.fixed_delta_seconds);
     const bool pointer_active = injection.active;
-    const float injection_x =
-        pointer_active ? injection.xy[0] : 0.5F + (std::cos(time * 0.73F) * 0.23F);
-    const float injection_y =
-        pointer_active ? injection.xy[1] : 0.5F + (std::sin(time * 0.91F) * 0.18F);
-    const float injection_radius =
-        pointer_active ? config.pointer_injection_radius : config.fallback_injection_radius;
-    const float injection_strength =
-        pointer_active ? config.pointer_injection_strength : config.fallback_injection_strength;
-    const std::array<float, 3> injection_dye =
-        pointer_active
-            ? std::array<float, 3>{0.98F, 0.32F, 0.13F}
-            : std::array<float, 3>{0.12F + (0.18F * std::sin(time * 0.47F)), 0.46F, 0.92F};
+    const float injection_x = pointer_active ? injection.xy[0] : 0.0F;
+    const float injection_y = pointer_active ? injection.xy[1] : 0.0F;
+    const std::array<float, 3> injection_dye = hue_to_srgb((time * 0.18F) + 0.08F);
     const std::array<float, 3> linear_injection_dye =
         cubey::render::srgb_to_linear_rgb(injection_dye);
-    const float force_x = pointer_active ? injection.force[0] : -std::sin(time * 0.91F) * 1.8F;
-    const float force_y = pointer_active ? injection.force[1] : std::cos(time * 0.73F) * 1.8F;
+    const float force_x = pointer_active ? injection.force[0] * 1.25F : 0.0F;
+    const float force_y = pointer_active ? injection.force[1] * 1.25F : 0.0F;
 
     return {
         .grid_dt_time =
@@ -108,15 +128,15 @@ void record_transfer_write_barrier(VkCommandBuffer command_buffer, TransferWrite
             {
                 injection_x,
                 injection_y,
-                injection_radius,
-                injection_strength,
+                config.pointer_injection_radius,
+                config.pointer_injection_strength,
             },
         .injection_dye_active =
             {
                 linear_injection_dye[0],
                 linear_injection_dye[1],
                 linear_injection_dye[2],
-                1.0F,
+                pointer_active ? 1.0F : 0.0F,
             },
         .force_decay =
             {
@@ -128,8 +148,8 @@ void record_transfer_write_barrier(VkCommandBuffer command_buffer, TransferWrite
         .solver_options =
             {
                 config.vorticity_strength,
-                0.0F,
-                0.0F,
+                config.fallback_injection_radius,
+                config.fallback_injection_strength,
                 0.0F,
             },
     };

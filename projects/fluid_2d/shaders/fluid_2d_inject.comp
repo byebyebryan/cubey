@@ -27,6 +27,20 @@ layout(push_constant) uniform SimulationParams {
     vec4 solver_options;
 } params;
 
+vec3 srgb_to_linear(vec3 color) {
+    return pow(max(color, vec3(0.0)), vec3(2.2));
+}
+
+void apply_source(inout Cell cell, vec2 uv, vec2 center, float radius, float strength, vec3 dye,
+                  vec2 force, float source_active, float dt) {
+    vec2 to_injection = uv - center;
+    float safe_radius = max(radius, 0.0001);
+    float splat = exp(-dot(to_injection, to_injection) / (safe_radius * safe_radius));
+    float source = splat * strength * source_active * dt;
+    cell.dye.rgb += dye * source;
+    cell.velocity.xy += force * splat * source_active * dt;
+}
+
 void main() {
     uint width = uint(params.grid_dt_time.x);
     uint height = uint(params.grid_dt_time.y);
@@ -46,18 +60,36 @@ void main() {
     }
 
     vec2 uv = (vec2(x, y) + vec2(0.5)) / vec2(width, height);
-    vec2 to_injection = uv - params.injection_xy_radius_strength.xy;
-    float radius = max(params.injection_xy_radius_strength.z, 0.0001);
-    float splat = exp(-dot(to_injection, to_injection) / (radius * radius));
     float dt = params.grid_dt_time.z;
+    float time = params.grid_dt_time.w;
+    float procedural_radius = params.solver_options.y;
+    float procedural_strength = params.solver_options.z;
 
-    vec3 dye = max(params.injection_dye_active.rgb, vec3(0.0));
-    float inject_active = clamp(params.injection_dye_active.w, 0.0, 1.0);
-    vec2 force = params.force_decay.xy;
-    float strength = params.injection_xy_radius_strength.w;
-    cell.dye.rgb += dye * splat * strength * inject_active * dt;
+    apply_source(cell, uv, params.injection_xy_radius_strength.xy,
+                 params.injection_xy_radius_strength.z, params.injection_xy_radius_strength.w,
+                 max(params.injection_dye_active.rgb, vec3(0.0)), params.force_decay.xy,
+                 clamp(params.injection_dye_active.w, 0.0, 1.0), dt);
+
+    vec2 center_a = vec2(0.50 + (cos(time * 0.43) * 0.28),
+                         0.50 + (sin(time * 0.61) * 0.22));
+    vec2 center_b = vec2(0.50 + (cos((time * -0.31) + 2.10) * 0.30),
+                         0.50 + (sin((time * 0.53) + 1.35) * 0.24));
+    vec2 center_c = vec2(0.50 + (sin((time * 0.37) + 4.10) * 0.24),
+                         0.50 + (cos((time * -0.47) + 0.70) * 0.19));
+    vec2 force_a = vec2(-sin(time * 0.43) * 2.05, cos(time * 0.61) * 1.65);
+    vec2 force_b =
+        vec2(sin((time * -0.31) + 2.10) * 1.85, cos((time * 0.53) + 1.35) * 1.70);
+    vec2 force_c =
+        vec2(cos((time * 0.37) + 4.10) * 1.65, -sin((time * -0.47) + 0.70) * 1.50);
+
+    apply_source(cell, uv, center_a, procedural_radius, procedural_strength,
+                 srgb_to_linear(vec3(1.00, 0.00, 0.00)), force_a, 1.0, dt);
+    apply_source(cell, uv, center_b, procedural_radius * 0.92, procedural_strength * 0.85,
+                 srgb_to_linear(vec3(0.00, 1.00, 0.00)), force_b, 1.0, dt);
+    apply_source(cell, uv, center_c, procedural_radius * 1.08, procedural_strength * 0.75,
+                 srgb_to_linear(vec3(0.00, 0.00, 1.00)), force_c, 1.0, dt);
+
     cell.dye.a = 1.0;
-    cell.velocity.xy += force * splat * inject_active * dt;
 
     destination_field.cells[index] = cell;
 }

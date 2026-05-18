@@ -34,12 +34,12 @@ struct Fluid2DConfig {
     std::uint32_t compute_group_size = 8;
     std::uint32_t pressure_iterations = 32;
     float fixed_delta_seconds = 1.0F / 60.0F;
-    float dye_decay_per_second = 0.985F;
-    float velocity_decay_per_second = 0.992F;
+    float dye_decay_per_second = 0.993F;
+    float velocity_decay_per_second = 0.996F;
     float pointer_injection_radius = 0.035F;
-    float fallback_injection_radius = 0.045F;
-    float pointer_injection_strength = 14.0F;
-    float fallback_injection_strength = 9.0F;
+    float fallback_injection_radius = 0.032F;
+    float pointer_injection_strength = 18.0F;
+    float fallback_injection_strength = 6.0F;
     float vorticity_strength = 18.0F;
     bool obstacles_enabled = false;
 };

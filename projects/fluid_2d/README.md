@@ -20,7 +20,7 @@ Implemented:
 
 - Windowed mode plus deterministic headless PNG and optional MP4 capture modes.
 - Configurable GPU storage-buffer grid for dye and velocity.
-- Procedural and pointer-driven dye/force injection.
+- Three moving procedural dye/force injectors plus pointer-driven injection.
 - MacCormack advection with local clamping and fade.
 - Optional static obstacle mask plus solid-cell boundary handling.
 - Curl, vorticity confinement, divergence, Jacobi pressure solve, and
@@ -50,7 +50,9 @@ Deferred:
 
 The default solver grid is `1024x1024`. Override it with `--grid-width` and
 `--grid-height` when comparing quality or performance. Static obstacles are
-disabled by default; enable them with `--obstacles`.
+disabled by default; enable them with `--obstacles`. The procedural injectors
+continue running while the pointer injects, so manual interaction layers into
+the same flow instead of replacing the background sources.
 
 ```text
 field A -> advect predict -> field temp
@@ -292,6 +294,22 @@ sharper without adding another simulation pass.
   dye gradient.
 - Status, controls, current direction, and cross-project fluid docs now describe
   the MacCormack, vorticity, obstacle, and expanded debug-view state.
+
+### Checkpoint 12
+
+Status: multi-source visual injection complete.
+
+Goal: make the default windowed and headless output read more like a deliberate
+fluid demo without adding another solver stage.
+
+- The old single fallback source was replaced with three deterministic moving
+  red, green, and blue procedural sources with stronger force paths.
+- Pointer injection is now additive: dragging injects cursor dye and force
+  without pausing the procedural sources.
+- Pointer dye now cycles through the hue wheel so separate drags naturally lay
+  down different colors.
+- Dye and velocity decay are tuned to linger longer, while procedural sources
+  stay narrow enough to keep the RGB streams separated.
 
 ## Commands
 

@@ -38,14 +38,18 @@ int main() {
                 "field byte size should cover one cell per grid location");
         require(config.pressure_iterations == 32,
                 "fluid pressure solve should default to 32 Jacobi iterations");
+        require(config.dye_decay_per_second == 0.993F,
+                "fluid dye decay should default to a longer linger");
+        require(config.velocity_decay_per_second == 0.996F,
+                "fluid velocity decay should default to a longer linger");
         require(config.pointer_injection_radius == 0.035F,
                 "fluid pointer injection radius should be tuned for sharper sources");
-        require(config.fallback_injection_radius == 0.045F,
-                "fluid fallback injection radius should be tuned for sharper sources");
-        require(config.pointer_injection_strength == 14.0F,
-                "fluid pointer injection strength should default to a stronger impulse");
-        require(config.fallback_injection_strength == 9.0F,
-                "fluid fallback injection strength should default to a stronger impulse");
+        require(config.fallback_injection_radius == 0.032F,
+                "fluid fallback injection radius should be tuned for sharper moving sources");
+        require(config.pointer_injection_strength == 18.0F,
+                "fluid pointer injection strength should default to a dramatic impulse");
+        require(config.fallback_injection_strength == 6.0F,
+                "fluid fallback injection strength should default to a visible multi-source impulse");
         require(config.vorticity_strength == 18.0F,
                 "fluid vorticity strength should have a visible default");
         require(!config.obstacles_enabled, "fluid obstacles should default disabled");
