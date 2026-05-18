@@ -39,7 +39,7 @@ upload_project_device_buffer(cubey::ProjectGpuServices& gpu, const void* data,
     return {
         .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
         .offset = 0,
-        .size = sizeof(float) * 16U,
+        .size = sizeof(float) * 20U,
     };
 }
 
@@ -96,6 +96,8 @@ void Fluid2DGpuResources::destroy_all_resources() {
     projection_pipeline_resource_.reset();
     pressure_pipeline_resource_.reset();
     divergence_pipeline_resource_.reset();
+    vorticity_pipeline_resource_.reset();
+    curl_pipeline_resource_.reset();
     advect_correct_pipeline_resource_.reset();
     advect_pipeline_resource_.reset();
     inject_pipeline_resource_.reset();
@@ -112,6 +114,7 @@ void Fluid2DGpuResources::destroy_all_resources() {
     compute_descriptor_layout_.reset();
     pressure_b_.reset();
     pressure_a_.reset();
+    curl_.reset();
     divergence_.reset();
     field_temp_.reset();
     field_b_.reset();
@@ -137,6 +140,9 @@ void Fluid2DGpuResources::create_field_buffers(cubey::ProjectGpuServices& gpu,
     divergence_.emplace(upload_project_device_buffer(gpu, scalar_initial.data(), scalar_byte_size,
                                                      VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
                                                      "fluid_2d divergence upload"));
+    curl_.emplace(upload_project_device_buffer(gpu, scalar_initial.data(), scalar_byte_size,
+                                               VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                                               "fluid_2d curl upload"));
     pressure_a_.emplace(upload_project_device_buffer(gpu, scalar_initial.data(), scalar_byte_size,
                                                      VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
                                                      "fluid_2d pressure A upload"));
@@ -158,11 +164,13 @@ void Fluid2DGpuResources::create_descriptor_resources(cubey::vulkan::Device& dev
             .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT,
         },
     }};
-    const cubey::vulkan::DescriptorSetInfo compute_info(compute_bindings, 2);
+    const cubey::vulkan::DescriptorSetInfo compute_info(compute_bindings, 4);
     compute_descriptor_layout_.emplace(device, compute_info.layout_info());
     compute_descriptor_pool_.emplace(device, compute_info.pool_info());
     inject_descriptor_set_ = compute_descriptor_pool().allocate(compute_descriptor_layout());
     advect_descriptor_set_ = compute_descriptor_pool().allocate(compute_descriptor_layout());
+    curl_descriptor_set_ = compute_descriptor_pool().allocate(compute_descriptor_layout());
+    vorticity_descriptor_set_ = compute_descriptor_pool().allocate(compute_descriptor_layout());
 
     const std::array<cubey::vulkan::DescriptorSetBindingConfig, 3> advect_correct_bindings{{
         {
@@ -260,7 +268,7 @@ void Fluid2DGpuResources::create_descriptor_resources(cubey::vulkan::Device& dev
     projection_pressure_b_descriptor_set_ =
         projection_descriptor_pool().allocate(projection_descriptor_layout());
 
-    const std::array<cubey::vulkan::DescriptorSetBindingConfig, 4> render_bindings{{
+    const std::array<cubey::vulkan::DescriptorSetBindingConfig, 5> render_bindings{{
         {
             .binding = 0,
             .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
@@ -278,6 +286,11 @@ void Fluid2DGpuResources::create_descriptor_resources(cubey::vulkan::Device& dev
         },
         {
             .binding = 3,
+            .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+            .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
+        },
+        {
+            .binding = 4,
             .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
             .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
         },
@@ -299,13 +312,18 @@ void Fluid2DGpuResources::update_field_descriptors(cubey::vulkan::Device& device
                         field_temp().size())
         .storage_buffer(advect_correct_descriptor_set_, 2, field_b().handle(), field_b().size())
         .storage_buffer(inject_descriptor_set_, 0, field_b().handle(), field_b().size())
-        .storage_buffer(inject_descriptor_set_, 1, field_a().handle(), field_a().size());
+        .storage_buffer(inject_descriptor_set_, 1, field_a().handle(), field_a().size())
+        .storage_buffer(curl_descriptor_set_, 0, field_a().handle(), field_a().size())
+        .storage_buffer(curl_descriptor_set_, 1, curl().handle(), curl().size())
+        .storage_buffer(vorticity_descriptor_set_, 0, field_a().handle(), field_a().size())
+        .storage_buffer(vorticity_descriptor_set_, 1, curl().handle(), curl().size());
 
     descriptor_writes
         .storage_buffer(render_descriptors().set(), 0, field_a().handle(), field_a().size())
         .storage_buffer(render_descriptors().set(), 1, divergence().handle(), divergence().size())
         .storage_buffer(render_descriptors().set(), 2, pressure_a().handle(), pressure_a().size())
-        .storage_buffer(render_descriptors().set(), 3, pressure_b().handle(), pressure_b().size());
+        .storage_buffer(render_descriptors().set(), 3, pressure_b().handle(), pressure_b().size())
+        .storage_buffer(render_descriptors().set(), 4, curl().handle(), curl().size());
 
     descriptor_writes
         .storage_buffer(divergence_descriptor_set_, 0, field_a().handle(), field_a().size())
@@ -348,6 +366,10 @@ void Fluid2DGpuResources::create_compute_pipelines(cubey::vulkan::Device& device
     create_compute_pipeline_resource(device, "fluid_2d_advect_correct.comp.spv",
                                      advect_correct_descriptor_layout(),
                                      advect_correct_pipeline_resource_);
+    create_compute_pipeline_resource(device, "fluid_2d_curl.comp.spv", compute_descriptor_layout(),
+                                     curl_pipeline_resource_);
+    create_compute_pipeline_resource(device, "fluid_2d_vorticity.comp.spv",
+                                     compute_descriptor_layout(), vorticity_pipeline_resource_);
     create_compute_pipeline_resource(device, "fluid_2d_divergence.comp.spv",
                                      divergence_descriptor_layout(), divergence_pipeline_resource_);
     create_compute_pipeline_resource(device, "fluid_2d_pressure.comp.spv",
@@ -406,6 +428,13 @@ const cubey::vulkan::Buffer& Fluid2DGpuResources::divergence() const {
         throw std::runtime_error("fluid divergence field is not initialized");
     }
     return divergence_.value();
+}
+
+const cubey::vulkan::Buffer& Fluid2DGpuResources::curl() const {
+    if (!curl_.has_value()) {
+        throw std::runtime_error("fluid curl field is not initialized");
+    }
+    return curl_.value();
 }
 
 const cubey::vulkan::Buffer& Fluid2DGpuResources::pressure_a() const {
@@ -522,6 +551,22 @@ Fluid2DGpuResources::advect_correct_pipeline_resource() const {
         throw std::runtime_error("advect correct pipeline resource is not initialized");
     }
     return advect_correct_pipeline_resource_.value();
+}
+
+const cubey::render::ComputePipelineResource&
+Fluid2DGpuResources::curl_pipeline_resource() const {
+    if (!curl_pipeline_resource_.has_value()) {
+        throw std::runtime_error("curl pipeline resource is not initialized");
+    }
+    return curl_pipeline_resource_.value();
+}
+
+const cubey::render::ComputePipelineResource&
+Fluid2DGpuResources::vorticity_pipeline_resource() const {
+    if (!vorticity_pipeline_resource_.has_value()) {
+        throw std::runtime_error("vorticity pipeline resource is not initialized");
+    }
+    return vorticity_pipeline_resource_.value();
 }
 
 const cubey::render::ComputePipelineResource&

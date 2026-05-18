@@ -25,10 +25,11 @@ struct SimulationPushConstants {
     std::array<float, 4> injection_xy_radius_strength{};
     std::array<float, 4> injection_dye_active{};
     std::array<float, 4> force_decay{};
+    std::array<float, 4> solver_options{};
 };
 
 static_assert(sizeof(RenderPushConstants) == sizeof(float) * 4U);
-static_assert(sizeof(SimulationPushConstants) == sizeof(float) * 16U);
+static_assert(sizeof(SimulationPushConstants) == sizeof(float) * 20U);
 
 struct DispatchGroups {
     std::uint32_t x = 0;
@@ -124,6 +125,13 @@ void record_transfer_write_barrier(VkCommandBuffer command_buffer, TransferWrite
                 config.dye_decay_per_second,
                 config.velocity_decay_per_second,
             },
+        .solver_options =
+            {
+                config.vorticity_strength,
+                0.0F,
+                0.0F,
+                0.0F,
+            },
     };
 }
 
@@ -134,6 +142,7 @@ void record_field_reset(VkCommandBuffer command_buffer, const Fluid2DGpuResource
                     0);
     vkCmdFillBuffer(command_buffer, resources.divergence().handle(), 0,
                     resources.divergence().size(), 0);
+    vkCmdFillBuffer(command_buffer, resources.curl().handle(), 0, resources.curl().size(), 0);
     vkCmdFillBuffer(command_buffer, resources.pressure_a().handle(), 0,
                     resources.pressure_a().size(), 0);
     vkCmdFillBuffer(command_buffer, resources.pressure_b().handle(), 0,
@@ -202,6 +211,35 @@ void record_fluid_compute(VkCommandBuffer command_buffer, Fluid2DGpuResources& r
     recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_COMPUTE, inject_pipeline.layout(), 0,
                                  resources.inject_descriptor_set());
     recorder.push_constants(inject_pipeline.layout(), VK_SHADER_STAGE_COMPUTE_BIT, 0,
+                            push_constants);
+    recorder.dispatch(groups.x, groups.y, 1);
+
+    record_shader_write_barrier(
+        command_buffer, {
+                            .dst_stage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                            .dst_access = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
+                        });
+
+    const cubey::render::ComputePipelineResource& curl_pipeline = resources.curl_pipeline_resource();
+    recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_COMPUTE, curl_pipeline.pipeline());
+    recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_COMPUTE, curl_pipeline.layout(), 0,
+                                 resources.curl_descriptor_set());
+    recorder.push_constants(curl_pipeline.layout(), VK_SHADER_STAGE_COMPUTE_BIT, 0,
+                            push_constants);
+    recorder.dispatch(groups.x, groups.y, 1);
+
+    record_shader_write_barrier(
+        command_buffer, {
+                            .dst_stage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                            .dst_access = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
+                        });
+
+    const cubey::render::ComputePipelineResource& vorticity_pipeline =
+        resources.vorticity_pipeline_resource();
+    recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_COMPUTE, vorticity_pipeline.pipeline());
+    recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_COMPUTE, vorticity_pipeline.layout(), 0,
+                                 resources.vorticity_descriptor_set());
+    recorder.push_constants(vorticity_pipeline.layout(), VK_SHADER_STAGE_COMPUTE_BIT, 0,
                             push_constants);
     recorder.dispatch(groups.x, groups.y, 1);
 
@@ -322,6 +360,9 @@ build_fluid_frame_graph(cubey::render::ColorTargetView color_target, Fluid2DGpuR
     const cubey::render::RenderGraphBufferHandle divergence = graph.import_buffer(
         {.label = "fluid divergence", .byte_size = resources.divergence().size()},
         resources.divergence().handle());
+    const cubey::render::RenderGraphBufferHandle curl =
+        graph.import_buffer({.label = "fluid curl", .byte_size = resources.curl().size()},
+                            resources.curl().handle());
     const cubey::render::RenderGraphBufferHandle pressure_a = graph.import_buffer(
         {.label = "fluid pressure A", .byte_size = resources.pressure_a().size()},
         resources.pressure_a().handle());
@@ -338,6 +379,7 @@ build_fluid_frame_graph(cubey::render::ColorTargetView color_target, Fluid2DGpuR
         .read_write_storage_buffer(field_b)
         .read_write_storage_buffer(field_temp)
         .read_write_storage_buffer(divergence)
+        .read_write_storage_buffer(curl)
         .read_write_storage_buffer(pressure_a)
         .read_write_storage_buffer(pressure_b)
         .execute([resource_ptr, config_ptr, injection, paused, reset_requested_ptr,
@@ -348,6 +390,7 @@ build_fluid_frame_graph(cubey::render::ColorTargetView color_target, Fluid2DGpuR
     graph.add_pass("fluid render", cubey::render::RenderGraphQueueDomain::Graphics)
         .read_storage_buffer(field_a)
         .read_storage_buffer(divergence)
+        .read_storage_buffer(curl)
         .read_storage_buffer(pressure_a)
         .read_storage_buffer(pressure_b)
         .write_color(backbuffer)

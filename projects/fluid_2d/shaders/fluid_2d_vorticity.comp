@@ -11,9 +11,9 @@ layout(set = 0, binding = 0, std430) buffer Field {
     Cell cells[];
 } field;
 
-layout(set = 0, binding = 1, std430) readonly buffer PressureField {
+layout(set = 0, binding = 1, std430) readonly buffer CurlField {
     float values[];
-} pressure;
+} curl;
 
 layout(push_constant) uniform SimulationParams {
     vec4 grid_dt_time;
@@ -46,11 +46,19 @@ void main() {
     }
 
     ivec2 coord = ivec2(int(x), int(y));
-    float left = pressure.values[cell_index(coord + ivec2(-1, 0), width, height)];
-    float right = pressure.values[cell_index(coord + ivec2(1, 0), width, height)];
-    float down = pressure.values[cell_index(coord + ivec2(0, -1), width, height)];
-    float up = pressure.values[cell_index(coord + ivec2(0, 1), width, height)];
-
-    cell.velocity.xy -= 0.5 * vec2(right - left, up - down);
+    float center = curl.values[index];
+    float left = abs(curl.values[cell_index(coord + ivec2(-1, 0), width, height)]);
+    float right = abs(curl.values[cell_index(coord + ivec2(1, 0), width, height)]);
+    float down = abs(curl.values[cell_index(coord + ivec2(0, -1), width, height)]);
+    float up = abs(curl.values[cell_index(coord + ivec2(0, 1), width, height)]);
+    vec2 gradient = vec2(right - left, up - down) * 0.5;
+    float gradient_length = length(gradient);
+    if (gradient_length > 0.00001) {
+        vec2 direction = gradient / gradient_length;
+        vec2 force = vec2(direction.y, -direction.x) * center * params.solver_options.x;
+        cell.velocity.xy += force * params.grid_dt_time.z;
+    }
+    cell.velocity.xy = clamp(cell.velocity.xy, vec2(-12.0), vec2(12.0));
+    cell.velocity.zw = vec2(0.0);
     field.cells[index] = cell;
 }

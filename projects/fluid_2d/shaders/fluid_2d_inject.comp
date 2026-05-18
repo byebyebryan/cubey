@@ -20,6 +20,7 @@ layout(push_constant) uniform SimulationParams {
     vec4 injection_xy_radius_strength;
     vec4 injection_dye_active;
     vec4 force_decay;
+    vec4 solver_options;
 } params;
 
 void main() {

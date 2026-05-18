@@ -48,6 +48,7 @@ Deferred:
 field A -> advect predict -> field temp
 field A + field temp -> MacCormack correction/clamp/fade -> field B
 field B -> inject fresh dye/force -> field A
+field A -> curl -> vorticity confinement -> field A
 field A -> divergence + pressure reset
 pressure A/B -> Jacobi iterations
 field A + pressure -> subtract gradient in place
@@ -241,6 +242,20 @@ quickly becoming blurry dye.
   value.
 - The render graph now imports the temporary field explicitly as simulation
   scratch storage.
+
+### Checkpoint 9
+
+Status: vorticity confinement complete.
+
+Goal: make the fluid read less like blurred noise by reinforcing rotational
+motion from the velocity field itself.
+
+- The solver now computes a scalar curl field after injection and applies a
+  confinement force before the pressure projection.
+- Curl is available as the vorticity debug view in the existing debug-view
+  cycle.
+- Push constants now reserve a solver-options vector so simulation controls can
+  grow without stealing fields from source/injection state.
 
 ## Commands
 

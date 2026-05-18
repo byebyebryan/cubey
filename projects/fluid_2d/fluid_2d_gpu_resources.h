@@ -29,6 +29,7 @@ class Fluid2DGpuResources {
     [[nodiscard]] const cubey::vulkan::Buffer& field_b() const;
     [[nodiscard]] const cubey::vulkan::Buffer& field_temp() const;
     [[nodiscard]] const cubey::vulkan::Buffer& divergence() const;
+    [[nodiscard]] const cubey::vulkan::Buffer& curl() const;
     [[nodiscard]] const cubey::vulkan::Buffer& pressure_a() const;
     [[nodiscard]] const cubey::vulkan::Buffer& pressure_b() const;
     [[nodiscard]] const cubey::vulkan::DescriptorSetBundle& render_descriptors() const;
@@ -36,6 +37,9 @@ class Fluid2DGpuResources {
     [[nodiscard]] const cubey::render::ComputePipelineResource& advect_pipeline_resource() const;
     [[nodiscard]] const cubey::render::ComputePipelineResource&
     advect_correct_pipeline_resource() const;
+    [[nodiscard]] const cubey::render::ComputePipelineResource& curl_pipeline_resource() const;
+    [[nodiscard]] const cubey::render::ComputePipelineResource&
+    vorticity_pipeline_resource() const;
     [[nodiscard]] const cubey::render::ComputePipelineResource&
     divergence_pipeline_resource() const;
     [[nodiscard]] const cubey::render::ComputePipelineResource& pressure_pipeline_resource() const;
@@ -50,6 +54,12 @@ class Fluid2DGpuResources {
     }
     [[nodiscard]] VkDescriptorSet advect_correct_descriptor_set() const noexcept {
         return advect_correct_descriptor_set_;
+    }
+    [[nodiscard]] VkDescriptorSet curl_descriptor_set() const noexcept {
+        return curl_descriptor_set_;
+    }
+    [[nodiscard]] VkDescriptorSet vorticity_descriptor_set() const noexcept {
+        return vorticity_descriptor_set_;
     }
     [[nodiscard]] VkDescriptorSet divergence_descriptor_set() const noexcept {
         return divergence_descriptor_set_;
@@ -88,12 +98,15 @@ class Fluid2DGpuResources {
     std::optional<cubey::vulkan::Buffer> field_b_;
     std::optional<cubey::vulkan::Buffer> field_temp_;
     std::optional<cubey::vulkan::Buffer> divergence_;
+    std::optional<cubey::vulkan::Buffer> curl_;
     std::optional<cubey::vulkan::Buffer> pressure_a_;
     std::optional<cubey::vulkan::Buffer> pressure_b_;
     std::optional<cubey::vulkan::DescriptorSetLayout> compute_descriptor_layout_;
     std::optional<cubey::vulkan::DescriptorPool> compute_descriptor_pool_;
     VkDescriptorSet inject_descriptor_set_ = VK_NULL_HANDLE;
     VkDescriptorSet advect_descriptor_set_ = VK_NULL_HANDLE;
+    VkDescriptorSet curl_descriptor_set_ = VK_NULL_HANDLE;
+    VkDescriptorSet vorticity_descriptor_set_ = VK_NULL_HANDLE;
     std::optional<cubey::vulkan::DescriptorSetLayout> advect_correct_descriptor_layout_;
     std::optional<cubey::vulkan::DescriptorPool> advect_correct_descriptor_pool_;
     VkDescriptorSet advect_correct_descriptor_set_ = VK_NULL_HANDLE;
@@ -112,6 +125,8 @@ class Fluid2DGpuResources {
     std::optional<cubey::render::ComputePipelineResource> inject_pipeline_resource_;
     std::optional<cubey::render::ComputePipelineResource> advect_pipeline_resource_;
     std::optional<cubey::render::ComputePipelineResource> advect_correct_pipeline_resource_;
+    std::optional<cubey::render::ComputePipelineResource> curl_pipeline_resource_;
+    std::optional<cubey::render::ComputePipelineResource> vorticity_pipeline_resource_;
     std::optional<cubey::render::ComputePipelineResource> divergence_pipeline_resource_;
     std::optional<cubey::render::ComputePipelineResource> pressure_pipeline_resource_;
     std::optional<cubey::render::ComputePipelineResource> projection_pipeline_resource_;
