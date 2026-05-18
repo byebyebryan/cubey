@@ -4,6 +4,7 @@
 #include <cubey/core/run_config.h>
 #include <cubey/host/frame_stats.h>
 #include <cubey/host/glfw_window.h>
+#include <cubey/host/ui.h>
 #include <cubey/input/input.h>
 #include <cubey/render/frame_data.h>
 #include <cubey/render/target.h>
@@ -19,9 +20,13 @@
 
 #include <cstdint>
 #include <functional>
+#include <memory>
 #include <optional>
+#include <vector>
 
 namespace cubey::host {
+
+class ImGuiOverlay;
 
 class WindowedAppContext {
   public:
@@ -30,7 +35,7 @@ class WindowedAppContext {
                        cubey::vulkan::Device& device, cubey::vulkan::Swapchain& swapchain,
                        cubey::vulkan::FrameResources& frame_resources,
                        cubey::vulkan::GpuRuntime& gpu, const cubey::input::InputFrame& input,
-                       std::uint32_t frame_slot_count);
+                       std::uint32_t frame_slot_count, UiCaptureState ui_capture);
 
     [[nodiscard]] const RunConfig& config() const {
         return config_;
@@ -62,6 +67,12 @@ class WindowedAppContext {
     [[nodiscard]] std::uint32_t frame_slot_count() const {
         return frame_slot_count_;
     }
+    [[nodiscard]] bool ui_wants_mouse() const {
+        return ui_capture_.wants_mouse;
+    }
+    [[nodiscard]] bool ui_wants_keyboard() const {
+        return ui_capture_.wants_keyboard;
+    }
 
   private:
     const RunConfig& config_;
@@ -74,6 +85,7 @@ class WindowedAppContext {
     cubey::vulkan::GpuRuntime& gpu_;
     const cubey::input::InputFrame& input_;
     std::uint32_t frame_slot_count_ = cubey::render::kSingleFrameSlotCount;
+    UiCaptureState ui_capture_{};
 };
 
 struct WindowedHostConfig {
@@ -98,6 +110,7 @@ struct WindowedHostCallbacks {
     std::function<void(WindowedAppContext&)> create_swapchain_resources;
     std::function<void(WindowedAppContext&)> destroy_swapchain_resources;
     std::function<void(WindowedAppContext&)> on_ready;
+    std::function<void(WindowedAppContext&)> draw_ui;
     std::function<void(WindowedAppContext&, const FrameTiming&)> update;
     std::function<void(WindowedAppContext&, const WindowedRenderFrame&)> record_frame;
     std::function<std::optional<FrameStatsSample>(WindowedAppContext&, const FrameTiming&)>
@@ -128,6 +141,8 @@ class WindowedHost {
     void destroy_swapchain_resources();
     void recreate_swapchain_resources();
     cubey::vulkan::RenderFrameResult draw_frame(const FrameTiming& timing);
+    [[nodiscard]] std::vector<VkCommandBuffer>
+    record_ui_command_buffers(const WindowedRenderFrame& render_frame);
     [[nodiscard]] WindowedAppContext context();
 
     [[nodiscard]] GlfwWindow& window();
@@ -142,6 +157,7 @@ class WindowedHost {
     WindowedHostConfig config_;
     WindowedHostCallbacks callbacks_;
     bool swapchain_resources_created_ = false;
+    UiCaptureState ui_capture_{};
 
     std::optional<GlfwWindow> window_;
     std::optional<cubey::vulkan::Instance> instance_;
@@ -151,6 +167,7 @@ class WindowedHost {
     std::optional<cubey::vulkan::GpuRuntime> gpu_;
     std::optional<cubey::vulkan::Swapchain> swapchain_;
     std::optional<cubey::vulkan::FrameResources> frame_resources_;
+    std::unique_ptr<ImGuiOverlay> imgui_overlay_;
     FrameClock frame_clock_;
     FrameStats frame_stats_;
     cubey::input::InputState input_state_;

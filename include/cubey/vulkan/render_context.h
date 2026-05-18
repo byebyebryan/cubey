@@ -8,6 +8,7 @@
 #include <vulkan/vulkan.h>
 
 #include <cstdint>
+#include <span>
 
 namespace cubey::vulkan {
 
@@ -53,6 +54,8 @@ class RenderContext {
 
     RenderFrameResult begin_frame(RenderFrame* frame) const;
     RenderFrameResult end_frame(const RenderFrame& frame) const;
+    RenderFrameResult end_frame(const RenderFrame& frame,
+                                std::span<const VkCommandBuffer> additional_command_buffers) const;
 
   private:
     RenderContextConfig config_;

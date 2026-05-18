@@ -2,6 +2,7 @@ add_library(cubey_host STATIC
     frame_stats.cpp
     glfw_window.cpp
     headless_png_host.cpp
+    imgui_overlay.cpp
     windowed_app.cpp
     windowed_host.cpp
 )
@@ -27,6 +28,7 @@ target_link_libraries(
         cubey::render
         cubey::engine
         cubey::vulkan
+        cubey_external_imgui
     PRIVATE
         cubey_project_warnings
         glfw

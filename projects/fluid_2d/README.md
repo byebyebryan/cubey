@@ -47,6 +47,10 @@ Deferred:
   obstacle views.
 - Escape: close the window.
 
+The windowed build also exposes a small debug UI for live demo tuning: pause,
+reset, debug view, injector count/motion, pressure iterations, vorticity,
+decay, and injection radius/strength.
+
 ## Runtime Shape
 
 The default solver grid is `1024x1024`. Override it with `--grid-width` and

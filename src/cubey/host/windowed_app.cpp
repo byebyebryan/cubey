@@ -3,6 +3,7 @@
 #include <cubey/input/input.h>
 
 #include <cstdio>
+#include <functional>
 #include <stdexcept>
 #include <string>
 
@@ -16,6 +17,14 @@ void print_ready_status(const WindowedAppConfig& config, WindowedAppContext& con
     std::printf("%s: %s %s at %ux%u\n", config.app_name, context.device().device_name(),
                 config.ready_status, context.swapchain().extent().width,
                 context.swapchain().extent().height);
+}
+
+[[nodiscard]] std::function<void(WindowedAppContext&)>
+make_draw_ui_callback(WindowedAppCallbacks& callbacks) {
+    if (!callbacks.draw_ui) {
+        return {};
+    }
+    return [&callbacks](WindowedAppContext& context) { callbacks.draw_ui(context); };
 }
 
 } // namespace
@@ -63,9 +72,10 @@ int run_windowed_app(WindowedAppConfig config, WindowedAppCallbacks callbacks) {
                     }
                     print_ready_status(config, context);
                 },
+            .draw_ui = make_draw_ui_callback(callbacks),
             .update =
                 [config, &callbacks](WindowedAppContext& context, const FrameTiming& timing) {
-                    if (config.close_on_escape &&
+                    if (config.close_on_escape && !context.ui_wants_keyboard() &&
                         context.input().key_pressed(cubey::input::Key::Escape)) {
                         context.window().request_close();
                     }

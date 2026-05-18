@@ -1,5 +1,6 @@
 #include "fluid_2d_gpu_resources.h"
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstddef>
@@ -183,10 +184,13 @@ void Fluid2DGpuResources::create_field_buffers(cubey::ProjectGpuServices& gpu,
     obstacle_.emplace(upload_project_device_buffer(gpu, obstacle_initial.data(), scalar_byte_size,
                                                    VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
                                                    "fluid_2d obstacle upload"));
-    const std::vector<Fluid2DInjectorGpu> injector_initial =
+    std::vector<Fluid2DInjectorGpu> injector_initial(kMaxProceduralInjectorCount);
+    const std::vector<Fluid2DInjectorGpu> active_injectors =
         fluid_2d_injectors_to_gpu(create_fluid_2d_injectors(config), config);
+    std::copy(active_injectors.begin(), active_injectors.end(), injector_initial.begin());
     injectors_.emplace(upload_project_device_buffer(
-        gpu, injector_initial.data(), static_cast<VkDeviceSize>(fluid_2d_injector_byte_size(config)),
+        gpu, injector_initial.data(),
+        static_cast<VkDeviceSize>(fluid_2d_injector_capacity_byte_size()),
         VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
         "fluid_2d injector upload"));
     pressure_a_.emplace(upload_project_device_buffer(gpu, scalar_initial.data(), scalar_byte_size,

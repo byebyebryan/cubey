@@ -420,4 +420,9 @@ std::size_t fluid_2d_injector_byte_size(const Fluid2DConfig& config) {
            static_cast<std::size_t>(config.procedural_injector_count);
 }
 
+std::size_t fluid_2d_injector_capacity_byte_size() {
+    return sizeof(Fluid2DInjectorGpu) *
+           static_cast<std::size_t>(kMaxProceduralInjectorCount);
+}
+
 } // namespace cubey::projects::fluid_2d

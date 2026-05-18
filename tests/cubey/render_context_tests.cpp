@@ -3,6 +3,7 @@
 #include <vulkan/vulkan.h>
 
 #include <cstdint>
+#include <span>
 #include <stdexcept>
 #include <type_traits>
 
@@ -47,9 +48,17 @@ void test_render_context_exposes_explicit_frame_boundary() {
     static_assert(std::is_same_v<decltype(&cubey::vulkan::RenderContext::begin_frame),
                                  cubey::vulkan::RenderFrameResult (cubey::vulkan::RenderContext::*)(
                                      cubey::vulkan::RenderFrame*) const>);
-    static_assert(std::is_same_v<decltype(&cubey::vulkan::RenderContext::end_frame),
-                                 cubey::vulkan::RenderFrameResult (cubey::vulkan::RenderContext::*)(
-                                     const cubey::vulkan::RenderFrame&) const>);
+    using EndFrame = cubey::vulkan::RenderFrameResult (cubey::vulkan::RenderContext::*)(
+        const cubey::vulkan::RenderFrame&) const;
+    using EndFrameWithAdditionalCommands =
+        cubey::vulkan::RenderFrameResult (cubey::vulkan::RenderContext::*)(
+            const cubey::vulkan::RenderFrame&, std::span<const VkCommandBuffer>) const;
+    static_assert(
+        std::is_same_v<decltype(static_cast<EndFrame>(&cubey::vulkan::RenderContext::end_frame)),
+                       EndFrame>);
+    static_assert(std::is_same_v<decltype(static_cast<EndFrameWithAdditionalCommands>(
+                                     &cubey::vulkan::RenderContext::end_frame)),
+                                 EndFrameWithAdditionalCommands>);
     static_assert(cubey::vulkan::RenderFrameResult::Rendered !=
                   cubey::vulkan::RenderFrameResult::RecreateSwapchain);
 

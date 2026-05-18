@@ -39,5 +39,6 @@ fluid_2d_injectors_to_gpu(const std::vector<Fluid2DInjectorState>& injectors,
 update_fluid_2d_injectors(std::vector<Fluid2DInjectorState>& injectors,
                           const Fluid2DConfig& config, const cubey::FrameTiming& timing);
 [[nodiscard]] std::size_t fluid_2d_injector_byte_size(const Fluid2DConfig& config);
+[[nodiscard]] std::size_t fluid_2d_injector_capacity_byte_size();
 
 } // namespace cubey::projects::fluid_2d

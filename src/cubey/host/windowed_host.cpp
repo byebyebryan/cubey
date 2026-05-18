@@ -1,5 +1,7 @@
 #include <cubey/host/windowed_host.h>
 
+#include "imgui_overlay.h"
+
 #include <cubey/host/frame_stats.h>
 #include <cubey/vulkan/render_context.h>
 #include <cubey/vulkan/vk_check.h>
@@ -38,10 +40,11 @@ WindowedAppContext::WindowedAppContext(
     const RunConfig& config, GlfwWindow& window, cubey::vulkan::Instance& instance,
     GlfwSurface& surface, cubey::vulkan::Device& device, cubey::vulkan::Swapchain& swapchain,
     cubey::vulkan::FrameResources& frame_resources, cubey::vulkan::GpuRuntime& gpu,
-    const cubey::input::InputFrame& input, std::uint32_t frame_slot_count)
+    const cubey::input::InputFrame& input, std::uint32_t frame_slot_count,
+    UiCaptureState ui_capture)
     : config_(config), window_(window), instance_(instance), surface_(surface), device_(device),
       swapchain_(swapchain), frame_resources_(frame_resources), gpu_(gpu), input_(input),
-      frame_slot_count_(frame_slot_count) {
+      frame_slot_count_(frame_slot_count), ui_capture_(ui_capture) {
     cubey::render::validate_frame_slot({.index = 0, .count = frame_slot_count_});
 }
 
@@ -109,6 +112,18 @@ int WindowedHost::run() {
             continue;
         }
 
+        if (imgui_overlay_ != nullptr && imgui_overlay_->active()) {
+            imgui_overlay_->begin_frame();
+            ui_capture_ = imgui_overlay_->capture_state();
+        }
+        if (callbacks_.draw_ui) {
+            WindowedAppContext ui_context = context();
+            callbacks_.draw_ui(ui_context);
+            if (imgui_overlay_ != nullptr && imgui_overlay_->active()) {
+                ui_capture_ = imgui_overlay_->capture_state();
+            }
+        }
+
         const FrameTiming timing = frame_clock_.tick();
         WindowedAppContext active_context = context();
         if (callbacks_.update) {
@@ -116,6 +131,9 @@ int WindowedHost::run() {
         }
         static_cast<void>(gpu().drain());
         if (window().should_close()) {
+            if (imgui_overlay_ != nullptr) {
+                imgui_overlay_->discard_frame();
+            }
             break;
         }
 
@@ -241,6 +259,18 @@ void WindowedHost::create_swapchain_resources() {
     create_swapchain();
     create_frame_resources();
     swapchain_resources_created_ = true;
+    if (callbacks_.draw_ui) {
+        if (imgui_overlay_ == nullptr) {
+            imgui_overlay_ = std::make_unique<ImGuiOverlay>();
+        }
+        imgui_overlay_->create({
+            .window = &window(),
+            .instance = &instance(),
+            .device = &device(),
+            .swapchain = &swapchain(),
+            .frame_resources = &frame_resources(),
+        });
+    }
     if (callbacks_.create_swapchain_resources) {
         WindowedAppContext active_context = context();
         callbacks_.create_swapchain_resources(active_context);
@@ -256,6 +286,10 @@ void WindowedHost::destroy_swapchain_resources() {
         WindowedAppContext active_context = context();
         callbacks_.destroy_swapchain_resources(active_context);
         static_cast<void>(gpu().drain());
+    }
+    if (imgui_overlay_ != nullptr) {
+        imgui_overlay_->destroy();
+        ui_capture_ = {};
     }
     swapchain_resources_created_ = false;
 }
@@ -296,7 +330,21 @@ cubey::vulkan::RenderFrameResult WindowedHost::draw_frame(const FrameTiming& tim
         .timing = timing,
     };
     callbacks_.record_frame(active_context, render_frame);
-    return render_context.end_frame(frame);
+    const std::vector<VkCommandBuffer> ui_command_buffers = record_ui_command_buffers(render_frame);
+    return render_context.end_frame(frame, ui_command_buffers);
+}
+
+std::vector<VkCommandBuffer>
+WindowedHost::record_ui_command_buffers(const WindowedRenderFrame& render_frame) {
+    if (imgui_overlay_ == nullptr || !imgui_overlay_->active()) {
+        return {};
+    }
+    const VkCommandBuffer command_buffer =
+        imgui_overlay_->record(render_frame.frame_slot, render_frame.color_target);
+    if (command_buffer == VK_NULL_HANDLE) {
+        return {};
+    }
+    return {command_buffer};
 }
 
 WindowedAppContext WindowedHost::context() {
@@ -309,7 +357,8 @@ WindowedAppContext WindowedHost::context() {
             frame_resources(),
             gpu(),
             input_state_.frame(),
-            frame_resources().frame_slot_count()};
+            frame_resources().frame_slot_count(),
+            ui_capture_};
 }
 
 GlfwWindow& WindowedHost::window() {

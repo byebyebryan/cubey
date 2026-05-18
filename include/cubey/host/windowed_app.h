@@ -32,6 +32,7 @@ struct WindowedAppCallbacks {
     std::function<void(WindowedAppContext&)> create_swapchain_resources;
     std::function<void(WindowedAppContext&)> destroy_swapchain_resources;
     std::function<void(WindowedAppContext&)> on_ready;
+    std::function<void(WindowedAppContext&)> draw_ui;
     std::function<void(WindowedAppContext&, const FrameTiming&)> update;
     std::function<void(WindowedAppContext&, const WindowedRenderFrame&)> record_frame;
     std::function<std::optional<FrameStatsSample>(WindowedAppContext&, const FrameTiming&)>

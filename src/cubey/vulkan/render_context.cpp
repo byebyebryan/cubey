@@ -4,6 +4,7 @@
 
 #include <cstddef>
 #include <stdexcept>
+#include <vector>
 
 namespace cubey::vulkan {
 namespace {
@@ -93,6 +94,12 @@ RenderFrameResult RenderContext::begin_frame(RenderFrame* frame) const {
 }
 
 RenderFrameResult RenderContext::end_frame(const RenderFrame& frame) const {
+    return end_frame(frame, {});
+}
+
+RenderFrameResult
+RenderContext::end_frame(const RenderFrame& frame,
+                         std::span<const VkCommandBuffer> additional_command_buffers) const {
     if (frame.command_buffer == VK_NULL_HANDLE) {
         throw std::runtime_error("end_frame requires a recorded command buffer");
     }
@@ -105,6 +112,11 @@ RenderFrameResult RenderContext::end_frame(const RenderFrame& frame) const {
         frame_resources.present_ready(static_cast<std::size_t>(frame.image_index));
     GpuSubmissionTicket submitted{};
     VkResult presented = VK_SUCCESS;
+    std::vector<VkCommandBuffer> command_buffers;
+    command_buffers.reserve(additional_command_buffers.size() + 1U);
+    command_buffers.push_back(frame.command_buffer);
+    command_buffers.insert(command_buffers.end(), additional_command_buffers.begin(),
+                           additional_command_buffers.end());
     static_cast<void>(config_.gpu->submit_and_wait({
         .label = "submit and present frame",
         .work =
@@ -117,8 +129,8 @@ RenderFrameResult RenderContext::end_frame(const RenderFrame& frame) const {
                                     .semaphore = frame_slot.image_available,
                                     .stage_mask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
                                 },
-                            },
-                        .command_buffers = {frame.command_buffer},
+                        },
+                        .command_buffers = command_buffers,
                         .signals = {QueueSignal{.semaphore = present_ready}},
                         .fence = frame_slot.fence,
                     },

@@ -172,6 +172,10 @@ int main() {
         require(cubey::projects::fluid_2d::fluid_2d_injector_byte_size(configured) ==
                     sizeof(cubey::projects::fluid_2d::Fluid2DInjectorGpu) * 8U,
                 "fluid injector byte size should cover one GPU record per injector");
+        require(cubey::projects::fluid_2d::fluid_2d_injector_capacity_byte_size() ==
+                    sizeof(cubey::projects::fluid_2d::Fluid2DInjectorGpu) *
+                        cubey::projects::fluid_2d::kMaxProceduralInjectorCount,
+                "fluid injector capacity should cover live-editable injector count");
 
         cubey::projects::fluid_2d::Fluid2DConfig one_ring_config = configured;
         one_ring_config.injector_motion =

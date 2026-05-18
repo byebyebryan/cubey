@@ -16,12 +16,14 @@
 #include <cubey/vulkan/gpu_runtime.h>
 #include <cubey/vulkan/immediate_commands.h>
 
+#include <imgui.h>
 #include <vulkan/vulkan.h>
 
+#include <array>
 #include <cstdint>
 #include <optional>
-#include <vector>
 #include <utility>
+#include <vector>
 
 namespace cubey::projects::fluid_2d {
 namespace {
@@ -29,6 +31,53 @@ namespace {
 using cubey::FrameTiming;
 using cubey::ProjectFrame;
 using cubey::host::FrameStatsSample;
+
+[[nodiscard]] const char* debug_view_name(FluidDebugView view) {
+    switch (view) {
+    case FluidDebugView::Dye:
+        return "Dye";
+    case FluidDebugView::Velocity:
+        return "Velocity";
+    case FluidDebugView::Divergence:
+        return "Divergence";
+    case FluidDebugView::Pressure:
+        return "Pressure";
+    case FluidDebugView::Speed:
+        return "Speed";
+    case FluidDebugView::Vorticity:
+        return "Vorticity";
+    case FluidDebugView::Obstacle:
+        return "Obstacle";
+    }
+    return "Dye";
+}
+
+[[nodiscard]] const char* injector_motion_name(Fluid2DInjectorMotion motion) {
+    switch (motion) {
+    case Fluid2DInjectorMotion::OneRing:
+        return "One ring";
+    case Fluid2DInjectorMotion::TwoRings:
+        return "Two rings";
+    case Fluid2DInjectorMotion::RandomOrbit:
+        return "Random orbit";
+    case Fluid2DInjectorMotion::Lissajous:
+        return "Lissajous";
+    }
+    return "Two rings";
+}
+
+constexpr std::array<FluidDebugView, 7> kDebugViews{
+    FluidDebugView::Dye,      FluidDebugView::Velocity,  FluidDebugView::Divergence,
+    FluidDebugView::Pressure, FluidDebugView::Speed,     FluidDebugView::Vorticity,
+    FluidDebugView::Obstacle,
+};
+
+constexpr std::array<Fluid2DInjectorMotion, 4> kInjectorMotions{
+    Fluid2DInjectorMotion::OneRing,
+    Fluid2DInjectorMotion::TwoRings,
+    Fluid2DInjectorMotion::RandomOrbit,
+    Fluid2DInjectorMotion::Lissajous,
+};
 
 class Fluid2DApp {
   public:
@@ -64,6 +113,9 @@ class Fluid2DApp {
                                   const FrameTiming& timing) {
             const ProjectFrame& project_frame = runtime_.frame_for_timing(timing);
             update_interaction(context, project_frame);
+        };
+        callbacks.draw_ui = [this](cubey::host::WindowedAppContext& context) {
+            draw_ui(context);
         };
         callbacks.record_frame = [this](cubey::host::WindowedAppContext& context,
                                         const cubey::host::WindowedRenderFrame& frame) {
@@ -104,20 +156,22 @@ class Fluid2DApp {
   private:
     void update_interaction(cubey::host::WindowedAppContext& context,
                             const ProjectFrame& project_frame) {
-        (void)project_frame;
         const cubey::input::InputFrame& input = context.input();
-        if (input.key_pressed(cubey::input::Key::Space)) {
-            paused_ = !paused_;
-        }
-        if (input.key_pressed(cubey::input::Key::R)) {
-            reset_requested_ = true;
-            reset_injectors();
-        }
-        if (input.key_pressed(cubey::input::Key::D)) {
-            debug_view_ = next_debug_view(debug_view_);
+        if (!context.ui_wants_keyboard()) {
+            if (input.key_pressed(cubey::input::Key::Space)) {
+                paused_ = !paused_;
+            }
+            if (input.key_pressed(cubey::input::Key::R)) {
+                reset_requested_ = true;
+                reset_injectors();
+            }
+            if (input.key_pressed(cubey::input::Key::D)) {
+                debug_view_ = next_debug_view(debug_view_);
+            }
         }
 
-        pointer_drag_.update(input);
+        cubey::input::InputFrame ui_blocked_input;
+        pointer_drag_.update(context.ui_wants_mouse() ? ui_blocked_input : input);
         if (!paused_) {
             update_injectors(project_frame);
         }
@@ -132,6 +186,80 @@ class Fluid2DApp {
         const cubey::input::CursorPosition cursor = pointer_drag_.cursor();
         const cubey::input::PointerDelta delta = pointer_drag_.consume_accumulated_delta();
         frame_injection_ = frame_injection_from_pointer(cursor, delta, extent);
+    }
+
+    void draw_ui(cubey::host::WindowedAppContext& context) {
+        (void)context;
+        ImGui::SetNextWindowSize(ImVec2(320.0F, 0.0F), ImGuiCond_FirstUseEver);
+        if (!ImGui::Begin("Fluid 2D")) {
+            ImGui::End();
+            return;
+        }
+
+        if (ImGui::Checkbox("Paused", &paused_)) {
+            frame_injection_ = {};
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Reset")) {
+            reset_requested_ = true;
+            reset_injectors();
+        }
+
+        if (ImGui::BeginCombo("Debug view", debug_view_name(debug_view_))) {
+            for (FluidDebugView view : kDebugViews) {
+                const bool selected = view == debug_view_;
+                if (ImGui::Selectable(debug_view_name(view), selected)) {
+                    debug_view_ = view;
+                }
+                if (selected) {
+                    ImGui::SetItemDefaultFocus();
+                }
+            }
+            ImGui::EndCombo();
+        }
+
+        int injector_count = static_cast<int>(fluid_config_.procedural_injector_count);
+        if (ImGui::SliderInt("Injectors", &injector_count, 1,
+                             static_cast<int>(kMaxProceduralInjectorCount))) {
+            fluid_config_.procedural_injector_count = static_cast<std::uint32_t>(injector_count);
+            reset_injectors();
+        }
+
+        if (ImGui::BeginCombo("Injector motion",
+                              injector_motion_name(fluid_config_.injector_motion))) {
+            for (Fluid2DInjectorMotion motion : kInjectorMotions) {
+                const bool selected = motion == fluid_config_.injector_motion;
+                if (ImGui::Selectable(injector_motion_name(motion), selected)) {
+                    fluid_config_.injector_motion = motion;
+                    reset_injectors();
+                }
+                if (selected) {
+                    ImGui::SetItemDefaultFocus();
+                }
+            }
+            ImGui::EndCombo();
+        }
+
+        int pressure_iterations = static_cast<int>(fluid_config_.pressure_iterations);
+        if (ImGui::SliderInt("Pressure iterations", &pressure_iterations, 1, 96)) {
+            fluid_config_.pressure_iterations = static_cast<std::uint32_t>(pressure_iterations);
+        }
+        ImGui::SliderFloat("Vorticity", &fluid_config_.vorticity_strength, 0.0F, 40.0F);
+        ImGui::SliderFloat("Dye decay", &fluid_config_.dye_decay_per_second, 0.950F, 1.0F,
+                           "%.4f");
+        ImGui::SliderFloat("Velocity decay", &fluid_config_.velocity_decay_per_second, 0.950F,
+                           1.0F, "%.4f");
+        ImGui::SliderFloat("Pointer radius", &fluid_config_.pointer_injection_radius, 0.005F,
+                           0.080F, "%.3f");
+        ImGui::SliderFloat("Pointer strength", &fluid_config_.pointer_injection_strength, 0.0F,
+                           40.0F, "%.1f");
+        ImGui::SliderFloat("Injector radius", &fluid_config_.fallback_injection_radius, 0.005F,
+                           0.080F, "%.3f");
+        ImGui::SliderFloat("Injector strength", &fluid_config_.fallback_injection_strength, 0.0F,
+                           20.0F, "%.1f");
+
+        ImGui::Text("Grid: %u x %u", fluid_config_.grid_width, fluid_config_.grid_height);
+        ImGui::End();
     }
 
     void reset_injectors() {

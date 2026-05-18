@@ -197,6 +197,48 @@ if (CUBEY_BUILD_HOST)
     set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
     FetchContent_MakeAvailable(glfw)
 
+    FetchContent_Declare(
+        imgui
+        GIT_REPOSITORY https://github.com/ocornut/imgui.git
+        GIT_TAG        v1.92.8
+    )
+    FetchContent_GetProperties(imgui)
+    if (NOT imgui_POPULATED)
+        cmake_policy(PUSH)
+        if (POLICY CMP0169)
+            cmake_policy(SET CMP0169 OLD)
+        endif()
+        FetchContent_Populate(imgui)
+        cmake_policy(POP)
+    endif()
+    add_library(cubey_external_imgui STATIC
+        "${imgui_SOURCE_DIR}/imgui.cpp"
+        "${imgui_SOURCE_DIR}/imgui_draw.cpp"
+        "${imgui_SOURCE_DIR}/imgui_tables.cpp"
+        "${imgui_SOURCE_DIR}/imgui_widgets.cpp"
+        "${imgui_SOURCE_DIR}/backends/imgui_impl_glfw.cpp"
+        "${imgui_SOURCE_DIR}/backends/imgui_impl_vulkan.cpp"
+    )
+    target_include_directories(
+        cubey_external_imgui
+        SYSTEM
+        PUBLIC
+            "${imgui_SOURCE_DIR}"
+            "${imgui_SOURCE_DIR}/backends"
+    )
+    target_compile_definitions(
+        cubey_external_imgui
+        PRIVATE
+            GLFW_INCLUDE_NONE
+    )
+    target_compile_options(
+        cubey_external_imgui
+        PRIVATE
+            "$<$<CXX_COMPILER_ID:Clang,GNU>:-w>"
+    )
+    target_link_libraries(cubey_external_imgui PUBLIC glfw Vulkan::Vulkan)
+    set_target_properties(cubey_external_imgui PROPERTIES CXX_CLANG_TIDY "")
+
     add_subdirectory(src/cubey/host)
 endif()
 

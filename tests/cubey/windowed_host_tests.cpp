@@ -33,6 +33,8 @@ void test_windowed_host_config_defaults_to_two_frame_slots() {
 
 void test_windowed_app_config_preserves_windowed_host_defaults() {
     const cubey::host::WindowedAppConfig config;
+    const cubey::host::WindowedAppCallbacks callbacks;
+    const cubey::host::WindowedHostCallbacks host_callbacks;
 
     require(config.required_queue_flags == VK_QUEUE_GRAPHICS_BIT,
             "windowed app config should default to graphics queues");
@@ -42,4 +44,6 @@ void test_windowed_app_config_preserves_windowed_host_defaults() {
     require(config.gpu_execution_mode == cubey::vulkan::GpuRuntimeExecutionMode::Threaded,
             "windowed app config should default to threaded GPU runtime");
     require(!config.close_on_escape, "windowed app config should not force escape handling");
+    require(!callbacks.draw_ui, "windowed app callbacks should default to no UI callback");
+    require(!host_callbacks.draw_ui, "windowed host callbacks should default to no UI callback");
 }
