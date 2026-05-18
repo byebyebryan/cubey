@@ -309,14 +309,14 @@ Current checkpoint:
   to an engine-owned `ForwardPbrRenderer3D` created by `RendererService`. It
   submits per-frame target, view, `ForwardPbrRenderer3DSceneResources`, and
   display settings through the forward-PBR request helper, binds generated or
-  HDR-backed IBL resources, supports windowed and headless PNG output, and
+  HDR-backed IBL resources, supports windowed and headless capture output, and
   falls back to a generated PBR cube when no input asset or sample-asset
   checkout is configured.
 - `projects/pbr_furnace` links against `cubey` and renders a white-furnace PBR
   validation grid: shared UV-sphere primitive mesh, roughness columns, metallic
   rows, uniform white IBL cubemaps, Filament-style base-color/reflectance
   remapping, DFG-based energy compensation, reusable PBR material uniform
-  descriptors, and windowed plus headless PNG output.
+  descriptors, and windowed plus headless capture output.
 - `examples/instanced_cubes` links against `cubey` and draws a cube grid through
   a single renderable packet, real instance-rate vertex input, one shared cube
   mesh, and `instance_count` propagation from scene primitive to Vulkan draw.
@@ -534,9 +534,9 @@ has proven useful.
 - Strict GPU runtime exposed through windowed/headless host contexts, with
   setup-time GPU work entering through a queue and running on the runtime owner.
   Status: complete for current headless capture and textured-cube setup work.
-- Narrow no-GLFW headless PNG host that shares no-window instance/device,
-  offscreen target, capture transitions, readback, and artifact writing. Status:
-  complete for current headless examples and `fluid_2d`.
+- Narrow no-GLFW headless capture host that shares no-window instance/device,
+  offscreen target, capture transitions, readback, PNG writing, and optional
+  MP4 writing. Status: complete for current headless examples/projects.
 - Input/UI hooks once the contract is clear enough to keep project code cleaner
   without becoming a generic editor or UI framework.
 

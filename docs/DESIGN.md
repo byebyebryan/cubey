@@ -271,7 +271,7 @@ This is critical for AI-assisted development — the agent gets structured pass/
 
 | Project | Source | Notes |
 |------|--------|-------|
-| Fluid 2D | cubey1 rewrite warmup | First project target; compute-updated 2D dye/velocity field with headless PNG output |
+| Fluid 2D | cubey1 rewrite warmup | First project target; compute-updated 2D dye/velocity field with headless capture output |
 | Fluid Simulation 3D | cubey1 rewrite | Future Eulerian 3D fluid sim, compute-based, raymarched volume rendering |
 | Particle System | cubey1 rewrite | Prototype attractor motion now lives under `examples/particle_cubes`; a larger project would need a clear compute + indirect draw contract before graduating |
 | Marching Cubes | cubey1 rewrite | Isosurface extraction via compute + indirect draw |
@@ -492,7 +492,7 @@ cubey/
       shadow_cube_render.* -- shadow pass metadata and graph texture states
     instanced_cubes/       -- instance-rate cube grid rendering
     material_cubes/        -- per-packet material instance binding
-    headless_cube/         -- no-window offscreen cube PNG path
+    headless_cube/         -- no-window offscreen cube PNG/MP4 capture path
     particle_cubes/        -- compute-updated cube particles
   projects/
       fractal_2d/

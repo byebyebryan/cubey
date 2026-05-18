@@ -176,7 +176,7 @@ Current state:
   output.
 - `cubey::host::HeadlessPngHost` owns the repeated no-window offscreen target,
   capture transition, runtime-queued capture recording, project-GPU readback
-  ticket, and PNG artifact write path.
+  ticket, PNG artifact write path, and optional MP4 video capture path.
 - `cubey::render::Texture2D` and `TextureCube` now own the current generated,
   uploaded, and cubemap sampled texture image shapes above the raw Vulkan
   `Image` and optional `Sampler`.
@@ -345,9 +345,9 @@ Current state:
   all current windowed examples.
 - Windowed examples still own shaders, pipelines, descriptors, swapchain-sized
   render resources, command recording, and example behavior.
-- `cubey::host::HeadlessPngHost` owns the repeated no-window Vulkan setup, offscreen
-  RGBA render target, capture transitions, readback buffer copy, and PNG write
-  path for current headless examples/projects.
+- `cubey::host::HeadlessPngHost` owns the repeated no-window Vulkan setup,
+  offscreen RGBA render target, capture transitions, readback buffer copy, PNG
+  writing, and optional MP4 writing for current headless examples/projects.
 - Shared non-platform helpers cover frame timing, frame stats, and orbit
   control.
 
@@ -414,9 +414,10 @@ Defer:
 Current state:
 
 - Validation is easy to require from examples.
-- CTest covers no-display boundary behavior and headless PNG artifact creation.
-- Shared CMake smoke helpers keep windowed no-display checks and headless PNG
-  validation consistent across examples.
+- CTest covers no-display boundary behavior plus headless PNG artifact and
+  optional MP4 artifact creation.
+- Shared CMake smoke helpers keep windowed no-display checks and headless
+  capture validation consistent across examples.
 
 Needed later:
 

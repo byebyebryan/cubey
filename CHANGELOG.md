@@ -121,6 +121,24 @@ versioned section and use that section as the release notes.
   current forward cube rendering path.
 - `examples/instanced_cubes`, a real instance-rate cube grid example.
 - `examples/material_cubes`, a per-packet material instance binding example.
+- `projects/pbr_furnace`, a white-furnace PBR validation scene for
+  roughness/metallic behavior under generated IBL.
+- `projects/gltf_viewer`, a glTF/glb integration project with imported meshes,
+  PBR materials, texture upload, rigid/morph/skinned animation, generated or
+  HDR-backed IBL, skybox rendering, shadow maps, and headless capture.
+- CPU-side glTF 2.0 asset loading through `cgltf`, including buffers, images,
+  samplers, sparse accessors, morph target names, animations, skins, alpha
+  modes, and common material extensions.
+- `KHR_texture_basisu` KTX2 material texture import through Basis Universal,
+  with BC7 upload when supported and RGBA8 fallback.
+- Radiance HDR environment loading plus generated/HDR-backed PBR IBL resources
+  with irradiance, prefiltered radiance, and DFG LUT data.
+- Shared forward-PBR renderer service and shader package with shadow, skybox,
+  HDR scene color, post/display transform, debug views, and render-graph-backed
+  recording.
+- Premultiplied-alpha blending policy for forward PBR alpha materials.
+- Optional in-process H.264 MP4 capture for headless runs when libav/FFmpeg
+  development packages are available at configure time.
 
 ### Changed
 
@@ -174,6 +192,9 @@ versioned section and use that section as the release notes.
 - `headless_cube`, `fractal_2d --headless`, and `fluid_2d --headless` now use
   the shared no-GLFW headless PNG host while keeping resource setup, simulation,
   and command recording sequence local to each runnable.
+- `gltf_viewer --headless` and `pbr_furnace --headless` also use the shared
+  headless host; projects that need per-frame renderer resources now size those
+  resources from the active capture frame-slot count.
 - `fluid_2d` simulation steps now consume `ProjectFrame` values from shared
   project runtime adapter in both windowed and headless modes, while keeping
   Vulkan command recording sequence and resource policy project-local.
@@ -192,6 +213,9 @@ versioned section and use that section as the release notes.
 - `shadow_cube` is split into example-local lifecycle, resource, scene, render
   graph, and shadow-pass helper files so the example app stays orchestration
   focused without promoting shadow policy into the Cubey library.
+- Headless capture can now produce either one PNG frame or a deterministic MP4
+  sequence; video capture uses a small in-flight render/readback slot ring and
+  CPU encoding on a worker thread.
 
 ## Pre-2.0 History
 

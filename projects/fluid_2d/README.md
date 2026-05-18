@@ -18,7 +18,7 @@ The broader fluid technique map lives in
 
 Implemented:
 
-- Windowed and deterministic headless PNG modes.
+- Windowed mode plus deterministic headless PNG and optional MP4 capture modes.
 - GPU storage-buffer fields for dye and velocity.
 - Procedural and pointer-driven dye/force injection.
 - Advection/fade compute pass.
@@ -123,7 +123,7 @@ headless modes.
 - Use a fixed-size 2D grid with ping-pong GPU fields.
 - Start with injection plus advection/fade compute passes.
 - Render dye through a fullscreen graphics pass.
-- Support a deterministic headless run that writes a PNG artifact.
+- Support a deterministic headless run that writes an artifact.
 - Deliberately defer pressure projection, richer controls, and reusable
   headless/project hosting until the first visible project path exists.
 
@@ -189,8 +189,8 @@ generic project host.
 - Project-owned field uploads run through `cubey::ProjectGpuServices` instead
   of using the host GPU runtime directly.
 - Headless simulation frame work runs through `ProjectGpuServices`; the
-  headless host still owns the offscreen target, capture transition, and PNG
-  artifact path.
+  headless host still owns the offscreen target, capture transition, PNG output,
+  and optional MP4 output path.
 - Windowed frame command recording remains project-local because pass order,
   barriers, descriptors, and shader policy are still part of the fluid project.
 
@@ -218,6 +218,7 @@ without moving fluid simulation policy into the renderer.
 ```bash
 ./build/dev/projects/fluid_2d/fluid_2d --require-validation --frames 300 --width 1280 --height 720
 ./build/dev/projects/fluid_2d/fluid_2d --headless --require-validation --frames 120 --width 640 --height 360 --output /tmp/cubey-fluid-2d.png
+./build/dev/projects/fluid_2d/fluid_2d --headless --capture video --frames 180 --fps 60 --width 1280 --height 720 --output /tmp/cubey-fluid-2d.mp4
 ```
 
 ## Next Slices

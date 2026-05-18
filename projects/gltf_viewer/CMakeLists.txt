@@ -67,6 +67,16 @@ if (BUILD_TESTING)
         "${CUBEY_GLTF_VIEWER_HEADLESS_SMOKE_OUTPUT}"
         --headless
     )
+    if (CUBEY_HAS_LIBAV)
+        set(CUBEY_GLTF_VIEWER_HEADLESS_VIDEO_SMOKE_OUTPUT
+            "${CMAKE_CURRENT_BINARY_DIR}/gltf-viewer-headless-smoke.mp4"
+        )
+        cubey_add_video_smoke_test(
+            gltf_viewer_headless_writes_video
+            cubey_project_gltf_viewer
+            "${CUBEY_GLTF_VIEWER_HEADLESS_VIDEO_SMOKE_OUTPUT}"
+        )
+    endif()
 
     function(cubey_add_gltf_viewer_sample_smoke_test test_name sample_relative_path output_name)
         if (NOT CUBEY_GLTF_SAMPLE_ASSETS_DIR)

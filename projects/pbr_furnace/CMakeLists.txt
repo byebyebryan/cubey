@@ -44,4 +44,14 @@ if (BUILD_TESTING)
         "${CUBEY_PBR_FURNACE_HEADLESS_SMOKE_OUTPUT}"
         --headless
     )
+    if (CUBEY_HAS_LIBAV)
+        set(CUBEY_PBR_FURNACE_HEADLESS_VIDEO_SMOKE_OUTPUT
+            "${CMAKE_CURRENT_BINARY_DIR}/pbr-furnace-headless-smoke.mp4"
+        )
+        cubey_add_video_smoke_test(
+            pbr_furnace_headless_writes_video
+            cubey_project_pbr_furnace
+            "${CUBEY_PBR_FURNACE_HEADLESS_VIDEO_SMOKE_OUTPUT}"
+        )
+    endif()
 endif()

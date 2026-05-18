@@ -5,9 +5,21 @@
 #include <cubey/vulkan/command_recorder.h>
 #include <cubey/vulkan/image_transitions.h>
 
+#include <algorithm>
 #include <array>
 
 namespace cubey::projects::pbr_furnace {
+namespace {
+
+[[nodiscard]] cubey::render::VertexInputLayout pbr_furnace_vertex_input_layout() {
+    cubey::render::VertexInputLayout layout = cubey::render::pbr_vertex_input_layout();
+    std::erase_if(layout.attributes, [](const VkVertexInputAttributeDescription& attribute) {
+        return attribute.location > 3;
+    });
+    return layout;
+}
+
+} // namespace
 
 void PbrFurnaceApp::create_forward_pass(const cubey::vulkan::Device& device, VkExtent2D extent,
                                         VkFormat color_format) {
@@ -15,7 +27,7 @@ void PbrFurnaceApp::create_forward_pass(const cubey::vulkan::Device& device, VkE
         cubey::render::vertex_shader_file(shader_path("pbr_furnace.vert.spv")),
         cubey::render::fragment_shader_file(shader_path("pbr_furnace.frag.spv")),
     };
-    const cubey::render::VertexInputLayout vertex_input = cubey::render::pbr_vertex_input_layout();
+    const cubey::render::VertexInputLayout vertex_input = pbr_furnace_vertex_input_layout();
     const std::array<VkDescriptorSetLayout, 2> set_layouts{
         scene_material().layout(),
         materials_.layout(material_handles_.front()),

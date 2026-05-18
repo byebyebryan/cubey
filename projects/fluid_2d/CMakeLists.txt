@@ -47,4 +47,14 @@ if (BUILD_TESTING)
         --headless
         --frames 8
     )
+    if (CUBEY_HAS_LIBAV)
+        set(CUBEY_FLUID_2D_HEADLESS_VIDEO_SMOKE_OUTPUT
+            "${CMAKE_CURRENT_BINARY_DIR}/fluid-2d-headless-smoke.mp4"
+        )
+        cubey_add_video_smoke_test(
+            fluid_2d_headless_writes_video
+            cubey_project_fluid_2d
+            "${CUBEY_FLUID_2D_HEADLESS_VIDEO_SMOKE_OUTPUT}"
+        )
+    endif()
 endif()
