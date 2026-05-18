@@ -190,7 +190,8 @@ class Fluid2DApp {
 
     void draw_ui(cubey::host::WindowedAppContext& context) {
         (void)context;
-        ImGui::SetNextWindowSize(ImVec2(320.0F, 0.0F), ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowPos(ImVec2(16.0F, 16.0F), ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowSize(ImVec2(430.0F, 0.0F), ImGuiCond_FirstUseEver);
         if (!ImGui::Begin("Fluid 2D")) {
             ImGui::End();
             return;
