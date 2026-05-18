@@ -20,9 +20,7 @@ layout(set = 0, binding = 3, std430) readonly buffer ObstacleField {
 
 layout(push_constant) uniform SimulationParams {
     vec4 grid_dt_time;
-    vec4 injection_xy_radius_strength;
-    vec4 injection_dye_active;
-    vec4 force_decay;
+    vec4 decay_options;
     vec4 solver_options;
 } params;
 

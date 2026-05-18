@@ -1,6 +1,5 @@
 #include "fluid_2d_commands.h"
 
-#include <cubey/render/color_space.h>
 #include <cubey/render/pass.h>
 #include <cubey/render/render_graph.h>
 #include <cubey/vulkan/command_recorder.h>
@@ -24,14 +23,12 @@ struct RenderPushConstants {
 
 struct SimulationPushConstants {
     std::array<float, 4> grid_dt_time{};
-    std::array<float, 4> injection_xy_radius_strength{};
-    std::array<float, 4> injection_dye_active{};
-    std::array<float, 4> force_decay{};
+    std::array<float, 4> decay_options{};
     std::array<float, 4> solver_options{};
 };
 
 static_assert(sizeof(RenderPushConstants) == sizeof(float) * 4U);
-static_assert(sizeof(SimulationPushConstants) == sizeof(float) * 20U);
+static_assert(sizeof(SimulationPushConstants) == sizeof(float) * 12U);
 
 struct DispatchGroups {
     std::uint32_t x = 0;
@@ -96,19 +93,9 @@ void record_injector_buffer_update(VkCommandBuffer command_buffer,
 }
 
 [[nodiscard]] SimulationPushConstants simulation_push_constants(const Fluid2DConfig& config,
-                                                                const FrameInjection& injection,
                                                                 const ProjectFrame& frame) {
     const float time = static_cast<float>(frame.elapsed_seconds);
     const float dt = std::min(static_cast<float>(frame.delta_seconds), config.fixed_delta_seconds);
-    const bool pointer_active = injection.active;
-    const float injection_x = pointer_active ? injection.xy[0] : 0.0F;
-    const float injection_y = pointer_active ? injection.xy[1] : 0.0F;
-    const std::array<float, 3> linear_injection_dye =
-        cubey::render::hsv_to_linear_rgb({.hue = (time * 0.18F) + 0.08F,
-                                          .saturation = 1.0F,
-                                          .value = 1.0F});
-    const float force_x = pointer_active ? injection.force[0] * 1.25F : 0.0F;
-    const float force_y = pointer_active ? injection.force[1] * 1.25F : 0.0F;
 
     return {
         .grid_dt_time =
@@ -118,32 +105,18 @@ void record_injector_buffer_update(VkCommandBuffer command_buffer,
                 dt,
                 time,
             },
-        .injection_xy_radius_strength =
+        .decay_options =
             {
-                injection_x,
-                injection_y,
-                config.pointer_injection_radius,
-                config.pointer_injection_strength,
-            },
-        .injection_dye_active =
-            {
-                linear_injection_dye[0],
-                linear_injection_dye[1],
-                linear_injection_dye[2],
-                pointer_active ? 1.0F : 0.0F,
-            },
-        .force_decay =
-            {
-                force_x,
-                force_y,
                 config.dye_decay_per_second,
                 config.velocity_decay_per_second,
+                0.0F,
+                0.0F,
             },
         .solver_options =
             {
                 config.vorticity_strength,
-                config.fallback_injection_radius,
-                config.fallback_injection_strength,
+                config.injector_injection_radius,
+                config.injector_injection_strength,
                 static_cast<float>(config.procedural_injector_count),
             },
     };
@@ -172,7 +145,7 @@ void record_field_reset(VkCommandBuffer command_buffer, const Fluid2DGpuResource
 } // namespace
 
 void record_fluid_compute(VkCommandBuffer command_buffer, Fluid2DGpuResources& resources,
-                          const Fluid2DConfig& config, const FrameInjection& injection, bool paused,
+                          const Fluid2DConfig& config, bool paused,
                           bool& reset_requested, const ProjectFrame& frame,
                           std::span<const Fluid2DInjectorGpu> injectors,
                           bool include_render_visibility_barrier) {
@@ -188,8 +161,7 @@ void record_fluid_compute(VkCommandBuffer command_buffer, Fluid2DGpuResources& r
 
     record_injector_buffer_update(command_buffer, resources, injectors);
 
-    const SimulationPushConstants push_constants =
-        simulation_push_constants(config, injection, frame);
+    const SimulationPushConstants push_constants = simulation_push_constants(config, frame);
     const DispatchGroups groups = compute_dispatch_groups(config);
 
     const cubey::render::ComputePipelineResource& advect_pipeline =
@@ -358,8 +330,7 @@ void record_fullscreen_draw(VkCommandBuffer command_buffer, const Fluid2DGpuReso
 [[nodiscard]] cubey::render::CompiledRenderGraph
 build_fluid_frame_graph(cubey::render::ColorTargetView color_target, Fluid2DGpuResources& resources,
                         const Fluid2DConfig& config, FluidDebugView debug_view,
-                        const FrameInjection& injection, bool paused, bool& reset_requested,
-                        const ProjectFrame& frame,
+                        bool paused, bool& reset_requested, const ProjectFrame& frame,
                         std::span<const Fluid2DInjectorGpu> injectors) {
     Fluid2DGpuResources* resource_ptr = &resources;
     const Fluid2DConfig* config_ptr = &config;
@@ -409,11 +380,10 @@ build_fluid_frame_graph(cubey::render::ColorTargetView color_target, Fluid2DGpuR
         .read_write_storage_buffer(injector_buffer)
         .read_write_storage_buffer(pressure_a)
         .read_write_storage_buffer(pressure_b)
-        .execute([resource_ptr, config_ptr, injection, paused, reset_requested_ptr,
-                  frame,
+        .execute([resource_ptr, config_ptr, paused, reset_requested_ptr, frame,
                   injector_snapshot](const cubey::render::RenderGraphExecutionContext& context) {
-            record_fluid_compute(context.recorder().handle(), *resource_ptr, *config_ptr, injection,
-                                 paused, *reset_requested_ptr, frame, injector_snapshot, false);
+            record_fluid_compute(context.recorder().handle(), *resource_ptr, *config_ptr, paused,
+                                 *reset_requested_ptr, frame, injector_snapshot, false);
         });
     graph.add_pass("fluid render", cubey::render::RenderGraphQueueDomain::Graphics)
         .read_storage_buffer(field_a)

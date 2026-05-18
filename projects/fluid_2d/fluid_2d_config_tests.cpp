@@ -1,5 +1,4 @@
 #include "fluid_2d_config.h"
-#include "fluid_2d_interaction.h"
 #include "fluid_2d_injectors.h"
 
 #include <cubey/core/frame_clock.h>
@@ -47,14 +46,10 @@ int main() {
                 "fluid dye decay should default to controlled linger");
         require(config.velocity_decay_per_second == 0.993F,
                 "fluid velocity decay should default to controlled linger");
-        require(config.pointer_injection_radius == 0.035F,
-                "fluid pointer injection radius should be tuned for sharper sources");
-        require(config.fallback_injection_radius == 0.032F,
-                "fluid fallback injection radius should be tuned for sharper moving sources");
-        require(config.pointer_injection_strength == 18.0F,
-                "fluid pointer injection strength should default to a dramatic impulse");
-        require(config.fallback_injection_strength == 6.0F,
-                "fluid fallback injection strength should default to a visible multi-source impulse");
+        require(config.injector_injection_radius == 0.032F,
+                "fluid injector radius should be tuned for sharper moving sources");
+        require(config.injector_injection_strength == 6.0F,
+                "fluid injector strength should default to a visible multi-source impulse");
         require(config.vorticity_strength == 18.0F,
                 "fluid vorticity strength should have a visible default");
         require(config.injector_motion ==
@@ -211,23 +206,6 @@ int main() {
         require(timing.elapsed_seconds == config.fixed_delta_seconds * 5.0,
                 "fixed headless timing should use deterministic elapsed time");
 
-        const cubey::projects::fluid_2d::FrameInjection injection =
-            cubey::projects::fluid_2d::frame_injection_from_pointer(
-                {.x = 25.0, .y = 10.0}, {.x = 5.0, .y = -2.0}, {.width = 100, .height = 50});
-        require(injection.active, "pointer injection should become active for a nonzero window");
-        require_close(injection.xy[0], 0.25F,
-                      "pointer injection x should normalize in window coordinates");
-        require_close(injection.xy[1], 0.2F,
-                      "pointer injection y should follow GLFW top-left window coordinates");
-        require_close(injection.force[0], 4.5F,
-                      "pointer force x should normalize from drag delta");
-        require_close(injection.force[1], -3.6F,
-                      "pointer force y should preserve GLFW drag direction");
-
-        const cubey::projects::fluid_2d::FrameInjection inactive =
-            cubey::projects::fluid_2d::frame_injection_from_pointer(
-                {.x = 25.0, .y = 10.0}, {.x = 5.0, .y = -2.0}, {.width = 0, .height = 50});
-        require(!inactive.active, "pointer injection should stay inactive for zero-size windows");
     } catch (const std::exception& error) {
         std::fprintf(stderr, "fluid_2d_config_tests: %s\n", error.what());
         return 1;

@@ -20,8 +20,7 @@ Implemented:
 
 - Windowed mode plus deterministic headless PNG and optional MP4 capture modes.
 - Configurable GPU storage-buffer grid for dye and velocity.
-- Configurable moving procedural dye/force injectors plus pointer-driven
-  injection.
+- Configurable moving procedural dye/force injectors.
 - MacCormack advection with local clamping and fade.
 - Optional static obstacle mask plus solid-cell boundary handling.
 - Curl, vorticity confinement, divergence, Jacobi pressure solve, and
@@ -40,7 +39,6 @@ Deferred:
 
 ## Controls
 
-- Left-drag: inject dye and cursor-derived force.
 - Space: pause or resume simulation.
 - `R`: reset dye, velocity, divergence, and pressure buffers.
 - `D`: cycle dye, velocity, divergence, pressure, speed, vorticity, and
@@ -59,10 +57,7 @@ injector count is three; override it with `--injectors` from `1` to `16` to
 spread more sources around the hue wheel. The default injector motion is
 `two-rings`; override it with
 `--injector-motion one-ring|two-rings|random-orbit|lissajous`.
-Static obstacles are disabled by default; enable them with `--obstacles`. The
-procedural injectors continue running while the pointer injects, so manual
-interaction layers into the same flow instead of replacing the background
-sources.
+Static obstacles are disabled by default; enable them with `--obstacles`.
 
 ```text
 field A -> advect predict -> field temp
@@ -240,8 +235,8 @@ without moving fluid simulation policy into the renderer.
 
 Status: sharper source ordering complete.
 
-Goal: make pointer and procedural injection read as intentional input instead of
-being immediately blurred by the advection pass.
+Goal: make source injection read as intentional input instead of being
+immediately blurred by the advection pass.
 
 - The simulation now advects the previous field first, then injects fresh dye
   and velocity into the visible field before divergence, pressure solve, and
@@ -326,12 +321,20 @@ fluid demo without adding another solver stage.
 - Built-in sources inject dye plus velocity. New dye carries the source's
   current velocity, while an opposite-direction propulsion term pushes a wake
   behind the moving injector.
-- Pointer injection is now additive: dragging injects cursor dye and force
-  without pausing the procedural sources.
-- Pointer dye now cycles through the hue wheel so separate drags naturally lay
-  down different colors.
 - Dye and velocity decay are tuned for a controlled linger, while procedural
   sources stay narrow enough to keep the color streams separated.
+
+### Checkpoint 13
+
+Status: pointer injector removed.
+
+Goal: keep `fluid_2d` focused on configurable procedural sources now that the
+demo UI owns live tuning controls.
+
+- Manual pointer splats were removed from the app input path, simulation push
+  constants, injector shader, and tests.
+- The remaining source controls now tune procedural injector radius and strength
+  directly instead of carrying the old fallback-source naming.
 
 ## Commands
 

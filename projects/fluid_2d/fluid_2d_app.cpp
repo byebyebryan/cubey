@@ -3,7 +3,6 @@
 #include "fluid_2d_commands.h"
 #include "fluid_2d_config.h"
 #include "fluid_2d_gpu_resources.h"
-#include "fluid_2d_interaction.h"
 #include "fluid_2d_injectors.h"
 
 #include <cubey/engine/project_gpu_services.h>
@@ -11,7 +10,6 @@
 #include <cubey/host/frame_stats.h>
 #include <cubey/host/headless_png_host.h>
 #include <cubey/host/windowed_app.h>
-#include <cubey/input/pointer_drag.h>
 #include <cubey/vulkan/device.h>
 #include <cubey/vulkan/gpu_runtime.h>
 #include <cubey/vulkan/immediate_commands.h>
@@ -170,22 +168,9 @@ class Fluid2DApp {
             }
         }
 
-        cubey::input::InputFrame ui_blocked_input;
-        pointer_drag_.update(context.ui_wants_mouse() ? ui_blocked_input : input);
         if (!paused_) {
             update_injectors(project_frame);
         }
-        const VkExtent2D extent = context.window().window_extent();
-        frame_injection_ = {};
-        if (!pointer_drag_.active() || !pointer_drag_.has_cursor() || extent.width == 0 ||
-            extent.height == 0) {
-            static_cast<void>(pointer_drag_.consume_accumulated_delta());
-            return;
-        }
-
-        const cubey::input::CursorPosition cursor = pointer_drag_.cursor();
-        const cubey::input::PointerDelta delta = pointer_drag_.consume_accumulated_delta();
-        frame_injection_ = frame_injection_from_pointer(cursor, delta, extent);
     }
 
     void draw_ui(cubey::host::WindowedAppContext& context) {
@@ -197,9 +182,7 @@ class Fluid2DApp {
             return;
         }
 
-        if (ImGui::Checkbox("Paused", &paused_)) {
-            frame_injection_ = {};
-        }
+        ImGui::Checkbox("Paused", &paused_);
         ImGui::SameLine();
         if (ImGui::Button("Reset")) {
             reset_requested_ = true;
@@ -250,13 +233,9 @@ class Fluid2DApp {
                            "%.4f");
         ImGui::SliderFloat("Velocity decay", &fluid_config_.velocity_decay_per_second, 0.950F,
                            1.0F, "%.4f");
-        ImGui::SliderFloat("Pointer radius", &fluid_config_.pointer_injection_radius, 0.005F,
+        ImGui::SliderFloat("Injector radius", &fluid_config_.injector_injection_radius, 0.005F,
                            0.080F, "%.3f");
-        ImGui::SliderFloat("Pointer strength", &fluid_config_.pointer_injection_strength, 0.0F,
-                           40.0F, "%.1f");
-        ImGui::SliderFloat("Injector radius", &fluid_config_.fallback_injection_radius, 0.005F,
-                           0.080F, "%.3f");
-        ImGui::SliderFloat("Injector strength", &fluid_config_.fallback_injection_strength, 0.0F,
+        ImGui::SliderFloat("Injector strength", &fluid_config_.injector_injection_strength, 0.0F,
                            20.0F, "%.1f");
 
         ImGui::Text("Grid: %u x %u", fluid_config_.grid_width, fluid_config_.grid_height);
@@ -321,8 +300,8 @@ class Fluid2DApp {
                       const cubey::host::WindowedRenderFrame& render_frame,
                       const ProjectFrame& frame) {
         const cubey::render::CompiledRenderGraph frame_graph = build_fluid_frame_graph(
-            render_frame.color_target, resources_, fluid_config_, debug_view_, frame_injection_,
-            paused_, reset_requested_, frame, injector_gpu_);
+            render_frame.color_target, resources_, fluid_config_, debug_view_, paused_,
+            reset_requested_, frame, injector_gpu_);
         graph_executor_.record(
             cubey::render::RenderGraphFrameRecordInfo{
                 .device = &context.device(),
@@ -342,8 +321,7 @@ class Fluid2DApp {
                 [this, frame](cubey::vulkan::GpuOwnerContext& gpu_context) {
                     cubey::vulkan::ImmediateCommands commands(gpu_context);
                     record_fluid_compute(commands.command_buffer(), resources_, fluid_config_,
-                                         frame_injection_, paused_, reset_requested_, frame,
-                                         injector_gpu_);
+                                         paused_, reset_requested_, frame, injector_gpu_);
                     commands.submit_and_wait();
                 },
         }));
@@ -401,8 +379,6 @@ class Fluid2DApp {
     RunConfig config_;
     cubey::ProjectRuntimeAdapter runtime_;
     Fluid2DConfig fluid_config_;
-    cubey::input::PointerDrag pointer_drag_;
-    FrameInjection frame_injection_;
     std::vector<Fluid2DInjectorState> injector_states_;
     std::vector<Fluid2DInjectorGpu> injector_gpu_;
     Fluid2DGpuResources resources_;

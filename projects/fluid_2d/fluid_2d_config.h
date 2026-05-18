@@ -47,10 +47,8 @@ struct Fluid2DConfig {
     float fixed_delta_seconds = 1.0F / 60.0F;
     float dye_decay_per_second = 0.990F;
     float velocity_decay_per_second = 0.993F;
-    float pointer_injection_radius = 0.035F;
-    float fallback_injection_radius = 0.032F;
-    float pointer_injection_strength = 18.0F;
-    float fallback_injection_strength = 6.0F;
+    float injector_injection_radius = 0.032F;
+    float injector_injection_strength = 6.0F;
     float vorticity_strength = 18.0F;
     Fluid2DInjectorMotion injector_motion = Fluid2DInjectorMotion::TwoRings;
     bool obstacles_enabled = false;

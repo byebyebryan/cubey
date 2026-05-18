@@ -361,8 +361,8 @@ fluid_2d_injectors_to_gpu(const std::vector<Fluid2DInjectorState>& injectors,
                 {
                     injector.position[0],
                     injector.position[1],
-                    config.fallback_injection_radius * tuning.radius_scale,
-                    config.fallback_injection_strength * tuning.strength_scale,
+                    config.injector_injection_radius * tuning.radius_scale,
+                    config.injector_injection_strength * tuning.strength_scale,
                 },
             .velocity_carry_propulsion =
                 {

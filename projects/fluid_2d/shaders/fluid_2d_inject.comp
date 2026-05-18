@@ -31,9 +31,7 @@ layout(set = 0, binding = 3, std430) readonly buffer InjectorField {
 
 layout(push_constant) uniform SimulationParams {
     vec4 grid_dt_time;
-    vec4 injection_xy_radius_strength;
-    vec4 injection_dye_active;
-    vec4 force_decay;
+    vec4 decay_options;
     vec4 solver_options;
 } params;
 
@@ -68,11 +66,6 @@ void main() {
     vec2 uv = (vec2(x, y) + vec2(0.5)) / vec2(width, height);
     float dt = params.grid_dt_time.z;
     uint procedural_count = uint(max(params.solver_options.w, 0.0));
-
-    apply_source(cell, uv, params.injection_xy_radius_strength.xy,
-                 params.injection_xy_radius_strength.z, params.injection_xy_radius_strength.w,
-                 max(params.injection_dye_active.rgb, vec3(0.0)), params.force_decay.xy,
-                 clamp(params.injection_dye_active.w, 0.0, 1.0), dt);
 
     for (uint i = 0; i < procedural_count; ++i) {
         Injector injector = injector_field.injectors[i];
