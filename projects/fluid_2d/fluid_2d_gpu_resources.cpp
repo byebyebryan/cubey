@@ -262,10 +262,10 @@ void Fluid2DGpuResources::update_field_descriptors(cubey::vulkan::Device& device
     cubey::vulkan::DescriptorWriteBatch descriptor_writes;
 
     descriptor_writes
-        .storage_buffer(inject_descriptor_set_, 0, field_a().handle(), field_a().size())
-        .storage_buffer(inject_descriptor_set_, 1, field_b().handle(), field_b().size())
-        .storage_buffer(advect_descriptor_set_, 0, field_b().handle(), field_b().size())
-        .storage_buffer(advect_descriptor_set_, 1, field_a().handle(), field_a().size());
+        .storage_buffer(advect_descriptor_set_, 0, field_a().handle(), field_a().size())
+        .storage_buffer(advect_descriptor_set_, 1, field_b().handle(), field_b().size())
+        .storage_buffer(inject_descriptor_set_, 0, field_b().handle(), field_b().size())
+        .storage_buffer(inject_descriptor_set_, 1, field_a().handle(), field_a().size());
 
     descriptor_writes
         .storage_buffer(render_descriptors().set(), 0, field_a().handle(), field_a().size())

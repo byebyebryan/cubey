@@ -45,8 +45,8 @@ Deferred:
 ## Runtime Shape
 
 ```text
-field A -> inject -> field B
-field B -> advect/fade -> field A
+field A -> advect/fade -> field B
+field B -> inject fresh dye/force -> field A
 field A -> divergence + pressure reset
 pressure A/B -> Jacobi iterations
 field A + pressure -> subtract gradient in place
@@ -212,6 +212,19 @@ without moving fluid simulation policy into the renderer.
 - Headless simulation keeps its direct project GPU services path and explicit
   final visibility barrier because capture rendering happens in a separate
   host-owned command path.
+
+### Checkpoint 7
+
+Status: sharper source ordering complete.
+
+Goal: make pointer and procedural injection read as intentional input instead of
+being immediately blurred by the advection pass.
+
+- The simulation now advects the previous field first, then injects fresh dye
+  and velocity into the visible field before divergence, pressure solve, and
+  projection.
+- The render graph declaration now names both ping-pong field buffers so graph
+  sync sees the full compute write set.
 
 ## Commands
 
