@@ -313,6 +313,34 @@ void test_run_config_parses_injector_orbit_controls() {
             "run config should parse procedural injector orbit inclination spread");
 }
 
+void test_run_config_parses_injector_movement_controls() {
+    {
+        std::string program = "cubey";
+        std::string movement_flag = "--injector-movement";
+        std::string movement_value = "circle";
+        std::string height_flag = "--injector-circle-height";
+        std::string height_value = "0.65";
+        std::array<char*, 5> argv{program.data(), movement_flag.data(), movement_value.data(),
+                                  height_flag.data(), height_value.data()};
+
+        const cubey::RunConfig config =
+            cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
+        require(config.injector_movement == "circle",
+                "run config should parse procedural injector movement");
+        require(config.injector_circle_height == 0.65F,
+                "run config should parse procedural injector circle height");
+    }
+    {
+        std::string program = "cubey";
+        std::string height_flag = "--injector-circle-height";
+        std::string height_value = "1.25";
+        std::array<char*, 3> argv{program.data(), height_flag.data(), height_value.data()};
+        require_throws(
+            [&argv]() { cubey::parse_run_config(static_cast<int>(argv.size()), argv.data()); },
+            "run config should reject injector circle heights outside the simulation volume");
+    }
+}
+
 void test_run_config_parses_injector_force_controls() {
     std::array<char, 6> program{'c', 'u', 'b', 'e', 'y', '\0'};
     std::array<char, 17> force_flag{'-', '-', 'i', 'n', 'j', 'e', 'c', 't', 'o',
@@ -329,6 +357,22 @@ void test_run_config_parses_injector_force_controls() {
     require(config.injector_force == 7.5F, "run config should parse procedural injector force");
     require(config.injector_propulsion == 1.6F,
             "run config should parse procedural injector propulsion");
+}
+
+void test_run_config_parses_fluid_density_and_buoyancy_controls() {
+    std::string program = "cubey";
+    std::string density_flag = "--fluid-density-injection";
+    std::string density_value = "7.25";
+    std::string buoyancy_flag = "--fluid-buoyancy";
+    std::string buoyancy_value = "1.75";
+    std::array<char*, 5> argv{program.data(), density_flag.data(), density_value.data(),
+                              buoyancy_flag.data(), buoyancy_value.data()};
+
+    const cubey::RunConfig config =
+        cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
+    require(config.fluid_density_injection == 7.25F,
+            "run config should parse fluid density injection");
+    require(config.fluid_buoyancy == 1.75F, "run config should parse fluid buoyancy");
 }
 
 void test_run_config_parses_obstacle_flag() {

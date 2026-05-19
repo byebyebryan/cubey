@@ -57,6 +57,11 @@ constexpr std::array<Fluid3DDebugView, 3> kDebugViews{
     Fluid3DDebugView::Velocity,
 };
 
+constexpr std::array<Fluid3DInjectorMovement, 2> kInjectorMovements{
+    Fluid3DInjectorMovement::Orbit,
+    Fluid3DInjectorMovement::Circle,
+};
+
 class Fluid3DApp {
   public:
     explicit Fluid3DApp(RunConfig config)
@@ -224,10 +229,27 @@ class Fluid3DApp {
                            "%.4f");
         ImGui::SliderFloat("Injector radius", &fluid_config_.injector_radius, 0.020F, 0.180F,
                            "%.3f");
-        ImGui::SliderFloat("Injection force", &fluid_config_.injector_strength, 0.0F, 12.0F,
+        ImGui::SliderFloat("Density injection", &fluid_config_.injector_density_strength, 0.0F,
+                           12.0F, "%.2f");
+        ImGui::SliderFloat("Velocity force", &fluid_config_.injector_strength, 0.0F, 12.0F,
                            "%.2f");
         ImGui::SliderFloat("Propulsion", &fluid_config_.injector_propulsion_strength, 0.0F, 3.0F,
                            "%.2f");
+        ImGui::SliderFloat("Buoyancy", &fluid_config_.buoyancy_strength, -2.0F, 6.0F, "%.2f");
+        if (ImGui::BeginCombo("Movement",
+                              fluid_3d_injector_movement_name(fluid_config_.injector_movement))) {
+            for (Fluid3DInjectorMovement movement : kInjectorMovements) {
+                const bool selected = movement == fluid_config_.injector_movement;
+                if (ImGui::Selectable(fluid_3d_injector_movement_name(movement), selected)) {
+                    fluid_config_.injector_movement = movement;
+                    reset_injectors();
+                }
+                if (selected) {
+                    ImGui::SetItemDefaultFocus();
+                }
+            }
+            ImGui::EndCombo();
+        }
         ImGui::SliderFloat("Orbit radius", &fluid_config_.injector_orbit_radius, 0.06F, 0.42F,
                            "%.3f");
         ImGui::SliderFloat("Radius spread", &fluid_config_.injector_orbit_radius_spread, 0.0F,
@@ -236,11 +258,16 @@ class Fluid3DApp {
                            2.0F, "%.2f");
         ImGui::SliderFloat("Speed spread", &fluid_config_.injector_orbit_angular_speed_spread,
                            0.0F, 4.0F, "%.2f");
-        ImGui::SliderFloat("Inclination", &fluid_config_.injector_orbit_inclination_degrees,
-                           -80.0F, 80.0F, "%.1f");
-        ImGui::SliderFloat("Inclination spread",
-                           &fluid_config_.injector_orbit_inclination_spread_degrees, 0.0F,
-                           160.0F, "%.1f");
+        if (fluid_config_.injector_movement == Fluid3DInjectorMovement::Orbit) {
+            ImGui::SliderFloat("Inclination", &fluid_config_.injector_orbit_inclination_degrees,
+                               -80.0F, 80.0F, "%.1f");
+            ImGui::SliderFloat("Inclination spread",
+                               &fluid_config_.injector_orbit_inclination_spread_degrees, 0.0F,
+                               160.0F, "%.1f");
+        } else if (fluid_config_.injector_movement == Fluid3DInjectorMovement::Circle) {
+            ImGui::SliderFloat("Circle height", &fluid_config_.injector_circle_height, 0.08F,
+                               0.92F, "%.3f");
+        }
         ImGui::SliderFloat("Phase spread", &fluid_config_.injector_orbit_phase_spread, 0.0F, 1.0F,
                            "%.2f");
         ImGui::SliderFloat("Vorticity", &fluid_config_.vorticity_strength, 0.0F, 1.5F, "%.2f");

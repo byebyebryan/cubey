@@ -24,7 +24,7 @@ struct Fluid3DInjectorState {
 struct Fluid3DInjectorGpu {
     std::array<float, 4> position_radius{};
     std::array<float, 4> velocity_strength{};
-    std::array<float, 4> color_active{};
+    std::array<float, 4> color_density{};
 };
 
 static_assert(sizeof(Fluid3DInjectorGpu) == sizeof(float) * 12U);

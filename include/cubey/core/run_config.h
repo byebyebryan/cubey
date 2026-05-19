@@ -34,6 +34,7 @@ struct RunConfig {
     std::uint32_t injectors = 0;
     float injector_force = 6.0F;
     float injector_propulsion = 1.0F;
+    float fluid_density_injection = 6.0F;
     float injector_orbit_radius = 0.25F;
     float injector_orbit_radius_spread = 0.22F;
     float injector_orbit_angular_speed = 0.0F;
@@ -41,6 +42,9 @@ struct RunConfig {
     float injector_orbit_phase_spread = 1.0F;
     float injector_orbit_inclination_degrees = 0.0F;
     float injector_orbit_inclination_spread_degrees = 60.0F;
+    std::string injector_movement = "orbit";
+    float injector_circle_height = 0.5F;
+    float fluid_buoyancy = 1.0F;
     std::uint32_t frames = 0;
     std::uint32_t fps = 60;
     std::filesystem::path input_path{};

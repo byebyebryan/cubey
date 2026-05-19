@@ -99,6 +99,9 @@ RunConfig parse_run_config(int argc, char** argv) {
         } else if (arg == "--injector-propulsion") {
             config.injector_propulsion =
                 parse_float(need_value("--injector-propulsion"), "--injector-propulsion");
+        } else if (arg == "--fluid-density-injection") {
+            config.fluid_density_injection =
+                parse_float(need_value("--fluid-density-injection"), "--fluid-density-injection");
         } else if (arg == "--injector-orbit-radius") {
             config.injector_orbit_radius =
                 parse_float(need_value("--injector-orbit-radius"), "--injector-orbit-radius");
@@ -123,6 +126,13 @@ RunConfig parse_run_config(int argc, char** argv) {
                    arg == "--injector-orbit-inclination-spread-degrees") {
             config.injector_orbit_inclination_spread_degrees = parse_float(
                 need_value(arg), "--injector-orbit-inclination-spread-degrees");
+        } else if (arg == "--injector-movement") {
+            config.injector_movement = std::string(need_value("--injector-movement"));
+        } else if (arg == "--injector-circle-height" || arg == "--injector-circle-y") {
+            config.injector_circle_height =
+                parse_float(need_value(arg), "--injector-circle-height");
+        } else if (arg == "--fluid-buoyancy") {
+            config.fluid_buoyancy = parse_float(need_value("--fluid-buoyancy"), "--fluid-buoyancy");
         } else if (arg == "--frames") {
             config.frames = parse_u32(need_value("--frames"), "--frames");
         } else if (arg == "--fps") {
@@ -184,6 +194,9 @@ RunConfig parse_run_config(int argc, char** argv) {
     if (config.injector_propulsion < 0.0F) {
         throw std::runtime_error("injector propulsion must be nonnegative");
     }
+    if (config.fluid_density_injection < 0.0F) {
+        throw std::runtime_error("fluid density injection must be nonnegative");
+    }
     if (config.injector_orbit_radius <= 0.0F) {
         throw std::runtime_error("injector orbit radius must be positive");
     }
@@ -198,6 +211,9 @@ RunConfig parse_run_config(int argc, char** argv) {
     }
     if (config.injector_orbit_inclination_spread_degrees < 0.0F) {
         throw std::runtime_error("injector orbit inclination spread must be nonnegative");
+    }
+    if (config.injector_circle_height < 0.0F || config.injector_circle_height > 1.0F) {
+        throw std::runtime_error("injector circle height must be in the 0..1 volume range");
     }
     if (config.capture_mode == CaptureMode::Video) {
         if (!config.headless) {

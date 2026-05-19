@@ -12,7 +12,7 @@ layout(push_constant) uniform SimulationParams {
 struct Injector {
     vec4 position_radius;
     vec4 velocity_strength;
-    vec4 color_active;
+    vec4 color_density;
 };
 
 layout(rgba16f, set = 0, binding = 0) uniform readonly image3D density_in;

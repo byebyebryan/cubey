@@ -130,8 +130,8 @@ void integrate_boundary(std::array<float, 3>& position, std::array<float, 3>& ve
     return degrees * kDegreesToRadians;
 }
 
-void sync_orbit_parameters(Fluid3DInjectorState& injector, const Fluid3DConfig& config,
-                           std::uint32_t index) {
+void sync_motion_parameters(Fluid3DInjectorState& injector, const Fluid3DConfig& config,
+                            std::uint32_t index) {
     injector.phase = orbit_phase(config, index);
     injector.radius = orbit_radius(config, index);
     injector.speed = orbit_angular_speed(config, index);
@@ -139,7 +139,7 @@ void sync_orbit_parameters(Fluid3DInjectorState& injector, const Fluid3DConfig& 
 }
 
 [[nodiscard]] std::array<float, 3>
-target_for_injector(const Fluid3DConfig&, const Fluid3DInjectorState& injector, float time) {
+orbit_target_for_injector(const Fluid3DInjectorState& injector, float time) {
     const float angle = injector.phase + (injector.speed * time);
     const float sin_inclination = std::sin(injector.inclination_radians);
     const float cos_inclination = std::cos(injector.inclination_radians);
@@ -148,6 +148,28 @@ target_for_injector(const Fluid3DConfig&, const Fluid3DInjectorState& injector, 
         kCenter[1] + (std::sin(angle) * injector.radius * sin_inclination),
         kCenter[2] + (std::sin(angle) * injector.radius * cos_inclination),
     });
+}
+
+[[nodiscard]] std::array<float, 3>
+circle_target_for_injector(const Fluid3DConfig& config, const Fluid3DInjectorState& injector,
+                           float time) {
+    const float angle = injector.phase + (injector.speed * time);
+    return clamp_uv({
+        kCenter[0] + (std::cos(angle) * injector.radius),
+        std::clamp(config.injector_circle_height, 0.08F, 0.92F),
+        kCenter[2] + (std::sin(angle) * injector.radius),
+    });
+}
+
+[[nodiscard]] std::array<float, 3>
+target_for_injector(const Fluid3DConfig& config, const Fluid3DInjectorState& injector, float time) {
+    switch (config.injector_movement) {
+    case Fluid3DInjectorMovement::Orbit:
+        return orbit_target_for_injector(injector, time);
+    case Fluid3DInjectorMovement::Circle:
+        return circle_target_for_injector(config, injector, time);
+    }
+    return orbit_target_for_injector(injector, time);
 }
 
 [[nodiscard]] std::array<float, 3> tangent_for_injector(const Fluid3DConfig& config,
@@ -238,7 +260,7 @@ std::vector<Fluid3DInjectorState> create_fluid_3d_injectors(const Fluid3DConfig&
             .speed = {},
             .inclination_radians = {},
         };
-        sync_orbit_parameters(injector, config, index);
+        sync_motion_parameters(injector, config, index);
         injector.position = target_for_injector(config, injector, 0.0F);
         injector.velocity = initial_velocity_for_injector(config, injector);
         injectors.push_back(injector);
@@ -268,12 +290,12 @@ fluid_3d_injectors_to_gpu(const std::vector<Fluid3DInjectorState>& injectors,
                     force[2],
                     config.injector_strength,
                 },
-            .color_active =
+            .color_density =
                 {
                     injector.color[0],
                     injector.color[1],
                     injector.color[2],
-                    1.0F,
+                    config.injector_density_strength,
                 },
         });
     }
@@ -289,7 +311,7 @@ update_fluid_3d_injectors(std::vector<Fluid3DInjectorState>& injectors, const Fl
     const float time = static_cast<float>(timing.elapsed_seconds);
     const float dt = std::min(static_cast<float>(timing.delta_seconds), config.fixed_delta_seconds);
     for (std::size_t index = 0; index < injectors.size(); ++index) {
-        sync_orbit_parameters(injectors[index], config, static_cast<std::uint32_t>(index));
+        sync_motion_parameters(injectors[index], config, static_cast<std::uint32_t>(index));
         const std::array<float, 3> acceleration =
             injector_acceleration(injectors, config, index, time);
         add_to(injectors[index].velocity, scale(acceleration, dt));

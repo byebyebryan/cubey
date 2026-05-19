@@ -18,9 +18,10 @@ and UI/control shape before the solver becomes more ambitious.
 - `D` cycles smoke, density-slice, and velocity debug views.
 
 The UI exposes injector count, pressure iterations, raymarch steps, decay,
-injection radius/force/propulsion, 3D orbit radius/speed/inclination controls,
-vorticity, absorption, light, shadow strength, shadow ray steps/update interval,
-ambient terms, and recent GPU pass timings.
+injection radius, density injection, velocity force, propulsion, buoyancy,
+movement type, orbit/circle controls, vorticity, absorption, light, shadow
+strength, shadow ray steps/update interval, ambient terms, and recent GPU pass
+timings.
 
 ## CLI
 
@@ -28,6 +29,8 @@ ambient terms, and recent GPU pass timings.
 ./build/dev/projects/fluid_3d/fluid_3d --width 1280 --height 720
 ./build/dev/projects/fluid_3d/fluid_3d --grid-width 64 --grid-height 64 --grid-depth 64 --injectors 8
 ./build/dev/projects/fluid_3d/fluid_3d --injectors 8 --injector-orbit-radius 0.24 --injector-orbit-angular-speed 0.0 --injector-orbit-angular-speed-spread 1.2 --injector-orbit-inclination-degrees 0 --injector-orbit-inclination-spread-degrees 70
+./build/dev/projects/fluid_3d/fluid_3d --injector-movement circle --injector-circle-height 0.62 --injectors 8
+./build/dev/projects/fluid_3d/fluid_3d --fluid-density-injection 7.0 --fluid-buoyancy 1.5
 ./build/dev/projects/fluid_3d/fluid_3d --shadow-grid-width 64 --shadow-grid-height 64 --shadow-grid-depth 64 --shadow-steps 64 --shadow-update-interval 1
 ./build/dev/projects/fluid_3d/fluid_3d --frames 300 --print-frame-stats --width 1280 --height 720
 ./build/dev/projects/fluid_3d/fluid_3d --headless --frames 120 --width 640 --height 360 --output /tmp/cubey-fluid-3d.png
@@ -38,9 +41,14 @@ at `64x64x64`, with 64 shadow ray steps and per-frame shadow updates. The CLI
 grid flags are useful for quick smoke tests (`32x32x32`) and higher-quality
 local runs once performance allows. Shadow grid changes are startup-time
 resource choices; shadow steps and update interval are also exposed live in UI.
-Procedural injectors follow moving 3D orbit targets with spring/damping physics
-rather than teleporting directly onto parametric paths. The injected velocity
-combines source carry velocity with an opposite-direction propulsion term.
+Procedural injectors follow moving targets with spring/damping physics rather
+than teleporting directly onto parametric paths. `orbit` uses tilted 3D paths;
+`circle` uses a horizontal X/Z path at configurable normalized Y height. The
+injected velocity combines source carry velocity with an opposite-direction
+propulsion term.
+Density injection and velocity force are controlled independently, and the
+solver applies density-weighted upward buoyancy during the correction/injection
+pass.
 
 ## Current Pipeline
 
@@ -60,7 +68,8 @@ The command path records:
 1. One-time image layout transition to `VK_IMAGE_LAYOUT_GENERAL`.
 2. Reset pass when requested.
 3. Semi-Lagrangian advection prediction pass.
-4. MacCormack/BFECC correction, limiter, cleanup, and procedural injector pass.
+4. MacCormack/BFECC correction, limiter, cleanup, procedural injection, and
+   buoyancy.
 5. Divergence pass.
 6. Jacobi pressure ping-pong.
 7. Projection plus vorticity confinement.

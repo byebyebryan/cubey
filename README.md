@@ -176,9 +176,10 @@ obstacle mask.
 `--shadow-steps`, `--shadow-update-interval`, `--injector-orbit-radius`,
 `--injector-orbit-angular-speed`, `--injector-orbit-angular-speed-spread`,
 `--injector-orbit-inclination-degrees`,
-`--injector-orbit-inclination-spread-degrees`, and `--injectors 1..16` for
-lower-cost smoke tests or heavier local runs. `--print-frame-stats` also emits
-periodic `fluid_3d_gpu` pass timings when timestamp queries are available.
+`--injector-orbit-inclination-spread-degrees`, `--injector-movement orbit|circle`,
+`--injector-circle-height`, and `--injectors 1..16` for lower-cost smoke tests
+or heavier local runs. `--print-frame-stats` also emits periodic `fluid_3d_gpu`
+pass timings when timestamp queries are available.
 
 Useful headless PNG smokes:
 

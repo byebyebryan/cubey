@@ -73,6 +73,8 @@ int main() {
                 "fluid 3D injector radius should match the tuned default");
         require(config.injector_strength == 6.0F,
                 "fluid 3D injector force should match the shared CLI default");
+        require(config.injector_density_strength == 6.0F,
+                "fluid 3D injector density injection should match the shared default");
         require(config.injector_propulsion_strength == 1.0F,
                 "fluid 3D injector propulsion should default to neutral scaling");
         require(config.injector_orbit_radius == 0.25F,
@@ -89,8 +91,15 @@ int main() {
                 "fluid 3D injector inclination should default to horizontal orbits");
         require(config.injector_orbit_inclination_spread_degrees == 60.0F,
                 "fluid 3D injector inclination spread should default to tilted 3D orbits");
+        require(config.injector_movement ==
+                    cubey::projects::fluid_3d::Fluid3DInjectorMovement::Orbit,
+                "fluid 3D injector movement should default to orbit");
+        require(config.injector_circle_height == 0.5F,
+                "fluid 3D injector circle height should default to the volume center");
         require(config.vorticity_strength == 1.0F,
                 "fluid 3D vorticity should match the tuned default");
+        require(config.buoyancy_strength == 1.0F,
+                "fluid 3D buoyancy should default to a mild upward force");
         require(config.absorption == 8.0F,
                 "fluid 3D absorption should match the tuned default");
         require(config.emission == 2.0F,
@@ -132,6 +141,7 @@ int main() {
         run_config.injectors = 8;
         run_config.injector_force = 7.5F;
         run_config.injector_propulsion = 1.6F;
+        run_config.fluid_density_injection = 6.5F;
         run_config.injector_orbit_radius = 0.24F;
         run_config.injector_orbit_radius_spread = 0.18F;
         run_config.injector_orbit_angular_speed = 0.1F;
@@ -139,6 +149,9 @@ int main() {
         run_config.injector_orbit_phase_spread = 0.75F;
         run_config.injector_orbit_inclination_degrees = 10.0F;
         run_config.injector_orbit_inclination_spread_degrees = 50.0F;
+        run_config.injector_movement = "circle";
+        run_config.injector_circle_height = 0.65F;
+        run_config.fluid_buoyancy = 1.75F;
         const cubey::projects::fluid_3d::Fluid3DConfig configured =
             cubey::projects::fluid_3d::fluid_3d_config_from_run_config(run_config);
         require(configured.grid_width == 64, "fluid 3D config should honor run config width");
@@ -158,6 +171,8 @@ int main() {
                 "fluid 3D config should honor run config injector count");
         require(configured.injector_strength == 7.5F,
                 "fluid 3D config should honor run config injector force");
+        require(configured.injector_density_strength == 6.5F,
+                "fluid 3D config should honor run config density injection");
         require(configured.injector_propulsion_strength == 1.6F,
                 "fluid 3D config should honor run config injector propulsion");
         require(configured.injector_orbit_radius == 0.24F,
@@ -174,6 +189,13 @@ int main() {
                 "fluid 3D config should honor run config injector inclination");
         require(configured.injector_orbit_inclination_spread_degrees == 50.0F,
                 "fluid 3D config should honor run config injector inclination spread");
+        require(configured.injector_movement ==
+                    cubey::projects::fluid_3d::Fluid3DInjectorMovement::Circle,
+                "fluid 3D config should honor run config injector movement");
+        require(configured.injector_circle_height == 0.65F,
+                "fluid 3D config should honor run config injector circle height");
+        require(configured.buoyancy_strength == 1.75F,
+                "fluid 3D config should honor run config buoyancy");
 
         bool threw_for_too_many_injectors = false;
         try {
@@ -188,6 +210,18 @@ int main() {
         require(threw_for_too_many_injectors,
                 "fluid 3D config should reject injector counts above the shader policy limit");
 
+        bool threw_for_invalid_movement = false;
+        try {
+            cubey::RunConfig invalid_movement_config;
+            invalid_movement_config.injector_movement = "spiral";
+            static_cast<void>(cubey::projects::fluid_3d::fluid_3d_config_from_run_config(
+                invalid_movement_config));
+        } catch (const std::runtime_error&) {
+            threw_for_invalid_movement = true;
+        }
+        require(threw_for_invalid_movement,
+                "fluid 3D config should reject unsupported injector movement modes");
+
         std::vector<cubey::projects::fluid_3d::Fluid3DInjectorState> injectors =
             cubey::projects::fluid_3d::create_fluid_3d_injectors(configured);
         require(injectors.size() == 8, "fluid 3D injector state should match configured count");
@@ -200,6 +234,8 @@ int main() {
                 "fluid 3D injector inclinations should spread across the configured band");
         require(injectors[1].phase > injectors[0].phase,
                 "fluid 3D injector phases should spread across the configured phase range");
+        require(injectors.front().position[1] > 0.64F && injectors.front().position[1] < 0.66F,
+                "fluid 3D circle movement should initialize on the configured height plane");
         require(length_squared(injectors.front().color) > 0.0F,
                 "fluid 3D injectors should carry display color");
         const std::array<float, 3> initial_position = injectors.front().position;
@@ -210,6 +246,8 @@ int main() {
                 "fluid 3D GPU injector should carry configured radius");
         require(gpu_injectors.front().velocity_strength[3] == configured.injector_strength,
                 "fluid 3D GPU injector should carry configured force");
+        require(gpu_injectors.front().color_density[3] == configured.injector_density_strength,
+                "fluid 3D GPU injector should carry configured density injection");
         cubey::projects::fluid_3d::Fluid3DConfig no_propulsion_config = configured;
         no_propulsion_config.injector_propulsion_strength = 0.0F;
         const std::vector<cubey::projects::fluid_3d::Fluid3DInjectorGpu> no_propulsion_gpu =
@@ -230,7 +268,7 @@ int main() {
         gpu_injectors =
             cubey::projects::fluid_3d::update_fluid_3d_injectors(injectors, configured, timing);
         require(injectors.front().position != initial_position,
-                "fluid 3D injector update should advance orbit position");
+                "fluid 3D injector update should advance motion position");
         require(length_squared(injectors.front().velocity) > 0.0F,
                 "fluid 3D injector update should produce carry velocity");
         require(cubey::projects::fluid_3d::fluid_3d_injector_byte_size(configured) ==
@@ -270,6 +308,10 @@ int main() {
                          "fluid 3D should use a MacCormack/BFECC correction pass");
         require_contains(advect_correct_shader, "source_bounds",
                          "fluid 3D MacCormack correction should use a source-neighborhood limiter");
+        require_contains(advect_correct_shader, "density_impulse",
+                         "fluid 3D correction pass should expose density injection strength");
+        require_contains(advect_correct_shader, "buoyancy_force",
+                         "fluid 3D correction pass should apply buoyancy");
         require_contains(render_shader, "sampler3D",
                          "fluid 3D render shader should raymarch sampled 3D textures");
         require_contains(render_shader, "shadow_volume",

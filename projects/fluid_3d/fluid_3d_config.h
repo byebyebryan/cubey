@@ -8,6 +8,7 @@
 #include <cstdint>
 #include <limits>
 #include <stdexcept>
+#include <string_view>
 
 namespace cubey::projects::fluid_3d {
 
@@ -15,6 +16,11 @@ enum class Fluid3DDebugView : std::uint32_t {
     Smoke = 0,
     DensitySlice = 1,
     Velocity = 2,
+};
+
+enum class Fluid3DInjectorMovement : std::uint32_t {
+    Orbit = 0,
+    Circle = 1,
 };
 
 inline constexpr std::uint32_t kMaxFluid3DInjectorCount = 16;
@@ -37,6 +43,7 @@ struct Fluid3DConfig {
     float velocity_decay_per_second = 0.99F;
     float injector_radius = 0.05F;
     float injector_strength = 6.0F;
+    float injector_density_strength = 6.0F;
     float injector_propulsion_strength = 1.0F;
     float injector_velocity_scale = 1.3F;
     float injector_orbit_radius = 0.25F;
@@ -46,7 +53,10 @@ struct Fluid3DConfig {
     float injector_orbit_phase_spread = 1.0F;
     float injector_orbit_inclination_degrees = 0.0F;
     float injector_orbit_inclination_spread_degrees = 60.0F;
+    Fluid3DInjectorMovement injector_movement = Fluid3DInjectorMovement::Orbit;
+    float injector_circle_height = 0.5F;
     float vorticity_strength = 1.0F;
+    float buoyancy_strength = 1.0F;
     float absorption = 8.0F;
     float emission = 2.0F;
     float shadow_absorption = 50.0F;
@@ -63,6 +73,28 @@ struct Fluid3DConfig {
         return Fluid3DDebugView::Smoke;
     }
     return Fluid3DDebugView::Smoke;
+}
+
+[[nodiscard]] inline const char* fluid_3d_injector_movement_name(
+    Fluid3DInjectorMovement movement) {
+    switch (movement) {
+    case Fluid3DInjectorMovement::Orbit:
+        return "Orbit";
+    case Fluid3DInjectorMovement::Circle:
+        return "Circle";
+    }
+    return "Orbit";
+}
+
+[[nodiscard]] inline Fluid3DInjectorMovement fluid_3d_injector_movement_from_string(
+    std::string_view name) {
+    if (name == "orbit") {
+        return Fluid3DInjectorMovement::Orbit;
+    }
+    if (name == "circle") {
+        return Fluid3DInjectorMovement::Circle;
+    }
+    throw std::runtime_error("fluid 3D injector movement must be orbit or circle");
 }
 
 [[nodiscard]] inline std::size_t volume_cell_count(const Fluid3DConfig& config) {
@@ -145,6 +177,7 @@ struct Fluid3DConfig {
         result.injector_count = config.injectors;
     }
     result.injector_strength = config.injector_force;
+    result.injector_density_strength = config.fluid_density_injection;
     result.injector_propulsion_strength = config.injector_propulsion;
     result.injector_orbit_radius = config.injector_orbit_radius;
     result.injector_orbit_radius_spread = config.injector_orbit_radius_spread;
@@ -154,6 +187,9 @@ struct Fluid3DConfig {
     result.injector_orbit_inclination_degrees = config.injector_orbit_inclination_degrees;
     result.injector_orbit_inclination_spread_degrees =
         config.injector_orbit_inclination_spread_degrees;
+    result.injector_movement = fluid_3d_injector_movement_from_string(config.injector_movement);
+    result.injector_circle_height = config.injector_circle_height;
+    result.buoyancy_strength = config.fluid_buoyancy;
     static_cast<void>(volume_cell_count(result));
     static_cast<void>(shadow_volume_cell_count(result));
     return result;

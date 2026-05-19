@@ -182,7 +182,7 @@ void record_injector_buffer_update(VkCommandBuffer command_buffer,
             {
                 config.shadow_absorption,
                 static_cast<float>(config.shadow_steps),
-                0.0F,
+                config.buoyancy_strength,
                 0.0F,
             },
     };
