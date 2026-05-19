@@ -222,7 +222,9 @@ class Fluid3DApp {
                            "%.2f");
         ImGui::SliderFloat("Vorticity", &fluid_config_.vorticity_strength, 0.0F, 1.5F, "%.2f");
         ImGui::SliderFloat("Absorption", &fluid_config_.absorption, 0.5F, 12.0F, "%.2f");
-        ImGui::SliderFloat("Emission", &fluid_config_.emission, 0.1F, 4.0F, "%.2f");
+        ImGui::SliderFloat("Light", &fluid_config_.emission, 0.1F, 4.0F, "%.2f");
+        ImGui::SliderFloat("Shadow", &fluid_config_.shadow_absorption, 0.0F, 96.0F, "%.2f");
+        ImGui::SliderFloat("Ambient", &fluid_config_.ambient_light, 0.0F, 1.0F, "%.2f");
         ImGui::Text("Grid: %u x %u x %u", fluid_config_.grid_width, fluid_config_.grid_height,
                     fluid_config_.grid_depth);
         ImGui::End();

@@ -20,6 +20,7 @@ struct SimulationPushConstants {
     std::array<float, 4> grid_dt_time{};
     std::array<float, 4> decay_force{};
     std::array<float, 4> options{};
+    std::array<float, 4> shadow_options{};
 };
 
 struct RenderPushConstants {
@@ -30,7 +31,7 @@ struct RenderPushConstants {
     std::array<float, 4> render_options{};
 };
 
-static_assert(sizeof(SimulationPushConstants) == sizeof(float) * 12U);
+static_assert(sizeof(SimulationPushConstants) == sizeof(float) * 16U);
 static_assert(sizeof(RenderPushConstants) == sizeof(float) * 20U);
 
 struct DispatchGroups {
@@ -101,6 +102,7 @@ void record_initial_volume_layouts(VkCommandBuffer command_buffer,
     transition_volume_to_general(command_buffer, resources.divergence());
     transition_volume_to_general(command_buffer, resources.pressure_a());
     transition_volume_to_general(command_buffer, resources.pressure_b());
+    transition_volume_to_general(command_buffer, resources.shadow_volume());
 }
 
 void record_injector_buffer_update(VkCommandBuffer command_buffer,
@@ -149,6 +151,13 @@ void record_injector_buffer_update(VkCommandBuffer command_buffer,
                 static_cast<float>(config.pressure_iterations),
                 time,
             },
+        .shadow_options =
+            {
+                config.shadow_absorption,
+                0.0F,
+                0.0F,
+                0.0F,
+            },
     };
 }
 
@@ -192,8 +201,8 @@ void record_injector_buffer_update(VkCommandBuffer command_buffer,
             {
                 config.absorption,
                 config.emission,
-                0.0F,
-                0.0F,
+                config.shadow_absorption,
+                config.ambient_light,
             },
     };
 }
@@ -295,6 +304,11 @@ void record_fluid_3d_compute(VkCommandBuffer command_buffer, Fluid3DGpuResources
         resources.projection_descriptor_set(frame_state.velocity_a_current, pressure_a_current),
         groups, push_constants);
     frame_state.velocity_a_current = !frame_state.velocity_a_current;
+
+    const cubey::render::ComputePipelineResource& shadow_pipeline = resources.shadow_pipeline();
+    record_dispatch(recorder, shadow_pipeline,
+                    resources.shadow_descriptor_set(frame_state.density_a_current), groups,
+                    push_constants);
 
     if (include_render_visibility_barrier) {
         record_shader_write_barrier(

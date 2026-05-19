@@ -36,6 +36,8 @@ struct Fluid3DConfig {
     float vorticity_strength = 0.22F;
     float absorption = 5.0F;
     float emission = 1.6F;
+    float shadow_absorption = 48.0F;
+    float ambient_light = 0.22F;
 };
 
 [[nodiscard]] inline Fluid3DDebugView next_debug_view(Fluid3DDebugView view) {

@@ -2,12 +2,13 @@
 
 `fluid_3d` is Cubey's first dense 3D smoke project. It keeps the initial scope
 deliberately small: 3D storage textures, compute advection/injection, Jacobi
-pressure projection, vorticity confinement, and a fullscreen raymarcher.
+pressure projection, vorticity confinement, and a lit fullscreen raymarcher with
+precomputed volume self-shadowing.
 
 The project is intentionally dense-grid first. Sparse bricks, tiled allocation,
-lighting, shadowing, and scene integration are later steps; this slice is meant
-to prove the volume texture, command recording, headless capture, and UI/control
-shape before the solver becomes more ambitious.
+scene lighting integration, and proper volume light lists are later steps; this
+slice is meant to prove the volume texture, command recording, headless capture,
+and UI/control shape before the solver becomes more ambitious.
 
 ## Controls
 
@@ -17,7 +18,7 @@ shape before the solver becomes more ambitious.
 - `D` cycles smoke, density-slice, and velocity debug views.
 
 The UI exposes injector count, pressure iterations, raymarch steps, decay,
-injection radius/force, vorticity, absorption, and emission.
+injection radius/force, vorticity, absorption, light, shadow, and ambient terms.
 
 ## CLI
 
@@ -32,12 +33,14 @@ smoke tests (`32x32x32`) and higher-quality local runs once performance allows.
 
 ## Current Pipeline
 
-The simulation uses seven `RGBA32F` 3D textures:
+The simulation uses seven `RGBA32F` 3D textures plus one sampled `R32F` shadow
+volume:
 
 - Density A/B.
 - Velocity A/B.
 - Divergence.
 - Pressure A/B.
+- Shadow transmittance.
 
 The command path records:
 
@@ -47,7 +50,8 @@ The command path records:
 4. Divergence pass.
 5. Jacobi pressure ping-pong.
 6. Projection plus vorticity confinement.
-7. Raymarched fullscreen draw.
+7. Shadow-volume compute pass from the current density volume.
+8. Raymarched fullscreen draw sampling the precomputed shadow volume.
 
 The project currently uses direct command recording rather than the render
 graph. That keeps the first 3D volume path easy to inspect; the render graph can

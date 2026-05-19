@@ -10,13 +10,23 @@ layout(push_constant) uniform RenderParams {
 
 layout(set = 0, binding = 0) uniform sampler3D density_volume;
 layout(set = 0, binding = 1) uniform sampler3D velocity_volume;
+layout(set = 0, binding = 2) uniform sampler3D shadow_volume;
 
 layout(location = 0) in vec2 frag_position;
 layout(location = 1) in vec2 frag_uv;
 layout(location = 0) out vec4 out_color;
 
+float safe_ray_component(float value) {
+    if (abs(value) >= 0.00001) {
+        return value;
+    }
+    return value < 0.0 ? -0.00001 : 0.00001;
+}
+
 bool ray_box_intersection(vec3 origin, vec3 direction, out float near_t, out float far_t) {
-    vec3 inv_direction = 1.0 / max(abs(direction), vec3(0.00001)) * sign(direction);
+    vec3 safe_direction = vec3(safe_ray_component(direction.x), safe_ray_component(direction.y),
+                               safe_ray_component(direction.z));
+    vec3 inv_direction = 1.0 / safe_direction;
     vec3 t0 = (vec3(0.0) - origin) * inv_direction;
     vec3 t1 = (vec3(1.0) - origin) * inv_direction;
     vec3 t_min = min(t0, t1);
@@ -30,10 +40,43 @@ vec4 density_at(vec3 uv) {
     return texture(density_volume, clamp(uv, vec3(0.0), vec3(1.0)));
 }
 
+float volume_edge_fade(vec3 position) {
+    float edge_distance = min(min(position.x, 1.0 - position.x),
+                              min(min(position.y, 1.0 - position.y),
+                                  min(position.z, 1.0 - position.z)));
+    return smoothstep(0.0, 0.045, edge_distance);
+}
+
+float raw_smoke_density(vec4 density) {
+    return dot(max(density.rgb, vec3(0.0)), vec3(1.0));
+}
+
+float smoke_density(vec4 density, vec3 position) {
+    float rgb_density = raw_smoke_density(density);
+    float low_density_mask = smoothstep(0.010, 0.050, rgb_density);
+    return rgb_density * low_density_mask * volume_edge_fade(position);
+}
+
+float smoke_density_at(vec3 uv) {
+    return smoke_density(density_at(uv), uv);
+}
+
+vec3 background_color(vec2 uv) {
+    return mix(vec3(0.004, 0.006, 0.012), vec3(0.020, 0.026, 0.040), uv.y);
+}
+
+float base_volume_extinction() {
+    return params.render_options.w * 0.16;
+}
+
 vec3 velocity_debug_color(vec3 velocity) {
     float speed = clamp(length(velocity) * 2.2, 0.0, 1.0);
     vec3 direction = normalize(velocity + vec3(0.00001)) * 0.5 + 0.5;
     return mix(vec3(speed), direction, 0.75);
+}
+
+vec3 density_albedo(vec4 density, float extinction_density) {
+    return clamp(density.rgb / max(extinction_density, 0.035), vec3(0.0), vec3(1.35));
 }
 
 void main() {
@@ -57,11 +100,15 @@ void main() {
     float aspect = params.ray_up_aspect.w;
     vec3 direction = normalize(forward + right * frag_position.x * aspect * tan_half_fovy +
                                up * frag_position.y * tan_half_fovy);
+    vec3 light_direction = normalize(vec3(-0.42, 0.72, -0.55));
+    vec3 light_color = vec3(1.0, 0.92, 0.80);
+    vec3 sky_color = vec3(0.42, 0.54, 0.76);
 
     float near_t = 0.0;
     float far_t = 0.0;
+    vec3 background = background_color(frag_uv);
     if (!ray_box_intersection(origin, direction, near_t, far_t)) {
-        out_color = vec4(0.0, 0.0, 0.0, 1.0);
+        out_color = vec4(background, 1.0);
         return;
     }
 
@@ -75,16 +122,31 @@ void main() {
         float t = near_t + (float(i) + 0.5) * step_length;
         vec3 position = origin + direction * t;
         vec4 density = density_at(position);
-        float alpha = 1.0 - exp(-density.a * params.render_options.x * step_length);
-        vec3 emission = density.rgb * params.render_options.y;
-        accumulated += transmittance * emission * alpha;
-        transmittance *= 1.0 - clamp(alpha, 0.0, 0.96);
+        float smoke_density_value = smoke_density(density, position);
+        float smoke_extinction = smoke_density_value * params.render_options.x;
+        float base_extinction = base_volume_extinction();
+        float smoke_alpha = 1.0 - exp(-smoke_extinction * step_length);
+        float base_alpha = 1.0 - exp(-base_extinction * step_length);
+        float shadow = texture(shadow_volume, clamp(position, vec3(0.0), vec3(1.0))).r;
+        float shadowed_light = pow(clamp(shadow, 0.0, 1.0), 1.35);
+        float ambient_shadow = mix(0.24, 1.0, shadowed_light);
+        float view_light = clamp(dot(-direction, light_direction), 0.0, 1.0);
+        float forward_scatter = 0.35 + 0.65 * pow(view_light, 3.0);
+        float rim = pow(1.0 - clamp(dot(direction, light_direction) * 0.5 + 0.5, 0.0, 1.0), 3.0);
+        vec3 lighting = sky_color * params.render_options.w * ambient_shadow +
+                        light_color * shadowed_light * params.render_options.y *
+                            forward_scatter +
+                        light_color * shadowed_light * rim * 0.38;
+        vec3 base_color = (sky_color * 0.45 + light_color * 0.12) * ambient_shadow;
+        accumulated += transmittance * base_color * base_alpha;
+        accumulated += transmittance * density_albedo(density, smoke_density_value) * lighting *
+                       smoke_alpha;
+        transmittance *= exp(-(base_extinction + smoke_extinction) * step_length);
         if (transmittance < 0.01) {
             break;
         }
     }
 
-    vec3 background = vec3(0.006, 0.008, 0.012);
     vec3 color = accumulated + background * transmittance;
     out_color = vec4(clamp(color, vec3(0.0), vec3(1.0)), 1.0);
 }

@@ -1,0 +1,101 @@
+#version 450
+
+layout(local_size_x = 4, local_size_y = 4, local_size_z = 4) in;
+
+layout(push_constant) uniform SimulationParams {
+    vec4 grid_dt_time;
+    vec4 decay_force;
+    vec4 options;
+    vec4 shadow_options;
+} params;
+
+layout(set = 0, binding = 0) uniform sampler3D density_volume;
+layout(r32f, set = 0, binding = 1) uniform writeonly image3D shadow_volume;
+
+float safe_ray_component(float value) {
+    if (abs(value) >= 0.00001) {
+        return value;
+    }
+    return value < 0.0 ? -0.00001 : 0.00001;
+}
+
+bool ray_box_intersection(vec3 origin, vec3 direction, out float near_t, out float far_t) {
+    vec3 safe_direction = vec3(safe_ray_component(direction.x), safe_ray_component(direction.y),
+                               safe_ray_component(direction.z));
+    vec3 inv_direction = 1.0 / safe_direction;
+    vec3 t0 = (vec3(0.0) - origin) * inv_direction;
+    vec3 t1 = (vec3(1.0) - origin) * inv_direction;
+    vec3 t_min = min(t0, t1);
+    vec3 t_max = max(t0, t1);
+    near_t = max(max(t_min.x, t_min.y), t_min.z);
+    far_t = min(min(t_max.x, t_max.y), t_max.z);
+    return far_t > max(near_t, 0.0);
+}
+
+float ray_box_exit_distance(vec3 origin, vec3 direction) {
+    float near_t = 0.0;
+    float far_t = 0.0;
+    if (!ray_box_intersection(origin, direction, near_t, far_t)) {
+        return 0.0;
+    }
+    return max(far_t, 0.0);
+}
+
+float rand_float(vec3 value) {
+    return fract(sin(dot(value, vec3(12.9898, 78.233, 56.8346))) * 43758.5453);
+}
+
+float volume_edge_fade(vec3 position) {
+    float edge_distance = min(min(position.x, 1.0 - position.x),
+                              min(min(position.y, 1.0 - position.y),
+                                  min(position.z, 1.0 - position.z)));
+    return smoothstep(0.0, 0.045, edge_distance);
+}
+
+float raw_smoke_density(vec4 density) {
+    return dot(max(density.rgb, vec3(0.0)), vec3(1.0));
+}
+
+float shadow_density_at(vec3 uv) {
+    float density = raw_smoke_density(texture(density_volume, clamp(uv, vec3(0.0), vec3(1.0))));
+    return density * smoothstep(0.002, 0.025, density) * volume_edge_fade(uv);
+}
+
+float light_transmittance(vec3 uv) {
+    vec3 light_direction = normalize(vec3(-0.42, 0.72, -0.55));
+    float distance_to_exit = ray_box_exit_distance(uv, light_direction);
+    if (distance_to_exit <= 0.0) {
+        return 1.0;
+    }
+
+    float max_dimension = max(max(params.grid_dt_time.x, params.grid_dt_time.y),
+                              params.grid_dt_time.z);
+    float step_length = 1.0 / max(max_dimension * 0.75, 1.0);
+    float jitter = rand_float(uv) * step_length;
+    float optical_depth = 0.0;
+    float absorption = max(params.shadow_options.x, 0.0);
+
+    for (int i = 0; i < 160; ++i) {
+        float traveled = jitter + (float(i) + 0.5) * step_length;
+        if (traveled >= distance_to_exit) {
+            break;
+        }
+        vec3 sample_position = uv + light_direction * traveled;
+        optical_depth += shadow_density_at(sample_position) * step_length;
+        if (optical_depth * absorption > 7.0) {
+            return 0.0;
+        }
+    }
+    return exp(-optical_depth * absorption);
+}
+
+void main() {
+    ivec3 coord = ivec3(gl_GlobalInvocationID.xyz);
+    ivec3 size = ivec3(params.grid_dt_time.xyz);
+    if (any(greaterThanEqual(coord, size))) {
+        return;
+    }
+
+    vec3 uv = (vec3(coord) + vec3(0.5)) / vec3(size);
+    imageStore(shadow_volume, coord, vec4(light_transmittance(uv)));
+}

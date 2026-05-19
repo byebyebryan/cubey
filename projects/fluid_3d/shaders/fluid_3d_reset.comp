@@ -6,6 +6,7 @@ layout(push_constant) uniform SimulationParams {
     vec4 grid_dt_time;
     vec4 decay_force;
     vec4 options;
+    vec4 shadow_options;
 } params;
 
 layout(rgba32f, set = 0, binding = 0) uniform writeonly image3D density_a;
@@ -13,6 +14,7 @@ layout(rgba32f, set = 0, binding = 1) uniform writeonly image3D velocity_a;
 layout(rgba32f, set = 0, binding = 2) uniform writeonly image3D divergence_volume;
 layout(rgba32f, set = 0, binding = 3) uniform writeonly image3D pressure_a;
 layout(rgba32f, set = 0, binding = 4) uniform writeonly image3D pressure_b;
+layout(r32f, set = 0, binding = 5) uniform writeonly image3D shadow_volume;
 
 void main() {
     ivec3 coord = ivec3(gl_GlobalInvocationID.xyz);
@@ -21,19 +23,10 @@ void main() {
         return;
     }
 
-    vec3 uv = (vec3(coord) + vec3(0.5)) / vec3(size);
-    vec3 centered = (uv - vec3(0.5)) * 2.0;
-    float core = exp(-dot(centered, centered) * 7.5);
-    float ring = exp(-abs(length(centered.xz) - 0.42) * 18.0) *
-                 exp(-centered.y * centered.y * 18.0);
-    vec3 color = mix(vec3(0.18, 0.36, 0.86), vec3(0.95, 0.34, 0.20),
-                     clamp(uv.y + 0.15 * sin(uv.z * 14.0), 0.0, 1.0));
-    vec4 density = vec4(color * (0.10 * core + 0.045 * ring), 0.10 * core + 0.04 * ring);
-
-    vec3 swirl = vec3(-centered.z, 0.18 * sin((uv.x + uv.z) * 12.0), centered.x) * 0.16;
-    imageStore(density_a, coord, density);
-    imageStore(velocity_a, coord, vec4(swirl, 0.0));
+    imageStore(density_a, coord, vec4(0.0));
+    imageStore(velocity_a, coord, vec4(0.0));
     imageStore(divergence_volume, coord, vec4(0.0));
     imageStore(pressure_a, coord, vec4(0.0));
     imageStore(pressure_b, coord, vec4(0.0));
+    imageStore(shadow_volume, coord, vec4(1.0));
 }

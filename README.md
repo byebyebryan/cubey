@@ -44,7 +44,8 @@ Current projects:
   deterministic headless capture output.
 - `fluid_3d`: dense volumetric smoke/gas baseline with 3D storage textures,
   compute advection/injection/projection, vorticity confinement, raymarching,
-  orbit camera controls, debug views, and headless capture output.
+  precomputed shadow-volume lighting, orbit camera controls, debug views, and
+  headless capture output.
 - `fractal_2d`: fullscreen Mandelbrot-style shader with windowed navigation and
   headless output.
 - `gltf_viewer`: glTF/glb viewer for imported assets, PBR materials, texture

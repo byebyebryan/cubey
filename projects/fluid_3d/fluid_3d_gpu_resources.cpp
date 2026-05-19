@@ -40,7 +40,7 @@ upload_project_device_buffer(cubey::ProjectGpuServices& gpu, const void* data,
     return {
         .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
         .offset = 0,
-        .size = sizeof(float) * 12U,
+        .size = sizeof(float) * 16U,
     };
 }
 
@@ -65,6 +65,19 @@ upload_project_device_buffer(cubey::ProjectGpuServices& gpu, const void* data,
         .extent = {config.grid_width, config.grid_height, config.grid_depth},
         .format = VK_FORMAT_R32G32B32A32_SFLOAT,
         .create_sampler = sampled,
+        .sampler =
+            {
+                .address_mode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+            },
+    };
+}
+
+[[nodiscard]] cubey::render::Texture3DConfig shadow_volume_texture_config(
+    const Fluid3DConfig& config) {
+    return {
+        .extent = {config.grid_width, config.grid_height, config.grid_depth},
+        .format = VK_FORMAT_R32_SFLOAT,
+        .create_sampler = true,
         .sampler =
             {
                 .address_mode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
@@ -121,6 +134,7 @@ void Fluid3DGpuResources::create_volume_resources(cubey::vulkan::Device& device,
     divergence_.emplace(device, volume_texture_config(config, false));
     pressure_a_.emplace(device, volume_texture_config(config, false));
     pressure_b_.emplace(device, volume_texture_config(config, false));
+    shadow_volume_.emplace(device, shadow_volume_texture_config(config));
 
     const std::vector<Fluid3DInjectorGpu> empty(kMaxFluid3DInjectorCount);
     injectors_.emplace(upload_project_device_buffer(
@@ -135,11 +149,14 @@ void Fluid3DGpuResources::destroy_swapchain_resources() {
 
 void Fluid3DGpuResources::destroy_all_resources() {
     destroy_swapchain_resources();
+    shadow_pipeline_.reset();
     projection_pipeline_.reset();
     pressure_pipeline_.reset();
     divergence_pipeline_.reset();
     advect_pipeline_.reset();
     reset_pipeline_.reset();
+    shadow_descriptor_pool_.reset();
+    shadow_descriptor_layout_.reset();
     render_descriptors_.reset();
     projection_descriptor_pool_.reset();
     projection_descriptor_layout_.reset();
@@ -154,6 +171,7 @@ void Fluid3DGpuResources::destroy_all_resources() {
     injectors_.reset();
     pressure_b_.reset();
     pressure_a_.reset();
+    shadow_volume_.reset();
     divergence_.reset();
     velocity_b_.reset();
     velocity_a_.reset();
@@ -162,7 +180,7 @@ void Fluid3DGpuResources::destroy_all_resources() {
 }
 
 void Fluid3DGpuResources::create_descriptor_resources(cubey::vulkan::Device& device) {
-    const std::array<cubey::vulkan::DescriptorSetBindingConfig, 5> reset_bindings{{
+    const std::array<cubey::vulkan::DescriptorSetBindingConfig, 6> reset_bindings{{
         {.binding = 0,
          .type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
          .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT},
@@ -176,6 +194,9 @@ void Fluid3DGpuResources::create_descriptor_resources(cubey::vulkan::Device& dev
          .type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
          .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT},
         {.binding = 4,
+         .type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+         .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT},
+        {.binding = 5,
          .type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
          .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT},
     }};
@@ -249,11 +270,29 @@ void Fluid3DGpuResources::create_descriptor_resources(cubey::vulkan::Device& dev
         set = projection_descriptor_pool().allocate(projection_descriptor_layout());
     }
 
-    const std::array<cubey::vulkan::DescriptorSetBindingConfig, 2> render_bindings{{
+    const std::array<cubey::vulkan::DescriptorSetBindingConfig, 2> shadow_bindings{{
+        {.binding = 0,
+         .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+         .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT},
+        {.binding = 1,
+         .type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+         .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT},
+    }};
+    const cubey::vulkan::DescriptorSetInfo shadow_info(shadow_bindings, 2);
+    shadow_descriptor_layout_.emplace(device, shadow_info.layout_info());
+    shadow_descriptor_pool_.emplace(device, shadow_info.pool_info());
+    for (VkDescriptorSet& set : shadow_descriptor_sets_) {
+        set = shadow_descriptor_pool().allocate(shadow_descriptor_layout());
+    }
+
+    const std::array<cubey::vulkan::DescriptorSetBindingConfig, 3> render_bindings{{
         {.binding = 0,
          .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
          .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT},
         {.binding = 1,
+         .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+         .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT},
+        {.binding = 2,
          .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
          .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT},
     }};
@@ -269,7 +308,8 @@ void Fluid3DGpuResources::update_descriptors(cubey::vulkan::Device& device) {
         .storage_image(reset_descriptor_set_, 1, velocity_a().view())
         .storage_image(reset_descriptor_set_, 2, divergence().view())
         .storage_image(reset_descriptor_set_, 3, pressure_a().view())
-        .storage_image(reset_descriptor_set_, 4, pressure_b().view());
+        .storage_image(reset_descriptor_set_, 4, pressure_b().view())
+        .storage_image(reset_descriptor_set_, 5, shadow_volume().view());
 
     const std::array<const cubey::render::Texture3D*, 2> densities{&density_a(), &density_b()};
     const std::array<const cubey::render::Texture3D*, 2> velocities{&velocity_a(), &velocity_b()};
@@ -292,9 +332,18 @@ void Fluid3DGpuResources::update_descriptors(cubey::vulkan::Device& device) {
                                         densities[density_index]->view(), VK_IMAGE_LAYOUT_GENERAL)
                 .combined_image_sampler(
                     render_set, 1, velocities[velocity_index]->sampler().handle(),
-                    velocities[velocity_index]->view(), VK_IMAGE_LAYOUT_GENERAL);
+                    velocities[velocity_index]->view(), VK_IMAGE_LAYOUT_GENERAL)
+                .combined_image_sampler(render_set, 2, shadow_volume().sampler().handle(),
+                                        shadow_volume().view(), VK_IMAGE_LAYOUT_GENERAL);
         }
     }
+
+    writes.combined_image_sampler(shadow_descriptor_set(true), 0, density_a().sampler().handle(),
+                                  density_a().view(), VK_IMAGE_LAYOUT_GENERAL)
+        .storage_image(shadow_descriptor_set(true), 1, shadow_volume().view())
+        .combined_image_sampler(shadow_descriptor_set(false), 0, density_b().sampler().handle(),
+                                density_b().view(), VK_IMAGE_LAYOUT_GENERAL)
+        .storage_image(shadow_descriptor_set(false), 1, shadow_volume().view());
 
     writes.storage_image(divergence_descriptor_set(true), 0, velocity_a().view())
         .storage_image(divergence_descriptor_set(true), 1, divergence().view())
@@ -334,6 +383,8 @@ void Fluid3DGpuResources::create_compute_pipelines(cubey::vulkan::Device& device
                                      pressure_descriptor_layout(), pressure_pipeline_);
     create_compute_pipeline_resource(device, "fluid_3d_projection.comp.spv",
                                      projection_descriptor_layout(), projection_pipeline_);
+    create_compute_pipeline_resource(device, "fluid_3d_shadow.comp.spv",
+                                     shadow_descriptor_layout(), shadow_pipeline_);
 }
 
 void Fluid3DGpuResources::create_render_pipeline(cubey::vulkan::Device& device,
@@ -371,6 +422,10 @@ VkDescriptorSet Fluid3DGpuResources::divergence_descriptor_set(bool velocity_a_c
 VkDescriptorSet Fluid3DGpuResources::projection_descriptor_set(bool velocity_a_current,
                                                                bool pressure_a_current) const {
     return projection_descriptor_sets_.at(projection_index(velocity_a_current, pressure_a_current));
+}
+
+VkDescriptorSet Fluid3DGpuResources::shadow_descriptor_set(bool density_a_current) const {
+    return shadow_descriptor_sets_.at(density_a_current ? 0U : 1U);
 }
 
 VkDescriptorSet Fluid3DGpuResources::render_descriptor_set(bool density_a_current,
@@ -427,6 +482,13 @@ const cubey::render::Texture3D& Fluid3DGpuResources::pressure_b() const {
     return pressure_b_.value();
 }
 
+const cubey::render::Texture3D& Fluid3DGpuResources::shadow_volume() const {
+    if (!shadow_volume_.has_value()) {
+        throw std::runtime_error("fluid 3D shadow volume is not initialized");
+    }
+    return shadow_volume_.value();
+}
+
 const cubey::vulkan::Buffer& Fluid3DGpuResources::injectors() const {
     if (!injectors_.has_value()) {
         throw std::runtime_error("fluid 3D injector buffer is not initialized");
@@ -467,6 +529,13 @@ const cubey::render::ComputePipelineResource& Fluid3DGpuResources::projection_pi
         throw std::runtime_error("fluid 3D projection pipeline is not initialized");
     }
     return projection_pipeline_.value();
+}
+
+const cubey::render::ComputePipelineResource& Fluid3DGpuResources::shadow_pipeline() const {
+    if (!shadow_pipeline_.has_value()) {
+        throw std::runtime_error("fluid 3D shadow pipeline is not initialized");
+    }
+    return shadow_pipeline_.value();
 }
 
 const cubey::render::GraphicsPipelineResource& Fluid3DGpuResources::render_pipeline() const {
@@ -544,6 +613,20 @@ const cubey::vulkan::DescriptorPool& Fluid3DGpuResources::projection_descriptor_
         throw std::runtime_error("fluid 3D projection descriptor pool is not initialized");
     }
     return projection_descriptor_pool_.value();
+}
+
+VkDescriptorSetLayout Fluid3DGpuResources::shadow_descriptor_layout() const {
+    if (!shadow_descriptor_layout_.has_value()) {
+        throw std::runtime_error("fluid 3D shadow descriptor layout is not initialized");
+    }
+    return shadow_descriptor_layout_->handle();
+}
+
+const cubey::vulkan::DescriptorPool& Fluid3DGpuResources::shadow_descriptor_pool() const {
+    if (!shadow_descriptor_pool_.has_value()) {
+        throw std::runtime_error("fluid 3D shadow descriptor pool is not initialized");
+    }
+    return shadow_descriptor_pool_.value();
 }
 
 const cubey::vulkan::DescriptorSetArray& Fluid3DGpuResources::render_descriptors() const {

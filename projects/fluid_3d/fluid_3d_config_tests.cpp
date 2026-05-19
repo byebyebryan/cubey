@@ -59,6 +59,10 @@ int main() {
         require(config.raymarch_steps == 96, "fluid 3D should default to one step per slice");
         require(config.injector_strength == 6.0F,
                 "fluid 3D injector force should match the shared CLI default");
+        require(config.shadow_absorption == 48.0F,
+                "fluid 3D should default to visible volume self-shadowing");
+        require(config.ambient_light == 0.22F,
+                "fluid 3D should default to a small amount of ambient volume light");
         require(cubey::projects::fluid_3d::volume_cell_count(config) == kExpectedCellCount,
                 "fluid 3D cell count should multiply all dimensions");
         require(cubey::projects::fluid_3d::volume_rgba32f_byte_size(config) ==
@@ -158,10 +162,16 @@ int main() {
             read_text_file(source_dir / "shaders" / "fluid_3d_advect.comp");
         const std::string render_shader =
             read_text_file(source_dir / "shaders" / "fluid_3d_raymarch.frag");
+        const std::string shadow_shader =
+            read_text_file(source_dir / "shaders" / "fluid_3d_shadow.comp");
         require_contains(advect_shader, "layout(rgba32f",
                          "fluid 3D compute shaders should use explicit storage image formats");
         require_contains(render_shader, "sampler3D",
                          "fluid 3D render shader should raymarch sampled 3D textures");
+        require_contains(render_shader, "shadow_volume",
+                         "fluid 3D render shader should sample the computed shadow volume");
+        require_contains(shadow_shader, "light_transmittance",
+                         "fluid 3D shadow shader should precompute volume light transmittance");
 
         return 0;
     } catch (const std::exception& error) {
