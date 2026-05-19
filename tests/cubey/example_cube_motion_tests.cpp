@@ -82,8 +82,10 @@ void test_cube_examples_share_spinning_cube_motion() {
                      "instanced cube rows should map to vertical screen space");
     require_contains(instanced, "cubey::math::translation(x, y, 0.0F)",
                      "instanced cube grid should be front-facing instead of side-on");
-    require_contains(instanced, ".distance = kCameraDistance",
-                     "instanced cube camera should use shared front-facing framing distance");
+    require_contains(instanced, ".camera_distance = kCameraDistance",
+                     "instanced cube setup should use shared front-facing framing distance");
+    require_contains(instanced, ".distance = orbit_controller_.distance()",
+                     "instanced cube camera should apply orbit-controller zoom distance");
     require_not_contains(instanced, "const float z = (static_cast<float>(row)",
                          "instanced cube rows should not be laid out in depth");
     require_not_contains(instanced, "set_auto_rotation_speed",
@@ -93,7 +95,9 @@ void test_cube_examples_share_spinning_cube_motion() {
     require_contains(material_scene, "0.0F,",
                      "material cube grid should keep cells on the front-facing XY plane");
     require_contains(material, ".distance = kCameraDistance",
-                     "material cube camera should use shared front-facing framing distance");
+                     "material cube setup should use shared front-facing framing distance");
+    require_contains(material, ".distance = orbit_controller_.distance()",
+                     "material cube camera should apply orbit-controller zoom distance");
     require_not_contains(material, "set_auto_rotation_speed",
                          "material cube camera should not auto-orbit the static grid");
     require_contains(shadow_app, "update_scene_transform(timing)",

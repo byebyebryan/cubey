@@ -138,7 +138,9 @@ cubey::render::PrimitiveMeshData<cubey::render::PbrVertex> make_pbr_sphere_mesh(
     return mesh;
 }
 
-PbrFurnaceApp::PbrFurnaceApp(RunConfig config) : config_(std::move(config)) {}
+PbrFurnaceApp::PbrFurnaceApp(RunConfig config) : config_(std::move(config)) {
+    orbit_controller_.set_home_distance(kCameraDistance);
+}
 
 int PbrFurnaceApp::run() {
     if (config_.headless) {

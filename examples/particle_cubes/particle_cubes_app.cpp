@@ -11,7 +11,9 @@ namespace {
 using cubey::host::FrameStatsSample;
 } // namespace
 
-ParticleCubesApp::ParticleCubesApp(RunConfig config) : config_(std::move(config)) {}
+ParticleCubesApp::ParticleCubesApp(RunConfig config) : config_(std::move(config)) {
+    orbit_controller_.set_home_distance(kCameraDistance);
+}
 
 int ParticleCubesApp::run() {
     cubey::host::WindowedAppCallbacks callbacks;

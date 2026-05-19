@@ -26,6 +26,7 @@
 namespace cubey::examples::shadow_cube::detail {
 
 inline constexpr float kShadowCubeGroundPlaneY = -1.5F;
+inline constexpr float kShadowCubeCameraDistance = 5.2F;
 
 class ShadowCubeApp {
   public:

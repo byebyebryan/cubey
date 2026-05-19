@@ -32,7 +32,7 @@ void PbrFurnaceApp::create_scene() {
     camera_entity_ = cubey::scene::create_camera_entity_3d(
         setup, cubey::orbit_camera_transform(cubey::OrbitCameraState{
                    .target = {0.0F, 0.0F, 0.0F},
-                   .distance = 9.0F,
+                   .distance = orbit_controller_.distance(),
                }));
     setup.commit();
 }
@@ -42,7 +42,7 @@ void PbrFurnaceApp::update_camera_transform() {
     edits.transforms3d().set_local_transform(camera_entity_,
                                              cubey::orbit_camera_transform(cubey::OrbitCameraState{
                                                  .target = {0.0F, 0.0F, 0.0F},
-                                                 .distance = 9.0F,
+                                                 .distance = orbit_controller_.distance(),
                                                  .yaw = orbit_controller_.yaw(),
                                                  .pitch = orbit_controller_.pitch(),
                                              }));

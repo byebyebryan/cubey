@@ -11,7 +11,7 @@ DrawPushConstants ParticleCubesApp::draw_push_constants(const FrameTiming& timin
     (void)timing;
     const float aspect = static_cast<float>(extent.width) / static_cast<float>(extent.height);
     const cubey::Transform3D camera_transform = cubey::orbit_camera_transform({
-        .distance = kCameraDistance,
+        .distance = orbit_controller_.distance(),
         .yaw = orbit_controller_.yaw(),
         .pitch = kCameraBasePitch + orbit_controller_.pitch(),
     });

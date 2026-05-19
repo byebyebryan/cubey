@@ -14,7 +14,7 @@ void TexturedCubeApp::create_scene() {
             setup, {
                        .mesh = cube_mesh_handle_,
                        .material = cube_material_handle_,
-                       .camera_distance = 4.2F,
+                       .camera_distance = kCameraDistance,
                        .directional_light = cubey::directional_light_3d(
                            {0.35F, -0.55F, 0.76F}, {0.72F, 0.72F, 0.72F}, 1.0F),
                    });
@@ -29,12 +29,12 @@ void TexturedCubeApp::update_scene_transform(const FrameTiming& timing) {
     cubey::SceneEditQueue edits = scene().create_edit_queue();
     edits.transforms3d().set_local_transform(
         cube_entity_, cubey::examples::common::cube_spin_transform(seconds));
-    edits.transforms3d().set_local_transform(
-        camera_entity_, cubey::orbit_camera_transform(cubey::OrbitCameraState{
-                            .distance = 4.2F,
-                            .yaw = orbit_controller_.yaw(),
-                            .pitch = orbit_controller_.pitch(),
-                        }));
+    edits.transforms3d().set_local_transform(camera_entity_,
+                                             cubey::orbit_camera_transform(cubey::OrbitCameraState{
+                                                 .distance = orbit_controller_.distance(),
+                                                 .yaw = orbit_controller_.yaw(),
+                                                 .pitch = orbit_controller_.pitch(),
+                                             }));
     scene().commit(edits);
 }
 

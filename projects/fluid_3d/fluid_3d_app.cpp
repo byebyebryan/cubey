@@ -64,6 +64,7 @@ class Fluid3DApp {
           fluid_config_(fluid_3d_config_from_run_config(config_)),
           injector_states_(create_fluid_3d_injectors(fluid_config_)),
           injector_gpu_(fluid_3d_injectors_to_gpu(injector_states_, fluid_config_)) {
+        orbit_controller_.set_home_distance(kCameraDistance);
         orbit_controller_.set_auto_rotation_speed(0.12F);
     }
 
@@ -154,13 +155,16 @@ class Fluid3DApp {
 
     void update_camera_input(cubey::host::WindowedAppContext& context, double delta_seconds) {
         const cubey::input::InputFrame& input = context.input();
-        if (!context.ui_wants_mouse() && input.has_cursor()) {
-            const cubey::input::CursorPosition cursor = input.cursor();
-            if (input.mouse_button_pressed(cubey::input::MouseButton::Left)) {
-                orbit_controller_.begin_drag(cursor.x, cursor.y);
-            }
-            if (input.mouse_button_down(cubey::input::MouseButton::Left)) {
-                orbit_controller_.drag_to(cursor.x, cursor.y);
+        if (!context.ui_wants_mouse()) {
+            orbit_controller_.zoom_by_scroll(input.scroll_delta().y);
+            if (input.has_cursor()) {
+                const cubey::input::CursorPosition cursor = input.cursor();
+                if (input.mouse_button_pressed(cubey::input::MouseButton::Left)) {
+                    orbit_controller_.begin_drag(cursor.x, cursor.y);
+                }
+                if (input.mouse_button_down(cubey::input::MouseButton::Left)) {
+                    orbit_controller_.drag_to(cursor.x, cursor.y);
+                }
             }
         }
         if (context.ui_wants_mouse() ||
@@ -294,7 +298,7 @@ class Fluid3DApp {
     [[nodiscard]] Fluid3DRenderCamera render_camera() const {
         const cubey::Transform3D transform = cubey::orbit_camera_transform(cubey::OrbitCameraState{
             .target = kVolumeCenter,
-            .distance = kCameraDistance,
+            .distance = orbit_controller_.distance(),
             .yaw = orbit_controller_.yaw(),
             .pitch = orbit_controller_.pitch(),
         });

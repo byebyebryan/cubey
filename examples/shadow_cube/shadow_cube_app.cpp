@@ -8,7 +8,9 @@
 namespace cubey::examples::shadow_cube {
 namespace detail {
 
-ShadowCubeApp::ShadowCubeApp(RunConfig config) : config_(std::move(config)) {}
+ShadowCubeApp::ShadowCubeApp(RunConfig config) : config_(std::move(config)) {
+    orbit_controller_.set_home_distance(kShadowCubeCameraDistance);
+}
 
 int ShadowCubeApp::run() {
     cubey::host::WindowedAppCallbacks callbacks;

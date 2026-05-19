@@ -21,6 +21,7 @@ void test_input_state_ignores_unknown_inputs();
 void test_input_state_tracks_key_and_button_edges();
 void test_orbit_controller_tracks_rotation_drag_pause_and_reset();
 void test_orbit_controller_updates_from_input_snapshot();
+void test_orbit_controller_scroll_zoom_clamps_distance();
 void test_pan_zoom_2d_controller_pans_and_zooms_from_input();
 void test_forward_pbr_renderer_3d_config_requires_shader_paths_and_shadow_extent();
 void test_forward_pbr_renderer_3d_config_defaults_to_hdr_scene_color();
@@ -124,6 +125,7 @@ std::span<const TestCase> engine_host_input_test_cases() {
         CUBEY_TEST(test_pan_zoom_2d_controller_pans_and_zooms_from_input),
         CUBEY_TEST(test_orbit_controller_tracks_rotation_drag_pause_and_reset),
         CUBEY_TEST(test_orbit_controller_updates_from_input_snapshot),
+        CUBEY_TEST(test_orbit_controller_scroll_zoom_clamps_distance),
         CUBEY_TEST(test_project_context_exposes_async_runtime_services),
         CUBEY_TEST(test_project_context_exposes_optional_gpu_services),
         CUBEY_TEST(test_project_gpu_services_submit_and_wait_runs_on_owner_thread),

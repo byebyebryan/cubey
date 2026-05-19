@@ -1,6 +1,8 @@
 #include <cubey/input/orbit_controller.h>
 
 #include <algorithm>
+#include <cmath>
+#include <stdexcept>
 
 namespace cubey {
 namespace {
@@ -8,10 +10,51 @@ namespace {
 constexpr float kDragRadiansPerPixel = 0.01F;
 constexpr float kMaxPitchRadians = 1.45F;
 
+[[nodiscard]] OrbitControllerConfig validated_config(OrbitControllerConfig config) {
+    if (config.min_distance <= 0.0F) {
+        throw std::invalid_argument("orbit controller min distance must be positive");
+    }
+    if (config.max_distance < config.min_distance) {
+        throw std::invalid_argument("orbit controller max distance must be >= min distance");
+    }
+    if (config.zoom_base <= 0.0F || config.zoom_base >= 1.0F) {
+        throw std::invalid_argument("orbit controller zoom base must be between 0 and 1");
+    }
+    config.distance = std::clamp(config.distance, config.min_distance, config.max_distance);
+    return config;
+}
+
 } // namespace
+
+OrbitController::OrbitController(OrbitControllerConfig config)
+    : config_(validated_config(config)), distance_(config_.distance) {}
 
 void OrbitController::set_auto_rotation_speed(float radians_per_second) {
     auto_rotation_speed_ = radians_per_second;
+}
+
+void OrbitController::set_distance_limits(float min_distance, float max_distance) {
+    config_ = validated_config({
+        .distance = config_.distance,
+        .min_distance = min_distance,
+        .max_distance = max_distance,
+        .zoom_base = config_.zoom_base,
+    });
+    distance_ = std::clamp(distance_, config_.min_distance, config_.max_distance);
+}
+
+void OrbitController::set_home_distance(float distance) {
+    config_ = validated_config({
+        .distance = distance,
+        .min_distance = config_.min_distance,
+        .max_distance = config_.max_distance,
+        .zoom_base = config_.zoom_base,
+    });
+    distance_ = config_.distance;
+}
+
+void OrbitController::set_distance(float distance) {
+    distance_ = std::clamp(distance, config_.min_distance, config_.max_distance);
 }
 
 void OrbitController::update(double delta_seconds) {
@@ -27,10 +70,19 @@ void OrbitController::reset() {
     dragging_ = false;
     last_x_ = 0.0;
     last_y_ = 0.0;
+    distance_ = config_.distance;
 }
 
 void OrbitController::toggle_pause() {
     paused_ = !paused_;
+}
+
+void OrbitController::zoom_by_scroll(double scroll_y) {
+    if (scroll_y == 0.0) {
+        return;
+    }
+    const float factor = std::pow(config_.zoom_base, static_cast<float>(scroll_y));
+    set_distance(distance_ * factor);
 }
 
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
@@ -66,6 +118,8 @@ void OrbitController::update_from_input(const cubey::input::InputFrame& input,
     if (input.key_pressed(cubey::input::Key::Space)) {
         toggle_pause();
     }
+
+    zoom_by_scroll(input.scroll_delta().y);
 
     dragging_ = input.mouse_button_down(cubey::input::MouseButton::Left);
     if (dragging_) {

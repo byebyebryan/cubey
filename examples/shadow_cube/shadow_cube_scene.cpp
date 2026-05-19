@@ -58,7 +58,8 @@ void ShadowCubeApp::create_scene() {
                        },
                });
     camera_entity_ = cubey::scene::create_camera_entity_3d(
-        setup, cubey::orbit_camera_transform(cubey::OrbitCameraState{.distance = 5.2F}));
+        setup, cubey::orbit_camera_transform(
+                   cubey::OrbitCameraState{.distance = orbit_controller_.distance()}));
 
     const cubey::math::Vec3 light_eye = light_direction() * 6.0F;
     light_camera_entity_ = cubey::scene::create_camera_entity_3d(
@@ -83,12 +84,12 @@ void ShadowCubeApp::update_scene_transform(const cubey::FrameTiming& timing) {
     edits.transforms3d().set_local_transform(
         cube_entity_, cubey::examples::common::cube_spin_transform(
                           seconds, {0.0F, 0.0F, 0.0F}, {0.82F, 0.82F, 0.82F}));
-    edits.transforms3d().set_local_transform(
-        camera_entity_, cubey::orbit_camera_transform(cubey::OrbitCameraState{
-                            .distance = 5.2F,
-                            .yaw = orbit_controller_.yaw(),
-                            .pitch = orbit_controller_.pitch(),
-                        }));
+    edits.transforms3d().set_local_transform(camera_entity_,
+                                             cubey::orbit_camera_transform(cubey::OrbitCameraState{
+                                                 .distance = orbit_controller_.distance(),
+                                                 .yaw = orbit_controller_.yaw(),
+                                                 .pitch = orbit_controller_.pitch(),
+                                             }));
     scene().commit(edits);
 }
 

@@ -22,10 +22,11 @@ void require_close(float actual, float expected, const char* message) {
 } // namespace
 
 void test_orbit_controller_tracks_rotation_drag_pause_and_reset() {
-    cubey::OrbitController controller;
+    cubey::OrbitController controller(cubey::OrbitControllerConfig{.distance = 5.0F});
 
     require_close(controller.yaw(), 0.0F, "initial yaw should be zero");
     require_close(controller.pitch(), 0.0F, "initial pitch should be zero");
+    require_close(controller.distance(), 5.0F, "initial distance should use configured home");
     require(!controller.paused(), "controller should start unpaused");
 
     controller.set_auto_rotation_speed(0.5F);
@@ -45,6 +46,7 @@ void test_orbit_controller_tracks_rotation_drag_pause_and_reset() {
     controller.reset();
     require_close(controller.yaw(), 0.0F, "reset should clear yaw");
     require_close(controller.pitch(), 0.0F, "reset should clear pitch");
+    require_close(controller.distance(), 5.0F, "reset should restore home distance");
     require(!controller.paused(), "reset should resume animation");
 }
 
@@ -61,10 +63,12 @@ void test_orbit_controller_updates_from_input_snapshot() {
         .cursor = {.x = 10.0, .y = 10.0},
     });
     input.record_cursor_position({.cursor = {.x = 30.0, .y = 5.0}});
+    input.record_scroll({.y_offset = 1.0, .cursor = {.x = 30.0, .y = 5.0}});
     controller.update_from_input(input.frame(), 2.0);
 
     require_close(controller.yaw(), -0.2F, "input right drag should reduce orbit yaw");
     require_close(controller.pitch(), 0.05F, "input up drag should raise orbit pitch");
+    require_close(controller.distance(), 3.612F, "positive wheel scroll should zoom orbit in");
     require(controller.dragging(), "input button state should mark controller dragging");
 
     input.begin_frame();
@@ -77,4 +81,30 @@ void test_orbit_controller_updates_from_input_snapshot() {
 
     require_close(controller.yaw(), 0.8F, "auto rotation should resume after drag release");
     require(!controller.dragging(), "input release should clear dragging");
+}
+
+void test_orbit_controller_scroll_zoom_clamps_distance() {
+    cubey::OrbitController controller(cubey::OrbitControllerConfig{
+        .distance = 5.0F,
+        .min_distance = 2.0F,
+        .max_distance = 8.0F,
+        .zoom_base = 0.5F,
+    });
+
+    controller.zoom_by_scroll(1.0);
+    require_close(controller.distance(), 2.5F, "positive wheel scroll should reduce distance");
+
+    controller.zoom_by_scroll(10.0);
+    require_close(controller.distance(), 2.0F, "orbit zoom in should clamp to minimum distance");
+
+    controller.zoom_by_scroll(-10.0);
+    require_close(controller.distance(), 8.0F, "orbit zoom out should clamp to maximum distance");
+
+    controller.set_distance_limits(1.0F, 4.0F);
+    require_close(controller.distance(), 4.0F, "distance should reclamp when limits shrink");
+
+    controller.set_home_distance(3.0F);
+    controller.set_distance(2.0F);
+    controller.reset();
+    require_close(controller.distance(), 3.0F, "reset should restore updated home distance");
 }

@@ -29,12 +29,12 @@ void InstancedCubesApp::create_scene() {
 
 void InstancedCubesApp::update_camera_transform() {
     cubey::SceneEditQueue edits = scene().create_edit_queue();
-    edits.transforms3d().set_local_transform(
-        camera_entity_, cubey::orbit_camera_transform(cubey::OrbitCameraState{
-                            .distance = kCameraDistance,
-                            .yaw = orbit_controller_.yaw(),
-                            .pitch = orbit_controller_.pitch(),
-                        }));
+    edits.transforms3d().set_local_transform(camera_entity_,
+                                             cubey::orbit_camera_transform(cubey::OrbitCameraState{
+                                                 .distance = orbit_controller_.distance(),
+                                                 .yaw = orbit_controller_.yaw(),
+                                                 .pitch = orbit_controller_.pitch(),
+                                             }));
     scene().commit(edits);
 }
 

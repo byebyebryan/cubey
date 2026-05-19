@@ -12,7 +12,9 @@ using cubey::host::FrameStatsSample;
 
 MaterialCubesApp::MaterialCubesApp(RunConfig config)
     : config_(std::move(config)),
-      debug_view_(render::pbr_debug_view_from_name(config_.debug_view)) {}
+      debug_view_(render::pbr_debug_view_from_name(config_.debug_view)) {
+    orbit_controller_.set_home_distance(kCameraDistance);
+}
 
 int MaterialCubesApp::run() {
     cubey::host::WindowedAppCallbacks callbacks;

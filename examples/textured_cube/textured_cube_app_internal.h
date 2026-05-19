@@ -29,6 +29,7 @@
 namespace cubey::examples::textured_cube {
 
 inline constexpr std::uint32_t kCubeTriangleCount = 12;
+inline constexpr float kCameraDistance = 4.2F;
 
 struct SceneUniforms {
     cubey::math::Mat4 mvp;

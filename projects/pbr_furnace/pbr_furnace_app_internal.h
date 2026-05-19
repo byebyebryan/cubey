@@ -31,6 +31,7 @@
 namespace cubey::projects::pbr_furnace {
 
 constexpr float kSphereRadius = 0.46F;
+constexpr float kCameraDistance = 9.0F;
 constexpr std::uint32_t kIblPrefilteredExtent = 64;
 constexpr std::uint32_t kIblPrefilteredMipLevels = 5;
 constexpr VkFormat kIblFormat = VK_FORMAT_R32G32B32A32_SFLOAT;

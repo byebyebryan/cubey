@@ -117,7 +117,6 @@ class GltfViewerApp {
     cubey::Entity light_camera_entity_{};
     cubey::Entity light_entity_{};
     cubey::Bounds3D scene_bounds_{};
-    float camera_distance_ = 4.2F;
     cubey::OrbitController orbit_controller_;
     cubey::render::PbrDebugView debug_view_ = cubey::render::PbrDebugView::Final;
     cubey::animation::GltfAnimationPlayback animation_playback_{};

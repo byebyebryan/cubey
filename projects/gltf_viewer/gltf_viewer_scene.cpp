@@ -32,12 +32,15 @@ void GltfViewerApp::create_fallback_scene() {
 
 void GltfViewerApp::create_camera_and_light(cubey::SceneTransaction& setup) {
     const float radius = std::max(glm::length(scene_bounds_.half_extent), 1.0F);
-    camera_distance_ = std::max(radius * 2.8F, 4.2F);
+    const float camera_distance = std::max(radius * 2.8F, 4.2F);
+    orbit_controller_.set_distance_limits(std::max(radius * 0.05F, 0.05F),
+                                          std::max(radius * 10.0F, camera_distance * 2.0F));
+    orbit_controller_.set_home_distance(camera_distance);
     camera_entity_ =
         cubey::scene::create_camera_entity_3d(setup,
                                               cubey::orbit_camera_transform(cubey::OrbitCameraState{
                                                   .target = scene_bounds_.center,
-                                                  .distance = camera_distance_,
+                                                  .distance = orbit_controller_.distance(),
                                               }),
                                               cubey::Camera3D({
                                                   .near_z = std::max(radius * 0.001F, 0.01F),
@@ -91,7 +94,7 @@ void GltfViewerApp::update_camera_transform() {
     edits.transforms3d().set_local_transform(camera_entity_,
                                              cubey::orbit_camera_transform(cubey::OrbitCameraState{
                                                  .target = scene_bounds_.center,
-                                                 .distance = camera_distance_,
+                                                 .distance = orbit_controller_.distance(),
                                                  .yaw = orbit_controller_.yaw(),
                                                  .pitch = orbit_controller_.pitch(),
                                              }));

@@ -97,12 +97,12 @@ void MaterialCubesApp::create_scene() {
 void MaterialCubesApp::update_scene_transform(const FrameTiming& timing) {
     const float seconds = static_cast<float>(timing.elapsed_seconds);
     cubey::SceneEditQueue edits = scene().create_edit_queue();
-    edits.transforms3d().set_local_transform(
-        camera_entity_, cubey::orbit_camera_transform(cubey::OrbitCameraState{
-                            .distance = kCameraDistance,
-                            .yaw = orbit_controller_.yaw(),
-                            .pitch = orbit_controller_.pitch(),
-                        }));
+    edits.transforms3d().set_local_transform(camera_entity_,
+                                             cubey::orbit_camera_transform(cubey::OrbitCameraState{
+                                                 .distance = orbit_controller_.distance(),
+                                                 .yaw = orbit_controller_.yaw(),
+                                                 .pitch = orbit_controller_.pitch(),
+                                             }));
     for (std::uint32_t index = 0; index < cubes_.size(); ++index) {
         edits.transforms3d().set_local_transform(
             cubes_.at(index).entity,

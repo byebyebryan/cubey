@@ -12,7 +12,9 @@ using cubey::host::FrameStatsSample;
 
 } // namespace
 
-TexturedCubeApp::TexturedCubeApp(RunConfig config) : config_(std::move(config)) {}
+TexturedCubeApp::TexturedCubeApp(RunConfig config) : config_(std::move(config)) {
+    orbit_controller_.set_home_distance(kCameraDistance);
+}
 
 int TexturedCubeApp::run() {
     cubey::host::WindowedAppCallbacks callbacks;
