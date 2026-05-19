@@ -42,6 +42,9 @@ Current projects:
 - `fluid_2d`: compute-updated dye/velocity field with MacCormack advection,
   vorticity, optional static obstacles, pressure projection, debug views, and
   deterministic headless capture output.
+- `fluid_3d`: dense volumetric smoke/gas baseline with 3D storage textures,
+  compute advection/injection/projection, vorticity confinement, raymarching,
+  orbit camera controls, debug views, and headless capture output.
 - `fractal_2d`: fullscreen Mandelbrot-style shader with windowed navigation and
   headless output.
 - `gltf_viewer`: glTF/glb viewer for imported assets, PBR materials, texture
@@ -75,6 +78,7 @@ Project-local docs:
 
 - [Fluid 2D](projects/fluid_2d/README.md)
 - [Fluid 2.5D design](projects/fluid_25d/README.md)
+- [Fluid 3D](projects/fluid_3d/README.md)
 
 ## Development Setup
 
@@ -152,6 +156,7 @@ Useful windowed smokes:
 ./build/dev/examples/particle_cubes/particle_cubes --frames 300 --width 1280 --height 720
 ./build/dev/projects/fractal_2d/fractal_2d --frames 300 --width 1280 --height 720
 ./build/dev/projects/fluid_2d/fluid_2d --frames 300 --width 1280 --height 720
+./build/dev/projects/fluid_3d/fluid_3d --frames 300 --width 1280 --height 720
 ./build/dev/projects/gltf_viewer/gltf_viewer --input path/to/model.glb --environment path/to/env.hdr --animation-index 0 --animation-speed 1.0 --frames 300 --width 1280 --height 720
 ./build/dev/projects/gltf_viewer/gltf_viewer --input path/to/model.glb --debug-view roughness --frames 300 --width 1280 --height 720
 ./build/dev/projects/pbr_furnace/pbr_furnace --frames 300 --width 1280 --height 720
@@ -164,6 +169,9 @@ open; the window title also shows the latest sampled FPS and frame time.
 injectors; use `--grid-width`, `--grid-height`, and `--injectors 1..16` to
 compare other simulation/demo shapes, and `--obstacles` to enable the static
 obstacle mask.
+`fluid_3d` defaults to a `96x96x96` dense volume; use `--grid-width`,
+`--grid-height`, `--grid-depth`, and `--injectors 1..16` for lower-cost smoke
+tests or heavier local runs.
 
 Useful headless PNG smokes:
 
@@ -171,6 +179,7 @@ Useful headless PNG smokes:
 ./build/dev/examples/headless_cube/headless_cube --width 640 --height 360 --output /tmp/cubey-headless-cube.png
 ./build/dev/projects/fractal_2d/fractal_2d --headless --width 640 --height 360 --output /tmp/cubey-fractal-2d.png
 ./build/dev/projects/fluid_2d/fluid_2d --headless --frames 120 --width 640 --height 360 --output /tmp/cubey-fluid-2d.png
+./build/dev/projects/fluid_3d/fluid_3d --headless --frames 120 --width 640 --height 360 --output /tmp/cubey-fluid-3d.png
 ./build/dev/projects/pbr_furnace/pbr_furnace --headless --width 640 --height 360 --output /tmp/cubey-pbr-furnace.png
 ```
 

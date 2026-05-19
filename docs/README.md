@@ -47,6 +47,7 @@ Project-specific design stays beside the project:
 
 - [Fluid 2D](../projects/fluid_2d/README.md)
 - [Fluid 2.5D](../projects/fluid_25d/README.md)
+- [Fluid 3D](../projects/fluid_3d/README.md)
 
 ## Notes
 

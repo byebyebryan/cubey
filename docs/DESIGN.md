@@ -272,7 +272,7 @@ This is critical for AI-assisted development — the agent gets structured pass/
 | Project | Source | Notes |
 |------|--------|-------|
 | Fluid 2D | cubey1 rewrite warmup | First project target; compute-updated 2D dye/velocity field with headless capture output |
-| Fluid Simulation 3D | cubey1 rewrite | Future Eulerian 3D fluid sim, compute-based, raymarched volume rendering |
+| Fluid 3D | cubey1 rewrite | Dense Eulerian smoke baseline with 3D storage textures, compute simulation, and raymarched volume rendering |
 | Particle System | cubey1 rewrite | Prototype attractor motion now lives under `examples/particle_cubes`; a larger project would need a clear compute + indirect draw contract before graduating |
 | Marching Cubes | cubey1 rewrite | Isosurface extraction via compute + indirect draw |
 | Fractal 2D | cubey1 rewrite | Mandelbrot/Julia renderer |
@@ -337,8 +337,9 @@ named explicitly and live in either `examples/` or `projects/`:
   example-local private modules for lifecycle, resources, scene setup, and
   command recording; that split is not automatically Cubey library API.
 - `projects/` - first-class graphics experiments and longer-lived creative
-  work, starting with `fluid_2d` and `fractal_2d`, plus later candidates such as
-  `fluid_sim`, `marching_cubes`, and `sdf_sculpt`.
+  work, including `fluid_2d`, `fluid_3d`, `fractal_2d`, `gltf_viewer`, and
+  `pbr_furnace`, plus later candidates such as `marching_cubes` and
+  `sdf_sculpt`.
 - `third_party/` - small vendored dependencies with explicit license notes.
 - `tools/` - repo utilities, asset processors, shader tools, or diagnostics.
 - `tests/` - unit and integration tests.
@@ -516,6 +517,21 @@ cubey/
           fluid_2d_projection.comp
           fluid_2d.vert
           fluid_2d_render.frag
+      fluid_3d/
+        CMakeLists.txt
+        main.cpp
+        fluid_3d_app.*     -- host/headless/input orchestration
+        fluid_3d_commands.* -- simulation and raymarch draw command recording
+        fluid_3d_gpu_resources.* -- project-owned 3D textures/descriptors/pipelines
+        fluid_3d_injectors.* -- procedural moving volume injectors
+        shaders/
+          fluid_3d_reset.comp
+          fluid_3d_advect.comp
+          fluid_3d_divergence.comp
+          fluid_3d_pressure.comp
+          fluid_3d_projection.comp
+          fluid_3d.vert
+          fluid_3d_raymarch.frag
       gltf_viewer/
         CMakeLists.txt
         main.cpp

@@ -12,8 +12,9 @@ is a small set of focused projects, each with different scaling assumptions:
   solves, obstacles, vorticity, and possible 2D free-surface experiments.
 - `projects/fluid_25d`: shallow-water terrain simulation for rivers, flooding,
   basins, sources, sinks, and heightfield-driven water.
-- Future sparse 3D gas/smoke project: modernized GPU-Gems-style volumetric
-  smoke/fire using sparse or tiled active regions.
+- `projects/fluid_3d`: dense 3D smoke/gas baseline with 3D storage textures,
+  compute advection/injection/projection, and fullscreen volume raymarching.
+  This is the deliberate first step before sparse or tiled active regions.
 - Future particle/hybrid liquid project: PBF, DFSPH, FLIP/APIC, or MLS-MPM for
   small interactive liquid volumes and multiphase material experiments.
 
@@ -112,7 +113,7 @@ visual result now that Cubey has already done the basic GPU Gems version once.
 
 | Technique | Cubey Fit | Notes |
 | --- | --- | --- |
-| Dense Eulerian grid | Good for `fluid_2d`, limited for 3D | Simple, inspectable, still useful for learning; 3D scales poorly. |
+| Dense Eulerian grid | Good for `fluid_2d`, baseline for `fluid_3d` | Simple, inspectable, still useful for learning; 3D scales poorly and should lead toward sparse/local work. |
 | Better advection | High | MacCormack/BFECC directly reduce classic Stable Fluids diffusion. |
 | Stronger pressure solve | High | CG or multigrid is a real scaling lever over fixed Jacobi iterations. |
 | Obstacles/boundaries | High | Makes `fluid_2d` feel scene-relevant instead of purely decorative. |
@@ -233,9 +234,9 @@ project is worth the complexity.
    and particle-liquid rendering.
 5. Try `liquid_flip_2d` with a PIC/FLIP blend once grid pressure and particle
    infrastructure are both comfortable.
-6. Revisit a flashy boxed fluid or sparse 3D gas/smoke project with stronger
-   shading, detail synthesis, and demo presentation than the original Cubey
-   version.
+6. Continue `fluid_3d` from the dense boxed baseline toward stronger shading,
+   detail synthesis, sparse/local simulation, and demo presentation than the
+   original Cubey version.
 7. Consider DFSPH, APIC, MLS-MPM, or 3D liquid variants only after the 2D
    particle and hybrid projects have paid for their infrastructure.
 

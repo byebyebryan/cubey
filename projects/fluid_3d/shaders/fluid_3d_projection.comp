@@ -1,0 +1,69 @@
+#version 450
+
+layout(local_size_x = 4, local_size_y = 4, local_size_z = 4) in;
+
+layout(push_constant) uniform SimulationParams {
+    vec4 grid_dt_time;
+    vec4 decay_force;
+    vec4 options;
+} params;
+
+layout(rgba32f, set = 0, binding = 0) uniform readonly image3D velocity_in;
+layout(rgba32f, set = 0, binding = 1) uniform readonly image3D pressure_volume;
+layout(rgba32f, set = 0, binding = 2) uniform writeonly image3D velocity_out;
+
+vec3 velocity_at(ivec3 coord) {
+    ivec3 max_coord = imageSize(velocity_in) - ivec3(1);
+    return imageLoad(velocity_in, clamp(coord, ivec3(0), max_coord)).xyz;
+}
+
+float pressure_at(ivec3 coord) {
+    ivec3 max_coord = imageSize(pressure_volume) - ivec3(1);
+    return imageLoad(pressure_volume, clamp(coord, ivec3(0), max_coord)).x;
+}
+
+vec3 curl_at(ivec3 coord) {
+    vec3 vy_plus = velocity_at(coord + ivec3(0, 1, 0));
+    vec3 vy_minus = velocity_at(coord - ivec3(0, 1, 0));
+    vec3 vx_plus = velocity_at(coord + ivec3(1, 0, 0));
+    vec3 vx_minus = velocity_at(coord - ivec3(1, 0, 0));
+    vec3 vz_plus = velocity_at(coord + ivec3(0, 0, 1));
+    vec3 vz_minus = velocity_at(coord - ivec3(0, 0, 1));
+    return vec3(
+        0.5 * ((vy_plus.z - vy_minus.z) - (vz_plus.y - vz_minus.y)),
+        0.5 * ((vz_plus.x - vz_minus.x) - (vx_plus.z - vx_minus.z)),
+        0.5 * ((vx_plus.y - vx_minus.y) - (vy_plus.x - vy_minus.x)));
+}
+
+float curl_magnitude_at(ivec3 coord) {
+    return length(curl_at(coord));
+}
+
+void main() {
+    ivec3 coord = ivec3(gl_GlobalInvocationID.xyz);
+    ivec3 size = ivec3(params.grid_dt_time.xyz);
+    if (any(greaterThanEqual(coord, size))) {
+        return;
+    }
+
+    vec3 pressure_gradient = 0.5 * vec3(
+        pressure_at(coord + ivec3(1, 0, 0)) - pressure_at(coord - ivec3(1, 0, 0)),
+        pressure_at(coord + ivec3(0, 1, 0)) - pressure_at(coord - ivec3(0, 1, 0)),
+        pressure_at(coord + ivec3(0, 0, 1)) - pressure_at(coord - ivec3(0, 0, 1)));
+
+    vec3 curl = curl_at(coord);
+    vec3 curl_gradient = 0.5 * vec3(
+        curl_magnitude_at(coord + ivec3(1, 0, 0)) - curl_magnitude_at(coord - ivec3(1, 0, 0)),
+        curl_magnitude_at(coord + ivec3(0, 1, 0)) - curl_magnitude_at(coord - ivec3(0, 1, 0)),
+        curl_magnitude_at(coord + ivec3(0, 0, 1)) - curl_magnitude_at(coord - ivec3(0, 0, 1)));
+    vec3 confinement = vec3(0.0);
+    if (dot(curl_gradient, curl_gradient) > 0.000001) {
+        confinement = cross(normalize(curl_gradient), curl) * params.options.y * params.grid_dt_time.w;
+    }
+
+    vec3 uv = (vec3(coord) + vec3(0.5)) / vec3(size);
+    float edge_distance = min(min(uv.x, 1.0 - uv.x), min(min(uv.y, 1.0 - uv.y), min(uv.z, 1.0 - uv.z)));
+    float wall = smoothstep(0.0, 0.035, edge_distance);
+    vec3 projected_velocity = (velocity_at(coord) - pressure_gradient + confinement) * wall;
+    imageStore(velocity_out, coord, vec4(projected_velocity, 0.0));
+}

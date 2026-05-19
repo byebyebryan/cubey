@@ -1,0 +1,34 @@
+#version 450
+
+layout(local_size_x = 4, local_size_y = 4, local_size_z = 4) in;
+
+layout(push_constant) uniform SimulationParams {
+    vec4 grid_dt_time;
+    vec4 decay_force;
+    vec4 options;
+} params;
+
+layout(rgba32f, set = 0, binding = 0) uniform readonly image3D divergence_volume;
+layout(rgba32f, set = 0, binding = 1) uniform readonly image3D pressure_in;
+layout(rgba32f, set = 0, binding = 2) uniform writeonly image3D pressure_out;
+
+float pressure_at(ivec3 coord) {
+    ivec3 max_coord = imageSize(pressure_in) - ivec3(1);
+    return imageLoad(pressure_in, clamp(coord, ivec3(0), max_coord)).x;
+}
+
+void main() {
+    ivec3 coord = ivec3(gl_GlobalInvocationID.xyz);
+    ivec3 size = ivec3(params.grid_dt_time.xyz);
+    if (any(greaterThanEqual(coord, size))) {
+        return;
+    }
+
+    float divergence = imageLoad(divergence_volume, coord).x;
+    float neighbor_sum =
+        pressure_at(coord + ivec3(1, 0, 0)) + pressure_at(coord - ivec3(1, 0, 0)) +
+        pressure_at(coord + ivec3(0, 1, 0)) + pressure_at(coord - ivec3(0, 1, 0)) +
+        pressure_at(coord + ivec3(0, 0, 1)) + pressure_at(coord - ivec3(0, 0, 1));
+    float pressure = (neighbor_sum - divergence) / 6.0;
+    imageStore(pressure_out, coord, vec4(pressure, 0.0, 0.0, 0.0));
+}
