@@ -3,6 +3,7 @@
 #include <cubey/vulkan/buffer.h>
 
 #include <array>
+#include <cstdint>
 #include <filesystem>
 #include <optional>
 #include <stdexcept>
@@ -16,6 +17,9 @@
 
 namespace cubey::projects::fluid_3d {
 namespace {
+
+constexpr VkFormat kFluidVectorVolumeFormat = VK_FORMAT_R16G16B16A16_SFLOAT;
+constexpr VkFormat kFluidScalarVolumeFormat = VK_FORMAT_R32_SFLOAT;
 
 std::filesystem::path shader_path(const char* filename) {
     return std::filesystem::path(CUBEY_FLUID_3D_SHADER_DIR) / filename;
@@ -59,11 +63,45 @@ upload_project_device_buffer(cubey::ProjectGpuServices& gpu, const void* data,
     };
 }
 
-[[nodiscard]] cubey::render::Texture3DConfig volume_texture_config(const Fluid3DConfig& config,
+[[nodiscard]] VkExtent3D solver_volume_extent(const Fluid3DConfig& config) {
+    return {
+        .width = config.grid_width,
+        .height = config.grid_height,
+        .depth = config.grid_depth,
+    };
+}
+
+[[nodiscard]] VkExtent3D shadow_volume_extent(const Fluid3DConfig& config) {
+    return {
+        .width = config.shadow_grid_width,
+        .height = config.shadow_grid_height,
+        .depth = config.shadow_grid_depth,
+    };
+}
+
+void validate_volume_format_features(const cubey::vulkan::Device& device, VkFormat format,
+                                     const char* label) {
+    if (format == kFluidVectorVolumeFormat &&
+        !device.supports_shader_storage_image_extended_formats()) {
+        throw std::runtime_error(
+            "fluid 3D RGBA16F storage images require shaderStorageImageExtendedFormats");
+    }
+    VkFormatProperties properties{};
+    vkGetPhysicalDeviceFormatProperties(device.physical_device(), format, &properties);
+    constexpr VkFormatFeatureFlags kRequired =
+        VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT | VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT;
+    if ((properties.optimalTilingFeatures & kRequired) != kRequired) {
+        throw std::runtime_error(std::string("fluid 3D ") + label +
+                                 " format does not support sampled storage images");
+    }
+}
+
+[[nodiscard]] cubey::render::Texture3DConfig volume_texture_config(VkExtent3D extent,
+                                                                   VkFormat format,
                                                                    bool sampled) {
     return {
-        .extent = {config.grid_width, config.grid_height, config.grid_depth},
-        .format = VK_FORMAT_R32G32B32A32_SFLOAT,
+        .extent = extent,
+        .format = format,
         .create_sampler = sampled,
         .sampler =
             {
@@ -75,8 +113,8 @@ upload_project_device_buffer(cubey::ProjectGpuServices& gpu, const void* data,
 [[nodiscard]] cubey::render::Texture3DConfig shadow_volume_texture_config(
     const Fluid3DConfig& config) {
     return {
-        .extent = {config.grid_width, config.grid_height, config.grid_depth},
-        .format = VK_FORMAT_R32_SFLOAT,
+        .extent = shadow_volume_extent(config),
+        .format = kFluidScalarVolumeFormat,
         .create_sampler = true,
         .sampler =
             {
@@ -113,29 +151,44 @@ void create_compute_pipeline_resource(
 
 void Fluid3DGpuResources::create_global_resources_if_needed(cubey::vulkan::Device& device,
                                                             cubey::ProjectGpuServices& gpu,
-                                                            const Fluid3DConfig& config) {
+                                                            const Fluid3DConfig& config,
+                                                            std::uint32_t frame_slot_count) {
     config_ = config;
     if (density_a_.has_value()) {
+        if (!profiler_.has_value()) {
+            profiler_.emplace(device, frame_slot_count, 8);
+        }
         return;
     }
 
     create_volume_resources(device, gpu, config_);
     create_descriptor_resources(device);
     create_compute_pipelines(device);
+    profiler_.emplace(device, frame_slot_count, 8);
 }
 
 void Fluid3DGpuResources::create_volume_resources(cubey::vulkan::Device& device,
                                                   cubey::ProjectGpuServices& gpu,
                                                   const Fluid3DConfig& config) {
-    density_a_.emplace(device, volume_texture_config(config, true));
-    density_b_.emplace(device, volume_texture_config(config, true));
-    velocity_a_.emplace(device, volume_texture_config(config, true));
-    velocity_b_.emplace(device, volume_texture_config(config, true));
-    density_prediction_.emplace(device, volume_texture_config(config, false));
-    velocity_prediction_.emplace(device, volume_texture_config(config, false));
-    divergence_.emplace(device, volume_texture_config(config, false));
-    pressure_a_.emplace(device, volume_texture_config(config, false));
-    pressure_b_.emplace(device, volume_texture_config(config, false));
+    validate_volume_format_features(device, kFluidVectorVolumeFormat, "RGBA16F volume");
+    validate_volume_format_features(device, kFluidScalarVolumeFormat, "R32F volume");
+    const VkExtent3D solver_extent = solver_volume_extent(config);
+    density_a_.emplace(device, volume_texture_config(solver_extent, kFluidVectorVolumeFormat, true));
+    density_b_.emplace(device, volume_texture_config(solver_extent, kFluidVectorVolumeFormat, true));
+    velocity_a_.emplace(device,
+                        volume_texture_config(solver_extent, kFluidVectorVolumeFormat, true));
+    velocity_b_.emplace(device,
+                        volume_texture_config(solver_extent, kFluidVectorVolumeFormat, true));
+    density_prediction_.emplace(
+        device, volume_texture_config(solver_extent, kFluidVectorVolumeFormat, false));
+    velocity_prediction_.emplace(
+        device, volume_texture_config(solver_extent, kFluidVectorVolumeFormat, false));
+    divergence_.emplace(device, volume_texture_config(solver_extent, kFluidScalarVolumeFormat,
+                                                      false));
+    pressure_a_.emplace(device, volume_texture_config(solver_extent, kFluidScalarVolumeFormat,
+                                                      false));
+    pressure_b_.emplace(device, volume_texture_config(solver_extent, kFluidScalarVolumeFormat,
+                                                      false));
     shadow_volume_.emplace(device, shadow_volume_texture_config(config));
 
     const std::vector<Fluid3DInjectorGpu> empty(kMaxFluid3DInjectorCount);
@@ -151,6 +204,7 @@ void Fluid3DGpuResources::destroy_swapchain_resources() {
 
 void Fluid3DGpuResources::destroy_all_resources() {
     destroy_swapchain_resources();
+    profiler_.reset();
     shadow_pipeline_.reset();
     projection_pipeline_.reset();
     pressure_pipeline_.reset();
@@ -733,6 +787,14 @@ const cubey::vulkan::DescriptorSetArray& Fluid3DGpuResources::render_descriptors
         throw std::runtime_error("fluid 3D render descriptors are not initialized");
     }
     return render_descriptors_.value();
+}
+
+const std::vector<cubey::vulkan::GpuPassTiming>& Fluid3DGpuResources::latest_timings() const {
+    if (!profiler_.has_value()) {
+        static const std::vector<cubey::vulkan::GpuPassTiming> empty;
+        return empty;
+    }
+    return profiler_->latest_timings();
 }
 
 } // namespace cubey::projects::fluid_3d

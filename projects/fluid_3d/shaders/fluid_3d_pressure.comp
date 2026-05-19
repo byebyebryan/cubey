@@ -8,9 +8,9 @@ layout(push_constant) uniform SimulationParams {
     vec4 options;
 } params;
 
-layout(rgba32f, set = 0, binding = 0) uniform readonly image3D divergence_volume;
-layout(rgba32f, set = 0, binding = 1) uniform readonly image3D pressure_in;
-layout(rgba32f, set = 0, binding = 2) uniform writeonly image3D pressure_out;
+layout(r32f, set = 0, binding = 0) uniform readonly image3D divergence_volume;
+layout(r32f, set = 0, binding = 1) uniform readonly image3D pressure_in;
+layout(r32f, set = 0, binding = 2) uniform writeonly image3D pressure_out;
 
 float pressure_at(ivec3 coord) {
     ivec3 max_coord = imageSize(pressure_in) - ivec3(1);

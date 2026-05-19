@@ -22,12 +22,12 @@ struct VolumeBounds {
     vec3 velocity_max;
 };
 
-layout(rgba32f, set = 0, binding = 0) uniform readonly image3D density_source;
-layout(rgba32f, set = 0, binding = 1) uniform readonly image3D velocity_source;
-layout(rgba32f, set = 0, binding = 2) uniform readonly image3D density_predicted;
-layout(rgba32f, set = 0, binding = 3) uniform readonly image3D velocity_predicted;
-layout(rgba32f, set = 0, binding = 4) uniform writeonly image3D density_out;
-layout(rgba32f, set = 0, binding = 5) uniform writeonly image3D velocity_out;
+layout(rgba16f, set = 0, binding = 0) uniform readonly image3D density_source;
+layout(rgba16f, set = 0, binding = 1) uniform readonly image3D velocity_source;
+layout(rgba16f, set = 0, binding = 2) uniform readonly image3D density_predicted;
+layout(rgba16f, set = 0, binding = 3) uniform readonly image3D velocity_predicted;
+layout(rgba16f, set = 0, binding = 4) uniform writeonly image3D density_out;
+layout(rgba16f, set = 0, binding = 5) uniform writeonly image3D velocity_out;
 layout(set = 0, binding = 6, std430) readonly buffer Fluid3DInjectors {
     Injector injectors[];
 };

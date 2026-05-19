@@ -18,30 +18,37 @@ and UI/control shape before the solver becomes more ambitious.
 - `D` cycles smoke, density-slice, and velocity debug views.
 
 The UI exposes injector count, pressure iterations, raymarch steps, decay,
-injection radius/force, vorticity, absorption, light, shadow, and ambient terms.
+injection radius/force, vorticity, absorption, light, shadow strength, shadow
+ray steps/update interval, ambient terms, and recent GPU pass timings.
 
 ## CLI
 
 ```bash
 ./build/dev/projects/fluid_3d/fluid_3d --width 1280 --height 720
 ./build/dev/projects/fluid_3d/fluid_3d --grid-width 64 --grid-height 64 --grid-depth 64 --injectors 8
+./build/dev/projects/fluid_3d/fluid_3d --shadow-grid-width 64 --shadow-grid-height 64 --shadow-grid-depth 64 --shadow-steps 64 --shadow-update-interval 1
+./build/dev/projects/fluid_3d/fluid_3d --frames 300 --print-frame-stats --width 1280 --height 720
 ./build/dev/projects/fluid_3d/fluid_3d --headless --frames 120 --width 640 --height 360 --output /tmp/cubey-fluid-3d.png
 ```
 
-The default solver grid is `128x128x128`. The CLI grid flags are useful for quick
-smoke tests (`32x32x32`) and higher-quality local runs once performance allows.
+The default solver grid is `128x128x128`. The default shadow grid is decoupled
+at `64x64x64`, with 64 shadow ray steps and per-frame shadow updates. The CLI
+grid flags are useful for quick smoke tests (`32x32x32`) and higher-quality
+local runs once performance allows. Shadow grid changes are startup-time
+resource choices; shadow steps and update interval are also exposed live in UI.
 
 ## Current Pipeline
 
-The simulation uses nine `RGBA32F` 3D textures plus one sampled `R32F` shadow
-volume:
+The simulation uses `RGBA16F` 3D textures for dye/velocity fields and prediction
+scratch, plus `R32F` scalar volumes for divergence, pressure, and shadow
+transmittance:
 
 - Density A/B.
 - Velocity A/B.
 - Density/velocity prediction scratch.
 - Divergence.
 - Pressure A/B.
-- Shadow transmittance.
+- Shadow transmittance on the decoupled shadow grid.
 
 The command path records:
 
@@ -54,6 +61,10 @@ The command path records:
 7. Projection plus vorticity confinement.
 8. Shadow-volume compute pass from the current density volume.
 9. Raymarched fullscreen draw sampling the precomputed shadow volume.
+
+Windowed runs collect GPU timestamps for reset, advection prediction/correction,
+divergence, pressure, projection, shadow, and raymarch passes. The timings are
+shown in the UI and emitted once per second with `--print-frame-stats`.
 
 The project currently uses direct command recording rather than the render
 graph. That keeps the first 3D volume path easy to inspect; the render graph can

@@ -50,14 +50,39 @@ struct TransferWriteBarrier {
     VkAccessFlags dst_access = 0;
 };
 
-[[nodiscard]] DispatchGroups compute_dispatch_groups(const Fluid3DConfig& config) {
-    if (config.compute_group_size == 0) {
+[[nodiscard]] DispatchGroups compute_dispatch_groups(VkExtent3D extent,
+                                                     std::uint32_t group_size) {
+    if (group_size == 0) {
         throw std::runtime_error("fluid 3D compute group size must be positive");
     }
     return {
-        .x = (config.grid_width + config.compute_group_size - 1U) / config.compute_group_size,
-        .y = (config.grid_height + config.compute_group_size - 1U) / config.compute_group_size,
-        .z = (config.grid_depth + config.compute_group_size - 1U) / config.compute_group_size,
+        .x = (extent.width + group_size - 1U) / group_size,
+        .y = (extent.height + group_size - 1U) / group_size,
+        .z = (extent.depth + group_size - 1U) / group_size,
+    };
+}
+
+[[nodiscard]] VkExtent3D solver_extent(const Fluid3DConfig& config) {
+    return {
+        .width = config.grid_width,
+        .height = config.grid_height,
+        .depth = config.grid_depth,
+    };
+}
+
+[[nodiscard]] VkExtent3D shadow_extent(const Fluid3DConfig& config) {
+    return {
+        .width = config.shadow_grid_width,
+        .height = config.shadow_grid_height,
+        .depth = config.shadow_grid_depth,
+    };
+}
+
+[[nodiscard]] VkExtent3D max_extent(VkExtent3D lhs, VkExtent3D rhs) {
+    return {
+        .width = std::max(lhs.width, rhs.width),
+        .height = std::max(lhs.height, rhs.height),
+        .depth = std::max(lhs.depth, rhs.depth),
     };
 }
 
@@ -156,7 +181,7 @@ void record_injector_buffer_update(VkCommandBuffer command_buffer,
         .shadow_options =
             {
                 config.shadow_absorption,
-                0.0F,
+                static_cast<float>(config.shadow_steps),
                 0.0F,
                 0.0F,
             },
@@ -227,8 +252,20 @@ void record_fluid_3d_compute(VkCommandBuffer command_buffer, Fluid3DGpuResources
                              const ProjectFrame& frame,
                              std::span<const Fluid3DInjectorGpu> injectors,
                              Fluid3DFrameState& frame_state,
-                             bool include_render_visibility_barrier) {
+                             bool include_render_visibility_barrier,
+                             cubey::vulkan::GpuTimestampProfiler* profiler,
+                             std::uint32_t frame_slot_index) {
     const cubey::vulkan::CommandRecorder recorder(command_buffer);
+    auto begin_pass = [&](const char* label) {
+        if (profiler != nullptr) {
+            profiler->begin_pass(command_buffer, frame_slot_index, label);
+        }
+    };
+    auto end_pass = [&]() {
+        if (profiler != nullptr) {
+            profiler->end_pass(command_buffer, frame_slot_index);
+        }
+    };
     if (!frame_state.volumes_initialized) {
         record_initial_volume_layouts(command_buffer, resources);
         frame_state.volumes_initialized = true;
@@ -236,14 +273,23 @@ void record_fluid_3d_compute(VkCommandBuffer command_buffer, Fluid3DGpuResources
     }
 
     const SimulationPushConstants push_constants = simulation_push_constants(config, frame);
-    const DispatchGroups groups = compute_dispatch_groups(config);
+    const DispatchGroups groups = compute_dispatch_groups(solver_extent(config),
+                                                          config.compute_group_size);
+    const DispatchGroups shadow_groups =
+        compute_dispatch_groups(shadow_extent(config), config.compute_group_size);
+    const DispatchGroups reset_groups = compute_dispatch_groups(
+        max_extent(solver_extent(config), shadow_extent(config)), config.compute_group_size);
 
     if (reset_requested) {
+        begin_pass("reset");
         const cubey::render::ComputePipelineResource& reset_pipeline = resources.reset_pipeline();
-        record_dispatch(recorder, reset_pipeline, resources.reset_descriptor_set(), groups,
+        record_dispatch(recorder, reset_pipeline, resources.reset_descriptor_set(), reset_groups,
                         push_constants);
+        end_pass();
         frame_state.density_a_current = true;
         frame_state.velocity_a_current = true;
+        frame_state.shadow_initialized = false;
+        frame_state.frames_since_shadow_update = 0;
         reset_requested = false;
         record_shader_write_barrier(
             command_buffer,
@@ -260,23 +306,27 @@ void record_fluid_3d_compute(VkCommandBuffer command_buffer, Fluid3DGpuResources
 
     record_injector_buffer_update(command_buffer, resources, injectors);
 
+    begin_pass("advect_predict");
     const cubey::render::ComputePipelineResource& advect_pipeline = resources.advect_pipeline();
     record_dispatch(recorder, advect_pipeline,
                     resources.advect_descriptor_set(frame_state.density_a_current,
                                                     frame_state.velocity_a_current),
                     groups, push_constants);
+    end_pass();
     record_shader_write_barrier(
         command_buffer, {
                             .dst_stage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                             .dst_access = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
                         });
 
+    begin_pass("advect_correct");
     const cubey::render::ComputePipelineResource& advect_correct_pipeline =
         resources.advect_correct_pipeline();
     record_dispatch(recorder, advect_correct_pipeline,
                     resources.advect_correct_descriptor_set(frame_state.density_a_current,
                                                             frame_state.velocity_a_current),
                     groups, push_constants);
+    end_pass();
     frame_state.density_a_current = !frame_state.density_a_current;
     frame_state.velocity_a_current = !frame_state.velocity_a_current;
     record_shader_write_barrier(
@@ -285,17 +335,20 @@ void record_fluid_3d_compute(VkCommandBuffer command_buffer, Fluid3DGpuResources
                             .dst_access = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
                         });
 
+    begin_pass("divergence");
     const cubey::render::ComputePipelineResource& divergence_pipeline =
         resources.divergence_pipeline();
     record_dispatch(recorder, divergence_pipeline,
                     resources.divergence_descriptor_set(frame_state.velocity_a_current), groups,
                     push_constants);
+    end_pass();
     record_shader_write_barrier(
         command_buffer, {
                             .dst_stage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                             .dst_access = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
                         });
 
+    begin_pass("pressure");
     const cubey::render::ComputePipelineResource& pressure_pipeline = resources.pressure_pipeline();
     for (std::uint32_t iteration = 0; iteration < config.pressure_iterations; ++iteration) {
         const VkDescriptorSet descriptor_set = (iteration % 2U == 0)
@@ -309,20 +362,34 @@ void record_fluid_3d_compute(VkCommandBuffer command_buffer, Fluid3DGpuResources
                 .dst_access = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
             });
     }
+    end_pass();
 
     const bool pressure_a_current = (config.pressure_iterations % 2U) == 0;
+    begin_pass("projection");
     const cubey::render::ComputePipelineResource& projection_pipeline =
         resources.projection_pipeline();
     record_dispatch(
         recorder, projection_pipeline,
         resources.projection_descriptor_set(frame_state.velocity_a_current, pressure_a_current),
         groups, push_constants);
+    end_pass();
     frame_state.velocity_a_current = !frame_state.velocity_a_current;
 
-    const cubey::render::ComputePipelineResource& shadow_pipeline = resources.shadow_pipeline();
-    record_dispatch(recorder, shadow_pipeline,
-                    resources.shadow_descriptor_set(frame_state.density_a_current), groups,
-                    push_constants);
+    const std::uint32_t shadow_interval = std::max(config.shadow_update_interval, 1U);
+    const bool update_shadow = !frame_state.shadow_initialized ||
+                               frame_state.frames_since_shadow_update >= shadow_interval - 1U;
+    if (update_shadow) {
+        begin_pass("shadow");
+        const cubey::render::ComputePipelineResource& shadow_pipeline = resources.shadow_pipeline();
+        record_dispatch(recorder, shadow_pipeline,
+                        resources.shadow_descriptor_set(frame_state.density_a_current),
+                        shadow_groups, push_constants);
+        end_pass();
+        frame_state.shadow_initialized = true;
+        frame_state.frames_since_shadow_update = 0;
+    } else {
+        ++frame_state.frames_since_shadow_update;
+    }
 
     if (include_render_visibility_barrier) {
         record_shader_write_barrier(
@@ -339,11 +406,16 @@ void record_fluid_3d_draw(VkCommandBuffer command_buffer, const Fluid3DGpuResour
                           const Fluid3DConfig& config, Fluid3DDebugView debug_view,
                           const Fluid3DRenderCamera& camera,
                           cubey::render::ColorTargetView color_target,
-                          const Fluid3DFrameState& frame_state) {
+                          const Fluid3DFrameState& frame_state,
+                          cubey::vulkan::GpuTimestampProfiler* profiler,
+                          std::uint32_t frame_slot_index) {
     const cubey::vulkan::CommandRecorder recorder(command_buffer);
     const RenderPushConstants push_constants =
         render_push_constants(config, debug_view, camera, color_target.extent);
 
+    if (profiler != nullptr) {
+        profiler->begin_pass(command_buffer, frame_slot_index, "raymarch");
+    }
     cubey::render::record_render_target_pass(
         recorder, cubey::render::render_target_view(color_target),
         cubey::render::RenderClearValues{
@@ -360,6 +432,9 @@ void record_fluid_3d_draw(VkCommandBuffer command_buffer, const Fluid3DGpuResour
                 },
                 VK_SHADER_STAGE_FRAGMENT_BIT, push_constants);
         });
+    if (profiler != nullptr) {
+        profiler->end_pass(command_buffer, frame_slot_index);
+    }
 }
 
 } // namespace cubey::projects::fluid_3d

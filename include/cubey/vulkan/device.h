@@ -44,6 +44,18 @@ class Device {
     bool supports_texture_compression_bc() const {
         return enabled_features_.textureCompressionBC == VK_TRUE;
     }
+    bool supports_shader_storage_image_extended_formats() const {
+        return supported_features_.shaderStorageImageExtendedFormats == VK_TRUE;
+    }
+    bool supports_timestamp_queries() const {
+        return queue_timestamp_valid_bits_ != 0;
+    }
+    std::uint32_t queue_timestamp_valid_bits() const {
+        return queue_timestamp_valid_bits_;
+    }
+    float timestamp_period_nanoseconds() const {
+        return properties_.limits.timestampPeriod;
+    }
 
     [[nodiscard]] std::uint32_t find_memory_type(std::uint32_t type_bits,
                                                  VkMemoryPropertyFlags required) const;
@@ -61,6 +73,7 @@ class Device {
     VkDevice device_ = VK_NULL_HANDLE;
     VkQueue queue_ = VK_NULL_HANDLE;
     std::uint32_t queue_family_ = 0;
+    std::uint32_t queue_timestamp_valid_bits_ = 0;
 };
 
 } // namespace cubey::vulkan

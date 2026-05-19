@@ -103,6 +103,11 @@ void test_texture_2d_config_preserves_mip_count() {
 }
 
 void test_texture_2d_byte_size_uses_compressed_blocks() {
+    require(cubey::render::texture_format_byte_size(VK_FORMAT_R32_SFLOAT) == 4,
+            "R32F texture format layout should use four bytes per texel");
+    require(cubey::render::texture_format_byte_size(VK_FORMAT_R16G16B16A16_SFLOAT) == 8,
+            "RGBA16F texture format layout should use eight bytes per texel");
+
     const cubey::render::TextureFormatLayout bc7 =
         cubey::render::texture_format_layout(VK_FORMAT_BC7_UNORM_BLOCK);
     require(bc7.block_width == 4, "BC7 should use four-wide blocks");

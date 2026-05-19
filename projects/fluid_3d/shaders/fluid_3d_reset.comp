@@ -9,28 +9,44 @@ layout(push_constant) uniform SimulationParams {
     vec4 shadow_options;
 } params;
 
-layout(rgba32f, set = 0, binding = 0) uniform writeonly image3D density_a;
-layout(rgba32f, set = 0, binding = 1) uniform writeonly image3D velocity_a;
-layout(rgba32f, set = 0, binding = 2) uniform writeonly image3D divergence_volume;
-layout(rgba32f, set = 0, binding = 3) uniform writeonly image3D pressure_a;
-layout(rgba32f, set = 0, binding = 4) uniform writeonly image3D pressure_b;
+layout(rgba16f, set = 0, binding = 0) uniform writeonly image3D density_a;
+layout(rgba16f, set = 0, binding = 1) uniform writeonly image3D velocity_a;
+layout(r32f, set = 0, binding = 2) uniform writeonly image3D divergence_volume;
+layout(r32f, set = 0, binding = 3) uniform writeonly image3D pressure_a;
+layout(r32f, set = 0, binding = 4) uniform writeonly image3D pressure_b;
 layout(r32f, set = 0, binding = 5) uniform writeonly image3D shadow_volume;
-layout(rgba32f, set = 0, binding = 6) uniform writeonly image3D density_prediction;
-layout(rgba32f, set = 0, binding = 7) uniform writeonly image3D velocity_prediction;
+layout(rgba16f, set = 0, binding = 6) uniform writeonly image3D density_prediction;
+layout(rgba16f, set = 0, binding = 7) uniform writeonly image3D velocity_prediction;
+
+bool inside(ivec3 coord, ivec3 size) {
+    return all(greaterThanEqual(coord, ivec3(0))) && all(lessThan(coord, size));
+}
 
 void main() {
     ivec3 coord = ivec3(gl_GlobalInvocationID.xyz);
-    ivec3 size = ivec3(params.grid_dt_time.xyz);
-    if (any(greaterThanEqual(coord, size))) {
-        return;
-    }
 
-    imageStore(density_a, coord, vec4(0.0));
-    imageStore(velocity_a, coord, vec4(0.0));
-    imageStore(divergence_volume, coord, vec4(0.0));
-    imageStore(pressure_a, coord, vec4(0.0));
-    imageStore(pressure_b, coord, vec4(0.0));
-    imageStore(shadow_volume, coord, vec4(1.0));
-    imageStore(density_prediction, coord, vec4(0.0));
-    imageStore(velocity_prediction, coord, vec4(0.0));
+    if (inside(coord, imageSize(density_a))) {
+        imageStore(density_a, coord, vec4(0.0));
+    }
+    if (inside(coord, imageSize(velocity_a))) {
+        imageStore(velocity_a, coord, vec4(0.0));
+    }
+    if (inside(coord, imageSize(divergence_volume))) {
+        imageStore(divergence_volume, coord, vec4(0.0));
+    }
+    if (inside(coord, imageSize(pressure_a))) {
+        imageStore(pressure_a, coord, vec4(0.0));
+    }
+    if (inside(coord, imageSize(pressure_b))) {
+        imageStore(pressure_b, coord, vec4(0.0));
+    }
+    if (inside(coord, imageSize(shadow_volume))) {
+        imageStore(shadow_volume, coord, vec4(1.0));
+    }
+    if (inside(coord, imageSize(density_prediction))) {
+        imageStore(density_prediction, coord, vec4(0.0));
+    }
+    if (inside(coord, imageSize(velocity_prediction))) {
+        imageStore(velocity_prediction, coord, vec4(0.0));
+    }
 }

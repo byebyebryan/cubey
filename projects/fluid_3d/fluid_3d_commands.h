@@ -19,6 +19,8 @@ struct Fluid3DFrameState {
     bool density_a_current = true;
     bool velocity_a_current = true;
     bool volumes_initialized = false;
+    bool shadow_initialized = false;
+    std::uint32_t frames_since_shadow_update = 0;
 };
 
 struct Fluid3DRenderCamera {
@@ -34,12 +36,16 @@ void record_fluid_3d_compute(VkCommandBuffer command_buffer, Fluid3DGpuResources
                              const ProjectFrame& frame,
                              std::span<const Fluid3DInjectorGpu> injectors,
                              Fluid3DFrameState& frame_state,
-                             bool include_render_visibility_barrier = true);
+                             bool include_render_visibility_barrier = true,
+                             cubey::vulkan::GpuTimestampProfiler* profiler = nullptr,
+                             std::uint32_t frame_slot_index = 0);
 
 void record_fluid_3d_draw(VkCommandBuffer command_buffer, const Fluid3DGpuResources& resources,
                           const Fluid3DConfig& config, Fluid3DDebugView debug_view,
                           const Fluid3DRenderCamera& camera,
                           cubey::render::ColorTargetView color_target,
-                          const Fluid3DFrameState& frame_state);
+                          const Fluid3DFrameState& frame_state,
+                          cubey::vulkan::GpuTimestampProfiler* profiler = nullptr,
+                          std::uint32_t frame_slot_index = 0);
 
 } // namespace cubey::projects::fluid_3d

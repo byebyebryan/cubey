@@ -57,19 +57,40 @@ int main() {
         require(config.pressure_iterations == 12,
                 "fluid 3D pressure solve should default to a small 3D budget");
         require(config.raymarch_steps == 128, "fluid 3D should default to one step per slice");
-        require(config.density_decay_per_second == 0.985F,
-                "fluid 3D should default to enough dye decay to avoid filled-volume buildup");
+        require(config.shadow_grid_width == 64, "fluid 3D should default to a 64-wide shadow grid");
+        require(config.shadow_grid_height == 64,
+                "fluid 3D should default to a 64-high shadow grid");
+        require(config.shadow_grid_depth == 64,
+                "fluid 3D should default to a 64-deep shadow grid");
+        require(config.shadow_steps == 64, "fluid 3D shadow rays should default to 64 steps");
+        require(config.shadow_update_interval == 1,
+                "fluid 3D should update shadows every frame by default");
+        require(config.density_decay_per_second == 0.99F,
+                "fluid 3D density decay should match the tuned default");
+        require(config.velocity_decay_per_second == 0.99F,
+                "fluid 3D velocity decay should match the tuned default");
+        require(config.injector_radius == 0.05F,
+                "fluid 3D injector radius should match the tuned default");
         require(config.injector_strength == 6.0F,
                 "fluid 3D injector force should match the shared CLI default");
-        require(config.shadow_absorption == 48.0F,
-                "fluid 3D should default to visible volume self-shadowing");
-        require(config.ambient_light == 0.22F,
-                "fluid 3D should default to a small amount of ambient volume light");
+        require(config.vorticity_strength == 1.0F,
+                "fluid 3D vorticity should match the tuned default");
+        require(config.absorption == 8.0F,
+                "fluid 3D absorption should match the tuned default");
+        require(config.emission == 2.0F,
+                "fluid 3D light emission should match the tuned default");
+        require(config.shadow_absorption == 50.0F,
+                "fluid 3D shadow absorption should match the tuned default");
+        require(config.ambient_light == 0.5F,
+                "fluid 3D ambient light should match the tuned default");
         require(cubey::projects::fluid_3d::volume_cell_count(config) == kExpectedCellCount,
                 "fluid 3D cell count should multiply all dimensions");
-        require(cubey::projects::fluid_3d::volume_rgba32f_byte_size(config) ==
-                    sizeof(float) * 4U * kExpectedCellCount,
-                "fluid 3D RGBA32F byte size should cover one texel per cell");
+        require(cubey::projects::fluid_3d::volume_byte_size(config, 8) ==
+                    8U * kExpectedCellCount,
+                "fluid 3D generic byte size should use caller-provided cell bytes");
+        require(cubey::projects::fluid_3d::shadow_volume_cell_count(config) ==
+                    std::size_t{64} * std::size_t{64} * std::size_t{64},
+                "fluid 3D shadow cell count should use the decoupled shadow grid");
         require(cubey::projects::fluid_3d::next_debug_view(
                     cubey::projects::fluid_3d::Fluid3DDebugView::Smoke) ==
                     cubey::projects::fluid_3d::Fluid3DDebugView::DensitySlice,
@@ -87,6 +108,11 @@ int main() {
         run_config.grid_width = 64;
         run_config.grid_height = 48;
         run_config.grid_depth = 32;
+        run_config.shadow_grid_width = 24;
+        run_config.shadow_grid_height = 20;
+        run_config.shadow_grid_depth = 16;
+        run_config.shadow_steps = 48;
+        run_config.shadow_update_interval = 3;
         run_config.injectors = 8;
         run_config.injector_force = 7.5F;
         const cubey::projects::fluid_3d::Fluid3DConfig configured =
@@ -94,6 +120,16 @@ int main() {
         require(configured.grid_width == 64, "fluid 3D config should honor run config width");
         require(configured.grid_height == 48, "fluid 3D config should honor run config height");
         require(configured.grid_depth == 32, "fluid 3D config should honor run config depth");
+        require(configured.shadow_grid_width == 24,
+                "fluid 3D config should honor run config shadow width");
+        require(configured.shadow_grid_height == 20,
+                "fluid 3D config should honor run config shadow height");
+        require(configured.shadow_grid_depth == 16,
+                "fluid 3D config should honor run config shadow depth");
+        require(configured.shadow_steps == 48,
+                "fluid 3D config should honor run config shadow steps");
+        require(configured.shadow_update_interval == 3,
+                "fluid 3D config should honor run config shadow update interval");
         require(configured.injector_count == 8,
                 "fluid 3D config should honor run config injector count");
         require(configured.injector_strength == 7.5F,
@@ -168,8 +204,10 @@ int main() {
             read_text_file(source_dir / "shaders" / "fluid_3d_raymarch.frag");
         const std::string shadow_shader =
             read_text_file(source_dir / "shaders" / "fluid_3d_shadow.comp");
-        require_contains(advect_shader, "layout(rgba32f",
-                         "fluid 3D compute shaders should use explicit storage image formats");
+        require_contains(advect_shader, "layout(rgba16f",
+                         "fluid 3D bulk volumes should use explicit RGBA16F storage images");
+        require_contains(shadow_shader, "imageSize(shadow_volume)",
+                         "fluid 3D shadow dispatch should use the decoupled shadow volume size");
         require_contains(advect_correct_shader, "reversed_density",
                          "fluid 3D should use a MacCormack/BFECC correction pass");
         require_contains(advect_correct_shader, "source_bounds",

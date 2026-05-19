@@ -8,8 +8,8 @@ layout(push_constant) uniform SimulationParams {
     vec4 options;
 } params;
 
-layout(rgba32f, set = 0, binding = 0) uniform readonly image3D velocity_volume;
-layout(rgba32f, set = 0, binding = 1) uniform writeonly image3D divergence_volume;
+layout(rgba16f, set = 0, binding = 0) uniform readonly image3D velocity_volume;
+layout(r32f, set = 0, binding = 1) uniform writeonly image3D divergence_volume;
 
 vec3 velocity_at(ivec3 coord) {
     ivec3 max_coord = imageSize(velocity_volume) - ivec3(1);

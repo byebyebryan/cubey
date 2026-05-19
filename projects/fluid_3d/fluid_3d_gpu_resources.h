@@ -9,12 +9,14 @@
 #include <cubey/vulkan/buffer.h>
 #include <cubey/vulkan/descriptors.h>
 #include <cubey/vulkan/device.h>
+#include <cubey/vulkan/gpu_timestamps.h>
 
 #include <vulkan/vulkan.h>
 
 #include <array>
 #include <cstdint>
 #include <optional>
+#include <vector>
 
 namespace cubey::projects::fluid_3d {
 
@@ -22,7 +24,8 @@ class Fluid3DGpuResources {
   public:
     void create_global_resources_if_needed(cubey::vulkan::Device& device,
                                            cubey::ProjectGpuServices& gpu,
-                                           const Fluid3DConfig& config);
+                                           const Fluid3DConfig& config,
+                                           std::uint32_t frame_slot_count);
     void create_render_pipeline(cubey::vulkan::Device& device, VkFormat color_format,
                                 VkExtent2D extent);
     void destroy_swapchain_resources();
@@ -67,6 +70,10 @@ class Fluid3DGpuResources {
     [[nodiscard]] VkDescriptorSet shadow_descriptor_set(bool density_a_current) const;
     [[nodiscard]] VkDescriptorSet render_descriptor_set(bool density_a_current,
                                                         bool velocity_a_current) const;
+    [[nodiscard]] cubey::vulkan::GpuTimestampProfiler* profiler() noexcept {
+        return profiler_.has_value() ? &profiler_.value() : nullptr;
+    }
+    [[nodiscard]] const std::vector<cubey::vulkan::GpuPassTiming>& latest_timings() const;
 
   private:
     void create_volume_resources(cubey::vulkan::Device& device, cubey::ProjectGpuServices& gpu,
@@ -133,6 +140,7 @@ class Fluid3DGpuResources {
     std::optional<cubey::render::ComputePipelineResource> projection_pipeline_;
     std::optional<cubey::render::ComputePipelineResource> shadow_pipeline_;
     std::optional<cubey::render::GraphicsPipelineResource> render_pipeline_;
+    std::optional<cubey::vulkan::GpuTimestampProfiler> profiler_;
 };
 
 } // namespace cubey::projects::fluid_3d

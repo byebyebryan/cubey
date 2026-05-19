@@ -134,6 +134,20 @@ TextureFormatLayout texture_format_layout(VkFormat format) {
             .bytes_per_block = 4,
             .compressed = false,
         };
+    case VK_FORMAT_R32_SFLOAT:
+        return {
+            .block_width = 1,
+            .block_height = 1,
+            .bytes_per_block = 4,
+            .compressed = false,
+        };
+    case VK_FORMAT_R16G16B16A16_SFLOAT:
+        return {
+            .block_width = 1,
+            .block_height = 1,
+            .bytes_per_block = 8,
+            .compressed = false,
+        };
     case VK_FORMAT_R32G32B32A32_SFLOAT:
         return {
             .block_width = 1,

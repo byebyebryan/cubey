@@ -224,6 +224,33 @@ void test_run_config_parses_grid_dimensions() {
     require(config.grid_depth == 96, "run config should parse grid depth");
 }
 
+void test_run_config_parses_shadow_volume_controls() {
+    std::string program = "cubey";
+    std::string width_flag = "--shadow-grid-width";
+    std::string width_value = "96";
+    std::string height_flag = "--shadow-grid-height";
+    std::string height_value = "80";
+    std::string depth_flag = "--shadow-grid-depth";
+    std::string depth_value = "64";
+    std::string steps_flag = "--shadow-steps";
+    std::string steps_value = "48";
+    std::string interval_flag = "--shadow-update-interval";
+    std::string interval_value = "2";
+    std::array<char*, 11> argv{program.data(), width_flag.data(),    width_value.data(),
+                               height_flag.data(), height_value.data(), depth_flag.data(),
+                               depth_value.data(), steps_flag.data(),   steps_value.data(),
+                               interval_flag.data(), interval_value.data()};
+
+    const cubey::RunConfig config =
+        cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
+    require(config.shadow_grid_width == 96, "run config should parse shadow grid width");
+    require(config.shadow_grid_height == 80, "run config should parse shadow grid height");
+    require(config.shadow_grid_depth == 64, "run config should parse shadow grid depth");
+    require(config.shadow_steps == 48, "run config should parse shadow steps");
+    require(config.shadow_update_interval == 2,
+            "run config should parse shadow update interval");
+}
+
 void test_run_config_parses_injector_count() {
     std::array<char, 6> program{'c', 'u', 'b', 'e', 'y', '\0'};
     std::array<char, 12> injectors_flag{'-', '-', 'i', 'n', 'j', 'e',

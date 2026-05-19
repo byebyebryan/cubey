@@ -23,6 +23,7 @@
 #include <vulkan/vulkan.h>
 
 #include <array>
+#include <cstdio>
 #include <cstdint>
 #include <optional>
 #include <utility>
@@ -76,7 +77,8 @@ class Fluid3DApp {
 
         cubey::host::WindowedAppCallbacks callbacks;
         callbacks.create_global_resources = [this](cubey::host::WindowedAppContext& context) {
-            create_global_resources_if_needed(context.device(), context.gpu());
+            create_global_resources_if_needed(context.device(), context.gpu(),
+                                              context.frame_slot_count());
         };
         callbacks.create_swapchain_resources = [this](cubey::host::WindowedAppContext& context) {
             const VkExtent2D extent = context.swapchain().extent();
@@ -224,9 +226,28 @@ class Fluid3DApp {
         ImGui::SliderFloat("Absorption", &fluid_config_.absorption, 0.5F, 12.0F, "%.2f");
         ImGui::SliderFloat("Light", &fluid_config_.emission, 0.1F, 4.0F, "%.2f");
         ImGui::SliderFloat("Shadow", &fluid_config_.shadow_absorption, 0.0F, 96.0F, "%.2f");
+        int shadow_steps = static_cast<int>(fluid_config_.shadow_steps);
+        if (ImGui::SliderInt("Shadow steps", &shadow_steps, 8, 192)) {
+            fluid_config_.shadow_steps = static_cast<std::uint32_t>(shadow_steps);
+        }
+        int shadow_update_interval = static_cast<int>(fluid_config_.shadow_update_interval);
+        if (ImGui::SliderInt("Shadow interval", &shadow_update_interval, 1, 8)) {
+            fluid_config_.shadow_update_interval =
+                static_cast<std::uint32_t>(shadow_update_interval);
+        }
         ImGui::SliderFloat("Ambient", &fluid_config_.ambient_light, 0.0F, 1.0F, "%.2f");
         ImGui::Text("Grid: %u x %u x %u", fluid_config_.grid_width, fluid_config_.grid_height,
                     fluid_config_.grid_depth);
+        ImGui::Text("Shadow grid: %u x %u x %u", fluid_config_.shadow_grid_width,
+                    fluid_config_.shadow_grid_height, fluid_config_.shadow_grid_depth);
+        const std::vector<cubey::vulkan::GpuPassTiming>& timings = resources_.latest_timings();
+        if (!timings.empty()) {
+            ImGui::Separator();
+            ImGui::Text("GPU timings");
+            for (const cubey::vulkan::GpuPassTiming& timing : timings) {
+                ImGui::Text("%s: %.3f ms", timing.label.c_str(), timing.milliseconds);
+            }
+        }
         ImGui::End();
     }
 
@@ -240,6 +261,8 @@ class Fluid3DApp {
         reset_requested_ = true;
         frame_state_.density_a_current = true;
         frame_state_.velocity_a_current = true;
+        frame_state_.shadow_initialized = false;
+        frame_state_.frames_since_shadow_update = 0;
     }
 
     void update_injectors(const ProjectFrame& frame) {
@@ -277,9 +300,11 @@ class Fluid3DApp {
     }
 
     void create_global_resources_if_needed(cubey::vulkan::Device& device,
-                                           cubey::vulkan::GpuRuntime& gpu) {
+                                           cubey::vulkan::GpuRuntime& gpu,
+                                           std::uint32_t frame_slot_count) {
         attach_project_gpu(gpu);
-        resources_.create_global_resources_if_needed(device, runtime_.gpu(), fluid_config_);
+        resources_.create_global_resources_if_needed(device, runtime_.gpu(), fluid_config_,
+                                                     frame_slot_count);
     }
 
     void attach_project_gpu(cubey::vulkan::GpuRuntime& gpu) {
@@ -311,18 +336,48 @@ class Fluid3DApp {
                       const cubey::host::WindowedRenderFrame& render_frame,
                       const ProjectFrame& frame) {
         (void)context;
+        cubey::vulkan::GpuTimestampProfiler* profiler = resources_.profiler();
+        if (profiler != nullptr) {
+            profiler->collect(render_frame.frame_slot.index);
+            maybe_print_gpu_timings(frame);
+        }
         const cubey::vulkan::CommandRecorder recorder(render_frame.command_buffer);
         recorder.begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+        if (profiler != nullptr) {
+            profiler->begin_frame(render_frame.command_buffer, render_frame.frame_slot.index);
+        }
         record_fluid_3d_compute(render_frame.command_buffer, resources_, fluid_config_, paused_,
-                                reset_requested_, frame, injector_gpu_, frame_state_);
+                                reset_requested_, frame, injector_gpu_, frame_state_, true,
+                                profiler, render_frame.frame_slot.index);
         cubey::render::record_present_render_target(
             recorder, cubey::render::render_target_view(render_frame.color_target),
-            [this, &render_frame](const cubey::vulkan::CommandRecorder& present_recorder) {
+            [this, &render_frame,
+             profiler](const cubey::vulkan::CommandRecorder& present_recorder) {
                 record_fluid_3d_draw(present_recorder.handle(), resources_, fluid_config_,
                                      debug_view_, render_camera(), render_frame.color_target,
-                                     frame_state_);
+                                     frame_state_, profiler, render_frame.frame_slot.index);
             });
         recorder.end("vkEndCommandBuffer fluid_3d");
+    }
+
+    void maybe_print_gpu_timings(const ProjectFrame& frame) {
+        if (!config_.print_frame_stats) {
+            return;
+        }
+        const std::vector<cubey::vulkan::GpuPassTiming>& timings = resources_.latest_timings();
+        if (timings.empty()) {
+            return;
+        }
+        if (last_gpu_timing_print_seconds_ >= 0.0 &&
+            frame.elapsed_seconds - last_gpu_timing_print_seconds_ < 1.0) {
+            return;
+        }
+        last_gpu_timing_print_seconds_ = frame.elapsed_seconds;
+        std::printf("fluid_3d_gpu:");
+        for (const cubey::vulkan::GpuPassTiming& timing : timings) {
+            std::printf(" %s=%.3fms", timing.label.c_str(), timing.milliseconds);
+        }
+        std::printf("\n");
     }
 
     void record_headless_simulation_frame(cubey::ProjectGpuServices& gpu,
@@ -349,7 +404,7 @@ class Fluid3DApp {
         cubey::host::HeadlessPngHostCallbacks callbacks;
         callbacks.create_resources = [this](cubey::host::HeadlessPngContext& context) {
             const cubey::host::HeadlessRenderTarget& target = context.render_target();
-            create_global_resources_if_needed(context.device(), context.gpu());
+            create_global_resources_if_needed(context.device(), context.gpu(), 1);
             create_render_pipeline(context.device(), target.format, target.extent);
         };
         if (config_.capture_mode == CaptureMode::Png) {
@@ -401,6 +456,7 @@ class Fluid3DApp {
     cubey::Camera3D camera_;
     cubey::OrbitController orbit_controller_;
     Fluid3DDebugView debug_view_ = Fluid3DDebugView::Smoke;
+    double last_gpu_timing_print_seconds_ = -1.0;
     bool paused_ = false;
     bool reset_requested_ = true;
 };

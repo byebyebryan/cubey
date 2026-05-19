@@ -61,6 +61,7 @@ add_library(cubey_vulkan STATIC
     vulkan/device.cpp
     vulkan/dynamic_rendering.cpp
     vulkan/frame_resources.cpp
+    vulkan/gpu_timestamps.cpp
     vulkan/gpu_runtime.cpp
     vulkan/image.cpp
     vulkan/immediate_commands.cpp

@@ -68,14 +68,16 @@ float light_transmittance(vec3 uv) {
         return 1.0;
     }
 
-    float max_dimension = max(max(params.grid_dt_time.x, params.grid_dt_time.y),
-                              params.grid_dt_time.z);
-    float step_length = 1.0 / max(max_dimension * 0.75, 1.0);
+    float step_count = max(params.shadow_options.y, 1.0);
+    float step_length = distance_to_exit / step_count;
     float jitter = rand_float(uv) * step_length;
     float optical_depth = 0.0;
     float absorption = max(params.shadow_options.x, 0.0);
 
-    for (int i = 0; i < 160; ++i) {
+    for (int i = 0; i < 256; ++i) {
+        if (i >= int(step_count + 0.5)) {
+            break;
+        }
         float traveled = jitter + (float(i) + 0.5) * step_length;
         if (traveled >= distance_to_exit) {
             break;
@@ -91,7 +93,7 @@ float light_transmittance(vec3 uv) {
 
 void main() {
     ivec3 coord = ivec3(gl_GlobalInvocationID.xyz);
-    ivec3 size = ivec3(params.grid_dt_time.xyz);
+    ivec3 size = imageSize(shadow_volume);
     if (any(greaterThanEqual(coord, size))) {
         return;
     }

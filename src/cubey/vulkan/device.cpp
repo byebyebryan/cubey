@@ -126,6 +126,7 @@ void Device::select_physical_device(const Instance& instance, const DeviceConfig
                 present_supported == VK_TRUE) {
                 physical_device_ = candidate;
                 queue_family_ = i;
+                queue_timestamp_valid_bits_ = families[i].timestampValidBits;
                 vkGetPhysicalDeviceProperties(physical_device_, &properties_);
                 vkGetPhysicalDeviceFeatures(physical_device_, &supported_features_);
                 return;
@@ -161,6 +162,9 @@ void Device::create_device(const DeviceConfig& config) {
     enabled_features_ = {};
     if (supported_features_.textureCompressionBC == VK_TRUE) {
         enabled_features_.textureCompressionBC = VK_TRUE;
+    }
+    if (supported_features_.shaderStorageImageExtendedFormats == VK_TRUE) {
+        enabled_features_.shaderStorageImageExtendedFormats = VK_TRUE;
     }
     info.pEnabledFeatures = &enabled_features_;
 

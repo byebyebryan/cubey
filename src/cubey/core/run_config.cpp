@@ -78,6 +78,20 @@ RunConfig parse_run_config(int argc, char** argv) {
             config.grid_height = parse_positive_u32(need_value("--grid-height"), "--grid-height");
         } else if (arg == "--grid-depth") {
             config.grid_depth = parse_positive_u32(need_value("--grid-depth"), "--grid-depth");
+        } else if (arg == "--shadow-grid-width") {
+            config.shadow_grid_width =
+                parse_positive_u32(need_value("--shadow-grid-width"), "--shadow-grid-width");
+        } else if (arg == "--shadow-grid-height") {
+            config.shadow_grid_height =
+                parse_positive_u32(need_value("--shadow-grid-height"), "--shadow-grid-height");
+        } else if (arg == "--shadow-grid-depth") {
+            config.shadow_grid_depth =
+                parse_positive_u32(need_value("--shadow-grid-depth"), "--shadow-grid-depth");
+        } else if (arg == "--shadow-steps") {
+            config.shadow_steps = parse_positive_u32(need_value("--shadow-steps"), "--shadow-steps");
+        } else if (arg == "--shadow-update-interval") {
+            config.shadow_update_interval = parse_positive_u32(
+                need_value("--shadow-update-interval"), "--shadow-update-interval");
         } else if (arg == "--injectors") {
             config.injectors = parse_positive_u32(need_value("--injectors"), "--injectors");
         } else if (arg == "--injector-force") {

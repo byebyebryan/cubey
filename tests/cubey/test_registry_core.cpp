@@ -21,6 +21,7 @@ void test_run_config_parses_video_capture_defaults();
 void test_run_config_parses_pbr_debug_view_name();
 void test_run_config_parses_frame_stats_flag();
 void test_run_config_parses_grid_dimensions();
+void test_run_config_parses_shadow_volume_controls();
 void test_run_config_parses_injector_count();
 void test_run_config_parses_injector_orbit_controls();
 void test_run_config_parses_injector_force_controls();
@@ -47,6 +48,7 @@ std::span<const TestCase> core_test_cases() {
         CUBEY_TEST(test_run_config_parses_pbr_debug_view_name),
         CUBEY_TEST(test_run_config_parses_frame_stats_flag),
         CUBEY_TEST(test_run_config_parses_grid_dimensions),
+        CUBEY_TEST(test_run_config_parses_shadow_volume_controls),
         CUBEY_TEST(test_run_config_parses_injector_count),
         CUBEY_TEST(test_run_config_parses_injector_orbit_controls),
         CUBEY_TEST(test_run_config_parses_injector_force_controls),
