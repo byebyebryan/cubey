@@ -6,6 +6,7 @@ layout(push_constant) uniform SimulationParams {
     vec4 grid_dt_time;
     vec4 decay_force;
     vec4 options;
+    vec4 shadow_options;
 } params;
 
 struct Injector {
@@ -78,24 +79,9 @@ void main() {
     float dt = params.grid_dt_time.w;
     vec3 uv = (vec3(coord) + vec3(0.5)) / vec3(size);
     vec3 velocity = imageLoad(velocity_in, coord).xyz;
-    vec3 previous_uv = uv - velocity * dt;
-    vec4 density = sample_density(previous_uv) * pow(params.decay_force.x, dt);
-    vec3 advected_velocity = sample_velocity(previous_uv).xyz * pow(params.decay_force.y, dt);
-
-    int injector_count = int(params.options.x + 0.5);
-    for (int i = 0; i < injector_count; ++i) {
-        Injector injector = injectors[i];
-        if (injector.color_active.w <= 0.0) {
-            continue;
-        }
-        vec3 delta = uv - injector.position_radius.xyz;
-        float radius = max(injector.position_radius.w, 0.0001);
-        float falloff = exp(-dot(delta, delta) / (radius * radius));
-        float impulse = injector.velocity_strength.w * dt * falloff;
-        density.rgb += injector.color_active.rgb * impulse * 0.55;
-        density.a += impulse * 0.22;
-        advected_velocity += injector.velocity_strength.xyz * impulse * 0.42;
-    }
+    vec3 previous_uv = clamp(uv - velocity * dt, vec3(0.0), vec3(1.0));
+    vec4 density = sample_density(previous_uv);
+    vec3 advected_velocity = sample_velocity(previous_uv).xyz;
 
     float edge_distance = min(min(uv.x, 1.0 - uv.x), min(min(uv.y, 1.0 - uv.y), min(uv.z, 1.0 - uv.z)));
     float wall = smoothstep(0.0, 0.035, edge_distance);

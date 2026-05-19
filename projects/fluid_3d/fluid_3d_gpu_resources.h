@@ -32,6 +32,8 @@ class Fluid3DGpuResources {
     [[nodiscard]] const cubey::render::Texture3D& density_b() const;
     [[nodiscard]] const cubey::render::Texture3D& velocity_a() const;
     [[nodiscard]] const cubey::render::Texture3D& velocity_b() const;
+    [[nodiscard]] const cubey::render::Texture3D& density_prediction() const;
+    [[nodiscard]] const cubey::render::Texture3D& velocity_prediction() const;
     [[nodiscard]] const cubey::render::Texture3D& divergence() const;
     [[nodiscard]] const cubey::render::Texture3D& pressure_a() const;
     [[nodiscard]] const cubey::render::Texture3D& pressure_b() const;
@@ -39,6 +41,7 @@ class Fluid3DGpuResources {
     [[nodiscard]] const cubey::vulkan::Buffer& injectors() const;
     [[nodiscard]] const cubey::render::ComputePipelineResource& reset_pipeline() const;
     [[nodiscard]] const cubey::render::ComputePipelineResource& advect_pipeline() const;
+    [[nodiscard]] const cubey::render::ComputePipelineResource& advect_correct_pipeline() const;
     [[nodiscard]] const cubey::render::ComputePipelineResource& divergence_pipeline() const;
     [[nodiscard]] const cubey::render::ComputePipelineResource& pressure_pipeline() const;
     [[nodiscard]] const cubey::render::ComputePipelineResource& projection_pipeline() const;
@@ -50,6 +53,8 @@ class Fluid3DGpuResources {
     }
     [[nodiscard]] VkDescriptorSet advect_descriptor_set(bool density_a_current,
                                                         bool velocity_a_current) const;
+    [[nodiscard]] VkDescriptorSet advect_correct_descriptor_set(bool density_a_current,
+                                                                bool velocity_a_current) const;
     [[nodiscard]] VkDescriptorSet divergence_descriptor_set(bool velocity_a_current) const;
     [[nodiscard]] VkDescriptorSet pressure_a_to_b_descriptor_set() const noexcept {
         return pressure_a_to_b_descriptor_set_;
@@ -73,6 +78,8 @@ class Fluid3DGpuResources {
     [[nodiscard]] const cubey::vulkan::DescriptorPool& reset_descriptor_pool() const;
     [[nodiscard]] VkDescriptorSetLayout advect_descriptor_layout() const;
     [[nodiscard]] const cubey::vulkan::DescriptorPool& advect_descriptor_pool() const;
+    [[nodiscard]] VkDescriptorSetLayout advect_correct_descriptor_layout() const;
+    [[nodiscard]] const cubey::vulkan::DescriptorPool& advect_correct_descriptor_pool() const;
     [[nodiscard]] VkDescriptorSetLayout divergence_descriptor_layout() const;
     [[nodiscard]] const cubey::vulkan::DescriptorPool& divergence_descriptor_pool() const;
     [[nodiscard]] VkDescriptorSetLayout pressure_descriptor_layout() const;
@@ -88,6 +95,8 @@ class Fluid3DGpuResources {
     std::optional<cubey::render::Texture3D> density_b_;
     std::optional<cubey::render::Texture3D> velocity_a_;
     std::optional<cubey::render::Texture3D> velocity_b_;
+    std::optional<cubey::render::Texture3D> density_prediction_;
+    std::optional<cubey::render::Texture3D> velocity_prediction_;
     std::optional<cubey::render::Texture3D> divergence_;
     std::optional<cubey::render::Texture3D> pressure_a_;
     std::optional<cubey::render::Texture3D> pressure_b_;
@@ -99,6 +108,9 @@ class Fluid3DGpuResources {
     std::optional<cubey::vulkan::DescriptorSetLayout> advect_descriptor_layout_;
     std::optional<cubey::vulkan::DescriptorPool> advect_descriptor_pool_;
     std::array<VkDescriptorSet, 4> advect_descriptor_sets_{};
+    std::optional<cubey::vulkan::DescriptorSetLayout> advect_correct_descriptor_layout_;
+    std::optional<cubey::vulkan::DescriptorPool> advect_correct_descriptor_pool_;
+    std::array<VkDescriptorSet, 4> advect_correct_descriptor_sets_{};
     std::optional<cubey::vulkan::DescriptorSetLayout> divergence_descriptor_layout_;
     std::optional<cubey::vulkan::DescriptorPool> divergence_descriptor_pool_;
     std::array<VkDescriptorSet, 2> divergence_descriptor_sets_{};
@@ -115,6 +127,7 @@ class Fluid3DGpuResources {
     std::optional<cubey::vulkan::DescriptorSetArray> render_descriptors_;
     std::optional<cubey::render::ComputePipelineResource> reset_pipeline_;
     std::optional<cubey::render::ComputePipelineResource> advect_pipeline_;
+    std::optional<cubey::render::ComputePipelineResource> advect_correct_pipeline_;
     std::optional<cubey::render::ComputePipelineResource> divergence_pipeline_;
     std::optional<cubey::render::ComputePipelineResource> pressure_pipeline_;
     std::optional<cubey::render::ComputePipelineResource> projection_pipeline_;

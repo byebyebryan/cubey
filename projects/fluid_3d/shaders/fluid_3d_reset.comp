@@ -15,6 +15,8 @@ layout(rgba32f, set = 0, binding = 2) uniform writeonly image3D divergence_volum
 layout(rgba32f, set = 0, binding = 3) uniform writeonly image3D pressure_a;
 layout(rgba32f, set = 0, binding = 4) uniform writeonly image3D pressure_b;
 layout(r32f, set = 0, binding = 5) uniform writeonly image3D shadow_volume;
+layout(rgba32f, set = 0, binding = 6) uniform writeonly image3D density_prediction;
+layout(rgba32f, set = 0, binding = 7) uniform writeonly image3D velocity_prediction;
 
 void main() {
     ivec3 coord = ivec3(gl_GlobalInvocationID.xyz);
@@ -29,4 +31,6 @@ void main() {
     imageStore(pressure_a, coord, vec4(0.0));
     imageStore(pressure_b, coord, vec4(0.0));
     imageStore(shadow_volume, coord, vec4(1.0));
+    imageStore(density_prediction, coord, vec4(0.0));
+    imageStore(velocity_prediction, coord, vec4(0.0));
 }

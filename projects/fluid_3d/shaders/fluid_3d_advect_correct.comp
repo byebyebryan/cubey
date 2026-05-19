@@ -1,0 +1,210 @@
+#version 450
+
+layout(local_size_x = 4, local_size_y = 4, local_size_z = 4) in;
+
+layout(push_constant) uniform SimulationParams {
+    vec4 grid_dt_time;
+    vec4 decay_force;
+    vec4 options;
+    vec4 shadow_options;
+} params;
+
+struct Injector {
+    vec4 position_radius;
+    vec4 velocity_strength;
+    vec4 color_active;
+};
+
+struct VolumeBounds {
+    vec4 density_min;
+    vec4 density_max;
+    vec3 velocity_min;
+    vec3 velocity_max;
+};
+
+layout(rgba32f, set = 0, binding = 0) uniform readonly image3D density_source;
+layout(rgba32f, set = 0, binding = 1) uniform readonly image3D velocity_source;
+layout(rgba32f, set = 0, binding = 2) uniform readonly image3D density_predicted;
+layout(rgba32f, set = 0, binding = 3) uniform readonly image3D velocity_predicted;
+layout(rgba32f, set = 0, binding = 4) uniform writeonly image3D density_out;
+layout(rgba32f, set = 0, binding = 5) uniform writeonly image3D velocity_out;
+layout(set = 0, binding = 6, std430) readonly buffer Fluid3DInjectors {
+    Injector injectors[];
+};
+
+vec4 load_density_source(ivec3 coord) {
+    ivec3 max_coord = imageSize(density_source) - ivec3(1);
+    return imageLoad(density_source, clamp(coord, ivec3(0), max_coord));
+}
+
+vec4 load_velocity_source(ivec3 coord) {
+    ivec3 max_coord = imageSize(velocity_source) - ivec3(1);
+    return imageLoad(velocity_source, clamp(coord, ivec3(0), max_coord));
+}
+
+vec4 load_density_predicted(ivec3 coord) {
+    ivec3 max_coord = imageSize(density_predicted) - ivec3(1);
+    return imageLoad(density_predicted, clamp(coord, ivec3(0), max_coord));
+}
+
+vec4 load_velocity_predicted(ivec3 coord) {
+    ivec3 max_coord = imageSize(velocity_predicted) - ivec3(1);
+    return imageLoad(velocity_predicted, clamp(coord, ivec3(0), max_coord));
+}
+
+vec4 trilinear_density_predicted(vec3 uv) {
+    vec3 size = vec3(imageSize(density_predicted));
+    vec3 position = clamp(uv, vec3(0.0), vec3(1.0)) * size - vec3(0.5);
+    ivec3 base = ivec3(floor(position));
+    vec3 fraction = fract(position);
+    vec4 c000 = load_density_predicted(base);
+    vec4 c100 = load_density_predicted(base + ivec3(1, 0, 0));
+    vec4 c010 = load_density_predicted(base + ivec3(0, 1, 0));
+    vec4 c110 = load_density_predicted(base + ivec3(1, 1, 0));
+    vec4 c001 = load_density_predicted(base + ivec3(0, 0, 1));
+    vec4 c101 = load_density_predicted(base + ivec3(1, 0, 1));
+    vec4 c011 = load_density_predicted(base + ivec3(0, 1, 1));
+    vec4 c111 = load_density_predicted(base + ivec3(1, 1, 1));
+    vec4 z0 = mix(mix(c000, c100, fraction.x), mix(c010, c110, fraction.x), fraction.y);
+    vec4 z1 = mix(mix(c001, c101, fraction.x), mix(c011, c111, fraction.x), fraction.y);
+    return mix(z0, z1, fraction.z);
+}
+
+vec4 trilinear_velocity_predicted(vec3 uv) {
+    vec3 size = vec3(imageSize(velocity_predicted));
+    vec3 position = clamp(uv, vec3(0.0), vec3(1.0)) * size - vec3(0.5);
+    ivec3 base = ivec3(floor(position));
+    vec3 fraction = fract(position);
+    vec4 c000 = load_velocity_predicted(base);
+    vec4 c100 = load_velocity_predicted(base + ivec3(1, 0, 0));
+    vec4 c010 = load_velocity_predicted(base + ivec3(0, 1, 0));
+    vec4 c110 = load_velocity_predicted(base + ivec3(1, 1, 0));
+    vec4 c001 = load_velocity_predicted(base + ivec3(0, 0, 1));
+    vec4 c101 = load_velocity_predicted(base + ivec3(1, 0, 1));
+    vec4 c011 = load_velocity_predicted(base + ivec3(0, 1, 1));
+    vec4 c111 = load_velocity_predicted(base + ivec3(1, 1, 1));
+    vec4 z0 = mix(mix(c000, c100, fraction.x), mix(c010, c110, fraction.x), fraction.y);
+    vec4 z1 = mix(mix(c001, c101, fraction.x), mix(c011, c111, fraction.x), fraction.y);
+    return mix(z0, z1, fraction.z);
+}
+
+VolumeBounds source_bounds(vec3 uv) {
+    vec3 size = vec3(imageSize(density_source));
+    vec3 position = clamp(uv, vec3(0.0), vec3(1.0)) * size - vec3(0.5);
+    ivec3 base = ivec3(floor(position));
+
+    vec4 d000 = load_density_source(base);
+    vec4 d100 = load_density_source(base + ivec3(1, 0, 0));
+    vec4 d010 = load_density_source(base + ivec3(0, 1, 0));
+    vec4 d110 = load_density_source(base + ivec3(1, 1, 0));
+    vec4 d001 = load_density_source(base + ivec3(0, 0, 1));
+    vec4 d101 = load_density_source(base + ivec3(1, 0, 1));
+    vec4 d011 = load_density_source(base + ivec3(0, 1, 1));
+    vec4 d111 = load_density_source(base + ivec3(1, 1, 1));
+
+    vec3 v000 = load_velocity_source(base).xyz;
+    vec3 v100 = load_velocity_source(base + ivec3(1, 0, 0)).xyz;
+    vec3 v010 = load_velocity_source(base + ivec3(0, 1, 0)).xyz;
+    vec3 v110 = load_velocity_source(base + ivec3(1, 1, 0)).xyz;
+    vec3 v001 = load_velocity_source(base + ivec3(0, 0, 1)).xyz;
+    vec3 v101 = load_velocity_source(base + ivec3(1, 0, 1)).xyz;
+    vec3 v011 = load_velocity_source(base + ivec3(0, 1, 1)).xyz;
+    vec3 v111 = load_velocity_source(base + ivec3(1, 1, 1)).xyz;
+
+    VolumeBounds bounds;
+    bounds.density_min =
+        min(min(min(d000, d100), min(d010, d110)), min(min(d001, d101), min(d011, d111)));
+    bounds.density_max =
+        max(max(max(d000, d100), max(d010, d110)), max(max(d001, d101), max(d011, d111)));
+    bounds.velocity_min =
+        min(min(min(v000, v100), min(v010, v110)), min(min(v001, v101), min(v011, v111)));
+    bounds.velocity_max =
+        max(max(max(v000, v100), max(v010, v110)), max(max(v001, v101), max(v011, v111)));
+    return bounds;
+}
+
+vec4 source_density_average(ivec3 coord) {
+    vec4 result = vec4(0.0);
+    for (int z = -1; z <= 1; ++z) {
+        for (int y = -1; y <= 1; ++y) {
+            for (int x = -1; x <= 1; ++x) {
+                result += load_density_source(coord + ivec3(x, y, z));
+            }
+        }
+    }
+    return result / 27.0;
+}
+
+vec3 source_velocity_average(ivec3 coord) {
+    vec3 result = vec3(0.0);
+    for (int z = -1; z <= 1; ++z) {
+        for (int y = -1; y <= 1; ++y) {
+            for (int x = -1; x <= 1; ++x) {
+                result += load_velocity_source(coord + ivec3(x, y, z)).xyz;
+            }
+        }
+    }
+    return result / 27.0;
+}
+
+void main() {
+    ivec3 coord = ivec3(gl_GlobalInvocationID.xyz);
+    ivec3 size = ivec3(params.grid_dt_time.xyz);
+    if (any(greaterThanEqual(coord, size))) {
+        return;
+    }
+
+    float dt = params.grid_dt_time.w;
+    vec3 uv = (vec3(coord) + vec3(0.5)) / vec3(size);
+    vec4 original_density = imageLoad(density_source, coord);
+    vec3 original_velocity = imageLoad(velocity_source, coord).xyz;
+    vec4 predicted_density = imageLoad(density_predicted, coord);
+    vec3 predicted_velocity = imageLoad(velocity_predicted, coord).xyz;
+    vec3 previous_uv = clamp(uv - original_velocity * dt, vec3(0.0), vec3(1.0));
+    vec3 next_uv = clamp(uv + predicted_velocity * dt, vec3(0.0), vec3(1.0));
+    vec4 reversed_density = trilinear_density_predicted(next_uv);
+    vec3 reversed_velocity = trilinear_velocity_predicted(next_uv).xyz;
+
+    vec4 density = predicted_density + ((original_density - reversed_density) * 0.5);
+    vec3 velocity = predicted_velocity + ((original_velocity - reversed_velocity) * 0.5);
+
+    VolumeBounds bounds = source_bounds(previous_uv);
+    float decay_scale = dt * 60.0;
+    density = clamp(density, bounds.density_min, bounds.density_max) *
+              pow(params.decay_force.x, decay_scale);
+    velocity = clamp(velocity, bounds.velocity_min, bounds.velocity_max) *
+               pow(params.decay_force.y, decay_scale);
+
+    vec4 average_density = source_density_average(coord);
+    vec3 average_velocity = source_velocity_average(coord);
+    float dye_energy = max(max(density.r, density.g), density.b);
+    float velocity_energy = length(velocity) * 0.08;
+    float residual_energy = max(dye_energy, velocity_energy);
+    float cleanup = (1.0 - smoothstep(0.020, 0.180, residual_energy)) * 0.12;
+    density = mix(density, average_density, cleanup);
+    velocity = mix(velocity, average_velocity, cleanup);
+
+    int injector_count = int(params.options.x + 0.5);
+    for (int i = 0; i < injector_count; ++i) {
+        Injector injector = injectors[i];
+        if (injector.color_active.w <= 0.0) {
+            continue;
+        }
+        vec3 delta = uv - injector.position_radius.xyz;
+        float radius = max(injector.position_radius.w, 0.0001);
+        float falloff = exp(-dot(delta, delta) / (radius * radius));
+        float impulse = injector.velocity_strength.w * dt * falloff;
+        density.rgb += injector.color_active.rgb * impulse * 0.46;
+        density.a += impulse * 0.12;
+        velocity += injector.velocity_strength.xyz * impulse * 0.42;
+    }
+
+    float edge_distance = min(min(uv.x, 1.0 - uv.x), min(min(uv.y, 1.0 - uv.y), min(uv.z, 1.0 - uv.z)));
+    float wall = smoothstep(0.0, 0.040, edge_distance);
+    density *= wall;
+    velocity *= wall;
+    density.rgb *= mix(0.88, 1.0, smoothstep(0.018, 0.120, max(max(density.r, density.g), density.b)));
+    imageStore(density_out, coord, vec4(clamp(density.rgb, vec3(0.0), vec3(8.0)),
+                                        clamp(density.a, 0.0, 8.0)));
+    imageStore(velocity_out, coord, vec4(clamp(velocity, vec3(-6.0), vec3(6.0)), 0.0));
+}

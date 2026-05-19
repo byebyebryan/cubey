@@ -20,15 +20,15 @@ enum class Fluid3DDebugView : std::uint32_t {
 inline constexpr std::uint32_t kMaxFluid3DInjectorCount = 16;
 
 struct Fluid3DConfig {
-    std::uint32_t grid_width = 96;
-    std::uint32_t grid_height = 96;
-    std::uint32_t grid_depth = 96;
+    std::uint32_t grid_width = 128;
+    std::uint32_t grid_height = 128;
+    std::uint32_t grid_depth = 128;
     std::uint32_t compute_group_size = 4;
     std::uint32_t pressure_iterations = 12;
-    std::uint32_t raymarch_steps = 96;
+    std::uint32_t raymarch_steps = 128;
     std::uint32_t injector_count = 4;
     float fixed_delta_seconds = 1.0F / 60.0F;
-    float density_decay_per_second = 0.990F;
+    float density_decay_per_second = 0.985F;
     float velocity_decay_per_second = 0.992F;
     float injector_radius = 0.085F;
     float injector_strength = 6.0F;

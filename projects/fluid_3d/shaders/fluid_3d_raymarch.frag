@@ -80,14 +80,16 @@ vec3 density_albedo(vec4 density, float extinction_density) {
 }
 
 void main() {
+    vec2 screen_position = vec2(frag_position.x, -frag_position.y);
+    vec2 screen_uv = vec2(frag_uv.x, 1.0 - frag_uv.y);
     int debug_view = int(params.ray_forward_debug.w + 0.5);
     if (debug_view == 1) {
-        vec4 density = density_at(vec3(frag_uv, 0.5));
+        vec4 density = density_at(vec3(screen_uv, 0.5));
         out_color = vec4(clamp(density.rgb + vec3(density.a * 0.15), vec3(0.0), vec3(1.0)), 1.0);
         return;
     }
     if (debug_view == 2) {
-        vec3 velocity = texture(velocity_volume, vec3(frag_uv, 0.5)).xyz;
+        vec3 velocity = texture(velocity_volume, vec3(screen_uv, 0.5)).xyz;
         out_color = vec4(velocity_debug_color(velocity), 1.0);
         return;
     }
@@ -98,15 +100,15 @@ void main() {
     vec3 forward = params.ray_forward_debug.xyz;
     float tan_half_fovy = params.ray_right_tan.w;
     float aspect = params.ray_up_aspect.w;
-    vec3 direction = normalize(forward + right * frag_position.x * aspect * tan_half_fovy +
-                               up * frag_position.y * tan_half_fovy);
-    vec3 light_direction = normalize(vec3(-0.42, 0.72, -0.55));
+    vec3 direction = normalize(forward + right * screen_position.x * aspect * tan_half_fovy +
+                               up * screen_position.y * tan_half_fovy);
+    vec3 light_direction = normalize(vec3(0.45, 0.82, 0.35));
     vec3 light_color = vec3(1.0, 0.92, 0.80);
     vec3 sky_color = vec3(0.42, 0.54, 0.76);
 
     float near_t = 0.0;
     float far_t = 0.0;
-    vec3 background = background_color(frag_uv);
+    vec3 background = background_color(screen_uv);
     if (!ray_box_intersection(origin, direction, near_t, far_t)) {
         out_color = vec4(background, 1.0);
         return;

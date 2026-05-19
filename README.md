@@ -43,9 +43,9 @@ Current projects:
   vorticity, optional static obstacles, pressure projection, debug views, and
   deterministic headless capture output.
 - `fluid_3d`: dense volumetric smoke/gas baseline with 3D storage textures,
-  compute advection/injection/projection, vorticity confinement, raymarching,
-  precomputed shadow-volume lighting, orbit camera controls, debug views, and
-  headless capture output.
+  MacCormack advection, injection/projection, vorticity confinement,
+  raymarching, precomputed shadow-volume lighting, orbit camera controls, debug
+  views, and headless capture output.
 - `fractal_2d`: fullscreen Mandelbrot-style shader with windowed navigation and
   headless output.
 - `gltf_viewer`: glTF/glb viewer for imported assets, PBR materials, texture
@@ -170,7 +170,7 @@ open; the window title also shows the latest sampled FPS and frame time.
 injectors; use `--grid-width`, `--grid-height`, and `--injectors 1..16` to
 compare other simulation/demo shapes, and `--obstacles` to enable the static
 obstacle mask.
-`fluid_3d` defaults to a `96x96x96` dense volume; use `--grid-width`,
+`fluid_3d` defaults to a `128x128x128` dense volume; use `--grid-width`,
 `--grid-height`, `--grid-depth`, and `--injectors 1..16` for lower-cost smoke
 tests or heavier local runs.
 

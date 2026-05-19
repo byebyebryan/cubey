@@ -15,6 +15,7 @@ cubey_add_app_target(
         shaders/fluid_3d_raymarch.frag
         shaders/fluid_3d_reset.comp
         shaders/fluid_3d_advect.comp
+        shaders/fluid_3d_advect_correct.comp
         shaders/fluid_3d_divergence.comp
         shaders/fluid_3d_pressure.comp
         shaders/fluid_3d_projection.comp

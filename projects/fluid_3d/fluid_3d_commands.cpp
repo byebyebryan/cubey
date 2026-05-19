@@ -99,6 +99,8 @@ void record_initial_volume_layouts(VkCommandBuffer command_buffer,
     transition_volume_to_general(command_buffer, resources.density_b());
     transition_volume_to_general(command_buffer, resources.velocity_a());
     transition_volume_to_general(command_buffer, resources.velocity_b());
+    transition_volume_to_general(command_buffer, resources.density_prediction());
+    transition_volume_to_general(command_buffer, resources.velocity_prediction());
     transition_volume_to_general(command_buffer, resources.divergence());
     transition_volume_to_general(command_buffer, resources.pressure_a());
     transition_volume_to_general(command_buffer, resources.pressure_b());
@@ -262,6 +264,18 @@ void record_fluid_3d_compute(VkCommandBuffer command_buffer, Fluid3DGpuResources
     record_dispatch(recorder, advect_pipeline,
                     resources.advect_descriptor_set(frame_state.density_a_current,
                                                     frame_state.velocity_a_current),
+                    groups, push_constants);
+    record_shader_write_barrier(
+        command_buffer, {
+                            .dst_stage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                            .dst_access = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
+                        });
+
+    const cubey::render::ComputePipelineResource& advect_correct_pipeline =
+        resources.advect_correct_pipeline();
+    record_dispatch(recorder, advect_correct_pipeline,
+                    resources.advect_correct_descriptor_set(frame_state.density_a_current,
+                                                            frame_state.velocity_a_current),
                     groups, push_constants);
     frame_state.density_a_current = !frame_state.density_a_current;
     frame_state.velocity_a_current = !frame_state.velocity_a_current;

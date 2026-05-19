@@ -49,14 +49,16 @@ int main() {
     try {
         const cubey::projects::fluid_3d::Fluid3DConfig config;
         constexpr std::size_t kExpectedCellCount =
-            std::size_t{96} * std::size_t{96} * std::size_t{96};
-        require(config.grid_width == 96, "fluid 3D should default to 96 columns");
-        require(config.grid_height == 96, "fluid 3D should default to 96 rows");
-        require(config.grid_depth == 96, "fluid 3D should default to 96 slices");
+            std::size_t{128} * std::size_t{128} * std::size_t{128};
+        require(config.grid_width == 128, "fluid 3D should default to 128 columns");
+        require(config.grid_height == 128, "fluid 3D should default to 128 rows");
+        require(config.grid_depth == 128, "fluid 3D should default to 128 slices");
         require(config.injector_count == 4, "fluid 3D should default to four injectors");
         require(config.pressure_iterations == 12,
                 "fluid 3D pressure solve should default to a small 3D budget");
-        require(config.raymarch_steps == 96, "fluid 3D should default to one step per slice");
+        require(config.raymarch_steps == 128, "fluid 3D should default to one step per slice");
+        require(config.density_decay_per_second == 0.985F,
+                "fluid 3D should default to enough dye decay to avoid filled-volume buildup");
         require(config.injector_strength == 6.0F,
                 "fluid 3D injector force should match the shared CLI default");
         require(config.shadow_absorption == 48.0F,
@@ -160,12 +162,18 @@ int main() {
         const std::filesystem::path source_dir = CUBEY_FLUID_3D_SOURCE_DIR;
         const std::string advect_shader =
             read_text_file(source_dir / "shaders" / "fluid_3d_advect.comp");
+        const std::string advect_correct_shader =
+            read_text_file(source_dir / "shaders" / "fluid_3d_advect_correct.comp");
         const std::string render_shader =
             read_text_file(source_dir / "shaders" / "fluid_3d_raymarch.frag");
         const std::string shadow_shader =
             read_text_file(source_dir / "shaders" / "fluid_3d_shadow.comp");
         require_contains(advect_shader, "layout(rgba32f",
                          "fluid 3D compute shaders should use explicit storage image formats");
+        require_contains(advect_correct_shader, "reversed_density",
+                         "fluid 3D should use a MacCormack/BFECC correction pass");
+        require_contains(advect_correct_shader, "source_bounds",
+                         "fluid 3D MacCormack correction should use a source-neighborhood limiter");
         require_contains(render_shader, "sampler3D",
                          "fluid 3D render shader should raymarch sampled 3D textures");
         require_contains(render_shader, "shadow_volume",

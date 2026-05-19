@@ -62,7 +62,7 @@ float shadow_density_at(vec3 uv) {
 }
 
 float light_transmittance(vec3 uv) {
-    vec3 light_direction = normalize(vec3(-0.42, 0.72, -0.55));
+    vec3 light_direction = normalize(vec3(0.45, 0.82, 0.35));
     float distance_to_exit = ray_box_exit_distance(uv, light_direction);
     if (distance_to_exit <= 0.0) {
         return 1.0;

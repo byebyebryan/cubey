@@ -131,6 +131,8 @@ void Fluid3DGpuResources::create_volume_resources(cubey::vulkan::Device& device,
     density_b_.emplace(device, volume_texture_config(config, true));
     velocity_a_.emplace(device, volume_texture_config(config, true));
     velocity_b_.emplace(device, volume_texture_config(config, true));
+    density_prediction_.emplace(device, volume_texture_config(config, false));
+    velocity_prediction_.emplace(device, volume_texture_config(config, false));
     divergence_.emplace(device, volume_texture_config(config, false));
     pressure_a_.emplace(device, volume_texture_config(config, false));
     pressure_b_.emplace(device, volume_texture_config(config, false));
@@ -153,6 +155,7 @@ void Fluid3DGpuResources::destroy_all_resources() {
     projection_pipeline_.reset();
     pressure_pipeline_.reset();
     divergence_pipeline_.reset();
+    advect_correct_pipeline_.reset();
     advect_pipeline_.reset();
     reset_pipeline_.reset();
     shadow_descriptor_pool_.reset();
@@ -164,6 +167,8 @@ void Fluid3DGpuResources::destroy_all_resources() {
     pressure_descriptor_layout_.reset();
     divergence_descriptor_pool_.reset();
     divergence_descriptor_layout_.reset();
+    advect_correct_descriptor_pool_.reset();
+    advect_correct_descriptor_layout_.reset();
     advect_descriptor_pool_.reset();
     advect_descriptor_layout_.reset();
     reset_descriptor_pool_.reset();
@@ -173,6 +178,8 @@ void Fluid3DGpuResources::destroy_all_resources() {
     pressure_a_.reset();
     shadow_volume_.reset();
     divergence_.reset();
+    velocity_prediction_.reset();
+    density_prediction_.reset();
     velocity_b_.reset();
     velocity_a_.reset();
     density_b_.reset();
@@ -180,7 +187,7 @@ void Fluid3DGpuResources::destroy_all_resources() {
 }
 
 void Fluid3DGpuResources::create_descriptor_resources(cubey::vulkan::Device& device) {
-    const std::array<cubey::vulkan::DescriptorSetBindingConfig, 6> reset_bindings{{
+    const std::array<cubey::vulkan::DescriptorSetBindingConfig, 8> reset_bindings{{
         {.binding = 0,
          .type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
          .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT},
@@ -197,6 +204,12 @@ void Fluid3DGpuResources::create_descriptor_resources(cubey::vulkan::Device& dev
          .type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
          .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT},
         {.binding = 5,
+         .type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+         .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT},
+        {.binding = 6,
+         .type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+         .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT},
+        {.binding = 7,
          .type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
          .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT},
     }};
@@ -227,6 +240,36 @@ void Fluid3DGpuResources::create_descriptor_resources(cubey::vulkan::Device& dev
     advect_descriptor_pool_.emplace(device, advect_info.pool_info());
     for (VkDescriptorSet& set : advect_descriptor_sets_) {
         set = advect_descriptor_pool().allocate(advect_descriptor_layout());
+    }
+
+    const std::array<cubey::vulkan::DescriptorSetBindingConfig, 7> advect_correct_bindings{{
+        {.binding = 0,
+         .type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+         .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT},
+        {.binding = 1,
+         .type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+         .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT},
+        {.binding = 2,
+         .type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+         .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT},
+        {.binding = 3,
+         .type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+         .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT},
+        {.binding = 4,
+         .type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+         .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT},
+        {.binding = 5,
+         .type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+         .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT},
+        {.binding = 6,
+         .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+         .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT},
+    }};
+    const cubey::vulkan::DescriptorSetInfo advect_correct_info(advect_correct_bindings, 4);
+    advect_correct_descriptor_layout_.emplace(device, advect_correct_info.layout_info());
+    advect_correct_descriptor_pool_.emplace(device, advect_correct_info.pool_info());
+    for (VkDescriptorSet& set : advect_correct_descriptor_sets_) {
+        set = advect_correct_descriptor_pool().allocate(advect_correct_descriptor_layout());
     }
 
     const std::array<cubey::vulkan::DescriptorSetBindingConfig, 2> divergence_bindings{{
@@ -309,7 +352,9 @@ void Fluid3DGpuResources::update_descriptors(cubey::vulkan::Device& device) {
         .storage_image(reset_descriptor_set_, 2, divergence().view())
         .storage_image(reset_descriptor_set_, 3, pressure_a().view())
         .storage_image(reset_descriptor_set_, 4, pressure_b().view())
-        .storage_image(reset_descriptor_set_, 5, shadow_volume().view());
+        .storage_image(reset_descriptor_set_, 5, shadow_volume().view())
+        .storage_image(reset_descriptor_set_, 6, density_prediction().view())
+        .storage_image(reset_descriptor_set_, 7, velocity_prediction().view());
 
     const std::array<const cubey::render::Texture3D*, 2> densities{&density_a(), &density_b()};
     const std::array<const cubey::render::Texture3D*, 2> velocities{&velocity_a(), &velocity_b()};
@@ -321,9 +366,19 @@ void Fluid3DGpuResources::update_descriptors(cubey::vulkan::Device& device) {
                 advect_descriptor_set(density_a_current, velocity_a_current);
             writes.storage_image(set, 0, densities[density_index]->view())
                 .storage_image(set, 1, velocities[velocity_index]->view())
-                .storage_image(set, 2, densities[1U - density_index]->view())
-                .storage_image(set, 3, velocities[1U - velocity_index]->view())
+                .storage_image(set, 2, density_prediction().view())
+                .storage_image(set, 3, velocity_prediction().view())
                 .storage_buffer(set, 4, injectors().handle(), injectors().size());
+
+            const VkDescriptorSet correct_set =
+                advect_correct_descriptor_set(density_a_current, velocity_a_current);
+            writes.storage_image(correct_set, 0, densities[density_index]->view())
+                .storage_image(correct_set, 1, velocities[velocity_index]->view())
+                .storage_image(correct_set, 2, density_prediction().view())
+                .storage_image(correct_set, 3, velocity_prediction().view())
+                .storage_image(correct_set, 4, densities[1U - density_index]->view())
+                .storage_image(correct_set, 5, velocities[1U - velocity_index]->view())
+                .storage_buffer(correct_set, 6, injectors().handle(), injectors().size());
 
             const VkDescriptorSet render_set =
                 render_descriptor_set(density_a_current, velocity_a_current);
@@ -377,6 +432,9 @@ void Fluid3DGpuResources::create_compute_pipelines(cubey::vulkan::Device& device
                                      reset_pipeline_);
     create_compute_pipeline_resource(device, "fluid_3d_advect.comp.spv", advect_descriptor_layout(),
                                      advect_pipeline_);
+    create_compute_pipeline_resource(device, "fluid_3d_advect_correct.comp.spv",
+                                     advect_correct_descriptor_layout(),
+                                     advect_correct_pipeline_);
     create_compute_pipeline_resource(device, "fluid_3d_divergence.comp.spv",
                                      divergence_descriptor_layout(), divergence_pipeline_);
     create_compute_pipeline_resource(device, "fluid_3d_pressure.comp.spv",
@@ -413,6 +471,11 @@ void Fluid3DGpuResources::create_render_pipeline(cubey::vulkan::Device& device,
 VkDescriptorSet Fluid3DGpuResources::advect_descriptor_set(bool density_a_current,
                                                            bool velocity_a_current) const {
     return advect_descriptor_sets_.at(advect_index(density_a_current, velocity_a_current));
+}
+
+VkDescriptorSet Fluid3DGpuResources::advect_correct_descriptor_set(
+    bool density_a_current, bool velocity_a_current) const {
+    return advect_correct_descriptor_sets_.at(advect_index(density_a_current, velocity_a_current));
 }
 
 VkDescriptorSet Fluid3DGpuResources::divergence_descriptor_set(bool velocity_a_current) const {
@@ -459,6 +522,20 @@ const cubey::render::Texture3D& Fluid3DGpuResources::velocity_b() const {
         throw std::runtime_error("fluid 3D velocity B is not initialized");
     }
     return velocity_b_.value();
+}
+
+const cubey::render::Texture3D& Fluid3DGpuResources::density_prediction() const {
+    if (!density_prediction_.has_value()) {
+        throw std::runtime_error("fluid 3D density prediction is not initialized");
+    }
+    return density_prediction_.value();
+}
+
+const cubey::render::Texture3D& Fluid3DGpuResources::velocity_prediction() const {
+    if (!velocity_prediction_.has_value()) {
+        throw std::runtime_error("fluid 3D velocity prediction is not initialized");
+    }
+    return velocity_prediction_.value();
 }
 
 const cubey::render::Texture3D& Fluid3DGpuResources::divergence() const {
@@ -508,6 +585,14 @@ const cubey::render::ComputePipelineResource& Fluid3DGpuResources::advect_pipeli
         throw std::runtime_error("fluid 3D advect pipeline is not initialized");
     }
     return advect_pipeline_.value();
+}
+
+const cubey::render::ComputePipelineResource&
+Fluid3DGpuResources::advect_correct_pipeline() const {
+    if (!advect_correct_pipeline_.has_value()) {
+        throw std::runtime_error("fluid 3D advect correct pipeline is not initialized");
+    }
+    return advect_correct_pipeline_.value();
 }
 
 const cubey::render::ComputePipelineResource& Fluid3DGpuResources::divergence_pipeline() const {
@@ -571,6 +656,20 @@ const cubey::vulkan::DescriptorPool& Fluid3DGpuResources::advect_descriptor_pool
         throw std::runtime_error("fluid 3D advect descriptor pool is not initialized");
     }
     return advect_descriptor_pool_.value();
+}
+
+VkDescriptorSetLayout Fluid3DGpuResources::advect_correct_descriptor_layout() const {
+    if (!advect_correct_descriptor_layout_.has_value()) {
+        throw std::runtime_error("fluid 3D advect correct descriptor layout is not initialized");
+    }
+    return advect_correct_descriptor_layout_->handle();
+}
+
+const cubey::vulkan::DescriptorPool& Fluid3DGpuResources::advect_correct_descriptor_pool() const {
+    if (!advect_correct_descriptor_pool_.has_value()) {
+        throw std::runtime_error("fluid 3D advect correct descriptor pool is not initialized");
+    }
+    return advect_correct_descriptor_pool_.value();
 }
 
 VkDescriptorSetLayout Fluid3DGpuResources::divergence_descriptor_layout() const {
