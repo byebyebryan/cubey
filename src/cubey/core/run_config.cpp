@@ -78,17 +78,27 @@ RunConfig parse_run_config(int argc, char** argv) {
             config.grid_height = parse_positive_u32(need_value("--grid-height"), "--grid-height");
         } else if (arg == "--injectors") {
             config.injectors = parse_positive_u32(need_value("--injectors"), "--injectors");
-        } else if (arg == "--injector-motion") {
-            config.injector_motion = std::string(need_value("--injector-motion"));
         } else if (arg == "--injector-force") {
-            config.injector_force = parse_float(need_value("--injector-force"),
-                                                "--injector-force");
+            config.injector_force = parse_float(need_value("--injector-force"), "--injector-force");
         } else if (arg == "--injector-propulsion") {
-            config.injector_propulsion = parse_float(need_value("--injector-propulsion"),
-                                                     "--injector-propulsion");
-        } else if (arg == "--injector-speed") {
-            config.injector_speed = parse_float(need_value("--injector-speed"),
-                                                "--injector-speed");
+            config.injector_propulsion =
+                parse_float(need_value("--injector-propulsion"), "--injector-propulsion");
+        } else if (arg == "--injector-orbit-radius") {
+            config.injector_orbit_radius =
+                parse_float(need_value("--injector-orbit-radius"), "--injector-orbit-radius");
+        } else if (arg == "--injector-orbit-radius-spread") {
+            config.injector_orbit_radius_spread = parse_float(
+                need_value("--injector-orbit-radius-spread"), "--injector-orbit-radius-spread");
+        } else if (arg == "--injector-orbit-angular-speed") {
+            config.injector_orbit_angular_speed = parse_float(
+                need_value("--injector-orbit-angular-speed"), "--injector-orbit-angular-speed");
+        } else if (arg == "--injector-orbit-angular-speed-spread") {
+            config.injector_orbit_angular_speed_spread =
+                parse_float(need_value("--injector-orbit-angular-speed-spread"),
+                            "--injector-orbit-angular-speed-spread");
+        } else if (arg == "--injector-orbit-phase-spread") {
+            config.injector_orbit_phase_spread = parse_float(
+                need_value("--injector-orbit-phase-spread"), "--injector-orbit-phase-spread");
         } else if (arg == "--frames") {
             config.frames = parse_u32(need_value("--frames"), "--frames");
         } else if (arg == "--fps") {
@@ -113,17 +123,16 @@ RunConfig parse_run_config(int argc, char** argv) {
         } else if (arg == "--ibl-intensity") {
             config.ibl_intensity = parse_float(need_value("--ibl-intensity"), "--ibl-intensity");
         } else if (arg == "--environment-rotation-degrees") {
-            config.environment_rotation_degrees =
-                parse_float(need_value("--environment-rotation-degrees"),
-                            "--environment-rotation-degrees");
+            config.environment_rotation_degrees = parse_float(
+                need_value("--environment-rotation-degrees"), "--environment-rotation-degrees");
         } else if (arg == "--exposure") {
             config.exposure = parse_float(need_value("--exposure"), "--exposure");
         } else if (arg == "--animation-index") {
-            config.animation_index = parse_u32(need_value("--animation-index"),
-                                               "--animation-index");
+            config.animation_index =
+                parse_u32(need_value("--animation-index"), "--animation-index");
         } else if (arg == "--animation-speed") {
-            config.animation_speed = parse_float(need_value("--animation-speed"),
-                                                 "--animation-speed");
+            config.animation_speed =
+                parse_float(need_value("--animation-speed"), "--animation-speed");
         } else if (arg == "--pause-animation") {
             config.animation_paused = true;
         } else if (arg == "--obstacles") {
@@ -145,14 +154,23 @@ RunConfig parse_run_config(int argc, char** argv) {
     if (config.fps == 0) {
         throw std::runtime_error("fps must be positive");
     }
-    if (config.injector_speed <= 0.0F) {
-        throw std::runtime_error("injector speed must be positive");
-    }
     if (config.injector_force < 0.0F) {
         throw std::runtime_error("injector force must be nonnegative");
     }
     if (config.injector_propulsion < 0.0F) {
         throw std::runtime_error("injector propulsion must be nonnegative");
+    }
+    if (config.injector_orbit_radius <= 0.0F) {
+        throw std::runtime_error("injector orbit radius must be positive");
+    }
+    if (config.injector_orbit_radius_spread < 0.0F) {
+        throw std::runtime_error("injector orbit radius spread must be nonnegative");
+    }
+    if (config.injector_orbit_angular_speed_spread < 0.0F) {
+        throw std::runtime_error("injector orbit angular speed spread must be nonnegative");
+    }
+    if (config.injector_orbit_phase_spread < 0.0F) {
+        throw std::runtime_error("injector orbit phase spread must be nonnegative");
     }
     if (config.capture_mode == CaptureMode::Video) {
         if (!config.headless) {

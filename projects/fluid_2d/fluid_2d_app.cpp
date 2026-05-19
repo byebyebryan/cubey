@@ -50,34 +50,10 @@ using cubey::host::FrameStatsSample;
     return "Dye";
 }
 
-[[nodiscard]] const char* injector_motion_name(Fluid2DInjectorMotion motion) {
-    switch (motion) {
-    case Fluid2DInjectorMotion::OneRing:
-        return "One ring";
-    case Fluid2DInjectorMotion::TwoRings:
-        return "Two rings";
-    case Fluid2DInjectorMotion::SameDirectionOrbits:
-        return "Same-direction orbits";
-    case Fluid2DInjectorMotion::AlternatingDirectionOrbits:
-        return "Alternating orbits";
-    case Fluid2DInjectorMotion::Lissajous:
-        return "Lissajous";
-    }
-    return "Two rings";
-}
-
 constexpr std::array<FluidDebugView, 7> kDebugViews{
-    FluidDebugView::Dye,      FluidDebugView::Velocity,  FluidDebugView::Divergence,
-    FluidDebugView::Pressure, FluidDebugView::Speed,     FluidDebugView::Vorticity,
+    FluidDebugView::Dye,      FluidDebugView::Velocity, FluidDebugView::Divergence,
+    FluidDebugView::Pressure, FluidDebugView::Speed,    FluidDebugView::Vorticity,
     FluidDebugView::Obstacle,
-};
-
-constexpr std::array<Fluid2DInjectorMotion, 5> kInjectorMotions{
-    Fluid2DInjectorMotion::OneRing,
-    Fluid2DInjectorMotion::TwoRings,
-    Fluid2DInjectorMotion::SameDirectionOrbits,
-    Fluid2DInjectorMotion::AlternatingDirectionOrbits,
-    Fluid2DInjectorMotion::Lissajous,
 };
 
 class Fluid2DApp {
@@ -115,9 +91,7 @@ class Fluid2DApp {
             const ProjectFrame& project_frame = runtime_.frame_for_timing(timing);
             update_interaction(context, project_frame);
         };
-        callbacks.draw_ui = [this](cubey::host::WindowedAppContext& context) {
-            draw_ui(context);
-        };
+        callbacks.draw_ui = [this](cubey::host::WindowedAppContext& context) { draw_ui(context); };
         callbacks.record_frame = [this](cubey::host::WindowedAppContext& context,
                                         const cubey::host::WindowedRenderFrame& frame) {
             const ProjectFrame& project_frame = runtime_.frame_for_timing(frame.timing);
@@ -212,37 +186,30 @@ class Fluid2DApp {
             reset_injectors();
         }
 
-        if (ImGui::BeginCombo("Injector motion",
-                              injector_motion_name(fluid_config_.injector_motion))) {
-            for (Fluid2DInjectorMotion motion : kInjectorMotions) {
-                const bool selected = motion == fluid_config_.injector_motion;
-                if (ImGui::Selectable(injector_motion_name(motion), selected)) {
-                    fluid_config_.injector_motion = motion;
-                    reset_injectors();
-                }
-                if (selected) {
-                    ImGui::SetItemDefaultFocus();
-                }
-            }
-            ImGui::EndCombo();
-        }
-
         int pressure_iterations = static_cast<int>(fluid_config_.pressure_iterations);
         if (ImGui::SliderInt("Pressure iterations", &pressure_iterations, 1, 96)) {
             fluid_config_.pressure_iterations = static_cast<std::uint32_t>(pressure_iterations);
         }
         ImGui::SliderFloat("Vorticity", &fluid_config_.vorticity_strength, 0.0F, 40.0F);
-        ImGui::SliderFloat("Dye decay", &fluid_config_.dye_decay_per_second, 0.950F, 1.0F,
+        ImGui::SliderFloat("Dye decay", &fluid_config_.dye_decay_per_second, 0.950F, 1.0F, "%.4f");
+        ImGui::SliderFloat("Velocity decay", &fluid_config_.velocity_decay_per_second, 0.950F, 1.0F,
                            "%.4f");
-        ImGui::SliderFloat("Velocity decay", &fluid_config_.velocity_decay_per_second, 0.950F,
-                           1.0F, "%.4f");
         ImGui::SliderFloat("Injector radius", &fluid_config_.injector_injection_radius, 0.005F,
                            0.080F, "%.3f");
         ImGui::SliderFloat("Injection force", &fluid_config_.injector_injection_strength, 0.0F,
                            20.0F, "%.1f");
         ImGui::SliderFloat("Propulsion", &fluid_config_.injector_propulsion_strength, 0.0F, 3.0F,
                            "%.2f");
-        ImGui::SliderFloat("Injector speed", &fluid_config_.injector_speed, 0.10F, 3.0F, "%.2f");
+        ImGui::SliderFloat("Orbit radius", &fluid_config_.injector_orbit_radius, 0.04F, 0.42F,
+                           "%.3f");
+        ImGui::SliderFloat("Radius spread", &fluid_config_.injector_orbit_radius_spread, 0.0F,
+                           0.50F, "%.3f");
+        ImGui::SliderFloat("Angular speed", &fluid_config_.injector_orbit_angular_speed, -2.0F,
+                           2.0F, "%.2f");
+        ImGui::SliderFloat("Speed spread", &fluid_config_.injector_orbit_angular_speed_spread, 0.0F,
+                           4.0F, "%.2f");
+        ImGui::SliderFloat("Phase spread", &fluid_config_.injector_orbit_phase_spread, 0.0F, 1.0F,
+                           "%.2f");
 
         ImGui::Text("Grid: %u x %u", fluid_config_.grid_width, fluid_config_.grid_height);
         ImGui::End();
@@ -305,9 +272,9 @@ class Fluid2DApp {
     void record_frame(cubey::host::WindowedAppContext& context,
                       const cubey::host::WindowedRenderFrame& render_frame,
                       const ProjectFrame& frame) {
-        const cubey::render::CompiledRenderGraph frame_graph = build_fluid_frame_graph(
-            render_frame.color_target, resources_, fluid_config_, debug_view_, paused_,
-            reset_requested_, frame, injector_gpu_);
+        const cubey::render::CompiledRenderGraph frame_graph =
+            build_fluid_frame_graph(render_frame.color_target, resources_, fluid_config_,
+                                    debug_view_, paused_, reset_requested_, frame, injector_gpu_);
         graph_executor_.record(
             cubey::render::RenderGraphFrameRecordInfo{
                 .device = &context.device(),
@@ -359,8 +326,8 @@ class Fluid2DApp {
                 const std::uint64_t simulation_frame = static_cast<std::uint64_t>(frame.index) + 1;
                 const FrameTiming timing{
                     .delta_seconds = frame.timing.delta_seconds,
-                    .elapsed_seconds = frame.timing.delta_seconds *
-                                       static_cast<double>(simulation_frame),
+                    .elapsed_seconds =
+                        frame.timing.delta_seconds * static_cast<double>(simulation_frame),
                     .frame_index = simulation_frame,
                 };
                 const ProjectFrame project_frame = runtime_.frame_for_timing(timing);

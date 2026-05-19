@@ -82,13 +82,18 @@ int main() {
                 "fluid injector strength should default to a visible multi-source impulse");
         require(config.injector_propulsion_strength == 1.0F,
                 "fluid injector propulsion should default to neutral scaling");
-        require(config.injector_speed == 1.0F,
-                "fluid injector speed should default to realtime motion");
+        require(config.injector_orbit_radius == 0.25F,
+                "fluid injector orbit radius should default near the middle of the field");
+        require(config.injector_orbit_radius_spread == 0.22F,
+                "fluid injector orbit radius spread should default to a broad band");
+        require(config.injector_orbit_angular_speed == 0.0F,
+                "fluid injector orbit speed should default to a centered signed band");
+        require(config.injector_orbit_angular_speed_spread == 0.8F,
+                "fluid injector orbit speed spread should default to mixed directions");
+        require(config.injector_orbit_phase_spread == 1.0F,
+                "fluid injector orbit phase spread should default around a full turn");
         require(config.vorticity_strength == 18.0F,
                 "fluid vorticity strength should have a visible default");
-        require(config.injector_motion ==
-                    cubey::projects::fluid_2d::Fluid2DInjectorMotion::TwoRings,
-                "fluid injector motion should default to two-rings");
         require(!config.obstacles_enabled, "fluid obstacles should default disabled");
         require(cubey::projects::fluid_2d::scalar_field_byte_size(config) ==
                     sizeof(float) * kExpectedCellCount,
@@ -126,27 +131,33 @@ int main() {
         run_config.grid_width = 1024;
         run_config.grid_height = 768;
         run_config.injectors = 8;
-        run_config.injector_motion = "alternating-direction-orbits";
         run_config.injector_force = 7.5F;
         run_config.injector_propulsion = 1.6F;
-        run_config.injector_speed = 1.75F;
+        run_config.injector_orbit_radius = 0.24F;
+        run_config.injector_orbit_radius_spread = 0.18F;
+        run_config.injector_orbit_angular_speed = 0.1F;
+        run_config.injector_orbit_angular_speed_spread = 1.2F;
+        run_config.injector_orbit_phase_spread = 0.75F;
         const cubey::projects::fluid_2d::Fluid2DConfig configured =
             cubey::projects::fluid_2d::fluid_config_from_run_config(run_config);
-        require(configured.grid_width == 1024,
-                "fluid config should honor run config grid width");
-        require(configured.grid_height == 768,
-                "fluid config should honor run config grid height");
+        require(configured.grid_width == 1024, "fluid config should honor run config grid width");
+        require(configured.grid_height == 768, "fluid config should honor run config grid height");
         require(configured.procedural_injector_count == 8,
                 "fluid config should honor run config injector count");
-        require(configured.injector_motion ==
-                    cubey::projects::fluid_2d::Fluid2DInjectorMotion::AlternatingDirectionOrbits,
-                "fluid config should honor run config injector motion");
         require(configured.injector_injection_strength == 7.5F,
                 "fluid config should honor run config injector force");
         require(configured.injector_propulsion_strength == 1.6F,
                 "fluid config should honor run config injector propulsion");
-        require(configured.injector_speed == 1.75F,
-                "fluid config should honor run config injector speed");
+        require(configured.injector_orbit_radius == 0.24F,
+                "fluid config should honor run config injector orbit radius");
+        require(configured.injector_orbit_radius_spread == 0.18F,
+                "fluid config should honor run config injector orbit radius spread");
+        require(configured.injector_orbit_angular_speed == 0.1F,
+                "fluid config should honor run config injector orbit angular speed");
+        require(configured.injector_orbit_angular_speed_spread == 1.2F,
+                "fluid config should honor run config injector orbit angular speed spread");
+        require(configured.injector_orbit_phase_spread == 0.75F,
+                "fluid config should honor run config injector orbit phase spread");
         require(!configured.obstacles_enabled,
                 "fluid config should keep obstacles disabled unless requested");
         run_config.obstacles = true;
@@ -168,26 +179,34 @@ int main() {
         require(threw_for_too_many_injectors,
                 "fluid config should reject injector counts above the shader policy limit");
 
-        bool threw_for_unknown_motion = false;
-        try {
-            cubey::RunConfig invalid_motion_config;
-            invalid_motion_config.injector_motion = "crossflow";
-            static_cast<void>(
-                cubey::projects::fluid_2d::fluid_config_from_run_config(invalid_motion_config));
-        } catch (const std::runtime_error&) {
-            threw_for_unknown_motion = true;
-        }
-        require(threw_for_unknown_motion,
-                "fluid config should reject unknown injector motion names");
-
         std::vector<cubey::projects::fluid_2d::Fluid2DInjectorState> injectors =
             cubey::projects::fluid_2d::create_fluid_2d_injectors(configured);
         require(injectors.size() == 8, "fluid injector state should match configured count");
-        require(injectors[0].motion ==
-                    cubey::projects::fluid_2d::Fluid2DInjectorMotion::AlternatingDirectionOrbits,
-                "fluid injector state should remember its configured motion");
         require_close(injectors[0].hue, 0.0F, "first injector hue should start at red");
         require_close(injectors[1].hue, 0.125F, "injector hues should spread evenly");
+        require(injectors.front().orbit_radius < injectors.back().orbit_radius,
+                "fluid injector orbit radii should spread across the configured band");
+        require(injectors.front().orbit_radius >=
+                    configured.injector_orbit_radius -
+                        (configured.injector_orbit_radius_spread * 0.5F) - 0.01F,
+                "fluid injector minimum orbit radius should stay inside the configured band");
+        require(injectors.back().orbit_radius <=
+                    configured.injector_orbit_radius +
+                        (configured.injector_orbit_radius_spread * 0.5F) + 0.01F,
+                "fluid injector maximum orbit radius should stay inside the configured band");
+        require(injectors.front().angular_speed < configured.injector_orbit_angular_speed &&
+                    injectors.back().angular_speed > configured.injector_orbit_angular_speed,
+                "fluid injector angular speeds should spread around the configured base speed");
+        require(injectors[1].anchor_angle > injectors[0].anchor_angle,
+                "fluid injector phases should spread across the configured phase range");
+        for (std::size_t index = 1; index < injectors.size(); ++index) {
+            const float radius_gap =
+                injectors[index].orbit_radius - injectors[index - 1].orbit_radius;
+            require(radius_gap > 0.010F,
+                    "fluid injector radii should avoid clustering inside the orbit band");
+            require(radius_gap < 0.040F,
+                    "fluid injector radii should stay close to an even orbit-band spread");
+        }
         const std::array<float, 2> initial_position = injectors[0].position;
         const std::vector<cubey::projects::fluid_2d::Fluid2DInjectorGpu> initial_gpu =
             cubey::projects::fluid_2d::fluid_2d_injectors_to_gpu(injectors, configured);
@@ -199,8 +218,7 @@ int main() {
         cubey::projects::fluid_2d::Fluid2DConfig no_propulsion_config = configured;
         no_propulsion_config.injector_propulsion_strength = 0.0F;
         const std::vector<cubey::projects::fluid_2d::Fluid2DInjectorGpu> no_propulsion_gpu =
-            cubey::projects::fluid_2d::fluid_2d_injectors_to_gpu(injectors,
-                                                                 no_propulsion_config);
+            cubey::projects::fluid_2d::fluid_2d_injectors_to_gpu(injectors, no_propulsion_config);
         require(no_propulsion_gpu[0].velocity_carry_propulsion[3] == 0.0F,
                 "fluid GPU injector should honor disabled propulsion force");
         const std::vector<cubey::projects::fluid_2d::Fluid2DInjectorGpu> advanced_gpu =
@@ -222,71 +240,17 @@ int main() {
                         cubey::projects::fluid_2d::kMaxProceduralInjectorCount,
                 "fluid injector capacity should cover live-editable injector count");
 
-        cubey::projects::fluid_2d::Fluid2DConfig one_ring_config = configured;
-        one_ring_config.injector_motion =
-            cubey::projects::fluid_2d::Fluid2DInjectorMotion::OneRing;
-        const std::vector<cubey::projects::fluid_2d::Fluid2DInjectorState> one_ring =
-            cubey::projects::fluid_2d::create_fluid_2d_injectors(one_ring_config);
-        require_close(one_ring[0].orbit_radius, one_ring[1].orbit_radius,
-                      "one-ring injector motion should keep every source on one radius");
-        require_close(one_ring[0].orbit_direction, one_ring[1].orbit_direction,
-                      "one-ring injector motion should keep every source moving together");
-
-        cubey::projects::fluid_2d::Fluid2DConfig two_ring_config = configured;
-        two_ring_config.injector_motion =
-            cubey::projects::fluid_2d::Fluid2DInjectorMotion::TwoRings;
-        const std::vector<cubey::projects::fluid_2d::Fluid2DInjectorState> two_rings =
-            cubey::projects::fluid_2d::create_fluid_2d_injectors(two_ring_config);
-        require_close(two_rings[0].orbit_radius, two_rings[3].orbit_radius,
-                      "two-rings injector motion should split the first half onto the outer ring");
-        require_close(two_rings[4].orbit_radius, two_rings[7].orbit_radius,
-                      "two-rings injector motion should split the second half onto the inner ring");
-        require(two_rings[4].orbit_radius < two_rings[0].orbit_radius,
-                "two-rings injector motion should put the second half on the inner ring");
-        require(two_rings[0].orbit_radius - two_rings[4].orbit_radius > 0.18F,
-                "two-rings injector motion should leave clear distance between rings");
-        require(two_rings[4].orbit_direction < 0.0F,
-                "two-rings injector motion should counter-rotate inner sources");
-
-        cubey::projects::fluid_2d::Fluid2DConfig same_orbit_config = configured;
-        same_orbit_config.injector_motion =
-            cubey::projects::fluid_2d::Fluid2DInjectorMotion::SameDirectionOrbits;
-        const std::vector<cubey::projects::fluid_2d::Fluid2DInjectorState> same_orbits =
-            cubey::projects::fluid_2d::create_fluid_2d_injectors(same_orbit_config);
-        require(same_orbits[0].orbit_direction > 0.0F && same_orbits[1].orbit_direction > 0.0F,
-                "same-direction orbit motion should keep every source orbiting together");
-        require(same_orbits.front().orbit_radius >= 0.14F &&
-                    same_orbits.back().orbit_radius <= 0.36F,
-                "same-direction orbit motion should keep radii inside the varied orbit band");
-        for (std::size_t index = 1; index < same_orbits.size(); ++index) {
-            const float radius_gap =
-                same_orbits[index].orbit_radius - same_orbits[index - 1].orbit_radius;
-            require(radius_gap > 0.015F,
-                    "same-direction orbit motion should avoid clustered orbit radii");
-            require(radius_gap < 0.040F,
-                    "same-direction orbit motion should only add small radius jitter");
-        }
-
-        cubey::projects::fluid_2d::Fluid2DConfig alternating_orbit_config = configured;
-        alternating_orbit_config.injector_motion =
-            cubey::projects::fluid_2d::Fluid2DInjectorMotion::AlternatingDirectionOrbits;
-        const std::vector<cubey::projects::fluid_2d::Fluid2DInjectorState> alternating_orbits =
-            cubey::projects::fluid_2d::create_fluid_2d_injectors(alternating_orbit_config);
-        require(alternating_orbits[0].orbit_direction > 0.0F &&
-                    alternating_orbits[1].orbit_direction < 0.0F,
-                "alternating orbit motion should flip direction on alternating sources");
-        require_close(alternating_orbits[0].orbit_radius, same_orbits[0].orbit_radius,
-                      "same and alternating orbit modes should share the same radius band");
-        require_close(alternating_orbits[7].orbit_radius, same_orbits[7].orbit_radius,
-                      "same and alternating orbit modes should share the same outer radius band");
-
-        cubey::projects::fluid_2d::Fluid2DConfig fast_ring_config = two_ring_config;
-        fast_ring_config.injector_speed = 2.0F;
-        const std::vector<cubey::projects::fluid_2d::Fluid2DInjectorState> fast_two_rings =
-            cubey::projects::fluid_2d::create_fluid_2d_injectors(fast_ring_config);
-        require(length_squared(fast_two_rings[0].velocity) >
-                    length_squared(two_rings[0].velocity),
-                "injector speed should increase initial source velocity");
+        cubey::projects::fluid_2d::Fluid2DConfig slow_orbit_config = configured;
+        slow_orbit_config.injector_orbit_angular_speed_spread = 0.4F;
+        const std::vector<cubey::projects::fluid_2d::Fluid2DInjectorState> slow_orbits =
+            cubey::projects::fluid_2d::create_fluid_2d_injectors(slow_orbit_config);
+        cubey::projects::fluid_2d::Fluid2DConfig fast_orbit_config = configured;
+        fast_orbit_config.injector_orbit_angular_speed_spread = 2.0F;
+        const std::vector<cubey::projects::fluid_2d::Fluid2DInjectorState> fast_orbits =
+            cubey::projects::fluid_2d::create_fluid_2d_injectors(fast_orbit_config);
+        require(length_squared(fast_orbits.back().velocity) >
+                    length_squared(slow_orbits.back().velocity),
+                "injector angular speed spread should increase initial source velocity");
 
         require(cubey::projects::fluid_2d::headless_frame_count(run_config) == 120,
                 "headless frame count should default to 120 frames");

@@ -8,7 +8,6 @@
 #include <cstdint>
 #include <limits>
 #include <stdexcept>
-#include <string_view>
 
 namespace cubey::projects::fluid_2d {
 
@@ -29,14 +28,6 @@ enum class FluidDebugView : std::uint32_t {
     Obstacle = 6,
 };
 
-enum class Fluid2DInjectorMotion : std::uint32_t {
-    OneRing = 0,
-    TwoRings = 1,
-    SameDirectionOrbits = 2,
-    AlternatingDirectionOrbits = 3,
-    Lissajous = 4,
-};
-
 inline constexpr std::uint32_t kMaxProceduralInjectorCount = 16;
 
 struct Fluid2DConfig {
@@ -51,52 +42,14 @@ struct Fluid2DConfig {
     float injector_injection_radius = 0.032F;
     float injector_injection_strength = 6.0F;
     float injector_propulsion_strength = 1.0F;
-    float injector_speed = 1.0F;
+    float injector_orbit_radius = 0.25F;
+    float injector_orbit_radius_spread = 0.22F;
+    float injector_orbit_angular_speed = 0.0F;
+    float injector_orbit_angular_speed_spread = 0.8F;
+    float injector_orbit_phase_spread = 1.0F;
     float vorticity_strength = 18.0F;
-    Fluid2DInjectorMotion injector_motion = Fluid2DInjectorMotion::TwoRings;
     bool obstacles_enabled = false;
 };
-
-[[nodiscard]] inline std::string_view fluid_2d_injector_motion_name(
-    Fluid2DInjectorMotion motion) {
-    switch (motion) {
-    case Fluid2DInjectorMotion::OneRing:
-        return "one-ring";
-    case Fluid2DInjectorMotion::TwoRings:
-        return "two-rings";
-    case Fluid2DInjectorMotion::SameDirectionOrbits:
-        return "same-direction-orbits";
-    case Fluid2DInjectorMotion::AlternatingDirectionOrbits:
-        return "alternating-direction-orbits";
-    case Fluid2DInjectorMotion::Lissajous:
-        return "lissajous";
-    }
-    return "two-rings";
-}
-
-[[nodiscard]] inline Fluid2DInjectorMotion parse_fluid_2d_injector_motion(
-    std::string_view value) {
-    if (value == "one-ring") {
-        return Fluid2DInjectorMotion::OneRing;
-    }
-    if (value == "two-rings") {
-        return Fluid2DInjectorMotion::TwoRings;
-    }
-    if (value == "same-direction-orbits" || value == "orbit-same" ||
-        value == "same-orbits") {
-        return Fluid2DInjectorMotion::SameDirectionOrbits;
-    }
-    if (value == "alternating-direction-orbits" || value == "orbit-alternating" ||
-        value == "alternating-orbits" || value == "random-orbit" || value == "random") {
-        return Fluid2DInjectorMotion::AlternatingDirectionOrbits;
-    }
-    if (value == "lissajous") {
-        return Fluid2DInjectorMotion::Lissajous;
-    }
-    throw std::runtime_error("fluid injector motion must be one-ring, two-rings, "
-                             "same-direction-orbits, alternating-direction-orbits, "
-                             "or lissajous");
-}
 
 [[nodiscard]] inline FluidDebugView next_debug_view(FluidDebugView view) {
     switch (view) {
@@ -161,13 +114,13 @@ struct Fluid2DConfig {
         }
         fluid_config.procedural_injector_count = config.injectors;
     }
-    if (!config.injector_motion.empty()) {
-        fluid_config.injector_motion =
-            parse_fluid_2d_injector_motion(config.injector_motion);
-    }
     fluid_config.injector_injection_strength = config.injector_force;
     fluid_config.injector_propulsion_strength = config.injector_propulsion;
-    fluid_config.injector_speed = config.injector_speed;
+    fluid_config.injector_orbit_radius = config.injector_orbit_radius;
+    fluid_config.injector_orbit_radius_spread = config.injector_orbit_radius_spread;
+    fluid_config.injector_orbit_angular_speed = config.injector_orbit_angular_speed;
+    fluid_config.injector_orbit_angular_speed_spread = config.injector_orbit_angular_speed_spread;
+    fluid_config.injector_orbit_phase_spread = config.injector_orbit_phase_spread;
     fluid_config.obstacles_enabled = config.obstacles;
     static_cast<void>(field_cell_count(fluid_config));
     return fluid_config;

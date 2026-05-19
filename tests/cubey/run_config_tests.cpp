@@ -12,8 +12,7 @@ void require(bool condition, const char* message) {
     }
 }
 
-template <typename Fn>
-void require_throws(Fn&& fn, const char* message) {
+template <typename Fn> void require_throws(Fn&& fn, const char* message) {
     try {
         fn();
     } catch (const std::exception&) {
@@ -40,10 +39,8 @@ void test_run_config_parses_png_output_path() {
 
 void test_run_config_parses_video_capture_defaults() {
     std::array<char, 6> program{'c', 'u', 'b', 'e', 'y', '\0'};
-    std::array<char, 11> headless_flag{'-', '-', 'h', 'e', 'a', 'd', 'l', 'e', 's', 's',
-                                       '\0'};
-    std::array<char, 10> capture_flag{'-', '-', 'c', 'a', 'p', 't', 'u', 'r', 'e',
-                                      '\0'};
+    std::array<char, 11> headless_flag{'-', '-', 'h', 'e', 'a', 'd', 'l', 'e', 's', 's', '\0'};
+    std::array<char, 10> capture_flag{'-', '-', 'c', 'a', 'p', 't', 'u', 'r', 'e', '\0'};
     std::array<char, 6> capture_value{'v', 'i', 'd', 'e', 'o', '\0'};
     std::array<char*, 4> argv{program.data(), headless_flag.data(), capture_flag.data(),
                               capture_value.data()};
@@ -60,21 +57,17 @@ void test_run_config_parses_video_capture_defaults() {
 
 void test_run_config_preserves_explicit_video_capture_timing_and_output() {
     std::array<char, 6> program{'c', 'u', 'b', 'e', 'y', '\0'};
-    std::array<char, 11> headless_flag{'-', '-', 'h', 'e', 'a', 'd', 'l', 'e', 's', 's',
-                                       '\0'};
-    std::array<char, 10> capture_flag{'-', '-', 'c', 'a', 'p', 't', 'u', 'r', 'e',
-                                      '\0'};
+    std::array<char, 11> headless_flag{'-', '-', 'h', 'e', 'a', 'd', 'l', 'e', 's', 's', '\0'};
+    std::array<char, 10> capture_flag{'-', '-', 'c', 'a', 'p', 't', 'u', 'r', 'e', '\0'};
     std::array<char, 6> capture_value{'v', 'i', 'd', 'e', 'o', '\0'};
-    std::array<char, 9> frames_flag{'-', '-', 'f', 'r', 'a', 'm', 'e', 's',
-                                    '\0'};
+    std::array<char, 9> frames_flag{'-', '-', 'f', 'r', 'a', 'm', 'e', 's', '\0'};
     std::array<char, 3> frames_value{'4', '2', '\0'};
     std::array<char, 6> fps_flag{'-', '-', 'f', 'p', 's', '\0'};
     std::array<char, 3> fps_value{'2', '4', '\0'};
     std::array<char, 9> output_flag{'-', '-', 'o', 'u', 't', 'p', 'u', 't', '\0'};
-    std::array<char, 21> output_value{'/', 't', 'm', 'p', '/', 'c', 'u', 'b',
-                                      'e', 'y', '-', 'v', 'i', 'd', 'e', 'o',
-                                      '.', 'm', 'p', '4', '\0'};
-    std::array<char*, 10> argv{program.data(),      headless_flag.data(), capture_flag.data(),
+    std::array<char, 21> output_value{'/', 't', 'm', 'p', '/', 'c', 'u', 'b', 'e', 'y', '-',
+                                      'v', 'i', 'd', 'e', 'o', '.', 'm', 'p', '4', '\0'};
+    std::array<char*, 10> argv{program.data(),       headless_flag.data(), capture_flag.data(),
                                capture_value.data(), frames_flag.data(),   frames_value.data(),
                                fps_flag.data(),      fps_value.data(),     output_flag.data(),
                                output_value.data()};
@@ -92,8 +85,7 @@ void test_run_config_preserves_explicit_video_capture_timing_and_output() {
 void test_run_config_rejects_invalid_capture_options() {
     {
         std::array<char, 6> program{'c', 'u', 'b', 'e', 'y', '\0'};
-        std::array<char, 10> capture_flag{'-', '-', 'c', 'a', 'p', 't', 'u', 'r', 'e',
-                                          '\0'};
+        std::array<char, 10> capture_flag{'-', '-', 'c', 'a', 'p', 't', 'u', 'r', 'e', '\0'};
         std::array<char, 4> capture_value{'g', 'i', 'f', '\0'};
         std::array<char*, 3> argv{program.data(), capture_flag.data(), capture_value.data()};
         require_throws(
@@ -102,8 +94,7 @@ void test_run_config_rejects_invalid_capture_options() {
     }
     {
         std::array<char, 6> program{'c', 'u', 'b', 'e', 'y', '\0'};
-        std::array<char, 11> headless_flag{'-', '-', 'h', 'e', 'a', 'd', 'l', 'e', 's', 's',
-                                           '\0'};
+        std::array<char, 11> headless_flag{'-', '-', 'h', 'e', 'a', 'd', 'l', 'e', 's', 's', '\0'};
         std::array<char, 6> fps_flag{'-', '-', 'f', 'p', 's', '\0'};
         std::array<char, 2> fps_value{'0', '\0'};
         std::array<char*, 4> argv{program.data(), headless_flag.data(), fps_flag.data(),
@@ -114,8 +105,7 @@ void test_run_config_rejects_invalid_capture_options() {
     }
     {
         std::array<char, 6> program{'c', 'u', 'b', 'e', 'y', '\0'};
-        std::array<char, 10> capture_flag{'-', '-', 'c', 'a', 'p', 't', 'u', 'r', 'e',
-                                          '\0'};
+        std::array<char, 10> capture_flag{'-', '-', 'c', 'a', 'p', 't', 'u', 'r', 'e', '\0'};
         std::array<char, 6> capture_value{'v', 'i', 'd', 'e', 'o', '\0'};
         std::array<char*, 3> argv{program.data(), capture_flag.data(), capture_value.data()};
         require_throws(
@@ -127,10 +117,9 @@ void test_run_config_rejects_invalid_capture_options() {
 void test_run_config_parses_input_path() {
     std::array<char, 6> program{'c', 'u', 'b', 'e', 'y', '\0'};
     std::array<char, 8> input_flag{'-', '-', 'i', 'n', 'p', 'u', 't', '\0'};
-    std::array<char, 25> input_value{'a', 's', 's', 'e', 't', 's', '/', 'D',
-                                     'a', 'm', 'a', 'g', 'e', 'd', 'H', 'e',
-                                     'l', 'm', 'e', 't', '.', 'g', 'l', 'b',
-                                     '\0'};
+    std::array<char, 25> input_value{'a', 's', 's', 'e', 't', 's', '/', 'D', 'a',
+                                     'm', 'a', 'g', 'e', 'd', 'H', 'e', 'l', 'm',
+                                     'e', 't', '.', 'g', 'l', 'b', '\0'};
     std::array<char*, 3> argv{program.data(), input_flag.data(), input_value.data()};
 
     const cubey::RunConfig config =
@@ -146,16 +135,14 @@ void test_run_config_parses_pbr_environment_options() {
     std::array<char, 16> intensity_flag{'-', '-', 'i', 'b', 'l', '-', 'i', 'n',
                                         't', 'e', 'n', 's', 'i', 't', 'y', '\0'};
     std::array<char, 5> intensity_value{'1', '.', '2', '5', '\0'};
-    std::array<char, 31> rotation_flag{
-        '-', '-', 'e', 'n', 'v', 'i', 'r', 'o', 'n', 'm', 'e', 'n', 't', '-',
-        'r', 'o', 't', 'a', 't', 'i', 'o', 'n', '-', 'd', 'e', 'g', 'r', 'e',
-        'e', 's', '\0'};
+    std::array<char, 31> rotation_flag{'-', '-', 'e', 'n', 'v', 'i', 'r', 'o', 'n', 'm', 'e',
+                                       'n', 't', '-', 'r', 'o', 't', 'a', 't', 'i', 'o', 'n',
+                                       '-', 'd', 'e', 'g', 'r', 'e', 'e', 's', '\0'};
     std::array<char, 6> rotation_value{'4', '5', '.', '0', '0', '\0'};
-    std::array<char, 11> exposure_flag{'-', '-', 'e', 'x', 'p', 'o', 's', 'u', 'r', 'e',
-                                       '\0'};
+    std::array<char, 11> exposure_flag{'-', '-', 'e', 'x', 'p', 'o', 's', 'u', 'r', 'e', '\0'};
     std::array<char, 5> exposure_value{'-', '0', '.', '5', '\0'};
     std::array<char*, 9> argv{
-        program.data(),      environment_flag.data(), environment_value.data(),
+        program.data(),        environment_flag.data(), environment_value.data(),
         intensity_flag.data(), intensity_value.data(),  rotation_flag.data(),
         rotation_value.data(), exposure_flag.data(),    exposure_value.data()};
 
@@ -179,7 +166,7 @@ void test_run_config_parses_animation_options() {
     std::array<char, 4> speed_value{'0', '.', '5', '\0'};
     std::array<char, 18> pause_flag{'-', '-', 'p', 'a', 'u', 's', 'e', '-', 'a',
                                     'n', 'i', 'm', 'a', 't', 'i', 'o', 'n', '\0'};
-    std::array<char*, 6> argv{program.data(), index_flag.data(), index_value.data(),
+    std::array<char*, 6> argv{program.data(),    index_flag.data(),  index_value.data(),
                               speed_flag.data(), speed_value.data(), pause_flag.data()};
 
     const cubey::RunConfig config =
@@ -193,8 +180,8 @@ void test_run_config_parses_pbr_debug_view_name() {
     std::array<char, 6> program{'c', 'u', 'b', 'e', 'y', '\0'};
     std::array<char, 13> debug_flag{'-', '-', 'd', 'e', 'b', 'u', 'g',
                                     '-', 'v', 'i', 'e', 'w', '\0'};
-    std::array<char, 15> debug_value{'g', 'e', 'o', 'm', 'e', 't', 'r',
-                                     'i', 'c', '-', 'n', 'o', 'r', 'm', '\0'};
+    std::array<char, 15> debug_value{'g', 'e', 'o', 'm', 'e', 't', 'r', 'i',
+                                     'c', '-', 'n', 'o', 'r', 'm', '\0'};
     std::array<char*, 3> argv{program.data(), debug_flag.data(), debug_value.data()};
 
     const cubey::RunConfig config =
@@ -205,9 +192,8 @@ void test_run_config_parses_pbr_debug_view_name() {
 
 void test_run_config_parses_frame_stats_flag() {
     std::array<char, 6> program{'c', 'u', 'b', 'e', 'y', '\0'};
-    std::array<char, 20> stats_flag{'-', '-', 'p', 'r', 'i', 'n', 't',
-                                    '-', 'f', 'r', 'a', 'm', 'e', '-',
-                                    's', 't', 'a', 't', 's', '\0'};
+    std::array<char, 20> stats_flag{'-', '-', 'p', 'r', 'i', 'n', 't', '-', 'f', 'r',
+                                    'a', 'm', 'e', '-', 's', 't', 'a', 't', 's', '\0'};
     std::array<char*, 2> argv{program.data(), stats_flag.data()};
 
     const cubey::RunConfig config =
@@ -244,31 +230,42 @@ void test_run_config_parses_injector_count() {
     require(config.injectors == 8, "run config should parse procedural injector count");
 }
 
-void test_run_config_parses_injector_motion() {
-    std::array<char, 6> program{'c', 'u', 'b', 'e', 'y', '\0'};
-    std::array<char, 18> motion_flag{'-', '-', 'i', 'n', 'j', 'e', 'c', 't', 'o',
-                                     'r', '-', 'm', 'o', 't', 'i', 'o', 'n', '\0'};
-    std::array<char, 13> motion_value{'r', 'a', 'n', 'd', 'o', 'm', '-',
-                                      'o', 'r', 'b', 'i', 't', '\0'};
-    std::array<char*, 3> argv{program.data(), motion_flag.data(), motion_value.data()};
+void test_run_config_parses_injector_orbit_controls() {
+    std::string program = "cubey";
+    std::string radius_flag = "--injector-orbit-radius";
+    std::string radius_value = "0.24";
+    std::string radius_spread_flag = "--injector-orbit-radius-spread";
+    std::string radius_spread_value = "0.18";
+    std::string speed_flag = "--injector-orbit-angular-speed";
+    std::string speed_value = "0.25";
+    std::string speed_spread_flag = "--injector-orbit-angular-speed-spread";
+    std::string speed_spread_value = "1.5";
+    std::string phase_spread_flag = "--injector-orbit-phase-spread";
+    std::string phase_spread_value = "0.75";
+    std::array<char*, 11> argv{program.data(),
+                               radius_flag.data(),
+                               radius_value.data(),
+                               radius_spread_flag.data(),
+                               radius_spread_value.data(),
+                               speed_flag.data(),
+                               speed_value.data(),
+                               speed_spread_flag.data(),
+                               speed_spread_value.data(),
+                               phase_spread_flag.data(),
+                               phase_spread_value.data()};
 
     const cubey::RunConfig config =
         cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
-    require(config.injector_motion == "random-orbit",
-            "run config should parse procedural injector motion");
-}
-
-void test_run_config_parses_injector_speed() {
-    std::array<char, 6> program{'c', 'u', 'b', 'e', 'y', '\0'};
-    std::array<char, 17> speed_flag{'-', '-', 'i', 'n', 'j', 'e', 'c', 't', 'o',
-                                    'r', '-', 's', 'p', 'e', 'e', 'd', '\0'};
-    std::array<char, 5> speed_value{'1', '.', '7', '5', '\0'};
-    std::array<char*, 3> argv{program.data(), speed_flag.data(), speed_value.data()};
-
-    const cubey::RunConfig config =
-        cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
-    require(config.injector_speed == 1.75F,
-            "run config should parse procedural injector speed");
+    require(config.injector_orbit_radius == 0.24F,
+            "run config should parse procedural injector orbit radius");
+    require(config.injector_orbit_radius_spread == 0.18F,
+            "run config should parse procedural injector orbit radius spread");
+    require(config.injector_orbit_angular_speed == 0.25F,
+            "run config should parse procedural injector orbit angular speed");
+    require(config.injector_orbit_angular_speed_spread == 1.5F,
+            "run config should parse procedural injector orbit angular speed spread");
+    require(config.injector_orbit_phase_spread == 0.75F,
+            "run config should parse procedural injector orbit phase spread");
 }
 
 void test_run_config_parses_injector_force_controls() {
@@ -276,17 +273,15 @@ void test_run_config_parses_injector_force_controls() {
     std::array<char, 17> force_flag{'-', '-', 'i', 'n', 'j', 'e', 'c', 't', 'o',
                                     'r', '-', 'f', 'o', 'r', 'c', 'e', '\0'};
     std::array<char, 4> force_value{'7', '.', '5', '\0'};
-    std::array<char, 22> propulsion_flag{'-', '-', 'i', 'n', 'j', 'e', 'c', 't',
-                                         'o',  'r',  '-', 'p', 'r', 'o', 'p',
-                                         'u',  'l',  's', 'i', 'o', 'n', '\0'};
+    std::array<char, 22> propulsion_flag{'-', '-', 'i', 'n', 'j', 'e', 'c', 't', 'o', 'r', '-',
+                                         'p', 'r', 'o', 'p', 'u', 'l', 's', 'i', 'o', 'n', '\0'};
     std::array<char, 4> propulsion_value{'1', '.', '6', '\0'};
     std::array<char*, 5> argv{program.data(), force_flag.data(), force_value.data(),
                               propulsion_flag.data(), propulsion_value.data()};
 
     const cubey::RunConfig config =
         cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
-    require(config.injector_force == 7.5F,
-            "run config should parse procedural injector force");
+    require(config.injector_force == 7.5F, "run config should parse procedural injector force");
     require(config.injector_propulsion == 1.6F,
             "run config should parse procedural injector propulsion");
 }
