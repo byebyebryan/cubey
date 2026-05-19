@@ -21,6 +21,7 @@ struct ImageConfig {
     VkSampleCountFlagBits samples = VK_SAMPLE_COUNT_1_BIT;
     std::uint32_t mip_levels = 1;
     std::uint32_t array_layers = 1;
+    VkImageType image_type = VK_IMAGE_TYPE_2D;
     VkImageViewType view_type = VK_IMAGE_VIEW_TYPE_2D;
 };
 
@@ -72,10 +73,10 @@ class Image {
 [[nodiscard]] ImageConfig color_render_target_image_config(VkExtent2D extent, VkFormat format);
 [[nodiscard]] ImageConfig depth_image_config(VkExtent2D extent, VkFormat format);
 [[nodiscard]] ImageConfig storage_sampled_image_config(VkExtent2D extent, VkFormat format);
+[[nodiscard]] ImageConfig storage_sampled_volume_image_config(VkExtent3D extent, VkFormat format);
 [[nodiscard]] ImageConfig transfer_sampled_image_config(VkExtent2D extent, VkFormat format);
-[[nodiscard]] ImageConfig transfer_sampled_cube_image_config(std::uint32_t extent,
-                                                            std::uint32_t mip_levels,
-                                                            VkFormat format);
+[[nodiscard]] ImageConfig
+transfer_sampled_cube_image_config(std::uint32_t extent, std::uint32_t mip_levels, VkFormat format);
 struct BufferImageCopyConfig {
     VkExtent3D extent{1, 1, 1};
     VkDeviceSize buffer_offset = 0;

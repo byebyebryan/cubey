@@ -59,6 +59,14 @@ void Image::create(const Device& device, const ImageConfig& config) {
     if (config.view_type == VK_IMAGE_VIEW_TYPE_CUBE && config.array_layers != 6) {
         throw std::runtime_error("cube image views require exactly six array layers");
     }
+    if (config.image_type == VK_IMAGE_TYPE_3D) {
+        if (config.array_layers != 1) {
+            throw std::runtime_error("3D images require exactly one array layer");
+        }
+        if (config.view_type != VK_IMAGE_VIEW_TYPE_3D) {
+            throw std::runtime_error("3D images require 3D image views");
+        }
+    }
 
     format_ = config.format;
     extent_ = config.extent;
@@ -67,7 +75,7 @@ void Image::create(const Device& device, const ImageConfig& config) {
 
     auto image_info = vk_struct<VkImageCreateInfo>(VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO);
     image_info.flags = config.flags;
-    image_info.imageType = VK_IMAGE_TYPE_2D;
+    image_info.imageType = config.image_type;
     image_info.extent = extent_;
     image_info.mipLevels = mip_levels_;
     image_info.arrayLayers = array_layers_;
@@ -179,6 +187,18 @@ ImageConfig storage_sampled_image_config(VkExtent2D extent, VkFormat format) {
         .usage = VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT |
                  VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
         .aspect = VK_IMAGE_ASPECT_COLOR_BIT,
+    };
+}
+
+ImageConfig storage_sampled_volume_image_config(VkExtent3D extent, VkFormat format) {
+    return {
+        .extent = extent,
+        .format = format,
+        .usage = VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT |
+                 VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
+        .aspect = VK_IMAGE_ASPECT_COLOR_BIT,
+        .image_type = VK_IMAGE_TYPE_3D,
+        .view_type = VK_IMAGE_VIEW_TYPE_3D,
     };
 }
 

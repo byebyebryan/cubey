@@ -22,7 +22,7 @@ ShadowCubeApp::ShadowRenderGraph ShadowCubeApp::current_render_graph(
     const cubey::render::RenderGraphTextureHandle scene_color_handle =
         graph.create_texture(cubey::render::RenderGraphTextureDesc{
             .label = "scene color",
-            .extent = frame.color_target.extent,
+            .extent = {frame.color_target.extent.width, frame.color_target.extent.height, 1},
             .format = frame.color_target.format,
             .aspects = VK_IMAGE_ASPECT_COLOR_BIT,
         });

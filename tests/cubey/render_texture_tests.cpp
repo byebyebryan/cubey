@@ -39,6 +39,35 @@ void test_texture_2d_config_maps_storage_sampled_usage() {
             "storage sampled texture should support readback copies");
 }
 
+void test_texture_3d_config_maps_storage_sampled_volume_usage() {
+    const cubey::render::Texture3DConfig config{
+        .extent = {32, 24, 16},
+        .format = VK_FORMAT_R32G32B32A32_SFLOAT,
+        .create_sampler = true,
+        .sampler =
+            {
+                .address_mode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+            },
+    };
+
+    const cubey::vulkan::ImageConfig image_config = cubey::render::texture_3d_image_config(config);
+    require(image_config.extent.width == 32, "texture 3D config should preserve width");
+    require(image_config.extent.height == 24, "texture 3D config should preserve height");
+    require(image_config.extent.depth == 16, "texture 3D config should preserve depth");
+    require(image_config.format == VK_FORMAT_R32G32B32A32_SFLOAT,
+            "texture 3D config should preserve format");
+    require((image_config.usage & VK_IMAGE_USAGE_STORAGE_BIT) != 0,
+            "texture 3D should support storage writes");
+    require((image_config.usage & VK_IMAGE_USAGE_SAMPLED_BIT) != 0,
+            "texture 3D should support sampling");
+    require(image_config.image_type == VK_IMAGE_TYPE_3D, "texture 3D should request a 3D image");
+    require(image_config.view_type == VK_IMAGE_VIEW_TYPE_3D,
+            "texture 3D should request a 3D image view");
+
+    static_assert(!std::is_copy_constructible_v<cubey::render::Texture3D>);
+    static_assert(std::is_move_constructible_v<cubey::render::Texture3D>);
+}
+
 void test_texture_2d_config_maps_transfer_sampled_usage() {
     const cubey::render::Texture2DConfig config{
         .extent = {128, 72},

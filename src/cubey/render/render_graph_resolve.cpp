@@ -61,9 +61,12 @@ ColorTargetView resolved_color_target_view(const RenderGraphExecutionContext& co
     if (resource.desc.aspects != VK_IMAGE_ASPECT_COLOR_BIT) {
         throw std::runtime_error("render graph color target view requires a color texture");
     }
+    if (resource.desc.extent.depth != 1U) {
+        throw std::runtime_error("render graph color target view requires a 2D texture");
+    }
     const RenderGraphResolvedTexture resolved = context.resolved_texture(handle);
-    return color_target_view(resource.desc.extent, resource.desc.format, resolved.image,
-                             resolved.view);
+    return color_target_view({resource.desc.extent.width, resource.desc.extent.height},
+                             resource.desc.format, resolved.image, resolved.view);
 }
 
 RenderGraphSampledTextureView

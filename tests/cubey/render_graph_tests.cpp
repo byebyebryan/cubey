@@ -169,7 +169,7 @@ void test_render_graph_rejects_invalid_resource_descriptors_and_handles() {
             cubey::render::RenderGraphBuilder graph;
             (void)graph.create_texture(cubey::render::RenderGraphTextureDesc{
                 .label = "",
-                .extent = {1, 1},
+                .extent = {1, 1, 1},
                 .format = VK_FORMAT_R8G8B8A8_UNORM,
                 .aspects = VK_IMAGE_ASPECT_COLOR_BIT,
             });
@@ -180,7 +180,7 @@ void test_render_graph_rejects_invalid_resource_descriptors_and_handles() {
             cubey::render::RenderGraphBuilder graph;
             (void)graph.create_texture(cubey::render::RenderGraphTextureDesc{
                 .label = "missing extent",
-                .extent = {0, 1},
+                .extent = {0, 1, 1},
                 .format = VK_FORMAT_R8G8B8A8_UNORM,
                 .aspects = VK_IMAGE_ASPECT_COLOR_BIT,
             });
@@ -191,7 +191,7 @@ void test_render_graph_rejects_invalid_resource_descriptors_and_handles() {
             cubey::render::RenderGraphBuilder graph;
             (void)graph.create_texture(cubey::render::RenderGraphTextureDesc{
                 .label = "missing format",
-                .extent = {1, 1},
+                .extent = {1, 1, 1},
                 .format = VK_FORMAT_UNDEFINED,
                 .aspects = VK_IMAGE_ASPECT_COLOR_BIT,
             });

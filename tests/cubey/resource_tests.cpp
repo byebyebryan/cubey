@@ -113,6 +113,23 @@ void test_transfer_helpers_describe_texture_and_readback_paths() {
             "generated texture config should support readback copies");
     require(generated.aspect == VK_IMAGE_ASPECT_COLOR_BIT,
             "generated texture config should use color aspect");
+    require(generated.image_type == VK_IMAGE_TYPE_2D,
+            "generated texture config should default to 2D images");
+    require(generated.view_type == VK_IMAGE_VIEW_TYPE_2D,
+            "generated texture config should default to 2D image views");
+
+    const VkExtent3D volume_extent{32, 24, 16};
+    const cubey::vulkan::ImageConfig volume = cubey::vulkan::storage_sampled_volume_image_config(
+        volume_extent, VK_FORMAT_R32G32B32A32_SFLOAT);
+    require(volume.extent.width == 32 && volume.extent.height == 24 && volume.extent.depth == 16,
+            "volume texture config should preserve 3D extent");
+    require((volume.usage & VK_IMAGE_USAGE_STORAGE_BIT) != 0,
+            "volume texture config should support storage writes");
+    require((volume.usage & VK_IMAGE_USAGE_SAMPLED_BIT) != 0,
+            "volume texture config should support sampling");
+    require(volume.image_type == VK_IMAGE_TYPE_3D, "volume texture config should create 3D images");
+    require(volume.view_type == VK_IMAGE_VIEW_TYPE_3D,
+            "volume texture config should create 3D image views");
 
     const cubey::vulkan::ImageConfig uploaded =
         cubey::vulkan::transfer_sampled_image_config(extent, format);
@@ -141,8 +158,8 @@ void test_transfer_helpers_describe_texture_and_readback_paths() {
             "copy region should target color aspect");
     require(copy.imageSubresource.layerCount == 1, "copy region should target one layer");
 
-    const VkBufferImageCopy cube_copy = cubey::vulkan::buffer_image_copy(
-        cubey::vulkan::BufferImageCopyConfig{
+    const VkBufferImageCopy cube_copy =
+        cubey::vulkan::buffer_image_copy(cubey::vulkan::BufferImageCopyConfig{
             .extent = {16, 16, 1},
             .buffer_offset = 4096,
             .mip_level = 2,
@@ -150,8 +167,7 @@ void test_transfer_helpers_describe_texture_and_readback_paths() {
             .layer_count = 1,
         });
     require(cube_copy.bufferOffset == 4096, "copy region should preserve buffer offset");
-    require(cube_copy.imageSubresource.mipLevel == 2,
-            "copy region should preserve mip level");
+    require(cube_copy.imageSubresource.mipLevel == 2, "copy region should preserve mip level");
     require(cube_copy.imageSubresource.baseArrayLayer == 4,
             "copy region should preserve base array layer");
 

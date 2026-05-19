@@ -28,6 +28,13 @@ struct Texture2DConfig {
     cubey::vulkan::SamplerConfig sampler;
 };
 
+struct Texture3DConfig {
+    VkExtent3D extent{1, 1, 1};
+    VkFormat format = VK_FORMAT_UNDEFINED;
+    bool create_sampler = false;
+    cubey::vulkan::SamplerConfig sampler;
+};
+
 struct TextureFormatLayout {
     std::uint32_t block_width = 1;
     std::uint32_t block_height = 1;
@@ -77,20 +84,17 @@ struct UploadedTextureCubeConfig {
 };
 
 [[nodiscard]] cubey::vulkan::ImageConfig texture_2d_image_config(const Texture2DConfig& config);
-[[nodiscard]] cubey::vulkan::ImageConfig texture_cube_image_config(
-    const TextureCubeConfig& config);
+[[nodiscard]] cubey::vulkan::ImageConfig texture_3d_image_config(const Texture3DConfig& config);
+[[nodiscard]] cubey::vulkan::ImageConfig texture_cube_image_config(const TextureCubeConfig& config);
 [[nodiscard]] cubey::vulkan::ImageConfig
 depth_texture_image_config(const DepthTextureConfig& config);
 [[nodiscard]] TextureFormatLayout texture_format_layout(VkFormat format);
 [[nodiscard]] std::size_t texture_format_byte_size(VkFormat format);
 [[nodiscard]] VkExtent2D texture_2d_mip_extent(VkExtent2D extent, std::uint32_t mip_level);
-[[nodiscard]] std::size_t texture_2d_byte_size(VkExtent2D extent,
-                                               std::uint32_t mip_levels,
+[[nodiscard]] std::size_t texture_2d_byte_size(VkExtent2D extent, std::uint32_t mip_levels,
                                                VkFormat format);
-[[nodiscard]] std::uint32_t texture_cube_mip_extent(std::uint32_t extent,
-                                                    std::uint32_t mip_level);
-[[nodiscard]] std::size_t texture_cube_byte_size(std::uint32_t extent,
-                                                 std::uint32_t mip_levels,
+[[nodiscard]] std::uint32_t texture_cube_mip_extent(std::uint32_t extent, std::uint32_t mip_level);
+[[nodiscard]] std::size_t texture_cube_byte_size(std::uint32_t extent, std::uint32_t mip_levels,
                                                  std::size_t texel_bytes);
 
 class Texture2D {
@@ -113,6 +117,41 @@ class Texture2D {
         return image_.format();
     }
     [[nodiscard]] VkExtent2D extent() const;
+    [[nodiscard]] bool has_sampler() const {
+        return sampler_.has_value();
+    }
+    [[nodiscard]] const cubey::vulkan::Sampler& sampler() const;
+    [[nodiscard]] const cubey::vulkan::Image& image() const {
+        return image_;
+    }
+
+  private:
+    cubey::vulkan::Image image_;
+    std::optional<cubey::vulkan::Sampler> sampler_;
+};
+
+class Texture3D {
+  public:
+    Texture3D(const cubey::vulkan::Device& device, const Texture3DConfig& config);
+    ~Texture3D() = default;
+
+    Texture3D(const Texture3D&) = delete;
+    Texture3D& operator=(const Texture3D&) = delete;
+    Texture3D(Texture3D&& other) noexcept = default;
+    Texture3D& operator=(Texture3D&& other) noexcept = default;
+
+    [[nodiscard]] VkImage handle() const {
+        return image_.handle();
+    }
+    [[nodiscard]] VkImageView view() const {
+        return image_.view();
+    }
+    [[nodiscard]] VkFormat format() const {
+        return image_.format();
+    }
+    [[nodiscard]] VkExtent3D extent() const {
+        return image_.extent();
+    }
     [[nodiscard]] bool has_sampler() const {
         return sampler_.has_value();
     }

@@ -25,6 +25,15 @@ void validate_config(const Texture2DConfig& config) {
     }
 }
 
+void validate_config(const Texture3DConfig& config) {
+    if (config.extent.width == 0 || config.extent.height == 0 || config.extent.depth == 0) {
+        throw std::runtime_error("texture 3D extent must be nonzero");
+    }
+    if (config.format == VK_FORMAT_UNDEFINED) {
+        throw std::runtime_error("texture 3D format must be defined");
+    }
+}
+
 void validate_config(const TextureCubeConfig& config) {
     if (config.extent == 0) {
         throw std::runtime_error("texture cube extent must be nonzero");
@@ -46,8 +55,7 @@ void validate_config(const DepthTextureConfig& config) {
     }
 }
 
-[[nodiscard]] std::size_t checked_mul(std::size_t lhs, std::size_t rhs,
-                                      const char* message) {
+[[nodiscard]] std::size_t checked_mul(std::size_t lhs, std::size_t rhs, const char* message) {
     if (lhs != 0 && rhs > std::numeric_limits<std::size_t>::max() / lhs) {
         throw std::runtime_error(message);
     }
@@ -95,6 +103,11 @@ cubey::vulkan::ImageConfig texture_2d_image_config(const Texture2DConfig& config
     }
     image_config.mip_levels = config.mip_levels;
     return image_config;
+}
+
+cubey::vulkan::ImageConfig texture_3d_image_config(const Texture3DConfig& config) {
+    validate_config(config);
+    return cubey::vulkan::storage_sampled_volume_image_config(config.extent, config.format);
 }
 
 cubey::vulkan::ImageConfig texture_cube_image_config(const TextureCubeConfig& config) {
@@ -165,8 +178,8 @@ std::size_t texture_2d_byte_size(VkExtent2D extent, std::uint32_t mip_levels, Vk
         const VkExtent2D mip_extent = texture_2d_mip_extent(extent, mip);
         const std::size_t blocks_x = div_round_up(mip_extent.width, layout.block_width);
         const std::size_t blocks_y = div_round_up(mip_extent.height, layout.block_height);
-        const std::size_t blocks = checked_mul(blocks_x, blocks_y,
-                                               "texture 2D mip block count overflows");
+        const std::size_t blocks =
+            checked_mul(blocks_x, blocks_y, "texture 2D mip block count overflows");
         const std::size_t mip_bytes =
             checked_mul(blocks, layout.bytes_per_block, "texture 2D mip byte size overflows");
         total = checked_add(total, mip_bytes, "texture 2D byte size overflows");
@@ -189,9 +202,9 @@ std::size_t texture_cube_byte_size(std::uint32_t extent, std::uint32_t mip_level
     std::size_t total = 0;
     for (std::uint32_t mip = 0; mip < mip_levels; ++mip) {
         const std::uint32_t mip_extent = texture_cube_mip_extent(extent, mip);
-        const std::size_t texels = checked_mul(static_cast<std::size_t>(mip_extent),
-                                               static_cast<std::size_t>(mip_extent),
-                                               "texture cube mip texel count overflows");
+        const std::size_t texels =
+            checked_mul(static_cast<std::size_t>(mip_extent), static_cast<std::size_t>(mip_extent),
+                        "texture cube mip texel count overflows");
         const std::size_t face_bytes =
             checked_mul(texels, texel_bytes, "texture cube face byte size overflows");
         const std::size_t mip_bytes =
@@ -219,6 +232,20 @@ VkExtent2D Texture2D::extent() const {
 const cubey::vulkan::Sampler& Texture2D::sampler() const {
     if (!sampler_.has_value()) {
         throw std::runtime_error("texture has no sampler");
+    }
+    return sampler_.value();
+}
+
+Texture3D::Texture3D(const cubey::vulkan::Device& device, const Texture3DConfig& config)
+    : image_(device, texture_3d_image_config(config)) {
+    if (config.create_sampler) {
+        sampler_.emplace(device, config.sampler);
+    }
+}
+
+const cubey::vulkan::Sampler& Texture3D::sampler() const {
+    if (!sampler_.has_value()) {
+        throw std::runtime_error("texture 3D has no sampler");
     }
     return sampler_.value();
 }
@@ -270,8 +297,7 @@ Texture2D create_uploaded_texture_2d(const cubey::vulkan::Device& device,
     if (!config.bytes.empty() && !config.rgba8.empty()) {
         throw std::runtime_error("uploaded texture helper accepts one source byte span");
     }
-    const std::span<const std::uint8_t> source =
-        config.bytes.empty() ? config.rgba8 : config.bytes;
+    const std::span<const std::uint8_t> source = config.bytes.empty() ? config.rgba8 : config.bytes;
 
     std::vector<UploadedTexture2DMip> mips;
     if (config.mips.empty()) {
@@ -327,8 +353,8 @@ Texture2D create_uploaded_texture_2d(const cubey::vulkan::Device& device,
                                   .create_sampler = config.create_sampler,
                                   .sampler = config.sampler,
                               });
-    cubey::vulkan::Buffer staging(device, cubey::vulkan::staging_buffer_config(
-                                              static_cast<VkDeviceSize>(source.size())));
+    cubey::vulkan::Buffer staging(
+        device, cubey::vulkan::staging_buffer_config(static_cast<VkDeviceSize>(source.size())));
     staging.upload(source.data(), static_cast<VkDeviceSize>(source.size()));
 
     std::vector<VkBufferImageCopy> copies;
@@ -348,8 +374,7 @@ Texture2D create_uploaded_texture_2d(const cubey::vulkan::Device& device,
         .label = "upload texture 2D",
         .work =
             [source = staging.handle(), destination = texture.handle(),
-             mip_levels = config.mip_levels,
-             copies](cubey::vulkan::GpuOwnerContext& context) {
+             mip_levels = config.mip_levels, copies](cubey::vulkan::GpuOwnerContext& context) {
                 cubey::vulkan::ImmediateCommands commands(context);
                 cubey::vulkan::transition_image_layout(
                     commands.command_buffer(),
@@ -400,20 +425,18 @@ TextureCube create_uploaded_texture_cube(const cubey::vulkan::Device& device,
     VkDeviceSize offset = 0;
     for (std::uint32_t mip = 0; mip < config.mip_levels; ++mip) {
         const std::uint32_t mip_extent = texture_cube_mip_extent(config.extent, mip);
-        const VkDeviceSize face_bytes = static_cast<VkDeviceSize>(
-            checked_mul(checked_mul(static_cast<std::size_t>(mip_extent),
-                                    static_cast<std::size_t>(mip_extent),
-                                    "texture cube upload face texel count overflows"),
-                        texel_bytes, "texture cube upload face byte size overflows"));
+        const VkDeviceSize face_bytes = static_cast<VkDeviceSize>(checked_mul(
+            checked_mul(static_cast<std::size_t>(mip_extent), static_cast<std::size_t>(mip_extent),
+                        "texture cube upload face texel count overflows"),
+            texel_bytes, "texture cube upload face byte size overflows"));
         for (std::uint32_t face = 0; face < 6; ++face) {
-            copies.push_back(cubey::vulkan::buffer_image_copy(
-                cubey::vulkan::BufferImageCopyConfig{
-                    .extent = {mip_extent, mip_extent, 1},
-                    .buffer_offset = offset,
-                    .mip_level = mip,
-                    .base_array_layer = face,
-                    .layer_count = 1,
-                }));
+            copies.push_back(cubey::vulkan::buffer_image_copy(cubey::vulkan::BufferImageCopyConfig{
+                .extent = {mip_extent, mip_extent, 1},
+                .buffer_offset = offset,
+                .mip_level = mip,
+                .base_array_layer = face,
+                .layer_count = 1,
+            }));
             offset += face_bytes;
         }
     }

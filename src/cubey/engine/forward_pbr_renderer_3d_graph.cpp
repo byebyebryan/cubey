@@ -147,7 +147,7 @@ ForwardPbrRenderer3D::Impl::CompiledGraph ForwardPbrRenderer3D::Impl::current_re
     const render::RenderGraphTextureHandle scene_color =
         graph.create_texture(render::RenderGraphTextureDesc{
             .label = "scene color",
-            .extent = color_target.extent,
+            .extent = {color_target.extent.width, color_target.extent.height, 1},
             .format = config_.scene_color_format,
             .aspects = VK_IMAGE_ASPECT_COLOR_BIT,
         });

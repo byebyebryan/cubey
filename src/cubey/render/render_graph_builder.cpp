@@ -23,7 +23,7 @@ void validate_label(const std::string& label, const char* message) {
 
 void validate_texture_desc(const RenderGraphTextureDesc& desc) {
     validate_label(desc.label, "render graph texture label must be non-empty");
-    if (desc.extent.width == 0 || desc.extent.height == 0) {
+    if (desc.extent.width == 0 || desc.extent.height == 0 || desc.extent.depth == 0) {
         throw std::runtime_error("render graph texture extent must be nonzero");
     }
     if (desc.format == VK_FORMAT_UNDEFINED) {
@@ -168,14 +168,12 @@ RenderGraphPassBuilder::read_write_storage_buffer(RenderGraphBufferHandle handle
     return *this;
 }
 
-RenderGraphPassBuilder&
-RenderGraphPassBuilder::read_vertex_buffer(RenderGraphBufferHandle handle) {
+RenderGraphPassBuilder& RenderGraphPassBuilder::read_vertex_buffer(RenderGraphBufferHandle handle) {
     graph_->add_buffer_access(pass_index_, handle, RenderGraphBufferUsage::VertexRead);
     return *this;
 }
 
-RenderGraphPassBuilder&
-RenderGraphPassBuilder::read_index_buffer(RenderGraphBufferHandle handle) {
+RenderGraphPassBuilder& RenderGraphPassBuilder::read_index_buffer(RenderGraphBufferHandle handle) {
     graph_->add_buffer_access(pass_index_, handle, RenderGraphBufferUsage::IndexRead);
     return *this;
 }
@@ -209,7 +207,7 @@ RenderGraphBuilder::import_color_target(std::string label, ColorTargetView targe
     return import_texture(
         RenderGraphTextureDesc{
             .label = std::move(label),
-            .extent = target.extent,
+            .extent = {target.extent.width, target.extent.height, 1},
             .format = target.format,
             .aspects = VK_IMAGE_ASPECT_COLOR_BIT,
         },
@@ -223,7 +221,7 @@ RenderGraphBuilder::import_depth_target(std::string label, DepthTargetView targe
     return import_texture(
         RenderGraphTextureDesc{
             .label = std::move(label),
-            .extent = target.extent,
+            .extent = {target.extent.width, target.extent.height, 1},
             .format = target.format,
             .aspects = VK_IMAGE_ASPECT_DEPTH_BIT,
         },

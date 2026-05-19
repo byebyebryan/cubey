@@ -209,13 +209,19 @@ void test_run_config_parses_grid_dimensions() {
     std::array<char, 14> grid_height_flag{'-', '-', 'g', 'r', 'i', 'd', '-',
                                           'h', 'e', 'i', 'g', 'h', 't', '\0'};
     std::array<char, 4> grid_height_value{'7', '6', '8', '\0'};
-    std::array<char*, 5> argv{program.data(), grid_width_flag.data(), grid_width_value.data(),
-                              grid_height_flag.data(), grid_height_value.data()};
+    std::array<char, 13> grid_depth_flag{'-', '-', 'g', 'r', 'i', 'd', '-',
+                                         'd', 'e', 'p', 't', 'h', '\0'};
+    std::array<char, 3> grid_depth_value{'9', '6', '\0'};
+    std::array<char*, 7> argv{program.data(),           grid_width_flag.data(),
+                              grid_width_value.data(),  grid_height_flag.data(),
+                              grid_height_value.data(), grid_depth_flag.data(),
+                              grid_depth_value.data()};
 
     const cubey::RunConfig config =
         cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
     require(config.grid_width == 1024, "run config should parse grid width");
     require(config.grid_height == 768, "run config should parse grid height");
+    require(config.grid_depth == 96, "run config should parse grid depth");
 }
 
 void test_run_config_parses_injector_count() {

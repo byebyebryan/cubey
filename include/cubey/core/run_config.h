@@ -25,6 +25,7 @@ struct RunConfig {
     std::uint32_t height = 720;
     std::uint32_t grid_width = 0;
     std::uint32_t grid_height = 0;
+    std::uint32_t grid_depth = 0;
     std::uint32_t injectors = 0;
     float injector_force = 6.0F;
     float injector_propulsion = 1.0F;

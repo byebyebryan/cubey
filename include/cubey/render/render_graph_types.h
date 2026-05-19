@@ -97,7 +97,7 @@ struct RenderGraphBufferState {
 
 struct RenderGraphTextureDesc {
     std::string label{};
-    VkExtent2D extent{};
+    VkExtent3D extent{};
     VkFormat format = VK_FORMAT_UNDEFINED;
     VkImageAspectFlags aspects = 0;
 };

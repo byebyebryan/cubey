@@ -40,7 +40,7 @@ inline void require_throws(auto&& action, const char* message) {
 [[nodiscard]] inline cubey::render::RenderGraphTextureDesc color_texture_desc(const char* label) {
     return {
         .label = label,
-        .extent = {640, 360},
+        .extent = {640, 360, 1},
         .format = VK_FORMAT_R8G8B8A8_UNORM,
         .aspects = VK_IMAGE_ASPECT_COLOR_BIT,
     };
@@ -49,7 +49,7 @@ inline void require_throws(auto&& action, const char* message) {
 [[nodiscard]] inline cubey::render::RenderGraphTextureDesc depth_texture_desc(const char* label) {
     return {
         .label = label,
-        .extent = {1024, 1024},
+        .extent = {1024, 1024, 1},
         .format = VK_FORMAT_D32_SFLOAT,
         .aspects = VK_IMAGE_ASPECT_DEPTH_BIT,
     };

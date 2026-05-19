@@ -131,12 +131,16 @@ void RenderGraphResourceSet::allocate_transients(const cubey::vulkan::Device& de
             continue;
         }
         transient_textures_.emplace_back(
-            device, cubey::vulkan::ImageConfig{
-                        .extent = {texture.desc.extent.width, texture.desc.extent.height, 1},
-                        .format = texture.desc.format,
-                        .usage = usage_flags,
-                        .aspect = texture.desc.aspects,
-                    });
+            device,
+            cubey::vulkan::ImageConfig{
+                .extent = texture.desc.extent,
+                .format = texture.desc.format,
+                .usage = usage_flags,
+                .aspect = texture.desc.aspects,
+                .image_type = texture.desc.extent.depth > 1U ? VK_IMAGE_TYPE_3D : VK_IMAGE_TYPE_2D,
+                .view_type =
+                    texture.desc.extent.depth > 1U ? VK_IMAGE_VIEW_TYPE_3D : VK_IMAGE_VIEW_TYPE_2D,
+            });
         const cubey::vulkan::Image& image = transient_textures_.back();
         bind_texture(texture.handle, RenderGraphResolvedTexture{
                                          .image = image.handle(),

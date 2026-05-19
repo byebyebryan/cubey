@@ -125,6 +125,7 @@ void test_shadow_depth_pass_info_declares_depth_only_state();
 void test_shadow_map_depth_texture_config_describes_sampled_depth_target();
 void test_shadow_map_sampler_uses_depth_texture_defaults();
 void test_texture_2d_config_maps_storage_sampled_usage();
+void test_texture_3d_config_maps_storage_sampled_volume_usage();
 void test_texture_2d_config_maps_transfer_sampled_usage();
 void test_texture_2d_config_preserves_mip_count();
 void test_texture_2d_byte_size_uses_compressed_blocks();
@@ -250,6 +251,7 @@ std::span<const TestCase> render_test_cases() {
         CUBEY_TEST(test_render_target_rendering_info_describes_dynamic_rendering),
         CUBEY_TEST(test_depth_only_rendering_info_describes_sampled_depth_target),
         CUBEY_TEST(test_texture_2d_config_maps_storage_sampled_usage),
+        CUBEY_TEST(test_texture_3d_config_maps_storage_sampled_volume_usage),
         CUBEY_TEST(test_texture_2d_config_maps_transfer_sampled_usage),
         CUBEY_TEST(test_texture_2d_config_preserves_mip_count),
         CUBEY_TEST(test_texture_2d_byte_size_uses_compressed_blocks),
