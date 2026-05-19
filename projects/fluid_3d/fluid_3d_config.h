@@ -37,7 +37,15 @@ struct Fluid3DConfig {
     float velocity_decay_per_second = 0.99F;
     float injector_radius = 0.05F;
     float injector_strength = 6.0F;
+    float injector_propulsion_strength = 1.0F;
     float injector_velocity_scale = 1.3F;
+    float injector_orbit_radius = 0.25F;
+    float injector_orbit_radius_spread = 0.22F;
+    float injector_orbit_angular_speed = 0.0F;
+    float injector_orbit_angular_speed_spread = 0.8F;
+    float injector_orbit_phase_spread = 1.0F;
+    float injector_orbit_inclination_degrees = 0.0F;
+    float injector_orbit_inclination_spread_degrees = 60.0F;
     float vorticity_strength = 1.0F;
     float absorption = 8.0F;
     float emission = 2.0F;
@@ -137,6 +145,15 @@ struct Fluid3DConfig {
         result.injector_count = config.injectors;
     }
     result.injector_strength = config.injector_force;
+    result.injector_propulsion_strength = config.injector_propulsion;
+    result.injector_orbit_radius = config.injector_orbit_radius;
+    result.injector_orbit_radius_spread = config.injector_orbit_radius_spread;
+    result.injector_orbit_angular_speed = config.injector_orbit_angular_speed;
+    result.injector_orbit_angular_speed_spread = config.injector_orbit_angular_speed_spread;
+    result.injector_orbit_phase_spread = config.injector_orbit_phase_spread;
+    result.injector_orbit_inclination_degrees = config.injector_orbit_inclination_degrees;
+    result.injector_orbit_inclination_spread_degrees =
+        config.injector_orbit_inclination_spread_degrees;
     static_cast<void>(volume_cell_count(result));
     static_cast<void>(shadow_volume_cell_count(result));
     return result;

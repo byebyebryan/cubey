@@ -18,6 +18,7 @@ struct Fluid3DInjectorState {
     float phase = 0.0F;
     float radius = 0.0F;
     float speed = 0.0F;
+    float inclination_radians = 0.0F;
 };
 
 struct Fluid3DInjectorGpu {

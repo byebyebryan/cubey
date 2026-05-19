@@ -222,6 +222,23 @@ class Fluid3DApp {
                            "%.3f");
         ImGui::SliderFloat("Injection force", &fluid_config_.injector_strength, 0.0F, 12.0F,
                            "%.2f");
+        ImGui::SliderFloat("Propulsion", &fluid_config_.injector_propulsion_strength, 0.0F, 3.0F,
+                           "%.2f");
+        ImGui::SliderFloat("Orbit radius", &fluid_config_.injector_orbit_radius, 0.06F, 0.42F,
+                           "%.3f");
+        ImGui::SliderFloat("Radius spread", &fluid_config_.injector_orbit_radius_spread, 0.0F,
+                           0.50F, "%.3f");
+        ImGui::SliderFloat("Orbit speed", &fluid_config_.injector_orbit_angular_speed, -2.0F,
+                           2.0F, "%.2f");
+        ImGui::SliderFloat("Speed spread", &fluid_config_.injector_orbit_angular_speed_spread,
+                           0.0F, 4.0F, "%.2f");
+        ImGui::SliderFloat("Inclination", &fluid_config_.injector_orbit_inclination_degrees,
+                           -80.0F, 80.0F, "%.1f");
+        ImGui::SliderFloat("Inclination spread",
+                           &fluid_config_.injector_orbit_inclination_spread_degrees, 0.0F,
+                           160.0F, "%.1f");
+        ImGui::SliderFloat("Phase spread", &fluid_config_.injector_orbit_phase_spread, 0.0F, 1.0F,
+                           "%.2f");
         ImGui::SliderFloat("Vorticity", &fluid_config_.vorticity_strength, 0.0F, 1.5F, "%.2f");
         ImGui::SliderFloat("Absorption", &fluid_config_.absorption, 0.5F, 12.0F, "%.2f");
         ImGui::SliderFloat("Light", &fluid_config_.emission, 0.1F, 4.0F, "%.2f");

@@ -115,6 +115,14 @@ RunConfig parse_run_config(int argc, char** argv) {
         } else if (arg == "--injector-orbit-phase-spread") {
             config.injector_orbit_phase_spread = parse_float(
                 need_value("--injector-orbit-phase-spread"), "--injector-orbit-phase-spread");
+        } else if (arg == "--injector-orbit-inclination" ||
+                   arg == "--injector-orbit-inclination-degrees") {
+            config.injector_orbit_inclination_degrees =
+                parse_float(need_value(arg), "--injector-orbit-inclination-degrees");
+        } else if (arg == "--injector-orbit-inclination-spread" ||
+                   arg == "--injector-orbit-inclination-spread-degrees") {
+            config.injector_orbit_inclination_spread_degrees = parse_float(
+                need_value(arg), "--injector-orbit-inclination-spread-degrees");
         } else if (arg == "--frames") {
             config.frames = parse_u32(need_value("--frames"), "--frames");
         } else if (arg == "--fps") {
@@ -187,6 +195,9 @@ RunConfig parse_run_config(int argc, char** argv) {
     }
     if (config.injector_orbit_phase_spread < 0.0F) {
         throw std::runtime_error("injector orbit phase spread must be nonnegative");
+    }
+    if (config.injector_orbit_inclination_spread_degrees < 0.0F) {
+        throw std::runtime_error("injector orbit inclination spread must be nonnegative");
     }
     if (config.capture_mode == CaptureMode::Video) {
         if (!config.headless) {

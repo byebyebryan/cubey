@@ -39,6 +39,8 @@ struct RunConfig {
     float injector_orbit_angular_speed = 0.0F;
     float injector_orbit_angular_speed_spread = 0.8F;
     float injector_orbit_phase_spread = 1.0F;
+    float injector_orbit_inclination_degrees = 0.0F;
+    float injector_orbit_inclination_spread_degrees = 60.0F;
     std::uint32_t frames = 0;
     std::uint32_t fps = 60;
     std::filesystem::path input_path{};

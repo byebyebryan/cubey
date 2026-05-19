@@ -275,7 +275,11 @@ void test_run_config_parses_injector_orbit_controls() {
     std::string speed_spread_value = "1.5";
     std::string phase_spread_flag = "--injector-orbit-phase-spread";
     std::string phase_spread_value = "0.75";
-    std::array<char*, 11> argv{program.data(),
+    std::string inclination_flag = "--injector-orbit-inclination-degrees";
+    std::string inclination_value = "12.5";
+    std::string inclination_spread_flag = "--injector-orbit-inclination-spread-degrees";
+    std::string inclination_spread_value = "45.0";
+    std::array<char*, 15> argv{program.data(),
                                radius_flag.data(),
                                radius_value.data(),
                                radius_spread_flag.data(),
@@ -285,7 +289,11 @@ void test_run_config_parses_injector_orbit_controls() {
                                speed_spread_flag.data(),
                                speed_spread_value.data(),
                                phase_spread_flag.data(),
-                               phase_spread_value.data()};
+                               phase_spread_value.data(),
+                               inclination_flag.data(),
+                               inclination_value.data(),
+                               inclination_spread_flag.data(),
+                               inclination_spread_value.data()};
 
     const cubey::RunConfig config =
         cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
@@ -299,6 +307,10 @@ void test_run_config_parses_injector_orbit_controls() {
             "run config should parse procedural injector orbit angular speed spread");
     require(config.injector_orbit_phase_spread == 0.75F,
             "run config should parse procedural injector orbit phase spread");
+    require(config.injector_orbit_inclination_degrees == 12.5F,
+            "run config should parse procedural injector orbit inclination");
+    require(config.injector_orbit_inclination_spread_degrees == 45.0F,
+            "run config should parse procedural injector orbit inclination spread");
 }
 
 void test_run_config_parses_injector_force_controls() {

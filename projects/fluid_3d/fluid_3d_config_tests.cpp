@@ -73,6 +73,22 @@ int main() {
                 "fluid 3D injector radius should match the tuned default");
         require(config.injector_strength == 6.0F,
                 "fluid 3D injector force should match the shared CLI default");
+        require(config.injector_propulsion_strength == 1.0F,
+                "fluid 3D injector propulsion should default to neutral scaling");
+        require(config.injector_orbit_radius == 0.25F,
+                "fluid 3D injector orbit radius should default near volume center");
+        require(config.injector_orbit_radius_spread == 0.22F,
+                "fluid 3D injector orbit radius spread should default to a broad band");
+        require(config.injector_orbit_angular_speed == 0.0F,
+                "fluid 3D injector orbit speed should default to a centered signed band");
+        require(config.injector_orbit_angular_speed_spread == 0.8F,
+                "fluid 3D injector speed spread should default to mixed directions");
+        require(config.injector_orbit_phase_spread == 1.0F,
+                "fluid 3D injector phase spread should default around a full turn");
+        require(config.injector_orbit_inclination_degrees == 0.0F,
+                "fluid 3D injector inclination should default to horizontal orbits");
+        require(config.injector_orbit_inclination_spread_degrees == 60.0F,
+                "fluid 3D injector inclination spread should default to tilted 3D orbits");
         require(config.vorticity_strength == 1.0F,
                 "fluid 3D vorticity should match the tuned default");
         require(config.absorption == 8.0F,
@@ -115,6 +131,14 @@ int main() {
         run_config.shadow_update_interval = 3;
         run_config.injectors = 8;
         run_config.injector_force = 7.5F;
+        run_config.injector_propulsion = 1.6F;
+        run_config.injector_orbit_radius = 0.24F;
+        run_config.injector_orbit_radius_spread = 0.18F;
+        run_config.injector_orbit_angular_speed = 0.1F;
+        run_config.injector_orbit_angular_speed_spread = 1.2F;
+        run_config.injector_orbit_phase_spread = 0.75F;
+        run_config.injector_orbit_inclination_degrees = 10.0F;
+        run_config.injector_orbit_inclination_spread_degrees = 50.0F;
         const cubey::projects::fluid_3d::Fluid3DConfig configured =
             cubey::projects::fluid_3d::fluid_3d_config_from_run_config(run_config);
         require(configured.grid_width == 64, "fluid 3D config should honor run config width");
@@ -134,6 +158,22 @@ int main() {
                 "fluid 3D config should honor run config injector count");
         require(configured.injector_strength == 7.5F,
                 "fluid 3D config should honor run config injector force");
+        require(configured.injector_propulsion_strength == 1.6F,
+                "fluid 3D config should honor run config injector propulsion");
+        require(configured.injector_orbit_radius == 0.24F,
+                "fluid 3D config should honor run config injector orbit radius");
+        require(configured.injector_orbit_radius_spread == 0.18F,
+                "fluid 3D config should honor run config injector orbit radius spread");
+        require(configured.injector_orbit_angular_speed == 0.1F,
+                "fluid 3D config should honor run config injector orbit speed");
+        require(configured.injector_orbit_angular_speed_spread == 1.2F,
+                "fluid 3D config should honor run config injector speed spread");
+        require(configured.injector_orbit_phase_spread == 0.75F,
+                "fluid 3D config should honor run config injector phase spread");
+        require(configured.injector_orbit_inclination_degrees == 10.0F,
+                "fluid 3D config should honor run config injector inclination");
+        require(configured.injector_orbit_inclination_spread_degrees == 50.0F,
+                "fluid 3D config should honor run config injector inclination spread");
 
         bool threw_for_too_many_injectors = false;
         try {
@@ -153,6 +193,13 @@ int main() {
         require(injectors.size() == 8, "fluid 3D injector state should match configured count");
         require(injectors.front().radius < injectors.back().radius,
                 "fluid 3D injector radii should spread through the volume");
+        require(injectors.front().speed < configured.injector_orbit_angular_speed &&
+                    injectors.back().speed > configured.injector_orbit_angular_speed,
+                "fluid 3D injector speeds should spread around the configured base speed");
+        require(injectors.front().inclination_radians < injectors.back().inclination_radians,
+                "fluid 3D injector inclinations should spread across the configured band");
+        require(injectors[1].phase > injectors[0].phase,
+                "fluid 3D injector phases should spread across the configured phase range");
         require(length_squared(injectors.front().color) > 0.0F,
                 "fluid 3D injectors should carry display color");
         const std::array<float, 3> initial_position = injectors.front().position;
@@ -163,6 +210,17 @@ int main() {
                 "fluid 3D GPU injector should carry configured radius");
         require(gpu_injectors.front().velocity_strength[3] == configured.injector_strength,
                 "fluid 3D GPU injector should carry configured force");
+        cubey::projects::fluid_3d::Fluid3DConfig no_propulsion_config = configured;
+        no_propulsion_config.injector_propulsion_strength = 0.0F;
+        const std::vector<cubey::projects::fluid_3d::Fluid3DInjectorGpu> no_propulsion_gpu =
+            cubey::projects::fluid_3d::fluid_3d_injectors_to_gpu(injectors, no_propulsion_config);
+        require(length_squared({gpu_injectors.front().velocity_strength[0],
+                                gpu_injectors.front().velocity_strength[1],
+                                gpu_injectors.front().velocity_strength[2]}) !=
+                    length_squared({no_propulsion_gpu.front().velocity_strength[0],
+                                    no_propulsion_gpu.front().velocity_strength[1],
+                                    no_propulsion_gpu.front().velocity_strength[2]}),
+                "fluid 3D GPU injector should add opposite-direction propulsion to carry velocity");
 
         const cubey::FrameTiming timing{
             .delta_seconds = configured.fixed_delta_seconds,
