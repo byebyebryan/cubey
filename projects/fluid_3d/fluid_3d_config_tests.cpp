@@ -120,6 +120,16 @@ int main() {
                     cubey::projects::fluid_3d::Fluid3DDebugView::Smoke,
                 "fluid 3D debug view should cycle from velocity to smoke");
 
+        cubey::RunConfig default_fire_run_config;
+        default_fire_run_config.fluid_scenario = "fire";
+        const cubey::projects::fluid_3d::Fluid3DConfig default_fire_config =
+            cubey::projects::fluid_3d::fluid_3d_config_from_run_config(default_fire_run_config);
+        require(default_fire_config.source_count == 1,
+                "fluid 3D fire should default to a single burner source");
+        require(default_fire_config.source_radius >
+                    cubey::projects::fluid_3d::kDefaultFluid3DSourceRadius,
+                "fluid 3D fire should default to a wider burner source");
+
         cubey::RunConfig run_config;
         run_config.grid_width = 64;
         run_config.grid_height = 48;
@@ -285,8 +295,28 @@ int main() {
                 "fluid 3D fire should use less soot than the smoke plume");
         require(fire_sources.front().material_amount[1] > fire_config.source_heat_amount,
                 "fluid 3D fire should boost heat");
-        require(fire_sources.front().material_amount[2] == fire_config.source_flame_amount,
-                "fluid 3D fire should carry flame amount");
+        require(fire_sources.front().material_amount[2] > fire_config.source_flame_amount,
+                "fluid 3D fire should boost flame amount");
+        const std::vector<cubey::projects::fluid_3d::Fluid3DSourceGpu> early_fire_gpu =
+            cubey::projects::fluid_3d::update_fluid_3d_sources(
+                fire_sources, fire_config,
+                {
+                    .delta_seconds = fire_config.fixed_delta_seconds,
+                    .elapsed_seconds = 0.25,
+                    .frame_index = 1,
+                });
+        const std::vector<cubey::projects::fluid_3d::Fluid3DSourceGpu> later_fire_gpu =
+            cubey::projects::fluid_3d::update_fluid_3d_sources(
+                fire_sources, fire_config,
+                {
+                    .delta_seconds = fire_config.fixed_delta_seconds,
+                    .elapsed_seconds = 0.75,
+                    .frame_index = 2,
+                });
+        require(early_fire_gpu.front().position_radius != later_fire_gpu.front().position_radius,
+                "fluid 3D fire source turbulence should jitter source position/radius over time");
+        require(early_fire_gpu.front().material_amount[2] != later_fire_gpu.front().material_amount[2],
+                "fluid 3D fire source turbulence should flicker flame over time");
 
         require(cubey::projects::fluid_3d::fluid_3d_headless_frame_count(run_config) == 120,
                 "fluid 3D headless PNG should default to a settled simulation frame");
@@ -321,6 +351,12 @@ int main() {
                          "fluid 3D correction pass should inject semantic smoke");
         require_contains(advect_correct_shader, "heat_impulse",
                          "fluid 3D correction pass should inject semantic heat");
+        require_contains(advect_correct_shader, "spent_flame",
+                         "fluid 3D correction pass should turn spent flame into smoke");
+        require_contains(advect_correct_shader, "source_turbulence",
+                         "fluid 3D correction pass should warp fire source injection");
+        require_contains(advect_correct_shader, "flame_shredding_force",
+                         "fluid 3D correction pass should shred flame edges from heat gradients");
         require_contains(advect_correct_shader, "buoyancy_force",
                          "fluid 3D correction pass should apply buoyancy");
         require_contains(render_shader, "sampler3D",
@@ -329,8 +365,12 @@ int main() {
                          "fluid 3D render shader should shade smoke as material, not RGB dye");
         require_contains(render_shader, "flame_emission",
                          "fluid 3D render shader should expose semantic flame emission");
-        require_contains(render_shader, "flame_alpha",
+        require_contains(render_shader, "flame_transfer",
+                         "fluid 3D render shader should sharpen the flame transfer function");
+        require_contains(render_shader, "flame_emission(density, position) * step_length",
                          "fluid 3D render shader should accumulate visible flame emission");
+        require_contains(render_shader, "soot_cutoff",
+                         "fluid 3D render shader should keep flame separate from smoke");
         require_contains(shadow_shader, "light_transmittance",
                          "fluid 3D shadow shader should precompute volume light transmittance");
         require_contains(shadow_shader, "soot_density_at",

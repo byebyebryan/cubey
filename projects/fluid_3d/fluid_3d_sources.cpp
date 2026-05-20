@@ -12,6 +12,7 @@ namespace {
 constexpr float kTau = 6.28318530718F;
 constexpr std::array<float, 3> kPlumeCenter{0.5F, 0.10F, 0.5F};
 constexpr std::array<float, 3> kExplosionCenter{0.5F, 0.24F, 0.5F};
+constexpr float kFireTurbulenceRadius = 0.006F;
 
 [[nodiscard]] std::array<float, 3> add(std::array<float, 3> lhs,
                                        std::array<float, 3> rhs) {
@@ -20,6 +21,14 @@ constexpr std::array<float, 3> kExplosionCenter{0.5F, 0.24F, 0.5F};
 
 [[nodiscard]] std::array<float, 3> scale(std::array<float, 3> value, float amount) {
     return {value[0] * amount, value[1] * amount, value[2] * amount};
+}
+
+[[nodiscard]] std::array<float, 3> clamp01(std::array<float, 3> value) {
+    return {
+        std::clamp(value[0], 0.035F, 0.965F),
+        std::clamp(value[1], 0.035F, 0.965F),
+        std::clamp(value[2], 0.035F, 0.965F),
+    };
 }
 
 [[nodiscard]] float length(std::array<float, 3> value) {
@@ -96,20 +105,20 @@ constexpr std::array<float, 3> kExplosionCenter{0.5F, 0.24F, 0.5F};
 
 [[nodiscard]] Fluid3DSourceState create_fire_source(const Fluid3DConfig& config,
                                                     std::uint32_t index) {
-    const std::array<float, 3> offset = scale(plume_disk_offset(index, config.source_count), 0.72F);
+    const std::array<float, 3> offset = scale(plume_disk_offset(index, config.source_count), 1.05F);
     const std::array<float, 3> swirl_direction = normalize_or_zero({offset[2], 0.0F, -offset[0]});
     const std::array<float, 3> velocity =
-        normalize_or_zero(add({0.0F, 1.0F, 0.0F}, scale(swirl_direction, 0.12F)));
+        normalize_or_zero(add({0.0F, 1.0F, 0.0F}, scale(swirl_direction, 0.22F)));
     return {
         .position = add(kPlumeCenter, offset),
         .velocity = velocity,
         .material_amount =
             {
-                config.source_smoke_amount * 0.34F,
-                config.source_heat_amount * 1.85F,
-                config.source_flame_amount,
+                config.source_smoke_amount * 0.035F,
+                config.source_heat_amount * 2.20F,
+                config.source_flame_amount * 1.80F,
             },
-        .radius = config.source_radius * 0.82F,
+        .radius = config.source_radius,
     };
 }
 
@@ -123,6 +132,31 @@ constexpr std::array<float, 3> kExplosionCenter{0.5F, 0.24F, 0.5F};
         return create_fire_source(config, index);
     }
     return create_plume_source(config, index);
+}
+
+void apply_fire_turbulence(Fluid3DSourceState& source, std::uint32_t index, float time) {
+    const float source_index = static_cast<float>(index);
+    const float phase = source_index * 2.173F;
+    const float drift = time * (1.05F + source_index * 0.11F) + phase;
+    const float swell = time * (0.52F + source_index * 0.07F) + phase * 1.9F;
+    const float drift_wave = 0.5F + 0.5F * std::sin(drift);
+    const float swell_wave = 0.5F + 0.5F * std::sin(swell);
+    const std::array<float, 3> position_jitter{
+        std::sin(drift) * kFireTurbulenceRadius,
+        (0.5F + 0.5F * std::sin(swell + 1.7F)) * kFireTurbulenceRadius * 0.25F,
+        std::cos(drift * 0.83F + 0.6F) * kFireTurbulenceRadius,
+    };
+    source.position = clamp01(add(source.position, position_jitter));
+    source.velocity =
+        normalize_or_zero(add(source.velocity,
+                              {
+                                  std::sin(swell * 1.3F) * 0.09F,
+                                  std::sin(drift * 0.7F + 0.4F) * 0.025F,
+                                  std::cos(swell * 1.1F + 0.8F) * 0.09F,
+                              }));
+    source.material_amount[1] *= 0.96F + swell_wave * 0.08F;
+    source.material_amount[2] *= 0.92F + swell_wave * 0.12F + drift_wave * 0.04F;
+    source.radius *= 0.96F + swell_wave * 0.08F;
 }
 
 [[nodiscard]] float source_emission_scale(const Fluid3DConfig& config, const FrameTiming& timing) {
@@ -202,6 +236,9 @@ update_fluid_3d_sources(std::vector<Fluid3DSourceState>& sources, const Fluid3DC
     }
     for (std::uint32_t index = 0; index < config.source_count; ++index) {
         sources[index] = create_source(config, index);
+        if (config.scenario == Fluid3DScenario::Fire) {
+            apply_fire_turbulence(sources[index], index, static_cast<float>(timing.elapsed_seconds));
+        }
     }
     return fluid_3d_sources_to_gpu(sources, config, source_emission_scale(config, timing));
 }

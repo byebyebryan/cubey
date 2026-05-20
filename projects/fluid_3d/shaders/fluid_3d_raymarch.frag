@@ -76,18 +76,38 @@ vec3 velocity_debug_color(vec3 velocity) {
 }
 
 vec3 smoke_albedo(vec4 density) {
-    float heat = clamp(density.g * 0.25, 0.0, 1.0);
+    float heat = clamp(density.g * 0.06, 0.0, 1.0);
     vec3 cool_soot = vec3(0.34, 0.33, 0.31);
-    vec3 warm_soot = vec3(0.55, 0.46, 0.35);
+    vec3 warm_soot = vec3(0.44, 0.39, 0.33);
     return mix(cool_soot, warm_soot, heat);
 }
 
-vec3 flame_emission(vec4 density) {
+float flame_transfer(float flame, float heat, float soot, vec3 position) {
+    float flame_mask = smoothstep(0.055, 0.34, flame);
+    float heat_mask = smoothstep(0.035, 0.70, heat);
+    float soot_cutoff = 1.0 - smoothstep(0.36, 1.45, soot);
+    float lower_volume = 1.0 - smoothstep(0.24, 0.82, position.y);
+    return pow(flame_mask * heat_mask * soot_cutoff, 1.75) * mix(0.25, 1.0, lower_volume);
+}
+
+vec3 flame_color(float heat, float core) {
+    vec3 ember = vec3(1.0, 0.16, 0.025);
+    vec3 orange = vec3(1.0, 0.42, 0.08);
+    vec3 yellow = vec3(1.0, 0.78, 0.28);
+    vec3 white_hot = vec3(1.0, 0.93, 0.66);
+    vec3 warm = mix(ember, orange, smoothstep(0.05, 0.34, heat));
+    vec3 hot = mix(yellow, white_hot, core);
+    return mix(warm, hot, smoothstep(0.28, 1.0, heat + core * 0.45));
+}
+
+vec3 flame_emission(vec4 density, vec3 position) {
     float flame = max(density.b, 0.0);
     float heat = max(density.g, 0.0);
-    vec3 flame_color = mix(vec3(1.0, 0.30, 0.05), vec3(1.0, 0.82, 0.32),
-                           clamp(heat * 0.25, 0.0, 1.0));
-    return flame_color * flame * params.render_options.y * 1.4;
+    float soot = max(density.r, 0.0);
+    float flame_value = flame_transfer(flame, heat, soot, position);
+    float core = pow(smoothstep(0.20, 0.95, flame) * smoothstep(0.20, 1.10, heat), 2.2);
+    return flame_color(clamp(heat * 0.34, 0.0, 1.4), core) * flame_value *
+           params.render_options.y * 8.0;
 }
 
 void main() {
@@ -140,7 +160,6 @@ void main() {
         vec4 density = density_at(position);
         float smoke_density_value = smoke_density(density, position);
         float smoke_extinction = smoke_density_value * params.render_options.x;
-        float flame_alpha = 1.0 - exp(-max(density.b, 0.0) * step_length * 0.75);
         float base_extinction = base_volume_extinction();
         float smoke_alpha = 1.0 - exp(-smoke_extinction * step_length);
         float base_alpha = 1.0 - exp(-base_extinction * step_length);
@@ -157,8 +176,7 @@ void main() {
         vec3 base_color = (sky_color * 0.45 + light_color * 0.12) * ambient_shadow;
         accumulated += transmittance * base_color * base_alpha;
         accumulated += transmittance * smoke_albedo(density) * lighting * smoke_alpha;
-        accumulated += transmittance * flame_emission(density) * step_length *
-                       max(smoke_alpha, flame_alpha);
+        accumulated += transmittance * flame_emission(density, position) * step_length;
         transmittance *= exp(-(base_extinction + smoke_extinction + max(density.b, 0.0) * 0.12) *
                               step_length);
         if (transmittance < 0.01) {

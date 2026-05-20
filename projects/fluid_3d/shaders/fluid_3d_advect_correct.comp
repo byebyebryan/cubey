@@ -145,6 +145,68 @@ vec3 source_velocity_average(ivec3 coord) {
     return result / 27.0;
 }
 
+float hash31(vec3 value) {
+    return fract(sin(dot(value, vec3(12.9898, 78.233, 37.719))) * 43758.5453);
+}
+
+float source_noise(vec3 value) {
+    vec3 cell = floor(value);
+    vec3 f = fract(value);
+    f = f * f * (3.0 - 2.0 * f);
+
+    float n000 = hash31(cell + vec3(0.0, 0.0, 0.0));
+    float n100 = hash31(cell + vec3(1.0, 0.0, 0.0));
+    float n010 = hash31(cell + vec3(0.0, 1.0, 0.0));
+    float n110 = hash31(cell + vec3(1.0, 1.0, 0.0));
+    float n001 = hash31(cell + vec3(0.0, 0.0, 1.0));
+    float n101 = hash31(cell + vec3(1.0, 0.0, 1.0));
+    float n011 = hash31(cell + vec3(0.0, 1.0, 1.0));
+    float n111 = hash31(cell + vec3(1.0, 1.0, 1.0));
+
+    float z0 = mix(mix(n000, n100, f.x), mix(n010, n110, f.x), f.y);
+    float z1 = mix(mix(n001, n101, f.x), mix(n011, n111, f.x), f.y);
+    return mix(z0, z1, f.z);
+}
+
+vec3 source_turbulence(vec3 uv, float source_index, float time) {
+    vec3 coord = uv * 18.0 + vec3(source_index * 3.71, time * 0.65, -time * 0.45);
+    return vec3(source_noise(coord), source_noise(coord + vec3(17.0)),
+                source_noise(coord + vec3(31.0))) *
+               2.0 -
+           vec3(1.0);
+}
+
+vec3 heat_gradient(ivec3 coord) {
+    return vec3(load_density_source(coord + ivec3(1, 0, 0)).g -
+                    load_density_source(coord - ivec3(1, 0, 0)).g,
+                load_density_source(coord + ivec3(0, 1, 0)).g -
+                    load_density_source(coord - ivec3(0, 1, 0)).g,
+                load_density_source(coord + ivec3(0, 0, 1)).g -
+                    load_density_source(coord - ivec3(0, 0, 1)).g) *
+           0.5;
+}
+
+vec3 flame_shredding_force(ivec3 coord, vec3 uv, vec4 density, float time) {
+    vec3 gradient = heat_gradient(coord);
+    float gradient_strength = length(gradient);
+    if (gradient_strength <= 0.0001) {
+        return vec3(0.0);
+    }
+
+    vec3 normal = gradient / gradient_strength;
+    vec3 noise = source_turbulence(uv * 1.7 + vec3(0.0, time * 0.025, 0.0), 11.0, time);
+    vec3 tangent = noise - normal * dot(noise, normal);
+    float tangent_strength = length(tangent);
+    if (tangent_strength <= 0.0001) {
+        return vec3(0.0);
+    }
+
+    float flame_signal = smoothstep(0.020, 0.45, density.b);
+    float heat_signal = smoothstep(0.020, 0.70, density.g);
+    float edge_signal = clamp(gradient_strength * 16.0, 0.0, 1.0) * flame_signal * heat_signal;
+    return tangent / tangent_strength * edge_signal;
+}
+
 void main() {
     ivec3 coord = ivec3(gl_GlobalInvocationID.xyz);
     ivec3 size = ivec3(params.grid_dt_time.xyz);
@@ -169,10 +231,13 @@ void main() {
     VolumeBounds bounds = source_bounds(previous_uv);
     float decay_scale = dt * 60.0;
     vec4 density_decay = vec4(pow(params.decay_force.x, decay_scale),
-                              pow(params.decay_force.x, decay_scale * 1.20),
-                              pow(params.decay_force.x, decay_scale * 1.80),
+                              pow(params.decay_force.x, decay_scale * 2.20),
+                              pow(params.decay_force.x, decay_scale * 9.00),
                               pow(params.decay_force.x, decay_scale));
-    density = clamp(density, bounds.density_min, bounds.density_max) * density_decay;
+    vec4 limited_density = clamp(density, bounds.density_min, bounds.density_max);
+    float spent_flame = max(limited_density.b * (1.0 - density_decay.z), 0.0);
+    density = limited_density * density_decay;
+    density.r += spent_flame * 0.22;
     velocity = clamp(velocity, bounds.velocity_min, bounds.velocity_max) *
                pow(params.decay_force.y, decay_scale);
 
@@ -193,9 +258,19 @@ void main() {
         if (dot(material_amount, vec3(1.0)) <= 0.0 && velocity_strength <= 0.0) {
             continue;
         }
-        vec3 delta = uv - source.position_radius.xyz;
+        float flame_weight = smoothstep(0.01, 0.25, material_amount.z);
         float radius = max(source.position_radius.w, 0.0001);
+        vec3 warp =
+            source_turbulence(uv, float(i), params.options.w) * radius * 0.20 * flame_weight;
+        vec3 delta = (uv + warp) - source.position_radius.xyz;
         float falloff = exp(-dot(delta, delta) / (radius * radius));
+        float breakup = mix(
+            1.0,
+            0.86 +
+                0.28 * source_noise(uv * 36.0 + vec3(float(i) * 5.13, params.options.w * 0.90,
+                                                     -params.options.w * 0.60)),
+            flame_weight);
+        falloff *= breakup;
         float smoke_impulse = material_amount.x * dt * falloff;
         float heat_impulse = material_amount.y * dt * falloff;
         float flame_impulse = material_amount.z * dt * falloff;
@@ -210,6 +285,7 @@ void main() {
     float buoyancy_energy = density.r * 0.35 + density.g * 0.80 + density.b * 0.35;
     vec3 buoyancy_force = vec3(0.0, params.shadow_options.z * buoyancy_energy, 0.0);
     velocity += buoyancy_force * dt;
+    velocity += flame_shredding_force(coord, uv, density, params.options.w) * dt * 2.4;
 
     float edge_distance = min(min(uv.x, 1.0 - uv.x), min(min(uv.y, 1.0 - uv.y), min(uv.z, 1.0 - uv.z)));
     float wall = smoothstep(0.0, 0.040, edge_distance);

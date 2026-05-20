@@ -25,6 +25,8 @@ enum class Fluid3DScenario : std::uint32_t {
 };
 
 inline constexpr std::uint32_t kMaxFluid3DSourceCount = 16;
+inline constexpr float kDefaultFluid3DSourceRadius = 0.05F;
+inline constexpr float kDefaultFireSourceRadius = 0.085F;
 
 struct Fluid3DConfig {
     std::uint32_t grid_width = 128;
@@ -43,7 +45,7 @@ struct Fluid3DConfig {
     float density_decay_per_second = 0.99F;
     float velocity_decay_per_second = 0.99F;
     Fluid3DScenario scenario = Fluid3DScenario::SmokePlume;
-    float source_radius = 0.05F;
+    float source_radius = kDefaultFluid3DSourceRadius;
     float source_velocity_strength = 6.0F;
     float source_smoke_amount = 6.0F;
     float source_heat_amount = 1.4F;
@@ -169,14 +171,20 @@ struct Fluid3DConfig {
     if (config.shadow_update_interval != 0) {
         result.shadow_update_interval = config.shadow_update_interval;
     }
+    result.scenario = fluid_3d_scenario_from_string(config.fluid_scenario);
     if (config.fluid_sources != 0) {
         if (config.fluid_sources > kMaxFluid3DSourceCount) {
             throw std::runtime_error("fluid 3D source count must be 1..16");
         }
         result.source_count = config.fluid_sources;
+    } else if (result.scenario == Fluid3DScenario::Fire) {
+        result.source_count = 1;
     }
-    result.scenario = fluid_3d_scenario_from_string(config.fluid_scenario);
-    result.source_radius = config.fluid_source_radius;
+    result.source_radius =
+        result.scenario == Fluid3DScenario::Fire &&
+                config.fluid_source_radius == kDefaultFluid3DSourceRadius
+            ? kDefaultFireSourceRadius
+            : config.fluid_source_radius;
     result.source_velocity_strength = config.fluid_source_force;
     result.source_smoke_amount = config.fluid_smoke;
     result.source_heat_amount = config.fluid_heat;
