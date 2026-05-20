@@ -324,7 +324,7 @@ same-frame project-frame reuse, project context access, and CPU-side deferred
 destruction retirement.
 `ProjectFrame`, `ProjectExtent`, `RenderPacket`, and the `ProjectLike` concept
 define the first compile-time checked lifecycle shape for future `projects/`
-code. `fluid_2d` now consumes `ProjectFrame` for simulation timing, but
+code. `smoke_2d` now consumes `ProjectFrame` for simulation timing, but
 examples remain direct.
 
 ## Error Handling And Shutdown
@@ -435,7 +435,7 @@ Status: threaded default plus inline test mode complete.
 - Added `ProjectGpuServices` for project-facing upload draining, upload
   completion/failure status, RGBA8 image readback tickets, and deferred
   destruction retirement from completed GPU submission tickets.
-- `fluid_2d` now attaches its `ProjectRuntimeAdapter` to the host GPU runtime
+- `smoke_2d` now attaches its `ProjectRuntimeAdapter` to the host GPU runtime
   and routes project-owned field uploads plus headless simulation work through
   `ProjectGpuServices`.
 

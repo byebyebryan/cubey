@@ -1,4 +1,4 @@
-#include "fluid_3d_gpu_resources.h"
+#include "pyro_3d_gpu_resources.h"
 
 #include <cubey/vulkan/buffer.h>
 
@@ -11,18 +11,18 @@
 #include <utility>
 #include <vector>
 
-#ifndef CUBEY_FLUID_3D_SHADER_DIR
-#error "CUBEY_FLUID_3D_SHADER_DIR must be defined by the fluid_3d CMake target"
+#ifndef CUBEY_PYRO_3D_SHADER_DIR
+#error "CUBEY_PYRO_3D_SHADER_DIR must be defined by the pyro_3d CMake target"
 #endif
 
-namespace cubey::projects::fluid_3d {
+namespace cubey::projects::fluid::pyro_3d {
 namespace {
 
 constexpr VkFormat kFluidVectorVolumeFormat = VK_FORMAT_R16G16B16A16_SFLOAT;
 constexpr VkFormat kFluidScalarVolumeFormat = VK_FORMAT_R32_SFLOAT;
 
 std::filesystem::path shader_path(const char* filename) {
-    return std::filesystem::path(CUBEY_FLUID_3D_SHADER_DIR) / filename;
+    return std::filesystem::path(CUBEY_PYRO_3D_SHADER_DIR) / filename;
 }
 
 [[nodiscard]] cubey::vulkan::Buffer
@@ -56,14 +56,14 @@ upload_project_device_buffer(cubey::ProjectGpuServices& gpu, const void* data,
     };
 }
 
-[[nodiscard]] cubey::render::MaterialPassInfo fluid_3d_render_pass_info() {
+[[nodiscard]] cubey::render::MaterialPassInfo pyro_3d_render_pass_info() {
     return {
-        .label = "fluid_3d.raymarch",
+        .label = "pyro_3d.raymarch",
         .push_constants = {render_push_constant_range()},
     };
 }
 
-[[nodiscard]] VkExtent3D solver_volume_extent(const Fluid3DConfig& config) {
+[[nodiscard]] VkExtent3D solver_volume_extent(const Pyro3DConfig& config) {
     return {
         .width = config.grid_width,
         .height = config.grid_height,
@@ -71,7 +71,7 @@ upload_project_device_buffer(cubey::ProjectGpuServices& gpu, const void* data,
     };
 }
 
-[[nodiscard]] VkExtent3D shadow_volume_extent(const Fluid3DConfig& config) {
+[[nodiscard]] VkExtent3D shadow_volume_extent(const Pyro3DConfig& config) {
     return {
         .width = config.shadow_grid_width,
         .height = config.shadow_grid_height,
@@ -84,14 +84,14 @@ void validate_volume_format_features(const cubey::vulkan::Device& device, VkForm
     if (format == kFluidVectorVolumeFormat &&
         !device.supports_shader_storage_image_extended_formats()) {
         throw std::runtime_error(
-            "fluid 3D RGBA16F storage images require shaderStorageImageExtendedFormats");
+            "pyro 3D RGBA16F storage images require shaderStorageImageExtendedFormats");
     }
     VkFormatProperties properties{};
     vkGetPhysicalDeviceFormatProperties(device.physical_device(), format, &properties);
     constexpr VkFormatFeatureFlags kRequired =
         VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT | VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT;
     if ((properties.optimalTilingFeatures & kRequired) != kRequired) {
-        throw std::runtime_error(std::string("fluid 3D ") + label +
+        throw std::runtime_error(std::string("pyro 3D ") + label +
                                  " format does not support sampled storage images");
     }
 }
@@ -111,7 +111,7 @@ void validate_volume_format_features(const cubey::vulkan::Device& device, VkForm
 }
 
 [[nodiscard]] cubey::render::Texture3DConfig shadow_volume_texture_config(
-    const Fluid3DConfig& config) {
+    const Pyro3DConfig& config) {
     return {
         .extent = shadow_volume_extent(config),
         .format = kFluidScalarVolumeFormat,
@@ -149,9 +149,9 @@ void create_compute_pipeline_resource(
 
 } // namespace
 
-void Fluid3DGpuResources::create_global_resources_if_needed(cubey::vulkan::Device& device,
+void Pyro3DGpuResources::create_global_resources_if_needed(cubey::vulkan::Device& device,
                                                             cubey::ProjectGpuServices& gpu,
-                                                            const Fluid3DConfig& config,
+                                                            const Pyro3DConfig& config,
                                                             std::uint32_t frame_slot_count) {
     config_ = config;
     if (density_a_.has_value()) {
@@ -167,9 +167,9 @@ void Fluid3DGpuResources::create_global_resources_if_needed(cubey::vulkan::Devic
     profiler_.emplace(device, frame_slot_count, 9);
 }
 
-void Fluid3DGpuResources::create_volume_resources(cubey::vulkan::Device& device,
+void Pyro3DGpuResources::create_volume_resources(cubey::vulkan::Device& device,
                                                   cubey::ProjectGpuServices& gpu,
-                                                  const Fluid3DConfig& config) {
+                                                  const Pyro3DConfig& config) {
     validate_volume_format_features(device, kFluidVectorVolumeFormat, "RGBA16F volume");
     validate_volume_format_features(device, kFluidScalarVolumeFormat, "R32F volume");
     const VkExtent3D solver_extent = solver_volume_extent(config);
@@ -191,18 +191,18 @@ void Fluid3DGpuResources::create_volume_resources(cubey::vulkan::Device& device,
                                                       false));
     shadow_volume_.emplace(device, shadow_volume_texture_config(config));
 
-    const std::vector<Fluid3DSourceGpu> empty(kMaxFluid3DSourceCount);
+    const std::vector<Pyro3DSourceGpu> empty(kMaxPyro3DSourceCount);
     sources_.emplace(upload_project_device_buffer(
-        gpu, empty.data(), static_cast<VkDeviceSize>(fluid_3d_source_capacity_byte_size()),
+        gpu, empty.data(), static_cast<VkDeviceSize>(pyro_3d_source_capacity_byte_size()),
         VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-        "fluid_3d source upload"));
+        "pyro_3d source upload"));
 }
 
-void Fluid3DGpuResources::destroy_swapchain_resources() {
+void Pyro3DGpuResources::destroy_swapchain_resources() {
     render_pipeline_.reset();
 }
 
-void Fluid3DGpuResources::destroy_all_resources() {
+void Pyro3DGpuResources::destroy_all_resources() {
     destroy_swapchain_resources();
     profiler_.reset();
     shadow_pipeline_.reset();
@@ -243,7 +243,7 @@ void Fluid3DGpuResources::destroy_all_resources() {
     density_a_.reset();
 }
 
-void Fluid3DGpuResources::create_descriptor_resources(cubey::vulkan::Device& device) {
+void Pyro3DGpuResources::create_descriptor_resources(cubey::vulkan::Device& device) {
     const std::array<cubey::vulkan::DescriptorSetBindingConfig, 8> reset_bindings{{
         {.binding = 0,
          .type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
@@ -412,7 +412,7 @@ void Fluid3DGpuResources::create_descriptor_resources(cubey::vulkan::Device& dev
     update_descriptors(device);
 }
 
-void Fluid3DGpuResources::update_descriptors(cubey::vulkan::Device& device) {
+void Pyro3DGpuResources::update_descriptors(cubey::vulkan::Device& device) {
     cubey::vulkan::DescriptorWriteBatch writes;
     writes.storage_image(reset_descriptor_set_, 0, density_a().view())
         .storage_image(reset_descriptor_set_, 1, velocity_a().view())
@@ -510,36 +510,36 @@ void Fluid3DGpuResources::update_descriptors(cubey::vulkan::Device& device) {
     writes.update(device);
 }
 
-void Fluid3DGpuResources::create_compute_pipelines(cubey::vulkan::Device& device) {
-    create_compute_pipeline_resource(device, "fluid_3d_reset.comp.spv", reset_descriptor_layout(),
+void Pyro3DGpuResources::create_compute_pipelines(cubey::vulkan::Device& device) {
+    create_compute_pipeline_resource(device, "pyro_3d_reset.comp.spv", reset_descriptor_layout(),
                                      reset_pipeline_);
-    create_compute_pipeline_resource(device, "fluid_3d_advect.comp.spv", advect_descriptor_layout(),
+    create_compute_pipeline_resource(device, "pyro_3d_advect.comp.spv", advect_descriptor_layout(),
                                      advect_pipeline_);
-    create_compute_pipeline_resource(device, "fluid_3d_advect_correct.comp.spv",
+    create_compute_pipeline_resource(device, "pyro_3d_advect_correct.comp.spv",
                                      advect_correct_descriptor_layout(),
                                      advect_correct_pipeline_);
-    create_compute_pipeline_resource(device, "fluid_3d_combust.comp.spv",
+    create_compute_pipeline_resource(device, "pyro_3d_combust.comp.spv",
                                      combustion_descriptor_layout(), combustion_pipeline_);
-    create_compute_pipeline_resource(device, "fluid_3d_divergence.comp.spv",
+    create_compute_pipeline_resource(device, "pyro_3d_divergence.comp.spv",
                                      divergence_descriptor_layout(), divergence_pipeline_);
-    create_compute_pipeline_resource(device, "fluid_3d_pressure.comp.spv",
+    create_compute_pipeline_resource(device, "pyro_3d_pressure.comp.spv",
                                      pressure_descriptor_layout(), pressure_pipeline_);
-    create_compute_pipeline_resource(device, "fluid_3d_projection.comp.spv",
+    create_compute_pipeline_resource(device, "pyro_3d_projection.comp.spv",
                                      projection_descriptor_layout(), projection_pipeline_);
-    create_compute_pipeline_resource(device, "fluid_3d_shadow.comp.spv",
+    create_compute_pipeline_resource(device, "pyro_3d_shadow.comp.spv",
                                      shadow_descriptor_layout(), shadow_pipeline_);
 }
 
-void Fluid3DGpuResources::create_render_pipeline(cubey::vulkan::Device& device,
+void Pyro3DGpuResources::create_render_pipeline(cubey::vulkan::Device& device,
                                                  VkFormat color_format, VkExtent2D extent) {
     const std::array<cubey::render::ShaderStageFile, 2> shader_stage_files{
         cubey::render::ShaderStageFile{
             .stage = VK_SHADER_STAGE_VERTEX_BIT,
-            .path = shader_path("fluid_3d.vert.spv"),
+            .path = shader_path("pyro_3d.vert.spv"),
         },
         cubey::render::ShaderStageFile{
             .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
-            .path = shader_path("fluid_3d_raymarch.frag.spv"),
+            .path = shader_path("pyro_3d_raymarch.frag.spv"),
         },
     };
     const std::array<VkDescriptorSetLayout, 1> set_layouts{render_descriptors().layout()};
@@ -548,306 +548,306 @@ void Fluid3DGpuResources::create_render_pipeline(cubey::vulkan::Device& device,
                                          .color_format = color_format,
                                          .shader_stage_files = shader_stage_files,
                                          .descriptor_set_layouts = set_layouts,
-                                         .material_pass = fluid_3d_render_pass_info(),
+                                         .material_pass = pyro_3d_render_pass_info(),
                                      });
 }
 
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
-VkDescriptorSet Fluid3DGpuResources::advect_descriptor_set(bool density_a_current,
+VkDescriptorSet Pyro3DGpuResources::advect_descriptor_set(bool density_a_current,
                                                            bool velocity_a_current) const {
     return advect_descriptor_sets_.at(advect_index(density_a_current, velocity_a_current));
 }
 
-VkDescriptorSet Fluid3DGpuResources::advect_correct_descriptor_set(
+VkDescriptorSet Pyro3DGpuResources::advect_correct_descriptor_set(
     bool density_a_current, bool velocity_a_current) const {
     return advect_correct_descriptor_sets_.at(advect_index(density_a_current, velocity_a_current));
 }
 
-VkDescriptorSet Fluid3DGpuResources::combustion_descriptor_set(bool density_a_current,
+VkDescriptorSet Pyro3DGpuResources::combustion_descriptor_set(bool density_a_current,
                                                                bool velocity_a_current) const {
     return combustion_descriptor_sets_.at(advect_index(density_a_current, velocity_a_current));
 }
 
-VkDescriptorSet Fluid3DGpuResources::divergence_descriptor_set(bool density_a_current,
+VkDescriptorSet Pyro3DGpuResources::divergence_descriptor_set(bool density_a_current,
                                                                bool velocity_a_current) const {
     return divergence_descriptor_sets_.at(advect_index(density_a_current, velocity_a_current));
 }
 
-VkDescriptorSet Fluid3DGpuResources::projection_descriptor_set(bool velocity_a_current,
+VkDescriptorSet Pyro3DGpuResources::projection_descriptor_set(bool velocity_a_current,
                                                                bool pressure_a_current) const {
     return projection_descriptor_sets_.at(projection_index(velocity_a_current, pressure_a_current));
 }
 
-VkDescriptorSet Fluid3DGpuResources::shadow_descriptor_set(bool density_a_current) const {
+VkDescriptorSet Pyro3DGpuResources::shadow_descriptor_set(bool density_a_current) const {
     return shadow_descriptor_sets_.at(density_a_current ? 0U : 1U);
 }
 
-VkDescriptorSet Fluid3DGpuResources::render_descriptor_set(bool density_a_current,
+VkDescriptorSet Pyro3DGpuResources::render_descriptor_set(bool density_a_current,
                                                            bool velocity_a_current) const {
     return render_descriptors().set(advect_index(density_a_current, velocity_a_current));
 }
 
-const cubey::render::Texture3D& Fluid3DGpuResources::density_a() const {
+const cubey::render::Texture3D& Pyro3DGpuResources::density_a() const {
     if (!density_a_.has_value()) {
-        throw std::runtime_error("fluid 3D density A is not initialized");
+        throw std::runtime_error("pyro 3D density A is not initialized");
     }
     return density_a_.value();
 }
 
-const cubey::render::Texture3D& Fluid3DGpuResources::density_b() const {
+const cubey::render::Texture3D& Pyro3DGpuResources::density_b() const {
     if (!density_b_.has_value()) {
-        throw std::runtime_error("fluid 3D density B is not initialized");
+        throw std::runtime_error("pyro 3D density B is not initialized");
     }
     return density_b_.value();
 }
 
-const cubey::render::Texture3D& Fluid3DGpuResources::velocity_a() const {
+const cubey::render::Texture3D& Pyro3DGpuResources::velocity_a() const {
     if (!velocity_a_.has_value()) {
-        throw std::runtime_error("fluid 3D velocity A is not initialized");
+        throw std::runtime_error("pyro 3D velocity A is not initialized");
     }
     return velocity_a_.value();
 }
 
-const cubey::render::Texture3D& Fluid3DGpuResources::velocity_b() const {
+const cubey::render::Texture3D& Pyro3DGpuResources::velocity_b() const {
     if (!velocity_b_.has_value()) {
-        throw std::runtime_error("fluid 3D velocity B is not initialized");
+        throw std::runtime_error("pyro 3D velocity B is not initialized");
     }
     return velocity_b_.value();
 }
 
-const cubey::render::Texture3D& Fluid3DGpuResources::density_prediction() const {
+const cubey::render::Texture3D& Pyro3DGpuResources::density_prediction() const {
     if (!density_prediction_.has_value()) {
-        throw std::runtime_error("fluid 3D density prediction is not initialized");
+        throw std::runtime_error("pyro 3D density prediction is not initialized");
     }
     return density_prediction_.value();
 }
 
-const cubey::render::Texture3D& Fluid3DGpuResources::velocity_prediction() const {
+const cubey::render::Texture3D& Pyro3DGpuResources::velocity_prediction() const {
     if (!velocity_prediction_.has_value()) {
-        throw std::runtime_error("fluid 3D velocity prediction is not initialized");
+        throw std::runtime_error("pyro 3D velocity prediction is not initialized");
     }
     return velocity_prediction_.value();
 }
 
-const cubey::render::Texture3D& Fluid3DGpuResources::divergence() const {
+const cubey::render::Texture3D& Pyro3DGpuResources::divergence() const {
     if (!divergence_.has_value()) {
-        throw std::runtime_error("fluid 3D divergence is not initialized");
+        throw std::runtime_error("pyro 3D divergence is not initialized");
     }
     return divergence_.value();
 }
 
-const cubey::render::Texture3D& Fluid3DGpuResources::pressure_a() const {
+const cubey::render::Texture3D& Pyro3DGpuResources::pressure_a() const {
     if (!pressure_a_.has_value()) {
-        throw std::runtime_error("fluid 3D pressure A is not initialized");
+        throw std::runtime_error("pyro 3D pressure A is not initialized");
     }
     return pressure_a_.value();
 }
 
-const cubey::render::Texture3D& Fluid3DGpuResources::pressure_b() const {
+const cubey::render::Texture3D& Pyro3DGpuResources::pressure_b() const {
     if (!pressure_b_.has_value()) {
-        throw std::runtime_error("fluid 3D pressure B is not initialized");
+        throw std::runtime_error("pyro 3D pressure B is not initialized");
     }
     return pressure_b_.value();
 }
 
-const cubey::render::Texture3D& Fluid3DGpuResources::shadow_volume() const {
+const cubey::render::Texture3D& Pyro3DGpuResources::shadow_volume() const {
     if (!shadow_volume_.has_value()) {
-        throw std::runtime_error("fluid 3D shadow volume is not initialized");
+        throw std::runtime_error("pyro 3D shadow volume is not initialized");
     }
     return shadow_volume_.value();
 }
 
-const cubey::vulkan::Buffer& Fluid3DGpuResources::sources() const {
+const cubey::vulkan::Buffer& Pyro3DGpuResources::sources() const {
     if (!sources_.has_value()) {
-        throw std::runtime_error("fluid 3D source buffer is not initialized");
+        throw std::runtime_error("pyro 3D source buffer is not initialized");
     }
     return sources_.value();
 }
 
-const cubey::render::ComputePipelineResource& Fluid3DGpuResources::reset_pipeline() const {
+const cubey::render::ComputePipelineResource& Pyro3DGpuResources::reset_pipeline() const {
     if (!reset_pipeline_.has_value()) {
-        throw std::runtime_error("fluid 3D reset pipeline is not initialized");
+        throw std::runtime_error("pyro 3D reset pipeline is not initialized");
     }
     return reset_pipeline_.value();
 }
 
-const cubey::render::ComputePipelineResource& Fluid3DGpuResources::advect_pipeline() const {
+const cubey::render::ComputePipelineResource& Pyro3DGpuResources::advect_pipeline() const {
     if (!advect_pipeline_.has_value()) {
-        throw std::runtime_error("fluid 3D advect pipeline is not initialized");
+        throw std::runtime_error("pyro 3D advect pipeline is not initialized");
     }
     return advect_pipeline_.value();
 }
 
 const cubey::render::ComputePipelineResource&
-Fluid3DGpuResources::advect_correct_pipeline() const {
+Pyro3DGpuResources::advect_correct_pipeline() const {
     if (!advect_correct_pipeline_.has_value()) {
-        throw std::runtime_error("fluid 3D advect correct pipeline is not initialized");
+        throw std::runtime_error("pyro 3D advect correct pipeline is not initialized");
     }
     return advect_correct_pipeline_.value();
 }
 
-const cubey::render::ComputePipelineResource& Fluid3DGpuResources::combustion_pipeline() const {
+const cubey::render::ComputePipelineResource& Pyro3DGpuResources::combustion_pipeline() const {
     if (!combustion_pipeline_.has_value()) {
-        throw std::runtime_error("fluid 3D combustion pipeline is not initialized");
+        throw std::runtime_error("pyro 3D combustion pipeline is not initialized");
     }
     return combustion_pipeline_.value();
 }
 
-const cubey::render::ComputePipelineResource& Fluid3DGpuResources::divergence_pipeline() const {
+const cubey::render::ComputePipelineResource& Pyro3DGpuResources::divergence_pipeline() const {
     if (!divergence_pipeline_.has_value()) {
-        throw std::runtime_error("fluid 3D divergence pipeline is not initialized");
+        throw std::runtime_error("pyro 3D divergence pipeline is not initialized");
     }
     return divergence_pipeline_.value();
 }
 
-const cubey::render::ComputePipelineResource& Fluid3DGpuResources::pressure_pipeline() const {
+const cubey::render::ComputePipelineResource& Pyro3DGpuResources::pressure_pipeline() const {
     if (!pressure_pipeline_.has_value()) {
-        throw std::runtime_error("fluid 3D pressure pipeline is not initialized");
+        throw std::runtime_error("pyro 3D pressure pipeline is not initialized");
     }
     return pressure_pipeline_.value();
 }
 
-const cubey::render::ComputePipelineResource& Fluid3DGpuResources::projection_pipeline() const {
+const cubey::render::ComputePipelineResource& Pyro3DGpuResources::projection_pipeline() const {
     if (!projection_pipeline_.has_value()) {
-        throw std::runtime_error("fluid 3D projection pipeline is not initialized");
+        throw std::runtime_error("pyro 3D projection pipeline is not initialized");
     }
     return projection_pipeline_.value();
 }
 
-const cubey::render::ComputePipelineResource& Fluid3DGpuResources::shadow_pipeline() const {
+const cubey::render::ComputePipelineResource& Pyro3DGpuResources::shadow_pipeline() const {
     if (!shadow_pipeline_.has_value()) {
-        throw std::runtime_error("fluid 3D shadow pipeline is not initialized");
+        throw std::runtime_error("pyro 3D shadow pipeline is not initialized");
     }
     return shadow_pipeline_.value();
 }
 
-const cubey::render::GraphicsPipelineResource& Fluid3DGpuResources::render_pipeline() const {
+const cubey::render::GraphicsPipelineResource& Pyro3DGpuResources::render_pipeline() const {
     if (!render_pipeline_.has_value()) {
-        throw std::runtime_error("fluid 3D render pipeline is not initialized");
+        throw std::runtime_error("pyro 3D render pipeline is not initialized");
     }
     return render_pipeline_.value();
 }
 
-VkDescriptorSetLayout Fluid3DGpuResources::reset_descriptor_layout() const {
+VkDescriptorSetLayout Pyro3DGpuResources::reset_descriptor_layout() const {
     if (!reset_descriptor_layout_.has_value()) {
-        throw std::runtime_error("fluid 3D reset descriptor layout is not initialized");
+        throw std::runtime_error("pyro 3D reset descriptor layout is not initialized");
     }
     return reset_descriptor_layout_->handle();
 }
 
-const cubey::vulkan::DescriptorPool& Fluid3DGpuResources::reset_descriptor_pool() const {
+const cubey::vulkan::DescriptorPool& Pyro3DGpuResources::reset_descriptor_pool() const {
     if (!reset_descriptor_pool_.has_value()) {
-        throw std::runtime_error("fluid 3D reset descriptor pool is not initialized");
+        throw std::runtime_error("pyro 3D reset descriptor pool is not initialized");
     }
     return reset_descriptor_pool_.value();
 }
 
-VkDescriptorSetLayout Fluid3DGpuResources::advect_descriptor_layout() const {
+VkDescriptorSetLayout Pyro3DGpuResources::advect_descriptor_layout() const {
     if (!advect_descriptor_layout_.has_value()) {
-        throw std::runtime_error("fluid 3D advect descriptor layout is not initialized");
+        throw std::runtime_error("pyro 3D advect descriptor layout is not initialized");
     }
     return advect_descriptor_layout_->handle();
 }
 
-const cubey::vulkan::DescriptorPool& Fluid3DGpuResources::advect_descriptor_pool() const {
+const cubey::vulkan::DescriptorPool& Pyro3DGpuResources::advect_descriptor_pool() const {
     if (!advect_descriptor_pool_.has_value()) {
-        throw std::runtime_error("fluid 3D advect descriptor pool is not initialized");
+        throw std::runtime_error("pyro 3D advect descriptor pool is not initialized");
     }
     return advect_descriptor_pool_.value();
 }
 
-VkDescriptorSetLayout Fluid3DGpuResources::advect_correct_descriptor_layout() const {
+VkDescriptorSetLayout Pyro3DGpuResources::advect_correct_descriptor_layout() const {
     if (!advect_correct_descriptor_layout_.has_value()) {
-        throw std::runtime_error("fluid 3D advect correct descriptor layout is not initialized");
+        throw std::runtime_error("pyro 3D advect correct descriptor layout is not initialized");
     }
     return advect_correct_descriptor_layout_->handle();
 }
 
-const cubey::vulkan::DescriptorPool& Fluid3DGpuResources::advect_correct_descriptor_pool() const {
+const cubey::vulkan::DescriptorPool& Pyro3DGpuResources::advect_correct_descriptor_pool() const {
     if (!advect_correct_descriptor_pool_.has_value()) {
-        throw std::runtime_error("fluid 3D advect correct descriptor pool is not initialized");
+        throw std::runtime_error("pyro 3D advect correct descriptor pool is not initialized");
     }
     return advect_correct_descriptor_pool_.value();
 }
 
-VkDescriptorSetLayout Fluid3DGpuResources::combustion_descriptor_layout() const {
+VkDescriptorSetLayout Pyro3DGpuResources::combustion_descriptor_layout() const {
     if (!combustion_descriptor_layout_.has_value()) {
-        throw std::runtime_error("fluid 3D combustion descriptor layout is not initialized");
+        throw std::runtime_error("pyro 3D combustion descriptor layout is not initialized");
     }
     return combustion_descriptor_layout_->handle();
 }
 
-const cubey::vulkan::DescriptorPool& Fluid3DGpuResources::combustion_descriptor_pool() const {
+const cubey::vulkan::DescriptorPool& Pyro3DGpuResources::combustion_descriptor_pool() const {
     if (!combustion_descriptor_pool_.has_value()) {
-        throw std::runtime_error("fluid 3D combustion descriptor pool is not initialized");
+        throw std::runtime_error("pyro 3D combustion descriptor pool is not initialized");
     }
     return combustion_descriptor_pool_.value();
 }
 
-VkDescriptorSetLayout Fluid3DGpuResources::divergence_descriptor_layout() const {
+VkDescriptorSetLayout Pyro3DGpuResources::divergence_descriptor_layout() const {
     if (!divergence_descriptor_layout_.has_value()) {
-        throw std::runtime_error("fluid 3D divergence descriptor layout is not initialized");
+        throw std::runtime_error("pyro 3D divergence descriptor layout is not initialized");
     }
     return divergence_descriptor_layout_->handle();
 }
 
-const cubey::vulkan::DescriptorPool& Fluid3DGpuResources::divergence_descriptor_pool() const {
+const cubey::vulkan::DescriptorPool& Pyro3DGpuResources::divergence_descriptor_pool() const {
     if (!divergence_descriptor_pool_.has_value()) {
-        throw std::runtime_error("fluid 3D divergence descriptor pool is not initialized");
+        throw std::runtime_error("pyro 3D divergence descriptor pool is not initialized");
     }
     return divergence_descriptor_pool_.value();
 }
 
-VkDescriptorSetLayout Fluid3DGpuResources::pressure_descriptor_layout() const {
+VkDescriptorSetLayout Pyro3DGpuResources::pressure_descriptor_layout() const {
     if (!pressure_descriptor_layout_.has_value()) {
-        throw std::runtime_error("fluid 3D pressure descriptor layout is not initialized");
+        throw std::runtime_error("pyro 3D pressure descriptor layout is not initialized");
     }
     return pressure_descriptor_layout_->handle();
 }
 
-const cubey::vulkan::DescriptorPool& Fluid3DGpuResources::pressure_descriptor_pool() const {
+const cubey::vulkan::DescriptorPool& Pyro3DGpuResources::pressure_descriptor_pool() const {
     if (!pressure_descriptor_pool_.has_value()) {
-        throw std::runtime_error("fluid 3D pressure descriptor pool is not initialized");
+        throw std::runtime_error("pyro 3D pressure descriptor pool is not initialized");
     }
     return pressure_descriptor_pool_.value();
 }
 
-VkDescriptorSetLayout Fluid3DGpuResources::projection_descriptor_layout() const {
+VkDescriptorSetLayout Pyro3DGpuResources::projection_descriptor_layout() const {
     if (!projection_descriptor_layout_.has_value()) {
-        throw std::runtime_error("fluid 3D projection descriptor layout is not initialized");
+        throw std::runtime_error("pyro 3D projection descriptor layout is not initialized");
     }
     return projection_descriptor_layout_->handle();
 }
 
-const cubey::vulkan::DescriptorPool& Fluid3DGpuResources::projection_descriptor_pool() const {
+const cubey::vulkan::DescriptorPool& Pyro3DGpuResources::projection_descriptor_pool() const {
     if (!projection_descriptor_pool_.has_value()) {
-        throw std::runtime_error("fluid 3D projection descriptor pool is not initialized");
+        throw std::runtime_error("pyro 3D projection descriptor pool is not initialized");
     }
     return projection_descriptor_pool_.value();
 }
 
-VkDescriptorSetLayout Fluid3DGpuResources::shadow_descriptor_layout() const {
+VkDescriptorSetLayout Pyro3DGpuResources::shadow_descriptor_layout() const {
     if (!shadow_descriptor_layout_.has_value()) {
-        throw std::runtime_error("fluid 3D shadow descriptor layout is not initialized");
+        throw std::runtime_error("pyro 3D shadow descriptor layout is not initialized");
     }
     return shadow_descriptor_layout_->handle();
 }
 
-const cubey::vulkan::DescriptorPool& Fluid3DGpuResources::shadow_descriptor_pool() const {
+const cubey::vulkan::DescriptorPool& Pyro3DGpuResources::shadow_descriptor_pool() const {
     if (!shadow_descriptor_pool_.has_value()) {
-        throw std::runtime_error("fluid 3D shadow descriptor pool is not initialized");
+        throw std::runtime_error("pyro 3D shadow descriptor pool is not initialized");
     }
     return shadow_descriptor_pool_.value();
 }
 
-const cubey::vulkan::DescriptorSetArray& Fluid3DGpuResources::render_descriptors() const {
+const cubey::vulkan::DescriptorSetArray& Pyro3DGpuResources::render_descriptors() const {
     if (!render_descriptors_.has_value()) {
-        throw std::runtime_error("fluid 3D render descriptors are not initialized");
+        throw std::runtime_error("pyro 3D render descriptors are not initialized");
     }
     return render_descriptors_.value();
 }
 
-const std::vector<cubey::vulkan::GpuPassTiming>& Fluid3DGpuResources::latest_timings() const {
+const std::vector<cubey::vulkan::GpuPassTiming>& Pyro3DGpuResources::latest_timings() const {
     if (!profiler_.has_value()) {
         static const std::vector<cubey::vulkan::GpuPassTiming> empty;
         return empty;
@@ -855,4 +855,4 @@ const std::vector<cubey::vulkan::GpuPassTiming>& Fluid3DGpuResources::latest_tim
     return profiler_->latest_timings();
 }
 
-} // namespace cubey::projects::fluid_3d
+} // namespace cubey::projects::fluid::pyro_3d

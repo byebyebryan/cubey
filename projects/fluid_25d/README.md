@@ -27,7 +27,7 @@ until the solver and debug views are understandable enough to tune.
 
 ## Simulation Model
 
-Use a shallow-water heightfield model rather than extending `fluid_2d`'s
+Use a shallow-water heightfield model rather than extending `smoke_2d`'s
 incompressible dye solver.
 
 Core state:
@@ -72,9 +72,9 @@ Stability knobs should be explicit from the start:
 ## Math Context
 
 Shallow-water simulation is related to Navier-Stokes, but it is not the same
-solver shape as `fluid_2d`.
+solver shape as `smoke_2d`.
 
-`fluid_2d` is an incompressible 2D projection solver:
+`smoke_2d` is an incompressible 2D projection solver:
 
 ```text
 advect velocity/dye
@@ -145,7 +145,7 @@ moving over authored heightfields.
 
 It should not absorb the whole fluid-simulation roadmap:
 
-- `fluid_2d` remains the incompressible grid-fluid lab for advection, pressure
+- `smoke_2d` remains the incompressible grid-fluid lab for advection, pressure
   solves, obstacles, vorticity, and possible level-set or FLIP-style 2D liquid
   experiments.
 - A future sparse 3D gas/smoke project is the better place to revisit the GPU
@@ -161,7 +161,7 @@ it targets a much more scene-relevant problem.
 ## Project Boundaries
 
 Create this as `projects/fluid_25d`, not as an example. It should reuse the same
-runtime pieces as `fluid_2d`:
+runtime pieces as `smoke_2d`:
 
 - `cubey::host::WindowedHost` for visible runs.
 - `cubey::host::HeadlessPngHost` for deterministic artifact output.
@@ -169,7 +169,7 @@ runtime pieces as `fluid_2d`:
   runtime services.
 
 Keep the first solver buffers, shader schedule, terrain generator, and render
-policy project-local. Promote shared helpers when `fluid_2d` and `fluid_25d`
+policy project-local. Promote shared helpers when `smoke_2d` and `fluid_25d`
 make the reusable solver/resource contract clear enough to test.
 
 ## First Checkpoint

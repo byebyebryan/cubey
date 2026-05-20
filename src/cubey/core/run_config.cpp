@@ -120,59 +120,59 @@ RunConfig parse_run_config(int argc, char** argv) {
             config.smoke_injector_orbit_phase_spread =
                 parse_float(need_value("--smoke-injector-orbit-phase-spread"),
                             "--smoke-injector-orbit-phase-spread");
-        } else if (arg == "--fluid-buoyancy") {
-            config.fluid_buoyancy = parse_float(need_value("--fluid-buoyancy"), "--fluid-buoyancy");
-        } else if (arg == "--fluid-scenario") {
-            config.fluid_scenario = std::string(need_value("--fluid-scenario"));
-        } else if (arg == "--fluid-sources") {
-            config.fluid_sources = parse_positive_u32(need_value("--fluid-sources"),
-                                                      "--fluid-sources");
-        } else if (arg == "--fluid-source-radius") {
-            config.fluid_source_radius =
-                parse_float(need_value("--fluid-source-radius"), "--fluid-source-radius");
-        } else if (arg == "--fluid-source-force") {
-            config.fluid_source_force =
-                parse_float(need_value("--fluid-source-force"), "--fluid-source-force");
-        } else if (arg == "--fluid-smoke") {
-            config.fluid_smoke = parse_float(need_value("--fluid-smoke"), "--fluid-smoke");
-        } else if (arg == "--fluid-heat") {
-            config.fluid_heat = parse_float(need_value("--fluid-heat"), "--fluid-heat");
-        } else if (arg == "--fluid-flame") {
-            config.fluid_flame = parse_float(need_value("--fluid-flame"), "--fluid-flame");
-        } else if (arg == "--fluid-explosion-interval") {
-            config.fluid_explosion_interval_seconds = parse_float(
-                need_value("--fluid-explosion-interval"), "--fluid-explosion-interval");
-        } else if (arg == "--fluid-explosion-duration") {
-            config.fluid_explosion_duration_seconds = parse_float(
-                need_value("--fluid-explosion-duration"), "--fluid-explosion-duration");
-        } else if (arg == "--fluid-explosion-boost") {
-            config.fluid_explosion_boost =
-                parse_float(need_value("--fluid-explosion-boost"), "--fluid-explosion-boost");
-        } else if (arg == "--fluid-fire-ignition-temperature") {
-            config.fluid_fire_ignition_temperature =
-                parse_float(need_value("--fluid-fire-ignition-temperature"),
-                            "--fluid-fire-ignition-temperature");
-        } else if (arg == "--fluid-fire-burn-rate") {
-            config.fluid_fire_burn_rate =
-                parse_float(need_value("--fluid-fire-burn-rate"), "--fluid-fire-burn-rate");
-        } else if (arg == "--fluid-fire-heat-output") {
-            config.fluid_fire_heat_output =
-                parse_float(need_value("--fluid-fire-heat-output"), "--fluid-fire-heat-output");
-        } else if (arg == "--fluid-fire-soot-yield") {
-            config.fluid_fire_soot_yield =
-                parse_float(need_value("--fluid-fire-soot-yield"), "--fluid-fire-soot-yield");
-        } else if (arg == "--fluid-fire-expansion") {
-            config.fluid_fire_expansion =
-                parse_float(need_value("--fluid-fire-expansion"), "--fluid-fire-expansion");
-        } else if (arg == "--fluid-fire-flame-cooling") {
-            config.fluid_fire_flame_cooling = parse_float(
-                need_value("--fluid-fire-flame-cooling"), "--fluid-fire-flame-cooling");
-        } else if (arg == "--fluid-fire-shredding") {
-            config.fluid_fire_shredding =
-                parse_float(need_value("--fluid-fire-shredding"), "--fluid-fire-shredding");
-        } else if (arg == "--fluid-fire-turbulence") {
-            config.fluid_fire_turbulence =
-                parse_float(need_value("--fluid-fire-turbulence"), "--fluid-fire-turbulence");
+        } else if (arg == "--pyro-sources") {
+            config.pyro_sources =
+                parse_positive_u32(need_value("--pyro-sources"), "--pyro-sources");
+        } else if (arg == "--pyro-source-radius") {
+            config.pyro_source_radius =
+                parse_float(need_value("--pyro-source-radius"), "--pyro-source-radius");
+        } else if (arg == "--pyro-source-force") {
+            config.pyro_source_force =
+                parse_float(need_value("--pyro-source-force"), "--pyro-source-force");
+        } else if (arg == "--pyro-soot") {
+            config.pyro_soot = parse_float(need_value("--pyro-soot"), "--pyro-soot");
+        } else if (arg == "--pyro-temperature") {
+            config.pyro_temperature =
+                parse_float(need_value("--pyro-temperature"), "--pyro-temperature");
+        } else if (arg == "--pyro-fuel") {
+            config.pyro_fuel = parse_float(need_value("--pyro-fuel"), "--pyro-fuel");
+        } else if (arg == "--pyro-buoyancy") {
+            config.pyro_buoyancy =
+                parse_float(need_value("--pyro-buoyancy"), "--pyro-buoyancy");
+        } else if (arg == "--pyro-ignition-temperature") {
+            config.pyro_ignition_temperature =
+                parse_float(need_value("--pyro-ignition-temperature"),
+                            "--pyro-ignition-temperature");
+        } else if (arg == "--pyro-burn-rate") {
+            config.pyro_burn_rate =
+                parse_float(need_value("--pyro-burn-rate"), "--pyro-burn-rate");
+        } else if (arg == "--pyro-heat-output") {
+            config.pyro_heat_output =
+                parse_float(need_value("--pyro-heat-output"), "--pyro-heat-output");
+        } else if (arg == "--pyro-soot-yield") {
+            config.pyro_soot_yield =
+                parse_float(need_value("--pyro-soot-yield"), "--pyro-soot-yield");
+        } else if (arg == "--pyro-expansion") {
+            config.pyro_expansion =
+                parse_float(need_value("--pyro-expansion"), "--pyro-expansion");
+        } else if (arg == "--pyro-flame-cooling") {
+            config.pyro_flame_cooling =
+                parse_float(need_value("--pyro-flame-cooling"), "--pyro-flame-cooling");
+        } else if (arg == "--pyro-shredding") {
+            config.pyro_shredding =
+                parse_float(need_value("--pyro-shredding"), "--pyro-shredding");
+        } else if (arg == "--pyro-turbulence") {
+            config.pyro_turbulence =
+                parse_float(need_value("--pyro-turbulence"), "--pyro-turbulence");
+        } else if (arg == "--explosion-interval") {
+            config.explosion_interval_seconds =
+                parse_float(need_value("--explosion-interval"), "--explosion-interval");
+        } else if (arg == "--explosion-duration") {
+            config.explosion_duration_seconds =
+                parse_float(need_value("--explosion-duration"), "--explosion-duration");
+        } else if (arg == "--explosion-boost") {
+            config.explosion_boost =
+                parse_float(need_value("--explosion-boost"), "--explosion-boost");
         } else if (arg == "--frames") {
             config.frames = parse_u32(need_value("--frames"), "--frames");
         } else if (arg == "--fps") {
@@ -246,56 +246,56 @@ RunConfig parse_run_config(int argc, char** argv) {
     if (config.smoke_injector_orbit_phase_spread < 0.0F) {
         throw std::runtime_error("smoke injector orbit phase spread must be nonnegative");
     }
-    if (config.fluid_source_radius <= 0.0F) {
-        throw std::runtime_error("fluid source radius must be positive");
+    if (config.pyro_source_radius <= 0.0F) {
+        throw std::runtime_error("pyro source radius must be positive");
     }
-    if (config.fluid_source_force < 0.0F) {
-        throw std::runtime_error("fluid source force must be nonnegative");
+    if (config.pyro_source_force < 0.0F) {
+        throw std::runtime_error("pyro source force must be nonnegative");
     }
-    if (config.fluid_smoke < 0.0F) {
-        throw std::runtime_error("fluid smoke must be nonnegative");
+    if (config.pyro_soot < 0.0F) {
+        throw std::runtime_error("pyro soot must be nonnegative");
     }
-    if (config.fluid_heat < 0.0F) {
-        throw std::runtime_error("fluid heat must be nonnegative");
+    if (config.pyro_temperature < 0.0F) {
+        throw std::runtime_error("pyro temperature must be nonnegative");
     }
-    if (config.fluid_flame < 0.0F) {
-        throw std::runtime_error("fluid flame must be nonnegative");
+    if (config.pyro_fuel < 0.0F) {
+        throw std::runtime_error("pyro fuel must be nonnegative");
     }
-    if (config.fluid_explosion_interval_seconds <= 0.0F) {
-        throw std::runtime_error("fluid explosion interval must be positive");
+    if (config.pyro_ignition_temperature < 0.0F) {
+        throw std::runtime_error("pyro ignition temperature must be nonnegative");
     }
-    if (config.fluid_explosion_duration_seconds <= 0.0F) {
-        throw std::runtime_error("fluid explosion duration must be positive");
+    if (config.pyro_burn_rate < 0.0F) {
+        throw std::runtime_error("pyro burn rate must be nonnegative");
     }
-    if (config.fluid_explosion_duration_seconds > config.fluid_explosion_interval_seconds) {
-        throw std::runtime_error("fluid explosion duration must not exceed the interval");
+    if (config.pyro_heat_output < 0.0F) {
+        throw std::runtime_error("pyro heat output must be nonnegative");
     }
-    if (config.fluid_explosion_boost < 0.0F) {
-        throw std::runtime_error("fluid explosion boost must be nonnegative");
+    if (config.pyro_soot_yield < 0.0F) {
+        throw std::runtime_error("pyro soot yield must be nonnegative");
     }
-    if (config.fluid_fire_ignition_temperature < 0.0F) {
-        throw std::runtime_error("fluid fire ignition temperature must be nonnegative");
+    if (config.pyro_expansion < 0.0F) {
+        throw std::runtime_error("pyro expansion must be nonnegative");
     }
-    if (config.fluid_fire_burn_rate < 0.0F) {
-        throw std::runtime_error("fluid fire burn rate must be nonnegative");
+    if (config.pyro_flame_cooling < 0.0F) {
+        throw std::runtime_error("pyro flame cooling must be nonnegative");
     }
-    if (config.fluid_fire_heat_output < 0.0F) {
-        throw std::runtime_error("fluid fire heat output must be nonnegative");
+    if (config.pyro_shredding < 0.0F) {
+        throw std::runtime_error("pyro shredding must be nonnegative");
     }
-    if (config.fluid_fire_soot_yield < 0.0F) {
-        throw std::runtime_error("fluid fire soot yield must be nonnegative");
+    if (config.pyro_turbulence < 0.0F) {
+        throw std::runtime_error("pyro turbulence must be nonnegative");
     }
-    if (config.fluid_fire_expansion < 0.0F) {
-        throw std::runtime_error("fluid fire expansion must be nonnegative");
+    if (config.explosion_interval_seconds <= 0.0F) {
+        throw std::runtime_error("explosion interval must be positive");
     }
-    if (config.fluid_fire_flame_cooling < 0.0F) {
-        throw std::runtime_error("fluid fire flame cooling must be nonnegative");
+    if (config.explosion_duration_seconds <= 0.0F) {
+        throw std::runtime_error("explosion duration must be positive");
     }
-    if (config.fluid_fire_shredding < 0.0F) {
-        throw std::runtime_error("fluid fire shredding must be nonnegative");
+    if (config.explosion_duration_seconds > config.explosion_interval_seconds) {
+        throw std::runtime_error("explosion duration must not exceed the interval");
     }
-    if (config.fluid_fire_turbulence < 0.0F) {
-        throw std::runtime_error("fluid fire turbulence must be nonnegative");
+    if (config.explosion_boost < 0.0F) {
+        throw std::runtime_error("explosion boost must be nonnegative");
     }
     if (config.capture_mode == CaptureMode::Video) {
         if (!config.headless) {

@@ -272,7 +272,7 @@ This is critical for AI-assisted development — the agent gets structured pass/
 | Project | Source | Notes |
 |------|--------|-------|
 | Smoke 2D | cubey1 rewrite warmup | First project target; compute-updated 2D dye/velocity field with headless capture output |
-| Fluid 3D | cubey1 rewrite | Dense Eulerian smoke baseline with 3D storage textures, compute simulation, and raymarched volume rendering |
+| Fire 3D / Explosion 3D | cubey1 rewrite | Shared dense pyro solver with fire and explosion app front ends |
 | Particle System | cubey1 rewrite | Prototype attractor motion now lives under `examples/particle_cubes`; a larger project would need a clear compute + indirect draw contract before graduating |
 | Marching Cubes | cubey1 rewrite | Isosurface extraction via compute + indirect draw |
 | Fractal 2D | cubey1 rewrite | Mandelbrot/Julia renderer |
@@ -337,8 +337,8 @@ named explicitly and live in either `examples/` or `projects/`:
   example-local private modules for lifecycle, resources, scene setup, and
   command recording; that split is not automatically Cubey library API.
 - `projects/` - first-class graphics experiments and longer-lived creative
-  work, including `smoke_2d`, `fluid_3d`, `fractal_2d`, `gltf_viewer`, and
-  `pbr_furnace`, plus later candidates such as `marching_cubes` and
+  work, including `smoke_2d`, `fire_3d`, `explosion_3d`, `fractal_2d`,
+  `gltf_viewer`, and `pbr_furnace`, plus later candidates such as `marching_cubes` and
   `sdf_sculpt`.
 - `third_party/` - small vendored dependencies with explicit license notes.
 - `tools/` - repo utilities, asset processors, shader tools, or diagnostics.
@@ -518,21 +518,24 @@ cubey/
             smoke_2d_projection.comp
             smoke_2d.vert
             smoke_2d_render.frag
-      fluid_3d/
-        CMakeLists.txt
-        main.cpp
-        fluid_3d_app.*     -- host/headless/input orchestration
-        fluid_3d_commands.* -- simulation and raymarch draw command recording
-        fluid_3d_gpu_resources.* -- project-owned 3D textures/descriptors/pipelines
-        fluid_3d_injectors.* -- procedural moving volume injectors
-        shaders/
-          fluid_3d_reset.comp
-          fluid_3d_advect.comp
-          fluid_3d_divergence.comp
-          fluid_3d_pressure.comp
-          fluid_3d_projection.comp
-          fluid_3d.vert
-          fluid_3d_raymarch.frag
+        sim/pyro_3d/
+          pyro_3d_app.*     -- shared host/headless/input orchestration
+          pyro_3d_commands.* -- simulation and raymarch draw command recording
+          pyro_3d_gpu_resources.* -- shared 3D textures/descriptors/pipelines
+          pyro_3d_sources.* -- fire/explosion source generation
+          shaders/
+            pyro_3d_reset.comp
+            pyro_3d_advect.comp
+            pyro_3d_combust.comp
+            pyro_3d_divergence.comp
+            pyro_3d_pressure.comp
+            pyro_3d_projection.comp
+            pyro_3d.vert
+            pyro_3d_raymarch.frag
+        fire_3d/
+          main.cpp          -- fire app wrapper over sim/pyro_3d
+        explosion_3d/
+          main.cpp          -- explosion app wrapper over sim/pyro_3d
       gltf_viewer/
         CMakeLists.txt
         main.cpp

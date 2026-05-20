@@ -21,7 +21,7 @@ layout(rgba16f, set = 0, binding = 0) uniform readonly image3D material_in;
 layout(rgba16f, set = 0, binding = 1) uniform readonly image3D velocity_in;
 layout(rgba16f, set = 0, binding = 2) uniform writeonly image3D material_out;
 layout(rgba16f, set = 0, binding = 3) uniform writeonly image3D velocity_out;
-layout(set = 0, binding = 4, std430) readonly buffer Fluid3DSources { Source sources[]; };
+layout(set = 0, binding = 4, std430) readonly buffer Pyro3DSources { Source sources[]; };
 
 vec4 material_at(ivec3 coord) {
     ivec3 max_coord = imageSize(material_in) - ivec3(1);
@@ -91,7 +91,7 @@ vec3 flame_shredding_force(ivec3 coord, vec3 uv, vec4 material, float time) {
     return tangent / tangent_strength * edge_signal;
 }
 
-void apply_sources(vec3 uv, float dt, bool fire_scenario, inout vec4 material,
+void apply_sources(vec3 uv, float dt, bool fire_mode, inout vec4 material,
                    inout vec3 velocity) {
     int source_count = int(params.options.x + 0.5);
     for (int i = 0; i < source_count; ++i) {
@@ -102,7 +102,7 @@ void apply_sources(vec3 uv, float dt, bool fire_scenario, inout vec4 material,
             continue;
         }
 
-        float fuel_weight = fire_scenario ? smoothstep(0.01, 0.25, material_amount.a) : 0.0;
+        float fuel_weight = fire_mode ? smoothstep(0.01, 0.25, material_amount.a) : 0.0;
         float radius = max(source.position_radius.w, 0.0001);
         vec3 warp =
             source_turbulence(uv, float(i), params.options.w) * radius * 0.20 * fuel_weight;
@@ -117,9 +117,9 @@ void apply_sources(vec3 uv, float dt, bool fire_scenario, inout vec4 material,
         falloff *= breakup;
 
         float source_scale = dt * falloff;
-        material.r += material_amount.r * source_scale * (fire_scenario ? 0.34 : 0.46);
-        material.g += material_amount.g * source_scale * (fire_scenario ? 0.48 : 0.34);
-        material.b += material_amount.b * source_scale * (fire_scenario ? 0.25 : 0.58);
+        material.r += material_amount.r * source_scale * (fire_mode ? 0.34 : 0.46);
+        material.g += material_amount.g * source_scale * (fire_mode ? 0.48 : 0.34);
+        material.b += material_amount.b * source_scale * (fire_mode ? 0.25 : 0.58);
         material.a += material_amount.a * source_scale * 0.64;
         velocity += source.velocity_strength.xyz * velocity_strength * source_scale * 0.42;
     }
@@ -173,10 +173,10 @@ void main() {
     vec3 uv = (vec3(coord) + vec3(0.5)) / vec3(size);
     vec4 material = imageLoad(material_in, coord);
     vec3 velocity = imageLoad(velocity_in, coord).xyz;
-    bool fire_scenario = int(params.shadow_options.w + 0.5) == 2;
+    bool fire_mode = int(params.shadow_options.w + 0.5) == 0;
 
-    apply_sources(uv, dt, fire_scenario, material, velocity);
-    if (fire_scenario) {
+    apply_sources(uv, dt, fire_mode, material, velocity);
+    if (fire_mode) {
         apply_combustion(dt, material);
         apply_fire_dissipation(dt, material);
         float flame_mask = smoothstep(0.020, 0.55, material.b);

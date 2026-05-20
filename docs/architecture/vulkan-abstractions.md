@@ -512,7 +512,7 @@ host layer.
 - Copied the image into a readback buffer and wrote a deterministic PNG artifact.
 - Added CTest coverage for artifact creation in no-display terminal sessions.
 - Follow-up extraction added `cubey::host::HeadlessPngHost` and migrated
-  `headless_cube`, `fractal_2d --headless`, and `fluid_2d --headless` onto the
+  `headless_cube`, `fractal_2d --headless`, and `smoke_2d --headless` onto the
   shared no-GLFW host.
 
 Keep this batch intentionally small. It should pressure render-target/readback
@@ -600,7 +600,7 @@ Goal: let a real project define the host/engine seam.
 This is the point where a project interface around setup, update, render,
 resize, and shutdown may become worthwhile.
 
-Status: `projects/fluid_2d` now provides the first project-scale checkpoint.
+Status: `projects/fluid/smoke_2d` now provides the first project-scale checkpoint.
 It uses storage-buffer ping-pong fields, compute injection/advection,
 project-local pressure projection, pointer injection, debug render modes,
 fullscreen rendering, and shared-host headless PNG output. The next useful

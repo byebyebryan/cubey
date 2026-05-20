@@ -19,7 +19,7 @@ Cubey already has the early pressure cases:
 
 - `examples/shadow_cube` records a depth pass, transitions the depth texture
   for sampling, then records the camera color pass.
-- `projects/fluid_2d` records an ordered compute pipeline with repeated storage
+- `projects/fluid/smoke_2d` records an ordered compute pipeline with repeated storage
   buffer hazards before rendering the result.
 - Headless and project GPU services already expose readback/capture paths that
   will become easier to reason about when intermediate targets are declared.
@@ -93,7 +93,7 @@ callbacks through `RenderGraphFrameExecutor`, allocates a non-aliased transient
 scene color target, resolves that target into dynamic-rendering and descriptor
 inputs, and records shadow-depth, scene-depth, scene-color, backbuffer acquire,
 and present release transitions from graph-derived requirements.
-`projects/fluid_2d` builds a coarse simulation-compute to fullscreen-render
+`projects/fluid/smoke_2d` builds a coarse simulation-compute to fullscreen-render
 graph and records it through the same executor while keeping solver-internal
 barriers manual.
 
@@ -216,14 +216,14 @@ Completed slices:
 7. In-graph sync requirement derivation for texture transitions and buffer
    barriers, with recorder-backed execution recording them through
    `CommandRecorder`.
-8. Coarse `fluid_2d` simulation-to-render graph declaration.
+8. Coarse `smoke_2d` simulation-to-render graph declaration.
 9. Imported initial/final resource state, transient first-use transitions,
    execution-time resource resolution, and non-aliased transient allocation.
 10. `shadow_cube` transient scene-color allocation, resolved color target views,
     and a graph-declared fullscreen present pass.
 11. Per-frame-slot graph resource ownership and sampled texture view resolution.
 12. Recorder-aware graph execution plus `RenderGraphFrameExecutor`, now used by
-    `shadow_cube` and `fluid_2d` to keep app `record_frame` callbacks focused
+    `shadow_cube` and `smoke_2d` to keep app `record_frame` callbacks focused
     on building per-frame data and graph declarations.
 
 This keeps the graph as a validation, vocabulary, pass-ordering, and

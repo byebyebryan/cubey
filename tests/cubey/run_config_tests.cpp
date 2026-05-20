@@ -321,81 +321,81 @@ void test_run_config_parses_smoke_injector_force_controls() {
             "run config should parse smoke injector propulsion");
 }
 
-void test_run_config_parses_fluid_3d_buoyancy_control() {
+void test_run_config_parses_pyro_buoyancy_control() {
     std::string program = "cubey";
-    std::string buoyancy_flag = "--fluid-buoyancy";
+    std::string buoyancy_flag = "--pyro-buoyancy";
     std::string buoyancy_value = "1.75";
     std::array<char*, 3> argv{program.data(), buoyancy_flag.data(), buoyancy_value.data()};
 
     const cubey::RunConfig config =
         cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
-    require(config.fluid_buoyancy == 1.75F, "run config should parse fluid buoyancy");
+    require(config.pyro_buoyancy == 1.75F, "run config should parse pyro buoyancy");
 }
 
-void test_run_config_parses_fluid_3d_source_controls() {
+void test_run_config_parses_pyro_source_controls() {
     std::string program = "cubey";
-    std::string scenario_flag = "--fluid-scenario";
-    std::string scenario_value = "smoke-plume";
-    std::string sources_flag = "--fluid-sources";
+    std::string sources_flag = "--pyro-sources";
     std::string sources_value = "6";
-    std::string radius_flag = "--fluid-source-radius";
+    std::string radius_flag = "--pyro-source-radius";
     std::string radius_value = "0.08";
-    std::string force_flag = "--fluid-source-force";
+    std::string force_flag = "--pyro-source-force";
     std::string force_value = "9.5";
-    std::string smoke_flag = "--fluid-smoke";
-    std::string smoke_value = "7.25";
-    std::string heat_flag = "--fluid-heat";
-    std::string heat_value = "1.75";
-    std::string flame_flag = "--fluid-flame";
-    std::string flame_value = "2.5";
-    std::string interval_flag = "--fluid-explosion-interval";
+    std::string soot_flag = "--pyro-soot";
+    std::string soot_value = "7.25";
+    std::string temperature_flag = "--pyro-temperature";
+    std::string temperature_value = "1.75";
+    std::string fuel_flag = "--pyro-fuel";
+    std::string fuel_value = "2.5";
+    std::string interval_flag = "--explosion-interval";
     std::string interval_value = "2.5";
-    std::string duration_flag = "--fluid-explosion-duration";
+    std::string duration_flag = "--explosion-duration";
     std::string duration_value = "0.18";
-    std::string boost_flag = "--fluid-explosion-boost";
+    std::string boost_flag = "--explosion-boost";
     std::string boost_value = "22.0";
-    std::array<char*, 21> argv{program.data(),      scenario_flag.data(), scenario_value.data(),
-                               sources_flag.data(), sources_value.data(),  radius_flag.data(),
-                               radius_value.data(), force_flag.data(),    force_value.data(),
-                               smoke_flag.data(),   smoke_value.data(),   heat_flag.data(),
-                               heat_value.data(),   flame_flag.data(),    flame_value.data(),
-                               interval_flag.data(), interval_value.data(), duration_flag.data(),
-                               duration_value.data(), boost_flag.data(),  boost_value.data()};
+    std::array<char*, 19> argv{program.data(),          sources_flag.data(),
+                               sources_value.data(),   radius_flag.data(),
+                               radius_value.data(),    force_flag.data(),
+                               force_value.data(),     soot_flag.data(),
+                               soot_value.data(),      temperature_flag.data(),
+                               temperature_value.data(), fuel_flag.data(),
+                               fuel_value.data(),      interval_flag.data(),
+                               interval_value.data(),  duration_flag.data(),
+                               duration_value.data(),  boost_flag.data(),
+                               boost_value.data()};
 
     const cubey::RunConfig config =
         cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
-    require(config.fluid_scenario == "smoke-plume", "run config should parse fluid scenario");
-    require(config.fluid_sources == 6, "run config should parse fluid source count");
-    require(config.fluid_source_radius == 0.08F, "run config should parse fluid source radius");
-    require(config.fluid_source_force == 9.5F, "run config should parse fluid source force");
-    require(config.fluid_smoke == 7.25F, "run config should parse fluid smoke amount");
-    require(config.fluid_heat == 1.75F, "run config should parse fluid heat amount");
-    require(config.fluid_flame == 2.5F, "run config should parse fluid flame amount");
-    require(config.fluid_explosion_interval_seconds == 2.5F,
-            "run config should parse fluid explosion interval");
-    require(config.fluid_explosion_duration_seconds == 0.18F,
-            "run config should parse fluid explosion duration");
-    require(config.fluid_explosion_boost == 22.0F,
-            "run config should parse fluid explosion boost");
+    require(config.pyro_sources == 6, "run config should parse pyro source count");
+    require(config.pyro_source_radius == 0.08F, "run config should parse pyro source radius");
+    require(config.pyro_source_force == 9.5F, "run config should parse pyro source force");
+    require(config.pyro_soot == 7.25F, "run config should parse pyro soot amount");
+    require(config.pyro_temperature == 1.75F,
+            "run config should parse pyro temperature amount");
+    require(config.pyro_fuel == 2.5F, "run config should parse pyro fuel amount");
+    require(config.explosion_interval_seconds == 2.5F,
+            "run config should parse explosion interval");
+    require(config.explosion_duration_seconds == 0.18F,
+            "run config should parse explosion duration");
+    require(config.explosion_boost == 22.0F, "run config should parse explosion boost");
 }
 
-void test_run_config_parses_fluid_3d_fire_controls() {
+void test_run_config_parses_pyro_fire_controls() {
     std::string program = "cubey";
-    std::string ignition_flag = "--fluid-fire-ignition-temperature";
+    std::string ignition_flag = "--pyro-ignition-temperature";
     std::string ignition_value = "0.31";
-    std::string burn_rate_flag = "--fluid-fire-burn-rate";
+    std::string burn_rate_flag = "--pyro-burn-rate";
     std::string burn_rate_value = "4.5";
-    std::string heat_output_flag = "--fluid-fire-heat-output";
+    std::string heat_output_flag = "--pyro-heat-output";
     std::string heat_output_value = "3.25";
-    std::string soot_yield_flag = "--fluid-fire-soot-yield";
+    std::string soot_yield_flag = "--pyro-soot-yield";
     std::string soot_yield_value = "0.22";
-    std::string expansion_flag = "--fluid-fire-expansion";
+    std::string expansion_flag = "--pyro-expansion";
     std::string expansion_value = "1.8";
-    std::string cooling_flag = "--fluid-fire-flame-cooling";
+    std::string cooling_flag = "--pyro-flame-cooling";
     std::string cooling_value = "2.75";
-    std::string shredding_flag = "--fluid-fire-shredding";
+    std::string shredding_flag = "--pyro-shredding";
     std::string shredding_value = "3.5";
-    std::string turbulence_flag = "--fluid-fire-turbulence";
+    std::string turbulence_flag = "--pyro-turbulence";
     std::string turbulence_value = "0.85";
     std::array<char*, 17> argv{program.data(),
                                ignition_flag.data(),
@@ -417,22 +417,17 @@ void test_run_config_parses_fluid_3d_fire_controls() {
 
     const cubey::RunConfig config =
         cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
-    require(config.fluid_fire_ignition_temperature == 0.31F,
-            "run config should parse fluid fire ignition");
-    require(config.fluid_fire_burn_rate == 4.5F,
-            "run config should parse fluid fire burn rate");
-    require(config.fluid_fire_heat_output == 3.25F,
-            "run config should parse fluid fire heat output");
-    require(config.fluid_fire_soot_yield == 0.22F,
-            "run config should parse fluid fire soot yield");
-    require(config.fluid_fire_expansion == 1.8F,
-            "run config should parse fluid fire expansion");
-    require(config.fluid_fire_flame_cooling == 2.75F,
-            "run config should parse fluid fire flame cooling");
-    require(config.fluid_fire_shredding == 3.5F,
-            "run config should parse fluid fire shredding");
-    require(config.fluid_fire_turbulence == 0.85F,
-            "run config should parse fluid fire turbulence");
+    require(config.pyro_ignition_temperature == 0.31F,
+            "run config should parse pyro ignition");
+    require(config.pyro_burn_rate == 4.5F, "run config should parse pyro burn rate");
+    require(config.pyro_heat_output == 3.25F,
+            "run config should parse pyro heat output");
+    require(config.pyro_soot_yield == 0.22F, "run config should parse pyro soot yield");
+    require(config.pyro_expansion == 1.8F, "run config should parse pyro expansion");
+    require(config.pyro_flame_cooling == 2.75F,
+            "run config should parse pyro flame cooling");
+    require(config.pyro_shredding == 3.5F, "run config should parse pyro shredding");
+    require(config.pyro_turbulence == 0.85F, "run config should parse pyro turbulence");
 }
 
 void test_run_config_parses_smoke_obstacle_flag() {

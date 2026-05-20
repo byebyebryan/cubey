@@ -1,7 +1,7 @@
 #pragma once
 
-#include "fluid_3d_config.h"
-#include "fluid_3d_sources.h"
+#include "pyro_3d_config.h"
+#include "pyro_3d_sources.h"
 
 #include <cubey/engine/project_gpu_services.h>
 #include <cubey/render/pipeline_resource.h>
@@ -18,13 +18,13 @@
 #include <optional>
 #include <vector>
 
-namespace cubey::projects::fluid_3d {
+namespace cubey::projects::fluid::pyro_3d {
 
-class Fluid3DGpuResources {
+class Pyro3DGpuResources {
   public:
     void create_global_resources_if_needed(cubey::vulkan::Device& device,
                                            cubey::ProjectGpuServices& gpu,
-                                           const Fluid3DConfig& config,
+                                           const Pyro3DConfig& config,
                                            std::uint32_t frame_slot_count);
     void create_render_pipeline(cubey::vulkan::Device& device, VkFormat color_format,
                                 VkExtent2D extent);
@@ -81,7 +81,7 @@ class Fluid3DGpuResources {
 
   private:
     void create_volume_resources(cubey::vulkan::Device& device, cubey::ProjectGpuServices& gpu,
-                                 const Fluid3DConfig& config);
+                                 const Pyro3DConfig& config);
     void create_descriptor_resources(cubey::vulkan::Device& device);
     void update_descriptors(cubey::vulkan::Device& device);
     void create_compute_pipelines(cubey::vulkan::Device& device);
@@ -103,7 +103,7 @@ class Fluid3DGpuResources {
     [[nodiscard]] const cubey::vulkan::DescriptorPool& shadow_descriptor_pool() const;
     [[nodiscard]] const cubey::vulkan::DescriptorSetArray& render_descriptors() const;
 
-    Fluid3DConfig config_{};
+    Pyro3DConfig config_{};
     std::optional<cubey::render::Texture3D> density_a_;
     std::optional<cubey::render::Texture3D> density_b_;
     std::optional<cubey::render::Texture3D> velocity_a_;
@@ -153,4 +153,4 @@ class Fluid3DGpuResources {
     std::optional<cubey::vulkan::GpuTimestampProfiler> profiler_;
 };
 
-} // namespace cubey::projects::fluid_3d
+} // namespace cubey::projects::fluid::pyro_3d

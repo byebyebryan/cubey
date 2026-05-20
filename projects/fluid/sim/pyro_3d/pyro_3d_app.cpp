@@ -1,9 +1,9 @@
-#include "fluid_3d_app.h"
+#include "pyro_3d_app.h"
 
-#include "fluid_3d_commands.h"
-#include "fluid_3d_config.h"
-#include "fluid_3d_gpu_resources.h"
-#include "fluid_3d_sources.h"
+#include "pyro_3d_commands.h"
+#include "pyro_3d_config.h"
+#include "pyro_3d_gpu_resources.h"
+#include "pyro_3d_sources.h"
 
 #include <cubey/engine/project_gpu_services.h>
 #include <cubey/engine/project_runtime.h>
@@ -30,7 +30,7 @@
 #include <utility>
 #include <vector>
 
-namespace cubey::projects::fluid_3d {
+namespace cubey::projects::fluid::pyro_3d {
 namespace {
 
 using cubey::FrameTiming;
@@ -40,43 +40,37 @@ using cubey::host::FrameStatsSample;
 constexpr float kCameraDistance = 2.45F;
 constexpr cubey::math::Vec3 kVolumeCenter{0.5F, 0.5F, 0.5F};
 
-[[nodiscard]] const char* debug_view_name(Fluid3DDebugView view) {
+[[nodiscard]] const char* debug_view_name(Pyro3DDebugView view) {
     switch (view) {
-    case Fluid3DDebugView::Smoke:
+    case Pyro3DDebugView::Smoke:
         return "Smoke";
-    case Fluid3DDebugView::DensitySlice:
+    case Pyro3DDebugView::DensitySlice:
         return "Density slice";
-    case Fluid3DDebugView::Velocity:
+    case Pyro3DDebugView::Velocity:
         return "Velocity";
     }
     return "Smoke";
 }
 
-constexpr std::array<Fluid3DDebugView, 3> kDebugViews{
-    Fluid3DDebugView::Smoke,
-    Fluid3DDebugView::DensitySlice,
-    Fluid3DDebugView::Velocity,
+constexpr std::array<Pyro3DDebugView, 3> kDebugViews{
+    Pyro3DDebugView::Smoke,
+    Pyro3DDebugView::DensitySlice,
+    Pyro3DDebugView::Velocity,
 };
 
-constexpr std::array<Fluid3DScenario, 3> kScenarios{
-    Fluid3DScenario::SmokePlume,
-    Fluid3DScenario::Explosion,
-    Fluid3DScenario::Fire,
-};
-
-class Fluid3DApp {
+class Pyro3DApp {
   public:
-    explicit Fluid3DApp(RunConfig config)
-        : config_(std::move(config)), runtime_(1),
-          fluid_config_(fluid_3d_config_from_run_config(config_)),
-          source_states_(create_fluid_3d_sources(fluid_config_)),
-          source_gpu_(fluid_3d_sources_to_gpu(source_states_, fluid_config_)) {
+    Pyro3DApp(RunConfig config, Pyro3DAppInfo app_info)
+        : config_(std::move(config)), app_info_(app_info), runtime_(1),
+          pyro_config_(pyro_3d_config_from_run_config(config_, app_info_.mode)),
+          source_states_(create_pyro_3d_sources(pyro_config_)),
+          source_gpu_(pyro_3d_sources_to_gpu(source_states_, pyro_config_)) {
         orbit_controller_.set_home_distance(kCameraDistance);
         orbit_controller_.set_auto_rotation_speed(0.12F);
     }
 
-    Fluid3DApp(const Fluid3DApp&) = delete;
-    Fluid3DApp& operator=(const Fluid3DApp&) = delete;
+    Pyro3DApp(const Pyro3DApp&) = delete;
+    Pyro3DApp& operator=(const Pyro3DApp&) = delete;
 
     int run() {
         if (config_.headless) {
@@ -128,8 +122,8 @@ class Fluid3DApp {
         return cubey::host::run_windowed_app(
             {
                 .run_config = config_,
-                .app_name = "fluid_3d",
-                .ready_status = "rendering 3D fluid project",
+                .app_name = app_info_.app_name,
+                .ready_status = app_info_.ready_status,
                 .required_queue_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
                 .swapchain_image_usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
                 .require_dynamic_rendering = true,
@@ -186,7 +180,7 @@ class Fluid3DApp {
         (void)context;
         ImGui::SetNextWindowPos(ImVec2(16.0F, 16.0F), ImGuiCond_FirstUseEver);
         ImGui::SetNextWindowSize(ImVec2(430.0F, 0.0F), ImGuiCond_FirstUseEver);
-        if (!ImGui::Begin("Fluid 3D")) {
+        if (!ImGui::Begin(app_info_.ui_title)) {
             ImGui::End();
             return;
         }
@@ -198,7 +192,7 @@ class Fluid3DApp {
         }
 
         if (ImGui::BeginCombo("Debug view", debug_view_name(debug_view_))) {
-            for (Fluid3DDebugView view : kDebugViews) {
+            for (Pyro3DDebugView view : kDebugViews) {
                 const bool selected = view == debug_view_;
                 if (ImGui::Selectable(debug_view_name(view), selected)) {
                     debug_view_ = view;
@@ -210,96 +204,80 @@ class Fluid3DApp {
             ImGui::EndCombo();
         }
 
-        if (ImGui::BeginCombo("Scenario", fluid_3d_scenario_name(fluid_config_.scenario))) {
-            for (Fluid3DScenario scenario : kScenarios) {
-                const bool selected = scenario == fluid_config_.scenario;
-                if (ImGui::Selectable(fluid_3d_scenario_name(scenario), selected)) {
-                    fluid_config_.scenario = scenario;
-                    if (scenario == Fluid3DScenario::Fire) {
-                        fluid_config_.source_count = 1;
-                        fluid_config_.source_radius = kDefaultFireSourceRadius;
-                    }
-                    reset_sources();
-                }
-                if (selected) {
-                    ImGui::SetItemDefaultFocus();
-                }
-            }
-            ImGui::EndCombo();
-        }
+        ImGui::Text("Mode: %s", pyro_3d_mode_name(pyro_config_.mode));
 
-        int source_count = static_cast<int>(fluid_config_.source_count);
+        int source_count = static_cast<int>(pyro_config_.source_count);
         if (ImGui::SliderInt("Sources", &source_count, 1,
-                             static_cast<int>(kMaxFluid3DSourceCount))) {
-            fluid_config_.source_count = static_cast<std::uint32_t>(source_count);
+                             static_cast<int>(kMaxPyro3DSourceCount))) {
+            pyro_config_.source_count = static_cast<std::uint32_t>(source_count);
             reset_sources();
         }
 
-        int pressure_iterations = static_cast<int>(fluid_config_.pressure_iterations);
+        int pressure_iterations = static_cast<int>(pyro_config_.pressure_iterations);
         if (ImGui::SliderInt("Pressure iterations", &pressure_iterations, 1, 48)) {
-            fluid_config_.pressure_iterations = static_cast<std::uint32_t>(pressure_iterations);
+            pyro_config_.pressure_iterations = static_cast<std::uint32_t>(pressure_iterations);
         }
-        int raymarch_steps = static_cast<int>(fluid_config_.raymarch_steps);
+        int raymarch_steps = static_cast<int>(pyro_config_.raymarch_steps);
         if (ImGui::SliderInt("Raymarch steps", &raymarch_steps, 24, 192)) {
-            fluid_config_.raymarch_steps = static_cast<std::uint32_t>(raymarch_steps);
+            pyro_config_.raymarch_steps = static_cast<std::uint32_t>(raymarch_steps);
         }
-        ImGui::SliderFloat("Density decay", &fluid_config_.density_decay_per_second, 0.960F, 1.0F,
+        ImGui::SliderFloat("Density decay", &pyro_config_.density_decay_per_second, 0.960F, 1.0F,
                            "%.4f");
-        ImGui::SliderFloat("Velocity decay", &fluid_config_.velocity_decay_per_second, 0.960F, 1.0F,
+        ImGui::SliderFloat("Velocity decay", &pyro_config_.velocity_decay_per_second, 0.960F, 1.0F,
                            "%.4f");
-        ImGui::SliderFloat("Source radius", &fluid_config_.source_radius, 0.020F, 0.180F,
+        ImGui::SliderFloat("Source radius", &pyro_config_.source_radius, 0.020F, 0.180F,
                            "%.3f");
-        ImGui::SliderFloat("Smoke", &fluid_config_.source_smoke_amount, 0.0F, 16.0F, "%.2f");
-        ImGui::SliderFloat("Heat", &fluid_config_.source_heat_amount, 0.0F, 8.0F, "%.2f");
-        ImGui::SliderFloat(fluid_config_.scenario == Fluid3DScenario::Fire ? "Fuel" : "Flame",
-                           &fluid_config_.source_flame_amount, 0.0F, 12.0F, "%.2f");
-        ImGui::SliderFloat("Velocity force", &fluid_config_.source_velocity_strength, 0.0F, 16.0F,
+        ImGui::SliderFloat("Smoke", &pyro_config_.source_smoke_amount, 0.0F, 16.0F, "%.2f");
+        ImGui::SliderFloat("Heat", &pyro_config_.source_heat_amount, 0.0F, 8.0F, "%.2f");
+        ImGui::SliderFloat(pyro_config_.mode == Pyro3DMode::Fire ? "Fuel" : "Flame",
+                           &pyro_config_.source_flame_amount, 0.0F, 12.0F, "%.2f");
+        ImGui::SliderFloat("Velocity force", &pyro_config_.source_velocity_strength, 0.0F, 16.0F,
                            "%.2f");
-        ImGui::SliderFloat("Buoyancy", &fluid_config_.buoyancy_strength, -2.0F, 6.0F, "%.2f");
-        if (fluid_config_.scenario == Fluid3DScenario::Explosion) {
-            ImGui::SliderFloat("Explosion interval", &fluid_config_.explosion_interval_seconds,
+        ImGui::SliderFloat("Buoyancy", &pyro_config_.buoyancy_strength, -2.0F, 6.0F, "%.2f");
+        if (pyro_config_.mode == Pyro3DMode::Explosion) {
+            ImGui::SliderFloat("Explosion interval", &pyro_config_.explosion_interval_seconds,
                                0.25F, 8.0F, "%.2f");
-            const float max_duration = std::min(fluid_config_.explosion_interval_seconds, 1.0F);
-            fluid_config_.explosion_duration_seconds =
-                std::min(fluid_config_.explosion_duration_seconds, max_duration);
-            ImGui::SliderFloat("Explosion duration", &fluid_config_.explosion_duration_seconds,
+            const float max_duration = std::min(pyro_config_.explosion_interval_seconds, 1.0F);
+            pyro_config_.explosion_duration_seconds =
+                std::min(pyro_config_.explosion_duration_seconds, max_duration);
+            ImGui::SliderFloat("Explosion duration", &pyro_config_.explosion_duration_seconds,
                                0.016F, max_duration, "%.3f");
-            ImGui::SliderFloat("Explosion boost", &fluid_config_.explosion_boost, 0.0F, 40.0F,
+            ImGui::SliderFloat("Explosion boost", &pyro_config_.explosion_boost, 0.0F, 40.0F,
                                "%.2f");
         }
-        if (fluid_config_.scenario == Fluid3DScenario::Fire) {
-            ImGui::SliderFloat("Ignition", &fluid_config_.fire_ignition_temperature, 0.0F, 2.0F,
+        if (pyro_config_.mode == Pyro3DMode::Fire) {
+            ImGui::SliderFloat("Ignition", &pyro_config_.fire_ignition_temperature, 0.0F, 2.0F,
                                "%.2f");
-            ImGui::SliderFloat("Burn rate", &fluid_config_.fire_burn_rate, 0.0F, 10.0F, "%.2f");
-            ImGui::SliderFloat("Heat output", &fluid_config_.fire_heat_output, 0.0F, 8.0F,
+            ImGui::SliderFloat("Burn rate", &pyro_config_.fire_burn_rate, 0.0F, 10.0F, "%.2f");
+            ImGui::SliderFloat("Heat output", &pyro_config_.fire_heat_output, 0.0F, 8.0F,
                                "%.2f");
-            ImGui::SliderFloat("Soot yield", &fluid_config_.fire_soot_yield, 0.0F, 1.5F,
+            ImGui::SliderFloat("Soot yield", &pyro_config_.fire_soot_yield, 0.0F, 1.5F,
                                "%.2f");
-            ImGui::SliderFloat("Expansion", &fluid_config_.fire_expansion, 0.0F, 4.0F, "%.2f");
-            ImGui::SliderFloat("Flame cooling", &fluid_config_.fire_flame_cooling, 0.0F, 8.0F,
+            ImGui::SliderFloat("Expansion", &pyro_config_.fire_expansion, 0.0F, 4.0F, "%.2f");
+            ImGui::SliderFloat("Flame cooling", &pyro_config_.fire_flame_cooling, 0.0F, 8.0F,
                                "%.2f");
-            ImGui::SliderFloat("Shredding", &fluid_config_.fire_shredding, 0.0F, 8.0F, "%.2f");
-            ImGui::SliderFloat("Turbulence", &fluid_config_.fire_turbulence, 0.0F, 3.0F,
+            ImGui::SliderFloat("Shredding", &pyro_config_.fire_shredding, 0.0F, 8.0F, "%.2f");
+            ImGui::SliderFloat("Turbulence", &pyro_config_.fire_turbulence, 0.0F, 3.0F,
                                "%.2f");
         }
-        ImGui::SliderFloat("Vorticity", &fluid_config_.vorticity_strength, 0.0F, 1.5F, "%.2f");
-        ImGui::SliderFloat("Absorption", &fluid_config_.absorption, 0.5F, 12.0F, "%.2f");
-        ImGui::SliderFloat("Light", &fluid_config_.emission, 0.1F, 4.0F, "%.2f");
-        ImGui::SliderFloat("Shadow", &fluid_config_.shadow_absorption, 0.0F, 96.0F, "%.2f");
-        int shadow_steps = static_cast<int>(fluid_config_.shadow_steps);
+        ImGui::SliderFloat("Vorticity", &pyro_config_.vorticity_strength, 0.0F, 1.5F, "%.2f");
+        ImGui::SliderFloat("Absorption", &pyro_config_.absorption, 0.5F, 12.0F, "%.2f");
+        ImGui::SliderFloat("Light", &pyro_config_.emission, 0.1F, 4.0F, "%.2f");
+        ImGui::SliderFloat("Shadow", &pyro_config_.shadow_absorption, 0.0F, 96.0F, "%.2f");
+        int shadow_steps = static_cast<int>(pyro_config_.shadow_steps);
         if (ImGui::SliderInt("Shadow steps", &shadow_steps, 8, 192)) {
-            fluid_config_.shadow_steps = static_cast<std::uint32_t>(shadow_steps);
+            pyro_config_.shadow_steps = static_cast<std::uint32_t>(shadow_steps);
         }
-        int shadow_update_interval = static_cast<int>(fluid_config_.shadow_update_interval);
+        int shadow_update_interval = static_cast<int>(pyro_config_.shadow_update_interval);
         if (ImGui::SliderInt("Shadow interval", &shadow_update_interval, 1, 8)) {
-            fluid_config_.shadow_update_interval =
+            pyro_config_.shadow_update_interval =
                 static_cast<std::uint32_t>(shadow_update_interval);
         }
-        ImGui::SliderFloat("Ambient", &fluid_config_.ambient_light, 0.0F, 1.0F, "%.2f");
-        ImGui::Text("Grid: %u x %u x %u", fluid_config_.grid_width, fluid_config_.grid_height,
-                    fluid_config_.grid_depth);
-        ImGui::Text("Shadow grid: %u x %u x %u", fluid_config_.shadow_grid_width,
-                    fluid_config_.shadow_grid_height, fluid_config_.shadow_grid_depth);
+        ImGui::SliderFloat("Ambient", &pyro_config_.ambient_light, 0.0F, 1.0F, "%.2f");
+        ImGui::Text("Grid: %u x %u x %u", pyro_config_.grid_width, pyro_config_.grid_height,
+                    pyro_config_.grid_depth);
+        ImGui::Text("Shadow grid: %u x %u x %u", pyro_config_.shadow_grid_width,
+                    pyro_config_.shadow_grid_height, pyro_config_.shadow_grid_depth);
         const std::vector<cubey::vulkan::GpuPassTiming>& timings = resources_.latest_timings();
         if (!timings.empty()) {
             ImGui::Separator();
@@ -312,8 +290,8 @@ class Fluid3DApp {
     }
 
     void reset_sources() {
-        source_states_ = create_fluid_3d_sources(fluid_config_);
-        source_gpu_ = fluid_3d_sources_to_gpu(source_states_, fluid_config_);
+        source_states_ = create_pyro_3d_sources(pyro_config_);
+        source_gpu_ = pyro_3d_sources_to_gpu(source_states_, pyro_config_);
     }
 
     void reset_simulation() {
@@ -331,10 +309,10 @@ class Fluid3DApp {
             .elapsed_seconds = frame.elapsed_seconds,
             .frame_index = frame.frame_index,
         };
-        source_gpu_ = update_fluid_3d_sources(source_states_, fluid_config_, timing);
+        source_gpu_ = update_pyro_3d_sources(source_states_, pyro_config_, timing);
     }
 
-    [[nodiscard]] Fluid3DRenderCamera render_camera() const {
+    [[nodiscard]] Pyro3DRenderCamera render_camera() const {
         const cubey::Transform3D transform = cubey::orbit_camera_transform(cubey::OrbitCameraState{
             .target = kVolumeCenter,
             .distance = orbit_controller_.distance(),
@@ -363,7 +341,7 @@ class Fluid3DApp {
                                            cubey::vulkan::GpuRuntime& gpu,
                                            std::uint32_t frame_slot_count) {
         attach_project_gpu(gpu);
-        resources_.create_global_resources_if_needed(device, runtime_.gpu(), fluid_config_,
+        resources_.create_global_resources_if_needed(device, runtime_.gpu(), pyro_config_,
                                                      frame_slot_count);
     }
 
@@ -406,18 +384,18 @@ class Fluid3DApp {
         if (profiler != nullptr) {
             profiler->begin_frame(render_frame.command_buffer, render_frame.frame_slot.index);
         }
-        record_fluid_3d_compute(render_frame.command_buffer, resources_, fluid_config_, paused_,
+        record_pyro_3d_compute(render_frame.command_buffer, resources_, pyro_config_, paused_,
                                 reset_requested_, frame, source_gpu_, frame_state_, true,
                                 profiler, render_frame.frame_slot.index);
         cubey::render::record_present_render_target(
             recorder, cubey::render::render_target_view(render_frame.color_target),
             [this, &render_frame,
              profiler](const cubey::vulkan::CommandRecorder& present_recorder) {
-                record_fluid_3d_draw(present_recorder.handle(), resources_, fluid_config_,
+                record_pyro_3d_draw(present_recorder.handle(), resources_, pyro_config_,
                                      debug_view_, render_camera(), render_frame.color_target,
                                      frame_state_, profiler, render_frame.frame_slot.index);
             });
-        recorder.end("vkEndCommandBuffer fluid_3d");
+        recorder.end("vkEndCommandBuffer pyro_3d");
     }
 
     void maybe_print_gpu_timings(const ProjectFrame& frame) {
@@ -433,7 +411,7 @@ class Fluid3DApp {
             return;
         }
         last_gpu_timing_print_seconds_ = frame.elapsed_seconds;
-        std::printf("fluid_3d_gpu:");
+        std::printf("pyro_3d_gpu:");
         for (const cubey::vulkan::GpuPassTiming& timing : timings) {
             std::printf(" %s=%.3fms", timing.label.c_str(), timing.milliseconds);
         }
@@ -444,11 +422,11 @@ class Fluid3DApp {
                                           const ProjectFrame& frame) {
         update_sources(frame);
         static_cast<void>(gpu.submit_and_wait({
-            .label = "fluid_3d headless simulation frame",
+            .label = "pyro_3d headless simulation frame",
             .work =
                 [this, frame](cubey::vulkan::GpuOwnerContext& gpu_context) {
                     cubey::vulkan::ImmediateCommands commands(gpu_context);
-                    record_fluid_3d_compute(commands.command_buffer(), resources_, fluid_config_,
+                    record_pyro_3d_compute(commands.command_buffer(), resources_, pyro_config_,
                                             paused_, reset_requested_, frame, source_gpu_,
                                             frame_state_);
                     commands.submit_and_wait();
@@ -469,10 +447,10 @@ class Fluid3DApp {
         };
         if (config_.capture_mode == CaptureMode::Png) {
             callbacks.before_capture = [this](cubey::host::HeadlessPngContext&) {
-                const std::uint32_t frames = fluid_3d_headless_frame_count(config_);
+                const std::uint32_t frames = pyro_3d_headless_frame_count(config_);
                 for (std::uint32_t frame = 1; frame <= frames; ++frame) {
                     const ProjectFrame project_frame = runtime_.frame_for_timing(
-                        fixed_fluid_3d_headless_timing(fluid_config_, frame));
+                        fixed_pyro_3d_headless_timing(pyro_config_, frame));
                     record_headless_simulation_frame(runtime_.gpu(), project_frame);
                 }
             };
@@ -493,7 +471,7 @@ class Fluid3DApp {
         callbacks.record_capture = [this](cubey::host::HeadlessPngContext&,
                                           VkCommandBuffer command_buffer,
                                           const cubey::host::HeadlessRenderTarget& target) {
-            record_fluid_3d_draw(command_buffer, resources_, fluid_config_, debug_view_,
+            record_pyro_3d_draw(command_buffer, resources_, pyro_config_, debug_view_,
                                  render_camera(), target, frame_state_);
         };
         callbacks.shutdown = [this](cubey::host::HeadlessPngContext&) {
@@ -507,15 +485,16 @@ class Fluid3DApp {
     }
 
     RunConfig config_;
+    Pyro3DAppInfo app_info_;
     cubey::ProjectRuntimeAdapter runtime_;
-    Fluid3DConfig fluid_config_;
-    std::vector<Fluid3DSourceState> source_states_;
-    std::vector<Fluid3DSourceGpu> source_gpu_;
-    Fluid3DGpuResources resources_;
-    Fluid3DFrameState frame_state_;
+    Pyro3DConfig pyro_config_;
+    std::vector<Pyro3DSourceState> source_states_;
+    std::vector<Pyro3DSourceGpu> source_gpu_;
+    Pyro3DGpuResources resources_;
+    Pyro3DFrameState frame_state_;
     cubey::Camera3D camera_;
     cubey::OrbitController orbit_controller_;
-    Fluid3DDebugView debug_view_ = Fluid3DDebugView::Smoke;
+    Pyro3DDebugView debug_view_ = Pyro3DDebugView::Smoke;
     double last_gpu_timing_print_seconds_ = -1.0;
     bool paused_ = false;
     bool reset_requested_ = true;
@@ -523,9 +502,9 @@ class Fluid3DApp {
 
 } // namespace
 
-int run_fluid_3d(const RunConfig& config) {
-    Fluid3DApp app(config);
+int run_pyro_3d(const RunConfig& config, Pyro3DAppInfo app_info) {
+    Pyro3DApp app(config, app_info);
     return app.run();
 }
 
-} // namespace cubey::projects::fluid_3d
+} // namespace cubey::projects::fluid::pyro_3d

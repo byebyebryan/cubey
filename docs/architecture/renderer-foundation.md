@@ -246,7 +246,7 @@ full engine architecture.
   files, descriptor set layouts, push constants, attachment formats, vertex
   input, and `MaterialPassInfo` where applicable; they do not reflect shaders,
   cache pipelines, choose material resources, or record commands. Current
-  examples and `fluid_2d` create app/project graphics pipelines through this
+  examples and `smoke_2d` create app/project graphics pipelines through this
   render-level wrapper using file-backed shader stage configs and recipe
   helpers; the lower-level Vulkan pipeline builders remain as tested
   implementation details and escape hatches.
@@ -280,10 +280,10 @@ full engine architecture.
   pass callbacks. Pass reordering, pass culling, descriptor allocation,
   aliasing, and async scheduling remain future work. `shadow_cube` now uses
   graph-derived shadow-depth, transient
-  scene-color, backbuffer, and depth sync, and `fluid_2d` declares a coarse
+  scene-color, backbuffer, and depth sync, and `smoke_2d` declares a coarse
   simulation-to-render graph boundary.
 - `cubey::vulkan::CommandRecorder` is the current low-level recording helper
-  used by examples and `fluid_2d` for common Vulkan command-buffer calls. It
+  used by examples and `smoke_2d` for common Vulkan command-buffer calls. It
   does not own pass scheduling, automatic barriers, descriptor policy, or
   renderer state.
 - Scene render-planning helpers live with the scene/component layer and emit
@@ -316,7 +316,7 @@ full engine architecture.
   The current windowed host uses real frame slots for overlapping frame
   resources, while swapchain image ownership stays Vulkan-visible.
 - Fullscreen passes are not modeled as quad primitives. `fractal_2d`,
-  `fluid_2d`, and `shadow_cube` use the oversized single-triangle pattern
+  `smoke_2d`, and `shadow_cube` use the oversized single-triangle pattern
   generated from `gl_VertexIndex`, avoiding vertex/index buffers and the
   internal diagonal of a two-triangle fullscreen quad.
 

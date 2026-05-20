@@ -1,4 +1,4 @@
-#include "fluid_3d_commands.h"
+#include "pyro_3d_commands.h"
 
 #include <cubey/render/pass.h>
 #include <cubey/vulkan/command_recorder.h>
@@ -11,7 +11,7 @@
 #include <cstdint>
 #include <stdexcept>
 
-namespace cubey::projects::fluid_3d {
+namespace cubey::projects::fluid::pyro_3d {
 namespace {
 
 using cubey::vulkan::ImageLayoutTransition;
@@ -55,7 +55,7 @@ struct TransferWriteBarrier {
 [[nodiscard]] DispatchGroups compute_dispatch_groups(VkExtent3D extent,
                                                      std::uint32_t group_size) {
     if (group_size == 0) {
-        throw std::runtime_error("fluid 3D compute group size must be positive");
+        throw std::runtime_error("pyro 3D compute group size must be positive");
     }
     return {
         .x = (extent.width + group_size - 1U) / group_size,
@@ -64,7 +64,7 @@ struct TransferWriteBarrier {
     };
 }
 
-[[nodiscard]] VkExtent3D solver_extent(const Fluid3DConfig& config) {
+[[nodiscard]] VkExtent3D solver_extent(const Pyro3DConfig& config) {
     return {
         .width = config.grid_width,
         .height = config.grid_height,
@@ -72,7 +72,7 @@ struct TransferWriteBarrier {
     };
 }
 
-[[nodiscard]] VkExtent3D shadow_extent(const Fluid3DConfig& config) {
+[[nodiscard]] VkExtent3D shadow_extent(const Pyro3DConfig& config) {
     return {
         .width = config.shadow_grid_width,
         .height = config.shadow_grid_height,
@@ -121,7 +121,7 @@ void transition_volume_to_general(VkCommandBuffer command_buffer,
 }
 
 void record_initial_volume_layouts(VkCommandBuffer command_buffer,
-                                   const Fluid3DGpuResources& resources) {
+                                   const Pyro3DGpuResources& resources) {
     transition_volume_to_general(command_buffer, resources.density_a());
     transition_volume_to_general(command_buffer, resources.density_b());
     transition_volume_to_general(command_buffer, resources.velocity_a());
@@ -134,15 +134,15 @@ void record_initial_volume_layouts(VkCommandBuffer command_buffer,
     transition_volume_to_general(command_buffer, resources.shadow_volume());
 }
 
-void record_source_buffer_update(VkCommandBuffer command_buffer, const Fluid3DGpuResources& resources,
-                                 std::span<const Fluid3DSourceGpu> sources) {
+void record_source_buffer_update(VkCommandBuffer command_buffer, const Pyro3DGpuResources& resources,
+                                 std::span<const Pyro3DSourceGpu> sources) {
     if (sources.empty()) {
         return;
     }
     const VkDeviceSize byte_size =
-        static_cast<VkDeviceSize>(sources.size() * sizeof(Fluid3DSourceGpu));
+        static_cast<VkDeviceSize>(sources.size() * sizeof(Pyro3DSourceGpu));
     if (byte_size > resources.sources().size()) {
-        throw std::runtime_error("fluid 3D source update exceeds source buffer size");
+        throw std::runtime_error("pyro 3D source update exceeds source buffer size");
     }
     vkCmdUpdateBuffer(command_buffer, resources.sources().handle(), 0, byte_size, sources.data());
     record_transfer_write_barrier(command_buffer,
@@ -152,7 +152,7 @@ void record_source_buffer_update(VkCommandBuffer command_buffer, const Fluid3DGp
                                   });
 }
 
-[[nodiscard]] SimulationPushConstants simulation_push_constants(const Fluid3DConfig& config,
+[[nodiscard]] SimulationPushConstants simulation_push_constants(const Pyro3DConfig& config,
                                                                 const ProjectFrame& frame) {
     const float time = static_cast<float>(frame.elapsed_seconds);
     const float dt = std::min(static_cast<float>(frame.delta_seconds), config.fixed_delta_seconds);
@@ -183,7 +183,7 @@ void record_source_buffer_update(VkCommandBuffer command_buffer, const Fluid3DGp
                 config.shadow_absorption,
                 static_cast<float>(config.shadow_steps),
                 config.buoyancy_strength,
-                static_cast<float>(static_cast<std::uint32_t>(config.scenario)),
+                static_cast<float>(static_cast<std::uint32_t>(config.mode)),
             },
         .fire_options =
             {
@@ -202,9 +202,9 @@ void record_source_buffer_update(VkCommandBuffer command_buffer, const Fluid3DGp
     };
 }
 
-[[nodiscard]] RenderPushConstants render_push_constants(const Fluid3DConfig& config,
-                                                        Fluid3DDebugView debug_view,
-                                                        const Fluid3DRenderCamera& camera,
+[[nodiscard]] RenderPushConstants render_push_constants(const Pyro3DConfig& config,
+                                                        Pyro3DDebugView debug_view,
+                                                        const Pyro3DRenderCamera& camera,
                                                         VkExtent2D extent) {
     const float aspect = extent.height == 0
                              ? 1.0F
@@ -261,11 +261,11 @@ void record_dispatch(const cubey::vulkan::CommandRecorder& recorder,
 
 } // namespace
 
-void record_fluid_3d_compute(VkCommandBuffer command_buffer, Fluid3DGpuResources& resources,
-                             const Fluid3DConfig& config, bool paused, bool& reset_requested,
+void record_pyro_3d_compute(VkCommandBuffer command_buffer, Pyro3DGpuResources& resources,
+                             const Pyro3DConfig& config, bool paused, bool& reset_requested,
                              const ProjectFrame& frame,
-                             std::span<const Fluid3DSourceGpu> sources,
-                             Fluid3DFrameState& frame_state,
+                             std::span<const Pyro3DSourceGpu> sources,
+                             Pyro3DFrameState& frame_state,
                              bool include_render_visibility_barrier,
                              cubey::vulkan::GpuTimestampProfiler* profiler,
                              std::uint32_t frame_slot_index) {
@@ -433,11 +433,11 @@ void record_fluid_3d_compute(VkCommandBuffer command_buffer, Fluid3DGpuResources
     }
 }
 
-void record_fluid_3d_draw(VkCommandBuffer command_buffer, const Fluid3DGpuResources& resources,
-                          const Fluid3DConfig& config, Fluid3DDebugView debug_view,
-                          const Fluid3DRenderCamera& camera,
+void record_pyro_3d_draw(VkCommandBuffer command_buffer, const Pyro3DGpuResources& resources,
+                          const Pyro3DConfig& config, Pyro3DDebugView debug_view,
+                          const Pyro3DRenderCamera& camera,
                           cubey::render::ColorTargetView color_target,
-                          const Fluid3DFrameState& frame_state,
+                          const Pyro3DFrameState& frame_state,
                           cubey::vulkan::GpuTimestampProfiler* profiler,
                           std::uint32_t frame_slot_index) {
     const cubey::vulkan::CommandRecorder recorder(command_buffer);
@@ -468,4 +468,4 @@ void record_fluid_3d_draw(VkCommandBuffer command_buffer, const Fluid3DGpuResour
     }
 }
 
-} // namespace cubey::projects::fluid_3d
+} // namespace cubey::projects::fluid::pyro_3d

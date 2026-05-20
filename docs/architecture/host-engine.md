@@ -118,20 +118,20 @@ setup before swapchain setup, and callback forwarding.
 8. Migrate the windowed `projects/fractal_2d` path while preserving its headless
    PNG path. Status: complete.
 9. Extract a narrow no-GLFW headless PNG host after `headless_cube`,
-   `fractal_2d --headless`, and `fluid_2d --headless` repeated the same
+   `fractal_2d --headless`, and `smoke_2d --headless` repeated the same
    offscreen render/readback/write loop. Status: complete.
 10. Migrate `examples/headless_cube` and `projects/fractal_2d --headless` to
     the shared headless host. Status: complete.
-11. Migrate `projects/fluid_2d --headless` to the shared headless host while
+11. Migrate `projects/fluid/smoke_2d --headless` to the shared headless host while
     preserving project-local compute simulation and fullscreen draw code.
     Status: complete.
-12. Add project runtime services and move `fluid_2d` simulation timing onto
+12. Add project runtime services and move `smoke_2d` simulation timing onto
     `ProjectFrame` in both windowed and headless modes. Status: complete.
 13. Extract `ProjectRuntimeAdapter` for the repeated host bridge: one project
     frame per host frame, context access, and deferred destruction retirement.
     Status: complete.
 14. Attach host GPU runtimes to `ProjectRuntimeAdapter`, add
-    `ProjectGpuServices` readback tickets, and migrate `fluid_2d` project-owned
+    `ProjectGpuServices` readback tickets, and migrate `smoke_2d` project-owned
     GPU setup/headless simulation work through that bridge. Status: complete.
 
 ## Current Checkpoint
@@ -211,7 +211,7 @@ setup before swapchain setup, and callback forwarding.
   and pass execution to `cubey::render::RenderGraphFrameExecutor`.
 - All current windowed examples/projects use the host layer: `spinning_cube`,
   `textured_cube`, `shadow_cube`, `instanced_cubes`, `material_cubes`,
-  `particle_cubes`, `fractal_2d`, and `fluid_2d`.
+  `particle_cubes`, `fractal_2d`, and `smoke_2d`.
   Cube examples keep the app callback shell thin and split resources, scene
   updates, render recording, and compute simulation into local implementation
   files. They still own their shaders, descriptors, command recording sequence,
@@ -223,7 +223,7 @@ setup before swapchain setup, and callback forwarding.
   writing, and optional MP4 video writing without depending on GLFW. Its target
   view uses the same `cubey::render::ColorTargetView` vocabulary as the
   windowed path.
-- `headless_cube`, `fractal_2d --headless`, `fluid_2d --headless`,
+- `headless_cube`, `fractal_2d --headless`, `smoke_2d --headless`,
   `gltf_viewer --headless`, and `pbr_furnace --headless` use the headless host
   while keeping their resource setup, simulation/update work, and capture
   command recording sequence local.
@@ -245,7 +245,7 @@ setup before swapchain setup, and callback forwarding.
 - `cubey::ProjectRuntimeAdapter` wraps those services with the repeated
   host-bridge behavior: convert `FrameTiming` to one `ProjectFrame` per host
   frame, expose `ProjectContext`, and retire deferred destruction on shutdown.
-  `fluid_2d` uses the adapter in both windowed and headless modes.
+  `smoke_2d` uses the adapter in both windowed and headless modes.
 - `cubey::ProjectGpuServices` is the optional GPU-facing project bridge for
   draining queued uploads into owner-thread GPU work, marking upload completion
   or failure, routing queue-idle waits through `GpuRuntime`, and retiring
