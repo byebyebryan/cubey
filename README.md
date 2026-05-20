@@ -174,7 +174,7 @@ obstacle mask.
 `64x64x64` shadow volume and a `smoke-plume` source scenario. Use
 `--grid-width`, `--grid-height`, `--grid-depth`, `--shadow-grid-width`,
 `--shadow-grid-height`, `--shadow-grid-depth`, `--shadow-steps`,
-`--shadow-update-interval`, `--fluid-scenario smoke-plume|explosion`,
+`--shadow-update-interval`, `--fluid-scenario smoke-plume|explosion|fire`,
 `--fluid-sources`, `--fluid-source-radius`, `--fluid-source-force`,
 `--fluid-smoke`, `--fluid-heat`, `--fluid-flame`,
 `--fluid-explosion-interval`, `--fluid-explosion-duration`, and

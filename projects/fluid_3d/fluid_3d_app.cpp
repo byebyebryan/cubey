@@ -58,9 +58,10 @@ constexpr std::array<Fluid3DDebugView, 3> kDebugViews{
     Fluid3DDebugView::Velocity,
 };
 
-constexpr std::array<Fluid3DScenario, 2> kScenarios{
+constexpr std::array<Fluid3DScenario, 3> kScenarios{
     Fluid3DScenario::SmokePlume,
     Fluid3DScenario::Explosion,
+    Fluid3DScenario::Fire,
 };
 
 class Fluid3DApp {

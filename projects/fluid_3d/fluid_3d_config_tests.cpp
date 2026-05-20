@@ -271,6 +271,23 @@ int main() {
         require(explosion_pause_gpu.front().velocity_strength[3] == 0.0F,
                 "fluid 3D explosion scenario should pause force between impulses");
 
+        cubey::RunConfig fire_run_config = run_config;
+        fire_run_config.fluid_scenario = "fire";
+        const cubey::projects::fluid_3d::Fluid3DConfig fire_config =
+            cubey::projects::fluid_3d::fluid_3d_config_from_run_config(fire_run_config);
+        require(fire_config.scenario == cubey::projects::fluid_3d::Fluid3DScenario::Fire,
+                "fluid 3D config should parse the fire scenario");
+        std::vector<cubey::projects::fluid_3d::Fluid3DSourceState> fire_sources =
+            cubey::projects::fluid_3d::create_fluid_3d_sources(fire_config);
+        require(fire_sources.front().position[1] < 0.12F,
+                "fluid 3D fire should originate near the lower burner");
+        require(fire_sources.front().material_amount[0] < fire_config.source_smoke_amount,
+                "fluid 3D fire should use less soot than the smoke plume");
+        require(fire_sources.front().material_amount[1] > fire_config.source_heat_amount,
+                "fluid 3D fire should boost heat");
+        require(fire_sources.front().material_amount[2] == fire_config.source_flame_amount,
+                "fluid 3D fire should carry flame amount");
+
         require(cubey::projects::fluid_3d::fluid_3d_headless_frame_count(run_config) == 120,
                 "fluid 3D headless PNG should default to a settled simulation frame");
         run_config.frames = 8;
@@ -312,6 +329,8 @@ int main() {
                          "fluid 3D render shader should shade smoke as material, not RGB dye");
         require_contains(render_shader, "flame_emission",
                          "fluid 3D render shader should expose semantic flame emission");
+        require_contains(render_shader, "flame_alpha",
+                         "fluid 3D render shader should accumulate visible flame emission");
         require_contains(shadow_shader, "light_transmittance",
                          "fluid 3D shadow shader should precompute volume light transmittance");
         require_contains(shadow_shader, "soot_density_at",

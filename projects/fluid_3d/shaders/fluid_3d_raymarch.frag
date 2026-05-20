@@ -140,6 +140,7 @@ void main() {
         vec4 density = density_at(position);
         float smoke_density_value = smoke_density(density, position);
         float smoke_extinction = smoke_density_value * params.render_options.x;
+        float flame_alpha = 1.0 - exp(-max(density.b, 0.0) * step_length * 0.75);
         float base_extinction = base_volume_extinction();
         float smoke_alpha = 1.0 - exp(-smoke_extinction * step_length);
         float base_alpha = 1.0 - exp(-base_extinction * step_length);
@@ -156,8 +157,10 @@ void main() {
         vec3 base_color = (sky_color * 0.45 + light_color * 0.12) * ambient_shadow;
         accumulated += transmittance * base_color * base_alpha;
         accumulated += transmittance * smoke_albedo(density) * lighting * smoke_alpha;
-        accumulated += transmittance * flame_emission(density) * step_length * smoke_alpha;
-        transmittance *= exp(-(base_extinction + smoke_extinction) * step_length);
+        accumulated += transmittance * flame_emission(density) * step_length *
+                       max(smoke_alpha, flame_alpha);
+        transmittance *= exp(-(base_extinction + smoke_extinction + max(density.b, 0.0) * 0.12) *
+                              step_length);
         if (transmittance < 0.01) {
             break;
         }

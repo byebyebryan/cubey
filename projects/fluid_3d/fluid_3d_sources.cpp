@@ -94,12 +94,33 @@ constexpr std::array<float, 3> kExplosionCenter{0.5F, 0.24F, 0.5F};
     };
 }
 
+[[nodiscard]] Fluid3DSourceState create_fire_source(const Fluid3DConfig& config,
+                                                    std::uint32_t index) {
+    const std::array<float, 3> offset = scale(plume_disk_offset(index, config.source_count), 0.72F);
+    const std::array<float, 3> swirl_direction = normalize_or_zero({offset[2], 0.0F, -offset[0]});
+    const std::array<float, 3> velocity =
+        normalize_or_zero(add({0.0F, 1.0F, 0.0F}, scale(swirl_direction, 0.12F)));
+    return {
+        .position = add(kPlumeCenter, offset),
+        .velocity = velocity,
+        .material_amount =
+            {
+                config.source_smoke_amount * 0.34F,
+                config.source_heat_amount * 1.85F,
+                config.source_flame_amount,
+            },
+        .radius = config.source_radius * 0.82F,
+    };
+}
+
 [[nodiscard]] Fluid3DSourceState create_source(const Fluid3DConfig& config, std::uint32_t index) {
     switch (config.scenario) {
     case Fluid3DScenario::SmokePlume:
         return create_plume_source(config, index);
     case Fluid3DScenario::Explosion:
         return create_explosion_source(config, index);
+    case Fluid3DScenario::Fire:
+        return create_fire_source(config, index);
     }
     return create_plume_source(config, index);
 }
@@ -115,6 +136,8 @@ constexpr std::array<float, 3> kExplosionCenter{0.5F, 0.24F, 0.5F};
         const float phase = std::fmod(std::max(time, 0.0F), interval);
         return phase < duration ? config.explosion_boost : 0.0F;
     }
+    case Fluid3DScenario::Fire:
+        return 1.0F;
     }
     return 1.0F;
 }

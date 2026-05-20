@@ -28,6 +28,7 @@ ambient terms, and recent GPU pass timings.
 ./build/dev/projects/fluid_3d/fluid_3d --width 1280 --height 720
 ./build/dev/projects/fluid_3d/fluid_3d --fluid-scenario smoke-plume --fluid-sources 6
 ./build/dev/projects/fluid_3d/fluid_3d --fluid-scenario explosion --fluid-explosion-interval 3.0 --fluid-explosion-duration 0.12 --fluid-explosion-boost 18
+./build/dev/projects/fluid_3d/fluid_3d --fluid-scenario fire --fluid-flame 3.0 --fluid-heat 2.0
 ./build/dev/projects/fluid_3d/fluid_3d --fluid-smoke 7.0 --fluid-heat 1.8 --fluid-source-force 8.0 --fluid-buoyancy 1.5
 ./build/dev/projects/fluid_3d/fluid_3d --shadow-grid-width 64 --shadow-grid-height 64 --shadow-grid-depth 64 --shadow-steps 64 --shadow-update-interval 1
 ./build/dev/projects/fluid_3d/fluid_3d --frames 300 --print-frame-stats --width 1280 --height 720
@@ -41,8 +42,9 @@ local runs once performance allows. Shadow grid changes are startup-time
 resource choices; shadow steps and update interval are also exposed live in UI.
 The default `smoke-plume` scenario uses fixed low sources that inject smoke,
 heat, and upward velocity. `explosion` emits a short boosted smoke/heat/flame
-and radial velocity impulse, then pauses until the next interval. The density
-volume channels are semantic material channels rather than display color:
+and radial velocity impulse, then pauses until the next interval. `fire` keeps a
+steady lower burner with stronger heat/flame and less soot. The density volume
+channels are semantic material channels rather than display color:
 `r = smoke/soot`, `g = heat`, `b = flame`, and `a = reserved`. Smoke/heat/flame
 injection and velocity force are controlled independently, and the solver
 applies material-weighted upward buoyancy during the correction/injection pass.

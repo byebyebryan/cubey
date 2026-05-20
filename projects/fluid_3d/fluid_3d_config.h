@@ -21,6 +21,7 @@ enum class Fluid3DDebugView : std::uint32_t {
 enum class Fluid3DScenario : std::uint32_t {
     SmokePlume = 0,
     Explosion = 1,
+    Fire = 2,
 };
 
 inline constexpr std::uint32_t kMaxFluid3DSourceCount = 16;
@@ -76,6 +77,8 @@ struct Fluid3DConfig {
         return "Smoke plume";
     case Fluid3DScenario::Explosion:
         return "Explosion";
+    case Fluid3DScenario::Fire:
+        return "Fire";
     }
     return "Smoke plume";
 }
@@ -87,7 +90,10 @@ struct Fluid3DConfig {
     if (name == "explosion") {
         return Fluid3DScenario::Explosion;
     }
-    throw std::runtime_error("fluid 3D scenario must be smoke-plume or explosion");
+    if (name == "fire") {
+        return Fluid3DScenario::Fire;
+    }
+    throw std::runtime_error("fluid 3D scenario must be smoke-plume, explosion, or fire");
 }
 
 [[nodiscard]] inline std::size_t volume_cell_count(const Fluid3DConfig& config) {
