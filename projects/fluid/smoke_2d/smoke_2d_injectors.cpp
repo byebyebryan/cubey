@@ -1,4 +1,4 @@
-#include "fluid_2d_injectors.h"
+#include "smoke_2d_injectors.h"
 
 #include <cubey/render/color_space.h>
 
@@ -8,7 +8,7 @@
 #include <cstdint>
 #include <stdexcept>
 
-namespace cubey::projects::fluid_2d {
+namespace cubey::projects::fluid::smoke_2d {
 namespace {
 
 constexpr float kTau = 6.28318530718F;
@@ -91,7 +91,7 @@ void integrate_boundary(std::array<float, 2>& position, std::array<float, 2>& ve
     };
 }
 
-[[nodiscard]] float spread_t(const Fluid2DConfig& config, std::uint32_t index) {
+[[nodiscard]] float spread_t(const Smoke2DConfig& config, std::uint32_t index) {
     if (config.procedural_injector_count <= 1U) {
         return 0.0F;
     }
@@ -99,7 +99,7 @@ void integrate_boundary(std::array<float, 2>& position, std::array<float, 2>& ve
     return (static_cast<float>(index) / (count - 1.0F)) * 2.0F - 1.0F;
 }
 
-[[nodiscard]] float orbit_radius(const Fluid2DConfig& config, std::uint32_t index) {
+[[nodiscard]] float orbit_radius(const Smoke2DConfig& config, std::uint32_t index) {
     const float count = static_cast<float>(std::max(config.procedural_injector_count, 1U));
     const float spacing = config.injector_orbit_radius_spread / count;
     const std::uint32_t seed = 0x9e3779b9U * (index + 1U);
@@ -112,12 +112,12 @@ void integrate_boundary(std::array<float, 2>& position, std::array<float, 2>& ve
                       kOrbitMinRadius, kOrbitMaxRadius);
 }
 
-[[nodiscard]] float orbit_angular_speed(const Fluid2DConfig& config, std::uint32_t index) {
+[[nodiscard]] float orbit_angular_speed(const Smoke2DConfig& config, std::uint32_t index) {
     return config.injector_orbit_angular_speed +
            (spread_t(config, index) * config.injector_orbit_angular_speed_spread * 0.5F);
 }
 
-[[nodiscard]] float orbit_phase(const Fluid2DConfig& config, std::uint32_t index) {
+[[nodiscard]] float orbit_phase(const Smoke2DConfig& config, std::uint32_t index) {
     if (config.procedural_injector_count <= 1U) {
         return 0.0F;
     }
@@ -125,7 +125,7 @@ void integrate_boundary(std::array<float, 2>& position, std::array<float, 2>& ve
     return (static_cast<float>(index) / count) * config.injector_orbit_phase_spread * kTau;
 }
 
-void sync_orbit_parameters(Fluid2DInjectorState& injector, const Fluid2DConfig& config,
+void sync_orbit_parameters(Smoke2DInjectorState& injector, const Smoke2DConfig& config,
                            std::uint32_t index) {
     injector.anchor_angle = orbit_phase(config, index);
     injector.orbit_radius = orbit_radius(config, index);
@@ -133,7 +133,7 @@ void sync_orbit_parameters(Fluid2DInjectorState& injector, const Fluid2DConfig& 
 }
 
 [[nodiscard]] std::array<float, 2>
-target_for_injector(const Fluid2DConfig&, const Fluid2DInjectorState& injector, float time) {
+target_for_injector(const Smoke2DConfig&, const Smoke2DInjectorState& injector, float time) {
     const float angle = injector.anchor_angle + (injector.angular_speed * time);
     return clamp_uv({
         kCenter[0] + (std::cos(angle) * injector.orbit_radius),
@@ -141,8 +141,8 @@ target_for_injector(const Fluid2DConfig&, const Fluid2DInjectorState& injector, 
     });
 }
 
-[[nodiscard]] std::array<float, 2> tangent_for_injector(const Fluid2DConfig& config,
-                                                        const Fluid2DInjectorState& injector,
+[[nodiscard]] std::array<float, 2> tangent_for_injector(const Smoke2DConfig& config,
+                                                        const Smoke2DInjectorState& injector,
                                                         float time) {
     constexpr float kDerivativeStep = 0.25F;
     const float previous_time = std::max(0.0F, time - kDerivativeStep);
@@ -150,7 +150,7 @@ target_for_injector(const Fluid2DConfig&, const Fluid2DInjectorState& injector, 
                                       target_for_injector(config, injector, previous_time)));
 }
 
-[[nodiscard]] float max_injector_speed(const Fluid2DConfig& config) {
+[[nodiscard]] float max_injector_speed(const Smoke2DConfig& config) {
     const float max_angular_speed = std::abs(config.injector_orbit_angular_speed) +
                                     (config.injector_orbit_angular_speed_spread * 0.5F);
     const float max_radius =
@@ -159,9 +159,9 @@ target_for_injector(const Fluid2DConfig&, const Fluid2DInjectorState& injector, 
 }
 
 [[nodiscard]] std::array<float, 2>
-injector_acceleration(const std::vector<Fluid2DInjectorState>& injectors,
-                      const Fluid2DConfig& config, std::size_t index, float time) {
-    const Fluid2DInjectorState& injector = injectors[index];
+injector_acceleration(const std::vector<Smoke2DInjectorState>& injectors,
+                      const Smoke2DConfig& config, std::size_t index, float time) {
+    const Smoke2DInjectorState& injector = injectors[index];
     const std::array<float, 2> target = target_for_injector(config, injector, time);
     std::array<float, 2> acceleration =
         add(scale(subtract(target, injector.position), 11.0F),
@@ -200,7 +200,7 @@ injector_acceleration(const std::vector<Fluid2DInjectorState>& injectors,
 }
 
 [[nodiscard]] std::array<float, 2>
-initial_velocity_for_injector(const Fluid2DConfig& config, const Fluid2DInjectorState& injector) {
+initial_velocity_for_injector(const Smoke2DConfig& config, const Smoke2DInjectorState& injector) {
     const float target_speed =
         std::max(std::abs(injector.angular_speed) * std::max(injector.orbit_radius, 0.04F), 0.035F);
     return scale(tangent_for_injector(config, injector, 0.0F), target_speed);
@@ -215,18 +215,18 @@ initial_velocity_for_injector(const Fluid2DConfig& config, const Fluid2DInjector
 
 } // namespace
 
-std::vector<Fluid2DInjectorState> create_fluid_2d_injectors(const Fluid2DConfig& config) {
+std::vector<Smoke2DInjectorState> create_smoke_2d_injectors(const Smoke2DConfig& config) {
     if (config.procedural_injector_count == 0 ||
         config.procedural_injector_count > kMaxProceduralInjectorCount) {
-        throw std::runtime_error("fluid injector count must be 1..16");
+        throw std::runtime_error("smoke injector count must be 1..16");
     }
 
-    std::vector<Fluid2DInjectorState> injectors;
+    std::vector<Smoke2DInjectorState> injectors;
     injectors.reserve(config.procedural_injector_count);
     for (std::uint32_t index = 0; index < config.procedural_injector_count; ++index) {
         const float hue =
             static_cast<float>(index) / static_cast<float>(config.procedural_injector_count);
-        Fluid2DInjectorState injector{
+        Smoke2DInjectorState injector{
             .position = {},
             .velocity = {},
             .hue = hue,
@@ -243,12 +243,12 @@ std::vector<Fluid2DInjectorState> create_fluid_2d_injectors(const Fluid2DConfig&
     return injectors;
 }
 
-std::vector<Fluid2DInjectorGpu>
-fluid_2d_injectors_to_gpu(const std::vector<Fluid2DInjectorState>& injectors,
-                          const Fluid2DConfig& config) {
-    std::vector<Fluid2DInjectorGpu> gpu_injectors;
+std::vector<Smoke2DInjectorGpu>
+smoke_2d_injectors_to_gpu(const std::vector<Smoke2DInjectorState>& injectors,
+                          const Smoke2DConfig& config) {
+    std::vector<Smoke2DInjectorGpu> gpu_injectors;
     gpu_injectors.reserve(injectors.size());
-    for (const Fluid2DInjectorState& injector : injectors) {
+    for (const Smoke2DInjectorState& injector : injectors) {
         const std::array<float, 3> dye = cubey::render::hsv_to_linear_rgb(
             {.hue = injector.hue, .saturation = 1.0F, .value = 1.0F});
         const InjectorGpuTuning tuning = gpu_tuning_for_injector();
@@ -279,11 +279,11 @@ fluid_2d_injectors_to_gpu(const std::vector<Fluid2DInjectorState>& injectors,
     return gpu_injectors;
 }
 
-std::vector<Fluid2DInjectorGpu>
-update_fluid_2d_injectors(std::vector<Fluid2DInjectorState>& injectors, const Fluid2DConfig& config,
+std::vector<Smoke2DInjectorGpu>
+update_smoke_2d_injectors(std::vector<Smoke2DInjectorState>& injectors, const Smoke2DConfig& config,
                           const cubey::FrameTiming& timing) {
     if (injectors.size() != config.procedural_injector_count) {
-        injectors = create_fluid_2d_injectors(config);
+        injectors = create_smoke_2d_injectors(config);
     }
 
     const float dt = std::min(static_cast<float>(timing.delta_seconds), config.fixed_delta_seconds);
@@ -295,24 +295,24 @@ update_fluid_2d_injectors(std::vector<Fluid2DInjectorState>& injectors, const Fl
         add_to(injectors[index].velocity, scale(acceleration, dt));
         clamp_speed(injectors[index].velocity, max_injector_speed(config));
     }
-    for (Fluid2DInjectorState& injector : injectors) {
+    for (Smoke2DInjectorState& injector : injectors) {
         add_to(injector.position, scale(injector.velocity, dt));
         integrate_boundary(injector.position, injector.velocity);
     }
 
-    return fluid_2d_injectors_to_gpu(injectors, config);
+    return smoke_2d_injectors_to_gpu(injectors, config);
 }
 
-std::size_t fluid_2d_injector_byte_size(const Fluid2DConfig& config) {
+std::size_t smoke_2d_injector_byte_size(const Smoke2DConfig& config) {
     if (config.procedural_injector_count == 0 ||
         config.procedural_injector_count > kMaxProceduralInjectorCount) {
-        throw std::runtime_error("fluid injector count must be 1..16");
+        throw std::runtime_error("smoke injector count must be 1..16");
     }
-    return sizeof(Fluid2DInjectorGpu) * static_cast<std::size_t>(config.procedural_injector_count);
+    return sizeof(Smoke2DInjectorGpu) * static_cast<std::size_t>(config.procedural_injector_count);
 }
 
-std::size_t fluid_2d_injector_capacity_byte_size() {
-    return sizeof(Fluid2DInjectorGpu) * static_cast<std::size_t>(kMaxProceduralInjectorCount);
+std::size_t smoke_2d_injector_capacity_byte_size() {
+    return sizeof(Smoke2DInjectorGpu) * static_cast<std::size_t>(kMaxProceduralInjectorCount);
 }
 
-} // namespace cubey::projects::fluid_2d
+} // namespace cubey::projects::fluid::smoke_2d

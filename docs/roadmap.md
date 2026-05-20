@@ -69,7 +69,7 @@ Completed criteria:
 - `cubey::cubey` builds as the aggregate library target and examples link
   against it.
 - `spinning_cube`, `textured_cube`, `shadow_cube`, `instanced_cubes`,
-  `material_cubes`, `particle_cubes`, `fractal_2d`, and `fluid_2d` open
+  `material_cubes`, `particle_cubes`, `fractal_2d`, and `smoke_2d` open
   windows and render through dynamic rendering.
 - Validation-layer smoke can be required from the command line.
 - Resize and swapchain recreation remain first-class tested behavior.
@@ -116,7 +116,7 @@ Current checkpoint:
 - Reusable `cubey::vulkan::ImmediateCommands` plus buffer helpers support
   one-shot setup uploads into device-local buffers.
 - Reusable `cubey::vulkan::CommandRecorder` wraps the repeated non-owning
-  command-buffer recording calls used by current examples and `fluid_2d`:
+  command-buffer recording calls used by current examples and `smoke_2d`:
   begin/end, dynamic rendering boundaries, image layout transitions, pipeline
   and descriptor binding, push constants, draws, indexed draws, and dispatches.
 - Reusable `cubey::vulkan::SubmissionCoordinator` serializes queue submission,
@@ -222,7 +222,7 @@ Current checkpoint:
   scene-depth, scene-color, backbuffer, and present transitions recorded by
   graph execution while pass callbacks still own descriptors, pipelines, and
   app-specific resource policy.
-  `fluid_2d` builds a coarse simulation-compute to fullscreen-render graph and
+  `smoke_2d` builds a coarse simulation-compute to fullscreen-render graph and
   records it through the same frame executor, with graph-owned buffer barriers
   plus backbuffer acquire/release at that boundary.
 - Reusable `cubey::scene` transaction helpers cover common renderable, camera,
@@ -250,7 +250,7 @@ Current checkpoint:
   depth-only pipelines, optional depth, and blending. `cubey::render`
   `ShaderProgram`, `GraphicsPipelineResource`, and `ComputePipelineResource`
   now package shader modules, pipeline layouts, and graphics/compute pipeline
-  lifetime for the examples and `fluid_2d`. Those examples use file-backed
+  lifetime for the examples and `smoke_2d`. Those examples use file-backed
   graphics pipeline configs, source descriptor layout shape, push constants,
   depth state, blend state, and pass participation from `MaterialPassInfo`,
   source standard cube/plane vertex data and input layouts from
@@ -456,9 +456,9 @@ building a full threaded renderer too early.
   it threaded by default, with inline mode remaining explicit for tests.
 - Added project runtime vocabulary for setup, update, render-packet, resize,
   and shutdown contracts.
-- Added `ProjectRuntimeServices` and moved `fluid_2d` simulation timing onto
+- Added `ProjectRuntimeServices` and moved `smoke_2d` simulation timing onto
   `ProjectFrame` while keeping command recording sequence project-local.
-- Added `ProjectRuntimeAdapter` and moved `fluid_2d` onto it while keeping host
+- Added `ProjectRuntimeAdapter` and moved `smoke_2d` onto it while keeping host
   callbacks and command recording sequence project-local.
 - Added `ProjectGpuServices` for project-facing upload draining, upload
   completion/failure status, and deferred destruction retirement from completed
@@ -481,14 +481,14 @@ Exit criteria:
 
 ## Phase 5: First Real Project
 
-Status: active; first `fluid_2d` solver checkpoints complete.
+Status: active; first `smoke_2d` solver checkpoints complete.
 
 Goal: prove the framework with one non-trivial procedural graphics project and
 let repeated project needs shape the host/engine API.
 
 Current project:
 
-- `projects/fluid_2d` starts the fluid simulation rewrite as a smaller 2D
+- `projects/fluid/smoke_2d` starts the fluid simulation rewrite as a smaller 2D
   dye-and-velocity field. The current checkpoint has compute injection,
   MacCormack advection, optional static obstacles, vorticity confinement, pressure
   projection, pointer injection, pause/reset, debug render modes, fullscreen
@@ -502,7 +502,7 @@ Current project:
 Candidate follow-ups:
 
 - Pressure solver upgrades, moving obstacles, or a clearer smoke/liquid split
-  for `fluid_2d`.
+  for `smoke_2d`.
 - Marching cubes for compute-generated geometry and indirect draw pressure.
 - SDF sculpting if the sparse resource model becomes the more interesting
   framework driver.
@@ -515,7 +515,7 @@ Exit criteria:
 - The same project can run headlessly for a fixed number of frames and produce a
   deterministic output artifact.
 - README contains the exact commands for local smoke testing. Status: complete
-  for the current `fluid_2d` checkpoint.
+  for the current `smoke_2d` checkpoint.
 
 ## Phase 6: Runtime Extraction
 

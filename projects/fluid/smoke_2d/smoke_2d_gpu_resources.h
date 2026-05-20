@@ -1,7 +1,7 @@
 #pragma once
 
-#include "fluid_2d_config.h"
-#include "fluid_2d_injectors.h"
+#include "smoke_2d_config.h"
+#include "smoke_2d_injectors.h"
 
 #include <cubey/engine/project_gpu_services.h>
 #include <cubey/render/pipeline_resource.h>
@@ -14,13 +14,13 @@
 #include <cstdint>
 #include <optional>
 
-namespace cubey::projects::fluid_2d {
+namespace cubey::projects::fluid::smoke_2d {
 
-class Fluid2DGpuResources {
+class Smoke2DGpuResources {
   public:
     void create_global_resources_if_needed(cubey::vulkan::Device& device,
                                            cubey::ProjectGpuServices& gpu,
-                                           const Fluid2DConfig& config);
+                                           const Smoke2DConfig& config);
     void create_render_pipeline(cubey::vulkan::Device& device, VkFormat color_format,
                                 VkExtent2D extent);
     void destroy_swapchain_resources();
@@ -81,7 +81,7 @@ class Fluid2DGpuResources {
     }
 
   private:
-    void create_field_buffers(cubey::ProjectGpuServices& gpu, const Fluid2DConfig& config);
+    void create_field_buffers(cubey::ProjectGpuServices& gpu, const Smoke2DConfig& config);
     void create_descriptor_resources(cubey::vulkan::Device& device);
     void update_field_descriptors(cubey::vulkan::Device& device);
     void create_compute_pipelines(cubey::vulkan::Device& device);
@@ -96,7 +96,7 @@ class Fluid2DGpuResources {
     [[nodiscard]] VkDescriptorSetLayout projection_descriptor_layout() const;
     [[nodiscard]] const cubey::vulkan::DescriptorPool& projection_descriptor_pool() const;
 
-    Fluid2DConfig config_{};
+    Smoke2DConfig config_{};
     std::optional<cubey::vulkan::Buffer> field_a_;
     std::optional<cubey::vulkan::Buffer> field_b_;
     std::optional<cubey::vulkan::Buffer> field_temp_;
@@ -138,4 +138,4 @@ class Fluid2DGpuResources {
     std::optional<cubey::render::GraphicsPipelineResource> render_pipeline_resource_;
 };
 
-} // namespace cubey::projects::fluid_2d
+} // namespace cubey::projects::fluid::smoke_2d

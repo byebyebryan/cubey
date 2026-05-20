@@ -1,9 +1,9 @@
-#include "fluid_2d_app.h"
+#include "smoke_2d_app.h"
 
-#include "fluid_2d_commands.h"
-#include "fluid_2d_config.h"
-#include "fluid_2d_gpu_resources.h"
-#include "fluid_2d_injectors.h"
+#include "smoke_2d_commands.h"
+#include "smoke_2d_config.h"
+#include "smoke_2d_gpu_resources.h"
+#include "smoke_2d_injectors.h"
 
 #include <cubey/engine/project_gpu_services.h>
 #include <cubey/engine/project_runtime.h>
@@ -23,49 +23,49 @@
 #include <utility>
 #include <vector>
 
-namespace cubey::projects::fluid_2d {
+namespace cubey::projects::fluid::smoke_2d {
 namespace {
 
 using cubey::FrameTiming;
 using cubey::ProjectFrame;
 using cubey::host::FrameStatsSample;
 
-[[nodiscard]] const char* debug_view_name(FluidDebugView view) {
+[[nodiscard]] const char* debug_view_name(Smoke2DDebugView view) {
     switch (view) {
-    case FluidDebugView::Dye:
+    case Smoke2DDebugView::Dye:
         return "Dye";
-    case FluidDebugView::Velocity:
+    case Smoke2DDebugView::Velocity:
         return "Velocity";
-    case FluidDebugView::Divergence:
+    case Smoke2DDebugView::Divergence:
         return "Divergence";
-    case FluidDebugView::Pressure:
+    case Smoke2DDebugView::Pressure:
         return "Pressure";
-    case FluidDebugView::Speed:
+    case Smoke2DDebugView::Speed:
         return "Speed";
-    case FluidDebugView::Vorticity:
+    case Smoke2DDebugView::Vorticity:
         return "Vorticity";
-    case FluidDebugView::Obstacle:
+    case Smoke2DDebugView::Obstacle:
         return "Obstacle";
     }
     return "Dye";
 }
 
-constexpr std::array<FluidDebugView, 7> kDebugViews{
-    FluidDebugView::Dye,      FluidDebugView::Velocity, FluidDebugView::Divergence,
-    FluidDebugView::Pressure, FluidDebugView::Speed,    FluidDebugView::Vorticity,
-    FluidDebugView::Obstacle,
+constexpr std::array<Smoke2DDebugView, 7> kDebugViews{
+    Smoke2DDebugView::Dye,      Smoke2DDebugView::Velocity, Smoke2DDebugView::Divergence,
+    Smoke2DDebugView::Pressure, Smoke2DDebugView::Speed,    Smoke2DDebugView::Vorticity,
+    Smoke2DDebugView::Obstacle,
 };
 
-class Fluid2DApp {
+class Smoke2DApp {
   public:
-    explicit Fluid2DApp(RunConfig config)
+    explicit Smoke2DApp(RunConfig config)
         : config_(std::move(config)), runtime_(1),
-          fluid_config_(fluid_config_from_run_config(config_)),
-          injector_states_(create_fluid_2d_injectors(fluid_config_)),
-          injector_gpu_(fluid_2d_injectors_to_gpu(injector_states_, fluid_config_)) {}
+          smoke_config_(smoke_2d_config_from_run_config(config_)),
+          injector_states_(create_smoke_2d_injectors(smoke_config_)),
+          injector_gpu_(smoke_2d_injectors_to_gpu(injector_states_, smoke_config_)) {}
 
-    Fluid2DApp(const Fluid2DApp&) = delete;
-    Fluid2DApp& operator=(const Fluid2DApp&) = delete;
+    Smoke2DApp(const Smoke2DApp&) = delete;
+    Smoke2DApp& operator=(const Smoke2DApp&) = delete;
 
     int run() {
         if (config_.headless) {
@@ -118,8 +118,8 @@ class Fluid2DApp {
         return cubey::host::run_windowed_app(
             {
                 .run_config = config_,
-                .app_name = "fluid_2d",
-                .ready_status = "rendering 2D fluid project",
+                .app_name = "smoke_2d",
+                .ready_status = "rendering 2D smoke project",
                 .required_queue_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
                 .swapchain_image_usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
                 .require_dynamic_rendering = true,
@@ -154,7 +154,7 @@ class Fluid2DApp {
         (void)context;
         ImGui::SetNextWindowPos(ImVec2(16.0F, 16.0F), ImGuiCond_FirstUseEver);
         ImGui::SetNextWindowSize(ImVec2(430.0F, 0.0F), ImGuiCond_FirstUseEver);
-        if (!ImGui::Begin("Fluid 2D")) {
+        if (!ImGui::Begin("Smoke 2D")) {
             ImGui::End();
             return;
         }
@@ -167,7 +167,7 @@ class Fluid2DApp {
         }
 
         if (ImGui::BeginCombo("Debug view", debug_view_name(debug_view_))) {
-            for (FluidDebugView view : kDebugViews) {
+            for (Smoke2DDebugView view : kDebugViews) {
                 const bool selected = view == debug_view_;
                 if (ImGui::Selectable(debug_view_name(view), selected)) {
                     debug_view_ = view;
@@ -179,45 +179,45 @@ class Fluid2DApp {
             ImGui::EndCombo();
         }
 
-        int injector_count = static_cast<int>(fluid_config_.procedural_injector_count);
+        int injector_count = static_cast<int>(smoke_config_.procedural_injector_count);
         if (ImGui::SliderInt("Injectors", &injector_count, 1,
                              static_cast<int>(kMaxProceduralInjectorCount))) {
-            fluid_config_.procedural_injector_count = static_cast<std::uint32_t>(injector_count);
+            smoke_config_.procedural_injector_count = static_cast<std::uint32_t>(injector_count);
             reset_injectors();
         }
 
-        int pressure_iterations = static_cast<int>(fluid_config_.pressure_iterations);
+        int pressure_iterations = static_cast<int>(smoke_config_.pressure_iterations);
         if (ImGui::SliderInt("Pressure iterations", &pressure_iterations, 1, 96)) {
-            fluid_config_.pressure_iterations = static_cast<std::uint32_t>(pressure_iterations);
+            smoke_config_.pressure_iterations = static_cast<std::uint32_t>(pressure_iterations);
         }
-        ImGui::SliderFloat("Vorticity", &fluid_config_.vorticity_strength, 0.0F, 40.0F);
-        ImGui::SliderFloat("Dye decay", &fluid_config_.dye_decay_per_second, 0.950F, 1.0F, "%.4f");
-        ImGui::SliderFloat("Velocity decay", &fluid_config_.velocity_decay_per_second, 0.950F, 1.0F,
+        ImGui::SliderFloat("Vorticity", &smoke_config_.vorticity_strength, 0.0F, 40.0F);
+        ImGui::SliderFloat("Dye decay", &smoke_config_.dye_decay_per_second, 0.950F, 1.0F, "%.4f");
+        ImGui::SliderFloat("Velocity decay", &smoke_config_.velocity_decay_per_second, 0.950F, 1.0F,
                            "%.4f");
-        ImGui::SliderFloat("Injector radius", &fluid_config_.injector_injection_radius, 0.005F,
+        ImGui::SliderFloat("Injector radius", &smoke_config_.injector_injection_radius, 0.005F,
                            0.080F, "%.3f");
-        ImGui::SliderFloat("Injection force", &fluid_config_.injector_injection_strength, 0.0F,
+        ImGui::SliderFloat("Injection force", &smoke_config_.injector_injection_strength, 0.0F,
                            20.0F, "%.1f");
-        ImGui::SliderFloat("Propulsion", &fluid_config_.injector_propulsion_strength, 0.0F, 3.0F,
+        ImGui::SliderFloat("Propulsion", &smoke_config_.injector_propulsion_strength, 0.0F, 3.0F,
                            "%.2f");
-        ImGui::SliderFloat("Orbit radius", &fluid_config_.injector_orbit_radius, 0.04F, 0.42F,
+        ImGui::SliderFloat("Orbit radius", &smoke_config_.injector_orbit_radius, 0.04F, 0.42F,
                            "%.3f");
-        ImGui::SliderFloat("Radius spread", &fluid_config_.injector_orbit_radius_spread, 0.0F,
+        ImGui::SliderFloat("Radius spread", &smoke_config_.injector_orbit_radius_spread, 0.0F,
                            0.50F, "%.3f");
-        ImGui::SliderFloat("Angular speed", &fluid_config_.injector_orbit_angular_speed, -2.0F,
+        ImGui::SliderFloat("Angular speed", &smoke_config_.injector_orbit_angular_speed, -2.0F,
                            2.0F, "%.2f");
-        ImGui::SliderFloat("Speed spread", &fluid_config_.injector_orbit_angular_speed_spread, 0.0F,
+        ImGui::SliderFloat("Speed spread", &smoke_config_.injector_orbit_angular_speed_spread, 0.0F,
                            4.0F, "%.2f");
-        ImGui::SliderFloat("Phase spread", &fluid_config_.injector_orbit_phase_spread, 0.0F, 1.0F,
+        ImGui::SliderFloat("Phase spread", &smoke_config_.injector_orbit_phase_spread, 0.0F, 1.0F,
                            "%.2f");
 
-        ImGui::Text("Grid: %u x %u", fluid_config_.grid_width, fluid_config_.grid_height);
+        ImGui::Text("Grid: %u x %u", smoke_config_.grid_width, smoke_config_.grid_height);
         ImGui::End();
     }
 
     void reset_injectors() {
-        injector_states_ = create_fluid_2d_injectors(fluid_config_);
-        injector_gpu_ = fluid_2d_injectors_to_gpu(injector_states_, fluid_config_);
+        injector_states_ = create_smoke_2d_injectors(smoke_config_);
+        injector_gpu_ = smoke_2d_injectors_to_gpu(injector_states_, smoke_config_);
     }
 
     void update_injectors(const ProjectFrame& frame) {
@@ -226,7 +226,7 @@ class Fluid2DApp {
             .elapsed_seconds = frame.elapsed_seconds,
             .frame_index = frame.frame_index,
         };
-        injector_gpu_ = update_fluid_2d_injectors(injector_states_, fluid_config_, timing);
+        injector_gpu_ = update_smoke_2d_injectors(injector_states_, smoke_config_, timing);
     }
 
     void destroy_swapchain_resources() {
@@ -241,7 +241,7 @@ class Fluid2DApp {
     void create_global_resources_if_needed(cubey::vulkan::Device& device,
                                            cubey::vulkan::GpuRuntime& gpu) {
         attach_project_gpu(gpu);
-        resources_.create_global_resources_if_needed(device, runtime_.gpu(), fluid_config_);
+        resources_.create_global_resources_if_needed(device, runtime_.gpu(), smoke_config_);
     }
 
     void attach_project_gpu(cubey::vulkan::GpuRuntime& gpu) {
@@ -273,14 +273,14 @@ class Fluid2DApp {
                       const cubey::host::WindowedRenderFrame& render_frame,
                       const ProjectFrame& frame) {
         const cubey::render::CompiledRenderGraph frame_graph =
-            build_fluid_frame_graph(render_frame.color_target, resources_, fluid_config_,
+            build_smoke_frame_graph(render_frame.color_target, resources_, smoke_config_,
                                     debug_view_, paused_, reset_requested_, frame, injector_gpu_);
         graph_executor_.record(
             cubey::render::RenderGraphFrameRecordInfo{
                 .device = &context.device(),
                 .command_buffer = render_frame.command_buffer,
                 .frame_slot = render_frame.frame_slot,
-                .label = "vkEndCommandBuffer fluid_2d",
+                .label = "vkEndCommandBuffer smoke_2d",
             },
             frame_graph);
     }
@@ -289,11 +289,11 @@ class Fluid2DApp {
                                           const ProjectFrame& frame) {
         update_injectors(frame);
         static_cast<void>(gpu.submit_and_wait({
-            .label = "fluid_2d headless simulation frame",
+            .label = "smoke_2d headless simulation frame",
             .work =
                 [this, frame](cubey::vulkan::GpuOwnerContext& gpu_context) {
                     cubey::vulkan::ImmediateCommands commands(gpu_context);
-                    record_fluid_compute(commands.command_buffer(), resources_, fluid_config_,
+                    record_smoke_compute(commands.command_buffer(), resources_, smoke_config_,
                                          paused_, reset_requested_, frame, injector_gpu_);
                     commands.submit_and_wait();
                 },
@@ -316,7 +316,7 @@ class Fluid2DApp {
                 const std::uint32_t frames = headless_frame_count(config_);
                 for (std::uint32_t frame = 1; frame <= frames; ++frame) {
                     const ProjectFrame project_frame =
-                        runtime_.frame_for_timing(fixed_headless_timing(fluid_config_, frame));
+                        runtime_.frame_for_timing(fixed_headless_timing(smoke_config_, frame));
                     record_headless_simulation_frame(runtime_.gpu(), project_frame);
                 }
             };
@@ -337,7 +337,7 @@ class Fluid2DApp {
         callbacks.record_capture = [this](cubey::host::HeadlessPngContext&,
                                           VkCommandBuffer command_buffer,
                                           const cubey::host::HeadlessRenderTarget& target) {
-            record_fullscreen_draw(command_buffer, resources_, fluid_config_, debug_view_, target);
+            record_fullscreen_draw(command_buffer, resources_, smoke_config_, debug_view_, target);
         };
         callbacks.shutdown = [this](cubey::host::HeadlessPngContext&) {
             destroy_all_resources();
@@ -351,21 +351,21 @@ class Fluid2DApp {
 
     RunConfig config_;
     cubey::ProjectRuntimeAdapter runtime_;
-    Fluid2DConfig fluid_config_;
-    std::vector<Fluid2DInjectorState> injector_states_;
-    std::vector<Fluid2DInjectorGpu> injector_gpu_;
-    Fluid2DGpuResources resources_;
+    Smoke2DConfig smoke_config_;
+    std::vector<Smoke2DInjectorState> injector_states_;
+    std::vector<Smoke2DInjectorGpu> injector_gpu_;
+    Smoke2DGpuResources resources_;
     cubey::render::RenderGraphFrameExecutor graph_executor_;
-    FluidDebugView debug_view_ = FluidDebugView::Dye;
+    Smoke2DDebugView debug_view_ = Smoke2DDebugView::Dye;
     bool paused_ = false;
     bool reset_requested_ = false;
 };
 
 } // namespace
 
-int run_fluid_2d(const RunConfig& config) {
-    Fluid2DApp app(config);
+int run_smoke_2d(const RunConfig& config) {
+    Smoke2DApp app(config);
     return app.run();
 }
 
-} // namespace cubey::projects::fluid_2d
+} // namespace cubey::projects::fluid::smoke_2d

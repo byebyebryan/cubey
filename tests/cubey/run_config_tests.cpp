@@ -251,35 +251,31 @@ void test_run_config_parses_shadow_volume_controls() {
             "run config should parse shadow update interval");
 }
 
-void test_run_config_parses_injector_count() {
+void test_run_config_parses_smoke_injector_count() {
     std::array<char, 6> program{'c', 'u', 'b', 'e', 'y', '\0'};
-    std::array<char, 12> injectors_flag{'-', '-', 'i', 'n', 'j', 'e',
-                                        'c', 't', 'o', 'r', 's', '\0'};
+    std::array<char, 18> injectors_flag{'-', '-', 's', 'm', 'o', 'k', 'e', '-',
+                                        'i', 'n', 'j', 'e', 'c', 't', 'o', 'r', 's', '\0'};
     std::array<char, 2> injectors_value{'8', '\0'};
     std::array<char*, 3> argv{program.data(), injectors_flag.data(), injectors_value.data()};
 
     const cubey::RunConfig config =
         cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
-    require(config.injectors == 8, "run config should parse procedural injector count");
+    require(config.smoke_injectors == 8, "run config should parse smoke injector count");
 }
 
-void test_run_config_parses_injector_orbit_controls() {
+void test_run_config_parses_smoke_injector_orbit_controls() {
     std::string program = "cubey";
-    std::string radius_flag = "--injector-orbit-radius";
+    std::string radius_flag = "--smoke-injector-orbit-radius";
     std::string radius_value = "0.24";
-    std::string radius_spread_flag = "--injector-orbit-radius-spread";
+    std::string radius_spread_flag = "--smoke-injector-orbit-radius-spread";
     std::string radius_spread_value = "0.18";
-    std::string speed_flag = "--injector-orbit-angular-speed";
+    std::string speed_flag = "--smoke-injector-orbit-angular-speed";
     std::string speed_value = "0.25";
-    std::string speed_spread_flag = "--injector-orbit-angular-speed-spread";
+    std::string speed_spread_flag = "--smoke-injector-orbit-angular-speed-spread";
     std::string speed_spread_value = "1.5";
-    std::string phase_spread_flag = "--injector-orbit-phase-spread";
+    std::string phase_spread_flag = "--smoke-injector-orbit-phase-spread";
     std::string phase_spread_value = "0.75";
-    std::string inclination_flag = "--injector-orbit-inclination-degrees";
-    std::string inclination_value = "12.5";
-    std::string inclination_spread_flag = "--injector-orbit-inclination-spread-degrees";
-    std::string inclination_spread_value = "45.0";
-    std::array<char*, 15> argv{program.data(),
+    std::array<char*, 11> argv{program.data(),
                                radius_flag.data(),
                                radius_value.data(),
                                radius_spread_flag.data(),
@@ -289,89 +285,50 @@ void test_run_config_parses_injector_orbit_controls() {
                                speed_spread_flag.data(),
                                speed_spread_value.data(),
                                phase_spread_flag.data(),
-                               phase_spread_value.data(),
-                               inclination_flag.data(),
-                               inclination_value.data(),
-                               inclination_spread_flag.data(),
-                               inclination_spread_value.data()};
+                               phase_spread_value.data()};
 
     const cubey::RunConfig config =
         cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
-    require(config.injector_orbit_radius == 0.24F,
-            "run config should parse procedural injector orbit radius");
-    require(config.injector_orbit_radius_spread == 0.18F,
-            "run config should parse procedural injector orbit radius spread");
-    require(config.injector_orbit_angular_speed == 0.25F,
-            "run config should parse procedural injector orbit angular speed");
-    require(config.injector_orbit_angular_speed_spread == 1.5F,
-            "run config should parse procedural injector orbit angular speed spread");
-    require(config.injector_orbit_phase_spread == 0.75F,
-            "run config should parse procedural injector orbit phase spread");
-    require(config.injector_orbit_inclination_degrees == 12.5F,
-            "run config should parse procedural injector orbit inclination");
-    require(config.injector_orbit_inclination_spread_degrees == 45.0F,
-            "run config should parse procedural injector orbit inclination spread");
+    require(config.smoke_injector_orbit_radius == 0.24F,
+            "run config should parse smoke injector orbit radius");
+    require(config.smoke_injector_orbit_radius_spread == 0.18F,
+            "run config should parse smoke injector orbit radius spread");
+    require(config.smoke_injector_orbit_angular_speed == 0.25F,
+            "run config should parse smoke injector orbit angular speed");
+    require(config.smoke_injector_orbit_angular_speed_spread == 1.5F,
+            "run config should parse smoke injector orbit angular speed spread");
+    require(config.smoke_injector_orbit_phase_spread == 0.75F,
+            "run config should parse smoke injector orbit phase spread");
 }
 
-void test_run_config_parses_injector_movement_controls() {
-    {
-        std::string program = "cubey";
-        std::string movement_flag = "--injector-movement";
-        std::string movement_value = "circle";
-        std::string height_flag = "--injector-circle-height";
-        std::string height_value = "0.65";
-        std::array<char*, 5> argv{program.data(), movement_flag.data(), movement_value.data(),
-                                  height_flag.data(), height_value.data()};
-
-        const cubey::RunConfig config =
-            cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
-        require(config.injector_movement == "circle",
-                "run config should parse procedural injector movement");
-        require(config.injector_circle_height == 0.65F,
-                "run config should parse procedural injector circle height");
-    }
-    {
-        std::string program = "cubey";
-        std::string height_flag = "--injector-circle-height";
-        std::string height_value = "1.25";
-        std::array<char*, 3> argv{program.data(), height_flag.data(), height_value.data()};
-        require_throws(
-            [&argv]() { cubey::parse_run_config(static_cast<int>(argv.size()), argv.data()); },
-            "run config should reject injector circle heights outside the simulation volume");
-    }
-}
-
-void test_run_config_parses_injector_force_controls() {
+void test_run_config_parses_smoke_injector_force_controls() {
     std::array<char, 6> program{'c', 'u', 'b', 'e', 'y', '\0'};
-    std::array<char, 17> force_flag{'-', '-', 'i', 'n', 'j', 'e', 'c', 't', 'o',
-                                    'r', '-', 'f', 'o', 'r', 'c', 'e', '\0'};
+    std::array<char, 23> force_flag{'-', '-', 's', 'm', 'o', 'k', 'e', '-', 'i', 'n', 'j', 'e',
+                                    'c', 't', 'o', 'r', '-', 'f', 'o', 'r', 'c', 'e', '\0'};
     std::array<char, 4> force_value{'7', '.', '5', '\0'};
-    std::array<char, 22> propulsion_flag{'-', '-', 'i', 'n', 'j', 'e', 'c', 't', 'o', 'r', '-',
-                                         'p', 'r', 'o', 'p', 'u', 'l', 's', 'i', 'o', 'n', '\0'};
+    std::array<char, 28> propulsion_flag{
+        '-', '-', 's', 'm', 'o', 'k', 'e', '-', 'i', 'n', 'j', 'e', 'c', 't',
+        'o', 'r', '-', 'p', 'r', 'o', 'p', 'u', 'l', 's', 'i', 'o', 'n', '\0'};
     std::array<char, 4> propulsion_value{'1', '.', '6', '\0'};
     std::array<char*, 5> argv{program.data(), force_flag.data(), force_value.data(),
                               propulsion_flag.data(), propulsion_value.data()};
 
     const cubey::RunConfig config =
         cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
-    require(config.injector_force == 7.5F, "run config should parse procedural injector force");
-    require(config.injector_propulsion == 1.6F,
-            "run config should parse procedural injector propulsion");
+    require(config.smoke_injector_force == 7.5F,
+            "run config should parse smoke injector force");
+    require(config.smoke_injector_propulsion == 1.6F,
+            "run config should parse smoke injector propulsion");
 }
 
-void test_run_config_parses_fluid_density_and_buoyancy_controls() {
+void test_run_config_parses_fluid_3d_buoyancy_control() {
     std::string program = "cubey";
-    std::string density_flag = "--fluid-density-injection";
-    std::string density_value = "7.25";
     std::string buoyancy_flag = "--fluid-buoyancy";
     std::string buoyancy_value = "1.75";
-    std::array<char*, 5> argv{program.data(), density_flag.data(), density_value.data(),
-                              buoyancy_flag.data(), buoyancy_value.data()};
+    std::array<char*, 3> argv{program.data(), buoyancy_flag.data(), buoyancy_value.data()};
 
     const cubey::RunConfig config =
         cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
-    require(config.fluid_density_injection == 7.25F,
-            "run config should parse fluid density injection");
     require(config.fluid_buoyancy == 1.75F, "run config should parse fluid buoyancy");
 }
 
@@ -478,15 +435,15 @@ void test_run_config_parses_fluid_3d_fire_controls() {
             "run config should parse fluid fire turbulence");
 }
 
-void test_run_config_parses_obstacle_flag() {
+void test_run_config_parses_smoke_obstacle_flag() {
     std::array<char, 6> program{'c', 'u', 'b', 'e', 'y', '\0'};
-    std::array<char, 12> obstacles_flag{'-', '-', 'o', 'b', 's', 't',
-                                        'a', 'c', 'l', 'e', 's', '\0'};
+    std::array<char, 18> obstacles_flag{'-', '-', 's', 'm', 'o', 'k', 'e', '-',
+                                        'o', 'b', 's', 't', 'a', 'c', 'l', 'e', 's', '\0'};
     std::array<char*, 2> argv{program.data(), obstacles_flag.data()};
 
     const cubey::RunConfig config =
         cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
-    require(config.obstacles, "run config should parse obstacle flag");
+    require(config.smoke_obstacles, "run config should parse smoke obstacle flag");
 }
 
 void test_run_cli_app_sets_default_title_and_returns_runner_status() {

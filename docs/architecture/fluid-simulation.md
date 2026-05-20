@@ -8,7 +8,7 @@ checkpoint history live beside each project under `projects/`.
 Cubey should not chase one universal real-time fluid solver. The practical path
 is a small set of focused projects, each with different scaling assumptions:
 
-- `projects/fluid_2d`: incompressible grid-fluid lab for advection, pressure
+- `projects/fluid/smoke_2d`: incompressible grid-fluid lab for advection, pressure
   solves, obstacles, vorticity, and possible 2D free-surface experiments.
 - `projects/fluid_25d`: shallow-water terrain simulation for rivers, flooding,
   basins, sources, sinks, and heightfield-driven water.
@@ -113,10 +113,10 @@ visual result now that Cubey has already done the basic GPU Gems version once.
 
 | Technique | Cubey Fit | Notes |
 | --- | --- | --- |
-| Dense Eulerian grid | Good for `fluid_2d`, baseline for `fluid_3d` | Simple, inspectable, still useful for learning; 3D scales poorly and should lead toward sparse/local work. |
+| Dense Eulerian grid | Good for `smoke_2d`, baseline for `fluid_3d` | Simple, inspectable, still useful for learning; 3D scales poorly and should lead toward sparse/local work. |
 | Better advection | High | MacCormack/BFECC directly reduce classic Stable Fluids diffusion. |
 | Stronger pressure solve | High | CG or multigrid is a real scaling lever over fixed Jacobi iterations. |
-| Obstacles/boundaries | High | Makes `fluid_2d` feel scene-relevant instead of purely decorative. |
+| Obstacles/boundaries | High | Makes `smoke_2d` feel scene-relevant instead of purely decorative. |
 | Level set liquid | Medium/high | Good 2D free-surface experiment; pure level sets lose mass. |
 | Particle level set | Medium | Corrects level-set mass loss with marker particles; more moving parts. |
 | VOF | Medium | Better mass conservation, harder interface reconstruction. |
@@ -226,10 +226,10 @@ project is worth the complexity.
 ## Suggested Order
 
 1. Continue `fluid_25d` with virtual-pipes shallow water over terrain.
-2. Continue `fluid_2d` with pressure-solver experiments, moving obstacles,
+2. Continue `smoke_2d` with pressure-solver experiments, moving obstacles,
    stronger diagnostics, and a clearer smoke/dye versus free-surface-liquid
    direction.
-3. Try a separate 2D level-set liquid slice once `fluid_2d` is cleaner.
+3. Try a separate 2D level-set liquid slice once `smoke_2d` is cleaner.
 4. Try `liquid_particles_2d` with PBF/simple SPH to prove GPU neighbor search
    and particle-liquid rendering.
 5. Try `liquid_flip_2d` with a PIC/FLIP blend once grid pressure and particle

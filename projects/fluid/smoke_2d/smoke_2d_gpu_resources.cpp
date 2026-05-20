@@ -1,4 +1,4 @@
-#include "fluid_2d_gpu_resources.h"
+#include "smoke_2d_gpu_resources.h"
 
 #include <algorithm>
 #include <array>
@@ -11,15 +11,15 @@
 #include <utility>
 #include <vector>
 
-#ifndef CUBEY_FLUID_2D_SHADER_DIR
-#error "CUBEY_FLUID_2D_SHADER_DIR must be defined by the fluid_2d CMake target"
+#ifndef CUBEY_SMOKE_2D_SHADER_DIR
+#error "CUBEY_SMOKE_2D_SHADER_DIR must be defined by the smoke_2d CMake target"
 #endif
 
-namespace cubey::projects::fluid_2d {
+namespace cubey::projects::fluid::smoke_2d {
 namespace {
 
 std::filesystem::path shader_path(const char* filename) {
-    return std::filesystem::path(CUBEY_FLUID_2D_SHADER_DIR) / filename;
+    return std::filesystem::path(CUBEY_SMOKE_2D_SHADER_DIR) / filename;
 }
 
 [[nodiscard]] cubey::vulkan::Buffer
@@ -45,14 +45,14 @@ upload_project_device_buffer(cubey::ProjectGpuServices& gpu, const void* data,
     };
 }
 
-[[nodiscard]] cubey::render::MaterialPassInfo fluid_render_pass_info() {
+[[nodiscard]] cubey::render::MaterialPassInfo smoke_render_pass_info() {
     const VkPushConstantRange render_push_constant{
         .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
         .offset = 0,
         .size = sizeof(float) * 4U,
     };
     return cubey::render::MaterialPassInfo{
-        .label = "fluid_2d.render",
+        .label = "smoke_2d.render",
         .push_constants = {render_push_constant},
     };
 }
@@ -74,7 +74,7 @@ void create_compute_pipeline_resource(
                                 });
 }
 
-[[nodiscard]] std::vector<float> create_obstacle_mask(const Fluid2DConfig& config) {
+[[nodiscard]] std::vector<float> create_obstacle_mask(const Smoke2DConfig& config) {
     std::vector<float> mask(field_cell_count(config), 0.0F);
     if (!config.obstacles_enabled) {
         return mask;
@@ -109,9 +109,9 @@ void create_compute_pipeline_resource(
 
 } // namespace
 
-void Fluid2DGpuResources::create_global_resources_if_needed(cubey::vulkan::Device& device,
+void Smoke2DGpuResources::create_global_resources_if_needed(cubey::vulkan::Device& device,
                                                             cubey::ProjectGpuServices& gpu,
-                                                            const Fluid2DConfig& config) {
+                                                            const Smoke2DConfig& config) {
     config_ = config;
     if (field_a_.has_value()) {
         return;
@@ -122,11 +122,11 @@ void Fluid2DGpuResources::create_global_resources_if_needed(cubey::vulkan::Devic
     create_compute_pipelines(device);
 }
 
-void Fluid2DGpuResources::destroy_swapchain_resources() {
+void Smoke2DGpuResources::destroy_swapchain_resources() {
     render_pipeline_resource_.reset();
 }
 
-void Fluid2DGpuResources::destroy_all_resources() {
+void Smoke2DGpuResources::destroy_all_resources() {
     destroy_swapchain_resources();
     projection_pipeline_resource_.reset();
     pressure_pipeline_resource_.reset();
@@ -158,50 +158,50 @@ void Fluid2DGpuResources::destroy_all_resources() {
     field_a_.reset();
 }
 
-void Fluid2DGpuResources::create_field_buffers(cubey::ProjectGpuServices& gpu,
-                                               const Fluid2DConfig& config) {
-    const std::vector<FluidCellGpu> initial(field_cell_count(config));
+void Smoke2DGpuResources::create_field_buffers(cubey::ProjectGpuServices& gpu,
+                                               const Smoke2DConfig& config) {
+    const std::vector<SmokeCellGpu> initial(field_cell_count(config));
     const VkDeviceSize byte_size = static_cast<VkDeviceSize>(field_byte_size(config));
     field_a_.emplace(upload_project_device_buffer(gpu, initial.data(), byte_size,
                                                   VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                                                  "fluid_2d field A upload"));
+                                                  "smoke_2d field A upload"));
     field_b_.emplace(upload_project_device_buffer(gpu, initial.data(), byte_size,
                                                   VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                                                  "fluid_2d field B upload"));
+                                                  "smoke_2d field B upload"));
     field_temp_.emplace(upload_project_device_buffer(gpu, initial.data(), byte_size,
                                                      VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                                                     "fluid_2d field temp upload"));
+                                                     "smoke_2d field temp upload"));
 
     const std::vector<float> scalar_initial(field_cell_count(config), 0.0F);
     const VkDeviceSize scalar_byte_size = static_cast<VkDeviceSize>(scalar_field_byte_size(config));
     divergence_.emplace(upload_project_device_buffer(gpu, scalar_initial.data(), scalar_byte_size,
                                                      VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                                                     "fluid_2d divergence upload"));
+                                                     "smoke_2d divergence upload"));
     curl_.emplace(upload_project_device_buffer(gpu, scalar_initial.data(), scalar_byte_size,
                                                VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                                               "fluid_2d curl upload"));
+                                               "smoke_2d curl upload"));
     const std::vector<float> obstacle_initial = create_obstacle_mask(config);
     obstacle_.emplace(upload_project_device_buffer(gpu, obstacle_initial.data(), scalar_byte_size,
                                                    VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                                                   "fluid_2d obstacle upload"));
-    std::vector<Fluid2DInjectorGpu> injector_initial(kMaxProceduralInjectorCount);
-    const std::vector<Fluid2DInjectorGpu> active_injectors =
-        fluid_2d_injectors_to_gpu(create_fluid_2d_injectors(config), config);
+                                                   "smoke_2d obstacle upload"));
+    std::vector<Smoke2DInjectorGpu> injector_initial(kMaxProceduralInjectorCount);
+    const std::vector<Smoke2DInjectorGpu> active_injectors =
+        smoke_2d_injectors_to_gpu(create_smoke_2d_injectors(config), config);
     std::copy(active_injectors.begin(), active_injectors.end(), injector_initial.begin());
     injectors_.emplace(upload_project_device_buffer(
         gpu, injector_initial.data(),
-        static_cast<VkDeviceSize>(fluid_2d_injector_capacity_byte_size()),
+        static_cast<VkDeviceSize>(smoke_2d_injector_capacity_byte_size()),
         VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-        "fluid_2d injector upload"));
+        "smoke_2d injector upload"));
     pressure_a_.emplace(upload_project_device_buffer(gpu, scalar_initial.data(), scalar_byte_size,
                                                      VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                                                     "fluid_2d pressure A upload"));
+                                                     "smoke_2d pressure A upload"));
     pressure_b_.emplace(upload_project_device_buffer(gpu, scalar_initial.data(), scalar_byte_size,
                                                      VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                                                     "fluid_2d pressure B upload"));
+                                                     "smoke_2d pressure B upload"));
 }
 
-void Fluid2DGpuResources::create_descriptor_resources(cubey::vulkan::Device& device) {
+void Smoke2DGpuResources::create_descriptor_resources(cubey::vulkan::Device& device) {
     const std::array<cubey::vulkan::DescriptorSetBindingConfig, 4> compute_bindings{{
         {
             .binding = 0,
@@ -386,7 +386,7 @@ void Fluid2DGpuResources::create_descriptor_resources(cubey::vulkan::Device& dev
     update_field_descriptors(device);
 }
 
-void Fluid2DGpuResources::update_field_descriptors(cubey::vulkan::Device& device) {
+void Smoke2DGpuResources::update_field_descriptors(cubey::vulkan::Device& device) {
     cubey::vulkan::DescriptorWriteBatch descriptor_writes;
 
     descriptor_writes
@@ -460,41 +460,41 @@ void Fluid2DGpuResources::update_field_descriptors(cubey::vulkan::Device& device
     descriptor_writes.update(device);
 }
 
-void Fluid2DGpuResources::create_compute_pipelines(cubey::vulkan::Device& device) {
-    create_compute_pipeline_resource(device, "fluid_2d_inject.comp.spv",
+void Smoke2DGpuResources::create_compute_pipelines(cubey::vulkan::Device& device) {
+    create_compute_pipeline_resource(device, "smoke_2d_inject.comp.spv",
                                      compute_descriptor_layout(), inject_pipeline_resource_);
-    create_compute_pipeline_resource(device, "fluid_2d_advect_predict.comp.spv",
+    create_compute_pipeline_resource(device, "smoke_2d_advect_predict.comp.spv",
                                      compute_descriptor_layout(), advect_pipeline_resource_);
-    create_compute_pipeline_resource(device, "fluid_2d_advect_correct.comp.spv",
+    create_compute_pipeline_resource(device, "smoke_2d_advect_correct.comp.spv",
                                      advect_correct_descriptor_layout(),
                                      advect_correct_pipeline_resource_);
-    create_compute_pipeline_resource(device, "fluid_2d_curl.comp.spv", compute_descriptor_layout(),
+    create_compute_pipeline_resource(device, "smoke_2d_curl.comp.spv", compute_descriptor_layout(),
                                      curl_pipeline_resource_);
-    create_compute_pipeline_resource(device, "fluid_2d_vorticity.comp.spv",
+    create_compute_pipeline_resource(device, "smoke_2d_vorticity.comp.spv",
                                      compute_descriptor_layout(), vorticity_pipeline_resource_);
-    create_compute_pipeline_resource(device, "fluid_2d_divergence.comp.spv",
+    create_compute_pipeline_resource(device, "smoke_2d_divergence.comp.spv",
                                      divergence_descriptor_layout(), divergence_pipeline_resource_);
-    create_compute_pipeline_resource(device, "fluid_2d_pressure.comp.spv",
+    create_compute_pipeline_resource(device, "smoke_2d_pressure.comp.spv",
                                      pressure_descriptor_layout(), pressure_pipeline_resource_);
-    create_compute_pipeline_resource(device, "fluid_2d_projection.comp.spv",
+    create_compute_pipeline_resource(device, "smoke_2d_projection.comp.spv",
                                      projection_descriptor_layout(), projection_pipeline_resource_);
 }
 
-void Fluid2DGpuResources::create_render_pipeline(cubey::vulkan::Device& device,
+void Smoke2DGpuResources::create_render_pipeline(cubey::vulkan::Device& device,
                                                  VkFormat color_format, VkExtent2D extent) {
     const std::array<cubey::render::ShaderStageFile, 2> shader_stage_files{
         cubey::render::ShaderStageFile{
             .stage = VK_SHADER_STAGE_VERTEX_BIT,
-            .path = shader_path("fluid_2d.vert.spv"),
+            .path = shader_path("smoke_2d.vert.spv"),
         },
         cubey::render::ShaderStageFile{
             .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
-            .path = shader_path("fluid_2d_render.frag.spv"),
+            .path = shader_path("smoke_2d_render.frag.spv"),
         },
     };
 
     const std::array<VkDescriptorSetLayout, 1> set_layouts{render_descriptors().layout()};
-    const cubey::render::MaterialPassInfo material_pass = fluid_render_pass_info();
+    const cubey::render::MaterialPassInfo material_pass = smoke_render_pass_info();
     render_pipeline_resource_.emplace(device, cubey::render::GraphicsPipelineFileResourceConfig{
                                                   .extent = extent,
                                                   .color_format = color_format,
@@ -504,84 +504,84 @@ void Fluid2DGpuResources::create_render_pipeline(cubey::vulkan::Device& device,
                                               });
 }
 
-const cubey::vulkan::Buffer& Fluid2DGpuResources::field_a() const {
+const cubey::vulkan::Buffer& Smoke2DGpuResources::field_a() const {
     if (!field_a_.has_value()) {
-        throw std::runtime_error("fluid field A is not initialized");
+        throw std::runtime_error("smoke field A is not initialized");
     }
     return field_a_.value();
 }
 
-const cubey::vulkan::Buffer& Fluid2DGpuResources::field_b() const {
+const cubey::vulkan::Buffer& Smoke2DGpuResources::field_b() const {
     if (!field_b_.has_value()) {
-        throw std::runtime_error("fluid field B is not initialized");
+        throw std::runtime_error("smoke field B is not initialized");
     }
     return field_b_.value();
 }
 
-const cubey::vulkan::Buffer& Fluid2DGpuResources::field_temp() const {
+const cubey::vulkan::Buffer& Smoke2DGpuResources::field_temp() const {
     if (!field_temp_.has_value()) {
         throw std::runtime_error("fluid temp field is not initialized");
     }
     return field_temp_.value();
 }
 
-const cubey::vulkan::Buffer& Fluid2DGpuResources::divergence() const {
+const cubey::vulkan::Buffer& Smoke2DGpuResources::divergence() const {
     if (!divergence_.has_value()) {
         throw std::runtime_error("fluid divergence field is not initialized");
     }
     return divergence_.value();
 }
 
-const cubey::vulkan::Buffer& Fluid2DGpuResources::curl() const {
+const cubey::vulkan::Buffer& Smoke2DGpuResources::curl() const {
     if (!curl_.has_value()) {
         throw std::runtime_error("fluid curl field is not initialized");
     }
     return curl_.value();
 }
 
-const cubey::vulkan::Buffer& Fluid2DGpuResources::obstacle() const {
+const cubey::vulkan::Buffer& Smoke2DGpuResources::obstacle() const {
     if (!obstacle_.has_value()) {
         throw std::runtime_error("fluid obstacle field is not initialized");
     }
     return obstacle_.value();
 }
 
-const cubey::vulkan::Buffer& Fluid2DGpuResources::injectors() const {
+const cubey::vulkan::Buffer& Smoke2DGpuResources::injectors() const {
     if (!injectors_.has_value()) {
-        throw std::runtime_error("fluid injector buffer is not initialized");
+        throw std::runtime_error("smoke injector buffer is not initialized");
     }
     return injectors_.value();
 }
 
-const cubey::vulkan::Buffer& Fluid2DGpuResources::pressure_a() const {
+const cubey::vulkan::Buffer& Smoke2DGpuResources::pressure_a() const {
     if (!pressure_a_.has_value()) {
         throw std::runtime_error("fluid pressure field A is not initialized");
     }
     return pressure_a_.value();
 }
 
-const cubey::vulkan::Buffer& Fluid2DGpuResources::pressure_b() const {
+const cubey::vulkan::Buffer& Smoke2DGpuResources::pressure_b() const {
     if (!pressure_b_.has_value()) {
         throw std::runtime_error("fluid pressure field B is not initialized");
     }
     return pressure_b_.value();
 }
 
-VkDescriptorSetLayout Fluid2DGpuResources::compute_descriptor_layout() const {
+VkDescriptorSetLayout Smoke2DGpuResources::compute_descriptor_layout() const {
     if (!compute_descriptor_layout_.has_value()) {
         throw std::runtime_error("compute descriptor layout is not initialized");
     }
     return compute_descriptor_layout_->handle();
 }
 
-const cubey::vulkan::DescriptorPool& Fluid2DGpuResources::compute_descriptor_pool() const {
+const cubey::vulkan::DescriptorPool& Smoke2DGpuResources::compute_descriptor_pool() const {
     if (!compute_descriptor_pool_.has_value()) {
         throw std::runtime_error("compute descriptor pool is not initialized");
     }
     return compute_descriptor_pool_.value();
 }
 
-VkDescriptorSetLayout Fluid2DGpuResources::advect_correct_descriptor_layout() const {
+VkDescriptorSetLayout Smoke2DGpuResources::advect_correct_descriptor_layout() const {
     if (!advect_correct_descriptor_layout_.has_value()) {
         throw std::runtime_error("advect correct descriptor layout is not initialized");
     }
@@ -589,56 +589,56 @@ VkDescriptorSetLayout Fluid2DGpuResources::advect_correct_descriptor_layout() co
 }
 
 const cubey::vulkan::DescriptorPool&
-Fluid2DGpuResources::advect_correct_descriptor_pool() const {
+Smoke2DGpuResources::advect_correct_descriptor_pool() const {
     if (!advect_correct_descriptor_pool_.has_value()) {
         throw std::runtime_error("advect correct descriptor pool is not initialized");
     }
     return advect_correct_descriptor_pool_.value();
 }
 
-VkDescriptorSetLayout Fluid2DGpuResources::divergence_descriptor_layout() const {
+VkDescriptorSetLayout Smoke2DGpuResources::divergence_descriptor_layout() const {
     if (!divergence_descriptor_layout_.has_value()) {
         throw std::runtime_error("divergence descriptor layout is not initialized");
     }
     return divergence_descriptor_layout_->handle();
 }
 
-const cubey::vulkan::DescriptorPool& Fluid2DGpuResources::divergence_descriptor_pool() const {
+const cubey::vulkan::DescriptorPool& Smoke2DGpuResources::divergence_descriptor_pool() const {
     if (!divergence_descriptor_pool_.has_value()) {
         throw std::runtime_error("divergence descriptor pool is not initialized");
     }
     return divergence_descriptor_pool_.value();
 }
 
-VkDescriptorSetLayout Fluid2DGpuResources::pressure_descriptor_layout() const {
+VkDescriptorSetLayout Smoke2DGpuResources::pressure_descriptor_layout() const {
     if (!pressure_descriptor_layout_.has_value()) {
         throw std::runtime_error("pressure descriptor layout is not initialized");
     }
     return pressure_descriptor_layout_->handle();
 }
 
-const cubey::vulkan::DescriptorPool& Fluid2DGpuResources::pressure_descriptor_pool() const {
+const cubey::vulkan::DescriptorPool& Smoke2DGpuResources::pressure_descriptor_pool() const {
     if (!pressure_descriptor_pool_.has_value()) {
         throw std::runtime_error("pressure descriptor pool is not initialized");
     }
     return pressure_descriptor_pool_.value();
 }
 
-VkDescriptorSetLayout Fluid2DGpuResources::projection_descriptor_layout() const {
+VkDescriptorSetLayout Smoke2DGpuResources::projection_descriptor_layout() const {
     if (!projection_descriptor_layout_.has_value()) {
         throw std::runtime_error("projection descriptor layout is not initialized");
     }
     return projection_descriptor_layout_->handle();
 }
 
-const cubey::vulkan::DescriptorPool& Fluid2DGpuResources::projection_descriptor_pool() const {
+const cubey::vulkan::DescriptorPool& Smoke2DGpuResources::projection_descriptor_pool() const {
     if (!projection_descriptor_pool_.has_value()) {
         throw std::runtime_error("projection descriptor pool is not initialized");
     }
     return projection_descriptor_pool_.value();
 }
 
-const cubey::vulkan::DescriptorSetBundle& Fluid2DGpuResources::render_descriptors() const {
+const cubey::vulkan::DescriptorSetBundle& Smoke2DGpuResources::render_descriptors() const {
     if (!render_descriptors_.has_value()) {
         throw std::runtime_error("fluid render descriptors are not initialized");
     }
@@ -646,7 +646,7 @@ const cubey::vulkan::DescriptorSetBundle& Fluid2DGpuResources::render_descriptor
 }
 
 const cubey::render::ComputePipelineResource&
-Fluid2DGpuResources::inject_pipeline_resource() const {
+Smoke2DGpuResources::inject_pipeline_resource() const {
     if (!inject_pipeline_resource_.has_value()) {
         throw std::runtime_error("inject pipeline resource is not initialized");
     }
@@ -654,7 +654,7 @@ Fluid2DGpuResources::inject_pipeline_resource() const {
 }
 
 const cubey::render::ComputePipelineResource&
-Fluid2DGpuResources::advect_pipeline_resource() const {
+Smoke2DGpuResources::advect_pipeline_resource() const {
     if (!advect_pipeline_resource_.has_value()) {
         throw std::runtime_error("advect pipeline resource is not initialized");
     }
@@ -662,7 +662,7 @@ Fluid2DGpuResources::advect_pipeline_resource() const {
 }
 
 const cubey::render::ComputePipelineResource&
-Fluid2DGpuResources::advect_correct_pipeline_resource() const {
+Smoke2DGpuResources::advect_correct_pipeline_resource() const {
     if (!advect_correct_pipeline_resource_.has_value()) {
         throw std::runtime_error("advect correct pipeline resource is not initialized");
     }
@@ -670,7 +670,7 @@ Fluid2DGpuResources::advect_correct_pipeline_resource() const {
 }
 
 const cubey::render::ComputePipelineResource&
-Fluid2DGpuResources::curl_pipeline_resource() const {
+Smoke2DGpuResources::curl_pipeline_resource() const {
     if (!curl_pipeline_resource_.has_value()) {
         throw std::runtime_error("curl pipeline resource is not initialized");
     }
@@ -678,7 +678,7 @@ Fluid2DGpuResources::curl_pipeline_resource() const {
 }
 
 const cubey::render::ComputePipelineResource&
-Fluid2DGpuResources::vorticity_pipeline_resource() const {
+Smoke2DGpuResources::vorticity_pipeline_resource() const {
     if (!vorticity_pipeline_resource_.has_value()) {
         throw std::runtime_error("vorticity pipeline resource is not initialized");
     }
@@ -686,7 +686,7 @@ Fluid2DGpuResources::vorticity_pipeline_resource() const {
 }
 
 const cubey::render::ComputePipelineResource&
-Fluid2DGpuResources::divergence_pipeline_resource() const {
+Smoke2DGpuResources::divergence_pipeline_resource() const {
     if (!divergence_pipeline_resource_.has_value()) {
         throw std::runtime_error("divergence pipeline resource is not initialized");
     }
@@ -694,7 +694,7 @@ Fluid2DGpuResources::divergence_pipeline_resource() const {
 }
 
 const cubey::render::ComputePipelineResource&
-Fluid2DGpuResources::pressure_pipeline_resource() const {
+Smoke2DGpuResources::pressure_pipeline_resource() const {
     if (!pressure_pipeline_resource_.has_value()) {
         throw std::runtime_error("pressure pipeline resource is not initialized");
     }
@@ -702,7 +702,7 @@ Fluid2DGpuResources::pressure_pipeline_resource() const {
 }
 
 const cubey::render::ComputePipelineResource&
-Fluid2DGpuResources::projection_pipeline_resource() const {
+Smoke2DGpuResources::projection_pipeline_resource() const {
     if (!projection_pipeline_resource_.has_value()) {
         throw std::runtime_error("projection pipeline resource is not initialized");
     }
@@ -710,11 +710,11 @@ Fluid2DGpuResources::projection_pipeline_resource() const {
 }
 
 const cubey::render::GraphicsPipelineResource&
-Fluid2DGpuResources::render_pipeline_resource() const {
+Smoke2DGpuResources::render_pipeline_resource() const {
     if (!render_pipeline_resource_.has_value()) {
         throw std::runtime_error("render pipeline resource is not initialized");
     }
     return render_pipeline_resource_.value();
 }
 
-} // namespace cubey::projects::fluid_2d
+} // namespace cubey::projects::fluid::smoke_2d

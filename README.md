@@ -39,7 +39,7 @@ Current examples:
 
 Current projects:
 
-- `fluid_2d`: compute-updated dye/velocity field with MacCormack advection,
+- `smoke_2d`: compute-updated dye/velocity field with MacCormack advection,
   vorticity, optional static obstacles, pressure projection, debug views, and
   deterministic headless capture output.
 - `fluid_3d`: dense volumetric smoke/gas baseline with 3D storage textures,
@@ -77,7 +77,7 @@ Authoritative current docs:
 
 Project-local docs:
 
-- [Fluid 2D](projects/fluid_2d/README.md)
+- [Smoke 2D](projects/fluid/smoke_2d/README.md)
 - [Fluid 2.5D design](projects/fluid_25d/README.md)
 - [Fluid 3D](projects/fluid_3d/README.md)
 
@@ -156,7 +156,7 @@ Useful windowed smokes:
 ./build/dev/examples/material_cubes/material_cubes --debug-view normal --frames 300 --width 1280 --height 720
 ./build/dev/examples/particle_cubes/particle_cubes --frames 300 --width 1280 --height 720
 ./build/dev/projects/fractal_2d/fractal_2d --frames 300 --width 1280 --height 720
-./build/dev/projects/fluid_2d/fluid_2d --frames 300 --width 1280 --height 720
+./build/dev/projects/fluid/smoke_2d/smoke_2d --frames 300 --width 1280 --height 720
 ./build/dev/projects/fluid_3d/fluid_3d --frames 300 --width 1280 --height 720
 ./build/dev/projects/gltf_viewer/gltf_viewer --input path/to/model.glb --environment path/to/env.hdr --animation-index 0 --animation-speed 1.0 --frames 300 --width 1280 --height 720
 ./build/dev/projects/gltf_viewer/gltf_viewer --input path/to/model.glb --debug-view roughness --frames 300 --width 1280 --height 720
@@ -166,9 +166,9 @@ Useful windowed smokes:
 Windowed `--frames` runs print a final `windowed_perf` FPS/frame-time summary.
 Use `--print-frame-stats` for periodic stdout samples while a window remains
 open; the window title also shows the latest sampled FPS and frame time.
-`fluid_2d` defaults to a `1024x1024` solver grid and three procedural
-injectors; use `--grid-width`, `--grid-height`, and `--injectors 1..16` to
-compare other simulation/demo shapes, and `--obstacles` to enable the static
+`smoke_2d` defaults to a `1024x1024` solver grid and three procedural
+injectors; use `--grid-width`, `--grid-height`, and `--smoke-injectors 1..16` to
+compare other simulation/demo shapes, and `--smoke-obstacles` to enable the static
 obstacle mask.
 `fluid_3d` defaults to a `128x128x128` dense solver volume with a decoupled
 `64x64x64` shadow volume and a `smoke-plume` source scenario. Use
@@ -191,7 +191,7 @@ Useful headless PNG smokes:
 ```bash
 ./build/dev/examples/headless_cube/headless_cube --width 640 --height 360 --output /tmp/cubey-headless-cube.png
 ./build/dev/projects/fractal_2d/fractal_2d --headless --width 640 --height 360 --output /tmp/cubey-fractal-2d.png
-./build/dev/projects/fluid_2d/fluid_2d --headless --frames 120 --width 640 --height 360 --output /tmp/cubey-fluid-2d.png
+./build/dev/projects/fluid/smoke_2d/smoke_2d --headless --frames 120 --width 640 --height 360 --output /tmp/cubey-smoke-2d.png
 ./build/dev/projects/fluid_3d/fluid_3d --headless --frames 120 --width 640 --height 360 --output /tmp/cubey-fluid-3d.png
 ./build/dev/projects/pbr_furnace/pbr_furnace --headless --width 640 --height 360 --output /tmp/cubey-pbr-furnace.png
 ```
@@ -201,7 +201,7 @@ Useful headless video captures when FFmpeg/libav support is enabled:
 ```bash
 ./build/dev/examples/headless_cube/headless_cube --headless --capture video --frames 180 --fps 60 --width 1280 --height 720 --output /tmp/cubey-headless-cube.mp4
 ./build/dev/projects/gltf_viewer/gltf_viewer --headless --capture video --frames 180 --fps 60 --input path/to/model.glb --environment path/to/env.hdr --output /tmp/cubey-gltf-viewer.mp4
-./build/dev/projects/fluid_2d/fluid_2d --headless --capture video --frames 180 --fps 60 --width 1280 --height 720 --output /tmp/cubey-fluid-2d.mp4
+./build/dev/projects/fluid/smoke_2d/smoke_2d --headless --capture video --frames 180 --fps 60 --width 1280 --height 720 --output /tmp/cubey-smoke-2d.mp4
 ```
 
 Use `--require-validation` on local smoke commands when Vulkan validation
@@ -221,7 +221,7 @@ layers are installed.
   updates, `R` resets the camera and cube field, Escape closes.
 - `fractal_2d`: left-drag pans, mouse wheel zooms around the cursor, `R` resets,
   Escape closes.
-- `fluid_2d`: left-drag injects dye/force, Space pauses/resumes, `R` resets,
+- `smoke_2d`: left-drag injects dye/force, Space pauses/resumes, `R` resets,
   `D` cycles dye/velocity/divergence/pressure/speed/vorticity/obstacle views,
   Escape closes.
 - `gltf_viewer`: left-drag orbits the camera, `D` cycles PBR debug views,

@@ -1,4 +1,4 @@
-#include "fluid_2d_commands.h"
+#include "smoke_2d_commands.h"
 
 #include <cubey/render/pass.h>
 #include <cubey/render/render_graph.h>
@@ -12,7 +12,7 @@
 #include <stdexcept>
 #include <vector>
 
-namespace cubey::projects::fluid_2d {
+namespace cubey::projects::fluid::smoke_2d {
 namespace {
 
 using cubey::vulkan::vk_struct;
@@ -45,7 +45,7 @@ struct TransferWriteBarrier {
     VkAccessFlags dst_access = 0;
 };
 
-[[nodiscard]] DispatchGroups compute_dispatch_groups(const Fluid2DConfig& config) {
+[[nodiscard]] DispatchGroups compute_dispatch_groups(const Smoke2DConfig& config) {
     return {
         .x = (config.grid_width + config.compute_group_size - 1U) / config.compute_group_size,
         .y = (config.grid_height + config.compute_group_size - 1U) / config.compute_group_size,
@@ -69,15 +69,15 @@ void record_transfer_write_barrier(VkCommandBuffer command_buffer, TransferWrite
 }
 
 void record_injector_buffer_update(VkCommandBuffer command_buffer,
-                                   const Fluid2DGpuResources& resources,
-                                   std::span<const Fluid2DInjectorGpu> injectors) {
+                                   const Smoke2DGpuResources& resources,
+                                   std::span<const Smoke2DInjectorGpu> injectors) {
     if (injectors.empty()) {
         return;
     }
     const VkDeviceSize byte_size =
-        static_cast<VkDeviceSize>(injectors.size() * sizeof(Fluid2DInjectorGpu));
+        static_cast<VkDeviceSize>(injectors.size() * sizeof(Smoke2DInjectorGpu));
     if (byte_size > resources.injectors().size()) {
-        throw std::runtime_error("fluid injector update exceeds injector buffer size");
+        throw std::runtime_error("smoke injector update exceeds injector buffer size");
     }
     vkCmdUpdateBuffer(command_buffer, resources.injectors().handle(), 0, byte_size,
                       injectors.data());
@@ -88,11 +88,11 @@ void record_injector_buffer_update(VkCommandBuffer command_buffer,
                         });
 }
 
-[[nodiscard]] float debug_view_push_value(FluidDebugView view) {
+[[nodiscard]] float debug_view_push_value(Smoke2DDebugView view) {
     return static_cast<float>(static_cast<std::uint32_t>(view));
 }
 
-[[nodiscard]] SimulationPushConstants simulation_push_constants(const Fluid2DConfig& config,
+[[nodiscard]] SimulationPushConstants simulation_push_constants(const Smoke2DConfig& config,
                                                                 const ProjectFrame& frame) {
     const float time = static_cast<float>(frame.elapsed_seconds);
     const float dt = std::min(static_cast<float>(frame.delta_seconds), config.fixed_delta_seconds);
@@ -122,7 +122,7 @@ void record_injector_buffer_update(VkCommandBuffer command_buffer,
     };
 }
 
-void record_field_reset(VkCommandBuffer command_buffer, const Fluid2DGpuResources& resources) {
+void record_field_reset(VkCommandBuffer command_buffer, const Smoke2DGpuResources& resources) {
     vkCmdFillBuffer(command_buffer, resources.field_a().handle(), 0, resources.field_a().size(), 0);
     vkCmdFillBuffer(command_buffer, resources.field_b().handle(), 0, resources.field_b().size(), 0);
     vkCmdFillBuffer(command_buffer, resources.field_temp().handle(), 0, resources.field_temp().size(),
@@ -144,10 +144,10 @@ void record_field_reset(VkCommandBuffer command_buffer, const Fluid2DGpuResource
 
 } // namespace
 
-void record_fluid_compute(VkCommandBuffer command_buffer, Fluid2DGpuResources& resources,
-                          const Fluid2DConfig& config, bool paused,
+void record_smoke_compute(VkCommandBuffer command_buffer, Smoke2DGpuResources& resources,
+                          const Smoke2DConfig& config, bool paused,
                           bool& reset_requested, const ProjectFrame& frame,
-                          std::span<const Fluid2DInjectorGpu> injectors,
+                          std::span<const Smoke2DInjectorGpu> injectors,
                           bool include_render_visibility_barrier) {
     const cubey::vulkan::CommandRecorder recorder(command_buffer);
 
@@ -297,8 +297,8 @@ void record_fluid_compute(VkCommandBuffer command_buffer, Fluid2DGpuResources& r
     }
 }
 
-void record_fullscreen_draw(VkCommandBuffer command_buffer, const Fluid2DGpuResources& resources,
-                            const Fluid2DConfig& config, FluidDebugView debug_view,
+void record_fullscreen_draw(VkCommandBuffer command_buffer, const Smoke2DGpuResources& resources,
+                            const Smoke2DConfig& config, Smoke2DDebugView debug_view,
                             cubey::render::ColorTargetView color_target) {
     const cubey::vulkan::CommandRecorder recorder(command_buffer);
     const RenderPushConstants push_constants{
@@ -328,24 +328,24 @@ void record_fullscreen_draw(VkCommandBuffer command_buffer, const Fluid2DGpuReso
 }
 
 [[nodiscard]] cubey::render::CompiledRenderGraph
-build_fluid_frame_graph(cubey::render::ColorTargetView color_target, Fluid2DGpuResources& resources,
-                        const Fluid2DConfig& config, FluidDebugView debug_view,
+build_smoke_frame_graph(cubey::render::ColorTargetView color_target, Smoke2DGpuResources& resources,
+                        const Smoke2DConfig& config, Smoke2DDebugView debug_view,
                         bool paused, bool& reset_requested, const ProjectFrame& frame,
-                        std::span<const Fluid2DInjectorGpu> injectors) {
-    Fluid2DGpuResources* resource_ptr = &resources;
-    const Fluid2DConfig* config_ptr = &config;
+                        std::span<const Smoke2DInjectorGpu> injectors) {
+    Smoke2DGpuResources* resource_ptr = &resources;
+    const Smoke2DConfig* config_ptr = &config;
     bool* reset_requested_ptr = &reset_requested;
-    std::vector<Fluid2DInjectorGpu> injector_snapshot(injectors.begin(), injectors.end());
+    std::vector<Smoke2DInjectorGpu> injector_snapshot(injectors.begin(), injectors.end());
     cubey::render::RenderGraphBuilder graph;
     const cubey::render::RenderGraphBufferHandle field_a =
-        graph.import_buffer({.label = "fluid field A", .byte_size = resources.field_a().size()},
+        graph.import_buffer({.label = "smoke field A", .byte_size = resources.field_a().size()},
                             resources.field_a().handle());
     const cubey::render::RenderGraphBufferHandle field_b =
-        graph.import_buffer({.label = "fluid field B", .byte_size = resources.field_b().size()},
+        graph.import_buffer({.label = "smoke field B", .byte_size = resources.field_b().size()},
                             resources.field_b().handle());
     const cubey::render::RenderGraphBufferHandle field_temp =
         graph.import_buffer(
-            {.label = "fluid field temp", .byte_size = resources.field_temp().size()},
+            {.label = "smoke field temp", .byte_size = resources.field_temp().size()},
             resources.field_temp().handle());
     const cubey::render::RenderGraphBufferHandle divergence = graph.import_buffer(
         {.label = "fluid divergence", .byte_size = resources.divergence().size()},
@@ -357,7 +357,7 @@ build_fluid_frame_graph(cubey::render::ColorTargetView color_target, Fluid2DGpuR
         graph.import_buffer({.label = "fluid obstacle", .byte_size = resources.obstacle().size()},
                             resources.obstacle().handle());
     const cubey::render::RenderGraphBufferHandle injector_buffer = graph.import_buffer(
-        {.label = "fluid injectors", .byte_size = resources.injectors().size()},
+        {.label = "smoke injectors", .byte_size = resources.injectors().size()},
         resources.injectors().handle());
     const cubey::render::RenderGraphBufferHandle pressure_a = graph.import_buffer(
         {.label = "fluid pressure A", .byte_size = resources.pressure_a().size()},
@@ -382,7 +382,7 @@ build_fluid_frame_graph(cubey::render::ColorTargetView color_target, Fluid2DGpuR
         .read_write_storage_buffer(pressure_b)
         .execute([resource_ptr, config_ptr, paused, reset_requested_ptr, frame,
                   injector_snapshot](const cubey::render::RenderGraphExecutionContext& context) {
-            record_fluid_compute(context.recorder().handle(), *resource_ptr, *config_ptr, paused,
+            record_smoke_compute(context.recorder().handle(), *resource_ptr, *config_ptr, paused,
                                  *reset_requested_ptr, frame, injector_snapshot, false);
         });
     graph.add_pass("fluid render", cubey::render::RenderGraphQueueDomain::Graphics)
@@ -407,4 +407,4 @@ build_fluid_frame_graph(cubey::render::ColorTargetView color_target, Fluid2DGpuR
     return graph.compile();
 }
 
-} // namespace cubey::projects::fluid_2d
+} // namespace cubey::projects::fluid::smoke_2d

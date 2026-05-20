@@ -1,6 +1,6 @@
-# Fluid 2D
+# Smoke 2D
 
-`fluid_2d` is Cubey's first project target. It is a compact GPU dye-and-velocity
+`smoke_2d` is Cubey's first project target. It is a compact GPU dye-and-velocity
 fluid simulation used to exercise the project/runtime boundary before moving to
 larger simulation work.
 
@@ -9,10 +9,10 @@ its simulation policy locally. Cubey provides the Vulkan/runtime pieces; this
 project owns the field layout, compute passes, interaction model, render modes,
 and tuning.
 
-This README is the source of truth for `fluid_2d` design notes and checkpoint
+This README is the source of truth for `smoke_2d` design notes and checkpoint
 history. Cross-project runtime decisions still belong under `docs/`.
 The broader fluid technique map lives in
-[`docs/architecture/fluid-simulation.md`](../../docs/architecture/fluid-simulation.md).
+[`docs/architecture/fluid-simulation.md`](../../../docs/architecture/fluid-simulation.md).
 
 ## Current Status
 
@@ -53,14 +53,14 @@ decay, and injection radius/force/propulsion.
 
 The default solver grid is `1024x1024`. Override it with `--grid-width` and
 `--grid-height` when comparing quality or performance. The default procedural
-injector count is three; override it with `--injectors` from `1` to `16` to
+injector count is three; override it with `--smoke-injectors` from `1` to `16` to
 spread more sources around the hue wheel. Procedural sources use one orbit model
 with configurable radius, radius spread, signed angular speed, angular speed
-spread, and phase spread. Use `--injector-orbit-radius`,
-`--injector-orbit-radius-spread`, `--injector-orbit-angular-speed`,
-`--injector-orbit-angular-speed-spread`, `--injector-orbit-phase-spread`,
-`--injector-force`, and `--injector-propulsion` to tune captures.
-Static obstacles are disabled by default; enable them with `--obstacles`.
+spread, and phase spread. Use `--smoke-injector-orbit-radius`,
+`--smoke-injector-orbit-radius-spread`, `--smoke-injector-orbit-angular-speed`,
+`--smoke-injector-orbit-angular-speed-spread`, `--smoke-injector-orbit-phase-spread`,
+`--smoke-injector-force`, and `--smoke-injector-propulsion` to tune captures.
+Static obstacles are disabled by default; enable them with `--smoke-obstacles`.
 
 ```text
 field A -> advect predict -> field temp
@@ -80,7 +80,7 @@ field layout.
 
 ## Technique Direction
 
-`fluid_2d` should stay the incompressible grid-fluid lab. It is the right place
+`smoke_2d` should stay the incompressible grid-fluid lab. It is the right place
 to improve the classic GPU Gems / Stable Fluids style solver, but it should not
 become the general answer to all water simulation.
 
@@ -124,7 +124,7 @@ render phi = 0 with marching squares
 
 Scaling guidance:
 
-- `fluid_2d` is useful for solver learning, diagnostics, and stylized
+- `smoke_2d` is useful for solver learning, diagnostics, and stylized
   smoke/dye/liquid cross-sections.
 - `fluid_25d` is the better path for scalable terrain water, rivers, and
   flooding.
@@ -140,7 +140,7 @@ Status: initial pass complete.
 Goal: render a deterministic compute-updated dye field in both windowed and
 headless modes.
 
-- Add a `projects/` CMake lane and `fluid_2d` binary.
+- Add a `projects/` CMake lane and `smoke_2d` binary.
 - Use a fixed-size 2D grid with ping-pong GPU fields.
 - Start with injection plus advection/fade compute passes.
 - Render dye through a fullscreen graphics pass.
@@ -171,7 +171,7 @@ Status: interaction and debug views complete.
 Goal: make the first project steerable and inspectable while keeping headless
 output deterministic.
 
-- Left-drag injects dye and cursor-derived force into the fluid field.
+- Left-drag injects dye and cursor-derived force into the smoke field.
 - Space pauses/resumes simulation without closing the window.
 - `R` clears dye, velocity, divergence, and pressure buffers.
 - `D` cycles render modes: dye, velocity, divergence, pressure.
@@ -188,7 +188,7 @@ Status: project runtime adapter integration complete.
 Goal: make the first project consume Cubey's runtime service vocabulary without
 creating a generic project host.
 
-- `fluid_2d` owns a `cubey::ProjectRuntimeAdapter` instance.
+- `smoke_2d` owns a `cubey::ProjectRuntimeAdapter` instance.
 - Windowed and headless simulation steps now use `cubey::ProjectFrame` for
   delta time, elapsed time, frame index, and GPU submission tickets.
 - The adapter owns runtime services, caches one project frame per host frame,
@@ -202,7 +202,7 @@ creating a generic project host.
 
 Status: project GPU services integration complete.
 
-Goal: keep `fluid_2d` on the async-ready runtime path without introducing a
+Goal: keep `smoke_2d` on the async-ready runtime path without introducing a
 generic project host.
 
 - The project runtime adapter now attaches to the host `GpuRuntime` in windowed
@@ -284,7 +284,7 @@ Goal: make the CFD nature more legible by giving the flow geometry to move
 around instead of only fading across an open rectangle.
 
 - The project now uploads a static obstacle mask with solid borders and a few
-  interior shapes when `--obstacles` is set.
+  interior shapes when `--smoke-obstacles` is set.
 - Injection, advection, curl, vorticity, divergence, pressure, and projection
   all read the mask so solid cells stay empty and pressure solve neighbors use a
   wall-aware fallback.
@@ -330,7 +330,7 @@ fluid demo without adding another solver stage.
 
 Status: pointer injector removed.
 
-Goal: keep `fluid_2d` focused on configurable procedural sources now that the
+Goal: keep `smoke_2d` focused on configurable procedural sources now that the
 demo UI owns live tuning controls.
 
 - Manual pointer splats were removed from the app input path, simulation push
@@ -348,29 +348,29 @@ solver.
 - The old named injector motion presets were folded into one orbit model with
   radius spread, angular speed spread, and phase spread.
 - Injection force and propulsion are configurable from the demo UI,
-  `--injector-force`, and `--injector-propulsion`.
+  `--smoke-injector-force`, and `--smoke-injector-propulsion`.
 
 ## Commands
 
 ```bash
-./build/dev/projects/fluid_2d/fluid_2d --require-validation --frames 300 --width 1280 --height 720
-./build/dev/projects/fluid_2d/fluid_2d --frames 300 --print-frame-stats --grid-width 512 --grid-height 512 --width 1280 --height 720
-./build/dev/projects/fluid_2d/fluid_2d --frames 300 --injectors 8 --injector-force 7.5 --injector-propulsion 1.4 --width 1280 --height 720
-./build/dev/projects/fluid_2d/fluid_2d --frames 300 --injectors 8 \
-    --injector-orbit-radius 0.25 --injector-orbit-radius-spread 0.24 \
-    --injector-orbit-angular-speed 0.0 --injector-orbit-angular-speed-spread 1.2 \
-    --injector-orbit-phase-spread 1.0 \
+./build/dev/projects/fluid/smoke_2d/smoke_2d --require-validation --frames 300 --width 1280 --height 720
+./build/dev/projects/fluid/smoke_2d/smoke_2d --frames 300 --print-frame-stats --grid-width 512 --grid-height 512 --width 1280 --height 720
+./build/dev/projects/fluid/smoke_2d/smoke_2d --frames 300 --smoke-injectors 8 --smoke-injector-force 7.5 --smoke-injector-propulsion 1.4 --width 1280 --height 720
+./build/dev/projects/fluid/smoke_2d/smoke_2d --frames 300 --smoke-injectors 8 \
+    --smoke-injector-orbit-radius 0.25 --smoke-injector-orbit-radius-spread 0.24 \
+    --smoke-injector-orbit-angular-speed 0.0 --smoke-injector-orbit-angular-speed-spread 1.2 \
+    --smoke-injector-orbit-phase-spread 1.0 \
     --width 1280 --height 720
-./build/dev/projects/fluid_2d/fluid_2d --frames 300 --obstacles --width 1280 --height 720
-./build/dev/projects/fluid_2d/fluid_2d --headless --require-validation --frames 120 --width 640 --height 360 --output /tmp/cubey-fluid-2d.png
-./build/dev/projects/fluid_2d/fluid_2d --headless --capture video --frames 180 --fps 60 --width 1280 --height 720 --output /tmp/cubey-fluid-2d.mp4
+./build/dev/projects/fluid/smoke_2d/smoke_2d --frames 300 --smoke-obstacles --width 1280 --height 720
+./build/dev/projects/fluid/smoke_2d/smoke_2d --headless --require-validation --frames 120 --width 640 --height 360 --output /tmp/cubey-smoke-2d.png
+./build/dev/projects/fluid/smoke_2d/smoke_2d --headless --capture video --frames 180 --fps 60 --width 1280 --height 720 --output /tmp/cubey-smoke-2d.mp4
 ```
 
 ## Next Slices
 
 - Upgrade the pressure solver beyond fixed-count Jacobi.
 - Add moving obstacles or obstacle velocity coupling.
-- Decide whether `fluid_2d` should lean smoke/dye, free-surface liquid, or split
+- Decide whether `smoke_2d` should lean smoke/dye, free-surface liquid, or split
   those into separate project modes.
 - Consider a project-local HUD only if title-bar stats are not enough.
 - Revisit reusable helpers when buffer ping-pong descriptors, fixed-step

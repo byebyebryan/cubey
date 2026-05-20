@@ -92,45 +92,34 @@ RunConfig parse_run_config(int argc, char** argv) {
         } else if (arg == "--shadow-update-interval") {
             config.shadow_update_interval = parse_positive_u32(
                 need_value("--shadow-update-interval"), "--shadow-update-interval");
-        } else if (arg == "--injectors") {
-            config.injectors = parse_positive_u32(need_value("--injectors"), "--injectors");
-        } else if (arg == "--injector-force") {
-            config.injector_force = parse_float(need_value("--injector-force"), "--injector-force");
-        } else if (arg == "--injector-propulsion") {
-            config.injector_propulsion =
-                parse_float(need_value("--injector-propulsion"), "--injector-propulsion");
-        } else if (arg == "--fluid-density-injection") {
-            config.fluid_density_injection =
-                parse_float(need_value("--fluid-density-injection"), "--fluid-density-injection");
-        } else if (arg == "--injector-orbit-radius") {
-            config.injector_orbit_radius =
-                parse_float(need_value("--injector-orbit-radius"), "--injector-orbit-radius");
-        } else if (arg == "--injector-orbit-radius-spread") {
-            config.injector_orbit_radius_spread = parse_float(
-                need_value("--injector-orbit-radius-spread"), "--injector-orbit-radius-spread");
-        } else if (arg == "--injector-orbit-angular-speed") {
-            config.injector_orbit_angular_speed = parse_float(
-                need_value("--injector-orbit-angular-speed"), "--injector-orbit-angular-speed");
-        } else if (arg == "--injector-orbit-angular-speed-spread") {
-            config.injector_orbit_angular_speed_spread =
-                parse_float(need_value("--injector-orbit-angular-speed-spread"),
-                            "--injector-orbit-angular-speed-spread");
-        } else if (arg == "--injector-orbit-phase-spread") {
-            config.injector_orbit_phase_spread = parse_float(
-                need_value("--injector-orbit-phase-spread"), "--injector-orbit-phase-spread");
-        } else if (arg == "--injector-orbit-inclination" ||
-                   arg == "--injector-orbit-inclination-degrees") {
-            config.injector_orbit_inclination_degrees =
-                parse_float(need_value(arg), "--injector-orbit-inclination-degrees");
-        } else if (arg == "--injector-orbit-inclination-spread" ||
-                   arg == "--injector-orbit-inclination-spread-degrees") {
-            config.injector_orbit_inclination_spread_degrees = parse_float(
-                need_value(arg), "--injector-orbit-inclination-spread-degrees");
-        } else if (arg == "--injector-movement") {
-            config.injector_movement = std::string(need_value("--injector-movement"));
-        } else if (arg == "--injector-circle-height" || arg == "--injector-circle-y") {
-            config.injector_circle_height =
-                parse_float(need_value(arg), "--injector-circle-height");
+        } else if (arg == "--smoke-injectors") {
+            config.smoke_injectors =
+                parse_positive_u32(need_value("--smoke-injectors"), "--smoke-injectors");
+        } else if (arg == "--smoke-injector-force") {
+            config.smoke_injector_force =
+                parse_float(need_value("--smoke-injector-force"), "--smoke-injector-force");
+        } else if (arg == "--smoke-injector-propulsion") {
+            config.smoke_injector_propulsion = parse_float(
+                need_value("--smoke-injector-propulsion"), "--smoke-injector-propulsion");
+        } else if (arg == "--smoke-injector-orbit-radius") {
+            config.smoke_injector_orbit_radius = parse_float(
+                need_value("--smoke-injector-orbit-radius"), "--smoke-injector-orbit-radius");
+        } else if (arg == "--smoke-injector-orbit-radius-spread") {
+            config.smoke_injector_orbit_radius_spread =
+                parse_float(need_value("--smoke-injector-orbit-radius-spread"),
+                            "--smoke-injector-orbit-radius-spread");
+        } else if (arg == "--smoke-injector-orbit-angular-speed") {
+            config.smoke_injector_orbit_angular_speed =
+                parse_float(need_value("--smoke-injector-orbit-angular-speed"),
+                            "--smoke-injector-orbit-angular-speed");
+        } else if (arg == "--smoke-injector-orbit-angular-speed-spread") {
+            config.smoke_injector_orbit_angular_speed_spread =
+                parse_float(need_value("--smoke-injector-orbit-angular-speed-spread"),
+                            "--smoke-injector-orbit-angular-speed-spread");
+        } else if (arg == "--smoke-injector-orbit-phase-spread") {
+            config.smoke_injector_orbit_phase_spread =
+                parse_float(need_value("--smoke-injector-orbit-phase-spread"),
+                            "--smoke-injector-orbit-phase-spread");
         } else if (arg == "--fluid-buoyancy") {
             config.fluid_buoyancy = parse_float(need_value("--fluid-buoyancy"), "--fluid-buoyancy");
         } else if (arg == "--fluid-scenario") {
@@ -220,8 +209,8 @@ RunConfig parse_run_config(int argc, char** argv) {
                 parse_float(need_value("--animation-speed"), "--animation-speed");
         } else if (arg == "--pause-animation") {
             config.animation_paused = true;
-        } else if (arg == "--obstacles") {
-            config.obstacles = true;
+        } else if (arg == "--smoke-obstacles") {
+            config.smoke_obstacles = true;
         } else if (arg == "--output") {
             config.output_path = std::string(need_value("--output"));
             output_path_explicit = true;
@@ -239,32 +228,23 @@ RunConfig parse_run_config(int argc, char** argv) {
     if (config.fps == 0) {
         throw std::runtime_error("fps must be positive");
     }
-    if (config.injector_force < 0.0F) {
-        throw std::runtime_error("injector force must be nonnegative");
+    if (config.smoke_injector_force < 0.0F) {
+        throw std::runtime_error("smoke injector force must be nonnegative");
     }
-    if (config.injector_propulsion < 0.0F) {
-        throw std::runtime_error("injector propulsion must be nonnegative");
+    if (config.smoke_injector_propulsion < 0.0F) {
+        throw std::runtime_error("smoke injector propulsion must be nonnegative");
     }
-    if (config.fluid_density_injection < 0.0F) {
-        throw std::runtime_error("fluid density injection must be nonnegative");
+    if (config.smoke_injector_orbit_radius <= 0.0F) {
+        throw std::runtime_error("smoke injector orbit radius must be positive");
     }
-    if (config.injector_orbit_radius <= 0.0F) {
-        throw std::runtime_error("injector orbit radius must be positive");
+    if (config.smoke_injector_orbit_radius_spread < 0.0F) {
+        throw std::runtime_error("smoke injector orbit radius spread must be nonnegative");
     }
-    if (config.injector_orbit_radius_spread < 0.0F) {
-        throw std::runtime_error("injector orbit radius spread must be nonnegative");
+    if (config.smoke_injector_orbit_angular_speed_spread < 0.0F) {
+        throw std::runtime_error("smoke injector orbit angular speed spread must be nonnegative");
     }
-    if (config.injector_orbit_angular_speed_spread < 0.0F) {
-        throw std::runtime_error("injector orbit angular speed spread must be nonnegative");
-    }
-    if (config.injector_orbit_phase_spread < 0.0F) {
-        throw std::runtime_error("injector orbit phase spread must be nonnegative");
-    }
-    if (config.injector_orbit_inclination_spread_degrees < 0.0F) {
-        throw std::runtime_error("injector orbit inclination spread must be nonnegative");
-    }
-    if (config.injector_circle_height < 0.0F || config.injector_circle_height > 1.0F) {
-        throw std::runtime_error("injector circle height must be in the 0..1 volume range");
+    if (config.smoke_injector_orbit_phase_spread < 0.0F) {
+        throw std::runtime_error("smoke injector orbit phase spread must be nonnegative");
     }
     if (config.fluid_source_radius <= 0.0F) {
         throw std::runtime_error("fluid source radius must be positive");

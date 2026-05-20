@@ -22,13 +22,12 @@ void test_run_config_parses_pbr_debug_view_name();
 void test_run_config_parses_frame_stats_flag();
 void test_run_config_parses_grid_dimensions();
 void test_run_config_parses_shadow_volume_controls();
-void test_run_config_parses_injector_count();
-void test_run_config_parses_injector_orbit_controls();
-void test_run_config_parses_injector_movement_controls();
-void test_run_config_parses_injector_force_controls();
-void test_run_config_parses_fluid_density_and_buoyancy_controls();
+void test_run_config_parses_smoke_injector_count();
+void test_run_config_parses_smoke_injector_orbit_controls();
+void test_run_config_parses_smoke_injector_force_controls();
+void test_run_config_parses_fluid_3d_buoyancy_control();
 void test_run_config_parses_fluid_3d_source_controls();
-void test_run_config_parses_obstacle_flag();
+void test_run_config_parses_smoke_obstacle_flag();
 void test_run_config_parses_input_path();
 void test_run_config_parses_png_output_path();
 void test_run_config_preserves_explicit_video_capture_timing_and_output();
@@ -52,13 +51,12 @@ std::span<const TestCase> core_test_cases() {
         CUBEY_TEST(test_run_config_parses_frame_stats_flag),
         CUBEY_TEST(test_run_config_parses_grid_dimensions),
         CUBEY_TEST(test_run_config_parses_shadow_volume_controls),
-        CUBEY_TEST(test_run_config_parses_injector_count),
-        CUBEY_TEST(test_run_config_parses_injector_orbit_controls),
-        CUBEY_TEST(test_run_config_parses_injector_movement_controls),
-        CUBEY_TEST(test_run_config_parses_injector_force_controls),
-        CUBEY_TEST(test_run_config_parses_fluid_density_and_buoyancy_controls),
+        CUBEY_TEST(test_run_config_parses_smoke_injector_count),
+        CUBEY_TEST(test_run_config_parses_smoke_injector_orbit_controls),
+        CUBEY_TEST(test_run_config_parses_smoke_injector_force_controls),
+        CUBEY_TEST(test_run_config_parses_fluid_3d_buoyancy_control),
         CUBEY_TEST(test_run_config_parses_fluid_3d_source_controls),
-        CUBEY_TEST(test_run_config_parses_obstacle_flag),
+        CUBEY_TEST(test_run_config_parses_smoke_obstacle_flag),
         CUBEY_TEST(test_run_cli_app_sets_default_title_and_returns_runner_status),
         CUBEY_TEST(test_file_io_round_trips_binary_bytes),
         CUBEY_TEST(test_frame_clock_tracks_delta_elapsed_and_index),

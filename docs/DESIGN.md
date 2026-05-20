@@ -271,7 +271,7 @@ This is critical for AI-assisted development — the agent gets structured pass/
 
 | Project | Source | Notes |
 |------|--------|-------|
-| Fluid 2D | cubey1 rewrite warmup | First project target; compute-updated 2D dye/velocity field with headless capture output |
+| Smoke 2D | cubey1 rewrite warmup | First project target; compute-updated 2D dye/velocity field with headless capture output |
 | Fluid 3D | cubey1 rewrite | Dense Eulerian smoke baseline with 3D storage textures, compute simulation, and raymarched volume rendering |
 | Particle System | cubey1 rewrite | Prototype attractor motion now lives under `examples/particle_cubes`; a larger project would need a clear compute + indirect draw contract before graduating |
 | Marching Cubes | cubey1 rewrite | Isosurface extraction via compute + indirect draw |
@@ -337,7 +337,7 @@ named explicitly and live in either `examples/` or `projects/`:
   example-local private modules for lifecycle, resources, scene setup, and
   command recording; that split is not automatically Cubey library API.
 - `projects/` - first-class graphics experiments and longer-lived creative
-  work, including `fluid_2d`, `fluid_3d`, `fractal_2d`, `gltf_viewer`, and
+  work, including `smoke_2d`, `fluid_3d`, `fractal_2d`, `gltf_viewer`, and
   `pbr_furnace`, plus later candidates such as `marching_cubes` and
   `sdf_sculpt`.
 - `third_party/` - small vendored dependencies with explicit license notes.
@@ -500,23 +500,24 @@ cubey/
         CMakeLists.txt
         main.cpp
         fractal_2d_app.*   -- fullscreen fractal host/headless orchestration
-      fluid_2d/
-        CMakeLists.txt
-        main.cpp
-        fluid_2d_app.*     -- host/engine/input orchestration
-        fluid_2d_commands.* -- simulation and fullscreen draw command recording
-        fluid_2d_gpu_resources.* -- project-owned GPU buffers/descriptors/pipelines
-        shaders/
-          fluid_2d_inject.comp
-          fluid_2d_advect_predict.comp
-          fluid_2d_advect_correct.comp
-          fluid_2d_curl.comp
-          fluid_2d_vorticity.comp
-          fluid_2d_divergence.comp
-          fluid_2d_pressure.comp
-          fluid_2d_projection.comp
-          fluid_2d.vert
-          fluid_2d_render.frag
+      fluid/
+        smoke_2d/
+          CMakeLists.txt
+          main.cpp
+          smoke_2d_app.*     -- host/engine/input orchestration
+          smoke_2d_commands.* -- simulation and fullscreen draw command recording
+          smoke_2d_gpu_resources.* -- project-owned GPU buffers/descriptors/pipelines
+          shaders/
+            smoke_2d_inject.comp
+            smoke_2d_advect_predict.comp
+            smoke_2d_advect_correct.comp
+            smoke_2d_curl.comp
+            smoke_2d_vorticity.comp
+            smoke_2d_divergence.comp
+            smoke_2d_pressure.comp
+            smoke_2d_projection.comp
+            smoke_2d.vert
+            smoke_2d_render.frag
       fluid_3d/
         CMakeLists.txt
         main.cpp
