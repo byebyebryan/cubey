@@ -9,10 +9,10 @@ layout(push_constant) uniform SimulationParams {
     vec4 shadow_options;
 } params;
 
-struct Injector {
+struct Source {
     vec4 position_radius;
     vec4 velocity_strength;
-    vec4 color_density;
+    vec4 material_amount;
 };
 
 struct VolumeBounds {
@@ -28,9 +28,7 @@ layout(rgba16f, set = 0, binding = 2) uniform readonly image3D density_predicted
 layout(rgba16f, set = 0, binding = 3) uniform readonly image3D velocity_predicted;
 layout(rgba16f, set = 0, binding = 4) uniform writeonly image3D density_out;
 layout(rgba16f, set = 0, binding = 5) uniform writeonly image3D velocity_out;
-layout(set = 0, binding = 6, std430) readonly buffer Fluid3DInjectors {
-    Injector injectors[];
-};
+layout(set = 0, binding = 6, std430) readonly buffer Fluid3DSources { Source sources[]; };
 
 vec4 load_density_source(ivec3 coord) {
     ivec3 max_coord = imageSize(density_source) - ivec3(1);
@@ -170,47 +168,55 @@ void main() {
 
     VolumeBounds bounds = source_bounds(previous_uv);
     float decay_scale = dt * 60.0;
-    density = clamp(density, bounds.density_min, bounds.density_max) *
-              pow(params.decay_force.x, decay_scale);
+    vec4 density_decay = vec4(pow(params.decay_force.x, decay_scale),
+                              pow(params.decay_force.x, decay_scale * 1.20),
+                              pow(params.decay_force.x, decay_scale * 1.80),
+                              pow(params.decay_force.x, decay_scale));
+    density = clamp(density, bounds.density_min, bounds.density_max) * density_decay;
     velocity = clamp(velocity, bounds.velocity_min, bounds.velocity_max) *
                pow(params.decay_force.y, decay_scale);
 
     vec4 average_density = source_density_average(coord);
     vec3 average_velocity = source_velocity_average(coord);
-    float dye_energy = max(max(density.r, density.g), density.b);
+    float dye_energy = max(max(density.r, density.g * 0.6), density.b);
     float velocity_energy = length(velocity) * 0.08;
     float residual_energy = max(dye_energy, velocity_energy);
     float cleanup = (1.0 - smoothstep(0.020, 0.180, residual_energy)) * 0.12;
     density = mix(density, average_density, cleanup);
     velocity = mix(velocity, average_velocity, cleanup);
 
-    int injector_count = int(params.options.x + 0.5);
-    for (int i = 0; i < injector_count; ++i) {
-        Injector injector = injectors[i];
-        float density_strength = max(injector.color_density.w, 0.0);
-        float velocity_strength = max(injector.velocity_strength.w, 0.0);
-        if (density_strength <= 0.0 && velocity_strength <= 0.0) {
+    int source_count = int(params.options.x + 0.5);
+    for (int i = 0; i < source_count; ++i) {
+        Source source = sources[i];
+        vec3 material_amount = max(source.material_amount.rgb, vec3(0.0));
+        float velocity_strength = max(source.velocity_strength.w, 0.0);
+        if (dot(material_amount, vec3(1.0)) <= 0.0 && velocity_strength <= 0.0) {
             continue;
         }
-        vec3 delta = uv - injector.position_radius.xyz;
-        float radius = max(injector.position_radius.w, 0.0001);
+        vec3 delta = uv - source.position_radius.xyz;
+        float radius = max(source.position_radius.w, 0.0001);
         float falloff = exp(-dot(delta, delta) / (radius * radius));
-        float density_impulse = density_strength * dt * falloff;
+        float smoke_impulse = material_amount.x * dt * falloff;
+        float heat_impulse = material_amount.y * dt * falloff;
+        float flame_impulse = material_amount.z * dt * falloff;
         float velocity_impulse = velocity_strength * dt * falloff;
-        density.rgb += injector.color_density.rgb * density_impulse * 0.46;
-        density.a += density_impulse * 0.12;
-        velocity += injector.velocity_strength.xyz * velocity_impulse * 0.42;
+        density.r += smoke_impulse * 0.46;
+        density.g += heat_impulse * 0.34;
+        density.b += flame_impulse * 0.58;
+        density.a += smoke_impulse * 0.08;
+        velocity += source.velocity_strength.xyz * velocity_impulse * 0.42;
     }
 
-    float smoke_energy = max(max(density.r, density.g), density.b);
-    vec3 buoyancy_force = vec3(0.0, params.shadow_options.z * smoke_energy, 0.0);
+    float buoyancy_energy = density.r * 0.35 + density.g * 0.80 + density.b * 0.35;
+    vec3 buoyancy_force = vec3(0.0, params.shadow_options.z * buoyancy_energy, 0.0);
     velocity += buoyancy_force * dt;
 
     float edge_distance = min(min(uv.x, 1.0 - uv.x), min(min(uv.y, 1.0 - uv.y), min(uv.z, 1.0 - uv.z)));
     float wall = smoothstep(0.0, 0.040, edge_distance);
     density *= wall;
     velocity *= wall;
-    density.rgb *= mix(0.88, 1.0, smoothstep(0.018, 0.120, max(max(density.r, density.g), density.b)));
+    density.rgb *= mix(0.88, 1.0,
+                       smoothstep(0.018, 0.120, max(max(density.r, density.g), density.b)));
     imageStore(density_out, coord, vec4(clamp(density.rgb, vec3(0.0), vec3(8.0)),
                                         clamp(density.a, 0.0, 8.0)));
     imageStore(velocity_out, coord, vec4(clamp(velocity, vec3(-6.0), vec3(6.0)), 0.0));

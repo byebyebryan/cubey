@@ -1,7 +1,7 @@
 #pragma once
 
 #include "fluid_3d_config.h"
-#include "fluid_3d_injectors.h"
+#include "fluid_3d_sources.h"
 
 #include <cubey/engine/project_gpu_services.h>
 #include <cubey/render/pipeline_resource.h>
@@ -41,7 +41,7 @@ class Fluid3DGpuResources {
     [[nodiscard]] const cubey::render::Texture3D& pressure_a() const;
     [[nodiscard]] const cubey::render::Texture3D& pressure_b() const;
     [[nodiscard]] const cubey::render::Texture3D& shadow_volume() const;
-    [[nodiscard]] const cubey::vulkan::Buffer& injectors() const;
+    [[nodiscard]] const cubey::vulkan::Buffer& sources() const;
     [[nodiscard]] const cubey::render::ComputePipelineResource& reset_pipeline() const;
     [[nodiscard]] const cubey::render::ComputePipelineResource& advect_pipeline() const;
     [[nodiscard]] const cubey::render::ComputePipelineResource& advect_correct_pipeline() const;
@@ -108,7 +108,7 @@ class Fluid3DGpuResources {
     std::optional<cubey::render::Texture3D> pressure_a_;
     std::optional<cubey::render::Texture3D> pressure_b_;
     std::optional<cubey::render::Texture3D> shadow_volume_;
-    std::optional<cubey::vulkan::Buffer> injectors_;
+    std::optional<cubey::vulkan::Buffer> sources_;
     std::optional<cubey::vulkan::DescriptorSetLayout> reset_descriptor_layout_;
     std::optional<cubey::vulkan::DescriptorPool> reset_descriptor_pool_;
     VkDescriptorSet reset_descriptor_set_ = VK_NULL_HANDLE;

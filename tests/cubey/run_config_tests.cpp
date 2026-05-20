@@ -375,6 +375,39 @@ void test_run_config_parses_fluid_density_and_buoyancy_controls() {
     require(config.fluid_buoyancy == 1.75F, "run config should parse fluid buoyancy");
 }
 
+void test_run_config_parses_fluid_3d_source_controls() {
+    std::string program = "cubey";
+    std::string scenario_flag = "--fluid-scenario";
+    std::string scenario_value = "smoke-plume";
+    std::string sources_flag = "--fluid-sources";
+    std::string sources_value = "6";
+    std::string radius_flag = "--fluid-source-radius";
+    std::string radius_value = "0.08";
+    std::string force_flag = "--fluid-source-force";
+    std::string force_value = "9.5";
+    std::string smoke_flag = "--fluid-smoke";
+    std::string smoke_value = "7.25";
+    std::string heat_flag = "--fluid-heat";
+    std::string heat_value = "1.75";
+    std::string flame_flag = "--fluid-flame";
+    std::string flame_value = "2.5";
+    std::array<char*, 15> argv{program.data(),      scenario_flag.data(), scenario_value.data(),
+                               sources_flag.data(), sources_value.data(),  radius_flag.data(),
+                               radius_value.data(), force_flag.data(),    force_value.data(),
+                               smoke_flag.data(),   smoke_value.data(),   heat_flag.data(),
+                               heat_value.data(),   flame_flag.data(),    flame_value.data()};
+
+    const cubey::RunConfig config =
+        cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
+    require(config.fluid_scenario == "smoke-plume", "run config should parse fluid scenario");
+    require(config.fluid_sources == 6, "run config should parse fluid source count");
+    require(config.fluid_source_radius == 0.08F, "run config should parse fluid source radius");
+    require(config.fluid_source_force == 9.5F, "run config should parse fluid source force");
+    require(config.fluid_smoke == 7.25F, "run config should parse fluid smoke amount");
+    require(config.fluid_heat == 1.75F, "run config should parse fluid heat amount");
+    require(config.fluid_flame == 2.5F, "run config should parse fluid flame amount");
+}
+
 void test_run_config_parses_obstacle_flag() {
     std::array<char, 6> program{'c', 'u', 'b', 'e', 'y', '\0'};
     std::array<char, 12> obstacles_flag{'-', '-', 'o', 'b', 's', 't',

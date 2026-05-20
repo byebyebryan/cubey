@@ -53,10 +53,10 @@ float volume_edge_fade(vec3 position) {
 }
 
 float raw_smoke_density(vec4 density) {
-    return dot(max(density.rgb, vec3(0.0)), vec3(1.0));
+    return max(density.r, 0.0);
 }
 
-float shadow_density_at(vec3 uv) {
+float soot_density_at(vec3 uv) {
     float density = raw_smoke_density(texture(density_volume, clamp(uv, vec3(0.0), vec3(1.0))));
     return density * smoothstep(0.002, 0.025, density) * volume_edge_fade(uv);
 }
@@ -83,7 +83,7 @@ float light_transmittance(vec3 uv) {
             break;
         }
         vec3 sample_position = uv + light_direction * traveled;
-        optical_depth += shadow_density_at(sample_position) * step_length;
+        optical_depth += soot_density_at(sample_position) * step_length;
         if (optical_depth * absorption > 7.0) {
             return 0.0;
         }

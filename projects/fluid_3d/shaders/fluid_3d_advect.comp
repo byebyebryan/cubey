@@ -9,19 +9,17 @@ layout(push_constant) uniform SimulationParams {
     vec4 shadow_options;
 } params;
 
-struct Injector {
+struct Source {
     vec4 position_radius;
     vec4 velocity_strength;
-    vec4 color_density;
+    vec4 material_amount;
 };
 
 layout(rgba16f, set = 0, binding = 0) uniform readonly image3D density_in;
 layout(rgba16f, set = 0, binding = 1) uniform readonly image3D velocity_in;
 layout(rgba16f, set = 0, binding = 2) uniform writeonly image3D density_out;
 layout(rgba16f, set = 0, binding = 3) uniform writeonly image3D velocity_out;
-layout(set = 0, binding = 4, std430) readonly buffer Fluid3DInjectors {
-    Injector injectors[];
-};
+layout(set = 0, binding = 4, std430) readonly buffer Fluid3DSources { Source sources[]; };
 
 vec4 load_density(ivec3 coord) {
     ivec3 max_coord = imageSize(density_in) - ivec3(1);

@@ -2,7 +2,7 @@
 
 #include "fluid_3d_config.h"
 #include "fluid_3d_gpu_resources.h"
-#include "fluid_3d_injectors.h"
+#include "fluid_3d_sources.h"
 
 #include <cubey/core/math.h>
 #include <cubey/engine/project_runtime.h>
@@ -34,7 +34,7 @@ struct Fluid3DRenderCamera {
 void record_fluid_3d_compute(VkCommandBuffer command_buffer, Fluid3DGpuResources& resources,
                              const Fluid3DConfig& config, bool paused, bool& reset_requested,
                              const ProjectFrame& frame,
-                             std::span<const Fluid3DInjectorGpu> injectors,
+                             std::span<const Fluid3DSourceGpu> sources,
                              Fluid3DFrameState& frame_state,
                              bool include_render_visibility_barrier = true,
                              cubey::vulkan::GpuTimestampProfiler* profiler = nullptr,

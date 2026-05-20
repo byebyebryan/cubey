@@ -48,13 +48,13 @@ float volume_edge_fade(vec3 position) {
 }
 
 float raw_smoke_density(vec4 density) {
-    return dot(max(density.rgb, vec3(0.0)), vec3(1.0));
+    return max(density.r, 0.0);
 }
 
 float smoke_density(vec4 density, vec3 position) {
-    float rgb_density = raw_smoke_density(density);
-    float low_density_mask = smoothstep(0.010, 0.050, rgb_density);
-    return rgb_density * low_density_mask * volume_edge_fade(position);
+    float soot_density = raw_smoke_density(density);
+    float low_density_mask = smoothstep(0.010, 0.050, soot_density);
+    return soot_density * low_density_mask * volume_edge_fade(position);
 }
 
 float smoke_density_at(vec3 uv) {
@@ -75,8 +75,19 @@ vec3 velocity_debug_color(vec3 velocity) {
     return mix(vec3(speed), direction, 0.75);
 }
 
-vec3 density_albedo(vec4 density, float extinction_density) {
-    return clamp(density.rgb / max(extinction_density, 0.035), vec3(0.0), vec3(1.35));
+vec3 smoke_albedo(vec4 density) {
+    float heat = clamp(density.g * 0.25, 0.0, 1.0);
+    vec3 cool_soot = vec3(0.34, 0.33, 0.31);
+    vec3 warm_soot = vec3(0.55, 0.46, 0.35);
+    return mix(cool_soot, warm_soot, heat);
+}
+
+vec3 flame_emission(vec4 density) {
+    float flame = max(density.b, 0.0);
+    float heat = max(density.g, 0.0);
+    vec3 flame_color = mix(vec3(1.0, 0.30, 0.05), vec3(1.0, 0.82, 0.32),
+                           clamp(heat * 0.25, 0.0, 1.0));
+    return flame_color * flame * params.render_options.y * 1.4;
 }
 
 void main() {
@@ -85,7 +96,10 @@ void main() {
     int debug_view = int(params.ray_forward_debug.w + 0.5);
     if (debug_view == 1) {
         vec4 density = density_at(vec3(screen_uv, 0.5));
-        out_color = vec4(clamp(density.rgb + vec3(density.a * 0.15), vec3(0.0), vec3(1.0)), 1.0);
+        out_color = vec4(clamp(vec3(density.r, density.g * 0.35, density.b) +
+                                   vec3(density.a * 0.15),
+                               vec3(0.0), vec3(1.0)),
+                         1.0);
         return;
     }
     if (debug_view == 2) {
@@ -141,8 +155,8 @@ void main() {
                         light_color * shadowed_light * rim * 0.38;
         vec3 base_color = (sky_color * 0.45 + light_color * 0.12) * ambient_shadow;
         accumulated += transmittance * base_color * base_alpha;
-        accumulated += transmittance * density_albedo(density, smoke_density_value) * lighting *
-                       smoke_alpha;
+        accumulated += transmittance * smoke_albedo(density) * lighting * smoke_alpha;
+        accumulated += transmittance * flame_emission(density) * step_length * smoke_alpha;
         transmittance *= exp(-(base_extinction + smoke_extinction) * step_length);
         if (transmittance < 0.01) {
             break;

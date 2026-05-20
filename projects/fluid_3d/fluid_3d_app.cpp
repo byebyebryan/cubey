@@ -3,7 +3,7 @@
 #include "fluid_3d_commands.h"
 #include "fluid_3d_config.h"
 #include "fluid_3d_gpu_resources.h"
-#include "fluid_3d_injectors.h"
+#include "fluid_3d_sources.h"
 
 #include <cubey/engine/project_gpu_services.h>
 #include <cubey/engine/project_runtime.h>
@@ -57,9 +57,8 @@ constexpr std::array<Fluid3DDebugView, 3> kDebugViews{
     Fluid3DDebugView::Velocity,
 };
 
-constexpr std::array<Fluid3DInjectorMovement, 2> kInjectorMovements{
-    Fluid3DInjectorMovement::Orbit,
-    Fluid3DInjectorMovement::Circle,
+constexpr std::array<Fluid3DScenario, 1> kScenarios{
+    Fluid3DScenario::SmokePlume,
 };
 
 class Fluid3DApp {
@@ -67,8 +66,8 @@ class Fluid3DApp {
     explicit Fluid3DApp(RunConfig config)
         : config_(std::move(config)), runtime_(1),
           fluid_config_(fluid_3d_config_from_run_config(config_)),
-          injector_states_(create_fluid_3d_injectors(fluid_config_)),
-          injector_gpu_(fluid_3d_injectors_to_gpu(injector_states_, fluid_config_)) {
+          source_states_(create_fluid_3d_sources(fluid_config_)),
+          source_gpu_(fluid_3d_sources_to_gpu(source_states_, fluid_config_)) {
         orbit_controller_.set_home_distance(kCameraDistance);
         orbit_controller_.set_auto_rotation_speed(0.12F);
     }
@@ -154,7 +153,7 @@ class Fluid3DApp {
 
         update_camera_input(context, project_frame.delta_seconds);
         if (!paused_) {
-            update_injectors(project_frame);
+            update_sources(project_frame);
         }
     }
 
@@ -208,11 +207,25 @@ class Fluid3DApp {
             ImGui::EndCombo();
         }
 
-        int injector_count = static_cast<int>(fluid_config_.injector_count);
-        if (ImGui::SliderInt("Injectors", &injector_count, 1,
-                             static_cast<int>(kMaxFluid3DInjectorCount))) {
-            fluid_config_.injector_count = static_cast<std::uint32_t>(injector_count);
-            reset_injectors();
+        if (ImGui::BeginCombo("Scenario", fluid_3d_scenario_name(fluid_config_.scenario))) {
+            for (Fluid3DScenario scenario : kScenarios) {
+                const bool selected = scenario == fluid_config_.scenario;
+                if (ImGui::Selectable(fluid_3d_scenario_name(scenario), selected)) {
+                    fluid_config_.scenario = scenario;
+                    reset_sources();
+                }
+                if (selected) {
+                    ImGui::SetItemDefaultFocus();
+                }
+            }
+            ImGui::EndCombo();
+        }
+
+        int source_count = static_cast<int>(fluid_config_.source_count);
+        if (ImGui::SliderInt("Sources", &source_count, 1,
+                             static_cast<int>(kMaxFluid3DSourceCount))) {
+            fluid_config_.source_count = static_cast<std::uint32_t>(source_count);
+            reset_sources();
         }
 
         int pressure_iterations = static_cast<int>(fluid_config_.pressure_iterations);
@@ -227,49 +240,13 @@ class Fluid3DApp {
                            "%.4f");
         ImGui::SliderFloat("Velocity decay", &fluid_config_.velocity_decay_per_second, 0.960F, 1.0F,
                            "%.4f");
-        ImGui::SliderFloat("Injector radius", &fluid_config_.injector_radius, 0.020F, 0.180F,
+        ImGui::SliderFloat("Source radius", &fluid_config_.source_radius, 0.020F, 0.180F,
                            "%.3f");
-        ImGui::SliderFloat("Density injection", &fluid_config_.injector_density_strength, 0.0F,
-                           12.0F, "%.2f");
-        ImGui::SliderFloat("Velocity force", &fluid_config_.injector_strength, 0.0F, 12.0F,
-                           "%.2f");
-        ImGui::SliderFloat("Propulsion", &fluid_config_.injector_propulsion_strength, 0.0F, 3.0F,
+        ImGui::SliderFloat("Smoke", &fluid_config_.source_smoke_amount, 0.0F, 16.0F, "%.2f");
+        ImGui::SliderFloat("Heat", &fluid_config_.source_heat_amount, 0.0F, 8.0F, "%.2f");
+        ImGui::SliderFloat("Velocity force", &fluid_config_.source_velocity_strength, 0.0F, 16.0F,
                            "%.2f");
         ImGui::SliderFloat("Buoyancy", &fluid_config_.buoyancy_strength, -2.0F, 6.0F, "%.2f");
-        if (ImGui::BeginCombo("Movement",
-                              fluid_3d_injector_movement_name(fluid_config_.injector_movement))) {
-            for (Fluid3DInjectorMovement movement : kInjectorMovements) {
-                const bool selected = movement == fluid_config_.injector_movement;
-                if (ImGui::Selectable(fluid_3d_injector_movement_name(movement), selected)) {
-                    fluid_config_.injector_movement = movement;
-                    reset_injectors();
-                }
-                if (selected) {
-                    ImGui::SetItemDefaultFocus();
-                }
-            }
-            ImGui::EndCombo();
-        }
-        ImGui::SliderFloat("Orbit radius", &fluid_config_.injector_orbit_radius, 0.06F, 0.42F,
-                           "%.3f");
-        ImGui::SliderFloat("Radius spread", &fluid_config_.injector_orbit_radius_spread, 0.0F,
-                           0.50F, "%.3f");
-        ImGui::SliderFloat("Orbit speed", &fluid_config_.injector_orbit_angular_speed, -2.0F,
-                           2.0F, "%.2f");
-        ImGui::SliderFloat("Speed spread", &fluid_config_.injector_orbit_angular_speed_spread,
-                           0.0F, 4.0F, "%.2f");
-        if (fluid_config_.injector_movement == Fluid3DInjectorMovement::Orbit) {
-            ImGui::SliderFloat("Inclination", &fluid_config_.injector_orbit_inclination_degrees,
-                               -80.0F, 80.0F, "%.1f");
-            ImGui::SliderFloat("Inclination spread",
-                               &fluid_config_.injector_orbit_inclination_spread_degrees, 0.0F,
-                               160.0F, "%.1f");
-        } else if (fluid_config_.injector_movement == Fluid3DInjectorMovement::Circle) {
-            ImGui::SliderFloat("Circle height", &fluid_config_.injector_circle_height, 0.08F,
-                               0.92F, "%.3f");
-        }
-        ImGui::SliderFloat("Phase spread", &fluid_config_.injector_orbit_phase_spread, 0.0F, 1.0F,
-                           "%.2f");
         ImGui::SliderFloat("Vorticity", &fluid_config_.vorticity_strength, 0.0F, 1.5F, "%.2f");
         ImGui::SliderFloat("Absorption", &fluid_config_.absorption, 0.5F, 12.0F, "%.2f");
         ImGui::SliderFloat("Light", &fluid_config_.emission, 0.1F, 4.0F, "%.2f");
@@ -299,13 +276,13 @@ class Fluid3DApp {
         ImGui::End();
     }
 
-    void reset_injectors() {
-        injector_states_ = create_fluid_3d_injectors(fluid_config_);
-        injector_gpu_ = fluid_3d_injectors_to_gpu(injector_states_, fluid_config_);
+    void reset_sources() {
+        source_states_ = create_fluid_3d_sources(fluid_config_);
+        source_gpu_ = fluid_3d_sources_to_gpu(source_states_, fluid_config_);
     }
 
     void reset_simulation() {
-        reset_injectors();
+        reset_sources();
         reset_requested_ = true;
         frame_state_.density_a_current = true;
         frame_state_.velocity_a_current = true;
@@ -313,13 +290,13 @@ class Fluid3DApp {
         frame_state_.frames_since_shadow_update = 0;
     }
 
-    void update_injectors(const ProjectFrame& frame) {
+    void update_sources(const ProjectFrame& frame) {
         const FrameTiming timing{
             .delta_seconds = frame.delta_seconds,
             .elapsed_seconds = frame.elapsed_seconds,
             .frame_index = frame.frame_index,
         };
-        injector_gpu_ = update_fluid_3d_injectors(injector_states_, fluid_config_, timing);
+        source_gpu_ = update_fluid_3d_sources(source_states_, fluid_config_, timing);
     }
 
     [[nodiscard]] Fluid3DRenderCamera render_camera() const {
@@ -395,7 +372,7 @@ class Fluid3DApp {
             profiler->begin_frame(render_frame.command_buffer, render_frame.frame_slot.index);
         }
         record_fluid_3d_compute(render_frame.command_buffer, resources_, fluid_config_, paused_,
-                                reset_requested_, frame, injector_gpu_, frame_state_, true,
+                                reset_requested_, frame, source_gpu_, frame_state_, true,
                                 profiler, render_frame.frame_slot.index);
         cubey::render::record_present_render_target(
             recorder, cubey::render::render_target_view(render_frame.color_target),
@@ -430,14 +407,14 @@ class Fluid3DApp {
 
     void record_headless_simulation_frame(cubey::ProjectGpuServices& gpu,
                                           const ProjectFrame& frame) {
-        update_injectors(frame);
+        update_sources(frame);
         static_cast<void>(gpu.submit_and_wait({
             .label = "fluid_3d headless simulation frame",
             .work =
                 [this, frame](cubey::vulkan::GpuOwnerContext& gpu_context) {
                     cubey::vulkan::ImmediateCommands commands(gpu_context);
                     record_fluid_3d_compute(commands.command_buffer(), resources_, fluid_config_,
-                                            paused_, reset_requested_, frame, injector_gpu_,
+                                            paused_, reset_requested_, frame, source_gpu_,
                                             frame_state_);
                     commands.submit_and_wait();
                 },
@@ -497,8 +474,8 @@ class Fluid3DApp {
     RunConfig config_;
     cubey::ProjectRuntimeAdapter runtime_;
     Fluid3DConfig fluid_config_;
-    std::vector<Fluid3DInjectorState> injector_states_;
-    std::vector<Fluid3DInjectorGpu> injector_gpu_;
+    std::vector<Fluid3DSourceState> source_states_;
+    std::vector<Fluid3DSourceGpu> source_gpu_;
     Fluid3DGpuResources resources_;
     Fluid3DFrameState frame_state_;
     cubey::Camera3D camera_;

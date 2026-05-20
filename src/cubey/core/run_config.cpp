@@ -133,6 +133,23 @@ RunConfig parse_run_config(int argc, char** argv) {
                 parse_float(need_value(arg), "--injector-circle-height");
         } else if (arg == "--fluid-buoyancy") {
             config.fluid_buoyancy = parse_float(need_value("--fluid-buoyancy"), "--fluid-buoyancy");
+        } else if (arg == "--fluid-scenario") {
+            config.fluid_scenario = std::string(need_value("--fluid-scenario"));
+        } else if (arg == "--fluid-sources") {
+            config.fluid_sources = parse_positive_u32(need_value("--fluid-sources"),
+                                                      "--fluid-sources");
+        } else if (arg == "--fluid-source-radius") {
+            config.fluid_source_radius =
+                parse_float(need_value("--fluid-source-radius"), "--fluid-source-radius");
+        } else if (arg == "--fluid-source-force") {
+            config.fluid_source_force =
+                parse_float(need_value("--fluid-source-force"), "--fluid-source-force");
+        } else if (arg == "--fluid-smoke") {
+            config.fluid_smoke = parse_float(need_value("--fluid-smoke"), "--fluid-smoke");
+        } else if (arg == "--fluid-heat") {
+            config.fluid_heat = parse_float(need_value("--fluid-heat"), "--fluid-heat");
+        } else if (arg == "--fluid-flame") {
+            config.fluid_flame = parse_float(need_value("--fluid-flame"), "--fluid-flame");
         } else if (arg == "--frames") {
             config.frames = parse_u32(need_value("--frames"), "--frames");
         } else if (arg == "--fps") {
@@ -214,6 +231,21 @@ RunConfig parse_run_config(int argc, char** argv) {
     }
     if (config.injector_circle_height < 0.0F || config.injector_circle_height > 1.0F) {
         throw std::runtime_error("injector circle height must be in the 0..1 volume range");
+    }
+    if (config.fluid_source_radius <= 0.0F) {
+        throw std::runtime_error("fluid source radius must be positive");
+    }
+    if (config.fluid_source_force < 0.0F) {
+        throw std::runtime_error("fluid source force must be nonnegative");
+    }
+    if (config.fluid_smoke < 0.0F) {
+        throw std::runtime_error("fluid smoke must be nonnegative");
+    }
+    if (config.fluid_heat < 0.0F) {
+        throw std::runtime_error("fluid heat must be nonnegative");
+    }
+    if (config.fluid_flame < 0.0F) {
+        throw std::runtime_error("fluid flame must be nonnegative");
     }
     if (config.capture_mode == CaptureMode::Video) {
         if (!config.headless) {

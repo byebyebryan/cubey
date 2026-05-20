@@ -18,12 +18,11 @@ enum class Fluid3DDebugView : std::uint32_t {
     Velocity = 2,
 };
 
-enum class Fluid3DInjectorMovement : std::uint32_t {
-    Orbit = 0,
-    Circle = 1,
+enum class Fluid3DScenario : std::uint32_t {
+    SmokePlume = 0,
 };
 
-inline constexpr std::uint32_t kMaxFluid3DInjectorCount = 16;
+inline constexpr std::uint32_t kMaxFluid3DSourceCount = 16;
 
 struct Fluid3DConfig {
     std::uint32_t grid_width = 128;
@@ -37,24 +36,16 @@ struct Fluid3DConfig {
     std::uint32_t shadow_grid_depth = 64;
     std::uint32_t shadow_steps = 64;
     std::uint32_t shadow_update_interval = 1;
-    std::uint32_t injector_count = 4;
+    std::uint32_t source_count = 3;
     float fixed_delta_seconds = 1.0F / 60.0F;
     float density_decay_per_second = 0.99F;
     float velocity_decay_per_second = 0.99F;
-    float injector_radius = 0.05F;
-    float injector_strength = 6.0F;
-    float injector_density_strength = 6.0F;
-    float injector_propulsion_strength = 1.0F;
-    float injector_velocity_scale = 1.3F;
-    float injector_orbit_radius = 0.25F;
-    float injector_orbit_radius_spread = 0.22F;
-    float injector_orbit_angular_speed = 0.0F;
-    float injector_orbit_angular_speed_spread = 0.8F;
-    float injector_orbit_phase_spread = 1.0F;
-    float injector_orbit_inclination_degrees = 0.0F;
-    float injector_orbit_inclination_spread_degrees = 60.0F;
-    Fluid3DInjectorMovement injector_movement = Fluid3DInjectorMovement::Orbit;
-    float injector_circle_height = 0.5F;
+    Fluid3DScenario scenario = Fluid3DScenario::SmokePlume;
+    float source_radius = 0.05F;
+    float source_velocity_strength = 6.0F;
+    float source_smoke_amount = 6.0F;
+    float source_heat_amount = 1.4F;
+    float source_flame_amount = 2.0F;
     float vorticity_strength = 1.0F;
     float buoyancy_strength = 1.0F;
     float absorption = 8.0F;
@@ -75,26 +66,19 @@ struct Fluid3DConfig {
     return Fluid3DDebugView::Smoke;
 }
 
-[[nodiscard]] inline const char* fluid_3d_injector_movement_name(
-    Fluid3DInjectorMovement movement) {
-    switch (movement) {
-    case Fluid3DInjectorMovement::Orbit:
-        return "Orbit";
-    case Fluid3DInjectorMovement::Circle:
-        return "Circle";
+[[nodiscard]] inline const char* fluid_3d_scenario_name(Fluid3DScenario scenario) {
+    switch (scenario) {
+    case Fluid3DScenario::SmokePlume:
+        return "Smoke plume";
     }
-    return "Orbit";
+    return "Smoke plume";
 }
 
-[[nodiscard]] inline Fluid3DInjectorMovement fluid_3d_injector_movement_from_string(
-    std::string_view name) {
-    if (name == "orbit") {
-        return Fluid3DInjectorMovement::Orbit;
+[[nodiscard]] inline Fluid3DScenario fluid_3d_scenario_from_string(std::string_view name) {
+    if (name == "smoke-plume" || name == "plume") {
+        return Fluid3DScenario::SmokePlume;
     }
-    if (name == "circle") {
-        return Fluid3DInjectorMovement::Circle;
-    }
-    throw std::runtime_error("fluid 3D injector movement must be orbit or circle");
+    throw std::runtime_error("fluid 3D scenario must be smoke-plume");
 }
 
 [[nodiscard]] inline std::size_t volume_cell_count(const Fluid3DConfig& config) {
@@ -170,25 +154,18 @@ struct Fluid3DConfig {
     if (config.shadow_update_interval != 0) {
         result.shadow_update_interval = config.shadow_update_interval;
     }
-    if (config.injectors != 0) {
-        if (config.injectors > kMaxFluid3DInjectorCount) {
-            throw std::runtime_error("fluid 3D injector count must be 1..16");
+    if (config.fluid_sources != 0) {
+        if (config.fluid_sources > kMaxFluid3DSourceCount) {
+            throw std::runtime_error("fluid 3D source count must be 1..16");
         }
-        result.injector_count = config.injectors;
+        result.source_count = config.fluid_sources;
     }
-    result.injector_strength = config.injector_force;
-    result.injector_density_strength = config.fluid_density_injection;
-    result.injector_propulsion_strength = config.injector_propulsion;
-    result.injector_orbit_radius = config.injector_orbit_radius;
-    result.injector_orbit_radius_spread = config.injector_orbit_radius_spread;
-    result.injector_orbit_angular_speed = config.injector_orbit_angular_speed;
-    result.injector_orbit_angular_speed_spread = config.injector_orbit_angular_speed_spread;
-    result.injector_orbit_phase_spread = config.injector_orbit_phase_spread;
-    result.injector_orbit_inclination_degrees = config.injector_orbit_inclination_degrees;
-    result.injector_orbit_inclination_spread_degrees =
-        config.injector_orbit_inclination_spread_degrees;
-    result.injector_movement = fluid_3d_injector_movement_from_string(config.injector_movement);
-    result.injector_circle_height = config.injector_circle_height;
+    result.scenario = fluid_3d_scenario_from_string(config.fluid_scenario);
+    result.source_radius = config.fluid_source_radius;
+    result.source_velocity_strength = config.fluid_source_force;
+    result.source_smoke_amount = config.fluid_smoke;
+    result.source_heat_amount = config.fluid_heat;
+    result.source_flame_amount = config.fluid_flame;
     result.buoyancy_strength = config.fluid_buoyancy;
     static_cast<void>(volume_cell_count(result));
     static_cast<void>(shadow_volume_cell_count(result));

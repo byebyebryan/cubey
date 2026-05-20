@@ -45,6 +45,13 @@ struct RunConfig {
     std::string injector_movement = "orbit";
     float injector_circle_height = 0.5F;
     float fluid_buoyancy = 1.0F;
+    std::string fluid_scenario = "smoke-plume";
+    std::uint32_t fluid_sources = 0;
+    float fluid_source_radius = 0.05F;
+    float fluid_source_force = 6.0F;
+    float fluid_smoke = 6.0F;
+    float fluid_heat = 1.4F;
+    float fluid_flame = 2.0F;
     std::uint32_t frames = 0;
     std::uint32_t fps = 60;
     std::filesystem::path input_path{};

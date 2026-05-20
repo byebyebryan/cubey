@@ -132,19 +132,17 @@ void record_initial_volume_layouts(VkCommandBuffer command_buffer,
     transition_volume_to_general(command_buffer, resources.shadow_volume());
 }
 
-void record_injector_buffer_update(VkCommandBuffer command_buffer,
-                                   const Fluid3DGpuResources& resources,
-                                   std::span<const Fluid3DInjectorGpu> injectors) {
-    if (injectors.empty()) {
+void record_source_buffer_update(VkCommandBuffer command_buffer, const Fluid3DGpuResources& resources,
+                                 std::span<const Fluid3DSourceGpu> sources) {
+    if (sources.empty()) {
         return;
     }
     const VkDeviceSize byte_size =
-        static_cast<VkDeviceSize>(injectors.size() * sizeof(Fluid3DInjectorGpu));
-    if (byte_size > resources.injectors().size()) {
-        throw std::runtime_error("fluid 3D injector update exceeds injector buffer size");
+        static_cast<VkDeviceSize>(sources.size() * sizeof(Fluid3DSourceGpu));
+    if (byte_size > resources.sources().size()) {
+        throw std::runtime_error("fluid 3D source update exceeds source buffer size");
     }
-    vkCmdUpdateBuffer(command_buffer, resources.injectors().handle(), 0, byte_size,
-                      injectors.data());
+    vkCmdUpdateBuffer(command_buffer, resources.sources().handle(), 0, byte_size, sources.data());
     record_transfer_write_barrier(command_buffer,
                                   {
                                       .dst_stage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
@@ -168,12 +166,12 @@ void record_injector_buffer_update(VkCommandBuffer command_buffer,
             {
                 config.density_decay_per_second,
                 config.velocity_decay_per_second,
-                config.injector_strength,
-                config.injector_radius,
+                config.source_velocity_strength,
+                config.source_radius,
             },
         .options =
             {
-                static_cast<float>(config.injector_count),
+                static_cast<float>(config.source_count),
                 config.vorticity_strength,
                 static_cast<float>(config.pressure_iterations),
                 time,
@@ -250,7 +248,7 @@ void record_dispatch(const cubey::vulkan::CommandRecorder& recorder,
 void record_fluid_3d_compute(VkCommandBuffer command_buffer, Fluid3DGpuResources& resources,
                              const Fluid3DConfig& config, bool paused, bool& reset_requested,
                              const ProjectFrame& frame,
-                             std::span<const Fluid3DInjectorGpu> injectors,
+                             std::span<const Fluid3DSourceGpu> sources,
                              Fluid3DFrameState& frame_state,
                              bool include_render_visibility_barrier,
                              cubey::vulkan::GpuTimestampProfiler* profiler,
@@ -304,7 +302,7 @@ void record_fluid_3d_compute(VkCommandBuffer command_buffer, Fluid3DGpuResources
         return;
     }
 
-    record_injector_buffer_update(command_buffer, resources, injectors);
+    record_source_buffer_update(command_buffer, resources, sources);
 
     begin_pass("advect_predict");
     const cubey::render::ComputePipelineResource& advect_pipeline = resources.advect_pipeline();

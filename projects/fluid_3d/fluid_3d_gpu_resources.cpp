@@ -191,11 +191,11 @@ void Fluid3DGpuResources::create_volume_resources(cubey::vulkan::Device& device,
                                                       false));
     shadow_volume_.emplace(device, shadow_volume_texture_config(config));
 
-    const std::vector<Fluid3DInjectorGpu> empty(kMaxFluid3DInjectorCount);
-    injectors_.emplace(upload_project_device_buffer(
-        gpu, empty.data(), static_cast<VkDeviceSize>(fluid_3d_injector_capacity_byte_size()),
+    const std::vector<Fluid3DSourceGpu> empty(kMaxFluid3DSourceCount);
+    sources_.emplace(upload_project_device_buffer(
+        gpu, empty.data(), static_cast<VkDeviceSize>(fluid_3d_source_capacity_byte_size()),
         VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-        "fluid_3d injector upload"));
+        "fluid_3d source upload"));
 }
 
 void Fluid3DGpuResources::destroy_swapchain_resources() {
@@ -227,7 +227,7 @@ void Fluid3DGpuResources::destroy_all_resources() {
     advect_descriptor_layout_.reset();
     reset_descriptor_pool_.reset();
     reset_descriptor_layout_.reset();
-    injectors_.reset();
+    sources_.reset();
     pressure_b_.reset();
     pressure_a_.reset();
     shadow_volume_.reset();
@@ -422,7 +422,7 @@ void Fluid3DGpuResources::update_descriptors(cubey::vulkan::Device& device) {
                 .storage_image(set, 1, velocities[velocity_index]->view())
                 .storage_image(set, 2, density_prediction().view())
                 .storage_image(set, 3, velocity_prediction().view())
-                .storage_buffer(set, 4, injectors().handle(), injectors().size());
+                .storage_buffer(set, 4, sources().handle(), sources().size());
 
             const VkDescriptorSet correct_set =
                 advect_correct_descriptor_set(density_a_current, velocity_a_current);
@@ -432,7 +432,7 @@ void Fluid3DGpuResources::update_descriptors(cubey::vulkan::Device& device) {
                 .storage_image(correct_set, 3, velocity_prediction().view())
                 .storage_image(correct_set, 4, densities[1U - density_index]->view())
                 .storage_image(correct_set, 5, velocities[1U - velocity_index]->view())
-                .storage_buffer(correct_set, 6, injectors().handle(), injectors().size());
+                .storage_buffer(correct_set, 6, sources().handle(), sources().size());
 
             const VkDescriptorSet render_set =
                 render_descriptor_set(density_a_current, velocity_a_current);
@@ -620,11 +620,11 @@ const cubey::render::Texture3D& Fluid3DGpuResources::shadow_volume() const {
     return shadow_volume_.value();
 }
 
-const cubey::vulkan::Buffer& Fluid3DGpuResources::injectors() const {
-    if (!injectors_.has_value()) {
-        throw std::runtime_error("fluid 3D injector buffer is not initialized");
+const cubey::vulkan::Buffer& Fluid3DGpuResources::sources() const {
+    if (!sources_.has_value()) {
+        throw std::runtime_error("fluid 3D source buffer is not initialized");
     }
-    return injectors_.value();
+    return sources_.value();
 }
 
 const cubey::render::ComputePipelineResource& Fluid3DGpuResources::reset_pipeline() const {

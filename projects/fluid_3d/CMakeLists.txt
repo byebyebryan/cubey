@@ -8,7 +8,7 @@ cubey_add_app_target(
         fluid_3d_app.cpp
         fluid_3d_commands.cpp
         fluid_3d_gpu_resources.cpp
-        fluid_3d_injectors.cpp
+        fluid_3d_sources.cpp
         main.cpp
     SHADERS
         shaders/fluid_3d.vert
@@ -24,7 +24,7 @@ cubey_add_app_target(
 
 if (BUILD_TESTING)
     add_executable(cubey_project_fluid_3d_tests
-        fluid_3d_injectors.cpp
+        fluid_3d_sources.cpp
         fluid_3d_config_tests.cpp
     )
     target_include_directories(cubey_project_fluid_3d_tests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")

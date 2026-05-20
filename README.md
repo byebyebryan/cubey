@@ -171,15 +171,14 @@ injectors; use `--grid-width`, `--grid-height`, and `--injectors 1..16` to
 compare other simulation/demo shapes, and `--obstacles` to enable the static
 obstacle mask.
 `fluid_3d` defaults to a `128x128x128` dense solver volume with a decoupled
-`64x64x64` shadow volume; use `--grid-width`, `--grid-height`, `--grid-depth`,
-`--shadow-grid-width`, `--shadow-grid-height`, `--shadow-grid-depth`,
-`--shadow-steps`, `--shadow-update-interval`, `--injector-orbit-radius`,
-`--injector-orbit-angular-speed`, `--injector-orbit-angular-speed-spread`,
-`--injector-orbit-inclination-degrees`,
-`--injector-orbit-inclination-spread-degrees`, `--injector-movement orbit|circle`,
-`--injector-circle-height`, and `--injectors 1..16` for lower-cost smoke tests
-or heavier local runs. `--print-frame-stats` also emits periodic `fluid_3d_gpu`
-pass timings when timestamp queries are available.
+`64x64x64` shadow volume and a `smoke-plume` source scenario. Use
+`--grid-width`, `--grid-height`, `--grid-depth`, `--shadow-grid-width`,
+`--shadow-grid-height`, `--shadow-grid-depth`, `--shadow-steps`,
+`--shadow-update-interval`, `--fluid-scenario smoke-plume`, `--fluid-sources`,
+`--fluid-source-radius`, `--fluid-source-force`, `--fluid-smoke`, and
+`--fluid-heat` for lower-cost smoke tests or heavier local runs.
+`--print-frame-stats` also emits periodic `fluid_3d_gpu` pass timings when
+timestamp queries are available.
 
 Useful headless PNG smokes:
 
