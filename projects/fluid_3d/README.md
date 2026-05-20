@@ -43,11 +43,25 @@ resource choices; shadow steps and update interval are also exposed live in UI.
 The default `smoke-plume` scenario uses fixed low sources that inject smoke,
 heat, and upward velocity. `explosion` emits a short boosted smoke/heat/flame
 and radial velocity impulse, then pauses until the next interval. `fire` keeps a
-steady lower burner with stronger heat/flame and less soot. The density volume
-channels are semantic material channels rather than display color:
-`r = smoke/soot`, `g = heat`, `b = flame`, and `a = reserved`. Smoke/heat/flame
-injection and velocity force are controlled independently, and the solver
-applies material-weighted upward buoyancy during the correction/injection pass.
+steady lower burner with stronger heat/flame and less soot.
+
+## Pyro Field Model
+
+The material volume channels are semantic simulation fields rather than display
+color:
+
+- `r`: soot/smoke density.
+- `g`: temperature for buoyancy, shaping, and flame color.
+- `b`: visible flame/burn lifetime.
+- `a`: fuel/reactants.
+
+The fire model should follow the established pyro shape used by Houdini-style
+solvers and classic fire papers: sources add fuel and heat, combustion consumes
+hot fuel into burn/flame, burn releases temperature, soot, and expanding gas,
+temperature drives buoyancy and shaping, and the renderer maps flame/temperature
+through a transfer function instead of displaying raw scalar values. Smoke plume
+and explosion remain simpler source-driven cases, but they share the same field
+layout so scenarios can reuse advection, projection, shadows, and rendering.
 
 ## Current Pipeline
 
@@ -67,13 +81,14 @@ The command path records:
 1. One-time image layout transition to `VK_IMAGE_LAYOUT_GENERAL`.
 2. Reset pass when requested.
 3. Semi-Lagrangian advection prediction pass.
-4. MacCormack/BFECC correction, limiter, cleanup, procedural injection, and
-   buoyancy.
-5. Divergence pass.
-6. Jacobi pressure ping-pong.
-7. Projection plus vorticity confinement.
-8. Shadow-volume compute pass from the current density volume.
-9. Raymarched fullscreen draw sampling the precomputed shadow volume.
+4. MacCormack/BFECC correction, limiter, and low-energy cleanup.
+5. Source/combustion/shaping pass that injects material and velocity, consumes
+   fire fuel, emits flame/temperature/soot, and applies buoyancy.
+6. Divergence pass.
+7. Jacobi pressure ping-pong.
+8. Projection plus vorticity confinement.
+9. Shadow-volume compute pass from the current density volume.
+10. Raymarched fullscreen draw sampling the precomputed shadow volume.
 
 Windowed runs collect GPU timestamps for reset, advection prediction/correction,
 divergence, pressure, projection, shadow, and raymarch passes. The timings are
