@@ -9,6 +9,7 @@ layout(push_constant) uniform SimulationParams {
     vec4 shadow_options;
     vec4 fire_options;
     vec4 shaping_options;
+    vec4 obstacle_options;
 } params;
 
 struct Source {
@@ -91,6 +92,15 @@ vec3 flame_shredding_force(ivec3 coord, vec3 uv, vec4 material, float time) {
     return tangent / tangent_strength * edge_signal;
 }
 
+bool inside_obstacle(vec3 uv) {
+    float radius = max(params.obstacle_options.y, 0.0);
+    if (radius <= 0.0) {
+        return false;
+    }
+    vec3 center = vec3(0.5, params.obstacle_options.x, 0.5);
+    return length(uv - center) <= radius;
+}
+
 void apply_sources(vec3 uv, float dt, bool fire_mode, inout vec4 material,
                    inout vec3 velocity) {
     int source_count = int(params.options.x + 0.5);
@@ -102,10 +112,13 @@ void apply_sources(vec3 uv, float dt, bool fire_mode, inout vec4 material,
             continue;
         }
 
-        float fuel_weight = fire_mode ? smoothstep(0.01, 0.25, material_amount.a) : 0.0;
+        float source_warp_weight =
+            fire_mode ? smoothstep(0.01, 0.25, material_amount.a)
+                      : smoothstep(0.01, 0.55, material_amount.b + material_amount.g * 0.25);
         float radius = max(source.position_radius.w, 0.0001);
         vec3 warp =
-            source_turbulence(uv, float(i), params.options.w) * radius * 0.20 * fuel_weight;
+            source_turbulence(uv, float(i), params.options.w) * radius * 0.20 *
+            source_warp_weight;
         vec3 delta = (uv + warp) - source.position_radius.xyz;
         float falloff = exp(-dot(delta, delta) / (radius * radius));
         float breakup = mix(
@@ -113,7 +126,7 @@ void apply_sources(vec3 uv, float dt, bool fire_mode, inout vec4 material,
             0.86 +
                 0.28 * source_noise(uv * 36.0 + vec3(float(i) * 5.13, params.options.w * 0.90,
                                                      -params.options.w * 0.60)),
-            fuel_weight);
+            source_warp_weight);
         falloff *= breakup;
 
         float source_scale = dt * falloff;
@@ -162,6 +175,17 @@ void apply_fire_dissipation(float dt, inout vec4 material) {
     material.a = material.a < 0.002 ? 0.0 : material.a;
 }
 
+void apply_explosion_dissipation(float dt, inout vec4 material) {
+    float flame_cooling = max(params.shaping_options.y, 0.0);
+    float flame_decay = exp(-(flame_cooling + 2.2) * dt);
+    float spent_flame = material.b * (1.0 - flame_decay);
+    material.b *= flame_decay;
+    material.g *= exp(-1.55 * dt);
+    material.r += spent_flame * 0.075;
+    material.a = 0.0;
+    material.b = material.b < 0.002 ? 0.0 : material.b;
+}
+
 void main() {
     ivec3 coord = ivec3(gl_GlobalInvocationID.xyz);
     ivec3 size = ivec3(params.grid_dt_time.xyz);
@@ -173,17 +197,31 @@ void main() {
     vec3 uv = (vec3(coord) + vec3(0.5)) / vec3(size);
     vec4 material = imageLoad(material_in, coord);
     vec3 velocity = imageLoad(velocity_in, coord).xyz;
-    bool fire_mode = int(params.shadow_options.w + 0.5) == 0;
+    if (inside_obstacle(uv)) {
+        imageStore(material_out, coord, vec4(0.0));
+        imageStore(velocity_out, coord, vec4(0.0));
+        return;
+    }
+    int pyro_mode = int(params.shadow_options.w + 0.5);
+    bool fire_mode = pyro_mode == 0;
+    bool explosion_mode = pyro_mode == 1;
 
     apply_sources(uv, dt, fire_mode, material, velocity);
     if (fire_mode) {
         apply_combustion(dt, material);
         apply_fire_dissipation(dt, material);
+    }
+    if (explosion_mode) {
+        apply_explosion_dissipation(dt, material);
+    }
+    if (fire_mode || explosion_mode) {
         float flame_mask = smoothstep(0.020, 0.55, material.b);
         vec3 turbulence = source_turbulence(uv * 1.3, 19.0, params.options.w);
-        velocity += turbulence * flame_mask * params.shaping_options.w * dt;
+        float turbulence_scale = explosion_mode ? 1.35 : 1.0;
+        float shredding_scale = explosion_mode ? 0.85 : 1.0;
+        velocity += turbulence * flame_mask * params.shaping_options.w * turbulence_scale * dt;
         velocity += flame_shredding_force(coord, uv, material, params.options.w) *
-                    params.shaping_options.z * dt;
+                    params.shaping_options.z * shredding_scale * dt;
     }
 
     float buoyancy_energy = material.r * 0.35 + material.g * 0.80 + material.b * 0.35;

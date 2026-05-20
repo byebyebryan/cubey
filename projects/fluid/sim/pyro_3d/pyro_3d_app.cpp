@@ -24,8 +24,8 @@
 
 #include <algorithm>
 #include <array>
-#include <cstdio>
 #include <cstdint>
+#include <cstdio>
 #include <optional>
 #include <utility>
 #include <vector>
@@ -225,8 +225,7 @@ class Pyro3DApp {
                            "%.4f");
         ImGui::SliderFloat("Velocity decay", &pyro_config_.velocity_decay_per_second, 0.960F, 1.0F,
                            "%.4f");
-        ImGui::SliderFloat("Source radius", &pyro_config_.source_radius, 0.020F, 0.180F,
-                           "%.3f");
+        ImGui::SliderFloat("Source radius", &pyro_config_.source_radius, 0.020F, 0.180F, "%.3f");
         ImGui::SliderFloat("Smoke", &pyro_config_.source_smoke_amount, 0.0F, 16.0F, "%.2f");
         ImGui::SliderFloat("Heat", &pyro_config_.source_heat_amount, 0.0F, 8.0F, "%.2f");
         ImGui::SliderFloat(pyro_config_.mode == Pyro3DMode::Fire ? "Fuel" : "Flame",
@@ -249,18 +248,20 @@ class Pyro3DApp {
             ImGui::SliderFloat("Ignition", &pyro_config_.fire_ignition_temperature, 0.0F, 2.0F,
                                "%.2f");
             ImGui::SliderFloat("Burn rate", &pyro_config_.fire_burn_rate, 0.0F, 10.0F, "%.2f");
-            ImGui::SliderFloat("Heat output", &pyro_config_.fire_heat_output, 0.0F, 8.0F,
-                               "%.2f");
-            ImGui::SliderFloat("Soot yield", &pyro_config_.fire_soot_yield, 0.0F, 1.5F,
-                               "%.2f");
+            ImGui::SliderFloat("Heat output", &pyro_config_.fire_heat_output, 0.0F, 8.0F, "%.2f");
+            ImGui::SliderFloat("Soot yield", &pyro_config_.fire_soot_yield, 0.0F, 1.5F, "%.2f");
+        }
+        if (pyro_config_.mode == Pyro3DMode::Fire || pyro_config_.mode == Pyro3DMode::Explosion) {
             ImGui::SliderFloat("Expansion", &pyro_config_.fire_expansion, 0.0F, 4.0F, "%.2f");
             ImGui::SliderFloat("Flame cooling", &pyro_config_.fire_flame_cooling, 0.0F, 8.0F,
                                "%.2f");
             ImGui::SliderFloat("Shredding", &pyro_config_.fire_shredding, 0.0F, 8.0F, "%.2f");
-            ImGui::SliderFloat("Turbulence", &pyro_config_.fire_turbulence, 0.0F, 3.0F,
-                               "%.2f");
+            ImGui::SliderFloat("Turbulence", &pyro_config_.fire_turbulence, 0.0F, 3.0F, "%.2f");
         }
         ImGui::SliderFloat("Vorticity", &pyro_config_.vorticity_strength, 0.0F, 1.5F, "%.2f");
+        ImGui::SliderFloat("Obstacle height", &pyro_config_.obstacle_center_height, 0.0F, 1.0F,
+                           "%.2f");
+        ImGui::SliderFloat("Obstacle radius", &pyro_config_.obstacle_radius, 0.0F, 0.35F, "%.3f");
         ImGui::SliderFloat("Absorption", &pyro_config_.absorption, 0.5F, 12.0F, "%.2f");
         ImGui::SliderFloat("Light", &pyro_config_.emission, 0.1F, 4.0F, "%.2f");
         ImGui::SliderFloat("Shadow", &pyro_config_.shadow_absorption, 0.0F, 96.0F, "%.2f");
@@ -385,15 +386,15 @@ class Pyro3DApp {
             profiler->begin_frame(render_frame.command_buffer, render_frame.frame_slot.index);
         }
         record_pyro_3d_compute(render_frame.command_buffer, resources_, pyro_config_, paused_,
-                                reset_requested_, frame, source_gpu_, frame_state_, true,
-                                profiler, render_frame.frame_slot.index);
+                               reset_requested_, frame, source_gpu_, frame_state_, true, profiler,
+                               render_frame.frame_slot.index);
         cubey::render::record_present_render_target(
             recorder, cubey::render::render_target_view(render_frame.color_target),
             [this, &render_frame,
              profiler](const cubey::vulkan::CommandRecorder& present_recorder) {
                 record_pyro_3d_draw(present_recorder.handle(), resources_, pyro_config_,
-                                     debug_view_, render_camera(), render_frame.color_target,
-                                     frame_state_, profiler, render_frame.frame_slot.index);
+                                    debug_view_, render_camera(), render_frame.color_target,
+                                    frame_state_, profiler, render_frame.frame_slot.index);
             });
         recorder.end("vkEndCommandBuffer pyro_3d");
     }
@@ -427,8 +428,8 @@ class Pyro3DApp {
                 [this, frame](cubey::vulkan::GpuOwnerContext& gpu_context) {
                     cubey::vulkan::ImmediateCommands commands(gpu_context);
                     record_pyro_3d_compute(commands.command_buffer(), resources_, pyro_config_,
-                                            paused_, reset_requested_, frame, source_gpu_,
-                                            frame_state_);
+                                           paused_, reset_requested_, frame, source_gpu_,
+                                           frame_state_);
                     commands.submit_and_wait();
                 },
         }));
@@ -472,7 +473,7 @@ class Pyro3DApp {
                                           VkCommandBuffer command_buffer,
                                           const cubey::host::HeadlessRenderTarget& target) {
             record_pyro_3d_draw(command_buffer, resources_, pyro_config_, debug_view_,
-                                 render_camera(), target, frame_state_);
+                                render_camera(), target, frame_state_);
         };
         callbacks.shutdown = [this](cubey::host::HeadlessPngContext&) {
             destroy_all_resources();

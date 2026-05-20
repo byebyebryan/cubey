@@ -64,10 +64,8 @@ int main() {
                 "pyro 3D pressure solve should default to a small 3D budget");
         require(config.raymarch_steps == 128, "pyro 3D should default to one step per slice");
         require(config.shadow_grid_width == 64, "pyro 3D should default to a 64-wide shadow grid");
-        require(config.shadow_grid_height == 64,
-                "pyro 3D should default to a 64-high shadow grid");
-        require(config.shadow_grid_depth == 64,
-                "pyro 3D should default to a 64-deep shadow grid");
+        require(config.shadow_grid_height == 64, "pyro 3D should default to a 64-high shadow grid");
+        require(config.shadow_grid_depth == 64, "pyro 3D should default to a 64-deep shadow grid");
         require(config.shadow_steps == 64, "pyro 3D shadow rays should default to 64 steps");
         require(config.shadow_update_interval == 1,
                 "pyro 3D should update shadows every frame by default");
@@ -91,8 +89,7 @@ int main() {
                 "pyro 3D explosion boost should default to a high impulse scale");
         require(config.fire_ignition_temperature == 0.22F,
                 "pyro 3D ignition should match the tuned default");
-        require(config.fire_burn_rate == 2.2F,
-                "pyro 3D burn rate should match the tuned default");
+        require(config.fire_burn_rate == 2.2F, "pyro 3D burn rate should match the tuned default");
         require(config.fire_heat_output == 1.65F,
                 "pyro 3D heat output should match the tuned default");
         require(config.fire_soot_yield == 0.070F,
@@ -105,14 +102,16 @@ int main() {
                 "pyro 3D fire shredding should match the tuned default");
         require(config.fire_turbulence == 0.35F,
                 "pyro 3D fire turbulence should match the tuned default");
+        require(config.obstacle_center_height == pyro::kDefaultPyro3DObstacleHeight,
+                "pyro 3D obstacle height should match the tuned default");
+        require(config.obstacle_radius == pyro::kDefaultPyro3DObstacleRadius,
+                "pyro 3D obstacle radius should match the tuned default");
         require(config.vorticity_strength == 1.0F,
                 "pyro 3D vorticity should match the tuned default");
         require(config.buoyancy_strength == 1.0F,
                 "pyro 3D buoyancy should default to a mild upward force");
-        require(config.absorption == 8.0F,
-                "pyro 3D absorption should match the tuned default");
-        require(config.emission == 2.0F,
-                "pyro 3D light emission should match the tuned default");
+        require(config.absorption == 8.0F, "pyro 3D absorption should match the tuned default");
+        require(config.emission == 2.0F, "pyro 3D light emission should match the tuned default");
         require(config.shadow_absorption == 50.0F,
                 "pyro 3D shadow absorption should match the tuned default");
         require(config.ambient_light == 0.5F,
@@ -133,6 +132,14 @@ int main() {
         require(pyro::next_debug_view(pyro::Pyro3DDebugView::Velocity) ==
                     pyro::Pyro3DDebugView::Smoke,
                 "pyro 3D debug view should cycle from velocity to smoke");
+
+        const cubey::RunConfig default_run_config;
+        const pyro::Pyro3DConfig default_explosion_config =
+            pyro::pyro_3d_config_from_run_config(default_run_config, pyro::Pyro3DMode::Explosion);
+        require(default_explosion_config.source_count == pyro::kDefaultExplosion3DSourceCount,
+                "pyro 3D explosion should default to a shell source layout");
+        require(default_explosion_config.source_radius == pyro::kDefaultExplosion3DSourceRadius,
+                "pyro 3D explosion should default to a wider impulse radius");
 
         cubey::RunConfig run_config;
         run_config.grid_width = 64;
@@ -157,6 +164,8 @@ int main() {
         run_config.pyro_flame_cooling = 2.75F;
         run_config.pyro_shredding = 3.5F;
         run_config.pyro_turbulence = 0.85F;
+        run_config.pyro_obstacle_height = 0.58F;
+        run_config.pyro_obstacle_radius = 0.18F;
         run_config.pyro_buoyancy = 1.75F;
         run_config.explosion_interval_seconds = 2.5F;
         run_config.explosion_duration_seconds = 0.18F;
@@ -213,6 +222,10 @@ int main() {
                 "pyro 3D config should honor run config shredding");
         require(fire_config.fire_turbulence == 0.85F,
                 "pyro 3D config should honor run config turbulence");
+        require(fire_config.obstacle_center_height == 0.58F,
+                "pyro 3D config should honor run config obstacle height");
+        require(fire_config.obstacle_radius == 0.18F,
+                "pyro 3D config should honor run config obstacle radius");
         require(fire_config.buoyancy_strength == 1.75F,
                 "pyro 3D config should honor run config buoyancy");
 
@@ -220,13 +233,35 @@ int main() {
         try {
             cubey::RunConfig invalid_source_config;
             invalid_source_config.pyro_sources = pyro::kMaxPyro3DSourceCount + 1U;
-            static_cast<void>(pyro::pyro_3d_config_from_run_config(
-                invalid_source_config, pyro::Pyro3DMode::Fire));
+            static_cast<void>(pyro::pyro_3d_config_from_run_config(invalid_source_config,
+                                                                   pyro::Pyro3DMode::Fire));
         } catch (const std::runtime_error&) {
             threw_for_too_many_sources = true;
         }
         require(threw_for_too_many_sources,
                 "pyro 3D config should reject source counts above the shader policy limit");
+        bool threw_for_invalid_obstacle_height = false;
+        try {
+            cubey::RunConfig invalid_obstacle_config;
+            invalid_obstacle_config.pyro_obstacle_height = 1.2F;
+            static_cast<void>(pyro::pyro_3d_config_from_run_config(invalid_obstacle_config,
+                                                                   pyro::Pyro3DMode::Fire));
+        } catch (const std::runtime_error&) {
+            threw_for_invalid_obstacle_height = true;
+        }
+        require(threw_for_invalid_obstacle_height,
+                "pyro 3D config should reject obstacle heights outside the volume");
+        bool threw_for_invalid_obstacle_radius = false;
+        try {
+            cubey::RunConfig invalid_obstacle_config;
+            invalid_obstacle_config.pyro_obstacle_radius = 0.6F;
+            static_cast<void>(pyro::pyro_3d_config_from_run_config(invalid_obstacle_config,
+                                                                   pyro::Pyro3DMode::Fire));
+        } catch (const std::runtime_error&) {
+            threw_for_invalid_obstacle_radius = true;
+        }
+        require(threw_for_invalid_obstacle_radius,
+                "pyro 3D config should reject obstacle radii outside the volume");
 
         std::vector<pyro::Pyro3DSourceState> fire_sources =
             pyro::create_pyro_3d_sources(fire_config);
@@ -250,29 +285,26 @@ int main() {
                 "pyro 3D GPU source should carry configured radius");
         require(fire_gpu.front().velocity_strength[3] == fire_config.source_velocity_strength,
                 "pyro 3D GPU source should carry configured force");
-        require(pyro::pyro_3d_source_byte_size(fire_config) ==
-                    sizeof(pyro::Pyro3DSourceGpu) * 6U,
+        require(pyro::pyro_3d_source_byte_size(fire_config) == sizeof(pyro::Pyro3DSourceGpu) * 6U,
                 "pyro 3D active source byte size should match configured count");
         require(pyro::pyro_3d_source_capacity_byte_size() ==
                     sizeof(pyro::Pyro3DSourceGpu) * pyro::kMaxPyro3DSourceCount,
                 "pyro 3D source capacity byte size should cover the shader policy limit");
 
         const std::vector<pyro::Pyro3DSourceGpu> early_fire_gpu =
-            pyro::update_pyro_3d_sources(
-                fire_sources, fire_config,
-                {
-                    .delta_seconds = fire_config.fixed_delta_seconds,
-                    .elapsed_seconds = 0.25,
-                    .frame_index = 1,
-                });
+            pyro::update_pyro_3d_sources(fire_sources, fire_config,
+                                         {
+                                             .delta_seconds = fire_config.fixed_delta_seconds,
+                                             .elapsed_seconds = 0.25,
+                                             .frame_index = 1,
+                                         });
         const std::vector<pyro::Pyro3DSourceGpu> later_fire_gpu =
-            pyro::update_pyro_3d_sources(
-                fire_sources, fire_config,
-                {
-                    .delta_seconds = fire_config.fixed_delta_seconds,
-                    .elapsed_seconds = 0.75,
-                    .frame_index = 2,
-                });
+            pyro::update_pyro_3d_sources(fire_sources, fire_config,
+                                         {
+                                             .delta_seconds = fire_config.fixed_delta_seconds,
+                                             .elapsed_seconds = 0.75,
+                                             .frame_index = 2,
+                                         });
         require(early_fire_gpu.front().position_radius != later_fire_gpu.front().position_radius,
                 "pyro 3D fire source turbulence should jitter source position/radius over time");
         require(early_fire_gpu.front().material_amount[3] !=
@@ -287,31 +319,44 @@ int main() {
             pyro::create_pyro_3d_sources(explosion_config);
         require(explosion_sources.front().position[1] > 0.20F,
                 "pyro 3D explosion should originate above the lower burner");
-        require(explosion_sources.front().material_amount[2] ==
-                    explosion_config.source_flame_amount,
-                "pyro 3D explosion should carry flame amount");
+        require(explosion_sources.front().material_amount[2] > explosion_config.source_flame_amount,
+                "pyro 3D explosion should start with a hot flame core");
         const std::vector<pyro::Pyro3DSourceGpu> explosion_active_gpu =
-            pyro::update_pyro_3d_sources(
-                explosion_sources, explosion_config,
-                {
-                    .delta_seconds = explosion_config.fixed_delta_seconds,
-                    .elapsed_seconds = 2.5,
-                    .frame_index = 1,
-                });
+            pyro::update_pyro_3d_sources(explosion_sources, explosion_config,
+                                         {
+                                             .delta_seconds = explosion_config.fixed_delta_seconds,
+                                             .elapsed_seconds = 2.5,
+                                             .frame_index = 1,
+                                         });
         require(explosion_active_gpu.front().material_amount[0] >
                     explosion_config.source_smoke_amount,
                 "pyro 3D explosion should boost smoke during the impulse window");
         require(explosion_active_gpu.front().velocity_strength[3] >
                     explosion_config.source_velocity_strength,
                 "pyro 3D explosion should boost force during the impulse window");
+        const std::vector<pyro::Pyro3DSourceGpu> explosion_shell_gpu = pyro::update_pyro_3d_sources(
+            explosion_sources, explosion_config,
+            {
+                .delta_seconds = explosion_config.fixed_delta_seconds,
+                .elapsed_seconds = 2.5 + explosion_config.explosion_duration_seconds * 0.72,
+                .frame_index = 2,
+            });
+        require(explosion_shell_gpu.front().position_radius[3] >
+                    explosion_active_gpu.front().position_radius[3],
+                "pyro 3D explosion should expand the source radius across the impulse");
+        require(explosion_shell_gpu.front().material_amount[0] >
+                    explosion_active_gpu.front().material_amount[0],
+                "pyro 3D explosion should shift from flash to smoke shell");
+        require(explosion_shell_gpu.front().material_amount[2] <
+                    explosion_active_gpu.front().material_amount[2],
+                "pyro 3D explosion should fade flame after the initial flash");
         const std::vector<pyro::Pyro3DSourceGpu> explosion_pause_gpu =
-            pyro::update_pyro_3d_sources(
-                explosion_sources, explosion_config,
-                {
-                    .delta_seconds = explosion_config.fixed_delta_seconds,
-                    .elapsed_seconds = 2.75,
-                    .frame_index = 2,
-                });
+            pyro::update_pyro_3d_sources(explosion_sources, explosion_config,
+                                         {
+                                             .delta_seconds = explosion_config.fixed_delta_seconds,
+                                             .elapsed_seconds = 2.75,
+                                             .frame_index = 3,
+                                         });
         require(explosion_pause_gpu.front().material_amount[0] == 0.0F,
                 "pyro 3D explosion should pause smoke between impulses");
         require(explosion_pause_gpu.front().velocity_strength[3] == 0.0F,
@@ -322,8 +367,7 @@ int main() {
         run_config.frames = 8;
         require(pyro::pyro_3d_headless_frame_count(run_config) == 8,
                 "pyro 3D headless frame count should honor explicit frames");
-        const cubey::FrameTiming fixed_timing =
-            pyro::fixed_pyro_3d_headless_timing(fire_config, 5);
+        const cubey::FrameTiming fixed_timing = pyro::fixed_pyro_3d_headless_timing(fire_config, 5);
         require(fixed_timing.frame_index == 5,
                 "pyro 3D fixed headless timing should preserve frame index");
         require(fixed_timing.delta_seconds == fire_config.fixed_delta_seconds,
@@ -336,6 +380,14 @@ int main() {
             read_text_file(source_dir / "shaders" / "pyro_3d_advect_correct.comp");
         const std::string combustion_shader =
             read_text_file(source_dir / "shaders" / "pyro_3d_combust.comp");
+        const std::string divergence_shader =
+            read_text_file(source_dir / "shaders" / "pyro_3d_divergence.comp");
+        const std::string pressure_shader =
+            read_text_file(source_dir / "shaders" / "pyro_3d_pressure.comp");
+        const std::string projection_shader =
+            read_text_file(source_dir / "shaders" / "pyro_3d_projection.comp");
+        const std::string raymarch_shader =
+            read_text_file(source_dir / "shaders" / "pyro_3d_raymarch.frag");
         const std::string shadow_shader =
             read_text_file(source_dir / "shaders" / "pyro_3d_shadow.comp");
         require_contains(advect_shader, "previous_uv",
@@ -346,6 +398,20 @@ int main() {
                          "pyro 3D combustion shader should run the fire model");
         require_contains(combustion_shader, "fire_mode",
                          "pyro 3D combustion shader should branch on pyro mode");
+        require_contains(combustion_shader, "apply_explosion_dissipation",
+                         "pyro 3D combustion shader should cool direct explosion flames");
+        require_contains(divergence_shader, "pyro_expansion",
+                         "pyro 3D divergence shader should apply pyro expansion");
+        require_contains(advect_shader, "inside_obstacle",
+                         "pyro 3D advection shader should clear the obstacle volume");
+        require_contains(divergence_shader, "inside_obstacle_coord",
+                         "pyro 3D divergence shader should treat the obstacle as solid");
+        require_contains(pressure_shader, "pressure_neighbor_or_center",
+                         "pyro 3D pressure shader should use solid boundary pressure");
+        require_contains(projection_shader, "pressure_neighbor_or_center",
+                         "pyro 3D projection shader should use solid boundary pressure");
+        require_contains(raymarch_shader, "ray_sphere_intersection",
+                         "pyro 3D raymarch shader should render the ball obstacle");
         require_contains(shadow_shader, "light_transmittance",
                          "pyro 3D shadow shader should retain shadow raymarching");
     } catch (const std::exception& error) {

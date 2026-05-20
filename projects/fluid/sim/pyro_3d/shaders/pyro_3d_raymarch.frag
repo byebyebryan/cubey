@@ -6,6 +6,7 @@ layout(push_constant) uniform RenderParams {
     vec4 ray_up_aspect;
     vec4 ray_forward_debug;
     vec4 render_options;
+    vec4 obstacle_options;
 } params;
 
 layout(set = 0, binding = 0) uniform sampler3D density_volume;
@@ -40,6 +41,40 @@ vec4 density_at(vec3 uv) {
     return texture(density_volume, clamp(uv, vec3(0.0), vec3(1.0)));
 }
 
+float obstacle_radius() {
+    return max(params.obstacle_options.y, 0.0);
+}
+
+vec3 obstacle_center() {
+    return vec3(0.5, params.obstacle_options.x, 0.5);
+}
+
+bool obstacle_enabled() {
+    return obstacle_radius() > 0.0;
+}
+
+bool inside_obstacle(vec3 position) {
+    return obstacle_enabled() && length(position - obstacle_center()) <= obstacle_radius();
+}
+
+bool ray_sphere_intersection(vec3 origin, vec3 direction, out float hit_t) {
+    if (!obstacle_enabled()) {
+        return false;
+    }
+    vec3 offset = origin - obstacle_center();
+    float b = dot(offset, direction);
+    float c = dot(offset, offset) - obstacle_radius() * obstacle_radius();
+    float discriminant = b * b - c;
+    if (discriminant < 0.0) {
+        return false;
+    }
+    float root = sqrt(discriminant);
+    float near_t = -b - root;
+    float far_t = -b + root;
+    hit_t = near_t > 0.0 ? near_t : far_t;
+    return hit_t > 0.0;
+}
+
 float volume_edge_fade(vec3 position) {
     float edge_distance = min(min(position.x, 1.0 - position.x),
                               min(min(position.y, 1.0 - position.y),
@@ -52,6 +87,9 @@ float raw_smoke_density(vec4 density) {
 }
 
 float smoke_density(vec4 density, vec3 position) {
+    if (inside_obstacle(position)) {
+        return 0.0;
+    }
     float soot_density = raw_smoke_density(density);
     float low_density_mask = smoothstep(0.010, 0.050, soot_density);
     return soot_density * low_density_mask * volume_edge_fade(position);
@@ -101,6 +139,9 @@ vec3 flame_color(float heat, float core) {
 }
 
 vec3 flame_emission(vec4 density, vec3 position) {
+    if (inside_obstacle(position)) {
+        return vec3(0.0);
+    }
     float flame = max(density.b, 0.0);
     float heat = max(density.g, 0.0);
     float soot = max(density.r, 0.0);
@@ -139,6 +180,8 @@ void main() {
     vec3 light_direction = normalize(vec3(0.45, 0.82, 0.35));
     vec3 light_color = vec3(1.0, 0.92, 0.80);
     vec3 sky_color = vec3(0.42, 0.54, 0.76);
+    float obstacle_t = 0.0;
+    bool obstacle_hit = ray_sphere_intersection(origin, direction, obstacle_t);
 
     float near_t = 0.0;
     float far_t = 0.0;
@@ -156,6 +199,17 @@ void main() {
     float transmittance = 1.0;
     for (int i = 0; i < steps; ++i) {
         float t = near_t + (float(i) + 0.5) * step_length;
+        if (obstacle_hit && obstacle_t >= near_t && obstacle_t <= far_t && t >= obstacle_t) {
+            vec3 hit_position = origin + direction * obstacle_t;
+            vec3 normal = normalize(hit_position - obstacle_center());
+            float diffuse = clamp(dot(normal, light_direction), 0.0, 1.0);
+            float rim = pow(1.0 - clamp(dot(-direction, normal), 0.0, 1.0), 2.5);
+            vec3 obstacle_color =
+                vec3(0.050, 0.055, 0.060) + light_color * diffuse * 0.20 + sky_color * rim * 0.10;
+            accumulated += transmittance * obstacle_color;
+            transmittance = 0.0;
+            break;
+        }
         vec3 position = origin + direction * t;
         vec4 density = density_at(position);
         float smoke_density_value = smoke_density(density, position);

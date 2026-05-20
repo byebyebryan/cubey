@@ -7,6 +7,9 @@ layout(push_constant) uniform SimulationParams {
     vec4 decay_force;
     vec4 options;
     vec4 shadow_options;
+    vec4 fire_options;
+    vec4 shaping_options;
+    vec4 obstacle_options;
 } params;
 
 struct Source {
@@ -67,6 +70,15 @@ vec4 sample_velocity(vec3 uv) {
     return mix(z0, z1, fraction.z);
 }
 
+bool inside_obstacle(vec3 uv) {
+    float radius = max(params.obstacle_options.y, 0.0);
+    if (radius <= 0.0) {
+        return false;
+    }
+    vec3 center = vec3(0.5, params.obstacle_options.x, 0.5);
+    return length(uv - center) <= radius;
+}
+
 void main() {
     ivec3 coord = ivec3(gl_GlobalInvocationID.xyz);
     ivec3 size = ivec3(params.grid_dt_time.xyz);
@@ -80,6 +92,10 @@ void main() {
     vec3 previous_uv = clamp(uv - velocity * dt, vec3(0.0), vec3(1.0));
     vec4 density = sample_density(previous_uv);
     vec3 advected_velocity = sample_velocity(previous_uv).xyz;
+    if (inside_obstacle(uv)) {
+        density = vec4(0.0);
+        advected_velocity = vec3(0.0);
+    }
 
     float edge_distance = min(min(uv.x, 1.0 - uv.x), min(min(uv.y, 1.0 - uv.y), min(uv.z, 1.0 - uv.z)));
     float wall = smoothstep(0.0, 0.035, edge_distance);

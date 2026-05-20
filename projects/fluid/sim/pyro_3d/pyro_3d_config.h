@@ -25,6 +25,10 @@ enum class Pyro3DMode : std::uint32_t {
 inline constexpr std::uint32_t kMaxPyro3DSourceCount = 16;
 inline constexpr float kDefaultPyro3DSourceRadius = 0.05F;
 inline constexpr float kDefaultFireSourceRadius = 0.085F;
+inline constexpr std::uint32_t kDefaultExplosion3DSourceCount = 9;
+inline constexpr float kDefaultExplosion3DSourceRadius = 0.060F;
+inline constexpr float kDefaultPyro3DObstacleHeight = 0.48F;
+inline constexpr float kDefaultPyro3DObstacleRadius = 0.15F;
 
 struct Pyro3DConfig {
     std::uint32_t grid_width = 128;
@@ -59,6 +63,8 @@ struct Pyro3DConfig {
     float fire_flame_cooling = 5.5F;
     float fire_shredding = 1.6F;
     float fire_turbulence = 0.35F;
+    float obstacle_center_height = kDefaultPyro3DObstacleHeight;
+    float obstacle_radius = kDefaultPyro3DObstacleRadius;
     float vorticity_strength = 1.0F;
     float buoyancy_strength = 1.0F;
     float absorption = 8.0F;
@@ -140,9 +146,9 @@ struct Pyro3DConfig {
                                                                  Pyro3DMode mode) {
     Pyro3DConfig result;
     result.mode = mode;
-    result.source_count = mode == Pyro3DMode::Fire ? 1U : 3U;
+    result.source_count = mode == Pyro3DMode::Fire ? 1U : kDefaultExplosion3DSourceCount;
     result.source_radius =
-        mode == Pyro3DMode::Fire ? kDefaultFireSourceRadius : kDefaultPyro3DSourceRadius;
+        mode == Pyro3DMode::Fire ? kDefaultFireSourceRadius : kDefaultExplosion3DSourceRadius;
     if (config.grid_width != 0) {
         result.grid_width = config.grid_width;
     }
@@ -173,8 +179,7 @@ struct Pyro3DConfig {
         }
         result.source_count = config.pyro_sources;
     }
-    if (config.pyro_source_radius != kDefaultPyro3DSourceRadius ||
-        mode != Pyro3DMode::Fire) {
+    if (config.pyro_source_radius != kDefaultPyro3DSourceRadius) {
         result.source_radius = config.pyro_source_radius;
     }
     result.source_velocity_strength = config.pyro_source_force;
@@ -192,6 +197,14 @@ struct Pyro3DConfig {
     result.fire_flame_cooling = config.pyro_flame_cooling;
     result.fire_shredding = config.pyro_shredding;
     result.fire_turbulence = config.pyro_turbulence;
+    result.obstacle_center_height = config.pyro_obstacle_height;
+    result.obstacle_radius = config.pyro_obstacle_radius;
+    if (result.obstacle_center_height < 0.0F || result.obstacle_center_height > 1.0F) {
+        throw std::runtime_error("pyro 3D obstacle height must be in [0, 1]");
+    }
+    if (result.obstacle_radius < 0.0F || result.obstacle_radius > 0.5F) {
+        throw std::runtime_error("pyro 3D obstacle radius must be in [0, 0.5]");
+    }
     result.buoyancy_strength = config.pyro_buoyancy;
     static_cast<void>(volume_cell_count(result));
     static_cast<void>(shadow_volume_cell_count(result));
@@ -203,7 +216,7 @@ struct Pyro3DConfig {
 }
 
 [[nodiscard]] inline FrameTiming fixed_pyro_3d_headless_timing(const Pyro3DConfig& config,
-                                                                std::uint64_t frame_index) {
+                                                               std::uint64_t frame_index) {
     if (frame_index == 0) {
         throw std::runtime_error("fixed pyro 3D frame index must be positive");
     }

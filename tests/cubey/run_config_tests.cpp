@@ -236,9 +236,9 @@ void test_run_config_parses_shadow_volume_controls() {
     std::string steps_value = "48";
     std::string interval_flag = "--shadow-update-interval";
     std::string interval_value = "2";
-    std::array<char*, 11> argv{program.data(), width_flag.data(),    width_value.data(),
-                               height_flag.data(), height_value.data(), depth_flag.data(),
-                               depth_value.data(), steps_flag.data(),   steps_value.data(),
+    std::array<char*, 11> argv{program.data(),       width_flag.data(),    width_value.data(),
+                               height_flag.data(),   height_value.data(),  depth_flag.data(),
+                               depth_value.data(),   steps_flag.data(),    steps_value.data(),
                                interval_flag.data(), interval_value.data()};
 
     const cubey::RunConfig config =
@@ -247,14 +247,13 @@ void test_run_config_parses_shadow_volume_controls() {
     require(config.shadow_grid_height == 80, "run config should parse shadow grid height");
     require(config.shadow_grid_depth == 64, "run config should parse shadow grid depth");
     require(config.shadow_steps == 48, "run config should parse shadow steps");
-    require(config.shadow_update_interval == 2,
-            "run config should parse shadow update interval");
+    require(config.shadow_update_interval == 2, "run config should parse shadow update interval");
 }
 
 void test_run_config_parses_smoke_injector_count() {
     std::array<char, 6> program{'c', 'u', 'b', 'e', 'y', '\0'};
-    std::array<char, 18> injectors_flag{'-', '-', 's', 'm', 'o', 'k', 'e', '-',
-                                        'i', 'n', 'j', 'e', 'c', 't', 'o', 'r', 's', '\0'};
+    std::array<char, 18> injectors_flag{'-', '-', 's', 'm', 'o', 'k', 'e', '-', 'i',
+                                        'n', 'j', 'e', 'c', 't', 'o', 'r', 's', '\0'};
     std::array<char, 2> injectors_value{'8', '\0'};
     std::array<char*, 3> argv{program.data(), injectors_flag.data(), injectors_value.data()};
 
@@ -306,17 +305,16 @@ void test_run_config_parses_smoke_injector_force_controls() {
     std::array<char, 23> force_flag{'-', '-', 's', 'm', 'o', 'k', 'e', '-', 'i', 'n', 'j', 'e',
                                     'c', 't', 'o', 'r', '-', 'f', 'o', 'r', 'c', 'e', '\0'};
     std::array<char, 4> force_value{'7', '.', '5', '\0'};
-    std::array<char, 28> propulsion_flag{
-        '-', '-', 's', 'm', 'o', 'k', 'e', '-', 'i', 'n', 'j', 'e', 'c', 't',
-        'o', 'r', '-', 'p', 'r', 'o', 'p', 'u', 'l', 's', 'i', 'o', 'n', '\0'};
+    std::array<char, 28> propulsion_flag{'-', '-', 's', 'm', 'o', 'k', 'e', '-', 'i', 'n',
+                                         'j', 'e', 'c', 't', 'o', 'r', '-', 'p', 'r', 'o',
+                                         'p', 'u', 'l', 's', 'i', 'o', 'n', '\0'};
     std::array<char, 4> propulsion_value{'1', '.', '6', '\0'};
     std::array<char*, 5> argv{program.data(), force_flag.data(), force_value.data(),
                               propulsion_flag.data(), propulsion_value.data()};
 
     const cubey::RunConfig config =
         cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
-    require(config.smoke_injector_force == 7.5F,
-            "run config should parse smoke injector force");
+    require(config.smoke_injector_force == 7.5F, "run config should parse smoke injector force");
     require(config.smoke_injector_propulsion == 1.6F,
             "run config should parse smoke injector propulsion");
 }
@@ -352,16 +350,14 @@ void test_run_config_parses_pyro_source_controls() {
     std::string duration_value = "0.18";
     std::string boost_flag = "--explosion-boost";
     std::string boost_value = "22.0";
-    std::array<char*, 19> argv{program.data(),          sources_flag.data(),
-                               sources_value.data(),   radius_flag.data(),
-                               radius_value.data(),    force_flag.data(),
-                               force_value.data(),     soot_flag.data(),
-                               soot_value.data(),      temperature_flag.data(),
-                               temperature_value.data(), fuel_flag.data(),
-                               fuel_value.data(),      interval_flag.data(),
-                               interval_value.data(),  duration_flag.data(),
-                               duration_value.data(),  boost_flag.data(),
-                               boost_value.data()};
+    std::array<char*, 19> argv{
+        program.data(),          sources_flag.data(),      sources_value.data(),
+        radius_flag.data(),      radius_value.data(),      force_flag.data(),
+        force_value.data(),      soot_flag.data(),         soot_value.data(),
+        temperature_flag.data(), temperature_value.data(), fuel_flag.data(),
+        fuel_value.data(),       interval_flag.data(),     interval_value.data(),
+        duration_flag.data(),    duration_value.data(),    boost_flag.data(),
+        boost_value.data()};
 
     const cubey::RunConfig config =
         cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
@@ -369,8 +365,7 @@ void test_run_config_parses_pyro_source_controls() {
     require(config.pyro_source_radius == 0.08F, "run config should parse pyro source radius");
     require(config.pyro_source_force == 9.5F, "run config should parse pyro source force");
     require(config.pyro_soot == 7.25F, "run config should parse pyro soot amount");
-    require(config.pyro_temperature == 1.75F,
-            "run config should parse pyro temperature amount");
+    require(config.pyro_temperature == 1.75F, "run config should parse pyro temperature amount");
     require(config.pyro_fuel == 2.5F, "run config should parse pyro fuel amount");
     require(config.explosion_interval_seconds == 2.5F,
             "run config should parse explosion interval");
@@ -397,43 +392,45 @@ void test_run_config_parses_pyro_fire_controls() {
     std::string shredding_value = "3.5";
     std::string turbulence_flag = "--pyro-turbulence";
     std::string turbulence_value = "0.85";
-    std::array<char*, 17> argv{program.data(),
-                               ignition_flag.data(),
-                               ignition_value.data(),
-                               burn_rate_flag.data(),
-                               burn_rate_value.data(),
-                               heat_output_flag.data(),
-                               heat_output_value.data(),
-                               soot_yield_flag.data(),
-                               soot_yield_value.data(),
-                               expansion_flag.data(),
-                               expansion_value.data(),
-                               cooling_flag.data(),
-                               cooling_value.data(),
-                               shredding_flag.data(),
-                               shredding_value.data(),
-                               turbulence_flag.data(),
-                               turbulence_value.data()};
+    std::array<char*, 17> argv{
+        program.data(),           ignition_flag.data(),   ignition_value.data(),
+        burn_rate_flag.data(),    burn_rate_value.data(), heat_output_flag.data(),
+        heat_output_value.data(), soot_yield_flag.data(), soot_yield_value.data(),
+        expansion_flag.data(),    expansion_value.data(), cooling_flag.data(),
+        cooling_value.data(),     shredding_flag.data(),  shredding_value.data(),
+        turbulence_flag.data(),   turbulence_value.data()};
 
     const cubey::RunConfig config =
         cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
-    require(config.pyro_ignition_temperature == 0.31F,
-            "run config should parse pyro ignition");
+    require(config.pyro_ignition_temperature == 0.31F, "run config should parse pyro ignition");
     require(config.pyro_burn_rate == 4.5F, "run config should parse pyro burn rate");
-    require(config.pyro_heat_output == 3.25F,
-            "run config should parse pyro heat output");
+    require(config.pyro_heat_output == 3.25F, "run config should parse pyro heat output");
     require(config.pyro_soot_yield == 0.22F, "run config should parse pyro soot yield");
     require(config.pyro_expansion == 1.8F, "run config should parse pyro expansion");
-    require(config.pyro_flame_cooling == 2.75F,
-            "run config should parse pyro flame cooling");
+    require(config.pyro_flame_cooling == 2.75F, "run config should parse pyro flame cooling");
     require(config.pyro_shredding == 3.5F, "run config should parse pyro shredding");
     require(config.pyro_turbulence == 0.85F, "run config should parse pyro turbulence");
 }
 
+void test_run_config_parses_pyro_obstacle_controls() {
+    std::string program = "cubey";
+    std::string height_flag = "--pyro-obstacle-height";
+    std::string height_value = "0.58";
+    std::string radius_flag = "--pyro-obstacle-radius";
+    std::string radius_value = "0.18";
+    std::array<char*, 5> argv{program.data(), height_flag.data(), height_value.data(),
+                              radius_flag.data(), radius_value.data()};
+
+    const cubey::RunConfig config =
+        cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
+    require(config.pyro_obstacle_height == 0.58F, "run config should parse pyro obstacle height");
+    require(config.pyro_obstacle_radius == 0.18F, "run config should parse pyro obstacle radius");
+}
+
 void test_run_config_parses_smoke_obstacle_flag() {
     std::array<char, 6> program{'c', 'u', 'b', 'e', 'y', '\0'};
-    std::array<char, 18> obstacles_flag{'-', '-', 's', 'm', 'o', 'k', 'e', '-',
-                                        'o', 'b', 's', 't', 'a', 'c', 'l', 'e', 's', '\0'};
+    std::array<char, 18> obstacles_flag{'-', '-', 's', 'm', 'o', 'k', 'e', '-', 'o',
+                                        'b', 's', 't', 'a', 'c', 'l', 'e', 's', '\0'};
     std::array<char*, 2> argv{program.data(), obstacles_flag.data()};
 
     const cubey::RunConfig config =

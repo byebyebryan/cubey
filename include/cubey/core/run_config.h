@@ -54,6 +54,8 @@ struct RunConfig {
     float pyro_flame_cooling = 3.0F;
     float pyro_shredding = 2.4F;
     float pyro_turbulence = 0.55F;
+    float pyro_obstacle_height = 0.48F;
+    float pyro_obstacle_radius = 0.15F;
     float explosion_interval_seconds = 3.0F;
     float explosion_duration_seconds = 0.12F;
     float explosion_boost = 18.0F;

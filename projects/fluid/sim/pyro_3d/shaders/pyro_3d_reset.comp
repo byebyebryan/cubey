@@ -7,6 +7,9 @@ layout(push_constant) uniform SimulationParams {
     vec4 decay_force;
     vec4 options;
     vec4 shadow_options;
+    vec4 fire_options;
+    vec4 shaping_options;
+    vec4 obstacle_options;
 } params;
 
 layout(rgba16f, set = 0, binding = 0) uniform writeonly image3D density_a;

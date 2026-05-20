@@ -7,6 +7,9 @@ layout(push_constant) uniform SimulationParams {
     vec4 decay_force;
     vec4 options;
     vec4 shadow_options;
+    vec4 fire_options;
+    vec4 shaping_options;
+    vec4 obstacle_options;
 } params;
 
 layout(set = 0, binding = 0) uniform sampler3D density_volume;
@@ -56,7 +59,19 @@ float raw_smoke_density(vec4 density) {
     return max(density.r, 0.0);
 }
 
+bool inside_obstacle(vec3 uv) {
+    float radius = max(params.obstacle_options.y, 0.0);
+    if (radius <= 0.0) {
+        return false;
+    }
+    vec3 center = vec3(0.5, params.obstacle_options.x, 0.5);
+    return length(uv - center) <= radius;
+}
+
 float soot_density_at(vec3 uv) {
+    if (inside_obstacle(clamp(uv, vec3(0.0), vec3(1.0)))) {
+        return 40.0;
+    }
     float density = raw_smoke_density(texture(density_volume, clamp(uv, vec3(0.0), vec3(1.0))));
     return density * smoothstep(0.002, 0.025, density) * volume_edge_fade(uv);
 }

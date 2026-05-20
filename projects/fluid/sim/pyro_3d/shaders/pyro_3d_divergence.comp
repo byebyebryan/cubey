@@ -9,13 +9,29 @@ layout(push_constant) uniform SimulationParams {
     vec4 shadow_options;
     vec4 fire_options;
     vec4 shaping_options;
+    vec4 obstacle_options;
 } params;
 
 layout(rgba16f, set = 0, binding = 0) uniform readonly image3D velocity_volume;
 layout(rgba16f, set = 0, binding = 1) uniform readonly image3D material_volume;
 layout(r32f, set = 0, binding = 2) uniform writeonly image3D divergence_volume;
 
+bool inside_obstacle_coord(ivec3 coord) {
+    float radius = max(params.obstacle_options.y, 0.0);
+    if (radius <= 0.0) {
+        return false;
+    }
+    vec3 size = vec3(imageSize(velocity_volume));
+    vec3 uv = (vec3(clamp(coord, ivec3(0), imageSize(velocity_volume) - ivec3(1))) + vec3(0.5)) /
+              size;
+    vec3 center = vec3(0.5, params.obstacle_options.x, 0.5);
+    return length(uv - center) <= radius;
+}
+
 vec3 velocity_at(ivec3 coord) {
+    if (inside_obstacle_coord(coord)) {
+        return vec3(0.0);
+    }
     ivec3 max_coord = imageSize(velocity_volume) - ivec3(1);
     return imageLoad(velocity_volume, clamp(coord, ivec3(0), max_coord)).xyz;
 }
@@ -25,16 +41,18 @@ vec4 material_at(ivec3 coord) {
     return imageLoad(material_volume, clamp(coord, ivec3(0), max_coord));
 }
 
-float fire_expansion(ivec3 coord) {
-    if (int(params.shadow_options.w + 0.5) != 2) {
+float pyro_expansion(ivec3 coord) {
+    int pyro_mode = int(params.shadow_options.w + 0.5);
+    if (pyro_mode != 0 && pyro_mode != 1) {
         return 0.0;
     }
     vec4 material = material_at(coord);
     float flame = smoothstep(0.040, 0.55, material.b);
     float temperature = smoothstep(params.fire_options.x * 1.4, params.fire_options.x * 4.0,
                                    material.g);
-    float fuel = smoothstep(0.010, 0.18, material.a);
-    return params.shaping_options.x * flame * temperature * max(fuel, 0.18) * 0.080;
+    float fuel = pyro_mode == 0 ? smoothstep(0.010, 0.18, material.a) : 1.0;
+    float mode_scale = pyro_mode == 1 ? 0.135 : 0.080;
+    return params.shaping_options.x * flame * temperature * max(fuel, 0.18) * mode_scale;
 }
 
 void main() {
@@ -43,11 +61,15 @@ void main() {
     if (any(greaterThanEqual(coord, size))) {
         return;
     }
+    if (inside_obstacle_coord(coord)) {
+        imageStore(divergence_volume, coord, vec4(0.0));
+        return;
+    }
 
     float divergence = 0.5 * (
         velocity_at(coord + ivec3(1, 0, 0)).x - velocity_at(coord - ivec3(1, 0, 0)).x +
         velocity_at(coord + ivec3(0, 1, 0)).y - velocity_at(coord - ivec3(0, 1, 0)).y +
         velocity_at(coord + ivec3(0, 0, 1)).z - velocity_at(coord - ivec3(0, 0, 1)).z);
-    divergence -= fire_expansion(coord);
+    divergence -= pyro_expansion(coord);
     imageStore(divergence_volume, coord, vec4(divergence, 0.0, 0.0, 0.0));
 }

@@ -23,6 +23,7 @@ struct SimulationPushConstants {
     std::array<float, 4> shadow_options{};
     std::array<float, 4> fire_options{};
     std::array<float, 4> shaping_options{};
+    std::array<float, 4> obstacle_options{};
 };
 
 struct RenderPushConstants {
@@ -31,10 +32,11 @@ struct RenderPushConstants {
     std::array<float, 4> ray_up_aspect{};
     std::array<float, 4> ray_forward_debug{};
     std::array<float, 4> render_options{};
+    std::array<float, 4> obstacle_options{};
 };
 
-static_assert(sizeof(SimulationPushConstants) == sizeof(float) * 24U);
-static_assert(sizeof(RenderPushConstants) == sizeof(float) * 20U);
+static_assert(sizeof(SimulationPushConstants) == sizeof(float) * 28U);
+static_assert(sizeof(RenderPushConstants) == sizeof(float) * 24U);
 
 struct DispatchGroups {
     std::uint32_t x = 0;
@@ -52,8 +54,7 @@ struct TransferWriteBarrier {
     VkAccessFlags dst_access = 0;
 };
 
-[[nodiscard]] DispatchGroups compute_dispatch_groups(VkExtent3D extent,
-                                                     std::uint32_t group_size) {
+[[nodiscard]] DispatchGroups compute_dispatch_groups(VkExtent3D extent, std::uint32_t group_size) {
     if (group_size == 0) {
         throw std::runtime_error("pyro 3D compute group size must be positive");
     }
@@ -134,7 +135,8 @@ void record_initial_volume_layouts(VkCommandBuffer command_buffer,
     transition_volume_to_general(command_buffer, resources.shadow_volume());
 }
 
-void record_source_buffer_update(VkCommandBuffer command_buffer, const Pyro3DGpuResources& resources,
+void record_source_buffer_update(VkCommandBuffer command_buffer,
+                                 const Pyro3DGpuResources& resources,
                                  std::span<const Pyro3DSourceGpu> sources) {
     if (sources.empty()) {
         return;
@@ -199,6 +201,13 @@ void record_source_buffer_update(VkCommandBuffer command_buffer, const Pyro3DGpu
                 config.fire_shredding,
                 config.fire_turbulence,
             },
+        .obstacle_options =
+            {
+                config.obstacle_center_height,
+                config.obstacle_radius,
+                0.0F,
+                0.0F,
+            },
     };
 }
 
@@ -245,6 +254,13 @@ void record_source_buffer_update(VkCommandBuffer command_buffer, const Pyro3DGpu
                 config.shadow_absorption,
                 config.ambient_light,
             },
+        .obstacle_options =
+            {
+                config.obstacle_center_height,
+                config.obstacle_radius,
+                0.0F,
+                0.0F,
+            },
     };
 }
 
@@ -262,13 +278,11 @@ void record_dispatch(const cubey::vulkan::CommandRecorder& recorder,
 } // namespace
 
 void record_pyro_3d_compute(VkCommandBuffer command_buffer, Pyro3DGpuResources& resources,
-                             const Pyro3DConfig& config, bool paused, bool& reset_requested,
-                             const ProjectFrame& frame,
-                             std::span<const Pyro3DSourceGpu> sources,
-                             Pyro3DFrameState& frame_state,
-                             bool include_render_visibility_barrier,
-                             cubey::vulkan::GpuTimestampProfiler* profiler,
-                             std::uint32_t frame_slot_index) {
+                            const Pyro3DConfig& config, bool paused, bool& reset_requested,
+                            const ProjectFrame& frame, std::span<const Pyro3DSourceGpu> sources,
+                            Pyro3DFrameState& frame_state, bool include_render_visibility_barrier,
+                            cubey::vulkan::GpuTimestampProfiler* profiler,
+                            std::uint32_t frame_slot_index) {
     const cubey::vulkan::CommandRecorder recorder(command_buffer);
     auto begin_pass = [&](const char* label) {
         if (profiler != nullptr) {
@@ -287,8 +301,8 @@ void record_pyro_3d_compute(VkCommandBuffer command_buffer, Pyro3DGpuResources& 
     }
 
     const SimulationPushConstants push_constants = simulation_push_constants(config, frame);
-    const DispatchGroups groups = compute_dispatch_groups(solver_extent(config),
-                                                          config.compute_group_size);
+    const DispatchGroups groups =
+        compute_dispatch_groups(solver_extent(config), config.compute_group_size);
     const DispatchGroups shadow_groups =
         compute_dispatch_groups(shadow_extent(config), config.compute_group_size);
     const DispatchGroups reset_groups = compute_dispatch_groups(
@@ -434,12 +448,12 @@ void record_pyro_3d_compute(VkCommandBuffer command_buffer, Pyro3DGpuResources& 
 }
 
 void record_pyro_3d_draw(VkCommandBuffer command_buffer, const Pyro3DGpuResources& resources,
-                          const Pyro3DConfig& config, Pyro3DDebugView debug_view,
-                          const Pyro3DRenderCamera& camera,
-                          cubey::render::ColorTargetView color_target,
-                          const Pyro3DFrameState& frame_state,
-                          cubey::vulkan::GpuTimestampProfiler* profiler,
-                          std::uint32_t frame_slot_index) {
+                         const Pyro3DConfig& config, Pyro3DDebugView debug_view,
+                         const Pyro3DRenderCamera& camera,
+                         cubey::render::ColorTargetView color_target,
+                         const Pyro3DFrameState& frame_state,
+                         cubey::vulkan::GpuTimestampProfiler* profiler,
+                         std::uint32_t frame_slot_index) {
     const cubey::vulkan::CommandRecorder recorder(command_buffer);
     const RenderPushConstants push_constants =
         render_push_constants(config, debug_view, camera, color_target.extent);

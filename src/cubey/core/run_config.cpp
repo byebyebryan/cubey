@@ -88,7 +88,8 @@ RunConfig parse_run_config(int argc, char** argv) {
             config.shadow_grid_depth =
                 parse_positive_u32(need_value("--shadow-grid-depth"), "--shadow-grid-depth");
         } else if (arg == "--shadow-steps") {
-            config.shadow_steps = parse_positive_u32(need_value("--shadow-steps"), "--shadow-steps");
+            config.shadow_steps =
+                parse_positive_u32(need_value("--shadow-steps"), "--shadow-steps");
         } else if (arg == "--shadow-update-interval") {
             config.shadow_update_interval = parse_positive_u32(
                 need_value("--shadow-update-interval"), "--shadow-update-interval");
@@ -137,15 +138,12 @@ RunConfig parse_run_config(int argc, char** argv) {
         } else if (arg == "--pyro-fuel") {
             config.pyro_fuel = parse_float(need_value("--pyro-fuel"), "--pyro-fuel");
         } else if (arg == "--pyro-buoyancy") {
-            config.pyro_buoyancy =
-                parse_float(need_value("--pyro-buoyancy"), "--pyro-buoyancy");
+            config.pyro_buoyancy = parse_float(need_value("--pyro-buoyancy"), "--pyro-buoyancy");
         } else if (arg == "--pyro-ignition-temperature") {
-            config.pyro_ignition_temperature =
-                parse_float(need_value("--pyro-ignition-temperature"),
-                            "--pyro-ignition-temperature");
+            config.pyro_ignition_temperature = parse_float(
+                need_value("--pyro-ignition-temperature"), "--pyro-ignition-temperature");
         } else if (arg == "--pyro-burn-rate") {
-            config.pyro_burn_rate =
-                parse_float(need_value("--pyro-burn-rate"), "--pyro-burn-rate");
+            config.pyro_burn_rate = parse_float(need_value("--pyro-burn-rate"), "--pyro-burn-rate");
         } else if (arg == "--pyro-heat-output") {
             config.pyro_heat_output =
                 parse_float(need_value("--pyro-heat-output"), "--pyro-heat-output");
@@ -153,17 +151,21 @@ RunConfig parse_run_config(int argc, char** argv) {
             config.pyro_soot_yield =
                 parse_float(need_value("--pyro-soot-yield"), "--pyro-soot-yield");
         } else if (arg == "--pyro-expansion") {
-            config.pyro_expansion =
-                parse_float(need_value("--pyro-expansion"), "--pyro-expansion");
+            config.pyro_expansion = parse_float(need_value("--pyro-expansion"), "--pyro-expansion");
         } else if (arg == "--pyro-flame-cooling") {
             config.pyro_flame_cooling =
                 parse_float(need_value("--pyro-flame-cooling"), "--pyro-flame-cooling");
         } else if (arg == "--pyro-shredding") {
-            config.pyro_shredding =
-                parse_float(need_value("--pyro-shredding"), "--pyro-shredding");
+            config.pyro_shredding = parse_float(need_value("--pyro-shredding"), "--pyro-shredding");
         } else if (arg == "--pyro-turbulence") {
             config.pyro_turbulence =
                 parse_float(need_value("--pyro-turbulence"), "--pyro-turbulence");
+        } else if (arg == "--pyro-obstacle-height") {
+            config.pyro_obstacle_height =
+                parse_float(need_value("--pyro-obstacle-height"), "--pyro-obstacle-height");
+        } else if (arg == "--pyro-obstacle-radius") {
+            config.pyro_obstacle_radius =
+                parse_float(need_value("--pyro-obstacle-radius"), "--pyro-obstacle-radius");
         } else if (arg == "--explosion-interval") {
             config.explosion_interval_seconds =
                 parse_float(need_value("--explosion-interval"), "--explosion-interval");
@@ -284,6 +286,12 @@ RunConfig parse_run_config(int argc, char** argv) {
     }
     if (config.pyro_turbulence < 0.0F) {
         throw std::runtime_error("pyro turbulence must be nonnegative");
+    }
+    if (config.pyro_obstacle_height < 0.0F || config.pyro_obstacle_height > 1.0F) {
+        throw std::runtime_error("pyro obstacle height must be in [0, 1]");
+    }
+    if (config.pyro_obstacle_radius < 0.0F || config.pyro_obstacle_radius > 0.5F) {
+        throw std::runtime_error("pyro obstacle radius must be in [0, 0.5]");
     }
     if (config.explosion_interval_seconds <= 0.0F) {
         throw std::runtime_error("explosion interval must be positive");

@@ -6,13 +6,32 @@ layout(push_constant) uniform SimulationParams {
     vec4 grid_dt_time;
     vec4 decay_force;
     vec4 options;
+    vec4 shadow_options;
+    vec4 fire_options;
+    vec4 shaping_options;
+    vec4 obstacle_options;
 } params;
 
 layout(rgba16f, set = 0, binding = 0) uniform readonly image3D velocity_in;
 layout(r32f, set = 0, binding = 1) uniform readonly image3D pressure_volume;
 layout(rgba16f, set = 0, binding = 2) uniform writeonly image3D velocity_out;
 
+bool inside_obstacle_coord(ivec3 coord) {
+    float radius = max(params.obstacle_options.y, 0.0);
+    if (radius <= 0.0) {
+        return false;
+    }
+    vec3 size = vec3(imageSize(velocity_in));
+    vec3 uv = (vec3(clamp(coord, ivec3(0), imageSize(velocity_in) - ivec3(1))) + vec3(0.5)) /
+              size;
+    vec3 center = vec3(0.5, params.obstacle_options.x, 0.5);
+    return length(uv - center) <= radius;
+}
+
 vec3 velocity_at(ivec3 coord) {
+    if (inside_obstacle_coord(coord)) {
+        return vec3(0.0);
+    }
     ivec3 max_coord = imageSize(velocity_in) - ivec3(1);
     return imageLoad(velocity_in, clamp(coord, ivec3(0), max_coord)).xyz;
 }
@@ -20,6 +39,13 @@ vec3 velocity_at(ivec3 coord) {
 float pressure_at(ivec3 coord) {
     ivec3 max_coord = imageSize(pressure_volume) - ivec3(1);
     return imageLoad(pressure_volume, clamp(coord, ivec3(0), max_coord)).x;
+}
+
+float pressure_neighbor_or_center(ivec3 coord, float center) {
+    if (inside_obstacle_coord(coord)) {
+        return center;
+    }
+    return pressure_at(coord);
 }
 
 vec3 curl_at(ivec3 coord) {
@@ -45,11 +71,19 @@ void main() {
     if (any(greaterThanEqual(coord, size))) {
         return;
     }
+    if (inside_obstacle_coord(coord)) {
+        imageStore(velocity_out, coord, vec4(0.0));
+        return;
+    }
 
+    float center_pressure = pressure_at(coord);
     vec3 pressure_gradient = 0.5 * vec3(
-        pressure_at(coord + ivec3(1, 0, 0)) - pressure_at(coord - ivec3(1, 0, 0)),
-        pressure_at(coord + ivec3(0, 1, 0)) - pressure_at(coord - ivec3(0, 1, 0)),
-        pressure_at(coord + ivec3(0, 0, 1)) - pressure_at(coord - ivec3(0, 0, 1)));
+        pressure_neighbor_or_center(coord + ivec3(1, 0, 0), center_pressure) -
+            pressure_neighbor_or_center(coord - ivec3(1, 0, 0), center_pressure),
+        pressure_neighbor_or_center(coord + ivec3(0, 1, 0), center_pressure) -
+            pressure_neighbor_or_center(coord - ivec3(0, 1, 0), center_pressure),
+        pressure_neighbor_or_center(coord + ivec3(0, 0, 1), center_pressure) -
+            pressure_neighbor_or_center(coord - ivec3(0, 0, 1), center_pressure));
 
     vec3 curl = curl_at(coord);
     vec3 curl_gradient = 0.5 * vec3(
