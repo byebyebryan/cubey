@@ -21,6 +21,8 @@ struct SimulationPushConstants {
     std::array<float, 4> decay_force{};
     std::array<float, 4> options{};
     std::array<float, 4> shadow_options{};
+    std::array<float, 4> fire_options{};
+    std::array<float, 4> shaping_options{};
 };
 
 struct RenderPushConstants {
@@ -31,7 +33,7 @@ struct RenderPushConstants {
     std::array<float, 4> render_options{};
 };
 
-static_assert(sizeof(SimulationPushConstants) == sizeof(float) * 16U);
+static_assert(sizeof(SimulationPushConstants) == sizeof(float) * 24U);
 static_assert(sizeof(RenderPushConstants) == sizeof(float) * 20U);
 
 struct DispatchGroups {
@@ -181,7 +183,21 @@ void record_source_buffer_update(VkCommandBuffer command_buffer, const Fluid3DGp
                 config.shadow_absorption,
                 static_cast<float>(config.shadow_steps),
                 config.buoyancy_strength,
-                0.0F,
+                static_cast<float>(static_cast<std::uint32_t>(config.scenario)),
+            },
+        .fire_options =
+            {
+                config.fire_ignition_temperature,
+                config.fire_burn_rate,
+                config.fire_heat_output,
+                config.fire_soot_yield,
+            },
+        .shaping_options =
+            {
+                config.fire_expansion,
+                config.fire_flame_cooling,
+                config.fire_shredding,
+                config.fire_turbulence,
             },
     };
 }
@@ -333,12 +349,29 @@ void record_fluid_3d_compute(VkCommandBuffer command_buffer, Fluid3DGpuResources
                             .dst_access = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
                         });
 
+    begin_pass("combustion");
+    const cubey::render::ComputePipelineResource& combustion_pipeline =
+        resources.combustion_pipeline();
+    record_dispatch(recorder, combustion_pipeline,
+                    resources.combustion_descriptor_set(frame_state.density_a_current,
+                                                        frame_state.velocity_a_current),
+                    groups, push_constants);
+    end_pass();
+    frame_state.density_a_current = !frame_state.density_a_current;
+    frame_state.velocity_a_current = !frame_state.velocity_a_current;
+    record_shader_write_barrier(
+        command_buffer, {
+                            .dst_stage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                            .dst_access = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
+                        });
+
     begin_pass("divergence");
     const cubey::render::ComputePipelineResource& divergence_pipeline =
         resources.divergence_pipeline();
     record_dispatch(recorder, divergence_pipeline,
-                    resources.divergence_descriptor_set(frame_state.velocity_a_current), groups,
-                    push_constants);
+                    resources.divergence_descriptor_set(frame_state.density_a_current,
+                                                        frame_state.velocity_a_current),
+                    groups, push_constants);
     end_pass();
     record_shader_write_barrier(
         command_buffer, {

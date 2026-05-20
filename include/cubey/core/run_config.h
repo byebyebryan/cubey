@@ -55,6 +55,14 @@ struct RunConfig {
     float fluid_explosion_interval_seconds = 3.0F;
     float fluid_explosion_duration_seconds = 0.12F;
     float fluid_explosion_boost = 18.0F;
+    float fluid_fire_ignition_temperature = 0.22F;
+    float fluid_fire_burn_rate = 3.4F;
+    float fluid_fire_heat_output = 2.6F;
+    float fluid_fire_soot_yield = 0.16F;
+    float fluid_fire_expansion = 1.35F;
+    float fluid_fire_flame_cooling = 3.0F;
+    float fluid_fire_shredding = 2.4F;
+    float fluid_fire_turbulence = 0.55F;
     std::uint32_t frames = 0;
     std::uint32_t fps = 60;
     std::filesystem::path input_path{};

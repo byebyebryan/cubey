@@ -87,6 +87,22 @@ int main() {
                 "fluid 3D explosion duration should default to a short impulse");
         require(config.explosion_boost == 18.0F,
                 "fluid 3D explosion boost should default to a high impulse scale");
+        require(config.fire_ignition_temperature == 0.22F,
+                "fluid 3D fire ignition should match the tuned default");
+        require(config.fire_burn_rate == 3.4F,
+                "fluid 3D fire burn rate should match the tuned default");
+        require(config.fire_heat_output == 2.6F,
+                "fluid 3D fire heat output should match the tuned default");
+        require(config.fire_soot_yield == 0.16F,
+                "fluid 3D fire soot yield should match the tuned default");
+        require(config.fire_expansion == 1.35F,
+                "fluid 3D fire expansion should match the tuned default");
+        require(config.fire_flame_cooling == 3.0F,
+                "fluid 3D fire flame cooling should match the tuned default");
+        require(config.fire_shredding == 2.4F,
+                "fluid 3D fire shredding should match the tuned default");
+        require(config.fire_turbulence == 0.55F,
+                "fluid 3D fire turbulence should match the tuned default");
         require(config.vorticity_strength == 1.0F,
                 "fluid 3D vorticity should match the tuned default");
         require(config.buoyancy_strength == 1.0F,
@@ -149,6 +165,14 @@ int main() {
         run_config.fluid_explosion_interval_seconds = 2.5F;
         run_config.fluid_explosion_duration_seconds = 0.18F;
         run_config.fluid_explosion_boost = 22.0F;
+        run_config.fluid_fire_ignition_temperature = 0.31F;
+        run_config.fluid_fire_burn_rate = 4.5F;
+        run_config.fluid_fire_heat_output = 3.25F;
+        run_config.fluid_fire_soot_yield = 0.22F;
+        run_config.fluid_fire_expansion = 1.8F;
+        run_config.fluid_fire_flame_cooling = 2.75F;
+        run_config.fluid_fire_shredding = 3.5F;
+        run_config.fluid_fire_turbulence = 0.85F;
         run_config.fluid_buoyancy = 1.75F;
         const cubey::projects::fluid_3d::Fluid3DConfig configured =
             cubey::projects::fluid_3d::fluid_3d_config_from_run_config(run_config);
@@ -183,6 +207,22 @@ int main() {
                 "fluid 3D config should honor run config explosion duration");
         require(configured.explosion_boost == 22.0F,
                 "fluid 3D config should honor run config explosion boost");
+        require(configured.fire_ignition_temperature == 0.31F,
+                "fluid 3D config should honor run config fire ignition");
+        require(configured.fire_burn_rate == 4.5F,
+                "fluid 3D config should honor run config fire burn rate");
+        require(configured.fire_heat_output == 3.25F,
+                "fluid 3D config should honor run config fire heat output");
+        require(configured.fire_soot_yield == 0.22F,
+                "fluid 3D config should honor run config fire soot yield");
+        require(configured.fire_expansion == 1.8F,
+                "fluid 3D config should honor run config fire expansion");
+        require(configured.fire_flame_cooling == 2.75F,
+                "fluid 3D config should honor run config fire flame cooling");
+        require(configured.fire_shredding == 3.5F,
+                "fluid 3D config should honor run config fire shredding");
+        require(configured.fire_turbulence == 0.85F,
+                "fluid 3D config should honor run config fire turbulence");
         require(configured.buoyancy_strength == 1.75F,
                 "fluid 3D config should honor run config buoyancy");
 
@@ -295,8 +335,10 @@ int main() {
                 "fluid 3D fire should use less soot than the smoke plume");
         require(fire_sources.front().material_amount[1] > fire_config.source_heat_amount,
                 "fluid 3D fire should boost heat");
-        require(fire_sources.front().material_amount[2] > fire_config.source_flame_amount,
-                "fluid 3D fire should boost flame amount");
+        require(fire_sources.front().material_amount[2] == 0.0F,
+                "fluid 3D fire source should let combustion create visible flame");
+        require(fire_sources.front().material_amount[3] > fire_config.source_flame_amount,
+                "fluid 3D fire should treat the source flame amount as fuel");
         const std::vector<cubey::projects::fluid_3d::Fluid3DSourceGpu> early_fire_gpu =
             cubey::projects::fluid_3d::update_fluid_3d_sources(
                 fire_sources, fire_config,
@@ -315,8 +357,8 @@ int main() {
                 });
         require(early_fire_gpu.front().position_radius != later_fire_gpu.front().position_radius,
                 "fluid 3D fire source turbulence should jitter source position/radius over time");
-        require(early_fire_gpu.front().material_amount[2] != later_fire_gpu.front().material_amount[2],
-                "fluid 3D fire source turbulence should flicker flame over time");
+        require(early_fire_gpu.front().material_amount[3] != later_fire_gpu.front().material_amount[3],
+                "fluid 3D fire source turbulence should vary fuel over time");
 
         require(cubey::projects::fluid_3d::fluid_3d_headless_frame_count(run_config) == 120,
                 "fluid 3D headless PNG should default to a settled simulation frame");
@@ -335,6 +377,10 @@ int main() {
             read_text_file(source_dir / "shaders" / "fluid_3d_advect.comp");
         const std::string advect_correct_shader =
             read_text_file(source_dir / "shaders" / "fluid_3d_advect_correct.comp");
+        const std::string combustion_shader =
+            read_text_file(source_dir / "shaders" / "fluid_3d_combust.comp");
+        const std::string divergence_shader =
+            read_text_file(source_dir / "shaders" / "fluid_3d_divergence.comp");
         const std::string render_shader =
             read_text_file(source_dir / "shaders" / "fluid_3d_raymarch.frag");
         const std::string shadow_shader =
@@ -347,18 +393,18 @@ int main() {
                          "fluid 3D should use a MacCormack/BFECC correction pass");
         require_contains(advect_correct_shader, "source_bounds",
                          "fluid 3D MacCormack correction should use a source-neighborhood limiter");
-        require_contains(advect_correct_shader, "smoke_impulse",
-                         "fluid 3D correction pass should inject semantic smoke");
-        require_contains(advect_correct_shader, "heat_impulse",
-                         "fluid 3D correction pass should inject semantic heat");
         require_contains(advect_correct_shader, "spent_flame",
                          "fluid 3D correction pass should turn spent flame into smoke");
-        require_contains(advect_correct_shader, "source_turbulence",
-                         "fluid 3D correction pass should warp fire source injection");
-        require_contains(advect_correct_shader, "flame_shredding_force",
-                         "fluid 3D correction pass should shred flame edges from heat gradients");
-        require_contains(advect_correct_shader, "buoyancy_force",
-                         "fluid 3D correction pass should apply buoyancy");
+        require_contains(combustion_shader, "apply_combustion",
+                         "fluid 3D combustion pass should consume hot fuel");
+        require_contains(combustion_shader, "material.a",
+                         "fluid 3D combustion pass should use the fuel channel");
+        require_contains(combustion_shader, "flame_shredding_force",
+                         "fluid 3D combustion pass should shred flame edges from heat gradients");
+        require_contains(combustion_shader, "buoyancy_force",
+                         "fluid 3D combustion pass should apply buoyancy");
+        require_contains(divergence_shader, "fire_expansion",
+                         "fluid 3D divergence pass should preserve fire gas release");
         require_contains(render_shader, "sampler3D",
                          "fluid 3D render shader should raymarch sampled 3D textures");
         require_contains(render_shader, "smoke_albedo",

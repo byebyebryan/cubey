@@ -159,6 +159,31 @@ RunConfig parse_run_config(int argc, char** argv) {
         } else if (arg == "--fluid-explosion-boost") {
             config.fluid_explosion_boost =
                 parse_float(need_value("--fluid-explosion-boost"), "--fluid-explosion-boost");
+        } else if (arg == "--fluid-fire-ignition-temperature") {
+            config.fluid_fire_ignition_temperature =
+                parse_float(need_value("--fluid-fire-ignition-temperature"),
+                            "--fluid-fire-ignition-temperature");
+        } else if (arg == "--fluid-fire-burn-rate") {
+            config.fluid_fire_burn_rate =
+                parse_float(need_value("--fluid-fire-burn-rate"), "--fluid-fire-burn-rate");
+        } else if (arg == "--fluid-fire-heat-output") {
+            config.fluid_fire_heat_output =
+                parse_float(need_value("--fluid-fire-heat-output"), "--fluid-fire-heat-output");
+        } else if (arg == "--fluid-fire-soot-yield") {
+            config.fluid_fire_soot_yield =
+                parse_float(need_value("--fluid-fire-soot-yield"), "--fluid-fire-soot-yield");
+        } else if (arg == "--fluid-fire-expansion") {
+            config.fluid_fire_expansion =
+                parse_float(need_value("--fluid-fire-expansion"), "--fluid-fire-expansion");
+        } else if (arg == "--fluid-fire-flame-cooling") {
+            config.fluid_fire_flame_cooling = parse_float(
+                need_value("--fluid-fire-flame-cooling"), "--fluid-fire-flame-cooling");
+        } else if (arg == "--fluid-fire-shredding") {
+            config.fluid_fire_shredding =
+                parse_float(need_value("--fluid-fire-shredding"), "--fluid-fire-shredding");
+        } else if (arg == "--fluid-fire-turbulence") {
+            config.fluid_fire_turbulence =
+                parse_float(need_value("--fluid-fire-turbulence"), "--fluid-fire-turbulence");
         } else if (arg == "--frames") {
             config.frames = parse_u32(need_value("--frames"), "--frames");
         } else if (arg == "--fps") {
@@ -267,6 +292,30 @@ RunConfig parse_run_config(int argc, char** argv) {
     }
     if (config.fluid_explosion_boost < 0.0F) {
         throw std::runtime_error("fluid explosion boost must be nonnegative");
+    }
+    if (config.fluid_fire_ignition_temperature < 0.0F) {
+        throw std::runtime_error("fluid fire ignition temperature must be nonnegative");
+    }
+    if (config.fluid_fire_burn_rate < 0.0F) {
+        throw std::runtime_error("fluid fire burn rate must be nonnegative");
+    }
+    if (config.fluid_fire_heat_output < 0.0F) {
+        throw std::runtime_error("fluid fire heat output must be nonnegative");
+    }
+    if (config.fluid_fire_soot_yield < 0.0F) {
+        throw std::runtime_error("fluid fire soot yield must be nonnegative");
+    }
+    if (config.fluid_fire_expansion < 0.0F) {
+        throw std::runtime_error("fluid fire expansion must be nonnegative");
+    }
+    if (config.fluid_fire_flame_cooling < 0.0F) {
+        throw std::runtime_error("fluid fire flame cooling must be nonnegative");
+    }
+    if (config.fluid_fire_shredding < 0.0F) {
+        throw std::runtime_error("fluid fire shredding must be nonnegative");
+    }
+    if (config.fluid_fire_turbulence < 0.0F) {
+        throw std::runtime_error("fluid fire turbulence must be nonnegative");
     }
     if (config.capture_mode == CaptureMode::Video) {
         if (!config.headless) {

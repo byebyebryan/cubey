@@ -28,7 +28,7 @@ ambient terms, and recent GPU pass timings.
 ./build/dev/projects/fluid_3d/fluid_3d --width 1280 --height 720
 ./build/dev/projects/fluid_3d/fluid_3d --fluid-scenario smoke-plume --fluid-sources 6
 ./build/dev/projects/fluid_3d/fluid_3d --fluid-scenario explosion --fluid-explosion-interval 3.0 --fluid-explosion-duration 0.12 --fluid-explosion-boost 18
-./build/dev/projects/fluid_3d/fluid_3d --fluid-scenario fire --fluid-flame 3.0 --fluid-heat 2.0
+./build/dev/projects/fluid_3d/fluid_3d --fluid-scenario fire --fluid-flame 3.0 --fluid-heat 2.0 --fluid-fire-shredding 3.0 --fluid-fire-expansion 1.6
 ./build/dev/projects/fluid_3d/fluid_3d --fluid-smoke 7.0 --fluid-heat 1.8 --fluid-source-force 8.0 --fluid-buoyancy 1.5
 ./build/dev/projects/fluid_3d/fluid_3d --shadow-grid-width 64 --shadow-grid-height 64 --shadow-grid-depth 64 --shadow-steps 64 --shadow-update-interval 1
 ./build/dev/projects/fluid_3d/fluid_3d --frames 300 --print-frame-stats --width 1280 --height 720
@@ -84,15 +84,16 @@ The command path records:
 4. MacCormack/BFECC correction, limiter, and low-energy cleanup.
 5. Source/combustion/shaping pass that injects material and velocity, consumes
    fire fuel, emits flame/temperature/soot, and applies buoyancy.
-6. Divergence pass.
+6. Divergence pass with fire gas-release expansion.
 7. Jacobi pressure ping-pong.
 8. Projection plus vorticity confinement.
 9. Shadow-volume compute pass from the current density volume.
 10. Raymarched fullscreen draw sampling the precomputed shadow volume.
 
 Windowed runs collect GPU timestamps for reset, advection prediction/correction,
-divergence, pressure, projection, shadow, and raymarch passes. The timings are
-shown in the UI and emitted once per second with `--print-frame-stats`.
+combustion, divergence, pressure, projection, shadow, and raymarch passes. The
+timings are shown in the UI and emitted once per second with
+`--print-frame-stats`.
 
 The project currently uses direct command recording rather than the render
 graph. That keeps the first 3D volume path easy to inspect; the render graph can

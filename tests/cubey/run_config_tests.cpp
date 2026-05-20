@@ -422,6 +422,62 @@ void test_run_config_parses_fluid_3d_source_controls() {
             "run config should parse fluid explosion boost");
 }
 
+void test_run_config_parses_fluid_3d_fire_controls() {
+    std::string program = "cubey";
+    std::string ignition_flag = "--fluid-fire-ignition-temperature";
+    std::string ignition_value = "0.31";
+    std::string burn_rate_flag = "--fluid-fire-burn-rate";
+    std::string burn_rate_value = "4.5";
+    std::string heat_output_flag = "--fluid-fire-heat-output";
+    std::string heat_output_value = "3.25";
+    std::string soot_yield_flag = "--fluid-fire-soot-yield";
+    std::string soot_yield_value = "0.22";
+    std::string expansion_flag = "--fluid-fire-expansion";
+    std::string expansion_value = "1.8";
+    std::string cooling_flag = "--fluid-fire-flame-cooling";
+    std::string cooling_value = "2.75";
+    std::string shredding_flag = "--fluid-fire-shredding";
+    std::string shredding_value = "3.5";
+    std::string turbulence_flag = "--fluid-fire-turbulence";
+    std::string turbulence_value = "0.85";
+    std::array<char*, 17> argv{program.data(),
+                               ignition_flag.data(),
+                               ignition_value.data(),
+                               burn_rate_flag.data(),
+                               burn_rate_value.data(),
+                               heat_output_flag.data(),
+                               heat_output_value.data(),
+                               soot_yield_flag.data(),
+                               soot_yield_value.data(),
+                               expansion_flag.data(),
+                               expansion_value.data(),
+                               cooling_flag.data(),
+                               cooling_value.data(),
+                               shredding_flag.data(),
+                               shredding_value.data(),
+                               turbulence_flag.data(),
+                               turbulence_value.data()};
+
+    const cubey::RunConfig config =
+        cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
+    require(config.fluid_fire_ignition_temperature == 0.31F,
+            "run config should parse fluid fire ignition");
+    require(config.fluid_fire_burn_rate == 4.5F,
+            "run config should parse fluid fire burn rate");
+    require(config.fluid_fire_heat_output == 3.25F,
+            "run config should parse fluid fire heat output");
+    require(config.fluid_fire_soot_yield == 0.22F,
+            "run config should parse fluid fire soot yield");
+    require(config.fluid_fire_expansion == 1.8F,
+            "run config should parse fluid fire expansion");
+    require(config.fluid_fire_flame_cooling == 2.75F,
+            "run config should parse fluid fire flame cooling");
+    require(config.fluid_fire_shredding == 3.5F,
+            "run config should parse fluid fire shredding");
+    require(config.fluid_fire_turbulence == 0.85F,
+            "run config should parse fluid fire turbulence");
+}
+
 void test_run_config_parses_obstacle_flag() {
     std::array<char, 6> program{'c', 'u', 'b', 'e', 'y', '\0'};
     std::array<char, 12> obstacles_flag{'-', '-', 'o', 'b', 's', 't',

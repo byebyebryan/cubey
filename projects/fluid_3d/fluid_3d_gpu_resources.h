@@ -45,6 +45,7 @@ class Fluid3DGpuResources {
     [[nodiscard]] const cubey::render::ComputePipelineResource& reset_pipeline() const;
     [[nodiscard]] const cubey::render::ComputePipelineResource& advect_pipeline() const;
     [[nodiscard]] const cubey::render::ComputePipelineResource& advect_correct_pipeline() const;
+    [[nodiscard]] const cubey::render::ComputePipelineResource& combustion_pipeline() const;
     [[nodiscard]] const cubey::render::ComputePipelineResource& divergence_pipeline() const;
     [[nodiscard]] const cubey::render::ComputePipelineResource& pressure_pipeline() const;
     [[nodiscard]] const cubey::render::ComputePipelineResource& projection_pipeline() const;
@@ -58,7 +59,10 @@ class Fluid3DGpuResources {
                                                         bool velocity_a_current) const;
     [[nodiscard]] VkDescriptorSet advect_correct_descriptor_set(bool density_a_current,
                                                                 bool velocity_a_current) const;
-    [[nodiscard]] VkDescriptorSet divergence_descriptor_set(bool velocity_a_current) const;
+    [[nodiscard]] VkDescriptorSet combustion_descriptor_set(bool density_a_current,
+                                                            bool velocity_a_current) const;
+    [[nodiscard]] VkDescriptorSet divergence_descriptor_set(bool density_a_current,
+                                                            bool velocity_a_current) const;
     [[nodiscard]] VkDescriptorSet pressure_a_to_b_descriptor_set() const noexcept {
         return pressure_a_to_b_descriptor_set_;
     }
@@ -87,6 +91,8 @@ class Fluid3DGpuResources {
     [[nodiscard]] const cubey::vulkan::DescriptorPool& advect_descriptor_pool() const;
     [[nodiscard]] VkDescriptorSetLayout advect_correct_descriptor_layout() const;
     [[nodiscard]] const cubey::vulkan::DescriptorPool& advect_correct_descriptor_pool() const;
+    [[nodiscard]] VkDescriptorSetLayout combustion_descriptor_layout() const;
+    [[nodiscard]] const cubey::vulkan::DescriptorPool& combustion_descriptor_pool() const;
     [[nodiscard]] VkDescriptorSetLayout divergence_descriptor_layout() const;
     [[nodiscard]] const cubey::vulkan::DescriptorPool& divergence_descriptor_pool() const;
     [[nodiscard]] VkDescriptorSetLayout pressure_descriptor_layout() const;
@@ -118,9 +124,12 @@ class Fluid3DGpuResources {
     std::optional<cubey::vulkan::DescriptorSetLayout> advect_correct_descriptor_layout_;
     std::optional<cubey::vulkan::DescriptorPool> advect_correct_descriptor_pool_;
     std::array<VkDescriptorSet, 4> advect_correct_descriptor_sets_{};
+    std::optional<cubey::vulkan::DescriptorSetLayout> combustion_descriptor_layout_;
+    std::optional<cubey::vulkan::DescriptorPool> combustion_descriptor_pool_;
+    std::array<VkDescriptorSet, 4> combustion_descriptor_sets_{};
     std::optional<cubey::vulkan::DescriptorSetLayout> divergence_descriptor_layout_;
     std::optional<cubey::vulkan::DescriptorPool> divergence_descriptor_pool_;
-    std::array<VkDescriptorSet, 2> divergence_descriptor_sets_{};
+    std::array<VkDescriptorSet, 4> divergence_descriptor_sets_{};
     std::optional<cubey::vulkan::DescriptorSetLayout> pressure_descriptor_layout_;
     std::optional<cubey::vulkan::DescriptorPool> pressure_descriptor_pool_;
     VkDescriptorSet pressure_a_to_b_descriptor_set_ = VK_NULL_HANDLE;
@@ -135,6 +144,7 @@ class Fluid3DGpuResources {
     std::optional<cubey::render::ComputePipelineResource> reset_pipeline_;
     std::optional<cubey::render::ComputePipelineResource> advect_pipeline_;
     std::optional<cubey::render::ComputePipelineResource> advect_correct_pipeline_;
+    std::optional<cubey::render::ComputePipelineResource> combustion_pipeline_;
     std::optional<cubey::render::ComputePipelineResource> divergence_pipeline_;
     std::optional<cubey::render::ComputePipelineResource> pressure_pipeline_;
     std::optional<cubey::render::ComputePipelineResource> projection_pipeline_;

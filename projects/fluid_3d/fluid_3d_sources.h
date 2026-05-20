@@ -14,7 +14,7 @@ namespace cubey::projects::fluid_3d {
 struct Fluid3DSourceState {
     std::array<float, 3> position{};
     std::array<float, 3> velocity{};
-    std::array<float, 3> material_amount{};
+    std::array<float, 4> material_amount{};
     float radius = 0.0F;
 };
 

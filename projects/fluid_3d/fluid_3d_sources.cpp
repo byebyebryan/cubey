@@ -68,7 +68,7 @@ constexpr float kFireTurbulenceRadius = 0.006F;
     return {
         .position = add(kPlumeCenter, offset),
         .velocity = velocity,
-        .material_amount = {config.source_smoke_amount, config.source_heat_amount, 0.0F},
+        .material_amount = {config.source_smoke_amount, config.source_heat_amount, 0.0F, 0.0F},
         .radius = config.source_radius,
     };
 }
@@ -98,6 +98,7 @@ constexpr float kFireTurbulenceRadius = 0.006F;
                 config.source_smoke_amount,
                 config.source_heat_amount * 1.45F,
                 config.source_flame_amount,
+                0.0F,
             },
         .radius = config.source_radius * 1.15F,
     };
@@ -114,9 +115,10 @@ constexpr float kFireTurbulenceRadius = 0.006F;
         .velocity = velocity,
         .material_amount =
             {
-                config.source_smoke_amount * 0.035F,
-                config.source_heat_amount * 2.20F,
-                config.source_flame_amount * 1.80F,
+                config.source_smoke_amount * 0.020F,
+                config.source_heat_amount * 2.40F,
+                0.0F,
+                config.source_flame_amount * 2.20F,
             },
         .radius = config.source_radius,
     };
@@ -155,7 +157,7 @@ void apply_fire_turbulence(Fluid3DSourceState& source, std::uint32_t index, floa
                                   std::cos(swell * 1.1F + 0.8F) * 0.09F,
                               }));
     source.material_amount[1] *= 0.96F + swell_wave * 0.08F;
-    source.material_amount[2] *= 0.92F + swell_wave * 0.12F + drift_wave * 0.04F;
+    source.material_amount[3] *= 0.92F + swell_wave * 0.12F + drift_wave * 0.04F;
     source.radius *= 0.96F + swell_wave * 0.08F;
 }
 
@@ -221,7 +223,7 @@ fluid_3d_sources_to_gpu(const std::vector<Fluid3DSourceState>& sources,
                     source.material_amount[0] * source_scale,
                     source.material_amount[1] * source_scale,
                     source.material_amount[2] * source_scale,
-                    0.0F,
+                    source.material_amount[3] * source_scale,
                 },
         });
     }

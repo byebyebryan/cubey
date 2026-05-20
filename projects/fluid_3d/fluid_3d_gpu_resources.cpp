@@ -44,7 +44,7 @@ upload_project_device_buffer(cubey::ProjectGpuServices& gpu, const void* data,
     return {
         .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
         .offset = 0,
-        .size = sizeof(float) * 16U,
+        .size = sizeof(float) * 24U,
     };
 }
 
@@ -156,7 +156,7 @@ void Fluid3DGpuResources::create_global_resources_if_needed(cubey::vulkan::Devic
     config_ = config;
     if (density_a_.has_value()) {
         if (!profiler_.has_value()) {
-            profiler_.emplace(device, frame_slot_count, 8);
+            profiler_.emplace(device, frame_slot_count, 9);
         }
         return;
     }
@@ -164,7 +164,7 @@ void Fluid3DGpuResources::create_global_resources_if_needed(cubey::vulkan::Devic
     create_volume_resources(device, gpu, config_);
     create_descriptor_resources(device);
     create_compute_pipelines(device);
-    profiler_.emplace(device, frame_slot_count, 8);
+    profiler_.emplace(device, frame_slot_count, 9);
 }
 
 void Fluid3DGpuResources::create_volume_resources(cubey::vulkan::Device& device,
@@ -209,6 +209,7 @@ void Fluid3DGpuResources::destroy_all_resources() {
     projection_pipeline_.reset();
     pressure_pipeline_.reset();
     divergence_pipeline_.reset();
+    combustion_pipeline_.reset();
     advect_correct_pipeline_.reset();
     advect_pipeline_.reset();
     reset_pipeline_.reset();
@@ -223,6 +224,8 @@ void Fluid3DGpuResources::destroy_all_resources() {
     divergence_descriptor_layout_.reset();
     advect_correct_descriptor_pool_.reset();
     advect_correct_descriptor_layout_.reset();
+    combustion_descriptor_pool_.reset();
+    combustion_descriptor_layout_.reset();
     advect_descriptor_pool_.reset();
     advect_descriptor_layout_.reset();
     reset_descriptor_pool_.reset();
@@ -326,15 +329,25 @@ void Fluid3DGpuResources::create_descriptor_resources(cubey::vulkan::Device& dev
         set = advect_correct_descriptor_pool().allocate(advect_correct_descriptor_layout());
     }
 
-    const std::array<cubey::vulkan::DescriptorSetBindingConfig, 2> divergence_bindings{{
+    const cubey::vulkan::DescriptorSetInfo combustion_info(advect_bindings, 4);
+    combustion_descriptor_layout_.emplace(device, combustion_info.layout_info());
+    combustion_descriptor_pool_.emplace(device, combustion_info.pool_info());
+    for (VkDescriptorSet& set : combustion_descriptor_sets_) {
+        set = combustion_descriptor_pool().allocate(combustion_descriptor_layout());
+    }
+
+    const std::array<cubey::vulkan::DescriptorSetBindingConfig, 3> divergence_bindings{{
         {.binding = 0,
          .type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
          .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT},
         {.binding = 1,
          .type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
          .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT},
+        {.binding = 2,
+         .type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+         .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT},
     }};
-    const cubey::vulkan::DescriptorSetInfo divergence_info(divergence_bindings, 2);
+    const cubey::vulkan::DescriptorSetInfo divergence_info(divergence_bindings, 4);
     divergence_descriptor_layout_.emplace(device, divergence_info.layout_info());
     divergence_descriptor_pool_.emplace(device, divergence_info.pool_info());
     for (VkDescriptorSet& set : divergence_descriptor_sets_) {
@@ -434,6 +447,14 @@ void Fluid3DGpuResources::update_descriptors(cubey::vulkan::Device& device) {
                 .storage_image(correct_set, 5, velocities[1U - velocity_index]->view())
                 .storage_buffer(correct_set, 6, sources().handle(), sources().size());
 
+            const VkDescriptorSet combustion_set =
+                combustion_descriptor_set(density_a_current, velocity_a_current);
+            writes.storage_image(combustion_set, 0, densities[density_index]->view())
+                .storage_image(combustion_set, 1, velocities[velocity_index]->view())
+                .storage_image(combustion_set, 2, densities[1U - density_index]->view())
+                .storage_image(combustion_set, 3, velocities[1U - velocity_index]->view())
+                .storage_buffer(combustion_set, 4, sources().handle(), sources().size());
+
             const VkDescriptorSet render_set =
                 render_descriptor_set(density_a_current, velocity_a_current);
             writes
@@ -454,11 +475,19 @@ void Fluid3DGpuResources::update_descriptors(cubey::vulkan::Device& device) {
                                 density_b().view(), VK_IMAGE_LAYOUT_GENERAL)
         .storage_image(shadow_descriptor_set(false), 1, shadow_volume().view());
 
-    writes.storage_image(divergence_descriptor_set(true), 0, velocity_a().view())
-        .storage_image(divergence_descriptor_set(true), 1, divergence().view())
-        .storage_image(divergence_descriptor_set(false), 0, velocity_b().view())
-        .storage_image(divergence_descriptor_set(false), 1, divergence().view())
-        .storage_image(pressure_a_to_b_descriptor_set_, 0, divergence().view())
+    for (std::uint32_t density_index = 0; density_index < 2; ++density_index) {
+        for (std::uint32_t velocity_index = 0; velocity_index < 2; ++velocity_index) {
+            const bool density_a_current = density_index == 0U;
+            const bool velocity_a_current = velocity_index == 0U;
+            const VkDescriptorSet set =
+                divergence_descriptor_set(density_a_current, velocity_a_current);
+            writes.storage_image(set, 0, velocities[velocity_index]->view())
+                .storage_image(set, 1, densities[density_index]->view())
+                .storage_image(set, 2, divergence().view());
+        }
+    }
+
+    writes.storage_image(pressure_a_to_b_descriptor_set_, 0, divergence().view())
         .storage_image(pressure_a_to_b_descriptor_set_, 1, pressure_a().view())
         .storage_image(pressure_a_to_b_descriptor_set_, 2, pressure_b().view())
         .storage_image(pressure_b_to_a_descriptor_set_, 0, divergence().view())
@@ -489,6 +518,8 @@ void Fluid3DGpuResources::create_compute_pipelines(cubey::vulkan::Device& device
     create_compute_pipeline_resource(device, "fluid_3d_advect_correct.comp.spv",
                                      advect_correct_descriptor_layout(),
                                      advect_correct_pipeline_);
+    create_compute_pipeline_resource(device, "fluid_3d_combust.comp.spv",
+                                     combustion_descriptor_layout(), combustion_pipeline_);
     create_compute_pipeline_resource(device, "fluid_3d_divergence.comp.spv",
                                      divergence_descriptor_layout(), divergence_pipeline_);
     create_compute_pipeline_resource(device, "fluid_3d_pressure.comp.spv",
@@ -532,8 +563,14 @@ VkDescriptorSet Fluid3DGpuResources::advect_correct_descriptor_set(
     return advect_correct_descriptor_sets_.at(advect_index(density_a_current, velocity_a_current));
 }
 
-VkDescriptorSet Fluid3DGpuResources::divergence_descriptor_set(bool velocity_a_current) const {
-    return divergence_descriptor_sets_.at(velocity_a_current ? 0U : 1U);
+VkDescriptorSet Fluid3DGpuResources::combustion_descriptor_set(bool density_a_current,
+                                                               bool velocity_a_current) const {
+    return combustion_descriptor_sets_.at(advect_index(density_a_current, velocity_a_current));
+}
+
+VkDescriptorSet Fluid3DGpuResources::divergence_descriptor_set(bool density_a_current,
+                                                               bool velocity_a_current) const {
+    return divergence_descriptor_sets_.at(advect_index(density_a_current, velocity_a_current));
 }
 
 VkDescriptorSet Fluid3DGpuResources::projection_descriptor_set(bool velocity_a_current,
@@ -649,6 +686,13 @@ Fluid3DGpuResources::advect_correct_pipeline() const {
     return advect_correct_pipeline_.value();
 }
 
+const cubey::render::ComputePipelineResource& Fluid3DGpuResources::combustion_pipeline() const {
+    if (!combustion_pipeline_.has_value()) {
+        throw std::runtime_error("fluid 3D combustion pipeline is not initialized");
+    }
+    return combustion_pipeline_.value();
+}
+
 const cubey::render::ComputePipelineResource& Fluid3DGpuResources::divergence_pipeline() const {
     if (!divergence_pipeline_.has_value()) {
         throw std::runtime_error("fluid 3D divergence pipeline is not initialized");
@@ -724,6 +768,20 @@ const cubey::vulkan::DescriptorPool& Fluid3DGpuResources::advect_correct_descrip
         throw std::runtime_error("fluid 3D advect correct descriptor pool is not initialized");
     }
     return advect_correct_descriptor_pool_.value();
+}
+
+VkDescriptorSetLayout Fluid3DGpuResources::combustion_descriptor_layout() const {
+    if (!combustion_descriptor_layout_.has_value()) {
+        throw std::runtime_error("fluid 3D combustion descriptor layout is not initialized");
+    }
+    return combustion_descriptor_layout_->handle();
+}
+
+const cubey::vulkan::DescriptorPool& Fluid3DGpuResources::combustion_descriptor_pool() const {
+    if (!combustion_descriptor_pool_.has_value()) {
+        throw std::runtime_error("fluid 3D combustion descriptor pool is not initialized");
+    }
+    return combustion_descriptor_pool_.value();
 }
 
 VkDescriptorSetLayout Fluid3DGpuResources::divergence_descriptor_layout() const {

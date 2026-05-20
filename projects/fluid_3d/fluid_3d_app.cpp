@@ -215,6 +215,10 @@ class Fluid3DApp {
                 const bool selected = scenario == fluid_config_.scenario;
                 if (ImGui::Selectable(fluid_3d_scenario_name(scenario), selected)) {
                     fluid_config_.scenario = scenario;
+                    if (scenario == Fluid3DScenario::Fire) {
+                        fluid_config_.source_count = 1;
+                        fluid_config_.source_radius = kDefaultFireSourceRadius;
+                    }
                     reset_sources();
                 }
                 if (selected) {
@@ -247,7 +251,8 @@ class Fluid3DApp {
                            "%.3f");
         ImGui::SliderFloat("Smoke", &fluid_config_.source_smoke_amount, 0.0F, 16.0F, "%.2f");
         ImGui::SliderFloat("Heat", &fluid_config_.source_heat_amount, 0.0F, 8.0F, "%.2f");
-        ImGui::SliderFloat("Flame", &fluid_config_.source_flame_amount, 0.0F, 12.0F, "%.2f");
+        ImGui::SliderFloat(fluid_config_.scenario == Fluid3DScenario::Fire ? "Fuel" : "Flame",
+                           &fluid_config_.source_flame_amount, 0.0F, 12.0F, "%.2f");
         ImGui::SliderFloat("Velocity force", &fluid_config_.source_velocity_strength, 0.0F, 16.0F,
                            "%.2f");
         ImGui::SliderFloat("Buoyancy", &fluid_config_.buoyancy_strength, -2.0F, 6.0F, "%.2f");
@@ -260,6 +265,21 @@ class Fluid3DApp {
             ImGui::SliderFloat("Explosion duration", &fluid_config_.explosion_duration_seconds,
                                0.016F, max_duration, "%.3f");
             ImGui::SliderFloat("Explosion boost", &fluid_config_.explosion_boost, 0.0F, 40.0F,
+                               "%.2f");
+        }
+        if (fluid_config_.scenario == Fluid3DScenario::Fire) {
+            ImGui::SliderFloat("Ignition", &fluid_config_.fire_ignition_temperature, 0.0F, 2.0F,
+                               "%.2f");
+            ImGui::SliderFloat("Burn rate", &fluid_config_.fire_burn_rate, 0.0F, 10.0F, "%.2f");
+            ImGui::SliderFloat("Heat output", &fluid_config_.fire_heat_output, 0.0F, 8.0F,
+                               "%.2f");
+            ImGui::SliderFloat("Soot yield", &fluid_config_.fire_soot_yield, 0.0F, 1.5F,
+                               "%.2f");
+            ImGui::SliderFloat("Expansion", &fluid_config_.fire_expansion, 0.0F, 4.0F, "%.2f");
+            ImGui::SliderFloat("Flame cooling", &fluid_config_.fire_flame_cooling, 0.0F, 8.0F,
+                               "%.2f");
+            ImGui::SliderFloat("Shredding", &fluid_config_.fire_shredding, 0.0F, 8.0F, "%.2f");
+            ImGui::SliderFloat("Turbulence", &fluid_config_.fire_turbulence, 0.0F, 3.0F,
                                "%.2f");
         }
         ImGui::SliderFloat("Vorticity", &fluid_config_.vorticity_strength, 0.0F, 1.5F, "%.2f");

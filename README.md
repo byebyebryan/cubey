@@ -178,7 +178,11 @@ obstacle mask.
 `--fluid-sources`, `--fluid-source-radius`, `--fluid-source-force`,
 `--fluid-smoke`, `--fluid-heat`, `--fluid-flame`,
 `--fluid-explosion-interval`, `--fluid-explosion-duration`, and
-`--fluid-explosion-boost` for lower-cost smoke tests or heavier local runs.
+`--fluid-explosion-boost`, plus `--fluid-fire-ignition-temperature`,
+`--fluid-fire-burn-rate`, `--fluid-fire-heat-output`,
+`--fluid-fire-soot-yield`, `--fluid-fire-expansion`,
+`--fluid-fire-flame-cooling`, `--fluid-fire-shredding`, and
+`--fluid-fire-turbulence` for lower-cost smoke tests or heavier local runs.
 `--print-frame-stats` also emits periodic `fluid_3d_gpu` pass timings when
 timestamp queries are available.
 
