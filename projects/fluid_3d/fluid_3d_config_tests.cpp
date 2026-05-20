@@ -89,19 +89,19 @@ int main() {
                 "fluid 3D explosion boost should default to a high impulse scale");
         require(config.fire_ignition_temperature == 0.22F,
                 "fluid 3D fire ignition should match the tuned default");
-        require(config.fire_burn_rate == 3.4F,
+        require(config.fire_burn_rate == 2.2F,
                 "fluid 3D fire burn rate should match the tuned default");
-        require(config.fire_heat_output == 2.6F,
+        require(config.fire_heat_output == 1.65F,
                 "fluid 3D fire heat output should match the tuned default");
-        require(config.fire_soot_yield == 0.16F,
+        require(config.fire_soot_yield == 0.070F,
                 "fluid 3D fire soot yield should match the tuned default");
-        require(config.fire_expansion == 1.35F,
+        require(config.fire_expansion == 0.65F,
                 "fluid 3D fire expansion should match the tuned default");
-        require(config.fire_flame_cooling == 3.0F,
+        require(config.fire_flame_cooling == 5.5F,
                 "fluid 3D fire flame cooling should match the tuned default");
-        require(config.fire_shredding == 2.4F,
+        require(config.fire_shredding == 1.6F,
                 "fluid 3D fire shredding should match the tuned default");
-        require(config.fire_turbulence == 0.55F,
+        require(config.fire_turbulence == 0.35F,
                 "fluid 3D fire turbulence should match the tuned default");
         require(config.vorticity_strength == 1.0F,
                 "fluid 3D vorticity should match the tuned default");
@@ -397,6 +397,8 @@ int main() {
                          "fluid 3D correction pass should turn spent flame into smoke");
         require_contains(combustion_shader, "apply_combustion",
                          "fluid 3D combustion pass should consume hot fuel");
+        require_contains(combustion_shader, "apply_fire_dissipation",
+                         "fluid 3D combustion pass should keep fire fields bounded");
         require_contains(combustion_shader, "material.a",
                          "fluid 3D combustion pass should use the fuel channel");
         require_contains(combustion_shader, "flame_shredding_force",

@@ -115,10 +115,10 @@ constexpr float kFireTurbulenceRadius = 0.006F;
         .velocity = velocity,
         .material_amount =
             {
-                config.source_smoke_amount * 0.020F,
-                config.source_heat_amount * 2.40F,
+                config.source_smoke_amount * 0.008F,
+                config.source_heat_amount * 1.55F,
                 0.0F,
-                config.source_flame_amount * 2.20F,
+                config.source_flame_amount * 1.15F,
             },
         .radius = config.source_radius,
     };

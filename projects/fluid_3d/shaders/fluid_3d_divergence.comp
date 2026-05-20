@@ -30,10 +30,11 @@ float fire_expansion(ivec3 coord) {
         return 0.0;
     }
     vec4 material = material_at(coord);
-    float flame = smoothstep(0.025, 0.45, material.b);
-    float temperature = smoothstep(params.fire_options.x, params.fire_options.x * 3.2, material.g);
+    float flame = smoothstep(0.040, 0.55, material.b);
+    float temperature = smoothstep(params.fire_options.x * 1.4, params.fire_options.x * 4.0,
+                                   material.g);
     float fuel = smoothstep(0.010, 0.18, material.a);
-    return params.shaping_options.x * flame * temperature * max(fuel, 0.30) * 0.16;
+    return params.shaping_options.x * flame * temperature * max(fuel, 0.18) * 0.080;
 }
 
 void main() {
