@@ -150,6 +150,15 @@ RunConfig parse_run_config(int argc, char** argv) {
             config.fluid_heat = parse_float(need_value("--fluid-heat"), "--fluid-heat");
         } else if (arg == "--fluid-flame") {
             config.fluid_flame = parse_float(need_value("--fluid-flame"), "--fluid-flame");
+        } else if (arg == "--fluid-explosion-interval") {
+            config.fluid_explosion_interval_seconds = parse_float(
+                need_value("--fluid-explosion-interval"), "--fluid-explosion-interval");
+        } else if (arg == "--fluid-explosion-duration") {
+            config.fluid_explosion_duration_seconds = parse_float(
+                need_value("--fluid-explosion-duration"), "--fluid-explosion-duration");
+        } else if (arg == "--fluid-explosion-boost") {
+            config.fluid_explosion_boost =
+                parse_float(need_value("--fluid-explosion-boost"), "--fluid-explosion-boost");
         } else if (arg == "--frames") {
             config.frames = parse_u32(need_value("--frames"), "--frames");
         } else if (arg == "--fps") {
@@ -246,6 +255,18 @@ RunConfig parse_run_config(int argc, char** argv) {
     }
     if (config.fluid_flame < 0.0F) {
         throw std::runtime_error("fluid flame must be nonnegative");
+    }
+    if (config.fluid_explosion_interval_seconds <= 0.0F) {
+        throw std::runtime_error("fluid explosion interval must be positive");
+    }
+    if (config.fluid_explosion_duration_seconds <= 0.0F) {
+        throw std::runtime_error("fluid explosion duration must be positive");
+    }
+    if (config.fluid_explosion_duration_seconds > config.fluid_explosion_interval_seconds) {
+        throw std::runtime_error("fluid explosion duration must not exceed the interval");
+    }
+    if (config.fluid_explosion_boost < 0.0F) {
+        throw std::runtime_error("fluid explosion boost must be nonnegative");
     }
     if (config.capture_mode == CaptureMode::Video) {
         if (!config.headless) {

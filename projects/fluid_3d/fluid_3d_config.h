@@ -20,6 +20,7 @@ enum class Fluid3DDebugView : std::uint32_t {
 
 enum class Fluid3DScenario : std::uint32_t {
     SmokePlume = 0,
+    Explosion = 1,
 };
 
 inline constexpr std::uint32_t kMaxFluid3DSourceCount = 16;
@@ -46,6 +47,9 @@ struct Fluid3DConfig {
     float source_smoke_amount = 6.0F;
     float source_heat_amount = 1.4F;
     float source_flame_amount = 2.0F;
+    float explosion_interval_seconds = 3.0F;
+    float explosion_duration_seconds = 0.12F;
+    float explosion_boost = 18.0F;
     float vorticity_strength = 1.0F;
     float buoyancy_strength = 1.0F;
     float absorption = 8.0F;
@@ -70,6 +74,8 @@ struct Fluid3DConfig {
     switch (scenario) {
     case Fluid3DScenario::SmokePlume:
         return "Smoke plume";
+    case Fluid3DScenario::Explosion:
+        return "Explosion";
     }
     return "Smoke plume";
 }
@@ -78,7 +84,10 @@ struct Fluid3DConfig {
     if (name == "smoke-plume" || name == "plume") {
         return Fluid3DScenario::SmokePlume;
     }
-    throw std::runtime_error("fluid 3D scenario must be smoke-plume");
+    if (name == "explosion") {
+        return Fluid3DScenario::Explosion;
+    }
+    throw std::runtime_error("fluid 3D scenario must be smoke-plume or explosion");
 }
 
 [[nodiscard]] inline std::size_t volume_cell_count(const Fluid3DConfig& config) {
@@ -166,6 +175,9 @@ struct Fluid3DConfig {
     result.source_smoke_amount = config.fluid_smoke;
     result.source_heat_amount = config.fluid_heat;
     result.source_flame_amount = config.fluid_flame;
+    result.explosion_interval_seconds = config.fluid_explosion_interval_seconds;
+    result.explosion_duration_seconds = config.fluid_explosion_duration_seconds;
+    result.explosion_boost = config.fluid_explosion_boost;
     result.buoyancy_strength = config.fluid_buoyancy;
     static_cast<void>(volume_cell_count(result));
     static_cast<void>(shadow_volume_cell_count(result));

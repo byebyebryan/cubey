@@ -391,11 +391,19 @@ void test_run_config_parses_fluid_3d_source_controls() {
     std::string heat_value = "1.75";
     std::string flame_flag = "--fluid-flame";
     std::string flame_value = "2.5";
-    std::array<char*, 15> argv{program.data(),      scenario_flag.data(), scenario_value.data(),
+    std::string interval_flag = "--fluid-explosion-interval";
+    std::string interval_value = "2.5";
+    std::string duration_flag = "--fluid-explosion-duration";
+    std::string duration_value = "0.18";
+    std::string boost_flag = "--fluid-explosion-boost";
+    std::string boost_value = "22.0";
+    std::array<char*, 21> argv{program.data(),      scenario_flag.data(), scenario_value.data(),
                                sources_flag.data(), sources_value.data(),  radius_flag.data(),
                                radius_value.data(), force_flag.data(),    force_value.data(),
                                smoke_flag.data(),   smoke_value.data(),   heat_flag.data(),
-                               heat_value.data(),   flame_flag.data(),    flame_value.data()};
+                               heat_value.data(),   flame_flag.data(),    flame_value.data(),
+                               interval_flag.data(), interval_value.data(), duration_flag.data(),
+                               duration_value.data(), boost_flag.data(),  boost_value.data()};
 
     const cubey::RunConfig config =
         cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
@@ -406,6 +414,12 @@ void test_run_config_parses_fluid_3d_source_controls() {
     require(config.fluid_smoke == 7.25F, "run config should parse fluid smoke amount");
     require(config.fluid_heat == 1.75F, "run config should parse fluid heat amount");
     require(config.fluid_flame == 2.5F, "run config should parse fluid flame amount");
+    require(config.fluid_explosion_interval_seconds == 2.5F,
+            "run config should parse fluid explosion interval");
+    require(config.fluid_explosion_duration_seconds == 0.18F,
+            "run config should parse fluid explosion duration");
+    require(config.fluid_explosion_boost == 22.0F,
+            "run config should parse fluid explosion boost");
 }
 
 void test_run_config_parses_obstacle_flag() {

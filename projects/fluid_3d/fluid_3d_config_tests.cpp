@@ -79,6 +79,14 @@ int main() {
                 "fluid 3D source smoke should match the tuned default");
         require(config.source_heat_amount == 1.4F,
                 "fluid 3D source heat should match the plume default");
+        require(config.source_flame_amount == 2.0F,
+                "fluid 3D source flame should match the tuned default");
+        require(config.explosion_interval_seconds == 3.0F,
+                "fluid 3D explosion interval should match the tuned default");
+        require(config.explosion_duration_seconds == 0.12F,
+                "fluid 3D explosion duration should default to a short impulse");
+        require(config.explosion_boost == 18.0F,
+                "fluid 3D explosion boost should default to a high impulse scale");
         require(config.vorticity_strength == 1.0F,
                 "fluid 3D vorticity should match the tuned default");
         require(config.buoyancy_strength == 1.0F,
@@ -128,6 +136,9 @@ int main() {
         run_config.fluid_smoke = 6.5F;
         run_config.fluid_heat = 1.75F;
         run_config.fluid_flame = 2.5F;
+        run_config.fluid_explosion_interval_seconds = 2.5F;
+        run_config.fluid_explosion_duration_seconds = 0.18F;
+        run_config.fluid_explosion_boost = 22.0F;
         run_config.fluid_buoyancy = 1.75F;
         const cubey::projects::fluid_3d::Fluid3DConfig configured =
             cubey::projects::fluid_3d::fluid_3d_config_from_run_config(run_config);
@@ -156,6 +167,12 @@ int main() {
                 "fluid 3D config should honor run config heat amount");
         require(configured.source_flame_amount == 2.5F,
                 "fluid 3D config should honor run config flame amount");
+        require(configured.explosion_interval_seconds == 2.5F,
+                "fluid 3D config should honor run config explosion interval");
+        require(configured.explosion_duration_seconds == 0.18F,
+                "fluid 3D config should honor run config explosion duration");
+        require(configured.explosion_boost == 22.0F,
+                "fluid 3D config should honor run config explosion boost");
         require(configured.buoyancy_strength == 1.75F,
                 "fluid 3D config should honor run config buoyancy");
 
@@ -213,6 +230,46 @@ int main() {
                     sizeof(cubey::projects::fluid_3d::Fluid3DSourceGpu) *
                         cubey::projects::fluid_3d::kMaxFluid3DSourceCount,
                 "fluid 3D source capacity byte size should cover the shader policy limit");
+
+        cubey::RunConfig explosion_run_config = run_config;
+        explosion_run_config.fluid_scenario = "explosion";
+        const cubey::projects::fluid_3d::Fluid3DConfig explosion_config =
+            cubey::projects::fluid_3d::fluid_3d_config_from_run_config(explosion_run_config);
+        require(explosion_config.scenario == cubey::projects::fluid_3d::Fluid3DScenario::Explosion,
+                "fluid 3D config should parse the explosion scenario");
+        std::vector<cubey::projects::fluid_3d::Fluid3DSourceState> explosion_sources =
+            cubey::projects::fluid_3d::create_fluid_3d_sources(explosion_config);
+        require(explosion_sources.front().position[1] > 0.20F,
+                "fluid 3D explosion should originate above the lower plume source");
+        require(explosion_sources.front().material_amount[2] ==
+                    explosion_config.source_flame_amount,
+                "fluid 3D explosion should carry flame amount");
+        const std::vector<cubey::projects::fluid_3d::Fluid3DSourceGpu> explosion_active_gpu =
+            cubey::projects::fluid_3d::update_fluid_3d_sources(
+                explosion_sources, explosion_config,
+                {
+                    .delta_seconds = explosion_config.fixed_delta_seconds,
+                    .elapsed_seconds = 2.5,
+                    .frame_index = 1,
+                });
+        require(explosion_active_gpu.front().material_amount[0] >
+                    explosion_config.source_smoke_amount,
+                "fluid 3D explosion scenario should boost smoke during the impulse window");
+        require(explosion_active_gpu.front().velocity_strength[3] >
+                    explosion_config.source_velocity_strength,
+                "fluid 3D explosion scenario should boost force during the impulse window");
+        const std::vector<cubey::projects::fluid_3d::Fluid3DSourceGpu> explosion_pause_gpu =
+            cubey::projects::fluid_3d::update_fluid_3d_sources(
+                explosion_sources, explosion_config,
+                {
+                    .delta_seconds = explosion_config.fixed_delta_seconds,
+                    .elapsed_seconds = 2.75,
+                    .frame_index = 2,
+                });
+        require(explosion_pause_gpu.front().material_amount[0] == 0.0F,
+                "fluid 3D explosion scenario should pause smoke between impulses");
+        require(explosion_pause_gpu.front().velocity_strength[3] == 0.0F,
+                "fluid 3D explosion scenario should pause force between impulses");
 
         require(cubey::projects::fluid_3d::fluid_3d_headless_frame_count(run_config) == 120,
                 "fluid 3D headless PNG should default to a settled simulation frame");

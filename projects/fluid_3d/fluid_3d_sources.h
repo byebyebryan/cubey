@@ -30,7 +30,7 @@ static_assert(sizeof(Fluid3DSourceGpu) == sizeof(float) * 12U);
     const Fluid3DConfig& config);
 [[nodiscard]] std::vector<Fluid3DSourceGpu>
 fluid_3d_sources_to_gpu(const std::vector<Fluid3DSourceState>& sources,
-                        const Fluid3DConfig& config);
+                        const Fluid3DConfig& config, float emission_scale = 1.0F);
 [[nodiscard]] std::vector<Fluid3DSourceGpu>
 update_fluid_3d_sources(std::vector<Fluid3DSourceState>& sources, const Fluid3DConfig& config,
                         const FrameTiming& timing);

@@ -174,9 +174,11 @@ obstacle mask.
 `64x64x64` shadow volume and a `smoke-plume` source scenario. Use
 `--grid-width`, `--grid-height`, `--grid-depth`, `--shadow-grid-width`,
 `--shadow-grid-height`, `--shadow-grid-depth`, `--shadow-steps`,
-`--shadow-update-interval`, `--fluid-scenario smoke-plume`, `--fluid-sources`,
-`--fluid-source-radius`, `--fluid-source-force`, `--fluid-smoke`, and
-`--fluid-heat` for lower-cost smoke tests or heavier local runs.
+`--shadow-update-interval`, `--fluid-scenario smoke-plume|explosion`,
+`--fluid-sources`, `--fluid-source-radius`, `--fluid-source-force`,
+`--fluid-smoke`, `--fluid-heat`, `--fluid-flame`,
+`--fluid-explosion-interval`, `--fluid-explosion-duration`, and
+`--fluid-explosion-boost` for lower-cost smoke tests or heavier local runs.
 `--print-frame-stats` also emits periodic `fluid_3d_gpu` pass timings when
 timestamp queries are available.
 

@@ -22,6 +22,7 @@
 #include <imgui.h>
 #include <vulkan/vulkan.h>
 
+#include <algorithm>
 #include <array>
 #include <cstdio>
 #include <cstdint>
@@ -57,8 +58,9 @@ constexpr std::array<Fluid3DDebugView, 3> kDebugViews{
     Fluid3DDebugView::Velocity,
 };
 
-constexpr std::array<Fluid3DScenario, 1> kScenarios{
+constexpr std::array<Fluid3DScenario, 2> kScenarios{
     Fluid3DScenario::SmokePlume,
+    Fluid3DScenario::Explosion,
 };
 
 class Fluid3DApp {
@@ -244,9 +246,21 @@ class Fluid3DApp {
                            "%.3f");
         ImGui::SliderFloat("Smoke", &fluid_config_.source_smoke_amount, 0.0F, 16.0F, "%.2f");
         ImGui::SliderFloat("Heat", &fluid_config_.source_heat_amount, 0.0F, 8.0F, "%.2f");
+        ImGui::SliderFloat("Flame", &fluid_config_.source_flame_amount, 0.0F, 12.0F, "%.2f");
         ImGui::SliderFloat("Velocity force", &fluid_config_.source_velocity_strength, 0.0F, 16.0F,
                            "%.2f");
         ImGui::SliderFloat("Buoyancy", &fluid_config_.buoyancy_strength, -2.0F, 6.0F, "%.2f");
+        if (fluid_config_.scenario == Fluid3DScenario::Explosion) {
+            ImGui::SliderFloat("Explosion interval", &fluid_config_.explosion_interval_seconds,
+                               0.25F, 8.0F, "%.2f");
+            const float max_duration = std::min(fluid_config_.explosion_interval_seconds, 1.0F);
+            fluid_config_.explosion_duration_seconds =
+                std::min(fluid_config_.explosion_duration_seconds, max_duration);
+            ImGui::SliderFloat("Explosion duration", &fluid_config_.explosion_duration_seconds,
+                               0.016F, max_duration, "%.3f");
+            ImGui::SliderFloat("Explosion boost", &fluid_config_.explosion_boost, 0.0F, 40.0F,
+                               "%.2f");
+        }
         ImGui::SliderFloat("Vorticity", &fluid_config_.vorticity_strength, 0.0F, 1.5F, "%.2f");
         ImGui::SliderFloat("Absorption", &fluid_config_.absorption, 0.5F, 12.0F, "%.2f");
         ImGui::SliderFloat("Light", &fluid_config_.emission, 0.1F, 4.0F, "%.2f");
