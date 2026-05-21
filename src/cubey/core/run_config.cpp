@@ -1,6 +1,7 @@
 #include <cubey/core/run_config.h>
 
 #include <charconv>
+#include <cmath>
 #include <limits>
 #include <stdexcept>
 #include <string>
@@ -34,7 +35,7 @@ float parse_float(std::string_view value, const char* name) {
     const char* begin = value.data();
     const char* end = value.data() + value.size();
     auto result = std::from_chars(begin, end, parsed);
-    if (result.ec != std::errc{} || result.ptr != end) {
+    if (result.ec != std::errc{} || result.ptr != end || !std::isfinite(parsed)) {
         throw std::runtime_error("invalid float for " + std::string(name));
     }
     return parsed;

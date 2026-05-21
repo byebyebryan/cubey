@@ -5,22 +5,10 @@ cubey_add_app_target(
     WINDOWED_SMOKE_TEST fire_3d_reaches_glfw
     WINDOWED_SMOKE_PATTERN "fire_3d: .*rendering 3D fire project"
     SOURCES
-        ../sim/pyro_3d/pyro_3d_app.cpp
-        ../sim/pyro_3d/pyro_3d_commands.cpp
-        ../sim/pyro_3d/pyro_3d_gpu_resources.cpp
-        ../sim/pyro_3d/pyro_3d_sources.cpp
+        ${CUBEY_PYRO_3D_SOURCES}
         main.cpp
     SHADERS
-        ../sim/pyro_3d/shaders/pyro_3d.vert
-        ../sim/pyro_3d/shaders/pyro_3d_raymarch.frag
-        ../sim/pyro_3d/shaders/pyro_3d_reset.comp
-        ../sim/pyro_3d/shaders/pyro_3d_advect.comp
-        ../sim/pyro_3d/shaders/pyro_3d_advect_correct.comp
-        ../sim/pyro_3d/shaders/pyro_3d_combust.comp
-        ../sim/pyro_3d/shaders/pyro_3d_divergence.comp
-        ../sim/pyro_3d/shaders/pyro_3d_pressure.comp
-        ../sim/pyro_3d/shaders/pyro_3d_projection.comp
-        ../sim/pyro_3d/shaders/pyro_3d_shadow.comp
+        ${CUBEY_PYRO_3D_SHADERS}
 )
 
 if (BUILD_TESTING)
@@ -37,4 +25,17 @@ if (BUILD_TESTING)
         --grid-height 32
         --grid-depth 32
     )
+    if (CUBEY_HAS_LIBAV)
+        set(CUBEY_FIRE_3D_HEADLESS_VIDEO_SMOKE_OUTPUT
+            "${CMAKE_CURRENT_BINARY_DIR}/fire-3d-headless-smoke.mp4"
+        )
+        cubey_add_video_smoke_test(
+            fire_3d_headless_writes_video
+            cubey_project_fire_3d
+            "${CUBEY_FIRE_3D_HEADLESS_VIDEO_SMOKE_OUTPUT}"
+            --grid-width 24
+            --grid-height 24
+            --grid-depth 24
+        )
+    endif()
 endif()

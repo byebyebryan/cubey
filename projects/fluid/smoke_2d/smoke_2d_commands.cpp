@@ -28,7 +28,8 @@ struct SimulationPushConstants {
 };
 
 static_assert(sizeof(RenderPushConstants) == sizeof(float) * 4U);
-static_assert(sizeof(SimulationPushConstants) == sizeof(float) * 12U);
+static_assert(sizeof(SimulationPushConstants) ==
+              sizeof(float) * kSmoke2DSimulationPushConstantFloatCount);
 
 struct DispatchGroups {
     std::uint32_t x = 0;
@@ -47,8 +48,8 @@ struct TransferWriteBarrier {
 
 [[nodiscard]] DispatchGroups compute_dispatch_groups(const Smoke2DConfig& config) {
     return {
-        .x = (config.grid_width + config.compute_group_size - 1U) / config.compute_group_size,
-        .y = (config.grid_height + config.compute_group_size - 1U) / config.compute_group_size,
+        .x = (config.grid_width + kSmoke2DComputeGroupSize - 1U) / kSmoke2DComputeGroupSize,
+        .y = (config.grid_height + kSmoke2DComputeGroupSize - 1U) / kSmoke2DComputeGroupSize,
     };
 }
 
@@ -81,11 +82,11 @@ void record_injector_buffer_update(VkCommandBuffer command_buffer,
     }
     vkCmdUpdateBuffer(command_buffer, resources.injectors().handle(), 0, byte_size,
                       injectors.data());
-    record_transfer_write_barrier(
-        command_buffer, {
-                            .dst_stage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-                            .dst_access = VK_ACCESS_SHADER_READ_BIT,
-                        });
+    record_transfer_write_barrier(command_buffer,
+                                  {
+                                      .dst_stage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                                      .dst_access = VK_ACCESS_SHADER_READ_BIT,
+                                  });
 }
 
 [[nodiscard]] float debug_view_push_value(Smoke2DDebugView view) {
@@ -125,8 +126,8 @@ void record_injector_buffer_update(VkCommandBuffer command_buffer,
 void record_field_reset(VkCommandBuffer command_buffer, const Smoke2DGpuResources& resources) {
     vkCmdFillBuffer(command_buffer, resources.field_a().handle(), 0, resources.field_a().size(), 0);
     vkCmdFillBuffer(command_buffer, resources.field_b().handle(), 0, resources.field_b().size(), 0);
-    vkCmdFillBuffer(command_buffer, resources.field_temp().handle(), 0, resources.field_temp().size(),
-                    0);
+    vkCmdFillBuffer(command_buffer, resources.field_temp().handle(), 0,
+                    resources.field_temp().size(), 0);
     vkCmdFillBuffer(command_buffer, resources.divergence().handle(), 0,
                     resources.divergence().size(), 0);
     vkCmdFillBuffer(command_buffer, resources.curl().handle(), 0, resources.curl().size(), 0);
@@ -145,9 +146,8 @@ void record_field_reset(VkCommandBuffer command_buffer, const Smoke2DGpuResource
 } // namespace
 
 void record_smoke_compute(VkCommandBuffer command_buffer, Smoke2DGpuResources& resources,
-                          const Smoke2DConfig& config, bool paused,
-                          bool& reset_requested, const ProjectFrame& frame,
-                          std::span<const Smoke2DInjectorGpu> injectors,
+                          const Smoke2DConfig& config, bool paused, bool& reset_requested,
+                          const ProjectFrame& frame, std::span<const Smoke2DInjectorGpu> injectors,
                           bool include_render_visibility_barrier) {
     const cubey::vulkan::CommandRecorder recorder(command_buffer);
 
@@ -209,12 +209,12 @@ void record_smoke_compute(VkCommandBuffer command_buffer, Smoke2DGpuResources& r
                             .dst_access = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
                         });
 
-    const cubey::render::ComputePipelineResource& curl_pipeline = resources.curl_pipeline_resource();
+    const cubey::render::ComputePipelineResource& curl_pipeline =
+        resources.curl_pipeline_resource();
     recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_COMPUTE, curl_pipeline.pipeline());
     recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_COMPUTE, curl_pipeline.layout(), 0,
                                  resources.curl_descriptor_set());
-    recorder.push_constants(curl_pipeline.layout(), VK_SHADER_STAGE_COMPUTE_BIT, 0,
-                            push_constants);
+    recorder.push_constants(curl_pipeline.layout(), VK_SHADER_STAGE_COMPUTE_BIT, 0, push_constants);
     recorder.dispatch(groups.x, groups.y, 1);
 
     record_shader_write_barrier(
@@ -329,8 +329,8 @@ void record_fullscreen_draw(VkCommandBuffer command_buffer, const Smoke2DGpuReso
 
 [[nodiscard]] cubey::render::CompiledRenderGraph
 build_smoke_frame_graph(cubey::render::ColorTargetView color_target, Smoke2DGpuResources& resources,
-                        const Smoke2DConfig& config, Smoke2DDebugView debug_view,
-                        bool paused, bool& reset_requested, const ProjectFrame& frame,
+                        const Smoke2DConfig& config, Smoke2DDebugView debug_view, bool paused,
+                        bool& reset_requested, const ProjectFrame& frame,
                         std::span<const Smoke2DInjectorGpu> injectors) {
     Smoke2DGpuResources* resource_ptr = &resources;
     const Smoke2DConfig* config_ptr = &config;
@@ -343,32 +343,29 @@ build_smoke_frame_graph(cubey::render::ColorTargetView color_target, Smoke2DGpuR
     const cubey::render::RenderGraphBufferHandle field_b =
         graph.import_buffer({.label = "smoke field B", .byte_size = resources.field_b().size()},
                             resources.field_b().handle());
-    const cubey::render::RenderGraphBufferHandle field_temp =
-        graph.import_buffer(
-            {.label = "smoke field temp", .byte_size = resources.field_temp().size()},
-            resources.field_temp().handle());
+    const cubey::render::RenderGraphBufferHandle field_temp = graph.import_buffer(
+        {.label = "smoke field temp", .byte_size = resources.field_temp().size()},
+        resources.field_temp().handle());
     const cubey::render::RenderGraphBufferHandle divergence = graph.import_buffer(
         {.label = "fluid divergence", .byte_size = resources.divergence().size()},
         resources.divergence().handle());
-    const cubey::render::RenderGraphBufferHandle curl =
-        graph.import_buffer({.label = "fluid curl", .byte_size = resources.curl().size()},
-                            resources.curl().handle());
+    const cubey::render::RenderGraphBufferHandle curl = graph.import_buffer(
+        {.label = "fluid curl", .byte_size = resources.curl().size()}, resources.curl().handle());
     const cubey::render::RenderGraphBufferHandle obstacle =
         graph.import_buffer({.label = "fluid obstacle", .byte_size = resources.obstacle().size()},
                             resources.obstacle().handle());
-    const cubey::render::RenderGraphBufferHandle injector_buffer = graph.import_buffer(
-        {.label = "smoke injectors", .byte_size = resources.injectors().size()},
-        resources.injectors().handle());
+    const cubey::render::RenderGraphBufferHandle injector_buffer =
+        graph.import_buffer({.label = "smoke injectors", .byte_size = resources.injectors().size()},
+                            resources.injectors().handle());
     const cubey::render::RenderGraphBufferHandle pressure_a = graph.import_buffer(
         {.label = "fluid pressure A", .byte_size = resources.pressure_a().size()},
         resources.pressure_a().handle());
     const cubey::render::RenderGraphBufferHandle pressure_b = graph.import_buffer(
         {.label = "fluid pressure B", .byte_size = resources.pressure_b().size()},
         resources.pressure_b().handle());
-    const cubey::render::RenderGraphTextureHandle backbuffer =
-        graph.import_color_target("backbuffer", color_target,
-                                  cubey::render::render_graph_undefined_texture_state(),
-                                  cubey::render::render_graph_present_texture_state());
+    const cubey::render::RenderGraphTextureHandle backbuffer = graph.import_color_target(
+        "backbuffer", color_target, cubey::render::render_graph_undefined_texture_state(),
+        cubey::render::render_graph_present_texture_state());
 
     graph.add_pass("fluid simulation", cubey::render::RenderGraphQueueDomain::Compute)
         .read_write_storage_buffer(field_a)

@@ -182,9 +182,10 @@ to a `128x128x128` solver volume with a decoupled `64x64x64` shadow volume. Use
 `--pyro-source-force`, `--pyro-soot`, `--pyro-temperature`, `--pyro-fuel`,
 `--pyro-buoyancy`, `--pyro-ignition-temperature`, `--pyro-burn-rate`,
 `--pyro-heat-output`, `--pyro-soot-yield`, `--pyro-expansion`,
-`--pyro-flame-cooling`, `--pyro-shredding`, and `--pyro-turbulence` for
-lower-cost smoke tests or heavier local runs. `explosion_3d` also accepts
-`--explosion-interval`, `--explosion-duration`, and `--explosion-boost`.
+`--pyro-flame-cooling`, `--pyro-shredding`, `--pyro-turbulence`,
+`--pyro-obstacle-height`, and `--pyro-obstacle-radius` for lower-cost smoke
+tests or heavier local runs. `explosion_3d` also accepts `--explosion-interval`,
+`--explosion-duration`, and `--explosion-boost`.
 `--print-frame-stats` also emits periodic `pyro_3d_gpu` pass timings when
 timestamp queries are available.
 
@@ -205,6 +206,8 @@ Useful headless video captures when FFmpeg/libav support is enabled:
 ./build/dev/examples/headless_cube/headless_cube --headless --capture video --frames 180 --fps 60 --width 1280 --height 720 --output /tmp/cubey-headless-cube.mp4
 ./build/dev/projects/gltf_viewer/gltf_viewer --headless --capture video --frames 180 --fps 60 --input path/to/model.glb --environment path/to/env.hdr --output /tmp/cubey-gltf-viewer.mp4
 ./build/dev/projects/fluid/smoke_2d/smoke_2d --headless --capture video --frames 180 --fps 60 --width 1280 --height 720 --output /tmp/cubey-smoke-2d.mp4
+./build/dev/projects/fluid/fire_3d/fire_3d --headless --capture video --frames 180 --fps 60 --width 1280 --height 720 --output /tmp/cubey-fire-3d.mp4
+./build/dev/projects/fluid/explosion_3d/explosion_3d --headless --capture video --frames 180 --fps 60 --width 1280 --height 720 --output /tmp/cubey-explosion-3d.mp4
 ```
 
 Use `--require-validation` on local smoke commands when Vulkan validation

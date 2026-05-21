@@ -18,6 +18,10 @@
 namespace cubey::projects::fluid::smoke_2d {
 namespace {
 
+static_assert(kSmoke2DComputeGroupSize == 8U);
+inline constexpr VkDeviceSize kSmoke2DSimulationPushConstantBytes =
+    sizeof(float) * kSmoke2DSimulationPushConstantFloatCount;
+
 std::filesystem::path shader_path(const char* filename) {
     return std::filesystem::path(CUBEY_SMOKE_2D_SHADER_DIR) / filename;
 }
@@ -41,7 +45,7 @@ upload_project_device_buffer(cubey::ProjectGpuServices& gpu, const void* data,
     return {
         .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
         .offset = 0,
-        .size = sizeof(float) * 20U,
+        .size = kSmoke2DSimulationPushConstantBytes,
     };
 }
 
@@ -83,22 +87,21 @@ void create_compute_pipeline_resource(
         static_cast<float>(config.grid_width) / static_cast<float>(config.grid_height);
     for (std::uint32_t y = 0; y < config.grid_height; ++y) {
         for (std::uint32_t x = 0; x < config.grid_width; ++x) {
-            const float uv_x = (static_cast<float>(x) + 0.5F) /
-                               static_cast<float>(config.grid_width);
-            const float uv_y = (static_cast<float>(y) + 0.5F) /
-                               static_cast<float>(config.grid_height);
+            const float uv_x =
+                (static_cast<float>(x) + 0.5F) / static_cast<float>(config.grid_width);
+            const float uv_y =
+                (static_cast<float>(y) + 0.5F) / static_cast<float>(config.grid_height);
             const float left_circle_x = (uv_x - 0.34F) * aspect;
             const float left_circle_y = uv_y - 0.48F;
             const float right_circle_x = (uv_x - 0.66F) * aspect;
             const float right_circle_y = uv_y - 0.57F;
-            const bool border = x < 2U || y < 2U || x + 3U > config.grid_width ||
-                                y + 3U > config.grid_height;
+            const bool border =
+                x < 2U || y < 2U || x + 3U > config.grid_width || y + 3U > config.grid_height;
             const bool left_circle =
                 (left_circle_x * left_circle_x) + (left_circle_y * left_circle_y) < 0.0081F;
             const bool right_circle =
                 (right_circle_x * right_circle_x) + (right_circle_y * right_circle_y) < 0.0064F;
-            const bool vertical_bar =
-                uv_x > 0.49F && uv_x < 0.53F && uv_y > 0.22F && uv_y < 0.42F;
+            const bool vertical_bar = uv_x > 0.49F && uv_x < 0.53F && uv_y > 0.22F && uv_y < 0.42F;
             if (border || left_circle || right_circle || vertical_bar) {
                 mask[(static_cast<std::size_t>(y) * config.grid_width) + x] = 1.0F;
             }
@@ -112,12 +115,11 @@ void create_compute_pipeline_resource(
 void Smoke2DGpuResources::create_global_resources_if_needed(cubey::vulkan::Device& device,
                                                             cubey::ProjectGpuServices& gpu,
                                                             const Smoke2DConfig& config) {
-    config_ = config;
     if (field_a_.has_value()) {
         return;
     }
 
-    create_field_buffers(gpu, config_);
+    create_field_buffers(gpu, config);
     create_descriptor_resources(device);
     create_compute_pipelines(device);
 }
@@ -588,8 +590,7 @@ VkDescriptorSetLayout Smoke2DGpuResources::advect_correct_descriptor_layout() co
     return advect_correct_descriptor_layout_->handle();
 }
 
-const cubey::vulkan::DescriptorPool&
-Smoke2DGpuResources::advect_correct_descriptor_pool() const {
+const cubey::vulkan::DescriptorPool& Smoke2DGpuResources::advect_correct_descriptor_pool() const {
     if (!advect_correct_descriptor_pool_.has_value()) {
         throw std::runtime_error("advect correct descriptor pool is not initialized");
     }
@@ -669,8 +670,7 @@ Smoke2DGpuResources::advect_correct_pipeline_resource() const {
     return advect_correct_pipeline_resource_.value();
 }
 
-const cubey::render::ComputePipelineResource&
-Smoke2DGpuResources::curl_pipeline_resource() const {
+const cubey::render::ComputePipelineResource& Smoke2DGpuResources::curl_pipeline_resource() const {
     if (!curl_pipeline_resource_.has_value()) {
         throw std::runtime_error("curl pipeline resource is not initialized");
     }

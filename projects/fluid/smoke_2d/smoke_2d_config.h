@@ -29,12 +29,13 @@ enum class Smoke2DDebugView : std::uint32_t {
 };
 
 inline constexpr std::uint32_t kMaxProceduralInjectorCount = 16;
+inline constexpr std::uint32_t kSmoke2DComputeGroupSize = 8;
+inline constexpr std::uint32_t kSmoke2DSimulationPushConstantFloatCount = 12;
 
 struct Smoke2DConfig {
     std::uint32_t grid_width = 1024;
     std::uint32_t grid_height = 1024;
     std::uint32_t procedural_injector_count = 3;
-    std::uint32_t compute_group_size = 8;
     std::uint32_t pressure_iterations = 32;
     float fixed_delta_seconds = 1.0F / 60.0F;
     float dye_decay_per_second = 0.990F;
@@ -114,14 +115,28 @@ struct Smoke2DConfig {
         }
         smoke_config.procedural_injector_count = config.smoke_injectors;
     }
-    smoke_config.injector_injection_strength = config.smoke_injector_force;
-    smoke_config.injector_propulsion_strength = config.smoke_injector_propulsion;
-    smoke_config.injector_orbit_radius = config.smoke_injector_orbit_radius;
-    smoke_config.injector_orbit_radius_spread = config.smoke_injector_orbit_radius_spread;
-    smoke_config.injector_orbit_angular_speed = config.smoke_injector_orbit_angular_speed;
-    smoke_config.injector_orbit_angular_speed_spread =
-        config.smoke_injector_orbit_angular_speed_spread;
-    smoke_config.injector_orbit_phase_spread = config.smoke_injector_orbit_phase_spread;
+    if (run_config_float_is_set(config.smoke_injector_force)) {
+        smoke_config.injector_injection_strength = config.smoke_injector_force;
+    }
+    if (run_config_float_is_set(config.smoke_injector_propulsion)) {
+        smoke_config.injector_propulsion_strength = config.smoke_injector_propulsion;
+    }
+    if (run_config_float_is_set(config.smoke_injector_orbit_radius)) {
+        smoke_config.injector_orbit_radius = config.smoke_injector_orbit_radius;
+    }
+    if (run_config_float_is_set(config.smoke_injector_orbit_radius_spread)) {
+        smoke_config.injector_orbit_radius_spread = config.smoke_injector_orbit_radius_spread;
+    }
+    if (run_config_float_is_set(config.smoke_injector_orbit_angular_speed)) {
+        smoke_config.injector_orbit_angular_speed = config.smoke_injector_orbit_angular_speed;
+    }
+    if (run_config_float_is_set(config.smoke_injector_orbit_angular_speed_spread)) {
+        smoke_config.injector_orbit_angular_speed_spread =
+            config.smoke_injector_orbit_angular_speed_spread;
+    }
+    if (run_config_float_is_set(config.smoke_injector_orbit_phase_spread)) {
+        smoke_config.injector_orbit_phase_spread = config.smoke_injector_orbit_phase_spread;
+    }
     smoke_config.obstacles_enabled = config.smoke_obstacles;
     static_cast<void>(field_cell_count(smoke_config));
     return smoke_config;

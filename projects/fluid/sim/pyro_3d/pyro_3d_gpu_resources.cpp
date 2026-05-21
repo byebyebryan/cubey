@@ -44,7 +44,7 @@ upload_project_device_buffer(cubey::ProjectGpuServices& gpu, const void* data,
     return {
         .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
         .offset = 0,
-        .size = sizeof(float) * 28U,
+        .size = sizeof(float) * kPyro3DSimulationPushConstantFloatCount,
     };
 }
 
@@ -52,7 +52,7 @@ upload_project_device_buffer(cubey::ProjectGpuServices& gpu, const void* data,
     return {
         .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
         .offset = 0,
-        .size = sizeof(float) * 24U,
+        .size = sizeof(float) * kPyro3DRenderPushConstantFloatCount,
     };
 }
 
@@ -152,7 +152,6 @@ void Pyro3DGpuResources::create_global_resources_if_needed(cubey::vulkan::Device
                                                            cubey::ProjectGpuServices& gpu,
                                                            const Pyro3DConfig& config,
                                                            std::uint32_t frame_slot_count) {
-    config_ = config;
     if (density_a_.has_value()) {
         if (!profiler_.has_value()) {
             profiler_.emplace(device, frame_slot_count, 9);
@@ -160,7 +159,7 @@ void Pyro3DGpuResources::create_global_resources_if_needed(cubey::vulkan::Device
         return;
     }
 
-    create_volume_resources(device, gpu, config_);
+    create_volume_resources(device, gpu, config);
     create_descriptor_resources(device);
     create_compute_pipelines(device);
     profiler_.emplace(device, frame_slot_count, 9);
@@ -276,7 +275,7 @@ void Pyro3DGpuResources::create_descriptor_resources(cubey::vulkan::Device& devi
     reset_descriptor_pool_.emplace(device, reset_info.pool_info());
     reset_descriptor_set_ = reset_descriptor_pool().allocate(reset_descriptor_layout());
 
-    const std::array<cubey::vulkan::DescriptorSetBindingConfig, 5> advect_bindings{{
+    const std::array<cubey::vulkan::DescriptorSetBindingConfig, 4> transport_bindings{{
         {.binding = 0,
          .type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
          .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT},
@@ -289,18 +288,15 @@ void Pyro3DGpuResources::create_descriptor_resources(cubey::vulkan::Device& devi
         {.binding = 3,
          .type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
          .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT},
-        {.binding = 4,
-         .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-         .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT},
     }};
-    const cubey::vulkan::DescriptorSetInfo advect_info(advect_bindings, 4);
+    const cubey::vulkan::DescriptorSetInfo advect_info(transport_bindings, 4);
     advect_descriptor_layout_.emplace(device, advect_info.layout_info());
     advect_descriptor_pool_.emplace(device, advect_info.pool_info());
     for (VkDescriptorSet& set : advect_descriptor_sets_) {
         set = advect_descriptor_pool().allocate(advect_descriptor_layout());
     }
 
-    const std::array<cubey::vulkan::DescriptorSetBindingConfig, 7> advect_correct_bindings{{
+    const std::array<cubey::vulkan::DescriptorSetBindingConfig, 6> advect_correct_bindings{{
         {.binding = 0,
          .type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
          .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT},
@@ -319,9 +315,6 @@ void Pyro3DGpuResources::create_descriptor_resources(cubey::vulkan::Device& devi
         {.binding = 5,
          .type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
          .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT},
-        {.binding = 6,
-         .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-         .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT},
     }};
     const cubey::vulkan::DescriptorSetInfo advect_correct_info(advect_correct_bindings, 4);
     advect_correct_descriptor_layout_.emplace(device, advect_correct_info.layout_info());
@@ -330,7 +323,24 @@ void Pyro3DGpuResources::create_descriptor_resources(cubey::vulkan::Device& devi
         set = advect_correct_descriptor_pool().allocate(advect_correct_descriptor_layout());
     }
 
-    const cubey::vulkan::DescriptorSetInfo combustion_info(advect_bindings, 4);
+    const std::array<cubey::vulkan::DescriptorSetBindingConfig, 5> combustion_bindings{{
+        {.binding = 0,
+         .type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+         .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT},
+        {.binding = 1,
+         .type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+         .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT},
+        {.binding = 2,
+         .type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+         .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT},
+        {.binding = 3,
+         .type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+         .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT},
+        {.binding = 4,
+         .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+         .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT},
+    }};
+    const cubey::vulkan::DescriptorSetInfo combustion_info(combustion_bindings, 4);
     combustion_descriptor_layout_.emplace(device, combustion_info.layout_info());
     combustion_descriptor_pool_.emplace(device, combustion_info.pool_info());
     for (VkDescriptorSet& set : combustion_descriptor_sets_) {
@@ -435,8 +445,7 @@ void Pyro3DGpuResources::update_descriptors(cubey::vulkan::Device& device) {
             writes.storage_image(set, 0, densities[density_index]->view())
                 .storage_image(set, 1, velocities[velocity_index]->view())
                 .storage_image(set, 2, density_prediction().view())
-                .storage_image(set, 3, velocity_prediction().view())
-                .storage_buffer(set, 4, sources().handle(), sources().size());
+                .storage_image(set, 3, velocity_prediction().view());
 
             const VkDescriptorSet correct_set =
                 advect_correct_descriptor_set(density_a_current, velocity_a_current);
@@ -445,8 +454,7 @@ void Pyro3DGpuResources::update_descriptors(cubey::vulkan::Device& device) {
                 .storage_image(correct_set, 2, density_prediction().view())
                 .storage_image(correct_set, 3, velocity_prediction().view())
                 .storage_image(correct_set, 4, densities[1U - density_index]->view())
-                .storage_image(correct_set, 5, velocities[1U - velocity_index]->view())
-                .storage_buffer(correct_set, 6, sources().handle(), sources().size());
+                .storage_image(correct_set, 5, velocities[1U - velocity_index]->view());
 
             const VkDescriptorSet combustion_set =
                 combustion_descriptor_set(density_a_current, velocity_a_current);

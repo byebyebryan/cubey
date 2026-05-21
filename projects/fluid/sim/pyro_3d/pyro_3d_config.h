@@ -23,18 +23,21 @@ enum class Pyro3DMode : std::uint32_t {
 };
 
 inline constexpr std::uint32_t kMaxPyro3DSourceCount = 16;
+inline constexpr std::uint32_t kPyro3DComputeGroupSize = 4;
+inline constexpr std::uint32_t kPyro3DSimulationPushConstantFloatCount = 28;
+inline constexpr std::uint32_t kPyro3DRenderPushConstantFloatCount = 24;
 inline constexpr float kDefaultPyro3DSourceRadius = 0.05F;
 inline constexpr float kDefaultFireSourceRadius = 0.085F;
 inline constexpr std::uint32_t kDefaultExplosion3DSourceCount = 9;
 inline constexpr float kDefaultExplosion3DSourceRadius = 0.060F;
 inline constexpr float kDefaultPyro3DObstacleHeight = 0.48F;
 inline constexpr float kDefaultPyro3DObstacleRadius = 0.15F;
+inline constexpr float kMaxPyro3DObstacleRadius = 0.5F;
 
 struct Pyro3DConfig {
     std::uint32_t grid_width = 128;
     std::uint32_t grid_height = 128;
     std::uint32_t grid_depth = 128;
-    std::uint32_t compute_group_size = 4;
     std::uint32_t pressure_iterations = 12;
     std::uint32_t raymarch_steps = 128;
     std::uint32_t shadow_grid_width = 64;
@@ -179,33 +182,84 @@ struct Pyro3DConfig {
         }
         result.source_count = config.pyro_sources;
     }
-    if (config.pyro_source_radius != kDefaultPyro3DSourceRadius) {
+    if (run_config_float_is_set(config.pyro_source_radius)) {
         result.source_radius = config.pyro_source_radius;
     }
-    result.source_velocity_strength = config.pyro_source_force;
-    result.source_smoke_amount = config.pyro_soot;
-    result.source_heat_amount = config.pyro_temperature;
-    result.source_flame_amount = config.pyro_fuel;
-    result.explosion_interval_seconds = config.explosion_interval_seconds;
-    result.explosion_duration_seconds = config.explosion_duration_seconds;
-    result.explosion_boost = config.explosion_boost;
-    result.fire_ignition_temperature = config.pyro_ignition_temperature;
-    result.fire_burn_rate = config.pyro_burn_rate;
-    result.fire_heat_output = config.pyro_heat_output;
-    result.fire_soot_yield = config.pyro_soot_yield;
-    result.fire_expansion = config.pyro_expansion;
-    result.fire_flame_cooling = config.pyro_flame_cooling;
-    result.fire_shredding = config.pyro_shredding;
-    result.fire_turbulence = config.pyro_turbulence;
-    result.obstacle_center_height = config.pyro_obstacle_height;
-    result.obstacle_radius = config.pyro_obstacle_radius;
+    if (result.source_radius <= 0.0F) {
+        throw std::runtime_error("pyro 3D source radius must be positive");
+    }
+    if (run_config_float_is_set(config.pyro_source_force)) {
+        result.source_velocity_strength = config.pyro_source_force;
+    }
+    if (run_config_float_is_set(config.pyro_soot)) {
+        result.source_smoke_amount = config.pyro_soot;
+    }
+    if (run_config_float_is_set(config.pyro_temperature)) {
+        result.source_heat_amount = config.pyro_temperature;
+    }
+    if (run_config_float_is_set(config.pyro_fuel)) {
+        result.source_flame_amount = config.pyro_fuel;
+    }
+    if (run_config_float_is_set(config.explosion_interval_seconds)) {
+        result.explosion_interval_seconds = config.explosion_interval_seconds;
+    }
+    if (run_config_float_is_set(config.explosion_duration_seconds)) {
+        result.explosion_duration_seconds = config.explosion_duration_seconds;
+    }
+    if (run_config_float_is_set(config.explosion_boost)) {
+        result.explosion_boost = config.explosion_boost;
+    }
+    if (result.explosion_interval_seconds <= 0.0F) {
+        throw std::runtime_error("pyro 3D explosion interval must be positive");
+    }
+    if (result.explosion_duration_seconds <= 0.0F) {
+        throw std::runtime_error("pyro 3D explosion duration must be positive");
+    }
+    if (result.explosion_duration_seconds > result.explosion_interval_seconds) {
+        throw std::runtime_error("pyro 3D explosion duration must not exceed the interval");
+    }
+    if (result.explosion_boost < 0.0F) {
+        throw std::runtime_error("pyro 3D explosion boost must be nonnegative");
+    }
+    if (run_config_float_is_set(config.pyro_ignition_temperature)) {
+        result.fire_ignition_temperature = config.pyro_ignition_temperature;
+    }
+    if (run_config_float_is_set(config.pyro_burn_rate)) {
+        result.fire_burn_rate = config.pyro_burn_rate;
+    }
+    if (run_config_float_is_set(config.pyro_heat_output)) {
+        result.fire_heat_output = config.pyro_heat_output;
+    }
+    if (run_config_float_is_set(config.pyro_soot_yield)) {
+        result.fire_soot_yield = config.pyro_soot_yield;
+    }
+    if (run_config_float_is_set(config.pyro_expansion)) {
+        result.fire_expansion = config.pyro_expansion;
+    }
+    if (run_config_float_is_set(config.pyro_flame_cooling)) {
+        result.fire_flame_cooling = config.pyro_flame_cooling;
+    }
+    if (run_config_float_is_set(config.pyro_shredding)) {
+        result.fire_shredding = config.pyro_shredding;
+    }
+    if (run_config_float_is_set(config.pyro_turbulence)) {
+        result.fire_turbulence = config.pyro_turbulence;
+    }
+    if (run_config_float_is_set(config.pyro_obstacle_height)) {
+        result.obstacle_center_height = config.pyro_obstacle_height;
+    }
+    if (run_config_float_is_set(config.pyro_obstacle_radius)) {
+        result.obstacle_radius = config.pyro_obstacle_radius;
+    }
     if (result.obstacle_center_height < 0.0F || result.obstacle_center_height > 1.0F) {
         throw std::runtime_error("pyro 3D obstacle height must be in [0, 1]");
     }
-    if (result.obstacle_radius < 0.0F || result.obstacle_radius > 0.5F) {
+    if (result.obstacle_radius < 0.0F || result.obstacle_radius > kMaxPyro3DObstacleRadius) {
         throw std::runtime_error("pyro 3D obstacle radius must be in [0, 0.5]");
     }
-    result.buoyancy_strength = config.pyro_buoyancy;
+    if (run_config_float_is_set(config.pyro_buoyancy)) {
+        result.buoyancy_strength = config.pyro_buoyancy;
+    }
     static_cast<void>(volume_cell_count(result));
     static_cast<void>(shadow_volume_cell_count(result));
     return result;

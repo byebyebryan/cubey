@@ -526,10 +526,12 @@ cubey/
           shaders/
             pyro_3d_reset.comp
             pyro_3d_advect.comp
+            pyro_3d_advect_correct.comp
             pyro_3d_combust.comp
             pyro_3d_divergence.comp
             pyro_3d_pressure.comp
             pyro_3d_projection.comp
+            pyro_3d_shadow.comp
             pyro_3d.vert
             pyro_3d_raymarch.frag
         fire_3d/

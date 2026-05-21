@@ -21,5 +21,6 @@ Useful commands:
 ./build/dev/projects/fluid/fire_3d/fire_3d --frames 300 --width 1280 --height 720
 ./build/dev/projects/fluid/fire_3d/fire_3d --frames 300 --pyro-sources 1 --pyro-source-radius 0.085 --pyro-fuel 2.5 --pyro-soot 6 --pyro-temperature 1.5
 ./build/dev/projects/fluid/fire_3d/fire_3d --frames 300 --pyro-obstacle-height 0.55 --pyro-obstacle-radius 0.18
+./build/dev/projects/fluid/fire_3d/fire_3d --headless --debug-view density-slice --frames 120 --width 640 --height 360 --output /tmp/cubey-fire-3d-density.png
 ./build/dev/projects/fluid/fire_3d/fire_3d --headless --frames 120 --width 640 --height 360 --output /tmp/cubey-fire-3d.png
 ```

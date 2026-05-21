@@ -27,6 +27,8 @@
 #include <cstdint>
 #include <cstdio>
 #include <optional>
+#include <stdexcept>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -52,6 +54,19 @@ constexpr cubey::math::Vec3 kVolumeCenter{0.5F, 0.5F, 0.5F};
     return "Smoke";
 }
 
+[[nodiscard]] Pyro3DDebugView debug_view_from_name(std::string_view name) {
+    if (name.empty() || name == "smoke") {
+        return Pyro3DDebugView::Smoke;
+    }
+    if (name == "density" || name == "density-slice") {
+        return Pyro3DDebugView::DensitySlice;
+    }
+    if (name == "velocity") {
+        return Pyro3DDebugView::Velocity;
+    }
+    throw std::runtime_error("pyro 3D debug view must be smoke, density-slice, or velocity");
+}
+
 constexpr std::array<Pyro3DDebugView, 3> kDebugViews{
     Pyro3DDebugView::Smoke,
     Pyro3DDebugView::DensitySlice,
@@ -64,7 +79,8 @@ class Pyro3DApp {
         : config_(std::move(config)), app_info_(app_info), runtime_(1),
           pyro_config_(pyro_3d_config_from_run_config(config_, app_info_.mode)),
           source_states_(create_pyro_3d_sources(pyro_config_)),
-          source_gpu_(pyro_3d_sources_to_gpu(source_states_, pyro_config_)) {
+          source_gpu_(pyro_3d_sources_to_gpu(source_states_, pyro_config_)),
+          debug_view_(debug_view_from_name(config_.debug_view)) {
         orbit_controller_.set_home_distance(kCameraDistance);
         orbit_controller_.set_auto_rotation_speed(0.12F);
     }
@@ -261,7 +277,8 @@ class Pyro3DApp {
         ImGui::SliderFloat("Vorticity", &pyro_config_.vorticity_strength, 0.0F, 1.5F, "%.2f");
         ImGui::SliderFloat("Obstacle height", &pyro_config_.obstacle_center_height, 0.0F, 1.0F,
                            "%.2f");
-        ImGui::SliderFloat("Obstacle radius", &pyro_config_.obstacle_radius, 0.0F, 0.35F, "%.3f");
+        ImGui::SliderFloat("Obstacle radius", &pyro_config_.obstacle_radius, 0.0F,
+                           kMaxPyro3DObstacleRadius, "%.3f");
         ImGui::SliderFloat("Absorption", &pyro_config_.absorption, 0.5F, 12.0F, "%.2f");
         ImGui::SliderFloat("Light", &pyro_config_.emission, 0.1F, 4.0F, "%.2f");
         ImGui::SliderFloat("Shadow", &pyro_config_.shadow_absorption, 0.0F, 96.0F, "%.2f");

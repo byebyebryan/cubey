@@ -22,5 +22,6 @@ Useful commands:
 ./build/dev/projects/fluid/explosion_3d/explosion_3d --frames 300 --width 1280 --height 720
 ./build/dev/projects/fluid/explosion_3d/explosion_3d --frames 300 --pyro-sources 9 --pyro-source-radius 0.06 --explosion-interval 2.5 --explosion-duration 0.16 --explosion-boost 22
 ./build/dev/projects/fluid/explosion_3d/explosion_3d --frames 300 --pyro-obstacle-height 0.55 --pyro-obstacle-radius 0.18
+./build/dev/projects/fluid/explosion_3d/explosion_3d --headless --debug-view velocity --frames 120 --width 640 --height 360 --output /tmp/cubey-explosion-3d-velocity.png
 ./build/dev/projects/fluid/explosion_3d/explosion_3d --headless --frames 120 --width 640 --height 360 --output /tmp/cubey-explosion-3d.png
 ```

@@ -41,8 +41,7 @@ class Smoke2DGpuResources {
     [[nodiscard]] const cubey::render::ComputePipelineResource&
     advect_correct_pipeline_resource() const;
     [[nodiscard]] const cubey::render::ComputePipelineResource& curl_pipeline_resource() const;
-    [[nodiscard]] const cubey::render::ComputePipelineResource&
-    vorticity_pipeline_resource() const;
+    [[nodiscard]] const cubey::render::ComputePipelineResource& vorticity_pipeline_resource() const;
     [[nodiscard]] const cubey::render::ComputePipelineResource&
     divergence_pipeline_resource() const;
     [[nodiscard]] const cubey::render::ComputePipelineResource& pressure_pipeline_resource() const;
@@ -96,7 +95,6 @@ class Smoke2DGpuResources {
     [[nodiscard]] VkDescriptorSetLayout projection_descriptor_layout() const;
     [[nodiscard]] const cubey::vulkan::DescriptorPool& projection_descriptor_pool() const;
 
-    Smoke2DConfig config_{};
     std::optional<cubey::vulkan::Buffer> field_a_;
     std::optional<cubey::vulkan::Buffer> field_b_;
     std::optional<cubey::vulkan::Buffer> field_temp_;

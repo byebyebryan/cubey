@@ -103,7 +103,6 @@ class Pyro3DGpuResources {
     [[nodiscard]] const cubey::vulkan::DescriptorPool& shadow_descriptor_pool() const;
     [[nodiscard]] const cubey::vulkan::DescriptorSetArray& render_descriptors() const;
 
-    Pyro3DConfig config_{};
     std::optional<cubey::render::Texture3D> density_a_;
     std::optional<cubey::render::Texture3D> density_b_;
     std::optional<cubey::render::Texture3D> velocity_a_;

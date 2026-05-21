@@ -1,4 +1,25 @@
 add_subdirectory(smoke_2d)
+
+set(CUBEY_PYRO_3D_SOURCES
+    ../sim/pyro_3d/pyro_3d_app.cpp
+    ../sim/pyro_3d/pyro_3d_commands.cpp
+    ../sim/pyro_3d/pyro_3d_gpu_resources.cpp
+    ../sim/pyro_3d/pyro_3d_sources.cpp
+)
+
+set(CUBEY_PYRO_3D_SHADERS
+    ../sim/pyro_3d/shaders/pyro_3d.vert
+    ../sim/pyro_3d/shaders/pyro_3d_raymarch.frag
+    ../sim/pyro_3d/shaders/pyro_3d_reset.comp
+    ../sim/pyro_3d/shaders/pyro_3d_advect.comp
+    ../sim/pyro_3d/shaders/pyro_3d_advect_correct.comp
+    ../sim/pyro_3d/shaders/pyro_3d_combust.comp
+    ../sim/pyro_3d/shaders/pyro_3d_divergence.comp
+    ../sim/pyro_3d/shaders/pyro_3d_pressure.comp
+    ../sim/pyro_3d/shaders/pyro_3d_projection.comp
+    ../sim/pyro_3d/shaders/pyro_3d_shadow.comp
+)
+
 add_subdirectory(fire_3d)
 add_subdirectory(explosion_3d)
 

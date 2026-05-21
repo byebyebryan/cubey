@@ -127,6 +127,22 @@ int main() {
                     cubey::projects::fluid::smoke_2d::Smoke2DDebugView::Dye,
                 "debug view should cycle from obstacle to dye");
 
+        const cubey::RunConfig default_run_config;
+        const cubey::projects::fluid::smoke_2d::Smoke2DConfig default_from_run_config =
+            cubey::projects::fluid::smoke_2d::smoke_2d_config_from_run_config(default_run_config);
+        require(default_from_run_config.grid_width == config.grid_width,
+                "default run config should preserve smoke grid width");
+        require(default_from_run_config.grid_height == config.grid_height,
+                "default run config should preserve smoke grid height");
+        require(default_from_run_config.procedural_injector_count ==
+                    config.procedural_injector_count,
+                "default run config should preserve smoke injector count");
+        require(default_from_run_config.injector_injection_strength ==
+                    config.injector_injection_strength,
+                "default run config should preserve smoke injector strength");
+        require(default_from_run_config.injector_orbit_radius == config.injector_orbit_radius,
+                "default run config should preserve smoke orbit radius");
+
         cubey::RunConfig run_config;
         run_config.grid_width = 1024;
         run_config.grid_height = 768;
@@ -171,8 +187,8 @@ int main() {
             cubey::RunConfig invalid_injector_config;
             invalid_injector_config.smoke_injectors =
                 cubey::projects::fluid::smoke_2d::kMaxProceduralInjectorCount + 1U;
-            static_cast<void>(
-                cubey::projects::fluid::smoke_2d::smoke_2d_config_from_run_config(invalid_injector_config));
+            static_cast<void>(cubey::projects::fluid::smoke_2d::smoke_2d_config_from_run_config(
+                invalid_injector_config));
         } catch (const std::runtime_error&) {
             threw_for_too_many_injectors = true;
         }
@@ -218,7 +234,8 @@ int main() {
         cubey::projects::fluid::smoke_2d::Smoke2DConfig no_propulsion_config = configured;
         no_propulsion_config.injector_propulsion_strength = 0.0F;
         const std::vector<cubey::projects::fluid::smoke_2d::Smoke2DInjectorGpu> no_propulsion_gpu =
-            cubey::projects::fluid::smoke_2d::smoke_2d_injectors_to_gpu(injectors, no_propulsion_config);
+            cubey::projects::fluid::smoke_2d::smoke_2d_injectors_to_gpu(injectors,
+                                                                        no_propulsion_config);
         require(no_propulsion_gpu[0].velocity_carry_propulsion[3] == 0.0F,
                 "smoke GPU injector should honor disabled propulsion force");
         const std::vector<cubey::projects::fluid::smoke_2d::Smoke2DInjectorGpu> advanced_gpu =

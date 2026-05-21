@@ -35,8 +35,9 @@ struct RenderPushConstants {
     std::array<float, 4> obstacle_options{};
 };
 
-static_assert(sizeof(SimulationPushConstants) == sizeof(float) * 28U);
-static_assert(sizeof(RenderPushConstants) == sizeof(float) * 24U);
+static_assert(sizeof(SimulationPushConstants) ==
+              sizeof(float) * kPyro3DSimulationPushConstantFloatCount);
+static_assert(sizeof(RenderPushConstants) == sizeof(float) * kPyro3DRenderPushConstantFloatCount);
 
 struct DispatchGroups {
     std::uint32_t x = 0;
@@ -302,11 +303,11 @@ void record_pyro_3d_compute(VkCommandBuffer command_buffer, Pyro3DGpuResources& 
 
     const SimulationPushConstants push_constants = simulation_push_constants(config, frame);
     const DispatchGroups groups =
-        compute_dispatch_groups(solver_extent(config), config.compute_group_size);
+        compute_dispatch_groups(solver_extent(config), kPyro3DComputeGroupSize);
     const DispatchGroups shadow_groups =
-        compute_dispatch_groups(shadow_extent(config), config.compute_group_size);
+        compute_dispatch_groups(shadow_extent(config), kPyro3DComputeGroupSize);
     const DispatchGroups reset_groups = compute_dispatch_groups(
-        max_extent(solver_extent(config), shadow_extent(config)), config.compute_group_size);
+        max_extent(solver_extent(config), shadow_extent(config)), kPyro3DComputeGroupSize);
 
     if (reset_requested) {
         begin_pass("reset");

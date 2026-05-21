@@ -134,12 +134,37 @@ int main() {
                 "pyro 3D debug view should cycle from velocity to smoke");
 
         const cubey::RunConfig default_run_config;
+        const pyro::Pyro3DConfig default_fire_config =
+            pyro::pyro_3d_config_from_run_config(default_run_config, pyro::Pyro3DMode::Fire);
+        require(default_fire_config.source_count == config.source_count,
+                "default run config should preserve fire source count");
+        require(default_fire_config.source_radius == config.source_radius,
+                "default run config should preserve fire source radius");
+        require(default_fire_config.fire_burn_rate == config.fire_burn_rate,
+                "default run config should preserve fire burn rate");
+        require(default_fire_config.fire_heat_output == config.fire_heat_output,
+                "default run config should preserve fire heat output");
+        require(default_fire_config.fire_expansion == config.fire_expansion,
+                "default run config should preserve fire expansion");
+        require(default_fire_config.fire_turbulence == config.fire_turbulence,
+                "default run config should preserve fire turbulence");
         const pyro::Pyro3DConfig default_explosion_config =
             pyro::pyro_3d_config_from_run_config(default_run_config, pyro::Pyro3DMode::Explosion);
         require(default_explosion_config.source_count == pyro::kDefaultExplosion3DSourceCount,
                 "pyro 3D explosion should default to a shell source layout");
         require(default_explosion_config.source_radius == pyro::kDefaultExplosion3DSourceRadius,
                 "pyro 3D explosion should default to a wider impulse radius");
+        cubey::RunConfig explicit_default_radius_config;
+        explicit_default_radius_config.pyro_source_radius = pyro::kDefaultPyro3DSourceRadius;
+        const pyro::Pyro3DConfig explicit_fire_radius_config = pyro::pyro_3d_config_from_run_config(
+            explicit_default_radius_config, pyro::Pyro3DMode::Fire);
+        const pyro::Pyro3DConfig explicit_explosion_radius_config =
+            pyro::pyro_3d_config_from_run_config(explicit_default_radius_config,
+                                                 pyro::Pyro3DMode::Explosion);
+        require(explicit_fire_radius_config.source_radius == pyro::kDefaultPyro3DSourceRadius,
+                "explicit default-size source radius should override fire mode radius");
+        require(explicit_explosion_radius_config.source_radius == pyro::kDefaultPyro3DSourceRadius,
+                "explicit default-size source radius should override explosion mode radius");
 
         cubey::RunConfig run_config;
         run_config.grid_width = 64;

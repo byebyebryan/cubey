@@ -20,6 +20,8 @@
 #include <array>
 #include <cstdint>
 #include <optional>
+#include <stdexcept>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -50,6 +52,32 @@ using cubey::host::FrameStatsSample;
     return "Dye";
 }
 
+[[nodiscard]] Smoke2DDebugView debug_view_from_name(std::string_view name) {
+    if (name.empty() || name == "dye") {
+        return Smoke2DDebugView::Dye;
+    }
+    if (name == "velocity") {
+        return Smoke2DDebugView::Velocity;
+    }
+    if (name == "divergence") {
+        return Smoke2DDebugView::Divergence;
+    }
+    if (name == "pressure") {
+        return Smoke2DDebugView::Pressure;
+    }
+    if (name == "speed") {
+        return Smoke2DDebugView::Speed;
+    }
+    if (name == "vorticity") {
+        return Smoke2DDebugView::Vorticity;
+    }
+    if (name == "obstacle") {
+        return Smoke2DDebugView::Obstacle;
+    }
+    throw std::runtime_error("smoke 2D debug view must be dye, velocity, divergence, pressure, "
+                             "speed, vorticity, or obstacle");
+}
+
 constexpr std::array<Smoke2DDebugView, 7> kDebugViews{
     Smoke2DDebugView::Dye,      Smoke2DDebugView::Velocity, Smoke2DDebugView::Divergence,
     Smoke2DDebugView::Pressure, Smoke2DDebugView::Speed,    Smoke2DDebugView::Vorticity,
@@ -62,7 +90,8 @@ class Smoke2DApp {
         : config_(std::move(config)), runtime_(1),
           smoke_config_(smoke_2d_config_from_run_config(config_)),
           injector_states_(create_smoke_2d_injectors(smoke_config_)),
-          injector_gpu_(smoke_2d_injectors_to_gpu(injector_states_, smoke_config_)) {}
+          injector_gpu_(smoke_2d_injectors_to_gpu(injector_states_, smoke_config_)),
+          debug_view_(debug_view_from_name(config_.debug_view)) {}
 
     Smoke2DApp(const Smoke2DApp&) = delete;
     Smoke2DApp& operator=(const Smoke2DApp&) = delete;
