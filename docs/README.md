@@ -46,6 +46,7 @@ Detailed current foundation notes live under
 Project-specific design stays beside the project:
 
 - [Smoke 2D](../projects/fluid/smoke_2d/README.md)
+- [Water 2D](../projects/fluid/water_2d/README.md)
 - [Fluid 2.5D](../projects/fluid_25d/README.md)
 - [Fire 3D](../projects/fluid/fire_3d/README.md)
 - [Explosion 3D](../projects/fluid/explosion_3d/README.md)

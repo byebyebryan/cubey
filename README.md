@@ -42,6 +42,8 @@ Current projects:
 - `smoke_2d`: compute-updated dye/velocity field with MacCormack advection,
   vorticity, optional static obstacles, pressure projection, debug views, and
   deterministic headless capture output.
+- `water_2d`: 2D MAC-grid free-surface liquid with a signed-distance level set,
+  pressure projection, debug views, and deterministic headless capture output.
 - `fire_3d`: dense volumetric pyro fire demo with 3D storage textures,
   MacCormack advection, combustion, projection, vorticity confinement,
   raymarching, shadow-volume lighting, orbit camera controls, debug views, and
@@ -80,6 +82,7 @@ Authoritative current docs:
 Project-local docs:
 
 - [Smoke 2D](projects/fluid/smoke_2d/README.md)
+- [Water 2D](projects/fluid/water_2d/README.md)
 - [Fluid 2.5D design](projects/fluid_25d/README.md)
 - [Fire 3D](projects/fluid/fire_3d/README.md)
 - [Explosion 3D](projects/fluid/explosion_3d/README.md)
@@ -160,6 +163,7 @@ Useful windowed smokes:
 ./build/dev/examples/particle_cubes/particle_cubes --frames 300 --width 1280 --height 720
 ./build/dev/projects/fractal_2d/fractal_2d --frames 300 --width 1280 --height 720
 ./build/dev/projects/fluid/smoke_2d/smoke_2d --frames 300 --width 1280 --height 720
+./build/dev/projects/fluid/water_2d/water_2d --frames 300 --width 1280 --height 720
 ./build/dev/projects/fluid/fire_3d/fire_3d --frames 300 --width 1280 --height 720
 ./build/dev/projects/fluid/explosion_3d/explosion_3d --frames 300 --width 1280 --height 720
 ./build/dev/projects/gltf_viewer/gltf_viewer --input path/to/model.glb --environment path/to/env.hdr --animation-index 0 --animation-speed 1.0 --frames 300 --width 1280 --height 720
@@ -174,6 +178,9 @@ open; the window title also shows the latest sampled FPS and frame time.
 injectors; use `--grid-width`, `--grid-height`, and `--smoke-injectors 1..16` to
 compare other simulation/demo shapes, and `--smoke-obstacles` to enable the static
 obstacle mask.
+`water_2d` defaults to a `512x288` MAC grid. It uses face-centered velocity and
+a cell-centered signed-distance level set, so it is intentionally a different
+solver family from `smoke_2d`.
 `fire_3d` and `explosion_3d` share the `pyro_3d` dense solver core. They default
 to a `128x128x128` solver volume with a decoupled `64x64x64` shadow volume. Use
 `--grid-width`, `--grid-height`, `--grid-depth`, `--shadow-grid-width`,
@@ -195,6 +202,7 @@ Useful headless PNG smokes:
 ./build/dev/examples/headless_cube/headless_cube --width 640 --height 360 --output /tmp/cubey-headless-cube.png
 ./build/dev/projects/fractal_2d/fractal_2d --headless --width 640 --height 360 --output /tmp/cubey-fractal-2d.png
 ./build/dev/projects/fluid/smoke_2d/smoke_2d --headless --frames 120 --width 640 --height 360 --output /tmp/cubey-smoke-2d.png
+./build/dev/projects/fluid/water_2d/water_2d --headless --frames 120 --width 640 --height 360 --output /tmp/cubey-water-2d.png
 ./build/dev/projects/fluid/fire_3d/fire_3d --headless --frames 120 --width 640 --height 360 --output /tmp/cubey-fire-3d.png
 ./build/dev/projects/fluid/explosion_3d/explosion_3d --headless --frames 120 --width 640 --height 360 --output /tmp/cubey-explosion-3d.png
 ./build/dev/projects/pbr_furnace/pbr_furnace --headless --width 640 --height 360 --output /tmp/cubey-pbr-furnace.png
@@ -206,6 +214,7 @@ Useful headless video captures when FFmpeg/libav support is enabled:
 ./build/dev/examples/headless_cube/headless_cube --headless --capture video --frames 180 --fps 60 --width 1280 --height 720 --output /tmp/cubey-headless-cube.mp4
 ./build/dev/projects/gltf_viewer/gltf_viewer --headless --capture video --frames 180 --fps 60 --input path/to/model.glb --environment path/to/env.hdr --output /tmp/cubey-gltf-viewer.mp4
 ./build/dev/projects/fluid/smoke_2d/smoke_2d --headless --capture video --frames 180 --fps 60 --width 1280 --height 720 --output /tmp/cubey-smoke-2d.mp4
+./build/dev/projects/fluid/water_2d/water_2d --headless --capture video --frames 180 --fps 60 --width 1280 --height 720 --output /tmp/cubey-water-2d.mp4
 ./build/dev/projects/fluid/fire_3d/fire_3d --headless --capture video --frames 180 --fps 60 --width 1280 --height 720 --output /tmp/cubey-fire-3d.mp4
 ./build/dev/projects/fluid/explosion_3d/explosion_3d --headless --capture video --frames 180 --fps 60 --width 1280 --height 720 --output /tmp/cubey-explosion-3d.mp4
 ```
@@ -230,6 +239,8 @@ layers are installed.
 - `smoke_2d`: Space pauses/resumes, `R` resets, `D` cycles
   dye/velocity/divergence/pressure/speed/vorticity/obstacle views, Escape
   closes.
+- `water_2d`: Space pauses/resumes, `R` resets, `D` cycles
+  surface/phi/velocity/divergence/pressure/solid views, Escape closes.
 - `fire_3d` / `explosion_3d`: left-drag orbits the camera, mouse wheel zooms,
   Space pauses/resumes, `R` resets, `D` cycles smoke/density/velocity views,
   Escape closes.

@@ -10,6 +10,9 @@ is a small set of focused projects, each with different scaling assumptions:
 
 - `projects/fluid/smoke_2d`: incompressible grid-fluid lab for advection, pressure
   solves, obstacles, vorticity, and possible 2D free-surface experiments.
+- `projects/fluid/water_2d`: 2D MAC-grid free-surface liquid baseline with a
+  signed-distance level set. This bridges grid projection work toward later
+  PIC/FLIP/APIC particles.
 - `projects/fluid_25d`: shallow-water terrain simulation for rivers, flooding,
   basins, sources, sinks, and heightfield-driven water.
 - `projects/fluid/fire_3d` and `projects/fluid/explosion_3d`: dense 3D pyro
@@ -118,7 +121,7 @@ visual result now that Cubey has already done the basic GPU Gems version once.
 | Better advection | High | MacCormack/BFECC directly reduce classic Stable Fluids diffusion. |
 | Stronger pressure solve | High | CG or multigrid is a real scaling lever over fixed Jacobi iterations. |
 | Obstacles/boundaries | High | Makes `smoke_2d` feel scene-relevant instead of purely decorative. |
-| Level set liquid | Medium/high | Good 2D free-surface experiment; pure level sets lose mass. |
+| Level set liquid | High | `water_2d` starts here with MAC velocity, pressure projection, and signed-distance surface tracking. Pure level sets lose mass. |
 | Particle level set | Medium | Corrects level-set mass loss with marker particles; more moving parts. |
 | VOF | Medium | Better mass conservation, harder interface reconstruction. |
 | Shallow water / virtual pipes | High | Best first path for scalable terrain water in `fluid_25d`. |
@@ -230,7 +233,7 @@ project is worth the complexity.
 2. Continue `smoke_2d` with pressure-solver experiments, moving obstacles,
    stronger diagnostics, and a clearer smoke/dye versus free-surface-liquid
    direction.
-3. Try a separate 2D level-set liquid slice once `smoke_2d` is cleaner.
+3. Build `water_2d` as a separate 2D MAC-grid level-set liquid slice.
 4. Try `liquid_particles_2d` with PBF/simple SPH to prove GPU neighbor search
    and particle-liquid rendering.
 5. Try `liquid_flip_2d` with a PIC/FLIP blend once grid pressure and particle
