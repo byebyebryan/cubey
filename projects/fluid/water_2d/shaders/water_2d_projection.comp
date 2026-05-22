@@ -1,0 +1,107 @@
+#version 450
+
+layout(local_size_x = 8, local_size_y = 8) in;
+
+layout(set = 0, binding = 0, std430) readonly buffer PhiAField {
+    float values[];
+} phi_a;
+layout(set = 0, binding = 2, std430) buffer UAWriteField {
+    float values[];
+} u_a;
+layout(set = 0, binding = 3, std430) readonly buffer UReadField {
+    float values[];
+} u_b;
+layout(set = 0, binding = 4, std430) buffer VAWriteField {
+    float values[];
+} v_a;
+layout(set = 0, binding = 5, std430) readonly buffer VReadField {
+    float values[];
+} v_b;
+layout(set = 0, binding = 6, std430) readonly buffer PressureAField {
+    float values[];
+} pressure_a;
+layout(set = 0, binding = 7, std430) readonly buffer PressureBField {
+    float values[];
+} pressure_b;
+layout(set = 0, binding = 9, std430) readonly buffer SolidField {
+    float values[];
+} solid;
+
+layout(push_constant) uniform SimulationParams {
+    vec4 grid_dt_time;
+    vec4 init_options;
+    vec4 obstacle_options;
+    vec4 solve_options;
+} params;
+
+uint cell_index(uint x, uint y, uint width) {
+    return (y * width) + x;
+}
+
+uint u_index(uint x, uint y, uint width) {
+    return (y * (width + 1u)) + x;
+}
+
+uint v_index(uint x, uint y, uint width) {
+    return (y * width) + x;
+}
+
+bool liquid_cell(uint x, uint y, uint width) {
+    uint index = cell_index(x, y, width);
+    return solid.values[index] < 0.5 && phi_a.values[index] < 0.0;
+}
+
+bool solid_cell(uint x, uint y, uint width) {
+    return solid.values[cell_index(x, y, width)] > 0.5;
+}
+
+float pressure_at(uint x, uint y, uint width) {
+    uint index = cell_index(x, y, width);
+    if (solid.values[index] > 0.5 || phi_a.values[index] >= 0.0) {
+        return 0.0;
+    }
+    return params.solve_options.y > 0.5 ? pressure_a.values[index] : pressure_b.values[index];
+}
+
+void main() {
+    uint width = uint(params.grid_dt_time.x);
+    uint height = uint(params.grid_dt_time.y);
+    uint x = gl_GlobalInvocationID.x;
+    uint y = gl_GlobalInvocationID.y;
+
+    if (x <= width && y < height) {
+        uint index = u_index(x, y, width);
+        bool boundary = x == 0u || x == width;
+        bool blocked = false;
+        bool has_liquid = false;
+        if (!boundary) {
+            blocked = solid_cell(x - 1u, y, width) || solid_cell(x, y, width);
+            has_liquid = liquid_cell(x - 1u, y, width) || liquid_cell(x, y, width);
+        }
+        if (boundary || blocked || !has_liquid) {
+            u_a.values[index] = 0.0;
+        } else {
+            float left = pressure_at(x - 1u, y, width);
+            float right = pressure_at(x, y, width);
+            u_a.values[index] = clamp(u_b.values[index] - (right - left), -4.0, 4.0);
+        }
+    }
+
+    if (x < width && y <= height) {
+        uint index = v_index(x, y, width);
+        bool boundary = y == 0u || y == height;
+        bool blocked = false;
+        bool has_liquid = false;
+        if (!boundary) {
+            blocked = solid_cell(x, y - 1u, width) || solid_cell(x, y, width);
+            has_liquid = liquid_cell(x, y - 1u, width) || liquid_cell(x, y, width);
+        }
+        if (boundary || blocked || !has_liquid) {
+            v_a.values[index] = 0.0;
+        } else {
+            float down = pressure_at(x, y - 1u, width);
+            float up = pressure_at(x, y, width);
+            v_a.values[index] = clamp(v_b.values[index] - (up - down), -4.0, 4.0);
+        }
+    }
+}

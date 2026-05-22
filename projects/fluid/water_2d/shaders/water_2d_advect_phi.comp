@@ -1,0 +1,95 @@
+#version 450
+
+layout(local_size_x = 8, local_size_y = 8) in;
+
+layout(set = 0, binding = 0, std430) readonly buffer PhiAReadField {
+    float values[];
+} phi_a;
+layout(set = 0, binding = 1, std430) buffer PhiBWriteField {
+    float values[];
+} phi_b;
+layout(set = 0, binding = 3, std430) readonly buffer UField {
+    float values[];
+} u_b;
+layout(set = 0, binding = 5, std430) readonly buffer VField {
+    float values[];
+} v_b;
+layout(set = 0, binding = 9, std430) readonly buffer SolidField {
+    float values[];
+} solid;
+
+layout(push_constant) uniform SimulationParams {
+    vec4 grid_dt_time;
+    vec4 init_options;
+    vec4 obstacle_options;
+    vec4 solve_options;
+} params;
+
+uint cell_index(ivec2 coord, uint width, uint height) {
+    ivec2 clamped = clamp(coord, ivec2(0), ivec2(int(width) - 1, int(height) - 1));
+    return (uint(clamped.y) * width) + uint(clamped.x);
+}
+
+uint u_index(ivec2 coord, uint width, uint height) {
+    ivec2 clamped = ivec2(clamp(coord.x, 0, int(width)), clamp(coord.y, 0, int(height) - 1));
+    return (uint(clamped.y) * (width + 1u)) + uint(clamped.x);
+}
+
+uint v_index(ivec2 coord, uint width, uint height) {
+    ivec2 clamped = ivec2(clamp(coord.x, 0, int(width) - 1), clamp(coord.y, 0, int(height)));
+    return (uint(clamped.y) * width) + uint(clamped.x);
+}
+
+float sample_phi(vec2 uv, uint width, uint height) {
+    vec2 position = uv * vec2(width, height) - vec2(0.5);
+    ivec2 base = ivec2(floor(position));
+    vec2 f = fract(position);
+    float a = phi_a.values[cell_index(base, width, height)];
+    float b = phi_a.values[cell_index(base + ivec2(1, 0), width, height)];
+    float c = phi_a.values[cell_index(base + ivec2(0, 1), width, height)];
+    float d = phi_a.values[cell_index(base + ivec2(1, 1), width, height)];
+    return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+}
+
+float sample_u(vec2 uv, uint width, uint height) {
+    vec2 position = vec2(uv.x * float(width), uv.y * float(height) - 0.5);
+    ivec2 base = ivec2(floor(position));
+    vec2 f = fract(position);
+    float a = u_b.values[u_index(base, width, height)];
+    float b = u_b.values[u_index(base + ivec2(1, 0), width, height)];
+    float c = u_b.values[u_index(base + ivec2(0, 1), width, height)];
+    float d = u_b.values[u_index(base + ivec2(1, 1), width, height)];
+    return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+}
+
+float sample_v(vec2 uv, uint width, uint height) {
+    vec2 position = vec2(uv.x * float(width) - 0.5, uv.y * float(height));
+    ivec2 base = ivec2(floor(position));
+    vec2 f = fract(position);
+    float a = v_b.values[v_index(base, width, height)];
+    float b = v_b.values[v_index(base + ivec2(1, 0), width, height)];
+    float c = v_b.values[v_index(base + ivec2(0, 1), width, height)];
+    float d = v_b.values[v_index(base + ivec2(1, 1), width, height)];
+    return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+}
+
+void main() {
+    uint width = uint(params.grid_dt_time.x);
+    uint height = uint(params.grid_dt_time.y);
+    uint x = gl_GlobalInvocationID.x;
+    uint y = gl_GlobalInvocationID.y;
+    if (x >= width || y >= height) {
+        return;
+    }
+
+    uint index = (y * width) + x;
+    if (solid.values[index] > 0.5) {
+        phi_b.values[index] = 0.02;
+        return;
+    }
+
+    vec2 uv = (vec2(x, y) + vec2(0.5)) / vec2(width, height);
+    vec2 velocity = vec2(sample_u(uv, width, height), sample_v(uv, width, height));
+    vec2 previous_uv = clamp(uv - velocity * params.grid_dt_time.z, vec2(0.0), vec2(1.0));
+    phi_b.values[index] = clamp(sample_phi(previous_uv, width, height), -0.5, 0.5);
+}

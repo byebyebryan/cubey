@@ -1,0 +1,115 @@
+#version 450
+
+layout(local_size_x = 8, local_size_y = 8) in;
+
+layout(set = 0, binding = 0, std430) readonly buffer PhiAField {
+    float values[];
+} phi_a;
+layout(set = 0, binding = 2, std430) readonly buffer UAReadField {
+    float values[];
+} u_a;
+layout(set = 0, binding = 3, std430) buffer UBWriteField {
+    float values[];
+} u_b;
+layout(set = 0, binding = 4, std430) readonly buffer VAReadField {
+    float values[];
+} v_a;
+layout(set = 0, binding = 5, std430) buffer VBWriteField {
+    float values[];
+} v_b;
+layout(set = 0, binding = 9, std430) readonly buffer SolidField {
+    float values[];
+} solid;
+
+layout(push_constant) uniform SimulationParams {
+    vec4 grid_dt_time;
+    vec4 init_options;
+    vec4 obstacle_options;
+    vec4 solve_options;
+} params;
+
+uint cell_index(ivec2 coord, uint width, uint height) {
+    ivec2 clamped = clamp(coord, ivec2(0), ivec2(int(width) - 1, int(height) - 1));
+    return (uint(clamped.y) * width) + uint(clamped.x);
+}
+
+uint u_index(ivec2 coord, uint width, uint height) {
+    ivec2 clamped = ivec2(clamp(coord.x, 0, int(width)), clamp(coord.y, 0, int(height) - 1));
+    return (uint(clamped.y) * (width + 1u)) + uint(clamped.x);
+}
+
+uint v_index(ivec2 coord, uint width, uint height) {
+    ivec2 clamped = ivec2(clamp(coord.x, 0, int(width) - 1), clamp(coord.y, 0, int(height)));
+    return (uint(clamped.y) * width) + uint(clamped.x);
+}
+
+float sample_u(vec2 uv, uint width, uint height) {
+    vec2 position = vec2(uv.x * float(width), uv.y * float(height) - 0.5);
+    ivec2 base = ivec2(floor(position));
+    vec2 f = fract(position);
+    float a = u_a.values[u_index(base, width, height)];
+    float b = u_a.values[u_index(base + ivec2(1, 0), width, height)];
+    float c = u_a.values[u_index(base + ivec2(0, 1), width, height)];
+    float d = u_a.values[u_index(base + ivec2(1, 1), width, height)];
+    return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+}
+
+float sample_v(vec2 uv, uint width, uint height) {
+    vec2 position = vec2(uv.x * float(width) - 0.5, uv.y * float(height));
+    ivec2 base = ivec2(floor(position));
+    vec2 f = fract(position);
+    float a = v_a.values[v_index(base, width, height)];
+    float b = v_a.values[v_index(base + ivec2(1, 0), width, height)];
+    float c = v_a.values[v_index(base + ivec2(0, 1), width, height)];
+    float d = v_a.values[v_index(base + ivec2(1, 1), width, height)];
+    return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+}
+
+vec2 sample_velocity(vec2 uv, uint width, uint height) {
+    vec2 clamped_uv = clamp(uv, vec2(0.0), vec2(1.0));
+    return vec2(sample_u(clamped_uv, width, height), sample_v(clamped_uv, width, height));
+}
+
+bool solid_cell(uint x, uint y, uint width) {
+    return solid.values[(y * width) + x] > 0.5;
+}
+
+void main() {
+    uint width = uint(params.grid_dt_time.x);
+    uint height = uint(params.grid_dt_time.y);
+    float dt = params.grid_dt_time.z;
+    uint x = gl_GlobalInvocationID.x;
+    uint y = gl_GlobalInvocationID.y;
+
+    if (x <= width && y < height) {
+        uint index = (y * (width + 1u)) + x;
+        bool boundary = x == 0u || x == width;
+        bool blocked = false;
+        if (!boundary) {
+            blocked = solid_cell(x - 1u, y, width) || solid_cell(x, y, width);
+        }
+        if (boundary || blocked) {
+            u_b.values[index] = 0.0;
+        } else {
+            vec2 uv = vec2(float(x) / float(width), (float(y) + 0.5) / float(height));
+            vec2 previous_uv = uv - sample_velocity(uv, width, height) * dt;
+            u_b.values[index] = clamp(sample_u(previous_uv, width, height), -4.0, 4.0);
+        }
+    }
+
+    if (x < width && y <= height) {
+        uint index = (y * width) + x;
+        bool boundary = y == 0u || y == height;
+        bool blocked = false;
+        if (!boundary) {
+            blocked = solid_cell(x, y - 1u, width) || solid_cell(x, y, width);
+        }
+        if (boundary || blocked) {
+            v_b.values[index] = 0.0;
+        } else {
+            vec2 uv = vec2((float(x) + 0.5) / float(width), float(y) / float(height));
+            vec2 previous_uv = uv - sample_velocity(uv, width, height) * dt;
+            v_b.values[index] = clamp(sample_v(previous_uv, width, height), -4.0, 4.0);
+        }
+    }
+}

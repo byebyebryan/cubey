@@ -1,0 +1,104 @@
+#version 450
+
+layout(local_size_x = 8, local_size_y = 8) in;
+
+layout(set = 0, binding = 0, std430) buffer PhiAField {
+    float values[];
+} phi_a;
+layout(set = 0, binding = 1, std430) buffer PhiBField {
+    float values[];
+} phi_b;
+layout(set = 0, binding = 2, std430) buffer UAField {
+    float values[];
+} u_a;
+layout(set = 0, binding = 3, std430) buffer UBField {
+    float values[];
+} u_b;
+layout(set = 0, binding = 4, std430) buffer VAField {
+    float values[];
+} v_a;
+layout(set = 0, binding = 5, std430) buffer VBField {
+    float values[];
+} v_b;
+layout(set = 0, binding = 6, std430) buffer PressureAField {
+    float values[];
+} pressure_a;
+layout(set = 0, binding = 7, std430) buffer PressureBField {
+    float values[];
+} pressure_b;
+layout(set = 0, binding = 8, std430) buffer DivergenceField {
+    float values[];
+} divergence;
+layout(set = 0, binding = 9, std430) buffer SolidField {
+    float values[];
+} solid;
+
+layout(push_constant) uniform SimulationParams {
+    vec4 grid_dt_time;
+    vec4 init_options;
+    vec4 obstacle_options;
+    vec4 solve_options;
+} params;
+
+uint cell_index(uint x, uint y, uint width) {
+    return (y * width) + x;
+}
+
+uint u_index(uint x, uint y, uint width) {
+    return (y * (width + 1u)) + x;
+}
+
+uint v_index(uint x, uint y, uint width) {
+    return (y * width) + x;
+}
+
+float box_sdf(vec2 point, vec2 center, vec2 half_size) {
+    vec2 d = abs(point - center) - half_size;
+    return length(max(d, vec2(0.0))) + min(max(d.x, d.y), 0.0);
+}
+
+void main() {
+    uint width = uint(params.grid_dt_time.x);
+    uint height = uint(params.grid_dt_time.y);
+    uint x = gl_GlobalInvocationID.x;
+    uint y = gl_GlobalInvocationID.y;
+
+    if (x < width && y < height) {
+        uint index = cell_index(x, y, width);
+        vec2 uv = (vec2(x, y) + vec2(0.5)) / vec2(width, height);
+        bool border = x < 2u || y < 2u || x + 3u > width || y + 3u > height;
+        vec2 obstacle_delta =
+            (uv - params.obstacle_options.xy) * vec2(float(width) / float(height), 1.0);
+        bool obstacle = params.init_options.w > 0.5 &&
+                        dot(obstacle_delta, obstacle_delta) <
+                            params.obstacle_options.z * params.obstacle_options.z;
+        float solid_value = (border || obstacle) ? 1.0 : 0.0;
+
+        vec2 liquid_min = vec2(0.045, 0.045);
+        vec2 liquid_max = vec2(params.init_options.y, params.init_options.x);
+        vec2 liquid_center = (liquid_min + liquid_max) * 0.5;
+        vec2 liquid_half_size = max((liquid_max - liquid_min) * 0.5, vec2(0.001));
+        float phi = box_sdf(uv, liquid_center, liquid_half_size);
+        if (solid_value > 0.5) {
+            phi = max(phi, 0.02);
+        }
+
+        phi_a.values[index] = phi;
+        phi_b.values[index] = phi;
+        pressure_a.values[index] = 0.0;
+        pressure_b.values[index] = 0.0;
+        divergence.values[index] = 0.0;
+        solid.values[index] = solid_value;
+    }
+
+    if (x <= width && y < height) {
+        uint index = u_index(x, y, width);
+        u_a.values[index] = 0.0;
+        u_b.values[index] = 0.0;
+    }
+    if (x < width && y <= height) {
+        uint index = v_index(x, y, width);
+        v_a.values[index] = 0.0;
+        v_b.values[index] = 0.0;
+    }
+}

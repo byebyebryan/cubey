@@ -1,0 +1,68 @@
+#version 450
+
+layout(local_size_x = 8, local_size_y = 8) in;
+
+layout(set = 0, binding = 0, std430) buffer PhiAField {
+    float values[];
+} phi_a;
+layout(set = 0, binding = 1, std430) buffer PhiBField {
+    float values[];
+} phi_b;
+layout(set = 0, binding = 9, std430) readonly buffer SolidField {
+    float values[];
+} solid;
+
+layout(push_constant) uniform SimulationParams {
+    vec4 grid_dt_time;
+    vec4 init_options;
+    vec4 obstacle_options;
+    vec4 solve_options;
+} params;
+
+uint cell_index(ivec2 coord, uint width, uint height) {
+    ivec2 clamped = clamp(coord, ivec2(0), ivec2(int(width) - 1, int(height) - 1));
+    return (uint(clamped.y) * width) + uint(clamped.x);
+}
+
+float read_phi(uint index) {
+    return params.solve_options.x > 0.5 ? phi_a.values[index] : phi_b.values[index];
+}
+
+void write_phi(uint index, float value) {
+    if (params.solve_options.x > 0.5) {
+        phi_b.values[index] = value;
+    } else {
+        phi_a.values[index] = value;
+    }
+}
+
+void main() {
+    uint width = uint(params.grid_dt_time.x);
+    uint height = uint(params.grid_dt_time.y);
+    uint x = gl_GlobalInvocationID.x;
+    uint y = gl_GlobalInvocationID.y;
+    if (x >= width || y >= height) {
+        return;
+    }
+
+    uint index = (y * width) + x;
+    if (solid.values[index] > 0.5) {
+        write_phi(index, 0.02);
+        return;
+    }
+
+    ivec2 coord = ivec2(int(x), int(y));
+    float center = read_phi(index);
+    float left = read_phi(cell_index(coord + ivec2(-1, 0), width, height));
+    float right = read_phi(cell_index(coord + ivec2(1, 0), width, height));
+    float down = read_phi(cell_index(coord + ivec2(0, -1), width, height));
+    float up = read_phi(cell_index(coord + ivec2(0, 1), width, height));
+    float h = 1.0 / float(min(width, height));
+    float neighbor_distance = min(min(abs(left), abs(right)), min(abs(down), abs(up))) + h;
+    float corrected_abs = mix(abs(center), neighbor_distance, 0.35);
+    float corrected = sign(center) * min(corrected_abs, 0.5);
+    if (abs(center) < h * 1.5) {
+        corrected = center;
+    }
+    write_phi(index, corrected);
+}

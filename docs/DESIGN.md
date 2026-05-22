@@ -518,6 +518,23 @@ cubey/
             smoke_2d_projection.comp
             smoke_2d.vert
             smoke_2d_render.frag
+        water_2d/
+          CMakeLists.txt
+          main.cpp
+          water_2d_app.*     -- host/engine/input orchestration
+          water_2d_commands.* -- MAC-grid simulation and fullscreen draw recording
+          water_2d_gpu_resources.* -- level set / face-velocity buffers and pipelines
+          shaders/
+            water_2d_reset.comp
+            water_2d_force.comp
+            water_2d_advect_velocity.comp
+            water_2d_advect_phi.comp
+            water_2d_reinitialize_phi.comp
+            water_2d_divergence.comp
+            water_2d_pressure.comp
+            water_2d_projection.comp
+            water_2d.vert
+            water_2d_render.frag
         sim/pyro_3d/
           pyro_3d_app.*     -- shared host/headless/input orchestration
           pyro_3d_commands.* -- simulation and raymarch draw command recording
