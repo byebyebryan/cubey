@@ -134,6 +134,7 @@ struct Water2DRuntimeState {
     std::uint32_t hose_cursor = 0;
     std::uint32_t particle_scan_count = 0;
     float hose_emit_accumulator = 0.0F;
+    bool pressure_read_b = false;
 };
 
 [[nodiscard]] inline std::uint32_t

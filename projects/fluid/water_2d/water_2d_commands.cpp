@@ -395,6 +395,7 @@ void record_water_2d_compute(VkCommandBuffer command_buffer, Water2DGpuResources
         }
 
         const bool final_pressure_is_b = (config.pressure_iterations % 2U) == 1U;
+        runtime_state.pressure_read_b = final_pressure_is_b;
         push_constants.dispatch_options[2] = final_pressure_is_b ? 1.0F : 0.0F;
         record_dispatch(recorder, resources.projection_pipeline_resource(), descriptor_set,
                         face_groups, push_constants);
@@ -419,7 +420,7 @@ void record_water_2d_compute(VkCommandBuffer command_buffer, Water2DGpuResources
 
 void record_water_2d_draw(VkCommandBuffer command_buffer, const Water2DGpuResources& resources,
                           const Water2DConfig& config, cubey::render::FrameSlot frame_slot,
-                          Water2DDebugView debug_view,
+                          const Water2DRuntimeState& runtime_state, Water2DDebugView debug_view,
                           cubey::render::ColorTargetView color_target) {
     const cubey::vulkan::CommandRecorder recorder(command_buffer);
     const RenderPushConstants push_constants{
@@ -430,7 +431,7 @@ void record_water_2d_draw(VkCommandBuffer command_buffer, const Water2DGpuResour
                 water_2d_shader_count_float(config.grid_height,
                                             "water grid height exceeds exact shader integer range"),
                 debug_view_push_value(debug_view),
-                (config.pressure_iterations % 2U) == 1U ? 1.0F : 0.0F,
+                runtime_state.pressure_read_b ? 1.0F : 0.0F,
             },
         .particle_options =
             {
@@ -567,13 +568,15 @@ build_water_2d_frame_graph(cubey::render::ColorTargetView color_target,
         .read_storage_buffer(cell_counts)
         .read_storage_buffer(cell_particle_indices)
         .write_color(backbuffer)
-        .execute([resource_ptr, config_ptr, debug_view, backbuffer, color_target,
-                  frame_slot](const cubey::render::RenderGraphExecutionContext& context) {
+        .execute([resource_ptr, config_ptr, runtime_state_ptr, debug_view, backbuffer,
+                  color_target, frame_slot](const cubey::render::RenderGraphExecutionContext&
+                                                context) {
             const cubey::vulkan::CommandRecorder& recorder = context.recorder();
             const cubey::render::RenderGraphResolvedTexture resolved =
                 context.resolved_texture(backbuffer);
             record_water_2d_draw(
-                recorder.handle(), *resource_ptr, *config_ptr, frame_slot, debug_view,
+                recorder.handle(), *resource_ptr, *config_ptr, frame_slot, *runtime_state_ptr,
+                debug_view,
                 cubey::render::color_target_view(color_target.extent, color_target.format,
                                                  resolved.image, resolved.view));
         });

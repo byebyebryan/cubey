@@ -10,8 +10,9 @@ is a small set of focused projects, each with different scaling assumptions:
 
 - `projects/fluid/smoke_2d`: incompressible grid-fluid lab for advection, pressure
   solves, obstacles, vorticity, and possible 2D free-surface experiments.
-- `projects/fluid/water_2d`: 2D PIC/FLIP free-surface liquid baseline with
-  particles for liquid motion and a MAC grid for pressure projection.
+- `projects/fluid/water_2d`: 2D APIC free-surface liquid baseline with a
+  PIC/FLIP fallback, particles for liquid motion, and a MAC grid for pressure
+  projection.
 - `projects/fluid_25d`: shallow-water terrain simulation for rivers, flooding,
   basins, sources, sinks, and heightfield-driven water.
 - `projects/fluid/fire_3d` and `projects/fluid/explosion_3d`: dense 3D pyro
@@ -127,7 +128,7 @@ visual result now that Cubey has already done the basic GPU Gems version once.
 | Saint-Venant finite volume | Medium/high later | More rigorous terrain-water experiment after virtual pipes exists. |
 | SPH / DFSPH | Medium | Good for small particle liquids and splashes; particle-count-bound. |
 | PBF | Medium | Stable real-time interactive liquid toy; less physically rigorous. |
-| FLIP/APIC | High | `water_2d` now starts with PIC/FLIP in 2D. APIC, meshing, richer collision, and 3D coupling remain substantial later work. |
+| FLIP/APIC | High | `water_2d` now uses APIC by default with a PIC/FLIP fallback. Meshing, richer collision, stronger pressure solves, and 3D coupling remain substantial later work. |
 | MPM / MLS-MPM | Medium later | Interesting for mud, snow, sand, viscous fluids, and multiphase effects. |
 | Lattice Boltzmann | Medium/low | Interesting flow-around-obstacle lab; not first choice for Cubey water. |
 | Sparse 3D gas | High later | Best modern answer to the old dense 3D smoke/fire box. |
@@ -159,9 +160,9 @@ reconstruct or render the particle surface
 The interesting part is the transfer back to particles. PIC samples the new grid
 velocity directly, which is stable but dissipative. FLIP samples the grid
 velocity delta and adds it to each particle, which preserves more energy but can
-be noisy. Many solvers blend PIC and FLIP. APIC is a later particle-in-cell
-variant that carries local affine velocity information to reduce dissipation and
-noise.
+be noisy. Many solvers blend PIC and FLIP. APIC carries local affine velocity
+information per particle to reduce dissipation and noise; `water_2d` now uses
+that path by default while retaining the PIC/FLIP path for comparison.
 
 Why it is worth trying:
 
@@ -177,12 +178,14 @@ Current Cubey target:
 projects/fluid/water_2d
 ```
 
-Start in 2D with particles plus a MAC-style grid, PIC/FLIP blend control,
-simple collision boundaries, runtime-editable fill volume, reset presets, and
-particle-splat surface rendering. The current `water_2d` path also includes a
-bounded hose-particle ring over inactive particle slots and a bottom drain so
-continuous material flow can be tested without particle compaction or readback.
-Defer APIC, 3D meshing, VDB-style surfacing, and complex collision coupling.
+Continue in 2D with particles plus a MAC-style grid, APIC transfer by default,
+PIC/FLIP blend control for comparison, simple collision boundaries,
+runtime-editable fill volume, reset presets, and particle-splat surface
+rendering. The current `water_2d` path also includes a bounded hose-particle
+ring over inactive particle slots, capped fixed-capacity particle bins, and a
+bottom drain so continuous material flow can be tested without particle
+compaction or readback. Defer 3D meshing, VDB-style surfacing, sparse/adaptive
+particle storage, and complex collision coupling.
 
 ### SPH / PBF / DFSPH
 
@@ -235,17 +238,17 @@ project is worth the complexity.
 2. Continue `smoke_2d` with pressure-solver experiments, moving obstacles,
    stronger diagnostics, and a clearer smoke/dye versus free-surface-liquid
    direction.
-3. Continue `water_2d` from the current 2D PIC/FLIP baseline toward better
+3. Continue `water_2d` from the current 2D APIC/PIC-FLIP baseline toward better
    surfacing, pressure solves, boundaries, validation/debug views, and richer
    water scenarios.
 4. Try `liquid_particles_2d` with PBF/simple SPH to prove GPU neighbor search
    and particle-liquid rendering.
-5. Consider APIC or a 3D liquid variant once the 2D PIC/FLIP infrastructure is
+5. Consider a 3D liquid variant once the 2D particle-grid infrastructure is
    comfortable.
 6. Continue `fire_3d` / `explosion_3d` from the dense boxed baseline toward
    stronger shading, detail synthesis, sparse/local simulation, and demo presentation than the
    original Cubey version.
-7. Consider DFSPH, APIC, MLS-MPM, or 3D liquid variants only after the 2D
+7. Consider DFSPH, MLS-MPM, or additional 3D liquid variants only after the 2D
    particle and hybrid projects have paid for their infrastructure.
 
 ## References

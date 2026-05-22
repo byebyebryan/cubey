@@ -355,6 +355,8 @@ int main() {
                     hose_fill) == (config.particle_capacity - hose_fill.active_particle_count),
                 "hose fill scenario should be able to emit into all inactive particle slots");
         cubey::projects::fluid::water_2d::Water2DRuntimeState runtime_state;
+        require(!runtime_state.pressure_read_b,
+                "water runtime should default pressure debug to pressure A");
         require(cubey::projects::fluid::water_2d::water_2d_runtime_particle_scan_count(
                     config, runtime_state) == config.active_particle_count,
                 "water runtime particle scan count should default to active reset particles");
@@ -383,6 +385,7 @@ int main() {
             read_text_file(source_root / "shaders/water_2d_contract.glsl");
         const std::string reset_shader =
             read_text_file(source_root / "shaders/water_2d_reset.comp");
+        const std::string commands_source = read_text_file(source_root / "water_2d_commands.cpp");
         const std::string build_bins_shader =
             read_text_file(source_root / "shaders/water_2d_build_bins.comp");
         const std::string emit_shader =
@@ -440,6 +443,10 @@ int main() {
                          "water reset shader should clamp fill width to the usable interior");
         require_contains(reset_shader, "relocate_spawn_outside_obstacle",
                          "water reset shader should avoid spawning particles inside obstacles");
+        require_contains(commands_source, "runtime_state.pressure_read_b = final_pressure_is_b",
+                         "water commands should track the last solved pressure buffer");
+        require_contains(commands_source, "runtime_state.pressure_read_b ? 1.0F : 0.0F",
+                         "water render should use the tracked pressure buffer");
         require_contains(build_bins_shader, "WATER2D_BINDING_CELL_COUNTS",
                          "water bin build should use shared descriptor binding names");
         require_contains(build_bins_shader, "atomicAdd",

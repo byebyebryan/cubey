@@ -462,7 +462,7 @@ class Water2DApp {
                                         VkCommandBuffer command_buffer,
                                         const cubey::host::HeadlessRenderTarget& target) {
             record_water_2d_draw(command_buffer, resources_, water_config_, frame.frame_slot,
-                                 debug_view_, target);
+                                 runtime_state_, debug_view_, target);
         };
         callbacks.shutdown = [this](cubey::host::HeadlessPngContext&) {
             destroy_all_resources();

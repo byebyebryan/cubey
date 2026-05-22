@@ -65,8 +65,12 @@ Main buffers:
 - `particle_positions` and `particle_velocities`: `vec4` particle state. The
   position `.w` lane is the active flag.
 - `particle_affine`: `vec4` particle APIC affine velocity state. It is zeroed
-  on reset, emission, drain, and while running in PIC/FLIP transfer mode.
+  on reset, emission, drain, collision, and while running in PIC/FLIP transfer
+  mode.
 - `cell_counts` and `cell_particle_indices`: fixed-capacity particle bins.
+  `cell_counts` tracks raw occupancy, while particle-grid transfer, separation,
+  rendering, and the volume-pressure source are bounded by the stored
+  `max_particles_per_cell` slots.
 - `u` and `v`: face velocity on vertical and horizontal grid faces.
 - `u_previous` and `v_previous`: pre-force/projection velocity for FLIP deltas.
 - `pressure` and `divergence`: cell-centered scalar fields.
@@ -90,3 +94,8 @@ been touched; after the hose ring wraps, the scan range expands to the full
 allocated particle buffer. The UI reports this compute-particle scan count,
 average FPS/frame time, Water2D buffer allocation size, and device-local memory
 usage when the Vulkan driver exposes `VK_EXT_memory_budget`.
+
+Current correctness boundaries: particles are not compacted after drain, cells
+only store a fixed number of particle indices, and the pressure solver remains
+fixed-iteration Jacobi. These are deliberate for now so the particle-grid
+contract remains simple to inspect.
