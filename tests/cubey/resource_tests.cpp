@@ -82,6 +82,11 @@ void test_resource_helpers_describe_device_local_upload_and_depth_setup() {
                                  VkFormat (*)(const cubey::vulkan::Device&)>);
     static_assert(std::is_same_v<decltype(&cubey::vulkan::Device::supports_texture_compression_bc),
                                  bool (cubey::vulkan::Device::*)() const>);
+    static_assert(std::is_same_v<decltype(&cubey::vulkan::Device::supports_memory_budget),
+                                 bool (cubey::vulkan::Device::*)() const>);
+    static_assert(
+        std::is_same_v<decltype(&cubey::vulkan::Device::device_memory_budget),
+                       cubey::vulkan::DeviceMemoryBudgetInfo (cubey::vulkan::Device::*)() const>);
     static_assert(std::is_constructible_v<cubey::vulkan::DepthAttachment,
                                           const cubey::vulkan::Device&, VkExtent2D>);
 }

@@ -26,6 +26,9 @@ layout(set = 0, binding = WATER2D_BINDING_V_PREVIOUS, std430) readonly buffer VP
 layout(set = 0, binding = WATER2D_BINDING_CELL_COUNTS, std430) readonly buffer CellCounts {
     uint values[];
 } cell_counts;
+layout(set = 0, binding = WATER2D_BINDING_CELL_PARTICLE_INDICES, std430) readonly buffer CellParticleIndices {
+    uint values[];
+} cell_particle_indices;
 
 WATER2D_SIMULATION_PARAMS;
 
@@ -78,6 +81,107 @@ vec2 sample_velocity(vec2 uv, uint width, uint height, bool previous) {
     return vec2(sample_u(uv, width, height, previous), sample_v(uv, width, height, previous));
 }
 
+float hash11(uint value) {
+    value ^= value >> 16u;
+    value *= 0x7feb352du;
+    value ^= value >> 15u;
+    value *= 0x846ca68bu;
+    value ^= value >> 16u;
+    return float(value & 0x00ffffffu) / float(0x01000000u);
+}
+
+vec2 separation_velocity(uint particle_id, vec2 position, uint width, uint height,
+                         uint max_particles_per_cell) {
+    float radius = max(0.05, params.solve_options.x);
+    float strength = clamp(params.solve_options.w, 0.0, 2.0);
+    if (strength <= 0.0001) {
+        return vec2(0.0);
+    }
+
+    vec2 grid_position = position * vec2(width, height);
+    ivec2 center = ivec2(floor(grid_position));
+    uint target_particles_per_cell = max(1u, uint(params.particle_options.z + 0.5));
+    uint center_count = cell_counts.values[cell_index(center, width, height)];
+    if (center_count <= target_particles_per_cell) {
+        return vec2(0.0);
+    }
+
+    float overpack = clamp((float(center_count) - float(target_particles_per_cell)) /
+                               float(target_particles_per_cell),
+                           0.0, 1.0);
+    int support = clamp(int(ceil(radius)) + 1, 1, 3);
+    float radius_squared = radius * radius;
+    vec2 correction = vec2(0.0);
+
+    for (int oy = -3; oy <= 3; ++oy) {
+        if (abs(oy) > support) {
+            continue;
+        }
+        for (int ox = -3; ox <= 3; ++ox) {
+            if (abs(ox) > support) {
+                continue;
+            }
+            ivec2 cell = center + ivec2(ox, oy);
+            if (cell.x < 0 || cell.y < 0 || cell.x >= int(width) || cell.y >= int(height)) {
+                continue;
+            }
+
+            uint cell_id = cell_index(cell, width, height);
+            uint count = min(cell_counts.values[cell_id], max_particles_per_cell);
+            for (uint slot = 0u; slot < count; ++slot) {
+                uint other_id =
+                    cell_particle_indices.values[(cell_id * max_particles_per_cell) + slot];
+                if (other_id == WATER2D_EMPTY_PARTICLE || other_id == particle_id ||
+                    particle_positions.values[other_id].w < 0.5) {
+                    continue;
+                }
+
+                vec2 other_grid = particle_positions.values[other_id].xy * vec2(width, height);
+                vec2 delta = grid_position - other_grid;
+                float distance_squared = dot(delta, delta);
+                if (distance_squared >= radius_squared) {
+                    continue;
+                }
+
+                if (distance_squared <= 0.000001) {
+                    float angle = hash11((particle_id * 1664525u) ^ (other_id * 1013904223u)) *
+                                  6.2831853;
+                    delta = vec2(cos(angle), sin(angle)) * 0.001;
+                    distance_squared = dot(delta, delta);
+                }
+
+                float distance = sqrt(distance_squared);
+                correction += (delta / distance) * (radius - distance);
+            }
+        }
+    }
+
+    float correction_length = length(correction);
+    float max_correction = radius * 0.55;
+    if (correction_length > max_correction) {
+        correction *= max_correction / correction_length;
+    }
+
+    vec2 correction_uv = correction * vec2(1.0 / float(width), 1.0 / float(height));
+    return (correction_uv * strength * overpack) / max(WATER2D_DT, 0.00001);
+}
+
+bool isolated_liquid_neighborhood(ivec2 center, uint width, uint height) {
+    uint occupied = 0u;
+    for (int oy = -1; oy <= 1; ++oy) {
+        for (int ox = -1; ox <= 1; ++ox) {
+            ivec2 cell = center + ivec2(ox, oy);
+            if (cell.x < 0 || cell.y < 0 || cell.x >= int(width) || cell.y >= int(height)) {
+                continue;
+            }
+            if (cell_counts.values[cell_index(cell, width, height)] > 0u) {
+                occupied += 1u;
+            }
+        }
+    }
+    return occupied <= 2u;
+}
+
 void main() {
     uint particle_id = gl_GlobalInvocationID.x;
     uint width = uint(WATER2D_GRID_WIDTH);
@@ -98,9 +202,12 @@ void main() {
     vec2 flip_velocity = old_velocity + (current_grid_velocity - previous_grid_velocity);
     vec2 velocity = mix(pic_velocity, flip_velocity, clamp(params.particle_options.w, 0.0, 1.0));
     uint particles_per_cell = max(1u, uint(params.particle_options.z + 0.5));
+    uint max_particles_per_cell = uint(params.particle_options.y + 0.5);
+    velocity += separation_velocity(particle_id, position, width, height, max_particles_per_cell);
     uint sparse_threshold = max(1u, particles_per_cell / 2u);
     ivec2 cell = ivec2(floor(position * vec2(width, height)));
-    bool sparse_drop = cell_counts.values[cell_index(cell, width, height)] <= sparse_threshold;
+    bool sparse_drop = cell_counts.values[cell_index(cell, width, height)] <= sparse_threshold &&
+                       isolated_liquid_neighborhood(cell, width, height);
     if (sparse_drop && old_velocity.y <= 0.10) {
         float ballistic_y = old_velocity.y + params.init_options.z * WATER2D_DT;
         velocity.y = min(velocity.y, ballistic_y);

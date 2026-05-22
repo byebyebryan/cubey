@@ -44,8 +44,8 @@ Current projects:
   deterministic headless capture output.
 - `water_2d`: 2D PIC/FLIP free-surface liquid with particle-grid transfers,
   MAC-grid pressure projection, reset presets, hose/drain material flow,
-  obstacle shapes, surface/foam debug views, and deterministic headless capture
-  output.
+  obstacle shapes, surface/foam debug views, live frame/memory diagnostics, and
+  deterministic headless capture output.
 - `fire_3d`: dense volumetric pyro fire demo with 3D storage textures,
   MacCormack advection, combustion, projection, vorticity confinement,
   raymarching, shadow-volume lighting, orbit camera controls, debug views, and
@@ -185,7 +185,8 @@ layer. It uses particles for liquid motion and a face-centered grid for
 pressure, so it is intentionally a different solver family from `smoke_2d`.
 Runtime UI controls cover reset presets, fill volume, hose emission, bottom
 drain, obstacle shape, substeps, pressure iterations, PIC/FLIP blend, collision
-damping, and surface/foam shading.
+damping, particle separation, surface/foam shading, and Water2D frame/memory
+diagnostics.
 `fire_3d` and `explosion_3d` share the `pyro_3d` dense solver core. They default
 to a `128x128x128` solver volume with a decoupled `64x64x64` shadow volume. Use
 `--grid-width`, `--grid-height`, `--grid-depth`, `--shadow-grid-width`,

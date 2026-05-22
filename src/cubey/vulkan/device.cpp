@@ -2,7 +2,6 @@
 
 #include <cubey/vulkan/vk_check.h>
 
-#include <array>
 #include <stdexcept>
 #include <string_view>
 #include <vector>
@@ -15,7 +14,7 @@ constexpr std::uint32_t make_vk_api_version(std::uint32_t variant, std::uint32_t
     return (variant << 29U) | (major << 22U) | (minor << 12U) | patch;
 }
 
-bool device_supports_swapchain(VkPhysicalDevice device) {
+bool device_extension_available(VkPhysicalDevice device, std::string_view extension_name) {
     std::uint32_t count = 0;
     check(vkEnumerateDeviceExtensionProperties(device, nullptr, &count, nullptr),
           "vkEnumerateDeviceExtensionProperties count");
@@ -24,11 +23,15 @@ bool device_supports_swapchain(VkPhysicalDevice device) {
           "vkEnumerateDeviceExtensionProperties");
 
     for (const VkExtensionProperties& extension : extensions) {
-        if (std::string_view(extension.extensionName) == VK_KHR_SWAPCHAIN_EXTENSION_NAME) {
+        if (std::string_view(extension.extensionName) == extension_name) {
             return true;
         }
     }
     return false;
+}
+
+bool device_supports_swapchain(VkPhysicalDevice device) {
+    return device_extension_available(device, VK_KHR_SWAPCHAIN_EXTENSION_NAME);
 }
 
 bool device_supports_dynamic_rendering(VkPhysicalDevice device) {
@@ -82,6 +85,34 @@ void Device::wait_idle() const {
     if (device_ != VK_NULL_HANDLE) {
         check(vkDeviceWaitIdle(device_), "vkDeviceWaitIdle");
     }
+}
+
+DeviceMemoryBudgetInfo Device::device_memory_budget() const {
+    DeviceMemoryBudgetInfo info{};
+
+    auto memory_properties = vk_struct<VkPhysicalDeviceMemoryProperties2>(
+        VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_PROPERTIES_2);
+    auto memory_budget = vk_struct<VkPhysicalDeviceMemoryBudgetPropertiesEXT>(
+        VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_BUDGET_PROPERTIES_EXT);
+    if (memory_budget_supported_) {
+        memory_properties.pNext = &memory_budget;
+        info.available = true;
+    }
+
+    vkGetPhysicalDeviceMemoryProperties2(physical_device_, &memory_properties);
+    const VkPhysicalDeviceMemoryProperties& properties = memory_properties.memoryProperties;
+    for (std::uint32_t heap = 0; heap < properties.memoryHeapCount; ++heap) {
+        if ((properties.memoryHeaps[heap].flags & VK_MEMORY_HEAP_DEVICE_LOCAL_BIT) == 0) {
+            continue;
+        }
+        info.device_local_heap_size += properties.memoryHeaps[heap].size;
+        if (memory_budget_supported_) {
+            info.device_local_usage += memory_budget.heapUsage[heap];
+            info.device_local_budget += memory_budget.heapBudget[heap];
+        }
+    }
+
+    return info;
 }
 
 void Device::select_physical_device(const Instance& instance, const DeviceConfig& config) {
@@ -154,7 +185,16 @@ void Device::create_device(const DeviceConfig& config) {
     queue_info.queueCount = 1;
     queue_info.pQueuePriorities = &priority;
 
-    std::array<const char*, 1> extensions{VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+    std::vector<const char*> extensions;
+    if (config.require_present) {
+        extensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+    }
+    memory_budget_supported_ =
+        device_extension_available(physical_device_, VK_EXT_MEMORY_BUDGET_EXTENSION_NAME);
+    if (memory_budget_supported_) {
+        extensions.push_back(VK_EXT_MEMORY_BUDGET_EXTENSION_NAME);
+    }
+
     auto info = vk_struct<VkDeviceCreateInfo>(VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO);
     info.queueCreateInfoCount = 1;
     info.pQueueCreateInfos = &queue_info;
@@ -175,7 +215,7 @@ void Device::create_device(const DeviceConfig& config) {
         info.pNext = &dynamic_rendering;
     }
 
-    if (config.require_present) {
+    if (!extensions.empty()) {
         info.enabledExtensionCount = static_cast<std::uint32_t>(extensions.size());
         info.ppEnabledExtensionNames = extensions.data();
     }

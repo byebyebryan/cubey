@@ -47,17 +47,17 @@ int main() {
             std::size_t{128} * std::size_t{100} * 4U;
         constexpr std::size_t kExpectedInitialParticleCapacity =
             std::size_t{235} * std::size_t{132} * 4U;
-        constexpr std::size_t kExpectedHoseParticleCapacity = 32768U;
+        constexpr std::size_t kExpectedHoseParticleCapacity = 262144U;
         constexpr std::size_t kExpectedParticleCapacity =
             kExpectedInitialParticleCapacity + kExpectedHoseParticleCapacity;
-        constexpr std::size_t kExpectedBinIndexCount = kExpectedCellCount * 16U;
+        constexpr std::size_t kExpectedBinIndexCount = kExpectedCellCount * 32U;
 
         require(config.grid_width == 256, "water grid should default to 256 columns");
         require(config.grid_height == 144, "water grid should default to 144 rows");
         require(config.pressure_iterations == 256,
                 "water pressure solve should default to a stronger Jacobi pass count");
         require(config.particles_per_cell == 4, "water should seed four particles per cell");
-        require(config.max_particles_per_cell == 16,
+        require(config.max_particles_per_cell == 32,
                 "water particle bins should reserve a bounded overflow margin");
         require(config.active_particle_count == kExpectedActiveParticleCount,
                 "water active particle count should come from the default fill area");
@@ -79,6 +79,10 @@ int main() {
         require(config.velocity_limit == 3.0F, "water should default to a bounded velocity limit");
         require(config.particle_damping == 0.999F,
                 "water should default to light particle damping");
+        require(config.particle_separation_radius == 0.58F,
+                "water should default to a particle separation radius");
+        require(config.particle_separation_strength == 0.32F,
+                "water should default to particle separation");
         require(config.boundary_restitution == 0.18F,
                 "water should default to a soft boundary bounce");
         require(config.obstacle_friction == 0.86F,
@@ -337,6 +341,15 @@ int main() {
                          "water grid-to-particle shader should support FLIP velocity updates");
         require_contains(g2p_shader, "params.particle_options.w",
                          "water grid-to-particle shader should use the configured PIC/FLIP blend");
+        require_contains(g2p_shader, "WATER2D_BINDING_CELL_PARTICLE_INDICES",
+                         "water grid-to-particle shader should inspect neighbor particle bins");
+        require_contains(g2p_shader, "separation_velocity",
+                         "water grid-to-particle shader should add particle separation");
+        require_contains(g2p_shader, "center_count <= target_particles_per_cell",
+                         "water particle separation should only run for overpacked cells");
+        require_contains(g2p_shader, "isolated_liquid_neighborhood",
+                         "water grid-to-particle shader should keep free surfaces from "
+                         "dropping like isolated particles");
         require_contains(g2p_shader, "params.solve_options.y",
                          "water grid-to-particle shader should use the velocity limit");
         require_contains(advect_shader, "collide_obstacle",

@@ -9,7 +9,7 @@ Current projects:
 - `smoke_2d`: 2D incompressible smoke/dye simulation.
 - `water_2d`: 2D PIC/FLIP free-surface liquid simulation on a MAC grid, with
   reset presets, hose/drain material flow, obstacle shapes, and particle-splat
-  surface rendering.
+  surface rendering plus live frame/memory diagnostics.
 - `fire_3d`: 3D dense-grid pyro fire simulation.
 - `explosion_3d`: 3D dense-grid pyro explosion simulation.
 

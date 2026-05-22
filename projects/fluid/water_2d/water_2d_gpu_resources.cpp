@@ -86,6 +86,23 @@ template <typename Value>
     return value.value();
 }
 
+[[nodiscard]] VkDeviceSize
+optional_buffer_size(const std::optional<cubey::vulkan::Buffer>& buffer) {
+    if (!buffer.has_value()) {
+        return 0;
+    }
+    return buffer->size();
+}
+
+template <typename Value>
+[[nodiscard]] VkDeviceSize optional_frame_uniform_buffer_size(
+    const std::optional<cubey::render::FrameUniformBuffer<Value>>& buffer) {
+    if (!buffer.has_value()) {
+        return 0;
+    }
+    return static_cast<VkDeviceSize>(buffer->slot_count()) * buffer->range();
+}
+
 } // namespace
 
 void Water2DGpuResources::create_global_resources_if_needed(cubey::vulkan::Device& device,
@@ -143,6 +160,17 @@ void Water2DGpuResources::destroy_all_resources() {
     u_.reset();
     particle_velocities_.reset();
     particle_positions_.reset();
+}
+
+VkDeviceSize Water2DGpuResources::allocated_buffer_bytes() const {
+    return optional_buffer_size(particle_positions_) + optional_buffer_size(particle_velocities_) +
+           optional_buffer_size(u_) + optional_buffer_size(u_previous_) + optional_buffer_size(v_) +
+           optional_buffer_size(v_previous_) + optional_buffer_size(u_weight_) +
+           optional_buffer_size(v_weight_) + optional_buffer_size(pressure_a_) +
+           optional_buffer_size(pressure_b_) + optional_buffer_size(divergence_) +
+           optional_buffer_size(solid_) + optional_buffer_size(cell_counts_) +
+           optional_buffer_size(cell_particle_indices_) +
+           optional_frame_uniform_buffer_size(simulation_uniforms_);
 }
 
 void Water2DGpuResources::create_field_buffers(cubey::ProjectGpuServices& gpu,

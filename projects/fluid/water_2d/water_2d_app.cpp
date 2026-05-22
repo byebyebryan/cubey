@@ -27,6 +27,7 @@ namespace {
 using cubey::FrameTiming;
 using cubey::ProjectFrame;
 using cubey::host::FrameStatsSample;
+using cubey::host::FrameStatsSnapshot;
 
 constexpr std::array<Water2DDebugView, 8> kDebugViews{
     Water2DDebugView::Surface,  Water2DDebugView::Particles,  Water2DDebugView::Cells,
@@ -46,6 +47,10 @@ constexpr std::array<Water2DObstacleShape, 3> kObstacleShapes{
     Water2DObstacleShape::Circle,
     Water2DObstacleShape::Box,
 };
+
+[[nodiscard]] double bytes_to_mib(VkDeviceSize bytes) {
+    return static_cast<double>(bytes) / (1024.0 * 1024.0);
+}
 
 class Water2DApp {
   public:
@@ -89,15 +94,9 @@ class Water2DApp {
             record_frame(context, frame, project_frame);
         };
         callbacks.frame_stats_sample =
-            [](cubey::host::WindowedAppContext& context,
-               const FrameTiming& timing) -> std::optional<FrameStatsSample> {
-            const VkExtent2D extent = context.swapchain().extent();
-            return FrameStatsSample{
-                .delta_seconds = timing.delta_seconds,
-                .width = extent.width,
-                .height = extent.height,
-                .triangles = 1,
-            };
+            [this](cubey::host::WindowedAppContext& context,
+                   const FrameTiming& timing) -> std::optional<FrameStatsSample> {
+            return record_frame_stats(context, timing);
         };
         callbacks.shutdown = [this](cubey::host::WindowedAppContext& context) {
             (void)context;
@@ -137,8 +136,26 @@ class Water2DApp {
         }
     }
 
+    std::optional<FrameStatsSample> record_frame_stats(cubey::host::WindowedAppContext& context,
+                                                       const FrameTiming& timing) {
+        const VkExtent2D extent = context.swapchain().extent();
+        latest_frame_ms_ = timing.delta_seconds * 1000.0;
+        latest_fps_ = timing.delta_seconds > 0.0 ? 1.0 / timing.delta_seconds : 0.0;
+
+        const FrameStatsSample sample{
+            .delta_seconds = timing.delta_seconds,
+            .width = extent.width,
+            .height = extent.height,
+            .triangles = 1,
+        };
+        if (std::optional<FrameStatsSnapshot> stats = ui_frame_stats_.record_frame(sample);
+            stats.has_value()) {
+            latest_frame_stats_ = stats.value();
+        }
+        return sample;
+    }
+
     void draw_ui(cubey::host::WindowedAppContext& context) {
-        (void)context;
         ImGui::SetNextWindowPos(ImVec2(16.0F, 16.0F), ImGuiCond_FirstUseEver);
         ImGui::SetNextWindowSize(ImVec2(430.0F, 0.0F), ImGuiCond_FirstUseEver);
         if (!ImGui::Begin("Water 2D")) {
@@ -192,6 +209,10 @@ class Water2DApp {
         ImGui::SliderFloat("Velocity limit", &water_config_.velocity_limit, 1.0F, 8.0F, "%.2f");
         ImGui::SliderFloat("Particle damping", &water_config_.particle_damping, 0.980F, 1.000F,
                            "%.3f");
+        ImGui::SliderFloat("Particle separation radius", &water_config_.particle_separation_radius,
+                           0.20F, 1.40F, "%.2f");
+        ImGui::SliderFloat("Particle separation strength",
+                           &water_config_.particle_separation_strength, 0.0F, 1.5F, "%.2f");
         ImGui::SliderFloat("Particle radius", &water_config_.particle_radius, 0.0025F, 0.025F,
                            "%.4f");
         ImGui::SliderFloat("Gravity", &water_config_.gravity, -4.0F, 0.0F, "%.2f");
@@ -212,7 +233,7 @@ class Water2DApp {
         ImGui::SliderFloat("Hose angle", &water_config_.hose.angle_degrees, -90.0F, 20.0F, "%.1f");
         ImGui::SliderFloat("Hose speed", &water_config_.hose.speed, 0.2F, 5.0F, "%.2f");
         ImGui::SliderFloat("Hose radius", &water_config_.hose.radius, 0.005F, 0.080F, "%.3f");
-        ImGui::SliderFloat("Hose rate", &water_config_.hose.particles_per_second, 0.0F, 12000.0F,
+        ImGui::SliderFloat("Hose rate", &water_config_.hose.particles_per_second, 0.0F, 60000.0F,
                            "%.0f");
         ImGui::SliderFloat("Hose spread", &water_config_.hose.spread_degrees, 0.0F, 45.0F, "%.1f");
 
@@ -268,6 +289,27 @@ class Water2DApp {
         ImGui::Text(
             "Particles: %u reset / %u hose pool / %u total", water_config_.active_particle_count,
             hose_particle_pool_capacity_for_config(water_config_), water_config_.particle_capacity);
+        if (latest_frame_stats_.has_value()) {
+            ImGui::Text("Frame: %.1f fps / %.2f ms avg (%.2f ms last)", latest_frame_stats_->fps,
+                        latest_frame_stats_->frame_ms, latest_frame_ms_);
+        } else if (latest_fps_ > 0.0) {
+            ImGui::Text("Frame: %.1f fps / %.2f ms", latest_fps_, latest_frame_ms_);
+        } else {
+            ImGui::TextUnformatted("Frame: collecting...");
+        }
+
+        const VkDeviceSize water_bytes = resources_.allocated_buffer_bytes();
+        const cubey::vulkan::DeviceMemoryBudgetInfo memory_budget =
+            context.device().device_memory_budget();
+        ImGui::Text("Water GPU buffers: %.1f MiB", bytes_to_mib(water_bytes));
+        if (memory_budget.available && memory_budget.device_local_budget > 0) {
+            ImGui::Text("VRAM: %.0f / %.0f MiB used",
+                        bytes_to_mib(memory_budget.device_local_usage),
+                        bytes_to_mib(memory_budget.device_local_budget));
+        } else {
+            ImGui::Text("VRAM heap: %.0f MiB (usage unavailable)",
+                        bytes_to_mib(memory_budget.device_local_heap_size));
+        }
         ImGui::End();
     }
 
@@ -406,7 +448,11 @@ class Water2DApp {
     Water2DRuntimeState runtime_state_;
     Water2DGpuResources resources_;
     cubey::render::RenderGraphFrameExecutor graph_executor_;
+    cubey::host::FrameStats ui_frame_stats_{0.25};
+    std::optional<FrameStatsSnapshot> latest_frame_stats_;
     Water2DDebugView debug_view_ = Water2DDebugView::Surface;
+    double latest_fps_ = 0.0;
+    double latest_frame_ms_ = 0.0;
     bool paused_ = false;
     bool reset_requested_ = true;
 };

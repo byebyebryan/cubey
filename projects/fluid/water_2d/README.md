@@ -28,7 +28,8 @@ Controls:
 - `D` cycles debug views.
 - The UI edits reset preset, fill volume, hose emission, bottom drain,
   obstacle shape, solver substeps, pressure iterations, PIC/FLIP blend,
-  collision tuning, and surface/foam shading.
+  particle separation, collision tuning, surface/foam shading, and live
+  frame/memory diagnostics.
 
 Debug views:
 
@@ -48,9 +49,11 @@ currently inactive particle slots, bins active particles into fixed-capacity cel
 transfers particle velocity to `u` and `v` MAC faces, applies gravity, computes
 occupied-cell divergence, solves pressure with Jacobi, projects face velocity,
 transfers the current-vs-previous grid delta back to particles with a
-configurable PIC/FLIP blend, then advects and collides the particles. Particles
-that enter the optional bottom drain are marked inactive; no compaction or
-readback free-list is involved.
+configurable PIC/FLIP blend, adds a bounded neighbor-bin particle separation
+velocity only for overpacked cells to keep material volume from collapsing
+without disturbing settled regions, then advects and collides the particles.
+Particles that enter the optional bottom drain are marked inactive; no
+compaction or readback free-list is involved.
 
 Main buffers:
 
@@ -71,7 +74,9 @@ surface tension, meshing, and sparse/adaptive particle storage until the basic
 PIC/FLIP contract is easier to inspect.
 
 The fill controls are runtime-editable. GPU particle buffers are allocated for
-the maximum editable fill area plus an explicit hose reserve, while each reset
-computes a reset-fill particle count from the current fill width and height. The
-hose pool starts after that reset-fill range, so smaller initial fills leave
-more room for continuous emission before the hose ring wraps.
+the maximum editable fill area plus a larger explicit hose reserve, while each
+reset computes a reset-fill particle count from the current fill width and
+height. The hose pool starts after that reset-fill range, so smaller initial
+fills leave more room for continuous emission before the hose ring wraps. The UI
+reports average FPS/frame time, Water2D buffer allocation size, and device-local
+memory usage when the Vulkan driver exposes `VK_EXT_memory_budget`.

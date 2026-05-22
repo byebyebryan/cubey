@@ -124,7 +124,13 @@ void record_shader_write_barrier(VkCommandBuffer command_buffer, ShaderWriteBarr
                 static_cast<float>(config.particles_per_cell),
                 config.flip_ratio,
             },
-        .solve_options = {0.0F, config.velocity_limit, config.particle_damping, 0.0F},
+        .solve_options =
+            {
+                config.particle_separation_radius,
+                config.velocity_limit,
+                config.particle_damping,
+                config.particle_separation_strength,
+            },
         .lifecycle_options =
             {
                 static_cast<float>(config.particle_capacity),

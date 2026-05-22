@@ -46,7 +46,7 @@ inline constexpr std::uint32_t kWater2DDefaultGridWidth = 256;
 inline constexpr std::uint32_t kWater2DDefaultGridHeight = 144;
 inline constexpr float kWater2DMinFillFraction = 0.08F;
 inline constexpr float kWater2DMaxFillFraction = 0.92F;
-inline constexpr std::uint32_t kWater2DDefaultHoseParticleCapacity = 32768;
+inline constexpr std::uint32_t kWater2DDefaultHoseParticleCapacity = 262144;
 
 struct Water2DHoseConfig {
     bool enabled = false;
@@ -54,7 +54,7 @@ struct Water2DHoseConfig {
     float angle_degrees = -28.0F;
     float speed = 2.0F;
     float radius = 0.035F;
-    float particles_per_second = 4200.0F;
+    float particles_per_second = 12000.0F;
     float spread_degrees = 10.0F;
     std::uint32_t particle_capacity = kWater2DDefaultHoseParticleCapacity;
 };
@@ -70,10 +70,10 @@ struct Water2DConfig {
     std::uint32_t grid_height = kWater2DDefaultGridHeight;
     std::uint32_t pressure_iterations = 256;
     std::uint32_t particles_per_cell = 4;
-    std::uint32_t max_particles_per_cell = 16;
+    std::uint32_t max_particles_per_cell = 32;
     std::uint32_t active_particle_count = 51200;
     std::uint32_t initial_particle_capacity = 124080;
-    std::uint32_t particle_capacity = 156848;
+    std::uint32_t particle_capacity = 386224;
     std::uint32_t substeps = 1;
     Water2DScenario scenario = Water2DScenario::DamBreak;
     float fixed_delta_seconds = 1.0F / 60.0F;
@@ -84,6 +84,8 @@ struct Water2DConfig {
     float initial_fill_width = 0.50F;
     float velocity_limit = 3.0F;
     float particle_damping = 0.999F;
+    float particle_separation_radius = 0.58F;
+    float particle_separation_strength = 0.32F;
     float boundary_restitution = 0.18F;
     float obstacle_friction = 0.86F;
     float surface_threshold = 0.82F;
@@ -373,7 +375,7 @@ inline void apply_water_2d_scenario_defaults(Water2DConfig& config) {
         config.hose.angle_degrees = -28.0F;
         config.hose.speed = 2.0F;
         config.hose.radius = 0.035F;
-        config.hose.particles_per_second = 4200.0F;
+        config.hose.particles_per_second = 12000.0F;
         config.hose.spread_degrees = 10.0F;
         config.drain.enabled = true;
         config.drain.center = {0.86F, 0.08F};

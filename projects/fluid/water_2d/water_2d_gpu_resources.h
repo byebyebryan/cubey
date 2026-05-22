@@ -28,6 +28,8 @@ class Water2DGpuResources {
     void destroy_swapchain_resources();
     void destroy_all_resources();
 
+    [[nodiscard]] VkDeviceSize allocated_buffer_bytes() const;
+
     [[nodiscard]] const cubey::vulkan::Buffer& particle_positions() const;
     [[nodiscard]] const cubey::vulkan::Buffer& particle_velocities() const;
     [[nodiscard]] const cubey::vulkan::Buffer& u() const;

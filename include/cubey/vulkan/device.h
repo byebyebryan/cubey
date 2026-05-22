@@ -15,6 +15,13 @@ struct DeviceConfig {
     bool require_dynamic_rendering = false;
 };
 
+struct DeviceMemoryBudgetInfo {
+    bool available = false;
+    VkDeviceSize device_local_usage = 0;
+    VkDeviceSize device_local_budget = 0;
+    VkDeviceSize device_local_heap_size = 0;
+};
+
 class Device {
   public:
     Device(const Instance& instance, const DeviceConfig& config);
@@ -56,6 +63,10 @@ class Device {
     float timestamp_period_nanoseconds() const {
         return properties_.limits.timestampPeriod;
     }
+    bool supports_memory_budget() const {
+        return memory_budget_supported_;
+    }
+    [[nodiscard]] DeviceMemoryBudgetInfo device_memory_budget() const;
 
     [[nodiscard]] std::uint32_t find_memory_type(std::uint32_t type_bits,
                                                  VkMemoryPropertyFlags required) const;
@@ -74,6 +85,7 @@ class Device {
     VkQueue queue_ = VK_NULL_HANDLE;
     std::uint32_t queue_family_ = 0;
     std::uint32_t queue_timestamp_valid_bits_ = 0;
+    bool memory_budget_supported_ = false;
 };
 
 } // namespace cubey::vulkan
