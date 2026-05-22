@@ -1,0 +1,192 @@
+#version 450
+#extension GL_GOOGLE_include_directive : require
+
+#include "water_3d_contract.glsl"
+
+layout(local_size_x = 4, local_size_y = 4, local_size_z = 4) in;
+
+layout(set = 0, binding = WATER3D_BINDING_PARTICLE_POSITIONS, std430) readonly buffer ParticlePositions {
+    vec4 values[];
+} particle_positions;
+layout(set = 0, binding = WATER3D_BINDING_PARTICLE_VELOCITIES, std430) readonly buffer ParticleVelocities {
+    vec4 values[];
+} particle_velocities;
+layout(set = 0, binding = WATER3D_BINDING_PARTICLE_AFFINE, std430) readonly buffer ParticleAffine {
+    vec4 values[];
+} particle_affine;
+layout(set = 0, binding = WATER3D_BINDING_U_FIELD, std430) buffer UField { float values[]; } u_field;
+layout(set = 0, binding = WATER3D_BINDING_U_PREVIOUS, std430) buffer UPreviousField { float values[]; } u_previous;
+layout(set = 0, binding = WATER3D_BINDING_V_FIELD, std430) buffer VField { float values[]; } v_field;
+layout(set = 0, binding = WATER3D_BINDING_V_PREVIOUS, std430) buffer VPreviousField { float values[]; } v_previous;
+layout(set = 0, binding = WATER3D_BINDING_W_FIELD, std430) buffer WField { float values[]; } w_field;
+layout(set = 0, binding = WATER3D_BINDING_W_PREVIOUS, std430) buffer WPreviousField { float values[]; } w_previous;
+layout(set = 0, binding = WATER3D_BINDING_U_WEIGHT, std430) buffer UWeightField { float values[]; } u_weight;
+layout(set = 0, binding = WATER3D_BINDING_V_WEIGHT, std430) buffer VWeightField { float values[]; } v_weight;
+layout(set = 0, binding = WATER3D_BINDING_W_WEIGHT, std430) buffer WWeightField { float values[]; } w_weight;
+layout(set = 0, binding = WATER3D_BINDING_SOLID, std430) readonly buffer SolidField { float values[]; } solid;
+layout(set = 0, binding = WATER3D_BINDING_CELL_COUNTS, std430) readonly buffer CellCounts { uint values[]; } cell_counts;
+layout(set = 0, binding = WATER3D_BINDING_CELL_PARTICLE_INDICES, std430) readonly buffer CellParticleIndices { uint values[]; } cell_particle_indices;
+
+WATER3D_SIMULATION_PARAMS;
+
+uint cell_index(uint x, uint y, uint z, uint width, uint height) {
+    return ((z * height) + y) * width + x;
+}
+uint u_index(uint x, uint y, uint z, uint width, uint height) {
+    return ((z * height) + y) * (width + 1u) + x;
+}
+uint v_index(uint x, uint y, uint z, uint width, uint height) {
+    return ((z * (height + 1u)) + y) * width + x;
+}
+uint w_index(uint x, uint y, uint z, uint width, uint height) {
+    return ((z * height) + y) * width + x;
+}
+
+bool in_bounds(int x, int y, int z, uint width, uint height, uint depth) {
+    return x >= 0 && y >= 0 && z >= 0 && x < int(width) && y < int(height) && z < int(depth);
+}
+
+bool solid_cell(int x, int y, int z, uint width, uint height, uint depth) {
+    if (!in_bounds(x, y, z, width, height, depth)) {
+        return true;
+    }
+    return solid.values[cell_index(uint(x), uint(y), uint(z), width, height)] > 0.5;
+}
+
+bool blocked_u_face(uint x, uint y, uint z, uint width, uint height, uint depth) {
+    return x == 0u || x == width || solid_cell(int(x) - 1, int(y), int(z), width, height, depth) ||
+           solid_cell(int(x), int(y), int(z), width, height, depth);
+}
+
+bool blocked_v_face(uint x, uint y, uint z, uint width, uint height, uint depth) {
+    return y == 0u || y == height || solid_cell(int(x), int(y) - 1, int(z), width, height, depth) ||
+           solid_cell(int(x), int(y), int(z), width, height, depth);
+}
+
+bool blocked_w_face(uint x, uint y, uint z, uint width, uint height, uint depth) {
+    return z == 0u || z == depth || solid_cell(int(x), int(y), int(z) - 1, width, height, depth) ||
+           solid_cell(int(x), int(y), int(z), width, height, depth);
+}
+
+float kernel(float value) {
+    return max(0.0, 1.0 - abs(value));
+}
+
+bool apic_transfer_mode() {
+    return uint(WATER3D_TRANSFER_MODE + 0.5) == 1u;
+}
+
+mat3 unpack_affine(uint particle_id) {
+    uint base = particle_id * 3u;
+    return mat3(particle_affine.values[base + 0u].xyz,
+                particle_affine.values[base + 1u].xyz,
+                particle_affine.values[base + 2u].xyz);
+}
+
+vec3 gather_face_velocity(vec3 face_grid_position, uint width, uint height, uint depth,
+                          uint max_particles_per_cell, out float total_weight) {
+    ivec3 base = ivec3(floor(face_grid_position));
+    vec3 velocity_sum = vec3(0.0);
+    total_weight = 0.0;
+
+    for (int oz = -1; oz <= 1; ++oz) {
+        for (int oy = -1; oy <= 1; ++oy) {
+            for (int ox = -1; ox <= 1; ++ox) {
+                ivec3 cell = base + ivec3(ox, oy, oz);
+                if (!in_bounds(cell.x, cell.y, cell.z, width, height, depth)) {
+                    continue;
+                }
+                uint cell_id = cell_index(uint(cell.x), uint(cell.y), uint(cell.z), width, height);
+                uint count = min(cell_counts.values[cell_id], max_particles_per_cell);
+                for (uint slot = 0u; slot < count; ++slot) {
+                    uint particle_id =
+                        cell_particle_indices.values[(cell_id * max_particles_per_cell) + slot];
+                    if (particle_id == WATER3D_EMPTY_PARTICLE ||
+                        particle_positions.values[particle_id].w < 0.5) {
+                        continue;
+                    }
+                    vec3 particle_grid =
+                        particle_positions.values[particle_id].xyz * vec3(width, height, depth);
+                    vec3 delta = face_grid_position - particle_grid;
+                    float weight = kernel(delta.x) * kernel(delta.y) * kernel(delta.z);
+                    if (weight <= 0.0) {
+                        continue;
+                    }
+                    vec3 velocity = particle_velocities.values[particle_id].xyz;
+                    if (apic_transfer_mode()) {
+                        velocity += unpack_affine(particle_id) * delta;
+                    }
+                    velocity_sum += velocity * weight;
+                    total_weight += weight;
+                }
+            }
+        }
+    }
+
+    if (total_weight <= 0.00001) {
+        return vec3(0.0);
+    }
+    return velocity_sum / total_weight;
+}
+
+void main() {
+    uint width = uint(WATER3D_GRID_WIDTH + 0.5);
+    uint height = uint(WATER3D_GRID_HEIGHT + 0.5);
+    uint depth = uint(WATER3D_GRID_DEPTH + 0.5);
+    uint max_particles_per_cell = uint(WATER3D_MAX_PARTICLES_PER_CELL + 0.5);
+    uint x = gl_GlobalInvocationID.x;
+    uint y = gl_GlobalInvocationID.y;
+    uint z = gl_GlobalInvocationID.z;
+
+    if (x <= width && y < height && z < depth) {
+        uint index = u_index(x, y, z, width, height);
+        if (blocked_u_face(x, y, z, width, height, depth)) {
+            u_field.values[index] = 0.0;
+            u_previous.values[index] = 0.0;
+            u_weight.values[index] = 0.0;
+        } else {
+            float weight = 0.0;
+            vec3 velocity = gather_face_velocity(vec3(float(x), float(y) + 0.5,
+                                                      float(z) + 0.5),
+                                                 width, height, depth, max_particles_per_cell,
+                                                 weight);
+            u_field.values[index] = velocity.x;
+            u_previous.values[index] = velocity.x;
+            u_weight.values[index] = weight;
+        }
+    }
+    if (x < width && y <= height && z < depth) {
+        uint index = v_index(x, y, z, width, height);
+        if (blocked_v_face(x, y, z, width, height, depth)) {
+            v_field.values[index] = 0.0;
+            v_previous.values[index] = 0.0;
+            v_weight.values[index] = 0.0;
+        } else {
+            float weight = 0.0;
+            vec3 velocity = gather_face_velocity(vec3(float(x) + 0.5, float(y),
+                                                      float(z) + 0.5),
+                                                 width, height, depth, max_particles_per_cell,
+                                                 weight);
+            v_field.values[index] = velocity.y;
+            v_previous.values[index] = velocity.y;
+            v_weight.values[index] = weight;
+        }
+    }
+    if (x < width && y < height && z <= depth) {
+        uint index = w_index(x, y, z, width, height);
+        if (blocked_w_face(x, y, z, width, height, depth)) {
+            w_field.values[index] = 0.0;
+            w_previous.values[index] = 0.0;
+            w_weight.values[index] = 0.0;
+        } else {
+            float weight = 0.0;
+            vec3 velocity = gather_face_velocity(vec3(float(x) + 0.5, float(y) + 0.5,
+                                                      float(z)),
+                                                 width, height, depth, max_particles_per_cell,
+                                                 weight);
+            w_field.values[index] = velocity.z;
+            w_previous.values[index] = velocity.z;
+            w_weight.values[index] = weight;
+        }
+    }
+}

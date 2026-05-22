@@ -1,0 +1,86 @@
+#version 450
+#extension GL_GOOGLE_include_directive : require
+
+#include "water_3d_contract.glsl"
+
+layout(local_size_x = 64, local_size_y = 1) in;
+
+layout(set = 0, binding = WATER3D_BINDING_PARTICLE_POSITIONS, std430) buffer ParticlePositions {
+    vec4 values[];
+} particle_positions;
+layout(set = 0, binding = WATER3D_BINDING_PARTICLE_VELOCITIES, std430) buffer ParticleVelocities {
+    vec4 values[];
+} particle_velocities;
+layout(set = 0, binding = WATER3D_BINDING_PARTICLE_AFFINE, std430) buffer ParticleAffine {
+    vec4 values[];
+} particle_affine;
+
+WATER3D_SIMULATION_PARAMS;
+
+bool collide_axis(inout float position, inout float velocity, float minimum, float maximum,
+                  float restitution) {
+    if (position < minimum) {
+        position = minimum;
+        if (velocity < 0.0) {
+            velocity = -velocity * restitution;
+        }
+        return true;
+    }
+    if (position > maximum) {
+        position = maximum;
+        if (velocity > 0.0) {
+            velocity = -velocity * restitution;
+        }
+        return true;
+    }
+    return false;
+}
+
+void clamp_velocity(inout vec3 velocity) {
+    float velocity_limit = max(0.1, WATER3D_VELOCITY_LIMIT);
+    float speed = length(velocity);
+    if (speed > velocity_limit) {
+        velocity *= velocity_limit / speed;
+    }
+}
+
+void clear_affine(uint particle_id) {
+    uint base = particle_id * 3u;
+    particle_affine.values[base + 0u] = vec4(0.0);
+    particle_affine.values[base + 1u] = vec4(0.0);
+    particle_affine.values[base + 2u] = vec4(0.0);
+}
+
+void main() {
+    uint particle_id = gl_GlobalInvocationID.x;
+    uint width = uint(WATER3D_GRID_WIDTH + 0.5);
+    uint height = uint(WATER3D_GRID_HEIGHT + 0.5);
+    uint depth = uint(WATER3D_GRID_DEPTH + 0.5);
+    uint particle_count =
+        min(uint(WATER3D_PARTICLE_SCAN_COUNT + 0.5), uint(WATER3D_PARTICLE_CAPACITY + 0.5));
+    if (particle_id >= particle_count || particle_positions.values[particle_id].w < 0.5) {
+        return;
+    }
+
+    float restitution = clamp(WATER3D_BOUNDARY_RESTITUTION, 0.0, 1.0);
+    float damping = clamp(WATER3D_PARTICLE_DAMPING, 0.0, 1.0);
+    vec3 position = particle_positions.values[particle_id].xyz;
+    vec3 velocity = particle_velocities.values[particle_id].xyz;
+    position += velocity * WATER3D_DT;
+
+    vec3 margin = vec3(2.25 / float(width), 2.25 / float(height), 2.25 / float(depth));
+    bool collided = false;
+    collided = collide_axis(position.x, velocity.x, margin.x, 1.0 - margin.x, restitution) ||
+               collided;
+    collided = collide_axis(position.y, velocity.y, margin.y, 1.0 - margin.y, restitution) ||
+               collided;
+    collided = collide_axis(position.z, velocity.z, margin.z, 1.0 - margin.z, restitution) ||
+               collided;
+    clamp_velocity(velocity);
+    if (collided) {
+        clear_affine(particle_id);
+    }
+
+    particle_positions.values[particle_id] = vec4(position, 1.0);
+    particle_velocities.values[particle_id] = vec4(velocity * damping, 0.0);
+}

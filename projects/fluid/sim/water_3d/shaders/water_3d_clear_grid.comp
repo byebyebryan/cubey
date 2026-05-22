@@ -1,0 +1,68 @@
+#version 450
+#extension GL_GOOGLE_include_directive : require
+
+#include "water_3d_contract.glsl"
+
+layout(local_size_x = 4, local_size_y = 4, local_size_z = 4) in;
+
+layout(set = 0, binding = WATER3D_BINDING_U_FIELD, std430) buffer UField { float values[]; } u_field;
+layout(set = 0, binding = WATER3D_BINDING_U_PREVIOUS, std430) buffer UPreviousField { float values[]; } u_previous;
+layout(set = 0, binding = WATER3D_BINDING_V_FIELD, std430) buffer VField { float values[]; } v_field;
+layout(set = 0, binding = WATER3D_BINDING_V_PREVIOUS, std430) buffer VPreviousField { float values[]; } v_previous;
+layout(set = 0, binding = WATER3D_BINDING_W_FIELD, std430) buffer WField { float values[]; } w_field;
+layout(set = 0, binding = WATER3D_BINDING_W_PREVIOUS, std430) buffer WPreviousField { float values[]; } w_previous;
+layout(set = 0, binding = WATER3D_BINDING_U_WEIGHT, std430) buffer UWeightField { float values[]; } u_weight;
+layout(set = 0, binding = WATER3D_BINDING_V_WEIGHT, std430) buffer VWeightField { float values[]; } v_weight;
+layout(set = 0, binding = WATER3D_BINDING_W_WEIGHT, std430) buffer WWeightField { float values[]; } w_weight;
+layout(set = 0, binding = WATER3D_BINDING_PRESSURE_A, std430) buffer PressureAField { float values[]; } pressure_a;
+layout(set = 0, binding = WATER3D_BINDING_PRESSURE_B, std430) buffer PressureBField { float values[]; } pressure_b;
+layout(set = 0, binding = WATER3D_BINDING_DIVERGENCE, std430) buffer DivergenceField { float values[]; } divergence;
+
+WATER3D_SIMULATION_PARAMS;
+
+uint cell_index(uint x, uint y, uint z, uint width, uint height) {
+    return ((z * height) + y) * width + x;
+}
+uint u_index(uint x, uint y, uint z, uint width, uint height) {
+    return ((z * height) + y) * (width + 1u) + x;
+}
+uint v_index(uint x, uint y, uint z, uint width, uint height) {
+    return ((z * (height + 1u)) + y) * width + x;
+}
+uint w_index(uint x, uint y, uint z, uint width, uint height) {
+    return ((z * height) + y) * width + x;
+}
+
+void main() {
+    uint width = uint(WATER3D_GRID_WIDTH + 0.5);
+    uint height = uint(WATER3D_GRID_HEIGHT + 0.5);
+    uint depth = uint(WATER3D_GRID_DEPTH + 0.5);
+    uint x = gl_GlobalInvocationID.x;
+    uint y = gl_GlobalInvocationID.y;
+    uint z = gl_GlobalInvocationID.z;
+
+    if (x <= width && y < height && z < depth) {
+        uint index = u_index(x, y, z, width, height);
+        u_field.values[index] = 0.0;
+        u_previous.values[index] = 0.0;
+        u_weight.values[index] = 0.0;
+    }
+    if (x < width && y <= height && z < depth) {
+        uint index = v_index(x, y, z, width, height);
+        v_field.values[index] = 0.0;
+        v_previous.values[index] = 0.0;
+        v_weight.values[index] = 0.0;
+    }
+    if (x < width && y < height && z <= depth) {
+        uint index = w_index(x, y, z, width, height);
+        w_field.values[index] = 0.0;
+        w_previous.values[index] = 0.0;
+        w_weight.values[index] = 0.0;
+    }
+    if (x < width && y < height && z < depth) {
+        uint index = cell_index(x, y, z, width, height);
+        pressure_a.values[index] = 0.0;
+        pressure_b.values[index] = 0.0;
+        divergence.values[index] = 0.0;
+    }
+}

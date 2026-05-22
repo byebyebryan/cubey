@@ -1,5 +1,6 @@
 add_subdirectory(smoke_2d)
 add_subdirectory(water_2d)
+add_subdirectory(water_3d)
 
 set(CUBEY_PYRO_3D_SOURCES
     ../sim/pyro_3d/pyro_3d_app.cpp

@@ -1,0 +1,190 @@
+#version 450
+#extension GL_GOOGLE_include_directive : require
+
+#include "water_3d_contract.glsl"
+
+layout(local_size_x = 64, local_size_y = 1) in;
+
+layout(set = 0, binding = WATER3D_BINDING_PARTICLE_POSITIONS, std430) buffer ParticlePositions {
+    vec4 values[];
+} particle_positions;
+layout(set = 0, binding = WATER3D_BINDING_PARTICLE_VELOCITIES, std430) buffer ParticleVelocities {
+    vec4 values[];
+} particle_velocities;
+layout(set = 0, binding = WATER3D_BINDING_PARTICLE_AFFINE, std430) buffer ParticleAffine {
+    vec4 values[];
+} particle_affine;
+layout(set = 0, binding = WATER3D_BINDING_U_FIELD, std430) buffer UField {
+    float values[];
+} u_field;
+layout(set = 0, binding = WATER3D_BINDING_U_PREVIOUS, std430) buffer UPreviousField {
+    float values[];
+} u_previous;
+layout(set = 0, binding = WATER3D_BINDING_V_FIELD, std430) buffer VField {
+    float values[];
+} v_field;
+layout(set = 0, binding = WATER3D_BINDING_V_PREVIOUS, std430) buffer VPreviousField {
+    float values[];
+} v_previous;
+layout(set = 0, binding = WATER3D_BINDING_W_FIELD, std430) buffer WField {
+    float values[];
+} w_field;
+layout(set = 0, binding = WATER3D_BINDING_W_PREVIOUS, std430) buffer WPreviousField {
+    float values[];
+} w_previous;
+layout(set = 0, binding = WATER3D_BINDING_U_WEIGHT, std430) buffer UWeightField {
+    float values[];
+} u_weight;
+layout(set = 0, binding = WATER3D_BINDING_V_WEIGHT, std430) buffer VWeightField {
+    float values[];
+} v_weight;
+layout(set = 0, binding = WATER3D_BINDING_W_WEIGHT, std430) buffer WWeightField {
+    float values[];
+} w_weight;
+layout(set = 0, binding = WATER3D_BINDING_PRESSURE_A, std430) buffer PressureAField {
+    float values[];
+} pressure_a;
+layout(set = 0, binding = WATER3D_BINDING_PRESSURE_B, std430) buffer PressureBField {
+    float values[];
+} pressure_b;
+layout(set = 0, binding = WATER3D_BINDING_DIVERGENCE, std430) buffer DivergenceField {
+    float values[];
+} divergence;
+layout(set = 0, binding = WATER3D_BINDING_SOLID, std430) buffer SolidField {
+    float values[];
+} solid;
+layout(set = 0, binding = WATER3D_BINDING_CELL_COUNTS, std430) buffer CellCounts {
+    uint values[];
+} cell_counts;
+layout(set = 0, binding = WATER3D_BINDING_CELL_PARTICLE_INDICES, std430) buffer CellParticleIndices {
+    uint values[];
+} cell_particle_indices;
+
+WATER3D_SIMULATION_PARAMS;
+
+const uint kWater3DWallCells = 2u;
+
+uint cell_index(uint x, uint y, uint z, uint width, uint height) {
+    return ((z * height) + y) * width + x;
+}
+
+uint u_index(uint x, uint y, uint z, uint width, uint height) {
+    return ((z * height) + y) * (width + 1u) + x;
+}
+
+uint v_index(uint x, uint y, uint z, uint width, uint height) {
+    return ((z * (height + 1u)) + y) * width + x;
+}
+
+uint w_index(uint x, uint y, uint z, uint width, uint height, uint depth) {
+    return ((z * height) + y) * width + x;
+}
+
+float hash11(uint value) {
+    value ^= value >> 16u;
+    value *= 0x7feb352du;
+    value ^= value >> 15u;
+    value *= 0x846ca68bu;
+    value ^= value >> 16u;
+    return float(value & 0x00ffffffu) / float(0x01000000u);
+}
+
+vec3 spawn_position(uint logical_cell, uint sub_particle, uint fill_x, uint fill_y, uint fill_z,
+                    uint particles_per_cell, uint start_x, uint start_y, uint start_z,
+                    vec3 jitter, uint width, uint height, uint depth) {
+    uint cells_per_layer = max(1u, fill_x * fill_y);
+    uint cx = logical_cell % fill_x;
+    uint cy = (logical_cell / fill_x) % fill_y;
+    uint cz = (logical_cell / cells_per_layer) % fill_z;
+    uint strata = max(1u, uint(ceil(pow(float(particles_per_cell), 1.0 / 3.0))));
+    uint sx = sub_particle % strata;
+    uint sy = (sub_particle / strata) % strata;
+    uint sz = (sub_particle / (strata * strata)) % strata;
+    vec3 strata_offset = (vec3(sx, sy, sz) + vec3(0.31, 0.67, 0.49)) / float(strata);
+    vec3 cell_position = vec3(start_x + cx, start_y + cy, start_z + cz) +
+                         clamp(strata_offset + jitter, vec3(0.10), vec3(0.90));
+    return cell_position / vec3(width, height, depth);
+}
+
+void main() {
+    uint id = gl_GlobalInvocationID.x;
+    uint width = uint(WATER3D_GRID_WIDTH + 0.5);
+    uint height = uint(WATER3D_GRID_HEIGHT + 0.5);
+    uint depth = uint(WATER3D_GRID_DEPTH + 0.5);
+    uint active_particle_count = uint(WATER3D_ACTIVE_PARTICLE_COUNT + 0.5);
+    uint particle_capacity = uint(WATER3D_PARTICLE_CAPACITY + 0.5);
+    uint max_particles_per_cell = uint(WATER3D_MAX_PARTICLES_PER_CELL + 0.5);
+    uint particles_per_cell = max(1u, uint(WATER3D_PARTICLES_PER_CELL + 0.5));
+    uint cell_count = width * height * depth;
+    uint u_count = (width + 1u) * height * depth;
+    uint v_count = width * (height + 1u) * depth;
+    uint w_count = width * height * (depth + 1u);
+    uint bin_count = cell_count * max_particles_per_cell;
+
+    if (id < active_particle_count) {
+        uint fill_x = clamp(uint(floor(params.fill_options.x * float(width))), 1u,
+                            max(1u, width - (kWater3DWallCells * 2u)));
+        uint fill_y = clamp(uint(floor(params.fill_options.y * float(height))), 1u,
+                            max(1u, height - (kWater3DWallCells * 2u)));
+        uint fill_z = clamp(uint(floor(params.fill_options.z * float(depth))), 1u,
+                            max(1u, depth - (kWater3DWallCells * 2u)));
+        uint logical_cell = id / particles_per_cell;
+        uint sub_particle = id % particles_per_cell;
+        uint start_x = max(kWater3DWallCells, (width - fill_x) / 2u);
+        uint start_y = kWater3DWallCells;
+        uint start_z = max(kWater3DWallCells, (depth - fill_z) / 2u);
+        uint strata = max(1u, uint(ceil(pow(float(particles_per_cell), 1.0 / 3.0))));
+        vec3 jitter =
+            (vec3(hash11(id * 3u + 17u), hash11(id * 3u + 31u), hash11(id * 3u + 47u)) -
+             vec3(0.5)) *
+            (0.22 / float(strata));
+        vec3 position = spawn_position(logical_cell, sub_particle, fill_x, fill_y, fill_z,
+                                       particles_per_cell, start_x, start_y, start_z, jitter,
+                                       width, height, depth);
+        float release = smoothstep(0.58, 0.98, position.x);
+        particle_positions.values[id] = vec4(position, 1.0);
+        particle_velocities.values[id] = vec4(0.18 * release, 0.0, 0.0, 0.0);
+        particle_affine.values[id * 3u + 0u] = vec4(0.0);
+        particle_affine.values[id * 3u + 1u] = vec4(0.0);
+        particle_affine.values[id * 3u + 2u] = vec4(0.0);
+    } else if (id < particle_capacity) {
+        particle_positions.values[id] = vec4(-10.0, -10.0, -10.0, 0.0);
+        particle_velocities.values[id] = vec4(0.0);
+        particle_affine.values[id * 3u + 0u] = vec4(0.0);
+        particle_affine.values[id * 3u + 1u] = vec4(0.0);
+        particle_affine.values[id * 3u + 2u] = vec4(0.0);
+    }
+
+    if (id < cell_count) {
+        uint x = id % width;
+        uint y = (id / width) % height;
+        uint z = id / (width * height);
+        bool border = x < kWater3DWallCells || y < kWater3DWallCells ||
+                      z < kWater3DWallCells || x + (kWater3DWallCells + 1u) > width ||
+                      y + (kWater3DWallCells + 1u) > height ||
+                      z + (kWater3DWallCells + 1u) > depth;
+        pressure_a.values[id] = 0.0;
+        pressure_b.values[id] = 0.0;
+        divergence.values[id] = 0.0;
+        solid.values[id] = border ? 1.0 : 0.0;
+        cell_counts.values[id] = 0u;
+    }
+    if (id < u_count) {
+        u_field.values[id] = 0.0;
+        u_previous.values[id] = 0.0;
+        u_weight.values[id] = 0.0;
+    }
+    if (id < v_count) {
+        v_field.values[id] = 0.0;
+        v_previous.values[id] = 0.0;
+        v_weight.values[id] = 0.0;
+    }
+    if (id < w_count) {
+        w_field.values[id] = 0.0;
+        w_previous.values[id] = 0.0;
+        w_weight.values[id] = 0.0;
+    }
+    if (id < bin_count) {
+        cell_particle_indices.values[id] = WATER3D_EMPTY_PARTICLE;
+    }
+}

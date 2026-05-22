@@ -1,0 +1,68 @@
+#version 450
+#extension GL_GOOGLE_include_directive : require
+
+#include "water_3d_contract.glsl"
+
+layout(local_size_x = 4, local_size_y = 4, local_size_z = 4) in;
+
+layout(set = 0, binding = WATER3D_BINDING_U_FIELD, std430) readonly buffer UField { float values[]; } u_field;
+layout(set = 0, binding = WATER3D_BINDING_V_FIELD, std430) readonly buffer VField { float values[]; } v_field;
+layout(set = 0, binding = WATER3D_BINDING_W_FIELD, std430) readonly buffer WField { float values[]; } w_field;
+layout(set = 0, binding = WATER3D_BINDING_PRESSURE_A, std430) buffer PressureAField { float values[]; } pressure_a;
+layout(set = 0, binding = WATER3D_BINDING_PRESSURE_B, std430) buffer PressureBField { float values[]; } pressure_b;
+layout(set = 0, binding = WATER3D_BINDING_DIVERGENCE, std430) buffer DivergenceField { float values[]; } divergence;
+layout(set = 0, binding = WATER3D_BINDING_SOLID, std430) readonly buffer SolidField { float values[]; } solid;
+layout(set = 0, binding = WATER3D_BINDING_CELL_COUNTS, std430) readonly buffer CellCounts { uint values[]; } cell_counts;
+
+WATER3D_SIMULATION_PARAMS;
+
+uint cell_index(uint x, uint y, uint z, uint width, uint height) {
+    return ((z * height) + y) * width + x;
+}
+uint u_index(uint x, uint y, uint z, uint width, uint height) {
+    return ((z * height) + y) * (width + 1u) + x;
+}
+uint v_index(uint x, uint y, uint z, uint width, uint height) {
+    return ((z * (height + 1u)) + y) * width + x;
+}
+uint w_index(uint x, uint y, uint z, uint width, uint height) {
+    return ((z * height) + y) * width + x;
+}
+bool liquid_cell(uint index) {
+    return solid.values[index] < 0.5 && cell_counts.values[index] > 0u;
+}
+
+void main() {
+    uint width = uint(WATER3D_GRID_WIDTH + 0.5);
+    uint height = uint(WATER3D_GRID_HEIGHT + 0.5);
+    uint depth = uint(WATER3D_GRID_DEPTH + 0.5);
+    uint x = gl_GlobalInvocationID.x;
+    uint y = gl_GlobalInvocationID.y;
+    uint z = gl_GlobalInvocationID.z;
+    if (x >= width || y >= height || z >= depth) {
+        return;
+    }
+
+    uint index = cell_index(x, y, z, width, height);
+    pressure_a.values[index] = 0.0;
+    pressure_b.values[index] = 0.0;
+    if (!liquid_cell(index)) {
+        divergence.values[index] = 0.0;
+        return;
+    }
+
+    float left = u_field.values[u_index(x, y, z, width, height)];
+    float right = u_field.values[u_index(x + 1u, y, z, width, height)];
+    float bottom = v_field.values[v_index(x, y, z, width, height)];
+    float top = v_field.values[v_index(x, y + 1u, z, width, height)];
+    float back = w_field.values[w_index(x, y, z, width, height)];
+    float front = w_field.values[w_index(x, y, z + 1u, width, height)];
+    float velocity_divergence = ((right - left) * float(width)) +
+                                ((top - bottom) * float(height)) +
+                                ((front - back) * float(depth));
+    float target_particles = max(1.0, WATER3D_PARTICLES_PER_CELL);
+    float stored_particles = min(float(cell_counts.values[index]), WATER3D_MAX_PARTICLES_PER_CELL);
+    float overpack = max(0.0, (stored_particles - target_particles) / target_particles);
+    float volume_source = min(overpack, 5.0) * max(0.0, WATER3D_VOLUME_STRENGTH);
+    divergence.values[index] = velocity_divergence - volume_source;
+}

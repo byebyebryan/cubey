@@ -1,0 +1,32 @@
+#version 450
+#extension GL_GOOGLE_include_directive : require
+
+#include "water_3d_contract.glsl"
+
+layout(local_size_x = 64, local_size_y = 1) in;
+
+layout(set = 0, binding = WATER3D_BINDING_CELL_COUNTS, std430) buffer CellCounts {
+    uint values[];
+} cell_counts;
+layout(set = 0, binding = WATER3D_BINDING_CELL_PARTICLE_INDICES, std430) buffer CellParticleIndices {
+    uint values[];
+} cell_particle_indices;
+
+WATER3D_SIMULATION_PARAMS;
+
+void main() {
+    uint id = gl_GlobalInvocationID.x;
+    uint width = uint(WATER3D_GRID_WIDTH + 0.5);
+    uint height = uint(WATER3D_GRID_HEIGHT + 0.5);
+    uint depth = uint(WATER3D_GRID_DEPTH + 0.5);
+    uint max_particles_per_cell = uint(WATER3D_MAX_PARTICLES_PER_CELL + 0.5);
+    uint cell_count = width * height * depth;
+    uint bin_count = cell_count * max_particles_per_cell;
+
+    if (id < cell_count) {
+        cell_counts.values[id] = 0u;
+    }
+    if (id < bin_count) {
+        cell_particle_indices.values[id] = WATER3D_EMPTY_PARTICLE;
+    }
+}

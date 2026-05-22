@@ -1,0 +1,108 @@
+#version 450
+#extension GL_GOOGLE_include_directive : require
+
+#include "water_3d_contract.glsl"
+
+layout(local_size_x = 4, local_size_y = 4, local_size_z = 4) in;
+
+layout(set = 0, binding = WATER3D_BINDING_PRESSURE_A, std430) buffer PressureAField { float values[]; } pressure_a;
+layout(set = 0, binding = WATER3D_BINDING_PRESSURE_B, std430) buffer PressureBField { float values[]; } pressure_b;
+layout(set = 0, binding = WATER3D_BINDING_DIVERGENCE, std430) readonly buffer DivergenceField { float values[]; } divergence;
+layout(set = 0, binding = WATER3D_BINDING_SOLID, std430) readonly buffer SolidField { float values[]; } solid;
+layout(set = 0, binding = WATER3D_BINDING_CELL_COUNTS, std430) readonly buffer CellCounts { uint values[]; } cell_counts;
+
+WATER3D_SIMULATION_PARAMS;
+
+uint cell_index(uint x, uint y, uint z, uint width, uint height) {
+    return ((z * height) + y) * width + x;
+}
+bool in_bounds(int x, int y, int z, uint width, uint height, uint depth) {
+    return x >= 0 && y >= 0 && z >= 0 && x < int(width) && y < int(height) && z < int(depth);
+}
+bool solid_cell(int x, int y, int z, uint width, uint height, uint depth) {
+    if (!in_bounds(x, y, z, width, height, depth)) {
+        return true;
+    }
+    return solid.values[cell_index(uint(x), uint(y), uint(z), width, height)] > 0.5;
+}
+bool liquid_cell(int x, int y, int z, uint width, uint height, uint depth) {
+    if (!in_bounds(x, y, z, width, height, depth)) {
+        return false;
+    }
+    uint index = cell_index(uint(x), uint(y), uint(z), width, height);
+    return solid.values[index] < 0.5 && cell_counts.values[index] > 0u;
+}
+float read_pressure(int x, int y, int z, uint width, uint height, uint depth, bool read_b) {
+    if (!liquid_cell(x, y, z, width, height, depth)) {
+        return 0.0;
+    }
+    uint index = cell_index(uint(x), uint(y), uint(z), width, height);
+    return read_b ? pressure_b.values[index] : pressure_a.values[index];
+}
+
+void main() {
+    uint width = uint(WATER3D_GRID_WIDTH + 0.5);
+    uint height = uint(WATER3D_GRID_HEIGHT + 0.5);
+    uint depth = uint(WATER3D_GRID_DEPTH + 0.5);
+    uint x = gl_GlobalInvocationID.x;
+    uint y = gl_GlobalInvocationID.y;
+    uint z = gl_GlobalInvocationID.z;
+    if (x >= width || y >= height || z >= depth) {
+        return;
+    }
+
+    uint index = cell_index(x, y, z, width, height);
+    bool read_b = WATER3D_PRESSURE_READ_B > 0.5;
+    ivec3 center = ivec3(int(x), int(y), int(z));
+    if (!liquid_cell(center.x, center.y, center.z, width, height, depth)) {
+        if (read_b) {
+            pressure_a.values[index] = 0.0;
+        } else {
+            pressure_b.values[index] = 0.0;
+        }
+        return;
+    }
+
+    float x_weight = float(width) * float(width);
+    float y_weight = float(height) * float(height);
+    float z_weight = float(depth) * float(depth);
+    float sum = 0.0;
+    float diagonal = 0.0;
+    if (!solid_cell(center.x - 1, center.y, center.z, width, height, depth)) {
+        diagonal += x_weight;
+        sum += read_pressure(center.x - 1, center.y, center.z, width, height, depth, read_b) *
+               x_weight;
+    }
+    if (!solid_cell(center.x + 1, center.y, center.z, width, height, depth)) {
+        diagonal += x_weight;
+        sum += read_pressure(center.x + 1, center.y, center.z, width, height, depth, read_b) *
+               x_weight;
+    }
+    if (!solid_cell(center.x, center.y - 1, center.z, width, height, depth)) {
+        diagonal += y_weight;
+        sum += read_pressure(center.x, center.y - 1, center.z, width, height, depth, read_b) *
+               y_weight;
+    }
+    if (!solid_cell(center.x, center.y + 1, center.z, width, height, depth)) {
+        diagonal += y_weight;
+        sum += read_pressure(center.x, center.y + 1, center.z, width, height, depth, read_b) *
+               y_weight;
+    }
+    if (!solid_cell(center.x, center.y, center.z - 1, width, height, depth)) {
+        diagonal += z_weight;
+        sum += read_pressure(center.x, center.y, center.z - 1, width, height, depth, read_b) *
+               z_weight;
+    }
+    if (!solid_cell(center.x, center.y, center.z + 1, width, height, depth)) {
+        diagonal += z_weight;
+        sum += read_pressure(center.x, center.y, center.z + 1, width, height, depth, read_b) *
+               z_weight;
+    }
+
+    float value = diagonal > 0.0 ? (sum - divergence.values[index]) / diagonal : 0.0;
+    if (read_b) {
+        pressure_a.values[index] = value;
+    } else {
+        pressure_b.values[index] = value;
+    }
+}

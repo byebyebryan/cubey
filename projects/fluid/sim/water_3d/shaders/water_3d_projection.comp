@@ -1,0 +1,118 @@
+#version 450
+#extension GL_GOOGLE_include_directive : require
+
+#include "water_3d_contract.glsl"
+
+layout(local_size_x = 4, local_size_y = 4, local_size_z = 4) in;
+
+layout(set = 0, binding = WATER3D_BINDING_U_FIELD, std430) buffer UField { float values[]; } u_field;
+layout(set = 0, binding = WATER3D_BINDING_V_FIELD, std430) buffer VField { float values[]; } v_field;
+layout(set = 0, binding = WATER3D_BINDING_W_FIELD, std430) buffer WField { float values[]; } w_field;
+layout(set = 0, binding = WATER3D_BINDING_PRESSURE_A, std430) readonly buffer PressureAField { float values[]; } pressure_a;
+layout(set = 0, binding = WATER3D_BINDING_PRESSURE_B, std430) readonly buffer PressureBField { float values[]; } pressure_b;
+layout(set = 0, binding = WATER3D_BINDING_SOLID, std430) readonly buffer SolidField { float values[]; } solid;
+layout(set = 0, binding = WATER3D_BINDING_CELL_COUNTS, std430) readonly buffer CellCounts { uint values[]; } cell_counts;
+
+WATER3D_SIMULATION_PARAMS;
+
+uint cell_index(uint x, uint y, uint z, uint width, uint height) {
+    return ((z * height) + y) * width + x;
+}
+uint u_index(uint x, uint y, uint z, uint width, uint height) {
+    return ((z * height) + y) * (width + 1u) + x;
+}
+uint v_index(uint x, uint y, uint z, uint width, uint height) {
+    return ((z * (height + 1u)) + y) * width + x;
+}
+uint w_index(uint x, uint y, uint z, uint width, uint height) {
+    return ((z * height) + y) * width + x;
+}
+bool in_bounds(int x, int y, int z, uint width, uint height, uint depth) {
+    return x >= 0 && y >= 0 && z >= 0 && x < int(width) && y < int(height) && z < int(depth);
+}
+bool solid_cell(int x, int y, int z, uint width, uint height, uint depth) {
+    if (!in_bounds(x, y, z, width, height, depth)) {
+        return true;
+    }
+    return solid.values[cell_index(uint(x), uint(y), uint(z), width, height)] > 0.5;
+}
+bool liquid_cell(int x, int y, int z, uint width, uint height, uint depth) {
+    if (!in_bounds(x, y, z, width, height, depth)) {
+        return false;
+    }
+    uint index = cell_index(uint(x), uint(y), uint(z), width, height);
+    return solid.values[index] < 0.5 && cell_counts.values[index] > 0u;
+}
+float read_pressure(int x, int y, int z, uint width, uint height, uint depth, bool read_b) {
+    if (!liquid_cell(x, y, z, width, height, depth)) {
+        return 0.0;
+    }
+    uint index = cell_index(uint(x), uint(y), uint(z), width, height);
+    return read_b ? pressure_b.values[index] : pressure_a.values[index];
+}
+
+void main() {
+    uint width = uint(WATER3D_GRID_WIDTH + 0.5);
+    uint height = uint(WATER3D_GRID_HEIGHT + 0.5);
+    uint depth = uint(WATER3D_GRID_DEPTH + 0.5);
+    uint x = gl_GlobalInvocationID.x;
+    uint y = gl_GlobalInvocationID.y;
+    uint z = gl_GlobalInvocationID.z;
+    bool read_b = WATER3D_PRESSURE_READ_B > 0.5;
+    float velocity_limit = max(0.1, WATER3D_VELOCITY_LIMIT);
+
+    if (x <= width && y < height && z < depth) {
+        uint index = u_index(x, y, z, width, height);
+        bool blocked = x == 0u || x == width ||
+                       solid_cell(int(x) - 1, int(y), int(z), width, height, depth) ||
+                       solid_cell(int(x), int(y), int(z), width, height, depth);
+        bool face_has_liquid =
+            liquid_cell(int(x) - 1, int(y), int(z), width, height, depth) ||
+            liquid_cell(int(x), int(y), int(z), width, height, depth);
+        if (blocked || !face_has_liquid) {
+            u_field.values[index] = 0.0;
+        } else {
+            float left = read_pressure(int(x) - 1, int(y), int(z), width, height, depth, read_b);
+            float right = read_pressure(int(x), int(y), int(z), width, height, depth, read_b);
+            u_field.values[index] =
+                clamp(u_field.values[index] - ((right - left) * float(width)), -velocity_limit,
+                      velocity_limit);
+        }
+    }
+    if (x < width && y <= height && z < depth) {
+        uint index = v_index(x, y, z, width, height);
+        bool blocked = y == 0u || y == height ||
+                       solid_cell(int(x), int(y) - 1, int(z), width, height, depth) ||
+                       solid_cell(int(x), int(y), int(z), width, height, depth);
+        bool face_has_liquid =
+            liquid_cell(int(x), int(y) - 1, int(z), width, height, depth) ||
+            liquid_cell(int(x), int(y), int(z), width, height, depth);
+        if (blocked || !face_has_liquid) {
+            v_field.values[index] = 0.0;
+        } else {
+            float bottom = read_pressure(int(x), int(y) - 1, int(z), width, height, depth, read_b);
+            float top = read_pressure(int(x), int(y), int(z), width, height, depth, read_b);
+            v_field.values[index] =
+                clamp(v_field.values[index] - ((top - bottom) * float(height)), -velocity_limit,
+                      velocity_limit);
+        }
+    }
+    if (x < width && y < height && z <= depth) {
+        uint index = w_index(x, y, z, width, height);
+        bool blocked = z == 0u || z == depth ||
+                       solid_cell(int(x), int(y), int(z) - 1, width, height, depth) ||
+                       solid_cell(int(x), int(y), int(z), width, height, depth);
+        bool face_has_liquid =
+            liquid_cell(int(x), int(y), int(z) - 1, width, height, depth) ||
+            liquid_cell(int(x), int(y), int(z), width, height, depth);
+        if (blocked || !face_has_liquid) {
+            w_field.values[index] = 0.0;
+        } else {
+            float back = read_pressure(int(x), int(y), int(z) - 1, width, height, depth, read_b);
+            float front = read_pressure(int(x), int(y), int(z), width, height, depth, read_b);
+            w_field.values[index] =
+                clamp(w_field.values[index] - ((front - back) * float(depth)), -velocity_limit,
+                      velocity_limit);
+        }
+    }
+}
