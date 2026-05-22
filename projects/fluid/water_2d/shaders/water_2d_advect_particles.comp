@@ -1,0 +1,72 @@
+#version 450
+#extension GL_GOOGLE_include_directive : require
+
+#include "water_2d_contract.glsl"
+
+layout(local_size_x = 64, local_size_y = 1) in;
+
+layout(set = 0, binding = WATER2D_BINDING_PARTICLE_POSITIONS, std430) buffer ParticlePositions {
+    vec4 values[];
+} particle_positions;
+layout(set = 0, binding = WATER2D_BINDING_PARTICLE_VELOCITIES, std430) buffer ParticleVelocities {
+    vec4 values[];
+} particle_velocities;
+
+WATER2D_SIMULATION_PARAMS;
+
+void collide_axis(inout float position, inout float velocity, float minimum, float maximum) {
+    if (position < minimum) {
+        position = minimum;
+        velocity = max(0.0, velocity) * 0.18;
+    }
+    if (position > maximum) {
+        position = maximum;
+        velocity = min(0.0, velocity) * 0.18;
+    }
+}
+
+void collide_obstacle(inout vec2 position, inout vec2 velocity, float width, float height) {
+    if (params.init_options.w < 0.5) {
+        return;
+    }
+    float aspect = width / height;
+    vec2 scaled_delta = (position - params.obstacle_options.xy) * vec2(aspect, 1.0);
+    float distance = length(scaled_delta);
+    float radius = params.obstacle_options.z;
+    if (distance >= radius || distance <= 0.00001) {
+        return;
+    }
+
+    vec2 scaled_normal = scaled_delta / distance;
+    position = params.obstacle_options.xy + vec2(scaled_normal.x / aspect, scaled_normal.y) *
+                                              (radius + 0.0025);
+    vec2 normal = normalize(vec2(scaled_normal.x * aspect, scaled_normal.y));
+    float inward = dot(velocity, normal);
+    if (inward < 0.0) {
+        velocity -= normal * inward * 1.18;
+    }
+    velocity *= 0.86;
+}
+
+void main() {
+    uint particle_id = gl_GlobalInvocationID.x;
+    uint width = uint(params.grid_dt_time.x);
+    uint height = uint(params.grid_dt_time.y);
+    uint particle_count = uint(params.particle_options.x + 0.5);
+    if (particle_id >= particle_count) {
+        return;
+    }
+
+    float dt = params.grid_dt_time.z;
+    vec2 position = particle_positions.values[particle_id].xy;
+    vec2 velocity = particle_velocities.values[particle_id].xy;
+    position += velocity * dt;
+
+    vec2 margin = vec2(2.25 / float(width), 2.25 / float(height));
+    collide_axis(position.x, velocity.x, margin.x, 1.0 - margin.x);
+    collide_axis(position.y, velocity.y, margin.y, 1.0 - margin.y);
+    collide_obstacle(position, velocity, float(width), float(height));
+
+    particle_positions.values[particle_id] = vec4(position, 0.0, 0.0);
+    particle_velocities.values[particle_id] = vec4(velocity * 0.999, 0.0, 0.0);
+}

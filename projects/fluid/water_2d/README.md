@@ -1,28 +1,22 @@
 # Water 2D
 
-`water_2d` is Cubey's first free-surface liquid project. It starts as a 2D
-MAC-grid solver with a signed-distance level set surface, then leaves room for
-PIC/FLIP/APIC particles once the grid projection and boundary behavior are
-worth extending.
+`water_2d` is Cubey's first free-surface liquid project. It uses a particle
+PIC/FLIP layer for material motion and a face-centered MAC grid for pressure,
+boundaries, and incompressibility.
 
-The project is deliberately separate from `smoke_2d`. Smoke uses a collocated
-dye/velocity field; water uses face-centered velocity and a liquid/air
-interface:
-
-- `phi`: cell-centered signed distance; negative values are liquid.
-- `pressure` and `divergence`: cell-centered scalar fields.
-- `solid`: cell-centered obstacle/wall mask.
-- `u`: x velocity on vertical cell faces, `(width + 1) * height`.
-- `v`: y velocity on horizontal cell faces, `width * (height + 1)`.
+The project is deliberately separate from `smoke_2d`. Smoke uses collocated
+dye/velocity fields; water tracks liquid with particles, transfers velocity to a
+staggered grid, solves pressure on occupied cells, then transfers the projected
+velocity back to particles.
 
 ## Current Target
 
-The first implementation is a live 2D liquid sandbox:
+The implementation is a live 2D dam-break sandbox:
 
 ```sh
 ./build/dev/projects/fluid/water_2d/water_2d --frames 300 --width 1280 --height 720
 ./build/dev/projects/fluid/water_2d/water_2d --headless --frames 120 --width 640 --height 360 --output /tmp/cubey-water-2d.png
-./build/dev/projects/fluid/water_2d/water_2d --headless --debug-view phi --frames 120 --width 640 --height 360 --output /tmp/cubey-water-2d-phi.png
+./build/dev/projects/fluid/water_2d/water_2d --headless --debug-view particles --frames 120 --width 640 --height 360 --output /tmp/cubey-water-2d-particles.png
 ```
 
 Controls:
@@ -33,20 +27,36 @@ Controls:
 
 Debug views:
 
-- `surface`: shaded water fill plus the `phi = 0` contour.
-- `phi`: signed distance.
-- `velocity`: face velocity sampled to pixels.
-- `divergence`: projected-cell divergence.
+- `surface`: shaded particle-splat water surface.
+- `particles`: sharper particle splat visualization.
+- `cells`: occupied liquid cells from the particle bins.
+- `velocity`: projected face velocity sampled to pixels.
+- `divergence`: occupied-cell divergence before projection.
 - `pressure`: pressure solve output.
 - `solid`: walls and optional obstacle mask.
 
 ## Solver Shape
 
-Each frame applies gravity, advects face velocity, advects `phi`, reinitializes
-the level set near the interface, computes liquid-cell divergence, solves
-pressure with free-surface boundary conditions, then projects the face velocity.
+Each frame clears the grid and particle bins, bins particles into fixed-capacity
+cell slots, transfers particle velocity to `u` and `v` MAC faces, applies
+gravity, computes occupied-cell divergence, solves pressure with Jacobi,
+projects face velocity, transfers the current-vs-previous grid delta back to
+particles with a configurable PIC/FLIP blend, then advects and collides the
+particles.
 
-This is not the final high-detail liquid path. Pure level sets are simple and
-inspectable but lose volume and smooth thin features. The intended next step is
-a PIC/FLIP layer that keeps liquid material detail on particles while retaining
-the MAC grid for pressure, boundaries, and incompressibility.
+Main buffers:
+
+- `particle_positions` and `particle_velocities`: `vec4` particle state.
+- `cell_counts` and `cell_particle_indices`: fixed-capacity particle bins.
+- `u` and `v`: face velocity on vertical and horizontal grid faces.
+- `u_previous` and `v_previous`: pre-force/projection velocity for FLIP deltas.
+- `pressure` and `divergence`: cell-centered scalar fields.
+- `solid`: cell-centered obstacle/wall mask.
+
+This is still a foundation slice. It intentionally skips APIC, viscosity,
+surface tension, meshing, and sparse/adaptive particle storage until the basic
+PIC/FLIP contract is easier to inspect.
+
+The fill controls are runtime-editable. GPU particle buffers are allocated for
+the maximum editable fill area, while each reset computes an active particle
+count from the current fill width and height.

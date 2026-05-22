@@ -13,16 +13,21 @@ cubey_add_app_target(
         shaders/water_2d.vert
         shaders/water_2d_render.frag
         shaders/water_2d_reset.comp
+        shaders/water_2d_clear_grid.comp
+        shaders/water_2d_clear_bins.comp
+        shaders/water_2d_build_bins.comp
+        shaders/water_2d_particle_to_grid.comp
         shaders/water_2d_force.comp
-        shaders/water_2d_advect_velocity.comp
-        shaders/water_2d_advect_phi.comp
-        shaders/water_2d_reinitialize_phi.comp
         shaders/water_2d_divergence.comp
         shaders/water_2d_pressure.comp
         shaders/water_2d_projection.comp
+        shaders/water_2d_grid_to_particle.comp
+        shaders/water_2d_advect_particles.comp
     SHADER_INCLUDE_DIRS
+        "${CMAKE_CURRENT_SOURCE_DIR}/shaders"
         "${CMAKE_SOURCE_DIR}/shaders"
     SHADER_DEPENDS
+        "${CMAKE_CURRENT_SOURCE_DIR}/shaders/water_2d_contract.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/color_space.glsl"
 )
 

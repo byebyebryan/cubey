@@ -1,0 +1,31 @@
+#version 450
+#extension GL_GOOGLE_include_directive : require
+
+#include "water_2d_contract.glsl"
+
+layout(local_size_x = 64, local_size_y = 1) in;
+
+layout(set = 0, binding = WATER2D_BINDING_CELL_COUNTS, std430) buffer CellCounts {
+    uint values[];
+} cell_counts;
+layout(set = 0, binding = WATER2D_BINDING_CELL_PARTICLE_INDICES, std430) buffer CellParticleIndices {
+    uint values[];
+} cell_particle_indices;
+
+WATER2D_SIMULATION_PARAMS;
+
+void main() {
+    uint id = gl_GlobalInvocationID.x;
+    uint width = uint(params.grid_dt_time.x);
+    uint height = uint(params.grid_dt_time.y);
+    uint max_particles_per_cell = uint(params.particle_options.y + 0.5);
+    uint cell_count = width * height;
+    uint bin_count = cell_count * max_particles_per_cell;
+
+    if (id < cell_count) {
+        cell_counts.values[id] = 0u;
+    }
+    if (id < bin_count) {
+        cell_particle_indices.values[id] = WATER2D_EMPTY_PARTICLE;
+    }
+}

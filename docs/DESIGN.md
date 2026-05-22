@@ -522,17 +522,21 @@ cubey/
           CMakeLists.txt
           main.cpp
           water_2d_app.*     -- host/engine/input orchestration
-          water_2d_commands.* -- MAC-grid simulation and fullscreen draw recording
-          water_2d_gpu_resources.* -- level set / face-velocity buffers and pipelines
+          water_2d_commands.* -- PIC/FLIP simulation and fullscreen draw recording
+          water_2d_gpu_resources.* -- particle / MAC-grid buffers and pipelines
           shaders/
+            water_2d_contract.glsl
             water_2d_reset.comp
+            water_2d_clear_grid.comp
+            water_2d_clear_bins.comp
+            water_2d_build_bins.comp
+            water_2d_particle_to_grid.comp
             water_2d_force.comp
-            water_2d_advect_velocity.comp
-            water_2d_advect_phi.comp
-            water_2d_reinitialize_phi.comp
             water_2d_divergence.comp
             water_2d_pressure.comp
             water_2d_projection.comp
+            water_2d_grid_to_particle.comp
+            water_2d_advect_particles.comp
             water_2d.vert
             water_2d_render.frag
         sim/pyro_3d/

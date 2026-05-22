@@ -10,9 +10,8 @@ is a small set of focused projects, each with different scaling assumptions:
 
 - `projects/fluid/smoke_2d`: incompressible grid-fluid lab for advection, pressure
   solves, obstacles, vorticity, and possible 2D free-surface experiments.
-- `projects/fluid/water_2d`: 2D MAC-grid free-surface liquid baseline with a
-  signed-distance level set. This bridges grid projection work toward later
-  PIC/FLIP/APIC particles.
+- `projects/fluid/water_2d`: 2D PIC/FLIP free-surface liquid baseline with
+  particles for liquid motion and a MAC grid for pressure projection.
 - `projects/fluid_25d`: shallow-water terrain simulation for rivers, flooding,
   basins, sources, sinks, and heightfield-driven water.
 - `projects/fluid/fire_3d` and `projects/fluid/explosion_3d`: dense 3D pyro
@@ -121,14 +120,14 @@ visual result now that Cubey has already done the basic GPU Gems version once.
 | Better advection | High | MacCormack/BFECC directly reduce classic Stable Fluids diffusion. |
 | Stronger pressure solve | High | CG or multigrid is a real scaling lever over fixed Jacobi iterations. |
 | Obstacles/boundaries | High | Makes `smoke_2d` feel scene-relevant instead of purely decorative. |
-| Level set liquid | High | `water_2d` starts here with MAC velocity, pressure projection, and signed-distance surface tracking. Pure level sets lose mass. |
+| Level set liquid | Medium | Useful for signed-distance surfaces and collision work, but pure level sets lose mass and are no longer the `water_2d` baseline. |
 | Particle level set | Medium | Corrects level-set mass loss with marker particles; more moving parts. |
 | VOF | Medium | Better mass conservation, harder interface reconstruction. |
 | Shallow water / virtual pipes | High | Best first path for scalable terrain water in `fluid_25d`. |
 | Saint-Venant finite volume | Medium/high later | More rigorous terrain-water experiment after virtual pipes exists. |
 | SPH / DFSPH | Medium | Good for small particle liquids and splashes; particle-count-bound. |
 | PBF | Medium | Stable real-time interactive liquid toy; less physically rigorous. |
-| FLIP/APIC | Medium/high later | Strong liquid approach, but meshing/collision/coupling are substantial. |
+| FLIP/APIC | High | `water_2d` now starts with PIC/FLIP in 2D. APIC, meshing, richer collision, and 3D coupling remain substantial later work. |
 | MPM / MLS-MPM | Medium later | Interesting for mud, snow, sand, viscous fluids, and multiphase effects. |
 | Lattice Boltzmann | Medium/low | Interesting flow-around-obstacle lab; not first choice for Cubey water. |
 | Sparse 3D gas | High later | Best modern answer to the old dense 3D smoke/fire box. |
@@ -172,15 +171,15 @@ Why it is worth trying:
 - It gives useful infrastructure pressure: GPU particles, particle-grid
   transfer, spatial bins, surface reconstruction, and debug views.
 
-Suggested Cubey target:
+Current Cubey target:
 
 ```text
-projects/liquid_flip_2d
+projects/fluid/water_2d
 ```
 
 Start in 2D with particles plus a MAC-style grid, PIC/FLIP blend control,
-simple collision boundaries, and marching-squares or splat rendering. Defer 3D
-meshing, VDB-style surfacing, and complex collision coupling.
+simple collision boundaries, runtime-editable fill volume, and splat rendering.
+Defer APIC, 3D meshing, VDB-style surfacing, and complex collision coupling.
 
 ### SPH / PBF / DFSPH
 
@@ -233,11 +232,12 @@ project is worth the complexity.
 2. Continue `smoke_2d` with pressure-solver experiments, moving obstacles,
    stronger diagnostics, and a clearer smoke/dye versus free-surface-liquid
    direction.
-3. Build `water_2d` as a separate 2D MAC-grid level-set liquid slice.
+3. Continue `water_2d` from the current 2D PIC/FLIP baseline toward better
+   surfacing, pressure solves, boundaries, and validation/debug views.
 4. Try `liquid_particles_2d` with PBF/simple SPH to prove GPU neighbor search
    and particle-liquid rendering.
-5. Try `liquid_flip_2d` with a PIC/FLIP blend once grid pressure and particle
-   infrastructure are both comfortable.
+5. Consider APIC or a 3D liquid variant once the 2D PIC/FLIP infrastructure is
+   comfortable.
 6. Continue `fire_3d` / `explosion_3d` from the dense boxed baseline toward
    stronger shading, detail synthesis, sparse/local simulation, and demo presentation than the
    original Cubey version.

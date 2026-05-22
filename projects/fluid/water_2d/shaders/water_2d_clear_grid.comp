@@ -1,0 +1,74 @@
+#version 450
+#extension GL_GOOGLE_include_directive : require
+
+#include "water_2d_contract.glsl"
+
+layout(local_size_x = 8, local_size_y = 8) in;
+
+layout(set = 0, binding = WATER2D_BINDING_U_FIELD, std430) buffer UField {
+    float values[];
+} u_field;
+layout(set = 0, binding = WATER2D_BINDING_U_PREVIOUS, std430) buffer UPreviousField {
+    float values[];
+} u_previous;
+layout(set = 0, binding = WATER2D_BINDING_V_FIELD, std430) buffer VField {
+    float values[];
+} v_field;
+layout(set = 0, binding = WATER2D_BINDING_V_PREVIOUS, std430) buffer VPreviousField {
+    float values[];
+} v_previous;
+layout(set = 0, binding = WATER2D_BINDING_U_WEIGHT, std430) buffer UWeightField {
+    float values[];
+} u_weight;
+layout(set = 0, binding = WATER2D_BINDING_V_WEIGHT, std430) buffer VWeightField {
+    float values[];
+} v_weight;
+layout(set = 0, binding = WATER2D_BINDING_PRESSURE_A, std430) buffer PressureAField {
+    float values[];
+} pressure_a;
+layout(set = 0, binding = WATER2D_BINDING_PRESSURE_B, std430) buffer PressureBField {
+    float values[];
+} pressure_b;
+layout(set = 0, binding = WATER2D_BINDING_DIVERGENCE, std430) buffer DivergenceField {
+    float values[];
+} divergence;
+
+WATER2D_SIMULATION_PARAMS;
+
+uint cell_index(uint x, uint y, uint width) {
+    return (y * width) + x;
+}
+
+uint u_index(uint x, uint y, uint width) {
+    return (y * (width + 1u)) + x;
+}
+
+uint v_index(uint x, uint y, uint width) {
+    return (y * width) + x;
+}
+
+void main() {
+    uint width = uint(params.grid_dt_time.x);
+    uint height = uint(params.grid_dt_time.y);
+    uint x = gl_GlobalInvocationID.x;
+    uint y = gl_GlobalInvocationID.y;
+
+    if (x <= width && y < height) {
+        uint index = u_index(x, y, width);
+        u_field.values[index] = 0.0;
+        u_previous.values[index] = 0.0;
+        u_weight.values[index] = 0.0;
+    }
+    if (x < width && y <= height) {
+        uint index = v_index(x, y, width);
+        v_field.values[index] = 0.0;
+        v_previous.values[index] = 0.0;
+        v_weight.values[index] = 0.0;
+    }
+    if (x < width && y < height) {
+        uint index = cell_index(x, y, width);
+        pressure_a.values[index] = 0.0;
+        pressure_b.values[index] = 0.0;
+        divergence.values[index] = 0.0;
+    }
+}

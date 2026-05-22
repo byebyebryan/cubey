@@ -1,35 +1,33 @@
 #version 450
+#extension GL_GOOGLE_include_directive : require
+
+#include "water_2d_contract.glsl"
 
 layout(local_size_x = 8, local_size_y = 8) in;
 
-layout(set = 0, binding = 0, std430) readonly buffer PhiAField {
+layout(set = 0, binding = WATER2D_BINDING_U_FIELD, std430) readonly buffer UField {
     float values[];
-} phi_a;
-layout(set = 0, binding = 3, std430) readonly buffer UField {
+} u_field;
+layout(set = 0, binding = WATER2D_BINDING_V_FIELD, std430) readonly buffer VField {
     float values[];
-} u_b;
-layout(set = 0, binding = 5, std430) readonly buffer VField {
-    float values[];
-} v_b;
-layout(set = 0, binding = 6, std430) buffer PressureAField {
+} v_field;
+layout(set = 0, binding = WATER2D_BINDING_PRESSURE_A, std430) buffer PressureAField {
     float values[];
 } pressure_a;
-layout(set = 0, binding = 7, std430) buffer PressureBField {
+layout(set = 0, binding = WATER2D_BINDING_PRESSURE_B, std430) buffer PressureBField {
     float values[];
 } pressure_b;
-layout(set = 0, binding = 8, std430) buffer DivergenceField {
+layout(set = 0, binding = WATER2D_BINDING_DIVERGENCE, std430) buffer DivergenceField {
     float values[];
 } divergence;
-layout(set = 0, binding = 9, std430) readonly buffer SolidField {
+layout(set = 0, binding = WATER2D_BINDING_SOLID, std430) readonly buffer SolidField {
     float values[];
 } solid;
+layout(set = 0, binding = WATER2D_BINDING_CELL_COUNTS, std430) readonly buffer CellCounts {
+    uint values[];
+} cell_counts;
 
-layout(push_constant) uniform SimulationParams {
-    vec4 grid_dt_time;
-    vec4 init_options;
-    vec4 obstacle_options;
-    vec4 solve_options;
-} params;
+WATER2D_SIMULATION_PARAMS;
 
 uint cell_index(uint x, uint y, uint width) {
     return (y * width) + x;
@@ -43,11 +41,16 @@ uint v_index(uint x, uint y, uint width) {
     return (y * width) + x;
 }
 
+bool liquid_cell(uint index) {
+    return solid.values[index] < 0.5 && cell_counts.values[index] > 0u;
+}
+
 void main() {
     uint width = uint(params.grid_dt_time.x);
     uint height = uint(params.grid_dt_time.y);
     uint x = gl_GlobalInvocationID.x;
     uint y = gl_GlobalInvocationID.y;
+
     if (x >= width || y >= height) {
         return;
     }
@@ -55,15 +58,15 @@ void main() {
     uint index = cell_index(x, y, width);
     pressure_a.values[index] = 0.0;
     pressure_b.values[index] = 0.0;
-
-    if (solid.values[index] > 0.5 || phi_a.values[index] >= 0.0) {
+    if (!liquid_cell(index)) {
         divergence.values[index] = 0.0;
         return;
     }
 
-    float right = u_b.values[u_index(x + 1u, y, width)];
-    float left = u_b.values[u_index(x, y, width)];
-    float up = v_b.values[v_index(x, y + 1u, width)];
-    float down = v_b.values[v_index(x, y, width)];
-    divergence.values[index] = (right - left) + (up - down);
+    float left = u_field.values[u_index(x, y, width)];
+    float right = u_field.values[u_index(x + 1u, y, width)];
+    float bottom = v_field.values[v_index(x, y, width)];
+    float top = v_field.values[v_index(x, y + 1u, width)];
+    divergence.values[index] =
+        ((right - left) * float(width)) + ((top - bottom) * float(height));
 }

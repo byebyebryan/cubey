@@ -28,9 +28,10 @@ using cubey::FrameTiming;
 using cubey::ProjectFrame;
 using cubey::host::FrameStatsSample;
 
-constexpr std::array<Water2DDebugView, 6> kDebugViews{
-    Water2DDebugView::Surface,    Water2DDebugView::Phi,      Water2DDebugView::Velocity,
-    Water2DDebugView::Divergence, Water2DDebugView::Pressure, Water2DDebugView::Solid,
+constexpr std::array<Water2DDebugView, 7> kDebugViews{
+    Water2DDebugView::Surface,  Water2DDebugView::Particles,  Water2DDebugView::Cells,
+    Water2DDebugView::Velocity, Water2DDebugView::Divergence, Water2DDebugView::Pressure,
+    Water2DDebugView::Solid,
 };
 
 class Water2DApp {
@@ -151,21 +152,21 @@ class Water2DApp {
         }
 
         int pressure_iterations = static_cast<int>(water_config_.pressure_iterations);
-        if (ImGui::SliderInt("Pressure iterations", &pressure_iterations, 1, 96)) {
+        if (ImGui::SliderInt("Pressure iterations", &pressure_iterations, 1, 512)) {
             water_config_.pressure_iterations = static_cast<std::uint32_t>(pressure_iterations);
         }
-        int reinit_iterations = static_cast<int>(water_config_.reinitialization_iterations);
-        if (ImGui::SliderInt("SDF cleanup", &reinit_iterations, 1, 8)) {
-            water_config_.reinitialization_iterations =
-                static_cast<std::uint32_t>(reinit_iterations);
-        }
+        ImGui::SliderFloat("PIC/FLIP blend", &water_config_.flip_ratio, 0.0F, 1.0F, "%.2f");
+        ImGui::SliderFloat("Particle radius", &water_config_.particle_radius, 0.0025F, 0.025F,
+                           "%.4f");
         ImGui::SliderFloat("Gravity", &water_config_.gravity, -4.0F, 0.0F, "%.2f");
-        if (ImGui::SliderFloat("Fill height", &water_config_.initial_fill_height, 0.08F, 0.92F,
-                               "%.2f")) {
+        if (ImGui::SliderFloat("Fill height", &water_config_.initial_fill_height,
+                               kWater2DMinFillFraction, kWater2DMaxFillFraction, "%.2f")) {
+            refresh_particle_counts(water_config_);
             reset_requested_ = true;
         }
-        if (ImGui::SliderFloat("Fill width", &water_config_.initial_fill_width, 0.08F, 0.92F,
-                               "%.2f")) {
+        if (ImGui::SliderFloat("Fill width", &water_config_.initial_fill_width,
+                               kWater2DMinFillFraction, kWater2DMaxFillFraction, "%.2f")) {
+            refresh_particle_counts(water_config_);
             reset_requested_ = true;
         }
         if (ImGui::Checkbox("Obstacle", &water_config_.obstacles_enabled)) {
@@ -181,6 +182,8 @@ class Water2DApp {
         }
 
         ImGui::Text("Grid: %u x %u", water_config_.grid_width, water_config_.grid_height);
+        ImGui::Text("Particles: %u / %u", water_config_.active_particle_count,
+                    water_config_.particle_capacity);
         ImGui::End();
     }
 

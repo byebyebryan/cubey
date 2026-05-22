@@ -1,0 +1,110 @@
+#version 450
+#extension GL_GOOGLE_include_directive : require
+
+#include "water_2d_contract.glsl"
+
+layout(local_size_x = 64, local_size_y = 1) in;
+
+layout(set = 0, binding = WATER2D_BINDING_PARTICLE_POSITIONS, std430) readonly buffer ParticlePositions {
+    vec4 values[];
+} particle_positions;
+layout(set = 0, binding = WATER2D_BINDING_PARTICLE_VELOCITIES, std430) buffer ParticleVelocities {
+    vec4 values[];
+} particle_velocities;
+layout(set = 0, binding = WATER2D_BINDING_U_FIELD, std430) readonly buffer UField {
+    float values[];
+} u_field;
+layout(set = 0, binding = WATER2D_BINDING_U_PREVIOUS, std430) readonly buffer UPreviousField {
+    float values[];
+} u_previous;
+layout(set = 0, binding = WATER2D_BINDING_V_FIELD, std430) readonly buffer VField {
+    float values[];
+} v_field;
+layout(set = 0, binding = WATER2D_BINDING_V_PREVIOUS, std430) readonly buffer VPreviousField {
+    float values[];
+} v_previous;
+layout(set = 0, binding = WATER2D_BINDING_CELL_COUNTS, std430) readonly buffer CellCounts {
+    uint values[];
+} cell_counts;
+
+WATER2D_SIMULATION_PARAMS;
+
+uint u_index(ivec2 coord, uint width, uint height) {
+    ivec2 clamped = ivec2(clamp(coord.x, 0, int(width)), clamp(coord.y, 0, int(height) - 1));
+    return (uint(clamped.y) * (width + 1u)) + uint(clamped.x);
+}
+
+uint v_index(ivec2 coord, uint width, uint height) {
+    ivec2 clamped = ivec2(clamp(coord.x, 0, int(width) - 1), clamp(coord.y, 0, int(height)));
+    return (uint(clamped.y) * width) + uint(clamped.x);
+}
+
+uint cell_index(ivec2 coord, uint width, uint height) {
+    ivec2 clamped = clamp(coord, ivec2(0), ivec2(int(width) - 1, int(height) - 1));
+    return (uint(clamped.y) * width) + uint(clamped.x);
+}
+
+float sample_u(vec2 uv, uint width, uint height, bool previous) {
+    vec2 position = vec2(uv.x * float(width), uv.y * float(height) - 0.5);
+    ivec2 base = ivec2(floor(position));
+    vec2 f = fract(position);
+    float a = previous ? u_previous.values[u_index(base, width, height)]
+                       : u_field.values[u_index(base, width, height)];
+    float b = previous ? u_previous.values[u_index(base + ivec2(1, 0), width, height)]
+                       : u_field.values[u_index(base + ivec2(1, 0), width, height)];
+    float c = previous ? u_previous.values[u_index(base + ivec2(0, 1), width, height)]
+                       : u_field.values[u_index(base + ivec2(0, 1), width, height)];
+    float d = previous ? u_previous.values[u_index(base + ivec2(1, 1), width, height)]
+                       : u_field.values[u_index(base + ivec2(1, 1), width, height)];
+    return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+}
+
+float sample_v(vec2 uv, uint width, uint height, bool previous) {
+    vec2 position = vec2(uv.x * float(width) - 0.5, uv.y * float(height));
+    ivec2 base = ivec2(floor(position));
+    vec2 f = fract(position);
+    float a = previous ? v_previous.values[v_index(base, width, height)]
+                       : v_field.values[v_index(base, width, height)];
+    float b = previous ? v_previous.values[v_index(base + ivec2(1, 0), width, height)]
+                       : v_field.values[v_index(base + ivec2(1, 0), width, height)];
+    float c = previous ? v_previous.values[v_index(base + ivec2(0, 1), width, height)]
+                       : v_field.values[v_index(base + ivec2(0, 1), width, height)];
+    float d = previous ? v_previous.values[v_index(base + ivec2(1, 1), width, height)]
+                       : v_field.values[v_index(base + ivec2(1, 1), width, height)];
+    return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+}
+
+vec2 sample_velocity(vec2 uv, uint width, uint height, bool previous) {
+    return vec2(sample_u(uv, width, height, previous), sample_v(uv, width, height, previous));
+}
+
+void main() {
+    uint particle_id = gl_GlobalInvocationID.x;
+    uint width = uint(params.grid_dt_time.x);
+    uint height = uint(params.grid_dt_time.y);
+    uint particle_count = uint(params.particle_options.x + 0.5);
+    if (particle_id >= particle_count) {
+        return;
+    }
+
+    vec2 position = particle_positions.values[particle_id].xy;
+    vec2 old_velocity = particle_velocities.values[particle_id].xy;
+    vec2 current_grid_velocity = sample_velocity(position, width, height, false);
+    vec2 previous_grid_velocity = sample_velocity(position, width, height, true);
+    vec2 pic_velocity = current_grid_velocity;
+    vec2 flip_velocity = old_velocity + (current_grid_velocity - previous_grid_velocity);
+    vec2 velocity = mix(pic_velocity, flip_velocity, clamp(params.particle_options.w, 0.0, 1.0));
+    uint particles_per_cell = max(1u, uint(params.particle_options.z + 0.5));
+    uint sparse_threshold = max(1u, particles_per_cell / 2u);
+    ivec2 cell = ivec2(floor(position * vec2(width, height)));
+    bool sparse_drop = cell_counts.values[cell_index(cell, width, height)] <= sparse_threshold;
+    if (sparse_drop && old_velocity.y <= 0.10) {
+        float ballistic_y = old_velocity.y + params.init_options.z * params.grid_dt_time.z;
+        velocity.y = min(velocity.y, ballistic_y);
+    }
+    float speed = length(velocity);
+    if (speed > 3.0) {
+        velocity *= 3.0 / speed;
+    }
+    particle_velocities.values[particle_id] = vec4(velocity, 0.0, 0.0);
+}

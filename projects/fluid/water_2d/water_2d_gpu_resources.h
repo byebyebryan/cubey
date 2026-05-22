@@ -24,32 +24,43 @@ class Water2DGpuResources {
     void destroy_swapchain_resources();
     void destroy_all_resources();
 
-    [[nodiscard]] const cubey::vulkan::Buffer& phi_a() const;
-    [[nodiscard]] const cubey::vulkan::Buffer& phi_b() const;
-    [[nodiscard]] const cubey::vulkan::Buffer& u_a() const;
-    [[nodiscard]] const cubey::vulkan::Buffer& u_b() const;
-    [[nodiscard]] const cubey::vulkan::Buffer& v_a() const;
-    [[nodiscard]] const cubey::vulkan::Buffer& v_b() const;
+    [[nodiscard]] const cubey::vulkan::Buffer& particle_positions() const;
+    [[nodiscard]] const cubey::vulkan::Buffer& particle_velocities() const;
+    [[nodiscard]] const cubey::vulkan::Buffer& u() const;
+    [[nodiscard]] const cubey::vulkan::Buffer& u_previous() const;
+    [[nodiscard]] const cubey::vulkan::Buffer& v() const;
+    [[nodiscard]] const cubey::vulkan::Buffer& v_previous() const;
+    [[nodiscard]] const cubey::vulkan::Buffer& u_weight() const;
+    [[nodiscard]] const cubey::vulkan::Buffer& v_weight() const;
     [[nodiscard]] const cubey::vulkan::Buffer& pressure_a() const;
     [[nodiscard]] const cubey::vulkan::Buffer& pressure_b() const;
     [[nodiscard]] const cubey::vulkan::Buffer& divergence() const;
     [[nodiscard]] const cubey::vulkan::Buffer& solid() const;
+    [[nodiscard]] const cubey::vulkan::Buffer& cell_counts() const;
+    [[nodiscard]] const cubey::vulkan::Buffer& cell_particle_indices() const;
     [[nodiscard]] VkDescriptorSet field_descriptor_set() const noexcept {
         return field_descriptor_set_;
     }
+
     [[nodiscard]] const cubey::render::ComputePipelineResource& reset_pipeline_resource() const;
+    [[nodiscard]] const cubey::render::ComputePipelineResource&
+    clear_grid_pipeline_resource() const;
+    [[nodiscard]] const cubey::render::ComputePipelineResource&
+    clear_bins_pipeline_resource() const;
+    [[nodiscard]] const cubey::render::ComputePipelineResource&
+    build_bins_pipeline_resource() const;
+    [[nodiscard]] const cubey::render::ComputePipelineResource&
+    particle_to_grid_pipeline_resource() const;
     [[nodiscard]] const cubey::render::ComputePipelineResource& force_pipeline_resource() const;
-    [[nodiscard]] const cubey::render::ComputePipelineResource&
-    advect_velocity_pipeline_resource() const;
-    [[nodiscard]] const cubey::render::ComputePipelineResource&
-    advect_phi_pipeline_resource() const;
-    [[nodiscard]] const cubey::render::ComputePipelineResource&
-    reinitialize_phi_pipeline_resource() const;
     [[nodiscard]] const cubey::render::ComputePipelineResource&
     divergence_pipeline_resource() const;
     [[nodiscard]] const cubey::render::ComputePipelineResource& pressure_pipeline_resource() const;
     [[nodiscard]] const cubey::render::ComputePipelineResource&
     projection_pipeline_resource() const;
+    [[nodiscard]] const cubey::render::ComputePipelineResource&
+    grid_to_particle_pipeline_resource() const;
+    [[nodiscard]] const cubey::render::ComputePipelineResource&
+    advect_particles_pipeline_resource() const;
     [[nodiscard]] const cubey::render::GraphicsPipelineResource& render_pipeline_resource() const;
 
   private:
@@ -60,27 +71,34 @@ class Water2DGpuResources {
     [[nodiscard]] VkDescriptorSetLayout field_descriptor_layout() const;
     [[nodiscard]] const cubey::vulkan::DescriptorPool& field_descriptor_pool() const;
 
-    std::optional<cubey::vulkan::Buffer> phi_a_;
-    std::optional<cubey::vulkan::Buffer> phi_b_;
-    std::optional<cubey::vulkan::Buffer> u_a_;
-    std::optional<cubey::vulkan::Buffer> u_b_;
-    std::optional<cubey::vulkan::Buffer> v_a_;
-    std::optional<cubey::vulkan::Buffer> v_b_;
+    std::optional<cubey::vulkan::Buffer> particle_positions_;
+    std::optional<cubey::vulkan::Buffer> particle_velocities_;
+    std::optional<cubey::vulkan::Buffer> u_;
+    std::optional<cubey::vulkan::Buffer> u_previous_;
+    std::optional<cubey::vulkan::Buffer> v_;
+    std::optional<cubey::vulkan::Buffer> v_previous_;
+    std::optional<cubey::vulkan::Buffer> u_weight_;
+    std::optional<cubey::vulkan::Buffer> v_weight_;
     std::optional<cubey::vulkan::Buffer> pressure_a_;
     std::optional<cubey::vulkan::Buffer> pressure_b_;
     std::optional<cubey::vulkan::Buffer> divergence_;
     std::optional<cubey::vulkan::Buffer> solid_;
+    std::optional<cubey::vulkan::Buffer> cell_counts_;
+    std::optional<cubey::vulkan::Buffer> cell_particle_indices_;
     std::optional<cubey::vulkan::DescriptorSetLayout> field_descriptor_layout_;
     std::optional<cubey::vulkan::DescriptorPool> field_descriptor_pool_;
     VkDescriptorSet field_descriptor_set_ = VK_NULL_HANDLE;
     std::optional<cubey::render::ComputePipelineResource> reset_pipeline_resource_;
+    std::optional<cubey::render::ComputePipelineResource> clear_grid_pipeline_resource_;
+    std::optional<cubey::render::ComputePipelineResource> clear_bins_pipeline_resource_;
+    std::optional<cubey::render::ComputePipelineResource> build_bins_pipeline_resource_;
+    std::optional<cubey::render::ComputePipelineResource> particle_to_grid_pipeline_resource_;
     std::optional<cubey::render::ComputePipelineResource> force_pipeline_resource_;
-    std::optional<cubey::render::ComputePipelineResource> advect_velocity_pipeline_resource_;
-    std::optional<cubey::render::ComputePipelineResource> advect_phi_pipeline_resource_;
-    std::optional<cubey::render::ComputePipelineResource> reinitialize_phi_pipeline_resource_;
     std::optional<cubey::render::ComputePipelineResource> divergence_pipeline_resource_;
     std::optional<cubey::render::ComputePipelineResource> pressure_pipeline_resource_;
     std::optional<cubey::render::ComputePipelineResource> projection_pipeline_resource_;
+    std::optional<cubey::render::ComputePipelineResource> grid_to_particle_pipeline_resource_;
+    std::optional<cubey::render::ComputePipelineResource> advect_particles_pipeline_resource_;
     std::optional<cubey::render::GraphicsPipelineResource> render_pipeline_resource_;
 };
 

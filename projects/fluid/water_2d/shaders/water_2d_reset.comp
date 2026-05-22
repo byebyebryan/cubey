@@ -1,44 +1,54 @@
 #version 450
+#extension GL_GOOGLE_include_directive : require
 
-layout(local_size_x = 8, local_size_y = 8) in;
+#include "water_2d_contract.glsl"
 
-layout(set = 0, binding = 0, std430) buffer PhiAField {
+layout(local_size_x = 64, local_size_y = 1) in;
+
+layout(set = 0, binding = WATER2D_BINDING_PARTICLE_POSITIONS, std430) buffer ParticlePositions {
+    vec4 values[];
+} particle_positions;
+layout(set = 0, binding = WATER2D_BINDING_PARTICLE_VELOCITIES, std430) buffer ParticleVelocities {
+    vec4 values[];
+} particle_velocities;
+layout(set = 0, binding = WATER2D_BINDING_U_FIELD, std430) buffer UField {
     float values[];
-} phi_a;
-layout(set = 0, binding = 1, std430) buffer PhiBField {
+} u_field;
+layout(set = 0, binding = WATER2D_BINDING_U_PREVIOUS, std430) buffer UPreviousField {
     float values[];
-} phi_b;
-layout(set = 0, binding = 2, std430) buffer UAField {
+} u_previous;
+layout(set = 0, binding = WATER2D_BINDING_V_FIELD, std430) buffer VField {
     float values[];
-} u_a;
-layout(set = 0, binding = 3, std430) buffer UBField {
+} v_field;
+layout(set = 0, binding = WATER2D_BINDING_V_PREVIOUS, std430) buffer VPreviousField {
     float values[];
-} u_b;
-layout(set = 0, binding = 4, std430) buffer VAField {
+} v_previous;
+layout(set = 0, binding = WATER2D_BINDING_U_WEIGHT, std430) buffer UWeightField {
     float values[];
-} v_a;
-layout(set = 0, binding = 5, std430) buffer VBField {
+} u_weight;
+layout(set = 0, binding = WATER2D_BINDING_V_WEIGHT, std430) buffer VWeightField {
     float values[];
-} v_b;
-layout(set = 0, binding = 6, std430) buffer PressureAField {
+} v_weight;
+layout(set = 0, binding = WATER2D_BINDING_PRESSURE_A, std430) buffer PressureAField {
     float values[];
 } pressure_a;
-layout(set = 0, binding = 7, std430) buffer PressureBField {
+layout(set = 0, binding = WATER2D_BINDING_PRESSURE_B, std430) buffer PressureBField {
     float values[];
 } pressure_b;
-layout(set = 0, binding = 8, std430) buffer DivergenceField {
+layout(set = 0, binding = WATER2D_BINDING_DIVERGENCE, std430) buffer DivergenceField {
     float values[];
 } divergence;
-layout(set = 0, binding = 9, std430) buffer SolidField {
+layout(set = 0, binding = WATER2D_BINDING_SOLID, std430) buffer SolidField {
     float values[];
 } solid;
+layout(set = 0, binding = WATER2D_BINDING_CELL_COUNTS, std430) buffer CellCounts {
+    uint values[];
+} cell_counts;
+layout(set = 0, binding = WATER2D_BINDING_CELL_PARTICLE_INDICES, std430) buffer CellParticleIndices {
+    uint values[];
+} cell_particle_indices;
 
-layout(push_constant) uniform SimulationParams {
-    vec4 grid_dt_time;
-    vec4 init_options;
-    vec4 obstacle_options;
-    vec4 solve_options;
-} params;
+WATER2D_SIMULATION_PARAMS;
 
 uint cell_index(uint x, uint y, uint width) {
     return (y * width) + x;
@@ -52,53 +62,86 @@ uint v_index(uint x, uint y, uint width) {
     return (y * width) + x;
 }
 
-float box_sdf(vec2 point, vec2 center, vec2 half_size) {
-    vec2 d = abs(point - center) - half_size;
-    return length(max(d, vec2(0.0))) + min(max(d.x, d.y), 0.0);
+float hash11(uint value) {
+    value ^= value >> 16u;
+    value *= 0x7feb352du;
+    value ^= value >> 15u;
+    value *= 0x846ca68bu;
+    value ^= value >> 16u;
+    return float(value & 0x00ffffffu) / float(0x01000000u);
+}
+
+bool obstacle_cell(vec2 uv, float width, float height) {
+    if (params.init_options.w < 0.5) {
+        return false;
+    }
+    vec2 obstacle_delta = (uv - params.obstacle_options.xy) * vec2(width / height, 1.0);
+    return dot(obstacle_delta, obstacle_delta) <
+           params.obstacle_options.z * params.obstacle_options.z;
 }
 
 void main() {
+    uint id = gl_GlobalInvocationID.x;
     uint width = uint(params.grid_dt_time.x);
     uint height = uint(params.grid_dt_time.y);
-    uint x = gl_GlobalInvocationID.x;
-    uint y = gl_GlobalInvocationID.y;
+    uint particle_count = uint(params.particle_options.x + 0.5);
+    uint max_particles_per_cell = uint(params.particle_options.y + 0.5);
+    uint particles_per_cell = max(1u, uint(params.particle_options.z + 0.5));
+    uint cell_count = width * height;
+    uint u_count = (width + 1u) * height;
+    uint v_count = width * (height + 1u);
+    uint bin_count = cell_count * max_particles_per_cell;
 
-    if (x < width && y < height) {
-        uint index = cell_index(x, y, width);
+    if (id < particle_count) {
+        uint fill_cols = clamp(uint(floor(params.init_options.y * float(width))), 1u,
+                               max(1u, width - 4u));
+        uint fill_rows = clamp(uint(floor(params.init_options.x * float(height))), 1u,
+                               max(1u, height - 4u));
+        uint logical_cell = id / particles_per_cell;
+        uint sub_particle = id % particles_per_cell;
+        uint cx = logical_cell % fill_cols;
+        uint cy = (logical_cell / fill_cols) % fill_rows;
+        uint strata = uint(ceil(sqrt(float(particles_per_cell))));
+        uint sx = sub_particle % strata;
+        uint sy = (sub_particle / strata) % strata;
+        vec2 strata_offset = (vec2(sx, sy) + vec2(0.32, 0.68)) / float(strata);
+        vec2 jitter =
+            (vec2(hash11(id * 2u + 17u), hash11(id * 2u + 31u)) - vec2(0.5)) *
+            (0.22 / float(strata));
+        vec2 cell_position = vec2(2u + cx, 2u + cy) + clamp(strata_offset + jitter,
+                                                            vec2(0.10), vec2(0.90));
+        vec2 position = cell_position / vec2(width, height);
+        float release_edge = smoothstep(float(fill_cols) * 0.68, float(fill_cols) * 0.98,
+                                        float(cx));
+        vec2 velocity = vec2(0.10 * release_edge, 0.0);
+        particle_positions.values[id] = vec4(position, 0.0, 0.0);
+        particle_velocities.values[id] = vec4(velocity, 0.0, 0.0);
+    }
+
+    if (id < cell_count) {
+        uint x = id % width;
+        uint y = id / width;
         vec2 uv = (vec2(x, y) + vec2(0.5)) / vec2(width, height);
         bool border = x < 2u || y < 2u || x + 3u > width || y + 3u > height;
-        vec2 obstacle_delta =
-            (uv - params.obstacle_options.xy) * vec2(float(width) / float(height), 1.0);
-        bool obstacle = params.init_options.w > 0.5 &&
-                        dot(obstacle_delta, obstacle_delta) <
-                            params.obstacle_options.z * params.obstacle_options.z;
-        float solid_value = (border || obstacle) ? 1.0 : 0.0;
-
-        vec2 liquid_min = vec2(0.045, 0.045);
-        vec2 liquid_max = vec2(params.init_options.y, params.init_options.x);
-        vec2 liquid_center = (liquid_min + liquid_max) * 0.5;
-        vec2 liquid_half_size = max((liquid_max - liquid_min) * 0.5, vec2(0.001));
-        float phi = box_sdf(uv, liquid_center, liquid_half_size);
-        if (solid_value > 0.5) {
-            phi = max(phi, 0.02);
-        }
-
-        phi_a.values[index] = phi;
-        phi_b.values[index] = phi;
-        pressure_a.values[index] = 0.0;
-        pressure_b.values[index] = 0.0;
-        divergence.values[index] = 0.0;
-        solid.values[index] = solid_value;
+        float solid_value = (border || obstacle_cell(uv, float(width), float(height))) ? 1.0 : 0.0;
+        pressure_a.values[id] = 0.0;
+        pressure_b.values[id] = 0.0;
+        divergence.values[id] = 0.0;
+        solid.values[id] = solid_value;
+        cell_counts.values[id] = 0u;
     }
 
-    if (x <= width && y < height) {
-        uint index = u_index(x, y, width);
-        u_a.values[index] = 0.0;
-        u_b.values[index] = 0.0;
+    if (id < u_count) {
+        u_field.values[id] = 0.0;
+        u_previous.values[id] = 0.0;
+        u_weight.values[id] = 0.0;
     }
-    if (x < width && y <= height) {
-        uint index = v_index(x, y, width);
-        v_a.values[index] = 0.0;
-        v_b.values[index] = 0.0;
+    if (id < v_count) {
+        v_field.values[id] = 0.0;
+        v_previous.values[id] = 0.0;
+        v_weight.values[id] = 0.0;
+    }
+    if (id < bin_count) {
+        cell_particle_indices.values[id] = WATER2D_EMPTY_PARTICLE;
     }
 }

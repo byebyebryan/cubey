@@ -1,0 +1,154 @@
+#version 450
+#extension GL_GOOGLE_include_directive : require
+
+#include "water_2d_contract.glsl"
+
+layout(local_size_x = 8, local_size_y = 8) in;
+
+layout(set = 0, binding = WATER2D_BINDING_PARTICLE_POSITIONS, std430) readonly buffer ParticlePositions {
+    vec4 values[];
+} particle_positions;
+layout(set = 0, binding = WATER2D_BINDING_PARTICLE_VELOCITIES, std430) readonly buffer ParticleVelocities {
+    vec4 values[];
+} particle_velocities;
+layout(set = 0, binding = WATER2D_BINDING_U_FIELD, std430) buffer UField {
+    float values[];
+} u_field;
+layout(set = 0, binding = WATER2D_BINDING_U_PREVIOUS, std430) buffer UPreviousField {
+    float values[];
+} u_previous;
+layout(set = 0, binding = WATER2D_BINDING_V_FIELD, std430) buffer VField {
+    float values[];
+} v_field;
+layout(set = 0, binding = WATER2D_BINDING_V_PREVIOUS, std430) buffer VPreviousField {
+    float values[];
+} v_previous;
+layout(set = 0, binding = WATER2D_BINDING_U_WEIGHT, std430) buffer UWeightField {
+    float values[];
+} u_weight;
+layout(set = 0, binding = WATER2D_BINDING_V_WEIGHT, std430) buffer VWeightField {
+    float values[];
+} v_weight;
+layout(set = 0, binding = WATER2D_BINDING_SOLID, std430) readonly buffer SolidField {
+    float values[];
+} solid;
+layout(set = 0, binding = WATER2D_BINDING_CELL_COUNTS, std430) readonly buffer CellCounts {
+    uint values[];
+} cell_counts;
+layout(set = 0, binding = WATER2D_BINDING_CELL_PARTICLE_INDICES, std430) readonly buffer CellParticleIndices {
+    uint values[];
+} cell_particle_indices;
+
+WATER2D_SIMULATION_PARAMS;
+
+uint cell_index(uint x, uint y, uint width) {
+    return (y * width) + x;
+}
+
+uint u_index(uint x, uint y, uint width) {
+    return (y * (width + 1u)) + x;
+}
+
+uint v_index(uint x, uint y, uint width) {
+    return (y * width) + x;
+}
+
+bool solid_cell(int x, int y, uint width, uint height) {
+    if (x < 0 || y < 0 || x >= int(width) || y >= int(height)) {
+        return true;
+    }
+    return solid.values[cell_index(uint(x), uint(y), width)] > 0.5;
+}
+
+bool blocked_u_face(uint x, uint y, uint width, uint height) {
+    return x == 0u || x == width || solid_cell(int(x) - 1, int(y), width, height) ||
+           solid_cell(int(x), int(y), width, height);
+}
+
+bool blocked_v_face(uint x, uint y, uint width, uint height) {
+    return y == 0u || y == height || solid_cell(int(x), int(y) - 1, width, height) ||
+           solid_cell(int(x), int(y), width, height);
+}
+
+float kernel(float value) {
+    return max(0.0, 1.0 - abs(value));
+}
+
+vec2 gather_face_velocity(vec2 face_grid_position, uint component, uint width, uint height,
+                          uint max_particles_per_cell, out float total_weight) {
+    ivec2 base = ivec2(floor(face_grid_position));
+    vec2 velocity_sum = vec2(0.0);
+    total_weight = 0.0;
+
+    for (int oy = -1; oy <= 1; ++oy) {
+        for (int ox = -1; ox <= 1; ++ox) {
+            ivec2 cell = base + ivec2(ox, oy);
+            if (cell.x < 0 || cell.y < 0 || cell.x >= int(width) || cell.y >= int(height)) {
+                continue;
+            }
+            uint cell_id = cell_index(uint(cell.x), uint(cell.y), width);
+            uint count = min(cell_counts.values[cell_id], max_particles_per_cell);
+            for (uint slot = 0u; slot < count; ++slot) {
+                uint particle_id =
+                    cell_particle_indices.values[(cell_id * max_particles_per_cell) + slot];
+                if (particle_id == WATER2D_EMPTY_PARTICLE) {
+                    continue;
+                }
+                vec2 particle_grid =
+                    particle_positions.values[particle_id].xy * vec2(width, height);
+                vec2 delta = particle_grid - face_grid_position;
+                float weight = kernel(delta.x) * kernel(delta.y);
+                if (weight <= 0.0) {
+                    continue;
+                }
+                velocity_sum += particle_velocities.values[particle_id].xy * weight;
+                total_weight += weight;
+            }
+        }
+    }
+
+    if (total_weight <= 0.00001) {
+        return vec2(0.0);
+    }
+    return velocity_sum / total_weight;
+}
+
+void main() {
+    uint width = uint(params.grid_dt_time.x);
+    uint height = uint(params.grid_dt_time.y);
+    uint max_particles_per_cell = uint(params.particle_options.y + 0.5);
+    uint x = gl_GlobalInvocationID.x;
+    uint y = gl_GlobalInvocationID.y;
+
+    if (x <= width && y < height) {
+        uint index = u_index(x, y, width);
+        if (blocked_u_face(x, y, width, height)) {
+            u_field.values[index] = 0.0;
+            u_previous.values[index] = 0.0;
+            u_weight.values[index] = 0.0;
+        } else {
+            float weight = 0.0;
+            vec2 velocity = gather_face_velocity(vec2(float(x), float(y) + 0.5), 0u, width,
+                                                 height, max_particles_per_cell, weight);
+            u_field.values[index] = velocity.x;
+            u_previous.values[index] = velocity.x;
+            u_weight.values[index] = weight;
+        }
+    }
+
+    if (x < width && y <= height) {
+        uint index = v_index(x, y, width);
+        if (blocked_v_face(x, y, width, height)) {
+            v_field.values[index] = 0.0;
+            v_previous.values[index] = 0.0;
+            v_weight.values[index] = 0.0;
+        } else {
+            float weight = 0.0;
+            vec2 velocity = gather_face_velocity(vec2(float(x) + 0.5, float(y)), 1u, width,
+                                                 height, max_particles_per_cell, weight);
+            v_field.values[index] = velocity.y;
+            v_previous.values[index] = velocity.y;
+            v_weight.values[index] = weight;
+        }
+    }
+}

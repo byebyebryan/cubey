@@ -42,8 +42,9 @@ Current projects:
 - `smoke_2d`: compute-updated dye/velocity field with MacCormack advection,
   vorticity, optional static obstacles, pressure projection, debug views, and
   deterministic headless capture output.
-- `water_2d`: 2D MAC-grid free-surface liquid with a signed-distance level set,
-  pressure projection, debug views, and deterministic headless capture output.
+- `water_2d`: 2D PIC/FLIP free-surface liquid with particle-grid transfers,
+  MAC-grid pressure projection, debug views, and deterministic headless capture
+  output.
 - `fire_3d`: dense volumetric pyro fire demo with 3D storage textures,
   MacCormack advection, combustion, projection, vorticity confinement,
   raymarching, shadow-volume lighting, orbit camera controls, debug views, and
@@ -178,9 +179,9 @@ open; the window title also shows the latest sampled FPS and frame time.
 injectors; use `--grid-width`, `--grid-height`, and `--smoke-injectors 1..16` to
 compare other simulation/demo shapes, and `--smoke-obstacles` to enable the static
 obstacle mask.
-`water_2d` defaults to a `512x288` MAC grid. It uses face-centered velocity and
-a cell-centered signed-distance level set, so it is intentionally a different
-solver family from `smoke_2d`.
+`water_2d` defaults to a `256x144` MAC grid with a particle PIC/FLIP material
+layer. It uses particles for liquid motion and a face-centered grid for
+pressure, so it is intentionally a different solver family from `smoke_2d`.
 `fire_3d` and `explosion_3d` share the `pyro_3d` dense solver core. They default
 to a `128x128x128` solver volume with a decoupled `64x64x64` shadow volume. Use
 `--grid-width`, `--grid-height`, `--grid-depth`, `--shadow-grid-width`,
@@ -240,7 +241,8 @@ layers are installed.
   dye/velocity/divergence/pressure/speed/vorticity/obstacle views, Escape
   closes.
 - `water_2d`: Space pauses/resumes, `R` resets, `D` cycles
-  surface/phi/velocity/divergence/pressure/solid views, Escape closes.
+  surface/particles/cells/velocity/divergence/pressure/solid views, Escape
+  closes.
 - `fire_3d` / `explosion_3d`: left-drag orbits the camera, mouse wheel zooms,
   Space pauses/resumes, `R` resets, `D` cycles smoke/density/velocity views,
   Escape closes.

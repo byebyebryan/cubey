@@ -7,10 +7,10 @@ to each demo until shared code is clearly useful.
 Current projects:
 
 - `smoke_2d`: 2D incompressible smoke/dye simulation.
-- `water_2d`: 2D MAC-grid free-surface liquid simulation with a level set.
+- `water_2d`: 2D PIC/FLIP free-surface liquid simulation on a MAC grid.
 - `fire_3d`: 3D dense-grid pyro fire simulation.
 - `explosion_3d`: 3D dense-grid pyro explosion simulation.
 
 Shared 3D pyro code lives under `sim/pyro_3d`. The 2D smoke and water solvers
 remain separate because smoke uses collocated dye/velocity fields while water
-uses a MAC grid and liquid/air surface tracking.
+uses particles for liquid motion plus a MAC grid for pressure projection.
