@@ -59,6 +59,9 @@ upload_project_device_buffer(cubey::ProjectGpuServices& gpu, const void* data,
     return cubey::render::MaterialPassInfo{
         .label = "water_3d.render",
         .push_constants = {render_push_constant},
+        .depth_test = true,
+        .depth_write = true,
+        .depth_compare_op = VK_COMPARE_OP_LESS,
         .blend_enable = true,
         .src_color_blend_factor = VK_BLEND_FACTOR_ONE,
         .dst_color_blend_factor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
@@ -132,12 +135,14 @@ void Water3DGpuResources::create_global_resources_if_needed(cubey::vulkan::Devic
 
 void Water3DGpuResources::destroy_swapchain_resources() {
     render_pipeline_resource_.reset();
+    depth_attachment_.reset();
 }
 
 void Water3DGpuResources::destroy_all_resources() {
     destroy_swapchain_resources();
     advect_particles_pipeline_resource_.reset();
     grid_to_particle_pipeline_resource_.reset();
+    extrapolate_velocity_pipeline_resource_.reset();
     projection_pipeline_resource_.reset();
     pressure_pipeline_resource_.reset();
     divergence_pipeline_resource_.reset();
@@ -158,6 +163,15 @@ void Water3DGpuResources::destroy_all_resources() {
     divergence_.reset();
     pressure_b_.reset();
     pressure_a_.reset();
+    w_weight_scratch_.reset();
+    v_weight_scratch_.reset();
+    u_weight_scratch_.reset();
+    w_previous_scratch_.reset();
+    w_scratch_.reset();
+    v_previous_scratch_.reset();
+    v_scratch_.reset();
+    u_previous_scratch_.reset();
+    u_scratch_.reset();
     w_weight_.reset();
     v_weight_.reset();
     u_weight_.reset();
@@ -179,6 +193,11 @@ VkDeviceSize Water3DGpuResources::allocated_buffer_bytes() const {
            optional_buffer_size(v_previous_) + optional_buffer_size(w_) +
            optional_buffer_size(w_previous_) + optional_buffer_size(u_weight_) +
            optional_buffer_size(v_weight_) + optional_buffer_size(w_weight_) +
+           optional_buffer_size(u_scratch_) + optional_buffer_size(u_previous_scratch_) +
+           optional_buffer_size(v_scratch_) + optional_buffer_size(v_previous_scratch_) +
+           optional_buffer_size(w_scratch_) + optional_buffer_size(w_previous_scratch_) +
+           optional_buffer_size(u_weight_scratch_) + optional_buffer_size(v_weight_scratch_) +
+           optional_buffer_size(w_weight_scratch_) +
            optional_buffer_size(pressure_a_) + optional_buffer_size(pressure_b_) +
            optional_buffer_size(divergence_) + optional_buffer_size(solid_) +
            optional_buffer_size(cell_counts_) + optional_buffer_size(cell_particle_indices_) +
@@ -244,6 +263,33 @@ void Water3DGpuResources::create_field_buffers(cubey::ProjectGpuServices& gpu,
     w_weight_.emplace(upload_project_device_buffer(gpu, w_initial.data(), w_byte_size,
                                                    VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
                                                    "water_3d W weight upload"));
+    u_scratch_.emplace(upload_project_device_buffer(gpu, u_initial.data(), u_byte_size,
+                                                    VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                                                    "water_3d U scratch upload"));
+    u_previous_scratch_.emplace(upload_project_device_buffer(
+        gpu, u_initial.data(), u_byte_size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+        "water_3d previous U scratch upload"));
+    v_scratch_.emplace(upload_project_device_buffer(gpu, v_initial.data(), v_byte_size,
+                                                    VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                                                    "water_3d V scratch upload"));
+    v_previous_scratch_.emplace(upload_project_device_buffer(
+        gpu, v_initial.data(), v_byte_size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+        "water_3d previous V scratch upload"));
+    w_scratch_.emplace(upload_project_device_buffer(gpu, w_initial.data(), w_byte_size,
+                                                    VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                                                    "water_3d W scratch upload"));
+    w_previous_scratch_.emplace(upload_project_device_buffer(
+        gpu, w_initial.data(), w_byte_size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+        "water_3d previous W scratch upload"));
+    u_weight_scratch_.emplace(upload_project_device_buffer(
+        gpu, u_initial.data(), u_byte_size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+        "water_3d U weight scratch upload"));
+    v_weight_scratch_.emplace(upload_project_device_buffer(
+        gpu, v_initial.data(), v_byte_size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+        "water_3d V weight scratch upload"));
+    w_weight_scratch_.emplace(upload_project_device_buffer(
+        gpu, w_initial.data(), w_byte_size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+        "water_3d W weight scratch upload"));
     pressure_a_.emplace(upload_project_device_buffer(gpu, cell_initial.data(), cell_byte_size,
                                                      VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
                                                      "water_3d pressure A upload"));
@@ -267,7 +313,7 @@ void Water3DGpuResources::create_field_buffers(cubey::ProjectGpuServices& gpu,
 void Water3DGpuResources::create_descriptor_resources(cubey::vulkan::Device& device) {
     constexpr VkShaderStageFlags kStages =
         VK_SHADER_STAGE_COMPUTE_BIT | VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
-    const std::array<cubey::vulkan::DescriptorSetBindingConfig, 19> field_bindings{{
+    const std::array<cubey::vulkan::DescriptorSetBindingConfig, 28> field_bindings{{
         {.binding = 0, .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .stage_flags = kStages},
         {.binding = 1, .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .stage_flags = kStages},
         {.binding = 2, .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .stage_flags = kStages},
@@ -289,6 +335,15 @@ void Water3DGpuResources::create_descriptor_resources(cubey::vulkan::Device& dev
         {.binding = 18,
          .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
          .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT},
+        {.binding = 19, .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .stage_flags = kStages},
+        {.binding = 20, .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .stage_flags = kStages},
+        {.binding = 21, .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .stage_flags = kStages},
+        {.binding = 22, .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .stage_flags = kStages},
+        {.binding = 23, .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .stage_flags = kStages},
+        {.binding = 24, .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .stage_flags = kStages},
+        {.binding = 25, .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .stage_flags = kStages},
+        {.binding = 26, .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .stage_flags = kStages},
+        {.binding = 27, .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .stage_flags = kStages},
     }};
     const cubey::vulkan::DescriptorSetInfo field_info(field_bindings, frame_slot_count_);
     field_descriptor_layout_.emplace(device, field_info.layout_info());
@@ -325,7 +380,16 @@ void Water3DGpuResources::update_field_descriptors(cubey::vulkan::Device& device
             .storage_buffer(set, 17, cell_particle_indices().handle(),
                             cell_particle_indices().size())
             .uniform_buffer(set, 18, simulation_uniform_buffer(frame_slot).handle(),
-                            simulation_uniform_buffer(frame_slot).size());
+                            simulation_uniform_buffer(frame_slot).size())
+            .storage_buffer(set, 19, u_scratch().handle(), u_scratch().size())
+            .storage_buffer(set, 20, u_previous_scratch().handle(), u_previous_scratch().size())
+            .storage_buffer(set, 21, v_scratch().handle(), v_scratch().size())
+            .storage_buffer(set, 22, v_previous_scratch().handle(), v_previous_scratch().size())
+            .storage_buffer(set, 23, w_scratch().handle(), w_scratch().size())
+            .storage_buffer(set, 24, w_previous_scratch().handle(), w_previous_scratch().size())
+            .storage_buffer(set, 25, u_weight_scratch().handle(), u_weight_scratch().size())
+            .storage_buffer(set, 26, v_weight_scratch().handle(), v_weight_scratch().size())
+            .storage_buffer(set, 27, w_weight_scratch().handle(), w_weight_scratch().size());
     }
     descriptor_writes.update(device);
 }
@@ -350,6 +414,9 @@ void Water3DGpuResources::create_compute_pipelines(cubey::vulkan::Device& device
                                      field_descriptor_layout(), pressure_pipeline_resource_);
     create_compute_pipeline_resource(device, "water_3d_projection.comp.spv",
                                      field_descriptor_layout(), projection_pipeline_resource_);
+    create_compute_pipeline_resource(device, "water_3d_extrapolate_velocity.comp.spv",
+                                     field_descriptor_layout(),
+                                     extrapolate_velocity_pipeline_resource_);
     create_compute_pipeline_resource(device, "water_3d_grid_to_particle.comp.spv",
                                      field_descriptor_layout(),
                                      grid_to_particle_pipeline_resource_);
@@ -360,6 +427,7 @@ void Water3DGpuResources::create_compute_pipelines(cubey::vulkan::Device& device
 
 void Water3DGpuResources::create_render_pipeline(cubey::vulkan::Device& device,
                                                  VkFormat color_format, VkExtent2D extent) {
+    depth_attachment_.emplace(device, extent);
     const std::array<cubey::render::ShaderStageFile, 2> shader_stage_files{
         cubey::render::ShaderStageFile{
             .stage = VK_SHADER_STAGE_VERTEX_BIT,
@@ -376,6 +444,7 @@ void Water3DGpuResources::create_render_pipeline(cubey::vulkan::Device& device,
     render_pipeline_resource_.emplace(device, cubey::render::GraphicsPipelineFileResourceConfig{
                                                   .extent = extent,
                                                   .color_format = color_format,
+                                                  .depth_format = depth_attachment().format(),
                                                   .shader_stage_files = shader_stage_files,
                                                   .descriptor_set_layouts = set_layouts,
                                                   .material_pass = material_pass,
@@ -431,6 +500,48 @@ const cubey::vulkan::Buffer& Water3DGpuResources::v_weight() const {
 
 const cubey::vulkan::Buffer& Water3DGpuResources::w_weight() const {
     return require_initialized(w_weight_, "water 3D W weight field is not initialized");
+}
+
+const cubey::vulkan::Buffer& Water3DGpuResources::u_scratch() const {
+    return require_initialized(u_scratch_, "water 3D U scratch field is not initialized");
+}
+
+const cubey::vulkan::Buffer& Water3DGpuResources::u_previous_scratch() const {
+    return require_initialized(u_previous_scratch_,
+                               "water 3D previous U scratch field is not initialized");
+}
+
+const cubey::vulkan::Buffer& Water3DGpuResources::v_scratch() const {
+    return require_initialized(v_scratch_, "water 3D V scratch field is not initialized");
+}
+
+const cubey::vulkan::Buffer& Water3DGpuResources::v_previous_scratch() const {
+    return require_initialized(v_previous_scratch_,
+                               "water 3D previous V scratch field is not initialized");
+}
+
+const cubey::vulkan::Buffer& Water3DGpuResources::w_scratch() const {
+    return require_initialized(w_scratch_, "water 3D W scratch field is not initialized");
+}
+
+const cubey::vulkan::Buffer& Water3DGpuResources::w_previous_scratch() const {
+    return require_initialized(w_previous_scratch_,
+                               "water 3D previous W scratch field is not initialized");
+}
+
+const cubey::vulkan::Buffer& Water3DGpuResources::u_weight_scratch() const {
+    return require_initialized(u_weight_scratch_,
+                               "water 3D U weight scratch field is not initialized");
+}
+
+const cubey::vulkan::Buffer& Water3DGpuResources::v_weight_scratch() const {
+    return require_initialized(v_weight_scratch_,
+                               "water 3D V weight scratch field is not initialized");
+}
+
+const cubey::vulkan::Buffer& Water3DGpuResources::w_weight_scratch() const {
+    return require_initialized(w_weight_scratch_,
+                               "water 3D W weight scratch field is not initialized");
 }
 
 const cubey::vulkan::Buffer& Water3DGpuResources::pressure_a() const {
@@ -551,6 +662,12 @@ Water3DGpuResources::projection_pipeline_resource() const {
 }
 
 const cubey::render::ComputePipelineResource&
+Water3DGpuResources::extrapolate_velocity_pipeline_resource() const {
+    return require_initialized(extrapolate_velocity_pipeline_resource_,
+                               "water 3D velocity extrapolation pipeline is not initialized");
+}
+
+const cubey::render::ComputePipelineResource&
 Water3DGpuResources::grid_to_particle_pipeline_resource() const {
     return require_initialized(grid_to_particle_pipeline_resource_,
                                "water 3D grid-to-particle pipeline is not initialized");
@@ -566,6 +683,11 @@ const cubey::render::GraphicsPipelineResource&
 Water3DGpuResources::render_pipeline_resource() const {
     return require_initialized(render_pipeline_resource_,
                                "water 3D render pipeline is not initialized");
+}
+
+const cubey::vulkan::DepthAttachment& Water3DGpuResources::depth_attachment() const {
+    return require_initialized(depth_attachment_,
+                               "water 3D depth attachment is not initialized");
 }
 
 } // namespace cubey::projects::fluid::water_3d

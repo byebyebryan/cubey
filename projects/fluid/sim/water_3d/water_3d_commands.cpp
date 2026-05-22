@@ -2,6 +2,7 @@
 
 #include <cubey/render/pass.h>
 #include <cubey/vulkan/command_recorder.h>
+#include <cubey/vulkan/image_transitions.h>
 #include <cubey/vulkan/vk_check.h>
 
 #include <algorithm>
@@ -10,6 +11,8 @@
 
 namespace cubey::projects::fluid::water_3d {
 namespace {
+
+inline constexpr std::uint32_t kWater3DVelocityExtrapolationIterations = 4;
 
 struct RenderPushConstants {
     cubey::math::Mat4 view_projection{1.0F};
@@ -289,6 +292,17 @@ void record_water_3d_compute(VkCommandBuffer command_buffer, Water3DGpuResources
                         face_groups, push_constants);
         record_compute_barrier(command_buffer);
 
+        const cubey::render::ComputePipelineResource& extrapolate_pipeline =
+            resources.extrapolate_velocity_pipeline_resource();
+        for (std::uint32_t iteration = 0; iteration < kWater3DVelocityExtrapolationIterations;
+             ++iteration) {
+            push_constants.dispatch_options[2] = (iteration % 2U == 1U) ? 1.0F : 0.0F;
+            record_dispatch(recorder, extrapolate_pipeline, descriptor_set, face_groups,
+                            push_constants);
+            record_compute_barrier(command_buffer);
+        }
+        push_constants.dispatch_options[2] = 0.0F;
+
         record_dispatch(recorder, resources.grid_to_particle_pipeline_resource(), descriptor_set,
                         particle_scan_dispatch_groups(config, runtime_state), push_constants);
         record_compute_barrier(command_buffer);
@@ -312,6 +326,10 @@ void record_water_3d_draw(VkCommandBuffer command_buffer, const Water3DGpuResour
                           const Water3DRenderCamera& camera,
                           cubey::render::ColorTargetView color_target) {
     const cubey::vulkan::CommandRecorder recorder(command_buffer);
+    const cubey::render::DepthTargetView depth_target =
+        cubey::render::depth_target_view(resources.depth_attachment());
+    recorder.transition_image_layout(
+        cubey::vulkan::begin_depth_attachment_transition(depth_target.image));
     const std::uint32_t particle_scan_count =
         water_3d_runtime_particle_scan_count(config, runtime_state);
     const RenderPushConstants push_constants{
@@ -352,9 +370,10 @@ void record_water_3d_draw(VkCommandBuffer command_buffer, const Water3DGpuResour
     };
 
     cubey::render::record_render_target_pass(
-        recorder, cubey::render::render_target_view(color_target),
+        recorder, cubey::render::render_target_view(color_target, depth_target),
         cubey::render::RenderClearValues{
             .color = cubey::render::color_clear_value(0.006F, 0.008F, 0.013F, 1.0F),
+            .depth = cubey::render::depth_clear_value(),
         },
         [&resources, frame_slot, push_constants,
          debug_view](const cubey::vulkan::CommandRecorder& pass_recorder) {

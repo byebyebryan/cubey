@@ -20,6 +20,15 @@
 #define WATER3D_BINDING_CELL_COUNTS 16
 #define WATER3D_BINDING_CELL_PARTICLE_INDICES 17
 #define WATER3D_BINDING_SIM_PARAMS 18
+#define WATER3D_BINDING_U_SCRATCH 19
+#define WATER3D_BINDING_U_PREVIOUS_SCRATCH 20
+#define WATER3D_BINDING_V_SCRATCH 21
+#define WATER3D_BINDING_V_PREVIOUS_SCRATCH 22
+#define WATER3D_BINDING_W_SCRATCH 23
+#define WATER3D_BINDING_W_PREVIOUS_SCRATCH 24
+#define WATER3D_BINDING_U_WEIGHT_SCRATCH 25
+#define WATER3D_BINDING_V_WEIGHT_SCRATCH 26
+#define WATER3D_BINDING_W_WEIGHT_SCRATCH 27
 
 #define WATER3D_EMPTY_PARTICLE 0xffffffffu
 
@@ -49,6 +58,7 @@
 #define WATER3D_DT dispatch_params.dispatch_options.x
 #define WATER3D_TIME dispatch_params.dispatch_options.y
 #define WATER3D_PRESSURE_READ_B dispatch_params.dispatch_options.z
+#define WATER3D_EXTRAPOLATE_READ_SCRATCH dispatch_params.dispatch_options.z
 #define WATER3D_PARTICLE_SCAN_COUNT dispatch_params.dispatch_options.w
 #define WATER3D_VELOCITY_LIMIT params.solve_options.x
 #define WATER3D_PARTICLE_DAMPING params.solve_options.y

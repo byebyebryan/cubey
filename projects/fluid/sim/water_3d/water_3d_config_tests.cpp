@@ -118,22 +118,38 @@ int main() {
         const std::string reset_shader = read_text_file(shader_dir / "water_3d_reset.comp");
         const std::string p2g_shader =
             read_text_file(shader_dir / "water_3d_particle_to_grid.comp");
+        const std::string extrapolate_shader =
+            read_text_file(shader_dir / "water_3d_extrapolate_velocity.comp");
         const std::string g2p_shader =
             read_text_file(shader_dir / "water_3d_grid_to_particle.comp");
         const std::string render_shader = read_text_file(shader_dir / "water_3d_render.frag");
 
         require_contains(contract, "WATER3D_BINDING_W_FIELD",
                          "water 3D contract should expose the W face field");
+        require_contains(contract, "WATER3D_BINDING_U_SCRATCH",
+                         "water 3D contract should expose velocity extrapolation scratch fields");
+        require_contains(contract, "WATER3D_BINDING_W_WEIGHT_SCRATCH",
+                         "water 3D contract should expose extrapolation validity scratch fields");
         require_contains(reset_shader, "particle_affine.values[id * 3u + 2u]",
                          "water 3D reset should clear all APIC affine rows");
         require_contains(p2g_shader, "gather_face_velocity",
                          "water 3D particle-to-grid should gather face velocities");
         require_contains(p2g_shader, "velocity += unpack_affine(particle_id) * delta",
                          "water 3D particle-to-grid should apply APIC local velocity");
+        require_contains(extrapolate_shader, "read_scratch()",
+                         "water 3D velocity extrapolation should ping-pong scratch buffers");
+        require_contains(extrapolate_shader, "source_u_valid(uint(neighbor.x)",
+                         "water 3D velocity extrapolation should average valid neighbor faces");
+        require_contains(extrapolate_shader, "write_w(index, 0.0, 0.0, 0.0)",
+                         "water 3D velocity extrapolation should keep blocked faces invalid");
         require_contains(g2p_shader, "flip_velocity",
                          "water 3D grid-to-particle should keep the PIC/FLIP path");
         require_contains(g2p_shader, "store_affine",
                          "water 3D grid-to-particle should write APIC affine state");
+        require_contains(g2p_shader, "confidence_blend",
+                         "water 3D grid-to-particle should use extrapolated velocity confidence");
+        require_contains(g2p_shader, "fallback_velocity",
+                         "water 3D grid-to-particle should preserve gravity when confidence is low");
         require_contains(render_shader, "frag_particle",
                          "water 3D renderer should support particle splats");
         require_contains(render_shader, "debug_view == 4u",

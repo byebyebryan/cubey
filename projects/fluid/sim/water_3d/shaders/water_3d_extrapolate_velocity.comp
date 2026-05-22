@@ -1,0 +1,325 @@
+#version 450
+#extension GL_GOOGLE_include_directive : require
+
+#include "water_3d_contract.glsl"
+
+layout(local_size_x = 4, local_size_y = 4, local_size_z = 4) in;
+
+layout(set = 0, binding = WATER3D_BINDING_U_FIELD, std430) buffer UField { float values[]; } u_field;
+layout(set = 0, binding = WATER3D_BINDING_U_PREVIOUS, std430) buffer UPreviousField { float values[]; } u_previous;
+layout(set = 0, binding = WATER3D_BINDING_V_FIELD, std430) buffer VField { float values[]; } v_field;
+layout(set = 0, binding = WATER3D_BINDING_V_PREVIOUS, std430) buffer VPreviousField { float values[]; } v_previous;
+layout(set = 0, binding = WATER3D_BINDING_W_FIELD, std430) buffer WField { float values[]; } w_field;
+layout(set = 0, binding = WATER3D_BINDING_W_PREVIOUS, std430) buffer WPreviousField { float values[]; } w_previous;
+layout(set = 0, binding = WATER3D_BINDING_U_WEIGHT, std430) buffer UWeightField { float values[]; } u_weight;
+layout(set = 0, binding = WATER3D_BINDING_V_WEIGHT, std430) buffer VWeightField { float values[]; } v_weight;
+layout(set = 0, binding = WATER3D_BINDING_W_WEIGHT, std430) buffer WWeightField { float values[]; } w_weight;
+layout(set = 0, binding = WATER3D_BINDING_SOLID, std430) readonly buffer SolidField { float values[]; } solid;
+layout(set = 0, binding = WATER3D_BINDING_CELL_COUNTS, std430) readonly buffer CellCounts { uint values[]; } cell_counts;
+layout(set = 0, binding = WATER3D_BINDING_U_SCRATCH, std430) buffer UScratchField { float values[]; } u_scratch;
+layout(set = 0, binding = WATER3D_BINDING_U_PREVIOUS_SCRATCH, std430) buffer UPreviousScratchField { float values[]; } u_previous_scratch;
+layout(set = 0, binding = WATER3D_BINDING_V_SCRATCH, std430) buffer VScratchField { float values[]; } v_scratch;
+layout(set = 0, binding = WATER3D_BINDING_V_PREVIOUS_SCRATCH, std430) buffer VPreviousScratchField { float values[]; } v_previous_scratch;
+layout(set = 0, binding = WATER3D_BINDING_W_SCRATCH, std430) buffer WScratchField { float values[]; } w_scratch;
+layout(set = 0, binding = WATER3D_BINDING_W_PREVIOUS_SCRATCH, std430) buffer WPreviousScratchField { float values[]; } w_previous_scratch;
+layout(set = 0, binding = WATER3D_BINDING_U_WEIGHT_SCRATCH, std430) buffer UWeightScratchField { float values[]; } u_weight_scratch;
+layout(set = 0, binding = WATER3D_BINDING_V_WEIGHT_SCRATCH, std430) buffer VWeightScratchField { float values[]; } v_weight_scratch;
+layout(set = 0, binding = WATER3D_BINDING_W_WEIGHT_SCRATCH, std430) buffer WWeightScratchField { float values[]; } w_weight_scratch;
+
+WATER3D_SIMULATION_PARAMS;
+
+uint cell_index(uint x, uint y, uint z, uint width, uint height) {
+    return ((z * height) + y) * width + x;
+}
+
+uint u_index(uint x, uint y, uint z, uint width, uint height) {
+    return ((z * height) + y) * (width + 1u) + x;
+}
+
+uint v_index(uint x, uint y, uint z, uint width, uint height) {
+    return ((z * (height + 1u)) + y) * width + x;
+}
+
+uint w_index(uint x, uint y, uint z, uint width, uint height) {
+    return ((z * height) + y) * width + x;
+}
+
+bool in_bounds(int x, int y, int z, uint width, uint height, uint depth) {
+    return x >= 0 && y >= 0 && z >= 0 && x < int(width) && y < int(height) &&
+           z < int(depth);
+}
+
+bool solid_cell(int x, int y, int z, uint width, uint height, uint depth) {
+    if (!in_bounds(x, y, z, width, height, depth)) {
+        return true;
+    }
+    return solid.values[cell_index(uint(x), uint(y), uint(z), width, height)] > 0.5;
+}
+
+bool liquid_cell(int x, int y, int z, uint width, uint height, uint depth) {
+    if (!in_bounds(x, y, z, width, height, depth)) {
+        return false;
+    }
+    uint index = cell_index(uint(x), uint(y), uint(z), width, height);
+    return solid.values[index] < 0.5 && cell_counts.values[index] > 0u;
+}
+
+bool blocked_u_face(uint x, uint y, uint z, uint width, uint height, uint depth) {
+    return x == 0u || x == width || solid_cell(int(x) - 1, int(y), int(z), width, height, depth) ||
+           solid_cell(int(x), int(y), int(z), width, height, depth);
+}
+
+bool blocked_v_face(uint x, uint y, uint z, uint width, uint height, uint depth) {
+    return y == 0u || y == height || solid_cell(int(x), int(y) - 1, int(z), width, height, depth) ||
+           solid_cell(int(x), int(y), int(z), width, height, depth);
+}
+
+bool blocked_w_face(uint x, uint y, uint z, uint width, uint height, uint depth) {
+    return z == 0u || z == depth || solid_cell(int(x), int(y), int(z) - 1, width, height, depth) ||
+           solid_cell(int(x), int(y), int(z), width, height, depth);
+}
+
+bool liquid_u_face(uint x, uint y, uint z, uint width, uint height, uint depth) {
+    return liquid_cell(int(x) - 1, int(y), int(z), width, height, depth) ||
+           liquid_cell(int(x), int(y), int(z), width, height, depth);
+}
+
+bool liquid_v_face(uint x, uint y, uint z, uint width, uint height, uint depth) {
+    return liquid_cell(int(x), int(y) - 1, int(z), width, height, depth) ||
+           liquid_cell(int(x), int(y), int(z), width, height, depth);
+}
+
+bool liquid_w_face(uint x, uint y, uint z, uint width, uint height, uint depth) {
+    return liquid_cell(int(x), int(y), int(z) - 1, width, height, depth) ||
+           liquid_cell(int(x), int(y), int(z), width, height, depth);
+}
+
+bool read_scratch() {
+    return WATER3D_EXTRAPOLATE_READ_SCRATCH > 0.5;
+}
+
+float read_u(uint index) {
+    return read_scratch() ? u_scratch.values[index] : u_field.values[index];
+}
+
+float read_u_previous(uint index) {
+    return read_scratch() ? u_previous_scratch.values[index] : u_previous.values[index];
+}
+
+float read_u_valid(uint index) {
+    return read_scratch() ? u_weight_scratch.values[index] : u_weight.values[index];
+}
+
+bool source_u_valid(uint x, uint y, uint z, uint width, uint height, uint depth) {
+    uint index = u_index(x, y, z, width, height);
+    if (read_u_valid(index) <= 0.00001) {
+        return false;
+    }
+    return read_scratch() || liquid_u_face(x, y, z, width, height, depth);
+}
+
+void write_u(uint index, float velocity, float previous_velocity, float valid) {
+    if (read_scratch()) {
+        u_field.values[index] = velocity;
+        u_previous.values[index] = previous_velocity;
+        u_weight.values[index] = valid;
+    } else {
+        u_scratch.values[index] = velocity;
+        u_previous_scratch.values[index] = previous_velocity;
+        u_weight_scratch.values[index] = valid;
+    }
+}
+
+float read_v(uint index) {
+    return read_scratch() ? v_scratch.values[index] : v_field.values[index];
+}
+
+float read_v_previous(uint index) {
+    return read_scratch() ? v_previous_scratch.values[index] : v_previous.values[index];
+}
+
+float read_v_valid(uint index) {
+    return read_scratch() ? v_weight_scratch.values[index] : v_weight.values[index];
+}
+
+bool source_v_valid(uint x, uint y, uint z, uint width, uint height, uint depth) {
+    uint index = v_index(x, y, z, width, height);
+    if (read_v_valid(index) <= 0.00001) {
+        return false;
+    }
+    return read_scratch() || liquid_v_face(x, y, z, width, height, depth);
+}
+
+void write_v(uint index, float velocity, float previous_velocity, float valid) {
+    if (read_scratch()) {
+        v_field.values[index] = velocity;
+        v_previous.values[index] = previous_velocity;
+        v_weight.values[index] = valid;
+    } else {
+        v_scratch.values[index] = velocity;
+        v_previous_scratch.values[index] = previous_velocity;
+        v_weight_scratch.values[index] = valid;
+    }
+}
+
+float read_w(uint index) {
+    return read_scratch() ? w_scratch.values[index] : w_field.values[index];
+}
+
+float read_w_previous(uint index) {
+    return read_scratch() ? w_previous_scratch.values[index] : w_previous.values[index];
+}
+
+float read_w_valid(uint index) {
+    return read_scratch() ? w_weight_scratch.values[index] : w_weight.values[index];
+}
+
+bool source_w_valid(uint x, uint y, uint z, uint width, uint height, uint depth) {
+    uint index = w_index(x, y, z, width, height);
+    if (read_w_valid(index) <= 0.00001) {
+        return false;
+    }
+    return read_scratch() || liquid_w_face(x, y, z, width, height, depth);
+}
+
+void write_w(uint index, float velocity, float previous_velocity, float valid) {
+    if (read_scratch()) {
+        w_field.values[index] = velocity;
+        w_previous.values[index] = previous_velocity;
+        w_weight.values[index] = valid;
+    } else {
+        w_scratch.values[index] = velocity;
+        w_previous_scratch.values[index] = previous_velocity;
+        w_weight_scratch.values[index] = valid;
+    }
+}
+
+void extrapolate_u(uint x, uint y, uint z, uint width, uint height, uint depth) {
+    uint index = u_index(x, y, z, width, height);
+    if (blocked_u_face(x, y, z, width, height, depth)) {
+        write_u(index, 0.0, 0.0, 0.0);
+        return;
+    }
+    if (source_u_valid(x, y, z, width, height, depth)) {
+        write_u(index, read_u(index), read_u_previous(index), 1.0);
+        return;
+    }
+
+    float velocity_sum = 0.0;
+    float previous_sum = 0.0;
+    uint count = 0u;
+    for (int axis = 0; axis < 3; ++axis) {
+        for (int direction = -1; direction <= 1; direction += 2) {
+            ivec3 neighbor = ivec3(int(x), int(y), int(z));
+            neighbor[axis] += direction;
+            if (neighbor.x < 0 || neighbor.x > int(width) || neighbor.y < 0 ||
+                neighbor.y >= int(height) || neighbor.z < 0 || neighbor.z >= int(depth)) {
+                continue;
+            }
+            uint neighbor_index =
+                u_index(uint(neighbor.x), uint(neighbor.y), uint(neighbor.z), width, height);
+            if (!source_u_valid(uint(neighbor.x), uint(neighbor.y), uint(neighbor.z), width,
+                                height, depth)) {
+                continue;
+            }
+            velocity_sum += read_u(neighbor_index);
+            previous_sum += read_u_previous(neighbor_index);
+            count += 1u;
+        }
+    }
+    write_u(index, count > 0u ? velocity_sum / float(count) : 0.0,
+            count > 0u ? previous_sum / float(count) : 0.0, count > 0u ? 1.0 : 0.0);
+}
+
+void extrapolate_v(uint x, uint y, uint z, uint width, uint height, uint depth) {
+    uint index = v_index(x, y, z, width, height);
+    if (blocked_v_face(x, y, z, width, height, depth)) {
+        write_v(index, 0.0, 0.0, 0.0);
+        return;
+    }
+    if (source_v_valid(x, y, z, width, height, depth)) {
+        write_v(index, read_v(index), read_v_previous(index), 1.0);
+        return;
+    }
+
+    float velocity_sum = 0.0;
+    float previous_sum = 0.0;
+    uint count = 0u;
+    for (int axis = 0; axis < 3; ++axis) {
+        for (int direction = -1; direction <= 1; direction += 2) {
+            ivec3 neighbor = ivec3(int(x), int(y), int(z));
+            neighbor[axis] += direction;
+            if (neighbor.x < 0 || neighbor.x >= int(width) || neighbor.y < 0 ||
+                neighbor.y > int(height) || neighbor.z < 0 || neighbor.z >= int(depth)) {
+                continue;
+            }
+            uint neighbor_index =
+                v_index(uint(neighbor.x), uint(neighbor.y), uint(neighbor.z), width, height);
+            if (!source_v_valid(uint(neighbor.x), uint(neighbor.y), uint(neighbor.z), width,
+                                height, depth)) {
+                continue;
+            }
+            velocity_sum += read_v(neighbor_index);
+            previous_sum += read_v_previous(neighbor_index);
+            count += 1u;
+        }
+    }
+    write_v(index, count > 0u ? velocity_sum / float(count) : 0.0,
+            count > 0u ? previous_sum / float(count) : 0.0, count > 0u ? 1.0 : 0.0);
+}
+
+void extrapolate_w(uint x, uint y, uint z, uint width, uint height, uint depth) {
+    uint index = w_index(x, y, z, width, height);
+    if (blocked_w_face(x, y, z, width, height, depth)) {
+        write_w(index, 0.0, 0.0, 0.0);
+        return;
+    }
+    if (source_w_valid(x, y, z, width, height, depth)) {
+        write_w(index, read_w(index), read_w_previous(index), 1.0);
+        return;
+    }
+
+    float velocity_sum = 0.0;
+    float previous_sum = 0.0;
+    uint count = 0u;
+    for (int axis = 0; axis < 3; ++axis) {
+        for (int direction = -1; direction <= 1; direction += 2) {
+            ivec3 neighbor = ivec3(int(x), int(y), int(z));
+            neighbor[axis] += direction;
+            if (neighbor.x < 0 || neighbor.x >= int(width) || neighbor.y < 0 ||
+                neighbor.y >= int(height) || neighbor.z < 0 || neighbor.z > int(depth)) {
+                continue;
+            }
+            uint neighbor_index =
+                w_index(uint(neighbor.x), uint(neighbor.y), uint(neighbor.z), width, height);
+            if (!source_w_valid(uint(neighbor.x), uint(neighbor.y), uint(neighbor.z), width,
+                                height, depth)) {
+                continue;
+            }
+            velocity_sum += read_w(neighbor_index);
+            previous_sum += read_w_previous(neighbor_index);
+            count += 1u;
+        }
+    }
+    write_w(index, count > 0u ? velocity_sum / float(count) : 0.0,
+            count > 0u ? previous_sum / float(count) : 0.0, count > 0u ? 1.0 : 0.0);
+}
+
+void main() {
+    uint width = uint(WATER3D_GRID_WIDTH + 0.5);
+    uint height = uint(WATER3D_GRID_HEIGHT + 0.5);
+    uint depth = uint(WATER3D_GRID_DEPTH + 0.5);
+    uint x = gl_GlobalInvocationID.x;
+    uint y = gl_GlobalInvocationID.y;
+    uint z = gl_GlobalInvocationID.z;
+
+    if (x <= width && y < height && z < depth) {
+        extrapolate_u(x, y, z, width, height, depth);
+    }
+    if (x < width && y <= height && z < depth) {
+        extrapolate_v(x, y, z, width, height, depth);
+    }
+    if (x < width && y < height && z <= depth) {
+        extrapolate_w(x, y, z, width, height, depth);
+    }
+}

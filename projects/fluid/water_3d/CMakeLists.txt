@@ -21,6 +21,7 @@ cubey_add_app_target(
         ../sim/water_3d/shaders/water_3d_divergence.comp
         ../sim/water_3d/shaders/water_3d_pressure.comp
         ../sim/water_3d/shaders/water_3d_projection.comp
+        ../sim/water_3d/shaders/water_3d_extrapolate_velocity.comp
         ../sim/water_3d/shaders/water_3d_grid_to_particle.comp
         ../sim/water_3d/shaders/water_3d_advect_particles.comp
     SHADER_INCLUDE_DIRS

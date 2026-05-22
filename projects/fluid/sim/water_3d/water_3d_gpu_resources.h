@@ -9,6 +9,7 @@
 #include <cubey/vulkan/buffer.h>
 #include <cubey/vulkan/descriptors.h>
 #include <cubey/vulkan/device.h>
+#include <cubey/vulkan/image.h>
 
 #include <vulkan/vulkan.h>
 
@@ -42,6 +43,15 @@ class Water3DGpuResources {
     [[nodiscard]] const cubey::vulkan::Buffer& u_weight() const;
     [[nodiscard]] const cubey::vulkan::Buffer& v_weight() const;
     [[nodiscard]] const cubey::vulkan::Buffer& w_weight() const;
+    [[nodiscard]] const cubey::vulkan::Buffer& u_scratch() const;
+    [[nodiscard]] const cubey::vulkan::Buffer& u_previous_scratch() const;
+    [[nodiscard]] const cubey::vulkan::Buffer& v_scratch() const;
+    [[nodiscard]] const cubey::vulkan::Buffer& v_previous_scratch() const;
+    [[nodiscard]] const cubey::vulkan::Buffer& w_scratch() const;
+    [[nodiscard]] const cubey::vulkan::Buffer& w_previous_scratch() const;
+    [[nodiscard]] const cubey::vulkan::Buffer& u_weight_scratch() const;
+    [[nodiscard]] const cubey::vulkan::Buffer& v_weight_scratch() const;
+    [[nodiscard]] const cubey::vulkan::Buffer& w_weight_scratch() const;
     [[nodiscard]] const cubey::vulkan::Buffer& pressure_a() const;
     [[nodiscard]] const cubey::vulkan::Buffer& pressure_b() const;
     [[nodiscard]] const cubey::vulkan::Buffer& divergence() const;
@@ -70,10 +80,13 @@ class Water3DGpuResources {
     [[nodiscard]] const cubey::render::ComputePipelineResource&
     projection_pipeline_resource() const;
     [[nodiscard]] const cubey::render::ComputePipelineResource&
+    extrapolate_velocity_pipeline_resource() const;
+    [[nodiscard]] const cubey::render::ComputePipelineResource&
     grid_to_particle_pipeline_resource() const;
     [[nodiscard]] const cubey::render::ComputePipelineResource&
     advect_particles_pipeline_resource() const;
     [[nodiscard]] const cubey::render::GraphicsPipelineResource& render_pipeline_resource() const;
+    [[nodiscard]] const cubey::vulkan::DepthAttachment& depth_attachment() const;
 
   private:
     void create_field_buffers(cubey::ProjectGpuServices& gpu, const Water3DConfig& config);
@@ -95,6 +108,15 @@ class Water3DGpuResources {
     std::optional<cubey::vulkan::Buffer> u_weight_;
     std::optional<cubey::vulkan::Buffer> v_weight_;
     std::optional<cubey::vulkan::Buffer> w_weight_;
+    std::optional<cubey::vulkan::Buffer> u_scratch_;
+    std::optional<cubey::vulkan::Buffer> u_previous_scratch_;
+    std::optional<cubey::vulkan::Buffer> v_scratch_;
+    std::optional<cubey::vulkan::Buffer> v_previous_scratch_;
+    std::optional<cubey::vulkan::Buffer> w_scratch_;
+    std::optional<cubey::vulkan::Buffer> w_previous_scratch_;
+    std::optional<cubey::vulkan::Buffer> u_weight_scratch_;
+    std::optional<cubey::vulkan::Buffer> v_weight_scratch_;
+    std::optional<cubey::vulkan::Buffer> w_weight_scratch_;
     std::optional<cubey::vulkan::Buffer> pressure_a_;
     std::optional<cubey::vulkan::Buffer> pressure_b_;
     std::optional<cubey::vulkan::Buffer> divergence_;
@@ -116,9 +138,11 @@ class Water3DGpuResources {
     std::optional<cubey::render::ComputePipelineResource> divergence_pipeline_resource_;
     std::optional<cubey::render::ComputePipelineResource> pressure_pipeline_resource_;
     std::optional<cubey::render::ComputePipelineResource> projection_pipeline_resource_;
+    std::optional<cubey::render::ComputePipelineResource> extrapolate_velocity_pipeline_resource_;
     std::optional<cubey::render::ComputePipelineResource> grid_to_particle_pipeline_resource_;
     std::optional<cubey::render::ComputePipelineResource> advect_particles_pipeline_resource_;
     std::optional<cubey::render::GraphicsPipelineResource> render_pipeline_resource_;
+    std::optional<cubey::vulkan::DepthAttachment> depth_attachment_;
 };
 
 } // namespace cubey::projects::fluid::water_3d
