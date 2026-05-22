@@ -14,13 +14,17 @@
 
 namespace cubey::projects::fluid::water_3d {
 
-enum class Water3DDebugView : std::uint32_t {
-    Particles = 0,
-    Cells = 1,
-    Velocity = 2,
-    Pressure = 3,
-    Solid = 4,
-    Overpack = 5,
+enum class Water3DRenderView : std::uint32_t {
+    Surface = 0,
+    Particles = 1,
+    Cells = 2,
+    Velocity = 3,
+    Pressure = 4,
+    Solid = 5,
+    Overpack = 6,
+    SurfaceDepth = 7,
+    SurfaceThickness = 8,
+    SurfaceNormals = 9,
 };
 
 enum class Water3DTransferMode : std::uint32_t {
@@ -32,7 +36,7 @@ inline constexpr std::uint32_t kWater3DComputeGroupSize = 4;
 inline constexpr std::uint32_t kWater3DParticleGroupSize = 64;
 inline constexpr std::uint32_t kWater3DSimulationPushConstantFloatCount = 4;
 inline constexpr std::uint32_t kWater3DSimulationUniformFloatCount = 32;
-inline constexpr std::uint32_t kWater3DRenderPushConstantFloatCount = 32;
+inline constexpr std::uint32_t kWater3DRenderPushConstantFloatCount = 48;
 inline constexpr std::uint32_t kWater3DWallCells = 2;
 inline constexpr std::uint32_t kWater3DMinimumGridExtent = 16;
 inline constexpr std::uint32_t kWater3DDefaultGridWidth = 64;
@@ -65,6 +69,11 @@ struct Water3DConfig {
     float particle_volume_strength = 12.0F;
     float boundary_restitution = 0.08F;
     float slice_depth = 0.50F;
+    float surface_thickness_scale = 1.0F;
+    float surface_smoothing_radius_px = 5.0F;
+    float surface_depth_sigma = 0.035F;
+    float surface_absorption = 1.5F;
+    float surface_refraction_strength = 0.035F;
 };
 
 struct Water3DSimulationUniforms {
@@ -98,22 +107,30 @@ static_assert(sizeof(Water3DSimulationUniforms) ==
 static_assert(sizeof(Water3DDispatchPushConstants) ==
               sizeof(float) * kWater3DSimulationPushConstantFloatCount);
 
-[[nodiscard]] inline const char* water_3d_debug_view_name(Water3DDebugView view) {
+[[nodiscard]] inline const char* water_3d_render_view_name(Water3DRenderView view) {
     switch (view) {
-    case Water3DDebugView::Particles:
+    case Water3DRenderView::Surface:
+        return "Surface";
+    case Water3DRenderView::Particles:
         return "Particles";
-    case Water3DDebugView::Cells:
+    case Water3DRenderView::Cells:
         return "Cells";
-    case Water3DDebugView::Velocity:
+    case Water3DRenderView::Velocity:
         return "Velocity";
-    case Water3DDebugView::Pressure:
+    case Water3DRenderView::Pressure:
         return "Pressure";
-    case Water3DDebugView::Solid:
+    case Water3DRenderView::Solid:
         return "Solid";
-    case Water3DDebugView::Overpack:
+    case Water3DRenderView::Overpack:
         return "Overpack";
+    case Water3DRenderView::SurfaceDepth:
+        return "Surface depth";
+    case Water3DRenderView::SurfaceThickness:
+        return "Surface thickness";
+    case Water3DRenderView::SurfaceNormals:
+        return "Surface normals";
     }
-    return "Particles";
+    return "Surface";
 }
 
 [[nodiscard]] inline const char* water_3d_transfer_mode_name(Water3DTransferMode mode) {
@@ -126,45 +143,71 @@ static_assert(sizeof(Water3DDispatchPushConstants) ==
     return "APIC";
 }
 
-[[nodiscard]] inline Water3DDebugView water_3d_debug_view_from_name(std::string_view name) {
-    if (name.empty() || name == "particles") {
-        return Water3DDebugView::Particles;
+[[nodiscard]] inline Water3DRenderView water_3d_render_view_from_name(std::string_view name) {
+    if (name.empty() || name == "surface") {
+        return Water3DRenderView::Surface;
+    }
+    if (name == "particles") {
+        return Water3DRenderView::Particles;
     }
     if (name == "cells") {
-        return Water3DDebugView::Cells;
+        return Water3DRenderView::Cells;
     }
     if (name == "velocity") {
-        return Water3DDebugView::Velocity;
+        return Water3DRenderView::Velocity;
     }
     if (name == "pressure") {
-        return Water3DDebugView::Pressure;
+        return Water3DRenderView::Pressure;
     }
     if (name == "solid") {
-        return Water3DDebugView::Solid;
+        return Water3DRenderView::Solid;
     }
     if (name == "overpack") {
-        return Water3DDebugView::Overpack;
+        return Water3DRenderView::Overpack;
     }
-    throw std::runtime_error(
-        "water 3D debug view must be particles, cells, velocity, pressure, solid, or overpack");
+    if (name == "surface-depth") {
+        return Water3DRenderView::SurfaceDepth;
+    }
+    if (name == "surface-thickness") {
+        return Water3DRenderView::SurfaceThickness;
+    }
+    if (name == "surface-normals") {
+        return Water3DRenderView::SurfaceNormals;
+    }
+    throw std::runtime_error("water 3D render view must be surface, particles, cells, velocity, "
+                             "pressure, solid, overpack, surface-depth, surface-thickness, or "
+                             "surface-normals");
 }
 
-[[nodiscard]] inline Water3DDebugView next_debug_view(Water3DDebugView view) {
+[[nodiscard]] inline Water3DRenderView next_render_view(Water3DRenderView view) {
     switch (view) {
-    case Water3DDebugView::Particles:
-        return Water3DDebugView::Cells;
-    case Water3DDebugView::Cells:
-        return Water3DDebugView::Velocity;
-    case Water3DDebugView::Velocity:
-        return Water3DDebugView::Pressure;
-    case Water3DDebugView::Pressure:
-        return Water3DDebugView::Solid;
-    case Water3DDebugView::Solid:
-        return Water3DDebugView::Overpack;
-    case Water3DDebugView::Overpack:
-        return Water3DDebugView::Particles;
+    case Water3DRenderView::Surface:
+        return Water3DRenderView::Particles;
+    case Water3DRenderView::Particles:
+        return Water3DRenderView::Cells;
+    case Water3DRenderView::Cells:
+        return Water3DRenderView::Velocity;
+    case Water3DRenderView::Velocity:
+        return Water3DRenderView::Pressure;
+    case Water3DRenderView::Pressure:
+        return Water3DRenderView::Solid;
+    case Water3DRenderView::Solid:
+        return Water3DRenderView::Overpack;
+    case Water3DRenderView::Overpack:
+        return Water3DRenderView::SurfaceDepth;
+    case Water3DRenderView::SurfaceDepth:
+        return Water3DRenderView::SurfaceThickness;
+    case Water3DRenderView::SurfaceThickness:
+        return Water3DRenderView::SurfaceNormals;
+    case Water3DRenderView::SurfaceNormals:
+        return Water3DRenderView::Surface;
     }
-    return Water3DDebugView::Particles;
+    return Water3DRenderView::Surface;
+}
+
+[[nodiscard]] inline bool is_water_3d_surface_view(Water3DRenderView view) {
+    return view == Water3DRenderView::Surface || view == Water3DRenderView::SurfaceDepth ||
+           view == Water3DRenderView::SurfaceThickness || view == Water3DRenderView::SurfaceNormals;
 }
 
 [[nodiscard]] inline std::size_t checked_mul(std::size_t lhs, std::size_t rhs,
@@ -214,17 +257,15 @@ inline void validate_water_3d_grid_dimensions(const Water3DConfig& config) {
     validate_water_3d_grid_dimensions(config);
     const std::size_t slice =
         checked_mul(config.grid_width, config.grid_height, "water 3D grid slice is too large");
-    const std::size_t count =
-        checked_mul(slice, config.grid_depth, "water 3D grid is too large");
+    const std::size_t count = checked_mul(slice, config.grid_depth, "water 3D grid is too large");
     validate_exact_shader_integer(count, "water 3D cell count exceeds exact shader integer range");
     return count;
 }
 
 [[nodiscard]] inline std::size_t u_face_count(const Water3DConfig& config) {
     validate_water_3d_grid_dimensions(config);
-    const std::size_t slice =
-        checked_mul(static_cast<std::size_t>(config.grid_width) + 1U, config.grid_height,
-                    "water 3D U-face slice is too large");
+    const std::size_t slice = checked_mul(static_cast<std::size_t>(config.grid_width) + 1U,
+                                          config.grid_height, "water 3D U-face slice is too large");
     const std::size_t count =
         checked_mul(slice, config.grid_depth, "water 3D U-face grid is too large");
     validate_exact_shader_integer(count,
@@ -258,12 +299,9 @@ inline void validate_water_3d_grid_dimensions(const Water3DConfig& config) {
 [[nodiscard]] inline std::size_t fill_cell_count(const Water3DConfig& config, float fill_width,
                                                  float fill_height, float fill_depth) {
     validate_water_3d_grid_dimensions(config);
-    const std::size_t fill_x =
-        water_3d_fill_axis_cell_count(config.grid_width, fill_width);
-    const std::size_t fill_y =
-        water_3d_fill_axis_cell_count(config.grid_height, fill_height);
-    const std::size_t fill_z =
-        water_3d_fill_axis_cell_count(config.grid_depth, fill_depth);
+    const std::size_t fill_x = water_3d_fill_axis_cell_count(config.grid_width, fill_width);
+    const std::size_t fill_y = water_3d_fill_axis_cell_count(config.grid_height, fill_height);
+    const std::size_t fill_z = water_3d_fill_axis_cell_count(config.grid_depth, fill_depth);
     return checked_mul(checked_mul(fill_x, fill_y, "water 3D fill slice is too large"), fill_z,
                        "water 3D fill volume is too large");
 }
@@ -353,8 +391,9 @@ water_3d_runtime_particle_scan_count(const Water3DConfig& config,
     if (config.max_particles_per_cell == 0) {
         throw std::runtime_error("water 3D max particles per cell must be positive");
     }
-    validate_exact_shader_integer(config.max_particles_per_cell,
-                                  "water 3D max particles per cell exceeds exact shader integer range");
+    validate_exact_shader_integer(
+        config.max_particles_per_cell,
+        "water 3D max particles per cell exceeds exact shader integer range");
     return checked_mul(cell_count(config), config.max_particles_per_cell,
                        "water 3D particle bins are too large");
 }

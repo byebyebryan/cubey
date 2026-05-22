@@ -12,6 +12,13 @@ cubey_add_app_target(
     SHADERS
         ../sim/water_3d/shaders/water_3d.vert
         ../sim/water_3d/shaders/water_3d_render.frag
+        ../sim/water_3d/shaders/water_3d_fullscreen.vert
+        ../sim/water_3d/shaders/water_3d_surface_particle.vert
+        ../sim/water_3d/shaders/water_3d_surface_depth.frag
+        ../sim/water_3d/shaders/water_3d_surface_thickness.frag
+        ../sim/water_3d/shaders/water_3d_surface_pack.frag
+        ../sim/water_3d/shaders/water_3d_surface_smooth.frag
+        ../sim/water_3d/shaders/water_3d_surface_composite.frag
         ../sim/water_3d/shaders/water_3d_reset.comp
         ../sim/water_3d/shaders/water_3d_clear_grid.comp
         ../sim/water_3d/shaders/water_3d_clear_bins.comp
@@ -29,6 +36,8 @@ cubey_add_app_target(
         "${CMAKE_SOURCE_DIR}/shaders"
     SHADER_DEPENDS
         "${CMAKE_CURRENT_SOURCE_DIR}/../sim/water_3d/shaders/water_3d_contract.glsl"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../sim/water_3d/shaders/water_3d_surface_common.glsl"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../sim/water_3d/shaders/water_3d_surface_helpers.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/color_space.glsl"
 )
 

@@ -27,12 +27,12 @@ vec2 quad_corner(uint index) {
 
 void main() {
     vec2 corner = quad_corner(uint(gl_VertexIndex));
-    uint debug_view = uint(params.camera_up_debug.w + 0.5);
+    uint render_view = uint(params.camera_up_debug.w + 0.5);
     frag_local = corner;
     frag_uv = corner * 0.5 + 0.5;
-    frag_particle = debug_view == 0u ? 1.0 : 0.0;
+    frag_particle = render_view == 1u ? 1.0 : 0.0;
 
-    if (debug_view != 0u) {
+    if (render_view != 1u) {
         gl_Position = vec4(corner, 0.0, 1.0);
         return;
     }

@@ -12,6 +12,7 @@
 #include <cubey/input/input.h>
 #include <cubey/input/orbit_controller.h>
 #include <cubey/render/pass.h>
+#include <cubey/render/render_graph.h>
 #include <cubey/scene/camera_3d.h>
 #include <cubey/vulkan/command_recorder.h>
 #include <cubey/vulkan/device.h>
@@ -40,9 +41,17 @@ constexpr float kCameraBaseYaw = -0.52F;
 constexpr float kCameraBasePitch = -0.38F;
 constexpr cubey::math::Vec3 kVolumeCenter{0.5F, 0.5F, 0.5F};
 
-constexpr std::array<Water3DDebugView, 6> kDebugViews{
-    Water3DDebugView::Particles, Water3DDebugView::Cells, Water3DDebugView::Velocity,
-    Water3DDebugView::Pressure,  Water3DDebugView::Solid, Water3DDebugView::Overpack,
+constexpr std::array<Water3DRenderView, 10> kRenderViews{
+    Water3DRenderView::Surface,
+    Water3DRenderView::Particles,
+    Water3DRenderView::Cells,
+    Water3DRenderView::Velocity,
+    Water3DRenderView::Pressure,
+    Water3DRenderView::Solid,
+    Water3DRenderView::Overpack,
+    Water3DRenderView::SurfaceDepth,
+    Water3DRenderView::SurfaceThickness,
+    Water3DRenderView::SurfaceNormals,
 };
 
 constexpr std::array<Water3DTransferMode, 2> kTransferModes{
@@ -59,7 +68,7 @@ class Water3DApp {
     Water3DApp(RunConfig config, Water3DAppInfo app_info)
         : config_(std::move(config)), app_info_(app_info), runtime_(1),
           water_config_(water_3d_config_from_run_config(config_)),
-          debug_view_(water_3d_debug_view_from_name(config_.debug_view)) {
+          render_view_(water_3d_render_view_from_name(config_.debug_view)) {
         orbit_controller_.set_home_distance(kCameraDistance);
         orbit_controller_.set_auto_rotation_speed(0.0F);
     }
@@ -133,7 +142,7 @@ class Water3DApp {
                 reset_simulation();
             }
             if (input.key_pressed(cubey::input::Key::D)) {
-                debug_view_ = next_debug_view(debug_view_);
+                render_view_ = next_render_view(render_view_);
             }
         }
 
@@ -174,8 +183,10 @@ class Water3DApp {
             .delta_seconds = timing.delta_seconds,
             .width = extent.width,
             .height = extent.height,
-            .triangles = debug_view_ == Water3DDebugView::Particles ? particle_scan_count * 2U
-                                                                     : 2U,
+            .triangles =
+                render_view_ == Water3DRenderView::Particles
+                    ? particle_scan_count * 2U
+                    : (is_water_3d_surface_view(render_view_) ? particle_scan_count * 4U + 8U : 2U),
         };
         if (std::optional<FrameStatsSnapshot> stats = ui_frame_stats_.record_frame(sample);
             stats.has_value()) {
@@ -198,11 +209,11 @@ class Water3DApp {
             reset_simulation();
         }
 
-        if (ImGui::BeginCombo("Debug view", water_3d_debug_view_name(debug_view_))) {
-            for (Water3DDebugView view : kDebugViews) {
-                const bool selected = view == debug_view_;
-                if (ImGui::Selectable(water_3d_debug_view_name(view), selected)) {
-                    debug_view_ = view;
+        if (ImGui::BeginCombo("Render view", water_3d_render_view_name(render_view_))) {
+            for (Water3DRenderView view : kRenderViews) {
+                const bool selected = view == render_view_;
+                if (ImGui::Selectable(water_3d_render_view_name(view), selected)) {
+                    render_view_ = view;
                 }
                 if (selected) {
                     ImGui::SetItemDefaultFocus();
@@ -241,6 +252,16 @@ class Water3DApp {
                            0.0F, 48.0F, "%.1f");
         ImGui::SliderFloat("Particle radius", &water_config_.particle_radius, 0.004F, 0.040F,
                            "%.4f");
+        ImGui::SliderFloat("Surface thickness", &water_config_.surface_thickness_scale, 0.1F, 4.0F,
+                           "%.2f");
+        ImGui::SliderFloat("Surface smooth px", &water_config_.surface_smoothing_radius_px, 0.0F,
+                           12.0F, "%.1f");
+        ImGui::SliderFloat("Surface depth sigma", &water_config_.surface_depth_sigma, 0.005F,
+                           0.120F, "%.3f");
+        ImGui::SliderFloat("Surface absorption", &water_config_.surface_absorption, 0.0F, 5.0F,
+                           "%.2f");
+        ImGui::SliderFloat("Surface refraction", &water_config_.surface_refraction_strength, 0.0F,
+                           0.12F, "%.3f");
         ImGui::SliderFloat("Gravity", &water_config_.gravity, -4.0F, 0.0F, "%.2f");
         ImGui::SliderFloat("Boundary bounce", &water_config_.boundary_restitution, 0.0F, 0.8F,
                            "%.2f");
@@ -299,18 +320,20 @@ class Water3DApp {
 
     [[nodiscard]] Water3DRenderCamera render_camera(VkExtent2D extent) const {
         const float aspect = static_cast<float>(extent.width) / static_cast<float>(extent.height);
-        const cubey::Transform3D transform =
-            cubey::orbit_camera_transform(cubey::OrbitCameraState{
-                .target = kVolumeCenter,
-                .distance = orbit_controller_.distance(),
-                .yaw = kCameraBaseYaw + orbit_controller_.yaw(),
-                .pitch = kCameraBasePitch + orbit_controller_.pitch(),
-            });
+        const cubey::Transform3D transform = cubey::orbit_camera_transform(cubey::OrbitCameraState{
+            .target = kVolumeCenter,
+            .distance = orbit_controller_.distance(),
+            .yaw = kCameraBaseYaw + orbit_controller_.yaw(),
+            .pitch = kCameraBasePitch + orbit_controller_.pitch(),
+        });
         const cubey::math::Quat rotation = transform.rotation;
         return {
             .view_projection = camera_.view_projection_matrix(transform, aspect),
+            .position = transform.translation,
             .right = rotation * cubey::math::Vec3{1.0F, 0.0F, 0.0F},
             .up = rotation * cubey::math::Vec3{0.0F, 1.0F, 0.0F},
+            .forward = rotation * cubey::math::Vec3{0.0F, 0.0F, -1.0F},
+            .fovy_radians = camera_.fovy_radians(),
         };
     }
 
@@ -319,6 +342,7 @@ class Water3DApp {
     }
 
     void destroy_all_resources() {
+        surface_graph_executor_.clear();
         resources_.destroy_all_resources();
     }
 
@@ -328,6 +352,7 @@ class Water3DApp {
         attach_project_gpu(gpu);
         resources_.create_global_resources_if_needed(device, runtime_.gpu(), water_config_,
                                                      frame_slot_count);
+        surface_graph_executor_.resize(frame_slot_count);
     }
 
     void attach_project_gpu(cubey::vulkan::GpuRuntime& gpu) {
@@ -358,20 +383,27 @@ class Water3DApp {
     void record_frame(cubey::host::WindowedAppContext& context,
                       const cubey::host::WindowedRenderFrame& render_frame,
                       const ProjectFrame& frame) {
-        (void)context;
         const cubey::vulkan::CommandRecorder recorder(render_frame.command_buffer);
         recorder.begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
         record_water_3d_compute(render_frame.command_buffer, resources_, water_config_,
-                                runtime_state_, render_frame.frame_slot, paused_,
-                                reset_requested_, frame);
-        cubey::render::record_present_render_target(
-            recorder, cubey::render::render_target_view(render_frame.color_target),
-            [this, &render_frame](const cubey::vulkan::CommandRecorder& present_recorder) {
-                record_water_3d_draw(present_recorder.handle(), resources_, water_config_,
-                                     render_frame.frame_slot, runtime_state_, debug_view_,
-                                     render_camera(render_frame.color_target.extent),
-                                     render_frame.color_target);
-            });
+                                runtime_state_, render_frame.frame_slot, paused_, reset_requested_,
+                                frame);
+        if (is_water_3d_surface_view(render_view_)) {
+            record_water_3d_surface_draw(
+                render_frame.command_buffer, context.device(), surface_graph_executor_, resources_,
+                water_config_, render_frame.frame_slot, runtime_state_, render_view_,
+                render_camera(render_frame.color_target.extent), render_frame.color_target,
+                Water3DRenderTargetMode::Present);
+        } else {
+            cubey::render::record_present_render_target(
+                recorder, cubey::render::render_target_view(render_frame.color_target),
+                [this, &render_frame](const cubey::vulkan::CommandRecorder& present_recorder) {
+                    record_water_3d_draw(present_recorder.handle(), resources_, water_config_,
+                                         render_frame.frame_slot, runtime_state_, render_view_,
+                                         render_camera(render_frame.color_target.extent),
+                                         render_frame.color_target);
+                });
+        }
         recorder.end("vkEndCommandBuffer water_3d");
     }
 
@@ -409,8 +441,7 @@ class Water3DApp {
                 const std::uint32_t frames = water_3d_headless_frame_count(config_);
                 for (std::uint32_t frame = 1; frame <= frames; ++frame) {
                     const cubey::render::FrameSlot frame_slot = cubey::render::frame_slot_for_index(
-                        frame - 1U,
-                        cubey::host::headless_capture_frame_slot_count(config_));
+                        frame - 1U, cubey::host::headless_capture_frame_slot_count(config_));
                     const ProjectFrame project_frame = runtime_.frame_for_timing(
                         fixed_water_3d_headless_timing(water_config_, frame));
                     record_headless_simulation_frame(runtime_.gpu(), frame_slot, project_frame);
@@ -430,13 +461,20 @@ class Water3DApp {
                 record_headless_simulation_frame(runtime_.gpu(), frame.frame_slot, project_frame);
             };
         }
-        callbacks.record_frame = [this](cubey::host::HeadlessPngContext&,
+        callbacks.record_frame = [this](cubey::host::HeadlessPngContext& context,
                                         const cubey::host::HeadlessCaptureFrame& frame,
                                         VkCommandBuffer command_buffer,
                                         const cubey::host::HeadlessRenderTarget& target) {
-            record_water_3d_draw(command_buffer, resources_, water_config_, frame.frame_slot,
-                                 runtime_state_, debug_view_, render_camera(target.extent),
-                                 target);
+            if (is_water_3d_surface_view(render_view_)) {
+                record_water_3d_surface_draw(
+                    command_buffer, context.device(), surface_graph_executor_, resources_,
+                    water_config_, frame.frame_slot, runtime_state_, render_view_,
+                    render_camera(target.extent), target, Water3DRenderTargetMode::ColorAttachment);
+            } else {
+                record_water_3d_draw(command_buffer, resources_, water_config_, frame.frame_slot,
+                                     runtime_state_, render_view_, render_camera(target.extent),
+                                     target);
+            }
         };
         callbacks.shutdown = [this](cubey::host::HeadlessPngContext&) {
             destroy_all_resources();
@@ -454,11 +492,12 @@ class Water3DApp {
     Water3DConfig water_config_;
     Water3DRuntimeState runtime_state_;
     Water3DGpuResources resources_;
+    cubey::render::RenderGraphFrameExecutor surface_graph_executor_;
     cubey::Camera3D camera_;
     cubey::OrbitController orbit_controller_;
     cubey::host::FrameStats ui_frame_stats_{0.25};
     std::optional<FrameStatsSnapshot> latest_frame_stats_;
-    Water3DDebugView debug_view_ = Water3DDebugView::Particles;
+    Water3DRenderView render_view_ = Water3DRenderView::Surface;
     double latest_fps_ = 0.0;
     double latest_frame_ms_ = 0.0;
     bool paused_ = false;

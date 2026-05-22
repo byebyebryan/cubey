@@ -4,18 +4,25 @@
 direction as `water_2d`: particles carry water volume, a staggered MAC grid solves
 velocity and pressure, and APIC is the default particle transfer mode.
 
-The first renderer is intentionally simple particle splatting with slice debug views.
-It is a simulation foundation, not yet a surface renderer. Marching cubes, mesh
-generation, foam, hose injection, and draining are deferred until the 3D solver
-contract is stable.
+The default renderer is now a minimal screen-space surface path: particles write
+front depth and thickness into render-graph transients, a separable bilateral pass
+smooths the surface, and a composite pass shades the water with Fresnel, absorption,
+and a procedural environment. The old particle splats remain as an opaque debug
+view. Marching cubes, mesh generation, foam, hose injection, and draining are still
+deferred until the 3D solver and renderer contract are stable.
 
-Useful debug views:
+Useful render views:
 
+- `surface`: default screen-space water surface.
 - `particles`: camera-facing particle splats.
 - `cells`: center slice occupancy.
 - `velocity`: center slice velocity magnitude.
 - `pressure`: center slice pressure.
 - `solid`: tank boundary mask.
+- `overpack`: particle bin pressure/overfill diagnostic.
+- `surface-depth`: raw smoothed surface depth.
+- `surface-thickness`: accumulated surface thickness.
+- `surface-normals`: reconstructed screen-space normals.
 
 Common runs:
 

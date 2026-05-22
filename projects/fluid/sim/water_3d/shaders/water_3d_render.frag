@@ -70,7 +70,7 @@ vec3 signed_scalar_color(float value, float scale) {
 }
 
 void main() {
-    uint debug_view = uint(params.camera_up_debug.w + 0.5);
+    uint render_view = uint(params.camera_up_debug.w + 0.5);
     if (frag_particle > 0.5) {
         float radius = length(frag_local);
         if (radius > 1.0) {
@@ -91,13 +91,13 @@ void main() {
     float solid_value = solid.values[index];
     vec3 color = vec3(0.012, 0.016, 0.024);
 
-    if (debug_view == 1u) {
+    if (render_view == 2u) {
         float occupancy = clamp(float(cell_counts.values[index]) / max(1.0, params.color_options.z), 0.0, 1.0);
         color = mix(vec3(0.024, 0.032, 0.044), vec3(0.12, 0.54, 0.86), occupancy);
         if (solid_value > 0.5) {
             color = vec3(0.72, 0.76, 0.82);
         }
-    } else if (debug_view == 2u) {
+    } else if (render_view == 3u) {
         uint ux = min(coord.x, width);
         uint uy = min(coord.y, height - 1u);
         uint uz = min(coord.z, depth - 1u);
@@ -113,14 +113,14 @@ void main() {
         float speed = clamp(length(velocity) * 0.8, 0.0, 1.0);
         vec3 direction_color = normalize(abs(velocity) + vec3(0.001));
         color = mix(vec3(0.030, 0.038, 0.052), direction_color, speed);
-    } else if (debug_view == 3u) {
+    } else if (render_view == 4u) {
         bool read_b = params.color_options.x > 0.5;
         float pressure = read_b ? pressure_b.values[index] : pressure_a.values[index];
         color = signed_scalar_color(pressure, 6.0);
-    } else if (debug_view == 4u) {
+    } else if (render_view == 5u) {
         color = mix(vec3(0.035, 0.042, 0.054), vec3(0.82, 0.86, 0.92),
                     clamp(solid_value, 0.0, 1.0));
-    } else if (debug_view == 5u) {
+    } else if (render_view == 6u) {
         float target_particles = max(1.0, params.color_options.w);
         float stored_particles = min(float(cell_counts.values[index]), params.color_options.z);
         float overpack = max(0.0, (stored_particles - target_particles) / target_particles);

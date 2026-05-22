@@ -44,10 +44,8 @@ int main() {
         constexpr std::size_t kExpectedUFaceCount = std::size_t{65} * 64U * 64U;
         constexpr std::size_t kExpectedVFaceCount = std::size_t{64} * 65U * 64U;
         constexpr std::size_t kExpectedWFaceCount = std::size_t{64} * 64U * 65U;
-        constexpr std::size_t kExpectedActiveParticleCount =
-            std::size_t{32} * 44U * 32U * 4U;
-        constexpr std::size_t kExpectedParticleCapacity =
-            std::size_t{48} * 48U * 48U * 4U;
+        constexpr std::size_t kExpectedActiveParticleCount = std::size_t{32} * 44U * 32U * 4U;
+        constexpr std::size_t kExpectedParticleCapacity = std::size_t{48} * 48U * 48U * 4U;
 
         require(config.grid_width == 64 && config.grid_height == 64 && config.grid_depth == 64,
                 "water 3D should default to a 64^3 grid");
@@ -71,6 +69,8 @@ int main() {
         require(sizeof(water::Water3DDispatchPushConstants) ==
                     sizeof(float) * water::kWater3DSimulationPushConstantFloatCount,
                 "water 3D dispatch constants should match the shader contract");
+        require(water::kWater3DRenderPushConstantFloatCount >= 40,
+                "water 3D render constants should leave room for surface reconstruction");
 
         require(water::cell_count(config) == kExpectedCellCount,
                 "water 3D cell count should multiply dimensions");
@@ -88,18 +88,44 @@ int main() {
                 "water 3D APIC affine buffers should store three vec4 rows per particle");
         require(water::particle_bin_index_count(config) == kExpectedCellCount * 32U,
                 "water 3D particle bins should allocate fixed cell slots");
-        require(std::string(water::water_3d_debug_view_name(water::Water3DDebugView::Overpack)) ==
+        require(std::string(water::water_3d_render_view_name(water::Water3DRenderView::Surface)) ==
+                    "Surface",
+                "water 3D render view names should include surface");
+        require(water::water_3d_render_view_from_name("") == water::Water3DRenderView::Surface,
+                "water 3D empty render view should default to surface");
+        require(water::water_3d_render_view_from_name("surface-depth") ==
+                    water::Water3DRenderView::SurfaceDepth,
+                "water 3D render view parsing should include surface depth");
+        require(water::water_3d_render_view_from_name("surface-thickness") ==
+                    water::Water3DRenderView::SurfaceThickness,
+                "water 3D render view parsing should include surface thickness");
+        require(water::water_3d_render_view_from_name("surface-normals") ==
+                    water::Water3DRenderView::SurfaceNormals,
+                "water 3D render view parsing should include surface normals");
+        require(water::is_water_3d_surface_view(water::Water3DRenderView::Surface),
+                "water 3D surface render should classify the default surface view");
+        require(water::is_water_3d_surface_view(water::Water3DRenderView::SurfaceDepth),
+                "water 3D surface render should classify depth diagnostics");
+        require(!water::is_water_3d_surface_view(water::Water3DRenderView::Particles),
+                "water 3D surface render should keep particle splats as a debug path");
+        require(std::string(water::water_3d_render_view_name(water::Water3DRenderView::Overpack)) ==
                     "Overpack",
-                "water 3D debug view names should include overpack");
-        require(water::water_3d_debug_view_from_name("overpack") ==
-                    water::Water3DDebugView::Overpack,
-                "water 3D debug view parsing should include overpack");
-        require(water::next_debug_view(water::Water3DDebugView::Solid) ==
-                    water::Water3DDebugView::Overpack,
-                "water 3D debug view cycle should include overpack after solid");
-        require(water::next_debug_view(water::Water3DDebugView::Overpack) ==
-                    water::Water3DDebugView::Particles,
-                "water 3D debug view cycle should wrap after overpack");
+                "water 3D render view names should include overpack");
+        require(water::water_3d_render_view_from_name("overpack") ==
+                    water::Water3DRenderView::Overpack,
+                "water 3D render view parsing should include overpack");
+        require(water::next_render_view(water::Water3DRenderView::Surface) ==
+                    water::Water3DRenderView::Particles,
+                "water 3D render view cycle should start with surface");
+        require(water::next_render_view(water::Water3DRenderView::Solid) ==
+                    water::Water3DRenderView::Overpack,
+                "water 3D render view cycle should include overpack after solid");
+        require(water::next_render_view(water::Water3DRenderView::Overpack) ==
+                    water::Water3DRenderView::SurfaceDepth,
+                "water 3D render view cycle should include surface diagnostics after overpack");
+        require(water::next_render_view(water::Water3DRenderView::SurfaceNormals) ==
+                    water::Water3DRenderView::Surface,
+                "water 3D render view cycle should wrap after surface normals");
 
         cubey::RunConfig run_config;
         run_config.grid_width = 32;
@@ -109,7 +135,8 @@ int main() {
         require(overridden.grid_width == 32 && overridden.grid_height == 48 &&
                     overridden.grid_depth == 40,
                 "water 3D should accept CLI grid dimensions");
-        require(overridden.active_particle_count == water::active_particle_count_for_fill(overridden),
+        require(overridden.active_particle_count ==
+                    water::active_particle_count_for_fill(overridden),
                 "water 3D run-config construction should refresh active particle counts");
         require(overridden.particle_capacity == water::particle_capacity_for_config(overridden),
                 "water 3D run-config construction should refresh particle capacity");
@@ -139,9 +166,20 @@ int main() {
         const std::string divergence_shader =
             read_text_file(shader_dir / "water_3d_divergence.comp");
         const std::string render_shader = read_text_file(shader_dir / "water_3d_render.frag");
-        const std::string gpu_resources =
-            read_text_file(std::filesystem::path(CUBEY_WATER_3D_SOURCE_DIR) /
-                           "water_3d_gpu_resources.cpp");
+        const std::string surface_common =
+            read_text_file(shader_dir / "water_3d_surface_common.glsl");
+        const std::string surface_depth =
+            read_text_file(shader_dir / "water_3d_surface_depth.frag");
+        const std::string surface_thickness =
+            read_text_file(shader_dir / "water_3d_surface_thickness.frag");
+        const std::string surface_smooth =
+            read_text_file(shader_dir / "water_3d_surface_smooth.frag");
+        const std::string surface_composite =
+            read_text_file(shader_dir / "water_3d_surface_composite.frag");
+        const std::string gpu_resources = read_text_file(
+            std::filesystem::path(CUBEY_WATER_3D_SOURCE_DIR) / "water_3d_gpu_resources.cpp");
+        const std::string commands = read_text_file(
+            std::filesystem::path(CUBEY_WATER_3D_SOURCE_DIR) / "water_3d_commands.cpp");
 
         require_contains(contract, "WATER3D_BINDING_W_FIELD",
                          "water 3D contract should expose the W face field");
@@ -169,8 +207,9 @@ int main() {
                          "water 3D grid-to-particle should write APIC affine state");
         require_contains(g2p_shader, "confidence_blend",
                          "water 3D grid-to-particle should use extrapolated velocity confidence");
-        require_contains(g2p_shader, "fallback_velocity",
-                         "water 3D grid-to-particle should preserve gravity when confidence is low");
+        require_contains(
+            g2p_shader, "fallback_velocity",
+            "water 3D grid-to-particle should preserve gravity when confidence is low");
         require_contains(g2p_shader, "CellCounts",
                          "water 3D grid-to-particle should classify droplets from local occupancy");
         require_contains(g2p_shader, "sparse_droplet_blend",
@@ -191,9 +230,27 @@ int main() {
                          "water 3D particle debug splats should be opaque");
         require_contains(gpu_resources, ".blend_enable = false",
                          "water 3D debug render pipeline should not alpha blend particles");
-        require_contains(render_shader, "debug_view == 4u",
+        require_contains(surface_common, "WATER3D_SURFACE_DEPTH_SENTINEL",
+                         "water 3D surface pass should use an explicit empty-depth sentinel");
+        require_contains(surface_depth, "gl_FragDepth",
+                         "water 3D surface depth pass should write sphere-correct depth");
+        require_contains(surface_thickness, "out_thickness",
+                         "water 3D surface thickness pass should emit additive thickness");
+        require_contains(gpu_resources, ".dst_color_blend_factor = VK_BLEND_FACTOR_ONE",
+                         "water 3D surface thickness pass should use additive blending");
+        require_contains(surface_smooth, "bilateral_weight",
+                         "water 3D surface smoothing should be bilateral against depth");
+        require_contains(surface_composite, "fresnel",
+                         "water 3D surface composite should include water Fresnel");
+        require_contains(surface_composite, "exp(-absorption",
+                         "water 3D surface composite should apply Beer-Lambert absorption");
+        require_contains(commands, "RenderGraphFrameExecutor",
+                         "water 3D surface render should be recorded through the render graph");
+        require_contains(commands, "update_surface_descriptors",
+                         "water 3D surface render should bind graph transient textures");
+        require_contains(render_shader, "render_view == 5u",
                          "water 3D renderer should expose the solid debug view");
-        require_contains(render_shader, "debug_view == 5u",
+        require_contains(render_shader, "render_view == 6u",
                          "water 3D renderer should expose the overpack debug view");
 
         return 0;
