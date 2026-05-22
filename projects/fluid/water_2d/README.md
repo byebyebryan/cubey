@@ -29,8 +29,8 @@ Controls:
 - `D` cycles debug views.
 - The UI edits reset preset, transfer mode, fill volume, hose emission, bottom
   drain, obstacle shape, solver substeps, pressure iterations, PIC/FLIP blend,
-  particle separation, collision tuning, surface/foam shading, and live
-  frame/memory diagnostics.
+  particle separation, particle volume expansion, collision tuning, surface/foam
+  shading, and live frame/memory diagnostics.
 
 Debug views:
 
@@ -48,16 +48,17 @@ Debug views:
 Each substep clears the grid, emits any hose particles into the hose ring over
 currently inactive particle slots, bins active particles into fixed-capacity cell slots,
 transfers particle velocity to `u` and `v` MAC faces, applies gravity, computes
-occupied-cell divergence, solves pressure with Jacobi, projects face velocity,
-then transfers velocity back to particles. APIC mode stores a local affine
-velocity field per particle and uses it during the next particle-to-grid
-transfer, which preserves rotational/local motion better than raw PIC/FLIP.
-The fallback mode keeps the old current-vs-previous grid delta path with a
-configurable PIC/FLIP blend. After transfer, the solver adds a bounded
-neighbor-bin particle separation velocity only for overpacked cells to keep
-material volume from collapsing without disturbing settled regions, then advects
-and collides the particles. Particles that enter the optional bottom drain are
-marked inactive; no compaction or readback free-list is involved.
+occupied-cell divergence, adds a bounded positive volume source for overpacked
+particle cells, solves pressure with Jacobi, projects face velocity, then
+transfers velocity back to particles. APIC mode stores a local affine velocity
+field per particle and uses it during the next particle-to-grid transfer, which
+preserves rotational/local motion better than raw PIC/FLIP. The fallback mode
+keeps the old current-vs-previous grid delta path with a configurable PIC/FLIP
+blend. After transfer, the solver adds a bounded neighbor-bin particle
+separation velocity only for overpacked cells to keep material volume from
+collapsing without disturbing settled regions, then advects and collides the
+particles. Particles that enter the optional bottom drain are marked inactive;
+no compaction or readback free-list is involved.
 
 Main buffers:
 
@@ -83,6 +84,9 @@ The fill controls are runtime-editable. GPU particle buffers are allocated for
 the maximum editable fill area plus a larger explicit hose reserve, while each
 reset computes a reset-fill particle count from the current fill width and
 height. The hose pool starts after that reset-fill range, so smaller initial
-fills leave more room for continuous emission before the hose ring wraps. The UI
-reports average FPS/frame time, Water2D buffer allocation size, and device-local
-memory usage when the Vulkan driver exposes `VK_EXT_memory_budget`.
+fills leave more room for continuous emission before the hose ring wraps. Runtime
+particle kernels scan only the reset range plus hose slots that have actually
+been touched; after the hose ring wraps, the scan range expands to the full
+allocated particle buffer. The UI reports this compute-particle scan count,
+average FPS/frame time, Water2D buffer allocation size, and device-local memory
+usage when the Vulkan driver exposes `VK_EXT_memory_budget`.

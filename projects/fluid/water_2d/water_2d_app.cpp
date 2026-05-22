@@ -232,6 +232,8 @@ class Water2DApp {
                            0.20F, 1.40F, "%.2f");
         ImGui::SliderFloat("Particle separation strength",
                            &water_config_.particle_separation_strength, 0.0F, 1.5F, "%.2f");
+        ImGui::SliderFloat("Particle volume strength", &water_config_.particle_volume_strength,
+                           0.0F, 48.0F, "%.1f");
         ImGui::SliderFloat("Particle radius", &water_config_.particle_radius, 0.0025F, 0.025F,
                            "%.4f");
         ImGui::SliderFloat("Gravity", &water_config_.gravity, -4.0F, 0.0F, "%.2f");
@@ -305,9 +307,20 @@ class Water2DApp {
         ImGui::SliderFloat("Foam strength", &water_config_.foam_strength, 0.0F, 1.5F, "%.2f");
 
         ImGui::Text("Grid: %u x %u", water_config_.grid_width, water_config_.grid_height);
-        ImGui::Text(
-            "Particles: %u reset / %u hose pool / %u total", water_config_.active_particle_count,
-            hose_particle_pool_capacity_for_config(water_config_), water_config_.particle_capacity);
+        const std::uint32_t hose_pool_capacity =
+            hose_particle_pool_capacity_for_config(water_config_);
+        const std::uint32_t scanned_particles =
+            water_2d_runtime_particle_scan_count(water_config_, runtime_state_);
+        const std::uint32_t touched_hose_particles =
+            scanned_particles > water_config_.active_particle_count
+                ? scanned_particles - water_config_.active_particle_count
+                : 0U;
+        ImGui::Text("Particles: %u reset / %u hose pool / %u total",
+                    water_config_.active_particle_count, hose_pool_capacity,
+                    water_config_.particle_capacity);
+        ImGui::Text("Compute particles: %u scanned / %u total", scanned_particles,
+                    water_config_.particle_capacity);
+        ImGui::Text("Hose touched: %u / %u", touched_hose_particles, hose_pool_capacity);
         if (latest_frame_stats_.has_value()) {
             ImGui::Text("Frame: %.1f fps / %.2f ms avg (%.2f ms last)", latest_frame_stats_->fps,
                         latest_frame_stats_->frame_ms, latest_frame_ms_);

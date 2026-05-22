@@ -50,8 +50,10 @@
 #define WATER2D_DT dispatch_params.dispatch_options.x
 #define WATER2D_TIME dispatch_params.dispatch_options.y
 #define WATER2D_PRESSURE_READ_B dispatch_params.dispatch_options.z
+#define WATER2D_PARTICLE_SCAN_COUNT dispatch_params.dispatch_options.w
 #define WATER2D_EMIT_CURSOR dispatch_params.emit_options.x
 #define WATER2D_EMIT_COUNT dispatch_params.emit_options.y
+#define WATER2D_VOLUME_STRENGTH params.hose_options2.y
 
 #define WATER2D_RENDER_PARAMS                                                                  \
     layout(push_constant) uniform RenderParams {                                                \

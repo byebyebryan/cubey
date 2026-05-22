@@ -67,6 +67,11 @@ void main() {
     float right = u_field.values[u_index(x + 1u, y, width)];
     float bottom = v_field.values[v_index(x, y, width)];
     float top = v_field.values[v_index(x, y + 1u, width)];
-    divergence.values[index] =
+    float velocity_divergence =
         ((right - left) * float(width)) + ((top - bottom) * float(height));
+    float target_particles = max(1.0, params.particle_options.z);
+    float overpack =
+        max(0.0, (float(cell_counts.values[index]) - target_particles) / target_particles);
+    float volume_source = min(overpack, 5.0) * max(0.0, WATER2D_VOLUME_STRENGTH);
+    divergence.values[index] = velocity_divergence - volume_source;
 }

@@ -85,6 +85,8 @@ int main() {
                 "water should default to a particle separation radius");
         require(config.particle_separation_strength == 0.32F,
                 "water should default to particle separation");
+        require(config.particle_volume_strength == 18.0F,
+                "water should default to particle volume expansion");
         require(config.boundary_restitution == 0.18F,
                 "water should default to a soft boundary bounce");
         require(config.obstacle_friction == 0.86F,
@@ -269,6 +271,18 @@ int main() {
         require(cubey::projects::fluid::water_2d::hose_particle_pool_capacity_for_config(
                     hose_fill) == (config.particle_capacity - hose_fill.active_particle_count),
                 "hose fill scenario should be able to emit into all inactive particle slots");
+        cubey::projects::fluid::water_2d::Water2DRuntimeState runtime_state;
+        require(cubey::projects::fluid::water_2d::water_2d_runtime_particle_scan_count(
+                    config, runtime_state) == config.active_particle_count,
+                "water runtime particle scan count should default to active reset particles");
+        runtime_state.particle_scan_count = config.active_particle_count + 64U;
+        require(cubey::projects::fluid::water_2d::water_2d_runtime_particle_scan_count(
+                    config, runtime_state) == (config.active_particle_count + 64U),
+                "water runtime particle scan count should include touched hose slots");
+        runtime_state.particle_scan_count = config.particle_capacity + 64U;
+        require(cubey::projects::fluid::water_2d::water_2d_runtime_particle_scan_count(
+                    config, runtime_state) == config.particle_capacity,
+                "water runtime particle scan count should clamp to particle capacity");
         require(cubey::projects::fluid::water_2d::water_2d_headless_frame_count(run_config) == 120,
                 "water headless frame count should default to 120");
         run_config.frames = 8;
@@ -292,6 +306,8 @@ int main() {
             read_text_file(source_root / "shaders/water_2d_emit_particles.comp");
         const std::string p2g_shader =
             read_text_file(source_root / "shaders/water_2d_particle_to_grid.comp");
+        const std::string divergence_shader =
+            read_text_file(source_root / "shaders/water_2d_divergence.comp");
         const std::string pressure_shader =
             read_text_file(source_root / "shaders/water_2d_pressure.comp");
         const std::string projection_shader =
@@ -308,6 +324,10 @@ int main() {
                          "water shader contract should define the APIC affine binding");
         require_contains(contract_shader, "WATER2D_TRANSFER_MODE",
                          "water shader contract should expose transfer mode");
+        require_contains(contract_shader, "WATER2D_PARTICLE_SCAN_COUNT",
+                         "water shader contract should expose particle scan count");
+        require_contains(contract_shader, "WATER2D_VOLUME_STRENGTH",
+                         "water shader contract should expose particle volume strength");
         require_contains(contract_shader, "uniform SimulationParams",
                          "water shader contract should move stable simulation params to a UBO");
         require_contains(contract_shader, "uniform DispatchParams",
@@ -339,6 +359,8 @@ int main() {
                          "water bin build should clamp fixed-capacity cell slots");
         require_contains(build_bins_shader, "particle_positions.values[particle_id].w < 0.5",
                          "water bin build should skip inactive hose-pool particles");
+        require_contains(build_bins_shader, "WATER2D_PARTICLE_SCAN_COUNT",
+                         "water bin build should scan only touched particle slots");
         require_contains(emit_shader, "WATER2D_HOSE_POOL_START",
                          "water emit shader should target the reserved hose particle range");
         require_contains(emit_shader, "WATER2D_EMIT_CURSOR",
@@ -358,6 +380,10 @@ int main() {
                          "water particle-to-grid shader should read APIC affine state");
         require_contains(p2g_shader, "particle_velocity += affine * delta",
                          "water particle-to-grid shader should apply APIC local velocity");
+        require_contains(divergence_shader, "WATER2D_VOLUME_STRENGTH",
+                         "water divergence shader should add particle-volume expansion");
+        require_contains(divergence_shader, "divergence.values[index] = velocity_divergence -",
+                         "water divergence shader should turn overpacked cells into sources");
         require_contains(pressure_shader, "cell_counts.values[index] > 0u",
                          "water pressure shader should solve only occupied liquid cells");
         require_contains(projection_shader, "read_pressure",
@@ -370,6 +396,8 @@ int main() {
                          "water grid-to-particle shader should reconstruct APIC affine state");
         require_contains(g2p_shader, "particle_affine.values[particle_id]",
                          "water grid-to-particle shader should write APIC affine state");
+        require_contains(g2p_shader, "WATER2D_PARTICLE_SCAN_COUNT",
+                         "water grid-to-particle shader should scan only touched particle slots");
         require_contains(g2p_shader, "WATER2D_BINDING_CELL_PARTICLE_INDICES",
                          "water grid-to-particle shader should inspect neighbor particle bins");
         require_contains(g2p_shader, "separation_velocity",
@@ -392,6 +420,8 @@ int main() {
                          "water particle advection should clear drained APIC affine state");
         require_contains(advect_shader, "params.solve_options.z",
                          "water particle advection should use configured damping");
+        require_contains(advect_shader, "WATER2D_PARTICLE_SCAN_COUNT",
+                         "water particle advection should scan only touched particle slots");
         require_contains(render_shader, "particle_density",
                          "water render shader should draw from particle bins");
         require_contains(render_shader, "params.surface_options",

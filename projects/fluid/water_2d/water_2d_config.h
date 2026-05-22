@@ -92,6 +92,7 @@ struct Water2DConfig {
     float particle_damping = 0.999F;
     float particle_separation_radius = 0.58F;
     float particle_separation_strength = 0.32F;
+    float particle_volume_strength = 18.0F;
     float boundary_restitution = 0.18F;
     float obstacle_friction = 0.86F;
     float surface_threshold = 0.82F;
@@ -127,8 +128,17 @@ struct Water2DDispatchPushConstants {
 
 struct Water2DRuntimeState {
     std::uint32_t hose_cursor = 0;
+    std::uint32_t particle_scan_count = 0;
     float hose_emit_accumulator = 0.0F;
 };
+
+[[nodiscard]] inline std::uint32_t
+water_2d_runtime_particle_scan_count(const Water2DConfig& config,
+                                     const Water2DRuntimeState& state) {
+    const std::uint32_t scan_count =
+        state.particle_scan_count == 0 ? config.active_particle_count : state.particle_scan_count;
+    return std::clamp(scan_count, config.active_particle_count, config.particle_capacity);
+}
 
 static_assert(sizeof(Water2DSimulationUniforms) ==
               sizeof(float) * kWater2DSimulationUniformFloatCount);

@@ -28,7 +28,8 @@ void main() {
     uint particle_id = gl_GlobalInvocationID.x;
     uint width = uint(WATER2D_GRID_WIDTH);
     uint height = uint(WATER2D_GRID_HEIGHT);
-    uint particle_count = uint(WATER2D_PARTICLE_CAPACITY + 0.5);
+    uint particle_count =
+        min(uint(WATER2D_PARTICLE_SCAN_COUNT + 0.5), uint(WATER2D_PARTICLE_CAPACITY + 0.5));
     uint max_particles_per_cell = uint(params.particle_options.y + 0.5);
     if (particle_id >= particle_count) {
         return;

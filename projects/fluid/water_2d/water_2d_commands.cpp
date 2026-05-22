@@ -54,8 +54,14 @@ struct ShaderWriteBarrier {
     return compute_dispatch_groups(config.grid_width + 1U, config.grid_height + 1U);
 }
 
-[[nodiscard]] DispatchGroups particle_dispatch_groups(const Water2DConfig& config) {
-    return linear_dispatch_groups(config.particle_capacity);
+[[nodiscard]] std::uint32_t particle_scan_count(const Water2DConfig& config,
+                                                const Water2DRuntimeState& state) {
+    return water_2d_runtime_particle_scan_count(config, state);
+}
+
+[[nodiscard]] DispatchGroups particle_scan_dispatch_groups(const Water2DConfig& config,
+                                                           const Water2DRuntimeState& state) {
+    return linear_dispatch_groups(particle_scan_count(config, state));
 }
 
 [[nodiscard]] DispatchGroups bin_dispatch_groups(const Water2DConfig& config) {
@@ -155,7 +161,7 @@ void record_shader_write_barrier(VkCommandBuffer command_buffer, ShaderWriteBarr
         .hose_options2 =
             {
                 config.hose.particles_per_second,
-                0.0F,
+                config.particle_volume_strength,
                 0.0F,
                 0.0F,
             },
@@ -178,14 +184,15 @@ void record_shader_write_barrier(VkCommandBuffer command_buffer, ShaderWriteBarr
 
 [[nodiscard]] Water2DDispatchPushConstants
 dispatch_push_constants(const ProjectFrame& frame, float delta_seconds, float pressure_read_b,
-                        std::uint32_t emit_cursor = 0, std::uint32_t emit_count = 0) {
+                        std::uint32_t particle_scan_count, std::uint32_t emit_cursor = 0,
+                        std::uint32_t emit_count = 0) {
     return {
         .dispatch_options =
             {
                 delta_seconds,
                 static_cast<float>(frame.elapsed_seconds),
                 pressure_read_b,
-                0.0F,
+                static_cast<float>(particle_scan_count),
             },
         .emit_options =
             {
@@ -210,6 +217,21 @@ dispatch_push_constants(const ProjectFrame& frame, float delta_seconds, float pr
     const std::uint32_t clamped_count = std::min(emit_count, hose_pool_capacity);
     state.hose_emit_accumulator -= static_cast<float>(clamped_count);
     return clamped_count;
+}
+
+void note_hose_emission(Water2DRuntimeState& state, const Water2DConfig& config,
+                        std::uint32_t emit_cursor, std::uint32_t emit_count) {
+    const std::uint32_t hose_pool_capacity = hose_particle_pool_capacity_for_config(config);
+    if (emit_count == 0 || hose_pool_capacity == 0) {
+        return;
+    }
+    const std::uint32_t pool_start = hose_particle_start_for_config(config);
+    const std::uint32_t touched_count = std::min(emit_count, hose_pool_capacity);
+    const std::uint32_t end_cursor = emit_cursor + touched_count;
+    const std::uint32_t touched_high =
+        end_cursor <= hose_pool_capacity ? pool_start + end_cursor : config.particle_capacity;
+    state.particle_scan_count = std::max(particle_scan_count(config, state),
+                                         std::min(touched_high, config.particle_capacity));
 }
 
 void record_dispatch(const cubey::vulkan::CommandRecorder& recorder,
@@ -243,12 +265,13 @@ void record_final_barrier(VkCommandBuffer command_buffer) {
 void record_refresh_bins(const cubey::vulkan::CommandRecorder& recorder,
                          VkCommandBuffer command_buffer, Water2DGpuResources& resources,
                          VkDescriptorSet descriptor_set, const Water2DConfig& config,
+                         const Water2DRuntimeState& runtime_state,
                          const Water2DDispatchPushConstants& push_constants) {
     record_dispatch(recorder, resources.clear_bins_pipeline_resource(), descriptor_set,
                     bin_dispatch_groups(config), push_constants);
     record_compute_barrier(command_buffer);
     record_dispatch(recorder, resources.build_bins_pipeline_resource(), descriptor_set,
-                    particle_dispatch_groups(config), push_constants);
+                    particle_scan_dispatch_groups(config, runtime_state), push_constants);
     record_compute_barrier(command_buffer);
 }
 
@@ -264,23 +287,26 @@ void record_water_2d_compute(VkCommandBuffer command_buffer, Water2DGpuResources
     const VkDescriptorSet descriptor_set = resources.field_descriptor_set(frame_slot);
     const DispatchGroups cell_groups = cell_dispatch_groups(config);
     const DispatchGroups face_groups = face_dispatch_groups(config);
-    const DispatchGroups particles = particle_dispatch_groups(config);
     const std::uint32_t substep_count = std::max(1U, config.substeps);
     const float frame_dt =
         std::min(static_cast<float>(frame.delta_seconds), config.fixed_delta_seconds);
     const float substep_dt = frame_dt / static_cast<float>(substep_count);
-    Water2DDispatchPushConstants push_constants = dispatch_push_constants(frame, substep_dt, 0.0F);
+    Water2DDispatchPushConstants push_constants = dispatch_push_constants(
+        frame, substep_dt, 0.0F, particle_scan_count(config, runtime_state));
 
     if (reset_requested) {
         runtime_state = {};
         record_dispatch(recorder, resources.reset_pipeline_resource(), descriptor_set,
                         reset_dispatch_groups(config), push_constants);
         record_compute_barrier(command_buffer);
+        runtime_state.particle_scan_count = config.active_particle_count;
+        push_constants.dispatch_options[3] =
+            static_cast<float>(particle_scan_count(config, runtime_state));
         reset_requested = false;
     }
     if (paused) {
         record_refresh_bins(recorder, command_buffer, resources, descriptor_set, config,
-                            push_constants);
+                            runtime_state, push_constants);
         if (include_render_visibility_barrier) {
             record_final_barrier(command_buffer);
         }
@@ -290,7 +316,8 @@ void record_water_2d_compute(VkCommandBuffer command_buffer, Water2DGpuResources
     for (std::uint32_t substep = 0; substep < substep_count; ++substep) {
         const float substep_time =
             static_cast<float>(frame.elapsed_seconds) + (static_cast<float>(substep) * substep_dt);
-        push_constants = dispatch_push_constants(frame, substep_dt, 0.0F);
+        push_constants = dispatch_push_constants(frame, substep_dt, 0.0F,
+                                                 particle_scan_count(config, runtime_state));
         push_constants.dispatch_options[1] = substep_time;
 
         record_dispatch(recorder, resources.clear_grid_pipeline_resource(), descriptor_set,
@@ -303,16 +330,20 @@ void record_water_2d_compute(VkCommandBuffer command_buffer, Water2DGpuResources
             const std::uint32_t hose_pool_capacity = hose_particle_pool_capacity_for_config(config);
             runtime_state.hose_cursor =
                 (runtime_state.hose_cursor + emit_count) % hose_pool_capacity;
-            Water2DDispatchPushConstants emit_push_constants =
-                dispatch_push_constants(frame, substep_dt, 0.0F, emit_cursor, emit_count);
+            note_hose_emission(runtime_state, config, emit_cursor, emit_count);
+            Water2DDispatchPushConstants emit_push_constants = dispatch_push_constants(
+                frame, substep_dt, 0.0F, particle_scan_count(config, runtime_state), emit_cursor,
+                emit_count);
             emit_push_constants.dispatch_options[1] = substep_time;
             record_dispatch(recorder, resources.emit_pipeline_resource(), descriptor_set,
                             linear_dispatch_groups(emit_count), emit_push_constants);
             record_compute_barrier(command_buffer);
         }
+        push_constants.dispatch_options[3] =
+            static_cast<float>(particle_scan_count(config, runtime_state));
 
         record_refresh_bins(recorder, command_buffer, resources, descriptor_set, config,
-                            push_constants);
+                            runtime_state, push_constants);
 
         record_dispatch(recorder, resources.particle_to_grid_pipeline_resource(), descriptor_set,
                         face_groups, push_constants);
@@ -342,15 +373,15 @@ void record_water_2d_compute(VkCommandBuffer command_buffer, Water2DGpuResources
         record_compute_barrier(command_buffer);
 
         record_dispatch(recorder, resources.grid_to_particle_pipeline_resource(), descriptor_set,
-                        particles, push_constants);
+                        particle_scan_dispatch_groups(config, runtime_state), push_constants);
         record_compute_barrier(command_buffer);
 
         record_dispatch(recorder, resources.advect_particles_pipeline_resource(), descriptor_set,
-                        particles, push_constants);
+                        particle_scan_dispatch_groups(config, runtime_state), push_constants);
         record_compute_barrier(command_buffer);
 
         record_refresh_bins(recorder, command_buffer, resources, descriptor_set, config,
-                            push_constants);
+                            runtime_state, push_constants);
     }
 
     if (include_render_visibility_barrier) {
