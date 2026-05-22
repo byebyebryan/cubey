@@ -139,6 +139,9 @@ int main() {
         const std::string divergence_shader =
             read_text_file(shader_dir / "water_3d_divergence.comp");
         const std::string render_shader = read_text_file(shader_dir / "water_3d_render.frag");
+        const std::string gpu_resources =
+            read_text_file(std::filesystem::path(CUBEY_WATER_3D_SOURCE_DIR) /
+                           "water_3d_gpu_resources.cpp");
 
         require_contains(contract, "WATER3D_BINDING_W_FIELD",
                          "water 3D contract should expose the W face field");
@@ -184,6 +187,10 @@ int main() {
                          "water 3D divergence should separate raw and boundary-limited source");
         require_contains(render_shader, "frag_particle",
                          "water 3D renderer should support particle splats");
+        require_contains(render_shader, "out_color = vec4(linear_color, 1.0)",
+                         "water 3D particle debug splats should be opaque");
+        require_contains(gpu_resources, ".blend_enable = false",
+                         "water 3D debug render pipeline should not alpha blend particles");
         require_contains(render_shader, "debug_view == 4u",
                          "water 3D renderer should expose the solid debug view");
         require_contains(render_shader, "debug_view == 5u",

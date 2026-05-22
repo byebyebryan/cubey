@@ -76,14 +76,10 @@ void main() {
         if (radius > 1.0) {
             discard;
         }
-        float alpha = smoothstep(1.0, 0.15, radius) * 0.82;
-        if (alpha < 0.08) {
-            discard;
-        }
         vec3 edge = vec3(0.16, 0.45, 0.78);
         vec3 core = vec3(0.54, 0.86, 1.0);
         vec3 linear_color = cubey_srgb_to_linear(mix(edge, core, smoothstep(0.95, 0.0, radius)));
-        out_color = vec4(linear_color * alpha, alpha);
+        out_color = vec4(linear_color, 1.0);
         return;
     }
 

@@ -62,11 +62,7 @@ upload_project_device_buffer(cubey::ProjectGpuServices& gpu, const void* data,
         .depth_test = true,
         .depth_write = true,
         .depth_compare_op = VK_COMPARE_OP_LESS,
-        .blend_enable = true,
-        .src_color_blend_factor = VK_BLEND_FACTOR_ONE,
-        .dst_color_blend_factor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
-        .src_alpha_blend_factor = VK_BLEND_FACTOR_ONE,
-        .dst_alpha_blend_factor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
+        .blend_enable = false,
     };
 }
 
