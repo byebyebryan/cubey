@@ -53,6 +53,9 @@ layout(set = 0, binding = WATER2D_BINDING_CELL_PARTICLE_INDICES, std430) buffer 
 
 WATER2D_SIMULATION_PARAMS;
 
+const uint kWater2DWallCells = 2u;
+const uint kWater2DSpawnRelocationAttempts = 8u;
+
 uint cell_index(uint x, uint y, uint width) {
     return (y * width) + x;
 }
@@ -89,6 +92,42 @@ bool obstacle_cell(vec2 uv, float width, float height) {
     return box_delta.x < half_size.x && box_delta.y < half_size.y;
 }
 
+vec2 spawn_position(uint cell, uint sub_particle, uint fill_cols, uint fill_rows,
+                    uint particles_per_cell, uint start_x, uint start_y, vec2 jitter,
+                    uint width, uint height) {
+    uint cx = cell % fill_cols;
+    uint cy = (cell / fill_cols) % fill_rows;
+    uint strata = uint(ceil(sqrt(float(particles_per_cell))));
+    uint sx = sub_particle % strata;
+    uint sy = (sub_particle / strata) % strata;
+    vec2 strata_offset = (vec2(sx, sy) + vec2(0.32, 0.68)) / float(strata);
+    vec2 cell_position = vec2(start_x + cx, start_y + cy) +
+                         clamp(strata_offset + jitter, vec2(0.10), vec2(0.90));
+    return cell_position / vec2(width, height);
+}
+
+bool relocate_spawn_outside_obstacle(inout vec2 position, uint id, uint logical_cell,
+                                     uint sub_particle, uint fill_cols, uint fill_rows,
+                                     uint particles_per_cell, uint start_x, uint start_y,
+                                     vec2 jitter, uint width, uint height) {
+    if (!obstacle_cell(position, float(width), float(height))) {
+        return true;
+    }
+    uint fill_cell_count = max(1u, fill_cols * fill_rows);
+    uint stride = 17u + (id % 29u);
+    for (uint attempt = 0u; attempt < kWater2DSpawnRelocationAttempts; ++attempt) {
+        uint candidate_cell = (logical_cell + ((attempt + 1u) * stride)) % fill_cell_count;
+        vec2 candidate = spawn_position(candidate_cell, sub_particle, fill_cols, fill_rows,
+                                        particles_per_cell, start_x, start_y, jitter, width,
+                                        height);
+        if (!obstacle_cell(candidate, float(width), float(height))) {
+            position = candidate;
+            return true;
+        }
+    }
+    return false;
+}
+
 void main() {
     uint id = gl_GlobalInvocationID.x;
     uint width = uint(WATER2D_GRID_WIDTH);
@@ -105,25 +144,28 @@ void main() {
 
     if (id < active_particle_count) {
         uint fill_cols = clamp(uint(floor(params.init_options.y * float(width))), 1u,
-                               max(1u, width - 4u));
+                               max(1u, width - (kWater2DWallCells * 2u)));
         uint fill_rows = clamp(uint(floor(params.init_options.x * float(height))), 1u,
-                               max(1u, height - 4u));
+                               max(1u, height - (kWater2DWallCells * 2u)));
         uint logical_cell = id / particles_per_cell;
         uint sub_particle = id % particles_per_cell;
         uint cx = logical_cell % fill_cols;
         uint cy = (logical_cell / fill_cols) % fill_rows;
         uint strata = uint(ceil(sqrt(float(particles_per_cell))));
-        uint sx = sub_particle % strata;
-        uint sy = (sub_particle / strata) % strata;
-        vec2 strata_offset = (vec2(sx, sy) + vec2(0.32, 0.68)) / float(strata);
         vec2 jitter =
             (vec2(hash11(id * 2u + 17u), hash11(id * 2u + 31u)) - vec2(0.5)) *
             (0.22 / float(strata));
-        uint start_x = scenario == 2u ? max(2u, (width - fill_cols) / 2u) : 2u;
-        uint start_y = 2u;
-        vec2 cell_position = vec2(start_x + cx, start_y + cy) +
-                             clamp(strata_offset + jitter, vec2(0.10), vec2(0.90));
-        vec2 position = cell_position / vec2(width, height);
+        uint start_x =
+            scenario == 2u ? max(kWater2DWallCells, (width - fill_cols) / 2u) :
+                             kWater2DWallCells;
+        uint start_y = kWater2DWallCells;
+        vec2 position = spawn_position(logical_cell, sub_particle, fill_cols, fill_rows,
+                                       particles_per_cell, start_x, start_y, jitter, width,
+                                       height);
+        bool spawn_active = relocate_spawn_outside_obstacle(position, id, logical_cell,
+                                                           sub_particle, fill_cols, fill_rows,
+                                                           particles_per_cell, start_x, start_y,
+                                                           jitter, width, height);
         float release_edge = smoothstep(float(fill_cols) * 0.68, float(fill_cols) * 0.98,
                                         float(cx));
         vec2 velocity = vec2(0.10 * release_edge, 0.0);
@@ -135,8 +177,9 @@ void main() {
             float wave = sin((float(cx) / max(1.0, float(fill_cols))) * 6.28318);
             velocity = vec2(0.44 * wave, 0.08 * cos(wave * 2.2));
         }
-        particle_positions.values[id] = vec4(position, 0.0, 1.0);
-        particle_velocities.values[id] = vec4(velocity, 0.0, 0.0);
+        particle_positions.values[id] =
+            spawn_active ? vec4(position, 0.0, 1.0) : vec4(-10.0, -10.0, 0.0, 0.0);
+        particle_velocities.values[id] = spawn_active ? vec4(velocity, 0.0, 0.0) : vec4(0.0);
         particle_affine.values[id] = vec4(0.0);
     } else if (id < particle_capacity) {
         particle_positions.values[id] = vec4(-10.0, -10.0, 0.0, 0.0);
@@ -148,7 +191,9 @@ void main() {
         uint x = id % width;
         uint y = id / width;
         vec2 uv = (vec2(x, y) + vec2(0.5)) / vec2(width, height);
-        bool border = x < 2u || y < 2u || x + 3u > width || y + 3u > height;
+        bool border = x < kWater2DWallCells || y < kWater2DWallCells ||
+                      x + (kWater2DWallCells + 1u) > width ||
+                      y + (kWater2DWallCells + 1u) > height;
         float solid_value = (border || obstacle_cell(uv, float(width), float(height))) ? 1.0 : 0.0;
         pressure_a.values[id] = 0.0;
         pressure_b.values[id] = 0.0;

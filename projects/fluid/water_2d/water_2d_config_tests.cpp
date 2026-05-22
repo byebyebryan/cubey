@@ -351,6 +351,10 @@ int main() {
                          "water reset shader should bind APIC affine state");
         require_contains(reset_shader, "particle_affine.values[id] = vec4(0.0)",
                          "water reset shader should clear APIC affine state");
+        require_contains(reset_shader, "kWater2DWallCells",
+                         "water reset shader should use a named wall-cell border");
+        require_contains(reset_shader, "relocate_spawn_outside_obstacle",
+                         "water reset shader should avoid spawning particles inside obstacles");
         require_contains(build_bins_shader, "WATER2D_BINDING_CELL_COUNTS",
                          "water bin build should use shared descriptor binding names");
         require_contains(build_bins_shader, "atomicAdd",
@@ -411,6 +415,12 @@ int main() {
                          "water grid-to-particle shader should use the velocity limit");
         require_contains(advect_shader, "collide_obstacle",
                          "water particle advection should collide against the optional obstacle");
+        require_contains(advect_shader, "velocity = -velocity * restitution",
+                         "water particle advection should reflect wall collision velocity");
+        require_contains(advect_shader, "bool collided = false",
+                         "water particle advection should track collision state");
+        require_contains(advect_shader, "if (collided)",
+                         "water particle advection should clear APIC affine state after collisions");
         require_contains(advect_shader, "inside_drain",
                          "water particle advection should support a box drain sink");
         require_contains(advect_shader,

@@ -17,29 +17,36 @@ layout(set = 0, binding = WATER2D_BINDING_PARTICLE_AFFINE, std430) buffer Partic
 
 WATER2D_SIMULATION_PARAMS;
 
-void collide_axis(inout float position, inout float velocity, float minimum, float maximum,
+bool collide_axis(inout float position, inout float velocity, float minimum, float maximum,
                   float restitution) {
     if (position < minimum) {
         position = minimum;
-        velocity = max(0.0, velocity) * restitution;
+        if (velocity < 0.0) {
+            velocity = -velocity * restitution;
+        }
+        return true;
     }
     if (position > maximum) {
         position = maximum;
-        velocity = min(0.0, velocity) * restitution;
+        if (velocity > 0.0) {
+            velocity = -velocity * restitution;
+        }
+        return true;
     }
+    return false;
 }
 
-void collide_circle_obstacle(inout vec2 position, inout vec2 velocity, float width, float height,
+bool collide_circle_obstacle(inout vec2 position, inout vec2 velocity, float width, float height,
                              float restitution, float friction) {
     float aspect = width / height;
     vec2 scaled_delta = (position - params.obstacle_options.xy) * vec2(aspect, 1.0);
     float distance = length(scaled_delta);
     float radius = params.obstacle_options.z;
-    if (distance >= radius || distance <= 0.00001) {
-        return;
+    if (distance >= radius) {
+        return false;
     }
 
-    vec2 scaled_normal = scaled_delta / distance;
+    vec2 scaled_normal = distance > 0.00001 ? scaled_delta / distance : vec2(0.0, 1.0);
     position = params.obstacle_options.xy + vec2(scaled_normal.x / aspect, scaled_normal.y) *
                                               (radius + 0.0025);
     vec2 normal = normalize(vec2(scaled_normal.x * aspect, scaled_normal.y));
@@ -48,15 +55,16 @@ void collide_circle_obstacle(inout vec2 position, inout vec2 velocity, float wid
         velocity -= normal * inward * (1.0 + restitution);
     }
     velocity *= friction;
+    return true;
 }
 
-void collide_box_obstacle(inout vec2 position, inout vec2 velocity, float restitution,
+bool collide_box_obstacle(inout vec2 position, inout vec2 velocity, float restitution,
                           float friction) {
     vec2 half_size = max(params.obstacle_extents.xy, vec2(0.001));
     vec2 delta = position - params.obstacle_options.xy;
     vec2 overlap = half_size - abs(delta);
     if (overlap.x <= 0.0 || overlap.y <= 0.0) {
-        return;
+        return false;
     }
 
     if (overlap.x < overlap.y) {
@@ -73,17 +81,19 @@ void collide_box_obstacle(inout vec2 position, inout vec2 velocity, float restit
         }
     }
     velocity *= friction;
+    return true;
 }
 
-void collide_obstacle(inout vec2 position, inout vec2 velocity, float width, float height) {
+bool collide_obstacle(inout vec2 position, inout vec2 velocity, float width, float height) {
     uint shape = uint(params.obstacle_options.w + 0.5);
     float restitution = clamp(params.obstacle_extents.z, 0.0, 1.0);
     float friction = clamp(params.obstacle_extents.w, 0.0, 1.0);
     if (shape == 1u) {
-        collide_circle_obstacle(position, velocity, width, height, restitution, friction);
+        return collide_circle_obstacle(position, velocity, width, height, restitution, friction);
     } else if (shape == 2u) {
-        collide_box_obstacle(position, velocity, restitution, friction);
+        return collide_box_obstacle(position, velocity, restitution, friction);
     }
+    return false;
 }
 
 void clamp_velocity(inout vec2 velocity) {
@@ -123,15 +133,21 @@ void main() {
     position += velocity * dt;
 
     vec2 margin = vec2(2.25 / float(width), 2.25 / float(height));
-    collide_axis(position.x, velocity.x, margin.x, 1.0 - margin.x, restitution);
-    collide_axis(position.y, velocity.y, margin.y, 1.0 - margin.y, restitution);
-    collide_obstacle(position, velocity, float(width), float(height));
+    bool collided = false;
+    collided = collide_axis(position.x, velocity.x, margin.x, 1.0 - margin.x, restitution) ||
+               collided;
+    collided = collide_axis(position.y, velocity.y, margin.y, 1.0 - margin.y, restitution) ||
+               collided;
+    collided = collide_obstacle(position, velocity, float(width), float(height)) || collided;
     clamp_velocity(velocity);
     if (inside_drain(position)) {
         particle_positions.values[particle_id] = vec4(-10.0, -10.0, 0.0, 0.0);
         particle_velocities.values[particle_id] = vec4(0.0);
         particle_affine.values[particle_id] = vec4(0.0);
         return;
+    }
+    if (collided) {
+        particle_affine.values[particle_id] = vec4(0.0);
     }
 
     particle_positions.values[particle_id] = vec4(position, 0.0, 1.0);
