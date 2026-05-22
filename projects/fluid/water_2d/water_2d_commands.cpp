@@ -97,10 +97,16 @@ void record_shader_write_barrier(VkCommandBuffer command_buffer, ShaderWriteBarr
     return {
         .grid_options =
             {
-                static_cast<float>(config.grid_width),
-                static_cast<float>(config.grid_height),
-                static_cast<float>(config.active_particle_count),
-                static_cast<float>(config.particle_capacity),
+                water_2d_shader_count_float(config.grid_width,
+                                            "water grid width exceeds exact shader integer range"),
+                water_2d_shader_count_float(config.grid_height,
+                                            "water grid height exceeds exact shader integer range"),
+                water_2d_shader_count_float(
+                    config.active_particle_count,
+                    "water active particle count exceeds exact shader integer range"),
+                water_2d_shader_count_float(
+                    config.particle_capacity,
+                    "water particle capacity exceeds exact shader integer range"),
             },
         .init_options =
             {
@@ -125,9 +131,15 @@ void record_shader_write_barrier(VkCommandBuffer command_buffer, ShaderWriteBarr
             },
         .particle_options =
             {
-                static_cast<float>(config.active_particle_count),
-                static_cast<float>(config.max_particles_per_cell),
-                static_cast<float>(config.particles_per_cell),
+                water_2d_shader_count_float(
+                    config.active_particle_count,
+                    "water active particle count exceeds exact shader integer range"),
+                water_2d_shader_count_float(
+                    config.max_particles_per_cell,
+                    "water max particles per cell exceeds exact shader integer range"),
+                water_2d_shader_count_float(
+                    config.particles_per_cell,
+                    "water particles per cell exceeds exact shader integer range"),
                 config.flip_ratio,
             },
         .solve_options =
@@ -139,9 +151,15 @@ void record_shader_write_barrier(VkCommandBuffer command_buffer, ShaderWriteBarr
             },
         .lifecycle_options =
             {
-                static_cast<float>(config.particle_capacity),
-                static_cast<float>(hose_particle_start_for_config(config)),
-                static_cast<float>(hose_particle_pool_capacity_for_config(config)),
+                water_2d_shader_count_float(
+                    config.particle_capacity,
+                    "water particle capacity exceeds exact shader integer range"),
+                water_2d_shader_count_float(
+                    hose_particle_start_for_config(config),
+                    "water hose particle start exceeds exact shader integer range"),
+                water_2d_shader_count_float(
+                    hose_particle_pool_capacity_for_config(config),
+                    "water hose particle pool exceeds exact shader integer range"),
                 static_cast<float>(static_cast<std::uint32_t>(config.transfer_mode)),
             },
         .hose_options0 =
@@ -192,12 +210,18 @@ dispatch_push_constants(const ProjectFrame& frame, float delta_seconds, float pr
                 delta_seconds,
                 static_cast<float>(frame.elapsed_seconds),
                 pressure_read_b,
-                static_cast<float>(particle_scan_count),
+                water_2d_shader_count_float(
+                    particle_scan_count,
+                    "water particle scan count exceeds exact shader integer range"),
             },
         .emit_options =
             {
-                static_cast<float>(emit_cursor),
-                static_cast<float>(emit_count),
+                water_2d_shader_count_float(
+                    emit_cursor,
+                    "water hose emit cursor exceeds exact shader integer range"),
+                water_2d_shader_count_float(
+                    emit_count,
+                    "water hose emit count exceeds exact shader integer range"),
                 0.0F,
                 0.0F,
             },
@@ -301,7 +325,9 @@ void record_water_2d_compute(VkCommandBuffer command_buffer, Water2DGpuResources
         record_compute_barrier(command_buffer);
         runtime_state.particle_scan_count = config.active_particle_count;
         push_constants.dispatch_options[3] =
-            static_cast<float>(particle_scan_count(config, runtime_state));
+            water_2d_shader_count_float(
+                particle_scan_count(config, runtime_state),
+                "water particle scan count exceeds exact shader integer range");
         reset_requested = false;
     }
     if (paused) {
@@ -340,7 +366,9 @@ void record_water_2d_compute(VkCommandBuffer command_buffer, Water2DGpuResources
             record_compute_barrier(command_buffer);
         }
         push_constants.dispatch_options[3] =
-            static_cast<float>(particle_scan_count(config, runtime_state));
+            water_2d_shader_count_float(
+                particle_scan_count(config, runtime_state),
+                "water particle scan count exceeds exact shader integer range");
 
         record_refresh_bins(recorder, command_buffer, resources, descriptor_set, config,
                             runtime_state, push_constants);
@@ -397,15 +425,21 @@ void record_water_2d_draw(VkCommandBuffer command_buffer, const Water2DGpuResour
     const RenderPushConstants push_constants{
         .grid_debug =
             {
-                static_cast<float>(config.grid_width),
-                static_cast<float>(config.grid_height),
+                water_2d_shader_count_float(config.grid_width,
+                                            "water grid width exceeds exact shader integer range"),
+                water_2d_shader_count_float(config.grid_height,
+                                            "water grid height exceeds exact shader integer range"),
                 debug_view_push_value(debug_view),
                 (config.pressure_iterations % 2U) == 1U ? 1.0F : 0.0F,
             },
         .particle_options =
             {
-                static_cast<float>(config.active_particle_count),
-                static_cast<float>(config.max_particles_per_cell),
+                water_2d_shader_count_float(
+                    config.active_particle_count,
+                    "water active particle count exceeds exact shader integer range"),
+                water_2d_shader_count_float(
+                    config.max_particles_per_cell,
+                    "water max particles per cell exceeds exact shader integer range"),
                 config.particle_radius,
                 0.0F,
             },

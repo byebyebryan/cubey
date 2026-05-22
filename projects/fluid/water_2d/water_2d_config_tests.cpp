@@ -54,6 +54,15 @@ int main() {
 
         require(config.grid_width == 256, "water grid should default to 256 columns");
         require(config.grid_height == 144, "water grid should default to 144 rows");
+        require(cubey::projects::fluid::water_2d::kWater2DWallCells == 2,
+                "water should use a two-cell solid border");
+        require(cubey::projects::fluid::water_2d::kWater2DMinimumGridWidth == 16,
+                "water should reject degenerate grid widths");
+        require(cubey::projects::fluid::water_2d::kWater2DMinimumGridHeight == 16,
+                "water should reject degenerate grid heights");
+        require(cubey::projects::fluid::water_2d::kWater2DMaxExactShaderInteger ==
+                    (1U << 24U),
+                "water float-backed shader counts should stay in the exact integer range");
         require(config.pressure_iterations == 256,
                 "water pressure solve should default to a stronger Jacobi pass count");
         require(config.particles_per_cell == 4, "water should seed four particles per cell");
@@ -118,6 +127,12 @@ int main() {
         require(cubey::projects::fluid::water_2d::particle_bin_index_count(config) ==
                     kExpectedBinIndexCount,
                 "water particle bins should allocate fixed cell slots");
+        require(cubey::projects::fluid::water_2d::water_2d_shader_count_float(
+                    cubey::projects::fluid::water_2d::kWater2DMaxExactShaderInteger,
+                    "test") ==
+                    static_cast<float>(
+                        cubey::projects::fluid::water_2d::kWater2DMaxExactShaderInteger),
+                "water shader count helper should accept the exact float integer cap");
         require(cubey::projects::fluid::water_2d::scalar_field_byte_size(config) ==
                     sizeof(float) * kExpectedCellCount,
                 "water scalar byte size should cover one float per cell");
@@ -201,6 +216,74 @@ int main() {
             threw_for_debug_view = true;
         }
         require(threw_for_debug_view, "water config should reject unknown debug views");
+
+        bool threw_for_tiny_grid = false;
+        try {
+            cubey::projects::fluid::water_2d::Water2DConfig tiny_grid = config;
+            tiny_grid.grid_width = 15;
+            static_cast<void>(cubey::projects::fluid::water_2d::cell_count(tiny_grid));
+        } catch (const std::runtime_error&) {
+            threw_for_tiny_grid = true;
+        }
+        require(threw_for_tiny_grid, "water config should reject grids narrower than 16 cells");
+
+        bool threw_for_inexact_grid = false;
+        try {
+            cubey::projects::fluid::water_2d::Water2DConfig inexact_grid = config;
+            inexact_grid.grid_width =
+                cubey::projects::fluid::water_2d::kWater2DMaxExactShaderInteger + 1U;
+            static_cast<void>(cubey::projects::fluid::water_2d::cell_count(inexact_grid));
+        } catch (const std::runtime_error&) {
+            threw_for_inexact_grid = true;
+        }
+        require(threw_for_inexact_grid,
+                "water config should reject grid dimensions outside exact float range");
+
+        bool threw_for_inexact_face_count = false;
+        try {
+            cubey::projects::fluid::water_2d::Water2DConfig inexact_faces = config;
+            inexact_faces.grid_width = 4096;
+            inexact_faces.grid_height = 4096;
+            static_cast<void>(cubey::projects::fluid::water_2d::u_face_count(inexact_faces));
+        } catch (const std::runtime_error&) {
+            threw_for_inexact_face_count = true;
+        }
+        require(threw_for_inexact_face_count,
+                "water config should reject face counts outside exact float range");
+
+        bool threw_for_inexact_particle_capacity = false;
+        try {
+            cubey::projects::fluid::water_2d::Water2DConfig inexact_particles = config;
+            inexact_particles.hose.particle_capacity =
+                cubey::projects::fluid::water_2d::kWater2DMaxExactShaderInteger;
+            cubey::projects::fluid::water_2d::refresh_particle_counts(inexact_particles);
+        } catch (const std::runtime_error&) {
+            threw_for_inexact_particle_capacity = true;
+        }
+        require(threw_for_inexact_particle_capacity,
+                "water config should reject particle capacity outside exact float range");
+
+        bool threw_for_inexact_shader_count = false;
+        try {
+            static_cast<void>(cubey::projects::fluid::water_2d::water_2d_shader_count_float(
+                static_cast<std::size_t>(
+                    cubey::projects::fluid::water_2d::kWater2DMaxExactShaderInteger) +
+                    1U,
+                "test"));
+        } catch (const std::runtime_error&) {
+            threw_for_inexact_shader_count = true;
+        }
+        require(threw_for_inexact_shader_count,
+                "water shader count helper should reject inexact float integers");
+
+        cubey::projects::fluid::water_2d::Water2DConfig minimum_grid = config;
+        minimum_grid.grid_width = 16;
+        minimum_grid.grid_height = 16;
+        cubey::projects::fluid::water_2d::refresh_particle_counts(minimum_grid);
+        require(minimum_grid.active_particle_count == (8U * 11U * 4U),
+                "water minimum grid should size active particles like the reset shader");
+        require(minimum_grid.initial_particle_capacity == (12U * 12U * 4U),
+                "water minimum grid should clamp maximum fill to the interior border");
 
         const cubey::RunConfig default_run_config;
         const cubey::projects::fluid::water_2d::Water2DConfig default_from_run_config =
@@ -353,6 +436,8 @@ int main() {
                          "water reset shader should clear APIC affine state");
         require_contains(reset_shader, "kWater2DWallCells",
                          "water reset shader should use a named wall-cell border");
+        require_contains(reset_shader, "width - (kWater2DWallCells * 2u)",
+                         "water reset shader should clamp fill width to the usable interior");
         require_contains(reset_shader, "relocate_spawn_outside_obstacle",
                          "water reset shader should avoid spawning particles inside obstacles");
         require_contains(build_bins_shader, "WATER2D_BINDING_CELL_COUNTS",
@@ -386,6 +471,8 @@ int main() {
                          "water particle-to-grid shader should apply APIC local velocity");
         require_contains(divergence_shader, "WATER2D_VOLUME_STRENGTH",
                          "water divergence shader should add particle-volume expansion");
+        require_contains(divergence_shader, "stored_particles = min",
+                         "water divergence shader should cap volume pressure to stored bins");
         require_contains(divergence_shader, "divergence.values[index] = velocity_divergence -",
                          "water divergence shader should turn overpacked cells into sources");
         require_contains(pressure_shader, "cell_counts.values[index] > 0u",

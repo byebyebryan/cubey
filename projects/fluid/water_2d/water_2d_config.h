@@ -49,6 +49,10 @@ inline constexpr std::uint32_t kWater2DSimulationUniformFloatCount = 48;
 inline constexpr std::uint32_t kWater2DRenderPushConstantFloatCount = 12;
 inline constexpr std::uint32_t kWater2DDefaultGridWidth = 256;
 inline constexpr std::uint32_t kWater2DDefaultGridHeight = 144;
+inline constexpr std::uint32_t kWater2DWallCells = 2;
+inline constexpr std::uint32_t kWater2DMinimumGridWidth = 16;
+inline constexpr std::uint32_t kWater2DMinimumGridHeight = 16;
+inline constexpr std::uint32_t kWater2DMaxExactShaderInteger = 1U << 24U;
 inline constexpr float kWater2DMinFillFraction = 0.08F;
 inline constexpr float kWater2DMaxFillFraction = 0.92F;
 inline constexpr std::uint32_t kWater2DDefaultHoseParticleCapacity = 262144;
@@ -262,43 +266,72 @@ static_assert(sizeof(Water2DDispatchPushConstants) ==
     return lhs * rhs;
 }
 
-[[nodiscard]] inline std::size_t cell_count(const Water2DConfig& config) {
-    if (config.grid_width == 0 || config.grid_height == 0) {
-        throw std::runtime_error("water grid dimensions must be positive");
+inline void validate_exact_shader_integer(std::size_t value, const char* message) {
+    if (value > kWater2DMaxExactShaderInteger) {
+        throw std::runtime_error(message);
     }
-    return checked_mul(static_cast<std::size_t>(config.grid_width),
-                       static_cast<std::size_t>(config.grid_height),
-                       "water grid dimensions are too large");
+}
+
+[[nodiscard]] inline float water_2d_shader_count_float(std::size_t value, const char* message) {
+    validate_exact_shader_integer(value, message);
+    return static_cast<float>(value);
+}
+
+inline void validate_water_2d_grid_dimensions(const Water2DConfig& config) {
+    if (config.grid_width < kWater2DMinimumGridWidth ||
+        config.grid_height < kWater2DMinimumGridHeight) {
+        throw std::runtime_error("water grid dimensions must be at least 16x16");
+    }
+    validate_exact_shader_integer(config.grid_width,
+                                  "water grid width exceeds exact shader integer range");
+    validate_exact_shader_integer(config.grid_height,
+                                  "water grid height exceeds exact shader integer range");
+}
+
+[[nodiscard]] inline std::uint32_t water_2d_fill_axis_cell_count(std::uint32_t axis_cells,
+                                                                 float fill_fraction) {
+    const std::uint32_t usable_cells = axis_cells - (kWater2DWallCells * 2U);
+    const float clamped_fraction =
+        std::clamp(fill_fraction, kWater2DMinFillFraction, kWater2DMaxFillFraction);
+    const auto raw_fill_cells =
+        static_cast<std::uint32_t>(std::floor(static_cast<float>(axis_cells) * clamped_fraction));
+    return std::clamp(raw_fill_cells, 1U, usable_cells);
+}
+
+[[nodiscard]] inline std::size_t cell_count(const Water2DConfig& config) {
+    validate_water_2d_grid_dimensions(config);
+    const std::size_t count = checked_mul(static_cast<std::size_t>(config.grid_width),
+                                          static_cast<std::size_t>(config.grid_height),
+                                          "water grid dimensions are too large");
+    validate_exact_shader_integer(count, "water cell count exceeds exact shader integer range");
+    return count;
 }
 
 [[nodiscard]] inline std::size_t u_face_count(const Water2DConfig& config) {
-    if (config.grid_width == std::numeric_limits<std::uint32_t>::max()) {
-        throw std::runtime_error("water grid width is too large");
-    }
-    return checked_mul(static_cast<std::size_t>(config.grid_width) + 1U,
-                       static_cast<std::size_t>(config.grid_height),
-                       "water U-face grid is too large");
+    validate_water_2d_grid_dimensions(config);
+    const std::size_t count = checked_mul(static_cast<std::size_t>(config.grid_width) + 1U,
+                                          static_cast<std::size_t>(config.grid_height),
+                                          "water U-face grid is too large");
+    validate_exact_shader_integer(count, "water U-face count exceeds exact shader integer range");
+    return count;
 }
 
 [[nodiscard]] inline std::size_t v_face_count(const Water2DConfig& config) {
-    if (config.grid_height == std::numeric_limits<std::uint32_t>::max()) {
-        throw std::runtime_error("water grid height is too large");
-    }
-    return checked_mul(static_cast<std::size_t>(config.grid_width),
-                       static_cast<std::size_t>(config.grid_height) + 1U,
-                       "water V-face grid is too large");
+    validate_water_2d_grid_dimensions(config);
+    const std::size_t count = checked_mul(static_cast<std::size_t>(config.grid_width),
+                                          static_cast<std::size_t>(config.grid_height) + 1U,
+                                          "water V-face grid is too large");
+    validate_exact_shader_integer(count, "water V-face count exceeds exact shader integer range");
+    return count;
 }
 
 [[nodiscard]] inline std::size_t fill_cell_count(const Water2DConfig& config, float fill_width,
                                                  float fill_height) {
-    const float clamped_width =
-        std::clamp(fill_width, kWater2DMinFillFraction, kWater2DMaxFillFraction);
-    const float clamped_height =
-        std::clamp(fill_height, kWater2DMinFillFraction, kWater2DMaxFillFraction);
-    const auto fill_cols = static_cast<std::size_t>(
-        std::max(1.0F, std::floor(static_cast<float>(config.grid_width) * clamped_width)));
-    const auto fill_rows = static_cast<std::size_t>(
-        std::max(1.0F, std::floor(static_cast<float>(config.grid_height) * clamped_height)));
+    validate_water_2d_grid_dimensions(config);
+    const auto fill_cols =
+        static_cast<std::size_t>(water_2d_fill_axis_cell_count(config.grid_width, fill_width));
+    const auto fill_rows =
+        static_cast<std::size_t>(water_2d_fill_axis_cell_count(config.grid_height, fill_height));
     return checked_mul(fill_cols, fill_rows, "water initial fill area is too large");
 }
 
@@ -313,6 +346,8 @@ static_assert(sizeof(Water2DDispatchPushConstants) ==
     if (count > std::numeric_limits<std::uint32_t>::max()) {
         throw std::runtime_error("water particle count exceeds shader index range");
     }
+    validate_exact_shader_integer(count,
+                                  "water particle count exceeds exact shader integer range");
     return static_cast<std::uint32_t>(count);
 }
 
@@ -327,7 +362,10 @@ static_assert(sizeof(Water2DDispatchPushConstants) ==
         std::numeric_limits<std::uint32_t>::max() - initial_capacity) {
         throw std::runtime_error("water particle capacity exceeds shader index range");
     }
-    return initial_capacity + config.hose.particle_capacity;
+    const std::uint32_t capacity = initial_capacity + config.hose.particle_capacity;
+    validate_exact_shader_integer(capacity,
+                                  "water particle capacity exceeds exact shader integer range");
+    return capacity;
 }
 
 [[nodiscard]] inline std::uint32_t
@@ -446,6 +484,8 @@ inline void apply_water_2d_scenario_defaults(Water2DConfig& config) {
     if (config.max_particles_per_cell == 0) {
         throw std::runtime_error("water max particles per cell must be positive");
     }
+    validate_exact_shader_integer(config.max_particles_per_cell,
+                                  "water max particles per cell exceeds exact shader integer range");
     return checked_mul(cell_count(config), static_cast<std::size_t>(config.max_particles_per_cell),
                        "water particle bins are too large");
 }
