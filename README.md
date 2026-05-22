@@ -42,10 +42,10 @@ Current projects:
 - `smoke_2d`: compute-updated dye/velocity field with MacCormack advection,
   vorticity, optional static obstacles, pressure projection, debug views, and
   deterministic headless capture output.
-- `water_2d`: 2D PIC/FLIP free-surface liquid with particle-grid transfers,
-  MAC-grid pressure projection, reset presets, hose/drain material flow,
-  obstacle shapes, surface/foam debug views, live frame/memory diagnostics, and
-  deterministic headless capture output.
+- `water_2d`: 2D APIC free-surface liquid with a PIC/FLIP fallback,
+  particle-grid transfers, MAC-grid pressure projection, reset presets,
+  hose/drain material flow, obstacle shapes, surface/foam debug views, live
+  frame/memory diagnostics, and deterministic headless capture output.
 - `fire_3d`: dense volumetric pyro fire demo with 3D storage textures,
   MacCormack advection, combustion, projection, vorticity confinement,
   raymarching, shadow-volume lighting, orbit camera controls, debug views, and

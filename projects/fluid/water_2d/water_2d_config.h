@@ -38,6 +38,11 @@ enum class Water2DObstacleShape : std::uint32_t {
     Box = 2,
 };
 
+enum class Water2DTransferMode : std::uint32_t {
+    PicFlip = 0,
+    Apic = 1,
+};
+
 inline constexpr std::uint32_t kWater2DComputeGroupSize = 8;
 inline constexpr std::uint32_t kWater2DSimulationPushConstantFloatCount = 8;
 inline constexpr std::uint32_t kWater2DSimulationUniformFloatCount = 48;
@@ -76,6 +81,7 @@ struct Water2DConfig {
     std::uint32_t particle_capacity = 386224;
     std::uint32_t substeps = 1;
     Water2DScenario scenario = Water2DScenario::DamBreak;
+    Water2DTransferMode transfer_mode = Water2DTransferMode::Apic;
     float fixed_delta_seconds = 1.0F / 60.0F;
     float gravity = -1.60F;
     float flip_ratio = 0.78F;
@@ -175,6 +181,16 @@ static_assert(sizeof(Water2DDispatchPushConstants) ==
         return "Box";
     }
     return "None";
+}
+
+[[nodiscard]] inline const char* water_2d_transfer_mode_name(Water2DTransferMode mode) {
+    switch (mode) {
+    case Water2DTransferMode::PicFlip:
+        return "PIC/FLIP";
+    case Water2DTransferMode::Apic:
+        return "APIC";
+    }
+    return "APIC";
 }
 
 [[nodiscard]] inline Water2DDebugView water_2d_debug_view_from_name(std::string_view name) {
@@ -410,6 +426,10 @@ inline void apply_water_2d_scenario_defaults(Water2DConfig& config) {
 [[nodiscard]] inline std::size_t particle_buffer_byte_size(const Water2DConfig& config) {
     return checked_mul(particle_value_count(config), sizeof(float),
                        "water particle buffer is too large");
+}
+
+[[nodiscard]] inline std::size_t particle_affine_buffer_byte_size(const Water2DConfig& config) {
+    return particle_buffer_byte_size(config);
 }
 
 [[nodiscard]] inline std::size_t particle_bin_index_count(const Water2DConfig& config) {

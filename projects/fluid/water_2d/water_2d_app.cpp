@@ -48,6 +48,11 @@ constexpr std::array<Water2DObstacleShape, 3> kObstacleShapes{
     Water2DObstacleShape::Box,
 };
 
+constexpr std::array<Water2DTransferMode, 2> kTransferModes{
+    Water2DTransferMode::Apic,
+    Water2DTransferMode::PicFlip,
+};
+
 [[nodiscard]] double bytes_to_mib(VkDeviceSize bytes) {
     return static_cast<double>(bytes) / (1024.0 * 1024.0);
 }
@@ -189,6 +194,20 @@ class Water2DApp {
                     water_config_.scenario = scenario;
                     apply_water_2d_scenario_defaults(water_config_);
                     reset_requested_ = true;
+                }
+                if (selected) {
+                    ImGui::SetItemDefaultFocus();
+                }
+            }
+            ImGui::EndCombo();
+        }
+
+        if (ImGui::BeginCombo("Transfer",
+                              water_2d_transfer_mode_name(water_config_.transfer_mode))) {
+            for (Water2DTransferMode mode : kTransferModes) {
+                const bool selected = mode == water_config_.transfer_mode;
+                if (ImGui::Selectable(water_2d_transfer_mode_name(mode), selected)) {
+                    water_config_.transfer_mode = mode;
                 }
                 if (selected) {
                     ImGui::SetItemDefaultFocus();

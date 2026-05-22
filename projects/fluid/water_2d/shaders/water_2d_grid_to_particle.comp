@@ -11,6 +11,9 @@ layout(set = 0, binding = WATER2D_BINDING_PARTICLE_POSITIONS, std430) readonly b
 layout(set = 0, binding = WATER2D_BINDING_PARTICLE_VELOCITIES, std430) buffer ParticleVelocities {
     vec4 values[];
 } particle_velocities;
+layout(set = 0, binding = WATER2D_BINDING_PARTICLE_AFFINE, std430) buffer ParticleAffine {
+    vec4 values[];
+} particle_affine;
 layout(set = 0, binding = WATER2D_BINDING_U_FIELD, std430) readonly buffer UField {
     float values[];
 } u_field;
@@ -79,6 +82,60 @@ float sample_v(vec2 uv, uint width, uint height, bool previous) {
 
 vec2 sample_velocity(vec2 uv, uint width, uint height, bool previous) {
     return vec2(sample_u(uv, width, height, previous), sample_v(uv, width, height, previous));
+}
+
+float kernel(float value) {
+    return max(0.0, 1.0 - abs(value));
+}
+
+bool apic_transfer_mode() {
+    return uint(WATER2D_TRANSFER_MODE + 0.5) == 1u;
+}
+
+vec4 pack_affine(mat2 value) {
+    return vec4(value[0], value[1]);
+}
+
+mat2 safe_inverse_moment(mat2 moment) {
+    float determinant = (moment[0][0] * moment[1][1]) - (moment[1][0] * moment[0][1]);
+    if (abs(determinant) <= 0.000001) {
+        return mat2(0.0);
+    }
+    float inv_det = 1.0 / determinant;
+    return mat2(vec2(moment[1][1], -moment[0][1]), vec2(-moment[1][0], moment[0][0])) * inv_det;
+}
+
+mat2 affine_from_grid(vec2 position, vec2 particle_velocity, uint width, uint height) {
+    vec2 particle_grid = position * vec2(width, height);
+    ivec2 base = ivec2(floor(particle_grid - vec2(0.5)));
+    mat2 velocity_moment = mat2(0.0);
+    mat2 distance_moment = mat2(0.0);
+
+    for (int oy = -1; oy <= 2; ++oy) {
+        for (int ox = -1; ox <= 2; ++ox) {
+            ivec2 cell = base + ivec2(ox, oy);
+            if (cell.x < 0 || cell.y < 0 || cell.x >= int(width) || cell.y >= int(height)) {
+                continue;
+            }
+
+            vec2 sample_grid = vec2(cell) + vec2(0.5);
+            vec2 delta = sample_grid - particle_grid;
+            float weight = kernel(delta.x) * kernel(delta.y);
+            if (weight <= 0.0) {
+                continue;
+            }
+
+            vec2 sample_uv = sample_grid / vec2(width, height);
+            vec2 velocity = sample_velocity(sample_uv, width, height, false) - particle_velocity;
+            velocity_moment += mat2(velocity * delta.x, velocity * delta.y) * weight;
+            distance_moment +=
+                mat2(vec2(delta.x * delta.x, delta.y * delta.x),
+                     vec2(delta.x * delta.y, delta.y * delta.y)) *
+                weight;
+        }
+    }
+
+    return velocity_moment * safe_inverse_moment(distance_moment);
 }
 
 float hash11(uint value) {
@@ -197,10 +254,17 @@ void main() {
     }
     vec2 old_velocity = particle_velocities.values[particle_id].xy;
     vec2 current_grid_velocity = sample_velocity(position, width, height, false);
-    vec2 previous_grid_velocity = sample_velocity(position, width, height, true);
-    vec2 pic_velocity = current_grid_velocity;
-    vec2 flip_velocity = old_velocity + (current_grid_velocity - previous_grid_velocity);
-    vec2 velocity = mix(pic_velocity, flip_velocity, clamp(params.particle_options.w, 0.0, 1.0));
+    vec2 velocity = current_grid_velocity;
+    if (apic_transfer_mode()) {
+        particle_affine.values[particle_id] =
+            pack_affine(affine_from_grid(position, current_grid_velocity, width, height));
+    } else {
+        vec2 previous_grid_velocity = sample_velocity(position, width, height, true);
+        vec2 pic_velocity = current_grid_velocity;
+        vec2 flip_velocity = old_velocity + (current_grid_velocity - previous_grid_velocity);
+        velocity = mix(pic_velocity, flip_velocity, clamp(params.particle_options.w, 0.0, 1.0));
+        particle_affine.values[particle_id] = vec4(0.0);
+    }
     uint particles_per_cell = max(1u, uint(params.particle_options.z + 0.5));
     uint max_particles_per_cell = uint(params.particle_options.y + 0.5);
     velocity += separation_velocity(particle_id, position, width, height, max_particles_per_cell);

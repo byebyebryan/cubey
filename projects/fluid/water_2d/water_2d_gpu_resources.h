@@ -32,6 +32,7 @@ class Water2DGpuResources {
 
     [[nodiscard]] const cubey::vulkan::Buffer& particle_positions() const;
     [[nodiscard]] const cubey::vulkan::Buffer& particle_velocities() const;
+    [[nodiscard]] const cubey::vulkan::Buffer& particle_affine() const;
     [[nodiscard]] const cubey::vulkan::Buffer& u() const;
     [[nodiscard]] const cubey::vulkan::Buffer& u_previous() const;
     [[nodiscard]] const cubey::vulkan::Buffer& v() const;
@@ -82,6 +83,7 @@ class Water2DGpuResources {
 
     std::optional<cubey::vulkan::Buffer> particle_positions_;
     std::optional<cubey::vulkan::Buffer> particle_velocities_;
+    std::optional<cubey::vulkan::Buffer> particle_affine_;
     std::optional<cubey::vulkan::Buffer> u_;
     std::optional<cubey::vulkan::Buffer> u_previous_;
     std::optional<cubey::vulkan::Buffer> v_;

@@ -11,6 +11,9 @@ layout(set = 0, binding = WATER2D_BINDING_PARTICLE_POSITIONS, std430) readonly b
 layout(set = 0, binding = WATER2D_BINDING_PARTICLE_VELOCITIES, std430) readonly buffer ParticleVelocities {
     vec4 values[];
 } particle_velocities;
+layout(set = 0, binding = WATER2D_BINDING_PARTICLE_AFFINE, std430) readonly buffer ParticleAffine {
+    vec4 values[];
+} particle_affine;
 layout(set = 0, binding = WATER2D_BINDING_U_FIELD, std430) buffer UField {
     float values[];
 } u_field;
@@ -74,6 +77,14 @@ float kernel(float value) {
     return max(0.0, 1.0 - abs(value));
 }
 
+bool apic_transfer_mode() {
+    return uint(WATER2D_TRANSFER_MODE + 0.5) == 1u;
+}
+
+mat2 unpack_affine(vec4 packed) {
+    return mat2(packed.xy, packed.zw);
+}
+
 vec2 gather_face_velocity(vec2 face_grid_position, uint component, uint width, uint height,
                           uint max_particles_per_cell, out float total_weight) {
     ivec2 base = ivec2(floor(face_grid_position));
@@ -96,12 +107,17 @@ vec2 gather_face_velocity(vec2 face_grid_position, uint component, uint width, u
                 }
                 vec2 particle_grid =
                     particle_positions.values[particle_id].xy * vec2(width, height);
-                vec2 delta = particle_grid - face_grid_position;
+                vec2 delta = face_grid_position - particle_grid;
                 float weight = kernel(delta.x) * kernel(delta.y);
                 if (weight <= 0.0) {
                     continue;
                 }
-                velocity_sum += particle_velocities.values[particle_id].xy * weight;
+                vec2 particle_velocity = particle_velocities.values[particle_id].xy;
+                if (apic_transfer_mode()) {
+                    mat2 affine = unpack_affine(particle_affine.values[particle_id]);
+                    particle_velocity += affine * delta;
+                }
+                velocity_sum += particle_velocity * weight;
                 total_weight += weight;
             }
         }

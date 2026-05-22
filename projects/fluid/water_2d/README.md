@@ -1,8 +1,9 @@
 # Water 2D
 
-`water_2d` is Cubey's first free-surface liquid project. It uses a particle
-PIC/FLIP layer for material motion and a face-centered MAC grid for pressure,
-boundaries, and incompressibility.
+`water_2d` is Cubey's first free-surface liquid project. It uses particles for
+material motion, APIC particle-grid transfer by default, a PIC/FLIP fallback for
+comparison, and a face-centered MAC grid for pressure, boundaries, and
+incompressibility.
 
 The project is deliberately separate from `smoke_2d`. Smoke uses collocated
 dye/velocity fields; water tracks liquid with particles, transfers velocity to a
@@ -11,8 +12,8 @@ velocity back to particles.
 
 ## Current Target
 
-The implementation is a live 2D PIC/FLIP sandbox. The default reset is a
-dam-break slab, with additional obstacle-splash, wave-slab, and hose-fill
+The implementation is a live 2D particle-grid water sandbox. The default reset
+is a dam-break slab, with additional obstacle-splash, wave-slab, and hose-fill
 presets available from the runtime UI:
 
 ```sh
@@ -26,8 +27,8 @@ Controls:
 - Space pauses/resumes.
 - `R` resets the tank.
 - `D` cycles debug views.
-- The UI edits reset preset, fill volume, hose emission, bottom drain,
-  obstacle shape, solver substeps, pressure iterations, PIC/FLIP blend,
+- The UI edits reset preset, transfer mode, fill volume, hose emission, bottom
+  drain, obstacle shape, solver substeps, pressure iterations, PIC/FLIP blend,
   particle separation, collision tuning, surface/foam shading, and live
   frame/memory diagnostics.
 
@@ -48,17 +49,22 @@ Each substep clears the grid, emits any hose particles into the hose ring over
 currently inactive particle slots, bins active particles into fixed-capacity cell slots,
 transfers particle velocity to `u` and `v` MAC faces, applies gravity, computes
 occupied-cell divergence, solves pressure with Jacobi, projects face velocity,
-transfers the current-vs-previous grid delta back to particles with a
-configurable PIC/FLIP blend, adds a bounded neighbor-bin particle separation
-velocity only for overpacked cells to keep material volume from collapsing
-without disturbing settled regions, then advects and collides the particles.
-Particles that enter the optional bottom drain are marked inactive; no
-compaction or readback free-list is involved.
+then transfers velocity back to particles. APIC mode stores a local affine
+velocity field per particle and uses it during the next particle-to-grid
+transfer, which preserves rotational/local motion better than raw PIC/FLIP.
+The fallback mode keeps the old current-vs-previous grid delta path with a
+configurable PIC/FLIP blend. After transfer, the solver adds a bounded
+neighbor-bin particle separation velocity only for overpacked cells to keep
+material volume from collapsing without disturbing settled regions, then advects
+and collides the particles. Particles that enter the optional bottom drain are
+marked inactive; no compaction or readback free-list is involved.
 
 Main buffers:
 
 - `particle_positions` and `particle_velocities`: `vec4` particle state. The
   position `.w` lane is the active flag.
+- `particle_affine`: `vec4` particle APIC affine velocity state. It is zeroed
+  on reset, emission, drain, and while running in PIC/FLIP transfer mode.
 - `cell_counts` and `cell_particle_indices`: fixed-capacity particle bins.
 - `u` and `v`: face velocity on vertical and horizontal grid faces.
 - `u_previous` and `v_previous`: pre-force/projection velocity for FLIP deltas.
@@ -69,9 +75,9 @@ The renderer reconstructs a lightweight surface from the particle bins. It uses
 particle density, a density-gradient fake normal, speed, and free-surface
 highlighting for a readable real-time liquid view without adding a meshing pass.
 
-This is still a foundation slice. It intentionally skips APIC, viscosity,
-surface tension, meshing, and sparse/adaptive particle storage until the basic
-PIC/FLIP contract is easier to inspect.
+This is still a foundation slice. It intentionally skips viscosity, surface
+tension, meshing, and sparse/adaptive particle storage until the basic
+particle-grid contract is easier to inspect.
 
 The fill controls are runtime-editable. GPU particle buffers are allocated for
 the maximum editable fill area plus a larger explicit hose reserve, while each

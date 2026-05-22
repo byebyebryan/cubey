@@ -136,7 +136,7 @@ void record_shader_write_barrier(VkCommandBuffer command_buffer, ShaderWriteBarr
                 static_cast<float>(config.particle_capacity),
                 static_cast<float>(hose_particle_start_for_config(config)),
                 static_cast<float>(hose_particle_pool_capacity_for_config(config)),
-                0.0F,
+                static_cast<float>(static_cast<std::uint32_t>(config.transfer_mode)),
             },
         .hose_options0 =
             {
@@ -425,6 +425,9 @@ build_water_2d_frame_graph(cubey::render::ColorTargetView color_target,
     const cubey::render::RenderGraphBufferHandle particle_velocities = graph.import_buffer(
         {.label = "water particle velocities", .byte_size = resources.particle_velocities().size()},
         resources.particle_velocities().handle());
+    const cubey::render::RenderGraphBufferHandle particle_affine = graph.import_buffer(
+        {.label = "water particle affine", .byte_size = resources.particle_affine().size()},
+        resources.particle_affine().handle());
     const cubey::render::RenderGraphBufferHandle u = graph.import_buffer(
         {.label = "water U", .byte_size = resources.u().size()}, resources.u().handle());
     const cubey::render::RenderGraphBufferHandle u_previous = graph.import_buffer(
@@ -468,6 +471,7 @@ build_water_2d_frame_graph(cubey::render::ColorTargetView color_target,
         .read_write_storage_buffer(particle_positions)
         .read_uniform_buffer(simulation_uniforms)
         .read_write_storage_buffer(particle_velocities)
+        .read_write_storage_buffer(particle_affine)
         .read_write_storage_buffer(u)
         .read_write_storage_buffer(u_previous)
         .read_write_storage_buffer(v)

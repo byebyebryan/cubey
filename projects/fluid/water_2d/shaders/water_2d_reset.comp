@@ -11,6 +11,9 @@ layout(set = 0, binding = WATER2D_BINDING_PARTICLE_POSITIONS, std430) buffer Par
 layout(set = 0, binding = WATER2D_BINDING_PARTICLE_VELOCITIES, std430) buffer ParticleVelocities {
     vec4 values[];
 } particle_velocities;
+layout(set = 0, binding = WATER2D_BINDING_PARTICLE_AFFINE, std430) buffer ParticleAffine {
+    vec4 values[];
+} particle_affine;
 layout(set = 0, binding = WATER2D_BINDING_U_FIELD, std430) buffer UField {
     float values[];
 } u_field;
@@ -134,9 +137,11 @@ void main() {
         }
         particle_positions.values[id] = vec4(position, 0.0, 1.0);
         particle_velocities.values[id] = vec4(velocity, 0.0, 0.0);
+        particle_affine.values[id] = vec4(0.0);
     } else if (id < particle_capacity) {
         particle_positions.values[id] = vec4(-10.0, -10.0, 0.0, 0.0);
         particle_velocities.values[id] = vec4(0.0);
+        particle_affine.values[id] = vec4(0.0);
     }
 
     if (id < cell_count) {

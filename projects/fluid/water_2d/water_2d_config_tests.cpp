@@ -70,6 +70,8 @@ int main() {
         require(config.substeps == 1, "water should default to one simulation substep");
         require(config.scenario == cubey::projects::fluid::water_2d::Water2DScenario::DamBreak,
                 "water should default to the dam-break scenario");
+        require(config.transfer_mode == cubey::projects::fluid::water_2d::Water2DTransferMode::Apic,
+                "water should default to APIC transfer");
         require(config.flip_ratio == 0.78F, "water should default to a stable PIC/FLIP blend");
         require(config.gravity < 0.0F, "water gravity should pull downward by default");
         require(config.initial_fill_height == 0.70F,
@@ -129,6 +131,9 @@ int main() {
         require(cubey::projects::fluid::water_2d::particle_buffer_byte_size(config) ==
                     sizeof(float) * kExpectedParticleCapacity * 4U,
                 "water particle byte size should cover vec4 particle capacity");
+        require(cubey::projects::fluid::water_2d::particle_affine_buffer_byte_size(config) ==
+                    cubey::projects::fluid::water_2d::particle_buffer_byte_size(config),
+                "water APIC affine state should use one vec4 per particle");
         require(cubey::projects::fluid::water_2d::hose_particle_start_for_config(config) ==
                     kExpectedActiveParticleCount,
                 "water hose particles should start after the active reset particles");
@@ -170,6 +175,12 @@ int main() {
         require(std::string(cubey::projects::fluid::water_2d::water_2d_obstacle_shape_name(
                     cubey::projects::fluid::water_2d::Water2DObstacleShape::Box)) == "Box",
                 "water obstacle shape names should include box obstacles");
+        require(std::string(cubey::projects::fluid::water_2d::water_2d_transfer_mode_name(
+                    cubey::projects::fluid::water_2d::Water2DTransferMode::Apic)) == "APIC",
+                "water transfer mode names should include APIC");
+        require(std::string(cubey::projects::fluid::water_2d::water_2d_transfer_mode_name(
+                    cubey::projects::fluid::water_2d::Water2DTransferMode::PicFlip)) == "PIC/FLIP",
+                "water transfer mode names should include PIC/FLIP");
 
         bool threw_for_phi = false;
         try {
@@ -293,6 +304,10 @@ int main() {
             read_text_file(source_root / "shaders/water_2d_render.frag");
         require_contains(contract_shader, "WATER2D_BINDING_SIM_PARAMS 14",
                          "water shader contract should define simulation uniform binding");
+        require_contains(contract_shader, "WATER2D_BINDING_PARTICLE_AFFINE 15",
+                         "water shader contract should define the APIC affine binding");
+        require_contains(contract_shader, "WATER2D_TRANSFER_MODE",
+                         "water shader contract should expose transfer mode");
         require_contains(contract_shader, "uniform SimulationParams",
                          "water shader contract should move stable simulation params to a UBO");
         require_contains(contract_shader, "uniform DispatchParams",
@@ -312,6 +327,10 @@ int main() {
         require_contains(reset_shader,
                          "particle_positions.values[id] = vec4(-10.0, -10.0, 0.0, 0.0)",
                          "water reset shader should mark unused particle slots inactive");
+        require_contains(reset_shader, "ParticleAffine",
+                         "water reset shader should bind APIC affine state");
+        require_contains(reset_shader, "particle_affine.values[id] = vec4(0.0)",
+                         "water reset shader should clear APIC affine state");
         require_contains(build_bins_shader, "WATER2D_BINDING_CELL_COUNTS",
                          "water bin build should use shared descriptor binding names");
         require_contains(build_bins_shader, "atomicAdd",
@@ -329,10 +348,16 @@ int main() {
                          "water emit shader should activate emitted material particles");
         require_contains(emit_shader, "particle_velocities.values[particle_id]",
                          "water emit shader should inject particle momentum");
+        require_contains(emit_shader, "particle_affine.values[particle_id] = vec4(0.0)",
+                         "water emit shader should clear emitted APIC affine state");
         require_contains(p2g_shader, "gather_face_velocity",
                          "water particle-to-grid shader should gather face velocities");
         require_contains(p2g_shader, "u_previous.values",
                          "water particle-to-grid shader should preserve pre-solve face velocity");
+        require_contains(p2g_shader, "particle_affine",
+                         "water particle-to-grid shader should read APIC affine state");
+        require_contains(p2g_shader, "particle_velocity += affine * delta",
+                         "water particle-to-grid shader should apply APIC local velocity");
         require_contains(pressure_shader, "cell_counts.values[index] > 0u",
                          "water pressure shader should solve only occupied liquid cells");
         require_contains(projection_shader, "read_pressure",
@@ -341,6 +366,10 @@ int main() {
                          "water grid-to-particle shader should support FLIP velocity updates");
         require_contains(g2p_shader, "params.particle_options.w",
                          "water grid-to-particle shader should use the configured PIC/FLIP blend");
+        require_contains(g2p_shader, "affine_from_grid",
+                         "water grid-to-particle shader should reconstruct APIC affine state");
+        require_contains(g2p_shader, "particle_affine.values[particle_id]",
+                         "water grid-to-particle shader should write APIC affine state");
         require_contains(g2p_shader, "WATER2D_BINDING_CELL_PARTICLE_INDICES",
                          "water grid-to-particle shader should inspect neighbor particle bins");
         require_contains(g2p_shader, "separation_velocity",
@@ -359,6 +388,8 @@ int main() {
         require_contains(advect_shader,
                          "particle_positions.values[particle_id] = vec4(-10.0, -10.0, 0.0, 0.0)",
                          "water particle advection should deactivate drained particles");
+        require_contains(advect_shader, "particle_affine.values[particle_id] = vec4(0.0)",
+                         "water particle advection should clear drained APIC affine state");
         require_contains(advect_shader, "params.solve_options.z",
                          "water particle advection should use configured damping");
         require_contains(render_shader, "particle_density",

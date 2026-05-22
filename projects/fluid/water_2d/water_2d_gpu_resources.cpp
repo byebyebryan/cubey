@@ -158,13 +158,15 @@ void Water2DGpuResources::destroy_all_resources() {
     v_.reset();
     u_previous_.reset();
     u_.reset();
+    particle_affine_.reset();
     particle_velocities_.reset();
     particle_positions_.reset();
 }
 
 VkDeviceSize Water2DGpuResources::allocated_buffer_bytes() const {
     return optional_buffer_size(particle_positions_) + optional_buffer_size(particle_velocities_) +
-           optional_buffer_size(u_) + optional_buffer_size(u_previous_) + optional_buffer_size(v_) +
+           optional_buffer_size(particle_affine_) + optional_buffer_size(u_) +
+           optional_buffer_size(u_previous_) + optional_buffer_size(v_) +
            optional_buffer_size(v_previous_) + optional_buffer_size(u_weight_) +
            optional_buffer_size(v_weight_) + optional_buffer_size(pressure_a_) +
            optional_buffer_size(pressure_b_) + optional_buffer_size(divergence_) +
@@ -197,6 +199,9 @@ void Water2DGpuResources::create_field_buffers(cubey::ProjectGpuServices& gpu,
     particle_velocities_.emplace(upload_project_device_buffer(
         gpu, particle_initial.data(), particle_byte_size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
         "water_2d particle velocity upload"));
+    particle_affine_.emplace(upload_project_device_buffer(
+        gpu, particle_initial.data(), particle_byte_size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+        "water_2d particle affine upload"));
     u_.emplace(upload_project_device_buffer(gpu, u_initial.data(), u_byte_size,
                                             VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
                                             "water_2d U upload"));
@@ -238,7 +243,7 @@ void Water2DGpuResources::create_field_buffers(cubey::ProjectGpuServices& gpu,
 void Water2DGpuResources::create_descriptor_resources(cubey::vulkan::Device& device) {
     constexpr VkShaderStageFlags kStages =
         VK_SHADER_STAGE_COMPUTE_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
-    const std::array<cubey::vulkan::DescriptorSetBindingConfig, 15> field_bindings{{
+    const std::array<cubey::vulkan::DescriptorSetBindingConfig, 16> field_bindings{{
         {.binding = 0, .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .stage_flags = kStages},
         {.binding = 1, .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .stage_flags = kStages},
         {.binding = 2, .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .stage_flags = kStages},
@@ -255,6 +260,9 @@ void Water2DGpuResources::create_descriptor_resources(cubey::vulkan::Device& dev
         {.binding = 13, .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .stage_flags = kStages},
         {.binding = 14,
          .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+         .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT},
+        {.binding = 15,
+         .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
          .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT},
     }};
     const cubey::vulkan::DescriptorSetInfo field_info(field_bindings, frame_slot_count_);
@@ -274,6 +282,7 @@ void Water2DGpuResources::update_field_descriptors(cubey::vulkan::Device& device
         descriptor_writes
             .storage_buffer(set, 0, particle_positions().handle(), particle_positions().size())
             .storage_buffer(set, 1, particle_velocities().handle(), particle_velocities().size())
+            .storage_buffer(set, 15, particle_affine().handle(), particle_affine().size())
             .storage_buffer(set, 2, u().handle(), u().size())
             .storage_buffer(set, 3, u_previous().handle(), u_previous().size())
             .storage_buffer(set, 4, v().handle(), v().size())
@@ -354,6 +363,10 @@ const cubey::vulkan::Buffer& Water2DGpuResources::particle_positions() const {
 const cubey::vulkan::Buffer& Water2DGpuResources::particle_velocities() const {
     return require_initialized(particle_velocities_,
                                "water particle velocities are not initialized");
+}
+
+const cubey::vulkan::Buffer& Water2DGpuResources::particle_affine() const {
+    return require_initialized(particle_affine_, "water particle affine state is not initialized");
 }
 
 const cubey::vulkan::Buffer& Water2DGpuResources::u() const {

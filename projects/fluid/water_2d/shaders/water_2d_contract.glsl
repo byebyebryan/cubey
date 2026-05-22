@@ -16,6 +16,7 @@
 #define WATER2D_BINDING_CELL_COUNTS 12
 #define WATER2D_BINDING_CELL_PARTICLE_INDICES 13
 #define WATER2D_BINDING_SIM_PARAMS 14
+#define WATER2D_BINDING_PARTICLE_AFFINE 15
 
 #define WATER2D_EMPTY_PARTICLE 0xffffffffu
 
@@ -45,6 +46,7 @@
 #define WATER2D_PARTICLE_CAPACITY params.lifecycle_options.x
 #define WATER2D_HOSE_POOL_START params.lifecycle_options.y
 #define WATER2D_HOSE_POOL_CAPACITY params.lifecycle_options.z
+#define WATER2D_TRANSFER_MODE params.lifecycle_options.w
 #define WATER2D_DT dispatch_params.dispatch_options.x
 #define WATER2D_TIME dispatch_params.dispatch_options.y
 #define WATER2D_PRESSURE_READ_B dispatch_params.dispatch_options.z

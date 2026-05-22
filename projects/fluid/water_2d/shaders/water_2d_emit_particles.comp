@@ -11,6 +11,9 @@ layout(set = 0, binding = WATER2D_BINDING_PARTICLE_POSITIONS, std430) buffer Par
 layout(set = 0, binding = WATER2D_BINDING_PARTICLE_VELOCITIES, std430) buffer ParticleVelocities {
     vec4 values[];
 } particle_velocities;
+layout(set = 0, binding = WATER2D_BINDING_PARTICLE_AFFINE, std430) buffer ParticleAffine {
+    vec4 values[];
+} particle_affine;
 
 WATER2D_SIMULATION_PARAMS;
 
@@ -55,4 +58,5 @@ void main() {
 
     particle_positions.values[particle_id] = vec4(position, 0.0, 1.0);
     particle_velocities.values[particle_id] = vec4(velocity, 0.0, 0.0);
+    particle_affine.values[particle_id] = vec4(0.0);
 }
