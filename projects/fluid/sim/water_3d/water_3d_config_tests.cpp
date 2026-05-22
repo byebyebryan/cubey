@@ -63,6 +63,12 @@ int main() {
         require(config.initial_fill_width == 0.50F && config.initial_fill_height == 0.70F &&
                     config.initial_fill_depth == 0.50F,
                 "water 3D should default to the planned centered dam fill");
+        require(config.surface_gap_fill_radius_px == 1.0F,
+                "water 3D should default to conservative surface gap fill");
+        require(config.surface_smoothing_iterations == 3,
+                "water 3D should default to iterative surface smoothing");
+        require(config.surface_thickness_smoothing == 0.8F,
+                "water 3D should soften thickness footprints by default");
         require(sizeof(water::Water3DSimulationUniforms) ==
                     sizeof(float) * water::kWater3DSimulationUniformFloatCount,
                 "water 3D simulation uniforms should match the shader contract");
@@ -173,6 +179,8 @@ int main() {
         const std::string scene_shader = read_text_file(shader_dir / "water_3d_scene.frag");
         const std::string surface_thickness =
             read_text_file(shader_dir / "water_3d_surface_thickness.frag");
+        const std::string surface_repair =
+            read_text_file(shader_dir / "water_3d_surface_repair.frag");
         const std::string surface_smooth =
             read_text_file(shader_dir / "water_3d_surface_smooth.frag");
         const std::string surface_composite =
@@ -245,8 +253,14 @@ int main() {
                          "water 3D surface thickness pass should emit additive thickness");
         require_contains(gpu_resources, ".dst_color_blend_factor = VK_BLEND_FACTOR_ONE",
                          "water 3D surface thickness pass should use additive blending");
+        require_contains(surface_repair, "WATER3D_SURFACE_MAX_FILL_RADIUS",
+                         "water 3D surface repair should cap hole filling");
+        require_contains(surface_repair, "required_support",
+                         "water 3D surface repair should reject weakly supported fills");
         require_contains(surface_smooth, "bilateral_weight",
                          "water 3D surface smoothing should be bilateral against depth");
+        require_contains(surface_smooth, "thickness_smoothing",
+                         "water 3D surface smoothing should filter thickness separately");
         require_contains(surface_composite, "fresnel",
                          "water 3D surface composite should include water Fresnel");
         require_contains(surface_composite, "exp(-absorption",
@@ -261,6 +275,10 @@ int main() {
                          "water 3D surface render should be recorded through the render graph");
         require_contains(commands, "water scene",
                          "water 3D surface render should include an offscreen scene pass");
+        require_contains(commands, "water surface repair",
+                         "water 3D surface render should repair small surface holes");
+        require_contains(commands, "surface_smoothing_iterations",
+                         "water 3D surface render should support iterative smoothing");
         require_contains(commands, "update_surface_descriptors",
                          "water 3D surface render should bind graph transient textures");
         require_contains(render_shader, "render_view == 5u",

@@ -62,5 +62,8 @@ void main() {
         out_surface = center;
         return;
     }
-    out_surface = vec4(depth_sum / weight_sum, thickness_sum / weight_sum, center.z, center.w);
+    float thickness_smoothing = clamp(surface_params.surface_options.w, 0.0, 1.0);
+    float filtered_thickness = thickness_sum / weight_sum;
+    out_surface = vec4(depth_sum / weight_sum,
+                       mix(center.y, filtered_thickness, thickness_smoothing), center.z, center.w);
 }

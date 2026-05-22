@@ -18,6 +18,7 @@ cubey_add_app_target(
         ../sim/water_3d/shaders/water_3d_surface_depth.frag
         ../sim/water_3d/shaders/water_3d_surface_thickness.frag
         ../sim/water_3d/shaders/water_3d_surface_pack.frag
+        ../sim/water_3d/shaders/water_3d_surface_repair.frag
         ../sim/water_3d/shaders/water_3d_surface_smooth.frag
         ../sim/water_3d/shaders/water_3d_surface_composite.frag
         ../sim/water_3d/shaders/water_3d_reset.comp

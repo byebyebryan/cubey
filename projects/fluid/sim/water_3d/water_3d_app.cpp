@@ -266,10 +266,20 @@ class Water3DApp {
                            "%.4f");
         ImGui::SliderFloat("Surface thickness", &water_config_.surface_thickness_scale, 0.1F, 4.0F,
                            "%.2f");
+        ImGui::SliderFloat("Surface fill px", &water_config_.surface_gap_fill_radius_px, 0.0F, 3.0F,
+                           "%.1f");
         ImGui::SliderFloat("Surface smooth px", &water_config_.surface_smoothing_radius_px, 0.0F,
                            12.0F, "%.1f");
+        int surface_smoothing_iterations =
+            static_cast<int>(water_config_.surface_smoothing_iterations);
+        if (ImGui::SliderInt("Surface smooth passes", &surface_smoothing_iterations, 0, 8)) {
+            water_config_.surface_smoothing_iterations =
+                static_cast<std::uint32_t>(surface_smoothing_iterations);
+        }
         ImGui::SliderFloat("Surface depth sigma", &water_config_.surface_depth_sigma, 0.005F,
                            0.120F, "%.3f");
+        ImGui::SliderFloat("Thickness smoothing", &water_config_.surface_thickness_smoothing, 0.0F,
+                           1.0F, "%.2f");
         ImGui::SliderFloat("Surface absorption", &water_config_.surface_absorption, 0.0F, 5.0F,
                            "%.2f");
         ImGui::SliderFloat("Surface refraction", &water_config_.surface_refraction_strength, 0.0F,

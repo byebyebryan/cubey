@@ -70,8 +70,11 @@ struct Water3DConfig {
     float boundary_restitution = 0.08F;
     float slice_depth = 0.50F;
     float surface_thickness_scale = 1.0F;
+    float surface_gap_fill_radius_px = 1.0F;
     float surface_smoothing_radius_px = 5.0F;
+    std::uint32_t surface_smoothing_iterations = 3;
     float surface_depth_sigma = 0.035F;
+    float surface_thickness_smoothing = 0.8F;
     float surface_absorption = 1.5F;
     float surface_refraction_strength = 0.035F;
     float environment_intensity = 1.0F;

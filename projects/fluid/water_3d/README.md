@@ -7,11 +7,12 @@ velocity and pressure, and APIC is the default particle transfer mode.
 The default renderer is a screen-space surface path: an HDR/generated environment
 and simple ground scene are rendered into offscreen color/depth targets, particles
 write front depth and thickness into render-graph transients, a separable bilateral
-pass smooths the surface, and a composite pass shades the water with Fresnel,
-scene-color refraction, environment reflection, and Beer-Lambert absorption. The
-old particle splats remain as an opaque debug view. Foam, whitewater, SSR, marching
-cubes, mesh generation, hose injection, and draining are still deferred until the
-3D solver and renderer contract are stable.
+pass repairs small holes and runs configurable depth-aware smoothing, and a composite
+pass shades the water with Fresnel, scene-color refraction, environment reflection,
+and Beer-Lambert absorption. The old particle splats remain as an opaque debug view.
+Foam, whitewater, SSR, anisotropic particle kernels, marching cubes, mesh generation,
+hose injection, and draining are still deferred until the 3D solver and renderer
+contract are stable.
 
 Useful render views:
 
@@ -22,7 +23,7 @@ Useful render views:
 - `pressure`: center slice pressure.
 - `solid`: tank boundary mask.
 - `overpack`: particle bin pressure/overfill diagnostic.
-- `surface-depth`: raw smoothed surface depth.
+- `surface-depth`: repaired and smoothed surface depth.
 - `surface-thickness`: accumulated surface thickness.
 - `surface-normals`: reconstructed screen-space normals.
 
