@@ -23,6 +23,7 @@
         vec4 grid_dt_time;                                                                      \
         vec4 init_options;                                                                      \
         vec4 obstacle_options;                                                                  \
+        vec4 obstacle_extents;                                                                  \
         vec4 particle_options;                                                                  \
         vec4 solve_options;                                                                     \
     } params
@@ -31,6 +32,7 @@
     layout(push_constant) uniform RenderParams {                                                \
         vec4 grid_debug;                                                                        \
         vec4 particle_options;                                                                  \
+        vec4 surface_options;                                                                   \
     } params
 
 #endif

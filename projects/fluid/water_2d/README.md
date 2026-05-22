@@ -11,7 +11,9 @@ velocity back to particles.
 
 ## Current Target
 
-The implementation is a live 2D dam-break sandbox:
+The implementation is a live 2D PIC/FLIP sandbox. The default reset is a
+dam-break slab, with additional obstacle-splash and wave-slab presets available
+from the runtime UI:
 
 ```sh
 ./build/dev/projects/fluid/water_2d/water_2d --frames 300 --width 1280 --height 720
@@ -24,6 +26,9 @@ Controls:
 - Space pauses/resumes.
 - `R` resets the tank.
 - `D` cycles debug views.
+- The UI edits reset preset, fill volume, obstacle shape, solver substeps,
+  pressure iterations, PIC/FLIP blend, collision tuning, and surface/foam
+  shading.
 
 Debug views:
 
@@ -34,12 +39,13 @@ Debug views:
 - `divergence`: occupied-cell divergence before projection.
 - `pressure`: pressure solve output.
 - `solid`: walls and optional obstacle mask.
+- `foam`: free-surface/speed highlight used by the shaded view.
 
 ## Solver Shape
 
-Each frame clears the grid and particle bins, bins particles into fixed-capacity
-cell slots, transfers particle velocity to `u` and `v` MAC faces, applies
-gravity, computes occupied-cell divergence, solves pressure with Jacobi,
+Each substep clears the grid and particle bins, bins particles into
+fixed-capacity cell slots, transfers particle velocity to `u` and `v` MAC faces,
+applies gravity, computes occupied-cell divergence, solves pressure with Jacobi,
 projects face velocity, transfers the current-vs-previous grid delta back to
 particles with a configurable PIC/FLIP blend, then advects and collides the
 particles.
@@ -53,9 +59,13 @@ Main buffers:
 - `pressure` and `divergence`: cell-centered scalar fields.
 - `solid`: cell-centered obstacle/wall mask.
 
+The renderer reconstructs a lightweight surface from the particle bins. It uses
+particle density, a density-gradient fake normal, speed, and free-surface
+highlighting for a readable real-time liquid view without adding a meshing pass.
+
 This is still a foundation slice. It intentionally skips APIC, viscosity,
-surface tension, meshing, and sparse/adaptive particle storage until the basic
-PIC/FLIP contract is easier to inspect.
+surface tension, meshing, continuous emitters, and sparse/adaptive particle
+storage until the basic PIC/FLIP contract is easier to inspect.
 
 The fill controls are runtime-editable. GPU particle buffers are allocated for
 the maximum editable fill area, while each reset computes an active particle

@@ -57,6 +57,7 @@ void main() {
     uint width = uint(params.grid_dt_time.x);
     uint height = uint(params.grid_dt_time.y);
     float dt = params.grid_dt_time.z;
+    float velocity_limit = max(0.1, params.solve_options.y);
     uint x = gl_GlobalInvocationID.x;
     uint y = gl_GlobalInvocationID.y;
 
@@ -79,7 +80,7 @@ void main() {
             v_field.values[index] = 0.0;
         } else {
             v_field.values[index] = clamp(v_field.values[index] + params.init_options.z * dt,
-                                          -3.0, 3.0);
+                                          -velocity_limit, velocity_limit);
         }
     }
 }

@@ -178,8 +178,9 @@ projects/fluid/water_2d
 ```
 
 Start in 2D with particles plus a MAC-style grid, PIC/FLIP blend control,
-simple collision boundaries, runtime-editable fill volume, and splat rendering.
-Defer APIC, 3D meshing, VDB-style surfacing, and complex collision coupling.
+simple collision boundaries, runtime-editable fill volume, reset presets, and
+particle-splat surface rendering. Defer APIC, 3D meshing, VDB-style surfacing,
+continuous emitters, and complex collision coupling.
 
 ### SPH / PBF / DFSPH
 
@@ -233,7 +234,8 @@ project is worth the complexity.
    stronger diagnostics, and a clearer smoke/dye versus free-surface-liquid
    direction.
 3. Continue `water_2d` from the current 2D PIC/FLIP baseline toward better
-   surfacing, pressure solves, boundaries, and validation/debug views.
+   surfacing, pressure solves, boundaries, validation/debug views, and richer
+   water scenarios.
 4. Try `liquid_particles_2d` with PBF/simple SPH to prove GPU neighbor search
    and particle-liquid rendering.
 5. Consider APIC or a 3D liquid variant once the 2D PIC/FLIP infrastructure is

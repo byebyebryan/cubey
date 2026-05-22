@@ -59,12 +59,29 @@ int main() {
                 "water active particle count should come from the default fill area");
         require(config.particle_capacity == kExpectedParticleCapacity,
                 "water particle capacity should cover the maximum editable fill area");
+        require(config.substeps == 1, "water should default to one simulation substep");
+        require(config.scenario == cubey::projects::fluid::water_2d::Water2DScenario::DamBreak,
+                "water should default to the dam-break scenario");
         require(config.flip_ratio == 0.78F, "water should default to a stable PIC/FLIP blend");
         require(config.gravity < 0.0F, "water gravity should pull downward by default");
         require(config.initial_fill_height == 0.70F,
                 "water fill height should default to a readable dam-break slab");
         require(config.initial_fill_width == 0.50F,
                 "water fill width should default to a readable dam-break slab");
+        require(config.velocity_limit == 3.0F, "water should default to a bounded velocity limit");
+        require(config.particle_damping == 0.999F,
+                "water should default to light particle damping");
+        require(config.boundary_restitution == 0.18F,
+                "water should default to a soft boundary bounce");
+        require(config.obstacle_friction == 0.86F,
+                "water should default to obstacle collision friction");
+        require(config.surface_threshold == 0.82F,
+                "water should default to the current surface threshold");
+        require(config.edge_strength == 0.52F, "water should default to readable surface edges");
+        require(config.foam_strength == 0.32F, "water should default to subtle foam");
+        require(config.obstacle_shape ==
+                    cubey::projects::fluid::water_2d::Water2DObstacleShape::None,
+                "water should default to no obstacle");
 
         require(cubey::projects::fluid::water_2d::cell_count(config) == kExpectedCellCount,
                 "water cell count should multiply dimensions");
@@ -103,10 +120,25 @@ int main() {
         require(cubey::projects::fluid::water_2d::water_2d_debug_view_from_name("solid") ==
                     cubey::projects::fluid::water_2d::Water2DDebugView::Solid,
                 "debug view parser should accept solid");
+        require(cubey::projects::fluid::water_2d::water_2d_debug_view_from_name("foam") ==
+                    cubey::projects::fluid::water_2d::Water2DDebugView::Foam,
+                "debug view parser should accept foam");
         require(cubey::projects::fluid::water_2d::next_debug_view(
                     cubey::projects::fluid::water_2d::Water2DDebugView::Solid) ==
+                    cubey::projects::fluid::water_2d::Water2DDebugView::Foam,
+                "debug view should move from solid to foam");
+        require(cubey::projects::fluid::water_2d::next_debug_view(
+                    cubey::projects::fluid::water_2d::Water2DDebugView::Foam) ==
                     cubey::projects::fluid::water_2d::Water2DDebugView::Surface,
-                "debug view should cycle back to surface");
+                "debug view should cycle back to surface after foam");
+
+        require(std::string(cubey::projects::fluid::water_2d::water_2d_scenario_name(
+                    cubey::projects::fluid::water_2d::Water2DScenario::ObstacleSplash)) ==
+                    "Obstacle splash",
+                "water scenario names should include the obstacle splash preset");
+        require(std::string(cubey::projects::fluid::water_2d::water_2d_obstacle_shape_name(
+                    cubey::projects::fluid::water_2d::Water2DObstacleShape::Box)) == "Box",
+                "water obstacle shape names should include box obstacles");
 
         bool threw_for_phi = false;
         try {
@@ -158,6 +190,23 @@ int main() {
                 "water runtime fill edits should update the active particle count");
         require(edited_fill.particle_capacity == config.particle_capacity,
                 "water runtime fill edits should retain the allocated particle capacity");
+        cubey::projects::fluid::water_2d::Water2DConfig obstacle_splash = config;
+        obstacle_splash.scenario =
+            cubey::projects::fluid::water_2d::Water2DScenario::ObstacleSplash;
+        cubey::projects::fluid::water_2d::apply_water_2d_scenario_defaults(obstacle_splash);
+        require(obstacle_splash.obstacle_shape ==
+                    cubey::projects::fluid::water_2d::Water2DObstacleShape::Circle,
+                "obstacle splash scenario should enable a circle obstacle");
+        require(obstacle_splash.active_particle_count == (158U * 89U * 4U),
+                "obstacle splash scenario should resize active particles from preset fill");
+        cubey::projects::fluid::water_2d::Water2DConfig wave_slab = config;
+        wave_slab.scenario = cubey::projects::fluid::water_2d::Water2DScenario::WaveSlab;
+        cubey::projects::fluid::water_2d::apply_water_2d_scenario_defaults(wave_slab);
+        require(wave_slab.obstacle_shape ==
+                    cubey::projects::fluid::water_2d::Water2DObstacleShape::None,
+                "wave slab scenario should leave obstacles disabled by default");
+        require(wave_slab.active_particle_count == (215U * 60U * 4U),
+                "wave slab scenario should resize active particles from preset fill");
         require(cubey::projects::fluid::water_2d::water_2d_headless_frame_count(run_config) == 120,
                 "water headless frame count should default to 120");
         run_config.frames = 8;
@@ -191,8 +240,10 @@ int main() {
                          "water reset shader should initialize particle positions");
         require_contains(reset_shader, "water_2d_contract.glsl",
                          "water reset shader should use the shared water shader contract");
-        require_contains(reset_shader, "release_edge",
-                         "water reset shader should seed a readable dam-break release");
+        require_contains(reset_shader, "uint scenario",
+                         "water reset shader should branch on scenario presets");
+        require_contains(reset_shader, "obstacle_extents",
+                         "water reset shader should support obstacle box extents");
         require_contains(build_bins_shader, "WATER2D_BINDING_CELL_COUNTS",
                          "water bin build should use shared descriptor binding names");
         require_contains(build_bins_shader, "atomicAdd",
@@ -211,10 +262,18 @@ int main() {
                          "water grid-to-particle shader should support FLIP velocity updates");
         require_contains(g2p_shader, "params.particle_options.w",
                          "water grid-to-particle shader should use the configured PIC/FLIP blend");
+        require_contains(g2p_shader, "params.solve_options.y",
+                         "water grid-to-particle shader should use the velocity limit");
         require_contains(advect_shader, "collide_obstacle",
                          "water particle advection should collide against the optional obstacle");
+        require_contains(advect_shader, "params.solve_options.z",
+                         "water particle advection should use configured damping");
         require_contains(render_shader, "particle_density",
                          "water render shader should draw from particle bins");
+        require_contains(render_shader, "params.surface_options",
+                         "water render shader should use configurable surface shading");
+        require_contains(render_shader, "debug_mode == 7",
+                         "water render shader should expose a foam debug view");
         require_contains(render_shader, "vec2 uv = vec2(screen_uv.x, 1.0 - screen_uv.y)",
                          "water render shader should flip screen Y to solver Y");
 

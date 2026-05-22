@@ -72,12 +72,18 @@ float hash11(uint value) {
 }
 
 bool obstacle_cell(vec2 uv, float width, float height) {
-    if (params.init_options.w < 0.5) {
+    uint shape = uint(params.obstacle_options.w + 0.5);
+    if (shape == 0u) {
         return false;
     }
-    vec2 obstacle_delta = (uv - params.obstacle_options.xy) * vec2(width / height, 1.0);
-    return dot(obstacle_delta, obstacle_delta) <
-           params.obstacle_options.z * params.obstacle_options.z;
+    if (shape == 1u) {
+        vec2 obstacle_delta = (uv - params.obstacle_options.xy) * vec2(width / height, 1.0);
+        return dot(obstacle_delta, obstacle_delta) <
+               params.obstacle_options.z * params.obstacle_options.z;
+    }
+    vec2 half_size = max(params.obstacle_extents.xy, vec2(0.001));
+    vec2 box_delta = abs(uv - params.obstacle_options.xy);
+    return box_delta.x < half_size.x && box_delta.y < half_size.y;
 }
 
 void main() {
@@ -87,6 +93,7 @@ void main() {
     uint particle_count = uint(params.particle_options.x + 0.5);
     uint max_particles_per_cell = uint(params.particle_options.y + 0.5);
     uint particles_per_cell = max(1u, uint(params.particle_options.z + 0.5));
+    uint scenario = uint(params.init_options.w + 0.5);
     uint cell_count = width * height;
     uint u_count = (width + 1u) * height;
     uint v_count = width * (height + 1u);
@@ -108,12 +115,22 @@ void main() {
         vec2 jitter =
             (vec2(hash11(id * 2u + 17u), hash11(id * 2u + 31u)) - vec2(0.5)) *
             (0.22 / float(strata));
-        vec2 cell_position = vec2(2u + cx, 2u + cy) + clamp(strata_offset + jitter,
-                                                            vec2(0.10), vec2(0.90));
+        uint start_x = scenario == 2u ? max(2u, (width - fill_cols) / 2u) : 2u;
+        uint start_y = 2u;
+        vec2 cell_position = vec2(start_x + cx, start_y + cy) +
+                             clamp(strata_offset + jitter, vec2(0.10), vec2(0.90));
         vec2 position = cell_position / vec2(width, height);
         float release_edge = smoothstep(float(fill_cols) * 0.68, float(fill_cols) * 0.98,
                                         float(cx));
         vec2 velocity = vec2(0.10 * release_edge, 0.0);
+        if (scenario == 1u) {
+            float vertical_variation =
+                sin((float(cy) / max(1.0, float(fill_rows))) * 6.28318 + hash11(id) * 0.4);
+            velocity = vec2(0.42 + 0.32 * release_edge, 0.06 * vertical_variation);
+        } else if (scenario == 2u) {
+            float wave = sin((float(cx) / max(1.0, float(fill_cols))) * 6.28318);
+            velocity = vec2(0.44 * wave, 0.08 * cos(wave * 2.2));
+        }
         particle_positions.values[id] = vec4(position, 0.0, 0.0);
         particle_velocities.values[id] = vec4(velocity, 0.0, 0.0);
     }

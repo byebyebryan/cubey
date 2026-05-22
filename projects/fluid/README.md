@@ -7,7 +7,8 @@ to each demo until shared code is clearly useful.
 Current projects:
 
 - `smoke_2d`: 2D incompressible smoke/dye simulation.
-- `water_2d`: 2D PIC/FLIP free-surface liquid simulation on a MAC grid.
+- `water_2d`: 2D PIC/FLIP free-surface liquid simulation on a MAC grid, with
+  reset presets, obstacle shapes, and particle-splat surface rendering.
 - `fire_3d`: 3D dense-grid pyro fire simulation.
 - `explosion_3d`: 3D dense-grid pyro explosion simulation.
 

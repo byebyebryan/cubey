@@ -28,10 +28,22 @@ using cubey::FrameTiming;
 using cubey::ProjectFrame;
 using cubey::host::FrameStatsSample;
 
-constexpr std::array<Water2DDebugView, 7> kDebugViews{
+constexpr std::array<Water2DDebugView, 8> kDebugViews{
     Water2DDebugView::Surface,  Water2DDebugView::Particles,  Water2DDebugView::Cells,
     Water2DDebugView::Velocity, Water2DDebugView::Divergence, Water2DDebugView::Pressure,
-    Water2DDebugView::Solid,
+    Water2DDebugView::Solid,    Water2DDebugView::Foam,
+};
+
+constexpr std::array<Water2DScenario, 3> kScenarios{
+    Water2DScenario::DamBreak,
+    Water2DScenario::ObstacleSplash,
+    Water2DScenario::WaveSlab,
+};
+
+constexpr std::array<Water2DObstacleShape, 3> kObstacleShapes{
+    Water2DObstacleShape::None,
+    Water2DObstacleShape::Circle,
+    Water2DObstacleShape::Box,
 };
 
 class Water2DApp {
@@ -151,11 +163,33 @@ class Water2DApp {
             ImGui::EndCombo();
         }
 
+        if (ImGui::BeginCombo("Scenario", water_2d_scenario_name(water_config_.scenario))) {
+            for (Water2DScenario scenario : kScenarios) {
+                const bool selected = scenario == water_config_.scenario;
+                if (ImGui::Selectable(water_2d_scenario_name(scenario), selected)) {
+                    water_config_.scenario = scenario;
+                    apply_water_2d_scenario_defaults(water_config_);
+                    reset_requested_ = true;
+                }
+                if (selected) {
+                    ImGui::SetItemDefaultFocus();
+                }
+            }
+            ImGui::EndCombo();
+        }
+
         int pressure_iterations = static_cast<int>(water_config_.pressure_iterations);
         if (ImGui::SliderInt("Pressure iterations", &pressure_iterations, 1, 512)) {
             water_config_.pressure_iterations = static_cast<std::uint32_t>(pressure_iterations);
         }
+        int substeps = static_cast<int>(water_config_.substeps);
+        if (ImGui::SliderInt("Substeps", &substeps, 1, 4)) {
+            water_config_.substeps = static_cast<std::uint32_t>(substeps);
+        }
         ImGui::SliderFloat("PIC/FLIP blend", &water_config_.flip_ratio, 0.0F, 1.0F, "%.2f");
+        ImGui::SliderFloat("Velocity limit", &water_config_.velocity_limit, 1.0F, 8.0F, "%.2f");
+        ImGui::SliderFloat("Particle damping", &water_config_.particle_damping, 0.980F, 1.000F,
+                           "%.3f");
         ImGui::SliderFloat("Particle radius", &water_config_.particle_radius, 0.0025F, 0.025F,
                            "%.4f");
         ImGui::SliderFloat("Gravity", &water_config_.gravity, -4.0F, 0.0F, "%.2f");
@@ -169,17 +203,48 @@ class Water2DApp {
             refresh_particle_counts(water_config_);
             reset_requested_ = true;
         }
-        if (ImGui::Checkbox("Obstacle", &water_config_.obstacles_enabled)) {
-            reset_requested_ = true;
+
+        if (ImGui::BeginCombo("Obstacle",
+                              water_2d_obstacle_shape_name(water_config_.obstacle_shape))) {
+            for (Water2DObstacleShape shape : kObstacleShapes) {
+                const bool selected = shape == water_config_.obstacle_shape;
+                if (ImGui::Selectable(water_2d_obstacle_shape_name(shape), selected)) {
+                    water_config_.obstacle_shape = shape;
+                    reset_requested_ = true;
+                }
+                if (selected) {
+                    ImGui::SetItemDefaultFocus();
+                }
+            }
+            ImGui::EndCombo();
         }
-        if (ImGui::SliderFloat("Obstacle radius", &water_config_.obstacle_radius, 0.02F, 0.22F,
-                               "%.3f")) {
-            reset_requested_ = true;
+
+        if (water_config_.obstacle_shape != Water2DObstacleShape::None) {
+            if (ImGui::SliderFloat2("Obstacle center", water_config_.obstacle_center.data(), 0.10F,
+                                    0.90F, "%.2f")) {
+                reset_requested_ = true;
+            }
         }
-        if (ImGui::SliderFloat2("Obstacle center", water_config_.obstacle_center.data(), 0.10F,
-                                0.90F, "%.2f")) {
-            reset_requested_ = true;
+        if (water_config_.obstacle_shape == Water2DObstacleShape::Circle) {
+            if (ImGui::SliderFloat("Obstacle radius", &water_config_.obstacle_radius, 0.02F, 0.22F,
+                                   "%.3f")) {
+                reset_requested_ = true;
+            }
         }
+        if (water_config_.obstacle_shape == Water2DObstacleShape::Box) {
+            if (ImGui::SliderFloat2("Obstacle half size", water_config_.obstacle_half_size.data(),
+                                    0.02F, 0.24F, "%.3f")) {
+                reset_requested_ = true;
+            }
+        }
+        ImGui::SliderFloat("Boundary bounce", &water_config_.boundary_restitution, 0.0F, 0.8F,
+                           "%.2f");
+        ImGui::SliderFloat("Obstacle friction", &water_config_.obstacle_friction, 0.0F, 1.0F,
+                           "%.2f");
+        ImGui::SliderFloat("Surface threshold", &water_config_.surface_threshold, 0.20F, 1.60F,
+                           "%.2f");
+        ImGui::SliderFloat("Edge strength", &water_config_.edge_strength, 0.0F, 1.5F, "%.2f");
+        ImGui::SliderFloat("Foam strength", &water_config_.foam_strength, 0.0F, 1.5F, "%.2f");
 
         ImGui::Text("Grid: %u x %u", water_config_.grid_width, water_config_.grid_height);
         ImGui::Text("Particles: %u / %u", water_config_.active_particle_count,

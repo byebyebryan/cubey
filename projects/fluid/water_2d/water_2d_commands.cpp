@@ -15,12 +15,14 @@ namespace {
 struct RenderPushConstants {
     std::array<float, 4> grid_debug{};
     std::array<float, 4> particle_options{};
+    std::array<float, 4> surface_options{};
 };
 
 struct SimulationPushConstants {
     std::array<float, 4> grid_dt_time{};
     std::array<float, 4> init_options{};
     std::array<float, 4> obstacle_options{};
+    std::array<float, 4> obstacle_extents{};
     std::array<float, 4> particle_options{};
     std::array<float, 4> solve_options{};
 };
@@ -89,15 +91,15 @@ void record_shader_write_barrier(VkCommandBuffer command_buffer, ShaderWriteBarr
 }
 
 [[nodiscard]] SimulationPushConstants simulation_push_constants(const Water2DConfig& config,
-                                                                const ProjectFrame& frame) {
+                                                                const ProjectFrame& frame,
+                                                                float delta_seconds) {
     const float time = static_cast<float>(frame.elapsed_seconds);
-    const float dt = std::min(static_cast<float>(frame.delta_seconds), config.fixed_delta_seconds);
     return {
         .grid_dt_time =
             {
                 static_cast<float>(config.grid_width),
                 static_cast<float>(config.grid_height),
-                dt,
+                delta_seconds,
                 time,
             },
         .init_options =
@@ -105,14 +107,21 @@ void record_shader_write_barrier(VkCommandBuffer command_buffer, ShaderWriteBarr
                 config.initial_fill_height,
                 config.initial_fill_width,
                 config.gravity,
-                config.obstacles_enabled ? 1.0F : 0.0F,
+                static_cast<float>(static_cast<std::uint32_t>(config.scenario)),
             },
         .obstacle_options =
             {
                 config.obstacle_center[0],
                 config.obstacle_center[1],
                 config.obstacle_radius,
-                0.0F,
+                static_cast<float>(static_cast<std::uint32_t>(config.obstacle_shape)),
+            },
+        .obstacle_extents =
+            {
+                config.obstacle_half_size[0],
+                config.obstacle_half_size[1],
+                config.boundary_restitution,
+                config.obstacle_friction,
             },
         .particle_options =
             {
@@ -121,7 +130,7 @@ void record_shader_write_barrier(VkCommandBuffer command_buffer, ShaderWriteBarr
                 static_cast<float>(config.particles_per_cell),
                 config.flip_ratio,
             },
-        .solve_options = {0.0F, 0.0F, 0.0F, 0.0F},
+        .solve_options = {0.0F, config.velocity_limit, config.particle_damping, 0.0F},
     };
 }
 
@@ -175,7 +184,11 @@ void record_water_2d_compute(VkCommandBuffer command_buffer, Water2DGpuResources
     const DispatchGroups cell_groups = cell_dispatch_groups(config);
     const DispatchGroups face_groups = face_dispatch_groups(config);
     const DispatchGroups particles = particle_dispatch_groups(config);
-    SimulationPushConstants push_constants = simulation_push_constants(config, frame);
+    const std::uint32_t substep_count = std::max(1U, config.substeps);
+    const float frame_dt =
+        std::min(static_cast<float>(frame.delta_seconds), config.fixed_delta_seconds);
+    const float substep_dt = frame_dt / static_cast<float>(substep_count);
+    SimulationPushConstants push_constants = simulation_push_constants(config, frame, substep_dt);
 
     if (reset_requested) {
         record_dispatch(recorder, resources.reset_pipeline_resource(), descriptor_set,
@@ -192,49 +205,56 @@ void record_water_2d_compute(VkCommandBuffer command_buffer, Water2DGpuResources
         return;
     }
 
-    record_dispatch(recorder, resources.clear_grid_pipeline_resource(), descriptor_set, face_groups,
-                    push_constants);
-    record_compute_barrier(command_buffer);
+    for (std::uint32_t substep = 0; substep < substep_count; ++substep) {
+        push_constants = simulation_push_constants(config, frame, substep_dt);
+        push_constants.grid_dt_time[3] =
+            static_cast<float>(frame.elapsed_seconds) + (static_cast<float>(substep) * substep_dt);
 
-    record_refresh_bins(recorder, command_buffer, resources, descriptor_set, config,
-                        push_constants);
-
-    record_dispatch(recorder, resources.particle_to_grid_pipeline_resource(), descriptor_set,
-                    face_groups, push_constants);
-    record_compute_barrier(command_buffer);
-
-    record_dispatch(recorder, resources.force_pipeline_resource(), descriptor_set, face_groups,
-                    push_constants);
-    record_compute_barrier(command_buffer);
-
-    record_dispatch(recorder, resources.divergence_pipeline_resource(), descriptor_set, cell_groups,
-                    push_constants);
-    record_compute_barrier(command_buffer);
-
-    const cubey::render::ComputePipelineResource& pressure_pipeline =
-        resources.pressure_pipeline_resource();
-    for (std::uint32_t iteration = 0; iteration < config.pressure_iterations; ++iteration) {
-        push_constants.solve_options[0] = (iteration % 2U == 1U) ? 1.0F : 0.0F;
-        record_dispatch(recorder, pressure_pipeline, descriptor_set, cell_groups, push_constants);
+        record_dispatch(recorder, resources.clear_grid_pipeline_resource(), descriptor_set,
+                        face_groups, push_constants);
         record_compute_barrier(command_buffer);
-    }
 
-    const bool final_pressure_is_b = (config.pressure_iterations % 2U) == 1U;
-    push_constants.solve_options[0] = final_pressure_is_b ? 1.0F : 0.0F;
-    record_dispatch(recorder, resources.projection_pipeline_resource(), descriptor_set, face_groups,
-                    push_constants);
-    record_compute_barrier(command_buffer);
+        record_refresh_bins(recorder, command_buffer, resources, descriptor_set, config,
+                            push_constants);
 
-    record_dispatch(recorder, resources.grid_to_particle_pipeline_resource(), descriptor_set,
-                    particles, push_constants);
-    record_compute_barrier(command_buffer);
+        record_dispatch(recorder, resources.particle_to_grid_pipeline_resource(), descriptor_set,
+                        face_groups, push_constants);
+        record_compute_barrier(command_buffer);
 
-    record_dispatch(recorder, resources.advect_particles_pipeline_resource(), descriptor_set,
-                    particles, push_constants);
-    record_compute_barrier(command_buffer);
-
-    record_refresh_bins(recorder, command_buffer, resources, descriptor_set, config,
+        record_dispatch(recorder, resources.force_pipeline_resource(), descriptor_set, face_groups,
                         push_constants);
+        record_compute_barrier(command_buffer);
+
+        record_dispatch(recorder, resources.divergence_pipeline_resource(), descriptor_set,
+                        cell_groups, push_constants);
+        record_compute_barrier(command_buffer);
+
+        const cubey::render::ComputePipelineResource& pressure_pipeline =
+            resources.pressure_pipeline_resource();
+        for (std::uint32_t iteration = 0; iteration < config.pressure_iterations; ++iteration) {
+            push_constants.solve_options[0] = (iteration % 2U == 1U) ? 1.0F : 0.0F;
+            record_dispatch(recorder, pressure_pipeline, descriptor_set, cell_groups,
+                            push_constants);
+            record_compute_barrier(command_buffer);
+        }
+
+        const bool final_pressure_is_b = (config.pressure_iterations % 2U) == 1U;
+        push_constants.solve_options[0] = final_pressure_is_b ? 1.0F : 0.0F;
+        record_dispatch(recorder, resources.projection_pipeline_resource(), descriptor_set,
+                        face_groups, push_constants);
+        record_compute_barrier(command_buffer);
+
+        record_dispatch(recorder, resources.grid_to_particle_pipeline_resource(), descriptor_set,
+                        particles, push_constants);
+        record_compute_barrier(command_buffer);
+
+        record_dispatch(recorder, resources.advect_particles_pipeline_resource(), descriptor_set,
+                        particles, push_constants);
+        record_compute_barrier(command_buffer);
+
+        record_refresh_bins(recorder, command_buffer, resources, descriptor_set, config,
+                            push_constants);
+    }
 
     if (include_render_visibility_barrier) {
         record_final_barrier(command_buffer);
@@ -258,6 +278,13 @@ void record_water_2d_draw(VkCommandBuffer command_buffer, const Water2DGpuResour
                 static_cast<float>(config.active_particle_count),
                 static_cast<float>(config.max_particles_per_cell),
                 config.particle_radius,
+                0.0F,
+            },
+        .surface_options =
+            {
+                config.surface_threshold,
+                config.edge_strength,
+                config.foam_strength,
                 0.0F,
             },
     };

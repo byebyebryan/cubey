@@ -103,8 +103,9 @@ void main() {
         velocity.y = min(velocity.y, ballistic_y);
     }
     float speed = length(velocity);
-    if (speed > 3.0) {
-        velocity *= 3.0 / speed;
+    float velocity_limit = max(0.1, params.solve_options.y);
+    if (speed > velocity_limit) {
+        velocity *= velocity_limit / speed;
     }
     particle_velocities.values[particle_id] = vec4(velocity, 0.0, 0.0);
 }

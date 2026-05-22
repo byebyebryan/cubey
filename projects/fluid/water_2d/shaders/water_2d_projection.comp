@@ -71,6 +71,7 @@ void main() {
     uint x = gl_GlobalInvocationID.x;
     uint y = gl_GlobalInvocationID.y;
     bool read_b = params.solve_options.x > 0.5;
+    float velocity_limit = max(0.1, params.solve_options.y);
 
     if (x <= width && y < height) {
         uint index = u_index(x, y, width);
@@ -84,7 +85,8 @@ void main() {
             float left = read_pressure(int(x) - 1, int(y), width, height, read_b);
             float right = read_pressure(int(x), int(y), width, height, read_b);
             u_field.values[index] =
-                clamp(u_field.values[index] - ((right - left) * float(width)), -3.0, 3.0);
+                clamp(u_field.values[index] - ((right - left) * float(width)), -velocity_limit,
+                      velocity_limit);
         }
     }
 
@@ -100,7 +102,8 @@ void main() {
             float bottom = read_pressure(int(x), int(y) - 1, width, height, read_b);
             float top = read_pressure(int(x), int(y), width, height, read_b);
             v_field.values[index] =
-                clamp(v_field.values[index] - ((top - bottom) * float(height)), -3.0, 3.0);
+                clamp(v_field.values[index] - ((top - bottom) * float(height)), -velocity_limit,
+                      velocity_limit);
         }
     }
 }

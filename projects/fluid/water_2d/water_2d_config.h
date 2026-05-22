@@ -22,11 +22,24 @@ enum class Water2DDebugView : std::uint32_t {
     Divergence = 4,
     Pressure = 5,
     Solid = 6,
+    Foam = 7,
+};
+
+enum class Water2DScenario : std::uint32_t {
+    DamBreak = 0,
+    ObstacleSplash = 1,
+    WaveSlab = 2,
+};
+
+enum class Water2DObstacleShape : std::uint32_t {
+    None = 0,
+    Circle = 1,
+    Box = 2,
 };
 
 inline constexpr std::uint32_t kWater2DComputeGroupSize = 8;
-inline constexpr std::uint32_t kWater2DSimulationPushConstantFloatCount = 20;
-inline constexpr std::uint32_t kWater2DRenderPushConstantFloatCount = 8;
+inline constexpr std::uint32_t kWater2DSimulationPushConstantFloatCount = 24;
+inline constexpr std::uint32_t kWater2DRenderPushConstantFloatCount = 12;
 inline constexpr std::uint32_t kWater2DDefaultGridWidth = 256;
 inline constexpr std::uint32_t kWater2DDefaultGridHeight = 144;
 inline constexpr float kWater2DMinFillFraction = 0.08F;
@@ -40,15 +53,25 @@ struct Water2DConfig {
     std::uint32_t max_particles_per_cell = 16;
     std::uint32_t active_particle_count = 51200;
     std::uint32_t particle_capacity = 124080;
+    std::uint32_t substeps = 1;
+    Water2DScenario scenario = Water2DScenario::DamBreak;
     float fixed_delta_seconds = 1.0F / 60.0F;
     float gravity = -1.60F;
     float flip_ratio = 0.78F;
     float particle_radius = 0.0125F;
     float initial_fill_height = 0.70F;
     float initial_fill_width = 0.50F;
+    float velocity_limit = 3.0F;
+    float particle_damping = 0.999F;
+    float boundary_restitution = 0.18F;
+    float obstacle_friction = 0.86F;
+    float surface_threshold = 0.82F;
+    float edge_strength = 0.52F;
+    float foam_strength = 0.32F;
+    Water2DObstacleShape obstacle_shape = Water2DObstacleShape::None;
     std::array<float, 2> obstacle_center{0.58F, 0.38F};
     float obstacle_radius = 0.095F;
-    bool obstacles_enabled = false;
+    std::array<float, 2> obstacle_half_size{0.07F, 0.14F};
 };
 
 [[nodiscard]] inline const char* water_2d_debug_view_name(Water2DDebugView view) {
@@ -67,8 +90,34 @@ struct Water2DConfig {
         return "Pressure";
     case Water2DDebugView::Solid:
         return "Solid";
+    case Water2DDebugView::Foam:
+        return "Foam";
     }
     return "Surface";
+}
+
+[[nodiscard]] inline const char* water_2d_scenario_name(Water2DScenario scenario) {
+    switch (scenario) {
+    case Water2DScenario::DamBreak:
+        return "Dam break";
+    case Water2DScenario::ObstacleSplash:
+        return "Obstacle splash";
+    case Water2DScenario::WaveSlab:
+        return "Wave slab";
+    }
+    return "Dam break";
+}
+
+[[nodiscard]] inline const char* water_2d_obstacle_shape_name(Water2DObstacleShape shape) {
+    switch (shape) {
+    case Water2DObstacleShape::None:
+        return "None";
+    case Water2DObstacleShape::Circle:
+        return "Circle";
+    case Water2DObstacleShape::Box:
+        return "Box";
+    }
+    return "None";
 }
 
 [[nodiscard]] inline Water2DDebugView water_2d_debug_view_from_name(std::string_view name) {
@@ -93,8 +142,11 @@ struct Water2DConfig {
     if (name == "solid") {
         return Water2DDebugView::Solid;
     }
+    if (name == "foam") {
+        return Water2DDebugView::Foam;
+    }
     throw std::runtime_error("water 2D debug view must be surface, particles, cells, velocity, "
-                             "divergence, pressure, or solid");
+                             "divergence, pressure, solid, or foam");
 }
 
 [[nodiscard]] inline Water2DDebugView next_debug_view(Water2DDebugView view) {
@@ -112,6 +164,8 @@ struct Water2DConfig {
     case Water2DDebugView::Pressure:
         return Water2DDebugView::Solid;
     case Water2DDebugView::Solid:
+        return Water2DDebugView::Foam;
+    case Water2DDebugView::Foam:
         return Water2DDebugView::Surface;
     }
     return Water2DDebugView::Surface;
@@ -193,6 +247,36 @@ inline void refresh_particle_counts(Water2DConfig& config) {
     if (config.active_particle_count > config.particle_capacity) {
         throw std::runtime_error("water active particle count exceeds particle capacity");
     }
+}
+
+inline void apply_water_2d_scenario_defaults(Water2DConfig& config) {
+    switch (config.scenario) {
+    case Water2DScenario::DamBreak:
+        config.initial_fill_width = 0.50F;
+        config.initial_fill_height = 0.70F;
+        config.obstacle_shape = Water2DObstacleShape::None;
+        config.obstacle_center = {0.58F, 0.38F};
+        config.obstacle_radius = 0.095F;
+        config.obstacle_half_size = {0.07F, 0.14F};
+        break;
+    case Water2DScenario::ObstacleSplash:
+        config.initial_fill_width = 0.62F;
+        config.initial_fill_height = 0.62F;
+        config.obstacle_shape = Water2DObstacleShape::Circle;
+        config.obstacle_center = {0.60F, 0.30F};
+        config.obstacle_radius = 0.11F;
+        config.obstacle_half_size = {0.07F, 0.14F};
+        break;
+    case Water2DScenario::WaveSlab:
+        config.initial_fill_width = 0.84F;
+        config.initial_fill_height = 0.42F;
+        config.obstacle_shape = Water2DObstacleShape::None;
+        config.obstacle_center = {0.50F, 0.34F};
+        config.obstacle_radius = 0.10F;
+        config.obstacle_half_size = {0.08F, 0.12F};
+        break;
+    }
+    refresh_particle_counts(config);
 }
 
 [[nodiscard]] inline std::size_t scalar_field_byte_size(const Water2DConfig& config) {
