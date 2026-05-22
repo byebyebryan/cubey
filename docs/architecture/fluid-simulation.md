@@ -179,8 +179,10 @@ projects/fluid/water_2d
 
 Start in 2D with particles plus a MAC-style grid, PIC/FLIP blend control,
 simple collision boundaries, runtime-editable fill volume, reset presets, and
-particle-splat surface rendering. Defer APIC, 3D meshing, VDB-style surfacing,
-continuous emitters, and complex collision coupling.
+particle-splat surface rendering. The current `water_2d` path also includes a
+bounded hose-particle ring over inactive particle slots and a bottom drain so
+continuous material flow can be tested without particle compaction or readback.
+Defer APIC, 3D meshing, VDB-style surfacing, and complex collision coupling.
 
 ### SPH / PBF / DFSPH
 

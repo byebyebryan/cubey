@@ -29,6 +29,7 @@ enum class Water2DScenario : std::uint32_t {
     DamBreak = 0,
     ObstacleSplash = 1,
     WaveSlab = 2,
+    HoseFill = 3,
 };
 
 enum class Water2DObstacleShape : std::uint32_t {
@@ -38,12 +39,31 @@ enum class Water2DObstacleShape : std::uint32_t {
 };
 
 inline constexpr std::uint32_t kWater2DComputeGroupSize = 8;
-inline constexpr std::uint32_t kWater2DSimulationPushConstantFloatCount = 24;
+inline constexpr std::uint32_t kWater2DSimulationPushConstantFloatCount = 8;
+inline constexpr std::uint32_t kWater2DSimulationUniformFloatCount = 48;
 inline constexpr std::uint32_t kWater2DRenderPushConstantFloatCount = 12;
 inline constexpr std::uint32_t kWater2DDefaultGridWidth = 256;
 inline constexpr std::uint32_t kWater2DDefaultGridHeight = 144;
 inline constexpr float kWater2DMinFillFraction = 0.08F;
 inline constexpr float kWater2DMaxFillFraction = 0.92F;
+inline constexpr std::uint32_t kWater2DDefaultHoseParticleCapacity = 32768;
+
+struct Water2DHoseConfig {
+    bool enabled = false;
+    std::array<float, 2> position{0.12F, 0.76F};
+    float angle_degrees = -28.0F;
+    float speed = 2.0F;
+    float radius = 0.035F;
+    float particles_per_second = 4200.0F;
+    float spread_degrees = 10.0F;
+    std::uint32_t particle_capacity = kWater2DDefaultHoseParticleCapacity;
+};
+
+struct Water2DDrainConfig {
+    bool enabled = false;
+    std::array<float, 2> center{0.86F, 0.08F};
+    std::array<float, 2> half_size{0.12F, 0.055F};
+};
 
 struct Water2DConfig {
     std::uint32_t grid_width = kWater2DDefaultGridWidth;
@@ -52,7 +72,8 @@ struct Water2DConfig {
     std::uint32_t particles_per_cell = 4;
     std::uint32_t max_particles_per_cell = 16;
     std::uint32_t active_particle_count = 51200;
-    std::uint32_t particle_capacity = 124080;
+    std::uint32_t initial_particle_capacity = 124080;
+    std::uint32_t particle_capacity = 156848;
     std::uint32_t substeps = 1;
     Water2DScenario scenario = Water2DScenario::DamBreak;
     float fixed_delta_seconds = 1.0F / 60.0F;
@@ -72,7 +93,39 @@ struct Water2DConfig {
     std::array<float, 2> obstacle_center{0.58F, 0.38F};
     float obstacle_radius = 0.095F;
     std::array<float, 2> obstacle_half_size{0.07F, 0.14F};
+    Water2DHoseConfig hose{};
+    Water2DDrainConfig drain{};
 };
+
+struct Water2DSimulationUniforms {
+    std::array<float, 4> grid_options{};
+    std::array<float, 4> init_options{};
+    std::array<float, 4> obstacle_options{};
+    std::array<float, 4> obstacle_extents{};
+    std::array<float, 4> particle_options{};
+    std::array<float, 4> solve_options{};
+    std::array<float, 4> lifecycle_options{};
+    std::array<float, 4> hose_options0{};
+    std::array<float, 4> hose_options1{};
+    std::array<float, 4> hose_options2{};
+    std::array<float, 4> drain_options{};
+    std::array<float, 4> drain_extents{};
+};
+
+struct Water2DDispatchPushConstants {
+    std::array<float, 4> dispatch_options{};
+    std::array<float, 4> emit_options{};
+};
+
+struct Water2DRuntimeState {
+    std::uint32_t hose_cursor = 0;
+    float hose_emit_accumulator = 0.0F;
+};
+
+static_assert(sizeof(Water2DSimulationUniforms) ==
+              sizeof(float) * kWater2DSimulationUniformFloatCount);
+static_assert(sizeof(Water2DDispatchPushConstants) ==
+              sizeof(float) * kWater2DSimulationPushConstantFloatCount);
 
 [[nodiscard]] inline const char* water_2d_debug_view_name(Water2DDebugView view) {
     switch (view) {
@@ -104,6 +157,8 @@ struct Water2DConfig {
         return "Obstacle splash";
     case Water2DScenario::WaveSlab:
         return "Wave slab";
+    case Water2DScenario::HoseFill:
+        return "Hose fill";
     }
     return "Dam break";
 }
@@ -238,14 +293,39 @@ struct Water2DConfig {
 }
 
 [[nodiscard]] inline std::uint32_t particle_capacity_for_config(const Water2DConfig& config) {
+    const std::uint32_t initial_capacity =
+        particle_count_for_fill(config, kWater2DMaxFillFraction, kWater2DMaxFillFraction);
+    if (config.hose.particle_capacity >
+        std::numeric_limits<std::uint32_t>::max() - initial_capacity) {
+        throw std::runtime_error("water particle capacity exceeds shader index range");
+    }
+    return initial_capacity + config.hose.particle_capacity;
+}
+
+[[nodiscard]] inline std::uint32_t
+initial_particle_capacity_for_config(const Water2DConfig& config) {
     return particle_count_for_fill(config, kWater2DMaxFillFraction, kWater2DMaxFillFraction);
+}
+
+[[nodiscard]] inline std::uint32_t hose_particle_start_for_config(const Water2DConfig& config) {
+    return config.active_particle_count;
+}
+
+[[nodiscard]] inline std::uint32_t
+hose_particle_pool_capacity_for_config(const Water2DConfig& config) {
+    const std::uint32_t pool_start = hose_particle_start_for_config(config);
+    if (pool_start > config.particle_capacity) {
+        throw std::runtime_error("water hose particle pool starts beyond particle capacity");
+    }
+    return config.particle_capacity - pool_start;
 }
 
 inline void refresh_particle_counts(Water2DConfig& config) {
     config.active_particle_count = active_particle_count_for_fill(config);
+    config.initial_particle_capacity = initial_particle_capacity_for_config(config);
     config.particle_capacity = particle_capacity_for_config(config);
-    if (config.active_particle_count > config.particle_capacity) {
-        throw std::runtime_error("water active particle count exceeds particle capacity");
+    if (config.active_particle_count > config.initial_particle_capacity) {
+        throw std::runtime_error("water active particle count exceeds initial particle capacity");
     }
 }
 
@@ -258,6 +338,8 @@ inline void apply_water_2d_scenario_defaults(Water2DConfig& config) {
         config.obstacle_center = {0.58F, 0.38F};
         config.obstacle_radius = 0.095F;
         config.obstacle_half_size = {0.07F, 0.14F};
+        config.hose.enabled = false;
+        config.drain.enabled = false;
         break;
     case Water2DScenario::ObstacleSplash:
         config.initial_fill_width = 0.62F;
@@ -266,6 +348,8 @@ inline void apply_water_2d_scenario_defaults(Water2DConfig& config) {
         config.obstacle_center = {0.60F, 0.30F};
         config.obstacle_radius = 0.11F;
         config.obstacle_half_size = {0.07F, 0.14F};
+        config.hose.enabled = false;
+        config.drain.enabled = false;
         break;
     case Water2DScenario::WaveSlab:
         config.initial_fill_width = 0.84F;
@@ -274,6 +358,26 @@ inline void apply_water_2d_scenario_defaults(Water2DConfig& config) {
         config.obstacle_center = {0.50F, 0.34F};
         config.obstacle_radius = 0.10F;
         config.obstacle_half_size = {0.08F, 0.12F};
+        config.hose.enabled = false;
+        config.drain.enabled = false;
+        break;
+    case Water2DScenario::HoseFill:
+        config.initial_fill_width = 0.28F;
+        config.initial_fill_height = 0.18F;
+        config.obstacle_shape = Water2DObstacleShape::None;
+        config.obstacle_center = {0.58F, 0.38F};
+        config.obstacle_radius = 0.095F;
+        config.obstacle_half_size = {0.07F, 0.14F};
+        config.hose.enabled = true;
+        config.hose.position = {0.12F, 0.76F};
+        config.hose.angle_degrees = -28.0F;
+        config.hose.speed = 2.0F;
+        config.hose.radius = 0.035F;
+        config.hose.particles_per_second = 4200.0F;
+        config.hose.spread_degrees = 10.0F;
+        config.drain.enabled = true;
+        config.drain.center = {0.86F, 0.08F};
+        config.drain.half_size = {0.12F, 0.055F};
         break;
     }
     refresh_particle_counts(config);

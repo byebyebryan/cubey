@@ -45,7 +45,11 @@ int main() {
         constexpr std::size_t kExpectedVFaceCount = std::size_t{256} * std::size_t{145};
         constexpr std::size_t kExpectedActiveParticleCount =
             std::size_t{128} * std::size_t{100} * 4U;
-        constexpr std::size_t kExpectedParticleCapacity = std::size_t{235} * std::size_t{132} * 4U;
+        constexpr std::size_t kExpectedInitialParticleCapacity =
+            std::size_t{235} * std::size_t{132} * 4U;
+        constexpr std::size_t kExpectedHoseParticleCapacity = 32768U;
+        constexpr std::size_t kExpectedParticleCapacity =
+            kExpectedInitialParticleCapacity + kExpectedHoseParticleCapacity;
         constexpr std::size_t kExpectedBinIndexCount = kExpectedCellCount * 16U;
 
         require(config.grid_width == 256, "water grid should default to 256 columns");
@@ -57,8 +61,12 @@ int main() {
                 "water particle bins should reserve a bounded overflow margin");
         require(config.active_particle_count == kExpectedActiveParticleCount,
                 "water active particle count should come from the default fill area");
+        require(config.initial_particle_capacity == kExpectedInitialParticleCapacity,
+                "water initial particle capacity should cover the maximum editable fill area");
+        require(config.hose.particle_capacity == kExpectedHoseParticleCapacity,
+                "water hose pool should reserve a bounded inactive particle range");
         require(config.particle_capacity == kExpectedParticleCapacity,
-                "water particle capacity should cover the maximum editable fill area");
+                "water particle capacity should include initial fill and hose-pool ranges");
         require(config.substeps == 1, "water should default to one simulation substep");
         require(config.scenario == cubey::projects::fluid::water_2d::Water2DScenario::DamBreak,
                 "water should default to the dam-break scenario");
@@ -82,6 +90,16 @@ int main() {
         require(config.obstacle_shape ==
                     cubey::projects::fluid::water_2d::Water2DObstacleShape::None,
                 "water should default to no obstacle");
+        require(!config.hose.enabled, "water should default with hose emission disabled");
+        require(!config.drain.enabled, "water should default with drain disabled");
+        require(sizeof(cubey::projects::fluid::water_2d::Water2DSimulationUniforms) ==
+                    sizeof(float) *
+                        cubey::projects::fluid::water_2d::kWater2DSimulationUniformFloatCount,
+                "water simulation uniform struct should match the shader contract size");
+        require(sizeof(cubey::projects::fluid::water_2d::Water2DDispatchPushConstants) ==
+                    sizeof(float) *
+                        cubey::projects::fluid::water_2d::kWater2DSimulationPushConstantFloatCount,
+                "water dispatch push constants should match the shader contract size");
 
         require(cubey::projects::fluid::water_2d::cell_count(config) == kExpectedCellCount,
                 "water cell count should multiply dimensions");
@@ -107,6 +125,12 @@ int main() {
         require(cubey::projects::fluid::water_2d::particle_buffer_byte_size(config) ==
                     sizeof(float) * kExpectedParticleCapacity * 4U,
                 "water particle byte size should cover vec4 particle capacity");
+        require(cubey::projects::fluid::water_2d::hose_particle_start_for_config(config) ==
+                    kExpectedActiveParticleCount,
+                "water hose particles should start after the active reset particles");
+        require(cubey::projects::fluid::water_2d::hose_particle_pool_capacity_for_config(config) ==
+                    (kExpectedParticleCapacity - kExpectedActiveParticleCount),
+                "water hose pool should include every inactive particle slot");
 
         require(cubey::projects::fluid::water_2d::water_2d_debug_view_from_name("") ==
                     cubey::projects::fluid::water_2d::Water2DDebugView::Surface,
@@ -136,6 +160,9 @@ int main() {
                     cubey::projects::fluid::water_2d::Water2DScenario::ObstacleSplash)) ==
                     "Obstacle splash",
                 "water scenario names should include the obstacle splash preset");
+        require(std::string(cubey::projects::fluid::water_2d::water_2d_scenario_name(
+                    cubey::projects::fluid::water_2d::Water2DScenario::HoseFill)) == "Hose fill",
+                "water scenario names should include the hose fill preset");
         require(std::string(cubey::projects::fluid::water_2d::water_2d_obstacle_shape_name(
                     cubey::projects::fluid::water_2d::Water2DObstacleShape::Box)) == "Box",
                 "water obstacle shape names should include box obstacles");
@@ -167,6 +194,9 @@ int main() {
                 "default run config should preserve water grid height");
         require(default_from_run_config.active_particle_count == config.active_particle_count,
                 "default run config should preserve water active particle count");
+        require(default_from_run_config.initial_particle_capacity ==
+                    config.initial_particle_capacity,
+                "default run config should preserve water initial particle capacity");
         require(default_from_run_config.particle_capacity == config.particle_capacity,
                 "default run config should preserve water particle capacity");
 
@@ -179,8 +209,11 @@ int main() {
         require(configured.grid_height == 180, "water config should honor run config grid height");
         require(configured.active_particle_count == (160U * 126U * 4U),
                 "water config should size active particles from configured grid dimensions");
-        require(configured.particle_capacity == (294U * 165U * 4U),
-                "water config should size particle capacity from configured grid dimensions");
+        require(configured.initial_particle_capacity == (294U * 165U * 4U),
+                "water config should size initial capacity from configured grid dimensions");
+        require(configured.particle_capacity ==
+                    ((294U * 165U * 4U) + kExpectedHoseParticleCapacity),
+                "water config should add hose capacity to configured particle capacity");
 
         cubey::projects::fluid::water_2d::Water2DConfig edited_fill = config;
         edited_fill.initial_fill_width = 0.25F;
@@ -188,6 +221,8 @@ int main() {
         cubey::projects::fluid::water_2d::refresh_particle_counts(edited_fill);
         require(edited_fill.active_particle_count == (64U * 36U * 4U),
                 "water runtime fill edits should update the active particle count");
+        require(edited_fill.initial_particle_capacity == config.initial_particle_capacity,
+                "water runtime fill edits should retain the initial particle capacity");
         require(edited_fill.particle_capacity == config.particle_capacity,
                 "water runtime fill edits should retain the allocated particle capacity");
         cubey::projects::fluid::water_2d::Water2DConfig obstacle_splash = config;
@@ -207,6 +242,18 @@ int main() {
                 "wave slab scenario should leave obstacles disabled by default");
         require(wave_slab.active_particle_count == (215U * 60U * 4U),
                 "wave slab scenario should resize active particles from preset fill");
+        cubey::projects::fluid::water_2d::Water2DConfig hose_fill = config;
+        hose_fill.scenario = cubey::projects::fluid::water_2d::Water2DScenario::HoseFill;
+        cubey::projects::fluid::water_2d::apply_water_2d_scenario_defaults(hose_fill);
+        require(hose_fill.hose.enabled, "hose fill scenario should enable hose emission");
+        require(hose_fill.drain.enabled, "hose fill scenario should enable bottom drain");
+        require(hose_fill.active_particle_count == (71U * 25U * 4U),
+                "hose fill scenario should start from a smaller settled water volume");
+        require(hose_fill.particle_capacity == config.particle_capacity,
+                "hose fill scenario should keep the same total particle capacity");
+        require(cubey::projects::fluid::water_2d::hose_particle_pool_capacity_for_config(
+                    hose_fill) == (config.particle_capacity - hose_fill.active_particle_count),
+                "hose fill scenario should be able to emit into all inactive particle slots");
         require(cubey::projects::fluid::water_2d::water_2d_headless_frame_count(run_config) == 120,
                 "water headless frame count should default to 120");
         run_config.frames = 8;
@@ -220,10 +267,14 @@ int main() {
                 "water fixed timing should use configured timestep");
 
         const std::filesystem::path source_root{CUBEY_WATER_2D_SOURCE_DIR};
+        const std::string contract_shader =
+            read_text_file(source_root / "shaders/water_2d_contract.glsl");
         const std::string reset_shader =
             read_text_file(source_root / "shaders/water_2d_reset.comp");
         const std::string build_bins_shader =
             read_text_file(source_root / "shaders/water_2d_build_bins.comp");
+        const std::string emit_shader =
+            read_text_file(source_root / "shaders/water_2d_emit_particles.comp");
         const std::string p2g_shader =
             read_text_file(source_root / "shaders/water_2d_particle_to_grid.comp");
         const std::string pressure_shader =
@@ -236,6 +287,16 @@ int main() {
             read_text_file(source_root / "shaders/water_2d_advect_particles.comp");
         const std::string render_shader =
             read_text_file(source_root / "shaders/water_2d_render.frag");
+        require_contains(contract_shader, "WATER2D_BINDING_SIM_PARAMS 14",
+                         "water shader contract should define simulation uniform binding");
+        require_contains(contract_shader, "uniform SimulationParams",
+                         "water shader contract should move stable simulation params to a UBO");
+        require_contains(contract_shader, "uniform DispatchParams",
+                         "water shader contract should keep per-dispatch values in push constants");
+        require_contains(contract_shader, "WATER2D_ACTIVE_PARTICLE_COUNT",
+                         "water shader contract should expose active initial particles");
+        require_contains(contract_shader, "WATER2D_PARTICLE_CAPACITY",
+                         "water shader contract should expose full particle capacity");
         require_contains(reset_shader, "ParticlePositions",
                          "water reset shader should initialize particle positions");
         require_contains(reset_shader, "water_2d_contract.glsl",
@@ -244,12 +305,26 @@ int main() {
                          "water reset shader should branch on scenario presets");
         require_contains(reset_shader, "obstacle_extents",
                          "water reset shader should support obstacle box extents");
+        require_contains(reset_shader,
+                         "particle_positions.values[id] = vec4(-10.0, -10.0, 0.0, 0.0)",
+                         "water reset shader should mark unused particle slots inactive");
         require_contains(build_bins_shader, "WATER2D_BINDING_CELL_COUNTS",
                          "water bin build should use shared descriptor binding names");
         require_contains(build_bins_shader, "atomicAdd",
                          "water bin build should atomically count particles per cell");
         require_contains(build_bins_shader, "max_particles_per_cell",
                          "water bin build should clamp fixed-capacity cell slots");
+        require_contains(build_bins_shader, "particle_positions.values[particle_id].w < 0.5",
+                         "water bin build should skip inactive hose-pool particles");
+        require_contains(emit_shader, "WATER2D_HOSE_POOL_START",
+                         "water emit shader should target the reserved hose particle range");
+        require_contains(emit_shader, "WATER2D_EMIT_CURSOR",
+                         "water emit shader should use the ring cursor from dispatch constants");
+        require_contains(emit_shader,
+                         "particle_positions.values[particle_id] = vec4(position, 0.0, 1.0)",
+                         "water emit shader should activate emitted material particles");
+        require_contains(emit_shader, "particle_velocities.values[particle_id]",
+                         "water emit shader should inject particle momentum");
         require_contains(p2g_shader, "gather_face_velocity",
                          "water particle-to-grid shader should gather face velocities");
         require_contains(p2g_shader, "u_previous.values",
@@ -266,6 +341,11 @@ int main() {
                          "water grid-to-particle shader should use the velocity limit");
         require_contains(advect_shader, "collide_obstacle",
                          "water particle advection should collide against the optional obstacle");
+        require_contains(advect_shader, "inside_drain",
+                         "water particle advection should support a box drain sink");
+        require_contains(advect_shader,
+                         "particle_positions.values[particle_id] = vec4(-10.0, -10.0, 0.0, 0.0)",
+                         "water particle advection should deactivate drained particles");
         require_contains(advect_shader, "params.solve_options.z",
                          "water particle advection should use configured damping");
         require_contains(render_shader, "particle_density",

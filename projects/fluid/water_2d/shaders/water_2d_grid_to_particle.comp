@@ -80,14 +80,17 @@ vec2 sample_velocity(vec2 uv, uint width, uint height, bool previous) {
 
 void main() {
     uint particle_id = gl_GlobalInvocationID.x;
-    uint width = uint(params.grid_dt_time.x);
-    uint height = uint(params.grid_dt_time.y);
-    uint particle_count = uint(params.particle_options.x + 0.5);
+    uint width = uint(WATER2D_GRID_WIDTH);
+    uint height = uint(WATER2D_GRID_HEIGHT);
+    uint particle_count = uint(WATER2D_PARTICLE_CAPACITY + 0.5);
     if (particle_id >= particle_count) {
         return;
     }
 
     vec2 position = particle_positions.values[particle_id].xy;
+    if (particle_positions.values[particle_id].w < 0.5) {
+        return;
+    }
     vec2 old_velocity = particle_velocities.values[particle_id].xy;
     vec2 current_grid_velocity = sample_velocity(position, width, height, false);
     vec2 previous_grid_velocity = sample_velocity(position, width, height, true);
@@ -99,7 +102,7 @@ void main() {
     ivec2 cell = ivec2(floor(position * vec2(width, height)));
     bool sparse_drop = cell_counts.values[cell_index(cell, width, height)] <= sparse_threshold;
     if (sparse_drop && old_velocity.y <= 0.10) {
-        float ballistic_y = old_velocity.y + params.init_options.z * params.grid_dt_time.z;
+        float ballistic_y = old_velocity.y + params.init_options.z * WATER2D_DT;
         velocity.y = min(velocity.y, ballistic_y);
     }
     float speed = length(velocity);

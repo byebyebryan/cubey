@@ -530,6 +530,7 @@ cubey/
             water_2d_clear_grid.comp
             water_2d_clear_bins.comp
             water_2d_build_bins.comp
+            water_2d_emit_particles.comp
             water_2d_particle_to_grid.comp
             water_2d_force.comp
             water_2d_divergence.comp

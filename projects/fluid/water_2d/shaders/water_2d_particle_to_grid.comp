@@ -114,8 +114,8 @@ vec2 gather_face_velocity(vec2 face_grid_position, uint component, uint width, u
 }
 
 void main() {
-    uint width = uint(params.grid_dt_time.x);
-    uint height = uint(params.grid_dt_time.y);
+    uint width = uint(WATER2D_GRID_WIDTH);
+    uint height = uint(WATER2D_GRID_HEIGHT);
     uint max_particles_per_cell = uint(params.particle_options.y + 0.5);
     uint x = gl_GlobalInvocationID.x;
     uint y = gl_GlobalInvocationID.y;

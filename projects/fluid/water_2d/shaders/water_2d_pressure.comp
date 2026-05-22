@@ -55,8 +55,8 @@ float read_pressure(int x, int y, uint width, uint height, bool read_b) {
 }
 
 void main() {
-    uint width = uint(params.grid_dt_time.x);
-    uint height = uint(params.grid_dt_time.y);
+    uint width = uint(WATER2D_GRID_WIDTH);
+    uint height = uint(WATER2D_GRID_HEIGHT);
     uint x = gl_GlobalInvocationID.x;
     uint y = gl_GlobalInvocationID.y;
     if (x >= width || y >= height) {
@@ -64,7 +64,7 @@ void main() {
     }
 
     uint index = cell_index(x, y, width);
-    bool read_b = params.solve_options.x > 0.5;
+    bool read_b = WATER2D_PRESSURE_READ_B > 0.5;
     bool center_liquid = liquid_cell(int(x), int(y), width, height);
     if (!center_liquid) {
         if (read_b) {

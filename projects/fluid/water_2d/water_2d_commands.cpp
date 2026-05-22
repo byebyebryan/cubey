@@ -7,6 +7,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cmath>
 #include <cstdint>
 
 namespace cubey::projects::fluid::water_2d {
@@ -18,18 +19,7 @@ struct RenderPushConstants {
     std::array<float, 4> surface_options{};
 };
 
-struct SimulationPushConstants {
-    std::array<float, 4> grid_dt_time{};
-    std::array<float, 4> init_options{};
-    std::array<float, 4> obstacle_options{};
-    std::array<float, 4> obstacle_extents{};
-    std::array<float, 4> particle_options{};
-    std::array<float, 4> solve_options{};
-};
-
 static_assert(sizeof(RenderPushConstants) == sizeof(float) * kWater2DRenderPushConstantFloatCount);
-static_assert(sizeof(SimulationPushConstants) ==
-              sizeof(float) * kWater2DSimulationPushConstantFloatCount);
 
 struct DispatchGroups {
     std::uint32_t x = 0;
@@ -65,7 +55,7 @@ struct ShaderWriteBarrier {
 }
 
 [[nodiscard]] DispatchGroups particle_dispatch_groups(const Water2DConfig& config) {
-    return linear_dispatch_groups(config.active_particle_count);
+    return linear_dispatch_groups(config.particle_capacity);
 }
 
 [[nodiscard]] DispatchGroups bin_dispatch_groups(const Water2DConfig& config) {
@@ -74,7 +64,7 @@ struct ShaderWriteBarrier {
 
 [[nodiscard]] DispatchGroups reset_dispatch_groups(const Water2DConfig& config) {
     return linear_dispatch_groups(
-        std::max({static_cast<std::size_t>(config.active_particle_count), cell_count(config),
+        std::max({static_cast<std::size_t>(config.particle_capacity), cell_count(config),
                   u_face_count(config), v_face_count(config), particle_bin_index_count(config)}));
 }
 
@@ -90,17 +80,21 @@ void record_shader_write_barrier(VkCommandBuffer command_buffer, ShaderWriteBarr
     return static_cast<float>(static_cast<std::uint32_t>(view));
 }
 
-[[nodiscard]] SimulationPushConstants simulation_push_constants(const Water2DConfig& config,
-                                                                const ProjectFrame& frame,
-                                                                float delta_seconds) {
-    const float time = static_cast<float>(frame.elapsed_seconds);
+[[nodiscard]] float degrees_to_radians(float degrees) {
+    constexpr float kPi = 3.14159265358979323846F;
+    return degrees * (kPi / 180.0F);
+}
+
+[[nodiscard]] Water2DSimulationUniforms simulation_uniforms(const Water2DConfig& config) {
+    const float hose_angle = degrees_to_radians(config.hose.angle_degrees);
+    const float hose_spread = degrees_to_radians(config.hose.spread_degrees);
     return {
-        .grid_dt_time =
+        .grid_options =
             {
                 static_cast<float>(config.grid_width),
                 static_cast<float>(config.grid_height),
-                delta_seconds,
-                time,
+                static_cast<float>(config.active_particle_count),
+                static_cast<float>(config.particle_capacity),
             },
         .init_options =
             {
@@ -131,13 +125,91 @@ void record_shader_write_barrier(VkCommandBuffer command_buffer, ShaderWriteBarr
                 config.flip_ratio,
             },
         .solve_options = {0.0F, config.velocity_limit, config.particle_damping, 0.0F},
+        .lifecycle_options =
+            {
+                static_cast<float>(config.particle_capacity),
+                static_cast<float>(hose_particle_start_for_config(config)),
+                static_cast<float>(hose_particle_pool_capacity_for_config(config)),
+                0.0F,
+            },
+        .hose_options0 =
+            {
+                config.hose.enabled ? 1.0F : 0.0F,
+                config.hose.position[0],
+                config.hose.position[1],
+                config.hose.radius,
+            },
+        .hose_options1 =
+            {
+                std::cos(hose_angle),
+                std::sin(hose_angle),
+                config.hose.speed,
+                hose_spread,
+            },
+        .hose_options2 =
+            {
+                config.hose.particles_per_second,
+                0.0F,
+                0.0F,
+                0.0F,
+            },
+        .drain_options =
+            {
+                config.drain.enabled ? 1.0F : 0.0F,
+                config.drain.center[0],
+                config.drain.center[1],
+                0.0F,
+            },
+        .drain_extents =
+            {
+                config.drain.half_size[0],
+                config.drain.half_size[1],
+                0.0F,
+                0.0F,
+            },
     };
+}
+
+[[nodiscard]] Water2DDispatchPushConstants
+dispatch_push_constants(const ProjectFrame& frame, float delta_seconds, float pressure_read_b,
+                        std::uint32_t emit_cursor = 0, std::uint32_t emit_count = 0) {
+    return {
+        .dispatch_options =
+            {
+                delta_seconds,
+                static_cast<float>(frame.elapsed_seconds),
+                pressure_read_b,
+                0.0F,
+            },
+        .emit_options =
+            {
+                static_cast<float>(emit_cursor),
+                static_cast<float>(emit_count),
+                0.0F,
+                0.0F,
+            },
+    };
+}
+
+[[nodiscard]] std::uint32_t next_hose_emit_count(const Water2DConfig& config,
+                                                 Water2DRuntimeState& state, float delta_seconds) {
+    const std::uint32_t hose_pool_capacity = hose_particle_pool_capacity_for_config(config);
+    if (!config.hose.enabled || hose_pool_capacity == 0 ||
+        config.hose.particles_per_second <= 0.0F) {
+        state.hose_emit_accumulator = 0.0F;
+        return 0;
+    }
+    state.hose_emit_accumulator += config.hose.particles_per_second * delta_seconds;
+    const auto emit_count = static_cast<std::uint32_t>(std::floor(state.hose_emit_accumulator));
+    const std::uint32_t clamped_count = std::min(emit_count, hose_pool_capacity);
+    state.hose_emit_accumulator -= static_cast<float>(clamped_count);
+    return clamped_count;
 }
 
 void record_dispatch(const cubey::vulkan::CommandRecorder& recorder,
                      const cubey::render::ComputePipelineResource& pipeline,
                      VkDescriptorSet descriptor_set, DispatchGroups groups,
-                     const SimulationPushConstants& push_constants) {
+                     const Water2DDispatchPushConstants& push_constants) {
     recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.pipeline());
     recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.layout(), 0,
                                  descriptor_set);
@@ -165,7 +237,7 @@ void record_final_barrier(VkCommandBuffer command_buffer) {
 void record_refresh_bins(const cubey::vulkan::CommandRecorder& recorder,
                          VkCommandBuffer command_buffer, Water2DGpuResources& resources,
                          VkDescriptorSet descriptor_set, const Water2DConfig& config,
-                         const SimulationPushConstants& push_constants) {
+                         const Water2DDispatchPushConstants& push_constants) {
     record_dispatch(recorder, resources.clear_bins_pipeline_resource(), descriptor_set,
                     bin_dispatch_groups(config), push_constants);
     record_compute_barrier(command_buffer);
@@ -177,10 +249,13 @@ void record_refresh_bins(const cubey::vulkan::CommandRecorder& recorder,
 } // namespace
 
 void record_water_2d_compute(VkCommandBuffer command_buffer, Water2DGpuResources& resources,
-                             const Water2DConfig& config, bool paused, bool& reset_requested,
-                             const ProjectFrame& frame, bool include_render_visibility_barrier) {
+                             const Water2DConfig& config, Water2DRuntimeState& runtime_state,
+                             cubey::render::FrameSlot frame_slot, bool paused,
+                             bool& reset_requested, const ProjectFrame& frame,
+                             bool include_render_visibility_barrier) {
     const cubey::vulkan::CommandRecorder recorder(command_buffer);
-    const VkDescriptorSet descriptor_set = resources.field_descriptor_set();
+    resources.upload_simulation_uniforms(frame_slot, simulation_uniforms(config));
+    const VkDescriptorSet descriptor_set = resources.field_descriptor_set(frame_slot);
     const DispatchGroups cell_groups = cell_dispatch_groups(config);
     const DispatchGroups face_groups = face_dispatch_groups(config);
     const DispatchGroups particles = particle_dispatch_groups(config);
@@ -188,9 +263,10 @@ void record_water_2d_compute(VkCommandBuffer command_buffer, Water2DGpuResources
     const float frame_dt =
         std::min(static_cast<float>(frame.delta_seconds), config.fixed_delta_seconds);
     const float substep_dt = frame_dt / static_cast<float>(substep_count);
-    SimulationPushConstants push_constants = simulation_push_constants(config, frame, substep_dt);
+    Water2DDispatchPushConstants push_constants = dispatch_push_constants(frame, substep_dt, 0.0F);
 
     if (reset_requested) {
+        runtime_state = {};
         record_dispatch(recorder, resources.reset_pipeline_resource(), descriptor_set,
                         reset_dispatch_groups(config), push_constants);
         record_compute_barrier(command_buffer);
@@ -206,13 +282,28 @@ void record_water_2d_compute(VkCommandBuffer command_buffer, Water2DGpuResources
     }
 
     for (std::uint32_t substep = 0; substep < substep_count; ++substep) {
-        push_constants = simulation_push_constants(config, frame, substep_dt);
-        push_constants.grid_dt_time[3] =
+        const float substep_time =
             static_cast<float>(frame.elapsed_seconds) + (static_cast<float>(substep) * substep_dt);
+        push_constants = dispatch_push_constants(frame, substep_dt, 0.0F);
+        push_constants.dispatch_options[1] = substep_time;
 
         record_dispatch(recorder, resources.clear_grid_pipeline_resource(), descriptor_set,
                         face_groups, push_constants);
         record_compute_barrier(command_buffer);
+
+        const std::uint32_t emit_count = next_hose_emit_count(config, runtime_state, substep_dt);
+        if (emit_count > 0) {
+            const std::uint32_t emit_cursor = runtime_state.hose_cursor;
+            const std::uint32_t hose_pool_capacity = hose_particle_pool_capacity_for_config(config);
+            runtime_state.hose_cursor =
+                (runtime_state.hose_cursor + emit_count) % hose_pool_capacity;
+            Water2DDispatchPushConstants emit_push_constants =
+                dispatch_push_constants(frame, substep_dt, 0.0F, emit_cursor, emit_count);
+            emit_push_constants.dispatch_options[1] = substep_time;
+            record_dispatch(recorder, resources.emit_pipeline_resource(), descriptor_set,
+                            linear_dispatch_groups(emit_count), emit_push_constants);
+            record_compute_barrier(command_buffer);
+        }
 
         record_refresh_bins(recorder, command_buffer, resources, descriptor_set, config,
                             push_constants);
@@ -232,14 +323,14 @@ void record_water_2d_compute(VkCommandBuffer command_buffer, Water2DGpuResources
         const cubey::render::ComputePipelineResource& pressure_pipeline =
             resources.pressure_pipeline_resource();
         for (std::uint32_t iteration = 0; iteration < config.pressure_iterations; ++iteration) {
-            push_constants.solve_options[0] = (iteration % 2U == 1U) ? 1.0F : 0.0F;
+            push_constants.dispatch_options[2] = (iteration % 2U == 1U) ? 1.0F : 0.0F;
             record_dispatch(recorder, pressure_pipeline, descriptor_set, cell_groups,
                             push_constants);
             record_compute_barrier(command_buffer);
         }
 
         const bool final_pressure_is_b = (config.pressure_iterations % 2U) == 1U;
-        push_constants.solve_options[0] = final_pressure_is_b ? 1.0F : 0.0F;
+        push_constants.dispatch_options[2] = final_pressure_is_b ? 1.0F : 0.0F;
         record_dispatch(recorder, resources.projection_pipeline_resource(), descriptor_set,
                         face_groups, push_constants);
         record_compute_barrier(command_buffer);
@@ -262,7 +353,8 @@ void record_water_2d_compute(VkCommandBuffer command_buffer, Water2DGpuResources
 }
 
 void record_water_2d_draw(VkCommandBuffer command_buffer, const Water2DGpuResources& resources,
-                          const Water2DConfig& config, Water2DDebugView debug_view,
+                          const Water2DConfig& config, cubey::render::FrameSlot frame_slot,
+                          Water2DDebugView debug_view,
                           cubey::render::ColorTargetView color_target) {
     const cubey::vulkan::CommandRecorder recorder(command_buffer);
     const RenderPushConstants push_constants{
@@ -294,12 +386,13 @@ void record_water_2d_draw(VkCommandBuffer command_buffer, const Water2DGpuResour
         cubey::render::RenderClearValues{
             .color = cubey::render::color_clear_value(0.006F, 0.009F, 0.014F, 1.0F),
         },
-        [&resources, push_constants](const cubey::vulkan::CommandRecorder& pass_recorder) {
+        [&resources, frame_slot,
+         push_constants](const cubey::vulkan::CommandRecorder& pass_recorder) {
             cubey::render::record_fullscreen_pipeline_draw(
                 pass_recorder,
                 {
                     .pipeline = &resources.render_pipeline_resource(),
-                    .descriptor_set = resources.field_descriptor_set(),
+                    .descriptor_set = resources.field_descriptor_set(frame_slot),
                 },
                 VK_SHADER_STAGE_FRAGMENT_BIT, push_constants);
         });
@@ -308,12 +401,18 @@ void record_water_2d_draw(VkCommandBuffer command_buffer, const Water2DGpuResour
 [[nodiscard]] cubey::render::CompiledRenderGraph
 build_water_2d_frame_graph(cubey::render::ColorTargetView color_target,
                            Water2DGpuResources& resources, const Water2DConfig& config,
+                           Water2DRuntimeState& runtime_state, cubey::render::FrameSlot frame_slot,
                            Water2DDebugView debug_view, bool paused, bool& reset_requested,
                            const ProjectFrame& frame) {
     Water2DGpuResources* resource_ptr = &resources;
     const Water2DConfig* config_ptr = &config;
     bool* reset_requested_ptr = &reset_requested;
+    Water2DRuntimeState* runtime_state_ptr = &runtime_state;
     cubey::render::RenderGraphBuilder graph;
+    const cubey::render::RenderGraphBufferHandle simulation_uniforms =
+        graph.import_buffer({.label = "water simulation uniforms",
+                             .byte_size = resources.simulation_uniform_buffer(frame_slot).size()},
+                            resources.simulation_uniform_buffer(frame_slot).handle());
     const cubey::render::RenderGraphBufferHandle particle_positions = graph.import_buffer(
         {.label = "water particle positions", .byte_size = resources.particle_positions().size()},
         resources.particle_positions().handle());
@@ -361,6 +460,7 @@ build_water_2d_frame_graph(cubey::render::ColorTargetView color_target,
 
     graph.add_pass("water simulation", cubey::render::RenderGraphQueueDomain::Compute)
         .read_write_storage_buffer(particle_positions)
+        .read_uniform_buffer(simulation_uniforms)
         .read_write_storage_buffer(particle_velocities)
         .read_write_storage_buffer(u)
         .read_write_storage_buffer(u_previous)
@@ -374,10 +474,12 @@ build_water_2d_frame_graph(cubey::render::ColorTargetView color_target,
         .read_write_storage_buffer(solid)
         .read_write_storage_buffer(cell_counts)
         .read_write_storage_buffer(cell_particle_indices)
-        .execute([resource_ptr, config_ptr, paused, reset_requested_ptr,
+        .execute([resource_ptr, config_ptr, runtime_state_ptr, frame_slot, paused,
+                  reset_requested_ptr,
                   frame](const cubey::render::RenderGraphExecutionContext& context) {
-            record_water_2d_compute(context.recorder().handle(), *resource_ptr, *config_ptr, paused,
-                                    *reset_requested_ptr, frame, false);
+            record_water_2d_compute(context.recorder().handle(), *resource_ptr, *config_ptr,
+                                    *runtime_state_ptr, frame_slot, paused, *reset_requested_ptr,
+                                    frame, false);
         });
     graph.add_pass("water render", cubey::render::RenderGraphQueueDomain::Graphics)
         .read_storage_buffer(particle_positions)
@@ -390,15 +492,15 @@ build_water_2d_frame_graph(cubey::render::ColorTargetView color_target,
         .read_storage_buffer(cell_counts)
         .read_storage_buffer(cell_particle_indices)
         .write_color(backbuffer)
-        .execute([resource_ptr, config_ptr, debug_view, backbuffer,
-                  color_target](const cubey::render::RenderGraphExecutionContext& context) {
+        .execute([resource_ptr, config_ptr, debug_view, backbuffer, color_target,
+                  frame_slot](const cubey::render::RenderGraphExecutionContext& context) {
             const cubey::vulkan::CommandRecorder& recorder = context.recorder();
             const cubey::render::RenderGraphResolvedTexture resolved =
                 context.resolved_texture(backbuffer);
-            record_water_2d_draw(recorder.handle(), *resource_ptr, *config_ptr, debug_view,
-                                 cubey::render::color_target_view(color_target.extent,
-                                                                  color_target.format,
-                                                                  resolved.image, resolved.view));
+            record_water_2d_draw(
+                recorder.handle(), *resource_ptr, *config_ptr, frame_slot, debug_view,
+                cubey::render::color_target_view(color_target.extent, color_target.format,
+                                                 resolved.image, resolved.view));
         });
 
     return graph.compile();

@@ -16,6 +16,7 @@ cubey_add_app_target(
         shaders/water_2d_clear_grid.comp
         shaders/water_2d_clear_bins.comp
         shaders/water_2d_build_bins.comp
+        shaders/water_2d_emit_particles.comp
         shaders/water_2d_particle_to_grid.comp
         shaders/water_2d_force.comp
         shaders/water_2d_divergence.comp

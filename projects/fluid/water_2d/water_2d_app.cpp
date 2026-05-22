@@ -34,10 +34,11 @@ constexpr std::array<Water2DDebugView, 8> kDebugViews{
     Water2DDebugView::Solid,    Water2DDebugView::Foam,
 };
 
-constexpr std::array<Water2DScenario, 3> kScenarios{
+constexpr std::array<Water2DScenario, 4> kScenarios{
     Water2DScenario::DamBreak,
     Water2DScenario::ObstacleSplash,
     Water2DScenario::WaveSlab,
+    Water2DScenario::HoseFill,
 };
 
 constexpr std::array<Water2DObstacleShape, 3> kObstacleShapes{
@@ -63,7 +64,8 @@ class Water2DApp {
 
         cubey::host::WindowedAppCallbacks callbacks;
         callbacks.create_global_resources = [this](cubey::host::WindowedAppContext& context) {
-            create_global_resources_if_needed(context.device(), context.gpu());
+            create_global_resources_if_needed(context.device(), context.gpu(),
+                                              context.frame_slot_count());
         };
         callbacks.create_swapchain_resources = [this](cubey::host::WindowedAppContext& context) {
             create_render_pipeline(context.device(), context.swapchain().format(),
@@ -204,6 +206,22 @@ class Water2DApp {
             reset_requested_ = true;
         }
 
+        ImGui::Checkbox("Hose", &water_config_.hose.enabled);
+        ImGui::SliderFloat2("Hose position", water_config_.hose.position.data(), 0.04F, 0.96F,
+                            "%.2f");
+        ImGui::SliderFloat("Hose angle", &water_config_.hose.angle_degrees, -90.0F, 20.0F, "%.1f");
+        ImGui::SliderFloat("Hose speed", &water_config_.hose.speed, 0.2F, 5.0F, "%.2f");
+        ImGui::SliderFloat("Hose radius", &water_config_.hose.radius, 0.005F, 0.080F, "%.3f");
+        ImGui::SliderFloat("Hose rate", &water_config_.hose.particles_per_second, 0.0F, 12000.0F,
+                           "%.0f");
+        ImGui::SliderFloat("Hose spread", &water_config_.hose.spread_degrees, 0.0F, 45.0F, "%.1f");
+
+        ImGui::Checkbox("Drain", &water_config_.drain.enabled);
+        ImGui::SliderFloat2("Drain center", water_config_.drain.center.data(), 0.04F, 0.96F,
+                            "%.2f");
+        ImGui::SliderFloat2("Drain half size", water_config_.drain.half_size.data(), 0.01F, 0.24F,
+                            "%.3f");
+
         if (ImGui::BeginCombo("Obstacle",
                               water_2d_obstacle_shape_name(water_config_.obstacle_shape))) {
             for (Water2DObstacleShape shape : kObstacleShapes) {
@@ -247,8 +265,9 @@ class Water2DApp {
         ImGui::SliderFloat("Foam strength", &water_config_.foam_strength, 0.0F, 1.5F, "%.2f");
 
         ImGui::Text("Grid: %u x %u", water_config_.grid_width, water_config_.grid_height);
-        ImGui::Text("Particles: %u / %u", water_config_.active_particle_count,
-                    water_config_.particle_capacity);
+        ImGui::Text(
+            "Particles: %u reset / %u hose pool / %u total", water_config_.active_particle_count,
+            hose_particle_pool_capacity_for_config(water_config_), water_config_.particle_capacity);
         ImGui::End();
     }
 
@@ -262,9 +281,11 @@ class Water2DApp {
     }
 
     void create_global_resources_if_needed(cubey::vulkan::Device& device,
-                                           cubey::vulkan::GpuRuntime& gpu) {
+                                           cubey::vulkan::GpuRuntime& gpu,
+                                           std::uint32_t frame_slot_count) {
         attach_project_gpu(gpu);
-        resources_.create_global_resources_if_needed(device, runtime_.gpu(), water_config_);
+        resources_.create_global_resources_if_needed(device, runtime_.gpu(), water_config_,
+                                                     frame_slot_count);
     }
 
     void attach_project_gpu(cubey::vulkan::GpuRuntime& gpu) {
@@ -295,9 +316,9 @@ class Water2DApp {
     void record_frame(cubey::host::WindowedAppContext& context,
                       const cubey::host::WindowedRenderFrame& render_frame,
                       const ProjectFrame& frame) {
-        const cubey::render::CompiledRenderGraph frame_graph =
-            build_water_2d_frame_graph(render_frame.color_target, resources_, water_config_,
-                                       debug_view_, paused_, reset_requested_, frame);
+        const cubey::render::CompiledRenderGraph frame_graph = build_water_2d_frame_graph(
+            render_frame.color_target, resources_, water_config_, runtime_state_,
+            render_frame.frame_slot, debug_view_, paused_, reset_requested_, frame);
         graph_executor_.record(
             cubey::render::RenderGraphFrameRecordInfo{
                 .device = &context.device(),
@@ -309,14 +330,16 @@ class Water2DApp {
     }
 
     void record_headless_simulation_frame(cubey::ProjectGpuServices& gpu,
+                                          cubey::render::FrameSlot frame_slot,
                                           const ProjectFrame& frame) {
         static_cast<void>(gpu.submit_and_wait({
             .label = "water_2d headless simulation frame",
             .work =
-                [this, frame](cubey::vulkan::GpuOwnerContext& gpu_context) {
+                [this, frame_slot, frame](cubey::vulkan::GpuOwnerContext& gpu_context) {
                     cubey::vulkan::ImmediateCommands commands(gpu_context);
                     record_water_2d_compute(commands.command_buffer(), resources_, water_config_,
-                                            paused_, reset_requested_, frame);
+                                            runtime_state_, frame_slot, paused_, reset_requested_,
+                                            frame);
                     commands.submit_and_wait();
                 },
         }));
@@ -330,16 +353,20 @@ class Water2DApp {
         cubey::host::HeadlessPngHostCallbacks callbacks;
         callbacks.create_resources = [this](cubey::host::HeadlessPngContext& context) {
             const cubey::host::HeadlessRenderTarget& target = context.render_target();
-            create_global_resources_if_needed(context.device(), context.gpu());
+            create_global_resources_if_needed(
+                context.device(), context.gpu(),
+                cubey::host::headless_capture_frame_slot_count(config_));
             create_render_pipeline(context.device(), target.format, target.extent);
         };
         if (config_.capture_mode == CaptureMode::Png) {
             callbacks.before_capture = [this](cubey::host::HeadlessPngContext&) {
                 const std::uint32_t frames = water_2d_headless_frame_count(config_);
                 for (std::uint32_t frame = 1; frame <= frames; ++frame) {
+                    const cubey::render::FrameSlot frame_slot = cubey::render::frame_slot_for_index(
+                        frame - 1U, cubey::render::kSingleFrameSlotCount);
                     const ProjectFrame project_frame = runtime_.frame_for_timing(
                         fixed_water_2d_headless_timing(water_config_, frame));
-                    record_headless_simulation_frame(runtime_.gpu(), project_frame);
+                    record_headless_simulation_frame(runtime_.gpu(), frame_slot, project_frame);
                 }
             };
         } else {
@@ -353,13 +380,15 @@ class Water2DApp {
                     .frame_index = simulation_frame,
                 };
                 const ProjectFrame project_frame = runtime_.frame_for_timing(timing);
-                record_headless_simulation_frame(runtime_.gpu(), project_frame);
+                record_headless_simulation_frame(runtime_.gpu(), frame.frame_slot, project_frame);
             };
         }
-        callbacks.record_capture = [this](cubey::host::HeadlessPngContext&,
-                                          VkCommandBuffer command_buffer,
-                                          const cubey::host::HeadlessRenderTarget& target) {
-            record_water_2d_draw(command_buffer, resources_, water_config_, debug_view_, target);
+        callbacks.record_frame = [this](cubey::host::HeadlessPngContext&,
+                                        const cubey::host::HeadlessCaptureFrame& frame,
+                                        VkCommandBuffer command_buffer,
+                                        const cubey::host::HeadlessRenderTarget& target) {
+            record_water_2d_draw(command_buffer, resources_, water_config_, frame.frame_slot,
+                                 debug_view_, target);
         };
         callbacks.shutdown = [this](cubey::host::HeadlessPngContext&) {
             destroy_all_resources();
@@ -374,6 +403,7 @@ class Water2DApp {
     RunConfig config_;
     cubey::ProjectRuntimeAdapter runtime_;
     Water2DConfig water_config_;
+    Water2DRuntimeState runtime_state_;
     Water2DGpuResources resources_;
     cubey::render::RenderGraphFrameExecutor graph_executor_;
     Water2DDebugView debug_view_ = Water2DDebugView::Surface;

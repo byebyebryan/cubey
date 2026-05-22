@@ -91,16 +91,27 @@ void clamp_velocity(inout vec2 velocity) {
     }
 }
 
+bool inside_drain(vec2 position) {
+    if (params.drain_options.x < 0.5) {
+        return false;
+    }
+    vec2 half_size = max(params.drain_extents.xy, vec2(0.001));
+    return all(lessThan(abs(position - params.drain_options.yz), half_size));
+}
+
 void main() {
     uint particle_id = gl_GlobalInvocationID.x;
-    uint width = uint(params.grid_dt_time.x);
-    uint height = uint(params.grid_dt_time.y);
-    uint particle_count = uint(params.particle_options.x + 0.5);
+    uint width = uint(WATER2D_GRID_WIDTH);
+    uint height = uint(WATER2D_GRID_HEIGHT);
+    uint particle_count = uint(WATER2D_PARTICLE_CAPACITY + 0.5);
     if (particle_id >= particle_count) {
         return;
     }
+    if (particle_positions.values[particle_id].w < 0.5) {
+        return;
+    }
 
-    float dt = params.grid_dt_time.z;
+    float dt = WATER2D_DT;
     float restitution = clamp(params.obstacle_extents.z, 0.0, 1.0);
     float damping = clamp(params.solve_options.z, 0.0, 1.0);
     vec2 position = particle_positions.values[particle_id].xy;
@@ -112,7 +123,12 @@ void main() {
     collide_axis(position.y, velocity.y, margin.y, 1.0 - margin.y, restitution);
     collide_obstacle(position, velocity, float(width), float(height));
     clamp_velocity(velocity);
+    if (inside_drain(position)) {
+        particle_positions.values[particle_id] = vec4(-10.0, -10.0, 0.0, 0.0);
+        particle_velocities.values[particle_id] = vec4(0.0);
+        return;
+    }
 
-    particle_positions.values[particle_id] = vec4(position, 0.0, 0.0);
+    particle_positions.values[particle_id] = vec4(position, 0.0, 1.0);
     particle_velocities.values[particle_id] = vec4(velocity * damping, 0.0, 0.0);
 }

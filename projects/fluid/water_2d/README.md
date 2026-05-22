@@ -12,8 +12,8 @@ velocity back to particles.
 ## Current Target
 
 The implementation is a live 2D PIC/FLIP sandbox. The default reset is a
-dam-break slab, with additional obstacle-splash and wave-slab presets available
-from the runtime UI:
+dam-break slab, with additional obstacle-splash, wave-slab, and hose-fill
+presets available from the runtime UI:
 
 ```sh
 ./build/dev/projects/fluid/water_2d/water_2d --frames 300 --width 1280 --height 720
@@ -26,9 +26,9 @@ Controls:
 - Space pauses/resumes.
 - `R` resets the tank.
 - `D` cycles debug views.
-- The UI edits reset preset, fill volume, obstacle shape, solver substeps,
-  pressure iterations, PIC/FLIP blend, collision tuning, and surface/foam
-  shading.
+- The UI edits reset preset, fill volume, hose emission, bottom drain,
+  obstacle shape, solver substeps, pressure iterations, PIC/FLIP blend,
+  collision tuning, and surface/foam shading.
 
 Debug views:
 
@@ -43,16 +43,19 @@ Debug views:
 
 ## Solver Shape
 
-Each substep clears the grid and particle bins, bins particles into
-fixed-capacity cell slots, transfers particle velocity to `u` and `v` MAC faces,
-applies gravity, computes occupied-cell divergence, solves pressure with Jacobi,
-projects face velocity, transfers the current-vs-previous grid delta back to
-particles with a configurable PIC/FLIP blend, then advects and collides the
-particles.
+Each substep clears the grid, emits any hose particles into the hose ring over
+currently inactive particle slots, bins active particles into fixed-capacity cell slots,
+transfers particle velocity to `u` and `v` MAC faces, applies gravity, computes
+occupied-cell divergence, solves pressure with Jacobi, projects face velocity,
+transfers the current-vs-previous grid delta back to particles with a
+configurable PIC/FLIP blend, then advects and collides the particles. Particles
+that enter the optional bottom drain are marked inactive; no compaction or
+readback free-list is involved.
 
 Main buffers:
 
-- `particle_positions` and `particle_velocities`: `vec4` particle state.
+- `particle_positions` and `particle_velocities`: `vec4` particle state. The
+  position `.w` lane is the active flag.
 - `cell_counts` and `cell_particle_indices`: fixed-capacity particle bins.
 - `u` and `v`: face velocity on vertical and horizontal grid faces.
 - `u_previous` and `v_previous`: pre-force/projection velocity for FLIP deltas.
@@ -64,9 +67,11 @@ particle density, a density-gradient fake normal, speed, and free-surface
 highlighting for a readable real-time liquid view without adding a meshing pass.
 
 This is still a foundation slice. It intentionally skips APIC, viscosity,
-surface tension, meshing, continuous emitters, and sparse/adaptive particle
-storage until the basic PIC/FLIP contract is easier to inspect.
+surface tension, meshing, and sparse/adaptive particle storage until the basic
+PIC/FLIP contract is easier to inspect.
 
 The fill controls are runtime-editable. GPU particle buffers are allocated for
-the maximum editable fill area, while each reset computes an active particle
-count from the current fill width and height.
+the maximum editable fill area plus an explicit hose reserve, while each reset
+computes a reset-fill particle count from the current fill width and height. The
+hose pool starts after that reset-fill range, so smaller initial fills leave
+more room for continuous emission before the hose ring wraps.

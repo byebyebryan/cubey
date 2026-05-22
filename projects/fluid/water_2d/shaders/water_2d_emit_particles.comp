@@ -1,0 +1,58 @@
+#version 450
+#extension GL_GOOGLE_include_directive : require
+
+#include "water_2d_contract.glsl"
+
+layout(local_size_x = 64, local_size_y = 1) in;
+
+layout(set = 0, binding = WATER2D_BINDING_PARTICLE_POSITIONS, std430) buffer ParticlePositions {
+    vec4 values[];
+} particle_positions;
+layout(set = 0, binding = WATER2D_BINDING_PARTICLE_VELOCITIES, std430) buffer ParticleVelocities {
+    vec4 values[];
+} particle_velocities;
+
+WATER2D_SIMULATION_PARAMS;
+
+float hash11(uint value) {
+    value ^= value >> 16u;
+    value *= 0x7feb352du;
+    value ^= value >> 15u;
+    value *= 0x846ca68bu;
+    value ^= value >> 16u;
+    return float(value & 0x00ffffffu) / float(0x01000000u);
+}
+
+vec2 rotate(vec2 value, float angle) {
+    float c = cos(angle);
+    float s = sin(angle);
+    return vec2((value.x * c) - (value.y * s), (value.x * s) + (value.y * c));
+}
+
+void main() {
+    uint emit_id = gl_GlobalInvocationID.x;
+    uint emit_count = uint(WATER2D_EMIT_COUNT + 0.5);
+    uint hose_capacity = uint(WATER2D_HOSE_POOL_CAPACITY + 0.5);
+    if (params.hose_options0.x < 0.5 || emit_id >= emit_count || hose_capacity == 0u) {
+        return;
+    }
+
+    uint cursor = uint(WATER2D_EMIT_CURSOR + 0.5);
+    uint pool_start = uint(WATER2D_HOSE_POOL_START + 0.5);
+    uint particle_id = pool_start + ((cursor + emit_id) % hose_capacity);
+    float seed_base = WATER2D_TIME * 977.0;
+    uint seed = particle_id * 1664525u + uint(seed_base) + emit_id * 1013904223u;
+
+    float radial = sqrt(hash11(seed + 11u)) * params.hose_options0.w;
+    float theta = hash11(seed + 23u) * 6.2831853;
+    vec2 offset = vec2(cos(theta), sin(theta)) * radial;
+    vec2 position = clamp(params.hose_options0.yz + offset, vec2(0.01), vec2(0.99));
+
+    float spread = (hash11(seed + 37u) - 0.5) * params.hose_options1.w;
+    vec2 direction = normalize(rotate(params.hose_options1.xy, spread));
+    float speed_jitter = mix(0.86, 1.14, hash11(seed + 53u));
+    vec2 velocity = direction * params.hose_options1.z * speed_jitter;
+
+    particle_positions.values[particle_id] = vec4(position, 0.0, 1.0);
+    particle_velocities.values[particle_id] = vec4(velocity, 0.0, 0.0);
+}

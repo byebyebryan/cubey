@@ -26,11 +26,14 @@ uint cell_index(uint x, uint y, uint width) {
 
 void main() {
     uint particle_id = gl_GlobalInvocationID.x;
-    uint width = uint(params.grid_dt_time.x);
-    uint height = uint(params.grid_dt_time.y);
-    uint particle_count = uint(params.particle_options.x + 0.5);
+    uint width = uint(WATER2D_GRID_WIDTH);
+    uint height = uint(WATER2D_GRID_HEIGHT);
+    uint particle_count = uint(WATER2D_PARTICLE_CAPACITY + 0.5);
     uint max_particles_per_cell = uint(params.particle_options.y + 0.5);
     if (particle_id >= particle_count) {
+        return;
+    }
+    if (particle_positions.values[particle_id].w < 0.5) {
         return;
     }
 

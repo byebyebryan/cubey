@@ -88,9 +88,10 @@ bool obstacle_cell(vec2 uv, float width, float height) {
 
 void main() {
     uint id = gl_GlobalInvocationID.x;
-    uint width = uint(params.grid_dt_time.x);
-    uint height = uint(params.grid_dt_time.y);
-    uint particle_count = uint(params.particle_options.x + 0.5);
+    uint width = uint(WATER2D_GRID_WIDTH);
+    uint height = uint(WATER2D_GRID_HEIGHT);
+    uint active_particle_count = uint(WATER2D_ACTIVE_PARTICLE_COUNT + 0.5);
+    uint particle_capacity = uint(WATER2D_PARTICLE_CAPACITY + 0.5);
     uint max_particles_per_cell = uint(params.particle_options.y + 0.5);
     uint particles_per_cell = max(1u, uint(params.particle_options.z + 0.5));
     uint scenario = uint(params.init_options.w + 0.5);
@@ -99,7 +100,7 @@ void main() {
     uint v_count = width * (height + 1u);
     uint bin_count = cell_count * max_particles_per_cell;
 
-    if (id < particle_count) {
+    if (id < active_particle_count) {
         uint fill_cols = clamp(uint(floor(params.init_options.y * float(width))), 1u,
                                max(1u, width - 4u));
         uint fill_rows = clamp(uint(floor(params.init_options.x * float(height))), 1u,
@@ -131,8 +132,11 @@ void main() {
             float wave = sin((float(cx) / max(1.0, float(fill_cols))) * 6.28318);
             velocity = vec2(0.44 * wave, 0.08 * cos(wave * 2.2));
         }
-        particle_positions.values[id] = vec4(position, 0.0, 0.0);
+        particle_positions.values[id] = vec4(position, 0.0, 1.0);
         particle_velocities.values[id] = vec4(velocity, 0.0, 0.0);
+    } else if (id < particle_capacity) {
+        particle_positions.values[id] = vec4(-10.0, -10.0, 0.0, 0.0);
+        particle_velocities.values[id] = vec4(0.0);
     }
 
     if (id < cell_count) {

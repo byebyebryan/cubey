@@ -16,8 +16,8 @@ WATER2D_SIMULATION_PARAMS;
 
 void main() {
     uint id = gl_GlobalInvocationID.x;
-    uint width = uint(params.grid_dt_time.x);
-    uint height = uint(params.grid_dt_time.y);
+    uint width = uint(WATER2D_GRID_WIDTH);
+    uint height = uint(WATER2D_GRID_HEIGHT);
     uint max_particles_per_cell = uint(params.particle_options.y + 0.5);
     uint cell_count = width * height;
     uint bin_count = cell_count * max_particles_per_cell;

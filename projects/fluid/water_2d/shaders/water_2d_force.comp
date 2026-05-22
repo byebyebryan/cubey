@@ -54,9 +54,9 @@ bool liquid_cell(int x, int y, uint width, uint height) {
 }
 
 void main() {
-    uint width = uint(params.grid_dt_time.x);
-    uint height = uint(params.grid_dt_time.y);
-    float dt = params.grid_dt_time.z;
+    uint width = uint(WATER2D_GRID_WIDTH);
+    uint height = uint(WATER2D_GRID_HEIGHT);
+    float dt = WATER2D_DT;
     float velocity_limit = max(0.1, params.solve_options.y);
     uint x = gl_GlobalInvocationID.x;
     uint y = gl_GlobalInvocationID.y;
