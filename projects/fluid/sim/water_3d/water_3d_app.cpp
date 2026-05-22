@@ -40,9 +40,9 @@ constexpr float kCameraBaseYaw = -0.52F;
 constexpr float kCameraBasePitch = -0.38F;
 constexpr cubey::math::Vec3 kVolumeCenter{0.5F, 0.5F, 0.5F};
 
-constexpr std::array<Water3DDebugView, 5> kDebugViews{
+constexpr std::array<Water3DDebugView, 6> kDebugViews{
     Water3DDebugView::Particles, Water3DDebugView::Cells, Water3DDebugView::Velocity,
-    Water3DDebugView::Pressure,  Water3DDebugView::Solid,
+    Water3DDebugView::Pressure,  Water3DDebugView::Solid, Water3DDebugView::Overpack,
 };
 
 constexpr std::array<Water3DTransferMode, 2> kTransferModes{

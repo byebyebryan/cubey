@@ -20,6 +20,7 @@ enum class Water3DDebugView : std::uint32_t {
     Velocity = 2,
     Pressure = 3,
     Solid = 4,
+    Overpack = 5,
 };
 
 enum class Water3DTransferMode : std::uint32_t {
@@ -109,6 +110,8 @@ static_assert(sizeof(Water3DDispatchPushConstants) ==
         return "Pressure";
     case Water3DDebugView::Solid:
         return "Solid";
+    case Water3DDebugView::Overpack:
+        return "Overpack";
     }
     return "Particles";
 }
@@ -139,7 +142,11 @@ static_assert(sizeof(Water3DDispatchPushConstants) ==
     if (name == "solid") {
         return Water3DDebugView::Solid;
     }
-    throw std::runtime_error("water 3D debug view must be particles, cells, velocity, pressure, or solid");
+    if (name == "overpack") {
+        return Water3DDebugView::Overpack;
+    }
+    throw std::runtime_error(
+        "water 3D debug view must be particles, cells, velocity, pressure, solid, or overpack");
 }
 
 [[nodiscard]] inline Water3DDebugView next_debug_view(Water3DDebugView view) {
@@ -153,6 +160,8 @@ static_assert(sizeof(Water3DDispatchPushConstants) ==
     case Water3DDebugView::Pressure:
         return Water3DDebugView::Solid;
     case Water3DDebugView::Solid:
+        return Water3DDebugView::Overpack;
+    case Water3DDebugView::Overpack:
         return Water3DDebugView::Particles;
     }
     return Water3DDebugView::Particles;

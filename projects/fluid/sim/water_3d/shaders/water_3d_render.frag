@@ -32,6 +32,29 @@ uint w_index(uint x, uint y, uint z, uint width, uint height) {
     return ((z * height) + y) * width + x;
 }
 
+bool in_bounds(int x, int y, int z, uint width, uint height, uint depth) {
+    return x >= 0 && y >= 0 && z >= 0 && x < int(width) && y < int(height) && z < int(depth);
+}
+
+bool solid_cell(int x, int y, int z, uint width, uint height, uint depth) {
+    if (!in_bounds(x, y, z, width, height, depth)) {
+        return true;
+    }
+    return solid.values[cell_index(uint(x), uint(y), uint(z), width, height)] > 0.5;
+}
+
+float side_boundary_volume_scale(uint x, uint y, uint z, uint width, uint height, uint depth) {
+    int side_solid_faces = 0;
+    side_solid_faces += solid_cell(int(x) - 1, int(y), int(z), width, height, depth) ? 1 : 0;
+    side_solid_faces += solid_cell(int(x) + 1, int(y), int(z), width, height, depth) ? 1 : 0;
+    side_solid_faces += solid_cell(int(x), int(y), int(z) - 1, width, height, depth) ? 1 : 0;
+    side_solid_faces += solid_cell(int(x), int(y), int(z) + 1, width, height, depth) ? 1 : 0;
+    if (side_solid_faces == 0) {
+        return 1.0;
+    }
+    return 0.0;
+}
+
 uvec3 slice_coord(vec2 uv, uint width, uint height, uint depth) {
     vec3 normalized = vec3(clamp(uv.x, 0.0, 0.999999), clamp(1.0 - uv.y, 0.0, 0.999999),
                            clamp(params.grid_slice.w, 0.0, 0.999999));
@@ -101,6 +124,18 @@ void main() {
     } else if (debug_view == 4u) {
         color = mix(vec3(0.035, 0.042, 0.054), vec3(0.82, 0.86, 0.92),
                     clamp(solid_value, 0.0, 1.0));
+    } else if (debug_view == 5u) {
+        float target_particles = max(1.0, params.color_options.w);
+        float stored_particles = min(float(cell_counts.values[index]), params.color_options.z);
+        float overpack = max(0.0, (stored_particles - target_particles) / target_particles);
+        float volume_scale =
+            side_boundary_volume_scale(coord.x, coord.y, coord.z, width, height, depth);
+        color = mix(vec3(0.020, 0.026, 0.036), vec3(0.98, 0.34, 0.12),
+                    clamp(overpack / 5.0, 0.0, 1.0));
+        color = mix(color * 0.35, color, volume_scale);
+        if (solid_value > 0.5) {
+            color = vec3(0.18, 0.19, 0.22);
+        }
     }
 
     vec2 grid = fract(frag_uv * vec2(width, height));

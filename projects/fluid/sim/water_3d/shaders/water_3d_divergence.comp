@@ -28,8 +28,37 @@ uint v_index(uint x, uint y, uint z, uint width, uint height) {
 uint w_index(uint x, uint y, uint z, uint width, uint height) {
     return ((z * height) + y) * width + x;
 }
+bool in_bounds(int x, int y, int z, uint width, uint height, uint depth) {
+    return x >= 0 && y >= 0 && z >= 0 && x < int(width) && y < int(height) && z < int(depth);
+}
+bool solid_cell(int x, int y, int z, uint width, uint height, uint depth) {
+    if (!in_bounds(x, y, z, width, height, depth)) {
+        return true;
+    }
+    return solid.values[cell_index(uint(x), uint(y), uint(z), width, height)] > 0.5;
+}
 bool liquid_cell(uint index) {
     return solid.values[index] < 0.5 && cell_counts.values[index] > 0u;
+}
+
+float side_boundary_volume_scale(uint x, uint y, uint z, uint width, uint height, uint depth) {
+    int side_solid_faces = 0;
+    side_solid_faces += solid_cell(int(x) - 1, int(y), int(z), width, height, depth) ? 1 : 0;
+    side_solid_faces += solid_cell(int(x) + 1, int(y), int(z), width, height, depth) ? 1 : 0;
+    side_solid_faces += solid_cell(int(x), int(y), int(z) - 1, width, height, depth) ? 1 : 0;
+    side_solid_faces += solid_cell(int(x), int(y), int(z) + 1, width, height, depth) ? 1 : 0;
+    if (side_solid_faces == 0) {
+        return 1.0;
+    }
+    return 0.0;
+}
+
+float boundary_limited_volume_source(float raw_source, float boundary_scale) {
+    if (boundary_scale >= 0.999) {
+        return raw_source;
+    }
+    float source_limit = max(0.0, WATER3D_VOLUME_STRENGTH) * boundary_scale;
+    return min(raw_source * boundary_scale, source_limit);
 }
 
 void main() {
@@ -63,6 +92,8 @@ void main() {
     float target_particles = max(1.0, WATER3D_PARTICLES_PER_CELL);
     float stored_particles = min(float(cell_counts.values[index]), WATER3D_MAX_PARTICLES_PER_CELL);
     float overpack = max(0.0, (stored_particles - target_particles) / target_particles);
-    float volume_source = min(overpack, 5.0) * max(0.0, WATER3D_VOLUME_STRENGTH);
+    float raw_volume_source = min(overpack, 5.0) * max(0.0, WATER3D_VOLUME_STRENGTH);
+    float volume_source = boundary_limited_volume_source(
+        raw_volume_source, side_boundary_volume_scale(x, y, z, width, height, depth));
     divergence.values[index] = velocity_divergence - volume_source;
 }

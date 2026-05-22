@@ -365,7 +365,8 @@ void record_water_3d_draw(VkCommandBuffer command_buffer, const Water3DGpuResour
                                             "water 3D particle scan count exceeds exact shader integer range"),
                 water_3d_shader_count_float(config.max_particles_per_cell,
                                             "water 3D max particles per cell exceeds exact shader integer range"),
-                0.0F,
+                water_3d_shader_count_float(config.particles_per_cell,
+                                            "water 3D particles per cell exceeds exact shader integer range"),
             },
     };
 

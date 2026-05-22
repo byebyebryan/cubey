@@ -36,6 +36,13 @@ bool collide_axis(inout float position, inout float velocity, float minimum, flo
     return false;
 }
 
+void apply_side_wall_friction(inout vec3 velocity, bool side_wall_collision) {
+    if (!side_wall_collision) {
+        return;
+    }
+    velocity *= 0.88;
+}
+
 void clamp_velocity(inout vec3 velocity) {
     float velocity_limit = max(0.1, WATER3D_VELOCITY_LIMIT);
     float speed = length(velocity);
@@ -70,12 +77,18 @@ void main() {
 
     vec3 margin = vec3(2.25 / float(width), 2.25 / float(height), 2.25 / float(depth));
     bool collided = false;
-    collided = collide_axis(position.x, velocity.x, margin.x, 1.0 - margin.x, restitution) ||
-               collided;
+    bool side_wall_collided = false;
+    side_wall_collided =
+        collide_axis(position.x, velocity.x, margin.x, 1.0 - margin.x, restitution) ||
+        side_wall_collided;
+    collided = side_wall_collided || collided;
     collided = collide_axis(position.y, velocity.y, margin.y, 1.0 - margin.y, restitution) ||
                collided;
-    collided = collide_axis(position.z, velocity.z, margin.z, 1.0 - margin.z, restitution) ||
-               collided;
+    side_wall_collided =
+        collide_axis(position.z, velocity.z, margin.z, 1.0 - margin.z, restitution) ||
+        side_wall_collided;
+    collided = side_wall_collided || collided;
+    apply_side_wall_friction(velocity, side_wall_collided);
     clamp_velocity(velocity);
     if (collided) {
         clear_affine(particle_id);

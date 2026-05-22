@@ -88,6 +88,18 @@ int main() {
                 "water 3D APIC affine buffers should store three vec4 rows per particle");
         require(water::particle_bin_index_count(config) == kExpectedCellCount * 32U,
                 "water 3D particle bins should allocate fixed cell slots");
+        require(std::string(water::water_3d_debug_view_name(water::Water3DDebugView::Overpack)) ==
+                    "Overpack",
+                "water 3D debug view names should include overpack");
+        require(water::water_3d_debug_view_from_name("overpack") ==
+                    water::Water3DDebugView::Overpack,
+                "water 3D debug view parsing should include overpack");
+        require(water::next_debug_view(water::Water3DDebugView::Solid) ==
+                    water::Water3DDebugView::Overpack,
+                "water 3D debug view cycle should include overpack after solid");
+        require(water::next_debug_view(water::Water3DDebugView::Overpack) ==
+                    water::Water3DDebugView::Particles,
+                "water 3D debug view cycle should wrap after overpack");
 
         cubey::RunConfig run_config;
         run_config.grid_width = 32;
@@ -118,10 +130,14 @@ int main() {
         const std::string reset_shader = read_text_file(shader_dir / "water_3d_reset.comp");
         const std::string p2g_shader =
             read_text_file(shader_dir / "water_3d_particle_to_grid.comp");
+        const std::string advect_shader =
+            read_text_file(shader_dir / "water_3d_advect_particles.comp");
         const std::string extrapolate_shader =
             read_text_file(shader_dir / "water_3d_extrapolate_velocity.comp");
         const std::string g2p_shader =
             read_text_file(shader_dir / "water_3d_grid_to_particle.comp");
+        const std::string divergence_shader =
+            read_text_file(shader_dir / "water_3d_divergence.comp");
         const std::string render_shader = read_text_file(shader_dir / "water_3d_render.frag");
 
         require_contains(contract, "WATER3D_BINDING_W_FIELD",
@@ -136,6 +152,8 @@ int main() {
                          "water 3D particle-to-grid should gather face velocities");
         require_contains(p2g_shader, "velocity += unpack_affine(particle_id) * delta",
                          "water 3D particle-to-grid should apply APIC local velocity");
+        require_contains(advect_shader, "apply_side_wall_friction",
+                         "water 3D particle advection should damp side-wall impacts");
         require_contains(extrapolate_shader, "read_scratch()",
                          "water 3D velocity extrapolation should ping-pong scratch buffers");
         require_contains(extrapolate_shader, "source_u_valid(uint(neighbor.x)",
@@ -150,10 +168,26 @@ int main() {
                          "water 3D grid-to-particle should use extrapolated velocity confidence");
         require_contains(g2p_shader, "fallback_velocity",
                          "water 3D grid-to-particle should preserve gravity when confidence is low");
+        require_contains(g2p_shader, "CellCounts",
+                         "water 3D grid-to-particle should classify droplets from local occupancy");
+        require_contains(g2p_shader, "sparse_droplet_blend",
+                         "water 3D grid-to-particle should keep isolated droplets ballistic");
+        require_contains(g2p_shader, "cell_sparsity",
+                         "water 3D sparse droplets should use neighborhood cell sparsity");
+        require_contains(g2p_shader, "velocity = mix(velocity, fallback_velocity, droplet_blend)",
+                         "water 3D sparse droplets should blend back to gravity-driven motion");
+        require_contains(divergence_shader, "side_boundary_volume_scale",
+                         "water 3D divergence should reduce volume correction near side walls");
+        require_contains(divergence_shader, "boundary_limited_volume_source",
+                         "water 3D divergence should clamp boundary volume correction");
+        require_contains(divergence_shader, "raw_volume_source",
+                         "water 3D divergence should separate raw and boundary-limited source");
         require_contains(render_shader, "frag_particle",
                          "water 3D renderer should support particle splats");
         require_contains(render_shader, "debug_view == 4u",
                          "water 3D renderer should expose the solid debug view");
+        require_contains(render_shader, "debug_view == 5u",
+                         "water 3D renderer should expose the overpack debug view");
 
         return 0;
     } catch (const std::exception& error) {
