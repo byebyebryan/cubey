@@ -25,6 +25,7 @@ inline constexpr VkDeviceSize kWater3DRenderPushConstantBytes =
     sizeof(float) * kWater3DRenderPushConstantFloatCount;
 inline constexpr VkFormat kWater3DSurfaceScalarFormat = VK_FORMAT_R32_SFLOAT;
 inline constexpr VkFormat kWater3DSurfacePackedFormat = VK_FORMAT_R32G32B32A32_SFLOAT;
+inline constexpr VkFormat kWater3DSceneColorFormat = VK_FORMAT_R16G16B16A16_SFLOAT;
 
 std::filesystem::path shader_path(const char* filename) {
     return std::filesystem::path(CUBEY_WATER_3D_SHADER_DIR) / filename;
@@ -105,6 +106,18 @@ sampled_texture_descriptor_set(std::uint32_t set, std::uint32_t binding_count) {
     };
 }
 
+[[nodiscard]] cubey::render::MaterialPassInfo water_surface_scene_pass_info() {
+    return cubey::render::MaterialPassInfo{
+        .label = "water_3d.surface.scene",
+        .descriptor_sets = {sampled_texture_descriptor_set(0, 1)},
+        .push_constants = {water_surface_push_constant_range()},
+        .depth_test = true,
+        .depth_write = true,
+        .depth_compare_op = VK_COMPARE_OP_LESS_OR_EQUAL,
+        .blend_enable = false,
+    };
+}
+
 [[nodiscard]] cubey::render::MaterialPassInfo water_surface_thickness_pass_info() {
     return cubey::render::MaterialPassInfo{
         .label = "water_3d.surface.thickness",
@@ -145,7 +158,7 @@ sampled_texture_descriptor_set(std::uint32_t set, std::uint32_t binding_count) {
 [[nodiscard]] cubey::render::MaterialPassInfo water_surface_composite_pass_info() {
     return cubey::render::MaterialPassInfo{
         .label = "water_3d.surface.composite",
-        .descriptor_sets = {sampled_texture_descriptor_set(0, 1)},
+        .descriptor_sets = {sampled_texture_descriptor_set(0, 4)},
         .push_constants = {water_surface_push_constant_range()},
         .depth_test = false,
         .depth_write = false,
@@ -238,11 +251,13 @@ void Water3DGpuResources::destroy_swapchain_resources() {
     surface_pack_pipeline_resource_.reset();
     surface_thickness_pipeline_resource_.reset();
     surface_depth_pipeline_resource_.reset();
+    surface_scene_pipeline_resource_.reset();
     surface_composite_material_.reset();
     surface_smooth_y_material_.reset();
     surface_smooth_x_material_.reset();
     surface_pack_material_.reset();
     surface_thickness_material_.reset();
+    surface_scene_material_.reset();
     surface_sampler_.reset();
     render_pipeline_resource_.reset();
     depth_attachment_.reset();
@@ -535,8 +550,9 @@ void Water3DGpuResources::create_compute_pipelines(cubey::vulkan::Device& device
                                      advect_particles_pipeline_resource_);
 }
 
-void Water3DGpuResources::create_render_pipeline(cubey::vulkan::Device& device,
-                                                 VkFormat color_format, VkExtent2D extent) {
+void Water3DGpuResources::create_render_pipeline(
+    cubey::vulkan::Device& device, VkFormat color_format, VkExtent2D extent,
+    const cubey::render::GeneratedPbrEnvironment& environment) {
     depth_attachment_.emplace(device, extent);
     surface_sampler_.emplace(device, cubey::vulkan::SamplerConfig{
                                          .min_filter = VK_FILTER_LINEAR,
@@ -545,6 +561,8 @@ void Water3DGpuResources::create_render_pipeline(cubey::vulkan::Device& device,
                                      });
 
     const cubey::render::MaterialPassInfo debug_material_pass = water_render_pass_info();
+    const cubey::render::MaterialPassInfo surface_scene_material_pass =
+        water_surface_scene_pass_info();
     const cubey::render::MaterialPassInfo surface_depth_material_pass =
         water_surface_depth_pass_info();
     const cubey::render::MaterialPassInfo surface_thickness_material_pass =
@@ -556,6 +574,12 @@ void Water3DGpuResources::create_render_pipeline(cubey::vulkan::Device& device,
     const cubey::render::MaterialPassInfo surface_composite_material_pass =
         water_surface_composite_pass_info();
 
+    surface_scene_material_.emplace(device,
+                                    cubey::render::MaterialInstanceConfig{
+                                        .material_pass = surface_scene_material_pass,
+                                        .descriptor_set = 0,
+                                        .set_count = frame_slot_count_,
+                                    });
     surface_thickness_material_.emplace(device,
                                         cubey::render::MaterialInstanceConfig{
                                             .material_pass = surface_thickness_material_pass,
@@ -595,6 +619,16 @@ void Water3DGpuResources::create_render_pipeline(cubey::vulkan::Device& device,
         },
     };
 
+    const std::array<cubey::render::ShaderStageFile, 2> surface_scene_shaders{
+        cubey::render::ShaderStageFile{
+            .stage = VK_SHADER_STAGE_VERTEX_BIT,
+            .path = shader_path("water_3d_fullscreen.vert.spv"),
+        },
+        cubey::render::ShaderStageFile{
+            .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
+            .path = shader_path("water_3d_scene.frag.spv"),
+        },
+    };
     const std::array<cubey::render::ShaderStageFile, 2> surface_particle_depth_shaders{
         cubey::render::ShaderStageFile{
             .stage = VK_SHADER_STAGE_VERTEX_BIT,
@@ -647,6 +681,9 @@ void Water3DGpuResources::create_render_pipeline(cubey::vulkan::Device& device,
     };
 
     const std::array<VkDescriptorSetLayout, 1> field_set_layouts{field_descriptor_layout()};
+    const std::array<VkDescriptorSetLayout, 1> scene_set_layouts{
+        surface_scene_material_->layout(),
+    };
     const std::array<VkDescriptorSetLayout, 2> field_and_thickness_set_layouts{
         field_descriptor_layout(),
         surface_thickness_material_->layout(),
@@ -662,6 +699,10 @@ void Water3DGpuResources::create_render_pipeline(cubey::vulkan::Device& device,
     create_graphics_pipeline_resource(device, extent, color_format, depth_attachment().format(),
                                       debug_shader_stage_files, field_set_layouts,
                                       debug_material_pass, render_pipeline_resource_);
+    create_graphics_pipeline_resource(device, extent, kWater3DSceneColorFormat,
+                                      depth_attachment().format(), surface_scene_shaders,
+                                      scene_set_layouts, surface_scene_material_pass,
+                                      surface_scene_pipeline_resource_);
     create_graphics_pipeline_resource(device, extent, kWater3DSurfaceScalarFormat,
                                       depth_attachment().format(), surface_particle_depth_shaders,
                                       field_set_layouts, surface_depth_material_pass,
@@ -680,6 +721,18 @@ void Water3DGpuResources::create_render_pipeline(cubey::vulkan::Device& device,
                                       surface_composite_shaders, composite_set_layouts,
                                       surface_composite_material_pass,
                                       surface_composite_pipeline_resource_);
+
+    cubey::vulkan::DescriptorWriteBatch writes;
+    for (std::uint32_t slot_index = 0; slot_index < frame_slot_count_; ++slot_index) {
+        const cubey::render::FrameSlot frame_slot{
+            .index = slot_index,
+            .count = frame_slot_count_,
+        };
+        writes.combined_image_sampler(surface_scene_descriptor_set(frame_slot), 0,
+                                      environment.prefiltered_cube.sampler().handle(),
+                                      environment.prefiltered_cube.view());
+    }
+    writes.update(device);
 }
 
 const cubey::vulkan::Buffer& Water3DGpuResources::particle_positions() const {
@@ -917,6 +970,12 @@ Water3DGpuResources::render_pipeline_resource() const {
 }
 
 const cubey::render::GraphicsPipelineResource&
+Water3DGpuResources::surface_scene_pipeline_resource() const {
+    return require_initialized(surface_scene_pipeline_resource_,
+                               "water 3D surface scene pipeline is not initialized");
+}
+
+const cubey::render::GraphicsPipelineResource&
 Water3DGpuResources::surface_depth_pipeline_resource() const {
     return require_initialized(surface_depth_pipeline_resource_,
                                "water 3D surface depth pipeline is not initialized");
@@ -944,6 +1003,13 @@ const cubey::render::GraphicsPipelineResource&
 Water3DGpuResources::surface_composite_pipeline_resource() const {
     return require_initialized(surface_composite_pipeline_resource_,
                                "water 3D surface composite pipeline is not initialized");
+}
+
+VkDescriptorSet
+Water3DGpuResources::surface_scene_descriptor_set(cubey::render::FrameSlot frame_slot) const {
+    return require_initialized(surface_scene_material_,
+                               "water 3D surface scene material is not initialized")
+        .set(frame_slot);
 }
 
 VkDescriptorSet
@@ -986,10 +1052,14 @@ void Water3DGpuResources::update_surface_descriptors(
     cubey::render::RenderGraphSampledTextureView raw_depth,
     cubey::render::RenderGraphSampledTextureView raw_thickness,
     cubey::render::RenderGraphSampledTextureView packed_a,
-    cubey::render::RenderGraphSampledTextureView packed_b) {
+    cubey::render::RenderGraphSampledTextureView packed_b,
+    cubey::render::RenderGraphSampledTextureView scene_color,
+    cubey::render::RenderGraphSampledTextureView scene_depth,
+    const cubey::render::GeneratedPbrEnvironment& environment) {
     const cubey::vulkan::Sampler& sampler =
         require_initialized(surface_sampler_, "water 3D surface sampler is not initialized");
     const VkSampler sampler_handle = sampler.handle();
+    const VkDescriptorSet composite_set = surface_composite_descriptor_set(frame_slot);
     cubey::vulkan::DescriptorWriteBatch writes;
     writes
         .combined_image_sampler(surface_thickness_descriptor_set(frame_slot), 0, sampler_handle,
@@ -1002,8 +1072,13 @@ void Water3DGpuResources::update_surface_descriptors(
                                 packed_a.view, packed_a.layout)
         .combined_image_sampler(surface_smooth_y_descriptor_set(frame_slot), 0, sampler_handle,
                                 packed_b.view, packed_b.layout)
-        .combined_image_sampler(surface_composite_descriptor_set(frame_slot), 0, sampler_handle,
-                                packed_a.view, packed_a.layout);
+        .combined_image_sampler(composite_set, 0, sampler_handle, packed_a.view, packed_a.layout)
+        .combined_image_sampler(composite_set, 1, sampler_handle, scene_color.view,
+                                scene_color.layout)
+        .combined_image_sampler(composite_set, 2, sampler_handle, scene_depth.view,
+                                scene_depth.layout)
+        .combined_image_sampler(composite_set, 3, environment.prefiltered_cube.sampler().handle(),
+                                environment.prefiltered_cube.view());
     writes.update(device);
 }
 

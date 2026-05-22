@@ -170,6 +170,7 @@ int main() {
             read_text_file(shader_dir / "water_3d_surface_common.glsl");
         const std::string surface_depth =
             read_text_file(shader_dir / "water_3d_surface_depth.frag");
+        const std::string scene_shader = read_text_file(shader_dir / "water_3d_scene.frag");
         const std::string surface_thickness =
             read_text_file(shader_dir / "water_3d_surface_thickness.frag");
         const std::string surface_smooth =
@@ -232,6 +233,12 @@ int main() {
                          "water 3D debug render pipeline should not alpha blend particles");
         require_contains(surface_common, "WATER3D_SURFACE_DEPTH_SENTINEL",
                          "water 3D surface pass should use an explicit empty-depth sentinel");
+        require_contains(surface_common, "display_transform",
+                         "water 3D surface pass should carry final display transform settings");
+        require_contains(scene_shader, "gl_FragDepth",
+                         "water 3D scene pass should preserve sampleable scene depth");
+        require_contains(scene_shader, "environment_cube",
+                         "water 3D scene pass should use the shared environment cube");
         require_contains(surface_depth, "gl_FragDepth",
                          "water 3D surface depth pass should write sphere-correct depth");
         require_contains(surface_thickness, "out_thickness",
@@ -244,8 +251,16 @@ int main() {
                          "water 3D surface composite should include water Fresnel");
         require_contains(surface_composite, "exp(-absorption",
                          "water 3D surface composite should apply Beer-Lambert absorption");
+        require_contains(surface_composite, "scene_color_texture",
+                         "water 3D surface composite should refract through scene color");
+        require_contains(surface_composite, "scene_depth_texture",
+                         "water 3D surface composite should occlude against scene depth");
+        require_contains(surface_composite, "cubey_pbr_apply_display_transform",
+                         "water 3D surface composite should apply the shared display transform");
         require_contains(commands, "RenderGraphFrameExecutor",
                          "water 3D surface render should be recorded through the render graph");
+        require_contains(commands, "water scene",
+                         "water 3D surface render should include an offscreen scene pass");
         require_contains(commands, "update_surface_descriptors",
                          "water 3D surface render should bind graph transient textures");
         require_contains(render_shader, "render_view == 5u",

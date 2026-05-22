@@ -4,6 +4,7 @@
 #include "water_3d_config.h"
 #include "water_3d_gpu_resources.h"
 
+#include <cubey/asset/hdr_image.h>
 #include <cubey/engine/project_gpu_services.h>
 #include <cubey/engine/project_runtime.h>
 #include <cubey/host/frame_stats.h>
@@ -11,6 +12,7 @@
 #include <cubey/host/windowed_app.h>
 #include <cubey/input/input.h>
 #include <cubey/input/orbit_controller.h>
+#include <cubey/render/generated_ibl.h>
 #include <cubey/render/pass.h>
 #include <cubey/render/render_graph.h>
 #include <cubey/scene/camera_3d.h>
@@ -25,7 +27,9 @@
 #include <algorithm>
 #include <array>
 #include <cstdint>
+#include <filesystem>
 #include <optional>
+#include <stdexcept>
 #include <utility>
 
 namespace cubey::projects::fluid::water_3d {
@@ -61,6 +65,14 @@ constexpr std::array<Water3DTransferMode, 2> kTransferModes{
 
 [[nodiscard]] double bytes_to_mib(VkDeviceSize bytes) {
     return static_cast<double>(bytes) / (1024.0 * 1024.0);
+}
+
+[[nodiscard]] std::filesystem::path bundled_sample_environment_path() {
+#ifdef CUBEY_HDR_SAMPLE_ASSETS_DIR
+    return std::filesystem::path(CUBEY_HDR_SAMPLE_ASSETS_DIR) / "lightroom_14b.hdr";
+#else
+    return {};
+#endif
 }
 
 class Water3DApp {
@@ -262,6 +274,11 @@ class Water3DApp {
                            "%.2f");
         ImGui::SliderFloat("Surface refraction", &water_config_.surface_refraction_strength, 0.0F,
                            0.12F, "%.3f");
+        ImGui::SliderFloat("Environment intensity", &water_config_.environment_intensity, 0.0F,
+                           4.0F, "%.2f");
+        ImGui::SliderFloat("Environment rotation", &water_config_.environment_rotation_degrees,
+                           -180.0F, 180.0F, "%.0f deg");
+        ImGui::SliderFloat("Exposure", &water_config_.exposure, -4.0F, 4.0F, "%.2f");
         ImGui::SliderFloat("Gravity", &water_config_.gravity, -4.0F, 0.0F, "%.2f");
         ImGui::SliderFloat("Boundary bounce", &water_config_.boundary_restitution, 0.0F, 0.8F,
                            "%.2f");
@@ -344,11 +361,62 @@ class Water3DApp {
     void destroy_all_resources() {
         surface_graph_executor_.clear();
         resources_.destroy_all_resources();
+        ibl_environment_.reset();
+    }
+
+    [[nodiscard]] std::filesystem::path resolved_environment_path() const {
+        if (!config_.environment_path.empty()) {
+            if (!std::filesystem::exists(config_.environment_path)) {
+                throw std::runtime_error("environment HDR does not exist: " +
+                                         config_.environment_path.string());
+            }
+            return config_.environment_path;
+        }
+
+        const std::filesystem::path sample = bundled_sample_environment_path();
+        if (!sample.empty() && std::filesystem::exists(sample)) {
+            return sample;
+        }
+        return {};
+    }
+
+    void create_environment_resources_if_needed(cubey::vulkan::Device& device,
+                                                cubey::vulkan::GpuRuntime& gpu) {
+        if (ibl_environment_.has_value()) {
+            return;
+        }
+
+        cubey::render::GeneratedPbrEnvironmentConfig ibl_config;
+        ibl_config.intensity = 1.0F;
+        const std::filesystem::path environment = resolved_environment_path();
+        if (!environment.empty()) {
+            const cubey::asset::HdrImage image = cubey::asset::load_hdr_image(environment);
+            ibl_environment_.emplace(cubey::render::create_pbr_environment_from_equirectangular(
+                device, gpu,
+                cubey::render::PbrEquirectangularImage{
+                    .width = image.width,
+                    .height = image.height,
+                    .rgba32f = image.rgba32f,
+                },
+                ibl_config));
+            return;
+        }
+
+        ibl_environment_.emplace(
+            cubey::render::create_generated_pbr_environment(device, gpu, ibl_config));
+    }
+
+    [[nodiscard]] const cubey::render::GeneratedPbrEnvironment& ibl_environment() const {
+        if (!ibl_environment_.has_value()) {
+            throw std::runtime_error("water 3D IBL environment is not initialized");
+        }
+        return ibl_environment_.value();
     }
 
     void create_global_resources_if_needed(cubey::vulkan::Device& device,
                                            cubey::vulkan::GpuRuntime& gpu,
                                            std::uint32_t frame_slot_count) {
+        create_environment_resources_if_needed(device, gpu);
         attach_project_gpu(gpu);
         resources_.create_global_resources_if_needed(device, runtime_.gpu(), water_config_,
                                                      frame_slot_count);
@@ -377,7 +445,7 @@ class Water3DApp {
 
     void create_render_pipeline(cubey::vulkan::Device& device, VkFormat color_format,
                                 VkExtent2D extent) {
-        resources_.create_render_pipeline(device, color_format, extent);
+        resources_.create_render_pipeline(device, color_format, extent, ibl_environment());
     }
 
     void record_frame(cubey::host::WindowedAppContext& context,
@@ -393,7 +461,7 @@ class Water3DApp {
                 render_frame.command_buffer, context.device(), surface_graph_executor_, resources_,
                 water_config_, render_frame.frame_slot, runtime_state_, render_view_,
                 render_camera(render_frame.color_target.extent), render_frame.color_target,
-                Water3DRenderTargetMode::Present);
+                Water3DRenderTargetMode::Present, ibl_environment());
         } else {
             cubey::render::record_present_render_target(
                 recorder, cubey::render::render_target_view(render_frame.color_target),
@@ -469,7 +537,8 @@ class Water3DApp {
                 record_water_3d_surface_draw(
                     command_buffer, context.device(), surface_graph_executor_, resources_,
                     water_config_, frame.frame_slot, runtime_state_, render_view_,
-                    render_camera(target.extent), target, Water3DRenderTargetMode::ColorAttachment);
+                    render_camera(target.extent), target, Water3DRenderTargetMode::ColorAttachment,
+                    ibl_environment());
             } else {
                 record_water_3d_draw(command_buffer, resources_, water_config_, frame.frame_slot,
                                      runtime_state_, render_view_, render_camera(target.extent),
@@ -493,6 +562,7 @@ class Water3DApp {
     Water3DRuntimeState runtime_state_;
     Water3DGpuResources resources_;
     cubey::render::RenderGraphFrameExecutor surface_graph_executor_;
+    std::optional<cubey::render::GeneratedPbrEnvironment> ibl_environment_;
     cubey::Camera3D camera_;
     cubey::OrbitController orbit_controller_;
     cubey::host::FrameStats ui_frame_stats_{0.25};

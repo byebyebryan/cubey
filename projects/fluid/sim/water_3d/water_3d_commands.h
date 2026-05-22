@@ -6,6 +6,7 @@
 #include <cubey/core/math.h>
 #include <cubey/engine/project_runtime.h>
 #include <cubey/render/frame_data.h>
+#include <cubey/render/generated_ibl.h>
 #include <cubey/render/render_graph_frame.h>
 #include <cubey/render/target.h>
 #include <cubey/vulkan/device.h>
@@ -50,6 +51,7 @@ void record_water_3d_surface_draw(VkCommandBuffer command_buffer,
                                   const Water3DRuntimeState& runtime_state,
                                   Water3DRenderView render_view, const Water3DRenderCamera& camera,
                                   cubey::render::ColorTargetView color_target,
-                                  Water3DRenderTargetMode target_mode);
+                                  Water3DRenderTargetMode target_mode,
+                                  const cubey::render::GeneratedPbrEnvironment& environment);
 
 } // namespace cubey::projects::fluid::water_3d

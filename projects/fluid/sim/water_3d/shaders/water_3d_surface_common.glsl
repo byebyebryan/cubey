@@ -19,6 +19,8 @@
         vec4 camera_forward_radius;                                                            \
         vec4 particle_options;                                                                 \
         vec4 surface_options;                                                                  \
+        vec4 environment_options;                                                              \
+        vec4 display_transform;                                                                \
     } surface_params
 
 bool water_surface_has_depth(float depth) {

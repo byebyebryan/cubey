@@ -74,6 +74,9 @@ struct Water3DConfig {
     float surface_depth_sigma = 0.035F;
     float surface_absorption = 1.5F;
     float surface_refraction_strength = 0.035F;
+    float environment_intensity = 1.0F;
+    float environment_rotation_degrees = 0.0F;
+    float exposure = 0.0F;
 };
 
 struct Water3DSimulationUniforms {
@@ -414,6 +417,9 @@ water_3d_runtime_particle_scan_count(const Water3DConfig& config,
     if (config.grid_depth != 0) {
         water_config.grid_depth = config.grid_depth;
     }
+    water_config.environment_intensity = config.ibl_intensity;
+    water_config.environment_rotation_degrees = config.environment_rotation_degrees;
+    water_config.exposure = config.exposure;
     refresh_particle_counts(water_config);
     static_cast<void>(cell_count(water_config));
     static_cast<void>(u_face_count(water_config));

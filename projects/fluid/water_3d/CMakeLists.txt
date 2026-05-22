@@ -13,6 +13,7 @@ cubey_add_app_target(
         ../sim/water_3d/shaders/water_3d.vert
         ../sim/water_3d/shaders/water_3d_render.frag
         ../sim/water_3d/shaders/water_3d_fullscreen.vert
+        ../sim/water_3d/shaders/water_3d_scene.frag
         ../sim/water_3d/shaders/water_3d_surface_particle.vert
         ../sim/water_3d/shaders/water_3d_surface_depth.frag
         ../sim/water_3d/shaders/water_3d_surface_thickness.frag
@@ -39,7 +40,16 @@ cubey_add_app_target(
         "${CMAKE_CURRENT_SOURCE_DIR}/../sim/water_3d/shaders/water_3d_surface_common.glsl"
         "${CMAKE_CURRENT_SOURCE_DIR}/../sim/water_3d/shaders/water_3d_surface_helpers.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/color_space.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/pbr.glsl"
 )
+
+if (CUBEY_HDR_SAMPLE_ASSETS_DIR)
+    target_compile_definitions(
+        cubey_project_water_3d
+        PRIVATE
+            CUBEY_HDR_SAMPLE_ASSETS_DIR="${CUBEY_HDR_SAMPLE_ASSETS_DIR}"
+    )
+endif()
 
 if (BUILD_TESTING)
     add_executable(cubey_project_water_3d_tests

@@ -4,6 +4,7 @@
 
 #include <cubey/engine/project_gpu_services.h>
 #include <cubey/render/frame_data.h>
+#include <cubey/render/generated_ibl.h>
 #include <cubey/render/material_instance.h>
 #include <cubey/render/pipeline_resource.h>
 #include <cubey/render/render_graph_types.h>
@@ -28,7 +29,8 @@ class Water3DGpuResources {
                                            const Water3DConfig& config,
                                            std::uint32_t frame_slot_count);
     void create_render_pipeline(cubey::vulkan::Device& device, VkFormat color_format,
-                                VkExtent2D extent);
+                                VkExtent2D extent,
+                                const cubey::render::GeneratedPbrEnvironment& environment);
     void destroy_swapchain_resources();
     void destroy_all_resources();
 
@@ -90,6 +92,8 @@ class Water3DGpuResources {
     advect_particles_pipeline_resource() const;
     [[nodiscard]] const cubey::render::GraphicsPipelineResource& render_pipeline_resource() const;
     [[nodiscard]] const cubey::render::GraphicsPipelineResource&
+    surface_scene_pipeline_resource() const;
+    [[nodiscard]] const cubey::render::GraphicsPipelineResource&
     surface_depth_pipeline_resource() const;
     [[nodiscard]] const cubey::render::GraphicsPipelineResource&
     surface_thickness_pipeline_resource() const;
@@ -99,6 +103,8 @@ class Water3DGpuResources {
     surface_smooth_pipeline_resource() const;
     [[nodiscard]] const cubey::render::GraphicsPipelineResource&
     surface_composite_pipeline_resource() const;
+    [[nodiscard]] VkDescriptorSet
+    surface_scene_descriptor_set(cubey::render::FrameSlot frame_slot) const;
     [[nodiscard]] VkDescriptorSet
     surface_thickness_descriptor_set(cubey::render::FrameSlot frame_slot) const;
     [[nodiscard]] VkDescriptorSet
@@ -114,7 +120,10 @@ class Water3DGpuResources {
                                     cubey::render::RenderGraphSampledTextureView raw_depth,
                                     cubey::render::RenderGraphSampledTextureView raw_thickness,
                                     cubey::render::RenderGraphSampledTextureView packed_a,
-                                    cubey::render::RenderGraphSampledTextureView packed_b);
+                                    cubey::render::RenderGraphSampledTextureView packed_b,
+                                    cubey::render::RenderGraphSampledTextureView scene_color,
+                                    cubey::render::RenderGraphSampledTextureView scene_depth,
+                                    const cubey::render::GeneratedPbrEnvironment& environment);
     [[nodiscard]] const cubey::vulkan::DepthAttachment& depth_attachment() const;
 
   private:
@@ -172,11 +181,13 @@ class Water3DGpuResources {
     std::optional<cubey::render::ComputePipelineResource> advect_particles_pipeline_resource_;
     std::optional<cubey::render::GraphicsPipelineResource> render_pipeline_resource_;
     std::optional<cubey::vulkan::Sampler> surface_sampler_;
+    std::optional<cubey::render::MaterialInstance> surface_scene_material_;
     std::optional<cubey::render::MaterialInstance> surface_thickness_material_;
     std::optional<cubey::render::MaterialInstance> surface_pack_material_;
     std::optional<cubey::render::MaterialInstance> surface_smooth_x_material_;
     std::optional<cubey::render::MaterialInstance> surface_smooth_y_material_;
     std::optional<cubey::render::MaterialInstance> surface_composite_material_;
+    std::optional<cubey::render::GraphicsPipelineResource> surface_scene_pipeline_resource_;
     std::optional<cubey::render::GraphicsPipelineResource> surface_depth_pipeline_resource_;
     std::optional<cubey::render::GraphicsPipelineResource> surface_thickness_pipeline_resource_;
     std::optional<cubey::render::GraphicsPipelineResource> surface_pack_pipeline_resource_;

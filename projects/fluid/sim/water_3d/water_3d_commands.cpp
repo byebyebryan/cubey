@@ -1,8 +1,10 @@
 #include "water_3d_commands.h"
 
 #include <cubey/render/pass.h>
+#include <cubey/render/pbr.h>
 #include <cubey/render/render_graph.h>
 #include <cubey/vulkan/command_recorder.h>
+#include <cubey/vulkan/dynamic_rendering.h>
 #include <cubey/vulkan/image_transitions.h>
 #include <cubey/vulkan/vk_check.h>
 
@@ -10,7 +12,9 @@
 #include <array>
 #include <cmath>
 #include <cstdint>
+#include <optional>
 #include <stdexcept>
+#include <utility>
 
 namespace cubey::projects::fluid::water_3d {
 namespace {
@@ -18,6 +22,7 @@ namespace {
 inline constexpr std::uint32_t kWater3DVelocityExtrapolationIterations = 4;
 inline constexpr VkFormat kWater3DSurfaceScalarFormat = VK_FORMAT_R32_SFLOAT;
 inline constexpr VkFormat kWater3DSurfacePackedFormat = VK_FORMAT_R32G32B32A32_SFLOAT;
+inline constexpr VkFormat kWater3DSceneColorFormat = VK_FORMAT_R16G16B16A16_SFLOAT;
 inline constexpr float kWater3DSurfaceDepthSentinel = 1000000.0F;
 
 struct RenderPushConstants {
@@ -38,6 +43,8 @@ struct SurfacePushConstants {
     std::array<float, 4> camera_forward_radius{};
     std::array<float, 4> particle_options{};
     std::array<float, 4> surface_options{};
+    std::array<float, 4> environment_options{};
+    std::array<float, 4> display_transform{};
 };
 
 static_assert(sizeof(SurfacePushConstants) <= sizeof(float) * kWater3DRenderPushConstantFloatCount);
@@ -129,12 +136,19 @@ void record_final_barrier(VkCommandBuffer command_buffer) {
 [[nodiscard]] SurfacePushConstants
 surface_push_constants(const Water3DConfig& config, const Water3DRuntimeState& runtime_state,
                        Water3DRenderView render_view, const Water3DRenderCamera& camera,
-                       VkExtent2D extent, float smooth_direction_x, float smooth_direction_y) {
+                       VkExtent2D extent, VkFormat output_format, float smooth_direction_x,
+                       float smooth_direction_y) {
     const std::uint32_t particle_scan_count =
         water_3d_runtime_particle_scan_count(config, runtime_state);
     const float aspect = extent.height > 0U
                              ? static_cast<float>(extent.width) / static_cast<float>(extent.height)
                              : 1.0F;
+    const float radians = config.environment_rotation_degrees * 0.017453292519943295F;
+    const cubey::render::PbrDisplayTransform display_transform =
+        cubey::render::pbr_display_transform_for_target(output_format, config.exposure,
+                                                        cubey::render::PbrTonemap::Aces);
+    const cubey::math::Vec4 display_transform_uniform =
+        cubey::render::pbr_display_transform_uniform(display_transform);
     return {
         .view_projection = camera.view_projection,
         .camera_position_view =
@@ -180,6 +194,20 @@ surface_push_constants(const Water3DConfig& config, const Water3DRuntimeState& r
                 config.surface_depth_sigma,
                 config.surface_absorption,
                 config.surface_refraction_strength,
+            },
+        .environment_options =
+            {
+                std::cos(radians),
+                std::sin(radians),
+                config.environment_intensity,
+                0.0F,
+            },
+        .display_transform =
+            {
+                display_transform_uniform.x,
+                display_transform_uniform.y,
+                display_transform_uniform.z,
+                display_transform_uniform.w,
             },
     };
 }
@@ -327,7 +355,8 @@ void record_surface_depth_pass(const cubey::vulkan::CommandRecorder& recorder,
                                cubey::render::ColorTargetView color_target,
                                cubey::render::DepthTargetView depth_target) {
     const SurfacePushConstants push_constants = surface_push_constants(
-        config, runtime_state, render_view, camera, color_target.extent, 0.0F, 0.0F);
+        config, runtime_state, render_view, camera, color_target.extent, color_target.format, 0.0F,
+        0.0F);
     const std::uint32_t particle_scan_count =
         water_3d_runtime_particle_scan_count(config, runtime_state);
     cubey::render::record_render_target_pass(
@@ -358,7 +387,8 @@ void record_surface_thickness_pass(const cubey::vulkan::CommandRecorder& recorde
                                    Water3DRenderView render_view, const Water3DRenderCamera& camera,
                                    cubey::render::ColorTargetView color_target) {
     const SurfacePushConstants push_constants = surface_push_constants(
-        config, runtime_state, render_view, camera, color_target.extent, 0.0F, 0.0F);
+        config, runtime_state, render_view, camera, color_target.extent, color_target.format, 0.0F,
+        0.0F);
     const std::uint32_t particle_scan_count =
         water_3d_runtime_particle_scan_count(config, runtime_state);
     cubey::render::record_render_target_pass(
@@ -405,8 +435,61 @@ void record_surface_fullscreen_pass(const cubey::vulkan::CommandRecorder& record
         });
 }
 
+template <typename RecordCallback>
+void record_render_target_pass_with_stored_depth(const cubey::vulkan::CommandRecorder& recorder,
+                                                 const cubey::render::RenderTargetView& target,
+                                                 const cubey::render::RenderClearValues& clear,
+                                                 RecordCallback&& record_callback) {
+    VkRenderingAttachmentInfo color_attachment =
+        cubey::vulkan::color_rendering_attachment(target.color.view, clear.color);
+    auto rendering = cubey::vulkan::vk_struct<VkRenderingInfo>(VK_STRUCTURE_TYPE_RENDERING_INFO);
+    rendering.renderArea.offset = {0, 0};
+    rendering.renderArea.extent = target.color.extent;
+    rendering.layerCount = 1;
+    rendering.colorAttachmentCount = 1;
+    rendering.pColorAttachments = &color_attachment;
+
+    std::optional<VkRenderingAttachmentInfo> depth_attachment;
+    if (target.depth.has_value()) {
+        depth_attachment =
+            cubey::vulkan::depth_rendering_attachment(target.depth->view, clear.depth);
+        depth_attachment->storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+        rendering.pDepthAttachment = &depth_attachment.value();
+    }
+
+    recorder.begin_rendering(rendering);
+    std::forward<RecordCallback>(record_callback)(recorder);
+    recorder.end_rendering();
+}
+
+void record_surface_scene_pass(const cubey::vulkan::CommandRecorder& recorder,
+                               const Water3DGpuResources& resources,
+                               cubey::render::FrameSlot frame_slot,
+                               const SurfacePushConstants& push_constants,
+                               cubey::render::ColorTargetView color_target,
+                               cubey::render::DepthTargetView depth_target) {
+    record_render_target_pass_with_stored_depth(
+        recorder, cubey::render::render_target_view(color_target, depth_target),
+        cubey::render::RenderClearValues{
+            .color = cubey::render::color_clear_value(0.0F, 0.0F, 0.0F, 1.0F),
+            .depth = cubey::render::depth_clear_value(),
+        },
+        [&resources, frame_slot,
+         push_constants](const cubey::vulkan::CommandRecorder& pass_recorder) {
+            cubey::render::record_fullscreen_pipeline_draw(
+                pass_recorder,
+                {
+                    .pipeline = &resources.surface_scene_pipeline_resource(),
+                    .descriptor_set = resources.surface_scene_descriptor_set(frame_slot),
+                },
+                VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, push_constants);
+        });
+}
+
 struct SurfaceRenderGraph {
     cubey::render::CompiledRenderGraph graph;
+    cubey::render::RenderGraphTextureHandle scene_color{};
+    cubey::render::RenderGraphTextureHandle scene_depth{};
     cubey::render::RenderGraphTextureHandle raw_depth{};
     cubey::render::RenderGraphTextureHandle raw_thickness{};
     cubey::render::RenderGraphTextureHandle packed_a{};
@@ -421,6 +504,7 @@ struct SurfaceRenderGraph {
     Water3DGpuResources* resource_ptr = &resources;
     const Water3DConfig* config_ptr = &config;
     const Water3DRuntimeState* runtime_state_ptr = &runtime_state;
+    const VkFormat output_format = color_target.format;
     cubey::render::RenderGraphBuilder graph;
     const cubey::render::RenderGraphTextureState initial_state =
         target_mode == Water3DRenderTargetMode::Present
@@ -432,6 +516,12 @@ struct SurfaceRenderGraph {
             : cubey::render::render_graph_color_attachment_texture_state();
     const cubey::render::RenderGraphTextureHandle backbuffer =
         graph.import_color_target("backbuffer", color_target, initial_state, final_state);
+    const cubey::render::RenderGraphTextureHandle scene_color =
+        graph.create_texture(surface_color_texture_desc("water scene color", color_target.extent,
+                                                        kWater3DSceneColorFormat));
+    const cubey::render::RenderGraphTextureHandle scene_depth =
+        graph.create_texture(surface_depth_texture_desc("water scene depth", color_target.extent,
+                                                       resources.depth_attachment().format()));
     const cubey::render::RenderGraphTextureHandle raw_depth =
         graph.create_texture(surface_color_texture_desc(
             "water surface raw depth", color_target.extent, kWater3DSurfaceScalarFormat));
@@ -448,6 +538,21 @@ struct SurfaceRenderGraph {
         surface_depth_texture_desc("water surface visibility depth", color_target.extent,
                                    resources.depth_attachment().format()));
 
+    graph.add_pass("water scene", cubey::render::RenderGraphQueueDomain::Graphics)
+        .write_color(scene_color)
+        .write_depth(scene_depth)
+        .execute([resource_ptr, config_ptr, runtime_state_ptr, frame_slot, render_view, camera,
+                  output_format, scene_color,
+                  scene_depth](const cubey::render::RenderGraphExecutionContext& context) {
+            const cubey::render::ColorTargetView target =
+                cubey::render::resolved_color_target_view(context, scene_color);
+            const SurfacePushConstants push_constants =
+                surface_push_constants(*config_ptr, *runtime_state_ptr, render_view, camera,
+                                       target.extent, output_format, 0.0F, 0.0F);
+            record_surface_scene_pass(context.recorder(), *resource_ptr, frame_slot,
+                                      push_constants, target,
+                                      resolved_depth_target_view(context, scene_depth));
+        });
     graph.add_pass("water surface depth", cubey::render::RenderGraphQueueDomain::Graphics)
         .write_color(raw_depth)
         .write_depth(visibility_depth)
@@ -474,10 +579,12 @@ struct SurfaceRenderGraph {
         .read_texture(raw_thickness)
         .write_color(packed_a)
         .execute([resource_ptr, config_ptr, runtime_state_ptr, frame_slot, render_view, camera,
+                  output_format,
                   packed_a](const cubey::render::RenderGraphExecutionContext& context) {
             const SurfacePushConstants push_constants = surface_push_constants(
                 *config_ptr, *runtime_state_ptr, render_view, camera,
-                cubey::render::resolved_color_target_view(context, packed_a).extent, 0.0F, 0.0F);
+                cubey::render::resolved_color_target_view(context, packed_a).extent, output_format,
+                0.0F, 0.0F);
             record_surface_fullscreen_pass(
                 context.recorder(), resource_ptr->surface_pack_pipeline_resource(),
                 resource_ptr->surface_pack_descriptor_set(frame_slot), push_constants,
@@ -489,10 +596,12 @@ struct SurfaceRenderGraph {
         .read_texture(packed_a)
         .write_color(packed_b)
         .execute([resource_ptr, config_ptr, runtime_state_ptr, frame_slot, render_view, camera,
+                  output_format,
                   packed_b](const cubey::render::RenderGraphExecutionContext& context) {
             const SurfacePushConstants push_constants = surface_push_constants(
                 *config_ptr, *runtime_state_ptr, render_view, camera,
-                cubey::render::resolved_color_target_view(context, packed_b).extent, 1.0F, 0.0F);
+                cubey::render::resolved_color_target_view(context, packed_b).extent, output_format,
+                1.0F, 0.0F);
             record_surface_fullscreen_pass(
                 context.recorder(), resource_ptr->surface_smooth_pipeline_resource(),
                 resource_ptr->surface_smooth_x_descriptor_set(frame_slot), push_constants,
@@ -504,10 +613,12 @@ struct SurfaceRenderGraph {
         .read_texture(packed_b)
         .write_color(packed_a)
         .execute([resource_ptr, config_ptr, runtime_state_ptr, frame_slot, render_view, camera,
+                  output_format,
                   packed_a](const cubey::render::RenderGraphExecutionContext& context) {
             const SurfacePushConstants push_constants = surface_push_constants(
                 *config_ptr, *runtime_state_ptr, render_view, camera,
-                cubey::render::resolved_color_target_view(context, packed_a).extent, 0.0F, 1.0F);
+                cubey::render::resolved_color_target_view(context, packed_a).extent, output_format,
+                0.0F, 1.0F);
             record_surface_fullscreen_pass(
                 context.recorder(), resource_ptr->surface_smooth_pipeline_resource(),
                 resource_ptr->surface_smooth_y_descriptor_set(frame_slot), push_constants,
@@ -516,13 +627,17 @@ struct SurfaceRenderGraph {
                                                  kWater3DSurfaceDepthSentinel));
         });
     graph.add_pass("water surface composite", cubey::render::RenderGraphQueueDomain::Graphics)
+        .read_texture(scene_color)
+        .read_texture(scene_depth)
         .read_texture(packed_a)
         .write_color(backbuffer)
         .execute([resource_ptr, config_ptr, runtime_state_ptr, frame_slot, render_view, camera,
+                  output_format,
                   backbuffer](const cubey::render::RenderGraphExecutionContext& context) {
             const SurfacePushConstants push_constants = surface_push_constants(
                 *config_ptr, *runtime_state_ptr, render_view, camera,
-                cubey::render::resolved_color_target_view(context, backbuffer).extent, 0.0F, 0.0F);
+                cubey::render::resolved_color_target_view(context, backbuffer).extent,
+                output_format, 0.0F, 0.0F);
             record_surface_fullscreen_pass(
                 context.recorder(), resource_ptr->surface_composite_pipeline_resource(),
                 resource_ptr->surface_composite_descriptor_set(frame_slot), push_constants,
@@ -532,6 +647,8 @@ struct SurfaceRenderGraph {
 
     return {
         .graph = graph.compile(),
+        .scene_color = scene_color,
+        .scene_depth = scene_depth,
         .raw_depth = raw_depth,
         .raw_thickness = raw_thickness,
         .packed_a = packed_a,
@@ -733,7 +850,8 @@ void record_water_3d_surface_draw(VkCommandBuffer command_buffer,
                                   const Water3DRuntimeState& runtime_state,
                                   Water3DRenderView render_view, const Water3DRenderCamera& camera,
                                   cubey::render::ColorTargetView color_target,
-                                  Water3DRenderTargetMode target_mode) {
+                                  Water3DRenderTargetMode target_mode,
+                                  const cubey::render::GeneratedPbrEnvironment& environment) {
     if (!is_water_3d_surface_view(render_view)) {
         throw std::runtime_error("water 3D surface draw requires a surface render view");
     }
@@ -750,7 +868,7 @@ void record_water_3d_surface_draw(VkCommandBuffer command_buffer,
             .command_buffer_mode = cubey::render::RenderGraphCommandBufferMode::AlreadyRecording,
         },
         render_graph.graph,
-        [&resources, &device, frame_slot,
+        [&resources, &device, frame_slot, &environment,
          &render_graph](const cubey::render::RenderGraphResourceSet& graph_resources) {
             resources.update_surface_descriptors(
                 device, frame_slot,
@@ -761,7 +879,12 @@ void record_water_3d_surface_draw(VkCommandBuffer command_buffer,
                 cubey::render::resolved_sampled_texture_view(render_graph.graph, graph_resources,
                                                              render_graph.packed_a),
                 cubey::render::resolved_sampled_texture_view(render_graph.graph, graph_resources,
-                                                             render_graph.packed_b));
+                                                             render_graph.packed_b),
+                cubey::render::resolved_sampled_texture_view(render_graph.graph, graph_resources,
+                                                             render_graph.scene_color),
+                cubey::render::resolved_sampled_texture_view(render_graph.graph, graph_resources,
+                                                             render_graph.scene_depth),
+                environment);
         });
 }
 

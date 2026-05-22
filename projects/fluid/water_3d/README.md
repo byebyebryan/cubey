@@ -4,12 +4,14 @@
 direction as `water_2d`: particles carry water volume, a staggered MAC grid solves
 velocity and pressure, and APIC is the default particle transfer mode.
 
-The default renderer is now a minimal screen-space surface path: particles write
-front depth and thickness into render-graph transients, a separable bilateral pass
-smooths the surface, and a composite pass shades the water with Fresnel, absorption,
-and a procedural environment. The old particle splats remain as an opaque debug
-view. Marching cubes, mesh generation, foam, hose injection, and draining are still
-deferred until the 3D solver and renderer contract are stable.
+The default renderer is a screen-space surface path: an HDR/generated environment
+and simple ground scene are rendered into offscreen color/depth targets, particles
+write front depth and thickness into render-graph transients, a separable bilateral
+pass smooths the surface, and a composite pass shades the water with Fresnel,
+scene-color refraction, environment reflection, and Beer-Lambert absorption. The
+old particle splats remain as an opaque debug view. Foam, whitewater, SSR, marching
+cubes, mesh generation, hose injection, and draining are still deferred until the
+3D solver and renderer contract are stable.
 
 Useful render views:
 
@@ -30,4 +32,5 @@ Common runs:
 ./build/dev/projects/fluid/water_3d/water_3d
 ./build/dev/projects/fluid/water_3d/water_3d --headless --frames 24 --output outputs/water-3d.png
 ./build/dev/projects/fluid/water_3d/water_3d --grid-width 48 --grid-height 48 --grid-depth 48
+./build/dev/projects/fluid/water_3d/water_3d --environment build/dev/_deps/cubey_hdr_sample_assets-src/venetian_crossroads_2k.hdr
 ```
