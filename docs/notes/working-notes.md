@@ -13,6 +13,42 @@ Cubey should build small, deliberate foundation contracts for established
 graphics/runtime concepts when the boundary is clear, while still avoiding a
 generic game engine or backend-agnostic renderer.
 
+## Water 3D Rendering Options
+
+As of 2026-05-22, `water_3d` simulates liquid with particles plus a grid, but
+its main particle view is a debug renderer rather than final water shading.
+Debug particles should stay opaque/cutout with depth test and depth write
+enabled. Alpha-blended splats are order-dependent, and unsorted particle-buffer
+order makes them misleading for solver inspection.
+
+For a proper water path, prioritize screen-space fluid rendering before mesh
+extraction. A practical screen-space pipeline is:
+
+1. Render particle depth into a depth texture, using sphere-impostor depth.
+2. Render additive particle thickness separately.
+3. Smooth depth/thickness, preferably with bilateral depth-aware filtering.
+4. Reconstruct normals from the smoothed depth.
+5. Composite with Fresnel reflection, refraction, Beer-Lambert absorption, and
+   optional foam/spray.
+
+This keeps the final water surface out of per-particle alpha blending and maps
+well onto the current particle data. Seb Lague's Fluid-Sim is a useful
+reference, not an oracle: it keeps separate particle, marching-cubes,
+raymarching, and screen-space renderers, and the screen-space path follows the
+depth/thickness/smoothing/normals/composite structure above. Useful entry
+points:
+
+- <https://github.com/SebLague/Fluid-Sim>
+- <https://github.com/SebLague/Fluid-Sim/tree/main/Assets/Scripts/Rendering/ScreenSpace>
+- <https://github.com/SebLague/Fluid-Sim/tree/main/Assets/Scripts/Rendering/Marching%20Cubes>
+
+Raymarching remains valuable for dense volume debug views, turbid liquid, or a
+high-quality experimental renderer, but it is likely too expensive to make the
+default clear-water path. Marching cubes can provide real geometry, but at
+modest grid resolution it tends to expose faceting/blockiness unless paired
+with a better scalar field, smoothing, higher resolution, and robust normal
+generation, so do not make it the first production water renderer.
+
 ## Current Checkpoint
 
 As of 2026-05-06:
