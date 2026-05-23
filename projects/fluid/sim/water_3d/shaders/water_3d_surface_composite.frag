@@ -18,6 +18,15 @@ layout(set = 0, binding = 4) uniform sampler2D whitewater_texture;
 layout(location = 0) in vec2 frag_uv;
 layout(location = 0) out vec4 out_color;
 
+struct WhitewaterField {
+    float coverage;
+    float foam;
+    float kind;
+    float depth;
+};
+
+float debug_depth_value(float depth);
+
 vec3 rotate_environment_direction(vec3 direction) {
     float c = surface_params.environment_options.x;
     float s = surface_params.environment_options.y;
@@ -37,8 +46,39 @@ vec3 apply_display_transform(vec3 color) {
     return cubey_pbr_apply_display_transform(color, surface_params.display_transform);
 }
 
-vec3 blend_premultiplied(vec3 base, vec4 overlay) {
-    return overlay.rgb + base * (1.0 - clamp(overlay.a, 0.0, 1.0));
+WhitewaterField read_whitewater_field(vec4 packed) {
+    float coverage = clamp(packed.a, 0.0, 1.0);
+    float inv_coverage = coverage > 0.0001 ? 1.0 / coverage : 0.0;
+    return WhitewaterField(
+        coverage,
+        clamp(packed.r, 0.0, 1.0),
+        packed.g * inv_coverage,
+        coverage > 0.0001 ? packed.b * inv_coverage : WATER3D_SURFACE_DEPTH_SENTINEL
+    );
+}
+
+float whitewater_surface_gate(WhitewaterField field, float water_depth, float thickness) {
+    if (field.coverage <= 0.0001 || !water_surface_has_depth(field.depth)) {
+        return 0.0;
+    }
+    float depth_margin = max(0.03, thickness * 0.25);
+    return 1.0 - smoothstep(water_depth + depth_margin,
+                            water_depth + depth_margin * 2.0, field.depth);
+}
+
+vec3 whitewater_debug_color(WhitewaterField field, vec3 background) {
+    if (field.coverage <= 0.0001) {
+        return background * 0.18;
+    }
+    float depth_value = debug_depth_value(field.depth);
+    vec3 foam_color = cubey_srgb_to_linear(vec3(0.78, 0.90, 0.88));
+    vec3 spray_color = cubey_srgb_to_linear(vec3(0.92, 0.96, 0.95));
+    vec3 bubble_color = cubey_srgb_to_linear(vec3(0.35, 0.58, 0.72));
+    float spray = smoothstep(0.5, 1.0, field.kind) * (1.0 - smoothstep(1.5, 2.0, field.kind));
+    float bubble = smoothstep(1.5, 2.0, field.kind);
+    vec3 kind_color = mix(mix(foam_color, spray_color, spray), bubble_color, bubble);
+    return mix(background * 0.18, kind_color * (0.35 + depth_value * 0.65),
+               clamp(field.coverage, 0.0, 1.0));
 }
 
 float clip_depth(vec3 world_position) {
@@ -60,6 +100,7 @@ float debug_thickness_value(float thickness) {
 vec3 reconstruct_normal(vec2 uv, float center_depth) {
     ivec2 texture_size = textureSize(surface_texture, 0);
     vec2 texel_size = 1.0 / vec2(texture_size);
+    vec3 center_position = water_surface_world_position(uv, center_depth);
     float left_depth = texture(surface_texture, uv - vec2(texel_size.x, 0.0)).x;
     float right_depth = texture(surface_texture, uv + vec2(texel_size.x, 0.0)).x;
     float down_depth = texture(surface_texture, uv - vec2(0.0, texel_size.y)).x;
@@ -82,8 +123,14 @@ vec3 reconstruct_normal(vec2 uv, float center_depth) {
     vec3 p_right = water_surface_world_position(uv + vec2(texel_size.x, 0.0), right_depth);
     vec3 p_down = water_surface_world_position(uv - vec2(0.0, texel_size.y), down_depth);
     vec3 p_up = water_surface_world_position(uv + vec2(0.0, texel_size.y), up_depth);
-    vec3 dpdx = p_right - p_left;
-    vec3 dpdy = p_up - p_down;
+    vec3 dpdx_right = p_right - center_position;
+    vec3 dpdx_left = center_position - p_left;
+    vec3 dpdy_up = p_up - center_position;
+    vec3 dpdy_down = center_position - p_down;
+    vec3 dpdx = abs(right_depth - center_depth) <= abs(left_depth - center_depth) ? dpdx_right
+                                                                                  : dpdx_left;
+    vec3 dpdy = abs(up_depth - center_depth) <= abs(down_depth - center_depth) ? dpdy_up
+                                                                               : dpdy_down;
     vec3 view_dir = normalize(water_surface_camera_position() -
                               water_surface_world_position(uv, center_depth));
     vec3 normal_cross = cross(dpdx, dpdy);
@@ -166,12 +213,10 @@ float foam_mask(vec2 uv, float center_depth, float thickness, vec3 position, vec
 void main() {
     vec4 surface = texture(surface_texture, frag_uv);
     vec3 background = texture(scene_color_texture, frag_uv).rgb;
-    vec4 whitewater = texture(whitewater_texture, frag_uv);
+    WhitewaterField whitewater = read_whitewater_field(texture(whitewater_texture, frag_uv));
     uint view = water_surface_render_view();
     if (view == WATER3D_SURFACE_VIEW_WHITEWATER) {
-        vec3 debug_background = background * 0.18;
-        out_color = vec4(apply_display_transform(blend_premultiplied(debug_background,
-                                                                      whitewater)),
+        out_color = vec4(apply_display_transform(whitewater_debug_color(whitewater, background)),
                          1.0);
         return;
     }
@@ -209,6 +254,8 @@ void main() {
         return;
     }
     float foam = foam_mask(frag_uv, depth, thickness, position, normal);
+    float whitewater_foam = whitewater.foam * whitewater_surface_gate(whitewater, depth, thickness);
+    foam = clamp(foam + whitewater_foam, 0.0, 1.0);
     if (view == WATER3D_SURFACE_VIEW_FOAM) {
         float debug_foam =
             clamp(foam / max(0.001, surface_params.surface_options.x), 0.0, 1.0);
@@ -224,6 +271,8 @@ void main() {
 
     vec3 absorption = vec3(1.85, 0.42, 0.08) * max(0.0, surface_params.surface_options.z);
     vec3 transmittance = exp(-absorption * max(0.0, thickness));
+    vec3 foam_color = cubey_srgb_to_linear(vec3(0.86, 0.91, 0.88)) *
+                      (0.7 + surface_params.environment_options.z * 0.3);
     vec2 normal_screen = vec2(dot(normal, water_surface_camera_right()),
                               dot(normal, water_surface_camera_up()));
     float refraction_amount = surface_params.surface_options.w *
@@ -231,19 +280,14 @@ void main() {
     vec2 refract_uv = clamp(frag_uv - normal_screen * refraction_amount, vec2(0.001),
                             vec2(0.999));
     vec3 refracted_scene = texture(scene_color_texture, refract_uv).rgb;
-    vec3 refracted = refracted_scene * transmittance;
-    vec3 reflected = sample_environment(reflect_dir);
+    vec3 refracted = mix(refracted_scene * transmittance, foam_color, foam * 0.85);
+    vec3 reflected = mix(sample_environment(reflect_dir), foam_color, foam * 0.35);
     vec3 light_dir = normalize(vec3(-0.28, 0.80, 0.52));
     vec3 half_dir = normalize(light_dir + view_dir);
-    float specular = pow(max(dot(normal, half_dir), 0.0), 96.0) * 0.22;
-    vec3 water_tint = cubey_srgb_to_linear(vec3(0.025, 0.22, 0.30)) * (1.0 - transmittance);
+    float specular = pow(max(dot(normal, half_dir), 0.0), 96.0) * 0.22 * (1.0 - foam * 0.65);
+    vec3 water_tint = cubey_srgb_to_linear(vec3(0.025, 0.22, 0.30)) * (1.0 - transmittance) *
+                      (1.0 - foam * 0.70);
     vec3 color = mix(refracted + water_tint, reflected, fresnel) + vec3(specular);
-    vec3 foam_color = cubey_srgb_to_linear(vec3(0.86, 0.91, 0.88)) *
-                      (0.7 + surface_params.environment_options.z * 0.3);
-    float whitewater_foam =
-        smoothstep(0.025, 0.22, whitewater.a) * smoothstep(0.10, 0.45, position.y);
-    foam = clamp(foam + whitewater_foam * 0.30, 0.0, 1.0);
-    color = mix(color, foam_color, foam);
 
     out_color = vec4(apply_display_transform(color), 1.0);
 }

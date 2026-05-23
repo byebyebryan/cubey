@@ -21,6 +21,7 @@ layout(location = 0) out vec2 frag_local;
 layout(location = 1) out float frag_kind;
 layout(location = 2) out float frag_age;
 layout(location = 3) out float frag_energy;
+layout(location = 4) out float frag_linear_depth;
 
 vec2 quad_corner(uint index) {
     vec2 corners[6] = vec2[](
@@ -43,6 +44,7 @@ void main() {
         frag_kind = 0.0;
         frag_age = 1.0;
         frag_energy = 0.0;
+        frag_linear_depth = WATER3D_SURFACE_DEPTH_SENTINEL;
         gl_Position = vec4(2.0, 2.0, 0.0, 1.0);
         return;
     }
@@ -61,5 +63,6 @@ void main() {
     frag_kind = kind;
     frag_age = age;
     frag_energy = state.w;
+    frag_linear_depth = length(center - water_surface_camera_position());
     gl_Position = surface_params.view_projection * vec4(world_position, 1.0);
 }

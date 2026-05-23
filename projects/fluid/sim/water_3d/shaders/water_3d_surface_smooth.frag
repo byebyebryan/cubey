@@ -20,6 +20,12 @@ float bilateral_weight(float spatial_offset, float spatial_sigma, float depth_de
     return spatial * depth;
 }
 
+float screen_space_radius_px(float world_radius, float linear_depth, float image_height) {
+    float tan_half_fovy = max(0.0001, surface_params.camera_right_tan.w);
+    float pixel_per_meter = image_height / max(0.0001, linear_depth * tan_half_fovy * 2.0);
+    return abs(world_radius) * pixel_per_meter;
+}
+
 void main() {
     vec4 center = texture(source_surface, frag_uv);
     if (!water_surface_has_depth(center.x)) {
@@ -29,8 +35,9 @@ void main() {
 
     vec2 texel_size = 1.0 / vec2(textureSize(source_surface, 0));
     vec2 direction = surface_params.particle_options.zw;
-    int radius = int(clamp(surface_params.surface_options.x, 0.0,
-                           float(WATER3D_SURFACE_MAX_SMOOTH_RADIUS)));
+    float radius_px = screen_space_radius_px(surface_params.surface_options.x, center.x,
+                                             float(textureSize(source_surface, 0).y));
+    int radius = int(clamp(ceil(radius_px), 0.0, float(WATER3D_SURFACE_MAX_SMOOTH_RADIUS)));
     if (radius <= 0 || dot(direction, direction) <= 0.0) {
         out_surface = center;
         return;

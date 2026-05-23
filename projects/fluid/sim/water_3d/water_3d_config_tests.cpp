@@ -67,9 +67,9 @@ int main() {
                 "water 3D should default to clearer surface thickness");
         require(config.surface_gap_fill_radius_px == 1.0F,
                 "water 3D should default to conservative surface gap fill");
-        require(config.surface_smoothing_radius_px == 3.0F &&
+        require(config.surface_smoothing_radius_world == 0.010F &&
                     config.surface_smoothing_iterations == 2,
-                "water 3D should default to moderate iterative surface smoothing");
+                "water 3D should default to moderate world-space surface smoothing");
         require(config.surface_depth_sigma == 0.025F && config.surface_thickness_smoothing == 0.5F,
                 "water 3D should soften thickness footprints by default");
         require(config.surface_absorption == 0.8F && config.surface_refraction_strength == 0.025F,
@@ -266,8 +266,10 @@ int main() {
                          "water 3D whitewater advection should damp particles");
         require_contains(whitewater_advect, "WATER3D_WHITEWATER_GRAVITY_SCALE",
                          "water 3D whitewater advection should apply scaled gravity");
-        require_contains(whitewater_advect, "kind = 0.0",
-                         "water 3D whitewater spray should convert to foam on reentry");
+        require_contains(whitewater_advect, "classify_whitewater_kind",
+                         "water 3D whitewater should classify foam, spray, and bubbles");
+        require_contains(whitewater_advect, "WHITEWATER_KIND_BUBBLE",
+                         "water 3D whitewater should carry explicit bubble state");
         require_contains(whitewater_emit, "free_surface_direction",
                          "water 3D whitewater emission should require free-surface particles");
         require_contains(whitewater_emit, "side_penalty",
@@ -280,8 +282,8 @@ int main() {
                          "water 3D whitewater emission should clamp per-frame emission");
         require_contains(whitewater_vert, "WATER3D_BINDING_WHITEWATER_POSITIONS",
                          "water 3D whitewater renderer should instance whitewater particles");
-        require_contains(whitewater_frag, "out_color = vec4(color * alpha, alpha)",
-                         "water 3D whitewater renderer should output premultiplied alpha");
+        require_contains(whitewater_frag, "alpha * frag_linear_depth",
+                         "water 3D whitewater renderer should output packed premultiplied depth");
         require_contains(extrapolate_shader, "read_scratch()",
                          "water 3D velocity extrapolation should ping-pong scratch buffers");
         require_contains(extrapolate_shader, "source_u_valid(uint(neighbor.x)",
@@ -341,8 +343,12 @@ int main() {
                          "water 3D surface repair should reject weakly supported fills");
         require_contains(surface_smooth, "bilateral_weight",
                          "water 3D surface smoothing should be bilateral against depth");
+        require_contains(surface_smooth, "screen_space_radius_px",
+                         "water 3D surface smoothing should convert world radius to pixels");
         require_contains(surface_smooth, "thickness_smoothing",
                          "water 3D surface smoothing should filter thickness separately");
+        require_contains(surface_composite, "dpdx_right",
+                         "water 3D surface normals should use edge-aware derivatives");
         require_contains(surface_composite, "fresnel",
                          "water 3D surface composite should include water Fresnel");
         require_contains(surface_composite, "exp(-absorption",
@@ -359,12 +365,12 @@ int main() {
                          "water 3D surface foam should prefer upward-facing free surfaces");
         require_contains(surface_composite, "WATER3D_SURFACE_VIEW_FOAM",
                          "water 3D surface composite should render the foam diagnostic view");
-        require_contains(surface_composite, "whitewater_texture",
-                         "water 3D surface composite should overlay rendered whitewater");
+        require_contains(surface_composite, "read_whitewater_field",
+                         "water 3D surface composite should decode packed whitewater fields");
         require_contains(surface_composite, "whitewater_foam",
                          "water 3D surface composite should integrate whitewater into foam");
-        require_contains(surface_composite, "blend_premultiplied",
-                         "water 3D surface composite should blend premultiplied whitewater");
+        require_contains(surface_composite, "whitewater_surface_gate",
+                         "water 3D surface composite should depth-gate whitewater foam");
         require_contains(commands, "RenderGraphFrameExecutor",
                          "water 3D surface render should be recorded through the render graph");
         require_contains(commands, "water scene",

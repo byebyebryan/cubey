@@ -270,8 +270,8 @@ class Water3DApp {
                            "%.2f");
         ImGui::SliderFloat("Surface fill px", &water_config_.surface_gap_fill_radius_px, 0.0F, 3.0F,
                            "%.1f");
-        ImGui::SliderFloat("Surface smooth px", &water_config_.surface_smoothing_radius_px, 0.0F,
-                           12.0F, "%.1f");
+        ImGui::SliderFloat("Surface smooth world", &water_config_.surface_smoothing_radius_world,
+                           0.0F, 0.04F, "%.3f");
         int surface_smoothing_iterations =
             static_cast<int>(water_config_.surface_smoothing_iterations);
         if (ImGui::SliderInt("Surface smooth passes", &surface_smoothing_iterations, 0, 8)) {

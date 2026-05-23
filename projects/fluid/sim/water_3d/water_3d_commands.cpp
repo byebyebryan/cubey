@@ -172,7 +172,7 @@ surface_push_constants(const Water3DConfig& config, const Water3DRuntimeState& r
     const std::array<float, 4> surface_options =
         filter_pass
             ? std::array<float, 4>{
-                  config.surface_smoothing_radius_px,
+                  config.surface_smoothing_radius_world,
                   config.surface_depth_sigma,
                   config.surface_gap_fill_radius_px,
                   config.surface_thickness_smoothing,

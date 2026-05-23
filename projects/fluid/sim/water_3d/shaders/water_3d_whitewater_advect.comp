@@ -35,6 +35,10 @@ layout(set = 0, binding = WATER3D_BINDING_WHITEWATER_COUNTERS, std430) buffer Wh
 
 WATER3D_SIMULATION_PARAMS;
 
+const float WHITEWATER_KIND_FOAM = 0.0;
+const float WHITEWATER_KIND_SPRAY = 1.0;
+const float WHITEWATER_KIND_BUBBLE = 2.0;
+
 uint cell_index(ivec3 coord, uint width, uint height, uint depth) {
     ivec3 clamped = ivec3(clamp(coord.x, 0, int(width) - 1),
                           clamp(coord.y, 0, int(height) - 1),
@@ -159,6 +163,61 @@ bool occupied_cell(ivec3 coord, uint width, uint height, uint depth) {
     return cell_counts.values[cell_index(coord, width, height, depth)] > 0u;
 }
 
+uint occupied_neighbor_count(ivec3 cell, uint width, uint height, uint depth) {
+    uint count = 0u;
+    for (int z = -1; z <= 1; ++z) {
+        for (int y = -1; y <= 1; ++y) {
+            for (int x = -1; x <= 1; ++x) {
+                ivec3 neighbor = cell + ivec3(x, y, z);
+                if (occupied_cell(neighbor, width, height, depth)) {
+                    count += 1u;
+                }
+            }
+        }
+    }
+    return count;
+}
+
+uint open_face_count(ivec3 cell, uint width, uint height, uint depth) {
+    uint count = 0u;
+    ivec3 offsets[6] = ivec3[](
+        ivec3(-1, 0, 0),
+        ivec3(1, 0, 0),
+        ivec3(0, -1, 0),
+        ivec3(0, 1, 0),
+        ivec3(0, 0, -1),
+        ivec3(0, 0, 1)
+    );
+    for (int index = 0; index < 6; ++index) {
+        ivec3 neighbor = cell + offsets[index];
+        if (!solid_or_outside(neighbor, width, height, depth) &&
+            !occupied_cell(neighbor, width, height, depth)) {
+            count += 1u;
+        }
+    }
+    return count;
+}
+
+float classify_whitewater_kind(float previous_kind, ivec3 cell, uint width, uint height,
+                               uint depth) {
+    bool in_liquid = occupied_cell(cell, width, height, depth);
+    uint occupied_neighbors = occupied_neighbor_count(cell, width, height, depth);
+    uint open_faces = open_face_count(cell, width, height, depth);
+    if (!in_liquid) {
+        if (occupied_neighbors == 0u) {
+            return WHITEWATER_KIND_SPRAY;
+        }
+        return previous_kind >= 0.5 ? WHITEWATER_KIND_SPRAY : WHITEWATER_KIND_FOAM;
+    }
+    if (open_faces > 0u) {
+        return WHITEWATER_KIND_FOAM;
+    }
+    if (occupied_neighbors >= 10u) {
+        return WHITEWATER_KIND_BUBBLE;
+    }
+    return WHITEWATER_KIND_FOAM;
+}
+
 void main() {
     uint id = gl_GlobalInvocationID.x;
     uint width = uint(WATER3D_GRID_WIDTH + 0.5);
@@ -188,9 +247,17 @@ void main() {
                                          height, depth);
     float drag = clamp(WATER3D_WHITEWATER_DRAG, 0.0, 1.0);
     float frame_drag = pow(max(0.001, drag), WATER3D_DT * 60.0);
-    if (kind > 0.5) {
+    bool spray = kind > 0.5 && kind < 1.5;
+    bool bubble = kind >= 1.5;
+    if (spray) {
         velocity += vec3(0.0, params.fill_options.w * WATER3D_WHITEWATER_GRAVITY_SCALE, 0.0) *
                     WATER3D_DT;
+        velocity *= frame_drag;
+        position += velocity * WATER3D_DT;
+    } else if (bubble) {
+        velocity = mix(velocity, grid_velocity, 0.55);
+        velocity.y += abs(params.fill_options.w) * WATER3D_WHITEWATER_GRAVITY_SCALE * 0.35 *
+                      WATER3D_DT;
         velocity *= frame_drag;
         position += velocity * WATER3D_DT;
     } else {
@@ -208,12 +275,17 @@ void main() {
         deactivate(id);
         return;
     }
-    if (kind > 0.5 && velocity.y < 0.0 && occupied_cell(cell, width, height, depth)) {
-        kind = 0.0;
+    float next_kind = classify_whitewater_kind(kind, cell, width, height, depth);
+    if (kind > 0.5 && next_kind == WHITEWATER_KIND_FOAM) {
         velocity = mix(velocity, grid_velocity, 0.65);
         state.x = max(0.45, WATER3D_WHITEWATER_LIFETIME * 0.8);
         state.z = max(state.z, 0.85);
     }
+    if (kind != WHITEWATER_KIND_BUBBLE && next_kind == WHITEWATER_KIND_BUBBLE) {
+        state.x = max(state.x, WATER3D_WHITEWATER_LIFETIME * 1.4);
+        state.z = max(state.z, 0.65);
+    }
+    kind = next_kind;
 
     whitewater_positions.values[id] = vec4(position, 1.0);
     whitewater_velocities.values[id] = vec4(velocity, age);
