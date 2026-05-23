@@ -50,6 +50,9 @@ Metric categories:
   split, neighborhood cell visits, scanned particle slots, positive/zero-weight
   particle candidates, APIC sample count, max cell occupancy seen by P2G, and
   derived ratios such as average slots per processed face.
+- `water_3d.p2g.histogram`: per-face buckets for candidate particle slots,
+  positive-weight candidates, and overpacked neighbor-cell counts. These rows
+  show whether P2G time is broad uniform work or a smaller set of heavy faces.
 
 ## Current Results
 

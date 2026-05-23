@@ -208,6 +208,56 @@ void record_water_3d_diagnostics(cubey::profiling::ProfileRecorder& recorder,
                             Water3DDiagnosticSlot::P2GApicParticleSamplesHigh));
     const double p2g_invalid_face_ids =
         static_cast<double>(slot(Water3DDiagnosticSlot::P2GInvalidFaceIds));
+    const double p2g_candidate_slots_0 =
+        static_cast<double>(slot(Water3DDiagnosticSlot::P2GCandidateSlotsBin0));
+    const double p2g_candidate_slots_1_to_32 =
+        static_cast<double>(slot(Water3DDiagnosticSlot::P2GCandidateSlotsBin1To32));
+    const double p2g_candidate_slots_33_to_64 =
+        static_cast<double>(slot(Water3DDiagnosticSlot::P2GCandidateSlotsBin33To64));
+    const double p2g_candidate_slots_65_to_96 =
+        static_cast<double>(slot(Water3DDiagnosticSlot::P2GCandidateSlotsBin65To96));
+    const double p2g_candidate_slots_97_to_128 =
+        static_cast<double>(slot(Water3DDiagnosticSlot::P2GCandidateSlotsBin97To128));
+    const double p2g_candidate_slots_129_to_192 =
+        static_cast<double>(slot(Water3DDiagnosticSlot::P2GCandidateSlotsBin129To192));
+    const double p2g_candidate_slots_193_to_384 =
+        static_cast<double>(slot(Water3DDiagnosticSlot::P2GCandidateSlotsBin193To384));
+    const double p2g_candidate_slots_385_plus =
+        static_cast<double>(slot(Water3DDiagnosticSlot::P2GCandidateSlotsBin385Plus));
+    const double p2g_positive_candidates_0 =
+        static_cast<double>(slot(Water3DDiagnosticSlot::P2GPositiveCandidatesBin0));
+    const double p2g_positive_candidates_1_to_3 =
+        static_cast<double>(slot(Water3DDiagnosticSlot::P2GPositiveCandidatesBin1To3));
+    const double p2g_positive_candidates_4_to_7 =
+        static_cast<double>(slot(Water3DDiagnosticSlot::P2GPositiveCandidatesBin4To7));
+    const double p2g_positive_candidates_8_to_15 =
+        static_cast<double>(slot(Water3DDiagnosticSlot::P2GPositiveCandidatesBin8To15));
+    const double p2g_positive_candidates_16_to_31 =
+        static_cast<double>(slot(Water3DDiagnosticSlot::P2GPositiveCandidatesBin16To31));
+    const double p2g_positive_candidates_32_to_63 =
+        static_cast<double>(slot(Water3DDiagnosticSlot::P2GPositiveCandidatesBin32To63));
+    const double p2g_positive_candidates_64_to_127 =
+        static_cast<double>(slot(Water3DDiagnosticSlot::P2GPositiveCandidatesBin64To127));
+    const double p2g_positive_candidates_128_plus =
+        static_cast<double>(slot(Water3DDiagnosticSlot::P2GPositiveCandidatesBin128Plus));
+    const double p2g_overpacked_neighbors_0 =
+        static_cast<double>(slot(Water3DDiagnosticSlot::P2GOverpackedNeighborCellsBin0));
+    const double p2g_overpacked_neighbors_1 =
+        static_cast<double>(slot(Water3DDiagnosticSlot::P2GOverpackedNeighborCellsBin1));
+    const double p2g_overpacked_neighbors_2_to_3 =
+        static_cast<double>(slot(Water3DDiagnosticSlot::P2GOverpackedNeighborCellsBin2To3));
+    const double p2g_overpacked_neighbors_4_to_7 =
+        static_cast<double>(slot(Water3DDiagnosticSlot::P2GOverpackedNeighborCellsBin4To7));
+    const double p2g_overpacked_neighbors_8_plus =
+        static_cast<double>(slot(Water3DDiagnosticSlot::P2GOverpackedNeighborCellsBin8Plus));
+    const double p2g_max_candidate_slots_per_face =
+        static_cast<double>(slot(Water3DDiagnosticSlot::P2GMaxCandidateSlotsPerFace));
+    const double p2g_zero_weight_u_faces =
+        static_cast<double>(slot(Water3DDiagnosticSlot::P2GZeroWeightUFaces));
+    const double p2g_zero_weight_v_faces =
+        static_cast<double>(slot(Water3DDiagnosticSlot::P2GZeroWeightVFaces));
+    const double p2g_zero_weight_w_faces =
+        static_cast<double>(slot(Water3DDiagnosticSlot::P2GZeroWeightWFaces));
 
     record_metric(recorder, frame_index, "water_3d.workload", "active_particles", active_particles);
     record_metric(recorder, frame_index, "water_3d.workload", "inactive_scan_particles",
@@ -272,6 +322,14 @@ void record_water_3d_diagnostics(cubey::profiling::ProfileRecorder& recorder,
     record_metric(recorder, frame_index, "water_3d.p2g", "apic_particle_samples",
                   p2g_apic_particle_samples);
     record_metric(recorder, frame_index, "water_3d.p2g", "invalid_face_ids", p2g_invalid_face_ids);
+    record_metric(recorder, frame_index, "water_3d.p2g", "max_candidate_slots_per_face",
+                  p2g_max_candidate_slots_per_face);
+    record_metric(recorder, frame_index, "water_3d.p2g", "zero_weight_u_faces",
+                  p2g_zero_weight_u_faces);
+    record_metric(recorder, frame_index, "water_3d.p2g", "zero_weight_v_faces",
+                  p2g_zero_weight_v_faces);
+    record_metric(recorder, frame_index, "water_3d.p2g", "zero_weight_w_faces",
+                  p2g_zero_weight_w_faces);
     record_metric(recorder, frame_index, "water_3d.p2g", "avg_slots_per_face",
                   p2g_faces_processed > 0.0 ? p2g_cell_particle_slots_scanned / p2g_faces_processed
                                             : 0.0);
@@ -286,6 +344,60 @@ void record_water_3d_diagnostics(cubey::profiling::ProfileRecorder& recorder,
                   p2g_neighbor_cells_tested > 0.0
                       ? p2g_neighbor_cells_in_bounds / p2g_neighbor_cells_tested
                       : 0.0);
+    record_metric(recorder, frame_index, "water_3d.p2g", "high_candidate_face_ratio",
+                  p2g_faces_processed > 0.0
+                      ? (p2g_candidate_slots_129_to_192 + p2g_candidate_slots_193_to_384 +
+                         p2g_candidate_slots_385_plus) /
+                            p2g_faces_processed
+                      : 0.0);
+    record_metric(recorder, frame_index, "water_3d.p2g", "overpacked_neighbor_face_ratio",
+                  p2g_faces_processed > 0.0
+                      ? (p2g_overpacked_neighbors_1 + p2g_overpacked_neighbors_2_to_3 +
+                         p2g_overpacked_neighbors_4_to_7 + p2g_overpacked_neighbors_8_plus) /
+                            p2g_faces_processed
+                      : 0.0);
+    record_metric(recorder, frame_index, "water_3d.p2g.histogram", "candidate_slots_0",
+                  p2g_candidate_slots_0);
+    record_metric(recorder, frame_index, "water_3d.p2g.histogram", "candidate_slots_1_32",
+                  p2g_candidate_slots_1_to_32);
+    record_metric(recorder, frame_index, "water_3d.p2g.histogram", "candidate_slots_33_64",
+                  p2g_candidate_slots_33_to_64);
+    record_metric(recorder, frame_index, "water_3d.p2g.histogram", "candidate_slots_65_96",
+                  p2g_candidate_slots_65_to_96);
+    record_metric(recorder, frame_index, "water_3d.p2g.histogram", "candidate_slots_97_128",
+                  p2g_candidate_slots_97_to_128);
+    record_metric(recorder, frame_index, "water_3d.p2g.histogram", "candidate_slots_129_192",
+                  p2g_candidate_slots_129_to_192);
+    record_metric(recorder, frame_index, "water_3d.p2g.histogram", "candidate_slots_193_384",
+                  p2g_candidate_slots_193_to_384);
+    record_metric(recorder, frame_index, "water_3d.p2g.histogram", "candidate_slots_385_plus",
+                  p2g_candidate_slots_385_plus);
+    record_metric(recorder, frame_index, "water_3d.p2g.histogram", "positive_candidates_0",
+                  p2g_positive_candidates_0);
+    record_metric(recorder, frame_index, "water_3d.p2g.histogram", "positive_candidates_1_3",
+                  p2g_positive_candidates_1_to_3);
+    record_metric(recorder, frame_index, "water_3d.p2g.histogram", "positive_candidates_4_7",
+                  p2g_positive_candidates_4_to_7);
+    record_metric(recorder, frame_index, "water_3d.p2g.histogram", "positive_candidates_8_15",
+                  p2g_positive_candidates_8_to_15);
+    record_metric(recorder, frame_index, "water_3d.p2g.histogram", "positive_candidates_16_31",
+                  p2g_positive_candidates_16_to_31);
+    record_metric(recorder, frame_index, "water_3d.p2g.histogram", "positive_candidates_32_63",
+                  p2g_positive_candidates_32_to_63);
+    record_metric(recorder, frame_index, "water_3d.p2g.histogram", "positive_candidates_64_127",
+                  p2g_positive_candidates_64_to_127);
+    record_metric(recorder, frame_index, "water_3d.p2g.histogram", "positive_candidates_128_plus",
+                  p2g_positive_candidates_128_plus);
+    record_metric(recorder, frame_index, "water_3d.p2g.histogram", "overpacked_neighbors_0",
+                  p2g_overpacked_neighbors_0);
+    record_metric(recorder, frame_index, "water_3d.p2g.histogram", "overpacked_neighbors_1",
+                  p2g_overpacked_neighbors_1);
+    record_metric(recorder, frame_index, "water_3d.p2g.histogram", "overpacked_neighbors_2_3",
+                  p2g_overpacked_neighbors_2_to_3);
+    record_metric(recorder, frame_index, "water_3d.p2g.histogram", "overpacked_neighbors_4_7",
+                  p2g_overpacked_neighbors_4_to_7);
+    record_metric(recorder, frame_index, "water_3d.p2g.histogram", "overpacked_neighbors_8_plus",
+                  p2g_overpacked_neighbors_8_plus);
 }
 
 [[nodiscard]] std::filesystem::path bundled_sample_environment_path() {

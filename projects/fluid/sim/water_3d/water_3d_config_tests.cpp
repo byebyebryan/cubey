@@ -372,6 +372,12 @@ int main() {
                          "water 3D diagnostics should mirror P2G face neighborhood traversal");
         require_contains(diagnostics_shader, "active_face_indices.values[active_slot]",
                          "water 3D diagnostics should scan compacted active faces");
+        require_contains(diagnostics_shader, "record_candidate_slot_bucket",
+                         "water 3D diagnostics should bucket P2G candidate slots per face");
+        require_contains(diagnostics_shader, "SLOT_P2G_CANDIDATE_SLOTS_BIN_385_PLUS",
+                         "water 3D diagnostics should capture heavy P2G candidate faces");
+        require_contains(diagnostics_shader, "SLOT_P2G_OVERPACKED_NEIGHBOR_CELLS_BIN_8_PLUS",
+                         "water 3D diagnostics should bucket overpacked P2G neighborhoods");
         require_contains(whitewater_vert, "WATER3D_BINDING_WHITEWATER_POSITIONS",
                          "water 3D whitewater renderer should instance whitewater particles");
         require_contains(whitewater_vert, "whitewater_active_indices.values[active_slot]",
@@ -501,6 +507,10 @@ int main() {
                          "water 3D headless diagnostics should record profile metrics");
         require_contains(app, "water_3d.p2g",
                          "water 3D headless diagnostics should export P2G scan metrics");
+        require_contains(app, "water_3d.p2g.histogram",
+                         "water 3D headless diagnostics should export P2G histogram metrics");
+        require_contains(app, "high_candidate_face_ratio",
+                         "water 3D headless diagnostics should derive heavy candidate ratios");
         require_contains(commands, "water whitewater",
                          "water 3D surface render should render whitewater before composite");
         require_contains(gpu_resources, "water_3d_active_face_dispatch_args.comp.spv",

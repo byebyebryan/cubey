@@ -44,6 +44,6 @@ Common runs:
 Profiling writes frame, pass, metric CSVs, Chrome trace JSON, and a text summary
 under `outputs/profiles/` when the prefix has no directory component.
 `--profile-diagnostics` is opt-in because it adds readback-oriented diagnostic
-passes for workload, P2G scan, solver residual, and whitewater counters. Use
-`--profile-diagnostic-interval N` to sample the diagnostic passes and readbacks
-less frequently during longer captures.
+passes for workload, P2G scan/histograms, solver residual, and whitewater
+counters. Use `--profile-diagnostic-interval N` to sample the diagnostic passes
+and readbacks less frequently during longer captures.

@@ -89,6 +89,31 @@ const uint SLOT_P2G_OVERPACKED_CELL_VISITS = 35u;
 const uint SLOT_P2G_APIC_PARTICLE_SAMPLES = 36u;
 const uint SLOT_P2G_APIC_PARTICLE_SAMPLES_HIGH = 37u;
 const uint SLOT_P2G_INVALID_FACE_IDS = 38u;
+const uint SLOT_P2G_CANDIDATE_SLOTS_BIN_0 = 39u;
+const uint SLOT_P2G_CANDIDATE_SLOTS_BIN_1_TO_32 = 40u;
+const uint SLOT_P2G_CANDIDATE_SLOTS_BIN_33_TO_64 = 41u;
+const uint SLOT_P2G_CANDIDATE_SLOTS_BIN_65_TO_96 = 42u;
+const uint SLOT_P2G_CANDIDATE_SLOTS_BIN_97_TO_128 = 43u;
+const uint SLOT_P2G_CANDIDATE_SLOTS_BIN_129_TO_192 = 44u;
+const uint SLOT_P2G_CANDIDATE_SLOTS_BIN_193_TO_384 = 45u;
+const uint SLOT_P2G_CANDIDATE_SLOTS_BIN_385_PLUS = 46u;
+const uint SLOT_P2G_POSITIVE_CANDIDATES_BIN_0 = 47u;
+const uint SLOT_P2G_POSITIVE_CANDIDATES_BIN_1_TO_3 = 48u;
+const uint SLOT_P2G_POSITIVE_CANDIDATES_BIN_4_TO_7 = 49u;
+const uint SLOT_P2G_POSITIVE_CANDIDATES_BIN_8_TO_15 = 50u;
+const uint SLOT_P2G_POSITIVE_CANDIDATES_BIN_16_TO_31 = 51u;
+const uint SLOT_P2G_POSITIVE_CANDIDATES_BIN_32_TO_63 = 52u;
+const uint SLOT_P2G_POSITIVE_CANDIDATES_BIN_64_TO_127 = 53u;
+const uint SLOT_P2G_POSITIVE_CANDIDATES_BIN_128_PLUS = 54u;
+const uint SLOT_P2G_OVERPACKED_NEIGHBOR_CELLS_BIN_0 = 55u;
+const uint SLOT_P2G_OVERPACKED_NEIGHBOR_CELLS_BIN_1 = 56u;
+const uint SLOT_P2G_OVERPACKED_NEIGHBOR_CELLS_BIN_2_TO_3 = 57u;
+const uint SLOT_P2G_OVERPACKED_NEIGHBOR_CELLS_BIN_4_TO_7 = 58u;
+const uint SLOT_P2G_OVERPACKED_NEIGHBOR_CELLS_BIN_8_PLUS = 59u;
+const uint SLOT_P2G_MAX_CANDIDATE_SLOTS_PER_FACE = 60u;
+const uint SLOT_P2G_ZERO_WEIGHT_U_FACES = 61u;
+const uint SLOT_P2G_ZERO_WEIGHT_V_FACES = 62u;
+const uint SLOT_P2G_ZERO_WEIGHT_W_FACES = 63u;
 const uint DIAGNOSTIC_SLOT_COUNT = 64u;
 const float DIVERGENCE_SCALE = 1000000.0;
 
@@ -152,6 +177,61 @@ void atomic_add_u64(uint low_slot, uint high_slot, uint value) {
     uint previous = atomicAdd(diagnostics.values[low_slot], value);
     if (previous > 0xffffffffu - value) {
         atomicAdd(diagnostics.values[high_slot], 1u);
+    }
+}
+
+void record_candidate_slot_bucket(uint candidate_slots) {
+    atomicMax(diagnostics.values[SLOT_P2G_MAX_CANDIDATE_SLOTS_PER_FACE], candidate_slots);
+    if (candidate_slots == 0u) {
+        atomicAdd(diagnostics.values[SLOT_P2G_CANDIDATE_SLOTS_BIN_0], 1u);
+    } else if (candidate_slots <= 32u) {
+        atomicAdd(diagnostics.values[SLOT_P2G_CANDIDATE_SLOTS_BIN_1_TO_32], 1u);
+    } else if (candidate_slots <= 64u) {
+        atomicAdd(diagnostics.values[SLOT_P2G_CANDIDATE_SLOTS_BIN_33_TO_64], 1u);
+    } else if (candidate_slots <= 96u) {
+        atomicAdd(diagnostics.values[SLOT_P2G_CANDIDATE_SLOTS_BIN_65_TO_96], 1u);
+    } else if (candidate_slots <= 128u) {
+        atomicAdd(diagnostics.values[SLOT_P2G_CANDIDATE_SLOTS_BIN_97_TO_128], 1u);
+    } else if (candidate_slots <= 192u) {
+        atomicAdd(diagnostics.values[SLOT_P2G_CANDIDATE_SLOTS_BIN_129_TO_192], 1u);
+    } else if (candidate_slots <= 384u) {
+        atomicAdd(diagnostics.values[SLOT_P2G_CANDIDATE_SLOTS_BIN_193_TO_384], 1u);
+    } else {
+        atomicAdd(diagnostics.values[SLOT_P2G_CANDIDATE_SLOTS_BIN_385_PLUS], 1u);
+    }
+}
+
+void record_positive_candidate_bucket(uint positive_candidates) {
+    if (positive_candidates == 0u) {
+        atomicAdd(diagnostics.values[SLOT_P2G_POSITIVE_CANDIDATES_BIN_0], 1u);
+    } else if (positive_candidates <= 3u) {
+        atomicAdd(diagnostics.values[SLOT_P2G_POSITIVE_CANDIDATES_BIN_1_TO_3], 1u);
+    } else if (positive_candidates <= 7u) {
+        atomicAdd(diagnostics.values[SLOT_P2G_POSITIVE_CANDIDATES_BIN_4_TO_7], 1u);
+    } else if (positive_candidates <= 15u) {
+        atomicAdd(diagnostics.values[SLOT_P2G_POSITIVE_CANDIDATES_BIN_8_TO_15], 1u);
+    } else if (positive_candidates <= 31u) {
+        atomicAdd(diagnostics.values[SLOT_P2G_POSITIVE_CANDIDATES_BIN_16_TO_31], 1u);
+    } else if (positive_candidates <= 63u) {
+        atomicAdd(diagnostics.values[SLOT_P2G_POSITIVE_CANDIDATES_BIN_32_TO_63], 1u);
+    } else if (positive_candidates <= 127u) {
+        atomicAdd(diagnostics.values[SLOT_P2G_POSITIVE_CANDIDATES_BIN_64_TO_127], 1u);
+    } else {
+        atomicAdd(diagnostics.values[SLOT_P2G_POSITIVE_CANDIDATES_BIN_128_PLUS], 1u);
+    }
+}
+
+void record_overpacked_neighbor_bucket(uint overpacked_neighbor_cells) {
+    if (overpacked_neighbor_cells == 0u) {
+        atomicAdd(diagnostics.values[SLOT_P2G_OVERPACKED_NEIGHBOR_CELLS_BIN_0], 1u);
+    } else if (overpacked_neighbor_cells == 1u) {
+        atomicAdd(diagnostics.values[SLOT_P2G_OVERPACKED_NEIGHBOR_CELLS_BIN_1], 1u);
+    } else if (overpacked_neighbor_cells <= 3u) {
+        atomicAdd(diagnostics.values[SLOT_P2G_OVERPACKED_NEIGHBOR_CELLS_BIN_2_TO_3], 1u);
+    } else if (overpacked_neighbor_cells <= 7u) {
+        atomicAdd(diagnostics.values[SLOT_P2G_OVERPACKED_NEIGHBOR_CELLS_BIN_4_TO_7], 1u);
+    } else {
+        atomicAdd(diagnostics.values[SLOT_P2G_OVERPACKED_NEIGHBOR_CELLS_BIN_8_PLUS], 1u);
     }
 }
 
@@ -258,9 +338,12 @@ void record_whitewater(uint id) {
 }
 
 void record_p2g_face_scan(vec3 face_grid_position, uint width, uint height, uint depth,
-                          uint max_particles_per_cell) {
+                          uint max_particles_per_cell, uint zero_weight_axis_slot) {
     ivec3 base = ivec3(floor(face_grid_position));
     float total_weight = 0.0;
+    uint candidate_slots = 0u;
+    uint positive_candidates = 0u;
+    uint overpacked_neighbor_cells = 0u;
 
     for (int oz = -1; oz <= 1; ++oz) {
         for (int oy = -1; oy <= 1; ++oy) {
@@ -280,9 +363,11 @@ void record_p2g_face_scan(vec3 face_grid_position, uint width, uint height, uint
                 }
                 if (raw_count > max_particles_per_cell) {
                     atomicAdd(diagnostics.values[SLOT_P2G_OVERPACKED_CELL_VISITS], 1u);
+                    overpacked_neighbor_cells += 1u;
                 }
 
                 uint count = min(raw_count, max_particles_per_cell);
+                candidate_slots += count;
                 atomic_add_u64(SLOT_P2G_CELL_PARTICLE_SLOTS_SCANNED,
                                SLOT_P2G_CELL_PARTICLE_SLOTS_SCANNED_HIGH, count);
                 for (uint slot = 0u; slot < count; ++slot) {
@@ -305,6 +390,7 @@ void record_p2g_face_scan(vec3 face_grid_position, uint width, uint height, uint
                     }
 
                     total_weight += weight;
+                    positive_candidates += 1u;
                     atomic_add_u64(SLOT_P2G_WEIGHT_POSITIVE_PARTICLES,
                                    SLOT_P2G_WEIGHT_POSITIVE_PARTICLES_HIGH, 1u);
                     if (apic_transfer_mode()) {
@@ -316,8 +402,12 @@ void record_p2g_face_scan(vec3 face_grid_position, uint width, uint height, uint
         }
     }
 
+    record_candidate_slot_bucket(candidate_slots);
+    record_positive_candidate_bucket(positive_candidates);
+    record_overpacked_neighbor_bucket(overpacked_neighbor_cells);
     if (total_weight <= 0.00001) {
         atomicAdd(diagnostics.values[SLOT_P2G_ZERO_WEIGHT_FACES], 1u);
+        atomicAdd(diagnostics.values[zero_weight_axis_slot], 1u);
     }
 }
 
@@ -351,7 +441,7 @@ void record_p2g_scan(uint active_slot, uint width, uint height, uint depth,
         atomicAdd(diagnostics.values[SLOT_P2G_FACES_PROCESSED], 1u);
         atomicAdd(diagnostics.values[SLOT_P2G_U_FACES_PROCESSED], 1u);
         record_p2g_face_scan(vec3(float(x), float(y) + 0.5, float(z) + 0.5), width, height,
-                             depth, max_particles_per_cell);
+                             depth, max_particles_per_cell, SLOT_P2G_ZERO_WEIGHT_U_FACES);
         return;
     }
 
@@ -368,7 +458,7 @@ void record_p2g_scan(uint active_slot, uint width, uint height, uint depth,
         atomicAdd(diagnostics.values[SLOT_P2G_FACES_PROCESSED], 1u);
         atomicAdd(diagnostics.values[SLOT_P2G_V_FACES_PROCESSED], 1u);
         record_p2g_face_scan(vec3(float(x) + 0.5, float(y), float(z) + 0.5), width, height,
-                             depth, max_particles_per_cell);
+                             depth, max_particles_per_cell, SLOT_P2G_ZERO_WEIGHT_V_FACES);
         return;
     }
 
@@ -384,7 +474,7 @@ void record_p2g_scan(uint active_slot, uint width, uint height, uint depth,
     atomicAdd(diagnostics.values[SLOT_P2G_FACES_PROCESSED], 1u);
     atomicAdd(diagnostics.values[SLOT_P2G_W_FACES_PROCESSED], 1u);
     record_p2g_face_scan(vec3(float(x) + 0.5, float(y) + 0.5, float(z)), width, height, depth,
-                         max_particles_per_cell);
+                         max_particles_per_cell, SLOT_P2G_ZERO_WEIGHT_W_FACES);
 }
 
 void main() {
