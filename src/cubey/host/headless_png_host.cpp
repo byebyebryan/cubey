@@ -182,8 +182,10 @@ struct HeadlessCaptureSlot {
 HeadlessPngContext::HeadlessPngContext(const RunConfig& config, cubey::vulkan::Instance& instance,
                                        cubey::vulkan::Device& device,
                                        cubey::vulkan::GpuRuntime& gpu,
-                                       const HeadlessRenderTarget& target)
-    : config_(config), instance_(instance), device_(device), gpu_(gpu), target_(target) {}
+                                       const HeadlessRenderTarget& target,
+                                       cubey::profiling::ProfileRecorder* profile_recorder)
+    : config_(config), instance_(instance), device_(device), gpu_(gpu), target_(target),
+      profile_recorder_(profile_recorder) {}
 
 std::size_t headless_png_byte_size(std::uint32_t width, std::uint32_t height) {
     if (width == 0 || height == 0) {
@@ -251,6 +253,7 @@ HeadlessCaptureFrame headless_capture_frame(const RunConfig& config, std::uint32
 HeadlessPngHost::HeadlessPngHost(HeadlessPngHostConfig config, HeadlessPngHostCallbacks callbacks)
     : config_(std::move(config)), callbacks_(std::move(callbacks)) {
     validate_config(config_, callbacks_);
+    create_profile_recorder();
 }
 
 HeadlessPngHost::~HeadlessPngHost() {
@@ -275,35 +278,46 @@ int HeadlessPngHost::run() {
         .image = render_target_image.handle(),
         .view = render_target_image.view(),
     };
-    HeadlessPngContext context(config_.run_config, instance(), device(), gpu(), target);
+    HeadlessPngContext context(config_.run_config, instance(), device(), gpu(), target,
+                               profile_recorder());
 
     if (callbacks_.create_resources) {
+        [[maybe_unused]] auto span = profile_span(0, "headless.create_resources");
         callbacks_.create_resources(context);
     }
     drain_gpu_work();
     if (callbacks_.before_capture) {
+        [[maybe_unused]] auto span = profile_span(0, "headless.before_capture");
         callbacks_.before_capture(context);
     }
     drain_gpu_work();
 
     if (config_.run_config.capture_mode == CaptureMode::Video) {
+        [[maybe_unused]] auto span = profile_span(0, "headless.write_video");
         write_video(context, target);
     } else {
         const HeadlessCaptureFrame frame = headless_capture_frame(config_.run_config, 0);
         if (callbacks_.before_frame) {
+            [[maybe_unused]] auto span = profile_span(frame.index, "headless.before_frame");
             callbacks_.before_frame(context, frame);
             drain_gpu_work();
         }
         record_capture(context, target, frame);
-        write_png(target);
+        record_profile_frame(frame, target);
+        {
+            [[maybe_unused]] auto span = profile_span(frame.index, "headless.write_png");
+            write_png(target);
+        }
     }
     device().wait_idle();
 
     drain_gpu_work();
     if (callbacks_.shutdown) {
+        [[maybe_unused]] auto span = profile_span(0, "headless.shutdown");
         callbacks_.shutdown(context);
         drain_gpu_work();
     }
+    write_profile_outputs();
     return 0;
 }
 
@@ -339,12 +353,66 @@ void HeadlessPngHost::create_project_gpu_services() {
     project_gpu_.emplace(gpu(), uploads_, deferred_destruction_);
 }
 
+void HeadlessPngHost::create_profile_recorder() {
+    if (config_.run_config.profile_output_prefix.empty()) {
+        return;
+    }
+    profile_recorder_.emplace(cubey::profiling::ProfileRecorderConfig{
+        .output_prefix = config_.run_config.profile_output_prefix,
+        .warmup_frames = config_.run_config.profile_warmup_frames,
+    });
+}
+
+void HeadlessPngHost::write_profile_outputs() {
+    if (!profile_recorder_.has_value()) {
+        return;
+    }
+    profile_recorder_->write_outputs();
+    const std::string prefix = profile_recorder_->config().output_prefix.string();
+    std::printf("profile: wrote %s.{frames.csv,passes.csv,trace.json,summary.txt}\n",
+                prefix.c_str());
+}
+
 void HeadlessPngHost::drain_gpu_work() {
     static_cast<void>(gpu().drain());
 }
 
+cubey::profiling::ProfileRecorder* HeadlessPngHost::profile_recorder() {
+    return profile_recorder_.has_value() ? &profile_recorder_.value() : nullptr;
+}
+
+cubey::profiling::ScopedCpuProfileSpan HeadlessPngHost::profile_span(std::uint64_t frame_index,
+                                                                     std::string_view label) {
+    cubey::profiling::ProfileRecorder* recorder = profile_recorder();
+    if (recorder == nullptr) {
+        return {};
+    }
+    return recorder->cpu_span(frame_index, label);
+}
+
+void HeadlessPngHost::record_profile_frame(const HeadlessCaptureFrame& frame,
+                                           const HeadlessRenderTarget& target) {
+    cubey::profiling::ProfileRecorder* recorder = profile_recorder();
+    if (recorder == nullptr) {
+        return;
+    }
+    const cubey::vulkan::DeviceMemoryBudgetInfo memory = device().device_memory_budget();
+    recorder->record_frame({
+        .frame_index = frame.index,
+        .delta_seconds = frame.timing.delta_seconds,
+        .width = target.extent.width,
+        .height = target.extent.height,
+        .triangles = 0,
+        .memory_budget_available = memory.available,
+        .device_local_usage = memory.device_local_usage,
+        .device_local_budget = memory.device_local_budget,
+        .device_local_heap_size = memory.device_local_heap_size,
+    });
+}
+
 void HeadlessPngHost::record_capture(HeadlessPngContext& context, const HeadlessRenderTarget& target,
                                      const HeadlessCaptureFrame& frame) {
+    [[maybe_unused]] auto span = profile_span(frame.index, "headless.record_capture");
     static_cast<void>(gpu().enqueue(cubey::vulkan::GpuWorkRequest{
         .label = "headless PNG capture",
         .work =
@@ -432,6 +500,7 @@ void HeadlessPngHost::write_video(HeadlessPngContext& context, const HeadlessRen
 
     auto submit_slot = [this](HeadlessPngContext& frame_context, HeadlessCaptureSlot& slot,
                               HeadlessCaptureFrame frame) {
+        [[maybe_unused]] auto span = profile_span(frame.index, "headless.submit_video_frame");
         static_cast<void>(gpu().enqueue(cubey::vulkan::GpuWorkRequest{
             .label = "headless video capture",
             .work =
@@ -484,12 +553,14 @@ void HeadlessPngHost::write_video(HeadlessPngContext& context, const HeadlessRen
 
         const HeadlessCaptureFrame frame = headless_capture_frame(config_.run_config, index);
         HeadlessPngContext frame_context(config_.run_config, instance(), device(), gpu(),
-                                         slot.target);
+                                         slot.target, profile_recorder());
         if (callbacks_.before_frame) {
+            [[maybe_unused]] auto span = profile_span(frame.index, "headless.before_frame");
             callbacks_.before_frame(frame_context, frame);
             drain_gpu_work();
         }
         submit_slot(frame_context, slot, frame);
+        record_profile_frame(frame, slot.target);
     }
     for (const std::unique_ptr<HeadlessCaptureSlot>& slot : slots) {
         wait_for_slot(*slot);

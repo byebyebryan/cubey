@@ -35,6 +35,7 @@ add_executable(cubey_core_tests
     orbit_controller_tests.cpp
     forward_pbr_renderer_3d_tests.cpp
     pipeline_tests.cpp
+    profiling_tests.cpp
     project_gpu_services_tests.cpp
     project_runtime_tests.cpp
     queue_submit_tests.cpp

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cubey/core/frame_clock.h>
+#include <cubey/core/profiling.h>
 #include <cubey/core/run_config.h>
 #include <cubey/engine/project_gpu_services.h>
 #include <cubey/render/frame_data.h>
@@ -16,6 +17,7 @@
 #include <cstdint>
 #include <functional>
 #include <optional>
+#include <string_view>
 
 namespace cubey::host {
 
@@ -32,7 +34,8 @@ class HeadlessPngContext {
   public:
     HeadlessPngContext(const RunConfig& config, cubey::vulkan::Instance& instance,
                        cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu,
-                       const HeadlessRenderTarget& target);
+                       const HeadlessRenderTarget& target,
+                       cubey::profiling::ProfileRecorder* profile_recorder);
 
     [[nodiscard]] const RunConfig& config() const {
         return config_;
@@ -49,6 +52,9 @@ class HeadlessPngContext {
     [[nodiscard]] const HeadlessRenderTarget& render_target() const {
         return target_;
     }
+    [[nodiscard]] cubey::profiling::ProfileRecorder* profile_recorder() const {
+        return profile_recorder_;
+    }
 
   private:
     const RunConfig& config_;
@@ -56,6 +62,7 @@ class HeadlessPngContext {
     cubey::vulkan::Device& device_;
     cubey::vulkan::GpuRuntime& gpu_;
     const HeadlessRenderTarget& target_;
+    cubey::profiling::ProfileRecorder* profile_recorder_ = nullptr;
 };
 
 struct HeadlessPngHostConfig {
@@ -101,7 +108,14 @@ class HeadlessPngHost {
     void create_submission_coordinator();
     void create_gpu_runtime();
     void create_project_gpu_services();
+    void create_profile_recorder();
+    void write_profile_outputs();
     void drain_gpu_work();
+    [[nodiscard]] cubey::profiling::ProfileRecorder* profile_recorder();
+    [[nodiscard]] cubey::profiling::ScopedCpuProfileSpan profile_span(std::uint64_t frame_index,
+                                                                      std::string_view label);
+    void record_profile_frame(const HeadlessCaptureFrame& frame,
+                              const HeadlessRenderTarget& target);
     void record_capture(HeadlessPngContext& context, const HeadlessRenderTarget& target,
                         const HeadlessCaptureFrame& frame);
     [[nodiscard]] ProjectGpuReadbackResult readback_target(const HeadlessRenderTarget& target,
@@ -124,6 +138,7 @@ class HeadlessPngHost {
     std::optional<cubey::vulkan::SubmissionCoordinator> submission_;
     std::optional<cubey::vulkan::GpuRuntime> gpu_;
     std::optional<ProjectGpuServices> project_gpu_;
+    std::optional<cubey::profiling::ProfileRecorder> profile_recorder_;
 };
 
 } // namespace cubey::host

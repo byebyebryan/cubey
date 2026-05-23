@@ -49,6 +49,32 @@ modest grid resolution it tends to expose faceting/blockiness unless paired
 with a better scalar field, smoothing, higher resolution, and robust normal
 generation, so do not make it the first production water renderer.
 
+Surface particle compaction is currently unsafe for the screen-space water
+renderer. The present depth/thickness reconstruction expects the full active
+water particle population; compacting to a thinner "surface" subset changed
+coverage, thickness, foam, and apparent volume enough to make the simulation
+look broken even when the solver buffers were unchanged. Keep the current
+surface path rendering the full active particle scan until the renderer has a
+separate reconstruction contract that preserves depth/thickness parity. The
+failed experiment is preserved on `wip/water3d-surface-draw-compaction`; do not
+use that path as a small cleanup patch.
+
+This does not rule out solver-side transfer optimization. `main` already
+dispatches P2G over active faces, so the next safe optimization target is to
+reduce P2G/G2P work without changing transfer semantics first: keep the surface
+renderer untouched, measure pass timings, and validate each P2G/G2P change
+against interactive water-level behavior plus headless captures before making
+it the default.
+
+P2G fixed-stencil gather experiment, 2026-05-23: changing the existing gather
+shader to scan only cell bins that can overlap each staggered face kernel
+compiled and passed the focused `water_3d` smoke tests, but the measured win was
+too small to justify the extra shader specialization. At `64^3`, baseline P2G
+timings were roughly `4.1 -> 5.4 -> 6.4 ms` over warm frames, while the patched
+version was roughly `3.7 -> 4.8 ms` in a comparable run. The first lower-level
+attempt was also slower in the headless path. Do not carry this change unless a
+future profile shows P2G dominates enough to justify the maintenance cost.
+
 ## Current Checkpoint
 
 As of 2026-05-06:

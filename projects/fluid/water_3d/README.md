@@ -37,4 +37,8 @@ Common runs:
 ./build/dev/projects/fluid/water_3d/water_3d --headless --frames 24 --output outputs/water-3d.png
 ./build/dev/projects/fluid/water_3d/water_3d --grid-width 48 --grid-height 48 --grid-depth 48
 ./build/dev/projects/fluid/water_3d/water_3d --environment build/dev/_deps/cubey_hdr_sample_assets-src/venetian_crossroads_2k.hdr
+./build/dev/projects/fluid/water_3d/water_3d --frames 240 --profile-output water3d-64 --profile-warmup-frames 60
 ```
+
+Profiling writes CSV, Chrome trace JSON, and a text summary under
+`outputs/profiles/` when the prefix has no directory component.

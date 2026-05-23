@@ -72,12 +72,14 @@ struct RunConfig {
     std::filesystem::path input_path{};
     std::filesystem::path environment_path{};
     std::filesystem::path output_path = "cubey-output.png";
+    std::filesystem::path profile_output_prefix{};
     std::string debug_view{};
     CaptureMode capture_mode = CaptureMode::Png;
     float ibl_intensity = 1.0F;
     float environment_rotation_degrees = 0.0F;
     float exposure = 0.0F;
     std::uint32_t animation_index = 0;
+    std::uint32_t profile_warmup_frames = 0;
     float animation_speed = 1.0F;
     bool headless = false;
     bool animation_paused = false;

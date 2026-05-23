@@ -21,6 +21,7 @@ add_library(cubey_core STATIC
     core/frame_clock.cpp
     core/image_io.cpp
     core/jobs.cpp
+    core/profiling.cpp
 )
 add_library(cubey::core ALIAS cubey_core)
 

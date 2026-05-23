@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cubey/core/frame_clock.h>
+#include <cubey/core/profiling.h>
 #include <cubey/core/run_config.h>
 #include <cubey/host/frame_stats.h>
 #include <cubey/host/glfw_window.h>
@@ -22,6 +23,7 @@
 #include <functional>
 #include <memory>
 #include <optional>
+#include <string_view>
 #include <vector>
 
 namespace cubey::host {
@@ -35,7 +37,8 @@ class WindowedAppContext {
                        cubey::vulkan::Device& device, cubey::vulkan::Swapchain& swapchain,
                        cubey::vulkan::FrameResources& frame_resources,
                        cubey::vulkan::GpuRuntime& gpu, const cubey::input::InputFrame& input,
-                       std::uint32_t frame_slot_count, UiCaptureState ui_capture);
+                       std::uint32_t frame_slot_count, UiCaptureState ui_capture,
+                       cubey::profiling::ProfileRecorder* profile_recorder);
 
     [[nodiscard]] const RunConfig& config() const {
         return config_;
@@ -73,6 +76,9 @@ class WindowedAppContext {
     [[nodiscard]] bool ui_wants_keyboard() const {
         return ui_capture_.wants_keyboard;
     }
+    [[nodiscard]] cubey::profiling::ProfileRecorder* profile_recorder() const {
+        return profile_recorder_;
+    }
 
   private:
     const RunConfig& config_;
@@ -86,6 +92,7 @@ class WindowedAppContext {
     const cubey::input::InputFrame& input_;
     std::uint32_t frame_slot_count_ = cubey::render::kSingleFrameSlotCount;
     UiCaptureState ui_capture_{};
+    cubey::profiling::ProfileRecorder* profile_recorder_ = nullptr;
 };
 
 struct WindowedHostConfig {
@@ -140,6 +147,13 @@ class WindowedHost {
     void create_swapchain_resources();
     void destroy_swapchain_resources();
     void recreate_swapchain_resources();
+    void create_profile_recorder();
+    void write_profile_outputs();
+    [[nodiscard]] cubey::profiling::ProfileRecorder* profile_recorder();
+    [[nodiscard]] cubey::profiling::ScopedCpuProfileSpan profile_span(std::uint64_t frame_index,
+                                                                      std::string_view label);
+    void record_profile_frame(std::uint64_t frame_index, const FrameTiming& timing,
+                              const std::optional<FrameStatsSample>& sample);
     cubey::vulkan::RenderFrameResult draw_frame(const FrameTiming& timing);
     [[nodiscard]] std::vector<VkCommandBuffer>
     record_ui_command_buffers(const WindowedRenderFrame& render_frame);
@@ -168,6 +182,7 @@ class WindowedHost {
     std::optional<cubey::vulkan::Swapchain> swapchain_;
     std::optional<cubey::vulkan::FrameResources> frame_resources_;
     std::unique_ptr<ImGuiOverlay> imgui_overlay_;
+    std::optional<cubey::profiling::ProfileRecorder> profile_recorder_;
     FrameClock frame_clock_;
     FrameStats frame_stats_;
     cubey::input::InputState input_state_;

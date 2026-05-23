@@ -2,6 +2,7 @@
 
 #include <charconv>
 #include <cmath>
+#include <filesystem>
 #include <limits>
 #include <stdexcept>
 #include <string>
@@ -39,6 +40,17 @@ float parse_float(std::string_view value, const char* name) {
         throw std::runtime_error("invalid float for " + std::string(name));
     }
     return parsed;
+}
+
+std::filesystem::path profile_output_prefix(std::string_view value) {
+    std::filesystem::path prefix{std::string(value)};
+    if (prefix.empty()) {
+        throw std::runtime_error("profile output prefix must not be empty");
+    }
+    if (!prefix.has_parent_path() && !prefix.is_absolute()) {
+        prefix = std::filesystem::path("outputs") / "profiles" / prefix;
+    }
+    return prefix;
 }
 
 } // namespace
@@ -182,6 +194,11 @@ RunConfig parse_run_config(int argc, char** argv) {
             config.fps = parse_u32(need_value("--fps"), "--fps");
         } else if (arg == "--print-frame-stats") {
             config.print_frame_stats = true;
+        } else if (arg == "--profile-output") {
+            config.profile_output_prefix = profile_output_prefix(need_value("--profile-output"));
+        } else if (arg == "--profile-warmup-frames") {
+            config.profile_warmup_frames =
+                parse_u32(need_value("--profile-warmup-frames"), "--profile-warmup-frames");
         } else if (arg == "--capture") {
             const std::string_view mode = need_value("--capture");
             if (mode == "png") {

@@ -41,16 +41,18 @@ WindowedAppContext::WindowedAppContext(
     GlfwSurface& surface, cubey::vulkan::Device& device, cubey::vulkan::Swapchain& swapchain,
     cubey::vulkan::FrameResources& frame_resources, cubey::vulkan::GpuRuntime& gpu,
     const cubey::input::InputFrame& input, std::uint32_t frame_slot_count,
-    UiCaptureState ui_capture)
+    UiCaptureState ui_capture, cubey::profiling::ProfileRecorder* profile_recorder)
     : config_(config), window_(window), instance_(instance), surface_(surface), device_(device),
       swapchain_(swapchain), frame_resources_(frame_resources), gpu_(gpu), input_(input),
-      frame_slot_count_(frame_slot_count), ui_capture_(ui_capture) {
+      frame_slot_count_(frame_slot_count), ui_capture_(ui_capture),
+      profile_recorder_(profile_recorder) {
     cubey::render::validate_frame_slot({.index = 0, .count = frame_slot_count_});
 }
 
 WindowedHost::WindowedHost(WindowedHostConfig config, WindowedHostCallbacks callbacks)
     : config_(std::move(config)), callbacks_(std::move(callbacks)) {
     validate_config(config_, callbacks_);
+    create_profile_recorder();
 }
 
 WindowedHost::~WindowedHost() {
@@ -98,7 +100,10 @@ int WindowedHost::run() {
     while (!window().should_close() &&
            (config_.run_config.frames == 0 || frame < config_.run_config.frames)) {
         input_state_.begin_frame();
-        window().poll_events();
+        {
+            [[maybe_unused]] auto span = profile_span(frame, "host.poll_events");
+            window().poll_events();
+        }
         if (window().should_close()) {
             break;
         }
@@ -117,8 +122,11 @@ int WindowedHost::run() {
             ui_capture_ = imgui_overlay_->capture_state();
         }
         if (callbacks_.draw_ui) {
-            WindowedAppContext ui_context = context();
-            callbacks_.draw_ui(ui_context);
+            {
+                [[maybe_unused]] auto span = profile_span(frame, "host.draw_ui");
+                WindowedAppContext ui_context = context();
+                callbacks_.draw_ui(ui_context);
+            }
             if (imgui_overlay_ != nullptr && imgui_overlay_->active()) {
                 ui_capture_ = imgui_overlay_->capture_state();
             }
@@ -127,9 +135,13 @@ int WindowedHost::run() {
         const FrameTiming timing = frame_clock_.tick();
         WindowedAppContext active_context = context();
         if (callbacks_.update) {
+            [[maybe_unused]] auto span = profile_span(frame, "host.update");
             callbacks_.update(active_context, timing);
         }
-        static_cast<void>(gpu().drain());
+        {
+            [[maybe_unused]] auto span = profile_span(frame, "host.gpu_drain");
+            static_cast<void>(gpu().drain());
+        }
         if (window().should_close()) {
             if (imgui_overlay_ != nullptr) {
                 imgui_overlay_->discard_frame();
@@ -137,7 +149,11 @@ int WindowedHost::run() {
             break;
         }
 
-        cubey::vulkan::RenderFrameResult result = draw_frame(timing);
+        cubey::vulkan::RenderFrameResult result;
+        {
+            [[maybe_unused]] auto span = profile_span(frame, "host.draw_frame");
+            result = draw_frame(timing);
+        }
         if (result == cubey::vulkan::RenderFrameResult::RecreateSwapchain) {
             recreate_tracker.record_recreate_request();
             std::puts("swapchain out of date; recreating");
@@ -149,6 +165,7 @@ int WindowedHost::run() {
 
         recreate_tracker.reset();
         if (callbacks_.frame_stats_sample) {
+            [[maybe_unused]] auto span = profile_span(frame, "host.frame_stats");
             std::optional<FrameStatsSample> sample =
                 callbacks_.frame_stats_sample(active_context, timing);
             if (sample.has_value()) {
@@ -167,6 +184,9 @@ int WindowedHost::run() {
                     }
                 }
             }
+            record_profile_frame(frame, timing, sample);
+        } else {
+            record_profile_frame(frame, timing, std::nullopt);
         }
         ++frame;
     }
@@ -190,6 +210,7 @@ int WindowedHost::run() {
         callbacks_.shutdown(active_context);
         static_cast<void>(gpu().drain());
     }
+    write_profile_outputs();
     return 0;
 }
 
@@ -303,6 +324,73 @@ void WindowedHost::recreate_swapchain_resources() {
     create_swapchain_resources();
 }
 
+void WindowedHost::create_profile_recorder() {
+    if (config_.run_config.profile_output_prefix.empty()) {
+        return;
+    }
+    profile_recorder_.emplace(cubey::profiling::ProfileRecorderConfig{
+        .output_prefix = config_.run_config.profile_output_prefix,
+        .warmup_frames = config_.run_config.profile_warmup_frames,
+    });
+}
+
+void WindowedHost::write_profile_outputs() {
+    if (!profile_recorder_.has_value()) {
+        return;
+    }
+    profile_recorder_->write_outputs();
+    const std::string prefix = profile_recorder_->config().output_prefix.string();
+    std::printf("profile: wrote %s.{frames.csv,passes.csv,trace.json,summary.txt}\n",
+                prefix.c_str());
+}
+
+cubey::profiling::ProfileRecorder* WindowedHost::profile_recorder() {
+    return profile_recorder_.has_value() ? &profile_recorder_.value() : nullptr;
+}
+
+cubey::profiling::ScopedCpuProfileSpan WindowedHost::profile_span(std::uint64_t frame_index,
+                                                                  std::string_view label) {
+    cubey::profiling::ProfileRecorder* recorder = profile_recorder();
+    if (recorder == nullptr) {
+        return {};
+    }
+    return recorder->cpu_span(frame_index, label);
+}
+
+void WindowedHost::record_profile_frame(std::uint64_t frame_index, const FrameTiming& timing,
+                                        const std::optional<FrameStatsSample>& sample) {
+    cubey::profiling::ProfileRecorder* recorder = profile_recorder();
+    if (recorder == nullptr) {
+        return;
+    }
+
+    std::uint32_t width = config_.run_config.width;
+    std::uint32_t height = config_.run_config.height;
+    std::uint32_t triangles = 0;
+    if (sample.has_value()) {
+        width = sample->width;
+        height = sample->height;
+        triangles = sample->triangles;
+    } else if (swapchain_.has_value()) {
+        const VkExtent2D extent = swapchain().extent();
+        width = extent.width;
+        height = extent.height;
+    }
+
+    const cubey::vulkan::DeviceMemoryBudgetInfo memory = device().device_memory_budget();
+    recorder->record_frame({
+        .frame_index = frame_index,
+        .delta_seconds = timing.delta_seconds,
+        .width = width,
+        .height = height,
+        .triangles = triangles,
+        .memory_budget_available = memory.available,
+        .device_local_usage = memory.device_local_usage,
+        .device_local_budget = memory.device_local_budget,
+        .device_local_heap_size = memory.device_local_heap_size,
+    });
+}
+
 cubey::vulkan::RenderFrameResult WindowedHost::draw_frame(const FrameTiming& timing) {
     cubey::vulkan::RenderContext render_context({
         .device = &device(),
@@ -358,7 +446,8 @@ WindowedAppContext WindowedHost::context() {
             gpu(),
             input_state_.frame(),
             frame_resources().frame_slot_count(),
-            ui_capture_};
+            ui_capture_,
+            profile_recorder()};
 }
 
 GlfwWindow& WindowedHost::window() {

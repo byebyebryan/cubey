@@ -15,11 +15,14 @@ void test_job_system_runs_jobs_and_propagates_errors();
 void test_job_system_shutdown_rejects_new_jobs();
 void test_math_helpers_match_vulkan_projection_conventions();
 void test_math_quaternion_helpers_match_rotation_matrices();
+void test_profile_recorder_skips_warmup_and_records_spans();
+void test_profile_recorder_writes_csv_summary_and_trace_outputs();
 void test_run_cli_app_sets_default_title_and_returns_runner_status();
 void test_run_config_parses_animation_options();
 void test_run_config_parses_video_capture_defaults();
 void test_run_config_parses_pbr_debug_view_name();
 void test_run_config_parses_frame_stats_flag();
+void test_run_config_parses_profile_options();
 void test_run_config_parses_grid_dimensions();
 void test_run_config_parses_shadow_volume_controls();
 void test_run_config_parses_smoke_injector_count();
@@ -51,6 +54,7 @@ std::span<const TestCase> core_test_cases() {
         CUBEY_TEST(test_run_config_parses_animation_options),
         CUBEY_TEST(test_run_config_parses_pbr_debug_view_name),
         CUBEY_TEST(test_run_config_parses_frame_stats_flag),
+        CUBEY_TEST(test_run_config_parses_profile_options),
         CUBEY_TEST(test_run_config_parses_grid_dimensions),
         CUBEY_TEST(test_run_config_parses_shadow_volume_controls),
         CUBEY_TEST(test_run_config_parses_smoke_injector_count),
@@ -77,6 +81,8 @@ std::span<const TestCase> core_test_cases() {
         CUBEY_TEST(test_job_system_shutdown_rejects_new_jobs),
         CUBEY_TEST(test_math_helpers_match_vulkan_projection_conventions),
         CUBEY_TEST(test_math_quaternion_helpers_match_rotation_matrices),
+        CUBEY_TEST(test_profile_recorder_skips_warmup_and_records_spans),
+        CUBEY_TEST(test_profile_recorder_writes_csv_summary_and_trace_outputs),
     };
     return tests;
 }

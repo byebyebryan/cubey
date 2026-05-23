@@ -260,6 +260,8 @@ int main() {
             std::filesystem::path(CUBEY_WATER_3D_SOURCE_DIR) / "water_3d_gpu_resources.cpp");
         const std::string commands = read_text_file(
             std::filesystem::path(CUBEY_WATER_3D_SOURCE_DIR) / "water_3d_commands.cpp");
+        const std::string app =
+            read_text_file(std::filesystem::path(CUBEY_WATER_3D_SOURCE_DIR) / "water_3d_app.cpp");
 
         require_contains(contract, "WATER3D_BINDING_W_FIELD",
                          "water 3D contract should expose the W face field");
@@ -448,6 +450,10 @@ int main() {
                          "water 3D simulation should support indirect compute dispatch");
         require_contains(commands, "active_face_dispatch_args().handle()",
                          "water 3D particle-to-grid should dispatch over active faces indirectly");
+        require_contains(app, "record_gpu_timings(context.profile_recorder()",
+                         "water 3D windowed path should export GPU timings to profiles");
+        require_contains(app, "record_gpu_timings(profile_recorder",
+                         "water 3D headless simulation path should export GPU timings to profiles");
         require_contains(commands, "water whitewater",
                          "water 3D surface render should render whitewater before composite");
         require_contains(gpu_resources, "water_3d_active_face_dispatch_args.comp.spv",

@@ -5,6 +5,7 @@
 #include "water_3d_gpu_resources.h"
 
 #include <cubey/asset/hdr_image.h>
+#include <cubey/core/profiling.h>
 #include <cubey/engine/project_gpu_services.h>
 #include <cubey/engine/project_runtime.h>
 #include <cubey/host/frame_stats.h>
@@ -69,6 +70,28 @@ constexpr std::array<Water3DTransferMode, 2> kTransferModes{
 
 [[nodiscard]] double bytes_to_mib(VkDeviceSize bytes) {
     return static_cast<double>(bytes) / (1024.0 * 1024.0);
+}
+
+[[nodiscard]] std::uint64_t profile_frame_index(const ProjectFrame& frame) {
+    return frame.frame_index == 0 ? 0 : frame.frame_index - 1U;
+}
+
+[[nodiscard]] std::uint64_t collected_profile_frame_index(const ProjectFrame& frame,
+                                                          cubey::render::FrameSlot frame_slot) {
+    if (frame.frame_index > frame_slot.count) {
+        return frame.frame_index - static_cast<std::uint64_t>(frame_slot.count) - 1U;
+    }
+    return profile_frame_index(frame);
+}
+
+void record_gpu_timings(cubey::profiling::ProfileRecorder* recorder, std::uint64_t frame_index,
+                        const std::vector<cubey::vulkan::GpuPassTiming>& timings) {
+    if (recorder == nullptr) {
+        return;
+    }
+    for (const cubey::vulkan::GpuPassTiming& timing : timings) {
+        recorder->record_gpu_span(frame_index, timing.label, timing.milliseconds);
+    }
 }
 
 [[nodiscard]] std::filesystem::path bundled_sample_environment_path() {
@@ -498,6 +521,9 @@ class Water3DApp {
         cubey::vulkan::GpuTimestampProfiler* profiler = resources_.profiler();
         if (profiler != nullptr) {
             profiler->collect(render_frame.frame_slot.index);
+            record_gpu_timings(context.profile_recorder(),
+                               collected_profile_frame_index(frame, render_frame.frame_slot),
+                               resources_.latest_timings());
             maybe_print_gpu_timings(frame);
         }
         const cubey::vulkan::CommandRecorder recorder(render_frame.command_buffer);
@@ -550,16 +576,42 @@ class Water3DApp {
 
     void record_headless_simulation_frame(cubey::ProjectGpuServices& gpu,
                                           cubey::render::FrameSlot frame_slot,
-                                          const ProjectFrame& frame) {
+                                          const ProjectFrame& frame,
+                                          cubey::profiling::ProfileRecorder* profile_recorder) {
         static_cast<void>(gpu.submit_and_wait({
             .label = "water_3d headless simulation frame",
             .work =
-                [this, frame_slot, frame](cubey::vulkan::GpuOwnerContext& gpu_context) {
+                [this, frame_slot, frame, profile_recorder](
+                    cubey::vulkan::GpuOwnerContext& gpu_context) {
                     cubey::vulkan::ImmediateCommands commands(gpu_context);
+                    cubey::vulkan::GpuTimestampProfiler* profiler = resources_.profiler();
+                    if (profiler != nullptr) {
+                        profiler->begin_frame(commands.command_buffer(), frame_slot.index);
+                    }
                     record_water_3d_compute(commands.command_buffer(), resources_, water_config_,
                                             runtime_state_, frame_slot, paused_, reset_requested_,
-                                            frame);
+                                            frame, true, profiler);
                     commands.submit_and_wait();
+                    if (profiler != nullptr) {
+                        profiler->collect(frame_slot.index);
+                        record_gpu_timings(profile_recorder, profile_frame_index(frame),
+                                           resources_.latest_timings());
+                    }
+                    if (profile_recorder != nullptr) {
+                        const cubey::vulkan::DeviceMemoryBudgetInfo memory =
+                            gpu_context.device().device_memory_budget();
+                        profile_recorder->record_frame({
+                            .frame_index = profile_frame_index(frame),
+                            .delta_seconds = 0.0,
+                            .width = config_.width,
+                            .height = config_.height,
+                            .triangles = 0,
+                            .memory_budget_available = memory.available,
+                            .device_local_usage = memory.device_local_usage,
+                            .device_local_budget = memory.device_local_budget,
+                            .device_local_heap_size = memory.device_local_heap_size,
+                        });
+                    }
                 },
         }));
     }
@@ -578,18 +630,19 @@ class Water3DApp {
             create_render_pipeline(context.device(), target.format, target.extent);
         };
         if (config_.capture_mode == CaptureMode::Png) {
-            callbacks.before_capture = [this](cubey::host::HeadlessPngContext&) {
+            callbacks.before_capture = [this](cubey::host::HeadlessPngContext& context) {
                 const std::uint32_t frames = water_3d_headless_frame_count(config_);
                 for (std::uint32_t frame = 1; frame <= frames; ++frame) {
                     const cubey::render::FrameSlot frame_slot = cubey::render::frame_slot_for_index(
                         frame - 1U, cubey::host::headless_capture_frame_slot_count(config_));
                     const ProjectFrame project_frame = runtime_.frame_for_timing(
                         fixed_water_3d_headless_timing(water_config_, frame));
-                    record_headless_simulation_frame(runtime_.gpu(), frame_slot, project_frame);
+                    record_headless_simulation_frame(runtime_.gpu(), frame_slot, project_frame,
+                                                     context.profile_recorder());
                 }
             };
         } else {
-            callbacks.before_frame = [this](cubey::host::HeadlessPngContext&,
+            callbacks.before_frame = [this](cubey::host::HeadlessPngContext& context,
                                             const cubey::host::HeadlessCaptureFrame& frame) {
                 const std::uint64_t simulation_frame = static_cast<std::uint64_t>(frame.index) + 1;
                 const FrameTiming timing{
@@ -599,7 +652,8 @@ class Water3DApp {
                     .frame_index = simulation_frame,
                 };
                 const ProjectFrame project_frame = runtime_.frame_for_timing(timing);
-                record_headless_simulation_frame(runtime_.gpu(), frame.frame_slot, project_frame);
+                record_headless_simulation_frame(runtime_.gpu(), frame.frame_slot, project_frame,
+                                                 context.profile_recorder());
             };
         }
         callbacks.record_frame = [this](cubey::host::HeadlessPngContext& context,
