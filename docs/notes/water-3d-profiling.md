@@ -95,6 +95,30 @@ with another heavy tail in 129-384 and occasional 385+ faces. The next
 optimization should target the per-face gather shape and cell/bin locality before
 changing pressure or extrapolation.
 
+## P2G Support-Aware Gather Results
+
+Captured 2026-05-23 with `water3d-p2g-support-*` profile prefixes after changing
+U/V/W face gathers from a generic `3x3x3` cell scan to face-support-aware
+`2x3x3` scans along each face normal.
+
+| Grid | P2G avg before | P2G avg after | Slots scanned | Zero candidates | Positive candidates | Solver residual |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| 64^3 | 4.933 ms | 4.369 ms (-11.4%) | -31.4% | -45.4% | +0.04% | unchanged |
+| 96^3 | 20.391 ms | 17.733 ms (-13.0%) | -31.9% | -45.9% | +0.01% | unchanged |
+| 128^3 | 42.770 ms | 36.670 ms (-14.3%) | -32.4% | -46.4% | +0.02% | unchanged |
+
+The optimization removed guaranteed-zero support cells without changing the
+useful transfer set. Positive-weight candidate counts and processed face counts
+stayed effectively unchanged, while the diagnostic P2G scan dropped roughly 25%
+and the real P2G pass dropped 11-14%. Solver residual averages/maxima stayed
+within noise across the measured captures.
+
+This confirms that support-aware gather was the correct first optimization, but
+P2G is still dominant. The remaining heavy-tail buckets point next at
+cell/bin-locality and clumped-neighborhood work: particle sorting or compacted
+cell ranges should be evaluated before a larger scatter/cooperative-transfer
+rewrite.
+
 ## Readout
 
 P2G is still the dominant cost and scales worse than the other visible passes.
@@ -104,8 +128,9 @@ runs twice per substep and feeds the active-face dispatch path.
 
 Near-term optimization candidates:
 
-1. Prototype a narrower P2G gather. The histogram data says the high-candidate
-   face tail and overpacked neighborhoods are the immediate suspects.
+1. Improve particle/bin locality for P2G gathers. Support-aware gather removed
+   guaranteed-zero cells; the remaining high-candidate tail is now mostly
+   cell-locality and clumped-neighborhood work.
 2. Keep P2G correctness fixed while experimenting. The previous fixed-stencil
    transfer attempt produced solver instability and should stay as a documented
    failed experiment until a narrower hypothesis is tested.
