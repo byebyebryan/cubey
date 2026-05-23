@@ -1,7 +1,7 @@
 function(cubey_add_app_target target)
     set(options)
     set(one_value_args OUTPUT_NAME SHADER_DEFINE WINDOWED_SMOKE_TEST WINDOWED_SMOKE_PATTERN)
-    set(multi_value_args SOURCES SHADERS SHADER_INCLUDE_DIRS SHADER_DEPENDS)
+    set(multi_value_args SOURCES SHADERS SHADER_INCLUDE_DIRS SHADER_DEPENDS WINDOWED_SMOKE_ARGS)
     cmake_parse_arguments(CUBEY_APP "${options}" "${one_value_args}" "${multi_value_args}" ${ARGN})
 
     if (NOT CUBEY_APP_SOURCES)
@@ -51,6 +51,7 @@ function(cubey_add_app_target target)
             "${CUBEY_APP_WINDOWED_SMOKE_TEST}"
             ${target}
             "${CUBEY_APP_WINDOWED_SMOKE_PATTERN}"
+            ${CUBEY_APP_WINDOWED_SMOKE_ARGS}
         )
     endif()
 endfunction()

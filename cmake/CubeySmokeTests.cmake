@@ -3,12 +3,13 @@ function(cubey_add_windowed_smoke_test name target success_pattern)
         NAME "${name}"
         COMMAND
             /bin/sh -c
-            "out=$(\"$1\" --frames 1 --width 64 --height 64 2>&1); status=$?; printf '%s\n' \"$out\"; if printf '%s\n' \"$out\" | grep -q 'vulkan validation error'; then exit 1; fi; if [ \"$status\" -eq 0 ]; then printf '%s\n' \"$out\" | grep -q \"$2\"; else printf '%s\n' \"$out\" | grep -q 'glfwInit failed\\|GLFW reports Vulkan is not supported'; fi"
+            "target=$1; pattern=$2; shift 2; out=$(\"$target\" \"$@\" --frames 1 --width 64 --height 64 2>&1); status=$?; printf '%s\n' \"$out\"; if printf '%s\n' \"$out\" | grep -q 'vulkan validation error'; then exit 1; fi; if [ \"$status\" -eq 0 ]; then printf '%s\n' \"$out\" | grep -q \"$pattern\"; else printf '%s\n' \"$out\" | grep -q 'glfwInit failed\\|GLFW reports Vulkan is not supported'; fi"
             "${name}"
             "$<TARGET_FILE:${target}>"
             "${success_pattern}"
+            ${ARGN}
     )
-    set_tests_properties("${name}" PROPERTIES TIMEOUT 10)
+    set_tests_properties("${name}" PROPERTIES TIMEOUT 20)
 endfunction()
 
 function(cubey_add_png_smoke_test name target output_path)

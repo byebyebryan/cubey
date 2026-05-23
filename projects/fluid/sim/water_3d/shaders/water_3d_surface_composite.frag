@@ -90,6 +90,71 @@ vec3 reconstruct_normal(vec2 uv, float center_depth) {
     return normal;
 }
 
+float readable_depth(float depth, float fallback_depth) {
+    return water_surface_has_depth(depth) ? depth : fallback_depth;
+}
+
+float foam_noise(vec3 position) {
+    float wave_a = sin(dot(position, vec3(37.7, 19.1, 29.3)));
+    float wave_b = sin(dot(position, vec3(-23.5, 43.9, 15.7)));
+    float wave_c = sin(dot(position, vec3(71.3, -11.9, 53.1)));
+    return clamp(0.50 + (wave_a * 0.23) + (wave_b * 0.17) + (wave_c * 0.10), 0.0, 1.0);
+}
+
+float foam_mask(vec2 uv, float center_depth, float thickness, vec3 position, vec3 normal) {
+    ivec2 texture_size = textureSize(surface_texture, 0);
+    vec2 texel_size = 1.0 / vec2(texture_size);
+    vec4 left_surface = texture(surface_texture, uv - vec2(texel_size.x, 0.0));
+    vec4 right_surface = texture(surface_texture, uv + vec2(texel_size.x, 0.0));
+    vec4 down_surface = texture(surface_texture, uv - vec2(0.0, texel_size.y));
+    vec4 up_surface = texture(surface_texture, uv + vec2(0.0, texel_size.y));
+    bool left_has_depth = water_surface_has_depth(left_surface.x);
+    bool right_has_depth = water_surface_has_depth(right_surface.x);
+    bool down_has_depth = water_surface_has_depth(down_surface.x);
+    bool up_has_depth = water_surface_has_depth(up_surface.x);
+    float left_depth = readable_depth(left_surface.x, center_depth);
+    float right_depth = readable_depth(right_surface.x, center_depth);
+    float down_depth = readable_depth(down_surface.x, center_depth);
+    float up_depth = readable_depth(up_surface.x, center_depth);
+    float left_thickness = left_has_depth ? max(0.0, left_surface.y) : 0.0;
+    float right_thickness = right_has_depth ? max(0.0, right_surface.y) : 0.0;
+    float down_thickness = down_has_depth ? max(0.0, down_surface.y) : 0.0;
+    float up_thickness = up_has_depth ? max(0.0, up_surface.y) : 0.0;
+
+    vec3 view_dir = normalize(water_surface_camera_position() - position);
+    float depth_scale = max(0.0015, center_depth * 0.0025);
+    float curvature = abs((left_depth + right_depth + down_depth + up_depth) -
+                          (center_depth * 4.0)) /
+                      depth_scale;
+    float slope = length(vec2(right_depth - left_depth, up_depth - down_depth)) /
+                  max(0.0015, depth_scale * 2.0);
+    float grazing = pow(clamp(1.0 - dot(normal, view_dir), 0.0, 1.0), 2.0);
+    float neighbor_count = float(left_has_depth) + float(right_has_depth) + float(down_has_depth) +
+                           float(up_has_depth);
+    float open_edge = 1.0 - (neighbor_count * 0.25);
+    float thickness_delta =
+        length(vec2(right_thickness - left_thickness, up_thickness - down_thickness)) /
+        max(0.04, thickness + 0.04);
+    float thin_sheet = smoothstep(0.015, 0.12, thickness) *
+                       (1.0 - smoothstep(0.45, 1.35, thickness));
+    float thickness_gate = smoothstep(0.01, 0.08, thickness) *
+                           (1.0 - smoothstep(1.20, 2.40, thickness));
+
+    float edge_signal = open_edge * thin_sheet;
+    float crest_signal = (curvature * 0.20) + (slope * 0.10) + (thickness_delta * 0.30) +
+                         (grazing * 0.18);
+    float sharpness = max(0.2, surface_params.surface_options.y);
+    float edge_mask = smoothstep(0.02, 0.18, edge_signal);
+    float crest_mask = smoothstep(0.05, 0.26, crest_signal);
+    float upper_surface = smoothstep(0.32, 0.74, position.y);
+    float upper_patch = upper_surface * thin_sheet * smoothstep(0.36, 0.80, foam_noise(position)) *
+                        smoothstep(0.03, 0.16, (thickness_delta * 0.50) + (slope * 0.05) +
+                                                    (curvature * 0.03) + (open_edge * 0.20));
+    float foam = max(max(edge_mask, crest_mask), upper_patch * 0.85) * thickness_gate;
+    foam = pow(clamp(foam, 0.0, 1.0), 1.0 / sharpness);
+    return foam * clamp(surface_params.surface_options.x, 0.0, 1.0);
+}
+
 void main() {
     vec4 surface = texture(surface_texture, frag_uv);
     vec3 background = texture(scene_color_texture, frag_uv).rgb;
@@ -127,6 +192,14 @@ void main() {
         out_color = vec4(apply_display_transform(normal * 0.5 + 0.5), 1.0);
         return;
     }
+    float foam = foam_mask(frag_uv, depth, thickness, position, normal);
+    if (view == WATER3D_SURFACE_VIEW_FOAM) {
+        float debug_foam =
+            clamp(foam / max(0.001, surface_params.surface_options.x), 0.0, 1.0);
+        vec3 debug_color = mix(vec3(0.025, 0.035, 0.045), vec3(0.88, 0.93, 0.92), debug_foam);
+        out_color = vec4(apply_display_transform(cubey_srgb_to_linear(debug_color)), 1.0);
+        return;
+    }
 
     vec3 view_dir = normalize(water_surface_camera_position() - position);
     vec3 reflect_dir = reflect(-view_dir, normal);
@@ -149,6 +222,9 @@ void main() {
     float specular = pow(max(dot(normal, half_dir), 0.0), 96.0) * 0.22;
     vec3 water_tint = cubey_srgb_to_linear(vec3(0.025, 0.22, 0.30)) * (1.0 - transmittance);
     vec3 color = mix(refracted + water_tint, reflected, fresnel) + vec3(specular);
+    vec3 foam_color = cubey_srgb_to_linear(vec3(0.86, 0.91, 0.88)) *
+                      (0.7 + surface_params.environment_options.z * 0.3);
+    color = mix(color, foam_color, foam);
 
     out_color = vec4(apply_display_transform(color), 1.0);
 }

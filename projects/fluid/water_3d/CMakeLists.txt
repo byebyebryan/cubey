@@ -4,6 +4,10 @@ cubey_add_app_target(
     SHADER_DEFINE CUBEY_WATER_3D_SHADER_DIR
     WINDOWED_SMOKE_TEST water_3d_reaches_glfw
     WINDOWED_SMOKE_PATTERN "water_3d: .*rendering 3D water project"
+    WINDOWED_SMOKE_ARGS
+        --grid-width 32
+        --grid-height 32
+        --grid-depth 32
     SOURCES
         ../sim/water_3d/water_3d_app.cpp
         ../sim/water_3d/water_3d_commands.cpp

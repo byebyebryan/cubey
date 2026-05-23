@@ -25,6 +25,7 @@ enum class Water3DRenderView : std::uint32_t {
     SurfaceDepth = 7,
     SurfaceThickness = 8,
     SurfaceNormals = 9,
+    SurfaceFoam = 10,
 };
 
 enum class Water3DTransferMode : std::uint32_t {
@@ -69,14 +70,16 @@ struct Water3DConfig {
     float particle_volume_strength = 12.0F;
     float boundary_restitution = 0.08F;
     float slice_depth = 0.50F;
-    float surface_thickness_scale = 1.0F;
+    float surface_thickness_scale = 0.65F;
     float surface_gap_fill_radius_px = 1.0F;
-    float surface_smoothing_radius_px = 5.0F;
-    std::uint32_t surface_smoothing_iterations = 3;
-    float surface_depth_sigma = 0.035F;
-    float surface_thickness_smoothing = 0.8F;
-    float surface_absorption = 1.5F;
-    float surface_refraction_strength = 0.035F;
+    float surface_smoothing_radius_px = 3.0F;
+    std::uint32_t surface_smoothing_iterations = 2;
+    float surface_depth_sigma = 0.025F;
+    float surface_thickness_smoothing = 0.5F;
+    float surface_absorption = 0.8F;
+    float surface_refraction_strength = 0.025F;
+    float foam_amount = 0.70F;
+    float foam_sharpness = 2.2F;
     float environment_intensity = 1.0F;
     float environment_rotation_degrees = 0.0F;
     float exposure = 0.0F;
@@ -135,6 +138,8 @@ static_assert(sizeof(Water3DDispatchPushConstants) ==
         return "Surface thickness";
     case Water3DRenderView::SurfaceNormals:
         return "Surface normals";
+    case Water3DRenderView::SurfaceFoam:
+        return "Surface foam";
     }
     return "Surface";
 }
@@ -180,9 +185,12 @@ static_assert(sizeof(Water3DDispatchPushConstants) ==
     if (name == "surface-normals") {
         return Water3DRenderView::SurfaceNormals;
     }
+    if (name == "surface-foam") {
+        return Water3DRenderView::SurfaceFoam;
+    }
     throw std::runtime_error("water 3D render view must be surface, particles, cells, velocity, "
                              "pressure, solid, overpack, surface-depth, surface-thickness, or "
-                             "surface-normals");
+                             "surface-normals, or surface-foam");
 }
 
 [[nodiscard]] inline Water3DRenderView next_render_view(Water3DRenderView view) {
@@ -206,6 +214,8 @@ static_assert(sizeof(Water3DDispatchPushConstants) ==
     case Water3DRenderView::SurfaceThickness:
         return Water3DRenderView::SurfaceNormals;
     case Water3DRenderView::SurfaceNormals:
+        return Water3DRenderView::SurfaceFoam;
+    case Water3DRenderView::SurfaceFoam:
         return Water3DRenderView::Surface;
     }
     return Water3DRenderView::Surface;
@@ -213,7 +223,8 @@ static_assert(sizeof(Water3DDispatchPushConstants) ==
 
 [[nodiscard]] inline bool is_water_3d_surface_view(Water3DRenderView view) {
     return view == Water3DRenderView::Surface || view == Water3DRenderView::SurfaceDepth ||
-           view == Water3DRenderView::SurfaceThickness || view == Water3DRenderView::SurfaceNormals;
+           view == Water3DRenderView::SurfaceThickness ||
+           view == Water3DRenderView::SurfaceNormals || view == Water3DRenderView::SurfaceFoam;
 }
 
 [[nodiscard]] inline std::size_t checked_mul(std::size_t lhs, std::size_t rhs,

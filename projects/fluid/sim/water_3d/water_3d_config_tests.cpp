@@ -63,12 +63,19 @@ int main() {
         require(config.initial_fill_width == 0.50F && config.initial_fill_height == 0.70F &&
                     config.initial_fill_depth == 0.50F,
                 "water 3D should default to the planned centered dam fill");
+        require(config.surface_thickness_scale == 0.65F,
+                "water 3D should default to clearer surface thickness");
         require(config.surface_gap_fill_radius_px == 1.0F,
                 "water 3D should default to conservative surface gap fill");
-        require(config.surface_smoothing_iterations == 3,
-                "water 3D should default to iterative surface smoothing");
-        require(config.surface_thickness_smoothing == 0.8F,
+        require(config.surface_smoothing_radius_px == 3.0F &&
+                    config.surface_smoothing_iterations == 2,
+                "water 3D should default to moderate iterative surface smoothing");
+        require(config.surface_depth_sigma == 0.025F && config.surface_thickness_smoothing == 0.5F,
                 "water 3D should soften thickness footprints by default");
+        require(config.surface_absorption == 0.8F && config.surface_refraction_strength == 0.025F,
+                "water 3D should default to clearer water shading");
+        require(config.foam_amount == 0.70F && config.foam_sharpness == 2.2F,
+                "water 3D should default to a visible screen-space foam layer");
         require(sizeof(water::Water3DSimulationUniforms) ==
                     sizeof(float) * water::kWater3DSimulationUniformFloatCount,
                 "water 3D simulation uniforms should match the shader contract");
@@ -108,10 +115,15 @@ int main() {
         require(water::water_3d_render_view_from_name("surface-normals") ==
                     water::Water3DRenderView::SurfaceNormals,
                 "water 3D render view parsing should include surface normals");
+        require(water::water_3d_render_view_from_name("surface-foam") ==
+                    water::Water3DRenderView::SurfaceFoam,
+                "water 3D render view parsing should include surface foam");
         require(water::is_water_3d_surface_view(water::Water3DRenderView::Surface),
                 "water 3D surface render should classify the default surface view");
         require(water::is_water_3d_surface_view(water::Water3DRenderView::SurfaceDepth),
                 "water 3D surface render should classify depth diagnostics");
+        require(water::is_water_3d_surface_view(water::Water3DRenderView::SurfaceFoam),
+                "water 3D surface render should classify foam diagnostics");
         require(!water::is_water_3d_surface_view(water::Water3DRenderView::Particles),
                 "water 3D surface render should keep particle splats as a debug path");
         require(std::string(water::water_3d_render_view_name(water::Water3DRenderView::Overpack)) ==
@@ -130,8 +142,11 @@ int main() {
                     water::Water3DRenderView::SurfaceDepth,
                 "water 3D render view cycle should include surface diagnostics after overpack");
         require(water::next_render_view(water::Water3DRenderView::SurfaceNormals) ==
+                    water::Water3DRenderView::SurfaceFoam,
+                "water 3D render view cycle should include surface foam after normals");
+        require(water::next_render_view(water::Water3DRenderView::SurfaceFoam) ==
                     water::Water3DRenderView::Surface,
-                "water 3D render view cycle should wrap after surface normals");
+                "water 3D render view cycle should wrap after surface foam");
 
         cubey::RunConfig run_config;
         run_config.grid_width = 32;
@@ -243,6 +258,8 @@ int main() {
                          "water 3D surface pass should use an explicit empty-depth sentinel");
         require_contains(surface_common, "display_transform",
                          "water 3D surface pass should carry final display transform settings");
+        require_contains(surface_common, "WATER3D_SURFACE_VIEW_FOAM",
+                         "water 3D surface pass should expose a foam diagnostic view");
         require_contains(scene_shader, "gl_FragDepth",
                          "water 3D scene pass should preserve sampleable scene depth");
         require_contains(scene_shader, "environment_cube",
@@ -271,6 +288,10 @@ int main() {
                          "water 3D surface composite should occlude against scene depth");
         require_contains(surface_composite, "cubey_pbr_apply_display_transform",
                          "water 3D surface composite should apply the shared display transform");
+        require_contains(surface_composite, "foam_mask",
+                         "water 3D surface composite should derive screen-space foam");
+        require_contains(surface_composite, "WATER3D_SURFACE_VIEW_FOAM",
+                         "water 3D surface composite should render the foam diagnostic view");
         require_contains(commands, "RenderGraphFrameExecutor",
                          "water 3D surface render should be recorded through the render graph");
         require_contains(commands, "water scene",

@@ -45,7 +45,7 @@ constexpr float kCameraBaseYaw = -0.52F;
 constexpr float kCameraBasePitch = -0.38F;
 constexpr cubey::math::Vec3 kVolumeCenter{0.5F, 0.5F, 0.5F};
 
-constexpr std::array<Water3DRenderView, 10> kRenderViews{
+constexpr std::array<Water3DRenderView, 11> kRenderViews{
     Water3DRenderView::Surface,
     Water3DRenderView::Particles,
     Water3DRenderView::Cells,
@@ -56,6 +56,7 @@ constexpr std::array<Water3DRenderView, 10> kRenderViews{
     Water3DRenderView::SurfaceDepth,
     Water3DRenderView::SurfaceThickness,
     Water3DRenderView::SurfaceNormals,
+    Water3DRenderView::SurfaceFoam,
 };
 
 constexpr std::array<Water3DTransferMode, 2> kTransferModes{
@@ -284,6 +285,8 @@ class Water3DApp {
                            "%.2f");
         ImGui::SliderFloat("Surface refraction", &water_config_.surface_refraction_strength, 0.0F,
                            0.12F, "%.3f");
+        ImGui::SliderFloat("Foam amount", &water_config_.foam_amount, 0.0F, 1.0F, "%.2f");
+        ImGui::SliderFloat("Foam sharpness", &water_config_.foam_sharpness, 0.2F, 4.0F, "%.2f");
         ImGui::SliderFloat("Environment intensity", &water_config_.environment_intensity, 0.0F,
                            4.0F, "%.2f");
         ImGui::SliderFloat("Environment rotation", &water_config_.environment_rotation_degrees,

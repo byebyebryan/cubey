@@ -170,8 +170,8 @@ surface_push_constants(const Water3DConfig& config, const Water3DRuntimeState& r
                   config.surface_thickness_smoothing,
               }
             : std::array<float, 4>{
-                  config.surface_smoothing_radius_px,
-                  config.surface_depth_sigma,
+                  config.foam_amount,
+                  config.foam_sharpness,
                   config.surface_absorption,
                   config.surface_refraction_strength,
               };
