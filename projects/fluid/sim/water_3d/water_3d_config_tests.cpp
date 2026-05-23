@@ -86,6 +86,8 @@ int main() {
                 "water 3D should default to visible whitewater emission");
         require(config.whitewater_drag == 0.94F && config.whitewater_gravity_scale == 0.55F,
                 "water 3D should default to damped spray whitewater");
+        require(!config.profile_diagnostics && config.profile_diagnostic_interval == 1U,
+                "water 3D diagnostics should be opt-in with per-frame sampling by default");
         require(sizeof(water::Water3DSimulationUniforms) ==
                     sizeof(float) * water::kWater3DSimulationUniformFloatCount,
                 "water 3D simulation uniforms should match the shader contract");
@@ -121,6 +123,9 @@ int main() {
                 "water 3D whitewater active indices should store one uint per particle");
         require(water::whitewater_draw_arg_byte_size(config) == sizeof(std::uint32_t) * 4U,
                 "water 3D whitewater draw args should store one indirect draw command");
+        require(water::diagnostics_buffer_byte_size(config) ==
+                    sizeof(std::uint32_t) * water::kWater3DDiagnosticSlotCount,
+                "water 3D diagnostics should store a fixed uint slot buffer");
         require(water::particle_bin_index_count(config) == kExpectedCellCount * 32U,
                 "water 3D particle bins should allocate fixed cell slots");
         require(water::active_work_count_byte_size(config) == sizeof(std::uint32_t) * 4U,
@@ -192,6 +197,8 @@ int main() {
         run_config.grid_width = 32;
         run_config.grid_height = 48;
         run_config.grid_depth = 40;
+        run_config.profile_diagnostics = true;
+        run_config.profile_diagnostic_interval = 7;
         const water::Water3DConfig overridden = water::water_3d_config_from_run_config(run_config);
         require(overridden.grid_width == 32 && overridden.grid_height == 48 &&
                     overridden.grid_depth == 40,
@@ -201,6 +208,8 @@ int main() {
                 "water 3D run-config construction should refresh active particle counts");
         require(overridden.particle_capacity == water::particle_capacity_for_config(overridden),
                 "water 3D run-config construction should refresh particle capacity");
+        require(overridden.profile_diagnostics && overridden.profile_diagnostic_interval == 7U,
+                "water 3D run-config construction should preserve profile diagnostics flags");
 
         bool rejected = false;
         try {
@@ -234,6 +243,8 @@ int main() {
             read_text_file(shader_dir / "water_3d_whitewater_active_indices.comp");
         const std::string whitewater_draw_args =
             read_text_file(shader_dir / "water_3d_whitewater_draw_args.comp");
+        const std::string diagnostics_shader =
+            read_text_file(shader_dir / "water_3d_diagnostics.comp");
         const std::string whitewater_vert = read_text_file(shader_dir / "water_3d_whitewater.vert");
         const std::string whitewater_frag = read_text_file(shader_dir / "water_3d_whitewater.frag");
         const std::string extrapolate_shader =
@@ -281,6 +292,8 @@ int main() {
                          "water 3D contract should expose compacted active face indices");
         require_contains(contract, "WATER3D_BINDING_ACTIVE_FACE_DISPATCH_ARGS",
                          "water 3D contract should expose active face indirect dispatch args");
+        require_contains(contract, "WATER3D_BINDING_DIAGNOSTICS",
+                         "water 3D contract should expose diagnostics readback storage");
         require_contains(contract, "WATER3D_BUILD_ACTIVE_FACES",
                          "water 3D contract should expose binning active-face control");
         require_contains(contract, "WATER3D_WHITEWATER_CAPACITY",
@@ -341,6 +354,16 @@ int main() {
                          "water 3D whitewater should count compacted active particles");
         require_contains(whitewater_draw_args, "whitewater_draw_args.values[1] = active_count",
                          "water 3D whitewater should write indirect draw instance count");
+        require_contains(diagnostics_shader, "SLOT_ACTIVE_PARTICLES",
+                         "water 3D diagnostics should count active particles");
+        require_contains(diagnostics_shader, "SLOT_ACTIVE_FACE_DISPATCH_GROUPS",
+                         "water 3D diagnostics should capture active-face dispatch work");
+        require_contains(diagnostics_shader, "record_projection_residual",
+                         "water 3D diagnostics should measure post-projection residuals");
+        require_contains(diagnostics_shader, "SLOT_WHITEWATER_ACTIVE",
+                         "water 3D diagnostics should capture whitewater active counts");
+        require_contains(diagnostics_shader, "DIVERGENCE_SCALE",
+                         "water 3D diagnostics should fixed-point encode divergence metrics");
         require_contains(whitewater_vert, "WATER3D_BINDING_WHITEWATER_POSITIONS",
                          "water 3D whitewater renderer should instance whitewater particles");
         require_contains(whitewater_vert, "whitewater_active_indices.values[active_slot]",
@@ -450,10 +473,20 @@ int main() {
                          "water 3D simulation should support indirect compute dispatch");
         require_contains(commands, "active_face_dispatch_args().handle()",
                          "water 3D particle-to-grid should dispatch over active faces indirectly");
+        require_contains(commands, "diagnostics workload",
+                         "water 3D simulation should profile workload diagnostics");
+        require_contains(commands, "diagnostics projection",
+                         "water 3D simulation should profile solver residual diagnostics");
+        require_contains(commands, "diagnostics whitewater",
+                         "water 3D simulation should profile whitewater diagnostics");
         require_contains(app, "record_gpu_timings(context.profile_recorder()",
                          "water 3D windowed path should export GPU timings to profiles");
         require_contains(app, "record_gpu_timings(profile_recorder",
                          "water 3D headless simulation path should export GPU timings to profiles");
+        require_contains(app, "resources_.diagnostics().handle()",
+                         "water 3D headless path should read back diagnostics metrics");
+        require_contains(app, "recorder.record_metric(frame_index, category, name, value)",
+                         "water 3D headless diagnostics should record profile metrics");
         require_contains(commands, "water whitewater",
                          "water 3D surface render should render whitewater before composite");
         require_contains(gpu_resources, "water_3d_active_face_dispatch_args.comp.spv",
@@ -464,6 +497,10 @@ int main() {
                          "water 3D GPU resources should create active whitewater compaction");
         require_contains(gpu_resources, "water_3d_whitewater_draw_args.comp.spv",
                          "water 3D GPU resources should create whitewater draw args");
+        require_contains(gpu_resources, "water_3d_diagnostics.comp.spv",
+                         "water 3D GPU resources should create diagnostics compute pipelines");
+        require_contains(gpu_resources, "VK_BUFFER_USAGE_TRANSFER_SRC_BIT",
+                         "water 3D diagnostics buffer should be readable by GPU readback");
         require_contains(gpu_resources, "water_3d_whitewater.vert.spv",
                          "water 3D GPU resources should create the whitewater render pipeline");
         require_contains(gpu_resources, "water_3d.whitewater",

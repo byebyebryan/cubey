@@ -208,16 +208,46 @@ void test_run_config_parses_profile_options() {
     std::string output_value = "water3d-64";
     std::string warmup_flag = "--profile-warmup-frames";
     std::string warmup_value = "60";
-    std::array<char*, 5> argv{program.data(), output_flag.data(), output_value.data(),
-                              warmup_flag.data(), warmup_value.data()};
+    std::string diagnostics_flag = "--profile-diagnostics";
+    std::string interval_flag = "--profile-diagnostic-interval";
+    std::string interval_value = "4";
+    std::array<char*, 8> argv{program.data(),       output_flag.data(),   output_value.data(),
+                              warmup_flag.data(),   warmup_value.data(),  diagnostics_flag.data(),
+                              interval_flag.data(), interval_value.data()};
 
     const cubey::RunConfig config =
         cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
-    require(config.profile_output_prefix == std::filesystem::path("outputs") / "profiles" /
-                                                output_value,
+    require(config.profile_output_prefix ==
+                std::filesystem::path("outputs") / "profiles" / output_value,
             "run config should place simple profile prefixes under outputs/profiles");
     require(config.profile_warmup_frames == 60,
             "run config should parse profile warmup frame count");
+    require(config.profile_diagnostics, "run config should parse profile diagnostics flag");
+    require(config.profile_diagnostic_interval == 4,
+            "run config should parse profile diagnostic interval");
+}
+
+void test_run_config_rejects_invalid_profile_diagnostics_options() {
+    {
+        std::string program = "cubey";
+        std::string diagnostics_flag = "--profile-diagnostics";
+        std::array<char*, 2> argv{program.data(), diagnostics_flag.data()};
+        require_throws(
+            [&argv]() { cubey::parse_run_config(static_cast<int>(argv.size()), argv.data()); },
+            "run config should reject profile diagnostics without profile output");
+    }
+    {
+        std::string program = "cubey";
+        std::string output_flag = "--profile-output";
+        std::string output_value = "water3d";
+        std::string interval_flag = "--profile-diagnostic-interval";
+        std::string interval_value = "0";
+        std::array<char*, 5> argv{program.data(), output_flag.data(), output_value.data(),
+                                  interval_flag.data(), interval_value.data()};
+        require_throws(
+            [&argv]() { cubey::parse_run_config(static_cast<int>(argv.size()), argv.data()); },
+            "run config should reject zero profile diagnostic interval");
+    }
 }
 
 void test_run_config_parses_grid_dimensions() {

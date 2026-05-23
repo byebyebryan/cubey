@@ -80,11 +80,13 @@ struct RunConfig {
     float exposure = 0.0F;
     std::uint32_t animation_index = 0;
     std::uint32_t profile_warmup_frames = 0;
+    std::uint32_t profile_diagnostic_interval = 1;
     float animation_speed = 1.0F;
     bool headless = false;
     bool animation_paused = false;
     bool smoke_obstacles = false;
     bool print_frame_stats = false;
+    bool profile_diagnostics = false;
     bool validation = true;
     bool require_validation = false;
 };

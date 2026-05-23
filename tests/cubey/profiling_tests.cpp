@@ -41,17 +41,23 @@ void test_profile_recorder_skips_warmup_and_records_spans() {
     recorder.record_frame({.frame_index = 0, .delta_seconds = 0.016});
     recorder.record_cpu_span(0, "warmup cpu", 1.0);
     recorder.record_gpu_span(0, "warmup gpu", 2.0);
+    recorder.record_metric(0, "warmup", "hidden", 9.0);
     recorder.record_frame({.frame_index = 1, .delta_seconds = 0.010, .width = 64, .height = 32});
     recorder.record_gpu_span(1, "particle to grid", 4.5);
+    recorder.record_metric(1, "water_3d.workload", "active_particles", 42.0);
 
     const std::vector<cubey::profiling::ProfileFrameRecord> frames = recorder.frame_records();
     const std::vector<cubey::profiling::ProfileSpanRecord> spans = recorder.span_records();
+    const std::vector<cubey::profiling::ProfileMetricRecord> metrics = recorder.metric_records();
     require(frames.size() == 1, "profile recorder should skip warmup frame records");
     require(spans.size() == 1, "profile recorder should skip warmup spans");
+    require(metrics.size() == 1, "profile recorder should skip warmup metrics");
     require(frames.front().frame_index == 1, "profile frame should preserve frame index");
     require(spans.front().label == "particle to grid", "profile span should preserve label");
     require(spans.front().duration_milliseconds == 4.5,
             "profile span should preserve GPU duration");
+    require(metrics.front().name == "active_particles", "profile metric should preserve name");
+    require(metrics.front().value == 42.0, "profile metric should preserve value");
 }
 
 void test_profile_recorder_writes_csv_summary_and_trace_outputs() {
@@ -76,10 +82,13 @@ void test_profile_recorder_writes_csv_summary_and_trace_outputs() {
     });
     recorder.record_cpu_span(0, "host,update", 1.25);
     recorder.record_gpu_span(0, "surface \"composite\"", 2.5);
+    recorder.record_metric(0, "water_3d.workload", "active,faces", 123.0);
+    recorder.record_metric(0, "water_3d.solver", "divergence \"max\"", 0.25);
     recorder.write_outputs();
 
     const std::string frames = read_text(prefix.string() + ".frames.csv");
     const std::string passes = read_text(prefix.string() + ".passes.csv");
+    const std::string metrics = read_text(prefix.string() + ".metrics.csv");
     const std::string trace = read_text(prefix.string() + ".trace.json");
     const std::string summary = read_text(prefix.string() + ".summary.txt");
 
@@ -91,13 +100,23 @@ void test_profile_recorder_writes_csv_summary_and_trace_outputs() {
             "profile passes CSV should quote comma labels");
     require(passes.find("\"surface \"\"composite\"\"\"") != std::string::npos,
             "profile passes CSV should escape quotes");
+    require(metrics.find("frame_index,category,name,value") != std::string::npos,
+            "profile metrics CSV should contain a header");
+    require(metrics.find("\"active,faces\"") != std::string::npos,
+            "profile metrics CSV should quote comma names");
+    require(metrics.find("\"divergence \"\"max\"\"\"") != std::string::npos,
+            "profile metrics CSV should escape quotes");
     require(trace.find("\"ph\":\"X\"") != std::string::npos,
             "profile trace should contain complete events");
+    require(trace.find("\"ph\":\"C\"") != std::string::npos,
+            "profile trace should contain counter events for metrics");
     require(trace.find("surface \\\"composite\\\"") != std::string::npos,
             "profile trace should JSON-escape labels");
     require(summary.find("kind,label,count,avg_ms,min_ms,median_ms,p95_ms,max_ms,total_ms") !=
                 std::string::npos,
             "profile summary should contain aggregate timing columns");
+    require(summary.find("category,name,count,avg,min,median,p95,max,last") != std::string::npos,
+            "profile summary should contain aggregate metric columns");
 
     std::filesystem::remove_all(dir);
 }

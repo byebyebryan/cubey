@@ -2,10 +2,11 @@
 
 Date: 2026-05-23
 
-Profiling now writes four files per run:
+Profiling now writes five files per run:
 
 - `<prefix>.frames.csv`
 - `<prefix>.passes.csv`
+- `<prefix>.metrics.csv`
 - `<prefix>.trace.json`
 - `<prefix>.summary.txt`
 
@@ -18,12 +19,32 @@ Current capture commands:
 ./build/dev/projects/fluid/water_3d/water_3d --headless --frames 120 --grid-width 64 --grid-height 64 --grid-depth 64 --output outputs/water3d-profile-headless.png --profile-output water3d-64-headless --profile-warmup-frames 30 --no-validation
 ./build/dev/projects/fluid/water_3d/water_3d --headless --frames 90 --grid-width 96 --grid-height 96 --grid-depth 96 --output outputs/water3d-profile-headless-96.png --profile-output water3d-96-headless --profile-warmup-frames 30 --no-validation
 ./build/dev/projects/fluid/water_3d/water_3d --headless --frames 60 --grid-width 128 --grid-height 128 --grid-depth 128 --output outputs/water3d-profile-headless-128.png --profile-output water3d-128-headless --profile-warmup-frames 20 --no-validation
+./build/dev/projects/fluid/water_3d/water_3d --headless --frames 120 --grid-width 64 --grid-height 64 --grid-depth 64 --output outputs/water3d-profile-diagnostics.png --profile-output water3d-64-diagnostics --profile-warmup-frames 30 --profile-diagnostics --profile-diagnostic-interval 4 --no-validation
 ```
 
 These runs measure the simulation GPU passes in the headless path. They do not
 include the windowed screen-space water renderer beyond the final PNG capture.
 `frames.csv` records memory rows with `delta_ms = 0` for headless simulation
 frames so the summary does not imply a wall-clock FPS.
+
+`--profile-diagnostics` enables extra water 3D compute passes that write a fixed
+uint diagnostics buffer. The headless simulation path reads it back after sampled
+frames and writes rows to `<prefix>.metrics.csv`; the same values also appear as
+Chrome trace counter events and aggregate rollups in the summary. Diagnostics
+requires `--profile-output`, and `--profile-diagnostic-interval N` controls how
+often rows are read back after warmup. Windowed runs currently keep the extra GPU
+diagnostic pass timings but do not synchronously read back metric rows.
+
+Metric categories:
+
+- `water_3d.workload`: active/inactive scan particles, out-of-bounds particles,
+  nonempty and overpacked cells, max cell occupancy, active face count/ratio, and
+  active-face indirect dispatch groups.
+- `water_3d.solver`: post-projection divergence residual sum, max, average, and
+  contributing cell count. Divergence is fixed-point encoded in the shader with a
+  scale of 1,000,000 before CPU decode.
+- `water_3d.whitewater`: per-frame emitted particles, compacted active particles,
+  capacity, and active ratio.
 
 ## Current Results
 
@@ -78,3 +99,7 @@ Review pass, 2026-05-23:
 - The next diagnostics pass should split P2G more finely before trying another
   optimization. In particular, separate active-face setup, bin traversal,
   particle neighborhood iteration, and atomic accumulation if possible.
+- A built-in diagnostic readback path now captures workload, solver residual,
+  and whitewater counters. Use that before another P2G rewrite so we can see
+  whether the cost is coming from scan count, cell occupancy, active-face work,
+  or residual pressure error rather than guessing from pass names alone.

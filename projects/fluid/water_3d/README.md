@@ -38,7 +38,10 @@ Common runs:
 ./build/dev/projects/fluid/water_3d/water_3d --grid-width 48 --grid-height 48 --grid-depth 48
 ./build/dev/projects/fluid/water_3d/water_3d --environment build/dev/_deps/cubey_hdr_sample_assets-src/venetian_crossroads_2k.hdr
 ./build/dev/projects/fluid/water_3d/water_3d --frames 240 --profile-output water3d-64 --profile-warmup-frames 60
+./build/dev/projects/fluid/water_3d/water_3d --headless --frames 120 --profile-output water3d-64-diagnostics --profile-diagnostics --profile-diagnostic-interval 4 --no-validation
 ```
 
-Profiling writes CSV, Chrome trace JSON, and a text summary under
-`outputs/profiles/` when the prefix has no directory component.
+Profiling writes frame, pass, metric CSVs, Chrome trace JSON, and a text summary
+under `outputs/profiles/` when the prefix has no directory component.
+`--profile-diagnostics` is opt-in because it adds readback-oriented diagnostic
+passes for workload, solver residual, and whitewater counters.

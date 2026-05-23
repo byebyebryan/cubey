@@ -179,6 +179,31 @@ ProjectGpuReadbackTicket ProjectGpuServices::enqueue_rgba8_image_readback(VkImag
     return ticket;
 }
 
+std::vector<std::uint8_t>
+ProjectGpuServices::readback_buffer(VkBuffer source, VkDeviceSize byte_size, std::string label) {
+    if (source == VK_NULL_HANDLE) {
+        throw std::runtime_error("project GPU buffer readback requires a source buffer");
+    }
+    if (byte_size == 0) {
+        throw std::runtime_error("project GPU buffer readback size must be positive");
+    }
+    if (byte_size > static_cast<VkDeviceSize>(std::numeric_limits<std::size_t>::max())) {
+        throw std::runtime_error("project GPU buffer readback is too large");
+    }
+
+    std::vector<std::uint8_t> bytes(static_cast<std::size_t>(byte_size));
+    static_cast<void>(impl_->gpu->submit_and_wait({
+        .label = std::move(label),
+        .work =
+            [source, byte_size, &bytes](vulkan::GpuOwnerContext& owner) {
+                vulkan::Buffer readback(owner.device(), vulkan::readback_buffer_config(byte_size));
+                vulkan::copy_buffer(owner, source, readback.handle(), byte_size);
+                readback.download(bytes.data(), byte_size);
+            },
+    }));
+    return bytes;
+}
+
 ProjectGpuReadbackStatus
 ProjectGpuServices::readback_status(const ProjectGpuReadbackTicket& ticket) const {
     std::scoped_lock lock(impl_->readback_mutex);

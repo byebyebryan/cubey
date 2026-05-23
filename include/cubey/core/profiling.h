@@ -35,6 +35,13 @@ struct ProfileSpanRecord {
     double duration_milliseconds = 0.0;
 };
 
+struct ProfileMetricRecord {
+    std::uint64_t frame_index = 0;
+    std::string category;
+    std::string name;
+    double value = 0.0;
+};
+
 struct ProfileRecorderConfig {
     std::filesystem::path output_prefix;
     std::uint32_t warmup_frames = 0;
@@ -82,16 +89,18 @@ class ProfileRecorder {
 
     [[nodiscard]] bool should_record_frame(std::uint64_t frame_index) const noexcept;
 
-    [[nodiscard]] ScopedCpuProfileSpan cpu_span(std::uint64_t frame_index,
-                                                std::string_view label);
+    [[nodiscard]] ScopedCpuProfileSpan cpu_span(std::uint64_t frame_index, std::string_view label);
     void record_frame(const ProfileFrameRecord& frame);
     void record_cpu_span(std::uint64_t frame_index, std::string_view label,
                          double duration_milliseconds);
     void record_gpu_span(std::uint64_t frame_index, std::string_view label,
                          double duration_milliseconds);
+    void record_metric(std::uint64_t frame_index, std::string_view category, std::string_view name,
+                       double value);
 
     [[nodiscard]] std::vector<ProfileFrameRecord> frame_records() const;
     [[nodiscard]] std::vector<ProfileSpanRecord> span_records() const;
+    [[nodiscard]] std::vector<ProfileMetricRecord> metric_records() const;
 
     void write_outputs() const;
 
@@ -99,8 +108,8 @@ class ProfileRecorder {
     friend class ScopedCpuProfileSpan;
     using Clock = std::chrono::steady_clock;
 
-    void record_cpu_span(std::uint64_t frame_index, std::string_view label,
-                         Clock::time_point start, Clock::time_point end);
+    void record_cpu_span(std::uint64_t frame_index, std::string_view label, Clock::time_point start,
+                         Clock::time_point end);
     void record_span(ProfileSpanRecord span);
     [[nodiscard]] double milliseconds_since_start(Clock::time_point time) const;
 
@@ -109,6 +118,7 @@ class ProfileRecorder {
     mutable std::mutex mutex_;
     std::vector<ProfileFrameRecord> frames_;
     std::vector<ProfileSpanRecord> spans_;
+    std::vector<ProfileMetricRecord> metrics_;
 };
 
 } // namespace cubey::profiling

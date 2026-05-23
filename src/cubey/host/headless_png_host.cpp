@@ -369,7 +369,7 @@ void HeadlessPngHost::write_profile_outputs() {
     }
     profile_recorder_->write_outputs();
     const std::string prefix = profile_recorder_->config().output_prefix.string();
-    std::printf("profile: wrote %s.{frames.csv,passes.csv,trace.json,summary.txt}\n",
+    std::printf("profile: wrote %s.{frames.csv,passes.csv,metrics.csv,trace.json,summary.txt}\n",
                 prefix.c_str());
 }
 

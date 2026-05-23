@@ -68,6 +68,8 @@ class ProjectGpuServices {
     [[nodiscard]] std::size_t retire_deferred_destruction();
     [[nodiscard]] ProjectGpuReadbackTicket
     enqueue_rgba8_image_readback(VkImage source, VkExtent2D extent, std::string label);
+    [[nodiscard]] std::vector<std::uint8_t> readback_buffer(VkBuffer source, VkDeviceSize byte_size,
+                                                            std::string label);
     [[nodiscard]] ProjectGpuReadbackStatus
     readback_status(const ProjectGpuReadbackTicket& ticket) const;
     [[nodiscard]] ProjectGpuReadbackResult

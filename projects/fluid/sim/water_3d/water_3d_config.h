@@ -46,8 +46,30 @@ inline constexpr std::uint32_t kWater3DDefaultGridHeight = 64;
 inline constexpr std::uint32_t kWater3DDefaultGridDepth = 64;
 inline constexpr std::uint32_t kWater3DDefaultWhitewaterCapacity = 65536;
 inline constexpr std::uint32_t kWater3DMaxExactShaderInteger = 1U << 24U;
+inline constexpr std::uint32_t kWater3DDiagnosticSlotCount = 64;
+inline constexpr std::uint32_t kWater3DDiagnosticDivergenceScale = 1000000;
 inline constexpr float kWater3DMinFillFraction = 0.08F;
 inline constexpr float kWater3DMaxFillFraction = 0.75F;
+
+enum class Water3DDiagnosticSlot : std::uint32_t {
+    ActiveParticles = 0,
+    InactiveScanParticles = 1,
+    OutOfBoundsParticles = 2,
+    NonemptyCells = 3,
+    OverpackedCells = 4,
+    OverpackedParticles = 5,
+    MaxCellCount = 6,
+    ActiveFaces = 7,
+    ActiveFaceDispatchGroups = 8,
+    DivergenceAbsSumFixed = 9,
+    DivergenceAbsMaxFixed = 10,
+    DivergentCells = 11,
+    WhitewaterEmitted = 12,
+    WhitewaterActive = 13,
+    WhitewaterCapacity = 14,
+    ParticleScanCount = 15,
+    DivergenceAbsSumFixedHigh = 16,
+};
 
 struct Water3DConfig {
     std::uint32_t grid_width = kWater3DDefaultGridWidth;
@@ -94,6 +116,8 @@ struct Water3DConfig {
     float environment_intensity = 1.0F;
     float environment_rotation_degrees = 0.0F;
     float exposure = 0.0F;
+    std::uint32_t profile_diagnostic_interval = 1;
+    bool profile_diagnostics = false;
 };
 
 struct Water3DSimulationUniforms {
@@ -353,9 +377,8 @@ inline void validate_water_3d_whitewater_capacity(const Water3DConfig& config) {
 }
 
 [[nodiscard]] inline std::size_t total_face_count(const Water3DConfig& config) {
-    const std::size_t uv_faces =
-        checked_add(u_face_count(config), v_face_count(config),
-                    "water 3D total face count is too large");
+    const std::size_t uv_faces = checked_add(u_face_count(config), v_face_count(config),
+                                             "water 3D total face count is too large");
     const std::size_t count =
         checked_add(uv_faces, w_face_count(config), "water 3D total face count is too large");
     validate_exact_shader_integer(count,
@@ -508,14 +531,18 @@ water_3d_runtime_particle_scan_count(const Water3DConfig& config,
 
 [[nodiscard]] inline std::size_t whitewater_active_index_byte_size(const Water3DConfig& config) {
     validate_water_3d_whitewater_capacity(config);
-    return checked_mul(static_cast<std::size_t>(config.whitewater_capacity),
-                       sizeof(std::uint32_t),
+    return checked_mul(static_cast<std::size_t>(config.whitewater_capacity), sizeof(std::uint32_t),
                        "water 3D whitewater active index buffer is too large");
 }
 
 [[nodiscard]] inline std::size_t whitewater_draw_arg_byte_size(const Water3DConfig& config) {
     validate_water_3d_whitewater_capacity(config);
     return sizeof(std::uint32_t) * 4U;
+}
+
+[[nodiscard]] inline std::size_t diagnostics_buffer_byte_size(const Water3DConfig& config) {
+    static_cast<void>(config);
+    return sizeof(std::uint32_t) * kWater3DDiagnosticSlotCount;
 }
 
 [[nodiscard]] inline Water3DConfig water_3d_config_from_run_config(const RunConfig& config) {
@@ -532,6 +559,8 @@ water_3d_runtime_particle_scan_count(const Water3DConfig& config,
     water_config.environment_intensity = config.ibl_intensity;
     water_config.environment_rotation_degrees = config.environment_rotation_degrees;
     water_config.exposure = config.exposure;
+    water_config.profile_diagnostics = config.profile_diagnostics;
+    water_config.profile_diagnostic_interval = config.profile_diagnostic_interval;
     refresh_particle_counts(water_config);
     static_cast<void>(cell_count(water_config));
     static_cast<void>(u_face_count(water_config));
@@ -547,6 +576,7 @@ water_3d_runtime_particle_scan_count(const Water3DConfig& config,
     static_cast<void>(whitewater_counter_byte_size(water_config));
     static_cast<void>(whitewater_active_index_byte_size(water_config));
     static_cast<void>(whitewater_draw_arg_byte_size(water_config));
+    static_cast<void>(diagnostics_buffer_byte_size(water_config));
     return water_config;
 }
 

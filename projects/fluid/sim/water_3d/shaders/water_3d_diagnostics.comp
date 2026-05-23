@@ -1,0 +1,215 @@
+#version 450
+#extension GL_GOOGLE_include_directive : require
+
+#include "water_3d_contract.glsl"
+
+layout(local_size_x = 64, local_size_y = 1) in;
+
+layout(set = 0, binding = WATER3D_BINDING_PARTICLE_POSITIONS, std430) readonly buffer ParticlePositions {
+    vec4 values[];
+} particle_positions;
+layout(set = 0, binding = WATER3D_BINDING_U_FIELD, std430) readonly buffer UField {
+    float values[];
+} u_field;
+layout(set = 0, binding = WATER3D_BINDING_V_FIELD, std430) readonly buffer VField {
+    float values[];
+} v_field;
+layout(set = 0, binding = WATER3D_BINDING_W_FIELD, std430) readonly buffer WField {
+    float values[];
+} w_field;
+layout(set = 0, binding = WATER3D_BINDING_SOLID, std430) readonly buffer SolidField {
+    float values[];
+} solid;
+layout(set = 0, binding = WATER3D_BINDING_CELL_COUNTS, std430) readonly buffer CellCounts {
+    uint values[];
+} cell_counts;
+layout(set = 0, binding = WATER3D_BINDING_WHITEWATER_COUNTERS, std430) readonly buffer WhitewaterCounters {
+    uint values[];
+} whitewater_counters;
+layout(set = 0, binding = WATER3D_BINDING_ACTIVE_WORK_COUNTS, std430) readonly buffer ActiveWorkCounts {
+    uint values[];
+} active_work_counts;
+layout(set = 0, binding = WATER3D_BINDING_ACTIVE_FACE_DISPATCH_ARGS, std430) readonly buffer ActiveFaceDispatchArgs {
+    uint values[];
+} active_face_dispatch_args;
+layout(set = 0, binding = WATER3D_BINDING_DIAGNOSTICS, std430) buffer Diagnostics {
+    uint values[];
+} diagnostics;
+
+WATER3D_SIMULATION_PARAMS;
+
+const uint DIAGNOSTIC_MODE_CLEAR = 0u;
+const uint DIAGNOSTIC_MODE_WORKLOAD = 1u;
+const uint DIAGNOSTIC_MODE_PROJECTION = 2u;
+const uint DIAGNOSTIC_MODE_WHITEWATER = 3u;
+
+const uint SLOT_ACTIVE_PARTICLES = 0u;
+const uint SLOT_INACTIVE_SCAN_PARTICLES = 1u;
+const uint SLOT_OUT_OF_BOUNDS_PARTICLES = 2u;
+const uint SLOT_NONEMPTY_CELLS = 3u;
+const uint SLOT_OVERPACKED_CELLS = 4u;
+const uint SLOT_OVERPACKED_PARTICLES = 5u;
+const uint SLOT_MAX_CELL_COUNT = 6u;
+const uint SLOT_ACTIVE_FACES = 7u;
+const uint SLOT_ACTIVE_FACE_DISPATCH_GROUPS = 8u;
+const uint SLOT_DIVERGENCE_ABS_SUM_FIXED = 9u;
+const uint SLOT_DIVERGENCE_ABS_MAX_FIXED = 10u;
+const uint SLOT_DIVERGENT_CELLS = 11u;
+const uint SLOT_WHITEWATER_EMITTED = 12u;
+const uint SLOT_WHITEWATER_ACTIVE = 13u;
+const uint SLOT_WHITEWATER_CAPACITY = 14u;
+const uint SLOT_PARTICLE_SCAN_COUNT = 15u;
+const uint SLOT_DIVERGENCE_ABS_SUM_FIXED_HIGH = 16u;
+const uint DIAGNOSTIC_SLOT_COUNT = 64u;
+const float DIVERGENCE_SCALE = 1000000.0;
+
+uint cell_index(uint x, uint y, uint z, uint width, uint height) {
+    return ((z * height) + y) * width + x;
+}
+uint u_index(uint x, uint y, uint z, uint width, uint height) {
+    return ((z * height) + y) * (width + 1u) + x;
+}
+uint v_index(uint x, uint y, uint z, uint width, uint height) {
+    return ((z * (height + 1u)) + y) * width + x;
+}
+uint w_index(uint x, uint y, uint z, uint width, uint height) {
+    return ((z * height) + y) * width + x;
+}
+bool in_bounds(int x, int y, int z, uint width, uint height, uint depth) {
+    return x >= 0 && y >= 0 && z >= 0 && x < int(width) && y < int(height) && z < int(depth);
+}
+bool solid_cell(int x, int y, int z, uint width, uint height, uint depth) {
+    if (!in_bounds(x, y, z, width, height, depth)) {
+        return true;
+    }
+    return solid.values[cell_index(uint(x), uint(y), uint(z), width, height)] > 0.5;
+}
+bool liquid_cell(uint index) {
+    return solid.values[index] < 0.5 && cell_counts.values[index] > 0u;
+}
+
+float side_boundary_volume_scale(uint x, uint y, uint z, uint width, uint height, uint depth) {
+    int side_solid_faces = 0;
+    side_solid_faces += solid_cell(int(x) - 1, int(y), int(z), width, height, depth) ? 1 : 0;
+    side_solid_faces += solid_cell(int(x) + 1, int(y), int(z), width, height, depth) ? 1 : 0;
+    side_solid_faces += solid_cell(int(x), int(y), int(z) - 1, width, height, depth) ? 1 : 0;
+    side_solid_faces += solid_cell(int(x), int(y), int(z) + 1, width, height, depth) ? 1 : 0;
+    return side_solid_faces == 0 ? 1.0 : 0.0;
+}
+
+float boundary_limited_volume_source(float raw_source, float boundary_scale) {
+    if (boundary_scale >= 0.999) {
+        return raw_source;
+    }
+    float source_limit = max(0.0, WATER3D_VOLUME_STRENGTH) * boundary_scale;
+    return min(raw_source * boundary_scale, source_limit);
+}
+
+void record_workload(uint id, uint cell_count, uint particle_count, uint max_particles_per_cell) {
+    if (id == 0u) {
+        diagnostics.values[SLOT_ACTIVE_FACES] = active_work_counts.values[0];
+        diagnostics.values[SLOT_ACTIVE_FACE_DISPATCH_GROUPS] = active_face_dispatch_args.values[0];
+        diagnostics.values[SLOT_PARTICLE_SCAN_COUNT] = particle_count;
+    }
+
+    if (id < particle_count) {
+        vec4 particle = particle_positions.values[id];
+        if (particle.w > 0.5) {
+            atomicAdd(diagnostics.values[SLOT_ACTIVE_PARTICLES], 1u);
+            if (any(lessThan(particle.xyz, vec3(0.0))) ||
+                any(greaterThanEqual(particle.xyz, vec3(1.0)))) {
+                atomicAdd(diagnostics.values[SLOT_OUT_OF_BOUNDS_PARTICLES], 1u);
+            }
+        } else {
+            atomicAdd(diagnostics.values[SLOT_INACTIVE_SCAN_PARTICLES], 1u);
+        }
+    }
+
+    if (id < cell_count) {
+        uint count = cell_counts.values[id];
+        if (count > 0u) {
+            atomicAdd(diagnostics.values[SLOT_NONEMPTY_CELLS], 1u);
+            atomicMax(diagnostics.values[SLOT_MAX_CELL_COUNT], count);
+            if (count > max_particles_per_cell) {
+                atomicAdd(diagnostics.values[SLOT_OVERPACKED_CELLS], 1u);
+                atomicAdd(diagnostics.values[SLOT_OVERPACKED_PARTICLES],
+                          count - max_particles_per_cell);
+            }
+        }
+    }
+}
+
+void record_projection_residual(uint id, uint width, uint height, uint depth) {
+    uint cell_count = width * height * depth;
+    if (id >= cell_count) {
+        return;
+    }
+    if (!liquid_cell(id)) {
+        return;
+    }
+
+    uint x = id % width;
+    uint y = (id / width) % height;
+    uint z = id / (width * height);
+    float left = u_field.values[u_index(x, y, z, width, height)];
+    float right = u_field.values[u_index(x + 1u, y, z, width, height)];
+    float bottom = v_field.values[v_index(x, y, z, width, height)];
+    float top = v_field.values[v_index(x, y + 1u, z, width, height)];
+    float back = w_field.values[w_index(x, y, z, width, height)];
+    float front = w_field.values[w_index(x, y, z + 1u, width, height)];
+    float velocity_divergence = ((right - left) * float(width)) + ((top - bottom) * float(height)) +
+                                ((front - back) * float(depth));
+    float target_particles = max(1.0, WATER3D_PARTICLES_PER_CELL);
+    float stored_particles = min(float(cell_counts.values[id]), WATER3D_MAX_PARTICLES_PER_CELL);
+    float overpack = max(0.0, (stored_particles - target_particles) / target_particles);
+    float raw_volume_source = min(overpack, 5.0) * max(0.0, WATER3D_VOLUME_STRENGTH);
+    float volume_source = boundary_limited_volume_source(
+        raw_volume_source, side_boundary_volume_scale(x, y, z, width, height, depth));
+    float residual = abs(velocity_divergence - volume_source);
+    if (residual <= 0.000001) {
+        return;
+    }
+
+    uint scaled = uint(min(residual * DIVERGENCE_SCALE, 4294967040.0));
+    uint previous = atomicAdd(diagnostics.values[SLOT_DIVERGENCE_ABS_SUM_FIXED], scaled);
+    if (previous > 0xffffffffu - scaled) {
+        atomicAdd(diagnostics.values[SLOT_DIVERGENCE_ABS_SUM_FIXED_HIGH], 1u);
+    }
+    atomicMax(diagnostics.values[SLOT_DIVERGENCE_ABS_MAX_FIXED], scaled);
+    atomicAdd(diagnostics.values[SLOT_DIVERGENT_CELLS], 1u);
+}
+
+void record_whitewater(uint id) {
+    if (id != 0u) {
+        return;
+    }
+    uint capacity = uint(WATER3D_WHITEWATER_CAPACITY + 0.5);
+    diagnostics.values[SLOT_WHITEWATER_EMITTED] = whitewater_counters.values[0];
+    diagnostics.values[SLOT_WHITEWATER_ACTIVE] =
+        WATER3D_WHITEWATER_INTENSITY > 0.0 ? min(whitewater_counters.values[1], capacity) : 0u;
+    diagnostics.values[SLOT_WHITEWATER_CAPACITY] = capacity;
+}
+
+void main() {
+    uint id = gl_GlobalInvocationID.x;
+    uint mode = uint(WATER3D_PRESSURE_READ_B + 0.5);
+    uint width = uint(WATER3D_GRID_WIDTH + 0.5);
+    uint height = uint(WATER3D_GRID_HEIGHT + 0.5);
+    uint depth = uint(WATER3D_GRID_DEPTH + 0.5);
+    uint cell_count = width * height * depth;
+    uint particle_count =
+        min(uint(WATER3D_PARTICLE_SCAN_COUNT + 0.5), uint(WATER3D_PARTICLE_CAPACITY + 0.5));
+    uint max_particles_per_cell = uint(WATER3D_MAX_PARTICLES_PER_CELL + 0.5);
+
+    if (mode == DIAGNOSTIC_MODE_CLEAR) {
+        if (id < DIAGNOSTIC_SLOT_COUNT) {
+            diagnostics.values[id] = 0u;
+        }
+    } else if (mode == DIAGNOSTIC_MODE_WORKLOAD) {
+        record_workload(id, cell_count, particle_count, max_particles_per_cell);
+    } else if (mode == DIAGNOSTIC_MODE_PROJECTION) {
+        record_projection_residual(id, width, height, depth);
+    } else if (mode == DIAGNOSTIC_MODE_WHITEWATER) {
+        record_whitewater(id);
+    }
+}

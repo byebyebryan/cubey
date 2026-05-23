@@ -199,6 +199,11 @@ RunConfig parse_run_config(int argc, char** argv) {
         } else if (arg == "--profile-warmup-frames") {
             config.profile_warmup_frames =
                 parse_u32(need_value("--profile-warmup-frames"), "--profile-warmup-frames");
+        } else if (arg == "--profile-diagnostics") {
+            config.profile_diagnostics = true;
+        } else if (arg == "--profile-diagnostic-interval") {
+            config.profile_diagnostic_interval = parse_positive_u32(
+                need_value("--profile-diagnostic-interval"), "--profile-diagnostic-interval");
         } else if (arg == "--capture") {
             const std::string_view mode = need_value("--capture");
             if (mode == "png") {
@@ -247,6 +252,9 @@ RunConfig parse_run_config(int argc, char** argv) {
     }
     if (config.fps == 0) {
         throw std::runtime_error("fps must be positive");
+    }
+    if (config.profile_diagnostics && config.profile_output_prefix.empty()) {
+        throw std::runtime_error("profile diagnostics require --profile-output");
     }
     if (config.smoke_injector_force < 0.0F) {
         throw std::runtime_error("smoke injector force must be nonnegative");

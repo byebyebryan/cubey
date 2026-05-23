@@ -27,11 +27,13 @@
 
 #include <algorithm>
 #include <array>
-#include <cstdio>
 #include <cstdint>
+#include <cstdio>
+#include <cstring>
 #include <filesystem>
 #include <optional>
 #include <stdexcept>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -92,6 +94,105 @@ void record_gpu_timings(cubey::profiling::ProfileRecorder* recorder, std::uint64
     for (const cubey::vulkan::GpuPassTiming& timing : timings) {
         recorder->record_gpu_span(frame_index, timing.label, timing.milliseconds);
     }
+}
+
+[[nodiscard]] std::uint32_t diagnostic_slot_value(const std::vector<std::uint8_t>& bytes,
+                                                  Water3DDiagnosticSlot slot) {
+    const std::size_t offset = static_cast<std::size_t>(slot) * sizeof(std::uint32_t);
+    if (offset > bytes.size() || sizeof(std::uint32_t) > bytes.size() - offset) {
+        throw std::runtime_error("water 3D diagnostics readback is too small");
+    }
+    std::uint32_t value = 0;
+    std::memcpy(&value, bytes.data() + offset, sizeof(value));
+    return value;
+}
+
+[[nodiscard]] bool should_record_water_3d_diagnostics(cubey::profiling::ProfileRecorder* recorder,
+                                                      const Water3DConfig& config,
+                                                      std::uint64_t frame_index) {
+    if (recorder == nullptr || !config.profile_diagnostics ||
+        config.profile_diagnostic_interval == 0U) {
+        return false;
+    }
+    return recorder->should_record_frame(frame_index) &&
+           (frame_index % config.profile_diagnostic_interval) == 0U;
+}
+
+void record_metric(cubey::profiling::ProfileRecorder& recorder, std::uint64_t frame_index,
+                   std::string_view category, std::string_view name, double value) {
+    recorder.record_metric(frame_index, category, name, value);
+}
+
+void record_water_3d_diagnostics(cubey::profiling::ProfileRecorder& recorder,
+                                 std::uint64_t frame_index, const Water3DConfig& config,
+                                 const std::vector<std::uint8_t>& bytes) {
+    const auto slot = [&bytes](Water3DDiagnosticSlot slot_index) {
+        return diagnostic_slot_value(bytes, slot_index);
+    };
+    const double active_particles =
+        static_cast<double>(slot(Water3DDiagnosticSlot::ActiveParticles));
+    const double inactive_scan_particles =
+        static_cast<double>(slot(Water3DDiagnosticSlot::InactiveScanParticles));
+    const double out_of_bounds_particles =
+        static_cast<double>(slot(Water3DDiagnosticSlot::OutOfBoundsParticles));
+    const double nonempty_cells = static_cast<double>(slot(Water3DDiagnosticSlot::NonemptyCells));
+    const double overpacked_cells =
+        static_cast<double>(slot(Water3DDiagnosticSlot::OverpackedCells));
+    const double overpacked_particles =
+        static_cast<double>(slot(Water3DDiagnosticSlot::OverpackedParticles));
+    const double max_cell_count = static_cast<double>(slot(Water3DDiagnosticSlot::MaxCellCount));
+    const double active_faces = static_cast<double>(slot(Water3DDiagnosticSlot::ActiveFaces));
+    const double active_face_dispatch_groups =
+        static_cast<double>(slot(Water3DDiagnosticSlot::ActiveFaceDispatchGroups));
+    const double particle_scan_count =
+        static_cast<double>(slot(Water3DDiagnosticSlot::ParticleScanCount));
+    const std::uint64_t divergence_abs_sum_fixed =
+        static_cast<std::uint64_t>(slot(Water3DDiagnosticSlot::DivergenceAbsSumFixed)) |
+        (static_cast<std::uint64_t>(slot(Water3DDiagnosticSlot::DivergenceAbsSumFixedHigh)) << 32U);
+    const double divergence_abs_sum = static_cast<double>(divergence_abs_sum_fixed) /
+                                      static_cast<double>(kWater3DDiagnosticDivergenceScale);
+    const double divergence_abs_max =
+        static_cast<double>(slot(Water3DDiagnosticSlot::DivergenceAbsMaxFixed)) /
+        static_cast<double>(kWater3DDiagnosticDivergenceScale);
+    const double divergent_cells = static_cast<double>(slot(Water3DDiagnosticSlot::DivergentCells));
+    const double whitewater_emitted =
+        static_cast<double>(slot(Water3DDiagnosticSlot::WhitewaterEmitted));
+    const double whitewater_active =
+        static_cast<double>(slot(Water3DDiagnosticSlot::WhitewaterActive));
+    const double whitewater_capacity =
+        static_cast<double>(slot(Water3DDiagnosticSlot::WhitewaterCapacity));
+
+    record_metric(recorder, frame_index, "water_3d.workload", "active_particles", active_particles);
+    record_metric(recorder, frame_index, "water_3d.workload", "inactive_scan_particles",
+                  inactive_scan_particles);
+    record_metric(recorder, frame_index, "water_3d.workload", "particle_scan_count",
+                  particle_scan_count);
+    record_metric(recorder, frame_index, "water_3d.workload", "out_of_bounds_particles",
+                  out_of_bounds_particles);
+    record_metric(recorder, frame_index, "water_3d.workload", "nonempty_cells", nonempty_cells);
+    record_metric(recorder, frame_index, "water_3d.workload", "overpacked_cells", overpacked_cells);
+    record_metric(recorder, frame_index, "water_3d.workload", "overpacked_particles",
+                  overpacked_particles);
+    record_metric(recorder, frame_index, "water_3d.workload", "max_cell_count", max_cell_count);
+    record_metric(recorder, frame_index, "water_3d.workload", "avg_particles_per_nonempty_cell",
+                  nonempty_cells > 0.0 ? active_particles / nonempty_cells : 0.0);
+    record_metric(recorder, frame_index, "water_3d.workload", "active_faces", active_faces);
+    record_metric(recorder, frame_index, "water_3d.workload", "active_face_ratio",
+                  active_faces / static_cast<double>(total_face_count(config)));
+    record_metric(recorder, frame_index, "water_3d.workload", "active_face_dispatch_groups",
+                  active_face_dispatch_groups);
+    record_metric(recorder, frame_index, "water_3d.solver", "divergence_abs_sum",
+                  divergence_abs_sum);
+    record_metric(recorder, frame_index, "water_3d.solver", "divergence_abs_max",
+                  divergence_abs_max);
+    record_metric(recorder, frame_index, "water_3d.solver", "divergent_cells", divergent_cells);
+    record_metric(recorder, frame_index, "water_3d.solver", "divergence_abs_avg",
+                  divergent_cells > 0.0 ? divergence_abs_sum / divergent_cells : 0.0);
+    record_metric(recorder, frame_index, "water_3d.whitewater", "emitted", whitewater_emitted);
+    record_metric(recorder, frame_index, "water_3d.whitewater", "active", whitewater_active);
+    record_metric(recorder, frame_index, "water_3d.whitewater", "capacity", whitewater_capacity);
+    record_metric(recorder, frame_index, "water_3d.whitewater", "active_ratio",
+                  whitewater_capacity > 0.0 ? whitewater_active / whitewater_capacity : 0.0);
 }
 
 [[nodiscard]] std::filesystem::path bundled_sample_environment_path() {
@@ -578,11 +679,12 @@ class Water3DApp {
                                           cubey::render::FrameSlot frame_slot,
                                           const ProjectFrame& frame,
                                           cubey::profiling::ProfileRecorder* profile_recorder) {
+        const std::uint64_t frame_index = profile_frame_index(frame);
         static_cast<void>(gpu.submit_and_wait({
             .label = "water_3d headless simulation frame",
             .work =
-                [this, frame_slot, frame, profile_recorder](
-                    cubey::vulkan::GpuOwnerContext& gpu_context) {
+                [this, frame_slot, frame, profile_recorder,
+                 frame_index](cubey::vulkan::GpuOwnerContext& gpu_context) {
                     cubey::vulkan::ImmediateCommands commands(gpu_context);
                     cubey::vulkan::GpuTimestampProfiler* profiler = resources_.profiler();
                     if (profiler != nullptr) {
@@ -594,14 +696,14 @@ class Water3DApp {
                     commands.submit_and_wait();
                     if (profiler != nullptr) {
                         profiler->collect(frame_slot.index);
-                        record_gpu_timings(profile_recorder, profile_frame_index(frame),
+                        record_gpu_timings(profile_recorder, frame_index,
                                            resources_.latest_timings());
                     }
                     if (profile_recorder != nullptr) {
                         const cubey::vulkan::DeviceMemoryBudgetInfo memory =
                             gpu_context.device().device_memory_budget();
                         profile_recorder->record_frame({
-                            .frame_index = profile_frame_index(frame),
+                            .frame_index = frame_index,
                             .delta_seconds = 0.0,
                             .width = config_.width,
                             .height = config_.height,
@@ -614,6 +716,12 @@ class Water3DApp {
                     }
                 },
         }));
+        if (should_record_water_3d_diagnostics(profile_recorder, water_config_, frame_index)) {
+            const std::vector<std::uint8_t> diagnostics = gpu.readback_buffer(
+                resources_.diagnostics().handle(), resources_.diagnostics().size(),
+                "water_3d diagnostics readback");
+            record_water_3d_diagnostics(*profile_recorder, frame_index, water_config_, diagnostics);
+        }
     }
 
     int run_headless() {

@@ -6,8 +6,8 @@
 #include <fstream>
 #include <iomanip>
 #include <map>
-#include <sstream>
 #include <span>
+#include <sstream>
 #include <stdexcept>
 #include <utility>
 
@@ -108,6 +108,12 @@ struct SpanSummary {
     std::vector<double> durations;
 };
 
+struct MetricSummary {
+    std::string category;
+    std::string name;
+    std::vector<double> values;
+};
+
 [[nodiscard]] double percentile(std::vector<double> sorted_values, double value) {
     if (sorted_values.empty()) {
         return 0.0;
@@ -155,7 +161,24 @@ void write_passes_csv(const std::filesystem::path& path, std::span<const Profile
     }
 }
 
-void write_trace_json(const std::filesystem::path& path, std::span<const ProfileSpanRecord> spans) {
+void write_metrics_csv(const std::filesystem::path& path,
+                       std::span<const ProfileMetricRecord> metrics) {
+    ensure_parent_directory(path);
+    std::ofstream file(path);
+    if (!file) {
+        throw std::runtime_error("failed to write profile metrics CSV: " + path.string());
+    }
+
+    file << "frame_index,category,name,value\n";
+    file << std::fixed << std::setprecision(6);
+    for (const ProfileMetricRecord& metric : metrics) {
+        file << metric.frame_index << ',' << csv_escape(metric.category) << ','
+             << csv_escape(metric.name) << ',' << metric.value << '\n';
+    }
+}
+
+void write_trace_json(const std::filesystem::path& path, std::span<const ProfileSpanRecord> spans,
+                      std::span<const ProfileMetricRecord> metrics) {
     ensure_parent_directory(path);
     std::ofstream file(path);
     if (!file) {
@@ -169,8 +192,7 @@ void write_trace_json(const std::filesystem::path& path, std::span<const Profile
         double start_milliseconds = span.start_milliseconds;
         if (span.kind == ProfileSpanKind::Gpu) {
             double& offset = gpu_frame_offsets[span.frame_index];
-            start_milliseconds =
-                static_cast<double>(span.frame_index) * 100.0 + offset;
+            start_milliseconds = static_cast<double>(span.frame_index) * 100.0 + offset;
             offset += span.duration_milliseconds;
         }
 
@@ -181,18 +203,31 @@ void write_trace_json(const std::filesystem::path& path, std::span<const Profile
         file << "{\"name\":\"" << json_escape(span.label) << "\","
              << "\"cat\":\"" << span_kind_name(span.kind) << "\","
              << "\"ph\":\"X\","
-             << "\"ts\":" << std::fixed << std::setprecision(3)
-             << (start_milliseconds * 1000.0) << ','
-             << "\"dur\":" << (span.duration_milliseconds * 1000.0) << ','
-             << "\"pid\":1,"
+             << "\"ts\":" << std::fixed << std::setprecision(3) << (start_milliseconds * 1000.0)
+             << ',' << "\"dur\":" << (span.duration_milliseconds * 1000.0) << ',' << "\"pid\":1,"
              << "\"tid\":" << (span.kind == ProfileSpanKind::Gpu ? 2 : 1) << ','
              << "\"args\":{\"frame\":" << span.frame_index << "}}";
+    }
+    for (const ProfileMetricRecord& metric : metrics) {
+        if (!first) {
+            file << ",\n";
+        }
+        first = false;
+        file << "{\"name\":\"" << json_escape(metric.name) << "\","
+             << "\"cat\":\"" << json_escape(metric.category) << "\","
+             << "\"ph\":\"C\","
+             << "\"ts\":" << std::fixed << std::setprecision(3)
+             << (static_cast<double>(metric.frame_index) * 100000.0) << ',' << "\"pid\":1,"
+             << "\"tid\":3,"
+             << "\"args\":{\"frame\":" << metric.frame_index << ",\"value\":" << metric.value
+             << "}}";
     }
     file << "\n]}\n";
 }
 
 void write_summary(const std::filesystem::path& path, std::span<const ProfileFrameRecord> frames,
-                   std::span<const ProfileSpanRecord> spans) {
+                   std::span<const ProfileSpanRecord> spans,
+                   std::span<const ProfileMetricRecord> metrics) {
     ensure_parent_directory(path);
     std::ofstream file(path);
     if (!file) {
@@ -207,8 +242,7 @@ void write_summary(const std::filesystem::path& path, std::span<const ProfileFra
         }
         if (total_delta > 0.0) {
             file << std::fixed << std::setprecision(3)
-                 << "average_fps: " << (static_cast<double>(frames.size()) / total_delta)
-                 << '\n';
+                 << "average_fps: " << (static_cast<double>(frames.size()) / total_delta) << '\n';
         }
     }
 
@@ -228,8 +262,7 @@ void write_summary(const std::filesystem::path& path, std::span<const ProfileFra
         if (summary.durations.empty()) {
             continue;
         }
-        const auto minmax =
-            std::minmax_element(summary.durations.begin(), summary.durations.end());
+        const auto minmax = std::minmax_element(summary.durations.begin(), summary.durations.end());
         double total = 0.0;
         for (const double duration : summary.durations) {
             total += duration;
@@ -237,9 +270,35 @@ void write_summary(const std::filesystem::path& path, std::span<const ProfileFra
         const double average = total / static_cast<double>(summary.durations.size());
         file << span_kind_name(summary.kind) << ',' << csv_escape(summary.label) << ','
              << summary.durations.size() << ',' << average << ',' << *minmax.first << ','
-             << percentile(summary.durations, 0.50) << ','
-             << percentile(summary.durations, 0.95) << ',' << *minmax.second << ',' << total
-             << '\n';
+             << percentile(summary.durations, 0.50) << ',' << percentile(summary.durations, 0.95)
+             << ',' << *minmax.second << ',' << total << '\n';
+    }
+
+    std::map<std::pair<std::string, std::string>, MetricSummary> metric_summaries;
+    for (const ProfileMetricRecord& metric : metrics) {
+        auto& summary = metric_summaries[{metric.category, metric.name}];
+        summary.category = metric.category;
+        summary.name = metric.name;
+        summary.values.push_back(metric.value);
+    }
+
+    file << "metrics:\n";
+    file << "category,name,count,avg,min,median,p95,max,last\n";
+    for (const auto& entry : metric_summaries) {
+        const MetricSummary& summary = entry.second;
+        if (summary.values.empty()) {
+            continue;
+        }
+        const auto minmax = std::minmax_element(summary.values.begin(), summary.values.end());
+        double total = 0.0;
+        for (const double value : summary.values) {
+            total += value;
+        }
+        const double average = total / static_cast<double>(summary.values.size());
+        file << csv_escape(summary.category) << ',' << csv_escape(summary.name) << ','
+             << summary.values.size() << ',' << average << ',' << *minmax.first << ','
+             << percentile(summary.values, 0.50) << ',' << percentile(summary.values, 0.95) << ','
+             << *minmax.second << ',' << summary.values.back() << '\n';
     }
 }
 
@@ -320,6 +379,20 @@ void ProfileRecorder::record_gpu_span(std::uint64_t frame_index, std::string_vie
     });
 }
 
+void ProfileRecorder::record_metric(std::uint64_t frame_index, std::string_view category,
+                                    std::string_view name, double value) {
+    if (!should_record_frame(frame_index)) {
+        return;
+    }
+    std::lock_guard lock(mutex_);
+    metrics_.push_back({
+        .frame_index = frame_index,
+        .category = std::string(category),
+        .name = std::string(name),
+        .value = value,
+    });
+}
+
 std::vector<ProfileFrameRecord> ProfileRecorder::frame_records() const {
     std::lock_guard lock(mutex_);
     return frames_;
@@ -330,6 +403,11 @@ std::vector<ProfileSpanRecord> ProfileRecorder::span_records() const {
     return spans_;
 }
 
+std::vector<ProfileMetricRecord> ProfileRecorder::metric_records() const {
+    std::lock_guard lock(mutex_);
+    return metrics_;
+}
+
 void ProfileRecorder::write_outputs() const {
     if (!enabled()) {
         return;
@@ -337,10 +415,12 @@ void ProfileRecorder::write_outputs() const {
 
     const std::vector<ProfileFrameRecord> frames = frame_records();
     const std::vector<ProfileSpanRecord> spans = span_records();
+    const std::vector<ProfileMetricRecord> metrics = metric_records();
     write_frames_csv(suffixed_path(config_.output_prefix, ".frames.csv"), frames);
     write_passes_csv(suffixed_path(config_.output_prefix, ".passes.csv"), spans);
-    write_trace_json(suffixed_path(config_.output_prefix, ".trace.json"), spans);
-    write_summary(suffixed_path(config_.output_prefix, ".summary.txt"), frames, spans);
+    write_metrics_csv(suffixed_path(config_.output_prefix, ".metrics.csv"), metrics);
+    write_trace_json(suffixed_path(config_.output_prefix, ".trace.json"), spans, metrics);
+    write_summary(suffixed_path(config_.output_prefix, ".summary.txt"), frames, spans, metrics);
 }
 
 void ProfileRecorder::record_cpu_span(std::uint64_t frame_index, std::string_view label,
