@@ -12,6 +12,7 @@
 #include <cubey/vulkan/buffer.h>
 #include <cubey/vulkan/descriptors.h>
 #include <cubey/vulkan/device.h>
+#include <cubey/vulkan/gpu_timestamps.h>
 #include <cubey/vulkan/image.h>
 #include <cubey/vulkan/sampler.h>
 
@@ -67,6 +68,10 @@ class Water3DGpuResources {
     [[nodiscard]] const cubey::vulkan::Buffer& whitewater_velocities() const;
     [[nodiscard]] const cubey::vulkan::Buffer& whitewater_state() const;
     [[nodiscard]] const cubey::vulkan::Buffer& whitewater_counters() const;
+    [[nodiscard]] cubey::vulkan::GpuTimestampProfiler* profiler() noexcept {
+        return profiler_.has_value() ? &profiler_.value() : nullptr;
+    }
+    [[nodiscard]] const std::vector<cubey::vulkan::GpuPassTiming>& latest_timings() const;
     [[nodiscard]] const cubey::vulkan::Buffer&
     simulation_uniform_buffer(cubey::render::FrameSlot frame_slot) const;
     void upload_simulation_uniforms(cubey::render::FrameSlot frame_slot,
@@ -181,6 +186,7 @@ class Water3DGpuResources {
     std::optional<cubey::vulkan::Buffer> whitewater_velocities_;
     std::optional<cubey::vulkan::Buffer> whitewater_state_;
     std::optional<cubey::vulkan::Buffer> whitewater_counters_;
+    std::optional<cubey::vulkan::GpuTimestampProfiler> profiler_;
     std::optional<cubey::render::FrameUniformBuffer<Water3DSimulationUniforms>>
         simulation_uniforms_;
     std::optional<cubey::vulkan::DescriptorSetLayout> field_descriptor_layout_;

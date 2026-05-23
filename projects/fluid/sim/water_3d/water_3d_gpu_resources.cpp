@@ -23,6 +23,7 @@ inline constexpr VkDeviceSize kWater3DSimulationPushConstantBytes =
     sizeof(float) * kWater3DSimulationPushConstantFloatCount;
 inline constexpr VkDeviceSize kWater3DRenderPushConstantBytes =
     sizeof(float) * kWater3DRenderPushConstantFloatCount;
+inline constexpr std::uint32_t kWater3DGpuProfilerPassCapacity = 128;
 inline constexpr VkFormat kWater3DSurfaceScalarFormat = VK_FORMAT_R32_SFLOAT;
 inline constexpr VkFormat kWater3DSurfacePackedFormat = VK_FORMAT_R32G32B32A32_SFLOAT;
 inline constexpr VkFormat kWater3DSceneColorFormat = VK_FORMAT_R16G16B16A16_SFLOAT;
@@ -258,6 +259,9 @@ void Water3DGpuResources::create_global_resources_if_needed(cubey::vulkan::Devic
                                                             const Water3DConfig& config,
                                                             std::uint32_t frame_slot_count) {
     if (particle_positions_.has_value()) {
+        if (!profiler_.has_value()) {
+            profiler_.emplace(device, frame_slot_count, kWater3DGpuProfilerPassCapacity);
+        }
         return;
     }
     if (frame_slot_count == 0) {
@@ -269,6 +273,7 @@ void Water3DGpuResources::create_global_resources_if_needed(cubey::vulkan::Devic
     simulation_uniforms_.emplace(device, frame_slot_count_);
     create_descriptor_resources(device);
     create_compute_pipelines(device);
+    profiler_.emplace(device, frame_slot_count_, kWater3DGpuProfilerPassCapacity);
 }
 
 void Water3DGpuResources::destroy_swapchain_resources() {
@@ -312,6 +317,7 @@ void Water3DGpuResources::destroy_all_resources() {
     field_descriptor_layout_.reset();
     field_descriptor_sets_.clear();
     simulation_uniforms_.reset();
+    profiler_.reset();
     frame_slot_count_ = 0;
     whitewater_counters_.reset();
     whitewater_state_.reset();
@@ -971,6 +977,14 @@ const cubey::vulkan::Buffer& Water3DGpuResources::whitewater_state() const {
 const cubey::vulkan::Buffer& Water3DGpuResources::whitewater_counters() const {
     return require_initialized(whitewater_counters_,
                                "water 3D whitewater counters are not initialized");
+}
+
+const std::vector<cubey::vulkan::GpuPassTiming>& Water3DGpuResources::latest_timings() const {
+    if (!profiler_.has_value()) {
+        static const std::vector<cubey::vulkan::GpuPassTiming> empty;
+        return empty;
+    }
+    return profiler_->latest_timings();
 }
 
 const cubey::vulkan::Buffer&

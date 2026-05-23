@@ -104,11 +104,11 @@ void RenderGraphFrameExecutor::record(const RenderGraphFrameRecordInfo& info,
     switch (info.command_buffer_mode) {
     case RenderGraphCommandBufferMode::BeginAndEnd:
         recorder.begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-        graph.execute(resources, recorder);
+        graph.execute(resources, recorder, info.profiler, info.frame_slot.index);
         recorder.end(info.label != nullptr ? info.label : "vkEndCommandBuffer render graph");
         return;
     case RenderGraphCommandBufferMode::AlreadyRecording:
-        graph.execute(resources, recorder);
+        graph.execute(resources, recorder, info.profiler, info.frame_slot.index);
         return;
     }
     throw std::runtime_error("render graph command buffer mode is invalid");

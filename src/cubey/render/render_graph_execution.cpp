@@ -1,5 +1,8 @@
 #include <cubey/render/render_graph.h>
 
+#include <cubey/vulkan/command_recorder.h>
+#include <cubey/vulkan/gpu_timestamps.h>
+
 #include <stdexcept>
 #include <utility>
 
@@ -99,22 +102,34 @@ const RenderGraphBufferResource& CompiledRenderGraph::buffer(RenderGraphBufferHa
 }
 
 void CompiledRenderGraph::execute() const {
-    execute(nullptr, nullptr);
+    execute(nullptr, nullptr, nullptr, 0);
 }
 
 void CompiledRenderGraph::execute(const RenderGraphResourceSet& resources) const {
-    execute(&resources, nullptr);
+    execute(&resources, nullptr, nullptr, 0);
 }
 
 void CompiledRenderGraph::execute(const RenderGraphResourceSet& resources,
                                   const cubey::vulkan::CommandRecorder& recorder) const {
-    execute(&resources, &recorder);
+    execute(&resources, &recorder, nullptr, 0);
+}
+
+void CompiledRenderGraph::execute(const RenderGraphResourceSet& resources,
+                                  const cubey::vulkan::CommandRecorder& recorder,
+                                  cubey::vulkan::GpuTimestampProfiler* profiler,
+                                  std::uint32_t frame_slot_index) const {
+    execute(&resources, &recorder, profiler, frame_slot_index);
 }
 
 void CompiledRenderGraph::execute(const RenderGraphResourceSet* resources,
-                                  const cubey::vulkan::CommandRecorder* recorder) const {
+                                  const cubey::vulkan::CommandRecorder* recorder,
+                                  cubey::vulkan::GpuTimestampProfiler* profiler,
+                                  std::uint32_t frame_slot_index) const {
     if (recorder != nullptr && resources == nullptr) {
         throw std::runtime_error("recorder-backed render graph execution requires resources");
+    }
+    if (profiler != nullptr && recorder == nullptr) {
+        throw std::runtime_error("profiled render graph execution requires a recorder");
     }
 
     for (std::size_t pass_index = 0; pass_index < passes_.size(); ++pass_index) {
@@ -123,12 +138,19 @@ void CompiledRenderGraph::execute(const RenderGraphResourceSet* resources,
             throw std::runtime_error("render graph pass has no execute callback");
         }
         const RenderGraphExecutionContext context(*this, pass_index, resources, recorder);
+        if (profiler != nullptr) {
+            profiler->begin_pass(recorder->handle(), frame_slot_index,
+                                 pass.label.empty() ? "render graph pass" : pass.label);
+        }
         if (recorder != nullptr) {
             record_render_graph_barriers(*recorder, context, RenderGraphBarrierPhase::BeforePass);
         }
         pass.execute(context);
         if (recorder != nullptr) {
             record_render_graph_barriers(*recorder, context, RenderGraphBarrierPhase::AfterPass);
+        }
+        if (profiler != nullptr) {
+            profiler->end_pass(recorder->handle(), frame_slot_index);
         }
     }
 }

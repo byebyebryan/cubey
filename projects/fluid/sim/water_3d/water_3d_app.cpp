@@ -26,11 +26,13 @@
 
 #include <algorithm>
 #include <array>
+#include <cstdio>
 #include <cstdint>
 #include <filesystem>
 #include <optional>
 #include <stdexcept>
 #include <utility>
+#include <vector>
 
 namespace cubey::projects::fluid::water_3d {
 namespace {
@@ -348,6 +350,15 @@ class Water3DApp {
             ImGui::TextUnformatted("Frame: collecting...");
         }
 
+        const std::vector<cubey::vulkan::GpuPassTiming>& timings = resources_.latest_timings();
+        if (!timings.empty()) {
+            ImGui::Separator();
+            ImGui::Text("GPU timings");
+            for (const cubey::vulkan::GpuPassTiming& timing : timings) {
+                ImGui::Text("%s: %.3f ms", timing.label.c_str(), timing.milliseconds);
+            }
+        }
+
         const VkDeviceSize water_bytes = resources_.allocated_buffer_bytes();
         const cubey::vulkan::DeviceMemoryBudgetInfo memory_budget =
             context.device().device_memory_budget();
@@ -484,28 +495,57 @@ class Water3DApp {
     void record_frame(cubey::host::WindowedAppContext& context,
                       const cubey::host::WindowedRenderFrame& render_frame,
                       const ProjectFrame& frame) {
+        cubey::vulkan::GpuTimestampProfiler* profiler = resources_.profiler();
+        if (profiler != nullptr) {
+            profiler->collect(render_frame.frame_slot.index);
+            maybe_print_gpu_timings(frame);
+        }
         const cubey::vulkan::CommandRecorder recorder(render_frame.command_buffer);
         recorder.begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+        if (profiler != nullptr) {
+            profiler->begin_frame(render_frame.command_buffer, render_frame.frame_slot.index);
+        }
         record_water_3d_compute(render_frame.command_buffer, resources_, water_config_,
                                 runtime_state_, render_frame.frame_slot, paused_, reset_requested_,
-                                frame);
+                                frame, true, profiler);
         if (is_water_3d_surface_view(render_view_)) {
             record_water_3d_surface_draw(
                 render_frame.command_buffer, context.device(), surface_graph_executor_, resources_,
                 water_config_, render_frame.frame_slot, runtime_state_, render_view_,
                 render_camera(render_frame.color_target.extent), render_frame.color_target,
-                Water3DRenderTargetMode::Present, ibl_environment());
+                Water3DRenderTargetMode::Present, ibl_environment(), profiler);
         } else {
             cubey::render::record_present_render_target(
                 recorder, cubey::render::render_target_view(render_frame.color_target),
-                [this, &render_frame](const cubey::vulkan::CommandRecorder& present_recorder) {
+                [this, &render_frame,
+                 profiler](const cubey::vulkan::CommandRecorder& present_recorder) {
                     record_water_3d_draw(present_recorder.handle(), resources_, water_config_,
                                          render_frame.frame_slot, runtime_state_, render_view_,
                                          render_camera(render_frame.color_target.extent),
-                                         render_frame.color_target);
+                                         render_frame.color_target, profiler);
                 });
         }
         recorder.end("vkEndCommandBuffer water_3d");
+    }
+
+    void maybe_print_gpu_timings(const ProjectFrame& frame) {
+        if (!config_.print_frame_stats) {
+            return;
+        }
+        const std::vector<cubey::vulkan::GpuPassTiming>& timings = resources_.latest_timings();
+        if (timings.empty()) {
+            return;
+        }
+        if (last_gpu_timing_print_seconds_ >= 0.0 &&
+            frame.elapsed_seconds - last_gpu_timing_print_seconds_ < 1.0) {
+            return;
+        }
+        last_gpu_timing_print_seconds_ = frame.elapsed_seconds;
+        std::printf("water_3d_gpu:");
+        for (const cubey::vulkan::GpuPassTiming& timing : timings) {
+            std::printf(" %s=%.3fms", timing.label.c_str(), timing.milliseconds);
+        }
+        std::printf("\n");
     }
 
     void record_headless_simulation_frame(cubey::ProjectGpuServices& gpu,
@@ -603,6 +643,7 @@ class Water3DApp {
     Water3DRenderView render_view_ = Water3DRenderView::Surface;
     double latest_fps_ = 0.0;
     double latest_frame_ms_ = 0.0;
+    double last_gpu_timing_print_seconds_ = -1.0;
     bool paused_ = false;
     bool reset_requested_ = true;
 };

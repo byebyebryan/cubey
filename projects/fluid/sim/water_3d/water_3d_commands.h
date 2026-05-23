@@ -35,13 +35,15 @@ void record_water_3d_compute(VkCommandBuffer command_buffer, Water3DGpuResources
                              const Water3DConfig& config, Water3DRuntimeState& runtime_state,
                              cubey::render::FrameSlot frame_slot, bool paused,
                              bool& reset_requested, const ProjectFrame& frame,
-                             bool include_render_visibility_barrier = true);
+                             bool include_render_visibility_barrier = true,
+                             cubey::vulkan::GpuTimestampProfiler* profiler = nullptr);
 
 void record_water_3d_draw(VkCommandBuffer command_buffer, const Water3DGpuResources& resources,
                           const Water3DConfig& config, cubey::render::FrameSlot frame_slot,
                           const Water3DRuntimeState& runtime_state, Water3DRenderView render_view,
                           const Water3DRenderCamera& camera,
-                          cubey::render::ColorTargetView color_target);
+                          cubey::render::ColorTargetView color_target,
+                          cubey::vulkan::GpuTimestampProfiler* profiler = nullptr);
 
 void record_water_3d_surface_draw(VkCommandBuffer command_buffer,
                                   const cubey::vulkan::Device& device,
@@ -52,6 +54,7 @@ void record_water_3d_surface_draw(VkCommandBuffer command_buffer,
                                   Water3DRenderView render_view, const Water3DRenderCamera& camera,
                                   cubey::render::ColorTargetView color_target,
                                   Water3DRenderTargetMode target_mode,
-                                  const cubey::render::GeneratedPbrEnvironment& environment);
+                                  const cubey::render::GeneratedPbrEnvironment& environment,
+                                  cubey::vulkan::GpuTimestampProfiler* profiler = nullptr);
 
 } // namespace cubey::projects::fluid::water_3d

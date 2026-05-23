@@ -12,6 +12,7 @@
 
 namespace cubey::vulkan {
 class Device;
+class GpuTimestampProfiler;
 } // namespace cubey::vulkan
 
 namespace cubey::render {
@@ -50,6 +51,7 @@ struct RenderGraphFrameRecordInfo {
     FrameSlot frame_slot{};
     const char* label = "vkEndCommandBuffer render graph";
     RenderGraphCommandBufferMode command_buffer_mode = RenderGraphCommandBufferMode::BeginAndEnd;
+    cubey::vulkan::GpuTimestampProfiler* profiler = nullptr;
 };
 
 using RenderGraphPrepareCallback = std::function<void(const RenderGraphResourceSet&)>;

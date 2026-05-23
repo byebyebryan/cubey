@@ -4,6 +4,7 @@
 #include <cubey/render/render_graph_types.h>
 
 #include <cstddef>
+#include <cstdint>
 #include <functional>
 #include <optional>
 #include <string>
@@ -11,6 +12,7 @@
 
 namespace cubey::vulkan {
 class CommandRecorder;
+class GpuTimestampProfiler;
 } // namespace cubey::vulkan
 
 namespace cubey::render {
@@ -86,10 +88,16 @@ class CompiledRenderGraph {
     void execute(const RenderGraphResourceSet& resources) const;
     void execute(const RenderGraphResourceSet& resources,
                  const cubey::vulkan::CommandRecorder& recorder) const;
+    void execute(const RenderGraphResourceSet& resources,
+                 const cubey::vulkan::CommandRecorder& recorder,
+                 cubey::vulkan::GpuTimestampProfiler* profiler,
+                 std::uint32_t frame_slot_index) const;
 
   private:
     void execute(const RenderGraphResourceSet* resources,
-                 const cubey::vulkan::CommandRecorder* recorder) const;
+                 const cubey::vulkan::CommandRecorder* recorder,
+                 cubey::vulkan::GpuTimestampProfiler* profiler,
+                 std::uint32_t frame_slot_index) const;
 
     std::vector<RenderGraphTextureResource> textures_{};
     std::vector<RenderGraphBufferResource> buffers_{};

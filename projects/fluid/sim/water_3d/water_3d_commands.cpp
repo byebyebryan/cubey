@@ -461,31 +461,61 @@ void record_refresh_bins(const cubey::vulkan::CommandRecorder& recorder,
                          VkCommandBuffer command_buffer, Water3DGpuResources& resources,
                          VkDescriptorSet descriptor_set, const Water3DConfig& config,
                          const Water3DRuntimeState& runtime_state,
-                         const Water3DDispatchPushConstants& push_constants) {
+                         const Water3DDispatchPushConstants& push_constants,
+                         cubey::render::FrameSlot frame_slot,
+                         cubey::vulkan::GpuTimestampProfiler* profiler,
+                         const char* profile_label) {
+    if (profiler != nullptr && profile_label != nullptr) {
+        profiler->begin_pass(command_buffer, frame_slot.index, profile_label);
+    }
     record_dispatch(recorder, resources.clear_bins_pipeline_resource(), descriptor_set,
                     bin_dispatch_groups(config), push_constants);
     record_compute_barrier(command_buffer);
     record_dispatch(recorder, resources.build_bins_pipeline_resource(), descriptor_set,
                     particle_scan_dispatch_groups(config, runtime_state), push_constants);
     record_compute_barrier(command_buffer);
+    if (profiler != nullptr && profile_label != nullptr) {
+        profiler->end_pass(command_buffer, frame_slot.index);
+    }
 }
 
 void record_whitewater_compute(const cubey::vulkan::CommandRecorder& recorder,
                                VkCommandBuffer command_buffer, Water3DGpuResources& resources,
                                VkDescriptorSet descriptor_set, const Water3DConfig& config,
                                const Water3DRuntimeState& runtime_state,
-                               const Water3DDispatchPushConstants& push_constants) {
+                               const Water3DDispatchPushConstants& push_constants,
+                               cubey::render::FrameSlot frame_slot,
+                               cubey::vulkan::GpuTimestampProfiler* profiler) {
+    auto begin_pass = [&](const char* label) {
+        if (profiler != nullptr) {
+            profiler->begin_pass(command_buffer, frame_slot.index, label);
+        }
+    };
+    auto end_pass = [&]() {
+        if (profiler != nullptr) {
+            profiler->end_pass(command_buffer, frame_slot.index);
+        }
+    };
+
+    begin_pass("whitewater clear");
     record_dispatch(recorder, resources.clear_whitewater_pipeline_resource(), descriptor_set,
                     whitewater_counter_dispatch_groups(), push_constants);
     record_compute_barrier(command_buffer);
+    end_pass();
+
+    begin_pass("whitewater advect");
     record_dispatch(recorder, resources.advect_whitewater_pipeline_resource(), descriptor_set,
                     whitewater_dispatch_groups(config), push_constants);
     record_compute_barrier(command_buffer);
+    end_pass();
+
     if (config.whitewater_enabled && config.whitewater_intensity > 0.0F &&
         config.whitewater_max_emit_per_frame > 0U) {
+        begin_pass("whitewater emit");
         record_dispatch(recorder, resources.emit_whitewater_pipeline_resource(), descriptor_set,
                         particle_scan_dispatch_groups(config, runtime_state), push_constants);
         record_compute_barrier(command_buffer);
+        end_pass();
     }
 }
 
@@ -927,8 +957,20 @@ void record_water_3d_compute(VkCommandBuffer command_buffer, Water3DGpuResources
                              const Water3DConfig& config, Water3DRuntimeState& runtime_state,
                              cubey::render::FrameSlot frame_slot, bool paused,
                              bool& reset_requested, const ProjectFrame& frame,
-                             bool include_render_visibility_barrier) {
+                             bool include_render_visibility_barrier,
+                             cubey::vulkan::GpuTimestampProfiler* profiler) {
     const cubey::vulkan::CommandRecorder recorder(command_buffer);
+    auto begin_pass = [&](const char* label) {
+        if (profiler != nullptr) {
+            profiler->begin_pass(command_buffer, frame_slot.index, label);
+        }
+    };
+    auto end_pass = [&]() {
+        if (profiler != nullptr) {
+            profiler->end_pass(command_buffer, frame_slot.index);
+        }
+    };
+
     resources.upload_simulation_uniforms(frame_slot, simulation_uniforms(config));
     const VkDescriptorSet descriptor_set = resources.field_descriptor_set(frame_slot);
     const DispatchGroups cell_groups = cell_dispatch_groups(config);
@@ -942,9 +984,11 @@ void record_water_3d_compute(VkCommandBuffer command_buffer, Water3DGpuResources
 
     if (reset_requested) {
         runtime_state = {};
+        begin_pass("reset");
         record_dispatch(recorder, resources.reset_pipeline_resource(), descriptor_set,
                         reset_dispatch_groups(config), push_constants);
         record_compute_barrier(command_buffer);
+        end_pass();
         runtime_state.particle_scan_count = config.active_particle_count;
         push_constants.dispatch_options[3] = water_3d_shader_count_float(
             water_3d_runtime_particle_scan_count(config, runtime_state),
@@ -953,7 +997,7 @@ void record_water_3d_compute(VkCommandBuffer command_buffer, Water3DGpuResources
     }
     if (paused) {
         record_refresh_bins(recorder, command_buffer, resources, descriptor_set, config,
-                            runtime_state, push_constants);
+                            runtime_state, push_constants, frame_slot, profiler, "refresh bins");
         if (include_render_visibility_barrier) {
             record_final_barrier(command_buffer);
         }
@@ -967,43 +1011,57 @@ void record_water_3d_compute(VkCommandBuffer command_buffer, Water3DGpuResources
             frame, substep_dt, 0.0F, water_3d_runtime_particle_scan_count(config, runtime_state));
         push_constants.dispatch_options[1] = substep_time;
 
+        begin_pass("clear grid");
         record_dispatch(recorder, resources.clear_grid_pipeline_resource(), descriptor_set,
                         face_groups, push_constants);
         record_compute_barrier(command_buffer);
+        end_pass();
 
         record_refresh_bins(recorder, command_buffer, resources, descriptor_set, config,
-                            runtime_state, push_constants);
+                            runtime_state, push_constants, frame_slot, profiler,
+                            "refresh bins pre-p2g");
 
+        begin_pass("particle to grid");
         record_dispatch(recorder, resources.particle_to_grid_pipeline_resource(), descriptor_set,
                         face_groups, push_constants);
         record_compute_barrier(command_buffer);
+        end_pass();
 
+        begin_pass("force");
         record_dispatch(recorder, resources.force_pipeline_resource(), descriptor_set, face_groups,
                         push_constants);
         record_compute_barrier(command_buffer);
+        end_pass();
 
+        begin_pass("divergence");
         record_dispatch(recorder, resources.divergence_pipeline_resource(), descriptor_set,
                         cell_groups, push_constants);
         record_compute_barrier(command_buffer);
+        end_pass();
 
         const cubey::render::ComputePipelineResource& pressure_pipeline =
             resources.pressure_pipeline_resource();
+        begin_pass("pressure");
         for (std::uint32_t iteration = 0; iteration < config.pressure_iterations; ++iteration) {
             push_constants.dispatch_options[2] = (iteration % 2U == 1U) ? 1.0F : 0.0F;
             record_dispatch(recorder, pressure_pipeline, descriptor_set, cell_groups,
                             push_constants);
             record_compute_barrier(command_buffer);
         }
+        end_pass();
 
         const bool final_pressure_is_b = (config.pressure_iterations % 2U) == 1U;
         runtime_state.pressure_read_b = final_pressure_is_b;
         push_constants.dispatch_options[2] = final_pressure_is_b ? 1.0F : 0.0F;
+        begin_pass("projection");
         record_dispatch(recorder, resources.projection_pipeline_resource(), descriptor_set,
                         face_groups, push_constants);
         record_compute_barrier(command_buffer);
+        end_pass();
 
         const cubey::render::ComputePipelineResource& extrapolate_pipeline =
             resources.extrapolate_velocity_pipeline_resource();
+        begin_pass("extrapolate velocity");
         for (std::uint32_t iteration = 0; iteration < kWater3DVelocityExtrapolationIterations;
              ++iteration) {
             push_constants.dispatch_options[2] = (iteration % 2U == 1U) ? 1.0F : 0.0F;
@@ -1011,20 +1069,26 @@ void record_water_3d_compute(VkCommandBuffer command_buffer, Water3DGpuResources
                             push_constants);
             record_compute_barrier(command_buffer);
         }
+        end_pass();
         push_constants.dispatch_options[2] = 0.0F;
 
+        begin_pass("grid to particle");
         record_dispatch(recorder, resources.grid_to_particle_pipeline_resource(), descriptor_set,
                         particle_scan_dispatch_groups(config, runtime_state), push_constants);
         record_compute_barrier(command_buffer);
+        end_pass();
 
+        begin_pass("advect particles");
         record_dispatch(recorder, resources.advect_particles_pipeline_resource(), descriptor_set,
                         particle_scan_dispatch_groups(config, runtime_state), push_constants);
         record_compute_barrier(command_buffer);
+        end_pass();
 
         record_refresh_bins(recorder, command_buffer, resources, descriptor_set, config,
-                            runtime_state, push_constants);
+                            runtime_state, push_constants, frame_slot, profiler,
+                            "refresh bins post-advect");
         record_whitewater_compute(recorder, command_buffer, resources, descriptor_set, config,
-                                  runtime_state, push_constants);
+                                  runtime_state, push_constants, frame_slot, profiler);
     }
 
     if (include_render_visibility_barrier) {
@@ -1036,8 +1100,12 @@ void record_water_3d_draw(VkCommandBuffer command_buffer, const Water3DGpuResour
                           const Water3DConfig& config, cubey::render::FrameSlot frame_slot,
                           const Water3DRuntimeState& runtime_state, Water3DRenderView render_view,
                           const Water3DRenderCamera& camera,
-                          cubey::render::ColorTargetView color_target) {
+                          cubey::render::ColorTargetView color_target,
+                          cubey::vulkan::GpuTimestampProfiler* profiler) {
     const cubey::vulkan::CommandRecorder recorder(command_buffer);
+    if (profiler != nullptr) {
+        profiler->begin_pass(command_buffer, frame_slot.index, "debug draw");
+    }
     const cubey::render::DepthTargetView depth_target =
         cubey::render::depth_target_view(resources.depth_attachment());
     recorder.transition_image_layout(
@@ -1107,6 +1175,9 @@ void record_water_3d_draw(VkCommandBuffer command_buffer, const Water3DGpuResour
                     : 1U;
             pass_recorder.draw(6, std::max(1U, instance_count));
         });
+    if (profiler != nullptr) {
+        profiler->end_pass(command_buffer, frame_slot.index);
+    }
 }
 
 void record_water_3d_surface_draw(VkCommandBuffer command_buffer,
@@ -1118,7 +1189,8 @@ void record_water_3d_surface_draw(VkCommandBuffer command_buffer,
                                   Water3DRenderView render_view, const Water3DRenderCamera& camera,
                                   cubey::render::ColorTargetView color_target,
                                   Water3DRenderTargetMode target_mode,
-                                  const cubey::render::GeneratedPbrEnvironment& environment) {
+                                  const cubey::render::GeneratedPbrEnvironment& environment,
+                                  cubey::vulkan::GpuTimestampProfiler* profiler) {
     if (!is_water_3d_surface_view(render_view)) {
         throw std::runtime_error("water 3D surface draw requires a surface render view");
     }
@@ -1133,6 +1205,7 @@ void record_water_3d_surface_draw(VkCommandBuffer command_buffer,
             .frame_slot = frame_slot,
             .label = "vkEndCommandBuffer water_3d surface",
             .command_buffer_mode = cubey::render::RenderGraphCommandBufferMode::AlreadyRecording,
+            .profiler = profiler,
         },
         render_graph.graph,
         [&resources, &device, frame_slot, &environment,
