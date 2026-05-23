@@ -96,14 +96,15 @@ mat3 unpack_affine(uint particle_id) {
 }
 
 vec3 gather_face_velocity(vec3 face_grid_position, uint width, uint height, uint depth,
-                          uint max_particles_per_cell, out float total_weight) {
+                          uint max_particles_per_cell, int ox_min, int ox_max, int oy_min,
+                          int oy_max, int oz_min, int oz_max, out float total_weight) {
     ivec3 base = ivec3(floor(face_grid_position));
     vec3 velocity_sum = vec3(0.0);
     total_weight = 0.0;
 
-    for (int oz = -1; oz <= 1; ++oz) {
-        for (int oy = -1; oy <= 1; ++oy) {
-            for (int ox = -1; ox <= 1; ++ox) {
+    for (int oz = oz_min; oz <= oz_max; ++oz) {
+        for (int oy = oy_min; oy <= oy_max; ++oy) {
+            for (int ox = ox_min; ox <= ox_max; ++ox) {
                 ivec3 cell = base + ivec3(ox, oy, oz);
                 if (!in_bounds(cell.x, cell.y, cell.z, width, height, depth)) {
                     continue;
@@ -156,7 +157,8 @@ void process_u_face(uint face_id, uint width, uint height, uint depth, uint max_
 
     float weight = 0.0;
     vec3 velocity = gather_face_velocity(vec3(float(x), float(y) + 0.5, float(z) + 0.5),
-                                         width, height, depth, max_particles_per_cell, weight);
+                                         width, height, depth, max_particles_per_cell, -1, 0, -1,
+                                         1, -1, 1, weight);
     u_field.values[index] = velocity.x;
     u_previous.values[index] = velocity.x;
     u_weight.values[index] = weight;
@@ -177,7 +179,8 @@ void process_v_face(uint face_id, uint width, uint height, uint depth, uint max_
 
     float weight = 0.0;
     vec3 velocity = gather_face_velocity(vec3(float(x) + 0.5, float(y), float(z) + 0.5),
-                                         width, height, depth, max_particles_per_cell, weight);
+                                         width, height, depth, max_particles_per_cell, -1, 1, -1,
+                                         0, -1, 1, weight);
     v_field.values[index] = velocity.y;
     v_previous.values[index] = velocity.y;
     v_weight.values[index] = weight;
@@ -198,7 +201,8 @@ void process_w_face(uint face_id, uint width, uint height, uint depth, uint max_
 
     float weight = 0.0;
     vec3 velocity = gather_face_velocity(vec3(float(x) + 0.5, float(y) + 0.5, float(z)),
-                                         width, height, depth, max_particles_per_cell, weight);
+                                         width, height, depth, max_particles_per_cell, -1, 1, -1,
+                                         1, -1, 0, weight);
     w_field.values[index] = velocity.z;
     w_previous.values[index] = velocity.z;
     w_weight.values[index] = weight;

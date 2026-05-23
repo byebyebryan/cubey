@@ -314,6 +314,10 @@ int main() {
                          "water 3D bin clearing should reset indirect dispatch args");
         require_contains(p2g_shader, "gather_face_velocity",
                          "water 3D particle-to-grid should gather face velocities");
+        require_contains(p2g_shader, "int ox_min, int ox_max",
+                         "water 3D particle-to-grid should use support-aware face gathers");
+        require_contains(p2g_shader, "max_particles_per_cell, -1, 0, -1",
+                         "water 3D U-face P2G should skip impossible positive-x cells");
         require_contains(p2g_shader, "velocity += unpack_affine(particle_id) * delta",
                          "water 3D particle-to-grid should apply APIC local velocity");
         require_contains(p2g_shader, "active_work_counts.values[0]",
@@ -370,6 +374,8 @@ int main() {
                          "water 3D diagnostics should count P2G particle-slot traversal");
         require_contains(diagnostics_shader, "record_p2g_face_scan",
                          "water 3D diagnostics should mirror P2G face neighborhood traversal");
+        require_contains(diagnostics_shader, "int ox_min, int ox_max",
+                         "water 3D diagnostics should mirror support-aware P2G gathers");
         require_contains(diagnostics_shader, "active_face_indices.values[active_slot]",
                          "water 3D diagnostics should scan compacted active faces");
         require_contains(diagnostics_shader, "record_candidate_slot_bucket",

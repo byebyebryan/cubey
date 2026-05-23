@@ -338,16 +338,17 @@ void record_whitewater(uint id) {
 }
 
 void record_p2g_face_scan(vec3 face_grid_position, uint width, uint height, uint depth,
-                          uint max_particles_per_cell, uint zero_weight_axis_slot) {
+                          uint max_particles_per_cell, int ox_min, int ox_max, int oy_min,
+                          int oy_max, int oz_min, int oz_max, uint zero_weight_axis_slot) {
     ivec3 base = ivec3(floor(face_grid_position));
     float total_weight = 0.0;
     uint candidate_slots = 0u;
     uint positive_candidates = 0u;
     uint overpacked_neighbor_cells = 0u;
 
-    for (int oz = -1; oz <= 1; ++oz) {
-        for (int oy = -1; oy <= 1; ++oy) {
-            for (int ox = -1; ox <= 1; ++ox) {
+    for (int oz = oz_min; oz <= oz_max; ++oz) {
+        for (int oy = oy_min; oy <= oy_max; ++oy) {
+            for (int ox = ox_min; ox <= ox_max; ++ox) {
                 atomicAdd(diagnostics.values[SLOT_P2G_NEIGHBOR_CELLS_TESTED], 1u);
                 ivec3 cell = base + ivec3(ox, oy, oz);
                 if (!in_bounds(cell.x, cell.y, cell.z, width, height, depth)) {
@@ -441,7 +442,8 @@ void record_p2g_scan(uint active_slot, uint width, uint height, uint depth,
         atomicAdd(diagnostics.values[SLOT_P2G_FACES_PROCESSED], 1u);
         atomicAdd(diagnostics.values[SLOT_P2G_U_FACES_PROCESSED], 1u);
         record_p2g_face_scan(vec3(float(x), float(y) + 0.5, float(z) + 0.5), width, height,
-                             depth, max_particles_per_cell, SLOT_P2G_ZERO_WEIGHT_U_FACES);
+                             depth, max_particles_per_cell, -1, 0, -1, 1, -1, 1,
+                             SLOT_P2G_ZERO_WEIGHT_U_FACES);
         return;
     }
 
@@ -458,7 +460,8 @@ void record_p2g_scan(uint active_slot, uint width, uint height, uint depth,
         atomicAdd(diagnostics.values[SLOT_P2G_FACES_PROCESSED], 1u);
         atomicAdd(diagnostics.values[SLOT_P2G_V_FACES_PROCESSED], 1u);
         record_p2g_face_scan(vec3(float(x) + 0.5, float(y), float(z) + 0.5), width, height,
-                             depth, max_particles_per_cell, SLOT_P2G_ZERO_WEIGHT_V_FACES);
+                             depth, max_particles_per_cell, -1, 1, -1, 0, -1, 1,
+                             SLOT_P2G_ZERO_WEIGHT_V_FACES);
         return;
     }
 
@@ -474,7 +477,8 @@ void record_p2g_scan(uint active_slot, uint width, uint height, uint depth,
     atomicAdd(diagnostics.values[SLOT_P2G_FACES_PROCESSED], 1u);
     atomicAdd(diagnostics.values[SLOT_P2G_W_FACES_PROCESSED], 1u);
     record_p2g_face_scan(vec3(float(x) + 0.5, float(y) + 0.5, float(z)), width, height, depth,
-                         max_particles_per_cell, SLOT_P2G_ZERO_WEIGHT_W_FACES);
+                         max_particles_per_cell, -1, 1, -1, 1, -1, 0,
+                         SLOT_P2G_ZERO_WEIGHT_W_FACES);
 }
 
 void main() {
