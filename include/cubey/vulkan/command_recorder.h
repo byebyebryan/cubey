@@ -55,6 +55,7 @@ class CommandRecorder {
     void draw_indexed(std::uint32_t index_count, std::uint32_t instance_count = 1,
                       std::uint32_t first_index = 0, std::int32_t vertex_offset = 0,
                       std::uint32_t first_instance = 0) const;
+    void dispatch_indirect(VkBuffer buffer, VkDeviceSize offset) const;
     void dispatch(std::uint32_t group_count_x, std::uint32_t group_count_y,
                   std::uint32_t group_count_z) const;
 

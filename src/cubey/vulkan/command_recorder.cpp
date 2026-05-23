@@ -211,6 +211,13 @@ void CommandRecorder::draw_indexed(std::uint32_t index_count, std::uint32_t inst
                      first_instance);
 }
 
+void CommandRecorder::dispatch_indirect(VkBuffer buffer, VkDeviceSize offset) const {
+    if (buffer == VK_NULL_HANDLE) {
+        throw std::runtime_error("command recorder dispatch indirect requires a buffer");
+    }
+    vkCmdDispatchIndirect(command_buffer_, buffer, offset);
+}
+
 void CommandRecorder::dispatch(std::uint32_t group_count_x, std::uint32_t group_count_y,
                                std::uint32_t group_count_z) const {
     vkCmdDispatch(command_buffer_, group_count_x, group_count_y, group_count_z);
