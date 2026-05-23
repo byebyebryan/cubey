@@ -1,0 +1,31 @@
+#version 450
+#extension GL_GOOGLE_include_directive : require
+
+#include "water_3d_contract.glsl"
+
+layout(local_size_x = 64, local_size_y = 1) in;
+
+layout(set = 0, binding = WATER3D_BINDING_WHITEWATER_POSITIONS, std430) readonly buffer WhitewaterPositions {
+    vec4 values[];
+} whitewater_positions;
+layout(set = 0, binding = WATER3D_BINDING_WHITEWATER_COUNTERS, std430) buffer WhitewaterCounters {
+    uint values[];
+} whitewater_counters;
+layout(set = 0, binding = WATER3D_BINDING_WHITEWATER_ACTIVE_INDICES, std430) buffer WhitewaterActiveIndices {
+    uint values[];
+} whitewater_active_indices;
+
+WATER3D_SIMULATION_PARAMS;
+
+void main() {
+    uint id = gl_GlobalInvocationID.x;
+    uint capacity = uint(WATER3D_WHITEWATER_CAPACITY + 0.5);
+    if (id >= capacity || whitewater_positions.values[id].w < 0.5) {
+        return;
+    }
+
+    uint active_slot = atomicAdd(whitewater_counters.values[1], 1u);
+    if (active_slot < capacity) {
+        whitewater_active_indices.values[active_slot] = id;
+    }
+}

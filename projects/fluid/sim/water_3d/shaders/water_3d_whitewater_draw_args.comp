@@ -1,0 +1,26 @@
+#version 450
+#extension GL_GOOGLE_include_directive : require
+
+#include "water_3d_contract.glsl"
+
+layout(local_size_x = 1, local_size_y = 1) in;
+
+layout(set = 0, binding = WATER3D_BINDING_WHITEWATER_COUNTERS, std430) readonly buffer WhitewaterCounters {
+    uint values[];
+} whitewater_counters;
+layout(set = 0, binding = WATER3D_BINDING_WHITEWATER_DRAW_ARGS, std430) buffer WhitewaterDrawArgs {
+    uint values[];
+} whitewater_draw_args;
+
+WATER3D_SIMULATION_PARAMS;
+
+void main() {
+    uint capacity = uint(WATER3D_WHITEWATER_CAPACITY + 0.5);
+    uint active_count = WATER3D_WHITEWATER_INTENSITY > 0.0
+                            ? min(whitewater_counters.values[1], capacity)
+                            : 0u;
+    whitewater_draw_args.values[0] = 6u;
+    whitewater_draw_args.values[1] = active_count;
+    whitewater_draw_args.values[2] = 0u;
+    whitewater_draw_args.values[3] = 0u;
+}

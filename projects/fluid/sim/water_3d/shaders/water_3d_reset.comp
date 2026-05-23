@@ -71,6 +71,12 @@ layout(set = 0, binding = WATER3D_BINDING_WHITEWATER_STATE, std430) buffer White
 layout(set = 0, binding = WATER3D_BINDING_WHITEWATER_COUNTERS, std430) buffer WhitewaterCounters {
     uint values[];
 } whitewater_counters;
+layout(set = 0, binding = WATER3D_BINDING_WHITEWATER_ACTIVE_INDICES, std430) buffer WhitewaterActiveIndices {
+    uint values[];
+} whitewater_active_indices;
+layout(set = 0, binding = WATER3D_BINDING_WHITEWATER_DRAW_ARGS, std430) buffer WhitewaterDrawArgs {
+    uint values[];
+} whitewater_draw_args;
 
 WATER3D_SIMULATION_PARAMS;
 
@@ -204,8 +210,10 @@ void main() {
         whitewater_positions.values[id] = vec4(-10.0, -10.0, -10.0, 0.0);
         whitewater_velocities.values[id] = vec4(0.0);
         whitewater_state.values[id] = vec4(0.0);
+        whitewater_active_indices.values[id] = WATER3D_EMPTY_PARTICLE;
     }
     if (id < 4u) {
         whitewater_counters.values[id] = 0u;
+        whitewater_draw_args.values[id] = id == 0u ? 6u : 0u;
     }
 }

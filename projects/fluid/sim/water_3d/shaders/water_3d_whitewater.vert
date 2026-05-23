@@ -16,6 +16,9 @@ layout(set = 0, binding = WATER3D_BINDING_WHITEWATER_VELOCITIES, std430) readonl
 layout(set = 0, binding = WATER3D_BINDING_WHITEWATER_STATE, std430) readonly buffer WhitewaterState {
     vec4 values[];
 } whitewater_state;
+layout(set = 0, binding = WATER3D_BINDING_WHITEWATER_ACTIVE_INDICES, std430) readonly buffer WhitewaterActiveIndices {
+    uint values[];
+} whitewater_active_indices;
 
 layout(location = 0) out vec2 frag_local;
 layout(location = 1) out float frag_kind;
@@ -37,8 +40,18 @@ vec2 quad_corner(uint index) {
 
 void main() {
     vec2 corner = quad_corner(uint(gl_VertexIndex));
-    uint particle_id = uint(gl_InstanceIndex);
+    uint active_slot = uint(gl_InstanceIndex);
     uint particle_count = water_surface_particle_count();
+    if (active_slot >= particle_count) {
+        frag_local = vec2(2.0);
+        frag_kind = 0.0;
+        frag_age = 1.0;
+        frag_energy = 0.0;
+        frag_linear_depth = WATER3D_SURFACE_DEPTH_SENTINEL;
+        gl_Position = vec4(2.0, 2.0, 0.0, 1.0);
+        return;
+    }
+    uint particle_id = whitewater_active_indices.values[active_slot];
     if (particle_id >= particle_count || whitewater_positions.values[particle_id].w < 0.5) {
         frag_local = vec2(2.0);
         frag_kind = 0.0;

@@ -467,6 +467,18 @@ water_3d_runtime_particle_scan_count(const Water3DConfig& config,
     return sizeof(std::uint32_t) * 4U;
 }
 
+[[nodiscard]] inline std::size_t whitewater_active_index_byte_size(const Water3DConfig& config) {
+    validate_water_3d_whitewater_capacity(config);
+    return checked_mul(static_cast<std::size_t>(config.whitewater_capacity),
+                       sizeof(std::uint32_t),
+                       "water 3D whitewater active index buffer is too large");
+}
+
+[[nodiscard]] inline std::size_t whitewater_draw_arg_byte_size(const Water3DConfig& config) {
+    validate_water_3d_whitewater_capacity(config);
+    return sizeof(std::uint32_t) * 4U;
+}
+
 [[nodiscard]] inline Water3DConfig water_3d_config_from_run_config(const RunConfig& config) {
     Water3DConfig water_config;
     if (config.grid_width != 0) {
@@ -489,6 +501,8 @@ water_3d_runtime_particle_scan_count(const Water3DConfig& config,
     static_cast<void>(particle_bin_index_count(water_config));
     static_cast<void>(whitewater_buffer_byte_size(water_config));
     static_cast<void>(whitewater_counter_byte_size(water_config));
+    static_cast<void>(whitewater_active_index_byte_size(water_config));
+    static_cast<void>(whitewater_draw_arg_byte_size(water_config));
     return water_config;
 }
 

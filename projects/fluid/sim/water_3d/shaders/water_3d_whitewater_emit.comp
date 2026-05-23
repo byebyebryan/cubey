@@ -187,5 +187,4 @@ void main() {
     whitewater_positions.values[target] = vec4(spawn_position, 1.0);
     whitewater_velocities.values[target] = vec4(spawn_velocity, 0.0);
     whitewater_state.values[target] = vec4(lifetime, spray ? 1.0 : 0.0, radius_scale, energy);
-    atomicAdd(whitewater_counters.values[1], 1u);
 }

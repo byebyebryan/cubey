@@ -42,6 +42,8 @@ cubey_add_app_target(
         ../sim/water_3d/shaders/water_3d_whitewater_clear.comp
         ../sim/water_3d/shaders/water_3d_whitewater_advect.comp
         ../sim/water_3d/shaders/water_3d_whitewater_emit.comp
+        ../sim/water_3d/shaders/water_3d_whitewater_active_indices.comp
+        ../sim/water_3d/shaders/water_3d_whitewater_draw_args.comp
     SHADER_INCLUDE_DIRS
         "${CMAKE_CURRENT_SOURCE_DIR}/../sim/water_3d/shaders"
         "${CMAKE_SOURCE_DIR}/shaders"

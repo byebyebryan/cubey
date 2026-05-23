@@ -68,6 +68,8 @@ class Water3DGpuResources {
     [[nodiscard]] const cubey::vulkan::Buffer& whitewater_velocities() const;
     [[nodiscard]] const cubey::vulkan::Buffer& whitewater_state() const;
     [[nodiscard]] const cubey::vulkan::Buffer& whitewater_counters() const;
+    [[nodiscard]] const cubey::vulkan::Buffer& whitewater_active_indices() const;
+    [[nodiscard]] const cubey::vulkan::Buffer& whitewater_draw_args() const;
     [[nodiscard]] cubey::vulkan::GpuTimestampProfiler* profiler() noexcept {
         return profiler_.has_value() ? &profiler_.value() : nullptr;
     }
@@ -105,6 +107,10 @@ class Water3DGpuResources {
     advect_whitewater_pipeline_resource() const;
     [[nodiscard]] const cubey::render::ComputePipelineResource&
     emit_whitewater_pipeline_resource() const;
+    [[nodiscard]] const cubey::render::ComputePipelineResource&
+    active_whitewater_indices_pipeline_resource() const;
+    [[nodiscard]] const cubey::render::ComputePipelineResource&
+    whitewater_draw_args_pipeline_resource() const;
     [[nodiscard]] const cubey::render::GraphicsPipelineResource& render_pipeline_resource() const;
     [[nodiscard]] const cubey::render::GraphicsPipelineResource&
     surface_scene_pipeline_resource() const;
@@ -186,6 +192,8 @@ class Water3DGpuResources {
     std::optional<cubey::vulkan::Buffer> whitewater_velocities_;
     std::optional<cubey::vulkan::Buffer> whitewater_state_;
     std::optional<cubey::vulkan::Buffer> whitewater_counters_;
+    std::optional<cubey::vulkan::Buffer> whitewater_active_indices_;
+    std::optional<cubey::vulkan::Buffer> whitewater_draw_args_;
     std::optional<cubey::vulkan::GpuTimestampProfiler> profiler_;
     std::optional<cubey::render::FrameUniformBuffer<Water3DSimulationUniforms>>
         simulation_uniforms_;
@@ -208,6 +216,9 @@ class Water3DGpuResources {
     std::optional<cubey::render::ComputePipelineResource> clear_whitewater_pipeline_resource_;
     std::optional<cubey::render::ComputePipelineResource> advect_whitewater_pipeline_resource_;
     std::optional<cubey::render::ComputePipelineResource> emit_whitewater_pipeline_resource_;
+    std::optional<cubey::render::ComputePipelineResource>
+        active_whitewater_indices_pipeline_resource_;
+    std::optional<cubey::render::ComputePipelineResource> whitewater_draw_args_pipeline_resource_;
     std::optional<cubey::render::GraphicsPipelineResource> render_pipeline_resource_;
     std::optional<cubey::vulkan::Sampler> surface_sampler_;
     std::optional<cubey::render::MaterialInstance> surface_scene_material_;

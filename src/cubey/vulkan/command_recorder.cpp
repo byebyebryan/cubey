@@ -190,6 +190,20 @@ void CommandRecorder::draw(std::uint32_t vertex_count, std::uint32_t instance_co
     vkCmdDraw(command_buffer_, vertex_count, instance_count, first_vertex, first_instance);
 }
 
+void CommandRecorder::draw_indirect(VkBuffer buffer, VkDeviceSize offset,
+                                    std::uint32_t draw_count, std::uint32_t stride) const {
+    if (buffer == VK_NULL_HANDLE) {
+        throw std::runtime_error("command recorder draw indirect requires a buffer");
+    }
+    if (draw_count == 0) {
+        throw std::runtime_error("command recorder draw indirect requires at least one draw");
+    }
+    if (stride == 0) {
+        throw std::runtime_error("command recorder draw indirect requires a positive stride");
+    }
+    vkCmdDrawIndirect(command_buffer_, buffer, offset, draw_count, stride);
+}
+
 void CommandRecorder::draw_indexed(std::uint32_t index_count, std::uint32_t instance_count,
                                    std::uint32_t first_index, std::int32_t vertex_offset,
                                    std::uint32_t first_instance) const {

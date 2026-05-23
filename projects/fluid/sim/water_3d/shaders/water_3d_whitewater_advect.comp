@@ -290,5 +290,4 @@ void main() {
     whitewater_positions.values[id] = vec4(position, 1.0);
     whitewater_velocities.values[id] = vec4(velocity, age);
     whitewater_state.values[id] = vec4(state.x, kind, state.z, state.w);
-    atomicAdd(whitewater_counters.values[1], 1u);
 }

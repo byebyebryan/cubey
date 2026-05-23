@@ -112,6 +112,11 @@ int main() {
                 "water 3D whitewater buffers should store vec4 capacity");
         require(water::whitewater_counter_byte_size(config) == sizeof(std::uint32_t) * 4U,
                 "water 3D whitewater counters should store four uint counters");
+        require(water::whitewater_active_index_byte_size(config) ==
+                    sizeof(std::uint32_t) * water::kWater3DDefaultWhitewaterCapacity,
+                "water 3D whitewater active indices should store one uint per particle");
+        require(water::whitewater_draw_arg_byte_size(config) == sizeof(std::uint32_t) * 4U,
+                "water 3D whitewater draw args should store one indirect draw command");
         require(water::particle_bin_index_count(config) == kExpectedCellCount * 32U,
                 "water 3D particle bins should allocate fixed cell slots");
         require(std::string(water::water_3d_render_view_name(water::Water3DRenderView::Surface)) ==
@@ -207,6 +212,10 @@ int main() {
             read_text_file(shader_dir / "water_3d_whitewater_advect.comp");
         const std::string whitewater_emit =
             read_text_file(shader_dir / "water_3d_whitewater_emit.comp");
+        const std::string whitewater_active_indices =
+            read_text_file(shader_dir / "water_3d_whitewater_active_indices.comp");
+        const std::string whitewater_draw_args =
+            read_text_file(shader_dir / "water_3d_whitewater_draw_args.comp");
         const std::string whitewater_vert = read_text_file(shader_dir / "water_3d_whitewater.vert");
         const std::string whitewater_frag = read_text_file(shader_dir / "water_3d_whitewater.frag");
         const std::string extrapolate_shader =
@@ -242,6 +251,10 @@ int main() {
                          "water 3D contract should expose extrapolation validity scratch fields");
         require_contains(contract, "WATER3D_BINDING_WHITEWATER_POSITIONS",
                          "water 3D contract should expose whitewater particles");
+        require_contains(contract, "WATER3D_BINDING_WHITEWATER_ACTIVE_INDICES",
+                         "water 3D contract should expose compacted whitewater draw indices");
+        require_contains(contract, "WATER3D_BINDING_WHITEWATER_DRAW_ARGS",
+                         "water 3D contract should expose whitewater indirect draw args");
         require_contains(contract, "WATER3D_WHITEWATER_CAPACITY",
                          "water 3D contract should expose whitewater capacity");
         require_contains(contract, "whitewater_options",
@@ -280,8 +293,16 @@ int main() {
                          "water 3D whitewater emission should write unique target slots");
         require_contains(whitewater_emit, "WATER3D_WHITEWATER_MAX_EMIT_PER_FRAME",
                          "water 3D whitewater emission should clamp per-frame emission");
+        require_contains(whitewater_active_indices, "whitewater_active_indices.values[active_slot]",
+                         "water 3D whitewater should compact active particles for rendering");
+        require_contains(whitewater_active_indices, "atomicAdd(whitewater_counters.values[1]",
+                         "water 3D whitewater should count compacted active particles");
+        require_contains(whitewater_draw_args, "whitewater_draw_args.values[1] = active_count",
+                         "water 3D whitewater should write indirect draw instance count");
         require_contains(whitewater_vert, "WATER3D_BINDING_WHITEWATER_POSITIONS",
                          "water 3D whitewater renderer should instance whitewater particles");
+        require_contains(whitewater_vert, "whitewater_active_indices.values[active_slot]",
+                         "water 3D whitewater renderer should draw compacted active particles");
         require_contains(whitewater_frag, "alpha * frag_linear_depth",
                          "water 3D whitewater renderer should output packed premultiplied depth");
         require_contains(extrapolate_shader, "read_scratch()",
@@ -387,6 +408,10 @@ int main() {
                          "water 3D surface render should render whitewater before composite");
         require_contains(gpu_resources, "water_3d_whitewater_emit.comp.spv",
                          "water 3D GPU resources should create whitewater compute pipelines");
+        require_contains(gpu_resources, "water_3d_whitewater_active_indices.comp.spv",
+                         "water 3D GPU resources should create active whitewater compaction");
+        require_contains(gpu_resources, "water_3d_whitewater_draw_args.comp.spv",
+                         "water 3D GPU resources should create whitewater draw args");
         require_contains(gpu_resources, "water_3d_whitewater.vert.spv",
                          "water 3D GPU resources should create the whitewater render pipeline");
         require_contains(gpu_resources, "water_3d.whitewater",
@@ -395,6 +420,8 @@ int main() {
                          "water 3D whitewater render should depth-test against the surface");
         require_contains(commands, "VK_ATTACHMENT_LOAD_OP_LOAD",
                          "water 3D whitewater render should keep the reconstructed surface depth");
+        require_contains(commands, "draw_indirect(resources.whitewater_draw_args().handle()",
+                         "water 3D whitewater render should use compacted indirect draw args");
         require_contains(render_shader, "render_view == 5u",
                          "water 3D renderer should expose the solid debug view");
         require_contains(render_shader, "render_view == 6u",

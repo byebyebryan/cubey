@@ -141,9 +141,11 @@ void record_final_barrier(VkCommandBuffer command_buffer) {
     record_shader_write_barrier(
         command_buffer, {
                             .dst_stage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT |
+                                         VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT |
                                          VK_PIPELINE_STAGE_VERTEX_SHADER_BIT |
                                          VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-                            .dst_access = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
+                            .dst_access = VK_ACCESS_INDIRECT_COMMAND_READ_BIT |
+                                          VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
                         });
 }
 
@@ -517,6 +519,18 @@ void record_whitewater_compute(const cubey::vulkan::CommandRecorder& recorder,
         record_compute_barrier(command_buffer);
         end_pass();
     }
+
+    begin_pass("whitewater active indices");
+    record_dispatch(recorder, resources.active_whitewater_indices_pipeline_resource(),
+                    descriptor_set, whitewater_dispatch_groups(config), push_constants);
+    record_compute_barrier(command_buffer);
+    end_pass();
+
+    begin_pass("whitewater draw args");
+    record_dispatch(recorder, resources.whitewater_draw_args_pipeline_resource(), descriptor_set,
+                    linear_dispatch_groups(1U), push_constants);
+    record_compute_barrier(command_buffer);
+    end_pass();
 }
 
 void record_surface_depth_pass(const cubey::vulkan::CommandRecorder& recorder,
@@ -694,16 +708,14 @@ void record_whitewater_pass(const cubey::vulkan::CommandRecorder& recorder,
                             cubey::render::DepthTargetView depth_target, VkFormat output_format) {
     const SurfacePushConstants push_constants =
         whitewater_push_constants(config, render_view, camera, color_target.extent, output_format);
-    const std::uint32_t instance_count =
-        config.whitewater_enabled ? config.whitewater_capacity : 0U;
     record_render_target_pass_with_loaded_depth(
         recorder, cubey::render::render_target_view(color_target, depth_target),
         cubey::render::RenderClearValues{
             .color = cubey::render::color_clear_value(0.0F, 0.0F, 0.0F, 0.0F),
             .depth = cubey::render::depth_clear_value(),
         },
-        [&resources, frame_slot, push_constants,
-         instance_count](const cubey::vulkan::CommandRecorder& pass_recorder) {
+        [&resources, frame_slot,
+         push_constants](const cubey::vulkan::CommandRecorder& pass_recorder) {
             const cubey::render::GraphicsPipelineResource& pipeline =
                 resources.whitewater_pipeline_resource();
             pass_recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.pipeline());
@@ -712,7 +724,8 @@ void record_whitewater_pass(const cubey::vulkan::CommandRecorder& recorder,
             pass_recorder.push_constants(pipeline.layout(),
                                          VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
                                          0, push_constants);
-            pass_recorder.draw(6, instance_count);
+            pass_recorder.draw_indirect(resources.whitewater_draw_args().handle(), 0, 1,
+                                        sizeof(VkDrawIndirectCommand));
         });
 }
 

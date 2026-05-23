@@ -4,6 +4,7 @@
 
 #include <array>
 #include <filesystem>
+#include <limits>
 #include <optional>
 #include <span>
 #include <stdexcept>
@@ -298,6 +299,8 @@ void Water3DGpuResources::destroy_swapchain_resources() {
 
 void Water3DGpuResources::destroy_all_resources() {
     destroy_swapchain_resources();
+    whitewater_draw_args_pipeline_resource_.reset();
+    active_whitewater_indices_pipeline_resource_.reset();
     emit_whitewater_pipeline_resource_.reset();
     advect_whitewater_pipeline_resource_.reset();
     clear_whitewater_pipeline_resource_.reset();
@@ -320,6 +323,8 @@ void Water3DGpuResources::destroy_all_resources() {
     profiler_.reset();
     frame_slot_count_ = 0;
     whitewater_counters_.reset();
+    whitewater_draw_args_.reset();
+    whitewater_active_indices_.reset();
     whitewater_state_.reset();
     whitewater_velocities_.reset();
     whitewater_positions_.reset();
@@ -370,6 +375,8 @@ VkDeviceSize Water3DGpuResources::allocated_buffer_bytes() const {
            optional_buffer_size(whitewater_positions_) +
            optional_buffer_size(whitewater_velocities_) + optional_buffer_size(whitewater_state_) +
            optional_buffer_size(whitewater_counters_) +
+           optional_buffer_size(whitewater_active_indices_) +
+           optional_buffer_size(whitewater_draw_args_) +
            optional_frame_uniform_buffer_size(simulation_uniforms_);
 }
 
@@ -384,7 +391,10 @@ void Water3DGpuResources::create_field_buffers(cubey::ProjectGpuServices& gpu,
     const std::vector<std::uint32_t> cell_count_initial(cell_count(config), 0U);
     const std::vector<std::uint32_t> bin_initial(particle_bin_index_count(config), 0U);
     const std::vector<float> whitewater_initial(whitewater_value_count(config), 0.0F);
+    const std::vector<std::uint32_t> whitewater_active_index_initial(
+        config.whitewater_capacity, std::numeric_limits<std::uint32_t>::max());
     const std::array<std::uint32_t, 4> whitewater_counter_initial{};
+    const std::array<std::uint32_t, 4> whitewater_draw_args_initial{6U, 0U, 0U, 0U};
     const VkDeviceSize particle_byte_size =
         static_cast<VkDeviceSize>(particle_buffer_byte_size(config));
     const VkDeviceSize affine_byte_size =
@@ -401,6 +411,10 @@ void Water3DGpuResources::create_field_buffers(cubey::ProjectGpuServices& gpu,
         static_cast<VkDeviceSize>(whitewater_buffer_byte_size(config));
     const VkDeviceSize whitewater_counter_bytes =
         static_cast<VkDeviceSize>(whitewater_counter_byte_size(config));
+    const VkDeviceSize whitewater_active_index_bytes =
+        static_cast<VkDeviceSize>(whitewater_active_index_byte_size(config));
+    const VkDeviceSize whitewater_draw_arg_bytes =
+        static_cast<VkDeviceSize>(whitewater_draw_arg_byte_size(config));
 
     particle_positions_.emplace(upload_project_device_buffer(
         gpu, particle_initial.data(), particle_byte_size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
@@ -495,12 +509,19 @@ void Water3DGpuResources::create_field_buffers(cubey::ProjectGpuServices& gpu,
     whitewater_counters_.emplace(upload_project_device_buffer(
         gpu, whitewater_counter_initial.data(), whitewater_counter_bytes,
         VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, "water_3d whitewater counter upload"));
+    whitewater_active_indices_.emplace(upload_project_device_buffer(
+        gpu, whitewater_active_index_initial.data(), whitewater_active_index_bytes,
+        VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, "water_3d whitewater active index upload"));
+    whitewater_draw_args_.emplace(upload_project_device_buffer(
+        gpu, whitewater_draw_args_initial.data(), whitewater_draw_arg_bytes,
+        VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
+        "water_3d whitewater indirect draw upload"));
 }
 
 void Water3DGpuResources::create_descriptor_resources(cubey::vulkan::Device& device) {
     constexpr VkShaderStageFlags kStages =
         VK_SHADER_STAGE_COMPUTE_BIT | VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
-    const std::array<cubey::vulkan::DescriptorSetBindingConfig, 32> field_bindings{{
+    const std::array<cubey::vulkan::DescriptorSetBindingConfig, 34> field_bindings{{
         {.binding = 0, .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .stage_flags = kStages},
         {.binding = 1, .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .stage_flags = kStages},
         {.binding = 2, .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .stage_flags = kStages},
@@ -535,6 +556,8 @@ void Water3DGpuResources::create_descriptor_resources(cubey::vulkan::Device& dev
         {.binding = 29, .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .stage_flags = kStages},
         {.binding = 30, .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .stage_flags = kStages},
         {.binding = 31, .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .stage_flags = kStages},
+        {.binding = 32, .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .stage_flags = kStages},
+        {.binding = 33, .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .stage_flags = kStages},
     }};
     const cubey::vulkan::DescriptorSetInfo field_info(field_bindings, frame_slot_count_);
     field_descriptor_layout_.emplace(device, field_info.layout_info());
@@ -585,7 +608,11 @@ void Water3DGpuResources::update_field_descriptors(cubey::vulkan::Device& device
             .storage_buffer(set, 29, whitewater_velocities().handle(),
                             whitewater_velocities().size())
             .storage_buffer(set, 30, whitewater_state().handle(), whitewater_state().size())
-            .storage_buffer(set, 31, whitewater_counters().handle(), whitewater_counters().size());
+            .storage_buffer(set, 31, whitewater_counters().handle(), whitewater_counters().size())
+            .storage_buffer(set, 32, whitewater_active_indices().handle(),
+                            whitewater_active_indices().size())
+            .storage_buffer(set, 33, whitewater_draw_args().handle(),
+                            whitewater_draw_args().size());
     }
     descriptor_writes.update(device);
 }
@@ -627,6 +654,12 @@ void Water3DGpuResources::create_compute_pipelines(cubey::vulkan::Device& device
                                      advect_whitewater_pipeline_resource_);
     create_compute_pipeline_resource(device, "water_3d_whitewater_emit.comp.spv",
                                      field_descriptor_layout(), emit_whitewater_pipeline_resource_);
+    create_compute_pipeline_resource(device, "water_3d_whitewater_active_indices.comp.spv",
+                                     field_descriptor_layout(),
+                                     active_whitewater_indices_pipeline_resource_);
+    create_compute_pipeline_resource(device, "water_3d_whitewater_draw_args.comp.spv",
+                                     field_descriptor_layout(),
+                                     whitewater_draw_args_pipeline_resource_);
 }
 
 void Water3DGpuResources::create_render_pipeline(
@@ -979,6 +1012,16 @@ const cubey::vulkan::Buffer& Water3DGpuResources::whitewater_counters() const {
                                "water 3D whitewater counters are not initialized");
 }
 
+const cubey::vulkan::Buffer& Water3DGpuResources::whitewater_active_indices() const {
+    return require_initialized(whitewater_active_indices_,
+                               "water 3D whitewater active indices are not initialized");
+}
+
+const cubey::vulkan::Buffer& Water3DGpuResources::whitewater_draw_args() const {
+    return require_initialized(whitewater_draw_args_,
+                               "water 3D whitewater draw args are not initialized");
+}
+
 const std::vector<cubey::vulkan::GpuPassTiming>& Water3DGpuResources::latest_timings() const {
     if (!profiler_.has_value()) {
         static const std::vector<cubey::vulkan::GpuPassTiming> empty;
@@ -1113,6 +1156,18 @@ const cubey::render::ComputePipelineResource&
 Water3DGpuResources::emit_whitewater_pipeline_resource() const {
     return require_initialized(emit_whitewater_pipeline_resource_,
                                "water 3D whitewater emission pipeline is not initialized");
+}
+
+const cubey::render::ComputePipelineResource&
+Water3DGpuResources::active_whitewater_indices_pipeline_resource() const {
+    return require_initialized(active_whitewater_indices_pipeline_resource_,
+                               "water 3D whitewater active index pipeline is not initialized");
+}
+
+const cubey::render::ComputePipelineResource&
+Water3DGpuResources::whitewater_draw_args_pipeline_resource() const {
+    return require_initialized(whitewater_draw_args_pipeline_resource_,
+                               "water 3D whitewater draw args pipeline is not initialized");
 }
 
 const cubey::render::GraphicsPipelineResource&
