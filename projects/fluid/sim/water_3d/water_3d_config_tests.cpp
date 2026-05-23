@@ -44,6 +44,8 @@ int main() {
         constexpr std::size_t kExpectedUFaceCount = std::size_t{65} * 64U * 64U;
         constexpr std::size_t kExpectedVFaceCount = std::size_t{64} * 65U * 64U;
         constexpr std::size_t kExpectedWFaceCount = std::size_t{64} * 64U * 65U;
+        constexpr std::size_t kExpectedTotalFaceCount =
+            kExpectedUFaceCount + kExpectedVFaceCount + kExpectedWFaceCount;
         constexpr std::size_t kExpectedActiveParticleCount = std::size_t{32} * 44U * 32U * 4U;
         constexpr std::size_t kExpectedParticleCapacity = std::size_t{48} * 48U * 48U * 4U;
 
@@ -101,6 +103,8 @@ int main() {
                 "water 3D V faces should include one extra y face");
         require(water::w_face_count(config) == kExpectedWFaceCount,
                 "water 3D W faces should include one extra z face");
+        require(water::total_face_count(config) == kExpectedTotalFaceCount,
+                "water 3D total face count should include all staggered grids");
         require(water::particle_buffer_byte_size(config) ==
                     sizeof(float) * kExpectedParticleCapacity * 4U,
                 "water 3D particle buffers should store vec4 capacity");
@@ -119,6 +123,16 @@ int main() {
                 "water 3D whitewater draw args should store one indirect draw command");
         require(water::particle_bin_index_count(config) == kExpectedCellCount * 32U,
                 "water 3D particle bins should allocate fixed cell slots");
+        require(water::active_work_count_byte_size(config) == sizeof(std::uint32_t) * 4U,
+                "water 3D active work counters should reserve four uint counters");
+        require(water::active_face_flag_byte_size(config) ==
+                    sizeof(std::uint32_t) * kExpectedTotalFaceCount,
+                "water 3D active face flags should cover every staggered face");
+        require(water::active_face_index_byte_size(config) ==
+                    sizeof(std::uint32_t) * kExpectedTotalFaceCount,
+                "water 3D active face indices should cover every staggered face");
+        require(water::active_face_dispatch_arg_byte_size(config) == sizeof(std::uint32_t) * 3U,
+                "water 3D active face dispatch args should store one indirect dispatch command");
         require(std::string(water::water_3d_render_view_name(water::Water3DRenderView::Surface)) ==
                     "Surface",
                 "water 3D render view names should include surface");
@@ -202,8 +216,12 @@ int main() {
             std::filesystem::path(CUBEY_WATER_3D_SOURCE_DIR) / "shaders";
         const std::string contract = read_text_file(shader_dir / "water_3d_contract.glsl");
         const std::string reset_shader = read_text_file(shader_dir / "water_3d_reset.comp");
+        const std::string build_bins = read_text_file(shader_dir / "water_3d_build_bins.comp");
+        const std::string clear_bins = read_text_file(shader_dir / "water_3d_clear_bins.comp");
         const std::string p2g_shader =
             read_text_file(shader_dir / "water_3d_particle_to_grid.comp");
+        const std::string active_face_dispatch_args =
+            read_text_file(shader_dir / "water_3d_active_face_dispatch_args.comp");
         const std::string advect_shader =
             read_text_file(shader_dir / "water_3d_advect_particles.comp");
         const std::string whitewater_clear =
@@ -255,6 +273,14 @@ int main() {
                          "water 3D contract should expose compacted whitewater draw indices");
         require_contains(contract, "WATER3D_BINDING_WHITEWATER_DRAW_ARGS",
                          "water 3D contract should expose whitewater indirect draw args");
+        require_contains(contract, "WATER3D_BINDING_ACTIVE_WORK_COUNTS",
+                         "water 3D contract should expose active work counters");
+        require_contains(contract, "WATER3D_BINDING_ACTIVE_FACE_INDICES",
+                         "water 3D contract should expose compacted active face indices");
+        require_contains(contract, "WATER3D_BINDING_ACTIVE_FACE_DISPATCH_ARGS",
+                         "water 3D contract should expose active face indirect dispatch args");
+        require_contains(contract, "WATER3D_BUILD_ACTIVE_FACES",
+                         "water 3D contract should expose binning active-face control");
         require_contains(contract, "WATER3D_WHITEWATER_CAPACITY",
                          "water 3D contract should expose whitewater capacity");
         require_contains(contract, "whitewater_options",
@@ -263,10 +289,24 @@ int main() {
                          "water 3D reset should clear all APIC affine rows");
         require_contains(reset_shader, "whitewater_positions.values[id]",
                          "water 3D reset should clear whitewater particles");
+        require_contains(build_bins, "WATER3D_BUILD_ACTIVE_FACES",
+                         "water 3D binning should optionally build active face work");
+        require_contains(build_bins, "atomicExchange(active_face_flags.values[face_id]",
+                         "water 3D binning should deduplicate active face work");
+        require_contains(build_bins, "active_face_indices.values[active_slot]",
+                         "water 3D binning should compact active face indices");
+        require_contains(clear_bins, "active_face_dispatch_args.values[id] = 1u",
+                         "water 3D bin clearing should reset indirect dispatch args");
         require_contains(p2g_shader, "gather_face_velocity",
                          "water 3D particle-to-grid should gather face velocities");
         require_contains(p2g_shader, "velocity += unpack_affine(particle_id) * delta",
                          "water 3D particle-to-grid should apply APIC local velocity");
+        require_contains(p2g_shader, "active_work_counts.values[0]",
+                         "water 3D particle-to-grid should consume compacted active face count");
+        require_contains(p2g_shader, "active_face_indices.values[active_slot]",
+                         "water 3D particle-to-grid should process compacted active face indices");
+        require_contains(active_face_dispatch_args, "active_face_dispatch_args.values[0]",
+                         "water 3D should write indirect dispatch args for active faces");
         require_contains(advect_shader, "apply_side_wall_friction",
                          "water 3D particle advection should damp side-wall impacts");
         require_contains(whitewater_clear, "whitewater_counters.values[id] = 0u",
@@ -404,8 +444,14 @@ int main() {
                          "water 3D surface render should bind graph transient textures");
         require_contains(commands, "record_whitewater_compute",
                          "water 3D simulation should run visual whitewater compute passes");
+        require_contains(commands, "record_dispatch_indirect",
+                         "water 3D simulation should support indirect compute dispatch");
+        require_contains(commands, "active_face_dispatch_args().handle()",
+                         "water 3D particle-to-grid should dispatch over active faces indirectly");
         require_contains(commands, "water whitewater",
                          "water 3D surface render should render whitewater before composite");
+        require_contains(gpu_resources, "water_3d_active_face_dispatch_args.comp.spv",
+                         "water 3D GPU resources should create active-face dispatch args");
         require_contains(gpu_resources, "water_3d_whitewater_emit.comp.spv",
                          "water 3D GPU resources should create whitewater compute pipelines");
         require_contains(gpu_resources, "water_3d_whitewater_active_indices.comp.spv",

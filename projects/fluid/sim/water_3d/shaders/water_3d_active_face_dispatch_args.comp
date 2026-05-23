@@ -1,0 +1,22 @@
+#version 450
+#extension GL_GOOGLE_include_directive : require
+
+#include "water_3d_contract.glsl"
+
+layout(local_size_x = 1, local_size_y = 1) in;
+
+layout(set = 0, binding = WATER3D_BINDING_ACTIVE_WORK_COUNTS, std430) readonly buffer ActiveWorkCounts {
+    uint values[];
+} active_work_counts;
+layout(set = 0, binding = WATER3D_BINDING_ACTIVE_FACE_DISPATCH_ARGS, std430) buffer ActiveFaceDispatchArgs {
+    uint values[];
+} active_face_dispatch_args;
+
+WATER3D_SIMULATION_PARAMS;
+
+void main() {
+    uint active_face_count = active_work_counts.values[0];
+    active_face_dispatch_args.values[0] = max(1u, (active_face_count + 63u) / 64u);
+    active_face_dispatch_args.values[1] = 1u;
+    active_face_dispatch_args.values[2] = 1u;
+}

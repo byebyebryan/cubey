@@ -11,6 +11,15 @@ layout(set = 0, binding = WATER3D_BINDING_CELL_COUNTS, std430) buffer CellCounts
 layout(set = 0, binding = WATER3D_BINDING_CELL_PARTICLE_INDICES, std430) buffer CellParticleIndices {
     uint values[];
 } cell_particle_indices;
+layout(set = 0, binding = WATER3D_BINDING_ACTIVE_WORK_COUNTS, std430) buffer ActiveWorkCounts {
+    uint values[];
+} active_work_counts;
+layout(set = 0, binding = WATER3D_BINDING_ACTIVE_FACE_FLAGS, std430) buffer ActiveFaceFlags {
+    uint values[];
+} active_face_flags;
+layout(set = 0, binding = WATER3D_BINDING_ACTIVE_FACE_DISPATCH_ARGS, std430) buffer ActiveFaceDispatchArgs {
+    uint values[];
+} active_face_dispatch_args;
 
 WATER3D_SIMULATION_PARAMS;
 
@@ -22,11 +31,23 @@ void main() {
     uint max_particles_per_cell = uint(WATER3D_MAX_PARTICLES_PER_CELL + 0.5);
     uint cell_count = width * height * depth;
     uint bin_count = cell_count * max_particles_per_cell;
+    uint total_face_count = ((width + 1u) * height * depth) +
+                            (width * (height + 1u) * depth) +
+                            (width * height * (depth + 1u));
 
     if (id < cell_count) {
         cell_counts.values[id] = 0u;
     }
     if (id < bin_count) {
         cell_particle_indices.values[id] = WATER3D_EMPTY_PARTICLE;
+    }
+    if (id < total_face_count) {
+        active_face_flags.values[id] = 0u;
+    }
+    if (id < 4u) {
+        active_work_counts.values[id] = 0u;
+    }
+    if (id < 3u) {
+        active_face_dispatch_args.values[id] = 1u;
     }
 }

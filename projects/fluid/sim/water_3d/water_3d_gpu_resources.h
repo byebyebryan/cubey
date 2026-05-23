@@ -70,6 +70,10 @@ class Water3DGpuResources {
     [[nodiscard]] const cubey::vulkan::Buffer& whitewater_counters() const;
     [[nodiscard]] const cubey::vulkan::Buffer& whitewater_active_indices() const;
     [[nodiscard]] const cubey::vulkan::Buffer& whitewater_draw_args() const;
+    [[nodiscard]] const cubey::vulkan::Buffer& active_work_counts() const;
+    [[nodiscard]] const cubey::vulkan::Buffer& active_face_flags() const;
+    [[nodiscard]] const cubey::vulkan::Buffer& active_face_indices() const;
+    [[nodiscard]] const cubey::vulkan::Buffer& active_face_dispatch_args() const;
     [[nodiscard]] cubey::vulkan::GpuTimestampProfiler* profiler() noexcept {
         return profiler_.has_value() ? &profiler_.value() : nullptr;
     }
@@ -87,6 +91,8 @@ class Water3DGpuResources {
     clear_bins_pipeline_resource() const;
     [[nodiscard]] const cubey::render::ComputePipelineResource&
     build_bins_pipeline_resource() const;
+    [[nodiscard]] const cubey::render::ComputePipelineResource&
+    active_face_dispatch_args_pipeline_resource() const;
     [[nodiscard]] const cubey::render::ComputePipelineResource&
     particle_to_grid_pipeline_resource() const;
     [[nodiscard]] const cubey::render::ComputePipelineResource& force_pipeline_resource() const;
@@ -194,6 +200,10 @@ class Water3DGpuResources {
     std::optional<cubey::vulkan::Buffer> whitewater_counters_;
     std::optional<cubey::vulkan::Buffer> whitewater_active_indices_;
     std::optional<cubey::vulkan::Buffer> whitewater_draw_args_;
+    std::optional<cubey::vulkan::Buffer> active_work_counts_;
+    std::optional<cubey::vulkan::Buffer> active_face_flags_;
+    std::optional<cubey::vulkan::Buffer> active_face_indices_;
+    std::optional<cubey::vulkan::Buffer> active_face_dispatch_args_;
     std::optional<cubey::vulkan::GpuTimestampProfiler> profiler_;
     std::optional<cubey::render::FrameUniformBuffer<Water3DSimulationUniforms>>
         simulation_uniforms_;
@@ -205,6 +215,8 @@ class Water3DGpuResources {
     std::optional<cubey::render::ComputePipelineResource> clear_grid_pipeline_resource_;
     std::optional<cubey::render::ComputePipelineResource> clear_bins_pipeline_resource_;
     std::optional<cubey::render::ComputePipelineResource> build_bins_pipeline_resource_;
+    std::optional<cubey::render::ComputePipelineResource>
+        active_face_dispatch_args_pipeline_resource_;
     std::optional<cubey::render::ComputePipelineResource> particle_to_grid_pipeline_resource_;
     std::optional<cubey::render::ComputePipelineResource> force_pipeline_resource_;
     std::optional<cubey::render::ComputePipelineResource> divergence_pipeline_resource_;

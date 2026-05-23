@@ -17,11 +17,106 @@ layout(set = 0, binding = WATER3D_BINDING_CELL_COUNTS, std430) buffer CellCounts
 layout(set = 0, binding = WATER3D_BINDING_CELL_PARTICLE_INDICES, std430) buffer CellParticleIndices {
     uint values[];
 } cell_particle_indices;
+layout(set = 0, binding = WATER3D_BINDING_ACTIVE_WORK_COUNTS, std430) buffer ActiveWorkCounts {
+    uint values[];
+} active_work_counts;
+layout(set = 0, binding = WATER3D_BINDING_ACTIVE_FACE_FLAGS, std430) buffer ActiveFaceFlags {
+    uint values[];
+} active_face_flags;
+layout(set = 0, binding = WATER3D_BINDING_ACTIVE_FACE_INDICES, std430) buffer ActiveFaceIndices {
+    uint values[];
+} active_face_indices;
 
 WATER3D_SIMULATION_PARAMS;
 
 uint cell_index(uint x, uint y, uint z, uint width, uint height) {
     return ((z * height) + y) * width + x;
+}
+uint u_index(uint x, uint y, uint z, uint width, uint height) {
+    return ((z * height) + y) * (width + 1u) + x;
+}
+uint v_index(uint x, uint y, uint z, uint width, uint height) {
+    return ((z * (height + 1u)) + y) * width + x;
+}
+uint w_index(uint x, uint y, uint z, uint width, uint height) {
+    return ((z * height) + y) * width + x;
+}
+uint u_face_count(uint width, uint height, uint depth) {
+    return (width + 1u) * height * depth;
+}
+uint v_face_count(uint width, uint height, uint depth) {
+    return width * (height + 1u) * depth;
+}
+uint total_face_count(uint width, uint height, uint depth) {
+    return u_face_count(width, height, depth) + v_face_count(width, height, depth) +
+           (width * height * (depth + 1u));
+}
+
+void append_active_face(uint face_id, uint total_faces) {
+    if (atomicExchange(active_face_flags.values[face_id], 1u) != 0u) {
+        return;
+    }
+    uint active_slot = atomicAdd(active_work_counts.values[0], 1u);
+    if (active_slot < total_faces) {
+        active_face_indices.values[active_slot] = face_id;
+    }
+}
+
+void mark_active_faces_for_cell(uvec3 cell, uint width, uint height, uint depth) {
+    uint total_faces = total_face_count(width, height, depth);
+    uint u_count = u_face_count(width, height, depth);
+    uint v_count = v_face_count(width, height, depth);
+
+    for (int dz = -1; dz <= 1; ++dz) {
+        int z = int(cell.z) + dz;
+        if (z < 0 || z >= int(depth)) {
+            continue;
+        }
+        for (int dy = -1; dy <= 1; ++dy) {
+            int y = int(cell.y) + dy;
+            if (y < 0 || y >= int(height)) {
+                continue;
+            }
+            append_active_face(u_index(cell.x, uint(y), uint(z), width, height), total_faces);
+            append_active_face(u_index(cell.x + 1u, uint(y), uint(z), width, height),
+                               total_faces);
+        }
+    }
+
+    for (int dz = -1; dz <= 1; ++dz) {
+        int z = int(cell.z) + dz;
+        if (z < 0 || z >= int(depth)) {
+            continue;
+        }
+        for (int dx = -1; dx <= 1; ++dx) {
+            int x = int(cell.x) + dx;
+            if (x < 0 || x >= int(width)) {
+                continue;
+            }
+            append_active_face(u_count + v_index(uint(x), cell.y, uint(z), width, height),
+                               total_faces);
+            append_active_face(u_count + v_index(uint(x), cell.y + 1u, uint(z), width, height),
+                               total_faces);
+        }
+    }
+
+    for (int dy = -1; dy <= 1; ++dy) {
+        int y = int(cell.y) + dy;
+        if (y < 0 || y >= int(height)) {
+            continue;
+        }
+        for (int dx = -1; dx <= 1; ++dx) {
+            int x = int(cell.x) + dx;
+            if (x < 0 || x >= int(width)) {
+                continue;
+            }
+            append_active_face(u_count + v_count + w_index(uint(x), uint(y), cell.z, width, height),
+                               total_faces);
+            append_active_face(u_count + v_count +
+                                   w_index(uint(x), uint(y), cell.z + 1u, width, height),
+                               total_faces);
+        }
+    }
 }
 
 void main() {
@@ -45,6 +140,9 @@ void main() {
     }
 
     uint slot = atomicAdd(cell_counts.values[cell_id], 1u);
+    if (slot == 0u && WATER3D_BUILD_ACTIVE_FACES > 0.5) {
+        mark_active_faces_for_cell(cell, width, height, depth);
+    }
     if (slot < max_particles_per_cell) {
         cell_particle_indices.values[(cell_id * max_particles_per_cell) + slot] = particle_id;
     }

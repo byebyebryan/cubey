@@ -3,7 +3,7 @@
 
 #include "water_3d_contract.glsl"
 
-layout(local_size_x = 4, local_size_y = 4, local_size_z = 4) in;
+layout(local_size_x = 64, local_size_y = 1) in;
 
 layout(set = 0, binding = WATER3D_BINDING_PARTICLE_POSITIONS, std430) readonly buffer ParticlePositions {
     vec4 values[];
@@ -26,6 +26,8 @@ layout(set = 0, binding = WATER3D_BINDING_W_WEIGHT, std430) buffer WWeightField 
 layout(set = 0, binding = WATER3D_BINDING_SOLID, std430) readonly buffer SolidField { float values[]; } solid;
 layout(set = 0, binding = WATER3D_BINDING_CELL_COUNTS, std430) readonly buffer CellCounts { uint values[]; } cell_counts;
 layout(set = 0, binding = WATER3D_BINDING_CELL_PARTICLE_INDICES, std430) readonly buffer CellParticleIndices { uint values[]; } cell_particle_indices;
+layout(set = 0, binding = WATER3D_BINDING_ACTIVE_WORK_COUNTS, std430) readonly buffer ActiveWorkCounts { uint values[]; } active_work_counts;
+layout(set = 0, binding = WATER3D_BINDING_ACTIVE_FACE_INDICES, std430) readonly buffer ActiveFaceIndices { uint values[]; } active_face_indices;
 
 WATER3D_SIMULATION_PARAMS;
 
@@ -40,6 +42,16 @@ uint v_index(uint x, uint y, uint z, uint width, uint height) {
 }
 uint w_index(uint x, uint y, uint z, uint width, uint height) {
     return ((z * height) + y) * width + x;
+}
+uint u_face_count(uint width, uint height, uint depth) {
+    return (width + 1u) * height * depth;
+}
+uint v_face_count(uint width, uint height, uint depth) {
+    return width * (height + 1u) * depth;
+}
+uint total_face_count(uint width, uint height, uint depth) {
+    return u_face_count(width, height, depth) + v_face_count(width, height, depth) +
+           (width * height * (depth + 1u));
 }
 
 bool in_bounds(int x, int y, int z, uint width, uint height, uint depth) {
@@ -129,64 +141,95 @@ vec3 gather_face_velocity(vec3 face_grid_position, uint width, uint height, uint
     return velocity_sum / total_weight;
 }
 
+void process_u_face(uint face_id, uint width, uint height, uint depth, uint max_particles_per_cell) {
+    uint x = face_id % (width + 1u);
+    uint yz = face_id / (width + 1u);
+    uint y = yz % height;
+    uint z = yz / height;
+    uint index = u_index(x, y, z, width, height);
+    if (blocked_u_face(x, y, z, width, height, depth)) {
+        u_field.values[index] = 0.0;
+        u_previous.values[index] = 0.0;
+        u_weight.values[index] = 0.0;
+        return;
+    }
+
+    float weight = 0.0;
+    vec3 velocity = gather_face_velocity(vec3(float(x), float(y) + 0.5, float(z) + 0.5),
+                                         width, height, depth, max_particles_per_cell, weight);
+    u_field.values[index] = velocity.x;
+    u_previous.values[index] = velocity.x;
+    u_weight.values[index] = weight;
+}
+
+void process_v_face(uint face_id, uint width, uint height, uint depth, uint max_particles_per_cell) {
+    uint x = face_id % width;
+    uint yz = face_id / width;
+    uint y = yz % (height + 1u);
+    uint z = yz / (height + 1u);
+    uint index = v_index(x, y, z, width, height);
+    if (blocked_v_face(x, y, z, width, height, depth)) {
+        v_field.values[index] = 0.0;
+        v_previous.values[index] = 0.0;
+        v_weight.values[index] = 0.0;
+        return;
+    }
+
+    float weight = 0.0;
+    vec3 velocity = gather_face_velocity(vec3(float(x) + 0.5, float(y), float(z) + 0.5),
+                                         width, height, depth, max_particles_per_cell, weight);
+    v_field.values[index] = velocity.y;
+    v_previous.values[index] = velocity.y;
+    v_weight.values[index] = weight;
+}
+
+void process_w_face(uint face_id, uint width, uint height, uint depth, uint max_particles_per_cell) {
+    uint x = face_id % width;
+    uint yz = face_id / width;
+    uint y = yz % height;
+    uint z = yz / height;
+    uint index = w_index(x, y, z, width, height);
+    if (blocked_w_face(x, y, z, width, height, depth)) {
+        w_field.values[index] = 0.0;
+        w_previous.values[index] = 0.0;
+        w_weight.values[index] = 0.0;
+        return;
+    }
+
+    float weight = 0.0;
+    vec3 velocity = gather_face_velocity(vec3(float(x) + 0.5, float(y) + 0.5, float(z)),
+                                         width, height, depth, max_particles_per_cell, weight);
+    w_field.values[index] = velocity.z;
+    w_previous.values[index] = velocity.z;
+    w_weight.values[index] = weight;
+}
+
 void main() {
+    uint active_slot = gl_GlobalInvocationID.x;
+    if (active_slot >= active_work_counts.values[0]) {
+        return;
+    }
+
     uint width = uint(WATER3D_GRID_WIDTH + 0.5);
     uint height = uint(WATER3D_GRID_HEIGHT + 0.5);
     uint depth = uint(WATER3D_GRID_DEPTH + 0.5);
     uint max_particles_per_cell = uint(WATER3D_MAX_PARTICLES_PER_CELL + 0.5);
-    uint x = gl_GlobalInvocationID.x;
-    uint y = gl_GlobalInvocationID.y;
-    uint z = gl_GlobalInvocationID.z;
+    uint global_face_id = active_face_indices.values[active_slot];
+    uint u_count = u_face_count(width, height, depth);
+    uint v_count = v_face_count(width, height, depth);
+    uint total_faces = total_face_count(width, height, depth);
+    if (global_face_id >= total_faces) {
+        return;
+    }
 
-    if (x <= width && y < height && z < depth) {
-        uint index = u_index(x, y, z, width, height);
-        if (blocked_u_face(x, y, z, width, height, depth)) {
-            u_field.values[index] = 0.0;
-            u_previous.values[index] = 0.0;
-            u_weight.values[index] = 0.0;
-        } else {
-            float weight = 0.0;
-            vec3 velocity = gather_face_velocity(vec3(float(x), float(y) + 0.5,
-                                                      float(z) + 0.5),
-                                                 width, height, depth, max_particles_per_cell,
-                                                 weight);
-            u_field.values[index] = velocity.x;
-            u_previous.values[index] = velocity.x;
-            u_weight.values[index] = weight;
-        }
+    if (global_face_id < u_count) {
+        process_u_face(global_face_id, width, height, depth, max_particles_per_cell);
+        return;
     }
-    if (x < width && y <= height && z < depth) {
-        uint index = v_index(x, y, z, width, height);
-        if (blocked_v_face(x, y, z, width, height, depth)) {
-            v_field.values[index] = 0.0;
-            v_previous.values[index] = 0.0;
-            v_weight.values[index] = 0.0;
-        } else {
-            float weight = 0.0;
-            vec3 velocity = gather_face_velocity(vec3(float(x) + 0.5, float(y),
-                                                      float(z) + 0.5),
-                                                 width, height, depth, max_particles_per_cell,
-                                                 weight);
-            v_field.values[index] = velocity.y;
-            v_previous.values[index] = velocity.y;
-            v_weight.values[index] = weight;
-        }
+    global_face_id -= u_count;
+    if (global_face_id < v_count) {
+        process_v_face(global_face_id, width, height, depth, max_particles_per_cell);
+        return;
     }
-    if (x < width && y < height && z <= depth) {
-        uint index = w_index(x, y, z, width, height);
-        if (blocked_w_face(x, y, z, width, height, depth)) {
-            w_field.values[index] = 0.0;
-            w_previous.values[index] = 0.0;
-            w_weight.values[index] = 0.0;
-        } else {
-            float weight = 0.0;
-            vec3 velocity = gather_face_velocity(vec3(float(x) + 0.5, float(y) + 0.5,
-                                                      float(z)),
-                                                 width, height, depth, max_particles_per_cell,
-                                                 weight);
-            w_field.values[index] = velocity.z;
-            w_previous.values[index] = velocity.z;
-            w_weight.values[index] = weight;
-        }
-    }
+    process_w_face(global_face_id - v_count, width, height, depth, max_particles_per_cell);
 }

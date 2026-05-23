@@ -35,6 +35,10 @@
 #define WATER3D_BINDING_WHITEWATER_COUNTERS 31
 #define WATER3D_BINDING_WHITEWATER_ACTIVE_INDICES 32
 #define WATER3D_BINDING_WHITEWATER_DRAW_ARGS 33
+#define WATER3D_BINDING_ACTIVE_WORK_COUNTS 34
+#define WATER3D_BINDING_ACTIVE_FACE_FLAGS 35
+#define WATER3D_BINDING_ACTIVE_FACE_INDICES 36
+#define WATER3D_BINDING_ACTIVE_FACE_DISPATCH_ARGS 37
 
 #define WATER3D_EMPTY_PARTICLE 0xffffffffu
 
@@ -65,6 +69,7 @@
 #define WATER3D_TIME dispatch_params.dispatch_options.y
 #define WATER3D_PRESSURE_READ_B dispatch_params.dispatch_options.z
 #define WATER3D_EXTRAPOLATE_READ_SCRATCH dispatch_params.dispatch_options.z
+#define WATER3D_BUILD_ACTIVE_FACES dispatch_params.dispatch_options.z
 #define WATER3D_PARTICLE_SCAN_COUNT dispatch_params.dispatch_options.w
 #define WATER3D_VELOCITY_LIMIT params.solve_options.x
 #define WATER3D_PARTICLE_DAMPING params.solve_options.y

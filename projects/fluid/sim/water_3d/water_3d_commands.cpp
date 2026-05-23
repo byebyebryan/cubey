@@ -137,6 +137,16 @@ void record_compute_barrier(VkCommandBuffer command_buffer) {
                         });
 }
 
+void record_compute_indirect_barrier(VkCommandBuffer command_buffer) {
+    record_shader_write_barrier(
+        command_buffer, {
+                            .dst_stage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT |
+                                         VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT,
+                            .dst_access = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT |
+                                          VK_ACCESS_INDIRECT_COMMAND_READ_BIT,
+                        });
+}
+
 void record_final_barrier(VkCommandBuffer command_buffer) {
     record_shader_write_barrier(
         command_buffer, {
@@ -459,6 +469,17 @@ void record_dispatch(const cubey::vulkan::CommandRecorder& recorder,
     recorder.dispatch(groups.x, groups.y, groups.z);
 }
 
+void record_dispatch_indirect(const cubey::vulkan::CommandRecorder& recorder,
+                              const cubey::render::ComputePipelineResource& pipeline,
+                              VkDescriptorSet descriptor_set, VkBuffer indirect_buffer,
+                              const Water3DDispatchPushConstants& push_constants) {
+    recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.pipeline());
+    recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.layout(), 0,
+                                 descriptor_set);
+    recorder.push_constants(pipeline.layout(), VK_SHADER_STAGE_COMPUTE_BIT, 0, push_constants);
+    recorder.dispatch_indirect(indirect_buffer, 0);
+}
+
 void record_refresh_bins(const cubey::vulkan::CommandRecorder& recorder,
                          VkCommandBuffer command_buffer, Water3DGpuResources& resources,
                          VkDescriptorSet descriptor_set, const Water3DConfig& config,
@@ -466,15 +487,17 @@ void record_refresh_bins(const cubey::vulkan::CommandRecorder& recorder,
                          const Water3DDispatchPushConstants& push_constants,
                          cubey::render::FrameSlot frame_slot,
                          cubey::vulkan::GpuTimestampProfiler* profiler,
-                         const char* profile_label) {
+                         const char* profile_label, bool mark_active_faces) {
     if (profiler != nullptr && profile_label != nullptr) {
         profiler->begin_pass(command_buffer, frame_slot.index, profile_label);
     }
     record_dispatch(recorder, resources.clear_bins_pipeline_resource(), descriptor_set,
                     bin_dispatch_groups(config), push_constants);
     record_compute_barrier(command_buffer);
+    Water3DDispatchPushConstants build_push_constants = push_constants;
+    build_push_constants.dispatch_options[2] = mark_active_faces ? 1.0F : 0.0F;
     record_dispatch(recorder, resources.build_bins_pipeline_resource(), descriptor_set,
-                    particle_scan_dispatch_groups(config, runtime_state), push_constants);
+                    particle_scan_dispatch_groups(config, runtime_state), build_push_constants);
     record_compute_barrier(command_buffer);
     if (profiler != nullptr && profile_label != nullptr) {
         profiler->end_pass(command_buffer, frame_slot.index);
@@ -1010,7 +1033,8 @@ void record_water_3d_compute(VkCommandBuffer command_buffer, Water3DGpuResources
     }
     if (paused) {
         record_refresh_bins(recorder, command_buffer, resources, descriptor_set, config,
-                            runtime_state, push_constants, frame_slot, profiler, "refresh bins");
+                            runtime_state, push_constants, frame_slot, profiler, "refresh bins",
+                            false);
         if (include_render_visibility_barrier) {
             record_final_barrier(command_buffer);
         }
@@ -1032,11 +1056,18 @@ void record_water_3d_compute(VkCommandBuffer command_buffer, Water3DGpuResources
 
         record_refresh_bins(recorder, command_buffer, resources, descriptor_set, config,
                             runtime_state, push_constants, frame_slot, profiler,
-                            "refresh bins pre-p2g");
+                            "refresh bins pre-p2g", true);
+
+        begin_pass("active face dispatch args");
+        record_dispatch(recorder, resources.active_face_dispatch_args_pipeline_resource(),
+                        descriptor_set, linear_dispatch_groups(1U), push_constants);
+        record_compute_indirect_barrier(command_buffer);
+        end_pass();
 
         begin_pass("particle to grid");
-        record_dispatch(recorder, resources.particle_to_grid_pipeline_resource(), descriptor_set,
-                        face_groups, push_constants);
+        record_dispatch_indirect(recorder, resources.particle_to_grid_pipeline_resource(),
+                                 descriptor_set, resources.active_face_dispatch_args().handle(),
+                                 push_constants);
         record_compute_barrier(command_buffer);
         end_pass();
 
@@ -1099,7 +1130,7 @@ void record_water_3d_compute(VkCommandBuffer command_buffer, Water3DGpuResources
 
         record_refresh_bins(recorder, command_buffer, resources, descriptor_set, config,
                             runtime_state, push_constants, frame_slot, profiler,
-                            "refresh bins post-advect");
+                            "refresh bins post-advect", false);
         record_whitewater_compute(recorder, command_buffer, resources, descriptor_set, config,
                                   runtime_state, push_constants, frame_slot, profiler);
     }

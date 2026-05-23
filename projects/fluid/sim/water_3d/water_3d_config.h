@@ -254,6 +254,14 @@ static_assert(sizeof(Water3DDispatchPushConstants) ==
     return lhs * rhs;
 }
 
+[[nodiscard]] inline std::size_t checked_add(std::size_t lhs, std::size_t rhs,
+                                             const char* message) {
+    if (rhs > std::numeric_limits<std::size_t>::max() - lhs) {
+        throw std::runtime_error(message);
+    }
+    return lhs + rhs;
+}
+
 inline void validate_exact_shader_integer(std::size_t value, const char* message) {
     if (value > kWater3DMaxExactShaderInteger) {
         throw std::runtime_error(message);
@@ -341,6 +349,17 @@ inline void validate_water_3d_whitewater_capacity(const Water3DConfig& config) {
                                           "water 3D W-face grid is too large");
     validate_exact_shader_integer(count,
                                   "water 3D W-face count exceeds exact shader integer range");
+    return count;
+}
+
+[[nodiscard]] inline std::size_t total_face_count(const Water3DConfig& config) {
+    const std::size_t uv_faces =
+        checked_add(u_face_count(config), v_face_count(config),
+                    "water 3D total face count is too large");
+    const std::size_t count =
+        checked_add(uv_faces, w_face_count(config), "water 3D total face count is too large");
+    validate_exact_shader_integer(count,
+                                  "water 3D total face count exceeds exact shader integer range");
     return count;
 }
 
@@ -451,6 +470,26 @@ water_3d_runtime_particle_scan_count(const Water3DConfig& config,
                        "water 3D particle bin index buffer is too large");
 }
 
+[[nodiscard]] inline std::size_t active_work_count_byte_size(const Water3DConfig& config) {
+    static_cast<void>(config);
+    return sizeof(std::uint32_t) * 4U;
+}
+
+[[nodiscard]] inline std::size_t active_face_flag_byte_size(const Water3DConfig& config) {
+    return checked_mul(total_face_count(config), sizeof(std::uint32_t),
+                       "water 3D active face flag buffer is too large");
+}
+
+[[nodiscard]] inline std::size_t active_face_index_byte_size(const Water3DConfig& config) {
+    return checked_mul(total_face_count(config), sizeof(std::uint32_t),
+                       "water 3D active face index buffer is too large");
+}
+
+[[nodiscard]] inline std::size_t active_face_dispatch_arg_byte_size(const Water3DConfig& config) {
+    static_cast<void>(config);
+    return sizeof(std::uint32_t) * 3U;
+}
+
 [[nodiscard]] inline std::size_t whitewater_value_count(const Water3DConfig& config) {
     validate_water_3d_whitewater_capacity(config);
     return checked_mul(static_cast<std::size_t>(config.whitewater_capacity), std::size_t{4},
@@ -498,7 +537,12 @@ water_3d_runtime_particle_scan_count(const Water3DConfig& config,
     static_cast<void>(u_face_count(water_config));
     static_cast<void>(v_face_count(water_config));
     static_cast<void>(w_face_count(water_config));
+    static_cast<void>(total_face_count(water_config));
     static_cast<void>(particle_bin_index_count(water_config));
+    static_cast<void>(active_work_count_byte_size(water_config));
+    static_cast<void>(active_face_flag_byte_size(water_config));
+    static_cast<void>(active_face_index_byte_size(water_config));
+    static_cast<void>(active_face_dispatch_arg_byte_size(water_config));
     static_cast<void>(whitewater_buffer_byte_size(water_config));
     static_cast<void>(whitewater_counter_byte_size(water_config));
     static_cast<void>(whitewater_active_index_byte_size(water_config));
