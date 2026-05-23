@@ -29,6 +29,10 @@
 #define WATER3D_BINDING_U_WEIGHT_SCRATCH 25
 #define WATER3D_BINDING_V_WEIGHT_SCRATCH 26
 #define WATER3D_BINDING_W_WEIGHT_SCRATCH 27
+#define WATER3D_BINDING_WHITEWATER_POSITIONS 28
+#define WATER3D_BINDING_WHITEWATER_VELOCITIES 29
+#define WATER3D_BINDING_WHITEWATER_STATE 30
+#define WATER3D_BINDING_WHITEWATER_COUNTERS 31
 
 #define WATER3D_EMPTY_PARTICLE 0xffffffffu
 
@@ -40,8 +44,8 @@
         vec4 solve_options;                                                                     \
         vec4 lifecycle_options;                                                                 \
         vec4 render_options;                                                                    \
-        vec4 reserved0;                                                                         \
-        vec4 reserved1;                                                                         \
+        vec4 whitewater_options;                                                                \
+        vec4 whitewater_lifecycle;                                                              \
     } params;                                                                                   \
     layout(push_constant) uniform DispatchParams {                                              \
         vec4 dispatch_options;                                                                  \
@@ -65,6 +69,14 @@
 #define WATER3D_VOLUME_STRENGTH params.solve_options.z
 #define WATER3D_TRANSFER_MODE params.solve_options.w
 #define WATER3D_BOUNDARY_RESTITUTION params.lifecycle_options.z
+#define WATER3D_WHITEWATER_CAPACITY params.whitewater_options.x
+#define WATER3D_WHITEWATER_MAX_EMIT_PER_FRAME params.whitewater_options.y
+#define WATER3D_WHITEWATER_INTENSITY params.whitewater_options.z
+#define WATER3D_WHITEWATER_RADIUS params.whitewater_options.w
+#define WATER3D_WHITEWATER_SPEED_THRESHOLD params.whitewater_lifecycle.x
+#define WATER3D_WHITEWATER_LIFETIME params.whitewater_lifecycle.y
+#define WATER3D_WHITEWATER_DRAG params.whitewater_lifecycle.z
+#define WATER3D_WHITEWATER_GRAVITY_SCALE params.whitewater_lifecycle.w
 
 #define WATER3D_RENDER_PARAMS                                                                   \
     layout(push_constant) uniform RenderParams {                                                \

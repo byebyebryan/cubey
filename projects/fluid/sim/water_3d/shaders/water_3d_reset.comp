@@ -59,6 +59,18 @@ layout(set = 0, binding = WATER3D_BINDING_CELL_COUNTS, std430) buffer CellCounts
 layout(set = 0, binding = WATER3D_BINDING_CELL_PARTICLE_INDICES, std430) buffer CellParticleIndices {
     uint values[];
 } cell_particle_indices;
+layout(set = 0, binding = WATER3D_BINDING_WHITEWATER_POSITIONS, std430) buffer WhitewaterPositions {
+    vec4 values[];
+} whitewater_positions;
+layout(set = 0, binding = WATER3D_BINDING_WHITEWATER_VELOCITIES, std430) buffer WhitewaterVelocities {
+    vec4 values[];
+} whitewater_velocities;
+layout(set = 0, binding = WATER3D_BINDING_WHITEWATER_STATE, std430) buffer WhitewaterState {
+    vec4 values[];
+} whitewater_state;
+layout(set = 0, binding = WATER3D_BINDING_WHITEWATER_COUNTERS, std430) buffer WhitewaterCounters {
+    uint values[];
+} whitewater_counters;
 
 WATER3D_SIMULATION_PARAMS;
 
@@ -120,6 +132,7 @@ void main() {
     uint v_count = width * (height + 1u) * depth;
     uint w_count = width * height * (depth + 1u);
     uint bin_count = cell_count * max_particles_per_cell;
+    uint whitewater_capacity = uint(WATER3D_WHITEWATER_CAPACITY + 0.5);
 
     if (id < active_particle_count) {
         uint fill_x = clamp(uint(floor(params.fill_options.x * float(width))), 1u,
@@ -186,5 +199,13 @@ void main() {
     }
     if (id < bin_count) {
         cell_particle_indices.values[id] = WATER3D_EMPTY_PARTICLE;
+    }
+    if (id < whitewater_capacity) {
+        whitewater_positions.values[id] = vec4(-10.0, -10.0, -10.0, 0.0);
+        whitewater_velocities.values[id] = vec4(0.0);
+        whitewater_state.values[id] = vec4(0.0);
+    }
+    if (id < 4u) {
+        whitewater_counters.values[id] = 0u;
     }
 }

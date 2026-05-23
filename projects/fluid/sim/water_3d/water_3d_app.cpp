@@ -45,7 +45,7 @@ constexpr float kCameraBaseYaw = -0.52F;
 constexpr float kCameraBasePitch = -0.38F;
 constexpr cubey::math::Vec3 kVolumeCenter{0.5F, 0.5F, 0.5F};
 
-constexpr std::array<Water3DRenderView, 11> kRenderViews{
+constexpr std::array<Water3DRenderView, 12> kRenderViews{
     Water3DRenderView::Surface,
     Water3DRenderView::Particles,
     Water3DRenderView::Cells,
@@ -57,6 +57,7 @@ constexpr std::array<Water3DRenderView, 11> kRenderViews{
     Water3DRenderView::SurfaceThickness,
     Water3DRenderView::SurfaceNormals,
     Water3DRenderView::SurfaceFoam,
+    Water3DRenderView::Whitewater,
 };
 
 constexpr std::array<Water3DTransferMode, 2> kTransferModes{
@@ -287,6 +288,23 @@ class Water3DApp {
                            0.12F, "%.3f");
         ImGui::SliderFloat("Foam amount", &water_config_.foam_amount, 0.0F, 1.0F, "%.2f");
         ImGui::SliderFloat("Foam sharpness", &water_config_.foam_sharpness, 0.2F, 4.0F, "%.2f");
+        ImGui::Checkbox("Whitewater", &water_config_.whitewater_enabled);
+        ImGui::SliderFloat("Whitewater intensity", &water_config_.whitewater_intensity, 0.0F, 3.0F,
+                           "%.2f");
+        int whitewater_max_emit = static_cast<int>(water_config_.whitewater_max_emit_per_frame);
+        if (ImGui::SliderInt("Whitewater emit/frame", &whitewater_max_emit, 0, 8192)) {
+            water_config_.whitewater_max_emit_per_frame =
+                static_cast<std::uint32_t>(whitewater_max_emit);
+        }
+        ImGui::SliderFloat("Whitewater speed", &water_config_.whitewater_speed_threshold, 0.05F,
+                           3.5F, "%.2f");
+        ImGui::SliderFloat("Whitewater radius", &water_config_.whitewater_radius, 0.002F, 0.035F,
+                           "%.3f");
+        ImGui::SliderFloat("Whitewater lifetime", &water_config_.whitewater_lifetime, 0.15F, 5.0F,
+                           "%.2f");
+        ImGui::SliderFloat("Whitewater drag", &water_config_.whitewater_drag, 0.50F, 1.0F, "%.2f");
+        ImGui::SliderFloat("Whitewater gravity", &water_config_.whitewater_gravity_scale, 0.0F,
+                           1.5F, "%.2f");
         ImGui::SliderFloat("Environment intensity", &water_config_.environment_intensity, 0.0F,
                            4.0F, "%.2f");
         ImGui::SliderFloat("Environment rotation", &water_config_.environment_rotation_degrees,
@@ -319,6 +337,8 @@ class Water3DApp {
         ImGui::Text("Particles: %u reset / %u capacity", water_config_.active_particle_count,
                     water_config_.particle_capacity);
         ImGui::Text("Compute particles: %u scanned", scanned_particles);
+        ImGui::Text("Whitewater: %u capacity / %u max emit", water_config_.whitewater_capacity,
+                    water_config_.whitewater_max_emit_per_frame);
         if (latest_frame_stats_.has_value()) {
             ImGui::Text("Frame: %.1f fps / %.2f ms avg (%.2f ms last)", latest_frame_stats_->fps,
                         latest_frame_stats_->frame_ms, latest_frame_ms_);

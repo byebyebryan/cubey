@@ -76,6 +76,14 @@ int main() {
                 "water 3D should default to clearer water shading");
         require(config.foam_amount == 0.70F && config.foam_sharpness == 2.2F,
                 "water 3D should default to a visible screen-space foam layer");
+        require(config.whitewater_enabled && config.whitewater_capacity == 65536U &&
+                    config.whitewater_max_emit_per_frame == 2048U,
+                "water 3D should default to bounded visual whitewater");
+        require(config.whitewater_intensity == 1.0F && config.whitewater_speed_threshold == 1.1F &&
+                    config.whitewater_lifetime == 1.6F && config.whitewater_radius == 0.010F,
+                "water 3D should default to visible whitewater emission");
+        require(config.whitewater_drag == 0.94F && config.whitewater_gravity_scale == 0.55F,
+                "water 3D should default to damped spray whitewater");
         require(sizeof(water::Water3DSimulationUniforms) ==
                     sizeof(float) * water::kWater3DSimulationUniformFloatCount,
                 "water 3D simulation uniforms should match the shader contract");
@@ -99,6 +107,11 @@ int main() {
         require(water::particle_affine_buffer_byte_size(config) ==
                     sizeof(float) * kExpectedParticleCapacity * 12U,
                 "water 3D APIC affine buffers should store three vec4 rows per particle");
+        require(water::whitewater_buffer_byte_size(config) ==
+                    sizeof(float) * water::kWater3DDefaultWhitewaterCapacity * 4U,
+                "water 3D whitewater buffers should store vec4 capacity");
+        require(water::whitewater_counter_byte_size(config) == sizeof(std::uint32_t) * 4U,
+                "water 3D whitewater counters should store four uint counters");
         require(water::particle_bin_index_count(config) == kExpectedCellCount * 32U,
                 "water 3D particle bins should allocate fixed cell slots");
         require(std::string(water::water_3d_render_view_name(water::Water3DRenderView::Surface)) ==
@@ -118,12 +131,17 @@ int main() {
         require(water::water_3d_render_view_from_name("surface-foam") ==
                     water::Water3DRenderView::SurfaceFoam,
                 "water 3D render view parsing should include surface foam");
+        require(water::water_3d_render_view_from_name("whitewater") ==
+                    water::Water3DRenderView::Whitewater,
+                "water 3D render view parsing should include whitewater");
         require(water::is_water_3d_surface_view(water::Water3DRenderView::Surface),
                 "water 3D surface render should classify the default surface view");
         require(water::is_water_3d_surface_view(water::Water3DRenderView::SurfaceDepth),
                 "water 3D surface render should classify depth diagnostics");
         require(water::is_water_3d_surface_view(water::Water3DRenderView::SurfaceFoam),
                 "water 3D surface render should classify foam diagnostics");
+        require(water::is_water_3d_surface_view(water::Water3DRenderView::Whitewater),
+                "water 3D surface render should classify whitewater diagnostics");
         require(!water::is_water_3d_surface_view(water::Water3DRenderView::Particles),
                 "water 3D surface render should keep particle splats as a debug path");
         require(std::string(water::water_3d_render_view_name(water::Water3DRenderView::Overpack)) ==
@@ -145,8 +163,11 @@ int main() {
                     water::Water3DRenderView::SurfaceFoam,
                 "water 3D render view cycle should include surface foam after normals");
         require(water::next_render_view(water::Water3DRenderView::SurfaceFoam) ==
+                    water::Water3DRenderView::Whitewater,
+                "water 3D render view cycle should include whitewater after surface foam");
+        require(water::next_render_view(water::Water3DRenderView::Whitewater) ==
                     water::Water3DRenderView::Surface,
-                "water 3D render view cycle should wrap after surface foam");
+                "water 3D render view cycle should wrap after whitewater");
 
         cubey::RunConfig run_config;
         run_config.grid_width = 32;
@@ -180,6 +201,14 @@ int main() {
             read_text_file(shader_dir / "water_3d_particle_to_grid.comp");
         const std::string advect_shader =
             read_text_file(shader_dir / "water_3d_advect_particles.comp");
+        const std::string whitewater_clear =
+            read_text_file(shader_dir / "water_3d_whitewater_clear.comp");
+        const std::string whitewater_advect =
+            read_text_file(shader_dir / "water_3d_whitewater_advect.comp");
+        const std::string whitewater_emit =
+            read_text_file(shader_dir / "water_3d_whitewater_emit.comp");
+        const std::string whitewater_vert = read_text_file(shader_dir / "water_3d_whitewater.vert");
+        const std::string whitewater_frag = read_text_file(shader_dir / "water_3d_whitewater.frag");
         const std::string extrapolate_shader =
             read_text_file(shader_dir / "water_3d_extrapolate_velocity.comp");
         const std::string g2p_shader =
@@ -211,14 +240,48 @@ int main() {
                          "water 3D contract should expose velocity extrapolation scratch fields");
         require_contains(contract, "WATER3D_BINDING_W_WEIGHT_SCRATCH",
                          "water 3D contract should expose extrapolation validity scratch fields");
+        require_contains(contract, "WATER3D_BINDING_WHITEWATER_POSITIONS",
+                         "water 3D contract should expose whitewater particles");
+        require_contains(contract, "WATER3D_WHITEWATER_CAPACITY",
+                         "water 3D contract should expose whitewater capacity");
+        require_contains(contract, "whitewater_options",
+                         "water 3D contract should expose whitewater uniforms");
         require_contains(reset_shader, "particle_affine.values[id * 3u + 2u]",
                          "water 3D reset should clear all APIC affine rows");
+        require_contains(reset_shader, "whitewater_positions.values[id]",
+                         "water 3D reset should clear whitewater particles");
         require_contains(p2g_shader, "gather_face_velocity",
                          "water 3D particle-to-grid should gather face velocities");
         require_contains(p2g_shader, "velocity += unpack_affine(particle_id) * delta",
                          "water 3D particle-to-grid should apply APIC local velocity");
         require_contains(advect_shader, "apply_side_wall_friction",
                          "water 3D particle advection should damp side-wall impacts");
+        require_contains(whitewater_clear, "whitewater_counters.values[id] = 0u",
+                         "water 3D whitewater should clear per-frame counters");
+        require_contains(whitewater_advect, "sample_velocity",
+                         "water 3D whitewater advection should follow the grid velocity");
+        require_contains(whitewater_advect, "WATER3D_WHITEWATER_INTENSITY",
+                         "water 3D whitewater advection should respect disabled emission");
+        require_contains(whitewater_advect, "WATER3D_WHITEWATER_DRAG",
+                         "water 3D whitewater advection should damp particles");
+        require_contains(whitewater_advect, "WATER3D_WHITEWATER_GRAVITY_SCALE",
+                         "water 3D whitewater advection should apply scaled gravity");
+        require_contains(whitewater_advect, "kind = 0.0",
+                         "water 3D whitewater spray should convert to foam on reentry");
+        require_contains(whitewater_emit, "free_surface_direction",
+                         "water 3D whitewater emission should require free-surface particles");
+        require_contains(whitewater_emit, "side_penalty",
+                         "water 3D whitewater emission should damp side-surface columns");
+        require_contains(whitewater_emit, "atomicAdd(whitewater_counters.values[0]",
+                         "water 3D whitewater emission should bound emitted particles");
+        require_contains(whitewater_emit, "uint target = (frame_seed + emit_slot) % capacity",
+                         "water 3D whitewater emission should write unique target slots");
+        require_contains(whitewater_emit, "WATER3D_WHITEWATER_MAX_EMIT_PER_FRAME",
+                         "water 3D whitewater emission should clamp per-frame emission");
+        require_contains(whitewater_vert, "WATER3D_BINDING_WHITEWATER_POSITIONS",
+                         "water 3D whitewater renderer should instance whitewater particles");
+        require_contains(whitewater_frag, "out_color = vec4(color * alpha, alpha)",
+                         "water 3D whitewater renderer should output premultiplied alpha");
         require_contains(extrapolate_shader, "read_scratch()",
                          "water 3D velocity extrapolation should ping-pong scratch buffers");
         require_contains(extrapolate_shader, "source_u_valid(uint(neighbor.x)",
@@ -260,6 +323,8 @@ int main() {
                          "water 3D surface pass should carry final display transform settings");
         require_contains(surface_common, "WATER3D_SURFACE_VIEW_FOAM",
                          "water 3D surface pass should expose a foam diagnostic view");
+        require_contains(surface_common, "WATER3D_SURFACE_VIEW_WHITEWATER",
+                         "water 3D surface pass should expose a whitewater diagnostic view");
         require_contains(scene_shader, "gl_FragDepth",
                          "water 3D scene pass should preserve sampleable scene depth");
         require_contains(scene_shader, "environment_cube",
@@ -290,8 +355,16 @@ int main() {
                          "water 3D surface composite should apply the shared display transform");
         require_contains(surface_composite, "foam_mask",
                          "water 3D surface composite should derive screen-space foam");
+        require_contains(surface_composite, "surface_gate",
+                         "water 3D surface foam should prefer upward-facing free surfaces");
         require_contains(surface_composite, "WATER3D_SURFACE_VIEW_FOAM",
                          "water 3D surface composite should render the foam diagnostic view");
+        require_contains(surface_composite, "whitewater_texture",
+                         "water 3D surface composite should overlay rendered whitewater");
+        require_contains(surface_composite, "whitewater_foam",
+                         "water 3D surface composite should integrate whitewater into foam");
+        require_contains(surface_composite, "blend_premultiplied",
+                         "water 3D surface composite should blend premultiplied whitewater");
         require_contains(commands, "RenderGraphFrameExecutor",
                          "water 3D surface render should be recorded through the render graph");
         require_contains(commands, "water scene",
@@ -302,6 +375,20 @@ int main() {
                          "water 3D surface render should support iterative smoothing");
         require_contains(commands, "update_surface_descriptors",
                          "water 3D surface render should bind graph transient textures");
+        require_contains(commands, "record_whitewater_compute",
+                         "water 3D simulation should run visual whitewater compute passes");
+        require_contains(commands, "water whitewater",
+                         "water 3D surface render should render whitewater before composite");
+        require_contains(gpu_resources, "water_3d_whitewater_emit.comp.spv",
+                         "water 3D GPU resources should create whitewater compute pipelines");
+        require_contains(gpu_resources, "water_3d_whitewater.vert.spv",
+                         "water 3D GPU resources should create the whitewater render pipeline");
+        require_contains(gpu_resources, "water_3d.whitewater",
+                         "water 3D GPU resources should label the whitewater render pass");
+        require_contains(gpu_resources, ".depth_test = true",
+                         "water 3D whitewater render should depth-test against the surface");
+        require_contains(commands, "VK_ATTACHMENT_LOAD_OP_LOAD",
+                         "water 3D whitewater render should keep the reconstructed surface depth");
         require_contains(render_shader, "render_view == 5u",
                          "water 3D renderer should expose the solid debug view");
         require_contains(render_shader, "render_view == 6u",

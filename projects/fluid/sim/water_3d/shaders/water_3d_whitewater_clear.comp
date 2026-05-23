@@ -1,0 +1,19 @@
+#version 450
+#extension GL_GOOGLE_include_directive : require
+
+#include "water_3d_contract.glsl"
+
+layout(local_size_x = 64, local_size_y = 1) in;
+
+layout(set = 0, binding = WATER3D_BINDING_WHITEWATER_COUNTERS, std430) buffer WhitewaterCounters {
+    uint values[];
+} whitewater_counters;
+
+WATER3D_SIMULATION_PARAMS;
+
+void main() {
+    uint id = gl_GlobalInvocationID.x;
+    if (id < 4u) {
+        whitewater_counters.values[id] = 0u;
+    }
+}

@@ -9,10 +9,11 @@ and simple ground scene are rendered into offscreen color/depth targets, particl
 write front depth and thickness into render-graph transients, a separable bilateral
 pass repairs small holes and runs configurable depth-aware smoothing, and a composite
 pass shades the water with Fresnel, scene-color refraction, environment reflection,
-Beer-Lambert absorption, and a heuristic screen-space foam mask. The old particle
-splats remain as an opaque debug view. Secondary whitewater particles, SSR,
-anisotropic particle kernels, marching cubes, mesh generation, hose injection, and
-draining are still deferred until the 3D solver and renderer contract are stable.
+Beer-Lambert absorption, a heuristic screen-space foam mask, and visual-only
+secondary whitewater spray/foam particles. The old particle splats remain as an
+opaque debug view. SSR, anisotropic particle kernels, marching cubes, mesh
+generation, hose injection, and draining are still deferred until the 3D solver
+and renderer contract are stable.
 
 Useful render views:
 
@@ -27,6 +28,7 @@ Useful render views:
 - `surface-thickness`: accumulated surface thickness.
 - `surface-normals`: reconstructed screen-space normals.
 - `surface-foam`: screen-space foam mask.
+- `whitewater`: secondary whitewater particles over a dimmed scene.
 
 Common runs:
 

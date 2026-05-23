@@ -107,10 +107,18 @@ struct SurfaceTextureSlot {
 }
 
 [[nodiscard]] DispatchGroups reset_dispatch_groups(const Water3DConfig& config) {
-    return linear_dispatch_groups(
-        std::max({static_cast<std::size_t>(config.particle_capacity), cell_count(config),
-                  u_face_count(config), v_face_count(config), w_face_count(config),
-                  particle_bin_index_count(config)}));
+    return linear_dispatch_groups(std::max(
+        {static_cast<std::size_t>(config.particle_capacity), cell_count(config),
+         u_face_count(config), v_face_count(config), w_face_count(config),
+         particle_bin_index_count(config), static_cast<std::size_t>(config.whitewater_capacity)}));
+}
+
+[[nodiscard]] DispatchGroups whitewater_dispatch_groups(const Water3DConfig& config) {
+    return linear_dispatch_groups(config.whitewater_capacity);
+}
+
+[[nodiscard]] DispatchGroups whitewater_counter_dispatch_groups() {
+    return linear_dispatch_groups(4U);
 }
 
 void record_shader_write_barrier(VkCommandBuffer command_buffer, ShaderWriteBarrier config) {
@@ -232,6 +240,83 @@ surface_push_constants(const Water3DConfig& config, const Water3DRuntimeState& r
     };
 }
 
+[[nodiscard]] SurfacePushConstants whitewater_push_constants(const Water3DConfig& config,
+                                                             Water3DRenderView render_view,
+                                                             const Water3DRenderCamera& camera,
+                                                             VkExtent2D extent,
+                                                             VkFormat output_format) {
+    const float aspect = extent.height > 0U
+                             ? static_cast<float>(extent.width) / static_cast<float>(extent.height)
+                             : 1.0F;
+    const float radians = config.environment_rotation_degrees * 0.017453292519943295F;
+    const cubey::render::PbrDisplayTransform display_transform =
+        cubey::render::pbr_display_transform_for_target(output_format, config.exposure,
+                                                        cubey::render::PbrTonemap::Aces);
+    const cubey::math::Vec4 display_transform_uniform =
+        cubey::render::pbr_display_transform_uniform(display_transform);
+    return {
+        .view_projection = camera.view_projection,
+        .camera_position_view =
+            {
+                camera.position.x,
+                camera.position.y,
+                camera.position.z,
+                render_view_push_value(render_view),
+            },
+        .camera_right_tan =
+            {
+                camera.right.x,
+                camera.right.y,
+                camera.right.z,
+                std::tan(camera.fovy_radians * 0.5F),
+            },
+        .camera_up_aspect =
+            {
+                camera.up.x,
+                camera.up.y,
+                camera.up.z,
+                aspect,
+            },
+        .camera_forward_radius =
+            {
+                camera.forward.x,
+                camera.forward.y,
+                camera.forward.z,
+                config.whitewater_radius,
+            },
+        .particle_options =
+            {
+                water_3d_shader_count_float(
+                    config.whitewater_capacity,
+                    "water 3D whitewater capacity exceeds exact shader integer range"),
+                0.0F,
+                0.0F,
+                0.0F,
+            },
+        .surface_options =
+            {
+                config.foam_amount,
+                config.foam_sharpness,
+                config.surface_absorption,
+                config.surface_refraction_strength,
+            },
+        .environment_options =
+            {
+                std::cos(radians),
+                std::sin(radians),
+                config.environment_intensity,
+                0.0F,
+            },
+        .display_transform =
+            {
+                display_transform_uniform.x,
+                display_transform_uniform.y,
+                display_transform_uniform.z,
+                display_transform_uniform.w,
+            },
+    };
+}
+
 [[nodiscard]] cubey::render::DepthTargetView
 resolved_depth_target_view(const cubey::render::RenderGraphExecutionContext& context,
                            cubey::render::RenderGraphTextureHandle handle) {
@@ -324,6 +409,24 @@ surface_depth_texture_desc(const char* label, VkExtent2D extent, VkFormat format
                 0.0F,
                 0.0F,
             },
+        .whitewater_options =
+            {
+                water_3d_shader_count_float(
+                    config.whitewater_capacity,
+                    "water 3D whitewater capacity exceeds exact shader integer range"),
+                water_3d_shader_count_float(
+                    std::min(config.whitewater_max_emit_per_frame, config.whitewater_capacity),
+                    "water 3D whitewater max emit count exceeds exact shader integer range"),
+                config.whitewater_enabled ? config.whitewater_intensity : 0.0F,
+                config.whitewater_radius,
+            },
+        .whitewater_lifecycle =
+            {
+                config.whitewater_speed_threshold,
+                config.whitewater_lifetime,
+                config.whitewater_drag,
+                config.whitewater_gravity_scale,
+            },
     };
 }
 
@@ -365,6 +468,25 @@ void record_refresh_bins(const cubey::vulkan::CommandRecorder& recorder,
     record_dispatch(recorder, resources.build_bins_pipeline_resource(), descriptor_set,
                     particle_scan_dispatch_groups(config, runtime_state), push_constants);
     record_compute_barrier(command_buffer);
+}
+
+void record_whitewater_compute(const cubey::vulkan::CommandRecorder& recorder,
+                               VkCommandBuffer command_buffer, Water3DGpuResources& resources,
+                               VkDescriptorSet descriptor_set, const Water3DConfig& config,
+                               const Water3DRuntimeState& runtime_state,
+                               const Water3DDispatchPushConstants& push_constants) {
+    record_dispatch(recorder, resources.clear_whitewater_pipeline_resource(), descriptor_set,
+                    whitewater_counter_dispatch_groups(), push_constants);
+    record_compute_barrier(command_buffer);
+    record_dispatch(recorder, resources.advect_whitewater_pipeline_resource(), descriptor_set,
+                    whitewater_dispatch_groups(config), push_constants);
+    record_compute_barrier(command_buffer);
+    if (config.whitewater_enabled && config.whitewater_intensity > 0.0F &&
+        config.whitewater_max_emit_per_frame > 0U) {
+        record_dispatch(recorder, resources.emit_whitewater_pipeline_resource(), descriptor_set,
+                        particle_scan_dispatch_groups(config, runtime_state), push_constants);
+        record_compute_barrier(command_buffer);
+    }
 }
 
 void record_surface_depth_pass(const cubey::vulkan::CommandRecorder& recorder,
@@ -482,6 +604,34 @@ void record_render_target_pass_with_stored_depth(const cubey::vulkan::CommandRec
     recorder.end_rendering();
 }
 
+template <typename RecordCallback>
+void record_render_target_pass_with_loaded_depth(const cubey::vulkan::CommandRecorder& recorder,
+                                                 const cubey::render::RenderTargetView& target,
+                                                 const cubey::render::RenderClearValues& clear,
+                                                 RecordCallback&& record_callback) {
+    VkRenderingAttachmentInfo color_attachment =
+        cubey::vulkan::color_rendering_attachment(target.color.view, clear.color);
+    auto rendering = cubey::vulkan::vk_struct<VkRenderingInfo>(VK_STRUCTURE_TYPE_RENDERING_INFO);
+    rendering.renderArea.offset = {0, 0};
+    rendering.renderArea.extent = target.color.extent;
+    rendering.layerCount = 1;
+    rendering.colorAttachmentCount = 1;
+    rendering.pColorAttachments = &color_attachment;
+
+    std::optional<VkRenderingAttachmentInfo> depth_attachment;
+    if (target.depth.has_value()) {
+        depth_attachment =
+            cubey::vulkan::depth_rendering_attachment(target.depth->view, clear.depth);
+        depth_attachment->loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+        depth_attachment->storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+        rendering.pDepthAttachment = &depth_attachment.value();
+    }
+
+    recorder.begin_rendering(rendering);
+    std::forward<RecordCallback>(record_callback)(recorder);
+    recorder.end_rendering();
+}
+
 void record_surface_scene_pass(const cubey::vulkan::CommandRecorder& recorder,
                                const Water3DGpuResources& resources,
                                cubey::render::FrameSlot frame_slot,
@@ -506,6 +656,36 @@ void record_surface_scene_pass(const cubey::vulkan::CommandRecorder& recorder,
         });
 }
 
+void record_whitewater_pass(const cubey::vulkan::CommandRecorder& recorder,
+                            const Water3DGpuResources& resources, const Water3DConfig& config,
+                            cubey::render::FrameSlot frame_slot, Water3DRenderView render_view,
+                            const Water3DRenderCamera& camera,
+                            cubey::render::ColorTargetView color_target,
+                            cubey::render::DepthTargetView depth_target, VkFormat output_format) {
+    const SurfacePushConstants push_constants =
+        whitewater_push_constants(config, render_view, camera, color_target.extent, output_format);
+    const std::uint32_t instance_count =
+        config.whitewater_enabled ? config.whitewater_capacity : 0U;
+    record_render_target_pass_with_loaded_depth(
+        recorder, cubey::render::render_target_view(color_target, depth_target),
+        cubey::render::RenderClearValues{
+            .color = cubey::render::color_clear_value(0.0F, 0.0F, 0.0F, 0.0F),
+            .depth = cubey::render::depth_clear_value(),
+        },
+        [&resources, frame_slot, push_constants,
+         instance_count](const cubey::vulkan::CommandRecorder& pass_recorder) {
+            const cubey::render::GraphicsPipelineResource& pipeline =
+                resources.whitewater_pipeline_resource();
+            pass_recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.pipeline());
+            pass_recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.layout(), 0,
+                                              resources.field_descriptor_set(frame_slot));
+            pass_recorder.push_constants(pipeline.layout(),
+                                         VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+                                         0, push_constants);
+            pass_recorder.draw(6, instance_count);
+        });
+}
+
 struct SurfaceRenderGraph {
     cubey::render::CompiledRenderGraph graph;
     cubey::render::RenderGraphTextureHandle scene_color{};
@@ -515,6 +695,7 @@ struct SurfaceRenderGraph {
     cubey::render::RenderGraphTextureHandle packed_a{};
     cubey::render::RenderGraphTextureHandle packed_b{};
     cubey::render::RenderGraphTextureHandle final_surface{};
+    cubey::render::RenderGraphTextureHandle whitewater{};
 };
 
 [[nodiscard]] VkDescriptorSet surface_source_descriptor_set(Water3DGpuResources& resources,
@@ -565,6 +746,9 @@ struct SurfaceRenderGraph {
     const cubey::render::RenderGraphTextureHandle visibility_depth = graph.create_texture(
         surface_depth_texture_desc("water surface visibility depth", color_target.extent,
                                    resources.depth_attachment().format()));
+    const cubey::render::RenderGraphTextureHandle whitewater =
+        graph.create_texture(surface_color_texture_desc("water whitewater", color_target.extent,
+                                                        kWater3DSceneColorFormat));
 
     graph.add_pass("water scene", cubey::render::RenderGraphQueueDomain::Graphics)
         .write_color(scene_color)
@@ -692,10 +876,23 @@ struct SurfaceRenderGraph {
         std::swap(current_surface, next_surface);
     }
 
+    graph.add_pass("water whitewater", cubey::render::RenderGraphQueueDomain::Graphics)
+        .write_color(whitewater)
+        .write_depth(visibility_depth)
+        .execute([resource_ptr, config_ptr, frame_slot, render_view, camera, output_format,
+                  whitewater,
+                  visibility_depth](const cubey::render::RenderGraphExecutionContext& context) {
+            record_whitewater_pass(
+                context.recorder(), *resource_ptr, *config_ptr, frame_slot, render_view, camera,
+                cubey::render::resolved_color_target_view(context, whitewater),
+                resolved_depth_target_view(context, visibility_depth), output_format);
+        });
+
     graph.add_pass("water surface composite", cubey::render::RenderGraphQueueDomain::Graphics)
         .read_texture(scene_color)
         .read_texture(scene_depth)
         .read_texture(current_surface.handle)
+        .read_texture(whitewater)
         .write_color(backbuffer)
         .execute([resource_ptr, config_ptr, runtime_state_ptr, frame_slot, render_view, camera,
                   output_format,
@@ -720,6 +917,7 @@ struct SurfaceRenderGraph {
         .packed_a = packed_a,
         .packed_b = packed_b,
         .final_surface = current_surface.handle,
+        .whitewater = whitewater,
     };
 }
 
@@ -825,6 +1023,8 @@ void record_water_3d_compute(VkCommandBuffer command_buffer, Water3DGpuResources
 
         record_refresh_bins(recorder, command_buffer, resources, descriptor_set, config,
                             runtime_state, push_constants);
+        record_whitewater_compute(recorder, command_buffer, resources, descriptor_set, config,
+                                  runtime_state, push_constants);
     }
 
     if (include_render_visibility_barrier) {
@@ -953,6 +1153,8 @@ void record_water_3d_surface_draw(VkCommandBuffer command_buffer,
                                                              render_graph.scene_color),
                 cubey::render::resolved_sampled_texture_view(render_graph.graph, graph_resources,
                                                              render_graph.scene_depth),
+                cubey::render::resolved_sampled_texture_view(render_graph.graph, graph_resources,
+                                                             render_graph.whitewater),
                 environment);
         });
 }

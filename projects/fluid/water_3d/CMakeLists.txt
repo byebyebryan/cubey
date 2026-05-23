@@ -18,6 +18,8 @@ cubey_add_app_target(
         ../sim/water_3d/shaders/water_3d_render.frag
         ../sim/water_3d/shaders/water_3d_fullscreen.vert
         ../sim/water_3d/shaders/water_3d_scene.frag
+        ../sim/water_3d/shaders/water_3d_whitewater.vert
+        ../sim/water_3d/shaders/water_3d_whitewater.frag
         ../sim/water_3d/shaders/water_3d_surface_particle.vert
         ../sim/water_3d/shaders/water_3d_surface_depth.frag
         ../sim/water_3d/shaders/water_3d_surface_thickness.frag
@@ -37,6 +39,9 @@ cubey_add_app_target(
         ../sim/water_3d/shaders/water_3d_extrapolate_velocity.comp
         ../sim/water_3d/shaders/water_3d_grid_to_particle.comp
         ../sim/water_3d/shaders/water_3d_advect_particles.comp
+        ../sim/water_3d/shaders/water_3d_whitewater_clear.comp
+        ../sim/water_3d/shaders/water_3d_whitewater_advect.comp
+        ../sim/water_3d/shaders/water_3d_whitewater_emit.comp
     SHADER_INCLUDE_DIRS
         "${CMAKE_CURRENT_SOURCE_DIR}/../sim/water_3d/shaders"
         "${CMAKE_SOURCE_DIR}/shaders"

@@ -26,6 +26,7 @@ enum class Water3DRenderView : std::uint32_t {
     SurfaceThickness = 8,
     SurfaceNormals = 9,
     SurfaceFoam = 10,
+    Whitewater = 11,
 };
 
 enum class Water3DTransferMode : std::uint32_t {
@@ -43,6 +44,7 @@ inline constexpr std::uint32_t kWater3DMinimumGridExtent = 16;
 inline constexpr std::uint32_t kWater3DDefaultGridWidth = 64;
 inline constexpr std::uint32_t kWater3DDefaultGridHeight = 64;
 inline constexpr std::uint32_t kWater3DDefaultGridDepth = 64;
+inline constexpr std::uint32_t kWater3DDefaultWhitewaterCapacity = 65536;
 inline constexpr std::uint32_t kWater3DMaxExactShaderInteger = 1U << 24U;
 inline constexpr float kWater3DMinFillFraction = 0.08F;
 inline constexpr float kWater3DMaxFillFraction = 0.75F;
@@ -80,6 +82,15 @@ struct Water3DConfig {
     float surface_refraction_strength = 0.025F;
     float foam_amount = 0.70F;
     float foam_sharpness = 2.2F;
+    bool whitewater_enabled = true;
+    std::uint32_t whitewater_capacity = kWater3DDefaultWhitewaterCapacity;
+    std::uint32_t whitewater_max_emit_per_frame = 2048;
+    float whitewater_intensity = 1.0F;
+    float whitewater_speed_threshold = 1.1F;
+    float whitewater_lifetime = 1.6F;
+    float whitewater_radius = 0.010F;
+    float whitewater_drag = 0.94F;
+    float whitewater_gravity_scale = 0.55F;
     float environment_intensity = 1.0F;
     float environment_rotation_degrees = 0.0F;
     float exposure = 0.0F;
@@ -92,8 +103,8 @@ struct Water3DSimulationUniforms {
     std::array<float, 4> solve_options{};
     std::array<float, 4> lifecycle_options{};
     std::array<float, 4> render_options{};
-    std::array<float, 4> reserved0{};
-    std::array<float, 4> reserved1{};
+    std::array<float, 4> whitewater_options{};
+    std::array<float, 4> whitewater_lifecycle{};
 };
 
 struct Water3DDispatchPushConstants {
@@ -140,6 +151,8 @@ static_assert(sizeof(Water3DDispatchPushConstants) ==
         return "Surface normals";
     case Water3DRenderView::SurfaceFoam:
         return "Surface foam";
+    case Water3DRenderView::Whitewater:
+        return "Whitewater";
     }
     return "Surface";
 }
@@ -188,9 +201,12 @@ static_assert(sizeof(Water3DDispatchPushConstants) ==
     if (name == "surface-foam") {
         return Water3DRenderView::SurfaceFoam;
     }
+    if (name == "whitewater") {
+        return Water3DRenderView::Whitewater;
+    }
     throw std::runtime_error("water 3D render view must be surface, particles, cells, velocity, "
                              "pressure, solid, overpack, surface-depth, surface-thickness, or "
-                             "surface-normals, or surface-foam");
+                             "surface-normals, surface-foam, or whitewater");
 }
 
 [[nodiscard]] inline Water3DRenderView next_render_view(Water3DRenderView view) {
@@ -216,6 +232,8 @@ static_assert(sizeof(Water3DDispatchPushConstants) ==
     case Water3DRenderView::SurfaceNormals:
         return Water3DRenderView::SurfaceFoam;
     case Water3DRenderView::SurfaceFoam:
+        return Water3DRenderView::Whitewater;
+    case Water3DRenderView::Whitewater:
         return Water3DRenderView::Surface;
     }
     return Water3DRenderView::Surface;
@@ -224,7 +242,8 @@ static_assert(sizeof(Water3DDispatchPushConstants) ==
 [[nodiscard]] inline bool is_water_3d_surface_view(Water3DRenderView view) {
     return view == Water3DRenderView::Surface || view == Water3DRenderView::SurfaceDepth ||
            view == Water3DRenderView::SurfaceThickness ||
-           view == Water3DRenderView::SurfaceNormals || view == Water3DRenderView::SurfaceFoam;
+           view == Water3DRenderView::SurfaceNormals || view == Water3DRenderView::SurfaceFoam ||
+           view == Water3DRenderView::Whitewater;
 }
 
 [[nodiscard]] inline std::size_t checked_mul(std::size_t lhs, std::size_t rhs,
@@ -258,6 +277,18 @@ inline void validate_water_3d_grid_dimensions(const Water3DConfig& config) {
                                   "water 3D grid height exceeds exact shader integer range");
     validate_exact_shader_integer(config.grid_depth,
                                   "water 3D grid depth exceeds exact shader integer range");
+}
+
+inline void validate_water_3d_whitewater_capacity(const Water3DConfig& config) {
+    if (config.whitewater_capacity == 0) {
+        throw std::runtime_error("water 3D whitewater capacity must be positive");
+    }
+    validate_exact_shader_integer(
+        config.whitewater_capacity,
+        "water 3D whitewater capacity exceeds exact shader integer range");
+    validate_exact_shader_integer(
+        config.whitewater_max_emit_per_frame,
+        "water 3D whitewater max emit count exceeds exact shader integer range");
 }
 
 [[nodiscard]] inline std::uint32_t water_3d_fill_axis_cell_count(std::uint32_t axis_cells,
@@ -420,6 +451,22 @@ water_3d_runtime_particle_scan_count(const Water3DConfig& config,
                        "water 3D particle bin index buffer is too large");
 }
 
+[[nodiscard]] inline std::size_t whitewater_value_count(const Water3DConfig& config) {
+    validate_water_3d_whitewater_capacity(config);
+    return checked_mul(static_cast<std::size_t>(config.whitewater_capacity), std::size_t{4},
+                       "water 3D whitewater vector field is too large");
+}
+
+[[nodiscard]] inline std::size_t whitewater_buffer_byte_size(const Water3DConfig& config) {
+    return checked_mul(whitewater_value_count(config), sizeof(float),
+                       "water 3D whitewater buffer is too large");
+}
+
+[[nodiscard]] inline std::size_t whitewater_counter_byte_size(const Water3DConfig& config) {
+    validate_water_3d_whitewater_capacity(config);
+    return sizeof(std::uint32_t) * 4U;
+}
+
 [[nodiscard]] inline Water3DConfig water_3d_config_from_run_config(const RunConfig& config) {
     Water3DConfig water_config;
     if (config.grid_width != 0) {
@@ -440,6 +487,8 @@ water_3d_runtime_particle_scan_count(const Water3DConfig& config,
     static_cast<void>(v_face_count(water_config));
     static_cast<void>(w_face_count(water_config));
     static_cast<void>(particle_bin_index_count(water_config));
+    static_cast<void>(whitewater_buffer_byte_size(water_config));
+    static_cast<void>(whitewater_counter_byte_size(water_config));
     return water_config;
 }
 

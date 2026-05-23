@@ -13,6 +13,7 @@ layout(set = 0, binding = 0) uniform sampler2D surface_texture;
 layout(set = 0, binding = 1) uniform sampler2D scene_color_texture;
 layout(set = 0, binding = 2) uniform sampler2D scene_depth_texture;
 layout(set = 0, binding = 3) uniform samplerCube environment_cube;
+layout(set = 0, binding = 4) uniform sampler2D whitewater_texture;
 
 layout(location = 0) in vec2 frag_uv;
 layout(location = 0) out vec4 out_color;
@@ -34,6 +35,10 @@ vec3 sample_environment(vec3 direction) {
 
 vec3 apply_display_transform(vec3 color) {
     return cubey_pbr_apply_display_transform(color, surface_params.display_transform);
+}
+
+vec3 blend_premultiplied(vec3 base, vec4 overlay) {
+    return overlay.rgb + base * (1.0 - clamp(overlay.a, 0.0, 1.0));
 }
 
 float clip_depth(vec3 world_position) {
@@ -139,15 +144,18 @@ float foam_mask(vec2 uv, float center_depth, float thickness, vec3 position, vec
                        (1.0 - smoothstep(0.45, 1.35, thickness));
     float thickness_gate = smoothstep(0.01, 0.08, thickness) *
                            (1.0 - smoothstep(1.20, 2.40, thickness));
+    float surface_gate = smoothstep(0.45, 0.85, normal.y) *
+                         smoothstep(0.16, 0.42, position.y);
 
-    float edge_signal = open_edge * thin_sheet;
+    float edge_signal = open_edge * thin_sheet * surface_gate;
     float crest_signal = (curvature * 0.20) + (slope * 0.10) + (thickness_delta * 0.30) +
                          (grazing * 0.18);
     float sharpness = max(0.2, surface_params.surface_options.y);
     float edge_mask = smoothstep(0.02, 0.18, edge_signal);
-    float crest_mask = smoothstep(0.05, 0.26, crest_signal);
+    float crest_mask = smoothstep(0.05, 0.26, crest_signal) * surface_gate;
     float upper_surface = smoothstep(0.32, 0.74, position.y);
-    float upper_patch = upper_surface * thin_sheet * smoothstep(0.36, 0.80, foam_noise(position)) *
+    float upper_patch = upper_surface * surface_gate * thin_sheet *
+                        smoothstep(0.36, 0.80, foam_noise(position)) *
                         smoothstep(0.03, 0.16, (thickness_delta * 0.50) + (slope * 0.05) +
                                                     (curvature * 0.03) + (open_edge * 0.20));
     float foam = max(max(edge_mask, crest_mask), upper_patch * 0.85) * thickness_gate;
@@ -158,6 +166,15 @@ float foam_mask(vec2 uv, float center_depth, float thickness, vec3 position, vec
 void main() {
     vec4 surface = texture(surface_texture, frag_uv);
     vec3 background = texture(scene_color_texture, frag_uv).rgb;
+    vec4 whitewater = texture(whitewater_texture, frag_uv);
+    uint view = water_surface_render_view();
+    if (view == WATER3D_SURFACE_VIEW_WHITEWATER) {
+        vec3 debug_background = background * 0.18;
+        out_color = vec4(apply_display_transform(blend_premultiplied(debug_background,
+                                                                      whitewater)),
+                         1.0);
+        return;
+    }
     if (!water_surface_has_depth(surface.x)) {
         out_color = vec4(apply_display_transform(background), 1.0);
         return;
@@ -167,7 +184,6 @@ void main() {
     float thickness = max(surface.y, 0.0);
     vec3 position = water_surface_world_position(frag_uv, depth);
     vec3 normal = reconstruct_normal(frag_uv, depth);
-    uint view = water_surface_render_view();
 
     float water_clip_depth = clip_depth(position);
     float scene_clip_depth = texture(scene_depth_texture, frag_uv).r;
@@ -224,6 +240,9 @@ void main() {
     vec3 color = mix(refracted + water_tint, reflected, fresnel) + vec3(specular);
     vec3 foam_color = cubey_srgb_to_linear(vec3(0.86, 0.91, 0.88)) *
                       (0.7 + surface_params.environment_options.z * 0.3);
+    float whitewater_foam =
+        smoothstep(0.025, 0.22, whitewater.a) * smoothstep(0.10, 0.45, position.y);
+    foam = clamp(foam + whitewater_foam * 0.30, 0.0, 1.0);
     color = mix(color, foam_color, foam);
 
     out_color = vec4(apply_display_transform(color), 1.0);

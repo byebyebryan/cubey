@@ -169,11 +169,26 @@ sampled_texture_descriptor_set(std::uint32_t set, std::uint32_t binding_count) {
 [[nodiscard]] cubey::render::MaterialPassInfo water_surface_composite_pass_info() {
     return cubey::render::MaterialPassInfo{
         .label = "water_3d.surface.composite",
-        .descriptor_sets = {sampled_texture_descriptor_set(0, 4)},
+        .descriptor_sets = {sampled_texture_descriptor_set(0, 5)},
         .push_constants = {water_surface_push_constant_range()},
         .depth_test = false,
         .depth_write = false,
         .blend_enable = false,
+    };
+}
+
+[[nodiscard]] cubey::render::MaterialPassInfo water_whitewater_pass_info() {
+    return cubey::render::MaterialPassInfo{
+        .label = "water_3d.whitewater",
+        .push_constants = {water_surface_push_constant_range()},
+        .depth_test = true,
+        .depth_write = false,
+        .depth_compare_op = VK_COMPARE_OP_LESS_OR_EQUAL,
+        .blend_enable = true,
+        .src_color_blend_factor = VK_BLEND_FACTOR_ONE,
+        .dst_color_blend_factor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
+        .src_alpha_blend_factor = VK_BLEND_FACTOR_ONE,
+        .dst_alpha_blend_factor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
     };
 }
 
@@ -257,6 +272,7 @@ void Water3DGpuResources::create_global_resources_if_needed(cubey::vulkan::Devic
 }
 
 void Water3DGpuResources::destroy_swapchain_resources() {
+    whitewater_pipeline_resource_.reset();
     surface_composite_pipeline_resource_.reset();
     surface_smooth_pipeline_resource_.reset();
     surface_repair_pipeline_resource_.reset();
@@ -277,6 +293,9 @@ void Water3DGpuResources::destroy_swapchain_resources() {
 
 void Water3DGpuResources::destroy_all_resources() {
     destroy_swapchain_resources();
+    emit_whitewater_pipeline_resource_.reset();
+    advect_whitewater_pipeline_resource_.reset();
+    clear_whitewater_pipeline_resource_.reset();
     advect_particles_pipeline_resource_.reset();
     grid_to_particle_pipeline_resource_.reset();
     extrapolate_velocity_pipeline_resource_.reset();
@@ -294,6 +313,10 @@ void Water3DGpuResources::destroy_all_resources() {
     field_descriptor_sets_.clear();
     simulation_uniforms_.reset();
     frame_slot_count_ = 0;
+    whitewater_counters_.reset();
+    whitewater_state_.reset();
+    whitewater_velocities_.reset();
+    whitewater_positions_.reset();
     cell_particle_indices_.reset();
     cell_counts_.reset();
     solid_.reset();
@@ -338,6 +361,9 @@ VkDeviceSize Water3DGpuResources::allocated_buffer_bytes() const {
            optional_buffer_size(pressure_b_) + optional_buffer_size(divergence_) +
            optional_buffer_size(solid_) + optional_buffer_size(cell_counts_) +
            optional_buffer_size(cell_particle_indices_) +
+           optional_buffer_size(whitewater_positions_) +
+           optional_buffer_size(whitewater_velocities_) + optional_buffer_size(whitewater_state_) +
+           optional_buffer_size(whitewater_counters_) +
            optional_frame_uniform_buffer_size(simulation_uniforms_);
 }
 
@@ -351,6 +377,8 @@ void Water3DGpuResources::create_field_buffers(cubey::ProjectGpuServices& gpu,
     const std::vector<float> w_initial(w_face_count(config), 0.0F);
     const std::vector<std::uint32_t> cell_count_initial(cell_count(config), 0U);
     const std::vector<std::uint32_t> bin_initial(particle_bin_index_count(config), 0U);
+    const std::vector<float> whitewater_initial(whitewater_value_count(config), 0.0F);
+    const std::array<std::uint32_t, 4> whitewater_counter_initial{};
     const VkDeviceSize particle_byte_size =
         static_cast<VkDeviceSize>(particle_buffer_byte_size(config));
     const VkDeviceSize affine_byte_size =
@@ -363,6 +391,10 @@ void Water3DGpuResources::create_field_buffers(cubey::ProjectGpuServices& gpu,
         static_cast<VkDeviceSize>(cell_uint_field_byte_size(config));
     const VkDeviceSize bin_byte_size =
         static_cast<VkDeviceSize>(particle_bin_index_byte_size(config));
+    const VkDeviceSize whitewater_byte_size =
+        static_cast<VkDeviceSize>(whitewater_buffer_byte_size(config));
+    const VkDeviceSize whitewater_counter_bytes =
+        static_cast<VkDeviceSize>(whitewater_counter_byte_size(config));
 
     particle_positions_.emplace(upload_project_device_buffer(
         gpu, particle_initial.data(), particle_byte_size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
@@ -445,12 +477,24 @@ void Water3DGpuResources::create_field_buffers(cubey::ProjectGpuServices& gpu,
     cell_particle_indices_.emplace(upload_project_device_buffer(
         gpu, bin_initial.data(), bin_byte_size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
         "water_3d cell particle index upload"));
+    whitewater_positions_.emplace(upload_project_device_buffer(
+        gpu, whitewater_initial.data(), whitewater_byte_size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+        "water_3d whitewater position upload"));
+    whitewater_velocities_.emplace(upload_project_device_buffer(
+        gpu, whitewater_initial.data(), whitewater_byte_size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+        "water_3d whitewater velocity upload"));
+    whitewater_state_.emplace(upload_project_device_buffer(
+        gpu, whitewater_initial.data(), whitewater_byte_size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+        "water_3d whitewater state upload"));
+    whitewater_counters_.emplace(upload_project_device_buffer(
+        gpu, whitewater_counter_initial.data(), whitewater_counter_bytes,
+        VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, "water_3d whitewater counter upload"));
 }
 
 void Water3DGpuResources::create_descriptor_resources(cubey::vulkan::Device& device) {
     constexpr VkShaderStageFlags kStages =
         VK_SHADER_STAGE_COMPUTE_BIT | VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
-    const std::array<cubey::vulkan::DescriptorSetBindingConfig, 28> field_bindings{{
+    const std::array<cubey::vulkan::DescriptorSetBindingConfig, 32> field_bindings{{
         {.binding = 0, .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .stage_flags = kStages},
         {.binding = 1, .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .stage_flags = kStages},
         {.binding = 2, .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .stage_flags = kStages},
@@ -481,6 +525,10 @@ void Water3DGpuResources::create_descriptor_resources(cubey::vulkan::Device& dev
         {.binding = 25, .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .stage_flags = kStages},
         {.binding = 26, .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .stage_flags = kStages},
         {.binding = 27, .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .stage_flags = kStages},
+        {.binding = 28, .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .stage_flags = kStages},
+        {.binding = 29, .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .stage_flags = kStages},
+        {.binding = 30, .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .stage_flags = kStages},
+        {.binding = 31, .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .stage_flags = kStages},
     }};
     const cubey::vulkan::DescriptorSetInfo field_info(field_bindings, frame_slot_count_);
     field_descriptor_layout_.emplace(device, field_info.layout_info());
@@ -526,7 +574,12 @@ void Water3DGpuResources::update_field_descriptors(cubey::vulkan::Device& device
             .storage_buffer(set, 24, w_previous_scratch().handle(), w_previous_scratch().size())
             .storage_buffer(set, 25, u_weight_scratch().handle(), u_weight_scratch().size())
             .storage_buffer(set, 26, v_weight_scratch().handle(), v_weight_scratch().size())
-            .storage_buffer(set, 27, w_weight_scratch().handle(), w_weight_scratch().size());
+            .storage_buffer(set, 27, w_weight_scratch().handle(), w_weight_scratch().size())
+            .storage_buffer(set, 28, whitewater_positions().handle(), whitewater_positions().size())
+            .storage_buffer(set, 29, whitewater_velocities().handle(),
+                            whitewater_velocities().size())
+            .storage_buffer(set, 30, whitewater_state().handle(), whitewater_state().size())
+            .storage_buffer(set, 31, whitewater_counters().handle(), whitewater_counters().size());
     }
     descriptor_writes.update(device);
 }
@@ -560,6 +613,14 @@ void Water3DGpuResources::create_compute_pipelines(cubey::vulkan::Device& device
     create_compute_pipeline_resource(device, "water_3d_advect_particles.comp.spv",
                                      field_descriptor_layout(),
                                      advect_particles_pipeline_resource_);
+    create_compute_pipeline_resource(device, "water_3d_whitewater_clear.comp.spv",
+                                     field_descriptor_layout(),
+                                     clear_whitewater_pipeline_resource_);
+    create_compute_pipeline_resource(device, "water_3d_whitewater_advect.comp.spv",
+                                     field_descriptor_layout(),
+                                     advect_whitewater_pipeline_resource_);
+    create_compute_pipeline_resource(device, "water_3d_whitewater_emit.comp.spv",
+                                     field_descriptor_layout(), emit_whitewater_pipeline_resource_);
 }
 
 void Water3DGpuResources::create_render_pipeline(
@@ -587,6 +648,7 @@ void Water3DGpuResources::create_render_pipeline(
         water_surface_smooth_pass_info();
     const cubey::render::MaterialPassInfo surface_composite_material_pass =
         water_surface_composite_pass_info();
+    const cubey::render::MaterialPassInfo whitewater_material_pass = water_whitewater_pass_info();
 
     surface_scene_material_.emplace(device, cubey::render::MaterialInstanceConfig{
                                                 .material_pass = surface_scene_material_pass,
@@ -702,6 +764,16 @@ void Water3DGpuResources::create_render_pipeline(
             .path = shader_path("water_3d_surface_composite.frag.spv"),
         },
     };
+    const std::array<cubey::render::ShaderStageFile, 2> whitewater_shaders{
+        cubey::render::ShaderStageFile{
+            .stage = VK_SHADER_STAGE_VERTEX_BIT,
+            .path = shader_path("water_3d_whitewater.vert.spv"),
+        },
+        cubey::render::ShaderStageFile{
+            .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
+            .path = shader_path("water_3d_whitewater.frag.spv"),
+        },
+    };
 
     const std::array<VkDescriptorSetLayout, 1> field_set_layouts{field_descriptor_layout()};
     const std::array<VkDescriptorSetLayout, 1> scene_set_layouts{
@@ -747,6 +819,9 @@ void Water3DGpuResources::create_render_pipeline(
                                       surface_composite_shaders, composite_set_layouts,
                                       surface_composite_material_pass,
                                       surface_composite_pipeline_resource_);
+    create_graphics_pipeline_resource(
+        device, extent, kWater3DSceneColorFormat, depth_attachment().format(), whitewater_shaders,
+        field_set_layouts, whitewater_material_pass, whitewater_pipeline_resource_);
 
     cubey::vulkan::DescriptorWriteBatch writes;
     for (std::uint32_t slot_index = 0; slot_index < frame_slot_count_; ++slot_index) {
@@ -879,6 +954,25 @@ const cubey::vulkan::Buffer& Water3DGpuResources::cell_particle_indices() const 
                                "water 3D cell particle indices are not initialized");
 }
 
+const cubey::vulkan::Buffer& Water3DGpuResources::whitewater_positions() const {
+    return require_initialized(whitewater_positions_,
+                               "water 3D whitewater positions are not initialized");
+}
+
+const cubey::vulkan::Buffer& Water3DGpuResources::whitewater_velocities() const {
+    return require_initialized(whitewater_velocities_,
+                               "water 3D whitewater velocities are not initialized");
+}
+
+const cubey::vulkan::Buffer& Water3DGpuResources::whitewater_state() const {
+    return require_initialized(whitewater_state_, "water 3D whitewater state is not initialized");
+}
+
+const cubey::vulkan::Buffer& Water3DGpuResources::whitewater_counters() const {
+    return require_initialized(whitewater_counters_,
+                               "water 3D whitewater counters are not initialized");
+}
+
 const cubey::vulkan::Buffer&
 Water3DGpuResources::simulation_uniform_buffer(cubey::render::FrameSlot frame_slot) const {
     const cubey::render::FrameUniformBuffer<Water3DSimulationUniforms>& uniforms =
@@ -989,6 +1083,24 @@ Water3DGpuResources::advect_particles_pipeline_resource() const {
                                "water 3D particle advection pipeline is not initialized");
 }
 
+const cubey::render::ComputePipelineResource&
+Water3DGpuResources::clear_whitewater_pipeline_resource() const {
+    return require_initialized(clear_whitewater_pipeline_resource_,
+                               "water 3D whitewater clear pipeline is not initialized");
+}
+
+const cubey::render::ComputePipelineResource&
+Water3DGpuResources::advect_whitewater_pipeline_resource() const {
+    return require_initialized(advect_whitewater_pipeline_resource_,
+                               "water 3D whitewater advection pipeline is not initialized");
+}
+
+const cubey::render::ComputePipelineResource&
+Water3DGpuResources::emit_whitewater_pipeline_resource() const {
+    return require_initialized(emit_whitewater_pipeline_resource_,
+                               "water 3D whitewater emission pipeline is not initialized");
+}
+
 const cubey::render::GraphicsPipelineResource&
 Water3DGpuResources::render_pipeline_resource() const {
     return require_initialized(render_pipeline_resource_,
@@ -1035,6 +1147,12 @@ const cubey::render::GraphicsPipelineResource&
 Water3DGpuResources::surface_composite_pipeline_resource() const {
     return require_initialized(surface_composite_pipeline_resource_,
                                "water 3D surface composite pipeline is not initialized");
+}
+
+const cubey::render::GraphicsPipelineResource&
+Water3DGpuResources::whitewater_pipeline_resource() const {
+    return require_initialized(whitewater_pipeline_resource_,
+                               "water 3D whitewater pipeline is not initialized");
 }
 
 VkDescriptorSet
@@ -1088,6 +1206,7 @@ void Water3DGpuResources::update_surface_descriptors(
     cubey::render::RenderGraphSampledTextureView final_surface,
     cubey::render::RenderGraphSampledTextureView scene_color,
     cubey::render::RenderGraphSampledTextureView scene_depth,
+    cubey::render::RenderGraphSampledTextureView whitewater,
     const cubey::render::GeneratedPbrEnvironment& environment) {
     const cubey::vulkan::Sampler& sampler =
         require_initialized(surface_sampler_, "water 3D surface sampler is not initialized");
@@ -1112,7 +1231,9 @@ void Water3DGpuResources::update_surface_descriptors(
         .combined_image_sampler(composite_set, 2, sampler_handle, scene_depth.view,
                                 scene_depth.layout)
         .combined_image_sampler(composite_set, 3, environment.prefiltered_cube.sampler().handle(),
-                                environment.prefiltered_cube.view());
+                                environment.prefiltered_cube.view())
+        .combined_image_sampler(composite_set, 4, sampler_handle, whitewater.view,
+                                whitewater.layout);
     writes.update(device);
 }
 

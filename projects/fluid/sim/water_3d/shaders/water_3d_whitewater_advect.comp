@@ -1,0 +1,222 @@
+#version 450
+#extension GL_GOOGLE_include_directive : require
+
+#include "water_3d_contract.glsl"
+
+layout(local_size_x = 64, local_size_y = 1) in;
+
+layout(set = 0, binding = WATER3D_BINDING_U_FIELD, std430) readonly buffer UField {
+    float values[];
+} u_field;
+layout(set = 0, binding = WATER3D_BINDING_V_FIELD, std430) readonly buffer VField {
+    float values[];
+} v_field;
+layout(set = 0, binding = WATER3D_BINDING_W_FIELD, std430) readonly buffer WField {
+    float values[];
+} w_field;
+layout(set = 0, binding = WATER3D_BINDING_SOLID, std430) readonly buffer SolidField {
+    float values[];
+} solid;
+layout(set = 0, binding = WATER3D_BINDING_CELL_COUNTS, std430) readonly buffer CellCounts {
+    uint values[];
+} cell_counts;
+layout(set = 0, binding = WATER3D_BINDING_WHITEWATER_POSITIONS, std430) buffer WhitewaterPositions {
+    vec4 values[];
+} whitewater_positions;
+layout(set = 0, binding = WATER3D_BINDING_WHITEWATER_VELOCITIES, std430) buffer WhitewaterVelocities {
+    vec4 values[];
+} whitewater_velocities;
+layout(set = 0, binding = WATER3D_BINDING_WHITEWATER_STATE, std430) buffer WhitewaterState {
+    vec4 values[];
+} whitewater_state;
+layout(set = 0, binding = WATER3D_BINDING_WHITEWATER_COUNTERS, std430) buffer WhitewaterCounters {
+    uint values[];
+} whitewater_counters;
+
+WATER3D_SIMULATION_PARAMS;
+
+uint cell_index(ivec3 coord, uint width, uint height, uint depth) {
+    ivec3 clamped = ivec3(clamp(coord.x, 0, int(width) - 1),
+                          clamp(coord.y, 0, int(height) - 1),
+                          clamp(coord.z, 0, int(depth) - 1));
+    return ((uint(clamped.z) * height) + uint(clamped.y)) * width + uint(clamped.x);
+}
+
+uint u_index(ivec3 coord, uint width, uint height, uint depth) {
+    ivec3 clamped = ivec3(clamp(coord.x, 0, int(width)),
+                          clamp(coord.y, 0, int(height) - 1),
+                          clamp(coord.z, 0, int(depth) - 1));
+    return ((uint(clamped.z) * height) + uint(clamped.y)) * (width + 1u) + uint(clamped.x);
+}
+
+uint v_index(ivec3 coord, uint width, uint height, uint depth) {
+    ivec3 clamped = ivec3(clamp(coord.x, 0, int(width) - 1),
+                          clamp(coord.y, 0, int(height)),
+                          clamp(coord.z, 0, int(depth) - 1));
+    return ((uint(clamped.z) * (height + 1u)) + uint(clamped.y)) * width + uint(clamped.x);
+}
+
+uint w_index(ivec3 coord, uint width, uint height, uint depth) {
+    ivec3 clamped = ivec3(clamp(coord.x, 0, int(width) - 1),
+                          clamp(coord.y, 0, int(height) - 1),
+                          clamp(coord.z, 0, int(depth)));
+    return ((uint(clamped.z) * height) + uint(clamped.y)) * width + uint(clamped.x);
+}
+
+bool cell_in_bounds(ivec3 coord, uint width, uint height, uint depth) {
+    return coord.x >= 0 && coord.y >= 0 && coord.z >= 0 && coord.x < int(width) &&
+           coord.y < int(height) && coord.z < int(depth);
+}
+
+float lerp8(float c000, float c100, float c010, float c110, float c001, float c101, float c011,
+            float c111, vec3 f) {
+    float x00 = mix(c000, c100, f.x);
+    float x10 = mix(c010, c110, f.x);
+    float x01 = mix(c001, c101, f.x);
+    float x11 = mix(c011, c111, f.x);
+    return mix(mix(x00, x10, f.y), mix(x01, x11, f.y), f.z);
+}
+
+float read_u(ivec3 coord, uint width, uint height, uint depth) {
+    return u_field.values[u_index(coord, width, height, depth)];
+}
+
+float read_v(ivec3 coord, uint width, uint height, uint depth) {
+    return v_field.values[v_index(coord, width, height, depth)];
+}
+
+float read_w(ivec3 coord, uint width, uint height, uint depth) {
+    return w_field.values[w_index(coord, width, height, depth)];
+}
+
+float sample_u(vec3 uv, uint width, uint height, uint depth) {
+    vec3 position = vec3(uv.x * float(width), uv.y * float(height) - 0.5,
+                         uv.z * float(depth) - 0.5);
+    ivec3 base = ivec3(floor(position));
+    vec3 f = fract(position);
+    return lerp8(read_u(base, width, height, depth),
+                 read_u(base + ivec3(1, 0, 0), width, height, depth),
+                 read_u(base + ivec3(0, 1, 0), width, height, depth),
+                 read_u(base + ivec3(1, 1, 0), width, height, depth),
+                 read_u(base + ivec3(0, 0, 1), width, height, depth),
+                 read_u(base + ivec3(1, 0, 1), width, height, depth),
+                 read_u(base + ivec3(0, 1, 1), width, height, depth),
+                 read_u(base + ivec3(1, 1, 1), width, height, depth), f);
+}
+
+float sample_v(vec3 uv, uint width, uint height, uint depth) {
+    vec3 position = vec3(uv.x * float(width) - 0.5, uv.y * float(height),
+                         uv.z * float(depth) - 0.5);
+    ivec3 base = ivec3(floor(position));
+    vec3 f = fract(position);
+    return lerp8(read_v(base, width, height, depth),
+                 read_v(base + ivec3(1, 0, 0), width, height, depth),
+                 read_v(base + ivec3(0, 1, 0), width, height, depth),
+                 read_v(base + ivec3(1, 1, 0), width, height, depth),
+                 read_v(base + ivec3(0, 0, 1), width, height, depth),
+                 read_v(base + ivec3(1, 0, 1), width, height, depth),
+                 read_v(base + ivec3(0, 1, 1), width, height, depth),
+                 read_v(base + ivec3(1, 1, 1), width, height, depth), f);
+}
+
+float sample_w(vec3 uv, uint width, uint height, uint depth) {
+    vec3 position = vec3(uv.x * float(width) - 0.5, uv.y * float(height) - 0.5,
+                         uv.z * float(depth));
+    ivec3 base = ivec3(floor(position));
+    vec3 f = fract(position);
+    return lerp8(read_w(base, width, height, depth),
+                 read_w(base + ivec3(1, 0, 0), width, height, depth),
+                 read_w(base + ivec3(0, 1, 0), width, height, depth),
+                 read_w(base + ivec3(1, 1, 0), width, height, depth),
+                 read_w(base + ivec3(0, 0, 1), width, height, depth),
+                 read_w(base + ivec3(1, 0, 1), width, height, depth),
+                 read_w(base + ivec3(0, 1, 1), width, height, depth),
+                 read_w(base + ivec3(1, 1, 1), width, height, depth), f);
+}
+
+vec3 sample_velocity(vec3 uv, uint width, uint height, uint depth) {
+    return vec3(sample_u(uv, width, height, depth), sample_v(uv, width, height, depth),
+                sample_w(uv, width, height, depth));
+}
+
+void deactivate(uint id) {
+    whitewater_positions.values[id] = vec4(-10.0, -10.0, -10.0, 0.0);
+    whitewater_velocities.values[id] = vec4(0.0);
+    whitewater_state.values[id] = vec4(0.0);
+}
+
+bool solid_or_outside(ivec3 coord, uint width, uint height, uint depth) {
+    if (!cell_in_bounds(coord, width, height, depth)) {
+        return true;
+    }
+    return solid.values[cell_index(coord, width, height, depth)] > 0.5;
+}
+
+bool occupied_cell(ivec3 coord, uint width, uint height, uint depth) {
+    if (!cell_in_bounds(coord, width, height, depth)) {
+        return false;
+    }
+    return cell_counts.values[cell_index(coord, width, height, depth)] > 0u;
+}
+
+void main() {
+    uint id = gl_GlobalInvocationID.x;
+    uint width = uint(WATER3D_GRID_WIDTH + 0.5);
+    uint height = uint(WATER3D_GRID_HEIGHT + 0.5);
+    uint depth = uint(WATER3D_GRID_DEPTH + 0.5);
+    uint capacity = uint(WATER3D_WHITEWATER_CAPACITY + 0.5);
+    if (id >= capacity || whitewater_positions.values[id].w < 0.5) {
+        return;
+    }
+    if (WATER3D_WHITEWATER_INTENSITY <= 0.0) {
+        deactivate(id);
+        return;
+    }
+
+    vec3 position = whitewater_positions.values[id].xyz;
+    vec3 velocity = whitewater_velocities.values[id].xyz;
+    float age = whitewater_velocities.values[id].w + WATER3D_DT;
+    vec4 state = whitewater_state.values[id];
+    float lifetime = max(0.05, state.x);
+    float kind = state.y;
+    if (age >= lifetime) {
+        deactivate(id);
+        return;
+    }
+
+    vec3 grid_velocity = sample_velocity(clamp(position, vec3(0.0), vec3(0.999999)), width,
+                                         height, depth);
+    float drag = clamp(WATER3D_WHITEWATER_DRAG, 0.0, 1.0);
+    float frame_drag = pow(max(0.001, drag), WATER3D_DT * 60.0);
+    if (kind > 0.5) {
+        velocity += vec3(0.0, params.fill_options.w * WATER3D_WHITEWATER_GRAVITY_SCALE, 0.0) *
+                    WATER3D_DT;
+        velocity *= frame_drag;
+        position += velocity * WATER3D_DT;
+    } else {
+        velocity = mix(velocity, grid_velocity, 0.35) * frame_drag;
+        position += velocity * WATER3D_DT;
+    }
+
+    if (any(lessThan(position, vec3(0.0))) || any(greaterThan(position, vec3(1.0)))) {
+        deactivate(id);
+        return;
+    }
+    ivec3 cell = ivec3(floor(clamp(position, vec3(0.0), vec3(0.999999)) *
+                             vec3(width, height, depth)));
+    if (solid_or_outside(cell, width, height, depth)) {
+        deactivate(id);
+        return;
+    }
+    if (kind > 0.5 && velocity.y < 0.0 && occupied_cell(cell, width, height, depth)) {
+        kind = 0.0;
+        velocity = mix(velocity, grid_velocity, 0.65);
+        state.x = max(0.45, WATER3D_WHITEWATER_LIFETIME * 0.8);
+        state.z = max(state.z, 0.85);
+    }
+
+    whitewater_positions.values[id] = vec4(position, 1.0);
+    whitewater_velocities.values[id] = vec4(velocity, age);
+    whitewater_state.values[id] = vec4(state.x, kind, state.z, state.w);
+    atomicAdd(whitewater_counters.values[1], 1u);
+}
