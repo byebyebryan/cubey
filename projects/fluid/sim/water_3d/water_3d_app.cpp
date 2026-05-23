@@ -107,6 +107,13 @@ void record_gpu_timings(cubey::profiling::ProfileRecorder* recorder, std::uint64
     return value;
 }
 
+[[nodiscard]] std::uint64_t diagnostic_slot_u64(const std::vector<std::uint8_t>& bytes,
+                                                Water3DDiagnosticSlot low_slot,
+                                                Water3DDiagnosticSlot high_slot) {
+    return static_cast<std::uint64_t>(diagnostic_slot_value(bytes, low_slot)) |
+           (static_cast<std::uint64_t>(diagnostic_slot_value(bytes, high_slot)) << 32U);
+}
+
 [[nodiscard]] bool should_record_water_3d_diagnostics(cubey::profiling::ProfileRecorder* recorder,
                                                       const Water3DConfig& config,
                                                       std::uint64_t frame_index) {
@@ -161,6 +168,46 @@ void record_water_3d_diagnostics(cubey::profiling::ProfileRecorder& recorder,
         static_cast<double>(slot(Water3DDiagnosticSlot::WhitewaterActive));
     const double whitewater_capacity =
         static_cast<double>(slot(Water3DDiagnosticSlot::WhitewaterCapacity));
+    const double p2g_active_faces =
+        static_cast<double>(slot(Water3DDiagnosticSlot::P2GActiveFaces));
+    const double p2g_faces_processed =
+        static_cast<double>(slot(Water3DDiagnosticSlot::P2GFacesProcessed));
+    const double p2g_blocked_faces =
+        static_cast<double>(slot(Water3DDiagnosticSlot::P2GBlockedFaces));
+    const double p2g_u_faces_processed =
+        static_cast<double>(slot(Water3DDiagnosticSlot::P2GUFacesProcessed));
+    const double p2g_v_faces_processed =
+        static_cast<double>(slot(Water3DDiagnosticSlot::P2GVFacesProcessed));
+    const double p2g_w_faces_processed =
+        static_cast<double>(slot(Water3DDiagnosticSlot::P2GWFacesProcessed));
+    const double p2g_neighbor_cells_tested =
+        static_cast<double>(slot(Water3DDiagnosticSlot::P2GNeighborCellsTested));
+    const double p2g_neighbor_cells_in_bounds =
+        static_cast<double>(slot(Water3DDiagnosticSlot::P2GNeighborCellsInBounds));
+    const double p2g_empty_cell_visits =
+        static_cast<double>(slot(Water3DDiagnosticSlot::P2GEmptyCellVisits));
+    const double p2g_cell_particle_slots_scanned = static_cast<double>(
+        diagnostic_slot_u64(bytes, Water3DDiagnosticSlot::P2GCellParticleSlotsScanned,
+                            Water3DDiagnosticSlot::P2GCellParticleSlotsScannedHigh));
+    const double p2g_inactive_particles_seen =
+        static_cast<double>(slot(Water3DDiagnosticSlot::P2GInactiveParticlesSeen));
+    const double p2g_weight_positive_particles = static_cast<double>(
+        diagnostic_slot_u64(bytes, Water3DDiagnosticSlot::P2GWeightPositiveParticles,
+                            Water3DDiagnosticSlot::P2GWeightPositiveParticlesHigh));
+    const double p2g_weight_zero_particles = static_cast<double>(
+        diagnostic_slot_u64(bytes, Water3DDiagnosticSlot::P2GWeightZeroParticles,
+                            Water3DDiagnosticSlot::P2GWeightZeroParticlesHigh));
+    const double p2g_zero_weight_faces =
+        static_cast<double>(slot(Water3DDiagnosticSlot::P2GZeroWeightFaces));
+    const double p2g_max_cell_count_seen =
+        static_cast<double>(slot(Water3DDiagnosticSlot::P2GMaxCellCountSeen));
+    const double p2g_overpacked_cell_visits =
+        static_cast<double>(slot(Water3DDiagnosticSlot::P2GOverpackedCellVisits));
+    const double p2g_apic_particle_samples = static_cast<double>(
+        diagnostic_slot_u64(bytes, Water3DDiagnosticSlot::P2GApicParticleSamples,
+                            Water3DDiagnosticSlot::P2GApicParticleSamplesHigh));
+    const double p2g_invalid_face_ids =
+        static_cast<double>(slot(Water3DDiagnosticSlot::P2GInvalidFaceIds));
 
     record_metric(recorder, frame_index, "water_3d.workload", "active_particles", active_particles);
     record_metric(recorder, frame_index, "water_3d.workload", "inactive_scan_particles",
@@ -193,6 +240,52 @@ void record_water_3d_diagnostics(cubey::profiling::ProfileRecorder& recorder,
     record_metric(recorder, frame_index, "water_3d.whitewater", "capacity", whitewater_capacity);
     record_metric(recorder, frame_index, "water_3d.whitewater", "active_ratio",
                   whitewater_capacity > 0.0 ? whitewater_active / whitewater_capacity : 0.0);
+    record_metric(recorder, frame_index, "water_3d.p2g", "active_faces", p2g_active_faces);
+    record_metric(recorder, frame_index, "water_3d.p2g", "faces_processed", p2g_faces_processed);
+    record_metric(recorder, frame_index, "water_3d.p2g", "blocked_faces", p2g_blocked_faces);
+    record_metric(recorder, frame_index, "water_3d.p2g", "u_faces_processed",
+                  p2g_u_faces_processed);
+    record_metric(recorder, frame_index, "water_3d.p2g", "v_faces_processed",
+                  p2g_v_faces_processed);
+    record_metric(recorder, frame_index, "water_3d.p2g", "w_faces_processed",
+                  p2g_w_faces_processed);
+    record_metric(recorder, frame_index, "water_3d.p2g", "neighbor_cells_tested",
+                  p2g_neighbor_cells_tested);
+    record_metric(recorder, frame_index, "water_3d.p2g", "neighbor_cells_in_bounds",
+                  p2g_neighbor_cells_in_bounds);
+    record_metric(recorder, frame_index, "water_3d.p2g", "empty_cell_visits",
+                  p2g_empty_cell_visits);
+    record_metric(recorder, frame_index, "water_3d.p2g", "cell_particle_slots_scanned",
+                  p2g_cell_particle_slots_scanned);
+    record_metric(recorder, frame_index, "water_3d.p2g", "inactive_particles_seen",
+                  p2g_inactive_particles_seen);
+    record_metric(recorder, frame_index, "water_3d.p2g", "weight_positive_particles",
+                  p2g_weight_positive_particles);
+    record_metric(recorder, frame_index, "water_3d.p2g", "weight_zero_particles",
+                  p2g_weight_zero_particles);
+    record_metric(recorder, frame_index, "water_3d.p2g", "zero_weight_faces",
+                  p2g_zero_weight_faces);
+    record_metric(recorder, frame_index, "water_3d.p2g", "max_cell_count_seen",
+                  p2g_max_cell_count_seen);
+    record_metric(recorder, frame_index, "water_3d.p2g", "overpacked_cell_visits",
+                  p2g_overpacked_cell_visits);
+    record_metric(recorder, frame_index, "water_3d.p2g", "apic_particle_samples",
+                  p2g_apic_particle_samples);
+    record_metric(recorder, frame_index, "water_3d.p2g", "invalid_face_ids", p2g_invalid_face_ids);
+    record_metric(recorder, frame_index, "water_3d.p2g", "avg_slots_per_face",
+                  p2g_faces_processed > 0.0 ? p2g_cell_particle_slots_scanned / p2g_faces_processed
+                                            : 0.0);
+    record_metric(recorder, frame_index, "water_3d.p2g", "positive_weight_ratio",
+                  (p2g_weight_positive_particles + p2g_weight_zero_particles) > 0.0
+                      ? p2g_weight_positive_particles /
+                            (p2g_weight_positive_particles + p2g_weight_zero_particles)
+                      : 0.0);
+    record_metric(recorder, frame_index, "water_3d.p2g", "blocked_face_ratio",
+                  p2g_active_faces > 0.0 ? p2g_blocked_faces / p2g_active_faces : 0.0);
+    record_metric(recorder, frame_index, "water_3d.p2g", "in_bounds_neighbor_ratio",
+                  p2g_neighbor_cells_tested > 0.0
+                      ? p2g_neighbor_cells_in_bounds / p2g_neighbor_cells_tested
+                      : 0.0);
 }
 
 [[nodiscard]] std::filesystem::path bundled_sample_environment_path() {

@@ -364,6 +364,14 @@ int main() {
                          "water 3D diagnostics should capture whitewater active counts");
         require_contains(diagnostics_shader, "DIVERGENCE_SCALE",
                          "water 3D diagnostics should fixed-point encode divergence metrics");
+        require_contains(diagnostics_shader, "DIAGNOSTIC_MODE_P2G_SCAN",
+                         "water 3D diagnostics should expose a P2G scan mode");
+        require_contains(diagnostics_shader, "SLOT_P2G_CELL_PARTICLE_SLOTS_SCANNED",
+                         "water 3D diagnostics should count P2G particle-slot traversal");
+        require_contains(diagnostics_shader, "record_p2g_face_scan",
+                         "water 3D diagnostics should mirror P2G face neighborhood traversal");
+        require_contains(diagnostics_shader, "active_face_indices.values[active_slot]",
+                         "water 3D diagnostics should scan compacted active faces");
         require_contains(whitewater_vert, "WATER3D_BINDING_WHITEWATER_POSITIONS",
                          "water 3D whitewater renderer should instance whitewater particles");
         require_contains(whitewater_vert, "whitewater_active_indices.values[active_slot]",
@@ -475,10 +483,14 @@ int main() {
                          "water 3D particle-to-grid should dispatch over active faces indirectly");
         require_contains(commands, "diagnostics workload",
                          "water 3D simulation should profile workload diagnostics");
+        require_contains(commands, "diagnostics p2g scan",
+                         "water 3D simulation should profile P2G scan diagnostics");
         require_contains(commands, "diagnostics projection",
                          "water 3D simulation should profile solver residual diagnostics");
         require_contains(commands, "diagnostics whitewater",
                          "water 3D simulation should profile whitewater diagnostics");
+        require_contains(commands, "should_record_diagnostics_for_frame",
+                         "water 3D simulation should gate diagnostics by sample interval");
         require_contains(app, "record_gpu_timings(context.profile_recorder()",
                          "water 3D windowed path should export GPU timings to profiles");
         require_contains(app, "record_gpu_timings(profile_recorder",
@@ -487,6 +499,8 @@ int main() {
                          "water 3D headless path should read back diagnostics metrics");
         require_contains(app, "recorder.record_metric(frame_index, category, name, value)",
                          "water 3D headless diagnostics should record profile metrics");
+        require_contains(app, "water_3d.p2g",
+                         "water 3D headless diagnostics should export P2G scan metrics");
         require_contains(commands, "water whitewater",
                          "water 3D surface render should render whitewater before composite");
         require_contains(gpu_resources, "water_3d_active_face_dispatch_args.comp.spv",

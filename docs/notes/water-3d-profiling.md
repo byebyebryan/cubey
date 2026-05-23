@@ -28,12 +28,13 @@ include the windowed screen-space water renderer beyond the final PNG capture.
 frames so the summary does not imply a wall-clock FPS.
 
 `--profile-diagnostics` enables extra water 3D compute passes that write a fixed
-uint diagnostics buffer. The headless simulation path reads it back after sampled
-frames and writes rows to `<prefix>.metrics.csv`; the same values also appear as
-Chrome trace counter events and aggregate rollups in the summary. Diagnostics
-requires `--profile-output`, and `--profile-diagnostic-interval N` controls how
-often rows are read back after warmup. Windowed runs currently keep the extra GPU
-diagnostic pass timings but do not synchronously read back metric rows.
+uint diagnostics buffer. Those passes are gated by
+`--profile-diagnostic-interval N`, and the headless simulation path reads the
+buffer back after sampled frames and writes rows to `<prefix>.metrics.csv`; the
+same values also appear as Chrome trace counter events and aggregate rollups in
+the summary. Diagnostics requires `--profile-output`. Windowed runs currently
+keep the extra GPU diagnostic pass timings but do not synchronously read back
+metric rows.
 
 Metric categories:
 
@@ -45,6 +46,10 @@ Metric categories:
   scale of 1,000,000 before CPU decode.
 - `water_3d.whitewater`: per-frame emitted particles, compacted active particles,
   capacity, and active ratio.
+- `water_3d.p2g`: active/blocked/processed face counts, processed U/V/W face
+  split, neighborhood cell visits, scanned particle slots, positive/zero-weight
+  particle candidates, APIC sample count, max cell occupancy seen by P2G, and
+  derived ratios such as average slots per processed face.
 
 ## Current Results
 
@@ -71,9 +76,9 @@ runs twice per substep and feeds the active-face dispatch path.
 
 Near-term optimization candidates:
 
-1. Add finer P2G instrumentation before changing the shader again: bin build,
-   active-face indirection, particle neighborhood iteration, atomics, and active
-   particle scan count should be separable in the profile.
+1. Use the new `water_3d.p2g` metric rows to separate active-face count, blocked
+   faces, neighborhood traversal, cell occupancy, and candidate particle weight
+   ratios before changing the real P2G shader again.
 2. Keep P2G correctness fixed while experimenting. The previous fixed-stencil
    transfer attempt produced solver instability and should stay as a documented
    failed experiment until a narrower hypothesis is tested.
@@ -96,10 +101,8 @@ Review pass, 2026-05-23:
   full interactive screen-space renderer as a steady-state frame workload.
 - Headless simulation rows use `delta_ms = 0`; use pass summaries for GPU cost
   and not `frames.csv` for FPS in this mode.
-- The next diagnostics pass should split P2G more finely before trying another
-  optimization. In particular, separate active-face setup, bin traversal,
-  particle neighborhood iteration, and atomic accumulation if possible.
-- A built-in diagnostic readback path now captures workload, solver residual,
-  and whitewater counters. Use that before another P2G rewrite so we can see
-  whether the cost is coming from scan count, cell occupancy, active-face work,
-  or residual pressure error rather than guessing from pass names alone.
+- A built-in diagnostic readback path now captures workload, P2G scan, solver
+  residual, and whitewater counters. Use that before another P2G rewrite so we
+  can see whether the cost is coming from active-face count, cell occupancy,
+  particle-slot traversal, weight sparsity, or residual pressure error rather
+  than guessing from pass names alone.

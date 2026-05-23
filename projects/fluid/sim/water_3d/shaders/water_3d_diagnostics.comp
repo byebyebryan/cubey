@@ -23,12 +23,18 @@ layout(set = 0, binding = WATER3D_BINDING_SOLID, std430) readonly buffer SolidFi
 layout(set = 0, binding = WATER3D_BINDING_CELL_COUNTS, std430) readonly buffer CellCounts {
     uint values[];
 } cell_counts;
+layout(set = 0, binding = WATER3D_BINDING_CELL_PARTICLE_INDICES, std430) readonly buffer CellParticleIndices {
+    uint values[];
+} cell_particle_indices;
 layout(set = 0, binding = WATER3D_BINDING_WHITEWATER_COUNTERS, std430) readonly buffer WhitewaterCounters {
     uint values[];
 } whitewater_counters;
 layout(set = 0, binding = WATER3D_BINDING_ACTIVE_WORK_COUNTS, std430) readonly buffer ActiveWorkCounts {
     uint values[];
 } active_work_counts;
+layout(set = 0, binding = WATER3D_BINDING_ACTIVE_FACE_INDICES, std430) readonly buffer ActiveFaceIndices {
+    uint values[];
+} active_face_indices;
 layout(set = 0, binding = WATER3D_BINDING_ACTIVE_FACE_DISPATCH_ARGS, std430) readonly buffer ActiveFaceDispatchArgs {
     uint values[];
 } active_face_dispatch_args;
@@ -42,6 +48,7 @@ const uint DIAGNOSTIC_MODE_CLEAR = 0u;
 const uint DIAGNOSTIC_MODE_WORKLOAD = 1u;
 const uint DIAGNOSTIC_MODE_PROJECTION = 2u;
 const uint DIAGNOSTIC_MODE_WHITEWATER = 3u;
+const uint DIAGNOSTIC_MODE_P2G_SCAN = 4u;
 
 const uint SLOT_ACTIVE_PARTICLES = 0u;
 const uint SLOT_INACTIVE_SCAN_PARTICLES = 1u;
@@ -60,6 +67,28 @@ const uint SLOT_WHITEWATER_ACTIVE = 13u;
 const uint SLOT_WHITEWATER_CAPACITY = 14u;
 const uint SLOT_PARTICLE_SCAN_COUNT = 15u;
 const uint SLOT_DIVERGENCE_ABS_SUM_FIXED_HIGH = 16u;
+const uint SLOT_P2G_ACTIVE_FACES = 17u;
+const uint SLOT_P2G_FACES_PROCESSED = 18u;
+const uint SLOT_P2G_BLOCKED_FACES = 19u;
+const uint SLOT_P2G_U_FACES_PROCESSED = 20u;
+const uint SLOT_P2G_V_FACES_PROCESSED = 21u;
+const uint SLOT_P2G_W_FACES_PROCESSED = 22u;
+const uint SLOT_P2G_NEIGHBOR_CELLS_TESTED = 23u;
+const uint SLOT_P2G_NEIGHBOR_CELLS_IN_BOUNDS = 24u;
+const uint SLOT_P2G_EMPTY_CELL_VISITS = 25u;
+const uint SLOT_P2G_CELL_PARTICLE_SLOTS_SCANNED = 26u;
+const uint SLOT_P2G_CELL_PARTICLE_SLOTS_SCANNED_HIGH = 27u;
+const uint SLOT_P2G_INACTIVE_PARTICLES_SEEN = 28u;
+const uint SLOT_P2G_WEIGHT_POSITIVE_PARTICLES = 29u;
+const uint SLOT_P2G_WEIGHT_POSITIVE_PARTICLES_HIGH = 30u;
+const uint SLOT_P2G_WEIGHT_ZERO_PARTICLES = 31u;
+const uint SLOT_P2G_WEIGHT_ZERO_PARTICLES_HIGH = 32u;
+const uint SLOT_P2G_ZERO_WEIGHT_FACES = 33u;
+const uint SLOT_P2G_MAX_CELL_COUNT_SEEN = 34u;
+const uint SLOT_P2G_OVERPACKED_CELL_VISITS = 35u;
+const uint SLOT_P2G_APIC_PARTICLE_SAMPLES = 36u;
+const uint SLOT_P2G_APIC_PARTICLE_SAMPLES_HIGH = 37u;
+const uint SLOT_P2G_INVALID_FACE_IDS = 38u;
 const uint DIAGNOSTIC_SLOT_COUNT = 64u;
 const float DIVERGENCE_SCALE = 1000000.0;
 
@@ -75,6 +104,16 @@ uint v_index(uint x, uint y, uint z, uint width, uint height) {
 uint w_index(uint x, uint y, uint z, uint width, uint height) {
     return ((z * height) + y) * width + x;
 }
+uint u_face_count(uint width, uint height, uint depth) {
+    return (width + 1u) * height * depth;
+}
+uint v_face_count(uint width, uint height, uint depth) {
+    return width * (height + 1u) * depth;
+}
+uint total_face_count(uint width, uint height, uint depth) {
+    return u_face_count(width, height, depth) + v_face_count(width, height, depth) +
+           (width * height * (depth + 1u));
+}
 bool in_bounds(int x, int y, int z, uint width, uint height, uint depth) {
     return x >= 0 && y >= 0 && z >= 0 && x < int(width) && y < int(height) && z < int(depth);
 }
@@ -86,6 +125,34 @@ bool solid_cell(int x, int y, int z, uint width, uint height, uint depth) {
 }
 bool liquid_cell(uint index) {
     return solid.values[index] < 0.5 && cell_counts.values[index] > 0u;
+}
+bool blocked_u_face(uint x, uint y, uint z, uint width, uint height, uint depth) {
+    return x == 0u || x == width || solid_cell(int(x) - 1, int(y), int(z), width, height, depth) ||
+           solid_cell(int(x), int(y), int(z), width, height, depth);
+}
+bool blocked_v_face(uint x, uint y, uint z, uint width, uint height, uint depth) {
+    return y == 0u || y == height || solid_cell(int(x), int(y) - 1, int(z), width, height, depth) ||
+           solid_cell(int(x), int(y), int(z), width, height, depth);
+}
+bool blocked_w_face(uint x, uint y, uint z, uint width, uint height, uint depth) {
+    return z == 0u || z == depth || solid_cell(int(x), int(y), int(z) - 1, width, height, depth) ||
+           solid_cell(int(x), int(y), int(z), width, height, depth);
+}
+float kernel(float value) {
+    return max(0.0, 1.0 - abs(value));
+}
+bool apic_transfer_mode() {
+    return uint(WATER3D_TRANSFER_MODE + 0.5) == 1u;
+}
+
+void atomic_add_u64(uint low_slot, uint high_slot, uint value) {
+    if (value == 0u) {
+        return;
+    }
+    uint previous = atomicAdd(diagnostics.values[low_slot], value);
+    if (previous > 0xffffffffu - value) {
+        atomicAdd(diagnostics.values[high_slot], 1u);
+    }
 }
 
 float side_boundary_volume_scale(uint x, uint y, uint z, uint width, uint height, uint depth) {
@@ -190,6 +257,136 @@ void record_whitewater(uint id) {
     diagnostics.values[SLOT_WHITEWATER_CAPACITY] = capacity;
 }
 
+void record_p2g_face_scan(vec3 face_grid_position, uint width, uint height, uint depth,
+                          uint max_particles_per_cell) {
+    ivec3 base = ivec3(floor(face_grid_position));
+    float total_weight = 0.0;
+
+    for (int oz = -1; oz <= 1; ++oz) {
+        for (int oy = -1; oy <= 1; ++oy) {
+            for (int ox = -1; ox <= 1; ++ox) {
+                atomicAdd(diagnostics.values[SLOT_P2G_NEIGHBOR_CELLS_TESTED], 1u);
+                ivec3 cell = base + ivec3(ox, oy, oz);
+                if (!in_bounds(cell.x, cell.y, cell.z, width, height, depth)) {
+                    continue;
+                }
+                atomicAdd(diagnostics.values[SLOT_P2G_NEIGHBOR_CELLS_IN_BOUNDS], 1u);
+
+                uint cell_id = cell_index(uint(cell.x), uint(cell.y), uint(cell.z), width, height);
+                uint raw_count = cell_counts.values[cell_id];
+                atomicMax(diagnostics.values[SLOT_P2G_MAX_CELL_COUNT_SEEN], raw_count);
+                if (raw_count == 0u) {
+                    atomicAdd(diagnostics.values[SLOT_P2G_EMPTY_CELL_VISITS], 1u);
+                }
+                if (raw_count > max_particles_per_cell) {
+                    atomicAdd(diagnostics.values[SLOT_P2G_OVERPACKED_CELL_VISITS], 1u);
+                }
+
+                uint count = min(raw_count, max_particles_per_cell);
+                atomic_add_u64(SLOT_P2G_CELL_PARTICLE_SLOTS_SCANNED,
+                               SLOT_P2G_CELL_PARTICLE_SLOTS_SCANNED_HIGH, count);
+                for (uint slot = 0u; slot < count; ++slot) {
+                    uint particle_id =
+                        cell_particle_indices.values[(cell_id * max_particles_per_cell) + slot];
+                    if (particle_id == WATER3D_EMPTY_PARTICLE ||
+                        particle_positions.values[particle_id].w < 0.5) {
+                        atomicAdd(diagnostics.values[SLOT_P2G_INACTIVE_PARTICLES_SEEN], 1u);
+                        continue;
+                    }
+
+                    vec3 particle_grid =
+                        particle_positions.values[particle_id].xyz * vec3(width, height, depth);
+                    vec3 delta = face_grid_position - particle_grid;
+                    float weight = kernel(delta.x) * kernel(delta.y) * kernel(delta.z);
+                    if (weight <= 0.0) {
+                        atomic_add_u64(SLOT_P2G_WEIGHT_ZERO_PARTICLES,
+                                       SLOT_P2G_WEIGHT_ZERO_PARTICLES_HIGH, 1u);
+                        continue;
+                    }
+
+                    total_weight += weight;
+                    atomic_add_u64(SLOT_P2G_WEIGHT_POSITIVE_PARTICLES,
+                                   SLOT_P2G_WEIGHT_POSITIVE_PARTICLES_HIGH, 1u);
+                    if (apic_transfer_mode()) {
+                        atomic_add_u64(SLOT_P2G_APIC_PARTICLE_SAMPLES,
+                                       SLOT_P2G_APIC_PARTICLE_SAMPLES_HIGH, 1u);
+                    }
+                }
+            }
+        }
+    }
+
+    if (total_weight <= 0.00001) {
+        atomicAdd(diagnostics.values[SLOT_P2G_ZERO_WEIGHT_FACES], 1u);
+    }
+}
+
+void record_p2g_scan(uint active_slot, uint width, uint height, uint depth,
+                     uint max_particles_per_cell) {
+    if (active_slot == 0u) {
+        diagnostics.values[SLOT_P2G_ACTIVE_FACES] = active_work_counts.values[0];
+    }
+    if (active_slot >= active_work_counts.values[0]) {
+        return;
+    }
+
+    uint global_face_id = active_face_indices.values[active_slot];
+    uint u_count = u_face_count(width, height, depth);
+    uint v_count = v_face_count(width, height, depth);
+    uint total_faces = total_face_count(width, height, depth);
+    if (global_face_id >= total_faces) {
+        atomicAdd(diagnostics.values[SLOT_P2G_INVALID_FACE_IDS], 1u);
+        return;
+    }
+
+    if (global_face_id < u_count) {
+        uint x = global_face_id % (width + 1u);
+        uint yz = global_face_id / (width + 1u);
+        uint y = yz % height;
+        uint z = yz / height;
+        if (blocked_u_face(x, y, z, width, height, depth)) {
+            atomicAdd(diagnostics.values[SLOT_P2G_BLOCKED_FACES], 1u);
+            return;
+        }
+        atomicAdd(diagnostics.values[SLOT_P2G_FACES_PROCESSED], 1u);
+        atomicAdd(diagnostics.values[SLOT_P2G_U_FACES_PROCESSED], 1u);
+        record_p2g_face_scan(vec3(float(x), float(y) + 0.5, float(z) + 0.5), width, height,
+                             depth, max_particles_per_cell);
+        return;
+    }
+
+    global_face_id -= u_count;
+    if (global_face_id < v_count) {
+        uint x = global_face_id % width;
+        uint yz = global_face_id / width;
+        uint y = yz % (height + 1u);
+        uint z = yz / (height + 1u);
+        if (blocked_v_face(x, y, z, width, height, depth)) {
+            atomicAdd(diagnostics.values[SLOT_P2G_BLOCKED_FACES], 1u);
+            return;
+        }
+        atomicAdd(diagnostics.values[SLOT_P2G_FACES_PROCESSED], 1u);
+        atomicAdd(diagnostics.values[SLOT_P2G_V_FACES_PROCESSED], 1u);
+        record_p2g_face_scan(vec3(float(x) + 0.5, float(y), float(z) + 0.5), width, height,
+                             depth, max_particles_per_cell);
+        return;
+    }
+
+    uint w_face_id = global_face_id - v_count;
+    uint x = w_face_id % width;
+    uint yz = w_face_id / width;
+    uint y = yz % height;
+    uint z = yz / height;
+    if (blocked_w_face(x, y, z, width, height, depth)) {
+        atomicAdd(diagnostics.values[SLOT_P2G_BLOCKED_FACES], 1u);
+        return;
+    }
+    atomicAdd(diagnostics.values[SLOT_P2G_FACES_PROCESSED], 1u);
+    atomicAdd(diagnostics.values[SLOT_P2G_W_FACES_PROCESSED], 1u);
+    record_p2g_face_scan(vec3(float(x) + 0.5, float(y) + 0.5, float(z)), width, height, depth,
+                         max_particles_per_cell);
+}
+
 void main() {
     uint id = gl_GlobalInvocationID.x;
     uint mode = uint(WATER3D_PRESSURE_READ_B + 0.5);
@@ -211,5 +408,7 @@ void main() {
         record_projection_residual(id, width, height, depth);
     } else if (mode == DIAGNOSTIC_MODE_WHITEWATER) {
         record_whitewater(id);
+    } else if (mode == DIAGNOSTIC_MODE_P2G_SCAN) {
+        record_p2g_scan(id, width, height, depth, max_particles_per_cell);
     }
 }

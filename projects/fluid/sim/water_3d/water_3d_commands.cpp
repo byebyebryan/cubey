@@ -24,6 +24,7 @@ inline constexpr float kWater3DDiagnosticsModeClear = 0.0F;
 inline constexpr float kWater3DDiagnosticsModeWorkload = 1.0F;
 inline constexpr float kWater3DDiagnosticsModeProjection = 2.0F;
 inline constexpr float kWater3DDiagnosticsModeWhitewater = 3.0F;
+inline constexpr float kWater3DDiagnosticsModeP2GScan = 4.0F;
 inline constexpr VkFormat kWater3DSurfaceScalarFormat = VK_FORMAT_R32_SFLOAT;
 inline constexpr VkFormat kWater3DSurfacePackedFormat = VK_FORMAT_R32G32B32A32_SFLOAT;
 inline constexpr VkFormat kWater3DSceneColorFormat = VK_FORMAT_R16G16B16A16_SFLOAT;
@@ -131,6 +132,16 @@ diagnostics_workload_dispatch_groups(const Water3DConfig& config,
     return linear_dispatch_groups(
         std::max(cell_count(config),
                  static_cast<std::size_t>(water_3d_runtime_particle_scan_count(config, state))));
+}
+
+[[nodiscard]] bool should_record_diagnostics_for_frame(const Water3DConfig& config,
+                                                       const ProjectFrame& frame) {
+    if (!config.profile_diagnostics) {
+        return false;
+    }
+    const std::uint32_t interval = std::max(1U, config.profile_diagnostic_interval);
+    const std::uint64_t profile_index = frame.frame_index == 0U ? 0U : frame.frame_index - 1U;
+    return (profile_index % interval) == 0U;
 }
 
 void record_shader_write_barrier(VkCommandBuffer command_buffer, ShaderWriteBarrier config) {
@@ -505,6 +516,26 @@ void record_diagnostics_pass(const cubey::vulkan::CommandRecorder& recorder,
     push_constants.dispatch_options[2] = mode;
     record_dispatch(recorder, resources.diagnostics_pipeline_resource(), descriptor_set, groups,
                     push_constants);
+    record_compute_barrier(command_buffer);
+    if (profiler != nullptr) {
+        profiler->end_pass(command_buffer, frame_slot.index);
+    }
+}
+
+void record_diagnostics_indirect_pass(const cubey::vulkan::CommandRecorder& recorder,
+                                      VkCommandBuffer command_buffer,
+                                      Water3DGpuResources& resources,
+                                      VkDescriptorSet descriptor_set,
+                                      Water3DDispatchPushConstants push_constants,
+                                      cubey::render::FrameSlot frame_slot,
+                                      cubey::vulkan::GpuTimestampProfiler* profiler,
+                                      const char* label, float mode, VkBuffer indirect_buffer) {
+    if (profiler != nullptr) {
+        profiler->begin_pass(command_buffer, frame_slot.index, label);
+    }
+    push_constants.dispatch_options[2] = mode;
+    record_dispatch_indirect(recorder, resources.diagnostics_pipeline_resource(), descriptor_set,
+                             indirect_buffer, push_constants);
     record_compute_barrier(command_buffer);
     if (profiler != nullptr) {
         profiler->end_pass(command_buffer, frame_slot.index);
@@ -1048,6 +1079,7 @@ void record_water_3d_compute(VkCommandBuffer command_buffer, Water3DGpuResources
     const float substep_dt = frame_dt / static_cast<float>(substep_count);
     Water3DDispatchPushConstants push_constants = dispatch_push_constants(
         frame, substep_dt, 0.0F, water_3d_runtime_particle_scan_count(config, runtime_state));
+    const bool record_diagnostics = should_record_diagnostics_for_frame(config, frame);
 
     if (reset_requested) {
         runtime_state = {};
@@ -1079,7 +1111,7 @@ void record_water_3d_compute(VkCommandBuffer command_buffer, Water3DGpuResources
             frame, substep_dt, 0.0F, water_3d_runtime_particle_scan_count(config, runtime_state));
         push_constants.dispatch_options[1] = substep_time;
 
-        if (config.profile_diagnostics) {
+        if (record_diagnostics) {
             record_diagnostics_pass(recorder, command_buffer, resources, descriptor_set,
                                     push_constants, frame_slot, profiler, "diagnostics clear",
                                     kWater3DDiagnosticsModeClear,
@@ -1102,11 +1134,15 @@ void record_water_3d_compute(VkCommandBuffer command_buffer, Water3DGpuResources
         record_compute_indirect_barrier(command_buffer);
         end_pass();
 
-        if (config.profile_diagnostics) {
+        if (record_diagnostics) {
             record_diagnostics_pass(recorder, command_buffer, resources, descriptor_set,
                                     push_constants, frame_slot, profiler, "diagnostics workload",
                                     kWater3DDiagnosticsModeWorkload,
                                     diagnostics_workload_dispatch_groups(config, runtime_state));
+            record_diagnostics_indirect_pass(recorder, command_buffer, resources, descriptor_set,
+                                             push_constants, frame_slot, profiler,
+                                             "diagnostics p2g scan", kWater3DDiagnosticsModeP2GScan,
+                                             resources.active_face_dispatch_args().handle());
         }
 
         begin_pass("particle to grid");
@@ -1148,7 +1184,7 @@ void record_water_3d_compute(VkCommandBuffer command_buffer, Water3DGpuResources
         record_compute_barrier(command_buffer);
         end_pass();
 
-        if (config.profile_diagnostics) {
+        if (record_diagnostics) {
             record_diagnostics_pass(recorder, command_buffer, resources, descriptor_set,
                                     push_constants, frame_slot, profiler, "diagnostics projection",
                                     kWater3DDiagnosticsModeProjection,
@@ -1185,7 +1221,7 @@ void record_water_3d_compute(VkCommandBuffer command_buffer, Water3DGpuResources
                             "refresh bins post-advect", false);
         record_whitewater_compute(recorder, command_buffer, resources, descriptor_set, config,
                                   runtime_state, push_constants, frame_slot, profiler);
-        if (config.profile_diagnostics) {
+        if (record_diagnostics) {
             record_diagnostics_pass(recorder, command_buffer, resources, descriptor_set,
                                     push_constants, frame_slot, profiler, "diagnostics whitewater",
                                     kWater3DDiagnosticsModeWhitewater, linear_dispatch_groups(1U));
