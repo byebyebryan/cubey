@@ -70,6 +70,31 @@ Top average passes:
 | 96^3 | particle to grid 20.611 ms | pressure 3.721 ms | extrapolate velocity 2.358 ms | refresh bins pre-p2g 1.969 ms | refresh bins post-advect 1.123 ms |
 | 128^3 | particle to grid 43.001 ms | pressure 8.155 ms | extrapolate velocity 5.439 ms | refresh bins pre-p2g 4.356 ms | refresh bins post-advect 2.739 ms |
 
+## P2G Histogram Results
+
+Captured 2026-05-23 with `water3d-p2g-hist-*` profile prefixes.
+
+| Grid | P2G avg | Processed faces | Avg slots/face | High-candidate face ratio | Max slots/face | Overpacked-neighbor face ratio |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| 64^3 | 4.933 ms | 149.8k | 85.4 | 19.6% | 336 avg / 449 max | 0.78% |
+| 96^3 | 20.391 ms | 393.6k | 115.4 | 35.7% | 440 avg / 514 max | 2.66% |
+| 128^3 | 42.770 ms | 898.5k | 131.4 | 30.4% | 512 avg / 616 max | 1.87% |
+
+At 128^3, P2G time correlates strongly with heavy-tail work: sampled-frame
+correlation is 0.957 with average slots per face, 0.979 with high-candidate face
+ratio, 0.952 with overpacked-neighbor face ratio, and 0.919 with max candidate
+slots per face. The 64^3 and 96^3 captures also correlate strongly with
+overpacked-neighbor ratio and max candidate slots, even when total scanned slots
+fall later in the run. This points at uneven per-face work and clumped bins, not
+only raw active-face count.
+
+The broad candidate scan is still wasteful. Across all grids, only about 30% of
+candidate particle slots have positive kernel weight. On the 128^3 capture, the
+average face distribution is concentrated in the 97-128 candidate-slot bucket,
+with another heavy tail in 129-384 and occasional 385+ faces. The next
+optimization should target the per-face gather shape and cell/bin locality before
+changing pressure or extrapolation.
+
 ## Readout
 
 P2G is still the dominant cost and scales worse than the other visible passes.
@@ -79,9 +104,8 @@ runs twice per substep and feeds the active-face dispatch path.
 
 Near-term optimization candidates:
 
-1. Use the new `water_3d.p2g` metric rows to separate active-face count, blocked
-   faces, neighborhood traversal, cell occupancy, and candidate particle weight
-   ratios before changing the real P2G shader again.
+1. Prototype a narrower P2G gather. The histogram data says the high-candidate
+   face tail and overpacked neighborhoods are the immediate suspects.
 2. Keep P2G correctness fixed while experimenting. The previous fixed-stencil
    transfer attempt produced solver instability and should stay as a documented
    failed experiment until a narrower hypothesis is tested.
