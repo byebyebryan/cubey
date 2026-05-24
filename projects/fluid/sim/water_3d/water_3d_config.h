@@ -45,6 +45,7 @@ inline constexpr std::uint32_t kWater3DDefaultGridWidth = 64;
 inline constexpr std::uint32_t kWater3DDefaultGridHeight = 64;
 inline constexpr std::uint32_t kWater3DDefaultGridDepth = 64;
 inline constexpr std::uint32_t kWater3DDefaultWhitewaterCapacity = 65536;
+inline constexpr std::uint32_t kWater3DScanGroupSize = 256;
 inline constexpr std::uint32_t kWater3DMaxExactShaderInteger = 1U << 24U;
 inline constexpr std::uint32_t kWater3DDiagnosticSlotCount = 64;
 inline constexpr std::uint32_t kWater3DDiagnosticDivergenceScale = 1000000;
@@ -370,6 +371,15 @@ inline void validate_water_3d_whitewater_capacity(const Water3DConfig& config) {
         "water 3D whitewater max emit count exceeds exact shader integer range");
 }
 
+inline void validate_water_3d_particle_limits(const Water3DConfig& config) {
+    if (config.max_particles_per_cell == 0) {
+        throw std::runtime_error("water 3D max particles per cell must be positive");
+    }
+    validate_exact_shader_integer(
+        config.max_particles_per_cell,
+        "water 3D max particles per cell exceeds exact shader integer range");
+}
+
 [[nodiscard]] inline std::uint32_t water_3d_fill_axis_cell_count(std::uint32_t axis_cells,
                                                                  float fill_fraction) {
     const std::uint32_t usable_cells = axis_cells - (kWater3DWallCells * 2U);
@@ -524,20 +534,40 @@ water_3d_runtime_particle_scan_count(const Water3DConfig& config,
                        "water 3D APIC affine buffer is too large");
 }
 
-[[nodiscard]] inline std::size_t particle_bin_index_count(const Water3DConfig& config) {
-    if (config.max_particles_per_cell == 0) {
-        throw std::runtime_error("water 3D max particles per cell must be positive");
-    }
-    validate_exact_shader_integer(
-        config.max_particles_per_cell,
-        "water 3D max particles per cell exceeds exact shader integer range");
-    return checked_mul(cell_count(config), config.max_particles_per_cell,
-                       "water 3D particle bins are too large");
+[[nodiscard]] inline std::size_t water_3d_scan_block_count(std::size_t element_count) {
+    const std::size_t adjusted =
+        checked_add(element_count, static_cast<std::size_t>(kWater3DScanGroupSize - 1U),
+                    "water 3D scan element count is too large");
+    const std::size_t count = adjusted / kWater3DScanGroupSize;
+    validate_exact_shader_integer(count, "water 3D scan block count exceeds exact shader range");
+    return count;
 }
 
-[[nodiscard]] inline std::size_t particle_bin_index_byte_size(const Water3DConfig& config) {
-    return checked_mul(particle_bin_index_count(config), sizeof(std::uint32_t),
-                       "water 3D particle bin index buffer is too large");
+[[nodiscard]] inline std::size_t particle_sort_scan_level0_count(const Water3DConfig& config) {
+    return water_3d_scan_block_count(cell_count(config));
+}
+
+[[nodiscard]] inline std::size_t particle_sort_scan_level1_count(const Water3DConfig& config) {
+    return water_3d_scan_block_count(particle_sort_scan_level0_count(config));
+}
+
+[[nodiscard]] inline std::size_t particle_sort_scan_level2_count(const Water3DConfig& config) {
+    return water_3d_scan_block_count(particle_sort_scan_level1_count(config));
+}
+
+[[nodiscard]] inline std::size_t particle_sort_scan_level0_byte_size(const Water3DConfig& config) {
+    return checked_mul(particle_sort_scan_level0_count(config), sizeof(std::uint32_t),
+                       "water 3D particle sort scan level 0 buffer is too large");
+}
+
+[[nodiscard]] inline std::size_t particle_sort_scan_level1_byte_size(const Water3DConfig& config) {
+    return checked_mul(particle_sort_scan_level1_count(config), sizeof(std::uint32_t),
+                       "water 3D particle sort scan level 1 buffer is too large");
+}
+
+[[nodiscard]] inline std::size_t particle_sort_scan_level2_byte_size(const Water3DConfig& config) {
+    return checked_mul(particle_sort_scan_level2_count(config), sizeof(std::uint32_t),
+                       "water 3D particle sort scan level 2 buffer is too large");
 }
 
 [[nodiscard]] inline std::size_t active_work_count_byte_size(const Water3DConfig& config) {
@@ -614,7 +644,10 @@ water_3d_runtime_particle_scan_count(const Water3DConfig& config,
     static_cast<void>(v_face_count(water_config));
     static_cast<void>(w_face_count(water_config));
     static_cast<void>(total_face_count(water_config));
-    static_cast<void>(particle_bin_index_count(water_config));
+    validate_water_3d_particle_limits(water_config);
+    static_cast<void>(particle_sort_scan_level0_count(water_config));
+    static_cast<void>(particle_sort_scan_level1_count(water_config));
+    static_cast<void>(particle_sort_scan_level2_count(water_config));
     static_cast<void>(active_work_count_byte_size(water_config));
     static_cast<void>(active_face_flag_byte_size(water_config));
     static_cast<void>(active_face_index_byte_size(water_config));

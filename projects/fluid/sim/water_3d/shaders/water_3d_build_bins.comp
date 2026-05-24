@@ -14,9 +14,6 @@ layout(set = 0, binding = WATER3D_BINDING_SOLID, std430) readonly buffer SolidFi
 layout(set = 0, binding = WATER3D_BINDING_CELL_COUNTS, std430) buffer CellCounts {
     uint values[];
 } cell_counts;
-layout(set = 0, binding = WATER3D_BINDING_CELL_PARTICLE_INDICES, std430) buffer CellParticleIndices {
-    uint values[];
-} cell_particle_indices;
 layout(set = 0, binding = WATER3D_BINDING_ACTIVE_WORK_COUNTS, std430) buffer ActiveWorkCounts {
     uint values[];
 } active_work_counts;
@@ -126,7 +123,6 @@ void main() {
     uint depth = uint(WATER3D_GRID_DEPTH + 0.5);
     uint particle_count =
         min(uint(WATER3D_PARTICLE_SCAN_COUNT + 0.5), uint(WATER3D_PARTICLE_CAPACITY + 0.5));
-    uint max_particles_per_cell = uint(WATER3D_MAX_PARTICLES_PER_CELL + 0.5);
     if (particle_id >= particle_count || particle_positions.values[particle_id].w < 0.5) {
         return;
     }
@@ -142,8 +138,5 @@ void main() {
     uint slot = atomicAdd(cell_counts.values[cell_id], 1u);
     if (slot == 0u && WATER3D_BUILD_ACTIVE_FACES > 0.5) {
         mark_active_faces_for_cell(cell, width, height, depth);
-    }
-    if (slot < max_particles_per_cell) {
-        cell_particle_indices.values[(cell_id * max_particles_per_cell) + slot] = particle_id;
     }
 }

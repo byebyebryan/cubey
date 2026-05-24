@@ -23,9 +23,9 @@ layout(set = 0, binding = WATER3D_BINDING_SOLID, std430) readonly buffer SolidFi
 layout(set = 0, binding = WATER3D_BINDING_CELL_COUNTS, std430) readonly buffer CellCounts {
     uint values[];
 } cell_counts;
-layout(set = 0, binding = WATER3D_BINDING_CELL_PARTICLE_INDICES, std430) readonly buffer CellParticleIndices {
+layout(set = 0, binding = WATER3D_BINDING_CELL_OFFSETS, std430) readonly buffer CellOffsets {
     uint values[];
-} cell_particle_indices;
+} cell_offsets;
 layout(set = 0, binding = WATER3D_BINDING_WHITEWATER_COUNTERS, std430) readonly buffer WhitewaterCounters {
     uint values[];
 } whitewater_counters;
@@ -368,14 +368,13 @@ void record_p2g_face_scan(vec3 face_grid_position, uint width, uint height, uint
                 }
 
                 uint count = min(raw_count, max_particles_per_cell);
+                uint offset = cell_offsets.values[cell_id];
                 candidate_slots += count;
                 atomic_add_u64(SLOT_P2G_CELL_PARTICLE_SLOTS_SCANNED,
                                SLOT_P2G_CELL_PARTICLE_SLOTS_SCANNED_HIGH, count);
                 for (uint slot = 0u; slot < count; ++slot) {
-                    uint particle_id =
-                        cell_particle_indices.values[(cell_id * max_particles_per_cell) + slot];
-                    if (particle_id == WATER3D_EMPTY_PARTICLE ||
-                        particle_positions.values[particle_id].w < 0.5) {
+                    uint particle_id = offset + slot;
+                    if (particle_positions.values[particle_id].w < 0.5) {
                         atomicAdd(diagnostics.values[SLOT_P2G_INACTIVE_PARTICLES_SEEN], 1u);
                         continue;
                     }

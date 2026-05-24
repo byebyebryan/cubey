@@ -56,9 +56,6 @@ layout(set = 0, binding = WATER3D_BINDING_SOLID, std430) buffer SolidField {
 layout(set = 0, binding = WATER3D_BINDING_CELL_COUNTS, std430) buffer CellCounts {
     uint values[];
 } cell_counts;
-layout(set = 0, binding = WATER3D_BINDING_CELL_PARTICLE_INDICES, std430) buffer CellParticleIndices {
-    uint values[];
-} cell_particle_indices;
 layout(set = 0, binding = WATER3D_BINDING_WHITEWATER_POSITIONS, std430) buffer WhitewaterPositions {
     vec4 values[];
 } whitewater_positions;
@@ -131,13 +128,11 @@ void main() {
     uint depth = uint(WATER3D_GRID_DEPTH + 0.5);
     uint active_particle_count = uint(WATER3D_ACTIVE_PARTICLE_COUNT + 0.5);
     uint particle_capacity = uint(WATER3D_PARTICLE_CAPACITY + 0.5);
-    uint max_particles_per_cell = uint(WATER3D_MAX_PARTICLES_PER_CELL + 0.5);
     uint particles_per_cell = max(1u, uint(WATER3D_PARTICLES_PER_CELL + 0.5));
     uint cell_count = width * height * depth;
     uint u_count = (width + 1u) * height * depth;
     uint v_count = width * (height + 1u) * depth;
     uint w_count = width * height * (depth + 1u);
-    uint bin_count = cell_count * max_particles_per_cell;
     uint whitewater_capacity = uint(WATER3D_WHITEWATER_CAPACITY + 0.5);
 
     if (id < active_particle_count) {
@@ -202,9 +197,6 @@ void main() {
         w_field.values[id] = 0.0;
         w_previous.values[id] = 0.0;
         w_weight.values[id] = 0.0;
-    }
-    if (id < bin_count) {
-        cell_particle_indices.values[id] = WATER3D_EMPTY_PARTICLE;
     }
     if (id < whitewater_capacity) {
         whitewater_positions.values[id] = vec4(-10.0, -10.0, -10.0, 0.0);

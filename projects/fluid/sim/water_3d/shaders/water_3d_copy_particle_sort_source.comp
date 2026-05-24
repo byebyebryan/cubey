@@ -1,0 +1,44 @@
+#version 450
+#extension GL_GOOGLE_include_directive : require
+
+#include "water_3d_contract.glsl"
+
+layout(local_size_x = 64, local_size_y = 1) in;
+
+layout(set = 0, binding = WATER3D_BINDING_PARTICLE_POSITIONS, std430) readonly buffer ParticlePositions {
+    vec4 values[];
+} particle_positions;
+layout(set = 0, binding = WATER3D_BINDING_PARTICLE_VELOCITIES, std430) readonly buffer ParticleVelocities {
+    vec4 values[];
+} particle_velocities;
+layout(set = 0, binding = WATER3D_BINDING_PARTICLE_AFFINE, std430) readonly buffer ParticleAffine {
+    vec4 values[];
+} particle_affine;
+layout(set = 0, binding = WATER3D_BINDING_PARTICLE_POSITIONS_SOURCE, std430) buffer ParticlePositionsSource {
+    vec4 values[];
+} particle_positions_source;
+layout(set = 0, binding = WATER3D_BINDING_PARTICLE_VELOCITIES_SOURCE, std430) buffer ParticleVelocitiesSource {
+    vec4 values[];
+} particle_velocities_source;
+layout(set = 0, binding = WATER3D_BINDING_PARTICLE_AFFINE_SOURCE, std430) buffer ParticleAffineSource {
+    vec4 values[];
+} particle_affine_source;
+
+WATER3D_SIMULATION_PARAMS;
+
+void main() {
+    uint particle_id = gl_GlobalInvocationID.x;
+    uint particle_count =
+        min(uint(WATER3D_PARTICLE_SCAN_COUNT + 0.5), uint(WATER3D_PARTICLE_CAPACITY + 0.5));
+    if (particle_id >= particle_count) {
+        return;
+    }
+
+    particle_positions_source.values[particle_id] = particle_positions.values[particle_id];
+    particle_velocities_source.values[particle_id] = particle_velocities.values[particle_id];
+
+    uint affine_base = particle_id * 3u;
+    particle_affine_source.values[affine_base + 0u] = particle_affine.values[affine_base + 0u];
+    particle_affine_source.values[affine_base + 1u] = particle_affine.values[affine_base + 1u];
+    particle_affine_source.values[affine_base + 2u] = particle_affine.values[affine_base + 2u];
+}

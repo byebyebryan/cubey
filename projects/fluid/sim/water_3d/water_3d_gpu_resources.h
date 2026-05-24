@@ -63,7 +63,16 @@ class Water3DGpuResources {
     [[nodiscard]] const cubey::vulkan::Buffer& divergence() const;
     [[nodiscard]] const cubey::vulkan::Buffer& solid() const;
     [[nodiscard]] const cubey::vulkan::Buffer& cell_counts() const;
-    [[nodiscard]] const cubey::vulkan::Buffer& cell_particle_indices() const;
+    [[nodiscard]] const cubey::vulkan::Buffer& particle_positions_source() const;
+    [[nodiscard]] const cubey::vulkan::Buffer& particle_velocities_source() const;
+    [[nodiscard]] const cubey::vulkan::Buffer& particle_affine_source() const;
+    [[nodiscard]] const cubey::vulkan::Buffer& cell_offsets() const;
+    [[nodiscard]] const cubey::vulkan::Buffer& cell_write_counts() const;
+    [[nodiscard]] const cubey::vulkan::Buffer& sort_scan_level0_sums() const;
+    [[nodiscard]] const cubey::vulkan::Buffer& sort_scan_level1_offsets() const;
+    [[nodiscard]] const cubey::vulkan::Buffer& sort_scan_level1_sums() const;
+    [[nodiscard]] const cubey::vulkan::Buffer& sort_scan_level2_offsets() const;
+    [[nodiscard]] const cubey::vulkan::Buffer& sort_scan_level2_sums() const;
     [[nodiscard]] const cubey::vulkan::Buffer& whitewater_positions() const;
     [[nodiscard]] const cubey::vulkan::Buffer& whitewater_velocities() const;
     [[nodiscard]] const cubey::vulkan::Buffer& whitewater_state() const;
@@ -94,6 +103,14 @@ class Water3DGpuResources {
     build_bins_pipeline_resource() const;
     [[nodiscard]] const cubey::render::ComputePipelineResource&
     active_face_dispatch_args_pipeline_resource() const;
+    [[nodiscard]] const cubey::render::ComputePipelineResource&
+    copy_particle_sort_source_pipeline_resource() const;
+    [[nodiscard]] const cubey::render::ComputePipelineResource&
+    scan_offsets_pipeline_resource() const;
+    [[nodiscard]] const cubey::render::ComputePipelineResource&
+    scan_add_offsets_pipeline_resource() const;
+    [[nodiscard]] const cubey::render::ComputePipelineResource&
+    scatter_sorted_particles_pipeline_resource() const;
     [[nodiscard]] const cubey::render::ComputePipelineResource&
     particle_to_grid_pipeline_resource() const;
     [[nodiscard]] const cubey::render::ComputePipelineResource& force_pipeline_resource() const;
@@ -196,7 +213,16 @@ class Water3DGpuResources {
     std::optional<cubey::vulkan::Buffer> divergence_;
     std::optional<cubey::vulkan::Buffer> solid_;
     std::optional<cubey::vulkan::Buffer> cell_counts_;
-    std::optional<cubey::vulkan::Buffer> cell_particle_indices_;
+    std::optional<cubey::vulkan::Buffer> particle_positions_source_;
+    std::optional<cubey::vulkan::Buffer> particle_velocities_source_;
+    std::optional<cubey::vulkan::Buffer> particle_affine_source_;
+    std::optional<cubey::vulkan::Buffer> cell_offsets_;
+    std::optional<cubey::vulkan::Buffer> cell_write_counts_;
+    std::optional<cubey::vulkan::Buffer> sort_scan_level0_sums_;
+    std::optional<cubey::vulkan::Buffer> sort_scan_level1_offsets_;
+    std::optional<cubey::vulkan::Buffer> sort_scan_level1_sums_;
+    std::optional<cubey::vulkan::Buffer> sort_scan_level2_offsets_;
+    std::optional<cubey::vulkan::Buffer> sort_scan_level2_sums_;
     std::optional<cubey::vulkan::Buffer> whitewater_positions_;
     std::optional<cubey::vulkan::Buffer> whitewater_velocities_;
     std::optional<cubey::vulkan::Buffer> whitewater_state_;
@@ -221,6 +247,12 @@ class Water3DGpuResources {
     std::optional<cubey::render::ComputePipelineResource> build_bins_pipeline_resource_;
     std::optional<cubey::render::ComputePipelineResource>
         active_face_dispatch_args_pipeline_resource_;
+    std::optional<cubey::render::ComputePipelineResource>
+        copy_particle_sort_source_pipeline_resource_;
+    std::optional<cubey::render::ComputePipelineResource> scan_offsets_pipeline_resource_;
+    std::optional<cubey::render::ComputePipelineResource> scan_add_offsets_pipeline_resource_;
+    std::optional<cubey::render::ComputePipelineResource>
+        scatter_sorted_particles_pipeline_resource_;
     std::optional<cubey::render::ComputePipelineResource> particle_to_grid_pipeline_resource_;
     std::optional<cubey::render::ComputePipelineResource> force_pipeline_resource_;
     std::optional<cubey::render::ComputePipelineResource> divergence_pipeline_resource_;

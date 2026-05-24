@@ -108,14 +108,23 @@ struct SurfaceTextureSlot {
 }
 
 [[nodiscard]] DispatchGroups bin_dispatch_groups(const Water3DConfig& config) {
-    return linear_dispatch_groups(std::max(cell_count(config), particle_bin_index_count(config)));
+    return linear_dispatch_groups(std::max(cell_count(config), total_face_count(config)));
+}
+
+[[nodiscard]] DispatchGroups scan_dispatch_groups(std::size_t count) {
+    return {
+        .x = static_cast<std::uint32_t>((count + kWater3DScanGroupSize - 1U) /
+                                        kWater3DScanGroupSize),
+        .y = 1U,
+        .z = 1U,
+    };
 }
 
 [[nodiscard]] DispatchGroups reset_dispatch_groups(const Water3DConfig& config) {
-    return linear_dispatch_groups(std::max(
-        {static_cast<std::size_t>(config.particle_capacity), cell_count(config),
-         u_face_count(config), v_face_count(config), w_face_count(config),
-         particle_bin_index_count(config), static_cast<std::size_t>(config.whitewater_capacity)}));
+    return linear_dispatch_groups(
+        std::max({static_cast<std::size_t>(config.particle_capacity), cell_count(config),
+                  u_face_count(config), v_face_count(config), w_face_count(config),
+                  static_cast<std::size_t>(config.whitewater_capacity)}));
 }
 
 [[nodiscard]] DispatchGroups whitewater_dispatch_groups(const Water3DConfig& config) {
@@ -481,6 +490,14 @@ dispatch_push_constants(const ProjectFrame& frame, float delta_seconds, float pr
     };
 }
 
+[[nodiscard]] Water3DDispatchPushConstants
+dispatch_count_push_constants(Water3DDispatchPushConstants push_constants, float mode,
+                              std::size_t count, const char* message) {
+    push_constants.dispatch_options[2] = mode;
+    push_constants.dispatch_options[3] = water_3d_shader_count_float(count, message);
+    return push_constants;
+}
+
 void record_dispatch(const cubey::vulkan::CommandRecorder& recorder,
                      const cubey::render::ComputePipelineResource& pipeline,
                      VkDescriptorSet descriptor_set, DispatchGroups groups,
@@ -550,20 +567,68 @@ void record_refresh_bins(const cubey::vulkan::CommandRecorder& recorder,
                          cubey::render::FrameSlot frame_slot,
                          cubey::vulkan::GpuTimestampProfiler* profiler, const char* profile_label,
                          bool mark_active_faces) {
-    if (profiler != nullptr && profile_label != nullptr) {
-        profiler->begin_pass(command_buffer, frame_slot.index, profile_label);
-    }
-    record_dispatch(recorder, resources.clear_bins_pipeline_resource(), descriptor_set,
-                    bin_dispatch_groups(config), push_constants);
-    record_compute_barrier(command_buffer);
+    auto record_profiled_dispatch =
+        [&](const cubey::render::ComputePipelineResource& pipeline, DispatchGroups groups,
+            const Water3DDispatchPushConstants& constants, const char* label) {
+            if (profiler != nullptr && label != nullptr) {
+                profiler->begin_pass(command_buffer, frame_slot.index, label);
+            }
+            record_dispatch(recorder, pipeline, descriptor_set, groups, constants);
+            record_compute_barrier(command_buffer);
+            if (profiler != nullptr && label != nullptr) {
+                profiler->end_pass(command_buffer, frame_slot.index);
+            }
+        };
+
+    const char* clear_label = profile_label == nullptr ? nullptr : "clear particle bins";
+    const char* build_label = profile_label == nullptr ? nullptr : "build particle bins";
+    const char* copy_label = profile_label == nullptr ? nullptr : "copy particle sort source";
+    const char* scan0_label = profile_label == nullptr ? nullptr : "scan cell counts";
+    const char* scan1_label = profile_label == nullptr ? nullptr : "scan cell count blocks";
+    const char* add1_label = profile_label == nullptr ? nullptr : "apply scan block offsets";
+    const char* scatter_label = profile_label == nullptr ? nullptr : "scatter sorted particles";
+
+    record_profiled_dispatch(resources.clear_bins_pipeline_resource(), bin_dispatch_groups(config),
+                             push_constants, clear_label);
+
     Water3DDispatchPushConstants build_push_constants = push_constants;
     build_push_constants.dispatch_options[2] = mark_active_faces ? 1.0F : 0.0F;
-    record_dispatch(recorder, resources.build_bins_pipeline_resource(), descriptor_set,
-                    particle_scan_dispatch_groups(config, runtime_state), build_push_constants);
-    record_compute_barrier(command_buffer);
-    if (profiler != nullptr && profile_label != nullptr) {
-        profiler->end_pass(command_buffer, frame_slot.index);
-    }
+    record_profiled_dispatch(resources.build_bins_pipeline_resource(),
+                             particle_scan_dispatch_groups(config, runtime_state),
+                             build_push_constants, build_label);
+
+    const std::size_t cells = cell_count(config);
+    const std::size_t level0_count = particle_sort_scan_level0_count(config);
+    const std::size_t level1_count = particle_sort_scan_level1_count(config);
+    const Water3DDispatchPushConstants scan_cells = dispatch_count_push_constants(
+        push_constants, 0.0F, cells, "water 3D cell scan count exceeds shader range");
+    const Water3DDispatchPushConstants scan_level0 = dispatch_count_push_constants(
+        push_constants, 1.0F, level0_count, "water 3D scan level 0 count exceeds shader range");
+    const Water3DDispatchPushConstants scan_level1 = dispatch_count_push_constants(
+        push_constants, 2.0F, level1_count, "water 3D scan level 1 count exceeds shader range");
+    const Water3DDispatchPushConstants add_level2_to_level1 =
+        dispatch_count_push_constants(push_constants, 1.0F, level0_count,
+                                      "water 3D scan block offset count exceeds shader range");
+    const Water3DDispatchPushConstants add_level1_to_cells = dispatch_count_push_constants(
+        push_constants, 0.0F, cells, "water 3D cell offset count exceeds shader range");
+
+    record_profiled_dispatch(resources.scan_offsets_pipeline_resource(),
+                             scan_dispatch_groups(cells), scan_cells, scan0_label);
+    record_profiled_dispatch(resources.scan_offsets_pipeline_resource(),
+                             scan_dispatch_groups(level0_count), scan_level0, scan1_label);
+    record_profiled_dispatch(resources.scan_offsets_pipeline_resource(),
+                             scan_dispatch_groups(level1_count), scan_level1, scan1_label);
+    record_profiled_dispatch(resources.scan_add_offsets_pipeline_resource(),
+                             linear_dispatch_groups(level0_count), add_level2_to_level1,
+                             add1_label);
+    record_profiled_dispatch(resources.scan_add_offsets_pipeline_resource(),
+                             linear_dispatch_groups(cells), add_level1_to_cells, add1_label);
+    record_profiled_dispatch(resources.copy_particle_sort_source_pipeline_resource(),
+                             particle_scan_dispatch_groups(config, runtime_state), push_constants,
+                             copy_label);
+    record_profiled_dispatch(resources.scatter_sorted_particles_pipeline_resource(),
+                             particle_scan_dispatch_groups(config, runtime_state), push_constants,
+                             scatter_label);
 }
 
 void record_whitewater_compute(const cubey::vulkan::CommandRecorder& recorder,

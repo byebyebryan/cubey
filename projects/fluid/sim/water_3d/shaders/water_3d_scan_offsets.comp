@@ -1,0 +1,91 @@
+#version 450
+#extension GL_GOOGLE_include_directive : require
+
+#include "water_3d_contract.glsl"
+
+layout(local_size_x = 256, local_size_y = 1) in;
+
+layout(set = 0, binding = WATER3D_BINDING_CELL_COUNTS, std430) readonly buffer CellCounts {
+    uint values[];
+} cell_counts;
+layout(set = 0, binding = WATER3D_BINDING_CELL_OFFSETS, std430) buffer CellOffsets {
+    uint values[];
+} cell_offsets;
+layout(set = 0, binding = WATER3D_BINDING_SORT_SCAN_LEVEL0_SUMS, std430) buffer SortScanLevel0Sums {
+    uint values[];
+} scan_level0_sums;
+layout(set = 0, binding = WATER3D_BINDING_SORT_SCAN_LEVEL1_OFFSETS, std430) buffer SortScanLevel1Offsets {
+    uint values[];
+} scan_level1_offsets;
+layout(set = 0, binding = WATER3D_BINDING_SORT_SCAN_LEVEL1_SUMS, std430) buffer SortScanLevel1Sums {
+    uint values[];
+} scan_level1_sums;
+layout(set = 0, binding = WATER3D_BINDING_SORT_SCAN_LEVEL2_OFFSETS, std430) buffer SortScanLevel2Offsets {
+    uint values[];
+} scan_level2_offsets;
+layout(set = 0, binding = WATER3D_BINDING_SORT_SCAN_LEVEL2_SUMS, std430) buffer SortScanLevel2Sums {
+    uint values[];
+} scan_level2_sums;
+
+WATER3D_SIMULATION_PARAMS;
+
+shared uint scan_values[256];
+
+uint scan_mode() {
+    return uint(WATER3D_PRESSURE_READ_B + 0.5);
+}
+
+uint read_value(uint mode, uint index) {
+    if (mode == 0u) {
+        return cell_counts.values[index];
+    }
+    if (mode == 1u) {
+        return scan_level0_sums.values[index];
+    }
+    return scan_level1_sums.values[index];
+}
+
+void write_offset(uint mode, uint index, uint value) {
+    if (mode == 0u) {
+        cell_offsets.values[index] = value;
+    } else if (mode == 1u) {
+        scan_level1_offsets.values[index] = value;
+    } else {
+        scan_level2_offsets.values[index] = value;
+    }
+}
+
+void write_block_sum(uint mode, uint index, uint value) {
+    if (mode == 0u) {
+        scan_level0_sums.values[index] = value;
+    } else if (mode == 1u) {
+        scan_level1_sums.values[index] = value;
+    } else {
+        scan_level2_sums.values[index] = value;
+    }
+}
+
+void main() {
+    uint local_id = gl_LocalInvocationID.x;
+    uint global_id = gl_GlobalInvocationID.x;
+    uint count = uint(WATER3D_DISPATCH_COUNT + 0.5);
+    uint mode = scan_mode();
+
+    uint value = global_id < count ? read_value(mode, global_id) : 0u;
+    scan_values[local_id] = value;
+    barrier();
+
+    for (uint offset = 1u; offset < 256u; offset <<= 1u) {
+        uint carry = local_id >= offset ? scan_values[local_id - offset] : 0u;
+        barrier();
+        scan_values[local_id] += carry;
+        barrier();
+    }
+
+    if (global_id < count) {
+        write_offset(mode, global_id, scan_values[local_id] - value);
+    }
+    if (local_id == 255u) {
+        write_block_sum(mode, gl_WorkGroupID.x, scan_values[local_id]);
+    }
+}

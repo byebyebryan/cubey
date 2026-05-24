@@ -313,6 +313,10 @@ void Water3DGpuResources::destroy_all_resources() {
     divergence_pipeline_resource_.reset();
     force_pipeline_resource_.reset();
     particle_to_grid_pipeline_resource_.reset();
+    scatter_sorted_particles_pipeline_resource_.reset();
+    scan_add_offsets_pipeline_resource_.reset();
+    scan_offsets_pipeline_resource_.reset();
+    copy_particle_sort_source_pipeline_resource_.reset();
     active_face_dispatch_args_pipeline_resource_.reset();
     build_bins_pipeline_resource_.reset();
     clear_bins_pipeline_resource_.reset();
@@ -335,7 +339,16 @@ void Water3DGpuResources::destroy_all_resources() {
     whitewater_state_.reset();
     whitewater_velocities_.reset();
     whitewater_positions_.reset();
-    cell_particle_indices_.reset();
+    sort_scan_level2_sums_.reset();
+    sort_scan_level2_offsets_.reset();
+    sort_scan_level1_sums_.reset();
+    sort_scan_level1_offsets_.reset();
+    sort_scan_level0_sums_.reset();
+    cell_write_counts_.reset();
+    cell_offsets_.reset();
+    particle_affine_source_.reset();
+    particle_velocities_source_.reset();
+    particle_positions_source_.reset();
     cell_counts_.reset();
     solid_.reset();
     divergence_.reset();
@@ -378,7 +391,14 @@ VkDeviceSize Water3DGpuResources::allocated_buffer_bytes() const {
            optional_buffer_size(w_weight_scratch_) + optional_buffer_size(pressure_a_) +
            optional_buffer_size(pressure_b_) + optional_buffer_size(divergence_) +
            optional_buffer_size(solid_) + optional_buffer_size(cell_counts_) +
-           optional_buffer_size(cell_particle_indices_) +
+           optional_buffer_size(particle_positions_source_) +
+           optional_buffer_size(particle_velocities_source_) +
+           optional_buffer_size(particle_affine_source_) + optional_buffer_size(cell_offsets_) +
+           optional_buffer_size(cell_write_counts_) + optional_buffer_size(sort_scan_level0_sums_) +
+           optional_buffer_size(sort_scan_level1_offsets_) +
+           optional_buffer_size(sort_scan_level1_sums_) +
+           optional_buffer_size(sort_scan_level2_offsets_) +
+           optional_buffer_size(sort_scan_level2_sums_) +
            optional_buffer_size(whitewater_positions_) +
            optional_buffer_size(whitewater_velocities_) + optional_buffer_size(whitewater_state_) +
            optional_buffer_size(whitewater_counters_) +
@@ -398,7 +418,12 @@ void Water3DGpuResources::create_field_buffers(cubey::ProjectGpuServices& gpu,
     const std::vector<float> v_initial(v_face_count(config), 0.0F);
     const std::vector<float> w_initial(w_face_count(config), 0.0F);
     const std::vector<std::uint32_t> cell_count_initial(cell_count(config), 0U);
-    const std::vector<std::uint32_t> bin_initial(particle_bin_index_count(config), 0U);
+    const std::vector<std::uint32_t> sort_scan_level0_initial(
+        particle_sort_scan_level0_count(config), 0U);
+    const std::vector<std::uint32_t> sort_scan_level1_initial(
+        particle_sort_scan_level1_count(config), 0U);
+    const std::vector<std::uint32_t> sort_scan_level2_initial(
+        particle_sort_scan_level2_count(config), 0U);
     const std::array<std::uint32_t, 4> active_work_count_initial{};
     const std::vector<std::uint32_t> active_face_flag_initial(total_face_count(config), 0U);
     const std::vector<std::uint32_t> active_face_index_initial(
@@ -420,8 +445,12 @@ void Water3DGpuResources::create_field_buffers(cubey::ProjectGpuServices& gpu,
     const VkDeviceSize w_byte_size = static_cast<VkDeviceSize>(w_face_byte_size(config));
     const VkDeviceSize cell_uint_byte_size =
         static_cast<VkDeviceSize>(cell_uint_field_byte_size(config));
-    const VkDeviceSize bin_byte_size =
-        static_cast<VkDeviceSize>(particle_bin_index_byte_size(config));
+    const VkDeviceSize sort_scan_level0_byte_size =
+        static_cast<VkDeviceSize>(particle_sort_scan_level0_byte_size(config));
+    const VkDeviceSize sort_scan_level1_byte_size =
+        static_cast<VkDeviceSize>(particle_sort_scan_level1_byte_size(config));
+    const VkDeviceSize sort_scan_level2_byte_size =
+        static_cast<VkDeviceSize>(particle_sort_scan_level2_byte_size(config));
     const VkDeviceSize active_work_count_bytes =
         static_cast<VkDeviceSize>(active_work_count_byte_size(config));
     const VkDeviceSize active_face_flag_bytes =
@@ -519,9 +548,36 @@ void Water3DGpuResources::create_field_buffers(cubey::ProjectGpuServices& gpu,
     cell_counts_.emplace(upload_project_device_buffer(
         gpu, cell_count_initial.data(), cell_uint_byte_size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
         "water_3d cell count upload"));
-    cell_particle_indices_.emplace(upload_project_device_buffer(
-        gpu, bin_initial.data(), bin_byte_size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-        "water_3d cell particle index upload"));
+    particle_positions_source_.emplace(upload_project_device_buffer(
+        gpu, particle_initial.data(), particle_byte_size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+        "water_3d particle position sort source upload"));
+    particle_velocities_source_.emplace(upload_project_device_buffer(
+        gpu, particle_initial.data(), particle_byte_size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+        "water_3d particle velocity sort source upload"));
+    particle_affine_source_.emplace(upload_project_device_buffer(
+        gpu, affine_initial.data(), affine_byte_size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+        "water_3d particle affine sort source upload"));
+    cell_offsets_.emplace(upload_project_device_buffer(
+        gpu, cell_count_initial.data(), cell_uint_byte_size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+        "water_3d cell offset upload"));
+    cell_write_counts_.emplace(upload_project_device_buffer(
+        gpu, cell_count_initial.data(), cell_uint_byte_size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+        "water_3d cell write count upload"));
+    sort_scan_level0_sums_.emplace(upload_project_device_buffer(
+        gpu, sort_scan_level0_initial.data(), sort_scan_level0_byte_size,
+        VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, "water_3d sort scan level 0 sum upload"));
+    sort_scan_level1_offsets_.emplace(upload_project_device_buffer(
+        gpu, sort_scan_level0_initial.data(), sort_scan_level0_byte_size,
+        VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, "water_3d sort scan level 1 offset upload"));
+    sort_scan_level1_sums_.emplace(upload_project_device_buffer(
+        gpu, sort_scan_level1_initial.data(), sort_scan_level1_byte_size,
+        VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, "water_3d sort scan level 1 sum upload"));
+    sort_scan_level2_offsets_.emplace(upload_project_device_buffer(
+        gpu, sort_scan_level1_initial.data(), sort_scan_level1_byte_size,
+        VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, "water_3d sort scan level 2 offset upload"));
+    sort_scan_level2_sums_.emplace(upload_project_device_buffer(
+        gpu, sort_scan_level2_initial.data(), sort_scan_level2_byte_size,
+        VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, "water_3d sort scan level 2 sum upload"));
     active_work_counts_.emplace(upload_project_device_buffer(
         gpu, active_work_count_initial.data(), active_work_count_bytes,
         VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, "water_3d active work count upload"));
@@ -563,7 +619,7 @@ void Water3DGpuResources::create_field_buffers(cubey::ProjectGpuServices& gpu,
 void Water3DGpuResources::create_descriptor_resources(cubey::vulkan::Device& device) {
     constexpr VkShaderStageFlags kStages =
         VK_SHADER_STAGE_COMPUTE_BIT | VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
-    const std::array<cubey::vulkan::DescriptorSetBindingConfig, 39> field_bindings{{
+    const std::array<cubey::vulkan::DescriptorSetBindingConfig, 48> field_bindings{{
         {.binding = 0, .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .stage_flags = kStages},
         {.binding = 1, .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .stage_flags = kStages},
         {.binding = 2, .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .stage_flags = kStages},
@@ -581,7 +637,6 @@ void Water3DGpuResources::create_descriptor_resources(cubey::vulkan::Device& dev
         {.binding = 14, .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .stage_flags = kStages},
         {.binding = 15, .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .stage_flags = kStages},
         {.binding = 16, .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .stage_flags = kStages},
-        {.binding = 17, .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .stage_flags = kStages},
         {.binding = 18,
          .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
          .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT},
@@ -605,6 +660,16 @@ void Water3DGpuResources::create_descriptor_resources(cubey::vulkan::Device& dev
         {.binding = 36, .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .stage_flags = kStages},
         {.binding = 37, .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .stage_flags = kStages},
         {.binding = 38, .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .stage_flags = kStages},
+        {.binding = 39, .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .stage_flags = kStages},
+        {.binding = 40, .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .stage_flags = kStages},
+        {.binding = 41, .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .stage_flags = kStages},
+        {.binding = 42, .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .stage_flags = kStages},
+        {.binding = 43, .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .stage_flags = kStages},
+        {.binding = 44, .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .stage_flags = kStages},
+        {.binding = 45, .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .stage_flags = kStages},
+        {.binding = 46, .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .stage_flags = kStages},
+        {.binding = 47, .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .stage_flags = kStages},
+        {.binding = 48, .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .stage_flags = kStages},
     }};
     const cubey::vulkan::DescriptorSetInfo field_info(field_bindings, frame_slot_count_);
     field_descriptor_layout_.emplace(device, field_info.layout_info());
@@ -638,8 +703,6 @@ void Water3DGpuResources::update_field_descriptors(cubey::vulkan::Device& device
             .storage_buffer(set, 14, divergence().handle(), divergence().size())
             .storage_buffer(set, 15, solid().handle(), solid().size())
             .storage_buffer(set, 16, cell_counts().handle(), cell_counts().size())
-            .storage_buffer(set, 17, cell_particle_indices().handle(),
-                            cell_particle_indices().size())
             .uniform_buffer(set, 18, simulation_uniform_buffer(frame_slot).handle(),
                             simulation_uniform_buffer(frame_slot).size())
             .storage_buffer(set, 19, u_scratch().handle(), u_scratch().size())
@@ -664,7 +727,25 @@ void Water3DGpuResources::update_field_descriptors(cubey::vulkan::Device& device
             .storage_buffer(set, 36, active_face_indices().handle(), active_face_indices().size())
             .storage_buffer(set, 37, active_face_dispatch_args().handle(),
                             active_face_dispatch_args().size())
-            .storage_buffer(set, 38, diagnostics().handle(), diagnostics().size());
+            .storage_buffer(set, 38, diagnostics().handle(), diagnostics().size())
+            .storage_buffer(set, 39, particle_positions_source().handle(),
+                            particle_positions_source().size())
+            .storage_buffer(set, 40, particle_velocities_source().handle(),
+                            particle_velocities_source().size())
+            .storage_buffer(set, 41, particle_affine_source().handle(),
+                            particle_affine_source().size())
+            .storage_buffer(set, 42, cell_offsets().handle(), cell_offsets().size())
+            .storage_buffer(set, 43, cell_write_counts().handle(), cell_write_counts().size())
+            .storage_buffer(set, 44, sort_scan_level0_sums().handle(),
+                            sort_scan_level0_sums().size())
+            .storage_buffer(set, 45, sort_scan_level1_offsets().handle(),
+                            sort_scan_level1_offsets().size())
+            .storage_buffer(set, 46, sort_scan_level1_sums().handle(),
+                            sort_scan_level1_sums().size())
+            .storage_buffer(set, 47, sort_scan_level2_offsets().handle(),
+                            sort_scan_level2_offsets().size())
+            .storage_buffer(set, 48, sort_scan_level2_sums().handle(),
+                            sort_scan_level2_sums().size());
     }
     descriptor_writes.update(device);
 }
@@ -681,6 +762,17 @@ void Water3DGpuResources::create_compute_pipelines(cubey::vulkan::Device& device
     create_compute_pipeline_resource(device, "water_3d_active_face_dispatch_args.comp.spv",
                                      field_descriptor_layout(),
                                      active_face_dispatch_args_pipeline_resource_);
+    create_compute_pipeline_resource(device, "water_3d_copy_particle_sort_source.comp.spv",
+                                     field_descriptor_layout(),
+                                     copy_particle_sort_source_pipeline_resource_);
+    create_compute_pipeline_resource(device, "water_3d_scan_offsets.comp.spv",
+                                     field_descriptor_layout(), scan_offsets_pipeline_resource_);
+    create_compute_pipeline_resource(device, "water_3d_scan_add_offsets.comp.spv",
+                                     field_descriptor_layout(),
+                                     scan_add_offsets_pipeline_resource_);
+    create_compute_pipeline_resource(device, "water_3d_scatter_sorted_particles.comp.spv",
+                                     field_descriptor_layout(),
+                                     scatter_sorted_particles_pipeline_resource_);
     create_compute_pipeline_resource(device, "water_3d_particle_to_grid.comp.spv",
                                      field_descriptor_layout(),
                                      particle_to_grid_pipeline_resource_);
@@ -1045,9 +1137,53 @@ const cubey::vulkan::Buffer& Water3DGpuResources::cell_counts() const {
     return require_initialized(cell_counts_, "water 3D cell counts are not initialized");
 }
 
-const cubey::vulkan::Buffer& Water3DGpuResources::cell_particle_indices() const {
-    return require_initialized(cell_particle_indices_,
-                               "water 3D cell particle indices are not initialized");
+const cubey::vulkan::Buffer& Water3DGpuResources::particle_positions_source() const {
+    return require_initialized(particle_positions_source_,
+                               "water 3D particle position sort source is not initialized");
+}
+
+const cubey::vulkan::Buffer& Water3DGpuResources::particle_velocities_source() const {
+    return require_initialized(particle_velocities_source_,
+                               "water 3D particle velocity sort source is not initialized");
+}
+
+const cubey::vulkan::Buffer& Water3DGpuResources::particle_affine_source() const {
+    return require_initialized(particle_affine_source_,
+                               "water 3D particle affine sort source is not initialized");
+}
+
+const cubey::vulkan::Buffer& Water3DGpuResources::cell_offsets() const {
+    return require_initialized(cell_offsets_, "water 3D cell offsets are not initialized");
+}
+
+const cubey::vulkan::Buffer& Water3DGpuResources::cell_write_counts() const {
+    return require_initialized(cell_write_counts_,
+                               "water 3D cell write counts are not initialized");
+}
+
+const cubey::vulkan::Buffer& Water3DGpuResources::sort_scan_level0_sums() const {
+    return require_initialized(sort_scan_level0_sums_,
+                               "water 3D sort scan level 0 sums are not initialized");
+}
+
+const cubey::vulkan::Buffer& Water3DGpuResources::sort_scan_level1_offsets() const {
+    return require_initialized(sort_scan_level1_offsets_,
+                               "water 3D sort scan level 1 offsets are not initialized");
+}
+
+const cubey::vulkan::Buffer& Water3DGpuResources::sort_scan_level1_sums() const {
+    return require_initialized(sort_scan_level1_sums_,
+                               "water 3D sort scan level 1 sums are not initialized");
+}
+
+const cubey::vulkan::Buffer& Water3DGpuResources::sort_scan_level2_offsets() const {
+    return require_initialized(sort_scan_level2_offsets_,
+                               "water 3D sort scan level 2 offsets are not initialized");
+}
+
+const cubey::vulkan::Buffer& Water3DGpuResources::sort_scan_level2_sums() const {
+    return require_initialized(sort_scan_level2_sums_,
+                               "water 3D sort scan level 2 sums are not initialized");
 }
 
 const cubey::vulkan::Buffer& Water3DGpuResources::whitewater_positions() const {
@@ -1178,6 +1314,30 @@ const cubey::render::ComputePipelineResource&
 Water3DGpuResources::active_face_dispatch_args_pipeline_resource() const {
     return require_initialized(active_face_dispatch_args_pipeline_resource_,
                                "water 3D active face dispatch args pipeline is not initialized");
+}
+
+const cubey::render::ComputePipelineResource&
+Water3DGpuResources::copy_particle_sort_source_pipeline_resource() const {
+    return require_initialized(copy_particle_sort_source_pipeline_resource_,
+                               "water 3D particle sort source copy pipeline is not initialized");
+}
+
+const cubey::render::ComputePipelineResource&
+Water3DGpuResources::scan_offsets_pipeline_resource() const {
+    return require_initialized(scan_offsets_pipeline_resource_,
+                               "water 3D scan offsets pipeline is not initialized");
+}
+
+const cubey::render::ComputePipelineResource&
+Water3DGpuResources::scan_add_offsets_pipeline_resource() const {
+    return require_initialized(scan_add_offsets_pipeline_resource_,
+                               "water 3D scan add offsets pipeline is not initialized");
+}
+
+const cubey::render::ComputePipelineResource&
+Water3DGpuResources::scatter_sorted_particles_pipeline_resource() const {
+    return require_initialized(scatter_sorted_particles_pipeline_resource_,
+                               "water 3D sorted particle scatter pipeline is not initialized");
 }
 
 const cubey::render::ComputePipelineResource&

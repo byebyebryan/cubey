@@ -25,7 +25,7 @@ layout(set = 0, binding = WATER3D_BINDING_V_WEIGHT, std430) buffer VWeightField 
 layout(set = 0, binding = WATER3D_BINDING_W_WEIGHT, std430) buffer WWeightField { float values[]; } w_weight;
 layout(set = 0, binding = WATER3D_BINDING_SOLID, std430) readonly buffer SolidField { float values[]; } solid;
 layout(set = 0, binding = WATER3D_BINDING_CELL_COUNTS, std430) readonly buffer CellCounts { uint values[]; } cell_counts;
-layout(set = 0, binding = WATER3D_BINDING_CELL_PARTICLE_INDICES, std430) readonly buffer CellParticleIndices { uint values[]; } cell_particle_indices;
+layout(set = 0, binding = WATER3D_BINDING_CELL_OFFSETS, std430) readonly buffer CellOffsets { uint values[]; } cell_offsets;
 layout(set = 0, binding = WATER3D_BINDING_ACTIVE_WORK_COUNTS, std430) readonly buffer ActiveWorkCounts { uint values[]; } active_work_counts;
 layout(set = 0, binding = WATER3D_BINDING_ACTIVE_FACE_INDICES, std430) readonly buffer ActiveFaceIndices { uint values[]; } active_face_indices;
 
@@ -111,11 +111,10 @@ vec3 gather_face_velocity(vec3 face_grid_position, uint width, uint height, uint
                 }
                 uint cell_id = cell_index(uint(cell.x), uint(cell.y), uint(cell.z), width, height);
                 uint count = min(cell_counts.values[cell_id], max_particles_per_cell);
+                uint offset = cell_offsets.values[cell_id];
                 for (uint slot = 0u; slot < count; ++slot) {
-                    uint particle_id =
-                        cell_particle_indices.values[(cell_id * max_particles_per_cell) + slot];
-                    if (particle_id == WATER3D_EMPTY_PARTICLE ||
-                        particle_positions.values[particle_id].w < 0.5) {
+                    uint particle_id = offset + slot;
+                    if (particle_positions.values[particle_id].w < 0.5) {
                         continue;
                     }
                     vec3 particle_grid =

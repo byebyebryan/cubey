@@ -1,0 +1,33 @@
+#version 450
+#extension GL_GOOGLE_include_directive : require
+
+#include "water_3d_contract.glsl"
+
+layout(local_size_x = 64, local_size_y = 1) in;
+
+layout(set = 0, binding = WATER3D_BINDING_CELL_OFFSETS, std430) buffer CellOffsets {
+    uint values[];
+} cell_offsets;
+layout(set = 0, binding = WATER3D_BINDING_SORT_SCAN_LEVEL1_OFFSETS, std430) buffer SortScanLevel1Offsets {
+    uint values[];
+} scan_level1_offsets;
+layout(set = 0, binding = WATER3D_BINDING_SORT_SCAN_LEVEL2_OFFSETS, std430) readonly buffer SortScanLevel2Offsets {
+    uint values[];
+} scan_level2_offsets;
+
+WATER3D_SIMULATION_PARAMS;
+
+void main() {
+    uint id = gl_GlobalInvocationID.x;
+    uint count = uint(WATER3D_DISPATCH_COUNT + 0.5);
+    if (id >= count) {
+        return;
+    }
+
+    uint mode = uint(WATER3D_PRESSURE_READ_B + 0.5);
+    if (mode == 0u) {
+        cell_offsets.values[id] += scan_level1_offsets.values[id / 256u];
+    } else {
+        scan_level1_offsets.values[id] += scan_level2_offsets.values[id / 256u];
+    }
+}
