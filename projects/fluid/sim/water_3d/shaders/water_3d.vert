@@ -25,6 +25,11 @@ vec2 quad_corner(uint index) {
     return corners[index % 6u];
 }
 
+vec3 sim_to_world(vec3 sim_position) {
+    vec3 scale = max(params.domain_options.xyz, vec3(0.001));
+    return ((sim_position - vec3(0.5)) * scale) + vec3(0.5);
+}
+
 void main() {
     vec2 corner = quad_corner(uint(gl_VertexIndex));
     uint render_view = uint(params.camera_up_debug.w + 0.5);
@@ -44,7 +49,7 @@ void main() {
         return;
     }
 
-    vec3 center = particle_positions.values[particle_id].xyz;
+    vec3 center = sim_to_world(particle_positions.values[particle_id].xyz);
     float radius = params.camera_right_radius.w;
     vec3 right = params.camera_right_radius.xyz;
     vec3 up = params.camera_up_debug.xyz;

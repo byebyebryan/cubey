@@ -25,6 +25,8 @@ inline constexpr float kWater3DDiagnosticsModeWorkload = 1.0F;
 inline constexpr float kWater3DDiagnosticsModeProjection = 2.0F;
 inline constexpr float kWater3DDiagnosticsModeWhitewater = 3.0F;
 inline constexpr float kWater3DDiagnosticsModeP2GScan = 4.0F;
+inline constexpr std::uint32_t kWater3DEmitterKindHose = 0;
+inline constexpr std::uint32_t kWater3DEmitterKindRain = 1;
 inline constexpr VkFormat kWater3DSurfaceScalarFormat = VK_FORMAT_R32_SFLOAT;
 inline constexpr VkFormat kWater3DSurfacePackedFormat = VK_FORMAT_R32G32B32A32_SFLOAT;
 inline constexpr VkFormat kWater3DSceneColorFormat = VK_FORMAT_R16G16B16A16_SFLOAT;
@@ -36,6 +38,7 @@ struct RenderPushConstants {
     std::array<float, 4> camera_up_debug{};
     std::array<float, 4> grid_slice{};
     std::array<float, 4> color_options{};
+    std::array<float, 4> domain_options{};
 };
 
 static_assert(sizeof(RenderPushConstants) <= sizeof(float) * kWater3DRenderPushConstantFloatCount);
@@ -50,6 +53,7 @@ struct SurfacePushConstants {
     std::array<float, 4> surface_options{};
     std::array<float, 4> environment_options{};
     std::array<float, 4> display_transform{};
+    std::array<float, 4> domain_options{};
 };
 
 static_assert(sizeof(SurfacePushConstants) <= sizeof(float) * kWater3DRenderPushConstantFloatCount);
@@ -82,6 +86,10 @@ struct SurfaceTextureSlot {
         .y = (height + kWater3DComputeGroupSize - 1U) / kWater3DComputeGroupSize,
         .z = (depth + kWater3DComputeGroupSize - 1U) / kWater3DComputeGroupSize,
     };
+}
+
+[[nodiscard]] float degrees_to_radians(float degrees) {
+    return degrees * 0.017453292519943295F;
 }
 
 [[nodiscard]] DispatchGroups linear_dispatch_groups(std::size_t count) {
@@ -281,6 +289,13 @@ surface_push_constants(const Water3DConfig& config, const Water3DRuntimeState& r
                 display_transform_uniform.z,
                 display_transform_uniform.w,
             },
+        .domain_options =
+            {
+                config.domain.scale[0],
+                config.domain.scale[1],
+                config.domain.scale[2],
+                0.0F,
+            },
     };
 }
 
@@ -358,6 +373,13 @@ surface_push_constants(const Water3DConfig& config, const Water3DRuntimeState& r
                 display_transform_uniform.z,
                 display_transform_uniform.w,
             },
+        .domain_options =
+            {
+                config.domain.scale[0],
+                config.domain.scale[1],
+                config.domain.scale[2],
+                0.0F,
+            },
     };
 }
 
@@ -395,6 +417,15 @@ surface_depth_texture_desc(const char* label, VkExtent2D extent, VkFormat format
 }
 
 [[nodiscard]] Water3DSimulationUniforms simulation_uniforms(const Water3DConfig& config) {
+    const float hose_yaw = degrees_to_radians(config.hose.yaw_degrees);
+    const float hose_pitch = degrees_to_radians(config.hose.pitch_degrees);
+    const float hose_spread = degrees_to_radians(config.hose.spread_degrees);
+    const float rain_spread = degrees_to_radians(config.rain.spread_degrees);
+    const std::array<float, 3> hose_direction{
+        std::cos(hose_pitch) * std::cos(hose_yaw),
+        std::sin(hose_pitch),
+        std::cos(hose_pitch) * std::sin(hose_yaw),
+    };
     return {
         .grid_options =
             {
@@ -427,6 +458,13 @@ surface_depth_texture_desc(const char* label, VkExtent2D extent, VkFormat format
                 config.initial_fill_height,
                 config.initial_fill_depth,
                 config.gravity,
+            },
+        .fill_placement_options =
+            {
+                config.initial_fill_center[0],
+                config.initial_fill_center[1],
+                0.0F,
+                0.0F,
             },
         .solve_options =
             {
@@ -471,12 +509,102 @@ surface_depth_texture_desc(const char* label, VkExtent2D extent, VkFormat format
                 config.whitewater_drag,
                 config.whitewater_gravity_scale,
             },
+        .emitter_lifecycle =
+            {
+                water_3d_shader_count_float(
+                    emitter_particle_start_for_config(config),
+                    "water 3D emitter particle start exceeds exact shader integer range"),
+                water_3d_shader_count_float(
+                    emitter_particle_pool_capacity_for_config(config),
+                    "water 3D emitter particle pool exceeds exact shader integer range"),
+                0.0F,
+                0.0F,
+            },
+        .hose_options0 =
+            {
+                config.hose.enabled ? 1.0F : 0.0F,
+                config.hose.position[0],
+                config.hose.position[1],
+                config.hose.position[2],
+            },
+        .hose_options1 =
+            {
+                hose_direction[0],
+                hose_direction[1],
+                hose_direction[2],
+                config.hose.speed,
+            },
+        .hose_options2 =
+            {
+                config.hose.radius,
+                config.hose.particles_per_second,
+                hose_spread,
+                0.0F,
+            },
+        .drain_options =
+            {
+                config.drain.enabled ? 1.0F : 0.0F,
+                config.drain.center[0],
+                config.drain.center[1],
+                config.drain.center[2],
+            },
+        .drain_extents =
+            {
+                config.drain.half_size[0],
+                config.drain.half_size[1],
+                config.drain.half_size[2],
+                0.0F,
+            },
+        .wave_options0 =
+            {
+                config.wave.enabled ? 1.0F : 0.0F,
+                config.wave.center[0],
+                config.wave.center[1],
+                config.wave.center[2],
+            },
+        .wave_options1 =
+            {
+                config.wave.half_size[0],
+                config.wave.half_size[1],
+                config.wave.half_size[2],
+                config.wave.amplitude,
+            },
+        .wave_options2 =
+            {
+                config.wave.frequency_hz,
+                0.0F,
+                0.0F,
+                0.0F,
+            },
+        .rain_options0 =
+            {
+                config.rain.enabled ? 1.0F : 0.0F,
+                config.rain.center[0],
+                config.rain.center[1],
+                config.rain.center[2],
+            },
+        .rain_options1 =
+            {
+                config.rain.half_size[0],
+                config.rain.half_size[1],
+                config.rain.half_size[2],
+                config.rain.speed,
+            },
+        .rain_options2 =
+            {
+                config.rain.radius,
+                config.rain.particles_per_second,
+                rain_spread,
+                0.0F,
+            },
     };
 }
 
 [[nodiscard]] Water3DDispatchPushConstants
 dispatch_push_constants(const ProjectFrame& frame, float delta_seconds, float pressure_read_b,
-                        std::uint32_t particle_scan_count) {
+                        std::uint32_t particle_scan_count, std::uint32_t emit_cursor = 0,
+                        std::uint32_t emit_count = 0, std::uint32_t emitter_kind = 0,
+                        std::uint32_t seed = 0) {
     return {
         .dispatch_options =
             {
@@ -487,6 +615,18 @@ dispatch_push_constants(const ProjectFrame& frame, float delta_seconds, float pr
                     particle_scan_count,
                     "water 3D particle scan count exceeds exact shader integer range"),
             },
+        .emit_options =
+            {
+                water_3d_shader_count_float(
+                    emit_cursor,
+                    "water 3D emitter cursor exceeds exact shader integer range"),
+                water_3d_shader_count_float(
+                    emit_count, "water 3D emitter count exceeds exact shader integer range"),
+                water_3d_shader_count_float(
+                    emitter_kind, "water 3D emitter kind exceeds exact shader integer range"),
+                water_3d_shader_count_float(
+                    seed, "water 3D emitter seed exceeds exact shader integer range"),
+            },
     };
 }
 
@@ -496,6 +636,37 @@ dispatch_count_push_constants(Water3DDispatchPushConstants push_constants, float
     push_constants.dispatch_options[2] = mode;
     push_constants.dispatch_options[3] = water_3d_shader_count_float(count, message);
     return push_constants;
+}
+
+[[nodiscard]] std::uint32_t next_emitter_emit_count(bool enabled, float particles_per_second,
+                                                    float delta_seconds,
+                                                    std::uint32_t pool_capacity,
+                                                    float& accumulator) {
+    if (!enabled || particles_per_second <= 0.0F || pool_capacity == 0U) {
+        accumulator = 0.0F;
+        return 0;
+    }
+    accumulator += particles_per_second * delta_seconds;
+    const auto emit_count = static_cast<std::uint32_t>(std::floor(accumulator));
+    const std::uint32_t clamped_count = std::min(emit_count, pool_capacity);
+    accumulator -= static_cast<float>(clamped_count);
+    return clamped_count;
+}
+
+void note_emitter_emission(Water3DRuntimeState& state, const Water3DConfig& config,
+                           std::uint32_t emit_cursor, std::uint32_t emit_count) {
+    const std::uint32_t pool_capacity = emitter_particle_pool_capacity_for_config(config);
+    if (emit_count == 0 || pool_capacity == 0) {
+        return;
+    }
+    const std::uint32_t pool_start = emitter_particle_start_for_config(config);
+    const std::uint32_t touched_count = std::min(emit_count, pool_capacity);
+    const std::uint32_t end_cursor = emit_cursor + touched_count;
+    const std::uint32_t touched_high =
+        end_cursor <= pool_capacity ? pool_start + end_cursor : config.particle_capacity;
+    state.particle_scan_count =
+        std::max(water_3d_runtime_particle_scan_count(config, state),
+                 std::min(touched_high, config.particle_capacity));
 }
 
 void record_dispatch(const cubey::vulkan::CommandRecorder& recorder,
@@ -518,6 +689,43 @@ void record_dispatch_indirect(const cubey::vulkan::CommandRecorder& recorder,
                                  descriptor_set);
     recorder.push_constants(pipeline.layout(), VK_SHADER_STAGE_COMPUTE_BIT, 0, push_constants);
     recorder.dispatch_indirect(indirect_buffer, 0);
+}
+
+void record_emitter_dispatch(const cubey::vulkan::CommandRecorder& recorder,
+                             VkCommandBuffer command_buffer, Water3DGpuResources& resources,
+                             VkDescriptorSet descriptor_set, const Water3DConfig& config,
+                             Water3DRuntimeState& runtime_state, const ProjectFrame& frame,
+                             float delta_seconds, float substep_time,
+                             cubey::render::FrameSlot frame_slot,
+                             cubey::vulkan::GpuTimestampProfiler* profiler, const char* label,
+                             std::uint32_t emitter_kind, bool enabled, float particles_per_second,
+                             float& accumulator) {
+    const std::uint32_t pool_capacity = emitter_particle_pool_capacity_for_config(config);
+    const std::uint32_t emit_count = next_emitter_emit_count(
+        enabled, particles_per_second, delta_seconds, pool_capacity, accumulator);
+    if (emit_count == 0U) {
+        return;
+    }
+
+    const std::uint32_t emit_cursor = runtime_state.emitter_cursor;
+    runtime_state.emitter_cursor = (runtime_state.emitter_cursor + emit_count) % pool_capacity;
+    note_emitter_emission(runtime_state, config, emit_cursor, emit_count);
+    const std::uint32_t seed =
+        static_cast<std::uint32_t>((frame.frame_index + emitter_kind) & 0x00ffffffU);
+    Water3DDispatchPushConstants emit_push_constants = dispatch_push_constants(
+        frame, delta_seconds, 0.0F, water_3d_runtime_particle_scan_count(config, runtime_state),
+        emit_cursor, emit_count, emitter_kind, seed);
+    emit_push_constants.dispatch_options[1] = substep_time;
+
+    if (profiler != nullptr) {
+        profiler->begin_pass(command_buffer, frame_slot.index, label);
+    }
+    record_dispatch(recorder, resources.emit_pipeline_resource(), descriptor_set,
+                    linear_dispatch_groups(emit_count), emit_push_constants);
+    record_compute_barrier(command_buffer);
+    if (profiler != nullptr) {
+        profiler->end_pass(command_buffer, frame_slot.index);
+    }
 }
 
 void record_diagnostics_pass(const cubey::vulkan::CommandRecorder& recorder,
@@ -1189,6 +1397,20 @@ void record_water_3d_compute(VkCommandBuffer command_buffer, Water3DGpuResources
         record_compute_barrier(command_buffer);
         end_pass();
 
+        record_emitter_dispatch(recorder, command_buffer, resources, descriptor_set, config,
+                                runtime_state, frame, substep_dt, substep_time, frame_slot,
+                                profiler, "hose emit", kWater3DEmitterKindHose,
+                                config.hose.enabled, config.hose.particles_per_second,
+                                runtime_state.hose_emit_accumulator);
+        record_emitter_dispatch(recorder, command_buffer, resources, descriptor_set, config,
+                                runtime_state, frame, substep_dt, substep_time, frame_slot,
+                                profiler, "rain emit", kWater3DEmitterKindRain,
+                                config.rain.enabled, config.rain.particles_per_second,
+                                runtime_state.rain_emit_accumulator);
+        push_constants.dispatch_options[3] = water_3d_shader_count_float(
+            water_3d_runtime_particle_scan_count(config, runtime_state),
+            "water 3D particle scan count exceeds exact shader integer range");
+
         record_refresh_bins(recorder, command_buffer, resources, descriptor_set, config,
                             runtime_state, push_constants, frame_slot, profiler,
                             "refresh bins pre-p2g", true);
@@ -1373,6 +1595,13 @@ void record_water_3d_draw(VkCommandBuffer command_buffer, const Water3DGpuResour
                 water_3d_shader_count_float(
                     config.particles_per_cell,
                     "water 3D particles per cell exceeds exact shader integer range"),
+            },
+        .domain_options =
+            {
+                config.domain.scale[0],
+                config.domain.scale[1],
+                config.domain.scale[2],
+                0.0F,
             },
     };
 

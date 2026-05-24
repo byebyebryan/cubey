@@ -76,8 +76,10 @@ void main() {
         float t = (ground_y - camera_position.y) / ray.y;
         if (t > 0.0) {
             vec3 world_position = camera_position + ray * t;
-            if (world_position.x >= -0.35 && world_position.x <= 1.35 &&
-                world_position.z >= -0.35 && world_position.z <= 1.35) {
+            vec3 domain_min = water_surface_domain_min() - vec3(0.20, 0.0, 0.20);
+            vec3 domain_max = water_surface_domain_max() + vec3(0.20, 0.0, 0.20);
+            if (world_position.x >= domain_min.x && world_position.x <= domain_max.x &&
+                world_position.z >= domain_min.z && world_position.z <= domain_max.z) {
                 color = ground_color(world_position);
                 depth = clip_depth(world_position);
             }

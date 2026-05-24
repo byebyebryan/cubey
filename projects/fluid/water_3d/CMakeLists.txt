@@ -31,6 +31,7 @@ cubey_add_app_target(
         ../sim/water_3d/shaders/water_3d_clear_grid.comp
         ../sim/water_3d/shaders/water_3d_clear_bins.comp
         ../sim/water_3d/shaders/water_3d_build_bins.comp
+        ../sim/water_3d/shaders/water_3d_emit_particles.comp
         ../sim/water_3d/shaders/water_3d_active_face_dispatch_args.comp
         ../sim/water_3d/shaders/water_3d_build_active_tiles.comp
         ../sim/water_3d/shaders/water_3d_active_tile_dispatch_args.comp

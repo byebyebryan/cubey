@@ -321,6 +321,7 @@ void Water3DGpuResources::destroy_all_resources() {
     active_tile_dispatch_args_pipeline_resource_.reset();
     build_active_tiles_pipeline_resource_.reset();
     active_face_dispatch_args_pipeline_resource_.reset();
+    emit_pipeline_resource_.reset();
     build_bins_pipeline_resource_.reset();
     clear_bins_pipeline_resource_.reset();
     clear_grid_pipeline_resource_.reset();
@@ -794,6 +795,8 @@ void Water3DGpuResources::create_compute_pipelines(cubey::vulkan::Device& device
                                      field_descriptor_layout(), clear_bins_pipeline_resource_);
     create_compute_pipeline_resource(device, "water_3d_build_bins.comp.spv",
                                      field_descriptor_layout(), build_bins_pipeline_resource_);
+    create_compute_pipeline_resource(device, "water_3d_emit_particles.comp.spv",
+                                     field_descriptor_layout(), emit_pipeline_resource_);
     create_compute_pipeline_resource(device, "water_3d_active_face_dispatch_args.comp.spv",
                                      field_descriptor_layout(),
                                      active_face_dispatch_args_pipeline_resource_);
@@ -1367,6 +1370,11 @@ const cubey::render::ComputePipelineResource&
 Water3DGpuResources::build_bins_pipeline_resource() const {
     return require_initialized(build_bins_pipeline_resource_,
                                "water 3D bin build pipeline is not initialized");
+}
+
+const cubey::render::ComputePipelineResource& Water3DGpuResources::emit_pipeline_resource() const {
+    return require_initialized(emit_pipeline_resource_,
+                               "water 3D emitter pipeline is not initialized");
 }
 
 const cubey::render::ComputePipelineResource&

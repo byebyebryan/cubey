@@ -43,14 +43,15 @@ inline constexpr std::uint32_t kWater3DComputeGroupSize = 4;
 inline constexpr std::uint32_t kWater3DParticleGroupSize = 64;
 inline constexpr std::uint32_t kWater3DP2GTileExtent = 4;
 inline constexpr std::uint32_t kWater3DP2GTileFaceSlots = 192;
-inline constexpr std::uint32_t kWater3DSimulationPushConstantFloatCount = 4;
-inline constexpr std::uint32_t kWater3DSimulationUniformFloatCount = 32;
-inline constexpr std::uint32_t kWater3DRenderPushConstantFloatCount = 48;
+inline constexpr std::uint32_t kWater3DSimulationPushConstantFloatCount = 8;
+inline constexpr std::uint32_t kWater3DSimulationUniformFloatCount = 84;
+inline constexpr std::uint32_t kWater3DRenderPushConstantFloatCount = 56;
 inline constexpr std::uint32_t kWater3DWallCells = 2;
 inline constexpr std::uint32_t kWater3DMinimumGridExtent = 16;
-inline constexpr std::uint32_t kWater3DDefaultGridWidth = 64;
+inline constexpr std::uint32_t kWater3DDefaultGridWidth = 128;
 inline constexpr std::uint32_t kWater3DDefaultGridHeight = 64;
-inline constexpr std::uint32_t kWater3DDefaultGridDepth = 64;
+inline constexpr std::uint32_t kWater3DDefaultGridDepth = 48;
+inline constexpr std::uint32_t kWater3DDefaultEmitterParticleCapacity = 65536;
 inline constexpr std::uint32_t kWater3DDefaultWhitewaterCapacity = 65536;
 inline constexpr std::uint32_t kWater3DScanGroupSize = 256;
 inline constexpr std::uint32_t kWater3DMaxExactShaderInteger = 1U << 24U;
@@ -130,6 +131,46 @@ enum class Water3DDiagnosticSlot : std::uint32_t {
     P2GTileDispatchGroups = 67,
 };
 
+struct Water3DDomainConfig {
+    std::array<float, 3> scale{2.4F, 1.0F, 0.7F};
+};
+
+struct Water3DHoseConfig {
+    bool enabled = true;
+    std::array<float, 3> position{0.08F, 0.76F, 0.50F};
+    float yaw_degrees = 0.0F;
+    float pitch_degrees = -18.0F;
+    float speed = 2.4F;
+    float radius = 0.035F;
+    float particles_per_second = 18000.0F;
+    float spread_degrees = 14.0F;
+    std::uint32_t particle_capacity = kWater3DDefaultEmitterParticleCapacity;
+};
+
+struct Water3DDrainConfig {
+    bool enabled = true;
+    std::array<float, 3> center{0.93F, 0.07F, 0.50F};
+    std::array<float, 3> half_size{0.045F, 0.035F, 0.28F};
+};
+
+struct Water3DWaveConfig {
+    bool enabled = true;
+    std::array<float, 3> center{0.12F, 0.34F, 0.50F};
+    std::array<float, 3> half_size{0.10F, 0.22F, 0.36F};
+    float amplitude = 0.35F;
+    float frequency_hz = 0.35F;
+};
+
+struct Water3DRainConfig {
+    bool enabled = false;
+    std::array<float, 3> center{0.55F, 0.96F, 0.50F};
+    std::array<float, 3> half_size{0.45F, 0.01F, 0.30F};
+    float speed = 2.0F;
+    float radius = 0.020F;
+    float particles_per_second = 8000.0F;
+    float spread_degrees = 5.0F;
+};
+
 struct Water3DConfig {
     std::uint32_t grid_width = kWater3DDefaultGridWidth;
     std::uint32_t grid_height = kWater3DDefaultGridHeight;
@@ -137,8 +178,9 @@ struct Water3DConfig {
     std::uint32_t pressure_iterations = 32;
     std::uint32_t particles_per_cell = 4;
     std::uint32_t max_particles_per_cell = 32;
-    std::uint32_t active_particle_count = 180224;
-    std::uint32_t particle_capacity = 442368;
+    std::uint32_t active_particle_count = 213440;
+    std::uint32_t initial_particle_capacity = 663552;
+    std::uint32_t particle_capacity = 729088;
     std::uint32_t substeps = 1;
     Water3DTransferMode transfer_mode = Water3DTransferMode::Apic;
     Water3DP2GMode p2g_mode = Water3DP2GMode::ActiveFaces;
@@ -146,9 +188,10 @@ struct Water3DConfig {
     float gravity = -1.35F;
     float flip_ratio = 0.78F;
     float particle_radius = 0.018F;
-    float initial_fill_width = 0.50F;
-    float initial_fill_height = 0.70F;
-    float initial_fill_depth = 0.50F;
+    float initial_fill_width = 0.32F;
+    float initial_fill_height = 0.72F;
+    float initial_fill_depth = 0.62F;
+    std::array<float, 2> initial_fill_center{0.24F, 0.50F};
     float velocity_limit = 3.0F;
     float particle_damping = 0.998F;
     float particle_volume_strength = 12.0F;
@@ -176,6 +219,11 @@ struct Water3DConfig {
     float environment_intensity = 1.0F;
     float environment_rotation_degrees = 0.0F;
     float exposure = 0.0F;
+    Water3DDomainConfig domain{};
+    Water3DHoseConfig hose{};
+    Water3DDrainConfig drain{};
+    Water3DWaveConfig wave{};
+    Water3DRainConfig rain{};
     std::uint32_t profile_diagnostic_interval = 1;
     bool profile_diagnostics = false;
 };
@@ -184,19 +232,36 @@ struct Water3DSimulationUniforms {
     std::array<float, 4> grid_options{};
     std::array<float, 4> particle_options{};
     std::array<float, 4> fill_options{};
+    std::array<float, 4> fill_placement_options{};
     std::array<float, 4> solve_options{};
     std::array<float, 4> lifecycle_options{};
     std::array<float, 4> render_options{};
     std::array<float, 4> whitewater_options{};
     std::array<float, 4> whitewater_lifecycle{};
+    std::array<float, 4> emitter_lifecycle{};
+    std::array<float, 4> hose_options0{};
+    std::array<float, 4> hose_options1{};
+    std::array<float, 4> hose_options2{};
+    std::array<float, 4> drain_options{};
+    std::array<float, 4> drain_extents{};
+    std::array<float, 4> wave_options0{};
+    std::array<float, 4> wave_options1{};
+    std::array<float, 4> wave_options2{};
+    std::array<float, 4> rain_options0{};
+    std::array<float, 4> rain_options1{};
+    std::array<float, 4> rain_options2{};
 };
 
 struct Water3DDispatchPushConstants {
     std::array<float, 4> dispatch_options{};
+    std::array<float, 4> emit_options{};
 };
 
 struct Water3DRuntimeState {
+    std::uint32_t emitter_cursor = 0;
     std::uint32_t particle_scan_count = 0;
+    float hose_emit_accumulator = 0.0F;
+    float rain_emit_accumulator = 0.0F;
     bool pressure_read_b = false;
 };
 
@@ -504,16 +569,47 @@ inline void validate_water_3d_particle_limits(const Water3DConfig& config) {
                                    config.initial_fill_depth);
 }
 
-[[nodiscard]] inline std::uint32_t particle_capacity_for_config(const Water3DConfig& config) {
+[[nodiscard]] inline std::uint32_t
+initial_particle_capacity_for_config(const Water3DConfig& config) {
     return particle_count_for_fill(config, kWater3DMaxFillFraction, kWater3DMaxFillFraction,
                                    kWater3DMaxFillFraction);
 }
 
+[[nodiscard]] inline std::uint32_t particle_capacity_for_config(const Water3DConfig& config) {
+    const std::uint32_t initial_capacity = initial_particle_capacity_for_config(config);
+    if (config.hose.particle_capacity >
+        std::numeric_limits<std::uint32_t>::max() - initial_capacity) {
+        throw std::runtime_error("water 3D particle capacity exceeds shader index range");
+    }
+    const std::uint32_t capacity = initial_capacity + config.hose.particle_capacity;
+    validate_exact_shader_integer(capacity,
+                                  "water 3D particle capacity exceeds exact shader integer range");
+    return capacity;
+}
+
+[[nodiscard]] inline std::uint32_t
+emitter_particle_start_for_config(const Water3DConfig& config) {
+    return config.active_particle_count;
+}
+
+[[nodiscard]] inline std::uint32_t
+emitter_particle_pool_capacity_for_config(const Water3DConfig& config) {
+    const std::uint32_t pool_start = emitter_particle_start_for_config(config);
+    if (pool_start > config.particle_capacity) {
+        throw std::runtime_error("water 3D emitter particle pool starts beyond particle capacity");
+    }
+    return config.particle_capacity - pool_start;
+}
+
 inline void refresh_particle_counts(Water3DConfig& config) {
     config.active_particle_count = active_particle_count_for_fill(config);
+    config.initial_particle_capacity = initial_particle_capacity_for_config(config);
     config.particle_capacity = particle_capacity_for_config(config);
-    if (config.active_particle_count > config.particle_capacity) {
-        throw std::runtime_error("water 3D active particles exceed particle capacity");
+    if (config.active_particle_count > config.initial_particle_capacity) {
+        throw std::runtime_error("water 3D active particles exceed initial particle capacity");
+    }
+    if (config.initial_particle_capacity > config.particle_capacity) {
+        throw std::runtime_error("water 3D initial particle capacity exceeds total capacity");
     }
 }
 

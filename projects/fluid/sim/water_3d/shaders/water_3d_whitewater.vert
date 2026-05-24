@@ -62,7 +62,7 @@ void main() {
         return;
     }
 
-    vec3 center = whitewater_positions.values[particle_id].xyz;
+    vec3 center = water_surface_sim_to_world(whitewater_positions.values[particle_id].xyz);
     vec4 velocity_age = whitewater_velocities.values[particle_id];
     vec4 state = whitewater_state.values[particle_id];
     float kind = state.y;

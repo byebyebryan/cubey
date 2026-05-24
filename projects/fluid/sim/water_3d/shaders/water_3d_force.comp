@@ -46,6 +46,19 @@ bool liquid_cell(int x, int y, int z, uint width, uint height, uint depth) {
     return solid.values[index] < 0.5 && cell_counts.values[index] > 0u;
 }
 
+float wave_gate(vec3 position) {
+    if (params.wave_options0.x < 0.5) {
+        return 0.0;
+    }
+    vec3 half_size = max(params.wave_options1.xyz, vec3(0.001));
+    vec3 delta = abs(position - params.wave_options0.yzw) / half_size;
+    if (any(greaterThan(delta, vec3(1.0)))) {
+        return 0.0;
+    }
+    vec3 shaped = 1.0 - smoothstep(vec3(0.65), vec3(1.0), delta);
+    return shaped.x * shaped.y * shaped.z;
+}
+
 void main() {
     uint width = uint(WATER3D_GRID_WIDTH + 0.5);
     uint height = uint(WATER3D_GRID_HEIGHT + 0.5);
@@ -63,6 +76,14 @@ void main() {
                        solid_cell(int(x), int(y), int(z), width, height, depth);
         if (blocked || u_weight.values[index] <= 0.0) {
             u_field.values[index] = 0.0;
+        } else {
+            vec3 face_position =
+                vec3(float(x) / float(width), (float(y) + 0.5) / float(height),
+                     (float(z) + 0.5) / float(depth));
+            float phase = WATER3D_TIME * max(0.0, params.wave_options2.x) * 6.2831853;
+            float impulse = params.wave_options1.w * sin(phase) * wave_gate(face_position);
+            u_field.values[index] = clamp(u_field.values[index] + impulse * dt, -velocity_limit,
+                                          velocity_limit);
         }
     }
     if (x < width && y <= height && z < depth) {

@@ -40,17 +40,20 @@ int main() {
     try {
         namespace water = cubey::projects::fluid::water_3d;
         water::Water3DConfig config;
-        constexpr std::size_t kExpectedCellCount = std::size_t{64} * 64U * 64U;
-        constexpr std::size_t kExpectedUFaceCount = std::size_t{65} * 64U * 64U;
-        constexpr std::size_t kExpectedVFaceCount = std::size_t{64} * 65U * 64U;
-        constexpr std::size_t kExpectedWFaceCount = std::size_t{64} * 64U * 65U;
+        constexpr std::size_t kExpectedCellCount = std::size_t{128} * 64U * 48U;
+        constexpr std::size_t kExpectedUFaceCount = std::size_t{129} * 64U * 48U;
+        constexpr std::size_t kExpectedVFaceCount = std::size_t{128} * 65U * 48U;
+        constexpr std::size_t kExpectedWFaceCount = std::size_t{128} * 64U * 49U;
         constexpr std::size_t kExpectedTotalFaceCount =
             kExpectedUFaceCount + kExpectedVFaceCount + kExpectedWFaceCount;
-        constexpr std::size_t kExpectedActiveParticleCount = std::size_t{32} * 44U * 32U * 4U;
-        constexpr std::size_t kExpectedParticleCapacity = std::size_t{48} * 48U * 48U * 4U;
+        constexpr std::size_t kExpectedActiveParticleCount = std::size_t{40} * 46U * 29U * 4U;
+        constexpr std::size_t kExpectedInitialParticleCapacity =
+            std::size_t{96} * 48U * 36U * 4U;
+        constexpr std::size_t kExpectedParticleCapacity =
+            kExpectedInitialParticleCapacity + water::kWater3DDefaultEmitterParticleCapacity;
 
-        require(config.grid_width == 64 && config.grid_height == 64 && config.grid_depth == 64,
-                "water 3D should default to a 64^3 grid");
+        require(config.grid_width == 128 && config.grid_height == 64 && config.grid_depth == 48,
+                "water 3D should default to a long tank grid");
         require(config.pressure_iterations == 32,
                 "water 3D should default to a bounded pressure solve");
         require(config.particles_per_cell == 4, "water 3D should seed four particles per cell");
@@ -58,15 +61,22 @@ int main() {
                 "water 3D P2G should cap per-cell transfer samples");
         require(config.active_particle_count == kExpectedActiveParticleCount,
                 "water 3D active particles should come from the default fill volume");
+        require(config.initial_particle_capacity == kExpectedInitialParticleCapacity,
+                "water 3D initial capacity should cover the maximum editable fill volume");
         require(config.particle_capacity == kExpectedParticleCapacity,
-                "water 3D capacity should cover the maximum editable fill volume");
+                "water 3D capacity should cover editable fill plus emitter headroom");
         require(config.transfer_mode == water::Water3DTransferMode::Apic,
                 "water 3D should default to APIC transfer");
         require(config.p2g_mode == water::Water3DP2GMode::ActiveFaces,
                 "water 3D should default to the proven active-face P2G path");
-        require(config.initial_fill_width == 0.50F && config.initial_fill_height == 0.70F &&
-                    config.initial_fill_depth == 0.50F,
-                "water 3D should default to the planned centered dam fill");
+        require(config.initial_fill_width == 0.32F && config.initial_fill_height == 0.72F &&
+                    config.initial_fill_depth == 0.62F,
+                "water 3D should default to a left-biased long-tank dam fill");
+        require(config.initial_fill_center[0] == 0.24F && config.initial_fill_center[1] == 0.50F,
+                "water 3D should default to a left-side fill center");
+        require(config.domain.scale[0] == 2.4F && config.domain.scale[1] == 1.0F &&
+                    config.domain.scale[2] == 0.7F,
+                "water 3D should default to a long visible tank domain");
         require(config.surface_thickness_scale == 0.65F,
                 "water 3D should default to clearer surface thickness");
         require(config.surface_gap_fill_radius_px == 1.0F,
@@ -88,6 +98,12 @@ int main() {
                 "water 3D should default to visible whitewater emission");
         require(config.whitewater_drag == 0.94F && config.whitewater_gravity_scale == 0.55F,
                 "water 3D should default to damped spray whitewater");
+        require(config.hose.enabled && config.hose.particle_capacity ==
+                                           water::kWater3DDefaultEmitterParticleCapacity,
+                "water 3D should reserve a default emitter particle pool");
+        require(config.drain.enabled, "water 3D should default to a bounded drain");
+        require(config.wave.enabled, "water 3D should default to mild wave forcing");
+        require(!config.rain.enabled, "water 3D rain should be opt-in by default");
         require(!config.profile_diagnostics && config.profile_diagnostic_interval == 1U,
                 "water 3D diagnostics should be opt-in with per-frame sampling by default");
         require(sizeof(water::Water3DSimulationUniforms) ==
@@ -128,9 +144,9 @@ int main() {
         require(water::diagnostics_buffer_byte_size(config) ==
                     sizeof(std::uint32_t) * water::kWater3DDiagnosticSlotCount,
                 "water 3D diagnostics should store a fixed uint slot buffer");
-        require(water::particle_sort_scan_level0_count(config) == 1024U,
+        require(water::particle_sort_scan_level0_count(config) == 1536U,
                 "water 3D particle sorting should scan one block per 256 cells");
-        require(water::particle_sort_scan_level1_count(config) == 4U,
+        require(water::particle_sort_scan_level1_count(config) == 6U,
                 "water 3D particle sorting should reserve second-level scan blocks");
         require(water::particle_sort_scan_level2_count(config) == 1U,
                 "water 3D particle sorting should terminate scan hierarchy at one block");
@@ -144,15 +160,15 @@ int main() {
                 "water 3D active face indices should cover every staggered face");
         require(water::active_face_dispatch_arg_byte_size(config) == sizeof(std::uint32_t) * 3U,
                 "water 3D active face dispatch args should store one indirect dispatch command");
-        require(water::water_3d_p2g_tile_count_x(config) == 16U &&
+        require(water::water_3d_p2g_tile_count_x(config) == 32U &&
                     water::water_3d_p2g_tile_count_y(config) == 16U &&
-                    water::water_3d_p2g_tile_count_z(config) == 16U,
+                    water::water_3d_p2g_tile_count_z(config) == 12U,
                 "water 3D P2G tiles should default to 4x4x4 cell groups");
-        require(water::water_3d_p2g_tile_count(config) == 4096U,
+        require(water::water_3d_p2g_tile_count(config) == 6144U,
                 "water 3D P2G tile count should cover the grid");
-        require(water::active_tile_flag_byte_size(config) == sizeof(std::uint32_t) * 4096U,
+        require(water::active_tile_flag_byte_size(config) == sizeof(std::uint32_t) * 6144U,
                 "water 3D active tile flags should cover every P2G tile");
-        require(water::active_tile_index_byte_size(config) == sizeof(std::uint32_t) * 4096U,
+        require(water::active_tile_index_byte_size(config) == sizeof(std::uint32_t) * 6144U,
                 "water 3D active tile indices should cover every P2G tile");
         require(water::active_tile_dispatch_arg_byte_size(config) == sizeof(std::uint32_t) * 3U,
                 "water 3D active tile dispatch args should store one indirect dispatch command");
@@ -253,6 +269,7 @@ int main() {
         const std::string reset_shader = read_text_file(shader_dir / "water_3d_reset.comp");
         const std::string build_bins = read_text_file(shader_dir / "water_3d_build_bins.comp");
         const std::string clear_bins = read_text_file(shader_dir / "water_3d_clear_bins.comp");
+        const std::string emit_shader = read_text_file(shader_dir / "water_3d_emit_particles.comp");
         const std::string p2g_shader =
             read_text_file(shader_dir / "water_3d_particle_to_grid.comp");
         const std::string build_active_tiles =
@@ -272,6 +289,7 @@ int main() {
             read_text_file(shader_dir / "water_3d_active_face_dispatch_args.comp");
         const std::string advect_shader =
             read_text_file(shader_dir / "water_3d_advect_particles.comp");
+        const std::string force_shader = read_text_file(shader_dir / "water_3d_force.comp");
         const std::string whitewater_clear =
             read_text_file(shader_dir / "water_3d_whitewater_clear.comp");
         const std::string whitewater_advect =
@@ -349,8 +367,20 @@ int main() {
                          "water 3D contract should expose whitewater capacity");
         require_contains(contract, "whitewater_options",
                          "water 3D contract should expose whitewater uniforms");
+        require_contains(contract, "fill_placement_options",
+                         "water 3D contract should expose fill placement uniforms");
+        require_contains(contract, "emitter_lifecycle",
+                         "water 3D contract should expose emitter particle pool uniforms");
+        require_contains(contract, "vec4 emit_options",
+                         "water 3D contract should expose emitter dispatch constants");
+        require_contains(contract, "domain_options",
+                         "water 3D render constants should expose domain scale");
+        require_contains(contract, "wave_options2",
+                         "water 3D contract should expose wave frequency uniforms");
         require_contains(reset_shader, "particle_affine.values[id * 3u + 2u]",
                          "water 3D reset should clear all APIC affine rows");
+        require_contains(reset_shader, "fill_start_from_center",
+                         "water 3D reset should honor editable fill placement");
         require_contains(reset_shader, "whitewater_positions.values[id]",
                          "water 3D reset should clear whitewater particles");
         require_contains(build_bins, "WATER3D_BUILD_ACTIVE_FACES",
@@ -367,6 +397,14 @@ int main() {
                          "water 3D bin clearing should reset active tile indirect args");
         require_contains(clear_bins, "cell_write_counts.values[id] = 0u",
                          "water 3D bin clearing should reset sorted scatter counters");
+        require_contains(emit_shader, "WATER3D_EMITTER_POOL_START",
+                         "water 3D emitter should target the shared inactive particle pool");
+        require_contains(emit_shader, "emit_hose",
+                         "water 3D emitter should support hose particles");
+        require_contains(emit_shader, "emit_rain",
+                         "water 3D emitter should support rain particles");
+        require_contains(emit_shader, "clear_affine",
+                         "water 3D emitter should reset APIC state for emitted particles");
         require_contains(copy_sort_source, "particle_positions_source.values[particle_id]",
                          "water 3D particle sort should copy canonical positions to source");
         require_contains(scan_offsets, "scan_values[256]",
@@ -407,6 +445,12 @@ int main() {
                          "water 3D should write indirect dispatch args for active faces");
         require_contains(advect_shader, "apply_side_wall_friction",
                          "water 3D particle advection should damp side-wall impacts");
+        require_contains(advect_shader, "inside_drain",
+                         "water 3D particle advection should deactivate drained particles");
+        require_contains(force_shader, "wave_gate",
+                         "water 3D force pass should include a bounded wave driver");
+        require_contains(force_shader, "params.wave_options2.x",
+                         "water 3D wave force should use configurable frequency");
         require_contains(whitewater_clear, "whitewater_counters.values[id] = 0u",
                          "water 3D whitewater should clear per-frame counters");
         require_contains(whitewater_advect, "sample_velocity",
@@ -510,6 +554,8 @@ int main() {
                          "water 3D particle debug splats should be opaque");
         require_contains(gpu_resources, ".blend_enable = false",
                          "water 3D debug render pipeline should not alpha blend particles");
+        require_contains(gpu_resources, "water_3d_emit_particles.comp.spv",
+                         "water 3D GPU resources should create the emitter compute pipeline");
         require_contains(surface_common, "WATER3D_SURFACE_DEPTH_SENTINEL",
                          "water 3D surface pass should use an explicit empty-depth sentinel");
         require_contains(surface_common, "display_transform",
@@ -522,6 +568,8 @@ int main() {
                          "water 3D scene pass should preserve sampleable scene depth");
         require_contains(scene_shader, "environment_cube",
                          "water 3D scene pass should use the shared environment cube");
+        require_contains(scene_shader, "water_surface_domain_min",
+                         "water 3D scene pass should size the ground plane from domain scale");
         require_contains(surface_depth, "gl_FragDepth",
                          "water 3D surface depth pass should write sphere-correct depth");
         require_contains(surface_thickness, "out_thickness",

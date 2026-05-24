@@ -60,14 +60,28 @@
         vec4 grid_options;                                                                      \
         vec4 particle_options;                                                                  \
         vec4 fill_options;                                                                      \
+        vec4 fill_placement_options;                                                            \
         vec4 solve_options;                                                                     \
         vec4 lifecycle_options;                                                                 \
         vec4 render_options;                                                                    \
         vec4 whitewater_options;                                                                \
         vec4 whitewater_lifecycle;                                                              \
+        vec4 emitter_lifecycle;                                                                 \
+        vec4 hose_options0;                                                                     \
+        vec4 hose_options1;                                                                     \
+        vec4 hose_options2;                                                                     \
+        vec4 drain_options;                                                                     \
+        vec4 drain_extents;                                                                     \
+        vec4 wave_options0;                                                                     \
+        vec4 wave_options1;                                                                     \
+        vec4 wave_options2;                                                                     \
+        vec4 rain_options0;                                                                     \
+        vec4 rain_options1;                                                                     \
+        vec4 rain_options2;                                                                     \
     } params;                                                                                   \
     layout(push_constant) uniform DispatchParams {                                              \
         vec4 dispatch_options;                                                                  \
+        vec4 emit_options;                                                                      \
     } dispatch_params
 
 #define WATER3D_GRID_WIDTH params.grid_options.x
@@ -85,11 +99,17 @@
 #define WATER3D_BUILD_ACTIVE_FACES dispatch_params.dispatch_options.z
 #define WATER3D_PARTICLE_SCAN_COUNT dispatch_params.dispatch_options.w
 #define WATER3D_DISPATCH_COUNT dispatch_params.dispatch_options.w
+#define WATER3D_EMIT_CURSOR dispatch_params.emit_options.x
+#define WATER3D_EMIT_COUNT dispatch_params.emit_options.y
+#define WATER3D_EMITTER_KIND dispatch_params.emit_options.z
+#define WATER3D_EMITTER_SEED dispatch_params.emit_options.w
 #define WATER3D_VELOCITY_LIMIT params.solve_options.x
 #define WATER3D_PARTICLE_DAMPING params.solve_options.y
 #define WATER3D_VOLUME_STRENGTH params.solve_options.z
 #define WATER3D_TRANSFER_MODE params.solve_options.w
 #define WATER3D_BOUNDARY_RESTITUTION params.lifecycle_options.z
+#define WATER3D_EMITTER_POOL_START params.emitter_lifecycle.x
+#define WATER3D_EMITTER_POOL_CAPACITY params.emitter_lifecycle.y
 #define WATER3D_WHITEWATER_CAPACITY params.whitewater_options.x
 #define WATER3D_WHITEWATER_MAX_EMIT_PER_FRAME params.whitewater_options.y
 #define WATER3D_WHITEWATER_INTENSITY params.whitewater_options.z
@@ -106,6 +126,7 @@
         vec4 camera_up_debug;                                                                   \
         vec4 grid_slice;                                                                        \
         vec4 color_options;                                                                     \
+        vec4 domain_options;                                                                    \
     } params
 
 #endif

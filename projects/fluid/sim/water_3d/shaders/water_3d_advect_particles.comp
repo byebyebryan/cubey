@@ -58,6 +58,14 @@ void clear_affine(uint particle_id) {
     particle_affine.values[base + 2u] = vec4(0.0);
 }
 
+bool inside_drain(vec3 position) {
+    if (params.drain_options.x < 0.5) {
+        return false;
+    }
+    vec3 half_size = max(params.drain_extents.xyz, vec3(0.001));
+    return all(lessThan(abs(position - params.drain_options.yzw), half_size));
+}
+
 void main() {
     uint particle_id = gl_GlobalInvocationID.x;
     uint width = uint(WATER3D_GRID_WIDTH + 0.5);
@@ -90,6 +98,12 @@ void main() {
     collided = side_wall_collided || collided;
     apply_side_wall_friction(velocity, side_wall_collided);
     clamp_velocity(velocity);
+    if (inside_drain(position)) {
+        particle_positions.values[particle_id] = vec4(-10.0, -10.0, -10.0, 0.0);
+        particle_velocities.values[particle_id] = vec4(0.0);
+        clear_affine(particle_id);
+        return;
+    }
     if (collided) {
         clear_affine(particle_id);
     }

@@ -29,6 +29,22 @@ vec3 water_surface_camera_forward() {
     return surface_params.camera_forward_radius.xyz;
 }
 
+vec3 water_surface_domain_scale() {
+    return max(surface_params.domain_options.xyz, vec3(0.001));
+}
+
+vec3 water_surface_sim_to_world(vec3 sim_position) {
+    return ((sim_position - vec3(0.5)) * water_surface_domain_scale()) + vec3(0.5);
+}
+
+vec3 water_surface_domain_min() {
+    return water_surface_sim_to_world(vec3(0.0));
+}
+
+vec3 water_surface_domain_max() {
+    return water_surface_sim_to_world(vec3(1.0));
+}
+
 vec3 water_surface_view_ray(vec2 uv) {
     vec2 screen = (uv * 2.0) - 1.0;
     float tan_half_fovy = surface_params.camera_right_tan.w;

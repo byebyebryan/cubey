@@ -104,6 +104,7 @@ class Water3DGpuResources {
     clear_bins_pipeline_resource() const;
     [[nodiscard]] const cubey::render::ComputePipelineResource&
     build_bins_pipeline_resource() const;
+    [[nodiscard]] const cubey::render::ComputePipelineResource& emit_pipeline_resource() const;
     [[nodiscard]] const cubey::render::ComputePipelineResource&
     active_face_dispatch_args_pipeline_resource() const;
     [[nodiscard]] const cubey::render::ComputePipelineResource&
@@ -257,6 +258,7 @@ class Water3DGpuResources {
     std::optional<cubey::render::ComputePipelineResource> clear_grid_pipeline_resource_;
     std::optional<cubey::render::ComputePipelineResource> clear_bins_pipeline_resource_;
     std::optional<cubey::render::ComputePipelineResource> build_bins_pipeline_resource_;
+    std::optional<cubey::render::ComputePipelineResource> emit_pipeline_resource_;
     std::optional<cubey::render::ComputePipelineResource>
         active_face_dispatch_args_pipeline_resource_;
     std::optional<cubey::render::ComputePipelineResource> build_active_tiles_pipeline_resource_;

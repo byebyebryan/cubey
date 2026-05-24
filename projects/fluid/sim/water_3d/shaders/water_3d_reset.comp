@@ -121,6 +121,13 @@ vec3 spawn_position(uint logical_cell, uint sub_particle, uint fill_x, uint fill
     return cell_position / vec3(width, height, depth);
 }
 
+uint fill_start_from_center(float center_fraction, uint fill_cells, uint axis_cells) {
+    uint usable_min = kWater3DWallCells;
+    uint usable_max = axis_cells - kWater3DWallCells - fill_cells;
+    int centered = int(floor(center_fraction * float(axis_cells))) - int(fill_cells / 2u);
+    return uint(clamp(centered, int(usable_min), int(usable_max)));
+}
+
 void main() {
     uint id = gl_GlobalInvocationID.x;
     uint width = uint(WATER3D_GRID_WIDTH + 0.5);
@@ -144,9 +151,9 @@ void main() {
                             max(1u, depth - (kWater3DWallCells * 2u)));
         uint logical_cell = id / particles_per_cell;
         uint sub_particle = id % particles_per_cell;
-        uint start_x = max(kWater3DWallCells, (width - fill_x) / 2u);
+        uint start_x = fill_start_from_center(params.fill_placement_options.x, fill_x, width);
         uint start_y = kWater3DWallCells;
-        uint start_z = max(kWater3DWallCells, (depth - fill_z) / 2u);
+        uint start_z = fill_start_from_center(params.fill_placement_options.y, fill_z, depth);
         uint strata = max(1u, uint(ceil(pow(float(particles_per_cell), 1.0 / 3.0))));
         vec3 jitter =
             (vec3(hash11(id * 3u + 17u), hash11(id * 3u + 31u), hash11(id * 3u + 47u)) -
@@ -155,7 +162,7 @@ void main() {
         vec3 position = spawn_position(logical_cell, sub_particle, fill_x, fill_y, fill_z,
                                        particles_per_cell, start_x, start_y, start_z, jitter,
                                        width, height, depth);
-        float release = smoothstep(0.58, 0.98, position.x);
+        float release = 1.0 - smoothstep(0.02, 0.50, position.x);
         particle_positions.values[id] = vec4(position, 1.0);
         particle_velocities.values[id] = vec4(0.18 * release, 0.0, 0.0, 0.0);
         particle_affine.values[id * 3u + 0u] = vec4(0.0);

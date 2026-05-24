@@ -38,7 +38,7 @@ void main() {
     }
 
     float radius = water_surface_particle_radius();
-    vec3 center = particle_positions.values[particle_id].xyz;
+    vec3 center = water_surface_sim_to_world(particle_positions.values[particle_id].xyz);
     vec3 world_position = center + ((water_surface_camera_right() * corner.x) +
                                     (water_surface_camera_up() * corner.y)) *
                                        radius;

@@ -45,9 +45,9 @@ using cubey::ProjectFrame;
 using cubey::host::FrameStatsSample;
 using cubey::host::FrameStatsSnapshot;
 
-constexpr float kCameraDistance = 2.7F;
-constexpr float kCameraBaseYaw = -0.52F;
-constexpr float kCameraBasePitch = -0.38F;
+constexpr float kCameraDistance = 4.0F;
+constexpr float kCameraBaseYaw = -0.45F;
+constexpr float kCameraBasePitch = -0.34F;
 constexpr cubey::math::Vec3 kVolumeCenter{0.5F, 0.5F, 0.5F};
 
 constexpr std::array<Water3DRenderView, 12> kRenderViews{
@@ -676,6 +676,55 @@ class Water3DApp {
             refresh_particle_counts(water_config_);
             reset_simulation();
         }
+        bool fill_center_changed = false;
+        fill_center_changed |= ImGui::SliderFloat("Fill center X",
+                                                  &water_config_.initial_fill_center[0], 0.05F,
+                                                  0.95F, "%.2f");
+        fill_center_changed |= ImGui::SliderFloat("Fill center Z",
+                                                  &water_config_.initial_fill_center[1], 0.05F,
+                                                  0.95F, "%.2f");
+        if (fill_center_changed) {
+            reset_simulation();
+        }
+        ImGui::SliderFloat3("Domain scale", water_config_.domain.scale.data(), 0.25F, 3.0F,
+                            "%.2f");
+        ImGui::Checkbox("Hose", &water_config_.hose.enabled);
+        ImGui::SliderFloat3("Hose position", water_config_.hose.position.data(), 0.02F, 0.98F,
+                            "%.2f");
+        ImGui::SliderFloat("Hose yaw", &water_config_.hose.yaw_degrees, -180.0F, 180.0F,
+                           "%.1f deg");
+        ImGui::SliderFloat("Hose pitch", &water_config_.hose.pitch_degrees, -70.0F, 20.0F,
+                           "%.1f deg");
+        ImGui::SliderFloat("Hose speed", &water_config_.hose.speed, 0.2F, 6.0F, "%.2f");
+        ImGui::SliderFloat("Hose radius", &water_config_.hose.radius, 0.004F, 0.080F, "%.3f");
+        ImGui::SliderFloat("Hose rate", &water_config_.hose.particles_per_second, 0.0F,
+                           60000.0F, "%.0f/s");
+        ImGui::SliderFloat("Hose spread", &water_config_.hose.spread_degrees, 0.0F, 45.0F,
+                           "%.1f deg");
+        ImGui::Checkbox("Drain", &water_config_.drain.enabled);
+        ImGui::SliderFloat3("Drain center", water_config_.drain.center.data(), 0.02F, 0.98F,
+                            "%.2f");
+        ImGui::SliderFloat3("Drain half size", water_config_.drain.half_size.data(), 0.005F,
+                            0.35F, "%.3f");
+        ImGui::Checkbox("Wave", &water_config_.wave.enabled);
+        ImGui::SliderFloat3("Wave center", water_config_.wave.center.data(), 0.02F, 0.98F,
+                            "%.2f");
+        ImGui::SliderFloat3("Wave half size", water_config_.wave.half_size.data(), 0.01F, 0.55F,
+                            "%.2f");
+        ImGui::SliderFloat("Wave amplitude", &water_config_.wave.amplitude, 0.0F, 4.0F, "%.2f");
+        ImGui::SliderFloat("Wave frequency", &water_config_.wave.frequency_hz, 0.0F, 2.0F,
+                           "%.2f Hz");
+        ImGui::Checkbox("Rain", &water_config_.rain.enabled);
+        ImGui::SliderFloat3("Rain center", water_config_.rain.center.data(), 0.02F, 0.98F,
+                            "%.2f");
+        ImGui::SliderFloat3("Rain half size", water_config_.rain.half_size.data(), 0.005F, 0.50F,
+                            "%.2f");
+        ImGui::SliderFloat("Rain speed", &water_config_.rain.speed, 0.2F, 6.0F, "%.2f");
+        ImGui::SliderFloat("Rain radius", &water_config_.rain.radius, 0.002F, 0.060F, "%.3f");
+        ImGui::SliderFloat("Rain rate", &water_config_.rain.particles_per_second, 0.0F,
+                           30000.0F, "%.0f/s");
+        ImGui::SliderFloat("Rain spread", &water_config_.rain.spread_degrees, 0.0F, 30.0F,
+                           "%.1f deg");
         ImGui::SliderFloat("Slice depth", &water_config_.slice_depth, 0.02F, 0.98F, "%.2f");
 
         ImGui::Text("Grid: %u x %u x %u", water_config_.grid_width, water_config_.grid_height,
@@ -685,6 +734,9 @@ class Water3DApp {
         ImGui::Text("Particles: %u reset / %u capacity", water_config_.active_particle_count,
                     water_config_.particle_capacity);
         ImGui::Text("Compute particles: %u scanned", scanned_particles);
+        ImGui::Text("Emitter pool: %u touched / %u available",
+                    scanned_particles - water_config_.active_particle_count,
+                    emitter_particle_pool_capacity_for_config(water_config_));
         ImGui::Text("Whitewater: %u capacity / %u max emit", water_config_.whitewater_capacity,
                     water_config_.whitewater_max_emit_per_frame);
         if (latest_frame_stats_.has_value()) {

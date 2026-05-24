@@ -11,7 +11,8 @@ Current projects:
   PIC/FLIP fallback, reset presets, hose/drain material flow, obstacle shapes,
   and particle-splat surface rendering plus live frame/memory diagnostics.
 - `water_3d`: 3D APIC/PIC-FLIP liquid simulation foundation on a MAC grid,
-  currently rendered as particle splats with slice diagnostics.
+  with a long-tank screen-space surface renderer, hose/drain flow, wave forcing,
+  optional rain, whitewater, and diagnostics.
 - `fire_3d`: 3D dense-grid pyro fire simulation.
 - `explosion_3d`: 3D dense-grid pyro explosion simulation.
 
