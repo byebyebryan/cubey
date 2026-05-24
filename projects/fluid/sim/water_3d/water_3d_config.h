@@ -44,7 +44,7 @@ inline constexpr std::uint32_t kWater3DParticleGroupSize = 64;
 inline constexpr std::uint32_t kWater3DP2GTileExtent = 4;
 inline constexpr std::uint32_t kWater3DP2GTileFaceSlots = 192;
 inline constexpr std::uint32_t kWater3DSimulationPushConstantFloatCount = 8;
-inline constexpr std::uint32_t kWater3DSimulationUniformFloatCount = 84;
+inline constexpr std::uint32_t kWater3DSimulationUniformFloatCount = 88;
 inline constexpr std::uint32_t kWater3DRenderPushConstantFloatCount = 56;
 inline constexpr std::uint32_t kWater3DWallCells = 2;
 inline constexpr std::uint32_t kWater3DMinimumGridExtent = 16;
@@ -151,14 +151,16 @@ struct Water3DDrainConfig {
     bool enabled = true;
     std::array<float, 3> center{0.93F, 0.07F, 0.50F};
     std::array<float, 3> half_size{0.045F, 0.035F, 0.28F};
+    float pull_speed = 2.2F;
+    float pull_radius = 1.10F;
 };
 
 struct Water3DWaveConfig {
     bool enabled = true;
-    std::array<float, 3> center{0.12F, 0.34F, 0.50F};
-    std::array<float, 3> half_size{0.10F, 0.22F, 0.36F};
-    float amplitude = 0.35F;
-    float frequency_hz = 0.35F;
+    std::array<float, 3> center{0.10F, 0.18F, 0.50F};
+    std::array<float, 3> half_size{0.09F, 0.24F, 0.36F};
+    float amplitude = 1.25F;
+    float frequency_hz = 0.55F;
 };
 
 struct Water3DRainConfig {
@@ -244,6 +246,7 @@ struct Water3DSimulationUniforms {
     std::array<float, 4> hose_options2{};
     std::array<float, 4> drain_options{};
     std::array<float, 4> drain_extents{};
+    std::array<float, 4> drain_flow{};
     std::array<float, 4> wave_options0{};
     std::array<float, 4> wave_options1{};
     std::array<float, 4> wave_options2{};

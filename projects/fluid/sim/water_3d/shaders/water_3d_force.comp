@@ -59,6 +59,32 @@ float wave_gate(vec3 position) {
     return shaped.x * shaped.y * shaped.z;
 }
 
+float drain_gate(vec3 position) {
+    if (params.drain_options.x < 0.5 || params.drain_flow.x <= 0.0) {
+        return 0.0;
+    }
+    float radius = max(0.001, params.drain_flow.y);
+    vec3 delta = position - params.drain_options.yzw;
+    delta.y *= 1.35;
+    float distance = length(delta);
+    return 1.0 - smoothstep(radius * 0.55, radius, distance);
+}
+
+vec3 drain_target_velocity(vec3 position) {
+    vec3 direction = params.drain_options.yzw - position;
+    direction.y *= 0.55;
+    float direction_length = length(direction);
+    if (direction_length <= 0.0001) {
+        return vec3(0.0);
+    }
+    return direction / direction_length * max(0.0, params.drain_flow.x);
+}
+
+float drive_toward(float current_velocity, float target_velocity, float gate, float dt) {
+    float blend = clamp(gate * dt * 10.0, 0.0, 1.0);
+    return mix(current_velocity, target_velocity, blend);
+}
+
 void main() {
     uint width = uint(WATER3D_GRID_WIDTH + 0.5);
     uint height = uint(WATER3D_GRID_HEIGHT + 0.5);
@@ -81,9 +107,13 @@ void main() {
                 vec3(float(x) / float(width), (float(y) + 0.5) / float(height),
                      (float(z) + 0.5) / float(depth));
             float phase = WATER3D_TIME * max(0.0, params.wave_options2.x) * 6.2831853;
-            float impulse = params.wave_options1.w * sin(phase) * wave_gate(face_position);
-            u_field.values[index] = clamp(u_field.values[index] + impulse * dt, -velocity_limit,
-                                          velocity_limit);
+            float wave_target = params.wave_options1.w * sin(phase);
+            float driven_velocity =
+                drive_toward(u_field.values[index], wave_target, wave_gate(face_position), dt);
+            vec3 drain_velocity = drain_target_velocity(face_position);
+            driven_velocity =
+                drive_toward(driven_velocity, drain_velocity.x, drain_gate(face_position), dt);
+            u_field.values[index] = clamp(driven_velocity, -velocity_limit, velocity_limit);
         }
     }
     if (x < width && y <= height && z < depth) {
@@ -96,9 +126,14 @@ void main() {
         if (blocked || !adjacent_liquid || v_weight.values[index] <= 0.0) {
             v_field.values[index] = 0.0;
         } else {
-            v_field.values[index] =
-                clamp(v_field.values[index] + params.fill_options.w * dt, -velocity_limit,
-                      velocity_limit);
+            vec3 face_position =
+                vec3((float(x) + 0.5) / float(width), float(y) / float(height),
+                     (float(z) + 0.5) / float(depth));
+            float driven_velocity = v_field.values[index] + params.fill_options.w * dt;
+            vec3 drain_velocity = drain_target_velocity(face_position);
+            driven_velocity =
+                drive_toward(driven_velocity, drain_velocity.y, drain_gate(face_position), dt);
+            v_field.values[index] = clamp(driven_velocity, -velocity_limit, velocity_limit);
         }
     }
     if (x < width && y < height && z <= depth) {
@@ -108,6 +143,15 @@ void main() {
                        solid_cell(int(x), int(y), int(z), width, height, depth);
         if (blocked || w_weight.values[index] <= 0.0) {
             w_field.values[index] = 0.0;
+        } else {
+            vec3 face_position =
+                vec3((float(x) + 0.5) / float(width), (float(y) + 0.5) / float(height),
+                     float(z) / float(depth));
+            vec3 drain_velocity = drain_target_velocity(face_position);
+            w_field.values[index] = clamp(
+                drive_toward(w_field.values[index], drain_velocity.z, drain_gate(face_position),
+                             dt),
+                -velocity_limit, velocity_limit);
         }
     }
 }

@@ -555,6 +555,13 @@ surface_depth_texture_desc(const char* label, VkExtent2D extent, VkFormat format
                 config.drain.half_size[2],
                 0.0F,
             },
+        .drain_flow =
+            {
+                config.drain.pull_speed,
+                config.drain.pull_radius,
+                0.0F,
+                0.0F,
+            },
         .wave_options0 =
             {
                 config.wave.enabled ? 1.0F : 0.0F,

@@ -72,6 +72,7 @@
         vec4 hose_options2;                                                                     \
         vec4 drain_options;                                                                     \
         vec4 drain_extents;                                                                     \
+        vec4 drain_flow;                                                                        \
         vec4 wave_options0;                                                                     \
         vec4 wave_options1;                                                                     \
         vec4 wave_options2;                                                                     \

@@ -5,8 +5,8 @@ direction as `water_2d`: particles carry water volume, a staggered MAC grid solv
 velocity and pressure, and APIC is the default particle transfer mode.
 
 The default scene is a long showcase tank. A left-biased dam break seeds the
-initial volume, a hose and drain keep the simulation alive after the first
-splash, and a mild wave driver adds low-frequency motion. Rain emission is
+initial volume, a hose and suction drain keep the simulation alive after the first
+splash, and a horizontal wave driver adds low-frequency motion. Rain emission is
 available from the UI but starts disabled. The solver still runs in normalized
 `[0,1]^3` coordinates; the long tank is a render-domain scale rather than a
 full anisotropic-cell rewrite.

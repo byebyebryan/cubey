@@ -101,8 +101,12 @@ int main() {
         require(config.hose.enabled && config.hose.particle_capacity ==
                                            water::kWater3DDefaultEmitterParticleCapacity,
                 "water 3D should reserve a default emitter particle pool");
-        require(config.drain.enabled, "water 3D should default to a bounded drain");
-        require(config.wave.enabled, "water 3D should default to mild wave forcing");
+        require(config.drain.enabled && config.drain.pull_speed == 2.2F &&
+                    config.drain.pull_radius == 1.10F,
+                "water 3D should default to a drain with scene-scale suction");
+        require(config.wave.enabled && config.wave.amplitude == 1.25F &&
+                    config.wave.frequency_hz == 0.55F,
+                "water 3D should default to visible wave forcing");
         require(!config.rain.enabled, "water 3D rain should be opt-in by default");
         require(!config.profile_diagnostics && config.profile_diagnostic_interval == 1U,
                 "water 3D diagnostics should be opt-in with per-frame sampling by default");
@@ -377,6 +381,8 @@ int main() {
                          "water 3D render constants should expose domain scale");
         require_contains(contract, "wave_options2",
                          "water 3D contract should expose wave frequency uniforms");
+        require_contains(contract, "drain_flow",
+                         "water 3D contract should expose drain suction uniforms");
         require_contains(reset_shader, "particle_affine.values[id * 3u + 2u]",
                          "water 3D reset should clear all APIC affine rows");
         require_contains(reset_shader, "fill_start_from_center",
@@ -451,6 +457,10 @@ int main() {
                          "water 3D force pass should include a bounded wave driver");
         require_contains(force_shader, "params.wave_options2.x",
                          "water 3D wave force should use configurable frequency");
+        require_contains(force_shader, "drain_gate",
+                         "water 3D force pass should include a broad drain suction field");
+        require_contains(force_shader, "drive_toward",
+                         "water 3D force pass should drive toward velocity targets");
         require_contains(whitewater_clear, "whitewater_counters.values[id] = 0u",
                          "water 3D whitewater should clear per-frame counters");
         require_contains(whitewater_advect, "sample_velocity",

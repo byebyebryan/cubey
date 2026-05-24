@@ -706,6 +706,10 @@ class Water3DApp {
                             "%.2f");
         ImGui::SliderFloat3("Drain half size", water_config_.drain.half_size.data(), 0.005F,
                             0.35F, "%.3f");
+        ImGui::SliderFloat("Drain pull speed", &water_config_.drain.pull_speed, 0.0F, 6.0F,
+                           "%.2f");
+        ImGui::SliderFloat("Drain pull radius", &water_config_.drain.pull_radius, 0.05F, 1.5F,
+                           "%.2f");
         ImGui::Checkbox("Wave", &water_config_.wave.enabled);
         ImGui::SliderFloat3("Wave center", water_config_.wave.center.data(), 0.02F, 0.98F,
                             "%.2f");
