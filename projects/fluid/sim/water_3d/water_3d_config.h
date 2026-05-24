@@ -136,7 +136,7 @@ struct Water3DDomainConfig {
 };
 
 struct Water3DHoseConfig {
-    bool enabled = true;
+    bool enabled = false;
     std::array<float, 3> position{0.08F, 0.76F, 0.50F};
     float yaw_degrees = 0.0F;
     float pitch_degrees = -18.0F;
@@ -148,7 +148,7 @@ struct Water3DHoseConfig {
 };
 
 struct Water3DDrainConfig {
-    bool enabled = true;
+    bool enabled = false;
     std::array<float, 3> center{0.93F, 0.07F, 0.50F};
     std::array<float, 3> half_size{0.045F, 0.035F, 0.28F};
     float pull_speed = 2.2F;

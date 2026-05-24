@@ -98,12 +98,12 @@ int main() {
                 "water 3D should default to visible whitewater emission");
         require(config.whitewater_drag == 0.94F && config.whitewater_gravity_scale == 0.55F,
                 "water 3D should default to damped spray whitewater");
-        require(config.hose.enabled && config.hose.particle_capacity ==
+        require(!config.hose.enabled && config.hose.particle_capacity ==
                                            water::kWater3DDefaultEmitterParticleCapacity,
-                "water 3D should reserve a default emitter particle pool");
-        require(config.drain.enabled && config.drain.pull_speed == 2.2F &&
+                "water 3D should reserve a default opt-in emitter particle pool");
+        require(!config.drain.enabled && config.drain.pull_speed == 2.2F &&
                     config.drain.pull_radius == 1.10F,
-                "water 3D should default to a drain with scene-scale suction");
+                "water 3D should default to opt-in drain suction");
         require(config.wave.enabled && config.wave.amplitude == 1.25F &&
                     config.wave.frequency_hz == 0.55F,
                 "water 3D should default to visible wave forcing");
