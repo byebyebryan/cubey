@@ -139,6 +139,35 @@ cell-local after the post-advect refresh. The old fixed cell-particle index
 buffer was removed after this capture because sorted cell ranges are now the
 only P2G path.
 
+## P2G Active Tile Experiment
+
+Captured 2026-05-23 with `water3d-p2g-active-*` and `water3d-p2g-tiled-*`
+profile prefixes. The tiled path is selected with
+`--water3d-p2g-mode tiled`; the default remains `active`.
+
+The experiment builds compact `4x4x4` active P2G tiles from the existing active
+face list, then dispatches one 192-invocation workgroup per tile. Each workgroup
+tests 64 U, 64 V, and 64 W face slots and skips inactive slots through
+`active_face_flags`. There is no shared-memory particle payload cache in this
+version, so the path is primarily a scheduling/locality experiment.
+
+| Grid | Active P2G | Tiled P2G | Tile build | Non-diagnostic GPU avg | Total GPU avg with diagnostics | Tile slot / active face |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| 64^3 | 2.222 ms | 1.157 ms | 0.037 ms | 5.801 -> 4.768 ms | 7.335 -> 6.288 ms | 1.61x |
+| 96^3 | 8.118 ms | 6.677 ms | 0.109 ms | 19.697 -> 18.439 ms | 24.598 -> 23.423 ms | 1.36x |
+| 128^3 | 21.779 ms | 23.954 ms | 0.211 ms | 48.540 -> 51.032 ms | 58.926 -> 61.505 ms | 1.26x |
+
+The result is mixed. Tiling helps at 64^3 and 96^3, but the 96^3 total win is
+small and 128^3 regresses. The lower tile-slot inflation at larger grids suggests
+the regression is not simply extra inactive face work; the 192-invocation tile
+shader is likely hitting occupancy, scheduling, or cache behavior that the
+active-face path avoids at high occupancy.
+
+Decision: keep `active` as the default and retain `tiled` as an opt-in profiling
+path. The next tiled attempt should not just reshape dispatch. It needs a real
+cooperative strategy, such as shared-memory cell metadata, particle payload
+staging, or particle-owned scatter with a correctness plan for write conflicts.
+
 ## Readout
 
 P2G remains the largest solver cost, but the first locality pass changed the
@@ -148,8 +177,9 @@ profile slice if visual composition becomes the limiting cost.
 
 Near-term optimization candidates:
 
-1. Investigate a cooperative tiled P2G path or particle-splat/grid-scatter
-   variant now that particle memory is cell-local.
+1. Investigate a deeper cooperative P2G path or particle-splat/grid-scatter
+   variant now that particle memory is cell-local. Simple active-tile dispatch
+   alone was not enough at 128^3.
 2. Keep P2G correctness fixed while experimenting. The previous fixed-stencil
    transfer attempt produced solver instability and should stay as a documented
    failed experiment until a narrower hypothesis is tested.
