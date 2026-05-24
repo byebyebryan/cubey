@@ -50,7 +50,7 @@ int main() {
         constexpr std::size_t kExpectedHoseParticleCapacity = 262144U;
         constexpr std::size_t kExpectedParticleCapacity =
             kExpectedInitialParticleCapacity + kExpectedHoseParticleCapacity;
-        constexpr std::size_t kExpectedBinIndexCount = kExpectedCellCount * 32U;
+        constexpr std::size_t kExpectedBinIndexCount = kExpectedCellCount * 64U;
 
         require(config.grid_width == 256, "water grid should default to 256 columns");
         require(config.grid_height == 144, "water grid should default to 144 rows");
@@ -66,7 +66,7 @@ int main() {
         require(config.pressure_iterations == 256,
                 "water pressure solve should default to a stronger Jacobi pass count");
         require(config.particles_per_cell == 4, "water should seed four particles per cell");
-        require(config.max_particles_per_cell == 32,
+        require(config.max_particles_per_cell == 64,
                 "water particle bins should reserve a bounded overflow margin");
         require(config.active_particle_count == kExpectedActiveParticleCount,
                 "water active particle count should come from the default fill area");
@@ -315,6 +315,22 @@ int main() {
                     ((294U * 165U * 4U) + kExpectedHoseParticleCapacity),
                 "water config should add hose capacity to configured particle capacity");
 
+        cubey::RunConfig transfer_run_config;
+        transfer_run_config.water2d_transfer_mode = "pic-flip";
+        transfer_run_config.water2d_transfer_limit = 48;
+        transfer_run_config.water2d_hose = 1;
+        transfer_run_config.water2d_drain = 1;
+        const cubey::projects::fluid::water_2d::Water2DConfig transfer_config =
+            cubey::projects::fluid::water_2d::water_2d_config_from_run_config(
+                transfer_run_config);
+        require(transfer_config.transfer_mode ==
+                    cubey::projects::fluid::water_2d::Water2DTransferMode::PicFlip,
+                "water run-config should parse transfer mode");
+        require(transfer_config.max_particles_per_cell == 48,
+                "water run-config should parse transfer sample limit");
+        require(transfer_config.hose.enabled && transfer_config.drain.enabled,
+                "water run-config should parse hose and drain toggles");
+
         cubey::projects::fluid::water_2d::Water2DConfig edited_fill = config;
         edited_fill.initial_fill_width = 0.25F;
         edited_fill.initial_fill_height = 0.25F;
@@ -478,8 +494,8 @@ int main() {
                          "water particle-to-grid shader should apply APIC local velocity");
         require_contains(divergence_shader, "WATER2D_VOLUME_STRENGTH",
                          "water divergence shader should add particle-volume expansion");
-        require_contains(divergence_shader, "stored_particles = min",
-                         "water divergence shader should cap volume pressure to stored bins");
+        require_contains(divergence_shader, "stored_particles = float(cell_counts.values[index])",
+                         "water divergence shader should use raw occupancy for volume pressure");
         require_contains(divergence_shader, "divergence.values[index] = velocity_divergence -",
                          "water divergence shader should turn overpacked cells into sources");
         require_contains(pressure_shader, "cell_counts.values[index] > 0u",

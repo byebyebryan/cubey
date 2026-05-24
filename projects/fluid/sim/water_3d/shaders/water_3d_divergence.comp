@@ -90,7 +90,7 @@ void main() {
                                 ((top - bottom) * float(height)) +
                                 ((front - back) * float(depth));
     float target_particles = max(1.0, WATER3D_PARTICLES_PER_CELL);
-    float stored_particles = min(float(cell_counts.values[index]), WATER3D_MAX_PARTICLES_PER_CELL);
+    float stored_particles = float(cell_counts.values[index]);
     float overpack = max(0.0, (stored_particles - target_particles) / target_particles);
     float raw_volume_source = min(overpack, 5.0) * max(0.0, WATER3D_VOLUME_STRENGTH);
     float volume_source = boundary_limited_volume_source(

@@ -23,6 +23,9 @@ layout(set = 0, binding = WATER3D_BINDING_SOLID, std430) readonly buffer SolidFi
 layout(set = 0, binding = WATER3D_BINDING_CELL_COUNTS, std430) readonly buffer CellCounts {
     uint values[];
 } cell_counts;
+layout(set = 0, binding = WATER3D_BINDING_SORTED_PARTICLE_INDICES, std430) readonly buffer SortedParticleIndices {
+    uint values[];
+} sorted_particle_indices;
 layout(set = 0, binding = WATER3D_BINDING_CELL_OFFSETS, std430) readonly buffer CellOffsets {
     uint values[];
 } cell_offsets;
@@ -121,7 +124,10 @@ const uint SLOT_P2G_ACTIVE_TILES = 64u;
 const uint SLOT_P2G_TILE_FACE_SLOTS = 65u;
 const uint SLOT_P2G_TILE_INACTIVE_FACE_SLOTS = 66u;
 const uint SLOT_P2G_TILE_DISPATCH_GROUPS = 67u;
-const uint DIAGNOSTIC_SLOT_COUNT = 68u;
+const uint SLOT_LIQUID_PARTICLES = 68u;
+const uint SLOT_RAIN_PARTICLES = 69u;
+const uint SLOT_TRANSFER_TRUNCATED_PARTICLES = 70u;
+const uint DIAGNOSTIC_SLOT_COUNT = 71u;
 const float DIVERGENCE_SCALE = 1000000.0;
 
 uint cell_index(uint x, uint y, uint z, uint width, uint height) {
@@ -277,6 +283,11 @@ void record_workload(uint id, uint cell_count, uint particle_count, uint max_par
         vec4 particle = particle_positions.values[id];
         if (particle.w > 0.5) {
             atomicAdd(diagnostics.values[SLOT_ACTIVE_PARTICLES], 1u);
+            if (particle.w == WATER3D_PARTICLE_STATE_RAIN) {
+                atomicAdd(diagnostics.values[SLOT_RAIN_PARTICLES], 1u);
+            } else {
+                atomicAdd(diagnostics.values[SLOT_LIQUID_PARTICLES], 1u);
+            }
             if (any(lessThan(particle.xyz, vec3(0.0))) ||
                 any(greaterThanEqual(particle.xyz, vec3(1.0)))) {
                 atomicAdd(diagnostics.values[SLOT_OUT_OF_BOUNDS_PARTICLES], 1u);
@@ -294,6 +305,8 @@ void record_workload(uint id, uint cell_count, uint particle_count, uint max_par
             if (count > max_particles_per_cell) {
                 atomicAdd(diagnostics.values[SLOT_OVERPACKED_CELLS], 1u);
                 atomicAdd(diagnostics.values[SLOT_OVERPACKED_PARTICLES],
+                          count - max_particles_per_cell);
+                atomicAdd(diagnostics.values[SLOT_TRANSFER_TRUNCATED_PARTICLES],
                           count - max_particles_per_cell);
             }
         }
@@ -321,7 +334,7 @@ void record_projection_residual(uint id, uint width, uint height, uint depth) {
     float velocity_divergence = ((right - left) * float(width)) + ((top - bottom) * float(height)) +
                                 ((front - back) * float(depth));
     float target_particles = max(1.0, WATER3D_PARTICLES_PER_CELL);
-    float stored_particles = min(float(cell_counts.values[id]), WATER3D_MAX_PARTICLES_PER_CELL);
+    float stored_particles = float(cell_counts.values[id]);
     float overpack = max(0.0, (stored_particles - target_particles) / target_particles);
     float raw_volume_source = min(overpack, 5.0) * max(0.0, WATER3D_VOLUME_STRENGTH);
     float volume_source = boundary_limited_volume_source(
@@ -387,8 +400,9 @@ void record_p2g_face_scan(vec3 face_grid_position, uint width, uint height, uint
                 atomic_add_u64(SLOT_P2G_CELL_PARTICLE_SLOTS_SCANNED,
                                SLOT_P2G_CELL_PARTICLE_SLOTS_SCANNED_HIGH, count);
                 for (uint slot = 0u; slot < count; ++slot) {
-                    uint particle_id = offset + slot;
-                    if (particle_positions.values[particle_id].w < 0.5) {
+                    uint particle_id = sorted_particle_indices.values[offset + slot];
+                    if (particle_id >= uint(WATER3D_PARTICLE_CAPACITY + 0.5) ||
+                        particle_positions.values[particle_id].w < 0.5) {
                         atomicAdd(diagnostics.values[SLOT_P2G_INACTIVE_PARTICLES_SEEN], 1u);
                         continue;
                     }

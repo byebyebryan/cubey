@@ -57,7 +57,7 @@ int main() {
         require(config.pressure_iterations == 32,
                 "water 3D should default to a bounded pressure solve");
         require(config.particles_per_cell == 4, "water 3D should seed four particles per cell");
-        require(config.max_particles_per_cell == 32,
+        require(config.max_particles_per_cell == 128,
                 "water 3D P2G should cap per-cell transfer samples");
         require(config.active_particle_count == kExpectedActiveParticleCount,
                 "water 3D active particles should come from the default fill volume");
@@ -135,6 +135,9 @@ int main() {
         require(water::particle_affine_buffer_byte_size(config) ==
                     sizeof(float) * kExpectedParticleCapacity * 12U,
                 "water 3D APIC affine buffers should store three vec4 rows per particle");
+        require(water::sorted_particle_index_byte_size(config) ==
+                    sizeof(std::uint32_t) * kExpectedParticleCapacity,
+                "water 3D sorted particle indices should store canonical particle IDs");
         require(water::whitewater_buffer_byte_size(config) ==
                     sizeof(float) * water::kWater3DDefaultWhitewaterCapacity * 4U,
                 "water 3D whitewater buffers should store vec4 capacity");
@@ -240,9 +243,17 @@ int main() {
         run_config.grid_width = 32;
         run_config.grid_height = 48;
         run_config.grid_depth = 40;
+        run_config.headless = true;
         run_config.profile_diagnostics = true;
         run_config.profile_diagnostic_interval = 7;
+        run_config.water3d_transfer_mode = "pic-flip";
+        run_config.water3d_transfer_limit = 96;
         run_config.water3d_p2g_mode = "tiled";
+        run_config.water3d_hose = 1;
+        run_config.water3d_drain = 1;
+        run_config.water3d_rain = 1;
+        run_config.water3d_wave = 0;
+        run_config.water3d_whitewater = 0;
         const water::Water3DConfig overridden = water::water_3d_config_from_run_config(run_config);
         require(overridden.grid_width == 32 && overridden.grid_height == 48 &&
                     overridden.grid_depth == 40,
@@ -254,8 +265,26 @@ int main() {
                 "water 3D run-config construction should refresh particle capacity");
         require(overridden.profile_diagnostics && overridden.profile_diagnostic_interval == 7U,
                 "water 3D run-config construction should preserve profile diagnostics flags");
+        require(overridden.transfer_mode == water::Water3DTransferMode::PicFlip &&
+                    overridden.max_particles_per_cell == 96U,
+                "water 3D run-config construction should parse transfer mode and limit");
         require(overridden.p2g_mode == water::Water3DP2GMode::TiledFaces,
                 "water 3D run-config construction should parse P2G mode");
+        require(overridden.hose.enabled && overridden.drain.enabled && overridden.rain.enabled,
+                "water 3D run-config construction should enable requested emitters");
+        require(!overridden.wave.enabled && !overridden.whitewater_enabled,
+                "water 3D run-config construction should disable requested optional systems");
+
+        bool rejected_windowed_diagnostics = false;
+        try {
+            cubey::RunConfig windowed_diagnostics;
+            windowed_diagnostics.profile_diagnostics = true;
+            static_cast<void>(water::water_3d_config_from_run_config(windowed_diagnostics));
+        } catch (const std::runtime_error&) {
+            rejected_windowed_diagnostics = true;
+        }
+        require(rejected_windowed_diagnostics,
+                "water 3D should reject diagnostic readback in windowed mode");
 
         bool rejected = false;
         try {
@@ -282,8 +311,6 @@ int main() {
             read_text_file(shader_dir / "water_3d_active_tile_dispatch_args.comp");
         const std::string p2g_tiled_shader =
             read_text_file(shader_dir / "water_3d_particle_to_grid_tiled.comp");
-        const std::string copy_sort_source =
-            read_text_file(shader_dir / "water_3d_copy_particle_sort_source.comp");
         const std::string scan_offsets = read_text_file(shader_dir / "water_3d_scan_offsets.comp");
         const std::string scan_add_offsets =
             read_text_file(shader_dir / "water_3d_scan_add_offsets.comp");
@@ -364,8 +391,8 @@ int main() {
                          "water 3D contract should expose diagnostics readback storage");
         require_contains(contract, "WATER3D_BINDING_CELL_OFFSETS",
                          "water 3D contract should expose sorted cell particle ranges");
-        require_contains(contract, "WATER3D_BINDING_PARTICLE_POSITIONS_SOURCE",
-                         "water 3D contract should expose particle sort source buffers");
+        require_contains(contract, "WATER3D_BINDING_SORTED_PARTICLE_INDICES",
+                         "water 3D contract should expose stable sorted particle indices");
         require_contains(contract, "WATER3D_BINDING_SORT_SCAN_LEVEL2_OFFSETS",
                          "water 3D contract should expose scan hierarchy scratch buffers");
         require_contains(contract, "WATER3D_BUILD_ACTIVE_FACES",
@@ -422,14 +449,14 @@ int main() {
                          "water 3D emitter should tag rain particles separately");
         require_contains(emit_shader, "clear_affine",
                          "water 3D emitter should reset APIC state for emitted particles");
-        require_contains(copy_sort_source, "particle_positions_source.values[particle_id]",
-                         "water 3D particle sort should copy canonical positions to source");
         require_contains(scan_offsets, "scan_values[256]",
                          "water 3D particle sort should scan cell counts on GPU");
         require_contains(scan_add_offsets, "cell_offsets.values[id] +=",
                          "water 3D particle sort should apply hierarchical scan offsets");
         require_contains(scatter_sorted_particles, "cell_offsets.values[cell_id] + slot",
                          "water 3D particle sort should scatter into compact cell ranges");
+        require_contains(scatter_sorted_particles, "sorted_particle_indices.values[target_id] = source_id",
+                         "water 3D particle sort should keep canonical particle storage stable");
         require_contains(p2g_shader, "gather_face_velocity",
                          "water 3D particle-to-grid should gather face velocities");
         require_contains(p2g_shader, "int ox_min, int ox_max",
@@ -438,6 +465,8 @@ int main() {
                          "water 3D U-face P2G should skip impossible positive-x cells");
         require_contains(p2g_shader, "cell_offsets.values[cell_id]",
                          "water 3D P2G should walk sorted compact cell ranges");
+        require_contains(p2g_shader, "sorted_particle_indices.values[offset + slot]",
+                         "water 3D P2G should dereference sorted canonical particle IDs");
         require_contains(p2g_shader, "velocity += unpack_affine(particle_id) * delta",
                          "water 3D particle-to-grid should apply APIC local velocity");
         require_contains(p2g_shader, "active_work_counts.values[0]",
@@ -458,6 +487,8 @@ int main() {
                          "water 3D tiled P2G should skip inactive face slots inside active tiles");
         require_contains(p2g_tiled_shader, "cell_offsets.values[cell_id]",
                          "water 3D tiled P2G should walk sorted compact cell ranges");
+        require_contains(p2g_tiled_shader, "sorted_particle_indices.values[offset + slot]",
+                         "water 3D tiled P2G should dereference sorted canonical particle IDs");
         require_contains(active_face_dispatch_args, "active_face_dispatch_args.values[0]",
                          "water 3D should write indirect dispatch args for active faces");
         require_contains(advect_shader, "apply_side_wall_friction",
@@ -530,8 +561,12 @@ int main() {
                          "water 3D diagnostics should mirror support-aware P2G gathers");
         require_contains(diagnostics_shader, "cell_offsets.values[cell_id]",
                          "water 3D diagnostics should mirror compact cell ranges");
+        require_contains(diagnostics_shader, "sorted_particle_indices.values[offset + slot]",
+                         "water 3D diagnostics should dereference sorted canonical particle IDs");
         require_contains(diagnostics_shader, "active_face_indices.values[active_slot]",
                          "water 3D diagnostics should scan compacted active faces");
+        require_contains(diagnostics_shader, "SLOT_TRANSFER_TRUNCATED_PARTICLES",
+                         "water 3D diagnostics should report transfer truncation pressure");
         require_contains(diagnostics_shader, "record_candidate_slot_bucket",
                          "water 3D diagnostics should bucket P2G candidate slots per face");
         require_contains(diagnostics_shader, "SLOT_P2G_CANDIDATE_SLOTS_BIN_385_PLUS",
@@ -673,10 +708,10 @@ int main() {
                          "water 3D simulation should profile solver residual diagnostics");
         require_contains(commands, "diagnostics whitewater",
                          "water 3D simulation should profile whitewater diagnostics");
-        require_contains(commands, "copy particle sort source",
-                         "water 3D simulation should profile particle sort source copies");
         require_contains(commands, "scatter sorted particles",
                          "water 3D simulation should profile sorted particle scatter");
+        require(commands.find("copy particle sort source") == std::string::npos,
+                "water 3D simulation should not copy canonical particle arrays for sorting");
         require_contains(commands, "should_record_diagnostics_for_frame",
                          "water 3D simulation should gate diagnostics by sample interval");
         require_contains(app, "record_gpu_timings(context.profile_recorder()",
@@ -723,10 +758,10 @@ int main() {
                          "water 3D GPU resources should create the whitewater render pipeline");
         require_contains(gpu_resources, "water_3d.whitewater",
                          "water 3D GPU resources should label the whitewater render pass");
-        require_contains(gpu_resources, ".depth_test = true",
-                         "water 3D whitewater render should depth-test against the surface");
-        require_contains(commands, "VK_ATTACHMENT_LOAD_OP_LOAD",
-                         "water 3D whitewater render should keep the reconstructed surface depth");
+        require_contains(gpu_resources, "water_3d.whitewater",
+                         "water 3D GPU resources should label the whitewater render pass");
+        require_contains(gpu_resources, ".dst_alpha_blend_factor = VK_BLEND_FACTOR_ONE",
+                         "water 3D whitewater render should use additive premultiplied accumulation");
         require_contains(commands, "draw_indirect(resources.whitewater_draw_args().handle()",
                          "water 3D whitewater render should use compacted indirect draw args");
         require_contains(render_shader, "render_view == 5u",

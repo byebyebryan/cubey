@@ -20,6 +20,7 @@ presets available from the runtime UI:
 ./build/dev/projects/fluid/water_2d/water_2d --frames 300 --width 1280 --height 720
 ./build/dev/projects/fluid/water_2d/water_2d --headless --frames 120 --width 640 --height 360 --output /tmp/cubey-water-2d.png
 ./build/dev/projects/fluid/water_2d/water_2d --headless --debug-view particles --frames 120 --width 640 --height 360 --output /tmp/cubey-water-2d-particles.png
+./build/dev/projects/fluid/water_2d/water_2d --water2d-transfer pic-flip --water2d-transfer-limit 48 --water2d-hose --water2d-drain
 ```
 
 Controls:
@@ -69,8 +70,9 @@ Main buffers:
   mode.
 - `cell_counts` and `cell_particle_indices`: fixed-capacity particle bins.
   `cell_counts` tracks raw occupancy, while particle-grid transfer, separation,
-  rendering, and the volume-pressure source are bounded by the stored
-  `max_particles_per_cell` slots.
+  and rendering are bounded by the stored `max_particles_per_cell` slots.
+  Volume pressure uses raw occupancy so overpacked cells still push back instead
+  of disappearing behind the transfer cap.
 - `u` and `v`: face velocity on vertical and horizontal grid faces.
 - `u_previous` and `v_previous`: pre-force/projection velocity for FLIP deltas.
 - `pressure` and `divergence`: cell-centered scalar fields.

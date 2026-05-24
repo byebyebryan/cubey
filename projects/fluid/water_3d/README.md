@@ -47,17 +47,40 @@ Common runs:
 ./build/dev/projects/fluid/water_3d/water_3d --grid-width 48 --grid-height 48 --grid-depth 48
 ./build/dev/projects/fluid/water_3d/water_3d --grid-width 128 --grid-height 64 --grid-depth 48
 ./build/dev/projects/fluid/water_3d/water_3d --environment build/dev/_deps/cubey_hdr_sample_assets-src/venetian_crossroads_2k.hdr
-./build/dev/projects/fluid/water_3d/water_3d --frames 240 --profile-output water3d-64 --profile-warmup-frames 60
-./build/dev/projects/fluid/water_3d/water_3d --headless --frames 120 --profile-output water3d-64-diagnostics --profile-diagnostics --profile-diagnostic-interval 4 --no-validation
+./build/dev/projects/fluid/water_3d/water_3d --grid-width 64 --grid-height 64 --grid-depth 64 --frames 240 --profile-output water3d-64 --profile-warmup-frames 60
+./build/dev/projects/fluid/water_3d/water_3d --headless --grid-width 64 --grid-height 64 --grid-depth 64 --frames 120 --profile-output water3d-64-diagnostics --profile-diagnostics --profile-diagnostic-interval 4 --no-validation
+./build/dev/projects/fluid/water_3d/water_3d --water3d-transfer pic-flip --water3d-transfer-limit 96 --no-water3d-wave
+./build/dev/projects/fluid/water_3d/water_3d --water3d-hose --water3d-drain --water3d-rain --no-water3d-whitewater
 ```
 
 Interactive controls include fill size/placement, render-domain scale, hose,
 drain, wave, rain, solver settings, surface reconstruction, whitewater, and
 frame/GPU-memory diagnostics.
 
+Water-specific CLI controls:
+
+- `--water3d-transfer apic|pic-flip`: select APIC or PIC/FLIP grid-to-particle
+  transfer.
+- `--water3d-transfer-limit N`: cap sorted particle samples consumed per cell by
+  P2G; raw cell occupancy is still tracked for overpack diagnostics and volume
+  correction.
+- `--water3d-p2g-mode active|tiled`: choose the default active-face P2G path or
+  the opt-in tiled profiling path.
+- `--water3d-hose`, `--no-water3d-hose`, `--water3d-drain`,
+  `--no-water3d-drain`, `--water3d-rain`, `--no-water3d-rain`,
+  `--water3d-wave`, `--no-water3d-wave`, `--water3d-whitewater`, and
+  `--no-water3d-whitewater`: override the runtime defaults for optional flow,
+  forcing, and visual secondary-particle systems.
+
 Profiling writes frame, pass, metric CSVs, Chrome trace JSON, and a text summary
 under `outputs/profiles/` when the prefix has no directory component.
-`--profile-diagnostics` is opt-in because it adds readback-oriented diagnostic
-passes for workload, P2G scan/histograms, solver residual, and whitewater
-counters. Use `--profile-diagnostic-interval N` to sample the diagnostic passes
-and readbacks less frequently during longer captures.
+`--profile-diagnostics` is headless-only and opt-in because it adds
+readback-oriented diagnostic passes for workload, P2G scan/histograms, solver
+residual, transfer truncation, liquid/rain split, and whitewater counters. Use
+`--profile-diagnostic-interval N` to sample the diagnostic passes and readbacks
+less frequently during longer captures.
+
+The particle-grid transfer path keeps canonical particle positions, velocities,
+and APIC affine rows stable. Each bin refresh writes a compact
+`sorted_particle_indices` range per occupied cell, and P2G/diagnostics
+dereference those IDs instead of shuffling particle payload buffers.

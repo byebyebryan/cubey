@@ -46,6 +46,10 @@ Current projects:
   particle-grid transfers, MAC-grid pressure projection, reset presets,
   hose/drain material flow, obstacle shapes, surface/foam debug views, live
   frame/memory diagnostics, and deterministic headless capture output.
+- `water_3d`: 3D APIC free-surface liquid in a long showcase tank, with stable
+  particle-grid transfer ranges, screen-space water surface rendering, rain,
+  hose/drain/wave controls, whitewater, profiling diagnostics, and headless
+  capture output.
 - `fire_3d`: dense volumetric pyro fire demo with 3D storage textures,
   MacCormack advection, combustion, projection, vorticity confinement,
   raymarching, shadow-volume lighting, orbit camera controls, debug views, and
@@ -85,6 +89,7 @@ Project-local docs:
 
 - [Smoke 2D](projects/fluid/smoke_2d/README.md)
 - [Water 2D](projects/fluid/water_2d/README.md)
+- [Water 3D](projects/fluid/water_3d/README.md)
 - [Fluid 2.5D design](projects/fluid_25d/README.md)
 - [Fire 3D](projects/fluid/fire_3d/README.md)
 - [Explosion 3D](projects/fluid/explosion_3d/README.md)
@@ -166,6 +171,7 @@ Useful windowed smokes:
 ./build/dev/projects/fractal_2d/fractal_2d --frames 300 --width 1280 --height 720
 ./build/dev/projects/fluid/smoke_2d/smoke_2d --frames 300 --width 1280 --height 720
 ./build/dev/projects/fluid/water_2d/water_2d --frames 300 --width 1280 --height 720
+./build/dev/projects/fluid/water_3d/water_3d --frames 300 --width 1280 --height 720
 ./build/dev/projects/fluid/fire_3d/fire_3d --frames 300 --width 1280 --height 720
 ./build/dev/projects/fluid/explosion_3d/explosion_3d --frames 300 --width 1280 --height 720
 ./build/dev/projects/gltf_viewer/gltf_viewer --input path/to/model.glb --environment path/to/env.hdr --animation-index 0 --animation-speed 1.0 --frames 300 --width 1280 --height 720
@@ -187,6 +193,14 @@ grid for pressure, so it is intentionally a different solver family from
 hose emission, bottom drain, obstacle shape, substeps, pressure iterations,
 PIC/FLIP blend, collision damping, particle separation, surface/foam shading,
 and Water2D frame/memory diagnostics.
+`water_3d` defaults to a `128x64x48` long-tank APIC liquid scene. It keeps
+particle storage stable and builds sorted particle-index ranges for transfer,
+then renders the default view through a screen-space surface path with
+refraction, absorption, environment reflection, foam, and secondary whitewater.
+Use `--water3d-transfer apic|pic-flip`, `--water3d-transfer-limit N`,
+`--water3d-p2g-mode active|tiled`, `--water3d-hose`, `--water3d-drain`,
+`--water3d-rain`, `--water3d-wave`, `--water3d-whitewater`, and
+`--profile-diagnostics` for focused solver/render profiling.
 `fire_3d` and `explosion_3d` share the `pyro_3d` dense solver core. They default
 to a `128x128x128` solver volume with a decoupled `64x64x64` shadow volume. Use
 `--grid-width`, `--grid-height`, `--grid-depth`, `--shadow-grid-width`,
@@ -209,6 +223,7 @@ Useful headless PNG smokes:
 ./build/dev/projects/fractal_2d/fractal_2d --headless --width 640 --height 360 --output /tmp/cubey-fractal-2d.png
 ./build/dev/projects/fluid/smoke_2d/smoke_2d --headless --frames 120 --width 640 --height 360 --output /tmp/cubey-smoke-2d.png
 ./build/dev/projects/fluid/water_2d/water_2d --headless --frames 120 --width 640 --height 360 --output /tmp/cubey-water-2d.png
+./build/dev/projects/fluid/water_3d/water_3d --headless --frames 120 --width 640 --height 360 --output /tmp/cubey-water-3d.png
 ./build/dev/projects/fluid/fire_3d/fire_3d --headless --frames 120 --width 640 --height 360 --output /tmp/cubey-fire-3d.png
 ./build/dev/projects/fluid/explosion_3d/explosion_3d --headless --frames 120 --width 640 --height 360 --output /tmp/cubey-explosion-3d.png
 ./build/dev/projects/pbr_furnace/pbr_furnace --headless --width 640 --height 360 --output /tmp/cubey-pbr-furnace.png
@@ -221,6 +236,7 @@ Useful headless video captures when FFmpeg/libav support is enabled:
 ./build/dev/projects/gltf_viewer/gltf_viewer --headless --capture video --frames 180 --fps 60 --input path/to/model.glb --environment path/to/env.hdr --output /tmp/cubey-gltf-viewer.mp4
 ./build/dev/projects/fluid/smoke_2d/smoke_2d --headless --capture video --frames 180 --fps 60 --width 1280 --height 720 --output /tmp/cubey-smoke-2d.mp4
 ./build/dev/projects/fluid/water_2d/water_2d --headless --capture video --frames 180 --fps 60 --width 1280 --height 720 --output /tmp/cubey-water-2d.mp4
+./build/dev/projects/fluid/water_3d/water_3d --headless --capture video --frames 180 --fps 60 --width 1280 --height 720 --output /tmp/cubey-water-3d.mp4
 ./build/dev/projects/fluid/fire_3d/fire_3d --headless --capture video --frames 180 --fps 60 --width 1280 --height 720 --output /tmp/cubey-fire-3d.mp4
 ./build/dev/projects/fluid/explosion_3d/explosion_3d --headless --capture video --frames 180 --fps 60 --width 1280 --height 720 --output /tmp/cubey-explosion-3d.mp4
 ```
@@ -248,6 +264,9 @@ layers are installed.
 - `water_2d`: Space pauses/resumes, `R` resets, `D` cycles
   surface/particles/cells/velocity/divergence/pressure/solid/foam views, Escape
   closes.
+- `water_3d`: left-drag orbits the camera, mouse wheel zooms, Space
+  pauses/resumes, `R` resets, `D` cycles surface/particles/cells/velocity/
+  pressure/solid/overpack/surface diagnostic/whitewater views, Escape closes.
 - `fire_3d` / `explosion_3d`: left-drag orbits the camera, mouse wheel zooms,
   Space pauses/resumes, `R` resets, `D` cycles smoke/density/velocity views,
   Escape closes.

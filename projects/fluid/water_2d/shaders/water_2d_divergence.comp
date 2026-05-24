@@ -70,7 +70,7 @@ void main() {
     float velocity_divergence =
         ((right - left) * float(width)) + ((top - bottom) * float(height));
     float target_particles = max(1.0, params.particle_options.z);
-    float stored_particles = min(float(cell_counts.values[index]), params.particle_options.y);
+    float stored_particles = float(cell_counts.values[index]);
     float overpack =
         max(0.0, (stored_particles - target_particles) / target_particles);
     float volume_source = min(overpack, 5.0) * max(0.0, WATER2D_VOLUME_STRENGTH);

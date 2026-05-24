@@ -5,27 +5,15 @@
 
 layout(local_size_x = 64, local_size_y = 1) in;
 
-layout(set = 0, binding = WATER3D_BINDING_PARTICLE_POSITIONS, std430) buffer ParticlePositions {
+layout(set = 0, binding = WATER3D_BINDING_PARTICLE_POSITIONS, std430) readonly buffer ParticlePositions {
     vec4 values[];
 } particle_positions;
-layout(set = 0, binding = WATER3D_BINDING_PARTICLE_VELOCITIES, std430) buffer ParticleVelocities {
-    vec4 values[];
-} particle_velocities;
-layout(set = 0, binding = WATER3D_BINDING_PARTICLE_AFFINE, std430) buffer ParticleAffine {
-    vec4 values[];
-} particle_affine;
 layout(set = 0, binding = WATER3D_BINDING_SOLID, std430) readonly buffer SolidField {
     float values[];
 } solid;
-layout(set = 0, binding = WATER3D_BINDING_PARTICLE_POSITIONS_SOURCE, std430) readonly buffer ParticlePositionsSource {
-    vec4 values[];
-} particle_positions_source;
-layout(set = 0, binding = WATER3D_BINDING_PARTICLE_VELOCITIES_SOURCE, std430) readonly buffer ParticleVelocitiesSource {
-    vec4 values[];
-} particle_velocities_source;
-layout(set = 0, binding = WATER3D_BINDING_PARTICLE_AFFINE_SOURCE, std430) readonly buffer ParticleAffineSource {
-    vec4 values[];
-} particle_affine_source;
+layout(set = 0, binding = WATER3D_BINDING_SORTED_PARTICLE_INDICES, std430) buffer SortedParticleIndices {
+    uint values[];
+} sorted_particle_indices;
 layout(set = 0, binding = WATER3D_BINDING_CELL_OFFSETS, std430) readonly buffer CellOffsets {
     uint values[];
 } cell_offsets;
@@ -50,7 +38,7 @@ void main() {
         return;
     }
 
-    vec4 source_position = particle_positions_source.values[source_id];
+    vec4 source_position = particle_positions.values[source_id];
     if (source_position.w < 0.5) {
         return;
     }
@@ -69,12 +57,5 @@ void main() {
         return;
     }
 
-    particle_positions.values[target_id] = source_position;
-    particle_velocities.values[target_id] = particle_velocities_source.values[source_id];
-
-    uint source_affine = source_id * 3u;
-    uint target_affine = target_id * 3u;
-    particle_affine.values[target_affine + 0u] = particle_affine_source.values[source_affine + 0u];
-    particle_affine.values[target_affine + 1u] = particle_affine_source.values[source_affine + 1u];
-    particle_affine.values[target_affine + 2u] = particle_affine_source.values[source_affine + 2u];
+    sorted_particle_indices.values[target_id] = source_id;
 }

@@ -47,8 +47,9 @@ vec3 apply_display_transform(vec3 color) {
 }
 
 WhitewaterField read_whitewater_field(vec4 packed) {
-    float coverage = clamp(packed.a, 0.0, 1.0);
-    float inv_coverage = coverage > 0.0001 ? 1.0 / coverage : 0.0;
+    float raw_coverage = max(packed.a, 0.0);
+    float coverage = clamp(raw_coverage, 0.0, 1.0);
+    float inv_coverage = raw_coverage > 0.0001 ? 1.0 / raw_coverage : 0.0;
     return WhitewaterField(
         coverage,
         clamp(packed.r, 0.0, 1.0),

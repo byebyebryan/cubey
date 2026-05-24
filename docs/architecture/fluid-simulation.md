@@ -13,6 +13,9 @@ is a small set of focused projects, each with different scaling assumptions:
 - `projects/fluid/water_2d`: 2D APIC free-surface liquid baseline with a
   PIC/FLIP fallback, particles for liquid motion, and a MAC grid for pressure
   projection.
+- `projects/fluid/water_3d`: 3D APIC free-surface liquid in a long tank, with
+  stable particle IDs, sorted cell-index ranges for transfer, a screen-space
+  surface renderer, and whitewater/profiling diagnostics.
 - `projects/fluid_25d`: shallow-water terrain simulation for rivers, flooding,
   basins, sources, sinks, and heightfield-driven water.
 - `projects/fluid/fire_3d` and `projects/fluid/explosion_3d`: dense 3D pyro
@@ -172,10 +175,11 @@ Why it is worth trying:
 - It gives useful infrastructure pressure: GPU particles, particle-grid
   transfer, spatial bins, surface reconstruction, and debug views.
 
-Current Cubey target:
+Current Cubey targets:
 
 ```text
 projects/fluid/water_2d
+projects/fluid/water_3d
 ```
 
 Continue in 2D with particles plus a MAC-style grid, APIC transfer by default,
@@ -184,8 +188,11 @@ runtime-editable fill volume, reset presets, and particle-splat surface
 rendering. The current `water_2d` path also includes a bounded hose-particle
 ring over inactive particle slots, capped fixed-capacity particle bins, and a
 bottom drain so continuous material flow can be tested without particle
-compaction or readback. Defer 3D meshing, VDB-style surfacing, sparse/adaptive
-particle storage, and complex collision coupling.
+compaction or readback. `water_3d` extends the same family into a bounded 3D
+tank, keeps canonical particle payloads stable, builds compact sorted index
+ranges for P2G, and uses screen-space reconstruction instead of mesh extraction.
+Defer 3D meshing, VDB-style surfacing, sparse/adaptive particle storage, and
+complex collision coupling until the transfer/render contracts stay stable.
 
 ### SPH / PBF / DFSPH
 
@@ -243,8 +250,9 @@ project is worth the complexity.
    water scenarios.
 4. Try `liquid_particles_2d` with PBF/simple SPH to prove GPU neighbor search
    and particle-liquid rendering.
-5. Consider a 3D liquid variant once the 2D particle-grid infrastructure is
-   comfortable.
+5. Continue `water_3d` from the current stable-ID APIC baseline toward stronger
+   pressure solves, better continuous-flow scenarios, renderer profiling, and
+   later sparse/local simulation if dense grids remain too expensive.
 6. Continue `fire_3d` / `explosion_3d` from the dense boxed baseline toward
    stronger shading, detail synthesis, sparse/local simulation, and demo presentation than the
    original Cubey version.

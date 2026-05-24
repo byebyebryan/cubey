@@ -63,9 +63,7 @@ class Water3DGpuResources {
     [[nodiscard]] const cubey::vulkan::Buffer& divergence() const;
     [[nodiscard]] const cubey::vulkan::Buffer& solid() const;
     [[nodiscard]] const cubey::vulkan::Buffer& cell_counts() const;
-    [[nodiscard]] const cubey::vulkan::Buffer& particle_positions_source() const;
-    [[nodiscard]] const cubey::vulkan::Buffer& particle_velocities_source() const;
-    [[nodiscard]] const cubey::vulkan::Buffer& particle_affine_source() const;
+    [[nodiscard]] const cubey::vulkan::Buffer& sorted_particle_indices() const;
     [[nodiscard]] const cubey::vulkan::Buffer& cell_offsets() const;
     [[nodiscard]] const cubey::vulkan::Buffer& cell_write_counts() const;
     [[nodiscard]] const cubey::vulkan::Buffer& sort_scan_level0_sums() const;
@@ -111,8 +109,6 @@ class Water3DGpuResources {
     build_active_tiles_pipeline_resource() const;
     [[nodiscard]] const cubey::render::ComputePipelineResource&
     active_tile_dispatch_args_pipeline_resource() const;
-    [[nodiscard]] const cubey::render::ComputePipelineResource&
-    copy_particle_sort_source_pipeline_resource() const;
     [[nodiscard]] const cubey::render::ComputePipelineResource&
     scan_offsets_pipeline_resource() const;
     [[nodiscard]] const cubey::render::ComputePipelineResource&
@@ -223,9 +219,7 @@ class Water3DGpuResources {
     std::optional<cubey::vulkan::Buffer> divergence_;
     std::optional<cubey::vulkan::Buffer> solid_;
     std::optional<cubey::vulkan::Buffer> cell_counts_;
-    std::optional<cubey::vulkan::Buffer> particle_positions_source_;
-    std::optional<cubey::vulkan::Buffer> particle_velocities_source_;
-    std::optional<cubey::vulkan::Buffer> particle_affine_source_;
+    std::optional<cubey::vulkan::Buffer> sorted_particle_indices_;
     std::optional<cubey::vulkan::Buffer> cell_offsets_;
     std::optional<cubey::vulkan::Buffer> cell_write_counts_;
     std::optional<cubey::vulkan::Buffer> sort_scan_level0_sums_;
@@ -264,8 +258,6 @@ class Water3DGpuResources {
     std::optional<cubey::render::ComputePipelineResource> build_active_tiles_pipeline_resource_;
     std::optional<cubey::render::ComputePipelineResource>
         active_tile_dispatch_args_pipeline_resource_;
-    std::optional<cubey::render::ComputePipelineResource>
-        copy_particle_sort_source_pipeline_resource_;
     std::optional<cubey::render::ComputePipelineResource> scan_offsets_pipeline_resource_;
     std::optional<cubey::render::ComputePipelineResource> scan_add_offsets_pipeline_resource_;
     std::optional<cubey::render::ComputePipelineResource>

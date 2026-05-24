@@ -266,8 +266,16 @@ void record_water_3d_diagnostics(cubey::profiling::ProfileRecorder& recorder,
         static_cast<double>(slot(Water3DDiagnosticSlot::P2GTileInactiveFaceSlots));
     const double p2g_tile_dispatch_groups =
         static_cast<double>(slot(Water3DDiagnosticSlot::P2GTileDispatchGroups));
+    const double liquid_particles =
+        static_cast<double>(slot(Water3DDiagnosticSlot::LiquidParticles));
+    const double rain_particles = static_cast<double>(slot(Water3DDiagnosticSlot::RainParticles));
+    const double transfer_truncated_particles =
+        static_cast<double>(slot(Water3DDiagnosticSlot::TransferTruncatedParticles));
 
     record_metric(recorder, frame_index, "water_3d.workload", "active_particles", active_particles);
+    record_metric(recorder, frame_index, "water_3d.workload", "liquid_particles",
+                  liquid_particles);
+    record_metric(recorder, frame_index, "water_3d.workload", "rain_particles", rain_particles);
     record_metric(recorder, frame_index, "water_3d.workload", "inactive_scan_particles",
                   inactive_scan_particles);
     record_metric(recorder, frame_index, "water_3d.workload", "particle_scan_count",
@@ -278,6 +286,8 @@ void record_water_3d_diagnostics(cubey::profiling::ProfileRecorder& recorder,
     record_metric(recorder, frame_index, "water_3d.workload", "overpacked_cells", overpacked_cells);
     record_metric(recorder, frame_index, "water_3d.workload", "overpacked_particles",
                   overpacked_particles);
+    record_metric(recorder, frame_index, "water_3d.workload", "transfer_truncated_particles",
+                  transfer_truncated_particles);
     record_metric(recorder, frame_index, "water_3d.workload", "max_cell_count", max_cell_count);
     record_metric(recorder, frame_index, "water_3d.workload", "avg_particles_per_nonempty_cell",
                   nonempty_cells > 0.0 ? active_particles / nonempty_cells : 0.0);
@@ -622,6 +632,10 @@ class Water3DApp {
                                1.000F, "%.3f");
             ImGui::SliderFloat("Particle volume strength", &water_config_.particle_volume_strength,
                                0.0F, 48.0F, "%.1f");
+            int transfer_limit = static_cast<int>(water_config_.max_particles_per_cell);
+            if (ImGui::SliderInt("Transfer limit/cell", &transfer_limit, 8, 256)) {
+                water_config_.max_particles_per_cell = static_cast<std::uint32_t>(transfer_limit);
+            }
             ImGui::SliderFloat("Gravity", &water_config_.gravity, -4.0F, 0.0F, "%.2f");
             ImGui::SliderFloat("Boundary bounce", &water_config_.boundary_restitution, 0.0F, 0.8F,
                                "%.2f");
@@ -1017,21 +1031,6 @@ class Water3DApp {
                         profiler->collect(frame_slot.index);
                         record_gpu_timings(profile_recorder, frame_index,
                                            resources_.latest_timings());
-                    }
-                    if (profile_recorder != nullptr) {
-                        const cubey::vulkan::DeviceMemoryBudgetInfo memory =
-                            gpu_context.device().device_memory_budget();
-                        profile_recorder->record_frame({
-                            .frame_index = frame_index,
-                            .delta_seconds = 0.0,
-                            .width = config_.width,
-                            .height = config_.height,
-                            .triangles = 0,
-                            .memory_budget_available = memory.available,
-                            .device_local_usage = memory.device_local_usage,
-                            .device_local_budget = memory.device_local_budget,
-                            .device_local_heap_size = memory.device_local_heap_size,
-                        });
                     }
                 },
         }));

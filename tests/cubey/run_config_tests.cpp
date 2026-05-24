@@ -273,6 +273,63 @@ void test_run_config_parses_grid_dimensions() {
     require(config.grid_depth == 96, "run config should parse grid depth");
 }
 
+void test_run_config_parses_water_controls() {
+    std::string program = "cubey";
+    std::string water2d_transfer_flag = "--water2d-transfer";
+    std::string water2d_transfer_value = "pic-flip";
+    std::string water2d_limit_flag = "--water2d-transfer-limit";
+    std::string water2d_limit_value = "48";
+    std::string water2d_hose_flag = "--water2d-hose";
+    std::string water2d_drain_flag = "--no-water2d-drain";
+    std::string water3d_transfer_flag = "--water3d-transfer";
+    std::string water3d_transfer_value = "apic";
+    std::string water3d_limit_flag = "--water3d-transfer-limit";
+    std::string water3d_limit_value = "96";
+    std::string water3d_p2g_flag = "--water3d-p2g-mode";
+    std::string water3d_p2g_value = "tiled";
+    std::string water3d_hose_flag = "--water3d-hose";
+    std::string water3d_drain_flag = "--water3d-drain";
+    std::string water3d_rain_flag = "--no-water3d-rain";
+    std::string water3d_wave_flag = "--no-water3d-wave";
+    std::string water3d_whitewater_flag = "--no-water3d-whitewater";
+    std::array<char*, 18> argv{program.data(),
+                               water2d_transfer_flag.data(),
+                               water2d_transfer_value.data(),
+                               water2d_limit_flag.data(),
+                               water2d_limit_value.data(),
+                               water2d_hose_flag.data(),
+                               water2d_drain_flag.data(),
+                               water3d_transfer_flag.data(),
+                               water3d_transfer_value.data(),
+                               water3d_limit_flag.data(),
+                               water3d_limit_value.data(),
+                               water3d_p2g_flag.data(),
+                               water3d_p2g_value.data(),
+                               water3d_hose_flag.data(),
+                               water3d_drain_flag.data(),
+                               water3d_rain_flag.data(),
+                               water3d_wave_flag.data(),
+                               water3d_whitewater_flag.data()};
+
+    const cubey::RunConfig config =
+        cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
+    require(config.water2d_transfer_mode == "pic-flip",
+            "run config should parse Water 2D transfer mode");
+    require(config.water2d_transfer_limit == 48,
+            "run config should parse Water 2D transfer limit");
+    require(config.water2d_hose == 1 && config.water2d_drain == 0,
+            "run config should parse Water 2D flow toggles");
+    require(config.water3d_transfer_mode == "apic",
+            "run config should parse Water 3D transfer mode");
+    require(config.water3d_transfer_limit == 96,
+            "run config should parse Water 3D transfer limit");
+    require(config.water3d_p2g_mode == "tiled", "run config should parse Water 3D P2G mode");
+    require(config.water3d_hose == 1 && config.water3d_drain == 1 && config.water3d_rain == 0,
+            "run config should parse Water 3D flow toggles");
+    require(config.water3d_wave == 0 && config.water3d_whitewater == 0,
+            "run config should parse Water 3D optional-system toggles");
+}
+
 void test_run_config_parses_shadow_volume_controls() {
     std::string program = "cubey";
     std::string width_flag = "--shadow-grid-width";

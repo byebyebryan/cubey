@@ -79,7 +79,7 @@ struct Water2DConfig {
     std::uint32_t grid_height = kWater2DDefaultGridHeight;
     std::uint32_t pressure_iterations = 256;
     std::uint32_t particles_per_cell = 4;
-    std::uint32_t max_particles_per_cell = 32;
+    std::uint32_t max_particles_per_cell = 64;
     std::uint32_t active_particle_count = 51200;
     std::uint32_t initial_particle_capacity = 124080;
     std::uint32_t particle_capacity = 386224;
@@ -206,6 +206,16 @@ static_assert(sizeof(Water2DDispatchPushConstants) ==
         return "APIC";
     }
     return "APIC";
+}
+
+[[nodiscard]] inline Water2DTransferMode water_2d_transfer_mode_from_name(std::string_view name) {
+    if (name.empty() || name == "apic") {
+        return Water2DTransferMode::Apic;
+    }
+    if (name == "pic-flip" || name == "picflip" || name == "pic/flip") {
+        return Water2DTransferMode::PicFlip;
+    }
+    throw std::runtime_error("water 2D transfer mode must be apic or pic-flip");
 }
 
 [[nodiscard]] inline Water2DDebugView water_2d_debug_view_from_name(std::string_view name) {
@@ -503,6 +513,18 @@ inline void apply_water_2d_scenario_defaults(Water2DConfig& config) {
     }
     if (config.grid_height != 0) {
         water_config.grid_height = config.grid_height;
+    }
+    if (!config.water2d_transfer_mode.empty()) {
+        water_config.transfer_mode = water_2d_transfer_mode_from_name(config.water2d_transfer_mode);
+    }
+    if (config.water2d_transfer_limit != 0) {
+        water_config.max_particles_per_cell = config.water2d_transfer_limit;
+    }
+    if (config.water2d_hose >= 0) {
+        water_config.hose.enabled = config.water2d_hose != 0;
+    }
+    if (config.water2d_drain >= 0) {
+        water_config.drain.enabled = config.water2d_drain != 0;
     }
     refresh_particle_counts(water_config);
     static_cast<void>(cell_count(water_config));

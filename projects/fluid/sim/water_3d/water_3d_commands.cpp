@@ -79,6 +79,12 @@ struct SurfaceTextureSlot {
     bool source_a = false;
 };
 
+template <typename RecordCallback>
+void record_render_target_pass_with_stored_depth(const cubey::vulkan::CommandRecorder& recorder,
+                                                 const cubey::render::RenderTargetView& target,
+                                                 const cubey::render::RenderClearValues& clear,
+                                                 RecordCallback&& record_callback);
+
 [[nodiscard]] DispatchGroups compute_dispatch_groups(std::uint32_t width, std::uint32_t height,
                                                      std::uint32_t depth) {
     return {
@@ -797,7 +803,6 @@ void record_refresh_bins(const cubey::vulkan::CommandRecorder& recorder,
 
     const char* clear_label = profile_label == nullptr ? nullptr : "clear particle bins";
     const char* build_label = profile_label == nullptr ? nullptr : "build particle bins";
-    const char* copy_label = profile_label == nullptr ? nullptr : "copy particle sort source";
     const char* scan0_label = profile_label == nullptr ? nullptr : "scan cell counts";
     const char* scan1_label = profile_label == nullptr ? nullptr : "scan cell count blocks";
     const char* add1_label = profile_label == nullptr ? nullptr : "apply scan block offsets";
@@ -838,9 +843,6 @@ void record_refresh_bins(const cubey::vulkan::CommandRecorder& recorder,
                              add1_label);
     record_profiled_dispatch(resources.scan_add_offsets_pipeline_resource(),
                              linear_dispatch_groups(cells), add_level1_to_cells, add1_label);
-    record_profiled_dispatch(resources.copy_particle_sort_source_pipeline_resource(),
-                             particle_scan_dispatch_groups(config, runtime_state), push_constants,
-                             copy_label);
     record_profiled_dispatch(resources.scatter_sorted_particles_pipeline_resource(),
                              particle_scan_dispatch_groups(config, runtime_state), push_constants,
                              scatter_label);
@@ -910,7 +912,7 @@ void record_surface_depth_pass(const cubey::vulkan::CommandRecorder& recorder,
                                color_target.format, 0.0F, 0.0F);
     const std::uint32_t particle_scan_count =
         water_3d_runtime_particle_scan_count(config, runtime_state);
-    cubey::render::record_render_target_pass(
+    record_render_target_pass_with_stored_depth(
         recorder, cubey::render::render_target_view(color_target, depth_target),
         cubey::render::RenderClearValues{
             .color =
@@ -1013,34 +1015,6 @@ void record_render_target_pass_with_stored_depth(const cubey::vulkan::CommandRec
     recorder.end_rendering();
 }
 
-template <typename RecordCallback>
-void record_render_target_pass_with_loaded_depth(const cubey::vulkan::CommandRecorder& recorder,
-                                                 const cubey::render::RenderTargetView& target,
-                                                 const cubey::render::RenderClearValues& clear,
-                                                 RecordCallback&& record_callback) {
-    VkRenderingAttachmentInfo color_attachment =
-        cubey::vulkan::color_rendering_attachment(target.color.view, clear.color);
-    auto rendering = cubey::vulkan::vk_struct<VkRenderingInfo>(VK_STRUCTURE_TYPE_RENDERING_INFO);
-    rendering.renderArea.offset = {0, 0};
-    rendering.renderArea.extent = target.color.extent;
-    rendering.layerCount = 1;
-    rendering.colorAttachmentCount = 1;
-    rendering.pColorAttachments = &color_attachment;
-
-    std::optional<VkRenderingAttachmentInfo> depth_attachment;
-    if (target.depth.has_value()) {
-        depth_attachment =
-            cubey::vulkan::depth_rendering_attachment(target.depth->view, clear.depth);
-        depth_attachment->loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
-        depth_attachment->storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-        rendering.pDepthAttachment = &depth_attachment.value();
-    }
-
-    recorder.begin_rendering(rendering);
-    std::forward<RecordCallback>(record_callback)(recorder);
-    recorder.end_rendering();
-}
-
 void record_surface_scene_pass(const cubey::vulkan::CommandRecorder& recorder,
                                const Water3DGpuResources& resources,
                                cubey::render::FrameSlot frame_slot,
@@ -1069,15 +1043,13 @@ void record_whitewater_pass(const cubey::vulkan::CommandRecorder& recorder,
                             const Water3DGpuResources& resources, const Water3DConfig& config,
                             cubey::render::FrameSlot frame_slot, Water3DRenderView render_view,
                             const Water3DRenderCamera& camera,
-                            cubey::render::ColorTargetView color_target,
-                            cubey::render::DepthTargetView depth_target, VkFormat output_format) {
+                            cubey::render::ColorTargetView color_target, VkFormat output_format) {
     const SurfacePushConstants push_constants =
         whitewater_push_constants(config, render_view, camera, color_target.extent, output_format);
-    record_render_target_pass_with_loaded_depth(
-        recorder, cubey::render::render_target_view(color_target, depth_target),
+    cubey::render::record_render_target_pass(
+        recorder, cubey::render::render_target_view(color_target),
         cubey::render::RenderClearValues{
             .color = cubey::render::color_clear_value(0.0F, 0.0F, 0.0F, 0.0F),
-            .depth = cubey::render::depth_clear_value(),
         },
         [&resources, frame_slot,
          push_constants](const cubey::vulkan::CommandRecorder& pass_recorder) {
@@ -1286,14 +1258,11 @@ struct SurfaceRenderGraph {
 
     graph.add_pass("water whitewater", cubey::render::RenderGraphQueueDomain::Graphics)
         .write_color(whitewater)
-        .write_depth(visibility_depth)
         .execute([resource_ptr, config_ptr, frame_slot, render_view, camera, output_format,
-                  whitewater,
-                  visibility_depth](const cubey::render::RenderGraphExecutionContext& context) {
+                  whitewater](const cubey::render::RenderGraphExecutionContext& context) {
             record_whitewater_pass(
                 context.recorder(), *resource_ptr, *config_ptr, frame_slot, render_view, camera,
-                cubey::render::resolved_color_target_view(context, whitewater),
-                resolved_depth_target_view(context, visibility_depth), output_format);
+                cubey::render::resolved_color_target_view(context, whitewater), output_format);
         });
 
     graph.add_pass("water surface composite", cubey::render::RenderGraphQueueDomain::Graphics)

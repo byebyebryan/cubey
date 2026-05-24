@@ -46,7 +46,7 @@ vec3 water_surface_domain_max() {
 }
 
 vec3 water_surface_view_ray(vec2 uv) {
-    vec2 screen = (uv * 2.0) - 1.0;
+    vec2 screen = vec2((uv.x * 2.0) - 1.0, ((1.0 - uv.y) * 2.0) - 1.0);
     float tan_half_fovy = surface_params.camera_right_tan.w;
     float aspect = surface_params.camera_up_aspect.w;
     return normalize(water_surface_camera_forward() +

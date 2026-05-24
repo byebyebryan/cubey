@@ -234,6 +234,10 @@ class Water2DApp {
                            &water_config_.particle_separation_strength, 0.0F, 1.5F, "%.2f");
         ImGui::SliderFloat("Particle volume strength", &water_config_.particle_volume_strength,
                            0.0F, 48.0F, "%.1f");
+        int transfer_limit = static_cast<int>(water_config_.max_particles_per_cell);
+        if (ImGui::SliderInt("Transfer limit/cell", &transfer_limit, 8, 256)) {
+            water_config_.max_particles_per_cell = static_cast<std::uint32_t>(transfer_limit);
+        }
         ImGui::SliderFloat("Particle radius", &water_config_.particle_radius, 0.0025F, 0.025F,
                            "%.4f");
         ImGui::SliderFloat("Gravity", &water_config_.gravity, -4.0F, 0.0F, "%.2f");

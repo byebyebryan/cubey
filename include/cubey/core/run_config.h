@@ -74,7 +74,18 @@ struct RunConfig {
     std::filesystem::path output_path = "cubey-output.png";
     std::filesystem::path profile_output_prefix{};
     std::string debug_view{};
+    std::string water2d_transfer_mode{};
+    std::uint32_t water2d_transfer_limit = 0;
+    int water2d_hose = -1;
+    int water2d_drain = -1;
+    std::string water3d_transfer_mode{};
+    std::uint32_t water3d_transfer_limit = 0;
     std::string water3d_p2g_mode{};
+    int water3d_hose = -1;
+    int water3d_drain = -1;
+    int water3d_rain = -1;
+    int water3d_wave = -1;
+    int water3d_whitewater = -1;
     CaptureMode capture_mode = CaptureMode::Png;
     float ibl_intensity = 1.0F;
     float environment_rotation_degrees = 0.0F;

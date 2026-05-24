@@ -55,7 +55,7 @@ inline constexpr std::uint32_t kWater3DDefaultEmitterParticleCapacity = 65536;
 inline constexpr std::uint32_t kWater3DDefaultWhitewaterCapacity = 65536;
 inline constexpr std::uint32_t kWater3DScanGroupSize = 256;
 inline constexpr std::uint32_t kWater3DMaxExactShaderInteger = 1U << 24U;
-inline constexpr std::uint32_t kWater3DDiagnosticSlotCount = 68;
+inline constexpr std::uint32_t kWater3DDiagnosticSlotCount = 71;
 inline constexpr std::uint32_t kWater3DDiagnosticDivergenceScale = 1000000;
 inline constexpr float kWater3DMinFillFraction = 0.08F;
 inline constexpr float kWater3DMaxFillFraction = 0.75F;
@@ -129,6 +129,9 @@ enum class Water3DDiagnosticSlot : std::uint32_t {
     P2GTileFaceSlots = 65,
     P2GTileInactiveFaceSlots = 66,
     P2GTileDispatchGroups = 67,
+    LiquidParticles = 68,
+    RainParticles = 69,
+    TransferTruncatedParticles = 70,
 };
 
 struct Water3DDomainConfig {
@@ -179,7 +182,7 @@ struct Water3DConfig {
     std::uint32_t grid_depth = kWater3DDefaultGridDepth;
     std::uint32_t pressure_iterations = 32;
     std::uint32_t particles_per_cell = 4;
-    std::uint32_t max_particles_per_cell = 32;
+    std::uint32_t max_particles_per_cell = 128;
     std::uint32_t active_particle_count = 213440;
     std::uint32_t initial_particle_capacity = 663552;
     std::uint32_t particle_capacity = 729088;
@@ -317,6 +320,16 @@ static_assert(sizeof(Water3DDispatchPushConstants) ==
         return "APIC";
     }
     return "APIC";
+}
+
+[[nodiscard]] inline Water3DTransferMode water_3d_transfer_mode_from_name(std::string_view name) {
+    if (name.empty() || name == "apic") {
+        return Water3DTransferMode::Apic;
+    }
+    if (name == "pic-flip" || name == "picflip" || name == "pic/flip") {
+        return Water3DTransferMode::PicFlip;
+    }
+    throw std::runtime_error("water 3D transfer mode must be apic or pic-flip");
 }
 
 [[nodiscard]] inline const char* water_3d_p2g_mode_name(Water3DP2GMode mode) {
@@ -665,6 +678,11 @@ water_3d_runtime_particle_scan_count(const Water3DConfig& config,
                        "water 3D APIC affine buffer is too large");
 }
 
+[[nodiscard]] inline std::size_t sorted_particle_index_byte_size(const Water3DConfig& config) {
+    return checked_mul(static_cast<std::size_t>(config.particle_capacity), sizeof(std::uint32_t),
+                       "water 3D sorted particle index buffer is too large");
+}
+
 [[nodiscard]] inline std::size_t water_3d_scan_block_count(std::size_t element_count) {
     const std::size_t adjusted =
         checked_add(element_count, static_cast<std::size_t>(kWater3DScanGroupSize - 1U),
@@ -811,10 +829,34 @@ water_3d_runtime_particle_scan_count(const Water3DConfig& config,
     water_config.environment_intensity = config.ibl_intensity;
     water_config.environment_rotation_degrees = config.environment_rotation_degrees;
     water_config.exposure = config.exposure;
+    if (config.profile_diagnostics && !config.headless) {
+        throw std::runtime_error("water 3D profile diagnostics require --headless");
+    }
     water_config.profile_diagnostics = config.profile_diagnostics;
     water_config.profile_diagnostic_interval = config.profile_diagnostic_interval;
+    if (!config.water3d_transfer_mode.empty()) {
+        water_config.transfer_mode = water_3d_transfer_mode_from_name(config.water3d_transfer_mode);
+    }
+    if (config.water3d_transfer_limit != 0) {
+        water_config.max_particles_per_cell = config.water3d_transfer_limit;
+    }
     if (!config.water3d_p2g_mode.empty()) {
         water_config.p2g_mode = water_3d_p2g_mode_from_name(config.water3d_p2g_mode);
+    }
+    if (config.water3d_hose >= 0) {
+        water_config.hose.enabled = config.water3d_hose != 0;
+    }
+    if (config.water3d_drain >= 0) {
+        water_config.drain.enabled = config.water3d_drain != 0;
+    }
+    if (config.water3d_rain >= 0) {
+        water_config.rain.enabled = config.water3d_rain != 0;
+    }
+    if (config.water3d_wave >= 0) {
+        water_config.wave.enabled = config.water3d_wave != 0;
+    }
+    if (config.water3d_whitewater >= 0) {
+        water_config.whitewater_enabled = config.water3d_whitewater != 0;
     }
     refresh_particle_counts(water_config);
     static_cast<void>(cell_count(water_config));
@@ -823,6 +865,7 @@ water_3d_runtime_particle_scan_count(const Water3DConfig& config,
     static_cast<void>(w_face_count(water_config));
     static_cast<void>(total_face_count(water_config));
     validate_water_3d_particle_limits(water_config);
+    static_cast<void>(sorted_particle_index_byte_size(water_config));
     static_cast<void>(particle_sort_scan_level0_count(water_config));
     static_cast<void>(particle_sort_scan_level1_count(water_config));
     static_cast<void>(particle_sort_scan_level2_count(water_config));

@@ -32,14 +32,15 @@ uint diagnostics buffer. Those passes are gated by
 `--profile-diagnostic-interval N`, and the headless simulation path reads the
 buffer back after sampled frames and writes rows to `<prefix>.metrics.csv`; the
 same values also appear as Chrome trace counter events and aggregate rollups in
-the summary. Diagnostics requires `--profile-output`. Windowed runs currently
-keep the extra GPU diagnostic pass timings but do not synchronously read back
-metric rows.
+the summary. Diagnostics requires `--profile-output` and `--headless`. Windowed
+runs reject `--profile-diagnostics` for now because the metric path depends on
+synchronous readbacks that are only wired into the deterministic headless loop.
 
 Metric categories:
 
 - `water_3d.workload`: active/inactive scan particles, out-of-bounds particles,
-  nonempty and overpacked cells, max cell occupancy, active face count/ratio, and
+  liquid/rain particle split, nonempty and overpacked cells,
+  transfer-truncated particles, max cell occupancy, active face count/ratio, and
   active-face indirect dispatch groups.
 - `water_3d.solver`: post-projection divergence residual sum, max, average, and
   contributing cell count. Divergence is fixed-point encoded in the shader with a
@@ -122,10 +123,12 @@ rewrite.
 ## P2G Cell-Sorted Locality Results
 
 Captured 2026-05-23 with `water3d-locality-*` profile prefixes after adding a
-GPU-only cell-range particle sort. The sort copies canonical particle buffers to
-temporary source buffers, scans cell counts into compact offsets, then scatters
-particles back into canonical storage sorted by cell. P2G now walks
-`cell_offsets + cell_counts` ranges instead of random fixed-bin particle IDs.
+GPU-only cell-range particle sort. The first measured version copied canonical
+particle buffers to temporary source buffers and scattered particles back into
+canonical storage sorted by cell. The current implementation keeps canonical
+particle IDs stable and only scatters compact `sorted_particle_indices` ranges
+per cell; P2G walks `cell_offsets + cell_counts` ranges and dereferences those
+IDs instead of random fixed-bin particle slots.
 
 | Grid | P2G support baseline | P2G sorted ranges | Approx. sort overhead/substep | Summed profiled GPU avg |
 | --- | ---: | ---: | ---: | ---: |
@@ -133,11 +136,18 @@ particles back into canonical storage sorted by cell. P2G now walks
 | 96^3 | 17.733 ms | 8.096 ms (-54.3%) | 3.84 ms | 52.303 ms -> 37.232 ms |
 | 128^3 | 36.670 ms | 21.731 ms (-40.7%) | 9.05 ms | 106.521 ms -> 85.079 ms |
 
-The sorted path is a clear net win despite the copy/scan/scatter cost. It also
-reduces `grid to particle` time because the canonical particle arrays stay
-cell-local after the post-advect refresh. The old fixed cell-particle index
-buffer was removed after this capture because sorted cell ranges are now the
-only P2G path.
+The sorted path is a clear net win despite the scan/scatter cost. The old fixed
+cell-particle index buffer was removed after this capture because sorted cell
+ranges are now the only P2G path. The later stable-ID revision deliberately gave
+up canonical payload shuffling to avoid corrupting particle identity across
+rendering, whitewater, APIC state, and diagnostics.
+
+Stable-ID transfer update, 2026-05-24: particle positions, velocities, and APIC
+affine rows are no longer shuffled during bin refresh. The sort lifecycle now
+clears and writes `sorted_particle_indices`, while diagnostics separately report
+raw cell occupancy and particles truncated by the configured transfer sample
+limit. This keeps the optimization aligned with the renderer and makes overpack
+pressure visible instead of silently hiding it behind a fixed bin cap.
 
 ## P2G Active Tile Experiment
 

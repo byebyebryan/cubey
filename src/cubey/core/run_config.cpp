@@ -219,8 +219,46 @@ RunConfig parse_run_config(int argc, char** argv) {
             config.environment_path = std::string(need_value("--environment"));
         } else if (arg == "--debug-view") {
             config.debug_view = std::string(need_value("--debug-view"));
+        } else if (arg == "--water2d-transfer") {
+            config.water2d_transfer_mode = std::string(need_value("--water2d-transfer"));
+        } else if (arg == "--water2d-transfer-limit") {
+            config.water2d_transfer_limit = parse_positive_u32(
+                need_value("--water2d-transfer-limit"), "--water2d-transfer-limit");
+        } else if (arg == "--water2d-hose") {
+            config.water2d_hose = 1;
+        } else if (arg == "--no-water2d-hose") {
+            config.water2d_hose = 0;
+        } else if (arg == "--water2d-drain") {
+            config.water2d_drain = 1;
+        } else if (arg == "--no-water2d-drain") {
+            config.water2d_drain = 0;
+        } else if (arg == "--water3d-transfer") {
+            config.water3d_transfer_mode = std::string(need_value("--water3d-transfer"));
+        } else if (arg == "--water3d-transfer-limit") {
+            config.water3d_transfer_limit = parse_positive_u32(
+                need_value("--water3d-transfer-limit"), "--water3d-transfer-limit");
         } else if (arg == "--water3d-p2g-mode") {
             config.water3d_p2g_mode = std::string(need_value("--water3d-p2g-mode"));
+        } else if (arg == "--water3d-hose") {
+            config.water3d_hose = 1;
+        } else if (arg == "--no-water3d-hose") {
+            config.water3d_hose = 0;
+        } else if (arg == "--water3d-drain") {
+            config.water3d_drain = 1;
+        } else if (arg == "--no-water3d-drain") {
+            config.water3d_drain = 0;
+        } else if (arg == "--water3d-rain") {
+            config.water3d_rain = 1;
+        } else if (arg == "--no-water3d-rain") {
+            config.water3d_rain = 0;
+        } else if (arg == "--water3d-wave") {
+            config.water3d_wave = 1;
+        } else if (arg == "--no-water3d-wave") {
+            config.water3d_wave = 0;
+        } else if (arg == "--water3d-whitewater") {
+            config.water3d_whitewater = 1;
+        } else if (arg == "--no-water3d-whitewater") {
+            config.water3d_whitewater = 0;
         } else if (arg == "--ibl-intensity") {
             config.ibl_intensity = parse_float(need_value("--ibl-intensity"), "--ibl-intensity");
         } else if (arg == "--environment-rotation-degrees") {

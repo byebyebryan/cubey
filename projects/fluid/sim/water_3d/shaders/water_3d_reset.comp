@@ -56,6 +56,9 @@ layout(set = 0, binding = WATER3D_BINDING_SOLID, std430) buffer SolidField {
 layout(set = 0, binding = WATER3D_BINDING_CELL_COUNTS, std430) buffer CellCounts {
     uint values[];
 } cell_counts;
+layout(set = 0, binding = WATER3D_BINDING_SORTED_PARTICLE_INDICES, std430) buffer SortedParticleIndices {
+    uint values[];
+} sorted_particle_indices;
 layout(set = 0, binding = WATER3D_BINDING_WHITEWATER_POSITIONS, std430) buffer WhitewaterPositions {
     vec4 values[];
 } whitewater_positions;
@@ -168,6 +171,7 @@ void main() {
         particle_affine.values[id * 3u + 0u] = vec4(0.0);
         particle_affine.values[id * 3u + 1u] = vec4(0.0);
         particle_affine.values[id * 3u + 2u] = vec4(0.0);
+        sorted_particle_indices.values[id] = WATER3D_EMPTY_PARTICLE;
     } else if (id < particle_capacity) {
         particle_positions.values[id] =
             vec4(-10.0, -10.0, -10.0, WATER3D_PARTICLE_STATE_INACTIVE);
@@ -175,6 +179,7 @@ void main() {
         particle_affine.values[id * 3u + 0u] = vec4(0.0);
         particle_affine.values[id * 3u + 1u] = vec4(0.0);
         particle_affine.values[id * 3u + 2u] = vec4(0.0);
+        sorted_particle_indices.values[id] = WATER3D_EMPTY_PARTICLE;
     }
 
     if (id < cell_count) {
