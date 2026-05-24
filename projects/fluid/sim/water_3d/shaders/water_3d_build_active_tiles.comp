@@ -1,0 +1,103 @@
+#version 450
+#extension GL_GOOGLE_include_directive : require
+
+#include "water_3d_contract.glsl"
+
+layout(local_size_x = 64, local_size_y = 1) in;
+
+layout(set = 0, binding = WATER3D_BINDING_ACTIVE_WORK_COUNTS, std430) buffer ActiveWorkCounts {
+    uint values[];
+} active_work_counts;
+layout(set = 0, binding = WATER3D_BINDING_ACTIVE_FACE_INDICES, std430) readonly buffer ActiveFaceIndices {
+    uint values[];
+} active_face_indices;
+layout(set = 0, binding = WATER3D_BINDING_ACTIVE_TILE_FLAGS, std430) buffer ActiveTileFlags {
+    uint values[];
+} active_tile_flags;
+layout(set = 0, binding = WATER3D_BINDING_ACTIVE_TILE_INDICES, std430) buffer ActiveTileIndices {
+    uint values[];
+} active_tile_indices;
+
+WATER3D_SIMULATION_PARAMS;
+
+uint u_face_count(uint width, uint height, uint depth) {
+    return (width + 1u) * height * depth;
+}
+
+uint v_face_count(uint width, uint height, uint depth) {
+    return width * (height + 1u) * depth;
+}
+
+uint total_face_count(uint width, uint height, uint depth) {
+    return u_face_count(width, height, depth) + v_face_count(width, height, depth) +
+           (width * height * (depth + 1u));
+}
+
+uint tile_id_for_cell(uint x, uint y, uint z, uint width, uint height, uint depth) {
+    uint tile_count_x = (width + 3u) / 4u;
+    uint tile_count_y = (height + 3u) / 4u;
+    uint tile_x = min(x, width - 1u) / 4u;
+    uint tile_y = min(y, height - 1u) / 4u;
+    uint tile_z = min(z, depth - 1u) / 4u;
+    return ((tile_z * tile_count_y) + tile_y) * tile_count_x + tile_x;
+}
+
+uint tile_id_for_face(uint global_face_id, uint width, uint height, uint depth, bool valid) {
+    uint u_count = u_face_count(width, height, depth);
+    uint v_count = v_face_count(width, height, depth);
+    uint total_faces = total_face_count(width, height, depth);
+    if (!valid || global_face_id >= total_faces) {
+        return 0u;
+    }
+
+    if (global_face_id < u_count) {
+        uint x = global_face_id % (width + 1u);
+        uint yz = global_face_id / (width + 1u);
+        uint y = yz % height;
+        uint z = yz / height;
+        return tile_id_for_cell(x, y, z, width, height, depth);
+    }
+
+    global_face_id -= u_count;
+    if (global_face_id < v_count) {
+        uint x = global_face_id % width;
+        uint yz = global_face_id / width;
+        uint y = yz % (height + 1u);
+        uint z = yz / (height + 1u);
+        return tile_id_for_cell(x, y, z, width, height, depth);
+    }
+
+    uint w_face_id = global_face_id - v_count;
+    uint x = w_face_id % width;
+    uint yz = w_face_id / width;
+    uint y = yz % height;
+    uint z = yz / height;
+    return tile_id_for_cell(x, y, z, width, height, depth);
+}
+
+void main() {
+    uint active_slot = gl_GlobalInvocationID.x;
+    if (active_slot >= active_work_counts.values[0]) {
+        return;
+    }
+
+    uint width = uint(WATER3D_GRID_WIDTH + 0.5);
+    uint height = uint(WATER3D_GRID_HEIGHT + 0.5);
+    uint depth = uint(WATER3D_GRID_DEPTH + 0.5);
+    uint tile_count = ((width + 3u) / 4u) * ((height + 3u) / 4u) * ((depth + 3u) / 4u);
+    uint global_face_id = active_face_indices.values[active_slot];
+    bool valid_face = global_face_id < total_face_count(width, height, depth);
+    uint tile_id = tile_id_for_face(global_face_id, width, height, depth, valid_face);
+    if (!valid_face || tile_id >= tile_count) {
+        return;
+    }
+
+    if (atomicExchange(active_tile_flags.values[tile_id], 1u) != 0u) {
+        return;
+    }
+
+    uint active_tile_slot = atomicAdd(active_work_counts.values[1], 1u);
+    if (active_tile_slot < tile_count) {
+        active_tile_indices.values[active_tile_slot] = tile_id;
+    }
+}

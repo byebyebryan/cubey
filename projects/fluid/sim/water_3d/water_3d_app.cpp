@@ -258,6 +258,14 @@ void record_water_3d_diagnostics(cubey::profiling::ProfileRecorder& recorder,
         static_cast<double>(slot(Water3DDiagnosticSlot::P2GZeroWeightVFaces));
     const double p2g_zero_weight_w_faces =
         static_cast<double>(slot(Water3DDiagnosticSlot::P2GZeroWeightWFaces));
+    const double p2g_active_tiles =
+        static_cast<double>(slot(Water3DDiagnosticSlot::P2GActiveTiles));
+    const double p2g_tile_face_slots =
+        static_cast<double>(slot(Water3DDiagnosticSlot::P2GTileFaceSlots));
+    const double p2g_tile_inactive_face_slots =
+        static_cast<double>(slot(Water3DDiagnosticSlot::P2GTileInactiveFaceSlots));
+    const double p2g_tile_dispatch_groups =
+        static_cast<double>(slot(Water3DDiagnosticSlot::P2GTileDispatchGroups));
 
     record_metric(recorder, frame_index, "water_3d.workload", "active_particles", active_particles);
     record_metric(recorder, frame_index, "water_3d.workload", "inactive_scan_particles",
@@ -330,6 +338,15 @@ void record_water_3d_diagnostics(cubey::profiling::ProfileRecorder& recorder,
                   p2g_zero_weight_v_faces);
     record_metric(recorder, frame_index, "water_3d.p2g", "zero_weight_w_faces",
                   p2g_zero_weight_w_faces);
+    record_metric(recorder, frame_index, "water_3d.p2g", "active_tiles", p2g_active_tiles);
+    record_metric(recorder, frame_index, "water_3d.p2g", "tile_face_slots",
+                  p2g_tile_face_slots);
+    record_metric(recorder, frame_index, "water_3d.p2g", "tile_inactive_face_slots",
+                  p2g_tile_inactive_face_slots);
+    record_metric(recorder, frame_index, "water_3d.p2g", "tile_dispatch_groups",
+                  p2g_tile_dispatch_groups);
+    record_metric(recorder, frame_index, "water_3d.p2g", "tile_slot_to_active_face_ratio",
+                  p2g_active_faces > 0.0 ? p2g_tile_face_slots / p2g_active_faces : 0.0);
     record_metric(recorder, frame_index, "water_3d.p2g", "avg_slots_per_face",
                   p2g_faces_processed > 0.0 ? p2g_cell_particle_slots_scanned / p2g_faces_processed
                                             : 0.0);

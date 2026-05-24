@@ -17,6 +17,12 @@ layout(set = 0, binding = WATER3D_BINDING_ACTIVE_FACE_FLAGS, std430) buffer Acti
 layout(set = 0, binding = WATER3D_BINDING_ACTIVE_FACE_DISPATCH_ARGS, std430) buffer ActiveFaceDispatchArgs {
     uint values[];
 } active_face_dispatch_args;
+layout(set = 0, binding = WATER3D_BINDING_ACTIVE_TILE_FLAGS, std430) buffer ActiveTileFlags {
+    uint values[];
+} active_tile_flags;
+layout(set = 0, binding = WATER3D_BINDING_ACTIVE_TILE_DISPATCH_ARGS, std430) buffer ActiveTileDispatchArgs {
+    uint values[];
+} active_tile_dispatch_args;
 layout(set = 0, binding = WATER3D_BINDING_CELL_OFFSETS, std430) buffer CellOffsets {
     uint values[];
 } cell_offsets;
@@ -35,6 +41,10 @@ void main() {
     uint total_face_count = ((width + 1u) * height * depth) +
                             (width * (height + 1u) * depth) +
                             (width * height * (depth + 1u));
+    uint tile_count_x = (width + 3u) / 4u;
+    uint tile_count_y = (height + 3u) / 4u;
+    uint tile_count_z = (depth + 3u) / 4u;
+    uint tile_count = tile_count_x * tile_count_y * tile_count_z;
 
     if (id < cell_count) {
         cell_counts.values[id] = 0u;
@@ -44,10 +54,14 @@ void main() {
     if (id < total_face_count) {
         active_face_flags.values[id] = 0u;
     }
+    if (id < tile_count) {
+        active_tile_flags.values[id] = 0u;
+    }
     if (id < 4u) {
         active_work_counts.values[id] = 0u;
     }
     if (id < 3u) {
         active_face_dispatch_args.values[id] = 1u;
+        active_tile_dispatch_args.values[id] = 1u;
     }
 }

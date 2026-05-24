@@ -83,6 +83,9 @@ class Water3DGpuResources {
     [[nodiscard]] const cubey::vulkan::Buffer& active_face_flags() const;
     [[nodiscard]] const cubey::vulkan::Buffer& active_face_indices() const;
     [[nodiscard]] const cubey::vulkan::Buffer& active_face_dispatch_args() const;
+    [[nodiscard]] const cubey::vulkan::Buffer& active_tile_flags() const;
+    [[nodiscard]] const cubey::vulkan::Buffer& active_tile_indices() const;
+    [[nodiscard]] const cubey::vulkan::Buffer& active_tile_dispatch_args() const;
     [[nodiscard]] const cubey::vulkan::Buffer& diagnostics() const;
     [[nodiscard]] cubey::vulkan::GpuTimestampProfiler* profiler() noexcept {
         return profiler_.has_value() ? &profiler_.value() : nullptr;
@@ -104,6 +107,10 @@ class Water3DGpuResources {
     [[nodiscard]] const cubey::render::ComputePipelineResource&
     active_face_dispatch_args_pipeline_resource() const;
     [[nodiscard]] const cubey::render::ComputePipelineResource&
+    build_active_tiles_pipeline_resource() const;
+    [[nodiscard]] const cubey::render::ComputePipelineResource&
+    active_tile_dispatch_args_pipeline_resource() const;
+    [[nodiscard]] const cubey::render::ComputePipelineResource&
     copy_particle_sort_source_pipeline_resource() const;
     [[nodiscard]] const cubey::render::ComputePipelineResource&
     scan_offsets_pipeline_resource() const;
@@ -113,6 +120,8 @@ class Water3DGpuResources {
     scatter_sorted_particles_pipeline_resource() const;
     [[nodiscard]] const cubey::render::ComputePipelineResource&
     particle_to_grid_pipeline_resource() const;
+    [[nodiscard]] const cubey::render::ComputePipelineResource&
+    particle_to_grid_tiled_pipeline_resource() const;
     [[nodiscard]] const cubey::render::ComputePipelineResource& force_pipeline_resource() const;
     [[nodiscard]] const cubey::render::ComputePipelineResource&
     divergence_pipeline_resource() const;
@@ -233,6 +242,9 @@ class Water3DGpuResources {
     std::optional<cubey::vulkan::Buffer> active_face_flags_;
     std::optional<cubey::vulkan::Buffer> active_face_indices_;
     std::optional<cubey::vulkan::Buffer> active_face_dispatch_args_;
+    std::optional<cubey::vulkan::Buffer> active_tile_flags_;
+    std::optional<cubey::vulkan::Buffer> active_tile_indices_;
+    std::optional<cubey::vulkan::Buffer> active_tile_dispatch_args_;
     std::optional<cubey::vulkan::Buffer> diagnostics_;
     std::optional<cubey::vulkan::GpuTimestampProfiler> profiler_;
     std::optional<cubey::render::FrameUniformBuffer<Water3DSimulationUniforms>>
@@ -247,6 +259,9 @@ class Water3DGpuResources {
     std::optional<cubey::render::ComputePipelineResource> build_bins_pipeline_resource_;
     std::optional<cubey::render::ComputePipelineResource>
         active_face_dispatch_args_pipeline_resource_;
+    std::optional<cubey::render::ComputePipelineResource> build_active_tiles_pipeline_resource_;
+    std::optional<cubey::render::ComputePipelineResource>
+        active_tile_dispatch_args_pipeline_resource_;
     std::optional<cubey::render::ComputePipelineResource>
         copy_particle_sort_source_pipeline_resource_;
     std::optional<cubey::render::ComputePipelineResource> scan_offsets_pipeline_resource_;
@@ -254,6 +269,8 @@ class Water3DGpuResources {
     std::optional<cubey::render::ComputePipelineResource>
         scatter_sorted_particles_pipeline_resource_;
     std::optional<cubey::render::ComputePipelineResource> particle_to_grid_pipeline_resource_;
+    std::optional<cubey::render::ComputePipelineResource>
+        particle_to_grid_tiled_pipeline_resource_;
     std::optional<cubey::render::ComputePipelineResource> force_pipeline_resource_;
     std::optional<cubey::render::ComputePipelineResource> divergence_pipeline_resource_;
     std::optional<cubey::render::ComputePipelineResource> pressure_pipeline_resource_;

@@ -32,11 +32,14 @@ cubey_add_app_target(
         ../sim/water_3d/shaders/water_3d_clear_bins.comp
         ../sim/water_3d/shaders/water_3d_build_bins.comp
         ../sim/water_3d/shaders/water_3d_active_face_dispatch_args.comp
+        ../sim/water_3d/shaders/water_3d_build_active_tiles.comp
+        ../sim/water_3d/shaders/water_3d_active_tile_dispatch_args.comp
         ../sim/water_3d/shaders/water_3d_copy_particle_sort_source.comp
         ../sim/water_3d/shaders/water_3d_scan_offsets.comp
         ../sim/water_3d/shaders/water_3d_scan_add_offsets.comp
         ../sim/water_3d/shaders/water_3d_scatter_sorted_particles.comp
         ../sim/water_3d/shaders/water_3d_particle_to_grid.comp
+        ../sim/water_3d/shaders/water_3d_particle_to_grid_tiled.comp
         ../sim/water_3d/shaders/water_3d_force.comp
         ../sim/water_3d/shaders/water_3d_divergence.comp
         ../sim/water_3d/shaders/water_3d_pressure.comp

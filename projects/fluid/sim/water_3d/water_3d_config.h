@@ -34,8 +34,15 @@ enum class Water3DTransferMode : std::uint32_t {
     Apic = 1,
 };
 
+enum class Water3DP2GMode : std::uint32_t {
+    ActiveFaces = 0,
+    TiledFaces = 1,
+};
+
 inline constexpr std::uint32_t kWater3DComputeGroupSize = 4;
 inline constexpr std::uint32_t kWater3DParticleGroupSize = 64;
+inline constexpr std::uint32_t kWater3DP2GTileExtent = 4;
+inline constexpr std::uint32_t kWater3DP2GTileFaceSlots = 192;
 inline constexpr std::uint32_t kWater3DSimulationPushConstantFloatCount = 4;
 inline constexpr std::uint32_t kWater3DSimulationUniformFloatCount = 32;
 inline constexpr std::uint32_t kWater3DRenderPushConstantFloatCount = 48;
@@ -47,7 +54,7 @@ inline constexpr std::uint32_t kWater3DDefaultGridDepth = 64;
 inline constexpr std::uint32_t kWater3DDefaultWhitewaterCapacity = 65536;
 inline constexpr std::uint32_t kWater3DScanGroupSize = 256;
 inline constexpr std::uint32_t kWater3DMaxExactShaderInteger = 1U << 24U;
-inline constexpr std::uint32_t kWater3DDiagnosticSlotCount = 64;
+inline constexpr std::uint32_t kWater3DDiagnosticSlotCount = 68;
 inline constexpr std::uint32_t kWater3DDiagnosticDivergenceScale = 1000000;
 inline constexpr float kWater3DMinFillFraction = 0.08F;
 inline constexpr float kWater3DMaxFillFraction = 0.75F;
@@ -117,6 +124,10 @@ enum class Water3DDiagnosticSlot : std::uint32_t {
     P2GZeroWeightUFaces = 61,
     P2GZeroWeightVFaces = 62,
     P2GZeroWeightWFaces = 63,
+    P2GActiveTiles = 64,
+    P2GTileFaceSlots = 65,
+    P2GTileInactiveFaceSlots = 66,
+    P2GTileDispatchGroups = 67,
 };
 
 struct Water3DConfig {
@@ -130,6 +141,7 @@ struct Water3DConfig {
     std::uint32_t particle_capacity = 442368;
     std::uint32_t substeps = 1;
     Water3DTransferMode transfer_mode = Water3DTransferMode::Apic;
+    Water3DP2GMode p2g_mode = Water3DP2GMode::ActiveFaces;
     float fixed_delta_seconds = 1.0F / 60.0F;
     float gravity = -1.35F;
     float flip_ratio = 0.78F;
@@ -237,6 +249,26 @@ static_assert(sizeof(Water3DDispatchPushConstants) ==
         return "APIC";
     }
     return "APIC";
+}
+
+[[nodiscard]] inline const char* water_3d_p2g_mode_name(Water3DP2GMode mode) {
+    switch (mode) {
+    case Water3DP2GMode::ActiveFaces:
+        return "active";
+    case Water3DP2GMode::TiledFaces:
+        return "tiled";
+    }
+    return "active";
+}
+
+[[nodiscard]] inline Water3DP2GMode water_3d_p2g_mode_from_name(std::string_view name) {
+    if (name.empty() || name == "active" || name == "active-faces") {
+        return Water3DP2GMode::ActiveFaces;
+    }
+    if (name == "tiled" || name == "tiled-faces") {
+        return Water3DP2GMode::TiledFaces;
+    }
+    throw std::runtime_error("water 3D P2G mode must be active or tiled");
 }
 
 [[nodiscard]] inline Water3DRenderView water_3d_render_view_from_name(std::string_view name) {
@@ -590,6 +622,50 @@ water_3d_runtime_particle_scan_count(const Water3DConfig& config,
     return sizeof(std::uint32_t) * 3U;
 }
 
+[[nodiscard]] inline std::uint32_t water_3d_p2g_tile_axis_count(std::uint32_t cell_count) {
+    return (cell_count + kWater3DP2GTileExtent - 1U) / kWater3DP2GTileExtent;
+}
+
+[[nodiscard]] inline std::uint32_t water_3d_p2g_tile_count_x(const Water3DConfig& config) {
+    validate_water_3d_grid_dimensions(config);
+    return water_3d_p2g_tile_axis_count(config.grid_width);
+}
+
+[[nodiscard]] inline std::uint32_t water_3d_p2g_tile_count_y(const Water3DConfig& config) {
+    validate_water_3d_grid_dimensions(config);
+    return water_3d_p2g_tile_axis_count(config.grid_height);
+}
+
+[[nodiscard]] inline std::uint32_t water_3d_p2g_tile_count_z(const Water3DConfig& config) {
+    validate_water_3d_grid_dimensions(config);
+    return water_3d_p2g_tile_axis_count(config.grid_depth);
+}
+
+[[nodiscard]] inline std::size_t water_3d_p2g_tile_count(const Water3DConfig& config) {
+    const std::size_t xy = checked_mul(water_3d_p2g_tile_count_x(config),
+                                       water_3d_p2g_tile_count_y(config),
+                                       "water 3D P2G tile slice is too large");
+    const std::size_t count = checked_mul(xy, water_3d_p2g_tile_count_z(config),
+                                          "water 3D P2G tile grid is too large");
+    validate_exact_shader_integer(count, "water 3D P2G tile count exceeds exact shader range");
+    return count;
+}
+
+[[nodiscard]] inline std::size_t active_tile_flag_byte_size(const Water3DConfig& config) {
+    return checked_mul(water_3d_p2g_tile_count(config), sizeof(std::uint32_t),
+                       "water 3D active tile flag buffer is too large");
+}
+
+[[nodiscard]] inline std::size_t active_tile_index_byte_size(const Water3DConfig& config) {
+    return checked_mul(water_3d_p2g_tile_count(config), sizeof(std::uint32_t),
+                       "water 3D active tile index buffer is too large");
+}
+
+[[nodiscard]] inline std::size_t active_tile_dispatch_arg_byte_size(const Water3DConfig& config) {
+    static_cast<void>(config);
+    return sizeof(std::uint32_t) * 3U;
+}
+
 [[nodiscard]] inline std::size_t whitewater_value_count(const Water3DConfig& config) {
     validate_water_3d_whitewater_capacity(config);
     return checked_mul(static_cast<std::size_t>(config.whitewater_capacity), std::size_t{4},
@@ -638,6 +714,9 @@ water_3d_runtime_particle_scan_count(const Water3DConfig& config,
     water_config.exposure = config.exposure;
     water_config.profile_diagnostics = config.profile_diagnostics;
     water_config.profile_diagnostic_interval = config.profile_diagnostic_interval;
+    if (!config.water3d_p2g_mode.empty()) {
+        water_config.p2g_mode = water_3d_p2g_mode_from_name(config.water3d_p2g_mode);
+    }
     refresh_particle_counts(water_config);
     static_cast<void>(cell_count(water_config));
     static_cast<void>(u_face_count(water_config));
@@ -652,6 +731,9 @@ water_3d_runtime_particle_scan_count(const Water3DConfig& config,
     static_cast<void>(active_face_flag_byte_size(water_config));
     static_cast<void>(active_face_index_byte_size(water_config));
     static_cast<void>(active_face_dispatch_arg_byte_size(water_config));
+    static_cast<void>(active_tile_flag_byte_size(water_config));
+    static_cast<void>(active_tile_index_byte_size(water_config));
+    static_cast<void>(active_tile_dispatch_arg_byte_size(water_config));
     static_cast<void>(whitewater_buffer_byte_size(water_config));
     static_cast<void>(whitewater_counter_byte_size(water_config));
     static_cast<void>(whitewater_active_index_byte_size(water_config));

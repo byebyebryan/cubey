@@ -219,6 +219,8 @@ RunConfig parse_run_config(int argc, char** argv) {
             config.environment_path = std::string(need_value("--environment"));
         } else if (arg == "--debug-view") {
             config.debug_view = std::string(need_value("--debug-view"));
+        } else if (arg == "--water3d-p2g-mode") {
+            config.water3d_p2g_mode = std::string(need_value("--water3d-p2g-mode"));
         } else if (arg == "--ibl-intensity") {
             config.ibl_intensity = parse_float(need_value("--ibl-intensity"), "--ibl-intensity");
         } else if (arg == "--environment-rotation-degrees") {

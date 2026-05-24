@@ -1199,6 +1199,23 @@ void record_water_3d_compute(VkCommandBuffer command_buffer, Water3DGpuResources
         record_compute_indirect_barrier(command_buffer);
         end_pass();
 
+        const bool tiled_p2g = config.p2g_mode == Water3DP2GMode::TiledFaces;
+        if (tiled_p2g) {
+            begin_pass("build active p2g tiles");
+            record_dispatch_indirect(recorder, resources.build_active_tiles_pipeline_resource(),
+                                     descriptor_set,
+                                     resources.active_face_dispatch_args().handle(),
+                                     push_constants);
+            record_compute_barrier(command_buffer);
+            end_pass();
+
+            begin_pass("active tile dispatch args");
+            record_dispatch(recorder, resources.active_tile_dispatch_args_pipeline_resource(),
+                            descriptor_set, linear_dispatch_groups(1U), push_constants);
+            record_compute_indirect_barrier(command_buffer);
+            end_pass();
+        }
+
         if (record_diagnostics) {
             record_diagnostics_pass(recorder, command_buffer, resources, descriptor_set,
                                     push_constants, frame_slot, profiler, "diagnostics workload",
@@ -1210,9 +1227,13 @@ void record_water_3d_compute(VkCommandBuffer command_buffer, Water3DGpuResources
                                              resources.active_face_dispatch_args().handle());
         }
 
-        begin_pass("particle to grid");
-        record_dispatch_indirect(recorder, resources.particle_to_grid_pipeline_resource(),
-                                 descriptor_set, resources.active_face_dispatch_args().handle(),
+        begin_pass(tiled_p2g ? "particle to grid tiled" : "particle to grid");
+        record_dispatch_indirect(recorder,
+                                 tiled_p2g ? resources.particle_to_grid_tiled_pipeline_resource()
+                                           : resources.particle_to_grid_pipeline_resource(),
+                                 descriptor_set,
+                                 tiled_p2g ? resources.active_tile_dispatch_args().handle()
+                                           : resources.active_face_dispatch_args().handle(),
                                  push_constants);
         record_compute_barrier(command_buffer);
         end_pass();

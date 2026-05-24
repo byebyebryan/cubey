@@ -38,6 +38,9 @@ layout(set = 0, binding = WATER3D_BINDING_ACTIVE_FACE_INDICES, std430) readonly 
 layout(set = 0, binding = WATER3D_BINDING_ACTIVE_FACE_DISPATCH_ARGS, std430) readonly buffer ActiveFaceDispatchArgs {
     uint values[];
 } active_face_dispatch_args;
+layout(set = 0, binding = WATER3D_BINDING_ACTIVE_TILE_DISPATCH_ARGS, std430) readonly buffer ActiveTileDispatchArgs {
+    uint values[];
+} active_tile_dispatch_args;
 layout(set = 0, binding = WATER3D_BINDING_DIAGNOSTICS, std430) buffer Diagnostics {
     uint values[];
 } diagnostics;
@@ -114,7 +117,11 @@ const uint SLOT_P2G_MAX_CANDIDATE_SLOTS_PER_FACE = 60u;
 const uint SLOT_P2G_ZERO_WEIGHT_U_FACES = 61u;
 const uint SLOT_P2G_ZERO_WEIGHT_V_FACES = 62u;
 const uint SLOT_P2G_ZERO_WEIGHT_W_FACES = 63u;
-const uint DIAGNOSTIC_SLOT_COUNT = 64u;
+const uint SLOT_P2G_ACTIVE_TILES = 64u;
+const uint SLOT_P2G_TILE_FACE_SLOTS = 65u;
+const uint SLOT_P2G_TILE_INACTIVE_FACE_SLOTS = 66u;
+const uint SLOT_P2G_TILE_DISPATCH_GROUPS = 67u;
+const uint DIAGNOSTIC_SLOT_COUNT = 68u;
 const float DIVERGENCE_SCALE = 1000000.0;
 
 uint cell_index(uint x, uint y, uint z, uint width, uint height) {
@@ -256,6 +263,13 @@ void record_workload(uint id, uint cell_count, uint particle_count, uint max_par
     if (id == 0u) {
         diagnostics.values[SLOT_ACTIVE_FACES] = active_work_counts.values[0];
         diagnostics.values[SLOT_ACTIVE_FACE_DISPATCH_GROUPS] = active_face_dispatch_args.values[0];
+        diagnostics.values[SLOT_P2G_ACTIVE_TILES] = active_work_counts.values[1];
+        diagnostics.values[SLOT_P2G_TILE_FACE_SLOTS] = active_work_counts.values[1] * 192u;
+        diagnostics.values[SLOT_P2G_TILE_INACTIVE_FACE_SLOTS] =
+            max(active_work_counts.values[1] * 192u, active_work_counts.values[0]) -
+            active_work_counts.values[0];
+        diagnostics.values[SLOT_P2G_TILE_DISPATCH_GROUPS] =
+            active_work_counts.values[1] == 0u ? 0u : active_tile_dispatch_args.values[0];
         diagnostics.values[SLOT_PARTICLE_SCAN_COUNT] = particle_count;
     }
 

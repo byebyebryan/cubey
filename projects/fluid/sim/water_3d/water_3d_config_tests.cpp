@@ -62,6 +62,8 @@ int main() {
                 "water 3D capacity should cover the maximum editable fill volume");
         require(config.transfer_mode == water::Water3DTransferMode::Apic,
                 "water 3D should default to APIC transfer");
+        require(config.p2g_mode == water::Water3DP2GMode::ActiveFaces,
+                "water 3D should default to the proven active-face P2G path");
         require(config.initial_fill_width == 0.50F && config.initial_fill_height == 0.70F &&
                     config.initial_fill_depth == 0.50F,
                 "water 3D should default to the planned centered dam fill");
@@ -142,6 +144,23 @@ int main() {
                 "water 3D active face indices should cover every staggered face");
         require(water::active_face_dispatch_arg_byte_size(config) == sizeof(std::uint32_t) * 3U,
                 "water 3D active face dispatch args should store one indirect dispatch command");
+        require(water::water_3d_p2g_tile_count_x(config) == 16U &&
+                    water::water_3d_p2g_tile_count_y(config) == 16U &&
+                    water::water_3d_p2g_tile_count_z(config) == 16U,
+                "water 3D P2G tiles should default to 4x4x4 cell groups");
+        require(water::water_3d_p2g_tile_count(config) == 4096U,
+                "water 3D P2G tile count should cover the grid");
+        require(water::active_tile_flag_byte_size(config) == sizeof(std::uint32_t) * 4096U,
+                "water 3D active tile flags should cover every P2G tile");
+        require(water::active_tile_index_byte_size(config) == sizeof(std::uint32_t) * 4096U,
+                "water 3D active tile indices should cover every P2G tile");
+        require(water::active_tile_dispatch_arg_byte_size(config) == sizeof(std::uint32_t) * 3U,
+                "water 3D active tile dispatch args should store one indirect dispatch command");
+        require(std::string(water::water_3d_p2g_mode_name(water::Water3DP2GMode::ActiveFaces)) ==
+                    "active",
+                "water 3D P2G mode names should include active");
+        require(water::water_3d_p2g_mode_from_name("tiled") == water::Water3DP2GMode::TiledFaces,
+                "water 3D P2G mode parser should accept tiled");
         require(std::string(water::water_3d_render_view_name(water::Water3DRenderView::Surface)) ==
                     "Surface",
                 "water 3D render view names should include surface");
@@ -203,6 +222,7 @@ int main() {
         run_config.grid_depth = 40;
         run_config.profile_diagnostics = true;
         run_config.profile_diagnostic_interval = 7;
+        run_config.water3d_p2g_mode = "tiled";
         const water::Water3DConfig overridden = water::water_3d_config_from_run_config(run_config);
         require(overridden.grid_width == 32 && overridden.grid_height == 48 &&
                     overridden.grid_depth == 40,
@@ -214,6 +234,8 @@ int main() {
                 "water 3D run-config construction should refresh particle capacity");
         require(overridden.profile_diagnostics && overridden.profile_diagnostic_interval == 7U,
                 "water 3D run-config construction should preserve profile diagnostics flags");
+        require(overridden.p2g_mode == water::Water3DP2GMode::TiledFaces,
+                "water 3D run-config construction should parse P2G mode");
 
         bool rejected = false;
         try {
@@ -233,6 +255,12 @@ int main() {
         const std::string clear_bins = read_text_file(shader_dir / "water_3d_clear_bins.comp");
         const std::string p2g_shader =
             read_text_file(shader_dir / "water_3d_particle_to_grid.comp");
+        const std::string build_active_tiles =
+            read_text_file(shader_dir / "water_3d_build_active_tiles.comp");
+        const std::string active_tile_dispatch_args =
+            read_text_file(shader_dir / "water_3d_active_tile_dispatch_args.comp");
+        const std::string p2g_tiled_shader =
+            read_text_file(shader_dir / "water_3d_particle_to_grid_tiled.comp");
         const std::string copy_sort_source =
             read_text_file(shader_dir / "water_3d_copy_particle_sort_source.comp");
         const std::string scan_offsets = read_text_file(shader_dir / "water_3d_scan_offsets.comp");
@@ -303,6 +331,10 @@ int main() {
                          "water 3D contract should expose compacted active face indices");
         require_contains(contract, "WATER3D_BINDING_ACTIVE_FACE_DISPATCH_ARGS",
                          "water 3D contract should expose active face indirect dispatch args");
+        require_contains(contract, "WATER3D_BINDING_ACTIVE_TILE_INDICES",
+                         "water 3D contract should expose compacted active tile indices");
+        require_contains(contract, "WATER3D_BINDING_ACTIVE_TILE_DISPATCH_ARGS",
+                         "water 3D contract should expose active tile indirect dispatch args");
         require_contains(contract, "WATER3D_BINDING_DIAGNOSTICS",
                          "water 3D contract should expose diagnostics readback storage");
         require_contains(contract, "WATER3D_BINDING_CELL_OFFSETS",
@@ -329,6 +361,10 @@ int main() {
                          "water 3D binning should compact active face indices");
         require_contains(clear_bins, "active_face_dispatch_args.values[id] = 1u",
                          "water 3D bin clearing should reset indirect dispatch args");
+        require_contains(clear_bins, "active_tile_flags.values[id] = 0u",
+                         "water 3D bin clearing should reset active tile flags");
+        require_contains(clear_bins, "active_tile_dispatch_args.values[id] = 1u",
+                         "water 3D bin clearing should reset active tile indirect args");
         require_contains(clear_bins, "cell_write_counts.values[id] = 0u",
                          "water 3D bin clearing should reset sorted scatter counters");
         require_contains(copy_sort_source, "particle_positions_source.values[particle_id]",
@@ -353,6 +389,20 @@ int main() {
                          "water 3D particle-to-grid should consume compacted active face count");
         require_contains(p2g_shader, "active_face_indices.values[active_slot]",
                          "water 3D particle-to-grid should process compacted active face indices");
+        require_contains(build_active_tiles, "atomicExchange(active_tile_flags.values[tile_id]",
+                         "water 3D active tile build should deduplicate tile work");
+        require_contains(build_active_tiles, "active_work_counts.values[1]",
+                         "water 3D active tile build should use the second active-work counter");
+        require_contains(active_tile_dispatch_args, "active_tile_dispatch_args.values[0]",
+                         "water 3D active tile dispatch args should write indirect group counts");
+        require_contains(p2g_tiled_shader, "layout(local_size_x = 192",
+                         "water 3D tiled P2G should run one workgroup per active tile");
+        require_contains(p2g_tiled_shader, "active_tile_indices.values[active_tile_slot]",
+                         "water 3D tiled P2G should consume compacted active tiles");
+        require_contains(p2g_tiled_shader, "active_face_flags.values[global_face_id]",
+                         "water 3D tiled P2G should skip inactive face slots inside active tiles");
+        require_contains(p2g_tiled_shader, "cell_offsets.values[cell_id]",
+                         "water 3D tiled P2G should walk sorted compact cell ranges");
         require_contains(active_face_dispatch_args, "active_face_dispatch_args.values[0]",
                          "water 3D should write indirect dispatch args for active faces");
         require_contains(advect_shader, "apply_side_wall_friction",
@@ -391,6 +441,10 @@ int main() {
                          "water 3D diagnostics should count active particles");
         require_contains(diagnostics_shader, "SLOT_ACTIVE_FACE_DISPATCH_GROUPS",
                          "water 3D diagnostics should capture active-face dispatch work");
+        require_contains(diagnostics_shader, "SLOT_P2G_ACTIVE_TILES",
+                         "water 3D diagnostics should capture active P2G tile work");
+        require_contains(diagnostics_shader, "SLOT_P2G_TILE_INACTIVE_FACE_SLOTS",
+                         "water 3D diagnostics should capture inactive tiled face slots");
         require_contains(diagnostics_shader, "record_projection_residual",
                          "water 3D diagnostics should measure post-projection residuals");
         require_contains(diagnostics_shader, "SLOT_WHITEWATER_ACTIVE",
@@ -524,6 +578,10 @@ int main() {
                          "water 3D simulation should support indirect compute dispatch");
         require_contains(commands, "active_face_dispatch_args().handle()",
                          "water 3D particle-to-grid should dispatch over active faces indirectly");
+        require_contains(commands, "build active p2g tiles",
+                         "water 3D simulation should profile active P2G tile compaction");
+        require_contains(commands, "particle to grid tiled",
+                         "water 3D simulation should profile tiled P2G dispatch");
         require_contains(commands, "diagnostics workload",
                          "water 3D simulation should profile workload diagnostics");
         require_contains(commands, "diagnostics p2g scan",
@@ -552,10 +610,18 @@ int main() {
                          "water 3D headless diagnostics should export P2G histogram metrics");
         require_contains(app, "high_candidate_face_ratio",
                          "water 3D headless diagnostics should derive heavy candidate ratios");
+        require_contains(app, "tile_slot_to_active_face_ratio",
+                         "water 3D headless diagnostics should derive tiled P2G work inflation");
         require_contains(commands, "water whitewater",
                          "water 3D surface render should render whitewater before composite");
         require_contains(gpu_resources, "water_3d_active_face_dispatch_args.comp.spv",
                          "water 3D GPU resources should create active-face dispatch args");
+        require_contains(gpu_resources, "water_3d_build_active_tiles.comp.spv",
+                         "water 3D GPU resources should create active-tile build pipeline");
+        require_contains(gpu_resources, "water_3d_active_tile_dispatch_args.comp.spv",
+                         "water 3D GPU resources should create active-tile dispatch args");
+        require_contains(gpu_resources, "water_3d_particle_to_grid_tiled.comp.spv",
+                         "water 3D GPU resources should create tiled P2G pipeline");
         require_contains(gpu_resources, "water_3d_whitewater_emit.comp.spv",
                          "water 3D GPU resources should create whitewater compute pipelines");
         require_contains(gpu_resources, "water_3d_whitewater_active_indices.comp.spv",
