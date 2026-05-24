@@ -49,8 +49,12 @@ void main() {
         return;
     }
 
-    vec3 center = sim_to_world(particle_positions.values[particle_id].xyz);
-    float radius = params.camera_right_radius.w;
+    vec4 particle = particle_positions.values[particle_id];
+    vec3 center = sim_to_world(particle.xyz);
+    float radius_scale = particle.w >= WATER3D_PARTICLE_STATE_RAIN - 0.5
+                             ? WATER3D_RAIN_RENDER_RADIUS_SCALE
+                             : 1.0;
+    float radius = params.camera_right_radius.w * radius_scale;
     vec3 right = params.camera_right_radius.xyz;
     vec3 up = params.camera_up_debug.xyz;
     vec3 world_position = center + ((right * corner.x) + (up * corner.y)) * radius;

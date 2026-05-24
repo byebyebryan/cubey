@@ -79,6 +79,7 @@ void main() {
 
     float restitution = clamp(WATER3D_BOUNDARY_RESTITUTION, 0.0, 1.0);
     float damping = clamp(WATER3D_PARTICLE_DAMPING, 0.0, 1.0);
+    float particle_state = particle_positions.values[particle_id].w;
     vec3 position = particle_positions.values[particle_id].xyz;
     vec3 velocity = particle_velocities.values[particle_id].xyz;
     position += velocity * WATER3D_DT;
@@ -99,7 +100,8 @@ void main() {
     apply_side_wall_friction(velocity, side_wall_collided);
     clamp_velocity(velocity);
     if (inside_drain(position)) {
-        particle_positions.values[particle_id] = vec4(-10.0, -10.0, -10.0, 0.0);
+        particle_positions.values[particle_id] =
+            vec4(-10.0, -10.0, -10.0, WATER3D_PARTICLE_STATE_INACTIVE);
         particle_velocities.values[particle_id] = vec4(0.0);
         clear_affine(particle_id);
         return;
@@ -108,6 +110,6 @@ void main() {
         clear_affine(particle_id);
     }
 
-    particle_positions.values[particle_id] = vec4(position, 1.0);
+    particle_positions.values[particle_id] = vec4(position, particle_state);
     particle_velocities.values[particle_id] = vec4(velocity * damping, 0.0);
 }

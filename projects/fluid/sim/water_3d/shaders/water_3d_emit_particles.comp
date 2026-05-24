@@ -59,8 +59,9 @@ void clear_affine(uint particle_id) {
     particle_affine.values[base + 2u] = vec4(0.0);
 }
 
-void emit_particle(uint particle_id, vec3 position, vec3 velocity) {
-    particle_positions.values[particle_id] = vec4(clamp(position, vec3(0.01), vec3(0.99)), 1.0);
+void emit_particle(uint particle_id, vec3 position, vec3 velocity, float particle_state) {
+    particle_positions.values[particle_id] =
+        vec4(clamp(position, vec3(0.01), vec3(0.99)), particle_state);
     particle_velocities.values[particle_id] = vec4(velocity, 0.0);
     clear_affine(particle_id);
 }
@@ -72,7 +73,8 @@ void emit_hose(uint particle_id, uint seed) {
     vec3 position = params.hose_options0.yzw + random_ball_offset(params.hose_options2.x, seed);
     vec3 direction = cone_direction(params.hose_options1.xyz, params.hose_options2.z, seed);
     float speed_jitter = mix(0.86, 1.14, hash11(seed + 83u));
-    emit_particle(particle_id, position, direction * params.hose_options1.w * speed_jitter);
+    emit_particle(particle_id, position, direction * params.hose_options1.w * speed_jitter,
+                  WATER3D_PARTICLE_STATE_LIQUID);
 }
 
 void emit_rain(uint particle_id, uint seed) {
@@ -84,7 +86,8 @@ void emit_rain(uint particle_id, uint seed) {
     vec3 position = params.rain_options0.yzw + offset + random_ball_offset(params.rain_options2.x, seed);
     vec3 direction = cone_direction(vec3(0.0, -1.0, 0.0), params.rain_options2.z, seed);
     float speed_jitter = mix(0.88, 1.12, hash11(seed + 149u));
-    emit_particle(particle_id, position, direction * params.rain_options1.w * speed_jitter);
+    emit_particle(particle_id, position, direction * params.rain_options1.w * speed_jitter,
+                  WATER3D_PARTICLE_STATE_RAIN);
 }
 
 void main() {

@@ -163,13 +163,14 @@ void main() {
                                        particles_per_cell, start_x, start_y, start_z, jitter,
                                        width, height, depth);
         float release = 1.0 - smoothstep(0.02, 0.50, position.x);
-        particle_positions.values[id] = vec4(position, 1.0);
+        particle_positions.values[id] = vec4(position, WATER3D_PARTICLE_STATE_LIQUID);
         particle_velocities.values[id] = vec4(0.18 * release, 0.0, 0.0, 0.0);
         particle_affine.values[id * 3u + 0u] = vec4(0.0);
         particle_affine.values[id * 3u + 1u] = vec4(0.0);
         particle_affine.values[id * 3u + 2u] = vec4(0.0);
     } else if (id < particle_capacity) {
-        particle_positions.values[id] = vec4(-10.0, -10.0, -10.0, 0.0);
+        particle_positions.values[id] =
+            vec4(-10.0, -10.0, -10.0, WATER3D_PARTICLE_STATE_INACTIVE);
         particle_velocities.values[id] = vec4(0.0);
         particle_affine.values[id * 3u + 0u] = vec4(0.0);
         particle_affine.values[id * 3u + 1u] = vec4(0.0);

@@ -10,6 +10,9 @@ suction drain, and rain emission are available from the UI but start disabled.
 The solver still runs in normalized `[0,1]^3` coordinates; the long tank is a
 render-domain scale rather than a full anisotropic-cell rewrite.
 
+Rain particles use the same particle-grid solver path as water, but they carry a
+separate render state so falling droplets draw smaller than bulk liquid particles.
+
 The default renderer is a screen-space surface path: an HDR/generated environment
 and simple ground scene are rendered into offscreen color/depth targets, particles
 write front depth and thickness into render-graph transients, a separable bilateral

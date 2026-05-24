@@ -9,6 +9,7 @@ WATER3D_SURFACE_PARAMS;
 
 layout(location = 0) in vec2 frag_local;
 layout(location = 1) in vec3 frag_center;
+layout(location = 2) in float frag_radius;
 layout(location = 0) out float out_depth;
 
 void main() {
@@ -17,7 +18,7 @@ void main() {
         discard;
     }
 
-    float radius = water_surface_particle_radius();
+    float radius = frag_radius;
     float sphere_z = sqrt(max(0.0, 1.0 - radius_squared)) * radius;
     vec3 surface_world = frag_center - water_surface_camera_forward() * sphere_z;
     vec4 clip = surface_params.view_projection * vec4(surface_world, 1.0);

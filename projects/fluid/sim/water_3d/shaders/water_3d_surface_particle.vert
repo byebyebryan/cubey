@@ -13,6 +13,7 @@ layout(set = 0, binding = WATER3D_BINDING_PARTICLE_POSITIONS, std430) readonly b
 
 layout(location = 0) out vec2 frag_local;
 layout(location = 1) out vec3 frag_center;
+layout(location = 2) out float frag_radius;
 
 vec2 quad_corner(uint index) {
     vec2 corners[6] = vec2[](
@@ -33,16 +34,22 @@ void main() {
     if (particle_id >= particle_count || particle_positions.values[particle_id].w < 0.5) {
         frag_local = vec2(2.0);
         frag_center = vec3(0.0);
+        frag_radius = 0.0;
         gl_Position = vec4(2.0, 2.0, 0.0, 1.0);
         return;
     }
 
-    float radius = water_surface_particle_radius();
+    float particle_state = particle_positions.values[particle_id].w;
+    float radius_scale = particle_state >= WATER3D_PARTICLE_STATE_RAIN - 0.5
+                             ? WATER3D_RAIN_RENDER_RADIUS_SCALE
+                             : 1.0;
+    float radius = water_surface_particle_radius() * radius_scale;
     vec3 center = water_surface_sim_to_world(particle_positions.values[particle_id].xyz);
     vec3 world_position = center + ((water_surface_camera_right() * corner.x) +
                                     (water_surface_camera_up() * corner.y)) *
                                        radius;
     frag_local = corner;
     frag_center = center;
+    frag_radius = radius;
     gl_Position = surface_params.view_projection * vec4(world_position, 1.0);
 }

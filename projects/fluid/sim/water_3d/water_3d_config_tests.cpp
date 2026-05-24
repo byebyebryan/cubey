@@ -315,8 +315,11 @@ int main() {
         const std::string divergence_shader =
             read_text_file(shader_dir / "water_3d_divergence.comp");
         const std::string render_shader = read_text_file(shader_dir / "water_3d_render.frag");
+        const std::string render_vertex = read_text_file(shader_dir / "water_3d.vert");
         const std::string surface_common =
             read_text_file(shader_dir / "water_3d_surface_common.glsl");
+        const std::string surface_particle =
+            read_text_file(shader_dir / "water_3d_surface_particle.vert");
         const std::string surface_depth =
             read_text_file(shader_dir / "water_3d_surface_depth.frag");
         const std::string scene_shader = read_text_file(shader_dir / "water_3d_scene.frag");
@@ -383,8 +386,14 @@ int main() {
                          "water 3D contract should expose wave frequency uniforms");
         require_contains(contract, "drain_flow",
                          "water 3D contract should expose drain suction uniforms");
+        require_contains(contract, "WATER3D_PARTICLE_STATE_RAIN",
+                         "water 3D contract should expose a rain particle render state");
+        require_contains(contract, "WATER3D_RAIN_RENDER_RADIUS_SCALE",
+                         "water 3D contract should expose rain droplet render scale");
         require_contains(reset_shader, "particle_affine.values[id * 3u + 2u]",
                          "water 3D reset should clear all APIC affine rows");
+        require_contains(reset_shader, "WATER3D_PARTICLE_STATE_LIQUID",
+                         "water 3D reset should tag initial particles as bulk liquid");
         require_contains(reset_shader, "fill_start_from_center",
                          "water 3D reset should honor editable fill placement");
         require_contains(reset_shader, "whitewater_positions.values[id]",
@@ -409,6 +418,8 @@ int main() {
                          "water 3D emitter should support hose particles");
         require_contains(emit_shader, "emit_rain",
                          "water 3D emitter should support rain particles");
+        require_contains(emit_shader, "WATER3D_PARTICLE_STATE_RAIN",
+                         "water 3D emitter should tag rain particles separately");
         require_contains(emit_shader, "clear_affine",
                          "water 3D emitter should reset APIC state for emitted particles");
         require_contains(copy_sort_source, "particle_positions_source.values[particle_id]",
@@ -453,6 +464,10 @@ int main() {
                          "water 3D particle advection should damp side-wall impacts");
         require_contains(advect_shader, "inside_drain",
                          "water 3D particle advection should deactivate drained particles");
+        require_contains(advect_shader, "float particle_state = particle_positions.values",
+                         "water 3D particle advection should preserve particle render state");
+        require_contains(advect_shader, "vec4(position, particle_state)",
+                         "water 3D particle advection should keep rain particles tagged");
         require_contains(force_shader, "wave_gate",
                          "water 3D force pass should include a bounded wave driver");
         require_contains(force_shader, "params.wave_options2.x",
@@ -562,6 +577,8 @@ int main() {
                          "water 3D renderer should support particle splats");
         require_contains(render_shader, "out_color = vec4(linear_color, 1.0)",
                          "water 3D particle debug splats should be opaque");
+        require_contains(render_vertex, "WATER3D_RAIN_RENDER_RADIUS_SCALE",
+                         "water 3D particle debug splats should draw rain as small droplets");
         require_contains(gpu_resources, ".blend_enable = false",
                          "water 3D debug render pipeline should not alpha blend particles");
         require_contains(gpu_resources, "water_3d_emit_particles.comp.spv",
@@ -574,6 +591,10 @@ int main() {
                          "water 3D surface pass should expose a foam diagnostic view");
         require_contains(surface_common, "WATER3D_SURFACE_VIEW_WHITEWATER",
                          "water 3D surface pass should expose a whitewater diagnostic view");
+        require_contains(surface_particle, "frag_radius",
+                         "water 3D surface particles should carry per-particle render radius");
+        require_contains(surface_particle, "WATER3D_RAIN_RENDER_RADIUS_SCALE",
+                         "water 3D surface particles should draw rain as small droplets");
         require_contains(scene_shader, "gl_FragDepth",
                          "water 3D scene pass should preserve sampleable scene depth");
         require_contains(scene_shader, "environment_cube",
@@ -582,8 +603,12 @@ int main() {
                          "water 3D scene pass should size the ground plane from domain scale");
         require_contains(surface_depth, "gl_FragDepth",
                          "water 3D surface depth pass should write sphere-correct depth");
+        require_contains(surface_depth, "frag_radius",
+                         "water 3D surface depth pass should use per-particle radius");
         require_contains(surface_thickness, "out_thickness",
                          "water 3D surface thickness pass should emit additive thickness");
+        require_contains(surface_thickness, "frag_radius",
+                         "water 3D surface thickness pass should use per-particle radius");
         require_contains(gpu_resources, ".dst_color_blend_factor = VK_BLEND_FACTOR_ONE",
                          "water 3D surface thickness pass should use additive blending");
         require_contains(surface_repair, "WATER3D_SURFACE_MAX_FILL_RADIUS",

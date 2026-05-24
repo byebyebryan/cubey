@@ -11,6 +11,7 @@ layout(set = 1, binding = 0) uniform sampler2D surface_depth;
 
 layout(location = 0) in vec2 frag_local;
 layout(location = 1) in vec3 frag_center;
+layout(location = 2) in float frag_radius;
 layout(location = 0) out float out_thickness;
 
 void main() {
@@ -25,7 +26,7 @@ void main() {
         discard;
     }
 
-    float radius = water_surface_particle_radius();
+    float radius = frag_radius;
     float sphere_z = sqrt(max(0.0, 1.0 - radius_squared)) * radius;
     vec3 back_world = frag_center + water_surface_camera_forward() * sphere_z;
     float back_depth = length(back_world - water_surface_camera_position());

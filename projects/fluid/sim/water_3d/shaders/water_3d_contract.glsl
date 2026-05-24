@@ -55,6 +55,11 @@
 
 #define WATER3D_EMPTY_PARTICLE 0xffffffffu
 
+const float WATER3D_PARTICLE_STATE_INACTIVE = 0.0;
+const float WATER3D_PARTICLE_STATE_LIQUID = 1.0;
+const float WATER3D_PARTICLE_STATE_RAIN = 2.0;
+const float WATER3D_RAIN_RENDER_RADIUS_SCALE = 0.26;
+
 #define WATER3D_SIMULATION_PARAMS                                                              \
     layout(set = 0, binding = WATER3D_BINDING_SIM_PARAMS, std140) uniform SimulationParams {    \
         vec4 grid_options;                                                                      \
