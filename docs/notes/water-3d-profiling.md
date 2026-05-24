@@ -119,18 +119,37 @@ cell/bin-locality and clumped-neighborhood work: particle sorting or compacted
 cell ranges should be evaluated before a larger scatter/cooperative-transfer
 rewrite.
 
+## P2G Cell-Sorted Locality Results
+
+Captured 2026-05-23 with `water3d-locality-*` profile prefixes after adding a
+GPU-only cell-range particle sort. The sort copies canonical particle buffers to
+temporary source buffers, scans cell counts into compact offsets, then scatters
+particles back into canonical storage sorted by cell. P2G now walks
+`cell_offsets + cell_counts` ranges instead of random fixed-bin particle IDs.
+
+| Grid | P2G support baseline | P2G sorted ranges | Approx. sort overhead/substep | Summed profiled GPU avg |
+| --- | ---: | ---: | ---: | ---: |
+| 64^3 | 4.369 ms | 2.219 ms (-49.2%) | 1.14 ms | 15.066 ms -> 11.482 ms |
+| 96^3 | 17.733 ms | 8.096 ms (-54.3%) | 3.84 ms | 52.303 ms -> 37.232 ms |
+| 128^3 | 36.670 ms | 21.731 ms (-40.7%) | 9.05 ms | 106.521 ms -> 85.079 ms |
+
+The sorted path is a clear net win despite the copy/scan/scatter cost. It also
+reduces `grid to particle` time because the canonical particle arrays stay
+cell-local after the post-advect refresh. The old fixed cell-particle index
+buffer was removed after this capture because sorted cell ranges are now the
+only P2G path.
+
 ## Readout
 
-P2G is still the dominant cost and scales worse than the other visible passes.
-Pressure and velocity extrapolation are the next meaningful costs, but they are
-not the first bottleneck. Bin refresh is also large enough to matter because it
-runs twice per substep and feeds the active-face dispatch path.
+P2G remains the largest solver cost, but the first locality pass changed the
+shape of the problem. The next high-gain work is either a deeper P2G rewrite
+that avoids one-thread-per-face repeated neighbor scans, or a separate renderer
+profile slice if visual composition becomes the limiting cost.
 
 Near-term optimization candidates:
 
-1. Improve particle/bin locality for P2G gathers. Support-aware gather removed
-   guaranteed-zero cells; the remaining high-candidate tail is now mostly
-   cell-locality and clumped-neighborhood work.
+1. Investigate a cooperative tiled P2G path or particle-splat/grid-scatter
+   variant now that particle memory is cell-local.
 2. Keep P2G correctness fixed while experimenting. The previous fixed-stencil
    transfer attempt produced solver instability and should stay as a documented
    failed experiment until a narrower hypothesis is tested.
