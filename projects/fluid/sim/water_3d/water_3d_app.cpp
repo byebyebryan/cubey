@@ -584,194 +584,235 @@ class Water3DApp {
             ImGui::EndCombo();
         }
 
-        if (ImGui::BeginCombo("Transfer",
-                              water_3d_transfer_mode_name(water_config_.transfer_mode))) {
-            for (Water3DTransferMode mode : kTransferModes) {
-                const bool selected = mode == water_config_.transfer_mode;
-                if (ImGui::Selectable(water_3d_transfer_mode_name(mode), selected)) {
-                    water_config_.transfer_mode = mode;
+        const auto section = [](const char* label, bool default_open) {
+            const ImGuiTreeNodeFlags flags =
+                default_open ? ImGuiTreeNodeFlags_DefaultOpen : ImGuiTreeNodeFlags_None;
+            return ImGui::CollapsingHeader(label, flags);
+        };
+
+        ImGui::Spacing();
+        if (section("Simulation", true)) {
+            if (ImGui::BeginCombo("Transfer",
+                                  water_3d_transfer_mode_name(water_config_.transfer_mode))) {
+                for (Water3DTransferMode mode : kTransferModes) {
+                    const bool selected = mode == water_config_.transfer_mode;
+                    if (ImGui::Selectable(water_3d_transfer_mode_name(mode), selected)) {
+                        water_config_.transfer_mode = mode;
+                    }
+                    if (selected) {
+                        ImGui::SetItemDefaultFocus();
+                    }
                 }
-                if (selected) {
-                    ImGui::SetItemDefaultFocus();
+                ImGui::EndCombo();
+            }
+
+            int pressure_iterations = static_cast<int>(water_config_.pressure_iterations);
+            if (ImGui::SliderInt("Pressure iterations", &pressure_iterations, 1, 128)) {
+                water_config_.pressure_iterations =
+                    static_cast<std::uint32_t>(pressure_iterations);
+            }
+            int substeps = static_cast<int>(water_config_.substeps);
+            if (ImGui::SliderInt("Substeps", &substeps, 1, 4)) {
+                water_config_.substeps = static_cast<std::uint32_t>(substeps);
+            }
+            ImGui::SliderFloat("PIC/FLIP blend", &water_config_.flip_ratio, 0.0F, 1.0F, "%.2f");
+            ImGui::SliderFloat("Velocity limit", &water_config_.velocity_limit, 1.0F, 8.0F,
+                               "%.2f");
+            ImGui::SliderFloat("Particle damping", &water_config_.particle_damping, 0.980F,
+                               1.000F, "%.3f");
+            ImGui::SliderFloat("Particle volume strength", &water_config_.particle_volume_strength,
+                               0.0F, 48.0F, "%.1f");
+            ImGui::SliderFloat("Gravity", &water_config_.gravity, -4.0F, 0.0F, "%.2f");
+            ImGui::SliderFloat("Boundary bounce", &water_config_.boundary_restitution, 0.0F, 0.8F,
+                               "%.2f");
+        }
+
+        if (section("Initial volume", false)) {
+            if (ImGui::SliderFloat("Fill width", &water_config_.initial_fill_width,
+                                   kWater3DMinFillFraction, kWater3DMaxFillFraction, "%.2f")) {
+                refresh_particle_counts(water_config_);
+                reset_simulation();
+            }
+            if (ImGui::SliderFloat("Fill height", &water_config_.initial_fill_height,
+                                   kWater3DMinFillFraction, kWater3DMaxFillFraction, "%.2f")) {
+                refresh_particle_counts(water_config_);
+                reset_simulation();
+            }
+            if (ImGui::SliderFloat("Fill depth", &water_config_.initial_fill_depth,
+                                   kWater3DMinFillFraction, kWater3DMaxFillFraction, "%.2f")) {
+                refresh_particle_counts(water_config_);
+                reset_simulation();
+            }
+            bool fill_center_changed = false;
+            fill_center_changed |= ImGui::SliderFloat("Fill center X",
+                                                      &water_config_.initial_fill_center[0], 0.05F,
+                                                      0.95F, "%.2f");
+            fill_center_changed |= ImGui::SliderFloat("Fill center Z",
+                                                      &water_config_.initial_fill_center[1], 0.05F,
+                                                      0.95F, "%.2f");
+            if (fill_center_changed) {
+                reset_simulation();
+            }
+            ImGui::SliderFloat3("Domain scale", water_config_.domain.scale.data(), 0.25F, 3.0F,
+                                "%.2f");
+        }
+
+        if (section("Sources and forces", true)) {
+            ImGui::SeparatorText("Hose");
+            ImGui::PushID("hose");
+            ImGui::Checkbox("Enabled", &water_config_.hose.enabled);
+            ImGui::SliderFloat3("Position", water_config_.hose.position.data(), 0.02F, 0.98F,
+                                "%.2f");
+            ImGui::SliderFloat("Yaw", &water_config_.hose.yaw_degrees, -180.0F, 180.0F,
+                               "%.1f deg");
+            ImGui::SliderFloat("Pitch", &water_config_.hose.pitch_degrees, -70.0F, 20.0F,
+                               "%.1f deg");
+            ImGui::SliderFloat("Speed", &water_config_.hose.speed, 0.2F, 6.0F, "%.2f");
+            ImGui::SliderFloat("Radius", &water_config_.hose.radius, 0.004F, 0.080F, "%.3f");
+            ImGui::SliderFloat("Rate", &water_config_.hose.particles_per_second, 0.0F, 60000.0F,
+                               "%.0f/s");
+            ImGui::SliderFloat("Spread", &water_config_.hose.spread_degrees, 0.0F, 45.0F,
+                               "%.1f deg");
+            ImGui::PopID();
+
+            ImGui::SeparatorText("Drain");
+            ImGui::PushID("drain");
+            ImGui::Checkbox("Enabled", &water_config_.drain.enabled);
+            ImGui::SliderFloat3("Center", water_config_.drain.center.data(), 0.02F, 0.98F,
+                                "%.2f");
+            ImGui::SliderFloat3("Half size", water_config_.drain.half_size.data(), 0.005F, 0.35F,
+                                "%.3f");
+            ImGui::SliderFloat("Pull speed", &water_config_.drain.pull_speed, 0.0F, 6.0F, "%.2f");
+            ImGui::SliderFloat("Pull radius", &water_config_.drain.pull_radius, 0.05F, 1.5F,
+                               "%.2f");
+            ImGui::PopID();
+
+            ImGui::SeparatorText("Wave");
+            ImGui::PushID("wave");
+            ImGui::Checkbox("Enabled", &water_config_.wave.enabled);
+            ImGui::SliderFloat3("Center", water_config_.wave.center.data(), 0.02F, 0.98F, "%.2f");
+            ImGui::SliderFloat3("Half size", water_config_.wave.half_size.data(), 0.01F, 0.55F,
+                                "%.2f");
+            ImGui::SliderFloat("Amplitude", &water_config_.wave.amplitude, 0.0F, 4.0F, "%.2f");
+            ImGui::SliderFloat("Frequency", &water_config_.wave.frequency_hz, 0.0F, 2.0F,
+                               "%.2f Hz");
+            ImGui::PopID();
+
+            ImGui::SeparatorText("Rain");
+            ImGui::PushID("rain");
+            ImGui::Checkbox("Enabled", &water_config_.rain.enabled);
+            ImGui::SliderFloat3("Center", water_config_.rain.center.data(), 0.02F, 0.98F, "%.2f");
+            ImGui::SliderFloat3("Half size", water_config_.rain.half_size.data(), 0.005F, 0.50F,
+                                "%.2f");
+            ImGui::SliderFloat("Speed", &water_config_.rain.speed, 0.2F, 6.0F, "%.2f");
+            ImGui::SliderFloat("Radius", &water_config_.rain.radius, 0.002F, 0.060F, "%.3f");
+            ImGui::SliderFloat("Rate", &water_config_.rain.particles_per_second, 0.0F, 30000.0F,
+                               "%.0f/s");
+            ImGui::SliderFloat("Spread", &water_config_.rain.spread_degrees, 0.0F, 30.0F,
+                               "%.1f deg");
+            ImGui::PopID();
+        }
+
+        if (section("Surface and lighting", false)) {
+            ImGui::SliderFloat("Particle radius", &water_config_.particle_radius, 0.004F, 0.040F,
+                               "%.4f");
+            ImGui::SliderFloat("Surface thickness", &water_config_.surface_thickness_scale, 0.1F,
+                               4.0F, "%.2f");
+            ImGui::SliderFloat("Surface fill px", &water_config_.surface_gap_fill_radius_px, 0.0F,
+                               3.0F, "%.1f");
+            ImGui::SliderFloat("Surface smooth world",
+                               &water_config_.surface_smoothing_radius_world, 0.0F, 0.04F,
+                               "%.3f");
+            int surface_smoothing_iterations =
+                static_cast<int>(water_config_.surface_smoothing_iterations);
+            if (ImGui::SliderInt("Surface smooth passes", &surface_smoothing_iterations, 0, 8)) {
+                water_config_.surface_smoothing_iterations =
+                    static_cast<std::uint32_t>(surface_smoothing_iterations);
+            }
+            ImGui::SliderFloat("Surface depth sigma", &water_config_.surface_depth_sigma, 0.005F,
+                               0.120F, "%.3f");
+            ImGui::SliderFloat("Thickness smoothing", &water_config_.surface_thickness_smoothing,
+                               0.0F, 1.0F, "%.2f");
+            ImGui::SliderFloat("Surface absorption", &water_config_.surface_absorption, 0.0F,
+                               5.0F, "%.2f");
+            ImGui::SliderFloat("Surface refraction", &water_config_.surface_refraction_strength,
+                               0.0F, 0.12F, "%.3f");
+            ImGui::SliderFloat("Environment intensity", &water_config_.environment_intensity,
+                               0.0F, 4.0F, "%.2f");
+            ImGui::SliderFloat("Environment rotation", &water_config_.environment_rotation_degrees,
+                               -180.0F, 180.0F, "%.0f deg");
+            ImGui::SliderFloat("Exposure", &water_config_.exposure, -4.0F, 4.0F, "%.2f");
+            ImGui::SliderFloat("Slice depth", &water_config_.slice_depth, 0.02F, 0.98F, "%.2f");
+        }
+
+        if (section("Foam and whitewater", false)) {
+            ImGui::SliderFloat("Foam amount", &water_config_.foam_amount, 0.0F, 1.0F, "%.2f");
+            ImGui::SliderFloat("Foam sharpness", &water_config_.foam_sharpness, 0.2F, 4.0F,
+                               "%.2f");
+            ImGui::Checkbox("Whitewater", &water_config_.whitewater_enabled);
+            ImGui::SliderFloat("Whitewater intensity", &water_config_.whitewater_intensity, 0.0F,
+                               3.0F, "%.2f");
+            int whitewater_max_emit =
+                static_cast<int>(water_config_.whitewater_max_emit_per_frame);
+            if (ImGui::SliderInt("Whitewater emit/frame", &whitewater_max_emit, 0, 8192)) {
+                water_config_.whitewater_max_emit_per_frame =
+                    static_cast<std::uint32_t>(whitewater_max_emit);
+            }
+            ImGui::SliderFloat("Whitewater speed", &water_config_.whitewater_speed_threshold,
+                               0.05F, 3.5F, "%.2f");
+            ImGui::SliderFloat("Whitewater radius", &water_config_.whitewater_radius, 0.002F,
+                               0.035F, "%.3f");
+            ImGui::SliderFloat("Whitewater lifetime", &water_config_.whitewater_lifetime, 0.15F,
+                               5.0F, "%.2f");
+            ImGui::SliderFloat("Whitewater drag", &water_config_.whitewater_drag, 0.50F, 1.0F,
+                               "%.2f");
+            ImGui::SliderFloat("Whitewater gravity", &water_config_.whitewater_gravity_scale, 0.0F,
+                               1.5F, "%.2f");
+        }
+
+        if (section("Diagnostics", true)) {
+            ImGui::Text("Grid: %u x %u x %u", water_config_.grid_width, water_config_.grid_height,
+                        water_config_.grid_depth);
+            const std::uint32_t scanned_particles =
+                water_3d_runtime_particle_scan_count(water_config_, runtime_state_);
+            ImGui::Text("Particles: %u reset / %u capacity", water_config_.active_particle_count,
+                        water_config_.particle_capacity);
+            ImGui::Text("Compute particles: %u scanned", scanned_particles);
+            ImGui::Text("Emitter pool: %u touched / %u available",
+                        scanned_particles - water_config_.active_particle_count,
+                        emitter_particle_pool_capacity_for_config(water_config_));
+            ImGui::Text("Whitewater: %u capacity / %u max emit", water_config_.whitewater_capacity,
+                        water_config_.whitewater_max_emit_per_frame);
+            if (latest_frame_stats_.has_value()) {
+                ImGui::Text("Frame: %.1f fps / %.2f ms avg (%.2f ms last)",
+                            latest_frame_stats_->fps, latest_frame_stats_->frame_ms,
+                            latest_frame_ms_);
+            } else if (latest_fps_ > 0.0) {
+                ImGui::Text("Frame: %.1f fps / %.2f ms", latest_fps_, latest_frame_ms_);
+            } else {
+                ImGui::TextUnformatted("Frame: collecting...");
+            }
+
+            const std::vector<cubey::vulkan::GpuPassTiming>& timings = resources_.latest_timings();
+            if (!timings.empty()) {
+                ImGui::SeparatorText("GPU timings");
+                for (const cubey::vulkan::GpuPassTiming& timing : timings) {
+                    ImGui::Text("%s: %.3f ms", timing.label.c_str(), timing.milliseconds);
                 }
             }
-            ImGui::EndCombo();
-        }
 
-        int pressure_iterations = static_cast<int>(water_config_.pressure_iterations);
-        if (ImGui::SliderInt("Pressure iterations", &pressure_iterations, 1, 128)) {
-            water_config_.pressure_iterations = static_cast<std::uint32_t>(pressure_iterations);
-        }
-        int substeps = static_cast<int>(water_config_.substeps);
-        if (ImGui::SliderInt("Substeps", &substeps, 1, 4)) {
-            water_config_.substeps = static_cast<std::uint32_t>(substeps);
-        }
-        ImGui::SliderFloat("PIC/FLIP blend", &water_config_.flip_ratio, 0.0F, 1.0F, "%.2f");
-        ImGui::SliderFloat("Velocity limit", &water_config_.velocity_limit, 1.0F, 8.0F, "%.2f");
-        ImGui::SliderFloat("Particle damping", &water_config_.particle_damping, 0.980F, 1.000F,
-                           "%.3f");
-        ImGui::SliderFloat("Particle volume strength", &water_config_.particle_volume_strength,
-                           0.0F, 48.0F, "%.1f");
-        ImGui::SliderFloat("Particle radius", &water_config_.particle_radius, 0.004F, 0.040F,
-                           "%.4f");
-        ImGui::SliderFloat("Surface thickness", &water_config_.surface_thickness_scale, 0.1F, 4.0F,
-                           "%.2f");
-        ImGui::SliderFloat("Surface fill px", &water_config_.surface_gap_fill_radius_px, 0.0F, 3.0F,
-                           "%.1f");
-        ImGui::SliderFloat("Surface smooth world", &water_config_.surface_smoothing_radius_world,
-                           0.0F, 0.04F, "%.3f");
-        int surface_smoothing_iterations =
-            static_cast<int>(water_config_.surface_smoothing_iterations);
-        if (ImGui::SliderInt("Surface smooth passes", &surface_smoothing_iterations, 0, 8)) {
-            water_config_.surface_smoothing_iterations =
-                static_cast<std::uint32_t>(surface_smoothing_iterations);
-        }
-        ImGui::SliderFloat("Surface depth sigma", &water_config_.surface_depth_sigma, 0.005F,
-                           0.120F, "%.3f");
-        ImGui::SliderFloat("Thickness smoothing", &water_config_.surface_thickness_smoothing, 0.0F,
-                           1.0F, "%.2f");
-        ImGui::SliderFloat("Surface absorption", &water_config_.surface_absorption, 0.0F, 5.0F,
-                           "%.2f");
-        ImGui::SliderFloat("Surface refraction", &water_config_.surface_refraction_strength, 0.0F,
-                           0.12F, "%.3f");
-        ImGui::SliderFloat("Foam amount", &water_config_.foam_amount, 0.0F, 1.0F, "%.2f");
-        ImGui::SliderFloat("Foam sharpness", &water_config_.foam_sharpness, 0.2F, 4.0F, "%.2f");
-        ImGui::Checkbox("Whitewater", &water_config_.whitewater_enabled);
-        ImGui::SliderFloat("Whitewater intensity", &water_config_.whitewater_intensity, 0.0F, 3.0F,
-                           "%.2f");
-        int whitewater_max_emit = static_cast<int>(water_config_.whitewater_max_emit_per_frame);
-        if (ImGui::SliderInt("Whitewater emit/frame", &whitewater_max_emit, 0, 8192)) {
-            water_config_.whitewater_max_emit_per_frame =
-                static_cast<std::uint32_t>(whitewater_max_emit);
-        }
-        ImGui::SliderFloat("Whitewater speed", &water_config_.whitewater_speed_threshold, 0.05F,
-                           3.5F, "%.2f");
-        ImGui::SliderFloat("Whitewater radius", &water_config_.whitewater_radius, 0.002F, 0.035F,
-                           "%.3f");
-        ImGui::SliderFloat("Whitewater lifetime", &water_config_.whitewater_lifetime, 0.15F, 5.0F,
-                           "%.2f");
-        ImGui::SliderFloat("Whitewater drag", &water_config_.whitewater_drag, 0.50F, 1.0F, "%.2f");
-        ImGui::SliderFloat("Whitewater gravity", &water_config_.whitewater_gravity_scale, 0.0F,
-                           1.5F, "%.2f");
-        ImGui::SliderFloat("Environment intensity", &water_config_.environment_intensity, 0.0F,
-                           4.0F, "%.2f");
-        ImGui::SliderFloat("Environment rotation", &water_config_.environment_rotation_degrees,
-                           -180.0F, 180.0F, "%.0f deg");
-        ImGui::SliderFloat("Exposure", &water_config_.exposure, -4.0F, 4.0F, "%.2f");
-        ImGui::SliderFloat("Gravity", &water_config_.gravity, -4.0F, 0.0F, "%.2f");
-        ImGui::SliderFloat("Boundary bounce", &water_config_.boundary_restitution, 0.0F, 0.8F,
-                           "%.2f");
-        if (ImGui::SliderFloat("Fill width", &water_config_.initial_fill_width,
-                               kWater3DMinFillFraction, kWater3DMaxFillFraction, "%.2f")) {
-            refresh_particle_counts(water_config_);
-            reset_simulation();
-        }
-        if (ImGui::SliderFloat("Fill height", &water_config_.initial_fill_height,
-                               kWater3DMinFillFraction, kWater3DMaxFillFraction, "%.2f")) {
-            refresh_particle_counts(water_config_);
-            reset_simulation();
-        }
-        if (ImGui::SliderFloat("Fill depth", &water_config_.initial_fill_depth,
-                               kWater3DMinFillFraction, kWater3DMaxFillFraction, "%.2f")) {
-            refresh_particle_counts(water_config_);
-            reset_simulation();
-        }
-        bool fill_center_changed = false;
-        fill_center_changed |= ImGui::SliderFloat("Fill center X",
-                                                  &water_config_.initial_fill_center[0], 0.05F,
-                                                  0.95F, "%.2f");
-        fill_center_changed |= ImGui::SliderFloat("Fill center Z",
-                                                  &water_config_.initial_fill_center[1], 0.05F,
-                                                  0.95F, "%.2f");
-        if (fill_center_changed) {
-            reset_simulation();
-        }
-        ImGui::SliderFloat3("Domain scale", water_config_.domain.scale.data(), 0.25F, 3.0F,
-                            "%.2f");
-        ImGui::Checkbox("Hose", &water_config_.hose.enabled);
-        ImGui::SliderFloat3("Hose position", water_config_.hose.position.data(), 0.02F, 0.98F,
-                            "%.2f");
-        ImGui::SliderFloat("Hose yaw", &water_config_.hose.yaw_degrees, -180.0F, 180.0F,
-                           "%.1f deg");
-        ImGui::SliderFloat("Hose pitch", &water_config_.hose.pitch_degrees, -70.0F, 20.0F,
-                           "%.1f deg");
-        ImGui::SliderFloat("Hose speed", &water_config_.hose.speed, 0.2F, 6.0F, "%.2f");
-        ImGui::SliderFloat("Hose radius", &water_config_.hose.radius, 0.004F, 0.080F, "%.3f");
-        ImGui::SliderFloat("Hose rate", &water_config_.hose.particles_per_second, 0.0F,
-                           60000.0F, "%.0f/s");
-        ImGui::SliderFloat("Hose spread", &water_config_.hose.spread_degrees, 0.0F, 45.0F,
-                           "%.1f deg");
-        ImGui::Checkbox("Drain", &water_config_.drain.enabled);
-        ImGui::SliderFloat3("Drain center", water_config_.drain.center.data(), 0.02F, 0.98F,
-                            "%.2f");
-        ImGui::SliderFloat3("Drain half size", water_config_.drain.half_size.data(), 0.005F,
-                            0.35F, "%.3f");
-        ImGui::SliderFloat("Drain pull speed", &water_config_.drain.pull_speed, 0.0F, 6.0F,
-                           "%.2f");
-        ImGui::SliderFloat("Drain pull radius", &water_config_.drain.pull_radius, 0.05F, 1.5F,
-                           "%.2f");
-        ImGui::Checkbox("Wave", &water_config_.wave.enabled);
-        ImGui::SliderFloat3("Wave center", water_config_.wave.center.data(), 0.02F, 0.98F,
-                            "%.2f");
-        ImGui::SliderFloat3("Wave half size", water_config_.wave.half_size.data(), 0.01F, 0.55F,
-                            "%.2f");
-        ImGui::SliderFloat("Wave amplitude", &water_config_.wave.amplitude, 0.0F, 4.0F, "%.2f");
-        ImGui::SliderFloat("Wave frequency", &water_config_.wave.frequency_hz, 0.0F, 2.0F,
-                           "%.2f Hz");
-        ImGui::Checkbox("Rain", &water_config_.rain.enabled);
-        ImGui::SliderFloat3("Rain center", water_config_.rain.center.data(), 0.02F, 0.98F,
-                            "%.2f");
-        ImGui::SliderFloat3("Rain half size", water_config_.rain.half_size.data(), 0.005F, 0.50F,
-                            "%.2f");
-        ImGui::SliderFloat("Rain speed", &water_config_.rain.speed, 0.2F, 6.0F, "%.2f");
-        ImGui::SliderFloat("Rain radius", &water_config_.rain.radius, 0.002F, 0.060F, "%.3f");
-        ImGui::SliderFloat("Rain rate", &water_config_.rain.particles_per_second, 0.0F,
-                           30000.0F, "%.0f/s");
-        ImGui::SliderFloat("Rain spread", &water_config_.rain.spread_degrees, 0.0F, 30.0F,
-                           "%.1f deg");
-        ImGui::SliderFloat("Slice depth", &water_config_.slice_depth, 0.02F, 0.98F, "%.2f");
-
-        ImGui::Text("Grid: %u x %u x %u", water_config_.grid_width, water_config_.grid_height,
-                    water_config_.grid_depth);
-        const std::uint32_t scanned_particles =
-            water_3d_runtime_particle_scan_count(water_config_, runtime_state_);
-        ImGui::Text("Particles: %u reset / %u capacity", water_config_.active_particle_count,
-                    water_config_.particle_capacity);
-        ImGui::Text("Compute particles: %u scanned", scanned_particles);
-        ImGui::Text("Emitter pool: %u touched / %u available",
-                    scanned_particles - water_config_.active_particle_count,
-                    emitter_particle_pool_capacity_for_config(water_config_));
-        ImGui::Text("Whitewater: %u capacity / %u max emit", water_config_.whitewater_capacity,
-                    water_config_.whitewater_max_emit_per_frame);
-        if (latest_frame_stats_.has_value()) {
-            ImGui::Text("Frame: %.1f fps / %.2f ms avg (%.2f ms last)", latest_frame_stats_->fps,
-                        latest_frame_stats_->frame_ms, latest_frame_ms_);
-        } else if (latest_fps_ > 0.0) {
-            ImGui::Text("Frame: %.1f fps / %.2f ms", latest_fps_, latest_frame_ms_);
-        } else {
-            ImGui::TextUnformatted("Frame: collecting...");
-        }
-
-        const std::vector<cubey::vulkan::GpuPassTiming>& timings = resources_.latest_timings();
-        if (!timings.empty()) {
-            ImGui::Separator();
-            ImGui::Text("GPU timings");
-            for (const cubey::vulkan::GpuPassTiming& timing : timings) {
-                ImGui::Text("%s: %.3f ms", timing.label.c_str(), timing.milliseconds);
+            const VkDeviceSize water_bytes = resources_.allocated_buffer_bytes();
+            const cubey::vulkan::DeviceMemoryBudgetInfo memory_budget =
+                context.device().device_memory_budget();
+            ImGui::Text("Water GPU buffers: %.1f MiB", bytes_to_mib(water_bytes));
+            if (memory_budget.available && memory_budget.device_local_budget > 0) {
+                ImGui::Text("VRAM: %.0f / %.0f MiB used",
+                            bytes_to_mib(memory_budget.device_local_usage),
+                            bytes_to_mib(memory_budget.device_local_budget));
+            } else {
+                ImGui::Text("VRAM heap: %.0f MiB (usage unavailable)",
+                            bytes_to_mib(memory_budget.device_local_heap_size));
             }
-        }
-
-        const VkDeviceSize water_bytes = resources_.allocated_buffer_bytes();
-        const cubey::vulkan::DeviceMemoryBudgetInfo memory_budget =
-            context.device().device_memory_budget();
-        ImGui::Text("Water GPU buffers: %.1f MiB", bytes_to_mib(water_bytes));
-        if (memory_budget.available && memory_budget.device_local_budget > 0) {
-            ImGui::Text("VRAM: %.0f / %.0f MiB used",
-                        bytes_to_mib(memory_budget.device_local_usage),
-                        bytes_to_mib(memory_budget.device_local_budget));
-        } else {
-            ImGui::Text("VRAM heap: %.0f MiB (usage unavailable)",
-                        bytes_to_mib(memory_budget.device_local_heap_size));
         }
         ImGui::End();
     }
