@@ -135,8 +135,10 @@ vec3 reconstruct_normal(vec2 uv, float center_depth) {
     vec3 view_dir = normalize(water_surface_camera_position() -
                               water_surface_world_position(uv, center_depth));
     vec3 normal_cross = cross(dpdx, dpdy);
-    float normal_length = length(normal_cross);
-    vec3 normal = normal_length > 0.00001 ? normal_cross / normal_length : view_dir;
+    float normal_length_squared = dot(normal_cross, normal_cross);
+    vec3 normal = normal_length_squared > 1.0e-24
+                      ? normal_cross * inversesqrt(normal_length_squared)
+                      : view_dir;
     if (dot(normal, view_dir) < 0.0) {
         normal = -normal;
     }

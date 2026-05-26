@@ -52,6 +52,7 @@ struct SurfacePushConstants {
     std::array<float, 4> camera_forward_radius{};
     std::array<float, 4> particle_options{};
     std::array<float, 4> surface_options{};
+    std::array<float, 4> filter_options{};
     std::array<float, 4> environment_options{};
     std::array<float, 4> display_transform{};
     std::array<float, 4> domain_options{};
@@ -214,6 +215,16 @@ void record_final_barrier(VkCommandBuffer command_buffer) {
     return static_cast<float>(static_cast<std::uint32_t>(view));
 }
 
+[[nodiscard]] std::array<float, 4> surface_filter_options(const Water3DConfig& config,
+                                                          VkExtent2D extent) {
+    return {
+        config.surface_smoothing_max_radius_px,
+        config.surface_particle_max_radius_px,
+        static_cast<float>(extent.height),
+        0.0F,
+    };
+}
+
 [[nodiscard]] SurfacePushConstants
 surface_push_constants(const Water3DConfig& config, const Water3DRuntimeState& runtime_state,
                        Water3DRenderView render_view, const Water3DRenderCamera& camera,
@@ -286,6 +297,7 @@ surface_push_constants(const Water3DConfig& config, const Water3DRuntimeState& r
                 smooth_direction_y,
             },
         .surface_options = surface_options,
+        .filter_options = surface_filter_options(config, extent),
         .environment_options =
             {
                 std::cos(radians),
@@ -370,6 +382,7 @@ surface_push_constants(const Water3DConfig& config, const Water3DRuntimeState& r
                 config.surface_absorption,
                 config.surface_refraction_strength,
             },
+        .filter_options = surface_filter_options(config, extent),
         .environment_options =
             {
                 std::cos(radians),

@@ -43,8 +43,9 @@ void main() {
     float radius_scale = particle_state >= WATER3D_PARTICLE_STATE_RAIN - 0.5
                              ? WATER3D_RAIN_RENDER_RADIUS_SCALE
                              : 1.0;
-    float radius = water_surface_particle_radius() * radius_scale;
     vec3 center = water_surface_sim_to_world(particle_positions.values[particle_id].xyz);
+    float radius =
+        water_surface_screen_limited_radius(center, water_surface_particle_radius() * radius_scale);
     vec3 world_position = center + ((water_surface_camera_right() * corner.x) +
                                     (water_surface_camera_up() * corner.y)) *
                                        radius;

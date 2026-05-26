@@ -26,6 +26,10 @@ float screen_space_radius_px(float world_radius, float linear_depth, float image
     return abs(world_radius) * pixel_per_meter;
 }
 
+float smoothing_radius_limit_px() {
+    return clamp(surface_params.filter_options.x, 0.0, float(WATER3D_SURFACE_MAX_SMOOTH_RADIUS));
+}
+
 void main() {
     vec4 center = texture(source_surface, frag_uv);
     if (!water_surface_has_depth(center.x)) {
@@ -37,7 +41,7 @@ void main() {
     vec2 direction = surface_params.particle_options.zw;
     float radius_px = screen_space_radius_px(surface_params.surface_options.x, center.x,
                                              float(textureSize(source_surface, 0).y));
-    int radius = int(clamp(ceil(radius_px), 0.0, float(WATER3D_SURFACE_MAX_SMOOTH_RADIUS)));
+    int radius = int(clamp(ceil(radius_px), 0.0, smoothing_radius_limit_px()));
     if (radius <= 0 || dot(direction, direction) <= 0.0) {
         out_surface = center;
         return;

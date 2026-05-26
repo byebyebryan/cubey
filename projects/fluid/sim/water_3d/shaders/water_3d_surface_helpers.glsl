@@ -29,6 +29,29 @@ vec3 water_surface_camera_forward() {
     return surface_params.camera_forward_radius.xyz;
 }
 
+float water_surface_view_height_px() {
+    return max(1.0, surface_params.filter_options.z);
+}
+
+float water_surface_projected_radius_px(float radius, float linear_depth) {
+    float tan_half_fovy = max(0.0001, surface_params.camera_right_tan.w);
+    return abs(radius) * water_surface_view_height_px() /
+           max(0.0001, linear_depth * tan_half_fovy * 2.0);
+}
+
+float water_surface_screen_limited_radius(vec3 center, float radius) {
+    float max_radius_px = surface_params.filter_options.y;
+    if (max_radius_px <= 0.0) {
+        return radius;
+    }
+    float linear_depth = length(center - water_surface_camera_position());
+    float projected_radius_px = water_surface_projected_radius_px(radius, linear_depth);
+    if (projected_radius_px <= max_radius_px) {
+        return radius;
+    }
+    return radius * (max_radius_px / max(0.0001, projected_radius_px));
+}
+
 vec3 water_surface_domain_scale() {
     return max(surface_params.domain_options.xyz, vec3(0.001));
 }

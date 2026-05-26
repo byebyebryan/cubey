@@ -68,7 +68,8 @@ void main() {
     float kind = state.y;
     float age = clamp(velocity_age.w / max(0.05, state.x), 0.0, 1.0);
     float radius_scale = max(0.2, state.z) * mix(1.75, 0.95, step(0.5, kind));
-    float radius = water_surface_particle_radius() * radius_scale;
+    float radius =
+        water_surface_screen_limited_radius(center, water_surface_particle_radius() * radius_scale);
     vec3 world_position = center + ((water_surface_camera_right() * corner.x) +
                                     (water_surface_camera_up() * corner.y)) *
                                        radius;

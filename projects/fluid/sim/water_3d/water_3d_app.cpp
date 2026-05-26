@@ -44,6 +44,9 @@ using cubey::host::FrameStatsSample;
 using cubey::host::FrameStatsSnapshot;
 
 constexpr float kCameraDistance = 4.0F;
+constexpr float kCameraNearPlane = 0.005F;
+constexpr float kCameraFarPlane = 20.0F;
+constexpr float kCameraMinDistance = 0.55F;
 constexpr float kCameraBaseYaw = -0.45F;
 constexpr float kCameraBasePitch = -0.34F;
 constexpr cubey::math::Vec3 kVolumeCenter{0.5F, 0.5F, 0.5F};
@@ -62,7 +65,9 @@ class Water3DApp {
         : config_(std::move(config)), app_info_(app_info), runtime_(1),
           water_config_(water_3d_config_from_run_config(config_)),
           render_view_(water_3d_render_view_from_name(config_.debug_view)) {
+        camera_.set_projection(camera_.fovy_radians(), kCameraNearPlane, kCameraFarPlane);
         orbit_controller_.set_home_distance(kCameraDistance);
+        orbit_controller_.set_distance_limits(kCameraMinDistance, 80.0F);
         orbit_controller_.set_auto_rotation_speed(0.0F);
     }
 

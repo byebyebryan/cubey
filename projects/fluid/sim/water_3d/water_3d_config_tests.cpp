@@ -24,6 +24,16 @@ void require_contains(const std::string& haystack, const char* needle, const cha
     }
 }
 
+[[nodiscard]] std::size_t count_occurrences(const std::string& haystack, const char* needle) {
+    std::size_t count = 0;
+    std::size_t position = haystack.find(needle);
+    while (position != std::string::npos) {
+        ++count;
+        position = haystack.find(needle, position + 1);
+    }
+    return count;
+}
+
 [[nodiscard]] std::string read_text_file(const std::filesystem::path& path) {
     std::ifstream file(path);
     if (!file) {
@@ -79,11 +89,15 @@ int main() {
                 "water 3D should default to a long visible tank domain");
         require(config.surface_thickness_scale == 0.65F,
                 "water 3D should default to clearer surface thickness");
+        require(config.surface_particle_max_radius_px ==
+                    water::kWater3DSurfaceDefaultParticleMaxRadiusPx,
+                "water 3D should cap close-up particle splat size");
         require(config.surface_gap_fill_radius_px == 1.0F,
                 "water 3D should default to conservative surface gap fill");
         require(config.surface_smoothing_radius_world == 0.010F &&
+                    config.surface_smoothing_max_radius_px == 8.0F &&
                     config.surface_smoothing_iterations == 2,
-                "water 3D should default to moderate world-space surface smoothing");
+                "water 3D should default to capped moderate world-space surface smoothing");
         require(config.surface_depth_sigma == 0.025F && config.surface_thickness_smoothing == 0.5F,
                 "water 3D should soften thickness footprints by default");
         require(config.surface_absorption == 0.8F && config.surface_refraction_strength == 0.025F,
@@ -579,6 +593,8 @@ int main() {
                          "water 3D whitewater renderer should instance whitewater particles");
         require_contains(whitewater_vert, "whitewater_active_indices.values[active_slot]",
                          "water 3D whitewater renderer should draw compacted active particles");
+        require_contains(whitewater_vert, "water_surface_screen_limited_radius",
+                         "water 3D whitewater should cap close-up splat radius");
         require_contains(whitewater_frag, "alpha * frag_linear_depth",
                          "water 3D whitewater renderer should output packed premultiplied depth");
         require_contains(extrapolate_shader, "read_scratch()",
@@ -630,6 +646,8 @@ int main() {
                          "water 3D surface pass should expose a whitewater diagnostic view");
         require_contains(surface_particle, "frag_radius",
                          "water 3D surface particles should carry per-particle render radius");
+        require_contains(surface_particle, "water_surface_screen_limited_radius",
+                         "water 3D surface particles should cap close-up splat radius");
         require_contains(surface_particle, "WATER3D_RAIN_RENDER_RADIUS_SCALE",
                          "water 3D surface particles should draw rain as small droplets");
         require_contains(scene_shader, "gl_FragDepth",
@@ -656,10 +674,14 @@ int main() {
                          "water 3D surface smoothing should be bilateral against depth");
         require_contains(surface_smooth, "screen_space_radius_px",
                          "water 3D surface smoothing should convert world radius to pixels");
+        require_contains(surface_smooth, "smoothing_radius_limit_px",
+                         "water 3D surface smoothing should cap close-up screen-space blur");
         require_contains(surface_smooth, "thickness_smoothing",
                          "water 3D surface smoothing should filter thickness separately");
         require_contains(surface_composite, "dpdx_right",
                          "water 3D surface normals should use edge-aware derivatives");
+        require_contains(surface_composite, "normal_length_squared > 1.0e-24",
+                         "water 3D surface normals should not collapse at close camera zoom");
         require_contains(surface_composite, "fresnel",
                          "water 3D surface composite should include water Fresnel");
         require_contains(surface_composite, "exp(-absorption",
@@ -767,6 +789,8 @@ int main() {
                          "water 3D whitewater render should use additive premultiplied accumulation");
         require_contains(commands, "draw_indirect(resources.whitewater_draw_args().handle()",
                          "water 3D whitewater render should use compacted indirect draw args");
+        require(count_occurrences(commands, "surface_filter_options(config, extent)") >= 2U,
+                "water 3D surface and whitewater passes should share filter options");
         require_contains(render_shader, "render_view == 5u",
                          "water 3D renderer should expose the solid debug view");
         require_contains(render_shader, "render_view == 6u",

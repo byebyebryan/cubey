@@ -186,12 +186,16 @@ void draw_water_3d_ui(Water3DUiContext ui) {
 
     if (section("Surface and lighting", false)) {
         ImGui::SliderFloat("Particle radius", &ui.config.particle_radius, 0.004F, 0.040F, "%.4f");
+        ImGui::SliderFloat("Particle max px", &ui.config.surface_particle_max_radius_px, 4.0F,
+                           kWater3DSurfaceMaxParticleRadiusPx, "%.0f");
         ImGui::SliderFloat("Surface thickness", &ui.config.surface_thickness_scale, 0.1F, 4.0F,
                            "%.2f");
         ImGui::SliderFloat("Surface fill px", &ui.config.surface_gap_fill_radius_px, 0.0F, 3.0F,
                            "%.1f");
         ImGui::SliderFloat("Surface smooth world", &ui.config.surface_smoothing_radius_world, 0.0F,
                            0.04F, "%.3f");
+        ImGui::SliderFloat("Surface smooth max px", &ui.config.surface_smoothing_max_radius_px,
+                           1.0F, kWater3DSurfaceMaxSmoothRadiusPx, "%.0f");
         int surface_smoothing_iterations = static_cast<int>(ui.config.surface_smoothing_iterations);
         if (ImGui::SliderInt("Surface smooth passes", &surface_smoothing_iterations, 0, 8)) {
             ui.config.surface_smoothing_iterations =
