@@ -9,6 +9,7 @@
 #include <cubey/vulkan/buffer.h>
 #include <cubey/vulkan/descriptors.h>
 #include <cubey/vulkan/device.h>
+#include <cubey/vulkan/gpu_timestamps.h>
 
 #include <vulkan/vulkan.h>
 
@@ -45,6 +46,11 @@ class Water2DGpuResources {
     [[nodiscard]] const cubey::vulkan::Buffer& solid() const;
     [[nodiscard]] const cubey::vulkan::Buffer& cell_counts() const;
     [[nodiscard]] const cubey::vulkan::Buffer& cell_particle_indices() const;
+    [[nodiscard]] const cubey::vulkan::Buffer& diagnostics() const;
+    [[nodiscard]] cubey::vulkan::GpuTimestampProfiler* profiler() noexcept {
+        return profiler_.has_value() ? &profiler_.value() : nullptr;
+    }
+    [[nodiscard]] const std::vector<cubey::vulkan::GpuPassTiming>& latest_timings() const;
     [[nodiscard]] const cubey::vulkan::Buffer&
     simulation_uniform_buffer(cubey::render::FrameSlot frame_slot) const;
     void upload_simulation_uniforms(cubey::render::FrameSlot frame_slot,
@@ -71,6 +77,8 @@ class Water2DGpuResources {
     grid_to_particle_pipeline_resource() const;
     [[nodiscard]] const cubey::render::ComputePipelineResource&
     advect_particles_pipeline_resource() const;
+    [[nodiscard]] const cubey::render::ComputePipelineResource&
+    diagnostics_pipeline_resource() const;
     [[nodiscard]] const cubey::render::GraphicsPipelineResource& render_pipeline_resource() const;
 
   private:
@@ -96,6 +104,8 @@ class Water2DGpuResources {
     std::optional<cubey::vulkan::Buffer> solid_;
     std::optional<cubey::vulkan::Buffer> cell_counts_;
     std::optional<cubey::vulkan::Buffer> cell_particle_indices_;
+    std::optional<cubey::vulkan::Buffer> diagnostics_;
+    std::optional<cubey::vulkan::GpuTimestampProfiler> profiler_;
     std::optional<cubey::render::FrameUniformBuffer<Water2DSimulationUniforms>>
         simulation_uniforms_;
     std::optional<cubey::vulkan::DescriptorSetLayout> field_descriptor_layout_;
@@ -114,6 +124,7 @@ class Water2DGpuResources {
     std::optional<cubey::render::ComputePipelineResource> projection_pipeline_resource_;
     std::optional<cubey::render::ComputePipelineResource> grid_to_particle_pipeline_resource_;
     std::optional<cubey::render::ComputePipelineResource> advect_particles_pipeline_resource_;
+    std::optional<cubey::render::ComputePipelineResource> diagnostics_pipeline_resource_;
     std::optional<cubey::render::GraphicsPipelineResource> render_pipeline_resource_;
 };
 

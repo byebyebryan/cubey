@@ -20,6 +20,7 @@ inline constexpr VkDeviceSize kWater2DSimulationPushConstantBytes =
     sizeof(float) * kWater2DSimulationPushConstantFloatCount;
 inline constexpr VkDeviceSize kWater2DRenderPushConstantBytes =
     sizeof(float) * kWater2DRenderPushConstantFloatCount;
+inline constexpr std::uint32_t kWater2DGpuProfilerPassCapacity = 32;
 
 std::filesystem::path shader_path(const char* filename) {
     return std::filesystem::path(CUBEY_WATER_2D_SHADER_DIR) / filename;
@@ -118,6 +119,7 @@ void Water2DGpuResources::create_global_resources_if_needed(cubey::vulkan::Devic
     frame_slot_count_ = frame_slot_count;
 
     create_field_buffers(gpu, config);
+    profiler_.emplace(device, frame_slot_count_, kWater2DGpuProfilerPassCapacity);
     simulation_uniforms_.emplace(device, frame_slot_count_);
     create_descriptor_resources(device);
     create_compute_pipelines(device);
@@ -130,6 +132,7 @@ void Water2DGpuResources::destroy_swapchain_resources() {
 void Water2DGpuResources::destroy_all_resources() {
     destroy_swapchain_resources();
     advect_particles_pipeline_resource_.reset();
+    diagnostics_pipeline_resource_.reset();
     grid_to_particle_pipeline_resource_.reset();
     projection_pipeline_resource_.reset();
     pressure_pipeline_resource_.reset();
@@ -145,7 +148,9 @@ void Water2DGpuResources::destroy_all_resources() {
     field_descriptor_layout_.reset();
     field_descriptor_sets_.clear();
     simulation_uniforms_.reset();
+    profiler_.reset();
     frame_slot_count_ = 0;
+    diagnostics_.reset();
     cell_particle_indices_.reset();
     cell_counts_.reset();
     solid_.reset();
@@ -171,7 +176,7 @@ VkDeviceSize Water2DGpuResources::allocated_buffer_bytes() const {
            optional_buffer_size(v_weight_) + optional_buffer_size(pressure_a_) +
            optional_buffer_size(pressure_b_) + optional_buffer_size(divergence_) +
            optional_buffer_size(solid_) + optional_buffer_size(cell_counts_) +
-           optional_buffer_size(cell_particle_indices_) +
+           optional_buffer_size(cell_particle_indices_) + optional_buffer_size(diagnostics_) +
            optional_frame_uniform_buffer_size(simulation_uniforms_);
 }
 
@@ -183,6 +188,7 @@ void Water2DGpuResources::create_field_buffers(cubey::ProjectGpuServices& gpu,
     const std::vector<float> v_initial(v_face_count(config), 0.0F);
     const std::vector<std::uint32_t> cell_count_initial(cell_count(config), 0U);
     const std::vector<std::uint32_t> bin_initial(particle_bin_index_count(config), 0U);
+    const std::vector<std::uint32_t> diagnostics_initial(kWater2DDiagnosticSlotCount, 0U);
     const VkDeviceSize particle_byte_size =
         static_cast<VkDeviceSize>(particle_buffer_byte_size(config));
     const VkDeviceSize cell_byte_size = static_cast<VkDeviceSize>(scalar_field_byte_size(config));
@@ -192,6 +198,8 @@ void Water2DGpuResources::create_field_buffers(cubey::ProjectGpuServices& gpu,
         static_cast<VkDeviceSize>(cell_uint_field_byte_size(config));
     const VkDeviceSize bin_byte_size =
         static_cast<VkDeviceSize>(particle_bin_index_byte_size(config));
+    const VkDeviceSize diagnostics_byte_size =
+        static_cast<VkDeviceSize>(diagnostics_buffer_byte_size(config));
 
     particle_positions_.emplace(upload_project_device_buffer(
         gpu, particle_initial.data(), particle_byte_size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
@@ -238,12 +246,16 @@ void Water2DGpuResources::create_field_buffers(cubey::ProjectGpuServices& gpu,
     cell_particle_indices_.emplace(upload_project_device_buffer(
         gpu, bin_initial.data(), bin_byte_size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
         "water_2d cell particle index upload"));
+    diagnostics_.emplace(upload_project_device_buffer(
+        gpu, diagnostics_initial.data(), diagnostics_byte_size,
+        VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+        "water_2d diagnostics upload"));
 }
 
 void Water2DGpuResources::create_descriptor_resources(cubey::vulkan::Device& device) {
     constexpr VkShaderStageFlags kStages =
         VK_SHADER_STAGE_COMPUTE_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
-    const std::array<cubey::vulkan::DescriptorSetBindingConfig, 16> field_bindings{{
+    const std::array<cubey::vulkan::DescriptorSetBindingConfig, 17> field_bindings{{
         {.binding = 0, .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .stage_flags = kStages},
         {.binding = 1, .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .stage_flags = kStages},
         {.binding = 2, .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .stage_flags = kStages},
@@ -262,6 +274,9 @@ void Water2DGpuResources::create_descriptor_resources(cubey::vulkan::Device& dev
          .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
          .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT},
         {.binding = 15,
+         .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+         .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT},
+        {.binding = 16,
          .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
          .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT},
     }};
@@ -296,6 +311,7 @@ void Water2DGpuResources::update_field_descriptors(cubey::vulkan::Device& device
             .storage_buffer(set, 12, cell_counts().handle(), cell_counts().size())
             .storage_buffer(set, 13, cell_particle_indices().handle(),
                             cell_particle_indices().size())
+            .storage_buffer(set, 16, diagnostics().handle(), diagnostics().size())
             .uniform_buffer(set, 14, simulation_uniform_buffer(frame_slot).handle(),
                             simulation_uniform_buffer(frame_slot).size());
     }
@@ -330,6 +346,8 @@ void Water2DGpuResources::create_compute_pipelines(cubey::vulkan::Device& device
     create_compute_pipeline_resource(device, "water_2d_advect_particles.comp.spv",
                                      field_descriptor_layout(),
                                      advect_particles_pipeline_resource_);
+    create_compute_pipeline_resource(device, "water_2d_diagnostics.comp.spv",
+                                     field_descriptor_layout(), diagnostics_pipeline_resource_);
 }
 
 void Water2DGpuResources::create_render_pipeline(cubey::vulkan::Device& device,
@@ -416,6 +434,18 @@ const cubey::vulkan::Buffer& Water2DGpuResources::cell_counts() const {
 const cubey::vulkan::Buffer& Water2DGpuResources::cell_particle_indices() const {
     return require_initialized(cell_particle_indices_,
                                "water cell particle indices are not initialized");
+}
+
+const cubey::vulkan::Buffer& Water2DGpuResources::diagnostics() const {
+    return require_initialized(diagnostics_, "water diagnostics are not initialized");
+}
+
+const std::vector<cubey::vulkan::GpuPassTiming>& Water2DGpuResources::latest_timings() const {
+    static const std::vector<cubey::vulkan::GpuPassTiming> kEmptyTimings;
+    if (!profiler_.has_value()) {
+        return kEmptyTimings;
+    }
+    return profiler_->latest_timings();
 }
 
 const cubey::vulkan::Buffer&
@@ -522,6 +552,12 @@ const cubey::render::ComputePipelineResource&
 Water2DGpuResources::advect_particles_pipeline_resource() const {
     return require_initialized(advect_particles_pipeline_resource_,
                                "water particle advection pipeline is not initialized");
+}
+
+const cubey::render::ComputePipelineResource&
+Water2DGpuResources::diagnostics_pipeline_resource() const {
+    return require_initialized(diagnostics_pipeline_resource_,
+                               "water diagnostics pipeline is not initialized");
 }
 
 const cubey::render::GraphicsPipelineResource&

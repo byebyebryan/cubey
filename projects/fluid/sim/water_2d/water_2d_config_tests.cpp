@@ -60,8 +60,7 @@ int main() {
                 "water should reject degenerate grid widths");
         require(cubey::projects::fluid::water_2d::kWater2DMinimumGridHeight == 16,
                 "water should reject degenerate grid heights");
-        require(cubey::projects::fluid::water_2d::kWater2DMaxExactShaderInteger ==
-                    (1U << 24U),
+        require(cubey::projects::fluid::water_2d::kWater2DMaxExactShaderInteger == (1U << 24U),
                 "water float-backed shader counts should stay in the exact integer range");
         require(config.pressure_iterations == 256,
                 "water pressure solve should default to a stronger Jacobi pass count");
@@ -127,12 +126,11 @@ int main() {
         require(cubey::projects::fluid::water_2d::particle_bin_index_count(config) ==
                     kExpectedBinIndexCount,
                 "water particle bins should allocate fixed cell slots");
-        require(cubey::projects::fluid::water_2d::water_2d_shader_count_float(
-                    cubey::projects::fluid::water_2d::kWater2DMaxExactShaderInteger,
-                    "test") ==
-                    static_cast<float>(
-                        cubey::projects::fluid::water_2d::kWater2DMaxExactShaderInteger),
-                "water shader count helper should accept the exact float integer cap");
+        require(
+            cubey::projects::fluid::water_2d::water_2d_shader_count_float(
+                cubey::projects::fluid::water_2d::kWater2DMaxExactShaderInteger, "test") ==
+                static_cast<float>(cubey::projects::fluid::water_2d::kWater2DMaxExactShaderInteger),
+            "water shader count helper should accept the exact float integer cap");
         require(cubey::projects::fluid::water_2d::scalar_field_byte_size(config) ==
                     sizeof(float) * kExpectedCellCount,
                 "water scalar byte size should cover one float per cell");
@@ -151,6 +149,10 @@ int main() {
         require(cubey::projects::fluid::water_2d::particle_affine_buffer_byte_size(config) ==
                     cubey::projects::fluid::water_2d::particle_buffer_byte_size(config),
                 "water APIC affine state should use one vec4 per particle");
+        require(cubey::projects::fluid::water_2d::diagnostics_buffer_byte_size(config) ==
+                    sizeof(std::uint32_t) *
+                        cubey::projects::fluid::water_2d::kWater2DDiagnosticSlotCount,
+                "water diagnostics should store a fixed uint slot buffer");
         require(cubey::projects::fluid::water_2d::hose_particle_start_for_config(config) ==
                     kExpectedActiveParticleCount,
                 "water hose particles should start after the active reset particles");
@@ -299,6 +301,9 @@ int main() {
                 "default run config should preserve water initial particle capacity");
         require(default_from_run_config.particle_capacity == config.particle_capacity,
                 "default run config should preserve water particle capacity");
+        require(!default_from_run_config.profile_diagnostics &&
+                    default_from_run_config.profile_diagnostic_interval == 1U,
+                "water diagnostics should be opt-in with per-frame sampling by default");
 
         cubey::RunConfig run_config;
         run_config.grid.width = 320;
@@ -321,8 +326,7 @@ int main() {
         transfer_run_config.water2d.hose = 1;
         transfer_run_config.water2d.drain = 1;
         const cubey::projects::fluid::water_2d::Water2DConfig transfer_config =
-            cubey::projects::fluid::water_2d::water_2d_config_from_run_config(
-                transfer_run_config);
+            cubey::projects::fluid::water_2d::water_2d_config_from_run_config(transfer_run_config);
         require(transfer_config.transfer_mode ==
                     cubey::projects::fluid::water_2d::Water2DTransferMode::PicFlip,
                 "water run-config should parse transfer mode");
@@ -330,6 +334,28 @@ int main() {
                 "water run-config should parse transfer sample limit");
         require(transfer_config.hose.enabled && transfer_config.drain.enabled,
                 "water run-config should parse hose and drain toggles");
+
+        cubey::RunConfig diagnostics_run_config;
+        diagnostics_run_config.headless = true;
+        diagnostics_run_config.profile_diagnostics = true;
+        diagnostics_run_config.profile_diagnostic_interval = 7U;
+        const cubey::projects::fluid::water_2d::Water2DConfig diagnostics_config =
+            cubey::projects::fluid::water_2d::water_2d_config_from_run_config(
+                diagnostics_run_config);
+        require(diagnostics_config.profile_diagnostics &&
+                    diagnostics_config.profile_diagnostic_interval == 7U,
+                "water run-config should preserve profile diagnostics flags");
+        bool rejected_windowed_diagnostics = false;
+        try {
+            cubey::RunConfig windowed_diagnostics;
+            windowed_diagnostics.profile_diagnostics = true;
+            static_cast<void>(cubey::projects::fluid::water_2d::water_2d_config_from_run_config(
+                windowed_diagnostics));
+        } catch (const std::runtime_error&) {
+            rejected_windowed_diagnostics = true;
+        }
+        require(rejected_windowed_diagnostics,
+                "water profile diagnostics should require headless mode");
 
         cubey::projects::fluid::water_2d::Water2DConfig edited_fill = config;
         edited_fill.initial_fill_width = 0.25F;
@@ -402,6 +428,11 @@ int main() {
         const std::string reset_shader =
             read_text_file(source_root / "shaders/water_2d_reset.comp");
         const std::string commands_source = read_text_file(source_root / "water_2d_commands.cpp");
+        const std::string app_source = read_text_file(source_root / "water_2d_app.cpp");
+        const std::string diagnostics_source =
+            read_text_file(source_root / "water_2d_diagnostics.cpp");
+        const std::string gpu_resources_source =
+            read_text_file(source_root / "water_2d_gpu_resources.cpp");
         const std::string build_bins_shader =
             read_text_file(source_root / "shaders/water_2d_build_bins.comp");
         const std::string emit_shader =
@@ -418,12 +449,16 @@ int main() {
             read_text_file(source_root / "shaders/water_2d_grid_to_particle.comp");
         const std::string advect_shader =
             read_text_file(source_root / "shaders/water_2d_advect_particles.comp");
+        const std::string diagnostics_shader =
+            read_text_file(source_root / "shaders/water_2d_diagnostics.comp");
         const std::string render_shader =
             read_text_file(source_root / "shaders/water_2d_render.frag");
         require_contains(contract_shader, "WATER2D_BINDING_SIM_PARAMS 14",
                          "water shader contract should define simulation uniform binding");
         require_contains(contract_shader, "WATER2D_BINDING_PARTICLE_AFFINE 15",
                          "water shader contract should define the APIC affine binding");
+        require_contains(contract_shader, "WATER2D_BINDING_DIAGNOSTICS 16",
+                         "water shader contract should define diagnostics storage binding");
         require_contains(contract_shader, "WATER2D_TRANSFER_MODE",
                          "water shader contract should expose transfer mode");
         require_contains(contract_shader, "WATER2D_PARTICLE_SCAN_COUNT",
@@ -463,6 +498,10 @@ int main() {
                          "water commands should track the last solved pressure buffer");
         require_contains(commands_source, "runtime_state.pressure_read_b ? 1.0F : 0.0F",
                          "water render should use the tracked pressure buffer");
+        require_contains(commands_source, "diagnostics_workload_dispatch_groups",
+                         "water commands should profile workload diagnostics");
+        require_contains(commands_source, "should_record_diagnostics_for_frame",
+                         "water commands should gate diagnostics by sample interval");
         require_contains(build_bins_shader, "WATER2D_BINDING_CELL_COUNTS",
                          "water bin build should use shared descriptor binding names");
         require_contains(build_bins_shader, "atomicAdd",
@@ -531,8 +570,9 @@ int main() {
                          "water particle advection should reflect wall collision velocity");
         require_contains(advect_shader, "bool collided = false",
                          "water particle advection should track collision state");
-        require_contains(advect_shader, "if (collided)",
-                         "water particle advection should clear APIC affine state after collisions");
+        require_contains(
+            advect_shader, "if (collided)",
+            "water particle advection should clear APIC affine state after collisions");
         require_contains(advect_shader, "inside_drain",
                          "water particle advection should support a box drain sink");
         require_contains(advect_shader,
@@ -544,6 +584,24 @@ int main() {
                          "water particle advection should use configured damping");
         require_contains(advect_shader, "WATER2D_PARTICLE_SCAN_COUNT",
                          "water particle advection should scan only touched particle slots");
+        require_contains(diagnostics_shader, "SLOT_ACTIVE_PARTICLES",
+                         "water diagnostics should count active particles");
+        require_contains(diagnostics_shader, "SLOT_NONEMPTY_CELLS",
+                         "water diagnostics should count occupied cells");
+        require_contains(diagnostics_shader, "SLOT_TRANSFER_TRUNCATED_PARTICLES",
+                         "water diagnostics should report transfer truncation pressure");
+        require_contains(diagnostics_shader, "atomicMax",
+                         "water diagnostics should record max cell occupancy");
+        require_contains(app_source, "record_gpu_timings(context.profile_recorder()",
+                         "water windowed path should export GPU timings");
+        require_contains(app_source, "resources_.diagnostics().handle()",
+                         "water headless path should read back diagnostics metrics");
+        require_contains(diagnostics_source, "water_2d.workload",
+                         "water diagnostics readback should export workload metrics");
+        require_contains(gpu_resources_source, "water_2d_diagnostics.comp.spv",
+                         "water GPU resources should create diagnostics compute pipeline");
+        require_contains(gpu_resources_source, "VK_BUFFER_USAGE_TRANSFER_SRC_BIT",
+                         "water diagnostics buffer should be readable by GPU readback");
         require_contains(render_shader, "particle_density",
                          "water render shader should draw from particle bins");
         require_contains(render_shader, "params.surface_options",

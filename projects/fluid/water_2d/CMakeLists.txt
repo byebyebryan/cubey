@@ -7,6 +7,7 @@ cubey_add_app_target(
     SOURCES
         ../sim/water_2d/water_2d_app.cpp
         ../sim/water_2d/water_2d_commands.cpp
+        ../sim/water_2d/water_2d_diagnostics.cpp
         ../sim/water_2d/water_2d_gpu_resources.cpp
         ../sim/water_2d/water_2d_ui.cpp
         main.cpp
@@ -25,6 +26,7 @@ cubey_add_app_target(
         ../sim/water_2d/shaders/water_2d_projection.comp
         ../sim/water_2d/shaders/water_2d_grid_to_particle.comp
         ../sim/water_2d/shaders/water_2d_advect_particles.comp
+        ../sim/water_2d/shaders/water_2d_diagnostics.comp
     SHADER_INCLUDE_DIRS
         "${CMAKE_CURRENT_SOURCE_DIR}/../sim/water_2d/shaders"
         "${CMAKE_SOURCE_DIR}/shaders"

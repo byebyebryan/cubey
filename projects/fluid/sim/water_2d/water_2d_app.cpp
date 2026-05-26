@@ -2,6 +2,7 @@
 
 #include "water_2d_commands.h"
 #include "water_2d_config.h"
+#include "water_2d_diagnostics.h"
 #include "water_2d_gpu_resources.h"
 #include "water_2d_ui.h"
 
@@ -10,14 +11,18 @@
 #include <cubey/host/frame_stats.h>
 #include <cubey/host/headless_png_host.h>
 #include <cubey/host/windowed_app.h>
+#include <cubey/vulkan/command_recorder.h>
 #include <cubey/vulkan/device.h>
 #include <cubey/vulkan/gpu_runtime.h>
+#include <cubey/vulkan/gpu_timestamps.h>
 #include <cubey/vulkan/immediate_commands.h>
 
 #include <vulkan/vulkan.h>
 
+#include <cstdio>
 #include <optional>
 #include <utility>
+#include <vector>
 
 namespace cubey::projects::fluid::water_2d {
 namespace {
@@ -181,33 +186,94 @@ class Water2DApp {
     void record_frame(cubey::host::WindowedAppContext& context,
                       const cubey::host::WindowedRenderFrame& render_frame,
                       const ProjectFrame& frame) {
+        cubey::vulkan::GpuTimestampProfiler* profiler = resources_.profiler();
+        if (profiler != nullptr) {
+            profiler->collect(render_frame.frame_slot.index);
+            record_gpu_timings(context.profile_recorder(),
+                               collected_profile_frame_index(frame, render_frame.frame_slot),
+                               resources_.latest_timings());
+            maybe_print_gpu_timings(frame);
+        }
+
         const cubey::render::CompiledRenderGraph frame_graph = build_water_2d_frame_graph(
             render_frame.color_target, resources_, water_config_, runtime_state_,
             render_frame.frame_slot, debug_view_, paused_, reset_requested_, frame);
+        const cubey::vulkan::CommandRecorder recorder(render_frame.command_buffer);
+        recorder.begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+        if (profiler != nullptr) {
+            profiler->begin_frame(render_frame.command_buffer, render_frame.frame_slot.index);
+        }
         graph_executor_.record(
             cubey::render::RenderGraphFrameRecordInfo{
                 .device = &context.device(),
                 .command_buffer = render_frame.command_buffer,
                 .frame_slot = render_frame.frame_slot,
                 .label = "vkEndCommandBuffer water_2d",
+                .command_buffer_mode =
+                    cubey::render::RenderGraphCommandBufferMode::AlreadyRecording,
+                .profiler = profiler,
             },
             frame_graph);
+        recorder.end("vkEndCommandBuffer water_2d");
+    }
+
+    void maybe_print_gpu_timings(const ProjectFrame& frame) {
+        if (!config_.print_frame_stats) {
+            return;
+        }
+        const std::vector<cubey::vulkan::GpuPassTiming>& timings = resources_.latest_timings();
+        if (timings.empty()) {
+            return;
+        }
+        if (last_gpu_timing_print_seconds_ >= 0.0 &&
+            frame.elapsed_seconds - last_gpu_timing_print_seconds_ < 1.0) {
+            return;
+        }
+        last_gpu_timing_print_seconds_ = frame.elapsed_seconds;
+        std::printf("water_2d_gpu:");
+        for (const cubey::vulkan::GpuPassTiming& timing : timings) {
+            std::printf(" %s=%.3fms", timing.label.c_str(), timing.milliseconds);
+        }
+        std::printf("\n");
     }
 
     void record_headless_simulation_frame(cubey::ProjectGpuServices& gpu,
                                           cubey::render::FrameSlot frame_slot,
-                                          const ProjectFrame& frame) {
+                                          const ProjectFrame& frame,
+                                          cubey::profiling::ProfileRecorder* profile_recorder) {
+        const std::uint64_t frame_index = profile_frame_index(frame);
         static_cast<void>(gpu.submit_and_wait({
             .label = "water_2d headless simulation frame",
             .work =
-                [this, frame_slot, frame](cubey::vulkan::GpuOwnerContext& gpu_context) {
+                [this, frame_slot, frame, profile_recorder,
+                 frame_index](cubey::vulkan::GpuOwnerContext& gpu_context) {
                     cubey::vulkan::ImmediateCommands commands(gpu_context);
-                    record_water_2d_compute(commands.command_buffer(), resources_, water_config_,
-                                            runtime_state_, frame_slot, paused_, reset_requested_,
-                                            frame);
+                    cubey::vulkan::GpuTimestampProfiler* profiler = resources_.profiler();
+                    if (profiler != nullptr) {
+                        profiler->begin_frame(commands.command_buffer(), frame_slot.index);
+                    }
+                    {
+                        cubey::vulkan::GpuTimestampScope profile_scope(
+                            profiler, commands.command_buffer(), frame_slot.index,
+                            "water simulation");
+                        record_water_2d_compute(commands.command_buffer(), resources_,
+                                                water_config_, runtime_state_, frame_slot, paused_,
+                                                reset_requested_, frame);
+                    }
                     commands.submit_and_wait();
+                    if (profiler != nullptr) {
+                        profiler->collect(frame_slot.index);
+                        record_gpu_timings(profile_recorder, frame_index,
+                                           resources_.latest_timings());
+                    }
                 },
         }));
+        if (should_record_water_2d_diagnostics(profile_recorder, water_config_, frame_index)) {
+            const std::vector<std::uint8_t> diagnostics = gpu.readback_buffer(
+                resources_.diagnostics().handle(), resources_.diagnostics().size(),
+                "water_2d diagnostics readback");
+            record_water_2d_diagnostics(*profile_recorder, frame_index, water_config_, diagnostics);
+        }
     }
 
     int run_headless() {
@@ -232,11 +298,11 @@ class Water2DApp {
                         return fixed_water_2d_headless_timing(water_config_, simulation_frame);
                     },
                 .simulate_frame =
-                    [this](cubey::host::HeadlessPngContext&,
+                    [this](cubey::host::HeadlessPngContext& context,
                            const cubey::host::HeadlessCaptureFrame& frame) {
                         const ProjectFrame project_frame = runtime_.frame_for_timing(frame.timing);
                         record_headless_simulation_frame(runtime_.gpu(), frame.frame_slot,
-                                                         project_frame);
+                                                         project_frame, context.profile_recorder());
                     },
             });
         callbacks.record_frame = [this](cubey::host::HeadlessPngContext&,
@@ -267,6 +333,7 @@ class Water2DApp {
     Water2DDebugView debug_view_ = Water2DDebugView::Surface;
     double latest_fps_ = 0.0;
     double latest_frame_ms_ = 0.0;
+    double last_gpu_timing_print_seconds_ = -1.0;
     bool paused_ = false;
     bool reset_requested_ = true;
 };

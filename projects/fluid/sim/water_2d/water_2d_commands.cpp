@@ -74,6 +74,21 @@ struct ShaderWriteBarrier {
                   u_face_count(config), v_face_count(config), particle_bin_index_count(config)}));
 }
 
+[[nodiscard]] DispatchGroups
+diagnostics_workload_dispatch_groups(const Water2DConfig& config,
+                                     const Water2DRuntimeState& runtime_state) {
+    return linear_dispatch_groups(std::max(
+        cell_count(config), static_cast<std::size_t>(particle_scan_count(config, runtime_state))));
+}
+
+[[nodiscard]] bool should_record_diagnostics_for_frame(const Water2DConfig& config,
+                                                       const ProjectFrame& frame) {
+    if (!config.profile_diagnostics || config.profile_diagnostic_interval == 0U) {
+        return false;
+    }
+    return (frame.frame_index % config.profile_diagnostic_interval) == 0U;
+}
+
 void record_shader_write_barrier(VkCommandBuffer command_buffer, ShaderWriteBarrier config) {
     auto barrier = cubey::vulkan::vk_struct<VkMemoryBarrier>(VK_STRUCTURE_TYPE_MEMORY_BARRIER);
     barrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
@@ -217,11 +232,9 @@ dispatch_push_constants(const ProjectFrame& frame, float delta_seconds, float pr
         .emit_options =
             {
                 water_2d_shader_count_float(
-                    emit_cursor,
-                    "water hose emit cursor exceeds exact shader integer range"),
+                    emit_cursor, "water hose emit cursor exceeds exact shader integer range"),
                 water_2d_shader_count_float(
-                    emit_count,
-                    "water hose emit count exceeds exact shader integer range"),
+                    emit_count, "water hose emit count exceeds exact shader integer range"),
                 0.0F,
                 0.0F,
             },
@@ -299,6 +312,17 @@ void record_refresh_bins(const cubey::vulkan::CommandRecorder& recorder,
     record_compute_barrier(command_buffer);
 }
 
+void record_diagnostics_pass(const cubey::vulkan::CommandRecorder& recorder,
+                             VkCommandBuffer command_buffer, Water2DGpuResources& resources,
+                             VkDescriptorSet descriptor_set,
+                             Water2DDispatchPushConstants push_constants, float mode,
+                             DispatchGroups groups) {
+    push_constants.dispatch_options[2] = mode;
+    record_dispatch(recorder, resources.diagnostics_pipeline_resource(), descriptor_set, groups,
+                    push_constants);
+    record_compute_barrier(command_buffer);
+}
+
 } // namespace
 
 void record_water_2d_compute(VkCommandBuffer command_buffer, Water2DGpuResources& resources,
@@ -317,6 +341,7 @@ void record_water_2d_compute(VkCommandBuffer command_buffer, Water2DGpuResources
     const float substep_dt = frame_dt / static_cast<float>(substep_count);
     Water2DDispatchPushConstants push_constants = dispatch_push_constants(
         frame, substep_dt, 0.0F, particle_scan_count(config, runtime_state));
+    const bool record_diagnostics = should_record_diagnostics_for_frame(config, frame);
 
     if (reset_requested) {
         runtime_state = {};
@@ -324,15 +349,22 @@ void record_water_2d_compute(VkCommandBuffer command_buffer, Water2DGpuResources
                         reset_dispatch_groups(config), push_constants);
         record_compute_barrier(command_buffer);
         runtime_state.particle_scan_count = config.active_particle_count;
-        push_constants.dispatch_options[3] =
-            water_2d_shader_count_float(
-                particle_scan_count(config, runtime_state),
-                "water particle scan count exceeds exact shader integer range");
+        push_constants.dispatch_options[3] = water_2d_shader_count_float(
+            particle_scan_count(config, runtime_state),
+            "water particle scan count exceeds exact shader integer range");
         reset_requested = false;
     }
     if (paused) {
         record_refresh_bins(recorder, command_buffer, resources, descriptor_set, config,
                             runtime_state, push_constants);
+        if (record_diagnostics) {
+            record_diagnostics_pass(recorder, command_buffer, resources, descriptor_set,
+                                    push_constants, kWater2DDiagnosticsModeClear,
+                                    linear_dispatch_groups(kWater2DDiagnosticSlotCount));
+            record_diagnostics_pass(recorder, command_buffer, resources, descriptor_set,
+                                    push_constants, kWater2DDiagnosticsModeWorkload,
+                                    diagnostics_workload_dispatch_groups(config, runtime_state));
+        }
         if (include_render_visibility_barrier) {
             record_final_barrier(command_buffer);
         }
@@ -365,10 +397,9 @@ void record_water_2d_compute(VkCommandBuffer command_buffer, Water2DGpuResources
                             linear_dispatch_groups(emit_count), emit_push_constants);
             record_compute_barrier(command_buffer);
         }
-        push_constants.dispatch_options[3] =
-            water_2d_shader_count_float(
-                particle_scan_count(config, runtime_state),
-                "water particle scan count exceeds exact shader integer range");
+        push_constants.dispatch_options[3] = water_2d_shader_count_float(
+            particle_scan_count(config, runtime_state),
+            "water particle scan count exceeds exact shader integer range");
 
         record_refresh_bins(recorder, command_buffer, resources, descriptor_set, config,
                             runtime_state, push_constants);
@@ -411,6 +442,15 @@ void record_water_2d_compute(VkCommandBuffer command_buffer, Water2DGpuResources
 
         record_refresh_bins(recorder, command_buffer, resources, descriptor_set, config,
                             runtime_state, push_constants);
+    }
+
+    if (record_diagnostics) {
+        record_diagnostics_pass(recorder, command_buffer, resources, descriptor_set, push_constants,
+                                kWater2DDiagnosticsModeClear,
+                                linear_dispatch_groups(kWater2DDiagnosticSlotCount));
+        record_diagnostics_pass(recorder, command_buffer, resources, descriptor_set, push_constants,
+                                kWater2DDiagnosticsModeWorkload,
+                                diagnostics_workload_dispatch_groups(config, runtime_state));
     }
 
     if (include_render_visibility_barrier) {
@@ -529,6 +569,9 @@ build_water_2d_frame_graph(cubey::render::ColorTargetView color_target,
         graph.import_buffer({.label = "water cell particle indices",
                              .byte_size = resources.cell_particle_indices().size()},
                             resources.cell_particle_indices().handle());
+    const cubey::render::RenderGraphBufferHandle diagnostics = graph.import_buffer(
+        {.label = "water diagnostics", .byte_size = resources.diagnostics().size()},
+        resources.diagnostics().handle());
     const cubey::render::RenderGraphTextureHandle backbuffer = graph.import_color_target(
         "backbuffer", color_target, cubey::render::render_graph_undefined_texture_state(),
         cubey::render::render_graph_present_texture_state());
@@ -550,6 +593,7 @@ build_water_2d_frame_graph(cubey::render::ColorTargetView color_target,
         .read_write_storage_buffer(solid)
         .read_write_storage_buffer(cell_counts)
         .read_write_storage_buffer(cell_particle_indices)
+        .read_write_storage_buffer(diagnostics)
         .execute([resource_ptr, config_ptr, runtime_state_ptr, frame_slot, paused,
                   reset_requested_ptr,
                   frame](const cubey::render::RenderGraphExecutionContext& context) {
@@ -568,17 +612,16 @@ build_water_2d_frame_graph(cubey::render::ColorTargetView color_target,
         .read_storage_buffer(cell_counts)
         .read_storage_buffer(cell_particle_indices)
         .write_color(backbuffer)
-        .execute([resource_ptr, config_ptr, runtime_state_ptr, debug_view, backbuffer,
-                  color_target, frame_slot](const cubey::render::RenderGraphExecutionContext&
-                                                context) {
+        .execute([resource_ptr, config_ptr, runtime_state_ptr, debug_view, backbuffer, color_target,
+                  frame_slot](const cubey::render::RenderGraphExecutionContext& context) {
             const cubey::vulkan::CommandRecorder& recorder = context.recorder();
             const cubey::render::RenderGraphResolvedTexture resolved =
                 context.resolved_texture(backbuffer);
-            record_water_2d_draw(
-                recorder.handle(), *resource_ptr, *config_ptr, frame_slot, *runtime_state_ptr,
-                debug_view,
-                cubey::render::color_target_view(color_target.extent, color_target.format,
-                                                 resolved.image, resolved.view));
+            record_water_2d_draw(recorder.handle(), *resource_ptr, *config_ptr, frame_slot,
+                                 *runtime_state_ptr, debug_view,
+                                 cubey::render::color_target_view(color_target.extent,
+                                                                  color_target.format,
+                                                                  resolved.image, resolved.view));
         });
 
     return graph.compile();

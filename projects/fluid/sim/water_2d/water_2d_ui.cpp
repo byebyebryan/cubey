@@ -9,6 +9,7 @@
 
 #include <array>
 #include <cstdint>
+#include <vector>
 
 namespace cubey::projects::fluid::water_2d {
 namespace {
@@ -229,6 +230,14 @@ void draw_water_2d_ui(Water2DUiContext ui) {
             ImGui::Text("Frame: %.1f fps / %.2f ms", ui.latest_fps, ui.latest_frame_ms);
         } else {
             ImGui::TextUnformatted("Frame: collecting...");
+        }
+
+        const std::vector<cubey::vulkan::GpuPassTiming>& timings = ui.resources.latest_timings();
+        if (!timings.empty()) {
+            ImGui::SeparatorText("GPU timings");
+            for (const cubey::vulkan::GpuPassTiming& timing : timings) {
+                ImGui::Text("%s: %.3f ms", timing.label.c_str(), timing.milliseconds);
+            }
         }
 
         const VkDeviceSize water_bytes = ui.resources.allocated_buffer_bytes();

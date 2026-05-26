@@ -1,0 +1,82 @@
+#version 450
+#extension GL_GOOGLE_include_directive : require
+
+#include "water_2d_contract.glsl"
+
+layout(local_size_x = 64, local_size_y = 1) in;
+
+layout(set = 0, binding = WATER2D_BINDING_PARTICLE_POSITIONS, std430) readonly buffer ParticlePositions {
+    vec4 values[];
+} particle_positions;
+layout(set = 0, binding = WATER2D_BINDING_CELL_COUNTS, std430) readonly buffer CellCounts {
+    uint values[];
+} cell_counts;
+layout(set = 0, binding = WATER2D_BINDING_DIAGNOSTICS, std430) buffer Diagnostics {
+    uint values[];
+} diagnostics;
+
+WATER2D_SIMULATION_PARAMS;
+
+const uint DIAGNOSTIC_MODE_CLEAR = 0u;
+const uint DIAGNOSTIC_MODE_WORKLOAD = 1u;
+
+const uint SLOT_ACTIVE_PARTICLES = 0u;
+const uint SLOT_INACTIVE_SCAN_PARTICLES = 1u;
+const uint SLOT_NONEMPTY_CELLS = 2u;
+const uint SLOT_OVERPACKED_CELLS = 3u;
+const uint SLOT_OVERPACKED_PARTICLES = 4u;
+const uint SLOT_TRANSFER_TRUNCATED_PARTICLES = 5u;
+const uint SLOT_MAX_CELL_COUNT = 6u;
+const uint SLOT_PARTICLE_SCAN_COUNT = 7u;
+const uint SLOT_COUNT = 8u;
+
+void record_workload(uint index) {
+    uint width = uint(WATER2D_GRID_WIDTH);
+    uint height = uint(WATER2D_GRID_HEIGHT);
+    uint cell_count = width * height;
+    uint particle_scan_count =
+        min(uint(WATER2D_PARTICLE_SCAN_COUNT + 0.5), uint(WATER2D_PARTICLE_CAPACITY + 0.5));
+    uint max_particles_per_cell = max(1u, uint(params.particle_options.y + 0.5));
+
+    if (index == 0u) {
+        diagnostics.values[SLOT_PARTICLE_SCAN_COUNT] = particle_scan_count;
+    }
+
+    if (index < particle_scan_count) {
+        if (particle_positions.values[index].w >= 0.5) {
+            atomicAdd(diagnostics.values[SLOT_ACTIVE_PARTICLES], 1u);
+        } else {
+            atomicAdd(diagnostics.values[SLOT_INACTIVE_SCAN_PARTICLES], 1u);
+        }
+    }
+
+    if (index < cell_count) {
+        uint count = cell_counts.values[index];
+        if (count > 0u) {
+            atomicAdd(diagnostics.values[SLOT_NONEMPTY_CELLS], 1u);
+            atomicMax(diagnostics.values[SLOT_MAX_CELL_COUNT], count);
+        }
+        if (count > max_particles_per_cell) {
+            atomicAdd(diagnostics.values[SLOT_OVERPACKED_CELLS], 1u);
+            uint excess = count - max_particles_per_cell;
+            atomicAdd(diagnostics.values[SLOT_OVERPACKED_PARTICLES], excess);
+            atomicAdd(diagnostics.values[SLOT_TRANSFER_TRUNCATED_PARTICLES], excess);
+        }
+    }
+}
+
+void main() {
+    uint index = gl_GlobalInvocationID.x;
+    uint mode = uint(dispatch_params.dispatch_options.z + 0.5);
+
+    if (mode == DIAGNOSTIC_MODE_CLEAR) {
+        if (index < SLOT_COUNT) {
+            diagnostics.values[index] = 0u;
+        }
+        return;
+    }
+
+    if (mode == DIAGNOSTIC_MODE_WORKLOAD) {
+        record_workload(index);
+    }
+}
