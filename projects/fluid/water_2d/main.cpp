@@ -1,6 +1,6 @@
 #include <cubey/core/run_config.h>
 
-#include "water_2d_app.h"
+#include "../sim/water_2d/water_2d_app.h"
 
 int main(int argc, char** argv) {
     return cubey::run_cli_app(argc, argv,
