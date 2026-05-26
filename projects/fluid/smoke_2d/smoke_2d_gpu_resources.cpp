@@ -21,6 +21,7 @@ namespace {
 static_assert(kSmoke2DComputeGroupSize == 8U);
 inline constexpr VkDeviceSize kSmoke2DSimulationPushConstantBytes =
     sizeof(float) * kSmoke2DSimulationPushConstantFloatCount;
+inline constexpr std::uint32_t kSmoke2DGpuProfilerPassCapacity = 16;
 
 std::filesystem::path shader_path(const char* filename) {
     return std::filesystem::path(CUBEY_SMOKE_2D_SHADER_DIR) / filename;
@@ -114,14 +115,22 @@ void create_compute_pipeline_resource(
 
 void Smoke2DGpuResources::create_global_resources_if_needed(cubey::vulkan::Device& device,
                                                             cubey::ProjectGpuServices& gpu,
-                                                            const Smoke2DConfig& config) {
+                                                            const Smoke2DConfig& config,
+                                                            std::uint32_t frame_slot_count) {
+    if (frame_slot_count == 0) {
+        throw std::runtime_error("smoke 2D resources require at least one frame slot");
+    }
     if (field_a_.has_value()) {
+        if (!profiler_.has_value()) {
+            profiler_.emplace(device, frame_slot_count, kSmoke2DGpuProfilerPassCapacity);
+        }
         return;
     }
 
     create_field_buffers(gpu, config);
     create_descriptor_resources(device);
     create_compute_pipelines(device);
+    profiler_.emplace(device, frame_slot_count, kSmoke2DGpuProfilerPassCapacity);
 }
 
 void Smoke2DGpuResources::destroy_swapchain_resources() {
@@ -130,6 +139,7 @@ void Smoke2DGpuResources::destroy_swapchain_resources() {
 
 void Smoke2DGpuResources::destroy_all_resources() {
     destroy_swapchain_resources();
+    profiler_.reset();
     projection_pipeline_resource_.reset();
     pressure_pipeline_resource_.reset();
     divergence_pipeline_resource_.reset();
@@ -644,6 +654,14 @@ const cubey::vulkan::DescriptorSetBundle& Smoke2DGpuResources::render_descriptor
         throw std::runtime_error("fluid render descriptors are not initialized");
     }
     return render_descriptors_.value();
+}
+
+const std::vector<cubey::vulkan::GpuPassTiming>& Smoke2DGpuResources::latest_timings() const {
+    static const std::vector<cubey::vulkan::GpuPassTiming> kEmptyTimings;
+    if (!profiler_.has_value()) {
+        return kEmptyTimings;
+    }
+    return profiler_->latest_timings();
 }
 
 const cubey::render::ComputePipelineResource&

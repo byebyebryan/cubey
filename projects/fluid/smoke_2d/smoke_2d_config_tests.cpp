@@ -338,6 +338,21 @@ int main() {
         require_not_contains(inject_shader, "force * splat * source_active * dt",
                              "smoke injector force should not bypass injection strength");
 
+        const std::string commands_source = read_text_file(source_root / "smoke_2d_commands.cpp");
+        require_contains(commands_source, "\"advect_predict\"",
+                         "smoke commands should profile advect prediction");
+        require_contains(commands_source, "\"pressure\"",
+                         "smoke commands should profile the pressure solve");
+        require_contains(commands_source, "\"render\"",
+                         "smoke commands should profile the render pass");
+        require_contains(commands_source, "GpuTimestampScope",
+                         "smoke commands should use GPU timestamp scopes");
+        const std::string app_source = read_text_file(source_root / "smoke_2d_app.cpp");
+        require_contains(app_source, "record_gpu_timings(context.profile_recorder()",
+                         "smoke app should export GPU timings into the profile recorder");
+        require_contains(app_source, "AlreadyRecording",
+                         "smoke app should own command buffer timing around render graph record");
+
     } catch (const std::exception& error) {
         std::fprintf(stderr, "smoke_2d_config_tests: %s\n", error.what());
         return 1;

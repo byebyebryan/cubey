@@ -3,6 +3,7 @@
 #include <cubey/render/pass.h>
 #include <cubey/render/render_graph.h>
 #include <cubey/vulkan/command_recorder.h>
+#include <cubey/vulkan/gpu_timestamps.h>
 #include <cubey/vulkan/vk_check.h>
 
 #include <algorithm>
@@ -143,15 +144,50 @@ void record_field_reset(VkCommandBuffer command_buffer, const Smoke2DGpuResource
                         });
 }
 
+void record_dispatch(const cubey::vulkan::CommandRecorder& recorder,
+                     const cubey::render::ComputePipelineResource& pipeline,
+                     VkDescriptorSet descriptor_set, const DispatchGroups& groups,
+                     const SimulationPushConstants& push_constants) {
+    cubey::render::record_compute_pipeline_dispatch(recorder,
+                                                    {
+                                                        .pipeline = &pipeline,
+                                                        .descriptor_set = descriptor_set,
+                                                        .group_count_x = groups.x,
+                                                        .group_count_y = groups.y,
+                                                    },
+                                                    VK_SHADER_STAGE_COMPUTE_BIT, push_constants);
+}
+
+void record_profiled_dispatch(const cubey::vulkan::CommandRecorder& recorder,
+                              const cubey::render::ComputePipelineResource& pipeline,
+                              VkDescriptorSet descriptor_set, const DispatchGroups& groups,
+                              const SimulationPushConstants& push_constants,
+                              cubey::vulkan::GpuTimestampProfiler* profiler,
+                              std::uint32_t frame_slot_index, const char* label) {
+    cubey::render::record_profiled_compute_pipeline_dispatch(
+        recorder,
+        {
+            .pipeline = &pipeline,
+            .descriptor_set = descriptor_set,
+            .group_count_x = groups.x,
+            .group_count_y = groups.y,
+        },
+        VK_SHADER_STAGE_COMPUTE_BIT, push_constants, profiler, frame_slot_index, label);
+}
+
 } // namespace
 
 void record_smoke_compute(VkCommandBuffer command_buffer, Smoke2DGpuResources& resources,
                           const Smoke2DConfig& config, bool paused, bool& reset_requested,
                           const ProjectFrame& frame, std::span<const Smoke2DInjectorGpu> injectors,
-                          bool include_render_visibility_barrier) {
+                          bool include_render_visibility_barrier,
+                          cubey::vulkan::GpuTimestampProfiler* profiler,
+                          std::uint32_t frame_slot_index) {
     const cubey::vulkan::CommandRecorder recorder(command_buffer);
 
     if (reset_requested) {
+        cubey::vulkan::GpuTimestampScope profile_scope(profiler, command_buffer, frame_slot_index,
+                                                       "reset");
         record_field_reset(command_buffer, resources);
         reset_requested = false;
     }
@@ -166,12 +202,8 @@ void record_smoke_compute(VkCommandBuffer command_buffer, Smoke2DGpuResources& r
 
     const cubey::render::ComputePipelineResource& advect_pipeline =
         resources.advect_pipeline_resource();
-    recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_COMPUTE, advect_pipeline.pipeline());
-    recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_COMPUTE, advect_pipeline.layout(), 0,
-                                 resources.advect_descriptor_set());
-    recorder.push_constants(advect_pipeline.layout(), VK_SHADER_STAGE_COMPUTE_BIT, 0,
-                            push_constants);
-    recorder.dispatch(groups.x, groups.y, 1);
+    record_profiled_dispatch(recorder, advect_pipeline, resources.advect_descriptor_set(), groups,
+                             push_constants, profiler, frame_slot_index, "advect_predict");
 
     record_shader_write_barrier(
         command_buffer, {
@@ -181,12 +213,9 @@ void record_smoke_compute(VkCommandBuffer command_buffer, Smoke2DGpuResources& r
 
     const cubey::render::ComputePipelineResource& advect_correct_pipeline =
         resources.advect_correct_pipeline_resource();
-    recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_COMPUTE, advect_correct_pipeline.pipeline());
-    recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_COMPUTE, advect_correct_pipeline.layout(),
-                                 0, resources.advect_correct_descriptor_set());
-    recorder.push_constants(advect_correct_pipeline.layout(), VK_SHADER_STAGE_COMPUTE_BIT, 0,
-                            push_constants);
-    recorder.dispatch(groups.x, groups.y, 1);
+    record_profiled_dispatch(recorder, advect_correct_pipeline,
+                             resources.advect_correct_descriptor_set(), groups, push_constants,
+                             profiler, frame_slot_index, "advect_correct");
 
     record_shader_write_barrier(
         command_buffer, {
@@ -196,12 +225,8 @@ void record_smoke_compute(VkCommandBuffer command_buffer, Smoke2DGpuResources& r
 
     const cubey::render::ComputePipelineResource& inject_pipeline =
         resources.inject_pipeline_resource();
-    recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_COMPUTE, inject_pipeline.pipeline());
-    recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_COMPUTE, inject_pipeline.layout(), 0,
-                                 resources.inject_descriptor_set());
-    recorder.push_constants(inject_pipeline.layout(), VK_SHADER_STAGE_COMPUTE_BIT, 0,
-                            push_constants);
-    recorder.dispatch(groups.x, groups.y, 1);
+    record_profiled_dispatch(recorder, inject_pipeline, resources.inject_descriptor_set(), groups,
+                             push_constants, profiler, frame_slot_index, "inject");
 
     record_shader_write_barrier(
         command_buffer, {
@@ -211,11 +236,8 @@ void record_smoke_compute(VkCommandBuffer command_buffer, Smoke2DGpuResources& r
 
     const cubey::render::ComputePipelineResource& curl_pipeline =
         resources.curl_pipeline_resource();
-    recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_COMPUTE, curl_pipeline.pipeline());
-    recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_COMPUTE, curl_pipeline.layout(), 0,
-                                 resources.curl_descriptor_set());
-    recorder.push_constants(curl_pipeline.layout(), VK_SHADER_STAGE_COMPUTE_BIT, 0, push_constants);
-    recorder.dispatch(groups.x, groups.y, 1);
+    record_profiled_dispatch(recorder, curl_pipeline, resources.curl_descriptor_set(), groups,
+                             push_constants, profiler, frame_slot_index, "curl");
 
     record_shader_write_barrier(
         command_buffer, {
@@ -225,12 +247,8 @@ void record_smoke_compute(VkCommandBuffer command_buffer, Smoke2DGpuResources& r
 
     const cubey::render::ComputePipelineResource& vorticity_pipeline =
         resources.vorticity_pipeline_resource();
-    recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_COMPUTE, vorticity_pipeline.pipeline());
-    recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_COMPUTE, vorticity_pipeline.layout(), 0,
-                                 resources.vorticity_descriptor_set());
-    recorder.push_constants(vorticity_pipeline.layout(), VK_SHADER_STAGE_COMPUTE_BIT, 0,
-                            push_constants);
-    recorder.dispatch(groups.x, groups.y, 1);
+    record_profiled_dispatch(recorder, vorticity_pipeline, resources.vorticity_descriptor_set(),
+                             groups, push_constants, profiler, frame_slot_index, "vorticity");
 
     record_shader_write_barrier(
         command_buffer, {
@@ -240,12 +258,8 @@ void record_smoke_compute(VkCommandBuffer command_buffer, Smoke2DGpuResources& r
 
     const cubey::render::ComputePipelineResource& divergence_pipeline =
         resources.divergence_pipeline_resource();
-    recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_COMPUTE, divergence_pipeline.pipeline());
-    recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_COMPUTE, divergence_pipeline.layout(), 0,
-                                 resources.divergence_descriptor_set());
-    recorder.push_constants(divergence_pipeline.layout(), VK_SHADER_STAGE_COMPUTE_BIT, 0,
-                            push_constants);
-    recorder.dispatch(groups.x, groups.y, 1);
+    record_profiled_dispatch(recorder, divergence_pipeline, resources.divergence_descriptor_set(),
+                             groups, push_constants, profiler, frame_slot_index, "divergence");
 
     record_shader_write_barrier(
         command_buffer, {
@@ -255,16 +269,13 @@ void record_smoke_compute(VkCommandBuffer command_buffer, Smoke2DGpuResources& r
 
     const cubey::render::ComputePipelineResource& pressure_pipeline =
         resources.pressure_pipeline_resource();
-    recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_COMPUTE, pressure_pipeline.pipeline());
+    cubey::vulkan::GpuTimestampScope pressure_scope(profiler, command_buffer, frame_slot_index,
+                                                    "pressure");
     for (std::uint32_t iteration = 0; iteration < config.pressure_iterations; ++iteration) {
         const VkDescriptorSet descriptor_set = (iteration % 2U == 0)
                                                    ? resources.pressure_a_to_b_descriptor_set()
                                                    : resources.pressure_b_to_a_descriptor_set();
-        recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_COMPUTE, pressure_pipeline.layout(), 0,
-                                     descriptor_set);
-        recorder.push_constants(pressure_pipeline.layout(), VK_SHADER_STAGE_COMPUTE_BIT, 0,
-                                push_constants);
-        recorder.dispatch(groups.x, groups.y, 1);
+        record_dispatch(recorder, pressure_pipeline, descriptor_set, groups, push_constants);
         record_shader_write_barrier(
             command_buffer,
             {
@@ -272,6 +283,7 @@ void record_smoke_compute(VkCommandBuffer command_buffer, Smoke2DGpuResources& r
                 .dst_access = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
             });
     }
+    pressure_scope.end();
 
     const bool final_pressure_is_a = (config.pressure_iterations % 2U) == 0;
     const VkDescriptorSet projection_descriptor_set =
@@ -279,12 +291,8 @@ void record_smoke_compute(VkCommandBuffer command_buffer, Smoke2DGpuResources& r
                             : resources.projection_pressure_b_descriptor_set();
     const cubey::render::ComputePipelineResource& projection_pipeline =
         resources.projection_pipeline_resource();
-    recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_COMPUTE, projection_pipeline.pipeline());
-    recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_COMPUTE, projection_pipeline.layout(), 0,
-                                 projection_descriptor_set);
-    recorder.push_constants(projection_pipeline.layout(), VK_SHADER_STAGE_COMPUTE_BIT, 0,
-                            push_constants);
-    recorder.dispatch(groups.x, groups.y, 1);
+    record_profiled_dispatch(recorder, projection_pipeline, projection_descriptor_set, groups,
+                             push_constants, profiler, frame_slot_index, "projection");
 
     if (include_render_visibility_barrier) {
         record_shader_write_barrier(
@@ -299,7 +307,9 @@ void record_smoke_compute(VkCommandBuffer command_buffer, Smoke2DGpuResources& r
 
 void record_fullscreen_draw(VkCommandBuffer command_buffer, const Smoke2DGpuResources& resources,
                             const Smoke2DConfig& config, Smoke2DDebugView debug_view,
-                            cubey::render::ColorTargetView color_target) {
+                            cubey::render::ColorTargetView color_target,
+                            cubey::vulkan::GpuTimestampProfiler* profiler,
+                            std::uint32_t frame_slot_index) {
     const cubey::vulkan::CommandRecorder recorder(command_buffer);
     const RenderPushConstants push_constants{
         .grid_debug =
@@ -311,6 +321,8 @@ void record_fullscreen_draw(VkCommandBuffer command_buffer, const Smoke2DGpuReso
             },
     };
 
+    cubey::vulkan::GpuTimestampScope profile_scope(profiler, command_buffer, frame_slot_index,
+                                                   "render");
     cubey::render::record_render_target_pass(
         recorder, cubey::render::render_target_view(color_target),
         cubey::render::RenderClearValues{
@@ -327,11 +339,11 @@ void record_fullscreen_draw(VkCommandBuffer command_buffer, const Smoke2DGpuReso
         });
 }
 
-[[nodiscard]] cubey::render::CompiledRenderGraph
-build_smoke_frame_graph(cubey::render::ColorTargetView color_target, Smoke2DGpuResources& resources,
-                        const Smoke2DConfig& config, Smoke2DDebugView debug_view, bool paused,
-                        bool& reset_requested, const ProjectFrame& frame,
-                        std::span<const Smoke2DInjectorGpu> injectors) {
+[[nodiscard]] cubey::render::CompiledRenderGraph build_smoke_frame_graph(
+    cubey::render::ColorTargetView color_target, Smoke2DGpuResources& resources,
+    const Smoke2DConfig& config, Smoke2DDebugView debug_view, bool paused, bool& reset_requested,
+    const ProjectFrame& frame, std::span<const Smoke2DInjectorGpu> injectors,
+    cubey::vulkan::GpuTimestampProfiler* profiler, std::uint32_t frame_slot_index) {
     Smoke2DGpuResources* resource_ptr = &resources;
     const Smoke2DConfig* config_ptr = &config;
     bool* reset_requested_ptr = &reset_requested;
@@ -377,10 +389,12 @@ build_smoke_frame_graph(cubey::render::ColorTargetView color_target, Smoke2DGpuR
         .read_write_storage_buffer(injector_buffer)
         .read_write_storage_buffer(pressure_a)
         .read_write_storage_buffer(pressure_b)
-        .execute([resource_ptr, config_ptr, paused, reset_requested_ptr, frame,
+        .execute([resource_ptr, config_ptr, paused, reset_requested_ptr, frame, profiler,
+                  frame_slot_index,
                   injector_snapshot](const cubey::render::RenderGraphExecutionContext& context) {
             record_smoke_compute(context.recorder().handle(), *resource_ptr, *config_ptr, paused,
-                                 *reset_requested_ptr, frame, injector_snapshot, false);
+                                 *reset_requested_ptr, frame, injector_snapshot, false, profiler,
+                                 frame_slot_index);
         });
     graph.add_pass("fluid render", cubey::render::RenderGraphQueueDomain::Graphics)
         .read_storage_buffer(field_a)
@@ -390,7 +404,7 @@ build_smoke_frame_graph(cubey::render::ColorTargetView color_target, Smoke2DGpuR
         .read_storage_buffer(pressure_a)
         .read_storage_buffer(pressure_b)
         .write_color(backbuffer)
-        .execute([resource_ptr, config_ptr, debug_view, backbuffer,
+        .execute([resource_ptr, config_ptr, debug_view, backbuffer, profiler, frame_slot_index,
                   color_target](const cubey::render::RenderGraphExecutionContext& context) {
             const cubey::vulkan::CommandRecorder& recorder = context.recorder();
             const cubey::render::RenderGraphResolvedTexture resolved =
@@ -398,7 +412,8 @@ build_smoke_frame_graph(cubey::render::ColorTargetView color_target, Smoke2DGpuR
             record_fullscreen_draw(recorder.handle(), *resource_ptr, *config_ptr, debug_view,
                                    cubey::render::color_target_view(color_target.extent,
                                                                     color_target.format,
-                                                                    resolved.image, resolved.view));
+                                                                    resolved.image, resolved.view),
+                                   profiler, frame_slot_index);
         });
 
     return graph.compile();

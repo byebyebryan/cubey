@@ -8,11 +8,13 @@
 #include <cubey/vulkan/buffer.h>
 #include <cubey/vulkan/descriptors.h>
 #include <cubey/vulkan/device.h>
+#include <cubey/vulkan/gpu_timestamps.h>
 
 #include <vulkan/vulkan.h>
 
 #include <cstdint>
 #include <optional>
+#include <vector>
 
 namespace cubey::projects::fluid::smoke_2d {
 
@@ -20,7 +22,8 @@ class Smoke2DGpuResources {
   public:
     void create_global_resources_if_needed(cubey::vulkan::Device& device,
                                            cubey::ProjectGpuServices& gpu,
-                                           const Smoke2DConfig& config);
+                                           const Smoke2DConfig& config,
+                                           std::uint32_t frame_slot_count = 1);
     void create_render_pipeline(cubey::vulkan::Device& device, VkFormat color_format,
                                 VkExtent2D extent);
     void destroy_swapchain_resources();
@@ -78,6 +81,10 @@ class Smoke2DGpuResources {
     [[nodiscard]] VkDescriptorSet projection_pressure_b_descriptor_set() const noexcept {
         return projection_pressure_b_descriptor_set_;
     }
+    [[nodiscard]] cubey::vulkan::GpuTimestampProfiler* profiler() noexcept {
+        return profiler_.has_value() ? &profiler_.value() : nullptr;
+    }
+    [[nodiscard]] const std::vector<cubey::vulkan::GpuPassTiming>& latest_timings() const;
 
   private:
     void create_field_buffers(cubey::ProjectGpuServices& gpu, const Smoke2DConfig& config);
@@ -134,6 +141,7 @@ class Smoke2DGpuResources {
     std::optional<cubey::render::ComputePipelineResource> pressure_pipeline_resource_;
     std::optional<cubey::render::ComputePipelineResource> projection_pipeline_resource_;
     std::optional<cubey::render::GraphicsPipelineResource> render_pipeline_resource_;
+    std::optional<cubey::vulkan::GpuTimestampProfiler> profiler_;
 };
 
 } // namespace cubey::projects::fluid::smoke_2d

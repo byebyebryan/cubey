@@ -1,9 +1,14 @@
 #include "smoke_2d_ui.h"
 
+#include "smoke_2d_gpu_resources.h"
+
+#include <cubey/vulkan/gpu_timestamps.h>
+
 #include <imgui.h>
 
 #include <array>
 #include <cstdint>
+#include <vector>
 
 namespace cubey::projects::fluid::smoke_2d {
 namespace {
@@ -97,6 +102,13 @@ void draw_smoke_2d_ui(Smoke2DUiContext ui) {
     if (section("Diagnostics", true)) {
         ImGui::Text("Grid: %u x %u", ui.config.grid_width, ui.config.grid_height);
         ImGui::Text("Injectors: %u", ui.config.procedural_injector_count);
+        const std::vector<cubey::vulkan::GpuPassTiming>& timings = ui.resources.latest_timings();
+        if (!timings.empty()) {
+            ImGui::SeparatorText("GPU timings");
+            for (const cubey::vulkan::GpuPassTiming& timing : timings) {
+                ImGui::Text("%s: %.3f ms", timing.label.c_str(), timing.milliseconds);
+            }
+        }
     }
 
     ImGui::End();
