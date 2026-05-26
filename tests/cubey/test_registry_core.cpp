@@ -30,6 +30,7 @@ void test_run_config_parses_shadow_volume_controls();
 void test_run_config_parses_smoke_injector_count();
 void test_run_config_parses_smoke_injector_orbit_controls();
 void test_run_config_parses_smoke_injector_force_controls();
+void test_run_config_parses_smoke_solver_controls();
 void test_run_config_parses_pyro_buoyancy_control();
 void test_run_config_parses_pyro_source_controls();
 void test_run_config_parses_pyro_fire_controls();
@@ -64,6 +65,7 @@ std::span<const TestCase> core_test_cases() {
         CUBEY_TEST(test_run_config_parses_smoke_injector_count),
         CUBEY_TEST(test_run_config_parses_smoke_injector_orbit_controls),
         CUBEY_TEST(test_run_config_parses_smoke_injector_force_controls),
+        CUBEY_TEST(test_run_config_parses_smoke_solver_controls),
         CUBEY_TEST(test_run_config_parses_pyro_buoyancy_control),
         CUBEY_TEST(test_run_config_parses_pyro_source_controls),
         CUBEY_TEST(test_run_config_parses_pyro_fire_controls),

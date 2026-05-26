@@ -140,13 +140,29 @@ int main() {
         require(default_from_run_config.injector_injection_strength ==
                     config.injector_injection_strength,
                 "default run config should preserve smoke injector strength");
+        require(default_from_run_config.pressure_iterations == config.pressure_iterations,
+                "default run config should preserve smoke pressure iterations");
+        require(default_from_run_config.dye_decay_per_second == config.dye_decay_per_second,
+                "default run config should preserve smoke dye decay");
+        require(default_from_run_config.velocity_decay_per_second ==
+                    config.velocity_decay_per_second,
+                "default run config should preserve smoke velocity decay");
+        require(default_from_run_config.injector_injection_radius ==
+                    config.injector_injection_radius,
+                "default run config should preserve smoke injector radius");
         require(default_from_run_config.injector_orbit_radius == config.injector_orbit_radius,
                 "default run config should preserve smoke orbit radius");
+        require(default_from_run_config.vorticity_strength == config.vorticity_strength,
+                "default run config should preserve smoke vorticity");
 
         cubey::RunConfig run_config;
         run_config.grid.width = 1024;
         run_config.grid.height = 768;
         run_config.smoke.injectors = 8;
+        run_config.smoke.pressure_iterations = 48;
+        run_config.smoke.dye_decay = 0.985F;
+        run_config.smoke.velocity_decay = 0.991F;
+        run_config.smoke.injector_radius = 0.041F;
         run_config.smoke.injector_force = 7.5F;
         run_config.smoke.injector_propulsion = 1.6F;
         run_config.smoke.injector_orbit_radius = 0.24F;
@@ -154,12 +170,21 @@ int main() {
         run_config.smoke.injector_orbit_angular_speed = 0.1F;
         run_config.smoke.injector_orbit_angular_speed_spread = 1.2F;
         run_config.smoke.injector_orbit_phase_spread = 0.75F;
+        run_config.smoke.vorticity = 24.0F;
         const cubey::projects::fluid::smoke_2d::Smoke2DConfig configured =
             cubey::projects::fluid::smoke_2d::smoke_2d_config_from_run_config(run_config);
         require(configured.grid_width == 1024, "smoke config should honor run config grid width");
         require(configured.grid_height == 768, "smoke config should honor run config grid height");
         require(configured.procedural_injector_count == 8,
                 "smoke config should honor run config injector count");
+        require(configured.pressure_iterations == 48,
+                "smoke config should honor run config pressure iterations");
+        require(configured.dye_decay_per_second == 0.985F,
+                "smoke config should honor run config dye decay");
+        require(configured.velocity_decay_per_second == 0.991F,
+                "smoke config should honor run config velocity decay");
+        require(configured.injector_injection_radius == 0.041F,
+                "smoke config should honor run config injector radius");
         require(configured.injector_injection_strength == 7.5F,
                 "smoke config should honor run config injector force");
         require(configured.injector_propulsion_strength == 1.6F,
@@ -174,6 +199,8 @@ int main() {
                 "smoke config should honor run config injector orbit angular speed spread");
         require(configured.injector_orbit_phase_spread == 0.75F,
                 "smoke config should honor run config injector orbit phase spread");
+        require(configured.vorticity_strength == 24.0F,
+                "smoke config should honor run config vorticity");
         require(!configured.obstacles_enabled,
                 "smoke config should keep obstacles disabled unless requested");
         run_config.smoke.obstacles = true;
@@ -194,6 +221,26 @@ int main() {
         }
         require(threw_for_too_many_injectors,
                 "smoke config should reject injector counts above the shader policy limit");
+        bool threw_for_invalid_decay = false;
+        try {
+            cubey::RunConfig invalid_decay_config;
+            invalid_decay_config.smoke.dye_decay = 1.2F;
+            static_cast<void>(cubey::projects::fluid::smoke_2d::smoke_2d_config_from_run_config(
+                invalid_decay_config));
+        } catch (const std::runtime_error&) {
+            threw_for_invalid_decay = true;
+        }
+        require(threw_for_invalid_decay, "smoke config should reject dye decay above one");
+        bool threw_for_invalid_radius = false;
+        try {
+            cubey::RunConfig invalid_radius_config;
+            invalid_radius_config.smoke.injector_radius = 0.0F;
+            static_cast<void>(cubey::projects::fluid::smoke_2d::smoke_2d_config_from_run_config(
+                invalid_radius_config));
+        } catch (const std::runtime_error&) {
+            threw_for_invalid_radius = true;
+        }
+        require(threw_for_invalid_radius, "smoke config should reject nonpositive injector radius");
 
         std::vector<cubey::projects::fluid::smoke_2d::Smoke2DInjectorState> injectors =
             cubey::projects::fluid::smoke_2d::create_smoke_2d_injectors(configured);

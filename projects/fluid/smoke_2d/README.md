@@ -62,6 +62,9 @@ spread, and phase spread. Use `--smoke-injector-orbit-radius`,
 `--smoke-injector-orbit-angular-speed-spread`, `--smoke-injector-orbit-phase-spread`,
 `--smoke-injector-force`, and `--smoke-injector-propulsion` to tune captures.
 Static obstacles are disabled by default; enable them with `--smoke-obstacles`.
+Solver and source tuning can be reproduced with `--smoke-pressure-iterations`,
+`--smoke-dye-decay`, `--smoke-velocity-decay`, `--smoke-injector-radius`, and
+`--smoke-vorticity`.
 Use `--debug-view dye|velocity|divergence|pressure|speed|vorticity|obstacle` to
 start windowed or headless runs in a diagnostic view.
 
@@ -139,6 +142,7 @@ Scaling guidance:
 ```bash
 ./build/dev/projects/fluid/smoke_2d/smoke_2d --require-validation --frames 300 --width 1280 --height 720
 ./build/dev/projects/fluid/smoke_2d/smoke_2d --frames 300 --print-frame-stats --grid-width 512 --grid-height 512 --width 1280 --height 720
+./build/dev/projects/fluid/smoke_2d/smoke_2d --frames 300 --smoke-pressure-iterations 48 --smoke-dye-decay 0.985 --smoke-velocity-decay 0.991 --smoke-injector-radius 0.041 --smoke-vorticity 24 --width 1280 --height 720
 ./build/dev/projects/fluid/smoke_2d/smoke_2d --frames 300 --smoke-injectors 8 --smoke-injector-force 7.5 --smoke-injector-propulsion 1.4 --width 1280 --height 720
 ./build/dev/projects/fluid/smoke_2d/smoke_2d --frames 300 --smoke-injectors 8 \
     --smoke-injector-orbit-radius 0.25 --smoke-injector-orbit-radius-spread 0.24 \

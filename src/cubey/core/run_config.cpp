@@ -109,6 +109,18 @@ RunConfig parse_run_config(int argc, char** argv) {
         } else if (arg == "--smoke-injectors") {
             config.smoke.injectors =
                 parse_positive_u32(need_value("--smoke-injectors"), "--smoke-injectors");
+        } else if (arg == "--smoke-pressure-iterations") {
+            config.smoke.pressure_iterations = parse_positive_u32(
+                need_value("--smoke-pressure-iterations"), "--smoke-pressure-iterations");
+        } else if (arg == "--smoke-dye-decay") {
+            config.smoke.dye_decay =
+                parse_float(need_value("--smoke-dye-decay"), "--smoke-dye-decay");
+        } else if (arg == "--smoke-velocity-decay") {
+            config.smoke.velocity_decay =
+                parse_float(need_value("--smoke-velocity-decay"), "--smoke-velocity-decay");
+        } else if (arg == "--smoke-injector-radius") {
+            config.smoke.injector_radius =
+                parse_float(need_value("--smoke-injector-radius"), "--smoke-injector-radius");
         } else if (arg == "--smoke-injector-force") {
             config.smoke.injector_force =
                 parse_float(need_value("--smoke-injector-force"), "--smoke-injector-force");
@@ -134,6 +146,9 @@ RunConfig parse_run_config(int argc, char** argv) {
             config.smoke.injector_orbit_phase_spread =
                 parse_float(need_value("--smoke-injector-orbit-phase-spread"),
                             "--smoke-injector-orbit-phase-spread");
+        } else if (arg == "--smoke-vorticity") {
+            config.smoke.vorticity =
+                parse_float(need_value("--smoke-vorticity"), "--smoke-vorticity");
         } else if (arg == "--pyro-sources") {
             config.pyro.sources =
                 parse_positive_u32(need_value("--pyro-sources"), "--pyro-sources");
@@ -304,6 +319,15 @@ RunConfig parse_run_config(int argc, char** argv) {
     if (config.profile_diagnostics && config.profile_output_prefix.empty()) {
         throw std::runtime_error("profile diagnostics require --profile-output");
     }
+    if (config.smoke.dye_decay < 0.0F || config.smoke.dye_decay > 1.0F) {
+        throw std::runtime_error("smoke dye decay must be in [0, 1]");
+    }
+    if (config.smoke.velocity_decay < 0.0F || config.smoke.velocity_decay > 1.0F) {
+        throw std::runtime_error("smoke velocity decay must be in [0, 1]");
+    }
+    if (config.smoke.injector_radius <= 0.0F) {
+        throw std::runtime_error("smoke injector radius must be positive");
+    }
     if (config.smoke.injector_force < 0.0F) {
         throw std::runtime_error("smoke injector force must be nonnegative");
     }
@@ -321,6 +345,9 @@ RunConfig parse_run_config(int argc, char** argv) {
     }
     if (config.smoke.injector_orbit_phase_spread < 0.0F) {
         throw std::runtime_error("smoke injector orbit phase spread must be nonnegative");
+    }
+    if (config.smoke.vorticity < 0.0F) {
+        throw std::runtime_error("smoke vorticity must be nonnegative");
     }
     if (config.pyro.source_radius <= 0.0F) {
         throw std::runtime_error("pyro source radius must be positive");

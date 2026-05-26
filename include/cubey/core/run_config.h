@@ -36,6 +36,10 @@ struct RunConfig {
 
     struct SmokeOptions {
         std::uint32_t injectors = 0;
+        std::uint32_t pressure_iterations = 0;
+        float dye_decay = kRunConfigUnsetFloat;
+        float velocity_decay = kRunConfigUnsetFloat;
+        float injector_radius = kRunConfigUnsetFloat;
         float injector_force = kRunConfigUnsetFloat;
         float injector_propulsion = kRunConfigUnsetFloat;
         float injector_orbit_radius = kRunConfigUnsetFloat;
@@ -43,6 +47,7 @@ struct RunConfig {
         float injector_orbit_angular_speed = kRunConfigUnsetFloat;
         float injector_orbit_angular_speed_spread = kRunConfigUnsetFloat;
         float injector_orbit_phase_spread = kRunConfigUnsetFloat;
+        float vorticity = kRunConfigUnsetFloat;
         bool obstacles = false;
     };
 

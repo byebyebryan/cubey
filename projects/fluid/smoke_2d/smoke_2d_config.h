@@ -115,6 +115,18 @@ struct Smoke2DConfig {
         }
         smoke_config.procedural_injector_count = config.smoke.injectors;
     }
+    if (config.smoke.pressure_iterations != 0) {
+        smoke_config.pressure_iterations = config.smoke.pressure_iterations;
+    }
+    if (run_config_float_is_set(config.smoke.dye_decay)) {
+        smoke_config.dye_decay_per_second = config.smoke.dye_decay;
+    }
+    if (run_config_float_is_set(config.smoke.velocity_decay)) {
+        smoke_config.velocity_decay_per_second = config.smoke.velocity_decay;
+    }
+    if (run_config_float_is_set(config.smoke.injector_radius)) {
+        smoke_config.injector_injection_radius = config.smoke.injector_radius;
+    }
     if (run_config_float_is_set(config.smoke.injector_force)) {
         smoke_config.injector_injection_strength = config.smoke.injector_force;
     }
@@ -137,8 +149,45 @@ struct Smoke2DConfig {
     if (run_config_float_is_set(config.smoke.injector_orbit_phase_spread)) {
         smoke_config.injector_orbit_phase_spread = config.smoke.injector_orbit_phase_spread;
     }
+    if (run_config_float_is_set(config.smoke.vorticity)) {
+        smoke_config.vorticity_strength = config.smoke.vorticity;
+    }
     smoke_config.obstacles_enabled = config.smoke.obstacles;
     static_cast<void>(field_cell_count(smoke_config));
+    if (smoke_config.pressure_iterations == 0) {
+        throw std::runtime_error("smoke pressure iterations must be positive");
+    }
+    if (smoke_config.dye_decay_per_second < 0.0F || smoke_config.dye_decay_per_second > 1.0F) {
+        throw std::runtime_error("smoke dye decay must be in [0, 1]");
+    }
+    if (smoke_config.velocity_decay_per_second < 0.0F ||
+        smoke_config.velocity_decay_per_second > 1.0F) {
+        throw std::runtime_error("smoke velocity decay must be in [0, 1]");
+    }
+    if (smoke_config.injector_injection_radius <= 0.0F) {
+        throw std::runtime_error("smoke injector radius must be positive");
+    }
+    if (smoke_config.injector_injection_strength < 0.0F) {
+        throw std::runtime_error("smoke injector strength must be nonnegative");
+    }
+    if (smoke_config.injector_propulsion_strength < 0.0F) {
+        throw std::runtime_error("smoke injector propulsion must be nonnegative");
+    }
+    if (smoke_config.injector_orbit_radius <= 0.0F) {
+        throw std::runtime_error("smoke injector orbit radius must be positive");
+    }
+    if (smoke_config.injector_orbit_radius_spread < 0.0F) {
+        throw std::runtime_error("smoke injector orbit radius spread must be nonnegative");
+    }
+    if (smoke_config.injector_orbit_angular_speed_spread < 0.0F) {
+        throw std::runtime_error("smoke injector orbit speed spread must be nonnegative");
+    }
+    if (smoke_config.injector_orbit_phase_spread < 0.0F) {
+        throw std::runtime_error("smoke injector orbit phase spread must be nonnegative");
+    }
+    if (smoke_config.vorticity_strength < 0.0F) {
+        throw std::runtime_error("smoke vorticity must be nonnegative");
+    }
     return smoke_config;
 }
 

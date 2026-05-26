@@ -426,6 +426,41 @@ void test_run_config_parses_smoke_injector_force_controls() {
             "run config should parse smoke injector propulsion");
 }
 
+void test_run_config_parses_smoke_solver_controls() {
+    std::string program = "cubey";
+    std::string pressure_flag = "--smoke-pressure-iterations";
+    std::string pressure_value = "48";
+    std::string dye_decay_flag = "--smoke-dye-decay";
+    std::string dye_decay_value = "0.985";
+    std::string velocity_decay_flag = "--smoke-velocity-decay";
+    std::string velocity_decay_value = "0.991";
+    std::string radius_flag = "--smoke-injector-radius";
+    std::string radius_value = "0.041";
+    std::string vorticity_flag = "--smoke-vorticity";
+    std::string vorticity_value = "24.0";
+    std::array<char*, 11> argv{program.data(),
+                               pressure_flag.data(),
+                               pressure_value.data(),
+                               dye_decay_flag.data(),
+                               dye_decay_value.data(),
+                               velocity_decay_flag.data(),
+                               velocity_decay_value.data(),
+                               radius_flag.data(),
+                               radius_value.data(),
+                               vorticity_flag.data(),
+                               vorticity_value.data()};
+
+    const cubey::RunConfig config =
+        cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
+    require(config.smoke.pressure_iterations == 48,
+            "run config should parse smoke pressure iterations");
+    require(config.smoke.dye_decay == 0.985F, "run config should parse smoke dye decay");
+    require(config.smoke.velocity_decay == 0.991F, "run config should parse smoke velocity decay");
+    require(config.smoke.injector_radius == 0.041F,
+            "run config should parse smoke injector radius");
+    require(config.smoke.vorticity == 24.0F, "run config should parse smoke vorticity");
+}
+
 void test_run_config_parses_pyro_buoyancy_control() {
     std::string program = "cubey";
     std::string buoyancy_flag = "--pyro-buoyancy";
