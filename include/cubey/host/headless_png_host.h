@@ -86,11 +86,24 @@ struct HeadlessPngHostCallbacks {
     std::function<void(HeadlessPngContext&)> shutdown;
 };
 
+struct HeadlessSimulationDriver {
+    std::uint32_t png_frame_count = 0;
+    std::function<FrameTiming(std::uint64_t simulation_frame)> png_timing;
+    std::function<void(HeadlessPngContext&, const HeadlessCaptureFrame&)> simulate_frame;
+};
+
 [[nodiscard]] std::size_t headless_png_byte_size(std::uint32_t width, std::uint32_t height);
 [[nodiscard]] std::uint32_t headless_capture_frame_slot_count(const RunConfig& config);
 [[nodiscard]] std::uint32_t headless_capture_frame_count(const RunConfig& config);
 [[nodiscard]] HeadlessCaptureFrame headless_capture_frame(const RunConfig& config,
-                                                         std::uint32_t frame_index);
+                                                          std::uint32_t frame_index);
+[[nodiscard]] FrameTiming headless_video_simulation_timing(const HeadlessCaptureFrame& frame);
+[[nodiscard]] HeadlessCaptureFrame headless_simulation_frame(const RunConfig& config,
+                                                             std::uint32_t frame_index,
+                                                             std::uint32_t frame_count,
+                                                             FrameTiming timing);
+void install_headless_simulation_driver(HeadlessPngHostCallbacks& callbacks, RunConfig config,
+                                        HeadlessSimulationDriver driver);
 
 class HeadlessPngHost {
   public:

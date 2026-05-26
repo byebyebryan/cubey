@@ -98,4 +98,37 @@ void test_headless_capture_frame_helpers_select_png_or_video_timing() {
             "video timing should use fixed fps delta");
     require(video_frame.timing.elapsed_seconds == 3.0 / 30.0,
             "video timing should use deterministic elapsed time");
+
+    const cubey::FrameTiming simulation_timing =
+        cubey::host::headless_video_simulation_timing(video_frame);
+    require(simulation_timing.frame_index == 4,
+            "video simulation timing should advance to one-based frame indices");
+    require(simulation_timing.elapsed_seconds == 4.0 / 30.0,
+            "video simulation timing should point at the simulated frame end");
+
+    const cubey::host::HeadlessCaptureFrame simulation_frame =
+        cubey::host::headless_simulation_frame(config, 4, 12, simulation_timing);
+    require(simulation_frame.index == 4, "simulation frame should preserve frame index");
+    require(simulation_frame.count == 12, "simulation frame should preserve frame count");
+    require(simulation_frame.frame_slot.index == 1,
+            "simulation frame should use the same slot ring policy as capture");
+    require(simulation_frame.timing.frame_index == 4,
+            "simulation frame should carry caller-provided timing");
+    require_throws(
+        [&] {
+            static_cast<void>(cubey::host::headless_simulation_frame(
+                config, 0, 0, simulation_timing));
+        },
+        "simulation frame helper should reject zero frame count");
+    require_throws(
+        [&] {
+            static_cast<void>(cubey::host::headless_simulation_frame(
+                config, 12, 12, simulation_timing));
+        },
+        "simulation frame helper should reject out-of-range frame indices");
+    require_throws(
+        [&] {
+            static_cast<void>(cubey::host::headless_video_simulation_timing(png_frame));
+        },
+        "video simulation timing should reject static PNG timing");
 }

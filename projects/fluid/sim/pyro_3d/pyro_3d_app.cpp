@@ -288,7 +288,8 @@ class Pyro3DApp {
         }
         int shadow_update_interval = static_cast<int>(pyro_config_.shadow_update_interval);
         if (ImGui::SliderInt("Shadow interval", &shadow_update_interval, 1, 8)) {
-            pyro_config_.shadow_update_interval = static_cast<std::uint32_t>(shadow_update_interval);
+            pyro_config_.shadow_update_interval =
+                static_cast<std::uint32_t>(shadow_update_interval);
         }
         ImGui::SliderFloat("Ambient", &pyro_config_.ambient_light, 0.0F, 1.0F, "%.2f");
         ImGui::Text("Grid: %u x %u x %u", pyro_config_.grid_width, pyro_config_.grid_height,
@@ -363,23 +364,15 @@ class Pyro3DApp {
     }
 
     void attach_project_gpu(cubey::vulkan::GpuRuntime& gpu) {
-        if (!runtime_.has_gpu()) {
-            runtime_.attach_gpu(gpu);
-        }
+        runtime_.attach_gpu_if_needed(gpu);
     }
 
     void detach_project_gpu() {
-        if (runtime_.has_gpu()) {
-            runtime_.detach_gpu();
-        }
+        runtime_.detach_gpu_if_attached();
     }
 
     void retire_project_gpu_work() {
-        if (runtime_.has_gpu()) {
-            static_cast<void>(runtime_.gpu().retire_deferred_destruction());
-            return;
-        }
-        static_cast<void>(runtime_.retire_deferred_destruction());
+        static_cast<void>(runtime_.retire_completed_gpu_work());
     }
 
     void create_render_pipeline(cubey::vulkan::Device& device, VkFormat color_format,
@@ -462,29 +455,21 @@ class Pyro3DApp {
             create_global_resources_if_needed(context.device(), context.gpu(), 1);
             create_render_pipeline(context.device(), target.format, target.extent);
         };
-        if (config_.capture_mode == CaptureMode::Png) {
-            callbacks.before_capture = [this](cubey::host::HeadlessPngContext&) {
-                const std::uint32_t frames = pyro_3d_headless_frame_count(config_);
-                for (std::uint32_t frame = 1; frame <= frames; ++frame) {
-                    const ProjectFrame project_frame = runtime_.frame_for_timing(
-                        fixed_pyro_3d_headless_timing(pyro_config_, frame));
-                    record_headless_simulation_frame(runtime_.gpu(), project_frame);
-                }
-            };
-        } else {
-            callbacks.before_frame = [this](cubey::host::HeadlessPngContext&,
-                                            const cubey::host::HeadlessCaptureFrame& frame) {
-                const std::uint64_t simulation_frame = static_cast<std::uint64_t>(frame.index) + 1U;
-                const FrameTiming timing{
-                    .delta_seconds = frame.timing.delta_seconds,
-                    .elapsed_seconds =
-                        frame.timing.delta_seconds * static_cast<double>(simulation_frame),
-                    .frame_index = simulation_frame,
-                };
-                const ProjectFrame project_frame = runtime_.frame_for_timing(timing);
-                record_headless_simulation_frame(runtime_.gpu(), project_frame);
-            };
-        }
+        cubey::host::install_headless_simulation_driver(
+            callbacks, config_,
+            {
+                .png_frame_count = pyro_3d_headless_frame_count(config_),
+                .png_timing =
+                    [this](std::uint64_t simulation_frame) {
+                        return fixed_pyro_3d_headless_timing(pyro_config_, simulation_frame);
+                    },
+                .simulate_frame =
+                    [this](cubey::host::HeadlessPngContext&,
+                           const cubey::host::HeadlessCaptureFrame& frame) {
+                        const ProjectFrame project_frame = runtime_.frame_for_timing(frame.timing);
+                        record_headless_simulation_frame(runtime_.gpu(), project_frame);
+                    },
+            });
         callbacks.record_capture = [this](cubey::host::HeadlessPngContext&,
                                           VkCommandBuffer command_buffer,
                                           const cubey::host::HeadlessRenderTarget& target) {

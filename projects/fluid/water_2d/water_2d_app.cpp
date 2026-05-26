@@ -367,23 +367,15 @@ class Water2DApp {
     }
 
     void attach_project_gpu(cubey::vulkan::GpuRuntime& gpu) {
-        if (!runtime_.has_gpu()) {
-            runtime_.attach_gpu(gpu);
-        }
+        runtime_.attach_gpu_if_needed(gpu);
     }
 
     void detach_project_gpu() {
-        if (runtime_.has_gpu()) {
-            runtime_.detach_gpu();
-        }
+        runtime_.detach_gpu_if_attached();
     }
 
     void retire_project_gpu_work() {
-        if (runtime_.has_gpu()) {
-            static_cast<void>(runtime_.gpu().retire_deferred_destruction());
-            return;
-        }
-        static_cast<void>(runtime_.retire_deferred_destruction());
+        static_cast<void>(runtime_.retire_completed_gpu_work());
     }
 
     void create_render_pipeline(cubey::vulkan::Device& device, VkFormat color_format,
@@ -436,31 +428,22 @@ class Water2DApp {
                 cubey::host::headless_capture_frame_slot_count(config_));
             create_render_pipeline(context.device(), target.format, target.extent);
         };
-        if (config_.capture_mode == CaptureMode::Png) {
-            callbacks.before_capture = [this](cubey::host::HeadlessPngContext&) {
-                const std::uint32_t frames = water_2d_headless_frame_count(config_);
-                for (std::uint32_t frame = 1; frame <= frames; ++frame) {
-                    const cubey::render::FrameSlot frame_slot = cubey::render::frame_slot_for_index(
-                        frame - 1U, cubey::render::kSingleFrameSlotCount);
-                    const ProjectFrame project_frame = runtime_.frame_for_timing(
-                        fixed_water_2d_headless_timing(water_config_, frame));
-                    record_headless_simulation_frame(runtime_.gpu(), frame_slot, project_frame);
-                }
-            };
-        } else {
-            callbacks.before_frame = [this](cubey::host::HeadlessPngContext&,
-                                            const cubey::host::HeadlessCaptureFrame& frame) {
-                const std::uint64_t simulation_frame = static_cast<std::uint64_t>(frame.index) + 1;
-                const FrameTiming timing{
-                    .delta_seconds = frame.timing.delta_seconds,
-                    .elapsed_seconds =
-                        frame.timing.delta_seconds * static_cast<double>(simulation_frame),
-                    .frame_index = simulation_frame,
-                };
-                const ProjectFrame project_frame = runtime_.frame_for_timing(timing);
-                record_headless_simulation_frame(runtime_.gpu(), frame.frame_slot, project_frame);
-            };
-        }
+        cubey::host::install_headless_simulation_driver(
+            callbacks, config_,
+            {
+                .png_frame_count = water_2d_headless_frame_count(config_),
+                .png_timing =
+                    [this](std::uint64_t simulation_frame) {
+                        return fixed_water_2d_headless_timing(water_config_, simulation_frame);
+                    },
+                .simulate_frame =
+                    [this](cubey::host::HeadlessPngContext&,
+                           const cubey::host::HeadlessCaptureFrame& frame) {
+                        const ProjectFrame project_frame = runtime_.frame_for_timing(frame.timing);
+                        record_headless_simulation_frame(runtime_.gpu(), frame.frame_slot,
+                                                         project_frame);
+                    },
+            });
         callbacks.record_frame = [this](cubey::host::HeadlessPngContext&,
                                         const cubey::host::HeadlessCaptureFrame& frame,
                                         VkCommandBuffer command_buffer,

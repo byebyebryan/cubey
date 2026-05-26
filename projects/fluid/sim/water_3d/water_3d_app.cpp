@@ -273,8 +273,7 @@ void record_water_3d_diagnostics(cubey::profiling::ProfileRecorder& recorder,
         static_cast<double>(slot(Water3DDiagnosticSlot::TransferTruncatedParticles));
 
     record_metric(recorder, frame_index, "water_3d.workload", "active_particles", active_particles);
-    record_metric(recorder, frame_index, "water_3d.workload", "liquid_particles",
-                  liquid_particles);
+    record_metric(recorder, frame_index, "water_3d.workload", "liquid_particles", liquid_particles);
     record_metric(recorder, frame_index, "water_3d.workload", "rain_particles", rain_particles);
     record_metric(recorder, frame_index, "water_3d.workload", "inactive_scan_particles",
                   inactive_scan_particles);
@@ -349,8 +348,7 @@ void record_water_3d_diagnostics(cubey::profiling::ProfileRecorder& recorder,
     record_metric(recorder, frame_index, "water_3d.p2g", "zero_weight_w_faces",
                   p2g_zero_weight_w_faces);
     record_metric(recorder, frame_index, "water_3d.p2g", "active_tiles", p2g_active_tiles);
-    record_metric(recorder, frame_index, "water_3d.p2g", "tile_face_slots",
-                  p2g_tile_face_slots);
+    record_metric(recorder, frame_index, "water_3d.p2g", "tile_face_slots", p2g_tile_face_slots);
     record_metric(recorder, frame_index, "water_3d.p2g", "tile_inactive_face_slots",
                   p2g_tile_inactive_face_slots);
     record_metric(recorder, frame_index, "water_3d.p2g", "tile_dispatch_groups",
@@ -618,18 +616,16 @@ class Water3DApp {
 
             int pressure_iterations = static_cast<int>(water_config_.pressure_iterations);
             if (ImGui::SliderInt("Pressure iterations", &pressure_iterations, 1, 128)) {
-                water_config_.pressure_iterations =
-                    static_cast<std::uint32_t>(pressure_iterations);
+                water_config_.pressure_iterations = static_cast<std::uint32_t>(pressure_iterations);
             }
             int substeps = static_cast<int>(water_config_.substeps);
             if (ImGui::SliderInt("Substeps", &substeps, 1, 4)) {
                 water_config_.substeps = static_cast<std::uint32_t>(substeps);
             }
             ImGui::SliderFloat("PIC/FLIP blend", &water_config_.flip_ratio, 0.0F, 1.0F, "%.2f");
-            ImGui::SliderFloat("Velocity limit", &water_config_.velocity_limit, 1.0F, 8.0F,
-                               "%.2f");
-            ImGui::SliderFloat("Particle damping", &water_config_.particle_damping, 0.980F,
-                               1.000F, "%.3f");
+            ImGui::SliderFloat("Velocity limit", &water_config_.velocity_limit, 1.0F, 8.0F, "%.2f");
+            ImGui::SliderFloat("Particle damping", &water_config_.particle_damping, 0.980F, 1.000F,
+                               "%.3f");
             ImGui::SliderFloat("Particle volume strength", &water_config_.particle_volume_strength,
                                0.0F, 48.0F, "%.1f");
             int transfer_limit = static_cast<int>(water_config_.max_particles_per_cell);
@@ -658,12 +654,10 @@ class Water3DApp {
                 reset_simulation();
             }
             bool fill_center_changed = false;
-            fill_center_changed |= ImGui::SliderFloat("Fill center X",
-                                                      &water_config_.initial_fill_center[0], 0.05F,
-                                                      0.95F, "%.2f");
-            fill_center_changed |= ImGui::SliderFloat("Fill center Z",
-                                                      &water_config_.initial_fill_center[1], 0.05F,
-                                                      0.95F, "%.2f");
+            fill_center_changed |= ImGui::SliderFloat(
+                "Fill center X", &water_config_.initial_fill_center[0], 0.05F, 0.95F, "%.2f");
+            fill_center_changed |= ImGui::SliderFloat(
+                "Fill center Z", &water_config_.initial_fill_center[1], 0.05F, 0.95F, "%.2f");
             if (fill_center_changed) {
                 reset_simulation();
             }
@@ -677,8 +671,7 @@ class Water3DApp {
             ImGui::Checkbox("Enabled", &water_config_.hose.enabled);
             ImGui::SliderFloat3("Position", water_config_.hose.position.data(), 0.02F, 0.98F,
                                 "%.2f");
-            ImGui::SliderFloat("Yaw", &water_config_.hose.yaw_degrees, -180.0F, 180.0F,
-                               "%.1f deg");
+            ImGui::SliderFloat("Yaw", &water_config_.hose.yaw_degrees, -180.0F, 180.0F, "%.1f deg");
             ImGui::SliderFloat("Pitch", &water_config_.hose.pitch_degrees, -70.0F, 20.0F,
                                "%.1f deg");
             ImGui::SliderFloat("Speed", &water_config_.hose.speed, 0.2F, 6.0F, "%.2f");
@@ -692,8 +685,7 @@ class Water3DApp {
             ImGui::SeparatorText("Drain");
             ImGui::PushID("drain");
             ImGui::Checkbox("Enabled", &water_config_.drain.enabled);
-            ImGui::SliderFloat3("Center", water_config_.drain.center.data(), 0.02F, 0.98F,
-                                "%.2f");
+            ImGui::SliderFloat3("Center", water_config_.drain.center.data(), 0.02F, 0.98F, "%.2f");
             ImGui::SliderFloat3("Half size", water_config_.drain.half_size.data(), 0.005F, 0.35F,
                                 "%.3f");
             ImGui::SliderFloat("Pull speed", &water_config_.drain.pull_speed, 0.0F, 6.0F, "%.2f");
@@ -735,8 +727,7 @@ class Water3DApp {
             ImGui::SliderFloat("Surface fill px", &water_config_.surface_gap_fill_radius_px, 0.0F,
                                3.0F, "%.1f");
             ImGui::SliderFloat("Surface smooth world",
-                               &water_config_.surface_smoothing_radius_world, 0.0F, 0.04F,
-                               "%.3f");
+                               &water_config_.surface_smoothing_radius_world, 0.0F, 0.04F, "%.3f");
             int surface_smoothing_iterations =
                 static_cast<int>(water_config_.surface_smoothing_iterations);
             if (ImGui::SliderInt("Surface smooth passes", &surface_smoothing_iterations, 0, 8)) {
@@ -747,12 +738,12 @@ class Water3DApp {
                                0.120F, "%.3f");
             ImGui::SliderFloat("Thickness smoothing", &water_config_.surface_thickness_smoothing,
                                0.0F, 1.0F, "%.2f");
-            ImGui::SliderFloat("Surface absorption", &water_config_.surface_absorption, 0.0F,
-                               5.0F, "%.2f");
+            ImGui::SliderFloat("Surface absorption", &water_config_.surface_absorption, 0.0F, 5.0F,
+                               "%.2f");
             ImGui::SliderFloat("Surface refraction", &water_config_.surface_refraction_strength,
                                0.0F, 0.12F, "%.3f");
-            ImGui::SliderFloat("Environment intensity", &water_config_.environment_intensity,
-                               0.0F, 4.0F, "%.2f");
+            ImGui::SliderFloat("Environment intensity", &water_config_.environment_intensity, 0.0F,
+                               4.0F, "%.2f");
             ImGui::SliderFloat("Environment rotation", &water_config_.environment_rotation_degrees,
                                -180.0F, 180.0F, "%.0f deg");
             ImGui::SliderFloat("Exposure", &water_config_.exposure, -4.0F, 4.0F, "%.2f");
@@ -761,19 +752,17 @@ class Water3DApp {
 
         if (section("Foam and whitewater", false)) {
             ImGui::SliderFloat("Foam amount", &water_config_.foam_amount, 0.0F, 1.0F, "%.2f");
-            ImGui::SliderFloat("Foam sharpness", &water_config_.foam_sharpness, 0.2F, 4.0F,
-                               "%.2f");
+            ImGui::SliderFloat("Foam sharpness", &water_config_.foam_sharpness, 0.2F, 4.0F, "%.2f");
             ImGui::Checkbox("Whitewater", &water_config_.whitewater_enabled);
             ImGui::SliderFloat("Whitewater intensity", &water_config_.whitewater_intensity, 0.0F,
                                3.0F, "%.2f");
-            int whitewater_max_emit =
-                static_cast<int>(water_config_.whitewater_max_emit_per_frame);
+            int whitewater_max_emit = static_cast<int>(water_config_.whitewater_max_emit_per_frame);
             if (ImGui::SliderInt("Whitewater emit/frame", &whitewater_max_emit, 0, 8192)) {
                 water_config_.whitewater_max_emit_per_frame =
                     static_cast<std::uint32_t>(whitewater_max_emit);
             }
-            ImGui::SliderFloat("Whitewater speed", &water_config_.whitewater_speed_threshold,
-                               0.05F, 3.5F, "%.2f");
+            ImGui::SliderFloat("Whitewater speed", &water_config_.whitewater_speed_threshold, 0.05F,
+                               3.5F, "%.2f");
             ImGui::SliderFloat("Whitewater radius", &water_config_.whitewater_radius, 0.002F,
                                0.035F, "%.3f");
             ImGui::SliderFloat("Whitewater lifetime", &water_config_.whitewater_lifetime, 0.15F,
@@ -785,8 +774,8 @@ class Water3DApp {
         }
 
         if (section("Diagnostics", true)) {
-            ImGui::Text("Grid: %u x %u x %u", water_config_.grid_width,
-                        water_config_.grid_height, water_config_.grid_depth);
+            ImGui::Text("Grid: %u x %u x %u", water_config_.grid_width, water_config_.grid_height,
+                        water_config_.grid_depth);
             const std::uint32_t scanned_particles =
                 water_3d_runtime_particle_scan_count(water_config_, runtime_state_);
             ImGui::Text("Particles: %u reset / %u capacity", water_config_.active_particle_count,
@@ -925,23 +914,15 @@ class Water3DApp {
     }
 
     void attach_project_gpu(cubey::vulkan::GpuRuntime& gpu) {
-        if (!runtime_.has_gpu()) {
-            runtime_.attach_gpu(gpu);
-        }
+        runtime_.attach_gpu_if_needed(gpu);
     }
 
     void detach_project_gpu() {
-        if (runtime_.has_gpu()) {
-            runtime_.detach_gpu();
-        }
+        runtime_.detach_gpu_if_attached();
     }
 
     void retire_project_gpu_work() {
-        if (runtime_.has_gpu()) {
-            static_cast<void>(runtime_.gpu().retire_deferred_destruction());
-            return;
-        }
-        static_cast<void>(runtime_.retire_deferred_destruction());
+        static_cast<void>(runtime_.retire_completed_gpu_work());
     }
 
     void create_render_pipeline(cubey::vulkan::Device& device, VkFormat color_format,
@@ -1055,33 +1036,22 @@ class Water3DApp {
                 cubey::host::headless_capture_frame_slot_count(config_));
             create_render_pipeline(context.device(), target.format, target.extent);
         };
-        if (config_.capture_mode == CaptureMode::Png) {
-            callbacks.before_capture = [this](cubey::host::HeadlessPngContext& context) {
-                const std::uint32_t frames = water_3d_headless_frame_count(config_);
-                for (std::uint32_t frame = 1; frame <= frames; ++frame) {
-                    const cubey::render::FrameSlot frame_slot = cubey::render::frame_slot_for_index(
-                        frame - 1U, cubey::host::headless_capture_frame_slot_count(config_));
-                    const ProjectFrame project_frame = runtime_.frame_for_timing(
-                        fixed_water_3d_headless_timing(water_config_, frame));
-                    record_headless_simulation_frame(runtime_.gpu(), frame_slot, project_frame,
-                                                     context.profile_recorder());
-                }
-            };
-        } else {
-            callbacks.before_frame = [this](cubey::host::HeadlessPngContext& context,
-                                            const cubey::host::HeadlessCaptureFrame& frame) {
-                const std::uint64_t simulation_frame = static_cast<std::uint64_t>(frame.index) + 1;
-                const FrameTiming timing{
-                    .delta_seconds = frame.timing.delta_seconds,
-                    .elapsed_seconds =
-                        frame.timing.delta_seconds * static_cast<double>(simulation_frame),
-                    .frame_index = simulation_frame,
-                };
-                const ProjectFrame project_frame = runtime_.frame_for_timing(timing);
-                record_headless_simulation_frame(runtime_.gpu(), frame.frame_slot, project_frame,
-                                                 context.profile_recorder());
-            };
-        }
+        cubey::host::install_headless_simulation_driver(
+            callbacks, config_,
+            {
+                .png_frame_count = water_3d_headless_frame_count(config_),
+                .png_timing =
+                    [this](std::uint64_t simulation_frame) {
+                        return fixed_water_3d_headless_timing(water_config_, simulation_frame);
+                    },
+                .simulate_frame =
+                    [this](cubey::host::HeadlessPngContext& context,
+                           const cubey::host::HeadlessCaptureFrame& frame) {
+                        const ProjectFrame project_frame = runtime_.frame_for_timing(frame.timing);
+                        record_headless_simulation_frame(runtime_.gpu(), frame.frame_slot,
+                                                         project_frame, context.profile_recorder());
+                    },
+            });
         callbacks.record_frame = [this](cubey::host::HeadlessPngContext& context,
                                         const cubey::host::HeadlessCaptureFrame& frame,
                                         VkCommandBuffer command_buffer,

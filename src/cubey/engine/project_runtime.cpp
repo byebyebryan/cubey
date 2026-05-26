@@ -84,14 +84,33 @@ std::size_t ProjectRuntimeAdapter::retire_deferred_destruction() {
         active_context.submission_tickets().current());
 }
 
+std::size_t ProjectRuntimeAdapter::retire_completed_gpu_work() {
+    if (has_gpu()) {
+        return gpu().retire_deferred_destruction();
+    }
+    return retire_deferred_destruction();
+}
+
 void ProjectRuntimeAdapter::attach_gpu(vulkan::GpuRuntime& gpu) {
     ProjectContext active_context = services_.context();
     gpu_services_ = std::make_unique<ProjectGpuServices>(gpu, active_context.upload_queue(),
                                                          active_context.deferred_destruction());
 }
 
+void ProjectRuntimeAdapter::attach_gpu_if_needed(vulkan::GpuRuntime& gpu) {
+    if (!has_gpu()) {
+        attach_gpu(gpu);
+    }
+}
+
 void ProjectRuntimeAdapter::detach_gpu() {
     gpu_services_.reset();
+}
+
+void ProjectRuntimeAdapter::detach_gpu_if_attached() {
+    if (has_gpu()) {
+        detach_gpu();
+    }
 }
 
 bool ProjectRuntimeAdapter::has_gpu() const noexcept {

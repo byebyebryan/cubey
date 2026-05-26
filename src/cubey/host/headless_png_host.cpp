@@ -137,22 +137,21 @@ class VideoEncodeWorker {
 struct HeadlessCaptureSlot {
     HeadlessCaptureSlot(cubey::vulkan::Device& device, VkExtent2D extent, VkFormat format)
         : image(device, cubey::vulkan::color_render_target_image_config(extent, format)),
-          readback(device, cubey::vulkan::readback_buffer_config(
-                               static_cast<VkDeviceSize>(video_frame_byte_size(extent.width,
-                                                                                extent.height)))),
-          command_pool(device, cubey::vulkan::CommandPoolConfig{
-                                   .flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
-                               }),
-          command_buffer(command_pool.allocate_primary()),
-          device_handle(device.handle()),
+          readback(device, cubey::vulkan::readback_buffer_config(static_cast<VkDeviceSize>(
+                               video_frame_byte_size(extent.width, extent.height)))),
+          command_pool(device,
+                       cubey::vulkan::CommandPoolConfig{
+                           .flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
+                       }),
+          command_buffer(command_pool.allocate_primary()), device_handle(device.handle()),
           target{
               .extent = extent,
               .format = image.format(),
               .image = image.handle(),
               .view = image.view(),
           } {
-        auto fence_info = cubey::vulkan::vk_struct<VkFenceCreateInfo>(
-            VK_STRUCTURE_TYPE_FENCE_CREATE_INFO);
+        auto fence_info =
+            cubey::vulkan::vk_struct<VkFenceCreateInfo>(VK_STRUCTURE_TYPE_FENCE_CREATE_INFO);
         cubey::vulkan::check(vkCreateFence(device_handle, &fence_info, nullptr, &fence),
                              "vkCreateFence headless video capture");
     }
@@ -248,6 +247,86 @@ HeadlessCaptureFrame headless_capture_frame(const RunConfig& config, std::uint32
         };
     }
     return frame;
+}
+
+FrameTiming headless_video_simulation_timing(const HeadlessCaptureFrame& frame) {
+    if (frame.timing.delta_seconds <= 0.0) {
+        throw std::runtime_error("headless video simulation timing requires positive delta time");
+    }
+    const std::uint64_t simulation_frame = static_cast<std::uint64_t>(frame.index) + 1U;
+    return {
+        .delta_seconds = frame.timing.delta_seconds,
+        .elapsed_seconds = frame.timing.delta_seconds * static_cast<double>(simulation_frame),
+        .frame_index = simulation_frame,
+    };
+}
+
+HeadlessCaptureFrame headless_simulation_frame(const RunConfig& config, std::uint32_t frame_index,
+                                               std::uint32_t frame_count, FrameTiming timing) {
+    if (frame_count == 0) {
+        throw std::runtime_error("headless simulation requires at least one frame");
+    }
+    if (frame_index >= frame_count) {
+        throw std::runtime_error("headless simulation frame index is out of range");
+    }
+    return {
+        .index = frame_index,
+        .count = frame_count,
+        .frame_slot = cubey::render::frame_slot_for_index(
+            frame_index, headless_capture_frame_slot_count(config)),
+        .timing = timing,
+    };
+}
+
+void install_headless_simulation_driver(HeadlessPngHostCallbacks& callbacks, RunConfig config,
+                                        HeadlessSimulationDriver driver) {
+    if (!driver.png_timing) {
+        throw std::runtime_error("headless simulation driver requires PNG timing callback");
+    }
+    if (!driver.simulate_frame) {
+        throw std::runtime_error("headless simulation driver requires simulate_frame callback");
+    }
+    if (driver.png_frame_count == 0) {
+        throw std::runtime_error("headless simulation driver requires at least one PNG frame");
+    }
+
+    auto shared_driver = std::make_shared<HeadlessSimulationDriver>(std::move(driver));
+    std::function<void(HeadlessPngContext&)> previous_before_capture =
+        std::move(callbacks.before_capture);
+    callbacks.before_capture = [config = std::move(config), shared_driver,
+                                previous_before_capture = std::move(previous_before_capture)](
+                                   HeadlessPngContext& context) mutable {
+        if (previous_before_capture) {
+            previous_before_capture(context);
+        }
+        if (config.capture_mode != CaptureMode::Png) {
+            return;
+        }
+        for (std::uint32_t frame_index = 0; frame_index < shared_driver->png_frame_count;
+             ++frame_index) {
+            const std::uint64_t simulation_frame = static_cast<std::uint64_t>(frame_index) + 1U;
+            const HeadlessCaptureFrame frame =
+                headless_simulation_frame(config, frame_index, shared_driver->png_frame_count,
+                                          shared_driver->png_timing(simulation_frame));
+            shared_driver->simulate_frame(context, frame);
+        }
+    };
+
+    std::function<void(HeadlessPngContext&, const HeadlessCaptureFrame&)> previous_before_frame =
+        std::move(callbacks.before_frame);
+    callbacks.before_frame =
+        [shared_driver, previous_before_frame = std::move(previous_before_frame)](
+            HeadlessPngContext& context, const HeadlessCaptureFrame& frame) mutable {
+            if (previous_before_frame) {
+                previous_before_frame(context, frame);
+            }
+            if (context.config().capture_mode != CaptureMode::Video) {
+                return;
+            }
+            HeadlessCaptureFrame simulation_frame = frame;
+            simulation_frame.timing = headless_video_simulation_timing(frame);
+            shared_driver->simulate_frame(context, simulation_frame);
+        };
 }
 
 HeadlessPngHost::HeadlessPngHost(HeadlessPngHostConfig config, HeadlessPngHostCallbacks callbacks)
@@ -410,7 +489,8 @@ void HeadlessPngHost::record_profile_frame(const HeadlessCaptureFrame& frame,
     });
 }
 
-void HeadlessPngHost::record_capture(HeadlessPngContext& context, const HeadlessRenderTarget& target,
+void HeadlessPngHost::record_capture(HeadlessPngContext& context,
+                                     const HeadlessRenderTarget& target,
                                      const HeadlessCaptureFrame& frame) {
     [[maybe_unused]] auto span = profile_span(frame.index, "headless.record_capture");
     static_cast<void>(gpu().enqueue(cubey::vulkan::GpuWorkRequest{
@@ -457,7 +537,8 @@ void HeadlessPngHost::write_png(const HeadlessRenderTarget& target) {
 
 void HeadlessPngHost::write_video(HeadlessPngContext& context, const HeadlessRenderTarget& target) {
     if (!video_encoding_available()) {
-        throw std::runtime_error("video capture requested, but no libav H.264 backend is available");
+        throw std::runtime_error(
+            "video capture requested, but no libav H.264 backend is available");
     }
     (void)context;
 
@@ -504,8 +585,7 @@ void HeadlessPngHost::write_video(HeadlessPngContext& context, const HeadlessRen
         static_cast<void>(gpu().enqueue(cubey::vulkan::GpuWorkRequest{
             .label = "headless video capture",
             .work =
-                [this, &frame_context, &slot, frame](
-                    cubey::vulkan::GpuOwnerContext& gpu_context) {
+                [this, &frame_context, &slot, frame](cubey::vulkan::GpuOwnerContext& gpu_context) {
                     cubey::vulkan::check(
                         vkResetFences(gpu_context.device().handle(), 1, &slot.fence),
                         "vkResetFences headless video capture");
@@ -520,8 +600,7 @@ void HeadlessPngHost::write_video(HeadlessPngContext& context, const HeadlessRen
                         callbacks_.record_frame(frame_context, frame, slot.command_buffer,
                                                 slot.target);
                     } else {
-                        callbacks_.record_capture(frame_context, slot.command_buffer,
-                                                  slot.target);
+                        callbacks_.record_capture(frame_context, slot.command_buffer, slot.target);
                     }
                     cubey::vulkan::transition_image_layout(
                         slot.command_buffer,

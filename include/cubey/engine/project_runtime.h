@@ -101,8 +101,11 @@ class ProjectRuntimeAdapter {
     [[nodiscard]] ProjectContext context();
     [[nodiscard]] const ProjectFrame& frame_for_timing(const FrameTiming& timing);
     [[nodiscard]] std::size_t retire_deferred_destruction();
+    [[nodiscard]] std::size_t retire_completed_gpu_work();
     void attach_gpu(vulkan::GpuRuntime& gpu);
+    void attach_gpu_if_needed(vulkan::GpuRuntime& gpu);
     void detach_gpu();
+    void detach_gpu_if_attached();
     [[nodiscard]] bool has_gpu() const noexcept;
     [[nodiscard]] ProjectGpuServices& gpu() const;
 

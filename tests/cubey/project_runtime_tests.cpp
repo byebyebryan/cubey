@@ -212,6 +212,18 @@ void test_project_runtime_adapter_exposes_context_and_retirement() {
         adapter.retire_deferred_destruction() == 1,
         "runtime adapter should retire deferred actions through the current GPU submission ticket");
     require(retired, "runtime adapter should run retired deferred actions");
+
+    const cubey::ProjectFrame& next_frame = adapter.frame_for_timing({
+        .delta_seconds = 0.033,
+        .elapsed_seconds = 2.033,
+        .frame_index = 4,
+    });
+    bool helper_retired = false;
+    context.deferred_destruction().defer_after(next_frame.submission_ticket,
+                                               [&helper_retired] { helper_retired = true; });
+    require(adapter.retire_completed_gpu_work() == 1,
+            "runtime adapter should expose a common deferred-work retirement helper");
+    require(helper_retired, "runtime adapter helper should retire non-GPU deferred work");
 }
 
 void test_project_runtime_adapter_attaches_gpu_services_to_context() {
@@ -228,18 +240,24 @@ void test_project_runtime_adapter_attaches_gpu_services_to_context() {
         .submission = &submission,
         .execution_mode = cubey::vulkan::GpuRuntimeExecutionMode::Inline,
     });
-    adapter.attach_gpu(runtime);
+    adapter.attach_gpu_if_needed(runtime);
 
     cubey::ProjectContext attached_context = adapter.context();
     require(adapter.has_gpu(), "runtime adapter should report attached GPU services");
     require(attached_context.has_gpu(), "attached runtime context should expose GPU services");
     require(&attached_context.gpu() == &adapter.gpu(),
             "attached runtime context should reference adapter GPU services");
+    cubey::ProjectGpuServices* first_gpu_services = &adapter.gpu();
+    adapter.attach_gpu_if_needed(runtime);
+    require(&adapter.gpu() == first_gpu_services,
+            "attach-if-needed should preserve existing GPU services");
 
-    adapter.detach_gpu();
+    adapter.detach_gpu_if_attached();
     cubey::ProjectContext detached_again = adapter.context();
     require(!adapter.has_gpu(), "runtime adapter should report detached GPU services");
     require(!detached_again.has_gpu(), "runtime context should lose GPU services after detach");
     require_throws([&detached_again] { static_cast<void>(detached_again.gpu()); },
                    "detached-again runtime context should reject GPU access");
+    adapter.detach_gpu_if_attached();
+    require(!adapter.has_gpu(), "detach-if-attached should tolerate repeated detach calls");
 }
