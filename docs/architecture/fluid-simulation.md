@@ -185,14 +185,15 @@ projects/fluid/water_3d
 Continue in 2D with particles plus a MAC-style grid, APIC transfer by default,
 PIC/FLIP blend control for comparison, simple collision boundaries,
 runtime-editable fill volume, reset presets, and particle-splat surface
-rendering. The current `water_2d` path also includes a bounded hose-particle
-ring over inactive particle slots, capped fixed-capacity particle bins, and a
-bottom drain so continuous material flow can be tested without particle
-compaction or readback. `water_3d` extends the same family into a bounded 3D
-tank, keeps canonical particle payloads stable, builds compact sorted index
-ranges for P2G, and uses screen-space reconstruction instead of mesh extraction.
-Defer 3D meshing, VDB-style surfacing, sparse/adaptive particle storage, and
-complex collision coupling until the transfer/render contracts stay stable.
+rendering. The current `water_2d` path also includes transfer-confidence fallback
+for sparse droplets, a bounded hose-particle ring over inactive particle slots,
+capped fixed-capacity particle bins, optional drain pull/removal, optional wave
+forcing, lightweight headless diagnostics, and shaped foam shading without
+whitewater particles. `water_3d` extends the same family into a bounded 3D tank,
+keeps canonical particle payloads stable, builds compact sorted index ranges for
+P2G, and uses screen-space reconstruction instead of mesh extraction. Defer 3D
+meshing, VDB-style surfacing, sparse/adaptive particle storage, and complex
+collision coupling until the transfer/render contracts stay stable.
 
 ### SPH / PBF / DFSPH
 

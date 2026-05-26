@@ -17,6 +17,7 @@ struct RenderPushConstants {
     std::array<float, 4> grid_debug{};
     std::array<float, 4> particle_options{};
     std::array<float, 4> surface_options{};
+    std::array<float, 4> foam_options{};
 };
 
 static_assert(sizeof(RenderPushConstants) == sizeof(float) * kWater2DRenderPushConstantFloatCount);
@@ -503,6 +504,13 @@ void record_water_2d_draw(VkCommandBuffer command_buffer, const Water2DGpuResour
                 config.surface_threshold,
                 config.edge_strength,
                 config.foam_strength,
+                0.0F,
+            },
+        .foam_options =
+            {
+                config.foam_sharpness,
+                config.foam_breakup,
+                0.0F,
                 0.0F,
             },
     };

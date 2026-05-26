@@ -63,6 +63,7 @@
         vec4 grid_debug;                                                                        \
         vec4 particle_options;                                                                  \
         vec4 surface_options;                                                                   \
+        vec4 foam_options;                                                                      \
     } params
 
 #endif

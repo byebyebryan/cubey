@@ -20,7 +20,7 @@ presets available from the runtime UI:
 ./build/dev/projects/fluid/water_2d/water_2d --frames 300 --width 1280 --height 720
 ./build/dev/projects/fluid/water_2d/water_2d --headless --frames 120 --width 640 --height 360 --output /tmp/cubey-water-2d.png
 ./build/dev/projects/fluid/water_2d/water_2d --headless --debug-view particles --frames 120 --width 640 --height 360 --output /tmp/cubey-water-2d-particles.png
-./build/dev/projects/fluid/water_2d/water_2d --water2d-transfer pic-flip --water2d-transfer-limit 48 --water2d-hose --water2d-drain
+./build/dev/projects/fluid/water_2d/water_2d --water2d-transfer pic-flip --water2d-transfer-limit 48 --water2d-hose --water2d-drain --water2d-wave
 ```
 
 Controls:
@@ -28,10 +28,10 @@ Controls:
 - Space pauses/resumes.
 - `R` resets the tank.
 - `D` cycles debug views.
-- The UI edits reset preset, transfer mode, fill volume, hose emission, bottom
-  drain, obstacle shape, solver substeps, pressure iterations, PIC/FLIP blend,
-  particle separation, particle volume expansion, collision tuning, surface/foam
-  shading, and live frame/memory diagnostics.
+- The UI groups reset preset, transfer mode, fill volume, hose emission, drain
+  pull/removal, optional wave forcing, obstacle shape, solver controls,
+  particle separation, volume expansion, collision tuning, surface/foam shading,
+  GPU timings, and live frame/memory diagnostics.
 
 Debug views:
 
@@ -53,9 +53,11 @@ occupied-cell divergence, adds a bounded positive volume source for overpacked
 particle cells, solves pressure with Jacobi, projects face velocity, then
 transfers velocity back to particles. APIC mode stores a local affine velocity
 field per particle and uses it during the next particle-to-grid transfer, which
-preserves rotational/local motion better than raw PIC/FLIP. The fallback mode
-keeps the old current-vs-previous grid delta path with a configurable PIC/FLIP
-blend. After transfer, the solver adds a bounded neighbor-bin particle
+preserves rotational/local motion better than raw PIC/FLIP. Grid-to-particle
+transfer samples face-weight confidence and falls back toward ballistic motion
+for weakly supported droplets instead of letting sparse particles stick to empty
+grid samples. The fallback mode keeps the old current-vs-previous grid delta
+path with a configurable PIC/FLIP blend. After transfer, the solver adds a bounded neighbor-bin particle
 separation velocity only for overpacked cells to keep material volume from
 collapsing without disturbing settled regions, then advects and collides the
 particles. Particles that enter the optional bottom drain are marked inactive;
@@ -77,10 +79,15 @@ Main buffers:
 - `u_previous` and `v_previous`: pre-force/projection velocity for FLIP deltas.
 - `pressure` and `divergence`: cell-centered scalar fields.
 - `solid`: cell-centered obstacle/wall mask.
+- `diagnostics`: fixed-slot GPU counter buffer used by headless profiling for
+  active particles, inactive scan particles, occupied cells, overpacked cells,
+  truncation pressure, and max cell occupancy.
 
 The renderer reconstructs a lightweight surface from the particle bins. It uses
 particle density, a density-gradient fake normal, speed, and free-surface
 highlighting for a readable real-time liquid view without adding a meshing pass.
+Foam is still a 2D shading heuristic, now with strength, sharpness, and
+procedural breakup controls rather than a separate whitewater particle system.
 
 This is still a foundation slice. It intentionally skips viscosity, surface
 tension, meshing, and sparse/adaptive particle storage until the basic
@@ -95,7 +102,9 @@ particle kernels scan only the reset range plus hose slots that have actually
 been touched; after the hose ring wraps, the scan range expands to the full
 allocated particle buffer. The UI reports this compute-particle scan count,
 average FPS/frame time, Water2D buffer allocation size, and device-local memory
-usage when the Vulkan driver exposes `VK_EXT_memory_budget`.
+usage when the Vulkan driver exposes `VK_EXT_memory_budget`. Headless
+`--profile-output --profile-diagnostics` additionally writes lightweight
+workload counters; diagnostics readback is intentionally headless-only.
 
 Current correctness boundaries: particles are not compacted after drain, cells
 only store a fixed number of particle indices, and the pressure solver remains

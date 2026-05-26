@@ -57,7 +57,7 @@ enum class Water2DDiagnosticSlot : std::uint32_t {
 inline constexpr std::uint32_t kWater2DComputeGroupSize = 8;
 inline constexpr std::uint32_t kWater2DSimulationPushConstantFloatCount = 8;
 inline constexpr std::uint32_t kWater2DSimulationUniformFloatCount = 56;
-inline constexpr std::uint32_t kWater2DRenderPushConstantFloatCount = 12;
+inline constexpr std::uint32_t kWater2DRenderPushConstantFloatCount = 16;
 inline constexpr std::uint32_t kWater2DDefaultGridWidth = 256;
 inline constexpr std::uint32_t kWater2DDefaultGridHeight = 144;
 inline constexpr std::uint32_t kWater2DWallCells = 2;
@@ -126,6 +126,8 @@ struct Water2DConfig {
     float surface_threshold = 0.82F;
     float edge_strength = 0.52F;
     float foam_strength = 0.32F;
+    float foam_sharpness = 1.35F;
+    float foam_breakup = 0.45F;
     bool profile_diagnostics = false;
     std::uint32_t profile_diagnostic_interval = 1;
     Water2DObstacleShape obstacle_shape = Water2DObstacleShape::None;

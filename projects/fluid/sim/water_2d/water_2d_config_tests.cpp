@@ -103,6 +103,8 @@ int main() {
                 "water should default to the current surface threshold");
         require(config.edge_strength == 0.52F, "water should default to readable surface edges");
         require(config.foam_strength == 0.32F, "water should default to subtle foam");
+        require(config.foam_sharpness == 1.35F && config.foam_breakup == 0.45F,
+                "water should default to shaped foam breakup");
         require(config.obstacle_shape ==
                     cubey::projects::fluid::water_2d::Water2DObstacleShape::None,
                 "water should default to no obstacle");
@@ -622,6 +624,10 @@ int main() {
                          "water render shader should draw from particle bins");
         require_contains(render_shader, "params.surface_options",
                          "water render shader should use configurable surface shading");
+        require_contains(render_shader, "params.foam_options",
+                         "water render shader should use configurable foam shaping");
+        require_contains(render_shader, "value_noise",
+                         "water render shader should break up foam with procedural noise");
         require_contains(render_shader, "debug_mode == 7",
                          "water render shader should expose a foam debug view");
         require_contains(render_shader, "vec2 uv = vec2(screen_uv.x, 1.0 - screen_uv.y)",

@@ -199,6 +199,23 @@ vec3 signed_scalar_color(float value, float scale) {
            vec3(0.10, 0.42, 0.92) * negative;
 }
 
+float hash21(vec2 value) {
+    vec3 p3 = fract(vec3(value.xyx) * 0.1031);
+    p3 += dot(p3, p3.yzx + 33.33);
+    return fract((p3.x + p3.y) * p3.z);
+}
+
+float value_noise(vec2 uv) {
+    vec2 base = floor(uv);
+    vec2 f = fract(uv);
+    vec2 shaped = f * f * (3.0 - 2.0 * f);
+    float a = hash21(base);
+    float b = hash21(base + vec2(1.0, 0.0));
+    float c = hash21(base + vec2(0.0, 1.0));
+    float d = hash21(base + vec2(1.0, 1.0));
+    return mix(mix(a, b, shaped.x), mix(c, d, shaped.x), shaped.y);
+}
+
 void main() {
     vec2 screen_uv = frag_position * 0.5 + 0.5;
     vec2 uv = vec2(screen_uv.x, 1.0 - screen_uv.y);
@@ -271,7 +288,13 @@ void main() {
     float water = smoothstep(threshold * 0.06, threshold, density);
     float surface = smoothstep(threshold * 0.16, threshold * 0.68, density) *
                     (1.0 - smoothstep(threshold * 0.76, threshold * 1.70, density));
-    float foam = surface * smoothstep(0.20, 0.95, speed + gradient_strength * 0.50) *
+    float foam_signal = surface * smoothstep(0.20, 0.95, speed + gradient_strength * 0.50);
+    float foam_noise = value_noise(uv * vec2(width, height) * 0.28);
+    float foam_breakup = clamp(params.foam_options.y, 0.0, 1.0);
+    float breakup_mask = mix(1.0, smoothstep(0.18, 0.82, foam_noise + speed * 0.20),
+                             foam_breakup);
+    float foam_sharpness = max(0.10, params.foam_options.x);
+    float foam = pow(clamp(foam_signal * breakup_mask, 0.0, 1.0), foam_sharpness) *
                  params.surface_options.z;
 
     if (debug_mode == 7) {
