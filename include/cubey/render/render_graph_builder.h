@@ -16,19 +16,27 @@ class RenderGraphBuilder;
 
 class RenderGraphPassBuilder {
   public:
-    RenderGraphPassBuilder& read_texture(RenderGraphTextureHandle handle);
-    RenderGraphPassBuilder& read_storage_texture(RenderGraphTextureHandle handle);
-    RenderGraphPassBuilder& write_storage_texture(RenderGraphTextureHandle handle);
-    RenderGraphPassBuilder& read_write_storage_texture(RenderGraphTextureHandle handle);
+    RenderGraphPassBuilder& read_texture(RenderGraphTextureHandle handle,
+                                         VkPipelineStageFlags stage_mask = 0);
+    RenderGraphPassBuilder& read_storage_texture(RenderGraphTextureHandle handle,
+                                                 VkPipelineStageFlags stage_mask = 0);
+    RenderGraphPassBuilder& write_storage_texture(RenderGraphTextureHandle handle,
+                                                  VkPipelineStageFlags stage_mask = 0);
+    RenderGraphPassBuilder& read_write_storage_texture(RenderGraphTextureHandle handle,
+                                                       VkPipelineStageFlags stage_mask = 0);
     RenderGraphPassBuilder& write_color(RenderGraphTextureHandle handle);
     RenderGraphPassBuilder& write_depth(RenderGraphTextureHandle handle);
     RenderGraphPassBuilder& transfer_read_texture(RenderGraphTextureHandle handle);
     RenderGraphPassBuilder& transfer_write_texture(RenderGraphTextureHandle handle);
 
-    RenderGraphPassBuilder& read_uniform_buffer(RenderGraphBufferHandle handle);
-    RenderGraphPassBuilder& read_storage_buffer(RenderGraphBufferHandle handle);
-    RenderGraphPassBuilder& write_storage_buffer(RenderGraphBufferHandle handle);
-    RenderGraphPassBuilder& read_write_storage_buffer(RenderGraphBufferHandle handle);
+    RenderGraphPassBuilder& read_uniform_buffer(RenderGraphBufferHandle handle,
+                                                VkPipelineStageFlags stage_mask = 0);
+    RenderGraphPassBuilder& read_storage_buffer(RenderGraphBufferHandle handle,
+                                                VkPipelineStageFlags stage_mask = 0);
+    RenderGraphPassBuilder& write_storage_buffer(RenderGraphBufferHandle handle,
+                                                 VkPipelineStageFlags stage_mask = 0);
+    RenderGraphPassBuilder& read_write_storage_buffer(RenderGraphBufferHandle handle,
+                                                      VkPipelineStageFlags stage_mask = 0);
     RenderGraphPassBuilder& read_vertex_buffer(RenderGraphBufferHandle handle);
     RenderGraphPassBuilder& read_index_buffer(RenderGraphBufferHandle handle);
     RenderGraphPassBuilder& transfer_read_buffer(RenderGraphBufferHandle handle);
@@ -74,9 +82,9 @@ class RenderGraphBuilder {
     friend class RenderGraphPassBuilder;
 
     void add_texture_access(std::uint32_t pass_index, RenderGraphTextureHandle handle,
-                            RenderGraphTextureUsage usage);
+                            RenderGraphTextureUsage usage, VkPipelineStageFlags stage_mask = 0);
     void add_buffer_access(std::uint32_t pass_index, RenderGraphBufferHandle handle,
-                           RenderGraphBufferUsage usage);
+                           RenderGraphBufferUsage usage, VkPipelineStageFlags stage_mask = 0);
     void set_material_pass(std::uint32_t pass_index, MaterialPassInfo info);
     void set_execute_callback(std::uint32_t pass_index, RenderGraphExecuteCallback callback);
 

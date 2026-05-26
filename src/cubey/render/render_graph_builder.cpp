@@ -59,7 +59,8 @@ void validate_next_resource_index(std::size_t resource_count, const char* messag
 
 void validate_texture_usage_for_pass(const RenderGraphCompiledPass& pass,
                                      const RenderGraphTextureResource& resource,
-                                     RenderGraphTextureUsage usage) {
+                                     RenderGraphTextureUsage usage,
+                                     VkPipelineStageFlags stage_mask) {
     if (pass.queue_domain == RenderGraphQueueDomain::Transfer &&
         !is_transfer_texture_usage(usage)) {
         throw std::runtime_error("render graph transfer pass can only use transfer texture usages");
@@ -80,10 +81,18 @@ void validate_texture_usage_for_pass(const RenderGraphCompiledPass& pass,
         !is_color_aspect(resource.desc.aspects)) {
         throw std::runtime_error("render graph color/storage usage requires a color texture");
     }
+    if (stage_mask != 0 &&
+        usage != RenderGraphTextureUsage::SampledRead &&
+        usage != RenderGraphTextureUsage::StorageRead &&
+        usage != RenderGraphTextureUsage::StorageWrite &&
+        usage != RenderGraphTextureUsage::StorageReadWrite) {
+        throw std::runtime_error("render graph explicit texture stage mask requires shader usage");
+    }
 }
 
 void validate_buffer_usage_for_pass(const RenderGraphCompiledPass& pass,
-                                    RenderGraphBufferUsage usage) {
+                                    RenderGraphBufferUsage usage,
+                                    VkPipelineStageFlags stage_mask) {
     if (pass.queue_domain == RenderGraphQueueDomain::Transfer && !is_transfer_buffer_usage(usage)) {
         throw std::runtime_error("render graph transfer pass can only use transfer buffer usages");
     }
@@ -92,6 +101,13 @@ void validate_buffer_usage_for_pass(const RenderGraphCompiledPass& pass,
         pass.queue_domain != RenderGraphQueueDomain::Graphics) {
         throw std::runtime_error("render graph vertex/index buffer usage requires a graphics pass");
     }
+    if (stage_mask != 0 &&
+        usage != RenderGraphBufferUsage::UniformRead &&
+        usage != RenderGraphBufferUsage::StorageRead &&
+        usage != RenderGraphBufferUsage::StorageWrite &&
+        usage != RenderGraphBufferUsage::StorageReadWrite) {
+        throw std::runtime_error("render graph explicit buffer stage mask requires shader usage");
+    }
 }
 
 } // namespace
@@ -99,26 +115,34 @@ void validate_buffer_usage_for_pass(const RenderGraphCompiledPass& pass,
 RenderGraphPassBuilder::RenderGraphPassBuilder(RenderGraphBuilder& graph, std::uint32_t pass_index)
     : graph_(&graph), pass_index_(pass_index) {}
 
-RenderGraphPassBuilder& RenderGraphPassBuilder::read_texture(RenderGraphTextureHandle handle) {
-    graph_->add_texture_access(pass_index_, handle, RenderGraphTextureUsage::SampledRead);
+RenderGraphPassBuilder& RenderGraphPassBuilder::read_texture(RenderGraphTextureHandle handle,
+                                                             VkPipelineStageFlags stage_mask) {
+    graph_->add_texture_access(pass_index_, handle, RenderGraphTextureUsage::SampledRead,
+                               stage_mask);
     return *this;
 }
 
 RenderGraphPassBuilder&
-RenderGraphPassBuilder::read_storage_texture(RenderGraphTextureHandle handle) {
-    graph_->add_texture_access(pass_index_, handle, RenderGraphTextureUsage::StorageRead);
+RenderGraphPassBuilder::read_storage_texture(RenderGraphTextureHandle handle,
+                                             VkPipelineStageFlags stage_mask) {
+    graph_->add_texture_access(pass_index_, handle, RenderGraphTextureUsage::StorageRead,
+                               stage_mask);
     return *this;
 }
 
 RenderGraphPassBuilder&
-RenderGraphPassBuilder::write_storage_texture(RenderGraphTextureHandle handle) {
-    graph_->add_texture_access(pass_index_, handle, RenderGraphTextureUsage::StorageWrite);
+RenderGraphPassBuilder::write_storage_texture(RenderGraphTextureHandle handle,
+                                              VkPipelineStageFlags stage_mask) {
+    graph_->add_texture_access(pass_index_, handle, RenderGraphTextureUsage::StorageWrite,
+                               stage_mask);
     return *this;
 }
 
 RenderGraphPassBuilder&
-RenderGraphPassBuilder::read_write_storage_texture(RenderGraphTextureHandle handle) {
-    graph_->add_texture_access(pass_index_, handle, RenderGraphTextureUsage::StorageReadWrite);
+RenderGraphPassBuilder::read_write_storage_texture(RenderGraphTextureHandle handle,
+                                                   VkPipelineStageFlags stage_mask) {
+    graph_->add_texture_access(pass_index_, handle, RenderGraphTextureUsage::StorageReadWrite,
+                               stage_mask);
     return *this;
 }
 
@@ -145,26 +169,34 @@ RenderGraphPassBuilder::transfer_write_texture(RenderGraphTextureHandle handle) 
 }
 
 RenderGraphPassBuilder&
-RenderGraphPassBuilder::read_uniform_buffer(RenderGraphBufferHandle handle) {
-    graph_->add_buffer_access(pass_index_, handle, RenderGraphBufferUsage::UniformRead);
+RenderGraphPassBuilder::read_uniform_buffer(RenderGraphBufferHandle handle,
+                                            VkPipelineStageFlags stage_mask) {
+    graph_->add_buffer_access(pass_index_, handle, RenderGraphBufferUsage::UniformRead,
+                              stage_mask);
     return *this;
 }
 
 RenderGraphPassBuilder&
-RenderGraphPassBuilder::read_storage_buffer(RenderGraphBufferHandle handle) {
-    graph_->add_buffer_access(pass_index_, handle, RenderGraphBufferUsage::StorageRead);
+RenderGraphPassBuilder::read_storage_buffer(RenderGraphBufferHandle handle,
+                                            VkPipelineStageFlags stage_mask) {
+    graph_->add_buffer_access(pass_index_, handle, RenderGraphBufferUsage::StorageRead,
+                              stage_mask);
     return *this;
 }
 
 RenderGraphPassBuilder&
-RenderGraphPassBuilder::write_storage_buffer(RenderGraphBufferHandle handle) {
-    graph_->add_buffer_access(pass_index_, handle, RenderGraphBufferUsage::StorageWrite);
+RenderGraphPassBuilder::write_storage_buffer(RenderGraphBufferHandle handle,
+                                             VkPipelineStageFlags stage_mask) {
+    graph_->add_buffer_access(pass_index_, handle, RenderGraphBufferUsage::StorageWrite,
+                              stage_mask);
     return *this;
 }
 
 RenderGraphPassBuilder&
-RenderGraphPassBuilder::read_write_storage_buffer(RenderGraphBufferHandle handle) {
-    graph_->add_buffer_access(pass_index_, handle, RenderGraphBufferUsage::StorageReadWrite);
+RenderGraphPassBuilder::read_write_storage_buffer(RenderGraphBufferHandle handle,
+                                                  VkPipelineStageFlags stage_mask) {
+    graph_->add_buffer_access(pass_index_, handle, RenderGraphBufferUsage::StorageReadWrite,
+                              stage_mask);
     return *this;
 }
 
@@ -320,31 +352,35 @@ RenderGraphPassBuilder RenderGraphBuilder::add_pass(std::string label,
 
 void RenderGraphBuilder::add_texture_access(std::uint32_t pass_index,
                                             RenderGraphTextureHandle handle,
-                                            RenderGraphTextureUsage usage) {
+                                            RenderGraphTextureUsage usage,
+                                            VkPipelineStageFlags stage_mask) {
     if (pass_index >= passes_.size()) {
         throw std::runtime_error("render graph pass handle is invalid");
     }
     const RenderGraphTextureResource& resource = texture_resource(handle);
     RenderGraphCompiledPass& pass = passes_[pass_index];
-    validate_texture_usage_for_pass(pass, resource, usage);
+    validate_texture_usage_for_pass(pass, resource, usage, stage_mask);
     pass.texture_accesses.push_back(RenderGraphTextureAccess{
         .handle = handle,
         .usage = usage,
+        .stage_mask = stage_mask,
     });
 }
 
 void RenderGraphBuilder::add_buffer_access(std::uint32_t pass_index, RenderGraphBufferHandle handle,
-                                           RenderGraphBufferUsage usage) {
+                                           RenderGraphBufferUsage usage,
+                                           VkPipelineStageFlags stage_mask) {
     if (pass_index >= passes_.size()) {
         throw std::runtime_error("render graph pass handle is invalid");
     }
     const RenderGraphBufferResource& resource = buffer_resource(handle);
     static_cast<void>(resource);
     RenderGraphCompiledPass& pass = passes_[pass_index];
-    validate_buffer_usage_for_pass(pass, usage);
+    validate_buffer_usage_for_pass(pass, usage, stage_mask);
     pass.buffer_accesses.push_back(RenderGraphBufferAccess{
         .handle = handle,
         .usage = usage,
+        .stage_mask = stage_mask,
     });
 }
 

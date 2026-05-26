@@ -50,6 +50,7 @@ void test_render_graph_declares_shadow_map_then_scene_sample_flow();
 void test_render_graph_derives_compute_to_graphics_storage_buffer_barrier();
 void test_render_graph_derives_compute_to_vertex_buffer_barrier();
 void test_render_graph_derives_depth_to_sampled_texture_barrier();
+void test_render_graph_honors_explicit_graphics_shader_stage_masks();
 void test_render_graph_derives_imported_buffer_acquire_and_release_barriers();
 void test_render_graph_derives_imported_texture_acquire_and_release_barriers();
 void test_render_graph_derives_transient_texture_first_use_barrier();
@@ -61,6 +62,8 @@ void test_render_graph_execution_resolves_bound_transient_resources();
 void test_render_graph_frame_executor_tracks_slots_and_rejects_invalid_record_info();
 void test_render_graph_frame_record_info_separates_command_buffer_ownership();
 void test_render_graph_frame_resources_manage_frame_slots();
+void test_render_graph_frame_resources_reuse_compatible_slots();
+void test_render_graph_resource_set_rejects_incompatible_shapes();
 void test_render_graph_frame_resources_reject_invalid_slots();
 void test_render_graph_frame_resources_replace_one_slot_without_disturbing_another();
 void test_render_graph_imports_color_and_depth_targets();
@@ -155,6 +158,7 @@ std::span<const TestCase> render_test_cases() {
         CUBEY_TEST(test_render_graph_declares_shadow_map_then_scene_sample_flow),
         CUBEY_TEST(test_render_graph_derives_depth_to_sampled_texture_barrier),
         CUBEY_TEST(test_render_graph_derives_compute_to_graphics_storage_buffer_barrier),
+        CUBEY_TEST(test_render_graph_honors_explicit_graphics_shader_stage_masks),
         CUBEY_TEST(test_render_graph_derives_compute_to_vertex_buffer_barrier),
         CUBEY_TEST(test_render_graph_derives_imported_texture_acquire_and_release_barriers),
         CUBEY_TEST(test_render_graph_derives_transient_texture_first_use_barrier),
@@ -168,6 +172,8 @@ std::span<const TestCase> render_test_cases() {
         CUBEY_TEST(test_render_graph_resolves_color_target_view_from_bound_transient_texture),
         CUBEY_TEST(test_render_graph_resolved_color_target_view_rejects_depth_texture),
         CUBEY_TEST(test_render_graph_frame_resources_manage_frame_slots),
+        CUBEY_TEST(test_render_graph_frame_resources_reuse_compatible_slots),
+        CUBEY_TEST(test_render_graph_resource_set_rejects_incompatible_shapes),
         CUBEY_TEST(test_render_graph_frame_resources_reject_invalid_slots),
         CUBEY_TEST(test_render_graph_frame_resources_replace_one_slot_without_disturbing_another),
         CUBEY_TEST(test_render_graph_resolves_sampled_color_texture_view),

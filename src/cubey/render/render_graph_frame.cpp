@@ -30,6 +30,10 @@ RenderGraphResourceSet& RenderGraphFrameResources::emplace(FrameSlot slot,
                                                            const CompiledRenderGraph& graph) {
     validate_slot(slot);
     std::optional<RenderGraphResourceSet>& resources = slots_[static_cast<std::size_t>(slot.index)];
+    if (resources.has_value() && resources->compatible(graph)) {
+        resources->reset(graph);
+        return resources.value();
+    }
     resources.emplace(graph);
     return resources.value();
 }
@@ -39,6 +43,10 @@ RenderGraphResourceSet& RenderGraphFrameResources::emplace(FrameSlot slot,
                                                            const CompiledRenderGraph& graph) {
     validate_slot(slot);
     std::optional<RenderGraphResourceSet>& resources = slots_[static_cast<std::size_t>(slot.index)];
+    if (resources.has_value() && resources->compatible(graph)) {
+        resources->reset(graph);
+        return resources.value();
+    }
     resources.emplace(device, graph);
     return resources.value();
 }

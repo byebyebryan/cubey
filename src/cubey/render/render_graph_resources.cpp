@@ -71,15 +71,81 @@ namespace {
     return usage_flags;
 }
 
+[[nodiscard]] bool texture_desc_equal(const RenderGraphTextureDesc& lhs,
+                                      const RenderGraphTextureDesc& rhs) {
+    return lhs.label == rhs.label && lhs.extent.width == rhs.extent.width &&
+           lhs.extent.height == rhs.extent.height && lhs.extent.depth == rhs.extent.depth &&
+           lhs.format == rhs.format && lhs.aspects == rhs.aspects;
+}
+
+[[nodiscard]] bool buffer_desc_equal(const RenderGraphBufferDesc& lhs,
+                                     const RenderGraphBufferDesc& rhs) {
+    return lhs.label == rhs.label && lhs.byte_size == rhs.byte_size;
+}
+
 } // namespace
 
 RenderGraphResourceSet::RenderGraphResourceSet(const CompiledRenderGraph& graph)
-    : textures_(graph.textures().size()), buffers_(graph.buffers().size()) {}
+    : textures_(graph.textures().size()), buffers_(graph.buffers().size()) {
+    capture_resource_keys(graph);
+}
 
 RenderGraphResourceSet::RenderGraphResourceSet(const cubey::vulkan::Device& device,
                                                const CompiledRenderGraph& graph)
     : RenderGraphResourceSet(graph) {
     allocate_transients(device, graph);
+}
+
+bool RenderGraphResourceSet::compatible(const CompiledRenderGraph& graph) const {
+    std::vector<TextureResourceKey> texture_keys;
+    texture_keys.reserve(graph.textures().size());
+    for (const RenderGraphTextureResource& texture : graph.textures()) {
+        texture_keys.push_back(TextureResourceKey{
+            .lifetime = texture.lifetime,
+            .desc = texture.desc,
+            .usage_flags = transient_image_usage_flags(graph, texture.handle),
+        });
+    }
+
+    std::vector<BufferResourceKey> buffer_keys;
+    buffer_keys.reserve(graph.buffers().size());
+    for (const RenderGraphBufferResource& buffer : graph.buffers()) {
+        buffer_keys.push_back(BufferResourceKey{
+            .lifetime = buffer.lifetime,
+            .desc = buffer.desc,
+            .usage_flags = transient_buffer_usage_flags(graph, buffer.handle),
+        });
+    }
+
+    if (texture_keys.size() != texture_keys_.size() || buffer_keys.size() != buffer_keys_.size()) {
+        return false;
+    }
+    for (std::size_t index = 0; index < texture_keys.size(); ++index) {
+        const TextureResourceKey& lhs = texture_keys[index];
+        const TextureResourceKey& rhs = texture_keys_[index];
+        if (lhs.lifetime != rhs.lifetime || !texture_desc_equal(lhs.desc, rhs.desc) ||
+            lhs.usage_flags != rhs.usage_flags) {
+            return false;
+        }
+    }
+    for (std::size_t index = 0; index < buffer_keys.size(); ++index) {
+        const BufferResourceKey& lhs = buffer_keys[index];
+        const BufferResourceKey& rhs = buffer_keys_[index];
+        if (lhs.lifetime != rhs.lifetime || !buffer_desc_equal(lhs.desc, rhs.desc) ||
+            lhs.usage_flags != rhs.usage_flags) {
+            return false;
+        }
+    }
+    return true;
+}
+
+void RenderGraphResourceSet::reset(const CompiledRenderGraph& graph) {
+    if (!compatible(graph)) {
+        throw std::runtime_error("render graph resource set cannot reset to incompatible graph");
+    }
+    textures_.assign(graph.textures().size(), std::nullopt);
+    buffers_.assign(graph.buffers().size(), std::nullopt);
+    bind_transient_resources();
 }
 
 void RenderGraphResourceSet::bind_texture(RenderGraphTextureHandle handle,
@@ -142,10 +208,12 @@ void RenderGraphResourceSet::allocate_transients(const cubey::vulkan::Device& de
                     texture.desc.extent.depth > 1U ? VK_IMAGE_VIEW_TYPE_3D : VK_IMAGE_VIEW_TYPE_2D,
             });
         const cubey::vulkan::Image& image = transient_textures_.back();
-        bind_texture(texture.handle, RenderGraphResolvedTexture{
-                                         .image = image.handle(),
-                                         .view = image.view(),
-                                     });
+        const RenderGraphResolvedTexture resolved{
+            .image = image.handle(),
+            .view = image.view(),
+        };
+        transient_texture_bindings_.emplace_back(texture.handle, resolved);
+        bind_texture(texture.handle, resolved);
     }
 
     for (const RenderGraphBufferResource& buffer : graph.buffers()) {
@@ -163,10 +231,43 @@ void RenderGraphResourceSet::allocate_transients(const cubey::vulkan::Device& de
                         .memory_properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
                     });
         const cubey::vulkan::Buffer& vk_buffer = transient_buffers_.back();
-        bind_buffer(buffer.handle, RenderGraphResolvedBuffer{
-                                       .buffer = vk_buffer.handle(),
-                                       .byte_size = vk_buffer.size(),
-                                   });
+        const RenderGraphResolvedBuffer resolved{
+            .buffer = vk_buffer.handle(),
+            .byte_size = vk_buffer.size(),
+        };
+        transient_buffer_bindings_.emplace_back(buffer.handle, resolved);
+        bind_buffer(buffer.handle, resolved);
+    }
+}
+
+void RenderGraphResourceSet::capture_resource_keys(const CompiledRenderGraph& graph) {
+    texture_keys_.clear();
+    texture_keys_.reserve(graph.textures().size());
+    for (const RenderGraphTextureResource& texture : graph.textures()) {
+        texture_keys_.push_back(TextureResourceKey{
+            .lifetime = texture.lifetime,
+            .desc = texture.desc,
+            .usage_flags = transient_image_usage_flags(graph, texture.handle),
+        });
+    }
+
+    buffer_keys_.clear();
+    buffer_keys_.reserve(graph.buffers().size());
+    for (const RenderGraphBufferResource& buffer : graph.buffers()) {
+        buffer_keys_.push_back(BufferResourceKey{
+            .lifetime = buffer.lifetime,
+            .desc = buffer.desc,
+            .usage_flags = transient_buffer_usage_flags(graph, buffer.handle),
+        });
+    }
+}
+
+void RenderGraphResourceSet::bind_transient_resources() {
+    for (const auto& [handle, resolved] : transient_texture_bindings_) {
+        bind_texture(handle, resolved);
+    }
+    for (const auto& [handle, resolved] : transient_buffer_bindings_) {
+        bind_buffer(handle, resolved);
     }
 }
 

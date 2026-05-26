@@ -129,11 +129,13 @@ struct RenderGraphBufferResource {
 struct RenderGraphTextureAccess {
     RenderGraphTextureHandle handle{};
     RenderGraphTextureUsage usage = RenderGraphTextureUsage::SampledRead;
+    VkPipelineStageFlags stage_mask = 0;
 };
 
 struct RenderGraphBufferAccess {
     RenderGraphBufferHandle handle{};
     RenderGraphBufferUsage usage = RenderGraphBufferUsage::UniformRead;
+    VkPipelineStageFlags stage_mask = 0;
 };
 
 struct RenderGraphTextureBarrier {

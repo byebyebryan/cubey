@@ -48,9 +48,15 @@ namespace {
     return VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 }
 
+[[nodiscard]] VkPipelineStageFlags shader_stage_for_access(RenderGraphQueueDomain domain,
+                                                           VkPipelineStageFlags stage_mask) {
+    return stage_mask != 0 ? stage_mask : shader_stage_for_pass(domain);
+}
+
 [[nodiscard]] RenderGraphTextureState
 texture_usage_state(const RenderGraphCompiledPass& pass, const RenderGraphTextureResource& resource,
-                    RenderGraphTextureUsage usage) {
+                    const RenderGraphTextureAccess& access) {
+    const RenderGraphTextureUsage usage = access.usage;
     switch (usage) {
     case RenderGraphTextureUsage::SampledRead:
         return {
@@ -58,25 +64,25 @@ texture_usage_state(const RenderGraphCompiledPass& pass, const RenderGraphTextur
                           ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL
                           : VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
             .access_mask = VK_ACCESS_SHADER_READ_BIT,
-            .stage_mask = shader_stage_for_pass(pass.queue_domain),
+            .stage_mask = shader_stage_for_access(pass.queue_domain, access.stage_mask),
         };
     case RenderGraphTextureUsage::StorageRead:
         return {
             .layout = VK_IMAGE_LAYOUT_GENERAL,
             .access_mask = VK_ACCESS_SHADER_READ_BIT,
-            .stage_mask = shader_stage_for_pass(pass.queue_domain),
+            .stage_mask = shader_stage_for_access(pass.queue_domain, access.stage_mask),
         };
     case RenderGraphTextureUsage::StorageWrite:
         return {
             .layout = VK_IMAGE_LAYOUT_GENERAL,
             .access_mask = VK_ACCESS_SHADER_WRITE_BIT,
-            .stage_mask = shader_stage_for_pass(pass.queue_domain),
+            .stage_mask = shader_stage_for_access(pass.queue_domain, access.stage_mask),
         };
     case RenderGraphTextureUsage::StorageReadWrite:
         return {
             .layout = VK_IMAGE_LAYOUT_GENERAL,
             .access_mask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
-            .stage_mask = shader_stage_for_pass(pass.queue_domain),
+            .stage_mask = shader_stage_for_access(pass.queue_domain, access.stage_mask),
         };
     case RenderGraphTextureUsage::ColorAttachment:
         return {
@@ -108,28 +114,29 @@ texture_usage_state(const RenderGraphCompiledPass& pass, const RenderGraphTextur
     throw std::runtime_error("render graph texture usage is invalid");
 }
 
-[[nodiscard]] RenderGraphBufferState buffer_usage_state(const RenderGraphCompiledPass& pass,
-                                                        RenderGraphBufferUsage usage) {
+[[nodiscard]] RenderGraphBufferState
+buffer_usage_state(const RenderGraphCompiledPass& pass, const RenderGraphBufferAccess& access) {
+    const RenderGraphBufferUsage usage = access.usage;
     switch (usage) {
     case RenderGraphBufferUsage::UniformRead:
         return {
             .access_mask = VK_ACCESS_UNIFORM_READ_BIT,
-            .stage_mask = shader_stage_for_pass(pass.queue_domain),
+            .stage_mask = shader_stage_for_access(pass.queue_domain, access.stage_mask),
         };
     case RenderGraphBufferUsage::StorageRead:
         return {
             .access_mask = VK_ACCESS_SHADER_READ_BIT,
-            .stage_mask = shader_stage_for_pass(pass.queue_domain),
+            .stage_mask = shader_stage_for_access(pass.queue_domain, access.stage_mask),
         };
     case RenderGraphBufferUsage::StorageWrite:
         return {
             .access_mask = VK_ACCESS_SHADER_WRITE_BIT,
-            .stage_mask = shader_stage_for_pass(pass.queue_domain),
+            .stage_mask = shader_stage_for_access(pass.queue_domain, access.stage_mask),
         };
     case RenderGraphBufferUsage::StorageReadWrite:
         return {
             .access_mask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
-            .stage_mask = shader_stage_for_pass(pass.queue_domain),
+            .stage_mask = shader_stage_for_access(pass.queue_domain, access.stage_mask),
         };
     case RenderGraphBufferUsage::VertexRead:
         return {
@@ -158,13 +165,13 @@ texture_usage_state(const RenderGraphCompiledPass& pass, const RenderGraphTextur
 struct LastTextureAccess {
     bool valid = false;
     std::size_t pass_index = 0;
-    RenderGraphTextureUsage usage = RenderGraphTextureUsage::SampledRead;
+    RenderGraphTextureAccess access{};
 };
 
 struct LastBufferAccess {
     bool valid = false;
     std::size_t pass_index = 0;
-    RenderGraphBufferUsage usage = RenderGraphBufferUsage::UniformRead;
+    RenderGraphBufferAccess access{};
 };
 
 [[nodiscard]] bool needs_texture_barrier(RenderGraphTextureUsage previous,
@@ -189,13 +196,14 @@ struct LastBufferAccess {
 make_texture_barrier(RenderGraphTextureHandle handle, const RenderGraphTextureResource& resource,
                      const RenderGraphCompiledPass& source_pass,
                      const RenderGraphCompiledPass& destination_pass,
-                     const LastTextureAccess& previous, RenderGraphTextureUsage next) {
+                     const LastTextureAccess& previous,
+                     const RenderGraphTextureAccess& next) {
     return RenderGraphTextureBarrier{
         .handle = handle,
         .source_pass_index = previous.pass_index,
-        .source_usage = previous.usage,
-        .destination_usage = next,
-        .source_state = texture_usage_state(source_pass, resource, previous.usage),
+        .source_usage = previous.access.usage,
+        .destination_usage = next.usage,
+        .source_state = texture_usage_state(source_pass, resource, previous.access),
         .destination_state = texture_usage_state(destination_pass, resource, next),
     };
 }
@@ -203,12 +211,12 @@ make_texture_barrier(RenderGraphTextureHandle handle, const RenderGraphTextureRe
 [[nodiscard]] RenderGraphTextureBarrier make_texture_acquire_barrier(
     RenderGraphTextureHandle handle, const RenderGraphTextureState& source_state,
     const RenderGraphCompiledPass& destination_pass, const RenderGraphTextureResource& resource,
-    RenderGraphTextureUsage next) {
+    const RenderGraphTextureAccess& next) {
     return RenderGraphTextureBarrier{
         .handle = handle,
         .source_pass_index = {},
         .source_usage = {},
-        .destination_usage = next,
+        .destination_usage = next.usage,
         .source_state = source_state,
         .destination_state = texture_usage_state(destination_pass, resource, next),
     };
@@ -221,9 +229,9 @@ make_texture_barrier(RenderGraphTextureHandle handle, const RenderGraphTextureRe
     return RenderGraphTextureBarrier{
         .handle = handle,
         .source_pass_index = previous.pass_index,
-        .source_usage = previous.usage,
+        .source_usage = previous.access.usage,
         .destination_usage = {},
-        .source_state = texture_usage_state(source_pass, resource, previous.usage),
+        .source_state = texture_usage_state(source_pass, resource, previous.access),
         .destination_state = destination_state,
     };
 }
@@ -231,25 +239,25 @@ make_texture_barrier(RenderGraphTextureHandle handle, const RenderGraphTextureRe
 [[nodiscard]] RenderGraphBufferBarrier
 make_buffer_barrier(RenderGraphBufferHandle handle, const RenderGraphCompiledPass& source_pass,
                     const RenderGraphCompiledPass& destination_pass,
-                    const LastBufferAccess& previous, RenderGraphBufferUsage next) {
+                    const LastBufferAccess& previous, const RenderGraphBufferAccess& next) {
     return RenderGraphBufferBarrier{
         .handle = handle,
         .source_pass_index = previous.pass_index,
-        .source_usage = previous.usage,
-        .destination_usage = next,
-        .source_state = buffer_usage_state(source_pass, previous.usage),
+        .source_usage = previous.access.usage,
+        .destination_usage = next.usage,
+        .source_state = buffer_usage_state(source_pass, previous.access),
         .destination_state = buffer_usage_state(destination_pass, next),
     };
 }
 
 [[nodiscard]] RenderGraphBufferBarrier make_buffer_acquire_barrier(
     RenderGraphBufferHandle handle, const RenderGraphBufferState& source_state,
-    const RenderGraphCompiledPass& destination_pass, RenderGraphBufferUsage next) {
+    const RenderGraphCompiledPass& destination_pass, const RenderGraphBufferAccess& next) {
     return RenderGraphBufferBarrier{
         .handle = handle,
         .source_pass_index = {},
         .source_usage = {},
-        .destination_usage = next,
+        .destination_usage = next.usage,
         .source_state = source_state,
         .destination_state = buffer_usage_state(destination_pass, next),
     };
@@ -261,9 +269,9 @@ make_buffer_barrier(RenderGraphBufferHandle handle, const RenderGraphCompiledPas
     return RenderGraphBufferBarrier{
         .handle = handle,
         .source_pass_index = previous.pass_index,
-        .source_usage = previous.usage,
+        .source_usage = previous.access.usage,
         .destination_usage = {},
-        .source_state = buffer_usage_state(source_pass, previous.usage),
+        .source_state = buffer_usage_state(source_pass, previous.access),
         .destination_state = destination_state,
     };
 }
@@ -319,18 +327,18 @@ CompiledRenderGraph RenderGraphBuilder::compile() const {
             }
             const LastTextureAccess& previous = last_texture_accesses[index];
             if (previous.valid) {
-                if (needs_texture_barrier(previous.usage, access.usage)) {
+                if (needs_texture_barrier(previous.access.usage, access.usage)) {
                     pass.before_texture_barriers.push_back(make_texture_barrier(
                         access.handle, resource, compiled_passes[previous.pass_index], pass,
-                        previous, access.usage));
+                        previous, access));
                 }
             } else if (resource.initial_state.has_value()) {
                 pass.before_texture_barriers.push_back(make_texture_acquire_barrier(
-                    access.handle, resource.initial_state.value(), pass, resource, access.usage));
+                    access.handle, resource.initial_state.value(), pass, resource, access));
             } else if (resource.lifetime == RenderGraphResourceLifetime::Transient) {
                 pass.before_texture_barriers.push_back(
                     make_texture_acquire_barrier(access.handle, transient_initial_texture_state(),
-                                                 pass, resource, access.usage));
+                                                 pass, resource, access));
             }
             if (is_texture_write(access.usage)) {
                 texture_writes.push_back(index);
@@ -338,7 +346,7 @@ CompiledRenderGraph RenderGraphBuilder::compile() const {
             last_texture_accesses[index] = LastTextureAccess{
                 .valid = true,
                 .pass_index = pass_index,
-                .usage = access.usage,
+                .access = access,
             };
         }
 
@@ -351,14 +359,14 @@ CompiledRenderGraph RenderGraphBuilder::compile() const {
             }
             const LastBufferAccess& previous = last_buffer_accesses[index];
             if (previous.valid) {
-                if (needs_buffer_barrier(previous.usage, access.usage)) {
+                if (needs_buffer_barrier(previous.access.usage, access.usage)) {
                     pass.before_buffer_barriers.push_back(
                         make_buffer_barrier(access.handle, compiled_passes[previous.pass_index],
-                                            pass, previous, access.usage));
+                                            pass, previous, access));
                 }
             } else if (resource.initial_state.has_value()) {
                 pass.before_buffer_barriers.push_back(make_buffer_acquire_barrier(
-                    access.handle, resource.initial_state.value(), pass, access.usage));
+                    access.handle, resource.initial_state.value(), pass, access));
             }
             if (is_buffer_write(access.usage)) {
                 buffer_writes.push_back(index);
@@ -366,7 +374,7 @@ CompiledRenderGraph RenderGraphBuilder::compile() const {
             last_buffer_accesses[index] = LastBufferAccess{
                 .valid = true,
                 .pass_index = pass_index,
-                .usage = access.usage,
+                .access = access,
             };
             static_cast<void>(resource);
         }

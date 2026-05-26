@@ -47,6 +47,61 @@ void test_render_graph_frame_resources_manage_frame_slots() {
             "cleared graph frame resources should report no slots");
 }
 
+void test_render_graph_frame_resources_reuse_compatible_slots() {
+    cubey::render::RenderGraphBuilder graph;
+    const cubey::render::RenderGraphBufferHandle buffer_handle =
+        graph.import_buffer(buffer_desc("slot buffer"), buffer(0x921));
+    graph.add_pass("read", cubey::render::RenderGraphQueueDomain::Compute)
+        .read_storage_buffer(buffer_handle)
+        .execute([](const cubey::render::RenderGraphExecutionContext&) {});
+    const cubey::render::CompiledRenderGraph compiled = graph.compile();
+
+    cubey::render::RenderGraphFrameResources frame_resources(1);
+    const cubey::render::FrameSlot slot{
+        .index = 0,
+        .count = 1,
+    };
+    cubey::render::RenderGraphResourceSet& first = frame_resources.emplace(slot, compiled);
+    first.bind_buffer(buffer_handle, cubey::render::RenderGraphResolvedBuffer{
+                                         .buffer = buffer(0x922),
+                                         .byte_size = buffer_desc("slot buffer").byte_size,
+                                     });
+
+    cubey::render::RenderGraphResourceSet& second = frame_resources.emplace(slot, compiled);
+    require(&first == &second, "compatible graph frame resources should reuse the slot object");
+    require(!second.buffer(buffer_handle).has_value(),
+            "reused graph frame resources should reset imported bindings before prepare");
+    require(second.compatible(compiled),
+            "reused graph frame resources should stay compatible with the compiled graph");
+}
+
+void test_render_graph_resource_set_rejects_incompatible_shapes() {
+    cubey::render::RenderGraphBuilder graph;
+    const cubey::render::RenderGraphBufferHandle original =
+        graph.create_buffer(buffer_desc("slot buffer"));
+    graph.add_pass("write", cubey::render::RenderGraphQueueDomain::Compute)
+        .write_storage_buffer(original)
+        .execute([](const cubey::render::RenderGraphExecutionContext&) {});
+    const cubey::render::CompiledRenderGraph compiled = graph.compile();
+
+    cubey::render::RenderGraphBuilder changed_graph;
+    const cubey::render::RenderGraphBufferHandle changed =
+        changed_graph.create_buffer(cubey::render::RenderGraphBufferDesc{
+            .label = "slot buffer",
+            .byte_size = buffer_desc("slot buffer").byte_size + 4,
+        });
+    changed_graph.add_pass("write", cubey::render::RenderGraphQueueDomain::Compute)
+        .write_storage_buffer(changed)
+        .execute([](const cubey::render::RenderGraphExecutionContext&) {});
+    const cubey::render::CompiledRenderGraph changed_compiled = changed_graph.compile();
+
+    cubey::render::RenderGraphResourceSet resources(compiled);
+    require(resources.compatible(compiled),
+            "resource set should report compatible with the graph that created it");
+    require(!resources.compatible(changed_compiled),
+            "resource set should reject incompatible graph resource descriptors");
+}
+
 void test_render_graph_frame_resources_reject_invalid_slots() {
     cubey::render::RenderGraphFrameResources frame_resources(2);
 

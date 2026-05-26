@@ -76,6 +76,24 @@ void test_render_graph_derives_compute_to_graphics_storage_buffer_barrier() {
             "storage read consumer should request shader read access");
 }
 
+void test_render_graph_honors_explicit_graphics_shader_stage_masks() {
+    cubey::render::RenderGraphBuilder graph;
+    const cubey::render::RenderGraphBufferHandle constants =
+        graph.import_buffer(buffer_desc("vertex constants"), buffer(0x231),
+                            host_written_buffer_state());
+
+    graph.add_pass("read constants", cubey::render::RenderGraphQueueDomain::Graphics)
+        .read_uniform_buffer(constants, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT);
+
+    const cubey::render::CompiledRenderGraph compiled = graph.compile();
+
+    require(compiled.passes()[0].before_buffer_barriers.size() == 1,
+            "explicit stage read should derive an imported buffer acquire barrier");
+    require(compiled.passes()[0].before_buffer_barriers[0].destination_state.stage_mask ==
+                VK_PIPELINE_STAGE_VERTEX_SHADER_BIT,
+            "explicit buffer stage mask should override the default graphics fragment stage");
+}
+
 void test_render_graph_derives_compute_to_vertex_buffer_barrier() {
     cubey::render::RenderGraphBuilder graph;
     const cubey::render::RenderGraphBufferHandle vertices =
