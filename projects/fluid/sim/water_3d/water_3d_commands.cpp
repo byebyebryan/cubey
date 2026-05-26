@@ -221,7 +221,7 @@ void record_final_barrier(VkCommandBuffer command_buffer) {
         config.surface_smoothing_max_radius_px,
         config.surface_particle_max_radius_px,
         static_cast<float>(extent.height),
-        0.0F,
+        config.whitewater_blur_radius_px,
     };
 }
 

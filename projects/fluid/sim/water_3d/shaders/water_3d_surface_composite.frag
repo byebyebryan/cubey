@@ -46,7 +46,7 @@ vec3 apply_display_transform(vec3 color) {
     return cubey_pbr_apply_display_transform(color, surface_params.display_transform);
 }
 
-WhitewaterField read_whitewater_field(vec4 packed) {
+WhitewaterField unpack_whitewater_field(vec4 packed) {
     float raw_coverage = max(packed.a, 0.0);
     float coverage = clamp(raw_coverage, 0.0, 1.0);
     float inv_coverage = raw_coverage > 0.0001 ? 1.0 / raw_coverage : 0.0;
@@ -58,13 +58,55 @@ WhitewaterField read_whitewater_field(vec4 packed) {
     );
 }
 
+WhitewaterField sample_whitewater_field(vec2 uv) {
+    float blur_px = clamp(surface_params.filter_options.w, 0.0, 12.0);
+    if (blur_px <= 0.001) {
+        return unpack_whitewater_field(texture(whitewater_texture, uv));
+    }
+
+    ivec2 texture_size = textureSize(whitewater_texture, 0);
+    vec2 texel_size = 1.0 / vec2(texture_size);
+    float strength = clamp(blur_px / 6.0, 0.0, 1.0);
+    float center_weight = mix(1.0, 0.30, strength);
+    float side_weight = (1.0 - center_weight) * 0.16;
+    float corner_weight = (1.0 - center_weight) * 0.09;
+    vec2 offset = texel_size * max(1.0, blur_px);
+    vec4 packed = texture(whitewater_texture, uv) * center_weight;
+    packed += texture(whitewater_texture, uv + vec2(offset.x, 0.0)) * side_weight;
+    packed += texture(whitewater_texture, uv - vec2(offset.x, 0.0)) * side_weight;
+    packed += texture(whitewater_texture, uv + vec2(0.0, offset.y)) * side_weight;
+    packed += texture(whitewater_texture, uv - vec2(0.0, offset.y)) * side_weight;
+    packed += texture(whitewater_texture, uv + offset) * corner_weight;
+    packed += texture(whitewater_texture, uv - offset) * corner_weight;
+    packed += texture(whitewater_texture, uv + vec2(offset.x, -offset.y)) * corner_weight;
+    packed += texture(whitewater_texture, uv + vec2(-offset.x, offset.y)) * corner_weight;
+    return unpack_whitewater_field(packed);
+}
+
+vec3 whitewater_color(WhitewaterField field) {
+    vec3 foam_color = cubey_srgb_to_linear(vec3(0.78, 0.90, 0.88));
+    vec3 spray_color = cubey_srgb_to_linear(vec3(0.93, 0.97, 0.95));
+    vec3 bubble_color = cubey_srgb_to_linear(vec3(0.32, 0.58, 0.72));
+    float spray = smoothstep(0.45, 1.0, field.kind) * (1.0 - smoothstep(1.35, 1.90, field.kind));
+    float bubble = smoothstep(1.35, 2.0, field.kind);
+    return mix(mix(foam_color, spray_color, spray), bubble_color, bubble);
+}
+
 float whitewater_surface_gate(WhitewaterField field, float water_depth, float thickness) {
     if (field.coverage <= 0.0001 || !water_surface_has_depth(field.depth)) {
         return 0.0;
     }
-    float depth_margin = max(0.03, thickness * 0.25);
+    float depth_margin = max(0.025, thickness * 0.18);
     return 1.0 - smoothstep(water_depth + depth_margin,
-                            water_depth + depth_margin * 2.0, field.depth);
+                            water_depth + depth_margin * 3.0, field.depth);
+}
+
+float whitewater_front_gate(WhitewaterField field, float water_depth, float thickness) {
+    if (field.coverage <= 0.0001 || !water_surface_has_depth(field.depth)) {
+        return 0.0;
+    }
+    float depth_margin = max(0.018, thickness * 0.08);
+    return 1.0 - smoothstep(water_depth - depth_margin, water_depth + depth_margin, field.depth);
 }
 
 vec3 whitewater_debug_color(WhitewaterField field, vec3 background) {
@@ -72,12 +114,7 @@ vec3 whitewater_debug_color(WhitewaterField field, vec3 background) {
         return background * 0.18;
     }
     float depth_value = debug_depth_value(field.depth);
-    vec3 foam_color = cubey_srgb_to_linear(vec3(0.78, 0.90, 0.88));
-    vec3 spray_color = cubey_srgb_to_linear(vec3(0.92, 0.96, 0.95));
-    vec3 bubble_color = cubey_srgb_to_linear(vec3(0.35, 0.58, 0.72));
-    float spray = smoothstep(0.5, 1.0, field.kind) * (1.0 - smoothstep(1.5, 2.0, field.kind));
-    float bubble = smoothstep(1.5, 2.0, field.kind);
-    vec3 kind_color = mix(mix(foam_color, spray_color, spray), bubble_color, bubble);
+    vec3 kind_color = whitewater_color(field);
     return mix(background * 0.18, kind_color * (0.35 + depth_value * 0.65),
                clamp(field.coverage, 0.0, 1.0));
 }
@@ -216,7 +253,7 @@ float foam_mask(vec2 uv, float center_depth, float thickness, vec3 position, vec
 void main() {
     vec4 surface = texture(surface_texture, frag_uv);
     vec3 background = texture(scene_color_texture, frag_uv).rgb;
-    WhitewaterField whitewater = read_whitewater_field(texture(whitewater_texture, frag_uv));
+    WhitewaterField whitewater = sample_whitewater_field(frag_uv);
     uint view = water_surface_render_view();
     if (view == WATER3D_SURFACE_VIEW_WHITEWATER) {
         out_color = vec4(apply_display_transform(whitewater_debug_color(whitewater, background)),
@@ -224,7 +261,9 @@ void main() {
         return;
     }
     if (!water_surface_has_depth(surface.x)) {
-        out_color = vec4(apply_display_transform(background), 1.0);
+        vec3 air_whitewater = mix(background, whitewater_color(whitewater),
+                                  clamp(whitewater.coverage * 0.55, 0.0, 0.65));
+        out_color = vec4(apply_display_transform(air_whitewater), 1.0);
         return;
     }
 
@@ -258,7 +297,7 @@ void main() {
     }
     float foam = foam_mask(frag_uv, depth, thickness, position, normal);
     float whitewater_foam = whitewater.foam * whitewater_surface_gate(whitewater, depth, thickness);
-    foam = clamp(foam + whitewater_foam, 0.0, 1.0);
+    foam = clamp(foam + whitewater_foam * (1.0 - foam * 0.35), 0.0, 1.0);
     if (view == WATER3D_SURFACE_VIEW_FOAM) {
         float debug_foam =
             clamp(foam / max(0.001, surface_params.surface_options.x), 0.0, 1.0);
@@ -291,6 +330,9 @@ void main() {
     vec3 water_tint = cubey_srgb_to_linear(vec3(0.025, 0.22, 0.30)) * (1.0 - transmittance) *
                       (1.0 - foam * 0.70);
     vec3 color = mix(refracted + water_tint, reflected, fresnel) + vec3(specular);
+    float front_whitewater =
+        clamp(whitewater.coverage * whitewater_front_gate(whitewater, depth, thickness), 0.0, 0.50);
+    color = mix(color, whitewater_color(whitewater), front_whitewater);
 
     out_color = vec4(apply_display_transform(color), 1.0);
 }

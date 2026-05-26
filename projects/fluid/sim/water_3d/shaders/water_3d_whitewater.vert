@@ -25,6 +25,17 @@ layout(location = 1) out float frag_kind;
 layout(location = 2) out float frag_age;
 layout(location = 3) out float frag_energy;
 layout(location = 4) out float frag_linear_depth;
+layout(location = 5) out float frag_radius_px;
+layout(location = 6) out float frag_seed;
+
+float particle_seed(uint value) {
+    value ^= value >> 16u;
+    value *= 2246822519u;
+    value ^= value >> 13u;
+    value *= 3266489917u;
+    value ^= value >> 16u;
+    return float(value & 65535u) / 65535.0;
+}
 
 vec2 quad_corner(uint index) {
     vec2 corners[6] = vec2[](
@@ -48,6 +59,8 @@ void main() {
         frag_age = 1.0;
         frag_energy = 0.0;
         frag_linear_depth = WATER3D_SURFACE_DEPTH_SENTINEL;
+        frag_radius_px = 1.0;
+        frag_seed = 0.0;
         gl_Position = vec4(2.0, 2.0, 0.0, 1.0);
         return;
     }
@@ -58,6 +71,8 @@ void main() {
         frag_age = 1.0;
         frag_energy = 0.0;
         frag_linear_depth = WATER3D_SURFACE_DEPTH_SENTINEL;
+        frag_radius_px = 1.0;
+        frag_seed = 0.0;
         gl_Position = vec4(2.0, 2.0, 0.0, 1.0);
         return;
     }
@@ -67,7 +82,7 @@ void main() {
     vec4 state = whitewater_state.values[particle_id];
     float kind = state.y;
     float age = clamp(velocity_age.w / max(0.05, state.x), 0.0, 1.0);
-    float radius_scale = max(0.2, state.z) * mix(1.75, 0.95, step(0.5, kind));
+    float radius_scale = max(0.2, state.z) * mix(0.95, 0.72, step(0.5, kind));
     float radius =
         water_surface_screen_limited_radius(center, water_surface_particle_radius() * radius_scale);
     vec3 world_position = center + ((water_surface_camera_right() * corner.x) +
@@ -78,5 +93,7 @@ void main() {
     frag_age = age;
     frag_energy = state.w;
     frag_linear_depth = length(center - water_surface_camera_position());
+    frag_radius_px = water_surface_projected_radius_px(radius, frag_linear_depth);
+    frag_seed = particle_seed(particle_id);
     gl_Position = surface_params.view_projection * vec4(world_position, 1.0);
 }

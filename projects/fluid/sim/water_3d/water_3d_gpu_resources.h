@@ -281,6 +281,7 @@ class Water3DGpuResources {
     std::optional<cubey::render::ComputePipelineResource> diagnostics_pipeline_resource_;
     std::optional<cubey::render::GraphicsPipelineResource> render_pipeline_resource_;
     std::optional<cubey::vulkan::Sampler> surface_sampler_;
+    std::optional<cubey::vulkan::Sampler> whitewater_sampler_;
     std::optional<cubey::render::MaterialInstance> surface_scene_material_;
     std::optional<cubey::render::MaterialInstance> surface_thickness_material_;
     std::optional<cubey::render::MaterialInstance> surface_pack_material_;

@@ -150,9 +150,9 @@ void main() {
     float surface_factor = clamp(open_faces / 4.0, 0.0, 1.0);
     float upward_surface = smoothstep(0.18, 0.58, surface_direction.y);
     float side_penalty = mix(0.35, 1.0, upward_surface);
-    float probability = clamp((0.035 + excess_speed * 0.12) * surface_factor * side_penalty *
+    float probability = clamp((0.025 + excess_speed * 0.10) * surface_factor * side_penalty *
                                   WATER3D_WHITEWATER_INTENSITY,
-                              0.0, 0.22);
+                              0.0, 0.18);
     if (hash01(seed) > probability) {
         return;
     }
@@ -169,20 +169,20 @@ void main() {
     float spray_signal = upward_surface * max(open_up * 0.55, upward_velocity);
     bool spray = speed > speed_threshold * 1.20 && spray_signal > 0.20 &&
                  hash01(seed + 19u) < mix(0.25, 0.70, energy);
-    float lifetime = WATER3D_WHITEWATER_LIFETIME * mix(0.65, 1.25, hash01(seed + 73u));
-    float radius_scale = mix(0.75, 1.55, hash01(seed + 101u)) * mix(0.85, 1.25, energy);
+    float lifetime = WATER3D_WHITEWATER_LIFETIME * mix(0.75, 1.45, hash01(seed + 73u));
+    float radius_scale = mix(0.55, 1.25, hash01(seed + 101u)) * mix(0.85, 1.15, energy);
     vec3 lateral_random = normalize(vec3(random_direction.x, random_direction.y * 0.20,
                                          random_direction.z) +
                                     vec3(0.001, 0.0, 0.003));
     vec3 spawn_offset =
-        (surface_direction * 0.40 + lateral_random * 0.60) * WATER3D_WHITEWATER_RADIUS *
-        (spray ? mix(1.1, 2.4, energy) : mix(0.6, 1.4, energy));
+        (surface_direction * 0.35 + lateral_random * 0.65) * WATER3D_WHITEWATER_RADIUS *
+        (spray ? mix(1.1, 2.2, energy) : mix(0.45, 1.05, energy));
     vec3 spawn_position = clamp(position + spawn_offset, vec3(0.001), vec3(0.999));
     vec3 spawn_velocity = spray
                               ? velocity * 0.45 + surface_direction * mix(0.08, 0.28, energy) +
                                     lateral_random * mix(0.04, 0.18, energy) +
                                     vec3(0.0, mix(0.03, 0.22, energy), 0.0)
-                              : velocity * 0.18 + lateral_random * 0.035;
+                              : velocity * 0.32 + lateral_random * 0.020;
 
     whitewater_positions.values[target] = vec4(spawn_position, 1.0);
     whitewater_velocities.values[target] = vec4(spawn_velocity, 0.0);

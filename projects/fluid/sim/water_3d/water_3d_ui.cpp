@@ -231,6 +231,8 @@ void draw_water_3d_ui(Water3DUiContext ui) {
                            "%.2f");
         ImGui::SliderFloat("Whitewater radius", &ui.config.whitewater_radius, 0.002F, 0.035F,
                            "%.3f");
+        ImGui::SliderFloat("Whitewater blur px", &ui.config.whitewater_blur_radius_px, 0.0F,
+                           kWater3DWhitewaterMaxBlurPx, "%.2f");
         ImGui::SliderFloat("Whitewater lifetime", &ui.config.whitewater_lifetime, 0.15F, 5.0F,
                            "%.2f");
         ImGui::SliderFloat("Whitewater drag", &ui.config.whitewater_drag, 0.50F, 1.0F, "%.2f");

@@ -102,15 +102,17 @@ int main() {
                 "water 3D should soften thickness footprints by default");
         require(config.surface_absorption == 0.8F && config.surface_refraction_strength == 0.025F,
                 "water 3D should default to clearer water shading");
-        require(config.foam_amount == 0.70F && config.foam_sharpness == 2.2F,
-                "water 3D should default to a visible screen-space foam layer");
+        require(config.foam_amount == 0.58F && config.foam_sharpness == 1.7F,
+                "water 3D should default to a softer screen-space foam layer");
         require(config.whitewater_enabled && config.whitewater_capacity == 65536U &&
-                    config.whitewater_max_emit_per_frame == 2048U,
+                    config.whitewater_max_emit_per_frame == 4096U,
                 "water 3D should default to bounded visual whitewater");
-        require(config.whitewater_intensity == 1.0F && config.whitewater_speed_threshold == 1.1F &&
-                    config.whitewater_lifetime == 1.6F && config.whitewater_radius == 0.010F,
+        require(config.whitewater_intensity == 1.15F &&
+                    config.whitewater_speed_threshold == 0.95F &&
+                    config.whitewater_lifetime == 2.0F && config.whitewater_radius == 0.007F &&
+                    config.whitewater_blur_radius_px == 0.0F,
                 "water 3D should default to visible whitewater emission");
-        require(config.whitewater_drag == 0.94F && config.whitewater_gravity_scale == 0.55F,
+        require(config.whitewater_drag == 0.91F && config.whitewater_gravity_scale == 0.65F,
                 "water 3D should default to damped spray whitewater");
         require(!config.hose.enabled && config.hose.particle_capacity ==
                                            water::kWater3DDefaultEmitterParticleCapacity,
@@ -535,6 +537,8 @@ int main() {
                          "water 3D whitewater advection should apply scaled gravity");
         require_contains(whitewater_advect, "classify_whitewater_kind",
                          "water 3D whitewater should classify foam, spray, and bubbles");
+        require_contains(whitewater_advect, "mix(velocity, grid_velocity, 0.72)",
+                         "water 3D foam whitewater should follow the water surface");
         require_contains(whitewater_advect, "WHITEWATER_KIND_BUBBLE",
                          "water 3D whitewater should carry explicit bubble state");
         require_contains(whitewater_emit, "free_surface_direction",
@@ -595,8 +599,26 @@ int main() {
                          "water 3D whitewater renderer should draw compacted active particles");
         require_contains(whitewater_vert, "water_surface_screen_limited_radius",
                          "water 3D whitewater should cap close-up splat radius");
+        require_contains(whitewater_vert, "frag_radius_px",
+                         "water 3D whitewater should pass screen radius to fragment shading");
+        require_contains(whitewater_vert, "particle_seed",
+                         "water 3D whitewater should vary splat masks per particle");
         require_contains(whitewater_frag, "alpha * frag_linear_depth",
                          "water 3D whitewater renderer should output packed premultiplied depth");
+        require_contains(whitewater_frag, "breakup",
+                         "water 3D whitewater renderer should soften perfect circular splats");
+        require_contains(whitewater_frag, "fleck_radius",
+                         "water 3D whitewater renderer should avoid circular bokeh splats");
+        require_contains(whitewater_frag, "chip",
+                         "water 3D whitewater renderer should break up splat interiors");
+        require_contains(whitewater_frag, "surface_params.filter_options.w",
+                         "water 3D whitewater splat blur should be runtime configurable");
+        require_contains(whitewater_frag, "blur_px / max(1.0, frag_radius_px)",
+                         "water 3D whitewater blur should map screen pixels to splat edge width");
+        require_contains(whitewater_frag, "mix(hard_body, soft_body, softness)",
+                         "water 3D whitewater blur should visibly control splat softness");
+        require_contains(whitewater_frag, "mix(body, core",
+                         "water 3D whitewater renderer should avoid overly soft mist splats");
         require_contains(extrapolate_shader, "read_scratch()",
                          "water 3D velocity extrapolation should ping-pong scratch buffers");
         require_contains(extrapolate_shader, "source_u_valid(uint(neighbor.x)",
@@ -698,12 +720,24 @@ int main() {
                          "water 3D surface foam should prefer upward-facing free surfaces");
         require_contains(surface_composite, "WATER3D_SURFACE_VIEW_FOAM",
                          "water 3D surface composite should render the foam diagnostic view");
-        require_contains(surface_composite, "read_whitewater_field",
-                         "water 3D surface composite should decode packed whitewater fields");
+        require_contains(surface_composite, "sample_whitewater_field",
+                         "water 3D surface composite should filter packed whitewater fields");
+        require_contains(surface_composite, "surface_params.filter_options.w",
+                         "water 3D whitewater filter should be runtime configurable");
+        require_contains(surface_composite, "blur_px <= 0.001",
+                         "water 3D whitewater filter should support a sharp unfiltered mode");
+        require_contains(surface_composite, "mix(1.0, 0.30, strength)",
+                         "water 3D whitewater filtering should retain a strong center sample");
+        require_contains(surface_composite, "corner_weight",
+                         "water 3D whitewater filtering should use a visibly wider blur kernel");
+        require_contains(surface_composite, "texture(whitewater_texture, uv) * center_weight",
+                         "water 3D whitewater filtering should keep particle detail");
         require_contains(surface_composite, "whitewater_foam",
                          "water 3D surface composite should integrate whitewater into foam");
         require_contains(surface_composite, "whitewater_surface_gate",
                          "water 3D surface composite should depth-gate whitewater foam");
+        require_contains(surface_composite, "whitewater_front_gate",
+                         "water 3D surface composite should layer front whitewater over water");
         require_contains(commands, "RenderGraphFrameExecutor",
                          "water 3D surface render should be recorded through the render graph");
         require_contains(commands, "water scene",
@@ -791,6 +825,12 @@ int main() {
                          "water 3D whitewater render should use compacted indirect draw args");
         require(count_occurrences(commands, "surface_filter_options(config, extent)") >= 2U,
                 "water 3D surface and whitewater passes should share filter options");
+        require_contains(commands, "config.whitewater_blur_radius_px",
+                         "water 3D whitewater blur should be passed to surface rendering");
+        require_contains(gpu_resources, "whitewater_sampler_",
+                         "water 3D whitewater should use its own sampler");
+        require_contains(gpu_resources, "VK_FILTER_NEAREST",
+                         "water 3D whitewater zero blur should avoid implicit linear filtering");
         require_contains(render_shader, "render_view == 5u",
                          "water 3D renderer should expose the solid debug view");
         require_contains(render_shader, "render_view == 6u",

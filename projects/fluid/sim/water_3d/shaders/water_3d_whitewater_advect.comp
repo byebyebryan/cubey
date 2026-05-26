@@ -261,7 +261,7 @@ void main() {
         velocity *= frame_drag;
         position += velocity * WATER3D_DT;
     } else {
-        velocity = mix(velocity, grid_velocity, 0.35) * frame_drag;
+        velocity = mix(velocity, grid_velocity, 0.72) * mix(1.0, frame_drag, 0.35);
         position += velocity * WATER3D_DT;
     }
 
@@ -277,9 +277,9 @@ void main() {
     }
     float next_kind = classify_whitewater_kind(kind, cell, width, height, depth);
     if (kind > 0.5 && next_kind == WHITEWATER_KIND_FOAM) {
-        velocity = mix(velocity, grid_velocity, 0.65);
-        state.x = max(0.45, WATER3D_WHITEWATER_LIFETIME * 0.8);
-        state.z = max(state.z, 0.85);
+        velocity = mix(velocity, grid_velocity, 0.85);
+        state.x = max(0.65, WATER3D_WHITEWATER_LIFETIME * 0.9);
+        state.z = max(state.z, 0.95);
     }
     if (kind != WHITEWATER_KIND_BUBBLE && next_kind == WHITEWATER_KIND_BUBBLE) {
         state.x = max(state.x, WATER3D_WHITEWATER_LIFETIME * 1.4);

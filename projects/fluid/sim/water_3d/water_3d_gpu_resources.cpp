@@ -292,6 +292,7 @@ void Water3DGpuResources::destroy_swapchain_resources() {
     surface_pack_material_.reset();
     surface_thickness_material_.reset();
     surface_scene_material_.reset();
+    whitewater_sampler_.reset();
     surface_sampler_.reset();
     render_pipeline_resource_.reset();
     depth_attachment_.reset();
@@ -851,6 +852,11 @@ void Water3DGpuResources::create_render_pipeline(
                                          .mag_filter = VK_FILTER_LINEAR,
                                          .address_mode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
                                      });
+    whitewater_sampler_.emplace(device, cubey::vulkan::SamplerConfig{
+                                            .min_filter = VK_FILTER_NEAREST,
+                                            .mag_filter = VK_FILTER_NEAREST,
+                                            .address_mode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+                                        });
 
     const cubey::render::MaterialPassInfo debug_material_pass = water_render_pass_info();
     const cubey::render::MaterialPassInfo surface_scene_material_pass =
@@ -1586,6 +1592,8 @@ void Water3DGpuResources::update_surface_descriptors(
     const cubey::vulkan::Sampler& sampler =
         require_initialized(surface_sampler_, "water 3D surface sampler is not initialized");
     const VkSampler sampler_handle = sampler.handle();
+    const cubey::vulkan::Sampler& whitewater_sampler =
+        require_initialized(whitewater_sampler_, "water 3D whitewater sampler is not initialized");
     const VkDescriptorSet composite_set = surface_composite_descriptor_set(frame_slot);
     cubey::vulkan::DescriptorWriteBatch writes;
     writes
@@ -1607,7 +1615,7 @@ void Water3DGpuResources::update_surface_descriptors(
                                 scene_depth.layout)
         .combined_image_sampler(composite_set, 3, environment.prefiltered_cube.sampler().handle(),
                                 environment.prefiltered_cube.view())
-        .combined_image_sampler(composite_set, 4, sampler_handle, whitewater.view,
+        .combined_image_sampler(composite_set, 4, whitewater_sampler.handle(), whitewater.view,
                                 whitewater.layout);
     writes.update(device);
 }
