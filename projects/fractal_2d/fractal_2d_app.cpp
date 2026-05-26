@@ -122,12 +122,13 @@ class FractalApp {
     }
 
     void update_input(cubey::host::WindowedAppContext& context) {
-        if (context.input().key_pressed(cubey::input::Key::R)) {
+        const auto input = context.filtered_input();
+        if (input.key_pressed(cubey::input::Key::R)) {
             view_controller_.reset();
         }
 
         const VkExtent2D extent = context.swapchain().extent();
-        view_controller_.update_from_input(context.input(), static_cast<float>(extent.width),
+        view_controller_.update_from_input(input, static_cast<float>(extent.width),
                                            static_cast<float>(extent.height));
     }
 

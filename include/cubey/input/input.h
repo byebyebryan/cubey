@@ -112,6 +112,60 @@ class InputFrame {
     PointerDelta scroll_delta_{};
 };
 
+class FilteredInputFrame {
+  public:
+    FilteredInputFrame(const InputFrame& input, bool mouse_enabled, bool keyboard_enabled)
+        : input_(input), mouse_enabled_(mouse_enabled), keyboard_enabled_(keyboard_enabled) {}
+
+    [[nodiscard]] bool mouse_enabled() const {
+        return mouse_enabled_;
+    }
+    [[nodiscard]] bool keyboard_enabled() const {
+        return keyboard_enabled_;
+    }
+
+    [[nodiscard]] bool key_down(Key key) const {
+        return keyboard_enabled_ && input_.key_down(key);
+    }
+    [[nodiscard]] bool key_pressed(Key key) const {
+        return keyboard_enabled_ && input_.key_pressed(key);
+    }
+    [[nodiscard]] bool key_released(Key key) const {
+        return keyboard_enabled_ && input_.key_released(key);
+    }
+
+    [[nodiscard]] bool mouse_button_down(MouseButton button) const {
+        return mouse_enabled_ && input_.mouse_button_down(button);
+    }
+    [[nodiscard]] bool mouse_button_pressed(MouseButton button) const {
+        return mouse_enabled_ && input_.mouse_button_pressed(button);
+    }
+    [[nodiscard]] bool mouse_button_released(MouseButton button) const {
+        return mouse_enabled_ && input_.mouse_button_released(button);
+    }
+    [[nodiscard]] PointerDelta mouse_button_delta(MouseButton button) const {
+        return mouse_enabled_ ? input_.mouse_button_delta(button) : PointerDelta{};
+    }
+
+    [[nodiscard]] bool has_cursor() const {
+        return mouse_enabled_ && input_.has_cursor();
+    }
+    [[nodiscard]] CursorPosition cursor() const {
+        return mouse_enabled_ ? input_.cursor() : CursorPosition{};
+    }
+    [[nodiscard]] PointerDelta cursor_delta() const {
+        return mouse_enabled_ ? input_.cursor_delta() : PointerDelta{};
+    }
+    [[nodiscard]] PointerDelta scroll_delta() const {
+        return mouse_enabled_ ? input_.scroll_delta() : PointerDelta{};
+    }
+
+  private:
+    const InputFrame& input_;
+    bool mouse_enabled_ = true;
+    bool keyboard_enabled_ = true;
+};
+
 class InputState {
   public:
     void begin_frame();

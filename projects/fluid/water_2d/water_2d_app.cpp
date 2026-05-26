@@ -127,17 +127,15 @@ class Water2DApp {
     void update_interaction(cubey::host::WindowedAppContext& context,
                             const ProjectFrame& project_frame) {
         (void)project_frame;
-        const cubey::input::InputFrame& input = context.input();
-        if (!context.ui_wants_keyboard()) {
-            if (input.key_pressed(cubey::input::Key::Space)) {
-                paused_ = !paused_;
-            }
-            if (input.key_pressed(cubey::input::Key::R)) {
-                reset_requested_ = true;
-            }
-            if (input.key_pressed(cubey::input::Key::D)) {
-                debug_view_ = next_debug_view(debug_view_);
-            }
+        const auto input = context.filtered_input();
+        if (input.key_pressed(cubey::input::Key::Space)) {
+            paused_ = !paused_;
+        }
+        if (input.key_pressed(cubey::input::Key::R)) {
+            reset_requested_ = true;
+        }
+        if (input.key_pressed(cubey::input::Key::D)) {
+            debug_view_ = next_debug_view(debug_view_);
         }
     }
 

@@ -29,10 +29,11 @@ int MaterialCubesApp::run() {
         destroy_swapchain_resources();
     };
     callbacks.update = [this](cubey::host::WindowedAppContext& context, const FrameTiming& timing) {
-        if (context.input().key_pressed(cubey::input::Key::D)) {
+        const auto input = context.filtered_input();
+        if (input.key_pressed(cubey::input::Key::D)) {
             debug_view_ = render::next_pbr_debug_view(debug_view_);
         }
-        orbit_controller_.update_from_input(context.input(), timing.delta_seconds);
+        orbit_controller_.update_from_input(input, timing.delta_seconds);
         update_scene_transform(timing);
     };
     callbacks.record_frame = [this](cubey::host::WindowedAppContext& context,

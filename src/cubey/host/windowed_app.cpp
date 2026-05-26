@@ -75,8 +75,8 @@ int run_windowed_app(WindowedAppConfig config, WindowedAppCallbacks callbacks) {
             .draw_ui = make_draw_ui_callback(callbacks),
             .update =
                 [config, &callbacks](WindowedAppContext& context, const FrameTiming& timing) {
-                    if (config.close_on_escape && !context.ui_wants_keyboard() &&
-                        context.input().key_pressed(cubey::input::Key::Escape)) {
+                    const auto input = context.filtered_input();
+                    if (config.close_on_escape && input.key_pressed(cubey::input::Key::Escape)) {
                         context.window().request_close();
                     }
                     if (callbacks.update) {

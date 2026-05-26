@@ -30,9 +30,8 @@ int TexturedCubeApp::run() {
         (void)context;
         orbit_controller_.set_auto_rotation_speed(0.9F);
     };
-    callbacks.update = [this](cubey::host::WindowedAppContext& context,
-                              const FrameTiming& timing) {
-        orbit_controller_.update_from_input(context.input(), timing.delta_seconds);
+    callbacks.update = [this](cubey::host::WindowedAppContext& context, const FrameTiming& timing) {
+        orbit_controller_.update_from_input(context.filtered_input(), timing.delta_seconds);
         update_scene_transform(timing);
     };
     callbacks.record_frame = [this](cubey::host::WindowedAppContext& context,

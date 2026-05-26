@@ -1,7 +1,8 @@
-#include <cubey/scene/camera_2d.h>
+#include <cubey/host/ui.h>
 #include <cubey/input/input.h>
 #include <cubey/input/pan_zoom_2d_controller.h>
 #include <cubey/input/pointer_drag.h>
+#include <cubey/scene/camera_2d.h>
 
 #include <stdexcept>
 
@@ -124,6 +125,47 @@ void test_input_state_ignores_unknown_inputs() {
             "unknown mouse button should not become down");
     require(!frame.mouse_button_pressed(cubey::input::MouseButton::Unknown),
             "unknown mouse button should not expose an edge");
+}
+
+void test_filtered_input_frame_masks_captured_ui_channels() {
+    cubey::input::InputState input;
+
+    input.begin_frame();
+    input.record_key({
+        .key = cubey::input::Key::Space,
+        .action = cubey::input::KeyAction::Press,
+    });
+    input.record_mouse_button({
+        .button = cubey::input::MouseButton::Left,
+        .action = cubey::input::MouseButtonAction::Press,
+        .cursor = {.x = 12.0, .y = 18.0},
+    });
+    input.record_cursor_position({.cursor = {.x = 17.0, .y = 14.0}});
+    input.record_scroll({.x_offset = 0.0, .y_offset = 2.0, .cursor = {.x = 17.0, .y = 14.0}});
+
+    const cubey::input::FilteredInputFrame mouse_blocked(input.frame(), false, true);
+    require(mouse_blocked.keyboard_enabled(), "keyboard should stay enabled");
+    require(!mouse_blocked.mouse_enabled(), "mouse should be disabled");
+    require(mouse_blocked.key_pressed(cubey::input::Key::Space),
+            "keyboard events should pass when keyboard is enabled");
+    require(!mouse_blocked.mouse_button_down(cubey::input::MouseButton::Left),
+            "mouse down should be hidden when mouse is disabled");
+    require(!mouse_blocked.has_cursor(), "cursor should be hidden when mouse is disabled");
+    require_close(mouse_blocked.scroll_delta().y, 0.0, "scroll should be zeroed when disabled");
+
+    const cubey::input::FilteredInputFrame keyboard_blocked(input.frame(), true, false);
+    require(!keyboard_blocked.key_pressed(cubey::input::Key::Space),
+            "keyboard events should be hidden when keyboard is disabled");
+    require(keyboard_blocked.mouse_button_down(cubey::input::MouseButton::Left),
+            "mouse state should pass when mouse is enabled");
+    require(keyboard_blocked.has_cursor(), "cursor should pass when mouse is enabled");
+    require_close(keyboard_blocked.cursor().x, 17.0, "cursor x should pass through");
+    require_close(keyboard_blocked.scroll_delta().y, 2.0, "scroll should pass through");
+
+    const auto ui_filtered =
+        cubey::host::filtered_input(input.frame(), {.wants_mouse = true, .wants_keyboard = false});
+    require(!ui_filtered.mouse_enabled(), "ui mouse capture should disable mouse reads");
+    require(ui_filtered.keyboard_enabled(), "uncaptured keyboard should stay enabled");
 }
 
 void test_pointer_drag_tracks_active_cursor_and_accumulated_delta() {

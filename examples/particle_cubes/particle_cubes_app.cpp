@@ -25,13 +25,13 @@ int ParticleCubesApp::run() {
         (void)context;
         destroy_swapchain_resources();
     };
-    callbacks.update = [this](cubey::host::WindowedAppContext& context,
-                              const FrameTiming& timing) {
-        orbit_controller_.update_from_input(context.input(), timing.delta_seconds);
-        if (context.input().key_pressed(cubey::input::Key::Space)) {
+    callbacks.update = [this](cubey::host::WindowedAppContext& context, const FrameTiming& timing) {
+        const auto input = context.filtered_input();
+        orbit_controller_.update_from_input(input, timing.delta_seconds);
+        if (input.key_pressed(cubey::input::Key::Space)) {
             paused_ = !paused_;
         }
-        if (context.input().key_pressed(cubey::input::Key::R)) {
+        if (input.key_pressed(cubey::input::Key::R)) {
             reset_cubes_requested_ = true;
         }
         if (reset_cubes_requested_) {

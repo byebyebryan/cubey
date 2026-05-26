@@ -29,6 +29,7 @@ class OrbitController {
     void drag_to(double x, double y);
     void end_drag();
     void update_from_input(const cubey::input::InputFrame& input, double delta_seconds);
+    void update_from_input(const cubey::input::FilteredInputFrame& input, double delta_seconds);
 
     float yaw() const {
         return yaw_;
@@ -47,6 +48,9 @@ class OrbitController {
     }
 
   private:
+    void apply_input(bool reset_pressed, bool pause_pressed, double scroll_y, bool mouse_enabled,
+                     bool mouse_down, cubey::input::PointerDelta mouse_delta, double delta_seconds);
+
     OrbitControllerConfig config_{};
     float distance_ = 4.2F;
     float yaw_ = 0.0F;

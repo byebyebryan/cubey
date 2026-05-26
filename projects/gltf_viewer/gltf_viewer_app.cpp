@@ -114,10 +114,11 @@ int GltfViewerApp::run_windowed() {
     };
     callbacks.update = [this](cubey::host::WindowedAppContext& context, const FrameTiming& timing) {
         update_animation(static_cast<float>(timing.delta_seconds));
-        if (context.input().key_pressed(cubey::input::Key::D)) {
+        const auto input = context.filtered_input();
+        if (input.key_pressed(cubey::input::Key::D)) {
             debug_view_ = render::next_pbr_debug_view(debug_view_);
         }
-        orbit_controller_.update_from_input(context.input(), timing.delta_seconds);
+        orbit_controller_.update_from_input(input, timing.delta_seconds);
         update_camera_transform();
     };
     callbacks.record_frame = [this](cubey::host::WindowedAppContext& context,
@@ -162,9 +163,8 @@ int GltfViewerApp::run_headless() {
 
     cubey::host::HeadlessPngHostCallbacks callbacks;
     callbacks.create_resources = [this](cubey::host::HeadlessPngContext& context) {
-        create_global_resources_if_needed(
-            context.device(), context.gpu(),
-            cubey::host::headless_capture_frame_slot_count(config_));
+        create_global_resources_if_needed(context.device(), context.gpu(),
+                                          cubey::host::headless_capture_frame_slot_count(config_));
         create_frame_resources(context.device(), context.render_target().extent,
                                context.render_target().format);
     };

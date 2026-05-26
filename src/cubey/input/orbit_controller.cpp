@@ -112,21 +112,42 @@ void OrbitController::end_drag() {
 
 void OrbitController::update_from_input(const cubey::input::InputFrame& input,
                                         double delta_seconds) {
-    if (input.key_pressed(cubey::input::Key::R)) {
+    apply_input(input.key_pressed(cubey::input::Key::R),
+                input.key_pressed(cubey::input::Key::Space), input.scroll_delta().y, true,
+                input.mouse_button_down(cubey::input::MouseButton::Left),
+                input.mouse_button_delta(cubey::input::MouseButton::Left), delta_seconds);
+}
+
+void OrbitController::update_from_input(const cubey::input::FilteredInputFrame& input,
+                                        double delta_seconds) {
+    apply_input(input.key_pressed(cubey::input::Key::R),
+                input.key_pressed(cubey::input::Key::Space), input.scroll_delta().y,
+                input.mouse_enabled(), input.mouse_button_down(cubey::input::MouseButton::Left),
+                input.mouse_button_delta(cubey::input::MouseButton::Left), delta_seconds);
+}
+
+void OrbitController::apply_input(bool reset_pressed, bool pause_pressed, double scroll_y,
+                                  bool mouse_enabled, bool mouse_down,
+                                  cubey::input::PointerDelta mouse_delta, double delta_seconds) {
+    if (reset_pressed) {
         reset();
     }
-    if (input.key_pressed(cubey::input::Key::Space)) {
+    if (pause_pressed) {
         toggle_pause();
     }
 
-    zoom_by_scroll(input.scroll_delta().y);
+    zoom_by_scroll(scroll_y);
 
-    dragging_ = input.mouse_button_down(cubey::input::MouseButton::Left);
+    if (!mouse_enabled) {
+        dragging_ = false;
+        update(delta_seconds);
+        return;
+    }
+
+    dragging_ = mouse_down;
     if (dragging_) {
-        const cubey::input::PointerDelta delta =
-            input.mouse_button_delta(cubey::input::MouseButton::Left);
-        yaw_ -= static_cast<float>(delta.x) * kDragRadiansPerPixel;
-        pitch_ -= static_cast<float>(delta.y) * kDragRadiansPerPixel;
+        yaw_ -= static_cast<float>(mouse_delta.x) * kDragRadiansPerPixel;
+        pitch_ -= static_cast<float>(mouse_delta.y) * kDragRadiansPerPixel;
         pitch_ = std::clamp(pitch_, -kMaxPitchRadians, kMaxPitchRadians);
     }
 

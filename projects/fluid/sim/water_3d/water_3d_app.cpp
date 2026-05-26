@@ -503,25 +503,23 @@ class Water3DApp {
   private:
     void update_interaction(cubey::host::WindowedAppContext& context,
                             const ProjectFrame& project_frame) {
-        const cubey::input::InputFrame& input = context.input();
-        if (!context.ui_wants_keyboard()) {
-            if (input.key_pressed(cubey::input::Key::Space)) {
-                paused_ = !paused_;
-            }
-            if (input.key_pressed(cubey::input::Key::R)) {
-                reset_simulation();
-            }
-            if (input.key_pressed(cubey::input::Key::D)) {
-                render_view_ = next_render_view(render_view_);
-            }
+        const auto input = context.filtered_input();
+        if (input.key_pressed(cubey::input::Key::Space)) {
+            paused_ = !paused_;
+        }
+        if (input.key_pressed(cubey::input::Key::R)) {
+            reset_simulation();
+        }
+        if (input.key_pressed(cubey::input::Key::D)) {
+            render_view_ = next_render_view(render_view_);
         }
 
         update_camera_input(context, project_frame.delta_seconds);
     }
 
     void update_camera_input(cubey::host::WindowedAppContext& context, double delta_seconds) {
-        const cubey::input::InputFrame& input = context.input();
-        if (!context.ui_wants_mouse()) {
+        const auto input = context.filtered_input();
+        if (input.mouse_enabled()) {
             orbit_controller_.zoom_by_scroll(input.scroll_delta().y);
             if (input.has_cursor()) {
                 const cubey::input::CursorPosition cursor = input.cursor();
@@ -533,7 +531,7 @@ class Water3DApp {
                 }
             }
         }
-        if (context.ui_wants_mouse() ||
+        if (!input.mouse_enabled() ||
             input.mouse_button_released(cubey::input::MouseButton::Left) ||
             !input.mouse_button_down(cubey::input::MouseButton::Left)) {
             orbit_controller_.end_drag();

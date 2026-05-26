@@ -67,6 +67,9 @@ class WindowedAppContext {
     [[nodiscard]] const cubey::input::InputFrame& input() const {
         return input_;
     }
+    [[nodiscard]] cubey::input::FilteredInputFrame filtered_input() const {
+        return cubey::host::filtered_input(input_, ui_capture_);
+    }
     [[nodiscard]] std::uint32_t frame_slot_count() const {
         return frame_slot_count_;
     }
