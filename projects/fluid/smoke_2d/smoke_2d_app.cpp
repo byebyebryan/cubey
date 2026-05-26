@@ -2,11 +2,11 @@
 
 #include "smoke_2d_commands.h"
 #include "smoke_2d_config.h"
+#include "smoke_2d_diagnostics.h"
 #include "smoke_2d_gpu_resources.h"
 #include "smoke_2d_injectors.h"
 #include "smoke_2d_ui.h"
 
-#include <cubey/core/profiling.h>
 #include <cubey/engine/project_gpu_services.h>
 #include <cubey/engine/project_runtime.h>
 #include <cubey/host/frame_stats.h>
@@ -33,28 +33,6 @@ namespace {
 using cubey::FrameTiming;
 using cubey::ProjectFrame;
 using cubey::host::FrameStatsSample;
-
-[[nodiscard]] std::uint64_t profile_frame_index(const ProjectFrame& frame) {
-    return frame.frame_index == 0 ? 0 : frame.frame_index - 1U;
-}
-
-[[nodiscard]] std::uint64_t collected_profile_frame_index(const ProjectFrame& frame,
-                                                          cubey::render::FrameSlot frame_slot) {
-    if (frame.frame_index > frame_slot.count) {
-        return frame.frame_index - static_cast<std::uint64_t>(frame_slot.count) - 1U;
-    }
-    return profile_frame_index(frame);
-}
-
-void record_gpu_timings(cubey::profiling::ProfileRecorder* recorder, std::uint64_t frame_index,
-                        const std::vector<cubey::vulkan::GpuPassTiming>& timings) {
-    if (recorder == nullptr) {
-        return;
-    }
-    for (const cubey::vulkan::GpuPassTiming& timing : timings) {
-        recorder->record_gpu_span(frame_index, timing.label, timing.milliseconds);
-    }
-}
 
 class Smoke2DApp {
   public:
@@ -268,8 +246,8 @@ class Smoke2DApp {
         std::printf("\n");
     }
 
-    void record_headless_simulation_frame(cubey::ProjectGpuServices& gpu,
-                                          const ProjectFrame& frame) {
+    void record_headless_simulation_frame(cubey::ProjectGpuServices& gpu, const ProjectFrame& frame,
+                                          cubey::profiling::ProfileRecorder* profile_recorder) {
         update_injectors(frame);
         static_cast<void>(gpu.submit_and_wait({
             .label = "smoke_2d headless simulation frame",
@@ -281,6 +259,20 @@ class Smoke2DApp {
                     commands.submit_and_wait();
                 },
         }));
+        const std::uint64_t frame_index = profile_frame_index(frame);
+        if (should_record_smoke_2d_diagnostics(profile_recorder, smoke_config_, frame_index)) {
+            const std::vector<std::uint8_t> field =
+                gpu.readback_buffer(resources_.field_a().handle(), resources_.field_a().size(),
+                                    "smoke_2d field diagnostics readback");
+            const std::vector<std::uint8_t> divergence = gpu.readback_buffer(
+                resources_.divergence().handle(), resources_.divergence().size(),
+                "smoke_2d divergence diagnostics readback");
+            const std::vector<std::uint8_t> curl =
+                gpu.readback_buffer(resources_.curl().handle(), resources_.curl().size(),
+                                    "smoke_2d curl diagnostics readback");
+            record_smoke_2d_diagnostics(*profile_recorder, frame_index, smoke_config_, field,
+                                        divergence, curl);
+        }
     }
 
     int run_headless() {
@@ -303,10 +295,11 @@ class Smoke2DApp {
                         return fixed_headless_timing(smoke_config_, simulation_frame);
                     },
                 .simulate_frame =
-                    [this](cubey::host::HeadlessPngContext&,
+                    [this](cubey::host::HeadlessPngContext& context,
                            const cubey::host::HeadlessCaptureFrame& frame) {
                         const ProjectFrame project_frame = runtime_.frame_for_timing(frame.timing);
-                        record_headless_simulation_frame(runtime_.gpu(), project_frame);
+                        record_headless_simulation_frame(runtime_.gpu(), project_frame,
+                                                         context.profile_recorder());
                     },
             });
         callbacks.record_capture = [this](cubey::host::HeadlessPngContext&,

@@ -22,6 +22,7 @@ layout(push_constant) uniform SimulationParams {
     vec4 grid_dt_time;
     vec4 decay_options;
     vec4 solver_options;
+    vec4 tuning_options;
 } params;
 
 uint cell_index(ivec2 coord, uint width, uint height) {

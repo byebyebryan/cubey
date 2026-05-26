@@ -94,7 +94,15 @@ int main() {
                 "smoke injector orbit phase spread should default around a full turn");
         require(config.vorticity_strength == 18.0F,
                 "fluid vorticity strength should have a visible default");
+        require(config.advection_strength == 0.18F,
+                "smoke advection strength should default to the tuned shader scale");
+        require(config.low_energy_cleanup_strength == 0.14F,
+                "smoke low-energy cleanup should default to the tuned artifact suppression");
+        require(config.low_energy_cleanup_start == 0.035F && config.low_energy_cleanup_end == 0.22F,
+                "smoke low-energy cleanup should expose the tuned residual range");
         require(!config.obstacles_enabled, "smoke obstacles should default disabled");
+        require(!config.profile_diagnostics && config.profile_diagnostic_interval == 1U,
+                "smoke diagnostics should be opt-in with per-frame sampling by default");
         require(cubey::projects::fluid::smoke_2d::scalar_field_byte_size(config) ==
                     sizeof(float) * kExpectedCellCount,
                 "scalar field byte size should cover one float per grid location");
@@ -154,6 +162,11 @@ int main() {
                 "default run config should preserve smoke orbit radius");
         require(default_from_run_config.vorticity_strength == config.vorticity_strength,
                 "default run config should preserve smoke vorticity");
+        require(default_from_run_config.advection_strength == config.advection_strength,
+                "default run config should preserve smoke advection strength");
+        require(default_from_run_config.low_energy_cleanup_strength ==
+                    config.low_energy_cleanup_strength,
+                "default run config should preserve smoke cleanup strength");
 
         cubey::RunConfig run_config;
         run_config.grid.width = 1024;
@@ -208,6 +221,28 @@ int main() {
             cubey::projects::fluid::smoke_2d::smoke_2d_config_from_run_config(run_config);
         require(configured_with_obstacles.obstacles_enabled,
                 "smoke config should honor run config obstacle toggle");
+        cubey::RunConfig diagnostics_run_config;
+        diagnostics_run_config.headless = true;
+        diagnostics_run_config.profile_diagnostics = true;
+        diagnostics_run_config.profile_diagnostic_interval = 7U;
+        const cubey::projects::fluid::smoke_2d::Smoke2DConfig diagnostics_config =
+            cubey::projects::fluid::smoke_2d::smoke_2d_config_from_run_config(
+                diagnostics_run_config);
+        require(diagnostics_config.profile_diagnostics &&
+                    diagnostics_config.profile_diagnostic_interval == 7U &&
+                    diagnostics_config.headless,
+                "smoke run-config construction should preserve profile diagnostics flags");
+        bool rejected_windowed_diagnostics = false;
+        try {
+            cubey::RunConfig windowed_diagnostics;
+            windowed_diagnostics.profile_diagnostics = true;
+            static_cast<void>(cubey::projects::fluid::smoke_2d::smoke_2d_config_from_run_config(
+                windowed_diagnostics));
+        } catch (const std::runtime_error&) {
+            rejected_windowed_diagnostics = true;
+        }
+        require(rejected_windowed_diagnostics,
+                "smoke profile diagnostics should require headless mode");
 
         bool threw_for_too_many_injectors = false;
         try {
@@ -339,6 +374,16 @@ int main() {
                              "smoke injector force should not bypass injection strength");
 
         const std::string commands_source = read_text_file(source_root / "smoke_2d_commands.cpp");
+        const std::string advect_predict_shader =
+            read_text_file(source_root / "shaders/smoke_2d_advect_predict.comp");
+        const std::string advect_correct_shader =
+            read_text_file(source_root / "shaders/smoke_2d_advect_correct.comp");
+        require_contains(advect_predict_shader, "params.tuning_options.x",
+                         "smoke advect prediction should use push-constant advection strength");
+        require_contains(advect_correct_shader, "params.tuning_options.y",
+                         "smoke advect correction should use push-constant cleanup strength");
+        require_not_contains(advect_predict_shader, "0.18",
+                             "smoke advect prediction should not hardcode advection strength");
         require_contains(commands_source, "\"advect_predict\"",
                          "smoke commands should profile advect prediction");
         require_contains(commands_source, "\"pressure\"",
@@ -352,6 +397,14 @@ int main() {
                          "smoke app should export GPU timings into the profile recorder");
         require_contains(app_source, "AlreadyRecording",
                          "smoke app should own command buffer timing around render graph record");
+        require_contains(app_source, "resources_.field_a().handle()",
+                         "smoke headless path should read back field diagnostics");
+        const std::string diagnostics_source =
+            read_text_file(source_root / "smoke_2d_diagnostics.cpp");
+        require_contains(diagnostics_source, "smoke_2d.field",
+                         "smoke diagnostics readback should export field metrics");
+        require_contains(diagnostics_source, "divergence_abs_max",
+                         "smoke diagnostics readback should export solver residual metrics");
 
     } catch (const std::exception& error) {
         std::fprintf(stderr, "smoke_2d_config_tests: %s\n", error.what());

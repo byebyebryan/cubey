@@ -7,6 +7,7 @@ cubey_add_app_target(
     SOURCES
         smoke_2d_app.cpp
         smoke_2d_commands.cpp
+        smoke_2d_diagnostics.cpp
         smoke_2d_injectors.cpp
         smoke_2d_ui.cpp
         main.cpp

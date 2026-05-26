@@ -34,6 +34,7 @@ layout(push_constant) uniform SimulationParams {
     vec4 grid_dt_time;
     vec4 decay_options;
     vec4 solver_options;
+    vec4 tuning_options;
 } params;
 
 uint cell_index(ivec2 coord, uint width, uint height) {
@@ -140,8 +141,10 @@ void main() {
 
     Cell original = source_field.cells[index];
     Cell predicted = predicted_field.cells[index];
-    vec2 previous_uv = clamp(uv - (original.velocity.xy * dt * 0.18), vec2(0.0), vec2(1.0));
-    vec2 next_uv = clamp(uv + (predicted.velocity.xy * dt * 0.18), vec2(0.0), vec2(1.0));
+    vec2 previous_uv =
+        clamp(uv - (original.velocity.xy * dt * params.tuning_options.x), vec2(0.0), vec2(1.0));
+    vec2 next_uv =
+        clamp(uv + (predicted.velocity.xy * dt * params.tuning_options.x), vec2(0.0), vec2(1.0));
     Cell reversed = sample_predicted_field(next_uv, width, height);
 
     Cell corrected;
@@ -161,7 +164,9 @@ void main() {
     float dye_energy = max(max(corrected.dye.r, corrected.dye.g), corrected.dye.b);
     float velocity_energy = length(corrected.velocity.xy) * 0.08;
     float residual_energy = max(dye_energy, velocity_energy);
-    float cleanup = (1.0 - smoothstep(0.035, 0.22, residual_energy)) * 0.14;
+    float cleanup = (1.0 - smoothstep(params.tuning_options.z, params.tuning_options.w,
+                                      residual_energy)) *
+                    params.tuning_options.y;
     corrected.dye.rgb = mix(corrected.dye.rgb, neighborhood.dye.rgb, cleanup);
     corrected.velocity.xy = mix(corrected.velocity.xy, neighborhood.velocity.xy, cleanup);
 

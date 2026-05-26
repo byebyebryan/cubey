@@ -62,9 +62,16 @@ void draw_smoke_2d_ui(Smoke2DUiContext ui) {
             ui.config.pressure_iterations = static_cast<std::uint32_t>(pressure_iterations);
         }
         ImGui::SliderFloat("Vorticity", &ui.config.vorticity_strength, 0.0F, 40.0F);
+        ImGui::SliderFloat("Advection scale", &ui.config.advection_strength, 0.04F, 0.32F, "%.3f");
         ImGui::SliderFloat("Dye decay", &ui.config.dye_decay_per_second, 0.950F, 1.0F, "%.4f");
         ImGui::SliderFloat("Velocity decay", &ui.config.velocity_decay_per_second, 0.950F, 1.0F,
                            "%.4f");
+        ImGui::SliderFloat("Cleanup strength", &ui.config.low_energy_cleanup_strength, 0.0F, 0.35F,
+                           "%.3f");
+        ImGui::SliderFloat("Cleanup start", &ui.config.low_energy_cleanup_start, 0.0F,
+                           ui.config.low_energy_cleanup_end - 0.001F, "%.3f");
+        ImGui::SliderFloat("Cleanup end", &ui.config.low_energy_cleanup_end,
+                           ui.config.low_energy_cleanup_start + 0.001F, 0.5F, "%.3f");
     }
 
     if (section("Injectors", true)) {

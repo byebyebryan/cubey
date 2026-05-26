@@ -26,6 +26,7 @@ struct SimulationPushConstants {
     std::array<float, 4> grid_dt_time{};
     std::array<float, 4> decay_options{};
     std::array<float, 4> solver_options{};
+    std::array<float, 4> tuning_options{};
 };
 
 static_assert(sizeof(RenderPushConstants) == sizeof(float) * 4U);
@@ -120,6 +121,13 @@ void record_injector_buffer_update(VkCommandBuffer command_buffer,
                 config.injector_injection_radius,
                 config.injector_injection_strength,
                 static_cast<float>(config.procedural_injector_count),
+            },
+        .tuning_options =
+            {
+                config.advection_strength,
+                config.low_energy_cleanup_strength,
+                config.low_energy_cleanup_start,
+                config.low_energy_cleanup_end,
             },
     };
 }

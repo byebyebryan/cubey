@@ -33,6 +33,7 @@ layout(push_constant) uniform SimulationParams {
     vec4 grid_dt_time;
     vec4 decay_options;
     vec4 solver_options;
+    vec4 tuning_options;
 } params;
 
 void apply_source(inout Cell cell, vec2 uv, vec2 center, float radius, float strength, vec3 dye,

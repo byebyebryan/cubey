@@ -31,7 +31,7 @@ enum class Smoke2DDebugView : std::uint32_t {
 
 inline constexpr std::uint32_t kMaxProceduralInjectorCount = 16;
 inline constexpr std::uint32_t kSmoke2DComputeGroupSize = 8;
-inline constexpr std::uint32_t kSmoke2DSimulationPushConstantFloatCount = 12;
+inline constexpr std::uint32_t kSmoke2DSimulationPushConstantFloatCount = 16;
 
 struct Smoke2DConfig {
     std::uint32_t grid_width = 1024;
@@ -50,7 +50,14 @@ struct Smoke2DConfig {
     float injector_orbit_angular_speed_spread = 0.8F;
     float injector_orbit_phase_spread = 1.0F;
     float vorticity_strength = 18.0F;
+    float advection_strength = 0.18F;
+    float low_energy_cleanup_strength = 0.14F;
+    float low_energy_cleanup_start = 0.035F;
+    float low_energy_cleanup_end = 0.22F;
+    std::uint32_t profile_diagnostic_interval = 1;
     bool obstacles_enabled = false;
+    bool profile_diagnostics = false;
+    bool headless = false;
 };
 
 [[nodiscard]] inline Smoke2DDebugView next_debug_view(Smoke2DDebugView view) {
@@ -200,7 +207,13 @@ struct Smoke2DConfig {
         smoke_config.vorticity_strength = config.smoke.vorticity;
     }
     smoke_config.obstacles_enabled = config.smoke.obstacles;
+    smoke_config.profile_diagnostics = config.profile_diagnostics;
+    smoke_config.profile_diagnostic_interval = config.profile_diagnostic_interval;
+    smoke_config.headless = config.headless;
     static_cast<void>(field_cell_count(smoke_config));
+    if (smoke_config.profile_diagnostics && !smoke_config.headless) {
+        throw std::runtime_error("smoke 2D profile diagnostics require --headless");
+    }
     if (smoke_config.pressure_iterations == 0) {
         throw std::runtime_error("smoke pressure iterations must be positive");
     }
@@ -234,6 +247,17 @@ struct Smoke2DConfig {
     }
     if (smoke_config.vorticity_strength < 0.0F) {
         throw std::runtime_error("smoke vorticity must be nonnegative");
+    }
+    if (smoke_config.advection_strength <= 0.0F) {
+        throw std::runtime_error("smoke advection strength must be positive");
+    }
+    if (smoke_config.low_energy_cleanup_strength < 0.0F ||
+        smoke_config.low_energy_cleanup_strength > 1.0F) {
+        throw std::runtime_error("smoke low-energy cleanup strength must be in [0, 1]");
+    }
+    if (smoke_config.low_energy_cleanup_start < 0.0F ||
+        smoke_config.low_energy_cleanup_end <= smoke_config.low_energy_cleanup_start) {
+        throw std::runtime_error("smoke low-energy cleanup range is invalid");
     }
     return smoke_config;
 }

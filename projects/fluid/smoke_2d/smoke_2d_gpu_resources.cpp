@@ -174,24 +174,23 @@ void Smoke2DGpuResources::create_field_buffers(cubey::ProjectGpuServices& gpu,
                                                const Smoke2DConfig& config) {
     const std::vector<SmokeCellGpu> initial(field_cell_count(config));
     const VkDeviceSize byte_size = static_cast<VkDeviceSize>(field_byte_size(config));
-    field_a_.emplace(upload_project_device_buffer(gpu, initial.data(), byte_size,
-                                                  VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+    const VkBufferUsageFlags field_usage =
+        VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+    field_a_.emplace(upload_project_device_buffer(gpu, initial.data(), byte_size, field_usage,
                                                   "smoke_2d field A upload"));
-    field_b_.emplace(upload_project_device_buffer(gpu, initial.data(), byte_size,
-                                                  VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+    field_b_.emplace(upload_project_device_buffer(gpu, initial.data(), byte_size, field_usage,
                                                   "smoke_2d field B upload"));
-    field_temp_.emplace(upload_project_device_buffer(gpu, initial.data(), byte_size,
-                                                     VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+    field_temp_.emplace(upload_project_device_buffer(gpu, initial.data(), byte_size, field_usage,
                                                      "smoke_2d field temp upload"));
 
     const std::vector<float> scalar_initial(field_cell_count(config), 0.0F);
     const VkDeviceSize scalar_byte_size = static_cast<VkDeviceSize>(scalar_field_byte_size(config));
+    const VkBufferUsageFlags scalar_usage =
+        VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
     divergence_.emplace(upload_project_device_buffer(gpu, scalar_initial.data(), scalar_byte_size,
-                                                     VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                                                     "smoke_2d divergence upload"));
+                                                     scalar_usage, "smoke_2d divergence upload"));
     curl_.emplace(upload_project_device_buffer(gpu, scalar_initial.data(), scalar_byte_size,
-                                               VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                                               "smoke_2d curl upload"));
+                                               scalar_usage, "smoke_2d curl upload"));
     const std::vector<float> obstacle_initial = create_obstacle_mask(config);
     obstacle_.emplace(upload_project_device_buffer(gpu, obstacle_initial.data(), scalar_byte_size,
                                                    VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
@@ -206,11 +205,9 @@ void Smoke2DGpuResources::create_field_buffers(cubey::ProjectGpuServices& gpu,
         VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
         "smoke_2d injector upload"));
     pressure_a_.emplace(upload_project_device_buffer(gpu, scalar_initial.data(), scalar_byte_size,
-                                                     VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                                                     "smoke_2d pressure A upload"));
+                                                     scalar_usage, "smoke_2d pressure A upload"));
     pressure_b_.emplace(upload_project_device_buffer(gpu, scalar_initial.data(), scalar_byte_size,
-                                                     VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                                                     "smoke_2d pressure B upload"));
+                                                     scalar_usage, "smoke_2d pressure B upload"));
 }
 
 void Smoke2DGpuResources::create_descriptor_resources(cubey::vulkan::Device& device) {

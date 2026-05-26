@@ -23,6 +23,7 @@ layout(push_constant) uniform SimulationParams {
     vec4 grid_dt_time;
     vec4 decay_options;
     vec4 solver_options;
+    vec4 tuning_options;
 } params;
 
 uint cell_index(ivec2 coord, uint width, uint height) {
@@ -67,7 +68,8 @@ void main() {
     Cell current = source_field.cells[index];
     vec2 uv = (vec2(x, y) + vec2(0.5)) / vec2(width, height);
     float dt = params.grid_dt_time.z;
-    vec2 previous_uv = clamp(uv - (current.velocity.xy * dt * 0.18), vec2(0.0), vec2(1.0));
+    vec2 previous_uv =
+        clamp(uv - (current.velocity.xy * dt * params.tuning_options.x), vec2(0.0), vec2(1.0));
     Cell advected = sample_field(previous_uv, width, height);
     advected.dye.rgb = clamp(advected.dye.rgb, vec3(0.0), vec3(8.0));
     advected.velocity.zw = vec2(0.0);
