@@ -62,6 +62,14 @@ bool inside_obstacle(vec3 position) {
     return obstacle_enabled() && length(position - obstacle_center()) <= obstacle_radius();
 }
 
+bool fire_render_mode() {
+    return int(params.obstacle_options.z + 0.5) == 0;
+}
+
+bool explosion_render_mode() {
+    return int(params.obstacle_options.z + 0.5) == 1;
+}
+
 bool ray_sphere_intersection(vec3 origin, vec3 direction, out float hit_t) {
     if (!obstacle_enabled()) {
         return false;
@@ -89,7 +97,8 @@ float volume_edge_distance(vec3 position) {
 
 float volume_edge_fade(vec3 position) {
     float edge_distance = volume_edge_distance(position);
-    return smoothstep(0.0, 0.045, edge_distance);
+    float edge_width = explosion_render_mode() ? 0.14 : 0.045;
+    return smoothstep(0.0, edge_width, edge_distance);
 }
 
 float raw_smoke_density(vec4 density) {
@@ -157,8 +166,9 @@ float flame_transfer(float flame, float heat, float soot, vec3 position) {
     float flame_mask = smoothstep(0.055, 0.34, flame);
     float heat_mask = smoothstep(0.035, 0.70, heat);
     float soot_cutoff = 1.0 - smoothstep(0.28, 1.10, soot);
-    float lower_volume = 1.0 - smoothstep(0.24, 0.82, position.y);
-    return pow(flame_mask * heat_mask * soot_cutoff, 1.75) * mix(0.04, 1.0, lower_volume);
+    float height_fade =
+        fire_render_mode() ? mix(0.04, 1.0, 1.0 - smoothstep(0.24, 0.82, position.y)) : 1.0;
+    return pow(flame_mask * heat_mask * soot_cutoff, 1.75) * height_fade;
 }
 
 vec3 flame_color(float heat, float core) {
@@ -179,9 +189,13 @@ vec3 flame_emission(vec4 density, vec3 position) {
     float heat = max(density.g, 0.0);
     float soot = max(density.r, 0.0);
     float flame_value = flame_transfer(flame, heat, soot, position);
-    float flame_height = 1.0 - smoothstep(0.28, 0.70, position.y);
+    float flame_height =
+        fire_render_mode() ? 1.0 - smoothstep(0.28, 0.70, position.y) : 1.0;
     float core = pow(smoothstep(0.20, 0.95, flame) * smoothstep(0.20, 1.10, heat), 2.2) *
                  params.color_options.z;
+    if (explosion_render_mode()) {
+        core *= 1.0 + smoothstep(0.08, 0.95, heat) * 0.65;
+    }
     float halo = smoothstep(0.08, 0.90, heat) * smoothstep(0.015, 0.40, flame) *
                  (1.0 - smoothstep(0.48, 1.40, soot)) * mix(0.10, 1.0, flame_height);
     float heat_glow = smoothstep(0.040, 0.72, heat) * (1.0 - smoothstep(0.42, 1.35, soot)) *

@@ -137,6 +137,9 @@ RunConfig parse_run_config(int argc, char** argv) {
         } else if (arg == "--pyro-sources") {
             config.pyro.sources =
                 parse_positive_u32(need_value("--pyro-sources"), "--pyro-sources");
+        } else if (arg == "--pyro-source-height") {
+            config.pyro.source_height =
+                parse_float(need_value("--pyro-source-height"), "--pyro-source-height");
         } else if (arg == "--pyro-source-radius") {
             config.pyro.source_radius =
                 parse_float(need_value("--pyro-source-radius"), "--pyro-source-radius");
@@ -321,6 +324,9 @@ RunConfig parse_run_config(int argc, char** argv) {
     }
     if (config.pyro.source_radius <= 0.0F) {
         throw std::runtime_error("pyro source radius must be positive");
+    }
+    if (config.pyro.source_height < 0.0F || config.pyro.source_height > 1.0F) {
+        throw std::runtime_error("pyro source height must be in [0, 1]");
     }
     if (config.pyro.source_force < 0.0F) {
         throw std::runtime_error("pyro source force must be nonnegative");

@@ -441,6 +441,8 @@ void test_run_config_parses_pyro_source_controls() {
     std::string program = "cubey";
     std::string sources_flag = "--pyro-sources";
     std::string sources_value = "6";
+    std::string height_flag = "--pyro-source-height";
+    std::string height_value = "0.21";
     std::string radius_flag = "--pyro-source-radius";
     std::string radius_value = "0.08";
     std::string force_flag = "--pyro-source-force";
@@ -457,18 +459,19 @@ void test_run_config_parses_pyro_source_controls() {
     std::string duration_value = "0.18";
     std::string boost_flag = "--explosion-boost";
     std::string boost_value = "22.0";
-    std::array<char*, 19> argv{
-        program.data(),          sources_flag.data(),      sources_value.data(),
-        radius_flag.data(),      radius_value.data(),      force_flag.data(),
-        force_value.data(),      soot_flag.data(),         soot_value.data(),
-        temperature_flag.data(), temperature_value.data(), fuel_flag.data(),
-        fuel_value.data(),       interval_flag.data(),     interval_value.data(),
-        duration_flag.data(),    duration_value.data(),    boost_flag.data(),
-        boost_value.data()};
+    std::array<char*, 21> argv{
+        program.data(),           sources_flag.data(),   sources_value.data(),
+        height_flag.data(),       height_value.data(),   radius_flag.data(),
+        radius_value.data(),      force_flag.data(),     force_value.data(),
+        soot_flag.data(),         soot_value.data(),     temperature_flag.data(),
+        temperature_value.data(), fuel_flag.data(),      fuel_value.data(),
+        interval_flag.data(),     interval_value.data(), duration_flag.data(),
+        duration_value.data(),    boost_flag.data(),     boost_value.data()};
 
     const cubey::RunConfig config =
         cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
     require(config.pyro.sources == 6, "run config should parse pyro source count");
+    require(config.pyro.source_height == 0.21F, "run config should parse pyro source height");
     require(config.pyro.source_radius == 0.08F, "run config should parse pyro source radius");
     require(config.pyro.source_force == 9.5F, "run config should parse pyro source force");
     require(config.pyro.soot == 7.25F, "run config should parse pyro soot amount");

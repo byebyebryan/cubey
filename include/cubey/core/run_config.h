@@ -51,6 +51,7 @@ struct RunConfig {
         std::uint32_t shadow_steps = 0;
         std::uint32_t shadow_update_interval = 0;
         std::uint32_t sources = 0;
+        float source_height = kRunConfigUnsetFloat;
         float source_radius = kRunConfigUnsetFloat;
         float source_force = kRunConfigUnsetFloat;
         float soot = kRunConfigUnsetFloat;

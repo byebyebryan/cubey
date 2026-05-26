@@ -9,8 +9,6 @@
 namespace cubey::projects::fluid::pyro_3d {
 namespace {
 
-constexpr std::array<float, 3> kFireCenter{0.5F, 0.10F, 0.5F};
-constexpr std::array<float, 3> kExplosionCenter{0.5F, 0.24F, 0.5F};
 constexpr float kFireTurbulenceRadius = 0.006F;
 
 struct ExplosionPulse {
@@ -88,10 +86,11 @@ struct ExplosionPulse {
     const float source_index = static_cast<float>(index - 1U);
     const float normalized_count = static_cast<float>(std::max(count - 1U, 1U));
     const float denominator = std::max(normalized_count - 1.0F, 1.0F);
-    const float height = -0.30F + 0.95F * (source_index / denominator);
+    const float height = -0.28F + 0.82F * (source_index / denominator);
     const float radius = std::sqrt(std::max(1.0F - height * height, 0.0F));
     const float angle = kGoldenAngle * (source_index + 1.0F);
-    return normalize_or_zero({std::cos(angle) * radius, height + 0.34F, std::sin(angle) * radius});
+    return normalize_or_zero(
+        {std::cos(angle) * radius, height * 0.40F + 0.20F, std::sin(angle) * radius});
 }
 
 [[nodiscard]] Pyro3DSourceState create_explosion_source(const Pyro3DConfig& config,
@@ -105,9 +104,10 @@ struct ExplosionPulse {
                                                     core_source ? 2.45F : 1.45F, pulse.radius);
     const float speed_scale = mix(1.45F, 0.55F, pulse.age) * (core_source ? 0.68F : 1.0F);
     const std::array<float, 3> velocity = scale(
-        normalize_or_zero(add(direction, {0.0F, 0.34F + pulse.smoke * 0.36F, 0.0F})), speed_scale);
+        normalize_or_zero(add(direction, {0.0F, 0.14F + pulse.smoke * 0.22F, 0.0F})), speed_scale);
+    const std::array<float, 3> center{0.5F, config.source_center_height, 0.5F};
     return {
-        .position = clamp01(add(kExplosionCenter, scale(direction, travel))),
+        .position = clamp01(add(center, scale(direction, travel))),
         .velocity = velocity,
         .material_amount =
             {
@@ -132,8 +132,9 @@ struct ExplosionPulse {
     const std::array<float, 3> swirl_direction = normalize_or_zero({offset[2], 0.0F, -offset[0]});
     const std::array<float, 3> velocity =
         normalize_or_zero(add({0.0F, 1.0F, 0.0F}, scale(swirl_direction, 0.22F)));
+    const std::array<float, 3> center{0.5F, config.source_center_height, 0.5F};
     return {
-        .position = add(kFireCenter, offset),
+        .position = add(center, offset),
         .velocity = velocity,
         .material_amount =
             {

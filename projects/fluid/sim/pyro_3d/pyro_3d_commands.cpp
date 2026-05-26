@@ -208,7 +208,7 @@ void record_source_buffer_update(VkCommandBuffer command_buffer,
             {
                 config.obstacle_center_height,
                 config.obstacle_radius,
-                0.0F,
+                static_cast<float>(static_cast<std::uint32_t>(config.mode)),
                 0.0F,
             },
     };
@@ -261,7 +261,7 @@ void record_source_buffer_update(VkCommandBuffer command_buffer,
             {
                 config.obstacle_center_height,
                 config.obstacle_radius,
-                0.0F,
+                static_cast<float>(static_cast<std::uint32_t>(config.mode)),
                 0.0F,
             },
         .style_options =

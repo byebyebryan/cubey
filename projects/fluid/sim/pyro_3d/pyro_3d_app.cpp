@@ -257,6 +257,8 @@ class Pyro3DApp {
                 pyro_config_.source_count = static_cast<std::uint32_t>(source_count);
                 reset_sources();
             }
+            ImGui::SliderFloat("Source height", &pyro_config_.source_center_height, 0.020F, 0.500F,
+                               "%.3f");
             ImGui::SliderFloat("Source radius", &pyro_config_.source_radius, 0.020F, 0.180F,
                                "%.3f");
             ImGui::SliderFloat("Smoke", &pyro_config_.source_smoke_amount, 0.0F, 32.0F, "%.2f");

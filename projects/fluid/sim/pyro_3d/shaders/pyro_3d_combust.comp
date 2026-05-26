@@ -216,10 +216,12 @@ void main() {
     }
     if (fire_mode || explosion_mode) {
         float flame_mask = smoothstep(0.020, 0.55, material.b);
+        float smoke_mask = smoothstep(0.025, 0.70, material.r);
+        float turbulence_mask = explosion_mode ? max(flame_mask, smoke_mask * 0.72) : flame_mask;
         vec3 turbulence = source_turbulence(uv * 1.3, 19.0, params.options.w);
         float turbulence_scale = explosion_mode ? 1.35 : 1.0;
         float shredding_scale = explosion_mode ? 0.85 : 1.0;
-        velocity += turbulence * flame_mask * params.shaping_options.w * turbulence_scale * dt;
+        velocity += turbulence * turbulence_mask * params.shaping_options.w * turbulence_scale * dt;
         velocity += flame_shredding_force(coord, uv, material, params.options.w) *
                     params.shaping_options.z * shredding_scale * dt;
     }

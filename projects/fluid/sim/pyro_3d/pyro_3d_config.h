@@ -27,9 +27,11 @@ inline constexpr std::uint32_t kPyro3DComputeGroupSize = 4;
 inline constexpr std::uint32_t kPyro3DSimulationPushConstantFloatCount = 28;
 inline constexpr std::uint32_t kPyro3DRenderPushConstantFloatCount = 32;
 inline constexpr float kDefaultPyro3DSourceRadius = 0.05F;
+inline constexpr float kDefaultFire3DSourceHeight = 0.10F;
 inline constexpr float kDefaultFireSourceRadius = 0.125F;
 inline constexpr std::uint32_t kDefaultExplosion3DSourceCount = 9;
-inline constexpr float kDefaultExplosion3DSourceRadius = 0.060F;
+inline constexpr float kDefaultExplosion3DSourceHeight = 0.10F;
+inline constexpr float kDefaultExplosion3DSourceRadius = 0.025F;
 inline constexpr float kDefaultFire3DObstacleHeight = 0.58F;
 inline constexpr float kDefaultFire3DObstacleRadius = 0.105F;
 inline constexpr float kDefaultExplosion3DObstacleHeight = 0.48F;
@@ -54,14 +56,15 @@ struct Pyro3DConfig {
     float density_decay_per_second = 0.99F;
     float velocity_decay_per_second = 0.99F;
     Pyro3DMode mode = Pyro3DMode::Fire;
+    float source_center_height = kDefaultFire3DSourceHeight;
     float source_radius = kDefaultFireSourceRadius;
     float source_velocity_strength = 8.5F;
     float source_smoke_amount = 16.0F;
     float source_heat_amount = 2.8F;
     float source_flame_amount = 4.0F;
     float explosion_interval_seconds = 3.0F;
-    float explosion_duration_seconds = 0.12F;
-    float explosion_boost = 18.0F;
+    float explosion_duration_seconds = 0.50F;
+    float explosion_boost = 20.0F;
     float fire_ignition_temperature = 0.22F;
     float fire_burn_rate = 4.0F;
     float fire_heat_output = 2.8F;
@@ -165,25 +168,27 @@ struct Pyro3DConfig {
     result.source_radius =
         mode == Pyro3DMode::Fire ? kDefaultFireSourceRadius : kDefaultExplosion3DSourceRadius;
     if (mode == Pyro3DMode::Explosion) {
-        result.source_velocity_strength = 6.0F;
-        result.source_smoke_amount = 6.0F;
-        result.source_heat_amount = 1.4F;
-        result.source_flame_amount = 2.0F;
-        result.fire_expansion = 0.65F;
-        result.fire_flame_cooling = 5.5F;
-        result.fire_shredding = 1.6F;
-        result.fire_turbulence = 0.35F;
+        result.density_decay_per_second = 0.97F;
+        result.source_center_height = kDefaultExplosion3DSourceHeight;
+        result.source_velocity_strength = 8.5F;
+        result.source_smoke_amount = 8.0F;
+        result.source_heat_amount = 2.6F;
+        result.source_flame_amount = 4.5F;
+        result.fire_expansion = 1.0F;
+        result.fire_flame_cooling = 3.4F;
+        result.fire_shredding = 2.8F;
+        result.fire_turbulence = 0.85F;
         result.obstacle_center_height = kDefaultExplosion3DObstacleHeight;
-        result.obstacle_radius = kDefaultExplosion3DObstacleRadius;
-        result.buoyancy_strength = 1.0F;
-        result.absorption = 10.0F;
-        result.render_exposure = 0.48F;
+        result.obstacle_radius = 0.0F;
+        result.buoyancy_strength = 1.35F;
+        result.absorption = 15.0F;
+        result.render_exposure = 0.64F;
         result.render_background_lift = 0.42F;
-        result.render_rim_strength = 1.35F;
-        result.render_scatter_strength = 1.22F;
-        result.render_smoke_warmth = 0.30F;
-        result.render_flame_intensity = 1.75F;
-        result.render_flame_core_strength = 1.45F;
+        result.render_rim_strength = 1.55F;
+        result.render_scatter_strength = 1.38F;
+        result.render_smoke_warmth = 0.24F;
+        result.render_flame_intensity = 2.35F;
+        result.render_flame_core_strength = 2.10F;
         result.render_backdrop_grid_strength = 0.50F;
     }
     if (config.grid.width != 0) {
@@ -215,6 +220,12 @@ struct Pyro3DConfig {
             throw std::runtime_error("pyro 3D source count must be 1..16");
         }
         result.source_count = config.pyro.sources;
+    }
+    if (run_config_float_is_set(config.pyro.source_height)) {
+        result.source_center_height = config.pyro.source_height;
+    }
+    if (result.source_center_height < 0.0F || result.source_center_height > 1.0F) {
+        throw std::runtime_error("pyro 3D source height must be in [0, 1]");
     }
     if (run_config_float_is_set(config.pyro.source_radius)) {
         result.source_radius = config.pyro.source_radius;
