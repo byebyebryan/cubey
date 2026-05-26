@@ -8,6 +8,7 @@
 #include <cstdint>
 #include <limits>
 #include <stdexcept>
+#include <string_view>
 
 namespace cubey::projects::fluid::smoke_2d {
 
@@ -70,6 +71,52 @@ struct Smoke2DConfig {
         return Smoke2DDebugView::Dye;
     }
     return Smoke2DDebugView::Dye;
+}
+
+[[nodiscard]] inline const char* smoke_2d_debug_view_name(Smoke2DDebugView view) {
+    switch (view) {
+    case Smoke2DDebugView::Dye:
+        return "Dye";
+    case Smoke2DDebugView::Velocity:
+        return "Velocity";
+    case Smoke2DDebugView::Divergence:
+        return "Divergence";
+    case Smoke2DDebugView::Pressure:
+        return "Pressure";
+    case Smoke2DDebugView::Speed:
+        return "Speed";
+    case Smoke2DDebugView::Vorticity:
+        return "Vorticity";
+    case Smoke2DDebugView::Obstacle:
+        return "Obstacle";
+    }
+    return "Dye";
+}
+
+[[nodiscard]] inline Smoke2DDebugView smoke_2d_debug_view_from_name(std::string_view name) {
+    if (name.empty() || name == "dye") {
+        return Smoke2DDebugView::Dye;
+    }
+    if (name == "velocity") {
+        return Smoke2DDebugView::Velocity;
+    }
+    if (name == "divergence") {
+        return Smoke2DDebugView::Divergence;
+    }
+    if (name == "pressure") {
+        return Smoke2DDebugView::Pressure;
+    }
+    if (name == "speed") {
+        return Smoke2DDebugView::Speed;
+    }
+    if (name == "vorticity") {
+        return Smoke2DDebugView::Vorticity;
+    }
+    if (name == "obstacle") {
+        return Smoke2DDebugView::Obstacle;
+    }
+    throw std::runtime_error("smoke 2D debug view must be dye, velocity, divergence, pressure, "
+                             "speed, vorticity, or obstacle");
 }
 
 [[nodiscard]] inline std::size_t field_cell_count(const Smoke2DConfig& config) {
