@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <limits>
 #include <stdexcept>
+#include <string_view>
 
 namespace cubey::vulkan {
 
@@ -310,6 +311,86 @@ DescriptorSetInfo::DescriptorSetInfo(std::span<const DescriptorSetBindingConfig>
 
     layout_info_ = descriptor_set_layout_info(bindings_);
     pool_info_ = descriptor_pool_info(max_sets, pool_sizes_);
+}
+
+DescriptorSetSchema::DescriptorSetSchema(std::span<const DescriptorSetSchemaBinding> bindings) {
+    if (bindings.empty()) {
+        throw std::runtime_error("descriptor set schema requires at least one binding");
+    }
+    bindings_.reserve(bindings.size());
+    for (const DescriptorSetSchemaBinding& binding : bindings) {
+        if (binding.name.empty()) {
+            throw std::runtime_error("descriptor set schema binding name must be non-empty");
+        }
+        for (const Binding& existing : bindings_) {
+            if (existing.name == binding.name) {
+                throw std::runtime_error("descriptor set schema binding names must be unique");
+            }
+            if (existing.binding.binding == binding.binding.binding) {
+                throw std::runtime_error("descriptor set schema binding indices must be unique");
+            }
+        }
+        bindings_.push_back(Binding{
+            .name = std::string(binding.name),
+            .binding = binding.binding,
+        });
+    }
+}
+
+DescriptorSetInfo DescriptorSetSchema::info(std::uint32_t max_sets) const {
+    std::vector<DescriptorSetBindingConfig> configs;
+    configs.reserve(bindings_.size());
+    for (const Binding& binding : bindings_) {
+        configs.push_back(binding.binding);
+    }
+    return DescriptorSetInfo(configs, max_sets);
+}
+
+std::uint32_t DescriptorSetSchema::binding(std::string_view name) const {
+    return find(name).binding.binding;
+}
+
+DescriptorWriteBatch& DescriptorSetSchema::uniform_buffer(
+    DescriptorWriteBatch& batch, VkDescriptorSet set, std::string_view name, VkBuffer buffer,
+    VkDeviceSize range, VkDeviceSize offset) const {
+    require_type(name, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+    return batch.uniform_buffer(set, binding(name), buffer, range, offset);
+}
+
+DescriptorWriteBatch& DescriptorSetSchema::storage_buffer(
+    DescriptorWriteBatch& batch, VkDescriptorSet set, std::string_view name, VkBuffer buffer,
+    VkDeviceSize range, VkDeviceSize offset) const {
+    require_type(name, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    return batch.storage_buffer(set, binding(name), buffer, range, offset);
+}
+
+DescriptorWriteBatch& DescriptorSetSchema::storage_image(
+    DescriptorWriteBatch& batch, VkDescriptorSet set, std::string_view name,
+    VkImageView image_view, VkImageLayout layout) const {
+    require_type(name, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
+    return batch.storage_image(set, binding(name), image_view, layout);
+}
+
+DescriptorWriteBatch& DescriptorSetSchema::combined_image_sampler(
+    DescriptorWriteBatch& batch, VkDescriptorSet set, std::string_view name, VkSampler sampler,
+    VkImageView image_view, VkImageLayout layout) const {
+    require_type(name, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+    return batch.combined_image_sampler(set, binding(name), sampler, image_view, layout);
+}
+
+const DescriptorSetSchema::Binding& DescriptorSetSchema::find(std::string_view name) const {
+    for (const Binding& binding : bindings_) {
+        if (binding.name == name) {
+            return binding;
+        }
+    }
+    throw std::runtime_error("descriptor set schema binding name is unknown");
+}
+
+void DescriptorSetSchema::require_type(std::string_view name, VkDescriptorType expected) const {
+    if (find(name).binding.type != expected) {
+        throw std::runtime_error("descriptor set schema binding type does not match write type");
+    }
 }
 
 DescriptorSetLayout::DescriptorSetLayout(const Device& device,

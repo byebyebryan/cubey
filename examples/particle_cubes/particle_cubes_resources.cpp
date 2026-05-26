@@ -36,6 +36,22 @@ cubey::render::MaterialPassInfo particle_cubes_forward_pass_info() {
     };
 }
 
+const cubey::vulkan::DescriptorSetSchema& particle_cubes_descriptor_schema() {
+    static const std::array<cubey::vulkan::DescriptorSetSchemaBinding, 1> bindings{{
+        {
+            .name = "particles",
+            .binding =
+                {
+                    .binding = 0,
+                    .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+                    .stage_flags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_COMPUTE_BIT,
+                },
+        },
+    }};
+    static const cubey::vulkan::DescriptorSetSchema schema(bindings);
+    return schema;
+}
+
 [[nodiscard]] float hash01(std::uint32_t value) {
     value ^= value >> 16U;
     value *= 0x7FEB352DU;
@@ -109,22 +125,15 @@ void ParticleCubesApp::create_particle_buffer(cubey::host::WindowedAppContext& c
 }
 
 void ParticleCubesApp::create_descriptor_resources(cubey::host::WindowedAppContext& context) {
-    const std::array<cubey::vulkan::DescriptorSetBindingConfig, 1> bindings{{
-        {
-            .binding = 0,
-            .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-            .stage_flags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_COMPUTE_BIT,
-        },
-    }};
-    const cubey::vulkan::DescriptorSetInfo info(bindings);
-    descriptors_.emplace(context.device(), info);
+    descriptors_.emplace(context.device(), particle_cubes_descriptor_schema().info());
     update_particle_descriptor(context);
 }
 
 void ParticleCubesApp::update_particle_descriptor(cubey::host::WindowedAppContext& context) {
     cubey::vulkan::DescriptorWriteBatch descriptor_writes;
-    descriptor_writes.storage_buffer(descriptors().set(), 0, particle_buffer().handle(),
-                                     particle_buffer().size());
+    particle_cubes_descriptor_schema().storage_buffer(descriptor_writes, descriptors().set(),
+                                                      "particles", particle_buffer().handle(),
+                                                      particle_buffer().size());
     descriptor_writes.update(context.device());
 }
 

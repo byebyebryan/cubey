@@ -17,6 +17,15 @@ void require(bool condition, const char* message) {
     }
 }
 
+template <typename Fn> void require_throws(Fn&& fn, const char* message) {
+    try {
+        std::forward<Fn>(fn)();
+    } catch (const std::exception&) {
+        return;
+    }
+    throw std::runtime_error(message);
+}
+
 template <typename T>
 concept RvalueDescriptorWriteCallable = requires(T value) { std::move(value).descriptor_write(); };
 
@@ -292,6 +301,69 @@ void test_descriptor_set_info_copies_bindings_and_aggregates_pool_sizes() {
                                      cubey::vulkan::DescriptorSetArray::*)() const>);
     static_assert(std::is_same_v<decltype(&cubey::vulkan::DescriptorSetArray::size),
                                  std::uint32_t (cubey::vulkan::DescriptorSetArray::*)() const>);
+}
+
+void test_descriptor_set_schema_builds_info_and_named_writes() {
+    const std::array<cubey::vulkan::DescriptorSetSchemaBinding, 3> bindings{{
+        {
+            .name = "constants",
+            .binding =
+                {
+                    .binding = 0,
+                    .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                    .stage_flags = VK_SHADER_STAGE_VERTEX_BIT,
+                },
+        },
+        {
+            .name = "particles",
+            .binding =
+                {
+                    .binding = 1,
+                    .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+                    .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT | VK_SHADER_STAGE_VERTEX_BIT,
+                },
+        },
+        {
+            .name = "surface",
+            .binding =
+                {
+                    .binding = 2,
+                    .type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+                    .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT,
+                },
+        },
+    }};
+    const cubey::vulkan::DescriptorSetSchema schema(bindings);
+
+    const cubey::vulkan::DescriptorSetInfo info = schema.info(2);
+    require(info.max_sets() == 2, "descriptor schema info should preserve max set count");
+    require(info.bindings().size() == bindings.size(),
+            "descriptor schema info should expose declared bindings");
+    require(schema.binding("particles") == 1,
+            "descriptor schema should resolve bindings by stable name");
+
+    const VkDescriptorSet set = reinterpret_cast<VkDescriptorSet>(0x10);
+    const VkBuffer uniform_buffer = reinterpret_cast<VkBuffer>(0x20);
+    const VkBuffer storage_buffer = reinterpret_cast<VkBuffer>(0x30);
+    const VkImageView storage_image = reinterpret_cast<VkImageView>(0x40);
+    cubey::vulkan::DescriptorWriteBatch batch;
+    schema.uniform_buffer(batch, set, "constants", uniform_buffer, 64)
+        .storage_buffer(set, schema.binding("particles"), storage_buffer, 128);
+    schema.storage_image(batch, set, "surface", storage_image);
+
+    const std::span<const VkWriteDescriptorSet> writes = batch.writes();
+    require(writes.size() == 3, "descriptor schema should append named writes");
+    require(writes[0].dstBinding == 0 && writes[0].descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+            "descriptor schema should write the named uniform binding");
+    require(writes[2].dstBinding == 2 && writes[2].descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+            "descriptor schema should write the named storage image binding");
+
+    require_throws([&schema, set, uniform_buffer] {
+        cubey::vulkan::DescriptorWriteBatch invalid;
+        schema.storage_buffer(invalid, set, "constants", uniform_buffer, 64);
+    }, "descriptor schema should reject writes with the wrong descriptor type");
+    require_throws([&schema] { static_cast<void>(schema.binding("missing")); },
+                   "descriptor schema should reject unknown names");
 }
 
 void test_descriptor_set_allocate_info_describes_multiple_sets() {

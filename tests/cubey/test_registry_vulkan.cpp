@@ -8,6 +8,7 @@ void test_deferred_gpu_destruction_queue_retires_completed_tickets();
 void test_descriptor_helpers_describe_layout_pool_and_writes();
 void test_descriptor_set_allocate_info_describes_multiple_sets();
 void test_descriptor_set_info_copies_bindings_and_aggregates_pool_sizes();
+void test_descriptor_set_schema_builds_info_and_named_writes();
 void test_descriptor_write_batch_owns_write_storage_and_preserves_order();
 void test_dynamic_rendering_describes_attachment_setup();
 void test_frame_resources_expose_slot_based_contract();
@@ -54,6 +55,7 @@ std::span<const TestCase> vulkan_test_cases() {
         CUBEY_TEST(test_descriptor_helpers_describe_layout_pool_and_writes),
         CUBEY_TEST(test_descriptor_write_batch_owns_write_storage_and_preserves_order),
         CUBEY_TEST(test_descriptor_set_info_copies_bindings_and_aggregates_pool_sizes),
+        CUBEY_TEST(test_descriptor_set_schema_builds_info_and_named_writes),
         CUBEY_TEST(test_descriptor_set_allocate_info_describes_multiple_sets),
         CUBEY_TEST(test_dynamic_rendering_describes_attachment_setup),
         CUBEY_TEST(test_frame_resources_expose_slot_based_contract),

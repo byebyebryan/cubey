@@ -7,6 +7,8 @@
 #include <cstddef>
 #include <cstdint>
 #include <span>
+#include <string>
+#include <string_view>
 #include <vector>
 
 namespace cubey::vulkan {
@@ -123,6 +125,11 @@ struct DescriptorSetBindingConfig {
     std::uint32_t descriptor_count = 1;
 };
 
+struct DescriptorSetSchemaBinding {
+    std::string_view name{};
+    DescriptorSetBindingConfig binding{};
+};
+
 class DescriptorSetInfo {
   public:
     explicit DescriptorSetInfo(std::span<const DescriptorSetBindingConfig> bindings,
@@ -156,6 +163,39 @@ class DescriptorSetInfo {
     VkDescriptorSetLayoutCreateInfo layout_info_{};
     VkDescriptorPoolCreateInfo pool_info_{};
     std::uint32_t max_sets_ = 0;
+};
+
+class DescriptorSetSchema {
+  public:
+    explicit DescriptorSetSchema(std::span<const DescriptorSetSchemaBinding> bindings);
+
+    [[nodiscard]] DescriptorSetInfo info(std::uint32_t max_sets = 1) const;
+    [[nodiscard]] std::uint32_t binding(std::string_view name) const;
+
+    DescriptorWriteBatch& uniform_buffer(DescriptorWriteBatch& batch, VkDescriptorSet set,
+                                         std::string_view name, VkBuffer buffer,
+                                         VkDeviceSize range, VkDeviceSize offset = 0) const;
+    DescriptorWriteBatch& storage_buffer(DescriptorWriteBatch& batch, VkDescriptorSet set,
+                                         std::string_view name, VkBuffer buffer,
+                                         VkDeviceSize range, VkDeviceSize offset = 0) const;
+    DescriptorWriteBatch& storage_image(DescriptorWriteBatch& batch, VkDescriptorSet set,
+                                        std::string_view name, VkImageView image_view,
+                                        VkImageLayout layout = VK_IMAGE_LAYOUT_GENERAL) const;
+    DescriptorWriteBatch&
+    combined_image_sampler(DescriptorWriteBatch& batch, VkDescriptorSet set, std::string_view name,
+                           VkSampler sampler, VkImageView image_view,
+                           VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) const;
+
+  private:
+    struct Binding {
+        std::string name{};
+        DescriptorSetBindingConfig binding{};
+    };
+
+    [[nodiscard]] const Binding& find(std::string_view name) const;
+    void require_type(std::string_view name, VkDescriptorType expected) const;
+
+    std::vector<Binding> bindings_{};
 };
 
 class DescriptorSetLayout {
