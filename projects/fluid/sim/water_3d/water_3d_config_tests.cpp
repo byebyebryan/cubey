@@ -364,6 +364,8 @@ int main() {
             std::filesystem::path(CUBEY_WATER_3D_SOURCE_DIR) / "water_3d_commands.cpp");
         const std::string app =
             read_text_file(std::filesystem::path(CUBEY_WATER_3D_SOURCE_DIR) / "water_3d_app.cpp");
+        const std::string diagnostics_cpp = read_text_file(
+            std::filesystem::path(CUBEY_WATER_3D_SOURCE_DIR) / "water_3d_diagnostics.cpp");
 
         require_contains(contract, "WATER3D_BINDING_W_FIELD",
                          "water 3D contract should expose the W face field");
@@ -720,15 +722,16 @@ int main() {
                          "water 3D headless simulation path should export GPU timings to profiles");
         require_contains(app, "resources_.diagnostics().handle()",
                          "water 3D headless path should read back diagnostics metrics");
-        require_contains(app, "recorder.record_metric(frame_index, category, name, value)",
+        require_contains(diagnostics_cpp,
+                         "recorder.record_metric(frame_index, category, name, value)",
                          "water 3D headless diagnostics should record profile metrics");
-        require_contains(app, "water_3d.p2g",
+        require_contains(diagnostics_cpp, "water_3d.p2g",
                          "water 3D headless diagnostics should export P2G scan metrics");
-        require_contains(app, "water_3d.p2g.histogram",
+        require_contains(diagnostics_cpp, "water_3d.p2g.histogram",
                          "water 3D headless diagnostics should export P2G histogram metrics");
-        require_contains(app, "high_candidate_face_ratio",
+        require_contains(diagnostics_cpp, "high_candidate_face_ratio",
                          "water 3D headless diagnostics should derive heavy candidate ratios");
-        require_contains(app, "tile_slot_to_active_face_ratio",
+        require_contains(diagnostics_cpp, "tile_slot_to_active_face_ratio",
                          "water 3D headless diagnostics should derive tiled P2G work inflation");
         require_contains(commands, "water whitewater",
                          "water 3D surface render should render whitewater before composite");

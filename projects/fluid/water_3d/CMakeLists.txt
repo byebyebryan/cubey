@@ -11,7 +11,9 @@ cubey_add_app_target(
     SOURCES
         ../sim/water_3d/water_3d_app.cpp
         ../sim/water_3d/water_3d_commands.cpp
+        ../sim/water_3d/water_3d_diagnostics.cpp
         ../sim/water_3d/water_3d_gpu_resources.cpp
+        ../sim/water_3d/water_3d_ui.cpp
         main.cpp
     SHADERS
         ../sim/water_3d/shaders/water_3d.vert
