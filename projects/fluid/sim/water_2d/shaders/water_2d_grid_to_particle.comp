@@ -26,6 +26,12 @@ layout(set = 0, binding = WATER2D_BINDING_V_FIELD, std430) readonly buffer VFiel
 layout(set = 0, binding = WATER2D_BINDING_V_PREVIOUS, std430) readonly buffer VPreviousField {
     float values[];
 } v_previous;
+layout(set = 0, binding = WATER2D_BINDING_U_WEIGHT, std430) readonly buffer UWeightField {
+    float values[];
+} u_weight;
+layout(set = 0, binding = WATER2D_BINDING_V_WEIGHT, std430) readonly buffer VWeightField {
+    float values[];
+} v_weight;
 layout(set = 0, binding = WATER2D_BINDING_CELL_COUNTS, std430) readonly buffer CellCounts {
     uint values[];
 } cell_counts;
@@ -82,6 +88,33 @@ float sample_v(vec2 uv, uint width, uint height, bool previous) {
 
 vec2 sample_velocity(vec2 uv, uint width, uint height, bool previous) {
     return vec2(sample_u(uv, width, height, previous), sample_v(uv, width, height, previous));
+}
+
+float sample_u_weight(vec2 uv, uint width, uint height) {
+    vec2 position = vec2(uv.x * float(width), uv.y * float(height) - 0.5);
+    ivec2 base = ivec2(floor(position));
+    vec2 f = fract(position);
+    float a = u_weight.values[u_index(base, width, height)];
+    float b = u_weight.values[u_index(base + ivec2(1, 0), width, height)];
+    float c = u_weight.values[u_index(base + ivec2(0, 1), width, height)];
+    float d = u_weight.values[u_index(base + ivec2(1, 1), width, height)];
+    return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+}
+
+float sample_v_weight(vec2 uv, uint width, uint height) {
+    vec2 position = vec2(uv.x * float(width) - 0.5, uv.y * float(height));
+    ivec2 base = ivec2(floor(position));
+    vec2 f = fract(position);
+    float a = v_weight.values[v_index(base, width, height)];
+    float b = v_weight.values[v_index(base + ivec2(1, 0), width, height)];
+    float c = v_weight.values[v_index(base + ivec2(0, 1), width, height)];
+    float d = v_weight.values[v_index(base + ivec2(1, 1), width, height)];
+    return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+}
+
+vec2 sample_velocity_confidence(vec2 uv, uint width, uint height) {
+    return clamp(vec2(sample_u_weight(uv, width, height), sample_v_weight(uv, width, height)),
+                 vec2(0.0), vec2(1.0));
 }
 
 float kernel(float value) {
@@ -223,20 +256,34 @@ vec2 separation_velocity(uint particle_id, vec2 position, uint width, uint heigh
     return (correction_uv * strength * overpack) / max(WATER2D_DT, 0.00001);
 }
 
-bool isolated_liquid_neighborhood(ivec2 center, uint width, uint height) {
-    uint occupied = 0u;
+bool cell_in_bounds(ivec2 coord, uint width, uint height) {
+    return coord.x >= 0 && coord.y >= 0 && coord.x < int(width) && coord.y < int(height);
+}
+
+float sparse_droplet_blend(ivec2 center, uint width, uint height, uint particles_per_cell,
+                           uint max_particles_per_cell) {
+    uint occupied_cells = 0u;
+    uint nearby_particles = 0u;
     for (int oy = -1; oy <= 1; ++oy) {
         for (int ox = -1; ox <= 1; ++ox) {
             ivec2 cell = center + ivec2(ox, oy);
-            if (cell.x < 0 || cell.y < 0 || cell.x >= int(width) || cell.y >= int(height)) {
+            if (!cell_in_bounds(cell, width, height)) {
                 continue;
             }
-            if (cell_counts.values[cell_index(cell, width, height)] > 0u) {
-                occupied += 1u;
+            uint count = min(cell_counts.values[cell_index(cell, width, height)],
+                             max_particles_per_cell);
+            if (count > 0u) {
+                occupied_cells += 1u;
+                nearby_particles += count;
             }
         }
     }
-    return occupied <= 2u;
+
+    float target_particles = float(max(1u, particles_per_cell));
+    float particle_sparsity =
+        1.0 - smoothstep(target_particles * 2.0, target_particles * 7.0, float(nearby_particles));
+    float cell_sparsity = 1.0 - smoothstep(2.0, 6.0, float(occupied_cells));
+    return clamp(min(particle_sparsity, cell_sparsity), 0.0, 1.0);
 }
 
 void main() {
@@ -255,28 +302,34 @@ void main() {
     }
     vec2 old_velocity = particle_velocities.values[particle_id].xy;
     vec2 current_grid_velocity = sample_velocity(position, width, height, false);
+    vec2 confidence_blend =
+        smoothstep(vec2(0.05), vec2(0.35), sample_velocity_confidence(position, width, height));
+    vec2 fallback_velocity = old_velocity + vec2(0.0, params.init_options.z * WATER2D_DT);
+    ivec2 cell = ivec2(clamp(ivec2(floor(position * vec2(width, height))), ivec2(0),
+                             ivec2(int(width) - 1, int(height) - 1)));
+    uint particles_per_cell = max(1u, uint(params.particle_options.z + 0.5));
+    uint max_particles_per_cell = uint(params.particle_options.y + 0.5);
+    float droplet_blend =
+        sparse_droplet_blend(cell, width, height, particles_per_cell, max_particles_per_cell);
     vec2 velocity = current_grid_velocity;
+
     if (apic_transfer_mode()) {
+        velocity = mix(fallback_velocity, current_grid_velocity, confidence_blend);
         particle_affine.values[particle_id] =
-            pack_affine(affine_from_grid(position, current_grid_velocity, width, height));
+            pack_affine(affine_from_grid(position, current_grid_velocity, width, height) *
+                        min(confidence_blend.x, confidence_blend.y) * (1.0 - droplet_blend));
     } else {
         vec2 previous_grid_velocity = sample_velocity(position, width, height, true);
         vec2 pic_velocity = current_grid_velocity;
         vec2 flip_velocity = old_velocity + (current_grid_velocity - previous_grid_velocity);
-        velocity = mix(pic_velocity, flip_velocity, clamp(params.particle_options.w, 0.0, 1.0));
+        vec2 transfer_velocity =
+            mix(pic_velocity, flip_velocity, clamp(params.particle_options.w, 0.0, 1.0));
+        velocity = mix(fallback_velocity, transfer_velocity, confidence_blend);
         particle_affine.values[particle_id] = vec4(0.0);
     }
-    uint particles_per_cell = max(1u, uint(params.particle_options.z + 0.5));
-    uint max_particles_per_cell = uint(params.particle_options.y + 0.5);
+    velocity = mix(velocity, fallback_velocity, droplet_blend);
     velocity += separation_velocity(particle_id, position, width, height, max_particles_per_cell);
-    uint sparse_threshold = max(1u, particles_per_cell / 2u);
-    ivec2 cell = ivec2(floor(position * vec2(width, height)));
-    bool sparse_drop = cell_counts.values[cell_index(cell, width, height)] <= sparse_threshold &&
-                       isolated_liquid_neighborhood(cell, width, height);
-    if (sparse_drop && old_velocity.y <= 0.10) {
-        float ballistic_y = old_velocity.y + params.init_options.z * WATER2D_DT;
-        velocity.y = min(velocity.y, ballistic_y);
-    }
+
     float speed = length(velocity);
     float velocity_limit = max(0.1, params.solve_options.y);
     if (speed > velocity_limit) {

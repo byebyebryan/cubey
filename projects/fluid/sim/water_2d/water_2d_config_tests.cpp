@@ -518,9 +518,11 @@ int main() {
                          "water grid-to-particle shader should add particle separation");
         require_contains(g2p_shader, "center_count <= target_particles_per_cell",
                          "water particle separation should only run for overpacked cells");
-        require_contains(g2p_shader, "isolated_liquid_neighborhood",
-                         "water grid-to-particle shader should keep free surfaces from "
-                         "dropping like isolated particles");
+        require_contains(g2p_shader, "sample_velocity_confidence",
+                         "water grid-to-particle shader should sample transfer confidence");
+        require_contains(g2p_shader, "sparse_droplet_blend",
+                         "water grid-to-particle shader should keep unsupported droplets "
+                         "on ballistic fallback");
         require_contains(g2p_shader, "params.solve_options.y",
                          "water grid-to-particle shader should use the velocity limit");
         require_contains(advect_shader, "collide_obstacle",
