@@ -116,6 +116,24 @@ int main() {
                 "pyro 3D shadow absorption should match the tuned default");
         require(config.ambient_light == 0.5F,
                 "pyro 3D ambient light should match the tuned default");
+        require(pyro::kPyro3DRenderPushConstantFloatCount == 32,
+                "pyro 3D render push constants should include style controls");
+        require(config.render_exposure == 0.42F,
+                "pyro 3D fire render exposure should match the tuned default");
+        require(config.render_background_lift == 0.42F,
+                "pyro 3D backdrop lift should match the tuned default");
+        require(config.render_rim_strength == 1.25F,
+                "pyro 3D rim strength should match the tuned default");
+        require(config.render_scatter_strength == 1.15F,
+                "pyro 3D scatter strength should match the tuned default");
+        require(config.render_smoke_warmth == 0.55F,
+                "pyro 3D smoke warmth should match the tuned default");
+        require(config.render_flame_intensity == 1.65F,
+                "pyro 3D flame intensity should match the tuned default");
+        require(config.render_flame_core_strength == 1.35F,
+                "pyro 3D flame core should match the tuned default");
+        require(config.render_backdrop_grid_strength == 0.42F,
+                "pyro 3D backdrop grid should match the tuned default");
         require(pyro::volume_cell_count(config) == kExpectedCellCount,
                 "pyro 3D cell count should multiply all dimensions");
         require(pyro::volume_byte_size(config, 8) == 8U * kExpectedCellCount,
@@ -148,12 +166,26 @@ int main() {
                 "default run config should preserve fire expansion");
         require(default_fire_config.fire_turbulence == config.fire_turbulence,
                 "default run config should preserve fire turbulence");
+        require(default_fire_config.render_exposure == config.render_exposure,
+                "default run config should preserve fire render exposure");
+        require(default_fire_config.render_smoke_warmth == config.render_smoke_warmth,
+                "default run config should preserve fire smoke warmth");
         const pyro::Pyro3DConfig default_explosion_config =
             pyro::pyro_3d_config_from_run_config(default_run_config, pyro::Pyro3DMode::Explosion);
         require(default_explosion_config.source_count == pyro::kDefaultExplosion3DSourceCount,
                 "pyro 3D explosion should default to a shell source layout");
         require(default_explosion_config.source_radius == pyro::kDefaultExplosion3DSourceRadius,
                 "pyro 3D explosion should default to a wider impulse radius");
+        require(default_explosion_config.render_exposure == 0.48F,
+                "pyro 3D explosion should default to higher render exposure");
+        require(default_explosion_config.render_rim_strength == 1.35F,
+                "pyro 3D explosion should default to stronger rim lighting");
+        require(default_explosion_config.render_scatter_strength == 1.22F,
+                "pyro 3D explosion should default to stronger forward scatter");
+        require(default_explosion_config.render_smoke_warmth == 0.30F,
+                "pyro 3D explosion should default to cooler smoke");
+        require(default_explosion_config.render_flame_intensity == 1.75F,
+                "pyro 3D explosion should default to brighter flame");
         cubey::RunConfig explicit_default_radius_config;
         explicit_default_radius_config.pyro.source_radius = pyro::kDefaultPyro3DSourceRadius;
         const pyro::Pyro3DConfig explicit_fire_radius_config = pyro::pyro_3d_config_from_run_config(
@@ -437,6 +469,16 @@ int main() {
                          "pyro 3D projection shader should use solid boundary pressure");
         require_contains(raymarch_shader, "ray_sphere_intersection",
                          "pyro 3D raymarch shader should render the ball obstacle");
+        require_contains(raymarch_shader, "cubey/color_space.glsl",
+                         "pyro 3D raymarch shader should use shared color conversion");
+        require_contains(raymarch_shader, "style_options",
+                         "pyro 3D raymarch shader should expose render style controls");
+        require_contains(raymarch_shader, "color_options",
+                         "pyro 3D raymarch shader should expose palette controls");
+        require_contains(raymarch_shader, "display_transform",
+                         "pyro 3D raymarch shader should apply exposure display transform");
+        require_contains(raymarch_shader, "params.color_options.w",
+                         "pyro 3D raymarch shader should expose backdrop grid strength");
         require_contains(shadow_shader, "light_transmittance",
                          "pyro 3D shadow shader should retain shadow raymarching");
     } catch (const std::exception& error) {

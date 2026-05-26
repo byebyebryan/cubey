@@ -218,88 +218,127 @@ class Pyro3DApp {
             ImGui::EndCombo();
         }
 
+        const auto section = [](const char* label, bool default_open) {
+            const ImGuiTreeNodeFlags flags =
+                default_open ? ImGuiTreeNodeFlags_DefaultOpen : ImGuiTreeNodeFlags_None;
+            return ImGui::CollapsingHeader(label, flags);
+        };
+
         ImGui::Text("Mode: %s", pyro_3d_mode_name(pyro_config_.mode));
 
-        int source_count = static_cast<int>(pyro_config_.source_count);
-        if (ImGui::SliderInt("Sources", &source_count, 1,
-                             static_cast<int>(kMaxPyro3DSourceCount))) {
-            pyro_config_.source_count = static_cast<std::uint32_t>(source_count);
-            reset_sources();
+        if (section("Simulation", true)) {
+            int pressure_iterations = static_cast<int>(pyro_config_.pressure_iterations);
+            if (ImGui::SliderInt("Pressure iterations", &pressure_iterations, 1, 48)) {
+                pyro_config_.pressure_iterations = static_cast<std::uint32_t>(pressure_iterations);
+            }
+            ImGui::SliderFloat("Density decay", &pyro_config_.density_decay_per_second, 0.960F,
+                               1.0F, "%.4f");
+            ImGui::SliderFloat("Velocity decay", &pyro_config_.velocity_decay_per_second, 0.960F,
+                               1.0F, "%.4f");
+            ImGui::SliderFloat("Buoyancy", &pyro_config_.buoyancy_strength, -2.0F, 6.0F, "%.2f");
+            ImGui::SliderFloat("Vorticity", &pyro_config_.vorticity_strength, 0.0F, 1.5F, "%.2f");
         }
 
-        int pressure_iterations = static_cast<int>(pyro_config_.pressure_iterations);
-        if (ImGui::SliderInt("Pressure iterations", &pressure_iterations, 1, 48)) {
-            pyro_config_.pressure_iterations = static_cast<std::uint32_t>(pressure_iterations);
+        if (section("Sources", true)) {
+            int source_count = static_cast<int>(pyro_config_.source_count);
+            if (ImGui::SliderInt("Sources", &source_count, 1,
+                                 static_cast<int>(kMaxPyro3DSourceCount))) {
+                pyro_config_.source_count = static_cast<std::uint32_t>(source_count);
+                reset_sources();
+            }
+            ImGui::SliderFloat("Source radius", &pyro_config_.source_radius, 0.020F, 0.180F,
+                               "%.3f");
+            ImGui::SliderFloat("Smoke", &pyro_config_.source_smoke_amount, 0.0F, 16.0F, "%.2f");
+            ImGui::SliderFloat("Heat", &pyro_config_.source_heat_amount, 0.0F, 8.0F, "%.2f");
+            ImGui::SliderFloat(pyro_config_.mode == Pyro3DMode::Fire ? "Fuel" : "Flame",
+                               &pyro_config_.source_flame_amount, 0.0F, 12.0F, "%.2f");
+            ImGui::SliderFloat("Velocity force", &pyro_config_.source_velocity_strength, 0.0F,
+                               16.0F, "%.2f");
         }
-        int raymarch_steps = static_cast<int>(pyro_config_.raymarch_steps);
-        if (ImGui::SliderInt("Raymarch steps", &raymarch_steps, 24, 192)) {
-            pyro_config_.raymarch_steps = static_cast<std::uint32_t>(raymarch_steps);
-        }
-        ImGui::SliderFloat("Density decay", &pyro_config_.density_decay_per_second, 0.960F, 1.0F,
-                           "%.4f");
-        ImGui::SliderFloat("Velocity decay", &pyro_config_.velocity_decay_per_second, 0.960F, 1.0F,
-                           "%.4f");
-        ImGui::SliderFloat("Source radius", &pyro_config_.source_radius, 0.020F, 0.180F, "%.3f");
-        ImGui::SliderFloat("Smoke", &pyro_config_.source_smoke_amount, 0.0F, 16.0F, "%.2f");
-        ImGui::SliderFloat("Heat", &pyro_config_.source_heat_amount, 0.0F, 8.0F, "%.2f");
-        ImGui::SliderFloat(pyro_config_.mode == Pyro3DMode::Fire ? "Fuel" : "Flame",
-                           &pyro_config_.source_flame_amount, 0.0F, 12.0F, "%.2f");
-        ImGui::SliderFloat("Velocity force", &pyro_config_.source_velocity_strength, 0.0F, 16.0F,
-                           "%.2f");
-        ImGui::SliderFloat("Buoyancy", &pyro_config_.buoyancy_strength, -2.0F, 6.0F, "%.2f");
-        if (pyro_config_.mode == Pyro3DMode::Explosion) {
-            ImGui::SliderFloat("Explosion interval", &pyro_config_.explosion_interval_seconds,
-                               0.25F, 8.0F, "%.2f");
-            const float max_duration = std::min(pyro_config_.explosion_interval_seconds, 1.0F);
-            pyro_config_.explosion_duration_seconds =
-                std::min(pyro_config_.explosion_duration_seconds, max_duration);
-            ImGui::SliderFloat("Explosion duration", &pyro_config_.explosion_duration_seconds,
-                               0.016F, max_duration, "%.3f");
-            ImGui::SliderFloat("Explosion boost", &pyro_config_.explosion_boost, 0.0F, 40.0F,
-                               "%.2f");
-        }
-        if (pyro_config_.mode == Pyro3DMode::Fire) {
-            ImGui::SliderFloat("Ignition", &pyro_config_.fire_ignition_temperature, 0.0F, 2.0F,
-                               "%.2f");
-            ImGui::SliderFloat("Burn rate", &pyro_config_.fire_burn_rate, 0.0F, 10.0F, "%.2f");
-            ImGui::SliderFloat("Heat output", &pyro_config_.fire_heat_output, 0.0F, 8.0F, "%.2f");
-            ImGui::SliderFloat("Soot yield", &pyro_config_.fire_soot_yield, 0.0F, 1.5F, "%.2f");
-        }
-        if (pyro_config_.mode == Pyro3DMode::Fire || pyro_config_.mode == Pyro3DMode::Explosion) {
+
+        if (section(pyro_config_.mode == Pyro3DMode::Fire ? "Fire model" : "Explosion model",
+                    true)) {
+            if (pyro_config_.mode == Pyro3DMode::Explosion) {
+                ImGui::SliderFloat("Explosion interval", &pyro_config_.explosion_interval_seconds,
+                                   0.25F, 8.0F, "%.2f");
+                const float max_duration = std::min(pyro_config_.explosion_interval_seconds, 1.0F);
+                pyro_config_.explosion_duration_seconds =
+                    std::min(pyro_config_.explosion_duration_seconds, max_duration);
+                ImGui::SliderFloat("Explosion duration", &pyro_config_.explosion_duration_seconds,
+                                   0.016F, max_duration, "%.3f");
+                ImGui::SliderFloat("Explosion boost", &pyro_config_.explosion_boost, 0.0F, 40.0F,
+                                   "%.2f");
+            }
+            if (pyro_config_.mode == Pyro3DMode::Fire) {
+                ImGui::SliderFloat("Ignition", &pyro_config_.fire_ignition_temperature, 0.0F, 2.0F,
+                                   "%.2f");
+                ImGui::SliderFloat("Burn rate", &pyro_config_.fire_burn_rate, 0.0F, 10.0F, "%.2f");
+                ImGui::SliderFloat("Heat output", &pyro_config_.fire_heat_output, 0.0F, 8.0F,
+                                   "%.2f");
+                ImGui::SliderFloat("Soot yield", &pyro_config_.fire_soot_yield, 0.0F, 1.5F, "%.2f");
+            }
             ImGui::SliderFloat("Expansion", &pyro_config_.fire_expansion, 0.0F, 4.0F, "%.2f");
             ImGui::SliderFloat("Flame cooling", &pyro_config_.fire_flame_cooling, 0.0F, 8.0F,
                                "%.2f");
             ImGui::SliderFloat("Shredding", &pyro_config_.fire_shredding, 0.0F, 8.0F, "%.2f");
             ImGui::SliderFloat("Turbulence", &pyro_config_.fire_turbulence, 0.0F, 3.0F, "%.2f");
         }
-        ImGui::SliderFloat("Vorticity", &pyro_config_.vorticity_strength, 0.0F, 1.5F, "%.2f");
-        ImGui::SliderFloat("Obstacle height", &pyro_config_.obstacle_center_height, 0.0F, 1.0F,
-                           "%.2f");
-        ImGui::SliderFloat("Obstacle radius", &pyro_config_.obstacle_radius, 0.0F,
-                           kMaxPyro3DObstacleRadius, "%.3f");
-        ImGui::SliderFloat("Absorption", &pyro_config_.absorption, 0.5F, 12.0F, "%.2f");
-        ImGui::SliderFloat("Light", &pyro_config_.emission, 0.1F, 4.0F, "%.2f");
-        ImGui::SliderFloat("Shadow", &pyro_config_.shadow_absorption, 0.0F, 96.0F, "%.2f");
-        int shadow_steps = static_cast<int>(pyro_config_.shadow_steps);
-        if (ImGui::SliderInt("Shadow steps", &shadow_steps, 8, 192)) {
-            pyro_config_.shadow_steps = static_cast<std::uint32_t>(shadow_steps);
+
+        if (section("Obstacles", false)) {
+            ImGui::SliderFloat("Obstacle height", &pyro_config_.obstacle_center_height, 0.0F, 1.0F,
+                               "%.2f");
+            ImGui::SliderFloat("Obstacle radius", &pyro_config_.obstacle_radius, 0.0F,
+                               kMaxPyro3DObstacleRadius, "%.3f");
         }
-        int shadow_update_interval = static_cast<int>(pyro_config_.shadow_update_interval);
-        if (ImGui::SliderInt("Shadow interval", &shadow_update_interval, 1, 8)) {
-            pyro_config_.shadow_update_interval =
-                static_cast<std::uint32_t>(shadow_update_interval);
+
+        if (section("Rendering", true)) {
+            int raymarch_steps = static_cast<int>(pyro_config_.raymarch_steps);
+            if (ImGui::SliderInt("Raymarch steps", &raymarch_steps, 24, 192)) {
+                pyro_config_.raymarch_steps = static_cast<std::uint32_t>(raymarch_steps);
+            }
+            ImGui::SliderFloat("Exposure", &pyro_config_.render_exposure, -2.0F, 2.0F, "%.2f");
+            ImGui::SliderFloat("Backdrop", &pyro_config_.render_background_lift, 0.0F, 1.0F,
+                               "%.2f");
+            ImGui::SliderFloat("Backdrop grid", &pyro_config_.render_backdrop_grid_strength, 0.0F,
+                               1.5F, "%.2f");
+            ImGui::SliderFloat("Absorption", &pyro_config_.absorption, 0.5F, 12.0F, "%.2f");
+            ImGui::SliderFloat("Light", &pyro_config_.emission, 0.1F, 4.0F, "%.2f");
+            ImGui::SliderFloat("Ambient", &pyro_config_.ambient_light, 0.0F, 1.0F, "%.2f");
+            ImGui::SliderFloat("Rim", &pyro_config_.render_rim_strength, 0.0F, 3.0F, "%.2f");
+            ImGui::SliderFloat("Scatter", &pyro_config_.render_scatter_strength, 0.0F, 3.0F,
+                               "%.2f");
+            ImGui::SliderFloat("Smoke warmth", &pyro_config_.render_smoke_warmth, 0.0F, 1.0F,
+                               "%.2f");
+            ImGui::SliderFloat("Flame intensity", &pyro_config_.render_flame_intensity, 0.0F, 3.0F,
+                               "%.2f");
+            ImGui::SliderFloat("Flame core", &pyro_config_.render_flame_core_strength, 0.0F, 3.0F,
+                               "%.2f");
         }
-        ImGui::SliderFloat("Ambient", &pyro_config_.ambient_light, 0.0F, 1.0F, "%.2f");
-        ImGui::Text("Grid: %u x %u x %u", pyro_config_.grid_width, pyro_config_.grid_height,
-                    pyro_config_.grid_depth);
-        ImGui::Text("Shadow grid: %u x %u x %u", pyro_config_.shadow_grid_width,
-                    pyro_config_.shadow_grid_height, pyro_config_.shadow_grid_depth);
-        const std::vector<cubey::vulkan::GpuPassTiming>& timings = resources_.latest_timings();
-        if (!timings.empty()) {
-            ImGui::Separator();
-            ImGui::Text("GPU timings");
-            for (const cubey::vulkan::GpuPassTiming& timing : timings) {
-                ImGui::Text("%s: %.3f ms", timing.label.c_str(), timing.milliseconds);
+
+        if (section("Shadows", false)) {
+            ImGui::SliderFloat("Shadow", &pyro_config_.shadow_absorption, 0.0F, 96.0F, "%.2f");
+            int shadow_steps = static_cast<int>(pyro_config_.shadow_steps);
+            if (ImGui::SliderInt("Shadow steps", &shadow_steps, 8, 192)) {
+                pyro_config_.shadow_steps = static_cast<std::uint32_t>(shadow_steps);
+            }
+            int shadow_update_interval = static_cast<int>(pyro_config_.shadow_update_interval);
+            if (ImGui::SliderInt("Shadow interval", &shadow_update_interval, 1, 8)) {
+                pyro_config_.shadow_update_interval =
+                    static_cast<std::uint32_t>(shadow_update_interval);
+            }
+        }
+
+        if (section("Diagnostics", true)) {
+            ImGui::Text("Grid: %u x %u x %u", pyro_config_.grid_width, pyro_config_.grid_height,
+                        pyro_config_.grid_depth);
+            ImGui::Text("Shadow grid: %u x %u x %u", pyro_config_.shadow_grid_width,
+                        pyro_config_.shadow_grid_height, pyro_config_.shadow_grid_depth);
+            const std::vector<cubey::vulkan::GpuPassTiming>& timings = resources_.latest_timings();
+            if (!timings.empty()) {
+                ImGui::SeparatorText("GPU timings");
+                for (const cubey::vulkan::GpuPassTiming& timing : timings) {
+                    ImGui::Text("%s: %.3f ms", timing.label.c_str(), timing.milliseconds);
+                }
             }
         }
         ImGui::End();

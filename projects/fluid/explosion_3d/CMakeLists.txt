@@ -9,6 +9,10 @@ cubey_add_app_target(
         main.cpp
     SHADERS
         ${CUBEY_PYRO_3D_SHADERS}
+    SHADER_INCLUDE_DIRS
+        "${CMAKE_SOURCE_DIR}/shaders"
+    SHADER_DEPENDS
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/color_space.glsl"
 )
 
 if (BUILD_TESTING)

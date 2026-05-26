@@ -25,7 +25,7 @@ enum class Pyro3DMode : std::uint32_t {
 inline constexpr std::uint32_t kMaxPyro3DSourceCount = 16;
 inline constexpr std::uint32_t kPyro3DComputeGroupSize = 4;
 inline constexpr std::uint32_t kPyro3DSimulationPushConstantFloatCount = 28;
-inline constexpr std::uint32_t kPyro3DRenderPushConstantFloatCount = 24;
+inline constexpr std::uint32_t kPyro3DRenderPushConstantFloatCount = 32;
 inline constexpr float kDefaultPyro3DSourceRadius = 0.05F;
 inline constexpr float kDefaultFireSourceRadius = 0.085F;
 inline constexpr std::uint32_t kDefaultExplosion3DSourceCount = 9;
@@ -74,6 +74,14 @@ struct Pyro3DConfig {
     float emission = 2.0F;
     float shadow_absorption = 50.0F;
     float ambient_light = 0.5F;
+    float render_exposure = 0.42F;
+    float render_background_lift = 0.42F;
+    float render_rim_strength = 1.25F;
+    float render_scatter_strength = 1.15F;
+    float render_smoke_warmth = 0.55F;
+    float render_flame_intensity = 1.65F;
+    float render_flame_core_strength = 1.35F;
+    float render_backdrop_grid_strength = 0.42F;
 };
 
 [[nodiscard]] inline Pyro3DDebugView next_debug_view(Pyro3DDebugView view) {
@@ -152,6 +160,16 @@ struct Pyro3DConfig {
     result.source_count = mode == Pyro3DMode::Fire ? 1U : kDefaultExplosion3DSourceCount;
     result.source_radius =
         mode == Pyro3DMode::Fire ? kDefaultFireSourceRadius : kDefaultExplosion3DSourceRadius;
+    if (mode == Pyro3DMode::Explosion) {
+        result.render_exposure = 0.48F;
+        result.render_background_lift = 0.42F;
+        result.render_rim_strength = 1.35F;
+        result.render_scatter_strength = 1.22F;
+        result.render_smoke_warmth = 0.30F;
+        result.render_flame_intensity = 1.75F;
+        result.render_flame_core_strength = 1.45F;
+        result.render_backdrop_grid_strength = 0.50F;
+    }
     if (config.grid.width != 0) {
         result.grid_width = config.grid.width;
     }

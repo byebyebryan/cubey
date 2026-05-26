@@ -33,6 +33,8 @@ struct RenderPushConstants {
     std::array<float, 4> ray_forward_debug{};
     std::array<float, 4> render_options{};
     std::array<float, 4> obstacle_options{};
+    std::array<float, 4> style_options{};
+    std::array<float, 4> color_options{};
 };
 
 static_assert(sizeof(SimulationPushConstants) ==
@@ -262,6 +264,20 @@ void record_source_buffer_update(VkCommandBuffer command_buffer,
                 0.0F,
                 0.0F,
             },
+        .style_options =
+            {
+                config.render_exposure,
+                config.render_background_lift,
+                config.render_rim_strength,
+                config.render_scatter_strength,
+            },
+        .color_options =
+            {
+                config.render_smoke_warmth,
+                config.render_flame_intensity,
+                config.render_flame_core_strength,
+                config.render_backdrop_grid_strength,
+            },
     };
 }
 
@@ -269,16 +285,15 @@ void record_dispatch(const cubey::vulkan::CommandRecorder& recorder,
                      const cubey::render::ComputePipelineResource& pipeline,
                      VkDescriptorSet descriptor_set, const DispatchGroups& groups,
                      const SimulationPushConstants& push_constants) {
-    cubey::render::record_compute_pipeline_dispatch(
-        recorder,
-        {
-            .pipeline = &pipeline,
-            .descriptor_set = descriptor_set,
-            .group_count_x = groups.x,
-            .group_count_y = groups.y,
-            .group_count_z = groups.z,
-        },
-        VK_SHADER_STAGE_COMPUTE_BIT, push_constants);
+    cubey::render::record_compute_pipeline_dispatch(recorder,
+                                                    {
+                                                        .pipeline = &pipeline,
+                                                        .descriptor_set = descriptor_set,
+                                                        .group_count_x = groups.x,
+                                                        .group_count_y = groups.y,
+                                                        .group_count_z = groups.z,
+                                                    },
+                                                    VK_SHADER_STAGE_COMPUTE_BIT, push_constants);
 }
 
 } // namespace
@@ -303,21 +318,20 @@ void record_pyro_3d_compute(VkCommandBuffer command_buffer, Pyro3DGpuResources& 
         compute_dispatch_groups(shadow_extent(config), kPyro3DComputeGroupSize);
     const DispatchGroups reset_groups = compute_dispatch_groups(
         max_extent(solver_extent(config), shadow_extent(config)), kPyro3DComputeGroupSize);
-    auto record_profiled_dispatch = [&](const char* label,
-                                        const cubey::render::ComputePipelineResource& pipeline,
-                                        VkDescriptorSet descriptor_set,
-                                        const DispatchGroups& dispatch_groups) {
-        cubey::render::record_profiled_compute_pipeline_dispatch(
-            recorder,
-            {
-                .pipeline = &pipeline,
-                .descriptor_set = descriptor_set,
-                .group_count_x = dispatch_groups.x,
-                .group_count_y = dispatch_groups.y,
-                .group_count_z = dispatch_groups.z,
-            },
-            VK_SHADER_STAGE_COMPUTE_BIT, push_constants, profiler, frame_slot_index, label);
-    };
+    auto record_profiled_dispatch =
+        [&](const char* label, const cubey::render::ComputePipelineResource& pipeline,
+            VkDescriptorSet descriptor_set, const DispatchGroups& dispatch_groups) {
+            cubey::render::record_profiled_compute_pipeline_dispatch(
+                recorder,
+                {
+                    .pipeline = &pipeline,
+                    .descriptor_set = descriptor_set,
+                    .group_count_x = dispatch_groups.x,
+                    .group_count_y = dispatch_groups.y,
+                    .group_count_z = dispatch_groups.z,
+                },
+                VK_SHADER_STAGE_COMPUTE_BIT, push_constants, profiler, frame_slot_index, label);
+        };
 
     if (reset_requested) {
         const cubey::render::ComputePipelineResource& reset_pipeline = resources.reset_pipeline();

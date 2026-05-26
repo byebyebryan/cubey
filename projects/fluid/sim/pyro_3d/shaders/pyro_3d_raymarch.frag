@@ -1,4 +1,7 @@
 #version 450
+#extension GL_GOOGLE_include_directive : require
+
+#include "cubey/color_space.glsl"
 
 layout(push_constant) uniform RenderParams {
     vec4 camera_position_steps;
@@ -7,6 +10,8 @@ layout(push_constant) uniform RenderParams {
     vec4 ray_forward_debug;
     vec4 render_options;
     vec4 obstacle_options;
+    vec4 style_options;
+    vec4 color_options;
 } params;
 
 layout(set = 0, binding = 0) uniform sampler3D density_volume;
@@ -100,7 +105,20 @@ float smoke_density_at(vec3 uv) {
 }
 
 vec3 background_color(vec2 uv) {
-    return mix(vec3(0.004, 0.006, 0.012), vec3(0.020, 0.026, 0.040), uv.y);
+    vec3 low = cubey_srgb_to_linear(vec3(0.050, 0.060, 0.075));
+    vec3 high = cubey_srgb_to_linear(vec3(0.150, 0.185, 0.230));
+    vec3 horizon = cubey_srgb_to_linear(vec3(0.095, 0.105, 0.110));
+    vec3 color = mix(low, high, uv.y);
+    float floor_band = 1.0 - smoothstep(0.00, 0.34, uv.y);
+    color = mix(color, horizon, floor_band * 0.50);
+
+    vec2 grid_uv = vec2(uv.x * 8.0, uv.y * 5.0);
+    vec2 grid_cell = abs(fract(grid_uv) - 0.5);
+    float grid = 1.0 - smoothstep(0.470, 0.500, max(grid_cell.x, grid_cell.y));
+    color += cubey_srgb_to_linear(vec3(0.115, 0.135, 0.155)) * grid *
+             params.color_options.w * (0.35 + floor_band * 0.65);
+
+    return color * mix(0.70, 1.35, clamp(params.style_options.y, 0.0, 1.0));
 }
 
 float base_volume_extinction() {
@@ -115,9 +133,9 @@ vec3 velocity_debug_color(vec3 velocity) {
 
 vec3 smoke_albedo(vec4 density) {
     float heat = clamp(density.g * 0.06, 0.0, 1.0);
-    vec3 cool_soot = vec3(0.34, 0.33, 0.31);
-    vec3 warm_soot = vec3(0.44, 0.39, 0.33);
-    return mix(cool_soot, warm_soot, heat);
+    vec3 cool_soot = cubey_srgb_to_linear(vec3(0.50, 0.53, 0.56));
+    vec3 warm_soot = cubey_srgb_to_linear(vec3(0.66, 0.57, 0.45));
+    return mix(cool_soot, warm_soot, clamp(params.color_options.x + heat * 0.65, 0.0, 1.0));
 }
 
 float flame_transfer(float flame, float heat, float soot, vec3 position) {
@@ -129,10 +147,10 @@ float flame_transfer(float flame, float heat, float soot, vec3 position) {
 }
 
 vec3 flame_color(float heat, float core) {
-    vec3 ember = vec3(1.0, 0.16, 0.025);
-    vec3 orange = vec3(1.0, 0.42, 0.08);
-    vec3 yellow = vec3(1.0, 0.78, 0.28);
-    vec3 white_hot = vec3(1.0, 0.93, 0.66);
+    vec3 ember = cubey_srgb_to_linear(vec3(1.0, 0.16, 0.025));
+    vec3 orange = cubey_srgb_to_linear(vec3(1.0, 0.42, 0.08));
+    vec3 yellow = cubey_srgb_to_linear(vec3(1.0, 0.78, 0.28));
+    vec3 white_hot = cubey_srgb_to_linear(vec3(1.0, 0.93, 0.66));
     vec3 warm = mix(ember, orange, smoothstep(0.05, 0.34, heat));
     vec3 hot = mix(yellow, white_hot, core);
     return mix(warm, hot, smoothstep(0.28, 1.0, heat + core * 0.45));
@@ -146,9 +164,22 @@ vec3 flame_emission(vec4 density, vec3 position) {
     float heat = max(density.g, 0.0);
     float soot = max(density.r, 0.0);
     float flame_value = flame_transfer(flame, heat, soot, position);
-    float core = pow(smoothstep(0.20, 0.95, flame) * smoothstep(0.20, 1.10, heat), 2.2);
-    return flame_color(clamp(heat * 0.34, 0.0, 1.4), core) * flame_value *
-           params.render_options.y * 8.0;
+    float core = pow(smoothstep(0.20, 0.95, flame) * smoothstep(0.20, 1.10, heat), 2.2) *
+                 params.color_options.z;
+    float halo = smoothstep(0.08, 0.90, heat) * smoothstep(0.015, 0.40, flame) *
+                 (1.0 - smoothstep(0.75, 1.80, soot));
+    float heat_glow = smoothstep(0.040, 0.72, heat) * (1.0 - smoothstep(0.70, 2.10, soot)) *
+                      mix(1.0, 0.34, smoothstep(0.18, 0.92, position.y));
+    vec3 halo_color = cubey_srgb_to_linear(vec3(1.0, 0.42, 0.10)) * halo * 0.40;
+    vec3 heat_color = cubey_srgb_to_linear(vec3(1.0, 0.30, 0.055)) * heat_glow * 0.30;
+    return (flame_color(clamp(heat * 0.34, 0.0, 1.4), core) * flame_value + halo_color +
+            heat_color) *
+           params.render_options.y * params.color_options.y * 14.0;
+}
+
+vec3 display_transform(vec3 color) {
+    float exposure = exp2(params.style_options.x);
+    return vec3(1.0) - exp(-max(color, vec3(0.0)) * exposure);
 }
 
 void main() {
@@ -178,8 +209,8 @@ void main() {
     vec3 direction = normalize(forward + right * screen_position.x * aspect * tan_half_fovy +
                                up * screen_position.y * tan_half_fovy);
     vec3 light_direction = normalize(vec3(0.45, 0.82, 0.35));
-    vec3 light_color = vec3(1.0, 0.92, 0.80);
-    vec3 sky_color = vec3(0.42, 0.54, 0.76);
+    vec3 light_color = cubey_srgb_to_linear(vec3(1.0, 0.92, 0.80));
+    vec3 sky_color = cubey_srgb_to_linear(vec3(0.42, 0.54, 0.76));
     float obstacle_t = 0.0;
     bool obstacle_hit = ray_sphere_intersection(origin, direction, obstacle_t);
 
@@ -205,7 +236,9 @@ void main() {
             float diffuse = clamp(dot(normal, light_direction), 0.0, 1.0);
             float rim = pow(1.0 - clamp(dot(-direction, normal), 0.0, 1.0), 2.5);
             vec3 obstacle_color =
-                vec3(0.050, 0.055, 0.060) + light_color * diffuse * 0.20 + sky_color * rim * 0.10;
+                cubey_srgb_to_linear(vec3(0.080, 0.090, 0.100)) +
+                light_color * diffuse * 0.24 +
+                sky_color * rim * 0.14 * params.style_options.z;
             accumulated += transmittance * obstacle_color;
             transmittance = 0.0;
             break;
@@ -221,13 +254,13 @@ void main() {
         float shadowed_light = pow(clamp(shadow, 0.0, 1.0), 1.35);
         float ambient_shadow = mix(0.24, 1.0, shadowed_light);
         float view_light = clamp(dot(-direction, light_direction), 0.0, 1.0);
-        float forward_scatter = 0.35 + 0.65 * pow(view_light, 3.0);
+        float forward_scatter = (0.35 + 0.65 * pow(view_light, 3.0)) * params.style_options.w;
         float rim = pow(1.0 - clamp(dot(direction, light_direction) * 0.5 + 0.5, 0.0, 1.0), 3.0);
-        vec3 lighting = sky_color * params.render_options.w * ambient_shadow +
+        vec3 lighting = sky_color * params.render_options.w * ambient_shadow * 1.25 +
                         light_color * shadowed_light * params.render_options.y *
                             forward_scatter +
-                        light_color * shadowed_light * rim * 0.38;
-        vec3 base_color = (sky_color * 0.45 + light_color * 0.12) * ambient_shadow;
+                        light_color * shadowed_light * rim * 0.38 * params.style_options.z;
+        vec3 base_color = (sky_color * 0.58 + light_color * 0.16) * ambient_shadow;
         accumulated += transmittance * base_color * base_alpha;
         accumulated += transmittance * smoke_albedo(density) * lighting * smoke_alpha;
         accumulated += transmittance * flame_emission(density, position) * step_length;
@@ -239,5 +272,5 @@ void main() {
     }
 
     vec3 color = accumulated + background * transmittance;
-    out_color = vec4(clamp(color, vec3(0.0), vec3(1.0)), 1.0);
+    out_color = vec4(clamp(display_transform(color), vec3(0.0), vec3(1.0)), 1.0);
 }

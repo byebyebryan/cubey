@@ -15,6 +15,10 @@ Useful controls:
 - `R`: reset the volume.
 - `D`: cycle smoke, density slice, and velocity debug views.
 - Escape: close.
+- The runtime UI groups simulation, source, explosion model, obstacle,
+  rendering, shadow, and diagnostics controls. The Rendering group owns the
+  presentation style: exposure, backdrop, rim/scatter, smoke warmth, and flame
+  shaping.
 
 Useful commands:
 
