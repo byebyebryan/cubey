@@ -321,9 +321,10 @@ void test_material_cubes_show_real_material_variant_grid() {
                      "material_cubes should use generated IBL when no HDR environment is supplied");
     require_contains(app, "create_pbr_environment_from_equirectangular",
                      "material_cubes should support HDR IBL through the normal run config");
-    require_contains(app, ".exposure = config_.exposure",
+    require_contains(app, ".exposure = config_.pbr.exposure",
                      "material_cubes should use the PBR display transform settings");
-    require_contains(app, ".environment_rotation_degrees = config_.environment_rotation_degrees",
+    require_contains(app,
+                     ".environment_rotation_degrees = config_.pbr.environment_rotation_degrees",
                      "material_cubes should pass environment rotation to PBR rendering");
     require_not_contains(app, "struct MaterialUniforms",
                          "material_cubes should not keep the old custom material uniform path");

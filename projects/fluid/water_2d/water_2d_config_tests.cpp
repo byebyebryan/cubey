@@ -301,8 +301,8 @@ int main() {
                 "default run config should preserve water particle capacity");
 
         cubey::RunConfig run_config;
-        run_config.grid_width = 320;
-        run_config.grid_height = 180;
+        run_config.grid.width = 320;
+        run_config.grid.height = 180;
         const cubey::projects::fluid::water_2d::Water2DConfig configured =
             cubey::projects::fluid::water_2d::water_2d_config_from_run_config(run_config);
         require(configured.grid_width == 320, "water config should honor run config grid width");
@@ -316,10 +316,10 @@ int main() {
                 "water config should add hose capacity to configured particle capacity");
 
         cubey::RunConfig transfer_run_config;
-        transfer_run_config.water2d_transfer_mode = "pic-flip";
-        transfer_run_config.water2d_transfer_limit = 48;
-        transfer_run_config.water2d_hose = 1;
-        transfer_run_config.water2d_drain = 1;
+        transfer_run_config.water2d.transfer_mode = "pic-flip";
+        transfer_run_config.water2d.transfer_limit = 48;
+        transfer_run_config.water2d.hose = 1;
+        transfer_run_config.water2d.drain = 1;
         const cubey::projects::fluid::water_2d::Water2DConfig transfer_config =
             cubey::projects::fluid::water_2d::water_2d_config_from_run_config(
                 transfer_run_config);

@@ -53,8 +53,8 @@ void GltfViewerApp::create_imported_asset_scene(const cubey::vulkan::Device& dev
             .label_prefix = "gltf_viewer",
         });
     animation_playback_ = {
-        .animation_index = config_.animation_index,
-        .speed = config_.animation_speed,
+        .animation_index = config_.gltf.animation_index,
+        .speed = config_.gltf.animation_speed,
     };
     animation_sample_.reset();
     scene_bounds_ = import_result_.bounds;
@@ -77,12 +77,12 @@ void GltfViewerApp::create_imported_asset_scene(const cubey::vulkan::Device& dev
 }
 
 std::filesystem::path GltfViewerApp::resolved_input_path() const {
-    if (!config_.input_path.empty()) {
-        if (!std::filesystem::exists(config_.input_path)) {
+    if (!config_.gltf.input_path.empty()) {
+        if (!std::filesystem::exists(config_.gltf.input_path)) {
             throw std::runtime_error("input glTF asset does not exist: " +
-                                     config_.input_path.string());
+                                     config_.gltf.input_path.string());
         }
-        return config_.input_path;
+        return config_.gltf.input_path;
     }
 
     const std::filesystem::path sample = bundled_sample_asset_path();
@@ -93,12 +93,12 @@ std::filesystem::path GltfViewerApp::resolved_input_path() const {
 }
 
 std::filesystem::path GltfViewerApp::resolved_environment_path() const {
-    if (!config_.environment_path.empty()) {
-        if (!std::filesystem::exists(config_.environment_path)) {
+    if (!config_.pbr.environment_path.empty()) {
+        if (!std::filesystem::exists(config_.pbr.environment_path)) {
             throw std::runtime_error("environment HDR does not exist: " +
-                                     config_.environment_path.string());
+                                     config_.pbr.environment_path.string());
         }
-        return config_.environment_path;
+        return config_.pbr.environment_path;
     }
 
     const std::filesystem::path sample = bundled_sample_environment_path();
@@ -183,7 +183,7 @@ void GltfViewerApp::create_fallback_mesh(cubey::vulkan::GpuRuntime& gpu) {
 void GltfViewerApp::create_ibl_resources(const cubey::vulkan::Device& device,
                                          cubey::vulkan::GpuRuntime& gpu) {
     cubey::render::GeneratedPbrEnvironmentConfig ibl_config;
-    ibl_config.intensity = config_.ibl_intensity;
+    ibl_config.intensity = config_.pbr.ibl_intensity;
 
     const std::filesystem::path environment = resolved_environment_path();
     if (!environment.empty()) {

@@ -785,8 +785,8 @@ class Water3DApp {
         }
 
         if (section("Diagnostics", true)) {
-            ImGui::Text("Grid: %u x %u x %u", water_config_.grid_width, water_config_.grid_height,
-                        water_config_.grid_depth);
+            ImGui::Text("Grid: %u x %u x %u", water_config_.grid_width,
+                        water_config_.grid_height, water_config_.grid_depth);
             const std::uint32_t scanned_particles =
                 water_3d_runtime_particle_scan_count(water_config_, runtime_state_);
             ImGui::Text("Particles: %u reset / %u capacity", water_config_.active_particle_count,
@@ -866,12 +866,12 @@ class Water3DApp {
     }
 
     [[nodiscard]] std::filesystem::path resolved_environment_path() const {
-        if (!config_.environment_path.empty()) {
-            if (!std::filesystem::exists(config_.environment_path)) {
+        if (!config_.pbr.environment_path.empty()) {
+            if (!std::filesystem::exists(config_.pbr.environment_path)) {
                 throw std::runtime_error("environment HDR does not exist: " +
-                                         config_.environment_path.string());
+                                         config_.pbr.environment_path.string());
             }
-            return config_.environment_path;
+            return config_.pbr.environment_path;
         }
 
         const std::filesystem::path sample = bundled_sample_environment_path();

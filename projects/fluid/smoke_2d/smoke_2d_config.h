@@ -103,41 +103,41 @@ struct Smoke2DConfig {
 
 [[nodiscard]] inline Smoke2DConfig smoke_2d_config_from_run_config(const RunConfig& config) {
     Smoke2DConfig smoke_config;
-    if (config.grid_width != 0) {
-        smoke_config.grid_width = config.grid_width;
+    if (config.grid.width != 0) {
+        smoke_config.grid_width = config.grid.width;
     }
-    if (config.grid_height != 0) {
-        smoke_config.grid_height = config.grid_height;
+    if (config.grid.height != 0) {
+        smoke_config.grid_height = config.grid.height;
     }
-    if (config.smoke_injectors != 0) {
-        if (config.smoke_injectors > kMaxProceduralInjectorCount) {
+    if (config.smoke.injectors != 0) {
+        if (config.smoke.injectors > kMaxProceduralInjectorCount) {
             throw std::runtime_error("smoke injector count must be 1..16");
         }
-        smoke_config.procedural_injector_count = config.smoke_injectors;
+        smoke_config.procedural_injector_count = config.smoke.injectors;
     }
-    if (run_config_float_is_set(config.smoke_injector_force)) {
-        smoke_config.injector_injection_strength = config.smoke_injector_force;
+    if (run_config_float_is_set(config.smoke.injector_force)) {
+        smoke_config.injector_injection_strength = config.smoke.injector_force;
     }
-    if (run_config_float_is_set(config.smoke_injector_propulsion)) {
-        smoke_config.injector_propulsion_strength = config.smoke_injector_propulsion;
+    if (run_config_float_is_set(config.smoke.injector_propulsion)) {
+        smoke_config.injector_propulsion_strength = config.smoke.injector_propulsion;
     }
-    if (run_config_float_is_set(config.smoke_injector_orbit_radius)) {
-        smoke_config.injector_orbit_radius = config.smoke_injector_orbit_radius;
+    if (run_config_float_is_set(config.smoke.injector_orbit_radius)) {
+        smoke_config.injector_orbit_radius = config.smoke.injector_orbit_radius;
     }
-    if (run_config_float_is_set(config.smoke_injector_orbit_radius_spread)) {
-        smoke_config.injector_orbit_radius_spread = config.smoke_injector_orbit_radius_spread;
+    if (run_config_float_is_set(config.smoke.injector_orbit_radius_spread)) {
+        smoke_config.injector_orbit_radius_spread = config.smoke.injector_orbit_radius_spread;
     }
-    if (run_config_float_is_set(config.smoke_injector_orbit_angular_speed)) {
-        smoke_config.injector_orbit_angular_speed = config.smoke_injector_orbit_angular_speed;
+    if (run_config_float_is_set(config.smoke.injector_orbit_angular_speed)) {
+        smoke_config.injector_orbit_angular_speed = config.smoke.injector_orbit_angular_speed;
     }
-    if (run_config_float_is_set(config.smoke_injector_orbit_angular_speed_spread)) {
+    if (run_config_float_is_set(config.smoke.injector_orbit_angular_speed_spread)) {
         smoke_config.injector_orbit_angular_speed_spread =
-            config.smoke_injector_orbit_angular_speed_spread;
+            config.smoke.injector_orbit_angular_speed_spread;
     }
-    if (run_config_float_is_set(config.smoke_injector_orbit_phase_spread)) {
-        smoke_config.injector_orbit_phase_spread = config.smoke_injector_orbit_phase_spread;
+    if (run_config_float_is_set(config.smoke.injector_orbit_phase_spread)) {
+        smoke_config.injector_orbit_phase_spread = config.smoke.injector_orbit_phase_spread;
     }
-    smoke_config.obstacles_enabled = config.smoke_obstacles;
+    smoke_config.obstacles_enabled = config.smoke.obstacles;
     static_cast<void>(field_cell_count(smoke_config));
     return smoke_config;
 }

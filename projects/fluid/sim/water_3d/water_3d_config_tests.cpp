@@ -240,20 +240,20 @@ int main() {
                 "water 3D render view cycle should wrap after whitewater");
 
         cubey::RunConfig run_config;
-        run_config.grid_width = 32;
-        run_config.grid_height = 48;
-        run_config.grid_depth = 40;
+        run_config.grid.width = 32;
+        run_config.grid.height = 48;
+        run_config.grid.depth = 40;
         run_config.headless = true;
         run_config.profile_diagnostics = true;
         run_config.profile_diagnostic_interval = 7;
-        run_config.water3d_transfer_mode = "pic-flip";
-        run_config.water3d_transfer_limit = 96;
-        run_config.water3d_p2g_mode = "tiled";
-        run_config.water3d_hose = 1;
-        run_config.water3d_drain = 1;
-        run_config.water3d_rain = 1;
-        run_config.water3d_wave = 0;
-        run_config.water3d_whitewater = 0;
+        run_config.water3d.transfer_mode = "pic-flip";
+        run_config.water3d.transfer_limit = 96;
+        run_config.water3d.p2g_mode = "tiled";
+        run_config.water3d.hose = 1;
+        run_config.water3d.drain = 1;
+        run_config.water3d.rain = 1;
+        run_config.water3d.wave = 0;
+        run_config.water3d.whitewater = 0;
         const water::Water3DConfig overridden = water::water_3d_config_from_run_config(run_config);
         require(overridden.grid_width == 32 && overridden.grid_height == 48 &&
                     overridden.grid_depth == 40,

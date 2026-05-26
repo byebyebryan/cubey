@@ -155,7 +155,7 @@ int main() {
         require(default_explosion_config.source_radius == pyro::kDefaultExplosion3DSourceRadius,
                 "pyro 3D explosion should default to a wider impulse radius");
         cubey::RunConfig explicit_default_radius_config;
-        explicit_default_radius_config.pyro_source_radius = pyro::kDefaultPyro3DSourceRadius;
+        explicit_default_radius_config.pyro.source_radius = pyro::kDefaultPyro3DSourceRadius;
         const pyro::Pyro3DConfig explicit_fire_radius_config = pyro::pyro_3d_config_from_run_config(
             explicit_default_radius_config, pyro::Pyro3DMode::Fire);
         const pyro::Pyro3DConfig explicit_explosion_radius_config =
@@ -167,34 +167,34 @@ int main() {
                 "explicit default-size source radius should override explosion mode radius");
 
         cubey::RunConfig run_config;
-        run_config.grid_width = 64;
-        run_config.grid_height = 48;
-        run_config.grid_depth = 32;
-        run_config.shadow_grid_width = 24;
-        run_config.shadow_grid_height = 20;
-        run_config.shadow_grid_depth = 16;
-        run_config.shadow_steps = 48;
-        run_config.shadow_update_interval = 3;
-        run_config.pyro_sources = 6;
-        run_config.pyro_source_radius = 0.08F;
-        run_config.pyro_source_force = 7.5F;
-        run_config.pyro_soot = 6.5F;
-        run_config.pyro_temperature = 1.75F;
-        run_config.pyro_fuel = 2.5F;
-        run_config.pyro_ignition_temperature = 0.31F;
-        run_config.pyro_burn_rate = 4.5F;
-        run_config.pyro_heat_output = 3.25F;
-        run_config.pyro_soot_yield = 0.22F;
-        run_config.pyro_expansion = 1.8F;
-        run_config.pyro_flame_cooling = 2.75F;
-        run_config.pyro_shredding = 3.5F;
-        run_config.pyro_turbulence = 0.85F;
-        run_config.pyro_obstacle_height = 0.58F;
-        run_config.pyro_obstacle_radius = 0.18F;
-        run_config.pyro_buoyancy = 1.75F;
-        run_config.explosion_interval_seconds = 2.5F;
-        run_config.explosion_duration_seconds = 0.18F;
-        run_config.explosion_boost = 22.0F;
+        run_config.grid.width = 64;
+        run_config.grid.height = 48;
+        run_config.grid.depth = 32;
+        run_config.pyro.shadow_grid.width = 24;
+        run_config.pyro.shadow_grid.height = 20;
+        run_config.pyro.shadow_grid.depth = 16;
+        run_config.pyro.shadow_steps = 48;
+        run_config.pyro.shadow_update_interval = 3;
+        run_config.pyro.sources = 6;
+        run_config.pyro.source_radius = 0.08F;
+        run_config.pyro.source_force = 7.5F;
+        run_config.pyro.soot = 6.5F;
+        run_config.pyro.temperature = 1.75F;
+        run_config.pyro.fuel = 2.5F;
+        run_config.pyro.ignition_temperature = 0.31F;
+        run_config.pyro.burn_rate = 4.5F;
+        run_config.pyro.heat_output = 3.25F;
+        run_config.pyro.soot_yield = 0.22F;
+        run_config.pyro.expansion = 1.8F;
+        run_config.pyro.flame_cooling = 2.75F;
+        run_config.pyro.shredding = 3.5F;
+        run_config.pyro.turbulence = 0.85F;
+        run_config.pyro.obstacle_height = 0.58F;
+        run_config.pyro.obstacle_radius = 0.18F;
+        run_config.pyro.buoyancy = 1.75F;
+        run_config.pyro.explosion_interval_seconds = 2.5F;
+        run_config.pyro.explosion_duration_seconds = 0.18F;
+        run_config.pyro.explosion_boost = 22.0F;
 
         const pyro::Pyro3DConfig fire_config =
             pyro::pyro_3d_config_from_run_config(run_config, pyro::Pyro3DMode::Fire);
@@ -257,7 +257,7 @@ int main() {
         bool threw_for_too_many_sources = false;
         try {
             cubey::RunConfig invalid_source_config;
-            invalid_source_config.pyro_sources = pyro::kMaxPyro3DSourceCount + 1U;
+            invalid_source_config.pyro.sources = pyro::kMaxPyro3DSourceCount + 1U;
             static_cast<void>(pyro::pyro_3d_config_from_run_config(invalid_source_config,
                                                                    pyro::Pyro3DMode::Fire));
         } catch (const std::runtime_error&) {
@@ -268,7 +268,7 @@ int main() {
         bool threw_for_invalid_obstacle_height = false;
         try {
             cubey::RunConfig invalid_obstacle_config;
-            invalid_obstacle_config.pyro_obstacle_height = 1.2F;
+            invalid_obstacle_config.pyro.obstacle_height = 1.2F;
             static_cast<void>(pyro::pyro_3d_config_from_run_config(invalid_obstacle_config,
                                                                    pyro::Pyro3DMode::Fire));
         } catch (const std::runtime_error&) {
@@ -279,7 +279,7 @@ int main() {
         bool threw_for_invalid_obstacle_radius = false;
         try {
             cubey::RunConfig invalid_obstacle_config;
-            invalid_obstacle_config.pyro_obstacle_radius = 0.6F;
+            invalid_obstacle_config.pyro.obstacle_radius = 0.6F;
             static_cast<void>(pyro::pyro_3d_config_from_run_config(invalid_obstacle_config,
                                                                    pyro::Pyro3DMode::Fire));
         } catch (const std::runtime_error&) {

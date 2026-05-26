@@ -86,107 +86,107 @@ RunConfig parse_run_config(int argc, char** argv) {
         } else if (arg == "--height") {
             config.height = parse_u32(need_value("--height"), "--height");
         } else if (arg == "--grid-width") {
-            config.grid_width = parse_positive_u32(need_value("--grid-width"), "--grid-width");
+            config.grid.width = parse_positive_u32(need_value("--grid-width"), "--grid-width");
         } else if (arg == "--grid-height") {
-            config.grid_height = parse_positive_u32(need_value("--grid-height"), "--grid-height");
+            config.grid.height = parse_positive_u32(need_value("--grid-height"), "--grid-height");
         } else if (arg == "--grid-depth") {
-            config.grid_depth = parse_positive_u32(need_value("--grid-depth"), "--grid-depth");
+            config.grid.depth = parse_positive_u32(need_value("--grid-depth"), "--grid-depth");
         } else if (arg == "--shadow-grid-width") {
-            config.shadow_grid_width =
+            config.pyro.shadow_grid.width =
                 parse_positive_u32(need_value("--shadow-grid-width"), "--shadow-grid-width");
         } else if (arg == "--shadow-grid-height") {
-            config.shadow_grid_height =
+            config.pyro.shadow_grid.height =
                 parse_positive_u32(need_value("--shadow-grid-height"), "--shadow-grid-height");
         } else if (arg == "--shadow-grid-depth") {
-            config.shadow_grid_depth =
+            config.pyro.shadow_grid.depth =
                 parse_positive_u32(need_value("--shadow-grid-depth"), "--shadow-grid-depth");
         } else if (arg == "--shadow-steps") {
-            config.shadow_steps =
+            config.pyro.shadow_steps =
                 parse_positive_u32(need_value("--shadow-steps"), "--shadow-steps");
         } else if (arg == "--shadow-update-interval") {
-            config.shadow_update_interval = parse_positive_u32(
+            config.pyro.shadow_update_interval = parse_positive_u32(
                 need_value("--shadow-update-interval"), "--shadow-update-interval");
         } else if (arg == "--smoke-injectors") {
-            config.smoke_injectors =
+            config.smoke.injectors =
                 parse_positive_u32(need_value("--smoke-injectors"), "--smoke-injectors");
         } else if (arg == "--smoke-injector-force") {
-            config.smoke_injector_force =
+            config.smoke.injector_force =
                 parse_float(need_value("--smoke-injector-force"), "--smoke-injector-force");
         } else if (arg == "--smoke-injector-propulsion") {
-            config.smoke_injector_propulsion = parse_float(
+            config.smoke.injector_propulsion = parse_float(
                 need_value("--smoke-injector-propulsion"), "--smoke-injector-propulsion");
         } else if (arg == "--smoke-injector-orbit-radius") {
-            config.smoke_injector_orbit_radius = parse_float(
+            config.smoke.injector_orbit_radius = parse_float(
                 need_value("--smoke-injector-orbit-radius"), "--smoke-injector-orbit-radius");
         } else if (arg == "--smoke-injector-orbit-radius-spread") {
-            config.smoke_injector_orbit_radius_spread =
+            config.smoke.injector_orbit_radius_spread =
                 parse_float(need_value("--smoke-injector-orbit-radius-spread"),
                             "--smoke-injector-orbit-radius-spread");
         } else if (arg == "--smoke-injector-orbit-angular-speed") {
-            config.smoke_injector_orbit_angular_speed =
+            config.smoke.injector_orbit_angular_speed =
                 parse_float(need_value("--smoke-injector-orbit-angular-speed"),
                             "--smoke-injector-orbit-angular-speed");
         } else if (arg == "--smoke-injector-orbit-angular-speed-spread") {
-            config.smoke_injector_orbit_angular_speed_spread =
+            config.smoke.injector_orbit_angular_speed_spread =
                 parse_float(need_value("--smoke-injector-orbit-angular-speed-spread"),
                             "--smoke-injector-orbit-angular-speed-spread");
         } else if (arg == "--smoke-injector-orbit-phase-spread") {
-            config.smoke_injector_orbit_phase_spread =
+            config.smoke.injector_orbit_phase_spread =
                 parse_float(need_value("--smoke-injector-orbit-phase-spread"),
                             "--smoke-injector-orbit-phase-spread");
         } else if (arg == "--pyro-sources") {
-            config.pyro_sources =
+            config.pyro.sources =
                 parse_positive_u32(need_value("--pyro-sources"), "--pyro-sources");
         } else if (arg == "--pyro-source-radius") {
-            config.pyro_source_radius =
+            config.pyro.source_radius =
                 parse_float(need_value("--pyro-source-radius"), "--pyro-source-radius");
         } else if (arg == "--pyro-source-force") {
-            config.pyro_source_force =
+            config.pyro.source_force =
                 parse_float(need_value("--pyro-source-force"), "--pyro-source-force");
         } else if (arg == "--pyro-soot") {
-            config.pyro_soot = parse_float(need_value("--pyro-soot"), "--pyro-soot");
+            config.pyro.soot = parse_float(need_value("--pyro-soot"), "--pyro-soot");
         } else if (arg == "--pyro-temperature") {
-            config.pyro_temperature =
+            config.pyro.temperature =
                 parse_float(need_value("--pyro-temperature"), "--pyro-temperature");
         } else if (arg == "--pyro-fuel") {
-            config.pyro_fuel = parse_float(need_value("--pyro-fuel"), "--pyro-fuel");
+            config.pyro.fuel = parse_float(need_value("--pyro-fuel"), "--pyro-fuel");
         } else if (arg == "--pyro-buoyancy") {
-            config.pyro_buoyancy = parse_float(need_value("--pyro-buoyancy"), "--pyro-buoyancy");
+            config.pyro.buoyancy = parse_float(need_value("--pyro-buoyancy"), "--pyro-buoyancy");
         } else if (arg == "--pyro-ignition-temperature") {
-            config.pyro_ignition_temperature = parse_float(
+            config.pyro.ignition_temperature = parse_float(
                 need_value("--pyro-ignition-temperature"), "--pyro-ignition-temperature");
         } else if (arg == "--pyro-burn-rate") {
-            config.pyro_burn_rate = parse_float(need_value("--pyro-burn-rate"), "--pyro-burn-rate");
+            config.pyro.burn_rate = parse_float(need_value("--pyro-burn-rate"), "--pyro-burn-rate");
         } else if (arg == "--pyro-heat-output") {
-            config.pyro_heat_output =
+            config.pyro.heat_output =
                 parse_float(need_value("--pyro-heat-output"), "--pyro-heat-output");
         } else if (arg == "--pyro-soot-yield") {
-            config.pyro_soot_yield =
+            config.pyro.soot_yield =
                 parse_float(need_value("--pyro-soot-yield"), "--pyro-soot-yield");
         } else if (arg == "--pyro-expansion") {
-            config.pyro_expansion = parse_float(need_value("--pyro-expansion"), "--pyro-expansion");
+            config.pyro.expansion = parse_float(need_value("--pyro-expansion"), "--pyro-expansion");
         } else if (arg == "--pyro-flame-cooling") {
-            config.pyro_flame_cooling =
+            config.pyro.flame_cooling =
                 parse_float(need_value("--pyro-flame-cooling"), "--pyro-flame-cooling");
         } else if (arg == "--pyro-shredding") {
-            config.pyro_shredding = parse_float(need_value("--pyro-shredding"), "--pyro-shredding");
+            config.pyro.shredding = parse_float(need_value("--pyro-shredding"), "--pyro-shredding");
         } else if (arg == "--pyro-turbulence") {
-            config.pyro_turbulence =
+            config.pyro.turbulence =
                 parse_float(need_value("--pyro-turbulence"), "--pyro-turbulence");
         } else if (arg == "--pyro-obstacle-height") {
-            config.pyro_obstacle_height =
+            config.pyro.obstacle_height =
                 parse_float(need_value("--pyro-obstacle-height"), "--pyro-obstacle-height");
         } else if (arg == "--pyro-obstacle-radius") {
-            config.pyro_obstacle_radius =
+            config.pyro.obstacle_radius =
                 parse_float(need_value("--pyro-obstacle-radius"), "--pyro-obstacle-radius");
         } else if (arg == "--explosion-interval") {
-            config.explosion_interval_seconds =
+            config.pyro.explosion_interval_seconds =
                 parse_float(need_value("--explosion-interval"), "--explosion-interval");
         } else if (arg == "--explosion-duration") {
-            config.explosion_duration_seconds =
+            config.pyro.explosion_duration_seconds =
                 parse_float(need_value("--explosion-duration"), "--explosion-duration");
         } else if (arg == "--explosion-boost") {
-            config.explosion_boost =
+            config.pyro.explosion_boost =
                 parse_float(need_value("--explosion-boost"), "--explosion-boost");
         } else if (arg == "--frames") {
             config.frames = parse_u32(need_value("--frames"), "--frames");
@@ -214,68 +214,68 @@ RunConfig parse_run_config(int argc, char** argv) {
                 throw std::runtime_error("capture mode must be png or video");
             }
         } else if (arg == "--input") {
-            config.input_path = std::string(need_value("--input"));
+            config.gltf.input_path = std::string(need_value("--input"));
         } else if (arg == "--environment") {
-            config.environment_path = std::string(need_value("--environment"));
+            config.pbr.environment_path = std::string(need_value("--environment"));
         } else if (arg == "--debug-view") {
             config.debug_view = std::string(need_value("--debug-view"));
         } else if (arg == "--water2d-transfer") {
-            config.water2d_transfer_mode = std::string(need_value("--water2d-transfer"));
+            config.water2d.transfer_mode = std::string(need_value("--water2d-transfer"));
         } else if (arg == "--water2d-transfer-limit") {
-            config.water2d_transfer_limit = parse_positive_u32(
+            config.water2d.transfer_limit = parse_positive_u32(
                 need_value("--water2d-transfer-limit"), "--water2d-transfer-limit");
         } else if (arg == "--water2d-hose") {
-            config.water2d_hose = 1;
+            config.water2d.hose = 1;
         } else if (arg == "--no-water2d-hose") {
-            config.water2d_hose = 0;
+            config.water2d.hose = 0;
         } else if (arg == "--water2d-drain") {
-            config.water2d_drain = 1;
+            config.water2d.drain = 1;
         } else if (arg == "--no-water2d-drain") {
-            config.water2d_drain = 0;
+            config.water2d.drain = 0;
         } else if (arg == "--water3d-transfer") {
-            config.water3d_transfer_mode = std::string(need_value("--water3d-transfer"));
+            config.water3d.transfer_mode = std::string(need_value("--water3d-transfer"));
         } else if (arg == "--water3d-transfer-limit") {
-            config.water3d_transfer_limit = parse_positive_u32(
+            config.water3d.transfer_limit = parse_positive_u32(
                 need_value("--water3d-transfer-limit"), "--water3d-transfer-limit");
         } else if (arg == "--water3d-p2g-mode") {
-            config.water3d_p2g_mode = std::string(need_value("--water3d-p2g-mode"));
+            config.water3d.p2g_mode = std::string(need_value("--water3d-p2g-mode"));
         } else if (arg == "--water3d-hose") {
-            config.water3d_hose = 1;
+            config.water3d.hose = 1;
         } else if (arg == "--no-water3d-hose") {
-            config.water3d_hose = 0;
+            config.water3d.hose = 0;
         } else if (arg == "--water3d-drain") {
-            config.water3d_drain = 1;
+            config.water3d.drain = 1;
         } else if (arg == "--no-water3d-drain") {
-            config.water3d_drain = 0;
+            config.water3d.drain = 0;
         } else if (arg == "--water3d-rain") {
-            config.water3d_rain = 1;
+            config.water3d.rain = 1;
         } else if (arg == "--no-water3d-rain") {
-            config.water3d_rain = 0;
+            config.water3d.rain = 0;
         } else if (arg == "--water3d-wave") {
-            config.water3d_wave = 1;
+            config.water3d.wave = 1;
         } else if (arg == "--no-water3d-wave") {
-            config.water3d_wave = 0;
+            config.water3d.wave = 0;
         } else if (arg == "--water3d-whitewater") {
-            config.water3d_whitewater = 1;
+            config.water3d.whitewater = 1;
         } else if (arg == "--no-water3d-whitewater") {
-            config.water3d_whitewater = 0;
+            config.water3d.whitewater = 0;
         } else if (arg == "--ibl-intensity") {
-            config.ibl_intensity = parse_float(need_value("--ibl-intensity"), "--ibl-intensity");
+            config.pbr.ibl_intensity = parse_float(need_value("--ibl-intensity"), "--ibl-intensity");
         } else if (arg == "--environment-rotation-degrees") {
-            config.environment_rotation_degrees = parse_float(
+            config.pbr.environment_rotation_degrees = parse_float(
                 need_value("--environment-rotation-degrees"), "--environment-rotation-degrees");
         } else if (arg == "--exposure") {
-            config.exposure = parse_float(need_value("--exposure"), "--exposure");
+            config.pbr.exposure = parse_float(need_value("--exposure"), "--exposure");
         } else if (arg == "--animation-index") {
-            config.animation_index =
+            config.gltf.animation_index =
                 parse_u32(need_value("--animation-index"), "--animation-index");
         } else if (arg == "--animation-speed") {
-            config.animation_speed =
+            config.gltf.animation_speed =
                 parse_float(need_value("--animation-speed"), "--animation-speed");
         } else if (arg == "--pause-animation") {
-            config.animation_paused = true;
+            config.gltf.animation_paused = true;
         } else if (arg == "--smoke-obstacles") {
-            config.smoke_obstacles = true;
+            config.smoke.obstacles = true;
         } else if (arg == "--output") {
             config.output_path = std::string(need_value("--output"));
             output_path_explicit = true;
@@ -287,7 +287,7 @@ RunConfig parse_run_config(int argc, char** argv) {
     if (config.width == 0 || config.height == 0) {
         throw std::runtime_error("width and height must be positive");
     }
-    if (config.ibl_intensity < 0.0F) {
+    if (config.pbr.ibl_intensity < 0.0F) {
         throw std::runtime_error("IBL intensity must be nonnegative");
     }
     if (config.fps == 0) {
@@ -296,79 +296,79 @@ RunConfig parse_run_config(int argc, char** argv) {
     if (config.profile_diagnostics && config.profile_output_prefix.empty()) {
         throw std::runtime_error("profile diagnostics require --profile-output");
     }
-    if (config.smoke_injector_force < 0.0F) {
+    if (config.smoke.injector_force < 0.0F) {
         throw std::runtime_error("smoke injector force must be nonnegative");
     }
-    if (config.smoke_injector_propulsion < 0.0F) {
+    if (config.smoke.injector_propulsion < 0.0F) {
         throw std::runtime_error("smoke injector propulsion must be nonnegative");
     }
-    if (config.smoke_injector_orbit_radius <= 0.0F) {
+    if (config.smoke.injector_orbit_radius <= 0.0F) {
         throw std::runtime_error("smoke injector orbit radius must be positive");
     }
-    if (config.smoke_injector_orbit_radius_spread < 0.0F) {
+    if (config.smoke.injector_orbit_radius_spread < 0.0F) {
         throw std::runtime_error("smoke injector orbit radius spread must be nonnegative");
     }
-    if (config.smoke_injector_orbit_angular_speed_spread < 0.0F) {
+    if (config.smoke.injector_orbit_angular_speed_spread < 0.0F) {
         throw std::runtime_error("smoke injector orbit angular speed spread must be nonnegative");
     }
-    if (config.smoke_injector_orbit_phase_spread < 0.0F) {
+    if (config.smoke.injector_orbit_phase_spread < 0.0F) {
         throw std::runtime_error("smoke injector orbit phase spread must be nonnegative");
     }
-    if (config.pyro_source_radius <= 0.0F) {
+    if (config.pyro.source_radius <= 0.0F) {
         throw std::runtime_error("pyro source radius must be positive");
     }
-    if (config.pyro_source_force < 0.0F) {
+    if (config.pyro.source_force < 0.0F) {
         throw std::runtime_error("pyro source force must be nonnegative");
     }
-    if (config.pyro_soot < 0.0F) {
+    if (config.pyro.soot < 0.0F) {
         throw std::runtime_error("pyro soot must be nonnegative");
     }
-    if (config.pyro_temperature < 0.0F) {
+    if (config.pyro.temperature < 0.0F) {
         throw std::runtime_error("pyro temperature must be nonnegative");
     }
-    if (config.pyro_fuel < 0.0F) {
+    if (config.pyro.fuel < 0.0F) {
         throw std::runtime_error("pyro fuel must be nonnegative");
     }
-    if (config.pyro_ignition_temperature < 0.0F) {
+    if (config.pyro.ignition_temperature < 0.0F) {
         throw std::runtime_error("pyro ignition temperature must be nonnegative");
     }
-    if (config.pyro_burn_rate < 0.0F) {
+    if (config.pyro.burn_rate < 0.0F) {
         throw std::runtime_error("pyro burn rate must be nonnegative");
     }
-    if (config.pyro_heat_output < 0.0F) {
+    if (config.pyro.heat_output < 0.0F) {
         throw std::runtime_error("pyro heat output must be nonnegative");
     }
-    if (config.pyro_soot_yield < 0.0F) {
+    if (config.pyro.soot_yield < 0.0F) {
         throw std::runtime_error("pyro soot yield must be nonnegative");
     }
-    if (config.pyro_expansion < 0.0F) {
+    if (config.pyro.expansion < 0.0F) {
         throw std::runtime_error("pyro expansion must be nonnegative");
     }
-    if (config.pyro_flame_cooling < 0.0F) {
+    if (config.pyro.flame_cooling < 0.0F) {
         throw std::runtime_error("pyro flame cooling must be nonnegative");
     }
-    if (config.pyro_shredding < 0.0F) {
+    if (config.pyro.shredding < 0.0F) {
         throw std::runtime_error("pyro shredding must be nonnegative");
     }
-    if (config.pyro_turbulence < 0.0F) {
+    if (config.pyro.turbulence < 0.0F) {
         throw std::runtime_error("pyro turbulence must be nonnegative");
     }
-    if (config.pyro_obstacle_height < 0.0F || config.pyro_obstacle_height > 1.0F) {
+    if (config.pyro.obstacle_height < 0.0F || config.pyro.obstacle_height > 1.0F) {
         throw std::runtime_error("pyro obstacle height must be in [0, 1]");
     }
-    if (config.pyro_obstacle_radius < 0.0F || config.pyro_obstacle_radius > 0.5F) {
+    if (config.pyro.obstacle_radius < 0.0F || config.pyro.obstacle_radius > 0.5F) {
         throw std::runtime_error("pyro obstacle radius must be in [0, 0.5]");
     }
-    if (config.explosion_interval_seconds <= 0.0F) {
+    if (config.pyro.explosion_interval_seconds <= 0.0F) {
         throw std::runtime_error("explosion interval must be positive");
     }
-    if (config.explosion_duration_seconds <= 0.0F) {
+    if (config.pyro.explosion_duration_seconds <= 0.0F) {
         throw std::runtime_error("explosion duration must be positive");
     }
-    if (config.explosion_duration_seconds > config.explosion_interval_seconds) {
+    if (config.pyro.explosion_duration_seconds > config.pyro.explosion_interval_seconds) {
         throw std::runtime_error("explosion duration must not exceed the interval");
     }
-    if (config.explosion_boost < 0.0F) {
+    if (config.pyro.explosion_boost < 0.0F) {
         throw std::runtime_error("explosion boost must be nonnegative");
     }
     if (config.capture_mode == CaptureMode::Video) {

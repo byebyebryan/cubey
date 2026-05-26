@@ -125,7 +125,7 @@ void test_run_config_parses_input_path() {
 
     const cubey::RunConfig config =
         cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
-    require(config.input_path == input_value.data(), "run config should preserve input path");
+    require(config.gltf.input_path == input_value.data(), "run config should preserve input path");
 }
 
 void test_run_config_parses_pbr_environment_options() {
@@ -149,12 +149,12 @@ void test_run_config_parses_pbr_environment_options() {
 
     const cubey::RunConfig config =
         cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
-    require(config.environment_path == environment_value.data(),
+    require(config.pbr.environment_path == environment_value.data(),
             "run config should preserve HDR environment path");
-    require(config.ibl_intensity == 1.25F, "run config should parse IBL intensity");
-    require(config.environment_rotation_degrees == 45.0F,
+    require(config.pbr.ibl_intensity == 1.25F, "run config should parse IBL intensity");
+    require(config.pbr.environment_rotation_degrees == 45.0F,
             "run config should parse environment rotation");
-    require(config.exposure == -0.5F, "run config should parse exposure");
+    require(config.pbr.exposure == -0.5F, "run config should parse exposure");
 }
 
 void test_run_config_parses_animation_options() {
@@ -172,9 +172,9 @@ void test_run_config_parses_animation_options() {
 
     const cubey::RunConfig config =
         cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
-    require(config.animation_index == 2, "run config should parse animation index");
-    require(config.animation_speed == 0.5F, "run config should parse animation speed");
-    require(config.animation_paused, "run config should parse animation pause flag");
+    require(config.gltf.animation_index == 2, "run config should parse animation index");
+    require(config.gltf.animation_speed == 0.5F, "run config should parse animation speed");
+    require(config.gltf.animation_paused, "run config should parse animation pause flag");
 }
 
 void test_run_config_parses_pbr_debug_view_name() {
@@ -268,9 +268,9 @@ void test_run_config_parses_grid_dimensions() {
 
     const cubey::RunConfig config =
         cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
-    require(config.grid_width == 1024, "run config should parse grid width");
-    require(config.grid_height == 768, "run config should parse grid height");
-    require(config.grid_depth == 96, "run config should parse grid depth");
+    require(config.grid.width == 1024, "run config should parse grid width");
+    require(config.grid.height == 768, "run config should parse grid height");
+    require(config.grid.depth == 96, "run config should parse grid depth");
 }
 
 void test_run_config_parses_water_controls() {
@@ -313,20 +313,20 @@ void test_run_config_parses_water_controls() {
 
     const cubey::RunConfig config =
         cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
-    require(config.water2d_transfer_mode == "pic-flip",
+    require(config.water2d.transfer_mode == "pic-flip",
             "run config should parse Water 2D transfer mode");
-    require(config.water2d_transfer_limit == 48,
+    require(config.water2d.transfer_limit == 48,
             "run config should parse Water 2D transfer limit");
-    require(config.water2d_hose == 1 && config.water2d_drain == 0,
+    require(config.water2d.hose == 1 && config.water2d.drain == 0,
             "run config should parse Water 2D flow toggles");
-    require(config.water3d_transfer_mode == "apic",
+    require(config.water3d.transfer_mode == "apic",
             "run config should parse Water 3D transfer mode");
-    require(config.water3d_transfer_limit == 96,
+    require(config.water3d.transfer_limit == 96,
             "run config should parse Water 3D transfer limit");
-    require(config.water3d_p2g_mode == "tiled", "run config should parse Water 3D P2G mode");
-    require(config.water3d_hose == 1 && config.water3d_drain == 1 && config.water3d_rain == 0,
+    require(config.water3d.p2g_mode == "tiled", "run config should parse Water 3D P2G mode");
+    require(config.water3d.hose == 1 && config.water3d.drain == 1 && config.water3d.rain == 0,
             "run config should parse Water 3D flow toggles");
-    require(config.water3d_wave == 0 && config.water3d_whitewater == 0,
+    require(config.water3d.wave == 0 && config.water3d.whitewater == 0,
             "run config should parse Water 3D optional-system toggles");
 }
 
@@ -349,11 +349,11 @@ void test_run_config_parses_shadow_volume_controls() {
 
     const cubey::RunConfig config =
         cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
-    require(config.shadow_grid_width == 96, "run config should parse shadow grid width");
-    require(config.shadow_grid_height == 80, "run config should parse shadow grid height");
-    require(config.shadow_grid_depth == 64, "run config should parse shadow grid depth");
-    require(config.shadow_steps == 48, "run config should parse shadow steps");
-    require(config.shadow_update_interval == 2, "run config should parse shadow update interval");
+    require(config.pyro.shadow_grid.width == 96, "run config should parse shadow grid width");
+    require(config.pyro.shadow_grid.height == 80, "run config should parse shadow grid height");
+    require(config.pyro.shadow_grid.depth == 64, "run config should parse shadow grid depth");
+    require(config.pyro.shadow_steps == 48, "run config should parse shadow steps");
+    require(config.pyro.shadow_update_interval == 2, "run config should parse shadow update interval");
 }
 
 void test_run_config_parses_smoke_injector_count() {
@@ -365,7 +365,7 @@ void test_run_config_parses_smoke_injector_count() {
 
     const cubey::RunConfig config =
         cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
-    require(config.smoke_injectors == 8, "run config should parse smoke injector count");
+    require(config.smoke.injectors == 8, "run config should parse smoke injector count");
 }
 
 void test_run_config_parses_smoke_injector_orbit_controls() {
@@ -394,15 +394,15 @@ void test_run_config_parses_smoke_injector_orbit_controls() {
 
     const cubey::RunConfig config =
         cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
-    require(config.smoke_injector_orbit_radius == 0.24F,
+    require(config.smoke.injector_orbit_radius == 0.24F,
             "run config should parse smoke injector orbit radius");
-    require(config.smoke_injector_orbit_radius_spread == 0.18F,
+    require(config.smoke.injector_orbit_radius_spread == 0.18F,
             "run config should parse smoke injector orbit radius spread");
-    require(config.smoke_injector_orbit_angular_speed == 0.25F,
+    require(config.smoke.injector_orbit_angular_speed == 0.25F,
             "run config should parse smoke injector orbit angular speed");
-    require(config.smoke_injector_orbit_angular_speed_spread == 1.5F,
+    require(config.smoke.injector_orbit_angular_speed_spread == 1.5F,
             "run config should parse smoke injector orbit angular speed spread");
-    require(config.smoke_injector_orbit_phase_spread == 0.75F,
+    require(config.smoke.injector_orbit_phase_spread == 0.75F,
             "run config should parse smoke injector orbit phase spread");
 }
 
@@ -420,8 +420,8 @@ void test_run_config_parses_smoke_injector_force_controls() {
 
     const cubey::RunConfig config =
         cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
-    require(config.smoke_injector_force == 7.5F, "run config should parse smoke injector force");
-    require(config.smoke_injector_propulsion == 1.6F,
+    require(config.smoke.injector_force == 7.5F, "run config should parse smoke injector force");
+    require(config.smoke.injector_propulsion == 1.6F,
             "run config should parse smoke injector propulsion");
 }
 
@@ -433,7 +433,7 @@ void test_run_config_parses_pyro_buoyancy_control() {
 
     const cubey::RunConfig config =
         cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
-    require(config.pyro_buoyancy == 1.75F, "run config should parse pyro buoyancy");
+    require(config.pyro.buoyancy == 1.75F, "run config should parse pyro buoyancy");
 }
 
 void test_run_config_parses_pyro_source_controls() {
@@ -467,17 +467,17 @@ void test_run_config_parses_pyro_source_controls() {
 
     const cubey::RunConfig config =
         cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
-    require(config.pyro_sources == 6, "run config should parse pyro source count");
-    require(config.pyro_source_radius == 0.08F, "run config should parse pyro source radius");
-    require(config.pyro_source_force == 9.5F, "run config should parse pyro source force");
-    require(config.pyro_soot == 7.25F, "run config should parse pyro soot amount");
-    require(config.pyro_temperature == 1.75F, "run config should parse pyro temperature amount");
-    require(config.pyro_fuel == 2.5F, "run config should parse pyro fuel amount");
-    require(config.explosion_interval_seconds == 2.5F,
+    require(config.pyro.sources == 6, "run config should parse pyro source count");
+    require(config.pyro.source_radius == 0.08F, "run config should parse pyro source radius");
+    require(config.pyro.source_force == 9.5F, "run config should parse pyro source force");
+    require(config.pyro.soot == 7.25F, "run config should parse pyro soot amount");
+    require(config.pyro.temperature == 1.75F, "run config should parse pyro temperature amount");
+    require(config.pyro.fuel == 2.5F, "run config should parse pyro fuel amount");
+    require(config.pyro.explosion_interval_seconds == 2.5F,
             "run config should parse explosion interval");
-    require(config.explosion_duration_seconds == 0.18F,
+    require(config.pyro.explosion_duration_seconds == 0.18F,
             "run config should parse explosion duration");
-    require(config.explosion_boost == 22.0F, "run config should parse explosion boost");
+    require(config.pyro.explosion_boost == 22.0F, "run config should parse explosion boost");
 }
 
 void test_run_config_parses_pyro_fire_controls() {
@@ -508,14 +508,14 @@ void test_run_config_parses_pyro_fire_controls() {
 
     const cubey::RunConfig config =
         cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
-    require(config.pyro_ignition_temperature == 0.31F, "run config should parse pyro ignition");
-    require(config.pyro_burn_rate == 4.5F, "run config should parse pyro burn rate");
-    require(config.pyro_heat_output == 3.25F, "run config should parse pyro heat output");
-    require(config.pyro_soot_yield == 0.22F, "run config should parse pyro soot yield");
-    require(config.pyro_expansion == 1.8F, "run config should parse pyro expansion");
-    require(config.pyro_flame_cooling == 2.75F, "run config should parse pyro flame cooling");
-    require(config.pyro_shredding == 3.5F, "run config should parse pyro shredding");
-    require(config.pyro_turbulence == 0.85F, "run config should parse pyro turbulence");
+    require(config.pyro.ignition_temperature == 0.31F, "run config should parse pyro ignition");
+    require(config.pyro.burn_rate == 4.5F, "run config should parse pyro burn rate");
+    require(config.pyro.heat_output == 3.25F, "run config should parse pyro heat output");
+    require(config.pyro.soot_yield == 0.22F, "run config should parse pyro soot yield");
+    require(config.pyro.expansion == 1.8F, "run config should parse pyro expansion");
+    require(config.pyro.flame_cooling == 2.75F, "run config should parse pyro flame cooling");
+    require(config.pyro.shredding == 3.5F, "run config should parse pyro shredding");
+    require(config.pyro.turbulence == 0.85F, "run config should parse pyro turbulence");
 }
 
 void test_run_config_parses_pyro_obstacle_controls() {
@@ -529,8 +529,8 @@ void test_run_config_parses_pyro_obstacle_controls() {
 
     const cubey::RunConfig config =
         cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
-    require(config.pyro_obstacle_height == 0.58F, "run config should parse pyro obstacle height");
-    require(config.pyro_obstacle_radius == 0.18F, "run config should parse pyro obstacle radius");
+    require(config.pyro.obstacle_height == 0.58F, "run config should parse pyro obstacle height");
+    require(config.pyro.obstacle_radius == 0.18F, "run config should parse pyro obstacle radius");
 }
 
 void test_run_config_parses_smoke_obstacle_flag() {
@@ -541,7 +541,7 @@ void test_run_config_parses_smoke_obstacle_flag() {
 
     const cubey::RunConfig config =
         cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
-    require(config.smoke_obstacles, "run config should parse smoke obstacle flag");
+    require(config.smoke.obstacles, "run config should parse smoke obstacle flag");
 }
 
 void test_run_cli_app_sets_default_title_and_returns_runner_status() {

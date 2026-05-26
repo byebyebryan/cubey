@@ -71,7 +71,7 @@ void GltfViewerApp::update_animation(float delta_seconds) {
     if (animation_playback_.animation_index >= asset_->animations.size()) {
         throw std::runtime_error("requested glTF animation index is out of range");
     }
-    if (config_.animation_paused) {
+    if (config_.gltf.animation_paused) {
         return;
     }
 

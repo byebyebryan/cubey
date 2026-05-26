@@ -817,46 +817,46 @@ water_3d_runtime_particle_scan_count(const Water3DConfig& config,
 
 [[nodiscard]] inline Water3DConfig water_3d_config_from_run_config(const RunConfig& config) {
     Water3DConfig water_config;
-    if (config.grid_width != 0) {
-        water_config.grid_width = config.grid_width;
+    if (config.grid.width != 0) {
+        water_config.grid_width = config.grid.width;
     }
-    if (config.grid_height != 0) {
-        water_config.grid_height = config.grid_height;
+    if (config.grid.height != 0) {
+        water_config.grid_height = config.grid.height;
     }
-    if (config.grid_depth != 0) {
-        water_config.grid_depth = config.grid_depth;
+    if (config.grid.depth != 0) {
+        water_config.grid_depth = config.grid.depth;
     }
-    water_config.environment_intensity = config.ibl_intensity;
-    water_config.environment_rotation_degrees = config.environment_rotation_degrees;
-    water_config.exposure = config.exposure;
+    water_config.environment_intensity = config.pbr.ibl_intensity;
+    water_config.environment_rotation_degrees = config.pbr.environment_rotation_degrees;
+    water_config.exposure = config.pbr.exposure;
     if (config.profile_diagnostics && !config.headless) {
         throw std::runtime_error("water 3D profile diagnostics require --headless");
     }
     water_config.profile_diagnostics = config.profile_diagnostics;
     water_config.profile_diagnostic_interval = config.profile_diagnostic_interval;
-    if (!config.water3d_transfer_mode.empty()) {
-        water_config.transfer_mode = water_3d_transfer_mode_from_name(config.water3d_transfer_mode);
+    if (!config.water3d.transfer_mode.empty()) {
+        water_config.transfer_mode = water_3d_transfer_mode_from_name(config.water3d.transfer_mode);
     }
-    if (config.water3d_transfer_limit != 0) {
-        water_config.max_particles_per_cell = config.water3d_transfer_limit;
+    if (config.water3d.transfer_limit != 0) {
+        water_config.max_particles_per_cell = config.water3d.transfer_limit;
     }
-    if (!config.water3d_p2g_mode.empty()) {
-        water_config.p2g_mode = water_3d_p2g_mode_from_name(config.water3d_p2g_mode);
+    if (!config.water3d.p2g_mode.empty()) {
+        water_config.p2g_mode = water_3d_p2g_mode_from_name(config.water3d.p2g_mode);
     }
-    if (config.water3d_hose >= 0) {
-        water_config.hose.enabled = config.water3d_hose != 0;
+    if (config.water3d.hose >= 0) {
+        water_config.hose.enabled = config.water3d.hose != 0;
     }
-    if (config.water3d_drain >= 0) {
-        water_config.drain.enabled = config.water3d_drain != 0;
+    if (config.water3d.drain >= 0) {
+        water_config.drain.enabled = config.water3d.drain != 0;
     }
-    if (config.water3d_rain >= 0) {
-        water_config.rain.enabled = config.water3d_rain != 0;
+    if (config.water3d.rain >= 0) {
+        water_config.rain.enabled = config.water3d.rain != 0;
     }
-    if (config.water3d_wave >= 0) {
-        water_config.wave.enabled = config.water3d_wave != 0;
+    if (config.water3d.wave >= 0) {
+        water_config.wave.enabled = config.water3d.wave != 0;
     }
-    if (config.water3d_whitewater >= 0) {
-        water_config.whitewater_enabled = config.water3d_whitewater != 0;
+    if (config.water3d.whitewater >= 0) {
+        water_config.whitewater_enabled = config.water3d.whitewater != 0;
     }
     refresh_particle_counts(water_config);
     static_cast<void>(cell_count(water_config));

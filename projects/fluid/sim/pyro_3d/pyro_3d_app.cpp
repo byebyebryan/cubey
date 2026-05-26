@@ -288,8 +288,7 @@ class Pyro3DApp {
         }
         int shadow_update_interval = static_cast<int>(pyro_config_.shadow_update_interval);
         if (ImGui::SliderInt("Shadow interval", &shadow_update_interval, 1, 8)) {
-            pyro_config_.shadow_update_interval =
-                static_cast<std::uint32_t>(shadow_update_interval);
+            pyro_config_.shadow_update_interval = static_cast<std::uint32_t>(shadow_update_interval);
         }
         ImGui::SliderFloat("Ambient", &pyro_config_.ambient_light, 0.0F, 1.0F, "%.2f");
         ImGui::Text("Grid: %u x %u x %u", pyro_config_.grid_width, pyro_config_.grid_height,

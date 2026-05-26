@@ -508,23 +508,23 @@ inline void apply_water_2d_scenario_defaults(Water2DConfig& config) {
 
 [[nodiscard]] inline Water2DConfig water_2d_config_from_run_config(const RunConfig& config) {
     Water2DConfig water_config;
-    if (config.grid_width != 0) {
-        water_config.grid_width = config.grid_width;
+    if (config.grid.width != 0) {
+        water_config.grid_width = config.grid.width;
     }
-    if (config.grid_height != 0) {
-        water_config.grid_height = config.grid_height;
+    if (config.grid.height != 0) {
+        water_config.grid_height = config.grid.height;
     }
-    if (!config.water2d_transfer_mode.empty()) {
-        water_config.transfer_mode = water_2d_transfer_mode_from_name(config.water2d_transfer_mode);
+    if (!config.water2d.transfer_mode.empty()) {
+        water_config.transfer_mode = water_2d_transfer_mode_from_name(config.water2d.transfer_mode);
     }
-    if (config.water2d_transfer_limit != 0) {
-        water_config.max_particles_per_cell = config.water2d_transfer_limit;
+    if (config.water2d.transfer_limit != 0) {
+        water_config.max_particles_per_cell = config.water2d.transfer_limit;
     }
-    if (config.water2d_hose >= 0) {
-        water_config.hose.enabled = config.water2d_hose != 0;
+    if (config.water2d.hose >= 0) {
+        water_config.hose.enabled = config.water2d.hose != 0;
     }
-    if (config.water2d_drain >= 0) {
-        water_config.drain.enabled = config.water2d_drain != 0;
+    if (config.water2d.drain >= 0) {
+        water_config.drain.enabled = config.water2d.drain != 0;
     }
     refresh_particle_counts(water_config);
     static_cast<void>(cell_count(water_config));

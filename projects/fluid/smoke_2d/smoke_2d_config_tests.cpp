@@ -144,16 +144,16 @@ int main() {
                 "default run config should preserve smoke orbit radius");
 
         cubey::RunConfig run_config;
-        run_config.grid_width = 1024;
-        run_config.grid_height = 768;
-        run_config.smoke_injectors = 8;
-        run_config.smoke_injector_force = 7.5F;
-        run_config.smoke_injector_propulsion = 1.6F;
-        run_config.smoke_injector_orbit_radius = 0.24F;
-        run_config.smoke_injector_orbit_radius_spread = 0.18F;
-        run_config.smoke_injector_orbit_angular_speed = 0.1F;
-        run_config.smoke_injector_orbit_angular_speed_spread = 1.2F;
-        run_config.smoke_injector_orbit_phase_spread = 0.75F;
+        run_config.grid.width = 1024;
+        run_config.grid.height = 768;
+        run_config.smoke.injectors = 8;
+        run_config.smoke.injector_force = 7.5F;
+        run_config.smoke.injector_propulsion = 1.6F;
+        run_config.smoke.injector_orbit_radius = 0.24F;
+        run_config.smoke.injector_orbit_radius_spread = 0.18F;
+        run_config.smoke.injector_orbit_angular_speed = 0.1F;
+        run_config.smoke.injector_orbit_angular_speed_spread = 1.2F;
+        run_config.smoke.injector_orbit_phase_spread = 0.75F;
         const cubey::projects::fluid::smoke_2d::Smoke2DConfig configured =
             cubey::projects::fluid::smoke_2d::smoke_2d_config_from_run_config(run_config);
         require(configured.grid_width == 1024, "smoke config should honor run config grid width");
@@ -176,7 +176,7 @@ int main() {
                 "smoke config should honor run config injector orbit phase spread");
         require(!configured.obstacles_enabled,
                 "smoke config should keep obstacles disabled unless requested");
-        run_config.smoke_obstacles = true;
+        run_config.smoke.obstacles = true;
         const cubey::projects::fluid::smoke_2d::Smoke2DConfig configured_with_obstacles =
             cubey::projects::fluid::smoke_2d::smoke_2d_config_from_run_config(run_config);
         require(configured_with_obstacles.obstacles_enabled,
@@ -185,7 +185,7 @@ int main() {
         bool threw_for_too_many_injectors = false;
         try {
             cubey::RunConfig invalid_injector_config;
-            invalid_injector_config.smoke_injectors =
+            invalid_injector_config.smoke.injectors =
                 cubey::projects::fluid::smoke_2d::kMaxProceduralInjectorCount + 1U;
             static_cast<void>(cubey::projects::fluid::smoke_2d::smoke_2d_config_from_run_config(
                 invalid_injector_config));
