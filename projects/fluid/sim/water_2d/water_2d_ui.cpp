@@ -226,6 +226,10 @@ void draw_water_2d_ui(Water2DUiContext ui) {
                            "%.1f px");
         ImGui::SliderFloat("Surface threshold", &ui.config.surface_threshold, 0.20F, 1.60F, "%.2f");
         ImGui::SliderFloat("Edge strength", &ui.config.edge_strength, 0.0F, 1.5F, "%.2f");
+        ImGui::SliderFloat("Refraction", &ui.config.surface_refraction_strength, 0.0F, 0.05F,
+                           "%.3f");
+        ImGui::SliderFloat("Caustics", &ui.config.surface_caustic_strength, 0.0F, 0.8F, "%.2f");
+        ImGui::SliderFloat("Specular", &ui.config.surface_specular_strength, 0.0F, 1.5F, "%.2f");
         ImGui::SliderFloat("Foam strength", &ui.config.foam_strength, 0.0F, 1.5F, "%.2f");
         ImGui::SliderFloat("Foam sharpness", &ui.config.foam_sharpness, 0.35F, 4.0F, "%.2f");
         ImGui::SliderFloat("Foam breakup", &ui.config.foam_breakup, 0.0F, 1.0F, "%.2f");

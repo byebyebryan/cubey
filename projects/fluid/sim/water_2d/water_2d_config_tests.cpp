@@ -107,6 +107,12 @@ int main() {
         require(config.surface_smoothing_radius_px == 7.0F &&
                     config.surface_smoothing_iterations == 3,
                 "water should default to a lightly smoothed implicit surface");
+        require(config.surface_refraction_strength == 0.018F,
+                "water should default to subtle surface refraction");
+        require(config.surface_caustic_strength == 0.18F,
+                "water should default to subtle caustic highlights");
+        require(config.surface_specular_strength == 0.35F,
+                "water should default to a bounded specular highlight");
         require(config.foam_strength == 0.32F, "water should default to subtle foam");
         require(config.foam_sharpness == 1.35F && config.foam_breakup == 0.45F,
                 "water should default to shaped foam breakup");
@@ -126,6 +132,8 @@ int main() {
                     sizeof(float) *
                         cubey::projects::fluid::water_2d::kWater2DSimulationPushConstantFloatCount,
                 "water dispatch push constants should match the shader contract size");
+        require(cubey::projects::fluid::water_2d::kWater2DRenderPushConstantFloatCount == 20,
+                "water render push constants should include style controls");
 
         require(cubey::projects::fluid::water_2d::cell_count(config) == kExpectedCellCount,
                 "water cell count should multiply dimensions");
@@ -492,6 +500,8 @@ int main() {
                          "water shader contract should move stable simulation params to a UBO");
         require_contains(contract_shader, "uniform DispatchParams",
                          "water shader contract should keep per-dispatch values in push constants");
+        require_contains(contract_shader, "style_options",
+                         "water shader contract should expose surface style controls");
         require_contains(contract_shader, "wave_options0",
                          "water shader contract should expose wave source controls");
         require_contains(contract_shader, "WATER2D_ACTIVE_PARTICLE_COUNT",
@@ -673,6 +683,20 @@ int main() {
                          "water surface composite should antialias the implicit threshold");
         require_contains(surface_composite_frag, "density_gradient",
                          "water surface composite should shade from smoothed density gradients");
+        require_contains(surface_composite_frag, "scene_backdrop",
+                         "water surface composite should render a tank backdrop");
+        require_contains(surface_composite_frag, "caustic_pattern",
+                         "water surface composite should add procedural caustics");
+        require_contains(surface_composite_frag, "curvature",
+                         "water surface composite should use curvature for thin foam");
+        require_contains(surface_composite_frag, "params.style_options.x",
+                         "water surface composite should use configurable refraction");
+        require_contains(surface_composite_frag, "params.style_options.y",
+                         "water surface composite should use configurable caustics");
+        require_contains(surface_composite_frag, "params.style_options.z",
+                         "water surface composite should use configurable specular");
+        require_contains(surface_composite_frag, "params.style_options.w",
+                         "water surface composite should use frame time for animated styling");
         require_contains(surface_composite_frag, "layout(set = 1",
                          "water surface composite should still sample solver fields");
 

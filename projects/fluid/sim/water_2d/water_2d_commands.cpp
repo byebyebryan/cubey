@@ -18,6 +18,7 @@ struct RenderPushConstants {
     std::array<float, 4> particle_options{};
     std::array<float, 4> surface_options{};
     std::array<float, 4> foam_options{};
+    std::array<float, 4> style_options{};
 };
 
 static_assert(sizeof(RenderPushConstants) == sizeof(float) * kWater2DRenderPushConstantFloatCount);
@@ -145,7 +146,8 @@ target_final_state(Water2DRenderTargetMode target_mode) {
 [[nodiscard]] RenderPushConstants render_push_constants(const Water2DConfig& config,
                                                         const Water2DRuntimeState& runtime_state,
                                                         Water2DDebugView debug_view,
-                                                        float smooth_axis = 0.0F) {
+                                                        float smooth_axis = 0.0F,
+                                                        float style_time = 0.0F) {
     return {
         .grid_debug =
             {
@@ -180,6 +182,13 @@ target_final_state(Water2DRenderTargetMode target_mode) {
                 config.foam_breakup,
                 config.surface_smoothing_radius_px,
                 smooth_axis,
+            },
+        .style_options =
+            {
+                config.surface_refraction_strength,
+                config.surface_caustic_strength,
+                config.surface_specular_strength,
+                style_time,
             },
     };
 }
@@ -643,10 +652,10 @@ void record_surface_smooth_pass(const cubey::vulkan::CommandRecorder& recorder,
 void record_surface_composite_pass(const cubey::vulkan::CommandRecorder& recorder,
                                    const Water2DGpuResources& resources,
                                    const Water2DConfig& config, cubey::render::FrameSlot frame_slot,
-                                   const Water2DRuntimeState& runtime_state,
+                                   const Water2DRuntimeState& runtime_state, float elapsed_seconds,
                                    cubey::render::ColorTargetView color_target) {
-    const RenderPushConstants push_constants =
-        render_push_constants(config, runtime_state, Water2DDebugView::Surface);
+    const RenderPushConstants push_constants = render_push_constants(
+        config, runtime_state, Water2DDebugView::Surface, 0.0F, elapsed_seconds);
     cubey::render::record_render_target_pass(
         recorder, cubey::render::render_target_view(color_target),
         cubey::render::RenderClearValues{
@@ -845,9 +854,11 @@ build_water_2d_frame_graph(cubey::render::ColorTargetView color_target,
             .read_storage_buffer(solid)
             .write_color(backbuffer)
             .execute([resource_ptr, config_ptr, runtime_state_ptr, frame_slot,
+                      elapsed_seconds = static_cast<float>(frame.elapsed_seconds),
                       backbuffer](const cubey::render::RenderGraphExecutionContext& context) {
                 record_surface_composite_pass(
                     context.recorder(), *resource_ptr, *config_ptr, frame_slot, *runtime_state_ptr,
+                    elapsed_seconds,
                     cubey::render::resolved_color_target_view(context, backbuffer));
             });
 

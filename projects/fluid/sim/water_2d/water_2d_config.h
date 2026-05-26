@@ -57,7 +57,7 @@ enum class Water2DDiagnosticSlot : std::uint32_t {
 inline constexpr std::uint32_t kWater2DComputeGroupSize = 8;
 inline constexpr std::uint32_t kWater2DSimulationPushConstantFloatCount = 8;
 inline constexpr std::uint32_t kWater2DSimulationUniformFloatCount = 56;
-inline constexpr std::uint32_t kWater2DRenderPushConstantFloatCount = 16;
+inline constexpr std::uint32_t kWater2DRenderPushConstantFloatCount = 20;
 inline constexpr std::uint32_t kWater2DDefaultGridWidth = 256;
 inline constexpr std::uint32_t kWater2DDefaultGridHeight = 144;
 inline constexpr std::uint32_t kWater2DWallCells = 2;
@@ -129,6 +129,9 @@ struct Water2DConfig {
     float surface_density_scale = 0.42F;
     float surface_smoothing_radius_px = 7.0F;
     std::uint32_t surface_smoothing_iterations = 3;
+    float surface_refraction_strength = 0.018F;
+    float surface_caustic_strength = 0.18F;
+    float surface_specular_strength = 0.35F;
     float foam_strength = 0.32F;
     float foam_sharpness = 1.35F;
     float foam_breakup = 0.45F;

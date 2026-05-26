@@ -85,11 +85,14 @@ Main buffers:
 
 The default renderer reconstructs an implicit screen-space surface from the
 particles. It splats active particles into an offscreen scalar density texture,
-runs configurable separable smoothing passes, then composites water from the
-smoothed threshold with density-gradient normals, velocity-aware edge highlights,
-and heuristic foam. The older direct particle-bin splat path is retained for
-debug views so particle layout, occupied cells, pressure, divergence, solids,
-and the foam mask are still inspectable without the surface reconstruction pass.
+runs configurable separable smoothing passes, then composites water inside a
+simple lab-tank backdrop from the smoothed threshold with density-gradient
+normals, density-based optical depth, cheap refraction, procedural caustics,
+contour specular, and heuristic foam. The Surface UI section exposes the
+surface reconstruction, refraction, caustics, specular, and foam controls. The
+older direct particle-bin splat path is retained for debug views so particle
+layout, occupied cells, pressure, divergence, solids, and the foam mask are
+still inspectable without the surface reconstruction pass.
 
 This is still a foundation slice. It intentionally skips viscosity, surface
 tension, meshing, and sparse/adaptive particle storage until the basic

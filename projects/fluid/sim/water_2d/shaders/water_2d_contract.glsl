@@ -64,6 +64,7 @@
         vec4 particle_options;                                                                  \
         vec4 surface_options;                                                                   \
         vec4 foam_options;                                                                      \
+        vec4 style_options;                                                                     \
     } params
 
 #endif
