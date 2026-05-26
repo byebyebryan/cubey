@@ -3,12 +3,14 @@
 #include <cubey/render/pipeline_resource.h>
 #include <cubey/render/target.h>
 #include <cubey/vulkan/command_recorder.h>
+#include <cubey/vulkan/gpu_timestamps.h>
 #include <cubey/vulkan/image_transitions.h>
 
 #include <vulkan/vulkan.h>
 
 #include <cstdint>
 #include <stdexcept>
+#include <string_view>
 #include <utility>
 
 namespace cubey::render {
@@ -82,6 +84,18 @@ void record_compute_pipeline_dispatch(const cubey::vulkan::CommandRecorder& reco
     }
     recorder.push_constants(info.pipeline->layout(), stage_flags, 0, push_constants);
     recorder.dispatch(info.group_count_x, info.group_count_y, info.group_count_z);
+}
+
+template <typename PushConstants>
+void record_profiled_compute_pipeline_dispatch(
+    const cubey::vulkan::CommandRecorder& recorder, const ComputePipelineDispatchInfo& info,
+    VkShaderStageFlags stage_flags, const PushConstants& push_constants,
+    cubey::vulkan::GpuTimestampProfiler* profiler, std::uint32_t frame_slot_index,
+    const char* label) {
+    const std::string_view profile_label = label == nullptr ? std::string_view{} : label;
+    cubey::vulkan::GpuTimestampScope profile_scope(profiler, recorder.handle(), frame_slot_index,
+                                                   profile_label);
+    record_compute_pipeline_dispatch(recorder, info, stage_flags, push_constants);
 }
 
 template <typename PushConstants>

@@ -14,6 +14,7 @@
 #include <cstdint>
 #include <optional>
 #include <stdexcept>
+#include <string_view>
 #include <utility>
 
 namespace cubey::projects::fluid::water_3d {
@@ -55,6 +56,10 @@ struct SurfacePushConstants {
     std::array<float, 4> display_transform{};
     std::array<float, 4> domain_options{};
 };
+
+[[nodiscard]] std::string_view gpu_profile_label(const char* label) {
+    return label == nullptr ? std::string_view{} : std::string_view(label);
+}
 
 static_assert(sizeof(SurfacePushConstants) <= sizeof(float) * kWater3DRenderPushConstantFloatCount);
 
@@ -686,11 +691,16 @@ void record_dispatch(const cubey::vulkan::CommandRecorder& recorder,
                      const cubey::render::ComputePipelineResource& pipeline,
                      VkDescriptorSet descriptor_set, DispatchGroups groups,
                      const Water3DDispatchPushConstants& push_constants) {
-    recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.pipeline());
-    recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.layout(), 0,
-                                 descriptor_set);
-    recorder.push_constants(pipeline.layout(), VK_SHADER_STAGE_COMPUTE_BIT, 0, push_constants);
-    recorder.dispatch(groups.x, groups.y, groups.z);
+    cubey::render::record_compute_pipeline_dispatch(
+        recorder,
+        {
+            .pipeline = &pipeline,
+            .descriptor_set = descriptor_set,
+            .group_count_x = groups.x,
+            .group_count_y = groups.y,
+            .group_count_z = groups.z,
+        },
+        VK_SHADER_STAGE_COMPUTE_BIT, push_constants);
 }
 
 void record_dispatch_indirect(const cubey::vulkan::CommandRecorder& recorder,
@@ -730,15 +740,11 @@ void record_emitter_dispatch(const cubey::vulkan::CommandRecorder& recorder,
         emit_cursor, emit_count, emitter_kind, seed);
     emit_push_constants.dispatch_options[1] = substep_time;
 
-    if (profiler != nullptr) {
-        profiler->begin_pass(command_buffer, frame_slot.index, label);
-    }
+    cubey::vulkan::GpuTimestampScope profile_scope(profiler, command_buffer, frame_slot.index,
+                                                   gpu_profile_label(label));
     record_dispatch(recorder, resources.emit_pipeline_resource(), descriptor_set,
                     linear_dispatch_groups(emit_count), emit_push_constants);
     record_compute_barrier(command_buffer);
-    if (profiler != nullptr) {
-        profiler->end_pass(command_buffer, frame_slot.index);
-    }
 }
 
 void record_diagnostics_pass(const cubey::vulkan::CommandRecorder& recorder,
@@ -748,16 +754,12 @@ void record_diagnostics_pass(const cubey::vulkan::CommandRecorder& recorder,
                              cubey::render::FrameSlot frame_slot,
                              cubey::vulkan::GpuTimestampProfiler* profiler, const char* label,
                              float mode, DispatchGroups groups) {
-    if (profiler != nullptr) {
-        profiler->begin_pass(command_buffer, frame_slot.index, label);
-    }
+    cubey::vulkan::GpuTimestampScope profile_scope(profiler, command_buffer, frame_slot.index,
+                                                   gpu_profile_label(label));
     push_constants.dispatch_options[2] = mode;
     record_dispatch(recorder, resources.diagnostics_pipeline_resource(), descriptor_set, groups,
                     push_constants);
     record_compute_barrier(command_buffer);
-    if (profiler != nullptr) {
-        profiler->end_pass(command_buffer, frame_slot.index);
-    }
 }
 
 void record_diagnostics_indirect_pass(const cubey::vulkan::CommandRecorder& recorder,
@@ -768,16 +770,12 @@ void record_diagnostics_indirect_pass(const cubey::vulkan::CommandRecorder& reco
                                       cubey::render::FrameSlot frame_slot,
                                       cubey::vulkan::GpuTimestampProfiler* profiler,
                                       const char* label, float mode, VkBuffer indirect_buffer) {
-    if (profiler != nullptr) {
-        profiler->begin_pass(command_buffer, frame_slot.index, label);
-    }
+    cubey::vulkan::GpuTimestampScope profile_scope(profiler, command_buffer, frame_slot.index,
+                                                   gpu_profile_label(label));
     push_constants.dispatch_options[2] = mode;
     record_dispatch_indirect(recorder, resources.diagnostics_pipeline_resource(), descriptor_set,
                              indirect_buffer, push_constants);
     record_compute_barrier(command_buffer);
-    if (profiler != nullptr) {
-        profiler->end_pass(command_buffer, frame_slot.index);
-    }
 }
 
 void record_refresh_bins(const cubey::vulkan::CommandRecorder& recorder,
@@ -791,14 +789,10 @@ void record_refresh_bins(const cubey::vulkan::CommandRecorder& recorder,
     auto record_profiled_dispatch =
         [&](const cubey::render::ComputePipelineResource& pipeline, DispatchGroups groups,
             const Water3DDispatchPushConstants& constants, const char* label) {
-            if (profiler != nullptr && label != nullptr) {
-                profiler->begin_pass(command_buffer, frame_slot.index, label);
-            }
+            cubey::vulkan::GpuTimestampScope profile_scope(
+                profiler, command_buffer, frame_slot.index, gpu_profile_label(label));
             record_dispatch(recorder, pipeline, descriptor_set, groups, constants);
             record_compute_barrier(command_buffer);
-            if (profiler != nullptr && label != nullptr) {
-                profiler->end_pass(command_buffer, frame_slot.index);
-            }
         };
 
     const char* clear_label = profile_label == nullptr ? nullptr : "clear particle bins";

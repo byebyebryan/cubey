@@ -4,6 +4,7 @@
 #include <cubey/vulkan/gpu_timestamps.h>
 
 #include <stdexcept>
+#include <string_view>
 #include <utility>
 
 namespace cubey::render {
@@ -138,19 +139,18 @@ void CompiledRenderGraph::execute(const RenderGraphResourceSet* resources,
             throw std::runtime_error("render graph pass has no execute callback");
         }
         const RenderGraphExecutionContext context(*this, pass_index, resources, recorder);
-        if (profiler != nullptr) {
-            profiler->begin_pass(recorder->handle(), frame_slot_index,
-                                 pass.label.empty() ? "render graph pass" : pass.label);
-        }
+        const std::string_view profile_label =
+            pass.label.empty() ? std::string_view("render graph pass")
+                               : std::string_view(pass.label);
+        cubey::vulkan::GpuTimestampScope profile_scope(
+            profiler, recorder != nullptr ? recorder->handle() : VK_NULL_HANDLE, frame_slot_index,
+            profile_label);
         if (recorder != nullptr) {
             record_render_graph_barriers(*recorder, context, RenderGraphBarrierPhase::BeforePass);
         }
         pass.execute(context);
         if (recorder != nullptr) {
             record_render_graph_barriers(*recorder, context, RenderGraphBarrierPhase::AfterPass);
-        }
-        if (profiler != nullptr) {
-            profiler->end_pass(recorder->handle(), frame_slot_index);
         }
     }
 }

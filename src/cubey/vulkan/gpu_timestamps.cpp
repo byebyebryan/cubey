@@ -4,6 +4,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <exception>
 #include <stdexcept>
 #include <utility>
 #include <vector>
@@ -165,6 +166,41 @@ void GpuTimestampProfiler::collect(std::uint32_t frame_slot_index) {
                 (static_cast<double>(timestamp_period_nanoseconds_) / 1'000'000.0),
         });
     }
+}
+
+GpuTimestampScope::GpuTimestampScope(GpuTimestampProfiler* profiler, VkCommandBuffer command_buffer,
+                                     std::uint32_t frame_slot_index, std::string_view label)
+    : profiler_(profiler), command_buffer_(command_buffer), frame_slot_index_(frame_slot_index) {
+    if (profiler_ == nullptr || label.empty()) {
+        return;
+    }
+    profiler_->begin_pass(command_buffer_, frame_slot_index_, label);
+    active_ = true;
+}
+
+GpuTimestampScope::~GpuTimestampScope() noexcept {
+    if (!active_) {
+        return;
+    }
+    try {
+        end();
+    } catch (...) {
+        std::terminate();
+    }
+}
+
+GpuTimestampScope::GpuTimestampScope(GpuTimestampScope&& other) noexcept
+    : profiler_(std::exchange(other.profiler_, nullptr)),
+      command_buffer_(std::exchange(other.command_buffer_, VK_NULL_HANDLE)),
+      frame_slot_index_(std::exchange(other.frame_slot_index_, 0)),
+      active_(std::exchange(other.active_, false)) {}
+
+void GpuTimestampScope::end() {
+    if (!active_) {
+        return;
+    }
+    profiler_->end_pass(command_buffer_, frame_slot_index_);
+    active_ = false;
 }
 
 } // namespace cubey::vulkan

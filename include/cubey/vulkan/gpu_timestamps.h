@@ -59,4 +59,24 @@ class GpuTimestampProfiler {
     std::vector<GpuPassTiming> latest_timings_;
 };
 
+class GpuTimestampScope {
+  public:
+    GpuTimestampScope(GpuTimestampProfiler* profiler, VkCommandBuffer command_buffer,
+                      std::uint32_t frame_slot_index, std::string_view label);
+    ~GpuTimestampScope() noexcept;
+
+    GpuTimestampScope(const GpuTimestampScope&) = delete;
+    GpuTimestampScope& operator=(const GpuTimestampScope&) = delete;
+    GpuTimestampScope(GpuTimestampScope&& other) noexcept;
+    GpuTimestampScope& operator=(GpuTimestampScope&& other) noexcept = delete;
+
+    void end();
+
+  private:
+    GpuTimestampProfiler* profiler_ = nullptr;
+    VkCommandBuffer command_buffer_ = VK_NULL_HANDLE;
+    std::uint32_t frame_slot_index_ = 0;
+    bool active_ = false;
+};
+
 } // namespace cubey::vulkan
