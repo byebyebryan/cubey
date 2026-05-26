@@ -214,6 +214,16 @@ void draw_water_2d_ui(Water2DUiContext ui) {
 
     if (section("Surface", false)) {
         ImGui::SliderFloat("Particle radius", &ui.config.particle_radius, 0.0025F, 0.025F, "%.4f");
+        ImGui::SliderFloat("Splat radius", &ui.config.surface_splat_radius_scale, 0.50F, 3.00F,
+                           "%.2f");
+        ImGui::SliderFloat("Density scale", &ui.config.surface_density_scale, 0.10F, 2.00F, "%.2f");
+        int smoothing_iterations = static_cast<int>(ui.config.surface_smoothing_iterations);
+        if (ImGui::SliderInt("Smooth passes", &smoothing_iterations, 0, 8)) {
+            ui.config.surface_smoothing_iterations =
+                static_cast<std::uint32_t>(smoothing_iterations);
+        }
+        ImGui::SliderFloat("Smooth radius", &ui.config.surface_smoothing_radius_px, 0.0F, 18.0F,
+                           "%.1f px");
         ImGui::SliderFloat("Surface threshold", &ui.config.surface_threshold, 0.20F, 1.60F, "%.2f");
         ImGui::SliderFloat("Edge strength", &ui.config.edge_strength, 0.0F, 1.5F, "%.2f");
         ImGui::SliderFloat("Foam strength", &ui.config.foam_strength, 0.0F, 1.5F, "%.2f");

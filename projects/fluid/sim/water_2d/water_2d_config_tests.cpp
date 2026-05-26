@@ -102,6 +102,11 @@ int main() {
         require(config.surface_threshold == 0.82F,
                 "water should default to the current surface threshold");
         require(config.edge_strength == 0.52F, "water should default to readable surface edges");
+        require(config.surface_splat_radius_scale == 1.65F && config.surface_density_scale == 0.42F,
+                "water should default to implicit surface splat controls");
+        require(config.surface_smoothing_radius_px == 7.0F &&
+                    config.surface_smoothing_iterations == 3,
+                "water should default to a lightly smoothed implicit surface");
         require(config.foam_strength == 0.32F, "water should default to subtle foam");
         require(config.foam_sharpness == 1.35F && config.foam_breakup == 0.45F,
                 "water should default to shaped foam breakup");
@@ -463,6 +468,14 @@ int main() {
             read_text_file(source_root / "shaders/water_2d_diagnostics.comp");
         const std::string render_shader =
             read_text_file(source_root / "shaders/water_2d_render.frag");
+        const std::string surface_density_vert =
+            read_text_file(source_root / "shaders/water_2d_surface_density.vert");
+        const std::string surface_density_frag =
+            read_text_file(source_root / "shaders/water_2d_surface_density.frag");
+        const std::string surface_smooth_frag =
+            read_text_file(source_root / "shaders/water_2d_surface_smooth.frag");
+        const std::string surface_composite_frag =
+            read_text_file(source_root / "shaders/water_2d_surface_composite.frag");
         require_contains(contract_shader, "WATER2D_BINDING_SIM_PARAMS 14",
                          "water shader contract should define simulation uniform binding");
         require_contains(contract_shader, "WATER2D_BINDING_PARTICLE_AFFINE 15",
@@ -514,6 +527,14 @@ int main() {
                          "water commands should profile workload diagnostics");
         require_contains(commands_source, "should_record_diagnostics_for_frame",
                          "water commands should gate diagnostics by sample interval");
+        require_contains(commands_source, "water surface density",
+                         "water commands should build an offscreen density surface");
+        require_contains(commands_source, "water surface smooth x",
+                         "water commands should smooth the implicit density surface");
+        require_contains(commands_source, "surface_smoothing_iterations",
+                         "water commands should gate configurable surface smoothing passes");
+        require_contains(app_source, "resolved_sampled_texture_view",
+                         "water app should bind graph transient surface textures");
         require_contains(build_bins_shader, "WATER2D_BINDING_CELL_COUNTS",
                          "water bin build should use shared descriptor binding names");
         require_contains(build_bins_shader, "atomicAdd",
@@ -618,6 +639,14 @@ int main() {
                          "water diagnostics readback should export workload metrics");
         require_contains(gpu_resources_source, "water_2d_diagnostics.comp.spv",
                          "water GPU resources should create diagnostics compute pipeline");
+        require_contains(gpu_resources_source, "water_2d_surface_density.frag.spv",
+                         "water GPU resources should create the surface density pipeline");
+        require_contains(gpu_resources_source, "water_2d_surface_smooth.frag.spv",
+                         "water GPU resources should create the surface smoothing pipeline");
+        require_contains(gpu_resources_source, "water_2d_surface_composite.frag.spv",
+                         "water GPU resources should create the surface composite pipeline");
+        require_contains(gpu_resources_source, "update_surface_descriptors",
+                         "water GPU resources should update transient surface descriptors");
         require_contains(gpu_resources_source, "VK_BUFFER_USAGE_TRANSFER_SRC_BIT",
                          "water diagnostics buffer should be readable by GPU readback");
         require_contains(render_shader, "particle_density",
@@ -632,6 +661,20 @@ int main() {
                          "water render shader should expose a foam debug view");
         require_contains(render_shader, "vec2 uv = vec2(screen_uv.x, 1.0 - screen_uv.y)",
                          "water render shader should flip screen Y to solver Y");
+        require_contains(surface_density_vert, "gl_InstanceIndex",
+                         "water surface density pass should draw instanced particle splats");
+        require_contains(surface_density_frag, "out_density",
+                         "water surface density pass should output scalar density");
+        require_contains(surface_smooth_frag, "kMaxSmoothRadius",
+                         "water surface smoothing should clamp its sample radius");
+        require_contains(surface_smooth_frag, "params.foam_options.w < 0.5",
+                         "water surface smoothing should switch between x/y passes");
+        require_contains(surface_composite_frag, "fwidth(density)",
+                         "water surface composite should antialias the implicit threshold");
+        require_contains(surface_composite_frag, "density_gradient",
+                         "water surface composite should shade from smoothed density gradients");
+        require_contains(surface_composite_frag, "layout(set = 1",
+                         "water surface composite should still sample solver fields");
 
         return 0;
     } catch (const std::exception& error) {

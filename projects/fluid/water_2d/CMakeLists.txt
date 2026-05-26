@@ -14,6 +14,10 @@ cubey_add_app_target(
     SHADERS
         ../sim/water_2d/shaders/water_2d.vert
         ../sim/water_2d/shaders/water_2d_render.frag
+        ../sim/water_2d/shaders/water_2d_surface_density.vert
+        ../sim/water_2d/shaders/water_2d_surface_density.frag
+        ../sim/water_2d/shaders/water_2d_surface_smooth.frag
+        ../sim/water_2d/shaders/water_2d_surface_composite.frag
         ../sim/water_2d/shaders/water_2d_reset.comp
         ../sim/water_2d/shaders/water_2d_clear_grid.comp
         ../sim/water_2d/shaders/water_2d_clear_bins.comp

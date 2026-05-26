@@ -35,7 +35,7 @@ Controls:
 
 Debug views:
 
-- `surface`: shaded particle-splat water surface.
+- `surface`: shaded implicit surface reconstructed from offscreen particle density.
 - `particles`: sharper particle splat visualization.
 - `cells`: occupied liquid cells from the particle bins.
 - `velocity`: projected face velocity sampled to pixels.
@@ -83,11 +83,13 @@ Main buffers:
   active particles, inactive scan particles, occupied cells, overpacked cells,
   truncation pressure, and max cell occupancy.
 
-The renderer reconstructs a lightweight surface from the particle bins. It uses
-particle density, a density-gradient fake normal, speed, and free-surface
-highlighting for a readable real-time liquid view without adding a meshing pass.
-Foam is still a 2D shading heuristic, now with strength, sharpness, and
-procedural breakup controls rather than a separate whitewater particle system.
+The default renderer reconstructs an implicit screen-space surface from the
+particles. It splats active particles into an offscreen scalar density texture,
+runs configurable separable smoothing passes, then composites water from the
+smoothed threshold with density-gradient normals, velocity-aware edge highlights,
+and heuristic foam. The older direct particle-bin splat path is retained for
+debug views so particle layout, occupied cells, pressure, divergence, solids,
+and the foam mask are still inspectable without the surface reconstruction pass.
 
 This is still a foundation slice. It intentionally skips viscosity, surface
 tension, meshing, and sparse/adaptive particle storage until the basic

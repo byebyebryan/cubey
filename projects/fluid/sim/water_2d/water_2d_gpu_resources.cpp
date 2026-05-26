@@ -1,8 +1,11 @@
 #include "water_2d_gpu_resources.h"
 
+#include <cubey/render/material.h>
+
 #include <array>
 #include <filesystem>
 #include <optional>
+#include <span>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -21,6 +24,7 @@ inline constexpr VkDeviceSize kWater2DSimulationPushConstantBytes =
 inline constexpr VkDeviceSize kWater2DRenderPushConstantBytes =
     sizeof(float) * kWater2DRenderPushConstantFloatCount;
 inline constexpr std::uint32_t kWater2DGpuProfilerPassCapacity = 32;
+inline constexpr VkFormat kWater2DSurfaceScalarFormat = VK_FORMAT_R32_SFLOAT;
 
 std::filesystem::path shader_path(const char* filename) {
     return std::filesystem::path(CUBEY_WATER_2D_SHADER_DIR) / filename;
@@ -61,6 +65,62 @@ upload_project_device_buffer(cubey::ProjectGpuServices& gpu, const void* data,
     };
 }
 
+[[nodiscard]] VkPushConstantRange surface_push_constant_range() {
+    return {
+        .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+        .offset = 0,
+        .size = kWater2DRenderPushConstantBytes,
+    };
+}
+
+[[nodiscard]] cubey::render::MaterialDescriptorSetLayout
+sampled_texture_descriptor_set(std::uint32_t set) {
+    return {
+        .set = set,
+        .bindings = {cubey::vulkan::DescriptorSetBindingConfig{
+            .binding = 0,
+            .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
+        }},
+    };
+}
+
+[[nodiscard]] cubey::render::MaterialPassInfo water_surface_density_pass_info() {
+    return cubey::render::MaterialPassInfo{
+        .label = "water_2d.surface.density",
+        .push_constants = {surface_push_constant_range()},
+        .depth_test = false,
+        .depth_write = false,
+        .blend_enable = true,
+        .src_color_blend_factor = VK_BLEND_FACTOR_ONE,
+        .dst_color_blend_factor = VK_BLEND_FACTOR_ONE,
+        .src_alpha_blend_factor = VK_BLEND_FACTOR_ONE,
+        .dst_alpha_blend_factor = VK_BLEND_FACTOR_ONE,
+    };
+}
+
+[[nodiscard]] cubey::render::MaterialPassInfo water_surface_smooth_pass_info() {
+    return cubey::render::MaterialPassInfo{
+        .label = "water_2d.surface.smooth",
+        .descriptor_sets = {sampled_texture_descriptor_set(0)},
+        .push_constants = {surface_push_constant_range()},
+        .depth_test = false,
+        .depth_write = false,
+        .blend_enable = false,
+    };
+}
+
+[[nodiscard]] cubey::render::MaterialPassInfo water_surface_composite_pass_info() {
+    return cubey::render::MaterialPassInfo{
+        .label = "water_2d.surface.composite",
+        .descriptor_sets = {sampled_texture_descriptor_set(0)},
+        .push_constants = {surface_push_constant_range()},
+        .depth_test = false,
+        .depth_write = false,
+        .blend_enable = false,
+    };
+}
+
 void create_compute_pipeline_resource(
     cubey::vulkan::Device& device, const char* filename, VkDescriptorSetLayout descriptor_layout,
     std::optional<cubey::render::ComputePipelineResource>& destination) {
@@ -75,6 +135,21 @@ void create_compute_pipeline_resource(
                                         },
                                     .descriptor_set_layouts = set_layouts,
                                     .push_constants = push_constants,
+                                });
+}
+
+void create_graphics_pipeline_resource(
+    cubey::vulkan::Device& device, VkExtent2D extent, VkFormat color_format,
+    std::span<const cubey::render::ShaderStageFile> shader_stage_files,
+    std::span<const VkDescriptorSetLayout> set_layouts,
+    const cubey::render::MaterialPassInfo& material_pass,
+    std::optional<cubey::render::GraphicsPipelineResource>& destination) {
+    destination.emplace(device, cubey::render::GraphicsPipelineFileResourceConfig{
+                                    .extent = extent,
+                                    .color_format = color_format,
+                                    .shader_stage_files = shader_stage_files,
+                                    .descriptor_set_layouts = set_layouts,
+                                    .material_pass = material_pass,
                                 });
 }
 
@@ -126,6 +201,14 @@ void Water2DGpuResources::create_global_resources_if_needed(cubey::vulkan::Devic
 }
 
 void Water2DGpuResources::destroy_swapchain_resources() {
+    surface_composite_pipeline_resource_.reset();
+    surface_smooth_pipeline_resource_.reset();
+    surface_density_pipeline_resource_.reset();
+    surface_composite_material_.reset();
+    surface_source_b_material_.reset();
+    surface_source_a_material_.reset();
+    surface_source_raw_material_.reset();
+    surface_sampler_.reset();
     render_pipeline_resource_.reset();
 }
 
@@ -254,7 +337,7 @@ void Water2DGpuResources::create_field_buffers(cubey::ProjectGpuServices& gpu,
 
 void Water2DGpuResources::create_descriptor_resources(cubey::vulkan::Device& device) {
     constexpr VkShaderStageFlags kStages =
-        VK_SHADER_STAGE_COMPUTE_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+        VK_SHADER_STAGE_COMPUTE_BIT | VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
     const std::array<cubey::vulkan::DescriptorSetBindingConfig, 17> field_bindings{{
         {.binding = 0, .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .stage_flags = kStages},
         {.binding = 1, .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .stage_flags = kStages},
@@ -352,6 +435,42 @@ void Water2DGpuResources::create_compute_pipelines(cubey::vulkan::Device& device
 
 void Water2DGpuResources::create_render_pipeline(cubey::vulkan::Device& device,
                                                  VkFormat color_format, VkExtent2D extent) {
+    surface_sampler_.emplace(device, cubey::vulkan::SamplerConfig{
+                                         .min_filter = VK_FILTER_LINEAR,
+                                         .mag_filter = VK_FILTER_LINEAR,
+                                         .address_mode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+                                     });
+
+    const cubey::render::MaterialPassInfo debug_material_pass = water_render_pass_info();
+    const cubey::render::MaterialPassInfo surface_density_material_pass =
+        water_surface_density_pass_info();
+    const cubey::render::MaterialPassInfo surface_smooth_material_pass =
+        water_surface_smooth_pass_info();
+    const cubey::render::MaterialPassInfo surface_composite_material_pass =
+        water_surface_composite_pass_info();
+
+    surface_source_raw_material_.emplace(device, cubey::render::MaterialInstanceConfig{
+                                                     .material_pass = surface_smooth_material_pass,
+                                                     .descriptor_set = 0,
+                                                     .set_count = frame_slot_count_,
+                                                 });
+    surface_source_a_material_.emplace(device, cubey::render::MaterialInstanceConfig{
+                                                   .material_pass = surface_smooth_material_pass,
+                                                   .descriptor_set = 0,
+                                                   .set_count = frame_slot_count_,
+                                               });
+    surface_source_b_material_.emplace(device, cubey::render::MaterialInstanceConfig{
+                                                   .material_pass = surface_smooth_material_pass,
+                                                   .descriptor_set = 0,
+                                                   .set_count = frame_slot_count_,
+                                               });
+    surface_composite_material_.emplace(device,
+                                        cubey::render::MaterialInstanceConfig{
+                                            .material_pass = surface_composite_material_pass,
+                                            .descriptor_set = 0,
+                                            .set_count = frame_slot_count_,
+                                        });
+
     const std::array<cubey::render::ShaderStageFile, 2> shader_stage_files{
         cubey::render::ShaderStageFile{
             .stage = VK_SHADER_STAGE_VERTEX_BIT,
@@ -362,16 +481,56 @@ void Water2DGpuResources::create_render_pipeline(cubey::vulkan::Device& device,
             .path = shader_path("water_2d_render.frag.spv"),
         },
     };
+    const std::array<cubey::render::ShaderStageFile, 2> surface_density_shaders{
+        cubey::render::ShaderStageFile{
+            .stage = VK_SHADER_STAGE_VERTEX_BIT,
+            .path = shader_path("water_2d_surface_density.vert.spv"),
+        },
+        cubey::render::ShaderStageFile{
+            .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
+            .path = shader_path("water_2d_surface_density.frag.spv"),
+        },
+    };
+    const std::array<cubey::render::ShaderStageFile, 2> surface_smooth_shaders{
+        cubey::render::ShaderStageFile{
+            .stage = VK_SHADER_STAGE_VERTEX_BIT,
+            .path = shader_path("water_2d.vert.spv"),
+        },
+        cubey::render::ShaderStageFile{
+            .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
+            .path = shader_path("water_2d_surface_smooth.frag.spv"),
+        },
+    };
+    const std::array<cubey::render::ShaderStageFile, 2> surface_composite_shaders{
+        cubey::render::ShaderStageFile{
+            .stage = VK_SHADER_STAGE_VERTEX_BIT,
+            .path = shader_path("water_2d.vert.spv"),
+        },
+        cubey::render::ShaderStageFile{
+            .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
+            .path = shader_path("water_2d_surface_composite.frag.spv"),
+        },
+    };
 
     const std::array<VkDescriptorSetLayout, 1> set_layouts{field_descriptor_layout()};
-    const cubey::render::MaterialPassInfo material_pass = water_render_pass_info();
-    render_pipeline_resource_.emplace(device, cubey::render::GraphicsPipelineFileResourceConfig{
-                                                  .extent = extent,
-                                                  .color_format = color_format,
-                                                  .shader_stage_files = shader_stage_files,
-                                                  .descriptor_set_layouts = set_layouts,
-                                                  .material_pass = material_pass,
-                                              });
+    const std::array<VkDescriptorSetLayout, 1> source_set_layouts{
+        surface_source_raw_material_->layout(),
+    };
+    const std::array<VkDescriptorSetLayout, 2> composite_set_layouts{
+        surface_composite_material_->layout(),
+        field_descriptor_layout(),
+    };
+    create_graphics_pipeline_resource(device, extent, color_format, shader_stage_files, set_layouts,
+                                      debug_material_pass, render_pipeline_resource_);
+    create_graphics_pipeline_resource(
+        device, extent, kWater2DSurfaceScalarFormat, surface_density_shaders, set_layouts,
+        surface_density_material_pass, surface_density_pipeline_resource_);
+    create_graphics_pipeline_resource(
+        device, extent, kWater2DSurfaceScalarFormat, surface_smooth_shaders, source_set_layouts,
+        surface_smooth_material_pass, surface_smooth_pipeline_resource_);
+    create_graphics_pipeline_resource(device, extent, color_format, surface_composite_shaders,
+                                      composite_set_layouts, surface_composite_material_pass,
+                                      surface_composite_pipeline_resource_);
 }
 
 const cubey::vulkan::Buffer& Water2DGpuResources::particle_positions() const {
@@ -564,6 +723,74 @@ const cubey::render::GraphicsPipelineResource&
 Water2DGpuResources::render_pipeline_resource() const {
     return require_initialized(render_pipeline_resource_,
                                "water render pipeline is not initialized");
+}
+
+const cubey::render::GraphicsPipelineResource&
+Water2DGpuResources::surface_density_pipeline_resource() const {
+    return require_initialized(surface_density_pipeline_resource_,
+                               "water surface density pipeline is not initialized");
+}
+
+const cubey::render::GraphicsPipelineResource&
+Water2DGpuResources::surface_smooth_pipeline_resource() const {
+    return require_initialized(surface_smooth_pipeline_resource_,
+                               "water surface smooth pipeline is not initialized");
+}
+
+const cubey::render::GraphicsPipelineResource&
+Water2DGpuResources::surface_composite_pipeline_resource() const {
+    return require_initialized(surface_composite_pipeline_resource_,
+                               "water surface composite pipeline is not initialized");
+}
+
+VkDescriptorSet
+Water2DGpuResources::surface_source_raw_descriptor_set(cubey::render::FrameSlot frame_slot) const {
+    return require_initialized(surface_source_raw_material_,
+                               "water surface raw source material is not initialized")
+        .set(frame_slot);
+}
+
+VkDescriptorSet
+Water2DGpuResources::surface_source_a_descriptor_set(cubey::render::FrameSlot frame_slot) const {
+    return require_initialized(surface_source_a_material_,
+                               "water surface source A material is not initialized")
+        .set(frame_slot);
+}
+
+VkDescriptorSet
+Water2DGpuResources::surface_source_b_descriptor_set(cubey::render::FrameSlot frame_slot) const {
+    return require_initialized(surface_source_b_material_,
+                               "water surface source B material is not initialized")
+        .set(frame_slot);
+}
+
+VkDescriptorSet
+Water2DGpuResources::surface_composite_descriptor_set(cubey::render::FrameSlot frame_slot) const {
+    return require_initialized(surface_composite_material_,
+                               "water surface composite material is not initialized")
+        .set(frame_slot);
+}
+
+void Water2DGpuResources::update_surface_descriptors(
+    const cubey::vulkan::Device& device, cubey::render::FrameSlot frame_slot,
+    cubey::render::RenderGraphSampledTextureView raw_density,
+    cubey::render::RenderGraphSampledTextureView surface_a,
+    cubey::render::RenderGraphSampledTextureView surface_b,
+    cubey::render::RenderGraphSampledTextureView final_surface) {
+    const cubey::vulkan::Sampler& sampler =
+        require_initialized(surface_sampler_, "water surface sampler is not initialized");
+    const VkSampler sampler_handle = sampler.handle();
+    cubey::vulkan::DescriptorWriteBatch writes;
+    writes
+        .combined_image_sampler(surface_source_raw_descriptor_set(frame_slot), 0, sampler_handle,
+                                raw_density.view, raw_density.layout)
+        .combined_image_sampler(surface_source_a_descriptor_set(frame_slot), 0, sampler_handle,
+                                surface_a.view, surface_a.layout)
+        .combined_image_sampler(surface_source_b_descriptor_set(frame_slot), 0, sampler_handle,
+                                surface_b.view, surface_b.layout)
+        .combined_image_sampler(surface_composite_descriptor_set(frame_slot), 0, sampler_handle,
+                                final_surface.view, final_surface.layout);
+    writes.update(device);
 }
 
 } // namespace cubey::projects::fluid::water_2d

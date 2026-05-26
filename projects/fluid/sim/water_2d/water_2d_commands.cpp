@@ -32,6 +32,17 @@ struct ShaderWriteBarrier {
     VkAccessFlags dst_access = 0;
 };
 
+enum class SurfaceTextureSource {
+    Raw,
+    A,
+    B,
+};
+
+struct SurfaceTextureSlot {
+    cubey::render::RenderGraphTextureHandle handle{};
+    SurfaceTextureSource source = SurfaceTextureSource::Raw;
+};
+
 [[nodiscard]] DispatchGroups compute_dispatch_groups(std::uint32_t width, std::uint32_t height) {
     return {
         .x = (width + kWater2DComputeGroupSize - 1U) / kWater2DComputeGroupSize,
@@ -105,6 +116,86 @@ void record_shader_write_barrier(VkCommandBuffer command_buffer, ShaderWriteBarr
 [[nodiscard]] float degrees_to_radians(float degrees) {
     constexpr float kPi = 3.14159265358979323846F;
     return degrees * (kPi / 180.0F);
+}
+
+[[nodiscard]] cubey::render::RenderGraphTextureDesc
+surface_color_texture_desc(const char* label, VkExtent2D extent, VkFormat format) {
+    return {
+        .label = label,
+        .extent = {extent.width, extent.height, 1},
+        .format = format,
+        .aspects = VK_IMAGE_ASPECT_COLOR_BIT,
+    };
+}
+
+[[nodiscard]] cubey::render::RenderGraphTextureState
+target_initial_state(Water2DRenderTargetMode target_mode) {
+    return target_mode == Water2DRenderTargetMode::Present
+               ? cubey::render::render_graph_undefined_texture_state()
+               : cubey::render::render_graph_color_attachment_texture_state();
+}
+
+[[nodiscard]] cubey::render::RenderGraphTextureState
+target_final_state(Water2DRenderTargetMode target_mode) {
+    return target_mode == Water2DRenderTargetMode::Present
+               ? cubey::render::render_graph_present_texture_state()
+               : cubey::render::render_graph_color_attachment_texture_state();
+}
+
+[[nodiscard]] RenderPushConstants render_push_constants(const Water2DConfig& config,
+                                                        const Water2DRuntimeState& runtime_state,
+                                                        Water2DDebugView debug_view,
+                                                        float smooth_axis = 0.0F) {
+    return {
+        .grid_debug =
+            {
+                water_2d_shader_count_float(config.grid_width,
+                                            "water grid width exceeds exact shader integer range"),
+                water_2d_shader_count_float(config.grid_height,
+                                            "water grid height exceeds exact shader integer range"),
+                debug_view_push_value(debug_view),
+                runtime_state.pressure_read_b ? 1.0F : 0.0F,
+            },
+        .particle_options =
+            {
+                water_2d_shader_count_float(
+                    particle_scan_count(config, runtime_state),
+                    "water particle scan count exceeds exact shader integer range"),
+                water_2d_shader_count_float(
+                    config.max_particles_per_cell,
+                    "water max particles per cell exceeds exact shader integer range"),
+                config.particle_radius,
+                config.surface_splat_radius_scale,
+            },
+        .surface_options =
+            {
+                config.surface_threshold,
+                config.edge_strength,
+                config.foam_strength,
+                config.surface_density_scale,
+            },
+        .foam_options =
+            {
+                config.foam_sharpness,
+                config.foam_breakup,
+                config.surface_smoothing_radius_px,
+                smooth_axis,
+            },
+    };
+}
+
+[[nodiscard]] VkDescriptorSet surface_source_descriptor_set(const Water2DGpuResources& resources,
+                                                            cubey::render::FrameSlot frame_slot,
+                                                            SurfaceTextureSource source) {
+    switch (source) {
+    case SurfaceTextureSource::Raw:
+        return resources.surface_source_raw_descriptor_set(frame_slot);
+    case SurfaceTextureSource::A:
+        return resources.surface_source_a_descriptor_set(frame_slot);
+    case SurfaceTextureSource::B:
+        return resources.surface_source_b_descriptor_set(frame_slot);
+    }
+    return resources.surface_source_raw_descriptor_set(frame_slot);
 }
 
 [[nodiscard]] Water2DSimulationUniforms simulation_uniforms(const Water2DConfig& config) {
@@ -478,42 +569,8 @@ void record_water_2d_draw(VkCommandBuffer command_buffer, const Water2DGpuResour
                           const Water2DRuntimeState& runtime_state, Water2DDebugView debug_view,
                           cubey::render::ColorTargetView color_target) {
     const cubey::vulkan::CommandRecorder recorder(command_buffer);
-    const RenderPushConstants push_constants{
-        .grid_debug =
-            {
-                water_2d_shader_count_float(config.grid_width,
-                                            "water grid width exceeds exact shader integer range"),
-                water_2d_shader_count_float(config.grid_height,
-                                            "water grid height exceeds exact shader integer range"),
-                debug_view_push_value(debug_view),
-                runtime_state.pressure_read_b ? 1.0F : 0.0F,
-            },
-        .particle_options =
-            {
-                water_2d_shader_count_float(
-                    config.active_particle_count,
-                    "water active particle count exceeds exact shader integer range"),
-                water_2d_shader_count_float(
-                    config.max_particles_per_cell,
-                    "water max particles per cell exceeds exact shader integer range"),
-                config.particle_radius,
-                0.0F,
-            },
-        .surface_options =
-            {
-                config.surface_threshold,
-                config.edge_strength,
-                config.foam_strength,
-                0.0F,
-            },
-        .foam_options =
-            {
-                config.foam_sharpness,
-                config.foam_breakup,
-                0.0F,
-                0.0F,
-            },
-    };
+    const RenderPushConstants push_constants =
+        render_push_constants(config, runtime_state, debug_view);
 
     cubey::render::record_render_target_pass(
         recorder, cubey::render::render_target_view(color_target),
@@ -532,12 +589,94 @@ void record_water_2d_draw(VkCommandBuffer command_buffer, const Water2DGpuResour
         });
 }
 
-[[nodiscard]] cubey::render::CompiledRenderGraph
+void record_surface_density_pass(const cubey::vulkan::CommandRecorder& recorder,
+                                 const Water2DGpuResources& resources, const Water2DConfig& config,
+                                 cubey::render::FrameSlot frame_slot,
+                                 const Water2DRuntimeState& runtime_state,
+                                 cubey::render::ColorTargetView color_target) {
+    const RenderPushConstants push_constants =
+        render_push_constants(config, runtime_state, Water2DDebugView::Surface);
+    const std::uint32_t instance_count = particle_scan_count(config, runtime_state);
+    cubey::render::record_render_target_pass(
+        recorder, cubey::render::render_target_view(color_target),
+        cubey::render::RenderClearValues{
+            .color = cubey::render::color_clear_value(0.0F, 0.0F, 0.0F, 0.0F),
+        },
+        [&resources, frame_slot, instance_count,
+         push_constants](const cubey::vulkan::CommandRecorder& pass_recorder) {
+            const cubey::render::GraphicsPipelineResource& pipeline =
+                resources.surface_density_pipeline_resource();
+            pass_recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.pipeline());
+            pass_recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.layout(), 0,
+                                              resources.field_descriptor_set(frame_slot));
+            pass_recorder.push_constants(pipeline.layout(),
+                                         VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+                                         0, push_constants);
+            pass_recorder.draw(6, std::max(1U, instance_count));
+        });
+}
+
+void record_surface_smooth_pass(const cubey::vulkan::CommandRecorder& recorder,
+                                const Water2DGpuResources& resources, const Water2DConfig& config,
+                                const Water2DRuntimeState& runtime_state,
+                                cubey::render::FrameSlot frame_slot, SurfaceTextureSource source,
+                                float smooth_axis, cubey::render::ColorTargetView color_target) {
+    const RenderPushConstants push_constants =
+        render_push_constants(config, runtime_state, Water2DDebugView::Surface, smooth_axis);
+    cubey::render::record_render_target_pass(
+        recorder, cubey::render::render_target_view(color_target),
+        cubey::render::RenderClearValues{
+            .color = cubey::render::color_clear_value(0.0F, 0.0F, 0.0F, 0.0F),
+        },
+        [&resources, frame_slot, source,
+         push_constants](const cubey::vulkan::CommandRecorder& pass_recorder) {
+            cubey::render::record_fullscreen_pipeline_draw(
+                pass_recorder,
+                {
+                    .pipeline = &resources.surface_smooth_pipeline_resource(),
+                    .descriptor_set = surface_source_descriptor_set(resources, frame_slot, source),
+                },
+                VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, push_constants);
+        });
+}
+
+void record_surface_composite_pass(const cubey::vulkan::CommandRecorder& recorder,
+                                   const Water2DGpuResources& resources,
+                                   const Water2DConfig& config, cubey::render::FrameSlot frame_slot,
+                                   const Water2DRuntimeState& runtime_state,
+                                   cubey::render::ColorTargetView color_target) {
+    const RenderPushConstants push_constants =
+        render_push_constants(config, runtime_state, Water2DDebugView::Surface);
+    cubey::render::record_render_target_pass(
+        recorder, cubey::render::render_target_view(color_target),
+        cubey::render::RenderClearValues{
+            .color = cubey::render::color_clear_value(0.006F, 0.009F, 0.014F, 1.0F),
+        },
+        [&resources, frame_slot,
+         push_constants](const cubey::vulkan::CommandRecorder& pass_recorder) {
+            const cubey::render::GraphicsPipelineResource& pipeline =
+                resources.surface_composite_pipeline_resource();
+            const std::array<VkDescriptorSet, 2> sets{
+                resources.surface_composite_descriptor_set(frame_slot),
+                resources.field_descriptor_set(frame_slot),
+            };
+            pass_recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.pipeline());
+            pass_recorder.bind_descriptor_sets(VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.layout(),
+                                               0, sets);
+            pass_recorder.push_constants(pipeline.layout(),
+                                         VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+                                         0, push_constants);
+            cubey::render::record_fullscreen_triangle(pass_recorder);
+        });
+}
+
+[[nodiscard]] Water2DFrameGraph
 build_water_2d_frame_graph(cubey::render::ColorTargetView color_target,
                            Water2DGpuResources& resources, const Water2DConfig& config,
                            Water2DRuntimeState& runtime_state, cubey::render::FrameSlot frame_slot,
                            Water2DDebugView debug_view, bool paused, bool& reset_requested,
-                           const ProjectFrame& frame) {
+                           const ProjectFrame& frame, Water2DRenderTargetMode target_mode,
+                           bool include_simulation) {
     Water2DGpuResources* resource_ptr = &resources;
     const Water2DConfig* config_ptr = &config;
     bool* reset_requested_ptr = &reset_requested;
@@ -594,35 +733,134 @@ build_water_2d_frame_graph(cubey::render::ColorTargetView color_target,
     const cubey::render::RenderGraphBufferHandle diagnostics = graph.import_buffer(
         {.label = "water diagnostics", .byte_size = resources.diagnostics().size()},
         resources.diagnostics().handle());
-    const cubey::render::RenderGraphTextureHandle backbuffer = graph.import_color_target(
-        "backbuffer", color_target, cubey::render::render_graph_undefined_texture_state(),
-        cubey::render::render_graph_present_texture_state());
+    const cubey::render::RenderGraphTextureHandle backbuffer =
+        graph.import_color_target("backbuffer", color_target, target_initial_state(target_mode),
+                                  target_final_state(target_mode));
 
-    graph.add_pass("water simulation", cubey::render::RenderGraphQueueDomain::Compute)
-        .read_write_storage_buffer(particle_positions)
-        .read_uniform_buffer(simulation_uniforms)
-        .read_write_storage_buffer(particle_velocities)
-        .read_write_storage_buffer(particle_affine)
-        .read_write_storage_buffer(u)
-        .read_write_storage_buffer(u_previous)
-        .read_write_storage_buffer(v)
-        .read_write_storage_buffer(v_previous)
-        .read_write_storage_buffer(u_weight)
-        .read_write_storage_buffer(v_weight)
-        .read_write_storage_buffer(pressure_a)
-        .read_write_storage_buffer(pressure_b)
-        .read_write_storage_buffer(divergence)
-        .read_write_storage_buffer(solid)
-        .read_write_storage_buffer(cell_counts)
-        .read_write_storage_buffer(cell_particle_indices)
-        .read_write_storage_buffer(diagnostics)
-        .execute([resource_ptr, config_ptr, runtime_state_ptr, frame_slot, paused,
-                  reset_requested_ptr,
-                  frame](const cubey::render::RenderGraphExecutionContext& context) {
-            record_water_2d_compute(context.recorder().handle(), *resource_ptr, *config_ptr,
-                                    *runtime_state_ptr, frame_slot, paused, *reset_requested_ptr,
-                                    frame, false);
-        });
+    if (include_simulation) {
+        graph.add_pass("water simulation", cubey::render::RenderGraphQueueDomain::Compute)
+            .read_write_storage_buffer(particle_positions)
+            .read_uniform_buffer(simulation_uniforms)
+            .read_write_storage_buffer(particle_velocities)
+            .read_write_storage_buffer(particle_affine)
+            .read_write_storage_buffer(u)
+            .read_write_storage_buffer(u_previous)
+            .read_write_storage_buffer(v)
+            .read_write_storage_buffer(v_previous)
+            .read_write_storage_buffer(u_weight)
+            .read_write_storage_buffer(v_weight)
+            .read_write_storage_buffer(pressure_a)
+            .read_write_storage_buffer(pressure_b)
+            .read_write_storage_buffer(divergence)
+            .read_write_storage_buffer(solid)
+            .read_write_storage_buffer(cell_counts)
+            .read_write_storage_buffer(cell_particle_indices)
+            .read_write_storage_buffer(diagnostics)
+            .execute([resource_ptr, config_ptr, runtime_state_ptr, frame_slot, paused,
+                      reset_requested_ptr,
+                      frame](const cubey::render::RenderGraphExecutionContext& context) {
+                record_water_2d_compute(context.recorder().handle(), *resource_ptr, *config_ptr,
+                                        *runtime_state_ptr, frame_slot, paused,
+                                        *reset_requested_ptr, frame, false);
+            });
+    }
+
+    if (debug_view == Water2DDebugView::Surface) {
+        const std::uint32_t smoothing_iterations =
+            std::min(config.surface_smoothing_iterations, std::uint32_t{8});
+        const cubey::render::RenderGraphTextureHandle raw_density =
+            graph.create_texture(surface_color_texture_desc(
+                "water surface raw density", color_target.extent, VK_FORMAT_R32_SFLOAT));
+        const cubey::render::RenderGraphTextureHandle surface_a =
+            smoothing_iterations > 0
+                ? graph.create_texture(surface_color_texture_desc(
+                      "water surface density A", color_target.extent, VK_FORMAT_R32_SFLOAT))
+                : raw_density;
+        const cubey::render::RenderGraphTextureHandle surface_b =
+            smoothing_iterations > 0
+                ? graph.create_texture(surface_color_texture_desc(
+                      "water surface density B", color_target.extent, VK_FORMAT_R32_SFLOAT))
+                : raw_density;
+
+        graph.add_pass("water surface density", cubey::render::RenderGraphQueueDomain::Graphics)
+            .read_storage_buffer(particle_positions)
+            .write_color(raw_density)
+            .execute([resource_ptr, config_ptr, runtime_state_ptr, frame_slot,
+                      raw_density](const cubey::render::RenderGraphExecutionContext& context) {
+                record_surface_density_pass(
+                    context.recorder(), *resource_ptr, *config_ptr, frame_slot, *runtime_state_ptr,
+                    cubey::render::resolved_color_target_view(context, raw_density));
+            });
+
+        SurfaceTextureSlot current_surface{
+            .handle = raw_density,
+            .source = SurfaceTextureSource::Raw,
+        };
+        SurfaceTextureSlot next_surface{
+            .handle = surface_a,
+            .source = SurfaceTextureSource::A,
+        };
+        for (std::uint32_t iteration = 0; iteration < smoothing_iterations; ++iteration) {
+            graph
+                .add_pass("water surface smooth x", cubey::render::RenderGraphQueueDomain::Graphics)
+                .read_texture(current_surface.handle)
+                .write_color(next_surface.handle)
+                .execute([resource_ptr, config_ptr, runtime_state_ptr, frame_slot,
+                          source = current_surface, destination = next_surface](
+                             const cubey::render::RenderGraphExecutionContext& context) {
+                    record_surface_smooth_pass(
+                        context.recorder(), *resource_ptr, *config_ptr, *runtime_state_ptr,
+                        frame_slot, source.source, 0.0F,
+                        cubey::render::resolved_color_target_view(context, destination.handle));
+                });
+            std::swap(current_surface, next_surface);
+            next_surface =
+                current_surface.source == SurfaceTextureSource::A
+                    ? SurfaceTextureSlot{.handle = surface_b, .source = SurfaceTextureSource::B}
+                    : SurfaceTextureSlot{.handle = surface_a, .source = SurfaceTextureSource::A};
+
+            graph
+                .add_pass("water surface smooth y", cubey::render::RenderGraphQueueDomain::Graphics)
+                .read_texture(current_surface.handle)
+                .write_color(next_surface.handle)
+                .execute([resource_ptr, config_ptr, runtime_state_ptr, frame_slot,
+                          source = current_surface, destination = next_surface](
+                             const cubey::render::RenderGraphExecutionContext& context) {
+                    record_surface_smooth_pass(
+                        context.recorder(), *resource_ptr, *config_ptr, *runtime_state_ptr,
+                        frame_slot, source.source, 1.0F,
+                        cubey::render::resolved_color_target_view(context, destination.handle));
+                });
+            std::swap(current_surface, next_surface);
+            next_surface =
+                current_surface.source == SurfaceTextureSource::A
+                    ? SurfaceTextureSlot{.handle = surface_b, .source = SurfaceTextureSource::B}
+                    : SurfaceTextureSlot{.handle = surface_a, .source = SurfaceTextureSource::A};
+        }
+
+        graph.add_pass("water surface composite", cubey::render::RenderGraphQueueDomain::Graphics)
+            .read_texture(current_surface.handle)
+            .read_storage_buffer(u)
+            .read_storage_buffer(v)
+            .read_storage_buffer(solid)
+            .write_color(backbuffer)
+            .execute([resource_ptr, config_ptr, runtime_state_ptr, frame_slot,
+                      backbuffer](const cubey::render::RenderGraphExecutionContext& context) {
+                record_surface_composite_pass(
+                    context.recorder(), *resource_ptr, *config_ptr, frame_slot, *runtime_state_ptr,
+                    cubey::render::resolved_color_target_view(context, backbuffer));
+            });
+
+        return {
+            .graph = graph.compile(),
+            .uses_surface_textures = true,
+            .raw_density = raw_density,
+            .surface_a = surface_a,
+            .surface_b = surface_b,
+            .final_surface = current_surface.handle,
+        };
+    }
+
     graph.add_pass("water render", cubey::render::RenderGraphQueueDomain::Graphics)
         .read_storage_buffer(particle_positions)
         .read_storage_buffer(u)
@@ -646,7 +884,7 @@ build_water_2d_frame_graph(cubey::render::ColorTargetView color_target,
                                                                   resolved.image, resolved.view));
         });
 
-    return graph.compile();
+    return {.graph = graph.compile()};
 }
 
 } // namespace cubey::projects::fluid::water_2d

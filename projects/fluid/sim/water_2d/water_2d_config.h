@@ -125,6 +125,10 @@ struct Water2DConfig {
     float obstacle_friction = 0.86F;
     float surface_threshold = 0.82F;
     float edge_strength = 0.52F;
+    float surface_splat_radius_scale = 1.65F;
+    float surface_density_scale = 0.42F;
+    float surface_smoothing_radius_px = 7.0F;
+    std::uint32_t surface_smoothing_iterations = 3;
     float foam_strength = 0.32F;
     float foam_sharpness = 1.35F;
     float foam_breakup = 0.45F;

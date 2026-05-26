@@ -4,12 +4,15 @@
 
 #include <cubey/engine/project_gpu_services.h>
 #include <cubey/render/frame_data.h>
+#include <cubey/render/material_instance.h>
 #include <cubey/render/pipeline_resource.h>
+#include <cubey/render/render_graph_types.h>
 #include <cubey/render/uniform_buffer.h>
 #include <cubey/vulkan/buffer.h>
 #include <cubey/vulkan/descriptors.h>
 #include <cubey/vulkan/device.h>
 #include <cubey/vulkan/gpu_timestamps.h>
+#include <cubey/vulkan/sampler.h>
 
 #include <vulkan/vulkan.h>
 
@@ -80,6 +83,26 @@ class Water2DGpuResources {
     [[nodiscard]] const cubey::render::ComputePipelineResource&
     diagnostics_pipeline_resource() const;
     [[nodiscard]] const cubey::render::GraphicsPipelineResource& render_pipeline_resource() const;
+    [[nodiscard]] const cubey::render::GraphicsPipelineResource&
+    surface_density_pipeline_resource() const;
+    [[nodiscard]] const cubey::render::GraphicsPipelineResource&
+    surface_smooth_pipeline_resource() const;
+    [[nodiscard]] const cubey::render::GraphicsPipelineResource&
+    surface_composite_pipeline_resource() const;
+    [[nodiscard]] VkDescriptorSet
+    surface_source_raw_descriptor_set(cubey::render::FrameSlot frame_slot) const;
+    [[nodiscard]] VkDescriptorSet
+    surface_source_a_descriptor_set(cubey::render::FrameSlot frame_slot) const;
+    [[nodiscard]] VkDescriptorSet
+    surface_source_b_descriptor_set(cubey::render::FrameSlot frame_slot) const;
+    [[nodiscard]] VkDescriptorSet
+    surface_composite_descriptor_set(cubey::render::FrameSlot frame_slot) const;
+    void update_surface_descriptors(const cubey::vulkan::Device& device,
+                                    cubey::render::FrameSlot frame_slot,
+                                    cubey::render::RenderGraphSampledTextureView raw_density,
+                                    cubey::render::RenderGraphSampledTextureView surface_a,
+                                    cubey::render::RenderGraphSampledTextureView surface_b,
+                                    cubey::render::RenderGraphSampledTextureView final_surface);
 
   private:
     void create_field_buffers(cubey::ProjectGpuServices& gpu, const Water2DConfig& config);
@@ -126,6 +149,14 @@ class Water2DGpuResources {
     std::optional<cubey::render::ComputePipelineResource> advect_particles_pipeline_resource_;
     std::optional<cubey::render::ComputePipelineResource> diagnostics_pipeline_resource_;
     std::optional<cubey::render::GraphicsPipelineResource> render_pipeline_resource_;
+    std::optional<cubey::vulkan::Sampler> surface_sampler_;
+    std::optional<cubey::render::MaterialInstance> surface_source_raw_material_;
+    std::optional<cubey::render::MaterialInstance> surface_source_a_material_;
+    std::optional<cubey::render::MaterialInstance> surface_source_b_material_;
+    std::optional<cubey::render::MaterialInstance> surface_composite_material_;
+    std::optional<cubey::render::GraphicsPipelineResource> surface_density_pipeline_resource_;
+    std::optional<cubey::render::GraphicsPipelineResource> surface_smooth_pipeline_resource_;
+    std::optional<cubey::render::GraphicsPipelineResource> surface_composite_pipeline_resource_;
 };
 
 } // namespace cubey::projects::fluid::water_2d
