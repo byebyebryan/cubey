@@ -108,6 +108,9 @@ int main() {
                 "water should default to no obstacle");
         require(!config.hose.enabled, "water should default with hose emission disabled");
         require(!config.drain.enabled, "water should default with drain disabled");
+        require(!config.wave.enabled, "water should default with wave forcing disabled");
+        require(config.drain.pull_speed > 0.0F && config.drain.pull_radius > 0.0F,
+                "water drain should expose pull controls");
         require(sizeof(cubey::projects::fluid::water_2d::Water2DSimulationUniforms) ==
                     sizeof(float) *
                         cubey::projects::fluid::water_2d::kWater2DSimulationUniformFloatCount,
@@ -325,6 +328,7 @@ int main() {
         transfer_run_config.water2d.transfer_limit = 48;
         transfer_run_config.water2d.hose = 1;
         transfer_run_config.water2d.drain = 1;
+        transfer_run_config.water2d.wave = 1;
         const cubey::projects::fluid::water_2d::Water2DConfig transfer_config =
             cubey::projects::fluid::water_2d::water_2d_config_from_run_config(transfer_run_config);
         require(transfer_config.transfer_mode ==
@@ -332,8 +336,9 @@ int main() {
                 "water run-config should parse transfer mode");
         require(transfer_config.max_particles_per_cell == 48,
                 "water run-config should parse transfer sample limit");
-        require(transfer_config.hose.enabled && transfer_config.drain.enabled,
-                "water run-config should parse hose and drain toggles");
+        require(transfer_config.hose.enabled && transfer_config.drain.enabled &&
+                    transfer_config.wave.enabled,
+                "water run-config should parse hose, drain, and wave toggles");
 
         cubey::RunConfig diagnostics_run_config;
         diagnostics_run_config.headless = true;
@@ -382,6 +387,7 @@ int main() {
         require(wave_slab.obstacle_shape ==
                     cubey::projects::fluid::water_2d::Water2DObstacleShape::None,
                 "wave slab scenario should leave obstacles disabled by default");
+        require(wave_slab.wave.enabled, "wave slab scenario should enable wave forcing");
         require(wave_slab.active_particle_count == (215U * 60U * 4U),
                 "wave slab scenario should resize active particles from preset fill");
         cubey::projects::fluid::water_2d::Water2DConfig hose_fill = config;
@@ -439,6 +445,8 @@ int main() {
             read_text_file(source_root / "shaders/water_2d_emit_particles.comp");
         const std::string p2g_shader =
             read_text_file(source_root / "shaders/water_2d_particle_to_grid.comp");
+        const std::string force_shader =
+            read_text_file(source_root / "shaders/water_2d_force.comp");
         const std::string divergence_shader =
             read_text_file(source_root / "shaders/water_2d_divergence.comp");
         const std::string pressure_shader =
@@ -469,6 +477,8 @@ int main() {
                          "water shader contract should move stable simulation params to a UBO");
         require_contains(contract_shader, "uniform DispatchParams",
                          "water shader contract should keep per-dispatch values in push constants");
+        require_contains(contract_shader, "wave_options0",
+                         "water shader contract should expose wave source controls");
         require_contains(contract_shader, "WATER2D_ACTIVE_PARTICLE_COUNT",
                          "water shader contract should expose active initial particles");
         require_contains(contract_shader, "WATER2D_PARTICLE_CAPACITY",
@@ -592,6 +602,12 @@ int main() {
                          "water diagnostics should report transfer truncation pressure");
         require_contains(diagnostics_shader, "atomicMax",
                          "water diagnostics should record max cell occupancy");
+        require_contains(force_shader, "wave_gate",
+                         "water force shader should support an optional wave driver");
+        require_contains(force_shader, "drain_target_velocity",
+                         "water force shader should pull liquid toward the drain");
+        require_contains(force_shader, "drive_toward",
+                         "water force shader should blend source targets into grid velocity");
         require_contains(app_source, "record_gpu_timings(context.profile_recorder()",
                          "water windowed path should export GPU timings");
         require_contains(app_source, "resources_.diagnostics().handle()",

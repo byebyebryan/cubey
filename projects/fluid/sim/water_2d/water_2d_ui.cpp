@@ -167,6 +167,17 @@ void draw_water_2d_ui(Water2DUiContext ui) {
         ImGui::Checkbox("Enabled", &ui.config.drain.enabled);
         ImGui::SliderFloat2("Center", ui.config.drain.center.data(), 0.04F, 0.96F, "%.2f");
         ImGui::SliderFloat2("Half size", ui.config.drain.half_size.data(), 0.01F, 0.24F, "%.3f");
+        ImGui::SliderFloat("Pull speed", &ui.config.drain.pull_speed, 0.0F, 6.0F, "%.2f");
+        ImGui::SliderFloat("Pull radius", &ui.config.drain.pull_radius, 0.02F, 1.0F, "%.2f");
+        ImGui::PopID();
+
+        ImGui::SeparatorText("Wave");
+        ImGui::PushID("wave");
+        ImGui::Checkbox("Enabled", &ui.config.wave.enabled);
+        ImGui::SliderFloat2("Center", ui.config.wave.center.data(), 0.04F, 0.96F, "%.2f");
+        ImGui::SliderFloat2("Half size", ui.config.wave.half_size.data(), 0.01F, 0.40F, "%.3f");
+        ImGui::SliderFloat("Amplitude", &ui.config.wave.amplitude, 0.0F, 4.0F, "%.2f");
+        ImGui::SliderFloat("Frequency", &ui.config.wave.frequency_hz, 0.0F, 2.0F, "%.2f Hz");
         ImGui::PopID();
     }
 

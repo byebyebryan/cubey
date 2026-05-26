@@ -77,6 +77,7 @@ struct RunConfig {
         std::uint32_t transfer_limit = 0;
         int hose = -1;
         int drain = -1;
+        int wave = -1;
     };
 
     struct Water3DOptions {

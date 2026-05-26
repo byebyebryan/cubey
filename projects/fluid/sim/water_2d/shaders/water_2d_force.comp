@@ -53,6 +53,45 @@ bool liquid_cell(int x, int y, uint width, uint height) {
     return solid.values[index] < 0.5 && cell_counts.values[index] > 0u;
 }
 
+float wave_gate(vec2 position) {
+    if (params.wave_options0.x < 0.5) {
+        return 0.0;
+    }
+    vec2 half_size = max(params.wave_options1.xy, vec2(0.001));
+    vec2 delta = abs(position - params.wave_options0.yz) / half_size;
+    if (any(greaterThan(delta, vec2(1.0)))) {
+        return 0.0;
+    }
+    vec2 shaped = 1.0 - smoothstep(vec2(0.65), vec2(1.0), delta);
+    return shaped.x * shaped.y;
+}
+
+float drain_gate(vec2 position) {
+    if (params.drain_options.x < 0.5 || params.drain_options.w <= 0.0) {
+        return 0.0;
+    }
+    float radius = max(0.001, params.drain_extents.z);
+    vec2 delta = position - params.drain_options.yz;
+    delta.y *= 1.35;
+    float distance = length(delta);
+    return 1.0 - smoothstep(radius * 0.55, radius, distance);
+}
+
+vec2 drain_target_velocity(vec2 position) {
+    vec2 direction = params.drain_options.yz - position;
+    direction.y *= 0.55;
+    float direction_length = length(direction);
+    if (direction_length <= 0.0001) {
+        return vec2(0.0);
+    }
+    return direction / direction_length * max(0.0, params.drain_options.w);
+}
+
+float drive_toward(float current_velocity, float target_velocity, float gate, float dt) {
+    float blend = clamp(gate * dt * 10.0, 0.0, 1.0);
+    return mix(current_velocity, target_velocity, blend);
+}
+
 void main() {
     uint width = uint(WATER2D_GRID_WIDTH);
     uint height = uint(WATER2D_GRID_HEIGHT);
@@ -67,6 +106,17 @@ void main() {
                        solid_cell(int(x), int(y), width, height);
         if (blocked || u_weight.values[index] <= 0.0) {
             u_field.values[index] = 0.0;
+        } else {
+            vec2 face_position = vec2(float(x) / float(width),
+                                      (float(y) + 0.5) / float(height));
+            float phase = WATER2D_TIME * max(0.0, params.wave_options1.z) * 6.2831853;
+            float wave_target = params.wave_options0.w * sin(phase);
+            float driven_velocity =
+                drive_toward(u_field.values[index], wave_target, wave_gate(face_position), dt);
+            vec2 drain_velocity = drain_target_velocity(face_position);
+            driven_velocity =
+                drive_toward(driven_velocity, drain_velocity.x, drain_gate(face_position), dt);
+            u_field.values[index] = clamp(driven_velocity, -velocity_limit, velocity_limit);
         }
     }
 
@@ -79,8 +129,13 @@ void main() {
         if (blocked || !adjacent_liquid || v_weight.values[index] <= 0.0) {
             v_field.values[index] = 0.0;
         } else {
-            v_field.values[index] = clamp(v_field.values[index] + params.init_options.z * dt,
-                                          -velocity_limit, velocity_limit);
+            vec2 face_position = vec2((float(x) + 0.5) / float(width),
+                                      float(y) / float(height));
+            float driven_velocity = v_field.values[index] + params.init_options.z * dt;
+            vec2 drain_velocity = drain_target_velocity(face_position);
+            driven_velocity =
+                drive_toward(driven_velocity, drain_velocity.y, drain_gate(face_position), dt);
+            v_field.values[index] = clamp(driven_velocity, -velocity_limit, velocity_limit);
         }
     }
 }

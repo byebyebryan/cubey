@@ -203,13 +203,27 @@ void record_shader_write_barrier(VkCommandBuffer command_buffer, ShaderWriteBarr
                 config.drain.enabled ? 1.0F : 0.0F,
                 config.drain.center[0],
                 config.drain.center[1],
-                0.0F,
+                config.drain.pull_speed,
             },
         .drain_extents =
             {
                 config.drain.half_size[0],
                 config.drain.half_size[1],
+                config.drain.pull_radius,
                 0.0F,
+            },
+        .wave_options0 =
+            {
+                config.wave.enabled ? 1.0F : 0.0F,
+                config.wave.center[0],
+                config.wave.center[1],
+                config.wave.amplitude,
+            },
+        .wave_options1 =
+            {
+                config.wave.half_size[0],
+                config.wave.half_size[1],
+                config.wave.frequency_hz,
                 0.0F,
             },
     };

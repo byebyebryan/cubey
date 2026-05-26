@@ -232,6 +232,10 @@ RunConfig parse_run_config(int argc, char** argv) {
             config.water2d.drain = 1;
         } else if (arg == "--no-water2d-drain") {
             config.water2d.drain = 0;
+        } else if (arg == "--water2d-wave") {
+            config.water2d.wave = 1;
+        } else if (arg == "--no-water2d-wave") {
+            config.water2d.wave = 0;
         } else if (arg == "--water3d-transfer") {
             config.water3d.transfer_mode = std::string(need_value("--water3d-transfer"));
         } else if (arg == "--water3d-transfer-limit") {
@@ -260,7 +264,8 @@ RunConfig parse_run_config(int argc, char** argv) {
         } else if (arg == "--no-water3d-whitewater") {
             config.water3d.whitewater = 0;
         } else if (arg == "--ibl-intensity") {
-            config.pbr.ibl_intensity = parse_float(need_value("--ibl-intensity"), "--ibl-intensity");
+            config.pbr.ibl_intensity =
+                parse_float(need_value("--ibl-intensity"), "--ibl-intensity");
         } else if (arg == "--environment-rotation-degrees") {
             config.pbr.environment_rotation_degrees = parse_float(
                 need_value("--environment-rotation-degrees"), "--environment-rotation-degrees");

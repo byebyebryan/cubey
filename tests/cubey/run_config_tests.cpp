@@ -281,6 +281,7 @@ void test_run_config_parses_water_controls() {
     std::string water2d_limit_value = "48";
     std::string water2d_hose_flag = "--water2d-hose";
     std::string water2d_drain_flag = "--no-water2d-drain";
+    std::string water2d_wave_flag = "--water2d-wave";
     std::string water3d_transfer_flag = "--water3d-transfer";
     std::string water3d_transfer_value = "apic";
     std::string water3d_limit_flag = "--water3d-transfer-limit";
@@ -292,13 +293,14 @@ void test_run_config_parses_water_controls() {
     std::string water3d_rain_flag = "--no-water3d-rain";
     std::string water3d_wave_flag = "--no-water3d-wave";
     std::string water3d_whitewater_flag = "--no-water3d-whitewater";
-    std::array<char*, 18> argv{program.data(),
+    std::array<char*, 19> argv{program.data(),
                                water2d_transfer_flag.data(),
                                water2d_transfer_value.data(),
                                water2d_limit_flag.data(),
                                water2d_limit_value.data(),
                                water2d_hose_flag.data(),
                                water2d_drain_flag.data(),
+                               water2d_wave_flag.data(),
                                water3d_transfer_flag.data(),
                                water3d_transfer_value.data(),
                                water3d_limit_flag.data(),
@@ -315,14 +317,12 @@ void test_run_config_parses_water_controls() {
         cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
     require(config.water2d.transfer_mode == "pic-flip",
             "run config should parse Water 2D transfer mode");
-    require(config.water2d.transfer_limit == 48,
-            "run config should parse Water 2D transfer limit");
-    require(config.water2d.hose == 1 && config.water2d.drain == 0,
+    require(config.water2d.transfer_limit == 48, "run config should parse Water 2D transfer limit");
+    require(config.water2d.hose == 1 && config.water2d.drain == 0 && config.water2d.wave == 1,
             "run config should parse Water 2D flow toggles");
     require(config.water3d.transfer_mode == "apic",
             "run config should parse Water 3D transfer mode");
-    require(config.water3d.transfer_limit == 96,
-            "run config should parse Water 3D transfer limit");
+    require(config.water3d.transfer_limit == 96, "run config should parse Water 3D transfer limit");
     require(config.water3d.p2g_mode == "tiled", "run config should parse Water 3D P2G mode");
     require(config.water3d.hose == 1 && config.water3d.drain == 1 && config.water3d.rain == 0,
             "run config should parse Water 3D flow toggles");
@@ -353,7 +353,8 @@ void test_run_config_parses_shadow_volume_controls() {
     require(config.pyro.shadow_grid.height == 80, "run config should parse shadow grid height");
     require(config.pyro.shadow_grid.depth == 64, "run config should parse shadow grid depth");
     require(config.pyro.shadow_steps == 48, "run config should parse shadow steps");
-    require(config.pyro.shadow_update_interval == 2, "run config should parse shadow update interval");
+    require(config.pyro.shadow_update_interval == 2,
+            "run config should parse shadow update interval");
 }
 
 void test_run_config_parses_smoke_injector_count() {

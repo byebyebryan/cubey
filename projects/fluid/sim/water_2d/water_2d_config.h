@@ -56,7 +56,7 @@ enum class Water2DDiagnosticSlot : std::uint32_t {
 
 inline constexpr std::uint32_t kWater2DComputeGroupSize = 8;
 inline constexpr std::uint32_t kWater2DSimulationPushConstantFloatCount = 8;
-inline constexpr std::uint32_t kWater2DSimulationUniformFloatCount = 48;
+inline constexpr std::uint32_t kWater2DSimulationUniformFloatCount = 56;
 inline constexpr std::uint32_t kWater2DRenderPushConstantFloatCount = 12;
 inline constexpr std::uint32_t kWater2DDefaultGridWidth = 256;
 inline constexpr std::uint32_t kWater2DDefaultGridHeight = 144;
@@ -86,6 +86,16 @@ struct Water2DDrainConfig {
     bool enabled = false;
     std::array<float, 2> center{0.86F, 0.08F};
     std::array<float, 2> half_size{0.12F, 0.055F};
+    float pull_speed = 2.2F;
+    float pull_radius = 0.42F;
+};
+
+struct Water2DWaveConfig {
+    bool enabled = false;
+    std::array<float, 2> center{0.11F, 0.30F};
+    std::array<float, 2> half_size{0.08F, 0.24F};
+    float amplitude = 1.15F;
+    float frequency_hz = 0.55F;
 };
 
 struct Water2DConfig {
@@ -124,6 +134,7 @@ struct Water2DConfig {
     std::array<float, 2> obstacle_half_size{0.07F, 0.14F};
     Water2DHoseConfig hose{};
     Water2DDrainConfig drain{};
+    Water2DWaveConfig wave{};
 };
 
 struct Water2DSimulationUniforms {
@@ -139,6 +150,8 @@ struct Water2DSimulationUniforms {
     std::array<float, 4> hose_options2{};
     std::array<float, 4> drain_options{};
     std::array<float, 4> drain_extents{};
+    std::array<float, 4> wave_options0{};
+    std::array<float, 4> wave_options1{};
 };
 
 struct Water2DDispatchPushConstants {
@@ -432,6 +445,7 @@ inline void apply_water_2d_scenario_defaults(Water2DConfig& config) {
         config.obstacle_half_size = {0.07F, 0.14F};
         config.hose.enabled = false;
         config.drain.enabled = false;
+        config.wave.enabled = false;
         break;
     case Water2DScenario::ObstacleSplash:
         config.initial_fill_width = 0.62F;
@@ -442,6 +456,7 @@ inline void apply_water_2d_scenario_defaults(Water2DConfig& config) {
         config.obstacle_half_size = {0.07F, 0.14F};
         config.hose.enabled = false;
         config.drain.enabled = false;
+        config.wave.enabled = false;
         break;
     case Water2DScenario::WaveSlab:
         config.initial_fill_width = 0.84F;
@@ -452,6 +467,11 @@ inline void apply_water_2d_scenario_defaults(Water2DConfig& config) {
         config.obstacle_half_size = {0.08F, 0.12F};
         config.hose.enabled = false;
         config.drain.enabled = false;
+        config.wave.enabled = true;
+        config.wave.center = {0.11F, 0.30F};
+        config.wave.half_size = {0.08F, 0.24F};
+        config.wave.amplitude = 1.15F;
+        config.wave.frequency_hz = 0.55F;
         break;
     case Water2DScenario::HoseFill:
         config.initial_fill_width = 0.28F;
@@ -470,6 +490,9 @@ inline void apply_water_2d_scenario_defaults(Water2DConfig& config) {
         config.drain.enabled = true;
         config.drain.center = {0.86F, 0.08F};
         config.drain.half_size = {0.12F, 0.055F};
+        config.drain.pull_speed = 2.2F;
+        config.drain.pull_radius = 0.42F;
+        config.wave.enabled = false;
         break;
     }
     refresh_particle_counts(config);
@@ -551,6 +574,9 @@ inline void apply_water_2d_scenario_defaults(Water2DConfig& config) {
     }
     if (config.water2d.drain >= 0) {
         water_config.drain.enabled = config.water2d.drain != 0;
+    }
+    if (config.water2d.wave >= 0) {
+        water_config.wave.enabled = config.water2d.wave != 0;
     }
     refresh_particle_counts(water_config);
     static_cast<void>(cell_count(water_config));

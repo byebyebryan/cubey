@@ -35,6 +35,8 @@
         vec4 hose_options2;                                                                     \
         vec4 drain_options;                                                                     \
         vec4 drain_extents;                                                                     \
+        vec4 wave_options0;                                                                     \
+        vec4 wave_options1;                                                                     \
     } params;                                                                                   \
     layout(push_constant) uniform DispatchParams {                                              \
         vec4 dispatch_options;                                                                  \
