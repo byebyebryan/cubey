@@ -160,7 +160,7 @@ void apply_combustion(float dt, inout vec4 material) {
     float flame_decay = exp(-flame_cooling * dt);
     float spent_flame = material.b * (1.0 - flame_decay);
     material.b *= flame_decay;
-    material.r += spent_flame * 0.018;
+    material.r += spent_flame * 0.085;
 }
 
 void apply_fire_dissipation(float dt, inout vec4 material) {

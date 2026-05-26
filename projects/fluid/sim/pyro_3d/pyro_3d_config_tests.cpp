@@ -73,13 +73,13 @@ int main() {
                 "pyro 3D density decay should match the tuned default");
         require(config.velocity_decay_per_second == 0.99F,
                 "pyro 3D velocity decay should match the tuned default");
-        require(config.source_velocity_strength == 6.0F,
+        require(config.source_velocity_strength == 8.5F,
                 "pyro 3D source force should match the tuned default");
-        require(config.source_smoke_amount == 6.0F,
+        require(config.source_smoke_amount == 16.0F,
                 "pyro 3D source soot should match the tuned default");
-        require(config.source_heat_amount == 1.4F,
+        require(config.source_heat_amount == 2.8F,
                 "pyro 3D source temperature should match the tuned default");
-        require(config.source_flame_amount == 2.0F,
+        require(config.source_flame_amount == 4.0F,
                 "pyro 3D source fuel should match the tuned default");
         require(config.explosion_interval_seconds == 3.0F,
                 "pyro 3D explosion interval should match the tuned default");
@@ -89,18 +89,18 @@ int main() {
                 "pyro 3D explosion boost should default to a high impulse scale");
         require(config.fire_ignition_temperature == 0.22F,
                 "pyro 3D ignition should match the tuned default");
-        require(config.fire_burn_rate == 2.2F, "pyro 3D burn rate should match the tuned default");
-        require(config.fire_heat_output == 1.65F,
+        require(config.fire_burn_rate == 4.0F, "pyro 3D burn rate should match the tuned default");
+        require(config.fire_heat_output == 2.8F,
                 "pyro 3D heat output should match the tuned default");
-        require(config.fire_soot_yield == 0.070F,
+        require(config.fire_soot_yield == 0.45F,
                 "pyro 3D soot yield should match the tuned default");
-        require(config.fire_expansion == 0.65F,
+        require(config.fire_expansion == 1.35F,
                 "pyro 3D fire expansion should match the tuned default");
-        require(config.fire_flame_cooling == 5.5F,
+        require(config.fire_flame_cooling == 3.8F,
                 "pyro 3D fire flame cooling should match the tuned default");
-        require(config.fire_shredding == 1.6F,
+        require(config.fire_shredding == 3.6F,
                 "pyro 3D fire shredding should match the tuned default");
-        require(config.fire_turbulence == 0.35F,
+        require(config.fire_turbulence == 0.95F,
                 "pyro 3D fire turbulence should match the tuned default");
         require(config.obstacle_center_height == pyro::kDefaultPyro3DObstacleHeight,
                 "pyro 3D obstacle height should match the tuned default");
@@ -108,9 +108,9 @@ int main() {
                 "pyro 3D obstacle radius should match the tuned default");
         require(config.vorticity_strength == 1.0F,
                 "pyro 3D vorticity should match the tuned default");
-        require(config.buoyancy_strength == 1.0F,
-                "pyro 3D buoyancy should default to a mild upward force");
-        require(config.absorption == 8.0F, "pyro 3D absorption should match the tuned default");
+        require(config.buoyancy_strength == 2.5F,
+                "pyro 3D buoyancy should default to a presentation plume force");
+        require(config.absorption == 28.0F, "pyro 3D absorption should match the tuned default");
         require(config.emission == 2.0F, "pyro 3D light emission should match the tuned default");
         require(config.shadow_absorption == 50.0F,
                 "pyro 3D shadow absorption should match the tuned default");
@@ -126,7 +126,7 @@ int main() {
                 "pyro 3D rim strength should match the tuned default");
         require(config.render_scatter_strength == 1.15F,
                 "pyro 3D scatter strength should match the tuned default");
-        require(config.render_smoke_warmth == 0.55F,
+        require(config.render_smoke_warmth == 0.18F,
                 "pyro 3D smoke warmth should match the tuned default");
         require(config.render_flame_intensity == 1.65F,
                 "pyro 3D flame intensity should match the tuned default");
@@ -176,6 +176,27 @@ int main() {
                 "pyro 3D explosion should default to a shell source layout");
         require(default_explosion_config.source_radius == pyro::kDefaultExplosion3DSourceRadius,
                 "pyro 3D explosion should default to a wider impulse radius");
+        require(default_explosion_config.source_velocity_strength == 6.0F,
+                "pyro 3D explosion should keep its impulse force baseline");
+        require(default_explosion_config.source_smoke_amount == 6.0F,
+                "pyro 3D explosion should keep its smoke baseline");
+        require(default_explosion_config.source_heat_amount == 1.4F,
+                "pyro 3D explosion should keep its heat baseline");
+        require(default_explosion_config.source_flame_amount == 2.0F,
+                "pyro 3D explosion should keep its flame baseline");
+        require(default_explosion_config.fire_expansion == 0.65F,
+                "pyro 3D explosion should keep its expansion baseline");
+        require(default_explosion_config.fire_flame_cooling == 5.5F,
+                "pyro 3D explosion should keep its cooling baseline");
+        require(default_explosion_config.obstacle_center_height ==
+                    pyro::kDefaultExplosion3DObstacleHeight,
+                "pyro 3D explosion should keep the higher-volume obstacle baseline");
+        require(default_explosion_config.obstacle_radius == pyro::kDefaultExplosion3DObstacleRadius,
+                "pyro 3D explosion should keep the larger obstacle baseline");
+        require(default_explosion_config.buoyancy_strength == 1.0F,
+                "pyro 3D explosion should keep its buoyancy baseline");
+        require(default_explosion_config.absorption == 10.0F,
+                "pyro 3D explosion should keep its smoke opacity baseline");
         require(default_explosion_config.render_exposure == 0.48F,
                 "pyro 3D explosion should default to higher render exposure");
         require(default_explosion_config.render_rim_strength == 1.35F,
@@ -453,6 +474,8 @@ int main() {
                          "pyro 3D correction shader should clamp corrected density");
         require_contains(combustion_shader, "apply_combustion",
                          "pyro 3D combustion shader should run the fire model");
+        require_contains(combustion_shader, "spent_flame * 0.085",
+                         "pyro 3D combustion shader should convert cooled flame into soot");
         require_contains(combustion_shader, "fire_mode",
                          "pyro 3D combustion shader should branch on pyro mode");
         require_contains(combustion_shader, "apply_explosion_dissipation",
@@ -477,6 +500,10 @@ int main() {
                          "pyro 3D raymarch shader should expose palette controls");
         require_contains(raymarch_shader, "display_transform",
                          "pyro 3D raymarch shader should apply exposure display transform");
+        require_contains(raymarch_shader, "soot_signal",
+                         "pyro 3D raymarch shader should darken smoke as soot dominates");
+        require_contains(raymarch_shader, "flame_height",
+                         "pyro 3D raymarch shader should fade flame emission into upper smoke");
         require_contains(raymarch_shader, "params.color_options.w",
                          "pyro 3D raymarch shader should expose backdrop grid strength");
         require_contains(shadow_shader, "light_transmittance",

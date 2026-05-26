@@ -39,8 +39,19 @@ using cubey::FrameTiming;
 using cubey::ProjectFrame;
 using cubey::host::FrameStatsSample;
 
-constexpr float kCameraDistance = 2.45F;
+constexpr float kFireCameraDistance = 2.05F;
+constexpr float kExplosionCameraDistance = 2.18F;
 constexpr cubey::math::Vec3 kVolumeCenter{0.5F, 0.5F, 0.5F};
+
+[[nodiscard]] float default_camera_distance(Pyro3DMode mode) {
+    switch (mode) {
+    case Pyro3DMode::Fire:
+        return kFireCameraDistance;
+    case Pyro3DMode::Explosion:
+        return kExplosionCameraDistance;
+    }
+    return kFireCameraDistance;
+}
 
 [[nodiscard]] const char* debug_view_name(Pyro3DDebugView view) {
     switch (view) {
@@ -81,7 +92,7 @@ class Pyro3DApp {
           source_states_(create_pyro_3d_sources(pyro_config_)),
           source_gpu_(pyro_3d_sources_to_gpu(source_states_, pyro_config_)),
           debug_view_(debug_view_from_name(config_.debug_view)) {
-        orbit_controller_.set_home_distance(kCameraDistance);
+        orbit_controller_.set_home_distance(default_camera_distance(app_info_.mode));
         orbit_controller_.set_auto_rotation_speed(0.12F);
     }
 
@@ -248,7 +259,7 @@ class Pyro3DApp {
             }
             ImGui::SliderFloat("Source radius", &pyro_config_.source_radius, 0.020F, 0.180F,
                                "%.3f");
-            ImGui::SliderFloat("Smoke", &pyro_config_.source_smoke_amount, 0.0F, 16.0F, "%.2f");
+            ImGui::SliderFloat("Smoke", &pyro_config_.source_smoke_amount, 0.0F, 32.0F, "%.2f");
             ImGui::SliderFloat("Heat", &pyro_config_.source_heat_amount, 0.0F, 8.0F, "%.2f");
             ImGui::SliderFloat(pyro_config_.mode == Pyro3DMode::Fire ? "Fuel" : "Flame",
                                &pyro_config_.source_flame_amount, 0.0F, 12.0F, "%.2f");
@@ -301,7 +312,7 @@ class Pyro3DApp {
                                "%.2f");
             ImGui::SliderFloat("Backdrop grid", &pyro_config_.render_backdrop_grid_strength, 0.0F,
                                1.5F, "%.2f");
-            ImGui::SliderFloat("Absorption", &pyro_config_.absorption, 0.5F, 12.0F, "%.2f");
+            ImGui::SliderFloat("Absorption", &pyro_config_.absorption, 0.5F, 48.0F, "%.2f");
             ImGui::SliderFloat("Light", &pyro_config_.emission, 0.1F, 4.0F, "%.2f");
             ImGui::SliderFloat("Ambient", &pyro_config_.ambient_light, 0.0F, 1.0F, "%.2f");
             ImGui::SliderFloat("Rim", &pyro_config_.render_rim_strength, 0.0F, 3.0F, "%.2f");
