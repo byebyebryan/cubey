@@ -399,12 +399,21 @@ int main() {
                          "smoke app should own command buffer timing around render graph record");
         require_contains(app_source, "resources_.field_a().handle()",
                          "smoke headless path should read back field diagnostics");
+        require_contains(app_source, "update_obstacle_mask",
+                         "smoke app should rebuild obstacle masks after live UI edits");
         const std::string diagnostics_source =
             read_text_file(source_root / "smoke_2d_diagnostics.cpp");
         require_contains(diagnostics_source, "smoke_2d.field",
                          "smoke diagnostics readback should export field metrics");
         require_contains(diagnostics_source, "divergence_abs_max",
                          "smoke diagnostics readback should export solver residual metrics");
+        const std::string ui_source = read_text_file(source_root / "smoke_2d_ui.cpp");
+        require_contains(ui_source, "ImGui::Checkbox(\"Enabled\"",
+                         "smoke obstacle UI should expose a live obstacle toggle");
+        const std::string gpu_resources_source =
+            read_text_file(source_root / "smoke_2d_gpu_resources.cpp");
+        require_contains(gpu_resources_source, "copy_buffer(owner, staging.handle(), destination",
+                         "smoke obstacle updates should upload into the existing GPU buffer");
 
     } catch (const std::exception& error) {
         std::fprintf(stderr, "smoke_2d_config_tests: %s\n", error.what());

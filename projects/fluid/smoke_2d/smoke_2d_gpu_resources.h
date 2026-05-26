@@ -26,6 +26,7 @@ class Smoke2DGpuResources {
                                            std::uint32_t frame_slot_count = 1);
     void create_render_pipeline(cubey::vulkan::Device& device, VkFormat color_format,
                                 VkExtent2D extent);
+    void update_obstacle_mask(cubey::ProjectGpuServices& gpu, const Smoke2DConfig& config);
     void destroy_swapchain_resources();
     void destroy_all_resources();
 

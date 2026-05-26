@@ -42,6 +42,24 @@ upload_project_device_buffer(cubey::ProjectGpuServices& gpu, const void* data,
     return std::move(uploaded.value());
 }
 
+void upload_project_device_buffer_contents(cubey::ProjectGpuServices& gpu, const void* data,
+                                           VkDeviceSize byte_size, VkBuffer destination,
+                                           std::string label) {
+    if (data == nullptr || byte_size == 0 || destination == VK_NULL_HANDLE) {
+        throw std::runtime_error("smoke buffer upload requires valid data and destination");
+    }
+    static_cast<void>(gpu.submit_and_wait({
+        .label = std::move(label),
+        .work =
+            [data, byte_size, destination](cubey::vulkan::GpuOwnerContext& owner) {
+                cubey::vulkan::Buffer staging(owner.device(),
+                                              cubey::vulkan::staging_buffer_config(byte_size));
+                staging.upload(data, byte_size);
+                cubey::vulkan::copy_buffer(owner, staging.handle(), destination, byte_size);
+            },
+    }));
+}
+
 [[nodiscard]] VkPushConstantRange simulation_push_constant_range() {
     return {
         .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
@@ -131,6 +149,17 @@ void Smoke2DGpuResources::create_global_resources_if_needed(cubey::vulkan::Devic
     create_descriptor_resources(device);
     create_compute_pipelines(device);
     profiler_.emplace(device, frame_slot_count, kSmoke2DGpuProfilerPassCapacity);
+}
+
+void Smoke2DGpuResources::update_obstacle_mask(cubey::ProjectGpuServices& gpu,
+                                               const Smoke2DConfig& config) {
+    const std::vector<float> obstacle_mask = create_obstacle_mask(config);
+    const VkDeviceSize byte_size = static_cast<VkDeviceSize>(scalar_field_byte_size(config));
+    if (byte_size != obstacle().size()) {
+        throw std::runtime_error("smoke obstacle update requires stable grid dimensions");
+    }
+    upload_project_device_buffer_contents(gpu, obstacle_mask.data(), byte_size, obstacle().handle(),
+                                          "smoke_2d obstacle update");
 }
 
 void Smoke2DGpuResources::destroy_swapchain_resources() {

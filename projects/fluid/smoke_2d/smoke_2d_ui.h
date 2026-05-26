@@ -14,6 +14,7 @@ struct Smoke2DUiContext {
     bool& paused;
     bool& reset_requested;
     bool& reset_injectors_requested;
+    bool& obstacles_changed;
 };
 
 void draw_smoke_2d_ui(Smoke2DUiContext ui);

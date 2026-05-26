@@ -99,7 +99,11 @@ void draw_smoke_2d_ui(Smoke2DUiContext ui) {
     }
 
     if (section("Obstacles", false)) {
-        ImGui::Text("Enabled: %s", ui.config.obstacles_enabled ? "yes" : "no");
+        bool obstacles_enabled = ui.config.obstacles_enabled;
+        if (ImGui::Checkbox("Enabled", &obstacles_enabled)) {
+            ui.config.obstacles_enabled = obstacles_enabled;
+            ui.obstacles_changed = true;
+        }
     }
 
     if (section("Rendering", false)) {
