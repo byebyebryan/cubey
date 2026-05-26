@@ -82,25 +82,25 @@ float value_noise(vec2 uv) {
 }
 
 vec3 scene_backdrop(vec2 screen_uv, vec2 solver_uv, uint width, uint height) {
-    vec3 wall_bottom = vec3(0.048, 0.054, 0.061);
-    vec3 wall_top = vec3(0.104, 0.114, 0.126);
+    vec3 wall_bottom = vec3(0.108, 0.124, 0.140);
+    vec3 wall_top = vec3(0.215, 0.238, 0.262);
     vec3 color = mix(wall_bottom, wall_top, screen_uv.y);
 
     float floor_band = 1.0 - smoothstep(0.00, 0.18, screen_uv.y);
-    color = mix(color, vec3(0.058, 0.064, 0.069), floor_band * 0.75);
+    color = mix(color, vec3(0.126, 0.140, 0.150), floor_band * 0.70);
 
     float left_wall = 1.0 - smoothstep(0.00, 0.035, screen_uv.x);
     float right_wall = smoothstep(0.965, 1.00, screen_uv.x);
     float floor_line = 1.0 - smoothstep(0.00, 0.040, screen_uv.y);
     float wall_line = max(max(left_wall, right_wall), floor_line);
-    color = mix(color, vec3(0.118, 0.128, 0.136), wall_line * 0.60);
+    color = mix(color, vec3(0.205, 0.222, 0.234), wall_line * 0.54);
 
     vec2 major = abs(fract(solver_uv * vec2(8.0, 6.0)) - 0.5);
     float guide = 1.0 - smoothstep(0.470, 0.500, max(major.x, major.y));
-    color -= vec3(0.010, 0.011, 0.012) * guide * (1.0 - floor_band * 0.45);
+    color -= vec3(0.014, 0.016, 0.018) * guide * (1.0 - floor_band * 0.45);
 
     float cell_ratio = max(float(width), float(height)) / max(1.0, min(float(width), float(height)));
-    color += vec3(0.010, 0.013, 0.015) * smoothstep(0.9, 1.8, cell_ratio) * screen_uv.y;
+    color += vec3(0.018, 0.022, 0.026) * smoothstep(0.9, 1.8, cell_ratio) * screen_uv.y;
     return color;
 }
 
@@ -124,7 +124,7 @@ void main() {
 
     if (solid_value > 0.45) {
         vec3 solid_color = scene_backdrop(screen_uv, uv, width, height);
-        solid_color = mix(solid_color, vec3(0.105, 0.111, 0.116), 0.72);
+        solid_color = mix(solid_color, vec3(0.172, 0.184, 0.192), 0.66);
         out_color = vec4(cubey_srgb_to_linear(solid_color), 1.0);
         return;
     }
@@ -162,7 +162,9 @@ void main() {
     float curvature_signal =
         smoothstep(0.010, 0.085, curvature * 3.8 + speed * 0.12 + gradient_strength * 0.08);
     float foam_signal =
-        surface * smoothstep(0.18, 0.95, speed * 0.65 + curvature_signal + gradient_strength * 0.25);
+        surface *
+        smoothstep(0.38, 1.16, speed * 0.78 + curvature_signal * 0.86 +
+                                  gradient_strength * 0.12);
     float foam_noise =
         value_noise(uv * vec2(width, height) * 0.22 + vec2(style_time * 0.24, -style_time * 0.18));
     float foam_breakup = clamp(params.foam_options.y, 0.0, 1.0);
@@ -172,6 +174,19 @@ void main() {
     float foam_sharpness = max(0.10, params.foam_options.x);
     float foam = pow(clamp(foam_signal * breakup_mask, 0.0, 1.0), foam_sharpness) *
                  params.surface_options.z;
+    float whitewater_noise =
+        value_noise(uv * vec2(width, height) * 0.46 + vec2(-style_time * 0.18, style_time * 0.30));
+    float whitewater_signal =
+        surface *
+        smoothstep(0.50, 1.20, speed * 0.86 + curvature_signal * 0.95 +
+                                  gradient_strength * 0.16);
+    float whitewater_mask =
+        mix(1.0, smoothstep(0.24, 0.86, whitewater_noise + curvature_signal * 0.28),
+            foam_breakup);
+    float whitewater =
+        pow(clamp(whitewater_signal * whitewater_mask, 0.0, 1.0),
+            max(0.35, foam_sharpness * 0.72)) *
+        params.surface_options.z;
 
     vec3 normal = normalize(vec3(-contour_gradient * params.surface_options.y * 28.0, 0.55));
     vec3 light_dir = normalize(vec3(-0.38, -0.58, 0.72));
@@ -180,23 +195,25 @@ void main() {
     float specular = pow(max(dot(normal, half_dir), 0.0), 54.0) * surface * specular_strength;
 
     float thickness = clamp(density / max(threshold * 3.2, 0.001), 0.0, 1.0);
-    float absorption = 1.0 - exp(-density * 0.85);
-    vec3 shallow_water = vec3(0.075, 0.255, 0.360);
-    vec3 deep_water = vec3(0.020, 0.105, 0.200);
+    float absorption = 1.0 - exp(-density * 0.58);
+    vec3 shallow_water = vec3(0.240, 0.720, 0.760);
+    vec3 deep_water = vec3(0.120, 0.420, 0.520);
     vec3 water_color = mix(shallow_water, deep_water, absorption);
-    water_color += vec3(0.010, 0.032, 0.045) * speed;
-    water_color *= mix(0.78, 1.18, light);
+    water_color += vec3(0.030, 0.090, 0.085) * speed;
+    water_color *= mix(0.96, 1.30, light);
 
     float caustics = caustic_pattern((uv + density_gradient * 0.10) * vec2(width, height) * 0.026,
                                      style_time);
-    background += vec3(0.070, 0.135, 0.155) * caustics * caustic_strength * water *
+    background += vec3(0.180, 0.330, 0.300) * caustics * caustic_strength * water *
                   (1.0 - interior * 0.55);
 
-    vec3 refracted_water = mix(background, water_color, mix(0.42, 0.82, thickness));
-    vec3 color = mix(background, refracted_water, water);
-    color += vec3(0.35, 0.62, 0.76) * surface * params.surface_options.y * (1.0 - foam * 0.55);
-    color += vec3(0.86, 0.94, 1.0) * foam * 0.56;
+    float optical_opacity = water * mix(0.24, 0.64, smoothstep(0.04, 1.0, thickness));
+    vec3 color = mix(background, water_color, optical_opacity);
+    color += vec3(0.60, 0.94, 0.96) * surface * params.surface_options.y *
+             (1.0 - foam * 0.46);
+    color += vec3(0.92, 0.99, 1.0) * foam * 0.58;
+    color += vec3(0.82, 1.00, 0.96) * whitewater * 0.74;
     color += vec3(0.95, 0.98, 1.0) * specular;
-    color += vec3(0.008, 0.026, 0.040) * smoothstep(0.0, 0.9, speed);
+    color += vec3(0.030, 0.080, 0.080) * smoothstep(0.0, 0.9, speed);
     out_color = vec4(cubey_srgb_to_linear(clamp(color, vec3(0.0), vec3(1.0))), 1.0);
 }

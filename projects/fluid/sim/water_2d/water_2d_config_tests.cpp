@@ -107,15 +107,15 @@ int main() {
         require(config.surface_smoothing_radius_px == 7.0F &&
                     config.surface_smoothing_iterations == 3,
                 "water should default to a lightly smoothed implicit surface");
-        require(config.surface_refraction_strength == 0.018F,
+        require(config.surface_refraction_strength == 0.022F,
                 "water should default to subtle surface refraction");
-        require(config.surface_caustic_strength == 0.18F,
-                "water should default to subtle caustic highlights");
-        require(config.surface_specular_strength == 0.35F,
+        require(config.surface_caustic_strength == 0.28F,
+                "water should default to visible caustic highlights");
+        require(config.surface_specular_strength == 0.55F,
                 "water should default to a bounded specular highlight");
-        require(config.foam_strength == 0.32F, "water should default to subtle foam");
-        require(config.foam_sharpness == 1.35F && config.foam_breakup == 0.45F,
-                "water should default to shaped foam breakup");
+        require(config.foam_strength == 0.50F, "water should default to pronounced foam");
+        require(config.foam_sharpness == 0.95F && config.foam_breakup == 0.66F,
+                "water should default to shaped whitewater breakup");
         require(config.obstacle_shape ==
                     cubey::projects::fluid::water_2d::Water2DObstacleShape::None,
                 "water should default to no obstacle");
