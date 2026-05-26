@@ -29,6 +29,11 @@ enum class Smoke2DDebugView : std::uint32_t {
     Obstacle = 6,
 };
 
+enum class Smoke2DPressureSolver : std::uint32_t {
+    Jacobi = 0,
+    RedBlackGaussSeidel = 1,
+};
+
 inline constexpr std::uint32_t kMaxProceduralInjectorCount = 16;
 inline constexpr std::uint32_t kSmoke2DComputeGroupSize = 8;
 inline constexpr std::uint32_t kSmoke2DSimulationPushConstantFloatCount = 16;
@@ -38,6 +43,7 @@ struct Smoke2DConfig {
     std::uint32_t grid_height = 1024;
     std::uint32_t procedural_injector_count = 3;
     std::uint32_t pressure_iterations = 32;
+    Smoke2DPressureSolver pressure_solver = Smoke2DPressureSolver::Jacobi;
     float fixed_delta_seconds = 1.0F / 60.0F;
     float dye_decay_per_second = 0.990F;
     float velocity_decay_per_second = 0.993F;
@@ -78,6 +84,27 @@ struct Smoke2DConfig {
         return Smoke2DDebugView::Dye;
     }
     return Smoke2DDebugView::Dye;
+}
+
+[[nodiscard]] inline const char* smoke_2d_pressure_solver_name(Smoke2DPressureSolver solver) {
+    switch (solver) {
+    case Smoke2DPressureSolver::Jacobi:
+        return "Jacobi";
+    case Smoke2DPressureSolver::RedBlackGaussSeidel:
+        return "RBGS";
+    }
+    return "Jacobi";
+}
+
+[[nodiscard]] inline Smoke2DPressureSolver
+smoke_2d_pressure_solver_from_name(std::string_view name) {
+    if (name.empty() || name == "jacobi") {
+        return Smoke2DPressureSolver::Jacobi;
+    }
+    if (name == "rbgs" || name == "red-black-gauss-seidel") {
+        return Smoke2DPressureSolver::RedBlackGaussSeidel;
+    }
+    throw std::runtime_error("smoke pressure solver must be jacobi or rbgs");
 }
 
 [[nodiscard]] inline const char* smoke_2d_debug_view_name(Smoke2DDebugView view) {
@@ -172,6 +199,7 @@ struct Smoke2DConfig {
     if (config.smoke.pressure_iterations != 0) {
         smoke_config.pressure_iterations = config.smoke.pressure_iterations;
     }
+    smoke_config.pressure_solver = smoke_2d_pressure_solver_from_name(config.smoke.pressure_solver);
     if (run_config_float_is_set(config.smoke.dye_decay)) {
         smoke_config.dye_decay_per_second = config.smoke.dye_decay;
     }

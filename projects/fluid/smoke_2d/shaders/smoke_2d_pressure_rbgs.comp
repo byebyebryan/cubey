@@ -1,0 +1,69 @@
+#version 450
+
+layout(local_size_x = 8, local_size_y = 8) in;
+
+layout(set = 0, binding = 0, std430) readonly buffer DivergenceField {
+    float values[];
+} divergence;
+
+layout(set = 0, binding = 1, std430) buffer PressureField {
+    float values[];
+} pressure;
+
+layout(set = 0, binding = 2, std430) readonly buffer ObstacleField {
+    float values[];
+} obstacle_field;
+
+layout(push_constant) uniform SimulationParams {
+    vec4 grid_dt_time;
+    vec4 decay_options;
+    vec4 solver_options;
+    vec4 tuning_options;
+} params;
+
+uint cell_index(ivec2 coord, uint width, uint height) {
+    ivec2 clamped = clamp(coord, ivec2(0), ivec2(int(width) - 1, int(height) - 1));
+    return (uint(clamped.y) * width) + uint(clamped.x);
+}
+
+bool is_solid(ivec2 coord, uint width, uint height) {
+    return obstacle_field.values[cell_index(coord, width, height)] > 0.5;
+}
+
+float neighbor_pressure_or_center(ivec2 coord, uint width, uint height, float center) {
+    if (is_solid(coord, width, height)) {
+        return center;
+    }
+    return pressure.values[cell_index(coord, width, height)];
+}
+
+void main() {
+    uint width = uint(params.grid_dt_time.x);
+    uint height = uint(params.grid_dt_time.y);
+    uint x = gl_GlobalInvocationID.x;
+    uint y = gl_GlobalInvocationID.y;
+    if (x >= width || y >= height) {
+        return;
+    }
+
+    uint index = (y * width) + x;
+    ivec2 coord = ivec2(int(x), int(y));
+    if (x == 0 || y == 0 || x + 1 >= width || y + 1 >= height ||
+        is_solid(coord, width, height)) {
+        pressure.values[index] = 0.0;
+        return;
+    }
+
+    uint parity = uint(params.decay_options.z + 0.5);
+    if (((x + y) & 1U) != parity) {
+        return;
+    }
+
+    float center = pressure.values[index];
+    float left = neighbor_pressure_or_center(coord + ivec2(-1, 0), width, height, center);
+    float right = neighbor_pressure_or_center(coord + ivec2(1, 0), width, height, center);
+    float down = neighbor_pressure_or_center(coord + ivec2(0, -1), width, height, center);
+    float up = neighbor_pressure_or_center(coord + ivec2(0, 1), width, height, center);
+    float div = divergence.values[index];
+    pressure.values[index] = (left + right + down + up - div) * 0.25;
+}

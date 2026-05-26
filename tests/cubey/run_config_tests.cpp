@@ -430,6 +430,8 @@ void test_run_config_parses_smoke_solver_controls() {
     std::string program = "cubey";
     std::string pressure_flag = "--smoke-pressure-iterations";
     std::string pressure_value = "48";
+    std::string pressure_solver_flag = "--smoke-pressure-solver";
+    std::string pressure_solver_value = "rbgs";
     std::string dye_decay_flag = "--smoke-dye-decay";
     std::string dye_decay_value = "0.985";
     std::string velocity_decay_flag = "--smoke-velocity-decay";
@@ -438,9 +440,11 @@ void test_run_config_parses_smoke_solver_controls() {
     std::string radius_value = "0.041";
     std::string vorticity_flag = "--smoke-vorticity";
     std::string vorticity_value = "24.0";
-    std::array<char*, 11> argv{program.data(),
+    std::array<char*, 13> argv{program.data(),
                                pressure_flag.data(),
                                pressure_value.data(),
+                               pressure_solver_flag.data(),
+                               pressure_solver_value.data(),
                                dye_decay_flag.data(),
                                dye_decay_value.data(),
                                velocity_decay_flag.data(),
@@ -454,6 +458,8 @@ void test_run_config_parses_smoke_solver_controls() {
         cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
     require(config.smoke.pressure_iterations == 48,
             "run config should parse smoke pressure iterations");
+    require(config.smoke.pressure_solver == "rbgs",
+            "run config should parse smoke pressure solver");
     require(config.smoke.dye_decay == 0.985F, "run config should parse smoke dye decay");
     require(config.smoke.velocity_decay == 0.991F, "run config should parse smoke velocity decay");
     require(config.smoke.injector_radius == 0.041F,

@@ -22,6 +22,7 @@ cubey_add_app_target(
         shaders/smoke_2d_vorticity.comp
         shaders/smoke_2d_divergence.comp
         shaders/smoke_2d_pressure.comp
+        shaders/smoke_2d_pressure_rbgs.comp
         shaders/smoke_2d_projection.comp
     SHADER_INCLUDE_DIRS
         "${CMAKE_SOURCE_DIR}/shaders"

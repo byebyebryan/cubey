@@ -170,6 +170,7 @@ void Smoke2DGpuResources::destroy_all_resources() {
     destroy_swapchain_resources();
     profiler_.reset();
     projection_pipeline_resource_.reset();
+    pressure_rbgs_pipeline_resource_.reset();
     pressure_pipeline_resource_.reset();
     divergence_pipeline_resource_.reset();
     vorticity_pipeline_resource_.reset();
@@ -182,6 +183,8 @@ void Smoke2DGpuResources::destroy_all_resources() {
     projection_descriptor_layout_.reset();
     pressure_descriptor_pool_.reset();
     pressure_descriptor_layout_.reset();
+    pressure_rbgs_descriptor_pool_.reset();
+    pressure_rbgs_descriptor_layout_.reset();
     divergence_descriptor_pool_.reset();
     divergence_descriptor_layout_.reset();
     advect_correct_descriptor_pool_.reset();
@@ -361,6 +364,29 @@ void Smoke2DGpuResources::create_descriptor_resources(cubey::vulkan::Device& dev
     pressure_b_to_a_descriptor_set_ =
         pressure_descriptor_pool().allocate(pressure_descriptor_layout());
 
+    const std::array<cubey::vulkan::DescriptorSetBindingConfig, 3> pressure_rbgs_bindings{{
+        {
+            .binding = 0,
+            .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+            .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT,
+        },
+        {
+            .binding = 1,
+            .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+            .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT,
+        },
+        {
+            .binding = 2,
+            .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+            .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT,
+        },
+    }};
+    const cubey::vulkan::DescriptorSetInfo pressure_rbgs_info(pressure_rbgs_bindings);
+    pressure_rbgs_descriptor_layout_.emplace(device, pressure_rbgs_info.layout_info());
+    pressure_rbgs_descriptor_pool_.emplace(device, pressure_rbgs_info.pool_info());
+    pressure_rbgs_descriptor_set_ =
+        pressure_rbgs_descriptor_pool().allocate(pressure_rbgs_descriptor_layout());
+
     const std::array<cubey::vulkan::DescriptorSetBindingConfig, 3> projection_bindings{{
         {
             .binding = 0,
@@ -482,6 +508,13 @@ void Smoke2DGpuResources::update_field_descriptors(cubey::vulkan::Device& device
         .storage_buffer(pressure_b_to_a_descriptor_set_, 3, obstacle().handle(), obstacle().size());
 
     descriptor_writes
+        .storage_buffer(pressure_rbgs_descriptor_set_, 0, divergence().handle(),
+                        divergence().size())
+        .storage_buffer(pressure_rbgs_descriptor_set_, 1, pressure_a().handle(),
+                        pressure_a().size())
+        .storage_buffer(pressure_rbgs_descriptor_set_, 2, obstacle().handle(), obstacle().size());
+
+    descriptor_writes
         .storage_buffer(projection_pressure_a_descriptor_set_, 0, field_a().handle(),
                         field_a().size())
         .storage_buffer(projection_pressure_a_descriptor_set_, 1, pressure_a().handle(),
@@ -514,6 +547,9 @@ void Smoke2DGpuResources::create_compute_pipelines(cubey::vulkan::Device& device
                                      divergence_descriptor_layout(), divergence_pipeline_resource_);
     create_compute_pipeline_resource(device, "smoke_2d_pressure.comp.spv",
                                      pressure_descriptor_layout(), pressure_pipeline_resource_);
+    create_compute_pipeline_resource(device, "smoke_2d_pressure_rbgs.comp.spv",
+                                     pressure_rbgs_descriptor_layout(),
+                                     pressure_rbgs_pipeline_resource_);
     create_compute_pipeline_resource(device, "smoke_2d_projection.comp.spv",
                                      projection_descriptor_layout(), projection_pipeline_resource_);
 }
@@ -661,6 +697,20 @@ const cubey::vulkan::DescriptorPool& Smoke2DGpuResources::pressure_descriptor_po
     return pressure_descriptor_pool_.value();
 }
 
+VkDescriptorSetLayout Smoke2DGpuResources::pressure_rbgs_descriptor_layout() const {
+    if (!pressure_rbgs_descriptor_layout_.has_value()) {
+        throw std::runtime_error("pressure RBGS descriptor layout is not initialized");
+    }
+    return pressure_rbgs_descriptor_layout_->handle();
+}
+
+const cubey::vulkan::DescriptorPool& Smoke2DGpuResources::pressure_rbgs_descriptor_pool() const {
+    if (!pressure_rbgs_descriptor_pool_.has_value()) {
+        throw std::runtime_error("pressure RBGS descriptor pool is not initialized");
+    }
+    return pressure_rbgs_descriptor_pool_.value();
+}
+
 VkDescriptorSetLayout Smoke2DGpuResources::projection_descriptor_layout() const {
     if (!projection_descriptor_layout_.has_value()) {
         throw std::runtime_error("projection descriptor layout is not initialized");
@@ -743,6 +793,14 @@ Smoke2DGpuResources::pressure_pipeline_resource() const {
         throw std::runtime_error("pressure pipeline resource is not initialized");
     }
     return pressure_pipeline_resource_.value();
+}
+
+const cubey::render::ComputePipelineResource&
+Smoke2DGpuResources::pressure_rbgs_pipeline_resource() const {
+    if (!pressure_rbgs_pipeline_resource_.has_value()) {
+        throw std::runtime_error("pressure RBGS pipeline resource is not initialized");
+    }
+    return pressure_rbgs_pipeline_resource_.value();
 }
 
 const cubey::render::ComputePipelineResource&

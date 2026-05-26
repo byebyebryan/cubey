@@ -72,6 +72,9 @@ int main() {
                 "field byte size should cover one cell per grid location");
         require(config.pressure_iterations == 32,
                 "fluid pressure solve should default to 32 Jacobi iterations");
+        require(config.pressure_solver ==
+                    cubey::projects::fluid::smoke_2d::Smoke2DPressureSolver::Jacobi,
+                "fluid pressure solve should default to Jacobi");
         require(config.dye_decay_per_second == 0.990F,
                 "fluid dye decay should default to controlled linger");
         require(config.velocity_decay_per_second == 0.993F,
@@ -134,6 +137,9 @@ int main() {
                     cubey::projects::fluid::smoke_2d::Smoke2DDebugView::Obstacle) ==
                     cubey::projects::fluid::smoke_2d::Smoke2DDebugView::Dye,
                 "debug view should cycle from obstacle to dye");
+        require(cubey::projects::fluid::smoke_2d::smoke_2d_pressure_solver_from_name("rbgs") ==
+                    cubey::projects::fluid::smoke_2d::Smoke2DPressureSolver::RedBlackGaussSeidel,
+                "pressure solver parser should accept rbgs");
 
         const cubey::RunConfig default_run_config;
         const cubey::projects::fluid::smoke_2d::Smoke2DConfig default_from_run_config =
@@ -150,6 +156,8 @@ int main() {
                 "default run config should preserve smoke injector strength");
         require(default_from_run_config.pressure_iterations == config.pressure_iterations,
                 "default run config should preserve smoke pressure iterations");
+        require(default_from_run_config.pressure_solver == config.pressure_solver,
+                "default run config should preserve smoke pressure solver");
         require(default_from_run_config.dye_decay_per_second == config.dye_decay_per_second,
                 "default run config should preserve smoke dye decay");
         require(default_from_run_config.velocity_decay_per_second ==
@@ -173,6 +181,7 @@ int main() {
         run_config.grid.height = 768;
         run_config.smoke.injectors = 8;
         run_config.smoke.pressure_iterations = 48;
+        run_config.smoke.pressure_solver = "rbgs";
         run_config.smoke.dye_decay = 0.985F;
         run_config.smoke.velocity_decay = 0.991F;
         run_config.smoke.injector_radius = 0.041F;
@@ -192,6 +201,9 @@ int main() {
                 "smoke config should honor run config injector count");
         require(configured.pressure_iterations == 48,
                 "smoke config should honor run config pressure iterations");
+        require(configured.pressure_solver ==
+                    cubey::projects::fluid::smoke_2d::Smoke2DPressureSolver::RedBlackGaussSeidel,
+                "smoke config should honor run config pressure solver");
         require(configured.dye_decay_per_second == 0.985F,
                 "smoke config should honor run config dye decay");
         require(configured.velocity_decay_per_second == 0.991F,
@@ -276,6 +288,17 @@ int main() {
             threw_for_invalid_radius = true;
         }
         require(threw_for_invalid_radius, "smoke config should reject nonpositive injector radius");
+        bool threw_for_invalid_pressure_solver = false;
+        try {
+            cubey::RunConfig invalid_pressure_solver_config;
+            invalid_pressure_solver_config.smoke.pressure_solver = "sor";
+            static_cast<void>(cubey::projects::fluid::smoke_2d::smoke_2d_config_from_run_config(
+                invalid_pressure_solver_config));
+        } catch (const std::runtime_error&) {
+            threw_for_invalid_pressure_solver = true;
+        }
+        require(threw_for_invalid_pressure_solver,
+                "smoke config should reject unsupported pressure solvers");
 
         std::vector<cubey::projects::fluid::smoke_2d::Smoke2DInjectorState> injectors =
             cubey::projects::fluid::smoke_2d::create_smoke_2d_injectors(configured);
@@ -388,6 +411,8 @@ int main() {
                          "smoke commands should profile advect prediction");
         require_contains(commands_source, "\"pressure\"",
                          "smoke commands should profile the pressure solve");
+        require_contains(commands_source, "pressure_rbgs_pipeline_resource",
+                         "smoke commands should support the RBGS pressure path");
         require_contains(commands_source, "\"render\"",
                          "smoke commands should profile the render pass");
         require_contains(commands_source, "GpuTimestampScope",
@@ -414,6 +439,12 @@ int main() {
             read_text_file(source_root / "smoke_2d_gpu_resources.cpp");
         require_contains(gpu_resources_source, "copy_buffer(owner, staging.handle(), destination",
                          "smoke obstacle updates should upload into the existing GPU buffer");
+        require_contains(gpu_resources_source, "smoke_2d_pressure_rbgs.comp.spv",
+                         "smoke GPU resources should create the RBGS pressure pipeline");
+        const std::string pressure_rbgs_shader =
+            read_text_file(source_root / "shaders/smoke_2d_pressure_rbgs.comp");
+        require_contains(pressure_rbgs_shader, "params.decay_options.z",
+                         "RBGS pressure shader should select red/black parity from push constants");
 
     } catch (const std::exception& error) {
         std::fprintf(stderr, "smoke_2d_config_tests: %s\n", error.what());

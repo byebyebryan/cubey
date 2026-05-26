@@ -205,7 +205,7 @@ void record_smoke_compute(VkCommandBuffer command_buffer, Smoke2DGpuResources& r
 
     record_injector_buffer_update(command_buffer, resources, injectors);
 
-    const SimulationPushConstants push_constants = simulation_push_constants(config, frame);
+    SimulationPushConstants push_constants = simulation_push_constants(config, frame);
     const DispatchGroups groups = compute_dispatch_groups(config);
 
     const cubey::render::ComputePipelineResource& advect_pipeline =
@@ -275,25 +275,45 @@ void record_smoke_compute(VkCommandBuffer command_buffer, Smoke2DGpuResources& r
                             .dst_access = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
                         });
 
-    const cubey::render::ComputePipelineResource& pressure_pipeline =
-        resources.pressure_pipeline_resource();
     cubey::vulkan::GpuTimestampScope pressure_scope(profiler, command_buffer, frame_slot_index,
                                                     "pressure");
-    for (std::uint32_t iteration = 0; iteration < config.pressure_iterations; ++iteration) {
-        const VkDescriptorSet descriptor_set = (iteration % 2U == 0)
-                                                   ? resources.pressure_a_to_b_descriptor_set()
-                                                   : resources.pressure_b_to_a_descriptor_set();
-        record_dispatch(recorder, pressure_pipeline, descriptor_set, groups, push_constants);
-        record_shader_write_barrier(
-            command_buffer,
-            {
-                .dst_stage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-                .dst_access = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
-            });
+    if (config.pressure_solver == Smoke2DPressureSolver::RedBlackGaussSeidel) {
+        const cubey::render::ComputePipelineResource& pressure_pipeline =
+            resources.pressure_rbgs_pipeline_resource();
+        for (std::uint32_t iteration = 0; iteration < config.pressure_iterations; ++iteration) {
+            for (std::uint32_t parity = 0; parity < 2U; ++parity) {
+                push_constants.decay_options[2] = static_cast<float>(parity);
+                record_dispatch(recorder, pressure_pipeline,
+                                resources.pressure_rbgs_descriptor_set(), groups, push_constants);
+                record_shader_write_barrier(
+                    command_buffer,
+                    {
+                        .dst_stage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                        .dst_access = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
+                    });
+            }
+        }
+    } else {
+        const cubey::render::ComputePipelineResource& pressure_pipeline =
+            resources.pressure_pipeline_resource();
+        for (std::uint32_t iteration = 0; iteration < config.pressure_iterations; ++iteration) {
+            const VkDescriptorSet descriptor_set = (iteration % 2U == 0)
+                                                       ? resources.pressure_a_to_b_descriptor_set()
+                                                       : resources.pressure_b_to_a_descriptor_set();
+            record_dispatch(recorder, pressure_pipeline, descriptor_set, groups, push_constants);
+            record_shader_write_barrier(
+                command_buffer,
+                {
+                    .dst_stage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                    .dst_access = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
+                });
+        }
     }
     pressure_scope.end();
 
-    const bool final_pressure_is_a = (config.pressure_iterations % 2U) == 0;
+    const bool final_pressure_is_a =
+        config.pressure_solver == Smoke2DPressureSolver::RedBlackGaussSeidel ||
+        (config.pressure_iterations % 2U) == 0;
     const VkDescriptorSet projection_descriptor_set =
         final_pressure_is_a ? resources.projection_pressure_a_descriptor_set()
                             : resources.projection_pressure_b_descriptor_set();
@@ -325,7 +345,10 @@ void record_fullscreen_draw(VkCommandBuffer command_buffer, const Smoke2DGpuReso
                 static_cast<float>(config.grid_width),
                 static_cast<float>(config.grid_height),
                 debug_view_push_value(debug_view),
-                (config.pressure_iterations % 2U) == 0 ? 0.0F : 1.0F,
+                config.pressure_solver == Smoke2DPressureSolver::RedBlackGaussSeidel ||
+                        (config.pressure_iterations % 2U) == 0
+                    ? 0.0F
+                    : 1.0F,
             },
     };
 

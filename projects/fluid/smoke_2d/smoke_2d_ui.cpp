@@ -19,6 +19,11 @@ constexpr std::array<Smoke2DDebugView, 7> kDebugViews{
     Smoke2DDebugView::Obstacle,
 };
 
+constexpr std::array<Smoke2DPressureSolver, 2> kPressureSolvers{
+    Smoke2DPressureSolver::Jacobi,
+    Smoke2DPressureSolver::RedBlackGaussSeidel,
+};
+
 [[nodiscard]] bool section(const char* label, bool default_open) {
     const ImGuiTreeNodeFlags flags =
         default_open ? ImGuiTreeNodeFlags_DefaultOpen : ImGuiTreeNodeFlags_None;
@@ -57,6 +62,20 @@ void draw_smoke_2d_ui(Smoke2DUiContext ui) {
 
     ImGui::Spacing();
     if (section("Simulation", true)) {
+        if (ImGui::BeginCombo("Pressure solver",
+                              smoke_2d_pressure_solver_name(ui.config.pressure_solver))) {
+            for (Smoke2DPressureSolver solver : kPressureSolvers) {
+                const bool selected = solver == ui.config.pressure_solver;
+                if (ImGui::Selectable(smoke_2d_pressure_solver_name(solver), selected)) {
+                    ui.config.pressure_solver = solver;
+                    ui.reset_requested = true;
+                }
+                if (selected) {
+                    ImGui::SetItemDefaultFocus();
+                }
+            }
+            ImGui::EndCombo();
+        }
         int pressure_iterations = static_cast<int>(ui.config.pressure_iterations);
         if (ImGui::SliderInt("Pressure iterations", &pressure_iterations, 1, 96)) {
             ui.config.pressure_iterations = static_cast<std::uint32_t>(pressure_iterations);

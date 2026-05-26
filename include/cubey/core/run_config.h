@@ -35,6 +35,7 @@ struct RunConfig {
     };
 
     struct SmokeOptions {
+        std::string pressure_solver{};
         std::uint32_t injectors = 0;
         std::uint32_t pressure_iterations = 0;
         float dye_decay = kRunConfigUnsetFloat;

@@ -112,6 +112,8 @@ RunConfig parse_run_config(int argc, char** argv) {
         } else if (arg == "--smoke-pressure-iterations") {
             config.smoke.pressure_iterations = parse_positive_u32(
                 need_value("--smoke-pressure-iterations"), "--smoke-pressure-iterations");
+        } else if (arg == "--smoke-pressure-solver") {
+            config.smoke.pressure_solver = std::string(need_value("--smoke-pressure-solver"));
         } else if (arg == "--smoke-dye-decay") {
             config.smoke.dye_decay =
                 parse_float(need_value("--smoke-dye-decay"), "--smoke-dye-decay");

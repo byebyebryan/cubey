@@ -50,6 +50,8 @@ class Smoke2DGpuResources {
     divergence_pipeline_resource() const;
     [[nodiscard]] const cubey::render::ComputePipelineResource& pressure_pipeline_resource() const;
     [[nodiscard]] const cubey::render::ComputePipelineResource&
+    pressure_rbgs_pipeline_resource() const;
+    [[nodiscard]] const cubey::render::ComputePipelineResource&
     projection_pipeline_resource() const;
     [[nodiscard]] const cubey::render::GraphicsPipelineResource& render_pipeline_resource() const;
     [[nodiscard]] VkDescriptorSet inject_descriptor_set() const noexcept {
@@ -76,6 +78,9 @@ class Smoke2DGpuResources {
     [[nodiscard]] VkDescriptorSet pressure_b_to_a_descriptor_set() const noexcept {
         return pressure_b_to_a_descriptor_set_;
     }
+    [[nodiscard]] VkDescriptorSet pressure_rbgs_descriptor_set() const noexcept {
+        return pressure_rbgs_descriptor_set_;
+    }
     [[nodiscard]] VkDescriptorSet projection_pressure_a_descriptor_set() const noexcept {
         return projection_pressure_a_descriptor_set_;
     }
@@ -100,6 +105,8 @@ class Smoke2DGpuResources {
     [[nodiscard]] const cubey::vulkan::DescriptorPool& divergence_descriptor_pool() const;
     [[nodiscard]] VkDescriptorSetLayout pressure_descriptor_layout() const;
     [[nodiscard]] const cubey::vulkan::DescriptorPool& pressure_descriptor_pool() const;
+    [[nodiscard]] VkDescriptorSetLayout pressure_rbgs_descriptor_layout() const;
+    [[nodiscard]] const cubey::vulkan::DescriptorPool& pressure_rbgs_descriptor_pool() const;
     [[nodiscard]] VkDescriptorSetLayout projection_descriptor_layout() const;
     [[nodiscard]] const cubey::vulkan::DescriptorPool& projection_descriptor_pool() const;
 
@@ -128,6 +135,9 @@ class Smoke2DGpuResources {
     std::optional<cubey::vulkan::DescriptorPool> pressure_descriptor_pool_;
     VkDescriptorSet pressure_a_to_b_descriptor_set_ = VK_NULL_HANDLE;
     VkDescriptorSet pressure_b_to_a_descriptor_set_ = VK_NULL_HANDLE;
+    std::optional<cubey::vulkan::DescriptorSetLayout> pressure_rbgs_descriptor_layout_;
+    std::optional<cubey::vulkan::DescriptorPool> pressure_rbgs_descriptor_pool_;
+    VkDescriptorSet pressure_rbgs_descriptor_set_ = VK_NULL_HANDLE;
     std::optional<cubey::vulkan::DescriptorSetLayout> projection_descriptor_layout_;
     std::optional<cubey::vulkan::DescriptorPool> projection_descriptor_pool_;
     VkDescriptorSet projection_pressure_a_descriptor_set_ = VK_NULL_HANDLE;
@@ -140,6 +150,7 @@ class Smoke2DGpuResources {
     std::optional<cubey::render::ComputePipelineResource> vorticity_pipeline_resource_;
     std::optional<cubey::render::ComputePipelineResource> divergence_pipeline_resource_;
     std::optional<cubey::render::ComputePipelineResource> pressure_pipeline_resource_;
+    std::optional<cubey::render::ComputePipelineResource> pressure_rbgs_pipeline_resource_;
     std::optional<cubey::render::ComputePipelineResource> projection_pipeline_resource_;
     std::optional<cubey::render::GraphicsPipelineResource> render_pipeline_resource_;
     std::optional<cubey::vulkan::GpuTimestampProfiler> profiler_;
