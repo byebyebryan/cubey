@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cubey/vulkan/image.h>
+#include <cubey/vulkan/dynamic_rendering.h>
 #include <cubey/vulkan/swapchain.h>
 
 #include <vulkan/vulkan.h>
@@ -36,6 +37,11 @@ struct RenderClearValues {
     VkClearValue depth{};
 };
 
+struct RenderTargetAttachmentOps {
+    cubey::vulkan::RenderingAttachmentOps color = cubey::vulkan::clear_store_attachment_ops();
+    cubey::vulkan::RenderingAttachmentOps depth = cubey::vulkan::clear_discard_attachment_ops();
+};
+
 [[nodiscard]] ColorTargetView color_target_view(VkExtent2D extent, VkFormat format, VkImage image,
                                                 VkImageView view);
 [[nodiscard]] ColorTargetView swapchain_color_target_view(const cubey::vulkan::Swapchain& swapchain,
@@ -49,7 +55,8 @@ struct RenderClearValues {
 
 class RenderTargetRenderingInfo {
   public:
-    RenderTargetRenderingInfo(const RenderTargetView& target, const RenderClearValues& clear);
+    RenderTargetRenderingInfo(const RenderTargetView& target, const RenderClearValues& clear,
+                              RenderTargetAttachmentOps ops = {});
 
     RenderTargetRenderingInfo(const RenderTargetRenderingInfo&) = delete;
     RenderTargetRenderingInfo& operator=(const RenderTargetRenderingInfo&) = delete;
@@ -72,7 +79,9 @@ class RenderTargetRenderingInfo {
 
 class DepthOnlyRenderingInfo {
   public:
-    DepthOnlyRenderingInfo(const DepthTargetView& target, VkClearValue clear);
+    DepthOnlyRenderingInfo(const DepthTargetView& target, VkClearValue clear,
+                           cubey::vulkan::RenderingAttachmentOps ops =
+                               cubey::vulkan::clear_store_attachment_ops());
 
     DepthOnlyRenderingInfo(const DepthOnlyRenderingInfo&) = delete;
     DepthOnlyRenderingInfo& operator=(const DepthOnlyRenderingInfo&) = delete;

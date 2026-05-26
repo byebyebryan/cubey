@@ -1,5 +1,6 @@
 #include "imgui_overlay.h"
 
+#include <cubey/vulkan/dynamic_rendering.h>
 #include <cubey/vulkan/image_transitions.h>
 #include <cubey/vulkan/vk_check.h>
 
@@ -148,14 +149,8 @@ present_to_color_attachment_transition(VkImage image) {
 }
 
 [[nodiscard]] VkRenderingAttachmentInfo load_color_attachment(VkImageView view) {
-    auto attachment =
-        cubey::vulkan::vk_struct<VkRenderingAttachmentInfo>(
-            VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO);
-    attachment.imageView = view;
-    attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
-    attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-    return attachment;
+    return cubey::vulkan::color_rendering_attachment(
+        view, VkClearValue{}, cubey::vulkan::load_store_attachment_ops());
 }
 
 } // namespace

@@ -64,7 +64,6 @@ dynamic_graphics_pipeline_config(const GraphicsPipelineResourceConfig& config,
 
     cubey::vulkan::DynamicGraphicsPipelineConfig pipeline_config;
     pipeline_config.layout = layout;
-    pipeline_config.extent = config.extent;
     pipeline_config.color_format = config.color_format;
     pipeline_config.depth_format = config.depth_format;
     pipeline_config.shader_stages = config.shader_stages;

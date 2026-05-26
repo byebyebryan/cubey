@@ -993,24 +993,13 @@ void record_render_target_pass_with_stored_depth(const cubey::vulkan::CommandRec
                                                  const cubey::render::RenderTargetView& target,
                                                  const cubey::render::RenderClearValues& clear,
                                                  RecordCallback&& record_callback) {
-    VkRenderingAttachmentInfo color_attachment =
-        cubey::vulkan::color_rendering_attachment(target.color.view, clear.color);
-    auto rendering = cubey::vulkan::vk_struct<VkRenderingInfo>(VK_STRUCTURE_TYPE_RENDERING_INFO);
-    rendering.renderArea.offset = {0, 0};
-    rendering.renderArea.extent = target.color.extent;
-    rendering.layerCount = 1;
-    rendering.colorAttachmentCount = 1;
-    rendering.pColorAttachments = &color_attachment;
-
-    std::optional<VkRenderingAttachmentInfo> depth_attachment;
-    if (target.depth.has_value()) {
-        depth_attachment =
-            cubey::vulkan::depth_rendering_attachment(target.depth->view, clear.depth);
-        depth_attachment->storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-        rendering.pDepthAttachment = &depth_attachment.value();
-    }
-
-    recorder.begin_rendering(rendering);
+    const cubey::render::RenderTargetRenderingInfo rendering(
+        target, clear,
+        cubey::render::RenderTargetAttachmentOps{
+            .depth = cubey::vulkan::clear_store_attachment_ops(),
+        });
+    recorder.begin_rendering(rendering.info());
+    recorder.set_viewport_and_scissor(target.color.extent);
     std::forward<RecordCallback>(record_callback)(recorder);
     recorder.end_rendering();
 }

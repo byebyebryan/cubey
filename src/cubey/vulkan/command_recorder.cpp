@@ -107,6 +107,35 @@ void CommandRecorder::end_rendering() const {
     vkCmdEndRendering(command_buffer_);
 }
 
+void CommandRecorder::set_viewport(VkExtent2D extent) const {
+    if (extent.width == 0 || extent.height == 0) {
+        throw std::runtime_error("command recorder viewport requires a non-empty extent");
+    }
+    VkViewport viewport{};
+    viewport.x = 0.0F;
+    viewport.y = 0.0F;
+    viewport.width = static_cast<float>(extent.width);
+    viewport.height = static_cast<float>(extent.height);
+    viewport.minDepth = 0.0F;
+    viewport.maxDepth = 1.0F;
+    vkCmdSetViewport(command_buffer_, 0, 1, &viewport);
+}
+
+void CommandRecorder::set_scissor(VkExtent2D extent) const {
+    if (extent.width == 0 || extent.height == 0) {
+        throw std::runtime_error("command recorder scissor requires a non-empty extent");
+    }
+    VkRect2D scissor{};
+    scissor.offset = {0, 0};
+    scissor.extent = extent;
+    vkCmdSetScissor(command_buffer_, 0, 1, &scissor);
+}
+
+void CommandRecorder::set_viewport_and_scissor(VkExtent2D extent) const {
+    set_viewport(extent);
+    set_scissor(extent);
+}
+
 void CommandRecorder::bind_pipeline(VkPipelineBindPoint bind_point, VkPipeline pipeline) const {
     if (pipeline == VK_NULL_HANDLE) {
         throw std::runtime_error("command recorder bind pipeline requires a pipeline");

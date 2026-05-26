@@ -4,6 +4,7 @@
 
 #include <vulkan/vulkan.h>
 
+#include <array>
 #include <span>
 #include <vector>
 
@@ -11,7 +12,6 @@ namespace cubey::vulkan {
 
 struct DynamicGraphicsPipelineConfig {
     VkPipelineLayout layout = VK_NULL_HANDLE;
-    VkExtent2D extent{};
     VkFormat color_format = VK_FORMAT_UNDEFINED;
     VkFormat depth_format = VK_FORMAT_UNDEFINED;
     std::span<const VkPipelineShaderStageCreateInfo> shader_stages;
@@ -104,14 +104,14 @@ class DynamicGraphicsPipelineInfo {
     VkPipelineRenderingCreateInfo rendering_info_{};
     VkPipelineVertexInputStateCreateInfo vertex_input_{};
     VkPipelineInputAssemblyStateCreateInfo input_assembly_{};
-    VkViewport viewport_{};
-    VkRect2D scissor_{};
     VkPipelineViewportStateCreateInfo viewport_state_{};
     VkPipelineRasterizationStateCreateInfo rasterizer_{};
     VkPipelineMultisampleStateCreateInfo multisample_{};
     VkPipelineDepthStencilStateCreateInfo depth_stencil_{};
     VkPipelineColorBlendAttachmentState color_blend_attachment_{};
     VkPipelineColorBlendStateCreateInfo color_blend_{};
+    std::array<VkDynamicState, 2> dynamic_states_{};
+    VkPipelineDynamicStateCreateInfo dynamic_state_{};
     VkGraphicsPipelineCreateInfo create_info_{};
 };
 

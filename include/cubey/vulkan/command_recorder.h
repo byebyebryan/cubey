@@ -27,6 +27,9 @@ class CommandRecorder {
                           std::span<const VkImageMemoryBarrier> image_barriers = {}) const;
     void begin_rendering(const VkRenderingInfo& rendering) const;
     void end_rendering() const;
+    void set_viewport(VkExtent2D extent) const;
+    void set_scissor(VkExtent2D extent) const;
+    void set_viewport_and_scissor(VkExtent2D extent) const;
     void bind_pipeline(VkPipelineBindPoint bind_point, VkPipeline pipeline) const;
     void bind_vertex_buffer(std::uint32_t first_binding, VkBuffer buffer,
                             VkDeviceSize offset = 0) const;

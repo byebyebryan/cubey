@@ -107,6 +107,7 @@ void record_render_target_pass(const cubey::vulkan::CommandRecorder& recorder,
                                RecordCallback&& record_callback) {
     const RenderTargetRenderingInfo rendering(target, clear);
     recorder.begin_rendering(rendering.info());
+    recorder.set_viewport_and_scissor(target.color.extent);
     std::forward<RecordCallback>(record_callback)(recorder);
     recorder.end_rendering();
 }
@@ -143,6 +144,7 @@ void record_depth_only_pass(const cubey::vulkan::CommandRecorder& recorder,
                             RecordCallback&& record_callback) {
     const DepthOnlyRenderingInfo rendering(target, clear);
     recorder.begin_rendering(rendering.info());
+    recorder.set_viewport_and_scissor(target.extent);
     std::forward<RecordCallback>(record_callback)(recorder);
     recorder.end_rendering();
 }

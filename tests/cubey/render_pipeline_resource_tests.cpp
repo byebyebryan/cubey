@@ -107,8 +107,6 @@ void test_render_pipeline_resource_builds_layout_and_dynamic_pipeline_info() {
         cubey::render::dynamic_graphics_pipeline_config(config, pipeline_layout);
     require(pipeline_config.layout == pipeline_layout,
             "dynamic graphics pipeline config should use provided layout");
-    require(pipeline_config.extent.width == 800 && pipeline_config.extent.height == 600,
-            "dynamic graphics pipeline config should preserve extent");
     require(pipeline_config.shader_stages.size() == 2,
             "dynamic graphics pipeline config should preserve shader stages");
     require(std::string_view(pipeline_config.shader_stages[1].pName) == "frag_main",
@@ -125,6 +123,8 @@ void test_render_pipeline_resource_builds_layout_and_dynamic_pipeline_info() {
     const cubey::vulkan::DynamicGraphicsPipelineInfo pipeline_info(pipeline_config);
     require(pipeline_info.create_info().stageCount == 2,
             "dynamic graphics pipeline info should accept pipeline resource config output");
+    require(pipeline_info.create_info().pDynamicState != nullptr,
+            "dynamic graphics pipeline info should use dynamic viewport state");
 }
 
 void test_render_pipeline_resource_allows_vertexless_fullscreen_pipeline_shape() {

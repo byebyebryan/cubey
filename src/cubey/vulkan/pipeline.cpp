@@ -12,9 +12,6 @@ void validate_dynamic_graphics_pipeline_config(const DynamicGraphicsPipelineConf
     if (config.layout == VK_NULL_HANDLE) {
         throw std::runtime_error("dynamic graphics pipeline requires a pipeline layout");
     }
-    if (config.extent.width == 0 || config.extent.height == 0) {
-        throw std::runtime_error("dynamic graphics pipeline requires a non-empty extent");
-    }
     if (config.color_format == VK_FORMAT_UNDEFINED && config.depth_format == VK_FORMAT_UNDEFINED) {
         throw std::runtime_error(
             "dynamic graphics pipeline requires at least one attachment format");
@@ -107,22 +104,21 @@ DynamicGraphicsPipelineInfo::DynamicGraphicsPipelineInfo(
         VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO);
     input_assembly_.topology = config.topology;
 
-    viewport_.x = 0.0F;
-    viewport_.y = 0.0F;
-    viewport_.width = static_cast<float>(config.extent.width);
-    viewport_.height = static_cast<float>(config.extent.height);
-    viewport_.minDepth = 0.0F;
-    viewport_.maxDepth = 1.0F;
-
-    scissor_.offset = {0, 0};
-    scissor_.extent = config.extent;
-
     viewport_state_ = vk_struct<VkPipelineViewportStateCreateInfo>(
         VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO);
     viewport_state_.viewportCount = 1;
-    viewport_state_.pViewports = &viewport_;
+    viewport_state_.pViewports = nullptr;
     viewport_state_.scissorCount = 1;
-    viewport_state_.pScissors = &scissor_;
+    viewport_state_.pScissors = nullptr;
+
+    dynamic_states_ = {
+        VK_DYNAMIC_STATE_VIEWPORT,
+        VK_DYNAMIC_STATE_SCISSOR,
+    };
+    dynamic_state_ = vk_struct<VkPipelineDynamicStateCreateInfo>(
+        VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO);
+    dynamic_state_.dynamicStateCount = static_cast<std::uint32_t>(dynamic_states_.size());
+    dynamic_state_.pDynamicStates = dynamic_states_.data();
 
     rasterizer_ = vk_struct<VkPipelineRasterizationStateCreateInfo>(
         VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO);
@@ -169,6 +165,7 @@ DynamicGraphicsPipelineInfo::DynamicGraphicsPipelineInfo(
     create_info_.pDepthStencilState =
         config.depth_format == VK_FORMAT_UNDEFINED ? nullptr : &depth_stencil_;
     create_info_.pColorBlendState = &color_blend_;
+    create_info_.pDynamicState = &dynamic_state_;
     create_info_.layout = config.layout;
 }
 

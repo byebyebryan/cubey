@@ -56,7 +56,6 @@ void test_pipeline_helpers_describe_dynamic_graphics_pipeline_setup() {
 
     cubey::vulkan::DynamicGraphicsPipelineConfig config;
     config.layout = reinterpret_cast<VkPipelineLayout>(0x30);
-    config.extent = {640, 480};
     config.color_format = VK_FORMAT_B8G8R8A8_SRGB;
     config.depth_format = VK_FORMAT_D32_SFLOAT;
     config.shader_stages = stages;
@@ -113,12 +112,21 @@ void test_pipeline_helpers_describe_dynamic_graphics_pipeline_setup() {
 
     require(create_info.pInputAssemblyState->topology == VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
             "input assembly should default to triangle list");
-    require(create_info.pViewportState->pViewports->width == 640.0F,
-            "viewport should use configured extent width");
-    require(create_info.pViewportState->pViewports->height == 480.0F,
-            "viewport should use configured extent height");
-    require(create_info.pViewportState->pScissors->extent.width == 640,
-            "scissor should use configured extent width");
+    require(create_info.pViewportState->viewportCount == 1,
+            "viewport state should describe one dynamic viewport");
+    require(create_info.pViewportState->pViewports == nullptr,
+            "dynamic viewport should not bake viewport dimensions");
+    require(create_info.pViewportState->scissorCount == 1,
+            "viewport state should describe one dynamic scissor");
+    require(create_info.pViewportState->pScissors == nullptr,
+            "dynamic scissor should not bake scissor dimensions");
+    require(create_info.pDynamicState != nullptr, "pipeline should enable dynamic state");
+    require(create_info.pDynamicState->dynamicStateCount == 2,
+            "pipeline should enable viewport and scissor dynamic states");
+    require(create_info.pDynamicState->pDynamicStates[0] == VK_DYNAMIC_STATE_VIEWPORT,
+            "pipeline should enable dynamic viewport");
+    require(create_info.pDynamicState->pDynamicStates[1] == VK_DYNAMIC_STATE_SCISSOR,
+            "pipeline should enable dynamic scissor");
     require(create_info.pRasterizationState->cullMode == VK_CULL_MODE_NONE,
             "rasterizer should default to no culling");
     require(create_info.pMultisampleState->rasterizationSamples == VK_SAMPLE_COUNT_1_BIT,
@@ -162,7 +170,6 @@ void test_pipeline_helpers_describe_depth_only_dynamic_graphics_pipeline_setup()
 
     cubey::vulkan::DynamicGraphicsPipelineConfig config;
     config.layout = reinterpret_cast<VkPipelineLayout>(0x50);
-    config.extent = {1024, 1024};
     config.color_format = VK_FORMAT_UNDEFINED;
     config.depth_format = VK_FORMAT_D32_SFLOAT;
     config.shader_stages = {&vertex_stage, 1};
