@@ -185,7 +185,9 @@ open; the window title also shows the latest sampled FPS and frame time.
 `smoke_2d` defaults to a `1024x1024` solver grid and three procedural
 injectors; use `--grid-width`, `--grid-height`, and `--smoke-injectors 1..16` to
 compare other simulation/demo shapes, and `--smoke-obstacles` to enable the static
-obstacle mask.
+obstacle mask. Use `--smoke-pressure-solver jacobi|rbgs` to compare the Jacobi
+and red-black Gauss-Seidel pressure paths; `--profile-diagnostics` is available
+in headless smoke runs when paired with `--profile-output`.
 `water_2d` defaults to a `256x144` MAC grid with APIC particle-grid transfer and
 a PIC/FLIP fallback. It uses particles for liquid motion and a face-centered
 grid for pressure, so it is intentionally a different solver family from

@@ -506,6 +506,7 @@ cubey/
           main.cpp
           smoke_2d_app.*     -- host/engine/input orchestration
           smoke_2d_commands.* -- simulation and fullscreen draw command recording
+          smoke_2d_diagnostics.* -- profile/readback metric export
           smoke_2d_gpu_resources.* -- project-owned GPU buffers/descriptors/pipelines
           shaders/
             smoke_2d_inject.comp
@@ -515,6 +516,7 @@ cubey/
             smoke_2d_vorticity.comp
             smoke_2d_divergence.comp
             smoke_2d_pressure.comp
+            smoke_2d_pressure_rbgs.comp
             smoke_2d_projection.comp
             smoke_2d.vert
             smoke_2d_render.frag

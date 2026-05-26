@@ -243,9 +243,9 @@ project is worth the complexity.
 ## Suggested Order
 
 1. Continue `fluid_25d` with virtual-pipes shallow water over terrain.
-2. Continue `smoke_2d` with pressure-solver experiments, moving obstacles,
-   stronger diagnostics, and a clearer smoke/dye versus free-surface-liquid
-   direction.
+2. Continue `smoke_2d` beyond the current Jacobi/RBGS baseline with moving
+   obstacles, stronger diagnostics, and a clearer smoke/dye versus
+   free-surface-liquid direction.
 3. Continue `water_2d` from the current 2D APIC/PIC-FLIP baseline toward better
    surfacing, pressure solves, boundaries, validation/debug views, and richer
    water scenarios.
