@@ -4,14 +4,15 @@
 the particle-grid `water_3d` tank: this demo starts from a camera-relative
 surface renderer, not from a CFD solver.
 
-The v1 target is scale. The surface follows the camera, evaluates a
-multi-cascade spectral wave field in world space, fades short wavelengths with
-distance, and blends the far mesh into the sky so the ocean can read all the way
-to the horizon without obvious texture repetition.
+The v1 target is scale. The surface follows the camera with a small ocean
+clipmap, evaluates a multi-cascade spectral wave field in world space, fades
+short wavelengths with distance, and blends the far mesh into the sky so the
+ocean can read all the way to the horizon without obvious texture repetition.
 
 Implemented:
 
-- camera-relative projected grid generated in the vertex shader;
+- camera-relative clipmap mesh generated in the vertex shader, with denser
+  geometry near the camera and coarser patches toward the horizon;
 - in-repo Stockham FFT path for three spectral ocean cascades, including packed
   choppy displacement, slope, curvature, and crest-compression fields;
 - bounded nonlinear macro crests layered over the FFT field for stronger
@@ -25,7 +26,7 @@ Implemented:
   and crest-gated foam source for both silhouette and shading;
 - coherent procedural sky pass, Fresnel sky reflection, fake scene refraction,
   Beer-style absorption, sun glint, crest/shallow-water foam,
-  exposure/tonemap handling, and debug views;
+  exposure/tonemap handling, and debug views including wireframe LOD inspection;
 - first-class future hooks for local disturbances and shoreline/bathymetry
   masks, disabled by default so the baseline reads as wind-driven ocean.
 
@@ -73,6 +74,9 @@ Tuning notes:
 - `Detail chop`, `Detail spread`, `Detail geometry`, and `Crest sharpness`
   control directional short-wave shape.
 - `Foam breakup` controls patchy breakup on detail crest foam.
+- `Base cells`, `LOD levels`, and `Extent` control the camera-relative clipmap.
+  Wireframe view is the fastest way to inspect close-up density and transition
+  placement.
 
 Primary references:
 
