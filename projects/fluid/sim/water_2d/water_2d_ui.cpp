@@ -39,10 +39,6 @@ constexpr std::array<Water2DTransferMode, 2> kTransferModes{
     Water2DTransferMode::PicFlip,
 };
 
-[[nodiscard]] double bytes_to_mib(VkDeviceSize bytes) {
-    return static_cast<double>(bytes) / (1024.0 * 1024.0);
-}
-
 void reset_simulation(Water2DUiContext& ui) {
     ui.reset_requested = true;
     ui.runtime_state = {};
@@ -51,9 +47,7 @@ void reset_simulation(Water2DUiContext& ui) {
 } // namespace
 
 void draw_water_2d_ui(Water2DUiContext ui) {
-    ImGui::SetNextWindowPos(ImVec2(16.0F, 16.0F), ImGuiCond_FirstUseEver);
-    ImGui::SetNextWindowSize(ImVec2(430.0F, 0.0F), ImGuiCond_FirstUseEver);
-    if (!ImGui::Begin(ui.title)) {
+    if (!cubey::host::begin_control_panel(ui.title)) {
         ImGui::End();
         return;
     }
@@ -64,55 +58,20 @@ void draw_water_2d_ui(Water2DUiContext ui) {
         reset_simulation(ui);
     }
 
-    if (ImGui::BeginCombo("Debug view", water_2d_debug_view_name(ui.debug_view))) {
-        for (Water2DDebugView view : kDebugViews) {
-            const bool selected = view == ui.debug_view;
-            if (ImGui::Selectable(water_2d_debug_view_name(view), selected)) {
-                ui.debug_view = view;
-            }
-            if (selected) {
-                ImGui::SetItemDefaultFocus();
-            }
-        }
-        ImGui::EndCombo();
-    }
-
-    const auto section = [](const char* label, bool default_open) {
-        const ImGuiTreeNodeFlags flags =
-            default_open ? ImGuiTreeNodeFlags_DefaultOpen : ImGuiTreeNodeFlags_None;
-        return ImGui::CollapsingHeader(label, flags);
-    };
+    cubey::host::imgui_enum_combo("Debug view", ui.debug_view, kDebugViews,
+                                  water_2d_debug_view_name);
 
     ImGui::Spacing();
-    if (section("Simulation", true)) {
+    if (cubey::host::imgui_section("Simulation", true)) {
         const cubey::host::ScopedImGuiId section_id("Simulation");
-        if (ImGui::BeginCombo("Scenario", water_2d_scenario_name(ui.config.scenario))) {
-            for (Water2DScenario scenario : kScenarios) {
-                const bool selected = scenario == ui.config.scenario;
-                if (ImGui::Selectable(water_2d_scenario_name(scenario), selected)) {
-                    ui.config.scenario = scenario;
-                    apply_water_2d_scenario_defaults(ui.config);
-                    reset_simulation(ui);
-                }
-                if (selected) {
-                    ImGui::SetItemDefaultFocus();
-                }
-            }
-            ImGui::EndCombo();
+        if (cubey::host::imgui_enum_combo("Scenario", ui.config.scenario, kScenarios,
+                                          water_2d_scenario_name)) {
+            apply_water_2d_scenario_defaults(ui.config);
+            reset_simulation(ui);
         }
 
-        if (ImGui::BeginCombo("Transfer", water_2d_transfer_mode_name(ui.config.transfer_mode))) {
-            for (Water2DTransferMode mode : kTransferModes) {
-                const bool selected = mode == ui.config.transfer_mode;
-                if (ImGui::Selectable(water_2d_transfer_mode_name(mode), selected)) {
-                    ui.config.transfer_mode = mode;
-                }
-                if (selected) {
-                    ImGui::SetItemDefaultFocus();
-                }
-            }
-            ImGui::EndCombo();
-        }
+        cubey::host::imgui_enum_combo("Transfer", ui.config.transfer_mode, kTransferModes,
+                                      water_2d_transfer_mode_name);
 
         int pressure_iterations = static_cast<int>(ui.config.pressure_iterations);
         if (ImGui::SliderInt("Pressure iterations", &pressure_iterations, 1, 512)) {
@@ -139,7 +98,7 @@ void draw_water_2d_ui(Water2DUiContext ui) {
         ImGui::SliderFloat("Boundary bounce", &ui.config.boundary_restitution, 0.0F, 0.8F, "%.2f");
     }
 
-    if (section("Initial volume", false)) {
+    if (cubey::host::imgui_section("Initial volume", false)) {
         const cubey::host::ScopedImGuiId section_id("Initial volume");
         if (ImGui::SliderFloat("Fill height", &ui.config.initial_fill_height,
                                kWater2DMinFillFraction, kWater2DMaxFillFraction, "%.2f")) {
@@ -153,7 +112,7 @@ void draw_water_2d_ui(Water2DUiContext ui) {
         }
     }
 
-    if (section("Sources and forces", true)) {
+    if (cubey::host::imgui_section("Sources and forces", true)) {
         const cubey::host::ScopedImGuiId section_id("Sources and forces");
         ImGui::SeparatorText("Hose");
         ImGui::PushID("hose");
@@ -185,20 +144,11 @@ void draw_water_2d_ui(Water2DUiContext ui) {
         ImGui::PopID();
     }
 
-    if (section("Obstacles", false)) {
+    if (cubey::host::imgui_section("Obstacles", false)) {
         const cubey::host::ScopedImGuiId section_id("Obstacles");
-        if (ImGui::BeginCombo("Shape", water_2d_obstacle_shape_name(ui.config.obstacle_shape))) {
-            for (Water2DObstacleShape shape : kObstacleShapes) {
-                const bool selected = shape == ui.config.obstacle_shape;
-                if (ImGui::Selectable(water_2d_obstacle_shape_name(shape), selected)) {
-                    ui.config.obstacle_shape = shape;
-                    reset_simulation(ui);
-                }
-                if (selected) {
-                    ImGui::SetItemDefaultFocus();
-                }
-            }
-            ImGui::EndCombo();
+        if (cubey::host::imgui_enum_combo("Shape", ui.config.obstacle_shape, kObstacleShapes,
+                                          water_2d_obstacle_shape_name)) {
+            reset_simulation(ui);
         }
 
         if (ui.config.obstacle_shape != Water2DObstacleShape::None &&
@@ -217,7 +167,7 @@ void draw_water_2d_ui(Water2DUiContext ui) {
         ImGui::SliderFloat("Obstacle friction", &ui.config.obstacle_friction, 0.0F, 1.0F, "%.2f");
     }
 
-    if (section("Surface", false)) {
+    if (cubey::host::imgui_section("Surface", false)) {
         const cubey::host::ScopedImGuiId section_id("Surface");
         ImGui::SliderFloat("Particle radius", &ui.config.particle_radius, 0.0025F, 0.025F, "%.4f");
         ImGui::SliderFloat("Splat radius", &ui.config.surface_splat_radius_scale, 0.50F, 3.00F,
@@ -241,7 +191,7 @@ void draw_water_2d_ui(Water2DUiContext ui) {
         ImGui::SliderFloat("Foam breakup", &ui.config.foam_breakup, 0.0F, 1.0F, "%.2f");
     }
 
-    if (section("Diagnostics", true)) {
+    if (cubey::host::imgui_section("Diagnostics", true)) {
         const cubey::host::ScopedImGuiId section_id("Diagnostics");
         ImGui::Text("Grid: %u x %u", ui.config.grid_width, ui.config.grid_height);
         const std::uint32_t hose_pool_capacity = hose_particle_pool_capacity_for_config(ui.config);
@@ -257,35 +207,14 @@ void draw_water_2d_ui(Water2DUiContext ui) {
         ImGui::Text("Compute particles: %u scanned / %u total", scanned_particles,
                     ui.config.particle_capacity);
         ImGui::Text("Hose touched: %u / %u", touched_hose_particles, hose_pool_capacity);
-        if (ui.latest_frame_stats.has_value()) {
-            ImGui::Text("Frame: %.1f fps / %.2f ms avg (%.2f ms last)", ui.latest_frame_stats->fps,
-                        ui.latest_frame_stats->frame_ms, ui.latest_frame_ms);
-        } else if (ui.latest_fps > 0.0) {
-            ImGui::Text("Frame: %.1f fps / %.2f ms", ui.latest_fps, ui.latest_frame_ms);
-        } else {
-            ImGui::TextUnformatted("Frame: collecting...");
-        }
+        cubey::host::draw_frame_stats(ui.latest_frame_stats, ui.latest_fps, ui.latest_frame_ms);
 
-        const std::vector<cubey::vulkan::GpuPassTiming>& timings = ui.resources.latest_timings();
-        if (!timings.empty()) {
-            ImGui::SeparatorText("GPU timings");
-            for (const cubey::vulkan::GpuPassTiming& timing : timings) {
-                ImGui::Text("%s: %.3f ms", timing.label.c_str(), timing.milliseconds);
-            }
-        }
+        cubey::host::draw_gpu_timings(ui.resources.latest_timings());
 
         const VkDeviceSize water_bytes = ui.resources.allocated_buffer_bytes();
         const cubey::vulkan::DeviceMemoryBudgetInfo memory_budget =
             ui.device.device_memory_budget();
-        ImGui::Text("Water GPU buffers: %.1f MiB", bytes_to_mib(water_bytes));
-        if (memory_budget.available && memory_budget.device_local_budget > 0) {
-            ImGui::Text("VRAM: %.0f / %.0f MiB used",
-                        bytes_to_mib(memory_budget.device_local_usage),
-                        bytes_to_mib(memory_budget.device_local_budget));
-        } else {
-            ImGui::Text("VRAM heap: %.0f MiB (usage unavailable)",
-                        bytes_to_mib(memory_budget.device_local_heap_size));
-        }
+        cubey::host::draw_device_memory_budget(water_bytes, memory_budget, "Water GPU buffers");
     }
     ImGui::End();
 }

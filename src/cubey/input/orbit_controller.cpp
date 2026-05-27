@@ -110,6 +110,20 @@ void OrbitController::end_drag() {
     dragging_ = false;
 }
 
+void OrbitController::update_pointer_input(const cubey::input::InputFrame& input,
+                                           double delta_seconds) {
+    apply_input(false, false, input.scroll_delta().y, true,
+                input.mouse_button_down(cubey::input::MouseButton::Left),
+                input.mouse_button_delta(cubey::input::MouseButton::Left), delta_seconds);
+}
+
+void OrbitController::update_pointer_input(const cubey::input::FilteredInputFrame& input,
+                                           double delta_seconds) {
+    apply_input(false, false, input.scroll_delta().y, input.mouse_enabled(),
+                input.mouse_button_down(cubey::input::MouseButton::Left),
+                input.mouse_button_delta(cubey::input::MouseButton::Left), delta_seconds);
+}
+
 void OrbitController::update_from_input(const cubey::input::InputFrame& input,
                                         double delta_seconds) {
     apply_input(input.key_pressed(cubey::input::Key::R),

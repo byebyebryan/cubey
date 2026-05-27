@@ -181,32 +181,12 @@ class Pyro3DApp {
     }
 
     void update_camera_input(cubey::host::WindowedAppContext& context, double delta_seconds) {
-        const auto input = context.filtered_input();
-        if (input.mouse_enabled()) {
-            orbit_controller_.zoom_by_scroll(input.scroll_delta().y);
-            if (input.has_cursor()) {
-                const cubey::input::CursorPosition cursor = input.cursor();
-                if (input.mouse_button_pressed(cubey::input::MouseButton::Left)) {
-                    orbit_controller_.begin_drag(cursor.x, cursor.y);
-                }
-                if (input.mouse_button_down(cubey::input::MouseButton::Left)) {
-                    orbit_controller_.drag_to(cursor.x, cursor.y);
-                }
-            }
-        }
-        if (!input.mouse_enabled() ||
-            input.mouse_button_released(cubey::input::MouseButton::Left) ||
-            !input.mouse_button_down(cubey::input::MouseButton::Left)) {
-            orbit_controller_.end_drag();
-        }
-        orbit_controller_.update(delta_seconds);
+        orbit_controller_.update_pointer_input(context.filtered_input(), delta_seconds);
     }
 
     void draw_ui(cubey::host::WindowedAppContext& context) {
         (void)context;
-        ImGui::SetNextWindowPos(ImVec2(16.0F, 16.0F), ImGuiCond_FirstUseEver);
-        ImGui::SetNextWindowSize(ImVec2(430.0F, 0.0F), ImGuiCond_FirstUseEver);
-        if (!ImGui::Begin(app_info_.ui_title)) {
+        if (!cubey::host::begin_control_panel(app_info_.ui_title)) {
             ImGui::End();
             return;
         }
@@ -217,28 +197,11 @@ class Pyro3DApp {
             reset_simulation();
         }
 
-        if (ImGui::BeginCombo("Debug view", debug_view_name(debug_view_))) {
-            for (Pyro3DDebugView view : kDebugViews) {
-                const bool selected = view == debug_view_;
-                if (ImGui::Selectable(debug_view_name(view), selected)) {
-                    debug_view_ = view;
-                }
-                if (selected) {
-                    ImGui::SetItemDefaultFocus();
-                }
-            }
-            ImGui::EndCombo();
-        }
-
-        const auto section = [](const char* label, bool default_open) {
-            const ImGuiTreeNodeFlags flags =
-                default_open ? ImGuiTreeNodeFlags_DefaultOpen : ImGuiTreeNodeFlags_None;
-            return ImGui::CollapsingHeader(label, flags);
-        };
+        cubey::host::imgui_enum_combo("Debug view", debug_view_, kDebugViews, debug_view_name);
 
         ImGui::Text("Mode: %s", pyro_3d_mode_name(pyro_config_.mode));
 
-        if (section("Simulation", true)) {
+        if (cubey::host::imgui_section("Simulation", true)) {
             const cubey::host::ScopedImGuiId section_id("Simulation");
             int pressure_iterations = static_cast<int>(pyro_config_.pressure_iterations);
             if (ImGui::SliderInt("Pressure iterations", &pressure_iterations, 1, 48)) {
@@ -252,7 +215,7 @@ class Pyro3DApp {
             ImGui::SliderFloat("Vorticity", &pyro_config_.vorticity_strength, 0.0F, 1.5F, "%.2f");
         }
 
-        if (section("Sources", true)) {
+        if (cubey::host::imgui_section("Sources", true)) {
             const cubey::host::ScopedImGuiId section_id("Sources");
             int source_count = static_cast<int>(pyro_config_.source_count);
             if (ImGui::SliderInt("Sources", &source_count, 1,
@@ -274,7 +237,7 @@ class Pyro3DApp {
 
         const char* model_section =
             pyro_config_.mode == Pyro3DMode::Fire ? "Fire model" : "Explosion model";
-        if (section(model_section, true)) {
+        if (cubey::host::imgui_section(model_section, true)) {
             const cubey::host::ScopedImGuiId section_id(model_section);
             if (pyro_config_.mode == Pyro3DMode::Explosion) {
                 ImGui::SliderFloat("Explosion interval", &pyro_config_.explosion_interval_seconds,
@@ -302,7 +265,7 @@ class Pyro3DApp {
             ImGui::SliderFloat("Turbulence", &pyro_config_.fire_turbulence, 0.0F, 3.0F, "%.2f");
         }
 
-        if (section("Obstacles", false)) {
+        if (cubey::host::imgui_section("Obstacles", false)) {
             const cubey::host::ScopedImGuiId section_id("Obstacles");
             ImGui::SliderFloat("Obstacle height", &pyro_config_.obstacle_center_height, 0.0F, 1.0F,
                                "%.2f");
@@ -310,7 +273,7 @@ class Pyro3DApp {
                                kMaxPyro3DObstacleRadius, "%.3f");
         }
 
-        if (section("Rendering", true)) {
+        if (cubey::host::imgui_section("Rendering", true)) {
             const cubey::host::ScopedImGuiId section_id("Rendering");
             int raymarch_steps = static_cast<int>(pyro_config_.raymarch_steps);
             if (ImGui::SliderInt("Raymarch steps", &raymarch_steps, 24, 192)) {
@@ -335,7 +298,7 @@ class Pyro3DApp {
                                "%.2f");
         }
 
-        if (section("Shadows", false)) {
+        if (cubey::host::imgui_section("Shadows", false)) {
             const cubey::host::ScopedImGuiId section_id("Shadows");
             ImGui::SliderFloat("Shadow", &pyro_config_.shadow_absorption, 0.0F, 96.0F, "%.2f");
             int shadow_steps = static_cast<int>(pyro_config_.shadow_steps);
@@ -349,19 +312,13 @@ class Pyro3DApp {
             }
         }
 
-        if (section("Diagnostics", true)) {
+        if (cubey::host::imgui_section("Diagnostics", true)) {
             const cubey::host::ScopedImGuiId section_id("Diagnostics");
             ImGui::Text("Grid: %u x %u x %u", pyro_config_.grid_width, pyro_config_.grid_height,
                         pyro_config_.grid_depth);
             ImGui::Text("Shadow grid: %u x %u x %u", pyro_config_.shadow_grid_width,
                         pyro_config_.shadow_grid_height, pyro_config_.shadow_grid_depth);
-            const std::vector<cubey::vulkan::GpuPassTiming>& timings = resources_.latest_timings();
-            if (!timings.empty()) {
-                ImGui::SeparatorText("GPU timings");
-                for (const cubey::vulkan::GpuPassTiming& timing : timings) {
-                    ImGui::Text("%s: %.3f ms", timing.label.c_str(), timing.milliseconds);
-                }
-            }
+            cubey::host::draw_gpu_timings(resources_.latest_timings());
         }
         ImGui::End();
     }

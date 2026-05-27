@@ -35,10 +35,6 @@ constexpr std::array<Water3DTransferMode, 2> kTransferModes{
     Water3DTransferMode::PicFlip,
 };
 
-[[nodiscard]] double bytes_to_mib(VkDeviceSize bytes) {
-    return static_cast<double>(bytes) / (1024.0 * 1024.0);
-}
-
 void reset_simulation(Water3DUiContext& ui) {
     ui.reset_requested = true;
     ui.runtime_state = {};
@@ -47,9 +43,7 @@ void reset_simulation(Water3DUiContext& ui) {
 } // namespace
 
 void draw_water_3d_ui(Water3DUiContext ui) {
-    ImGui::SetNextWindowPos(ImVec2(16.0F, 16.0F), ImGuiCond_FirstUseEver);
-    ImGui::SetNextWindowSize(ImVec2(430.0F, 0.0F), ImGuiCond_FirstUseEver);
-    if (!ImGui::Begin(ui.title)) {
+    if (!cubey::host::begin_control_panel(ui.title)) {
         ImGui::End();
         return;
     }
@@ -60,40 +54,14 @@ void draw_water_3d_ui(Water3DUiContext ui) {
         reset_simulation(ui);
     }
 
-    if (ImGui::BeginCombo("Render view", water_3d_render_view_name(ui.render_view))) {
-        for (Water3DRenderView view : kRenderViews) {
-            const bool selected = view == ui.render_view;
-            if (ImGui::Selectable(water_3d_render_view_name(view), selected)) {
-                ui.render_view = view;
-            }
-            if (selected) {
-                ImGui::SetItemDefaultFocus();
-            }
-        }
-        ImGui::EndCombo();
-    }
-
-    const auto section = [](const char* label, bool default_open) {
-        const ImGuiTreeNodeFlags flags =
-            default_open ? ImGuiTreeNodeFlags_DefaultOpen : ImGuiTreeNodeFlags_None;
-        return ImGui::CollapsingHeader(label, flags);
-    };
+    cubey::host::imgui_enum_combo("Render view", ui.render_view, kRenderViews,
+                                  water_3d_render_view_name);
 
     ImGui::Spacing();
-    if (section("Simulation", true)) {
+    if (cubey::host::imgui_section("Simulation", true)) {
         const cubey::host::ScopedImGuiId section_id("Simulation");
-        if (ImGui::BeginCombo("Transfer", water_3d_transfer_mode_name(ui.config.transfer_mode))) {
-            for (Water3DTransferMode mode : kTransferModes) {
-                const bool selected = mode == ui.config.transfer_mode;
-                if (ImGui::Selectable(water_3d_transfer_mode_name(mode), selected)) {
-                    ui.config.transfer_mode = mode;
-                }
-                if (selected) {
-                    ImGui::SetItemDefaultFocus();
-                }
-            }
-            ImGui::EndCombo();
-        }
+        cubey::host::imgui_enum_combo("Transfer", ui.config.transfer_mode, kTransferModes,
+                                      water_3d_transfer_mode_name);
 
         int pressure_iterations = static_cast<int>(ui.config.pressure_iterations);
         if (ImGui::SliderInt("Pressure iterations", &pressure_iterations, 1, 128)) {
@@ -116,7 +84,7 @@ void draw_water_3d_ui(Water3DUiContext ui) {
         ImGui::SliderFloat("Boundary bounce", &ui.config.boundary_restitution, 0.0F, 0.8F, "%.2f");
     }
 
-    if (section("Initial volume", false)) {
+    if (cubey::host::imgui_section("Initial volume", false)) {
         const cubey::host::ScopedImGuiId section_id("Initial volume");
         if (ImGui::SliderFloat("Fill width", &ui.config.initial_fill_width, kWater3DMinFillFraction,
                                kWater3DMaxFillFraction, "%.2f")) {
@@ -144,7 +112,7 @@ void draw_water_3d_ui(Water3DUiContext ui) {
         ImGui::SliderFloat3("Domain scale", ui.config.domain.scale.data(), 0.25F, 3.0F, "%.2f");
     }
 
-    if (section("Sources and forces", true)) {
+    if (cubey::host::imgui_section("Sources and forces", true)) {
         const cubey::host::ScopedImGuiId section_id("Sources and forces");
         ImGui::SeparatorText("Hose");
         ImGui::PushID("hose");
@@ -188,7 +156,7 @@ void draw_water_3d_ui(Water3DUiContext ui) {
         ImGui::PopID();
     }
 
-    if (section("Surface and lighting", false)) {
+    if (cubey::host::imgui_section("Surface and lighting", false)) {
         const cubey::host::ScopedImGuiId section_id("Surface and lighting");
         ImGui::SliderFloat("Particle radius", &ui.config.particle_radius, 0.004F, 0.040F, "%.4f");
         ImGui::SliderFloat("Particle max px", &ui.config.surface_particle_max_radius_px, 4.0F,
@@ -221,7 +189,7 @@ void draw_water_3d_ui(Water3DUiContext ui) {
         ImGui::SliderFloat("Slice depth", &ui.config.slice_depth, 0.02F, 0.98F, "%.2f");
     }
 
-    if (section("Foam and whitewater", false)) {
+    if (cubey::host::imgui_section("Foam and whitewater", false)) {
         const cubey::host::ScopedImGuiId section_id("Foam and whitewater");
         ImGui::SliderFloat("Foam amount", &ui.config.foam_amount, 0.0F, 1.0F, "%.2f");
         ImGui::SliderFloat("Foam sharpness", &ui.config.foam_sharpness, 0.2F, 4.0F, "%.2f");
@@ -246,7 +214,7 @@ void draw_water_3d_ui(Water3DUiContext ui) {
                            "%.2f");
     }
 
-    if (section("Diagnostics", true)) {
+    if (cubey::host::imgui_section("Diagnostics", true)) {
         const cubey::host::ScopedImGuiId section_id("Diagnostics");
         ImGui::Text("Grid: %u x %u x %u", ui.config.grid_width, ui.config.grid_height,
                     ui.config.grid_depth);
@@ -260,35 +228,14 @@ void draw_water_3d_ui(Water3DUiContext ui) {
                     emitter_particle_pool_capacity_for_config(ui.config));
         ImGui::Text("Whitewater: %u capacity / %u max emit", ui.config.whitewater_capacity,
                     ui.config.whitewater_max_emit_per_frame);
-        if (ui.latest_frame_stats.has_value()) {
-            ImGui::Text("Frame: %.1f fps / %.2f ms avg (%.2f ms last)", ui.latest_frame_stats->fps,
-                        ui.latest_frame_stats->frame_ms, ui.latest_frame_ms);
-        } else if (ui.latest_fps > 0.0) {
-            ImGui::Text("Frame: %.1f fps / %.2f ms", ui.latest_fps, ui.latest_frame_ms);
-        } else {
-            ImGui::TextUnformatted("Frame: collecting...");
-        }
+        cubey::host::draw_frame_stats(ui.latest_frame_stats, ui.latest_fps, ui.latest_frame_ms);
 
-        const std::vector<cubey::vulkan::GpuPassTiming>& timings = ui.resources.latest_timings();
-        if (!timings.empty()) {
-            ImGui::SeparatorText("GPU timings");
-            for (const cubey::vulkan::GpuPassTiming& timing : timings) {
-                ImGui::Text("%s: %.3f ms", timing.label.c_str(), timing.milliseconds);
-            }
-        }
+        cubey::host::draw_gpu_timings(ui.resources.latest_timings());
 
         const VkDeviceSize water_bytes = ui.resources.allocated_buffer_bytes();
         const cubey::vulkan::DeviceMemoryBudgetInfo memory_budget =
             ui.device.device_memory_budget();
-        ImGui::Text("Water GPU buffers: %.1f MiB", bytes_to_mib(water_bytes));
-        if (memory_budget.available && memory_budget.device_local_budget > 0) {
-            ImGui::Text("VRAM: %.0f / %.0f MiB used",
-                        bytes_to_mib(memory_budget.device_local_usage),
-                        bytes_to_mib(memory_budget.device_local_budget));
-        } else {
-            ImGui::Text("VRAM heap: %.0f MiB (usage unavailable)",
-                        bytes_to_mib(memory_budget.device_local_heap_size));
-        }
+        cubey::host::draw_device_memory_budget(water_bytes, memory_budget, "Water GPU buffers");
     }
     ImGui::End();
 }

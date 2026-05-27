@@ -24,18 +24,10 @@ constexpr std::array<Smoke2DPressureSolver, 2> kPressureSolvers{
     Smoke2DPressureSolver::RedBlackGaussSeidel,
 };
 
-[[nodiscard]] bool section(const char* label, bool default_open) {
-    const ImGuiTreeNodeFlags flags =
-        default_open ? ImGuiTreeNodeFlags_DefaultOpen : ImGuiTreeNodeFlags_None;
-    return ImGui::CollapsingHeader(label, flags);
-}
-
 } // namespace
 
 void draw_smoke_2d_ui(Smoke2DUiContext ui) {
-    ImGui::SetNextWindowPos(ImVec2(16.0F, 16.0F), ImGuiCond_FirstUseEver);
-    ImGui::SetNextWindowSize(ImVec2(430.0F, 0.0F), ImGuiCond_FirstUseEver);
-    if (!ImGui::Begin(ui.title)) {
+    if (!cubey::host::begin_control_panel(ui.title)) {
         ImGui::End();
         return;
     }
@@ -47,35 +39,15 @@ void draw_smoke_2d_ui(Smoke2DUiContext ui) {
         ui.reset_injectors_requested = true;
     }
 
-    if (ImGui::BeginCombo("Debug view", smoke_2d_debug_view_name(ui.debug_view))) {
-        for (Smoke2DDebugView view : kDebugViews) {
-            const bool selected = view == ui.debug_view;
-            if (ImGui::Selectable(smoke_2d_debug_view_name(view), selected)) {
-                ui.debug_view = view;
-            }
-            if (selected) {
-                ImGui::SetItemDefaultFocus();
-            }
-        }
-        ImGui::EndCombo();
-    }
+    cubey::host::imgui_enum_combo("Debug view", ui.debug_view, kDebugViews,
+                                  smoke_2d_debug_view_name);
 
     ImGui::Spacing();
-    if (section("Simulation", true)) {
+    if (cubey::host::imgui_section("Simulation", true)) {
         const cubey::host::ScopedImGuiId section_id("Simulation");
-        if (ImGui::BeginCombo("Pressure solver",
-                              smoke_2d_pressure_solver_name(ui.config.pressure_solver))) {
-            for (Smoke2DPressureSolver solver : kPressureSolvers) {
-                const bool selected = solver == ui.config.pressure_solver;
-                if (ImGui::Selectable(smoke_2d_pressure_solver_name(solver), selected)) {
-                    ui.config.pressure_solver = solver;
-                    ui.reset_requested = true;
-                }
-                if (selected) {
-                    ImGui::SetItemDefaultFocus();
-                }
-            }
-            ImGui::EndCombo();
+        if (cubey::host::imgui_enum_combo("Pressure solver", ui.config.pressure_solver,
+                                          kPressureSolvers, smoke_2d_pressure_solver_name)) {
+            ui.reset_requested = true;
         }
         int pressure_iterations = static_cast<int>(ui.config.pressure_iterations);
         if (ImGui::SliderInt("Pressure iterations", &pressure_iterations, 1, 96)) {
@@ -94,7 +66,7 @@ void draw_smoke_2d_ui(Smoke2DUiContext ui) {
                            ui.config.low_energy_cleanup_start + 0.001F, 0.5F, "%.3f");
     }
 
-    if (section("Injectors", true)) {
+    if (cubey::host::imgui_section("Injectors", true)) {
         const cubey::host::ScopedImGuiId section_id("Injectors");
         int injector_count = static_cast<int>(ui.config.procedural_injector_count);
         if (ImGui::SliderInt("Injector count", &injector_count, 1,
@@ -119,22 +91,16 @@ void draw_smoke_2d_ui(Smoke2DUiContext ui) {
                            "%.2f");
     }
 
-    if (section("Rendering", false)) {
+    if (cubey::host::imgui_section("Rendering", false)) {
         const cubey::host::ScopedImGuiId section_id("Rendering");
         ImGui::Text("Debug view: %s", smoke_2d_debug_view_name(ui.debug_view));
     }
 
-    if (section("Diagnostics", true)) {
+    if (cubey::host::imgui_section("Diagnostics", true)) {
         const cubey::host::ScopedImGuiId section_id("Diagnostics");
         ImGui::Text("Grid: %u x %u", ui.config.grid_width, ui.config.grid_height);
         ImGui::Text("Injectors: %u", ui.config.procedural_injector_count);
-        const std::vector<cubey::vulkan::GpuPassTiming>& timings = ui.resources.latest_timings();
-        if (!timings.empty()) {
-            ImGui::SeparatorText("GPU timings");
-            for (const cubey::vulkan::GpuPassTiming& timing : timings) {
-                ImGui::Text("%s: %.3f ms", timing.label.c_str(), timing.milliseconds);
-            }
-        }
+        cubey::host::draw_gpu_timings(ui.resources.latest_timings());
     }
 
     ImGui::End();

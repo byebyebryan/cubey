@@ -28,6 +28,8 @@ class OrbitController {
     void begin_drag(double x, double y);
     void drag_to(double x, double y);
     void end_drag();
+    void update_pointer_input(const cubey::input::InputFrame& input, double delta_seconds);
+    void update_pointer_input(const cubey::input::FilteredInputFrame& input, double delta_seconds);
     void update_from_input(const cubey::input::InputFrame& input, double delta_seconds);
     void update_from_input(const cubey::input::FilteredInputFrame& input, double delta_seconds);
 

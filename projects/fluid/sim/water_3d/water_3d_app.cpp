@@ -146,25 +146,7 @@ class Water3DApp {
     }
 
     void update_camera_input(cubey::host::WindowedAppContext& context, double delta_seconds) {
-        const auto input = context.filtered_input();
-        if (input.mouse_enabled()) {
-            orbit_controller_.zoom_by_scroll(input.scroll_delta().y);
-            if (input.has_cursor()) {
-                const cubey::input::CursorPosition cursor = input.cursor();
-                if (input.mouse_button_pressed(cubey::input::MouseButton::Left)) {
-                    orbit_controller_.begin_drag(cursor.x, cursor.y);
-                }
-                if (input.mouse_button_down(cubey::input::MouseButton::Left)) {
-                    orbit_controller_.drag_to(cursor.x, cursor.y);
-                }
-            }
-        }
-        if (!input.mouse_enabled() ||
-            input.mouse_button_released(cubey::input::MouseButton::Left) ||
-            !input.mouse_button_down(cubey::input::MouseButton::Left)) {
-            orbit_controller_.end_drag();
-        }
-        orbit_controller_.update(delta_seconds);
+        orbit_controller_.update_pointer_input(context.filtered_input(), delta_seconds);
     }
 
     std::optional<FrameStatsSample> record_frame_stats(cubey::host::WindowedAppContext& context,
