@@ -124,6 +124,8 @@ int main() {
         const std::string fft_shader = read_text_file(source_root / "shaders/ocean_fft.comp");
         const std::string finalize_shader =
             read_text_file(source_root / "shaders/ocean_finalize.comp");
+        const std::string foam_update_shader =
+            read_text_file(source_root / "shaders/ocean_foam_update.comp");
         require_contains(vertex_shader, "projected_grid_position",
                          "ocean vertex shader should use a camera-relative projected grid");
         require_contains(vertex_shader, "cascade_sample_position",
@@ -142,6 +144,8 @@ int main() {
                          "ocean fragment shader should include directional sun reflection");
         require_contains(fragment_shader, "OCEAN_VIEW_REFLECTION",
                          "ocean fragment shader should expose reflection debug view");
+        require_contains(fragment_shader, "sample_foam_history",
+                         "ocean fragment shader should sample persistent foam history");
         require_contains(sky_shader, "camera_forward",
                          "ocean sky shader should reconstruct rays from camera basis");
         require_contains(atmosphere_shader, "ocean_sky_color",
@@ -160,6 +164,10 @@ int main() {
                          "ocean finalize shader should write normal and foam output");
         require_contains(finalize_shader, "jacobian",
                          "ocean finalize shader should derive crest compression");
+        require_contains(foam_update_shader, "previous_foam_image",
+                         "ocean foam update shader should read prior foam history");
+        require_contains(foam_update_shader, "next_foam_image",
+                         "ocean foam update shader should write ping-ponged foam history");
 
         return 0;
     } catch (const std::exception& error) {

@@ -12,6 +12,12 @@ layout(set = 0, binding = 2) uniform sampler2D displacement_far_texture;
 layout(set = 0, binding = 3) uniform sampler2D normal_foam_near_texture;
 layout(set = 0, binding = 4) uniform sampler2D normal_foam_mid_texture;
 layout(set = 0, binding = 5) uniform sampler2D normal_foam_far_texture;
+layout(set = 0, binding = 6) uniform sampler2D foam_history_a_near_texture;
+layout(set = 0, binding = 7) uniform sampler2D foam_history_a_mid_texture;
+layout(set = 0, binding = 8) uniform sampler2D foam_history_a_far_texture;
+layout(set = 0, binding = 9) uniform sampler2D foam_history_b_near_texture;
+layout(set = 0, binding = 10) uniform sampler2D foam_history_b_mid_texture;
+layout(set = 0, binding = 11) uniform sampler2D foam_history_b_far_texture;
 
 layout(push_constant) uniform OceanParams {
     mat4 view_projection;
@@ -48,6 +54,7 @@ struct FragmentSurfaceSample {
     vec3 displacement;
     vec3 normal_sum;
     float foam;
+    float persistent_foam;
     float weight_sum;
     float normal_weight_sum;
 };
@@ -87,6 +94,20 @@ vec4 sample_displacement(uint cascade, vec2 uv) {
         return texture(displacement_mid_texture, uv);
     }
     return texture(displacement_far_texture, uv);
+}
+
+float sample_foam_history(uint cascade, vec2 uv) {
+    bool use_b = ocean.debug_options.y > 0.5;
+    if (cascade == 0u) {
+        return use_b ? texture(foam_history_b_near_texture, uv).x
+                     : texture(foam_history_a_near_texture, uv).x;
+    }
+    if (cascade == 1u) {
+        return use_b ? texture(foam_history_b_mid_texture, uv).x
+                     : texture(foam_history_a_mid_texture, uv).x;
+    }
+    return use_b ? texture(foam_history_b_far_texture, uv).x
+                 : texture(foam_history_a_far_texture, uv).x;
 }
 
 float cascade_patch_length(uint cascade) {
@@ -175,6 +196,8 @@ void add_cascade(inout FragmentSurfaceSample sample_value, uint cascade, vec2 po
         max(sample_value.foam,
             max(displacement.w, normal_foam.w) * normal_weight *
                 cascade_displacement_detail_scale(cascade));
+    sample_value.persistent_foam =
+        max(sample_value.persistent_foam, sample_foam_history(cascade, uv) * weight);
     sample_value.weight_sum += weight;
     sample_value.normal_weight_sum += normal_weight;
 }
@@ -184,6 +207,7 @@ FragmentSurfaceSample sample_fragment_surface(vec2 position, float camera_distan
     sample_value.displacement = vec3(0.0);
     sample_value.normal_sum = vec3(0.0);
     sample_value.foam = 0.0;
+    sample_value.persistent_foam = 0.0;
     sample_value.weight_sum = 0.0;
     sample_value.normal_weight_sum = 0.0;
     add_cascade(sample_value, 2u, position, camera_distance);
@@ -205,6 +229,7 @@ FragmentSurfaceSample sample_fragment_surface(vec2 position, float camera_distan
     sample_value.displacement += macro_waves.displacement;
     sample_value.normal_sum = ocean_normal_from_slope(slope + macro_waves.slope);
     sample_value.foam = max(sample_value.foam, macro_waves.foam * ocean.detail_options.z * 0.35);
+    sample_value.persistent_foam = max(sample_value.persistent_foam, macro_waves.foam * 0.20);
     return sample_value;
 }
 
@@ -315,7 +340,9 @@ void main() {
     normal = add_procedural_detail(normal, refined_sample_position, frag_wave.z);
     float depth = max(frag_wave.w, 0.0);
     float foam = foam_mask(normal, depth);
-    foam = clamp(max(foam, surface_sample.foam * ocean.detail_options.z), 0.0, 1.0);
+    foam = clamp(max(max(foam, surface_sample.foam * ocean.detail_options.z),
+                     surface_sample.persistent_foam * ocean.detail_options.z),
+                 0.0, 1.0);
 
     vec3 reflection_dir = reflect(-view_dir, normal);
     vec3 reflection = ocean_sky_color(reflection_dir);

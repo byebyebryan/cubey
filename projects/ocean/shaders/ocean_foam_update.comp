@@ -1,0 +1,52 @@
+#version 450
+
+layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
+
+layout(rgba32f, set = 0, binding = 0) readonly uniform image2D normal_foam_image;
+layout(rgba32f, set = 0, binding = 1) readonly uniform image2D previous_foam_image;
+layout(rgba32f, set = 0, binding = 2) writeonly uniform image2D next_foam_image;
+
+layout(push_constant) uniform FoamUpdateParams {
+    vec4 foam_options;
+    vec4 cascade_options;
+} params;
+
+ivec2 wrap_texel(ivec2 texel, ivec2 size) {
+    return ivec2((texel.x + size.x) % size.x, (texel.y + size.y) % size.y);
+}
+
+float foam_at(ivec2 texel, ivec2 size) {
+    return imageLoad(previous_foam_image, wrap_texel(texel, size)).x;
+}
+
+float bilinear_foam(vec2 texel_position, ivec2 size) {
+    ivec2 base = ivec2(floor(texel_position));
+    vec2 local = fract(texel_position);
+    float a = foam_at(base, size);
+    float b = foam_at(base + ivec2(1, 0), size);
+    float c = foam_at(base + ivec2(0, 1), size);
+    float d = foam_at(base + ivec2(1, 1), size);
+    return mix(mix(a, b, local.x), mix(c, d, local.x), local.y);
+}
+
+void main() {
+    ivec2 texel = ivec2(gl_GlobalInvocationID.xy);
+    ivec2 size = imageSize(next_foam_image);
+    if (texel.x >= size.x || texel.y >= size.y) {
+        return;
+    }
+
+    float dt = max(params.foam_options.x, 1.0 / 60.0);
+    float decay = pow(clamp(params.foam_options.y, 0.0, 1.0), dt * 60.0);
+    float source_gain = max(params.foam_options.z, 0.0);
+    float previous_valid = params.foam_options.w;
+    float patch_length = max(params.cascade_options.x, 0.001);
+    vec2 wind_direction = normalize(params.cascade_options.yz);
+    float wind_speed = max(params.cascade_options.w, 0.0);
+
+    vec2 texel_motion = wind_direction * ((wind_speed * 8.0 * dt) / patch_length) * vec2(size);
+    float previous = previous_valid > 0.5 ? bilinear_foam(vec2(texel) - texel_motion, size) : 0.0;
+    float source = imageLoad(normal_foam_image, texel).w * source_gain;
+    float foam = clamp(max(previous * decay, source), 0.0, 1.0);
+    imageStore(next_foam_image, texel, vec4(foam, 0.0, 0.0, 0.0));
+}

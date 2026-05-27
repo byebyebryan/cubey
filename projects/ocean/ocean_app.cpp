@@ -95,9 +95,15 @@ struct OceanFinalizePushConstants {
     cubey::math::Vec4 debug_options;
 };
 
+struct OceanFoamUpdatePushConstants {
+    cubey::math::Vec4 foam_options;
+    cubey::math::Vec4 cascade_options;
+};
+
 static_assert(sizeof(OceanSpectrumPushConstants) == sizeof(float) * 16U);
 static_assert(sizeof(OceanFftPushConstants) == sizeof(float) * 8U);
 static_assert(sizeof(OceanFinalizePushConstants) == sizeof(float) * 16U);
+static_assert(sizeof(OceanFoamUpdatePushConstants) == sizeof(float) * 8U);
 
 [[nodiscard]] float radians(float degrees) {
     return degrees * (std::numbers::pi_v<float> / 180.0F);
@@ -231,6 +237,8 @@ class OceanApp {
                                         VkCommandBuffer command_buffer,
                                         const cubey::host::HeadlessRenderTarget& target) {
             time_seconds_ = frame.timing.elapsed_seconds;
+            last_delta_seconds_ =
+                frame.timing.delta_seconds > 0.0 ? frame.timing.delta_seconds : (1.0 / 60.0);
             record_ocean_target(command_buffer, target, false);
         };
         callbacks.shutdown = [this](cubey::host::HeadlessPngContext&) {
@@ -262,6 +270,7 @@ class OceanApp {
         if (!paused_) {
             time_seconds_ += timing.delta_seconds;
         }
+        last_delta_seconds_ = timing.delta_seconds > 0.0 ? timing.delta_seconds : (1.0 / 60.0);
         sync_gpu_resources(context);
     }
 
@@ -293,6 +302,8 @@ class OceanApp {
         pipeline_color_format_ = color_format;
         textures_initialized_ = false;
         spectrum_initialized_ = false;
+        foam_initialized_ = false;
+        foam_history_index_ = 0;
         gpu_config_ = ocean_config_;
     }
 
@@ -301,6 +312,8 @@ class OceanApp {
         pipeline_color_format_ = VK_FORMAT_UNDEFINED;
         textures_initialized_ = false;
         spectrum_initialized_ = false;
+        foam_initialized_ = false;
+        foam_history_index_ = 0;
         gpu_config_.reset();
     }
 
@@ -327,6 +340,8 @@ class OceanApp {
         }
         if (ocean_spectrum_generation_changed(ocean_config_, gpu_config_.value())) {
             spectrum_initialized_ = false;
+            foam_initialized_ = false;
+            foam_history_index_ = 0;
             gpu_config_ = ocean_config_;
         }
     }
@@ -399,7 +414,7 @@ class OceanApp {
             .debug_options =
                 {
                     static_cast<float>(static_cast<std::uint32_t>(render_view_)),
-                    0.0F,
+                    static_cast<float>(foam_history_index_),
                     0.0F,
                     0.0F,
                 },
@@ -563,6 +578,29 @@ class OceanApp {
         };
     }
 
+    [[nodiscard]] OceanFoamUpdatePushConstants
+    foam_update_push_constants(std::uint32_t cascade) const {
+        const float wind = radians(ocean_config_.wind_direction_degrees);
+        const double delta_seconds =
+            last_delta_seconds_ > 0.0 ? last_delta_seconds_ : (1.0 / 60.0);
+        return {
+            .foam_options =
+                {
+                    static_cast<float>(delta_seconds),
+                    ocean_config_.foam_decay,
+                    ocean_config_.foam_generation * ocean_config_.foam_amount,
+                    foam_initialized_ ? 1.0F : 0.0F,
+                },
+            .cascade_options =
+                {
+                    ocean_cascade_patch_length(ocean_config_, cascade),
+                    std::cos(wind),
+                    std::sin(wind),
+                    ocean_config_.wind_speed,
+                },
+        };
+    }
+
     void record_initial_texture_transitions(const cubey::vulkan::CommandRecorder& recorder) const {
         for (std::uint32_t cascade = 0; cascade < kOceanCascadeCount; ++cascade) {
             recorder.transition_image_layout(cubey::vulkan::begin_storage_image_write_transition(
@@ -582,6 +620,10 @@ class OceanApp {
                 ocean_gpu_.displacement(cascade).handle()));
             recorder.transition_image_layout(cubey::vulkan::begin_storage_image_write_transition(
                 ocean_gpu_.normal_foam(cascade).handle()));
+            recorder.transition_image_layout(cubey::vulkan::begin_storage_image_write_transition(
+                ocean_gpu_.foam_history(cascade, 0).handle()));
+            recorder.transition_image_layout(cubey::vulkan::begin_storage_image_write_transition(
+                ocean_gpu_.foam_history(cascade, 1).handle()));
         }
     }
 
@@ -657,6 +699,22 @@ class OceanApp {
         }
     }
 
+    void record_foam_update(const cubey::vulkan::CommandRecorder& recorder) {
+        const cubey::render::ComputeDispatchGroups groups =
+            ocean_spectrum_dispatch_groups(ocean_config_);
+        const std::uint32_t previous_history_index = foam_history_index_;
+        for (std::uint32_t cascade = 0; cascade < kOceanCascadeCount; ++cascade) {
+            cubey::render::record_compute_pipeline_dispatch(
+                recorder,
+                cubey::render::compute_pipeline_dispatch_info(
+                    ocean_gpu_.foam_update_pipeline(),
+                    ocean_gpu_.foam_update_set(cascade, previous_history_index), groups),
+                VK_SHADER_STAGE_COMPUTE_BIT, foam_update_push_constants(cascade));
+        }
+        foam_history_index_ = 1U - previous_history_index;
+        foam_initialized_ = true;
+    }
+
     void record_ocean_compute(const cubey::vulkan::CommandRecorder& recorder) {
         if (!textures_initialized_) {
             record_initial_texture_transitions(recorder);
@@ -671,6 +729,8 @@ class OceanApp {
         cubey::vulkan::record_compute_shader_write_barrier(recorder.handle());
         record_fft(recorder);
         record_finalize(recorder);
+        cubey::vulkan::record_compute_shader_write_barrier(recorder.handle());
+        record_foam_update(recorder);
         cubey::vulkan::record_shader_write_barrier(recorder.handle(),
                                                    VK_PIPELINE_STAGE_VERTEX_SHADER_BIT |
                                                        VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
@@ -719,12 +779,15 @@ class OceanApp {
     std::optional<OceanConfig> gpu_config_;
     VkFormat pipeline_color_format_ = VK_FORMAT_UNDEFINED;
     double time_seconds_ = 0.0;
+    double last_delta_seconds_ = 1.0 / 60.0;
     double latest_fps_ = 0.0;
     double latest_frame_ms_ = 0.0;
     bool paused_ = false;
     bool reset_requested_ = false;
     bool textures_initialized_ = false;
     bool spectrum_initialized_ = false;
+    bool foam_initialized_ = false;
+    std::uint32_t foam_history_index_ = 0;
 };
 
 } // namespace

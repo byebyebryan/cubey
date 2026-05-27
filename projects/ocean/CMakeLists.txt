@@ -14,6 +14,7 @@ cubey_add_app_target(
         shaders/ocean_spectrum_evolve.comp
         shaders/ocean_fft.comp
         shaders/ocean_finalize.comp
+        shaders/ocean_foam_update.comp
         shaders/ocean_sky.vert
         shaders/ocean_sky.frag
         shaders/ocean.vert
