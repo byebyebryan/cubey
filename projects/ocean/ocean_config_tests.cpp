@@ -138,8 +138,8 @@ int main() {
                          "ocean fragment shader should use the shared display transform");
         require_contains(fragment_shader, "cascade_detail_filter",
                          "ocean fragment shader should filter detail by pixel footprint");
-        require_contains(fragment_shader, "procedural_detail_slope",
-                         "ocean fragment shader should add near-field procedural detail normals");
+        require_contains(fragment_shader, "foam_breakup",
+                         "ocean fragment shader should localize detail to foam breakup");
         require_contains(fragment_shader, "sun_glint",
                          "ocean fragment shader should include directional sun reflection");
         require_contains(fragment_shader, "OCEAN_VIEW_REFLECTION",

@@ -11,13 +11,15 @@ surface renderer and only adds simulation where interaction needs it.
   camera and concentrates vertices near the viewer.
 - Evaluate a multi-cascade spectral wave field in world space so the mesh can
   move without swimming the pattern.
-- Use an in-repo Stockham FFT path for deep-water height/displacement textures,
-  with decorrelated cascade sampling and distance-filtered short-wave detail to
-  avoid obvious repetition to the horizon.
+- Use an in-repo Stockham FFT path for deep-water height, choppy horizontal
+  displacement, slope, curvature, and crest-compression fields, with
+  decorrelated cascade sampling to avoid obvious repetition to the horizon.
+- Layer bounded nonlinear macro crests over the spectral field so near-camera
+  waves have asymmetric crests instead of smooth sine-like hills.
 - Draw a project-local procedural sky first, then shade the surface against that
   same atmosphere model for coherent horizon fog, reflection, and sun glint.
 - Shade the surface with Fresnel sky reflection, fake refraction/absorption,
-  fragment-level height/normal refinement, foam, tonemapping, and debug views.
+  spectrum-derived normals, persistent crest foam, tonemapping, and debug views.
 - Keep explicit hooks for local disturbances and shoreline/bathymetry masks.
 
 ## Rendering References
@@ -26,12 +28,13 @@ The current renderer is not trying to port a single reference shader. It borrows
 the useful shape of established approaches:
 
 - Tessendorf-style FFT spectra for scalable deep-water motion.
-- GPU Gems water guidance: split geometric displacement from normal/detail
-  waves, filter short wavelengths by sampling footprint, and use depth plus
-  Fresnel to control reflection/refraction.
+- GPU Gems water guidance: split geometric displacement from surface detail,
+  filter short wavelengths by sampling footprint, use Gerstner-style choppy
+  displacement for sharper crests, and use depth plus Fresnel to control
+  reflection/refraction.
 - TDM/Inigo Quilez-style `Seascape` presentation lessons: coherent sky color,
-  strong directional sun reflection, normal refinement near the camera, and
-  fogging the far surface into the sky.
+  strong directional sun reflection, nonlinear wave shape, and fogging the far
+  surface into the sky.
 
 The important distinction is that `projects/ocean` keeps a mesh-backed renderer
 that can later interact with scene objects. Pure ray-marched seascapes can look

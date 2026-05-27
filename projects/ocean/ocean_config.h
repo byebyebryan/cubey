@@ -42,13 +42,13 @@ struct OceanConfig {
 
     float wind_direction_degrees = -36.0F;
     float wind_speed = 1.75F;
-    float wave_amplitude = 2.45F;
+    float wave_amplitude = 2.55F;
     float swell_scale = 1.15F;
-    float chop = 1.65F;
-    float normal_strength = 0.36F;
+    float chop = 1.75F;
+    float normal_strength = 0.48F;
 
-    float foam_amount = 0.34F;
-    float foam_threshold = 0.74F;
+    float foam_amount = 0.42F;
+    float foam_threshold = 0.72F;
     float absorption = 0.070F;
     float refraction_strength = 0.055F;
     float exposure = 0.0F;
@@ -59,8 +59,8 @@ struct OceanConfig {
     float spectrum_patch_length_far = 1536.0F;
     float spectrum_energy = 2.05F;
     float spectrum_fetch = 2.35F;
-    float foam_generation = 0.56F;
-    float foam_decay = 0.965F;
+    float foam_generation = 0.72F;
+    float foam_decay = 0.972F;
     std::uint32_t spectrum_seed = 1337;
 
     float shoreline_influence = 0.0F;

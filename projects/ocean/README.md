@@ -12,10 +12,12 @@ to the horizon without obvious texture repetition.
 Implemented:
 
 - camera-relative projected grid generated in the vertex shader;
-- in-repo Stockham FFT path for three spectral ocean cascades;
-- decorrelated texture-sampled displacement, normals, and generated crest foam;
-- distance-filtered wave detail plus near-field procedural normal refinement to
-  reduce horizon aliasing;
+- in-repo Stockham FFT path for three spectral ocean cascades, including packed
+  choppy displacement, slope, curvature, and crest-compression fields;
+- bounded nonlinear macro crests layered over the FFT field for stronger
+  asymmetric wave shape near the camera;
+- persistent ping-ponged crest foam with filtered breakup detail, instead of
+  full-surface procedural normal shimmer;
 - coherent procedural sky pass, Fresnel sky reflection, fake scene refraction,
   Beer-style absorption, sun glint, crest/shallow-water foam,
   exposure/tonemap handling, and debug views;
@@ -27,7 +29,7 @@ Deferred:
 - real scene color/depth refraction against arbitrary geometry;
 - boats, buoyancy, wake databases, shoreline authoring, caustics, and underwater
   rendering;
-- physically meaningful breaking waves.
+- spray particles and physically meaningful plunging shore breakers.
 
 Breaking waves are intentionally not part of v1. Deep-water whitecaps can be
 approximated from crest steepness and foam, which is what this project does now.

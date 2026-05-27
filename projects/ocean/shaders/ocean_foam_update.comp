@@ -46,7 +46,8 @@ void main() {
 
     vec2 texel_motion = wind_direction * ((wind_speed * 8.0 * dt) / patch_length) * vec2(size);
     float previous = previous_valid > 0.5 ? bilinear_foam(vec2(texel) - texel_motion, size) : 0.0;
-    float source = imageLoad(normal_foam_image, texel).w * source_gain;
+    float crest = imageLoad(normal_foam_image, texel).w;
+    float source = pow(clamp(crest, 0.0, 1.0), 0.75) * source_gain * 2.0;
     float foam = clamp(max(previous * decay, source), 0.0, 1.0);
     imageStore(next_foam_image, texel, vec4(foam, 0.0, 0.0, 0.0));
 }

@@ -70,7 +70,7 @@ void main() {
         (d_horizontal_dz.x * d_horizontal_dx.y);
     float compression = max(0.0, 1.0 - jacobian);
     float curvature = max(0.0, -slope_z_curvature.z);
-    float crest_signal = compression * 1.8 + curvature * chop * 0.22;
+    float crest_signal = compression * 1.5 + curvature * chop * 0.18;
     float foam = smoothstep(params.foam_options.z, params.foam_options.z + 0.55, crest_signal) *
                  params.foam_options.x * params.foam_options.w;
     foam *= mix(0.35, 1.0, clamp(params.foam_options.y, 0.0, 1.0));
