@@ -90,6 +90,22 @@ float cascade_patch_length(uint cascade) {
     return ocean.cascade_options.z;
 }
 
+vec2 rotate_position(vec2 position, float angle) {
+    float s = sin(angle);
+    float c = cos(angle);
+    return vec2(position.x * c - position.y * s, position.x * s + position.y * c);
+}
+
+vec2 cascade_sample_position(uint cascade, vec2 position) {
+    if (cascade == 1u) {
+        return rotate_position(position + vec2(173.2, -91.7), 0.17);
+    }
+    if (cascade == 2u) {
+        return rotate_position(position + vec2(-811.3, 419.6), -0.11);
+    }
+    return position;
+}
+
 float cascade_weight(uint cascade, float camera_distance) {
     if (cascade == 0u) {
         return 1.0 - smoothstep(ocean.mesh_options.y * 0.18, ocean.mesh_options.y * 0.55,
@@ -109,7 +125,7 @@ void add_cascade(inout SurfaceSample sample_value, uint cascade, vec2 position,
                  float camera_distance) {
     float patch_length = cascade_patch_length(cascade);
     float weight = cascade_weight(cascade, camera_distance);
-    vec2 uv = position / max(patch_length, 0.001);
+    vec2 uv = cascade_sample_position(cascade, position) / max(patch_length, 0.001);
     vec4 displacement = sample_displacement(cascade, uv);
     vec4 normal_foam = sample_normal_foam(cascade, uv);
     sample_value.displacement += displacement.xyz * weight;
