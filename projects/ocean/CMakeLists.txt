@@ -14,11 +14,15 @@ cubey_add_app_target(
         shaders/ocean_spectrum_evolve.comp
         shaders/ocean_fft.comp
         shaders/ocean_finalize.comp
+        shaders/ocean_sky.vert
+        shaders/ocean_sky.frag
         shaders/ocean.vert
         shaders/ocean.frag
     SHADER_INCLUDE_DIRS
+        "${CMAKE_CURRENT_SOURCE_DIR}/shaders"
         "${CMAKE_SOURCE_DIR}/shaders"
     SHADER_DEPENDS
+        "${CMAKE_CURRENT_SOURCE_DIR}/shaders/ocean_atmosphere.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/color_space.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/pbr.glsl"
 )

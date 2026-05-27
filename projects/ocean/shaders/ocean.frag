@@ -3,6 +3,7 @@
 
 #include "cubey/color_space.glsl"
 #include "cubey/pbr.glsl"
+#include "ocean_atmosphere.glsl"
 
 layout(set = 0, binding = 0) uniform sampler2D displacement_near_texture;
 layout(set = 0, binding = 1) uniform sampler2D displacement_mid_texture;
@@ -47,21 +48,6 @@ struct FragmentSurfaceSample {
     float foam;
     float weight_sum;
 };
-
-vec3 sky_color(vec3 direction) {
-    direction = normalize(direction);
-    float horizon = clamp(direction.y * 0.5 + 0.5, 0.0, 1.0);
-    vec3 horizon_color = cubey_srgb_to_linear(vec3(0.66, 0.78, 0.89));
-    vec3 zenith_color = cubey_srgb_to_linear(vec3(0.045, 0.16, 0.34));
-    vec3 color = mix(horizon_color, zenith_color, pow(horizon, 1.65));
-
-    vec3 sun_direction = normalize(vec3(-0.34, 0.38, 0.86));
-    float sun_disk = pow(max(dot(direction, sun_direction), 0.0), 780.0);
-    float sun_glow = pow(max(dot(direction, sun_direction), 0.0), 18.0);
-    color += cubey_srgb_to_linear(vec3(1.0, 0.78, 0.43)) * sun_disk * 18.0;
-    color += cubey_srgb_to_linear(vec3(0.95, 0.54, 0.22)) * sun_glow * 0.55;
-    return color;
-}
 
 float hash21(vec2 value) {
     vec3 p = fract(vec3(value.xyx) * vec3(443.897, 441.423, 437.195));
@@ -195,7 +181,7 @@ void main() {
     foam = clamp(max(foam, surface_sample.foam * ocean.detail_options.z), 0.0, 1.0);
 
     vec3 reflection_dir = reflect(-view_dir, normal);
-    vec3 reflection = sky_color(reflection_dir);
+    vec3 reflection = ocean_sky_color(reflection_dir);
     vec3 refraction = refraction_color(depth, foam);
     float fresnel = 0.020 + 0.980 * pow(clamp(1.0 - dot(normal, view_dir), 0.0, 1.0), 5.0);
     vec3 water = mix(refraction, reflection, fresnel);
@@ -206,7 +192,7 @@ void main() {
                                    frag_wave.z) *
                         ocean.mesh_options.w;
     vec3 horizon_dir = normalize(vec3(-view_dir.x, 0.055, -view_dir.z));
-    vec3 color = mix(water, sky_color(horizon_dir), horizon_fog);
+    vec3 color = mix(water, ocean_sky_color(horizon_dir), horizon_fog);
 
     if (view == OCEAN_VIEW_HEIGHT) {
         color = debug_height_color(frag_wave.x);

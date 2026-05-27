@@ -50,6 +50,22 @@ constexpr VkFormat kOceanFieldFormat = VK_FORMAT_R32G32B32A32_SFLOAT;
     };
 }
 
+[[nodiscard]] cubey::render::MaterialPassInfo ocean_sky_pass_info() {
+    const VkPushConstantRange push_constant_range{
+        .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+        .offset = 0,
+        .size = sizeof(float) * 20U,
+    };
+    return {
+        .label = "ocean.sky",
+        .push_constants = {push_constant_range},
+        .cull_mode = VK_CULL_MODE_NONE,
+        .depth_test = false,
+        .depth_write = false,
+        .blend_enable = false,
+    };
+}
+
 [[nodiscard]] VkPushConstantRange compute_push_constant_range(std::uint32_t float_count) {
     return {
         .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
@@ -89,6 +105,7 @@ void OceanGpuResources::create(const cubey::vulkan::Device& device,
 
 void OceanGpuResources::reset() {
     surface_pipeline_.reset();
+    sky_pipeline_.reset();
     finalize_pipeline_.reset();
     fft_pipeline_.reset();
     spectrum_evolve_pipeline_.reset();
@@ -327,6 +344,16 @@ void OceanGpuResources::create_pipelines(const cubey::vulkan::Device& device,
         cubey::render::fragment_shader_file(shader_path(config.shader_dir, "ocean.frag.spv")),
     };
     const std::array surface_layouts{surface_layout_->handle()};
+    const std::array sky_shader_stage_files{
+        cubey::render::vertex_shader_file(shader_path(config.shader_dir, "ocean_sky.vert.spv")),
+        cubey::render::fragment_shader_file(shader_path(config.shader_dir, "ocean_sky.frag.spv")),
+    };
+    sky_pipeline_.emplace(device, cubey::render::GraphicsPipelineFileResourceConfig{
+                                      .extent = config.target_extent,
+                                      .color_format = config.color_format,
+                                      .shader_stage_files = sky_shader_stage_files,
+                                      .material_pass = ocean_sky_pass_info(),
+                                  });
     surface_pipeline_.emplace(device, cubey::render::GraphicsPipelineFileResourceConfig{
                                           .extent = config.target_extent,
                                           .color_format = config.color_format,
@@ -334,6 +361,13 @@ void OceanGpuResources::create_pipelines(const cubey::vulkan::Device& device,
                                           .descriptor_set_layouts = surface_layouts,
                                           .material_pass = ocean_surface_pass_info(),
                                       });
+}
+
+const cubey::render::GraphicsPipelineResource& OceanGpuResources::sky_pipeline() const {
+    if (!sky_pipeline_.has_value()) {
+        throw std::runtime_error("ocean sky pipeline is not initialized");
+    }
+    return sky_pipeline_.value();
 }
 
 const cubey::render::GraphicsPipelineResource& OceanGpuResources::surface_pipeline() const {

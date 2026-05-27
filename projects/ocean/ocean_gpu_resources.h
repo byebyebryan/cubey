@@ -35,9 +35,10 @@ class OceanGpuResources {
     void reset();
 
     [[nodiscard]] bool initialized() const {
-        return surface_pipeline_.has_value();
+        return sky_pipeline_.has_value() && surface_pipeline_.has_value();
     }
 
+    [[nodiscard]] const cubey::render::GraphicsPipelineResource& sky_pipeline() const;
     [[nodiscard]] const cubey::render::GraphicsPipelineResource& surface_pipeline() const;
     [[nodiscard]] const cubey::render::ComputePipelineResource& spectrum_init_pipeline() const;
     [[nodiscard]] const cubey::render::ComputePipelineResource& spectrum_evolve_pipeline() const;
@@ -107,6 +108,7 @@ class OceanGpuResources {
     std::optional<cubey::render::ComputePipelineResource> spectrum_evolve_pipeline_;
     std::optional<cubey::render::ComputePipelineResource> fft_pipeline_;
     std::optional<cubey::render::ComputePipelineResource> finalize_pipeline_;
+    std::optional<cubey::render::GraphicsPipelineResource> sky_pipeline_;
     std::optional<cubey::render::GraphicsPipelineResource> surface_pipeline_;
 };
 

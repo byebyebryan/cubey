@@ -66,6 +66,16 @@ struct OceanPushConstants {
 
 static_assert(sizeof(OceanPushConstants) == sizeof(float) * 56U);
 
+struct OceanSkyPushConstants {
+    cubey::math::Vec4 camera_time;
+    cubey::math::Vec4 camera_right_aspect;
+    cubey::math::Vec4 camera_up_tan_half_fovy;
+    cubey::math::Vec4 camera_forward;
+    cubey::math::Vec4 display_transform;
+};
+
+static_assert(sizeof(OceanSkyPushConstants) == sizeof(float) * 20U);
+
 struct OceanSpectrumPushConstants {
     cubey::math::Vec4 ocean_options;
     cubey::math::Vec4 cascade_options;
@@ -333,6 +343,8 @@ class OceanApp {
     [[nodiscard]] OceanPushConstants push_constants(VkExtent2D extent) const {
         const cubey::Transform3D transform = camera_transform();
         const float aspect = static_cast<float>(extent.width) / static_cast<float>(extent.height);
+        const cubey::math::Mat4 view_projection =
+            camera_.view_projection_matrix(transform, aspect);
         const cubey::render::PbrDisplayTransform display_transform =
             cubey::render::pbr_display_transform_for_target(pipeline_color_format_,
                                                             ocean_config_.exposure);
@@ -340,7 +352,7 @@ class OceanApp {
             cubey::render::pbr_display_transform_uniform(display_transform);
 
         return {
-            .view_projection = camera_.view_projection_matrix(transform, aspect),
+            .view_projection = view_projection,
             .camera_time =
                 {
                     transform.translation.x,
@@ -408,6 +420,37 @@ class OceanApp {
         };
     }
 
+    [[nodiscard]] OceanSkyPushConstants sky_push_constants(VkExtent2D extent) const {
+        const cubey::Transform3D transform = camera_transform();
+        const float aspect = static_cast<float>(extent.width) / static_cast<float>(extent.height);
+        const float tan_half_fovy = std::tan(camera_.fovy_radians() * 0.5F);
+        const cubey::math::Vec3 right =
+            glm::normalize(transform.rotation * cubey::math::Vec3{1.0F, 0.0F, 0.0F});
+        const cubey::math::Vec3 up =
+            glm::normalize(transform.rotation * cubey::math::Vec3{0.0F, 1.0F, 0.0F});
+        const cubey::math::Vec3 forward =
+            glm::normalize(transform.rotation * cubey::math::Vec3{0.0F, 0.0F, -1.0F});
+        const cubey::render::PbrDisplayTransform display_transform =
+            cubey::render::pbr_display_transform_for_target(pipeline_color_format_,
+                                                            ocean_config_.exposure);
+        const cubey::math::Vec4 display_uniform =
+            cubey::render::pbr_display_transform_uniform(display_transform);
+
+        return {
+            .camera_time =
+                {
+                    transform.translation.x,
+                    transform.translation.y,
+                    transform.translation.z,
+                    static_cast<float>(time_seconds_),
+                },
+            .camera_right_aspect = {right.x, right.y, right.z, aspect},
+            .camera_up_tan_half_fovy = {up.x, up.y, up.z, tan_half_fovy},
+            .camera_forward = {forward.x, forward.y, forward.z, 0.0F},
+            .display_transform = display_uniform,
+        };
+    }
+
     void record_ocean_draw(const cubey::vulkan::CommandRecorder& recorder,
                            VkExtent2D extent) const {
         const OceanPushConstants constants = push_constants(extent);
@@ -419,6 +462,17 @@ class OceanApp {
                                 VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
                                 constants);
         recorder.draw(ocean_mesh_vertex_count(ocean_config_));
+    }
+
+    void record_ocean_sky(const cubey::vulkan::CommandRecorder& recorder, VkExtent2D extent) const {
+        const OceanSkyPushConstants constants = sky_push_constants(extent);
+        const cubey::render::GraphicsPipelineResource& sky_pipeline = ocean_gpu_.sky_pipeline();
+        cubey::render::record_fullscreen_pipeline_draw(
+            recorder,
+            {
+                .pipeline = &sky_pipeline,
+            },
+            VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, constants);
     }
 
     [[nodiscard]] OceanSpectrumPushConstants spectrum_push_constants(std::uint32_t cascade) const {
@@ -621,9 +675,10 @@ class OceanApp {
             cubey::render::record_render_target_pass(
                 pass_recorder, cubey::render::render_target_view(target),
                 cubey::render::RenderClearValues{
-                    .color = cubey::render::color_clear_value(0.64F, 0.76F, 0.86F, 1.0F),
+                    .color = cubey::render::color_clear_value(0.0F, 0.0F, 0.0F, 1.0F),
                 },
                 [this, target](const cubey::vulkan::CommandRecorder& draw_recorder) {
+                    record_ocean_sky(draw_recorder, target.extent);
                     record_ocean_draw(draw_recorder, target.extent);
                 });
         };
