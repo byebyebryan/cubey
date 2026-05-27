@@ -4,7 +4,7 @@
 #include <cubey/render/render_graph.h>
 #include <cubey/vulkan/command_recorder.h>
 #include <cubey/vulkan/gpu_timestamps.h>
-#include <cubey/vulkan/vk_check.h>
+#include <cubey/vulkan/memory_barriers.h>
 
 #include <algorithm>
 #include <array>
@@ -15,8 +15,6 @@
 
 namespace cubey::projects::fluid::smoke_2d {
 namespace {
-
-using cubey::vulkan::vk_struct;
 
 struct RenderPushConstants {
     std::array<float, 4> grid_debug{};
@@ -33,42 +31,11 @@ static_assert(sizeof(RenderPushConstants) == sizeof(float) * 4U);
 static_assert(sizeof(SimulationPushConstants) ==
               sizeof(float) * kSmoke2DSimulationPushConstantFloatCount);
 
-struct DispatchGroups {
-    std::uint32_t x = 0;
-    std::uint32_t y = 0;
-};
-
-struct ShaderWriteBarrier {
-    VkPipelineStageFlags dst_stage = 0;
-    VkAccessFlags dst_access = 0;
-};
-
-struct TransferWriteBarrier {
-    VkPipelineStageFlags dst_stage = 0;
-    VkAccessFlags dst_access = 0;
-};
+using DispatchGroups = cubey::render::ComputeDispatchGroups;
 
 [[nodiscard]] DispatchGroups compute_dispatch_groups(const Smoke2DConfig& config) {
-    return {
-        .x = (config.grid_width + kSmoke2DComputeGroupSize - 1U) / kSmoke2DComputeGroupSize,
-        .y = (config.grid_height + kSmoke2DComputeGroupSize - 1U) / kSmoke2DComputeGroupSize,
-    };
-}
-
-void record_shader_write_barrier(VkCommandBuffer command_buffer, ShaderWriteBarrier config) {
-    auto barrier = vk_struct<VkMemoryBarrier>(VK_STRUCTURE_TYPE_MEMORY_BARRIER);
-    barrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
-    barrier.dstAccessMask = config.dst_access;
-    vkCmdPipelineBarrier(command_buffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, config.dst_stage, 0,
-                         1, &barrier, 0, nullptr, 0, nullptr);
-}
-
-void record_transfer_write_barrier(VkCommandBuffer command_buffer, TransferWriteBarrier config) {
-    auto barrier = vk_struct<VkMemoryBarrier>(VK_STRUCTURE_TYPE_MEMORY_BARRIER);
-    barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-    barrier.dstAccessMask = config.dst_access;
-    vkCmdPipelineBarrier(command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, config.dst_stage, 0, 1,
-                         &barrier, 0, nullptr, 0, nullptr);
+    return cubey::render::ceil_dispatch_groups(config.grid_width, config.grid_height,
+                                               kSmoke2DComputeGroupSize);
 }
 
 void record_injector_buffer_update(VkCommandBuffer command_buffer,
@@ -84,11 +51,8 @@ void record_injector_buffer_update(VkCommandBuffer command_buffer,
     }
     vkCmdUpdateBuffer(command_buffer, resources.injectors().handle(), 0, byte_size,
                       injectors.data());
-    record_transfer_write_barrier(command_buffer,
-                                  {
-                                      .dst_stage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-                                      .dst_access = VK_ACCESS_SHADER_READ_BIT,
-                                  });
+    cubey::vulkan::record_transfer_write_barrier(
+        command_buffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_ACCESS_SHADER_READ_BIT);
 }
 
 [[nodiscard]] float debug_view_push_value(Smoke2DDebugView view) {
@@ -144,26 +108,19 @@ void record_field_reset(VkCommandBuffer command_buffer, const Smoke2DGpuResource
                     resources.pressure_a().size(), 0);
     vkCmdFillBuffer(command_buffer, resources.pressure_b().handle(), 0,
                     resources.pressure_b().size(), 0);
-    record_transfer_write_barrier(
-        command_buffer, {
-                            .dst_stage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT |
-                                         VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-                            .dst_access = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
-                        });
+    cubey::vulkan::record_transfer_write_barrier(
+        command_buffer,
+        VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+        VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
 }
 
 void record_dispatch(const cubey::vulkan::CommandRecorder& recorder,
                      const cubey::render::ComputePipelineResource& pipeline,
                      VkDescriptorSet descriptor_set, const DispatchGroups& groups,
                      const SimulationPushConstants& push_constants) {
-    cubey::render::record_compute_pipeline_dispatch(recorder,
-                                                    {
-                                                        .pipeline = &pipeline,
-                                                        .descriptor_set = descriptor_set,
-                                                        .group_count_x = groups.x,
-                                                        .group_count_y = groups.y,
-                                                    },
-                                                    VK_SHADER_STAGE_COMPUTE_BIT, push_constants);
+    cubey::render::record_compute_pipeline_dispatch(
+        recorder, cubey::render::compute_pipeline_dispatch_info(pipeline, descriptor_set, groups),
+        VK_SHADER_STAGE_COMPUTE_BIT, push_constants);
 }
 
 void record_profiled_dispatch(const cubey::vulkan::CommandRecorder& recorder,
@@ -173,14 +130,16 @@ void record_profiled_dispatch(const cubey::vulkan::CommandRecorder& recorder,
                               cubey::vulkan::GpuTimestampProfiler* profiler,
                               std::uint32_t frame_slot_index, const char* label) {
     cubey::render::record_profiled_compute_pipeline_dispatch(
-        recorder,
-        {
-            .pipeline = &pipeline,
-            .descriptor_set = descriptor_set,
-            .group_count_x = groups.x,
-            .group_count_y = groups.y,
-        },
+        recorder, cubey::render::compute_pipeline_dispatch_info(pipeline, descriptor_set, groups),
         VK_SHADER_STAGE_COMPUTE_BIT, push_constants, profiler, frame_slot_index, label);
+}
+
+void record_compute_barrier(VkCommandBuffer command_buffer) {
+    cubey::vulkan::record_compute_shader_write_barrier(command_buffer);
+}
+
+void record_render_visibility_barrier(VkCommandBuffer command_buffer) {
+    cubey::vulkan::record_compute_render_shader_write_barrier(command_buffer);
 }
 
 } // namespace
@@ -213,11 +172,7 @@ void record_smoke_compute(VkCommandBuffer command_buffer, Smoke2DGpuResources& r
     record_profiled_dispatch(recorder, advect_pipeline, resources.advect_descriptor_set(), groups,
                              push_constants, profiler, frame_slot_index, "advect_predict");
 
-    record_shader_write_barrier(
-        command_buffer, {
-                            .dst_stage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-                            .dst_access = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
-                        });
+    record_compute_barrier(command_buffer);
 
     const cubey::render::ComputePipelineResource& advect_correct_pipeline =
         resources.advect_correct_pipeline_resource();
@@ -225,55 +180,35 @@ void record_smoke_compute(VkCommandBuffer command_buffer, Smoke2DGpuResources& r
                              resources.advect_correct_descriptor_set(), groups, push_constants,
                              profiler, frame_slot_index, "advect_correct");
 
-    record_shader_write_barrier(
-        command_buffer, {
-                            .dst_stage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-                            .dst_access = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
-                        });
+    record_compute_barrier(command_buffer);
 
     const cubey::render::ComputePipelineResource& inject_pipeline =
         resources.inject_pipeline_resource();
     record_profiled_dispatch(recorder, inject_pipeline, resources.inject_descriptor_set(), groups,
                              push_constants, profiler, frame_slot_index, "inject");
 
-    record_shader_write_barrier(
-        command_buffer, {
-                            .dst_stage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-                            .dst_access = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
-                        });
+    record_compute_barrier(command_buffer);
 
     const cubey::render::ComputePipelineResource& curl_pipeline =
         resources.curl_pipeline_resource();
     record_profiled_dispatch(recorder, curl_pipeline, resources.curl_descriptor_set(), groups,
                              push_constants, profiler, frame_slot_index, "curl");
 
-    record_shader_write_barrier(
-        command_buffer, {
-                            .dst_stage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-                            .dst_access = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
-                        });
+    record_compute_barrier(command_buffer);
 
     const cubey::render::ComputePipelineResource& vorticity_pipeline =
         resources.vorticity_pipeline_resource();
     record_profiled_dispatch(recorder, vorticity_pipeline, resources.vorticity_descriptor_set(),
                              groups, push_constants, profiler, frame_slot_index, "vorticity");
 
-    record_shader_write_barrier(
-        command_buffer, {
-                            .dst_stage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-                            .dst_access = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
-                        });
+    record_compute_barrier(command_buffer);
 
     const cubey::render::ComputePipelineResource& divergence_pipeline =
         resources.divergence_pipeline_resource();
     record_profiled_dispatch(recorder, divergence_pipeline, resources.divergence_descriptor_set(),
                              groups, push_constants, profiler, frame_slot_index, "divergence");
 
-    record_shader_write_barrier(
-        command_buffer, {
-                            .dst_stage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-                            .dst_access = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
-                        });
+    record_compute_barrier(command_buffer);
 
     cubey::vulkan::GpuTimestampScope pressure_scope(profiler, command_buffer, frame_slot_index,
                                                     "pressure");
@@ -285,12 +220,7 @@ void record_smoke_compute(VkCommandBuffer command_buffer, Smoke2DGpuResources& r
                 push_constants.decay_options[2] = static_cast<float>(parity);
                 record_dispatch(recorder, pressure_pipeline,
                                 resources.pressure_rbgs_descriptor_set(), groups, push_constants);
-                record_shader_write_barrier(
-                    command_buffer,
-                    {
-                        .dst_stage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-                        .dst_access = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
-                    });
+                record_compute_barrier(command_buffer);
             }
         }
     } else {
@@ -301,12 +231,7 @@ void record_smoke_compute(VkCommandBuffer command_buffer, Smoke2DGpuResources& r
                                                        ? resources.pressure_a_to_b_descriptor_set()
                                                        : resources.pressure_b_to_a_descriptor_set();
             record_dispatch(recorder, pressure_pipeline, descriptor_set, groups, push_constants);
-            record_shader_write_barrier(
-                command_buffer,
-                {
-                    .dst_stage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-                    .dst_access = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
-                });
+            record_compute_barrier(command_buffer);
         }
     }
     pressure_scope.end();
@@ -323,13 +248,7 @@ void record_smoke_compute(VkCommandBuffer command_buffer, Smoke2DGpuResources& r
                              push_constants, profiler, frame_slot_index, "projection");
 
     if (include_render_visibility_barrier) {
-        record_shader_write_barrier(
-            command_buffer,
-            {
-                .dst_stage =
-                    VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-                .dst_access = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
-            });
+        record_render_visibility_barrier(command_buffer);
     }
 }
 

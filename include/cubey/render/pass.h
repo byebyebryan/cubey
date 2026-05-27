@@ -8,7 +8,9 @@
 
 #include <vulkan/vulkan.h>
 
+#include <cstddef>
 #include <cstdint>
+#include <limits>
 #include <stdexcept>
 #include <string_view>
 #include <utility>
@@ -37,6 +39,67 @@ struct ComputePipelineDispatchInfo {
     std::uint32_t group_count_y = 1;
     std::uint32_t group_count_z = 1;
 };
+
+struct ComputeDispatchGroups {
+    std::uint32_t x = 1;
+    std::uint32_t y = 1;
+    std::uint32_t z = 1;
+};
+
+[[nodiscard]] inline std::uint32_t ceil_dispatch_group_count(std::size_t item_count,
+                                                             std::uint32_t group_size) {
+    if (item_count == 0 || group_size == 0) {
+        throw std::runtime_error("compute dispatch group sizing requires positive values");
+    }
+    const std::size_t group_count = (item_count + group_size - 1U) / group_size;
+    if (group_count > std::numeric_limits<std::uint32_t>::max()) {
+        throw std::runtime_error("compute dispatch group count exceeds Vulkan uint32 range");
+    }
+    return static_cast<std::uint32_t>(group_count);
+}
+
+[[nodiscard]] inline ComputeDispatchGroups linear_dispatch_groups(std::size_t item_count,
+                                                                  std::uint32_t group_size) {
+    return {
+        .x = ceil_dispatch_group_count(item_count, group_size),
+        .y = 1U,
+        .z = 1U,
+    };
+}
+
+[[nodiscard]] inline ComputeDispatchGroups
+ceil_dispatch_groups(std::uint32_t width, std::uint32_t height, std::uint32_t group_size) {
+    return {
+        .x = ceil_dispatch_group_count(width, group_size),
+        .y = ceil_dispatch_group_count(height, group_size),
+        .z = 1U,
+    };
+}
+
+[[nodiscard]] inline ComputeDispatchGroups ceil_dispatch_groups(std::uint32_t width,
+                                                                std::uint32_t height,
+                                                                std::uint32_t depth,
+                                                                std::uint32_t group_size) {
+    return {
+        .x = ceil_dispatch_group_count(width, group_size),
+        .y = ceil_dispatch_group_count(height, group_size),
+        .z = ceil_dispatch_group_count(depth, group_size),
+    };
+}
+
+[[nodiscard]] inline ComputePipelineDispatchInfo
+compute_pipeline_dispatch_info(const ComputePipelineResource& pipeline,
+                               VkDescriptorSet descriptor_set, ComputeDispatchGroups groups,
+                               std::uint32_t descriptor_set_index = 0) noexcept {
+    return {
+        .pipeline = &pipeline,
+        .descriptor_set = descriptor_set,
+        .descriptor_set_index = descriptor_set_index,
+        .group_count_x = groups.x,
+        .group_count_y = groups.y,
+        .group_count_z = groups.z,
+    };
+}
 
 inline void validate_compute_dispatch_info(const ComputePipelineDispatchInfo& info) {
     if (info.pipeline == nullptr) {
@@ -87,11 +150,12 @@ void record_compute_pipeline_dispatch(const cubey::vulkan::CommandRecorder& reco
 }
 
 template <typename PushConstants>
-void record_profiled_compute_pipeline_dispatch(
-    const cubey::vulkan::CommandRecorder& recorder, const ComputePipelineDispatchInfo& info,
-    VkShaderStageFlags stage_flags, const PushConstants& push_constants,
-    cubey::vulkan::GpuTimestampProfiler* profiler, std::uint32_t frame_slot_index,
-    const char* label) {
+void record_profiled_compute_pipeline_dispatch(const cubey::vulkan::CommandRecorder& recorder,
+                                               const ComputePipelineDispatchInfo& info,
+                                               VkShaderStageFlags stage_flags,
+                                               const PushConstants& push_constants,
+                                               cubey::vulkan::GpuTimestampProfiler* profiler,
+                                               std::uint32_t frame_slot_index, const char* label) {
     const std::string_view profile_label = label == nullptr ? std::string_view{} : label;
     cubey::vulkan::GpuTimestampScope profile_scope(profiler, recorder.handle(), frame_slot_index,
                                                    profile_label);

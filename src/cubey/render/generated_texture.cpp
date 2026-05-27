@@ -11,10 +11,7 @@
 namespace cubey::render {
 
 std::uint32_t compute_dispatch_group_count(std::uint32_t extent, std::uint32_t group_size) {
-    if (extent == 0 || group_size == 0) {
-        throw std::runtime_error("compute dispatch group sizing requires positive values");
-    }
-    return (extent + group_size - 1U) / group_size;
+    return ceil_dispatch_group_count(extent, group_size);
 }
 
 void validate_compute_generated_texture_config(const ComputeGeneratedTexture2DConfig& config) {

@@ -6,7 +6,7 @@
 #include <cubey/vulkan/command_recorder.h>
 #include <cubey/vulkan/dynamic_rendering.h>
 #include <cubey/vulkan/image_transitions.h>
-#include <cubey/vulkan/vk_check.h>
+#include <cubey/vulkan/memory_barriers.h>
 
 #include <algorithm>
 #include <array>
@@ -64,16 +64,7 @@ struct SurfacePushConstants {
 
 static_assert(sizeof(SurfacePushConstants) <= sizeof(float) * kWater3DRenderPushConstantFloatCount);
 
-struct DispatchGroups {
-    std::uint32_t x = 0;
-    std::uint32_t y = 0;
-    std::uint32_t z = 0;
-};
-
-struct ShaderWriteBarrier {
-    VkPipelineStageFlags dst_stage = 0;
-    VkAccessFlags dst_access = 0;
-};
+using DispatchGroups = cubey::render::ComputeDispatchGroups;
 
 enum class SurfacePassKind {
     Shading,
@@ -93,11 +84,7 @@ void record_render_target_pass_with_stored_depth(const cubey::vulkan::CommandRec
 
 [[nodiscard]] DispatchGroups compute_dispatch_groups(std::uint32_t width, std::uint32_t height,
                                                      std::uint32_t depth) {
-    return {
-        .x = (width + kWater3DComputeGroupSize - 1U) / kWater3DComputeGroupSize,
-        .y = (height + kWater3DComputeGroupSize - 1U) / kWater3DComputeGroupSize,
-        .z = (depth + kWater3DComputeGroupSize - 1U) / kWater3DComputeGroupSize,
-    };
+    return cubey::render::ceil_dispatch_groups(width, height, depth, kWater3DComputeGroupSize);
 }
 
 [[nodiscard]] float degrees_to_radians(float degrees) {
@@ -105,12 +92,7 @@ void record_render_target_pass_with_stored_depth(const cubey::vulkan::CommandRec
 }
 
 [[nodiscard]] DispatchGroups linear_dispatch_groups(std::size_t count) {
-    return {
-        .x = static_cast<std::uint32_t>((count + kWater3DParticleGroupSize - 1U) /
-                                        kWater3DParticleGroupSize),
-        .y = 1U,
-        .z = 1U,
-    };
+    return cubey::render::linear_dispatch_groups(count, kWater3DParticleGroupSize);
 }
 
 [[nodiscard]] DispatchGroups cell_dispatch_groups(const Water3DConfig& config) {
@@ -132,12 +114,7 @@ void record_render_target_pass_with_stored_depth(const cubey::vulkan::CommandRec
 }
 
 [[nodiscard]] DispatchGroups scan_dispatch_groups(std::size_t count) {
-    return {
-        .x = static_cast<std::uint32_t>((count + kWater3DScanGroupSize - 1U) /
-                                        kWater3DScanGroupSize),
-        .y = 1U,
-        .z = 1U,
-    };
+    return cubey::render::linear_dispatch_groups(count, kWater3DScanGroupSize);
 }
 
 [[nodiscard]] DispatchGroups reset_dispatch_groups(const Water3DConfig& config) {
@@ -173,42 +150,21 @@ diagnostics_workload_dispatch_groups(const Water3DConfig& config,
     return (profile_index % interval) == 0U;
 }
 
-void record_shader_write_barrier(VkCommandBuffer command_buffer, ShaderWriteBarrier config) {
-    auto barrier = cubey::vulkan::vk_struct<VkMemoryBarrier>(VK_STRUCTURE_TYPE_MEMORY_BARRIER);
-    barrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
-    barrier.dstAccessMask = config.dst_access;
-    vkCmdPipelineBarrier(command_buffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, config.dst_stage, 0,
-                         1, &barrier, 0, nullptr, 0, nullptr);
-}
-
 void record_compute_barrier(VkCommandBuffer command_buffer) {
-    record_shader_write_barrier(
-        command_buffer, {
-                            .dst_stage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-                            .dst_access = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
-                        });
+    cubey::vulkan::record_compute_shader_write_barrier(command_buffer);
 }
 
 void record_compute_indirect_barrier(VkCommandBuffer command_buffer) {
-    record_shader_write_barrier(
-        command_buffer,
-        {
-            .dst_stage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT,
-            .dst_access = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT |
-                          VK_ACCESS_INDIRECT_COMMAND_READ_BIT,
-        });
+    cubey::vulkan::record_compute_indirect_shader_write_barrier(command_buffer);
 }
 
 void record_final_barrier(VkCommandBuffer command_buffer) {
-    record_shader_write_barrier(
+    cubey::vulkan::record_shader_write_barrier(
         command_buffer,
-        {
-            .dst_stage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT |
-                         VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT | VK_PIPELINE_STAGE_VERTEX_SHADER_BIT |
-                         VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-            .dst_access = VK_ACCESS_INDIRECT_COMMAND_READ_BIT | VK_ACCESS_SHADER_READ_BIT |
-                          VK_ACCESS_SHADER_WRITE_BIT,
-        });
+        VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT |
+            VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+        VK_ACCESS_INDIRECT_COMMAND_READ_BIT | VK_ACCESS_SHADER_READ_BIT |
+            VK_ACCESS_SHADER_WRITE_BIT);
 }
 
 [[nodiscard]] float render_view_push_value(Water3DRenderView view) {
@@ -649,8 +605,7 @@ dispatch_push_constants(const ProjectFrame& frame, float delta_seconds, float pr
         .emit_options =
             {
                 water_3d_shader_count_float(
-                    emit_cursor,
-                    "water 3D emitter cursor exceeds exact shader integer range"),
+                    emit_cursor, "water 3D emitter cursor exceeds exact shader integer range"),
                 water_3d_shader_count_float(
                     emit_count, "water 3D emitter count exceeds exact shader integer range"),
                 water_3d_shader_count_float(
@@ -695,9 +650,8 @@ void note_emitter_emission(Water3DRuntimeState& state, const Water3DConfig& conf
     const std::uint32_t end_cursor = emit_cursor + touched_count;
     const std::uint32_t touched_high =
         end_cursor <= pool_capacity ? pool_start + end_cursor : config.particle_capacity;
-    state.particle_scan_count =
-        std::max(water_3d_runtime_particle_scan_count(config, state),
-                 std::min(touched_high, config.particle_capacity));
+    state.particle_scan_count = std::max(water_3d_runtime_particle_scan_count(config, state),
+                                         std::min(touched_high, config.particle_capacity));
 }
 
 void record_dispatch(const cubey::vulkan::CommandRecorder& recorder,
@@ -705,14 +659,7 @@ void record_dispatch(const cubey::vulkan::CommandRecorder& recorder,
                      VkDescriptorSet descriptor_set, DispatchGroups groups,
                      const Water3DDispatchPushConstants& push_constants) {
     cubey::render::record_compute_pipeline_dispatch(
-        recorder,
-        {
-            .pipeline = &pipeline,
-            .descriptor_set = descriptor_set,
-            .group_count_x = groups.x,
-            .group_count_y = groups.y,
-            .group_count_z = groups.z,
-        },
+        recorder, cubey::render::compute_pipeline_dispatch_info(pipeline, descriptor_set, groups),
         VK_SHADER_STAGE_COMPUTE_BIT, push_constants);
 }
 
@@ -799,14 +746,15 @@ void record_refresh_bins(const cubey::vulkan::CommandRecorder& recorder,
                          cubey::render::FrameSlot frame_slot,
                          cubey::vulkan::GpuTimestampProfiler* profiler, const char* profile_label,
                          bool mark_active_faces) {
-    auto record_profiled_dispatch =
-        [&](const cubey::render::ComputePipelineResource& pipeline, DispatchGroups groups,
-            const Water3DDispatchPushConstants& constants, const char* label) {
-            cubey::vulkan::GpuTimestampScope profile_scope(
-                profiler, command_buffer, frame_slot.index, gpu_profile_label(label));
-            record_dispatch(recorder, pipeline, descriptor_set, groups, constants);
-            record_compute_barrier(command_buffer);
-        };
+    auto record_profiled_dispatch = [&](const cubey::render::ComputePipelineResource& pipeline,
+                                        DispatchGroups groups,
+                                        const Water3DDispatchPushConstants& constants,
+                                        const char* label) {
+        cubey::vulkan::GpuTimestampScope profile_scope(profiler, command_buffer, frame_slot.index,
+                                                       gpu_profile_label(label));
+        record_dispatch(recorder, pipeline, descriptor_set, groups, constants);
+        record_compute_barrier(command_buffer);
+    };
 
     const char* clear_label = profile_label == nullptr ? nullptr : "clear particle bins";
     const char* build_label = profile_label == nullptr ? nullptr : "build particle bins";
@@ -1371,13 +1319,13 @@ void record_water_3d_compute(VkCommandBuffer command_buffer, Water3DGpuResources
 
         record_emitter_dispatch(recorder, command_buffer, resources, descriptor_set, config,
                                 runtime_state, frame, substep_dt, substep_time, frame_slot,
-                                profiler, "hose emit", kWater3DEmitterKindHose,
-                                config.hose.enabled, config.hose.particles_per_second,
+                                profiler, "hose emit", kWater3DEmitterKindHose, config.hose.enabled,
+                                config.hose.particles_per_second,
                                 runtime_state.hose_emit_accumulator);
         record_emitter_dispatch(recorder, command_buffer, resources, descriptor_set, config,
                                 runtime_state, frame, substep_dt, substep_time, frame_slot,
-                                profiler, "rain emit", kWater3DEmitterKindRain,
-                                config.rain.enabled, config.rain.particles_per_second,
+                                profiler, "rain emit", kWater3DEmitterKindRain, config.rain.enabled,
+                                config.rain.particles_per_second,
                                 runtime_state.rain_emit_accumulator);
         push_constants.dispatch_options[3] = water_3d_shader_count_float(
             water_3d_runtime_particle_scan_count(config, runtime_state),
@@ -1397,8 +1345,7 @@ void record_water_3d_compute(VkCommandBuffer command_buffer, Water3DGpuResources
         if (tiled_p2g) {
             begin_pass("build active p2g tiles");
             record_dispatch_indirect(recorder, resources.build_active_tiles_pipeline_resource(),
-                                     descriptor_set,
-                                     resources.active_face_dispatch_args().handle(),
+                                     descriptor_set, resources.active_face_dispatch_args().handle(),
                                      push_constants);
             record_compute_barrier(command_buffer);
             end_pass();

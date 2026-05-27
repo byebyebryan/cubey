@@ -3,7 +3,7 @@
 #include <cubey/render/pass.h>
 #include <cubey/vulkan/command_recorder.h>
 #include <cubey/vulkan/image_transitions.h>
-#include <cubey/vulkan/vk_check.h>
+#include <cubey/vulkan/memory_barriers.h>
 
 #include <algorithm>
 #include <array>
@@ -41,31 +41,11 @@ static_assert(sizeof(SimulationPushConstants) ==
               sizeof(float) * kPyro3DSimulationPushConstantFloatCount);
 static_assert(sizeof(RenderPushConstants) == sizeof(float) * kPyro3DRenderPushConstantFloatCount);
 
-struct DispatchGroups {
-    std::uint32_t x = 0;
-    std::uint32_t y = 0;
-    std::uint32_t z = 0;
-};
-
-struct ShaderWriteBarrier {
-    VkPipelineStageFlags dst_stage = 0;
-    VkAccessFlags dst_access = 0;
-};
-
-struct TransferWriteBarrier {
-    VkPipelineStageFlags dst_stage = 0;
-    VkAccessFlags dst_access = 0;
-};
+using DispatchGroups = cubey::render::ComputeDispatchGroups;
 
 [[nodiscard]] DispatchGroups compute_dispatch_groups(VkExtent3D extent, std::uint32_t group_size) {
-    if (group_size == 0) {
-        throw std::runtime_error("pyro 3D compute group size must be positive");
-    }
-    return {
-        .x = (extent.width + group_size - 1U) / group_size,
-        .y = (extent.height + group_size - 1U) / group_size,
-        .z = (extent.depth + group_size - 1U) / group_size,
-    };
+    return cubey::render::ceil_dispatch_groups(extent.width, extent.height, extent.depth,
+                                               group_size);
 }
 
 [[nodiscard]] VkExtent3D solver_extent(const Pyro3DConfig& config) {
@@ -90,22 +70,6 @@ struct TransferWriteBarrier {
         .height = std::max(lhs.height, rhs.height),
         .depth = std::max(lhs.depth, rhs.depth),
     };
-}
-
-void record_shader_write_barrier(VkCommandBuffer command_buffer, ShaderWriteBarrier config) {
-    auto barrier = cubey::vulkan::vk_struct<VkMemoryBarrier>(VK_STRUCTURE_TYPE_MEMORY_BARRIER);
-    barrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
-    barrier.dstAccessMask = config.dst_access;
-    vkCmdPipelineBarrier(command_buffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, config.dst_stage, 0,
-                         1, &barrier, 0, nullptr, 0, nullptr);
-}
-
-void record_transfer_write_barrier(VkCommandBuffer command_buffer, TransferWriteBarrier config) {
-    auto barrier = cubey::vulkan::vk_struct<VkMemoryBarrier>(VK_STRUCTURE_TYPE_MEMORY_BARRIER);
-    barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-    barrier.dstAccessMask = config.dst_access;
-    vkCmdPipelineBarrier(command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, config.dst_stage, 0, 1,
-                         &barrier, 0, nullptr, 0, nullptr);
 }
 
 void transition_volume_to_general(VkCommandBuffer command_buffer,
@@ -150,11 +114,8 @@ void record_source_buffer_update(VkCommandBuffer command_buffer,
         throw std::runtime_error("pyro 3D source update exceeds source buffer size");
     }
     vkCmdUpdateBuffer(command_buffer, resources.sources().handle(), 0, byte_size, sources.data());
-    record_transfer_write_barrier(command_buffer,
-                                  {
-                                      .dst_stage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-                                      .dst_access = VK_ACCESS_SHADER_READ_BIT,
-                                  });
+    cubey::vulkan::record_transfer_write_barrier(
+        command_buffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_ACCESS_SHADER_READ_BIT);
 }
 
 [[nodiscard]] SimulationPushConstants simulation_push_constants(const Pyro3DConfig& config,
@@ -285,15 +246,17 @@ void record_dispatch(const cubey::vulkan::CommandRecorder& recorder,
                      const cubey::render::ComputePipelineResource& pipeline,
                      VkDescriptorSet descriptor_set, const DispatchGroups& groups,
                      const SimulationPushConstants& push_constants) {
-    cubey::render::record_compute_pipeline_dispatch(recorder,
-                                                    {
-                                                        .pipeline = &pipeline,
-                                                        .descriptor_set = descriptor_set,
-                                                        .group_count_x = groups.x,
-                                                        .group_count_y = groups.y,
-                                                        .group_count_z = groups.z,
-                                                    },
-                                                    VK_SHADER_STAGE_COMPUTE_BIT, push_constants);
+    cubey::render::record_compute_pipeline_dispatch(
+        recorder, cubey::render::compute_pipeline_dispatch_info(pipeline, descriptor_set, groups),
+        VK_SHADER_STAGE_COMPUTE_BIT, push_constants);
+}
+
+void record_compute_barrier(VkCommandBuffer command_buffer) {
+    cubey::vulkan::record_compute_shader_write_barrier(command_buffer);
+}
+
+void record_render_visibility_barrier(VkCommandBuffer command_buffer) {
+    cubey::vulkan::record_compute_render_shader_write_barrier(command_buffer);
 }
 
 } // namespace
@@ -323,13 +286,8 @@ void record_pyro_3d_compute(VkCommandBuffer command_buffer, Pyro3DGpuResources& 
             VkDescriptorSet descriptor_set, const DispatchGroups& dispatch_groups) {
             cubey::render::record_profiled_compute_pipeline_dispatch(
                 recorder,
-                {
-                    .pipeline = &pipeline,
-                    .descriptor_set = descriptor_set,
-                    .group_count_x = dispatch_groups.x,
-                    .group_count_y = dispatch_groups.y,
-                    .group_count_z = dispatch_groups.z,
-                },
+                cubey::render::compute_pipeline_dispatch_info(pipeline, descriptor_set,
+                                                              dispatch_groups),
                 VK_SHADER_STAGE_COMPUTE_BIT, push_constants, profiler, frame_slot_index, label);
         };
 
@@ -342,13 +300,7 @@ void record_pyro_3d_compute(VkCommandBuffer command_buffer, Pyro3DGpuResources& 
         frame_state.shadow_initialized = false;
         frame_state.frames_since_shadow_update = 0;
         reset_requested = false;
-        record_shader_write_barrier(
-            command_buffer,
-            {
-                .dst_stage =
-                    VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-                .dst_access = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
-            });
+        record_render_visibility_barrier(command_buffer);
     }
 
     if (paused) {
@@ -362,11 +314,7 @@ void record_pyro_3d_compute(VkCommandBuffer command_buffer, Pyro3DGpuResources& 
                              resources.advect_descriptor_set(frame_state.density_a_current,
                                                              frame_state.velocity_a_current),
                              groups);
-    record_shader_write_barrier(
-        command_buffer, {
-                            .dst_stage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-                            .dst_access = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
-                        });
+    record_compute_barrier(command_buffer);
 
     const cubey::render::ComputePipelineResource& advect_correct_pipeline =
         resources.advect_correct_pipeline();
@@ -376,11 +324,7 @@ void record_pyro_3d_compute(VkCommandBuffer command_buffer, Pyro3DGpuResources& 
                              groups);
     frame_state.density_a_current = !frame_state.density_a_current;
     frame_state.velocity_a_current = !frame_state.velocity_a_current;
-    record_shader_write_barrier(
-        command_buffer, {
-                            .dst_stage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-                            .dst_access = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
-                        });
+    record_compute_barrier(command_buffer);
 
     const cubey::render::ComputePipelineResource& combustion_pipeline =
         resources.combustion_pipeline();
@@ -390,11 +334,7 @@ void record_pyro_3d_compute(VkCommandBuffer command_buffer, Pyro3DGpuResources& 
                              groups);
     frame_state.density_a_current = !frame_state.density_a_current;
     frame_state.velocity_a_current = !frame_state.velocity_a_current;
-    record_shader_write_barrier(
-        command_buffer, {
-                            .dst_stage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-                            .dst_access = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
-                        });
+    record_compute_barrier(command_buffer);
 
     const cubey::render::ComputePipelineResource& divergence_pipeline =
         resources.divergence_pipeline();
@@ -402,11 +342,7 @@ void record_pyro_3d_compute(VkCommandBuffer command_buffer, Pyro3DGpuResources& 
                              resources.divergence_descriptor_set(frame_state.density_a_current,
                                                                  frame_state.velocity_a_current),
                              groups);
-    record_shader_write_barrier(
-        command_buffer, {
-                            .dst_stage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-                            .dst_access = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
-                        });
+    record_compute_barrier(command_buffer);
 
     const cubey::render::ComputePipelineResource& pressure_pipeline = resources.pressure_pipeline();
     cubey::vulkan::GpuTimestampScope pressure_scope(profiler, command_buffer, frame_slot_index,
@@ -416,12 +352,7 @@ void record_pyro_3d_compute(VkCommandBuffer command_buffer, Pyro3DGpuResources& 
                                                    ? resources.pressure_a_to_b_descriptor_set()
                                                    : resources.pressure_b_to_a_descriptor_set();
         record_dispatch(recorder, pressure_pipeline, descriptor_set, groups, push_constants);
-        record_shader_write_barrier(
-            command_buffer,
-            {
-                .dst_stage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-                .dst_access = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
-            });
+        record_compute_barrier(command_buffer);
     }
     pressure_scope.end();
 
@@ -449,13 +380,7 @@ void record_pyro_3d_compute(VkCommandBuffer command_buffer, Pyro3DGpuResources& 
     }
 
     if (include_render_visibility_barrier) {
-        record_shader_write_barrier(
-            command_buffer,
-            {
-                .dst_stage =
-                    VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-                .dst_access = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
-            });
+        record_render_visibility_barrier(command_buffer);
     }
 }
 

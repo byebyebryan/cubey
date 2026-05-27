@@ -3,7 +3,7 @@
 #include <cubey/render/pass.h>
 #include <cubey/render/render_graph.h>
 #include <cubey/vulkan/command_recorder.h>
-#include <cubey/vulkan/vk_check.h>
+#include <cubey/vulkan/memory_barriers.h>
 
 #include <algorithm>
 #include <array>
@@ -23,15 +23,7 @@ struct RenderPushConstants {
 
 static_assert(sizeof(RenderPushConstants) == sizeof(float) * kWater2DRenderPushConstantFloatCount);
 
-struct DispatchGroups {
-    std::uint32_t x = 0;
-    std::uint32_t y = 0;
-};
-
-struct ShaderWriteBarrier {
-    VkPipelineStageFlags dst_stage = 0;
-    VkAccessFlags dst_access = 0;
-};
+using DispatchGroups = cubey::render::ComputeDispatchGroups;
 
 enum class SurfaceTextureSource {
     Raw,
@@ -45,18 +37,12 @@ struct SurfaceTextureSlot {
 };
 
 [[nodiscard]] DispatchGroups compute_dispatch_groups(std::uint32_t width, std::uint32_t height) {
-    return {
-        .x = (width + kWater2DComputeGroupSize - 1U) / kWater2DComputeGroupSize,
-        .y = (height + kWater2DComputeGroupSize - 1U) / kWater2DComputeGroupSize,
-    };
+    return cubey::render::ceil_dispatch_groups(width, height, kWater2DComputeGroupSize);
 }
 
 [[nodiscard]] DispatchGroups linear_dispatch_groups(std::size_t count,
                                                     std::uint32_t group_size = 64U) {
-    return {
-        .x = static_cast<std::uint32_t>((count + group_size - 1U) / group_size),
-        .y = 1U,
-    };
+    return cubey::render::linear_dispatch_groups(count, group_size);
 }
 
 [[nodiscard]] DispatchGroups cell_dispatch_groups(const Water2DConfig& config) {
@@ -100,14 +86,6 @@ diagnostics_workload_dispatch_groups(const Water2DConfig& config,
         return false;
     }
     return (frame.frame_index % config.profile_diagnostic_interval) == 0U;
-}
-
-void record_shader_write_barrier(VkCommandBuffer command_buffer, ShaderWriteBarrier config) {
-    auto barrier = cubey::vulkan::vk_struct<VkMemoryBarrier>(VK_STRUCTURE_TYPE_MEMORY_BARRIER);
-    barrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
-    barrier.dstAccessMask = config.dst_access;
-    vkCmdPipelineBarrier(command_buffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, config.dst_stage, 0,
-                         1, &barrier, 0, nullptr, 0, nullptr);
 }
 
 [[nodiscard]] float debug_view_push_value(Water2DDebugView view) {
@@ -390,28 +368,17 @@ void record_dispatch(const cubey::vulkan::CommandRecorder& recorder,
                      const cubey::render::ComputePipelineResource& pipeline,
                      VkDescriptorSet descriptor_set, DispatchGroups groups,
                      const Water2DDispatchPushConstants& push_constants) {
-    recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.pipeline());
-    recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.layout(), 0,
-                                 descriptor_set);
-    recorder.push_constants(pipeline.layout(), VK_SHADER_STAGE_COMPUTE_BIT, 0, push_constants);
-    recorder.dispatch(groups.x, groups.y, 1);
+    cubey::render::record_compute_pipeline_dispatch(
+        recorder, cubey::render::compute_pipeline_dispatch_info(pipeline, descriptor_set, groups),
+        VK_SHADER_STAGE_COMPUTE_BIT, push_constants);
 }
 
 void record_compute_barrier(VkCommandBuffer command_buffer) {
-    record_shader_write_barrier(
-        command_buffer, {
-                            .dst_stage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-                            .dst_access = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
-                        });
+    cubey::vulkan::record_compute_shader_write_barrier(command_buffer);
 }
 
 void record_final_barrier(VkCommandBuffer command_buffer) {
-    record_shader_write_barrier(
-        command_buffer, {
-                            .dst_stage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT |
-                                         VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-                            .dst_access = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
-                        });
+    cubey::vulkan::record_compute_render_shader_write_barrier(command_buffer);
 }
 
 void record_refresh_bins(const cubey::vulkan::CommandRecorder& recorder,
