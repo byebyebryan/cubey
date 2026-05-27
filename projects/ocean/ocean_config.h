@@ -37,17 +37,17 @@ struct OceanConfig {
     std::uint32_t mesh_cells = 220;
     float mesh_extent = 5600.0F;
     float mesh_snap = 16.0F;
-    float horizon_fog = 0.78F;
+    float horizon_fog = 0.50F;
 
     float wind_direction_degrees = -36.0F;
-    float wind_speed = 1.0F;
-    float wave_amplitude = 0.62F;
-    float swell_scale = 1.0F;
-    float chop = 0.65F;
-    float normal_strength = 0.46F;
+    float wind_speed = 1.75F;
+    float wave_amplitude = 2.45F;
+    float swell_scale = 1.15F;
+    float chop = 1.65F;
+    float normal_strength = 0.36F;
 
-    float foam_amount = 0.14F;
-    float foam_threshold = 1.20F;
+    float foam_amount = 0.34F;
+    float foam_threshold = 0.74F;
     float absorption = 0.070F;
     float refraction_strength = 0.055F;
     float exposure = 0.0F;
@@ -56,9 +56,9 @@ struct OceanConfig {
     float spectrum_patch_length_near = 96.0F;
     float spectrum_patch_length_mid = 384.0F;
     float spectrum_patch_length_far = 1536.0F;
-    float spectrum_energy = 0.72F;
-    float spectrum_fetch = 1.0F;
-    float foam_generation = 0.28F;
+    float spectrum_energy = 2.05F;
+    float spectrum_fetch = 2.35F;
+    float foam_generation = 0.56F;
     float foam_decay = 0.965F;
     std::uint32_t spectrum_seed = 1337;
 

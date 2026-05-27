@@ -1,6 +1,8 @@
 #version 450
 #extension GL_GOOGLE_include_directive : require
 
+#include "ocean_macro_waves.glsl"
+
 layout(set = 0, binding = 0) uniform sampler2D displacement_near_texture;
 layout(set = 0, binding = 1) uniform sampler2D displacement_mid_texture;
 layout(set = 0, binding = 2) uniform sampler2D displacement_far_texture;
@@ -121,16 +123,43 @@ float cascade_weight(uint cascade, float camera_distance) {
     return smoothstep(ocean.mesh_options.y * 0.34, ocean.mesh_options.y * 0.72, camera_distance);
 }
 
+float cascade_displacement_detail_scale(uint cascade) {
+    float detail = clamp(ocean.detail_options.y, 0.0, 1.0);
+    if (cascade == 0u) {
+        return 0.45 * detail * detail;
+    }
+    if (cascade == 1u) {
+        return mix(1.02, 1.24, detail);
+    }
+    return mix(1.72, 1.48, detail);
+}
+
+float cascade_normal_detail_scale(uint cascade) {
+    float detail = clamp(ocean.detail_options.y, 0.0, 1.0);
+    if (cascade == 0u) {
+        return detail * detail * 0.35;
+    }
+    if (cascade == 1u) {
+        return detail * 0.28;
+    }
+    return detail * 0.18;
+}
+
 void add_cascade(inout SurfaceSample sample_value, uint cascade, vec2 position,
                  float camera_distance) {
     float patch_length = cascade_patch_length(cascade);
     float weight = cascade_weight(cascade, camera_distance);
+    float displacement_weight = weight * cascade_displacement_detail_scale(cascade);
     vec2 uv = cascade_sample_position(cascade, position) / max(patch_length, 0.001);
     vec4 displacement = sample_displacement(cascade, uv);
     vec4 normal_foam = sample_normal_foam(cascade, uv);
-    sample_value.displacement += displacement.xyz * weight;
-    sample_value.normal_sum += normal_foam.xyz * weight;
-    sample_value.foam = max(sample_value.foam, max(displacement.w, normal_foam.w) * weight);
+    vec3 spectral_displacement = displacement.xyz;
+    spectral_displacement.xz *= mix(0.50, 1.0, clamp(ocean.detail_options.y, 0.0, 1.0));
+    sample_value.displacement += spectral_displacement * displacement_weight;
+    float normal_detail = cascade_normal_detail_scale(cascade);
+    sample_value.normal_sum += mix(vec3(0.0, 1.0, 0.0), normal_foam.xyz, normal_detail) * weight;
+    sample_value.foam = max(sample_value.foam, max(displacement.w, normal_foam.w) *
+                                                   displacement_weight);
     sample_value.weight_sum += weight;
 }
 
@@ -170,6 +199,16 @@ SurfaceSample sample_ocean(vec2 position, float camera_distance) {
         sample_value.displacement /= sample_value.weight_sum;
         sample_value.normal_sum /= sample_value.weight_sum;
     }
+    OceanMacroWaveSample macro_waves =
+        ocean_macro_waves(position, ocean.camera_time.w, ocean.wave_options.y,
+                          ocean.wave_options.x, ocean.detail_options.x, ocean.wave_options.w);
+    float normal_length = length(sample_value.normal_sum);
+    vec2 slope = normal_length > 0.0001
+                     ? ocean_slope_from_normal(sample_value.normal_sum / normal_length)
+                     : vec2(0.0);
+    sample_value.displacement += macro_waves.displacement;
+    sample_value.normal_sum = ocean_normal_from_slope(slope + macro_waves.slope);
+    sample_value.foam = max(sample_value.foam, macro_waves.foam * ocean.detail_options.z * 0.35);
     add_disturbance(sample_value, position);
     return sample_value;
 }

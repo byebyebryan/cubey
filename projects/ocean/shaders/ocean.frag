@@ -4,6 +4,7 @@
 #include "cubey/color_space.glsl"
 #include "cubey/pbr.glsl"
 #include "ocean_atmosphere.glsl"
+#include "ocean_macro_waves.glsl"
 
 layout(set = 0, binding = 0) uniform sampler2D displacement_near_texture;
 layout(set = 0, binding = 1) uniform sampler2D displacement_mid_texture;
@@ -137,26 +138,43 @@ float uv_texel_footprint(vec2 uv) {
 }
 
 float cascade_detail_filter(vec2 uv, float camera_distance) {
-    float derivative_filter = 1.0 - smoothstep(0.85, 3.2, uv_texel_footprint(uv));
-    float horizon_filter =
-        1.0 - smoothstep(ocean.mesh_options.y * 0.26, ocean.mesh_options.y * 0.84,
+    float derivative_filter = 1.0 - smoothstep(0.28, 1.35, uv_texel_footprint(uv));
+    float far_softening =
+        1.0 - smoothstep(ocean.mesh_options.y * 0.62, ocean.mesh_options.y * 1.10,
                          camera_distance);
-    return clamp(max(derivative_filter * 0.75, horizon_filter * 0.35), 0.0, 1.0);
+    return clamp(derivative_filter * mix(0.55, 1.0, far_softening), 0.0, 1.0);
+}
+
+float cascade_displacement_detail_scale(uint cascade) {
+    float detail = clamp(ocean.detail_options.y, 0.0, 1.0);
+    if (cascade == 0u) {
+        return 0.45 * detail * detail;
+    }
+    if (cascade == 1u) {
+        return mix(1.02, 1.24, detail);
+    }
+    return mix(1.72, 1.48, detail);
 }
 
 void add_cascade(inout FragmentSurfaceSample sample_value, uint cascade, vec2 position,
                  float camera_distance) {
     float patch_length = cascade_patch_length(cascade);
     float weight = cascade_weight(cascade, camera_distance);
+    float displacement_weight = weight * cascade_displacement_detail_scale(cascade);
     vec2 uv = cascade_sample_position(cascade, position) / max(patch_length, 0.001);
     vec4 displacement = sample_displacement(cascade, uv);
     vec4 normal_foam = sample_normal_foam(cascade, uv);
     float detail_filter = cascade_detail_filter(uv, camera_distance);
-    float normal_weight = weight * detail_filter;
-    sample_value.displacement += displacement.xyz * weight;
+    float detail_strength = clamp(ocean.detail_options.y, 0.0, 1.0);
+    float normal_weight = weight * detail_filter * detail_strength;
+    vec3 spectral_displacement = displacement.xyz;
+    spectral_displacement.xz *= mix(0.50, 1.0, detail_strength);
+    sample_value.displacement += spectral_displacement * displacement_weight;
     sample_value.normal_sum += normal_foam.xyz * normal_weight;
     sample_value.foam =
-        max(sample_value.foam, max(displacement.w, normal_foam.w) * normal_weight);
+        max(sample_value.foam,
+            max(displacement.w, normal_foam.w) * normal_weight *
+                cascade_displacement_detail_scale(cascade));
     sample_value.weight_sum += weight;
     sample_value.normal_weight_sum += normal_weight;
 }
@@ -177,6 +195,16 @@ FragmentSurfaceSample sample_fragment_surface(vec2 position, float camera_distan
     if (sample_value.normal_weight_sum > 0.0001) {
         sample_value.normal_sum /= sample_value.normal_weight_sum;
     }
+    OceanMacroWaveSample macro_waves =
+        ocean_macro_waves(position, ocean.camera_time.w, ocean.wave_options.y,
+                          ocean.wave_options.x, ocean.detail_options.x, ocean.wave_options.w);
+    float normal_length = length(sample_value.normal_sum);
+    vec2 slope = normal_length > 0.0001
+                     ? ocean_slope_from_normal(sample_value.normal_sum / normal_length)
+                     : vec2(0.0);
+    sample_value.displacement += macro_waves.displacement;
+    sample_value.normal_sum = ocean_normal_from_slope(slope + macro_waves.slope);
+    sample_value.foam = max(sample_value.foam, macro_waves.foam * ocean.detail_options.z * 0.35);
     return sample_value;
 }
 
@@ -202,30 +230,33 @@ vec2 rotated_unit(vec2 value, float angle) {
 vec2 add_detail_wave(vec2 slope, vec2 position, vec2 direction, float wavelength,
                      float slope_amplitude, float speed, float phase) {
     float frequency = 6.2831853 / max(wavelength, 0.001);
-    float theta = dot(position, direction) * frequency + ocean.camera_time.w * speed + phase;
-    return slope + direction * (cos(theta) * slope_amplitude);
+    vec2 advected_position = position + direction * (ocean.camera_time.w * speed);
+    float theta = dot(advected_position, direction) * frequency + phase;
+    float footprint = max(abs(dot(dFdx(position), direction) * frequency),
+                          abs(dot(dFdy(position), direction) * frequency));
+    float antialias = 1.0 - smoothstep(0.45, 1.25, footprint);
+    float envelope =
+        mix(0.45, 1.0, value_noise(position * (1.0 / max(wavelength * 2.7, 0.001)) +
+                                   direction * ocean.camera_time.w * 0.006 + phase));
+    return slope + direction * (cos(theta) * slope_amplitude * envelope * antialias);
 }
 
 vec2 procedural_detail_slope(vec2 position, float camera_distance) {
-    float near_fade =
-        1.0 - smoothstep(ocean.mesh_options.y * 0.025, ocean.mesh_options.y * 0.34,
-                         camera_distance);
-    float strength = ocean.detail_options.y * near_fade;
+    float strength = ocean.detail_options.y * ocean.detail_options.y * 0.055;
     if (strength <= 0.0001) {
         return vec2(0.0);
     }
 
     vec2 wind = vec2(cos(ocean.wave_options.y), sin(ocean.wave_options.y));
     vec2 slope = vec2(0.0);
-    slope = add_detail_wave(slope, position, rotated_unit(wind, 0.28), 18.0, 0.018, 0.95, 0.4);
-    slope = add_detail_wave(slope, position, rotated_unit(wind, -0.52), 9.0, 0.014, 1.7, 1.3);
-    slope = add_detail_wave(slope, position, rotated_unit(wind, 1.18), 4.5, 0.008, 2.6, 2.7);
-    slope = add_detail_wave(slope, position, rotated_unit(wind, -1.38), 2.4, 0.004, 3.8, 4.2);
+    slope = add_detail_wave(slope, position, rotated_unit(wind, 0.28), 58.0, 0.0052, 0.82, 0.4);
+    slope = add_detail_wave(slope, position, rotated_unit(wind, -0.52), 37.0, 0.0030, 0.63, 1.3);
+    slope = add_detail_wave(slope, position, rotated_unit(wind, 1.18), 25.0, 0.0015, 0.48, 2.7);
     return slope * strength;
 }
 
 vec3 normal_from_slope(vec2 slope) {
-    return normalize(vec3(-slope.x, 1.0, -slope.y));
+    return ocean_normal_from_slope(slope);
 }
 
 vec3 add_procedural_detail(vec3 normal, vec2 position, float camera_distance) {
@@ -266,8 +297,7 @@ void main() {
     vec3 camera_position = ocean.camera_time.xyz;
     FragmentSurfaceSample surface_sample =
         sample_fragment_surface(frag_sample_position, frag_wave.z);
-    float refinement_weight =
-        1.0 - smoothstep(ocean.mesh_options.y * 0.08, ocean.mesh_options.y * 0.24, frag_wave.z);
+    float refinement_weight = 0.22;
     vec2 refined_sample_position =
         mix(frag_sample_position, frag_sample_position + surface_sample.displacement.xz,
             refinement_weight);
@@ -280,11 +310,8 @@ void main() {
     vec3 sampled_normal = length(surface_sample.normal_sum) > 0.0001
                               ? normalize(surface_sample.normal_sum)
                               : normalize(frag_normal);
-    float normal_detail_fade =
-        1.0 - smoothstep(ocean.mesh_options.y * 0.10, ocean.mesh_options.y * 0.56, frag_wave.z);
     vec3 normal = normalize(mix(normalize(frag_normal), sampled_normal,
-                                clamp(ocean.detail_options.y * 0.62 * normal_detail_fade, 0.0,
-                                      1.0)));
+                                clamp(ocean.detail_options.y * 0.44, 0.0, 1.0)));
     normal = add_procedural_detail(normal, refined_sample_position, frag_wave.z);
     float depth = max(frag_wave.w, 0.0);
     float foam = foam_mask(normal, depth);
@@ -297,8 +324,14 @@ void main() {
     vec3 water = mix(refraction, reflection, fresnel);
     float sun_alignment = max(dot(reflection_dir, ocean_sun_direction()), 0.0);
     float grazing = pow(clamp(1.0 - dot(normal, view_dir), 0.0, 1.0), 0.55);
-    float sun_glint = pow(sun_alignment, 120.0) * 0.65 + pow(sun_alignment, 620.0) * 2.0;
-    water += cubey_srgb_to_linear(vec3(1.0, 0.78, 0.46)) * sun_glint * (0.18 + grazing);
+    float detail_strength = clamp(ocean.detail_options.y, 0.0, 1.0);
+    float normal_variation = length(dFdx(normal)) + length(dFdy(normal));
+    float specular_filter = 1.0 / (1.0 + normal_variation * 95.0);
+    float broad_glint = pow(sun_alignment, mix(12.0, 38.0, detail_strength)) * 0.24;
+    float sharp_glint = pow(sun_alignment, mix(70.0, 150.0, detail_strength)) * detail_strength *
+                        detail_strength * 0.30 * specular_filter;
+    float sun_glint = broad_glint + sharp_glint;
+    water += cubey_srgb_to_linear(vec3(1.0, 0.78, 0.46)) * sun_glint * (0.14 + grazing * 0.58);
     vec3 foam_color = cubey_srgb_to_linear(vec3(0.82, 0.94, 0.91));
     water = mix(water, foam_color, foam);
 

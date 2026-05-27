@@ -42,11 +42,11 @@ using cubey::FrameTiming;
 using cubey::host::FrameStatsSample;
 using cubey::host::FrameStatsSnapshot;
 
-constexpr float kCameraDistance = 220.0F;
+constexpr float kCameraDistance = 125.0F;
 constexpr float kCameraMinDistance = 18.0F;
 constexpr float kCameraMaxDistance = 900.0F;
 constexpr float kCameraBaseYaw = 0.38F;
-constexpr float kCameraBasePitch = -0.46F;
+constexpr float kCameraBasePitch = -0.22F;
 constexpr float kCameraNearPlane = 0.25F;
 constexpr float kCameraFarPlane = 14000.0F;
 

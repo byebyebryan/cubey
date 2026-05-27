@@ -86,7 +86,7 @@ void draw_ocean_ui(OceanUiContext ui) {
         ImGui::SliderFloat("Amplitude", &ui.config.wave_amplitude, 0.0F, 3.0F, "%.2f");
         ImGui::SliderFloat("Swell scale", &ui.config.swell_scale, 0.35F, 2.5F, "%.2f");
         ImGui::SliderFloat("Chop", &ui.config.chop, 0.0F, 2.0F, "%.2f");
-        ImGui::SliderFloat("Normal strength", &ui.config.normal_strength, 0.0F, 2.0F, "%.2f");
+        ImGui::SliderFloat("Detail strength", &ui.config.normal_strength, 0.0F, 1.0F, "%.2f");
     }
 
     if (cubey::host::imgui_section("Spectrum", true)) {
