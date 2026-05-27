@@ -1,6 +1,7 @@
 #include "ocean_app.h"
 
 #include "ocean_config.h"
+#include "ocean_gpu_resources.h"
 #include "ocean_ui.h"
 
 #include <cubey/core/math.h>
@@ -12,7 +13,6 @@
 #include <cubey/input/orbit_controller.h>
 #include <cubey/render/pass.h>
 #include <cubey/render/pbr.h>
-#include <cubey/render/pipeline_resource.h>
 #include <cubey/render/target.h>
 #include <cubey/scene/camera_3d.h>
 #include <cubey/vulkan/command_recorder.h>
@@ -61,26 +61,6 @@ struct OceanPushConstants {
 };
 
 static_assert(sizeof(OceanPushConstants) == sizeof(float) * 48U);
-
-[[nodiscard]] std::filesystem::path shader_path(const char* filename) {
-    return std::filesystem::path(CUBEY_OCEAN_SHADER_DIR) / filename;
-}
-
-[[nodiscard]] cubey::render::MaterialPassInfo ocean_pass_info() {
-    const VkPushConstantRange push_constant_range{
-        .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-        .offset = 0,
-        .size = sizeof(OceanPushConstants),
-    };
-    return {
-        .label = "ocean.surface",
-        .push_constants = {push_constant_range},
-        .cull_mode = VK_CULL_MODE_NONE,
-        .depth_test = false,
-        .depth_write = false,
-        .blend_enable = false,
-    };
-}
 
 [[nodiscard]] float radians(float degrees) {
     return degrees * (std::numbers::pi_v<float> / 180.0F);
@@ -157,7 +137,7 @@ class OceanApp {
                 .run_config = config_,
                 .app_name = "ocean",
                 .ready_status = "rendering ocean project",
-                .required_queue_flags = VK_QUEUE_GRAPHICS_BIT,
+                .required_queue_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
                 .swapchain_image_usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
                 .require_dynamic_rendering = true,
                 .close_on_escape = true,
@@ -168,7 +148,7 @@ class OceanApp {
     int run_headless() {
         cubey::host::HeadlessPngHostConfig host_config;
         host_config.run_config = config_;
-        host_config.required_queue_flags = VK_QUEUE_GRAPHICS_BIT;
+        host_config.required_queue_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT;
         host_config.output_format = VK_FORMAT_R8G8B8A8_UNORM;
         host_config.require_dynamic_rendering = true;
 
@@ -234,30 +214,25 @@ class OceanApp {
     }
 
     void create_pipeline(cubey::vulkan::Device& device, VkFormat color_format, VkExtent2D extent) {
-        const std::array<cubey::render::ShaderStageFile, 2> shader_stage_files{
-            cubey::render::vertex_shader_file(shader_path("ocean.vert.spv")),
-            cubey::render::fragment_shader_file(shader_path("ocean.frag.spv")),
-        };
-        const cubey::render::MaterialPassInfo pass = ocean_pass_info();
-        pipeline_.emplace(device, cubey::render::GraphicsPipelineFileResourceConfig{
-                                      .extent = extent,
+        ocean_gpu_.create(device, OceanGpuResourceConfig{
+                                      .ocean = ocean_config_,
+                                      .shader_dir = CUBEY_OCEAN_SHADER_DIR,
                                       .color_format = color_format,
-                                      .shader_stage_files = shader_stage_files,
-                                      .material_pass = pass,
+                                      .target_extent = extent,
                                   });
         pipeline_color_format_ = color_format;
     }
 
     void destroy_swapchain_resources() {
-        pipeline_.reset();
+        ocean_gpu_.reset();
         pipeline_color_format_ = VK_FORMAT_UNDEFINED;
     }
 
     [[nodiscard]] const cubey::render::GraphicsPipelineResource& pipeline() const {
-        if (!pipeline_.has_value()) {
+        if (!ocean_gpu_.initialized()) {
             throw std::runtime_error("ocean pipeline is not initialized");
         }
-        return pipeline_.value();
+        return ocean_gpu_.surface_pipeline();
     }
 
     [[nodiscard]] cubey::Transform3D camera_transform() const {
@@ -338,6 +313,8 @@ class OceanApp {
         const OceanPushConstants constants = push_constants(extent);
         const cubey::render::GraphicsPipelineResource& ocean_pipeline = pipeline();
         recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, ocean_pipeline.pipeline());
+        recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS, ocean_pipeline.layout(), 0,
+                                     ocean_gpu_.surface_set());
         recorder.push_constants(ocean_pipeline.layout(),
                                 VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
                                 constants);
@@ -381,7 +358,7 @@ class OceanApp {
     cubey::OrbitController orbit_controller_;
     cubey::host::FrameStats ui_frame_stats_;
     std::optional<FrameStatsSnapshot> latest_frame_stats_;
-    std::optional<cubey::render::GraphicsPipelineResource> pipeline_;
+    OceanGpuResources ocean_gpu_;
     VkFormat pipeline_color_format_ = VK_FORMAT_UNDEFINED;
     double time_seconds_ = 0.0;
     double latest_fps_ = 0.0;

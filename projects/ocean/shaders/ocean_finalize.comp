@@ -1,0 +1,24 @@
+#version 450
+
+layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
+
+layout(rgba32f, set = 0, binding = 0) readonly uniform image2D height_image;
+layout(rgba32f, set = 0, binding = 1) writeonly uniform image2D displacement_image;
+layout(rgba32f, set = 0, binding = 2) writeonly uniform image2D normal_foam_image;
+
+layout(push_constant) uniform FinalizeParams {
+    vec4 ocean_options;
+    vec4 cascade_options;
+    vec4 foam_options;
+    vec4 debug_options;
+} params;
+
+void main() {
+    ivec2 texel = ivec2(gl_GlobalInvocationID.xy);
+    ivec2 size = imageSize(displacement_image);
+    if (texel.x >= size.x || texel.y >= size.y) {
+        return;
+    }
+    imageStore(displacement_image, texel, vec4(0.0));
+    imageStore(normal_foam_image, texel, vec4(0.0, 1.0, 0.0, 0.0));
+}

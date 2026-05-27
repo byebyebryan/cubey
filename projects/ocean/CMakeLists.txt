@@ -6,9 +6,14 @@ cubey_add_app_target(
     WINDOWED_SMOKE_PATTERN "ocean: .*rendering ocean project"
     SOURCES
         ocean_app.cpp
+        ocean_gpu_resources.cpp
         ocean_ui.cpp
         main.cpp
     SHADERS
+        shaders/ocean_spectrum_init.comp
+        shaders/ocean_spectrum_evolve.comp
+        shaders/ocean_fft.comp
+        shaders/ocean_finalize.comp
         shaders/ocean.vert
         shaders/ocean.frag
     SHADER_INCLUDE_DIRS
