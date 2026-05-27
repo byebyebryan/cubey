@@ -32,6 +32,7 @@ inline constexpr std::uint32_t kOceanMaxMeshCells = 320;
 inline constexpr std::uint32_t kOceanMinSpectrumResolution = 64;
 inline constexpr std::uint32_t kOceanMaxSpectrumResolution = 512;
 inline constexpr std::uint32_t kOceanCascadeCount = 3;
+inline constexpr std::uint32_t kOceanSpectrumFieldCount = 3;
 
 struct OceanConfig {
     std::uint32_t mesh_cells = 220;

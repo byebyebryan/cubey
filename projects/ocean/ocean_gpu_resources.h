@@ -47,7 +47,8 @@ class OceanGpuResources {
 
     [[nodiscard]] VkDescriptorSet spectrum_init_set(std::uint32_t cascade) const;
     [[nodiscard]] VkDescriptorSet spectrum_evolve_set(std::uint32_t cascade) const;
-    [[nodiscard]] VkDescriptorSet fft_set(std::uint32_t cascade, std::uint32_t set_index) const;
+    [[nodiscard]] VkDescriptorSet fft_set(std::uint32_t cascade, std::uint32_t field,
+                                          std::uint32_t set_index) const;
     [[nodiscard]] VkDescriptorSet finalize_set(std::uint32_t cascade) const;
     [[nodiscard]] VkDescriptorSet surface_set() const;
 
@@ -56,14 +57,20 @@ class OceanGpuResources {
     }
 
     [[nodiscard]] const cubey::render::Texture2D& h0(std::uint32_t cascade) const;
-    [[nodiscard]] const cubey::render::Texture2D& spectrum(std::uint32_t cascade) const;
-    [[nodiscard]] const cubey::render::Texture2D& ping(std::uint32_t cascade) const;
-    [[nodiscard]] const cubey::render::Texture2D& pong(std::uint32_t cascade) const;
+    [[nodiscard]] const cubey::render::Texture2D& spectrum(std::uint32_t cascade,
+                                                           std::uint32_t field) const;
+    [[nodiscard]] const cubey::render::Texture2D& ping(std::uint32_t cascade,
+                                                       std::uint32_t field) const;
+    [[nodiscard]] const cubey::render::Texture2D& pong(std::uint32_t cascade,
+                                                       std::uint32_t field) const;
     [[nodiscard]] const cubey::render::Texture2D& displacement(std::uint32_t cascade) const;
     [[nodiscard]] const cubey::render::Texture2D& normal_foam(std::uint32_t cascade) const;
 
   private:
     using TextureArray = std::array<std::optional<cubey::render::Texture2D>, kOceanCascadeCount>;
+    using SpectrumTextureArray =
+        std::array<std::optional<cubey::render::Texture2D>,
+                   kOceanCascadeCount * kOceanSpectrumFieldCount>;
 
     void create_textures(const cubey::vulkan::Device& device, const OceanConfig& config);
     void create_descriptor_sets(const cubey::vulkan::Device& device);
@@ -73,14 +80,17 @@ class OceanGpuResources {
 
     [[nodiscard]] const cubey::render::Texture2D&
     texture_at(const TextureArray& textures, std::uint32_t cascade, const char* label) const;
+    [[nodiscard]] const cubey::render::Texture2D&
+    spectrum_texture_at(const SpectrumTextureArray& textures, std::uint32_t cascade,
+                        std::uint32_t field, const char* label) const;
     [[nodiscard]] VkDescriptorSet descriptor_at(std::span<const VkDescriptorSet> sets,
                                                 std::uint32_t index, const char* label) const;
 
     std::uint32_t resolution_ = 0;
     TextureArray h0_{};
-    TextureArray spectrum_{};
-    TextureArray ping_{};
-    TextureArray pong_{};
+    SpectrumTextureArray spectrum_{};
+    SpectrumTextureArray ping_{};
+    SpectrumTextureArray pong_{};
     TextureArray displacement_{};
     TextureArray normal_foam_{};
 
@@ -94,7 +104,7 @@ class OceanGpuResources {
 
     std::optional<cubey::vulkan::DescriptorSetLayout> fft_layout_;
     std::optional<cubey::vulkan::DescriptorPool> fft_pool_;
-    std::array<VkDescriptorSet, kOceanCascadeCount * 3U> fft_sets_{};
+    std::array<VkDescriptorSet, kOceanCascadeCount * kOceanSpectrumFieldCount * 3U> fft_sets_{};
 
     std::optional<cubey::vulkan::DescriptorSetLayout> finalize_layout_;
     std::optional<cubey::vulkan::DescriptorPool> finalize_pool_;

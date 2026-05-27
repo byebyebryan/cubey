@@ -2,9 +2,11 @@
 
 layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 
-layout(rgba32f, set = 0, binding = 0) readonly uniform image2D height_image;
-layout(rgba32f, set = 0, binding = 1) writeonly uniform image2D displacement_image;
-layout(rgba32f, set = 0, binding = 2) writeonly uniform image2D normal_foam_image;
+layout(rgba32f, set = 0, binding = 0) readonly uniform image2D height_dx_image;
+layout(rgba32f, set = 0, binding = 1) readonly uniform image2D dz_slope_x_image;
+layout(rgba32f, set = 0, binding = 2) readonly uniform image2D slope_z_curvature_image;
+layout(rgba32f, set = 0, binding = 3) writeonly uniform image2D displacement_image;
+layout(rgba32f, set = 0, binding = 4) writeonly uniform image2D normal_foam_image;
 
 layout(push_constant) uniform FinalizeParams {
     vec4 ocean_options;
@@ -13,9 +15,29 @@ layout(push_constant) uniform FinalizeParams {
     vec4 debug_options;
 } params;
 
-float height_at(ivec2 texel, ivec2 size) {
+ivec2 wrapped_texel(ivec2 texel, ivec2 size) {
+    return ivec2((texel.x + size.x) % size.x, (texel.y + size.y) % size.y);
+}
+
+vec4 height_dx_at(ivec2 texel, ivec2 size) {
     ivec2 wrapped = ivec2((texel.x + size.x) % size.x, (texel.y + size.y) % size.y);
-    return imageLoad(height_image, wrapped).x * params.cascade_options.w;
+    return imageLoad(height_dx_image, wrapped) * params.cascade_options.w;
+}
+
+vec4 dz_slope_x_at(ivec2 texel, ivec2 size) {
+    ivec2 wrapped = wrapped_texel(texel, size);
+    return imageLoad(dz_slope_x_image, wrapped) * params.cascade_options.w;
+}
+
+vec4 slope_z_curvature_at(ivec2 texel, ivec2 size) {
+    ivec2 wrapped = wrapped_texel(texel, size);
+    return imageLoad(slope_z_curvature_image, wrapped) * params.cascade_options.w;
+}
+
+vec2 horizontal_at(ivec2 texel, ivec2 size) {
+    vec4 height_dx = height_dx_at(texel, size);
+    vec4 dz_slope_x = dz_slope_x_at(texel, size);
+    return vec2(height_dx.z, dz_slope_x.x);
 }
 
 void main() {
@@ -27,17 +49,28 @@ void main() {
 
     float patch_length = params.cascade_options.x;
     float cell_size = patch_length / max(params.ocean_options.x, 1.0);
-    float center = height_at(texel, size);
-    float left = height_at(texel + ivec2(-1, 0), size);
-    float right = height_at(texel + ivec2(1, 0), size);
-    float down = height_at(texel + ivec2(0, -1), size);
-    float up = height_at(texel + ivec2(0, 1), size);
-    vec2 gradient = vec2(right - left, up - down) / max(2.0 * cell_size, 0.0001);
+    vec4 height_dx = height_dx_at(texel, size);
+    vec4 dz_slope_x = dz_slope_x_at(texel, size);
+    vec4 slope_z_curvature = slope_z_curvature_at(texel, size);
+    float center = height_dx.x;
     float chop = max(params.cascade_options.z, 0.0);
-    vec2 horizontal = -gradient * chop * min(cell_size * 2.0, patch_length * 0.018);
-    vec3 normal = normalize(vec3(-gradient.x * params.ocean_options.w, 1.0,
-                                 -gradient.y * params.ocean_options.w));
-    float crest_signal = length(gradient) * chop * 5.0;
+    vec2 horizontal = vec2(height_dx.z, dz_slope_x.x) * chop;
+    vec2 slope = vec2(dz_slope_x.z, slope_z_curvature.x);
+    vec3 normal = normalize(vec3(-slope.x * params.ocean_options.w, 1.0,
+                                 -slope.y * params.ocean_options.w));
+
+    vec2 horizontal_left = horizontal_at(texel + ivec2(-1, 0), size);
+    vec2 horizontal_right = horizontal_at(texel + ivec2(1, 0), size);
+    vec2 horizontal_down = horizontal_at(texel + ivec2(0, -1), size);
+    vec2 horizontal_up = horizontal_at(texel + ivec2(0, 1), size);
+    vec2 d_horizontal_dx = (horizontal_right - horizontal_left) / max(2.0 * cell_size, 0.0001);
+    vec2 d_horizontal_dz = (horizontal_up - horizontal_down) / max(2.0 * cell_size, 0.0001);
+    float jacobian =
+        (1.0 + d_horizontal_dx.x) * (1.0 + d_horizontal_dz.y) -
+        (d_horizontal_dz.x * d_horizontal_dx.y);
+    float compression = max(0.0, 1.0 - jacobian);
+    float curvature = max(0.0, -slope_z_curvature.z);
+    float crest_signal = compression * 1.8 + curvature * chop * 0.22;
     float foam = smoothstep(params.foam_options.z, params.foam_options.z + 0.55, crest_signal) *
                  params.foam_options.x * params.foam_options.w;
     foam *= mix(0.35, 1.0, clamp(params.foam_options.y, 0.0, 1.0));

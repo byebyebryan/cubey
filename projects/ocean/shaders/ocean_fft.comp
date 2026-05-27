@@ -34,13 +34,13 @@ int bit_reverse(int value, int bits) {
     return result;
 }
 
-vec2 load_complex(ivec2 base_texel, int index, bool horizontal, bool first_pass, int bits) {
+vec4 load_packed_complex(ivec2 base_texel, int index, bool horizontal, bool first_pass, int bits) {
     ivec2 source_texel = horizontal ? ivec2(index, base_texel.y) : ivec2(base_texel.x, index);
     if (first_pass) {
         int reversed = bit_reverse(index, bits);
         source_texel = horizontal ? ivec2(reversed, base_texel.y) : ivec2(base_texel.x, reversed);
     }
-    return imageLoad(source_image, source_texel).xy;
+    return imageLoad(source_image, source_texel);
 }
 
 void main() {
@@ -64,11 +64,13 @@ void main() {
     int i1 = i0 + half_m;
 
     int bits = log2_exact(n);
-    vec2 a = load_complex(texel, i0, horizontal, first_pass, bits);
-    vec2 b = load_complex(texel, i1, horizontal, first_pass, bits);
+    vec4 a = load_packed_complex(texel, i0, horizontal, first_pass, bits);
+    vec4 b = load_packed_complex(texel, i1, horizontal, first_pass, bits);
     float angle = 2.0 * PI * float(pair_index) / float(m);
     vec2 twiddle = vec2(cos(angle), sin(angle));
-    vec2 rotated = complex_mul(b, twiddle);
-    vec2 value = local < half_m ? (a + rotated) : (a - rotated);
-    imageStore(destination_image, texel, vec4(value, 0.0, 0.0));
+    vec2 rotated_xy = complex_mul(b.xy, twiddle);
+    vec2 rotated_zw = complex_mul(b.zw, twiddle);
+    vec4 rotated = vec4(rotated_xy, rotated_zw);
+    vec4 value = local < half_m ? (a + rotated) : (a - rotated);
+    imageStore(destination_image, texel, value);
 }

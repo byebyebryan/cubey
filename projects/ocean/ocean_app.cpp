@@ -567,12 +567,17 @@ class OceanApp {
         for (std::uint32_t cascade = 0; cascade < kOceanCascadeCount; ++cascade) {
             recorder.transition_image_layout(cubey::vulkan::begin_storage_image_write_transition(
                 ocean_gpu_.h0(cascade).handle()));
-            recorder.transition_image_layout(cubey::vulkan::begin_storage_image_write_transition(
-                ocean_gpu_.spectrum(cascade).handle()));
-            recorder.transition_image_layout(cubey::vulkan::begin_storage_image_write_transition(
-                ocean_gpu_.ping(cascade).handle()));
-            recorder.transition_image_layout(cubey::vulkan::begin_storage_image_write_transition(
-                ocean_gpu_.pong(cascade).handle()));
+            for (std::uint32_t field = 0; field < kOceanSpectrumFieldCount; ++field) {
+                recorder.transition_image_layout(
+                    cubey::vulkan::begin_storage_image_write_transition(
+                        ocean_gpu_.spectrum(cascade, field).handle()));
+                recorder.transition_image_layout(
+                    cubey::vulkan::begin_storage_image_write_transition(
+                        ocean_gpu_.ping(cascade, field).handle()));
+                recorder.transition_image_layout(
+                    cubey::vulkan::begin_storage_image_write_transition(
+                        ocean_gpu_.pong(cascade, field).handle()));
+            }
             recorder.transition_image_layout(cubey::vulkan::begin_storage_image_write_transition(
                 ocean_gpu_.displacement(cascade).handle()));
             recorder.transition_image_layout(cubey::vulkan::begin_storage_image_write_transition(
@@ -607,14 +612,14 @@ class OceanApp {
     }
 
     void record_fft_pass(const cubey::vulkan::CommandRecorder& recorder, std::uint32_t cascade,
-                         std::uint32_t stage, bool horizontal, bool first_pass,
+                         std::uint32_t field, std::uint32_t stage, bool horizontal, bool first_pass,
                          std::uint32_t descriptor_set_index) const {
         const cubey::render::ComputeDispatchGroups groups =
             ocean_spectrum_dispatch_groups(ocean_config_);
         cubey::render::record_compute_pipeline_dispatch(
             recorder,
             cubey::render::compute_pipeline_dispatch_info(
-                ocean_gpu_.fft_pipeline(), ocean_gpu_.fft_set(cascade, descriptor_set_index),
+                ocean_gpu_.fft_pipeline(), ocean_gpu_.fft_set(cascade, field, descriptor_set_index),
                 groups),
             VK_SHADER_STAGE_COMPUTE_BIT, fft_push_constants(stage, horizontal, first_pass));
     }
@@ -622,15 +627,20 @@ class OceanApp {
     void record_fft(const cubey::vulkan::CommandRecorder& recorder) const {
         const std::uint32_t stage_count = log2_exact(ocean_config_.spectrum_resolution);
         for (std::uint32_t cascade = 0; cascade < kOceanCascadeCount; ++cascade) {
-            for (std::uint32_t stage = 1; stage <= stage_count; ++stage) {
-                const std::uint32_t set_index = stage == 1U ? 0U : ((stage % 2U) == 0U ? 1U : 2U);
-                record_fft_pass(recorder, cascade, stage, true, stage == 1U, set_index);
-                cubey::vulkan::record_compute_shader_write_barrier(recorder.handle());
-            }
-            for (std::uint32_t stage = 1; stage <= stage_count; ++stage) {
-                const std::uint32_t set_index = stage == 1U ? 2U : ((stage % 2U) == 0U ? 1U : 2U);
-                record_fft_pass(recorder, cascade, stage, false, stage == 1U, set_index);
-                cubey::vulkan::record_compute_shader_write_barrier(recorder.handle());
+            for (std::uint32_t field = 0; field < kOceanSpectrumFieldCount; ++field) {
+                for (std::uint32_t stage = 1; stage <= stage_count; ++stage) {
+                    const std::uint32_t set_index =
+                        stage == 1U ? 0U : ((stage % 2U) == 0U ? 1U : 2U);
+                    record_fft_pass(recorder, cascade, field, stage, true, stage == 1U, set_index);
+                    cubey::vulkan::record_compute_shader_write_barrier(recorder.handle());
+                }
+                for (std::uint32_t stage = 1; stage <= stage_count; ++stage) {
+                    const std::uint32_t set_index =
+                        stage == 1U ? 2U : ((stage % 2U) == 0U ? 1U : 2U);
+                    record_fft_pass(recorder, cascade, field, stage, false, stage == 1U,
+                                    set_index);
+                    cubey::vulkan::record_compute_shader_write_barrier(recorder.handle());
+                }
             }
         }
     }

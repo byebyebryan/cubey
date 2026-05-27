@@ -119,6 +119,8 @@ int main() {
             read_text_file(source_root / "shaders/ocean_atmosphere.glsl");
         const std::string init_shader =
             read_text_file(source_root / "shaders/ocean_spectrum_init.comp");
+        const std::string evolve_shader =
+            read_text_file(source_root / "shaders/ocean_spectrum_evolve.comp");
         const std::string fft_shader = read_text_file(source_root / "shaders/ocean_fft.comp");
         const std::string finalize_shader =
             read_text_file(source_root / "shaders/ocean_finalize.comp");
@@ -146,10 +148,18 @@ int main() {
                          "ocean atmosphere include should share sky color with water");
         require_contains(init_shader, "gaussian_pair",
                          "ocean spectrum init shader should seed a frequency-domain spectrum");
+        require_contains(evolve_shader, "height_dx_spectrum_image",
+                         "ocean spectrum evolve shader should output packed derived fields");
+        require_contains(evolve_shader, "slope_z_curvature_spectrum_image",
+                         "ocean spectrum evolve shader should derive slope and crest fields");
         require_contains(fft_shader, "twiddle",
                          "ocean FFT shader should perform staged butterfly passes");
+        require_contains(fft_shader, "load_packed_complex",
+                         "ocean FFT shader should preserve packed complex field lanes");
         require_contains(finalize_shader, "normal_foam_image",
                          "ocean finalize shader should write normal and foam output");
+        require_contains(finalize_shader, "jacobian",
+                         "ocean finalize shader should derive crest compression");
 
         return 0;
     } catch (const std::exception& error) {
