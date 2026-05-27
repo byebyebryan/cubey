@@ -582,9 +582,14 @@ cubey/
         CMakeLists.txt
         main.cpp
         ocean_app.*       -- camera-relative procedural ocean host/headless orchestration
+        ocean_gpu_resources.* -- spectral compute textures, descriptors, and pipelines
         ocean_ui.*        -- live ocean renderer controls
         shaders/
-          ocean.vert      -- projected grid, multi-band waves, interaction hooks
+          ocean_spectrum_init.comp -- seeded deep-water spectrum generation
+          ocean_spectrum_evolve.comp -- time-evolved frequency-domain height
+          ocean_fft.comp  -- in-repo staged Stockham FFT passes
+          ocean_finalize.comp -- displacement, normals, and crest foam from FFT height
+          ocean.vert      -- projected grid, cascaded FFT displacement, interaction hooks
           ocean.frag      -- Fresnel/refraction-style shading, foam, debug views
       pbr_furnace/
         CMakeLists.txt

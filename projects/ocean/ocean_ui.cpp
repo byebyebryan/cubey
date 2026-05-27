@@ -5,9 +5,50 @@
 #include <imgui.h>
 
 #include <algorithm>
+#include <array>
 #include <cstdint>
+#include <cstdio>
 
 namespace cubey::projects::ocean {
+namespace {
+
+void draw_spectrum_resolution_combo(OceanConfig& config) {
+    constexpr std::array<std::uint32_t, 4> kResolutions{64, 128, 256, 512};
+    const char* preview = "256";
+    switch (config.spectrum_resolution) {
+    case 64:
+        preview = "64";
+        break;
+    case 128:
+        preview = "128";
+        break;
+    case 256:
+        preview = "256";
+        break;
+    case 512:
+        preview = "512";
+        break;
+    default:
+        preview = "custom";
+        break;
+    }
+    if (ImGui::BeginCombo("Spectrum res", preview)) {
+        for (std::uint32_t resolution : kResolutions) {
+            const bool selected = config.spectrum_resolution == resolution;
+            char label[16]{};
+            std::snprintf(label, sizeof(label), "%u", resolution);
+            if (ImGui::Selectable(label, selected)) {
+                config.spectrum_resolution = resolution;
+            }
+            if (selected) {
+                ImGui::SetItemDefaultFocus();
+            }
+        }
+        ImGui::EndCombo();
+    }
+}
+
+} // namespace
 
 void draw_ocean_ui(OceanUiContext ui) {
     if (!cubey::host::begin_control_panel("Ocean", {.width = 390.0F})) {
@@ -26,8 +67,7 @@ void draw_ocean_ui(OceanUiContext ui) {
     if (cubey::host::imgui_section("Scale", true)) {
         const cubey::host::ScopedImGuiId section_id("Scale");
         int mesh_cells = static_cast<int>(ui.config.mesh_cells);
-        if (ImGui::SliderInt("Mesh cells", &mesh_cells,
-                             static_cast<int>(kOceanMinMeshCells),
+        if (ImGui::SliderInt("Mesh cells", &mesh_cells, static_cast<int>(kOceanMinMeshCells),
                              static_cast<int>(kOceanMaxMeshCells))) {
             ui.config.mesh_cells = static_cast<std::uint32_t>(
                 std::clamp(mesh_cells, static_cast<int>(kOceanMinMeshCells),
@@ -49,10 +89,29 @@ void draw_ocean_ui(OceanUiContext ui) {
         ImGui::SliderFloat("Normal strength", &ui.config.normal_strength, 0.0F, 2.0F, "%.2f");
     }
 
+    if (cubey::host::imgui_section("Spectrum", true)) {
+        const cubey::host::ScopedImGuiId section_id("Spectrum");
+        draw_spectrum_resolution_combo(ui.config);
+        ImGui::SliderFloat("Near patch", &ui.config.spectrum_patch_length_near, 32.0F, 256.0F,
+                           "%.0f m");
+        ImGui::SliderFloat("Mid patch", &ui.config.spectrum_patch_length_mid, 128.0F, 1024.0F,
+                           "%.0f m");
+        ImGui::SliderFloat("Far patch", &ui.config.spectrum_patch_length_far, 512.0F, 4096.0F,
+                           "%.0f m");
+        ui.config.spectrum_patch_length_mid = std::max(ui.config.spectrum_patch_length_mid,
+                                                       ui.config.spectrum_patch_length_near + 1.0F);
+        ui.config.spectrum_patch_length_far = std::max(ui.config.spectrum_patch_length_far,
+                                                       ui.config.spectrum_patch_length_mid + 1.0F);
+        ImGui::SliderFloat("Energy", &ui.config.spectrum_energy, 0.0F, 3.0F, "%.2f");
+        ImGui::SliderFloat("Fetch", &ui.config.spectrum_fetch, 0.1F, 4.0F, "%.2f");
+    }
+
     if (cubey::host::imgui_section("Shading", true)) {
         const cubey::host::ScopedImGuiId section_id("Shading");
         ImGui::SliderFloat("Foam amount", &ui.config.foam_amount, 0.0F, 1.5F, "%.2f");
         ImGui::SliderFloat("Foam threshold", &ui.config.foam_threshold, 0.1F, 1.5F, "%.2f");
+        ImGui::SliderFloat("Foam generation", &ui.config.foam_generation, 0.0F, 2.0F, "%.2f");
+        ImGui::SliderFloat("Foam decay", &ui.config.foam_decay, 0.0F, 1.0F, "%.3f");
         ImGui::SliderFloat("Absorption", &ui.config.absorption, 0.0F, 0.35F, "%.3f");
         ImGui::SliderFloat("Refraction", &ui.config.refraction_strength, 0.0F, 0.18F, "%.3f");
         ImGui::SliderFloat("Exposure", &ui.config.exposure, -4.0F, 4.0F, "%.2f");

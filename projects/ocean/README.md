@@ -49,8 +49,8 @@ Controls:
 - Mouse wheel: zoom.
 - Space: pause or resume wave time.
 - `R`: reset camera and wave time.
-- `D`: cycle final, height, normal, foam, reflection, refraction, and depth
-  debug views.
+- `D`: cycle final, height, displacement, normal, foam, reflection,
+  refraction, and spectrum debug views.
 - Escape: close.
 
 Primary references:

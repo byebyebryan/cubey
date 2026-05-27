@@ -67,13 +67,13 @@ class OceanGpuResources {
     void create_textures(const cubey::vulkan::Device& device, const OceanConfig& config);
     void create_descriptor_sets(const cubey::vulkan::Device& device);
     void update_descriptors(const cubey::vulkan::Device& device);
-    void create_pipelines(const cubey::vulkan::Device& device, const OceanGpuResourceConfig& config);
+    void create_pipelines(const cubey::vulkan::Device& device,
+                          const OceanGpuResourceConfig& config);
 
     [[nodiscard]] const cubey::render::Texture2D&
     texture_at(const TextureArray& textures, std::uint32_t cascade, const char* label) const;
     [[nodiscard]] VkDescriptorSet descriptor_at(std::span<const VkDescriptorSet> sets,
-                                                std::uint32_t index,
-                                                const char* label) const;
+                                                std::uint32_t index, const char* label) const;
 
     std::uint32_t resolution_ = 0;
     TextureArray h0_{};

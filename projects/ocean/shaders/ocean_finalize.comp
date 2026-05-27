@@ -40,6 +40,7 @@ void main() {
     float crest_signal = length(gradient) * chop * 5.0;
     float foam = smoothstep(params.foam_options.z, params.foam_options.z + 0.55, crest_signal) *
                  params.foam_options.x * params.foam_options.w;
+    foam *= mix(0.35, 1.0, clamp(params.foam_options.y, 0.0, 1.0));
     imageStore(displacement_image, texel, vec4(horizontal.x, center, horizontal.y, foam));
     imageStore(normal_foam_image, texel, vec4(normal, foam));
 }

@@ -1,6 +1,13 @@
 #version 450
 #extension GL_GOOGLE_include_directive : require
 
+layout(set = 0, binding = 0) uniform sampler2D displacement_near_texture;
+layout(set = 0, binding = 1) uniform sampler2D displacement_mid_texture;
+layout(set = 0, binding = 2) uniform sampler2D displacement_far_texture;
+layout(set = 0, binding = 3) uniform sampler2D normal_foam_near_texture;
+layout(set = 0, binding = 4) uniform sampler2D normal_foam_mid_texture;
+layout(set = 0, binding = 5) uniform sampler2D normal_foam_far_texture;
+
 layout(push_constant) uniform OceanParams {
     mat4 view_projection;
     vec4 camera_time;
@@ -11,117 +18,22 @@ layout(push_constant) uniform OceanParams {
     vec4 display_transform;
     vec4 disturbance;
     vec4 debug_options;
+    vec4 spectrum_options;
+    vec4 cascade_options;
 } ocean;
 
 layout(location = 0) out vec3 frag_world_position;
 layout(location = 1) out vec3 frag_normal;
 layout(location = 2) out vec4 frag_wave;
+layout(location = 3) out vec3 frag_displacement;
+layout(location = 4) out vec2 frag_sample_position;
 
-const float PI = 3.14159265359;
-
-struct WaveSample {
-    float height;
-    vec2 gradient;
-    vec2 displacement;
-    float crest;
+struct SurfaceSample {
+    vec3 displacement;
+    vec3 normal_sum;
+    float foam;
+    float weight_sum;
 };
-
-vec2 direction_from_angle(float angle) {
-    return normalize(vec2(cos(angle), sin(angle)));
-}
-
-float hash11(float value) {
-    return fract(sin(value * 127.1) * 43758.5453123);
-}
-
-float short_wave_lod(float wavelength, float camera_distance) {
-    float distance_ratio = camera_distance / max(ocean.mesh_options.y, 1.0);
-    float short_wave = 1.0 - smoothstep(54.0, 128.0, wavelength);
-    float edge_fade = 1.0 - smoothstep(0.88, 0.98, distance_ratio);
-    return mix(1.0, edge_fade, short_wave * 0.72);
-}
-
-void add_wave(inout WaveSample sample_value, vec2 position, float camera_distance, float angle,
-              float wavelength, float amplitude, float speed_scale, float steepness,
-              float phase_offset) {
-    vec2 direction = direction_from_angle(angle);
-    float k = (2.0 * PI) / max(wavelength, 0.001);
-    float phase_speed = sqrt(9.81 * k) * ocean.wave_options.z * speed_scale;
-    float phase =
-        (k * dot(direction, position)) + phase_offset - (phase_speed * ocean.camera_time.w);
-    float wave_lod = short_wave_lod(wavelength, camera_distance);
-    float s = sin(phase);
-    float c = cos(phase);
-    float a = amplitude * wave_lod;
-    sample_value.height += a * s;
-    sample_value.gradient += direction * (a * k * c);
-    sample_value.displacement += direction * (ocean.wave_options.w * steepness * a * c);
-    sample_value.crest += smoothstep(ocean.detail_options.w, ocean.detail_options.w + 0.42,
-                                     max(c, 0.0) * steepness * ocean.wave_options.w * wave_lod);
-}
-
-void add_disturbance(inout WaveSample sample_value, vec2 position) {
-    float radius = max(ocean.disturbance.z, 0.001);
-    float strength = max(ocean.disturbance.w, 0.0);
-    if (strength <= 0.0001) {
-        return;
-    }
-    vec2 delta = position - ocean.disturbance.xy;
-    float distance_to_center = length(delta);
-    float envelope = exp(-distance_to_center / radius);
-    float phase = (distance_to_center * 0.42) - (ocean.camera_time.w * 5.8);
-    float ripple = sin(phase) * envelope * strength;
-    sample_value.height += ripple;
-    if (distance_to_center > 0.001) {
-        vec2 radial = delta / distance_to_center;
-        sample_value.gradient += radial * cos(phase) * envelope * strength * 0.42;
-    }
-    sample_value.crest += smoothstep(0.04, 0.28, abs(ripple));
-}
-
-float shoreline_mask(vec2 position) {
-    float influence = clamp(ocean.shading_options.z, 0.0, 1.0);
-    vec2 shoal_position = (position - vec2(-520.0, -240.0)) / vec2(1.85, 0.75);
-    float shoal = 1.0 - smoothstep(140.0, 640.0, length(shoal_position));
-    return shoal * influence;
-}
-
-WaveSample sample_ocean(vec2 position, float camera_distance) {
-    float amplitude = max(ocean.wave_options.x, 0.0);
-    float wind = ocean.wave_options.y;
-    float swell_scale = max(ocean.detail_options.x, 0.05);
-
-    WaveSample sample_value;
-    sample_value.height = 0.0;
-    sample_value.gradient = vec2(0.0);
-    sample_value.displacement = vec2(0.0);
-    sample_value.crest = 0.0;
-
-    const int wave_count = 22;
-    for (int index = 0; index < wave_count; ++index) {
-        float t = (float(index) + 0.5) / float(wave_count);
-        float wavelength =
-            exp(mix(log(760.0 * swell_scale), log(46.0 * swell_scale), t));
-        wavelength *= mix(0.88, 1.16, hash11(float(index) + 7.13));
-
-        float signed_spread = (hash11(float(index) + 13.71) * 2.0) - 1.0;
-        float directional_spread = mix(0.16, 1.28, t);
-        float cross_sea = ((index % 5) == 0) ? sign(signed_spread) * mix(0.42, 0.92, t) : 0.0;
-        float angle = wind + signed_spread * directional_spread + cross_sea;
-
-        float normalized_wavelength = wavelength / max(760.0 * swell_scale, 1.0);
-        float component_amplitude =
-            amplitude * 0.66 * pow(normalized_wavelength, 0.72) *
-            mix(0.72, 1.18, hash11(float(index) + 29.3));
-        float speed_scale = mix(0.30, 1.72, t) * mix(0.92, 1.10, hash11(float(index) + 41.5));
-        float steepness = mix(0.24, 0.74, t);
-        float phase_offset = hash11(float(index) + 53.9) * PI * 2.0;
-        add_wave(sample_value, position, camera_distance, angle, wavelength, component_amplitude,
-                 speed_scale, steepness, phase_offset);
-    }
-    add_disturbance(sample_value, position);
-    return sample_value;
-}
 
 vec2 triangle_corner(uint vertex_in_cell) {
     if (vertex_in_cell == 0u) {
@@ -142,6 +54,104 @@ vec2 triangle_corner(uint vertex_in_cell) {
     return vec2(1.0, 1.0);
 }
 
+vec4 sample_displacement(uint cascade, vec2 uv) {
+    if (cascade == 0u) {
+        return texture(displacement_near_texture, uv);
+    }
+    if (cascade == 1u) {
+        return texture(displacement_mid_texture, uv);
+    }
+    return texture(displacement_far_texture, uv);
+}
+
+vec4 sample_normal_foam(uint cascade, vec2 uv) {
+    if (cascade == 0u) {
+        return texture(normal_foam_near_texture, uv);
+    }
+    if (cascade == 1u) {
+        return texture(normal_foam_mid_texture, uv);
+    }
+    return texture(normal_foam_far_texture, uv);
+}
+
+float cascade_patch_length(uint cascade) {
+    if (cascade == 0u) {
+        return ocean.cascade_options.x;
+    }
+    if (cascade == 1u) {
+        return ocean.cascade_options.y;
+    }
+    return ocean.cascade_options.z;
+}
+
+float cascade_weight(uint cascade, float camera_distance) {
+    if (cascade == 0u) {
+        return 1.0 - smoothstep(ocean.mesh_options.y * 0.18, ocean.mesh_options.y * 0.55,
+                                camera_distance);
+    }
+    if (cascade == 1u) {
+        float fade_in = smoothstep(ocean.mesh_options.y * 0.10, ocean.mesh_options.y * 0.22,
+                                   camera_distance);
+        float fade_out = 1.0 - smoothstep(ocean.mesh_options.y * 0.58,
+                                          ocean.mesh_options.y * 0.94, camera_distance);
+        return fade_in * fade_out;
+    }
+    return smoothstep(ocean.mesh_options.y * 0.34, ocean.mesh_options.y * 0.72, camera_distance);
+}
+
+void add_cascade(inout SurfaceSample sample_value, uint cascade, vec2 position,
+                 float camera_distance) {
+    float patch_length = cascade_patch_length(cascade);
+    float weight = cascade_weight(cascade, camera_distance);
+    vec2 uv = position / max(patch_length, 0.001);
+    vec4 displacement = sample_displacement(cascade, uv);
+    vec4 normal_foam = sample_normal_foam(cascade, uv);
+    sample_value.displacement += displacement.xyz * weight;
+    sample_value.normal_sum += normal_foam.xyz * weight;
+    sample_value.foam = max(sample_value.foam, max(displacement.w, normal_foam.w) * weight);
+    sample_value.weight_sum += weight;
+}
+
+void add_disturbance(inout SurfaceSample sample_value, vec2 position) {
+    float radius = max(ocean.disturbance.z, 0.001);
+    float strength = max(ocean.disturbance.w, 0.0);
+    if (strength <= 0.0001) {
+        return;
+    }
+    vec2 delta = position - ocean.disturbance.xy;
+    float distance_to_center = length(delta);
+    float envelope = exp(-distance_to_center / radius);
+    float phase = (distance_to_center * 0.42) - (ocean.camera_time.w * 5.8);
+    float ripple = sin(phase) * envelope * strength;
+    sample_value.displacement.y += ripple;
+    sample_value.foam = max(sample_value.foam, smoothstep(0.04, 0.28, abs(ripple)));
+}
+
+float shoreline_mask(vec2 position) {
+    float influence = clamp(ocean.shading_options.z, 0.0, 1.0);
+    vec2 shoal_position = (position - vec2(-520.0, -240.0)) / vec2(1.85, 0.75);
+    float shoal = 1.0 - smoothstep(140.0, 640.0, length(shoal_position));
+    return shoal * influence;
+}
+
+SurfaceSample sample_ocean(vec2 position, float camera_distance) {
+    SurfaceSample sample_value;
+    sample_value.displacement = vec3(0.0);
+    sample_value.normal_sum = vec3(0.0);
+    sample_value.foam = 0.0;
+    sample_value.weight_sum = 0.0;
+
+    add_cascade(sample_value, 2u, position, camera_distance);
+    add_cascade(sample_value, 1u, position, camera_distance);
+    add_cascade(sample_value, 0u, position, camera_distance);
+    if (sample_value.weight_sum > 0.0001) {
+        sample_value.displacement /= sample_value.weight_sum;
+        sample_value.normal_sum /= sample_value.weight_sum;
+    }
+    add_disturbance(sample_value, position);
+    return sample_value;
+}
+
 void main() {
     uint cells = max(uint(ocean.mesh_options.x + 0.5), 1u);
     uint vertex_in_cell = uint(gl_VertexIndex) % 6u;
@@ -156,22 +166,26 @@ void main() {
     vec2 camera_xz = ocean.camera_time.xz;
     float snap = max(ocean.mesh_options.z, 0.001);
     vec2 snapped_center = floor(camera_xz / snap) * snap;
-    vec2 position_xz = snapped_center + (projected_uv * ocean.mesh_options.y);
-    float camera_distance = length(position_xz - camera_xz);
+    vec2 base_position_xz = snapped_center + (projected_uv * ocean.mesh_options.y);
+    float camera_distance = length(base_position_xz - camera_xz);
 
-    WaveSample wave = sample_ocean(position_xz, camera_distance);
-    position_xz += wave.displacement;
+    SurfaceSample ocean_sample = sample_ocean(base_position_xz, camera_distance);
+    vec2 position_xz = base_position_xz + ocean_sample.displacement.xz;
     float shore = shoreline_mask(position_xz);
     float depth = mix(82.0, 1.4, shore);
     float shore_foam = smoothstep(0.10, 0.72, shore) * (0.45 + 0.55 * sin(ocean.camera_time.w));
 
-    vec3 normal = normalize(vec3(-wave.gradient.x * ocean.detail_options.y, 1.0,
-                                 -wave.gradient.y * ocean.detail_options.y));
-    vec3 world_position = vec3(position_xz.x, wave.height, position_xz.y);
+    float normal_length = length(ocean_sample.normal_sum);
+    vec3 normal = normal_length > 0.0001 ? ocean_sample.normal_sum / normal_length
+                                         : vec3(0.0, 1.0, 0.0);
+    vec3 world_position = vec3(position_xz.x, ocean_sample.displacement.y, position_xz.y);
 
     frag_world_position = world_position;
     frag_normal = normal;
-    frag_wave = vec4(wave.height, clamp((wave.crest * 0.20) + shore_foam, 0.0, 1.0),
+    frag_wave = vec4(ocean_sample.displacement.y,
+                     clamp((ocean_sample.foam * 0.75) + shore_foam, 0.0, 1.0),
                      camera_distance, depth);
+    frag_displacement = ocean_sample.displacement;
+    frag_sample_position = base_position_xz;
     gl_Position = ocean.view_projection * vec4(world_position, 1.0);
 }
