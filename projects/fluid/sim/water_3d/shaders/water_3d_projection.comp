@@ -2,6 +2,7 @@
 #extension GL_GOOGLE_include_directive : require
 
 #include "water_3d_contract.glsl"
+#include "water_3d_grid.glsl"
 
 layout(local_size_x = 4, local_size_y = 4, local_size_z = 4) in;
 
@@ -15,21 +16,6 @@ layout(set = 0, binding = WATER3D_BINDING_CELL_COUNTS, std430) readonly buffer C
 
 WATER3D_SIMULATION_PARAMS;
 
-uint cell_index(uint x, uint y, uint z, uint width, uint height) {
-    return ((z * height) + y) * width + x;
-}
-uint u_index(uint x, uint y, uint z, uint width, uint height) {
-    return ((z * height) + y) * (width + 1u) + x;
-}
-uint v_index(uint x, uint y, uint z, uint width, uint height) {
-    return ((z * (height + 1u)) + y) * width + x;
-}
-uint w_index(uint x, uint y, uint z, uint width, uint height) {
-    return ((z * height) + y) * width + x;
-}
-bool in_bounds(int x, int y, int z, uint width, uint height, uint depth) {
-    return x >= 0 && y >= 0 && z >= 0 && x < int(width) && y < int(height) && z < int(depth);
-}
 bool solid_cell(int x, int y, int z, uint width, uint height, uint depth) {
     if (!in_bounds(x, y, z, width, height, depth)) {
         return true;

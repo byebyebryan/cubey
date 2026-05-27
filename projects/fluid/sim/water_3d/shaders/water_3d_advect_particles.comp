@@ -2,6 +2,7 @@
 #extension GL_GOOGLE_include_directive : require
 
 #include "water_3d_contract.glsl"
+#include "water_3d_grid.glsl"
 
 layout(local_size_x = 64, local_size_y = 1) in;
 
@@ -19,10 +20,6 @@ layout(set = 0, binding = WATER3D_BINDING_CELL_COUNTS, std430) readonly buffer C
 } cell_counts;
 
 WATER3D_SIMULATION_PARAMS;
-
-uint cell_index(uint x, uint y, uint z, uint width, uint height) {
-    return ((z * height) + y) * width + x;
-}
 
 bool collide_axis(inout float position, inout float velocity, float minimum, float maximum,
                   float restitution) {

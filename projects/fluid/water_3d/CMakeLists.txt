@@ -57,11 +57,13 @@ cubey_add_app_target(
         ../sim/water_3d/shaders/water_3d_diagnostics.comp
     SHADER_INCLUDE_DIRS
         "${CMAKE_CURRENT_SOURCE_DIR}/../sim/water_3d/shaders"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../sim/common/shaders"
         "${CMAKE_SOURCE_DIR}/shaders"
     SHADER_DEPENDS
         "${CMAKE_CURRENT_SOURCE_DIR}/../sim/water_3d/shaders/water_3d_contract.glsl"
         "${CMAKE_CURRENT_SOURCE_DIR}/../sim/water_3d/shaders/water_3d_surface_common.glsl"
         "${CMAKE_CURRENT_SOURCE_DIR}/../sim/water_3d/shaders/water_3d_surface_helpers.glsl"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../sim/common/shaders/water_3d_grid.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/color_space.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/pbr.glsl"
 )

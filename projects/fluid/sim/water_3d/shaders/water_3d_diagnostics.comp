@@ -2,6 +2,7 @@
 #extension GL_GOOGLE_include_directive : require
 
 #include "water_3d_contract.glsl"
+#include "water_3d_grid.glsl"
 
 layout(local_size_x = 64, local_size_y = 1) in;
 
@@ -130,31 +131,6 @@ const uint SLOT_TRANSFER_TRUNCATED_PARTICLES = 70u;
 const uint DIAGNOSTIC_SLOT_COUNT = 71u;
 const float DIVERGENCE_SCALE = 1000000.0;
 
-uint cell_index(uint x, uint y, uint z, uint width, uint height) {
-    return ((z * height) + y) * width + x;
-}
-uint u_index(uint x, uint y, uint z, uint width, uint height) {
-    return ((z * height) + y) * (width + 1u) + x;
-}
-uint v_index(uint x, uint y, uint z, uint width, uint height) {
-    return ((z * (height + 1u)) + y) * width + x;
-}
-uint w_index(uint x, uint y, uint z, uint width, uint height) {
-    return ((z * height) + y) * width + x;
-}
-uint u_face_count(uint width, uint height, uint depth) {
-    return (width + 1u) * height * depth;
-}
-uint v_face_count(uint width, uint height, uint depth) {
-    return width * (height + 1u) * depth;
-}
-uint total_face_count(uint width, uint height, uint depth) {
-    return u_face_count(width, height, depth) + v_face_count(width, height, depth) +
-           (width * height * (depth + 1u));
-}
-bool in_bounds(int x, int y, int z, uint width, uint height, uint depth) {
-    return x >= 0 && y >= 0 && z >= 0 && x < int(width) && y < int(height) && z < int(depth);
-}
 bool solid_cell(int x, int y, int z, uint width, uint height, uint depth) {
     if (!in_bounds(x, y, z, width, height, depth)) {
         return true;

@@ -2,6 +2,7 @@
 #extension GL_GOOGLE_include_directive : require
 
 #include "water_3d_contract.glsl"
+#include "water_3d_grid.glsl"
 
 layout(local_size_x = 64, local_size_y = 1) in;
 
@@ -81,23 +82,6 @@ layout(set = 0, binding = WATER3D_BINDING_WHITEWATER_DRAW_ARGS, std430) buffer W
 WATER3D_SIMULATION_PARAMS;
 
 const uint kWater3DWallCells = 2u;
-
-uint cell_index(uint x, uint y, uint z, uint width, uint height) {
-    return ((z * height) + y) * width + x;
-}
-
-uint u_index(uint x, uint y, uint z, uint width, uint height) {
-    return ((z * height) + y) * (width + 1u) + x;
-}
-
-uint v_index(uint x, uint y, uint z, uint width, uint height) {
-    return ((z * (height + 1u)) + y) * width + x;
-}
-
-uint w_index(uint x, uint y, uint z, uint width, uint height, uint depth) {
-    return ((z * height) + y) * width + x;
-}
-
 float hash11(uint value) {
     value ^= value >> 16u;
     value *= 0x7feb352du;

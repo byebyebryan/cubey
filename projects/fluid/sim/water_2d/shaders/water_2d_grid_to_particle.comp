@@ -2,6 +2,7 @@
 #extension GL_GOOGLE_include_directive : require
 
 #include "water_2d_contract.glsl"
+#include "water_2d_grid.glsl"
 
 layout(local_size_x = 64, local_size_y = 1) in;
 
@@ -40,21 +41,6 @@ layout(set = 0, binding = WATER2D_BINDING_CELL_PARTICLE_INDICES, std430) readonl
 } cell_particle_indices;
 
 WATER2D_SIMULATION_PARAMS;
-
-uint u_index(ivec2 coord, uint width, uint height) {
-    ivec2 clamped = ivec2(clamp(coord.x, 0, int(width)), clamp(coord.y, 0, int(height) - 1));
-    return (uint(clamped.y) * (width + 1u)) + uint(clamped.x);
-}
-
-uint v_index(ivec2 coord, uint width, uint height) {
-    ivec2 clamped = ivec2(clamp(coord.x, 0, int(width) - 1), clamp(coord.y, 0, int(height)));
-    return (uint(clamped.y) * width) + uint(clamped.x);
-}
-
-uint cell_index(ivec2 coord, uint width, uint height) {
-    ivec2 clamped = clamp(coord, ivec2(0), ivec2(int(width) - 1, int(height) - 1));
-    return (uint(clamped.y) * width) + uint(clamped.x);
-}
 
 float sample_u(vec2 uv, uint width, uint height, bool previous) {
     vec2 position = vec2(uv.x * float(width), uv.y * float(height) - 0.5);

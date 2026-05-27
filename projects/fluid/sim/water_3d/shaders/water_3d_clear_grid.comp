@@ -2,6 +2,7 @@
 #extension GL_GOOGLE_include_directive : require
 
 #include "water_3d_contract.glsl"
+#include "water_3d_grid.glsl"
 
 layout(local_size_x = 4, local_size_y = 4, local_size_z = 4) in;
 
@@ -19,19 +20,6 @@ layout(set = 0, binding = WATER3D_BINDING_PRESSURE_B, std430) buffer PressureBFi
 layout(set = 0, binding = WATER3D_BINDING_DIVERGENCE, std430) buffer DivergenceField { float values[]; } divergence;
 
 WATER3D_SIMULATION_PARAMS;
-
-uint cell_index(uint x, uint y, uint z, uint width, uint height) {
-    return ((z * height) + y) * width + x;
-}
-uint u_index(uint x, uint y, uint z, uint width, uint height) {
-    return ((z * height) + y) * (width + 1u) + x;
-}
-uint v_index(uint x, uint y, uint z, uint width, uint height) {
-    return ((z * (height + 1u)) + y) * width + x;
-}
-uint w_index(uint x, uint y, uint z, uint width, uint height) {
-    return ((z * height) + y) * width + x;
-}
 
 void main() {
     uint width = uint(WATER3D_GRID_WIDTH + 0.5);

@@ -3,6 +3,7 @@
 
 #include "cubey/color_space.glsl"
 #include "water_2d_contract.glsl"
+#include "water_2d_grid.glsl"
 
 WATER2D_RENDER_PARAMS;
 
@@ -36,21 +37,6 @@ layout(set = 0, binding = WATER2D_BINDING_CELL_PARTICLE_INDICES, std430) readonl
 
 layout(location = 0) in vec2 frag_position;
 layout(location = 0) out vec4 out_color;
-
-uint cell_index(ivec2 coord, uint width, uint height) {
-    ivec2 clamped = clamp(coord, ivec2(0), ivec2(int(width) - 1, int(height) - 1));
-    return (uint(clamped.y) * width) + uint(clamped.x);
-}
-
-uint u_index(ivec2 coord, uint width, uint height) {
-    ivec2 clamped = ivec2(clamp(coord.x, 0, int(width)), clamp(coord.y, 0, int(height) - 1));
-    return (uint(clamped.y) * (width + 1u)) + uint(clamped.x);
-}
-
-uint v_index(ivec2 coord, uint width, uint height) {
-    ivec2 clamped = ivec2(clamp(coord.x, 0, int(width) - 1), clamp(coord.y, 0, int(height)));
-    return (uint(clamped.y) * width) + uint(clamped.x);
-}
 
 float solid_cell_at(vec2 uv, uint width, uint height) {
     ivec2 coord = clamp(ivec2(floor(uv * vec2(width, height))), ivec2(0),

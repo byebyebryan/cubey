@@ -3,6 +3,7 @@
 
 #include "cubey/color_space.glsl"
 #include "water_3d_contract.glsl"
+#include "water_3d_grid.glsl"
 
 WATER3D_RENDER_PARAMS;
 
@@ -18,23 +19,6 @@ layout(location = 0) in vec2 frag_uv;
 layout(location = 1) in vec2 frag_local;
 layout(location = 2) in float frag_particle;
 layout(location = 0) out vec4 out_color;
-
-uint cell_index(uint x, uint y, uint z, uint width, uint height) {
-    return ((z * height) + y) * width + x;
-}
-uint u_index(uint x, uint y, uint z, uint width, uint height) {
-    return ((z * height) + y) * (width + 1u) + x;
-}
-uint v_index(uint x, uint y, uint z, uint width, uint height) {
-    return ((z * (height + 1u)) + y) * width + x;
-}
-uint w_index(uint x, uint y, uint z, uint width, uint height) {
-    return ((z * height) + y) * width + x;
-}
-
-bool in_bounds(int x, int y, int z, uint width, uint height, uint depth) {
-    return x >= 0 && y >= 0 && z >= 0 && x < int(width) && y < int(height) && z < int(depth);
-}
 
 bool solid_cell(int x, int y, int z, uint width, uint height, uint depth) {
     if (!in_bounds(x, y, z, width, height, depth)) {

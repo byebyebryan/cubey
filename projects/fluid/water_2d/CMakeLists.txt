@@ -33,9 +33,11 @@ cubey_add_app_target(
         ../sim/water_2d/shaders/water_2d_diagnostics.comp
     SHADER_INCLUDE_DIRS
         "${CMAKE_CURRENT_SOURCE_DIR}/../sim/water_2d/shaders"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../sim/common/shaders"
         "${CMAKE_SOURCE_DIR}/shaders"
     SHADER_DEPENDS
         "${CMAKE_CURRENT_SOURCE_DIR}/../sim/water_2d/shaders/water_2d_contract.glsl"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../sim/common/shaders/water_2d_grid.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/color_space.glsl"
 )
 

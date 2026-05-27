@@ -2,6 +2,7 @@
 #extension GL_GOOGLE_include_directive : require
 
 #include "water_2d_contract.glsl"
+#include "water_2d_grid.glsl"
 
 layout(local_size_x = 8, local_size_y = 8) in;
 
@@ -22,14 +23,6 @@ layout(set = 0, binding = WATER2D_BINDING_CELL_COUNTS, std430) readonly buffer C
 } cell_counts;
 
 WATER2D_SIMULATION_PARAMS;
-
-uint cell_index(uint x, uint y, uint width) {
-    return (y * width) + x;
-}
-
-bool in_bounds(int x, int y, uint width, uint height) {
-    return x >= 0 && y >= 0 && x < int(width) && y < int(height);
-}
 
 bool solid_cell(int x, int y, uint width, uint height) {
     if (!in_bounds(x, y, width, height)) {

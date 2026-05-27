@@ -2,6 +2,7 @@
 #extension GL_GOOGLE_include_directive : require
 
 #include "cubey/color_space.glsl"
+#include "fluid_ray_box.glsl"
 
 layout(push_constant) uniform RenderParams {
     vec4 camera_position_steps;
@@ -21,26 +22,6 @@ layout(set = 0, binding = 2) uniform sampler3D shadow_volume;
 layout(location = 0) in vec2 frag_position;
 layout(location = 1) in vec2 frag_uv;
 layout(location = 0) out vec4 out_color;
-
-float safe_ray_component(float value) {
-    if (abs(value) >= 0.00001) {
-        return value;
-    }
-    return value < 0.0 ? -0.00001 : 0.00001;
-}
-
-bool ray_box_intersection(vec3 origin, vec3 direction, out float near_t, out float far_t) {
-    vec3 safe_direction = vec3(safe_ray_component(direction.x), safe_ray_component(direction.y),
-                               safe_ray_component(direction.z));
-    vec3 inv_direction = 1.0 / safe_direction;
-    vec3 t0 = (vec3(0.0) - origin) * inv_direction;
-    vec3 t1 = (vec3(1.0) - origin) * inv_direction;
-    vec3 t_min = min(t0, t1);
-    vec3 t_max = max(t0, t1);
-    near_t = max(max(t_min.x, t_min.y), t_min.z);
-    far_t = min(min(t_max.x, t_max.y), t_max.z);
-    return far_t > max(near_t, 0.0);
-}
 
 vec4 density_at(vec3 uv) {
     return texture(density_volume, clamp(uv, vec3(0.0), vec3(1.0)));

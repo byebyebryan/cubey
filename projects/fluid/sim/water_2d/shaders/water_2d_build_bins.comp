@@ -2,6 +2,7 @@
 #extension GL_GOOGLE_include_directive : require
 
 #include "water_2d_contract.glsl"
+#include "water_2d_grid.glsl"
 
 layout(local_size_x = 64, local_size_y = 1) in;
 
@@ -19,10 +20,6 @@ layout(set = 0, binding = WATER2D_BINDING_CELL_PARTICLE_INDICES, std430) buffer 
 } cell_particle_indices;
 
 WATER2D_SIMULATION_PARAMS;
-
-uint cell_index(uint x, uint y, uint width) {
-    return (y * width) + x;
-}
 
 void main() {
     uint particle_id = gl_GlobalInvocationID.x;

@@ -2,6 +2,7 @@
 #extension GL_GOOGLE_include_directive : require
 
 #include "water_3d_contract.glsl"
+#include "water_3d_grid.glsl"
 
 layout(local_size_x = 64, local_size_y = 1) in;
 
@@ -26,34 +27,6 @@ layout(set = 0, binding = WATER3D_BINDING_W_WEIGHT, std430) readonly buffer WWei
 layout(set = 0, binding = WATER3D_BINDING_CELL_COUNTS, std430) readonly buffer CellCounts { uint values[]; } cell_counts;
 
 WATER3D_SIMULATION_PARAMS;
-
-uint u_index(ivec3 coord, uint width, uint height, uint depth) {
-    ivec3 clamped = ivec3(clamp(coord.x, 0, int(width)),
-                          clamp(coord.y, 0, int(height) - 1),
-                          clamp(coord.z, 0, int(depth) - 1));
-    return ((uint(clamped.z) * height) + uint(clamped.y)) * (width + 1u) + uint(clamped.x);
-}
-
-uint v_index(ivec3 coord, uint width, uint height, uint depth) {
-    ivec3 clamped = ivec3(clamp(coord.x, 0, int(width) - 1),
-                          clamp(coord.y, 0, int(height)),
-                          clamp(coord.z, 0, int(depth) - 1));
-    return ((uint(clamped.z) * (height + 1u)) + uint(clamped.y)) * width + uint(clamped.x);
-}
-
-uint w_index(ivec3 coord, uint width, uint height, uint depth) {
-    ivec3 clamped = ivec3(clamp(coord.x, 0, int(width) - 1),
-                          clamp(coord.y, 0, int(height) - 1),
-                          clamp(coord.z, 0, int(depth)));
-    return ((uint(clamped.z) * height) + uint(clamped.y)) * width + uint(clamped.x);
-}
-
-uint cell_index(ivec3 coord, uint width, uint height, uint depth) {
-    ivec3 clamped = ivec3(clamp(coord.x, 0, int(width) - 1),
-                          clamp(coord.y, 0, int(height) - 1),
-                          clamp(coord.z, 0, int(depth) - 1));
-    return ((uint(clamped.z) * height) + uint(clamped.y)) * width + uint(clamped.x);
-}
 
 bool cell_in_bounds(ivec3 coord, uint width, uint height, uint depth) {
     return coord.x >= 0 && coord.y >= 0 && coord.z >= 0 && coord.x < int(width) &&
