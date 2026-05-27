@@ -53,22 +53,20 @@ void ocean_add_macro_wave(inout OceanMacroWaveSample sample_value, vec2 position
     float wave_cos = cos(phase);
     float harmonic_sin = sin(phase * 2.0 + phase_offset);
     float harmonic_cos = cos(phase * 2.0 + phase_offset);
-    float steepness = clamp(chop, 0.0, 2.5);
     float local_amplitude = amplitude * envelope;
-    float crest_power = mix(1.08, 0.72, clamp(steepness * 0.5, 0.0, 1.0));
-    float shaped_wave = sign(wave_sin) * pow(abs(wave_sin), crest_power);
-    float shaped_derivative =
-        crest_power * pow(max(abs(wave_sin), 0.06), crest_power - 1.0) * wave_cos;
-    float height = (shaped_wave + harmonic_sin * 0.22) * local_amplitude;
-    float slope = (shaped_derivative + harmonic_cos * 0.44) * local_amplitude * k;
+    float steepness = clamp(chop, 0.0, 1.0);
+    float bounded_steepness = min(steepness, 0.82 / max(k * local_amplitude, 0.001));
+    float crest_bias = bounded_steepness * bounded_steepness;
+    float harmonic_scale = 0.28 * crest_bias;
+    float height = (wave_sin + harmonic_sin * harmonic_scale) * local_amplitude;
+    float slope = (wave_cos + harmonic_cos * harmonic_scale * 2.0) * local_amplitude * k;
 
     sample_value.displacement.y += height;
-    sample_value.displacement.xz += direction * (wave_cos * local_amplitude * steepness * 0.56);
+    sample_value.displacement.xz += direction * (wave_cos * local_amplitude * bounded_steepness);
     sample_value.slope += direction * slope;
-    float crest_signal = max(shaped_wave, 0.0) * local_amplitude * k * (1.0 + steepness * 5.5);
-    sample_value.foam =
-        max(sample_value.foam,
-            smoothstep(0.08, 0.26, crest_signal));
+    float compression = max(wave_sin, 0.0) * local_amplitude * k * bounded_steepness;
+    float crest_signal = compression + max(harmonic_sin, 0.0) * harmonic_scale * 1.4;
+    sample_value.foam = max(sample_value.foam, smoothstep(0.10, 0.32, crest_signal));
 }
 
 OceanMacroWaveSample ocean_macro_waves(vec2 position, float time, float wind_angle,
