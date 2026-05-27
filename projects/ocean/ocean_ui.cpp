@@ -73,7 +73,7 @@ void draw_ocean_ui(OceanUiContext ui) {
                 std::clamp(mesh_cells, static_cast<int>(kOceanMinMeshCells),
                            static_cast<int>(kOceanMaxMeshCells)));
         }
-        ImGui::SliderFloat("Extent", &ui.config.mesh_extent, 400.0F, 6000.0F, "%.0f");
+        ImGui::SliderFloat("Extent", &ui.config.mesh_extent, 400.0F, 9000.0F, "%.0f");
         ImGui::SliderFloat("Snap", &ui.config.mesh_snap, 1.0F, 64.0F, "%.0f");
         ImGui::SliderFloat("Horizon fog", &ui.config.horizon_fog, 0.0F, 1.0F, "%.2f");
     }

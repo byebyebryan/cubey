@@ -54,6 +54,12 @@ vec2 triangle_corner(uint vertex_in_cell) {
     return vec2(1.0, 1.0);
 }
 
+vec2 projected_grid_position(vec2 signed_uv) {
+    float radial = clamp(length(signed_uv) * 0.70710678, 0.0, 1.0);
+    float scale = mix(0.22, 1.0, pow(radial, 1.35));
+    return signed_uv * scale;
+}
+
 vec4 sample_displacement(uint cascade, vec2 uv) {
     if (cascade == 0u) {
         return texture(displacement_near_texture, uv);
@@ -161,7 +167,7 @@ void main() {
 
     vec2 uv = (vec2(cell_x, cell_z) + triangle_corner(vertex_in_cell)) / float(cells);
     vec2 signed_uv = (uv * 2.0) - 1.0;
-    vec2 projected_uv = sign(signed_uv) * pow(abs(signed_uv), vec2(1.72));
+    vec2 projected_uv = projected_grid_position(signed_uv);
 
     vec2 camera_xz = ocean.camera_time.xz;
     float snap = max(ocean.mesh_options.z, 0.001);

@@ -48,7 +48,7 @@ constexpr float kCameraMaxDistance = 900.0F;
 constexpr float kCameraBaseYaw = 0.38F;
 constexpr float kCameraBasePitch = -0.46F;
 constexpr float kCameraNearPlane = 0.25F;
-constexpr float kCameraFarPlane = 6800.0F;
+constexpr float kCameraFarPlane = 14000.0F;
 
 struct OceanPushConstants {
     cubey::math::Mat4 view_projection;
@@ -621,7 +621,7 @@ class OceanApp {
             cubey::render::record_render_target_pass(
                 pass_recorder, cubey::render::render_target_view(target),
                 cubey::render::RenderClearValues{
-                    .color = cubey::render::color_clear_value(0.42F, 0.56F, 0.70F, 1.0F),
+                    .color = cubey::render::color_clear_value(0.64F, 0.76F, 0.86F, 1.0F),
                 },
                 [this, target](const cubey::vulkan::CommandRecorder& draw_recorder) {
                     record_ocean_draw(draw_recorder, target.extent);

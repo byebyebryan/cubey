@@ -119,7 +119,7 @@ int main() {
         const std::string fft_shader = read_text_file(source_root / "shaders/ocean_fft.comp");
         const std::string finalize_shader =
             read_text_file(source_root / "shaders/ocean_finalize.comp");
-        require_contains(vertex_shader, "pow(abs(signed_uv), vec2(1.72))",
+        require_contains(vertex_shader, "projected_grid_position",
                          "ocean vertex shader should use a camera-relative projected grid");
         require_contains(vertex_shader, "displacement_near_texture",
                          "ocean vertex shader should sample the near displacement cascade");
