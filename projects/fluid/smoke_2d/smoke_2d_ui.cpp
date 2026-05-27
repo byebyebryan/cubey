@@ -14,10 +14,9 @@
 namespace cubey::projects::fluid::smoke_2d {
 namespace {
 
-constexpr std::array<Smoke2DDebugView, 7> kDebugViews{
+constexpr std::array<Smoke2DDebugView, 6> kDebugViews{
     Smoke2DDebugView::Dye,      Smoke2DDebugView::Velocity, Smoke2DDebugView::Divergence,
     Smoke2DDebugView::Pressure, Smoke2DDebugView::Speed,    Smoke2DDebugView::Vorticity,
-    Smoke2DDebugView::Obstacle,
 };
 
 constexpr std::array<Smoke2DPressureSolver, 2> kPressureSolvers{
@@ -118,15 +117,6 @@ void draw_smoke_2d_ui(Smoke2DUiContext ui) {
                            4.0F, "%.2f");
         ImGui::SliderFloat("Phase spread", &ui.config.injector_orbit_phase_spread, 0.0F, 1.0F,
                            "%.2f");
-    }
-
-    if (section("Obstacles", false)) {
-        const cubey::host::ScopedImGuiId section_id("Obstacles");
-        bool obstacles_enabled = ui.config.obstacles_enabled;
-        if (ImGui::Checkbox("Enabled", &obstacles_enabled)) {
-            ui.config.obstacles_enabled = obstacles_enabled;
-            ui.obstacles_changed = true;
-        }
     }
 
     if (section("Rendering", false)) {

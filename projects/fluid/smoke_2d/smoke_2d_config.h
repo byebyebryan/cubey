@@ -26,7 +26,6 @@ enum class Smoke2DDebugView : std::uint32_t {
     Pressure = 3,
     Speed = 4,
     Vorticity = 5,
-    Obstacle = 6,
 };
 
 enum class Smoke2DPressureSolver : std::uint32_t {
@@ -41,27 +40,26 @@ inline constexpr std::uint32_t kSmoke2DSimulationPushConstantFloatCount = 16;
 struct Smoke2DConfig {
     std::uint32_t grid_width = 1024;
     std::uint32_t grid_height = 1024;
-    std::uint32_t procedural_injector_count = 3;
-    std::uint32_t pressure_iterations = 32;
+    std::uint32_t procedural_injector_count = 5;
+    std::uint32_t pressure_iterations = 40;
     Smoke2DPressureSolver pressure_solver = Smoke2DPressureSolver::Jacobi;
     float fixed_delta_seconds = 1.0F / 60.0F;
-    float dye_decay_per_second = 0.990F;
-    float velocity_decay_per_second = 0.993F;
-    float injector_injection_radius = 0.032F;
-    float injector_injection_strength = 6.0F;
-    float injector_propulsion_strength = 1.0F;
-    float injector_orbit_radius = 0.25F;
-    float injector_orbit_radius_spread = 0.22F;
+    float dye_decay_per_second = 0.992F;
+    float velocity_decay_per_second = 0.996F;
+    float injector_injection_radius = 0.026F;
+    float injector_injection_strength = 7.2F;
+    float injector_propulsion_strength = 1.35F;
+    float injector_orbit_radius = 0.26F;
+    float injector_orbit_radius_spread = 0.28F;
     float injector_orbit_angular_speed = 0.0F;
-    float injector_orbit_angular_speed_spread = 0.8F;
+    float injector_orbit_angular_speed_spread = 1.1F;
     float injector_orbit_phase_spread = 1.0F;
-    float vorticity_strength = 18.0F;
+    float vorticity_strength = 22.0F;
     float advection_strength = 0.18F;
-    float low_energy_cleanup_strength = 0.14F;
-    float low_energy_cleanup_start = 0.035F;
-    float low_energy_cleanup_end = 0.22F;
+    float low_energy_cleanup_strength = 0.12F;
+    float low_energy_cleanup_start = 0.030F;
+    float low_energy_cleanup_end = 0.20F;
     std::uint32_t profile_diagnostic_interval = 1;
-    bool obstacles_enabled = false;
     bool profile_diagnostics = false;
     bool headless = false;
 };
@@ -79,8 +77,6 @@ struct Smoke2DConfig {
     case Smoke2DDebugView::Speed:
         return Smoke2DDebugView::Vorticity;
     case Smoke2DDebugView::Vorticity:
-        return Smoke2DDebugView::Obstacle;
-    case Smoke2DDebugView::Obstacle:
         return Smoke2DDebugView::Dye;
     }
     return Smoke2DDebugView::Dye;
@@ -121,8 +117,6 @@ smoke_2d_pressure_solver_from_name(std::string_view name) {
         return "Speed";
     case Smoke2DDebugView::Vorticity:
         return "Vorticity";
-    case Smoke2DDebugView::Obstacle:
-        return "Obstacle";
     }
     return "Dye";
 }
@@ -146,11 +140,8 @@ smoke_2d_pressure_solver_from_name(std::string_view name) {
     if (name == "vorticity") {
         return Smoke2DDebugView::Vorticity;
     }
-    if (name == "obstacle") {
-        return Smoke2DDebugView::Obstacle;
-    }
     throw std::runtime_error("smoke 2D debug view must be dye, velocity, divergence, pressure, "
-                             "speed, vorticity, or obstacle");
+                             "speed, or vorticity");
 }
 
 [[nodiscard]] inline std::size_t field_cell_count(const Smoke2DConfig& config) {
@@ -234,7 +225,6 @@ smoke_2d_pressure_solver_from_name(std::string_view name) {
     if (run_config_float_is_set(config.smoke.vorticity)) {
         smoke_config.vorticity_strength = config.smoke.vorticity;
     }
-    smoke_config.obstacles_enabled = config.smoke.obstacles;
     smoke_config.profile_diagnostics = config.profile_diagnostics;
     smoke_config.profile_diagnostic_interval = config.profile_diagnostic_interval;
     smoke_config.headless = config.headless;

@@ -8,8 +8,8 @@ checkpoint history live beside each project under `projects/`.
 Cubey should not chase one universal real-time fluid solver. The practical path
 is a small set of focused projects, each with different scaling assumptions:
 
-- `projects/fluid/smoke_2d`: incompressible grid-fluid lab for advection, pressure
-  solves, obstacles, vorticity, and possible 2D free-surface experiments.
+- `projects/fluid/smoke_2d`: incompressible grid-fluid lab for advection,
+  pressure solves, vorticity, and possible 2D free-surface experiments.
 - `projects/fluid/water_2d`: 2D APIC free-surface liquid baseline with a
   PIC/FLIP fallback, particles for liquid motion, and a MAC grid for pressure
   projection.
@@ -123,7 +123,7 @@ visual result now that Cubey has already done the basic GPU Gems version once.
 | Dense Eulerian grid | Good for `smoke_2d`, baseline for `fire_3d` / `explosion_3d` | Simple, inspectable, still useful for learning; 3D scales poorly and should lead toward sparse/local work. |
 | Better advection | High | MacCormack/BFECC directly reduce classic Stable Fluids diffusion. |
 | Stronger pressure solve | High | CG or multigrid is a real scaling lever over fixed Jacobi iterations. |
-| Obstacles/boundaries | High | Makes `smoke_2d` feel scene-relevant instead of purely decorative. |
+| Obstacles/boundaries | Medium | Still useful for water, pyro, and later scene interaction, but no longer part of the current `smoke_2d` surface. |
 | Level set liquid | Medium | Useful for signed-distance surfaces and collision work, but pure level sets lose mass and are no longer the `water_2d` baseline. |
 | Particle level set | Medium | Corrects level-set mass loss with marker particles; more moving parts. |
 | VOF | Medium | Better mass conservation, harder interface reconstruction. |
@@ -243,8 +243,8 @@ project is worth the complexity.
 ## Suggested Order
 
 1. Continue `fluid_25d` with virtual-pipes shallow water over terrain.
-2. Continue `smoke_2d` beyond the current Jacobi/RBGS baseline with moving
-   obstacles, stronger diagnostics, and a clearer smoke/dye versus
+2. Continue `smoke_2d` beyond the current Jacobi/RBGS baseline with richer
+   injectors, stronger diagnostics, and a clearer smoke/dye versus
    free-surface-liquid direction.
 3. Continue `water_2d` from the current 2D APIC/PIC-FLIP baseline toward better
    surfacing, pressure solves, boundaries, validation/debug views, and richer

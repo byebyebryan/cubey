@@ -131,7 +131,6 @@ class Smoke2DApp {
     void draw_ui(cubey::host::WindowedAppContext& context) {
         (void)context;
         bool reset_injectors_requested = false;
-        bool obstacles_changed = false;
         draw_smoke_2d_ui({
             .title = "Smoke 2D",
             .config = smoke_config_,
@@ -140,14 +139,9 @@ class Smoke2DApp {
             .paused = paused_,
             .reset_requested = reset_requested_,
             .reset_injectors_requested = reset_injectors_requested,
-            .obstacles_changed = obstacles_changed,
         });
         if (reset_injectors_requested) {
             reset_injectors();
-        }
-        if (obstacles_changed) {
-            resources_.update_obstacle_mask(runtime_.gpu(), smoke_config_);
-            reset_requested_ = true;
         }
     }
 

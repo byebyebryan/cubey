@@ -21,11 +21,7 @@ layout(set = 0, binding = 1, std430) buffer DestinationField {
     Cell cells[];
 } destination_field;
 
-layout(set = 0, binding = 2, std430) readonly buffer ObstacleField {
-    float values[];
-} obstacle_field;
-
-layout(set = 0, binding = 3, std430) readonly buffer InjectorField {
+layout(set = 0, binding = 2, std430) readonly buffer InjectorField {
     Injector injectors[];
 } injector_field;
 
@@ -57,12 +53,6 @@ void main() {
 
     uint index = (y * width) + x;
     Cell cell = source_field.cells[index];
-    if (obstacle_field.values[index] > 0.5) {
-        cell.dye = vec4(0.0);
-        cell.velocity = vec4(0.0);
-        destination_field.cells[index] = cell;
-        return;
-    }
 
     vec2 uv = (vec2(x, y) + vec2(0.5)) / vec2(width, height);
     float dt = params.grid_dt_time.z;

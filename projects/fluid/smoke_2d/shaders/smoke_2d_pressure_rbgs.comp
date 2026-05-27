@@ -10,10 +10,6 @@ layout(set = 0, binding = 1, std430) buffer PressureField {
     float values[];
 } pressure;
 
-layout(set = 0, binding = 2, std430) readonly buffer ObstacleField {
-    float values[];
-} obstacle_field;
-
 layout(push_constant) uniform SimulationParams {
     vec4 grid_dt_time;
     vec4 decay_options;
@@ -26,14 +22,7 @@ uint cell_index(ivec2 coord, uint width, uint height) {
     return (uint(clamped.y) * width) + uint(clamped.x);
 }
 
-bool is_solid(ivec2 coord, uint width, uint height) {
-    return obstacle_field.values[cell_index(coord, width, height)] > 0.5;
-}
-
-float neighbor_pressure_or_center(ivec2 coord, uint width, uint height, float center) {
-    if (is_solid(coord, width, height)) {
-        return center;
-    }
+float neighbor_pressure(ivec2 coord, uint width, uint height) {
     return pressure.values[cell_index(coord, width, height)];
 }
 
@@ -48,8 +37,7 @@ void main() {
 
     uint index = (y * width) + x;
     ivec2 coord = ivec2(int(x), int(y));
-    if (x == 0 || y == 0 || x + 1 >= width || y + 1 >= height ||
-        is_solid(coord, width, height)) {
+    if (x == 0 || y == 0 || x + 1 >= width || y + 1 >= height) {
         pressure.values[index] = 0.0;
         return;
     }
@@ -59,11 +47,10 @@ void main() {
         return;
     }
 
-    float center = pressure.values[index];
-    float left = neighbor_pressure_or_center(coord + ivec2(-1, 0), width, height, center);
-    float right = neighbor_pressure_or_center(coord + ivec2(1, 0), width, height, center);
-    float down = neighbor_pressure_or_center(coord + ivec2(0, -1), width, height, center);
-    float up = neighbor_pressure_or_center(coord + ivec2(0, 1), width, height, center);
+    float left = neighbor_pressure(coord + ivec2(-1, 0), width, height);
+    float right = neighbor_pressure(coord + ivec2(1, 0), width, height);
+    float down = neighbor_pressure(coord + ivec2(0, -1), width, height);
+    float up = neighbor_pressure(coord + ivec2(0, 1), width, height);
     float div = divergence.values[index];
     pressure.values[index] = (left + right + down + up - div) * 0.25;
 }

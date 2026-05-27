@@ -49,7 +49,6 @@ struct RunConfig {
         float injector_orbit_angular_speed_spread = kRunConfigUnsetFloat;
         float injector_orbit_phase_spread = kRunConfigUnsetFloat;
         float vorticity = kRunConfigUnsetFloat;
-        bool obstacles = false;
     };
 
     struct PyroOptions {

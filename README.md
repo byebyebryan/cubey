@@ -40,7 +40,7 @@ Current examples:
 Current projects:
 
 - `smoke_2d`: compute-updated dye/velocity field with MacCormack advection,
-  vorticity, optional static obstacles, pressure projection, debug views, and
+  vorticity, pressure projection, debug views, and
   deterministic headless capture output.
 - `water_2d`: 2D APIC free-surface liquid with a PIC/FLIP fallback,
   particle-grid transfers, MAC-grid pressure projection, reset presets,
@@ -182,10 +182,9 @@ Useful windowed smokes:
 Windowed `--frames` runs print a final `windowed_perf` FPS/frame-time summary.
 Use `--print-frame-stats` for periodic stdout samples while a window remains
 open; the window title also shows the latest sampled FPS and frame time.
-`smoke_2d` defaults to a `1024x1024` solver grid and three procedural
+`smoke_2d` defaults to a `1024x1024` solver grid and five procedural
 injectors; use `--grid-width`, `--grid-height`, and `--smoke-injectors 1..16` to
-compare other simulation/demo shapes, and `--smoke-obstacles` to enable the static
-obstacle mask. Use `--smoke-pressure-solver jacobi|rbgs` to compare the Jacobi
+compare other simulation/demo shapes. Use `--smoke-pressure-solver jacobi|rbgs` to compare the Jacobi
 and red-black Gauss-Seidel pressure paths; `--profile-diagnostics` is available
 in headless smoke runs when paired with `--profile-output`.
 `water_2d` defaults to a `256x144` MAC grid with APIC particle-grid transfer and
@@ -261,7 +260,7 @@ layers are installed.
 - `fractal_2d`: left-drag pans, mouse wheel zooms around the cursor, `R` resets,
   Escape closes.
 - `smoke_2d`: Space pauses/resumes, `R` resets, `D` cycles
-  dye/velocity/divergence/pressure/speed/vorticity/obstacle views, Escape
+  dye/velocity/divergence/pressure/speed/vorticity views, Escape
   closes.
 - `water_2d`: Space pauses/resumes, `R` resets, `D` cycles
   surface/particles/cells/velocity/divergence/pressure/solid/foam views, Escape

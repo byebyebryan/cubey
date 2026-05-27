@@ -394,9 +394,6 @@ void record_fullscreen_draw(VkCommandBuffer command_buffer, const Smoke2DGpuReso
         resources.divergence().handle());
     const cubey::render::RenderGraphBufferHandle curl = graph.import_buffer(
         {.label = "fluid curl", .byte_size = resources.curl().size()}, resources.curl().handle());
-    const cubey::render::RenderGraphBufferHandle obstacle =
-        graph.import_buffer({.label = "fluid obstacle", .byte_size = resources.obstacle().size()},
-                            resources.obstacle().handle());
     const cubey::render::RenderGraphBufferHandle injector_buffer =
         graph.import_buffer({.label = "smoke injectors", .byte_size = resources.injectors().size()},
                             resources.injectors().handle());
@@ -416,7 +413,6 @@ void record_fullscreen_draw(VkCommandBuffer command_buffer, const Smoke2DGpuReso
         .read_write_storage_buffer(field_temp)
         .read_write_storage_buffer(divergence)
         .read_write_storage_buffer(curl)
-        .read_storage_buffer(obstacle)
         .read_write_storage_buffer(injector_buffer)
         .read_write_storage_buffer(pressure_a)
         .read_write_storage_buffer(pressure_b)
@@ -431,7 +427,6 @@ void record_fullscreen_draw(VkCommandBuffer command_buffer, const Smoke2DGpuReso
         .read_storage_buffer(field_a)
         .read_storage_buffer(divergence)
         .read_storage_buffer(curl)
-        .read_storage_buffer(obstacle)
         .read_storage_buffer(pressure_a)
         .read_storage_buffer(pressure_b)
         .write_color(backbuffer)

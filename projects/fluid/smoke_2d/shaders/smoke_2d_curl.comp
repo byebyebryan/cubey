@@ -15,10 +15,6 @@ layout(set = 0, binding = 1, std430) buffer CurlField {
     float values[];
 } curl;
 
-layout(set = 0, binding = 2, std430) readonly buffer ObstacleField {
-    float values[];
-} obstacle_field;
-
 layout(push_constant) uniform SimulationParams {
     vec4 grid_dt_time;
     vec4 decay_options;
@@ -41,8 +37,7 @@ void main() {
     }
 
     uint index = (y * width) + x;
-    if (x == 0 || y == 0 || x + 1 >= width || y + 1 >= height ||
-        obstacle_field.values[index] > 0.5) {
+    if (x == 0 || y == 0 || x + 1 >= width || y + 1 >= height) {
         curl.values[index] = 0.0;
         return;
     }

@@ -15,10 +15,6 @@ layout(set = 0, binding = 1, std430) buffer PredictedField {
     Cell cells[];
 } predicted_field;
 
-layout(set = 0, binding = 2, std430) readonly buffer ObstacleField {
-    float values[];
-} obstacle_field;
-
 layout(push_constant) uniform SimulationParams {
     vec4 grid_dt_time;
     vec4 decay_options;
@@ -58,13 +54,6 @@ void main() {
     }
 
     uint index = (y * width) + x;
-    if (obstacle_field.values[index] > 0.5) {
-        Cell solid;
-        solid.dye = vec4(0.0);
-        solid.velocity = vec4(0.0);
-        predicted_field.cells[index] = solid;
-        return;
-    }
     Cell current = source_field.cells[index];
     vec2 uv = (vec2(x, y) + vec2(0.5)) / vec2(width, height);
     float dt = params.grid_dt_time.z;

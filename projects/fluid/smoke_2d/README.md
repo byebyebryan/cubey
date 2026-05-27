@@ -23,11 +23,10 @@ Implemented:
 - Configurable GPU storage-buffer grid for dye and velocity.
 - Configurable moving procedural dye/force injectors.
 - MacCormack advection with local clamping and fade.
-- Optional static obstacle mask plus solid-cell boundary handling.
 - Curl, vorticity confinement, divergence, Jacobi or red-black Gauss-Seidel
   pressure solve, and pressure-gradient projection.
 - Fullscreen rendering with dye, velocity, divergence, pressure, speed,
-  vorticity, and obstacle debug views.
+  and vorticity debug views.
 - Per-pass GPU timings in the live UI and profile recorder, plus opt-in
   headless field diagnostics.
 - Integration with `cubey::host::WindowedHost`, `cubey::host::HeadlessPngHost`, and
@@ -44,31 +43,29 @@ Deferred:
 
 - Space: pause or resume simulation.
 - `R`: reset dye, velocity, divergence, and pressure buffers.
-- `D`: cycle dye, velocity, divergence, pressure, speed, vorticity, and
-  obstacle views.
+- `D`: cycle dye, velocity, divergence, pressure, speed, and vorticity views.
 - Escape: close the window.
 
 The windowed build also exposes a small debug UI for live demo tuning: pause,
 reset, debug view, pressure solver/iterations, advection and cleanup tuning,
 injector count/orbits, vorticity, decay, injection radius/force/propulsion,
-obstacle toggle, and GPU timings.
+and GPU timings.
 
 ## Runtime Shape
 
 The default solver grid is `1024x1024`. Override it with `--grid-width` and
 `--grid-height` when comparing quality or performance. The default procedural
-injector count is three; override it with `--smoke-injectors` from `1` to `16` to
+injector count is five; override it with `--smoke-injectors` from `1` to `16` to
 spread more sources around the hue wheel. Procedural sources use one orbit model
 with configurable radius, radius spread, signed angular speed, angular speed
 spread, and phase spread. Use `--smoke-injector-orbit-radius`,
 `--smoke-injector-orbit-radius-spread`, `--smoke-injector-orbit-angular-speed`,
 `--smoke-injector-orbit-angular-speed-spread`, `--smoke-injector-orbit-phase-spread`,
 `--smoke-injector-force`, and `--smoke-injector-propulsion` to tune captures.
-Static obstacles are disabled by default; enable them with `--smoke-obstacles`.
 Solver and source tuning can be reproduced with
 `--smoke-pressure-solver jacobi|rbgs`, `--smoke-pressure-iterations`, `--smoke-dye-decay`,
 `--smoke-velocity-decay`, `--smoke-injector-radius`, and `--smoke-vorticity`.
-Use `--debug-view dye|velocity|divergence|pressure|speed|vorticity|obstacle` to
+Use `--debug-view dye|velocity|divergence|pressure|speed|vorticity` to
 start windowed or headless runs in a diagnostic view.
 Use `--headless --profile-output NAME --profile-diagnostics` to add aggregate
 dye, velocity, divergence, and curl metrics to the profile CSV/trace artifacts.
@@ -77,7 +74,6 @@ dye, velocity, divergence, and curl metrics to the profile CSV/trace artifacts.
 field A -> advect predict -> field temp
 field A + field temp -> MacCormack correction/clamp/fade -> field B
 field B -> inject fresh dye/force -> field A
-optional static obstacle mask constrains injection/advection/pressure/projection
 field A -> curl -> vorticity confinement -> field A
 field A -> divergence + pressure reset
 pressure A/B -> Jacobi iterations, or pressure A -> red/black Gauss-Seidel
@@ -99,8 +95,6 @@ Near-term improvements worth trying:
 
 - Pressure solver upgrades beyond the current Jacobi/RBGS paths: conjugate
   gradient, SOR tuning, or later multigrid.
-- Moving obstacle velocity injection and explicit no-slip/free-slip boundary
-  modes.
 - Richer injectors, turbulence/detail synthesis, and more deliberate smoke or
   dye shading.
 
@@ -155,7 +149,6 @@ Scaling guidance:
     --smoke-injector-orbit-angular-speed 0.0 --smoke-injector-orbit-angular-speed-spread 1.2 \
     --smoke-injector-orbit-phase-spread 1.0 \
     --width 1280 --height 720
-./build/dev/projects/fluid/smoke_2d/smoke_2d --frames 300 --smoke-obstacles --width 1280 --height 720
 ./build/dev/projects/fluid/smoke_2d/smoke_2d --headless --require-validation --frames 120 --width 640 --height 360 --output /tmp/cubey-smoke-2d.png
 ./build/dev/projects/fluid/smoke_2d/smoke_2d --headless --frames 120 --profile-output smoke-2d --profile-diagnostics --output /tmp/cubey-smoke-2d.png
 ./build/dev/projects/fluid/smoke_2d/smoke_2d --headless --capture video --frames 180 --fps 60 --width 1280 --height 720 --output /tmp/cubey-smoke-2d.mp4
@@ -164,7 +157,6 @@ Scaling guidance:
 ## Next Slices
 
 - Compare Jacobi and RBGS with diagnostics before adding CG/SOR/multigrid.
-- Add moving obstacles or obstacle velocity coupling.
 - Decide whether `smoke_2d` should lean smoke/dye, free-surface liquid, or split
   those into separate project modes.
 - Consider a project-local HUD only if title-bar stats are not enough.

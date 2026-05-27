@@ -299,8 +299,6 @@ RunConfig parse_run_config(int argc, char** argv) {
                 parse_float(need_value("--animation-speed"), "--animation-speed");
         } else if (arg == "--pause-animation") {
             config.gltf.animation_paused = true;
-        } else if (arg == "--smoke-obstacles") {
-            config.smoke.obstacles = true;
         } else if (arg == "--output") {
             config.output_path = std::string(need_value("--output"));
             output_path_explicit = true;

@@ -490,8 +490,8 @@ Current project:
 
 - `projects/fluid/smoke_2d` starts the fluid simulation rewrite as a smaller 2D
   dye-and-velocity field. The current checkpoint has compute injection,
-  MacCormack advection, optional static obstacles, vorticity confinement, pressure
-  projection, pointer injection, pause/reset, debug render modes, fullscreen
+  MacCormack advection, vorticity confinement, pressure
+  projection, procedural moving injectors, pause/reset, debug render modes, fullscreen
   rendering, a windowed smoke, and deterministic headless PNG/MP4 output.
   Simulation timing now flows through `ProjectFrame` in both windowed and
   headless modes. The windowed frame now declares a coarse render graph for
@@ -501,7 +501,7 @@ Current project:
 
 Candidate follow-ups:
 
-- Pressure solver upgrades, moving obstacles, or a clearer smoke/liquid split
+- Pressure solver upgrades, richer injectors, or a clearer smoke/liquid split
   for `smoke_2d`.
 - Marching cubes for compute-generated geometry and indirect draw pressure.
 - SDF sculpting if the sparse resource model becomes the more interesting

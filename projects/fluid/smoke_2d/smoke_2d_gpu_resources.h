@@ -26,7 +26,6 @@ class Smoke2DGpuResources {
                                            std::uint32_t frame_slot_count = 1);
     void create_render_pipeline(cubey::vulkan::Device& device, VkFormat color_format,
                                 VkExtent2D extent);
-    void update_obstacle_mask(cubey::ProjectGpuServices& gpu, const Smoke2DConfig& config);
     void destroy_swapchain_resources();
     void destroy_all_resources();
 
@@ -35,7 +34,6 @@ class Smoke2DGpuResources {
     [[nodiscard]] const cubey::vulkan::Buffer& field_temp() const;
     [[nodiscard]] const cubey::vulkan::Buffer& divergence() const;
     [[nodiscard]] const cubey::vulkan::Buffer& curl() const;
-    [[nodiscard]] const cubey::vulkan::Buffer& obstacle() const;
     [[nodiscard]] const cubey::vulkan::Buffer& injectors() const;
     [[nodiscard]] const cubey::vulkan::Buffer& pressure_a() const;
     [[nodiscard]] const cubey::vulkan::Buffer& pressure_b() const;
@@ -115,7 +113,6 @@ class Smoke2DGpuResources {
     std::optional<cubey::vulkan::Buffer> field_temp_;
     std::optional<cubey::vulkan::Buffer> divergence_;
     std::optional<cubey::vulkan::Buffer> curl_;
-    std::optional<cubey::vulkan::Buffer> obstacle_;
     std::optional<cubey::vulkan::Buffer> injectors_;
     std::optional<cubey::vulkan::Buffer> pressure_a_;
     std::optional<cubey::vulkan::Buffer> pressure_b_;

@@ -5,6 +5,7 @@
 #include <cubey/core/run_config.h>
 
 #include <array>
+#include <cmath>
 #include <cstdio>
 #include <exception>
 #include <filesystem>
@@ -63,47 +64,46 @@ int main() {
         constexpr std::size_t kExpectedCellCount = std::size_t{1024} * std::size_t{1024};
         require(config.grid_width == 1024, "smoke grid should default to 1024 columns");
         require(config.grid_height == 1024, "smoke grid should default to 1024 rows");
-        require(config.procedural_injector_count == 3,
-                "smoke should default to three procedural injectors");
+        require(config.procedural_injector_count == 5,
+                "smoke should default to five procedural injectors");
         require(cubey::projects::fluid::smoke_2d::field_cell_count(config) == kExpectedCellCount,
                 "field cell count should multiply dimensions");
         require(cubey::projects::fluid::smoke_2d::field_byte_size(config) ==
                     sizeof(cubey::projects::fluid::smoke_2d::SmokeCellGpu) * kExpectedCellCount,
                 "field byte size should cover one cell per grid location");
-        require(config.pressure_iterations == 32,
-                "fluid pressure solve should default to 32 Jacobi iterations");
+        require(config.pressure_iterations == 40,
+                "fluid pressure solve should default to 40 Jacobi iterations");
         require(config.pressure_solver ==
                     cubey::projects::fluid::smoke_2d::Smoke2DPressureSolver::Jacobi,
                 "fluid pressure solve should default to Jacobi");
-        require(config.dye_decay_per_second == 0.990F,
+        require(config.dye_decay_per_second == 0.992F,
                 "fluid dye decay should default to controlled linger");
-        require(config.velocity_decay_per_second == 0.993F,
+        require(config.velocity_decay_per_second == 0.996F,
                 "fluid velocity decay should default to controlled linger");
-        require(config.injector_injection_radius == 0.032F,
+        require(config.injector_injection_radius == 0.026F,
                 "smoke injector radius should be tuned for sharper moving sources");
-        require(config.injector_injection_strength == 6.0F,
+        require(config.injector_injection_strength == 7.2F,
                 "smoke injector strength should default to a visible multi-source impulse");
-        require(config.injector_propulsion_strength == 1.0F,
-                "smoke injector propulsion should default to neutral scaling");
-        require(config.injector_orbit_radius == 0.25F,
+        require(config.injector_propulsion_strength == 1.35F,
+                "smoke injector propulsion should default to a visible pushback");
+        require(config.injector_orbit_radius == 0.26F,
                 "smoke injector orbit radius should default near the middle of the field");
-        require(config.injector_orbit_radius_spread == 0.22F,
+        require(config.injector_orbit_radius_spread == 0.28F,
                 "smoke injector orbit radius spread should default to a broad band");
         require(config.injector_orbit_angular_speed == 0.0F,
                 "smoke injector orbit speed should default to a centered signed band");
-        require(config.injector_orbit_angular_speed_spread == 0.8F,
+        require(config.injector_orbit_angular_speed_spread == 1.1F,
                 "smoke injector orbit speed spread should default to mixed directions");
         require(config.injector_orbit_phase_spread == 1.0F,
                 "smoke injector orbit phase spread should default around a full turn");
-        require(config.vorticity_strength == 18.0F,
+        require(config.vorticity_strength == 22.0F,
                 "fluid vorticity strength should have a visible default");
         require(config.advection_strength == 0.18F,
                 "smoke advection strength should default to the tuned shader scale");
-        require(config.low_energy_cleanup_strength == 0.14F,
+        require(config.low_energy_cleanup_strength == 0.12F,
                 "smoke low-energy cleanup should default to the tuned artifact suppression");
-        require(config.low_energy_cleanup_start == 0.035F && config.low_energy_cleanup_end == 0.22F,
+        require(config.low_energy_cleanup_start == 0.030F && config.low_energy_cleanup_end == 0.20F,
                 "smoke low-energy cleanup should expose the tuned residual range");
-        require(!config.obstacles_enabled, "smoke obstacles should default disabled");
         require(!config.profile_diagnostics && config.profile_diagnostic_interval == 1U,
                 "smoke diagnostics should be opt-in with per-frame sampling by default");
         require(cubey::projects::fluid::smoke_2d::scalar_field_byte_size(config) ==
@@ -131,12 +131,8 @@ int main() {
                 "debug view should cycle from speed to vorticity");
         require(cubey::projects::fluid::smoke_2d::next_debug_view(
                     cubey::projects::fluid::smoke_2d::Smoke2DDebugView::Vorticity) ==
-                    cubey::projects::fluid::smoke_2d::Smoke2DDebugView::Obstacle,
-                "debug view should cycle from vorticity to obstacle");
-        require(cubey::projects::fluid::smoke_2d::next_debug_view(
-                    cubey::projects::fluid::smoke_2d::Smoke2DDebugView::Obstacle) ==
                     cubey::projects::fluid::smoke_2d::Smoke2DDebugView::Dye,
-                "debug view should cycle from obstacle to dye");
+                "debug view should cycle from vorticity to dye");
         require(cubey::projects::fluid::smoke_2d::smoke_2d_pressure_solver_from_name("rbgs") ==
                     cubey::projects::fluid::smoke_2d::Smoke2DPressureSolver::RedBlackGaussSeidel,
                 "pressure solver parser should accept rbgs");
@@ -175,6 +171,15 @@ int main() {
         require(default_from_run_config.low_energy_cleanup_strength ==
                     config.low_energy_cleanup_strength,
                 "default run config should preserve smoke cleanup strength");
+        std::vector<cubey::projects::fluid::smoke_2d::Smoke2DInjectorState> default_injectors =
+            cubey::projects::fluid::smoke_2d::create_smoke_2d_injectors(config);
+        require(default_injectors.size() == 5,
+                "default smoke injector state should match the default injector count");
+        for (const cubey::projects::fluid::smoke_2d::Smoke2DInjectorState& injector :
+             default_injectors) {
+            require(std::abs(injector.angular_speed) > 0.001F,
+                    "default smoke injector speed spread should not leave an injector static");
+        }
 
         cubey::RunConfig run_config;
         run_config.grid.width = 1024;
@@ -226,13 +231,6 @@ int main() {
                 "smoke config should honor run config injector orbit phase spread");
         require(configured.vorticity_strength == 24.0F,
                 "smoke config should honor run config vorticity");
-        require(!configured.obstacles_enabled,
-                "smoke config should keep obstacles disabled unless requested");
-        run_config.smoke.obstacles = true;
-        const cubey::projects::fluid::smoke_2d::Smoke2DConfig configured_with_obstacles =
-            cubey::projects::fluid::smoke_2d::smoke_2d_config_from_run_config(run_config);
-        require(configured_with_obstacles.obstacles_enabled,
-                "smoke config should honor run config obstacle toggle");
         cubey::RunConfig diagnostics_run_config;
         diagnostics_run_config.headless = true;
         diagnostics_run_config.profile_diagnostics = true;
@@ -424,8 +422,8 @@ int main() {
                          "smoke app should own command buffer timing around render graph record");
         require_contains(app_source, "resources_.field_a().handle()",
                          "smoke headless path should read back field diagnostics");
-        require_contains(app_source, "update_obstacle_mask",
-                         "smoke app should rebuild obstacle masks after live UI edits");
+        require_not_contains(app_source, "update_obstacle_mask",
+                             "smoke app should not retain removed obstacle-mask updates");
         const std::string diagnostics_source =
             read_text_file(source_root / "smoke_2d_diagnostics.cpp");
         require_contains(diagnostics_source, "smoke_2d.field",
@@ -433,12 +431,12 @@ int main() {
         require_contains(diagnostics_source, "divergence_abs_max",
                          "smoke diagnostics readback should export solver residual metrics");
         const std::string ui_source = read_text_file(source_root / "smoke_2d_ui.cpp");
-        require_contains(ui_source, "ImGui::Checkbox(\"Enabled\"",
-                         "smoke obstacle UI should expose a live obstacle toggle");
+        require_not_contains(ui_source, "Obstacles",
+                             "smoke UI should not expose removed obstacle controls");
         const std::string gpu_resources_source =
             read_text_file(source_root / "smoke_2d_gpu_resources.cpp");
-        require_contains(gpu_resources_source, "copy_buffer(owner, staging.handle(), destination",
-                         "smoke obstacle updates should upload into the existing GPU buffer");
+        require_not_contains(gpu_resources_source, "obstacle",
+                             "smoke GPU resources should not retain obstacle buffers");
         require_contains(gpu_resources_source, "smoke_2d_pressure_rbgs.comp.spv",
                          "smoke GPU resources should create the RBGS pressure pipeline");
         const std::string pressure_rbgs_shader =

@@ -99,6 +99,16 @@ void integrate_boundary(std::array<float, 2>& position, std::array<float, 2>& ve
     return (static_cast<float>(index) / (count - 1.0F)) * 2.0F - 1.0F;
 }
 
+[[nodiscard]] float angular_speed_spread_t(const Smoke2DConfig& config, std::uint32_t index) {
+    const float t = spread_t(config, index);
+    if (std::abs(t) > 0.0001F || config.injector_orbit_angular_speed_spread <= 0.0F) {
+        return t;
+    }
+    const float count = static_cast<float>(config.procedural_injector_count);
+    const float nearest_nonzero_step = 1.0F / std::max(count - 1.0F, 1.0F);
+    return (index % 2U) == 0U ? nearest_nonzero_step : -nearest_nonzero_step;
+}
+
 [[nodiscard]] float orbit_radius(const Smoke2DConfig& config, std::uint32_t index) {
     const float count = static_cast<float>(std::max(config.procedural_injector_count, 1U));
     const float spacing = config.injector_orbit_radius_spread / count;
@@ -114,7 +124,8 @@ void integrate_boundary(std::array<float, 2>& position, std::array<float, 2>& ve
 
 [[nodiscard]] float orbit_angular_speed(const Smoke2DConfig& config, std::uint32_t index) {
     return config.injector_orbit_angular_speed +
-           (spread_t(config, index) * config.injector_orbit_angular_speed_spread * 0.5F);
+           (angular_speed_spread_t(config, index) * config.injector_orbit_angular_speed_spread *
+            0.5F);
 }
 
 [[nodiscard]] float orbit_phase(const Smoke2DConfig& config, std::uint32_t index) {
@@ -250,7 +261,7 @@ smoke_2d_injectors_to_gpu(const std::vector<Smoke2DInjectorState>& injectors,
     gpu_injectors.reserve(injectors.size());
     for (const Smoke2DInjectorState& injector : injectors) {
         const std::array<float, 3> dye = cubey::render::hsv_to_linear_rgb(
-            {.hue = injector.hue, .saturation = 1.0F, .value = 1.0F});
+            {.hue = injector.hue, .saturation = 0.82F, .value = 1.08F});
         const InjectorGpuTuning tuning = gpu_tuning_for_injector();
         gpu_injectors.push_back({
             .position_radius_strength =
