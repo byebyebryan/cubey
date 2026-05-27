@@ -26,6 +26,7 @@ layout(push_constant) uniform OceanParams {
     mat4 view_projection;
     vec4 camera_time;
     vec4 mesh_options;
+    vec4 patch_bounds;
     vec4 wave_options;
     vec4 detail_options;
     vec4 shading_options;
@@ -43,6 +44,7 @@ layout(location = 2) in vec4 frag_wave;
 layout(location = 3) in vec3 frag_displacement;
 layout(location = 4) in vec2 frag_sample_position;
 noperspective layout(location = 5) in vec3 frag_barycentric;
+layout(location = 6) in float frag_patch_fade;
 
 layout(location = 0) out vec4 out_color;
 
@@ -159,22 +161,22 @@ vec2 cascade_sample_position(uint cascade, vec2 position) {
 
 float cascade_weight(uint cascade, float camera_distance) {
     if (cascade == 0u) {
-        return 1.0 - smoothstep(ocean.mesh_options.y * 0.18, ocean.mesh_options.y * 0.55,
+        return 1.0 - smoothstep(ocean.mesh_options.z * 0.18, ocean.mesh_options.z * 0.55,
                                 camera_distance);
     }
     if (cascade == 1u) {
-        float fade_in = smoothstep(ocean.mesh_options.y * 0.10, ocean.mesh_options.y * 0.22,
+        float fade_in = smoothstep(ocean.mesh_options.z * 0.10, ocean.mesh_options.z * 0.22,
                                    camera_distance);
-        float fade_out = 1.0 - smoothstep(ocean.mesh_options.y * 0.58,
-                                          ocean.mesh_options.y * 0.94, camera_distance);
+        float fade_out = 1.0 - smoothstep(ocean.mesh_options.z * 0.58,
+                                          ocean.mesh_options.z * 0.94, camera_distance);
         return fade_in * fade_out;
     }
-    return smoothstep(ocean.mesh_options.y * 0.34, ocean.mesh_options.y * 0.72, camera_distance);
+    return smoothstep(ocean.mesh_options.z * 0.34, ocean.mesh_options.z * 0.72, camera_distance);
 }
 
 float cascade_detail_filter(float camera_distance) {
     float near_fade =
-        1.0 - smoothstep(ocean.mesh_options.y * 0.68, ocean.mesh_options.y * 1.10,
+        1.0 - smoothstep(ocean.mesh_options.z * 0.68, ocean.mesh_options.z * 1.10,
                          camera_distance);
     return clamp(mix(0.42, 1.0, near_fade), 0.0, 1.0);
 }
@@ -307,6 +309,19 @@ float wireframe_line(vec3 barycentric) {
     return 1.0 - min(min(edge.x, edge.y), edge.z);
 }
 
+vec3 wireframe_lod_tint() {
+    float phase = fract(ocean.debug_options.z * 0.173) * 6.2831853;
+    vec3 tint = 0.55 + 0.45 * cos(vec3(0.0, 2.0943951, 4.1887902) + phase);
+    return cubey_srgb_to_linear(tint);
+}
+
+float clipmap_patch_alpha() {
+    if (ocean.debug_options.z >= ocean.debug_options.w - 0.5) {
+        return 1.0;
+    }
+    return clamp(frag_patch_fade, 0.0, 1.0);
+}
+
 vec3 apply_display(vec3 color) {
     return cubey_pbr_apply_display_transform(color, ocean.display_transform);
 }
@@ -363,7 +378,7 @@ void main() {
     vec3 foam_color = mix(old_foam, fresh_foam, foam_freshness);
     water = mix(water, foam_color, shaded_foam);
 
-    float horizon_fog = smoothstep(ocean.mesh_options.y * 0.28, ocean.mesh_options.y * 0.92,
+    float horizon_fog = smoothstep(ocean.mesh_options.z * 0.28, ocean.mesh_options.z * 0.92,
                                    frag_wave.z) *
                         ocean.mesh_options.w;
     vec3 horizon_dir = normalize(vec3(-view_dir.x, 0.055, -view_dir.z));
@@ -396,9 +411,11 @@ void main() {
         float line = wireframe_line(frag_barycentric);
         vec3 base = mix(cubey_srgb_to_linear(vec3(0.015, 0.035, 0.045)),
                         debug_height_color(frag_wave.x), 0.18);
-        vec3 wire = cubey_srgb_to_linear(vec3(0.82, 0.94, 1.0));
+        vec3 lod_tint = wireframe_lod_tint();
+        base = mix(base, lod_tint, 0.10);
+        vec3 wire = mix(cubey_srgb_to_linear(vec3(0.82, 0.94, 1.0)), lod_tint, 0.18);
         color = mix(base, wire, line);
     }
 
-    out_color = vec4(apply_display(color), 1.0);
+    out_color = vec4(apply_display(color), clipmap_patch_alpha());
 }

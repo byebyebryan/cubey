@@ -17,6 +17,7 @@ layout(push_constant) uniform OceanParams {
     mat4 view_projection;
     vec4 camera_time;
     vec4 mesh_options;
+    vec4 patch_bounds;
     vec4 wave_options;
     vec4 detail_options;
     vec4 shading_options;
@@ -34,6 +35,7 @@ layout(location = 2) out vec4 frag_wave;
 layout(location = 3) out vec3 frag_displacement;
 layout(location = 4) out vec2 frag_sample_position;
 noperspective layout(location = 5) out vec3 frag_barycentric;
+layout(location = 6) out float frag_patch_fade;
 
 struct SurfaceSample {
     vec3 displacement;
@@ -72,10 +74,19 @@ vec3 triangle_barycentric(uint vertex_in_cell) {
     return vec3(0.0, 0.0, 1.0);
 }
 
-vec2 projected_grid_position(vec2 signed_uv) {
-    float radial = clamp(length(signed_uv) * 0.70710678, 0.0, 1.0);
-    float scale = mix(0.22, 1.0, pow(radial, 1.35));
-    return signed_uv * scale;
+float ocean_far_extent() {
+    return max(ocean.mesh_options.z, 0.001);
+}
+
+vec2 clipmap_patch_position(vec2 uv) {
+    return vec2(mix(ocean.patch_bounds.x, ocean.patch_bounds.y, uv.x),
+                mix(ocean.patch_bounds.z, ocean.patch_bounds.w, uv.y));
+}
+
+float clipmap_patch_edge_fade(vec2 uv, vec2 cells) {
+    vec2 edge_cells = min(uv, vec2(1.0) - uv) * cells;
+    float edge_distance = min(edge_cells.x, edge_cells.y);
+    return smoothstep(0.0, 18.0, edge_distance);
 }
 
 vec4 sample_displacement(uint cascade, vec2 uv) {
@@ -136,17 +147,17 @@ vec2 cascade_sample_position(uint cascade, vec2 position) {
 
 float cascade_weight(uint cascade, float camera_distance) {
     if (cascade == 0u) {
-        return 1.0 - smoothstep(ocean.mesh_options.y * 0.18, ocean.mesh_options.y * 0.55,
+        return 1.0 - smoothstep(ocean_far_extent() * 0.18, ocean_far_extent() * 0.55,
                                 camera_distance);
     }
     if (cascade == 1u) {
-        float fade_in = smoothstep(ocean.mesh_options.y * 0.10, ocean.mesh_options.y * 0.22,
+        float fade_in = smoothstep(ocean_far_extent() * 0.10, ocean_far_extent() * 0.22,
                                    camera_distance);
-        float fade_out = 1.0 - smoothstep(ocean.mesh_options.y * 0.58,
-                                          ocean.mesh_options.y * 0.94, camera_distance);
+        float fade_out = 1.0 - smoothstep(ocean_far_extent() * 0.58,
+                                          ocean_far_extent() * 0.94, camera_distance);
         return fade_in * fade_out;
     }
-    return smoothstep(ocean.mesh_options.y * 0.34, ocean.mesh_options.y * 0.72, camera_distance);
+    return smoothstep(ocean_far_extent() * 0.34, ocean_far_extent() * 0.72, camera_distance);
 }
 
 float cascade_displacement_detail_scale(uint cascade) {
@@ -173,13 +184,13 @@ float cascade_normal_detail_scale(uint cascade) {
 
 float cascade_geometry_detail_scale(uint cascade, float camera_distance) {
     if (cascade == 0u) {
-        float near = 1.0 - smoothstep(ocean.mesh_options.y * 0.10,
-                                      ocean.mesh_options.y * 0.36, camera_distance);
+        float near = 1.0 - smoothstep(ocean_far_extent() * 0.10,
+                                      ocean_far_extent() * 0.36, camera_distance);
         return near;
     }
     if (cascade == 1u) {
-        float near = 1.0 - smoothstep(ocean.mesh_options.y * 0.18,
-                                      ocean.mesh_options.y * 0.46, camera_distance);
+        float near = 1.0 - smoothstep(ocean_far_extent() * 0.18,
+                                      ocean_far_extent() * 0.46, camera_distance);
         return near * 0.34;
     }
     return 0.0;
@@ -262,20 +273,23 @@ SurfaceSample sample_ocean(vec2 position, float camera_distance) {
 }
 
 void main() {
-    uint cells = max(uint(ocean.mesh_options.x + 0.5), 1u);
+    uint cells_x = max(uint(ocean.mesh_options.x + 0.5), 1u);
+    uint cells_z = max(uint(ocean.mesh_options.y + 0.5), 1u);
     uint vertex_in_cell = uint(gl_VertexIndex) % 6u;
     uint cell_index = uint(gl_VertexIndex) / 6u;
-    uint cell_x = cell_index % cells;
-    uint cell_z = cell_index / cells;
+    uint cell_x = cell_index % cells_x;
+    uint cell_z = cell_index / cells_x;
 
-    vec2 uv = (vec2(cell_x, cell_z) + triangle_corner(vertex_in_cell)) / float(cells);
-    vec2 signed_uv = (uv * 2.0) - 1.0;
-    vec2 projected_uv = projected_grid_position(signed_uv);
+    vec2 uv = (vec2(cell_x, cell_z) + triangle_corner(vertex_in_cell)) /
+              vec2(float(cells_x), float(cells_z));
+    float patch_fade = clipmap_patch_edge_fade(uv, vec2(float(cells_x), float(cells_z)));
 
     vec2 camera_xz = ocean.camera_time.xz;
-    float snap = max(ocean.mesh_options.z, 0.001);
+    float patch_cell_size =
+        (ocean.patch_bounds.y - ocean.patch_bounds.x) / max(float(cells_x), 1.0);
+    float snap = max(patch_cell_size / exp2(ocean.debug_options.z), 0.001);
     vec2 snapped_center = floor(camera_xz / snap) * snap;
-    vec2 base_position_xz = snapped_center + (projected_uv * ocean.mesh_options.y);
+    vec2 base_position_xz = snapped_center + clipmap_patch_position(uv);
     float camera_distance = length(base_position_xz - camera_xz);
 
     SurfaceSample ocean_sample = sample_ocean(base_position_xz, camera_distance);
@@ -297,5 +311,6 @@ void main() {
     frag_displacement = ocean_sample.displacement;
     frag_sample_position = base_position_xz;
     frag_barycentric = triangle_barycentric(vertex_in_cell);
+    frag_patch_fade = patch_fade;
     gl_Position = ocean.view_projection * vec4(world_position, 1.0);
 }

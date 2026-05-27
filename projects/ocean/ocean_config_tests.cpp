@@ -191,8 +191,12 @@ int main() {
         const std::string detail_shader = read_text_file(source_root / "shaders/ocean_detail.comp");
         const std::string foam_update_shader =
             read_text_file(source_root / "shaders/ocean_foam_update.comp");
-        require_contains(vertex_shader, "projected_grid_position",
-                         "ocean vertex shader should use a camera-relative projected grid");
+        require_contains(vertex_shader, "clipmap_patch_position",
+                         "ocean vertex shader should map generated vertices through clipmap patches");
+        require_contains(vertex_shader, "clipmap_patch_edge_fade",
+                         "ocean vertex shader should soften clipmap patch boundaries");
+        require_contains(vertex_shader, "patch_bounds",
+                         "ocean vertex shader should receive clipmap patch bounds");
         require_contains(vertex_shader, "cascade_sample_position",
                          "ocean vertex shader should decorrelate cascade sampling");
         require_contains(vertex_shader, "displacement_near_texture",
@@ -225,6 +229,8 @@ int main() {
                          "ocean fragment shader should expose detail debug view");
         require_contains(fragment_shader, "wireframe_line",
                          "ocean fragment shader should expose a shader wireframe debug view");
+        require_contains(fragment_shader, "wireframe_lod_tint",
+                         "ocean fragment shader should tint wireframe by clipmap LOD level");
         require_contains(fragment_shader, "noperspective layout(location = 5)",
                          "ocean fragment shader should keep wireframe interpolation screen-space");
         require_contains(sky_shader, "camera_forward",

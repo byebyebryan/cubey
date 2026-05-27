@@ -39,7 +39,7 @@ constexpr VkFormat kOceanFieldFormat = VK_FORMAT_R32G32B32A32_SFLOAT;
     const VkPushConstantRange push_constant_range{
         .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
         .offset = 0,
-        .size = sizeof(float) * 60U,
+        .size = sizeof(float) * 64U,
     };
     return {
         .label = "ocean.surface",
@@ -47,7 +47,11 @@ constexpr VkFormat kOceanFieldFormat = VK_FORMAT_R32G32B32A32_SFLOAT;
         .cull_mode = VK_CULL_MODE_NONE,
         .depth_test = false,
         .depth_write = false,
-        .blend_enable = false,
+        .blend_enable = true,
+        .src_color_blend_factor = VK_BLEND_FACTOR_SRC_ALPHA,
+        .dst_color_blend_factor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
+        .src_alpha_blend_factor = VK_BLEND_FACTOR_ONE,
+        .dst_alpha_blend_factor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
     };
 }
 

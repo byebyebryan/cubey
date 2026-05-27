@@ -1,5 +1,7 @@
 #include "ocean_ui.h"
 
+#include "ocean_mesh.h"
+
 #include <cubey/host/imgui_helpers.h>
 
 #include <imgui.h>
@@ -67,14 +69,21 @@ void draw_ocean_ui(OceanUiContext ui) {
     if (cubey::host::imgui_section("Scale", true)) {
         const cubey::host::ScopedImGuiId section_id("Scale");
         int mesh_cells = static_cast<int>(ui.config.mesh_cells);
-        if (ImGui::SliderInt("Mesh cells", &mesh_cells, static_cast<int>(kOceanMinMeshCells),
+        if (ImGui::SliderInt("Base cells", &mesh_cells, static_cast<int>(kOceanMinMeshCells),
                              static_cast<int>(kOceanMaxMeshCells))) {
             ui.config.mesh_cells = static_cast<std::uint32_t>(
                 std::clamp(mesh_cells, static_cast<int>(kOceanMinMeshCells),
                            static_cast<int>(kOceanMaxMeshCells)));
         }
+        int mesh_lod_levels = static_cast<int>(ui.config.mesh_lod_levels);
+        if (ImGui::SliderInt("LOD levels", &mesh_lod_levels,
+                             static_cast<int>(kOceanMinMeshLodLevels),
+                             static_cast<int>(kOceanMaxMeshLodLevels))) {
+            ui.config.mesh_lod_levels = static_cast<std::uint32_t>(
+                std::clamp(mesh_lod_levels, static_cast<int>(kOceanMinMeshLodLevels),
+                           static_cast<int>(kOceanMaxMeshLodLevels)));
+        }
         ImGui::SliderFloat("Extent", &ui.config.mesh_extent, 400.0F, 9000.0F, "%.0f");
-        ImGui::SliderFloat("Snap", &ui.config.mesh_snap, 1.0F, 64.0F, "%.0f");
         ImGui::SliderFloat("Horizon fog", &ui.config.horizon_fog, 0.0F, 1.0F, "%.2f");
     }
 
@@ -137,8 +146,9 @@ void draw_ocean_ui(OceanUiContext ui) {
     if (cubey::host::imgui_section("Diagnostics", true)) {
         const cubey::host::ScopedImGuiId section_id("Diagnostics");
         cubey::host::draw_frame_stats(ui.latest_frame_stats, ui.latest_fps, ui.latest_frame_ms);
-        ImGui::Text("Mesh: %u cells / %u tris", ui.config.mesh_cells,
-                    ui.config.mesh_cells * ui.config.mesh_cells * 2U);
+        ImGui::Text("Mesh: %u LOD / %u patches / %u tris", ui.config.mesh_lod_levels,
+                    ocean_mesh_patch_count(ui.config), ocean_mesh_total_triangle_count(ui.config));
+        ImGui::Text("Near cell: %.2f m", ocean_mesh_near_cell_size(ui.config));
     }
 
     ImGui::End();

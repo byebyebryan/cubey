@@ -40,10 +40,9 @@ inline constexpr std::uint32_t kOceanCascadeCount = 3;
 inline constexpr std::uint32_t kOceanSpectrumFieldCount = 3;
 
 struct OceanConfig {
-    std::uint32_t mesh_cells = 220;
-    std::uint32_t mesh_lod_levels = 5;
+    std::uint32_t mesh_cells = 224;
+    std::uint32_t mesh_lod_levels = 4;
     float mesh_extent = 5600.0F;
-    float mesh_snap = 16.0F;
     float horizon_fog = 0.50F;
 
     float wind_direction_degrees = -36.0F;

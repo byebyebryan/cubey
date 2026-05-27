@@ -2,6 +2,7 @@
 
 #include "ocean_config.h"
 #include "ocean_gpu_resources.h"
+#include "ocean_mesh.h"
 #include "ocean_ui.h"
 
 #include <cubey/core/math.h>
@@ -54,6 +55,7 @@ struct OceanPushConstants {
     cubey::math::Mat4 view_projection;
     cubey::math::Vec4 camera_time;
     cubey::math::Vec4 mesh_options;
+    cubey::math::Vec4 patch_bounds;
     cubey::math::Vec4 wave_options;
     cubey::math::Vec4 detail_options;
     cubey::math::Vec4 shading_options;
@@ -65,7 +67,7 @@ struct OceanPushConstants {
     cubey::math::Vec4 detail_wave_options;
 };
 
-static_assert(sizeof(OceanPushConstants) == sizeof(float) * 60U);
+static_assert(sizeof(OceanPushConstants) == sizeof(float) * 64U);
 
 struct OceanSkyPushConstants {
     cubey::math::Vec4 camera_time;
@@ -119,7 +121,7 @@ static_assert(sizeof(OceanDetailPushConstants) == sizeof(float) * 16U);
 }
 
 [[nodiscard]] std::uint32_t triangle_count(const OceanConfig& config) {
-    return config.mesh_cells * config.mesh_cells * 2U;
+    return ocean_mesh_total_triangle_count(config);
 }
 
 [[nodiscard]] std::uint32_t log2_exact(std::uint32_t value) {
@@ -364,7 +366,8 @@ class OceanApp {
         });
     }
 
-    [[nodiscard]] OceanPushConstants push_constants(VkExtent2D extent) const {
+    [[nodiscard]] OceanPushConstants push_constants(VkExtent2D extent,
+                                                    const OceanMeshPatch& patch) const {
         const cubey::Transform3D transform = camera_transform();
         const float aspect = static_cast<float>(extent.width) / static_cast<float>(extent.height);
         const cubey::math::Mat4 view_projection =
@@ -386,10 +389,17 @@ class OceanApp {
                 },
             .mesh_options =
                 {
-                    static_cast<float>(ocean_config_.mesh_cells),
+                    static_cast<float>(patch.cells_x),
+                    static_cast<float>(patch.cells_z),
                     ocean_config_.mesh_extent,
-                    ocean_config_.mesh_snap,
                     ocean_config_.horizon_fog,
+                },
+            .patch_bounds =
+                {
+                    patch.bounds.min_x,
+                    patch.bounds.max_x,
+                    patch.bounds.min_z,
+                    patch.bounds.max_z,
                 },
             .wave_options =
                 {
@@ -424,8 +434,8 @@ class OceanApp {
                 {
                     static_cast<float>(static_cast<std::uint32_t>(render_view_)),
                     static_cast<float>(foam_history_index_),
-                    0.0F,
-                    0.0F,
+                    static_cast<float>(patch.level),
+                    static_cast<float>(ocean_config_.mesh_lod_levels - 1U),
                 },
             .spectrum_options =
                 {
@@ -484,15 +494,18 @@ class OceanApp {
 
     void record_ocean_draw(const cubey::vulkan::CommandRecorder& recorder,
                            VkExtent2D extent) const {
-        const OceanPushConstants constants = push_constants(extent);
+        const OceanMeshPatchList patches = ocean_mesh_clipmap_patches(ocean_config_);
         const cubey::render::GraphicsPipelineResource& ocean_pipeline = pipeline();
         recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, ocean_pipeline.pipeline());
         recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS, ocean_pipeline.layout(), 0,
                                      ocean_gpu_.surface_set());
-        recorder.push_constants(ocean_pipeline.layout(),
-                                VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
-                                constants);
-        recorder.draw(ocean_mesh_vertex_count(ocean_config_));
+        for (const OceanMeshPatch& patch : patches) {
+            const OceanPushConstants constants = push_constants(extent, patch);
+            recorder.push_constants(ocean_pipeline.layout(),
+                                    VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
+                                    constants);
+            recorder.draw(ocean_mesh_patch_vertex_count(patch));
+        }
     }
 
     void record_ocean_sky(const cubey::vulkan::CommandRecorder& recorder, VkExtent2D extent) const {
