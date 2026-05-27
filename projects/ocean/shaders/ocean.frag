@@ -51,18 +51,46 @@ float hash21(vec2 value) {
     return fract((p.x + p.y) * p.z);
 }
 
+float value_noise(vec2 value) {
+    vec2 cell = floor(value);
+    vec2 local = fract(value);
+    vec2 smooth_local = local * local * (3.0 - 2.0 * local);
+    float a = hash21(cell);
+    float b = hash21(cell + vec2(1.0, 0.0));
+    float c = hash21(cell + vec2(0.0, 1.0));
+    float d = hash21(cell + vec2(1.0, 1.0));
+    return mix(mix(a, b, smooth_local.x), mix(c, d, smooth_local.x), smooth_local.y);
+}
+
+void add_micro_wave(inout vec2 gradient, vec2 position, vec2 direction, float frequency,
+                    float slope, float speed, float phase_offset, float time) {
+    float phase = dot(position, direction) * frequency + phase_offset - time * speed;
+    gradient += direction * (cos(phase) * slope);
+}
+
 vec3 add_micro_normal(vec3 base_normal, vec2 position, float time) {
     float wind = ocean.wave_options.y;
     vec2 wind_dir = normalize(vec2(cos(wind), sin(wind)));
     vec2 cross_dir = vec2(-wind_dir.y, wind_dir.x);
-    float n0 = sin(dot(position, wind_dir) * 0.33 - time * 2.1);
-    float n1 = sin(dot(position, cross_dir) * 0.61 + time * 1.7);
-    float n2 = sin(dot(position, normalize(wind_dir + cross_dir * 0.45)) * 1.37 - time * 3.3);
-    vec2 gradient = wind_dir * (n0 * 0.040) + cross_dir * (n1 * 0.026) +
-                    normalize(wind_dir + cross_dir * 0.45) * (n2 * 0.012);
-    float detail_fade = 1.0 - smoothstep(180.0, 980.0, frag_wave.z);
+    vec2 gradient = vec2(0.0);
+    add_micro_wave(gradient, position, normalize(wind_dir + cross_dir * 0.10), 0.054, 0.034,
+                   0.56, 0.40, time);
+    add_micro_wave(gradient, position, normalize(wind_dir - cross_dir * 0.18), 0.079, 0.027,
+                   0.76, 2.30, time);
+    add_micro_wave(gradient, position, normalize(wind_dir + cross_dir * 0.42), 0.122, 0.021,
+                   1.04, 4.70, time);
+    add_micro_wave(gradient, position, normalize(wind_dir - cross_dir * 0.62), 0.188, 0.015,
+                   1.38, 1.70, time);
+    add_micro_wave(gradient, position, normalize(cross_dir + wind_dir * 0.35), 0.282, 0.010,
+                   1.84, 3.60, time);
+    add_micro_wave(gradient, position, normalize(cross_dir - wind_dir * 0.52), 0.430, 0.006,
+                   2.48, 5.50, time);
+    float large_scale_modulation =
+        mix(0.86, 1.08, value_noise(position * 0.0035 + vec2(time * 0.010, time * -0.006)));
+    float detail_fade =
+        1.0 - smoothstep(ocean.mesh_options.y * 0.58, ocean.mesh_options.y * 0.98, frag_wave.z);
     vec3 normal = base_normal + vec3(-gradient.x, 0.0, -gradient.y) *
-                                    ocean.detail_options.y * detail_fade;
+                                    ocean.detail_options.y * detail_fade * large_scale_modulation;
     return normalize(normal);
 }
 
@@ -82,7 +110,10 @@ float foam_mask(vec3 normal, float depth) {
     float slope_foam = smoothstep(ocean.detail_options.w, ocean.detail_options.w + 0.35,
                                   slope * ocean.wave_options.w * 4.5);
     float shallow_foam = (1.0 - smoothstep(1.5, 11.0, depth)) * ocean.shading_options.z;
-    float noisy_breakup = 0.62 + 0.38 * hash21(floor(frag_world_position.xz * 0.075));
+    float noisy_breakup =
+        mix(0.72, 1.06,
+            value_noise(frag_world_position.xz * 0.026 +
+                        vec2(ocean.camera_time.w * 0.018, ocean.camera_time.w * -0.011)));
     return clamp((crest + slope_foam * 0.32 + shallow_foam * 0.48) *
                      ocean.detail_options.z * noisy_breakup,
                  0.0, 1.0);

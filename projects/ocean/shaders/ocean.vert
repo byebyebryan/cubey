@@ -30,18 +30,25 @@ vec2 direction_from_angle(float angle) {
     return normalize(vec2(cos(angle), sin(angle)));
 }
 
+float hash11(float value) {
+    return fract(sin(value * 127.1) * 43758.5453123);
+}
+
 float short_wave_lod(float wavelength, float camera_distance) {
-    float fade_begin = wavelength * 24.0;
-    float fade_end = wavelength * 86.0;
-    return 1.0 - smoothstep(fade_begin, fade_end, camera_distance);
+    float distance_ratio = camera_distance / max(ocean.mesh_options.y, 1.0);
+    float short_wave = 1.0 - smoothstep(54.0, 128.0, wavelength);
+    float edge_fade = 1.0 - smoothstep(0.88, 0.98, distance_ratio);
+    return mix(1.0, edge_fade, short_wave * 0.72);
 }
 
 void add_wave(inout WaveSample sample_value, vec2 position, float camera_distance, float angle,
-              float wavelength, float amplitude, float speed_scale, float steepness) {
+              float wavelength, float amplitude, float speed_scale, float steepness,
+              float phase_offset) {
     vec2 direction = direction_from_angle(angle);
     float k = (2.0 * PI) / max(wavelength, 0.001);
     float phase_speed = sqrt(9.81 * k) * ocean.wave_options.z * speed_scale;
-    float phase = (k * dot(direction, position)) - (phase_speed * ocean.camera_time.w);
+    float phase =
+        (k * dot(direction, position)) + phase_offset - (phase_speed * ocean.camera_time.w);
     float wave_lod = short_wave_lod(wavelength, camera_distance);
     float s = sin(phase);
     float c = cos(phase);
@@ -50,12 +57,15 @@ void add_wave(inout WaveSample sample_value, vec2 position, float camera_distanc
     sample_value.gradient += direction * (a * k * c);
     sample_value.displacement += direction * (ocean.wave_options.w * steepness * a * c);
     sample_value.crest += smoothstep(ocean.detail_options.w, ocean.detail_options.w + 0.42,
-                                     abs(c) * steepness * ocean.wave_options.w * wave_lod);
+                                     max(c, 0.0) * steepness * ocean.wave_options.w * wave_lod);
 }
 
 void add_disturbance(inout WaveSample sample_value, vec2 position) {
     float radius = max(ocean.disturbance.z, 0.001);
     float strength = max(ocean.disturbance.w, 0.0);
+    if (strength <= 0.0001) {
+        return;
+    }
     vec2 delta = position - ocean.disturbance.xy;
     float distance_to_center = length(delta);
     float envelope = exp(-distance_to_center / radius);
@@ -87,16 +97,28 @@ WaveSample sample_ocean(vec2 position, float camera_distance) {
     sample_value.displacement = vec2(0.0);
     sample_value.crest = 0.0;
 
-    add_wave(sample_value, position, camera_distance, wind, 420.0 * swell_scale,
-             amplitude * 5.4, 0.48, 0.38);
-    add_wave(sample_value, position, camera_distance, wind + 0.38, 210.0 * swell_scale,
-             amplitude * 2.1, 0.72, 0.55);
-    add_wave(sample_value, position, camera_distance, wind - 0.74, 92.0 * swell_scale,
-             amplitude * 0.84, 1.12, 0.72);
-    add_wave(sample_value, position, camera_distance, wind + 1.43, 41.0 * swell_scale,
-             amplitude * 0.30, 1.65, 0.88);
-    add_wave(sample_value, position, camera_distance, wind - 1.91, 17.0 * swell_scale,
-             amplitude * 0.10, 2.35, 0.92);
+    const int wave_count = 22;
+    for (int index = 0; index < wave_count; ++index) {
+        float t = (float(index) + 0.5) / float(wave_count);
+        float wavelength =
+            exp(mix(log(760.0 * swell_scale), log(46.0 * swell_scale), t));
+        wavelength *= mix(0.88, 1.16, hash11(float(index) + 7.13));
+
+        float signed_spread = (hash11(float(index) + 13.71) * 2.0) - 1.0;
+        float directional_spread = mix(0.16, 1.28, t);
+        float cross_sea = ((index % 5) == 0) ? sign(signed_spread) * mix(0.42, 0.92, t) : 0.0;
+        float angle = wind + signed_spread * directional_spread + cross_sea;
+
+        float normalized_wavelength = wavelength / max(760.0 * swell_scale, 1.0);
+        float component_amplitude =
+            amplitude * 0.66 * pow(normalized_wavelength, 0.72) *
+            mix(0.72, 1.18, hash11(float(index) + 29.3));
+        float speed_scale = mix(0.30, 1.72, t) * mix(0.92, 1.10, hash11(float(index) + 41.5));
+        float steepness = mix(0.24, 0.74, t);
+        float phase_offset = hash11(float(index) + 53.9) * PI * 2.0;
+        add_wave(sample_value, position, camera_distance, angle, wavelength, component_amplitude,
+                 speed_scale, steepness, phase_offset);
+    }
     add_disturbance(sample_value, position);
     return sample_value;
 }

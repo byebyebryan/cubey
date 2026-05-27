@@ -17,7 +17,7 @@ Implemented:
 - Fresnel sky reflection, fake scene refraction, Beer-style absorption, crest
   and shallow-water foam, exposure/tonemap handling, and debug views;
 - first-class future hooks for local disturbances and shoreline/bathymetry
-  masks.
+  masks, disabled by default so the baseline reads as wind-driven ocean.
 
 Deferred:
 

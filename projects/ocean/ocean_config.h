@@ -30,27 +30,27 @@ inline constexpr std::uint32_t kOceanMinMeshCells = 32;
 inline constexpr std::uint32_t kOceanMaxMeshCells = 320;
 
 struct OceanConfig {
-    std::uint32_t mesh_cells = 184;
+    std::uint32_t mesh_cells = 220;
     float mesh_extent = 3200.0F;
     float mesh_snap = 16.0F;
     float horizon_fog = 0.78F;
 
-    float wind_direction_degrees = 34.0F;
+    float wind_direction_degrees = -36.0F;
     float wind_speed = 1.0F;
-    float wave_amplitude = 1.0F;
+    float wave_amplitude = 0.85F;
     float swell_scale = 1.0F;
-    float chop = 1.08F;
-    float normal_strength = 1.0F;
+    float chop = 0.9F;
+    float normal_strength = 0.88F;
 
-    float foam_amount = 0.58F;
-    float foam_threshold = 0.72F;
+    float foam_amount = 0.34F;
+    float foam_threshold = 1.02F;
     float absorption = 0.085F;
     float refraction_strength = 0.055F;
     float exposure = 0.0F;
 
-    float shoreline_influence = 0.18F;
+    float shoreline_influence = 0.0F;
     float disturbance_radius = 42.0F;
-    float disturbance_strength = 0.28F;
+    float disturbance_strength = 0.0F;
     OceanRenderView render_view = OceanRenderView::Final;
 };
 

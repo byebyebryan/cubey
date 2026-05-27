@@ -41,8 +41,8 @@ int main() {
                 "ocean vertex count should match generated grid triangles");
         require(defaults.mesh_extent > 1000.0F,
                 "default ocean mesh should target horizon-scale rendering");
-        require(defaults.disturbance_radius > 0.0F && defaults.disturbance_strength > 0.0F,
-                "default ocean config should keep interaction hooks visible");
+        require(defaults.disturbance_radius > 0.0F && defaults.disturbance_strength == 0.0F,
+                "default ocean config should expose interaction hooks without radial rings");
 
         require(ocean::ocean_render_view_from_name("") == ocean::OceanRenderView::Final,
                 "empty debug view should use final ocean rendering");
