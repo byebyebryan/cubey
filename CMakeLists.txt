@@ -275,6 +275,7 @@ if (CUBEY_BUILD_EXAMPLES)
                 "${CMAKE_SOURCE_DIR}/examples/particle_cubes"
                 "${CMAKE_SOURCE_DIR}/projects/fractal_2d"
                 "${CMAKE_SOURCE_DIR}/projects/fluid"
+                "${CMAKE_SOURCE_DIR}/projects/ocean"
                 "${CMAKE_SOURCE_DIR}/projects/pbr_furnace"
         )
     endif()
