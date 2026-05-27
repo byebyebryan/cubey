@@ -21,6 +21,8 @@ Implemented:
 - separated controls for wind direction, spectral sea state, animation speed,
   and foam drift so visual scale, motion, and foam history can be tuned
   independently;
+- compute-backed directional short-wave detail normals plus crest-gated foam
+  coverage, coupled to the persistent foam source;
 - coherent procedural sky pass, Fresnel sky reflection, fake scene refraction,
   Beer-style absorption, sun glint, crest/shallow-water foam,
   exposure/tonemap handling, and debug views;
@@ -45,6 +47,7 @@ Useful runs:
 
 ```sh
 ./build/dev/projects/ocean/ocean --frames 300 --width 1280 --height 720
+./build/dev/projects/ocean/ocean --debug-view detail --frames 300 --width 1280 --height 720
 ./build/dev/projects/ocean/ocean --debug-view foam --frames 300 --width 1280 --height 720
 ./build/dev/projects/ocean/ocean --headless --frames 120 --width 640 --height 360 --output /tmp/cubey-ocean.png
 ./build/dev/projects/ocean/ocean --headless --capture video --frames 180 --fps 60 --width 1280 --height 720 --output /tmp/cubey-ocean.mp4
@@ -56,7 +59,7 @@ Controls:
 - Mouse wheel: zoom.
 - Space: pause or resume wave time.
 - `R`: reset camera and wave time.
-- `D`: cycle final, height, displacement, normal, foam, reflection,
+- `D`: cycle final, height, displacement, normal, foam, detail, reflection,
   refraction, and spectrum debug views.
 - Escape: close.
 
@@ -66,6 +69,8 @@ Tuning notes:
   detail.
 - `Animation speed` changes phase progression only.
 - `Foam drift` moves the persistent foam history along the wind direction only.
+- `Detail chop` and `Detail spread` control directional short-wave normals.
+- `Foam streaks` controls patchy breakup on detail crest foam.
 
 Primary references:
 

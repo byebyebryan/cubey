@@ -44,6 +44,7 @@ class OceanGpuResources {
     [[nodiscard]] const cubey::render::ComputePipelineResource& spectrum_evolve_pipeline() const;
     [[nodiscard]] const cubey::render::ComputePipelineResource& fft_pipeline() const;
     [[nodiscard]] const cubey::render::ComputePipelineResource& finalize_pipeline() const;
+    [[nodiscard]] const cubey::render::ComputePipelineResource& detail_pipeline() const;
     [[nodiscard]] const cubey::render::ComputePipelineResource& foam_update_pipeline() const;
 
     [[nodiscard]] VkDescriptorSet spectrum_init_set(std::uint32_t cascade) const;
@@ -51,6 +52,7 @@ class OceanGpuResources {
     [[nodiscard]] VkDescriptorSet fft_set(std::uint32_t cascade, std::uint32_t field,
                                           std::uint32_t set_index) const;
     [[nodiscard]] VkDescriptorSet finalize_set(std::uint32_t cascade) const;
+    [[nodiscard]] VkDescriptorSet detail_set(std::uint32_t cascade) const;
     [[nodiscard]] VkDescriptorSet foam_update_set(std::uint32_t cascade,
                                                   std::uint32_t history_index) const;
     [[nodiscard]] VkDescriptorSet surface_set() const;
@@ -70,6 +72,7 @@ class OceanGpuResources {
                                                                std::uint32_t history_index) const;
     [[nodiscard]] const cubey::render::Texture2D& displacement(std::uint32_t cascade) const;
     [[nodiscard]] const cubey::render::Texture2D& normal_foam(std::uint32_t cascade) const;
+    [[nodiscard]] const cubey::render::Texture2D& detail_normal_foam(std::uint32_t cascade) const;
 
   private:
     using TextureArray = std::array<std::optional<cubey::render::Texture2D>, kOceanCascadeCount>;
@@ -98,6 +101,7 @@ class OceanGpuResources {
     SpectrumTextureArray pong_{};
     TextureArray displacement_{};
     TextureArray normal_foam_{};
+    TextureArray detail_normal_foam_{};
     TextureArray foam_history_a_{};
     TextureArray foam_history_b_{};
 
@@ -117,6 +121,10 @@ class OceanGpuResources {
     std::optional<cubey::vulkan::DescriptorPool> finalize_pool_;
     std::array<VkDescriptorSet, kOceanCascadeCount> finalize_sets_{};
 
+    std::optional<cubey::vulkan::DescriptorSetLayout> detail_layout_;
+    std::optional<cubey::vulkan::DescriptorPool> detail_pool_;
+    std::array<VkDescriptorSet, kOceanCascadeCount> detail_sets_{};
+
     std::optional<cubey::vulkan::DescriptorSetLayout> foam_update_layout_;
     std::optional<cubey::vulkan::DescriptorPool> foam_update_pool_;
     std::array<VkDescriptorSet, kOceanCascadeCount * 2U> foam_update_sets_{};
@@ -129,6 +137,7 @@ class OceanGpuResources {
     std::optional<cubey::render::ComputePipelineResource> spectrum_evolve_pipeline_;
     std::optional<cubey::render::ComputePipelineResource> fft_pipeline_;
     std::optional<cubey::render::ComputePipelineResource> finalize_pipeline_;
+    std::optional<cubey::render::ComputePipelineResource> detail_pipeline_;
     std::optional<cubey::render::ComputePipelineResource> foam_update_pipeline_;
     std::optional<cubey::render::GraphicsPipelineResource> sky_pipeline_;
     std::optional<cubey::render::GraphicsPipelineResource> surface_pipeline_;

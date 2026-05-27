@@ -1,0 +1,106 @@
+#version 450
+
+layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
+
+layout(rgba32f, set = 0, binding = 0) readonly uniform image2D base_normal_foam_image;
+layout(rgba32f, set = 0, binding = 1) writeonly uniform image2D detail_normal_foam_image;
+
+layout(push_constant) uniform DetailParams {
+    vec4 ocean_options;
+    vec4 cascade_options;
+    vec4 wind_options;
+    vec4 foam_options;
+} params;
+
+const float PI = 3.14159265359;
+const float G = 9.81;
+
+float hash12(vec2 value) {
+    vec3 p = fract(vec3(value.xyx) * vec3(443.8975, 397.2973, 491.1871));
+    p += dot(p, p.yzx + 19.19);
+    return fract((p.x + p.y) * p.z);
+}
+
+float value_noise(vec2 value) {
+    vec2 cell = floor(value);
+    vec2 local = smoothstep(vec2(0.0), vec2(1.0), fract(value));
+    float a = hash12(cell);
+    float b = hash12(cell + vec2(1.0, 0.0));
+    float c = hash12(cell + vec2(0.0, 1.0));
+    float d = hash12(cell + vec2(1.0, 1.0));
+    return mix(mix(a, b, local.x), mix(c, d, local.x), local.y);
+}
+
+vec2 rotate2(vec2 value, float angle) {
+    float s = sin(angle);
+    float c = cos(angle);
+    return vec2(c * value.x - s * value.y, s * value.x + c * value.y);
+}
+
+void add_detail_wave(inout vec2 slope, inout float crest, vec2 position, vec2 direction,
+                     float wavelength, float amplitude, float time, float phase_offset) {
+    float k = (2.0 * PI) / max(wavelength, 0.001);
+    float omega = sqrt(G * k);
+    float phase = dot(position, direction) * k + time * omega + phase_offset;
+    float wave = sin(phase);
+    float wave_slope = cos(phase) * amplitude * k;
+    slope += direction * wave_slope;
+    crest = max(crest, smoothstep(0.82, 0.995, wave) * amplitude * k);
+}
+
+float foam_coverage_mask(vec2 position, vec2 wind_direction, float time, float foam_streaks) {
+    vec2 cross_direction = vec2(-wind_direction.y, wind_direction.x);
+    vec2 aligned_uv = vec2(dot(position, wind_direction) * 0.030 - time * 0.020,
+                           dot(position, cross_direction) * 0.044);
+    float broad = value_noise(aligned_uv);
+    float patch_noise = value_noise(position * 0.055 + vec2(time * 0.018, time * -0.013));
+    float coverage = smoothstep(0.44, 0.86, mix(broad, patch_noise, 0.55));
+    return mix(1.0, mix(0.38, 1.0, coverage), clamp(foam_streaks, 0.0, 1.0));
+}
+
+void main() {
+    ivec2 texel = ivec2(gl_GlobalInvocationID.xy);
+    ivec2 size = imageSize(detail_normal_foam_image);
+    if (texel.x >= size.x || texel.y >= size.y) {
+        return;
+    }
+
+    float resolution = max(params.ocean_options.x, 1.0);
+    float time = params.ocean_options.y * max(params.wind_options.z, 0.0);
+    float foam_threshold = params.ocean_options.w;
+    float patch_length = max(params.cascade_options.x, 0.001);
+    float cascade = params.cascade_options.y;
+    float detail_chop = max(params.cascade_options.z, 0.0);
+    float detail_spread = max(params.cascade_options.w, 0.0);
+    float foam_amount = max(params.foam_options.x, 0.0);
+    float sea_state = max(params.foam_options.y, 0.05);
+
+    vec2 uv = (vec2(texel) + vec2(0.5)) / vec2(size);
+    vec2 position = uv * patch_length;
+    vec2 wind_direction = params.wind_options.xy;
+    wind_direction = length(wind_direction) > 0.001 ? normalize(wind_direction) : vec2(1.0, 0.0);
+
+    float spread_radians = clamp(detail_spread, 0.0, 1.0) * 1.15;
+    float cascade_scale = exp2(cascade * 0.30);
+    float sea_scale = mix(0.82, 1.34, clamp(sea_state / 3.0, 0.0, 1.0));
+    float base_wavelength = patch_length / resolution * 26.0 * cascade_scale * sea_scale;
+
+    vec2 slope = vec2(0.0);
+    float crest = 0.0;
+    add_detail_wave(slope, crest, position, rotate2(wind_direction, -0.95 * spread_radians),
+                    base_wavelength * 1.80, 0.42 * detail_chop, time, 0.7);
+    add_detail_wave(slope, crest, position, rotate2(wind_direction, -0.32 * spread_radians),
+                    base_wavelength * 1.08, 0.30 * detail_chop, time * 1.08, 2.1);
+    add_detail_wave(slope, crest, position, rotate2(wind_direction, 0.43 * spread_radians),
+                    base_wavelength * 0.72, 0.18 * detail_chop, time * 1.18, 4.2);
+    add_detail_wave(slope, crest, position, rotate2(wind_direction, 1.08 * spread_radians),
+                    base_wavelength * 0.48, 0.10 * detail_chop, time * 1.34, 5.8);
+
+    vec4 base = imageLoad(base_normal_foam_image, texel);
+    vec3 detail_normal = normalize(vec3(-slope.x, 1.0, -slope.y));
+    float coverage = foam_coverage_mask(position, wind_direction, time, params.wind_options.w);
+    float crest_foam = smoothstep(foam_threshold * 0.18, foam_threshold * 0.58, crest);
+    float detail_foam = crest_foam * foam_amount * coverage * 0.72;
+    float foam_source = clamp(max(base.w, detail_foam), 0.0, 1.0);
+    imageStore(detail_normal_foam_image, texel, vec4(detail_normal, foam_source));
+}

@@ -22,6 +22,7 @@ layout(push_constant) uniform OceanParams {
     vec4 debug_options;
     vec4 spectrum_options;
     vec4 cascade_options;
+    vec4 detail_wave_options;
 } ocean;
 
 layout(location = 0) out vec3 frag_world_position;

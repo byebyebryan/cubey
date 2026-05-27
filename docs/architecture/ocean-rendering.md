@@ -23,6 +23,8 @@ surface renderer and only adds simulation where interaction needs it.
 - Keep sea state, animation speed, and foam drift as separate controls: sea state
   reshapes the generated spectrum, animation speed advances wave phase, and foam
   drift moves only the persistent foam history.
+- Generate short-wave detail in a compute-backed field: analytic directional wave
+  bands produce normals, while crest-gated coverage feeds persistent foam.
 - Keep explicit hooks for local disturbances and shoreline/bathymetry masks.
 
 ## Rendering References
@@ -35,6 +37,10 @@ the useful shape of established approaches:
   filter short wavelengths by sampling footprint, use Gerstner-style choppy
   displacement for sharper crests, and use depth plus Fresnel to control
   reflection/refraction.
+- Unity HDRP-style water bands: keep large swells, chop, and ripples separately
+  controllable instead of treating all detail as one noise layer.
+- Crest-style whitecaps: deposit foam from pinched/choppy crests, then persist
+  and advect it over time.
 - TDM/Inigo Quilez-style `Seascape` presentation lessons: coherent sky color,
   strong directional sun reflection, nonlinear wave shape, and fogging the far
   surface into the sky.

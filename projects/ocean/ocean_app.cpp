@@ -62,9 +62,10 @@ struct OceanPushConstants {
     cubey::math::Vec4 debug_options;
     cubey::math::Vec4 spectrum_options;
     cubey::math::Vec4 cascade_options;
+    cubey::math::Vec4 detail_wave_options;
 };
 
-static_assert(sizeof(OceanPushConstants) == sizeof(float) * 56U);
+static_assert(sizeof(OceanPushConstants) == sizeof(float) * 60U);
 
 struct OceanSkyPushConstants {
     cubey::math::Vec4 camera_time;
@@ -100,10 +101,18 @@ struct OceanFoamUpdatePushConstants {
     cubey::math::Vec4 cascade_options;
 };
 
+struct OceanDetailPushConstants {
+    cubey::math::Vec4 ocean_options;
+    cubey::math::Vec4 cascade_options;
+    cubey::math::Vec4 wind_options;
+    cubey::math::Vec4 foam_options;
+};
+
 static_assert(sizeof(OceanSpectrumPushConstants) == sizeof(float) * 16U);
 static_assert(sizeof(OceanFftPushConstants) == sizeof(float) * 8U);
 static_assert(sizeof(OceanFinalizePushConstants) == sizeof(float) * 16U);
 static_assert(sizeof(OceanFoamUpdatePushConstants) == sizeof(float) * 8U);
+static_assert(sizeof(OceanDetailPushConstants) == sizeof(float) * 16U);
 
 [[nodiscard]] float radians(float degrees) {
     return degrees * (std::numbers::pi_v<float> / 180.0F);
@@ -432,6 +441,13 @@ class OceanApp {
                     ocean_config_.spectrum_patch_length_far,
                     0.0F,
                 },
+            .detail_wave_options =
+                {
+                    ocean_config_.detail_chop,
+                    ocean_config_.detail_spread,
+                    ocean_config_.foam_streaks,
+                    0.0F,
+                },
         };
     }
 
@@ -601,6 +617,40 @@ class OceanApp {
         };
     }
 
+    [[nodiscard]] OceanDetailPushConstants detail_push_constants(std::uint32_t cascade) const {
+        const float wind = radians(ocean_config_.wind_direction_degrees);
+        return {
+            .ocean_options =
+                {
+                    static_cast<float>(ocean_config_.spectrum_resolution),
+                    static_cast<float>(time_seconds_),
+                    ocean_config_.normal_strength,
+                    ocean_config_.foam_threshold,
+                },
+            .cascade_options =
+                {
+                    ocean_cascade_patch_length(ocean_config_, cascade),
+                    static_cast<float>(cascade),
+                    ocean_config_.detail_chop,
+                    ocean_config_.detail_spread,
+                },
+            .wind_options =
+                {
+                    std::cos(wind),
+                    std::sin(wind),
+                    ocean_config_.animation_speed,
+                    ocean_config_.foam_streaks,
+                },
+            .foam_options =
+                {
+                    ocean_config_.foam_amount,
+                    ocean_config_.sea_state,
+                    ocean_config_.spectrum_fetch,
+                    0.0F,
+                },
+        };
+    }
+
     void record_initial_texture_transitions(const cubey::vulkan::CommandRecorder& recorder) const {
         for (std::uint32_t cascade = 0; cascade < kOceanCascadeCount; ++cascade) {
             recorder.transition_image_layout(cubey::vulkan::begin_storage_image_write_transition(
@@ -620,6 +670,8 @@ class OceanApp {
                 ocean_gpu_.displacement(cascade).handle()));
             recorder.transition_image_layout(cubey::vulkan::begin_storage_image_write_transition(
                 ocean_gpu_.normal_foam(cascade).handle()));
+            recorder.transition_image_layout(cubey::vulkan::begin_storage_image_write_transition(
+                ocean_gpu_.detail_normal_foam(cascade).handle()));
             recorder.transition_image_layout(cubey::vulkan::begin_storage_image_write_transition(
                 ocean_gpu_.foam_history(cascade, 0).handle()));
             recorder.transition_image_layout(cubey::vulkan::begin_storage_image_write_transition(
@@ -699,6 +751,18 @@ class OceanApp {
         }
     }
 
+    void record_detail_update(const cubey::vulkan::CommandRecorder& recorder) const {
+        const cubey::render::ComputeDispatchGroups groups =
+            ocean_spectrum_dispatch_groups(ocean_config_);
+        for (std::uint32_t cascade = 0; cascade < kOceanCascadeCount; ++cascade) {
+            cubey::render::record_compute_pipeline_dispatch(
+                recorder,
+                cubey::render::compute_pipeline_dispatch_info(
+                    ocean_gpu_.detail_pipeline(), ocean_gpu_.detail_set(cascade), groups),
+                VK_SHADER_STAGE_COMPUTE_BIT, detail_push_constants(cascade));
+        }
+    }
+
     void record_foam_update(const cubey::vulkan::CommandRecorder& recorder) {
         const cubey::render::ComputeDispatchGroups groups =
             ocean_spectrum_dispatch_groups(ocean_config_);
@@ -729,6 +793,8 @@ class OceanApp {
         cubey::vulkan::record_compute_shader_write_barrier(recorder.handle());
         record_fft(recorder);
         record_finalize(recorder);
+        cubey::vulkan::record_compute_shader_write_barrier(recorder.handle());
+        record_detail_update(recorder);
         cubey::vulkan::record_compute_shader_write_barrier(recorder.handle());
         record_foam_update(recorder);
         cubey::vulkan::record_shader_write_barrier(recorder.handle(),

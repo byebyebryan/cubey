@@ -16,15 +16,16 @@ enum class OceanRenderView : std::uint32_t {
     Displacement = 2,
     Normal = 3,
     Foam = 4,
-    Reflection = 5,
-    Refraction = 6,
-    Spectrum = 7,
+    Detail = 5,
+    Reflection = 6,
+    Refraction = 7,
+    Spectrum = 8,
 };
 
-inline constexpr std::array<OceanRenderView, 8> kOceanRenderViews{
+inline constexpr std::array<OceanRenderView, 9> kOceanRenderViews{
     OceanRenderView::Final,      OceanRenderView::Height,   OceanRenderView::Displacement,
-    OceanRenderView::Normal,     OceanRenderView::Foam,     OceanRenderView::Reflection,
-    OceanRenderView::Refraction, OceanRenderView::Spectrum,
+    OceanRenderView::Normal,     OceanRenderView::Foam,     OceanRenderView::Detail,
+    OceanRenderView::Reflection, OceanRenderView::Refraction, OceanRenderView::Spectrum,
 };
 
 inline constexpr std::uint32_t kOceanMinMeshCells = 32;
@@ -47,9 +48,12 @@ struct OceanConfig {
     float swell_scale = 1.15F;
     float chop = 1.75F;
     float normal_strength = 0.48F;
+    float detail_chop = 1.05F;
+    float detail_spread = 0.30F;
 
     float foam_amount = 0.42F;
     float foam_threshold = 0.72F;
+    float foam_streaks = 0.75F;
     float absorption = 0.070F;
     float refraction_strength = 0.055F;
     float exposure = 0.0F;
@@ -83,6 +87,8 @@ struct OceanConfig {
         return "normal";
     case OceanRenderView::Foam:
         return "foam";
+    case OceanRenderView::Detail:
+        return "detail";
     case OceanRenderView::Reflection:
         return "reflection";
     case OceanRenderView::Refraction:
@@ -170,6 +176,12 @@ inline void validate_ocean_config(const OceanConfig& config) {
     if (config.animation_speed < 0.0F) {
         throw std::runtime_error("ocean animation speed must be nonnegative");
     }
+    if (config.detail_chop < 0.0F) {
+        throw std::runtime_error("ocean detail chop must be nonnegative");
+    }
+    if (config.detail_spread < 0.0F) {
+        throw std::runtime_error("ocean detail spread must be nonnegative");
+    }
     if (config.spectrum_fetch <= 0.0F) {
         throw std::runtime_error("ocean spectrum fetch must be positive");
     }
@@ -178,6 +190,9 @@ inline void validate_ocean_config(const OceanConfig& config) {
     }
     if (config.foam_decay < 0.0F || config.foam_decay > 1.0F) {
         throw std::runtime_error("ocean foam decay must be in [0, 1]");
+    }
+    if (config.foam_streaks < 0.0F) {
+        throw std::runtime_error("ocean foam streaks must be nonnegative");
     }
     if (config.foam_drift < 0.0F) {
         throw std::runtime_error("ocean foam drift must be nonnegative");

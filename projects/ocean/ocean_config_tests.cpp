@@ -47,8 +47,12 @@ int main() {
                 "ocean should default to a practical FFT spectrum resolution");
         require(defaults.sea_state > 0.0F && defaults.animation_speed > 0.0F,
                 "default ocean config should split sea-state shape from animation speed");
+        require(defaults.detail_chop > 0.0F && defaults.detail_spread >= 0.0F,
+                "default ocean config should expose directional detail waves");
         require(defaults.foam_drift >= 0.0F,
                 "default ocean config should expose independent foam drift");
+        require(defaults.foam_streaks > 0.0F,
+                "default ocean config should expose crest foam streaking");
         require(ocean::ocean_is_power_of_two(defaults.spectrum_resolution),
                 "default ocean spectrum resolution should be a power of two");
         require(ocean::ocean_cascade_patch_length(defaults, 0) <
@@ -63,6 +67,8 @@ int main() {
                 "empty debug view should use final ocean rendering");
         require(ocean::ocean_render_view_from_name("normal") == ocean::OceanRenderView::Normal,
                 "normal debug view should parse");
+        require(ocean::ocean_render_view_from_name("detail") == ocean::OceanRenderView::Detail,
+                "detail debug view should parse");
         require(ocean::ocean_render_view_from_name("spectrum") == ocean::OceanRenderView::Spectrum,
                 "spectrum debug view should parse");
         require(ocean::next_ocean_render_view(ocean::OceanRenderView::Spectrum) ==
@@ -128,6 +134,7 @@ int main() {
         const std::string fft_shader = read_text_file(source_root / "shaders/ocean_fft.comp");
         const std::string finalize_shader =
             read_text_file(source_root / "shaders/ocean_finalize.comp");
+        const std::string detail_shader = read_text_file(source_root / "shaders/ocean_detail.comp");
         const std::string foam_update_shader =
             read_text_file(source_root / "shaders/ocean_foam_update.comp");
         require_contains(vertex_shader, "projected_grid_position",
@@ -150,6 +157,10 @@ int main() {
                          "ocean fragment shader should expose reflection debug view");
         require_contains(fragment_shader, "sample_foam_history",
                          "ocean fragment shader should sample persistent foam history");
+        require_contains(fragment_shader, "sample_detail_normal_foam",
+                         "ocean fragment shader should sample detail normal foam field");
+        require_contains(fragment_shader, "OCEAN_VIEW_DETAIL",
+                         "ocean fragment shader should expose detail debug view");
         require_contains(sky_shader, "camera_forward",
                          "ocean sky shader should reconstruct rays from camera basis");
         require_contains(atmosphere_shader, "ocean_sky_color",
@@ -172,10 +183,18 @@ int main() {
                          "ocean finalize shader should write normal and foam output");
         require_contains(finalize_shader, "jacobian",
                          "ocean finalize shader should derive crest compression");
+        require_contains(detail_shader, "add_detail_wave",
+                         "ocean detail shader should generate analytic short-wave bands");
+        require_contains(detail_shader, "foam_coverage_mask",
+                         "ocean detail shader should gate crest foam with patchy coverage");
+        require_contains(detail_shader, "detail_normal_foam_image",
+                         "ocean detail shader should write a detail normal and foam field");
         require_contains(foam_update_shader, "previous_foam_image",
                          "ocean foam update shader should read prior foam history");
         require_contains(foam_update_shader, "next_foam_image",
                          "ocean foam update shader should write ping-ponged foam history");
+        require_contains(foam_update_shader, "detail_normal_foam_image",
+                         "ocean foam update shader should read detail foam source");
         require_contains(foam_update_shader, "foam_drift",
                          "ocean foam update shader should drift foam independently");
 

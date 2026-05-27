@@ -18,6 +18,9 @@ layout(set = 0, binding = 8) uniform sampler2D foam_history_a_far_texture;
 layout(set = 0, binding = 9) uniform sampler2D foam_history_b_near_texture;
 layout(set = 0, binding = 10) uniform sampler2D foam_history_b_mid_texture;
 layout(set = 0, binding = 11) uniform sampler2D foam_history_b_far_texture;
+layout(set = 0, binding = 12) uniform sampler2D detail_normal_foam_near_texture;
+layout(set = 0, binding = 13) uniform sampler2D detail_normal_foam_mid_texture;
+layout(set = 0, binding = 14) uniform sampler2D detail_normal_foam_far_texture;
 
 layout(push_constant) uniform OceanParams {
     mat4 view_projection;
@@ -31,6 +34,7 @@ layout(push_constant) uniform OceanParams {
     vec4 debug_options;
     vec4 spectrum_options;
     vec4 cascade_options;
+    vec4 detail_wave_options;
 } ocean;
 
 layout(location = 0) in vec3 frag_world_position;
@@ -46,17 +50,21 @@ const uint OCEAN_VIEW_HEIGHT = 1u;
 const uint OCEAN_VIEW_DISPLACEMENT = 2u;
 const uint OCEAN_VIEW_NORMAL = 3u;
 const uint OCEAN_VIEW_FOAM = 4u;
-const uint OCEAN_VIEW_REFLECTION = 5u;
-const uint OCEAN_VIEW_REFRACTION = 6u;
-const uint OCEAN_VIEW_SPECTRUM = 7u;
+const uint OCEAN_VIEW_DETAIL = 5u;
+const uint OCEAN_VIEW_REFLECTION = 6u;
+const uint OCEAN_VIEW_REFRACTION = 7u;
+const uint OCEAN_VIEW_SPECTRUM = 8u;
 
 struct FragmentSurfaceSample {
     vec3 displacement;
     vec3 normal_sum;
+    vec3 detail_normal_sum;
     float foam;
+    float detail_foam;
     float persistent_foam;
     float weight_sum;
     float normal_weight_sum;
+    float detail_weight_sum;
 };
 
 float hash21(vec2 value) {
@@ -84,6 +92,16 @@ vec4 sample_normal_foam(uint cascade, vec2 uv) {
         return texture(normal_foam_mid_texture, uv);
     }
     return texture(normal_foam_far_texture, uv);
+}
+
+vec4 sample_detail_normal_foam(uint cascade, vec2 uv) {
+    if (cascade == 0u) {
+        return texture(detail_normal_foam_near_texture, uv);
+    }
+    if (cascade == 1u) {
+        return texture(detail_normal_foam_mid_texture, uv);
+    }
+    return texture(detail_normal_foam_far_texture, uv);
 }
 
 vec4 sample_displacement(uint cascade, vec2 uv) {
@@ -151,19 +169,11 @@ float cascade_weight(uint cascade, float camera_distance) {
     return smoothstep(ocean.mesh_options.y * 0.34, ocean.mesh_options.y * 0.72, camera_distance);
 }
 
-float uv_texel_footprint(vec2 uv) {
-    float resolution = max(ocean.spectrum_options.x, 1.0);
-    vec2 dx = dFdx(uv) * resolution;
-    vec2 dy = dFdy(uv) * resolution;
-    return max(length(dx), length(dy));
-}
-
-float cascade_detail_filter(vec2 uv, float camera_distance) {
-    float derivative_filter = 1.0 - smoothstep(0.28, 1.35, uv_texel_footprint(uv));
-    float far_softening =
-        1.0 - smoothstep(ocean.mesh_options.y * 0.62, ocean.mesh_options.y * 1.10,
+float cascade_detail_filter(float camera_distance) {
+    float near_fade =
+        1.0 - smoothstep(ocean.mesh_options.y * 0.68, ocean.mesh_options.y * 1.10,
                          camera_distance);
-    return clamp(derivative_filter * mix(0.55, 1.0, far_softening), 0.0, 1.0);
+    return clamp(mix(0.42, 1.0, near_fade), 0.0, 1.0);
 }
 
 float cascade_displacement_detail_scale(uint cascade) {
@@ -185,31 +195,40 @@ void add_cascade(inout FragmentSurfaceSample sample_value, uint cascade, vec2 po
     vec2 uv = cascade_sample_position(cascade, position) / max(patch_length, 0.001);
     vec4 displacement = sample_displacement(cascade, uv);
     vec4 normal_foam = sample_normal_foam(cascade, uv);
-    float detail_filter = cascade_detail_filter(uv, camera_distance);
+    vec4 detail_normal_foam = sample_detail_normal_foam(cascade, uv);
+    float detail_filter = cascade_detail_filter(camera_distance);
     float detail_strength = clamp(ocean.detail_options.y, 0.0, 1.0);
     float normal_weight = weight * detail_filter * detail_strength;
+    float detail_weight = normal_weight * smoothstep(0.04, 0.38, ocean.detail_wave_options.x);
     vec3 spectral_displacement = displacement.xyz;
     spectral_displacement.xz *= mix(0.50, 1.0, detail_strength);
     sample_value.displacement += spectral_displacement * displacement_weight;
     sample_value.normal_sum += normal_foam.xyz * normal_weight;
+    sample_value.detail_normal_sum += detail_normal_foam.xyz * detail_weight;
     sample_value.foam =
         max(sample_value.foam,
             max(displacement.w, normal_foam.w) * normal_weight *
                 cascade_displacement_detail_scale(cascade));
+    sample_value.detail_foam =
+        max(sample_value.detail_foam, detail_normal_foam.w * detail_weight);
     sample_value.persistent_foam =
         max(sample_value.persistent_foam, sample_foam_history(cascade, uv) * weight);
     sample_value.weight_sum += weight;
     sample_value.normal_weight_sum += normal_weight;
+    sample_value.detail_weight_sum += detail_weight;
 }
 
 FragmentSurfaceSample sample_fragment_surface(vec2 position, float camera_distance) {
     FragmentSurfaceSample sample_value;
     sample_value.displacement = vec3(0.0);
     sample_value.normal_sum = vec3(0.0);
+    sample_value.detail_normal_sum = vec3(0.0);
     sample_value.foam = 0.0;
+    sample_value.detail_foam = 0.0;
     sample_value.persistent_foam = 0.0;
     sample_value.weight_sum = 0.0;
     sample_value.normal_weight_sum = 0.0;
+    sample_value.detail_weight_sum = 0.0;
     add_cascade(sample_value, 2u, position, camera_distance);
     add_cascade(sample_value, 1u, position, camera_distance);
     add_cascade(sample_value, 0u, position, camera_distance);
@@ -219,6 +238,9 @@ FragmentSurfaceSample sample_fragment_surface(vec2 position, float camera_distan
     if (sample_value.normal_weight_sum > 0.0001) {
         sample_value.normal_sum /= sample_value.normal_weight_sum;
     }
+    if (sample_value.detail_weight_sum > 0.0001) {
+        sample_value.detail_normal_sum /= sample_value.detail_weight_sum;
+    }
     OceanMacroWaveSample macro_waves =
         ocean_macro_waves(position, ocean.camera_time.w * ocean.wave_options.z, ocean.wave_options.y,
                           ocean.wave_options.x, ocean.detail_options.x, ocean.wave_options.w);
@@ -227,8 +249,15 @@ FragmentSurfaceSample sample_fragment_surface(vec2 position, float camera_distan
                      ? ocean_slope_from_normal(sample_value.normal_sum / normal_length)
                      : vec2(0.0);
     sample_value.displacement += macro_waves.displacement;
-    sample_value.normal_sum = ocean_normal_from_slope(slope + macro_waves.slope);
+    float detail_normal_length = length(sample_value.detail_normal_sum);
+    vec2 detail_slope = detail_normal_length > 0.0001
+                            ? ocean_slope_from_normal(sample_value.detail_normal_sum /
+                                                      detail_normal_length)
+                            : vec2(0.0);
+    sample_value.normal_sum = ocean_normal_from_slope(slope + macro_waves.slope +
+                                                      detail_slope * 0.44);
     sample_value.foam = max(sample_value.foam, macro_waves.foam * ocean.detail_options.z * 0.35);
+    sample_value.detail_foam = max(sample_value.detail_foam, macro_waves.foam * 0.16);
     sample_value.persistent_foam = max(sample_value.persistent_foam, macro_waves.foam * 0.20);
     return sample_value;
 }
@@ -248,17 +277,8 @@ vec3 refraction_color(float depth, float foam) {
 
 float foam_mask(vec3 normal, float depth) {
     float crest = frag_wave.y;
-    float slope = 1.0 - clamp(normal.y, 0.0, 1.0);
-    float slope_foam = smoothstep(ocean.detail_options.w, ocean.detail_options.w + 0.35,
-                                  slope * ocean.wave_options.w * 4.5);
     float shallow_foam = (1.0 - smoothstep(1.5, 11.0, depth)) * ocean.shading_options.z;
-    float noisy_breakup =
-        mix(0.72, 1.06,
-            value_noise(frag_world_position.xz * 0.026 +
-                        vec2(ocean.camera_time.w * 0.018, ocean.camera_time.w * -0.011)));
-    return clamp((crest + slope_foam * 0.32 + shallow_foam * 0.48) *
-                     ocean.detail_options.z * noisy_breakup,
-                 0.0, 1.0);
+    return clamp((crest + shallow_foam * 0.42) * ocean.detail_options.z, 0.0, 1.0);
 }
 
 float foam_breakup(vec2 position) {
@@ -266,7 +286,7 @@ float foam_breakup(vec2 position) {
                             vec2(ocean.camera_time.w * 0.020, ocean.camera_time.w * -0.014));
     float fine = value_noise(position * 0.115 +
                             vec2(ocean.camera_time.w * -0.035, ocean.camera_time.w * 0.018));
-    return mix(0.68, 1.18, slow) * mix(0.72, 1.12, fine);
+    return mix(0.82, 1.08, slow) * mix(0.88, 1.04, fine);
 }
 
 vec3 debug_height_color(float height) {
@@ -300,11 +320,12 @@ void main() {
                               ? normalize(surface_sample.normal_sum)
                               : normalize(frag_normal);
     vec3 normal = normalize(mix(normalize(frag_normal), sampled_normal,
-                                clamp(ocean.detail_options.y * 0.44, 0.0, 1.0)));
+                                clamp(ocean.detail_options.y * 0.58, 0.0, 1.0)));
     float depth = max(frag_wave.w, 0.0);
     float foam = foam_mask(normal, depth);
     foam = clamp(max(max(foam, surface_sample.foam * ocean.detail_options.z),
-                     surface_sample.persistent_foam * ocean.detail_options.z),
+                     max(surface_sample.detail_foam * ocean.detail_options.z,
+                         surface_sample.persistent_foam * ocean.detail_options.z)),
                  0.0, 1.0);
     float shaded_foam = clamp(foam * foam_breakup(refined_sample_position), 0.0, 1.0);
 
@@ -341,6 +362,12 @@ void main() {
         color = normal * 0.5 + 0.5;
     } else if (view == OCEAN_VIEW_FOAM) {
         color = cubey_srgb_to_linear(vec3(shaded_foam));
+    } else if (view == OCEAN_VIEW_DETAIL) {
+        vec3 detail_normal = length(surface_sample.detail_normal_sum) > 0.0001
+                                 ? normalize(surface_sample.detail_normal_sum)
+                                 : vec3(0.0, 1.0, 0.0);
+        color = mix(detail_normal * 0.5 + 0.5, cubey_srgb_to_linear(vec3(0.92, 0.96, 0.88)),
+                    clamp(surface_sample.detail_foam, 0.0, 1.0));
     } else if (view == OCEAN_VIEW_REFLECTION) {
         color = reflection;
     } else if (view == OCEAN_VIEW_REFRACTION) {

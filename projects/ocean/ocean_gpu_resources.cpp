@@ -38,7 +38,7 @@ constexpr VkFormat kOceanFieldFormat = VK_FORMAT_R32G32B32A32_SFLOAT;
     const VkPushConstantRange push_constant_range{
         .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
         .offset = 0,
-        .size = sizeof(float) * 56U,
+        .size = sizeof(float) * 60U,
     };
     return {
         .label = "ocean.surface",
@@ -111,6 +111,7 @@ void OceanGpuResources::reset() {
     surface_pipeline_.reset();
     sky_pipeline_.reset();
     foam_update_pipeline_.reset();
+    detail_pipeline_.reset();
     finalize_pipeline_.reset();
     fft_pipeline_.reset();
     spectrum_evolve_pipeline_.reset();
@@ -120,6 +121,8 @@ void OceanGpuResources::reset() {
     surface_layout_.reset();
     foam_update_pool_.reset();
     foam_update_layout_.reset();
+    detail_pool_.reset();
+    detail_layout_.reset();
     finalize_pool_.reset();
     finalize_layout_.reset();
     fft_pool_.reset();
@@ -133,10 +136,12 @@ void OceanGpuResources::reset() {
     spectrum_evolve_sets_ = {};
     fft_sets_ = {};
     finalize_sets_ = {};
+    detail_sets_ = {};
     foam_update_sets_ = {};
 
     foam_history_b_ = {};
     foam_history_a_ = {};
+    detail_normal_foam_ = {};
     normal_foam_ = {};
     displacement_ = {};
     pong_ = {};
@@ -162,6 +167,8 @@ void OceanGpuResources::create_textures(const cubey::vulkan::Device& device,
         displacement_[cascade].emplace(
             make_ocean_field_texture(device, config.spectrum_resolution, true));
         normal_foam_[cascade].emplace(
+            make_ocean_field_texture(device, config.spectrum_resolution, true));
+        detail_normal_foam_[cascade].emplace(
             make_ocean_field_texture(device, config.spectrum_resolution, true));
         foam_history_a_[cascade].emplace(
             make_ocean_field_texture(device, config.spectrum_resolution, true));
@@ -271,6 +278,26 @@ void OceanGpuResources::create_descriptor_sets(const cubey::vulkan::Device& devi
         set = finalize_pool_->allocate(finalize_layout_->handle());
     }
 
+    const std::array detail_bindings{
+        cubey::vulkan::DescriptorSetBindingConfig{
+            .binding = 0,
+            .type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+            .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT,
+        },
+        cubey::vulkan::DescriptorSetBindingConfig{
+            .binding = 1,
+            .type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+            .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT,
+        },
+    };
+    const cubey::vulkan::DescriptorSetInfo detail_info =
+        descriptor_info(detail_bindings, kOceanCascadeCount);
+    detail_layout_.emplace(device, detail_info.layout_info());
+    detail_pool_.emplace(device, detail_info.pool_info());
+    for (VkDescriptorSet& set : detail_sets_) {
+        set = detail_pool_->allocate(detail_layout_->handle());
+    }
+
     const std::array foam_update_bindings{
         cubey::vulkan::DescriptorSetBindingConfig{
             .binding = 0,
@@ -357,6 +384,21 @@ void OceanGpuResources::create_descriptor_sets(const cubey::vulkan::Device& devi
             .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
             .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
         },
+        cubey::vulkan::DescriptorSetBindingConfig{
+            .binding = 12,
+            .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
+        },
+        cubey::vulkan::DescriptorSetBindingConfig{
+            .binding = 13,
+            .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
+        },
+        cubey::vulkan::DescriptorSetBindingConfig{
+            .binding = 14,
+            .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
+        },
     };
     const cubey::vulkan::DescriptorSetInfo surface_info = descriptor_info(surface_bindings, 1);
     surface_layout_.emplace(device, surface_info.layout_info());
@@ -376,11 +418,13 @@ void OceanGpuResources::update_descriptors(const cubey::vulkan::Device& device) 
             .storage_image(finalize_set(cascade), 1, pong(cascade, 1).view())
             .storage_image(finalize_set(cascade), 2, pong(cascade, 2).view())
             .storage_image(finalize_set(cascade), 3, displacement(cascade).view())
-            .storage_image(finalize_set(cascade), 4, normal_foam(cascade).view());
-        writes.storage_image(foam_update_set(cascade, 0), 0, normal_foam(cascade).view())
+            .storage_image(finalize_set(cascade), 4, normal_foam(cascade).view())
+            .storage_image(detail_set(cascade), 0, normal_foam(cascade).view())
+            .storage_image(detail_set(cascade), 1, detail_normal_foam(cascade).view());
+        writes.storage_image(foam_update_set(cascade, 0), 0, detail_normal_foam(cascade).view())
             .storage_image(foam_update_set(cascade, 0), 1, foam_history(cascade, 0).view())
             .storage_image(foam_update_set(cascade, 0), 2, foam_history(cascade, 1).view())
-            .storage_image(foam_update_set(cascade, 1), 0, normal_foam(cascade).view())
+            .storage_image(foam_update_set(cascade, 1), 0, detail_normal_foam(cascade).view())
             .storage_image(foam_update_set(cascade, 1), 1, foam_history(cascade, 1).view())
             .storage_image(foam_update_set(cascade, 1), 2, foam_history(cascade, 0).view());
 
@@ -407,7 +451,10 @@ void OceanGpuResources::update_descriptors(const cubey::vulkan::Device& device) 
                                     foam_history(cascade, 0).view(), VK_IMAGE_LAYOUT_GENERAL)
             .combined_image_sampler(surface_set_, cascade + (kOceanCascadeCount * 3U),
                                     foam_history(cascade, 1).sampler().handle(),
-                                    foam_history(cascade, 1).view(), VK_IMAGE_LAYOUT_GENERAL);
+                                    foam_history(cascade, 1).view(), VK_IMAGE_LAYOUT_GENERAL)
+            .combined_image_sampler(surface_set_, cascade + (kOceanCascadeCount * 4U),
+                                    detail_normal_foam(cascade).sampler().handle(),
+                                    detail_normal_foam(cascade).view(), VK_IMAGE_LAYOUT_GENERAL);
     }
     writes.update(device);
 }
@@ -417,6 +464,7 @@ void OceanGpuResources::create_pipelines(const cubey::vulkan::Device& device,
     const VkPushConstantRange spectrum_push_constants = compute_push_constant_range(16U);
     const VkPushConstantRange fft_push_constants = compute_push_constant_range(8U);
     const VkPushConstantRange finalize_push_constants = compute_push_constant_range(16U);
+    const VkPushConstantRange detail_push_constants = compute_push_constant_range(16U);
     const VkPushConstantRange foam_update_push_constants = compute_push_constant_range(8U);
 
     const std::array init_layouts{spectrum_init_layout_->handle()};
@@ -453,6 +501,15 @@ void OceanGpuResources::create_pipelines(const cubey::vulkan::Device& device,
                                    .descriptor_set_layouts = finalize_layouts,
                                    .push_constants = {&finalize_push_constants, 1},
                                });
+
+    const std::array detail_layouts{detail_layout_->handle()};
+    detail_pipeline_.emplace(device,
+                             cubey::render::ComputePipelineResourceConfig{
+                                 .shader_stage = cubey::render::compute_shader_file(
+                                     shader_path(config.shader_dir, "ocean_detail.comp.spv")),
+                                 .descriptor_set_layouts = detail_layouts,
+                                 .push_constants = {&detail_push_constants, 1},
+                             });
 
     const std::array foam_update_layouts{foam_update_layout_->handle()};
     foam_update_pipeline_.emplace(
@@ -529,6 +586,13 @@ const cubey::render::ComputePipelineResource& OceanGpuResources::finalize_pipeli
     return finalize_pipeline_.value();
 }
 
+const cubey::render::ComputePipelineResource& OceanGpuResources::detail_pipeline() const {
+    if (!detail_pipeline_.has_value()) {
+        throw std::runtime_error("ocean detail pipeline is not initialized");
+    }
+    return detail_pipeline_.value();
+}
+
 const cubey::render::ComputePipelineResource& OceanGpuResources::foam_update_pipeline() const {
     if (!foam_update_pipeline_.has_value()) {
         throw std::runtime_error("ocean foam update pipeline is not initialized");
@@ -558,6 +622,10 @@ VkDescriptorSet OceanGpuResources::fft_set(std::uint32_t cascade, std::uint32_t 
 
 VkDescriptorSet OceanGpuResources::finalize_set(std::uint32_t cascade) const {
     return descriptor_at(finalize_sets_, cascade, "ocean finalize descriptor set");
+}
+
+VkDescriptorSet OceanGpuResources::detail_set(std::uint32_t cascade) const {
+    return descriptor_at(detail_sets_, cascade, "ocean detail descriptor set");
 }
 
 VkDescriptorSet OceanGpuResources::foam_update_set(std::uint32_t cascade,
@@ -612,6 +680,11 @@ const cubey::render::Texture2D& OceanGpuResources::displacement(std::uint32_t ca
 
 const cubey::render::Texture2D& OceanGpuResources::normal_foam(std::uint32_t cascade) const {
     return texture_at(normal_foam_, cascade, "ocean normal foam texture");
+}
+
+const cubey::render::Texture2D& OceanGpuResources::detail_normal_foam(
+    std::uint32_t cascade) const {
+    return texture_at(detail_normal_foam_, cascade, "ocean detail normal foam texture");
 }
 
 const cubey::render::Texture2D& OceanGpuResources::texture_at(const TextureArray& textures,
