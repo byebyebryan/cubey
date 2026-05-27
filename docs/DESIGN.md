@@ -504,6 +504,14 @@ cubey/
         smoke_2d/
           CMakeLists.txt
           main.cpp
+          README.md
+        sim/common/
+          water_common.h
+          shaders/
+            fluid_ray_box.glsl
+            water_2d_grid.glsl
+            water_3d_grid.glsl
+        sim/smoke_2d/
           smoke_2d_app.*     -- host/engine/input orchestration
           smoke_2d_commands.* -- simulation and fullscreen draw command recording
           smoke_2d_diagnostics.* -- profile/readback metric export
@@ -523,6 +531,7 @@ cubey/
         water_2d/
           CMakeLists.txt
           main.cpp
+        sim/water_2d/
           water_2d_app.*     -- host/engine/input orchestration
           water_2d_commands.* -- PIC/FLIP simulation and fullscreen draw recording
           water_2d_gpu_resources.* -- particle / MAC-grid buffers and pipelines

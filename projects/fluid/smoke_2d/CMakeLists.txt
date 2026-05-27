@@ -5,40 +5,50 @@ cubey_add_app_target(
     WINDOWED_SMOKE_TEST smoke_2d_reaches_glfw
     WINDOWED_SMOKE_PATTERN "smoke_2d: .*rendering 2D smoke project"
     SOURCES
-        smoke_2d_app.cpp
-        smoke_2d_commands.cpp
-        smoke_2d_diagnostics.cpp
-        smoke_2d_injectors.cpp
-        smoke_2d_ui.cpp
+        ../sim/smoke_2d/smoke_2d_app.cpp
+        ../sim/smoke_2d/smoke_2d_commands.cpp
+        ../sim/smoke_2d/smoke_2d_diagnostics.cpp
+        ../sim/smoke_2d/smoke_2d_injectors.cpp
+        ../sim/smoke_2d/smoke_2d_ui.cpp
         main.cpp
-        smoke_2d_gpu_resources.cpp
+        ../sim/smoke_2d/smoke_2d_gpu_resources.cpp
     SHADERS
-        shaders/smoke_2d.vert
-        shaders/smoke_2d_render.frag
-        shaders/smoke_2d_inject.comp
-        shaders/smoke_2d_advect_predict.comp
-        shaders/smoke_2d_advect_correct.comp
-        shaders/smoke_2d_curl.comp
-        shaders/smoke_2d_vorticity.comp
-        shaders/smoke_2d_divergence.comp
-        shaders/smoke_2d_pressure.comp
-        shaders/smoke_2d_pressure_rbgs.comp
-        shaders/smoke_2d_projection.comp
+        ../sim/smoke_2d/shaders/smoke_2d.vert
+        ../sim/smoke_2d/shaders/smoke_2d_render.frag
+        ../sim/smoke_2d/shaders/smoke_2d_inject.comp
+        ../sim/smoke_2d/shaders/smoke_2d_advect_predict.comp
+        ../sim/smoke_2d/shaders/smoke_2d_advect_correct.comp
+        ../sim/smoke_2d/shaders/smoke_2d_curl.comp
+        ../sim/smoke_2d/shaders/smoke_2d_vorticity.comp
+        ../sim/smoke_2d/shaders/smoke_2d_divergence.comp
+        ../sim/smoke_2d/shaders/smoke_2d_pressure.comp
+        ../sim/smoke_2d/shaders/smoke_2d_pressure_rbgs.comp
+        ../sim/smoke_2d/shaders/smoke_2d_projection.comp
     SHADER_INCLUDE_DIRS
         "${CMAKE_SOURCE_DIR}/shaders"
     SHADER_DEPENDS
         "${CMAKE_SOURCE_DIR}/shaders/cubey/color_space.glsl"
 )
 
+target_include_directories(
+    cubey_project_smoke_2d
+    PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/../sim/smoke_2d"
+)
+
 if (BUILD_TESTING)
     add_executable(cubey_project_smoke_2d_tests
-        smoke_2d_injectors.cpp
-        smoke_2d_config_tests.cpp
+        ../sim/smoke_2d/smoke_2d_injectors.cpp
+        ../sim/smoke_2d/smoke_2d_config_tests.cpp
     )
-    target_include_directories(cubey_project_smoke_2d_tests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
+    target_include_directories(
+        cubey_project_smoke_2d_tests
+        PRIVATE
+            "${CMAKE_CURRENT_SOURCE_DIR}/../sim/smoke_2d"
+    )
     target_compile_definitions(cubey_project_smoke_2d_tests
         PRIVATE
-            CUBEY_SMOKE_2D_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}"
+            CUBEY_SMOKE_2D_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/../sim/smoke_2d"
     )
     target_link_libraries(
         cubey_project_smoke_2d_tests
