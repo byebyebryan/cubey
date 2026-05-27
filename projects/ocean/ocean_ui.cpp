@@ -90,6 +90,8 @@ void draw_ocean_ui(OceanUiContext ui) {
         ImGui::SliderFloat("Detail strength", &ui.config.normal_strength, 0.0F, 1.0F, "%.2f");
         ImGui::SliderFloat("Detail chop", &ui.config.detail_chop, 0.0F, 2.0F, "%.2f");
         ImGui::SliderFloat("Detail spread", &ui.config.detail_spread, 0.0F, 1.0F, "%.2f");
+        ImGui::SliderFloat("Detail geometry", &ui.config.detail_geometry, 0.0F, 1.5F, "%.2f");
+        ImGui::SliderFloat("Crest sharpness", &ui.config.crest_sharpness, 0.0F, 1.5F, "%.2f");
     }
 
     if (cubey::host::imgui_section("Spectrum", true)) {
@@ -114,7 +116,7 @@ void draw_ocean_ui(OceanUiContext ui) {
         ImGui::SliderFloat("Foam amount", &ui.config.foam_amount, 0.0F, 1.5F, "%.2f");
         ImGui::SliderFloat("Foam threshold", &ui.config.foam_threshold, 0.1F, 1.5F, "%.2f");
         ImGui::SliderFloat("Foam generation", &ui.config.foam_generation, 0.0F, 2.0F, "%.2f");
-        ImGui::SliderFloat("Foam streaks", &ui.config.foam_streaks, 0.0F, 2.0F, "%.2f");
+        ImGui::SliderFloat("Foam breakup", &ui.config.foam_breakup, 0.0F, 2.0F, "%.2f");
         ImGui::SliderFloat("Foam decay", &ui.config.foam_decay, 0.0F, 1.0F, "%.3f");
         ImGui::SliderFloat("Foam drift", &ui.config.foam_drift, 0.0F, 3.0F, "%.2f");
         ImGui::SliderFloat("Absorption", &ui.config.absorption, 0.0F, 0.35F, "%.3f");

@@ -16,13 +16,13 @@ Implemented:
   choppy displacement, slope, curvature, and crest-compression fields;
 - bounded nonlinear macro crests layered over the FFT field for stronger
   asymmetric wave shape near the camera;
-- persistent ping-ponged crest foam with filtered breakup detail, instead of
-  full-surface procedural normal shimmer;
+- persistent ping-ponged crest foam with coverage/freshness state and filtered
+  breakup detail, instead of full-surface procedural normal shimmer;
 - separated controls for wind direction, spectral sea state, animation speed,
   and foam drift so visual scale, motion, and foam history can be tuned
   independently;
-- compute-backed directional short-wave detail normals plus crest-gated foam
-  coverage, coupled to the persistent foam source;
+- compute-backed directional short-wave detail, storing geometric height, slope,
+  and crest-gated foam source for both silhouette and shading;
 - coherent procedural sky pass, Fresnel sky reflection, fake scene refraction,
   Beer-style absorption, sun glint, crest/shallow-water foam,
   exposure/tonemap handling, and debug views;
@@ -34,7 +34,7 @@ Deferred:
 - real scene color/depth refraction against arbitrary geometry;
 - boats, buoyancy, wake databases, shoreline authoring, caustics, and underwater
   rendering;
-- spray particles and physically meaningful plunging shore breakers.
+- particle whitewater and physically meaningful plunging shore breakers.
 
 Breaking waves are intentionally not part of v1. Deep-water whitecaps can be
 approximated from crest steepness and foam, which is what this project does now.
@@ -69,8 +69,9 @@ Tuning notes:
   detail.
 - `Animation speed` changes phase progression only.
 - `Foam drift` moves the persistent foam history along the wind direction only.
-- `Detail chop` and `Detail spread` control directional short-wave normals.
-- `Foam streaks` controls patchy breakup on detail crest foam.
+- `Detail chop`, `Detail spread`, `Detail geometry`, and `Crest sharpness`
+  control directional short-wave shape.
+- `Foam breakup` controls patchy breakup on detail crest foam.
 
 Primary references:
 

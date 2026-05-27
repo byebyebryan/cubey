@@ -9,6 +9,9 @@ layout(set = 0, binding = 2) uniform sampler2D displacement_far_texture;
 layout(set = 0, binding = 3) uniform sampler2D normal_foam_near_texture;
 layout(set = 0, binding = 4) uniform sampler2D normal_foam_mid_texture;
 layout(set = 0, binding = 5) uniform sampler2D normal_foam_far_texture;
+layout(set = 0, binding = 12) uniform sampler2D detail_wave_near_texture;
+layout(set = 0, binding = 13) uniform sampler2D detail_wave_mid_texture;
+layout(set = 0, binding = 14) uniform sampler2D detail_wave_far_texture;
 
 layout(push_constant) uniform OceanParams {
     mat4 view_projection;
@@ -83,6 +86,16 @@ vec4 sample_normal_foam(uint cascade, vec2 uv) {
     return texture(normal_foam_far_texture, uv);
 }
 
+vec4 sample_detail_wave(uint cascade, vec2 uv) {
+    if (cascade == 0u) {
+        return texture(detail_wave_near_texture, uv);
+    }
+    if (cascade == 1u) {
+        return texture(detail_wave_mid_texture, uv);
+    }
+    return texture(detail_wave_far_texture, uv);
+}
+
 float cascade_patch_length(uint cascade) {
     if (cascade == 0u) {
         return ocean.cascade_options.x;
@@ -146,6 +159,20 @@ float cascade_normal_detail_scale(uint cascade) {
     return detail * 0.18;
 }
 
+float cascade_geometry_detail_scale(uint cascade, float camera_distance) {
+    if (cascade == 0u) {
+        float near = 1.0 - smoothstep(ocean.mesh_options.y * 0.10,
+                                      ocean.mesh_options.y * 0.36, camera_distance);
+        return near;
+    }
+    if (cascade == 1u) {
+        float near = 1.0 - smoothstep(ocean.mesh_options.y * 0.18,
+                                      ocean.mesh_options.y * 0.46, camera_distance);
+        return near * 0.34;
+    }
+    return 0.0;
+}
+
 void add_cascade(inout SurfaceSample sample_value, uint cascade, vec2 position,
                  float camera_distance) {
     float patch_length = cascade_patch_length(cascade);
@@ -154,13 +181,21 @@ void add_cascade(inout SurfaceSample sample_value, uint cascade, vec2 position,
     vec2 uv = cascade_sample_position(cascade, position) / max(patch_length, 0.001);
     vec4 displacement = sample_displacement(cascade, uv);
     vec4 normal_foam = sample_normal_foam(cascade, uv);
+    vec4 detail_wave = sample_detail_wave(cascade, uv);
     vec3 spectral_displacement = displacement.xyz;
     spectral_displacement.xz *= mix(0.50, 1.0, clamp(ocean.detail_options.y, 0.0, 1.0));
     sample_value.displacement += spectral_displacement * displacement_weight;
+    sample_value.displacement.y +=
+        detail_wave.x * weight * cascade_geometry_detail_scale(cascade, camera_distance);
     float normal_detail = cascade_normal_detail_scale(cascade);
-    sample_value.normal_sum += mix(vec3(0.0, 1.0, 0.0), normal_foam.xyz, normal_detail) * weight;
-    sample_value.foam = max(sample_value.foam, max(displacement.w, normal_foam.w) *
-                                                   displacement_weight);
+    vec3 spectral_normal = mix(vec3(0.0, 1.0, 0.0), normal_foam.xyz, normal_detail);
+    vec3 detail_normal = ocean_normal_from_slope(detail_wave.yz);
+    sample_value.normal_sum += mix(spectral_normal, detail_normal,
+                                   cascade_geometry_detail_scale(cascade, camera_distance) * 0.42) *
+                               weight;
+    sample_value.foam =
+        max(sample_value.foam,
+            max(max(displacement.w, normal_foam.w), detail_wave.w) * displacement_weight);
     sample_value.weight_sum += weight;
 }
 

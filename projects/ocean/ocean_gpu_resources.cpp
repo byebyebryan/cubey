@@ -3,6 +3,7 @@
 #include <cubey/render/material.h>
 
 #include <array>
+#include <cstdint>
 #include <stdexcept>
 #include <utility>
 
@@ -387,17 +388,17 @@ void OceanGpuResources::create_descriptor_sets(const cubey::vulkan::Device& devi
         cubey::vulkan::DescriptorSetBindingConfig{
             .binding = 12,
             .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-            .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
+            .stage_flags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
         },
         cubey::vulkan::DescriptorSetBindingConfig{
             .binding = 13,
             .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-            .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
+            .stage_flags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
         },
         cubey::vulkan::DescriptorSetBindingConfig{
             .binding = 14,
             .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-            .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
+            .stage_flags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
         },
     };
     const cubey::vulkan::DescriptorSetInfo surface_info = descriptor_info(surface_bindings, 1);

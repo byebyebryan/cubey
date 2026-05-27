@@ -445,8 +445,8 @@ class OceanApp {
                 {
                     ocean_config_.detail_chop,
                     ocean_config_.detail_spread,
-                    ocean_config_.foam_streaks,
-                    0.0F,
+                    ocean_config_.foam_breakup,
+                    ocean_config_.detail_geometry,
                 },
         };
     }
@@ -639,14 +639,14 @@ class OceanApp {
                     std::cos(wind),
                     std::sin(wind),
                     ocean_config_.animation_speed,
-                    ocean_config_.foam_streaks,
+                    ocean_config_.foam_breakup,
                 },
             .foam_options =
                 {
                     ocean_config_.foam_amount,
                     ocean_config_.sea_state,
-                    ocean_config_.spectrum_fetch,
-                    0.0F,
+                    ocean_config_.detail_geometry,
+                    ocean_config_.crest_sharpness,
                 },
         };
     }

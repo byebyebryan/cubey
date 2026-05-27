@@ -50,10 +50,12 @@ struct OceanConfig {
     float normal_strength = 0.48F;
     float detail_chop = 1.05F;
     float detail_spread = 0.30F;
+    float detail_geometry = 0.55F;
+    float crest_sharpness = 0.70F;
 
     float foam_amount = 0.42F;
     float foam_threshold = 0.72F;
-    float foam_streaks = 0.75F;
+    float foam_breakup = 0.55F;
     float absorption = 0.070F;
     float refraction_strength = 0.055F;
     float exposure = 0.0F;
@@ -182,6 +184,12 @@ inline void validate_ocean_config(const OceanConfig& config) {
     if (config.detail_spread < 0.0F) {
         throw std::runtime_error("ocean detail spread must be nonnegative");
     }
+    if (config.detail_geometry < 0.0F) {
+        throw std::runtime_error("ocean detail geometry must be nonnegative");
+    }
+    if (config.crest_sharpness < 0.0F) {
+        throw std::runtime_error("ocean crest sharpness must be nonnegative");
+    }
     if (config.spectrum_fetch <= 0.0F) {
         throw std::runtime_error("ocean spectrum fetch must be positive");
     }
@@ -191,8 +199,8 @@ inline void validate_ocean_config(const OceanConfig& config) {
     if (config.foam_decay < 0.0F || config.foam_decay > 1.0F) {
         throw std::runtime_error("ocean foam decay must be in [0, 1]");
     }
-    if (config.foam_streaks < 0.0F) {
-        throw std::runtime_error("ocean foam streaks must be nonnegative");
+    if (config.foam_breakup < 0.0F) {
+        throw std::runtime_error("ocean foam breakup must be nonnegative");
     }
     if (config.foam_drift < 0.0F) {
         throw std::runtime_error("ocean foam drift must be nonnegative");

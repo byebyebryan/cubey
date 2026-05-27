@@ -19,12 +19,13 @@ surface renderer and only adds simulation where interaction needs it.
 - Draw a project-local procedural sky first, then shade the surface against that
   same atmosphere model for coherent horizon fog, reflection, and sun glint.
 - Shade the surface with Fresnel sky reflection, fake refraction/absorption,
-  spectrum-derived normals, persistent crest foam, tonemapping, and debug views.
+  spectrum-derived normals, persistent crest foam coverage/freshness,
+  tonemapping, and debug views.
 - Keep sea state, animation speed, and foam drift as separate controls: sea state
   reshapes the generated spectrum, animation speed advances wave phase, and foam
   drift moves only the persistent foam history.
 - Generate short-wave detail in a compute-backed field: analytic directional wave
-  bands produce normals, while crest-gated coverage feeds persistent foam.
+  bands produce near-field geometry, slopes, and crest-gated foam source.
 - Keep explicit hooks for local disturbances and shoreline/bathymetry masks.
 
 ## Rendering References
@@ -57,8 +58,7 @@ The renderer should expose inputs that later systems can feed:
 - local disturbances for boat wakes, impacts, and gameplay ripples;
 - shoreline/bathymetry masks for depth attenuation, surf foam, and shallow-water
   coupling;
-- optional foam/spray/whitewater fields that can be visual-only or simulation
-  backed.
+- optional foam/whitewater fields that can be visual-only or simulation backed.
 
 V1 keeps these as compact controls and shader inputs. Boat physics, buoyancy,
 shoreline authoring, and shallow-water simulation should arrive as separate
@@ -66,11 +66,10 @@ projects or later integration slices.
 
 ## Breaking Waves
 
-Deep-water whitecaps are reasonable in the renderer: detect steep/choppy crests,
-add foam, and later spawn spray particles. True plunging shore breakers are not
-just a shader feature. They need terrain or bathymetry, shallow-water/surf-zone
-state, nonlinear local wave deformation, and often particles or volumes for
-spray and aerated water.
+Deep-water whitecaps are reasonable in the renderer: detect steep/choppy crests
+and add foam. True plunging shore breakers are not just a shader feature. They
+need terrain or bathymetry, shallow-water/surf-zone state, nonlinear local wave
+deformation, and often particles or volumes for aerated water.
 
 The recommended sequence is:
 

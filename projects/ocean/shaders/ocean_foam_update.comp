@@ -15,17 +15,17 @@ ivec2 wrap_texel(ivec2 texel, ivec2 size) {
     return ivec2((texel.x + size.x) % size.x, (texel.y + size.y) % size.y);
 }
 
-float foam_at(ivec2 texel, ivec2 size) {
-    return imageLoad(previous_foam_image, wrap_texel(texel, size)).x;
+vec4 foam_at(ivec2 texel, ivec2 size) {
+    return imageLoad(previous_foam_image, wrap_texel(texel, size));
 }
 
-float bilinear_foam(vec2 texel_position, ivec2 size) {
+vec4 bilinear_foam(vec2 texel_position, ivec2 size) {
     ivec2 base = ivec2(floor(texel_position));
     vec2 local = fract(texel_position);
-    float a = foam_at(base, size);
-    float b = foam_at(base + ivec2(1, 0), size);
-    float c = foam_at(base + ivec2(0, 1), size);
-    float d = foam_at(base + ivec2(1, 1), size);
+    vec4 a = foam_at(base, size);
+    vec4 b = foam_at(base + ivec2(1, 0), size);
+    vec4 c = foam_at(base + ivec2(0, 1), size);
+    vec4 d = foam_at(base + ivec2(1, 1), size);
     return mix(mix(a, b, local.x), mix(c, d, local.x), local.y);
 }
 
@@ -45,9 +45,12 @@ void main() {
     float foam_drift = max(params.cascade_options.w, 0.0);
 
     vec2 texel_motion = wind_direction * ((foam_drift * 8.0 * dt) / patch_length) * vec2(size);
-    float previous = previous_valid > 0.5 ? bilinear_foam(vec2(texel) - texel_motion, size) : 0.0;
+    vec4 previous =
+        previous_valid > 0.5 ? bilinear_foam(vec2(texel) - texel_motion, size) : vec4(0.0);
     float crest = imageLoad(detail_normal_foam_image, texel).w;
     float source = pow(clamp(crest, 0.0, 1.0), 0.75) * source_gain * 2.0;
-    float foam = clamp(max(previous * decay, source), 0.0, 1.0);
-    imageStore(next_foam_image, texel, vec4(foam, 0.0, 0.0, 0.0));
+    float coverage = clamp(max(previous.x * decay, source), 0.0, 1.0);
+    float freshness = clamp(max(previous.y * pow(decay, 0.42), source), 0.0, 1.0);
+    float energy = clamp(max(previous.z * decay, source), 0.0, 1.0);
+    imageStore(next_foam_image, texel, vec4(coverage, freshness, energy, 0.0));
 }
