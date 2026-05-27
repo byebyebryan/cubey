@@ -18,6 +18,9 @@ Implemented:
   asymmetric wave shape near the camera;
 - persistent ping-ponged crest foam with filtered breakup detail, instead of
   full-surface procedural normal shimmer;
+- separated controls for wind direction, spectral sea state, animation speed,
+  and foam drift so visual scale, motion, and foam history can be tuned
+  independently;
 - coherent procedural sky pass, Fresnel sky reflection, fake scene refraction,
   Beer-style absorption, sun glint, crest/shallow-water foam,
   exposure/tonemap handling, and debug views;
@@ -56,6 +59,13 @@ Controls:
 - `D`: cycle final, height, displacement, normal, foam, reflection,
   refraction, and spectrum debug views.
 - Escape: close.
+
+Tuning notes:
+
+- `Sea state` changes the spectral peak and therefore the distribution of wave
+  detail.
+- `Animation speed` changes phase progression only.
+- `Foam drift` moves the persistent foam history along the wind direction only.
 
 Primary references:
 

@@ -220,7 +220,7 @@ FragmentSurfaceSample sample_fragment_surface(vec2 position, float camera_distan
         sample_value.normal_sum /= sample_value.normal_weight_sum;
     }
     OceanMacroWaveSample macro_waves =
-        ocean_macro_waves(position, ocean.camera_time.w, ocean.wave_options.y,
+        ocean_macro_waves(position, ocean.camera_time.w * ocean.wave_options.z, ocean.wave_options.y,
                           ocean.wave_options.x, ocean.detail_options.x, ocean.wave_options.w);
     float normal_length = length(sample_value.normal_sum);
     vec2 slope = normal_length > 0.0001

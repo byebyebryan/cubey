@@ -40,7 +40,8 @@ void main() {
     vec4 h0 = imageLoad(h0_image, texel);
     vec2 k = wave_vector(texel, size.x, params.cascade_options.x);
     float omega = sqrt(G * length(k));
-    float phase_angle = omega * params.ocean_options.y * max(params.wind_options.z, 0.0);
+    float animation_speed = max(params.seed_options.w, 0.0);
+    float phase_angle = omega * params.ocean_options.y * animation_speed;
     vec2 phase = vec2(cos(phase_angle), sin(phase_angle));
     vec2 height = complex_mul(h0.xy, phase) + complex_mul(vec2(h0.z, -h0.w), vec2(phase.x, -phase.y));
     float k_len = max(length(k), 0.00001);

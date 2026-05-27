@@ -45,6 +45,10 @@ int main() {
                 "default ocean config should expose interaction hooks without radial rings");
         require(defaults.spectrum_resolution == 256,
                 "ocean should default to a practical FFT spectrum resolution");
+        require(defaults.sea_state > 0.0F && defaults.animation_speed > 0.0F,
+                "default ocean config should split sea-state shape from animation speed");
+        require(defaults.foam_drift >= 0.0F,
+                "default ocean config should expose independent foam drift");
         require(ocean::ocean_is_power_of_two(defaults.spectrum_resolution),
                 "default ocean spectrum resolution should be a power of two");
         require(ocean::ocean_cascade_patch_length(defaults, 0) <
@@ -152,6 +156,10 @@ int main() {
                          "ocean atmosphere include should share sky color with water");
         require_contains(init_shader, "gaussian_pair",
                          "ocean spectrum init shader should seed a frequency-domain spectrum");
+        require_contains(init_shader, "sea_state",
+                         "ocean spectrum init shader should use sea state for spectral shape");
+        require_contains(evolve_shader, "animation_speed",
+                         "ocean spectrum evolve shader should use an independent animation speed");
         require_contains(evolve_shader, "height_dx_spectrum_image",
                          "ocean spectrum evolve shader should output packed derived fields");
         require_contains(evolve_shader, "slope_z_curvature_spectrum_image",
@@ -168,6 +176,8 @@ int main() {
                          "ocean foam update shader should read prior foam history");
         require_contains(foam_update_shader, "next_foam_image",
                          "ocean foam update shader should write ping-ponged foam history");
+        require_contains(foam_update_shader, "foam_drift",
+                         "ocean foam update shader should drift foam independently");
 
         return 0;
     } catch (const std::exception& error) {

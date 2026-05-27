@@ -142,7 +142,7 @@ ocean_spectrum_dispatch_groups(const OceanConfig& config) {
            lhs.spectrum_patch_length_mid != rhs.spectrum_patch_length_mid ||
            lhs.spectrum_patch_length_far != rhs.spectrum_patch_length_far ||
            lhs.wind_direction_degrees != rhs.wind_direction_degrees ||
-           lhs.wind_speed != rhs.wind_speed || lhs.wave_amplitude != rhs.wave_amplitude ||
+           lhs.sea_state != rhs.sea_state || lhs.wave_amplitude != rhs.wave_amplitude ||
            lhs.swell_scale != rhs.swell_scale || lhs.spectrum_energy != rhs.spectrum_energy ||
            lhs.spectrum_fetch != rhs.spectrum_fetch || lhs.spectrum_seed != rhs.spectrum_seed;
 }
@@ -386,7 +386,7 @@ class OceanApp {
                 {
                     ocean_config_.wave_amplitude,
                     radians(ocean_config_.wind_direction_degrees),
-                    ocean_config_.wind_speed,
+                    ocean_config_.animation_speed,
                     ocean_config_.chop,
                 },
             .detail_options =
@@ -511,7 +511,7 @@ class OceanApp {
                 {
                     std::cos(wind),
                     std::sin(wind),
-                    ocean_config_.wind_speed,
+                    ocean_config_.sea_state,
                     ocean_config_.swell_scale,
                 },
             .seed_options =
@@ -519,7 +519,7 @@ class OceanApp {
                     static_cast<float>(ocean_config_.spectrum_seed),
                     ocean_config_.foam_generation,
                     ocean_config_.foam_decay,
-                    0.0F,
+                    ocean_config_.animation_speed,
                 },
         };
     }
@@ -596,7 +596,7 @@ class OceanApp {
                     ocean_cascade_patch_length(ocean_config_, cascade),
                     std::cos(wind),
                     std::sin(wind),
-                    ocean_config_.wind_speed,
+                    ocean_config_.foam_drift,
                 },
         };
     }

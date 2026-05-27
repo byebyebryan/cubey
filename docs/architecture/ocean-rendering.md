@@ -20,6 +20,9 @@ surface renderer and only adds simulation where interaction needs it.
   same atmosphere model for coherent horizon fog, reflection, and sun glint.
 - Shade the surface with Fresnel sky reflection, fake refraction/absorption,
   spectrum-derived normals, persistent crest foam, tonemapping, and debug views.
+- Keep sea state, animation speed, and foam drift as separate controls: sea state
+  reshapes the generated spectrum, animation speed advances wave phase, and foam
+  drift moves only the persistent foam history.
 - Keep explicit hooks for local disturbances and shoreline/bathymetry masks.
 
 ## Rendering References

@@ -43,10 +43,10 @@ float spectral_envelope(vec2 k, float patch_length, vec2 wind_dir) {
         return 0.0;
     }
 
-    float wind_speed = max(params.wind_options.z, 0.05);
+    float sea_state = max(params.wind_options.z, 0.05);
     float fetch = max(params.cascade_options.z, 0.05);
     float swell_scale = clamp(params.wind_options.w, 0.35, 2.5);
-    float dominant_length = clamp((wind_speed * wind_speed / G) * patch_length * 0.20 * fetch,
+    float dominant_length = clamp((sea_state * sea_state / G) * patch_length * 0.20 * fetch,
                                   patch_length * 0.040, patch_length * 0.42);
     dominant_length *= swell_scale;
     float wavelength = (2.0 * PI) / k_len;

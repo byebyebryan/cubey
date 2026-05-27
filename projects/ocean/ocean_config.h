@@ -41,7 +41,8 @@ struct OceanConfig {
     float horizon_fog = 0.50F;
 
     float wind_direction_degrees = -36.0F;
-    float wind_speed = 1.75F;
+    float sea_state = 1.75F;
+    float animation_speed = 1.0F;
     float wave_amplitude = 2.55F;
     float swell_scale = 1.15F;
     float chop = 1.75F;
@@ -61,6 +62,7 @@ struct OceanConfig {
     float spectrum_fetch = 2.35F;
     float foam_generation = 0.72F;
     float foam_decay = 0.972F;
+    float foam_drift = 1.0F;
     std::uint32_t spectrum_seed = 1337;
 
     float shoreline_influence = 0.0F;
@@ -162,6 +164,12 @@ inline void validate_ocean_config(const OceanConfig& config) {
     if (config.spectrum_energy < 0.0F) {
         throw std::runtime_error("ocean spectrum energy must be nonnegative");
     }
+    if (config.sea_state <= 0.0F) {
+        throw std::runtime_error("ocean sea state must be positive");
+    }
+    if (config.animation_speed < 0.0F) {
+        throw std::runtime_error("ocean animation speed must be nonnegative");
+    }
     if (config.spectrum_fetch <= 0.0F) {
         throw std::runtime_error("ocean spectrum fetch must be positive");
     }
@@ -170,6 +178,9 @@ inline void validate_ocean_config(const OceanConfig& config) {
     }
     if (config.foam_decay < 0.0F || config.foam_decay > 1.0F) {
         throw std::runtime_error("ocean foam decay must be in [0, 1]");
+    }
+    if (config.foam_drift < 0.0F) {
+        throw std::runtime_error("ocean foam drift must be nonnegative");
     }
 }
 

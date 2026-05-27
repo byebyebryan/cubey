@@ -82,7 +82,8 @@ void draw_ocean_ui(OceanUiContext ui) {
         const cubey::host::ScopedImGuiId section_id("Waves");
         ImGui::SliderFloat("Wind direction", &ui.config.wind_direction_degrees, -180.0F, 180.0F,
                            "%.0f deg");
-        ImGui::SliderFloat("Wind speed", &ui.config.wind_speed, 0.0F, 3.0F, "%.2f");
+        ImGui::SliderFloat("Sea state", &ui.config.sea_state, 0.1F, 3.0F, "%.2f");
+        ImGui::SliderFloat("Animation speed", &ui.config.animation_speed, 0.0F, 3.0F, "%.2f");
         ImGui::SliderFloat("Amplitude", &ui.config.wave_amplitude, 0.0F, 3.0F, "%.2f");
         ImGui::SliderFloat("Swell scale", &ui.config.swell_scale, 0.35F, 2.5F, "%.2f");
         ImGui::SliderFloat("Chop", &ui.config.chop, 0.0F, 2.0F, "%.2f");
@@ -112,6 +113,7 @@ void draw_ocean_ui(OceanUiContext ui) {
         ImGui::SliderFloat("Foam threshold", &ui.config.foam_threshold, 0.1F, 1.5F, "%.2f");
         ImGui::SliderFloat("Foam generation", &ui.config.foam_generation, 0.0F, 2.0F, "%.2f");
         ImGui::SliderFloat("Foam decay", &ui.config.foam_decay, 0.0F, 1.0F, "%.3f");
+        ImGui::SliderFloat("Foam drift", &ui.config.foam_drift, 0.0F, 3.0F, "%.2f");
         ImGui::SliderFloat("Absorption", &ui.config.absorption, 0.0F, 0.35F, "%.3f");
         ImGui::SliderFloat("Refraction", &ui.config.refraction_strength, 0.0F, 0.18F, "%.3f");
         ImGui::SliderFloat("Exposure", &ui.config.exposure, -4.0F, 4.0F, "%.2f");
