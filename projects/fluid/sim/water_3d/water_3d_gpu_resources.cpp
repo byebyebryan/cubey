@@ -33,21 +33,6 @@ std::filesystem::path shader_path(const char* filename) {
     return std::filesystem::path(CUBEY_WATER_3D_SHADER_DIR) / filename;
 }
 
-[[nodiscard]] cubey::vulkan::Buffer
-upload_project_device_buffer(cubey::ProjectGpuServices& gpu, const void* data,
-                             VkDeviceSize byte_size, VkBufferUsageFlags usage, std::string label) {
-    std::optional<cubey::vulkan::Buffer> uploaded;
-    static_cast<void>(gpu.submit_and_wait({
-        .label = std::move(label),
-        .work =
-            [&uploaded, data, byte_size, usage](cubey::vulkan::GpuOwnerContext& owner) {
-                uploaded.emplace(
-                    cubey::vulkan::upload_device_buffer(owner, data, byte_size, usage));
-            },
-    }));
-    return std::move(uploaded.value());
-}
-
 [[nodiscard]] VkPushConstantRange simulation_push_constant_range() {
     return {
         .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
@@ -80,23 +65,6 @@ upload_project_device_buffer(cubey::ProjectGpuServices& gpu, const void* data,
     };
 }
 
-[[nodiscard]] cubey::render::MaterialDescriptorSetLayout
-sampled_texture_descriptor_set(std::uint32_t set, std::uint32_t binding_count) {
-    std::vector<cubey::vulkan::DescriptorSetBindingConfig> bindings;
-    bindings.reserve(binding_count);
-    for (std::uint32_t binding = 0; binding < binding_count; ++binding) {
-        bindings.push_back(cubey::vulkan::DescriptorSetBindingConfig{
-            .binding = binding,
-            .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-            .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
-        });
-    }
-    return {
-        .set = set,
-        .bindings = std::move(bindings),
-    };
-}
-
 [[nodiscard]] cubey::render::MaterialPassInfo water_surface_depth_pass_info() {
     return cubey::render::MaterialPassInfo{
         .label = "water_3d.surface.depth",
@@ -111,7 +79,7 @@ sampled_texture_descriptor_set(std::uint32_t set, std::uint32_t binding_count) {
 [[nodiscard]] cubey::render::MaterialPassInfo water_surface_scene_pass_info() {
     return cubey::render::MaterialPassInfo{
         .label = "water_3d.surface.scene",
-        .descriptor_sets = {sampled_texture_descriptor_set(0, 1)},
+        .descriptor_sets = {cubey::render::sampled_texture_descriptor_set_layout(0)},
         .push_constants = {water_surface_push_constant_range()},
         .depth_test = true,
         .depth_write = true,
@@ -123,7 +91,7 @@ sampled_texture_descriptor_set(std::uint32_t set, std::uint32_t binding_count) {
 [[nodiscard]] cubey::render::MaterialPassInfo water_surface_thickness_pass_info() {
     return cubey::render::MaterialPassInfo{
         .label = "water_3d.surface.thickness",
-        .descriptor_sets = {sampled_texture_descriptor_set(1, 1)},
+        .descriptor_sets = {cubey::render::sampled_texture_descriptor_set_layout(1)},
         .push_constants = {water_surface_push_constant_range()},
         .depth_test = false,
         .depth_write = false,
@@ -138,7 +106,7 @@ sampled_texture_descriptor_set(std::uint32_t set, std::uint32_t binding_count) {
 [[nodiscard]] cubey::render::MaterialPassInfo water_surface_pack_pass_info() {
     return cubey::render::MaterialPassInfo{
         .label = "water_3d.surface.pack",
-        .descriptor_sets = {sampled_texture_descriptor_set(0, 2)},
+        .descriptor_sets = {cubey::render::sampled_texture_descriptor_set_layout(0, 2)},
         .push_constants = {water_surface_push_constant_range()},
         .depth_test = false,
         .depth_write = false,
@@ -149,7 +117,7 @@ sampled_texture_descriptor_set(std::uint32_t set, std::uint32_t binding_count) {
 [[nodiscard]] cubey::render::MaterialPassInfo water_surface_repair_pass_info() {
     return cubey::render::MaterialPassInfo{
         .label = "water_3d.surface.repair",
-        .descriptor_sets = {sampled_texture_descriptor_set(0, 1)},
+        .descriptor_sets = {cubey::render::sampled_texture_descriptor_set_layout(0)},
         .push_constants = {water_surface_push_constant_range()},
         .depth_test = false,
         .depth_write = false,
@@ -160,7 +128,7 @@ sampled_texture_descriptor_set(std::uint32_t set, std::uint32_t binding_count) {
 [[nodiscard]] cubey::render::MaterialPassInfo water_surface_smooth_pass_info() {
     return cubey::render::MaterialPassInfo{
         .label = "water_3d.surface.smooth",
-        .descriptor_sets = {sampled_texture_descriptor_set(0, 1)},
+        .descriptor_sets = {cubey::render::sampled_texture_descriptor_set_layout(0)},
         .push_constants = {water_surface_push_constant_range()},
         .depth_test = false,
         .depth_write = false,
@@ -171,7 +139,7 @@ sampled_texture_descriptor_set(std::uint32_t set, std::uint32_t binding_count) {
 [[nodiscard]] cubey::render::MaterialPassInfo water_surface_composite_pass_info() {
     return cubey::render::MaterialPassInfo{
         .label = "water_3d.surface.composite",
-        .descriptor_sets = {sampled_texture_descriptor_set(0, 5)},
+        .descriptor_sets = {cubey::render::sampled_texture_descriptor_set_layout(0, 5)},
         .push_constants = {water_surface_push_constant_range()},
         .depth_test = false,
         .depth_write = false,
@@ -194,21 +162,13 @@ sampled_texture_descriptor_set(std::uint32_t set, std::uint32_t binding_count) {
     };
 }
 
-void create_compute_pipeline_resource(
+void emplace_simulation_compute_pipeline(
     cubey::vulkan::Device& device, const char* filename, VkDescriptorSetLayout descriptor_layout,
     std::optional<cubey::render::ComputePipelineResource>& destination) {
-    const VkPushConstantRange compute_push_constant = simulation_push_constant_range();
-    const std::array<VkDescriptorSetLayout, 1> set_layouts{descriptor_layout};
-    const std::array<VkPushConstantRange, 1> push_constants{compute_push_constant};
-    destination.emplace(device, cubey::render::ComputePipelineResourceConfig{
-                                    .shader_stage =
-                                        {
-                                            .stage = VK_SHADER_STAGE_COMPUTE_BIT,
-                                            .path = shader_path(filename),
-                                        },
-                                    .descriptor_set_layouts = set_layouts,
-                                    .push_constants = push_constants,
-                                });
+    const std::array<VkPushConstantRange, 1> push_constants{simulation_push_constant_range()};
+    cubey::render::emplace_single_set_compute_pipeline_resource(
+        destination, device, cubey::render::compute_shader_file(shader_path(filename)),
+        descriptor_layout, push_constants);
 }
 
 void create_graphics_pipeline_resource(
@@ -489,152 +449,149 @@ void Water3DGpuResources::create_field_buffers(cubey::ProjectGpuServices& gpu,
     const VkDeviceSize whitewater_draw_arg_bytes =
         static_cast<VkDeviceSize>(whitewater_draw_arg_byte_size(config));
 
-    particle_positions_.emplace(upload_project_device_buffer(
-        gpu, particle_initial.data(), particle_byte_size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+    particle_positions_.emplace(gpu.upload_device_buffer(
+        particle_initial.data(), particle_byte_size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
         "water_3d particle position upload"));
-    particle_velocities_.emplace(upload_project_device_buffer(
-        gpu, particle_initial.data(), particle_byte_size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+    particle_velocities_.emplace(gpu.upload_device_buffer(
+        particle_initial.data(), particle_byte_size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
         "water_3d particle velocity upload"));
-    particle_affine_.emplace(upload_project_device_buffer(
-        gpu, affine_initial.data(), affine_byte_size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-        "water_3d particle affine upload"));
-    u_.emplace(upload_project_device_buffer(gpu, u_initial.data(), u_byte_size,
-                                            VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                                            "water_3d U upload"));
-    u_previous_.emplace(upload_project_device_buffer(gpu, u_initial.data(), u_byte_size,
-                                                     VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                                                     "water_3d previous U upload"));
-    v_.emplace(upload_project_device_buffer(gpu, v_initial.data(), v_byte_size,
-                                            VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                                            "water_3d V upload"));
-    v_previous_.emplace(upload_project_device_buffer(gpu, v_initial.data(), v_byte_size,
-                                                     VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                                                     "water_3d previous V upload"));
-    w_.emplace(upload_project_device_buffer(gpu, w_initial.data(), w_byte_size,
-                                            VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                                            "water_3d W upload"));
-    w_previous_.emplace(upload_project_device_buffer(gpu, w_initial.data(), w_byte_size,
-                                                     VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                                                     "water_3d previous W upload"));
-    u_weight_.emplace(upload_project_device_buffer(gpu, u_initial.data(), u_byte_size,
-                                                   VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                                                   "water_3d U weight upload"));
-    v_weight_.emplace(upload_project_device_buffer(gpu, v_initial.data(), v_byte_size,
-                                                   VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                                                   "water_3d V weight upload"));
-    w_weight_.emplace(upload_project_device_buffer(gpu, w_initial.data(), w_byte_size,
-                                                   VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                                                   "water_3d W weight upload"));
-    u_scratch_.emplace(upload_project_device_buffer(gpu, u_initial.data(), u_byte_size,
-                                                    VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                                                    "water_3d U scratch upload"));
-    u_previous_scratch_.emplace(upload_project_device_buffer(gpu, u_initial.data(), u_byte_size,
-                                                             VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                                                             "water_3d previous U scratch upload"));
-    v_scratch_.emplace(upload_project_device_buffer(gpu, v_initial.data(), v_byte_size,
-                                                    VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                                                    "water_3d V scratch upload"));
-    v_previous_scratch_.emplace(upload_project_device_buffer(gpu, v_initial.data(), v_byte_size,
-                                                             VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                                                             "water_3d previous V scratch upload"));
-    w_scratch_.emplace(upload_project_device_buffer(gpu, w_initial.data(), w_byte_size,
-                                                    VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                                                    "water_3d W scratch upload"));
-    w_previous_scratch_.emplace(upload_project_device_buffer(gpu, w_initial.data(), w_byte_size,
-                                                             VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                                                             "water_3d previous W scratch upload"));
-    u_weight_scratch_.emplace(upload_project_device_buffer(gpu, u_initial.data(), u_byte_size,
-                                                           VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                                                           "water_3d U weight scratch upload"));
-    v_weight_scratch_.emplace(upload_project_device_buffer(gpu, v_initial.data(), v_byte_size,
-                                                           VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                                                           "water_3d V weight scratch upload"));
-    w_weight_scratch_.emplace(upload_project_device_buffer(gpu, w_initial.data(), w_byte_size,
-                                                           VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                                                           "water_3d W weight scratch upload"));
-    pressure_a_.emplace(upload_project_device_buffer(gpu, cell_initial.data(), cell_byte_size,
-                                                     VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                                                     "water_3d pressure A upload"));
-    pressure_b_.emplace(upload_project_device_buffer(gpu, cell_initial.data(), cell_byte_size,
-                                                     VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                                                     "water_3d pressure B upload"));
-    divergence_.emplace(upload_project_device_buffer(gpu, cell_initial.data(), cell_byte_size,
-                                                     VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                                                     "water_3d divergence upload"));
-    solid_.emplace(upload_project_device_buffer(gpu, cell_initial.data(), cell_byte_size,
+    particle_affine_.emplace(gpu.upload_device_buffer(affine_initial.data(), affine_byte_size,
+                                                      VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                                                      "water_3d particle affine upload"));
+    u_.emplace(gpu.upload_device_buffer(u_initial.data(), u_byte_size,
+                                        VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, "water_3d U upload"));
+    u_previous_.emplace(gpu.upload_device_buffer(u_initial.data(), u_byte_size,
+                                                 VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                                                 "water_3d previous U upload"));
+    v_.emplace(gpu.upload_device_buffer(v_initial.data(), v_byte_size,
+                                        VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, "water_3d V upload"));
+    v_previous_.emplace(gpu.upload_device_buffer(v_initial.data(), v_byte_size,
+                                                 VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                                                 "water_3d previous V upload"));
+    w_.emplace(gpu.upload_device_buffer(w_initial.data(), w_byte_size,
+                                        VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, "water_3d W upload"));
+    w_previous_.emplace(gpu.upload_device_buffer(w_initial.data(), w_byte_size,
+                                                 VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                                                 "water_3d previous W upload"));
+    u_weight_.emplace(gpu.upload_device_buffer(u_initial.data(), u_byte_size,
+                                               VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                                               "water_3d U weight upload"));
+    v_weight_.emplace(gpu.upload_device_buffer(v_initial.data(), v_byte_size,
+                                               VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                                               "water_3d V weight upload"));
+    w_weight_.emplace(gpu.upload_device_buffer(w_initial.data(), w_byte_size,
+                                               VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                                               "water_3d W weight upload"));
+    u_scratch_.emplace(gpu.upload_device_buffer(u_initial.data(), u_byte_size,
                                                 VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                                                "water_3d solid upload"));
-    cell_counts_.emplace(upload_project_device_buffer(
-        gpu, cell_count_initial.data(), cell_uint_byte_size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-        "water_3d cell count upload"));
-    sorted_particle_indices_.emplace(upload_project_device_buffer(
-        gpu, sorted_particle_index_initial.data(), sorted_particle_index_bytes,
+                                                "water_3d U scratch upload"));
+    u_previous_scratch_.emplace(gpu.upload_device_buffer(u_initial.data(), u_byte_size,
+                                                         VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                                                         "water_3d previous U scratch upload"));
+    v_scratch_.emplace(gpu.upload_device_buffer(v_initial.data(), v_byte_size,
+                                                VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                                                "water_3d V scratch upload"));
+    v_previous_scratch_.emplace(gpu.upload_device_buffer(v_initial.data(), v_byte_size,
+                                                         VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                                                         "water_3d previous V scratch upload"));
+    w_scratch_.emplace(gpu.upload_device_buffer(w_initial.data(), w_byte_size,
+                                                VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                                                "water_3d W scratch upload"));
+    w_previous_scratch_.emplace(gpu.upload_device_buffer(w_initial.data(), w_byte_size,
+                                                         VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                                                         "water_3d previous W scratch upload"));
+    u_weight_scratch_.emplace(gpu.upload_device_buffer(u_initial.data(), u_byte_size,
+                                                       VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                                                       "water_3d U weight scratch upload"));
+    v_weight_scratch_.emplace(gpu.upload_device_buffer(v_initial.data(), v_byte_size,
+                                                       VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                                                       "water_3d V weight scratch upload"));
+    w_weight_scratch_.emplace(gpu.upload_device_buffer(w_initial.data(), w_byte_size,
+                                                       VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                                                       "water_3d W weight scratch upload"));
+    pressure_a_.emplace(gpu.upload_device_buffer(cell_initial.data(), cell_byte_size,
+                                                 VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                                                 "water_3d pressure A upload"));
+    pressure_b_.emplace(gpu.upload_device_buffer(cell_initial.data(), cell_byte_size,
+                                                 VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                                                 "water_3d pressure B upload"));
+    divergence_.emplace(gpu.upload_device_buffer(cell_initial.data(), cell_byte_size,
+                                                 VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                                                 "water_3d divergence upload"));
+    solid_.emplace(gpu.upload_device_buffer(cell_initial.data(), cell_byte_size,
+                                            VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                                            "water_3d solid upload"));
+    cell_counts_.emplace(gpu.upload_device_buffer(cell_count_initial.data(), cell_uint_byte_size,
+                                                  VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                                                  "water_3d cell count upload"));
+    sorted_particle_indices_.emplace(gpu.upload_device_buffer(
+        sorted_particle_index_initial.data(), sorted_particle_index_bytes,
         VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, "water_3d sorted particle index upload"));
-    cell_offsets_.emplace(upload_project_device_buffer(
-        gpu, cell_count_initial.data(), cell_uint_byte_size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-        "water_3d cell offset upload"));
-    cell_write_counts_.emplace(upload_project_device_buffer(
-        gpu, cell_count_initial.data(), cell_uint_byte_size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+    cell_offsets_.emplace(gpu.upload_device_buffer(cell_count_initial.data(), cell_uint_byte_size,
+                                                   VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                                                   "water_3d cell offset upload"));
+    cell_write_counts_.emplace(gpu.upload_device_buffer(
+        cell_count_initial.data(), cell_uint_byte_size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
         "water_3d cell write count upload"));
-    sort_scan_level0_sums_.emplace(upload_project_device_buffer(
-        gpu, sort_scan_level0_initial.data(), sort_scan_level0_byte_size,
+    sort_scan_level0_sums_.emplace(gpu.upload_device_buffer(
+        sort_scan_level0_initial.data(), sort_scan_level0_byte_size,
         VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, "water_3d sort scan level 0 sum upload"));
-    sort_scan_level1_offsets_.emplace(upload_project_device_buffer(
-        gpu, sort_scan_level0_initial.data(), sort_scan_level0_byte_size,
+    sort_scan_level1_offsets_.emplace(gpu.upload_device_buffer(
+        sort_scan_level0_initial.data(), sort_scan_level0_byte_size,
         VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, "water_3d sort scan level 1 offset upload"));
-    sort_scan_level1_sums_.emplace(upload_project_device_buffer(
-        gpu, sort_scan_level1_initial.data(), sort_scan_level1_byte_size,
+    sort_scan_level1_sums_.emplace(gpu.upload_device_buffer(
+        sort_scan_level1_initial.data(), sort_scan_level1_byte_size,
         VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, "water_3d sort scan level 1 sum upload"));
-    sort_scan_level2_offsets_.emplace(upload_project_device_buffer(
-        gpu, sort_scan_level1_initial.data(), sort_scan_level1_byte_size,
+    sort_scan_level2_offsets_.emplace(gpu.upload_device_buffer(
+        sort_scan_level1_initial.data(), sort_scan_level1_byte_size,
         VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, "water_3d sort scan level 2 offset upload"));
-    sort_scan_level2_sums_.emplace(upload_project_device_buffer(
-        gpu, sort_scan_level2_initial.data(), sort_scan_level2_byte_size,
+    sort_scan_level2_sums_.emplace(gpu.upload_device_buffer(
+        sort_scan_level2_initial.data(), sort_scan_level2_byte_size,
         VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, "water_3d sort scan level 2 sum upload"));
-    active_work_counts_.emplace(upload_project_device_buffer(
-        gpu, active_work_count_initial.data(), active_work_count_bytes,
+    active_work_counts_.emplace(gpu.upload_device_buffer(
+        active_work_count_initial.data(), active_work_count_bytes,
         VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, "water_3d active work count upload"));
-    active_face_flags_.emplace(upload_project_device_buffer(
-        gpu, active_face_flag_initial.data(), active_face_flag_bytes,
-        VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, "water_3d active face flag upload"));
-    active_face_indices_.emplace(upload_project_device_buffer(
-        gpu, active_face_index_initial.data(), active_face_index_bytes,
+    active_face_flags_.emplace(gpu.upload_device_buffer(
+        active_face_flag_initial.data(), active_face_flag_bytes, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+        "water_3d active face flag upload"));
+    active_face_indices_.emplace(gpu.upload_device_buffer(
+        active_face_index_initial.data(), active_face_index_bytes,
         VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, "water_3d active face index upload"));
-    active_face_dispatch_args_.emplace(upload_project_device_buffer(
-        gpu, active_face_dispatch_arg_initial.data(), active_face_dispatch_arg_bytes,
+    active_face_dispatch_args_.emplace(gpu.upload_device_buffer(
+        active_face_dispatch_arg_initial.data(), active_face_dispatch_arg_bytes,
         VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
         "water_3d active face indirect dispatch upload"));
-    active_tile_flags_.emplace(upload_project_device_buffer(
-        gpu, active_tile_flag_initial.data(), active_tile_flag_bytes,
-        VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, "water_3d active tile flag upload"));
-    active_tile_indices_.emplace(upload_project_device_buffer(
-        gpu, active_tile_index_initial.data(), active_tile_index_bytes,
+    active_tile_flags_.emplace(gpu.upload_device_buffer(
+        active_tile_flag_initial.data(), active_tile_flag_bytes, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+        "water_3d active tile flag upload"));
+    active_tile_indices_.emplace(gpu.upload_device_buffer(
+        active_tile_index_initial.data(), active_tile_index_bytes,
         VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, "water_3d active tile index upload"));
-    active_tile_dispatch_args_.emplace(upload_project_device_buffer(
-        gpu, active_tile_dispatch_arg_initial.data(), active_tile_dispatch_arg_bytes,
+    active_tile_dispatch_args_.emplace(gpu.upload_device_buffer(
+        active_tile_dispatch_arg_initial.data(), active_tile_dispatch_arg_bytes,
         VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
         "water_3d active tile indirect dispatch upload"));
-    diagnostics_.emplace(upload_project_device_buffer(
-        gpu, diagnostics_initial.data(), diagnostics_bytes,
-        VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-        "water_3d diagnostics upload"));
-    whitewater_positions_.emplace(upload_project_device_buffer(
-        gpu, whitewater_initial.data(), whitewater_byte_size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+    diagnostics_.emplace(gpu.upload_device_buffer(diagnostics_initial.data(), diagnostics_bytes,
+                                                  VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
+                                                      VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                                                  "water_3d diagnostics upload"));
+    whitewater_positions_.emplace(gpu.upload_device_buffer(
+        whitewater_initial.data(), whitewater_byte_size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
         "water_3d whitewater position upload"));
-    whitewater_velocities_.emplace(upload_project_device_buffer(
-        gpu, whitewater_initial.data(), whitewater_byte_size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+    whitewater_velocities_.emplace(gpu.upload_device_buffer(
+        whitewater_initial.data(), whitewater_byte_size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
         "water_3d whitewater velocity upload"));
-    whitewater_state_.emplace(upload_project_device_buffer(
-        gpu, whitewater_initial.data(), whitewater_byte_size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+    whitewater_state_.emplace(gpu.upload_device_buffer(
+        whitewater_initial.data(), whitewater_byte_size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
         "water_3d whitewater state upload"));
-    whitewater_counters_.emplace(upload_project_device_buffer(
-        gpu, whitewater_counter_initial.data(), whitewater_counter_bytes,
+    whitewater_counters_.emplace(gpu.upload_device_buffer(
+        whitewater_counter_initial.data(), whitewater_counter_bytes,
         VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, "water_3d whitewater counter upload"));
-    whitewater_active_indices_.emplace(upload_project_device_buffer(
-        gpu, whitewater_active_index_initial.data(), whitewater_active_index_bytes,
+    whitewater_active_indices_.emplace(gpu.upload_device_buffer(
+        whitewater_active_index_initial.data(), whitewater_active_index_bytes,
         VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, "water_3d whitewater active index upload"));
-    whitewater_draw_args_.emplace(upload_project_device_buffer(
-        gpu, whitewater_draw_args_initial.data(), whitewater_draw_arg_bytes,
+    whitewater_draw_args_.emplace(gpu.upload_device_buffer(
+        whitewater_draw_args_initial.data(), whitewater_draw_arg_bytes,
         VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
         "water_3d whitewater indirect draw upload"));
 }
@@ -775,72 +732,73 @@ void Water3DGpuResources::update_field_descriptors(cubey::vulkan::Device& device
 }
 
 void Water3DGpuResources::create_compute_pipelines(cubey::vulkan::Device& device) {
-    create_compute_pipeline_resource(device, "water_3d_reset.comp.spv", field_descriptor_layout(),
-                                     reset_pipeline_resource_);
-    create_compute_pipeline_resource(device, "water_3d_clear_grid.comp.spv",
-                                     field_descriptor_layout(), clear_grid_pipeline_resource_);
-    create_compute_pipeline_resource(device, "water_3d_clear_bins.comp.spv",
-                                     field_descriptor_layout(), clear_bins_pipeline_resource_);
-    create_compute_pipeline_resource(device, "water_3d_build_bins.comp.spv",
-                                     field_descriptor_layout(), build_bins_pipeline_resource_);
-    create_compute_pipeline_resource(device, "water_3d_emit_particles.comp.spv",
-                                     field_descriptor_layout(), emit_pipeline_resource_);
-    create_compute_pipeline_resource(device, "water_3d_active_face_dispatch_args.comp.spv",
-                                     field_descriptor_layout(),
-                                     active_face_dispatch_args_pipeline_resource_);
-    create_compute_pipeline_resource(device, "water_3d_build_active_tiles.comp.spv",
-                                     field_descriptor_layout(),
-                                     build_active_tiles_pipeline_resource_);
-    create_compute_pipeline_resource(device, "water_3d_active_tile_dispatch_args.comp.spv",
-                                     field_descriptor_layout(),
-                                     active_tile_dispatch_args_pipeline_resource_);
-    create_compute_pipeline_resource(device, "water_3d_scan_offsets.comp.spv",
-                                     field_descriptor_layout(), scan_offsets_pipeline_resource_);
-    create_compute_pipeline_resource(device, "water_3d_scan_add_offsets.comp.spv",
-                                     field_descriptor_layout(),
-                                     scan_add_offsets_pipeline_resource_);
-    create_compute_pipeline_resource(device, "water_3d_scatter_sorted_particles.comp.spv",
-                                     field_descriptor_layout(),
-                                     scatter_sorted_particles_pipeline_resource_);
-    create_compute_pipeline_resource(device, "water_3d_particle_to_grid.comp.spv",
-                                     field_descriptor_layout(),
-                                     particle_to_grid_pipeline_resource_);
-    create_compute_pipeline_resource(device, "water_3d_particle_to_grid_tiled.comp.spv",
-                                     field_descriptor_layout(),
-                                     particle_to_grid_tiled_pipeline_resource_);
-    create_compute_pipeline_resource(device, "water_3d_force.comp.spv", field_descriptor_layout(),
-                                     force_pipeline_resource_);
-    create_compute_pipeline_resource(device, "water_3d_divergence.comp.spv",
-                                     field_descriptor_layout(), divergence_pipeline_resource_);
-    create_compute_pipeline_resource(device, "water_3d_pressure.comp.spv",
-                                     field_descriptor_layout(), pressure_pipeline_resource_);
-    create_compute_pipeline_resource(device, "water_3d_projection.comp.spv",
-                                     field_descriptor_layout(), projection_pipeline_resource_);
-    create_compute_pipeline_resource(device, "water_3d_extrapolate_velocity.comp.spv",
-                                     field_descriptor_layout(),
-                                     extrapolate_velocity_pipeline_resource_);
-    create_compute_pipeline_resource(device, "water_3d_grid_to_particle.comp.spv",
-                                     field_descriptor_layout(),
-                                     grid_to_particle_pipeline_resource_);
-    create_compute_pipeline_resource(device, "water_3d_advect_particles.comp.spv",
-                                     field_descriptor_layout(),
-                                     advect_particles_pipeline_resource_);
-    create_compute_pipeline_resource(device, "water_3d_whitewater_clear.comp.spv",
-                                     field_descriptor_layout(),
-                                     clear_whitewater_pipeline_resource_);
-    create_compute_pipeline_resource(device, "water_3d_whitewater_advect.comp.spv",
-                                     field_descriptor_layout(),
-                                     advect_whitewater_pipeline_resource_);
-    create_compute_pipeline_resource(device, "water_3d_whitewater_emit.comp.spv",
-                                     field_descriptor_layout(), emit_whitewater_pipeline_resource_);
-    create_compute_pipeline_resource(device, "water_3d_whitewater_active_indices.comp.spv",
-                                     field_descriptor_layout(),
-                                     active_whitewater_indices_pipeline_resource_);
-    create_compute_pipeline_resource(device, "water_3d_whitewater_draw_args.comp.spv",
-                                     field_descriptor_layout(),
-                                     whitewater_draw_args_pipeline_resource_);
-    create_compute_pipeline_resource(device, "water_3d_diagnostics.comp.spv",
-                                     field_descriptor_layout(), diagnostics_pipeline_resource_);
+    emplace_simulation_compute_pipeline(device, "water_3d_reset.comp.spv",
+                                        field_descriptor_layout(), reset_pipeline_resource_);
+    emplace_simulation_compute_pipeline(device, "water_3d_clear_grid.comp.spv",
+                                        field_descriptor_layout(), clear_grid_pipeline_resource_);
+    emplace_simulation_compute_pipeline(device, "water_3d_clear_bins.comp.spv",
+                                        field_descriptor_layout(), clear_bins_pipeline_resource_);
+    emplace_simulation_compute_pipeline(device, "water_3d_build_bins.comp.spv",
+                                        field_descriptor_layout(), build_bins_pipeline_resource_);
+    emplace_simulation_compute_pipeline(device, "water_3d_emit_particles.comp.spv",
+                                        field_descriptor_layout(), emit_pipeline_resource_);
+    emplace_simulation_compute_pipeline(device, "water_3d_active_face_dispatch_args.comp.spv",
+                                        field_descriptor_layout(),
+                                        active_face_dispatch_args_pipeline_resource_);
+    emplace_simulation_compute_pipeline(device, "water_3d_build_active_tiles.comp.spv",
+                                        field_descriptor_layout(),
+                                        build_active_tiles_pipeline_resource_);
+    emplace_simulation_compute_pipeline(device, "water_3d_active_tile_dispatch_args.comp.spv",
+                                        field_descriptor_layout(),
+                                        active_tile_dispatch_args_pipeline_resource_);
+    emplace_simulation_compute_pipeline(device, "water_3d_scan_offsets.comp.spv",
+                                        field_descriptor_layout(), scan_offsets_pipeline_resource_);
+    emplace_simulation_compute_pipeline(device, "water_3d_scan_add_offsets.comp.spv",
+                                        field_descriptor_layout(),
+                                        scan_add_offsets_pipeline_resource_);
+    emplace_simulation_compute_pipeline(device, "water_3d_scatter_sorted_particles.comp.spv",
+                                        field_descriptor_layout(),
+                                        scatter_sorted_particles_pipeline_resource_);
+    emplace_simulation_compute_pipeline(device, "water_3d_particle_to_grid.comp.spv",
+                                        field_descriptor_layout(),
+                                        particle_to_grid_pipeline_resource_);
+    emplace_simulation_compute_pipeline(device, "water_3d_particle_to_grid_tiled.comp.spv",
+                                        field_descriptor_layout(),
+                                        particle_to_grid_tiled_pipeline_resource_);
+    emplace_simulation_compute_pipeline(device, "water_3d_force.comp.spv",
+                                        field_descriptor_layout(), force_pipeline_resource_);
+    emplace_simulation_compute_pipeline(device, "water_3d_divergence.comp.spv",
+                                        field_descriptor_layout(), divergence_pipeline_resource_);
+    emplace_simulation_compute_pipeline(device, "water_3d_pressure.comp.spv",
+                                        field_descriptor_layout(), pressure_pipeline_resource_);
+    emplace_simulation_compute_pipeline(device, "water_3d_projection.comp.spv",
+                                        field_descriptor_layout(), projection_pipeline_resource_);
+    emplace_simulation_compute_pipeline(device, "water_3d_extrapolate_velocity.comp.spv",
+                                        field_descriptor_layout(),
+                                        extrapolate_velocity_pipeline_resource_);
+    emplace_simulation_compute_pipeline(device, "water_3d_grid_to_particle.comp.spv",
+                                        field_descriptor_layout(),
+                                        grid_to_particle_pipeline_resource_);
+    emplace_simulation_compute_pipeline(device, "water_3d_advect_particles.comp.spv",
+                                        field_descriptor_layout(),
+                                        advect_particles_pipeline_resource_);
+    emplace_simulation_compute_pipeline(device, "water_3d_whitewater_clear.comp.spv",
+                                        field_descriptor_layout(),
+                                        clear_whitewater_pipeline_resource_);
+    emplace_simulation_compute_pipeline(device, "water_3d_whitewater_advect.comp.spv",
+                                        field_descriptor_layout(),
+                                        advect_whitewater_pipeline_resource_);
+    emplace_simulation_compute_pipeline(device, "water_3d_whitewater_emit.comp.spv",
+                                        field_descriptor_layout(),
+                                        emit_whitewater_pipeline_resource_);
+    emplace_simulation_compute_pipeline(device, "water_3d_whitewater_active_indices.comp.spv",
+                                        field_descriptor_layout(),
+                                        active_whitewater_indices_pipeline_resource_);
+    emplace_simulation_compute_pipeline(device, "water_3d_whitewater_draw_args.comp.spv",
+                                        field_descriptor_layout(),
+                                        whitewater_draw_args_pipeline_resource_);
+    emplace_simulation_compute_pipeline(device, "water_3d_diagnostics.comp.spv",
+                                        field_descriptor_layout(), diagnostics_pipeline_resource_);
 }
 
 void Water3DGpuResources::create_render_pipeline(

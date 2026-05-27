@@ -103,6 +103,45 @@ vulkan::GpuWorkTicket ProjectGpuServices::submit_and_wait(vulkan::GpuWorkRequest
     return impl_->gpu->submit_and_wait(std::move(request));
 }
 
+vulkan::Buffer ProjectGpuServices::upload_device_buffer(const void* data, VkDeviceSize byte_size,
+                                                        VkBufferUsageFlags usage,
+                                                        std::string label) {
+    return upload_device_buffer(ProjectDeviceBufferUpload{
+        .label = std::move(label),
+        .data = data,
+        .byte_size = byte_size,
+        .usage = usage,
+    });
+}
+
+vulkan::Buffer ProjectGpuServices::upload_device_buffer(const ProjectDeviceBufferUpload& upload) {
+    std::vector<vulkan::Buffer> uploaded =
+        upload_device_buffers(std::span{&upload, 1U}, upload.label);
+    return std::move(uploaded.front());
+}
+
+std::vector<vulkan::Buffer>
+ProjectGpuServices::upload_device_buffers(std::span<const ProjectDeviceBufferUpload> uploads,
+                                          std::string label) {
+    if (uploads.empty()) {
+        return {};
+    }
+
+    std::vector<vulkan::Buffer> uploaded;
+    uploaded.reserve(uploads.size());
+    static_cast<void>(impl_->gpu->submit_and_wait({
+        .label = std::move(label),
+        .work =
+            [&uploaded, uploads](vulkan::GpuOwnerContext& owner) {
+                for (const ProjectDeviceBufferUpload& upload : uploads) {
+                    uploaded.emplace_back(vulkan::upload_device_buffer(
+                        owner, upload.data, upload.byte_size, upload.usage));
+                }
+            },
+    }));
+    return uploaded;
+}
+
 void ProjectGpuServices::wait_queue_idle(std::string label) {
     impl_->gpu->wait_queue_idle(std::move(label));
 }

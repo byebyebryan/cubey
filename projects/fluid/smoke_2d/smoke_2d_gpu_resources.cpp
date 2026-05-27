@@ -27,21 +27,6 @@ std::filesystem::path shader_path(const char* filename) {
     return std::filesystem::path(CUBEY_SMOKE_2D_SHADER_DIR) / filename;
 }
 
-[[nodiscard]] cubey::vulkan::Buffer
-upload_project_device_buffer(cubey::ProjectGpuServices& gpu, const void* data,
-                             VkDeviceSize byte_size, VkBufferUsageFlags usage, std::string label) {
-    std::optional<cubey::vulkan::Buffer> uploaded;
-    static_cast<void>(gpu.submit_and_wait({
-        .label = std::move(label),
-        .work =
-            [&uploaded, data, byte_size, usage](cubey::vulkan::GpuOwnerContext& owner) {
-                uploaded.emplace(
-                    cubey::vulkan::upload_device_buffer(owner, data, byte_size, usage));
-            },
-    }));
-    return std::move(uploaded.value());
-}
-
 [[nodiscard]] VkPushConstantRange simulation_push_constant_range() {
     return {
         .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
@@ -62,21 +47,13 @@ upload_project_device_buffer(cubey::ProjectGpuServices& gpu, const void* data,
     };
 }
 
-void create_compute_pipeline_resource(
+void emplace_simulation_compute_pipeline(
     cubey::vulkan::Device& device, const char* filename, VkDescriptorSetLayout descriptor_layout,
     std::optional<cubey::render::ComputePipelineResource>& destination) {
-    const VkPushConstantRange compute_push_constant = simulation_push_constant_range();
-    const std::array<VkDescriptorSetLayout, 1> set_layouts{descriptor_layout};
-    const std::array<VkPushConstantRange, 1> push_constants{compute_push_constant};
-    destination.emplace(device, cubey::render::ComputePipelineResourceConfig{
-                                    .shader_stage =
-                                        {
-                                            .stage = VK_SHADER_STAGE_COMPUTE_BIT,
-                                            .path = shader_path(filename),
-                                        },
-                                    .descriptor_set_layouts = set_layouts,
-                                    .push_constants = push_constants,
-                                });
+    const std::array<VkPushConstantRange, 1> push_constants{simulation_push_constant_range()};
+    cubey::render::emplace_single_set_compute_pipeline_resource(
+        destination, device, cubey::render::compute_shader_file(shader_path(filename)),
+        descriptor_layout, push_constants);
 }
 
 } // namespace
@@ -146,34 +123,33 @@ void Smoke2DGpuResources::create_field_buffers(cubey::ProjectGpuServices& gpu,
     const VkDeviceSize byte_size = static_cast<VkDeviceSize>(field_byte_size(config));
     const VkBufferUsageFlags field_usage =
         VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-    field_a_.emplace(upload_project_device_buffer(gpu, initial.data(), byte_size, field_usage,
-                                                  "smoke_2d field A upload"));
-    field_b_.emplace(upload_project_device_buffer(gpu, initial.data(), byte_size, field_usage,
-                                                  "smoke_2d field B upload"));
-    field_temp_.emplace(upload_project_device_buffer(gpu, initial.data(), byte_size, field_usage,
-                                                     "smoke_2d field temp upload"));
+    field_a_.emplace(gpu.upload_device_buffer(initial.data(), byte_size, field_usage,
+                                              "smoke_2d field A upload"));
+    field_b_.emplace(gpu.upload_device_buffer(initial.data(), byte_size, field_usage,
+                                              "smoke_2d field B upload"));
+    field_temp_.emplace(gpu.upload_device_buffer(initial.data(), byte_size, field_usage,
+                                                 "smoke_2d field temp upload"));
 
     const std::vector<float> scalar_initial(field_cell_count(config), 0.0F);
     const VkDeviceSize scalar_byte_size = static_cast<VkDeviceSize>(scalar_field_byte_size(config));
     const VkBufferUsageFlags scalar_usage =
         VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-    divergence_.emplace(upload_project_device_buffer(gpu, scalar_initial.data(), scalar_byte_size,
-                                                     scalar_usage, "smoke_2d divergence upload"));
-    curl_.emplace(upload_project_device_buffer(gpu, scalar_initial.data(), scalar_byte_size,
-                                               scalar_usage, "smoke_2d curl upload"));
+    divergence_.emplace(gpu.upload_device_buffer(scalar_initial.data(), scalar_byte_size,
+                                                 scalar_usage, "smoke_2d divergence upload"));
+    curl_.emplace(gpu.upload_device_buffer(scalar_initial.data(), scalar_byte_size, scalar_usage,
+                                           "smoke_2d curl upload"));
     std::vector<Smoke2DInjectorGpu> injector_initial(kMaxProceduralInjectorCount);
     const std::vector<Smoke2DInjectorGpu> active_injectors =
         smoke_2d_injectors_to_gpu(create_smoke_2d_injectors(config), config);
     std::copy(active_injectors.begin(), active_injectors.end(), injector_initial.begin());
-    injectors_.emplace(upload_project_device_buffer(
-        gpu, injector_initial.data(),
-        static_cast<VkDeviceSize>(smoke_2d_injector_capacity_byte_size()),
+    injectors_.emplace(gpu.upload_device_buffer(
+        injector_initial.data(), static_cast<VkDeviceSize>(smoke_2d_injector_capacity_byte_size()),
         VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
         "smoke_2d injector upload"));
-    pressure_a_.emplace(upload_project_device_buffer(gpu, scalar_initial.data(), scalar_byte_size,
-                                                     scalar_usage, "smoke_2d pressure A upload"));
-    pressure_b_.emplace(upload_project_device_buffer(gpu, scalar_initial.data(), scalar_byte_size,
-                                                     scalar_usage, "smoke_2d pressure B upload"));
+    pressure_a_.emplace(gpu.upload_device_buffer(scalar_initial.data(), scalar_byte_size,
+                                                 scalar_usage, "smoke_2d pressure A upload"));
+    pressure_b_.emplace(gpu.upload_device_buffer(scalar_initial.data(), scalar_byte_size,
+                                                 scalar_usage, "smoke_2d pressure B upload"));
 }
 
 void Smoke2DGpuResources::create_descriptor_resources(cubey::vulkan::Device& device) {
@@ -417,26 +393,28 @@ void Smoke2DGpuResources::update_field_descriptors(cubey::vulkan::Device& device
 }
 
 void Smoke2DGpuResources::create_compute_pipelines(cubey::vulkan::Device& device) {
-    create_compute_pipeline_resource(device, "smoke_2d_inject.comp.spv",
-                                     compute_descriptor_layout(), inject_pipeline_resource_);
-    create_compute_pipeline_resource(device, "smoke_2d_advect_predict.comp.spv",
-                                     compute_descriptor_layout(), advect_pipeline_resource_);
-    create_compute_pipeline_resource(device, "smoke_2d_advect_correct.comp.spv",
-                                     advect_correct_descriptor_layout(),
-                                     advect_correct_pipeline_resource_);
-    create_compute_pipeline_resource(device, "smoke_2d_curl.comp.spv", compute_descriptor_layout(),
-                                     curl_pipeline_resource_);
-    create_compute_pipeline_resource(device, "smoke_2d_vorticity.comp.spv",
-                                     compute_descriptor_layout(), vorticity_pipeline_resource_);
-    create_compute_pipeline_resource(device, "smoke_2d_divergence.comp.spv",
-                                     divergence_descriptor_layout(), divergence_pipeline_resource_);
-    create_compute_pipeline_resource(device, "smoke_2d_pressure.comp.spv",
-                                     pressure_descriptor_layout(), pressure_pipeline_resource_);
-    create_compute_pipeline_resource(device, "smoke_2d_pressure_rbgs.comp.spv",
-                                     pressure_rbgs_descriptor_layout(),
-                                     pressure_rbgs_pipeline_resource_);
-    create_compute_pipeline_resource(device, "smoke_2d_projection.comp.spv",
-                                     projection_descriptor_layout(), projection_pipeline_resource_);
+    emplace_simulation_compute_pipeline(device, "smoke_2d_inject.comp.spv",
+                                        compute_descriptor_layout(), inject_pipeline_resource_);
+    emplace_simulation_compute_pipeline(device, "smoke_2d_advect_predict.comp.spv",
+                                        compute_descriptor_layout(), advect_pipeline_resource_);
+    emplace_simulation_compute_pipeline(device, "smoke_2d_advect_correct.comp.spv",
+                                        advect_correct_descriptor_layout(),
+                                        advect_correct_pipeline_resource_);
+    emplace_simulation_compute_pipeline(device, "smoke_2d_curl.comp.spv",
+                                        compute_descriptor_layout(), curl_pipeline_resource_);
+    emplace_simulation_compute_pipeline(device, "smoke_2d_vorticity.comp.spv",
+                                        compute_descriptor_layout(), vorticity_pipeline_resource_);
+    emplace_simulation_compute_pipeline(device, "smoke_2d_divergence.comp.spv",
+                                        divergence_descriptor_layout(),
+                                        divergence_pipeline_resource_);
+    emplace_simulation_compute_pipeline(device, "smoke_2d_pressure.comp.spv",
+                                        pressure_descriptor_layout(), pressure_pipeline_resource_);
+    emplace_simulation_compute_pipeline(device, "smoke_2d_pressure_rbgs.comp.spv",
+                                        pressure_rbgs_descriptor_layout(),
+                                        pressure_rbgs_pipeline_resource_);
+    emplace_simulation_compute_pipeline(device, "smoke_2d_projection.comp.spv",
+                                        projection_descriptor_layout(),
+                                        projection_pipeline_resource_);
 }
 
 void Smoke2DGpuResources::create_render_pipeline(cubey::vulkan::Device& device,

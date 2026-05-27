@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <stdexcept>
+#include <utility>
 
 namespace cubey::render {
 namespace {
@@ -13,14 +14,13 @@ void validate_descriptor_set(const MaterialDescriptorSetLayout& descriptor_set) 
         }
     }
 
-    for (auto current = descriptor_set.bindings.begin();
-         current != descriptor_set.bindings.end(); ++current) {
-        const auto duplicate =
-            std::find_if(descriptor_set.bindings.begin(), current,
-                         [binding = current->binding](
-                             const cubey::vulkan::DescriptorSetBindingConfig& prior) {
-                             return prior.binding == binding;
-                         });
+    for (auto current = descriptor_set.bindings.begin(); current != descriptor_set.bindings.end();
+         ++current) {
+        const auto duplicate = std::find_if(
+            descriptor_set.bindings.begin(), current,
+            [binding = current->binding](const cubey::vulkan::DescriptorSetBindingConfig& prior) {
+                return prior.binding == binding;
+            });
         if (duplicate != current) {
             throw std::runtime_error("material pass descriptor set has duplicate bindings");
         }
@@ -29,13 +29,35 @@ void validate_descriptor_set(const MaterialDescriptorSetLayout& descriptor_set) 
 
 } // namespace
 
+MaterialDescriptorSetLayout sampled_texture_descriptor_set_layout(std::uint32_t set,
+                                                                  std::uint32_t binding_count,
+                                                                  VkShaderStageFlags stage_flags) {
+    if (binding_count == 0) {
+        throw std::runtime_error("sampled texture descriptor set requires bindings");
+    }
+
+    std::vector<cubey::vulkan::DescriptorSetBindingConfig> bindings;
+    bindings.reserve(binding_count);
+    for (std::uint32_t binding = 0; binding < binding_count; ++binding) {
+        bindings.push_back(cubey::vulkan::DescriptorSetBindingConfig{
+            .binding = binding,
+            .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            .stage_flags = stage_flags,
+        });
+    }
+    return {
+        .set = set,
+        .bindings = std::move(bindings),
+    };
+}
+
 void validate_material_pass_info(const MaterialPassInfo& info) {
     if (info.label.empty()) {
         throw std::runtime_error("material pass label must be non-empty");
     }
 
-    for (auto current = info.descriptor_sets.begin();
-         current != info.descriptor_sets.end(); ++current) {
+    for (auto current = info.descriptor_sets.begin(); current != info.descriptor_sets.end();
+         ++current) {
         validate_descriptor_set(*current);
         const auto duplicate =
             std::find_if(info.descriptor_sets.begin(), current,
@@ -57,11 +79,9 @@ void validate_material_pass_info(const MaterialPassInfo& info) {
 const MaterialDescriptorSetLayout& material_descriptor_set_layout(const MaterialPassInfo& info,
                                                                   std::uint32_t set) {
     validate_material_pass_info(info);
-    const auto descriptor_set =
-        std::find_if(info.descriptor_sets.begin(), info.descriptor_sets.end(),
-                     [set](const MaterialDescriptorSetLayout& candidate) {
-                         return candidate.set == set;
-                     });
+    const auto descriptor_set = std::find_if(
+        info.descriptor_sets.begin(), info.descriptor_sets.end(),
+        [set](const MaterialDescriptorSetLayout& candidate) { return candidate.set == set; });
     if (descriptor_set == info.descriptor_sets.end()) {
         throw std::runtime_error("material pass descriptor set is not declared");
     }

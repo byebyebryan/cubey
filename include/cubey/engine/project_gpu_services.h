@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cubey/engine/upload_queue.h>
+#include <cubey/vulkan/buffer.h>
 #include <cubey/vulkan/gpu_runtime.h>
 #include <cubey/vulkan/submission_tickets.h>
 
@@ -8,7 +9,9 @@
 #include <cstdint>
 #include <functional>
 #include <memory>
+#include <span>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include <vulkan/vulkan.h>
@@ -18,6 +21,13 @@ namespace cubey {
 struct ProjectGpuUploadDrainResult {
     std::size_t upload_count = 0;
     std::vector<vulkan::GpuWorkTicket> work_tickets;
+};
+
+struct ProjectDeviceBufferUpload {
+    std::string label;
+    const void* data = nullptr;
+    VkDeviceSize byte_size = 0;
+    VkBufferUsageFlags usage = 0;
 };
 
 using ProjectGpuUploadHandler = std::function<void(const QueuedUpload&, vulkan::GpuOwnerContext&)>;
@@ -63,6 +73,17 @@ class ProjectGpuServices {
     enqueue_pending_uploads(ProjectGpuUploadHandler handler);
     [[nodiscard]] vulkan::GpuWorkTicket enqueue(vulkan::GpuWorkRequest request);
     [[nodiscard]] vulkan::GpuWorkTicket submit_and_wait(vulkan::GpuWorkRequest request);
+    [[nodiscard]] vulkan::Buffer upload_device_buffer(const void* data, VkDeviceSize byte_size,
+                                                      VkBufferUsageFlags usage, std::string label);
+    [[nodiscard]] vulkan::Buffer upload_device_buffer(const ProjectDeviceBufferUpload& upload);
+    [[nodiscard]] std::vector<vulkan::Buffer>
+    upload_device_buffers(std::span<const ProjectDeviceBufferUpload> uploads, std::string label);
+    template <typename Value>
+    [[nodiscard]] vulkan::Buffer upload_device_buffer(std::span<const Value> values,
+                                                      VkBufferUsageFlags usage, std::string label) {
+        return upload_device_buffer(values.data(), static_cast<VkDeviceSize>(values.size_bytes()),
+                                    usage, std::move(label));
+    }
     void wait_queue_idle(std::string label);
     [[nodiscard]] vulkan::GpuDrainResult drain();
     [[nodiscard]] std::size_t retire_deferred_destruction();

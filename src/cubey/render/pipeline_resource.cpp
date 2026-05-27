@@ -140,6 +140,18 @@ compute_pipeline_config(const ComputePipelineResourceConfig& config, VkPipelineL
     };
 }
 
+void emplace_single_set_compute_pipeline_resource(
+    std::optional<ComputePipelineResource>& destination, const cubey::vulkan::Device& device,
+    ShaderStageFile shader_stage, VkDescriptorSetLayout descriptor_set_layout,
+    std::span<const VkPushConstantRange> push_constants) {
+    const std::array<VkDescriptorSetLayout, 1> set_layouts{descriptor_set_layout};
+    destination.emplace(device, ComputePipelineResourceConfig{
+                                    .shader_stage = std::move(shader_stage),
+                                    .descriptor_set_layouts = set_layouts,
+                                    .push_constants = push_constants,
+                                });
+}
+
 ComputePipelineResource::ComputePipelineResource(const cubey::vulkan::Device& device,
                                                  const ComputePipelineResourceConfig& config) {
     validate_compute_pipeline_resource_config(config);

@@ -122,6 +122,9 @@ struct MaterialPassInfo {
     return material_supports_pass(material.pass_mask, kind);
 }
 
+[[nodiscard]] MaterialDescriptorSetLayout sampled_texture_descriptor_set_layout(
+    std::uint32_t set, std::uint32_t binding_count = 1,
+    VkShaderStageFlags stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT);
 void validate_material_pass_info(const MaterialPassInfo& info);
 [[nodiscard]] const MaterialDescriptorSetLayout&
 material_descriptor_set_layout(const MaterialPassInfo& info, std::uint32_t set);

@@ -25,21 +25,6 @@ std::filesystem::path shader_path(const char* filename) {
     return std::filesystem::path(CUBEY_PYRO_3D_SHADER_DIR) / filename;
 }
 
-[[nodiscard]] cubey::vulkan::Buffer
-upload_project_device_buffer(cubey::ProjectGpuServices& gpu, const void* data,
-                             VkDeviceSize byte_size, VkBufferUsageFlags usage, std::string label) {
-    std::optional<cubey::vulkan::Buffer> uploaded;
-    static_cast<void>(gpu.submit_and_wait({
-        .label = std::move(label),
-        .work =
-            [&uploaded, data, byte_size, usage](cubey::vulkan::GpuOwnerContext& owner) {
-                uploaded.emplace(
-                    cubey::vulkan::upload_device_buffer(owner, data, byte_size, usage));
-            },
-    }));
-    return std::move(uploaded.value());
-}
-
 [[nodiscard]] VkPushConstantRange simulation_push_constant_range() {
     return {
         .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
@@ -130,20 +115,13 @@ shadow_volume_texture_config(const Pyro3DConfig& config) {
     return (velocity_a_current ? 0U : 2U) + (pressure_a_current ? 0U : 1U);
 }
 
-void create_compute_pipeline_resource(
+void emplace_simulation_compute_pipeline(
     cubey::vulkan::Device& device, const char* filename, VkDescriptorSetLayout descriptor_layout,
     std::optional<cubey::render::ComputePipelineResource>& destination) {
-    const std::array<VkDescriptorSetLayout, 1> set_layouts{descriptor_layout};
     const std::array<VkPushConstantRange, 1> push_constants{simulation_push_constant_range()};
-    destination.emplace(device, cubey::render::ComputePipelineResourceConfig{
-                                    .shader_stage =
-                                        {
-                                            .stage = VK_SHADER_STAGE_COMPUTE_BIT,
-                                            .path = shader_path(filename),
-                                        },
-                                    .descriptor_set_layouts = set_layouts,
-                                    .push_constants = push_constants,
-                                });
+    cubey::render::emplace_single_set_compute_pipeline_resource(
+        destination, device, cubey::render::compute_shader_file(shader_path(filename)),
+        descriptor_layout, push_constants);
 }
 
 } // namespace
@@ -192,8 +170,8 @@ void Pyro3DGpuResources::create_volume_resources(cubey::vulkan::Device& device,
     shadow_volume_.emplace(device, shadow_volume_texture_config(config));
 
     const std::vector<Pyro3DSourceGpu> empty(kMaxPyro3DSourceCount);
-    sources_.emplace(upload_project_device_buffer(
-        gpu, empty.data(), static_cast<VkDeviceSize>(pyro_3d_source_capacity_byte_size()),
+    sources_.emplace(gpu.upload_device_buffer(
+        empty.data(), static_cast<VkDeviceSize>(pyro_3d_source_capacity_byte_size()),
         VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
         "pyro_3d source upload"));
 }
@@ -521,22 +499,23 @@ void Pyro3DGpuResources::update_descriptors(cubey::vulkan::Device& device) {
 }
 
 void Pyro3DGpuResources::create_compute_pipelines(cubey::vulkan::Device& device) {
-    create_compute_pipeline_resource(device, "pyro_3d_reset.comp.spv", reset_descriptor_layout(),
-                                     reset_pipeline_);
-    create_compute_pipeline_resource(device, "pyro_3d_advect.comp.spv", advect_descriptor_layout(),
-                                     advect_pipeline_);
-    create_compute_pipeline_resource(device, "pyro_3d_advect_correct.comp.spv",
-                                     advect_correct_descriptor_layout(), advect_correct_pipeline_);
-    create_compute_pipeline_resource(device, "pyro_3d_combust.comp.spv",
-                                     combustion_descriptor_layout(), combustion_pipeline_);
-    create_compute_pipeline_resource(device, "pyro_3d_divergence.comp.spv",
-                                     divergence_descriptor_layout(), divergence_pipeline_);
-    create_compute_pipeline_resource(device, "pyro_3d_pressure.comp.spv",
-                                     pressure_descriptor_layout(), pressure_pipeline_);
-    create_compute_pipeline_resource(device, "pyro_3d_projection.comp.spv",
-                                     projection_descriptor_layout(), projection_pipeline_);
-    create_compute_pipeline_resource(device, "pyro_3d_shadow.comp.spv", shadow_descriptor_layout(),
-                                     shadow_pipeline_);
+    emplace_simulation_compute_pipeline(device, "pyro_3d_reset.comp.spv", reset_descriptor_layout(),
+                                        reset_pipeline_);
+    emplace_simulation_compute_pipeline(device, "pyro_3d_advect.comp.spv",
+                                        advect_descriptor_layout(), advect_pipeline_);
+    emplace_simulation_compute_pipeline(device, "pyro_3d_advect_correct.comp.spv",
+                                        advect_correct_descriptor_layout(),
+                                        advect_correct_pipeline_);
+    emplace_simulation_compute_pipeline(device, "pyro_3d_combust.comp.spv",
+                                        combustion_descriptor_layout(), combustion_pipeline_);
+    emplace_simulation_compute_pipeline(device, "pyro_3d_divergence.comp.spv",
+                                        divergence_descriptor_layout(), divergence_pipeline_);
+    emplace_simulation_compute_pipeline(device, "pyro_3d_pressure.comp.spv",
+                                        pressure_descriptor_layout(), pressure_pipeline_);
+    emplace_simulation_compute_pipeline(device, "pyro_3d_projection.comp.spv",
+                                        projection_descriptor_layout(), projection_pipeline_);
+    emplace_simulation_compute_pipeline(device, "pyro_3d_shadow.comp.spv",
+                                        shadow_descriptor_layout(), shadow_pipeline_);
 }
 
 void Pyro3DGpuResources::create_render_pipeline(cubey::vulkan::Device& device,

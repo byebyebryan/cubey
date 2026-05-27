@@ -176,4 +176,9 @@ class ComputePipelineResource {
     std::optional<cubey::vulkan::ComputePipeline> pipeline_{};
 };
 
+void emplace_single_set_compute_pipeline_resource(
+    std::optional<ComputePipelineResource>& destination, const cubey::vulkan::Device& device,
+    ShaderStageFile shader_stage, VkDescriptorSetLayout descriptor_set_layout,
+    std::span<const VkPushConstantRange> push_constants = {});
+
 } // namespace cubey::render
