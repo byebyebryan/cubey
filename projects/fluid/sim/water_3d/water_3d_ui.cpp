@@ -2,6 +2,7 @@
 
 #include "water_3d_gpu_resources.h"
 
+#include <cubey/host/imgui_helpers.h>
 #include <cubey/vulkan/device.h>
 
 #include <imgui.h>
@@ -80,6 +81,7 @@ void draw_water_3d_ui(Water3DUiContext ui) {
 
     ImGui::Spacing();
     if (section("Simulation", true)) {
+        const cubey::host::ScopedImGuiId section_id("Simulation");
         if (ImGui::BeginCombo("Transfer", water_3d_transfer_mode_name(ui.config.transfer_mode))) {
             for (Water3DTransferMode mode : kTransferModes) {
                 const bool selected = mode == ui.config.transfer_mode;
@@ -115,6 +117,7 @@ void draw_water_3d_ui(Water3DUiContext ui) {
     }
 
     if (section("Initial volume", false)) {
+        const cubey::host::ScopedImGuiId section_id("Initial volume");
         if (ImGui::SliderFloat("Fill width", &ui.config.initial_fill_width, kWater3DMinFillFraction,
                                kWater3DMaxFillFraction, "%.2f")) {
             refresh_particle_counts(ui.config);
@@ -142,6 +145,7 @@ void draw_water_3d_ui(Water3DUiContext ui) {
     }
 
     if (section("Sources and forces", true)) {
+        const cubey::host::ScopedImGuiId section_id("Sources and forces");
         ImGui::SeparatorText("Hose");
         ImGui::PushID("hose");
         ImGui::Checkbox("Enabled", &ui.config.hose.enabled);
@@ -185,6 +189,7 @@ void draw_water_3d_ui(Water3DUiContext ui) {
     }
 
     if (section("Surface and lighting", false)) {
+        const cubey::host::ScopedImGuiId section_id("Surface and lighting");
         ImGui::SliderFloat("Particle radius", &ui.config.particle_radius, 0.004F, 0.040F, "%.4f");
         ImGui::SliderFloat("Particle max px", &ui.config.surface_particle_max_radius_px, 4.0F,
                            kWater3DSurfaceMaxParticleRadiusPx, "%.0f");
@@ -217,6 +222,7 @@ void draw_water_3d_ui(Water3DUiContext ui) {
     }
 
     if (section("Foam and whitewater", false)) {
+        const cubey::host::ScopedImGuiId section_id("Foam and whitewater");
         ImGui::SliderFloat("Foam amount", &ui.config.foam_amount, 0.0F, 1.0F, "%.2f");
         ImGui::SliderFloat("Foam sharpness", &ui.config.foam_sharpness, 0.2F, 4.0F, "%.2f");
         ImGui::Checkbox("Whitewater", &ui.config.whitewater_enabled);
@@ -241,6 +247,7 @@ void draw_water_3d_ui(Water3DUiContext ui) {
     }
 
     if (section("Diagnostics", true)) {
+        const cubey::host::ScopedImGuiId section_id("Diagnostics");
         ImGui::Text("Grid: %u x %u x %u", ui.config.grid_width, ui.config.grid_height,
                     ui.config.grid_depth);
         const std::uint32_t scanned_particles =

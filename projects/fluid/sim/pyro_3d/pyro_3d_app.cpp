@@ -9,6 +9,7 @@
 #include <cubey/engine/project_runtime.h>
 #include <cubey/host/frame_stats.h>
 #include <cubey/host/headless_png_host.h>
+#include <cubey/host/imgui_helpers.h>
 #include <cubey/host/windowed_app.h>
 #include <cubey/input/input.h>
 #include <cubey/input/orbit_controller.h>
@@ -238,6 +239,7 @@ class Pyro3DApp {
         ImGui::Text("Mode: %s", pyro_3d_mode_name(pyro_config_.mode));
 
         if (section("Simulation", true)) {
+            const cubey::host::ScopedImGuiId section_id("Simulation");
             int pressure_iterations = static_cast<int>(pyro_config_.pressure_iterations);
             if (ImGui::SliderInt("Pressure iterations", &pressure_iterations, 1, 48)) {
                 pyro_config_.pressure_iterations = static_cast<std::uint32_t>(pressure_iterations);
@@ -251,6 +253,7 @@ class Pyro3DApp {
         }
 
         if (section("Sources", true)) {
+            const cubey::host::ScopedImGuiId section_id("Sources");
             int source_count = static_cast<int>(pyro_config_.source_count);
             if (ImGui::SliderInt("Sources", &source_count, 1,
                                  static_cast<int>(kMaxPyro3DSourceCount))) {
@@ -269,8 +272,10 @@ class Pyro3DApp {
                                16.0F, "%.2f");
         }
 
-        if (section(pyro_config_.mode == Pyro3DMode::Fire ? "Fire model" : "Explosion model",
-                    true)) {
+        const char* model_section =
+            pyro_config_.mode == Pyro3DMode::Fire ? "Fire model" : "Explosion model";
+        if (section(model_section, true)) {
+            const cubey::host::ScopedImGuiId section_id(model_section);
             if (pyro_config_.mode == Pyro3DMode::Explosion) {
                 ImGui::SliderFloat("Explosion interval", &pyro_config_.explosion_interval_seconds,
                                    0.25F, 8.0F, "%.2f");
@@ -298,6 +303,7 @@ class Pyro3DApp {
         }
 
         if (section("Obstacles", false)) {
+            const cubey::host::ScopedImGuiId section_id("Obstacles");
             ImGui::SliderFloat("Obstacle height", &pyro_config_.obstacle_center_height, 0.0F, 1.0F,
                                "%.2f");
             ImGui::SliderFloat("Obstacle radius", &pyro_config_.obstacle_radius, 0.0F,
@@ -305,6 +311,7 @@ class Pyro3DApp {
         }
 
         if (section("Rendering", true)) {
+            const cubey::host::ScopedImGuiId section_id("Rendering");
             int raymarch_steps = static_cast<int>(pyro_config_.raymarch_steps);
             if (ImGui::SliderInt("Raymarch steps", &raymarch_steps, 24, 192)) {
                 pyro_config_.raymarch_steps = static_cast<std::uint32_t>(raymarch_steps);
@@ -329,6 +336,7 @@ class Pyro3DApp {
         }
 
         if (section("Shadows", false)) {
+            const cubey::host::ScopedImGuiId section_id("Shadows");
             ImGui::SliderFloat("Shadow", &pyro_config_.shadow_absorption, 0.0F, 96.0F, "%.2f");
             int shadow_steps = static_cast<int>(pyro_config_.shadow_steps);
             if (ImGui::SliderInt("Shadow steps", &shadow_steps, 8, 192)) {
@@ -342,6 +350,7 @@ class Pyro3DApp {
         }
 
         if (section("Diagnostics", true)) {
+            const cubey::host::ScopedImGuiId section_id("Diagnostics");
             ImGui::Text("Grid: %u x %u x %u", pyro_config_.grid_width, pyro_config_.grid_height,
                         pyro_config_.grid_depth);
             ImGui::Text("Shadow grid: %u x %u x %u", pyro_config_.shadow_grid_width,

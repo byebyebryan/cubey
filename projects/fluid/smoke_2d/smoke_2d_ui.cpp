@@ -2,6 +2,7 @@
 
 #include "smoke_2d_gpu_resources.h"
 
+#include <cubey/host/imgui_helpers.h>
 #include <cubey/vulkan/gpu_timestamps.h>
 
 #include <imgui.h>
@@ -62,6 +63,7 @@ void draw_smoke_2d_ui(Smoke2DUiContext ui) {
 
     ImGui::Spacing();
     if (section("Simulation", true)) {
+        const cubey::host::ScopedImGuiId section_id("Simulation");
         if (ImGui::BeginCombo("Pressure solver",
                               smoke_2d_pressure_solver_name(ui.config.pressure_solver))) {
             for (Smoke2DPressureSolver solver : kPressureSolvers) {
@@ -94,8 +96,9 @@ void draw_smoke_2d_ui(Smoke2DUiContext ui) {
     }
 
     if (section("Injectors", true)) {
+        const cubey::host::ScopedImGuiId section_id("Injectors");
         int injector_count = static_cast<int>(ui.config.procedural_injector_count);
-        if (ImGui::SliderInt("Injectors", &injector_count, 1,
+        if (ImGui::SliderInt("Injector count", &injector_count, 1,
                              static_cast<int>(kMaxProceduralInjectorCount))) {
             ui.config.procedural_injector_count = static_cast<std::uint32_t>(injector_count);
             ui.reset_injectors_requested = true;
@@ -118,6 +121,7 @@ void draw_smoke_2d_ui(Smoke2DUiContext ui) {
     }
 
     if (section("Obstacles", false)) {
+        const cubey::host::ScopedImGuiId section_id("Obstacles");
         bool obstacles_enabled = ui.config.obstacles_enabled;
         if (ImGui::Checkbox("Enabled", &obstacles_enabled)) {
             ui.config.obstacles_enabled = obstacles_enabled;
@@ -126,10 +130,12 @@ void draw_smoke_2d_ui(Smoke2DUiContext ui) {
     }
 
     if (section("Rendering", false)) {
+        const cubey::host::ScopedImGuiId section_id("Rendering");
         ImGui::Text("Debug view: %s", smoke_2d_debug_view_name(ui.debug_view));
     }
 
     if (section("Diagnostics", true)) {
+        const cubey::host::ScopedImGuiId section_id("Diagnostics");
         ImGui::Text("Grid: %u x %u", ui.config.grid_width, ui.config.grid_height);
         ImGui::Text("Injectors: %u", ui.config.procedural_injector_count);
         const std::vector<cubey::vulkan::GpuPassTiming>& timings = ui.resources.latest_timings();

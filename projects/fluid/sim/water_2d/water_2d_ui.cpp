@@ -2,6 +2,7 @@
 
 #include "water_2d_gpu_resources.h"
 
+#include <cubey/host/imgui_helpers.h>
 #include <cubey/vulkan/device.h>
 
 #include <imgui.h>
@@ -84,6 +85,7 @@ void draw_water_2d_ui(Water2DUiContext ui) {
 
     ImGui::Spacing();
     if (section("Simulation", true)) {
+        const cubey::host::ScopedImGuiId section_id("Simulation");
         if (ImGui::BeginCombo("Scenario", water_2d_scenario_name(ui.config.scenario))) {
             for (Water2DScenario scenario : kScenarios) {
                 const bool selected = scenario == ui.config.scenario;
@@ -138,6 +140,7 @@ void draw_water_2d_ui(Water2DUiContext ui) {
     }
 
     if (section("Initial volume", false)) {
+        const cubey::host::ScopedImGuiId section_id("Initial volume");
         if (ImGui::SliderFloat("Fill height", &ui.config.initial_fill_height,
                                kWater2DMinFillFraction, kWater2DMaxFillFraction, "%.2f")) {
             refresh_particle_counts(ui.config);
@@ -151,6 +154,7 @@ void draw_water_2d_ui(Water2DUiContext ui) {
     }
 
     if (section("Sources and forces", true)) {
+        const cubey::host::ScopedImGuiId section_id("Sources and forces");
         ImGui::SeparatorText("Hose");
         ImGui::PushID("hose");
         ImGui::Checkbox("Enabled", &ui.config.hose.enabled);
@@ -182,6 +186,7 @@ void draw_water_2d_ui(Water2DUiContext ui) {
     }
 
     if (section("Obstacles", false)) {
+        const cubey::host::ScopedImGuiId section_id("Obstacles");
         if (ImGui::BeginCombo("Shape", water_2d_obstacle_shape_name(ui.config.obstacle_shape))) {
             for (Water2DObstacleShape shape : kObstacleShapes) {
                 const bool selected = shape == ui.config.obstacle_shape;
@@ -213,6 +218,7 @@ void draw_water_2d_ui(Water2DUiContext ui) {
     }
 
     if (section("Surface", false)) {
+        const cubey::host::ScopedImGuiId section_id("Surface");
         ImGui::SliderFloat("Particle radius", &ui.config.particle_radius, 0.0025F, 0.025F, "%.4f");
         ImGui::SliderFloat("Splat radius", &ui.config.surface_splat_radius_scale, 0.50F, 3.00F,
                            "%.2f");
@@ -236,6 +242,7 @@ void draw_water_2d_ui(Water2DUiContext ui) {
     }
 
     if (section("Diagnostics", true)) {
+        const cubey::host::ScopedImGuiId section_id("Diagnostics");
         ImGui::Text("Grid: %u x %u", ui.config.grid_width, ui.config.grid_height);
         const std::uint32_t hose_pool_capacity = hose_particle_pool_capacity_for_config(ui.config);
         const std::uint32_t scanned_particles =
