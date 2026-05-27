@@ -32,6 +32,8 @@ inline constexpr std::array<OceanRenderView, 10> kOceanRenderViews{
 
 inline constexpr std::uint32_t kOceanMinMeshCells = 32;
 inline constexpr std::uint32_t kOceanMaxMeshCells = 320;
+inline constexpr std::uint32_t kOceanMinMeshLodLevels = 1;
+inline constexpr std::uint32_t kOceanMaxMeshLodLevels = 6;
 inline constexpr std::uint32_t kOceanMinSpectrumResolution = 64;
 inline constexpr std::uint32_t kOceanMaxSpectrumResolution = 512;
 inline constexpr std::uint32_t kOceanCascadeCount = 3;
@@ -39,6 +41,7 @@ inline constexpr std::uint32_t kOceanSpectrumFieldCount = 3;
 
 struct OceanConfig {
     std::uint32_t mesh_cells = 220;
+    std::uint32_t mesh_lod_levels = 5;
     float mesh_extent = 5600.0F;
     float mesh_snap = 16.0F;
     float horizon_fog = 0.50F;
@@ -160,6 +163,10 @@ struct OceanConfig {
 
 inline void validate_ocean_config(const OceanConfig& config) {
     static_cast<void>(ocean_mesh_vertex_count(config));
+    if (config.mesh_lod_levels < kOceanMinMeshLodLevels ||
+        config.mesh_lod_levels > kOceanMaxMeshLodLevels) {
+        throw std::runtime_error("ocean mesh LOD levels out of supported range");
+    }
     if (config.spectrum_resolution < kOceanMinSpectrumResolution ||
         config.spectrum_resolution > kOceanMaxSpectrumResolution ||
         !ocean_is_power_of_two(config.spectrum_resolution)) {

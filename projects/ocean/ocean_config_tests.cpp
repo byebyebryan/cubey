@@ -1,4 +1,5 @@
 #include "ocean_config.h"
+#include "ocean_mesh.h"
 
 #include <filesystem>
 #include <fstream>
@@ -12,6 +13,10 @@ void require(bool condition, const char* message) {
     if (!condition) {
         throw std::runtime_error(message);
     }
+}
+
+void require_near(float value, float expected, float tolerance, const char* message) {
+    require(value >= expected - tolerance && value <= expected + tolerance, message);
 }
 
 std::string read_text_file(const std::filesystem::path& path) {
@@ -36,9 +41,34 @@ int main() {
         require(defaults.mesh_cells >= ocean::kOceanMinMeshCells &&
                     defaults.mesh_cells <= ocean::kOceanMaxMeshCells,
                 "default mesh resolution should be in supported range");
+        require(defaults.mesh_lod_levels >= ocean::kOceanMinMeshLodLevels &&
+                    defaults.mesh_lod_levels <= ocean::kOceanMaxMeshLodLevels,
+                "default mesh LOD level count should be in supported range");
         require(ocean::ocean_mesh_vertex_count(defaults) ==
                     defaults.mesh_cells * defaults.mesh_cells * 6U,
                 "ocean vertex count should match generated grid triangles");
+        require(ocean::ocean_mesh_patch_count(defaults) ==
+                    1U + (4U * (defaults.mesh_lod_levels - 1U)),
+                "ocean clipmap patch count should match center plus annular rings");
+        const ocean::OceanMeshPatchList patches = ocean::ocean_mesh_clipmap_patches(defaults);
+        require(patches.count == ocean::ocean_mesh_patch_count(defaults),
+                "ocean clipmap helper should emit all expected patches");
+        require(patches.patches[0].level == defaults.mesh_lod_levels - 1U,
+                "ocean clipmap patches should be ordered far to near for overdraw seams");
+        const ocean::OceanMeshPatch& center_patch = patches.patches[patches.count - 1U];
+        require(center_patch.level == 0U, "ocean clipmap should finish with the center patch");
+        require(center_patch.cells_x == defaults.mesh_cells &&
+                    center_patch.cells_z == defaults.mesh_cells,
+                "ocean center clipmap patch should use the base mesh resolution");
+        require_near(center_patch.bounds.max_x, ocean::ocean_mesh_near_half_extent(defaults),
+                     0.001F, "ocean center clipmap extent should match near half extent");
+        require_near(patches.patches[0].bounds.max_x, defaults.mesh_extent, 0.001F,
+                     "outer ocean clipmap patch should reach configured mesh extent");
+        require(ocean::ocean_mesh_total_triangle_count(defaults) >
+                    defaults.mesh_cells * defaults.mesh_cells * 2U,
+                "ocean clipmap should add coarser horizon geometry around the center patch");
+        require(ocean::ocean_mesh_near_cell_size(defaults) > 0.0F,
+                "ocean clipmap should expose a positive near cell size");
         require(defaults.mesh_extent > 1000.0F,
                 "default ocean mesh should target horizon-scale rendering");
         require(defaults.disturbance_radius > 0.0F && defaults.disturbance_strength == 0.0F,
@@ -104,6 +134,26 @@ int main() {
             rejected = true;
         }
         require(rejected, "ocean mesh sizing should reject unsupported low resolution");
+
+        ocean::OceanConfig invalid_lod = defaults;
+        invalid_lod.mesh_lod_levels = ocean::kOceanMaxMeshLodLevels + 1U;
+        rejected = false;
+        try {
+            ocean::validate_ocean_config(invalid_lod);
+        } catch (const std::runtime_error&) {
+            rejected = true;
+        }
+        require(rejected, "ocean mesh validation should reject unsupported LOD levels");
+
+        ocean::OceanConfig single_lod = defaults;
+        single_lod.mesh_lod_levels = 1U;
+        const ocean::OceanMeshPatchList single_lod_patches =
+            ocean::ocean_mesh_clipmap_patches(single_lod);
+        require(single_lod_patches.count == 1U,
+                "single-level ocean clipmap should emit one patch");
+        require(ocean::ocean_mesh_total_triangle_count(single_lod) ==
+                    single_lod.mesh_cells * single_lod.mesh_cells * 2U,
+                "single-level ocean clipmap should match the legacy grid triangle count");
 
         ocean::OceanConfig invalid_spectrum = defaults;
         invalid_spectrum.spectrum_resolution = 192;
