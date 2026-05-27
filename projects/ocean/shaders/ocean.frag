@@ -279,9 +279,10 @@ void main() {
     vec3 refraction = refraction_color(depth, foam);
     float fresnel = 0.020 + 0.980 * pow(clamp(1.0 - dot(normal, view_dir), 0.0, 1.0), 5.0);
     vec3 water = mix(refraction, reflection, fresnel);
-    float sun_specular = pow(max(dot(reflection_dir, ocean_sun_direction()), 0.0), 360.0) *
-                         (1.0 - smoothstep(0.0, ocean.mesh_options.y * 0.42, frag_wave.z));
-    water += cubey_srgb_to_linear(vec3(1.0, 0.78, 0.46)) * sun_specular * 0.85;
+    float sun_alignment = max(dot(reflection_dir, ocean_sun_direction()), 0.0);
+    float grazing = pow(clamp(1.0 - dot(normal, view_dir), 0.0, 1.0), 0.55);
+    float sun_glint = pow(sun_alignment, 120.0) * 0.65 + pow(sun_alignment, 620.0) * 2.0;
+    water += cubey_srgb_to_linear(vec3(1.0, 0.78, 0.46)) * sun_glint * (0.18 + grazing);
     vec3 foam_color = cubey_srgb_to_linear(vec3(0.82, 0.94, 0.91));
     water = mix(water, foam_color, foam);
 

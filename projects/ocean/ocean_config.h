@@ -46,9 +46,9 @@ struct OceanConfig {
     float chop = 0.65F;
     float normal_strength = 0.46F;
 
-    float foam_amount = 0.22F;
-    float foam_threshold = 1.16F;
-    float absorption = 0.085F;
+    float foam_amount = 0.14F;
+    float foam_threshold = 1.20F;
+    float absorption = 0.070F;
     float refraction_strength = 0.055F;
     float exposure = 0.0F;
 
@@ -58,7 +58,7 @@ struct OceanConfig {
     float spectrum_patch_length_far = 1536.0F;
     float spectrum_energy = 0.72F;
     float spectrum_fetch = 1.0F;
-    float foam_generation = 0.42F;
+    float foam_generation = 0.28F;
     float foam_decay = 0.965F;
     std::uint32_t spectrum_seed = 1337;
 
