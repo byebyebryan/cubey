@@ -13,10 +13,12 @@ Implemented:
 
 - camera-relative projected grid generated in the vertex shader;
 - in-repo Stockham FFT path for three spectral ocean cascades;
-- texture-sampled displacement, normals, and generated crest foam;
-- distance-filtered wave detail to reduce horizon aliasing;
-- Fresnel sky reflection, fake scene refraction, Beer-style absorption, crest
-  and shallow-water foam, exposure/tonemap handling, and debug views;
+- decorrelated texture-sampled displacement, normals, and generated crest foam;
+- distance-filtered wave detail plus near-field procedural normal refinement to
+  reduce horizon aliasing;
+- coherent procedural sky pass, Fresnel sky reflection, fake scene refraction,
+  Beer-style absorption, sun glint, crest/shallow-water foam,
+  exposure/tonemap handling, and debug views;
 - first-class future hooks for local disturbances and shoreline/bathymetry
   masks, disabled by default so the baseline reads as wind-driven ocean.
 
@@ -55,8 +57,13 @@ Controls:
 
 Primary references:
 
-- Jerry Tessendorf, "Simulating Ocean Water".
-- GPU Gems Chapter 1, "Effective Water Simulation from Physical Models".
-- GPU Gems 2 Chapter 19, "Generic Refraction Simulation".
+- Jerry Tessendorf, "Simulating Ocean Water":
+  <https://people.computing.clemson.edu/~jtessen/reports/papers_files/coursenotes2004.pdf>.
+- GPU Gems Chapter 1, "Effective Water Simulation from Physical Models":
+  <https://developer.nvidia.com/gpugems/gpugems/part-i-natural-effects/chapter-1-effective-water-simulation-physical-models>.
+- GPU Gems 2 Chapter 19, "Generic Refraction Simulation":
+  <https://developer.nvidia.com/gpugems/gpugems2/part-ii-shading-lighting-and-shadows/chapter-19-generic-refraction-simulation>.
+- TDM/Inigo Quilez-style Shadertoy seascape references for presentation:
+  <https://www.shadertoy.com/view/MdXyzX>.
 - Unreal Water System and Unity HDRP Water System public docs for water-system
   scope and production tradeoffs.

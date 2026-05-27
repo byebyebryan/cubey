@@ -12,11 +12,31 @@ surface renderer and only adds simulation where interaction needs it.
 - Evaluate a multi-cascade spectral wave field in world space so the mesh can
   move without swimming the pattern.
 - Use an in-repo Stockham FFT path for deep-water height/displacement textures,
-  plus distance-filtered short-wave detail to avoid obvious repetition to the
-  horizon.
+  with decorrelated cascade sampling and distance-filtered short-wave detail to
+  avoid obvious repetition to the horizon.
+- Draw a project-local procedural sky first, then shade the surface against that
+  same atmosphere model for coherent horizon fog, reflection, and sun glint.
 - Shade the surface with Fresnel sky reflection, fake refraction/absorption,
-  foam, tonemapping, and debug views.
+  fragment-level height/normal refinement, foam, tonemapping, and debug views.
 - Keep explicit hooks for local disturbances and shoreline/bathymetry masks.
+
+## Rendering References
+
+The current renderer is not trying to port a single reference shader. It borrows
+the useful shape of established approaches:
+
+- Tessendorf-style FFT spectra for scalable deep-water motion.
+- GPU Gems water guidance: split geometric displacement from normal/detail
+  waves, filter short wavelengths by sampling footprint, and use depth plus
+  Fresnel to control reflection/refraction.
+- TDM/Inigo Quilez-style `Seascape` presentation lessons: coherent sky color,
+  strong directional sun reflection, normal refinement near the camera, and
+  fogging the far surface into the sky.
+
+The important distinction is that `projects/ocean` keeps a mesh-backed renderer
+that can later interact with scene objects. Pure ray-marched seascapes can look
+excellent in a standalone shader, but they do not give us the same path toward
+boats, shorelines, depth buffers, and scene integration.
 
 ## Interaction Path
 

@@ -114,6 +114,9 @@ int main() {
         const std::filesystem::path source_root(CUBEY_OCEAN_SOURCE_DIR);
         const std::string vertex_shader = read_text_file(source_root / "shaders/ocean.vert");
         const std::string fragment_shader = read_text_file(source_root / "shaders/ocean.frag");
+        const std::string sky_shader = read_text_file(source_root / "shaders/ocean_sky.frag");
+        const std::string atmosphere_shader =
+            read_text_file(source_root / "shaders/ocean_atmosphere.glsl");
         const std::string init_shader =
             read_text_file(source_root / "shaders/ocean_spectrum_init.comp");
         const std::string fft_shader = read_text_file(source_root / "shaders/ocean_fft.comp");
@@ -121,14 +124,26 @@ int main() {
             read_text_file(source_root / "shaders/ocean_finalize.comp");
         require_contains(vertex_shader, "projected_grid_position",
                          "ocean vertex shader should use a camera-relative projected grid");
+        require_contains(vertex_shader, "cascade_sample_position",
+                         "ocean vertex shader should decorrelate cascade sampling");
         require_contains(vertex_shader, "displacement_near_texture",
                          "ocean vertex shader should sample the near displacement cascade");
         require_contains(vertex_shader, "cascade_patch_length",
                          "ocean vertex shader should sample cascaded ocean patch lengths");
         require_contains(fragment_shader, "cubey_pbr_apply_display_transform",
                          "ocean fragment shader should use the shared display transform");
+        require_contains(fragment_shader, "cascade_detail_filter",
+                         "ocean fragment shader should filter detail by pixel footprint");
+        require_contains(fragment_shader, "procedural_detail_slope",
+                         "ocean fragment shader should add near-field procedural detail normals");
+        require_contains(fragment_shader, "sun_glint",
+                         "ocean fragment shader should include directional sun reflection");
         require_contains(fragment_shader, "OCEAN_VIEW_REFLECTION",
                          "ocean fragment shader should expose reflection debug view");
+        require_contains(sky_shader, "camera_forward",
+                         "ocean sky shader should reconstruct rays from camera basis");
+        require_contains(atmosphere_shader, "ocean_sky_color",
+                         "ocean atmosphere include should share sky color with water");
         require_contains(init_shader, "gaussian_pair",
                          "ocean spectrum init shader should seed a frequency-domain spectrum");
         require_contains(fft_shader, "twiddle",
