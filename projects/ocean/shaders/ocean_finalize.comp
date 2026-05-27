@@ -13,12 +13,33 @@ layout(push_constant) uniform FinalizeParams {
     vec4 debug_options;
 } params;
 
+float height_at(ivec2 texel, ivec2 size) {
+    ivec2 wrapped = ivec2((texel.x + size.x) % size.x, (texel.y + size.y) % size.y);
+    return imageLoad(height_image, wrapped).x * params.cascade_options.w;
+}
+
 void main() {
     ivec2 texel = ivec2(gl_GlobalInvocationID.xy);
     ivec2 size = imageSize(displacement_image);
     if (texel.x >= size.x || texel.y >= size.y) {
         return;
     }
-    imageStore(displacement_image, texel, vec4(0.0));
-    imageStore(normal_foam_image, texel, vec4(0.0, 1.0, 0.0, 0.0));
+
+    float patch_length = params.cascade_options.x;
+    float cell_size = patch_length / max(params.ocean_options.x, 1.0);
+    float center = height_at(texel, size);
+    float left = height_at(texel + ivec2(-1, 0), size);
+    float right = height_at(texel + ivec2(1, 0), size);
+    float down = height_at(texel + ivec2(0, -1), size);
+    float up = height_at(texel + ivec2(0, 1), size);
+    vec2 gradient = vec2(right - left, up - down) / max(2.0 * cell_size, 0.0001);
+    float chop = max(params.cascade_options.z, 0.0);
+    vec2 horizontal = -gradient * chop * min(cell_size * 2.0, patch_length * 0.018);
+    vec3 normal = normalize(vec3(-gradient.x * params.ocean_options.w, 1.0,
+                                 -gradient.y * params.ocean_options.w));
+    float crest_signal = length(gradient) * chop * 5.0;
+    float foam = smoothstep(params.foam_options.z, params.foam_options.z + 0.55, crest_signal) *
+                 params.foam_options.x * params.foam_options.w;
+    imageStore(displacement_image, texel, vec4(horizontal.x, center, horizontal.y, foam));
+    imageStore(normal_foam_image, texel, vec4(normal, foam));
 }

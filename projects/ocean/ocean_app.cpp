@@ -17,13 +17,14 @@
 #include <cubey/scene/camera_3d.h>
 #include <cubey/vulkan/command_recorder.h>
 #include <cubey/vulkan/device.h>
+#include <cubey/vulkan/image_transitions.h>
+#include <cubey/vulkan/memory_barriers.h>
 
 #include <vulkan/vulkan.h>
 
 #include <array>
 #include <cmath>
 #include <cstdint>
-#include <filesystem>
 #include <numbers>
 #include <optional>
 #include <stdexcept>
@@ -62,12 +63,53 @@ struct OceanPushConstants {
 
 static_assert(sizeof(OceanPushConstants) == sizeof(float) * 48U);
 
+struct OceanSpectrumPushConstants {
+    cubey::math::Vec4 ocean_options;
+    cubey::math::Vec4 cascade_options;
+    cubey::math::Vec4 wind_options;
+    cubey::math::Vec4 seed_options;
+};
+
+struct OceanFftPushConstants {
+    cubey::math::Vec4 fft_options;
+    cubey::math::Vec4 pass_options;
+};
+
+struct OceanFinalizePushConstants {
+    cubey::math::Vec4 ocean_options;
+    cubey::math::Vec4 cascade_options;
+    cubey::math::Vec4 foam_options;
+    cubey::math::Vec4 debug_options;
+};
+
+static_assert(sizeof(OceanSpectrumPushConstants) == sizeof(float) * 16U);
+static_assert(sizeof(OceanFftPushConstants) == sizeof(float) * 8U);
+static_assert(sizeof(OceanFinalizePushConstants) == sizeof(float) * 16U);
+
 [[nodiscard]] float radians(float degrees) {
     return degrees * (std::numbers::pi_v<float> / 180.0F);
 }
 
 [[nodiscard]] std::uint32_t triangle_count(const OceanConfig& config) {
     return config.mesh_cells * config.mesh_cells * 2U;
+}
+
+[[nodiscard]] std::uint32_t log2_exact(std::uint32_t value) {
+    if (!ocean_is_power_of_two(value)) {
+        throw std::runtime_error("ocean FFT resolution must be a power of two");
+    }
+    std::uint32_t result = 0;
+    while (value > 1U) {
+        value >>= 1U;
+        ++result;
+    }
+    return result;
+}
+
+[[nodiscard]] cubey::render::ComputeDispatchGroups ocean_spectrum_dispatch_groups(
+    const OceanConfig& config) {
+    return cubey::render::ceil_dispatch_groups(config.spectrum_resolution,
+                                               config.spectrum_resolution, 16U);
 }
 
 class OceanApp {
@@ -221,11 +263,15 @@ class OceanApp {
                                       .target_extent = extent,
                                   });
         pipeline_color_format_ = color_format;
+        textures_initialized_ = false;
+        spectrum_initialized_ = false;
     }
 
     void destroy_swapchain_resources() {
         ocean_gpu_.reset();
         pipeline_color_format_ = VK_FORMAT_UNDEFINED;
+        textures_initialized_ = false;
+        spectrum_initialized_ = false;
     }
 
     [[nodiscard]] const cubey::render::GraphicsPipelineResource& pipeline() const {
@@ -321,9 +367,203 @@ class OceanApp {
         recorder.draw(ocean_mesh_vertex_count(ocean_config_));
     }
 
+    [[nodiscard]] OceanSpectrumPushConstants spectrum_push_constants(std::uint32_t cascade) const {
+        const float wind = radians(ocean_config_.wind_direction_degrees);
+        return {
+            .ocean_options =
+                {
+                    static_cast<float>(ocean_config_.spectrum_resolution),
+                    static_cast<float>(time_seconds_),
+                    ocean_config_.wave_amplitude,
+                    ocean_config_.spectrum_energy,
+                },
+            .cascade_options =
+                {
+                    ocean_cascade_patch_length(ocean_config_, cascade),
+                    static_cast<float>(cascade),
+                    ocean_config_.spectrum_fetch,
+                    ocean_config_.chop,
+                },
+            .wind_options =
+                {
+                    std::cos(wind),
+                    std::sin(wind),
+                    ocean_config_.wind_speed,
+                    ocean_config_.normal_strength,
+                },
+            .seed_options =
+                {
+                    static_cast<float>(ocean_config_.spectrum_seed),
+                    ocean_config_.foam_generation,
+                    ocean_config_.foam_decay,
+                    0.0F,
+                },
+        };
+    }
+
+    [[nodiscard]] OceanFftPushConstants fft_push_constants(std::uint32_t stage,
+                                                           bool horizontal,
+                                                           bool first_pass) const {
+        return {
+            .fft_options =
+                {
+                    static_cast<float>(ocean_config_.spectrum_resolution),
+                    static_cast<float>(stage),
+                    horizontal ? 1.0F : 0.0F,
+                    first_pass ? 1.0F : 0.0F,
+                },
+            .pass_options =
+                {
+                    0.0F,
+                    0.0F,
+                    0.0F,
+                    0.0F,
+                },
+        };
+    }
+
+    [[nodiscard]] OceanFinalizePushConstants finalize_push_constants(std::uint32_t cascade) const {
+        const float resolution = static_cast<float>(ocean_config_.spectrum_resolution);
+        return {
+            .ocean_options =
+                {
+                    resolution,
+                    static_cast<float>(time_seconds_),
+                    ocean_config_.wave_amplitude,
+                    ocean_config_.normal_strength,
+                },
+            .cascade_options =
+                {
+                    ocean_cascade_patch_length(ocean_config_, cascade),
+                    static_cast<float>(cascade),
+                    ocean_config_.chop,
+                    1.0F / (resolution * resolution),
+                },
+            .foam_options =
+                {
+                    ocean_config_.foam_generation,
+                    ocean_config_.foam_decay,
+                    ocean_config_.foam_threshold,
+                    ocean_config_.foam_amount,
+                },
+            .debug_options =
+                {
+                    0.0F,
+                    0.0F,
+                    0.0F,
+                    0.0F,
+                },
+        };
+    }
+
+    void record_initial_texture_transitions(const cubey::vulkan::CommandRecorder& recorder) const {
+        for (std::uint32_t cascade = 0; cascade < kOceanCascadeCount; ++cascade) {
+            recorder.transition_image_layout(cubey::vulkan::begin_storage_image_write_transition(
+                ocean_gpu_.h0(cascade).handle()));
+            recorder.transition_image_layout(cubey::vulkan::begin_storage_image_write_transition(
+                ocean_gpu_.spectrum(cascade).handle()));
+            recorder.transition_image_layout(cubey::vulkan::begin_storage_image_write_transition(
+                ocean_gpu_.ping(cascade).handle()));
+            recorder.transition_image_layout(cubey::vulkan::begin_storage_image_write_transition(
+                ocean_gpu_.pong(cascade).handle()));
+            recorder.transition_image_layout(cubey::vulkan::begin_storage_image_write_transition(
+                ocean_gpu_.displacement(cascade).handle()));
+            recorder.transition_image_layout(cubey::vulkan::begin_storage_image_write_transition(
+                ocean_gpu_.normal_foam(cascade).handle()));
+        }
+    }
+
+    void record_spectrum_init(const cubey::vulkan::CommandRecorder& recorder) const {
+        const cubey::render::ComputeDispatchGroups groups =
+            ocean_spectrum_dispatch_groups(ocean_config_);
+        for (std::uint32_t cascade = 0; cascade < kOceanCascadeCount; ++cascade) {
+            cubey::render::record_compute_pipeline_dispatch(
+                recorder,
+                cubey::render::compute_pipeline_dispatch_info(
+                    ocean_gpu_.spectrum_init_pipeline(), ocean_gpu_.spectrum_init_set(cascade),
+                    groups),
+                VK_SHADER_STAGE_COMPUTE_BIT, spectrum_push_constants(cascade));
+        }
+    }
+
+    void record_spectrum_evolve(const cubey::vulkan::CommandRecorder& recorder) const {
+        const cubey::render::ComputeDispatchGroups groups =
+            ocean_spectrum_dispatch_groups(ocean_config_);
+        for (std::uint32_t cascade = 0; cascade < kOceanCascadeCount; ++cascade) {
+            cubey::render::record_compute_pipeline_dispatch(
+                recorder,
+                cubey::render::compute_pipeline_dispatch_info(
+                    ocean_gpu_.spectrum_evolve_pipeline(), ocean_gpu_.spectrum_evolve_set(cascade),
+                    groups),
+                VK_SHADER_STAGE_COMPUTE_BIT, spectrum_push_constants(cascade));
+        }
+    }
+
+    void record_fft_pass(const cubey::vulkan::CommandRecorder& recorder, std::uint32_t cascade,
+                         std::uint32_t stage, bool horizontal, bool first_pass,
+                         std::uint32_t descriptor_set_index) const {
+        const cubey::render::ComputeDispatchGroups groups =
+            ocean_spectrum_dispatch_groups(ocean_config_);
+        cubey::render::record_compute_pipeline_dispatch(
+            recorder,
+            cubey::render::compute_pipeline_dispatch_info(
+                ocean_gpu_.fft_pipeline(), ocean_gpu_.fft_set(cascade, descriptor_set_index),
+                groups),
+            VK_SHADER_STAGE_COMPUTE_BIT, fft_push_constants(stage, horizontal, first_pass));
+    }
+
+    void record_fft(const cubey::vulkan::CommandRecorder& recorder) const {
+        const std::uint32_t stage_count = log2_exact(ocean_config_.spectrum_resolution);
+        for (std::uint32_t cascade = 0; cascade < kOceanCascadeCount; ++cascade) {
+            for (std::uint32_t stage = 1; stage <= stage_count; ++stage) {
+                const std::uint32_t set_index = stage == 1U ? 0U : ((stage % 2U) == 0U ? 1U : 2U);
+                record_fft_pass(recorder, cascade, stage, true, stage == 1U, set_index);
+                cubey::vulkan::record_compute_shader_write_barrier(recorder.handle());
+            }
+            for (std::uint32_t stage = 1; stage <= stage_count; ++stage) {
+                const std::uint32_t set_index = stage == 1U ? 2U : ((stage % 2U) == 0U ? 1U : 2U);
+                record_fft_pass(recorder, cascade, stage, false, stage == 1U, set_index);
+                cubey::vulkan::record_compute_shader_write_barrier(recorder.handle());
+            }
+        }
+    }
+
+    void record_finalize(const cubey::vulkan::CommandRecorder& recorder) const {
+        const cubey::render::ComputeDispatchGroups groups =
+            ocean_spectrum_dispatch_groups(ocean_config_);
+        for (std::uint32_t cascade = 0; cascade < kOceanCascadeCount; ++cascade) {
+            cubey::render::record_compute_pipeline_dispatch(
+                recorder,
+                cubey::render::compute_pipeline_dispatch_info(ocean_gpu_.finalize_pipeline(),
+                                                              ocean_gpu_.finalize_set(cascade),
+                                                              groups),
+                VK_SHADER_STAGE_COMPUTE_BIT, finalize_push_constants(cascade));
+        }
+    }
+
+    void record_ocean_compute(const cubey::vulkan::CommandRecorder& recorder) {
+        if (!textures_initialized_) {
+            record_initial_texture_transitions(recorder);
+            textures_initialized_ = true;
+        }
+        if (!spectrum_initialized_) {
+            record_spectrum_init(recorder);
+            cubey::vulkan::record_compute_shader_write_barrier(recorder.handle());
+            spectrum_initialized_ = true;
+        }
+        record_spectrum_evolve(recorder);
+        cubey::vulkan::record_compute_shader_write_barrier(recorder.handle());
+        record_fft(recorder);
+        record_finalize(recorder);
+        cubey::vulkan::record_shader_write_barrier(
+            recorder.handle(), VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+            VK_ACCESS_SHADER_READ_BIT);
+    }
+
     void record_ocean_target(VkCommandBuffer command_buffer, cubey::render::ColorTargetView target,
-                             bool present) const {
+                             bool present) {
         const cubey::vulkan::CommandRecorder recorder(command_buffer);
+        record_ocean_compute(recorder);
         auto record_pass = [this, target](const cubey::vulkan::CommandRecorder& pass_recorder) {
             cubey::render::record_render_target_pass(
                 pass_recorder, cubey::render::render_target_view(target),
@@ -344,7 +584,7 @@ class OceanApp {
         record_pass(recorder);
     }
 
-    void record_windowed_frame(const cubey::host::WindowedRenderFrame& frame) const {
+    void record_windowed_frame(const cubey::host::WindowedRenderFrame& frame) {
         const cubey::vulkan::CommandRecorder recorder(frame.command_buffer);
         recorder.begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
         record_ocean_target(frame.command_buffer, frame.color_target, true);
@@ -365,6 +605,8 @@ class OceanApp {
     double latest_frame_ms_ = 0.0;
     bool paused_ = false;
     bool reset_requested_ = false;
+    bool textures_initialized_ = false;
+    bool spectrum_initialized_ = false;
 };
 
 } // namespace

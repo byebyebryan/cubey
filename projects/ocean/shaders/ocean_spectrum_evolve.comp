@@ -12,11 +12,34 @@ layout(push_constant) uniform SpectrumParams {
     vec4 seed_options;
 } params;
 
+const float PI = 3.14159265359;
+const float G = 9.81;
+
+vec2 complex_mul(vec2 lhs, vec2 rhs) {
+    return vec2((lhs.x * rhs.x) - (lhs.y * rhs.y), (lhs.x * rhs.y) + (lhs.y * rhs.x));
+}
+
+int signed_frequency(int value, int size) {
+    return value <= size / 2 ? value : value - size;
+}
+
+vec2 wave_vector(ivec2 texel, int size, float patch_length) {
+    return (2.0 * PI / patch_length) *
+           vec2(float(signed_frequency(texel.x, size)), float(signed_frequency(texel.y, size)));
+}
+
 void main() {
     ivec2 texel = ivec2(gl_GlobalInvocationID.xy);
     ivec2 size = imageSize(spectrum_image);
     if (texel.x >= size.x || texel.y >= size.y) {
         return;
     }
-    imageStore(spectrum_image, texel, imageLoad(h0_image, texel));
+
+    vec4 h0 = imageLoad(h0_image, texel);
+    vec2 k = wave_vector(texel, size.x, params.cascade_options.x);
+    float omega = sqrt(G * length(k));
+    float phase_angle = omega * params.ocean_options.y * max(params.wind_options.z, 0.0);
+    vec2 phase = vec2(cos(phase_angle), sin(phase_angle));
+    vec2 height = complex_mul(h0.xy, phase) + complex_mul(vec2(h0.z, -h0.w), vec2(phase.x, -phase.y));
+    imageStore(spectrum_image, texel, vec4(height, 0.0, 0.0));
 }

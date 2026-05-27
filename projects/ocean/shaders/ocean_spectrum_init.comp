@@ -11,11 +11,77 @@ layout(push_constant) uniform SpectrumParams {
     vec4 seed_options;
 } params;
 
+const float PI = 3.14159265359;
+const float G = 9.81;
+
+float hash12(vec2 value) {
+    vec3 p = fract(vec3(value.xyx) * vec3(443.8975, 397.2973, 491.1871));
+    p += dot(p, p.yzx + 19.19);
+    return fract((p.x + p.y) * p.z);
+}
+
+vec2 gaussian_pair(vec2 value) {
+    float u1 = max(hash12(value), 0.000001);
+    float u2 = hash12(value + vec2(37.2, 17.7));
+    float radius = sqrt(-2.0 * log(u1));
+    float angle = 2.0 * PI * u2;
+    return radius * vec2(cos(angle), sin(angle));
+}
+
+int signed_frequency(int value, int size) {
+    return value <= size / 2 ? value : value - size;
+}
+
+vec2 wave_vector(ivec2 texel, int size, float patch_length) {
+    return (2.0 * PI / patch_length) *
+           vec2(float(signed_frequency(texel.x, size)), float(signed_frequency(texel.y, size)));
+}
+
+float spectral_envelope(vec2 k, float patch_length, vec2 wind_dir) {
+    float k_len = length(k);
+    if (k_len < 0.00001) {
+        return 0.0;
+    }
+
+    float wind_speed = max(params.wind_options.z, 0.05);
+    float fetch = max(params.cascade_options.z, 0.05);
+    float dominant_length = clamp((wind_speed * wind_speed / G) * patch_length * 0.20 * fetch,
+                                  patch_length * 0.040, patch_length * 0.42);
+    float wavelength = (2.0 * PI) / k_len;
+    float log_distance = log(max(wavelength, 0.0001) / dominant_length);
+    float band = exp(-(log_distance * log_distance) / (2.0 * 0.72 * 0.72));
+
+    vec2 k_dir = k / k_len;
+    float aligned = max(dot(k_dir, wind_dir), 0.0);
+    float opposite = max(dot(-k_dir, wind_dir), 0.0);
+    float directional = pow(aligned, 5.0) + (0.18 * pow(opposite, 2.0)) + 0.025;
+    float small_cutoff = 1.0 - exp(-pow(wavelength / max(patch_length / params.ocean_options.x, 0.001), 2.0));
+    float large_cutoff = exp(-pow(wavelength / (patch_length * 1.20), 4.0));
+    return band * directional * small_cutoff * large_cutoff;
+}
+
+vec2 h0_for_frequency(ivec2 texel, int size, float patch_length, vec2 wind_dir, float seed) {
+    vec2 k = wave_vector(texel, size, patch_length);
+    float envelope = spectral_envelope(k, patch_length, wind_dir);
+    float coefficient_scale = params.ocean_options.z * params.ocean_options.w *
+                              patch_length * 1.25 * sqrt(max(envelope, 0.0));
+    vec2 gaussian = gaussian_pair(vec2(texel) + vec2(seed, seed * 1.37));
+    return gaussian * coefficient_scale;
+}
+
 void main() {
     ivec2 texel = ivec2(gl_GlobalInvocationID.xy);
     ivec2 size = imageSize(h0_image);
     if (texel.x >= size.x || texel.y >= size.y) {
         return;
     }
-    imageStore(h0_image, texel, vec4(0.0));
+
+    int n = size.x;
+    float patch_length = params.cascade_options.x;
+    vec2 wind_dir = normalize(params.wind_options.xy);
+    float seed = params.seed_options.x + params.cascade_options.y * 101.0;
+    ivec2 mirrored = ivec2((n - texel.x) % n, (n - texel.y) % n);
+    vec2 h0 = h0_for_frequency(texel, n, patch_length, wind_dir, seed);
+    vec2 h0_minus = h0_for_frequency(mirrored, n, patch_length, wind_dir, seed);
+    imageStore(h0_image, texel, vec4(h0, h0_minus));
 }
