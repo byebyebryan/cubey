@@ -56,6 +56,9 @@ Current projects:
   headless capture output.
 - `explosion_3d`: the same shared 3D pyro solver presented as repeated impulse
   bursts with explosion-specific timing and boost controls.
+- `ocean`: camera-relative procedural ocean renderer with horizon-scale
+  multi-band waves, Fresnel/refraction-style water shading, foam/debug views,
+  and first-class hooks for future wakes and shorelines.
 - `fractal_2d`: fullscreen Mandelbrot-style shader with windowed navigation and
   headless output.
 - `gltf_viewer`: glTF/glb viewer for imported assets, PBR materials, texture
@@ -93,6 +96,7 @@ Project-local docs:
 - [Fluid 2.5D design](projects/fluid_25d/README.md)
 - [Fire 3D](projects/fluid/fire_3d/README.md)
 - [Explosion 3D](projects/fluid/explosion_3d/README.md)
+- [Ocean](projects/ocean/README.md)
 
 ## Development Setup
 
@@ -174,6 +178,7 @@ Useful windowed smokes:
 ./build/dev/projects/fluid/water_3d/water_3d --frames 300 --width 1280 --height 720
 ./build/dev/projects/fluid/fire_3d/fire_3d --frames 300 --width 1280 --height 720
 ./build/dev/projects/fluid/explosion_3d/explosion_3d --frames 300 --width 1280 --height 720
+./build/dev/projects/ocean/ocean --frames 300 --width 1280 --height 720
 ./build/dev/projects/gltf_viewer/gltf_viewer --input path/to/model.glb --environment path/to/env.hdr --animation-index 0 --animation-speed 1.0 --frames 300 --width 1280 --height 720
 ./build/dev/projects/gltf_viewer/gltf_viewer --input path/to/model.glb --debug-view roughness --frames 300 --width 1280 --height 720
 ./build/dev/projects/pbr_furnace/pbr_furnace --frames 300 --width 1280 --height 720
@@ -216,6 +221,11 @@ tests or heavier local runs. `explosion_3d` also accepts `--explosion-interval`,
 `--explosion-duration`, and `--explosion-boost`.
 `--print-frame-stats` also emits periodic `pyro_3d_gpu` pass timings when
 timestamp queries are available.
+`ocean` is a rendering-focused water project rather than a CFD solver. It uses a
+camera-relative projected grid, non-repeating multi-band procedural waves,
+distance-filtered detail, horizon fog, Fresnel sky reflection, fake refraction,
+foam, and debug views. Use `--debug-view height|normal|foam|reflection|refraction|depth`
+to inspect the water renderer.
 
 Useful headless PNG smokes:
 
@@ -227,6 +237,7 @@ Useful headless PNG smokes:
 ./build/dev/projects/fluid/water_3d/water_3d --headless --frames 120 --width 640 --height 360 --output /tmp/cubey-water-3d.png
 ./build/dev/projects/fluid/fire_3d/fire_3d --headless --frames 120 --width 640 --height 360 --output /tmp/cubey-fire-3d.png
 ./build/dev/projects/fluid/explosion_3d/explosion_3d --headless --frames 120 --width 640 --height 360 --output /tmp/cubey-explosion-3d.png
+./build/dev/projects/ocean/ocean --headless --frames 120 --width 640 --height 360 --output /tmp/cubey-ocean.png
 ./build/dev/projects/pbr_furnace/pbr_furnace --headless --width 640 --height 360 --output /tmp/cubey-pbr-furnace.png
 ```
 
@@ -240,6 +251,7 @@ Useful headless video captures when FFmpeg/libav support is enabled:
 ./build/dev/projects/fluid/water_3d/water_3d --headless --capture video --frames 180 --fps 60 --width 1280 --height 720 --output /tmp/cubey-water-3d.mp4
 ./build/dev/projects/fluid/fire_3d/fire_3d --headless --capture video --frames 180 --fps 60 --width 1280 --height 720 --output /tmp/cubey-fire-3d.mp4
 ./build/dev/projects/fluid/explosion_3d/explosion_3d --headless --capture video --frames 180 --fps 60 --width 1280 --height 720 --output /tmp/cubey-explosion-3d.mp4
+./build/dev/projects/ocean/ocean --headless --capture video --frames 180 --fps 60 --width 1280 --height 720 --output /tmp/cubey-ocean.mp4
 ```
 
 Use `--require-validation` on local smoke commands when Vulkan validation
@@ -273,6 +285,8 @@ layers are installed.
   Escape closes.
 - `gltf_viewer`: left-drag orbits the camera, `D` cycles PBR debug views,
   Escape closes.
+- `ocean`: left-drag orbits the camera, mouse wheel zooms, Space pauses/resumes
+  wave time, `R` resets, `D` cycles ocean debug views, Escape closes.
 - `pbr_furnace`: left-drag orbits the camera, Escape closes.
 
 `--debug-view` currently accepts `final`, `base-color`, `normal`,

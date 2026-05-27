@@ -16,6 +16,10 @@ is a small set of focused projects, each with different scaling assumptions:
 - `projects/fluid/water_3d`: 3D APIC free-surface liquid in a long tank, with
   stable particle IDs, sorted cell-index ranges for transfer, a screen-space
   surface renderer, and whitewater/profiling diagnostics.
+- `projects/ocean`: practical large-scale water rendering with a
+  camera-relative surface, procedural multi-band waves, foam/debug views, and
+  explicit future hooks for wakes and shorelines. It is rendering-first, not a
+  fluid solver.
 - `projects/fluid_25d`: shallow-water terrain simulation for rivers, flooding,
   basins, sources, sinks, and heightfield-driven water.
 - `projects/fluid/fire_3d` and `projects/fluid/explosion_3d`: dense 3D pyro
@@ -242,22 +246,25 @@ project is worth the complexity.
 
 ## Suggested Order
 
-1. Continue `fluid_25d` with virtual-pipes shallow water over terrain.
-2. Continue `smoke_2d` beyond the current Jacobi/RBGS baseline with richer
+1. Continue `projects/ocean` toward terrain/depth integration, local
+   disturbance textures, and stronger large-scale water presentation.
+2. Continue `fluid_25d` with virtual-pipes shallow water over terrain, then feed
+   depth/shoreline data into the ocean renderer.
+3. Continue `smoke_2d` beyond the current Jacobi/RBGS baseline with richer
    injectors, stronger diagnostics, and a clearer smoke/dye versus
    free-surface-liquid direction.
-3. Continue `water_2d` from the current 2D APIC/PIC-FLIP baseline toward better
+4. Continue `water_2d` from the current 2D APIC/PIC-FLIP baseline toward better
    surfacing, pressure solves, boundaries, validation/debug views, and richer
    water scenarios.
-4. Try `liquid_particles_2d` with PBF/simple SPH to prove GPU neighbor search
+5. Try `liquid_particles_2d` with PBF/simple SPH to prove GPU neighbor search
    and particle-liquid rendering.
-5. Continue `water_3d` from the current stable-ID APIC baseline toward stronger
+6. Continue `water_3d` from the current stable-ID APIC baseline toward stronger
    pressure solves, better continuous-flow scenarios, renderer profiling, and
    later sparse/local simulation if dense grids remain too expensive.
-6. Continue `fire_3d` / `explosion_3d` from the dense boxed baseline toward
+7. Continue `fire_3d` / `explosion_3d` from the dense boxed baseline toward
    stronger shading, detail synthesis, sparse/local simulation, and demo presentation than the
    original Cubey version.
-7. Consider DFSPH, MLS-MPM, or additional 3D liquid variants only after the 2D
+8. Consider DFSPH, MLS-MPM, or additional 3D liquid variants only after the 2D
    particle and hybrid projects have paid for their infrastructure.
 
 ## References

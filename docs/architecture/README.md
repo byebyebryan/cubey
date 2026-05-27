@@ -10,6 +10,8 @@ than the root design and roadmap.
   commits, and transform manager direction.
 - [Fluid simulation direction](fluid-simulation.md): project direction for
   2D/2.5D/3D fluid work.
+- [Ocean rendering](ocean-rendering.md): scalable procedural ocean rendering,
+  interaction hooks, and breaking-wave tradeoffs.
 - [glTF assets and PBR](gltf-assets.md): static glTF import, PBR material
   contract, texture upload, HDR environments, and viewer boundaries.
 - [Animation and deformation](animation-deformation.md): glTF animation,

@@ -338,8 +338,8 @@ named explicitly and live in either `examples/` or `projects/`:
   command recording; that split is not automatically Cubey library API.
 - `projects/` - first-class graphics experiments and longer-lived creative
   work, including `smoke_2d`, `fire_3d`, `explosion_3d`, `fractal_2d`,
-  `gltf_viewer`, and `pbr_furnace`, plus later candidates such as `marching_cubes` and
-  `sdf_sculpt`.
+  `gltf_viewer`, `ocean`, and `pbr_furnace`, plus later candidates such as
+  `marching_cubes` and `sdf_sculpt`.
 - `third_party/` - small vendored dependencies with explicit license notes.
 - `tools/` - repo utilities, asset processors, shader tools, or diagnostics.
 - `tests/` - unit and integration tests.
@@ -578,6 +578,14 @@ cubey/
         gltf_viewer_assets.* -- asset/fallback/IBL resource setup
         gltf_viewer_scene.* -- camera, light, bounds, and scene setup
         gltf_viewer_render.* -- render request assembly
+      ocean/
+        CMakeLists.txt
+        main.cpp
+        ocean_app.*       -- camera-relative procedural ocean host/headless orchestration
+        ocean_ui.*        -- live ocean renderer controls
+        shaders/
+          ocean.vert      -- projected grid, multi-band waves, interaction hooks
+          ocean.frag      -- Fresnel/refraction-style shading, foam, debug views
       pbr_furnace/
         CMakeLists.txt
         main.cpp
