@@ -39,6 +39,12 @@ cubey_add_app_target(
         "${CMAKE_SOURCE_DIR}/shaders/cubey/color_space.glsl"
 )
 
+target_link_libraries(
+    cubey_project_water_2d
+    PRIVATE
+        cubey_project_fluid_common
+)
+
 if (BUILD_TESTING)
     add_executable(cubey_project_water_2d_tests
         ../sim/water_2d/water_2d_config_tests.cpp
@@ -56,6 +62,7 @@ if (BUILD_TESTING)
         cubey_project_water_2d_tests
         PRIVATE
             cubey::cubey
+            cubey_project_fluid_common
             cubey_project_options
             cubey_project_warnings
     )

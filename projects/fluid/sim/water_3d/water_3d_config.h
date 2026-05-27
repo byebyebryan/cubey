@@ -1,11 +1,11 @@
 #pragma once
 
+#include "../common/water_common.h"
+
 #include <cubey/core/frame_clock.h>
 #include <cubey/core/run_config.h>
 
-#include <algorithm>
 #include <array>
-#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <limits>
@@ -29,10 +29,7 @@ enum class Water3DRenderView : std::uint32_t {
     Whitewater = 11,
 };
 
-enum class Water3DTransferMode : std::uint32_t {
-    PicFlip = 0,
-    Apic = 1,
-};
+using Water3DTransferMode = common::WaterTransferMode;
 
 enum class Water3DP2GMode : std::uint32_t {
     ActiveFaces = 0,
@@ -58,7 +55,8 @@ inline constexpr std::uint32_t kWater3DDefaultGridDepth = 48;
 inline constexpr std::uint32_t kWater3DDefaultEmitterParticleCapacity = 65536;
 inline constexpr std::uint32_t kWater3DDefaultWhitewaterCapacity = 65536;
 inline constexpr std::uint32_t kWater3DScanGroupSize = 256;
-inline constexpr std::uint32_t kWater3DMaxExactShaderInteger = 1U << 24U;
+inline constexpr std::uint32_t kWater3DMaxExactShaderInteger =
+    common::kWaterMaxExactShaderInteger;
 inline constexpr std::uint32_t kWater3DDiagnosticSlotCount = 71;
 inline constexpr std::uint32_t kWater3DDiagnosticDivergenceScale = 1000000;
 inline constexpr float kWater3DMinFillFraction = 0.08F;
@@ -320,23 +318,12 @@ static_assert(sizeof(Water3DDispatchPushConstants) ==
 }
 
 [[nodiscard]] inline const char* water_3d_transfer_mode_name(Water3DTransferMode mode) {
-    switch (mode) {
-    case Water3DTransferMode::PicFlip:
-        return "PIC/FLIP";
-    case Water3DTransferMode::Apic:
-        return "APIC";
-    }
-    return "APIC";
+    return common::water_transfer_mode_name(mode);
 }
 
 [[nodiscard]] inline Water3DTransferMode water_3d_transfer_mode_from_name(std::string_view name) {
-    if (name.empty() || name == "apic") {
-        return Water3DTransferMode::Apic;
-    }
-    if (name == "pic-flip" || name == "picflip" || name == "pic/flip") {
-        return Water3DTransferMode::PicFlip;
-    }
-    throw std::runtime_error("water 3D transfer mode must be apic or pic-flip");
+    return common::water_transfer_mode_from_name(
+        name, "water 3D transfer mode must be apic or pic-flip");
 }
 
 [[nodiscard]] inline const char* water_3d_p2g_mode_name(Water3DP2GMode mode) {
@@ -438,31 +425,15 @@ static_assert(sizeof(Water3DDispatchPushConstants) ==
            view == Water3DRenderView::Whitewater;
 }
 
-[[nodiscard]] inline std::size_t checked_mul(std::size_t lhs, std::size_t rhs,
-                                             const char* message) {
-    if (lhs != 0 && rhs > std::numeric_limits<std::size_t>::max() / lhs) {
-        throw std::runtime_error(message);
-    }
-    return lhs * rhs;
-}
-
-[[nodiscard]] inline std::size_t checked_add(std::size_t lhs, std::size_t rhs,
-                                             const char* message) {
-    if (rhs > std::numeric_limits<std::size_t>::max() - lhs) {
-        throw std::runtime_error(message);
-    }
-    return lhs + rhs;
-}
+using common::checked_add;
+using common::checked_mul;
 
 inline void validate_exact_shader_integer(std::size_t value, const char* message) {
-    if (value > kWater3DMaxExactShaderInteger) {
-        throw std::runtime_error(message);
-    }
+    common::validate_exact_shader_integer(value, message);
 }
 
 [[nodiscard]] inline float water_3d_shader_count_float(std::size_t value, const char* message) {
-    validate_exact_shader_integer(value, message);
-    return static_cast<float>(value);
+    return common::water_shader_count_float(value, message);
 }
 
 inline void validate_water_3d_grid_dimensions(const Water3DConfig& config) {
@@ -502,12 +473,9 @@ inline void validate_water_3d_particle_limits(const Water3DConfig& config) {
 
 [[nodiscard]] inline std::uint32_t water_3d_fill_axis_cell_count(std::uint32_t axis_cells,
                                                                  float fill_fraction) {
-    const std::uint32_t usable_cells = axis_cells - (kWater3DWallCells * 2U);
-    const float clamped_fraction =
-        std::clamp(fill_fraction, kWater3DMinFillFraction, kWater3DMaxFillFraction);
-    const auto raw_fill_cells =
-        static_cast<std::uint32_t>(std::floor(static_cast<float>(axis_cells) * clamped_fraction));
-    return std::clamp(raw_fill_cells, 1U, usable_cells);
+    return common::water_fill_axis_cell_count(axis_cells, kWater3DWallCells,
+                                              kWater3DMinFillFraction, kWater3DMaxFillFraction,
+                                              fill_fraction);
 }
 
 [[nodiscard]] inline std::size_t cell_count(const Water3DConfig& config) {
@@ -639,9 +607,8 @@ inline void refresh_particle_counts(Water3DConfig& config) {
 [[nodiscard]] inline std::uint32_t
 water_3d_runtime_particle_scan_count(const Water3DConfig& config,
                                      const Water3DRuntimeState& state) {
-    const std::uint32_t scan_count =
-        state.particle_scan_count == 0 ? config.active_particle_count : state.particle_scan_count;
-    return std::clamp(scan_count, config.active_particle_count, config.particle_capacity);
+    return common::water_runtime_particle_scan_count(
+        config.active_particle_count, config.particle_capacity, state.particle_scan_count);
 }
 
 [[nodiscard]] inline std::size_t scalar_field_byte_size(const Water3DConfig& config) {

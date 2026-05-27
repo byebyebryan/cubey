@@ -1,11 +1,11 @@
 #pragma once
 
+#include "../common/water_common.h"
+
 #include <cubey/core/frame_clock.h>
 #include <cubey/core/run_config.h>
 
-#include <algorithm>
 #include <array>
-#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <limits>
@@ -38,10 +38,7 @@ enum class Water2DObstacleShape : std::uint32_t {
     Box = 2,
 };
 
-enum class Water2DTransferMode : std::uint32_t {
-    PicFlip = 0,
-    Apic = 1,
-};
+using Water2DTransferMode = common::WaterTransferMode;
 
 enum class Water2DDiagnosticSlot : std::uint32_t {
     ActiveParticles = 0,
@@ -63,7 +60,8 @@ inline constexpr std::uint32_t kWater2DDefaultGridHeight = 144;
 inline constexpr std::uint32_t kWater2DWallCells = 2;
 inline constexpr std::uint32_t kWater2DMinimumGridWidth = 16;
 inline constexpr std::uint32_t kWater2DMinimumGridHeight = 16;
-inline constexpr std::uint32_t kWater2DMaxExactShaderInteger = 1U << 24U;
+inline constexpr std::uint32_t kWater2DMaxExactShaderInteger =
+    common::kWaterMaxExactShaderInteger;
 inline constexpr float kWater2DMinFillFraction = 0.08F;
 inline constexpr float kWater2DMaxFillFraction = 0.92F;
 inline constexpr std::uint32_t kWater2DDefaultHoseParticleCapacity = 262144;
@@ -178,9 +176,8 @@ struct Water2DRuntimeState {
 [[nodiscard]] inline std::uint32_t
 water_2d_runtime_particle_scan_count(const Water2DConfig& config,
                                      const Water2DRuntimeState& state) {
-    const std::uint32_t scan_count =
-        state.particle_scan_count == 0 ? config.active_particle_count : state.particle_scan_count;
-    return std::clamp(scan_count, config.active_particle_count, config.particle_capacity);
+    return common::water_runtime_particle_scan_count(
+        config.active_particle_count, config.particle_capacity, state.particle_scan_count);
 }
 
 static_assert(sizeof(Water2DSimulationUniforms) ==
@@ -237,23 +234,12 @@ static_assert(sizeof(Water2DDispatchPushConstants) ==
 }
 
 [[nodiscard]] inline const char* water_2d_transfer_mode_name(Water2DTransferMode mode) {
-    switch (mode) {
-    case Water2DTransferMode::PicFlip:
-        return "PIC/FLIP";
-    case Water2DTransferMode::Apic:
-        return "APIC";
-    }
-    return "APIC";
+    return common::water_transfer_mode_name(mode);
 }
 
 [[nodiscard]] inline Water2DTransferMode water_2d_transfer_mode_from_name(std::string_view name) {
-    if (name.empty() || name == "apic") {
-        return Water2DTransferMode::Apic;
-    }
-    if (name == "pic-flip" || name == "picflip" || name == "pic/flip") {
-        return Water2DTransferMode::PicFlip;
-    }
-    throw std::runtime_error("water 2D transfer mode must be apic or pic-flip");
+    return common::water_transfer_mode_from_name(
+        name, "water 2D transfer mode must be apic or pic-flip");
 }
 
 [[nodiscard]] inline Water2DDebugView water_2d_debug_view_from_name(std::string_view name) {
@@ -307,23 +293,14 @@ static_assert(sizeof(Water2DDispatchPushConstants) ==
     return Water2DDebugView::Surface;
 }
 
-[[nodiscard]] inline std::size_t checked_mul(std::size_t lhs, std::size_t rhs,
-                                             const char* message) {
-    if (lhs != 0 && rhs > std::numeric_limits<std::size_t>::max() / lhs) {
-        throw std::runtime_error(message);
-    }
-    return lhs * rhs;
-}
+using common::checked_mul;
 
 inline void validate_exact_shader_integer(std::size_t value, const char* message) {
-    if (value > kWater2DMaxExactShaderInteger) {
-        throw std::runtime_error(message);
-    }
+    common::validate_exact_shader_integer(value, message);
 }
 
 [[nodiscard]] inline float water_2d_shader_count_float(std::size_t value, const char* message) {
-    validate_exact_shader_integer(value, message);
-    return static_cast<float>(value);
+    return common::water_shader_count_float(value, message);
 }
 
 inline void validate_water_2d_grid_dimensions(const Water2DConfig& config) {
@@ -339,12 +316,9 @@ inline void validate_water_2d_grid_dimensions(const Water2DConfig& config) {
 
 [[nodiscard]] inline std::uint32_t water_2d_fill_axis_cell_count(std::uint32_t axis_cells,
                                                                  float fill_fraction) {
-    const std::uint32_t usable_cells = axis_cells - (kWater2DWallCells * 2U);
-    const float clamped_fraction =
-        std::clamp(fill_fraction, kWater2DMinFillFraction, kWater2DMaxFillFraction);
-    const auto raw_fill_cells =
-        static_cast<std::uint32_t>(std::floor(static_cast<float>(axis_cells) * clamped_fraction));
-    return std::clamp(raw_fill_cells, 1U, usable_cells);
+    return common::water_fill_axis_cell_count(axis_cells, kWater2DWallCells,
+                                              kWater2DMinFillFraction, kWater2DMaxFillFraction,
+                                              fill_fraction);
 }
 
 [[nodiscard]] inline std::size_t cell_count(const Water2DConfig& config) {

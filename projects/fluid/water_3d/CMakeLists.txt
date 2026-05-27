@@ -66,6 +66,12 @@ cubey_add_app_target(
         "${CMAKE_SOURCE_DIR}/shaders/cubey/pbr.glsl"
 )
 
+target_link_libraries(
+    cubey_project_water_3d
+    PRIVATE
+        cubey_project_fluid_common
+)
+
 if (CUBEY_HDR_SAMPLE_ASSETS_DIR)
     target_compile_definitions(
         cubey_project_water_3d
@@ -91,6 +97,7 @@ if (BUILD_TESTING)
         cubey_project_water_3d_tests
         PRIVATE
             cubey::cubey
+            cubey_project_fluid_common
             cubey_project_options
             cubey_project_warnings
     )
