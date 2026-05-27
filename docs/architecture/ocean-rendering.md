@@ -9,10 +9,10 @@ surface renderer and only adds simulation where interaction needs it.
 
 - Generate a projected grid in the vertex shader so the surface follows the
   camera and concentrates vertices near the viewer.
-- Evaluate waves in world space so the mesh can move without swimming the
-  pattern.
-- Use multiple directional wave bands with non-commensurate wavelengths and
-  distance-filtered short-wave detail to avoid obvious repetition to the
+- Evaluate a multi-cascade spectral wave field in world space so the mesh can
+  move without swimming the pattern.
+- Use an in-repo Stockham FFT path for deep-water height/displacement textures,
+  plus distance-filtered short-wave detail to avoid obvious repetition to the
   horizon.
 - Shade the surface with Fresnel sky reflection, fake refraction/absorption,
   foam, tonemapping, and debug views.
@@ -42,7 +42,7 @@ spray and aerated water.
 
 The recommended sequence is:
 
-1. Render choppy waves plus crest foam.
+1. Render spectral waves plus generated crest foam.
 2. Add local wake/disturbance textures.
 3. Add terrain/bathymetry and shoreline foam.
 4. Couple to `fluid_25d` or a local surf simulation for actual breaking waves.

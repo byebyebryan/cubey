@@ -4,15 +4,16 @@
 the particle-grid `water_3d` tank: this demo starts from a camera-relative
 surface renderer, not from a CFD solver.
 
-The v1 target is scale. The surface follows the camera, evaluates waves in world
-space, mixes several non-commensurate wave bands, fades short wavelengths with
+The v1 target is scale. The surface follows the camera, evaluates a
+multi-cascade spectral wave field in world space, fades short wavelengths with
 distance, and blends the far mesh into the sky so the ocean can read all the way
 to the horizon without obvious texture repetition.
 
 Implemented:
 
 - camera-relative projected grid generated in the vertex shader;
-- multi-band directional Gerstner/sine wave displacement with choppy crests;
+- in-repo Stockham FFT path for three spectral ocean cascades;
+- texture-sampled displacement, normals, and generated crest foam;
 - distance-filtered wave detail to reduce horizon aliasing;
 - Fresnel sky reflection, fake scene refraction, Beer-style absorption, crest
   and shallow-water foam, exposure/tonemap handling, and debug views;
@@ -21,7 +22,6 @@ Implemented:
 
 Deferred:
 
-- FFT/Tessendorf spectrum generation;
 - real scene color/depth refraction against arbitrary geometry;
 - boats, buoyancy, wake databases, shoreline authoring, caustics, and underwater
   rendering;

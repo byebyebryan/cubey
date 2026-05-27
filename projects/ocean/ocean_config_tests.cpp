@@ -43,12 +43,25 @@ int main() {
                 "default ocean mesh should target horizon-scale rendering");
         require(defaults.disturbance_radius > 0.0F && defaults.disturbance_strength == 0.0F,
                 "default ocean config should expose interaction hooks without radial rings");
+        require(defaults.spectrum_resolution == 256,
+                "ocean should default to a practical FFT spectrum resolution");
+        require(ocean::ocean_is_power_of_two(defaults.spectrum_resolution),
+                "default ocean spectrum resolution should be a power of two");
+        require(ocean::ocean_cascade_patch_length(defaults, 0) <
+                    ocean::ocean_cascade_patch_length(defaults, 1),
+                "near ocean cascade should be smaller than mid cascade");
+        require(ocean::ocean_cascade_patch_length(defaults, 1) <
+                    ocean::ocean_cascade_patch_length(defaults, 2),
+                "mid ocean cascade should be smaller than far cascade");
+        ocean::validate_ocean_config(defaults);
 
         require(ocean::ocean_render_view_from_name("") == ocean::OceanRenderView::Final,
                 "empty debug view should use final ocean rendering");
         require(ocean::ocean_render_view_from_name("normal") == ocean::OceanRenderView::Normal,
                 "normal debug view should parse");
-        require(ocean::next_ocean_render_view(ocean::OceanRenderView::Depth) ==
+        require(ocean::ocean_render_view_from_name("spectrum") == ocean::OceanRenderView::Spectrum,
+                "spectrum debug view should parse");
+        require(ocean::next_ocean_render_view(ocean::OceanRenderView::Spectrum) ==
                     ocean::OceanRenderView::Final,
                 "ocean debug view cycle should wrap");
 
@@ -77,6 +90,26 @@ int main() {
             rejected = true;
         }
         require(rejected, "ocean mesh sizing should reject unsupported low resolution");
+
+        ocean::OceanConfig invalid_spectrum = defaults;
+        invalid_spectrum.spectrum_resolution = 192;
+        rejected = false;
+        try {
+            ocean::validate_ocean_config(invalid_spectrum);
+        } catch (const std::runtime_error&) {
+            rejected = true;
+        }
+        require(rejected, "ocean spectrum sizing should reject non-power-of-two resolutions");
+
+        ocean::OceanConfig invalid_cascade = defaults;
+        invalid_cascade.spectrum_patch_length_mid = invalid_cascade.spectrum_patch_length_near;
+        rejected = false;
+        try {
+            ocean::validate_ocean_config(invalid_cascade);
+        } catch (const std::runtime_error&) {
+            rejected = true;
+        }
+        require(rejected, "ocean spectrum cascades should require ordered patch lengths");
 
         const std::filesystem::path source_root(CUBEY_OCEAN_SOURCE_DIR);
         const std::string vertex_shader = read_text_file(source_root / "shaders/ocean.vert");
