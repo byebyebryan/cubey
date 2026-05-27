@@ -20,12 +20,14 @@ enum class OceanRenderView : std::uint32_t {
     Reflection = 6,
     Refraction = 7,
     Spectrum = 8,
+    Wireframe = 9,
 };
 
-inline constexpr std::array<OceanRenderView, 9> kOceanRenderViews{
+inline constexpr std::array<OceanRenderView, 10> kOceanRenderViews{
     OceanRenderView::Final,      OceanRenderView::Height,   OceanRenderView::Displacement,
     OceanRenderView::Normal,     OceanRenderView::Foam,     OceanRenderView::Detail,
     OceanRenderView::Reflection, OceanRenderView::Refraction, OceanRenderView::Spectrum,
+    OceanRenderView::Wireframe,
 };
 
 inline constexpr std::uint32_t kOceanMinMeshCells = 32;
@@ -97,6 +99,8 @@ struct OceanConfig {
         return "refraction";
     case OceanRenderView::Spectrum:
         return "spectrum";
+    case OceanRenderView::Wireframe:
+        return "wireframe";
     }
     return "final";
 }

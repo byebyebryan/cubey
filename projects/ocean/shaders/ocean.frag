@@ -42,6 +42,7 @@ layout(location = 1) in vec3 frag_normal;
 layout(location = 2) in vec4 frag_wave;
 layout(location = 3) in vec3 frag_displacement;
 layout(location = 4) in vec2 frag_sample_position;
+noperspective layout(location = 5) in vec3 frag_barycentric;
 
 layout(location = 0) out vec4 out_color;
 
@@ -54,6 +55,7 @@ const uint OCEAN_VIEW_DETAIL = 5u;
 const uint OCEAN_VIEW_REFLECTION = 6u;
 const uint OCEAN_VIEW_REFRACTION = 7u;
 const uint OCEAN_VIEW_SPECTRUM = 8u;
+const uint OCEAN_VIEW_WIREFRAME = 9u;
 
 struct FragmentSurfaceSample {
     vec3 displacement;
@@ -299,6 +301,12 @@ vec3 debug_height_color(float height) {
     return value < 0.5 ? mix(low, mid, value * 2.0) : mix(mid, high, (value - 0.5) * 2.0);
 }
 
+float wireframe_line(vec3 barycentric) {
+    vec3 width = max(fwidth(barycentric), vec3(0.0001));
+    vec3 edge = smoothstep(vec3(0.0), width * 1.35, barycentric);
+    return 1.0 - min(min(edge.x, edge.y), edge.z);
+}
+
 vec3 apply_display(vec3 color) {
     return cubey_pbr_apply_display_transform(color, ocean.display_transform);
 }
@@ -384,6 +392,12 @@ void main() {
     } else if (view == OCEAN_VIEW_SPECTRUM) {
         color = mix(debug_height_color(frag_wave.x), cubey_srgb_to_linear(vec3(0.92, 0.96, 0.90)),
                     clamp(shaded_foam, 0.0, 1.0));
+    } else if (view == OCEAN_VIEW_WIREFRAME) {
+        float line = wireframe_line(frag_barycentric);
+        vec3 base = mix(cubey_srgb_to_linear(vec3(0.015, 0.035, 0.045)),
+                        debug_height_color(frag_wave.x), 0.18);
+        vec3 wire = cubey_srgb_to_linear(vec3(0.82, 0.94, 1.0));
+        color = mix(base, wire, line);
     }
 
     out_color = vec4(apply_display(color), 1.0);

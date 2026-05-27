@@ -33,6 +33,7 @@ layout(location = 1) out vec3 frag_normal;
 layout(location = 2) out vec4 frag_wave;
 layout(location = 3) out vec3 frag_displacement;
 layout(location = 4) out vec2 frag_sample_position;
+noperspective layout(location = 5) out vec3 frag_barycentric;
 
 struct SurfaceSample {
     vec3 displacement;
@@ -58,6 +59,17 @@ vec2 triangle_corner(uint vertex_in_cell) {
         return vec2(1.0, 0.0);
     }
     return vec2(1.0, 1.0);
+}
+
+vec3 triangle_barycentric(uint vertex_in_cell) {
+    uint vertex_in_triangle = vertex_in_cell % 3u;
+    if (vertex_in_triangle == 0u) {
+        return vec3(1.0, 0.0, 0.0);
+    }
+    if (vertex_in_triangle == 1u) {
+        return vec3(0.0, 1.0, 0.0);
+    }
+    return vec3(0.0, 0.0, 1.0);
 }
 
 vec2 projected_grid_position(vec2 signed_uv) {
@@ -284,5 +296,6 @@ void main() {
                      camera_distance, depth);
     frag_displacement = ocean_sample.displacement;
     frag_sample_position = base_position_xz;
+    frag_barycentric = triangle_barycentric(vertex_in_cell);
     gl_Position = ocean.view_projection * vec4(world_position, 1.0);
 }

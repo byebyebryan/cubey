@@ -49,6 +49,7 @@ Useful runs:
 ./build/dev/projects/ocean/ocean --frames 300 --width 1280 --height 720
 ./build/dev/projects/ocean/ocean --debug-view detail --frames 300 --width 1280 --height 720
 ./build/dev/projects/ocean/ocean --debug-view foam --frames 300 --width 1280 --height 720
+./build/dev/projects/ocean/ocean --debug-view wireframe --frames 300 --width 1280 --height 720
 ./build/dev/projects/ocean/ocean --headless --frames 120 --width 640 --height 360 --output /tmp/cubey-ocean.png
 ./build/dev/projects/ocean/ocean --headless --capture video --frames 180 --fps 60 --width 1280 --height 720 --output /tmp/cubey-ocean.mp4
 ```
@@ -60,7 +61,7 @@ Controls:
 - Space: pause or resume wave time.
 - `R`: reset camera and wave time.
 - `D`: cycle final, height, displacement, normal, foam, detail, reflection,
-  refraction, and spectrum debug views.
+  refraction, spectrum, and wireframe debug views.
 - Escape: close.
 
 Tuning notes:

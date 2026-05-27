@@ -72,7 +72,10 @@ int main() {
                 "detail debug view should parse");
         require(ocean::ocean_render_view_from_name("spectrum") == ocean::OceanRenderView::Spectrum,
                 "spectrum debug view should parse");
-        require(ocean::next_ocean_render_view(ocean::OceanRenderView::Spectrum) ==
+        require(ocean::ocean_render_view_from_name("wireframe") ==
+                    ocean::OceanRenderView::Wireframe,
+                "wireframe debug view should parse");
+        require(ocean::next_ocean_render_view(ocean::OceanRenderView::Wireframe) ==
                     ocean::OceanRenderView::Final,
                 "ocean debug view cycle should wrap");
 
@@ -150,6 +153,10 @@ int main() {
                          "ocean vertex shader should filter geometric detail displacement");
         require_contains(vertex_shader, "sample_detail_wave",
                          "ocean vertex shader should sample the detail wave field");
+        require_contains(vertex_shader, "triangle_barycentric",
+                         "ocean vertex shader should emit barycentric wireframe data");
+        require_contains(vertex_shader, "noperspective layout(location = 5)",
+                         "ocean vertex shader should keep wireframe interpolation screen-space");
         require_contains(fragment_shader, "cubey_pbr_apply_display_transform",
                          "ocean fragment shader should use the shared display transform");
         require_contains(fragment_shader, "cascade_detail_filter",
@@ -166,6 +173,10 @@ int main() {
                          "ocean fragment shader should sample detail wave field");
         require_contains(fragment_shader, "OCEAN_VIEW_DETAIL",
                          "ocean fragment shader should expose detail debug view");
+        require_contains(fragment_shader, "wireframe_line",
+                         "ocean fragment shader should expose a shader wireframe debug view");
+        require_contains(fragment_shader, "noperspective layout(location = 5)",
+                         "ocean fragment shader should keep wireframe interpolation screen-space");
         require_contains(sky_shader, "camera_forward",
                          "ocean sky shader should reconstruct rays from camera basis");
         require_contains(atmosphere_shader, "ocean_sky_color",
