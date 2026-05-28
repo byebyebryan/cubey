@@ -25,6 +25,8 @@ Implemented:
   be tuned independently;
 - compute-backed directional short-wave packets, storing geometric height,
   slope, and crest-gated foam source for both silhouette and shading;
+- cascade-aware choppy displacement with a one-step displaced-position resample
+  so crests and shading follow the folded spectral surface;
 - coherent procedural sky pass, procedural seabed scene color/depth, Fresnel sky
   reflection, scene-depth refraction, Beer-style absorption, sun glint,
   crest/shallow-water foam, exposure/tonemap handling, and debug views including
@@ -100,6 +102,9 @@ Tuning notes:
 - `Foam drift` moves the persistent foam history along the wind direction only.
 - `Spectral geometry` controls FFT displacement strength independently from
   `Normal strength`, so reducing normals does not flatten the surface.
+- Cascade-aware chop keeps near crests stronger than far cascades, and the
+  surface shaders resample once at the displaced position so sharp features are
+  not only a normal-map effect.
 - `Detail chop`, `Detail spread`, `Detail geometry`, and `Crest sharpness`
   control packeted directional short-wave shape.
 - `Foam coverage`, `Foam breakup`, and `Foam dispersion` control how much

@@ -261,7 +261,7 @@ float shoreline_mask(vec2 position) {
     return shoal * influence;
 }
 
-SurfaceSample sample_ocean(vec2 position, float camera_distance) {
+SurfaceSample sample_ocean_once(vec2 position, float camera_distance) {
     SurfaceSample sample_value;
     sample_value.displacement = vec3(0.0);
     sample_value.normal_sum = vec3(0.0);
@@ -287,6 +287,16 @@ SurfaceSample sample_ocean(vec2 position, float camera_distance) {
     sample_value.foam = max(sample_value.foam, macro_waves.foam * ocean.detail_options.z * 0.10);
     add_disturbance(sample_value, position);
     return sample_value;
+}
+
+SurfaceSample sample_ocean(vec2 position, float camera_distance) {
+    SurfaceSample first = sample_ocean_once(position, camera_distance);
+    vec2 refined_position = position + first.displacement.xz * 0.36;
+    SurfaceSample refined = sample_ocean_once(refined_position, camera_distance);
+    first.displacement = mix(first.displacement, refined.displacement, 0.42);
+    first.normal_sum = normalize(mix(first.normal_sum, refined.normal_sum, 0.36));
+    first.foam = max(first.foam, refined.foam);
+    return first;
 }
 
 void main() {

@@ -55,7 +55,10 @@ void main() {
     vec4 slope_z_curvature = slope_z_curvature_at(texel, size);
     float center = height_dx.x;
     float chop = max(params.cascade_options.z, 0.0);
-    vec2 horizontal = vec2(height_dx.z, dz_slope_x.x) * chop;
+    float cascade = params.cascade_options.y;
+    float cascade_chop =
+        chop * (cascade < 0.5 ? 1.18 : (cascade < 1.5 ? 0.96 : 0.72));
+    vec2 horizontal = vec2(height_dx.z, dz_slope_x.x) * cascade_chop;
     vec2 slope = vec2(dz_slope_x.z, slope_z_curvature.x);
     vec3 normal = normalize(vec3(-slope.x * params.ocean_options.w, 1.0,
                                  -slope.y * params.ocean_options.w));
@@ -71,7 +74,7 @@ void main() {
         (d_horizontal_dz.x * d_horizontal_dx.y);
     float compression = clamp(max(0.0, 1.0 - jacobian), 0.0, 2.0);
     float curvature = max(0.0, -slope_z_curvature.z);
-    float crest_signal = compression * 1.5 + curvature * chop * 0.14;
+    float crest_signal = compression * 1.5 + curvature * cascade_chop * 0.14;
     float foam_coverage = clamp(params.foam_shaping_options.x, 0.0, 1.5);
     float foam_width = mix(0.74, 0.36, clamp(foam_coverage, 0.0, 1.0));
     float foam = smoothstep(params.foam_options.z, params.foam_options.z + foam_width,

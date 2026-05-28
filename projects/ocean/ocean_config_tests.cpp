@@ -281,6 +281,8 @@ int main() {
                          "ocean vertex shader should filter geometric detail displacement");
         require_contains(vertex_shader, "sample_detail_wave",
                          "ocean vertex shader should sample the detail wave field");
+        require_contains(vertex_shader, "sample_ocean_once",
+                         "ocean vertex shader should resample choppy displacement");
         require_contains(vertex_shader, "ocean.detail_wave_options.w",
                          "ocean vertex shader should use independent spectral geometry");
         require_contains(vertex_shader, "macro_waves.foam * ocean.detail_options.z * 0.10",
@@ -303,6 +305,8 @@ int main() {
                          "ocean fragment shader should centralize water color ramp");
         require_contains(fragment_shader, "cascade_detail_filter",
                          "ocean fragment shader should filter detail by pixel footprint");
+        require_contains(fragment_shader, "sample_fragment_surface_once",
+                         "ocean fragment shader should resample choppy displacement");
         require_contains(fragment_shader, "ocean.detail_wave_options.w",
                          "ocean fragment shader should use independent spectral geometry");
         require_contains(fragment_shader, "macro_waves.foam * 0.25",
@@ -396,6 +400,8 @@ int main() {
                          "ocean finalize shader should write normal and foam output");
         require_contains(finalize_shader, "jacobian",
                          "ocean finalize shader should derive crest compression");
+        require_contains(finalize_shader, "cascade_chop",
+                         "ocean finalize shader should apply cascade-aware choppy displacement");
         require_contains(finalize_shader, "compression)",
                          "ocean finalize shader should store compression separately from foam");
         require_contains(detail_shader, "add_detail_packet",
