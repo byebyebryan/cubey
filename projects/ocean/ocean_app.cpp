@@ -14,6 +14,7 @@
 #include <cubey/input/orbit_controller.h>
 #include <cubey/render/pass.h>
 #include <cubey/render/pbr.h>
+#include <cubey/render/render_graph.h>
 #include <cubey/render/target.h>
 #include <cubey/scene/camera_3d.h>
 #include <cubey/vulkan/command_recorder.h>
@@ -116,12 +117,33 @@ static_assert(sizeof(OceanFinalizePushConstants) == sizeof(float) * 16U);
 static_assert(sizeof(OceanFoamUpdatePushConstants) == sizeof(float) * 8U);
 static_assert(sizeof(OceanDetailPushConstants) == sizeof(float) * 16U);
 
+enum class OceanRenderTargetMode : std::uint8_t {
+    Present,
+    ColorAttachment,
+};
+
+struct OceanFrameGraph {
+    cubey::render::CompiledRenderGraph graph;
+    cubey::render::RenderGraphTextureHandle backbuffer{};
+    cubey::render::RenderGraphTextureHandle scene_color{};
+};
+
 [[nodiscard]] float radians(float degrees) {
     return degrees * (std::numbers::pi_v<float> / 180.0F);
 }
 
 [[nodiscard]] std::uint32_t triangle_count(const OceanConfig& config) {
     return ocean_mesh_total_triangle_count(config);
+}
+
+[[nodiscard]] cubey::render::RenderGraphTextureDesc ocean_color_texture_desc(
+    const char* label, VkExtent2D extent, VkFormat format) {
+    return {
+        .label = label,
+        .extent = {extent.width, extent.height, 1},
+        .format = format,
+        .aspects = VK_IMAGE_ASPECT_COLOR_BIT,
+    };
 }
 
 [[nodiscard]] std::uint32_t log2_exact(std::uint32_t value) {
@@ -187,7 +209,7 @@ class OceanApp {
         cubey::host::WindowedAppCallbacks callbacks;
         callbacks.create_swapchain_resources = [this](cubey::host::WindowedAppContext& context) {
             create_pipeline(context.device(), context.swapchain().format(),
-                            context.swapchain().extent());
+                            context.swapchain().extent(), context.frame_slot_count());
         };
         callbacks.destroy_swapchain_resources = [this](cubey::host::WindowedAppContext&) {
             destroy_swapchain_resources();
@@ -205,9 +227,9 @@ class OceanApp {
                 .latest_frame_ms = latest_frame_ms_,
             });
         };
-        callbacks.record_frame = [this](cubey::host::WindowedAppContext&,
+        callbacks.record_frame = [this](cubey::host::WindowedAppContext& context,
                                         const cubey::host::WindowedRenderFrame& frame) {
-            record_windowed_frame(frame);
+            record_windowed_frame(context.device(), frame);
         };
         callbacks.frame_stats_sample =
             [this](cubey::host::WindowedAppContext& context,
@@ -241,16 +263,18 @@ class OceanApp {
         cubey::host::HeadlessPngHostCallbacks callbacks;
         callbacks.create_resources = [this](cubey::host::HeadlessPngContext& context) {
             const cubey::host::HeadlessRenderTarget& target = context.render_target();
-            create_pipeline(context.device(), target.format, target.extent);
+            create_pipeline(context.device(), target.format, target.extent,
+                            cubey::host::headless_capture_frame_slot_count(config_));
         };
-        callbacks.record_frame = [this](cubey::host::HeadlessPngContext&,
+        callbacks.record_frame = [this](cubey::host::HeadlessPngContext& context,
                                         const cubey::host::HeadlessCaptureFrame& frame,
                                         VkCommandBuffer command_buffer,
                                         const cubey::host::HeadlessRenderTarget& target) {
             time_seconds_ = frame.timing.elapsed_seconds;
             last_delta_seconds_ =
                 frame.timing.delta_seconds > 0.0 ? frame.timing.delta_seconds : (1.0 / 60.0);
-            record_ocean_target(command_buffer, target, false);
+            record_ocean_target(command_buffer, context.device(), target, frame.frame_slot,
+                                OceanRenderTargetMode::ColorAttachment);
         };
         callbacks.shutdown = [this](cubey::host::HeadlessPngContext&) {
             destroy_swapchain_resources();
@@ -303,13 +327,16 @@ class OceanApp {
         return sample;
     }
 
-    void create_pipeline(cubey::vulkan::Device& device, VkFormat color_format, VkExtent2D extent) {
+    void create_pipeline(cubey::vulkan::Device& device, VkFormat color_format, VkExtent2D extent,
+                         std::uint32_t frame_slot_count) {
         ocean_gpu_.create(device, OceanGpuResourceConfig{
                                       .ocean = ocean_config_,
                                       .shader_dir = CUBEY_OCEAN_SHADER_DIR,
                                       .color_format = color_format,
                                       .target_extent = extent,
                                   });
+        graph_executor_.clear();
+        graph_executor_.resize(frame_slot_count);
         pipeline_color_format_ = color_format;
         textures_initialized_ = false;
         spectrum_initialized_ = false;
@@ -319,6 +346,7 @@ class OceanApp {
     }
 
     void destroy_swapchain_resources() {
+        graph_executor_.clear();
         ocean_gpu_.reset();
         pipeline_color_format_ = VK_FORMAT_UNDEFINED;
         textures_initialized_ = false;
@@ -339,14 +367,14 @@ class OceanApp {
         validate_ocean_config(ocean_config_);
         if (!gpu_config_.has_value()) {
             create_pipeline(context.device(), context.swapchain().format(),
-                            context.swapchain().extent());
+                            context.swapchain().extent(), context.frame_slot_count());
             return;
         }
         if (ocean_resolution_changed(ocean_config_, gpu_config_.value())) {
             cubey::vulkan::check(vkDeviceWaitIdle(context.device().handle()),
                                  "vkDeviceWaitIdle before ocean resource recreation");
             create_pipeline(context.device(), context.swapchain().format(),
-                            context.swapchain().extent());
+                            context.swapchain().extent(), context.frame_slot_count());
             return;
         }
         if (ocean_spectrum_generation_changed(ocean_config_, gpu_config_.value())) {
@@ -517,6 +545,63 @@ class OceanApp {
                 .pipeline = &sky_pipeline,
             },
             VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, constants);
+    }
+
+    [[nodiscard]] OceanFrameGraph build_ocean_frame_graph(
+        cubey::render::ColorTargetView color_target, OceanRenderTargetMode target_mode) {
+        cubey::render::RenderGraphBuilder graph;
+        const cubey::render::RenderGraphTextureState initial_state =
+            target_mode == OceanRenderTargetMode::Present
+                ? cubey::render::render_graph_undefined_texture_state()
+                : cubey::render::render_graph_color_attachment_texture_state();
+        const cubey::render::RenderGraphTextureState final_state =
+            target_mode == OceanRenderTargetMode::Present
+                ? cubey::render::render_graph_present_texture_state()
+                : cubey::render::render_graph_color_attachment_texture_state();
+        const cubey::render::RenderGraphTextureHandle backbuffer =
+            graph.import_color_target("ocean backbuffer", color_target, initial_state, final_state);
+        const cubey::render::RenderGraphTextureHandle scene_color =
+            graph.create_texture(ocean_color_texture_desc("ocean scene color", color_target.extent,
+                                                          color_target.format));
+
+        graph.add_pass("ocean scene", cubey::render::RenderGraphQueueDomain::Graphics)
+            .write_color(scene_color)
+            .execute([this, scene_color](
+                         const cubey::render::RenderGraphExecutionContext& context) {
+                const cubey::render::ColorTargetView target =
+                    cubey::render::resolved_color_target_view(context, scene_color);
+                cubey::render::record_render_target_pass(
+                    context.recorder(), cubey::render::render_target_view(target),
+                    cubey::render::RenderClearValues{
+                        .color = cubey::render::color_clear_value(0.0F, 0.0F, 0.0F, 1.0F),
+                    },
+                    [this, target](const cubey::vulkan::CommandRecorder& draw_recorder) {
+                        record_ocean_sky(draw_recorder, target.extent);
+                    });
+            });
+
+        graph.add_pass("ocean final", cubey::render::RenderGraphQueueDomain::Graphics)
+            .write_color(backbuffer)
+            .execute([this, backbuffer](
+                         const cubey::render::RenderGraphExecutionContext& context) {
+                const cubey::render::ColorTargetView target =
+                    cubey::render::resolved_color_target_view(context, backbuffer);
+                cubey::render::record_render_target_pass(
+                    context.recorder(), cubey::render::render_target_view(target),
+                    cubey::render::RenderClearValues{
+                        .color = cubey::render::color_clear_value(0.0F, 0.0F, 0.0F, 1.0F),
+                    },
+                    [this, target](const cubey::vulkan::CommandRecorder& draw_recorder) {
+                        record_ocean_sky(draw_recorder, target.extent);
+                        record_ocean_draw(draw_recorder, target.extent);
+                    });
+            });
+
+        return {
+            .graph = graph.compile(),
+            .backbuffer = backbuffer,
+            .scene_color = scene_color,
+        };
     }
 
     [[nodiscard]] OceanSpectrumPushConstants spectrum_push_constants(std::uint32_t cascade) const {
@@ -816,34 +901,30 @@ class OceanApp {
                                                    VK_ACCESS_SHADER_READ_BIT);
     }
 
-    void record_ocean_target(VkCommandBuffer command_buffer, cubey::render::ColorTargetView target,
-                             bool present) {
+    void record_ocean_target(VkCommandBuffer command_buffer, const cubey::vulkan::Device& device,
+                             cubey::render::ColorTargetView target,
+                             cubey::render::FrameSlot frame_slot,
+                             OceanRenderTargetMode target_mode) {
         const cubey::vulkan::CommandRecorder recorder(command_buffer);
         record_ocean_compute(recorder);
-        auto record_pass = [this, target](const cubey::vulkan::CommandRecorder& pass_recorder) {
-            cubey::render::record_render_target_pass(
-                pass_recorder, cubey::render::render_target_view(target),
-                cubey::render::RenderClearValues{
-                    .color = cubey::render::color_clear_value(0.0F, 0.0F, 0.0F, 1.0F),
-                },
-                [this, target](const cubey::vulkan::CommandRecorder& draw_recorder) {
-                    record_ocean_sky(draw_recorder, target.extent);
-                    record_ocean_draw(draw_recorder, target.extent);
-                });
-        };
-
-        if (present) {
-            cubey::render::record_present_render_target(
-                recorder, cubey::render::render_target_view(target), record_pass);
-            return;
-        }
-        record_pass(recorder);
+        const OceanFrameGraph frame_graph = build_ocean_frame_graph(target, target_mode);
+        graph_executor_.record(cubey::render::RenderGraphFrameRecordInfo{
+                                   .device = &device,
+                                   .command_buffer = command_buffer,
+                                   .frame_slot = frame_slot,
+                                   .label = "vkEndCommandBuffer ocean graph",
+                                   .command_buffer_mode =
+                                       cubey::render::RenderGraphCommandBufferMode::AlreadyRecording,
+                               },
+                               frame_graph.graph);
     }
 
-    void record_windowed_frame(const cubey::host::WindowedRenderFrame& frame) {
+    void record_windowed_frame(const cubey::vulkan::Device& device,
+                               const cubey::host::WindowedRenderFrame& frame) {
         const cubey::vulkan::CommandRecorder recorder(frame.command_buffer);
         recorder.begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-        record_ocean_target(frame.command_buffer, frame.color_target, true);
+        record_ocean_target(frame.command_buffer, device, frame.color_target, frame.frame_slot,
+                            OceanRenderTargetMode::Present);
         recorder.end("vkEndCommandBuffer ocean");
     }
 
@@ -855,6 +936,7 @@ class OceanApp {
     cubey::host::FrameStats ui_frame_stats_;
     std::optional<FrameStatsSnapshot> latest_frame_stats_;
     OceanGpuResources ocean_gpu_;
+    cubey::render::RenderGraphFrameExecutor graph_executor_;
     std::optional<OceanConfig> gpu_config_;
     VkFormat pipeline_color_format_ = VK_FORMAT_UNDEFINED;
     double time_seconds_ = 0.0;
