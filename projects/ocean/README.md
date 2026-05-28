@@ -84,6 +84,9 @@ Tuning notes:
 
 - `Sea state` changes the spectral peak and therefore the distribution of wave
   detail.
+- The default near/mid/far spectrum patch lengths are deliberately detuned
+  instead of exact multiples, which keeps low-angle views from locking onto a
+  repeated cascade period.
 - `Animation speed` changes phase progression only.
 - `Foam drift` moves the persistent foam history along the wind direction only.
 - `Detail chop`, `Detail spread`, `Detail geometry`, and `Crest sharpness`
@@ -93,6 +96,9 @@ Tuning notes:
   controls shape the single-layer-water translucency path. The procedural
   seafloor is optional and off by default for open-ocean shots; when enabled,
   seafloor detail is the sediment/relief contrast, separate from brightness.
+- Lower `Absorption` with `Seafloor` enabled pushes the look toward clear
+  tropical shallows; higher absorption with seafloor disabled reads as deeper
+  open ocean.
 - `Base cells`, `LOD levels`, and `Extent` control the camera-relative clipmap.
   Wireframe view is the fastest way to inspect close-up density and transition
   placement.

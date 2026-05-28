@@ -139,6 +139,7 @@ struct OceanFrameGraph {
     cubey::render::RenderGraphTextureHandle backbuffer{};
     cubey::render::RenderGraphTextureHandle scene_color{};
     cubey::render::RenderGraphTextureHandle scene_depth{};
+    cubey::render::RenderGraphTextureHandle surface_depth{};
 };
 
 [[nodiscard]] float radians(float degrees) {
@@ -639,6 +640,10 @@ class OceanApp {
         const cubey::render::RenderGraphTextureHandle scene_depth =
             graph.create_texture(ocean_depth_texture_desc("ocean scene depth", color_target.extent,
                                                           kOceanSceneDepthFormat));
+        const cubey::render::RenderGraphTextureHandle surface_depth =
+            graph.create_texture(ocean_depth_texture_desc("ocean surface depth",
+                                                          color_target.extent,
+                                                          kOceanSceneDepthFormat));
 
         graph.add_pass("ocean scene", cubey::render::RenderGraphQueueDomain::Graphics)
             .write_color(scene_color)
@@ -664,14 +669,18 @@ class OceanApp {
             .read_texture(scene_color, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT)
             .read_texture(scene_depth, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT)
             .write_color(backbuffer)
-            .execute([this, backbuffer,
+            .write_depth(surface_depth)
+            .execute([this, backbuffer, surface_depth,
                       frame_slot](const cubey::render::RenderGraphExecutionContext& context) {
                 const cubey::render::ColorTargetView target =
                     cubey::render::resolved_color_target_view(context, backbuffer);
+                const cubey::render::DepthTargetView depth =
+                    cubey::render::resolved_depth_target_view(context, surface_depth);
                 cubey::render::record_render_target_pass(
-                    context.recorder(), cubey::render::render_target_view(target),
+                    context.recorder(), cubey::render::render_target_view(target, depth),
                     cubey::render::RenderClearValues{
                         .color = cubey::render::color_clear_value(0.0F, 0.0F, 0.0F, 1.0F),
+                        .depth = cubey::render::depth_clear_value(),
                     },
                     [this, target,
                      frame_slot](const cubey::vulkan::CommandRecorder& draw_recorder) {
@@ -686,6 +695,7 @@ class OceanApp {
             .backbuffer = backbuffer,
             .scene_color = scene_color,
             .scene_depth = scene_depth,
+            .surface_depth = surface_depth,
         };
     }
 

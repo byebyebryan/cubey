@@ -67,10 +67,10 @@ struct OceanConfig {
     float foam_amount = 0.42F;
     float foam_threshold = 0.72F;
     float foam_breakup = 0.55F;
-    float absorption = 0.040F;
+    float absorption = 0.055F;
     float refraction_pixels = 10.0F;
-    float water_opacity = 0.34F;
-    float scattering_strength = 0.22F;
+    float water_opacity = 0.42F;
+    float scattering_strength = 0.25F;
     bool seafloor_enabled = false;
     float seafloor_depth = 16.0F;
     float seafloor_brightness = 1.30F;
@@ -78,9 +78,9 @@ struct OceanConfig {
     float exposure = 0.0F;
 
     std::uint32_t spectrum_resolution = 256;
-    float spectrum_patch_length_near = 96.0F;
-    float spectrum_patch_length_mid = 384.0F;
-    float spectrum_patch_length_far = 1536.0F;
+    float spectrum_patch_length_near = 120.0F;
+    float spectrum_patch_length_mid = 470.0F;
+    float spectrum_patch_length_far = 2100.0F;
     float spectrum_energy = 2.05F;
     float spectrum_fetch = 2.35F;
     float foam_generation = 0.72F;

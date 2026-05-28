@@ -31,6 +31,15 @@ void require_contains(const std::string& text, const std::string& needle, const 
     require(text.find(needle) != std::string::npos, message);
 }
 
+std::string require_block_between(const std::string& text, const std::string& begin,
+                                  const std::string& end, const char* message) {
+    const std::size_t begin_index = text.find(begin);
+    require(begin_index != std::string::npos, message);
+    const std::size_t end_index = text.find(end, begin_index + begin.size());
+    require(end_index != std::string::npos, message);
+    return text.substr(begin_index, end_index - begin_index);
+}
+
 } // namespace
 
 int main() {
@@ -125,6 +134,10 @@ int main() {
         require(ocean::ocean_cascade_patch_length(defaults, 1) <
                     ocean::ocean_cascade_patch_length(defaults, 2),
                 "mid ocean cascade should be smaller than far cascade");
+        require(defaults.spectrum_patch_length_mid != defaults.spectrum_patch_length_near * 4.0F &&
+                    defaults.spectrum_patch_length_far !=
+                        defaults.spectrum_patch_length_mid * 4.0F,
+                "default ocean cascade periods should avoid exact harmonic tiling");
         ocean::validate_ocean_config(defaults);
 
         require(ocean::ocean_render_view_from_name("") == ocean::OceanRenderView::Final,
@@ -265,12 +278,18 @@ int main() {
                          "ocean fragment shader should sample the scene depth texture");
         require_contains(fragment_shader, "scene_refraction_color",
                          "ocean fragment shader should derive refraction from scene data");
+        require_contains(fragment_shader, "water_volume_color",
+                         "ocean fragment shader should centralize water color ramp");
         require_contains(fragment_shader, "cascade_detail_filter",
                          "ocean fragment shader should filter detail by pixel footprint");
         require_contains(fragment_shader, "foam_breakup",
                          "ocean fragment shader should localize detail to foam breakup");
         require_contains(fragment_shader, "sun_glint",
                          "ocean fragment shader should include directional sun reflection");
+        require_contains(fragment_shader, "filtered_ocean_reflection",
+                         "ocean fragment shader should filter grazing-angle reflection aliasing");
+        require_contains(fragment_shader, "glint_filter",
+                         "ocean fragment shader should filter broad and sharp sun glint");
         require_contains(fragment_shader, "OCEAN_VIEW_REFLECTION",
                          "ocean fragment shader should expose reflection debug view");
         require_contains(fragment_shader, "sample_foam_history",
@@ -283,6 +302,8 @@ int main() {
                          "ocean fragment shader should expose a shader wireframe debug view");
         require_contains(fragment_shader, "wireframe_lod_tint",
                          "ocean fragment shader should tint wireframe by clipmap LOD level");
+        require_contains(fragment_shader, "frag_patch_alpha",
+                         "ocean fragment shader should apply clipmap transition alpha");
         require_contains(fragment_shader, "OCEAN_VIEW_THICKNESS",
                          "ocean fragment shader should expose water thickness debug view");
         require_contains(fragment_shader, "OCEAN_VIEW_TRANSMITTANCE",
@@ -305,6 +326,23 @@ int main() {
                          "ocean scene shader should receive seafloor detail from config");
         require_contains(scene_shader, "scene.scene_options.w < 0.0",
                          "ocean scene shader should allow disabling procedural seafloor");
+        const std::string ocean_gpu_source =
+            read_text_file(source_root / "ocean_gpu_resources.cpp");
+        const std::string ocean_app_source = read_text_file(source_root / "ocean_app.cpp");
+        const std::string surface_pass_source = require_block_between(
+            ocean_gpu_source, "MaterialPassInfo ocean_surface_pass_info()",
+            "MaterialPassInfo ocean_sky_pass_info()",
+            "ocean GPU source should contain surface and sky pass blocks");
+        require_contains(surface_pass_source, ".depth_test = true",
+                         "ocean surface pipeline should depth-test displaced water geometry");
+        require_contains(surface_pass_source, ".depth_write = true",
+                         "ocean surface pipeline should write depth for self-occlusion");
+        require_contains(surface_pass_source, ".blend_enable = true",
+                         "ocean surface pipeline should keep clipmap alpha blending");
+        require_contains(ocean_app_source, "ocean surface depth",
+                         "ocean final pass should allocate a depth target for the water surface");
+        require_contains(ocean_app_source, "write_depth(surface_depth)",
+                         "ocean final pass should attach water surface depth");
         require_contains(atmosphere_shader, "ocean_sky_color",
                          "ocean atmosphere include should share sky color with water");
         require_contains(init_shader, "gaussian_pair",

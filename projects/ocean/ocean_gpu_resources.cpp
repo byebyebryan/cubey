@@ -45,9 +45,14 @@ constexpr VkFormat kOceanFieldFormat = VK_FORMAT_R32G32B32A32_SFLOAT;
         .label = "ocean.surface",
         .push_constants = {push_constant_range},
         .cull_mode = VK_CULL_MODE_NONE,
-        .depth_test = false,
-        .depth_write = false,
-        .blend_enable = false,
+        .depth_test = true,
+        .depth_write = true,
+        .depth_compare_op = VK_COMPARE_OP_LESS_OR_EQUAL,
+        .blend_enable = true,
+        .src_color_blend_factor = VK_BLEND_FACTOR_SRC_ALPHA,
+        .dst_color_blend_factor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
+        .src_alpha_blend_factor = VK_BLEND_FACTOR_ONE,
+        .dst_alpha_blend_factor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
     };
 }
 
@@ -594,6 +599,7 @@ void OceanGpuResources::create_pipelines(const cubey::vulkan::Device& device,
     sky_pipeline_.emplace(device, cubey::render::GraphicsPipelineFileResourceConfig{
                                       .extent = config.target_extent,
                                       .color_format = config.color_format,
+                                      .depth_format = config.scene_depth_format,
                                       .shader_stage_files = sky_shader_stage_files,
                                       .material_pass = ocean_sky_pass_info(),
                                   });
@@ -607,6 +613,7 @@ void OceanGpuResources::create_pipelines(const cubey::vulkan::Device& device,
     surface_pipeline_.emplace(device, cubey::render::GraphicsPipelineFileResourceConfig{
                                           .extent = config.target_extent,
                                           .color_format = config.color_format,
+                                          .depth_format = config.scene_depth_format,
                                           .shader_stage_files = shader_stage_files,
                                           .descriptor_set_layouts = surface_scene_layouts,
                                           .material_pass = ocean_surface_pass_info(),
