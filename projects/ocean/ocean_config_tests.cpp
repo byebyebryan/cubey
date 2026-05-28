@@ -398,8 +398,12 @@ int main() {
                          "ocean finalize shader should derive crest compression");
         require_contains(finalize_shader, "compression)",
                          "ocean finalize shader should store compression separately from foam");
-        require_contains(detail_shader, "add_detail_wave",
-                         "ocean detail shader should generate analytic short-wave bands");
+        require_contains(detail_shader, "add_detail_packet",
+                         "ocean detail shader should generate packeted short-wave bands");
+        require_contains(detail_shader, "for (int band = 0; band < 8; ++band)",
+                         "ocean detail shader should layer multiple deterministic wave packets");
+        require_contains(detail_shader, "opposing_direction",
+                         "ocean detail shader should pair packet waves for evolving amplitudes");
         require_contains(detail_shader, "foam_coverage_mask",
                          "ocean detail shader should gate crest foam with patchy coverage");
         require_contains(detail_shader, "crest_sharpness",

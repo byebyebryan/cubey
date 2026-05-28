@@ -23,8 +23,8 @@ Implemented:
 - separated controls for wind direction, wind speed, fetch, spectrum spread,
   animation speed, and foam drift so visual scale, motion, and foam history can
   be tuned independently;
-- compute-backed directional short-wave detail, storing geometric height, slope,
-  and crest-gated foam source for both silhouette and shading;
+- compute-backed directional short-wave packets, storing geometric height,
+  slope, and crest-gated foam source for both silhouette and shading;
 - coherent procedural sky pass, procedural seabed scene color/depth, Fresnel sky
   reflection, scene-depth refraction, Beer-style absorption, sun glint,
   crest/shallow-water foam, exposure/tonemap handling, and debug views including
@@ -101,7 +101,7 @@ Tuning notes:
 - `Spectral geometry` controls FFT displacement strength independently from
   `Normal strength`, so reducing normals does not flatten the surface.
 - `Detail chop`, `Detail spread`, `Detail geometry`, and `Crest sharpness`
-  control directional short-wave shape.
+  control packeted directional short-wave shape.
 - `Foam coverage`, `Foam breakup`, and `Foam dispersion` control how much
   compression-driven foam is generated, how patchy it is, and how old foam
   spreads before decay.

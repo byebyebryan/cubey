@@ -46,9 +46,9 @@ float base_foam_at(ivec2 texel, ivec2 size) {
     return imageLoad(base_normal_foam_image, wrap_texel(texel, size)).w;
 }
 
-void add_detail_wave(inout float height, inout vec2 slope, inout float crest, vec2 position,
-                     vec2 direction, float wavelength, float amplitude, float time,
-                     float phase_offset, float crest_sharpness) {
+void add_detail_component(inout float height, inout vec2 slope, inout float crest, vec2 position,
+                          vec2 direction, float wavelength, float amplitude, float time,
+                          float phase_offset, float crest_sharpness) {
     float k = (2.0 * PI) / max(wavelength, 0.001);
     float omega = sqrt(G * k);
     float phase = dot(position, direction) * k + time * omega + phase_offset;
@@ -66,6 +66,45 @@ void add_detail_wave(inout float height, inout vec2 slope, inout float crest, ve
     slope += direction * wave_slope;
     float pinched_crest = smoothstep(0.78, mix(0.995, 0.90, crest_sharpness), wave);
     crest = max(crest, pinched_crest * amplitude * k * (1.0 + crest_sharpness * 0.45));
+}
+
+float wave_packet_envelope(vec2 position, vec2 direction, float wavelength, float time,
+                           float band_index) {
+    vec2 cross_direction = vec2(-direction.y, direction.x);
+    vec2 packet_uv =
+        vec2(dot(position, direction) / max(wavelength * 5.8, 0.001) -
+                 time * (0.012 + band_index * 0.0015),
+             dot(position, cross_direction) / max(wavelength * 2.9, 0.001));
+    float broad = value_noise(packet_uv + vec2(band_index * 11.7, band_index * -5.4));
+    float secondary =
+        value_noise(packet_uv * vec2(0.47, 0.72) + vec2(band_index * 4.1, time * 0.010));
+    float pulse = 0.5 + 0.5 * sin(time * (0.16 + band_index * 0.027) + band_index * 1.91);
+    float packet = mix(broad, secondary, 0.35);
+    return smoothstep(0.26, 0.78, packet) * mix(0.55, 1.15, pulse);
+}
+
+void add_detail_packet(inout float height, inout vec2 slope, inout float crest, vec2 position,
+                       vec2 wind_direction, float base_wavelength, float time,
+                       float spread_radians, float detail_chop, float crest_sharpness,
+                       int band) {
+    float band_index = float(band);
+    float band_ratio = band_index / 7.0;
+    float angle_offset = mix(-1.0, 1.0, band_ratio) * spread_radians;
+    angle_offset += (hash12(vec2(band_index, 19.31)) - 0.5) * spread_radians * 0.42;
+    vec2 direction = rotate2(wind_direction, angle_offset);
+    float wavelength = base_wavelength * exp2(mix(1.45, -0.70, band_ratio));
+    float amplitude = detail_chop * mix(0.24, 0.035, band_ratio);
+    float envelope = wave_packet_envelope(position, direction, wavelength, time, band_index);
+    amplitude *= envelope;
+    float phase = hash12(vec2(band_index, 41.7)) * 2.0 * PI;
+
+    add_detail_component(height, slope, crest, position, direction, wavelength, amplitude, time,
+                         phase, crest_sharpness);
+    vec2 opposing_direction =
+        rotate2(-direction, (hash12(vec2(band_index, 83.2)) - 0.5) * spread_radians * 0.32);
+    add_detail_component(height, slope, crest, position, opposing_direction, wavelength * 1.06,
+                         amplitude * mix(0.18, 0.36, band_ratio), -time * 0.82,
+                         phase + 1.7, crest_sharpness);
 }
 
 float foam_coverage_mask(vec2 position, vec2 wind_direction, float time, float foam_breakup,
@@ -118,17 +157,11 @@ void main() {
     float height = 0.0;
     vec2 slope = vec2(0.0);
     float crest = 0.0;
-    add_detail_wave(height, slope, crest, position, rotate2(wind_direction, -0.95 * spread_radians),
-                    base_wavelength * 1.92, 0.36 * detail_chop, time, 0.7, crest_sharpness);
-    add_detail_wave(height, slope, crest, position, rotate2(wind_direction, -0.32 * spread_radians),
-                    base_wavelength * 1.14, 0.24 * detail_chop, time * 1.08, 2.1,
-                    crest_sharpness);
-    add_detail_wave(height, slope, crest, position, rotate2(wind_direction, 0.43 * spread_radians),
-                    base_wavelength * 0.82, 0.10 * detail_chop, time * 1.18, 4.2,
-                    crest_sharpness);
-    add_detail_wave(height, slope, crest, position, rotate2(wind_direction, 1.08 * spread_radians),
-                    base_wavelength * 0.62, 0.04 * detail_chop, time * 1.34, 5.8,
-                    crest_sharpness);
+    for (int band = 0; band < 8; ++band) {
+        add_detail_packet(height, slope, crest, position, wind_direction, base_wavelength,
+                          time * mix(0.92, 1.28, float(band) / 7.0), spread_radians,
+                          detail_chop, crest_sharpness, band);
+    }
 
     vec4 base = imageLoad(base_normal_foam_image, texel);
     float base_foam = (base.w * 4.0 + base_foam_at(texel + ivec2(1, 0), size) +
