@@ -37,39 +37,101 @@ vec2 wave_vector(ivec2 texel, int size, float patch_length) {
            vec2(float(signed_frequency(texel.x, size)), float(signed_frequency(texel.y, size)));
 }
 
+float log_gaussian(float wavelength, float peak_wavelength, float bandwidth) {
+    float log_distance = log(max(wavelength, 0.0001) / max(peak_wavelength, 0.0001));
+    return exp(-(log_distance * log_distance) / max(2.0 * bandwidth * bandwidth, 0.001));
+}
+
+float directional_lobe(vec2 k_dir, vec2 wind_dir, float spread, float forward_power,
+                       float back_weight, float ambient_weight) {
+    float aligned = max(dot(k_dir, wind_dir), 0.0);
+    float opposite = max(dot(-k_dir, wind_dir), 0.0);
+    float broadening = clamp(spread, 0.0, 1.0);
+    float forward = pow(aligned, mix(forward_power, max(forward_power * 0.32, 1.2), broadening));
+    float backward =
+        back_weight * pow(opposite, mix(forward_power * 0.85, max(forward_power * 0.24, 1.0),
+                                        broadening));
+    return forward + backward + ambient_weight;
+}
+
+float resolved_wavelength_mask(float wavelength, float patch_length, float resolution,
+                               float small_wave_detail) {
+    float min_wavelength =
+        max((patch_length / resolution) * mix(3.6, 1.30, clamp(small_wave_detail, 0.0, 1.0)),
+            0.001);
+    float short_cutoff = smoothstep(min_wavelength * 0.75, min_wavelength * 1.80, wavelength);
+    float large_cutoff = 1.0 - smoothstep(patch_length * 0.82, patch_length * 1.22, wavelength);
+    return short_cutoff * large_cutoff;
+}
+
+float fully_developed_peak_wavelength(float wind_speed, float fetch_m, float swell_scale) {
+    float peak_omega = 22.0 * pow((G * G) / max(wind_speed * fetch_m, 0.001), 1.0 / 3.0);
+    float physical_peak_length = (2.0 * PI * G) / max(peak_omega * peak_omega, 0.001);
+    return physical_peak_length * swell_scale;
+}
+
+float swell_spectrum_band(float wavelength, vec2 k_dir, vec2 wind_dir, float physical_peak,
+                          float patch_length, float spread, float swell_scale) {
+    float swell_peak = clamp(physical_peak, patch_length * 0.18, patch_length * 0.62);
+    float band = log_gaussian(wavelength, swell_peak, mix(0.34, 0.58, spread));
+    float direction = directional_lobe(k_dir, wind_dir, spread, 14.0, 0.010, 0.002);
+    float swell_energy = mix(0.32, 0.74, clamp((swell_scale - 0.35) / 2.15, 0.0, 1.0));
+    return band * direction * swell_energy;
+}
+
+float wind_wave_spectrum_band(float wavelength, vec2 k_dir, vec2 wind_dir, float physical_peak,
+                              float patch_length, float spread, float wind_speed,
+                              float small_wave_detail) {
+    float wind_peak =
+        clamp(physical_peak * mix(0.20, 0.38, clamp(small_wave_detail, 0.0, 1.0)),
+              patch_length * 0.060, patch_length * 0.32);
+    float band = log_gaussian(wavelength, wind_peak, mix(0.40, 0.76, spread));
+    float direction = directional_lobe(k_dir, wind_dir, spread, 8.0, 0.055, 0.012);
+    float wind_energy = mix(0.70, 1.42, clamp((wind_speed - 6.0) / 22.0, 0.0, 1.0));
+    return band * direction * wind_energy;
+}
+
+float short_wave_spectrum_band(float wavelength, vec2 k_dir, vec2 wind_dir, float physical_peak,
+                               float patch_length, float resolution, float spread,
+                               float wind_speed, float small_wave_detail, float cascade) {
+    float wind_peak =
+        clamp(physical_peak * mix(0.20, 0.38, clamp(small_wave_detail, 0.0, 1.0)),
+              patch_length * 0.060, patch_length * 0.32);
+    float short_peak =
+        clamp(wind_peak * mix(0.24, 0.42, clamp(small_wave_detail, 0.0, 1.0)),
+              (patch_length / resolution) * 2.0, patch_length * 0.095);
+    float band = log_gaussian(wavelength, short_peak, mix(0.48, 0.86, spread));
+    float direction = directional_lobe(k_dir, wind_dir, spread, 5.4, 0.12, 0.030);
+    float wind_energy = mix(0.45, 1.24, clamp((wind_speed - 5.0) / 24.0, 0.0, 1.0));
+    float cascade_weight = cascade < 0.5 ? 1.15 : (cascade < 1.5 ? 0.78 : 0.28);
+    return band * direction * wind_energy * clamp(small_wave_detail, 0.0, 1.0) * cascade_weight;
+}
+
 float spectral_envelope(vec2 k, float patch_length, vec2 wind_dir) {
     float k_len = length(k);
     if (k_len < 0.00001) {
         return 0.0;
     }
 
+    float resolution = max(params.ocean_options.x, 1.0);
     float wind_speed = max(params.wind_options.z, 0.1);
     float fetch_m = max(params.cascade_options.z, 0.1) * 1000.0;
     float swell_scale = clamp(params.wind_options.w, 0.35, 2.5);
     float spread = clamp(params.seed_options.y, 0.0, 1.0);
     float small_wave_detail = clamp(params.seed_options.z, 0.0, 1.0);
-    float peak_omega = 22.0 * pow((G * G) / max(wind_speed * fetch_m, 0.001), 1.0 / 3.0);
-    float physical_peak_length = (2.0 * PI * G) / max(peak_omega * peak_omega, 0.001);
-    physical_peak_length *= swell_scale;
-    float dominant_length =
-        clamp(physical_peak_length, patch_length * 0.050, patch_length * 0.52);
+    float cascade = params.cascade_options.y;
+    float physical_peak = fully_developed_peak_wavelength(wind_speed, fetch_m, swell_scale);
     float wavelength = (2.0 * PI) / k_len;
-    float log_distance = log(max(wavelength, 0.0001) / dominant_length);
-    float bandwidth = mix(0.48, 0.92, spread) + small_wave_detail * 0.10;
-    float band = exp(-(log_distance * log_distance) / max(2.0 * bandwidth * bandwidth, 0.001));
-
     vec2 k_dir = k / k_len;
-    float aligned = max(dot(k_dir, wind_dir), 0.0);
-    float opposite = max(dot(-k_dir, wind_dir), 0.0);
-    float directional = pow(aligned, mix(9.0, 2.4, spread)) +
-                        mix(0.02, 0.24, spread) * pow(opposite, mix(7.0, 2.2, spread)) +
-                        mix(0.010, 0.080, spread);
-    float min_wavelength =
-        max((patch_length / params.ocean_options.x) * mix(4.2, 1.35, small_wave_detail),
-            0.001);
-    float small_cutoff = 1.0 - exp(-pow(wavelength / min_wavelength, 2.0));
-    float large_cutoff = exp(-pow(wavelength / (patch_length * 1.20), 4.0));
-    return band * directional * small_cutoff * large_cutoff;
+    float spectrum = swell_spectrum_band(wavelength, k_dir, wind_dir, physical_peak, patch_length,
+                                         spread, swell_scale);
+    spectrum += wind_wave_spectrum_band(wavelength, k_dir, wind_dir, physical_peak, patch_length,
+                                        spread, wind_speed, small_wave_detail);
+    spectrum += short_wave_spectrum_band(wavelength, k_dir, wind_dir, physical_peak, patch_length,
+                                         resolution, spread, wind_speed, small_wave_detail,
+                                         cascade);
+    return spectrum * resolved_wavelength_mask(wavelength, patch_length, resolution,
+                                               small_wave_detail);
 }
 
 vec2 h0_for_frequency(ivec2 texel, int size, float patch_length, vec2 wind_dir, float seed) {

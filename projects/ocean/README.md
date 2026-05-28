@@ -91,8 +91,11 @@ Tuning notes:
 
 - `Wind speed` and `Fetch` change the spectral peak and therefore the
   distribution of wave sizes.
-- `Spread` broadens directional variance, while `Small detail` retains shorter
-  wavelengths in the current FFT spectrum.
+- The FFT spectrum is split into swell, wind-wave, and short-wave bands so
+  long shape, mid-scale ridges, and close detail can be balanced without
+  restoring random macro bumps.
+- `Spread` broadens directional variance, while `Small detail` strengthens the
+  short/mid wave bands after unresolved wavelengths are filtered out.
 - `Macro swell` adds restrained long-period swell only; the FFT/detail layers
   are expected to carry choppy wave shape.
 - The default near/mid/far spectrum patch lengths are deliberately detuned

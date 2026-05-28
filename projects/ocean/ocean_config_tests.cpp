@@ -384,6 +384,14 @@ int main() {
                          "ocean spectrum init shader should seed a frequency-domain spectrum");
         require_contains(init_shader, "peak_omega",
                          "ocean spectrum init shader should derive spectral shape from wind and fetch");
+        require_contains(init_shader, "swell_spectrum_band",
+                         "ocean spectrum init shader should keep long swell as a named band");
+        require_contains(init_shader, "wind_wave_spectrum_band",
+                         "ocean spectrum init shader should include a mid wind-wave band");
+        require_contains(init_shader, "short_wave_spectrum_band",
+                         "ocean spectrum init shader should include a short-wave detail band");
+        require_contains(init_shader, "resolved_wavelength_mask",
+                         "ocean spectrum init shader should filter unresolved wavelengths");
         require_contains(init_shader, "small_wave_detail",
                          "ocean spectrum init shader should control high-frequency wave retention");
         require_contains(evolve_shader, "animation_speed",
