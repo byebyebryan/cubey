@@ -284,7 +284,7 @@ SurfaceSample sample_ocean(vec2 position, float camera_distance) {
                      : vec2(0.0);
     sample_value.displacement += macro_waves.displacement;
     sample_value.normal_sum = ocean_normal_from_slope(slope + macro_waves.slope);
-    sample_value.foam = max(sample_value.foam, macro_waves.foam * ocean.detail_options.z * 0.35);
+    sample_value.foam = max(sample_value.foam, macro_waves.foam * ocean.detail_options.z * 0.10);
     add_disturbance(sample_value, position);
     return sample_value;
 }

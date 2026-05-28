@@ -91,6 +91,8 @@ Tuning notes:
   distribution of wave sizes.
 - `Spread` broadens directional variance, while `Small detail` retains shorter
   wavelengths in the current FFT spectrum.
+- `Macro swell` adds restrained long-period swell only; the FFT/detail layers
+  are expected to carry choppy wave shape.
 - The default near/mid/far spectrum patch lengths are deliberately detuned
   instead of exact multiples, which keeps low-angle views from locking onto a
   repeated cascade period.

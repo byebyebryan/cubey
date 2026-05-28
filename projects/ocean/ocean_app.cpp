@@ -469,7 +469,7 @@ class OceanApp {
                 },
             .detail_options =
                 {
-                    ocean_config_.swell_scale,
+                    ocean_config_.macro_swell,
                     ocean_config_.normal_strength,
                     ocean_config_.foam_amount,
                     ocean_config_.foam_threshold,

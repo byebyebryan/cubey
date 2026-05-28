@@ -95,6 +95,7 @@ void draw_ocean_ui(OceanUiContext ui) {
         ImGui::SliderFloat("Animation speed", &ui.config.animation_speed, 0.0F, 3.0F, "%.2f");
         ImGui::SliderFloat("Amplitude", &ui.config.wave_amplitude, 0.0F, 3.0F, "%.2f");
         ImGui::SliderFloat("Swell scale", &ui.config.swell_scale, 0.35F, 2.5F, "%.2f");
+        ImGui::SliderFloat("Macro swell", &ui.config.macro_swell, 0.0F, 1.5F, "%.2f");
         ImGui::SliderFloat("Chop", &ui.config.chop, 0.0F, 2.0F, "%.2f");
         ImGui::SliderFloat("Spectral geometry", &ui.config.spectral_geometry, 0.0F, 1.5F,
                            "%.2f");

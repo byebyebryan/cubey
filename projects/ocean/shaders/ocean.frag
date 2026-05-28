@@ -271,11 +271,11 @@ FragmentSurfaceSample sample_fragment_surface(vec2 position, float camera_distan
     vec2 detail_slope = sample_value.detail_slope_sum;
     sample_value.normal_sum =
         ocean_normal_from_slope(slope + macro_waves.slope + detail_slope * 0.44);
-    sample_value.compression = max(sample_value.compression, macro_waves.foam * 0.55);
-    sample_value.foam = max(sample_value.foam, macro_waves.foam * ocean.detail_options.z * 0.18);
-    sample_value.detail_foam = max(sample_value.detail_foam, macro_waves.foam * 0.08);
+    sample_value.compression = max(sample_value.compression, macro_waves.foam * 0.25);
+    sample_value.foam = max(sample_value.foam, macro_waves.foam * ocean.detail_options.z * 0.05);
+    sample_value.detail_foam = max(sample_value.detail_foam, macro_waves.foam * 0.02);
     sample_value.persistent_foam =
-        max(sample_value.persistent_foam, vec4(macro_waves.foam * 0.08, 0.0, 0.0, 0.0));
+        max(sample_value.persistent_foam, vec4(macro_waves.foam * 0.02, 0.0, 0.0, 0.0));
     return sample_value;
 }
 

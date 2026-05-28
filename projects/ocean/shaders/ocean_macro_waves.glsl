@@ -70,24 +70,18 @@ void ocean_add_macro_wave(inout OceanMacroWaveSample sample_value, vec2 position
 }
 
 OceanMacroWaveSample ocean_macro_waves(vec2 position, float time, float wind_angle,
-                                       float amplitude, float swell_scale, float chop) {
+                                       float amplitude, float macro_swell, float chop) {
     OceanMacroWaveSample sample_value = ocean_empty_macro_wave_sample();
-    float energy = max(amplitude, 0.0);
-    float swell = clamp(swell_scale, 0.35, 2.5);
+    float energy = max(amplitude, 0.0) * clamp(macro_swell, 0.0, 1.5);
+    float swell = mix(0.75, 1.65, clamp(macro_swell, 0.0, 1.5) / 1.5);
     ocean_add_macro_wave(sample_value, position, time, ocean_macro_wave_direction(wind_angle, 0.0),
-                         520.0 * swell, 4.4 * energy, chop * 0.30, 0.2);
+                         720.0 * swell, 2.35 * energy, chop * 0.18, 0.2);
     ocean_add_macro_wave(sample_value, position, time, ocean_macro_wave_direction(wind_angle, 0.52),
-                         340.0 * swell, 3.1 * energy, chop * 0.27, 2.4);
+                         470.0 * swell, 1.42 * energy, chop * 0.14, 2.4);
     ocean_add_macro_wave(sample_value, position, time, ocean_macro_wave_direction(wind_angle, -0.74),
-                         220.0 * swell, 2.05 * energy, chop * 0.23, 5.1);
+                         310.0 * swell, 0.84 * energy, chop * 0.10, 5.1);
     ocean_add_macro_wave(sample_value, position, time, ocean_macro_wave_direction(wind_angle, 1.37),
-                         150.0 * swell, 1.30 * energy, chop * 0.18, 3.3);
-    ocean_add_macro_wave(sample_value, position, time, ocean_macro_wave_direction(wind_angle, -1.91),
-                         105.0 * swell, 0.82 * energy, chop * 0.13, 4.7);
-    ocean_add_macro_wave(sample_value, position, time, ocean_macro_wave_direction(wind_angle, 2.62),
-                         76.0 * swell, 0.48 * energy, chop * 0.09, 1.8);
-    ocean_add_macro_wave(sample_value, position, time, ocean_macro_wave_direction(wind_angle, -2.84),
-                         54.0 * swell, 0.30 * energy, chop * 0.06, 5.9);
+                         220.0 * swell, 0.40 * energy, chop * 0.07, 3.3);
     return sample_value;
 }
 

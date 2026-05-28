@@ -107,6 +107,8 @@ int main() {
                 "ocean should default to a practical FFT spectrum resolution");
         require(defaults.wind_speed_mps > 0.0F && defaults.animation_speed > 0.0F,
                 "default ocean config should split wind-driven shape from animation speed");
+        require(defaults.macro_swell >= 0.0F,
+                "default ocean config should expose separate macro swell strength");
         require(defaults.fetch_km > 0.0F && defaults.spectrum_spread >= 0.0F &&
                     defaults.small_wave_detail > 0.0F,
                 "default ocean config should expose hybrid wind spectrum controls");
@@ -281,6 +283,8 @@ int main() {
                          "ocean vertex shader should sample the detail wave field");
         require_contains(vertex_shader, "ocean.detail_wave_options.w",
                          "ocean vertex shader should use independent spectral geometry");
+        require_contains(vertex_shader, "macro_waves.foam * ocean.detail_options.z * 0.10",
+                         "ocean vertex shader should keep macro waves from dominating foam");
         require_contains(vertex_shader, "triangle_barycentric",
                          "ocean vertex shader should emit barycentric wireframe data");
         require_contains(vertex_shader, "noperspective layout(location = 5)",
@@ -301,6 +305,8 @@ int main() {
                          "ocean fragment shader should filter detail by pixel footprint");
         require_contains(fragment_shader, "ocean.detail_wave_options.w",
                          "ocean fragment shader should use independent spectral geometry");
+        require_contains(fragment_shader, "macro_waves.foam * 0.25",
+                         "ocean fragment shader should keep macro swell secondary");
         require_contains(fragment_shader, "foam_breakup",
                          "ocean fragment shader should localize detail to foam breakup");
         require_contains(fragment_shader, "sun_glint",
@@ -400,6 +406,12 @@ int main() {
                          "ocean detail shader should sharpen crest geometry");
         require_contains(detail_shader, "vec4(height * detail_geometry, slope.x, slope.y",
                          "ocean detail shader should write height, slope, and foam source");
+        const std::string macro_shader =
+            read_text_file(source_root / "shaders/ocean_macro_waves.glsl");
+        require_contains(macro_shader, "720.0 * swell",
+                         "ocean macro waves should focus on long swell");
+        require_contains(macro_shader, "220.0 * swell",
+                         "ocean macro waves should stop before short repeating components");
         require_contains(foam_update_shader, "previous_foam_image",
                          "ocean foam update shader should read prior foam history");
         require_contains(foam_update_shader, "next_foam_image",
