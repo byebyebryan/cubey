@@ -31,7 +31,7 @@ inline constexpr std::array<OceanRenderView, 10> kOceanRenderViews{
 };
 
 inline constexpr std::uint32_t kOceanMinMeshCells = 32;
-inline constexpr std::uint32_t kOceanMaxMeshCells = 320;
+inline constexpr std::uint32_t kOceanMaxMeshCells = 512;
 inline constexpr std::uint32_t kOceanMinMeshLodLevels = 1;
 inline constexpr std::uint32_t kOceanMaxMeshLodLevels = 6;
 inline constexpr std::uint32_t kOceanMinSpectrumResolution = 64;
@@ -40,8 +40,8 @@ inline constexpr std::uint32_t kOceanCascadeCount = 3;
 inline constexpr std::uint32_t kOceanSpectrumFieldCount = 3;
 
 struct OceanConfig {
-    std::uint32_t mesh_cells = 224;
-    std::uint32_t mesh_lod_levels = 4;
+    std::uint32_t mesh_cells = 512;
+    std::uint32_t mesh_lod_levels = 5;
     float mesh_extent = 5600.0F;
     float horizon_fog = 0.50F;
 
