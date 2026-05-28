@@ -12,6 +12,7 @@ layout(push_constant) uniform FinalizeParams {
     vec4 ocean_options;
     vec4 cascade_options;
     vec4 foam_options;
+    vec4 foam_shaping_options;
     vec4 debug_options;
 } params;
 
@@ -68,12 +69,15 @@ void main() {
     float jacobian =
         (1.0 + d_horizontal_dx.x) * (1.0 + d_horizontal_dz.y) -
         (d_horizontal_dz.x * d_horizontal_dx.y);
-    float compression = max(0.0, 1.0 - jacobian);
+    float compression = clamp(max(0.0, 1.0 - jacobian), 0.0, 2.0);
     float curvature = max(0.0, -slope_z_curvature.z);
-    float crest_signal = compression * 1.5 + curvature * chop * 0.18;
-    float foam = smoothstep(params.foam_options.z, params.foam_options.z + 0.55, crest_signal) *
+    float crest_signal = compression * 1.5 + curvature * chop * 0.14;
+    float foam_coverage = clamp(params.foam_shaping_options.x, 0.0, 1.5);
+    float foam_width = mix(0.74, 0.36, clamp(foam_coverage, 0.0, 1.0));
+    float foam = smoothstep(params.foam_options.z, params.foam_options.z + foam_width,
+                            crest_signal) *
                  params.foam_options.x * params.foam_options.w;
-    foam *= mix(0.35, 1.0, clamp(params.foam_options.y, 0.0, 1.0));
-    imageStore(displacement_image, texel, vec4(horizontal.x, center, horizontal.y, foam));
+    foam *= mix(0.28, 0.92, clamp(foam_coverage, 0.0, 1.0));
+    imageStore(displacement_image, texel, vec4(horizontal.x, center, horizontal.y, compression));
     imageStore(normal_foam_image, texel, vec4(normal, foam));
 }

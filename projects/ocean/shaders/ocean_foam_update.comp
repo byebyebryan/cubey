@@ -9,6 +9,7 @@ layout(rgba32f, set = 0, binding = 2) writeonly uniform image2D next_foam_image;
 layout(push_constant) uniform FoamUpdateParams {
     vec4 foam_options;
     vec4 cascade_options;
+    vec4 shaping_options;
 } params;
 
 ivec2 wrap_texel(ivec2 texel, ivec2 size) {
@@ -40,6 +41,8 @@ void main() {
     float decay = pow(clamp(params.foam_options.y, 0.0, 1.0), dt * 60.0);
     float source_gain = max(params.foam_options.z, 0.0);
     float previous_valid = params.foam_options.w;
+    float foam_coverage = clamp(params.shaping_options.x, 0.0, 1.5);
+    float foam_dispersion = clamp(params.shaping_options.y, 0.0, 1.0);
     float patch_length = max(params.cascade_options.x, 0.001);
     vec2 wind_direction = normalize(params.cascade_options.yz);
     float foam_drift = max(params.cascade_options.w, 0.0);
@@ -47,10 +50,19 @@ void main() {
     vec2 texel_motion = wind_direction * ((foam_drift * 8.0 * dt) / patch_length) * vec2(size);
     vec4 previous =
         previous_valid > 0.5 ? bilinear_foam(vec2(texel) - texel_motion, size) : vec4(0.0);
+    if (previous_valid > 0.5 && foam_dispersion > 0.0001) {
+        vec4 neighbor_sum = foam_at(texel + ivec2(1, 0), size) +
+                            foam_at(texel + ivec2(-1, 0), size) +
+                            foam_at(texel + ivec2(0, 1), size) +
+                            foam_at(texel + ivec2(0, -1), size);
+        vec4 dispersed = (previous * 3.0 + neighbor_sum) * (1.0 / 7.0);
+        previous = mix(previous, dispersed, foam_dispersion * 0.58);
+    }
     float crest = imageLoad(detail_normal_foam_image, texel).w;
-    float source = pow(clamp(crest, 0.0, 1.0), 0.75) * source_gain * 2.0;
-    float coverage = clamp(max(previous.x * decay, source), 0.0, 1.0);
-    float freshness = clamp(max(previous.y * pow(decay, 0.42), source), 0.0, 1.0);
-    float energy = clamp(max(previous.z * decay, source), 0.0, 1.0);
+    float source = pow(clamp(crest, 0.0, 1.0), 1.36) * source_gain *
+                   mix(0.56, 1.04, clamp(foam_coverage, 0.0, 1.0));
+    float coverage = clamp(previous.x * decay + source * (1.0 - previous.x) * 1.05, 0.0, 1.0);
+    float freshness = clamp(previous.y * pow(decay, 0.42) + source * 0.92, 0.0, 1.0);
+    float energy = clamp(previous.z * pow(decay, 0.76) + source * 0.74, 0.0, 1.0);
     imageStore(next_foam_image, texel, vec4(coverage, freshness, energy, 0.0));
 }

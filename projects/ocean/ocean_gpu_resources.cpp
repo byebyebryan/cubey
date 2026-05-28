@@ -526,9 +526,9 @@ void OceanGpuResources::create_pipelines(const cubey::vulkan::Device& device,
                                          const OceanGpuResourceConfig& config) {
     const VkPushConstantRange spectrum_push_constants = compute_push_constant_range(16U);
     const VkPushConstantRange fft_push_constants = compute_push_constant_range(8U);
-    const VkPushConstantRange finalize_push_constants = compute_push_constant_range(16U);
-    const VkPushConstantRange detail_push_constants = compute_push_constant_range(16U);
-    const VkPushConstantRange foam_update_push_constants = compute_push_constant_range(8U);
+    const VkPushConstantRange finalize_push_constants = compute_push_constant_range(20U);
+    const VkPushConstantRange detail_push_constants = compute_push_constant_range(20U);
+    const VkPushConstantRange foam_update_push_constants = compute_push_constant_range(12U);
 
     const std::array init_layouts{spectrum_init_layout_->handle()};
     spectrum_init_pipeline_.emplace(

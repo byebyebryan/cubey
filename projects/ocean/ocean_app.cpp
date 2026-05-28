@@ -108,12 +108,14 @@ struct OceanFinalizePushConstants {
     cubey::math::Vec4 ocean_options;
     cubey::math::Vec4 cascade_options;
     cubey::math::Vec4 foam_options;
+    cubey::math::Vec4 foam_shaping_options;
     cubey::math::Vec4 debug_options;
 };
 
 struct OceanFoamUpdatePushConstants {
     cubey::math::Vec4 foam_options;
     cubey::math::Vec4 cascade_options;
+    cubey::math::Vec4 shaping_options;
 };
 
 struct OceanDetailPushConstants {
@@ -121,13 +123,14 @@ struct OceanDetailPushConstants {
     cubey::math::Vec4 cascade_options;
     cubey::math::Vec4 wind_options;
     cubey::math::Vec4 foam_options;
+    cubey::math::Vec4 foam_shaping_options;
 };
 
 static_assert(sizeof(OceanSpectrumPushConstants) == sizeof(float) * 16U);
 static_assert(sizeof(OceanFftPushConstants) == sizeof(float) * 8U);
-static_assert(sizeof(OceanFinalizePushConstants) == sizeof(float) * 16U);
-static_assert(sizeof(OceanFoamUpdatePushConstants) == sizeof(float) * 8U);
-static_assert(sizeof(OceanDetailPushConstants) == sizeof(float) * 16U);
+static_assert(sizeof(OceanFinalizePushConstants) == sizeof(float) * 20U);
+static_assert(sizeof(OceanFoamUpdatePushConstants) == sizeof(float) * 12U);
+static_assert(sizeof(OceanDetailPushConstants) == sizeof(float) * 20U);
 
 enum class OceanRenderTargetMode : std::uint8_t {
     Present,
@@ -777,6 +780,13 @@ class OceanApp {
                     ocean_config_.foam_threshold,
                     ocean_config_.foam_amount,
                 },
+            .foam_shaping_options =
+                {
+                    ocean_config_.foam_coverage,
+                    ocean_config_.foam_dispersion,
+                    0.0F,
+                    0.0F,
+                },
             .debug_options =
                 {
                     0.0F,
@@ -796,7 +806,7 @@ class OceanApp {
                 {
                     static_cast<float>(delta_seconds),
                     ocean_config_.foam_decay,
-                    ocean_config_.foam_generation * ocean_config_.foam_amount,
+                    ocean_config_.foam_generation,
                     foam_initialized_ ? 1.0F : 0.0F,
                 },
             .cascade_options =
@@ -805,6 +815,13 @@ class OceanApp {
                     std::cos(wind),
                     std::sin(wind),
                     ocean_config_.foam_drift,
+                },
+            .shaping_options =
+                {
+                    ocean_config_.foam_coverage,
+                    ocean_config_.foam_dispersion,
+                    0.0F,
+                    0.0F,
                 },
         };
     }
@@ -839,6 +856,13 @@ class OceanApp {
                     ocean_config_.sea_state,
                     ocean_config_.detail_geometry,
                     ocean_config_.crest_sharpness,
+                },
+            .foam_shaping_options =
+                {
+                    ocean_config_.foam_coverage,
+                    ocean_config_.foam_dispersion,
+                    0.0F,
+                    0.0F,
                 },
         };
     }

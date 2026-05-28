@@ -25,9 +25,12 @@ enum class OceanRenderView : std::uint32_t {
     Thickness = 11,
     Transmittance = 12,
     RefractionOffset = 13,
+    Compression = 14,
+    FoamSource = 15,
+    FoamHistory = 16,
 };
 
-inline constexpr std::array<OceanRenderView, 14> kOceanRenderViews{
+inline constexpr std::array<OceanRenderView, 17> kOceanRenderViews{
     OceanRenderView::Final,         OceanRenderView::Height,
     OceanRenderView::Displacement,  OceanRenderView::Normal,
     OceanRenderView::Foam,          OceanRenderView::Detail,
@@ -35,6 +38,8 @@ inline constexpr std::array<OceanRenderView, 14> kOceanRenderViews{
     OceanRenderView::Spectrum,      OceanRenderView::Wireframe,
     OceanRenderView::SceneDepth,    OceanRenderView::Thickness,
     OceanRenderView::Transmittance, OceanRenderView::RefractionOffset,
+    OceanRenderView::Compression,   OceanRenderView::FoamSource,
+    OceanRenderView::FoamHistory,
 };
 
 inline constexpr std::uint32_t kOceanMinMeshCells = 32;
@@ -58,15 +63,17 @@ struct OceanConfig {
     float wave_amplitude = 2.55F;
     float swell_scale = 1.15F;
     float chop = 1.75F;
-    float normal_strength = 0.48F;
-    float detail_chop = 1.05F;
+    float normal_strength = 0.38F;
+    float detail_chop = 0.78F;
     float detail_spread = 0.30F;
-    float detail_geometry = 0.55F;
-    float crest_sharpness = 0.70F;
+    float detail_geometry = 0.38F;
+    float crest_sharpness = 0.58F;
 
-    float foam_amount = 0.42F;
-    float foam_threshold = 0.72F;
-    float foam_breakup = 0.55F;
+    float foam_amount = 0.30F;
+    float foam_threshold = 1.02F;
+    float foam_breakup = 0.62F;
+    float foam_coverage = 0.34F;
+    float foam_dispersion = 0.44F;
     float absorption = 0.055F;
     float refraction_pixels = 10.0F;
     float water_opacity = 0.42F;
@@ -83,8 +90,8 @@ struct OceanConfig {
     float spectrum_patch_length_far = 2100.0F;
     float spectrum_energy = 2.05F;
     float spectrum_fetch = 2.35F;
-    float foam_generation = 0.72F;
-    float foam_decay = 0.972F;
+    float foam_generation = 0.42F;
+    float foam_decay = 0.948F;
     float foam_drift = 1.0F;
     std::uint32_t spectrum_seed = 1337;
 
@@ -124,6 +131,12 @@ struct OceanConfig {
         return "transmittance";
     case OceanRenderView::RefractionOffset:
         return "refraction-offset";
+    case OceanRenderView::Compression:
+        return "compression";
+    case OceanRenderView::FoamSource:
+        return "foam-source";
+    case OceanRenderView::FoamHistory:
+        return "foam-history";
     }
     return "final";
 }
@@ -232,6 +245,12 @@ inline void validate_ocean_config(const OceanConfig& config) {
     }
     if (config.foam_breakup < 0.0F) {
         throw std::runtime_error("ocean foam breakup must be nonnegative");
+    }
+    if (config.foam_coverage < 0.0F) {
+        throw std::runtime_error("ocean foam coverage must be nonnegative");
+    }
+    if (config.foam_dispersion < 0.0F) {
+        throw std::runtime_error("ocean foam dispersion must be nonnegative");
     }
     if (config.foam_drift < 0.0F) {
         throw std::runtime_error("ocean foam drift must be nonnegative");

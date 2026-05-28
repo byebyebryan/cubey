@@ -17,8 +17,9 @@ Implemented:
   choppy displacement, slope, curvature, and crest-compression fields;
 - bounded nonlinear macro crests layered over the FFT field for stronger
   asymmetric wave shape near the camera;
-- persistent ping-ponged crest foam with coverage/freshness state and filtered
-  breakup detail, instead of full-surface procedural normal shimmer;
+- persistent ping-ponged crest foam with coverage/freshness state, dispersion,
+  and filtered breakup detail, instead of full-surface procedural normal
+  shimmer;
 - separated controls for wind direction, spectral sea state, animation speed,
   and foam drift so visual scale, motion, and foam history can be tuned
   independently;
@@ -27,7 +28,8 @@ Implemented:
 - coherent procedural sky pass, procedural seabed scene color/depth, Fresnel sky
   reflection, scene-depth refraction, Beer-style absorption, sun glint,
   crest/shallow-water foam, exposure/tonemap handling, and debug views including
-  wireframe LOD and translucency inspection;
+  wireframe LOD, crest compression, foam source/history, and translucency
+  inspection;
 - first-class future hooks for local disturbances and shoreline/bathymetry
   masks, disabled by default so the baseline reads as wind-driven ocean.
 
@@ -65,6 +67,9 @@ Useful runs:
 ./build/dev/projects/ocean/ocean --debug-view foam --frames 300 --width 1280 --height 720
 ./build/dev/projects/ocean/ocean --debug-view wireframe --frames 300 --width 1280 --height 720
 ./build/dev/projects/ocean/ocean --debug-view thickness --frames 300 --width 1280 --height 720
+./build/dev/projects/ocean/ocean --debug-view compression --frames 300 --width 1280 --height 720
+./build/dev/projects/ocean/ocean --debug-view foam-source --frames 300 --width 1280 --height 720
+./build/dev/projects/ocean/ocean --debug-view foam-history --frames 300 --width 1280 --height 720
 ./build/dev/projects/ocean/ocean --headless --frames 120 --width 640 --height 360 --output /tmp/cubey-ocean.png
 ./build/dev/projects/ocean/ocean --headless --capture video --frames 180 --fps 60 --width 1280 --height 720 --output /tmp/cubey-ocean.mp4
 ```
@@ -76,8 +81,8 @@ Controls:
 - Space: pause or resume wave time.
 - `R`: reset camera and wave time.
 - `D`: cycle final, height, displacement, normal, foam, detail, reflection,
-  refraction, spectrum, wireframe, scene-depth, thickness, transmittance, and
-  refraction-offset debug views.
+  refraction, spectrum, wireframe, scene-depth, thickness, transmittance,
+  refraction-offset, compression, foam-source, and foam-history debug views.
 - Escape: close.
 
 Tuning notes:
@@ -91,7 +96,9 @@ Tuning notes:
 - `Foam drift` moves the persistent foam history along the wind direction only.
 - `Detail chop`, `Detail spread`, `Detail geometry`, and `Crest sharpness`
   control directional short-wave shape.
-- `Foam breakup` controls patchy breakup on detail crest foam.
+- `Foam coverage`, `Foam breakup`, and `Foam dispersion` control how much
+  compression-driven foam is generated, how patchy it is, and how old foam
+  spreads before decay.
 - `Absorption`, `Refraction px`, `Water opacity`, `Scattering`, and `Seafloor`
   controls shape the single-layer-water translucency path. The procedural
   seafloor is optional and off by default for open-ocean shots; when enabled,

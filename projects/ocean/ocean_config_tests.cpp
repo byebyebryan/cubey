@@ -112,8 +112,9 @@ int main() {
                 "default ocean config should expose directional geometric detail waves");
         require(defaults.foam_drift >= 0.0F,
                 "default ocean config should expose independent foam drift");
-        require(defaults.foam_breakup > 0.0F,
-                "default ocean config should expose crest foam breakup");
+        require(defaults.foam_breakup > 0.0F && defaults.foam_coverage > 0.0F &&
+                    defaults.foam_dispersion > 0.0F,
+                "default ocean config should expose crest foam shaping controls");
         require(defaults.refraction_pixels > 1.0F,
                 "default ocean config should expose pixel-scale scene refraction");
         require(defaults.water_opacity > 0.0F && defaults.water_opacity <= 1.0F,
@@ -157,7 +158,16 @@ int main() {
         require(ocean::ocean_render_view_from_name("refraction-offset") ==
                     ocean::OceanRenderView::RefractionOffset,
                 "refraction offset debug view should parse");
-        require(ocean::next_ocean_render_view(ocean::OceanRenderView::RefractionOffset) ==
+        require(ocean::ocean_render_view_from_name("compression") ==
+                    ocean::OceanRenderView::Compression,
+                "compression debug view should parse");
+        require(ocean::ocean_render_view_from_name("foam-source") ==
+                    ocean::OceanRenderView::FoamSource,
+                "foam source debug view should parse");
+        require(ocean::ocean_render_view_from_name("foam-history") ==
+                    ocean::OceanRenderView::FoamHistory,
+                "foam history debug view should parse");
+        require(ocean::next_ocean_render_view(ocean::OceanRenderView::FoamHistory) ==
                     ocean::OceanRenderView::Final,
                 "ocean debug view cycle should wrap");
 
@@ -308,6 +318,12 @@ int main() {
                          "ocean fragment shader should expose water thickness debug view");
         require_contains(fragment_shader, "OCEAN_VIEW_TRANSMITTANCE",
                          "ocean fragment shader should expose transmittance debug view");
+        require_contains(fragment_shader, "OCEAN_VIEW_COMPRESSION",
+                         "ocean fragment shader should expose compression debug view");
+        require_contains(fragment_shader, "OCEAN_VIEW_FOAM_SOURCE",
+                         "ocean fragment shader should expose foam source debug view");
+        require_contains(fragment_shader, "OCEAN_VIEW_FOAM_HISTORY",
+                         "ocean fragment shader should expose foam history debug view");
         require_contains(fragment_shader, "noperspective layout(location = 5)",
                          "ocean fragment shader should keep wireframe interpolation screen-space");
         require_contains(sky_shader, "camera_forward",
@@ -363,6 +379,8 @@ int main() {
                          "ocean finalize shader should write normal and foam output");
         require_contains(finalize_shader, "jacobian",
                          "ocean finalize shader should derive crest compression");
+        require_contains(finalize_shader, "compression)",
+                         "ocean finalize shader should store compression separately from foam");
         require_contains(detail_shader, "add_detail_wave",
                          "ocean detail shader should generate analytic short-wave bands");
         require_contains(detail_shader, "foam_coverage_mask",
@@ -381,6 +399,8 @@ int main() {
                          "ocean foam update shader should preserve fresh foam state");
         require_contains(foam_update_shader, "foam_drift",
                          "ocean foam update shader should drift foam independently");
+        require_contains(foam_update_shader, "foam_dispersion",
+                         "ocean foam update shader should disperse persistent foam");
 
         return 0;
     } catch (const std::exception& error) {

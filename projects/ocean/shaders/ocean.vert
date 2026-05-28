@@ -235,8 +235,7 @@ void add_cascade(inout SurfaceSample sample_value, uint cascade, vec2 position,
                                    cascade_geometry_detail_scale(cascade, camera_distance) * 0.42) *
                                weight;
     sample_value.foam =
-        max(sample_value.foam,
-            max(max(displacement.w, normal_foam.w), detail_wave.w) * displacement_weight);
+        max(sample_value.foam, max(normal_foam.w, detail_wave.w) * displacement_weight);
     sample_value.weight_sum += weight;
 }
 

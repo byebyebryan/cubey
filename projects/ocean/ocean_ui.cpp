@@ -126,6 +126,8 @@ void draw_ocean_ui(OceanUiContext ui) {
         ImGui::SliderFloat("Foam threshold", &ui.config.foam_threshold, 0.1F, 1.5F, "%.2f");
         ImGui::SliderFloat("Foam generation", &ui.config.foam_generation, 0.0F, 2.0F, "%.2f");
         ImGui::SliderFloat("Foam breakup", &ui.config.foam_breakup, 0.0F, 2.0F, "%.2f");
+        ImGui::SliderFloat("Foam coverage", &ui.config.foam_coverage, 0.0F, 1.5F, "%.2f");
+        ImGui::SliderFloat("Foam dispersion", &ui.config.foam_dispersion, 0.0F, 1.0F, "%.2f");
         ImGui::SliderFloat("Foam decay", &ui.config.foam_decay, 0.0F, 1.0F, "%.3f");
         ImGui::SliderFloat("Foam drift", &ui.config.foam_drift, 0.0F, 3.0F, "%.2f");
         ImGui::SliderFloat("Absorption", &ui.config.absorption, 0.0F, 0.35F, "%.3f");
