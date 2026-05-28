@@ -42,6 +42,7 @@ using cubey::host::FrameStatsSample;
 
 constexpr float kFireCameraDistance = 2.05F;
 constexpr float kExplosionCameraDistance = 2.18F;
+constexpr float kHeadlessVideoOrbitSpeed = 0.32F;
 constexpr cubey::math::Vec3 kVolumeCenter{0.5F, 0.5F, 0.5F};
 
 [[nodiscard]] float default_camera_distance(Pyro3DMode mode) {
@@ -471,6 +472,13 @@ class Pyro3DApp {
             create_global_resources_if_needed(context.device(), context.gpu(), 1);
             create_render_pipeline(context.device(), target.format, target.extent);
         };
+        if (config_.capture_mode == CaptureMode::Video) {
+            orbit_controller_.set_auto_rotation_speed(kHeadlessVideoOrbitSpeed);
+            callbacks.before_frame = [this](cubey::host::HeadlessPngContext&,
+                                            const cubey::host::HeadlessCaptureFrame& frame) {
+                orbit_controller_.update(frame.timing.delta_seconds);
+            };
+        }
         cubey::host::install_headless_simulation_driver(
             callbacks, config_,
             {

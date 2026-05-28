@@ -22,6 +22,12 @@ namespace cubey::projects::gltf_viewer {
 
 using cubey::host::FrameStatsSample;
 
+namespace {
+
+constexpr float kHeadlessVideoOrbitSpeed = 0.32F;
+
+} // namespace
+
 const cubey::math::Vec3 kLightDirection = glm::normalize(cubey::math::Vec3{0.45F, 0.82F, 0.35F});
 
 std::filesystem::path shader_path(const char* filename) {
@@ -169,9 +175,12 @@ int GltfViewerApp::run_headless() {
                                context.render_target().format);
     };
     if (config_.capture_mode == CaptureMode::Video) {
+        orbit_controller_.set_auto_rotation_speed(kHeadlessVideoOrbitSpeed);
         callbacks.before_frame = [this](cubey::host::HeadlessPngContext&,
                                         const cubey::host::HeadlessCaptureFrame& frame) {
             update_animation(static_cast<float>(frame.timing.delta_seconds));
+            orbit_controller_.update(frame.timing.delta_seconds);
+            update_camera_transform();
         };
     }
     callbacks.record_frame = [this](cubey::host::HeadlessPngContext& context,

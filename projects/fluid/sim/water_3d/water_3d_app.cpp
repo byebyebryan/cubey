@@ -49,6 +49,7 @@ constexpr float kCameraFarPlane = 20.0F;
 constexpr float kCameraMinDistance = 0.55F;
 constexpr float kCameraBaseYaw = -0.45F;
 constexpr float kCameraBasePitch = -0.34F;
+constexpr float kHeadlessVideoOrbitSpeed = 0.32F;
 constexpr cubey::math::Vec3 kVolumeCenter{0.5F, 0.5F, 0.5F};
 
 [[nodiscard]] std::filesystem::path bundled_sample_environment_path() {
@@ -405,6 +406,13 @@ class Water3DApp {
                 cubey::host::headless_capture_frame_slot_count(config_));
             create_render_pipeline(context.device(), target.format, target.extent);
         };
+        if (config_.capture_mode == CaptureMode::Video) {
+            orbit_controller_.set_auto_rotation_speed(kHeadlessVideoOrbitSpeed);
+            callbacks.before_frame = [this](cubey::host::HeadlessPngContext&,
+                                            const cubey::host::HeadlessCaptureFrame& frame) {
+                orbit_controller_.update(frame.timing.delta_seconds);
+            };
+        }
         cubey::host::install_headless_simulation_driver(
             callbacks, config_,
             {
