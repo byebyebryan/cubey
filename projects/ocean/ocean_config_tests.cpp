@@ -107,6 +107,8 @@ int main() {
                 "ocean should default to a practical FFT spectrum resolution");
         require(defaults.sea_state > 0.0F && defaults.animation_speed > 0.0F,
                 "default ocean config should split sea-state shape from animation speed");
+        require(defaults.spectral_geometry > 0.0F,
+                "default ocean config should decouple spectral geometry from normals");
         require(defaults.detail_chop > 0.0F && defaults.detail_spread >= 0.0F &&
                     defaults.detail_geometry > 0.0F && defaults.crest_sharpness > 0.0F,
                 "default ocean config should expose directional geometric detail waves");
@@ -274,6 +276,8 @@ int main() {
                          "ocean vertex shader should filter geometric detail displacement");
         require_contains(vertex_shader, "sample_detail_wave",
                          "ocean vertex shader should sample the detail wave field");
+        require_contains(vertex_shader, "ocean.detail_wave_options.w",
+                         "ocean vertex shader should use independent spectral geometry");
         require_contains(vertex_shader, "triangle_barycentric",
                          "ocean vertex shader should emit barycentric wireframe data");
         require_contains(vertex_shader, "noperspective layout(location = 5)",
@@ -292,6 +296,8 @@ int main() {
                          "ocean fragment shader should centralize water color ramp");
         require_contains(fragment_shader, "cascade_detail_filter",
                          "ocean fragment shader should filter detail by pixel footprint");
+        require_contains(fragment_shader, "ocean.detail_wave_options.w",
+                         "ocean fragment shader should use independent spectral geometry");
         require_contains(fragment_shader, "foam_breakup",
                          "ocean fragment shader should localize detail to foam breakup");
         require_contains(fragment_shader, "sun_glint",

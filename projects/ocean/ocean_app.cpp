@@ -512,7 +512,7 @@ class OceanApp {
                     ocean_config_.detail_chop,
                     ocean_config_.detail_spread,
                     ocean_config_.foam_breakup,
-                    ocean_config_.detail_geometry,
+                    ocean_config_.spectral_geometry,
                 },
         };
     }

@@ -63,6 +63,7 @@ struct OceanConfig {
     float wave_amplitude = 2.55F;
     float swell_scale = 1.15F;
     float chop = 1.75F;
+    float spectral_geometry = 0.92F;
     float normal_strength = 0.38F;
     float detail_chop = 0.78F;
     float detail_spread = 0.30F;
@@ -221,6 +222,9 @@ inline void validate_ocean_config(const OceanConfig& config) {
     }
     if (config.animation_speed < 0.0F) {
         throw std::runtime_error("ocean animation speed must be nonnegative");
+    }
+    if (config.spectral_geometry < 0.0F) {
+        throw std::runtime_error("ocean spectral geometry must be nonnegative");
     }
     if (config.detail_chop < 0.0F) {
         throw std::runtime_error("ocean detail chop must be nonnegative");

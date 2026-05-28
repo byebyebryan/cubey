@@ -94,6 +94,8 @@ Tuning notes:
   repeated cascade period.
 - `Animation speed` changes phase progression only.
 - `Foam drift` moves the persistent foam history along the wind direction only.
+- `Spectral geometry` controls FFT displacement strength independently from
+  `Normal strength`, so reducing normals does not flatten the surface.
 - `Detail chop`, `Detail spread`, `Detail geometry`, and `Crest sharpness`
   control directional short-wave shape.
 - `Foam coverage`, `Foam breakup`, and `Foam dispersion` control how much

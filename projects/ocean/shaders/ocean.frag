@@ -192,14 +192,14 @@ float cascade_detail_filter(float camera_distance) {
 }
 
 float cascade_displacement_detail_scale(uint cascade) {
-    float detail = clamp(ocean.detail_options.y, 0.0, 1.0);
+    float detail = clamp(ocean.detail_wave_options.w, 0.0, 1.5);
     if (cascade == 0u) {
-        return 0.45 * detail * detail;
+        return 0.45 * detail;
     }
     if (cascade == 1u) {
-        return mix(1.02, 1.24, detail);
+        return mix(0.86, 1.26, detail);
     }
-    return mix(1.72, 1.48, detail);
+    return mix(1.08, 1.58, detail);
 }
 
 void add_cascade(inout FragmentSurfaceSample sample_value, uint cascade, vec2 position,
