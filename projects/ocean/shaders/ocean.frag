@@ -287,13 +287,11 @@ vec3 fallback_refraction_color(float depth, float foam) {
     vec3 shallow_water = cubey_srgb_to_linear(vec3(0.17, 0.58, 0.70));
     vec3 mid_water = cubey_srgb_to_linear(vec3(0.030, 0.22, 0.34));
     vec3 deep_water = cubey_srgb_to_linear(vec3(0.006, 0.035, 0.085));
-    vec3 sand = cubey_srgb_to_linear(vec3(0.52, 0.51, 0.42));
     float absorption = max(ocean.shading_options.x, 0.0);
     float transmittance = exp(-absorption * depth);
     vec3 water_tint = mix(deep_water, mid_water, clamp(transmittance * 2.2, 0.0, 1.0));
     water_tint = mix(water_tint, shallow_water, clamp(transmittance * 0.72, 0.0, 1.0));
-    vec3 bottom = mix(water_tint, sand, clamp(transmittance * 0.38, 0.0, 1.0));
-    return mix(bottom, cubey_srgb_to_linear(vec3(0.74, 0.90, 0.90)), foam * 0.10);
+    return mix(water_tint, cubey_srgb_to_linear(vec3(0.74, 0.90, 0.90)), foam * 0.10);
 }
 
 vec2 screen_uv() {
@@ -301,22 +299,30 @@ vec2 screen_uv() {
     return gl_FragCoord.xy / max(extent, vec2(1.0));
 }
 
-RefractionSample scene_refraction_color(vec3 normal, vec3 world_position, float depth, float foam) {
+RefractionSample scene_refraction_color(vec3 normal, vec3 view_dir, vec3 world_position,
+                                        float depth, float foam) {
     vec2 uv = screen_uv();
     vec2 extent = vec2(textureSize(scene_color_texture, 0));
     float refraction_pixels = max(ocean.shading_options.y, 0.0);
+    float ndotv = clamp(dot(normal, view_dir), 0.0, 1.0);
+    float transmission_view_weight = smoothstep(0.12, 0.40, ndotv);
     float normal_bend = clamp(0.35 + abs(dot(normal, vec3(0.0, 1.0, 0.0))) * 0.65, 0.0, 1.0);
     vec2 offset_uv = normal.xz * (refraction_pixels / max(extent, vec2(1.0))) * normal_bend;
     vec2 refracted_uv = clamp(uv + offset_uv, vec2(0.001), vec2(0.999));
-    float scene_depth = texture(scene_depth_texture, refracted_uv).r;
-    bool has_scene = scene_depth < 0.9999;
-    if (!has_scene) {
-        refracted_uv = uv;
-        scene_depth = texture(scene_depth_texture, uv).r;
-        has_scene = scene_depth < 0.9999;
-    }
+    float refracted_depth = texture(scene_depth_texture, refracted_uv).r;
+    float base_depth = texture(scene_depth_texture, uv).r;
+    float refracted_weight = 1.0 - smoothstep(0.997, 0.9999, refracted_depth);
+    float base_weight = 1.0 - smoothstep(0.997, 0.9999, base_depth);
+    float raw_scene_weight = max(refracted_weight, base_weight * (1.0 - refracted_weight));
+    float scene_mix = raw_scene_weight > 0.0001 ? refracted_weight / raw_scene_weight : 0.0;
+    float scene_weight = raw_scene_weight * transmission_view_weight;
 
-    vec3 sampled_scene = texture(scene_color_texture, refracted_uv).rgb;
+    vec3 refracted_scene = texture(scene_color_texture, refracted_uv).rgb;
+    vec3 base_scene = texture(scene_color_texture, uv).rgb;
+    vec3 sampled_scene = mix(base_scene, refracted_scene, scene_mix);
+    float scene_depth = mix(base_depth, refracted_depth, scene_mix);
+    offset_uv *= scene_mix * transmission_view_weight;
+    bool has_scene = scene_weight > 0.01;
     vec3 fallback = fallback_refraction_color(depth, foam);
     float water_surface_depth = gl_FragCoord.z;
     float clip_delta = max(scene_depth - water_surface_depth, 0.0);
@@ -338,7 +344,7 @@ RefractionSample scene_refraction_color(vec3 normal, vec3 world_position, float 
     vec3 water_medium = sampled_scene * transmittance +
                         scatter_color * (1.0 - transmittance) * scattering;
     float opacity = clamp(ocean.spectrum_options.w, 0.0, 1.0);
-    vec3 color = has_scene ? mix(sampled_scene, water_medium, opacity) : fallback;
+    vec3 color = mix(fallback, mix(sampled_scene, water_medium, opacity), scene_weight);
     color = mix(color, cubey_srgb_to_linear(vec3(0.74, 0.90, 0.90)), foam * 0.10);
 
     return RefractionSample(color, sampled_scene, scene_depth, thickness, transmittance,
@@ -417,12 +423,15 @@ void main() {
     vec3 reflection_dir = reflect(-view_dir, normal);
     vec3 reflection = ocean_sky_color(reflection_dir);
     RefractionSample refraction_sample =
-        scene_refraction_color(normal, refined_world_position, depth, foam);
+        scene_refraction_color(normal, view_dir, refined_world_position, depth, foam);
     vec3 refraction = refraction_sample.color;
-    float fresnel = 0.020 + 0.980 * pow(clamp(1.0 - dot(normal, view_dir), 0.0, 1.0), 5.0);
+    float ndotv = clamp(dot(normal, view_dir), 0.0, 1.0);
+    float schlick = 0.020 + 0.980 * pow(1.0 - ndotv, 5.0);
+    float grazing_reflection = 0.88 * (1.0 - smoothstep(0.10, 0.36, ndotv));
+    float fresnel = clamp(max(schlick, grazing_reflection), 0.0, 0.98);
     vec3 water = mix(refraction, reflection, fresnel);
     float sun_alignment = max(dot(reflection_dir, ocean_sun_direction()), 0.0);
-    float grazing = pow(clamp(1.0 - dot(normal, view_dir), 0.0, 1.0), 0.55);
+    float grazing = pow(1.0 - ndotv, 0.55);
     float detail_strength = clamp(ocean.detail_options.y, 0.0, 1.0);
     float normal_variation = length(dFdx(normal)) + length(dFdy(normal));
     float specular_filter = 1.0 / (1.0 + normal_variation * 95.0);
@@ -492,5 +501,5 @@ void main() {
                                           refraction_sample.has_scene ? 0.20 : 0.85));
     }
 
-    out_color = vec4(apply_display(color), clamp(frag_patch_alpha, 0.0, 1.0));
+    out_color = vec4(apply_display(color), 1.0);
 }

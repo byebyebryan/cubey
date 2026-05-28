@@ -90,7 +90,9 @@ Tuning notes:
   control directional short-wave shape.
 - `Foam breakup` controls patchy breakup on detail crest foam.
 - `Absorption`, `Refraction px`, `Water opacity`, `Scattering`, and `Seafloor`
-  controls shape the single-layer-water translucency path.
+  controls shape the single-layer-water translucency path. The procedural
+  seafloor is optional and off by default for open-ocean shots; when enabled,
+  seafloor detail is the sediment/relief contrast, separate from brightness.
 - `Base cells`, `LOD levels`, and `Extent` control the camera-relative clipmap.
   Wireframe view is the fastest way to inspect close-up density and transition
   placement.

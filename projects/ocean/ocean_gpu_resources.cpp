@@ -47,11 +47,7 @@ constexpr VkFormat kOceanFieldFormat = VK_FORMAT_R32G32B32A32_SFLOAT;
         .cull_mode = VK_CULL_MODE_NONE,
         .depth_test = false,
         .depth_write = false,
-        .blend_enable = true,
-        .src_color_blend_factor = VK_BLEND_FACTOR_SRC_ALPHA,
-        .dst_color_blend_factor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
-        .src_alpha_blend_factor = VK_BLEND_FACTOR_ONE,
-        .dst_alpha_blend_factor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
+        .blend_enable = false,
     };
 }
 

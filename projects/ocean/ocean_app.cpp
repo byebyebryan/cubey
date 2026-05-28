@@ -572,7 +572,7 @@ class OceanApp {
                     ocean_config_.seafloor_depth,
                     ocean_config_.seafloor_brightness,
                     ocean_config_.horizon_fog,
-                    0.0F,
+                    ocean_config_.seafloor_enabled ? ocean_config_.seafloor_detail : -1.0F,
                 },
         };
     }

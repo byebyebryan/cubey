@@ -67,12 +67,14 @@ struct OceanConfig {
     float foam_amount = 0.42F;
     float foam_threshold = 0.72F;
     float foam_breakup = 0.55F;
-    float absorption = 0.070F;
+    float absorption = 0.040F;
     float refraction_pixels = 10.0F;
-    float water_opacity = 0.70F;
-    float scattering_strength = 0.38F;
+    float water_opacity = 0.34F;
+    float scattering_strength = 0.22F;
+    bool seafloor_enabled = false;
     float seafloor_depth = 16.0F;
-    float seafloor_brightness = 1.0F;
+    float seafloor_brightness = 1.30F;
+    float seafloor_detail = 1.70F;
     float exposure = 0.0F;
 
     std::uint32_t spectrum_resolution = 256;
@@ -251,6 +253,9 @@ inline void validate_ocean_config(const OceanConfig& config) {
     }
     if (config.seafloor_brightness < 0.0F) {
         throw std::runtime_error("ocean seafloor brightness must be nonnegative");
+    }
+    if (config.seafloor_detail < 0.0F) {
+        throw std::runtime_error("ocean seafloor detail must be nonnegative");
     }
 }
 

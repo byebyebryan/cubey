@@ -132,9 +132,11 @@ void draw_ocean_ui(OceanUiContext ui) {
         ImGui::SliderFloat("Refraction px", &ui.config.refraction_pixels, 0.0F, 36.0F, "%.1f");
         ImGui::SliderFloat("Water opacity", &ui.config.water_opacity, 0.0F, 1.0F, "%.2f");
         ImGui::SliderFloat("Scattering", &ui.config.scattering_strength, 0.0F, 1.5F, "%.2f");
+        ImGui::Checkbox("Seafloor", &ui.config.seafloor_enabled);
         ImGui::SliderFloat("Seafloor depth", &ui.config.seafloor_depth, 2.0F, 80.0F, "%.1f m");
         ImGui::SliderFloat("Seafloor brightness", &ui.config.seafloor_brightness, 0.0F, 2.0F,
                            "%.2f");
+        ImGui::SliderFloat("Seafloor detail", &ui.config.seafloor_detail, 0.0F, 3.0F, "%.2f");
         ImGui::SliderFloat("Exposure", &ui.config.exposure, -4.0F, 4.0F, "%.2f");
     }
 

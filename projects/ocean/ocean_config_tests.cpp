@@ -111,8 +111,12 @@ int main() {
                 "default ocean config should expose bounded water opacity");
         require(defaults.scattering_strength > 0.0F,
                 "default ocean config should expose water scattering strength");
+        require(!defaults.seafloor_enabled,
+                "default ocean config should render open ocean without procedural seafloor");
         require(defaults.seafloor_depth > 0.0F && defaults.seafloor_brightness > 0.0F,
                 "default ocean config should expose procedural seafloor controls");
+        require(defaults.seafloor_detail > 0.0F,
+                "default ocean config should expose seafloor feature contrast");
         require(ocean::ocean_is_power_of_two(defaults.spectrum_resolution),
                 "default ocean spectrum resolution should be a power of two");
         require(ocean::ocean_cascade_patch_length(defaults, 0) <
@@ -291,8 +295,16 @@ int main() {
                          "ocean scene shader should write procedural seafloor depth");
         require_contains(scene_shader, "seafloor_color",
                          "ocean scene shader should shade the refracted seabed layer");
+        require_contains(scene_shader, "fbm_noise",
+                         "ocean scene shader should avoid single-lattice seabed noise");
+        require_contains(scene_shader, "dFdx(floor_position)",
+                         "ocean scene shader should fade fine seabed detail by footprint");
         require_contains(scene_shader, "scene.scene_options.x",
                          "ocean scene shader should receive seafloor depth from config");
+        require_contains(scene_shader, "scene.scene_options.w",
+                         "ocean scene shader should receive seafloor detail from config");
+        require_contains(scene_shader, "scene.scene_options.w < 0.0",
+                         "ocean scene shader should allow disabling procedural seafloor");
         require_contains(atmosphere_shader, "ocean_sky_color",
                          "ocean atmosphere include should share sky color with water");
         require_contains(init_shader, "gaussian_pair",
