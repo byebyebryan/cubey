@@ -74,9 +74,8 @@ int main() {
             center_parent_cell_size, ocean::ocean_mesh_level_half_extent(defaults, 0U));
         require(center_transition_width > center_parent_cell_size,
                 "ocean clipmap transition should cover multiple coarse cells");
-        require(center_transition_width <=
-                    ocean::ocean_mesh_level_half_extent(defaults, 0U) *
-                        ocean::kOceanMeshMaxTransitionRatio,
+        require(center_transition_width <= ocean::ocean_mesh_level_half_extent(defaults, 0U) *
+                                               ocean::kOceanMeshMaxTransitionRatio,
                 "ocean clipmap transition should be bounded by patch extent");
         bool found_level_one_transition_overlap = false;
         for (const ocean::OceanMeshPatch& patch : patches) {
@@ -84,8 +83,7 @@ int main() {
                 require_near(patch.bounds.min_z,
                              ocean::ocean_mesh_level_half_extent(defaults, 0U) -
                                  center_transition_width,
-                             0.001F,
-                             "ocean parent patch should overlap child transition band");
+                             0.001F, "ocean parent patch should overlap child transition band");
                 found_level_one_transition_overlap = true;
                 break;
             }
@@ -107,6 +105,14 @@ int main() {
                 "default ocean config should expose independent foam drift");
         require(defaults.foam_breakup > 0.0F,
                 "default ocean config should expose crest foam breakup");
+        require(defaults.refraction_pixels > 1.0F,
+                "default ocean config should expose pixel-scale scene refraction");
+        require(defaults.water_opacity > 0.0F && defaults.water_opacity <= 1.0F,
+                "default ocean config should expose bounded water opacity");
+        require(defaults.scattering_strength > 0.0F,
+                "default ocean config should expose water scattering strength");
+        require(defaults.seafloor_depth > 0.0F && defaults.seafloor_brightness > 0.0F,
+                "default ocean config should expose procedural seafloor controls");
         require(ocean::ocean_is_power_of_two(defaults.spectrum_resolution),
                 "default ocean spectrum resolution should be a power of two");
         require(ocean::ocean_cascade_patch_length(defaults, 0) <
@@ -128,7 +134,13 @@ int main() {
         require(ocean::ocean_render_view_from_name("wireframe") ==
                     ocean::OceanRenderView::Wireframe,
                 "wireframe debug view should parse");
-        require(ocean::next_ocean_render_view(ocean::OceanRenderView::Wireframe) ==
+        require(ocean::ocean_render_view_from_name("thickness") ==
+                    ocean::OceanRenderView::Thickness,
+                "thickness debug view should parse");
+        require(ocean::ocean_render_view_from_name("refraction-offset") ==
+                    ocean::OceanRenderView::RefractionOffset,
+                "refraction offset debug view should parse");
+        require(ocean::next_ocean_render_view(ocean::OceanRenderView::RefractionOffset) ==
                     ocean::OceanRenderView::Final,
                 "ocean debug view cycle should wrap");
 
@@ -172,8 +184,7 @@ int main() {
         single_lod.mesh_lod_levels = 1U;
         const ocean::OceanMeshPatchList single_lod_patches =
             ocean::ocean_mesh_clipmap_patches(single_lod);
-        require(single_lod_patches.count == 1U,
-                "single-level ocean clipmap should emit one patch");
+        require(single_lod_patches.count == 1U, "single-level ocean clipmap should emit one patch");
         require(ocean::ocean_mesh_total_triangle_count(single_lod) ==
                     single_lod.mesh_cells * single_lod.mesh_cells * 2U,
                 "single-level ocean clipmap should match the legacy grid triangle count");
@@ -202,6 +213,7 @@ int main() {
         const std::string vertex_shader = read_text_file(source_root / "shaders/ocean.vert");
         const std::string fragment_shader = read_text_file(source_root / "shaders/ocean.frag");
         const std::string sky_shader = read_text_file(source_root / "shaders/ocean_sky.frag");
+        const std::string scene_shader = read_text_file(source_root / "shaders/ocean_scene.frag");
         const std::string atmosphere_shader =
             read_text_file(source_root / "shaders/ocean_atmosphere.glsl");
         const std::string init_shader =
@@ -214,8 +226,9 @@ int main() {
         const std::string detail_shader = read_text_file(source_root / "shaders/ocean_detail.comp");
         const std::string foam_update_shader =
             read_text_file(source_root / "shaders/ocean_foam_update.comp");
-        require_contains(vertex_shader, "clipmap_patch_position",
-                         "ocean vertex shader should map generated vertices through clipmap patches");
+        require_contains(
+            vertex_shader, "clipmap_patch_position",
+            "ocean vertex shader should map generated vertices through clipmap patches");
         require_contains(vertex_shader, "clipmap_patch_alpha",
                          "ocean vertex shader should compute world-space clipmap ownership");
         require_contains(vertex_shader, "clipmap_transition_width",
@@ -238,8 +251,16 @@ int main() {
                          "ocean vertex shader should emit barycentric wireframe data");
         require_contains(vertex_shader, "noperspective layout(location = 5)",
                          "ocean vertex shader should keep wireframe interpolation screen-space");
+        require_contains(vertex_shader, "ocean.cascade_options.w",
+                         "ocean vertex shader should use configured seafloor depth");
         require_contains(fragment_shader, "cubey_pbr_apply_display_transform",
                          "ocean fragment shader should use the shared display transform");
+        require_contains(fragment_shader, "scene_color_texture",
+                         "ocean fragment shader should sample the scene color texture");
+        require_contains(fragment_shader, "scene_depth_texture",
+                         "ocean fragment shader should sample the scene depth texture");
+        require_contains(fragment_shader, "scene_refraction_color",
+                         "ocean fragment shader should derive refraction from scene data");
         require_contains(fragment_shader, "cascade_detail_filter",
                          "ocean fragment shader should filter detail by pixel footprint");
         require_contains(fragment_shader, "foam_breakup",
@@ -258,10 +279,20 @@ int main() {
                          "ocean fragment shader should expose a shader wireframe debug view");
         require_contains(fragment_shader, "wireframe_lod_tint",
                          "ocean fragment shader should tint wireframe by clipmap LOD level");
+        require_contains(fragment_shader, "OCEAN_VIEW_THICKNESS",
+                         "ocean fragment shader should expose water thickness debug view");
+        require_contains(fragment_shader, "OCEAN_VIEW_TRANSMITTANCE",
+                         "ocean fragment shader should expose transmittance debug view");
         require_contains(fragment_shader, "noperspective layout(location = 5)",
                          "ocean fragment shader should keep wireframe interpolation screen-space");
         require_contains(sky_shader, "camera_forward",
                          "ocean sky shader should reconstruct rays from camera basis");
+        require_contains(scene_shader, "gl_FragDepth",
+                         "ocean scene shader should write procedural seafloor depth");
+        require_contains(scene_shader, "seafloor_color",
+                         "ocean scene shader should shade the refracted seabed layer");
+        require_contains(scene_shader, "scene.scene_options.x",
+                         "ocean scene shader should receive seafloor depth from config");
         require_contains(atmosphere_shader, "ocean_sky_color",
                          "ocean atmosphere include should share sky color with water");
         require_contains(init_shader, "gaussian_pair",

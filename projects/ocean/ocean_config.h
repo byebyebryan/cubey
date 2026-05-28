@@ -21,13 +21,20 @@ enum class OceanRenderView : std::uint32_t {
     Refraction = 7,
     Spectrum = 8,
     Wireframe = 9,
+    SceneDepth = 10,
+    Thickness = 11,
+    Transmittance = 12,
+    RefractionOffset = 13,
 };
 
-inline constexpr std::array<OceanRenderView, 10> kOceanRenderViews{
-    OceanRenderView::Final,      OceanRenderView::Height,   OceanRenderView::Displacement,
-    OceanRenderView::Normal,     OceanRenderView::Foam,     OceanRenderView::Detail,
-    OceanRenderView::Reflection, OceanRenderView::Refraction, OceanRenderView::Spectrum,
-    OceanRenderView::Wireframe,
+inline constexpr std::array<OceanRenderView, 14> kOceanRenderViews{
+    OceanRenderView::Final,         OceanRenderView::Height,
+    OceanRenderView::Displacement,  OceanRenderView::Normal,
+    OceanRenderView::Foam,          OceanRenderView::Detail,
+    OceanRenderView::Reflection,    OceanRenderView::Refraction,
+    OceanRenderView::Spectrum,      OceanRenderView::Wireframe,
+    OceanRenderView::SceneDepth,    OceanRenderView::Thickness,
+    OceanRenderView::Transmittance, OceanRenderView::RefractionOffset,
 };
 
 inline constexpr std::uint32_t kOceanMinMeshCells = 32;
@@ -61,7 +68,11 @@ struct OceanConfig {
     float foam_threshold = 0.72F;
     float foam_breakup = 0.55F;
     float absorption = 0.070F;
-    float refraction_strength = 0.055F;
+    float refraction_pixels = 10.0F;
+    float water_opacity = 0.70F;
+    float scattering_strength = 0.38F;
+    float seafloor_depth = 16.0F;
+    float seafloor_brightness = 1.0F;
     float exposure = 0.0F;
 
     std::uint32_t spectrum_resolution = 256;
@@ -103,6 +114,14 @@ struct OceanConfig {
         return "spectrum";
     case OceanRenderView::Wireframe:
         return "wireframe";
+    case OceanRenderView::SceneDepth:
+        return "scene-depth";
+    case OceanRenderView::Thickness:
+        return "thickness";
+    case OceanRenderView::Transmittance:
+        return "transmittance";
+    case OceanRenderView::RefractionOffset:
+        return "refraction-offset";
     }
     return "final";
 }
@@ -214,6 +233,24 @@ inline void validate_ocean_config(const OceanConfig& config) {
     }
     if (config.foam_drift < 0.0F) {
         throw std::runtime_error("ocean foam drift must be nonnegative");
+    }
+    if (config.absorption < 0.0F) {
+        throw std::runtime_error("ocean absorption must be nonnegative");
+    }
+    if (config.refraction_pixels < 0.0F) {
+        throw std::runtime_error("ocean refraction pixel offset must be nonnegative");
+    }
+    if (config.water_opacity < 0.0F || config.water_opacity > 1.0F) {
+        throw std::runtime_error("ocean water opacity must be in [0, 1]");
+    }
+    if (config.scattering_strength < 0.0F) {
+        throw std::runtime_error("ocean scattering strength must be nonnegative");
+    }
+    if (config.seafloor_depth <= 0.0F) {
+        throw std::runtime_error("ocean seafloor depth must be positive");
+    }
+    if (config.seafloor_brightness < 0.0F) {
+        throw std::runtime_error("ocean seafloor brightness must be nonnegative");
     }
 }
 

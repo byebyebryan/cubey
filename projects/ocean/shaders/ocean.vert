@@ -317,7 +317,7 @@ void main() {
     SurfaceSample ocean_sample = sample_ocean(base_position_xz, camera_distance);
     vec2 position_xz = base_position_xz + ocean_sample.displacement.xz;
     float shore = shoreline_mask(position_xz);
-    float depth = mix(82.0, 1.4, shore);
+    float depth = mix(max(ocean.cascade_options.w, 0.1), 1.4, shore);
     float shore_foam = smoothstep(0.10, 0.72, shore) * (0.45 + 0.55 * sin(ocean.camera_time.w));
 
     float normal_length = length(ocean_sample.normal_sum);

@@ -21,6 +21,8 @@ layout(set = 0, binding = 11) uniform sampler2D foam_history_b_far_texture;
 layout(set = 0, binding = 12) uniform sampler2D detail_wave_near_texture;
 layout(set = 0, binding = 13) uniform sampler2D detail_wave_mid_texture;
 layout(set = 0, binding = 14) uniform sampler2D detail_wave_far_texture;
+layout(set = 1, binding = 0) uniform sampler2D scene_color_texture;
+layout(set = 1, binding = 1) uniform sampler2D scene_depth_texture;
 
 layout(push_constant) uniform OceanParams {
     mat4 view_projection;
@@ -58,6 +60,10 @@ const uint OCEAN_VIEW_REFLECTION = 6u;
 const uint OCEAN_VIEW_REFRACTION = 7u;
 const uint OCEAN_VIEW_SPECTRUM = 8u;
 const uint OCEAN_VIEW_WIREFRAME = 9u;
+const uint OCEAN_VIEW_SCENE_DEPTH = 10u;
+const uint OCEAN_VIEW_THICKNESS = 11u;
+const uint OCEAN_VIEW_TRANSMITTANCE = 12u;
+const uint OCEAN_VIEW_REFRACTION_OFFSET = 13u;
 
 struct FragmentSurfaceSample {
     vec3 displacement;
@@ -267,7 +273,17 @@ FragmentSurfaceSample sample_fragment_surface(vec2 position, float camera_distan
     return sample_value;
 }
 
-vec3 refraction_color(float depth, float foam) {
+struct RefractionSample {
+    vec3 color;
+    vec3 scene_color;
+    float scene_depth;
+    float thickness;
+    float transmittance;
+    vec2 offset_uv;
+    bool has_scene;
+};
+
+vec3 fallback_refraction_color(float depth, float foam) {
     vec3 shallow_water = cubey_srgb_to_linear(vec3(0.17, 0.58, 0.70));
     vec3 mid_water = cubey_srgb_to_linear(vec3(0.030, 0.22, 0.34));
     vec3 deep_water = cubey_srgb_to_linear(vec3(0.006, 0.035, 0.085));
@@ -278,6 +294,55 @@ vec3 refraction_color(float depth, float foam) {
     water_tint = mix(water_tint, shallow_water, clamp(transmittance * 0.72, 0.0, 1.0));
     vec3 bottom = mix(water_tint, sand, clamp(transmittance * 0.38, 0.0, 1.0));
     return mix(bottom, cubey_srgb_to_linear(vec3(0.74, 0.90, 0.90)), foam * 0.10);
+}
+
+vec2 screen_uv() {
+    vec2 extent = vec2(textureSize(scene_color_texture, 0));
+    return gl_FragCoord.xy / max(extent, vec2(1.0));
+}
+
+RefractionSample scene_refraction_color(vec3 normal, vec3 world_position, float depth, float foam) {
+    vec2 uv = screen_uv();
+    vec2 extent = vec2(textureSize(scene_color_texture, 0));
+    float refraction_pixels = max(ocean.shading_options.y, 0.0);
+    float normal_bend = clamp(0.35 + abs(dot(normal, vec3(0.0, 1.0, 0.0))) * 0.65, 0.0, 1.0);
+    vec2 offset_uv = normal.xz * (refraction_pixels / max(extent, vec2(1.0))) * normal_bend;
+    vec2 refracted_uv = clamp(uv + offset_uv, vec2(0.001), vec2(0.999));
+    float scene_depth = texture(scene_depth_texture, refracted_uv).r;
+    bool has_scene = scene_depth < 0.9999;
+    if (!has_scene) {
+        refracted_uv = uv;
+        scene_depth = texture(scene_depth_texture, uv).r;
+        has_scene = scene_depth < 0.9999;
+    }
+
+    vec3 sampled_scene = texture(scene_color_texture, refracted_uv).rgb;
+    vec3 fallback = fallback_refraction_color(depth, foam);
+    float water_surface_depth = gl_FragCoord.z;
+    float clip_delta = max(scene_depth - water_surface_depth, 0.0);
+    float view_distance = max(distance(ocean.camera_time.xyz, world_position), 1.0);
+    float scene_thickness = clip_delta * view_distance * 220.0;
+    float physical_thickness = max(ocean.cascade_options.w + world_position.y, 0.0);
+    float thickness = has_scene ? max(min(scene_thickness, ocean.cascade_options.w * 1.35),
+                                      physical_thickness)
+                                : depth;
+    thickness = clamp(thickness, 0.0, max(depth, ocean.cascade_options.w * 1.35));
+
+    float absorption = max(ocean.shading_options.x, 0.0);
+    float transmittance = exp(-absorption * thickness);
+    vec3 shallow_scatter = cubey_srgb_to_linear(vec3(0.12, 0.58, 0.66));
+    vec3 deep_scatter = cubey_srgb_to_linear(vec3(0.004, 0.030, 0.075));
+    vec3 scatter_color = mix(deep_scatter, shallow_scatter,
+                             clamp(1.0 - thickness / max(ocean.cascade_options.w, 0.1), 0.0, 1.0));
+    float scattering = clamp(ocean.shading_options.w, 0.0, 2.0);
+    vec3 water_medium = sampled_scene * transmittance +
+                        scatter_color * (1.0 - transmittance) * scattering;
+    float opacity = clamp(ocean.spectrum_options.w, 0.0, 1.0);
+    vec3 color = has_scene ? mix(sampled_scene, water_medium, opacity) : fallback;
+    color = mix(color, cubey_srgb_to_linear(vec3(0.74, 0.90, 0.90)), foam * 0.10);
+
+    return RefractionSample(color, sampled_scene, scene_depth, thickness, transmittance,
+                            offset_uv, has_scene);
 }
 
 float foam_mask(vec3 normal, float depth) {
@@ -351,7 +416,9 @@ void main() {
 
     vec3 reflection_dir = reflect(-view_dir, normal);
     vec3 reflection = ocean_sky_color(reflection_dir);
-    vec3 refraction = refraction_color(depth, foam);
+    RefractionSample refraction_sample =
+        scene_refraction_color(normal, refined_world_position, depth, foam);
+    vec3 refraction = refraction_sample.color;
     float fresnel = 0.020 + 0.980 * pow(clamp(1.0 - dot(normal, view_dir), 0.0, 1.0), 5.0);
     vec3 water = mix(refraction, reflection, fresnel);
     float sun_alignment = max(dot(reflection_dir, ocean_sun_direction()), 0.0);
@@ -408,6 +475,21 @@ void main() {
         base = mix(base, lod_tint, 0.10);
         vec3 wire = mix(cubey_srgb_to_linear(vec3(0.82, 0.94, 1.0)), lod_tint, 0.18);
         color = mix(base, wire, line);
+    } else if (view == OCEAN_VIEW_SCENE_DEPTH) {
+        float scene = refraction_sample.has_scene ? refraction_sample.scene_depth : 1.0;
+        color = vec3(pow(clamp(1.0 - scene, 0.0, 1.0), 0.32));
+    } else if (view == OCEAN_VIEW_THICKNESS) {
+        float value =
+            clamp(refraction_sample.thickness / max(ocean.cascade_options.w, 0.1), 0.0, 1.0);
+        color = mix(cubey_srgb_to_linear(vec3(0.03, 0.12, 0.18)),
+                    cubey_srgb_to_linear(vec3(0.18, 0.75, 0.85)), value);
+    } else if (view == OCEAN_VIEW_TRANSMITTANCE) {
+        color = vec3(refraction_sample.transmittance);
+    } else if (view == OCEAN_VIEW_REFRACTION_OFFSET) {
+        vec2 pixels = abs(refraction_sample.offset_uv) * vec2(textureSize(scene_color_texture, 0));
+        color = cubey_srgb_to_linear(vec3(clamp(pixels.x / 18.0, 0.0, 1.0),
+                                          clamp(pixels.y / 18.0, 0.0, 1.0),
+                                          refraction_sample.has_scene ? 0.20 : 0.85));
     }
 
     out_color = vec4(apply_display(color), clamp(frag_patch_alpha, 0.0, 1.0));

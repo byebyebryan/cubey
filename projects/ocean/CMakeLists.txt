@@ -18,6 +18,7 @@ cubey_add_app_target(
         shaders/ocean_foam_update.comp
         shaders/ocean_sky.vert
         shaders/ocean_sky.frag
+        shaders/ocean_scene.frag
         shaders/ocean.vert
         shaders/ocean.frag
     SHADER_INCLUDE_DIRS

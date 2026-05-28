@@ -24,15 +24,17 @@ Implemented:
   independently;
 - compute-backed directional short-wave detail, storing geometric height, slope,
   and crest-gated foam source for both silhouette and shading;
-- coherent procedural sky pass, Fresnel sky reflection, fake scene refraction,
-  Beer-style absorption, sun glint, crest/shallow-water foam,
-  exposure/tonemap handling, and debug views including wireframe LOD inspection;
+- coherent procedural sky pass, procedural seabed scene color/depth, Fresnel sky
+  reflection, scene-depth refraction, Beer-style absorption, sun glint,
+  crest/shallow-water foam, exposure/tonemap handling, and debug views including
+  wireframe LOD and translucency inspection;
 - first-class future hooks for local disturbances and shoreline/bathymetry
   masks, disabled by default so the baseline reads as wind-driven ocean.
 
 Current translucency direction:
 
-- render an opaque scene color/depth layer first;
+- render an opaque scene color/depth layer first, currently a procedural seabed
+  plus sky;
 - shade the ocean as a single water layer that samples scene color and depth
   behind the water for refracted bottom/scene color;
 - derive optical thickness from water depth vs sampled scene depth, then apply
@@ -42,8 +44,8 @@ Current translucency direction:
 
 Deferred:
 
-- underwater camera volumes, waterline transitions, and true volumetric
-  in-scattering;
+- arbitrary opaque scene integration, underwater camera volumes, waterline
+  transitions, and true volumetric in-scattering;
 - boats, buoyancy, wake databases, shoreline authoring, caustics, and underwater
   rendering;
 - particle whitewater and physically meaningful plunging shore breakers.
@@ -62,6 +64,7 @@ Useful runs:
 ./build/dev/projects/ocean/ocean --debug-view detail --frames 300 --width 1280 --height 720
 ./build/dev/projects/ocean/ocean --debug-view foam --frames 300 --width 1280 --height 720
 ./build/dev/projects/ocean/ocean --debug-view wireframe --frames 300 --width 1280 --height 720
+./build/dev/projects/ocean/ocean --debug-view thickness --frames 300 --width 1280 --height 720
 ./build/dev/projects/ocean/ocean --headless --frames 120 --width 640 --height 360 --output /tmp/cubey-ocean.png
 ./build/dev/projects/ocean/ocean --headless --capture video --frames 180 --fps 60 --width 1280 --height 720 --output /tmp/cubey-ocean.mp4
 ```
@@ -73,7 +76,8 @@ Controls:
 - Space: pause or resume wave time.
 - `R`: reset camera and wave time.
 - `D`: cycle final, height, displacement, normal, foam, detail, reflection,
-  refraction, spectrum, and wireframe debug views.
+  refraction, spectrum, wireframe, scene-depth, thickness, transmittance, and
+  refraction-offset debug views.
 - Escape: close.
 
 Tuning notes:
@@ -85,6 +89,8 @@ Tuning notes:
 - `Detail chop`, `Detail spread`, `Detail geometry`, and `Crest sharpness`
   control directional short-wave shape.
 - `Foam breakup` controls patchy breakup on detail crest foam.
+- `Absorption`, `Refraction px`, `Water opacity`, `Scattering`, and `Seafloor`
+  controls shape the single-layer-water translucency path.
 - `Base cells`, `LOD levels`, and `Extent` control the camera-relative clipmap.
   Wireframe view is the fastest way to inspect close-up density and transition
   placement.

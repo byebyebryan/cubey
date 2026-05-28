@@ -2,10 +2,13 @@
 
 #include "ocean_config.h"
 
+#include <cubey/render/frame_data.h>
 #include <cubey/render/pipeline_resource.h>
+#include <cubey/render/render_graph_types.h>
 #include <cubey/render/texture.h>
 #include <cubey/vulkan/descriptors.h>
 #include <cubey/vulkan/device.h>
+#include <cubey/vulkan/sampler.h>
 
 #include <vulkan/vulkan.h>
 
@@ -13,6 +16,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <optional>
+#include <vector>
 
 namespace cubey::projects::ocean {
 
@@ -20,7 +24,9 @@ struct OceanGpuResourceConfig {
     OceanConfig ocean{};
     std::filesystem::path shader_dir{};
     VkFormat color_format = VK_FORMAT_UNDEFINED;
+    VkFormat scene_depth_format = VK_FORMAT_D32_SFLOAT;
     VkExtent2D target_extent{};
+    std::uint32_t frame_slot_count = 1;
 };
 
 class OceanGpuResources {
@@ -35,10 +41,12 @@ class OceanGpuResources {
     void reset();
 
     [[nodiscard]] bool initialized() const {
-        return sky_pipeline_.has_value() && surface_pipeline_.has_value();
+        return sky_pipeline_.has_value() && scene_pipeline_.has_value() &&
+               surface_pipeline_.has_value();
     }
 
     [[nodiscard]] const cubey::render::GraphicsPipelineResource& sky_pipeline() const;
+    [[nodiscard]] const cubey::render::GraphicsPipelineResource& scene_pipeline() const;
     [[nodiscard]] const cubey::render::GraphicsPipelineResource& surface_pipeline() const;
     [[nodiscard]] const cubey::render::ComputePipelineResource& spectrum_init_pipeline() const;
     [[nodiscard]] const cubey::render::ComputePipelineResource& spectrum_evolve_pipeline() const;
@@ -56,6 +64,12 @@ class OceanGpuResources {
     [[nodiscard]] VkDescriptorSet foam_update_set(std::uint32_t cascade,
                                                   std::uint32_t history_index) const;
     [[nodiscard]] VkDescriptorSet surface_set() const;
+    [[nodiscard]] VkDescriptorSet scene_set(cubey::render::FrameSlot frame_slot) const;
+
+    void update_scene_descriptors(const cubey::vulkan::Device& device,
+                                  cubey::render::FrameSlot frame_slot,
+                                  cubey::render::RenderGraphSampledTextureView scene_color,
+                                  cubey::render::RenderGraphSampledTextureView scene_depth) const;
 
     [[nodiscard]] std::uint32_t resolution() const {
         return resolution_;
@@ -76,12 +90,12 @@ class OceanGpuResources {
 
   private:
     using TextureArray = std::array<std::optional<cubey::render::Texture2D>, kOceanCascadeCount>;
-    using SpectrumTextureArray =
-        std::array<std::optional<cubey::render::Texture2D>,
-                   kOceanCascadeCount * kOceanSpectrumFieldCount>;
+    using SpectrumTextureArray = std::array<std::optional<cubey::render::Texture2D>,
+                                            kOceanCascadeCount * kOceanSpectrumFieldCount>;
 
     void create_textures(const cubey::vulkan::Device& device, const OceanConfig& config);
-    void create_descriptor_sets(const cubey::vulkan::Device& device);
+    void create_descriptor_sets(const cubey::vulkan::Device& device,
+                                std::uint32_t frame_slot_count);
     void update_descriptors(const cubey::vulkan::Device& device);
     void create_pipelines(const cubey::vulkan::Device& device,
                           const OceanGpuResourceConfig& config);
@@ -133,12 +147,18 @@ class OceanGpuResources {
     std::optional<cubey::vulkan::DescriptorPool> surface_pool_;
     VkDescriptorSet surface_set_ = VK_NULL_HANDLE;
 
+    std::optional<cubey::vulkan::DescriptorSetLayout> scene_layout_;
+    std::optional<cubey::vulkan::DescriptorPool> scene_pool_;
+    std::vector<VkDescriptorSet> scene_sets_{};
+    std::optional<cubey::vulkan::Sampler> scene_sampler_;
+
     std::optional<cubey::render::ComputePipelineResource> spectrum_init_pipeline_;
     std::optional<cubey::render::ComputePipelineResource> spectrum_evolve_pipeline_;
     std::optional<cubey::render::ComputePipelineResource> fft_pipeline_;
     std::optional<cubey::render::ComputePipelineResource> finalize_pipeline_;
     std::optional<cubey::render::ComputePipelineResource> detail_pipeline_;
     std::optional<cubey::render::ComputePipelineResource> foam_update_pipeline_;
+    std::optional<cubey::render::GraphicsPipelineResource> scene_pipeline_;
     std::optional<cubey::render::GraphicsPipelineResource> sky_pipeline_;
     std::optional<cubey::render::GraphicsPipelineResource> surface_pipeline_;
 };
