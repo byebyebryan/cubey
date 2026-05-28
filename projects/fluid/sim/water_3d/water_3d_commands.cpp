@@ -363,19 +363,6 @@ surface_push_constants(const Water3DConfig& config, const Water3DRuntimeState& r
     };
 }
 
-[[nodiscard]] cubey::render::DepthTargetView
-resolved_depth_target_view(const cubey::render::RenderGraphExecutionContext& context,
-                           cubey::render::RenderGraphTextureHandle handle) {
-    const cubey::render::RenderGraphTextureResource& resource = context.texture(handle);
-    if (resource.desc.aspects != VK_IMAGE_ASPECT_DEPTH_BIT) {
-        throw std::runtime_error("water 3D surface graph expected a depth texture");
-    }
-    const cubey::render::RenderGraphResolvedTexture resolved = context.resolved_texture(handle);
-    return cubey::render::depth_target_view(
-        {resource.desc.extent.width, resource.desc.extent.height}, resource.desc.format,
-        resolved.image, resolved.view);
-}
-
 [[nodiscard]] cubey::render::RenderGraphTextureDesc
 surface_color_texture_desc(const char* label, VkExtent2D extent, VkFormat format) {
     return {
@@ -1086,7 +1073,9 @@ struct SurfaceRenderGraph {
                 surface_push_constants(*config_ptr, *runtime_state_ptr, render_view, camera,
                                        target.extent, output_format, 0.0F, 0.0F);
             record_surface_scene_pass(context.recorder(), *resource_ptr, frame_slot, push_constants,
-                                      target, resolved_depth_target_view(context, scene_depth));
+                                      target,
+                                      cubey::render::resolved_depth_target_view(context,
+                                                                                scene_depth));
         });
     graph.add_pass("water surface depth", cubey::render::RenderGraphQueueDomain::Graphics)
         .write_color(raw_depth)
@@ -1097,7 +1086,8 @@ struct SurfaceRenderGraph {
             record_surface_depth_pass(context.recorder(), *resource_ptr, *config_ptr, frame_slot,
                                       *runtime_state_ptr, render_view, camera,
                                       cubey::render::resolved_color_target_view(context, raw_depth),
-                                      resolved_depth_target_view(context, visibility_depth));
+                                      cubey::render::resolved_depth_target_view(
+                                          context, visibility_depth));
         });
     graph.add_pass("water surface thickness", cubey::render::RenderGraphQueueDomain::Graphics)
         .read_texture(raw_depth)

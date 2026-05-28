@@ -8,6 +8,8 @@ namespace cubey::render {
 
 [[nodiscard]] ColorTargetView resolved_color_target_view(const RenderGraphExecutionContext& context,
                                                          RenderGraphTextureHandle handle);
+[[nodiscard]] DepthTargetView resolved_depth_target_view(const RenderGraphExecutionContext& context,
+                                                         RenderGraphTextureHandle handle);
 [[nodiscard]] RenderGraphSampledTextureView
 resolved_sampled_texture_view(const RenderGraphExecutionContext& context,
                               RenderGraphTextureHandle handle);

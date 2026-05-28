@@ -205,6 +205,61 @@ void test_render_graph_resolved_color_target_view_rejects_depth_texture() {
     require(rejected_depth, "resolved color target depth rejection test should execute");
 }
 
+void test_render_graph_resolves_depth_target_view_from_bound_transient_texture() {
+    cubey::render::RenderGraphBuilder graph;
+    const cubey::render::RenderGraphTextureHandle transient =
+        graph.create_texture(depth_texture_desc("scene depth"));
+
+    bool resolved_target = false;
+    graph.add_pass("scene", cubey::render::RenderGraphQueueDomain::Graphics)
+        .write_depth(transient)
+        .execute([&](const cubey::render::RenderGraphExecutionContext& context) {
+            const cubey::render::DepthTargetView target =
+                cubey::render::resolved_depth_target_view(context, transient);
+            require(target.extent.width == depth_texture_desc("scene depth").extent.width,
+                    "resolved depth target should preserve graph texture width");
+            require(target.extent.height == depth_texture_desc("scene depth").extent.height,
+                    "resolved depth target should preserve graph texture height");
+            require(target.format == depth_texture_desc("scene depth").format,
+                    "resolved depth target should preserve graph texture format");
+            require(target.image == image(0x831),
+                    "resolved depth target should use bound transient image");
+            require(target.view == view(0x832),
+                    "resolved depth target should use bound transient image view");
+            resolved_target = true;
+        });
+
+    const cubey::render::CompiledRenderGraph compiled = graph.compile();
+    cubey::render::RenderGraphResourceSet resources(compiled);
+    resources.bind_texture(transient, cubey::render::RenderGraphResolvedTexture{
+                                          .image = image(0x831),
+                                          .view = view(0x832),
+                                      });
+    compiled.execute(resources);
+
+    require(resolved_target, "resolved depth target view test should execute");
+}
+
+void test_render_graph_resolved_depth_target_view_rejects_color_texture() {
+    cubey::render::RenderGraphBuilder graph;
+    const cubey::render::RenderGraphTextureHandle color =
+        graph.import_texture(color_texture_desc("color"), image(0x841), view(0x842));
+
+    bool rejected_color = false;
+    graph.add_pass("color", cubey::render::RenderGraphQueueDomain::Graphics)
+        .write_color(color)
+        .execute([&](const cubey::render::RenderGraphExecutionContext& context) {
+            require_throws([&] { (void)cubey::render::resolved_depth_target_view(context, color); },
+                           "resolved depth target view should reject color textures");
+            rejected_color = true;
+        });
+
+    const cubey::render::CompiledRenderGraph compiled = graph.compile();
+    compiled.execute();
+
+    require(rejected_color, "resolved depth target color rejection test should execute");
+}
+
 void test_render_graph_resolves_sampled_color_texture_view() {
     cubey::render::RenderGraphBuilder graph;
     const cubey::render::RenderGraphTextureHandle color =

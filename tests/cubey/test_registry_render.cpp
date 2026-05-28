@@ -76,7 +76,9 @@ void test_render_graph_rejects_invalid_resource_descriptors_and_handles();
 void test_render_graph_rejects_transient_texture_read_before_write();
 void test_render_graph_texture_state_helpers_describe_common_frame_states();
 void test_render_graph_resolved_color_target_view_rejects_depth_texture();
+void test_render_graph_resolved_depth_target_view_rejects_color_texture();
 void test_render_graph_resolves_color_target_view_from_bound_transient_texture();
+void test_render_graph_resolves_depth_target_view_from_bound_transient_texture();
 void test_render_graph_resolves_sampled_color_texture_view();
 void test_render_graph_resolves_sampled_depth_texture_view();
 void test_render_graph_sampled_texture_view_rejects_unallocated_transient();
@@ -171,6 +173,8 @@ std::span<const TestCase> render_test_cases() {
         CUBEY_TEST(test_render_graph_execution_resolves_bound_transient_resources),
         CUBEY_TEST(test_render_graph_resolves_color_target_view_from_bound_transient_texture),
         CUBEY_TEST(test_render_graph_resolved_color_target_view_rejects_depth_texture),
+        CUBEY_TEST(test_render_graph_resolves_depth_target_view_from_bound_transient_texture),
+        CUBEY_TEST(test_render_graph_resolved_depth_target_view_rejects_color_texture),
         CUBEY_TEST(test_render_graph_frame_resources_manage_frame_slots),
         CUBEY_TEST(test_render_graph_frame_resources_reuse_compatible_slots),
         CUBEY_TEST(test_render_graph_resource_set_rejects_incompatible_shapes),

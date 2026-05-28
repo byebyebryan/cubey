@@ -69,6 +69,20 @@ ColorTargetView resolved_color_target_view(const RenderGraphExecutionContext& co
                              resource.desc.format, resolved.image, resolved.view);
 }
 
+DepthTargetView resolved_depth_target_view(const RenderGraphExecutionContext& context,
+                                           RenderGraphTextureHandle handle) {
+    const RenderGraphTextureResource& resource = context.texture(handle);
+    if (resource.desc.aspects != VK_IMAGE_ASPECT_DEPTH_BIT) {
+        throw std::runtime_error("render graph depth target view requires a depth texture");
+    }
+    if (resource.desc.extent.depth != 1U) {
+        throw std::runtime_error("render graph depth target view requires a 2D texture");
+    }
+    const RenderGraphResolvedTexture resolved = context.resolved_texture(handle);
+    return depth_target_view({resource.desc.extent.width, resource.desc.extent.height},
+                             resource.desc.format, resolved.image, resolved.view);
+}
+
 RenderGraphSampledTextureView
 resolved_sampled_texture_view(const RenderGraphExecutionContext& context,
                               RenderGraphTextureHandle handle) {
