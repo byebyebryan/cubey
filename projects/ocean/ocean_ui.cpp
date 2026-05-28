@@ -95,7 +95,7 @@ void draw_ocean_ui(OceanUiContext ui) {
         ImGui::SliderFloat("Animation speed", &ui.config.animation_speed, 0.0F, 3.0F, "%.2f");
         ImGui::SliderFloat("Amplitude", &ui.config.wave_amplitude, 0.0F, 3.0F, "%.2f");
         ImGui::SliderFloat("Swell scale", &ui.config.swell_scale, 0.35F, 2.5F, "%.2f");
-        ImGui::SliderFloat("Macro swell", &ui.config.macro_swell, 0.0F, 1.5F, "%.2f");
+        ImGui::SliderFloat("Swell overlay", &ui.config.macro_swell, 0.0F, 1.5F, "%.2f");
         ImGui::SliderFloat("Chop", &ui.config.chop, 0.0F, 2.0F, "%.2f");
         ImGui::SliderFloat("Spectral geometry", &ui.config.spectral_geometry, 0.0F, 1.5F,
                            "%.2f");
@@ -122,7 +122,7 @@ void draw_ocean_ui(OceanUiContext ui) {
         ImGui::SliderFloat("Energy", &ui.config.spectrum_energy, 0.0F, 3.0F, "%.2f");
         ImGui::SliderFloat("Fetch", &ui.config.fetch_km, 10.0F, 1200.0F, "%.0f km");
         ImGui::SliderFloat("Spread", &ui.config.spectrum_spread, 0.0F, 1.0F, "%.2f");
-        ImGui::SliderFloat("Small detail", &ui.config.small_wave_detail, 0.0F, 1.0F, "%.2f");
+        ImGui::SliderFloat("Short waves", &ui.config.small_wave_detail, 0.0F, 1.0F, "%.2f");
     }
 
     if (cubey::host::imgui_section("Shading", true)) {

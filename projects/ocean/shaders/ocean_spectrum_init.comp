@@ -81,14 +81,15 @@ float swell_spectrum_band(float wavelength, vec2 k_dir, vec2 wind_dir, float phy
 
 float wind_wave_spectrum_band(float wavelength, vec2 k_dir, vec2 wind_dir, float physical_peak,
                               float patch_length, float spread, float wind_speed,
-                              float small_wave_detail) {
+                              float small_wave_detail, float cascade) {
     float wind_peak =
         clamp(physical_peak * mix(0.20, 0.38, clamp(small_wave_detail, 0.0, 1.0)),
               patch_length * 0.060, patch_length * 0.32);
     float band = log_gaussian(wavelength, wind_peak, mix(0.40, 0.76, spread));
     float direction = directional_lobe(k_dir, wind_dir, spread, 8.0, 0.055, 0.012);
-    float wind_energy = mix(0.70, 1.42, clamp((wind_speed - 6.0) / 22.0, 0.0, 1.0));
-    return band * direction * wind_energy;
+    float wind_energy = mix(0.50, 1.02, clamp((wind_speed - 6.0) / 22.0, 0.0, 1.0));
+    float cascade_weight = cascade < 0.5 ? 1.08 : (cascade < 1.5 ? 0.92 : 0.42);
+    return band * direction * wind_energy * cascade_weight;
 }
 
 float short_wave_spectrum_band(float wavelength, vec2 k_dir, vec2 wind_dir, float physical_peak,
@@ -102,8 +103,8 @@ float short_wave_spectrum_band(float wavelength, vec2 k_dir, vec2 wind_dir, floa
               (patch_length / resolution) * 2.0, patch_length * 0.095);
     float band = log_gaussian(wavelength, short_peak, mix(0.48, 0.86, spread));
     float direction = directional_lobe(k_dir, wind_dir, spread, 5.4, 0.12, 0.030);
-    float wind_energy = mix(0.45, 1.24, clamp((wind_speed - 5.0) / 24.0, 0.0, 1.0));
-    float cascade_weight = cascade < 0.5 ? 1.15 : (cascade < 1.5 ? 0.78 : 0.28);
+    float wind_energy = mix(0.24, 0.68, clamp((wind_speed - 5.0) / 24.0, 0.0, 1.0));
+    float cascade_weight = cascade < 0.5 ? 1.00 : (cascade < 1.5 ? 0.52 : 0.10);
     return band * direction * wind_energy * clamp(small_wave_detail, 0.0, 1.0) * cascade_weight;
 }
 
@@ -126,12 +127,12 @@ float spectral_envelope(vec2 k, float patch_length, vec2 wind_dir) {
     float spectrum = swell_spectrum_band(wavelength, k_dir, wind_dir, physical_peak, patch_length,
                                          spread, swell_scale);
     spectrum += wind_wave_spectrum_band(wavelength, k_dir, wind_dir, physical_peak, patch_length,
-                                        spread, wind_speed, small_wave_detail);
+                                        spread, wind_speed, small_wave_detail, cascade);
     spectrum += short_wave_spectrum_band(wavelength, k_dir, wind_dir, physical_peak, patch_length,
                                          resolution, spread, wind_speed, small_wave_detail,
                                          cascade);
-    return spectrum * resolved_wavelength_mask(wavelength, patch_length, resolution,
-                                               small_wave_detail);
+    return min(spectrum, 1.25) *
+           resolved_wavelength_mask(wavelength, patch_length, resolution, small_wave_detail);
 }
 
 vec2 h0_for_frequency(ivec2 texel, int size, float patch_length, vec2 wind_dir, float seed) {

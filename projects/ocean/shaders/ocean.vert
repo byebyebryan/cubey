@@ -180,13 +180,14 @@ float cascade_weight(uint cascade, float camera_distance) {
 
 float cascade_displacement_detail_scale(uint cascade) {
     float detail = clamp(ocean.detail_wave_options.w, 0.0, 1.5);
+    float detail_weight = clamp(detail / 1.5, 0.0, 1.0);
     if (cascade == 0u) {
-        return 0.45 * detail;
+        return mix(0.46, 0.78, detail_weight);
     }
     if (cascade == 1u) {
-        return mix(0.86, 1.26, detail);
+        return mix(0.54, 0.82, detail_weight);
     }
-    return mix(1.08, 1.58, detail);
+    return mix(0.24, 0.42, detail_weight);
 }
 
 float cascade_normal_detail_scale(uint cascade) {
@@ -204,12 +205,12 @@ float cascade_geometry_detail_scale(uint cascade, float camera_distance) {
     if (cascade == 0u) {
         float near = 1.0 - smoothstep(ocean_far_extent() * 0.10,
                                       ocean_far_extent() * 0.36, camera_distance);
-        return near;
+        return near * 0.62;
     }
     if (cascade == 1u) {
         float near = 1.0 - smoothstep(ocean_far_extent() * 0.18,
                                       ocean_far_extent() * 0.46, camera_distance);
-        return near * 0.34;
+        return near * 0.20;
     }
     return 0.0;
 }

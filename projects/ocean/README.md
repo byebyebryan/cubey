@@ -94,10 +94,10 @@ Tuning notes:
 - The FFT spectrum is split into swell, wind-wave, and short-wave bands so
   long shape, mid-scale ridges, and close detail can be balanced without
   restoring random macro bumps.
-- `Spread` broadens directional variance, while `Small detail` strengthens the
+- `Spread` broadens directional variance, while `Short waves` strengthens the
   short/mid wave bands after unresolved wavelengths are filtered out.
-- `Macro swell` adds restrained long-period swell only; the FFT/detail layers
-  are expected to carry choppy wave shape.
+- `Swell overlay` adds restrained long-period swell only; the FFT/detail layers
+  are expected to carry choppy wind-wave shape.
 - The default near/mid/far spectrum patch lengths are deliberately detuned
   instead of exact multiples, which keeps low-angle views from locking onto a
   repeated cascade period.

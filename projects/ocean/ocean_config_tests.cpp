@@ -117,6 +117,9 @@ int main() {
         require(defaults.detail_chop > 0.0F && defaults.detail_spread >= 0.0F &&
                     defaults.detail_geometry > 0.0F && defaults.crest_sharpness > 0.0F,
                 "default ocean config should expose directional geometric detail waves");
+        require(defaults.detail_chop >= 0.80F && defaults.detail_geometry >= 0.30F &&
+                    defaults.crest_sharpness >= 0.70F && defaults.small_wave_detail >= 0.70F,
+                "default ocean config should emphasize visible wind-wave ridges");
         require(defaults.foam_drift >= 0.0F,
                 "default ocean config should expose independent foam drift");
         require(defaults.foam_breakup > 0.0F && defaults.foam_coverage > 0.0F &&
@@ -279,6 +282,8 @@ int main() {
                          "ocean vertex shader should sample cascaded ocean patch lengths");
         require_contains(vertex_shader, "cascade_geometry_detail_scale",
                          "ocean vertex shader should filter geometric detail displacement");
+        require_contains(vertex_shader, "return mix(0.24, 0.42, detail_weight)",
+                         "ocean vertex shader should restrain far cascade displacement");
         require_contains(vertex_shader, "sample_detail_wave",
                          "ocean vertex shader should sample the detail wave field");
         require_contains(vertex_shader, "sample_ocean_once",
@@ -305,6 +310,8 @@ int main() {
                          "ocean fragment shader should centralize water color ramp");
         require_contains(fragment_shader, "cascade_detail_filter",
                          "ocean fragment shader should filter detail by pixel footprint");
+        require_contains(fragment_shader, "return mix(0.24, 0.42, detail_weight)",
+                         "ocean fragment shader should restrain far cascade displacement");
         require_contains(fragment_shader, "sample_fragment_surface_once",
                          "ocean fragment shader should resample choppy displacement");
         require_contains(fragment_shader, "ocean.detail_wave_options.w",
