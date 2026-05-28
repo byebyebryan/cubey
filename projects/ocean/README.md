@@ -30,9 +30,20 @@ Implemented:
 - first-class future hooks for local disturbances and shoreline/bathymetry
   masks, disabled by default so the baseline reads as wind-driven ocean.
 
+Current translucency direction:
+
+- render an opaque scene color/depth layer first;
+- shade the ocean as a single water layer that samples scene color and depth
+  behind the water for refracted bottom/scene color;
+- derive optical thickness from water depth vs sampled scene depth, then apply
+  Beer absorption, shallow scattering, Fresnel reflection, and foam on top;
+- keep this ocean-local until there is pressure for a general transparent
+  material/ordering system.
+
 Deferred:
 
-- real scene color/depth refraction against arbitrary geometry;
+- underwater camera volumes, waterline transitions, and true volumetric
+  in-scattering;
 - boats, buoyancy, wake databases, shoreline authoring, caustics, and underwater
   rendering;
 - particle whitewater and physically meaningful plunging shore breakers.
@@ -88,5 +99,15 @@ Primary references:
   <https://developer.nvidia.com/gpugems/gpugems2/part-ii-shading-lighting-and-shadows/chapter-19-generic-refraction-simulation>.
 - TDM/Inigo Quilez-style Shadertoy seascape references for presentation:
   <https://www.shadertoy.com/view/MdXyzX>.
+- Unreal Single Layer Water for scene color/depth based water composition:
+  <https://dev.epicgames.com/documentation/unreal-engine/single-layer-water-shading-model-in-unreal-engine>.
+- Crest Ocean System docs for transparent ocean/refraction tradeoffs and
+  production-facing water controls: <https://docs.crest.waveharmonic.com/>.
+- Sea of Thieves technical art notes for art-directed wave peak masking,
+  scattering, and foam persistence:
+  <https://history.siggraph.org/wp-content/uploads/2022/09/2018-Talks-Ang_The-Technical-Art-of-Sea-of-Thieves.pdf>.
+- Subnautica rendering notes for stylized depth attenuation, water volumes, and
+  environmental readability:
+  <https://www.gamedeveloper.com/design/how-i-subnautica-i-plunges-deeper-into-rendering-realistic-water>.
 - Unreal Water System and Unity HDRP Water System public docs for water-system
   scope and production tradeoffs.
