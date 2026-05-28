@@ -105,8 +105,11 @@ int main() {
                 "default ocean config should expose interaction hooks without radial rings");
         require(defaults.spectrum_resolution == 256,
                 "ocean should default to a practical FFT spectrum resolution");
-        require(defaults.sea_state > 0.0F && defaults.animation_speed > 0.0F,
-                "default ocean config should split sea-state shape from animation speed");
+        require(defaults.wind_speed_mps > 0.0F && defaults.animation_speed > 0.0F,
+                "default ocean config should split wind-driven shape from animation speed");
+        require(defaults.fetch_km > 0.0F && defaults.spectrum_spread >= 0.0F &&
+                    defaults.small_wave_detail > 0.0F,
+                "default ocean config should expose hybrid wind spectrum controls");
         require(defaults.spectral_geometry > 0.0F,
                 "default ocean config should decouple spectral geometry from normals");
         require(defaults.detail_chop > 0.0F && defaults.detail_spread >= 0.0F &&
@@ -369,8 +372,10 @@ int main() {
                          "ocean atmosphere include should share sky color with water");
         require_contains(init_shader, "gaussian_pair",
                          "ocean spectrum init shader should seed a frequency-domain spectrum");
-        require_contains(init_shader, "sea_state",
-                         "ocean spectrum init shader should use sea state for spectral shape");
+        require_contains(init_shader, "peak_omega",
+                         "ocean spectrum init shader should derive spectral shape from wind and fetch");
+        require_contains(init_shader, "small_wave_detail",
+                         "ocean spectrum init shader should control high-frequency wave retention");
         require_contains(evolve_shader, "animation_speed",
                          "ocean spectrum evolve shader should use an independent animation speed");
         require_contains(evolve_shader, "height_dx_spectrum_image",

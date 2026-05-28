@@ -100,7 +100,7 @@ void main() {
     float detail_chop = max(params.cascade_options.z, 0.0);
     float detail_spread = max(params.cascade_options.w, 0.0);
     float foam_amount = max(params.foam_options.x, 0.0);
-    float sea_state = max(params.foam_options.y, 0.05);
+    float wind_speed = max(params.foam_options.y, 0.1);
     float detail_geometry = max(params.foam_options.z, 0.0);
     float crest_sharpness = clamp(params.foam_options.w, 0.0, 1.5);
     float foam_coverage = clamp(params.foam_shaping_options.x, 0.0, 1.5);
@@ -112,7 +112,7 @@ void main() {
 
     float spread_radians = clamp(detail_spread, 0.0, 1.0) * 1.15;
     float cascade_scale = exp2(cascade * 0.30);
-    float sea_scale = mix(0.82, 1.34, clamp(sea_state / 3.0, 0.0, 1.0));
+    float sea_scale = mix(0.82, 1.34, clamp((wind_speed - 4.0) / 24.0, 0.0, 1.0));
     float base_wavelength = patch_length / resolution * 38.0 * cascade_scale * sea_scale;
 
     float height = 0.0;

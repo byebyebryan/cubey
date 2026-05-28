@@ -58,7 +58,7 @@ struct OceanConfig {
     float horizon_fog = 0.50F;
 
     float wind_direction_degrees = -36.0F;
-    float sea_state = 1.75F;
+    float wind_speed_mps = 18.0F;
     float animation_speed = 1.0F;
     float wave_amplitude = 2.55F;
     float swell_scale = 1.15F;
@@ -90,7 +90,9 @@ struct OceanConfig {
     float spectrum_patch_length_mid = 470.0F;
     float spectrum_patch_length_far = 2100.0F;
     float spectrum_energy = 2.05F;
-    float spectrum_fetch = 2.35F;
+    float fetch_km = 550.0F;
+    float spectrum_spread = 0.34F;
+    float small_wave_detail = 0.72F;
     float foam_generation = 0.42F;
     float foam_decay = 0.948F;
     float foam_drift = 1.0F;
@@ -217,8 +219,8 @@ inline void validate_ocean_config(const OceanConfig& config) {
     if (config.spectrum_energy < 0.0F) {
         throw std::runtime_error("ocean spectrum energy must be nonnegative");
     }
-    if (config.sea_state <= 0.0F) {
-        throw std::runtime_error("ocean sea state must be positive");
+    if (config.wind_speed_mps <= 0.0F) {
+        throw std::runtime_error("ocean wind speed must be positive");
     }
     if (config.animation_speed < 0.0F) {
         throw std::runtime_error("ocean animation speed must be nonnegative");
@@ -238,8 +240,14 @@ inline void validate_ocean_config(const OceanConfig& config) {
     if (config.crest_sharpness < 0.0F) {
         throw std::runtime_error("ocean crest sharpness must be nonnegative");
     }
-    if (config.spectrum_fetch <= 0.0F) {
-        throw std::runtime_error("ocean spectrum fetch must be positive");
+    if (config.fetch_km <= 0.0F) {
+        throw std::runtime_error("ocean fetch must be positive");
+    }
+    if (config.spectrum_spread < 0.0F) {
+        throw std::runtime_error("ocean spectrum spread must be nonnegative");
+    }
+    if (config.small_wave_detail < 0.0F) {
+        throw std::runtime_error("ocean small-wave detail must be nonnegative");
     }
     if (config.foam_generation < 0.0F) {
         throw std::runtime_error("ocean foam generation must be nonnegative");

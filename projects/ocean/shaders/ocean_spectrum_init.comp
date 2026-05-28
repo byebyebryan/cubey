@@ -43,21 +43,31 @@ float spectral_envelope(vec2 k, float patch_length, vec2 wind_dir) {
         return 0.0;
     }
 
-    float sea_state = max(params.wind_options.z, 0.05);
-    float fetch = max(params.cascade_options.z, 0.05);
+    float wind_speed = max(params.wind_options.z, 0.1);
+    float fetch_m = max(params.cascade_options.z, 0.1) * 1000.0;
     float swell_scale = clamp(params.wind_options.w, 0.35, 2.5);
-    float dominant_length = clamp((sea_state * sea_state / G) * patch_length * 0.20 * fetch,
-                                  patch_length * 0.040, patch_length * 0.42);
-    dominant_length *= swell_scale;
+    float spread = clamp(params.seed_options.y, 0.0, 1.0);
+    float small_wave_detail = clamp(params.seed_options.z, 0.0, 1.0);
+    float peak_omega = 22.0 * pow((G * G) / max(wind_speed * fetch_m, 0.001), 1.0 / 3.0);
+    float physical_peak_length = (2.0 * PI * G) / max(peak_omega * peak_omega, 0.001);
+    physical_peak_length *= swell_scale;
+    float dominant_length =
+        clamp(physical_peak_length, patch_length * 0.050, patch_length * 0.52);
     float wavelength = (2.0 * PI) / k_len;
     float log_distance = log(max(wavelength, 0.0001) / dominant_length);
-    float band = exp(-(log_distance * log_distance) / (2.0 * 0.72 * 0.72));
+    float bandwidth = mix(0.48, 0.92, spread) + small_wave_detail * 0.10;
+    float band = exp(-(log_distance * log_distance) / max(2.0 * bandwidth * bandwidth, 0.001));
 
     vec2 k_dir = k / k_len;
     float aligned = max(dot(k_dir, wind_dir), 0.0);
     float opposite = max(dot(-k_dir, wind_dir), 0.0);
-    float directional = pow(aligned, 5.0) + (0.18 * pow(opposite, 2.0)) + 0.025;
-    float small_cutoff = 1.0 - exp(-pow(wavelength / max(patch_length / params.ocean_options.x, 0.001), 2.0));
+    float directional = pow(aligned, mix(9.0, 2.4, spread)) +
+                        mix(0.02, 0.24, spread) * pow(opposite, mix(7.0, 2.2, spread)) +
+                        mix(0.010, 0.080, spread);
+    float min_wavelength =
+        max((patch_length / params.ocean_options.x) * mix(4.2, 1.35, small_wave_detail),
+            0.001);
+    float small_cutoff = 1.0 - exp(-pow(wavelength / min_wavelength, 2.0));
     float large_cutoff = exp(-pow(wavelength / (patch_length * 1.20), 4.0));
     return band * directional * small_cutoff * large_cutoff;
 }

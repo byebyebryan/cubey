@@ -91,7 +91,7 @@ void draw_ocean_ui(OceanUiContext ui) {
         const cubey::host::ScopedImGuiId section_id("Waves");
         ImGui::SliderFloat("Wind direction", &ui.config.wind_direction_degrees, -180.0F, 180.0F,
                            "%.0f deg");
-        ImGui::SliderFloat("Sea state", &ui.config.sea_state, 0.1F, 3.0F, "%.2f");
+        ImGui::SliderFloat("Wind speed", &ui.config.wind_speed_mps, 2.0F, 32.0F, "%.1f m/s");
         ImGui::SliderFloat("Animation speed", &ui.config.animation_speed, 0.0F, 3.0F, "%.2f");
         ImGui::SliderFloat("Amplitude", &ui.config.wave_amplitude, 0.0F, 3.0F, "%.2f");
         ImGui::SliderFloat("Swell scale", &ui.config.swell_scale, 0.35F, 2.5F, "%.2f");
@@ -119,7 +119,9 @@ void draw_ocean_ui(OceanUiContext ui) {
         ui.config.spectrum_patch_length_far = std::max(ui.config.spectrum_patch_length_far,
                                                        ui.config.spectrum_patch_length_mid + 1.0F);
         ImGui::SliderFloat("Energy", &ui.config.spectrum_energy, 0.0F, 3.0F, "%.2f");
-        ImGui::SliderFloat("Fetch", &ui.config.spectrum_fetch, 0.1F, 4.0F, "%.2f");
+        ImGui::SliderFloat("Fetch", &ui.config.fetch_km, 10.0F, 1200.0F, "%.0f km");
+        ImGui::SliderFloat("Spread", &ui.config.spectrum_spread, 0.0F, 1.0F, "%.2f");
+        ImGui::SliderFloat("Small detail", &ui.config.small_wave_detail, 0.0F, 1.0F, "%.2f");
     }
 
     if (cubey::host::imgui_section("Shading", true)) {

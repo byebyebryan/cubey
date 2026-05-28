@@ -20,9 +20,9 @@ Implemented:
 - persistent ping-ponged crest foam with coverage/freshness state, dispersion,
   and filtered breakup detail, instead of full-surface procedural normal
   shimmer;
-- separated controls for wind direction, spectral sea state, animation speed,
-  and foam drift so visual scale, motion, and foam history can be tuned
-  independently;
+- separated controls for wind direction, wind speed, fetch, spectrum spread,
+  animation speed, and foam drift so visual scale, motion, and foam history can
+  be tuned independently;
 - compute-backed directional short-wave detail, storing geometric height, slope,
   and crest-gated foam source for both silhouette and shading;
 - coherent procedural sky pass, procedural seabed scene color/depth, Fresnel sky
@@ -87,8 +87,10 @@ Controls:
 
 Tuning notes:
 
-- `Sea state` changes the spectral peak and therefore the distribution of wave
-  detail.
+- `Wind speed` and `Fetch` change the spectral peak and therefore the
+  distribution of wave sizes.
+- `Spread` broadens directional variance, while `Small detail` retains shorter
+  wavelengths in the current FFT spectrum.
 - The default near/mid/far spectrum patch lengths are deliberately detuned
   instead of exact multiples, which keeps low-angle views from locking onto a
   repeated cascade period.

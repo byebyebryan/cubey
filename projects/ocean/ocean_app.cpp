@@ -202,9 +202,12 @@ ocean_spectrum_dispatch_groups(const OceanConfig& config) {
            lhs.spectrum_patch_length_mid != rhs.spectrum_patch_length_mid ||
            lhs.spectrum_patch_length_far != rhs.spectrum_patch_length_far ||
            lhs.wind_direction_degrees != rhs.wind_direction_degrees ||
-           lhs.sea_state != rhs.sea_state || lhs.wave_amplitude != rhs.wave_amplitude ||
+           lhs.wind_speed_mps != rhs.wind_speed_mps ||
+           lhs.wave_amplitude != rhs.wave_amplitude ||
            lhs.swell_scale != rhs.swell_scale || lhs.spectrum_energy != rhs.spectrum_energy ||
-           lhs.spectrum_fetch != rhs.spectrum_fetch || lhs.spectrum_seed != rhs.spectrum_seed;
+           lhs.fetch_km != rhs.fetch_km || lhs.spectrum_spread != rhs.spectrum_spread ||
+           lhs.small_wave_detail != rhs.small_wave_detail ||
+           lhs.spectrum_seed != rhs.spectrum_seed;
 }
 
 class OceanApp {
@@ -497,7 +500,7 @@ class OceanApp {
                 {
                     static_cast<float>(ocean_config_.spectrum_resolution),
                     ocean_config_.spectrum_energy,
-                    ocean_config_.spectrum_fetch,
+                    ocean_config_.fetch_km,
                     ocean_config_.water_opacity,
                 },
             .cascade_options =
@@ -716,21 +719,21 @@ class OceanApp {
                 {
                     ocean_cascade_patch_length(ocean_config_, cascade),
                     static_cast<float>(cascade),
-                    ocean_config_.spectrum_fetch,
+                    ocean_config_.fetch_km,
                     ocean_config_.chop,
                 },
             .wind_options =
                 {
                     std::cos(wind),
                     std::sin(wind),
-                    ocean_config_.sea_state,
+                    ocean_config_.wind_speed_mps,
                     ocean_config_.swell_scale,
                 },
             .seed_options =
                 {
                     static_cast<float>(ocean_config_.spectrum_seed),
-                    ocean_config_.foam_generation,
-                    ocean_config_.foam_decay,
+                    ocean_config_.spectrum_spread,
+                    ocean_config_.small_wave_detail,
                     ocean_config_.animation_speed,
                 },
         };
@@ -853,7 +856,7 @@ class OceanApp {
             .foam_options =
                 {
                     ocean_config_.foam_amount,
-                    ocean_config_.sea_state,
+                    ocean_config_.wind_speed_mps,
                     ocean_config_.detail_geometry,
                     ocean_config_.crest_sharpness,
                 },
