@@ -44,7 +44,7 @@ layout(location = 2) in vec4 frag_wave;
 layout(location = 3) in vec3 frag_displacement;
 layout(location = 4) in vec2 frag_sample_position;
 noperspective layout(location = 5) in vec3 frag_barycentric;
-layout(location = 6) in float frag_patch_fade;
+layout(location = 6) in float frag_patch_alpha;
 
 layout(location = 0) out vec4 out_color;
 
@@ -315,13 +315,6 @@ vec3 wireframe_lod_tint() {
     return cubey_srgb_to_linear(tint);
 }
 
-float clipmap_patch_alpha() {
-    if (ocean.debug_options.z >= ocean.debug_options.w - 0.5) {
-        return 1.0;
-    }
-    return clamp(frag_patch_fade, 0.0, 1.0);
-}
-
 vec3 apply_display(vec3 color) {
     return cubey_pbr_apply_display_transform(color, ocean.display_transform);
 }
@@ -417,5 +410,5 @@ void main() {
         color = mix(base, wire, line);
     }
 
-    out_color = vec4(apply_display(color), clipmap_patch_alpha());
+    out_color = vec4(apply_display(color), clamp(frag_patch_alpha, 0.0, 1.0));
 }

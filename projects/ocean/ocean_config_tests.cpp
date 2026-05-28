@@ -69,6 +69,29 @@ int main() {
                 "ocean clipmap should add coarser horizon geometry around the center patch");
         require(ocean::ocean_mesh_near_cell_size(defaults) > 0.0F,
                 "ocean clipmap should expose a positive near cell size");
+        const float center_parent_cell_size = ocean::ocean_mesh_level_cell_size(defaults, 1U);
+        const float center_transition_width = ocean::ocean_mesh_transition_width(
+            center_parent_cell_size, ocean::ocean_mesh_level_half_extent(defaults, 0U));
+        require(center_transition_width > center_parent_cell_size,
+                "ocean clipmap transition should cover multiple coarse cells");
+        require(center_transition_width <=
+                    ocean::ocean_mesh_level_half_extent(defaults, 0U) *
+                        ocean::kOceanMeshMaxTransitionRatio,
+                "ocean clipmap transition should be bounded by patch extent");
+        bool found_level_one_transition_overlap = false;
+        for (const ocean::OceanMeshPatch& patch : patches) {
+            if (patch.level == 1U && patch.bounds.min_z > 0.0F) {
+                require_near(patch.bounds.min_z,
+                             ocean::ocean_mesh_level_half_extent(defaults, 0U) -
+                                 center_transition_width,
+                             0.001F,
+                             "ocean parent patch should overlap child transition band");
+                found_level_one_transition_overlap = true;
+                break;
+            }
+        }
+        require(found_level_one_transition_overlap,
+                "ocean clipmap should include a parent overlap for the center transition");
         require(defaults.mesh_extent > 1000.0F,
                 "default ocean mesh should target horizon-scale rendering");
         require(defaults.disturbance_radius > 0.0F && defaults.disturbance_strength == 0.0F,
@@ -193,8 +216,12 @@ int main() {
             read_text_file(source_root / "shaders/ocean_foam_update.comp");
         require_contains(vertex_shader, "clipmap_patch_position",
                          "ocean vertex shader should map generated vertices through clipmap patches");
-        require_contains(vertex_shader, "clipmap_patch_edge_fade",
-                         "ocean vertex shader should soften clipmap patch boundaries");
+        require_contains(vertex_shader, "clipmap_patch_alpha",
+                         "ocean vertex shader should compute world-space clipmap ownership");
+        require_contains(vertex_shader, "clipmap_transition_width",
+                         "ocean vertex shader should share transition-width policy");
+        require_contains(vertex_shader, "OCEAN_MESH_TRANSITION_CELLS",
+                         "ocean vertex shader should name the transition cell policy");
         require_contains(vertex_shader, "patch_bounds",
                          "ocean vertex shader should receive clipmap patch bounds");
         require_contains(vertex_shader, "cascade_sample_position",

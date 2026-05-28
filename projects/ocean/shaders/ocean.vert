@@ -35,7 +35,10 @@ layout(location = 2) out vec4 frag_wave;
 layout(location = 3) out vec3 frag_displacement;
 layout(location = 4) out vec2 frag_sample_position;
 noperspective layout(location = 5) out vec3 frag_barycentric;
-layout(location = 6) out float frag_patch_fade;
+layout(location = 6) out float frag_patch_alpha;
+
+const float OCEAN_MESH_TRANSITION_CELLS = 16.0;
+const float OCEAN_MESH_MAX_TRANSITION_RATIO = 0.35;
 
 struct SurfaceSample {
     vec3 displacement;
@@ -83,10 +86,25 @@ vec2 clipmap_patch_position(vec2 uv) {
                 mix(ocean.patch_bounds.z, ocean.patch_bounds.w, uv.y));
 }
 
-float clipmap_patch_edge_fade(vec2 uv, vec2 cells) {
-    vec2 edge_cells = min(uv, vec2(1.0) - uv) * cells;
-    float edge_distance = min(edge_cells.x, edge_cells.y);
-    return smoothstep(0.0, 18.0, edge_distance);
+float clipmap_transition_width(float coarse_cell_size, float boundary_extent) {
+    const float preferred = coarse_cell_size * OCEAN_MESH_TRANSITION_CELLS;
+    const float maximum = boundary_extent * OCEAN_MESH_MAX_TRANSITION_RATIO;
+    return max(0.001, min(preferred, maximum));
+}
+
+float clipmap_square_radius(vec2 position) {
+    return max(abs(position.x), abs(position.y));
+}
+
+float clipmap_patch_alpha(vec2 patch_position, float patch_cell_size) {
+    if (ocean.debug_options.z >= ocean.debug_options.w - 0.5) {
+        return 1.0;
+    }
+    float outer_extent = max(max(abs(ocean.patch_bounds.x), abs(ocean.patch_bounds.y)),
+                             max(abs(ocean.patch_bounds.z), abs(ocean.patch_bounds.w)));
+    float transition_width = clipmap_transition_width(patch_cell_size * 2.0, outer_extent);
+    float radius = clipmap_square_radius(patch_position);
+    return 1.0 - smoothstep(outer_extent - transition_width, outer_extent, radius);
 }
 
 vec4 sample_displacement(uint cascade, vec2 uv) {
@@ -282,14 +300,18 @@ void main() {
 
     vec2 uv = (vec2(cell_x, cell_z) + triangle_corner(vertex_in_cell)) /
               vec2(float(cells_x), float(cells_z));
-    float patch_fade = clipmap_patch_edge_fade(uv, vec2(float(cells_x), float(cells_z)));
 
     vec2 camera_xz = ocean.camera_time.xz;
+    vec2 patch_size =
+        vec2(ocean.patch_bounds.y - ocean.patch_bounds.x,
+             ocean.patch_bounds.w - ocean.patch_bounds.z);
     float patch_cell_size =
-        (ocean.patch_bounds.y - ocean.patch_bounds.x) / max(float(cells_x), 1.0);
+        max(patch_size.x / max(float(cells_x), 1.0), patch_size.y / max(float(cells_z), 1.0));
     float snap = max(patch_cell_size / exp2(ocean.debug_options.z), 0.001);
     vec2 snapped_center = floor(camera_xz / snap) * snap;
-    vec2 base_position_xz = snapped_center + clipmap_patch_position(uv);
+    vec2 patch_position = clipmap_patch_position(uv);
+    float patch_alpha = clipmap_patch_alpha(patch_position, patch_cell_size);
+    vec2 base_position_xz = snapped_center + patch_position;
     float camera_distance = length(base_position_xz - camera_xz);
 
     SurfaceSample ocean_sample = sample_ocean(base_position_xz, camera_distance);
@@ -311,6 +333,6 @@ void main() {
     frag_displacement = ocean_sample.displacement;
     frag_sample_position = base_position_xz;
     frag_barycentric = triangle_barycentric(vertex_in_cell);
-    frag_patch_fade = patch_fade;
+    frag_patch_alpha = patch_alpha;
     gl_Position = ocean.view_projection * vec4(world_position, 1.0);
 }

@@ -13,6 +13,8 @@ namespace cubey::projects::ocean {
 
 inline constexpr std::uint32_t kOceanMaxMeshPatches =
     1U + (4U * (kOceanMaxMeshLodLevels - 1U));
+inline constexpr float kOceanMeshTransitionCells = 16.0F;
+inline constexpr float kOceanMeshMaxTransitionRatio = 0.35F;
 
 struct OceanMeshPatchBounds {
     float min_x = 0.0F;
@@ -67,6 +69,16 @@ struct OceanMeshPatchList {
     return ocean_mesh_near_cell_size(config) * static_cast<float>(1U << level);
 }
 
+[[nodiscard]] inline float ocean_mesh_transition_width(float coarse_cell_size,
+                                                       float boundary_extent) {
+    if (coarse_cell_size <= 0.0F || boundary_extent <= 0.0F) {
+        throw std::runtime_error("ocean mesh transition inputs must be positive");
+    }
+    const float preferred = coarse_cell_size * kOceanMeshTransitionCells;
+    const float maximum = boundary_extent * kOceanMeshMaxTransitionRatio;
+    return std::max(0.001F, std::min(preferred, maximum));
+}
+
 [[nodiscard]] inline std::uint32_t ocean_mesh_cells_for_span(float span, float target_cell_size) {
     if (span <= 0.0F || target_cell_size <= 0.0F) {
         throw std::runtime_error("ocean mesh patch span must be positive");
@@ -114,7 +126,7 @@ inline void ocean_mesh_add_patch(OceanMeshPatchList& list, std::uint32_t level,
         }
 
         const float inner = ocean_mesh_level_half_extent(config, level - 1U);
-        const float overlap = target_cell_size;
+        const float overlap = ocean_mesh_transition_width(target_cell_size, inner);
         ocean_mesh_add_patch(list, level, {-outer, outer, inner - overlap, outer},
                              target_cell_size);
         ocean_mesh_add_patch(list, level, {-outer, outer, -outer, -inner + overlap},
