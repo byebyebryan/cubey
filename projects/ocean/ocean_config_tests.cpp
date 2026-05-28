@@ -410,6 +410,10 @@ int main() {
                          "ocean finalize shader should derive crest compression");
         require_contains(finalize_shader, "cascade_chop",
                          "ocean finalize shader should apply cascade-aware choppy displacement");
+        require_contains(finalize_shader, "cascade_chop_scale",
+                         "ocean finalize shader should isolate cascade chop weighting");
+        require_contains(finalize_shader, "bounded_choppy_displacement",
+                         "ocean finalize shader should bound choppy displacement");
         require_contains(finalize_shader, "compression)",
                          "ocean finalize shader should store compression separately from foam");
         require_contains(detail_shader, "add_detail_packet",

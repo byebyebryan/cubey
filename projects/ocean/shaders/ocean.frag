@@ -281,15 +281,15 @@ FragmentSurfaceSample sample_fragment_surface_once(vec2 position, float camera_d
 
 FragmentSurfaceSample sample_fragment_surface(vec2 position, float camera_distance) {
     FragmentSurfaceSample first = sample_fragment_surface_once(position, camera_distance);
-    vec2 refined_position = position + first.displacement.xz * 0.28;
+    vec2 refined_position = position + first.displacement.xz * 0.20;
     FragmentSurfaceSample refined = sample_fragment_surface_once(refined_position, camera_distance);
-    first.displacement = mix(first.displacement, refined.displacement, 0.36);
-    vec3 mixed_normal = mix(first.normal_sum, refined.normal_sum, 0.32);
+    first.displacement = mix(first.displacement, refined.displacement, 0.12);
+    vec3 mixed_normal = mix(first.normal_sum, refined.normal_sum, 0.34);
     if (length(mixed_normal) > 0.0001) {
         first.normal_sum = normalize(mixed_normal);
     }
-    first.detail_slope_sum = mix(first.detail_slope_sum, refined.detail_slope_sum, 0.36);
-    first.detail_height = mix(first.detail_height, refined.detail_height, 0.36);
+    first.detail_slope_sum = mix(first.detail_slope_sum, refined.detail_slope_sum, 0.18);
+    first.detail_height = mix(first.detail_height, refined.detail_height, 0.18);
     first.compression = max(first.compression, refined.compression);
     first.foam = max(first.foam, refined.foam);
     first.detail_foam = max(first.detail_foam, refined.detail_foam);

@@ -291,10 +291,10 @@ SurfaceSample sample_ocean_once(vec2 position, float camera_distance) {
 
 SurfaceSample sample_ocean(vec2 position, float camera_distance) {
     SurfaceSample first = sample_ocean_once(position, camera_distance);
-    vec2 refined_position = position + first.displacement.xz * 0.36;
+    vec2 refined_position = position + first.displacement.xz * 0.24;
     SurfaceSample refined = sample_ocean_once(refined_position, camera_distance);
-    first.displacement = mix(first.displacement, refined.displacement, 0.42);
-    first.normal_sum = normalize(mix(first.normal_sum, refined.normal_sum, 0.36));
+    first.displacement = mix(first.displacement, refined.displacement, 0.14);
+    first.normal_sum = normalize(mix(first.normal_sum, refined.normal_sum, 0.32));
     first.foam = max(first.foam, refined.foam);
     return first;
 }

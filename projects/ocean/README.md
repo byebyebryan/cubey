@@ -105,9 +105,9 @@ Tuning notes:
 - `Foam drift` moves the persistent foam history along the wind direction only.
 - `Spectral geometry` controls FFT displacement strength independently from
   `Normal strength`, so reducing normals does not flatten the surface.
-- Cascade-aware chop keeps near crests stronger than far cascades, and the
-  surface shaders resample once at the displaced position so sharp features are
-  not only a normal-map effect.
+- Cascade-aware chop keeps near and mid crests stronger than the far cascade,
+  bounds horizontal displacement to avoid grazing-angle spikes, and uses a
+  light displaced-position resample mostly for shading/crest coherence.
 - `Detail chop`, `Detail spread`, `Detail geometry`, and `Crest sharpness`
   control packeted directional short-wave shape.
 - `Foam coverage`, `Foam breakup`, and `Foam dispersion` control how much

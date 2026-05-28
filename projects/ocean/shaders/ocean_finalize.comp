@@ -35,10 +35,27 @@ vec4 slope_z_curvature_at(ivec2 texel, ivec2 size) {
     return imageLoad(slope_z_curvature_image, wrapped) * params.cascade_options.w;
 }
 
-vec2 horizontal_at(ivec2 texel, ivec2 size) {
+vec2 raw_horizontal_at(ivec2 texel, ivec2 size) {
     vec4 height_dx = height_dx_at(texel, size);
     vec4 dz_slope_x = dz_slope_x_at(texel, size);
     return vec2(height_dx.z, dz_slope_x.x);
+}
+
+float cascade_chop_scale(float cascade, float chop) {
+    return chop * (cascade < 0.5 ? 1.36 : (cascade < 1.5 ? 1.12 : 0.62));
+}
+
+vec2 bounded_choppy_displacement(vec2 horizontal, float patch_length, float cascade) {
+    float horizontal_limit =
+        patch_length * (cascade < 0.5 ? 0.032 : (cascade < 1.5 ? 0.024 : 0.014));
+    float horizontal_length = length(horizontal);
+    return horizontal * min(1.0, horizontal_limit / max(horizontal_length, 0.0001));
+}
+
+vec2 choppy_horizontal_at(ivec2 texel, ivec2 size, float cascade_chop, float patch_length,
+                          float cascade) {
+    return bounded_choppy_displacement(raw_horizontal_at(texel, size) * cascade_chop,
+                                       patch_length, cascade);
 }
 
 void main() {
@@ -56,17 +73,21 @@ void main() {
     float center = height_dx.x;
     float chop = max(params.cascade_options.z, 0.0);
     float cascade = params.cascade_options.y;
-    float cascade_chop =
-        chop * (cascade < 0.5 ? 1.18 : (cascade < 1.5 ? 0.96 : 0.72));
-    vec2 horizontal = vec2(height_dx.z, dz_slope_x.x) * cascade_chop;
+    float cascade_chop = cascade_chop_scale(cascade, chop);
+    vec2 horizontal = bounded_choppy_displacement(vec2(height_dx.z, dz_slope_x.x) * cascade_chop,
+                                                  patch_length, cascade);
     vec2 slope = vec2(dz_slope_x.z, slope_z_curvature.x);
     vec3 normal = normalize(vec3(-slope.x * params.ocean_options.w, 1.0,
                                  -slope.y * params.ocean_options.w));
 
-    vec2 horizontal_left = horizontal_at(texel + ivec2(-1, 0), size);
-    vec2 horizontal_right = horizontal_at(texel + ivec2(1, 0), size);
-    vec2 horizontal_down = horizontal_at(texel + ivec2(0, -1), size);
-    vec2 horizontal_up = horizontal_at(texel + ivec2(0, 1), size);
+    vec2 horizontal_left =
+        choppy_horizontal_at(texel + ivec2(-1, 0), size, cascade_chop, patch_length, cascade);
+    vec2 horizontal_right =
+        choppy_horizontal_at(texel + ivec2(1, 0), size, cascade_chop, patch_length, cascade);
+    vec2 horizontal_down =
+        choppy_horizontal_at(texel + ivec2(0, -1), size, cascade_chop, patch_length, cascade);
+    vec2 horizontal_up =
+        choppy_horizontal_at(texel + ivec2(0, 1), size, cascade_chop, patch_length, cascade);
     vec2 d_horizontal_dx = (horizontal_right - horizontal_left) / max(2.0 * cell_size, 0.0001);
     vec2 d_horizontal_dz = (horizontal_up - horizontal_down) / max(2.0 * cell_size, 0.0001);
     float jacobian =
