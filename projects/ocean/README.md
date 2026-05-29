@@ -91,13 +91,23 @@ Tuning notes:
 
 - `Wind speed` and `Fetch` change the spectral peak and therefore the
   distribution of wave sizes.
-- The FFT spectrum is split into swell, wind-wave, and short-wave bands so
-  long shape, mid-scale ridges, and close detail can be balanced without
-  restoring random macro bumps.
+- The FFT spectrum is split into swell, wind-wave, and short-wave bands, with
+  close cascade defaults modeled after the GodotOceanWaves stack: short
+  normal-only detail, a mid displacement band, and a larger wind-wave geometry
+  band.
+- Displacement cascades are additive, not averaged. The short cascade can
+  contribute close normals without diluting the 57 m / 88 m geometry layers.
+- High-frequency spectrum is attenuated per cascade so the displacement-bearing
+  maps keep mesh-resolvable shape while short waves remain a normal/detail
+  layer.
+- The spectrum coefficients are treated as a physical Fourier sum; the finalize
+  pass intentionally does not divide the inverse FFT output by resolution.
 - `Spread` broadens directional variance, while `Short waves` strengthens the
   short/mid wave bands after unresolved wavelengths are filtered out.
-- `Swell overlay` adds restrained long-period swell only; the FFT/detail layers
-  are expected to carry choppy wind-wave shape.
+- `Swell overlay` adds restrained long-period swell plus cheap
+  Stokes/Gerstner-style crest trains. Those trains fill the visual gap between
+  large FFT waves and normal-only detail, while staying continuous and
+  wind-aligned instead of isolated procedural bumps.
 - The default near/mid/far spectrum patch lengths are deliberately detuned
   instead of exact multiples, which keeps low-angle views from locking onto a
   repeated cascade period.
@@ -109,10 +119,11 @@ Tuning notes:
   bounds horizontal displacement to avoid grazing-angle spikes, and uses a
   light displaced-position resample mostly for shading/crest coherence.
 - `Detail chop`, `Detail spread`, `Detail geometry`, and `Crest sharpness`
-  control packeted directional short-wave shape.
-- `Foam coverage`, `Foam breakup`, and `Foam dispersion` control how much
-  compression-driven foam is generated, how patchy it is, and how old foam
-  spreads before decay.
+  control the optional packeted short-wave overlay. The overlay is disabled by
+  default while close detail comes from the FFT cascades.
+- Foam generation is disabled by default while crest shape is being tuned.
+  `Foam coverage`, `Foam breakup`, and `Foam dispersion` remain available for
+  a later whitecap pass.
 - `Absorption`, `Refraction px`, `Water opacity`, `Scattering`, and `Seafloor`
   controls shape the single-layer-water translucency path. The procedural
   seafloor is optional and off by default for open-ocean shots; when enabled,

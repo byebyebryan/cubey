@@ -44,7 +44,7 @@ struct SurfaceSample {
     vec3 displacement;
     vec3 normal_sum;
     float foam;
-    float weight_sum;
+    float normal_weight_sum;
 };
 
 vec2 triangle_corner(uint vertex_in_cell) {
@@ -165,52 +165,50 @@ vec2 cascade_sample_position(uint cascade, vec2 position) {
 
 float cascade_weight(uint cascade, float camera_distance) {
     if (cascade == 0u) {
-        return 1.0 - smoothstep(ocean_far_extent() * 0.18, ocean_far_extent() * 0.55,
+        return 1.0 - smoothstep(ocean_far_extent() * 0.14, ocean_far_extent() * 0.42,
                                 camera_distance);
     }
     if (cascade == 1u) {
-        float fade_in = smoothstep(ocean_far_extent() * 0.10, ocean_far_extent() * 0.22,
-                                   camera_distance);
         float fade_out = 1.0 - smoothstep(ocean_far_extent() * 0.58,
                                           ocean_far_extent() * 0.94, camera_distance);
-        return fade_in * fade_out;
+        return fade_out;
     }
-    return smoothstep(ocean_far_extent() * 0.34, ocean_far_extent() * 0.72, camera_distance);
+    return 1.0;
 }
 
 float cascade_displacement_detail_scale(uint cascade) {
     float detail = clamp(ocean.detail_wave_options.w, 0.0, 1.5);
     float detail_weight = clamp(detail / 1.5, 0.0, 1.0);
     if (cascade == 0u) {
-        return mix(0.46, 0.78, detail_weight);
+        return 0.0;
     }
     if (cascade == 1u) {
-        return mix(0.54, 0.82, detail_weight);
+        return mix(0.22, 0.40, detail_weight);
     }
-    return mix(0.24, 0.42, detail_weight);
+    return mix(0.34, 0.58, detail_weight);
 }
 
 float cascade_normal_detail_scale(uint cascade) {
     float detail = clamp(ocean.detail_options.y, 0.0, 1.0);
     if (cascade == 0u) {
-        return detail * detail * 0.35;
+        return detail * 0.25;
     }
     if (cascade == 1u) {
-        return detail * 0.28;
+        return detail;
     }
-    return detail * 0.18;
+    return detail;
 }
 
 float cascade_geometry_detail_scale(uint cascade, float camera_distance) {
     if (cascade == 0u) {
         float near = 1.0 - smoothstep(ocean_far_extent() * 0.10,
                                       ocean_far_extent() * 0.36, camera_distance);
-        return near * 0.62;
+        return near * 0.0;
     }
     if (cascade == 1u) {
         float near = 1.0 - smoothstep(ocean_far_extent() * 0.18,
                                       ocean_far_extent() * 0.46, camera_distance);
-        return near * 0.20;
+        return near * 0.0;
     }
     return 0.0;
 }
@@ -237,7 +235,7 @@ void add_cascade(inout SurfaceSample sample_value, uint cascade, vec2 position,
                                weight;
     sample_value.foam =
         max(sample_value.foam, max(normal_foam.w, detail_wave.w) * displacement_weight);
-    sample_value.weight_sum += weight;
+    sample_value.normal_weight_sum += weight;
 }
 
 void add_disturbance(inout SurfaceSample sample_value, vec2 position) {
@@ -267,14 +265,13 @@ SurfaceSample sample_ocean_once(vec2 position, float camera_distance) {
     sample_value.displacement = vec3(0.0);
     sample_value.normal_sum = vec3(0.0);
     sample_value.foam = 0.0;
-    sample_value.weight_sum = 0.0;
+    sample_value.normal_weight_sum = 0.0;
 
     add_cascade(sample_value, 2u, position, camera_distance);
     add_cascade(sample_value, 1u, position, camera_distance);
     add_cascade(sample_value, 0u, position, camera_distance);
-    if (sample_value.weight_sum > 0.0001) {
-        sample_value.displacement /= sample_value.weight_sum;
-        sample_value.normal_sum /= sample_value.weight_sum;
+    if (sample_value.normal_weight_sum > 0.0001) {
+        sample_value.normal_sum /= sample_value.normal_weight_sum;
     }
     OceanMacroWaveSample macro_waves =
         ocean_macro_waves(position, ocean.camera_time.w * ocean.wave_options.z, ocean.wave_options.y,

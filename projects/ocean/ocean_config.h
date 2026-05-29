@@ -58,20 +58,20 @@ struct OceanConfig {
     float horizon_fog = 0.50F;
 
     float wind_direction_degrees = -36.0F;
-    float wind_speed_mps = 19.0F;
+    float wind_speed_mps = 10.0F;
     float animation_speed = 1.0F;
-    float wave_amplitude = 2.62F;
-    float swell_scale = 1.05F;
+    float wave_amplitude = 1.45F;
+    float swell_scale = 0.80F;
     float macro_swell = 0.36F;
-    float chop = 1.76F;
-    float spectral_geometry = 1.00F;
-    float normal_strength = 0.42F;
-    float detail_chop = 0.82F;
+    float chop = 1.84F;
+    float spectral_geometry = 0.72F;
+    float normal_strength = 0.64F;
+    float detail_chop = 0.0F;
     float detail_spread = 0.18F;
-    float detail_geometry = 0.34F;
-    float crest_sharpness = 0.70F;
+    float detail_geometry = 0.0F;
+    float crest_sharpness = 0.84F;
 
-    float foam_amount = 0.30F;
+    float foam_amount = 0.0F;
     float foam_threshold = 1.02F;
     float foam_breakup = 0.62F;
     float foam_coverage = 0.34F;
@@ -87,14 +87,14 @@ struct OceanConfig {
     float exposure = 0.0F;
 
     std::uint32_t spectrum_resolution = 256;
-    float spectrum_patch_length_near = 120.0F;
-    float spectrum_patch_length_mid = 470.0F;
-    float spectrum_patch_length_far = 2100.0F;
-    float spectrum_energy = 2.05F;
-    float fetch_km = 420.0F;
-    float spectrum_spread = 0.22F;
-    float small_wave_detail = 0.70F;
-    float foam_generation = 0.42F;
+    float spectrum_patch_length_near = 16.0F;
+    float spectrum_patch_length_mid = 57.0F;
+    float spectrum_patch_length_far = 88.0F;
+    float spectrum_energy = 1.00F;
+    float fetch_km = 150.0F;
+    float spectrum_spread = 0.20F;
+    float small_wave_detail = 1.0F;
+    float foam_generation = 0.0F;
     float foam_decay = 0.948F;
     float foam_drift = 1.0F;
     std::uint32_t spectrum_seed = 1337;

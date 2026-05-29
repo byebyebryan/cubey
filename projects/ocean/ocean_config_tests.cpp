@@ -114,12 +114,14 @@ int main() {
                 "default ocean config should expose hybrid wind spectrum controls");
         require(defaults.spectral_geometry > 0.0F,
                 "default ocean config should decouple spectral geometry from normals");
-        require(defaults.detail_chop > 0.0F && defaults.detail_spread >= 0.0F &&
-                    defaults.detail_geometry > 0.0F && defaults.crest_sharpness > 0.0F,
+        require(defaults.detail_chop >= 0.0F && defaults.detail_spread >= 0.0F &&
+                    defaults.detail_geometry >= 0.0F && defaults.crest_sharpness > 0.0F,
                 "default ocean config should expose directional geometric detail waves");
-        require(defaults.detail_chop >= 0.80F && defaults.detail_geometry >= 0.30F &&
-                    defaults.crest_sharpness >= 0.70F && defaults.small_wave_detail >= 0.70F,
-                "default ocean config should emphasize visible wind-wave ridges");
+        require(defaults.detail_chop == 0.0F && defaults.detail_geometry == 0.0F &&
+                    defaults.small_wave_detail >= 0.95F,
+                "default ocean config should use FFT cascades for close detail");
+        require(defaults.foam_amount == 0.0F && defaults.foam_generation == 0.0F,
+                "default ocean config should keep foam disabled until whitecaps are tuned");
         require(defaults.foam_drift >= 0.0F,
                 "default ocean config should expose independent foam drift");
         require(defaults.foam_breakup > 0.0F && defaults.foam_coverage > 0.0F &&
@@ -282,8 +284,12 @@ int main() {
                          "ocean vertex shader should sample cascaded ocean patch lengths");
         require_contains(vertex_shader, "cascade_geometry_detail_scale",
                          "ocean vertex shader should filter geometric detail displacement");
-        require_contains(vertex_shader, "return mix(0.24, 0.42, detail_weight)",
-                         "ocean vertex shader should restrain far cascade displacement");
+        require_contains(vertex_shader, "if (cascade == 0u) {\n        return 0.0;",
+                         "ocean vertex shader should keep near cascade normal-only by default");
+        require_contains(vertex_shader, "return mix(0.34, 0.58, detail_weight)",
+                         "ocean vertex shader should keep FFT geometry below the crest-train layer");
+        require_contains(vertex_shader, "return fade_out;\n    }\n    return 1.0;",
+                         "ocean vertex shader should keep the large displacement cascade active near the camera");
         require_contains(vertex_shader, "sample_detail_wave",
                          "ocean vertex shader should sample the detail wave field");
         require_contains(vertex_shader, "sample_ocean_once",
@@ -310,8 +316,12 @@ int main() {
                          "ocean fragment shader should centralize water color ramp");
         require_contains(fragment_shader, "cascade_detail_filter",
                          "ocean fragment shader should filter detail by pixel footprint");
-        require_contains(fragment_shader, "return mix(0.24, 0.42, detail_weight)",
-                         "ocean fragment shader should restrain far cascade displacement");
+        require_contains(fragment_shader, "if (cascade == 0u) {\n        return 0.0;",
+                         "ocean fragment shader should keep near cascade normal-only by default");
+        require_contains(fragment_shader, "return mix(0.34, 0.58, detail_weight)",
+                         "ocean fragment shader should keep FFT geometry below the crest-train layer");
+        require_contains(fragment_shader, "return fade_out;\n    }\n    return 1.0;",
+                         "ocean fragment shader should keep the large displacement cascade active near the camera");
         require_contains(fragment_shader, "sample_fragment_surface_once",
                          "ocean fragment shader should resample choppy displacement");
         require_contains(fragment_shader, "ocean.detail_wave_options.w",
@@ -385,20 +395,28 @@ int main() {
                          "ocean final pass should allocate a depth target for the water surface");
         require_contains(ocean_app_source, "write_depth(surface_depth)",
                          "ocean final pass should attach water surface depth");
+        require_contains(ocean_app_source, "cascade_wind_speed",
+                         "ocean spectrum setup should derive per-cascade wind speed");
+        require_contains(ocean_app_source, "cascade_fetch",
+                         "ocean spectrum setup should derive per-cascade fetch");
+        require_contains(ocean_app_source, "cascade_detail",
+                         "ocean spectrum setup should attenuate high-frequency geometry per cascade");
+        require_contains(ocean_app_source, "static_cast<float>(cascade),\n                    ocean_config_.chop,\n                    1.0F",
+                         "ocean finalize should keep physical FFT spectrum amplitudes unnormalized");
         require_contains(atmosphere_shader, "ocean_sky_color",
                          "ocean atmosphere include should share sky color with water");
         require_contains(init_shader, "gaussian_pair",
                          "ocean spectrum init shader should seed a frequency-domain spectrum");
         require_contains(init_shader, "peak_omega",
                          "ocean spectrum init shader should derive spectral shape from wind and fetch");
-        require_contains(init_shader, "swell_spectrum_band",
-                         "ocean spectrum init shader should keep long swell as a named band");
-        require_contains(init_shader, "wind_wave_spectrum_band",
-                         "ocean spectrum init shader should include a mid wind-wave band");
-        require_contains(init_shader, "short_wave_spectrum_band",
-                         "ocean spectrum init shader should include a short-wave detail band");
-        require_contains(init_shader, "resolved_wavelength_mask",
-                         "ocean spectrum init shader should filter unresolved wavelengths");
+        require_contains(init_shader, "tma_spectrum",
+                         "ocean spectrum init shader should use a finite-depth TMA spectrum");
+        require_contains(init_shader, "hasselmann_directional_spread",
+                         "ocean spectrum init shader should use empirical directional spread");
+        require_contains(init_shader, "jonswap_alpha",
+                         "ocean spectrum init shader should derive JONSWAP energy from wind and fetch");
+        require_contains(init_shader, "omega_normalization",
+                         "ocean spectrum init shader should normalize by frequency-space cell size");
         require_contains(init_shader, "small_wave_detail",
                          "ocean spectrum init shader should control high-frequency wave retention");
         require_contains(evolve_shader, "animation_speed",
@@ -433,14 +451,18 @@ int main() {
                          "ocean detail shader should gate crest foam with patchy coverage");
         require_contains(detail_shader, "crest_sharpness",
                          "ocean detail shader should sharpen crest geometry");
+        require_contains(detail_shader, "stokes2",
+                         "ocean detail shader should phase-lock harmonic crest shaping");
+        require_contains(detail_shader, "crest_lift",
+                         "ocean detail shader should lift crests instead of sharpening troughs");
         require_contains(detail_shader, "vec4(height * detail_geometry, slope.x, slope.y",
                          "ocean detail shader should write height, slope, and foam source");
         const std::string macro_shader =
             read_text_file(source_root / "shaders/ocean_macro_waves.glsl");
-        require_contains(macro_shader, "720.0 * swell",
-                         "ocean macro waves should focus on long swell");
-        require_contains(macro_shader, "220.0 * swell",
-                         "ocean macro waves should stop before short repeating components");
+        require_contains(macro_shader, "ocean_add_crest_train",
+                         "ocean macro waves should add continuous asymmetric crest trains");
+        require_contains(macro_shader, "sample_value.displacement.xz -= direction",
+                         "ocean crest trains should use choppy horizontal displacement");
         require_contains(foam_update_shader, "previous_foam_image",
                          "ocean foam update shader should read prior foam history");
         require_contains(foam_update_shader, "next_foam_image",

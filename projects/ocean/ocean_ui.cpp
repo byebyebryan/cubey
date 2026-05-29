@@ -109,11 +109,11 @@ void draw_ocean_ui(OceanUiContext ui) {
     if (cubey::host::imgui_section("Spectrum", true)) {
         const cubey::host::ScopedImGuiId section_id("Spectrum");
         draw_spectrum_resolution_combo(ui.config);
-        ImGui::SliderFloat("Near patch", &ui.config.spectrum_patch_length_near, 32.0F, 256.0F,
+        ImGui::SliderFloat("Near patch", &ui.config.spectrum_patch_length_near, 8.0F, 256.0F,
                            "%.0f m");
-        ImGui::SliderFloat("Mid patch", &ui.config.spectrum_patch_length_mid, 128.0F, 1024.0F,
+        ImGui::SliderFloat("Mid patch", &ui.config.spectrum_patch_length_mid, 16.0F, 1024.0F,
                            "%.0f m");
-        ImGui::SliderFloat("Far patch", &ui.config.spectrum_patch_length_far, 512.0F, 4096.0F,
+        ImGui::SliderFloat("Far patch", &ui.config.spectrum_patch_length_far, 32.0F, 4096.0F,
                            "%.0f m");
         ui.config.spectrum_patch_length_mid = std::max(ui.config.spectrum_patch_length_mid,
                                                        ui.config.spectrum_patch_length_near + 1.0F);

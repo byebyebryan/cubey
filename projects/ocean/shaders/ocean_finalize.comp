@@ -42,12 +42,12 @@ vec2 raw_horizontal_at(ivec2 texel, ivec2 size) {
 }
 
 float cascade_chop_scale(float cascade, float chop) {
-    return chop * (cascade < 0.5 ? 1.36 : (cascade < 1.5 ? 1.12 : 0.62));
+    return chop * (cascade < 0.5 ? 1.18 : (cascade < 1.5 ? 1.08 : 1.0));
 }
 
 vec2 bounded_choppy_displacement(vec2 horizontal, float patch_length, float cascade) {
     float horizontal_limit =
-        patch_length * (cascade < 0.5 ? 0.032 : (cascade < 1.5 ? 0.024 : 0.014));
+        patch_length * (cascade < 0.5 ? 0.030 : (cascade < 1.5 ? 0.030 : 0.034));
     float horizontal_length = length(horizontal);
     return horizontal * min(1.0, horizontal_limit / max(horizontal_length, 0.0001));
 }

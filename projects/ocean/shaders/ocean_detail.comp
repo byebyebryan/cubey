@@ -53,15 +53,19 @@ void add_detail_component(inout float height, inout vec2 slope, inout float cres
     float omega = sqrt(G * k);
     float phase = dot(position, direction) * k + time * omega + phase_offset;
     float wave = sin(phase);
-    float wave2 = sin(phase * 2.0 + phase_offset);
-    float wave3 = sin(phase * 3.0 - phase_offset);
-    float harmonic2 = 0.22 * crest_sharpness;
-    float harmonic3 = 0.07 * crest_sharpness;
-    float shaped_wave = wave + max(wave, 0.0) * (wave2 * harmonic2 + wave3 * harmonic3);
-    float wave_slope =
-        (cos(phase) + cos(phase * 2.0 + phase_offset) * harmonic2 * 2.0 +
-         cos(phase * 3.0 - phase_offset) * harmonic3 * 3.0) *
-        amplitude * k;
+    float wave_cos = cos(phase);
+    float stokes2 = 2.0 * wave * wave - 1.0;
+    float crest_exponent = mix(3.2, 1.55, clamp(crest_sharpness, 0.0, 1.5) / 1.5);
+    float crest_lift = pow(max(wave, 0.0), crest_exponent);
+    float harmonic2 = 0.18 * crest_sharpness;
+    float harmonic3 = 0.12 * crest_sharpness;
+    float shaped_wave = wave + stokes2 * harmonic2 + crest_lift * harmonic3;
+    float crest_slope =
+        wave > 0.0 ? crest_exponent * pow(max(wave, 0.0001), crest_exponent - 1.0) * wave_cos
+                   : 0.0;
+    float wave_slope = (wave_cos + (4.0 * wave * wave_cos) * harmonic2 +
+                        crest_slope * harmonic3) *
+                       amplitude * k;
     height += shaped_wave * amplitude;
     slope += direction * wave_slope;
     float pinched_crest = smoothstep(0.78, mix(0.995, 0.90, crest_sharpness), wave);

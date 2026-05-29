@@ -25,6 +25,7 @@
 
 #include <vulkan/vulkan.h>
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstdint>
@@ -707,6 +708,21 @@ class OceanApp {
 
     [[nodiscard]] OceanSpectrumPushConstants spectrum_push_constants(std::uint32_t cascade) const {
         const float wind = radians(ocean_config_.wind_direction_degrees);
+        const float cascade_wind_speed =
+            cascade == 0U ? ocean_config_.wind_speed_mps * 2.0F
+                          : (cascade == 1U ? ocean_config_.wind_speed_mps * 0.5F
+                                            : ocean_config_.wind_speed_mps);
+        const float cascade_fetch =
+            cascade == 0U ? ocean_config_.fetch_km * (550.0F / 150.0F)
+                          : ocean_config_.fetch_km;
+        const float cascade_spread =
+            cascade == 0U ? std::min(ocean_config_.spectrum_spread * 2.0F, 1.0F)
+                          : (cascade == 1U ? std::min(ocean_config_.spectrum_spread * 2.0F, 1.0F)
+                                            : ocean_config_.spectrum_spread);
+        const float cascade_detail =
+            cascade == 0U ? ocean_config_.small_wave_detail
+                          : (cascade == 1U ? std::min(ocean_config_.small_wave_detail, 0.72F)
+                                            : std::min(ocean_config_.small_wave_detail, 0.58F));
         return {
             .ocean_options =
                 {
@@ -719,21 +735,21 @@ class OceanApp {
                 {
                     ocean_cascade_patch_length(ocean_config_, cascade),
                     static_cast<float>(cascade),
-                    ocean_config_.fetch_km,
+                    cascade_fetch,
                     ocean_config_.chop,
                 },
             .wind_options =
                 {
                     std::cos(wind),
                     std::sin(wind),
-                    ocean_config_.wind_speed_mps,
+                    cascade_wind_speed,
                     ocean_config_.swell_scale,
                 },
             .seed_options =
                 {
                     static_cast<float>(ocean_config_.spectrum_seed),
-                    ocean_config_.spectrum_spread,
-                    ocean_config_.small_wave_detail,
+                    cascade_spread,
+                    cascade_detail,
                     ocean_config_.animation_speed,
                 },
         };
@@ -774,7 +790,7 @@ class OceanApp {
                     ocean_cascade_patch_length(ocean_config_, cascade),
                     static_cast<float>(cascade),
                     ocean_config_.chop,
-                    1.0F / (resolution * resolution),
+                    1.0F,
                 },
             .foam_options =
                 {

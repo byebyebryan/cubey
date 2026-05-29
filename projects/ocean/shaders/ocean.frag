@@ -77,7 +77,6 @@ struct FragmentSurfaceSample {
     float foam;
     float detail_foam;
     vec4 persistent_foam;
-    float weight_sum;
     float normal_weight_sum;
     float detail_weight_sum;
 };
@@ -171,17 +170,15 @@ vec2 cascade_sample_position(uint cascade, vec2 position) {
 
 float cascade_weight(uint cascade, float camera_distance) {
     if (cascade == 0u) {
-        return 1.0 - smoothstep(ocean.mesh_options.z * 0.18, ocean.mesh_options.z * 0.55,
+        return 1.0 - smoothstep(ocean.mesh_options.z * 0.14, ocean.mesh_options.z * 0.42,
                                 camera_distance);
     }
     if (cascade == 1u) {
-        float fade_in = smoothstep(ocean.mesh_options.z * 0.10, ocean.mesh_options.z * 0.22,
-                                   camera_distance);
         float fade_out = 1.0 - smoothstep(ocean.mesh_options.z * 0.58,
                                           ocean.mesh_options.z * 0.94, camera_distance);
-        return fade_in * fade_out;
+        return fade_out;
     }
-    return smoothstep(ocean.mesh_options.z * 0.34, ocean.mesh_options.z * 0.72, camera_distance);
+    return 1.0;
 }
 
 float cascade_detail_filter(float camera_distance) {
@@ -195,12 +192,12 @@ float cascade_displacement_detail_scale(uint cascade) {
     float detail = clamp(ocean.detail_wave_options.w, 0.0, 1.5);
     float detail_weight = clamp(detail / 1.5, 0.0, 1.0);
     if (cascade == 0u) {
-        return mix(0.46, 0.78, detail_weight);
+        return 0.0;
     }
     if (cascade == 1u) {
-        return mix(0.54, 0.82, detail_weight);
+        return mix(0.22, 0.40, detail_weight);
     }
-    return mix(0.24, 0.42, detail_weight);
+    return mix(0.34, 0.58, detail_weight);
 }
 
 void add_cascade(inout FragmentSurfaceSample sample_value, uint cascade, vec2 position,
@@ -229,7 +226,6 @@ void add_cascade(inout FragmentSurfaceSample sample_value, uint cascade, vec2 po
     sample_value.detail_foam = max(sample_value.detail_foam, detail_wave.w * weight);
     sample_value.persistent_foam =
         max(sample_value.persistent_foam, sample_foam_history(cascade, uv) * weight);
-    sample_value.weight_sum += weight;
     sample_value.normal_weight_sum += normal_weight;
     sample_value.detail_weight_sum += detail_weight;
 }
@@ -244,15 +240,11 @@ FragmentSurfaceSample sample_fragment_surface_once(vec2 position, float camera_d
     sample_value.foam = 0.0;
     sample_value.detail_foam = 0.0;
     sample_value.persistent_foam = vec4(0.0);
-    sample_value.weight_sum = 0.0;
     sample_value.normal_weight_sum = 0.0;
     sample_value.detail_weight_sum = 0.0;
     add_cascade(sample_value, 2u, position, camera_distance);
     add_cascade(sample_value, 1u, position, camera_distance);
     add_cascade(sample_value, 0u, position, camera_distance);
-    if (sample_value.weight_sum > 0.0001) {
-        sample_value.displacement /= sample_value.weight_sum;
-    }
     if (sample_value.normal_weight_sum > 0.0001) {
         sample_value.normal_sum /= sample_value.normal_weight_sum;
     }
@@ -273,10 +265,12 @@ FragmentSurfaceSample sample_fragment_surface_once(vec2 position, float camera_d
     sample_value.normal_sum =
         ocean_normal_from_slope(slope + macro_waves.slope + detail_slope * 0.44);
     sample_value.compression = max(sample_value.compression, macro_waves.foam * 0.25);
-    sample_value.foam = max(sample_value.foam, macro_waves.foam * ocean.detail_options.z * 0.05);
-    sample_value.detail_foam = max(sample_value.detail_foam, macro_waves.foam * 0.02);
+    sample_value.foam = max(sample_value.foam, macro_waves.foam * ocean.detail_options.z * 0.85);
+    sample_value.detail_foam =
+        max(sample_value.detail_foam, macro_waves.foam * ocean.detail_options.z * 0.34);
     sample_value.persistent_foam =
-        max(sample_value.persistent_foam, vec4(macro_waves.foam * 0.02, 0.0, 0.0, 0.0));
+        max(sample_value.persistent_foam,
+            vec4(macro_waves.foam * ocean.detail_options.z * 0.22, 0.0, 0.0, 0.0));
     return sample_value;
 }
 
