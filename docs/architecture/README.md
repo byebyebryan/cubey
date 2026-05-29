@@ -12,6 +12,8 @@ than the root design and roadmap.
   2D/2.5D/3D fluid work.
 - [Ocean rendering](ocean-rendering.md): scalable procedural ocean rendering,
   interaction hooks, and breaking-wave tradeoffs.
+- [Ocean adjacent systems](ocean-adjacent-systems.md): atmosphere, clouds,
+  terrain, bathymetry, shoreline, and shallow-water integration boundaries.
 - [glTF assets and PBR](gltf-assets.md): static glTF import, PBR material
   contract, texture upload, HDR environments, and viewer boundaries.
 - [Animation and deformation](animation-deformation.md): glTF animation,
