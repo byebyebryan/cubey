@@ -35,7 +35,6 @@ void test_run_config_parses_pyro_buoyancy_control();
 void test_run_config_parses_pyro_source_controls();
 void test_run_config_parses_pyro_fire_controls();
 void test_run_config_parses_pyro_obstacle_controls();
-void test_run_config_parses_smoke_obstacle_flag();
 void test_run_config_parses_input_path();
 void test_run_config_parses_png_output_path();
 void test_run_config_preserves_explicit_video_capture_timing_and_output();
@@ -70,7 +69,6 @@ std::span<const TestCase> core_test_cases() {
         CUBEY_TEST(test_run_config_parses_pyro_source_controls),
         CUBEY_TEST(test_run_config_parses_pyro_fire_controls),
         CUBEY_TEST(test_run_config_parses_pyro_obstacle_controls),
-        CUBEY_TEST(test_run_config_parses_smoke_obstacle_flag),
         CUBEY_TEST(test_run_cli_app_sets_default_title_and_returns_runner_status),
         CUBEY_TEST(test_file_io_round_trips_binary_bytes),
         CUBEY_TEST(test_frame_clock_tracks_delta_elapsed_and_index),

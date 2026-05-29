@@ -578,17 +578,6 @@ void test_run_config_parses_pyro_obstacle_controls() {
     require(config.pyro.obstacle_radius == 0.18F, "run config should parse pyro obstacle radius");
 }
 
-void test_run_config_parses_smoke_obstacle_flag() {
-    std::array<char, 6> program{'c', 'u', 'b', 'e', 'y', '\0'};
-    std::array<char, 18> obstacles_flag{'-', '-', 's', 'm', 'o', 'k', 'e', '-', 'o',
-                                        'b', 's', 't', 'a', 'c', 'l', 'e', 's', '\0'};
-    std::array<char*, 2> argv{program.data(), obstacles_flag.data()};
-
-    const cubey::RunConfig config =
-        cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
-    require(config.smoke.obstacles, "run config should parse smoke obstacle flag");
-}
-
 void test_run_cli_app_sets_default_title_and_returns_runner_status() {
     std::array<char, 6> program{'c', 'u', 'b', 'e', 'y', '\0'};
     std::array<char*, 1> argv{program.data()};

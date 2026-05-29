@@ -40,7 +40,7 @@ current design.
 | Build | CMake + Ninja | Cross-platform, fast incremental builds |
 | Primary GPU API | Vulkan | Full GPU control, async compute, no feature ceiling |
 | Windowing | GLFW | Minimal, Vulkan-native surface creation |
-| UI | None yet; ImGui is the likely debug UI | Current telemetry stays lightweight until UI earns the dependency |
+| UI | ImGui for project debug panels | Live controls stay project-focused; Cubey is not an editor |
 | Math | GLM behind `cubey::math` | Share matrix/vector types, transform/camera state, and Vulkan projection conventions without exposing ad hoc example math |
 | Shader compilation | glslangValidator (build time) | GLSL → SPIR-V, no runtime dependency |
 | Image output | `stb_image_write` | Single-header dependency, enough for inspectable artifacts |

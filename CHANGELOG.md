@@ -99,11 +99,11 @@ versioned section and use that section as the release notes.
   cube into an offscreen color target, reads it back, and writes a PNG artifact.
 - `examples/particle_cubes`, a compute-updated attractor particle smoke
   rendered as indexed cube instances.
-- `projects/fluid_2d`, the first project target: a 2D dye-and-velocity compute
-  simulation with injection/advection passes, project-local pressure
-  projection, pointer injection, pause/reset controls, debug render modes,
-  fullscreen rendering, config tests, windowed smoke, and deterministic
-  headless PNG smoke.
+- `projects/fluid/smoke_2d`, the first fluid project target: a 2D
+  dye-and-velocity compute simulation with injection/advection passes,
+  project-local pressure projection, pointer injection, pause/reset controls,
+  debug render modes, fullscreen rendering, config tests, windowed smoke, and
+  deterministic headless PNG smoke.
 - `projects/fractal_2d`, a fullscreen Mandelbrot-style shader project with
   pan/zoom/reset navigation and headless PNG output.
 - CTest smoke that accepts either successful window startup or the known
@@ -149,7 +149,7 @@ versioned section and use that section as the release notes.
 - Windowed examples now use dynamic rendering instead of classic render
   passes/framebuffers while keeping command recording and render-resource policy
   local.
-- Windowed examples, `headless_cube`, and `fluid_2d` now use the shared
+- Windowed examples, `headless_cube`, and `smoke_2d` now use the shared
   Vulkan command recorder for repeated command-buffer calls while keeping pass
   order, barriers, descriptors, pipelines, and render policy local.
 - Frame submission routes through the Vulkan submission coordinator, and
@@ -189,13 +189,13 @@ versioned section and use that section as the release notes.
   `material_cubes`, and `particle_cubes` now use the shared GLFW/windowed host
   layer while keeping command recording sequence and render resources
   example-local.
-- `headless_cube`, `fractal_2d --headless`, and `fluid_2d --headless` now use
+- `headless_cube`, `fractal_2d --headless`, and `smoke_2d --headless` now use
   the shared no-GLFW headless PNG host while keeping resource setup, simulation,
   and command recording sequence local to each runnable.
 - `gltf_viewer --headless` and `pbr_furnace --headless` also use the shared
   headless host; projects that need per-frame renderer resources now size those
   resources from the active capture frame-slot count.
-- `fluid_2d` simulation steps now consume `ProjectFrame` values from shared
+- `smoke_2d` simulation steps now consume `ProjectFrame` values from shared
   project runtime adapter in both windowed and headless modes, while keeping
   Vulkan command recording sequence and resource policy project-local.
 - `Camera3D` now supports orthographic projection in addition to perspective
@@ -219,5 +219,5 @@ versioned section and use that section as the release notes.
 
 ## Pre-2.0 History
 
-- The original cubey codebase remains preserved on the `master` branch as an
+- The original cubey codebase remains preserved on the `legacy` branch as an
   OpenGL 4 shader playground.

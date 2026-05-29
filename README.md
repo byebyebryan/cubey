@@ -9,6 +9,9 @@ Cubey is not a generic game engine, editor, SDK, or backend-agnostic renderer.
 It should still use established graphics terminology and proven public
 precedent when shaping new foundation contracts.
 
+Active development lives on `main`. The original OpenGL 4 shader playground is
+preserved on the `legacy` branch.
+
 ## Current Direction
 
 - Primary target: native Vulkan on desktop.
@@ -21,6 +24,8 @@ precedent when shaping new foundation contracts.
   under `projects/`.
 - Headless PNG and optional MP4 output are first-class verification/capture
   paths for projects that can render without a window.
+- Runtime debug UI uses ImGui where projects need live controls; Cubey still
+  does not aim to become an editor.
 
 Current examples:
 
@@ -84,12 +89,16 @@ Authoritative current docs:
 - [Host and engine](docs/architecture/host-engine.md)
 - [Threading and async](docs/architecture/threading-and-async.md)
 - [glTF assets and PBR](docs/architecture/gltf-assets.md)
+- [Animation and deformation](docs/architecture/animation-deformation.md)
 - [Fluid simulation direction](docs/architecture/fluid-simulation.md)
+- [Ocean rendering](docs/architecture/ocean-rendering.md)
+- [Ocean adjacent systems](docs/architecture/ocean-adjacent-systems.md)
 - [C++ style guide](docs/cpp-style.md)
 - [Changelog / release notes](CHANGELOG.md)
 
 Project-local docs:
 
+- [Fluid overview](projects/fluid/README.md)
 - [Smoke 2D](projects/fluid/smoke_2d/README.md)
 - [Water 2D](projects/fluid/water_2d/README.md)
 - [Water 3D](projects/fluid/water_3d/README.md)
@@ -189,9 +198,10 @@ Use `--print-frame-stats` for periodic stdout samples while a window remains
 open; the window title also shows the latest sampled FPS and frame time.
 `smoke_2d` defaults to a `1024x1024` solver grid and five procedural
 injectors; use `--grid-width`, `--grid-height`, and `--smoke-injectors 1..16` to
-compare other simulation/demo shapes. Use `--smoke-pressure-solver jacobi|rbgs` to compare the Jacobi
-and red-black Gauss-Seidel pressure paths; `--profile-diagnostics` is available
-in headless smoke runs when paired with `--profile-output`.
+compare other simulation/demo shapes. Use `--smoke-pressure-solver jacobi|rbgs`
+to compare the Jacobi and red-black Gauss-Seidel pressure paths;
+`--profile-diagnostics` is available in headless smoke runs when paired with
+`--profile-output`.
 `water_2d` defaults to a `256x144` MAC grid with APIC particle-grid transfer and
 a PIC/FLIP fallback. It uses particles for liquid motion and a face-centered
 grid for pressure, so it is intentionally a different solver family from
