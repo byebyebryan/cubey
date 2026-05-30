@@ -87,6 +87,18 @@ if (BUILD_TESTING)
         30
     )
 
+    set(CUBEY_ATMOSPHERE_NIGHT_SMOKE_OUTPUT
+        "${CMAKE_CURRENT_BINARY_DIR}/atmosphere-night.png"
+    )
+    cubey_add_png_smoke_test(
+        atmosphere_night_writes_png
+        cubey_project_atmosphere
+        "${CUBEY_ATMOSPHERE_NIGHT_SMOKE_OUTPUT}"
+        --headless
+        --atmosphere-preset
+        night
+    )
+
     set(CUBEY_ATMOSPHERE_TRANSMITTANCE_SMOKE_OUTPUT
         "${CMAKE_CURRENT_BINARY_DIR}/atmosphere-transmittance.png"
     )

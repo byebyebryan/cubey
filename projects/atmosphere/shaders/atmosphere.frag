@@ -21,6 +21,8 @@ layout(push_constant) uniform AtmosphereParams {
     vec4 sun_direction_radius;
     vec4 display_transform;
     vec4 atmosphere_options;
+    vec4 night_options;
+    vec4 celestial_options;
 } atmosphere;
 
 layout(location = 0) in vec2 frag_ndc;
@@ -139,6 +141,115 @@ float ground_sun_visibility(vec3 normal, vec3 sun_direction) {
     float softness =
         max(atmosphere.sun_direction_radius.w * 4.0, ATMOSPHERE_MIN_TWILIGHT_SOFTNESS);
     return smoothstep(-softness, softness, dot(normal, sun_direction));
+}
+
+float sun_elevation_degrees(vec3 sun_direction) {
+    return degrees(asin(clamp(sun_direction.y, -1.0, 1.0)));
+}
+
+float twilight_visibility(float sun_elevation) {
+    float astronomical_fade = smoothstep(-18.0, -6.0, sun_elevation);
+    float daylight_fade = 1.0 - smoothstep(-1.0, 4.0, sun_elevation);
+    return astronomical_fade * daylight_fade;
+}
+
+float star_visibility(float sun_elevation) {
+    return 1.0 - smoothstep(-18.0, -6.0, sun_elevation);
+}
+
+vec3 twilight_radiance(vec3 ray_direction, vec3 sun_direction) {
+    float sun_elevation = sun_elevation_degrees(sun_direction);
+    float visibility = twilight_visibility(sun_elevation) * atmosphere.night_options.x;
+    if (visibility <= 0.0) {
+        return vec3(0.0);
+    }
+
+    float horizon = 1.0 - smoothstep(0.02, 0.42, abs(ray_direction.y));
+    float upper_sky = smoothstep(-0.10, 0.65, ray_direction.y);
+    vec3 ray_horizontal = normalize(vec3(ray_direction.x, 0.0, ray_direction.z));
+    vec3 sun_horizontal = normalize(vec3(sun_direction.x, 0.0, sun_direction.z));
+    float sun_azimuth_lobe = pow(max(dot(ray_horizontal, sun_horizontal), 0.0), 2.5);
+    float horizon_warmth = atmosphere.night_options.y;
+
+    vec3 zenith = cubey_srgb_to_linear(vec3(0.010, 0.024, 0.074)) * 0.18;
+    vec3 horizon_blue = cubey_srgb_to_linear(vec3(0.075, 0.092, 0.155)) * 0.20;
+    vec3 sun_warmth = cubey_srgb_to_linear(vec3(1.0, 0.34, 0.09)) * 0.10;
+    vec3 twilight = mix(horizon_blue, zenith, upper_sky);
+    twilight += sun_warmth * horizon * sun_azimuth_lobe * horizon_warmth;
+    return twilight * visibility;
+}
+
+float hash12(vec2 value) {
+    vec3 p = fract(vec3(value.xyx) * 0.1031);
+    p += dot(p, p.yzx + 33.33);
+    return fract((p.x + p.y) * p.z);
+}
+
+vec3 rotate_around_axis(vec3 value, vec3 axis, float cos_angle, float sin_angle) {
+    return value * cos_angle + cross(axis, value) * sin_angle +
+           axis * dot(axis, value) * (1.0 - cos_angle);
+}
+
+vec3 star_sample_direction(vec3 ray_direction) {
+    vec3 celestial_pole =
+        normalize(vec3(0.0, atmosphere.celestial_options.z, atmosphere.celestial_options.w));
+    return rotate_around_axis(ray_direction, celestial_pole, atmosphere.celestial_options.x,
+                              -atmosphere.celestial_options.y);
+}
+
+void star_cube_uv(vec3 direction, out vec2 uv, out float face) {
+    vec3 axis = abs(direction);
+    if (axis.x >= axis.y && axis.x >= axis.z) {
+        face = direction.x > 0.0 ? 0.0 : 1.0;
+        uv = vec2(direction.z, direction.y) / axis.x;
+    } else if (axis.y >= axis.z) {
+        face = direction.y > 0.0 ? 2.0 : 3.0;
+        uv = vec2(direction.x, direction.z) / axis.y;
+    } else {
+        face = direction.z > 0.0 ? 4.0 : 5.0;
+        uv = vec2(direction.x, direction.y) / axis.z;
+    }
+}
+
+vec3 procedural_star_radiance(vec3 ray_direction, vec3 sun_direction) {
+    float visibility = star_visibility(sun_elevation_degrees(sun_direction)) *
+                       atmosphere.night_options.z *
+                       smoothstep(-0.03, 0.18, ray_direction.y);
+    if (visibility <= 0.0 || atmosphere.night_options.w <= 0.0) {
+        return vec3(0.0);
+    }
+
+    vec2 uv;
+    float face;
+    star_cube_uv(star_sample_direction(ray_direction), uv, face);
+    float cell_count = 128.0;
+    vec2 star_uv = (uv * 0.5 + 0.5) * cell_count;
+    vec2 cell = floor(star_uv);
+    vec2 local = fract(star_uv);
+    vec2 seed = cell + vec2(face * 97.0, face * 53.0);
+    float candidate = hash12(seed);
+    float probability = mix(0.004, 0.055, atmosphere.night_options.w);
+    if (candidate < 1.0 - probability) {
+        return vec3(0.0);
+    }
+
+    vec2 center = vec2(hash12(seed + 19.17), hash12(seed + 71.31)) * 0.82 + 0.09;
+    float brightness_seed = hash12(seed + 113.7);
+    float brightness = mix(0.20, 1.35, pow(brightness_seed, 6.0));
+    float radius = mix(0.018, 0.040, pow(brightness_seed, 10.0));
+    float distance_to_star = length(local - center);
+    float antialias = max(length(fwidth(local)), 0.010);
+    float star = 1.0 - smoothstep(radius, radius + antialias, distance_to_star);
+    float color_seed = hash12(seed + 211.9);
+    vec3 warm = cubey_srgb_to_linear(vec3(1.0, 0.82, 0.58));
+    vec3 cool = cubey_srgb_to_linear(vec3(0.70, 0.78, 1.0));
+    vec3 color = mix(warm, cool, smoothstep(0.25, 0.85, color_seed));
+    return color * star * brightness * visibility * 0.045;
+}
+
+vec3 night_sky_radiance(vec3 ray_direction, vec3 sun_direction) {
+    return twilight_radiance(ray_direction, sun_direction) +
+           procedural_star_radiance(ray_direction, sun_direction);
 }
 
 AtmosphereSample integrate_atmosphere(vec3 ray_origin, vec3 ray_direction, float ray_start,
@@ -302,8 +413,12 @@ vec3 ground_radiance(vec3 ray_direction, vec3 planet_center, float ground_t) {
     float sun_visibility = ground_sun_visibility(normal, sun_direction);
     float direct_light = max(ndotl, 0.0) * sun_visibility;
     float twilight_fill = (1.0 - sun_visibility) * smoothstep(-0.16, 0.02, ndotl) * 0.16;
+    float sun_elevation = sun_elevation_degrees(sun_direction);
+    float twilight_ground = twilight_visibility(sun_elevation) * atmosphere.night_options.x;
+    float night_ground = star_visibility(sun_elevation) * atmosphere.night_options.z;
+    float night_ambient = twilight_ground * 0.060 + night_ground * 0.024;
     vec3 base = cubey_srgb_to_linear(vec3(0.18, 0.20, 0.16)) * atmosphere.radii_ground.w;
-    vec3 lit_ground = base * (0.12 + direct_light * 1.35 + twilight_fill);
+    vec3 lit_ground = base * (0.12 + direct_light * 1.35 + twilight_fill + night_ambient);
     vec4 reference = ground_reference_geometry(ground_position);
     return mix(lit_ground, reference.rgb, reference.a);
 }
@@ -337,7 +452,9 @@ void main() {
     vec2 atmosphere_hit = ray_sphere_intersection(vec3(0.0), ray_direction, planet_center,
                                                   atmosphere.radii_ground.y);
     if (atmosphere_hit.y <= 0.0) {
-        vec3 space_color = sun_disk_luminance(ray_direction, planet_center);
+        vec3 sun_direction = normalize(atmosphere.sun_direction_radius.xyz);
+        vec3 space_color = sun_disk_luminance(ray_direction, planet_center) +
+                           night_sky_radiance(ray_direction, sun_direction);
         out_color = vec4(cubey_pbr_apply_display_transform(space_color,
                                                            atmosphere.display_transform), 1.0);
         return;
@@ -354,7 +471,12 @@ void main() {
     int debug_view = int(atmosphere.camera_forward_debug_view.w + 0.5);
     AtmosphereSample atmosphere_sample = integrate_atmosphere(vec3(0.0), ray_direction, ray_start,
                                                               ray_end, planet_center);
-    vec3 color = atmosphere_sample.color + sun_disk_luminance(ray_direction, planet_center);
+    vec3 sun_direction = normalize(atmosphere.sun_direction_radius.xyz);
+    vec3 night_sky = hit_ground
+        ? vec3(0.0)
+        : night_sky_radiance(ray_direction, sun_direction) * atmosphere_sample.transmittance;
+    vec3 color = atmosphere_sample.color + sun_disk_luminance(ray_direction, planet_center) +
+                 night_sky;
     if (hit_ground) {
         color += ground_radiance(ray_direction, planet_center, ground_t) *
                  atmosphere_sample.transmittance;
@@ -372,6 +494,8 @@ void main() {
         color = sun_disk_luminance(ray_direction, planet_center);
     } else if (debug_view == 6) {
         color = render_aerial_perspective_debug(ray_direction, planet_center);
+    } else if (debug_view == 7) {
+        color = night_sky;
     }
 
     out_color = vec4(cubey_pbr_apply_display_transform(color, atmosphere.display_transform), 1.0);

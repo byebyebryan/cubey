@@ -53,9 +53,11 @@ struct AtmospherePushConstants {
     cubey::math::Vec4 sun_direction_radius;
     cubey::math::Vec4 display_transform;
     cubey::math::Vec4 atmosphere_options;
+    cubey::math::Vec4 night_options;
+    cubey::math::Vec4 celestial_options;
 };
 
-static_assert(sizeof(AtmospherePushConstants) == sizeof(float) * 40U);
+static_assert(sizeof(AtmospherePushConstants) == sizeof(float) * 48U);
 
 std::filesystem::path shader_path(const char* filename) {
     return std::filesystem::path(CUBEY_ATMOSPHERE_SHADER_DIR) / filename;
@@ -94,7 +96,8 @@ class AtmosphereApp {
         : run_config_(std::move(config)),
           atmosphere_config_(atmosphere_config_from_run_config(run_config_)),
           render_view_(atmosphere_config_.render_view),
-          headless_base_time_hours_(atmosphere_config_.time_of_day.time_hours) {
+          headless_base_time_hours_(atmosphere_config_.time_of_day.time_hours),
+          headless_base_day_of_year_(atmosphere_config_.time_of_day.day_of_year) {
         view_controller_.set_auto_rotation_speed(0.0F);
     }
 
@@ -204,6 +207,7 @@ class AtmosphereApp {
             const AtmospherePreset preset = atmosphere_config_.preset;
             atmosphere_config_ = atmosphere_config_for_preset(preset);
             headless_base_time_hours_ = atmosphere_config_.time_of_day.time_hours;
+            headless_base_day_of_year_ = atmosphere_config_.time_of_day.day_of_year;
             render_view_ = atmosphere_config_.render_view;
             view_controller_.reset();
             reset_requested_ = false;
@@ -218,10 +222,9 @@ class AtmosphereApp {
         if (run_config_.capture_mode == CaptureMode::Video &&
             atmosphere_config_.time_of_day.mode == SunControlMode::SolarClock &&
             atmosphere_config_.time_of_day.playing) {
-            atmosphere_config_.time_of_day.time_hours = atmosphere_wrap_time_hours(
-                headless_base_time_hours_ +
-                static_cast<float>(frame.timing.elapsed_seconds) *
-                    atmosphere_config_.time_of_day.speed_hours_per_second);
+            set_atmosphere_time_from_elapsed(atmosphere_config_.time_of_day,
+                                             headless_base_time_hours_, headless_base_day_of_year_,
+                                             frame.timing.elapsed_seconds);
         }
         resolve_atmosphere_time_of_day(atmosphere_config_);
         validate_atmosphere_config(atmosphere_config_);
@@ -283,6 +286,9 @@ class AtmosphereApp {
         const cubey::math::Vec3 forward =
             glm::normalize(rotation * cubey::math::Vec3{0.0F, 0.0F, -1.0F});
         const cubey::math::Vec3 sun = sun_direction(atmosphere_config_);
+        const float sidereal_angle =
+            atmosphere_sidereal_angle_radians(atmosphere_config_.time_of_day);
+        const float latitude = radians(atmosphere_config_.time_of_day.latitude_degrees);
         const cubey::render::PbrDisplayTransform display_transform =
             cubey::render::pbr_display_transform_for_target(pipeline_color_format_,
                                                             atmosphere_config_.exposure);
@@ -343,6 +349,20 @@ class AtmosphereApp {
                     atmosphere_config_.reference_grid_km,
                     atmosphere_config_.reference_intensity,
                 },
+            .night_options =
+                {
+                    atmosphere_config_.night_sky.twilight_strength,
+                    atmosphere_config_.night_sky.twilight_horizon_warmth,
+                    atmosphere_config_.night_sky.star_intensity,
+                    atmosphere_config_.night_sky.star_density,
+                },
+            .celestial_options =
+                {
+                    std::cos(sidereal_angle),
+                    std::sin(sidereal_angle),
+                    std::sin(latitude),
+                    std::cos(latitude),
+                },
         };
     }
 
@@ -398,6 +418,7 @@ class AtmosphereApp {
     double latest_fps_ = 0.0;
     double latest_frame_ms_ = 0.0;
     float headless_base_time_hours_ = 12.0F;
+    float headless_base_day_of_year_ = 80.0F;
     bool reset_requested_ = false;
 
     VkFormat pipeline_color_format_ = VK_FORMAT_UNDEFINED;

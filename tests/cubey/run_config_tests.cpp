@@ -220,7 +220,15 @@ void test_run_config_parses_atmosphere_options() {
     std::string auto_exposure_flag = "--no-auto-exposure";
     std::string exposure_bias_flag = "--exposure-bias";
     std::string exposure_bias_value = "0.75";
-    std::array<char*, 27> argv{program.data(),
+    std::string twilight_flag = "--twilight-strength";
+    std::string twilight_value = "1.5";
+    std::string twilight_warmth_flag = "--twilight-horizon-warmth";
+    std::string twilight_warmth_value = "0.8";
+    std::string star_intensity_flag = "--star-intensity";
+    std::string star_intensity_value = "1.7";
+    std::string star_density_flag = "--star-density";
+    std::string star_density_value = "0.4";
+    std::array<char*, 35> argv{program.data(),
                                preset_flag.data(),
                                preset_value.data(),
                                elevation_flag.data(),
@@ -246,7 +254,15 @@ void test_run_config_parses_atmosphere_options() {
                                pause_flag.data(),
                                auto_exposure_flag.data(),
                                exposure_bias_flag.data(),
-                               exposure_bias_value.data()};
+                               exposure_bias_value.data(),
+                               twilight_flag.data(),
+                               twilight_value.data(),
+                               twilight_warmth_flag.data(),
+                               twilight_warmth_value.data(),
+                               star_intensity_flag.data(),
+                               star_intensity_value.data(),
+                               star_density_flag.data(),
+                               star_density_value.data()};
 
     const cubey::RunConfig config =
         cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
@@ -270,6 +286,12 @@ void test_run_config_parses_atmosphere_options() {
     require(config.atmosphere.auto_exposure == 0,
             "run config should parse auto exposure disable flag");
     require(config.atmosphere.exposure_bias == 0.75F, "run config should parse exposure bias");
+    require(config.atmosphere.twilight_strength == 1.5F,
+            "run config should parse twilight strength");
+    require(config.atmosphere.twilight_horizon_warmth == 0.8F,
+            "run config should parse twilight horizon warmth");
+    require(config.atmosphere.star_intensity == 1.7F, "run config should parse star intensity");
+    require(config.atmosphere.star_density == 0.4F, "run config should parse star density");
 }
 
 void test_run_config_rejects_invalid_atmosphere_options() {
@@ -347,6 +369,26 @@ void test_run_config_rejects_invalid_atmosphere_options() {
         require_throws(
             [&argv]() { cubey::parse_run_config(static_cast<int>(argv.size()), argv.data()); },
             "run config should reject invalid exposure bias");
+    }
+    {
+        std::string program = "cubey";
+        std::string star_density_flag = "--star-density";
+        std::string star_density_value = "1.5";
+        std::array<char*, 3> argv{program.data(), star_density_flag.data(),
+                                  star_density_value.data()};
+        require_throws(
+            [&argv]() { cubey::parse_run_config(static_cast<int>(argv.size()), argv.data()); },
+            "run config should reject invalid star density");
+    }
+    {
+        std::string program = "cubey";
+        std::string twilight_warmth_flag = "--twilight-horizon-warmth";
+        std::string twilight_warmth_value = "2.5";
+        std::array<char*, 3> argv{program.data(), twilight_warmth_flag.data(),
+                                  twilight_warmth_value.data()};
+        require_throws(
+            [&argv]() { cubey::parse_run_config(static_cast<int>(argv.size()), argv.data()); },
+            "run config should reject invalid twilight horizon warmth");
     }
 }
 

@@ -59,7 +59,8 @@ void draw_atmosphere_ui(AtmosphereUiContext ui) {
         if (ui.config.time_of_day.mode == SunControlMode::SolarClock) {
             ImGui::BeginDisabled();
         }
-        ImGui::SliderFloat("Elevation", &ui.config.sun_elevation_degrees, -4.0F, 90.0F, "%.1f deg");
+        ImGui::SliderFloat("Elevation", &ui.config.sun_elevation_degrees, -90.0F, 90.0F,
+                           "%.1f deg");
         ImGui::SliderFloat("Azimuth", &ui.config.sun_azimuth_degrees, -180.0F, 180.0F, "%.1f deg");
         if (ui.config.time_of_day.mode == SunControlMode::SolarClock) {
             ImGui::EndDisabled();
@@ -85,6 +86,15 @@ void draw_atmosphere_ui(AtmosphereUiContext ui) {
         ImGui::Checkbox("Ground reference", &ui.config.reference_geometry_enabled);
         ImGui::SliderFloat("Grid scale", &ui.config.reference_grid_km, 0.25F, 10.0F, "%.2f km");
         ImGui::SliderFloat("Grid intensity", &ui.config.reference_intensity, 0.0F, 1.5F, "%.2f");
+    }
+
+    if (cubey::host::imgui_section("Night sky", true)) {
+        const cubey::host::ScopedImGuiId section_id("Night sky");
+        ImGui::SliderFloat("Twilight", &ui.config.night_sky.twilight_strength, 0.0F, 4.0F, "%.2f");
+        ImGui::SliderFloat("Horizon warmth", &ui.config.night_sky.twilight_horizon_warmth, 0.0F,
+                           2.0F, "%.2f");
+        ImGui::SliderFloat("Stars", &ui.config.night_sky.star_intensity, 0.0F, 4.0F, "%.2f");
+        ImGui::SliderFloat("Star density", &ui.config.night_sky.star_density, 0.0F, 1.0F, "%.2f");
     }
 
     if (cubey::host::imgui_section("Display", true)) {

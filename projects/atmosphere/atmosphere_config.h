@@ -21,11 +21,13 @@ enum class AtmospherePreset : std::uint32_t {
     Hazy = 3,
     ThinAir = 4,
     HighAltitude = 5,
+    Night = 6,
 };
 
-inline constexpr std::array<AtmospherePreset, 6> kAtmospherePresets{
-    AtmospherePreset::Noon, AtmospherePreset::LowSun,  AtmospherePreset::Sunset,
-    AtmospherePreset::Hazy, AtmospherePreset::ThinAir, AtmospherePreset::HighAltitude,
+inline constexpr std::array<AtmospherePreset, 7> kAtmospherePresets{
+    AtmospherePreset::Noon,  AtmospherePreset::LowSun,  AtmospherePreset::Sunset,
+    AtmospherePreset::Hazy,  AtmospherePreset::ThinAir, AtmospherePreset::HighAltitude,
+    AtmospherePreset::Night,
 };
 
 enum class AtmosphereRenderView : std::uint32_t {
@@ -36,9 +38,10 @@ enum class AtmosphereRenderView : std::uint32_t {
     OpticalDepth = 4,
     SunDisk = 5,
     AerialPerspective = 6,
+    NightSky = 7,
 };
 
-inline constexpr std::array<AtmosphereRenderView, 7> kAtmosphereRenderViews{
+inline constexpr std::array<AtmosphereRenderView, 8> kAtmosphereRenderViews{
     AtmosphereRenderView::Final,
     AtmosphereRenderView::Rayleigh,
     AtmosphereRenderView::Mie,
@@ -46,6 +49,7 @@ inline constexpr std::array<AtmosphereRenderView, 7> kAtmosphereRenderViews{
     AtmosphereRenderView::OpticalDepth,
     AtmosphereRenderView::SunDisk,
     AtmosphereRenderView::AerialPerspective,
+    AtmosphereRenderView::NightSky,
 };
 
 enum class SunControlMode : std::uint32_t {
@@ -70,10 +74,18 @@ struct TimeOfDayConfig {
     float exposure_bias = 0.0F;
 };
 
+struct NightSkyConfig {
+    float twilight_strength = 1.0F;
+    float twilight_horizon_warmth = 1.0F;
+    float star_intensity = 1.0F;
+    float star_density = 0.65F;
+};
+
 struct AtmosphereConfig {
     AtmospherePreset preset = AtmospherePreset::Noon;
     AtmosphereRenderView render_view = AtmosphereRenderView::Final;
     TimeOfDayConfig time_of_day{};
+    NightSkyConfig night_sky{};
 
     float bottom_radius_km = 6371.0F;
     float top_radius_km = 6471.0F;
@@ -121,6 +133,8 @@ struct SolarPosition {
         return "thin-air";
     case AtmospherePreset::HighAltitude:
         return "high-altitude";
+    case AtmospherePreset::Night:
+        return "night";
     }
     return "noon";
 }
@@ -153,6 +167,8 @@ struct SolarPosition {
         return "sun-disk";
     case AtmosphereRenderView::AerialPerspective:
         return "aerial-perspective";
+    case AtmosphereRenderView::NightSky:
+        return "night-sky";
     }
     return "final";
 }
@@ -216,6 +232,14 @@ struct SolarPosition {
     return wrapped;
 }
 
+[[nodiscard]] inline float atmosphere_advance_day_of_year(float day_of_year, int day_delta) {
+    float wrapped = std::fmod(day_of_year - 1.0F + static_cast<float>(day_delta), 366.0F);
+    if (wrapped < 0.0F) {
+        wrapped += 366.0F;
+    }
+    return wrapped + 1.0F;
+}
+
 [[nodiscard]] inline float atmosphere_smoothstep(float edge0, float edge1, float value) {
     const float t = std::clamp((value - edge0) / (edge1 - edge0), 0.0F, 1.0F);
     return t * t * (3.0F - 2.0F * t);
@@ -244,10 +268,24 @@ struct SolarPosition {
     };
 }
 
+[[nodiscard]] inline float atmosphere_sidereal_angle_radians(const TimeOfDayConfig& time_of_day) {
+    constexpr float kSiderealSolarRatio = 1.00273790935F;
+    constexpr float kTropicalYearDays = 365.2422F;
+    float rotations =
+        (atmosphere_wrap_time_hours(time_of_day.time_hours) / 24.0F) * kSiderealSolarRatio +
+        (time_of_day.day_of_year - 80.0F) / kTropicalYearDays;
+    rotations = rotations - std::floor(rotations);
+    if (rotations < 0.0F) {
+        rotations += 1.0F;
+    }
+    return rotations * 2.0F * std::numbers::pi_v<float>;
+}
+
 [[nodiscard]] inline float atmosphere_auto_exposure(float sun_elevation_degrees,
                                                     float exposure_bias) {
     const float daylight = atmosphere_smoothstep(-6.0F, 20.0F, sun_elevation_degrees);
-    return std::clamp(exposure_bias + 2.2F * (1.0F - daylight), -4.0F, 4.0F);
+    const float full_night = 1.0F - atmosphere_smoothstep(-18.0F, -6.0F, sun_elevation_degrees);
+    return std::clamp(exposure_bias + 2.2F * (1.0F - daylight) + 0.6F * full_night, -4.0F, 4.0F);
 }
 
 inline void resolve_atmosphere_time_of_day(AtmosphereConfig& config) {
@@ -262,14 +300,23 @@ inline void resolve_atmosphere_time_of_day(AtmosphereConfig& config) {
     }
 }
 
+inline void set_atmosphere_time_from_elapsed(TimeOfDayConfig& time_of_day, float base_time_hours,
+                                             float base_day_of_year, double elapsed_seconds) {
+    const float elapsed_hours =
+        std::max(static_cast<float>(elapsed_seconds), 0.0F) * time_of_day.speed_hours_per_second;
+    const float total_hours = base_time_hours + elapsed_hours;
+    const int day_delta = static_cast<int>(std::floor(total_hours / 24.0F));
+    time_of_day.time_hours = atmosphere_wrap_time_hours(total_hours);
+    time_of_day.day_of_year = atmosphere_advance_day_of_year(base_day_of_year, day_delta);
+}
+
 inline void advance_atmosphere_time_of_day(AtmosphereConfig& config, double delta_seconds) {
     if (config.time_of_day.mode != SunControlMode::SolarClock || !config.time_of_day.playing ||
         delta_seconds <= 0.0) {
         return;
     }
-    config.time_of_day.time_hours = atmosphere_wrap_time_hours(
-        config.time_of_day.time_hours +
-        static_cast<float>(delta_seconds) * config.time_of_day.speed_hours_per_second);
+    set_atmosphere_time_from_elapsed(config.time_of_day, config.time_of_day.time_hours,
+                                     config.time_of_day.day_of_year, delta_seconds);
 }
 
 [[nodiscard]] inline AtmosphereConfig atmosphere_config_for_preset(AtmospherePreset preset) {
@@ -319,6 +366,15 @@ inline void advance_atmosphere_time_of_day(AtmosphereConfig& config, double delt
         config.camera_altitude_km = 25.0F;
         config.mie_density_scale = 0.35F;
         break;
+    case AtmospherePreset::Night:
+        config.time_of_day.time_hours = 0.0F;
+        config.sun_elevation_degrees = -60.0F;
+        config.sun_azimuth_degrees = 180.0F;
+        config.camera_altitude_km = 0.15F;
+        config.exposure = 2.8F;
+        config.night_sky.star_intensity = 1.25F;
+        config.night_sky.star_density = 0.72F;
+        break;
     }
     return config;
 }
@@ -346,6 +402,10 @@ inline void validate_atmosphere_config(const AtmosphereConfig& config) {
     require_finite(config.exposure, "atmosphere exposure");
     require_finite(config.reference_grid_km, "atmosphere reference grid scale");
     require_finite(config.reference_intensity, "atmosphere reference intensity");
+    require_finite(config.night_sky.twilight_strength, "atmosphere twilight strength");
+    require_finite(config.night_sky.twilight_horizon_warmth, "atmosphere twilight horizon warmth");
+    require_finite(config.night_sky.star_intensity, "atmosphere star intensity");
+    require_finite(config.night_sky.star_density, "atmosphere star density");
     require_finite(config.time_of_day.time_hours, "atmosphere time hours");
     require_finite(config.time_of_day.day_of_year, "atmosphere day of year");
     require_finite(config.time_of_day.latitude_degrees, "atmosphere latitude");
@@ -383,6 +443,13 @@ inline void validate_atmosphere_config(const AtmosphereConfig& config) {
     }
     if (config.reference_grid_km <= 0.0F || config.reference_intensity < 0.0F) {
         throw std::runtime_error("atmosphere reference grid scale must be positive");
+    }
+    if (config.night_sky.twilight_strength < 0.0F || config.night_sky.twilight_strength > 4.0F ||
+        config.night_sky.twilight_horizon_warmth < 0.0F ||
+        config.night_sky.twilight_horizon_warmth > 2.0F || config.night_sky.star_intensity < 0.0F ||
+        config.night_sky.star_intensity > 4.0F || config.night_sky.star_density < 0.0F ||
+        config.night_sky.star_density > 1.0F) {
+        throw std::runtime_error("atmosphere night-sky controls are out of range");
     }
     if (config.time_of_day.time_hours < 0.0F || config.time_of_day.time_hours > 24.0F ||
         config.time_of_day.day_of_year < 1.0F || config.time_of_day.day_of_year > 366.0F) {
@@ -455,6 +522,18 @@ inline void validate_atmosphere_config(const AtmosphereConfig& config) {
     }
     if (run_config_float_is_set(run.atmosphere.exposure_bias)) {
         config.time_of_day.exposure_bias = run.atmosphere.exposure_bias;
+    }
+    if (run_config_float_is_set(run.atmosphere.twilight_strength)) {
+        config.night_sky.twilight_strength = run.atmosphere.twilight_strength;
+    }
+    if (run_config_float_is_set(run.atmosphere.twilight_horizon_warmth)) {
+        config.night_sky.twilight_horizon_warmth = run.atmosphere.twilight_horizon_warmth;
+    }
+    if (run_config_float_is_set(run.atmosphere.star_intensity)) {
+        config.night_sky.star_intensity = run.atmosphere.star_intensity;
+    }
+    if (run_config_float_is_set(run.atmosphere.star_density)) {
+        config.night_sky.star_density = run.atmosphere.star_density;
     }
     resolve_atmosphere_time_of_day(config);
     validate_atmosphere_config(config);

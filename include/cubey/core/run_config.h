@@ -125,6 +125,10 @@ struct RunConfig {
         float sun_azimuth_offset_degrees = kRunConfigUnsetFloat;
         float time_speed_hours_per_second = kRunConfigUnsetFloat;
         float exposure_bias = kRunConfigUnsetFloat;
+        float twilight_strength = kRunConfigUnsetFloat;
+        float twilight_horizon_warmth = kRunConfigUnsetFloat;
+        float star_intensity = kRunConfigUnsetFloat;
+        float star_density = kRunConfigUnsetFloat;
         int time_paused = -1;
         int auto_exposure = -1;
     };

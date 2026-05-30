@@ -330,6 +330,18 @@ RunConfig parse_run_config(int argc, char** argv) {
         } else if (arg == "--exposure-bias") {
             config.atmosphere.exposure_bias =
                 parse_float(need_value("--exposure-bias"), "--exposure-bias");
+        } else if (arg == "--twilight-strength") {
+            config.atmosphere.twilight_strength =
+                parse_float(need_value("--twilight-strength"), "--twilight-strength");
+        } else if (arg == "--twilight-horizon-warmth") {
+            config.atmosphere.twilight_horizon_warmth =
+                parse_float(need_value("--twilight-horizon-warmth"), "--twilight-horizon-warmth");
+        } else if (arg == "--star-intensity") {
+            config.atmosphere.star_intensity =
+                parse_float(need_value("--star-intensity"), "--star-intensity");
+        } else if (arg == "--star-density") {
+            config.atmosphere.star_density =
+                parse_float(need_value("--star-density"), "--star-density");
         } else if (arg == "--animation-index") {
             config.gltf.animation_index =
                 parse_u32(need_value("--animation-index"), "--animation-index");
@@ -396,6 +408,19 @@ RunConfig parse_run_config(int argc, char** argv) {
     }
     if (config.atmosphere.exposure_bias < -4.0F || config.atmosphere.exposure_bias > 4.0F) {
         throw std::runtime_error("atmosphere exposure bias must be in [-4, 4]");
+    }
+    if (config.atmosphere.twilight_strength < 0.0F || config.atmosphere.twilight_strength > 4.0F) {
+        throw std::runtime_error("atmosphere twilight strength must be in [0, 4]");
+    }
+    if (config.atmosphere.twilight_horizon_warmth < 0.0F ||
+        config.atmosphere.twilight_horizon_warmth > 2.0F) {
+        throw std::runtime_error("atmosphere twilight horizon warmth must be in [0, 2]");
+    }
+    if (config.atmosphere.star_intensity < 0.0F || config.atmosphere.star_intensity > 4.0F) {
+        throw std::runtime_error("atmosphere star intensity must be in [0, 4]");
+    }
+    if (config.atmosphere.star_density < 0.0F || config.atmosphere.star_density > 1.0F) {
+        throw std::runtime_error("atmosphere star density must be in [0, 1]");
     }
     if (config.smoke.dye_decay < 0.0F || config.smoke.dye_decay > 1.0F) {
         throw std::runtime_error("smoke dye decay must be in [0, 1]");
