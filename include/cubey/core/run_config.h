@@ -115,6 +115,8 @@ struct RunConfig {
     struct AtmosphereOptions {
         std::string preset{};
         std::string time_of_day_mode{};
+        std::string night_sky_mode{};
+        std::string milky_way_source{};
         float sun_elevation_degrees = kRunConfigUnsetFloat;
         float sun_azimuth_degrees = kRunConfigUnsetFloat;
         float camera_altitude_km = kRunConfigUnsetFloat;
@@ -129,6 +131,10 @@ struct RunConfig {
         float twilight_horizon_warmth = kRunConfigUnsetFloat;
         float star_intensity = kRunConfigUnsetFloat;
         float star_density = kRunConfigUnsetFloat;
+        float milky_way_intensity = kRunConfigUnsetFloat;
+        float milky_way_contrast = kRunConfigUnsetFloat;
+        float light_pollution = kRunConfigUnsetFloat;
+        float milky_way_variation = kRunConfigUnsetFloat;
         float moon_intensity = kRunConfigUnsetFloat;
         float moonlight_intensity = kRunConfigUnsetFloat;
         float moon_phase_offset_days = kRunConfigUnsetFloat;

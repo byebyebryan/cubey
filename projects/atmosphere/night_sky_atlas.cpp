@@ -1,0 +1,583 @@
+#include "night_sky_atlas.h"
+
+#include <stb_image.h>
+
+#include <algorithm>
+#include <array>
+#include <cmath>
+#include <cstddef>
+#include <cstdint>
+#include <limits>
+#include <memory>
+#include <numbers>
+#include <stdexcept>
+#include <string>
+#include <vector>
+
+namespace cubey::projects::atmosphere {
+namespace {
+
+struct Vec2 {
+    float x = 0.0F;
+    float y = 0.0F;
+};
+
+struct Vec3 {
+    float x = 0.0F;
+    float y = 0.0F;
+    float z = 0.0F;
+};
+
+struct SourceImage {
+    std::uint32_t width = 1;
+    std::uint32_t height = 1;
+    std::vector<std::uint8_t> rgba8{};
+};
+
+struct StbiImageDeleter {
+    void operator()(stbi_uc* pixels) const noexcept {
+        stbi_image_free(pixels);
+    }
+};
+
+[[nodiscard]] float clamp01(float value) {
+    return std::clamp(value, 0.0F, 1.0F);
+}
+
+[[nodiscard]] float mix(float a, float b, float t) {
+    return a + (b - a) * t;
+}
+
+[[nodiscard]] Vec3 mix(Vec3 a, Vec3 b, float t) {
+    return {
+        mix(a.x, b.x, t),
+        mix(a.y, b.y, t),
+        mix(a.z, b.z, t),
+    };
+}
+
+[[nodiscard]] float smoothstep(float edge0, float edge1, float value) {
+    const float t = clamp01((value - edge0) / (edge1 - edge0));
+    return t * t * (3.0F - 2.0F * t);
+}
+
+[[nodiscard]] Vec3 operator+(Vec3 lhs, Vec3 rhs) {
+    return {lhs.x + rhs.x, lhs.y + rhs.y, lhs.z + rhs.z};
+}
+
+[[nodiscard]] Vec3 operator-(Vec3 lhs, Vec3 rhs) {
+    return {lhs.x - rhs.x, lhs.y - rhs.y, lhs.z - rhs.z};
+}
+
+[[nodiscard]] Vec3 operator*(Vec3 value, float scale) {
+    return {value.x * scale, value.y * scale, value.z * scale};
+}
+
+[[nodiscard]] Vec3 operator/(Vec3 value, float scale) {
+    return {value.x / scale, value.y / scale, value.z / scale};
+}
+
+[[nodiscard]] float dot(Vec3 lhs, Vec3 rhs) {
+    return lhs.x * rhs.x + lhs.y * rhs.y + lhs.z * rhs.z;
+}
+
+[[nodiscard]] Vec3 cross(Vec3 lhs, Vec3 rhs) {
+    return {
+        lhs.y * rhs.z - lhs.z * rhs.y,
+        lhs.z * rhs.x - lhs.x * rhs.z,
+        lhs.x * rhs.y - lhs.y * rhs.x,
+    };
+}
+
+[[nodiscard]] float length(Vec3 value) {
+    return std::sqrt(dot(value, value));
+}
+
+[[nodiscard]] Vec3 normalize(Vec3 value) {
+    const float len = length(value);
+    if (len <= std::numeric_limits<float>::epsilon()) {
+        return {0.0F, 1.0F, 0.0F};
+    }
+    return value / len;
+}
+
+[[nodiscard]] Vec3 rotate_x(Vec3 value, float angle) {
+    const float c = std::cos(angle);
+    const float s = std::sin(angle);
+    return {value.x, value.y * c - value.z * s, value.y * s + value.z * c};
+}
+
+[[nodiscard]] Vec3 rotate_y(Vec3 value, float angle) {
+    const float c = std::cos(angle);
+    const float s = std::sin(angle);
+    return {value.x * c + value.z * s, value.y, -value.x * s + value.z * c};
+}
+
+[[nodiscard]] float luminance(Vec3 color) {
+    return color.x * 0.2126F + color.y * 0.7152F + color.z * 0.0722F;
+}
+
+[[nodiscard]] std::uint32_t hash_u32(std::uint32_t value) {
+    value ^= value >> 16U;
+    value *= 0x7feb352dU;
+    value ^= value >> 15U;
+    value *= 0x846ca68bU;
+    value ^= value >> 16U;
+    return value;
+}
+
+[[nodiscard]] float hash_to_unit(std::uint32_t value) {
+    constexpr float kInv24Bit = 1.0F / 16'777'215.0F;
+    return static_cast<float>(hash_u32(value) >> 8U) * kInv24Bit;
+}
+
+[[nodiscard]] float lattice_hash(int x, int y, int z, std::uint32_t seed) {
+    return hash_to_unit(seed ^ (static_cast<std::uint32_t>(x) * 0x9e3779b9U) ^
+                        (static_cast<std::uint32_t>(y) * 0x85ebca6bU) ^
+                        (static_cast<std::uint32_t>(z) * 0xc2b2ae35U));
+}
+
+[[nodiscard]] float value_noise(Vec3 position, std::uint32_t seed) {
+    const int x0 = static_cast<int>(std::floor(position.x));
+    const int y0 = static_cast<int>(std::floor(position.y));
+    const int z0 = static_cast<int>(std::floor(position.z));
+    const float tx = position.x - static_cast<float>(x0);
+    const float ty = position.y - static_cast<float>(y0);
+    const float tz = position.z - static_cast<float>(z0);
+    const float sx = tx * tx * (3.0F - 2.0F * tx);
+    const float sy = ty * ty * (3.0F - 2.0F * ty);
+    const float sz = tz * tz * (3.0F - 2.0F * tz);
+
+    const float c000 = lattice_hash(x0, y0, z0, seed);
+    const float c100 = lattice_hash(x0 + 1, y0, z0, seed);
+    const float c010 = lattice_hash(x0, y0 + 1, z0, seed);
+    const float c110 = lattice_hash(x0 + 1, y0 + 1, z0, seed);
+    const float c001 = lattice_hash(x0, y0, z0 + 1, seed);
+    const float c101 = lattice_hash(x0 + 1, y0, z0 + 1, seed);
+    const float c011 = lattice_hash(x0, y0 + 1, z0 + 1, seed);
+    const float c111 = lattice_hash(x0 + 1, y0 + 1, z0 + 1, seed);
+    const float x00 = mix(c000, c100, sx);
+    const float x10 = mix(c010, c110, sx);
+    const float x01 = mix(c001, c101, sx);
+    const float x11 = mix(c011, c111, sx);
+    return mix(mix(x00, x10, sy), mix(x01, x11, sy), sz);
+}
+
+[[nodiscard]] float fbm(Vec3 position, std::uint32_t seed, int octaves) {
+    float value = 0.0F;
+    float amplitude = 0.5F;
+    float frequency = 1.0F;
+    float norm = 0.0F;
+    for (int octave = 0; octave < octaves; ++octave) {
+        value += amplitude *
+                 value_noise({position.x * frequency, position.y * frequency,
+                              position.z * frequency},
+                             seed + static_cast<std::uint32_t>(octave) * 101U);
+        norm += amplitude;
+        amplitude *= 0.52F;
+        frequency *= 2.07F;
+    }
+    return norm > 0.0F ? value / norm : 0.0F;
+}
+
+[[nodiscard]] float ridged_fbm(Vec3 position, std::uint32_t seed, int octaves) {
+    float value = 0.0F;
+    float amplitude = 0.5F;
+    float frequency = 1.0F;
+    float norm = 0.0F;
+    for (int octave = 0; octave < octaves; ++octave) {
+        const float noise =
+            value_noise({position.x * frequency, position.y * frequency, position.z * frequency},
+                        seed + static_cast<std::uint32_t>(octave) * 157U);
+        value += amplitude * (1.0F - std::abs(noise * 2.0F - 1.0F));
+        norm += amplitude;
+        amplitude *= 0.50F;
+        frequency *= 2.13F;
+    }
+    return norm > 0.0F ? value / norm : 0.0F;
+}
+
+[[nodiscard]] float angle_delta(float value, float center) {
+    return std::atan2(std::sin(value - center), std::cos(value - center));
+}
+
+[[nodiscard]] float srgb_channel_to_linear(float value) {
+    if (value <= 0.04045F) {
+        return value / 12.92F;
+    }
+    return std::pow((value + 0.055F) / 1.055F, 2.4F);
+}
+
+[[nodiscard]] Vec3 cubemap_direction(std::uint32_t face, std::uint32_t x, std::uint32_t y,
+                                     std::uint32_t extent) {
+    const float u = ((static_cast<float>(x) + 0.5F) / static_cast<float>(extent)) * 2.0F - 1.0F;
+    const float v = ((static_cast<float>(y) + 0.5F) / static_cast<float>(extent)) * 2.0F - 1.0F;
+    switch (face) {
+    case 0:
+        return normalize({1.0F, -v, -u});
+    case 1:
+        return normalize({-1.0F, -v, u});
+    case 2:
+        return normalize({u, 1.0F, v});
+    case 3:
+        return normalize({u, -1.0F, -v});
+    case 4:
+        return normalize({u, -v, 1.0F});
+    default:
+        return normalize({-u, -v, -1.0F});
+    }
+}
+
+[[nodiscard]] Vec2 direction_to_equirect(Vec3 direction) {
+    constexpr float kInvTwoPi = 1.0F / (2.0F * std::numbers::pi_v<float>);
+    constexpr float kInvPi = 1.0F / std::numbers::pi_v<float>;
+    const float longitude = std::atan2(direction.x, -direction.z);
+    const float latitude = std::asin(std::clamp(direction.y, -1.0F, 1.0F));
+    return {
+        longitude * kInvTwoPi + 0.5F,
+        0.5F - latitude * kInvPi,
+    };
+}
+
+[[nodiscard]] Vec3 sample_source_image(const SourceImage& image, Vec2 uv) {
+    uv.x = uv.x - std::floor(uv.x);
+    uv.y = clamp01(uv.y);
+    const float x = uv.x * static_cast<float>(image.width);
+    const float y = uv.y * static_cast<float>(image.height - 1U);
+    const int x0 = static_cast<int>(std::floor(x)) % static_cast<int>(image.width);
+    const int x1 = (x0 + 1) % static_cast<int>(image.width);
+    const int y0 = std::clamp(static_cast<int>(std::floor(y)), 0, static_cast<int>(image.height) - 1);
+    const int y1 = std::clamp(y0 + 1, 0, static_cast<int>(image.height) - 1);
+    const float tx = x - std::floor(x);
+    const float ty = y - std::floor(y);
+
+    const auto texel = [&image](int px, int py) {
+        const std::size_t offset =
+            (static_cast<std::size_t>(py) * image.width + static_cast<std::size_t>(px)) * 4U;
+        return Vec3{srgb_channel_to_linear(static_cast<float>(image.rgba8[offset]) / 255.0F),
+                    srgb_channel_to_linear(static_cast<float>(image.rgba8[offset + 1U]) / 255.0F),
+                    srgb_channel_to_linear(static_cast<float>(image.rgba8[offset + 2U]) / 255.0F)};
+    };
+    const Vec3 a = texel(x0, y0);
+    const Vec3 b = texel(x1, y0);
+    const Vec3 c = texel(x0, y1);
+    const Vec3 d = texel(x1, y1);
+    return mix(mix(a, b, tx), mix(c, d, tx), ty);
+}
+
+[[nodiscard]] Vec3 sample_diffuse_source_image(const SourceImage& image, Vec2 uv) {
+    const float radius_x = 36.0F / static_cast<float>(image.width);
+    const float radius_y = 36.0F / static_cast<float>(image.height);
+    struct DiffuseSample {
+        Vec3 color{};
+        float luma = 0.0F;
+        float weight = 1.0F;
+    };
+    std::array<DiffuseSample, 25> samples{};
+    std::size_t sample_index = 0;
+    for (int y = -2; y <= 2; ++y) {
+        for (int x = -2; x <= 2; ++x) {
+            const float distance_squared = static_cast<float>(x * x + y * y);
+            const float weight = std::exp(-distance_squared * 0.32F);
+            const Vec3 color = sample_source_image(
+                image, {uv.x + static_cast<float>(x) * radius_x,
+                        uv.y + static_cast<float>(y) * radius_y});
+            samples[sample_index] = {
+                .color = color,
+                .luma = luminance(color),
+                .weight = weight,
+            };
+            ++sample_index;
+        }
+    }
+    std::array<float, 25> sorted_luma{};
+    for (std::size_t index = 0; index < samples.size(); ++index) {
+        sorted_luma[index] = samples[index].luma;
+    }
+    std::sort(sorted_luma.begin(), sorted_luma.end());
+    const float median_luma = sorted_luma[sorted_luma.size() / 2U];
+    const float cap_luma = median_luma * 2.15F + 0.0025F;
+
+    Vec3 sum{};
+    float weight_sum = 0.0F;
+    for (const DiffuseSample& sample : samples) {
+        const float star_clamp =
+            sample.luma > cap_luma && sample.luma > 0.0F ? cap_luma / sample.luma : 1.0F;
+        sum = sum + sample.color * (sample.weight * star_clamp);
+        weight_sum += sample.weight;
+    }
+    return weight_sum > 0.0F ? sum / weight_sum : sum;
+}
+
+[[nodiscard]] SourceImage load_source_image(const std::filesystem::path& path) {
+    int width = 0;
+    int height = 0;
+    int channels = 0;
+    std::unique_ptr<stbi_uc, StbiImageDeleter> pixels{
+        stbi_load(path.string().c_str(), &width, &height, &channels, 4)};
+    if (!pixels) {
+        const char* reason = stbi_failure_reason();
+        throw std::runtime_error("night sky atlas failed to decode data source " + path.string() +
+                                 (reason != nullptr ? std::string{": "} + reason
+                                                    : std::string{}));
+    }
+    if (width <= 0 || height <= 0) {
+        throw std::runtime_error("night sky atlas data source has invalid dimensions: " +
+                                 path.string());
+    }
+    const std::size_t value_count =
+        static_cast<std::size_t>(width) * static_cast<std::size_t>(height) * 4U;
+    SourceImage image{
+        .width = static_cast<std::uint32_t>(width),
+        .height = static_cast<std::uint32_t>(height),
+        .rgba8 = std::vector<std::uint8_t>(value_count),
+    };
+    std::copy(pixels.get(), pixels.get() + value_count, image.rgba8.begin());
+    return image;
+}
+
+[[nodiscard]] Vec3 procedural_milky_way(Vec3 direction, std::uint32_t seed) {
+    struct StarCloud {
+        float longitude = 0.0F;
+        float latitude = 0.0F;
+        float longitude_radius = 0.35F;
+        float latitude_radius = 0.045F;
+        float strength = 1.0F;
+    };
+
+    const Vec3 pole = normalize({0.31F, 0.84F, 0.44F});
+    const Vec3 center_hint = normalize({-0.45F, -0.12F, -0.89F});
+    const Vec3 center = normalize(center_hint - pole * dot(center_hint, pole));
+    const Vec3 tangent = normalize(cross(pole, center));
+
+    const float center_axis = dot(direction, center);
+    const float tangent_axis = dot(direction, tangent);
+    const float pole_axis = dot(direction, pole);
+    const float latitude = std::asin(std::clamp(pole_axis, -1.0F, 1.0F));
+    const float longitude = std::atan2(tangent_axis, center_axis);
+    const Vec3 local_direction{center_axis, tangent_axis, pole_axis};
+    const Vec3 domain{
+        local_direction.x * 3.1F + static_cast<float>(seed % 37U) * 0.17F,
+        local_direction.y * 3.1F + static_cast<float>(seed % 53U) * 0.11F,
+        local_direction.z * 12.5F + static_cast<float>(seed % 71U) * 0.07F,
+    };
+
+    const float warp = (fbm(domain, seed + 17U, 4) - 0.5F) * 0.065F;
+    const float latitude_warp =
+        latitude + warp * smoothstep(0.0F, 0.50F, 1.0F - std::abs(pole_axis));
+    const float abs_lat = std::abs(latitude_warp);
+    const float band = std::exp(-abs_lat * 10.0F);
+    const float inner_band = std::exp(-abs_lat * 18.0F);
+    const float wide_band = std::exp(-abs_lat * 3.0F);
+    const float core =
+        std::exp(-(angle_delta(longitude, 0.0F) * angle_delta(longitude, 0.0F)) / 0.19F -
+                 (latitude_warp * latitude_warp) / 0.032F);
+
+    const float cloud_noise = fbm({domain.x * 1.6F, domain.y * 1.6F, domain.z * 0.52F},
+                                  seed + 91U, 6);
+    const float fine_clouds = ridged_fbm({domain.x * 4.7F, domain.y * 4.7F, domain.z * 0.82F},
+                                         seed + 151U, 5);
+    const float dust_noise = fbm({domain.x * 2.3F + 4.0F, domain.y * 2.3F - 2.0F,
+                                  domain.z * 0.74F + 7.0F},
+                                 seed + 211U, 5);
+
+    const float branch =
+        std::sin(longitude * 3.0F + (dust_noise - 0.5F) * 2.2F) * 0.033F +
+        std::sin(longitude * 7.0F + (cloud_noise - 0.5F) * 2.8F) * 0.013F;
+    const float lane_width = mix(0.018F, 0.058F, dust_noise);
+    const float primary_dust =
+        std::exp(-std::abs(latitude_warp - branch) / lane_width) *
+        smoothstep(0.08F, 0.90F, band);
+    const float secondary_center =
+        -0.065F + std::sin(longitude * 2.0F + (cloud_noise - 0.5F) * 2.0F) * 0.018F;
+    const float secondary_dust =
+        std::exp(-std::abs(latitude_warp - secondary_center) / 0.032F) *
+        smoothstep(0.15F, 0.80F, band) * smoothstep(1.75F, 0.20F, std::abs(longitude));
+    const float core_dust =
+        std::exp(-std::abs(latitude_warp + 0.045F) / 0.034F) *
+        std::exp(-(angle_delta(longitude, 0.0F) * angle_delta(longitude, 0.0F)) / 0.62F);
+    const float extinction =
+        clamp01(1.0F - primary_dust * 0.60F - secondary_dust * 0.34F - core_dust * 0.42F);
+
+    static constexpr std::array kStarClouds{
+        StarCloud{-0.95F, 0.020F, 0.30F, 0.050F, 0.90F},
+        StarCloud{-0.45F, -0.010F, 0.24F, 0.040F, 0.75F},
+        StarCloud{0.00F, 0.025F, 0.31F, 0.060F, 1.35F},
+        StarCloud{0.42F, -0.025F, 0.26F, 0.044F, 0.65F},
+        StarCloud{1.15F, 0.012F, 0.36F, 0.050F, 0.70F},
+        StarCloud{2.10F, -0.008F, 0.42F, 0.060F, 0.46F},
+    };
+    float cloud_knots = 0.0F;
+    for (const StarCloud& cloud : kStarClouds) {
+        const float dl = angle_delta(longitude, cloud.longitude) / cloud.longitude_radius;
+        const float db = (latitude_warp - cloud.latitude) / cloud.latitude_radius;
+        cloud_knots += cloud.strength * std::exp(-(dl * dl + db * db));
+    }
+
+    const float star_clouds =
+        mix(0.52F, 1.42F, cloud_noise) * mix(0.72F, 1.38F, fine_clouds);
+    const float mottling =
+        mix(0.72F, 1.28F, fbm({domain.x * 8.0F + 11.0F, domain.y * 8.0F - 5.0F,
+                               domain.z * 1.4F + 3.0F},
+                              seed + 307U, 4));
+    const float radiance =
+        (wide_band * 0.0014F + band * 0.0075F * star_clouds +
+         inner_band * 0.0040F * mottling + cloud_knots * 0.010F + core * 0.028F) *
+        extinction;
+    const Vec3 band_color = {0.76F, 0.82F, 1.0F};
+    const Vec3 core_color = {1.0F, 0.84F, 0.58F};
+    const Vec3 cloud_color = mix(band_color, {0.88F, 0.90F, 1.0F}, clamp01(fine_clouds));
+    const Vec3 color = mix(cloud_color, core_color, clamp01(core * 1.35F));
+    return color * radiance;
+}
+
+[[nodiscard]] Vec3 data_milky_way(Vec3 direction, const SourceImage& image) {
+    const Vec3 source_direction =
+        rotate_y(rotate_x(direction, -0.26F), -1.62F);
+    Vec3 source = sample_diffuse_source_image(image, direction_to_equirect(source_direction));
+    const float luma = luminance(source);
+    const float mask = smoothstep(0.0004F, 0.040F, luma);
+    const Vec3 neutral = {luma, luma, luma};
+    source = mix(neutral, source, 0.55F);
+    return source * mask * 1.55F;
+}
+
+void set_texel(NightSkyAtlas& atlas, std::uint32_t mip, std::uint32_t face, std::uint32_t x,
+               std::uint32_t y, Vec3 color) {
+    const NightSkyAtlasMip& level = atlas.mips.at(mip);
+    const std::size_t texel_offset = level.byte_offset / sizeof(float) +
+                                     ((static_cast<std::size_t>(face) * level.extent *
+                                           level.extent +
+                                       static_cast<std::size_t>(y) * level.extent + x) *
+                                      4U);
+    const float alpha = clamp01(luminance(color) * 64.0F);
+    atlas.rgba32f[texel_offset] = std::max(color.x, 0.0F);
+    atlas.rgba32f[texel_offset + 1U] = std::max(color.y, 0.0F);
+    atlas.rgba32f[texel_offset + 2U] = std::max(color.z, 0.0F);
+    atlas.rgba32f[texel_offset + 3U] = alpha;
+}
+
+[[nodiscard]] Vec3 get_texel(const NightSkyAtlas& atlas, std::uint32_t mip, std::uint32_t face,
+                             std::uint32_t x, std::uint32_t y) {
+    const NightSkyAtlasMip& level = atlas.mips.at(mip);
+    x = std::min(x, level.extent - 1U);
+    y = std::min(y, level.extent - 1U);
+    const std::size_t texel_offset = level.byte_offset / sizeof(float) +
+                                     ((static_cast<std::size_t>(face) * level.extent *
+                                           level.extent +
+                                       static_cast<std::size_t>(y) * level.extent + x) *
+                                      4U);
+    return {atlas.rgba32f[texel_offset], atlas.rgba32f[texel_offset + 1U],
+            atlas.rgba32f[texel_offset + 2U]};
+}
+
+void build_mips(NightSkyAtlas& atlas) {
+    for (std::uint32_t mip = 1; mip < atlas.mip_levels; ++mip) {
+        const std::uint32_t extent = atlas.mips.at(mip).extent;
+        for (std::uint32_t face = 0; face < 6U; ++face) {
+            for (std::uint32_t y = 0; y < extent; ++y) {
+                for (std::uint32_t x = 0; x < extent; ++x) {
+                    Vec3 sum{};
+                    for (std::uint32_t oy = 0; oy < 2U; ++oy) {
+                        for (std::uint32_t ox = 0; ox < 2U; ++ox) {
+                            sum = sum + get_texel(atlas, mip - 1U, face, x * 2U + ox,
+                                                  y * 2U + oy);
+                        }
+                    }
+                    set_texel(atlas, mip, face, x, y, sum * 0.25F);
+                }
+            }
+        }
+    }
+}
+
+[[nodiscard]] NightSkyAtlas make_empty_atlas(std::uint32_t extent,
+                                             NightSkyAtlasSource source) {
+    const std::uint32_t mip_levels = night_sky_atlas_mip_count(extent);
+    NightSkyAtlas atlas{
+        .extent = extent,
+        .mip_levels = mip_levels,
+        .source = source,
+    };
+    atlas.mips.reserve(mip_levels);
+    std::size_t byte_offset = 0;
+    for (std::uint32_t mip = 0; mip < mip_levels; ++mip) {
+        const std::uint32_t mip_extent = std::max(1U, extent >> mip);
+        const std::size_t byte_count = static_cast<std::size_t>(mip_extent) *
+                                       static_cast<std::size_t>(mip_extent) * 6U * 4U *
+                                       sizeof(float);
+        atlas.mips.push_back(NightSkyAtlasMip{
+            .extent = mip_extent,
+            .byte_offset = byte_offset,
+            .byte_count = byte_count,
+        });
+        byte_offset += byte_count;
+    }
+    atlas.rgba32f.resize(byte_offset / sizeof(float));
+    return atlas;
+}
+
+} // namespace
+
+std::uint32_t night_sky_atlas_mip_count(std::uint32_t extent) {
+    if (extent == 0U) {
+        throw std::runtime_error("night sky atlas extent must be positive");
+    }
+    std::uint32_t levels = 1;
+    while (extent > 1U) {
+        extent >>= 1U;
+        ++levels;
+    }
+    return levels;
+}
+
+NightSkyAtlas generate_night_sky_atlas(const NightSkyAtlasConfig& config, std::uint32_t extent) {
+    if (extent == 0U || (extent & (extent - 1U)) != 0U) {
+        throw std::runtime_error("night sky atlas extent must be a power of two");
+    }
+
+    NightSkyAtlas atlas = make_empty_atlas(extent, config.source);
+    SourceImage source_image;
+    if (config.source == NightSkyAtlasSource::Data) {
+        if (!config.data_path.has_value()) {
+            throw std::runtime_error("night sky atlas data source requires an image path");
+        }
+        source_image = load_source_image(config.data_path.value());
+    }
+
+    const std::uint32_t variation_seed =
+        hash_u32(static_cast<std::uint32_t>(std::round(config.procedural_variation * 1000.0F)) +
+                 0x7a41c6d3U);
+    for (std::uint32_t face = 0; face < 6U; ++face) {
+        for (std::uint32_t y = 0; y < extent; ++y) {
+            for (std::uint32_t x = 0; x < extent; ++x) {
+                const Vec3 direction = cubemap_direction(face, x, y, extent);
+                const Vec3 color = config.source == NightSkyAtlasSource::Data
+                                       ? data_milky_way(direction, source_image)
+                                       : procedural_milky_way(direction, variation_seed);
+                set_texel(atlas, 0U, face, x, y, color);
+            }
+        }
+    }
+    build_mips(atlas);
+    return atlas;
+}
+
+std::uint64_t night_sky_atlas_hash(std::span<const float> values) {
+    std::uint64_t hash = 1469598103934665603ULL;
+    for (const float value : values) {
+        const std::uint32_t quantized =
+            static_cast<std::uint32_t>(std::round(std::clamp(value, 0.0F, 16.0F) * 65535.0F));
+        hash ^= quantized & 0xffU;
+        hash *= 1099511628211ULL;
+        hash ^= (quantized >> 8U) & 0xffU;
+        hash *= 1099511628211ULL;
+        hash ^= (quantized >> 16U) & 0xffU;
+        hash *= 1099511628211ULL;
+        hash ^= (quantized >> 24U) & 0xffU;
+        hash *= 1099511628211ULL;
+    }
+    return hash;
+}
+
+} // namespace cubey::projects::atmosphere

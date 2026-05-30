@@ -40,11 +40,12 @@ enum class AtmosphereRenderView : std::uint32_t {
     SunDisk = 5,
     AerialPerspective = 6,
     NightSky = 7,
-    Moon = 8,
-    MoonSurface = 9,
+    MilkyWay = 8,
+    Moon = 9,
+    MoonSurface = 10,
 };
 
-inline constexpr std::array<AtmosphereRenderView, 10> kAtmosphereRenderViews{
+inline constexpr std::array<AtmosphereRenderView, 11> kAtmosphereRenderViews{
     AtmosphereRenderView::Final,
     AtmosphereRenderView::Rayleigh,
     AtmosphereRenderView::Mie,
@@ -53,6 +54,7 @@ inline constexpr std::array<AtmosphereRenderView, 10> kAtmosphereRenderViews{
     AtmosphereRenderView::SunDisk,
     AtmosphereRenderView::AerialPerspective,
     AtmosphereRenderView::NightSky,
+    AtmosphereRenderView::MilkyWay,
     AtmosphereRenderView::Moon,
     AtmosphereRenderView::MoonSurface,
 };
@@ -65,6 +67,28 @@ enum class SunControlMode : std::uint32_t {
 inline constexpr std::array<SunControlMode, 2> kSunControlModes{
     SunControlMode::ManualSun,
     SunControlMode::SolarClock,
+};
+
+enum class NightSkySource : std::uint32_t {
+    Auto = 0,
+    Data = 1,
+    Procedural = 2,
+};
+
+inline constexpr std::array<NightSkySource, 3> kNightSkySources{
+    NightSkySource::Auto,
+    NightSkySource::Data,
+    NightSkySource::Procedural,
+};
+
+enum class NightSkyVisualMode : std::uint32_t {
+    HumanEye = 0,
+    Camera = 1,
+};
+
+inline constexpr std::array<NightSkyVisualMode, 2> kNightSkyVisualModes{
+    NightSkyVisualMode::HumanEye,
+    NightSkyVisualMode::Camera,
 };
 
 struct TimeOfDayConfig {
@@ -80,10 +104,16 @@ struct TimeOfDayConfig {
 };
 
 struct NightSkyConfig {
+    NightSkySource source = NightSkySource::Procedural;
+    NightSkyVisualMode visual_mode = NightSkyVisualMode::HumanEye;
     float twilight_strength = 1.0F;
     float twilight_horizon_warmth = 1.0F;
     float star_intensity = 1.0F;
     float star_density = 0.65F;
+    float milky_way_intensity = 0.75F;
+    float milky_way_contrast = 1.0F;
+    float light_pollution = 0.0F;
+    float procedural_variation = 0.0F;
 };
 
 struct MoonConfig {
@@ -192,6 +222,8 @@ struct LunarState {
         return "aerial-perspective";
     case AtmosphereRenderView::NightSky:
         return "night-sky";
+    case AtmosphereRenderView::MilkyWay:
+        return "milky-way";
     case AtmosphereRenderView::Moon:
         return "moon";
     case AtmosphereRenderView::MoonSurface:
@@ -210,6 +242,52 @@ struct LunarState {
         }
     }
     throw std::runtime_error("unknown atmosphere render view: " + std::string(name));
+}
+
+[[nodiscard]] inline const char* night_sky_source_name(NightSkySource source) {
+    switch (source) {
+    case NightSkySource::Auto:
+        return "auto";
+    case NightSkySource::Data:
+        return "data";
+    case NightSkySource::Procedural:
+        return "procedural";
+    }
+    return "auto";
+}
+
+[[nodiscard]] inline NightSkySource night_sky_source_from_name(std::string_view name) {
+    if (name.empty()) {
+        return NightSkySource::Auto;
+    }
+    for (const NightSkySource source : kNightSkySources) {
+        if (name == night_sky_source_name(source)) {
+            return source;
+        }
+    }
+    throw std::runtime_error("unknown night sky source: " + std::string(name));
+}
+
+[[nodiscard]] inline const char* night_sky_visual_mode_name(NightSkyVisualMode mode) {
+    switch (mode) {
+    case NightSkyVisualMode::HumanEye:
+        return "human";
+    case NightSkyVisualMode::Camera:
+        return "camera";
+    }
+    return "human";
+}
+
+[[nodiscard]] inline NightSkyVisualMode night_sky_visual_mode_from_name(std::string_view name) {
+    if (name.empty()) {
+        return NightSkyVisualMode::HumanEye;
+    }
+    for (const NightSkyVisualMode mode : kNightSkyVisualModes) {
+        if (name == night_sky_visual_mode_name(mode)) {
+            return mode;
+        }
+    }
+    throw std::runtime_error("unknown night sky visual mode: " + std::string(name));
 }
 
 [[nodiscard]] inline AtmosphereRenderView next_atmosphere_render_view(AtmosphereRenderView view) {
@@ -448,6 +526,8 @@ inline void advance_atmosphere_time_of_day(AtmosphereConfig& config, double delt
         config.exposure = 2.8F;
         config.night_sky.star_intensity = 1.25F;
         config.night_sky.star_density = 0.72F;
+        config.night_sky.milky_way_intensity = 0.90F;
+        config.night_sky.milky_way_contrast = 1.10F;
         break;
     case AtmospherePreset::MoonlitNight:
         config.time_of_day.time_hours = 0.0F;
@@ -458,6 +538,8 @@ inline void advance_atmosphere_time_of_day(AtmosphereConfig& config, double delt
         config.exposure = 2.4F;
         config.night_sky.star_intensity = 0.90F;
         config.night_sky.star_density = 0.58F;
+        config.night_sky.milky_way_intensity = 0.55F;
+        config.night_sky.milky_way_contrast = 0.90F;
         config.moon.disk_intensity = 1.25F;
         config.moon.moonlight_intensity = 1.35F;
         config.moon.angular_radius_scale = 3.0F;
@@ -493,6 +575,10 @@ inline void validate_atmosphere_config(const AtmosphereConfig& config) {
     require_finite(config.night_sky.twilight_horizon_warmth, "atmosphere twilight horizon warmth");
     require_finite(config.night_sky.star_intensity, "atmosphere star intensity");
     require_finite(config.night_sky.star_density, "atmosphere star density");
+    require_finite(config.night_sky.milky_way_intensity, "atmosphere Milky Way intensity");
+    require_finite(config.night_sky.milky_way_contrast, "atmosphere Milky Way contrast");
+    require_finite(config.night_sky.light_pollution, "atmosphere light pollution");
+    require_finite(config.night_sky.procedural_variation, "atmosphere Milky Way variation");
     require_finite(config.moon.disk_intensity, "atmosphere moon intensity");
     require_finite(config.moon.moonlight_intensity, "atmosphere moonlight intensity");
     require_finite(config.moon.phase_offset_days, "atmosphere moon phase offset");
@@ -539,7 +625,13 @@ inline void validate_atmosphere_config(const AtmosphereConfig& config) {
         config.night_sky.twilight_horizon_warmth < 0.0F ||
         config.night_sky.twilight_horizon_warmth > 2.0F || config.night_sky.star_intensity < 0.0F ||
         config.night_sky.star_intensity > 4.0F || config.night_sky.star_density < 0.0F ||
-        config.night_sky.star_density > 1.0F) {
+        config.night_sky.star_density > 1.0F || config.night_sky.milky_way_intensity < 0.0F ||
+        config.night_sky.milky_way_intensity > 4.0F ||
+        config.night_sky.milky_way_contrast < 0.0F ||
+        config.night_sky.milky_way_contrast > 4.0F || config.night_sky.light_pollution < 0.0F ||
+        config.night_sky.light_pollution > 1.0F ||
+        config.night_sky.procedural_variation < 0.0F ||
+        config.night_sky.procedural_variation > 16.0F) {
         throw std::runtime_error("atmosphere night-sky controls are out of range");
     }
     if (config.moon.disk_intensity < 0.0F || config.moon.disk_intensity > 4.0F ||
@@ -570,6 +662,13 @@ inline void validate_atmosphere_config(const AtmosphereConfig& config) {
     config.render_view = atmosphere_render_view_from_name(run.debug_view);
     if (!run.atmosphere.time_of_day_mode.empty()) {
         config.time_of_day.mode = sun_control_mode_from_name(run.atmosphere.time_of_day_mode);
+    }
+    if (!run.atmosphere.night_sky_mode.empty()) {
+        config.night_sky.visual_mode =
+            night_sky_visual_mode_from_name(run.atmosphere.night_sky_mode);
+    }
+    if (!run.atmosphere.milky_way_source.empty()) {
+        config.night_sky.source = night_sky_source_from_name(run.atmosphere.milky_way_source);
     }
     const bool manual_sun_override =
         run_config_float_is_set(run.atmosphere.sun_elevation_degrees) ||
@@ -631,6 +730,18 @@ inline void validate_atmosphere_config(const AtmosphereConfig& config) {
     }
     if (run_config_float_is_set(run.atmosphere.star_density)) {
         config.night_sky.star_density = run.atmosphere.star_density;
+    }
+    if (run_config_float_is_set(run.atmosphere.milky_way_intensity)) {
+        config.night_sky.milky_way_intensity = run.atmosphere.milky_way_intensity;
+    }
+    if (run_config_float_is_set(run.atmosphere.milky_way_contrast)) {
+        config.night_sky.milky_way_contrast = run.atmosphere.milky_way_contrast;
+    }
+    if (run_config_float_is_set(run.atmosphere.light_pollution)) {
+        config.night_sky.light_pollution = run.atmosphere.light_pollution;
+    }
+    if (run_config_float_is_set(run.atmosphere.milky_way_variation)) {
+        config.night_sky.procedural_variation = run.atmosphere.milky_way_variation;
     }
     if (run.atmosphere.moon >= 0) {
         config.moon.enabled = run.atmosphere.moon == 1;

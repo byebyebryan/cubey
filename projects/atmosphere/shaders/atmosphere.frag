@@ -26,9 +26,11 @@ layout(push_constant) uniform AtmosphereParams {
     vec4 moon_direction_radius;
     vec4 moon_options;
     vec4 moon_phase_options;
+    vec4 milky_way_options;
 } atmosphere;
 
 layout(set = 0, binding = 0) uniform sampler2D moon_atlas;
+layout(set = 0, binding = 1) uniform samplerCube night_sky_atlas;
 
 layout(location = 0) in vec2 frag_ndc;
 layout(location = 0) out vec4 out_color;
@@ -286,9 +288,54 @@ vec3 procedural_star_radiance(vec3 ray_direction, vec3 sun_direction) {
     return color * star * brightness * visibility * moon_fade * 0.045;
 }
 
+vec3 milky_way_radiance(vec3 ray_direction, vec3 sun_direction) {
+    float source_intensity = atmosphere.milky_way_options.x;
+    if (source_intensity <= 0.0) {
+        return vec3(0.0);
+    }
+
+    vec3 atlas = max(texture(night_sky_atlas, star_sample_direction(ray_direction)).rgb, vec3(0.0));
+    float luma = dot(atlas, vec3(0.2126, 0.7152, 0.0722));
+    if (luma <= 0.0) {
+        return vec3(0.0);
+    }
+
+    float sun_elevation = sun_elevation_degrees(sun_direction);
+    float night_visibility = star_visibility(sun_elevation);
+    float horizon_visibility = smoothstep(-0.02, 0.24, ray_direction.y);
+    float haze_visibility = 1.0 - smoothstep(0.006, 0.018, atmosphere.mie.x);
+    float light_pollution = clamp(atmosphere.milky_way_options.z, 0.0, 1.0);
+    float pollution_visibility = mix(1.0, 0.04, light_pollution);
+
+    vec3 moon_direction = normalize(atmosphere.moon_direction_radius.xyz);
+    float moon_strength = atmosphere.moon_options.x * atmosphere.moon_options.y *
+                          atmosphere.moon_options.w;
+    float moon_angle = acos(clamp(dot(ray_direction, moon_direction), -1.0, 1.0));
+    float moon_lobe = 1.0 - smoothstep(atmosphere.moon_direction_radius.w * 8.0,
+                                       atmosphere.moon_direction_radius.w * 90.0, moon_angle);
+    float moon_visibility = clamp(1.0 - moon_strength * (0.34 + moon_lobe * 0.46), 0.06, 1.0);
+
+    float camera_mode = step(0.5, atmosphere.milky_way_options.w);
+    float saturation = mix(0.16, 0.72, camera_mode);
+    vec3 color = mix(vec3(luma), atlas, saturation);
+    float contrast = clamp(atmosphere.milky_way_options.y, 0.0, 4.0);
+    float contrast_gain = mix(0.45, 1.55, contrast * 0.25);
+    float exposure_gain = mix(0.85, 1.70, camera_mode);
+    float visibility = night_visibility * horizon_visibility * haze_visibility *
+                       pollution_visibility * moon_visibility;
+    return color * source_intensity * contrast_gain * exposure_gain * visibility;
+}
+
+vec3 render_milky_way_debug(vec3 ray_direction) {
+    vec3 atlas = max(texture(night_sky_atlas, star_sample_direction(ray_direction)).rgb, vec3(0.0));
+    float luma = dot(atlas, vec3(0.2126, 0.7152, 0.0722));
+    return mix(vec3(luma), atlas, 0.75) * 18.0;
+}
+
 vec3 night_sky_radiance(vec3 ray_direction, vec3 sun_direction) {
     return twilight_radiance(ray_direction, sun_direction) +
-           procedural_star_radiance(ray_direction, sun_direction);
+           procedural_star_radiance(ray_direction, sun_direction) +
+           milky_way_radiance(ray_direction, sun_direction);
 }
 
 AtmosphereSample integrate_atmosphere(vec3 ray_origin, vec3 ray_direction, float ray_start,
@@ -599,8 +646,14 @@ void main() {
     vec3 planet_center = vec3(0.0, -atmosphere.radii_ground.x - atmosphere.radii_ground.z, 0.0);
     int debug_view = int(atmosphere.camera_forward_debug_view.w + 0.5);
 
-    if (debug_view == 9) {
+    if (debug_view == 10) {
         vec3 color = render_moon_surface_debug();
+        out_color = vec4(cubey_pbr_apply_display_transform(color, atmosphere.display_transform),
+                         1.0);
+        return;
+    }
+    if (debug_view == 8) {
+        vec3 color = render_milky_way_debug(ray_direction);
         out_color = vec4(cubey_pbr_apply_display_transform(color, atmosphere.display_transform),
                          1.0);
         return;
@@ -655,7 +708,7 @@ void main() {
         color = render_aerial_perspective_debug(ray_direction, planet_center);
     } else if (debug_view == 7) {
         color = night_sky;
-    } else if (debug_view == 8) {
+    } else if (debug_view == 9) {
         color = moon_disk;
         if (hit_ground) {
             color = moon_ground_debug_radiance(ray_direction, planet_center, ground_t) *

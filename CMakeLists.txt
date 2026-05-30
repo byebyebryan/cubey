@@ -29,6 +29,11 @@ option(
     "Fetch selected Filament HDR environment samples into the build tree"
     OFF
 )
+option(
+    CUBEY_FETCH_MILKY_WAY_ASSETS
+    "Fetch selected NOAA/Mellinger Milky Way sample assets into the build tree"
+    OFF
+)
 set(
     CUBEY_GLTF_SAMPLE_ASSETS_DIR
     ""
@@ -39,10 +44,16 @@ set(
     ""
     CACHE PATH "Existing Cubey HDR sample asset directory"
 )
+set(
+    CUBEY_MILKY_WAY_ASSETS_DIR
+    ""
+    CACHE PATH "Existing Cubey Milky Way sample asset directory"
+)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(CubeyApps)
 include(CubeyHdrSamples)
+include(CubeyMilkyWaySamples)
 include(CubeyShaders)
 include(CubeySmokeTests)
 include(CubeyWarnings)
@@ -293,6 +304,10 @@ endif()
 
 if (CUBEY_FETCH_HDR_SAMPLE_ASSETS)
     cubey_fetch_hdr_sample_assets()
+endif()
+
+if (CUBEY_FETCH_MILKY_WAY_ASSETS)
+    cubey_fetch_milky_way_sample_assets()
 endif()
 
 if (CUBEY_BUILD_PROJECTS)

@@ -90,11 +90,23 @@ void draw_atmosphere_ui(AtmosphereUiContext ui) {
 
     if (cubey::host::imgui_section("Night sky", true)) {
         const cubey::host::ScopedImGuiId section_id("Night sky");
+        cubey::host::imgui_enum_combo("Source", ui.config.night_sky.source, kNightSkySources,
+                                      night_sky_source_name);
+        cubey::host::imgui_enum_combo("Mode", ui.config.night_sky.visual_mode,
+                                      kNightSkyVisualModes, night_sky_visual_mode_name);
         ImGui::SliderFloat("Twilight", &ui.config.night_sky.twilight_strength, 0.0F, 4.0F, "%.2f");
         ImGui::SliderFloat("Horizon warmth", &ui.config.night_sky.twilight_horizon_warmth, 0.0F,
                            2.0F, "%.2f");
         ImGui::SliderFloat("Stars", &ui.config.night_sky.star_intensity, 0.0F, 4.0F, "%.2f");
         ImGui::SliderFloat("Star density", &ui.config.night_sky.star_density, 0.0F, 1.0F, "%.2f");
+        ImGui::SliderFloat("Milky Way", &ui.config.night_sky.milky_way_intensity, 0.0F, 4.0F,
+                           "%.2f");
+        ImGui::SliderFloat("MW contrast", &ui.config.night_sky.milky_way_contrast, 0.0F, 4.0F,
+                           "%.2f");
+        ImGui::SliderFloat("Light pollution", &ui.config.night_sky.light_pollution, 0.0F, 1.0F,
+                           "%.2f");
+        ImGui::SliderFloat("MW variation", &ui.config.night_sky.procedural_variation, 0.0F, 16.0F,
+                           "%.1f");
     }
 
     if (cubey::host::imgui_section("Moon", true)) {

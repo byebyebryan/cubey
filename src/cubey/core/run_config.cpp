@@ -296,6 +296,10 @@ RunConfig parse_run_config(int argc, char** argv) {
             config.atmosphere.preset = std::string(need_value("--atmosphere-preset"));
         } else if (arg == "--time-of-day-mode") {
             config.atmosphere.time_of_day_mode = std::string(need_value("--time-of-day-mode"));
+        } else if (arg == "--night-sky-mode") {
+            config.atmosphere.night_sky_mode = std::string(need_value("--night-sky-mode"));
+        } else if (arg == "--milky-way-source") {
+            config.atmosphere.milky_way_source = std::string(need_value("--milky-way-source"));
         } else if (arg == "--sun-elevation") {
             config.atmosphere.sun_elevation_degrees =
                 parse_float(need_value("--sun-elevation"), "--sun-elevation");
@@ -342,6 +346,18 @@ RunConfig parse_run_config(int argc, char** argv) {
         } else if (arg == "--star-density") {
             config.atmosphere.star_density =
                 parse_float(need_value("--star-density"), "--star-density");
+        } else if (arg == "--milky-way-intensity") {
+            config.atmosphere.milky_way_intensity =
+                parse_float(need_value("--milky-way-intensity"), "--milky-way-intensity");
+        } else if (arg == "--milky-way-contrast") {
+            config.atmosphere.milky_way_contrast =
+                parse_float(need_value("--milky-way-contrast"), "--milky-way-contrast");
+        } else if (arg == "--light-pollution") {
+            config.atmosphere.light_pollution =
+                parse_float(need_value("--light-pollution"), "--light-pollution");
+        } else if (arg == "--milky-way-variation") {
+            config.atmosphere.milky_way_variation =
+                parse_float(need_value("--milky-way-variation"), "--milky-way-variation");
         } else if (arg == "--moon-intensity") {
             config.atmosphere.moon_intensity =
                 parse_float(need_value("--moon-intensity"), "--moon-intensity");
@@ -391,6 +407,17 @@ RunConfig parse_run_config(int argc, char** argv) {
         config.atmosphere.time_of_day_mode != "solar") {
         throw std::runtime_error("atmosphere time-of-day mode must be manual or solar");
     }
+    if (!config.atmosphere.night_sky_mode.empty() &&
+        config.atmosphere.night_sky_mode != "human" &&
+        config.atmosphere.night_sky_mode != "camera") {
+        throw std::runtime_error("atmosphere night sky mode must be human or camera");
+    }
+    if (!config.atmosphere.milky_way_source.empty() &&
+        config.atmosphere.milky_way_source != "auto" &&
+        config.atmosphere.milky_way_source != "data" &&
+        config.atmosphere.milky_way_source != "procedural") {
+        throw std::runtime_error("atmosphere Milky Way source must be auto, data, or procedural");
+    }
     if (config.atmosphere.time_of_day_mode == "solar" &&
         (run_config_float_is_set(config.atmosphere.sun_elevation_degrees) ||
          run_config_float_is_set(config.atmosphere.sun_azimuth_degrees))) {
@@ -437,6 +464,21 @@ RunConfig parse_run_config(int argc, char** argv) {
     }
     if (config.atmosphere.star_density < 0.0F || config.atmosphere.star_density > 1.0F) {
         throw std::runtime_error("atmosphere star density must be in [0, 1]");
+    }
+    if (config.atmosphere.milky_way_intensity < 0.0F ||
+        config.atmosphere.milky_way_intensity > 4.0F) {
+        throw std::runtime_error("atmosphere Milky Way intensity must be in [0, 4]");
+    }
+    if (config.atmosphere.milky_way_contrast < 0.0F ||
+        config.atmosphere.milky_way_contrast > 4.0F) {
+        throw std::runtime_error("atmosphere Milky Way contrast must be in [0, 4]");
+    }
+    if (config.atmosphere.light_pollution < 0.0F || config.atmosphere.light_pollution > 1.0F) {
+        throw std::runtime_error("atmosphere light pollution must be in [0, 1]");
+    }
+    if (config.atmosphere.milky_way_variation < 0.0F ||
+        config.atmosphere.milky_way_variation > 16.0F) {
+        throw std::runtime_error("atmosphere Milky Way variation must be in [0, 16]");
     }
     if (config.atmosphere.moon_intensity < 0.0F || config.atmosphere.moon_intensity > 4.0F) {
         throw std::runtime_error("atmosphere moon intensity must be in [0, 4]");
