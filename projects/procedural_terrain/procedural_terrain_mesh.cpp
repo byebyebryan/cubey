@@ -9,6 +9,8 @@
 namespace cubey::projects::procedural_terrain {
 namespace {
 
+constexpr float kWaterSurfaceVisualOffsetM = 0.32F;
+
 [[nodiscard]] std::uint32_t offset_of(std::size_t offset) {
     return static_cast<std::uint32_t>(offset);
 }
@@ -94,6 +96,85 @@ TerrainMeshData make_terrain_mesh(const TerrainFieldData& fields) {
             const std::uint32_t b = static_cast<std::uint32_t>(fields.index(x + 1U, y));
             const std::uint32_t c = static_cast<std::uint32_t>(fields.index(x + 1U, y + 1U));
             const std::uint32_t d = static_cast<std::uint32_t>(fields.index(x, y + 1U));
+            mesh.indices.insert(mesh.indices.end(), {a, b, c, a, c, d});
+        }
+    }
+    return mesh;
+}
+
+TerrainMeshData make_water_surface_mesh(const TerrainFieldData& fields) {
+    if (fields.desc.width < 2U || fields.desc.height < 2U) {
+        throw std::runtime_error("water mesh requires at least a 2x2 field");
+    }
+
+    const std::uint32_t mesh_width = fields.desc.width + 2U;
+    const std::uint32_t mesh_height = fields.desc.height + 2U;
+    if (static_cast<std::uint64_t>(mesh_width) * static_cast<std::uint64_t>(mesh_height) >
+        std::numeric_limits<std::uint32_t>::max()) {
+        throw std::runtime_error("water mesh exceeds uint32 vertex range");
+    }
+
+    const float terrain_width_m = static_cast<float>(fields.desc.width - 1U) *
+                                  fields.desc.cell_size_m;
+    const float terrain_height_m = static_cast<float>(fields.desc.height - 1U) *
+                                   fields.desc.cell_size_m;
+    const float min_x = -terrain_width_m * 0.5F;
+    const float min_z = -terrain_height_m * 0.5F;
+    const float padding_m = std::max(terrain_width_m, terrain_height_m) * 6.0F;
+    const float deep_water_m = std::max(fields.max_water_depth_m, 1.0F);
+    const float far_shore_sdf_m = -std::max(fields.max_abs_shore_sdf_m + padding_m, padding_m);
+
+    TerrainMeshData mesh;
+    mesh.vertices.reserve(static_cast<std::size_t>(mesh_width) * mesh_height);
+    for (std::uint32_t y = 0; y < mesh_height; ++y) {
+        for (std::uint32_t x = 0; x < mesh_width; ++x) {
+            const bool border =
+                x == 0U || y == 0U || x == mesh_width - 1U || y == mesh_height - 1U;
+            const float world_x = x == 0U
+                                      ? min_x - padding_m
+                                  : x == mesh_width - 1U
+                                      ? min_x + terrain_width_m + padding_m
+                                      : min_x + (static_cast<float>(x - 1U) *
+                                                 fields.desc.cell_size_m);
+            const float world_z = y == 0U
+                                      ? min_z - padding_m
+                                  : y == mesh_height - 1U
+                                      ? min_z + terrain_height_m + padding_m
+                                      : min_z + (static_cast<float>(y - 1U) *
+                                                 fields.desc.cell_size_m);
+
+            float water_depth = deep_water_m;
+            float shore_sdf = far_shore_sdf_m;
+            if (!border) {
+                const std::size_t sample = fields.index(x - 1U, y - 1U);
+                water_depth = fields.water_depth_m[sample];
+                shore_sdf = fields.shore_sdf_m[sample];
+            }
+
+            mesh.vertices.push_back({
+                .position = {world_x, fields.desc.sea_level_m + kWaterSurfaceVisualOffsetM,
+                             world_z},
+                .normal = {0.0F, 1.0F, 0.0F},
+                .material = {0.0F, 0.0F, 0.0F, 1.0F},
+                .fields =
+                    {
+                        fields.desc.sea_level_m,
+                        water_depth,
+                        shore_sdf,
+                        -1.0F,
+                    },
+            });
+        }
+    }
+
+    mesh.indices.reserve(static_cast<std::size_t>(mesh_width - 1U) *
+                         static_cast<std::size_t>(mesh_height - 1U) * 6U);
+    for (std::uint32_t y = 0; y < mesh_height - 1U; ++y) {
+        for (std::uint32_t x = 0; x < mesh_width - 1U; ++x) {
+            const std::uint32_t a = (y * mesh_width) + x;
+            const std::uint32_t b = (y * mesh_width) + x + 1U;
+            const std::uint32_t c = ((y + 1U) * mesh_width) + x + 1U;
+            const std::uint32_t d = ((y + 1U) * mesh_width) + x;
             mesh.indices.insert(mesh.indices.end(), {a, b, c, a, c, d});
         }
     }

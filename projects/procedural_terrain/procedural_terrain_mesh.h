@@ -27,6 +27,7 @@ struct TerrainMeshData {
 
 [[nodiscard]] cubey::render::VertexInputLayout terrain_vertex_input_layout();
 [[nodiscard]] TerrainMeshData make_terrain_mesh(const TerrainFieldData& fields);
+[[nodiscard]] TerrainMeshData make_water_surface_mesh(const TerrainFieldData& fields);
 [[nodiscard]] std::uint32_t terrain_triangle_count(const TerrainMeshData& mesh);
 
 } // namespace cubey::projects::procedural_terrain

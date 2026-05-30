@@ -218,13 +218,13 @@ TerrainFieldData generate_terrain_fields(const TerrainConfig& config) {
                     : (static_cast<float>(x) / static_cast<float>(fields.desc.width - 1U));
             float px = (u * 2.0F) - 1.0F;
             float py = (v * 2.0F) - 1.0F;
-            px += value_noise(px * 1.8F, py * 1.8F, config.seed + 17U) * 0.08F;
-            py += value_noise(px * 1.6F + 9.2F, py * 1.6F - 4.7F, config.seed + 29U) * 0.08F;
-            const float radius = std::sqrt((px * px * 0.92F) + (py * py * 1.12F));
-            const float island = 1.0F - std::pow(radius, 1.85F);
+            px += value_noise(px * 1.8F, py * 1.8F, config.seed + 17U) * 0.06F;
+            py += value_noise(px * 1.6F + 9.2F, py * 1.6F - 4.7F, config.seed + 29U) * 0.06F;
+            const float radius = std::sqrt((px * px * 0.86F) + (py * py * 1.18F));
+            const float island = 1.0F - std::pow(radius, 2.35F);
             const float coast_noise =
-                fbm(px * 2.2F + 11.0F, py * 2.2F - 3.0F, config.seed + 41U, 4);
-            const float land_potential = island - 0.18F + (coast_noise * 0.30F);
+                fbm(px * 2.4F + 11.0F, py * 2.4F - 3.0F, config.seed + 41U, 4);
+            const float land_potential = island - 0.30F + (coast_noise * 0.20F);
             land_mask[fields.index(x, y)] = land_potential >= 0.0F;
         }
     }
@@ -257,13 +257,15 @@ TerrainFieldData generate_terrain_fields(const TerrainConfig& config) {
             const float nz = z / 280.0F;
             float height = fields.desc.sea_level_m;
             if (land) {
-                const float coast = smoothstep(0.0F, 64.0F, shore_sdf);
-                const float inland = smoothstep(55.0F, 230.0F, shore_sdf);
-                const float broad = fbm(nx, nz, config.seed + 101U, 5) * 22.0F;
+                const float coast = smoothstep(0.0F, 58.0F, shore_sdf);
+                const float inland = smoothstep(42.0F, 185.0F, shore_sdf);
+                const float interior = smoothstep(96.0F, 250.0F, shore_sdf);
+                const float broad = fbm(nx * 1.15F, nz * 1.15F, config.seed + 101U, 5) * 18.0F;
                 const float ridge =
-                    ridged(nx * 1.7F + 8.0F, nz * 1.7F - 5.0F, config.seed + 211U) * 48.0F * inland;
-                height = fields.desc.sea_level_m + 0.5F + (coast * 12.0F) +
-                         (inland * (42.0F + broad + ridge));
+                    ridged(nx * 1.85F + 8.0F, nz * 1.85F - 5.0F, config.seed + 211U) *
+                    58.0F * inland;
+                height = fields.desc.sea_level_m + 0.18F + (coast * 14.0F) +
+                         (inland * (38.0F + broad + ridge)) + (interior * 18.0F);
             } else {
                 const float depth_distance = -shore_sdf;
                 const float near = smoothstep(0.0F, 96.0F, depth_distance);
@@ -273,7 +275,7 @@ TerrainFieldData generate_terrain_fields(const TerrainConfig& config) {
                     fbm(nx * 0.8F - 3.0F, nz * 0.8F + 5.0F, config.seed + 307U, 4) *
                     (4.0F + (shelf * 8.0F));
                 const float depth =
-                    1.5F + (near * 12.0F) + (shelf * 54.0F) + (abyss * 120.0F) + seabed;
+                    0.25F + (near * 13.0F) + (shelf * 54.0F) + (abyss * 120.0F) + seabed;
                 height = fields.desc.sea_level_m - std::max(depth, 0.5F);
             }
 
@@ -309,14 +311,15 @@ TerrainFieldData generate_terrain_fields(const TerrainConfig& config) {
             const float shore = std::abs(fields.shore_sdf_m[sample]);
             const bool underwater = water_depth > 0.0F;
             const float low_slope = 1.0F - smoothstep(0.12F, 0.55F, slope);
-            const float steep = smoothstep(0.35F, 1.10F, slope);
-            const float sand = low_slope * (1.0F - smoothstep(18.0F, 95.0F, shore)) *
-                               (1.0F - smoothstep(20.0F, 45.0F, height));
-            const float rock = std::max(steep, smoothstep(55.0F, 120.0F, height)) *
-                               (1.0F - smoothstep(0.0F, 18.0F, water_depth));
-            const float vegetation = (underwater ? 0.0F : 1.0F) * (1.0F - steep) *
-                                     smoothstep(10.0F, 42.0F, height) *
-                                     (1.0F - smoothstep(110.0F, 150.0F, height));
+            const float steep = smoothstep(0.34F, 1.05F, slope);
+            const float land = underwater ? 0.0F : 1.0F;
+            const float sand = land * low_slope * (1.0F - smoothstep(16.0F, 68.0F, shore)) *
+                               (1.0F - smoothstep(30.0F, 72.0F, height));
+            const float rock = land * std::max(steep * 0.85F, smoothstep(78.0F, 145.0F, height));
+            const float vegetation = land * (1.0F - (steep * 0.85F)) *
+                                     smoothstep(8.0F, 26.0F, height) *
+                                     (1.0F - smoothstep(120.0F, 175.0F, height)) *
+                                     smoothstep(22.0F, 105.0F, shore);
             const float sediment =
                 (underwater ? 1.0F : 0.0F) * low_slope * smoothstep(2.0F, 28.0F, water_depth);
             fields.material_masks[sample] =

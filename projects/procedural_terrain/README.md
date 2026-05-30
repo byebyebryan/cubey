@@ -3,7 +3,9 @@
 `procedural_terrain` is the standalone terrain and bathymetry data demo for
 future ocean shoreline work. It keeps the first terrain contract explicit:
 positive-up terrain elevation, positive-down water depth, shoreline signed
-distance, and material masks for sand, rock, vegetation, and sediment.
+distance, and material masks for sand, rock, vegetation, and sediment. The
+default final view adds a visual sea-surface mesh over the same analytical
+fields so shoreline work is legible before the ocean renderer is integrated.
 
 Run a windowed view:
 
@@ -28,6 +30,6 @@ Useful debug views:
 ```
 
 Use `--grid-width` and `--grid-height` for lower-cost checks or denser local
-captures. The first implementation generates fields on the CPU and uploads a
-CPU mesh; GPU texture-backed displacement, chunked LOD, CDLOD, erosion, and
-ocean integration are follow-up work.
+captures. The first implementation generates fields on the CPU and uploads CPU
+terrain and water meshes; GPU texture-backed displacement, chunked LOD, CDLOD,
+erosion, and ocean integration are follow-up work.

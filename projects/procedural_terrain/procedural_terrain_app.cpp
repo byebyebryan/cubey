@@ -20,7 +20,7 @@
 namespace cubey::projects::procedural_terrain {
 namespace {
 
-constexpr float kDefaultPitchRadians = -0.68F;
+constexpr float kDefaultPitchRadians = -0.90F;
 
 [[nodiscard]] float terrain_extent_m(const TerrainConfig& config) {
     return static_cast<float>(std::max(config.grid_width, config.grid_height) - 1U) *
@@ -28,7 +28,7 @@ constexpr float kDefaultPitchRadians = -0.68F;
 }
 
 [[nodiscard]] float terrain_camera_distance(const TerrainConfig& config) {
-    return std::max(320.0F, terrain_extent_m(config) * 1.18F);
+    return std::max(300.0F, terrain_extent_m(config) * 0.88F);
 }
 
 [[nodiscard]] cubey::render::MaterialPassInfo terrain_pass_info() {
@@ -55,6 +55,7 @@ std::filesystem::path shader_path(const char* filename) {
 ProceduralTerrainApp::ProceduralTerrainApp(RunConfig config)
     : config_(std::move(config)), terrain_config_(terrain_config_from_run_config(config_)),
       fields_(generate_terrain_fields(terrain_config_)), mesh_data_(make_terrain_mesh(fields_)),
+      water_mesh_data_(make_water_surface_mesh(fields_)),
       orbit_controller_(cubey::OrbitControllerConfig{
           .distance = terrain_camera_distance(terrain_config_),
           .min_distance = 48.0F,
@@ -95,7 +96,8 @@ int ProceduralTerrainApp::run_windowed() {
             .delta_seconds = timing.delta_seconds,
             .width = extent.width,
             .height = extent.height,
-            .triangles = terrain_triangle_count(mesh_data_),
+            .triangles = terrain_triangle_count(mesh_data_) +
+                         terrain_triangle_count(water_mesh_data_),
         };
     };
     callbacks.shutdown = [this](cubey::host::WindowedAppContext&) { destroy_all_resources(); };
@@ -142,6 +144,7 @@ void ProceduralTerrainApp::create_global_resources_if_needed(cubey::vulkan::GpuR
         return;
     }
     mesh_.emplace(gpu, mesh_data_.mesh_config());
+    water_mesh_.emplace(gpu, water_mesh_data_.mesh_config());
 }
 
 void ProceduralTerrainApp::create_forward_pass(const cubey::vulkan::Device& device,
@@ -167,7 +170,7 @@ void ProceduralTerrainApp::create_forward_pass(const cubey::vulkan::Device& devi
                 },
             .clear =
                 {
-                    .color = cubey::render::color_clear_value(0.48F, 0.60F, 0.70F, 1.0F),
+                    .color = cubey::render::color_clear_value(0.62F, 0.74F, 0.84F, 1.0F),
                     .depth = cubey::render::depth_clear_value(),
                 },
         });
@@ -179,6 +182,7 @@ void ProceduralTerrainApp::destroy_swapchain_resources() {
 
 void ProceduralTerrainApp::destroy_all_resources() {
     destroy_swapchain_resources();
+    water_mesh_.reset();
     mesh_.reset();
 }
 
@@ -231,6 +235,10 @@ void ProceduralTerrainApp::record_terrain_frame(VkCommandBuffer command_buffer,
         pass_recorder.push_constants(forward_pass().pipeline().layout(),
                                      VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
                                      constants);
+        if (terrain_config_.debug_view == TerrainDebugView::Final) {
+            cubey::render::record_draw_item(pass_recorder.handle(),
+                                            cubey::render::DrawItem{.mesh = &water_mesh()});
+        }
         cubey::render::record_draw_item(pass_recorder.handle(),
                                         cubey::render::DrawItem{.mesh = &mesh()});
     };
@@ -250,6 +258,13 @@ const cubey::render::Mesh& ProceduralTerrainApp::mesh() const {
         throw std::runtime_error("procedural terrain mesh is not initialized");
     }
     return mesh_.value();
+}
+
+const cubey::render::Mesh& ProceduralTerrainApp::water_mesh() const {
+    if (!water_mesh_.has_value()) {
+        throw std::runtime_error("procedural terrain water mesh is not initialized");
+    }
+    return water_mesh_.value();
 }
 
 const cubey::render::ForwardScenePass3D& ProceduralTerrainApp::forward_pass() const {
