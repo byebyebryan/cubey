@@ -283,6 +283,14 @@ RunConfig parse_run_config(int argc, char** argv) {
             config.water3d.whitewater = 1;
         } else if (arg == "--no-water3d-whitewater") {
             config.water3d.whitewater = 0;
+        } else if (arg == "--ocean-map-size") {
+            config.ocean.map_size =
+                parse_positive_u32(need_value("--ocean-map-size"), "--ocean-map-size");
+        } else if (arg == "--ocean-wire-overlay") {
+            config.ocean.wire_overlay = true;
+        } else if (arg == "--ocean-wire-opacity") {
+            config.ocean.wire_opacity =
+                parse_float(need_value("--ocean-wire-opacity"), "--ocean-wire-opacity");
         } else if (arg == "--ocean-ref-map-size") {
             config.ocean_ref.map_size =
                 parse_positive_u32(need_value("--ocean-ref-map-size"), "--ocean-ref-map-size");
@@ -323,6 +331,10 @@ RunConfig parse_run_config(int argc, char** argv) {
     }
     if (config.fps == 0) {
         throw std::runtime_error("fps must be positive");
+    }
+    if (run_config_float_is_set(config.ocean.wire_opacity) &&
+        (config.ocean.wire_opacity < 0.0F || config.ocean.wire_opacity > 1.0F)) {
+        throw std::runtime_error("ocean wire opacity must be in [0, 1]");
     }
     if (run_config_float_is_set(config.ocean_ref.wire_opacity) &&
         (config.ocean_ref.wire_opacity < 0.0F || config.ocean_ref.wire_opacity > 1.0F)) {

@@ -97,6 +97,12 @@ struct RunConfig {
         int whitewater = -1;
     };
 
+    struct OceanOptions {
+        std::uint32_t map_size = 0;
+        float wire_opacity = kRunConfigUnsetFloat;
+        bool wire_overlay = false;
+    };
+
     struct OceanRefOptions {
         std::uint32_t map_size = 0;
         float wire_opacity = kRunConfigUnsetFloat;
@@ -125,6 +131,7 @@ struct RunConfig {
     PyroOptions pyro{};
     Water2DOptions water2d{};
     Water3DOptions water3d{};
+    OceanOptions ocean{};
     OceanRefOptions ocean_ref{};
     PbrOptions pbr{};
     GltfOptions gltf{};

@@ -1,6 +1,7 @@
 add_subdirectory(fluid)
 add_subdirectory(fractal_2d)
 add_subdirectory(gltf_viewer)
+add_subdirectory(ocean)
 add_subdirectory(ocean_legacy)
 add_subdirectory(ocean_ref)
 add_subdirectory(pbr_furnace)
