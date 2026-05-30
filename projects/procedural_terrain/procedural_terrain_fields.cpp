@@ -593,6 +593,8 @@ void relax_land_heights(TerrainFieldData& fields, const TerrainConfig& config) {
             const float coast = smoothstep(0.0F, 76.0F, fields.shore_sdf_m[sample]);
             const float floor = fields.desc.sea_level_m + 0.12F + (coast * 1.6F);
             relaxed[sample] = std::max(lerp(capped, local_average, relax_amount), floor);
+            fields.height_contributions[sample].relax_delta_m =
+                relaxed[sample] - fields.height_m[sample];
         }
     }
 
@@ -639,6 +641,7 @@ TerrainFieldData generate_terrain_fields(const TerrainConfig& config) {
     fields.shore_sdf_m.resize(count);
     fields.slope.resize(count);
     fields.material_masks.resize(count);
+    fields.height_contributions.resize(count);
     fields.land_potential.resize(count);
     fields.inland.resize(count);
     fields.ridge_strength.resize(count);
@@ -743,28 +746,33 @@ TerrainFieldData generate_terrain_fields(const TerrainConfig& config) {
             const float nx = world_x / 360.0F;
             const float nz = z / 360.0F;
             float height = fields.desc.sea_level_m;
+            TerrainHeightContributions contributions{};
             if (land) {
                 const float coast = smoothstep(0.0F, 76.0F, shore_sdf);
-                const float broad =
+                contributions.coast_lift_m = coast * 8.5F * config.relief_scale;
+                contributions.inland_lift_m = std::pow(inland, 0.68F) * 42.0F * config.relief_scale;
+                contributions.broad_noise_m =
                     fbm(nx * 1.55F + 1.3F, nz * 1.55F - 8.1F, config.seed + 101U, 5) * 18.0F *
                     config.relief_scale * (0.28F + (0.72F * inland));
-                const float detail =
+                contributions.detail_noise_m =
                     fbm(nx * 5.2F - 6.0F, nz * 5.2F + 4.0F, config.seed + 151U, 4) * 4.8F *
                     config.relief_scale * inland;
-                const float foothills =
+                contributions.foothills_m =
                     soft_mounds(nx * 1.85F - 2.5F, nz * 1.85F + 6.2F, config.seed + 233U, 5) *
                     9.0F * config.relief_scale * inland *
                     (1.0F - (saturate(fields.ridge_strength[sample]) * 0.48F));
-                const float ridge = std::pow(saturate(fields.ridge_strength[sample]), 1.58F) *
-                                    66.0F * config.relief_scale;
-                const float broken_ridge =
+                contributions.ridge_m = std::pow(saturate(fields.ridge_strength[sample]), 1.58F) *
+                                        66.0F * config.relief_scale;
+                contributions.broken_ridge_m =
                     soft_mounds(nx * 3.1F + 8.0F, nz * 3.1F - 5.0F, config.seed + 211U, 4) * 8.0F *
                     config.relief_scale * saturate(fields.ridge_strength[sample] * 0.72F);
-                const float valley_cut = fields.valley_strength[sample] *
-                                         (3.0F + (18.0F * inland)) * config.relief_scale;
-                height = fields.desc.sea_level_m + 0.22F + (coast * 8.5F * config.relief_scale) +
-                         (std::pow(inland, 0.68F) * 42.0F * config.relief_scale) + broad + detail +
-                         foothills + ridge + broken_ridge - valley_cut;
+                contributions.valley_cut_m = fields.valley_strength[sample] *
+                                             (3.0F + (18.0F * inland)) * config.relief_scale;
+                height = fields.desc.sea_level_m + 0.22F + contributions.coast_lift_m +
+                         contributions.inland_lift_m + contributions.broad_noise_m +
+                         contributions.detail_noise_m + contributions.foothills_m +
+                         contributions.ridge_m + contributions.broken_ridge_m -
+                         contributions.valley_cut_m;
                 height = std::max(height, fields.desc.sea_level_m + 0.12F + (coast * 1.6F));
             } else {
                 const float depth_distance = -shore_sdf;
@@ -779,6 +787,8 @@ TerrainFieldData generate_terrain_fields(const TerrainConfig& config) {
                 height = fields.desc.sea_level_m - std::max(depth, 0.5F);
             }
 
+            contributions.pre_relax_height_m = height;
+            fields.height_contributions[sample] = contributions;
             fields.height_m[sample] = height;
             fields.water_depth_m[sample] = std::max(0.0F, fields.desc.sea_level_m - height);
             fields.max_water_depth_m =

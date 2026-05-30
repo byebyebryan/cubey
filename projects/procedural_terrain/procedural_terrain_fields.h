@@ -26,6 +26,19 @@ struct TerrainMaterialMask {
     float sediment = 0.0F;
 };
 
+struct TerrainHeightContributions {
+    float coast_lift_m = 0.0F;
+    float inland_lift_m = 0.0F;
+    float broad_noise_m = 0.0F;
+    float detail_noise_m = 0.0F;
+    float foothills_m = 0.0F;
+    float ridge_m = 0.0F;
+    float broken_ridge_m = 0.0F;
+    float valley_cut_m = 0.0F;
+    float pre_relax_height_m = 0.0F;
+    float relax_delta_m = 0.0F;
+};
+
 struct TerrainFieldData {
     TerrainGridDesc desc{};
     std::vector<float> height_m{};
@@ -33,6 +46,7 @@ struct TerrainFieldData {
     std::vector<float> shore_sdf_m{};
     std::vector<float> slope{};
     std::vector<TerrainMaterialMask> material_masks{};
+    std::vector<TerrainHeightContributions> height_contributions{};
     std::vector<float> land_potential{};
     std::vector<float> inland{};
     std::vector<float> ridge_strength{};

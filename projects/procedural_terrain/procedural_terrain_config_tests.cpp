@@ -20,6 +20,32 @@ void require_near(float value, float expected, float tolerance, const char* mess
     require(value >= expected - tolerance && value <= expected + tolerance, message);
 }
 
+float named_land_contribution_sum(
+    const cubey::projects::procedural_terrain::TerrainHeightContributions& contributions) {
+    return contributions.coast_lift_m + contributions.inland_lift_m + contributions.broad_noise_m +
+           contributions.detail_noise_m + contributions.foothills_m + contributions.ridge_m +
+           contributions.broken_ridge_m - contributions.valley_cut_m;
+}
+
+void require_land_contributions_zero(
+    const cubey::projects::procedural_terrain::TerrainHeightContributions& contributions) {
+    require_near(contributions.coast_lift_m, 0.0F, 0.001F,
+                 "water samples should not have coast lift");
+    require_near(contributions.inland_lift_m, 0.0F, 0.001F,
+                 "water samples should not have inland lift");
+    require_near(contributions.broad_noise_m, 0.0F, 0.001F,
+                 "water samples should not have broad noise lift");
+    require_near(contributions.detail_noise_m, 0.0F, 0.001F,
+                 "water samples should not have detail lift");
+    require_near(contributions.foothills_m, 0.0F, 0.001F,
+                 "water samples should not have foothill lift");
+    require_near(contributions.ridge_m, 0.0F, 0.001F, "water samples should not have ridge lift");
+    require_near(contributions.broken_ridge_m, 0.0F, 0.001F,
+                 "water samples should not have broken ridge lift");
+    require_near(contributions.valley_cut_m, 0.0F, 0.001F,
+                 "water samples should not have valley cut");
+}
+
 } // namespace
 
 int main() {
@@ -168,6 +194,8 @@ int main() {
             "terrain valley field size mismatch");
     require(fields.material_masks.size() == fields.sample_count(),
             "terrain material field size mismatch");
+    require(fields.height_contributions.size() == fields.sample_count(),
+            "terrain contribution field size mismatch");
     require(fields.min_height_m < 0.0F, "terrain should include underwater terrain");
     require(fields.max_height_m > 0.0F, "terrain should include land terrain");
     require(fields.max_water_depth_m > 0.0F, "terrain should include positive water depth");
@@ -189,6 +217,24 @@ int main() {
                 "terrain ridge field should be finite");
         require(std::isfinite(fields.valley_strength[index]),
                 "terrain valley field should be finite");
+        const terrain::TerrainHeightContributions contributions =
+            fields.height_contributions[index];
+        require(std::isfinite(contributions.coast_lift_m), "terrain coast lift should be finite");
+        require(std::isfinite(contributions.inland_lift_m), "terrain inland lift should be finite");
+        require(std::isfinite(contributions.broad_noise_m), "terrain broad noise should be finite");
+        require(std::isfinite(contributions.detail_noise_m),
+                "terrain detail noise should be finite");
+        require(std::isfinite(contributions.foothills_m), "terrain foothills should be finite");
+        require(std::isfinite(contributions.ridge_m), "terrain ridge lift should be finite");
+        require(std::isfinite(contributions.broken_ridge_m),
+                "terrain broken ridge lift should be finite");
+        require(std::isfinite(contributions.valley_cut_m), "terrain valley cut should be finite");
+        require(std::isfinite(contributions.pre_relax_height_m),
+                "terrain pre-relax height should be finite");
+        require(std::isfinite(contributions.relax_delta_m), "terrain relax delta should be finite");
+        require_near(fields.height_m[index],
+                     contributions.pre_relax_height_m + contributions.relax_delta_m, 0.001F,
+                     "terrain final height should match pre-relax height plus relax delta");
         require(fields.water_depth_m[index] >= 0.0F, "terrain water depth should be positive");
         require_near(fields.water_depth_m[index],
                      std::max(0.0F, fields.desc.sea_level_m - fields.height_m[index]), 0.001F,
@@ -196,9 +242,18 @@ int main() {
         if (fields.water_depth_m[index] > 0.0F) {
             require(fields.shore_sdf_m[index] <= 0.001F,
                     "underwater samples should be on water side of shoreline");
+            require_land_contributions_zero(contributions);
         } else {
             require(fields.shore_sdf_m[index] >= -0.001F,
                     "land samples should be on land side of shoreline");
+            const float assembled_pre_relax =
+                fields.desc.sea_level_m + 0.22F + named_land_contribution_sum(contributions);
+            const float coast =
+                contributions.coast_lift_m / std::max(8.5F * small.relief_scale, 0.001F);
+            const float shore_floor = fields.desc.sea_level_m + 0.12F + (coast * 1.6F);
+            require_near(contributions.pre_relax_height_m,
+                         std::max(assembled_pre_relax, shore_floor), 0.002F,
+                         "terrain pre-relax land height should match named contributions");
         }
 
         const terrain::TerrainMaterialMask mask = fields.material_masks[index];
