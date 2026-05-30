@@ -43,15 +43,21 @@ void main() {
     float foam_grow_rate = params.foam_options.y;
     float foam_decay_rate = params.foam_options.z;
     float previous_valid = params.foam_options.w;
-    float jacobian = (1.0 + dhx_dx) * (1.0 + dhz_dz) - dhz_dx * dhz_dx;
-    float foam_factor = -min(0.0, jacobian - whitecap);
-    float foam = previous_valid > 0.5 ? imageLoad(foam_image, id).x : 0.0;
-    foam *= exp(-foam_decay_rate);
-    foam += foam_factor * foam_grow_rate;
-    foam = clamp(foam, 0.0, 1.0);
+    float jxx = 1.0 + dhx_dx;
+    float jzz = 1.0 + dhz_dz;
+    float jxz = dhz_dx;
+    float jacobian = jxx * jzz - jxz * jxz;
+    float compression = 0.5 * (jxx + jzz) -
+                        0.5 * sqrt(max((jxx - jzz) * (jxx - jzz) + 4.0 * jxz * jxz, 0.0));
+    float jacobian_source = max(0.0, whitecap - jacobian);
+    float compression_source = max(0.0, whitecap - compression);
+    float current_source = clamp(max(jacobian_source, compression_source) * foam_grow_rate, 0.0, 1.0);
+    float persistent = previous_valid > 0.5 ? imageLoad(foam_image, id).x : 0.0;
+    persistent *= exp(-foam_decay_rate);
+    persistent = max(current_source, persistent);
 
     vec2 gradient = vec2(dhy_dx, dhy_dz) / (1.0 + abs(vec2(dhx_dx, dhz_dz)));
     imageStore(displacement_image, id, vec4(hx, hy, hz, 0.0));
     imageStore(normal_image, id, vec4(gradient, dhx_dx, dhz_dz));
-    imageStore(foam_image, id, vec4(foam, foam_factor, jacobian, 0.0));
+    imageStore(foam_image, id, vec4(persistent, current_source, jacobian, compression));
 }

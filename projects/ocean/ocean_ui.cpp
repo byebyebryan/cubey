@@ -247,6 +247,8 @@ void draw_ocean_ui(OceanUiContext ui) {
         const cubey::host::ScopedImGuiId section_id("Shading");
         ImGui::SliderFloat("Roughness", &ui.config.roughness, 0.0F, 1.0F, "%.2f");
         ImGui::SliderFloat("Normal strength", &ui.config.normal_strength, 0.0F, 2.0F, "%.2f");
+        ImGui::SliderFloat("Foam density", &ui.config.foam_density, 0.0F, 4.0F, "%.2f");
+        ImGui::SliderFloat("Foam sharpness", &ui.config.foam_sharpness, 0.0F, 1.0F, "%.2f");
         ImGui::SliderFloat("Exposure", &ui.config.exposure, -4.0F, 4.0F, "%.2f");
         ImGui::ColorEdit3("Water", &ui.config.water_color_r);
         ImGui::ColorEdit3("Foam", &ui.config.foam_color_r);

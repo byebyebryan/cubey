@@ -46,7 +46,8 @@ const uint OCEAN_VIEW_HEIGHT = 1u;
 const uint OCEAN_VIEW_DISPLACEMENT = 2u;
 const uint OCEAN_VIEW_NORMAL = 3u;
 const uint OCEAN_VIEW_FOAM = 4u;
-const uint OCEAN_VIEW_LOD = 5u;
+const uint OCEAN_VIEW_FOAM_SOURCE = 5u;
+const uint OCEAN_VIEW_LOD = 6u;
 const float OCEAN_REFLECTANCE = 0.02;
 const float OCEAN_FAR_ANTI_REPEAT_START = 220.0;
 const float OCEAN_FAR_ANTI_REPEAT_END = 900.0;
@@ -211,24 +212,24 @@ vec4 sample_normal(uint cascade, vec2 uv, float pixels_per_meter) {
                texture(normal_cascade4_texture, uv), min(1.0, pixels_per_meter * 0.1));
 }
 
-float sample_foam(uint cascade, vec2 uv, float pixels_per_meter) {
+vec4 sample_foam(uint cascade, vec2 uv, float pixels_per_meter) {
     if (cascade == 0u) {
-        return mix(texture_bicubic(foam_cascade0_texture, uv).x, texture(foam_cascade0_texture, uv).x,
+        return mix(texture_bicubic(foam_cascade0_texture, uv), texture(foam_cascade0_texture, uv),
                    min(1.0, pixels_per_meter * 0.1));
     }
     if (cascade == 1u) {
-        return mix(texture_bicubic(foam_cascade1_texture, uv).x, texture(foam_cascade1_texture, uv).x,
+        return mix(texture_bicubic(foam_cascade1_texture, uv), texture(foam_cascade1_texture, uv),
                    min(1.0, pixels_per_meter * 0.1));
     }
     if (cascade == 2u) {
-        return mix(texture_bicubic(foam_cascade2_texture, uv).x, texture(foam_cascade2_texture, uv).x,
+        return mix(texture_bicubic(foam_cascade2_texture, uv), texture(foam_cascade2_texture, uv),
                    min(1.0, pixels_per_meter * 0.1));
     }
     if (cascade == 3u) {
-        return mix(texture_bicubic(foam_cascade3_texture, uv).x, texture(foam_cascade3_texture, uv).x,
+        return mix(texture_bicubic(foam_cascade3_texture, uv), texture(foam_cascade3_texture, uv),
                    min(1.0, pixels_per_meter * 0.1));
     }
-    return mix(texture_bicubic(foam_cascade4_texture, uv).x, texture(foam_cascade4_texture, uv).x,
+    return mix(texture_bicubic(foam_cascade4_texture, uv), texture(foam_cascade4_texture, uv),
                min(1.0, pixels_per_meter * 0.1));
 }
 
@@ -257,7 +258,7 @@ float cascade_surface_lod_weight(uint cascade, float dist) {
     return 1.0 - smoothstep(260.0, 1200.0, dist);
 }
 
-vec3 sample_normal_foam_domain(uint cascade, vec2 position, float tile_length,
+vec4 sample_normal_foam_domain(uint cascade, vec2 position, float tile_length,
                                float pixels_per_meter, uint domain) {
     float angle = detail_anti_repeat_angle(cascade, domain);
     float scale = detail_anti_repeat_scale(cascade, domain);
@@ -265,35 +266,36 @@ vec3 sample_normal_foam_domain(uint cascade, vec2 position, float tile_length,
         rotate2(position, angle) * scale + detail_anti_repeat_offset(cascade, domain);
     vec2 secondary_uv = secondary_position / tile_length;
     vec4 secondary_normal = sample_normal(cascade, secondary_uv, pixels_per_meter);
-    float secondary_foam = sample_foam(cascade, secondary_uv, pixels_per_meter);
+    vec4 secondary_foam = sample_foam(cascade, secondary_uv, pixels_per_meter);
     vec2 secondary_gradient = rotate2(secondary_normal.xy, -angle) * scale;
-    return vec3(secondary_gradient, secondary_foam);
+    return vec4(secondary_gradient, secondary_foam.rg);
 }
 
-vec3 sample_normal_foam_gradient(uint cascade, vec2 position, float tile_length,
+vec4 sample_normal_foam_gradient(uint cascade, vec2 position, float tile_length,
                                  float pixels_per_meter, float anti_repeat_factor) {
     vec2 primary_uv = position / tile_length;
     vec4 primary_normal = sample_normal(cascade, primary_uv, pixels_per_meter);
-    float primary_foam = sample_foam(cascade, primary_uv, pixels_per_meter);
-    vec3 primary = vec3(primary_normal.xy, primary_foam);
+    vec4 primary_foam = sample_foam(cascade, primary_uv, pixels_per_meter);
+    vec4 primary = vec4(primary_normal.xy, primary_foam.rg);
     if (!ocean_detail_anti_repeat_enabled(cascade, anti_repeat_factor)) {
         return primary;
     }
 
     vec2 weights = detail_anti_repeat_weights(cascade, position, anti_repeat_factor);
-    vec3 secondary0 = sample_normal_foam_domain(cascade, position, tile_length, pixels_per_meter, 0u);
-    vec3 secondary1 = sample_normal_foam_domain(cascade, position, tile_length, pixels_per_meter, 1u);
+    vec4 secondary0 = sample_normal_foam_domain(cascade, position, tile_length, pixels_per_meter, 0u);
+    vec4 secondary1 = sample_normal_foam_domain(cascade, position, tile_length, pixels_per_meter, 1u);
     vec2 gradient =
         (primary.xy + secondary0.xy * weights.x + secondary1.xy * weights.y) /
         (1.0 + weights.x + weights.y);
-    float foam = 1.0 - (1.0 - primary.z) * (1.0 - secondary0.z * weights.x) *
-                           (1.0 - secondary1.z * weights.y);
+    vec2 foam = vec2(1.0) - (vec2(1.0) - primary.zw) *
+                               (vec2(1.0) - secondary0.zw * weights.x) *
+                               (vec2(1.0) - secondary1.zw * weights.y);
     foam = clamp(foam * foam_breakup_weight(cascade, position, anti_repeat_factor), 0.0, 1.0);
-    return vec3(gradient, foam);
+    return vec4(gradient, foam);
 }
 
-vec3 normal_foam_gradient(float dist) {
-    vec3 gradient = vec3(0.0);
+vec4 normal_foam_gradient(float dist) {
+    vec4 gradient = vec4(0.0);
     float map_size = ocean.cascade4_options.w;
     float anti_repeat_factor =
         clamp(ocean.inspection_options.y, 0.0, 1.0) *
@@ -304,14 +306,14 @@ vec3 normal_foam_gradient(float dist) {
         }
         float tile_length = max(cascade_tile_length(cascade), 0.001);
         float pixels_per_meter = map_size / tile_length;
-        vec3 normal_foam =
+        vec4 normal_foam =
             sample_normal_foam_gradient(cascade, frag_sample_position, tile_length, pixels_per_meter,
                                         anti_repeat_factor);
         float normal_scale = cascade_normal_scale(cascade);
         float lod_weight = cascade_surface_lod_weight(cascade, dist);
-        gradient += normal_foam * vec3(normal_scale, normal_scale, 1.0) * lod_weight;
+        gradient += normal_foam * vec4(normal_scale, normal_scale, 1.0, 1.0) * lod_weight;
     }
-    gradient.z = smoothstep(0.0, 1.0, gradient.z * 0.75) * exp(-dist * 0.0075);
+    gradient.zw = clamp(gradient.zw, 0.0, 1.0);
     gradient.xy *= mix(0.015, ocean.foam_color.w, exp(-dist * 0.0175));
     return gradient;
 }
@@ -320,14 +322,23 @@ float ocean_material_distance_factor(float dist) {
     return smoothstep(250.0, 1800.0, dist);
 }
 
-float ocean_foam_coverage(float foam, float dist, float ndotv) {
+float ocean_foam_signal(float persistent, float current) {
+    return clamp(mix(current, persistent, 0.62), 0.0, 1.0);
+}
+
+float ocean_foam_coverage(float persistent, float current, float dist, float ndotv) {
     float far_factor = ocean_material_distance_factor(dist);
-    float soft_foam = smoothstep(0.12, 0.84, foam);
-    float crest_core = smoothstep(0.48, 1.0, foam);
+    float density = max(ocean.inspection_options.z, 0.001);
+    float sharpness = clamp(ocean.inspection_options.w, 0.0, 1.0);
+    float signal = ocean_foam_signal(persistent, current) * density;
+    float threshold = mix(0.015, 0.095, sharpness);
+    float width = mix(0.30, 0.12, sharpness);
+    float soft_foam = smoothstep(threshold, threshold + width, signal);
+    float crest_core = smoothstep(0.08, 0.48, current * density);
     float view_factor = mix(0.82, 1.0, smoothstep(0.05, 0.55, ndotv));
-    return clamp(max(soft_foam * 0.82, crest_core * 0.76) * view_factor *
-                     mix(0.92, 0.36, far_factor),
-                 0.0, 0.78);
+    return clamp(max(soft_foam * 0.48, crest_core * 0.74) * view_factor *
+                     mix(0.80, 0.30, far_factor),
+                 0.0, 0.62);
 }
 
 vec3 ocean_shaded_foam(vec3 water, vec3 foam_color, vec3 normal, float ndotl, float foam,
@@ -383,9 +394,11 @@ void main() {
     uint view = uint(ocean.debug_options.x + 0.5);
     vec3 camera_position = ocean.camera_time.xyz;
     float dist = length(frag_sample_position - camera_position.xz);
-    vec3 gradient = normal_foam_gradient(dist);
+    vec4 gradient = normal_foam_gradient(dist);
     vec3 normal = normalize(vec3(-gradient.x, 1.0, -gradient.y));
-    float foam = clamp(gradient.z, 0.0, 1.0);
+    float foam_persistent = clamp(gradient.z, 0.0, 1.0);
+    float foam_current = clamp(gradient.w, 0.0, 1.0);
+    float foam = ocean_foam_signal(foam_persistent, foam_current);
 
     vec3 water_color = cubey_srgb_to_linear(ocean.water_color.rgb);
     vec3 foam_color = cubey_srgb_to_linear(ocean.foam_color.rgb);
@@ -395,7 +408,7 @@ void main() {
     float ndotv = clamp(dot(normal, view_dir), 0.0, 1.0);
     float ndotl = clamp(dot(normal, sun_dir), 0.0, 1.0);
     float material_distance = ocean_material_distance_factor(dist);
-    float foam_coverage = ocean_foam_coverage(foam, dist, ndotv);
+    float foam_coverage = ocean_foam_coverage(foam_persistent, foam_current, dist, ndotv);
     float roughness = clamp(ocean.water_color.w, 0.02, 1.0);
     roughness = mix(roughness, max(roughness, 0.78), material_distance);
 
@@ -432,7 +445,9 @@ void main() {
     } else if (view == OCEAN_VIEW_NORMAL) {
         color = normal * 0.5 + 0.5;
     } else if (view == OCEAN_VIEW_FOAM) {
-        color = vec3(foam);
+        color = vec3(foam_coverage);
+    } else if (view == OCEAN_VIEW_FOAM_SOURCE) {
+        color = vec3(foam_current);
     } else if (view == OCEAN_VIEW_LOD) {
         color = debug_lod_color(ocean.debug_options.y, ocean.debug_options.z);
     }

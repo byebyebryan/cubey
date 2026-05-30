@@ -472,8 +472,8 @@ class OceanApp {
                 {
                     static_cast<float>(diagnostics_.selected_cascade),
                     diagnostics_.anti_repeat_strength,
-                    0.0F,
-                    0.0F,
+                    ocean_config_.foam_density,
+                    ocean_config_.foam_sharpness,
                 },
             .tile_lengths =
                 {
