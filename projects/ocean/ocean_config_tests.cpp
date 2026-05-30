@@ -84,10 +84,48 @@ int main() {
         const ocean::OceanCascadeConfig& cascade2 = defaults.cascades[2];
         const ocean::OceanCascadeConfig& cascade3 = defaults.cascades[3];
         const ocean::OceanCascadeConfig& cascade4 = defaults.cascades[4];
+        const ocean::OceanCascadeDomain domain0 = ocean::ocean_cascade_domain(defaults, 0);
+        const ocean::OceanCascadeDomain domain1 = ocean::ocean_cascade_domain(defaults, 1);
+        const ocean::OceanCascadeDomain domain2 = ocean::ocean_cascade_domain(defaults, 2);
+        const ocean::OceanCascadeDomain domain3 = ocean::ocean_cascade_domain(defaults, 3);
+        const ocean::OceanCascadeDomain domain4 = ocean::ocean_cascade_domain(defaults, 4);
         require(ocean::kOceanMacroCascadeCount == 2U,
                 "ocean should place two macro cascades first");
         require(ocean::kOceanReferenceCascadeCount == 3U,
                 "ocean should keep three reference-derived cascades");
+        require(domain0.active && domain1.active && domain2.active && domain3.active &&
+                    domain4.active,
+                "default cascade wavelength domains should all be active");
+        require(domain0.low_k < domain0.high_k && domain1.low_k < domain1.high_k &&
+                    domain2.low_k < domain2.high_k && domain3.low_k < domain3.high_k &&
+                    domain4.low_k < domain4.high_k,
+                "default cascade domains should have increasing k bounds");
+        require(domain0.low_wavelength < domain0.high_wavelength &&
+                    domain1.low_wavelength < domain1.high_wavelength &&
+                    domain2.low_wavelength < domain2.high_wavelength &&
+                    domain3.low_wavelength < domain3.high_wavelength &&
+                    domain4.low_wavelength < domain4.high_wavelength,
+                "default cascade domains should expose low/high wavelength bounds");
+        require(domain0.high_wavelength > domain1.high_wavelength &&
+                    domain1.high_wavelength > domain2.high_wavelength &&
+                    domain2.high_wavelength > domain3.high_wavelength &&
+                    domain3.high_wavelength > domain4.high_wavelength,
+                "cascade diagnostic domains should run from macro to detail wavelengths");
+        require_near(domain0.high_wavelength,
+                     cascade0.tile_length / ocean::kOceanCascadeMinWavesPerDomain, 0.01F,
+                     "cascade 0 largest wavelength should follow min waves per domain");
+        require_near(domain0.low_wavelength,
+                     cascade0.tile_length * ocean::kOceanCascadeSmallestWaveMultiplier /
+                         static_cast<float>(defaults.map_size),
+                     0.01F, "cascade 0 smallest wavelength should follow map sampling");
+        require_near(domain1.high_wavelength, domain0.low_wavelength, 0.001F,
+                     "cascade 1 diagnostic domain should start after cascade 0");
+        require_near(domain2.high_wavelength, domain1.low_wavelength, 0.001F,
+                     "cascade 2 diagnostic domain should start after cascade 1");
+        require_near(domain3.high_wavelength, domain2.low_wavelength, 0.001F,
+                     "cascade 3 diagnostic domain should start after cascade 2");
+        require_near(domain4.high_wavelength, domain3.low_wavelength, 0.001F,
+                     "cascade 4 diagnostic domain should start after cascade 3");
         require_near(cascade0.tile_length, 1531.0F, 0.001F,
                      "cascade 0 should be the largest decorrelated macro swell");
         require_near(cascade1.tile_length, 421.0F, 0.001F,
@@ -320,6 +358,10 @@ int main() {
                          "app should pass anti-repeat as diagnostics push data");
         require_contains(ui_source, "&ui.diagnostics.anti_repeat_strength",
                          "UI should expose anti-repeat as a diagnostics control");
+        require_contains(ui_source, "ocean_cascade_domain(ui.config, index)",
+                         "UI should expose cascade wavelength domain diagnostics");
+        require_contains(ui_source, "domain %.2f-%.2f m",
+                         "UI should show cascade diagnostic wavelength bands");
         require_contains(fragment_shader,
                          "gradient += normal_foam * vec3(normal_scale, normal_scale, 1.0)",
                          "fragment shader should preserve normal/foam map scale packing");

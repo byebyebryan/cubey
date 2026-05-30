@@ -2,6 +2,7 @@
 
 #include <cubey/core/run_config.h>
 
+#include <algorithm>
 #include <array>
 #include <cstdint>
 #include <stdexcept>
@@ -35,6 +36,9 @@ inline constexpr std::uint32_t kOceanMinMeshCells = 32U;
 inline constexpr std::uint32_t kOceanMaxMeshCells = 512U;
 inline constexpr std::uint32_t kOceanMinMeshLodLevels = 1U;
 inline constexpr std::uint32_t kOceanMaxMeshLodLevels = 6U;
+inline constexpr float kOceanPi = 3.14159265358979323846F;
+inline constexpr float kOceanCascadeMinWavesPerDomain = 6.0F;
+inline constexpr float kOceanCascadeSmallestWaveMultiplier = 4.0F;
 
 struct OceanCascadeConfig {
     float tile_length = 88.0F;
@@ -159,6 +163,16 @@ struct OceanConfig {
     friend bool operator==(const OceanConfig&, const OceanConfig&) = default;
 };
 
+struct OceanCascadeDomain {
+    float low_k = 0.0F;
+    float high_k = 0.0F;
+    float low_wavelength = 0.0F;
+    float high_wavelength = 0.0F;
+    bool active = false;
+
+    friend bool operator==(const OceanCascadeDomain&, const OceanCascadeDomain&) = default;
+};
+
 [[nodiscard]] inline const char* ocean_render_view_name(OceanRenderView view) {
     switch (view) {
     case OceanRenderView::Final:
@@ -224,6 +238,46 @@ struct OceanConfig {
         throw std::runtime_error("ocean cascade index out of range");
     }
     return config.cascades[cascade];
+}
+
+[[nodiscard]] inline float ocean_cascade_domain_high_k(const OceanConfig& config,
+                                                       std::uint32_t cascade) {
+    const OceanCascadeConfig& cascade_config = ocean_cascade(config, cascade);
+    if (config.map_size == 0U || cascade_config.tile_length <= 0.0F) {
+        return 0.0F;
+    }
+    return 2.0F * kOceanPi * static_cast<float>(config.map_size) /
+           (cascade_config.tile_length * kOceanCascadeSmallestWaveMultiplier);
+}
+
+[[nodiscard]] inline OceanCascadeDomain ocean_cascade_domain(const OceanConfig& config,
+                                                             std::uint32_t cascade) {
+    const OceanCascadeConfig& cascade_config = ocean_cascade(config, cascade);
+    if (config.map_size == 0U || cascade_config.tile_length <= 0.0F) {
+        return {};
+    }
+
+    float previous_high_k = 0.0F;
+    for (std::uint32_t index = 0; index < cascade; ++index) {
+        previous_high_k =
+            std::max(previous_high_k, ocean_cascade_domain_high_k(config, index));
+    }
+
+    const float low_k = std::max(2.0F * kOceanPi * kOceanCascadeMinWavesPerDomain /
+                                     cascade_config.tile_length,
+                                 previous_high_k);
+    const float high_k = ocean_cascade_domain_high_k(config, cascade);
+    if (low_k <= 0.0F || high_k <= low_k) {
+        return {.low_k = low_k, .high_k = high_k};
+    }
+
+    return {
+        .low_k = low_k,
+        .high_k = high_k,
+        .low_wavelength = 2.0F * kOceanPi / high_k,
+        .high_wavelength = 2.0F * kOceanPi / low_k,
+        .active = true,
+    };
 }
 
 inline void validate_ocean_config(const OceanConfig& config) {

@@ -265,8 +265,17 @@ void draw_ocean_ui(OceanUiContext ui) {
         for (std::uint32_t index = 0; index < kOceanCascadeCount; ++index) {
             char label[40]{};
             format_cascade_label(label, sizeof(label), index);
-            ImGui::Text("%s: %.0f m / disp %.2f", label, ui.config.cascades[index].tile_length,
-                        ui.config.cascades[index].displacement_scale);
+            const OceanCascadeDomain domain = ocean_cascade_domain(ui.config, index);
+            if (domain.active) {
+                ImGui::Text("%s: %.0f m / disp %.2f / domain %.2f-%.2f m", label,
+                            ui.config.cascades[index].tile_length,
+                            ui.config.cascades[index].displacement_scale,
+                            domain.low_wavelength, domain.high_wavelength);
+            } else {
+                ImGui::Text("%s: %.0f m / disp %.2f / domain inactive", label,
+                            ui.config.cascades[index].tile_length,
+                            ui.config.cascades[index].displacement_scale);
+            }
         }
         ImGui::Text("Mesh: %u LOD / %u patches / %u tris", ui.config.mesh_lod_levels,
                     ocean_mesh_patch_count(ui.config),
