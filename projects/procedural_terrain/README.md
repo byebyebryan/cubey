@@ -29,7 +29,7 @@ Run a deterministic headless capture:
 Terrain tuning is available from both the UI and CLI:
 
 ```sh
-./build/dev/projects/procedural_terrain/procedural_terrain --headless --terrain-seed 12345 --terrain-land-extent 0.64 --terrain-relief 1.35 --terrain-ridges 0.85 --output /tmp/cubey-terrain-tuned.png
+./build/dev/projects/procedural_terrain/procedural_terrain --headless --terrain-seed 12345 --terrain-land-extent 0.64 --terrain-relief 1.35 --terrain-ridges 0.85 --terrain-valleys 1.10 --output /tmp/cubey-terrain-tuned.png
 ./build/dev/projects/procedural_terrain/procedural_terrain --headless --no-terrain-water-surface --output /tmp/cubey-terrain-land.png
 ```
 
@@ -41,6 +41,9 @@ Useful debug views:
 ./build/dev/projects/procedural_terrain/procedural_terrain --debug-view shoreline
 ./build/dev/projects/procedural_terrain/procedural_terrain --debug-view material
 ./build/dev/projects/procedural_terrain/procedural_terrain --debug-view slope
+./build/dev/projects/procedural_terrain/procedural_terrain --debug-view landform
+./build/dev/projects/procedural_terrain/procedural_terrain --debug-view ridges
+./build/dev/projects/procedural_terrain/procedural_terrain --debug-view valleys
 ```
 
 Use `--grid-width` and `--grid-height` for lower-cost checks or denser local

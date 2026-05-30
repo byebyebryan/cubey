@@ -25,6 +25,7 @@ constexpr float kWaterSurfaceVisualOffsetM = 0.04F;
         .normal = glm::normalize(a.normal + ((b.normal - a.normal) * t)),
         .material = a.material + ((b.material - a.material) * t),
         .fields = a.fields + ((b.fields - a.fields) * t),
+        .generator = a.generator + ((b.generator - a.generator) * t),
     };
     vertex.position.y = sea_level_m;
     vertex.fields.x = sea_level_m;
@@ -98,6 +99,9 @@ cubey::render::VertexInputLayout terrain_vertex_input_layout() {
                                                       offset_of(offsetof(TerrainVertex, material))),
                 cubey::render::vertex_input_attribute(3, 0, VK_FORMAT_R32G32B32A32_SFLOAT,
                                                       offset_of(offsetof(TerrainVertex, fields))),
+                cubey::render::vertex_input_attribute(
+                    4, 0, VK_FORMAT_R32G32B32A32_SFLOAT,
+                    offset_of(offsetof(TerrainVertex, generator))),
             },
     };
 }
@@ -134,6 +138,8 @@ TerrainMeshData make_terrain_mesh(const TerrainFieldData& fields) {
                 std::max(dz, fields.desc.cell_size_m);
             const std::size_t sample = fields.index(x, y);
             const TerrainMaterialMask mask = fields.material_masks[sample];
+            const float land_debug = std::clamp(0.5F + (fields.land_potential[sample] * 1.8F),
+                                                0.0F, 1.0F);
             mesh.vertices.push_back({
                 .position = {world_x, fields.height_m[sample], z},
                 .normal = glm::normalize(cubey::math::Vec3{-dhdx, 1.0F, -dhdz}),
@@ -144,6 +150,13 @@ TerrainMeshData make_terrain_mesh(const TerrainFieldData& fields) {
                         fields.water_depth_m[sample],
                         fields.shore_sdf_m[sample],
                         fields.slope[sample],
+                    },
+                .generator =
+                    {
+                        land_debug,
+                        fields.inland[sample],
+                        std::clamp(fields.ridge_strength[sample], 0.0F, 1.0F),
+                        std::clamp(fields.valley_strength[sample], 0.0F, 1.0F),
                     },
             });
         }
@@ -254,6 +267,7 @@ TerrainMeshData make_water_surface_mesh(const TerrainFieldData& fields) {
                         shore_sdf,
                         -1.0F,
                     },
+                .generator = {0.0F, 0.0F, 0.0F, 0.0F},
             });
         }
     }

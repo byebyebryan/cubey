@@ -18,11 +18,15 @@ enum class TerrainDebugView : std::uint32_t {
     Shoreline = 3,
     Material = 4,
     Slope = 5,
+    Landform = 6,
+    Ridges = 7,
+    Valleys = 8,
 };
 
-inline constexpr std::array<TerrainDebugView, 6> kTerrainDebugViews{
+inline constexpr std::array<TerrainDebugView, 9> kTerrainDebugViews{
     TerrainDebugView::Final,     TerrainDebugView::Height,   TerrainDebugView::WaterDepth,
     TerrainDebugView::Shoreline, TerrainDebugView::Material, TerrainDebugView::Slope,
+    TerrainDebugView::Landform,  TerrainDebugView::Ridges,   TerrainDebugView::Valleys,
 };
 
 inline constexpr std::uint32_t kTerrainDefaultGridWidth = 385U;
@@ -36,6 +40,7 @@ inline constexpr float kTerrainDefaultLandExtent = 0.70F;
 inline constexpr float kTerrainDefaultCoastNoiseStrength = 0.20F;
 inline constexpr float kTerrainDefaultReliefScale = 1.0F;
 inline constexpr float kTerrainDefaultRidgeScale = 1.0F;
+inline constexpr float kTerrainDefaultValleyScale = 0.75F;
 
 struct TerrainConfig {
     std::uint32_t grid_width = kTerrainDefaultGridWidth;
@@ -47,6 +52,7 @@ struct TerrainConfig {
     float coast_noise_strength = kTerrainDefaultCoastNoiseStrength;
     float relief_scale = kTerrainDefaultReliefScale;
     float ridge_scale = kTerrainDefaultRidgeScale;
+    float valley_scale = kTerrainDefaultValleyScale;
     TerrainDebugView debug_view = TerrainDebugView::Final;
 
     friend bool operator==(const TerrainConfig&, const TerrainConfig&) = default;
@@ -66,6 +72,12 @@ struct TerrainConfig {
         return "material";
     case TerrainDebugView::Slope:
         return "slope";
+    case TerrainDebugView::Landform:
+        return "landform";
+    case TerrainDebugView::Ridges:
+        return "ridges";
+    case TerrainDebugView::Valleys:
+        return "valleys";
     }
     return "final";
 }
@@ -118,6 +130,10 @@ inline void validate_terrain_config(const TerrainConfig& config) {
         config.ridge_scale > 2.0F) {
         throw std::runtime_error("terrain ridge scale must be in [0.0, 2.0]");
     }
+    if (!std::isfinite(config.valley_scale) || config.valley_scale < 0.0F ||
+        config.valley_scale > 2.0F) {
+        throw std::runtime_error("terrain valley scale must be in [0.0, 2.0]");
+    }
 }
 
 [[nodiscard]] inline bool terrain_rebuild_config_equal(const TerrainConfig& lhs,
@@ -126,7 +142,8 @@ inline void validate_terrain_config(const TerrainConfig& config) {
            lhs.seed == rhs.seed && lhs.cell_size_m == rhs.cell_size_m &&
            lhs.sea_level_m == rhs.sea_level_m && lhs.land_extent == rhs.land_extent &&
            lhs.coast_noise_strength == rhs.coast_noise_strength &&
-           lhs.relief_scale == rhs.relief_scale && lhs.ridge_scale == rhs.ridge_scale;
+           lhs.relief_scale == rhs.relief_scale && lhs.ridge_scale == rhs.ridge_scale &&
+           lhs.valley_scale == rhs.valley_scale;
 }
 
 [[nodiscard]] inline TerrainConfig terrain_config_from_run_config(const RunConfig& config) {
@@ -157,6 +174,9 @@ inline void validate_terrain_config(const TerrainConfig& config) {
     }
     if (run_config_float_is_set(config.terrain.ridges)) {
         terrain.ridge_scale = config.terrain.ridges;
+    }
+    if (run_config_float_is_set(config.terrain.valleys)) {
+        terrain.valley_scale = config.terrain.valleys;
     }
     terrain.debug_view = terrain_debug_view_from_name(config.debug_view);
     validate_terrain_config(terrain);

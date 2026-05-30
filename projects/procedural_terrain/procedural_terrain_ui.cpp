@@ -110,6 +110,7 @@ void draw_terrain_ui(TerrainUiContext ui) {
                            "%.2f");
         ImGui::SliderFloat("Relief", &ui.edit_config.relief_scale, 0.20F, 2.0F, "%.2f");
         ImGui::SliderFloat("Ridges", &ui.edit_config.ridge_scale, 0.0F, 2.0F, "%.2f");
+        ImGui::SliderFloat("Valleys", &ui.edit_config.valley_scale, 0.0F, 2.0F, "%.2f");
     }
 
     const bool pending_rebuild =
@@ -149,6 +150,8 @@ void draw_terrain_ui(TerrainUiContext ui) {
         ImGui::Text("Shoreline samples: %zu", ui.diagnostics.shoreline_samples);
         ImGui::Text("Slope avg/max: %.3f / %.3f", ui.diagnostics.average_slope,
                     ui.diagnostics.max_slope);
+        ImGui::Text("Ridge/valley coverage: %.3f / %.3f", ui.diagnostics.ridge_coverage,
+                    ui.diagnostics.valley_coverage);
         ImGui::Text("Full terrain: %u verts / %u tris", ui.diagnostics.terrain_vertices,
                     ui.diagnostics.terrain_triangles);
         ImGui::Text("Final land: %u verts / %u tris", ui.diagnostics.final_land_vertices,

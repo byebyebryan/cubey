@@ -10,6 +10,7 @@ layout(location = 0) in vec3 frag_world_position;
 layout(location = 1) in vec3 frag_normal;
 layout(location = 2) in vec4 frag_material;
 layout(location = 3) in vec4 frag_fields;
+layout(location = 4) in vec4 frag_generator;
 
 layout(location = 0) out vec4 out_color;
 
@@ -19,6 +20,9 @@ const uint TERRAIN_VIEW_WATER_DEPTH = 2u;
 const uint TERRAIN_VIEW_SHORELINE = 3u;
 const uint TERRAIN_VIEW_MATERIAL = 4u;
 const uint TERRAIN_VIEW_SLOPE = 5u;
+const uint TERRAIN_VIEW_LANDFORM = 6u;
+const uint TERRAIN_VIEW_RIDGES = 7u;
+const uint TERRAIN_VIEW_VALLEYS = 8u;
 
 vec3 ramp3(float t, vec3 a, vec3 b, vec3 c) {
     t = clamp(t, 0.0, 1.0);
@@ -109,6 +113,15 @@ void main() {
     } else if (debug_view == TERRAIN_VIEW_SLOPE) {
         color = ramp3(slope_t, vec3(0.10, 0.18, 0.22), vec3(0.78, 0.58, 0.26),
                       vec3(0.93, 0.92, 0.86));
+    } else if (debug_view == TERRAIN_VIEW_LANDFORM) {
+        color = ramp3(frag_generator.x, vec3(0.03, 0.12, 0.22), vec3(0.78, 0.80, 0.58),
+                      vec3(0.20, 0.46, 0.22));
+    } else if (debug_view == TERRAIN_VIEW_RIDGES) {
+        color = ramp3(frag_generator.z, vec3(0.09, 0.13, 0.16), vec3(0.48, 0.42, 0.33),
+                      vec3(0.92, 0.88, 0.78));
+    } else if (debug_view == TERRAIN_VIEW_VALLEYS) {
+        color = ramp3(frag_generator.w, vec3(0.12, 0.15, 0.12), vec3(0.12, 0.40, 0.36),
+                      vec3(0.68, 0.88, 0.78));
     }
     out_color = vec4(color, 1.0);
 }

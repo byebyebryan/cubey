@@ -83,6 +83,8 @@ constexpr float kDefaultPitchRadians = -0.90F;
         const float slope = fields.slope[index];
         slope_sum += slope;
         diagnostics.max_slope = std::max(diagnostics.max_slope, slope);
+        diagnostics.ridge_coverage += fields.ridge_strength[index];
+        diagnostics.valley_coverage += fields.valley_strength[index];
 
         const TerrainMaterialMask mask = fields.material_masks[index];
         diagnostics.sand_coverage += mask.sand;
@@ -95,6 +97,8 @@ constexpr float kDefaultPitchRadians = -0.90F;
                                   ? 0.0F
                                   : 1.0F / static_cast<float>(diagnostics.sample_count);
     diagnostics.average_slope = static_cast<float>(slope_sum) * inv_samples;
+    diagnostics.ridge_coverage *= inv_samples;
+    diagnostics.valley_coverage *= inv_samples;
     diagnostics.sand_coverage *= inv_samples;
     diagnostics.rock_coverage *= inv_samples;
     diagnostics.vegetation_coverage *= inv_samples;

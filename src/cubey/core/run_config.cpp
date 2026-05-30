@@ -287,6 +287,9 @@ RunConfig parse_run_config(int argc, char** argv) {
         } else if (arg == "--terrain-ridges") {
             config.terrain.ridges =
                 parse_float(need_value("--terrain-ridges"), "--terrain-ridges");
+        } else if (arg == "--terrain-valleys") {
+            config.terrain.valleys =
+                parse_float(need_value("--terrain-valleys"), "--terrain-valleys");
         } else if (arg == "--terrain-water-surface") {
             config.terrain.water_surface = 1;
         } else if (arg == "--no-terrain-water-surface") {

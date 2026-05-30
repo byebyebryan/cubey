@@ -22,6 +22,8 @@ struct TerrainDiagnostics {
     float max_abs_shore_sdf_m = 0.0F;
     float average_slope = 0.0F;
     float max_slope = 0.0F;
+    float ridge_coverage = 0.0F;
+    float valley_coverage = 0.0F;
     float sand_coverage = 0.0F;
     float rock_coverage = 0.0F;
     float vegetation_coverage = 0.0F;

@@ -33,6 +33,10 @@ struct TerrainFieldData {
     std::vector<float> shore_sdf_m{};
     std::vector<float> slope{};
     std::vector<TerrainMaterialMask> material_masks{};
+    std::vector<float> land_potential{};
+    std::vector<float> inland{};
+    std::vector<float> ridge_strength{};
+    std::vector<float> valley_strength{};
     float min_height_m = 0.0F;
     float max_height_m = 0.0F;
     float max_water_depth_m = 0.0F;

@@ -377,14 +377,16 @@ void test_run_config_parses_terrain_controls() {
     std::string relief_value = "1.35";
     std::string ridges_flag = "--terrain-ridges";
     std::string ridges_value = "0.85";
+    std::string valleys_flag = "--terrain-valleys";
+    std::string valleys_value = "1.15";
     std::string water_surface_flag = "--no-terrain-water-surface";
-    std::array<char*, 16> argv{
+    std::array<char*, 18> argv{
         program.data(),          seed_flag.data(),        seed_value.data(),
         cell_size_flag.data(),   cell_size_value.data(),  sea_level_flag.data(),
         sea_level_value.data(),  land_extent_flag.data(), land_extent_value.data(),
         coast_noise_flag.data(), coast_noise_value.data(), relief_flag.data(),
         relief_value.data(),     ridges_flag.data(),      ridges_value.data(),
-        water_surface_flag.data()};
+        valleys_flag.data(),     valleys_value.data(),    water_surface_flag.data()};
 
     const cubey::RunConfig config =
         cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
@@ -396,6 +398,7 @@ void test_run_config_parses_terrain_controls() {
     require(config.terrain.coast_noise == 0.31F, "run config should parse terrain coast noise");
     require(config.terrain.relief == 1.35F, "run config should parse terrain relief");
     require(config.terrain.ridges == 0.85F, "run config should parse terrain ridges");
+    require(config.terrain.valleys == 1.15F, "run config should parse terrain valleys");
     require(config.terrain.water_surface == 0,
             "run config should parse disabled terrain water surface");
 

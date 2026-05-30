@@ -132,6 +132,7 @@ struct RunConfig {
         float coast_noise = kRunConfigUnsetFloat;
         float relief = kRunConfigUnsetFloat;
         float ridges = kRunConfigUnsetFloat;
+        float valleys = kRunConfigUnsetFloat;
         int water_surface = -1;
         bool seed_set = false;
     };

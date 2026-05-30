@@ -1,7 +1,9 @@
 #include "procedural_terrain_fields.h"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
+#include <cstdint>
 #include <limits>
 #include <stdexcept>
 #include <vector>
@@ -10,6 +12,12 @@ namespace cubey::projects::procedural_terrain {
 namespace {
 
 constexpr float kDistanceInfinity = 1.0e20F;
+constexpr float kTau = 6.28318530718F;
+
+struct Point2 {
+    float x = 0.0F;
+    float y = 0.0F;
+};
 
 [[nodiscard]] float saturate(float value) {
     return std::clamp(value, 0.0F, 1.0F);
@@ -34,6 +42,13 @@ constexpr float kDistanceInfinity = 1.0e20F;
     value *= 0xc4ceb9fe1a85ec53ULL;
     value ^= value >> 33U;
     return static_cast<std::uint32_t>(value);
+}
+
+[[nodiscard]] float random01(std::uint64_t seed, std::uint32_t index, std::uint32_t channel) {
+    constexpr float kScale = 1.0F / static_cast<float>(std::numeric_limits<std::uint32_t>::max());
+    return static_cast<float>(hash_u32(static_cast<std::int32_t>(index),
+                                       static_cast<std::int32_t>(channel), seed)) *
+           kScale;
 }
 
 [[nodiscard]] float value_noise(float x, float y, std::uint64_t seed) {
@@ -73,6 +88,204 @@ constexpr float kDistanceInfinity = 1.0e20F;
     const float noise = fbm(x, y, seed, 4);
     const float ridge = 1.0F - std::abs(noise);
     return ridge * ridge;
+}
+
+[[nodiscard]] float length(Point2 p) {
+    return std::sqrt((p.x * p.x) + (p.y * p.y));
+}
+
+[[nodiscard]] float dot(Point2 a, Point2 b) {
+    return (a.x * b.x) + (a.y * b.y);
+}
+
+[[nodiscard]] float distance(Point2 a, Point2 b) {
+    return length({a.x - b.x, a.y - b.y});
+}
+
+[[nodiscard]] float distance_to_segment(Point2 p, Point2 a, Point2 b) {
+    const Point2 ab{b.x - a.x, b.y - a.y};
+    const float denom = (ab.x * ab.x) + (ab.y * ab.y);
+    const float t = denom <= 0.000001F
+                        ? 0.0F
+                        : saturate((((p.x - a.x) * ab.x) + ((p.y - a.y) * ab.y)) / denom);
+    const Point2 q{a.x + (ab.x * t), a.y + (ab.y * t)};
+    return distance(p, q);
+}
+
+[[nodiscard]] Point2 polar_point(float angle, float radius) {
+    return {std::cos(angle) * radius, std::sin(angle) * radius};
+}
+
+[[nodiscard]] Point2 axis_point(float angle, float axial, float lateral) {
+    const Point2 dir{std::cos(angle), std::sin(angle)};
+    const Point2 normal{-dir.y, dir.x};
+    return {(dir.x * axial) + (normal.x * lateral),
+            (dir.y * axial) + (normal.y * lateral)};
+}
+
+[[nodiscard]] float terrain_axis_angle(const TerrainConfig& config) {
+    return random01(config.seed, 0U, 103U) * kTau;
+}
+
+[[nodiscard]] float terrain_axis_offset(const TerrainConfig& config) {
+    return lerp(-0.13F, 0.13F, random01(config.seed, 0U, 107U));
+}
+
+[[nodiscard]] float radial_island_radius(const TerrainConfig& config) {
+    const float extent_t = saturate((config.land_extent - 0.35F) / (0.90F - 0.35F));
+    return lerp(0.48F, 0.86F, extent_t);
+}
+
+[[nodiscard]] float coastline_land_potential(Point2 p, const TerrainConfig& config) {
+    const float warp_x = fbm(p.x * 1.45F + 7.2F, p.y * 1.45F - 3.1F, config.seed + 17U, 4) *
+                         0.13F;
+    const float warp_y = fbm(p.x * 1.35F - 4.6F, p.y * 1.35F + 8.9F, config.seed + 29U, 4) *
+                         0.13F;
+    const Point2 warped{p.x + warp_x, p.y + warp_y};
+    const float angle = std::atan2(warped.y, warped.x);
+    const float radial_variation =
+        1.0F + (std::sin(angle * 2.0F + random01(config.seed, 2U, 3U) * kTau) * 0.08F) +
+        (std::sin(angle * 5.0F + random01(config.seed, 5U, 7U) * kTau) * 0.045F);
+    const float radius =
+        std::sqrt((warped.x * warped.x * 0.88F) + (warped.y * warped.y * 1.12F)) /
+        std::max(radial_variation, 0.65F);
+    float shape = radial_island_radius(config) - radius;
+
+    for (std::uint32_t index = 0; index < 5U; ++index) {
+        const float angle_offset = (random01(config.seed, index, 11U) - 0.5F) * 0.46F;
+        const float lobe_angle = (static_cast<float>(index) / 5.0F) * kTau + angle_offset;
+        const float center_radius = lerp(0.12F, 0.42F, random01(config.seed, index, 13U));
+        const Point2 center = polar_point(lobe_angle, center_radius);
+        const float lobe_radius = lerp(0.30F, 0.54F, random01(config.seed, index, 17U));
+        const float stretch = lerp(0.78F, 1.34F, random01(config.seed, index, 19U));
+        const Point2 delta{(warped.x - center.x) / (lobe_radius * stretch),
+                           (warped.y - center.y) / (lobe_radius / stretch)};
+        shape = std::max(shape, (1.0F - length(delta)) * lobe_radius * 0.82F);
+    }
+
+    for (std::uint32_t index = 0; index < 3U; ++index) {
+        const float bay_angle =
+            ((static_cast<float>(index) + 0.42F) / 3.0F) * kTau +
+            ((random01(config.seed, index, 23U) - 0.5F) * 0.56F);
+        const float bay_radius = radial_island_radius(config) + lerp(0.00F, 0.16F,
+                                                                     random01(config.seed, index, 29U));
+        const Point2 center = polar_point(bay_angle, bay_radius);
+        const float width = lerp(0.18F, 0.34F, random01(config.seed, index, 31U));
+        const float bay = std::max(0.0F, width - distance(warped, center));
+        shape -= bay * lerp(0.36F, 0.74F, random01(config.seed, index, 37U));
+    }
+
+    for (std::uint32_t index = 0; index < 3U; ++index) {
+        const float islet_angle =
+            (random01(config.seed, index, 41U) * kTau) + static_cast<float>(index) * 0.21F;
+        const float islet_center_radius =
+            radial_island_radius(config) + lerp(0.08F, 0.27F, random01(config.seed, index, 43U));
+        const Point2 center = polar_point(islet_angle, islet_center_radius);
+        const float islet_radius = lerp(0.035F, 0.075F, random01(config.seed, index, 47U));
+        shape = std::max(shape, islet_radius - distance(warped, center));
+    }
+
+    const float coast_noise =
+        (fbm(warped.x * 3.4F + 11.0F, warped.y * 3.4F - 3.0F, config.seed + 41U, 4) *
+         0.28F) +
+        (fbm(warped.x * 9.5F - 7.0F, warped.y * 9.5F + 5.0F, config.seed + 43U, 3) *
+         0.08F);
+    return shape + (coast_noise * config.coast_noise_strength);
+}
+
+[[nodiscard]] float ridge_chain(Point2 p, float angle, float center_s, float center_l,
+                                float half_length, float width, float amplitude, float phase,
+                                float weight, std::uint64_t seed) {
+    const Point2 dir{std::cos(angle), std::sin(angle)};
+    const Point2 normal{-dir.y, dir.x};
+    const Point2 center{(dir.x * center_s) + (normal.x * center_l),
+                        (dir.y * center_s) + (normal.y * center_l)};
+    const Point2 rel{p.x - center.x, p.y - center.y};
+    const float axial = dot(rel, dir);
+    const float lateral = dot(rel, normal);
+    const float t = saturate((axial + half_length) / (half_length * 2.0F));
+    const float centerline =
+        (std::sin((t * kTau) + phase) * amplitude) +
+        (std::sin((t * kTau * 2.15F) + (phase * 0.71F)) * amplitude * 0.38F);
+    const float dist = std::abs(lateral - centerline);
+    const float line = 1.0F - smoothstep(width * 0.18F, width, dist);
+    const float taper = smoothstep(-half_length - 0.07F, -half_length + 0.18F, axial) *
+                        (1.0F - smoothstep(half_length - 0.18F, half_length + 0.07F, axial));
+    const float fracture = 0.34F + (0.66F * smoothstep(0.24F, 0.92F,
+                                                       ridged((axial * 4.2F) + phase,
+                                                              (lateral * 5.7F) - phase, seed + 23U)));
+    const float broken =
+        0.44F + (0.56F * ridged((p.x * 8.2F) + phase, (p.y * 8.2F) - phase, seed));
+    return saturate(line * taper * fracture * broken * weight);
+}
+
+[[nodiscard]] float ridge_field(Point2 p, const TerrainConfig& config) {
+    const float base_angle = terrain_axis_angle(config);
+    const float base_offset = terrain_axis_offset(config);
+    float strength =
+        ridge_chain(p, base_angle, lerp(-0.08F, 0.08F, random01(config.seed, 0U, 109U)),
+                    base_offset, 0.66F, 0.066F,
+                    lerp(0.035F, 0.085F, random01(config.seed, 0U, 113U)),
+                    random01(config.seed, 0U, 127U) * kTau, 0.96F, config.seed + 400U);
+
+    for (std::uint32_t index = 0; index < 3U; ++index) {
+        const float side = index == 0U ? -1.0F : 1.0F;
+        const float angle = base_angle + (side * lerp(0.48F, 1.04F,
+                                                       random01(config.seed, index, 131U))) +
+                            ((random01(config.seed, index, 137U) - 0.5F) * 0.24F);
+        const float center_s = lerp(-0.46F, 0.46F, random01(config.seed, index, 139U));
+        const float center_l =
+            base_offset + (side * lerp(0.10F, 0.28F, random01(config.seed, index, 149U)));
+        const float branch =
+            ridge_chain(p, angle, center_s, center_l,
+                        lerp(0.28F, 0.46F, random01(config.seed, index, 151U)),
+                        lerp(0.038F, 0.058F, random01(config.seed, index, 157U)),
+                        lerp(0.020F, 0.060F, random01(config.seed, index, 163U)),
+                        random01(config.seed, index, 167U) * kTau,
+                        lerp(0.34F, 0.56F, random01(config.seed, index, 173U)),
+                        config.seed + 500U + index);
+        strength = std::max(strength, branch);
+    }
+
+    const float rough_highland =
+        ridged(p.x * 2.4F + 3.1F, p.y * 2.4F - 8.7F, config.seed + 577U) *
+        smoothstep(0.78F, 0.18F, length(p)) * 0.18F;
+    strength = std::max(strength, rough_highland);
+    return strength;
+}
+
+[[nodiscard]] float valley_field(Point2 p, const TerrainConfig& config) {
+    const float base_angle = terrain_axis_angle(config);
+    const float base_offset = terrain_axis_offset(config);
+    float strength = 0.0F;
+    for (std::uint32_t index = 0; index < 7U; ++index) {
+        const float source_s = lerp(-0.58F, 0.58F, random01(config.seed, index, 601U));
+        const float source_l =
+            base_offset + lerp(-0.15F, 0.15F, random01(config.seed, index, 607U));
+        const Point2 start = axis_point(base_angle, source_s, source_l);
+        const float outlet_angle =
+            std::atan2(start.y, start.x) + ((random01(config.seed, index, 613U) - 0.5F) * 1.08F);
+        const Point2 end =
+            polar_point(outlet_angle, lerp(0.70F, 0.96F, random01(config.seed, index, 617U)));
+        const Point2 delta{end.x - start.x, end.y - start.y};
+        const float delta_length = std::max(length(delta), 0.001F);
+        const Point2 side{-delta.y / delta_length, delta.x / delta_length};
+        const float bend_t = lerp(0.40F, 0.66F, random01(config.seed, index, 619U));
+        const float bend_offset = lerp(-0.16F, 0.16F, random01(config.seed, index, 631U));
+        const Point2 bend{start.x + (delta.x * bend_t) + (side.x * bend_offset),
+                          start.y + (delta.y * bend_t) + (side.y * bend_offset)};
+        const float width = lerp(0.024F, 0.054F, random01(config.seed, index, 641U));
+        const float dist =
+            std::min(distance_to_segment(p, start, bend), distance_to_segment(p, bend, end));
+        const float line = 1.0F - smoothstep(width * 0.12F, width, dist);
+        const float downstream = smoothstep(0.06F, 0.24F, distance(p, start));
+        const float meander =
+            0.70F + (0.30F * fbm(p.x * 7.2F + static_cast<float>(index) * 3.0F,
+                                 p.y * 7.2F - static_cast<float>(index) * 2.0F,
+                                 config.seed + 700U + index, 3));
+        strength = std::max(strength, line * downstream * meander);
+    }
+    return strength;
 }
 
 [[nodiscard]] std::vector<float> squared_distance_to_mask(const std::vector<bool>& mask,
@@ -205,8 +418,13 @@ TerrainFieldData generate_terrain_fields(const TerrainConfig& config) {
     fields.shore_sdf_m.resize(count);
     fields.slope.resize(count);
     fields.material_masks.resize(count);
+    fields.land_potential.resize(count);
+    fields.inland.resize(count);
+    fields.ridge_strength.resize(count);
+    fields.valley_strength.resize(count);
 
     std::vector<bool> land_mask(count, false);
+    std::size_t land_count = 0;
     for (std::uint32_t y = 0; y < fields.desc.height; ++y) {
         const float v = fields.desc.height == 1U
                             ? 0.0F
@@ -216,19 +434,17 @@ TerrainFieldData generate_terrain_fields(const TerrainConfig& config) {
                 fields.desc.width == 1U
                     ? 0.0F
                     : (static_cast<float>(x) / static_cast<float>(fields.desc.width - 1U));
-            float px = (u * 2.0F) - 1.0F;
-            float py = (v * 2.0F) - 1.0F;
-            px += value_noise(px * 1.8F, py * 1.8F, config.seed + 17U) * 0.06F;
-            py += value_noise(px * 1.6F + 9.2F, py * 1.6F - 4.7F, config.seed + 29U) * 0.06F;
-            const float radius = std::sqrt((px * px * 0.86F) + (py * py * 1.18F));
-            const float island = 1.0F - std::pow(radius, 2.35F);
-            const float coast_noise =
-                fbm(px * 2.4F + 11.0F, py * 2.4F - 3.0F, config.seed + 41U, 4);
-            const float land_potential =
-                island - (1.0F - config.land_extent) +
-                (coast_noise * config.coast_noise_strength);
-            land_mask[fields.index(x, y)] = land_potential >= 0.0F;
+            const Point2 p{(u * 2.0F) - 1.0F, (v * 2.0F) - 1.0F};
+            const std::size_t sample = fields.index(x, y);
+            fields.land_potential[sample] = coastline_land_potential(p, config);
+            land_mask[sample] = fields.land_potential[sample] >= 0.0F;
+            if (land_mask[sample]) {
+                ++land_count;
+            }
         }
+    }
+    if (land_count == 0U || land_count == count) {
+        throw std::runtime_error("terrain generator produced degenerate land coverage");
     }
 
     const std::vector<float> squared_to_water =
@@ -239,10 +455,18 @@ TerrainFieldData generate_terrain_fields(const TerrainConfig& config) {
     fields.min_height_m = std::numeric_limits<float>::max();
     fields.max_height_m = std::numeric_limits<float>::lowest();
     for (std::uint32_t y = 0; y < fields.desc.height; ++y) {
+        const float v = fields.desc.height == 1U
+                            ? 0.0F
+                            : (static_cast<float>(y) / static_cast<float>(fields.desc.height - 1U));
         const float z =
             (static_cast<float>(y) - (static_cast<float>(fields.desc.height - 1U) * 0.5F)) *
             fields.desc.cell_size_m;
         for (std::uint32_t x = 0; x < fields.desc.width; ++x) {
+            const float u =
+                fields.desc.width == 1U
+                    ? 0.0F
+                    : (static_cast<float>(x) / static_cast<float>(fields.desc.width - 1U));
+            const Point2 p{(u * 2.0F) - 1.0F, (v * 2.0F) - 1.0F};
             const float world_x =
                 (static_cast<float>(x) - (static_cast<float>(fields.desc.width - 1U) * 0.5F)) *
                 fields.desc.cell_size_m;
@@ -255,32 +479,57 @@ TerrainFieldData generate_terrain_fields(const TerrainConfig& config) {
             fields.shore_sdf_m[sample] = shore_sdf;
             fields.max_abs_shore_sdf_m = std::max(fields.max_abs_shore_sdf_m, std::abs(shore_sdf));
 
-            const float nx = world_x / 280.0F;
-            const float nz = z / 280.0F;
+            const float inland = land ? smoothstep(10.0F, 260.0F, shore_sdf) : 0.0F;
+            fields.inland[sample] = inland;
+            fields.ridge_strength[sample] =
+                land ? ridge_field(p, config) * smoothstep(44.0F, 230.0F, shore_sdf) *
+                           std::clamp(config.ridge_scale, 0.0F, 2.0F)
+                     : 0.0F;
+            fields.valley_strength[sample] =
+                land ? valley_field(p, config) * smoothstep(20.0F, 210.0F, shore_sdf) *
+                           std::clamp(config.valley_scale, 0.0F, 2.0F)
+                     : 0.0F;
+
+            const float nx = world_x / 360.0F;
+            const float nz = z / 360.0F;
             float height = fields.desc.sea_level_m;
             if (land) {
-                const float coast = smoothstep(0.0F, 58.0F, shore_sdf);
-                const float inland = smoothstep(42.0F, 185.0F, shore_sdf);
-                const float interior = smoothstep(96.0F, 250.0F, shore_sdf);
-                const float broad = fbm(nx * 1.15F, nz * 1.15F, config.seed + 101U, 5) *
-                                    18.0F * config.relief_scale;
+                const float coast = smoothstep(0.0F, 76.0F, shore_sdf);
+                const float broad =
+                    fbm(nx * 1.55F + 1.3F, nz * 1.55F - 8.1F, config.seed + 101U, 5) *
+                    18.0F * config.relief_scale * (0.28F + (0.72F * inland));
+                const float detail =
+                    fbm(nx * 5.2F - 6.0F, nz * 5.2F + 4.0F, config.seed + 151U, 4) *
+                    4.8F * config.relief_scale * inland;
+                const float foothills =
+                    ridged(nx * 1.85F - 2.5F, nz * 1.85F + 6.2F, config.seed + 233U) *
+                    12.0F * config.relief_scale * inland *
+                    (1.0F - (saturate(fields.ridge_strength[sample]) * 0.48F));
                 const float ridge =
-                    ridged(nx * 1.85F + 8.0F, nz * 1.85F - 5.0F, config.seed + 211U) *
-                    58.0F * inland * config.ridge_scale;
-                height = fields.desc.sea_level_m + 0.18F +
-                         (coast * 14.0F * config.relief_scale) +
-                         (inland * ((38.0F * config.relief_scale) + broad + ridge)) +
-                         (interior * 18.0F * config.relief_scale);
+                    std::pow(saturate(fields.ridge_strength[sample]), 1.40F) * 48.0F *
+                    config.relief_scale;
+                const float broken_ridge =
+                    ridged(nx * 3.1F + 8.0F, nz * 3.1F - 5.0F, config.seed + 211U) *
+                    13.0F * config.relief_scale *
+                    saturate((fields.ridge_strength[sample] * 0.72F) + (inland * 0.18F));
+                const float valley_cut =
+                    fields.valley_strength[sample] * (8.0F + (42.0F * inland)) *
+                    config.relief_scale;
+                height = fields.desc.sea_level_m + 0.22F +
+                         (coast * 8.5F * config.relief_scale) +
+                         (std::pow(inland, 0.68F) * 42.0F * config.relief_scale) + broad +
+                         detail + foothills + ridge + broken_ridge - valley_cut;
+                height = std::max(height, fields.desc.sea_level_m + 0.12F + (coast * 1.6F));
             } else {
                 const float depth_distance = -shore_sdf;
-                const float near = smoothstep(0.0F, 96.0F, depth_distance);
-                const float shelf = smoothstep(110.0F, 420.0F, depth_distance);
-                const float abyss = smoothstep(420.0F, 880.0F, depth_distance);
+                const float near = smoothstep(0.0F, 104.0F, depth_distance);
+                const float shelf = smoothstep(96.0F, 420.0F, depth_distance);
+                const float abyss = smoothstep(420.0F, 920.0F, depth_distance);
                 const float seabed =
-                    fbm(nx * 0.8F - 3.0F, nz * 0.8F + 5.0F, config.seed + 307U, 4) *
-                    (4.0F + (shelf * 8.0F));
+                    fbm(nx * 0.86F - 3.0F, nz * 0.86F + 5.0F, config.seed + 307U, 4) *
+                    (3.2F + (shelf * 7.4F));
                 const float depth =
-                    0.25F + (near * 13.0F) + (shelf * 54.0F) + (abyss * 120.0F) + seabed;
+                    0.25F + (near * 10.0F) + (shelf * 48.0F) + (abyss * 128.0F) + seabed;
                 height = fields.desc.sea_level_m - std::max(depth, 0.5F);
             }
 
@@ -311,22 +560,27 @@ TerrainFieldData generate_terrain_fields(const TerrainConfig& config) {
             const float slope = std::sqrt((dhdx * dhdx) + (dhdz * dhdz));
             fields.slope[sample] = slope;
 
-            const float height = fields.height_m[sample];
+            const float height = fields.height_m[sample] - fields.desc.sea_level_m;
             const float water_depth = fields.water_depth_m[sample];
             const float shore = std::abs(fields.shore_sdf_m[sample]);
             const bool underwater = water_depth > 0.0F;
-            const float low_slope = 1.0F - smoothstep(0.12F, 0.55F, slope);
-            const float steep = smoothstep(0.34F, 1.05F, slope);
+            const float low_slope = 1.0F - smoothstep(0.10F, 0.46F, slope);
+            const float steep = smoothstep(0.28F, 0.90F, slope);
+            const float high = smoothstep(60.0F, 128.0F, height);
+            const float beach_band = (1.0F - smoothstep(20.0F, 86.0F, shore)) * low_slope;
+            const float valley_moisture = saturate(fields.valley_strength[sample] * 1.45F);
+            const float ridge_exposure =
+                std::pow(saturate(fields.ridge_strength[sample] * 0.94F), 1.36F);
             const float land = underwater ? 0.0F : 1.0F;
-            const float sand = land * low_slope * (1.0F - smoothstep(16.0F, 68.0F, shore)) *
-                               (1.0F - smoothstep(30.0F, 72.0F, height));
-            const float rock = land * std::max(steep * 0.85F, smoothstep(78.0F, 145.0F, height));
-            const float vegetation = land * (1.0F - (steep * 0.85F)) *
-                                     smoothstep(8.0F, 26.0F, height) *
-                                     (1.0F - smoothstep(120.0F, 175.0F, height)) *
-                                     smoothstep(22.0F, 105.0F, shore);
+            const float sand = land * beach_band * (1.0F - smoothstep(26.0F, 70.0F, height));
+            const float rock =
+                land * std::max(std::max(steep * 0.80F, ridge_exposure * 0.48F), high * 0.62F);
+            const float vegetation =
+                land * (1.0F - (steep * 0.78F)) * (1.0F - (ridge_exposure * 0.55F)) *
+                smoothstep(7.0F, 24.0F, height) * (1.0F - smoothstep(118.0F, 170.0F, height)) *
+                (0.64F + (0.46F * valley_moisture)) * smoothstep(18.0F, 92.0F, shore);
             const float sediment =
-                (underwater ? 1.0F : 0.0F) * low_slope * smoothstep(2.0F, 28.0F, water_depth);
+                (underwater ? 1.0F : 0.0F) * low_slope * smoothstep(2.0F, 32.0F, water_depth);
             fields.material_masks[sample] =
                 normalized_mask(sand, rock, vegetation, sediment, underwater);
         }
