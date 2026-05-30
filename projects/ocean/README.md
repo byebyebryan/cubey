@@ -9,6 +9,9 @@ refraction, or seafloor shading are reintroduced.
 GodotOceanWaves is MIT licensed; the required notice is kept in
 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
+Known-good fallback before the LOD data/domain architecture work:
+`ocean-known-good-material-v1` (`400d45c`).
+
 Run a still capture:
 
 ```sh
