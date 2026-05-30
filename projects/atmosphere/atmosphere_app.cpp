@@ -55,9 +55,12 @@ struct AtmospherePushConstants {
     cubey::math::Vec4 atmosphere_options;
     cubey::math::Vec4 night_options;
     cubey::math::Vec4 celestial_options;
+    cubey::math::Vec4 moon_direction_radius;
+    cubey::math::Vec4 moon_options;
+    cubey::math::Vec4 moon_phase_options;
 };
 
-static_assert(sizeof(AtmospherePushConstants) == sizeof(float) * 48U);
+static_assert(sizeof(AtmospherePushConstants) == sizeof(float) * 60U);
 
 std::filesystem::path shader_path(const char* filename) {
     return std::filesystem::path(CUBEY_ATMOSPHERE_SHADER_DIR) / filename;
@@ -289,6 +292,8 @@ class AtmosphereApp {
         const float sidereal_angle =
             atmosphere_sidereal_angle_radians(atmosphere_config_.time_of_day);
         const float latitude = radians(atmosphere_config_.time_of_day.latitude_degrees);
+        const LunarState lunar_state =
+            atmosphere_lunar_state(atmosphere_config_.time_of_day, atmosphere_config_.moon);
         const cubey::render::PbrDisplayTransform display_transform =
             cubey::render::pbr_display_transform_for_target(pipeline_color_format_,
                                                             atmosphere_config_.exposure);
@@ -362,6 +367,27 @@ class AtmosphereApp {
                     std::sin(sidereal_angle),
                     std::sin(latitude),
                     std::cos(latitude),
+                },
+            .moon_direction_radius =
+                {
+                    lunar_state.direction.x,
+                    lunar_state.direction.y,
+                    lunar_state.direction.z,
+                    lunar_state.angular_radius,
+                },
+            .moon_options =
+                {
+                    atmosphere_config_.moon.enabled ? 1.0F : 0.0F,
+                    atmosphere_config_.moon.disk_intensity,
+                    atmosphere_config_.moon.moonlight_intensity,
+                    lunar_state.illumination,
+                },
+            .moon_phase_options =
+                {
+                    lunar_state.phase_fraction,
+                    std::sin(lunar_state.phase_fraction * 2.0F * std::numbers::pi_v<float>),
+                    0.0F,
+                    0.0F,
                 },
         };
     }

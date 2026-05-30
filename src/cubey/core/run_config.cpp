@@ -342,6 +342,22 @@ RunConfig parse_run_config(int argc, char** argv) {
         } else if (arg == "--star-density") {
             config.atmosphere.star_density =
                 parse_float(need_value("--star-density"), "--star-density");
+        } else if (arg == "--moon-intensity") {
+            config.atmosphere.moon_intensity =
+                parse_float(need_value("--moon-intensity"), "--moon-intensity");
+        } else if (arg == "--moonlight-intensity") {
+            config.atmosphere.moonlight_intensity =
+                parse_float(need_value("--moonlight-intensity"), "--moonlight-intensity");
+        } else if (arg == "--moon-phase-offset-days") {
+            config.atmosphere.moon_phase_offset_days =
+                parse_float(need_value("--moon-phase-offset-days"), "--moon-phase-offset-days");
+        } else if (arg == "--moon-size-scale") {
+            config.atmosphere.moon_size_scale =
+                parse_float(need_value("--moon-size-scale"), "--moon-size-scale");
+        } else if (arg == "--moon") {
+            config.atmosphere.moon = 1;
+        } else if (arg == "--no-moon") {
+            config.atmosphere.moon = 0;
         } else if (arg == "--animation-index") {
             config.gltf.animation_index =
                 parse_u32(need_value("--animation-index"), "--animation-index");
@@ -421,6 +437,20 @@ RunConfig parse_run_config(int argc, char** argv) {
     }
     if (config.atmosphere.star_density < 0.0F || config.atmosphere.star_density > 1.0F) {
         throw std::runtime_error("atmosphere star density must be in [0, 1]");
+    }
+    if (config.atmosphere.moon_intensity < 0.0F || config.atmosphere.moon_intensity > 4.0F) {
+        throw std::runtime_error("atmosphere moon intensity must be in [0, 4]");
+    }
+    if (config.atmosphere.moonlight_intensity < 0.0F ||
+        config.atmosphere.moonlight_intensity > 4.0F) {
+        throw std::runtime_error("atmosphere moonlight intensity must be in [0, 4]");
+    }
+    if (config.atmosphere.moon_phase_offset_days < 0.0F ||
+        config.atmosphere.moon_phase_offset_days > 29.530588F) {
+        throw std::runtime_error("atmosphere moon phase offset must be in [0, 29.530588]");
+    }
+    if (config.atmosphere.moon_size_scale <= 0.0F || config.atmosphere.moon_size_scale > 8.0F) {
+        throw std::runtime_error("atmosphere moon size scale must be in (0, 8]");
     }
     if (config.smoke.dye_decay < 0.0F || config.smoke.dye_decay > 1.0F) {
         throw std::runtime_error("smoke dye decay must be in [0, 1]");

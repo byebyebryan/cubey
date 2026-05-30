@@ -99,6 +99,18 @@ if (BUILD_TESTING)
         night
     )
 
+    set(CUBEY_ATMOSPHERE_MOONLIT_SMOKE_OUTPUT
+        "${CMAKE_CURRENT_BINARY_DIR}/atmosphere-moonlit.png"
+    )
+    cubey_add_png_smoke_test(
+        atmosphere_moonlit_writes_png
+        cubey_project_atmosphere
+        "${CUBEY_ATMOSPHERE_MOONLIT_SMOKE_OUTPUT}"
+        --headless
+        --atmosphere-preset
+        moonlit-night
+    )
+
     set(CUBEY_ATMOSPHERE_TRANSMITTANCE_SMOKE_OUTPUT
         "${CMAKE_CURRENT_BINARY_DIR}/atmosphere-transmittance.png"
     )

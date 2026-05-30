@@ -129,8 +129,13 @@ struct RunConfig {
         float twilight_horizon_warmth = kRunConfigUnsetFloat;
         float star_intensity = kRunConfigUnsetFloat;
         float star_density = kRunConfigUnsetFloat;
+        float moon_intensity = kRunConfigUnsetFloat;
+        float moonlight_intensity = kRunConfigUnsetFloat;
+        float moon_phase_offset_days = kRunConfigUnsetFloat;
+        float moon_size_scale = kRunConfigUnsetFloat;
         int time_paused = -1;
         int auto_exposure = -1;
+        int moon = -1;
     };
 
     std::string title = "cubey";

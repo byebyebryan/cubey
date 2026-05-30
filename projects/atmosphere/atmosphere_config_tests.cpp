@@ -61,7 +61,9 @@ int main() {
                 AtmosphereRenderView::NightSky,
             "atmosphere render view cycle should include night sky after aerial perspective");
     require(next_atmosphere_render_view(AtmosphereRenderView::NightSky) ==
-                AtmosphereRenderView::Final,
+                AtmosphereRenderView::Moon,
+            "atmosphere render view cycle should include moon after night sky");
+    require(next_atmosphere_render_view(AtmosphereRenderView::Moon) == AtmosphereRenderView::Final,
             "atmosphere render view cycle should wrap");
     require_throws([] { static_cast<void>(atmosphere_render_view_from_name("density")); },
                    "atmosphere render view parser should reject unknown views");
@@ -91,6 +93,17 @@ int main() {
             "high-altitude preset should move the camera upward");
     require(atmosphere_config_for_preset(AtmospherePreset::Night).time_of_day.time_hours == 0.0F,
             "night preset should start at midnight");
+    require(atmosphere_config_for_preset(AtmospherePreset::MoonlitNight).moon.moonlight_intensity >
+                atmosphere_config_for_preset(AtmospherePreset::Night).moon.moonlight_intensity,
+            "moonlit night preset should increase moonlight");
+    {
+        const AtmosphereConfig moonlit =
+            atmosphere_config_for_preset(AtmospherePreset::MoonlitNight);
+        const LunarState moonlit_moon = atmosphere_lunar_state(moonlit.time_of_day, moonlit.moon);
+        require(std::abs(moonlit_moon.direction.x) < 0.02F && moonlit_moon.direction.y > 0.20F &&
+                    moonlit_moon.direction.y < 0.35F,
+                "moonlit night preset should place the moon in the default horizon view");
+    }
     require_throws([] { static_cast<void>(atmosphere_preset_from_name("storm")); },
                    "atmosphere preset parser should reject unknown presets");
 
@@ -112,6 +125,10 @@ int main() {
                 defaults.night_sky.star_intensity > 0.0F &&
                 defaults.night_sky.star_density > 0.0F && defaults.night_sky.star_density <= 1.0F,
             "default atmosphere config should include night sky controls");
+    require(defaults.moon.enabled && defaults.moon.disk_intensity > 0.0F &&
+                defaults.moon.moonlight_intensity > 0.0F &&
+                defaults.moon.phase_offset_days > 0.0F && defaults.moon.angular_radius_scale > 0.0F,
+            "default atmosphere config should include moon controls");
 
     {
         TimeOfDayConfig solar_noon;
@@ -177,6 +194,29 @@ int main() {
                      "sidereal angle should advance between solar days");
     }
     {
+        TimeOfDayConfig lunar_time;
+        lunar_time.time_hours = 0.0F;
+        lunar_time.day_of_year = 80.0F;
+        lunar_time.latitude_degrees = 30.0F;
+        MoonConfig full_moon;
+        full_moon.phase_offset_days = 14.765294F;
+        const LunarState full_state = atmosphere_lunar_state(lunar_time, full_moon);
+        require_near(full_state.phase_fraction, 0.5F, 0.001F,
+                     "full moon phase fraction should be near half a lunar cycle");
+        require_near(full_state.illumination, 1.0F, 0.001F,
+                     "full moon illumination should be near one");
+        require(full_state.direction.y > 0.4F,
+                "full moon should be above the horizon near midnight for default latitude");
+
+        MoonConfig new_moon;
+        new_moon.phase_offset_days = 0.0F;
+        const LunarState new_state = atmosphere_lunar_state(lunar_time, new_moon);
+        require_near(new_state.phase_fraction, 0.0F, 0.001F,
+                     "new moon phase fraction should start the lunar cycle");
+        require_near(new_state.illumination, 0.0F, 0.001F,
+                     "new moon illumination should be near zero");
+    }
+    {
         require(atmosphere_auto_exposure(2.0F, 0.0F) > atmosphere_auto_exposure(60.0F, 0.0F),
                 "auto exposure should brighten low sun relative to daylight");
         require(atmosphere_auto_exposure(-20.0F, 0.0F) > atmosphere_auto_exposure(-6.0F, 0.0F),
@@ -210,9 +250,15 @@ int main() {
                        "atmosphere config should reject invalid night sky controls");
     }
     {
+        AtmosphereConfig invalid = defaults;
+        invalid.moon.angular_radius_scale = 0.0F;
+        require_throws([&invalid] { validate_atmosphere_config(invalid); },
+                       "atmosphere config should reject invalid moon controls");
+    }
+    {
         cubey::RunConfig run_config;
         run_config.atmosphere.preset = "sunset";
-        run_config.debug_view = "night-sky";
+        run_config.debug_view = "moon";
         run_config.atmosphere.sun_elevation_degrees = 6.0F;
         run_config.atmosphere.sun_azimuth_degrees = 33.0F;
         run_config.atmosphere.camera_altitude_km = 2.0F;
@@ -221,10 +267,15 @@ int main() {
         run_config.atmosphere.twilight_horizon_warmth = 0.80F;
         run_config.atmosphere.star_intensity = 1.70F;
         run_config.atmosphere.star_density = 0.40F;
+        run_config.atmosphere.moon = 0;
+        run_config.atmosphere.moon_intensity = 1.25F;
+        run_config.atmosphere.moonlight_intensity = 1.50F;
+        run_config.atmosphere.moon_phase_offset_days = 7.25F;
+        run_config.atmosphere.moon_size_scale = 1.75F;
         AtmosphereConfig config = atmosphere_config_from_run_config(run_config);
         require(config.preset == AtmospherePreset::Sunset,
                 "run config should select atmosphere preset");
-        require(config.render_view == AtmosphereRenderView::NightSky,
+        require(config.render_view == AtmosphereRenderView::Moon,
                 "run config should select atmosphere debug view");
         require(config.sun_elevation_degrees == 6.0F && config.sun_azimuth_degrees == 33.0F &&
                     config.camera_altitude_km == 2.0F && config.mie_density_scale == 2.25F,
@@ -234,6 +285,11 @@ int main() {
                     config.night_sky.star_intensity == 1.70F &&
                     config.night_sky.star_density == 0.40F,
                 "run config night sky overrides should win over preset defaults");
+        require(!config.moon.enabled && config.moon.disk_intensity == 1.25F &&
+                    config.moon.moonlight_intensity == 1.50F &&
+                    config.moon.phase_offset_days == 7.25F &&
+                    config.moon.angular_radius_scale == 1.75F,
+                "run config moon overrides should win over preset defaults");
         require(config.time_of_day.mode == SunControlMode::ManualSun,
                 "manual sun overrides should force manual sun mode");
         require(!config.time_of_day.auto_exposure_enabled,
@@ -276,7 +332,7 @@ int main() {
     const std::string shader_source = read_text_file(source_root / "shaders/atmosphere.frag");
     require_contains(app_source, "static_assert(sizeof(AtmospherePushConstants)",
                      "atmosphere app should lock push constant size");
-    require_contains(app_source, "sizeof(float) * 48U",
+    require_contains(app_source, "sizeof(float) * 60U",
                      "atmosphere app should include celestial push constants");
     require_contains(shader_source, "rayleigh_phase",
                      "atmosphere shader should include Rayleigh phase");
@@ -305,6 +361,10 @@ int main() {
                      "atmosphere shader should receive celestial rotation options");
     require_contains(shader_source, "debug_view == 7",
                      "atmosphere shader should include night sky debug output");
+    require_contains(shader_source, "moon_disk_radiance",
+                     "atmosphere shader should include moon disk radiance");
+    require_contains(shader_source, "debug_view == 8",
+                     "atmosphere shader should include moon debug output");
     require_contains(shader_source, "ground_reference_geometry",
                      "atmosphere shader should include ground reference geometry");
     require_contains(shader_source, "reference_line",

@@ -228,7 +228,16 @@ void test_run_config_parses_atmosphere_options() {
     std::string star_intensity_value = "1.7";
     std::string star_density_flag = "--star-density";
     std::string star_density_value = "0.4";
-    std::array<char*, 35> argv{program.data(),
+    std::string moon_intensity_flag = "--moon-intensity";
+    std::string moon_intensity_value = "1.2";
+    std::string moonlight_intensity_flag = "--moonlight-intensity";
+    std::string moonlight_intensity_value = "1.4";
+    std::string moon_phase_offset_flag = "--moon-phase-offset-days";
+    std::string moon_phase_offset_value = "7.5";
+    std::string moon_size_scale_flag = "--moon-size-scale";
+    std::string moon_size_scale_value = "1.8";
+    std::string no_moon_flag = "--no-moon";
+    std::array<char*, 44> argv{program.data(),
                                preset_flag.data(),
                                preset_value.data(),
                                elevation_flag.data(),
@@ -262,7 +271,16 @@ void test_run_config_parses_atmosphere_options() {
                                star_intensity_flag.data(),
                                star_intensity_value.data(),
                                star_density_flag.data(),
-                               star_density_value.data()};
+                               star_density_value.data(),
+                               moon_intensity_flag.data(),
+                               moon_intensity_value.data(),
+                               moonlight_intensity_flag.data(),
+                               moonlight_intensity_value.data(),
+                               moon_phase_offset_flag.data(),
+                               moon_phase_offset_value.data(),
+                               moon_size_scale_flag.data(),
+                               moon_size_scale_value.data(),
+                               no_moon_flag.data()};
 
     const cubey::RunConfig config =
         cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
@@ -292,6 +310,13 @@ void test_run_config_parses_atmosphere_options() {
             "run config should parse twilight horizon warmth");
     require(config.atmosphere.star_intensity == 1.7F, "run config should parse star intensity");
     require(config.atmosphere.star_density == 0.4F, "run config should parse star density");
+    require(config.atmosphere.moon_intensity == 1.2F, "run config should parse moon intensity");
+    require(config.atmosphere.moonlight_intensity == 1.4F,
+            "run config should parse moonlight intensity");
+    require(config.atmosphere.moon_phase_offset_days == 7.5F,
+            "run config should parse moon phase offset");
+    require(config.atmosphere.moon_size_scale == 1.8F, "run config should parse moon size scale");
+    require(config.atmosphere.moon == 0, "run config should parse moon disable flag");
 }
 
 void test_run_config_rejects_invalid_atmosphere_options() {
@@ -389,6 +414,26 @@ void test_run_config_rejects_invalid_atmosphere_options() {
         require_throws(
             [&argv]() { cubey::parse_run_config(static_cast<int>(argv.size()), argv.data()); },
             "run config should reject invalid twilight horizon warmth");
+    }
+    {
+        std::string program = "cubey";
+        std::string moon_phase_offset_flag = "--moon-phase-offset-days";
+        std::string moon_phase_offset_value = "30";
+        std::array<char*, 3> argv{program.data(), moon_phase_offset_flag.data(),
+                                  moon_phase_offset_value.data()};
+        require_throws(
+            [&argv]() { cubey::parse_run_config(static_cast<int>(argv.size()), argv.data()); },
+            "run config should reject invalid moon phase offset");
+    }
+    {
+        std::string program = "cubey";
+        std::string moon_size_scale_flag = "--moon-size-scale";
+        std::string moon_size_scale_value = "0";
+        std::array<char*, 3> argv{program.data(), moon_size_scale_flag.data(),
+                                  moon_size_scale_value.data()};
+        require_throws(
+            [&argv]() { cubey::parse_run_config(static_cast<int>(argv.size()), argv.data()); },
+            "run config should reject invalid moon size scale");
     }
 }
 

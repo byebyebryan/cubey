@@ -22,12 +22,13 @@ enum class AtmospherePreset : std::uint32_t {
     ThinAir = 4,
     HighAltitude = 5,
     Night = 6,
+    MoonlitNight = 7,
 };
 
-inline constexpr std::array<AtmospherePreset, 7> kAtmospherePresets{
-    AtmospherePreset::Noon,  AtmospherePreset::LowSun,  AtmospherePreset::Sunset,
-    AtmospherePreset::Hazy,  AtmospherePreset::ThinAir, AtmospherePreset::HighAltitude,
-    AtmospherePreset::Night,
+inline constexpr std::array<AtmospherePreset, 8> kAtmospherePresets{
+    AtmospherePreset::Noon,  AtmospherePreset::LowSun,       AtmospherePreset::Sunset,
+    AtmospherePreset::Hazy,  AtmospherePreset::ThinAir,      AtmospherePreset::HighAltitude,
+    AtmospherePreset::Night, AtmospherePreset::MoonlitNight,
 };
 
 enum class AtmosphereRenderView : std::uint32_t {
@@ -39,9 +40,10 @@ enum class AtmosphereRenderView : std::uint32_t {
     SunDisk = 5,
     AerialPerspective = 6,
     NightSky = 7,
+    Moon = 8,
 };
 
-inline constexpr std::array<AtmosphereRenderView, 8> kAtmosphereRenderViews{
+inline constexpr std::array<AtmosphereRenderView, 9> kAtmosphereRenderViews{
     AtmosphereRenderView::Final,
     AtmosphereRenderView::Rayleigh,
     AtmosphereRenderView::Mie,
@@ -50,6 +52,7 @@ inline constexpr std::array<AtmosphereRenderView, 8> kAtmosphereRenderViews{
     AtmosphereRenderView::SunDisk,
     AtmosphereRenderView::AerialPerspective,
     AtmosphereRenderView::NightSky,
+    AtmosphereRenderView::Moon,
 };
 
 enum class SunControlMode : std::uint32_t {
@@ -81,11 +84,20 @@ struct NightSkyConfig {
     float star_density = 0.65F;
 };
 
+struct MoonConfig {
+    bool enabled = true;
+    float disk_intensity = 1.0F;
+    float moonlight_intensity = 1.0F;
+    float phase_offset_days = 14.765F;
+    float angular_radius_scale = 1.0F;
+};
+
 struct AtmosphereConfig {
     AtmospherePreset preset = AtmospherePreset::Noon;
     AtmosphereRenderView render_view = AtmosphereRenderView::Final;
     TimeOfDayConfig time_of_day{};
     NightSkyConfig night_sky{};
+    MoonConfig moon{};
 
     float bottom_radius_km = 6371.0F;
     float top_radius_km = 6471.0F;
@@ -119,6 +131,13 @@ struct SolarPosition {
     float azimuth_degrees = 0.0F;
 };
 
+struct LunarState {
+    cubey::math::Vec3 direction{0.0F, 1.0F, 0.0F};
+    float phase_fraction = 0.5F;
+    float illumination = 1.0F;
+    float angular_radius = 0.00452F;
+};
+
 [[nodiscard]] inline const char* atmosphere_preset_name(AtmospherePreset preset) {
     switch (preset) {
     case AtmospherePreset::Noon:
@@ -135,6 +154,8 @@ struct SolarPosition {
         return "high-altitude";
     case AtmospherePreset::Night:
         return "night";
+    case AtmospherePreset::MoonlitNight:
+        return "moonlit-night";
     }
     return "noon";
 }
@@ -169,6 +190,8 @@ struct SolarPosition {
         return "aerial-perspective";
     case AtmosphereRenderView::NightSky:
         return "night-sky";
+    case AtmosphereRenderView::Moon:
+        return "moon";
     }
     return "final";
 }
@@ -245,6 +268,14 @@ struct SolarPosition {
     return t * t * (3.0F - 2.0F * t);
 }
 
+[[nodiscard]] inline float atmosphere_wrap_unit(float value) {
+    float wrapped = std::fmod(value, 1.0F);
+    if (wrapped < 0.0F) {
+        wrapped += 1.0F;
+    }
+    return wrapped;
+}
+
 [[nodiscard]] inline SolarPosition atmosphere_solar_position(const TimeOfDayConfig& time_of_day) {
     const float day_angle =
         atmosphere_degrees_to_radians((360.0F / 365.0F) * (time_of_day.day_of_year - 80.0F));
@@ -265,6 +296,45 @@ struct SolarPosition {
     return {
         .elevation_degrees = atmosphere_radians_to_degrees(elevation),
         .azimuth_degrees = std::clamp(azimuth, -360.0F, 360.0F),
+    };
+}
+
+[[nodiscard]] inline cubey::math::Vec3 atmosphere_direction_from_alt_az(float elevation_degrees,
+                                                                        float azimuth_degrees) {
+    const float elevation = atmosphere_degrees_to_radians(elevation_degrees);
+    const float azimuth = atmosphere_degrees_to_radians(azimuth_degrees);
+    const float horizontal = std::cos(elevation);
+    return {
+        horizontal * std::sin(azimuth),
+        std::sin(elevation),
+        -horizontal * std::cos(azimuth),
+    };
+}
+
+[[nodiscard]] inline LunarState atmosphere_lunar_state(const TimeOfDayConfig& time_of_day,
+                                                       const MoonConfig& moon) {
+    constexpr float kLunarCycleDays = 29.530588F;
+    constexpr float kTropicalYearDays = 365.2422F;
+    constexpr float kMeanMoonAngularRadius = 0.00452F;
+    const float lunar_age_days = std::fmod(
+        time_of_day.day_of_year - 80.0F + time_of_day.time_hours / 24.0F + moon.phase_offset_days,
+        kLunarCycleDays);
+    const float phase_fraction = atmosphere_wrap_unit(lunar_age_days / kLunarCycleDays);
+    const float phase_angle = phase_fraction * 2.0F * std::numbers::pi_v<float>;
+    const float illumination = 0.5F - 0.5F * std::cos(phase_angle);
+
+    TimeOfDayConfig moon_clock = time_of_day;
+    moon_clock.time_hours =
+        atmosphere_wrap_time_hours(time_of_day.time_hours - phase_fraction * 24.0F);
+    moon_clock.day_of_year = atmosphere_advance_day_of_year(
+        time_of_day.day_of_year, static_cast<int>(std::floor(phase_fraction * kTropicalYearDays)));
+    const SolarPosition moon_position = atmosphere_solar_position(moon_clock);
+    return {
+        .direction = atmosphere_direction_from_alt_az(moon_position.elevation_degrees,
+                                                      moon_position.azimuth_degrees),
+        .phase_fraction = phase_fraction,
+        .illumination = illumination,
+        .angular_radius = kMeanMoonAngularRadius * moon.angular_radius_scale,
     };
 }
 
@@ -375,6 +445,19 @@ inline void advance_atmosphere_time_of_day(AtmosphereConfig& config, double delt
         config.night_sky.star_intensity = 1.25F;
         config.night_sky.star_density = 0.72F;
         break;
+    case AtmospherePreset::MoonlitNight:
+        config.time_of_day.time_hours = 0.0F;
+        config.time_of_day.latitude_degrees = 75.0F;
+        config.sun_elevation_degrees = -60.0F;
+        config.sun_azimuth_degrees = 180.0F;
+        config.camera_altitude_km = 0.15F;
+        config.exposure = 2.4F;
+        config.night_sky.star_intensity = 0.90F;
+        config.night_sky.star_density = 0.58F;
+        config.moon.disk_intensity = 1.25F;
+        config.moon.moonlight_intensity = 1.35F;
+        config.moon.angular_radius_scale = 3.0F;
+        break;
     }
     return config;
 }
@@ -406,6 +489,10 @@ inline void validate_atmosphere_config(const AtmosphereConfig& config) {
     require_finite(config.night_sky.twilight_horizon_warmth, "atmosphere twilight horizon warmth");
     require_finite(config.night_sky.star_intensity, "atmosphere star intensity");
     require_finite(config.night_sky.star_density, "atmosphere star density");
+    require_finite(config.moon.disk_intensity, "atmosphere moon intensity");
+    require_finite(config.moon.moonlight_intensity, "atmosphere moonlight intensity");
+    require_finite(config.moon.phase_offset_days, "atmosphere moon phase offset");
+    require_finite(config.moon.angular_radius_scale, "atmosphere moon size scale");
     require_finite(config.time_of_day.time_hours, "atmosphere time hours");
     require_finite(config.time_of_day.day_of_year, "atmosphere day of year");
     require_finite(config.time_of_day.latitude_degrees, "atmosphere latitude");
@@ -450,6 +537,12 @@ inline void validate_atmosphere_config(const AtmosphereConfig& config) {
         config.night_sky.star_intensity > 4.0F || config.night_sky.star_density < 0.0F ||
         config.night_sky.star_density > 1.0F) {
         throw std::runtime_error("atmosphere night-sky controls are out of range");
+    }
+    if (config.moon.disk_intensity < 0.0F || config.moon.disk_intensity > 4.0F ||
+        config.moon.moonlight_intensity < 0.0F || config.moon.moonlight_intensity > 4.0F ||
+        config.moon.phase_offset_days < 0.0F || config.moon.phase_offset_days > 29.530588F ||
+        config.moon.angular_radius_scale <= 0.0F || config.moon.angular_radius_scale > 8.0F) {
+        throw std::runtime_error("atmosphere moon controls are out of range");
     }
     if (config.time_of_day.time_hours < 0.0F || config.time_of_day.time_hours > 24.0F ||
         config.time_of_day.day_of_year < 1.0F || config.time_of_day.day_of_year > 366.0F) {
@@ -534,6 +627,21 @@ inline void validate_atmosphere_config(const AtmosphereConfig& config) {
     }
     if (run_config_float_is_set(run.atmosphere.star_density)) {
         config.night_sky.star_density = run.atmosphere.star_density;
+    }
+    if (run.atmosphere.moon >= 0) {
+        config.moon.enabled = run.atmosphere.moon == 1;
+    }
+    if (run_config_float_is_set(run.atmosphere.moon_intensity)) {
+        config.moon.disk_intensity = run.atmosphere.moon_intensity;
+    }
+    if (run_config_float_is_set(run.atmosphere.moonlight_intensity)) {
+        config.moon.moonlight_intensity = run.atmosphere.moonlight_intensity;
+    }
+    if (run_config_float_is_set(run.atmosphere.moon_phase_offset_days)) {
+        config.moon.phase_offset_days = run.atmosphere.moon_phase_offset_days;
+    }
+    if (run_config_float_is_set(run.atmosphere.moon_size_scale)) {
+        config.moon.angular_radius_scale = run.atmosphere.moon_size_scale;
     }
     resolve_atmosphere_time_of_day(config);
     validate_atmosphere_config(config);

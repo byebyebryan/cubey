@@ -97,6 +97,16 @@ void draw_atmosphere_ui(AtmosphereUiContext ui) {
         ImGui::SliderFloat("Star density", &ui.config.night_sky.star_density, 0.0F, 1.0F, "%.2f");
     }
 
+    if (cubey::host::imgui_section("Moon", true)) {
+        const cubey::host::ScopedImGuiId section_id("Moon");
+        ImGui::Checkbox("Moon", &ui.config.moon.enabled);
+        ImGui::SliderFloat("Disk", &ui.config.moon.disk_intensity, 0.0F, 4.0F, "%.2f");
+        ImGui::SliderFloat("Moonlight", &ui.config.moon.moonlight_intensity, 0.0F, 4.0F, "%.2f");
+        ImGui::SliderFloat("Phase offset", &ui.config.moon.phase_offset_days, 0.0F, 29.530588F,
+                           "%.2f d");
+        ImGui::SliderFloat("Size", &ui.config.moon.angular_radius_scale, 0.25F, 8.0F, "%.2f");
+    }
+
     if (cubey::host::imgui_section("Display", true)) {
         const cubey::host::ScopedImGuiId section_id("Display");
         ImGui::Checkbox("Auto exposure", &ui.config.time_of_day.auto_exposure_enabled);
