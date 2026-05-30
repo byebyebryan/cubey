@@ -73,6 +73,10 @@ struct StbiImageDeleter {
     return {value.x * scale, value.y * scale, value.z * scale};
 }
 
+[[nodiscard]] Vec3 operator*(Vec3 lhs, Vec3 rhs) {
+    return {lhs.x * rhs.x, lhs.y * rhs.y, lhs.z * rhs.z};
+}
+
 [[nodiscard]] Vec3 operator/(Vec3 value, float scale) {
     return {value.x / scale, value.y / scale, value.z / scale};
 }
@@ -336,99 +340,256 @@ struct StbiImageDeleter {
     return image;
 }
 
-[[nodiscard]] Vec3 procedural_milky_way(Vec3 direction, std::uint32_t seed) {
-    struct StarCloud {
-        float longitude = 0.0F;
-        float latitude = 0.0F;
-        float longitude_radius = 0.35F;
-        float latitude_radius = 0.045F;
-        float strength = 1.0F;
-    };
+struct GalacticFrame {
+    Vec3 pole{};
+    Vec3 center{};
+    Vec3 tangent{};
+};
 
+struct GalacticSample {
+    float longitude = 0.0F;
+    float latitude = 0.0F;
+    float center_axis = 0.0F;
+    float tangent_axis = 0.0F;
+    float pole_axis = 0.0F;
+    Vec3 local_direction{};
+};
+
+struct SkyStamp {
+    float longitude = 0.0F;
+    float latitude = 0.0F;
+    float longitude_radius = 0.35F;
+    float latitude_radius = 0.045F;
+    float strength = 1.0F;
+};
+
+struct ProceduralMilkyWayLayers {
+    Vec3 stellar_emission{};
+    float dust_tau = 0.0F;
+    Vec3 star_clouds{};
+    Vec3 hii_emission{};
+    float speckles = 0.0F;
+    Vec3 final_rgb{};
+};
+
+[[nodiscard]] GalacticFrame galactic_frame() {
     const Vec3 pole = normalize({0.31F, 0.84F, 0.44F});
     const Vec3 center_hint = normalize({-0.45F, -0.12F, -0.89F});
     const Vec3 center = normalize(center_hint - pole * dot(center_hint, pole));
-    const Vec3 tangent = normalize(cross(pole, center));
+    return {
+        .pole = pole,
+        .center = center,
+        .tangent = normalize(cross(pole, center)),
+    };
+}
 
-    const float center_axis = dot(direction, center);
-    const float tangent_axis = dot(direction, tangent);
-    const float pole_axis = dot(direction, pole);
-    const float latitude = std::asin(std::clamp(pole_axis, -1.0F, 1.0F));
-    const float longitude = std::atan2(tangent_axis, center_axis);
-    const Vec3 local_direction{center_axis, tangent_axis, pole_axis};
+[[nodiscard]] GalacticSample galactic_sample(Vec3 direction) {
+    const GalacticFrame frame = galactic_frame();
+    const float center_axis = dot(direction, frame.center);
+    const float tangent_axis = dot(direction, frame.tangent);
+    const float pole_axis = dot(direction, frame.pole);
+    return {
+        .longitude = std::atan2(tangent_axis, center_axis),
+        .latitude = std::asin(std::clamp(pole_axis, -1.0F, 1.0F)),
+        .center_axis = center_axis,
+        .tangent_axis = tangent_axis,
+        .pole_axis = pole_axis,
+        .local_direction = {center_axis, tangent_axis, pole_axis},
+    };
+}
+
+[[nodiscard]] float elliptical_stamp(const GalacticSample& sample, const SkyStamp& stamp) {
+    const float dl = angle_delta(sample.longitude, stamp.longitude) / stamp.longitude_radius;
+    const float db = (sample.latitude - stamp.latitude) / stamp.latitude_radius;
+    return stamp.strength * std::exp(-(dl * dl + db * db));
+}
+
+[[nodiscard]] float sparse_speckles(Vec3 position, std::uint32_t seed) {
+    const float coarse = value_noise(position, seed);
+    const float fine = value_noise({position.x * 2.13F + 17.0F, position.y * 2.13F - 11.0F,
+                                    position.z * 2.13F + 5.0F},
+                                   seed + 31U);
+    return smoothstep(0.76F, 0.985F, coarse) * std::pow(fine, 5.0F);
+}
+
+[[nodiscard]] ProceduralMilkyWayLayers procedural_milky_way_layers(Vec3 direction,
+                                                                   std::uint32_t seed) {
+    GalacticSample sample = galactic_sample(direction);
     const Vec3 domain{
-        local_direction.x * 3.1F + static_cast<float>(seed % 37U) * 0.17F,
-        local_direction.y * 3.1F + static_cast<float>(seed % 53U) * 0.11F,
-        local_direction.z * 12.5F + static_cast<float>(seed % 71U) * 0.07F,
+        sample.local_direction.x * 3.0F + static_cast<float>(seed % 37U) * 0.17F,
+        sample.local_direction.y * 3.0F + static_cast<float>(seed % 53U) * 0.11F,
+        sample.local_direction.z * 11.5F + static_cast<float>(seed % 71U) * 0.07F,
+    };
+    const Vec3 filament_domain{
+        sample.local_direction.x * 7.4F + static_cast<float>(seed % 97U) * 0.09F,
+        sample.local_direction.y * 7.4F - static_cast<float>(seed % 89U) * 0.08F,
+        sample.local_direction.z * 21.0F + static_cast<float>(seed % 79U) * 0.05F,
     };
 
-    const float warp = (fbm(domain, seed + 17U, 4) - 0.5F) * 0.065F;
+    const float warp =
+        (fbm(domain, seed + 17U, 2) - 0.5F) * 0.060F +
+        (ridged_fbm(filament_domain, seed + 29U, 1) - 0.5F) * 0.024F;
     const float latitude_warp =
-        latitude + warp * smoothstep(0.0F, 0.50F, 1.0F - std::abs(pole_axis));
-    const float abs_lat = std::abs(latitude_warp);
-    const float band = std::exp(-abs_lat * 10.0F);
-    const float inner_band = std::exp(-abs_lat * 18.0F);
-    const float wide_band = std::exp(-abs_lat * 3.0F);
+        sample.latitude + warp * smoothstep(0.0F, 0.58F, 1.0F - std::abs(sample.pole_axis));
+    const float center_longitude = angle_delta(sample.longitude, 0.0F);
+    const float anticenter_longitude =
+        angle_delta(sample.longitude, std::numbers::pi_v<float>);
+    const float center_weight = std::exp(-(center_longitude * center_longitude) / 0.56F);
+    const float anticenter_weight =
+        std::exp(-(anticenter_longitude * anticenter_longitude) / 0.42F);
+    const float band_sigma = std::clamp(mix(0.045F, 0.115F, center_weight) -
+                                            anticenter_weight * 0.010F,
+                                        0.034F, 0.125F);
+    const float broad_sigma = band_sigma * 2.85F;
+    const float inner_sigma = band_sigma * 0.46F;
+    const float band =
+        std::exp(-(latitude_warp * latitude_warp) / (2.0F * band_sigma * band_sigma));
+    const float broad_band =
+        std::exp(-(latitude_warp * latitude_warp) / (2.0F * broad_sigma * broad_sigma));
+    const float inner_band =
+        std::exp(-(latitude_warp * latitude_warp) / (2.0F * inner_sigma * inner_sigma));
     const float core =
-        std::exp(-(angle_delta(longitude, 0.0F) * angle_delta(longitude, 0.0F)) / 0.19F -
-                 (latitude_warp * latitude_warp) / 0.032F);
+        std::exp(-(center_longitude * center_longitude) / 0.16F -
+                 (latitude_warp * latitude_warp) / 0.020F);
+    const float bar =
+        std::exp(-(angle_delta(sample.longitude, -0.24F) *
+                   angle_delta(sample.longitude, -0.24F)) /
+                     0.40F -
+                 ((latitude_warp + 0.018F) * (latitude_warp + 0.018F)) / 0.018F);
 
-    const float cloud_noise = fbm({domain.x * 1.6F, domain.y * 1.6F, domain.z * 0.52F},
-                                  seed + 91U, 6);
-    const float fine_clouds = ridged_fbm({domain.x * 4.7F, domain.y * 4.7F, domain.z * 0.82F},
-                                         seed + 151U, 5);
+    const float cloud_noise = fbm({domain.x * 1.55F, domain.y * 1.55F, domain.z * 0.58F},
+                                  seed + 91U, 3);
+    const float fine_clouds =
+        ridged_fbm({filament_domain.x * 1.25F, filament_domain.y * 1.25F,
+                    filament_domain.z * 0.55F},
+                   seed + 151U, 3);
     const float dust_noise = fbm({domain.x * 2.3F + 4.0F, domain.y * 2.3F - 2.0F,
                                   domain.z * 0.74F + 7.0F},
-                                 seed + 211U, 5);
+                                 seed + 211U, 3);
+    const float filament_noise =
+        ridged_fbm({filament_domain.x * 1.7F + 3.0F, filament_domain.y * 1.7F - 7.0F,
+                    filament_domain.z * 0.70F + 2.0F},
+                   seed + 257U, 3);
 
-    const float branch =
-        std::sin(longitude * 3.0F + (dust_noise - 0.5F) * 2.2F) * 0.033F +
-        std::sin(longitude * 7.0F + (cloud_noise - 0.5F) * 2.8F) * 0.013F;
-    const float lane_width = mix(0.018F, 0.058F, dust_noise);
-    const float primary_dust =
-        std::exp(-std::abs(latitude_warp - branch) / lane_width) *
-        smoothstep(0.08F, 0.90F, band);
-    const float secondary_center =
-        -0.065F + std::sin(longitude * 2.0F + (cloud_noise - 0.5F) * 2.0F) * 0.018F;
-    const float secondary_dust =
-        std::exp(-std::abs(latitude_warp - secondary_center) / 0.032F) *
-        smoothstep(0.15F, 0.80F, band) * smoothstep(1.75F, 0.20F, std::abs(longitude));
-    const float core_dust =
-        std::exp(-std::abs(latitude_warp + 0.045F) / 0.034F) *
-        std::exp(-(angle_delta(longitude, 0.0F) * angle_delta(longitude, 0.0F)) / 0.62F);
-    const float extinction =
-        clamp01(1.0F - primary_dust * 0.60F - secondary_dust * 0.34F - core_dust * 0.42F);
-
-    static constexpr std::array kStarClouds{
-        StarCloud{-0.95F, 0.020F, 0.30F, 0.050F, 0.90F},
-        StarCloud{-0.45F, -0.010F, 0.24F, 0.040F, 0.75F},
-        StarCloud{0.00F, 0.025F, 0.31F, 0.060F, 1.35F},
-        StarCloud{0.42F, -0.025F, 0.26F, 0.044F, 0.65F},
-        StarCloud{1.15F, 0.012F, 0.36F, 0.050F, 0.70F},
-        StarCloud{2.10F, -0.008F, 0.42F, 0.060F, 0.46F},
+    static constexpr std::array kCloudStamps{
+        SkyStamp{-1.20F, 0.030F, 0.34F, 0.055F, 0.85F},
+        SkyStamp{-0.78F, -0.018F, 0.26F, 0.044F, 0.90F},
+        SkyStamp{0.02F, 0.030F, 0.34F, 0.065F, 1.45F},
+        SkyStamp{1.08F, 0.014F, 0.35F, 0.052F, 0.80F},
+        SkyStamp{2.10F, -0.008F, 0.44F, 0.065F, 0.46F},
     };
+    static constexpr std::array kDustStamps{
+        SkyStamp{-0.36F, 0.048F, 0.14F, 0.030F, 0.44F},
+        SkyStamp{0.10F, 0.070F, 0.16F, 0.036F, 0.64F},
+        SkyStamp{0.35F, -0.058F, 0.20F, 0.038F, 0.52F},
+        SkyStamp{1.42F, -0.022F, 0.24F, 0.043F, 0.34F},
+    };
+    static constexpr std::array kHiiStamps{
+        SkyStamp{-0.96F, 0.024F, 0.12F, 0.026F, 0.65F},
+        SkyStamp{-0.08F, 0.052F, 0.13F, 0.030F, 0.78F},
+        SkyStamp{0.30F, -0.018F, 0.10F, 0.024F, 0.48F},
+        SkyStamp{0.98F, 0.030F, 0.15F, 0.030F, 0.56F},
+    };
+
     float cloud_knots = 0.0F;
-    for (const StarCloud& cloud : kStarClouds) {
-        const float dl = angle_delta(longitude, cloud.longitude) / cloud.longitude_radius;
-        const float db = (latitude_warp - cloud.latitude) / cloud.latitude_radius;
-        cloud_knots += cloud.strength * std::exp(-(dl * dl + db * db));
+    for (const SkyStamp& stamp : kCloudStamps) {
+        cloud_knots += elliptical_stamp(sample, stamp);
+    }
+    float dust_stamps = 0.0F;
+    for (const SkyStamp& stamp : kDustStamps) {
+        dust_stamps += elliptical_stamp(sample, stamp);
+    }
+    float hii_stamps = 0.0F;
+    for (const SkyStamp& stamp : kHiiStamps) {
+        hii_stamps += elliptical_stamp(sample, stamp);
     }
 
-    const float star_clouds =
-        mix(0.52F, 1.42F, cloud_noise) * mix(0.72F, 1.38F, fine_clouds);
-    const float mottling =
-        mix(0.72F, 1.28F, fbm({domain.x * 8.0F + 11.0F, domain.y * 8.0F - 5.0F,
-                               domain.z * 1.4F + 3.0F},
-                              seed + 307U, 4));
-    const float radiance =
-        (wide_band * 0.0014F + band * 0.0075F * star_clouds +
-         inner_band * 0.0040F * mottling + cloud_knots * 0.010F + core * 0.028F) *
-        extinction;
-    const Vec3 band_color = {0.76F, 0.82F, 1.0F};
-    const Vec3 core_color = {1.0F, 0.84F, 0.58F};
-    const Vec3 cloud_color = mix(band_color, {0.88F, 0.90F, 1.0F}, clamp01(fine_clouds));
-    const Vec3 color = mix(cloud_color, core_color, clamp01(core * 1.35F));
-    return color * radiance;
+    const float branch =
+        std::sin(sample.longitude * 3.0F + (dust_noise - 0.5F) * 2.5F) * 0.035F +
+        std::sin(sample.longitude * 8.0F + (filament_noise - 0.5F) * 3.2F) * 0.012F;
+    const float lane_width = mix(0.012F, 0.045F, dust_noise);
+    const float primary_dust =
+        std::exp(-std::abs(latitude_warp - branch) / lane_width) *
+        smoothstep(0.10F, 0.94F, band);
+    const float secondary_center =
+        -0.065F + std::sin(sample.longitude * 2.0F + (cloud_noise - 0.5F) * 2.0F) * 0.020F;
+    const float secondary_dust =
+        std::exp(-std::abs(latitude_warp - secondary_center) / 0.034F) *
+        smoothstep(0.14F, 0.80F, band) * smoothstep(1.85F, 0.20F, std::abs(sample.longitude));
+    const float core_dust =
+        std::exp(-std::abs(latitude_warp + 0.043F) / 0.032F) *
+        std::exp(-(center_longitude * center_longitude) / 0.58F);
+
+    const float base_dust = broad_band * mix(0.10F, 0.34F, dust_noise);
+    const float filament_dust = primary_dust * mix(0.42F, 0.88F, filament_noise);
+    const float dust_tau = std::clamp(base_dust + filament_dust + secondary_dust * 0.46F +
+                                          core_dust * 0.76F + dust_stamps * 0.50F,
+                                      0.0F, 2.35F);
+
+    const Vec3 band_color = {0.70F, 0.78F, 1.0F};
+    const Vec3 core_color = {1.0F, 0.80F, 0.52F};
+    const Vec3 cloud_color = mix({0.72F, 0.78F, 1.0F}, {0.95F, 0.91F, 0.78F},
+                                 clamp01(center_weight * 0.72F + cloud_knots * 0.10F));
+    const float core_emission = core * 0.026F + bar * 0.010F;
+    ProceduralMilkyWayLayers layers;
+    layers.stellar_emission =
+        mix(band_color, core_color, clamp01(core * 1.4F + bar * 0.55F)) *
+        (broad_band * 0.0010F + band * 0.0036F + inner_band * 0.0023F + core_emission);
+
+    const float cloud_field =
+        band * mix(0.0012F, 0.0078F, cloud_noise) * mix(0.65F, 1.52F, fine_clouds) +
+        cloud_knots * 0.0068F + center_weight * inner_band * 0.0034F;
+    layers.star_clouds = cloud_color * cloud_field;
+
+    const float speckle_mask = smoothstep(0.08F, 0.92F, band);
+    layers.speckles =
+        sparse_speckles({sample.local_direction.x * 52.0F + 12.0F,
+                         sample.local_direction.y * 52.0F - 4.0F,
+                         sample.local_direction.z * 72.0F + 9.0F},
+                        seed + 401U) *
+        speckle_mask * mix(0.0008F, 0.0042F, clamp01(cloud_noise + cloud_knots * 0.18F));
+
+    const float hii_density =
+        hii_stamps * smoothstep(0.05F, 0.70F, band) * mix(0.35F, 1.0F, cloud_noise);
+    layers.hii_emission = Vec3{1.0F, 0.30F, 0.16F} * hii_density * 0.0038F;
+
+    const Vec3 extinction{
+        std::exp(-dust_tau * 0.58F),
+        std::exp(-dust_tau * 0.86F),
+        std::exp(-dust_tau * 1.22F),
+    };
+    const Vec3 speckle_color = mix({0.65F, 0.72F, 1.0F}, {1.0F, 0.84F, 0.62F},
+                                   clamp01(center_weight * 0.55F + cloud_noise * 0.25F));
+    layers.final_rgb =
+        (layers.stellar_emission + layers.star_clouds + speckle_color * layers.speckles) *
+            extinction +
+        layers.hii_emission;
+    layers.dust_tau = dust_tau;
+    return layers;
+}
+
+[[nodiscard]] Vec3 procedural_layer_color(const ProceduralMilkyWayLayers& layers,
+                                          NightSkyLayerView layer) {
+    switch (layer) {
+    case NightSkyLayerView::Final:
+        return layers.final_rgb;
+    case NightSkyLayerView::StellarEmission:
+        return layers.stellar_emission;
+    case NightSkyLayerView::DustTau:
+        return Vec3{layers.dust_tau, layers.dust_tau, layers.dust_tau} * 0.018F;
+    case NightSkyLayerView::StarClouds:
+        return layers.star_clouds;
+    case NightSkyLayerView::HiiEmission:
+        return layers.hii_emission * 4.0F;
+    case NightSkyLayerView::Speckles:
+        return Vec3{0.78F, 0.84F, 1.0F} * (layers.speckles * 3.5F);
+    }
+    return layers.final_rgb;
+}
+
+[[nodiscard]] Vec3 procedural_milky_way(Vec3 direction, std::uint32_t seed,
+                                        NightSkyLayerView layer) {
+    return procedural_layer_color(procedural_milky_way_layers(direction, seed), layer);
 }
 
 [[nodiscard]] Vec3 data_milky_way(Vec3 direction, const SourceImage& image) {
@@ -491,13 +652,14 @@ void build_mips(NightSkyAtlas& atlas) {
     }
 }
 
-[[nodiscard]] NightSkyAtlas make_empty_atlas(std::uint32_t extent,
-                                             NightSkyAtlasSource source) {
+[[nodiscard]] NightSkyAtlas make_empty_atlas(std::uint32_t extent, NightSkyAtlasSource source,
+                                             NightSkyLayerView layer) {
     const std::uint32_t mip_levels = night_sky_atlas_mip_count(extent);
     NightSkyAtlas atlas{
         .extent = extent,
         .mip_levels = mip_levels,
         .source = source,
+        .layer = layer,
     };
     atlas.mips.reserve(mip_levels);
     std::size_t byte_offset = 0;
@@ -536,7 +698,9 @@ NightSkyAtlas generate_night_sky_atlas(const NightSkyAtlasConfig& config, std::u
         throw std::runtime_error("night sky atlas extent must be a power of two");
     }
 
-    NightSkyAtlas atlas = make_empty_atlas(extent, config.source);
+    const NightSkyLayerView layer =
+        config.source == NightSkyAtlasSource::Data ? NightSkyLayerView::Final : config.layer;
+    NightSkyAtlas atlas = make_empty_atlas(extent, config.source, layer);
     SourceImage source_image;
     if (config.source == NightSkyAtlasSource::Data) {
         if (!config.data_path.has_value()) {
@@ -554,7 +718,7 @@ NightSkyAtlas generate_night_sky_atlas(const NightSkyAtlasConfig& config, std::u
                 const Vec3 direction = cubemap_direction(face, x, y, extent);
                 const Vec3 color = config.source == NightSkyAtlasSource::Data
                                        ? data_milky_way(direction, source_image)
-                                       : procedural_milky_way(direction, variation_seed);
+                                       : procedural_milky_way(direction, variation_seed, layer);
                 set_texel(atlas, 0U, face, x, y, color);
             }
         }

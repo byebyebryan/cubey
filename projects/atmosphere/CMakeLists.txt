@@ -177,6 +177,38 @@ if (BUILD_TESTING)
         procedural
     )
 
+    set(CUBEY_ATMOSPHERE_MILKY_WAY_DUST_SMOKE_OUTPUT
+        "${CMAKE_CURRENT_BINARY_DIR}/atmosphere-milky-way-dust.png"
+    )
+    cubey_add_png_smoke_test(
+        atmosphere_milky_way_dust_writes_png
+        cubey_project_atmosphere
+        "${CUBEY_ATMOSPHERE_MILKY_WAY_DUST_SMOKE_OUTPUT}"
+        --headless
+        --debug-view
+        milky-way
+        --milky-way-source
+        procedural
+        --milky-way-layer
+        dust-tau
+    )
+
+    set(CUBEY_ATMOSPHERE_MILKY_WAY_HII_SMOKE_OUTPUT
+        "${CMAKE_CURRENT_BINARY_DIR}/atmosphere-milky-way-hii.png"
+    )
+    cubey_add_png_smoke_test(
+        atmosphere_milky_way_hii_writes_png
+        cubey_project_atmosphere
+        "${CUBEY_ATMOSPHERE_MILKY_WAY_HII_SMOKE_OUTPUT}"
+        --headless
+        --debug-view
+        milky-way
+        --milky-way-source
+        procedural
+        --milky-way-layer
+        hii-emission
+    )
+
     set(CUBEY_ATMOSPHERE_TRANSMITTANCE_SMOKE_OUTPUT
         "${CMAKE_CURRENT_BINARY_DIR}/atmosphere-transmittance.png"
     )

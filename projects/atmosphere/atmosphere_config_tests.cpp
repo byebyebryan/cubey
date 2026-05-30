@@ -141,6 +141,30 @@ struct TestVec3 {
            atlas.rgba32f[offset + 2U] * 0.0722F;
 }
 
+struct AtlasLuminanceStats {
+    float min = std::numeric_limits<float>::max();
+    float max = 0.0F;
+    float sum = 0.0F;
+    std::size_t above_threshold = 0;
+};
+
+[[nodiscard]] AtlasLuminanceStats night_sky_luminance_stats(
+    const cubey::projects::atmosphere::NightSkyAtlas& atlas, float threshold) {
+    AtlasLuminanceStats stats;
+    for (std::size_t index = 0; index + 2U < atlas.rgba32f.size(); index += 4U) {
+        const float luma = atlas.rgba32f[index] * 0.2126F +
+                           atlas.rgba32f[index + 1U] * 0.7152F +
+                           atlas.rgba32f[index + 2U] * 0.0722F;
+        stats.min = std::min(stats.min, luma);
+        stats.max = std::max(stats.max, luma);
+        stats.sum += luma;
+        if (luma > threshold) {
+            ++stats.above_threshold;
+        }
+    }
+    return stats;
+}
+
 } // namespace
 
 int main() {
@@ -197,6 +221,15 @@ int main() {
             "empty night sky visual mode should default to human eye");
     require_throws([] { static_cast<void>(night_sky_visual_mode_from_name("neon")); },
                    "night sky visual mode parser should reject unknown modes");
+
+    for (const NightSkyLayerView layer : kNightSkyLayerViews) {
+        require(night_sky_layer_view_from_name(night_sky_layer_view_name(layer)) == layer,
+                "night sky layer view names should round trip");
+    }
+    require(night_sky_layer_view_from_name("") == NightSkyLayerView::Final,
+            "empty night sky layer should default to final");
+    require_throws([] { static_cast<void>(night_sky_layer_view_from_name("hydrogen")); },
+                   "night sky layer parser should reject unknown layers");
 
     for (const AtmospherePreset preset : kAtmospherePresets) {
         require(atmosphere_preset_from_name(atmosphere_preset_name(preset)) == preset,
@@ -301,8 +334,30 @@ int main() {
                 .procedural_variation = 3.0F,
             },
             64U);
+        const NightSkyAtlas dust_layer = generate_night_sky_atlas(
+            NightSkyAtlasConfig{
+                .source = NightSkyAtlasSource::Procedural,
+                .layer = NightSkyLayerView::DustTau,
+            },
+            64U);
+        const NightSkyAtlas hii_layer = generate_night_sky_atlas(
+            NightSkyAtlasConfig{
+                .source = NightSkyAtlasSource::Procedural,
+                .layer = NightSkyLayerView::HiiEmission,
+            },
+            64U);
+        const NightSkyAtlas speckle_layer = generate_night_sky_atlas(
+            NightSkyAtlasConfig{
+                .source = NightSkyAtlasSource::Procedural,
+                .layer = NightSkyLayerView::Speckles,
+            },
+            64U);
         require(atlas.extent == 64U && atlas.mip_levels == 7U,
                 "night sky atlas should use the requested power-of-two extent");
+        require(dust_layer.layer == NightSkyLayerView::DustTau &&
+                    hii_layer.layer == NightSkyLayerView::HiiEmission &&
+                    speckle_layer.layer == NightSkyLayerView::Speckles,
+                "procedural night sky atlas should preserve selected diagnostic layer");
         require(atlas.mips.size() == atlas.mip_levels,
                 "night sky atlas should include a complete mip chain");
         require(night_sky_atlas_hash(atlas.rgba32f) ==
@@ -310,6 +365,9 @@ int main() {
                 "procedural night sky atlas generation should be deterministic");
         require(night_sky_atlas_hash(atlas.rgba32f) != night_sky_atlas_hash(varied.rgba32f),
                 "procedural night sky atlas variation should alter generated structure");
+        require(night_sky_atlas_hash(atlas.rgba32f) !=
+                    night_sky_atlas_hash(dust_layer.rgba32f),
+                "procedural diagnostic layers should differ from final output");
         for (std::uint32_t mip = 0; mip < atlas.mip_levels; ++mip) {
             const NightSkyAtlasMip& level = atlas.mips.at(mip);
             require(level.extent >= 1U, "night sky atlas mip dimensions should be nonzero");
@@ -346,6 +404,17 @@ int main() {
                 "procedural night sky core should be brighter than off-plane sky");
         require(dust_luma < adjacent_luma * 0.95F,
                 "procedural night sky dust lane should darken adjacent galactic light");
+        const AtlasLuminanceStats dust_stats = night_sky_luminance_stats(dust_layer, 0.006F);
+        const AtlasLuminanceStats hii_stats = night_sky_luminance_stats(hii_layer, 0.0004F);
+        const AtlasLuminanceStats speckle_stats =
+            night_sky_luminance_stats(speckle_layer, 0.0008F);
+        require(dust_stats.max - dust_stats.min > 0.006F,
+                "procedural dust optical depth layer should expose visible contrast");
+        require(hii_stats.above_threshold > 0U && hii_stats.above_threshold < atlas.extent *
+                    atlas.extent * 6U / 3U,
+                "procedural H II layer should be sparse and nonzero");
+        require(speckle_stats.above_threshold > 0U,
+                "procedural speckle layer should contain faint dense stars");
         const float seam_latitude = 0.035F;
         const float seam_epsilon = 0.025F;
         const float seam_a = night_sky_luminance_at(
@@ -517,6 +586,7 @@ int main() {
         run_config.debug_view = "moon";
         run_config.atmosphere.night_sky_mode = "camera";
         run_config.atmosphere.milky_way_source = "procedural";
+        run_config.atmosphere.milky_way_layer = "dust-tau";
         run_config.atmosphere.sun_elevation_degrees = 6.0F;
         run_config.atmosphere.sun_azimuth_degrees = 33.0F;
         run_config.atmosphere.camera_altitude_km = 2.0F;
@@ -540,8 +610,9 @@ int main() {
         require(config.render_view == AtmosphereRenderView::Moon,
                 "run config should select atmosphere debug view");
         require(config.night_sky.visual_mode == NightSkyVisualMode::Camera &&
-                    config.night_sky.source == NightSkySource::Procedural,
-                "run config should select night sky source and visual mode");
+                    config.night_sky.source == NightSkySource::Procedural &&
+                    config.night_sky.layer == NightSkyLayerView::DustTau,
+                "run config should select night sky source, visual mode, and layer");
         require(config.sun_elevation_degrees == 6.0F && config.sun_azimuth_degrees == 33.0F &&
                     config.camera_altitude_km == 2.0F && config.mie_density_scale == 2.25F,
                 "run config atmosphere overrides should win over preset defaults");

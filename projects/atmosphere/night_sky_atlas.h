@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
@@ -20,6 +21,24 @@ enum class NightSkyAtlasSource : std::uint32_t {
     Procedural = 1,
 };
 
+enum class NightSkyLayerView : std::uint32_t {
+    Final = 0,
+    StellarEmission = 1,
+    DustTau = 2,
+    StarClouds = 3,
+    HiiEmission = 4,
+    Speckles = 5,
+};
+
+inline constexpr std::array<NightSkyLayerView, 6> kNightSkyLayerViews{
+    NightSkyLayerView::Final,
+    NightSkyLayerView::StellarEmission,
+    NightSkyLayerView::DustTau,
+    NightSkyLayerView::StarClouds,
+    NightSkyLayerView::HiiEmission,
+    NightSkyLayerView::Speckles,
+};
+
 struct NightSkyAtlasMip {
     std::uint32_t extent = 1;
     std::size_t byte_offset = 0;
@@ -30,6 +49,7 @@ struct NightSkyAtlasConfig {
     NightSkyAtlasSource source = NightSkyAtlasSource::Procedural;
     std::optional<std::filesystem::path> data_path{};
     float procedural_variation = 0.0F;
+    NightSkyLayerView layer = NightSkyLayerView::Final;
 };
 
 struct NightSkyAtlas {
@@ -38,6 +58,7 @@ struct NightSkyAtlas {
     std::vector<float> rgba32f{};
     std::vector<NightSkyAtlasMip> mips{};
     NightSkyAtlasSource source = NightSkyAtlasSource::Procedural;
+    NightSkyLayerView layer = NightSkyLayerView::Final;
 };
 
 [[nodiscard]] std::uint32_t night_sky_atlas_mip_count(std::uint32_t extent);

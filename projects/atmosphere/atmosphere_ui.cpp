@@ -94,6 +94,8 @@ void draw_atmosphere_ui(AtmosphereUiContext ui) {
                                       night_sky_source_name);
         cubey::host::imgui_enum_combo("Mode", ui.config.night_sky.visual_mode,
                                       kNightSkyVisualModes, night_sky_visual_mode_name);
+        cubey::host::imgui_enum_combo("Layer", ui.config.night_sky.layer, kNightSkyLayerViews,
+                                      night_sky_layer_view_name);
         ImGui::SliderFloat("Twilight", &ui.config.night_sky.twilight_strength, 0.0F, 4.0F, "%.2f");
         ImGui::SliderFloat("Horizon warmth", &ui.config.night_sky.twilight_horizon_warmth, 0.0F,
                            2.0F, "%.2f");

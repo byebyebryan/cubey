@@ -1,5 +1,7 @@
 #pragma once
 
+#include "night_sky_atlas.h"
+
 #include <cubey/core/math.h>
 #include <cubey/core/run_config.h>
 
@@ -106,6 +108,7 @@ struct TimeOfDayConfig {
 struct NightSkyConfig {
     NightSkySource source = NightSkySource::Procedural;
     NightSkyVisualMode visual_mode = NightSkyVisualMode::HumanEye;
+    NightSkyLayerView layer = NightSkyLayerView::Final;
     float twilight_strength = 1.0F;
     float twilight_horizon_warmth = 1.0F;
     float star_intensity = 1.0F;
@@ -288,6 +291,36 @@ struct LunarState {
         }
     }
     throw std::runtime_error("unknown night sky visual mode: " + std::string(name));
+}
+
+[[nodiscard]] inline const char* night_sky_layer_view_name(NightSkyLayerView layer) {
+    switch (layer) {
+    case NightSkyLayerView::Final:
+        return "final";
+    case NightSkyLayerView::StellarEmission:
+        return "stellar-emission";
+    case NightSkyLayerView::DustTau:
+        return "dust-tau";
+    case NightSkyLayerView::StarClouds:
+        return "star-clouds";
+    case NightSkyLayerView::HiiEmission:
+        return "hii-emission";
+    case NightSkyLayerView::Speckles:
+        return "speckles";
+    }
+    return "final";
+}
+
+[[nodiscard]] inline NightSkyLayerView night_sky_layer_view_from_name(std::string_view name) {
+    if (name.empty()) {
+        return NightSkyLayerView::Final;
+    }
+    for (const NightSkyLayerView layer : kNightSkyLayerViews) {
+        if (name == night_sky_layer_view_name(layer)) {
+            return layer;
+        }
+    }
+    throw std::runtime_error("unknown Milky Way layer: " + std::string(name));
 }
 
 [[nodiscard]] inline AtmosphereRenderView next_atmosphere_render_view(AtmosphereRenderView view) {
@@ -669,6 +702,9 @@ inline void validate_atmosphere_config(const AtmosphereConfig& config) {
     }
     if (!run.atmosphere.milky_way_source.empty()) {
         config.night_sky.source = night_sky_source_from_name(run.atmosphere.milky_way_source);
+    }
+    if (!run.atmosphere.milky_way_layer.empty()) {
+        config.night_sky.layer = night_sky_layer_view_from_name(run.atmosphere.milky_way_layer);
     }
     const bool manual_sun_override =
         run_config_float_is_set(run.atmosphere.sun_elevation_degrees) ||

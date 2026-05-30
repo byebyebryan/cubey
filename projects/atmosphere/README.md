@@ -32,6 +32,7 @@ Useful runs:
 ./build/dev/projects/atmosphere/atmosphere --headless --debug-view transmittance --output /tmp/cubey-atmosphere-transmittance.png
 ./build/dev/projects/atmosphere/atmosphere --headless --debug-view moon-surface --output /tmp/cubey-atmosphere-moon-surface.png
 ./build/dev/projects/atmosphere/atmosphere --headless --debug-view milky-way --milky-way-source procedural --output /tmp/cubey-atmosphere-milky-way.png
+./build/dev/projects/atmosphere/atmosphere --headless --debug-view milky-way --milky-way-layer dust-tau --output /tmp/cubey-atmosphere-milky-way-dust.png
 ./build/dev/projects/atmosphere/atmosphere --headless --atmosphere-preset sunset --output /tmp/cubey-atmosphere-sunset.png
 ./build/dev/projects/atmosphere/atmosphere --headless --time-of-day-mode solar --time-hours 17.8 --output /tmp/cubey-atmosphere-twilight.png
 ./build/dev/projects/atmosphere/atmosphere --headless --capture video --frames 120 --output /tmp/cubey-atmosphere.mp4
@@ -47,6 +48,7 @@ Controls:
 - The Time panel switches between manual sun direction and local solar time.
 - The Reference panel controls the ground grid, local red/cyan axes, and origin
   marker used for orientation.
-- The Night sky panel switches Milky Way source, human/camera response, Milky Way
-  intensity/contrast, light pollution, and procedural variation.
+- The Night sky panel switches Milky Way source, diagnostic layer, human/camera
+  response, Milky Way intensity/contrast, light pollution, and procedural
+  variation.
 - Escape: close.

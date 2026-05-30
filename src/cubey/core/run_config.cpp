@@ -300,6 +300,8 @@ RunConfig parse_run_config(int argc, char** argv) {
             config.atmosphere.night_sky_mode = std::string(need_value("--night-sky-mode"));
         } else if (arg == "--milky-way-source") {
             config.atmosphere.milky_way_source = std::string(need_value("--milky-way-source"));
+        } else if (arg == "--milky-way-layer") {
+            config.atmosphere.milky_way_layer = std::string(need_value("--milky-way-layer"));
         } else if (arg == "--sun-elevation") {
             config.atmosphere.sun_elevation_degrees =
                 parse_float(need_value("--sun-elevation"), "--sun-elevation");
@@ -417,6 +419,17 @@ RunConfig parse_run_config(int argc, char** argv) {
         config.atmosphere.milky_way_source != "data" &&
         config.atmosphere.milky_way_source != "procedural") {
         throw std::runtime_error("atmosphere Milky Way source must be auto, data, or procedural");
+    }
+    if (!config.atmosphere.milky_way_layer.empty() &&
+        config.atmosphere.milky_way_layer != "final" &&
+        config.atmosphere.milky_way_layer != "stellar-emission" &&
+        config.atmosphere.milky_way_layer != "dust-tau" &&
+        config.atmosphere.milky_way_layer != "star-clouds" &&
+        config.atmosphere.milky_way_layer != "hii-emission" &&
+        config.atmosphere.milky_way_layer != "speckles") {
+        throw std::runtime_error(
+            "atmosphere Milky Way layer must be final, stellar-emission, dust-tau, "
+            "star-clouds, hii-emission, or speckles");
     }
     if (config.atmosphere.time_of_day_mode == "solar" &&
         (run_config_float_is_set(config.atmosphere.sun_elevation_degrees) ||

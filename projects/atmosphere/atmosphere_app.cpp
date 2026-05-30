@@ -74,6 +74,7 @@ static_assert(sizeof(AtmospherePushConstants) == sizeof(float) * 64U);
 struct ResolvedNightSkyAtlas {
     NightSkyAtlasSource source = NightSkyAtlasSource::Procedural;
     float procedural_variation = 0.0F;
+    NightSkyLayerView layer = NightSkyLayerView::Final;
     std::optional<std::filesystem::path> data_path{};
 };
 
@@ -126,6 +127,7 @@ std::filesystem::path shader_path(const char* filename) {
                 return {
                     .source = NightSkyAtlasSource::Procedural,
                     .procedural_variation = config.night_sky.procedural_variation,
+                    .layer = config.night_sky.layer,
                 };
             }
             throw std::runtime_error(
@@ -135,6 +137,7 @@ std::filesystem::path shader_path(const char* filename) {
         return {
             .source = NightSkyAtlasSource::Data,
             .procedural_variation = config.night_sky.procedural_variation,
+            .layer = NightSkyLayerView::Final,
             .data_path = data_path,
         };
     }
@@ -142,19 +145,21 @@ std::filesystem::path shader_path(const char* filename) {
         return {
             .source = NightSkyAtlasSource::Data,
             .procedural_variation = config.night_sky.procedural_variation,
+            .layer = NightSkyLayerView::Final,
             .data_path = data_path,
         };
     }
     return {
         .source = NightSkyAtlasSource::Procedural,
         .procedural_variation = config.night_sky.procedural_variation,
+        .layer = config.night_sky.layer,
     };
 }
 
 [[nodiscard]] bool same_night_sky_atlas(const ResolvedNightSkyAtlas& lhs,
                                         const ResolvedNightSkyAtlas& rhs) {
     return lhs.source == rhs.source && lhs.procedural_variation == rhs.procedural_variation &&
-           lhs.data_path == rhs.data_path;
+           lhs.layer == rhs.layer && lhs.data_path == rhs.data_path;
 }
 
 [[nodiscard]] cubey::render::MaterialPassInfo atmosphere_pass_info() {
@@ -404,6 +409,7 @@ class AtmosphereApp {
             .source = resolved.source,
             .data_path = resolved.data_path,
             .procedural_variation = resolved.procedural_variation,
+            .layer = resolved.layer,
         });
         const std::span<const std::uint8_t> bytes{
             reinterpret_cast<const std::uint8_t*>(atlas.rgba32f.data()),
