@@ -7,10 +7,64 @@
 #include <algorithm>
 
 namespace cubey::projects::atmosphere {
+namespace {
+
+[[nodiscard]] bool has_loading_status(const AtmosphereLoadingStatus& status) {
+    return status.moon_pending || status.night_sky_pending || status.moon_placeholder ||
+           status.night_sky_placeholder || !status.moon_error.empty() ||
+           !status.night_sky_error.empty();
+}
+
+void draw_loading_overlay(const AtmosphereLoadingStatus& status) {
+    if (!has_loading_status(status)) {
+        return;
+    }
+
+    const ImGuiViewport* viewport = ImGui::GetMainViewport();
+    const ImVec2 position{
+        viewport->WorkPos.x + viewport->WorkSize.x - 18.0F,
+        viewport->WorkPos.y + 18.0F,
+    };
+    ImGui::SetNextWindowPos(position, ImGuiCond_Always, ImVec2{1.0F, 0.0F});
+    ImGui::SetNextWindowBgAlpha(0.84F);
+    constexpr ImGuiWindowFlags flags = ImGuiWindowFlags_NoDecoration |
+                                       ImGuiWindowFlags_AlwaysAutoResize |
+                                       ImGuiWindowFlags_NoSavedSettings |
+                                       ImGuiWindowFlags_NoFocusOnAppearing |
+                                       ImGuiWindowFlags_NoNav;
+    if (!ImGui::Begin("Atmosphere asset status", nullptr, flags)) {
+        ImGui::End();
+        return;
+    }
+
+    ImGui::TextUnformatted("Atmosphere assets");
+    if (status.moon_pending) {
+        ImGui::BulletText("Generating moon atlas");
+    } else if (status.moon_placeholder) {
+        ImGui::BulletText("Moon placeholder");
+    }
+    if (status.night_sky_pending) {
+        ImGui::BulletText("Generating night sky atlas");
+    } else if (status.night_sky_placeholder) {
+        ImGui::BulletText("Night sky placeholder");
+    }
+    if (!status.moon_error.empty()) {
+        ImGui::TextColored(ImVec4{1.0F, 0.42F, 0.32F, 1.0F}, "%s",
+                           status.moon_error.c_str());
+    }
+    if (!status.night_sky_error.empty()) {
+        ImGui::TextColored(ImVec4{1.0F, 0.42F, 0.32F, 1.0F}, "%s",
+                           status.night_sky_error.c_str());
+    }
+    ImGui::End();
+}
+
+} // namespace
 
 void draw_atmosphere_ui(AtmosphereUiContext ui) {
     if (!cubey::host::begin_control_panel("Atmosphere", {.width = 390.0F})) {
         ImGui::End();
+        draw_loading_overlay(ui.loading_status);
         return;
     }
 
@@ -143,6 +197,7 @@ void draw_atmosphere_ui(AtmosphereUiContext ui) {
     }
 
     ImGui::End();
+    draw_loading_overlay(ui.loading_status);
 }
 
 } // namespace cubey::projects::atmosphere
