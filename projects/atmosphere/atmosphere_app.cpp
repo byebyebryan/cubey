@@ -2,6 +2,7 @@
 
 #include "atmosphere_config.h"
 #include "atmosphere_ui.h"
+#include "lunar_atlas.h"
 
 #include <cubey/core/math.h>
 #include <cubey/host/frame_stats.h>
@@ -9,12 +10,16 @@
 #include <cubey/host/windowed_app.h>
 #include <cubey/input/input.h>
 #include <cubey/input/orbit_controller.h>
+#include <cubey/render/material.h>
 #include <cubey/render/pass.h>
 #include <cubey/render/pbr.h>
 #include <cubey/render/pipeline_resource.h>
 #include <cubey/render/target.h>
+#include <cubey/render/texture.h>
 #include <cubey/vulkan/command_recorder.h>
+#include <cubey/vulkan/descriptors.h>
 #include <cubey/vulkan/device.h>
+#include <cubey/vulkan/gpu_runtime.h>
 
 #include <vulkan/vulkan.h>
 
@@ -24,8 +29,10 @@
 #include <filesystem>
 #include <numbers>
 #include <optional>
+#include <span>
 #include <stdexcept>
 #include <utility>
+#include <vector>
 
 #ifndef CUBEY_ATMOSPHERE_SHADER_DIR
 #error "CUBEY_ATMOSPHERE_SHADER_DIR must be defined by the atmosphere CMake target"
@@ -89,6 +96,7 @@ std::filesystem::path shader_path(const char* filename) {
     };
     return cubey::render::MaterialPassInfo{
         .label = "atmosphere.fullscreen",
+        .descriptor_sets = {cubey::render::sampled_texture_descriptor_set_layout(0)},
         .push_constants = {push_constant_range},
     };
 }
@@ -122,8 +130,8 @@ class AtmosphereApp {
     int run_windowed() {
         cubey::host::WindowedAppCallbacks callbacks;
         callbacks.create_swapchain_resources = [this](cubey::host::WindowedAppContext& context) {
-            create_pipeline(context.device(), context.swapchain().format(),
-                            context.swapchain().extent());
+            create_gpu_resources(context.device(), context.gpu(), context.swapchain().format(),
+                                 context.swapchain().extent());
         };
         callbacks.destroy_swapchain_resources = [this](cubey::host::WindowedAppContext&) {
             destroy_swapchain_resources();
@@ -176,7 +184,7 @@ class AtmosphereApp {
         cubey::host::HeadlessPngHostCallbacks callbacks;
         callbacks.create_resources = [this](cubey::host::HeadlessPngContext& context) {
             const cubey::host::HeadlessRenderTarget& target = context.render_target();
-            create_pipeline(context.device(), target.format, target.extent);
+            create_gpu_resources(context.device(), context.gpu(), target.format, target.extent);
         };
         callbacks.record_frame = [this](cubey::host::HeadlessPngContext&,
                                         const cubey::host::HeadlessCaptureFrame& frame,
@@ -251,6 +259,61 @@ class AtmosphereApp {
         return sample;
     }
 
+    void create_gpu_resources(cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu,
+                              VkFormat color_format, VkExtent2D extent) {
+        create_lunar_atlas_resources(device, gpu);
+        create_pipeline(device, color_format, extent);
+    }
+
+    void create_lunar_atlas_resources(cubey::vulkan::Device& device,
+                                      cubey::vulkan::GpuRuntime& gpu) {
+        const LunarAtlas atlas = generate_lunar_atlas();
+        std::vector<cubey::render::UploadedTexture2DMip> upload_mips;
+        upload_mips.reserve(atlas.mips.size());
+        for (const LunarAtlasMip& mip : atlas.mips) {
+            upload_mips.push_back(cubey::render::UploadedTexture2DMip{
+                .extent = {mip.width, mip.height},
+                .byte_offset = static_cast<VkDeviceSize>(mip.byte_offset),
+                .byte_count = mip.byte_count,
+            });
+        }
+
+        const cubey::vulkan::SamplerConfig sampler{
+            .min_filter = VK_FILTER_LINEAR,
+            .mag_filter = VK_FILTER_LINEAR,
+            .address_mode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+            .mipmap_mode = VK_SAMPLER_MIPMAP_MODE_LINEAR,
+            .max_lod = static_cast<float>(atlas.mip_levels - 1U),
+        };
+        lunar_atlas_texture_.emplace(cubey::render::create_uploaded_texture_2d(
+            device, gpu,
+            {
+                .extent = {atlas.width, atlas.height},
+                .mip_levels = atlas.mip_levels,
+                .format = VK_FORMAT_R8G8B8A8_UNORM,
+                .rgba8 = std::span<const std::uint8_t>{atlas.rgba8.data(), atlas.rgba8.size()},
+                .mips = std::span<const cubey::render::UploadedTexture2DMip>{upload_mips.data(),
+                                                                             upload_mips.size()},
+                .create_sampler = true,
+                .sampler = sampler,
+            }));
+
+        const std::array bindings{cubey::vulkan::DescriptorSetBindingConfig{
+            .binding = 0,
+            .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
+        }};
+        const cubey::vulkan::DescriptorSetInfo descriptor_info(bindings);
+        lunar_atlas_descriptors_.emplace(device, descriptor_info);
+
+        cubey::vulkan::DescriptorWriteBatch descriptor_writes;
+        descriptor_writes
+            .combined_image_sampler(lunar_atlas_descriptors_->set(), 0,
+                                    lunar_atlas_texture_->sampler().handle(),
+                                    lunar_atlas_texture_->view())
+            .update(device);
+    }
+
     void create_pipeline(cubey::vulkan::Device& device, VkFormat color_format, VkExtent2D extent) {
         const std::array<cubey::render::ShaderStageFile, 2> shader_stage_files{
             cubey::render::ShaderStageFile{
@@ -262,11 +325,13 @@ class AtmosphereApp {
                 .path = shader_path("atmosphere.frag.spv"),
             },
         };
+        const std::array descriptor_set_layouts{lunar_atlas_descriptors().layout()};
 
         pipeline_resource_.emplace(device, cubey::render::GraphicsPipelineFileResourceConfig{
                                                .extent = extent,
                                                .color_format = color_format,
                                                .shader_stage_files = shader_stage_files,
+                                               .descriptor_set_layouts = descriptor_set_layouts,
                                                .material_pass = atmosphere_pass_info(),
                                            });
         pipeline_color_format_ = color_format;
@@ -274,6 +339,8 @@ class AtmosphereApp {
 
     void destroy_swapchain_resources() {
         pipeline_resource_.reset();
+        lunar_atlas_descriptors_.reset();
+        lunar_atlas_texture_.reset();
         pipeline_color_format_ = VK_FORMAT_UNDEFINED;
     }
 
@@ -402,8 +469,12 @@ class AtmosphereApp {
             },
             [this, constants](const cubey::vulkan::CommandRecorder& pass_recorder) {
                 cubey::render::record_fullscreen_pipeline_draw(
-                    pass_recorder, {.pipeline = &pipeline_resource()}, VK_SHADER_STAGE_FRAGMENT_BIT,
-                    constants);
+                    pass_recorder,
+                    {
+                        .pipeline = &pipeline_resource(),
+                        .descriptor_set = lunar_atlas_descriptors().set(),
+                    },
+                    VK_SHADER_STAGE_FRAGMENT_BIT, constants);
             });
     }
 
@@ -431,6 +502,13 @@ class AtmosphereApp {
         return pipeline_resource_.value();
     }
 
+    [[nodiscard]] const cubey::vulkan::DescriptorSetBundle& lunar_atlas_descriptors() const {
+        if (!lunar_atlas_descriptors_.has_value()) {
+            throw std::runtime_error("atmosphere lunar atlas descriptors are not initialized");
+        }
+        return lunar_atlas_descriptors_.value();
+    }
+
     RunConfig run_config_;
     AtmosphereConfig atmosphere_config_;
     AtmosphereRenderView render_view_ = AtmosphereRenderView::Final;
@@ -448,6 +526,8 @@ class AtmosphereApp {
     bool reset_requested_ = false;
 
     VkFormat pipeline_color_format_ = VK_FORMAT_UNDEFINED;
+    std::optional<cubey::render::Texture2D> lunar_atlas_texture_;
+    std::optional<cubey::vulkan::DescriptorSetBundle> lunar_atlas_descriptors_;
     std::optional<cubey::render::GraphicsPipelineResource> pipeline_resource_;
 };
 

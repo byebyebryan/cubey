@@ -6,6 +6,7 @@ cubey_add_app_target(
     WINDOWED_SMOKE_PATTERN "atmosphere: .*rendering atmosphere project"
     SOURCES
         atmosphere_app.cpp
+        lunar_atlas.cpp
         atmosphere_ui.cpp
         main.cpp
     SHADERS
@@ -21,6 +22,7 @@ cubey_add_app_target(
 if (BUILD_TESTING)
     add_executable(cubey_project_atmosphere_tests
         atmosphere_config_tests.cpp
+        lunar_atlas.cpp
     )
     target_include_directories(
         cubey_project_atmosphere_tests
@@ -109,6 +111,18 @@ if (BUILD_TESTING)
         --headless
         --atmosphere-preset
         moonlit-night
+    )
+
+    set(CUBEY_ATMOSPHERE_MOON_SURFACE_SMOKE_OUTPUT
+        "${CMAKE_CURRENT_BINARY_DIR}/atmosphere-moon-surface.png"
+    )
+    cubey_add_png_smoke_test(
+        atmosphere_moon_surface_writes_png
+        cubey_project_atmosphere
+        "${CUBEY_ATMOSPHERE_MOON_SURFACE_SMOKE_OUTPUT}"
+        --headless
+        --debug-view
+        moon-surface
     )
 
     set(CUBEY_ATMOSPHERE_TRANSMITTANCE_SMOKE_OUTPUT

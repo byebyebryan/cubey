@@ -41,9 +41,10 @@ enum class AtmosphereRenderView : std::uint32_t {
     AerialPerspective = 6,
     NightSky = 7,
     Moon = 8,
+    MoonSurface = 9,
 };
 
-inline constexpr std::array<AtmosphereRenderView, 9> kAtmosphereRenderViews{
+inline constexpr std::array<AtmosphereRenderView, 10> kAtmosphereRenderViews{
     AtmosphereRenderView::Final,
     AtmosphereRenderView::Rayleigh,
     AtmosphereRenderView::Mie,
@@ -53,6 +54,7 @@ inline constexpr std::array<AtmosphereRenderView, 9> kAtmosphereRenderViews{
     AtmosphereRenderView::AerialPerspective,
     AtmosphereRenderView::NightSky,
     AtmosphereRenderView::Moon,
+    AtmosphereRenderView::MoonSurface,
 };
 
 enum class SunControlMode : std::uint32_t {
@@ -192,6 +194,8 @@ struct LunarState {
         return "night-sky";
     case AtmosphereRenderView::Moon:
         return "moon";
+    case AtmosphereRenderView::MoonSurface:
+        return "moon-surface";
     }
     return "final";
 }

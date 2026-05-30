@@ -28,6 +28,8 @@ layout(push_constant) uniform AtmosphereParams {
     vec4 moon_phase_options;
 } atmosphere;
 
+layout(set = 0, binding = 0) uniform sampler2D moon_atlas;
+
 layout(location = 0) in vec2 frag_ndc;
 layout(location = 0) out vec4 out_color;
 
@@ -374,93 +376,20 @@ vec3 sun_disk_luminance(vec3 ray_direction, vec3 planet_center) {
     return transmittance_from_depth(depth) * disk * ATMOSPHERE_SUN_INTENSITY;
 }
 
-float moon_ellipse_mask(vec2 position, vec2 center, vec2 radius, float rotation, float seed) {
-    float c = cos(rotation);
-    float s = sin(rotation);
-    vec2 offset = position - center;
-    vec2 rotated = vec2(c * offset.x + s * offset.y, -s * offset.x + c * offset.y);
-    vec2 basin_uv = rotated / radius;
-    float edge_noise = fbm2(basin_uv * 2.1 + vec2(seed, seed * 0.37)) * 0.18;
-    float distance_to_basin = length(basin_uv) + edge_noise;
-    return 1.0 - smoothstep(0.72, 1.04, distance_to_basin);
-}
+struct MoonSurfaceSample {
+    float albedo;
+    vec3 normal;
+};
 
-float moon_maria_mask(vec2 position) {
-    float maria = 0.0;
-    maria =
-        max(maria, moon_ellipse_mask(position, vec2(-0.34, 0.08), vec2(0.24, 0.42), -0.30, 1.0));
-    maria =
-        max(maria, moon_ellipse_mask(position, vec2(-0.08, 0.40), vec2(0.22, 0.14), 0.14, 2.0));
-    maria =
-        max(maria, moon_ellipse_mask(position, vec2(0.22, 0.30), vec2(0.16, 0.12), -0.18, 3.0));
-    maria =
-        max(maria, moon_ellipse_mask(position, vec2(0.26, 0.04), vec2(0.22, 0.13), 0.25, 4.0));
-    maria =
-        max(maria, moon_ellipse_mask(position, vec2(-0.12, -0.34), vec2(0.21, 0.13), -0.10, 5.0));
-    maria =
-        max(maria, moon_ellipse_mask(position, vec2(0.51, 0.19), vec2(0.12, 0.10), 0.05, 6.0));
-    maria =
-        max(maria, moon_ellipse_mask(position, vec2(0.20, -0.30), vec2(0.17, 0.11), -0.25, 7.0));
-    return clamp(maria, 0.0, 1.0);
-}
-
-float moon_crater_layer(vec2 position, float scale, float strength, float seed_offset) {
-    vec2 uv = position * scale + vec2(seed_offset, seed_offset * 0.57);
-    vec2 cell = floor(uv);
-    vec2 local = fract(uv);
-    float detail = 0.0;
-    for (int y = -1; y <= 1; ++y) {
-        for (int x = -1; x <= 1; ++x) {
-            vec2 neighbor = vec2(float(x), float(y));
-            vec2 seed = cell + neighbor;
-            float keep = hash12(seed + seed_offset * 3.7);
-            if (keep < 0.42) {
-                continue;
-            }
-            vec2 center = neighbor + hash22(seed + seed_offset);
-            vec2 crater_delta = local - center;
-            float radius = mix(0.13, 0.30, hash12(seed + seed_offset * 11.3));
-            float crater_distance = length(crater_delta) / radius;
-            float rim = exp(-70.0 * (crater_distance - 1.0) * (crater_distance - 1.0)) *
-                        (1.0 - smoothstep(1.10, 1.85, crater_distance));
-            float floor = 1.0 - smoothstep(0.20, 0.78, crater_distance);
-            float ejecta = exp(-2.8 * crater_distance) *
-                           (1.0 - smoothstep(1.0, 3.0, crater_distance));
-            detail += strength * (0.085 * rim - 0.050 * floor + 0.020 * ejecta);
-        }
-    }
-    return detail;
-}
-
-float moon_ray_detail(vec2 position, vec2 center, float rotation, float strength) {
-    vec2 delta = position - center;
-    float radius = length(delta);
-    float angle = atan(delta.y, delta.x) + rotation;
-    float spokes = pow(abs(cos(angle * 7.0)), 18.0);
-    float fade = smoothstep(0.05, 0.16, radius) * (1.0 - smoothstep(0.24, 0.78, radius));
-    return spokes * fade * strength;
-}
-
-float moon_surface_albedo(vec2 position, float pixel_radius, float light_dot) {
-    float maria = moon_maria_mask(position);
-    float broad_noise = fbm2(position * 4.0 + vec2(8.7, 3.1));
-    float fine_visibility = smoothstep(10.0, 42.0, pixel_radius);
-    float crater_visibility = smoothstep(8.0, 28.0, pixel_radius);
-
-    float albedo = mix(0.56, 0.34, maria);
-    albedo += broad_noise * 0.045;
-    albedo += fbm2(position * 18.0 + vec2(23.0, 5.0)) * 0.040 * fine_visibility;
-
-    float crater_detail = moon_crater_layer(position, 5.5, 1.0, 13.0) +
-                          moon_crater_layer(position + vec2(0.07, -0.04), 12.0, 0.62, 37.0);
-    float terminator_contrast = mix(0.55, 1.30, 1.0 - smoothstep(0.05, 0.45, abs(light_dot)));
-    albedo += crater_detail * crater_visibility * terminator_contrast;
-
-    float rays = moon_ray_detail(position, vec2(0.34, -0.24), 0.22, 0.050) +
-                 moon_ray_detail(position, vec2(-0.18, 0.22), -0.34, 0.028);
-    albedo += rays * fine_visibility;
-
-    return clamp(albedo, 0.24, 0.72);
+MoonSurfaceSample moon_surface_sample(vec2 position, vec3 surface_normal, vec3 moon_right,
+                                      vec3 moon_up) {
+    vec4 atlas = texture(moon_atlas, position * 0.5 + 0.5);
+    vec2 detail_xy = atlas.gb * 2.0 - 1.0;
+    detail_xy *= smoothstep(0.0, 0.18, sqrt(max(1.0 - dot(position, position), 0.0)));
+    vec3 detail_normal =
+        normalize(surface_normal + moon_right * detail_xy.x * 0.30 + moon_up * detail_xy.y * 0.30);
+    float albedo = clamp((atlas.r - 0.44) * 2.05 + 0.44, 0.16, 0.84);
+    return MoonSurfaceSample(albedo, detail_normal);
 }
 
 vec3 moon_disk_radiance(vec3 ray_direction, vec3 sun_direction, vec3 planet_center) {
@@ -471,11 +400,6 @@ vec3 moon_disk_radiance(vec3 ray_direction, vec3 sun_direction, vec3 planet_cent
     vec3 moon_direction = normalize(atmosphere.moon_direction_radius.xyz);
     float moon_cos = dot(ray_direction, moon_direction);
     float moon_radius = atmosphere.moon_direction_radius.w;
-    float moon_cutoff = cos(moon_radius);
-    float disk = smoothstep(moon_cutoff, min(1.0, moon_cutoff + 0.00055), moon_cos);
-    if (disk <= 0.0) {
-        return vec3(0.0);
-    }
 
     vec3 moon_up = vec3(0.0, 1.0, 0.0) - moon_direction * moon_direction.y;
     if (dot(moon_up, moon_up) < 0.000001) {
@@ -487,15 +411,20 @@ vec3 moon_disk_radiance(vec3 ray_direction, vec3 sun_direction, vec3 planet_cent
     vec2 moon_position = vec2(dot(disk_offset, moon_right), dot(disk_offset, moon_up)) /
                          max(sin(moon_radius), 0.0001);
     float radius_squared = dot(moon_position, moon_position);
-    if (radius_squared > 1.04) {
+    float disk_radius = sqrt(radius_squared);
+    float rim_width = max(fwidth(disk_radius) * 1.35, 0.0015);
+    float rim_antialias = 1.0 - smoothstep(1.0 - rim_width, 1.0 + rim_width, disk_radius);
+    if (rim_antialias <= 0.0) {
         return vec3(0.0);
     }
 
     float local_z = sqrt(max(1.0 - radius_squared, 0.0));
     vec3 surface_normal = normalize(moon_right * moon_position.x + moon_up * moon_position.y -
                                     moon_direction * local_z);
+    MoonSurfaceSample surface = moon_surface_sample(moon_position, surface_normal, moon_right,
+                                                    moon_up);
     float mu = max(local_z, 0.0);
-    float light_dot = dot(surface_normal, sun_direction);
+    float light_dot = dot(surface.normal, sun_direction);
     float mu0 = max(light_dot, 0.0);
     float derivative_width = max(length(fwidth(moon_position)), 0.004);
     float terminator_noise = fbm2(moon_position * 18.0 + vec2(41.0, 2.0)) * 0.035;
@@ -506,15 +435,9 @@ vec3 moon_disk_radiance(vec3 ray_direction, vec3 sun_direction, vec3 planet_cent
         return vec3(0.0);
     }
 
-    float pixel_radius = 1.0 / derivative_width;
-    float albedo = moon_surface_albedo(moon_position, pixel_radius, light_dot);
     float phase_alignment = clamp(dot(-moon_direction, sun_direction) * 0.5 + 0.5, 0.0, 1.0);
     float opposition_boost = mix(0.88, 1.12, pow(phase_alignment, 6.0));
     float limb_softening = mix(0.78, 1.0, smoothstep(0.0, 0.35, mu));
-    float rim_antialias = 1.0 - smoothstep(0.96, 1.02, sqrt(radius_squared));
-    if (rim_antialias <= 0.0) {
-        return vec3(0.0);
-    }
 
     vec2 atmosphere_hit = ray_sphere_intersection(vec3(0.0), ray_direction, planet_center,
                                                   atmosphere.radii_ground.y);
@@ -522,8 +445,8 @@ vec3 moon_disk_radiance(vec3 ray_direction, vec3 sun_direction, vec3 planet_cent
     OpticalDepth depth = integrate_optical_depth(vec3(0.0), ray_direction, ray_end,
                                                 planet_center, ATMOSPHERE_LIGHT_SAMPLE_COUNT);
     vec3 moon_color = cubey_srgb_to_linear(vec3(0.78, 0.84, 1.0));
-    return transmittance_from_depth(depth) * moon_color * albedo * surface_light * disk *
-           rim_antialias * limb_softening * opposition_boost * atmosphere.moon_options.y * 0.34;
+    return transmittance_from_depth(depth) * moon_color * surface.albedo * surface_light *
+           rim_antialias * limb_softening * opposition_boost * atmosphere.moon_options.y * 0.18;
 }
 
 float reference_line(vec2 position, float spacing) {
@@ -648,6 +571,24 @@ vec3 debug_optical_depth(OpticalDepth depth) {
     return vec3(depth.rayleigh * 0.020, depth.mie * 0.080, depth.ozone * 0.035);
 }
 
+vec3 render_moon_surface_debug() {
+    vec2 position =
+        vec2(frag_ndc.x * atmosphere.camera_right_aspect.w, frag_ndc.y) / 0.88;
+    float radius_squared = dot(position, position);
+    if (radius_squared > 1.0) {
+        return vec3(0.0);
+    }
+
+    vec4 atlas = texture(moon_atlas, position * 0.5 + 0.5);
+    float albedo = clamp((atlas.r - 0.44) * 2.65 + 0.50, 0.0, 1.0);
+    vec2 normal_xy = atlas.gb * 2.0 - 1.0;
+    float relief = dot(normalize(vec3(normal_xy * 1.6, 1.0)),
+                       normalize(vec3(-0.35, 0.55, 0.76)));
+    float relief_preview = mix(0.72, 1.18, clamp(relief * 0.5 + 0.5, 0.0, 1.0));
+    float limb = 1.0 - smoothstep(0.985, 1.0, sqrt(radius_squared));
+    return vec3(albedo * relief_preview * limb);
+}
+
 void main() {
     float tan_half_fovy = atmosphere.camera_up_tan_half_fovy.w;
     vec3 ray_direction = normalize(
@@ -656,6 +597,14 @@ void main() {
             tan_half_fovy -
         atmosphere.camera_up_tan_half_fovy.xyz * frag_ndc.y * tan_half_fovy);
     vec3 planet_center = vec3(0.0, -atmosphere.radii_ground.x - atmosphere.radii_ground.z, 0.0);
+    int debug_view = int(atmosphere.camera_forward_debug_view.w + 0.5);
+
+    if (debug_view == 9) {
+        vec3 color = render_moon_surface_debug();
+        out_color = vec4(cubey_pbr_apply_display_transform(color, atmosphere.display_transform),
+                         1.0);
+        return;
+    }
 
     vec2 atmosphere_hit = ray_sphere_intersection(vec3(0.0), ray_direction, planet_center,
                                                   atmosphere.radii_ground.y);
@@ -677,7 +626,6 @@ void main() {
         ray_end = ground_t;
     }
 
-    int debug_view = int(atmosphere.camera_forward_debug_view.w + 0.5);
     AtmosphereSample atmosphere_sample = integrate_atmosphere(vec3(0.0), ray_direction, ray_start,
                                                               ray_end, planet_center);
     vec3 sun_direction = normalize(atmosphere.sun_direction_radius.xyz);

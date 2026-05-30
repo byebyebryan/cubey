@@ -19,6 +19,7 @@ Useful runs:
 ```sh
 ./build/dev/projects/atmosphere/atmosphere --headless --output /tmp/cubey-atmosphere.png
 ./build/dev/projects/atmosphere/atmosphere --headless --debug-view transmittance --output /tmp/cubey-atmosphere-transmittance.png
+./build/dev/projects/atmosphere/atmosphere --headless --debug-view moon-surface --output /tmp/cubey-atmosphere-moon-surface.png
 ./build/dev/projects/atmosphere/atmosphere --headless --atmosphere-preset sunset --output /tmp/cubey-atmosphere-sunset.png
 ./build/dev/projects/atmosphere/atmosphere --headless --time-of-day-mode solar --time-hours 17.8 --output /tmp/cubey-atmosphere-twilight.png
 ./build/dev/projects/atmosphere/atmosphere --headless --capture video --frames 120 --output /tmp/cubey-atmosphere.mp4
@@ -29,8 +30,8 @@ Controls:
 - Left-drag: rotate view direction.
 - Space: play/pause solar time.
 - `R`: reset to the active preset.
-- `D`: cycle final, rayleigh, mie, transmittance, optical-depth, sun-disk, and
-  aerial-perspective debug views.
+- `D`: cycle final, rayleigh, mie, transmittance, optical-depth, sun-disk,
+  aerial-perspective, night-sky, moon, and moon-surface debug views.
 - The Time panel switches between manual sun direction and local solar time.
 - The Reference panel controls the ground grid, local red/cyan axes, and origin
   marker used for orientation.
