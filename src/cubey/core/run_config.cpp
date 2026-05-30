@@ -298,8 +298,6 @@ RunConfig parse_run_config(int argc, char** argv) {
             config.atmosphere.time_of_day_mode = std::string(need_value("--time-of-day-mode"));
         } else if (arg == "--night-sky-mode") {
             config.atmosphere.night_sky_mode = std::string(need_value("--night-sky-mode"));
-        } else if (arg == "--milky-way-source") {
-            config.atmosphere.milky_way_source = std::string(need_value("--milky-way-source"));
         } else if (arg == "--milky-way-layer") {
             config.atmosphere.milky_way_layer = std::string(need_value("--milky-way-layer"));
         } else if (arg == "--sun-elevation") {
@@ -413,12 +411,6 @@ RunConfig parse_run_config(int argc, char** argv) {
         config.atmosphere.night_sky_mode != "human" &&
         config.atmosphere.night_sky_mode != "camera") {
         throw std::runtime_error("atmosphere night sky mode must be human or camera");
-    }
-    if (!config.atmosphere.milky_way_source.empty() &&
-        config.atmosphere.milky_way_source != "auto" &&
-        config.atmosphere.milky_way_source != "data" &&
-        config.atmosphere.milky_way_source != "procedural") {
-        throw std::runtime_error("atmosphere Milky Way source must be auto, data, or procedural");
     }
     if (!config.atmosphere.milky_way_layer.empty() &&
         config.atmosphere.milky_way_layer != "final" &&

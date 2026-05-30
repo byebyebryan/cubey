@@ -204,15 +204,6 @@ int main() {
     require_throws([] { static_cast<void>(sun_control_mode_from_name("civil")); },
                    "sun control mode parser should reject unknown modes");
 
-    for (const NightSkySource source : kNightSkySources) {
-        require(night_sky_source_from_name(night_sky_source_name(source)) == source,
-                "night sky source names should round trip");
-    }
-    require(night_sky_source_from_name("") == NightSkySource::Auto,
-            "empty night sky source should default to auto");
-    require_throws([] { static_cast<void>(night_sky_source_from_name("painted")); },
-                   "night sky source parser should reject unknown sources");
-
     for (const NightSkyVisualMode mode : kNightSkyVisualModes) {
         require(night_sky_visual_mode_from_name(night_sky_visual_mode_name(mode)) == mode,
                 "night sky visual mode names should round trip");
@@ -276,7 +267,6 @@ int main() {
                 defaults.reference_intensity > 0.0F,
             "default atmosphere config should expose reference ground geometry");
     require(defaults.night_sky.twilight_strength > 0.0F &&
-                defaults.night_sky.source == NightSkySource::Procedural &&
                 defaults.night_sky.star_intensity > 0.0F &&
                 defaults.night_sky.star_density > 0.0F && defaults.night_sky.star_density <= 1.0F &&
                 defaults.night_sky.milky_way_intensity > 0.0F &&
@@ -319,7 +309,6 @@ int main() {
 
     {
         const NightSkyAtlasConfig procedural_config{
-            .source = NightSkyAtlasSource::Procedural,
             .procedural_variation = 0.0F,
         };
         const NightSkyAtlas default_atlas = generate_night_sky_atlas(procedural_config);
@@ -330,25 +319,21 @@ int main() {
         const NightSkyAtlas atlas_again = generate_night_sky_atlas(procedural_config, 64U);
         const NightSkyAtlas varied = generate_night_sky_atlas(
             NightSkyAtlasConfig{
-                .source = NightSkyAtlasSource::Procedural,
                 .procedural_variation = 3.0F,
             },
             64U);
         const NightSkyAtlas dust_layer = generate_night_sky_atlas(
             NightSkyAtlasConfig{
-                .source = NightSkyAtlasSource::Procedural,
                 .layer = NightSkyLayerView::DustTau,
             },
             64U);
         const NightSkyAtlas hii_layer = generate_night_sky_atlas(
             NightSkyAtlasConfig{
-                .source = NightSkyAtlasSource::Procedural,
                 .layer = NightSkyLayerView::HiiEmission,
             },
             64U);
         const NightSkyAtlas speckle_layer = generate_night_sky_atlas(
             NightSkyAtlasConfig{
-                .source = NightSkyAtlasSource::Procedural,
                 .layer = NightSkyLayerView::Speckles,
             },
             64U);
@@ -432,28 +417,6 @@ int main() {
                     "night sky atlas values should be finite and nonnegative");
         }
     }
-
-#ifdef CUBEY_MILKY_WAY_ASSETS_DIR
-    {
-        std::filesystem::path data_path =
-            std::filesystem::path(CUBEY_MILKY_WAY_ASSETS_DIR) / "starmap_8k.jpg";
-        if (!std::filesystem::exists(data_path)) {
-            data_path = std::filesystem::path(CUBEY_MILKY_WAY_ASSETS_DIR) / "2048.jpg";
-        }
-        if (std::filesystem::exists(data_path)) {
-            const NightSkyAtlas data_atlas = generate_night_sky_atlas(
-                NightSkyAtlasConfig{
-                    .source = NightSkyAtlasSource::Data,
-                    .data_path = data_path,
-                },
-                32U);
-            require(data_atlas.extent == 32U && data_atlas.source == NightSkyAtlasSource::Data,
-                    "data-backed night sky atlas should load the configured source image");
-            require(!data_atlas.rgba32f.empty(),
-                    "data-backed night sky atlas should emit cubemap radiance");
-        }
-    }
-#endif
 
     {
         TimeOfDayConfig solar_noon;
@@ -585,7 +548,6 @@ int main() {
         run_config.atmosphere.preset = "sunset";
         run_config.debug_view = "moon";
         run_config.atmosphere.night_sky_mode = "camera";
-        run_config.atmosphere.milky_way_source = "procedural";
         run_config.atmosphere.milky_way_layer = "dust-tau";
         run_config.atmosphere.sun_elevation_degrees = 6.0F;
         run_config.atmosphere.sun_azimuth_degrees = 33.0F;
@@ -610,9 +572,8 @@ int main() {
         require(config.render_view == AtmosphereRenderView::Moon,
                 "run config should select atmosphere debug view");
         require(config.night_sky.visual_mode == NightSkyVisualMode::Camera &&
-                    config.night_sky.source == NightSkySource::Procedural &&
                     config.night_sky.layer == NightSkyLayerView::DustTau,
-                "run config should select night sky source, visual mode, and layer");
+                "run config should select night sky visual mode and layer");
         require(config.sun_elevation_degrees == 6.0F && config.sun_azimuth_degrees == 33.0F &&
                     config.camera_altitude_km == 2.0F && config.mie_density_scale == 2.25F,
                 "run config atmosphere overrides should win over preset defaults");

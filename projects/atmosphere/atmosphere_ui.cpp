@@ -144,8 +144,6 @@ void draw_atmosphere_ui(AtmosphereUiContext ui) {
 
     if (cubey::host::imgui_section("Night sky", true)) {
         const cubey::host::ScopedImGuiId section_id("Night sky");
-        cubey::host::imgui_enum_combo("Source", ui.config.night_sky.source, kNightSkySources,
-                                      night_sky_source_name);
         cubey::host::imgui_enum_combo("Mode", ui.config.night_sky.visual_mode,
                                       kNightSkyVisualModes, night_sky_visual_mode_name);
         cubey::host::imgui_enum_combo("Layer", ui.config.night_sky.layer, kNightSkyLayerViews,

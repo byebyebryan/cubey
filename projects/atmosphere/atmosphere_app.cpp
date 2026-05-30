@@ -75,10 +75,8 @@ struct AtmospherePushConstants {
 static_assert(sizeof(AtmospherePushConstants) == sizeof(float) * 64U);
 
 struct ResolvedNightSkyAtlas {
-    NightSkyAtlasSource source = NightSkyAtlasSource::Procedural;
     float procedural_variation = 0.0F;
     NightSkyLayerView layer = NightSkyLayerView::Final;
-    std::optional<std::filesystem::path> data_path{};
 };
 
 struct GeneratedNightSkyAtlas {
@@ -89,11 +87,6 @@ struct GeneratedNightSkyAtlas {
 struct PendingNightSkyAtlasJob {
     ResolvedNightSkyAtlas resolved{};
     cubey::jobs::JobHandle<GeneratedNightSkyAtlas> job;
-};
-
-enum class MissingNightSkyDataPolicy {
-    Strict,
-    FallbackToProcedural,
 };
 
 std::filesystem::path shader_path(const char* filename) {
@@ -115,55 +108,8 @@ std::filesystem::path shader_path(const char* filename) {
     });
 }
 
-[[nodiscard]] std::optional<std::filesystem::path> default_milky_way_data_path() {
-#ifdef CUBEY_MILKY_WAY_ASSETS_DIR
-    const std::filesystem::path nasa_path =
-        std::filesystem::path(CUBEY_MILKY_WAY_ASSETS_DIR) / "starmap_8k.jpg";
-    if (std::filesystem::exists(nasa_path)) {
-        return nasa_path;
-    }
-    const std::filesystem::path noaa_path =
-        std::filesystem::path(CUBEY_MILKY_WAY_ASSETS_DIR) / "2048.jpg";
-    if (std::filesystem::exists(noaa_path)) {
-        return noaa_path;
-    }
-#endif
-    return std::nullopt;
-}
-
-[[nodiscard]] ResolvedNightSkyAtlas resolve_night_sky_atlas(
-    const AtmosphereConfig& config, MissingNightSkyDataPolicy missing_data_policy) {
-    const std::optional<std::filesystem::path> data_path = default_milky_way_data_path();
-    if (config.night_sky.source == NightSkySource::Data) {
-        if (!data_path.has_value()) {
-            if (missing_data_policy == MissingNightSkyDataPolicy::FallbackToProcedural) {
-                return {
-                    .source = NightSkyAtlasSource::Procedural,
-                    .procedural_variation = config.night_sky.procedural_variation,
-                    .layer = config.night_sky.layer,
-                };
-            }
-            throw std::runtime_error(
-                "Milky Way data source requested but CUBEY_MILKY_WAY_ASSETS_DIR/starmap_8k.jpg "
-                "or 2048.jpg is not available");
-        }
-        return {
-            .source = NightSkyAtlasSource::Data,
-            .procedural_variation = config.night_sky.procedural_variation,
-            .layer = NightSkyLayerView::Final,
-            .data_path = data_path,
-        };
-    }
-    if (config.night_sky.source == NightSkySource::Auto && data_path.has_value()) {
-        return {
-            .source = NightSkyAtlasSource::Data,
-            .procedural_variation = config.night_sky.procedural_variation,
-            .layer = NightSkyLayerView::Final,
-            .data_path = data_path,
-        };
-    }
+[[nodiscard]] ResolvedNightSkyAtlas resolve_night_sky_atlas(const AtmosphereConfig& config) {
     return {
-        .source = NightSkyAtlasSource::Procedural,
         .procedural_variation = config.night_sky.procedural_variation,
         .layer = config.night_sky.layer,
     };
@@ -171,23 +117,11 @@ std::filesystem::path shader_path(const char* filename) {
 
 [[nodiscard]] bool same_night_sky_atlas(const ResolvedNightSkyAtlas& lhs,
                                         const ResolvedNightSkyAtlas& rhs) {
-    return lhs.source == rhs.source && lhs.procedural_variation == rhs.procedural_variation &&
-           lhs.layer == rhs.layer && lhs.data_path == rhs.data_path;
-}
-
-[[nodiscard]] ResolvedNightSkyAtlas procedural_night_sky_atlas_request(
-    const AtmosphereConfig& config) {
-    return {
-        .source = NightSkyAtlasSource::Procedural,
-        .procedural_variation = config.night_sky.procedural_variation,
-        .layer = config.night_sky.layer,
-    };
+    return lhs.procedural_variation == rhs.procedural_variation && lhs.layer == rhs.layer;
 }
 
 [[nodiscard]] NightSkyAtlasConfig night_sky_atlas_config(const ResolvedNightSkyAtlas& resolved) {
     return {
-        .source = resolved.source,
-        .data_path = resolved.data_path,
         .procedural_variation = resolved.procedural_variation,
         .layer = resolved.layer,
     };
@@ -407,8 +341,7 @@ class AtmosphereApp {
         upload_lunar_atlas(device, gpu, generate_lunar_atlas());
         lunar_atlas_ready_ = true;
 
-        const ResolvedNightSkyAtlas resolved =
-            resolve_night_sky_atlas(atmosphere_config_, missing_night_sky_data_policy());
+        const ResolvedNightSkyAtlas resolved = resolve_night_sky_atlas(atmosphere_config_);
         upload_night_sky_atlas(device, gpu, generate_resolved_night_sky_atlas(resolved));
 
         create_atmosphere_descriptors(device);
@@ -567,13 +500,7 @@ class AtmosphereApp {
     }
 
     [[nodiscard]] ResolvedNightSkyAtlas desired_windowed_night_sky_atlas() const {
-        const ResolvedNightSkyAtlas resolved = resolve_night_sky_atlas(
-            atmosphere_config_, MissingNightSkyDataPolicy::FallbackToProcedural);
-        if (failed_night_sky_atlas_.has_value() &&
-            same_night_sky_atlas(failed_night_sky_atlas_.value(), resolved)) {
-            return procedural_night_sky_atlas_request(atmosphere_config_);
-        }
-        return resolved;
+        return resolve_night_sky_atlas(atmosphere_config_);
     }
 
     void request_night_sky_atlas_if_needed(const ResolvedNightSkyAtlas& resolved) {
@@ -599,14 +526,6 @@ class AtmosphereApp {
         poll_lunar_atlas_job(device, gpu);
         poll_night_sky_atlas_job(device, gpu);
         const ResolvedNightSkyAtlas desired = desired_windowed_night_sky_atlas();
-        if (failed_night_sky_atlas_.has_value() &&
-            !same_night_sky_atlas(failed_night_sky_atlas_.value(),
-                                  resolve_night_sky_atlas(
-                                      atmosphere_config_,
-                                      MissingNightSkyDataPolicy::FallbackToProcedural))) {
-            failed_night_sky_atlas_.reset();
-            night_sky_atlas_error_.clear();
-        }
         request_night_sky_atlas_if_needed(desired);
     }
 
@@ -632,7 +551,6 @@ class AtmosphereApp {
             return;
         }
 
-        const ResolvedNightSkyAtlas requested = pending_night_sky_atlas_->resolved;
         try {
             GeneratedNightSkyAtlas generated = pending_night_sky_atlas_->job.get();
             pending_night_sky_atlas_.reset();
@@ -646,11 +564,6 @@ class AtmosphereApp {
         } catch (const std::exception& error) {
             pending_night_sky_atlas_.reset();
             night_sky_atlas_error_ = error.what();
-            if (requested.source == NightSkyAtlasSource::Data) {
-                failed_night_sky_atlas_ = requested;
-                request_night_sky_atlas_if_needed(
-                    procedural_night_sky_atlas_request(atmosphere_config_));
-            }
         }
     }
 
@@ -666,11 +579,6 @@ class AtmosphereApp {
         loading_status_.night_sky_placeholder = !current_night_sky_atlas_.has_value();
         loading_status_.moon_error = lunar_atlas_error_;
         loading_status_.night_sky_error = night_sky_atlas_error_;
-    }
-
-    [[nodiscard]] MissingNightSkyDataPolicy missing_night_sky_data_policy() const {
-        return run_config_.headless ? MissingNightSkyDataPolicy::Strict
-                                    : MissingNightSkyDataPolicy::FallbackToProcedural;
     }
 
     void create_pipeline(cubey::vulkan::Device& device, VkFormat color_format, VkExtent2D extent) {
@@ -707,7 +615,6 @@ class AtmosphereApp {
         night_sky_atlas_texture_.reset();
         current_night_sky_atlas_.reset();
         lunar_atlas_ready_ = false;
-        failed_night_sky_atlas_.reset();
         refresh_loading_status();
     }
 
@@ -906,7 +813,6 @@ class AtmosphereApp {
     std::optional<cubey::render::Texture2D> lunar_atlas_texture_;
     std::optional<cubey::render::TextureCube> night_sky_atlas_texture_;
     std::optional<ResolvedNightSkyAtlas> current_night_sky_atlas_;
-    std::optional<ResolvedNightSkyAtlas> failed_night_sky_atlas_;
     std::optional<cubey::vulkan::DescriptorSetBundle> atmosphere_descriptors_;
     std::optional<cubey::render::GraphicsPipelineResource> pipeline_resource_;
     cubey::jobs::JobSystem atlas_jobs_{2};

@@ -15,15 +15,9 @@ resolved on the CPU from local solar time, day of year, and latitude, with manua
 sun direction still available for art/debug work.
 
 Night rendering includes procedural foreground stars, a moon disk with a
-generated lunar atlas, and a procedural Milky Way atlas by default. Explicit
-`data` or `auto` source selection can use NASA SVS Deep Star Maps
-`starmap_8k.jpg` when `CUBEY_FETCH_MILKY_WAY_ASSETS=ON` or
-`CUBEY_MILKY_WAY_ASSETS_DIR` points at a local copy. The optional fetch also
-keeps the earlier NOAA/Mellinger `2048.jpg` panorama as a fallback/reference.
-Sources:
-https://svs.gsfc.nasa.gov/3895, https://svs.gsfc.nasa.gov/4851,
-https://sos.noaa.gov/catalog/datasets/milky-way-panorama/, and
-https://arxiv.org/abs/0908.4360.
+generated lunar atlas, and a procedural Milky Way atlas. The Milky Way generator
+is tuned in local layers for stellar emission, dust lanes, star clouds, H II
+regions, and speckles instead of consuming a source panorama.
 
 Useful runs:
 
@@ -31,7 +25,7 @@ Useful runs:
 ./build/dev/projects/atmosphere/atmosphere --headless --output /tmp/cubey-atmosphere.png
 ./build/dev/projects/atmosphere/atmosphere --headless --debug-view transmittance --output /tmp/cubey-atmosphere-transmittance.png
 ./build/dev/projects/atmosphere/atmosphere --headless --debug-view moon-surface --output /tmp/cubey-atmosphere-moon-surface.png
-./build/dev/projects/atmosphere/atmosphere --headless --debug-view milky-way --milky-way-source procedural --output /tmp/cubey-atmosphere-milky-way.png
+./build/dev/projects/atmosphere/atmosphere --headless --debug-view milky-way --output /tmp/cubey-atmosphere-milky-way.png
 ./build/dev/projects/atmosphere/atmosphere --headless --debug-view milky-way --milky-way-layer dust-tau --output /tmp/cubey-atmosphere-milky-way-dust.png
 ./build/dev/projects/atmosphere/atmosphere --headless --atmosphere-preset sunset --output /tmp/cubey-atmosphere-sunset.png
 ./build/dev/projects/atmosphere/atmosphere --headless --time-of-day-mode solar --time-hours 17.8 --output /tmp/cubey-atmosphere-twilight.png
@@ -48,7 +42,6 @@ Controls:
 - The Time panel switches between manual sun direction and local solar time.
 - The Reference panel controls the ground grid, local red/cyan axes, and origin
   marker used for orientation.
-- The Night sky panel switches Milky Way source, diagnostic layer, human/camera
-  response, Milky Way intensity/contrast, light pollution, and procedural
-  variation.
+- The Night sky panel switches diagnostic layer, human/camera response, Milky
+  Way intensity/contrast, light pollution, and procedural variation.
 - Escape: close.

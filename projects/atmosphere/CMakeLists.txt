@@ -4,9 +4,6 @@ cubey_add_app_target(
     SHADER_DEFINE CUBEY_ATMOSPHERE_SHADER_DIR
     WINDOWED_SMOKE_TEST atmosphere_reaches_glfw
     WINDOWED_SMOKE_PATTERN "atmosphere: .*rendering atmosphere project"
-    WINDOWED_SMOKE_ARGS
-        --milky-way-source
-        procedural
     SOURCES
         atmosphere_app.cpp
         lunar_atlas.cpp
@@ -22,18 +19,6 @@ cubey_add_app_target(
         "${CMAKE_SOURCE_DIR}/shaders/cubey/color_space.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/pbr.glsl"
 )
-target_link_libraries(
-    cubey_project_atmosphere
-    PRIVATE
-        cubey_external_stb_image
-)
-if (CUBEY_MILKY_WAY_ASSETS_DIR)
-    target_compile_definitions(
-        cubey_project_atmosphere
-        PRIVATE
-            CUBEY_MILKY_WAY_ASSETS_DIR="${CUBEY_MILKY_WAY_ASSETS_DIR}"
-    )
-endif()
 
 if (BUILD_TESTING)
     add_executable(cubey_project_atmosphere_tests
@@ -51,19 +36,10 @@ if (BUILD_TESTING)
         PRIVATE
             CUBEY_ATMOSPHERE_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}"
     )
-    if (CUBEY_MILKY_WAY_ASSETS_DIR)
-        target_compile_definitions(
-            cubey_project_atmosphere_tests
-            PRIVATE
-                CUBEY_MILKY_WAY_ASSETS_DIR="${CUBEY_MILKY_WAY_ASSETS_DIR}"
-        )
-    endif()
     target_link_libraries(
         cubey_project_atmosphere_tests
         PRIVATE
             cubey::core
-            cubey::asset
-            cubey_external_stb_image
             cubey_project_options
             cubey_project_warnings
     )
@@ -77,8 +53,6 @@ if (BUILD_TESTING)
         cubey_project_atmosphere
         "${CUBEY_ATMOSPHERE_HEADLESS_SMOKE_OUTPUT}"
         --headless
-        --milky-way-source
-        procedural
     )
 
     set(CUBEY_ATMOSPHERE_SOLAR_NOON_SMOKE_OUTPUT
@@ -97,8 +71,6 @@ if (BUILD_TESTING)
         80
         --latitude-degrees
         30
-        --milky-way-source
-        procedural
     )
 
     set(CUBEY_ATMOSPHERE_TWILIGHT_SMOKE_OUTPUT
@@ -117,8 +89,6 @@ if (BUILD_TESTING)
         80
         --latitude-degrees
         30
-        --milky-way-source
-        procedural
     )
 
     set(CUBEY_ATMOSPHERE_NIGHT_SMOKE_OUTPUT
@@ -131,8 +101,6 @@ if (BUILD_TESTING)
         --headless
         --atmosphere-preset
         night
-        --milky-way-source
-        procedural
     )
 
     set(CUBEY_ATMOSPHERE_MOONLIT_SMOKE_OUTPUT
@@ -145,8 +113,6 @@ if (BUILD_TESTING)
         --headless
         --atmosphere-preset
         moonlit-night
-        --milky-way-source
-        procedural
     )
 
     set(CUBEY_ATMOSPHERE_MOON_SURFACE_SMOKE_OUTPUT
@@ -157,8 +123,6 @@ if (BUILD_TESTING)
         cubey_project_atmosphere
         "${CUBEY_ATMOSPHERE_MOON_SURFACE_SMOKE_OUTPUT}"
         --headless
-        --milky-way-source
-        procedural
         --debug-view
         moon-surface
     )
@@ -173,8 +137,6 @@ if (BUILD_TESTING)
         --headless
         --debug-view
         milky-way
-        --milky-way-source
-        procedural
     )
 
     set(CUBEY_ATMOSPHERE_MILKY_WAY_DUST_SMOKE_OUTPUT
@@ -187,8 +149,6 @@ if (BUILD_TESTING)
         --headless
         --debug-view
         milky-way
-        --milky-way-source
-        procedural
         --milky-way-layer
         dust-tau
     )
@@ -203,8 +163,6 @@ if (BUILD_TESTING)
         --headless
         --debug-view
         milky-way
-        --milky-way-source
-        procedural
         --milky-way-layer
         hii-emission
     )
@@ -217,8 +175,6 @@ if (BUILD_TESTING)
         cubey_project_atmosphere
         "${CUBEY_ATMOSPHERE_TRANSMITTANCE_SMOKE_OUTPUT}"
         --headless
-        --milky-way-source
-        procedural
         --debug-view
         transmittance
     )
@@ -231,7 +187,7 @@ if (BUILD_TESTING)
             NAME atmosphere_headless_writes_video
             COMMAND
                 /bin/sh -c
-                "output=$1; target=$2; rm -f \"$output\"; out=$(\"$target\" --headless --capture video --frames 60 --fps 60 --width 64 --height 64 --time-of-day-mode solar --time-speed-hours-per-second 2 --milky-way-source procedural --output \"$output\" 2>&1); status=$?; printf '%s\n' \"$out\"; if printf '%s\n' \"$out\" | grep -q 'vulkan validation error'; then exit 1; fi; if [ \"$status\" -ne 0 ]; then printf '%s\n' \"$out\" | grep -Eq 'no Vulkan physical devices found|vkEnumeratePhysicalDevices|no Vulkan device with required queues and dynamic rendering found|vkCreateInstance'; exit; fi; test -s \"$output\"; strings \"$output\" | grep -q ftyp"
+                "output=$1; target=$2; rm -f \"$output\"; out=$(\"$target\" --headless --capture video --frames 60 --fps 60 --width 64 --height 64 --time-of-day-mode solar --time-speed-hours-per-second 2 --output \"$output\" 2>&1); status=$?; printf '%s\n' \"$out\"; if printf '%s\n' \"$out\" | grep -q 'vulkan validation error'; then exit 1; fi; if [ \"$status\" -ne 0 ]; then printf '%s\n' \"$out\" | grep -Eq 'no Vulkan physical devices found|vkEnumeratePhysicalDevices|no Vulkan device with required queues and dynamic rendering found|vkCreateInstance'; exit; fi; test -s \"$output\"; strings \"$output\" | grep -q ftyp"
                 "atmosphere_headless_writes_video"
                 "${CUBEY_ATMOSPHERE_HEADLESS_VIDEO_SMOKE_OUTPUT}"
                 "$<TARGET_FILE:cubey_project_atmosphere>"

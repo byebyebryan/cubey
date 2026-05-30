@@ -1,17 +1,13 @@
 #include "night_sky_atlas.h"
 
-#include <stb_image.h>
-
 #include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <limits>
-#include <memory>
 #include <numbers>
 #include <stdexcept>
-#include <string>
 #include <vector>
 
 namespace cubey::projects::atmosphere {
@@ -26,18 +22,6 @@ struct Vec3 {
     float x = 0.0F;
     float y = 0.0F;
     float z = 0.0F;
-};
-
-struct SourceImage {
-    std::uint32_t width = 1;
-    std::uint32_t height = 1;
-    std::vector<std::uint8_t> rgba8{};
-};
-
-struct StbiImageDeleter {
-    void operator()(stbi_uc* pixels) const noexcept {
-        stbi_image_free(pixels);
-    }
 };
 
 [[nodiscard]] float clamp01(float value) {
@@ -103,18 +87,6 @@ struct StbiImageDeleter {
         return {0.0F, 1.0F, 0.0F};
     }
     return value / len;
-}
-
-[[nodiscard]] Vec3 rotate_x(Vec3 value, float angle) {
-    const float c = std::cos(angle);
-    const float s = std::sin(angle);
-    return {value.x, value.y * c - value.z * s, value.y * s + value.z * c};
-}
-
-[[nodiscard]] Vec3 rotate_y(Vec3 value, float angle) {
-    const float c = std::cos(angle);
-    const float s = std::sin(angle);
-    return {value.x * c + value.z * s, value.y, -value.x * s + value.z * c};
 }
 
 [[nodiscard]] float luminance(Vec3 color) {
@@ -205,13 +177,6 @@ struct StbiImageDeleter {
     return std::atan2(std::sin(value - center), std::cos(value - center));
 }
 
-[[nodiscard]] float srgb_channel_to_linear(float value) {
-    if (value <= 0.04045F) {
-        return value / 12.92F;
-    }
-    return std::pow((value + 0.055F) / 1.055F, 2.4F);
-}
-
 [[nodiscard]] Vec3 cubemap_direction(std::uint32_t face, std::uint32_t x, std::uint32_t y,
                                      std::uint32_t extent) {
     const float u = ((static_cast<float>(x) + 0.5F) / static_cast<float>(extent)) * 2.0F - 1.0F;
@@ -230,114 +195,6 @@ struct StbiImageDeleter {
     default:
         return normalize({-u, -v, -1.0F});
     }
-}
-
-[[nodiscard]] Vec2 direction_to_equirect(Vec3 direction) {
-    constexpr float kInvTwoPi = 1.0F / (2.0F * std::numbers::pi_v<float>);
-    constexpr float kInvPi = 1.0F / std::numbers::pi_v<float>;
-    const float longitude = std::atan2(direction.x, -direction.z);
-    const float latitude = std::asin(std::clamp(direction.y, -1.0F, 1.0F));
-    return {
-        longitude * kInvTwoPi + 0.5F,
-        0.5F - latitude * kInvPi,
-    };
-}
-
-[[nodiscard]] Vec3 sample_source_image(const SourceImage& image, Vec2 uv) {
-    uv.x = uv.x - std::floor(uv.x);
-    uv.y = clamp01(uv.y);
-    const float x = uv.x * static_cast<float>(image.width);
-    const float y = uv.y * static_cast<float>(image.height - 1U);
-    const int x0 = static_cast<int>(std::floor(x)) % static_cast<int>(image.width);
-    const int x1 = (x0 + 1) % static_cast<int>(image.width);
-    const int y0 = std::clamp(static_cast<int>(std::floor(y)), 0, static_cast<int>(image.height) - 1);
-    const int y1 = std::clamp(y0 + 1, 0, static_cast<int>(image.height) - 1);
-    const float tx = x - std::floor(x);
-    const float ty = y - std::floor(y);
-
-    const auto texel = [&image](int px, int py) {
-        const std::size_t offset =
-            (static_cast<std::size_t>(py) * image.width + static_cast<std::size_t>(px)) * 4U;
-        return Vec3{srgb_channel_to_linear(static_cast<float>(image.rgba8[offset]) / 255.0F),
-                    srgb_channel_to_linear(static_cast<float>(image.rgba8[offset + 1U]) / 255.0F),
-                    srgb_channel_to_linear(static_cast<float>(image.rgba8[offset + 2U]) / 255.0F)};
-    };
-    const Vec3 a = texel(x0, y0);
-    const Vec3 b = texel(x1, y0);
-    const Vec3 c = texel(x0, y1);
-    const Vec3 d = texel(x1, y1);
-    return mix(mix(a, b, tx), mix(c, d, tx), ty);
-}
-
-[[nodiscard]] Vec3 sample_diffuse_source_image(const SourceImage& image, Vec2 uv) {
-    const float radius_x = 36.0F / static_cast<float>(image.width);
-    const float radius_y = 36.0F / static_cast<float>(image.height);
-    struct DiffuseSample {
-        Vec3 color{};
-        float luma = 0.0F;
-        float weight = 1.0F;
-    };
-    std::array<DiffuseSample, 25> samples{};
-    std::size_t sample_index = 0;
-    for (int y = -2; y <= 2; ++y) {
-        for (int x = -2; x <= 2; ++x) {
-            const float distance_squared = static_cast<float>(x * x + y * y);
-            const float weight = std::exp(-distance_squared * 0.32F);
-            const Vec3 color = sample_source_image(
-                image, {uv.x + static_cast<float>(x) * radius_x,
-                        uv.y + static_cast<float>(y) * radius_y});
-            samples[sample_index] = {
-                .color = color,
-                .luma = luminance(color),
-                .weight = weight,
-            };
-            ++sample_index;
-        }
-    }
-    std::array<float, 25> sorted_luma{};
-    for (std::size_t index = 0; index < samples.size(); ++index) {
-        sorted_luma[index] = samples[index].luma;
-    }
-    std::sort(sorted_luma.begin(), sorted_luma.end());
-    const float median_luma = sorted_luma[sorted_luma.size() / 2U];
-    const float cap_luma = median_luma * 2.15F + 0.0025F;
-
-    Vec3 sum{};
-    float weight_sum = 0.0F;
-    for (const DiffuseSample& sample : samples) {
-        const float star_clamp =
-            sample.luma > cap_luma && sample.luma > 0.0F ? cap_luma / sample.luma : 1.0F;
-        sum = sum + sample.color * (sample.weight * star_clamp);
-        weight_sum += sample.weight;
-    }
-    return weight_sum > 0.0F ? sum / weight_sum : sum;
-}
-
-[[nodiscard]] SourceImage load_source_image(const std::filesystem::path& path) {
-    int width = 0;
-    int height = 0;
-    int channels = 0;
-    std::unique_ptr<stbi_uc, StbiImageDeleter> pixels{
-        stbi_load(path.string().c_str(), &width, &height, &channels, 4)};
-    if (!pixels) {
-        const char* reason = stbi_failure_reason();
-        throw std::runtime_error("night sky atlas failed to decode data source " + path.string() +
-                                 (reason != nullptr ? std::string{": "} + reason
-                                                    : std::string{}));
-    }
-    if (width <= 0 || height <= 0) {
-        throw std::runtime_error("night sky atlas data source has invalid dimensions: " +
-                                 path.string());
-    }
-    const std::size_t value_count =
-        static_cast<std::size_t>(width) * static_cast<std::size_t>(height) * 4U;
-    SourceImage image{
-        .width = static_cast<std::uint32_t>(width),
-        .height = static_cast<std::uint32_t>(height),
-        .rgba8 = std::vector<std::uint8_t>(value_count),
-    };
-    std::copy(pixels.get(), pixels.get() + value_count, image.rgba8.begin());
-    return image;
 }
 
 struct GalacticFrame {
@@ -592,17 +449,6 @@ struct ProceduralMilkyWayLayers {
     return procedural_layer_color(procedural_milky_way_layers(direction, seed), layer);
 }
 
-[[nodiscard]] Vec3 data_milky_way(Vec3 direction, const SourceImage& image) {
-    const Vec3 source_direction =
-        rotate_y(rotate_x(direction, -0.26F), -1.62F);
-    Vec3 source = sample_diffuse_source_image(image, direction_to_equirect(source_direction));
-    const float luma = luminance(source);
-    const float mask = smoothstep(0.0004F, 0.040F, luma);
-    const Vec3 neutral = {luma, luma, luma};
-    source = mix(neutral, source, 0.55F);
-    return source * mask * 1.55F;
-}
-
 void set_texel(NightSkyAtlas& atlas, std::uint32_t mip, std::uint32_t face, std::uint32_t x,
                std::uint32_t y, Vec3 color) {
     const NightSkyAtlasMip& level = atlas.mips.at(mip);
@@ -652,13 +498,11 @@ void build_mips(NightSkyAtlas& atlas) {
     }
 }
 
-[[nodiscard]] NightSkyAtlas make_empty_atlas(std::uint32_t extent, NightSkyAtlasSource source,
-                                             NightSkyLayerView layer) {
+[[nodiscard]] NightSkyAtlas make_empty_atlas(std::uint32_t extent, NightSkyLayerView layer) {
     const std::uint32_t mip_levels = night_sky_atlas_mip_count(extent);
     NightSkyAtlas atlas{
         .extent = extent,
         .mip_levels = mip_levels,
-        .source = source,
         .layer = layer,
     };
     atlas.mips.reserve(mip_levels);
@@ -698,17 +542,7 @@ NightSkyAtlas generate_night_sky_atlas(const NightSkyAtlasConfig& config, std::u
         throw std::runtime_error("night sky atlas extent must be a power of two");
     }
 
-    const NightSkyLayerView layer =
-        config.source == NightSkyAtlasSource::Data ? NightSkyLayerView::Final : config.layer;
-    NightSkyAtlas atlas = make_empty_atlas(extent, config.source, layer);
-    SourceImage source_image;
-    if (config.source == NightSkyAtlasSource::Data) {
-        if (!config.data_path.has_value()) {
-            throw std::runtime_error("night sky atlas data source requires an image path");
-        }
-        source_image = load_source_image(config.data_path.value());
-    }
-
+    NightSkyAtlas atlas = make_empty_atlas(extent, config.layer);
     const std::uint32_t variation_seed =
         hash_u32(static_cast<std::uint32_t>(std::round(config.procedural_variation * 1000.0F)) +
                  0x7a41c6d3U);
@@ -716,9 +550,8 @@ NightSkyAtlas generate_night_sky_atlas(const NightSkyAtlasConfig& config, std::u
         for (std::uint32_t y = 0; y < extent; ++y) {
             for (std::uint32_t x = 0; x < extent; ++x) {
                 const Vec3 direction = cubemap_direction(face, x, y, extent);
-                const Vec3 color = config.source == NightSkyAtlasSource::Data
-                                       ? data_milky_way(direction, source_image)
-                                       : procedural_milky_way(direction, variation_seed, layer);
+                const Vec3 color =
+                    procedural_milky_way(direction, variation_seed, config.layer);
                 set_texel(atlas, 0U, face, x, y, color);
             }
         }

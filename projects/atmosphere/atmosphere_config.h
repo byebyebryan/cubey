@@ -71,18 +71,6 @@ inline constexpr std::array<SunControlMode, 2> kSunControlModes{
     SunControlMode::SolarClock,
 };
 
-enum class NightSkySource : std::uint32_t {
-    Auto = 0,
-    Data = 1,
-    Procedural = 2,
-};
-
-inline constexpr std::array<NightSkySource, 3> kNightSkySources{
-    NightSkySource::Auto,
-    NightSkySource::Data,
-    NightSkySource::Procedural,
-};
-
 enum class NightSkyVisualMode : std::uint32_t {
     HumanEye = 0,
     Camera = 1,
@@ -106,7 +94,6 @@ struct TimeOfDayConfig {
 };
 
 struct NightSkyConfig {
-    NightSkySource source = NightSkySource::Procedural;
     NightSkyVisualMode visual_mode = NightSkyVisualMode::HumanEye;
     NightSkyLayerView layer = NightSkyLayerView::Final;
     float twilight_strength = 1.0F;
@@ -245,30 +232,6 @@ struct LunarState {
         }
     }
     throw std::runtime_error("unknown atmosphere render view: " + std::string(name));
-}
-
-[[nodiscard]] inline const char* night_sky_source_name(NightSkySource source) {
-    switch (source) {
-    case NightSkySource::Auto:
-        return "auto";
-    case NightSkySource::Data:
-        return "data";
-    case NightSkySource::Procedural:
-        return "procedural";
-    }
-    return "auto";
-}
-
-[[nodiscard]] inline NightSkySource night_sky_source_from_name(std::string_view name) {
-    if (name.empty()) {
-        return NightSkySource::Auto;
-    }
-    for (const NightSkySource source : kNightSkySources) {
-        if (name == night_sky_source_name(source)) {
-            return source;
-        }
-    }
-    throw std::runtime_error("unknown night sky source: " + std::string(name));
 }
 
 [[nodiscard]] inline const char* night_sky_visual_mode_name(NightSkyVisualMode mode) {
@@ -699,9 +662,6 @@ inline void validate_atmosphere_config(const AtmosphereConfig& config) {
     if (!run.atmosphere.night_sky_mode.empty()) {
         config.night_sky.visual_mode =
             night_sky_visual_mode_from_name(run.atmosphere.night_sky_mode);
-    }
-    if (!run.atmosphere.milky_way_source.empty()) {
-        config.night_sky.source = night_sky_source_from_name(run.atmosphere.milky_way_source);
     }
     if (!run.atmosphere.milky_way_layer.empty()) {
         config.night_sky.layer = night_sky_layer_view_from_name(run.atmosphere.milky_way_layer);
