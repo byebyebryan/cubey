@@ -322,23 +322,32 @@ float ocean_material_distance_factor(float dist) {
     return smoothstep(250.0, 1800.0, dist);
 }
 
-float ocean_foam_signal(float persistent, float current) {
-    return clamp(mix(current, persistent, 0.62), 0.0, 1.0);
+float ocean_persistent_foam(float persistent, float dist) {
+    return smoothstep(0.0, 1.0, persistent * 0.75) * exp(-dist * 0.0075);
+}
+
+float ocean_current_foam_core(float current, float dist) {
+    return smoothstep(0.20, 0.55, current) * exp(-dist * 0.010);
+}
+
+float ocean_foam_signal(float persistent, float current, float dist) {
+    return clamp(max(ocean_persistent_foam(persistent, dist),
+                     ocean_current_foam_core(current, dist) * 0.25),
+                 0.0, 1.0);
 }
 
 float ocean_foam_coverage(float persistent, float current, float dist, float ndotv) {
     float far_factor = ocean_material_distance_factor(dist);
     float density = max(ocean.inspection_options.z, 0.001);
     float sharpness = clamp(ocean.inspection_options.w, 0.0, 1.0);
-    float signal = ocean_foam_signal(persistent, current) * density;
-    float threshold = mix(0.015, 0.095, sharpness);
-    float width = mix(0.30, 0.12, sharpness);
-    float soft_foam = smoothstep(threshold, threshold + width, signal);
-    float crest_core = smoothstep(0.08, 0.48, current * density);
+    float history = ocean_persistent_foam(persistent, dist) * density;
+    float crest_core = ocean_current_foam_core(current, dist);
+    float soft_foam = pow(clamp(history, 0.0, 1.0), mix(0.90, 1.25, sharpness));
+    float fresh_core = smoothstep(0.35, 0.80, crest_core * density);
     float view_factor = mix(0.82, 1.0, smoothstep(0.05, 0.55, ndotv));
-    return clamp(max(soft_foam * 0.48, crest_core * 0.74) * view_factor *
-                     mix(0.80, 0.30, far_factor),
-                 0.0, 0.62);
+    return clamp(max(soft_foam * 0.72, fresh_core * 0.22) * view_factor *
+                     mix(0.92, 0.36, far_factor),
+                 0.0, 0.72);
 }
 
 vec3 ocean_shaded_foam(vec3 water, vec3 foam_color, vec3 normal, float ndotl, float foam,
@@ -398,7 +407,7 @@ void main() {
     vec3 normal = normalize(vec3(-gradient.x, 1.0, -gradient.y));
     float foam_persistent = clamp(gradient.z, 0.0, 1.0);
     float foam_current = clamp(gradient.w, 0.0, 1.0);
-    float foam = ocean_foam_signal(foam_persistent, foam_current);
+    float foam = ocean_foam_signal(foam_persistent, foam_current, dist);
 
     vec3 water_color = cubey_srgb_to_linear(ocean.water_color.rgb);
     vec3 foam_color = cubey_srgb_to_linear(ocean.foam_color.rgb);

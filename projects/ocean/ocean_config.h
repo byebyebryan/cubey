@@ -79,7 +79,7 @@ struct OceanConfig {
     float foam_color_g = 0.67F;
     float foam_color_b = 0.62F;
     float foam_density = 2.80F;
-    float foam_sharpness = 0.50F;
+    float foam_sharpness = 0.70F;
     bool spectral_domains_enabled = true;
     OceanRenderView render_view = OceanRenderView::Final;
     std::array<OceanCascadeConfig, kOceanCascadeCount> cascades{
@@ -109,8 +109,8 @@ struct OceanConfig {
             .swell = 1.10F,
             .spread = 0.28F,
             .detail = 0.70F,
-            .whitecap = 0.18F,
-            .foam_amount = 0.50F,
+            .whitecap = 0.28F,
+            .foam_amount = 0.80F,
             .seed_x = 9311,
             .seed_y = -1733,
             .time_offset = 117.0F,
@@ -125,8 +125,8 @@ struct OceanConfig {
             .swell = 1.0F,
             .spread = 0.14F,
             .detail = 1.0F,
-            .whitecap = 0.46F,
-            .foam_amount = 3.20F,
+            .whitecap = 0.50F,
+            .foam_amount = 5.20F,
             .seed_x = 1337,
             .seed_y = 4919,
             .time_offset = 120.0F,
@@ -141,8 +141,8 @@ struct OceanConfig {
             .swell = 0.95F,
             .spread = 0.25F,
             .detail = 1.0F,
-            .whitecap = 0.44F,
-            .foam_amount = 2.80F,
+            .whitecap = 0.48F,
+            .foam_amount = 4.20F,
             .seed_x = -2713,
             .seed_y = 8128,
             .time_offset = 123.14159F,
@@ -157,8 +157,8 @@ struct OceanConfig {
             .swell = 0.9F,
             .spread = 0.25F,
             .detail = 1.0F,
-            .whitecap = 0.32F,
-            .foam_amount = 1.60F,
+            .whitecap = 0.44F,
+            .foam_amount = 2.20F,
             .seed_x = 6619,
             .seed_y = -3544,
             .time_offset = 126.28318F,

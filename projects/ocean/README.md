@@ -44,15 +44,16 @@ Cascades are ordered from macro to detail for tuning: `0` is broad macro swell,
 secondary reference wave, and `4` is fine normal/foam detail. The macro
 cascades use low displacement, low normal contribution, and low foam by default
 so they can break up tiling without creating broad whitecaps alone. The current
-defaults are biased toward a stormier sea state with foam driven mostly by C2
-and C3, with C4 adding fine breakup and C0/C1 kept from creating broad cloudy
-white sheets. The anti-repeat control keeps a conservative C0/C1 geometry blend
-and adds distance-gated C1-C4 normal/foam anti-tiling for far-field whitecaps.
-Spectral domains are enabled by default to remove tile-sized waves from each
-cascade while preserving overlap between source bands; foam is stored separately
-from normal data as persistent history, current breaking source, determinant,
-and compression channels so whitecap coverage can be sharpened without damaging
-the normals. This is still not a localized wind or weather simulation.
+defaults are biased toward a stormier sea state with accumulated foam driven
+mostly by C2 and C3, with C4 kept secondary and C0/C1 kept from creating broad
+cloudy white sheets. The anti-repeat control keeps a conservative C0/C1 geometry
+blend and adds distance-gated C1-C4 normal/foam anti-tiling for far-field
+whitecaps. Spectral domains are enabled by default to remove tile-sized waves
+from each cascade while preserving overlap between source bands; foam is stored
+separately from normal data as persistent history, current Jacobian breaking
+source, determinant, and compression diagnostic channels. Final whitecap
+coverage uses the accumulated Jacobian history, while compression is currently a
+diagnostic signal only. This is still not a localized wind or weather simulation.
 
 The default FFT map is `1024`. Smoke tests and fast local checks can use
 `--ocean-map-size 128`.

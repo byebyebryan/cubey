@@ -50,11 +50,9 @@ void main() {
     float compression = 0.5 * (jxx + jzz) -
                         0.5 * sqrt(max((jxx - jzz) * (jxx - jzz) + 4.0 * jxz * jxz, 0.0));
     float jacobian_source = max(0.0, whitecap - jacobian);
-    float compression_source = max(0.0, whitecap - compression);
-    float current_source = clamp(max(jacobian_source, compression_source) * foam_grow_rate, 0.0, 1.0);
+    float current_source = clamp(jacobian_source * foam_grow_rate, 0.0, 1.0);
     float persistent = previous_valid > 0.5 ? imageLoad(foam_image, id).x : 0.0;
-    persistent *= exp(-foam_decay_rate);
-    persistent = max(current_source, persistent);
+    persistent = clamp(persistent * exp(-foam_decay_rate) + current_source, 0.0, 1.0);
 
     vec2 gradient = vec2(dhy_dx, dhy_dz) / (1.0 + abs(vec2(dhx_dx, dhz_dz)));
     imageStore(displacement_image, id, vec4(hx, hy, hz, 0.0));
