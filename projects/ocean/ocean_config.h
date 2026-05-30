@@ -37,7 +37,7 @@ inline constexpr std::uint32_t kOceanMaxMeshCells = 512U;
 inline constexpr std::uint32_t kOceanMinMeshLodLevels = 1U;
 inline constexpr std::uint32_t kOceanMaxMeshLodLevels = 6U;
 inline constexpr float kOceanPi = 3.14159265358979323846F;
-inline constexpr float kOceanCascadeMinWavesPerDomain = 6.0F;
+inline constexpr float kOceanCascadeMinWavesPerDomain = 3.0F;
 inline constexpr float kOceanCascadeSmallestWaveMultiplier = 4.0F;
 
 struct OceanCascadeConfig {
@@ -76,6 +76,7 @@ struct OceanConfig {
     float foam_color_r = 0.73F;
     float foam_color_g = 0.67F;
     float foam_color_b = 0.62F;
+    bool spectral_domains_enabled = true;
     OceanRenderView render_view = OceanRenderView::Final;
     std::array<OceanCascadeConfig, kOceanCascadeCount> cascades{
         OceanCascadeConfig{
@@ -257,15 +258,8 @@ struct OceanCascadeDomain {
         return {};
     }
 
-    float previous_high_k = 0.0F;
-    for (std::uint32_t index = 0; index < cascade; ++index) {
-        previous_high_k =
-            std::max(previous_high_k, ocean_cascade_domain_high_k(config, index));
-    }
-
-    const float low_k = std::max(2.0F * kOceanPi * kOceanCascadeMinWavesPerDomain /
-                                     cascade_config.tile_length,
-                                 previous_high_k);
+    const float low_k =
+        2.0F * kOceanPi * kOceanCascadeMinWavesPerDomain / cascade_config.tile_length;
     const float high_k = ocean_cascade_domain_high_k(config, cascade);
     if (low_k <= 0.0F || high_k <= low_k) {
         return {.low_k = low_k, .high_k = high_k};
@@ -314,6 +308,9 @@ inline void validate_ocean_config(const OceanConfig& config) {
     OceanConfig ocean;
     if (config.ocean.map_size != 0U) {
         ocean.map_size = config.ocean.map_size;
+    }
+    if (config.ocean.spectral_domains >= 0) {
+        ocean.spectral_domains_enabled = config.ocean.spectral_domains != 0;
     }
     ocean.render_view = ocean_render_view_from_name(config.debug_view);
     ocean.exposure = config.pbr.exposure;

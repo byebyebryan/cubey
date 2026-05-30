@@ -7,7 +7,8 @@ layout(rgba32f, set = 0, binding = 1) readonly uniform image2D fft_field1_image;
 layout(rgba32f, set = 0, binding = 2) readonly uniform image2D fft_field2_image;
 layout(rgba32f, set = 0, binding = 3) readonly uniform image2D fft_field3_image;
 layout(rgba32f, set = 0, binding = 4) writeonly uniform image2D displacement_image;
-layout(rgba32f, set = 0, binding = 5) uniform image2D normal_foam_image;
+layout(rgba32f, set = 0, binding = 5) writeonly uniform image2D normal_image;
+layout(rgba32f, set = 0, binding = 6) uniform image2D foam_image;
 
 layout(push_constant) uniform UnpackParams {
     vec4 foam_options;
@@ -44,12 +45,13 @@ void main() {
     float previous_valid = params.foam_options.w;
     float jacobian = (1.0 + dhx_dx) * (1.0 + dhz_dz) - dhz_dx * dhz_dx;
     float foam_factor = -min(0.0, jacobian - whitecap);
-    float foam = previous_valid > 0.5 ? imageLoad(normal_foam_image, id).a : 0.0;
+    float foam = previous_valid > 0.5 ? imageLoad(foam_image, id).x : 0.0;
     foam *= exp(-foam_decay_rate);
     foam += foam_factor * foam_grow_rate;
     foam = clamp(foam, 0.0, 1.0);
 
     vec2 gradient = vec2(dhy_dx, dhy_dz) / (1.0 + abs(vec2(dhx_dx, dhz_dz)));
     imageStore(displacement_image, id, vec4(hx, hy, hz, 0.0));
-    imageStore(normal_foam_image, id, vec4(gradient, dhx_dx, foam));
+    imageStore(normal_image, id, vec4(gradient, dhx_dx, dhz_dz));
+    imageStore(foam_image, id, vec4(foam, foam_factor, jacobian, 0.0));
 }

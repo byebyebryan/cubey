@@ -27,6 +27,7 @@ Useful debug views:
 ./build/dev/projects/ocean/ocean --debug-view lod
 ./build/dev/projects/ocean/ocean --debug-view lod --ocean-wire-overlay
 ./build/dev/projects/ocean/ocean --debug-view displacement --ocean-cascade 2
+./build/dev/projects/ocean/ocean --no-ocean-spectral-domains
 ```
 
 The GUI panel also includes cascade isolation, camera presets including a wide
@@ -34,7 +35,8 @@ repeat-inspection camera, a paused single-frame step button, a portable wire
 overlay, and an LOD breakdown table for checking clipmap coverage, patch counts,
 and triangle load while tuning the mesh. Headless captures can use
 `--ocean-cascade all|0|1|2|3|4`,
-`--ocean-wire-overlay`, and `--ocean-wire-opacity 0.0..1.0`.
+`--ocean-wire-overlay`, `--ocean-wire-opacity 0.0..1.0`,
+`--ocean-spectral-domains`, and `--no-ocean-spectral-domains`.
 
 Cascades are ordered from macro to detail for tuning: `0` is broad macro swell,
 `1` is mid-scale macro chop, `2` is the primary reference crest, `3` is the
@@ -44,8 +46,11 @@ so they can break up tiling without creating broad whitecaps alone. The current
 defaults are biased toward a stormier sea state with foam distributed across
 C0-C4 instead of being dominated by the primary crest cascade. The anti-repeat
 control keeps a conservative C0/C1 geometry blend and adds distance-gated C1-C4
-normal/foam anti-tiling for far-field whitecaps; it is not a localized wind or
-weather simulation.
+normal/foam anti-tiling for far-field whitecaps. Spectral domains are enabled
+by default to remove tile-sized waves from each cascade while preserving overlap
+between source bands; foam is now stored separately from normal data so
+far-field whitecap breakup can be tuned without damaging the normals. This is
+still not a localized wind or weather simulation.
 
 The default FFT map is `1024`. Smoke tests and fast local checks can use
 `--ocean-map-size 128`.

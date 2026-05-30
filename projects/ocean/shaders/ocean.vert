@@ -160,6 +160,27 @@ bool ocean_macro_anti_repeat_enabled(uint cascade) {
     return cascade < 2u && ocean.inspection_options.y > 0.0;
 }
 
+float cascade_displacement_lod_weight(uint cascade, float camera_distance) {
+    if (cascade == 0u) {
+        return 1.0;
+    }
+    if (cascade == 1u) {
+        return 1.0 - smoothstep(2400.0, 5200.0, camera_distance);
+    }
+    if (cascade == 2u) {
+        return 1.0 - smoothstep(900.0, 2400.0, camera_distance);
+    }
+    if (cascade == 3u) {
+        return 1.0 - smoothstep(520.0, 1600.0, camera_distance);
+    }
+    return 1.0 - smoothstep(220.0, 800.0, camera_distance);
+}
+
+float horizon_displacement_weight(float camera_distance) {
+    return 1.0 - smoothstep(ocean.mesh_options.z * 0.36, ocean.mesh_options.z * 0.76,
+                            camera_distance);
+}
+
 vec3 sample_ocean_displacement(uint cascade, vec2 position, float tile_length) {
     vec3 primary = sample_displacement(cascade, position / tile_length).xyz;
     if (!ocean_macro_anti_repeat_enabled(cascade)) {
@@ -175,13 +196,15 @@ vec3 sample_ocean_displacement(uint cascade, vec2 position, float tile_length) {
     return (primary + secondary * weight) / (1.0 + weight);
 }
 
-void add_displacement(inout vec3 displacement, uint cascade, vec2 position) {
+void add_displacement(inout vec3 displacement, uint cascade, vec2 position,
+                      float camera_distance) {
     if (!ocean_cascade_enabled(cascade)) {
         return;
     }
     float tile_length = max(cascade_tile_length(cascade), 0.001);
+    float lod_weight = cascade_displacement_lod_weight(cascade, camera_distance);
     displacement += sample_ocean_displacement(cascade, position, tile_length) *
-                    cascade_displacement_scale(cascade);
+                    cascade_displacement_scale(cascade) * lod_weight;
 }
 
 void main() {
@@ -205,13 +228,12 @@ void main() {
     vec2 patch_position = clipmap_patch_position(uv);
     vec2 base_position = snapped_center + patch_position;
     float camera_distance = length(base_position - camera_xz);
-    float distance_factor = min(exp(-(camera_distance - 150.0) * 0.007), 1.0);
 
     vec3 displacement = vec3(0.0);
     for (uint cascade = 0u; cascade < 5u; ++cascade) {
-        add_displacement(displacement, cascade, base_position);
+        add_displacement(displacement, cascade, base_position, camera_distance);
     }
-    displacement *= distance_factor;
+    displacement *= horizon_displacement_weight(camera_distance);
 
     vec3 world_position = vec3(base_position.x, 0.0, base_position.y) + displacement;
     frag_world_position = world_position;

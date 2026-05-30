@@ -554,6 +554,9 @@ class OceanApp {
     [[nodiscard]] OceanSpectrumPushConstants
     spectrum_push_constants(std::uint32_t cascade_index) const {
         const OceanCascadeConfig& cascade = ocean_cascade(ocean_config_, cascade_index);
+        const OceanCascadeDomain domain = ocean_config_.spectral_domains_enabled
+                                              ? ocean_cascade_domain(ocean_config_, cascade_index)
+                                              : OceanCascadeDomain{};
         const float fetch_m = cascade.fetch_length_km * 1000.0F;
         return {
             .seed_tile =
@@ -581,8 +584,8 @@ class OceanApp {
                 {
                     static_cast<float>(cascade_index),
                     static_cast<float>(ocean_config_.map_size),
-                    0.0F,
-                    0.0F,
+                    domain.active ? domain.low_k : 0.0F,
+                    domain.active ? domain.high_k : 0.0F,
                 },
         };
     }
@@ -741,7 +744,9 @@ class OceanApp {
             recorder.transition_image_layout(cubey::vulkan::begin_storage_image_write_transition(
                 ocean_gpu_.displacement(cascade).handle()));
             recorder.transition_image_layout(cubey::vulkan::begin_storage_image_write_transition(
-                ocean_gpu_.normal_foam(cascade).handle()));
+                ocean_gpu_.normal(cascade).handle()));
+            recorder.transition_image_layout(cubey::vulkan::begin_storage_image_write_transition(
+                ocean_gpu_.foam(cascade).handle()));
         }
     }
 

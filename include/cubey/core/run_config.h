@@ -100,6 +100,7 @@ struct RunConfig {
     struct OceanOptions {
         std::uint32_t map_size = 0;
         int cascade = -1;
+        int spectral_domains = -1;
         float wire_opacity = kRunConfigUnsetFloat;
         bool wire_overlay = false;
     };

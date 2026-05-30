@@ -308,6 +308,10 @@ RunConfig parse_run_config(int argc, char** argv) {
         } else if (arg == "--ocean-map-size") {
             config.ocean.map_size =
                 parse_positive_u32(need_value("--ocean-map-size"), "--ocean-map-size");
+        } else if (arg == "--ocean-spectral-domains") {
+            config.ocean.spectral_domains = 1;
+        } else if (arg == "--no-ocean-spectral-domains") {
+            config.ocean.spectral_domains = 0;
         } else if (arg == "--ocean-cascade") {
             config.ocean.cascade = parse_ocean_cascade(need_value("--ocean-cascade"),
                                                        "--ocean-cascade");

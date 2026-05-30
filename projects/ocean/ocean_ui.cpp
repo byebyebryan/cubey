@@ -202,6 +202,7 @@ void draw_ocean_ui(OceanUiContext ui) {
     if (cubey::host::imgui_section("Wave Core", true)) {
         const cubey::host::ScopedImGuiId section_id("Wave Core");
         draw_map_size_combo(ui.config);
+        ImGui::Checkbox("Spectral domains", &ui.config.spectral_domains_enabled);
         ImGui::SliderFloat("Anti-repeat", &ui.diagnostics.anti_repeat_strength, 0.0F, 1.0F,
                            "%.2f");
         ImGui::SliderFloat("Depth", &ui.config.depth, 2.0F, 80.0F, "%.1f m");
@@ -262,6 +263,8 @@ void draw_ocean_ui(OceanUiContext ui) {
         const cubey::host::ScopedImGuiId section_id("Diagnostics");
         cubey::host::draw_frame_stats(ui.latest_frame_stats, ui.latest_fps, ui.latest_frame_ms);
         ImGui::Text("Map: %u", ui.config.map_size);
+        ImGui::Text("Spectral domains: %s",
+                    ui.config.spectral_domains_enabled ? "enabled" : "disabled");
         for (std::uint32_t index = 0; index < kOceanCascadeCount; ++index) {
             char label[40]{};
             format_cascade_label(label, sizeof(label), index);

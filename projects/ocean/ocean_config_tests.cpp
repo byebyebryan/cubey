@@ -63,6 +63,8 @@ int main() {
         require(defaults.mesh_lod_levels >= ocean::kOceanMinMeshLodLevels &&
                     defaults.mesh_lod_levels <= ocean::kOceanMaxMeshLodLevels,
                 "default mesh LOD count should be in supported range");
+        require(defaults.spectral_domains_enabled,
+                "ocean should default to spectral source-domain filtering");
         require(ocean::ocean_mesh_vertex_count(defaults) ==
                     defaults.mesh_cells * defaults.mesh_cells * 6U,
                 "ocean vertex count should match generated grid triangles");
@@ -118,14 +120,34 @@ int main() {
                      cascade0.tile_length * ocean::kOceanCascadeSmallestWaveMultiplier /
                          static_cast<float>(defaults.map_size),
                      0.01F, "cascade 0 smallest wavelength should follow map sampling");
-        require_near(domain1.high_wavelength, domain0.low_wavelength, 0.001F,
-                     "cascade 1 diagnostic domain should start after cascade 0");
-        require_near(domain2.high_wavelength, domain1.low_wavelength, 0.001F,
-                     "cascade 2 diagnostic domain should start after cascade 1");
-        require_near(domain3.high_wavelength, domain2.low_wavelength, 0.001F,
-                     "cascade 3 diagnostic domain should start after cascade 2");
-        require_near(domain4.high_wavelength, domain3.low_wavelength, 0.001F,
-                     "cascade 4 diagnostic domain should start after cascade 3");
+        require_near(domain1.high_wavelength,
+                     cascade1.tile_length / ocean::kOceanCascadeMinWavesPerDomain, 0.01F,
+                     "cascade 1 largest wavelength should follow min waves per domain");
+        require_near(domain1.low_wavelength,
+                     cascade1.tile_length * ocean::kOceanCascadeSmallestWaveMultiplier /
+                         static_cast<float>(defaults.map_size),
+                     0.01F, "cascade 1 smallest wavelength should follow map sampling");
+        require_near(domain2.high_wavelength,
+                     cascade2.tile_length / ocean::kOceanCascadeMinWavesPerDomain, 0.01F,
+                     "cascade 2 largest wavelength should follow min waves per domain");
+        require_near(domain2.low_wavelength,
+                     cascade2.tile_length * ocean::kOceanCascadeSmallestWaveMultiplier /
+                         static_cast<float>(defaults.map_size),
+                     0.01F, "cascade 2 smallest wavelength should follow map sampling");
+        require_near(domain3.high_wavelength,
+                     cascade3.tile_length / ocean::kOceanCascadeMinWavesPerDomain, 0.01F,
+                     "cascade 3 largest wavelength should follow min waves per domain");
+        require_near(domain3.low_wavelength,
+                     cascade3.tile_length * ocean::kOceanCascadeSmallestWaveMultiplier /
+                         static_cast<float>(defaults.map_size),
+                     0.01F, "cascade 3 smallest wavelength should follow map sampling");
+        require_near(domain4.high_wavelength,
+                     cascade4.tile_length / ocean::kOceanCascadeMinWavesPerDomain, 0.01F,
+                     "cascade 4 largest wavelength should follow min waves per domain");
+        require_near(domain4.low_wavelength,
+                     cascade4.tile_length * ocean::kOceanCascadeSmallestWaveMultiplier /
+                         static_cast<float>(defaults.map_size),
+                     0.01F, "cascade 4 smallest wavelength should follow map sampling");
         require_near(cascade0.tile_length, 1531.0F, 0.001F,
                      "cascade 0 should be the largest decorrelated macro swell");
         require_near(cascade1.tile_length, 421.0F, 0.001F,
@@ -251,6 +273,7 @@ int main() {
         cubey::RunConfig run_config;
         run_config.debug_view = "foam";
         run_config.ocean.map_size = 128;
+        run_config.ocean.spectral_domains = 0;
         run_config.pbr.exposure = 0.5F;
         const ocean::OceanConfig from_run_config =
             ocean::ocean_config_from_run_config(run_config);
@@ -258,12 +281,15 @@ int main() {
                 "run config should initialize ocean debug view");
         require(from_run_config.map_size == 128U,
                 "run config should initialize ocean map size");
+        require(!from_run_config.spectral_domains_enabled,
+                "run config should initialize ocean spectral domain override");
         require_near(from_run_config.exposure, 0.5F, 0.001F,
                      "run config should initialize ocean exposure");
 
         const char* argv[] = {"ocean",
                               "--ocean-map-size",
                               "256",
+                              "--no-ocean-spectral-domains",
                               "--ocean-cascade",
                               "4",
                               "--debug-view",
@@ -271,8 +297,10 @@ int main() {
                               "--ocean-wire-overlay",
                               "--ocean-wire-opacity",
                               "0.8"};
-        cubey::RunConfig parsed = cubey::parse_run_config(10, const_cast<char**>(argv));
+        cubey::RunConfig parsed = cubey::parse_run_config(11, const_cast<char**>(argv));
         require(parsed.ocean.map_size == 256U, "CLI parser should accept --ocean-map-size");
+        require(parsed.ocean.spectral_domains == 0,
+                "CLI parser should accept --no-ocean-spectral-domains");
         require(parsed.ocean.cascade == 4, "CLI parser should accept --ocean-cascade");
         require(parsed.debug_view == "normal", "CLI parser should preserve debug view");
         require(parsed.ocean.wire_overlay, "CLI parser should accept ocean wire overlay");
@@ -282,6 +310,11 @@ int main() {
         const char* all_cascade_argv[] = {"ocean", "--ocean-cascade", "all"};
         parsed = cubey::parse_run_config(3, const_cast<char**>(all_cascade_argv));
         require(parsed.ocean.cascade == -1, "CLI parser should accept all ocean cascades");
+
+        const char* spectral_domains_argv[] = {"ocean", "--ocean-spectral-domains"};
+        parsed = cubey::parse_run_config(2, const_cast<char**>(spectral_domains_argv));
+        require(parsed.ocean.spectral_domains == 1,
+                "CLI parser should accept --ocean-spectral-domains");
 
         ocean::OceanConfig invalid_map = defaults;
         invalid_map.map_size = 192U;
@@ -321,6 +354,8 @@ int main() {
                          "spectrum shader should document reference h0 packing");
         require_contains(spectrum_shader, "conj_complex(get_spectrum_amplitude(id1, dims))",
                          "spectrum shader should pack conjugated negative frequency");
+        require_contains(spectrum_shader, "float spectral_domain_weight",
+                         "spectrum shader should apply spectral source-domain filtering");
         require_contains(modulate_shader, "const uint NUM_SPECTRA = 4U",
                          "modulate shader should preserve four reference spectra");
         require_contains(modulate_shader, "vec2 dhy_dx = h_inv * k_vec.y;",
@@ -343,9 +378,16 @@ int main() {
             unpack_shader,
             "vec2 gradient = vec2(dhy_dx, dhy_dz) / (1.0 + abs(vec2(dhx_dx, dhz_dz)));",
             "unpack shader should preserve reference gradient denominator");
-        require_contains(vertex_shader,
-                         "distance_factor = min(exp(-(camera_distance - 150.0) * 0.007), 1.0)",
-                         "vertex shader should preserve reference distance falloff");
+        require_contains(unpack_shader, "imageLoad(foam_image, id).x",
+                         "unpack shader should keep persistent foam in a separate texture");
+        require_contains(unpack_shader, "imageStore(normal_image, id, vec4(gradient",
+                         "unpack shader should write normal data separately from foam");
+        require_contains(unpack_shader, "imageStore(foam_image, id, vec4(foam",
+                         "unpack shader should write foam data separately from normals");
+        require_contains(vertex_shader, "float cascade_displacement_lod_weight",
+                         "vertex shader should apply per-cascade displacement LOD weights");
+        require_contains(vertex_shader, "float horizon_displacement_weight",
+                         "vertex shader should fade displacement only near the horizon");
         require_contains(vertex_shader, "if (!ocean_cascade_enabled(cascade))",
                          "vertex shader should gate displacement by inspected cascade");
         require_contains(vertex_shader, "for (uint cascade = 0u; cascade < 5u; ++cascade)",
@@ -356,8 +398,12 @@ int main() {
                          "vertex shader should apply macro anti-repeat displacement sampling");
         require_contains(app_source, "diagnostics_.anti_repeat_strength",
                          "app should pass anti-repeat as diagnostics push data");
+        require_contains(app_source, "ocean_config_.spectral_domains_enabled",
+                         "app should pass spectral domain bounds to spectrum generation");
         require_contains(ui_source, "&ui.diagnostics.anti_repeat_strength",
                          "UI should expose anti-repeat as a diagnostics control");
+        require_contains(ui_source, "&ui.config.spectral_domains_enabled",
+                         "UI should expose spectral domain filtering");
         require_contains(ui_source, "ocean_cascade_domain(ui.config, index)",
                          "UI should expose cascade wavelength domain diagnostics");
         require_contains(ui_source, "domain %.2f-%.2f m",
@@ -373,6 +419,8 @@ int main() {
                          "fragment shader should gate far anti-repeat to foamy cascades");
         require_contains(fragment_shader, "value_noise(position * 0.0011",
                          "fragment shader should use stable world-space noise weights");
+        require_contains(fragment_shader, "float foam_breakup_weight",
+                         "fragment shader should use distance-gated world-space foam breakup");
         require_contains(fragment_shader,
                          "sample_normal_foam_domain(cascade, position, tile_length, pixels_per_meter",
                          "fragment shader should sample secondary normal/foam domains");
@@ -382,6 +430,8 @@ int main() {
                          "fragment shader should distance-gate far anti-repeat");
         require_contains(fragment_shader, "float map_size = ocean.cascade4_options.w;",
                          "fragment shader should read map size from packed cascade controls");
+        require_contains(fragment_shader, "float cascade_surface_lod_weight",
+                         "fragment shader should apply per-cascade normal and foam LOD weights");
         require_contains(fragment_shader,
                          "smoothstep(0.0, 1.0, gradient.z * 0.75) * exp(-dist * 0.0075)",
                          "fragment shader should preserve raw foam attenuation");
@@ -407,10 +457,12 @@ int main() {
                          "fragment shader should expose wire diagnostics");
         require_contains(gpu_resources_source, ".size = sizeof(float) * 64U",
                          "surface pipeline push constants should match ocean shader layout");
-        require_contains(gpu_resources_source, "kOceanCascadeCount * 2U",
-                         "surface layout should bind displacement and normal/foam for every cascade");
+        require_contains(gpu_resources_source, "kOceanCascadeCount * 3U",
+                         "surface layout should bind displacement, normal, and foam for every cascade");
         require_contains(gpu_resources_source, "cascade + kOceanCascadeCount",
-                         "surface descriptors should expose normal/foam maps for every cascade");
+                         "surface descriptors should expose normal maps for every cascade");
+        require_contains(gpu_resources_source, "cascade + kOceanCascadeCount * 2U",
+                         "surface descriptors should expose foam maps for every cascade");
 
         require_not_contains(vertex_shader, "ocean_macro_waves",
                              "ocean vertex shader should not use Cubey macro waves");
@@ -418,8 +470,8 @@ int main() {
                              "ocean fragment shader should not use Cubey macro waves");
         require_not_contains(unpack_shader, "bounded_choppy",
                              "ocean unpack shader should not use bounded choppy clamps");
-        require_not_contains(fragment_shader, "foam_history",
-                             "ocean fragment shader should not use separate foam history");
+        require_not_contains(fragment_shader, "normal_foam_cascade",
+                             "ocean fragment shader should not pack normals and foam in one sampler");
 
         return 0;
     } catch (const std::exception& error) {
