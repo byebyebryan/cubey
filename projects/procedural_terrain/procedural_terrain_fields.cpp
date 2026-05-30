@@ -90,6 +90,11 @@ struct Point2 {
     return ridge * ridge;
 }
 
+[[nodiscard]] float soft_mounds(float x, float y, std::uint64_t seed, std::uint32_t octaves) {
+    const float noise = (fbm(x, y, seed, octaves) * 0.5F) + 0.5F;
+    return smoothstep(0.32F, 0.92F, noise);
+}
+
 [[nodiscard]] float length(Point2 p) {
     return std::sqrt((p.x * p.x) + (p.y * p.y));
 }
@@ -661,16 +666,15 @@ TerrainFieldData generate_terrain_fields(const TerrainConfig& config) {
                     fbm(nx * 5.2F - 6.0F, nz * 5.2F + 4.0F, config.seed + 151U, 4) *
                     4.8F * config.relief_scale * inland;
                 const float foothills =
-                    ridged(nx * 1.85F - 2.5F, nz * 1.85F + 6.2F, config.seed + 233U) *
-                    14.0F * config.relief_scale * inland *
+                    soft_mounds(nx * 1.85F - 2.5F, nz * 1.85F + 6.2F, config.seed + 233U, 5) *
+                    9.0F * config.relief_scale * inland *
                     (1.0F - (saturate(fields.ridge_strength[sample]) * 0.48F));
                 const float ridge =
                     std::pow(saturate(fields.ridge_strength[sample]), 1.58F) * 66.0F *
                     config.relief_scale;
                 const float broken_ridge =
-                    ridged(nx * 3.1F + 8.0F, nz * 3.1F - 5.0F, config.seed + 211U) *
-                    10.0F * config.relief_scale *
-                    saturate((fields.ridge_strength[sample] * 0.66F) + (inland * 0.14F));
+                    soft_mounds(nx * 3.1F + 8.0F, nz * 3.1F - 5.0F, config.seed + 211U, 4) *
+                    8.0F * config.relief_scale * saturate(fields.ridge_strength[sample] * 0.72F);
                 const float valley_cut =
                     fields.valley_strength[sample] * (3.0F + (18.0F * inland)) *
                     config.relief_scale;

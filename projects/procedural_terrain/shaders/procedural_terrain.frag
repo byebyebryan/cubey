@@ -33,6 +33,17 @@ float hash21(vec2 p) {
     return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
 }
 
+float value_noise2(vec2 p) {
+    vec2 i = floor(p);
+    vec2 f = fract(p);
+    vec2 u = f * f * (3.0 - 2.0 * f);
+    float a = hash21(i);
+    float b = hash21(i + vec2(1.0, 0.0));
+    float c = hash21(i + vec2(0.0, 1.0));
+    float d = hash21(i + vec2(1.0, 1.0));
+    return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);
+}
+
 vec3 material_color(vec4 material) {
     vec3 sand = vec3(0.74, 0.63, 0.43);
     vec3 rock = vec3(0.38, 0.39, 0.37);
@@ -71,9 +82,12 @@ vec3 terrain_final_color() {
                          smoothstep(4.0, 82.0, water_depth));
     color = mix(color, submerged, water * 0.90);
 
-    float detail = (hash21(frag_world_position.xz * 0.055) - 0.5) +
-                   (sin(frag_world_position.x * 0.09) * sin(frag_world_position.z * 0.07) * 0.35);
-    color *= 0.96 + (detail * 0.08 * (1.0 - (water * 0.85)));
+    float detail = ((value_noise2(frag_world_position.xz * 0.038) - 0.5) * 0.55) +
+                   ((value_noise2(frag_world_position.xz * 0.095 + vec2(17.0, -9.0)) - 0.5) *
+                    0.24) +
+                   (sin(frag_world_position.x * 0.027) * sin(frag_world_position.z * 0.023) *
+                    0.10);
+    color *= 0.98 + (detail * 0.045 * (1.0 - (water * 0.85)));
 
     vec3 normal = normalize(frag_normal);
     vec3 light_direction = normalize(pc.light_direction_debug.xyz);
