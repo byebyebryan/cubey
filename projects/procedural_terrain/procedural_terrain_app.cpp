@@ -11,6 +11,8 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <chrono>
+#include <cstddef>
 #include <stdexcept>
 #include <utility>
 
@@ -47,6 +49,56 @@ constexpr float kDefaultPitchRadians = -0.90F;
     };
 }
 
+[[nodiscard]] TerrainDiagnostics make_terrain_diagnostics(const TerrainFieldData& fields,
+                                                          const TerrainMeshData& mesh,
+                                                          const TerrainMeshData& water_mesh,
+                                                          double rebuild_ms,
+                                                          std::uint64_t rebuild_count) {
+    TerrainDiagnostics diagnostics;
+    diagnostics.sample_count = fields.sample_count();
+    diagnostics.min_height_m = fields.min_height_m;
+    diagnostics.max_height_m = fields.max_height_m;
+    diagnostics.max_water_depth_m = fields.max_water_depth_m;
+    diagnostics.max_abs_shore_sdf_m = fields.max_abs_shore_sdf_m;
+    diagnostics.terrain_vertices = static_cast<std::uint32_t>(mesh.vertices.size());
+    diagnostics.terrain_triangles = terrain_triangle_count(mesh);
+    diagnostics.water_vertices = static_cast<std::uint32_t>(water_mesh.vertices.size());
+    diagnostics.water_triangles = terrain_triangle_count(water_mesh);
+    diagnostics.last_rebuild_ms = rebuild_ms;
+    diagnostics.rebuild_count = rebuild_count;
+
+    double slope_sum = 0.0;
+    for (std::size_t index = 0; index < diagnostics.sample_count; ++index) {
+        if (fields.water_depth_m[index] > 0.0F) {
+            ++diagnostics.water_samples;
+        } else {
+            ++diagnostics.land_samples;
+        }
+        if (std::abs(fields.shore_sdf_m[index]) <= fields.desc.cell_size_m * 1.5F) {
+            ++diagnostics.shoreline_samples;
+        }
+        const float slope = fields.slope[index];
+        slope_sum += slope;
+        diagnostics.max_slope = std::max(diagnostics.max_slope, slope);
+
+        const TerrainMaterialMask mask = fields.material_masks[index];
+        diagnostics.sand_coverage += mask.sand;
+        diagnostics.rock_coverage += mask.rock;
+        diagnostics.vegetation_coverage += mask.vegetation;
+        diagnostics.sediment_coverage += mask.sediment;
+    }
+
+    const float inv_samples = diagnostics.sample_count == 0U
+                                  ? 0.0F
+                                  : 1.0F / static_cast<float>(diagnostics.sample_count);
+    diagnostics.average_slope = static_cast<float>(slope_sum) * inv_samples;
+    diagnostics.sand_coverage *= inv_samples;
+    diagnostics.rock_coverage *= inv_samples;
+    diagnostics.vegetation_coverage *= inv_samples;
+    diagnostics.sediment_coverage *= inv_samples;
+    return diagnostics;
+}
+
 } // namespace
 
 std::filesystem::path shader_path(const char* filename) {
@@ -62,7 +114,9 @@ ProceduralTerrainApp::ProceduralTerrainApp(RunConfig config)
           .distance = terrain_camera_distance(terrain_config_),
           .min_distance = 48.0F,
           .max_distance = std::max(terrain_camera_distance(terrain_config_) * 4.0F, 960.0F),
-      }) {}
+      }) {
+    refresh_diagnostics(0.0);
+}
 
 int ProceduralTerrainApp::run() {
     if (config_.headless) {
@@ -94,14 +148,7 @@ int ProceduralTerrainApp::run_windowed() {
     callbacks.frame_stats_sample =
         [this](cubey::host::WindowedAppContext& context,
                const FrameTiming& timing) -> std::optional<cubey::host::FrameStatsSample> {
-        const VkExtent2D extent = context.swapchain().extent();
-        return cubey::host::FrameStatsSample{
-            .delta_seconds = timing.delta_seconds,
-            .width = extent.width,
-            .height = extent.height,
-            .triangles = terrain_triangle_count(mesh_data_) +
-                         terrain_triangle_count(water_mesh_data_),
-        };
+        return record_frame_stats(context.swapchain().extent(), timing);
     };
     callbacks.shutdown = [this](cubey::host::WindowedAppContext&) { destroy_all_resources(); };
 
@@ -193,9 +240,13 @@ void ProceduralTerrainApp::draw_ui(cubey::host::WindowedAppContext& context) {
     draw_terrain_ui({
         .active_config = terrain_config_,
         .edit_config = edit_terrain_config_,
+        .diagnostics = diagnostics_,
+        .latest_frame_stats = latest_frame_stats_,
         .water_visible = water_visible_,
         .rebuild_requested = rebuild_requested_,
         .reset_camera_requested = reset_camera_requested_,
+        .latest_fps = latest_fps_,
+        .latest_frame_ms = latest_frame_ms_,
     });
     if (reset_camera_requested_) {
         orbit_controller_.reset();
@@ -213,10 +264,11 @@ void ProceduralTerrainApp::update_input(const cubey::host::WindowedAppContext& c
 }
 
 void ProceduralTerrainApp::rebuild_terrain_resources(cubey::host::WindowedAppContext& context) {
+    const auto start = std::chrono::steady_clock::now();
     validate_terrain_config(edit_terrain_config_);
 
     const TerrainConfig next_config = edit_terrain_config_;
-    const TerrainFieldData next_fields = generate_terrain_fields(next_config);
+    TerrainFieldData next_fields = generate_terrain_fields(next_config);
     TerrainMeshData next_mesh_data = make_terrain_mesh(next_fields);
     TerrainMeshData next_water_mesh_data = make_water_surface_mesh(next_fields);
 
@@ -233,6 +285,38 @@ void ProceduralTerrainApp::rebuild_terrain_resources(cubey::host::WindowedAppCon
     water_mesh_data_ = std::move(next_water_mesh_data);
     mesh_.emplace(context.gpu(), mesh_data_.mesh_config());
     water_mesh_.emplace(context.gpu(), water_mesh_data_.mesh_config());
+    static_cast<void>(context.gpu().drain());
+
+    const auto end = std::chrono::steady_clock::now();
+    const double rebuild_ms =
+        std::chrono::duration<double, std::milli>(end - start).count();
+    ++rebuild_count_;
+    refresh_diagnostics(rebuild_ms);
+}
+
+void ProceduralTerrainApp::refresh_diagnostics(double rebuild_ms) {
+    diagnostics_ =
+        make_terrain_diagnostics(fields_, mesh_data_, water_mesh_data_, rebuild_ms, rebuild_count_);
+}
+
+std::optional<cubey::host::FrameStatsSample>
+ProceduralTerrainApp::record_frame_stats(VkExtent2D extent, const FrameTiming& timing) {
+    latest_frame_ms_ = timing.delta_seconds * 1000.0;
+    latest_fps_ = timing.delta_seconds > 0.0 ? 1.0 / timing.delta_seconds : 0.0;
+
+    const cubey::host::FrameStatsSample sample{
+        .delta_seconds = timing.delta_seconds,
+        .width = extent.width,
+        .height = extent.height,
+        .triangles = terrain_triangle_count(mesh_data_) +
+                     (water_visible_ ? terrain_triangle_count(water_mesh_data_) : 0U),
+    };
+    if (std::optional<cubey::host::FrameStatsSnapshot> stats =
+            ui_frame_stats_.record_frame(sample);
+        stats.has_value()) {
+        latest_frame_stats_ = stats.value();
+    }
+    return sample;
 }
 
 TerrainPushConstants ProceduralTerrainApp::push_constants(VkExtent2D extent) const {

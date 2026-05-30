@@ -50,6 +50,29 @@ void draw_seed_control(TerrainConfig& config) {
     }
 }
 
+void draw_material_table(const TerrainDiagnostics& diagnostics) {
+    if (!ImGui::BeginTable("terrain material coverage", 2,
+                           ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_RowBg)) {
+        return;
+    }
+    ImGui::TableSetupColumn("Material");
+    ImGui::TableSetupColumn("Coverage");
+    ImGui::TableHeadersRow();
+
+    const auto row = [](const char* label, float coverage) {
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        ImGui::TextUnformatted(label);
+        ImGui::TableSetColumnIndex(1);
+        ImGui::Text("%.1f%%", coverage * 100.0F);
+    };
+    row("Sand", diagnostics.sand_coverage);
+    row("Rock", diagnostics.rock_coverage);
+    row("Vegetation", diagnostics.vegetation_coverage);
+    row("Sediment", diagnostics.sediment_coverage);
+    ImGui::EndTable();
+}
+
 } // namespace
 
 void draw_terrain_ui(TerrainUiContext ui) {
@@ -99,6 +122,34 @@ void draw_terrain_ui(TerrainUiContext ui) {
     if (pending_rebuild) {
         ImGui::SameLine();
         ImGui::TextUnformatted("pending rebuild");
+    }
+
+    if (cubey::host::imgui_section("Diagnostics", true)) {
+        const cubey::host::ScopedImGuiId section_id("Diagnostics");
+        cubey::host::draw_frame_stats(ui.latest_frame_stats, ui.latest_fps, ui.latest_frame_ms);
+        ImGui::Text("Grid: %u x %u", ui.active_config.grid_width, ui.active_config.grid_height);
+        ImGui::Text("Cell: %.1f m | Sea: %.1f m", ui.active_config.cell_size_m,
+                    ui.active_config.sea_level_m);
+        ImGui::Text("Height: %.1f .. %.1f m", ui.diagnostics.min_height_m,
+                    ui.diagnostics.max_height_m);
+        ImGui::Text("Water depth max: %.1f m", ui.diagnostics.max_water_depth_m);
+        ImGui::Text("Shore SDF max abs: %.1f m", ui.diagnostics.max_abs_shore_sdf_m);
+        ImGui::Text("Land/water: %.1f%% / %.1f%%",
+                    static_cast<float>(ui.diagnostics.land_samples) * 100.0F /
+                        static_cast<float>(std::max<std::size_t>(ui.diagnostics.sample_count, 1U)),
+                    static_cast<float>(ui.diagnostics.water_samples) * 100.0F /
+                        static_cast<float>(std::max<std::size_t>(ui.diagnostics.sample_count, 1U)));
+        ImGui::Text("Shoreline samples: %zu", ui.diagnostics.shoreline_samples);
+        ImGui::Text("Slope avg/max: %.3f / %.3f", ui.diagnostics.average_slope,
+                    ui.diagnostics.max_slope);
+        ImGui::Text("Terrain mesh: %u verts / %u tris", ui.diagnostics.terrain_vertices,
+                    ui.diagnostics.terrain_triangles);
+        ImGui::Text("Water mesh: %u verts / %u tris", ui.diagnostics.water_vertices,
+                    ui.diagnostics.water_triangles);
+        ImGui::Text("Rebuilds: %llu | Last: %.2f ms",
+                    static_cast<unsigned long long>(ui.diagnostics.rebuild_count),
+                    ui.diagnostics.last_rebuild_ms);
+        draw_material_table(ui.diagnostics);
     }
 
     ImGui::End();

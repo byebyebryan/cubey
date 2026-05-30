@@ -14,9 +14,9 @@ Run a windowed view:
 ```
 
 The windowed view opens an ImGui control panel for debug view selection, water
-visibility, camera reset, and applied terrain rebuilds. Terrain shape edits are
-staged until `Apply Terrain` so large grids do not regenerate on every slider
-tick.
+visibility, camera reset, applied terrain rebuilds, and field/mesh diagnostics.
+Terrain shape edits are staged until `Apply Terrain` so large grids do not
+regenerate on every slider tick.
 
 Run a deterministic headless capture:
 
