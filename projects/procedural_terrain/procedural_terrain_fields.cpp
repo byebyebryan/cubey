@@ -112,6 +112,10 @@ struct Point2 {
     return distance(p, q);
 }
 
+[[nodiscard]] std::size_t grid_index(std::uint32_t x, std::uint32_t y, std::uint32_t width) {
+    return static_cast<std::size_t>(y) * width + x;
+}
+
 [[nodiscard]] Point2 polar_point(float angle, float radius) {
     return {std::cos(angle) * radius, std::sin(angle) * radius};
 }
@@ -193,9 +197,83 @@ struct Point2 {
     return shape + (coast_noise * config.coast_noise_strength);
 }
 
-[[nodiscard]] float ridge_chain(Point2 p, float angle, float center_s, float center_l,
-                                float half_length, float width, float amplitude, float phase,
-                                float weight, std::uint64_t seed) {
+[[nodiscard]] std::vector<float> smoothed_scalar_field(const std::vector<float>& values,
+                                                       std::uint32_t width,
+                                                       std::uint32_t height) {
+    std::vector<float> result(values.size());
+    for (std::uint32_t y = 0; y < height; ++y) {
+        for (std::uint32_t x = 0; x < width; ++x) {
+            float sum = 0.0F;
+            float weight_sum = 0.0F;
+            for (std::int32_t oy = -1; oy <= 1; ++oy) {
+                const auto sy = static_cast<std::int32_t>(y) + oy;
+                if (sy < 0 || sy >= static_cast<std::int32_t>(height)) {
+                    continue;
+                }
+                for (std::int32_t ox = -1; ox <= 1; ++ox) {
+                    const auto sx = static_cast<std::int32_t>(x) + ox;
+                    if (sx < 0 || sx >= static_cast<std::int32_t>(width)) {
+                        continue;
+                    }
+                    const float weight = ox == 0 && oy == 0 ? 4.0F
+                                         : ox == 0 || oy == 0 ? 2.0F
+                                                             : 1.0F;
+                    sum += values[grid_index(static_cast<std::uint32_t>(sx),
+                                             static_cast<std::uint32_t>(sy), width)] *
+                           weight;
+                    weight_sum += weight;
+                }
+            }
+            result[grid_index(x, y, width)] = weight_sum == 0.0F ? values[grid_index(x, y, width)]
+                                                                 : sum / weight_sum;
+        }
+    }
+    return result;
+}
+
+void remove_single_cell_coast_artifacts(std::vector<bool>& land_mask, std::uint32_t width,
+                                        std::uint32_t height) {
+    std::vector<bool> next = land_mask;
+    for (std::uint32_t y = 0; y < height; ++y) {
+        for (std::uint32_t x = 0; x < width; ++x) {
+            std::uint32_t land_neighbors = 0;
+            std::uint32_t neighbor_count = 0;
+            for (std::int32_t oy = -1; oy <= 1; ++oy) {
+                const auto sy = static_cast<std::int32_t>(y) + oy;
+                if (sy < 0 || sy >= static_cast<std::int32_t>(height)) {
+                    continue;
+                }
+                for (std::int32_t ox = -1; ox <= 1; ++ox) {
+                    if (ox == 0 && oy == 0) {
+                        continue;
+                    }
+                    const auto sx = static_cast<std::int32_t>(x) + ox;
+                    if (sx < 0 || sx >= static_cast<std::int32_t>(width)) {
+                        continue;
+                    }
+                    ++neighbor_count;
+                    if (land_mask[grid_index(static_cast<std::uint32_t>(sx),
+                                             static_cast<std::uint32_t>(sy), width)]) {
+                        ++land_neighbors;
+                    }
+                }
+            }
+
+            const std::size_t sample = grid_index(x, y, width);
+            if (land_mask[sample] && land_neighbors <= 2U) {
+                next[sample] = false;
+            } else if (!land_mask[sample] && neighbor_count >= 5U &&
+                       land_neighbors >= neighbor_count - 1U) {
+                next[sample] = true;
+            }
+        }
+    }
+    land_mask = std::move(next);
+}
+
+[[nodiscard]] float mountain_band(Point2 p, float angle, float center_s, float center_l,
+                                  float half_length, float width, float amplitude, float phase,
+                                  float weight, std::uint64_t seed) {
     const Point2 dir{std::cos(angle), std::sin(angle)};
     const Point2 normal{-dir.y, dir.x};
     const Point2 center{(dir.x * center_s) + (normal.x * center_l),
@@ -208,27 +286,30 @@ struct Point2 {
         (std::sin((t * kTau) + phase) * amplitude) +
         (std::sin((t * kTau * 2.15F) + (phase * 0.71F)) * amplitude * 0.38F);
     const float dist = std::abs(lateral - centerline);
-    const float line = 1.0F - smoothstep(width * 0.18F, width, dist);
+    const float broad = 1.0F - smoothstep(width * 0.42F, width, dist);
+    const float core = 1.0F - smoothstep(width * 0.11F, width * 0.34F, dist);
     const float taper = smoothstep(-half_length - 0.07F, -half_length + 0.18F, axial) *
                         (1.0F - smoothstep(half_length - 0.18F, half_length + 0.07F, axial));
-    const float fracture = 0.34F + (0.66F * smoothstep(0.24F, 0.92F,
-                                                       ridged((axial * 4.2F) + phase,
-                                                              (lateral * 5.7F) - phase, seed + 23U)));
-    const float broken =
-        0.44F + (0.56F * ridged((p.x * 8.2F) + phase, (p.y * 8.2F) - phase, seed));
-    return saturate(line * taper * fracture * broken * weight);
+    const float coarse =
+        ridged((p.x * 3.0F) + phase, (p.y * 3.0F) - phase, seed + 11U);
+    const float fine =
+        ridged((p.x * 8.4F) - (phase * 0.43F), (p.y * 8.4F) + phase, seed + 23U);
+    const float peak_texture = (coarse * 0.66F) + (fine * 0.34F);
+    const float peak = smoothstep(0.44F, 0.90F, peak_texture) * (0.42F + (0.58F * core));
+    const float shoulder = broad * 0.18F;
+    return saturate((shoulder + (broad * peak)) * taper * weight);
 }
 
 [[nodiscard]] float ridge_field(Point2 p, const TerrainConfig& config) {
     const float base_angle = terrain_axis_angle(config);
     const float base_offset = terrain_axis_offset(config);
     float strength =
-        ridge_chain(p, base_angle, lerp(-0.08F, 0.08F, random01(config.seed, 0U, 109U)),
-                    base_offset, 0.66F, 0.066F,
-                    lerp(0.035F, 0.085F, random01(config.seed, 0U, 113U)),
-                    random01(config.seed, 0U, 127U) * kTau, 0.96F, config.seed + 400U);
+        mountain_band(p, base_angle, lerp(-0.08F, 0.08F, random01(config.seed, 0U, 109U)),
+                      base_offset, 0.68F, 0.24F,
+                      lerp(0.055F, 0.125F, random01(config.seed, 0U, 113U)),
+                      random01(config.seed, 0U, 127U) * kTau, 1.0F, config.seed + 400U);
 
-    for (std::uint32_t index = 0; index < 3U; ++index) {
+    for (std::uint32_t index = 0; index < 2U; ++index) {
         const float side = index == 0U ? -1.0F : 1.0F;
         const float angle = base_angle + (side * lerp(0.48F, 1.04F,
                                                        random01(config.seed, index, 131U))) +
@@ -237,19 +318,19 @@ struct Point2 {
         const float center_l =
             base_offset + (side * lerp(0.10F, 0.28F, random01(config.seed, index, 149U)));
         const float branch =
-            ridge_chain(p, angle, center_s, center_l,
-                        lerp(0.28F, 0.46F, random01(config.seed, index, 151U)),
-                        lerp(0.038F, 0.058F, random01(config.seed, index, 157U)),
-                        lerp(0.020F, 0.060F, random01(config.seed, index, 163U)),
-                        random01(config.seed, index, 167U) * kTau,
-                        lerp(0.34F, 0.56F, random01(config.seed, index, 173U)),
-                        config.seed + 500U + index);
+            mountain_band(p, angle, center_s, center_l,
+                          lerp(0.24F, 0.42F, random01(config.seed, index, 151U)),
+                          lerp(0.12F, 0.20F, random01(config.seed, index, 157U)),
+                          lerp(0.030F, 0.075F, random01(config.seed, index, 163U)),
+                          random01(config.seed, index, 167U) * kTau,
+                          lerp(0.38F, 0.62F, random01(config.seed, index, 173U)),
+                          config.seed + 500U + index);
         strength = std::max(strength, branch);
     }
 
     const float rough_highland =
         ridged(p.x * 2.4F + 3.1F, p.y * 2.4F - 8.7F, config.seed + 577U) *
-        smoothstep(0.78F, 0.18F, length(p)) * 0.18F;
+        smoothstep(0.82F, 0.20F, length(p)) * 0.12F;
     strength = std::max(strength, rough_highland);
     return strength;
 }
@@ -388,6 +469,68 @@ struct Point2 {
     };
 }
 
+void relax_land_heights(TerrainFieldData& fields, const TerrainConfig& config) {
+    std::vector<float> relaxed = fields.height_m;
+    for (std::uint32_t y = 0; y < fields.desc.height; ++y) {
+        for (std::uint32_t x = 0; x < fields.desc.width; ++x) {
+            const std::size_t sample = fields.index(x, y);
+            if (fields.height_m[sample] <= fields.desc.sea_level_m) {
+                continue;
+            }
+
+            float sum = fields.height_m[sample] * 4.0F;
+            float weight_sum = 4.0F;
+            for (std::int32_t oy = -1; oy <= 1; ++oy) {
+                const auto sy = static_cast<std::int32_t>(y) + oy;
+                if (sy < 0 || sy >= static_cast<std::int32_t>(fields.desc.height)) {
+                    continue;
+                }
+                for (std::int32_t ox = -1; ox <= 1; ++ox) {
+                    if (ox == 0 && oy == 0) {
+                        continue;
+                    }
+                    const auto sx = static_cast<std::int32_t>(x) + ox;
+                    if (sx < 0 || sx >= static_cast<std::int32_t>(fields.desc.width)) {
+                        continue;
+                    }
+                    const std::size_t neighbor =
+                        fields.index(static_cast<std::uint32_t>(sx),
+                                     static_cast<std::uint32_t>(sy));
+                    if (fields.height_m[neighbor] <= fields.desc.sea_level_m) {
+                        continue;
+                    }
+                    const float weight = ox == 0 || oy == 0 ? 2.0F : 1.0F;
+                    sum += fields.height_m[neighbor] * weight;
+                    weight_sum += weight;
+                }
+            }
+
+            const float local_average = sum / weight_sum;
+            const float ridge = saturate(fields.ridge_strength[sample]);
+            const float shore_guard = smoothstep(20.0F, 92.0F, fields.shore_sdf_m[sample]);
+            const float local_cap = local_average + ((22.0F + (62.0F * ridge)) *
+                                                     config.relief_scale);
+            const float capped = std::min(fields.height_m[sample], local_cap);
+            const float relax_amount = (0.10F + (0.10F * ridge)) * shore_guard;
+            const float coast = smoothstep(0.0F, 76.0F, fields.shore_sdf_m[sample]);
+            const float floor = fields.desc.sea_level_m + 0.12F + (coast * 1.6F);
+            relaxed[sample] = std::max(lerp(capped, local_average, relax_amount), floor);
+        }
+    }
+
+    fields.height_m = std::move(relaxed);
+    fields.min_height_m = std::numeric_limits<float>::max();
+    fields.max_height_m = std::numeric_limits<float>::lowest();
+    fields.max_water_depth_m = 0.0F;
+    for (std::size_t index = 0; index < fields.sample_count(); ++index) {
+        fields.water_depth_m[index] =
+            std::max(0.0F, fields.desc.sea_level_m - fields.height_m[index]);
+        fields.max_water_depth_m = std::max(fields.max_water_depth_m, fields.water_depth_m[index]);
+        fields.min_height_m = std::min(fields.min_height_m, fields.height_m[index]);
+        fields.max_height_m = std::max(fields.max_height_m, fields.height_m[index]);
+    }
+}
+
 } // namespace
 
 std::size_t TerrainFieldData::sample_count() const {
@@ -424,7 +567,6 @@ TerrainFieldData generate_terrain_fields(const TerrainConfig& config) {
     fields.valley_strength.resize(count);
 
     std::vector<bool> land_mask(count, false);
-    std::size_t land_count = 0;
     for (std::uint32_t y = 0; y < fields.desc.height; ++y) {
         const float v = fields.desc.height == 1U
                             ? 0.0F
@@ -437,10 +579,26 @@ TerrainFieldData generate_terrain_fields(const TerrainConfig& config) {
             const Point2 p{(u * 2.0F) - 1.0F, (v * 2.0F) - 1.0F};
             const std::size_t sample = fields.index(x, y);
             fields.land_potential[sample] = coastline_land_potential(p, config);
-            land_mask[sample] = fields.land_potential[sample] >= 0.0F;
-            if (land_mask[sample]) {
-                ++land_count;
-            }
+        }
+    }
+
+    const std::vector<float> coast_smoothed =
+        smoothed_scalar_field(fields.land_potential, fields.desc.width, fields.desc.height);
+    for (std::size_t index = 0; index < count; ++index) {
+        fields.land_potential[index] =
+            (fields.land_potential[index] * 0.72F) + (coast_smoothed[index] * 0.28F);
+        land_mask[index] = fields.land_potential[index] >= 0.0F;
+    }
+    remove_single_cell_coast_artifacts(land_mask, fields.desc.width, fields.desc.height);
+    remove_single_cell_coast_artifacts(land_mask, fields.desc.width, fields.desc.height);
+
+    std::size_t land_count = 0;
+    for (std::size_t index = 0; index < count; ++index) {
+        if (land_mask[index]) {
+            fields.land_potential[index] = std::max(fields.land_potential[index], 0.001F);
+            ++land_count;
+        } else {
+            fields.land_potential[index] = std::min(fields.land_potential[index], -0.001F);
         }
     }
     if (land_count == 0U || land_count == count) {
@@ -503,17 +661,17 @@ TerrainFieldData generate_terrain_fields(const TerrainConfig& config) {
                     4.8F * config.relief_scale * inland;
                 const float foothills =
                     ridged(nx * 1.85F - 2.5F, nz * 1.85F + 6.2F, config.seed + 233U) *
-                    12.0F * config.relief_scale * inland *
+                    14.0F * config.relief_scale * inland *
                     (1.0F - (saturate(fields.ridge_strength[sample]) * 0.48F));
                 const float ridge =
-                    std::pow(saturate(fields.ridge_strength[sample]), 1.40F) * 48.0F *
+                    std::pow(saturate(fields.ridge_strength[sample]), 1.58F) * 66.0F *
                     config.relief_scale;
                 const float broken_ridge =
                     ridged(nx * 3.1F + 8.0F, nz * 3.1F - 5.0F, config.seed + 211U) *
-                    13.0F * config.relief_scale *
-                    saturate((fields.ridge_strength[sample] * 0.72F) + (inland * 0.18F));
+                    10.0F * config.relief_scale *
+                    saturate((fields.ridge_strength[sample] * 0.66F) + (inland * 0.14F));
                 const float valley_cut =
-                    fields.valley_strength[sample] * (8.0F + (42.0F * inland)) *
+                    fields.valley_strength[sample] * (3.0F + (18.0F * inland)) *
                     config.relief_scale;
                 height = fields.desc.sea_level_m + 0.22F +
                          (coast * 8.5F * config.relief_scale) +
@@ -541,6 +699,8 @@ TerrainFieldData generate_terrain_fields(const TerrainConfig& config) {
             fields.max_height_m = std::max(fields.max_height_m, height);
         }
     }
+
+    relax_land_heights(fields, config);
 
     for (std::uint32_t y = 0; y < fields.desc.height; ++y) {
         for (std::uint32_t x = 0; x < fields.desc.width; ++x) {
@@ -570,11 +730,11 @@ TerrainFieldData generate_terrain_fields(const TerrainConfig& config) {
             const float beach_band = (1.0F - smoothstep(20.0F, 86.0F, shore)) * low_slope;
             const float valley_moisture = saturate(fields.valley_strength[sample] * 1.45F);
             const float ridge_exposure =
-                std::pow(saturate(fields.ridge_strength[sample] * 0.94F), 1.36F);
+                std::pow(saturate(fields.ridge_strength[sample] * 0.88F), 1.52F);
             const float land = underwater ? 0.0F : 1.0F;
             const float sand = land * beach_band * (1.0F - smoothstep(26.0F, 70.0F, height));
             const float rock =
-                land * std::max(std::max(steep * 0.80F, ridge_exposure * 0.48F), high * 0.62F);
+                land * std::max(std::max(steep * 0.82F, ridge_exposure * 0.40F), high * 0.58F);
             const float vegetation =
                 land * (1.0F - (steep * 0.78F)) * (1.0F - (ridge_exposure * 0.55F)) *
                 smoothstep(7.0F, 24.0F, height) * (1.0F - smoothstep(118.0F, 170.0F, height)) *

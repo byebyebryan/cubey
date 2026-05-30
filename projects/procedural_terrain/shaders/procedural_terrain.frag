@@ -42,21 +42,22 @@ vec3 material_color(vec4 material) {
 }
 
 vec3 water_surface_color() {
-    float depth_t = smoothstep(2.0, 76.0, frag_fields.y);
-    float shore_t = 1.0 - smoothstep(2.0, 24.0, abs(frag_fields.z));
+    float depth_t = smoothstep(12.0, 180.0, frag_fields.y) * 0.42;
+    float shore_t = frag_fields.z < 0.0 ? 1.0 - smoothstep(3.0, 28.0, -frag_fields.z) : 0.0;
     float ripple = sin((frag_world_position.x * 0.010) + (frag_world_position.z * 0.014)) +
                    (sin((frag_world_position.x * 0.023) - (frag_world_position.z * 0.018)) * 0.5);
+    float long_wave = sin((frag_world_position.x * 0.003) - (frag_world_position.z * 0.002));
 
-    vec3 shallow = vec3(0.11, 0.48, 0.55);
-    vec3 deep = vec3(0.03, 0.20, 0.29);
+    vec3 shallow = vec3(0.10, 0.45, 0.52);
+    vec3 deep = vec3(0.07, 0.32, 0.40);
     vec3 color = mix(shallow, deep, depth_t);
-    color *= 0.97 + (ripple * 0.012);
+    color *= 0.98 + (ripple * 0.010) + (long_wave * 0.018);
 
     vec3 normal = normalize(frag_normal);
     vec3 light_direction = normalize(pc.light_direction_debug.xyz);
     float sparkle = pow(max(dot(normal, light_direction), 0.0), 18.0);
     color += vec3(0.06, 0.09, 0.08) * sparkle;
-    color = mix(color, vec3(0.82, 0.91, 0.86), shore_t * 0.32);
+    color = mix(color, vec3(0.48, 0.57, 0.47), shore_t * 0.34);
     float fog = smoothstep(420.0, 1150.0, length(frag_world_position.xz));
     color = mix(color, vec3(0.61, 0.74, 0.83), fog);
     return color;
