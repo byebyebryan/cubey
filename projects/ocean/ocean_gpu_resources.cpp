@@ -42,7 +42,7 @@ make_ocean_field_texture(const cubey::vulkan::Device& device, std::uint32_t reso
     const VkPushConstantRange push_constant_range{
         .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
         .offset = 0,
-        .size = sizeof(float) * 60U,
+        .size = sizeof(float) * 64U,
     };
     return {
         .label = "ocean.surface",
@@ -275,38 +275,23 @@ void OceanGpuResources::create_descriptor_sets(const cubey::vulkan::Device& devi
         set = unpack_pool_->allocate(unpack_layout_->handle());
     }
 
-    const std::array surface_bindings{
-        cubey::vulkan::DescriptorSetBindingConfig{
-            .binding = 0,
+    std::array<cubey::vulkan::DescriptorSetBindingConfig, kOceanCascadeCount * 2U>
+        surface_bindings{};
+    for (std::uint32_t cascade = 0; cascade < kOceanCascadeCount; ++cascade) {
+        surface_bindings[cascade] = cubey::vulkan::DescriptorSetBindingConfig{
+            .binding = cascade,
             .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-            .stage_flags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-        },
-        cubey::vulkan::DescriptorSetBindingConfig{
-            .binding = 1,
-            .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-            .stage_flags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-        },
-        cubey::vulkan::DescriptorSetBindingConfig{
-            .binding = 2,
-            .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-            .stage_flags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-        },
-        cubey::vulkan::DescriptorSetBindingConfig{
-            .binding = 3,
-            .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-            .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
-        },
-        cubey::vulkan::DescriptorSetBindingConfig{
-            .binding = 4,
-            .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-            .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
-        },
-        cubey::vulkan::DescriptorSetBindingConfig{
-            .binding = 5,
-            .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-            .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
-        },
-    };
+            .stage_flags = VK_SHADER_STAGE_VERTEX_BIT,
+        };
+    }
+    for (std::uint32_t cascade = 0; cascade < kOceanCascadeCount; ++cascade) {
+        surface_bindings[kOceanCascadeCount + cascade] =
+            cubey::vulkan::DescriptorSetBindingConfig{
+                .binding = kOceanCascadeCount + cascade,
+                .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
+            };
+    }
     const cubey::vulkan::DescriptorSetInfo surface_info = descriptor_info(surface_bindings, 1U);
     surface_layout_.emplace(device, surface_info.layout_info());
     surface_pool_.emplace(device, surface_info.pool_info());
@@ -329,10 +314,10 @@ void OceanGpuResources::update_descriptors(const cubey::vulkan::Device& device) 
             .storage_image(unpack_set(cascade), 4, displacement(cascade).view())
             .storage_image(unpack_set(cascade), 5, normal_foam(cascade).view())
             .combined_image_sampler(surface_set_, cascade, displacement(cascade).sampler().handle(),
-                                    displacement(cascade).view(), VK_IMAGE_LAYOUT_GENERAL)
-            .combined_image_sampler(surface_set_, cascade + kOceanCascadeCount,
-                                    normal_foam(cascade).sampler().handle(),
-                                    normal_foam(cascade).view(), VK_IMAGE_LAYOUT_GENERAL);
+                                    displacement(cascade).view(), VK_IMAGE_LAYOUT_GENERAL);
+        writes.combined_image_sampler(surface_set_, cascade + kOceanCascadeCount,
+                                      normal_foam(cascade).sampler().handle(),
+                                      normal_foam(cascade).view(), VK_IMAGE_LAYOUT_GENERAL);
 
         for (std::uint32_t field_index = 0; field_index < kOceanSpectrumFieldCount;
              ++field_index) {

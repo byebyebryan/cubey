@@ -27,6 +27,9 @@ The active renderer currently focuses on:
 - a camera-relative clipmap mesh with LOD diagnostics;
 - the GodotOceanWaves-style multi-cascade spectrum, modulation, FFT, and unpack
   path;
+- five regular cascades ordered from broad macro swell through primary crest to
+  fine normal/foam detail, with storm-biased defaults for stronger long-wave
+  displacement and crest energy;
 - displacement, normal, foam, and LOD debug views;
 - cascade isolation, camera presets, pause/step timing, and mesh diagnostics
   for interactive inspection;

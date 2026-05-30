@@ -26,7 +26,10 @@ inline constexpr std::array<OceanRenderView, 6> kOceanRenderViews{
 
 inline constexpr std::array<std::uint32_t, 4> kOceanSupportedMapSizes{128U, 256U, 512U, 1024U};
 inline constexpr std::uint32_t kOceanDefaultMapSize = 1024U;
-inline constexpr std::uint32_t kOceanCascadeCount = 3U;
+inline constexpr std::uint32_t kOceanMacroCascadeCount = 2U;
+inline constexpr std::uint32_t kOceanReferenceCascadeCount = 3U;
+inline constexpr std::uint32_t kOceanCascadeCount =
+    kOceanMacroCascadeCount + kOceanReferenceCascadeCount;
 inline constexpr std::uint32_t kOceanSpectrumFieldCount = 4U;
 inline constexpr std::uint32_t kOceanMinMeshCells = 32U;
 inline constexpr std::uint32_t kOceanMaxMeshCells = 512U;
@@ -71,19 +74,66 @@ struct OceanConfig {
     float foam_color_b = 0.62F;
     OceanRenderView render_view = OceanRenderView::Final;
     std::array<OceanCascadeConfig, kOceanCascadeCount> cascades{
-        OceanCascadeConfig{},
+        OceanCascadeConfig{
+            .tile_length = 1152.0F,
+            .displacement_scale = 0.55F,
+            .normal_scale = 0.16F,
+            .wind_speed = 32.0F,
+            .wind_direction_degrees = 17.0F,
+            .fetch_length_km = 1200.0F,
+            .swell = 1.15F,
+            .spread = 0.38F,
+            .detail = 0.38F,
+            .whitecap = 0.0F,
+            .foam_amount = 0.0F,
+            .seed_x = -5441,
+            .seed_y = 2203,
+            .time_offset = 131.5F,
+        },
+        OceanCascadeConfig{
+            .tile_length = 384.0F,
+            .displacement_scale = 0.95F,
+            .normal_scale = 0.36F,
+            .wind_speed = 30.0F,
+            .wind_direction_degrees = 19.0F,
+            .fetch_length_km = 1100.0F,
+            .swell = 1.10F,
+            .spread = 0.28F,
+            .detail = 0.70F,
+            .whitecap = 0.0F,
+            .foam_amount = 0.0F,
+            .seed_x = 9311,
+            .seed_y = -1733,
+            .time_offset = 117.0F,
+        },
+        OceanCascadeConfig{
+            .tile_length = 88.0F,
+            .displacement_scale = 1.35F,
+            .normal_scale = 1.35F,
+            .wind_speed = 18.0F,
+            .wind_direction_degrees = 20.0F,
+            .fetch_length_km = 350.0F,
+            .swell = 1.0F,
+            .spread = 0.14F,
+            .detail = 1.0F,
+            .whitecap = 0.58F,
+            .foam_amount = 10.0F,
+            .seed_x = 1337,
+            .seed_y = 4919,
+            .time_offset = 120.0F,
+        },
         OceanCascadeConfig{
             .tile_length = 57.0F,
-            .displacement_scale = 0.75F,
-            .normal_scale = 1.0F,
-            .wind_speed = 5.0F,
-            .wind_direction_degrees = 15.0F,
-            .fetch_length_km = 150.0F,
-            .swell = 0.8F,
-            .spread = 0.4F,
+            .displacement_scale = 1.08F,
+            .normal_scale = 1.35F,
+            .wind_speed = 16.0F,
+            .wind_direction_degrees = 17.0F,
+            .fetch_length_km = 330.0F,
+            .swell = 0.95F,
+            .spread = 0.25F,
             .detail = 1.0F,
-            .whitecap = 0.5F,
-            .foam_amount = 0.0F,
+            .whitecap = 0.58F,
+            .foam_amount = 4.0F,
             .seed_x = -2713,
             .seed_y = 8128,
             .time_offset = 123.14159F,
@@ -91,15 +141,15 @@ struct OceanConfig {
         OceanCascadeConfig{
             .tile_length = 16.0F,
             .displacement_scale = 0.0F,
-            .normal_scale = 0.25F,
-            .wind_speed = 20.0F,
+            .normal_scale = 0.50F,
+            .wind_speed = 30.0F,
             .wind_direction_degrees = 20.0F,
-            .fetch_length_km = 550.0F,
-            .swell = 0.8F,
-            .spread = 0.4F,
+            .fetch_length_km = 850.0F,
+            .swell = 0.9F,
+            .spread = 0.25F,
             .detail = 1.0F,
-            .whitecap = 0.25F,
-            .foam_amount = 3.0F,
+            .whitecap = 0.35F,
+            .foam_amount = 6.5F,
             .seed_x = 6619,
             .seed_y = -3544,
             .time_offset = 126.28318F,
