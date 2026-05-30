@@ -170,6 +170,10 @@ class OceanRefApp {
     explicit OceanRefApp(RunConfig config)
         : config_(std::move(config)), ocean_config_(ocean_ref_config_from_run_config(config_)),
           render_view_(ocean_config_.render_view) {
+        diagnostics_.wire_overlay = config_.ocean_ref.wire_overlay;
+        if (cubey::run_config_float_is_set(config_.ocean_ref.wire_opacity)) {
+            diagnostics_.wire_opacity = config_.ocean_ref.wire_opacity;
+        }
         camera_.set_projection(camera_.fovy_radians(), kCameraNearPlane, kCameraFarPlane);
         orbit_controller_.set_home_distance(kCameraDistance);
         orbit_controller_.set_distance_limits(kCameraMinDistance, kCameraMaxDistance);
@@ -205,6 +209,7 @@ class OceanRefApp {
         callbacks.draw_ui = [this](cubey::host::WindowedAppContext&) {
             draw_ocean_ref_ui({
                 .config = ocean_config_,
+                .diagnostics = diagnostics_,
                 .latest_frame_stats = latest_frame_stats_,
                 .render_view = render_view_,
                 .paused = paused_,
@@ -412,7 +417,8 @@ class OceanRefApp {
                     static_cast<float>(static_cast<std::uint32_t>(render_view_)),
                     static_cast<float>(patch.level),
                     static_cast<float>(ocean_config_.mesh_lod_levels - 1U),
-                    0.0F,
+                    diagnostics_.wire_overlay ? std::clamp(diagnostics_.wire_opacity, 0.0F, 1.0F)
+                                              : 0.0F,
                 },
             .tile_lengths =
                 {
@@ -800,6 +806,7 @@ class OceanRefApp {
 
     RunConfig config_;
     OceanRefConfig ocean_config_;
+    OceanRefDiagnosticsConfig diagnostics_;
     OceanRefRenderView render_view_ = OceanRefRenderView::Final;
     cubey::Camera3D camera_;
     cubey::OrbitController orbit_controller_;

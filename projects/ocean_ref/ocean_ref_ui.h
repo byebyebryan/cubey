@@ -8,8 +8,14 @@
 
 namespace cubey::projects::ocean_ref {
 
+struct OceanRefDiagnosticsConfig {
+    bool wire_overlay = false;
+    float wire_opacity = 0.65F;
+};
+
 struct OceanRefUiContext {
     OceanRefConfig& config;
+    OceanRefDiagnosticsConfig& diagnostics;
     std::optional<cubey::host::FrameStatsSnapshot>& latest_frame_stats;
     OceanRefRenderView& render_view;
     bool& paused;

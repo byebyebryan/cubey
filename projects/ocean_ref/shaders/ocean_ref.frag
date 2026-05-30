@@ -28,6 +28,7 @@ layout(location = 1) in vec3 frag_displacement;
 layout(location = 2) in vec2 frag_sample_position;
 layout(location = 3) in vec4 frag_wave;
 layout(location = 4) in float frag_patch_alpha;
+layout(location = 5) noperspective in vec3 frag_barycentric;
 
 layout(location = 0) out vec4 out_color;
 
@@ -36,6 +37,7 @@ const uint OCEAN_REF_VIEW_HEIGHT = 1u;
 const uint OCEAN_REF_VIEW_DISPLACEMENT = 2u;
 const uint OCEAN_REF_VIEW_NORMAL = 3u;
 const uint OCEAN_REF_VIEW_FOAM = 4u;
+const uint OCEAN_REF_VIEW_LOD = 5u;
 const float OCEAN_REF_REFLECTANCE = 0.02;
 
 float cascade_tile_length(uint cascade) {
@@ -121,6 +123,21 @@ vec3 debug_height_color(float height) {
     return value < 0.5 ? mix(low, mid, value * 2.0) : mix(mid, high, (value - 0.5) * 2.0);
 }
 
+vec3 debug_lod_color(float level, float max_level) {
+    float value = max_level > 0.0 ? clamp(level / max_level, 0.0, 1.0) : 0.0;
+    vec3 near_color = cubey_srgb_to_linear(vec3(0.98, 0.62, 0.18));
+    vec3 mid_color = cubey_srgb_to_linear(vec3(0.12, 0.68, 0.62));
+    vec3 far_color = cubey_srgb_to_linear(vec3(0.22, 0.34, 0.88));
+    return value < 0.5 ? mix(near_color, mid_color, value * 2.0)
+                       : mix(mid_color, far_color, (value - 0.5) * 2.0);
+}
+
+float triangle_wire_factor(vec3 barycentric) {
+    vec3 width = max(fwidth(barycentric), vec3(0.0001));
+    vec3 edge = smoothstep(width * 0.75, width * 1.75, barycentric);
+    return 1.0 - min(min(edge.x, edge.y), edge.z);
+}
+
 vec3 apply_display(vec3 color) {
     return cubey_pbr_apply_display_transform(color, ocean.display_transform);
 }
@@ -177,6 +194,16 @@ void main() {
         color = normal * 0.5 + 0.5;
     } else if (view == OCEAN_REF_VIEW_FOAM) {
         color = vec3(foam);
+    } else if (view == OCEAN_REF_VIEW_LOD) {
+        color = debug_lod_color(ocean.debug_options.y, ocean.debug_options.z);
+    }
+
+    if (ocean.debug_options.w > 0.0) {
+        float wire = triangle_wire_factor(frag_barycentric);
+        vec3 wire_color = view == OCEAN_REF_VIEW_LOD
+                              ? cubey_srgb_to_linear(vec3(0.015, 0.020, 0.026))
+                              : cubey_srgb_to_linear(vec3(0.82, 0.94, 1.0));
+        color = mix(color, wire_color, wire * clamp(ocean.debug_options.w, 0.0, 1.0));
     }
 
     out_color = vec4(apply_display(color), clamp(frag_patch_alpha, 0.0, 1.0));

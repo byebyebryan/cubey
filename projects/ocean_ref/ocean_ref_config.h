@@ -16,11 +16,12 @@ enum class OceanRefRenderView : std::uint32_t {
     Displacement = 2,
     Normal = 3,
     Foam = 4,
+    Lod = 5,
 };
 
-inline constexpr std::array<OceanRefRenderView, 5> kOceanRefRenderViews{
+inline constexpr std::array<OceanRefRenderView, 6> kOceanRefRenderViews{
     OceanRefRenderView::Final,  OceanRefRenderView::Height, OceanRefRenderView::Displacement,
-    OceanRefRenderView::Normal, OceanRefRenderView::Foam,
+    OceanRefRenderView::Normal, OceanRefRenderView::Foam,   OceanRefRenderView::Lod,
 };
 
 inline constexpr std::array<std::uint32_t, 4> kOceanRefSupportedMapSizes{128U, 256U, 512U, 1024U};
@@ -120,6 +121,8 @@ struct OceanRefConfig {
         return "normal";
     case OceanRefRenderView::Foam:
         return "foam";
+    case OceanRefRenderView::Lod:
+        return "lod";
     }
     return "final";
 }

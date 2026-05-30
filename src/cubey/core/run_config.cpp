@@ -286,6 +286,11 @@ RunConfig parse_run_config(int argc, char** argv) {
         } else if (arg == "--ocean-ref-map-size") {
             config.ocean_ref.map_size =
                 parse_positive_u32(need_value("--ocean-ref-map-size"), "--ocean-ref-map-size");
+        } else if (arg == "--ocean-ref-wire-overlay") {
+            config.ocean_ref.wire_overlay = true;
+        } else if (arg == "--ocean-ref-wire-opacity") {
+            config.ocean_ref.wire_opacity =
+                parse_float(need_value("--ocean-ref-wire-opacity"), "--ocean-ref-wire-opacity");
         } else if (arg == "--ibl-intensity") {
             config.pbr.ibl_intensity =
                 parse_float(need_value("--ibl-intensity"), "--ibl-intensity");
@@ -318,6 +323,10 @@ RunConfig parse_run_config(int argc, char** argv) {
     }
     if (config.fps == 0) {
         throw std::runtime_error("fps must be positive");
+    }
+    if (run_config_float_is_set(config.ocean_ref.wire_opacity) &&
+        (config.ocean_ref.wire_opacity < 0.0F || config.ocean_ref.wire_opacity > 1.0F)) {
+        throw std::runtime_error("ocean_ref wire opacity must be in [0, 1]");
     }
     if (config.profile_diagnostics && config.profile_output_prefix.empty()) {
         throw std::runtime_error("profile diagnostics require --profile-output");

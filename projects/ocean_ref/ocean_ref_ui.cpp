@@ -14,6 +14,12 @@
 namespace cubey::projects::ocean_ref {
 namespace {
 
+struct OceanRefLodStats {
+    std::uint32_t patches = 0;
+    std::uint32_t triangles = 0;
+    std::uint32_t vertices = 0;
+};
+
 void draw_map_size_combo(OceanRefConfig& config) {
     char preview[16]{};
     std::snprintf(preview, sizeof(preview), "%u", config.map_size);
@@ -55,6 +61,42 @@ void draw_cascade_controls(OceanRefCascadeConfig& cascade, std::uint32_t index) 
     ImGui::SliderFloat("Foam amount", &cascade.foam_amount, 0.0F, 10.0F, "%.2f");
 }
 
+void draw_lod_diagnostics(const OceanRefConfig& config) {
+    std::array<OceanRefLodStats, kOceanRefMaxMeshLodLevels> stats{};
+    const OceanRefMeshPatchList patches = ocean_ref_mesh_clipmap_patches(config);
+    for (const OceanRefMeshPatch& patch : patches) {
+        OceanRefLodStats& level = stats[patch.level];
+        ++level.patches;
+        level.triangles += ocean_ref_mesh_patch_triangle_count(patch);
+        level.vertices += ocean_ref_mesh_patch_vertex_count(patch);
+    }
+
+    if (!ImGui::BeginTable("LOD breakdown", 5,
+                           ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_RowBg)) {
+        return;
+    }
+    ImGui::TableSetupColumn("Level");
+    ImGui::TableSetupColumn("Cell");
+    ImGui::TableSetupColumn("Patches");
+    ImGui::TableSetupColumn("Tris");
+    ImGui::TableSetupColumn("Half");
+    ImGui::TableHeadersRow();
+    for (std::uint32_t level = 0; level < config.mesh_lod_levels; ++level) {
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        ImGui::Text("%u", level);
+        ImGui::TableSetColumnIndex(1);
+        ImGui::Text("%.2f", ocean_ref_mesh_level_cell_size(config, level));
+        ImGui::TableSetColumnIndex(2);
+        ImGui::Text("%u", stats[level].patches);
+        ImGui::TableSetColumnIndex(3);
+        ImGui::Text("%u", stats[level].triangles);
+        ImGui::TableSetColumnIndex(4);
+        ImGui::Text("%.0f", ocean_ref_mesh_level_half_extent(config, level));
+    }
+    ImGui::EndTable();
+}
+
 } // namespace
 
 void draw_ocean_ref_ui(OceanRefUiContext ui) {
@@ -70,6 +112,10 @@ void draw_ocean_ref_ui(OceanRefUiContext ui) {
     }
     cubey::host::imgui_enum_combo("Debug view", ui.render_view, kOceanRefRenderViews,
                                   ocean_ref_render_view_name);
+    ImGui::Checkbox("Wire overlay", &ui.diagnostics.wire_overlay);
+    ImGui::BeginDisabled(!ui.diagnostics.wire_overlay);
+    ImGui::SliderFloat("Wire opacity", &ui.diagnostics.wire_opacity, 0.05F, 1.0F, "%.2f");
+    ImGui::EndDisabled();
 
     if (cubey::host::imgui_section("Reference", true)) {
         const cubey::host::ScopedImGuiId section_id("Reference");
@@ -122,6 +168,8 @@ void draw_ocean_ref_ui(OceanRefUiContext ui) {
                     ocean_ref_mesh_patch_count(ui.config),
                     ocean_ref_mesh_total_triangle_count(ui.config));
         ImGui::Text("Near cell: %.2f m", ocean_ref_mesh_near_cell_size(ui.config));
+        ImGui::Text("Vertices: %u", ocean_ref_mesh_total_vertex_count(ui.config));
+        draw_lod_diagnostics(ui.config);
     }
 
     ImGui::End();

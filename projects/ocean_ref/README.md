@@ -21,7 +21,14 @@ Useful debug views:
 ./build/dev/projects/ocean_ref/ocean_ref --debug-view displacement
 ./build/dev/projects/ocean_ref/ocean_ref --debug-view normal
 ./build/dev/projects/ocean_ref/ocean_ref --debug-view foam
+./build/dev/projects/ocean_ref/ocean_ref --debug-view lod
+./build/dev/projects/ocean_ref/ocean_ref --debug-view lod --ocean-ref-wire-overlay
 ```
+
+The GUI panel also includes a portable wire overlay and an LOD breakdown table
+for checking clipmap coverage, patch counts, and triangle load while tuning the
+mesh. Headless captures can use `--ocean-ref-wire-overlay` and
+`--ocean-ref-wire-opacity 0.0..1.0`.
 
 The default FFT map is `1024`. Smoke tests and fast local checks can use
 `--ocean-ref-map-size 128`.

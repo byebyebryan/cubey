@@ -23,6 +23,7 @@ layout(location = 1) out vec3 frag_displacement;
 layout(location = 2) out vec2 frag_sample_position;
 layout(location = 3) out vec4 frag_wave;
 layout(location = 4) out float frag_patch_alpha;
+layout(location = 5) noperspective out vec3 frag_barycentric;
 
 const float OCEAN_REF_MESH_TRANSITION_CELLS = 16.0;
 const float OCEAN_REF_MESH_MAX_TRANSITION_RATIO = 0.35;
@@ -44,6 +45,16 @@ vec2 triangle_corner(uint vertex_in_cell) {
         return vec2(1.0, 0.0);
     }
     return vec2(1.0, 1.0);
+}
+
+vec3 triangle_barycentric(uint vertex_in_cell) {
+    if (vertex_in_cell == 0u || vertex_in_cell == 3u) {
+        return vec3(1.0, 0.0, 0.0);
+    }
+    if (vertex_in_cell == 1u || vertex_in_cell == 4u) {
+        return vec3(0.0, 1.0, 0.0);
+    }
+    return vec3(0.0, 0.0, 1.0);
 }
 
 vec2 clipmap_patch_position(vec2 uv) {
@@ -139,5 +150,6 @@ void main() {
     frag_sample_position = base_position;
     frag_wave = vec4(displacement.y, 0.0, camera_distance, ocean.normal_scales.w);
     frag_patch_alpha = clipmap_patch_alpha(patch_position, patch_cell_size);
+    frag_barycentric = triangle_barycentric(vertex_in_cell);
     gl_Position = ocean.view_projection * vec4(world_position, 1.0);
 }

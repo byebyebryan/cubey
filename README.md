@@ -243,7 +243,9 @@ foam, and debug views. Use `--debug-view height|normal|foam|reflection|refractio
 to inspect the water renderer.
 `ocean_ref` is the isolated GodotOceanWaves reference port. Use
 `--ocean-ref-map-size 128|256|512|1024` to choose the FFT map size, and
-`--debug-view final|height|displacement|normal|foam` for focused comparisons.
+`--debug-view final|height|displacement|normal|foam|lod` for focused
+comparisons. Its GUI also has wire-overlay and LOD diagnostics for clipmap
+tuning; use `--ocean-ref-wire-overlay` for captured diagnostics.
 
 Useful headless PNG smokes:
 

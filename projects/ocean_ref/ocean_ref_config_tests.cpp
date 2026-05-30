@@ -143,7 +143,13 @@ int main() {
         require(ocean_ref::ocean_ref_render_view_from_name("foam") ==
                     ocean_ref::OceanRefRenderView::Foam,
                 "foam debug view should parse");
+        require(ocean_ref::ocean_ref_render_view_from_name("lod") ==
+                    ocean_ref::OceanRefRenderView::Lod,
+                "lod debug view should parse");
         require(ocean_ref::next_ocean_ref_render_view(ocean_ref::OceanRefRenderView::Foam) ==
+                    ocean_ref::OceanRefRenderView::Lod,
+                "ocean_ref debug view cycle should include the LOD view");
+        require(ocean_ref::next_ocean_ref_render_view(ocean_ref::OceanRefRenderView::Lod) ==
                     ocean_ref::OceanRefRenderView::Final,
                 "ocean_ref debug view cycle should wrap");
 
@@ -168,10 +174,20 @@ int main() {
         require_near(from_run_config.exposure, 0.5F, 0.001F,
                      "run config should initialize ocean_ref exposure");
 
-        const char* argv[] = {"ocean_ref", "--ocean-ref-map-size", "256", "--debug-view", "normal"};
-        cubey::RunConfig parsed = cubey::parse_run_config(5, const_cast<char**>(argv));
+        const char* argv[] = {"ocean_ref",
+                              "--ocean-ref-map-size",
+                              "256",
+                              "--debug-view",
+                              "normal",
+                              "--ocean-ref-wire-overlay",
+                              "--ocean-ref-wire-opacity",
+                              "0.8"};
+        cubey::RunConfig parsed = cubey::parse_run_config(8, const_cast<char**>(argv));
         require(parsed.ocean_ref.map_size == 256U, "CLI parser should accept --ocean-ref-map-size");
         require(parsed.debug_view == "normal", "CLI parser should preserve debug view");
+        require(parsed.ocean_ref.wire_overlay, "CLI parser should accept ocean_ref wire overlay");
+        require_near(parsed.ocean_ref.wire_opacity, 0.8F, 0.001F,
+                     "CLI parser should accept ocean_ref wire opacity");
 
         ocean_ref::OceanRefConfig invalid_map = defaults;
         invalid_map.map_size = 192U;
@@ -240,6 +256,12 @@ int main() {
                          "fragment shader should preserve reference foam attenuation");
         require_contains(fragment_shader, "mix(0.015, ocean.normal_scales.w, exp(-dist * 0.0175))",
                          "fragment shader should preserve reference normal fade");
+        require_contains(vertex_shader, "triangle_barycentric(vertex_in_cell)",
+                         "vertex shader should feed wireframe diagnostics");
+        require_contains(fragment_shader, "const uint OCEAN_REF_VIEW_LOD = 5u",
+                         "fragment shader should expose LOD diagnostics");
+        require_contains(fragment_shader, "triangle_wire_factor(frag_barycentric)",
+                         "fragment shader should expose wire diagnostics");
 
         require_not_contains(vertex_shader, "ocean_macro_waves",
                              "ocean_ref vertex shader should not use Cubey macro waves");

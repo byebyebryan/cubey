@@ -99,6 +99,8 @@ struct RunConfig {
 
     struct OceanRefOptions {
         std::uint32_t map_size = 0;
+        float wire_opacity = kRunConfigUnsetFloat;
+        bool wire_overlay = false;
     };
 
     struct PbrOptions {
