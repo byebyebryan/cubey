@@ -45,7 +45,7 @@ float value_noise2(vec2 p) {
 }
 
 vec3 material_color(vec4 material) {
-    vec3 sand = vec3(0.74, 0.63, 0.43);
+    vec3 sand = vec3(0.67, 0.58, 0.42);
     vec3 rock = vec3(0.38, 0.39, 0.37);
     vec3 vegetation = vec3(0.18, 0.39, 0.22);
     vec3 sediment = vec3(0.24, 0.26, 0.23);
@@ -54,7 +54,6 @@ vec3 material_color(vec4 material) {
 
 vec3 water_surface_color() {
     float depth_t = smoothstep(12.0, 180.0, frag_fields.y) * 0.42;
-    float shore_t = frag_fields.z < 0.0 ? 1.0 - smoothstep(3.0, 28.0, -frag_fields.z) : 0.0;
     float ripple = sin((frag_world_position.x * 0.010) + (frag_world_position.z * 0.014)) +
                    (sin((frag_world_position.x * 0.023) - (frag_world_position.z * 0.018)) * 0.5);
     float long_wave = sin((frag_world_position.x * 0.003) - (frag_world_position.z * 0.002));
@@ -68,7 +67,6 @@ vec3 water_surface_color() {
     vec3 light_direction = normalize(pc.light_direction_debug.xyz);
     float sparkle = pow(max(dot(normal, light_direction), 0.0), 18.0);
     color += vec3(0.06, 0.09, 0.08) * sparkle;
-    color = mix(color, vec3(0.48, 0.57, 0.47), shore_t * 0.34);
     float fog = smoothstep(420.0, 1150.0, length(frag_world_position.xz));
     color = mix(color, vec3(0.61, 0.74, 0.83), fog);
     return color;

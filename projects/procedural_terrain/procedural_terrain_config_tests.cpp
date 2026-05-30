@@ -4,6 +4,7 @@
 
 #include <cubey/core/run_config.h>
 
+#include <algorithm>
 #include <cmath>
 #include <stdexcept>
 
@@ -160,8 +161,7 @@ int main() {
             "terrain shoreline field size mismatch");
     require(fields.land_potential.size() == fields.sample_count(),
             "terrain landform field size mismatch");
-    require(fields.inland.size() == fields.sample_count(),
-            "terrain inland field size mismatch");
+    require(fields.inland.size() == fields.sample_count(), "terrain inland field size mismatch");
     require(fields.ridge_strength.size() == fields.sample_count(),
             "terrain ridge field size mismatch");
     require(fields.valley_strength.size() == fields.sample_count(),
@@ -172,11 +172,10 @@ int main() {
     require(fields.max_height_m > 0.0F, "terrain should include land terrain");
     require(fields.max_water_depth_m > 0.0F, "terrain should include positive water depth");
     require(fields.max_abs_shore_sdf_m > 0.0F, "terrain should include shoreline distance");
-    float ridge_sum = 0.0F;
-    float valley_sum = 0.0F;
     require(terrain::terrain_triangle_count(clipped_land) > 0U,
             "clipped land mesh should include land triangles");
-    require(terrain::terrain_triangle_count(clipped_land) <= terrain::terrain_triangle_count(mesh) * 2U,
+    require(terrain::terrain_triangle_count(clipped_land) <=
+                terrain::terrain_triangle_count(mesh) * 2U,
             "clipped land mesh should not exceed two triangles per source triangle");
 
     for (std::size_t index = 0; index < fields.sample_count(); ++index) {
@@ -201,8 +200,6 @@ int main() {
             require(fields.shore_sdf_m[index] >= -0.001F,
                     "land samples should be on land side of shoreline");
         }
-        ridge_sum += fields.ridge_strength[index];
-        valley_sum += fields.valley_strength[index];
 
         const terrain::TerrainMaterialMask mask = fields.material_masks[index];
         const float sum = mask.sand + mask.rock + mask.vegetation + mask.sediment;
@@ -213,8 +210,58 @@ int main() {
         require(vertex.fields.x >= fields.desc.sea_level_m - 0.001F,
                 "clipped land mesh should not include underwater vertices");
     }
+
+    terrain::TerrainConfig feature_grid = defaults;
+    feature_grid.grid_width = 129;
+    feature_grid.grid_height = 129;
+    const terrain::TerrainFieldData feature_fields = terrain::generate_terrain_fields(feature_grid);
+    float ridge_sum = 0.0F;
+    float valley_sum = 0.0F;
+    for (std::size_t index = 0; index < feature_fields.sample_count(); ++index) {
+        ridge_sum += feature_fields.ridge_strength[index];
+        valley_sum += feature_fields.valley_strength[index];
+    }
     require(ridge_sum > 0.0F, "terrain should include ridge influence");
     require(valley_sum > 0.0F, "terrain should include valley influence");
+
+    terrain::TerrainConfig isolated_relief = defaults;
+    isolated_relief.coast_noise_strength = 0.0F;
+    isolated_relief.relief_scale = 2.0F;
+    isolated_relief.ridge_scale = 0.0F;
+    isolated_relief.valley_scale = 0.0F;
+    const terrain::TerrainFieldData isolated_fields =
+        terrain::generate_terrain_fields(isolated_relief);
+    float isolated_max_slope = 0.0F;
+    for (std::size_t index = 0; index < isolated_fields.sample_count(); ++index) {
+        if (isolated_fields.water_depth_m[index] <= 0.0F) {
+            isolated_max_slope = std::max(isolated_max_slope, isolated_fields.slope[index]);
+        }
+    }
+    require(isolated_max_slope < 4.0F,
+            "isolated base relief should not create terrain spikes or fingers");
+
+    const float shoreline_edge_limit = isolated_fields.desc.cell_size_m * 2.5F;
+    for (std::uint32_t y = 0; y < isolated_fields.desc.height; ++y) {
+        for (std::uint32_t x = 0; x < isolated_fields.desc.width; ++x) {
+            const std::size_t sample = isolated_fields.index(x, y);
+            const auto check_neighbor = [&](std::uint32_t nx, std::uint32_t ny) {
+                const std::size_t neighbor = isolated_fields.index(nx, ny);
+                const bool same_side = (isolated_fields.shore_sdf_m[sample] >= 0.0F) ==
+                                       (isolated_fields.shore_sdf_m[neighbor] >= 0.0F);
+                if (same_side) {
+                    require(std::abs(isolated_fields.shore_sdf_m[sample] -
+                                     isolated_fields.shore_sdf_m[neighbor]) <= shoreline_edge_limit,
+                            "shoreline distance should be continuous on the same side");
+                }
+            };
+            if (x + 1U < isolated_fields.desc.width) {
+                check_neighbor(x + 1U, y);
+            }
+            if (y + 1U < isolated_fields.desc.height) {
+                check_neighbor(x, y + 1U);
+            }
+        }
+    }
 
     for (const std::uint64_t seed : {11ULL, 77ULL, 12345ULL}) {
         terrain::TerrainConfig seeded = defaults;

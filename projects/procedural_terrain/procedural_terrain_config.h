@@ -29,12 +29,12 @@ inline constexpr std::array<TerrainDebugView, 9> kTerrainDebugViews{
     TerrainDebugView::Landform,  TerrainDebugView::Ridges,   TerrainDebugView::Valleys,
 };
 
-inline constexpr std::uint32_t kTerrainDefaultGridWidth = 385U;
-inline constexpr std::uint32_t kTerrainDefaultGridHeight = 385U;
+inline constexpr std::uint32_t kTerrainDefaultGridWidth = 513U;
+inline constexpr std::uint32_t kTerrainDefaultGridHeight = 513U;
 inline constexpr std::uint32_t kTerrainMinGridExtent = 17U;
 inline constexpr std::uint32_t kTerrainMaxGridExtent = 513U;
 inline constexpr std::uint64_t kTerrainDefaultSeed = 0x54e2'2026'0529ULL;
-inline constexpr float kTerrainDefaultCellSizeMeters = 4.0F;
+inline constexpr float kTerrainDefaultCellSizeMeters = 3.0F;
 inline constexpr float kTerrainDefaultSeaLevelMeters = 0.0F;
 inline constexpr float kTerrainDefaultLandExtent = 0.70F;
 inline constexpr float kTerrainDefaultCoastNoiseStrength = 0.20F;
