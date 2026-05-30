@@ -245,47 +245,112 @@ void star_cube_uv(vec3 direction, out vec2 uv, out float face) {
     }
 }
 
-vec3 procedural_star_radiance(vec3 ray_direction, vec3 sun_direction) {
-    float visibility = star_visibility(sun_elevation_degrees(sun_direction)) *
-                       atmosphere.night_options.z *
-                       smoothstep(-0.03, 0.18, ray_direction.y);
-    if (visibility <= 0.0 || atmosphere.night_options.w <= 0.0) {
-        return vec3(0.0);
-    }
+float night_haze_visibility() {
+    return 1.0 - smoothstep(0.006, 0.018, atmosphere.mie.x);
+}
 
+float moon_washout(vec3 ray_direction, float base_strength, float lobe_strength,
+                   float min_visibility) {
+    vec3 moon_direction = normalize(atmosphere.moon_direction_radius.xyz);
+    float moon_strength = atmosphere.moon_options.x * atmosphere.moon_options.y *
+                          atmosphere.moon_options.w;
+    float moon_angle = acos(clamp(dot(ray_direction, moon_direction), -1.0, 1.0));
+    float moon_lobe = 1.0 - smoothstep(atmosphere.moon_direction_radius.w * 8.0,
+                                       atmosphere.moon_direction_radius.w * 90.0, moon_angle);
+    return clamp(1.0 - moon_strength * (base_strength + moon_lobe * lobe_strength),
+                 min_visibility, 1.0);
+}
+
+float night_object_visibility(vec3 ray_direction, vec3 sun_direction, float horizon_end,
+                              float moon_base, float moon_lobe, float moon_min,
+                              float pollution_min) {
+    float night = star_visibility(sun_elevation_degrees(sun_direction));
+    float horizon = smoothstep(-0.03, horizon_end, ray_direction.y);
+    float pollution = mix(1.0, pollution_min, clamp(atmosphere.milky_way_options.z, 0.0, 1.0));
+    return night * horizon * night_haze_visibility() * pollution *
+           moon_washout(ray_direction, moon_base, moon_lobe, moon_min);
+}
+
+float galactic_star_density(vec3 sky_direction) {
+    vec3 pole = normalize(vec3(0.31, 0.84, 0.44));
+    vec3 center_hint = normalize(vec3(-0.45, -0.12, -0.89));
+    vec3 center = normalize(center_hint - pole * dot(center_hint, pole));
+    vec3 tangent = normalize(cross(pole, center));
+    float latitude = asin(clamp(dot(sky_direction, pole), -1.0, 1.0));
+    float longitude = atan(dot(sky_direction, tangent), dot(sky_direction, center));
+    float band = exp(-abs(latitude) * 10.5);
+    float core = exp(-(longitude * longitude) / 0.36 - (latitude * latitude) / 0.040);
+    return clamp(0.32 + band * 1.05 + core * 1.25, 0.25, 2.45);
+}
+
+vec3 star_temperature_color(float seed) {
+    vec3 warm = cubey_srgb_to_linear(vec3(1.0, 0.82, 0.58));
+    vec3 neutral = cubey_srgb_to_linear(vec3(0.92, 0.94, 1.0));
+    vec3 cool = cubey_srgb_to_linear(vec3(0.70, 0.78, 1.0));
+    return seed < 0.48 ? mix(warm, neutral, smoothstep(0.05, 0.48, seed))
+                       : mix(neutral, cool, smoothstep(0.48, 0.94, seed));
+}
+
+vec3 star_cell_radiance(vec3 sky_direction, float cell_count, float probability,
+                        float min_radius, float max_radius, float min_brightness,
+                        float max_brightness, float brightness_power, vec2 layer_seed) {
     vec2 uv;
     float face;
-    star_cube_uv(star_sample_direction(ray_direction), uv, face);
-    float cell_count = 128.0;
+    star_cube_uv(sky_direction, uv, face);
     vec2 star_uv = (uv * 0.5 + 0.5) * cell_count;
     vec2 cell = floor(star_uv);
     vec2 local = fract(star_uv);
-    vec2 seed = cell + vec2(face * 97.0, face * 53.0);
+    vec2 seed = cell + vec2(face * 97.0, face * 53.0) + layer_seed;
     float candidate = hash12(seed);
-    float probability = mix(0.004, 0.055, atmosphere.night_options.w);
     if (candidate < 1.0 - probability) {
         return vec3(0.0);
     }
 
     vec2 center = vec2(hash12(seed + 19.17), hash12(seed + 71.31)) * 0.82 + 0.09;
     float brightness_seed = hash12(seed + 113.7);
-    float brightness = mix(0.20, 1.35, pow(brightness_seed, 6.0));
-    float radius = mix(0.018, 0.040, pow(brightness_seed, 10.0));
+    float brightness =
+        mix(min_brightness, max_brightness, pow(brightness_seed, brightness_power));
+    float radius = mix(min_radius, max_radius, pow(brightness_seed, 10.0));
     float distance_to_star = length(local - center);
     float antialias = max(length(fwidth(local)), 0.010);
     float star = 1.0 - smoothstep(radius, radius + antialias, distance_to_star);
-    float color_seed = hash12(seed + 211.9);
-    vec3 warm = cubey_srgb_to_linear(vec3(1.0, 0.82, 0.58));
-    vec3 cool = cubey_srgb_to_linear(vec3(0.70, 0.78, 1.0));
-    vec3 color = mix(warm, cool, smoothstep(0.25, 0.85, color_seed));
-    vec3 moon_direction = normalize(atmosphere.moon_direction_radius.xyz);
-    float moon_strength = atmosphere.moon_options.x * atmosphere.moon_options.y *
-                          atmosphere.moon_options.w;
-    float moon_angle = acos(clamp(dot(ray_direction, moon_direction), -1.0, 1.0));
-    float moon_halo = 1.0 - smoothstep(atmosphere.moon_direction_radius.w * 4.0,
-                                       atmosphere.moon_direction_radius.w * 24.0, moon_angle);
-    float moon_fade = clamp(1.0 - moon_strength * (0.18 + moon_halo * 0.62), 0.20, 1.0);
-    return color * star * brightness * visibility * moon_fade * 0.045;
+    return star_temperature_color(hash12(seed + 211.9)) * star * brightness;
+}
+
+vec3 bright_star_radiance(vec3 sky_direction) {
+    float density = clamp(atmosphere.night_options.w, 0.0, 1.0);
+    float galactic_bias = mix(0.85, 1.15, clamp((galactic_star_density(sky_direction) - 0.25) /
+                                                   2.20,
+                                               0.0, 1.0));
+    float probability = clamp(mix(0.0025, 0.034, density) * galactic_bias, 0.0, 0.055);
+    return star_cell_radiance(sky_direction, 126.0, probability, 0.016, 0.042, 0.24, 1.85,
+                              5.8, vec2(0.0, 0.0)) *
+           0.046;
+}
+
+vec3 faint_star_radiance(vec3 sky_direction) {
+    float density = clamp(atmosphere.night_options.w, 0.0, 1.0);
+    float galactic_density_value = galactic_star_density(sky_direction);
+    float probability = clamp(mix(0.006, 0.065, density) *
+                                  mix(0.45, 1.95,
+                                      clamp((galactic_density_value - 0.25) / 2.20, 0.0, 1.0)),
+                              0.0, 0.12);
+    vec3 stars = star_cell_radiance(sky_direction, 310.0, probability, 0.007, 0.020, 0.10,
+                                    0.62, 3.3, vec2(173.0, 311.0));
+    return stars * mix(0.010, 0.020, clamp(galactic_density_value * 0.5, 0.0, 1.0));
+}
+
+vec3 procedural_star_radiance(vec3 ray_direction, vec3 sun_direction) {
+    float visibility = night_object_visibility(ray_direction, sun_direction, 0.18, 0.22, 0.68,
+                                               0.10, 0.14) *
+                       atmosphere.night_options.z;
+    if (visibility <= 0.0 || atmosphere.night_options.w <= 0.0) {
+        return vec3(0.0);
+    }
+
+    vec3 sky_direction = star_sample_direction(ray_direction);
+    return (bright_star_radiance(sky_direction) + faint_star_radiance(sky_direction)) *
+           visibility;
 }
 
 vec3 milky_way_radiance(vec3 ray_direction, vec3 sun_direction) {
@@ -300,29 +365,14 @@ vec3 milky_way_radiance(vec3 ray_direction, vec3 sun_direction) {
         return vec3(0.0);
     }
 
-    float sun_elevation = sun_elevation_degrees(sun_direction);
-    float night_visibility = star_visibility(sun_elevation);
-    float horizon_visibility = smoothstep(-0.02, 0.24, ray_direction.y);
-    float haze_visibility = 1.0 - smoothstep(0.006, 0.018, atmosphere.mie.x);
-    float light_pollution = clamp(atmosphere.milky_way_options.z, 0.0, 1.0);
-    float pollution_visibility = mix(1.0, 0.04, light_pollution);
-
-    vec3 moon_direction = normalize(atmosphere.moon_direction_radius.xyz);
-    float moon_strength = atmosphere.moon_options.x * atmosphere.moon_options.y *
-                          atmosphere.moon_options.w;
-    float moon_angle = acos(clamp(dot(ray_direction, moon_direction), -1.0, 1.0));
-    float moon_lobe = 1.0 - smoothstep(atmosphere.moon_direction_radius.w * 8.0,
-                                       atmosphere.moon_direction_radius.w * 90.0, moon_angle);
-    float moon_visibility = clamp(1.0 - moon_strength * (0.34 + moon_lobe * 0.46), 0.06, 1.0);
-
     float camera_mode = step(0.5, atmosphere.milky_way_options.w);
     float saturation = mix(0.16, 0.72, camera_mode);
     vec3 color = mix(vec3(luma), atlas, saturation);
     float contrast = clamp(atmosphere.milky_way_options.y, 0.0, 4.0);
     float contrast_gain = mix(0.45, 1.55, contrast * 0.25);
     float exposure_gain = mix(0.85, 1.70, camera_mode);
-    float visibility = night_visibility * horizon_visibility * haze_visibility *
-                       pollution_visibility * moon_visibility;
+    float visibility =
+        night_object_visibility(ray_direction, sun_direction, 0.24, 0.34, 0.46, 0.06, 0.04);
     return color * source_intensity * contrast_gain * exposure_gain * visibility;
 }
 

@@ -695,6 +695,12 @@ int main() {
                      "atmosphere shader should include twilight radiance");
     require_contains(shader_source, "procedural_star_radiance",
                      "atmosphere shader should include procedural stars");
+    require_contains(shader_source, "bright_star_radiance",
+                     "atmosphere shader should separate bright stars");
+    require_contains(shader_source, "faint_star_radiance",
+                     "atmosphere shader should separate faint stars");
+    require_contains(shader_source, "night_object_visibility",
+                     "atmosphere shader should share night object visibility");
     require_contains(shader_source, "star_sample_direction",
                      "atmosphere shader should rotate star sampling through celestial space");
     require_contains(shader_source, "celestial_options",
