@@ -697,8 +697,16 @@ int main() {
                      "atmosphere shader should include procedural stars");
     require_contains(shader_source, "bright_star_radiance",
                      "atmosphere shader should separate bright stars");
+    require_contains(shader_source, "anchor_star_radiance",
+                     "atmosphere shader should include sparse bright anchor stars");
+    require_contains(shader_source, "naked_eye_star_radiance",
+                     "atmosphere shader should include naked-eye star population");
     require_contains(shader_source, "faint_star_radiance",
                      "atmosphere shader should separate faint stars");
+    require_contains(shader_source, "star_limiting_magnitude",
+                     "atmosphere shader should fade stars by limiting magnitude");
+    require_contains(shader_source, "star_magnitude_weight",
+                     "atmosphere shader should weight stars by sampled magnitude");
     require_contains(shader_source, "night_object_visibility",
                      "atmosphere shader should share night object visibility");
     require_contains(shader_source, "star_sample_direction",
