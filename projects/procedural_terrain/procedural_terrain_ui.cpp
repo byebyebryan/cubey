@@ -149,8 +149,10 @@ void draw_terrain_ui(TerrainUiContext ui) {
         ImGui::Text("Shoreline samples: %zu", ui.diagnostics.shoreline_samples);
         ImGui::Text("Slope avg/max: %.3f / %.3f", ui.diagnostics.average_slope,
                     ui.diagnostics.max_slope);
-        ImGui::Text("Terrain mesh: %u verts / %u tris", ui.diagnostics.terrain_vertices,
+        ImGui::Text("Full terrain: %u verts / %u tris", ui.diagnostics.terrain_vertices,
                     ui.diagnostics.terrain_triangles);
+        ImGui::Text("Final land: %u verts / %u tris", ui.diagnostics.final_land_vertices,
+                    ui.diagnostics.final_land_triangles);
         ImGui::Text("Water mesh: %u verts / %u tris", ui.diagnostics.water_vertices,
                     ui.diagnostics.water_triangles);
         ImGui::Text("Rebuilds: %llu | Last: %.2f ms",

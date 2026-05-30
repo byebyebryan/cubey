@@ -19,6 +19,7 @@ if (BUILD_TESTING)
     add_executable(cubey_project_procedural_terrain_tests
         procedural_terrain_config_tests.cpp
         procedural_terrain_fields.cpp
+        procedural_terrain_mesh.cpp
     )
     target_include_directories(
         cubey_project_procedural_terrain_tests

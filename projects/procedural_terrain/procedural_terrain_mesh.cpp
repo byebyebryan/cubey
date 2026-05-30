@@ -2,17 +2,78 @@
 
 #include <glm/geometric.hpp>
 
+#include <algorithm>
+#include <array>
 #include <cstddef>
 #include <limits>
 #include <stdexcept>
+#include <vector>
 
 namespace cubey::projects::procedural_terrain {
 namespace {
 
-constexpr float kWaterSurfaceVisualOffsetM = 0.32F;
+constexpr float kWaterSurfaceVisualOffsetM = 0.04F;
 
 [[nodiscard]] std::uint32_t offset_of(std::size_t offset) {
     return static_cast<std::uint32_t>(offset);
+}
+
+[[nodiscard]] TerrainVertex interpolated_vertex(const TerrainVertex& a, const TerrainVertex& b,
+                                                float t, float sea_level_m) {
+    TerrainVertex vertex{
+        .position = a.position + ((b.position - a.position) * t),
+        .normal = glm::normalize(a.normal + ((b.normal - a.normal) * t)),
+        .material = a.material + ((b.material - a.material) * t),
+        .fields = a.fields + ((b.fields - a.fields) * t),
+    };
+    vertex.position.y = sea_level_m;
+    vertex.fields.x = sea_level_m;
+    vertex.fields.y = 0.0F;
+    vertex.fields.z = 0.0F;
+    return vertex;
+}
+
+[[nodiscard]] std::vector<TerrainVertex> clip_triangle_to_land(
+    const std::array<TerrainVertex, 3>& triangle, float sea_level_m) {
+    std::vector<TerrainVertex> output;
+    output.reserve(4U);
+
+    for (std::size_t index = 0; index < triangle.size(); ++index) {
+        const TerrainVertex& current = triangle[index];
+        const TerrainVertex& next = triangle[(index + 1U) % triangle.size()];
+        const bool current_inside = current.fields.x >= sea_level_m;
+        const bool next_inside = next.fields.x >= sea_level_m;
+
+        if (current_inside && next_inside) {
+            output.push_back(next);
+        } else if (current_inside && !next_inside) {
+            const float denom = current.fields.x - next.fields.x;
+            const float t = denom == 0.0F ? 0.0F : (current.fields.x - sea_level_m) / denom;
+            output.push_back(interpolated_vertex(current, next, t, sea_level_m));
+        } else if (!current_inside && next_inside) {
+            const float denom = next.fields.x - current.fields.x;
+            const float t = denom == 0.0F ? 0.0F : (sea_level_m - current.fields.x) / denom;
+            output.push_back(interpolated_vertex(current, next, t, sea_level_m));
+            output.push_back(next);
+        }
+    }
+
+    return output;
+}
+
+void append_triangle_fan(TerrainMeshData& mesh, const std::vector<TerrainVertex>& polygon) {
+    if (polygon.size() < 3U) {
+        return;
+    }
+    if (mesh.vertices.size() > std::numeric_limits<std::uint32_t>::max() - polygon.size()) {
+        throw std::runtime_error("clipped land mesh exceeds uint32 vertex range");
+    }
+
+    const std::uint32_t base = static_cast<std::uint32_t>(mesh.vertices.size());
+    mesh.vertices.insert(mesh.vertices.end(), polygon.begin(), polygon.end());
+    for (std::uint32_t index = 1; index + 1U < polygon.size(); ++index) {
+        mesh.indices.insert(mesh.indices.end(), {base, base + index, base + index + 1U});
+    }
 }
 
 } // namespace
@@ -98,6 +159,36 @@ TerrainMeshData make_terrain_mesh(const TerrainFieldData& fields) {
             const std::uint32_t d = static_cast<std::uint32_t>(fields.index(x, y + 1U));
             mesh.indices.insert(mesh.indices.end(), {a, b, c, a, c, d});
         }
+    }
+    return mesh;
+}
+
+TerrainMeshData make_clipped_land_mesh(const TerrainFieldData& fields,
+                                       const TerrainMeshData& terrain_mesh) {
+    if (terrain_mesh.indices.size() % 3U != 0U) {
+        throw std::runtime_error("terrain mesh index count must be a multiple of three");
+    }
+
+    TerrainMeshData mesh;
+    mesh.vertices.reserve(terrain_mesh.vertices.size());
+    mesh.indices.reserve(terrain_mesh.indices.size());
+    for (std::size_t index = 0; index < terrain_mesh.indices.size(); index += 3U) {
+        const auto vertex_at = [&terrain_mesh](std::uint32_t vertex_index) -> const TerrainVertex& {
+            if (vertex_index >= terrain_mesh.vertices.size()) {
+                throw std::runtime_error("terrain mesh index is out of bounds");
+            }
+            return terrain_mesh.vertices[vertex_index];
+        };
+
+        const std::array<TerrainVertex, 3> triangle{
+            vertex_at(terrain_mesh.indices[index]),
+            vertex_at(terrain_mesh.indices[index + 1U]),
+            vertex_at(terrain_mesh.indices[index + 2U]),
+        };
+        append_triangle_fan(mesh, clip_triangle_to_land(triangle, fields.desc.sea_level_m));
+    }
+    if (mesh.indices.empty()) {
+        throw std::runtime_error("clipped land mesh produced no triangles");
     }
     return mesh;
 }

@@ -1,5 +1,6 @@
 #include "procedural_terrain_config.h"
 #include "procedural_terrain_fields.h"
+#include "procedural_terrain_mesh.h"
 
 #include <cubey/core/run_config.h>
 
@@ -127,6 +128,8 @@ int main() {
     small.grid_width = 33;
     small.grid_height = 33;
     const terrain::TerrainFieldData fields = terrain::generate_terrain_fields(small);
+    const terrain::TerrainMeshData mesh = terrain::make_terrain_mesh(fields);
+    const terrain::TerrainMeshData clipped_land = terrain::make_clipped_land_mesh(fields, mesh);
     require(fields.sample_count() == 33U * 33U, "terrain fields should match grid dimensions");
     require(fields.height_m.size() == fields.sample_count(), "terrain height field size mismatch");
     require(fields.water_depth_m.size() == fields.sample_count(),
@@ -139,6 +142,10 @@ int main() {
     require(fields.max_height_m > 0.0F, "terrain should include land terrain");
     require(fields.max_water_depth_m > 0.0F, "terrain should include positive water depth");
     require(fields.max_abs_shore_sdf_m > 0.0F, "terrain should include shoreline distance");
+    require(terrain::terrain_triangle_count(clipped_land) > 0U,
+            "clipped land mesh should include land triangles");
+    require(terrain::terrain_triangle_count(clipped_land) <= terrain::terrain_triangle_count(mesh) * 2U,
+            "clipped land mesh should not exceed two triangles per source triangle");
 
     for (std::size_t index = 0; index < fields.sample_count(); ++index) {
         require(std::isfinite(fields.height_m[index]), "terrain height should be finite");
@@ -152,5 +159,10 @@ int main() {
         const terrain::TerrainMaterialMask mask = fields.material_masks[index];
         const float sum = mask.sand + mask.rock + mask.vegetation + mask.sediment;
         require_near(sum, 1.0F, 0.001F, "terrain material masks should be normalized");
+    }
+
+    for (const terrain::TerrainVertex& vertex : clipped_land.vertices) {
+        require(vertex.fields.x >= fields.desc.sea_level_m - 0.001F,
+                "clipped land mesh should not include underwater vertices");
     }
 }

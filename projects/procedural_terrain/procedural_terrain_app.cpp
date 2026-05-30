@@ -51,6 +51,7 @@ constexpr float kDefaultPitchRadians = -0.90F;
 
 [[nodiscard]] TerrainDiagnostics make_terrain_diagnostics(const TerrainFieldData& fields,
                                                           const TerrainMeshData& mesh,
+                                                          const TerrainMeshData& final_land_mesh,
                                                           const TerrainMeshData& water_mesh,
                                                           double rebuild_ms,
                                                           std::uint64_t rebuild_count) {
@@ -62,6 +63,8 @@ constexpr float kDefaultPitchRadians = -0.90F;
     diagnostics.max_abs_shore_sdf_m = fields.max_abs_shore_sdf_m;
     diagnostics.terrain_vertices = static_cast<std::uint32_t>(mesh.vertices.size());
     diagnostics.terrain_triangles = terrain_triangle_count(mesh);
+    diagnostics.final_land_vertices = static_cast<std::uint32_t>(final_land_mesh.vertices.size());
+    diagnostics.final_land_triangles = terrain_triangle_count(final_land_mesh);
     diagnostics.water_vertices = static_cast<std::uint32_t>(water_mesh.vertices.size());
     diagnostics.water_triangles = terrain_triangle_count(water_mesh);
     diagnostics.last_rebuild_ms = rebuild_ms;
@@ -109,6 +112,7 @@ ProceduralTerrainApp::ProceduralTerrainApp(RunConfig config)
     : config_(std::move(config)), terrain_config_(terrain_config_from_run_config(config_)),
       edit_terrain_config_(terrain_config_), fields_(generate_terrain_fields(terrain_config_)),
       mesh_data_(make_terrain_mesh(fields_)),
+      final_land_mesh_data_(make_clipped_land_mesh(fields_, mesh_data_)),
       water_mesh_data_(make_water_surface_mesh(fields_)),
       orbit_controller_(cubey::OrbitControllerConfig{
           .distance = terrain_camera_distance(terrain_config_),
@@ -197,6 +201,7 @@ void ProceduralTerrainApp::create_global_resources_if_needed(cubey::vulkan::GpuR
         return;
     }
     mesh_.emplace(gpu, mesh_data_.mesh_config());
+    final_land_mesh_.emplace(gpu, final_land_mesh_data_.mesh_config());
     water_mesh_.emplace(gpu, water_mesh_data_.mesh_config());
 }
 
@@ -236,6 +241,7 @@ void ProceduralTerrainApp::destroy_swapchain_resources() {
 void ProceduralTerrainApp::destroy_all_resources() {
     destroy_swapchain_resources();
     water_mesh_.reset();
+    final_land_mesh_.reset();
     mesh_.reset();
 }
 
@@ -289,20 +295,25 @@ void ProceduralTerrainApp::rebuild_terrain_resources(cubey::host::WindowedAppCon
     const TerrainConfig next_config = edit_terrain_config_;
     TerrainFieldData next_fields = generate_terrain_fields(next_config);
     TerrainMeshData next_mesh_data = make_terrain_mesh(next_fields);
+    TerrainMeshData next_final_land_mesh_data =
+        make_clipped_land_mesh(next_fields, next_mesh_data);
     TerrainMeshData next_water_mesh_data = make_water_surface_mesh(next_fields);
 
     cubey::vulkan::check(vkDeviceWaitIdle(context.device().handle()),
                          "vkDeviceWaitIdle procedural terrain rebuild");
     static_cast<void>(context.gpu().drain());
     water_mesh_.reset();
+    final_land_mesh_.reset();
     mesh_.reset();
 
     terrain_config_ = next_config;
     edit_terrain_config_ = terrain_config_;
     fields_ = std::move(next_fields);
     mesh_data_ = std::move(next_mesh_data);
+    final_land_mesh_data_ = std::move(next_final_land_mesh_data);
     water_mesh_data_ = std::move(next_water_mesh_data);
     mesh_.emplace(context.gpu(), mesh_data_.mesh_config());
+    final_land_mesh_.emplace(context.gpu(), final_land_mesh_data_.mesh_config());
     water_mesh_.emplace(context.gpu(), water_mesh_data_.mesh_config());
     static_cast<void>(context.gpu().drain());
     refresh_camera_limits_for_terrain();
@@ -323,8 +334,8 @@ void ProceduralTerrainApp::refresh_camera_limits_for_terrain() {
 }
 
 void ProceduralTerrainApp::refresh_diagnostics(double rebuild_ms) {
-    diagnostics_ =
-        make_terrain_diagnostics(fields_, mesh_data_, water_mesh_data_, rebuild_ms, rebuild_count_);
+    diagnostics_ = make_terrain_diagnostics(fields_, mesh_data_, final_land_mesh_data_,
+                                            water_mesh_data_, rebuild_ms, rebuild_count_);
 }
 
 std::optional<cubey::host::FrameStatsSample>
@@ -336,8 +347,11 @@ ProceduralTerrainApp::record_frame_stats(VkExtent2D extent, const FrameTiming& t
         .delta_seconds = timing.delta_seconds,
         .width = extent.width,
         .height = extent.height,
-        .triangles = terrain_triangle_count(mesh_data_) +
-                     (water_visible_ ? terrain_triangle_count(water_mesh_data_) : 0U),
+        .triangles =
+            terrain_config_.debug_view == TerrainDebugView::Final
+                ? terrain_triangle_count(final_land_mesh_data_) +
+                      (water_visible_ ? terrain_triangle_count(water_mesh_data_) : 0U)
+                : terrain_triangle_count(mesh_data_),
     };
     if (std::optional<cubey::host::FrameStatsSnapshot> stats =
             ui_frame_stats_.record_frame(sample);
@@ -391,12 +405,17 @@ void ProceduralTerrainApp::record_terrain_frame(VkCommandBuffer command_buffer,
         pass_recorder.push_constants(forward_pass().pipeline().layout(),
                                      VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
                                      constants);
-        if (terrain_config_.debug_view == TerrainDebugView::Final && water_visible_) {
+        if (terrain_config_.debug_view == TerrainDebugView::Final) {
+            if (water_visible_) {
+                cubey::render::record_draw_item(pass_recorder.handle(),
+                                                cubey::render::DrawItem{.mesh = &water_mesh()});
+            }
             cubey::render::record_draw_item(pass_recorder.handle(),
-                                            cubey::render::DrawItem{.mesh = &water_mesh()});
+                                            cubey::render::DrawItem{.mesh = &final_land_mesh()});
+        } else {
+            cubey::render::record_draw_item(pass_recorder.handle(),
+                                            cubey::render::DrawItem{.mesh = &mesh()});
         }
-        cubey::render::record_draw_item(pass_recorder.handle(),
-                                        cubey::render::DrawItem{.mesh = &mesh()});
     };
 
     if (present) {
@@ -414,6 +433,13 @@ const cubey::render::Mesh& ProceduralTerrainApp::mesh() const {
         throw std::runtime_error("procedural terrain mesh is not initialized");
     }
     return mesh_.value();
+}
+
+const cubey::render::Mesh& ProceduralTerrainApp::final_land_mesh() const {
+    if (!final_land_mesh_.has_value()) {
+        throw std::runtime_error("procedural terrain clipped land mesh is not initialized");
+    }
+    return final_land_mesh_.value();
 }
 
 const cubey::render::Mesh& ProceduralTerrainApp::water_mesh() const {

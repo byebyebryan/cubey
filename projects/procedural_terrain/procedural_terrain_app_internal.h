@@ -63,6 +63,7 @@ class ProceduralTerrainApp {
 
     [[nodiscard]] TerrainPushConstants push_constants(VkExtent2D extent) const;
     [[nodiscard]] const cubey::render::Mesh& mesh() const;
+    [[nodiscard]] const cubey::render::Mesh& final_land_mesh() const;
     [[nodiscard]] const cubey::render::Mesh& water_mesh() const;
     [[nodiscard]] const cubey::render::ForwardScenePass3D& forward_pass() const;
 
@@ -71,10 +72,12 @@ class ProceduralTerrainApp {
     TerrainConfig edit_terrain_config_{};
     TerrainFieldData fields_{};
     TerrainMeshData mesh_data_{};
+    TerrainMeshData final_land_mesh_data_{};
     TerrainMeshData water_mesh_data_{};
     cubey::OrbitController orbit_controller_;
     cubey::Camera3D camera_{cubey::Camera3DConfig{.near_z = 0.1F, .far_z = 5000.0F}};
     std::optional<cubey::render::Mesh> mesh_;
+    std::optional<cubey::render::Mesh> final_land_mesh_;
     std::optional<cubey::render::Mesh> water_mesh_;
     std::optional<cubey::render::ForwardScenePass3D> forward_pass_;
     cubey::host::FrameStats ui_frame_stats_;

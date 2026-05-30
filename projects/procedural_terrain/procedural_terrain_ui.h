@@ -28,6 +28,8 @@ struct TerrainDiagnostics {
     float sediment_coverage = 0.0F;
     std::uint32_t terrain_vertices = 0;
     std::uint32_t terrain_triangles = 0;
+    std::uint32_t final_land_vertices = 0;
+    std::uint32_t final_land_triangles = 0;
     std::uint32_t water_vertices = 0;
     std::uint32_t water_triangles = 0;
     double last_rebuild_ms = 0.0;
