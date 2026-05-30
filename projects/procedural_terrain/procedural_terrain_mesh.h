@@ -17,6 +17,8 @@ struct TerrainVertex {
     cubey::math::Vec4 material{};
     cubey::math::Vec4 fields{};
     cubey::math::Vec4 generator{};
+    cubey::math::Vec4 contributions_a{};
+    cubey::math::Vec4 contributions_b{};
 };
 
 struct TerrainMeshData {

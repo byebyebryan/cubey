@@ -21,12 +21,19 @@ enum class TerrainDebugView : std::uint32_t {
     Landform = 6,
     Ridges = 7,
     Valleys = 8,
+    MacroHeight = 9,
+    BaseNoise = 10,
+    DetailNoise = 11,
+    FeatureHeight = 12,
+    RelaxDelta = 13,
 };
 
-inline constexpr std::array<TerrainDebugView, 9> kTerrainDebugViews{
-    TerrainDebugView::Final,     TerrainDebugView::Height,   TerrainDebugView::WaterDepth,
-    TerrainDebugView::Shoreline, TerrainDebugView::Material, TerrainDebugView::Slope,
-    TerrainDebugView::Landform,  TerrainDebugView::Ridges,   TerrainDebugView::Valleys,
+inline constexpr std::array<TerrainDebugView, 14> kTerrainDebugViews{
+    TerrainDebugView::Final,         TerrainDebugView::Height,     TerrainDebugView::WaterDepth,
+    TerrainDebugView::Shoreline,     TerrainDebugView::Material,   TerrainDebugView::Slope,
+    TerrainDebugView::Landform,      TerrainDebugView::Ridges,     TerrainDebugView::Valleys,
+    TerrainDebugView::MacroHeight,   TerrainDebugView::BaseNoise,  TerrainDebugView::DetailNoise,
+    TerrainDebugView::FeatureHeight, TerrainDebugView::RelaxDelta,
 };
 
 inline constexpr std::uint32_t kTerrainDefaultGridWidth = 513U;
@@ -78,6 +85,16 @@ struct TerrainConfig {
         return "ridges";
     case TerrainDebugView::Valleys:
         return "valleys";
+    case TerrainDebugView::MacroHeight:
+        return "macro_height";
+    case TerrainDebugView::BaseNoise:
+        return "base_noise";
+    case TerrainDebugView::DetailNoise:
+        return "detail_noise";
+    case TerrainDebugView::FeatureHeight:
+        return "feature_height";
+    case TerrainDebugView::RelaxDelta:
+        return "relax_delta";
     }
     return "final";
 }

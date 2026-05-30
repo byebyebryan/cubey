@@ -4,6 +4,8 @@ layout(push_constant) uniform TerrainPushConstants {
     mat4 view_projection;
     vec4 light_direction_debug;
     vec4 field_ranges;
+    vec4 contribution_ranges;
+    vec4 relax_ranges;
 } pc;
 
 layout(location = 0) in vec3 frag_world_position;
@@ -11,6 +13,8 @@ layout(location = 1) in vec3 frag_normal;
 layout(location = 2) in vec4 frag_material;
 layout(location = 3) in vec4 frag_fields;
 layout(location = 4) in vec4 frag_generator;
+layout(location = 5) in vec4 frag_contributions_a;
+layout(location = 6) in vec4 frag_contributions_b;
 
 layout(location = 0) out vec4 out_color;
 
@@ -23,10 +27,23 @@ const uint TERRAIN_VIEW_SLOPE = 5u;
 const uint TERRAIN_VIEW_LANDFORM = 6u;
 const uint TERRAIN_VIEW_RIDGES = 7u;
 const uint TERRAIN_VIEW_VALLEYS = 8u;
+const uint TERRAIN_VIEW_MACRO_HEIGHT = 9u;
+const uint TERRAIN_VIEW_BASE_NOISE = 10u;
+const uint TERRAIN_VIEW_DETAIL_NOISE = 11u;
+const uint TERRAIN_VIEW_FEATURE_HEIGHT = 12u;
+const uint TERRAIN_VIEW_RELAX_DELTA = 13u;
 
 vec3 ramp3(float t, vec3 a, vec3 b, vec3 c) {
     t = clamp(t, 0.0, 1.0);
     return t < 0.5 ? mix(a, b, t * 2.0) : mix(b, c, (t - 0.5) * 2.0);
+}
+
+vec3 signed_ramp(float value, float max_abs_value) {
+    float t = clamp(value / max(max_abs_value, 0.001), -1.0, 1.0);
+    vec3 zero = vec3(0.12, 0.15, 0.17);
+    vec3 negative = vec3(0.12, 0.32, 0.58);
+    vec3 positive = vec3(0.92, 0.72, 0.34);
+    return t < 0.0 ? mix(zero, negative, -t) : mix(zero, positive, t);
 }
 
 float hash21(vec2 p) {
@@ -106,6 +123,9 @@ void main() {
     float depth_t = frag_fields.y / max(pc.field_ranges.z, 0.001);
     float shore_t = clamp((frag_fields.z / max(pc.field_ranges.w, 0.001)) * 0.5 + 0.5, 0.0, 1.0);
     float slope_t = clamp(frag_fields.w * 1.8, 0.0, 1.0);
+    float macro_height = frag_contributions_a.x + frag_contributions_a.y;
+    float detail_height = frag_contributions_a.w + frag_contributions_b.x;
+    float feature_height = frag_contributions_b.y + frag_contributions_b.z;
 
     bool water_surface = frag_fields.w < -0.5;
     vec3 color = water_surface ? water_surface_color() : terrain_final_color();
@@ -135,6 +155,16 @@ void main() {
     } else if (debug_view == TERRAIN_VIEW_VALLEYS) {
         color = ramp3(frag_generator.w, vec3(0.12, 0.15, 0.12), vec3(0.12, 0.40, 0.36),
                       vec3(0.68, 0.88, 0.78));
+    } else if (debug_view == TERRAIN_VIEW_MACRO_HEIGHT) {
+        color = signed_ramp(macro_height, pc.contribution_ranges.x);
+    } else if (debug_view == TERRAIN_VIEW_BASE_NOISE) {
+        color = signed_ramp(frag_contributions_a.z, pc.contribution_ranges.y);
+    } else if (debug_view == TERRAIN_VIEW_DETAIL_NOISE) {
+        color = signed_ramp(detail_height, pc.contribution_ranges.z);
+    } else if (debug_view == TERRAIN_VIEW_FEATURE_HEIGHT) {
+        color = signed_ramp(feature_height, pc.contribution_ranges.w);
+    } else if (debug_view == TERRAIN_VIEW_RELAX_DELTA) {
+        color = signed_ramp(frag_contributions_b.w, pc.relax_ranges.x);
     }
     out_color = vec4(color, 1.0);
 }

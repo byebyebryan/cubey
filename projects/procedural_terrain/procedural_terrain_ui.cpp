@@ -20,8 +20,7 @@ void draw_grid_preset_combo(TerrainConfig& config) {
     if (config.grid_width == config.grid_height) {
         std::snprintf(preview, sizeof(preview), "%u", config.grid_width);
     } else {
-        std::snprintf(preview, sizeof(preview), "%u x %u", config.grid_width,
-                      config.grid_height);
+        std::snprintf(preview, sizeof(preview), "%u x %u", config.grid_width, config.grid_height);
     }
     if (!ImGui::BeginCombo("Grid preset", preview)) {
         return;
@@ -113,8 +112,7 @@ void draw_terrain_ui(TerrainUiContext ui) {
         ImGui::SliderFloat("Valleys", &ui.edit_config.valley_scale, 0.0F, 2.0F, "%.2f");
     }
 
-    const bool pending_rebuild =
-        !terrain_rebuild_config_equal(ui.active_config, ui.edit_config);
+    const bool pending_rebuild = !terrain_rebuild_config_equal(ui.active_config, ui.edit_config);
     ImGui::BeginDisabled(!pending_rebuild);
     if (ImGui::Button("Apply Terrain")) {
         ui.rebuild_requested = true;
@@ -152,6 +150,11 @@ void draw_terrain_ui(TerrainUiContext ui) {
                     ui.diagnostics.max_slope);
         ImGui::Text("Ridge/valley coverage: %.3f / %.3f", ui.diagnostics.ridge_coverage,
                     ui.diagnostics.valley_coverage);
+        ImGui::Text("Macro/base/detail max abs: %.1f / %.1f / %.1f m",
+                    ui.diagnostics.max_abs_macro_height_m, ui.diagnostics.max_abs_base_noise_m,
+                    ui.diagnostics.max_abs_detail_noise_m);
+        ImGui::Text("Feature/relax max abs: %.1f / %.2f m", ui.diagnostics.max_abs_feature_height_m,
+                    ui.diagnostics.max_abs_relax_delta_m);
         ImGui::Text("Full terrain: %u verts / %u tris", ui.diagnostics.terrain_vertices,
                     ui.diagnostics.terrain_triangles);
         ImGui::Text("Final land: %u verts / %u tris", ui.diagnostics.final_land_vertices,

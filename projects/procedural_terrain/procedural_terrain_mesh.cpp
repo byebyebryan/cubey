@@ -27,6 +27,8 @@ constexpr std::uint32_t kShoreClipSubdivisions = 4U;
         .material = a.material + ((b.material - a.material) * t),
         .fields = a.fields + ((b.fields - a.fields) * t),
         .generator = a.generator + ((b.generator - a.generator) * t),
+        .contributions_a = a.contributions_a + ((b.contributions_a - a.contributions_a) * t),
+        .contributions_b = a.contributions_b + ((b.contributions_b - a.contributions_b) * t),
     };
     vertex.position.y = sea_level_m;
     vertex.material = {0.62F, 0.0F, 0.0F, 0.38F};
@@ -71,6 +73,10 @@ constexpr std::uint32_t kShoreClipSubdivisions = 4U;
         .material = mix_vec(v00.material, v10.material, v01.material, v11.material),
         .fields = mix_vec(v00.fields, v10.fields, v01.fields, v11.fields),
         .generator = mix_vec(v00.generator, v10.generator, v01.generator, v11.generator),
+        .contributions_a = mix_vec(v00.contributions_a, v10.contributions_a, v01.contributions_a,
+                                   v11.contributions_a),
+        .contributions_b = mix_vec(v00.contributions_b, v10.contributions_b, v01.contributions_b,
+                                   v11.contributions_b),
     };
     vertex.normal = glm::normalize(vertex.normal);
     return vertex;
@@ -153,6 +159,12 @@ cubey::render::VertexInputLayout terrain_vertex_input_layout() {
                 cubey::render::vertex_input_attribute(
                     4, 0, VK_FORMAT_R32G32B32A32_SFLOAT,
                     offset_of(offsetof(TerrainVertex, generator))),
+                cubey::render::vertex_input_attribute(
+                    5, 0, VK_FORMAT_R32G32B32A32_SFLOAT,
+                    offset_of(offsetof(TerrainVertex, contributions_a))),
+                cubey::render::vertex_input_attribute(
+                    6, 0, VK_FORMAT_R32G32B32A32_SFLOAT,
+                    offset_of(offsetof(TerrainVertex, contributions_b))),
             },
     };
 }
@@ -189,6 +201,7 @@ TerrainMeshData make_terrain_mesh(const TerrainFieldData& fields) {
                 std::max(dz, fields.desc.cell_size_m);
             const std::size_t sample = fields.index(x, y);
             const TerrainMaterialMask mask = fields.material_masks[sample];
+            const TerrainHeightContributions contributions = fields.height_contributions[sample];
             const float land_debug =
                 std::clamp(0.5F + (fields.land_potential[sample] * 1.8F), 0.0F, 1.0F);
             mesh.vertices.push_back({
@@ -208,6 +221,20 @@ TerrainMeshData make_terrain_mesh(const TerrainFieldData& fields) {
                         fields.inland[sample],
                         std::clamp(fields.ridge_strength[sample], 0.0F, 1.0F),
                         std::clamp(fields.valley_strength[sample], 0.0F, 1.0F),
+                    },
+                .contributions_a =
+                    {
+                        contributions.coast_lift_m,
+                        contributions.inland_lift_m,
+                        contributions.broad_noise_m,
+                        contributions.detail_noise_m,
+                    },
+                .contributions_b =
+                    {
+                        contributions.foothills_m,
+                        contributions.ridge_m,
+                        contributions.broken_ridge_m - contributions.valley_cut_m,
+                        contributions.relax_delta_m,
                     },
             });
         }

@@ -10,8 +10,8 @@
 
 #include <algorithm>
 #include <array>
-#include <cmath>
 #include <chrono>
+#include <cmath>
 #include <cstddef>
 #include <stdexcept>
 #include <utility>
@@ -49,12 +49,10 @@ constexpr float kDefaultPitchRadians = -0.90F;
     };
 }
 
-[[nodiscard]] TerrainDiagnostics make_terrain_diagnostics(const TerrainFieldData& fields,
-                                                          const TerrainMeshData& mesh,
-                                                          const TerrainMeshData& final_land_mesh,
-                                                          const TerrainMeshData& water_mesh,
-                                                          double rebuild_ms,
-                                                          std::uint64_t rebuild_count) {
+[[nodiscard]] TerrainDiagnostics
+make_terrain_diagnostics(const TerrainFieldData& fields, const TerrainMeshData& mesh,
+                         const TerrainMeshData& final_land_mesh, const TerrainMeshData& water_mesh,
+                         double rebuild_ms, std::uint64_t rebuild_count) {
     TerrainDiagnostics diagnostics;
     diagnostics.sample_count = fields.sample_count();
     diagnostics.min_height_m = fields.min_height_m;
@@ -86,6 +84,22 @@ constexpr float kDefaultPitchRadians = -0.90F;
         diagnostics.ridge_coverage += fields.ridge_strength[index];
         diagnostics.valley_coverage += fields.valley_strength[index];
 
+        const TerrainHeightContributions contributions = fields.height_contributions[index];
+        const float macro_height = contributions.coast_lift_m + contributions.inland_lift_m;
+        const float detail_height = contributions.detail_noise_m + contributions.foothills_m;
+        const float feature_height =
+            contributions.ridge_m + contributions.broken_ridge_m - contributions.valley_cut_m;
+        diagnostics.max_abs_macro_height_m =
+            std::max(diagnostics.max_abs_macro_height_m, std::abs(macro_height));
+        diagnostics.max_abs_base_noise_m =
+            std::max(diagnostics.max_abs_base_noise_m, std::abs(contributions.broad_noise_m));
+        diagnostics.max_abs_detail_noise_m =
+            std::max(diagnostics.max_abs_detail_noise_m, std::abs(detail_height));
+        diagnostics.max_abs_feature_height_m =
+            std::max(diagnostics.max_abs_feature_height_m, std::abs(feature_height));
+        diagnostics.max_abs_relax_delta_m =
+            std::max(diagnostics.max_abs_relax_delta_m, std::abs(contributions.relax_delta_m));
+
         const TerrainMaterialMask mask = fields.material_masks[index];
         diagnostics.sand_coverage += mask.sand;
         diagnostics.rock_coverage += mask.rock;
@@ -93,9 +107,8 @@ constexpr float kDefaultPitchRadians = -0.90F;
         diagnostics.sediment_coverage += mask.sediment;
     }
 
-    const float inv_samples = diagnostics.sample_count == 0U
-                                  ? 0.0F
-                                  : 1.0F / static_cast<float>(diagnostics.sample_count);
+    const float inv_samples =
+        diagnostics.sample_count == 0U ? 0.0F : 1.0F / static_cast<float>(diagnostics.sample_count);
     diagnostics.average_slope = static_cast<float>(slope_sum) * inv_samples;
     diagnostics.ridge_coverage *= inv_samples;
     diagnostics.valley_coverage *= inv_samples;
@@ -299,8 +312,7 @@ void ProceduralTerrainApp::rebuild_terrain_resources(cubey::host::WindowedAppCon
     const TerrainConfig next_config = edit_terrain_config_;
     TerrainFieldData next_fields = generate_terrain_fields(next_config);
     TerrainMeshData next_mesh_data = make_terrain_mesh(next_fields);
-    TerrainMeshData next_final_land_mesh_data =
-        make_clipped_land_mesh(next_fields, next_mesh_data);
+    TerrainMeshData next_final_land_mesh_data = make_clipped_land_mesh(next_fields, next_mesh_data);
     TerrainMeshData next_water_mesh_data = make_water_surface_mesh(next_fields);
 
     cubey::vulkan::check(vkDeviceWaitIdle(context.device().handle()),
@@ -323,8 +335,7 @@ void ProceduralTerrainApp::rebuild_terrain_resources(cubey::host::WindowedAppCon
     refresh_camera_limits_for_terrain();
 
     const auto end = std::chrono::steady_clock::now();
-    const double rebuild_ms =
-        std::chrono::duration<double, std::milli>(end - start).count();
+    const double rebuild_ms = std::chrono::duration<double, std::milli>(end - start).count();
     ++rebuild_count_;
     refresh_diagnostics(rebuild_ms);
 }
@@ -351,14 +362,12 @@ ProceduralTerrainApp::record_frame_stats(VkExtent2D extent, const FrameTiming& t
         .delta_seconds = timing.delta_seconds,
         .width = extent.width,
         .height = extent.height,
-        .triangles =
-            terrain_config_.debug_view == TerrainDebugView::Final
-                ? terrain_triangle_count(final_land_mesh_data_) +
-                      (water_visible_ ? terrain_triangle_count(water_mesh_data_) : 0U)
-                : terrain_triangle_count(mesh_data_),
+        .triangles = terrain_config_.debug_view == TerrainDebugView::Final
+                         ? terrain_triangle_count(final_land_mesh_data_) +
+                               (water_visible_ ? terrain_triangle_count(water_mesh_data_) : 0U)
+                         : terrain_triangle_count(mesh_data_),
     };
-    if (std::optional<cubey::host::FrameStatsSnapshot> stats =
-            ui_frame_stats_.record_frame(sample);
+    if (std::optional<cubey::host::FrameStatsSnapshot> stats = ui_frame_stats_.record_frame(sample);
         stats.has_value()) {
         latest_frame_stats_ = stats.value();
     }
@@ -390,6 +399,20 @@ TerrainPushConstants ProceduralTerrainApp::push_constants(VkExtent2D extent) con
                 fields_.max_height_m,
                 std::max(fields_.max_water_depth_m, 1.0F),
                 std::max(fields_.max_abs_shore_sdf_m, 1.0F),
+            },
+        .contribution_ranges =
+            {
+                std::max(diagnostics_.max_abs_macro_height_m, 1.0F),
+                std::max(diagnostics_.max_abs_base_noise_m, 1.0F),
+                std::max(diagnostics_.max_abs_detail_noise_m, 1.0F),
+                std::max(diagnostics_.max_abs_feature_height_m, 1.0F),
+            },
+        .relax_ranges =
+            {
+                std::max(diagnostics_.max_abs_relax_delta_m, 1.0F),
+                1.0F,
+                1.0F,
+                1.0F,
             },
     };
 }

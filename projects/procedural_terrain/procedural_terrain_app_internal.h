@@ -25,10 +25,12 @@ struct TerrainPushConstants {
     cubey::math::Mat4 view_projection{1.0F};
     cubey::math::Vec4 light_direction_debug{0.35F, 0.75F, 0.45F, 0.0F};
     cubey::math::Vec4 field_ranges{0.0F, 1.0F, 1.0F, 1.0F};
+    cubey::math::Vec4 contribution_ranges{1.0F, 1.0F, 1.0F, 1.0F};
+    cubey::math::Vec4 relax_ranges{1.0F, 1.0F, 1.0F, 1.0F};
 };
 
 static_assert(sizeof(TerrainPushConstants) ==
-              sizeof(cubey::math::Mat4) + (sizeof(cubey::math::Vec4) * 2U));
+              sizeof(cubey::math::Mat4) + (sizeof(cubey::math::Vec4) * 4U));
 static_assert(sizeof(TerrainPushConstants) <= 128U);
 
 [[nodiscard]] std::filesystem::path shader_path(const char* filename);

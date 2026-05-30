@@ -86,7 +86,25 @@ int main() {
             "ridges terrain debug view should parse");
     require(terrain::terrain_debug_view_from_name("valleys") == terrain::TerrainDebugView::Valleys,
             "valleys terrain debug view should parse");
+    require(terrain::terrain_debug_view_from_name("macro_height") ==
+                terrain::TerrainDebugView::MacroHeight,
+            "macro height terrain debug view should parse");
+    require(terrain::terrain_debug_view_from_name("base_noise") ==
+                terrain::TerrainDebugView::BaseNoise,
+            "base noise terrain debug view should parse");
+    require(terrain::terrain_debug_view_from_name("detail_noise") ==
+                terrain::TerrainDebugView::DetailNoise,
+            "detail noise terrain debug view should parse");
+    require(terrain::terrain_debug_view_from_name("feature_height") ==
+                terrain::TerrainDebugView::FeatureHeight,
+            "feature height terrain debug view should parse");
+    require(terrain::terrain_debug_view_from_name("relax_delta") ==
+                terrain::TerrainDebugView::RelaxDelta,
+            "relax delta terrain debug view should parse");
     require(terrain::next_terrain_debug_view(terrain::TerrainDebugView::Valleys) ==
+                terrain::TerrainDebugView::MacroHeight,
+            "terrain debug view cycle should include contribution views");
+    require(terrain::next_terrain_debug_view(terrain::TerrainDebugView::RelaxDelta) ==
                 terrain::TerrainDebugView::Final,
             "terrain debug view cycle should wrap");
 
@@ -264,6 +282,28 @@ int main() {
     for (const terrain::TerrainVertex& vertex : clipped_land.vertices) {
         require(vertex.fields.x >= fields.desc.sea_level_m - 0.001F,
                 "clipped land mesh should not include underwater vertices");
+    }
+    for (std::size_t index = 0; index < fields.sample_count(); ++index) {
+        const terrain::TerrainHeightContributions contributions =
+            fields.height_contributions[index];
+        const terrain::TerrainVertex& vertex = mesh.vertices[index];
+        require_near(vertex.contributions_a.x, contributions.coast_lift_m, 0.001F,
+                     "terrain mesh should carry coast contribution");
+        require_near(vertex.contributions_a.y, contributions.inland_lift_m, 0.001F,
+                     "terrain mesh should carry inland contribution");
+        require_near(vertex.contributions_a.z, contributions.broad_noise_m, 0.001F,
+                     "terrain mesh should carry base-noise contribution");
+        require_near(vertex.contributions_a.w, contributions.detail_noise_m, 0.001F,
+                     "terrain mesh should carry detail-noise contribution");
+        require_near(vertex.contributions_b.x, contributions.foothills_m, 0.001F,
+                     "terrain mesh should carry foothill contribution");
+        require_near(vertex.contributions_b.y, contributions.ridge_m, 0.001F,
+                     "terrain mesh should carry ridge contribution");
+        require_near(vertex.contributions_b.z,
+                     contributions.broken_ridge_m - contributions.valley_cut_m, 0.001F,
+                     "terrain mesh should carry feature contribution");
+        require_near(vertex.contributions_b.w, contributions.relax_delta_m, 0.001F,
+                     "terrain mesh should carry relax contribution");
     }
 
     terrain::TerrainConfig feature_grid = defaults;
