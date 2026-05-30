@@ -85,8 +85,8 @@ int main() {
                      "sea state wind direction should default to the reference primary wind");
         require_near(defaults.sea_state.fetch_length_km, 150.0F, 0.001F,
                      "sea state fetch should default to the reference primary fetch");
-        require_near(defaults.sea_state.spread, 0.3F, 0.001F,
-                     "sea state spread should default to a shared active-ocean value");
+        require_near(defaults.sea_state.spread, 0.2F, 0.001F,
+                     "sea state spread should preserve the reference primary directionality");
 
         const ocean::OceanCascadeConfig& cascade0 = defaults.cascades[0];
         const ocean::OceanCascadeConfig& cascade1 = defaults.cascades[1];
@@ -97,40 +97,46 @@ int main() {
                      "cascade 0 should be the macro tile");
         require_near(cascade0.min_wavelength, 224.0F, 0.001F,
                      "cascade 0 should start at macro wavelengths");
-        require_near(cascade0.max_wavelength, 512.0F, 0.001F,
-                     "cascade 0 should end at the macro tile wavelength");
-        require_near(cascade0.displacement_scale, 0.55F, 0.001F,
+        require_near(cascade0.max_wavelength, 768.0F, 0.001F,
+                     "cascade 0 should have an overlapping macro window");
+        require_near(cascade0.displacement_scale, 0.25F, 0.001F,
                      "cascade 0 displacement scale should be restrained");
 
         require_near(cascade1.tile_length, 224.0F, 0.001F,
                      "cascade 1 should bridge macro and primary waves");
         require_near(cascade1.min_wavelength, 88.0F, 0.001F,
                      "cascade 1 should begin above the primary band");
-        require_near(cascade1.max_wavelength, 224.0F, 0.001F,
-                     "cascade 1 should end at its tile wavelength");
+        require_near(cascade1.max_wavelength, 320.0F, 0.001F,
+                     "cascade 1 should have an overlapping long-wave window");
+        require_near(cascade1.displacement_scale, 0.35F, 0.001F,
+                     "cascade 1 displacement scale should stay below primary wave scales");
 
         require_near(cascade2.tile_length, 88.0F, 0.001F,
                      "cascade 2 should retain the reference primary tile length");
-        require_near(cascade2.min_wavelength, 40.0F, 0.001F,
-                     "cascade 2 should cover primary wavelengths");
-        require_near(cascade2.max_wavelength, 88.0F, 0.001F,
-                     "cascade 2 should end at the reference primary tile");
-        require_near(cascade2.foam_amount, 5.0F, 0.001F,
-                     "cascade 2 should carry the main whitecap foam");
+        require_near(cascade2.min_wavelength, 12.0F, 0.001F,
+                     "cascade 2 should keep short wavelengths for sharp crests");
+        require_near(cascade2.max_wavelength, 128.0F, 0.001F,
+                     "cascade 2 should overlap the long bridge band");
+        require_near(cascade2.displacement_scale, 1.0F, 0.001F,
+                     "cascade 2 should preserve reference primary displacement");
+        require_near(cascade2.foam_amount, 8.0F, 0.001F,
+                     "cascade 2 should preserve reference primary foam");
 
-        require_near(cascade3.tile_length, 40.0F, 0.001F,
-                     "cascade 3 should bridge primary waves and detail");
-        require_near(cascade3.min_wavelength, 16.0F, 0.001F,
-                     "cascade 3 should begin above the detail band");
-        require_near(cascade3.max_wavelength, 40.0F, 0.001F,
-                     "cascade 3 should end at its tile wavelength");
+        require_near(cascade3.tile_length, 57.0F, 0.001F,
+                     "cascade 3 should preserve the reference secondary tile length");
+        require_near(cascade3.min_wavelength, 6.0F, 0.001F,
+                     "cascade 3 should keep short wavelengths for crest interference");
+        require_near(cascade3.max_wavelength, 88.0F, 0.001F,
+                     "cascade 3 should overlap the primary band");
+        require_near(cascade3.displacement_scale, 0.75F, 0.001F,
+                     "cascade 3 should preserve reference secondary displacement");
 
         require_near(cascade4.tile_length, 16.0F, 0.001F,
                      "cascade 4 should retain the reference detail tile length");
-        require_near(cascade4.min_wavelength, 2.0F, 0.001F,
+        require_near(cascade4.min_wavelength, 1.5F, 0.001F,
                      "cascade 4 should cover short detail wavelengths");
-        require_near(cascade4.max_wavelength, 16.0F, 0.001F,
-                     "cascade 4 should end at the detail tile wavelength");
+        require_near(cascade4.max_wavelength, 32.0F, 0.001F,
+                     "cascade 4 should overlap primary crest detail");
         require_near(cascade4.displacement_scale, 0.0F, 0.001F,
                      "cascade 4 should remain normal-only detail");
         require_near(cascade4.normal_scale, 0.25F, 0.001F,

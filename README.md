@@ -62,8 +62,9 @@ Current projects:
 - `explosion_3d`: the same shared 3D pyro solver presented as repeated impulse
   bursts with explosion-specific timing and boost controls.
 - `ocean`: active ocean renderer derived from the GodotOceanWaves
-  spectrum/FFT/unpack core, with five banded cascades, shared sea-state wind
-  controls, camera-relative mesh LOD, foam/debug views, and wire/LOD diagnostics.
+  spectrum/FFT/unpack core, with five overlapping wavelength cascades, shared
+  sea-state wind controls, camera-relative mesh LOD, foam/debug views, and
+  wire/LOD diagnostics.
 - `ocean_ref`: frozen known-good GodotOceanWaves port kept for visual and
   implementation comparisons.
 - `ocean_legacy`: previous experimental ocean renderer, kept as a feature donor
@@ -241,7 +242,8 @@ tests or heavier local runs. `explosion_3d` also accepts `--explosion-interval`,
 timestamp queries are available.
 `ocean` is a rendering-focused water project rather than a CFD solver. It now
 starts from the GodotOceanWaves-derived spectrum/FFT/unpack path, expanded into
-a five-cascade banded active renderer with shared sea-state wind controls. It exposes
+a five-cascade active renderer with overlapping wavelength windows and shared
+sea-state wind controls. It exposes
 `--ocean-map-size 128|256|512|1024`,
 `--debug-view final|height|displacement|normal|foam|lod`, and
 `--ocean-cascade all|0|1|2|3|4` for focused inspection. Use `--ocean-wire-overlay`

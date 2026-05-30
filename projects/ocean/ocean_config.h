@@ -38,7 +38,7 @@ struct OceanSeaStateConfig {
     float wind_direction_degrees = 20.0F;
     float fetch_length_km = 150.0F;
     float swell = 0.8F;
-    float spread = 0.3F;
+    float spread = 0.2F;
     float detail = 1.0F;
 
     friend bool operator==(const OceanSeaStateConfig&, const OceanSeaStateConfig&) = default;
@@ -47,9 +47,9 @@ struct OceanSeaStateConfig {
 struct OceanCascadeConfig {
     float tile_length = 512.0F;
     float min_wavelength = 224.0F;
-    float max_wavelength = 512.0F;
-    float displacement_scale = 0.55F;
-    float normal_scale = 0.25F;
+    float max_wavelength = 768.0F;
+    float displacement_scale = 0.25F;
+    float normal_scale = 0.15F;
     float whitecap = 0.5F;
     float foam_amount = 0.0F;
     std::int32_t seed_x = 9311;
@@ -83,43 +83,43 @@ struct OceanConfig {
         OceanCascadeConfig{
             .tile_length = 224.0F,
             .min_wavelength = 88.0F,
-            .max_wavelength = 224.0F,
-            .displacement_scale = 0.55F,
-            .normal_scale = 0.45F,
+            .max_wavelength = 320.0F,
+            .displacement_scale = 0.35F,
+            .normal_scale = 0.35F,
             .whitecap = 0.6F,
-            .foam_amount = 0.5F,
+            .foam_amount = 0.25F,
             .seed_x = -2713,
             .seed_y = 8128,
             .time_offset = 123.14159F,
         },
         OceanCascadeConfig{
             .tile_length = 88.0F,
-            .min_wavelength = 40.0F,
-            .max_wavelength = 88.0F,
-            .displacement_scale = 0.8F,
-            .normal_scale = 0.9F,
+            .min_wavelength = 12.0F,
+            .max_wavelength = 128.0F,
+            .displacement_scale = 1.0F,
+            .normal_scale = 1.0F,
             .whitecap = 0.5F,
-            .foam_amount = 5.0F,
+            .foam_amount = 8.0F,
             .seed_x = 1337,
             .seed_y = 4919,
             .time_offset = 120.0F,
         },
         OceanCascadeConfig{
-            .tile_length = 40.0F,
-            .min_wavelength = 16.0F,
-            .max_wavelength = 40.0F,
-            .displacement_scale = 0.25F,
-            .normal_scale = 0.65F,
-            .whitecap = 0.4F,
-            .foam_amount = 2.5F,
-            .seed_x = 4493,
-            .seed_y = -7177,
-            .time_offset = 124.25F,
+            .tile_length = 57.0F,
+            .min_wavelength = 6.0F,
+            .max_wavelength = 88.0F,
+            .displacement_scale = 0.75F,
+            .normal_scale = 1.0F,
+            .whitecap = 0.5F,
+            .foam_amount = 0.0F,
+            .seed_x = -2713,
+            .seed_y = 8128,
+            .time_offset = 123.14159F,
         },
         OceanCascadeConfig{
             .tile_length = 16.0F,
-            .min_wavelength = 2.0F,
-            .max_wavelength = 16.0F,
+            .min_wavelength = 1.5F,
+            .max_wavelength = 32.0F,
             .displacement_scale = 0.0F,
             .normal_scale = 0.25F,
             .whitecap = 0.25F,

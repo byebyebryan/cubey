@@ -3,7 +3,7 @@
 `ocean` is the active Cubey port of the wave-generation path from
 [`2Retr0/GodotOceanWaves`](https://github.com/2Retr0/GodotOceanWaves/). It
 deliberately starts from the known-good reference core, then experiments in the
-active project with five band-limited cascades and a shared sea-state wind model
+active project with five overlapping wavelength cascades and a shared sea-state wind model
 before any of Cubey's older experimental macro waves, detail normal pass, foam
 history pass, refraction, or seafloor shading are reintroduced.
 
@@ -34,10 +34,10 @@ load while tuning the mesh. Headless captures can use
 `--ocean-cascade all|0|1|2|3|4`,
 `--ocean-wire-overlay`, and `--ocean-wire-opacity 0.0..1.0`.
 
-The active default uses five wavelength bands: macro `224..512 m`, long bridge
-`88..224 m`, primary `40..88 m`, chop bridge `16..40 m`, and detail `2..16 m`.
-This reduces zoomed-out tile repetition while keeping wind controls coherent
-enough to investigate better wind/turbulence modeling separately.
+The active default adds restrained macro `224..768 m` and long `88..320 m`
+windows in front of the reference-like `88 m`, `57 m`, and `16 m` cascades.
+The windows intentionally overlap so the reference-style crest interference
+survives while zoomed-out tile repetition is reduced.
 
 The default FFT map is `1024`. Smoke tests and fast local checks can use
 `--ocean-map-size 128`.

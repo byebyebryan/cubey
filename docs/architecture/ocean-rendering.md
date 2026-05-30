@@ -26,7 +26,7 @@ The active renderer currently focuses on:
 
 - a camera-relative clipmap mesh with LOD diagnostics;
 - the GodotOceanWaves-style spectrum, modulation, FFT, and unpack path, expanded
-  in active ocean to five wavelength-banded cascades;
+  in active ocean to five overlapping wavelength cascades;
 - a shared sea-state wind model feeding those bands, so unrelated per-cascade
   winds are not the default explanation for visual variety;
 - displacement, normal, foam, and LOD debug views;
@@ -38,10 +38,10 @@ The active renderer currently focuses on:
 
 The active renderer should not immediately absorb all legacy features. Additions
 should be ported one at a time only when they preserve or improve the
-interactive inspection result. The current cascade work is an experiment to
-reduce far-field repetition and make wind controls more coherent, not a complete
-wind/turbulence model. The first bias is toward diagnostics that help reason
-about the wave core, not snapshot comparison tooling.
+interactive inspection result. The current cascade work is an experiment to add
+large-scale variation without losing reference-like crest interference; it is
+not a complete wind/turbulence model. The first bias is toward diagnostics that
+help reason about the wave core, not snapshot comparison tooling.
 
 ## Feature Donor Boundaries
 
