@@ -339,7 +339,7 @@ void remove_single_cell_coast_artifacts(std::vector<bool>& land_mask, std::uint3
     const float base_angle = terrain_axis_angle(config);
     const float base_offset = terrain_axis_offset(config);
     float strength = 0.0F;
-    for (std::uint32_t index = 0; index < 7U; ++index) {
+    for (std::uint32_t index = 0; index < 5U; ++index) {
         const float source_s = lerp(-0.58F, 0.58F, random01(config.seed, index, 601U));
         const float source_l =
             base_offset + lerp(-0.15F, 0.15F, random01(config.seed, index, 607U));
@@ -355,16 +355,16 @@ void remove_single_cell_coast_artifacts(std::vector<bool>& land_mask, std::uint3
         const float bend_offset = lerp(-0.16F, 0.16F, random01(config.seed, index, 631U));
         const Point2 bend{start.x + (delta.x * bend_t) + (side.x * bend_offset),
                           start.y + (delta.y * bend_t) + (side.y * bend_offset)};
-        const float width = lerp(0.024F, 0.054F, random01(config.seed, index, 641U));
+        const float width = lerp(0.060F, 0.120F, random01(config.seed, index, 641U));
         const float dist =
             std::min(distance_to_segment(p, start, bend), distance_to_segment(p, bend, end));
-        const float line = 1.0F - smoothstep(width * 0.12F, width, dist);
+        const float line = 1.0F - smoothstep(width * 0.16F, width, dist);
         const float downstream = smoothstep(0.06F, 0.24F, distance(p, start));
         const float meander =
             0.70F + (0.30F * fbm(p.x * 7.2F + static_cast<float>(index) * 3.0F,
                                  p.y * 7.2F - static_cast<float>(index) * 2.0F,
                                  config.seed + 700U + index, 3));
-        strength = std::max(strength, line * downstream * meander);
+        strength = std::max(strength, line * downstream * meander * 0.58F);
     }
     return strength;
 }
@@ -639,10 +639,11 @@ TerrainFieldData generate_terrain_fields(const TerrainConfig& config) {
 
             const float inland = land ? smoothstep(10.0F, 260.0F, shore_sdf) : 0.0F;
             fields.inland[sample] = inland;
+            const float raw_ridge =
+                land ? ridge_field(p, config) * smoothstep(44.0F, 230.0F, shore_sdf) : 0.0F;
+            const float ridge_gate = smoothstep(0.16F, 0.78F, raw_ridge);
             fields.ridge_strength[sample] =
-                land ? ridge_field(p, config) * smoothstep(44.0F, 230.0F, shore_sdf) *
-                           std::clamp(config.ridge_scale, 0.0F, 2.0F)
-                     : 0.0F;
+                raw_ridge * ridge_gate * std::clamp(config.ridge_scale, 0.0F, 2.0F);
             fields.valley_strength[sample] =
                 land ? valley_field(p, config) * smoothstep(20.0F, 210.0F, shore_sdf) *
                            std::clamp(config.valley_scale, 0.0F, 2.0F)
@@ -730,13 +731,13 @@ TerrainFieldData generate_terrain_fields(const TerrainConfig& config) {
             const float beach_band = (1.0F - smoothstep(20.0F, 86.0F, shore)) * low_slope;
             const float valley_moisture = saturate(fields.valley_strength[sample] * 1.45F);
             const float ridge_exposure =
-                std::pow(saturate(fields.ridge_strength[sample] * 0.88F), 1.52F);
+                std::pow(smoothstep(0.18F, 0.74F, saturate(fields.ridge_strength[sample])), 1.40F);
             const float land = underwater ? 0.0F : 1.0F;
             const float sand = land * beach_band * (1.0F - smoothstep(26.0F, 70.0F, height));
             const float rock =
                 land * std::max(std::max(steep * 0.82F, ridge_exposure * 0.40F), high * 0.58F);
             const float vegetation =
-                land * (1.0F - (steep * 0.78F)) * (1.0F - (ridge_exposure * 0.55F)) *
+                land * (1.0F - (steep * 0.78F)) * (1.0F - (ridge_exposure * 0.72F)) *
                 smoothstep(7.0F, 24.0F, height) * (1.0F - smoothstep(118.0F, 170.0F, height)) *
                 (0.64F + (0.46F * valley_moisture)) * smoothstep(18.0F, 92.0F, shore);
             const float sediment =

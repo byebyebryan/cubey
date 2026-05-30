@@ -40,7 +40,7 @@ inline constexpr float kTerrainDefaultLandExtent = 0.70F;
 inline constexpr float kTerrainDefaultCoastNoiseStrength = 0.20F;
 inline constexpr float kTerrainDefaultReliefScale = 1.0F;
 inline constexpr float kTerrainDefaultRidgeScale = 1.0F;
-inline constexpr float kTerrainDefaultValleyScale = 0.45F;
+inline constexpr float kTerrainDefaultValleyScale = 0.30F;
 
 struct TerrainConfig {
     std::uint32_t grid_width = kTerrainDefaultGridWidth;
