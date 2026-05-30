@@ -258,6 +258,42 @@ vec3 normal_foam_gradient(float dist) {
     return gradient;
 }
 
+float ocean_material_distance_factor(float dist) {
+    return smoothstep(250.0, 1800.0, dist);
+}
+
+float ocean_foam_coverage(float foam, float dist, float ndotv) {
+    float far_factor = ocean_material_distance_factor(dist);
+    float soft_foam = smoothstep(0.12, 0.84, foam);
+    float crest_core = smoothstep(0.48, 1.0, foam);
+    float view_factor = mix(0.82, 1.0, smoothstep(0.05, 0.55, ndotv));
+    return clamp(max(soft_foam * 0.82, crest_core * 0.76) * view_factor *
+                     mix(0.92, 0.36, far_factor),
+                 0.0, 0.78);
+}
+
+vec3 ocean_shaded_foam(vec3 water, vec3 foam_color, vec3 normal, float ndotl, float foam,
+                       float coverage, float dist) {
+    float far_factor = ocean_material_distance_factor(dist);
+    float edge = smoothstep(0.03, 0.30, foam) * (1.0 - smoothstep(0.62, 0.98, foam));
+    vec3 sky_light = ocean_sky_color(normal) * 0.055;
+    float diffuse_light = 0.36 + 0.18 * clamp(normal.y, 0.0, 1.0) + 0.28 * ndotl;
+    vec3 lit_foam = foam_color * diffuse_light + sky_light;
+    vec3 far_foam = foam_color * 0.58 + ocean_sky_color(vec3(0.0, 1.0, 0.0)) * 0.045;
+    vec3 wet_water = mix(water, water * 1.14 + foam_color * 0.08,
+                         edge * mix(0.36, 0.18, far_factor));
+    return mix(wet_water, mix(lit_foam, far_foam, far_factor * 0.55), coverage);
+}
+
+float ocean_horizon_fog_factor(vec3 view_dir, float dist) {
+    float distance_fog =
+        smoothstep(ocean.mesh_options.z * 0.30, ocean.mesh_options.z * 0.95, dist);
+    float low_angle = 1.0 - smoothstep(0.035, 0.36, abs(view_dir.y));
+    float angle_fog =
+        low_angle * smoothstep(ocean.mesh_options.z * 0.18, ocean.mesh_options.z * 0.72, dist);
+    return clamp((distance_fog * 0.86 + angle_fog * 0.34) * ocean.mesh_options.w, 0.0, 0.96);
+}
+
 vec3 debug_height_color(float height) {
     float value = clamp(height * 0.08 + 0.5, 0.0, 1.0);
     vec3 low = cubey_srgb_to_linear(vec3(0.04, 0.18, 0.42));
@@ -300,7 +336,10 @@ void main() {
     vec3 reflection_dir = reflect(-view_dir, normal);
     float ndotv = clamp(dot(normal, view_dir), 0.0, 1.0);
     float ndotl = clamp(dot(normal, sun_dir), 0.0, 1.0);
+    float material_distance = ocean_material_distance_factor(dist);
+    float foam_coverage = ocean_foam_coverage(foam, dist, ndotv);
     float roughness = clamp(ocean.water_color.w, 0.02, 1.0);
+    roughness = mix(roughness, max(roughness, 0.78), material_distance);
 
     float fresnel =
         mix(pow(1.0 - ndotv, 5.0 * exp(-2.69 * roughness)) /
@@ -318,13 +357,12 @@ void main() {
     vec3 halfway = normalize(sun_dir + view_dir);
     float specular =
         pow(max(dot(normal, halfway), 0.0), mix(24.0, 110.0, 1.0 - roughness)) * fresnel * 1.6;
+    specular *= mix(1.0, 0.35, material_distance) * (1.0 - foam_coverage * 0.82);
     vec3 water = mix(ambient + direct, reflection, clamp(fresnel, 0.0, 0.92));
     water += cubey_srgb_to_linear(vec3(1.0, 0.78, 0.46)) * specular;
-    water = mix(water, foam_color, foam);
+    water = ocean_shaded_foam(water, foam_color, normal, ndotl, foam, foam_coverage, dist);
 
-    float horizon_fog =
-        smoothstep(ocean.mesh_options.z * 0.28, ocean.mesh_options.z * 0.92, dist) *
-        ocean.mesh_options.w;
+    float horizon_fog = ocean_horizon_fog_factor(view_dir, dist);
     vec3 horizon_dir = normalize(vec3(-view_dir.x, 0.055, -view_dir.z));
     vec3 color = mix(water, ocean_sky_color(horizon_dir), horizon_fog);
 

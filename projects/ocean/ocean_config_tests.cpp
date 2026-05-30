@@ -342,9 +342,21 @@ int main() {
                          "fragment shader should read map size from packed cascade controls");
         require_contains(fragment_shader,
                          "smoothstep(0.0, 1.0, gradient.z * 0.75) * exp(-dist * 0.0075)",
-                         "fragment shader should preserve reference foam attenuation");
+                         "fragment shader should preserve raw foam attenuation");
         require_contains(fragment_shader, "mix(0.015, ocean.foam_color.w, exp(-dist * 0.0175))",
                          "fragment shader should preserve reference normal fade");
+        require_contains(fragment_shader, "float ocean_material_distance_factor(float dist)",
+                         "fragment shader should distance-filter material response");
+        require_contains(fragment_shader, "float ocean_foam_coverage(float foam, float dist",
+                         "fragment shader should derive presentation foam coverage from raw foam");
+        require_contains(fragment_shader, "vec3 ocean_shaded_foam(",
+                         "fragment shader should shade foam as a material");
+        require_contains(fragment_shader, "specular *= mix(1.0, 0.35, material_distance)",
+                         "fragment shader should reduce far and foam-covered specular");
+        require_contains(fragment_shader, "float ocean_horizon_fog_factor(vec3 view_dir, float dist)",
+                         "fragment shader should use view-angle-aware horizon haze");
+        require_contains(fragment_shader, "color = vec3(foam);",
+                         "fragment shader should keep debug foam view raw");
         require_contains(vertex_shader, "triangle_barycentric(vertex_in_cell)",
                          "vertex shader should feed wireframe diagnostics");
         require_contains(fragment_shader, "const uint OCEAN_VIEW_LOD = 5u",
