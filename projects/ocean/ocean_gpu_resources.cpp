@@ -42,7 +42,7 @@ make_ocean_field_texture(const cubey::vulkan::Device& device, std::uint32_t reso
     const VkPushConstantRange push_constant_range{
         .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
         .offset = 0,
-        .size = sizeof(float) * 64U,
+        .size = sizeof(float) * 60U,
     };
     return {
         .label = "ocean.surface",
@@ -275,21 +275,38 @@ void OceanGpuResources::create_descriptor_sets(const cubey::vulkan::Device& devi
         set = unpack_pool_->allocate(unpack_layout_->handle());
     }
 
-    std::array<cubey::vulkan::DescriptorSetBindingConfig, kOceanCascadeCount * 2U>
-        surface_bindings{};
-    for (std::uint32_t cascade = 0; cascade < kOceanCascadeCount; ++cascade) {
-        surface_bindings[cascade] = cubey::vulkan::DescriptorSetBindingConfig{
-            .binding = cascade,
+    const std::array surface_bindings{
+        cubey::vulkan::DescriptorSetBindingConfig{
+            .binding = 0,
             .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
             .stage_flags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-        };
-        surface_bindings[cascade + kOceanCascadeCount] =
-            cubey::vulkan::DescriptorSetBindingConfig{
-                .binding = cascade + kOceanCascadeCount,
-                .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
-            };
-    }
+        },
+        cubey::vulkan::DescriptorSetBindingConfig{
+            .binding = 1,
+            .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            .stage_flags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+        },
+        cubey::vulkan::DescriptorSetBindingConfig{
+            .binding = 2,
+            .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            .stage_flags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+        },
+        cubey::vulkan::DescriptorSetBindingConfig{
+            .binding = 3,
+            .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
+        },
+        cubey::vulkan::DescriptorSetBindingConfig{
+            .binding = 4,
+            .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
+        },
+        cubey::vulkan::DescriptorSetBindingConfig{
+            .binding = 5,
+            .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
+        },
+    };
     const cubey::vulkan::DescriptorSetInfo surface_info = descriptor_info(surface_bindings, 1U);
     surface_layout_.emplace(device, surface_info.layout_info());
     surface_pool_.emplace(device, surface_info.pool_info());

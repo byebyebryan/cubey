@@ -78,14 +78,6 @@ float TMA_spectrum(in float w, in float w_p, in float alpha) {
     return jonswap * depth_attenuation;
 }
 
-float wavelength_band_weight(in float wavelength) {
-    float min_wavelength = params.cascade_options.z;
-    float max_wavelength = params.cascade_options.w;
-    float lower = smoothstep(min_wavelength * 0.5, min_wavelength, wavelength);
-    float upper = 1.0 - smoothstep(max_wavelength, max_wavelength * 2.0, wavelength);
-    return clamp(lower * upper, 0.0, 1.0);
-}
-
 vec2 get_spectrum_amplitude(in ivec2 id, in ivec2 map_size) {
     vec2 tile_length = params.seed_tile.zw;
     vec2 dk = 2.0 * PI / tile_length;
@@ -105,11 +97,8 @@ vec2 get_spectrum_amplitude(in ivec2 id, in ivec2 map_size) {
                                           theta),
             1.0 - spread) *
         exp(-(1.0 - detail) * (1.0 - detail) * k * k);
-    float wavelength = 2.0 * PI / k;
-    float band = wavelength_band_weight(wavelength);
     ivec2 seed = ivec2(params.seed_tile.xy);
-    return gaussian(hash(uvec2(id + seed))) *
-           sqrt(max(2.0 * spectrum * direction * w_norm * band, 0.0));
+    return gaussian(hash(uvec2(id + seed))) * sqrt(max(2.0 * spectrum * direction * w_norm, 0.0));
 }
 
 void main() {

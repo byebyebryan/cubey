@@ -55,13 +55,7 @@ int parse_ocean_cascade(std::string_view value, const char* name) {
     if (value == "2") {
         return 2;
     }
-    if (value == "3") {
-        return 3;
-    }
-    if (value == "4") {
-        return 4;
-    }
-    throw std::runtime_error(std::string(name) + " must be all, 0, 1, 2, 3, or 4");
+    throw std::runtime_error(std::string(name) + " must be all, 0, 1, or 2");
 }
 
 std::filesystem::path profile_output_prefix(std::string_view value) {

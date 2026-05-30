@@ -78,71 +78,52 @@ int main() {
                     defaults.mesh_cells * defaults.mesh_cells * 2U,
                 "ocean clipmap should add coarser horizon geometry");
 
-        require(ocean::kOceanCascadeCount == 5U, "ocean should use five active cascades");
-        require_near(defaults.sea_state.wind_speed, 10.0F, 0.001F,
-                     "sea state wind speed should default to the reference primary wind");
-        require_near(defaults.sea_state.wind_direction_degrees, 20.0F, 0.001F,
-                     "sea state wind direction should default to the reference primary wind");
-        require_near(defaults.sea_state.fetch_length_km, 150.0F, 0.001F,
-                     "sea state fetch should default to the reference primary fetch");
-        require_near(defaults.sea_state.spread, 0.2F, 0.001F,
-                     "sea state spread should preserve the reference primary directionality");
-
         const ocean::OceanCascadeConfig& cascade0 = defaults.cascades[0];
         const ocean::OceanCascadeConfig& cascade1 = defaults.cascades[1];
         const ocean::OceanCascadeConfig& cascade2 = defaults.cascades[2];
-        const ocean::OceanCascadeConfig& cascade3 = defaults.cascades[3];
-        const ocean::OceanCascadeConfig& cascade4 = defaults.cascades[4];
-        require_near(cascade0.tile_length, 512.0F, 0.001F,
-                     "cascade 0 should be the macro tile");
-        require_near(cascade0.min_wavelength, 224.0F, 0.001F,
-                     "cascade 0 should start at macro wavelengths");
-        require_near(cascade0.max_wavelength, 768.0F, 0.001F,
-                     "cascade 0 should have an overlapping macro window");
-        require_near(cascade0.displacement_scale, 0.25F, 0.001F,
-                     "cascade 0 displacement scale should be restrained");
+        require_near(cascade0.tile_length, 88.0F, 0.001F,
+                     "cascade 0 tile length should match Godot ref");
+        require_near(cascade0.displacement_scale, 1.0F, 0.001F,
+                     "cascade 0 displacement scale should match Godot ref");
+        require_near(cascade0.wind_speed, 10.0F, 0.001F,
+                     "cascade 0 wind speed should match Godot ref");
+        require_near(cascade0.wind_direction_degrees, 20.0F, 0.001F,
+                     "cascade 0 wind direction should match Godot ref");
+        require_near(cascade0.fetch_length_km, 150.0F, 0.001F,
+                     "cascade 0 fetch should match Godot ref");
+        require_near(cascade0.spread, 0.2F, 0.001F, "cascade 0 spread should match Godot ref");
+        require_near(cascade0.whitecap, 0.5F, 0.001F, "cascade 0 whitecap should match Godot ref");
+        require_near(cascade0.foam_amount, 8.0F, 0.001F,
+                     "cascade 0 foam amount should match Godot ref");
 
-        require_near(cascade1.tile_length, 224.0F, 0.001F,
-                     "cascade 1 should bridge macro and primary waves");
-        require_near(cascade1.min_wavelength, 88.0F, 0.001F,
-                     "cascade 1 should begin above the primary band");
-        require_near(cascade1.max_wavelength, 320.0F, 0.001F,
-                     "cascade 1 should have an overlapping long-wave window");
-        require_near(cascade1.displacement_scale, 0.35F, 0.001F,
-                     "cascade 1 displacement scale should stay below primary wave scales");
+        require_near(cascade1.tile_length, 57.0F, 0.001F,
+                     "cascade 1 tile length should match Godot ref");
+        require_near(cascade1.displacement_scale, 0.75F, 0.001F,
+                     "cascade 1 displacement scale should match Godot ref");
+        require_near(cascade1.wind_speed, 5.0F, 0.001F,
+                     "cascade 1 wind speed should match Godot ref");
+        require_near(cascade1.wind_direction_degrees, 15.0F, 0.001F,
+                     "cascade 1 wind direction should match Godot ref");
+        require_near(cascade1.fetch_length_km, 150.0F, 0.001F,
+                     "cascade 1 fetch should match Godot ref");
+        require_near(cascade1.spread, 0.4F, 0.001F, "cascade 1 spread should match Godot ref");
+        require_near(cascade1.whitecap, 0.5F, 0.001F, "cascade 1 whitecap should match Godot ref");
+        require_near(cascade1.foam_amount, 0.0F, 0.001F,
+                     "cascade 1 foam amount should match Godot ref");
 
-        require_near(cascade2.tile_length, 88.0F, 0.001F,
-                     "cascade 2 should retain the reference primary tile length");
-        require_near(cascade2.min_wavelength, 12.0F, 0.001F,
-                     "cascade 2 should keep short wavelengths for sharp crests");
-        require_near(cascade2.max_wavelength, 128.0F, 0.001F,
-                     "cascade 2 should overlap the long bridge band");
-        require_near(cascade2.displacement_scale, 1.0F, 0.001F,
-                     "cascade 2 should preserve reference primary displacement");
-        require_near(cascade2.foam_amount, 8.0F, 0.001F,
-                     "cascade 2 should preserve reference primary foam");
-
-        require_near(cascade3.tile_length, 57.0F, 0.001F,
-                     "cascade 3 should preserve the reference secondary tile length");
-        require_near(cascade3.min_wavelength, 6.0F, 0.001F,
-                     "cascade 3 should keep short wavelengths for crest interference");
-        require_near(cascade3.max_wavelength, 88.0F, 0.001F,
-                     "cascade 3 should overlap the primary band");
-        require_near(cascade3.displacement_scale, 0.75F, 0.001F,
-                     "cascade 3 should preserve reference secondary displacement");
-
-        require_near(cascade4.tile_length, 16.0F, 0.001F,
-                     "cascade 4 should retain the reference detail tile length");
-        require_near(cascade4.min_wavelength, 1.5F, 0.001F,
-                     "cascade 4 should cover short detail wavelengths");
-        require_near(cascade4.max_wavelength, 32.0F, 0.001F,
-                     "cascade 4 should overlap primary crest detail");
-        require_near(cascade4.displacement_scale, 0.0F, 0.001F,
-                     "cascade 4 should remain normal-only detail");
-        require_near(cascade4.normal_scale, 0.25F, 0.001F,
-                     "cascade 4 normal scale should match reference detail");
-        require_near(cascade4.foam_amount, 3.0F, 0.001F,
-                     "cascade 4 foam amount should match reference detail");
+        require_near(cascade2.tile_length, 16.0F, 0.001F,
+                     "cascade 2 tile length should match Godot ref");
+        require_near(cascade2.displacement_scale, 0.0F, 0.001F,
+                     "cascade 2 geometry scale should match Godot ref");
+        require_near(cascade2.normal_scale, 0.25F, 0.001F,
+                     "cascade 2 normal scale should match Godot ref");
+        require_near(cascade2.wind_speed, 20.0F, 0.001F,
+                     "cascade 2 wind speed should match Godot ref");
+        require_near(cascade2.fetch_length_km, 550.0F, 0.001F,
+                     "cascade 2 fetch should match Godot ref");
+        require_near(cascade2.whitecap, 0.25F, 0.001F, "cascade 2 whitecap should match Godot ref");
+        require_near(cascade2.foam_amount, 3.0F, 0.001F,
+                     "cascade 2 foam amount should match Godot ref");
         require_near(defaults.water_color_r, 0.1F, 0.001F, "water color should match Godot ref");
         require_near(defaults.foam_color_r, 0.73F, 0.001F, "foam color should match Godot ref");
         ocean::validate_ocean_config(defaults);
@@ -197,7 +178,7 @@ int main() {
                               "--ocean-map-size",
                               "256",
                               "--ocean-cascade",
-                              "4",
+                              "2",
                               "--debug-view",
                               "normal",
                               "--ocean-wire-overlay",
@@ -205,7 +186,7 @@ int main() {
                               "0.8"};
         cubey::RunConfig parsed = cubey::parse_run_config(10, const_cast<char**>(argv));
         require(parsed.ocean.map_size == 256U, "CLI parser should accept --ocean-map-size");
-        require(parsed.ocean.cascade == 4, "CLI parser should accept --ocean-cascade");
+        require(parsed.ocean.cascade == 2, "CLI parser should accept --ocean-cascade");
         require(parsed.debug_view == "normal", "CLI parser should preserve debug view");
         require(parsed.ocean.wire_overlay, "CLI parser should accept ocean wire overlay");
         require_near(parsed.ocean.wire_opacity, 0.8F, 0.001F,
@@ -251,8 +232,6 @@ int main() {
                          "spectrum shader should document reference h0 packing");
         require_contains(spectrum_shader, "conj_complex(get_spectrum_amplitude(id1, dims))",
                          "spectrum shader should pack conjugated negative frequency");
-        require_contains(spectrum_shader, "wavelength_band_weight(wavelength)",
-                         "spectrum shader should band-limit each active cascade");
         require_contains(modulate_shader, "const uint NUM_SPECTRA = 4U",
                          "modulate shader should preserve four reference spectra");
         require_contains(modulate_shader, "vec2 dhy_dx = h_inv * k_vec.y;",
@@ -278,24 +257,17 @@ int main() {
         require_contains(vertex_shader,
                          "distance_factor = min(exp(-(camera_distance - 150.0) * 0.007), 1.0)",
                          "vertex shader should preserve reference distance falloff");
-        require_contains(vertex_shader, "const uint OCEAN_CASCADE_COUNT = 5u",
-                         "vertex shader should sample all active cascades");
-        require_contains(vertex_shader, "texture(displacement_cascade4_texture, uv)",
-                         "vertex shader should sample the fifth cascade displacement");
         require_contains(vertex_shader, "if (!ocean_cascade_enabled(cascade))",
                          "vertex shader should gate displacement by inspected cascade");
         require_contains(fragment_shader,
                          "gradient += normal_foam.xyw * vec3(normal_scale, normal_scale, 1.0)",
                          "fragment shader should preserve normal/foam map scale packing");
-        require_contains(fragment_shader, "texture(normal_foam_cascade4_texture, uv)",
-                         "fragment shader should sample the fifth cascade normal/foam map");
         require_contains(fragment_shader, "if (!ocean_cascade_enabled(cascade))",
                          "fragment shader should gate normal and foam by inspected cascade");
         require_contains(fragment_shader,
                          "smoothstep(0.0, 1.0, gradient.z * 0.75) * exp(-dist * 0.0075)",
                          "fragment shader should preserve reference foam attenuation");
-        require_contains(fragment_shader,
-                         "mix(0.015, ocean.inspection_options.z, exp(-dist * 0.0175))",
+        require_contains(fragment_shader, "mix(0.015, ocean.normal_scales.w, exp(-dist * 0.0175))",
                          "fragment shader should preserve reference normal fade");
         require_contains(vertex_shader, "triangle_barycentric(vertex_in_cell)",
                          "vertex shader should feed wireframe diagnostics");
@@ -303,7 +275,7 @@ int main() {
                          "fragment shader should expose LOD diagnostics");
         require_contains(fragment_shader, "triangle_wire_factor(frag_barycentric)",
                          "fragment shader should expose wire diagnostics");
-        require_contains(gpu_resources_source, ".size = sizeof(float) * 64U",
+        require_contains(gpu_resources_source, ".size = sizeof(float) * 60U",
                          "surface pipeline push constants should match ocean shader layout");
 
         require_not_contains(vertex_shader, "ocean_macro_waves",

@@ -41,28 +41,20 @@ void draw_map_size_combo(OceanConfig& config) {
 }
 
 void draw_selected_cascade_combo(OceanDiagnosticsConfig& diagnostics) {
-    char preview[16]{};
-    if (diagnostics.selected_cascade < 0) {
-        std::snprintf(preview, sizeof(preview), "All");
-    } else {
-        std::snprintf(preview, sizeof(preview), "%d", diagnostics.selected_cascade);
-    }
+    const char* preview = diagnostics.selected_cascade < 0
+                              ? "All"
+                              : (diagnostics.selected_cascade == 0
+                                     ? "0"
+                                     : (diagnostics.selected_cascade == 1 ? "1" : "2"));
     if (!ImGui::BeginCombo("Inspect cascade", preview)) {
         return;
     }
-    bool selected = diagnostics.selected_cascade < 0;
-    if (ImGui::Selectable("All", selected)) {
-        diagnostics.selected_cascade = -1;
-    }
-    if (selected) {
-        ImGui::SetItemDefaultFocus();
-    }
-    for (std::uint32_t cascade = 0; cascade < kOceanCascadeCount; ++cascade) {
-        char label[16]{};
-        std::snprintf(label, sizeof(label), "%u", cascade);
-        selected = diagnostics.selected_cascade == static_cast<int>(cascade);
-        if (ImGui::Selectable(label, selected)) {
-            diagnostics.selected_cascade = static_cast<int>(cascade);
+    const std::array labels{"All", "0", "1", "2"};
+    const std::array values{-1, 0, 1, 2};
+    for (std::size_t index = 0; index < labels.size(); ++index) {
+        const bool selected = diagnostics.selected_cascade == values[index];
+        if (ImGui::Selectable(labels[index], selected)) {
+            diagnostics.selected_cascade = values[index];
         }
         if (selected) {
             ImGui::SetItemDefaultFocus();
@@ -89,16 +81,6 @@ void draw_camera_preset_button(OceanUiContext& ui, OceanCameraPreset preset, con
     }
 }
 
-void draw_sea_state_controls(OceanSeaStateConfig& sea_state) {
-    ImGui::SliderFloat("Wind speed", &sea_state.wind_speed, 0.1F, 32.0F, "%.1f m/s");
-    ImGui::SliderFloat("Wind direction", &sea_state.wind_direction_degrees, -180.0F, 180.0F,
-                       "%.0f deg");
-    ImGui::SliderFloat("Fetch", &sea_state.fetch_length_km, 10.0F, 1200.0F, "%.0f km");
-    ImGui::SliderFloat("Swell", &sea_state.swell, 0.0F, 2.0F, "%.2f");
-    ImGui::SliderFloat("Spread", &sea_state.spread, 0.0F, 1.0F, "%.2f");
-    ImGui::SliderFloat("Detail", &sea_state.detail, 0.0F, 1.0F, "%.2f");
-}
-
 void draw_cascade_controls(OceanCascadeConfig& cascade, std::uint32_t index) {
     char label[32]{};
     std::snprintf(label, sizeof(label), "Cascade %u", index);
@@ -107,17 +89,16 @@ void draw_cascade_controls(OceanCascadeConfig& cascade, std::uint32_t index) {
     }
 
     const cubey::host::ScopedImGuiId section_id(label);
-    ImGui::SliderFloat("Tile length", &cascade.tile_length, 8.0F, 1024.0F, "%.0f m");
-    if (ImGui::SliderFloat("Band min", &cascade.min_wavelength, 0.5F, 1024.0F, "%.1f m")) {
-        cascade.min_wavelength = std::min(cascade.min_wavelength,
-                                          cascade.max_wavelength - 0.001F);
-    }
-    if (ImGui::SliderFloat("Band max", &cascade.max_wavelength, 1.0F, 1024.0F, "%.1f m")) {
-        cascade.max_wavelength = std::max(cascade.max_wavelength,
-                                          cascade.min_wavelength + 0.001F);
-    }
+    ImGui::SliderFloat("Tile length", &cascade.tile_length, 8.0F, 256.0F, "%.0f m");
     ImGui::SliderFloat("Displacement scale", &cascade.displacement_scale, 0.0F, 2.0F, "%.2f");
     ImGui::SliderFloat("Normal scale", &cascade.normal_scale, 0.0F, 2.0F, "%.2f");
+    ImGui::SliderFloat("Wind speed", &cascade.wind_speed, 0.1F, 32.0F, "%.1f m/s");
+    ImGui::SliderFloat("Wind direction", &cascade.wind_direction_degrees, -180.0F, 180.0F,
+                       "%.0f deg");
+    ImGui::SliderFloat("Fetch", &cascade.fetch_length_km, 10.0F, 1200.0F, "%.0f km");
+    ImGui::SliderFloat("Swell", &cascade.swell, 0.0F, 2.0F, "%.2f");
+    ImGui::SliderFloat("Spread", &cascade.spread, 0.0F, 1.0F, "%.2f");
+    ImGui::SliderFloat("Detail", &cascade.detail, 0.0F, 1.0F, "%.2f");
     ImGui::SliderFloat("Whitecap", &cascade.whitecap, 0.0F, 2.0F, "%.2f");
     ImGui::SliderFloat("Foam amount", &cascade.foam_amount, 0.0F, 10.0F, "%.2f");
 }
@@ -189,12 +170,7 @@ void draw_ocean_ui(OceanUiContext ui) {
         const cubey::host::ScopedImGuiId section_id("Wave Core");
         draw_map_size_combo(ui.config);
         ImGui::SliderFloat("Depth", &ui.config.depth, 2.0F, 80.0F, "%.1f m");
-        ImGui::TextUnformatted("Banded GodotOceanWaves core");
-    }
-
-    if (cubey::host::imgui_section("Sea State", true)) {
-        const cubey::host::ScopedImGuiId section_id("Sea State");
-        draw_sea_state_controls(ui.config.sea_state);
+        ImGui::TextUnformatted("GodotOceanWaves port");
     }
 
     if (cubey::host::imgui_section("Camera", true)) {
@@ -249,12 +225,12 @@ void draw_ocean_ui(OceanUiContext ui) {
         const cubey::host::ScopedImGuiId section_id("Diagnostics");
         cubey::host::draw_frame_stats(ui.latest_frame_stats, ui.latest_fps, ui.latest_frame_ms);
         ImGui::Text("Map: %u", ui.config.map_size);
-        for (std::uint32_t index = 0; index < kOceanCascadeCount; ++index) {
-            const OceanCascadeConfig& cascade = ui.config.cascades[index];
-            ImGui::Text("C%u: %.0f m / %.1f-%.0f m / disp %.2f", index, cascade.tile_length,
-                        cascade.min_wavelength, cascade.max_wavelength,
-                        cascade.displacement_scale);
-        }
+        ImGui::Text("C0: %.0f m / disp %.2f", ui.config.cascades[0].tile_length,
+                    ui.config.cascades[0].displacement_scale);
+        ImGui::Text("C1: %.0f m / disp %.2f", ui.config.cascades[1].tile_length,
+                    ui.config.cascades[1].displacement_scale);
+        ImGui::Text("C2: %.0f m / disp %.2f", ui.config.cascades[2].tile_length,
+                    ui.config.cascades[2].displacement_scale);
         ImGui::Text("Mesh: %u LOD / %u patches / %u tris", ui.config.mesh_lod_levels,
                     ocean_mesh_patch_count(ui.config),
                     ocean_mesh_total_triangle_count(ui.config));

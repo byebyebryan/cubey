@@ -64,7 +64,6 @@ struct OceanPushConstants {
     cubey::math::Vec4 tile_lengths;
     cubey::math::Vec4 displacement_scales;
     cubey::math::Vec4 normal_scales;
-    cubey::math::Vec4 cascade4_options;
     cubey::math::Vec4 water_color;
     cubey::math::Vec4 foam_color;
 };
@@ -99,7 +98,7 @@ struct OceanUnpackPushConstants {
     cubey::math::Vec4 cascade_options;
 };
 
-static_assert(sizeof(OceanPushConstants) == sizeof(float) * 64U);
+static_assert(sizeof(OceanPushConstants) == sizeof(float) * 60U);
 static_assert(sizeof(OceanSkyPushConstants) == sizeof(float) * 20U);
 static_assert(sizeof(OceanSpectrumPushConstants) == sizeof(float) * 16U);
 static_assert(sizeof(OceanModulatePushConstants) == sizeof(float) * 8U);
@@ -469,37 +468,30 @@ class OceanApp {
             .inspection_options =
                 {
                     static_cast<float>(diagnostics_.selected_cascade),
-                    static_cast<float>(ocean_config_.map_size),
-                    ocean_config_.normal_strength,
-                    ocean_config_.cascades[4].tile_length,
+                    0.0F,
+                    0.0F,
+                    0.0F,
                 },
             .tile_lengths =
                 {
                     ocean_config_.cascades[0].tile_length,
                     ocean_config_.cascades[1].tile_length,
                     ocean_config_.cascades[2].tile_length,
-                    ocean_config_.cascades[3].tile_length,
+                    static_cast<float>(ocean_config_.map_size),
                 },
             .displacement_scales =
                 {
                     ocean_config_.cascades[0].displacement_scale,
                     ocean_config_.cascades[1].displacement_scale,
                     ocean_config_.cascades[2].displacement_scale,
-                    ocean_config_.cascades[3].displacement_scale,
+                    ocean_config_.depth,
                 },
             .normal_scales =
                 {
                     ocean_config_.cascades[0].normal_scale,
                     ocean_config_.cascades[1].normal_scale,
                     ocean_config_.cascades[2].normal_scale,
-                    ocean_config_.cascades[3].normal_scale,
-                },
-            .cascade4_options =
-                {
-                    ocean_config_.cascades[4].displacement_scale,
-                    ocean_config_.cascades[4].normal_scale,
-                    0.0F,
-                    0.0F,
+                    ocean_config_.normal_strength,
                 },
             .water_color =
                 {
@@ -552,8 +544,7 @@ class OceanApp {
     [[nodiscard]] OceanSpectrumPushConstants
     spectrum_push_constants(std::uint32_t cascade_index) const {
         const OceanCascadeConfig& cascade = ocean_cascade(ocean_config_, cascade_index);
-        const OceanSeaStateConfig& sea_state = ocean_config_.sea_state;
-        const float fetch_m = sea_state.fetch_length_km * 1000.0F;
+        const float fetch_m = cascade.fetch_length_km * 1000.0F;
         return {
             .seed_tile =
                 {
@@ -564,24 +555,24 @@ class OceanApp {
                 },
             .spectrum_options =
                 {
-                    jonswap_alpha(sea_state.wind_speed, fetch_m),
-                    jonswap_peak_frequency(sea_state.wind_speed, fetch_m),
-                    sea_state.wind_speed,
-                    radians(sea_state.wind_direction_degrees),
+                    jonswap_alpha(cascade.wind_speed, fetch_m),
+                    jonswap_peak_frequency(cascade.wind_speed, fetch_m),
+                    cascade.wind_speed,
+                    radians(cascade.wind_direction_degrees),
                 },
             .shape_options =
                 {
                     ocean_config_.depth,
-                    sea_state.swell,
-                    sea_state.detail,
-                    sea_state.spread,
+                    cascade.swell,
+                    cascade.detail,
+                    cascade.spread,
                 },
             .cascade_options =
                 {
                     static_cast<float>(cascade_index),
                     static_cast<float>(ocean_config_.map_size),
-                    cascade.min_wavelength,
-                    cascade.max_wavelength,
+                    0.0F,
+                    0.0F,
                 },
         };
     }

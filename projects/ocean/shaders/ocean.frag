@@ -5,11 +5,9 @@
 #include "cubey/pbr.glsl"
 #include "ocean_atmosphere.glsl"
 
-layout(set = 0, binding = 5) uniform sampler2D normal_foam_cascade0_texture;
-layout(set = 0, binding = 6) uniform sampler2D normal_foam_cascade1_texture;
-layout(set = 0, binding = 7) uniform sampler2D normal_foam_cascade2_texture;
-layout(set = 0, binding = 8) uniform sampler2D normal_foam_cascade3_texture;
-layout(set = 0, binding = 9) uniform sampler2D normal_foam_cascade4_texture;
+layout(set = 0, binding = 3) uniform sampler2D normal_foam_cascade0_texture;
+layout(set = 0, binding = 4) uniform sampler2D normal_foam_cascade1_texture;
+layout(set = 0, binding = 5) uniform sampler2D normal_foam_cascade2_texture;
 
 layout(push_constant) uniform OceanParams {
     mat4 view_projection;
@@ -22,7 +20,6 @@ layout(push_constant) uniform OceanParams {
     vec4 tile_lengths;
     vec4 displacement_scales;
     vec4 normal_scales;
-    vec4 cascade4_options;
     vec4 water_color;
     vec4 foam_color;
 } ocean;
@@ -42,7 +39,6 @@ const uint OCEAN_VIEW_DISPLACEMENT = 2u;
 const uint OCEAN_VIEW_NORMAL = 3u;
 const uint OCEAN_VIEW_FOAM = 4u;
 const uint OCEAN_VIEW_LOD = 5u;
-const uint OCEAN_CASCADE_COUNT = 5u;
 const float OCEAN_REFLECTANCE = 0.02;
 
 float cascade_tile_length(uint cascade) {
@@ -52,13 +48,7 @@ float cascade_tile_length(uint cascade) {
     if (cascade == 1u) {
         return ocean.tile_lengths.y;
     }
-    if (cascade == 2u) {
-        return ocean.tile_lengths.z;
-    }
-    if (cascade == 3u) {
-        return ocean.tile_lengths.w;
-    }
-    return ocean.inspection_options.w;
+    return ocean.tile_lengths.z;
 }
 
 float cascade_normal_scale(uint cascade) {
@@ -68,13 +58,7 @@ float cascade_normal_scale(uint cascade) {
     if (cascade == 1u) {
         return ocean.normal_scales.y;
     }
-    if (cascade == 2u) {
-        return ocean.normal_scales.z;
-    }
-    if (cascade == 3u) {
-        return ocean.normal_scales.w;
-    }
-    return ocean.cascade4_options.y;
+    return ocean.normal_scales.z;
 }
 
 vec4 texture_bicubic(in sampler2D source_texture, in vec2 uv) {
@@ -112,18 +96,8 @@ vec4 sample_normal_foam(uint cascade, vec2 uv, float pixels_per_meter) {
         return mix(texture_bicubic(normal_foam_cascade1_texture, uv),
                    texture(normal_foam_cascade1_texture, uv), min(1.0, pixels_per_meter * 0.1));
     }
-    if (cascade == 2u) {
-        return mix(texture_bicubic(normal_foam_cascade2_texture, uv),
-                   texture(normal_foam_cascade2_texture, uv),
-                   min(1.0, pixels_per_meter * 0.1));
-    }
-    if (cascade == 3u) {
-        return mix(texture_bicubic(normal_foam_cascade3_texture, uv),
-                   texture(normal_foam_cascade3_texture, uv),
-                   min(1.0, pixels_per_meter * 0.1));
-    }
-    return mix(texture_bicubic(normal_foam_cascade4_texture, uv),
-               texture(normal_foam_cascade4_texture, uv), min(1.0, pixels_per_meter * 0.1));
+    return mix(texture_bicubic(normal_foam_cascade2_texture, uv),
+               texture(normal_foam_cascade2_texture, uv), min(1.0, pixels_per_meter * 0.1));
 }
 
 bool ocean_cascade_enabled(uint cascade) {
@@ -133,8 +107,8 @@ bool ocean_cascade_enabled(uint cascade) {
 
 vec3 normal_foam_gradient(float dist) {
     vec3 gradient = vec3(0.0);
-    float map_size = ocean.inspection_options.y;
-    for (uint cascade = 0u; cascade < OCEAN_CASCADE_COUNT; ++cascade) {
+    float map_size = ocean.tile_lengths.w;
+    for (uint cascade = 0u; cascade < 3u; ++cascade) {
         if (!ocean_cascade_enabled(cascade)) {
             continue;
         }
@@ -146,7 +120,7 @@ vec3 normal_foam_gradient(float dist) {
         gradient += normal_foam.xyw * vec3(normal_scale, normal_scale, 1.0);
     }
     gradient.z = smoothstep(0.0, 1.0, gradient.z * 0.75) * exp(-dist * 0.0075);
-    gradient.xy *= mix(0.015, ocean.inspection_options.z, exp(-dist * 0.0175));
+    gradient.xy *= mix(0.015, ocean.normal_scales.w, exp(-dist * 0.0175));
     return gradient;
 }
 

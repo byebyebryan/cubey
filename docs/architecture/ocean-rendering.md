@@ -3,8 +3,8 @@
 Cubey now keeps three ocean lanes with different jobs:
 
 - `projects/ocean` is the active renderer. It starts from the known-good
-  GodotOceanWaves-derived spectrum/FFT/unpack core and experiments with active
-  cascade/banding changes only when they can be inspected against that baseline.
+  GodotOceanWaves-derived spectrum/FFT/unpack core and should stay close to
+  that baseline until changes clearly improve it.
 - `projects/ocean_ref` is the frozen reference port. Keep it source-stable so
   active ocean changes can be checked against a working wave-shape guardrail,
   not treated as an oracle.
@@ -25,10 +25,8 @@ needs it.
 The active renderer currently focuses on:
 
 - a camera-relative clipmap mesh with LOD diagnostics;
-- the GodotOceanWaves-style spectrum, modulation, FFT, and unpack path, expanded
-  in active ocean to five overlapping wavelength cascades;
-- a shared sea-state wind model feeding those bands, so unrelated per-cascade
-  winds are not the default explanation for visual variety;
+- the GodotOceanWaves-style multi-cascade spectrum, modulation, FFT, and unpack
+  path;
 - displacement, normal, foam, and LOD debug views;
 - cascade isolation, camera presets, pause/step timing, and mesh diagnostics
   for interactive inspection;
@@ -38,10 +36,8 @@ The active renderer currently focuses on:
 
 The active renderer should not immediately absorb all legacy features. Additions
 should be ported one at a time only when they preserve or improve the
-interactive inspection result. The current cascade work is an experiment to add
-large-scale variation without losing reference-like crest interference; it is
-not a complete wind/turbulence model. The first bias is toward diagnostics that
-help reason about the wave core, not snapshot comparison tooling.
+interactive inspection result. The first bias is toward diagnostics that help
+reason about the wave core, not snapshot comparison tooling.
 
 ## Feature Donor Boundaries
 

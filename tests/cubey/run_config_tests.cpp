@@ -335,7 +335,7 @@ void test_run_config_parses_ocean_controls() {
     std::string map_flag = "--ocean-map-size";
     std::string map_value = "256";
     std::string cascade_flag = "--ocean-cascade";
-    std::string cascade_value = "4";
+    std::string cascade_value = "2";
     std::string wire_flag = "--ocean-wire-overlay";
     std::string opacity_flag = "--ocean-wire-opacity";
     std::string opacity_value = "0.75";
@@ -346,7 +346,7 @@ void test_run_config_parses_ocean_controls() {
     const cubey::RunConfig config =
         cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
     require(config.ocean.map_size == 256, "run config should parse ocean map size");
-    require(config.ocean.cascade == 4, "run config should parse ocean cascade selection");
+    require(config.ocean.cascade == 2, "run config should parse ocean cascade selection");
     require(config.ocean.wire_overlay, "run config should parse ocean wire overlay");
     require(config.ocean.wire_opacity == 0.75F,
             "run config should parse ocean wire opacity");
@@ -364,7 +364,7 @@ void test_run_config_parses_ocean_controls() {
 void test_run_config_rejects_invalid_ocean_controls() {
     std::string program = "cubey";
     std::string cascade_flag = "--ocean-cascade";
-    std::string cascade_value = "5";
+    std::string cascade_value = "3";
     std::array<char*, 3> argv{program.data(), cascade_flag.data(), cascade_value.data()};
     require_throws(
         [&argv]() { cubey::parse_run_config(static_cast<int>(argv.size()), argv.data()); },
