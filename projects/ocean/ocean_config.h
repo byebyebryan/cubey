@@ -26,28 +26,35 @@ inline constexpr std::array<OceanRenderView, 6> kOceanRenderViews{
 
 inline constexpr std::array<std::uint32_t, 4> kOceanSupportedMapSizes{128U, 256U, 512U, 1024U};
 inline constexpr std::uint32_t kOceanDefaultMapSize = 1024U;
-inline constexpr std::uint32_t kOceanCascadeCount = 3U;
+inline constexpr std::uint32_t kOceanCascadeCount = 5U;
 inline constexpr std::uint32_t kOceanSpectrumFieldCount = 4U;
 inline constexpr std::uint32_t kOceanMinMeshCells = 32U;
 inline constexpr std::uint32_t kOceanMaxMeshCells = 512U;
 inline constexpr std::uint32_t kOceanMinMeshLodLevels = 1U;
 inline constexpr std::uint32_t kOceanMaxMeshLodLevels = 6U;
 
-struct OceanCascadeConfig {
-    float tile_length = 88.0F;
-    float displacement_scale = 1.0F;
-    float normal_scale = 1.0F;
+struct OceanSeaStateConfig {
     float wind_speed = 10.0F;
     float wind_direction_degrees = 20.0F;
     float fetch_length_km = 150.0F;
     float swell = 0.8F;
-    float spread = 0.2F;
+    float spread = 0.3F;
     float detail = 1.0F;
+
+    friend bool operator==(const OceanSeaStateConfig&, const OceanSeaStateConfig&) = default;
+};
+
+struct OceanCascadeConfig {
+    float tile_length = 512.0F;
+    float min_wavelength = 224.0F;
+    float max_wavelength = 512.0F;
+    float displacement_scale = 0.55F;
+    float normal_scale = 0.25F;
     float whitecap = 0.5F;
-    float foam_amount = 8.0F;
-    std::int32_t seed_x = 1337;
-    std::int32_t seed_y = 4919;
-    float time_offset = 120.0F;
+    float foam_amount = 0.0F;
+    std::int32_t seed_x = 9311;
+    std::int32_t seed_y = -1733;
+    float time_offset = 117.0F;
 
     friend bool operator==(const OceanCascadeConfig&, const OceanCascadeConfig&) = default;
 };
@@ -70,34 +77,51 @@ struct OceanConfig {
     float foam_color_g = 0.67F;
     float foam_color_b = 0.62F;
     OceanRenderView render_view = OceanRenderView::Final;
+    OceanSeaStateConfig sea_state{};
     std::array<OceanCascadeConfig, kOceanCascadeCount> cascades{
         OceanCascadeConfig{},
         OceanCascadeConfig{
-            .tile_length = 57.0F,
-            .displacement_scale = 0.75F,
-            .normal_scale = 1.0F,
-            .wind_speed = 5.0F,
-            .wind_direction_degrees = 15.0F,
-            .fetch_length_km = 150.0F,
-            .swell = 0.8F,
-            .spread = 0.4F,
-            .detail = 1.0F,
-            .whitecap = 0.5F,
-            .foam_amount = 0.0F,
+            .tile_length = 224.0F,
+            .min_wavelength = 88.0F,
+            .max_wavelength = 224.0F,
+            .displacement_scale = 0.55F,
+            .normal_scale = 0.45F,
+            .whitecap = 0.6F,
+            .foam_amount = 0.5F,
             .seed_x = -2713,
             .seed_y = 8128,
             .time_offset = 123.14159F,
         },
         OceanCascadeConfig{
+            .tile_length = 88.0F,
+            .min_wavelength = 40.0F,
+            .max_wavelength = 88.0F,
+            .displacement_scale = 0.8F,
+            .normal_scale = 0.9F,
+            .whitecap = 0.5F,
+            .foam_amount = 5.0F,
+            .seed_x = 1337,
+            .seed_y = 4919,
+            .time_offset = 120.0F,
+        },
+        OceanCascadeConfig{
+            .tile_length = 40.0F,
+            .min_wavelength = 16.0F,
+            .max_wavelength = 40.0F,
+            .displacement_scale = 0.25F,
+            .normal_scale = 0.65F,
+            .whitecap = 0.4F,
+            .foam_amount = 2.5F,
+            .seed_x = 4493,
+            .seed_y = -7177,
+            .time_offset = 124.25F,
+        },
+        OceanCascadeConfig{
             .tile_length = 16.0F,
+            .min_wavelength = 2.0F,
+            .max_wavelength = 16.0F,
             .displacement_scale = 0.0F,
             .normal_scale = 0.25F,
-            .wind_speed = 20.0F,
-            .wind_direction_degrees = 20.0F,
-            .fetch_length_km = 550.0F,
-            .swell = 0.8F,
-            .spread = 0.4F,
-            .detail = 1.0F,
             .whitecap = 0.25F,
             .foam_amount = 3.0F,
             .seed_x = 6619,
@@ -192,15 +216,19 @@ inline void validate_ocean_config(const OceanConfig& config) {
     if (config.normal_strength < 0.0F || config.roughness < 0.0F || config.roughness > 1.0F) {
         throw std::runtime_error("ocean shading controls are out of range");
     }
+    if (config.sea_state.wind_speed <= 0.0F || config.sea_state.fetch_length_km <= 0.0F ||
+        config.sea_state.swell < 0.0F || config.sea_state.spread < 0.0F ||
+        config.sea_state.spread > 1.0F || config.sea_state.detail < 0.0F ||
+        config.sea_state.detail > 1.0F) {
+        throw std::runtime_error("ocean sea-state controls are out of range");
+    }
     for (const OceanCascadeConfig& cascade : config.cascades) {
-        if (cascade.tile_length <= 0.0F || cascade.wind_speed <= 0.0F ||
-            cascade.fetch_length_km <= 0.0F) {
+        if (cascade.tile_length <= 0.0F || cascade.min_wavelength <= 0.0F ||
+            cascade.max_wavelength <= cascade.min_wavelength) {
             throw std::runtime_error("ocean cascade wave dimensions must be positive");
         }
         if (cascade.displacement_scale < 0.0F || cascade.normal_scale < 0.0F ||
-            cascade.swell < 0.0F || cascade.spread < 0.0F || cascade.spread > 1.0F ||
-            cascade.detail < 0.0F || cascade.detail > 1.0F || cascade.whitecap < 0.0F ||
-            cascade.foam_amount < 0.0F) {
+            cascade.whitecap < 0.0F || cascade.foam_amount < 0.0F) {
             throw std::runtime_error("ocean cascade controls are out of range");
         }
     }

@@ -3,6 +3,8 @@
 layout(set = 0, binding = 0) uniform sampler2D displacement_cascade0_texture;
 layout(set = 0, binding = 1) uniform sampler2D displacement_cascade1_texture;
 layout(set = 0, binding = 2) uniform sampler2D displacement_cascade2_texture;
+layout(set = 0, binding = 3) uniform sampler2D displacement_cascade3_texture;
+layout(set = 0, binding = 4) uniform sampler2D displacement_cascade4_texture;
 
 layout(push_constant) uniform OceanParams {
     mat4 view_projection;
@@ -15,6 +17,7 @@ layout(push_constant) uniform OceanParams {
     vec4 tile_lengths;
     vec4 displacement_scales;
     vec4 normal_scales;
+    vec4 cascade4_options;
     vec4 water_color;
     vec4 foam_color;
 } ocean;
@@ -28,6 +31,7 @@ layout(location = 5) noperspective out vec3 frag_barycentric;
 
 const float OCEAN_MESH_TRANSITION_CELLS = 16.0;
 const float OCEAN_MESH_MAX_TRANSITION_RATIO = 0.35;
+const uint OCEAN_CASCADE_COUNT = 5u;
 
 vec2 triangle_corner(uint vertex_in_cell) {
     if (vertex_in_cell == 0u) {
@@ -87,7 +91,13 @@ float cascade_tile_length(uint cascade) {
     if (cascade == 1u) {
         return ocean.tile_lengths.y;
     }
-    return ocean.tile_lengths.z;
+    if (cascade == 2u) {
+        return ocean.tile_lengths.z;
+    }
+    if (cascade == 3u) {
+        return ocean.tile_lengths.w;
+    }
+    return ocean.inspection_options.w;
 }
 
 float cascade_displacement_scale(uint cascade) {
@@ -97,7 +107,13 @@ float cascade_displacement_scale(uint cascade) {
     if (cascade == 1u) {
         return ocean.displacement_scales.y;
     }
-    return ocean.displacement_scales.z;
+    if (cascade == 2u) {
+        return ocean.displacement_scales.z;
+    }
+    if (cascade == 3u) {
+        return ocean.displacement_scales.w;
+    }
+    return ocean.cascade4_options.x;
 }
 
 vec4 sample_displacement(uint cascade, vec2 uv) {
@@ -107,7 +123,13 @@ vec4 sample_displacement(uint cascade, vec2 uv) {
     if (cascade == 1u) {
         return texture(displacement_cascade1_texture, uv);
     }
-    return texture(displacement_cascade2_texture, uv);
+    if (cascade == 2u) {
+        return texture(displacement_cascade2_texture, uv);
+    }
+    if (cascade == 3u) {
+        return texture(displacement_cascade3_texture, uv);
+    }
+    return texture(displacement_cascade4_texture, uv);
 }
 
 bool ocean_cascade_enabled(uint cascade) {
@@ -148,16 +170,16 @@ void main() {
     float distance_factor = min(exp(-(camera_distance - 150.0) * 0.007), 1.0);
 
     vec3 displacement = vec3(0.0);
-    add_displacement(displacement, 0u, base_position);
-    add_displacement(displacement, 1u, base_position);
-    add_displacement(displacement, 2u, base_position);
+    for (uint cascade = 0u; cascade < OCEAN_CASCADE_COUNT; ++cascade) {
+        add_displacement(displacement, cascade, base_position);
+    }
     displacement *= distance_factor;
 
     vec3 world_position = vec3(base_position.x, 0.0, base_position.y) + displacement;
     frag_world_position = world_position;
     frag_displacement = displacement;
     frag_sample_position = base_position;
-    frag_wave = vec4(displacement.y, 0.0, camera_distance, ocean.normal_scales.w);
+    frag_wave = vec4(displacement.y, 0.0, camera_distance, ocean.inspection_options.z);
     frag_patch_alpha = clipmap_patch_alpha(patch_position, patch_cell_size);
     frag_barycentric = triangle_barycentric(vertex_in_cell);
     gl_Position = ocean.view_projection * vec4(world_position, 1.0);

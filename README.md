@@ -62,8 +62,8 @@ Current projects:
 - `explosion_3d`: the same shared 3D pyro solver presented as repeated impulse
   bursts with explosion-specific timing and boost controls.
 - `ocean`: active ocean renderer derived from the GodotOceanWaves
-  spectrum/FFT/unpack core, with camera-relative mesh LOD, foam/debug views,
-  and wire/LOD diagnostics.
+  spectrum/FFT/unpack core, with five banded cascades, shared sea-state wind
+  controls, camera-relative mesh LOD, foam/debug views, and wire/LOD diagnostics.
 - `ocean_ref`: frozen known-good GodotOceanWaves port kept for visual and
   implementation comparisons.
 - `ocean_legacy`: previous experimental ocean renderer, kept as a feature donor
@@ -240,10 +240,11 @@ tests or heavier local runs. `explosion_3d` also accepts `--explosion-interval`,
 `--print-frame-stats` also emits periodic `pyro_3d_gpu` pass timings when
 timestamp queries are available.
 `ocean` is a rendering-focused water project rather than a CFD solver. It now
-starts from the GodotOceanWaves-derived spectrum/FFT/unpack path and exposes
+starts from the GodotOceanWaves-derived spectrum/FFT/unpack path, expanded into
+a five-cascade banded active renderer with shared sea-state wind controls. It exposes
 `--ocean-map-size 128|256|512|1024`,
 `--debug-view final|height|displacement|normal|foam|lod`, and
-`--ocean-cascade all|0|1|2` for focused inspection. Use `--ocean-wire-overlay`
+`--ocean-cascade all|0|1|2|3|4` for focused inspection. Use `--ocean-wire-overlay`
 for captured LOD diagnostics.
 `ocean_ref` keeps the same wave core under `--ocean-ref-*` options as a frozen
 known-good reference. `ocean_legacy` keeps the older Cubey experimental renderer
