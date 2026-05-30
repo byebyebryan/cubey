@@ -31,6 +31,7 @@ layout(location = 5) noperspective out vec3 frag_barycentric;
 
 const float OCEAN_MESH_TRANSITION_CELLS = 16.0;
 const float OCEAN_MESH_MAX_TRANSITION_RATIO = 0.35;
+const float OCEAN_MACRO_ANTI_REPEAT_WEIGHT = 0.32;
 
 vec2 triangle_corner(uint vertex_in_cell) {
     if (vertex_in_cell == 0u) {
@@ -59,6 +60,25 @@ vec3 triangle_barycentric(uint vertex_in_cell) {
         return vec3(0.0, 1.0, 0.0);
     }
     return vec3(0.0, 0.0, 1.0);
+}
+
+vec2 rotate2(vec2 value, float angle) {
+    float s = sin(angle);
+    float c = cos(angle);
+    return vec2(c * value.x - s * value.y, s * value.x + c * value.y);
+}
+
+float macro_anti_repeat_angle(uint cascade) {
+    return cascade == 0u ? 0.47 : -0.61;
+}
+
+vec2 macro_anti_repeat_offset(uint cascade) {
+    return cascade == 0u ? vec2(347.0, -911.0) : vec2(-193.0, 467.0);
+}
+
+vec3 rotate_displacement_xz(vec3 displacement, float angle) {
+    vec2 xz = rotate2(displacement.xz, angle);
+    return vec3(xz.x, displacement.y, xz.y);
 }
 
 vec2 clipmap_patch_position(vec2 uv) {
@@ -136,13 +156,32 @@ bool ocean_cascade_enabled(uint cascade) {
     return selected < -0.5 || abs(selected - float(cascade)) < 0.5;
 }
 
+bool ocean_macro_anti_repeat_enabled(uint cascade) {
+    return cascade < 2u && ocean.inspection_options.y > 0.0;
+}
+
+vec3 sample_ocean_displacement(uint cascade, vec2 position, float tile_length) {
+    vec3 primary = sample_displacement(cascade, position / tile_length).xyz;
+    if (!ocean_macro_anti_repeat_enabled(cascade)) {
+        return primary;
+    }
+
+    float angle = macro_anti_repeat_angle(cascade);
+    vec2 secondary_position = rotate2(position, angle) + macro_anti_repeat_offset(cascade);
+    vec3 secondary = sample_displacement(cascade, secondary_position / tile_length).xyz;
+    secondary = rotate_displacement_xz(secondary, -angle);
+
+    float weight = OCEAN_MACRO_ANTI_REPEAT_WEIGHT * clamp(ocean.inspection_options.y, 0.0, 1.0);
+    return (primary + secondary * weight) / (1.0 + weight);
+}
+
 void add_displacement(inout vec3 displacement, uint cascade, vec2 position) {
     if (!ocean_cascade_enabled(cascade)) {
         return;
     }
     float tile_length = max(cascade_tile_length(cascade), 0.001);
-    vec2 uv = position / tile_length;
-    displacement += sample_displacement(cascade, uv).xyz * cascade_displacement_scale(cascade);
+    displacement += sample_ocean_displacement(cascade, position, tile_length) *
+                    cascade_displacement_scale(cascade);
 }
 
 void main() {

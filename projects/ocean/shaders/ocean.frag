@@ -43,6 +43,78 @@ const uint OCEAN_VIEW_NORMAL = 3u;
 const uint OCEAN_VIEW_FOAM = 4u;
 const uint OCEAN_VIEW_LOD = 5u;
 const float OCEAN_REFLECTANCE = 0.02;
+const float OCEAN_FAR_ANTI_REPEAT_START = 220.0;
+const float OCEAN_FAR_ANTI_REPEAT_END = 900.0;
+
+vec2 rotate2(vec2 value, float angle) {
+    float s = sin(angle);
+    float c = cos(angle);
+    return vec2(c * value.x - s * value.y, s * value.x + c * value.y);
+}
+
+float detail_anti_repeat_angle(uint cascade, uint domain) {
+    if (cascade == 1u) {
+        return domain == 0u ? 0.39 : -0.83;
+    }
+    if (cascade == 2u) {
+        return domain == 0u ? 0.73 : -1.17;
+    }
+    if (cascade == 3u) {
+        return domain == 0u ? -0.58 : 1.29;
+    }
+    return domain == 0u ? 0.91 : -1.43;
+}
+
+float detail_anti_repeat_scale(uint cascade, uint domain) {
+    if (cascade == 1u) {
+        return domain == 0u ? 1.27 : 0.71;
+    }
+    if (cascade == 2u) {
+        return domain == 0u ? 1.41 : 0.67;
+    }
+    if (cascade == 3u) {
+        return domain == 0u ? 1.53 : 0.74;
+    }
+    return domain == 0u ? 1.67 : 0.58;
+}
+
+vec2 detail_anti_repeat_offset(uint cascade, uint domain) {
+    if (cascade == 1u) {
+        return domain == 0u ? vec2(719.0, -277.0) : vec2(-607.0, 431.0);
+    }
+    if (cascade == 2u) {
+        return domain == 0u ? vec2(131.0, -389.0) : vec2(-521.0, 97.0);
+    }
+    if (cascade == 3u) {
+        return domain == 0u ? vec2(-211.0, 307.0) : vec2(463.0, -173.0);
+    }
+    return domain == 0u ? vec2(47.0, 223.0) : vec2(-349.0, -421.0);
+}
+
+float hash12(vec2 value) {
+    vec3 p = fract(vec3(value.xyx) * 0.1031);
+    p += dot(p, p.yzx + 33.33);
+    return fract((p.x + p.y) * p.z);
+}
+
+float value_noise(vec2 value) {
+    vec2 cell = floor(value);
+    vec2 local = fract(value);
+    local = local * local * (3.0 - 2.0 * local);
+
+    float a = hash12(cell);
+    float b = hash12(cell + vec2(1.0, 0.0));
+    float c = hash12(cell + vec2(0.0, 1.0));
+    float d = hash12(cell + vec2(1.0, 1.0));
+    return mix(mix(a, b, local.x), mix(c, d, local.x), local.y);
+}
+
+vec2 detail_anti_repeat_weights(uint cascade, vec2 position, float factor) {
+    float seed = float(cascade) * 19.37;
+    float first = value_noise(position * 0.0011 + vec2(seed, seed * 0.37));
+    float second = value_noise(position * 0.00073 + vec2(seed + 41.0, seed - 13.0));
+    return factor * vec2(mix(0.38, 0.72, first), mix(0.28, 0.58, second));
+}
 
 float cascade_tile_length(uint cascade) {
     if (cascade == 0u) {
@@ -128,19 +200,58 @@ bool ocean_cascade_enabled(uint cascade) {
     return selected < -0.5 || abs(selected - float(cascade)) < 0.5;
 }
 
+bool ocean_detail_anti_repeat_enabled(uint cascade, float factor) {
+    return cascade >= 1u && factor > 0.0;
+}
+
+vec3 sample_normal_foam_domain(uint cascade, vec2 position, float tile_length,
+                               float pixels_per_meter, uint domain) {
+    float angle = detail_anti_repeat_angle(cascade, domain);
+    float scale = detail_anti_repeat_scale(cascade, domain);
+    vec2 secondary_position =
+        rotate2(position, angle) * scale + detail_anti_repeat_offset(cascade, domain);
+    vec4 secondary_sample =
+        sample_normal_foam(cascade, secondary_position / tile_length, pixels_per_meter);
+    vec2 secondary_gradient = rotate2(secondary_sample.xy, -angle) * scale;
+    return vec3(secondary_gradient, secondary_sample.w);
+}
+
+vec3 sample_normal_foam_gradient(uint cascade, vec2 position, float tile_length,
+                                 float pixels_per_meter, float anti_repeat_factor) {
+    vec4 primary_sample = sample_normal_foam(cascade, position / tile_length, pixels_per_meter);
+    vec3 primary = primary_sample.xyw;
+    if (!ocean_detail_anti_repeat_enabled(cascade, anti_repeat_factor)) {
+        return primary;
+    }
+
+    vec2 weights = detail_anti_repeat_weights(cascade, position, anti_repeat_factor);
+    vec3 secondary0 = sample_normal_foam_domain(cascade, position, tile_length, pixels_per_meter, 0u);
+    vec3 secondary1 = sample_normal_foam_domain(cascade, position, tile_length, pixels_per_meter, 1u);
+    vec2 gradient =
+        (primary.xy + secondary0.xy * weights.x + secondary1.xy * weights.y) /
+        (1.0 + weights.x + weights.y);
+    float foam = 1.0 - (1.0 - primary.z) * (1.0 - secondary0.z * weights.x) *
+                           (1.0 - secondary1.z * weights.y);
+    return vec3(gradient, foam);
+}
+
 vec3 normal_foam_gradient(float dist) {
     vec3 gradient = vec3(0.0);
     float map_size = ocean.cascade4_options.w;
+    float anti_repeat_factor =
+        clamp(ocean.inspection_options.y, 0.0, 1.0) *
+        smoothstep(OCEAN_FAR_ANTI_REPEAT_START, OCEAN_FAR_ANTI_REPEAT_END, dist);
     for (uint cascade = 0u; cascade < 5u; ++cascade) {
         if (!ocean_cascade_enabled(cascade)) {
             continue;
         }
         float tile_length = max(cascade_tile_length(cascade), 0.001);
-        vec2 uv = frag_sample_position / tile_length;
         float pixels_per_meter = map_size / tile_length;
-        vec4 normal_foam = sample_normal_foam(cascade, uv, pixels_per_meter);
+        vec3 normal_foam =
+            sample_normal_foam_gradient(cascade, frag_sample_position, tile_length, pixels_per_meter,
+                                        anti_repeat_factor);
         float normal_scale = cascade_normal_scale(cascade);
-        gradient += normal_foam.xyw * vec3(normal_scale, normal_scale, 1.0);
+        gradient += normal_foam * vec3(normal_scale, normal_scale, 1.0);
     }
     gradient.z = smoothstep(0.0, 1.0, gradient.z * 0.75) * exp(-dist * 0.0075);
     gradient.xy *= mix(0.015, ocean.foam_color.w, exp(-dist * 0.0175));

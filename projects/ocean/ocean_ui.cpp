@@ -120,7 +120,7 @@ void draw_cascade_controls(OceanCascadeConfig& cascade, std::uint32_t index) {
     const cubey::host::ScopedImGuiId section_id(label);
     const bool macro_layer = index < kOceanMacroCascadeCount;
     ImGui::SliderFloat("Tile length", &cascade.tile_length, 8.0F,
-                       macro_layer ? 1600.0F : 256.0F, "%.0f m");
+                       macro_layer ? 2400.0F : 256.0F, "%.0f m");
     ImGui::SliderFloat("Displacement scale", &cascade.displacement_scale, 0.0F,
                        macro_layer ? 1.50F : 2.0F, "%.2f");
     ImGui::SliderFloat("Normal scale", &cascade.normal_scale, 0.0F,
@@ -202,6 +202,8 @@ void draw_ocean_ui(OceanUiContext ui) {
     if (cubey::host::imgui_section("Wave Core", true)) {
         const cubey::host::ScopedImGuiId section_id("Wave Core");
         draw_map_size_combo(ui.config);
+        ImGui::SliderFloat("Anti-repeat", &ui.diagnostics.anti_repeat_strength, 0.0F, 1.0F,
+                           "%.2f");
         ImGui::SliderFloat("Depth", &ui.config.depth, 2.0F, 80.0F, "%.1f m");
         ImGui::TextUnformatted("GodotOceanWaves port");
     }
@@ -215,6 +217,8 @@ void draw_ocean_ui(OceanUiContext ui) {
         draw_camera_preset_button(ui, OceanCameraPreset::Close, "Close");
         ImGui::SameLine();
         draw_camera_preset_button(ui, OceanCameraPreset::Overhead, "Overhead");
+        ImGui::SameLine();
+        draw_camera_preset_button(ui, OceanCameraPreset::Wide, "Wide");
     }
 
     if (cubey::host::imgui_section("Mesh", true)) {

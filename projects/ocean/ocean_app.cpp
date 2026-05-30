@@ -180,6 +180,8 @@ ocean_depth_texture_desc(const char* label, VkExtent2D extent, VkFormat format) 
         return {.preset = preset, .distance = 48.0F, .yaw = 0.62F, .pitch = -0.28F};
     case OceanCameraPreset::Overhead:
         return {.preset = preset, .distance = 220.0F, .yaw = 0.20F, .pitch = -1.05F};
+    case OceanCameraPreset::Wide:
+        return {.preset = preset, .distance = 900.0F, .yaw = 0.20F, .pitch = -0.70F};
     }
     return {.preset = OceanCameraPreset::Default, .distance = kCameraDistance,
             .yaw = kCameraBaseYaw, .pitch = kCameraBasePitch};
@@ -469,7 +471,7 @@ class OceanApp {
             .inspection_options =
                 {
                     static_cast<float>(diagnostics_.selected_cascade),
-                    0.0F,
+                    diagnostics_.anti_repeat_strength,
                     0.0F,
                     0.0F,
                 },
