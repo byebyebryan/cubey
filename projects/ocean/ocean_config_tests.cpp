@@ -175,7 +175,7 @@ int main() {
                      "cascade 0 macro swell should not generate foam by default");
         require_near(cascade1.whitecap, 0.28F, 0.001F,
                      "cascade 1 macro chop should feed restrained breaking source");
-        require_near(cascade1.foam_amount, 0.80F, 0.001F,
+        require_near(cascade1.foam_amount, 0.90F, 0.001F,
                      "cascade 1 macro chop should feed low accumulated foam by default");
 
         require_near(cascade2.tile_length, 88.0F, 0.001F,
@@ -194,7 +194,7 @@ int main() {
                      "cascade 2 storm primary crest spread should be tuned");
         require_near(cascade2.whitecap, 0.50F, 0.001F,
                      "cascade 2 storm primary crest whitecap should match ref-style breaking");
-        require_near(cascade2.foam_amount, 5.20F, 0.001F,
+        require_near(cascade2.foam_amount, 5.80F, 0.001F,
                      "cascade 2 storm primary crest foam should drive accumulated whitecaps");
 
         require_near(cascade3.tile_length, 57.0F, 0.001F,
@@ -213,7 +213,7 @@ int main() {
                      "cascade 3 storm secondary wave spread should be tuned");
         require_near(cascade3.whitecap, 0.48F, 0.001F,
                      "cascade 3 storm secondary wave whitecap should match ref-style breaking");
-        require_near(cascade3.foam_amount, 4.20F, 0.001F,
+        require_near(cascade3.foam_amount, 4.80F, 0.001F,
                      "cascade 3 storm secondary wave foam should support accumulated whitecaps");
 
         require_near(cascade4.tile_length, 16.0F, 0.001F,
@@ -232,9 +232,9 @@ int main() {
                      "cascade 4 storm detail foam should stay secondary");
         require_near(defaults.water_color_r, 0.1F, 0.001F, "water color should match Godot ref");
         require_near(defaults.foam_color_r, 0.73F, 0.001F, "foam color should match Godot ref");
-        require_near(defaults.foam_density, 2.80F, 0.001F,
+        require_near(defaults.foam_density, 3.15F, 0.001F,
                      "foam density should default to visible persistent coverage");
-        require_near(defaults.foam_sharpness, 0.70F, 0.001F,
+        require_near(defaults.foam_sharpness, 0.62F, 0.001F,
                      "foam sharpness should default to a whitecap-biased response");
         const ocean::OceanDiagnosticsConfig diagnostics{};
         require_near(diagnostics.anti_repeat_strength, 1.0F, 0.001F,
