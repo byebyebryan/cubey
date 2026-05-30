@@ -224,7 +224,9 @@ TerrainFieldData generate_terrain_fields(const TerrainConfig& config) {
             const float island = 1.0F - std::pow(radius, 2.35F);
             const float coast_noise =
                 fbm(px * 2.4F + 11.0F, py * 2.4F - 3.0F, config.seed + 41U, 4);
-            const float land_potential = island - 0.30F + (coast_noise * 0.20F);
+            const float land_potential =
+                island - (1.0F - config.land_extent) +
+                (coast_noise * config.coast_noise_strength);
             land_mask[fields.index(x, y)] = land_potential >= 0.0F;
         }
     }
@@ -260,12 +262,15 @@ TerrainFieldData generate_terrain_fields(const TerrainConfig& config) {
                 const float coast = smoothstep(0.0F, 58.0F, shore_sdf);
                 const float inland = smoothstep(42.0F, 185.0F, shore_sdf);
                 const float interior = smoothstep(96.0F, 250.0F, shore_sdf);
-                const float broad = fbm(nx * 1.15F, nz * 1.15F, config.seed + 101U, 5) * 18.0F;
+                const float broad = fbm(nx * 1.15F, nz * 1.15F, config.seed + 101U, 5) *
+                                    18.0F * config.relief_scale;
                 const float ridge =
                     ridged(nx * 1.85F + 8.0F, nz * 1.85F - 5.0F, config.seed + 211U) *
-                    58.0F * inland;
-                height = fields.desc.sea_level_m + 0.18F + (coast * 14.0F) +
-                         (inland * (38.0F + broad + ridge)) + (interior * 18.0F);
+                    58.0F * inland * config.ridge_scale;
+                height = fields.desc.sea_level_m + 0.18F +
+                         (coast * 14.0F * config.relief_scale) +
+                         (inland * ((38.0F * config.relief_scale) + broad + ridge)) +
+                         (interior * 18.0F * config.relief_scale);
             } else {
                 const float depth_distance = -shore_sdf;
                 const float near = smoothstep(0.0F, 96.0F, depth_distance);

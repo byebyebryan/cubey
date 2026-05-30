@@ -28,6 +28,10 @@ int main() {
             "terrain default width should be stable");
     require(defaults.grid_height == terrain::kTerrainDefaultGridHeight,
             "terrain default height should be stable");
+    require_near(defaults.land_extent, terrain::kTerrainDefaultLandExtent, 0.001F,
+                 "terrain default land extent should be stable");
+    require_near(defaults.relief_scale, terrain::kTerrainDefaultReliefScale, 0.001F,
+                 "terrain default relief scale should be stable");
     terrain::validate_terrain_config(defaults);
 
     require(terrain::terrain_debug_view_from_name("") == terrain::TerrainDebugView::Final,
@@ -77,6 +81,26 @@ int main() {
         rejected = true;
     }
     require(rejected, "terrain should reject too-small grids");
+
+    invalid = defaults;
+    invalid.land_extent = 0.1F;
+    rejected = false;
+    try {
+        terrain::validate_terrain_config(invalid);
+    } catch (const std::runtime_error&) {
+        rejected = true;
+    }
+    require(rejected, "terrain should reject invalid land extent");
+
+    invalid = defaults;
+    invalid.relief_scale = 0.0F;
+    rejected = false;
+    try {
+        terrain::validate_terrain_config(invalid);
+    } catch (const std::runtime_error&) {
+        rejected = true;
+    }
+    require(rejected, "terrain should reject invalid relief scale");
 
     terrain::TerrainConfig small = defaults;
     small.grid_width = 33;

@@ -6,6 +6,7 @@
 #include <cubey/vulkan/command_recorder.h>
 #include <cubey/vulkan/device.h>
 #include <cubey/vulkan/image_transitions.h>
+#include <cubey/vulkan/vk_check.h>
 
 #include <algorithm>
 #include <array>
@@ -54,7 +55,8 @@ std::filesystem::path shader_path(const char* filename) {
 
 ProceduralTerrainApp::ProceduralTerrainApp(RunConfig config)
     : config_(std::move(config)), terrain_config_(terrain_config_from_run_config(config_)),
-      fields_(generate_terrain_fields(terrain_config_)), mesh_data_(make_terrain_mesh(fields_)),
+      edit_terrain_config_(terrain_config_), fields_(generate_terrain_fields(terrain_config_)),
+      mesh_data_(make_terrain_mesh(fields_)),
       water_mesh_data_(make_water_surface_mesh(fields_)),
       orbit_controller_(cubey::OrbitControllerConfig{
           .distance = terrain_camera_distance(terrain_config_),
@@ -84,6 +86,7 @@ int ProceduralTerrainApp::run_windowed() {
     callbacks.update = [this](cubey::host::WindowedAppContext& context, const FrameTiming& timing) {
         update_input(context, timing);
     };
+    callbacks.draw_ui = [this](cubey::host::WindowedAppContext& context) { draw_ui(context); };
     callbacks.record_frame = [this](cubey::host::WindowedAppContext&,
                                     const cubey::host::WindowedRenderFrame& frame) {
         record_terrain_frame(frame.command_buffer, frame.color_target, true);
@@ -186,9 +189,50 @@ void ProceduralTerrainApp::destroy_all_resources() {
     mesh_.reset();
 }
 
+void ProceduralTerrainApp::draw_ui(cubey::host::WindowedAppContext& context) {
+    draw_terrain_ui({
+        .active_config = terrain_config_,
+        .edit_config = edit_terrain_config_,
+        .water_visible = water_visible_,
+        .rebuild_requested = rebuild_requested_,
+        .reset_camera_requested = reset_camera_requested_,
+    });
+    if (reset_camera_requested_) {
+        orbit_controller_.reset();
+        reset_camera_requested_ = false;
+    }
+    if (rebuild_requested_) {
+        rebuild_terrain_resources(context);
+        rebuild_requested_ = false;
+    }
+}
+
 void ProceduralTerrainApp::update_input(const cubey::host::WindowedAppContext& context,
                                         const FrameTiming& timing) {
     orbit_controller_.update_from_input(context.filtered_input(), timing.delta_seconds);
+}
+
+void ProceduralTerrainApp::rebuild_terrain_resources(cubey::host::WindowedAppContext& context) {
+    validate_terrain_config(edit_terrain_config_);
+
+    const TerrainConfig next_config = edit_terrain_config_;
+    const TerrainFieldData next_fields = generate_terrain_fields(next_config);
+    TerrainMeshData next_mesh_data = make_terrain_mesh(next_fields);
+    TerrainMeshData next_water_mesh_data = make_water_surface_mesh(next_fields);
+
+    cubey::vulkan::check(vkDeviceWaitIdle(context.device().handle()),
+                         "vkDeviceWaitIdle procedural terrain rebuild");
+    static_cast<void>(context.gpu().drain());
+    water_mesh_.reset();
+    mesh_.reset();
+
+    terrain_config_ = next_config;
+    edit_terrain_config_ = terrain_config_;
+    fields_ = std::move(next_fields);
+    mesh_data_ = std::move(next_mesh_data);
+    water_mesh_data_ = std::move(next_water_mesh_data);
+    mesh_.emplace(context.gpu(), mesh_data_.mesh_config());
+    water_mesh_.emplace(context.gpu(), water_mesh_data_.mesh_config());
 }
 
 TerrainPushConstants ProceduralTerrainApp::push_constants(VkExtent2D extent) const {
@@ -235,7 +279,7 @@ void ProceduralTerrainApp::record_terrain_frame(VkCommandBuffer command_buffer,
         pass_recorder.push_constants(forward_pass().pipeline().layout(),
                                      VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
                                      constants);
-        if (terrain_config_.debug_view == TerrainDebugView::Final) {
+        if (terrain_config_.debug_view == TerrainDebugView::Final && water_visible_) {
             cubey::render::record_draw_item(pass_recorder.handle(),
                                             cubey::render::DrawItem{.mesh = &water_mesh()});
         }

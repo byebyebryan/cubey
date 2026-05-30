@@ -13,6 +13,11 @@ Run a windowed view:
 ./build/dev/projects/procedural_terrain/procedural_terrain --width 1280 --height 720
 ```
 
+The windowed view opens an ImGui control panel for debug view selection, water
+visibility, camera reset, and applied terrain rebuilds. Terrain shape edits are
+staged until `Apply Terrain` so large grids do not regenerate on every slider
+tick.
+
 Run a deterministic headless capture:
 
 ```sh

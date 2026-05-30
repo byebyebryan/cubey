@@ -3,6 +3,7 @@
 #include "procedural_terrain_app.h"
 #include "procedural_terrain_fields.h"
 #include "procedural_terrain_mesh.h"
+#include "procedural_terrain_ui.h"
 
 #include <cubey/host/frame_stats.h>
 #include <cubey/host/headless_png_host.h>
@@ -49,7 +50,9 @@ class ProceduralTerrainApp {
                              VkFormat color_format);
     void destroy_swapchain_resources();
     void destroy_all_resources();
+    void draw_ui(cubey::host::WindowedAppContext& context);
     void update_input(const cubey::host::WindowedAppContext& context, const FrameTiming& timing);
+    void rebuild_terrain_resources(cubey::host::WindowedAppContext& context);
     void record_terrain_frame(VkCommandBuffer command_buffer,
                               cubey::render::ColorTargetView color_target, bool present);
 
@@ -60,6 +63,7 @@ class ProceduralTerrainApp {
 
     RunConfig config_;
     TerrainConfig terrain_config_{};
+    TerrainConfig edit_terrain_config_{};
     TerrainFieldData fields_{};
     TerrainMeshData mesh_data_{};
     TerrainMeshData water_mesh_data_{};
@@ -68,6 +72,9 @@ class ProceduralTerrainApp {
     std::optional<cubey::render::Mesh> mesh_;
     std::optional<cubey::render::Mesh> water_mesh_;
     std::optional<cubey::render::ForwardScenePass3D> forward_pass_;
+    bool water_visible_ = true;
+    bool rebuild_requested_ = false;
+    bool reset_camera_requested_ = false;
 };
 
 } // namespace cubey::projects::procedural_terrain

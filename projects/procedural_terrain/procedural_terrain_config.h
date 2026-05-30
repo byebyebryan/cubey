@@ -3,6 +3,7 @@
 #include <cubey/core/run_config.h>
 
 #include <array>
+#include <cmath>
 #include <cstdint>
 #include <stdexcept>
 #include <string>
@@ -31,6 +32,10 @@ inline constexpr std::uint32_t kTerrainMaxGridExtent = 513U;
 inline constexpr std::uint64_t kTerrainDefaultSeed = 0x54e2'2026'0529ULL;
 inline constexpr float kTerrainDefaultCellSizeMeters = 4.0F;
 inline constexpr float kTerrainDefaultSeaLevelMeters = 0.0F;
+inline constexpr float kTerrainDefaultLandExtent = 0.70F;
+inline constexpr float kTerrainDefaultCoastNoiseStrength = 0.20F;
+inline constexpr float kTerrainDefaultReliefScale = 1.0F;
+inline constexpr float kTerrainDefaultRidgeScale = 1.0F;
 
 struct TerrainConfig {
     std::uint32_t grid_width = kTerrainDefaultGridWidth;
@@ -38,6 +43,10 @@ struct TerrainConfig {
     std::uint64_t seed = kTerrainDefaultSeed;
     float cell_size_m = kTerrainDefaultCellSizeMeters;
     float sea_level_m = kTerrainDefaultSeaLevelMeters;
+    float land_extent = kTerrainDefaultLandExtent;
+    float coast_noise_strength = kTerrainDefaultCoastNoiseStrength;
+    float relief_scale = kTerrainDefaultReliefScale;
+    float ridge_scale = kTerrainDefaultRidgeScale;
     TerrainDebugView debug_view = TerrainDebugView::Final;
 
     friend bool operator==(const TerrainConfig&, const TerrainConfig&) = default;
@@ -87,9 +96,37 @@ inline void validate_terrain_config(const TerrainConfig& config) {
         config.grid_height < kTerrainMinGridExtent || config.grid_height > kTerrainMaxGridExtent) {
         throw std::runtime_error("terrain grid dimensions must be in [17, 513]");
     }
-    if (config.cell_size_m <= 0.0F) {
+    if (!std::isfinite(config.cell_size_m) || config.cell_size_m <= 0.0F) {
         throw std::runtime_error("terrain cell size must be positive");
     }
+    if (!std::isfinite(config.sea_level_m)) {
+        throw std::runtime_error("terrain sea level must be finite");
+    }
+    if (!std::isfinite(config.land_extent) || config.land_extent < 0.35F ||
+        config.land_extent > 0.90F) {
+        throw std::runtime_error("terrain land extent must be in [0.35, 0.90]");
+    }
+    if (!std::isfinite(config.coast_noise_strength) || config.coast_noise_strength < 0.0F ||
+        config.coast_noise_strength > 0.50F) {
+        throw std::runtime_error("terrain coast noise strength must be in [0.0, 0.50]");
+    }
+    if (!std::isfinite(config.relief_scale) || config.relief_scale < 0.20F ||
+        config.relief_scale > 2.0F) {
+        throw std::runtime_error("terrain relief scale must be in [0.20, 2.0]");
+    }
+    if (!std::isfinite(config.ridge_scale) || config.ridge_scale < 0.0F ||
+        config.ridge_scale > 2.0F) {
+        throw std::runtime_error("terrain ridge scale must be in [0.0, 2.0]");
+    }
+}
+
+[[nodiscard]] inline bool terrain_rebuild_config_equal(const TerrainConfig& lhs,
+                                                       const TerrainConfig& rhs) {
+    return lhs.grid_width == rhs.grid_width && lhs.grid_height == rhs.grid_height &&
+           lhs.seed == rhs.seed && lhs.cell_size_m == rhs.cell_size_m &&
+           lhs.sea_level_m == rhs.sea_level_m && lhs.land_extent == rhs.land_extent &&
+           lhs.coast_noise_strength == rhs.coast_noise_strength &&
+           lhs.relief_scale == rhs.relief_scale && lhs.ridge_scale == rhs.ridge_scale;
 }
 
 [[nodiscard]] inline TerrainConfig terrain_config_from_run_config(const RunConfig& config) {

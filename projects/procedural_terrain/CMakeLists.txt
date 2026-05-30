@@ -9,6 +9,7 @@ cubey_add_app_target(
         procedural_terrain_app.cpp
         procedural_terrain_fields.cpp
         procedural_terrain_mesh.cpp
+        procedural_terrain_ui.cpp
     SHADERS
         shaders/procedural_terrain.vert
         shaders/procedural_terrain.frag
