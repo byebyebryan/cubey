@@ -1,6 +1,6 @@
 # Ocean
 
-`ocean` is an isolated Cubey port of the wave-generation path from
+`ocean` is the active Cubey port of the wave-generation path from
 [`2Retr0/GodotOceanWaves`](https://github.com/2Retr0/GodotOceanWaves/). It is
 the active ocean renderer and deliberately starts from the known-good reference
 core before any of Cubey's older experimental macro waves, detail normal pass,

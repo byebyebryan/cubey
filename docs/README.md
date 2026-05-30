@@ -35,8 +35,9 @@ Detailed current foundation notes live under
   GPU work, ownership, and future threading boundaries.
 - [Fluid simulation direction](architecture/fluid-simulation.md): project
   direction for 2D/2.5D/3D fluid work.
-- [Ocean rendering](architecture/ocean-rendering.md): scalable procedural ocean
-  rendering, interaction hooks, and breaking-wave tradeoffs.
+- [Ocean rendering](architecture/ocean-rendering.md): active/reference/legacy
+  ocean split, reference-derived wave core, feature donor boundaries, and
+  breaking-wave tradeoffs.
 - [glTF assets and PBR](architecture/gltf-assets.md): glTF import, PBR material
   contract, animation/deformation, texture upload, HDR environments, and viewer
   boundaries.
@@ -54,6 +55,8 @@ Project-specific design stays beside the project:
 - [Fire 3D](../projects/fluid/fire_3d/README.md)
 - [Explosion 3D](../projects/fluid/explosion_3d/README.md)
 - [Ocean](../projects/ocean/README.md)
+- [Ocean Ref](../projects/ocean_ref/README.md)
+- [Ocean Legacy](../projects/ocean_legacy/README.md)
 
 ## Notes
 

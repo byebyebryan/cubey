@@ -1,10 +1,12 @@
 # Ocean Adjacent Systems
 
-`projects/ocean` is already a useful deep-water renderer, but the next visible
-quality jump depends on systems that should not be built directly inside the
-ocean project first. Shorelines, shallow water, atmospheric scattering, and
-clouds each have enough policy and tuning surface to deserve standalone
-project pressure before they become shared renderer inputs.
+`projects/ocean` is now the active reference-derived deep-water renderer, with
+`projects/ocean_ref` kept as a known-good wave baseline and
+`projects/ocean_legacy` kept as a feature donor. The next visible quality jump
+still depends on systems that should not be built directly inside the ocean
+project first. Shorelines, shallow water, atmospheric scattering, and clouds
+each have enough policy and tuning surface to deserve standalone project
+pressure before they become shared renderer inputs.
 
 This note captures the intended split so parallel work can stay mergeable.
 
@@ -20,9 +22,9 @@ ocean renderer through small data and shader contracts:
 - `projects/fluid_25d`: shallow-water simulation over heightfields for rivers,
   flooding, sources, sinks, and later dynamic shoreline coupling.
 
-The ocean renderer should remain the consumer of these systems, not their first
-owner. That keeps the renderer focused on scalable water presentation while the
-supporting systems become inspectable in isolation.
+The active ocean renderer should remain the consumer of these systems, not their
+first owner. That keeps the renderer focused on reference-quality water
+presentation while the supporting systems become inspectable in isolation.
 
 ## Atmosphere Project
 
@@ -48,6 +50,8 @@ Ocean integration target:
 - sample the same sky model for background, reflection, fog, and sun glint;
 - use one shared sun direction and radiance value;
 - keep output in linear HDR before project-specific exposure and tone mapping.
+- compare the integration against `ocean_ref` before retiring the ocean-local
+  sky fallback.
 
 ## Terrain And Bathymetry Project
 
@@ -71,6 +75,8 @@ Ocean integration target:
   damping;
 - use shoreline masks for foam placement and beach-edge wetness;
 - use scene color/depth as the input behind the single-layer ocean water pass.
+- port legacy seafloor/refraction behavior only after the active wave core still
+  matches or improves on the reference baseline.
 
 `projects/procedural_terrain` should stay rendering/data focused. Gameplay
 water movement, rainfall, sources, sinks, and flooding belong in

@@ -16,10 +16,11 @@ is a small set of focused projects, each with different scaling assumptions:
 - `projects/fluid/water_3d`: 3D APIC free-surface liquid in a long tank, with
   stable particle IDs, sorted cell-index ranges for transfer, a screen-space
   surface renderer, and whitewater/profiling diagnostics.
-- `projects/ocean`: practical large-scale water rendering with a
-  camera-relative surface, procedural multi-band waves, foam/debug views, and
-  explicit future hooks for wakes and shorelines. It is rendering-first, not a
-  fluid solver.
+- `projects/ocean`: active reference-derived large-scale water rendering with a
+  camera-relative mesh, GodotOceanWaves-style spectrum/FFT waves, foam/debug
+  views, and future hooks for wakes and shorelines. It is rendering-first, not a
+  fluid solver. `projects/ocean_ref` is the frozen comparison baseline, and
+  `projects/ocean_legacy` is the old feature donor.
 - `projects/fluid_25d`: shallow-water terrain simulation for rivers, flooding,
   basins, sources, sinks, and heightfield-driven water.
 - `projects/fluid/fire_3d` and `projects/fluid/explosion_3d`: dense 3D pyro
@@ -246,8 +247,9 @@ project is worth the complexity.
 
 ## Suggested Order
 
-1. Continue `projects/ocean` toward terrain/depth integration, local
-   disturbance textures, and stronger large-scale water presentation.
+1. Keep `projects/ocean` close to the reference-derived wave baseline, then
+   port only focused `ocean_legacy` features that improve crest shape, foam,
+   terrain/depth integration, or diagnostics.
 2. Continue `fluid_25d` with virtual-pipes shallow water over terrain, then feed
    depth/shoreline data into the ocean renderer.
 3. Continue `smoke_2d` beyond the current Jacobi/RBGS baseline with richer

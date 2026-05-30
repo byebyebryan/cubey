@@ -338,8 +338,8 @@ named explicitly and live in either `examples/` or `projects/`:
   command recording; that split is not automatically Cubey library API.
 - `projects/` - first-class graphics experiments and longer-lived creative
   work, including `smoke_2d`, `fire_3d`, `explosion_3d`, `fractal_2d`,
-  `gltf_viewer`, `ocean`, and `pbr_furnace`, plus later candidates such as
-  `marching_cubes` and `sdf_sculpt`.
+  `gltf_viewer`, `ocean`, `ocean_ref`, `ocean_legacy`, and `pbr_furnace`, plus
+  later candidates such as `marching_cubes` and `sdf_sculpt`.
 - `third_party/` - small vendored dependencies with explicit license notes.
 - `tools/` - repo utilities, asset processors, shader tools, or diagnostics.
 - `tests/` - unit and integration tests.
@@ -581,16 +581,18 @@ cubey/
       ocean/
         CMakeLists.txt
         main.cpp
-        ocean_app.*       -- camera-relative procedural ocean host/headless orchestration
-        ocean_gpu_resources.* -- spectral compute textures, descriptors, and pipelines
+        ocean_app.*       -- active reference-derived ocean host/headless orchestration
+        ocean_gpu_resources.* -- spectrum, FFT, unpack textures, descriptors, and pipelines
         ocean_ui.*        -- live ocean renderer controls
         shaders/
-          ocean_spectrum_init.comp -- seeded deep-water spectrum generation
-          ocean_spectrum_evolve.comp -- time-evolved frequency-domain height
+          ocean_spectrum.comp -- seeded GodotOceanWaves-style spectrum generation
+          ocean_modulate.comp -- time-evolved frequency-domain fields
           ocean_fft.comp  -- in-repo staged Stockham FFT passes
-          ocean_finalize.comp -- displacement, normals, and crest foam from FFT height
-          ocean.vert      -- projected grid, cascaded FFT displacement, interaction hooks
-          ocean.frag      -- Fresnel/refraction-style shading, foam, debug views
+          ocean_unpack.comp -- displacement, normals, and foam from FFT fields
+          ocean.vert      -- camera-relative clipmap and cascaded displacement
+          ocean.frag      -- water shading, foam, and debug views
+      ocean_ref/          -- frozen known-good GodotOceanWaves comparison port
+      ocean_legacy/       -- previous Cubey ocean renderer and feature donor
       pbr_furnace/
         CMakeLists.txt
         main.cpp
