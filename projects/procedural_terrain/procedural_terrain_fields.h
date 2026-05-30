@@ -51,10 +51,15 @@ struct TerrainFieldData {
     std::vector<float> inland{};
     std::vector<float> ridge_strength{};
     std::vector<float> valley_strength{};
+    std::vector<float> flow_accumulation{};
+    std::vector<float> stream_power{};
+    std::vector<float> flow_direction{};
     float min_height_m = 0.0F;
     float max_height_m = 0.0F;
     float max_water_depth_m = 0.0F;
     float max_abs_shore_sdf_m = 0.0F;
+    float max_flow_accumulation = 0.0F;
+    float max_stream_power = 0.0F;
 
     [[nodiscard]] std::size_t sample_count() const;
     [[nodiscard]] std::size_t index(std::uint32_t x, std::uint32_t y) const;

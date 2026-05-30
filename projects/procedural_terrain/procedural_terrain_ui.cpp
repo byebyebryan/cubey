@@ -155,6 +155,8 @@ void draw_terrain_ui(TerrainUiContext ui) {
                     ui.diagnostics.max_abs_detail_noise_m);
         ImGui::Text("Feature/relax max abs: %.1f / %.2f m", ui.diagnostics.max_abs_feature_height_m,
                     ui.diagnostics.max_abs_relax_delta_m);
+        ImGui::Text("Flow/stream max: %.1f / %.3f", ui.diagnostics.max_flow_accumulation,
+                    ui.diagnostics.max_stream_power);
         ImGui::Text("Full terrain: %u verts / %u tris", ui.diagnostics.terrain_vertices,
                     ui.diagnostics.terrain_triangles);
         ImGui::Text("Final land: %u verts / %u tris", ui.diagnostics.final_land_vertices,

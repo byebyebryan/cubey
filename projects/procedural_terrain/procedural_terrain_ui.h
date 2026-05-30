@@ -29,6 +29,8 @@ struct TerrainDiagnostics {
     float max_abs_detail_noise_m = 0.0F;
     float max_abs_feature_height_m = 0.0F;
     float max_abs_relax_delta_m = 0.0F;
+    float max_flow_accumulation = 0.0F;
+    float max_stream_power = 0.0F;
     float sand_coverage = 0.0F;
     float rock_coverage = 0.0F;
     float vegetation_coverage = 0.0F;

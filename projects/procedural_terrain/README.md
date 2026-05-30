@@ -44,9 +44,18 @@ Useful debug views:
 ./build/dev/projects/procedural_terrain/procedural_terrain --debug-view landform
 ./build/dev/projects/procedural_terrain/procedural_terrain --debug-view ridges
 ./build/dev/projects/procedural_terrain/procedural_terrain --debug-view valleys
+./build/dev/projects/procedural_terrain/procedural_terrain --debug-view flow_accumulation
+./build/dev/projects/procedural_terrain/procedural_terrain --debug-view stream_power
+./build/dev/projects/procedural_terrain/procedural_terrain --debug-view macro_height
+./build/dev/projects/procedural_terrain/procedural_terrain --debug-view base_noise
+./build/dev/projects/procedural_terrain/procedural_terrain --debug-view detail_noise
+./build/dev/projects/procedural_terrain/procedural_terrain --debug-view feature_height
+./build/dev/projects/procedural_terrain/procedural_terrain --debug-view relax_delta
 ```
 
 Use `--grid-width` and `--grid-height` for lower-cost checks or denser local
-captures. The first implementation generates fields on the CPU and uploads CPU
-terrain and water meshes; GPU texture-backed displacement, chunked LOD, CDLOD,
+captures. The current generator computes fields on the CPU, including
+shoreline distance, ridge strength, flow accumulation, stream power, named
+height contributions, and a bounded relax delta, then uploads CPU terrain and
+water meshes. GPU texture-backed displacement, chunked LOD, CDLOD, heavier
 erosion, and ocean integration are follow-up work.

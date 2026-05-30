@@ -29,6 +29,7 @@ constexpr std::uint32_t kShoreClipSubdivisions = 4U;
         .generator = a.generator + ((b.generator - a.generator) * t),
         .contributions_a = a.contributions_a + ((b.contributions_a - a.contributions_a) * t),
         .contributions_b = a.contributions_b + ((b.contributions_b - a.contributions_b) * t),
+        .hydrology = a.hydrology + ((b.hydrology - a.hydrology) * t),
     };
     vertex.position.y = sea_level_m;
     vertex.material = {0.62F, 0.0F, 0.0F, 0.38F};
@@ -77,6 +78,7 @@ constexpr std::uint32_t kShoreClipSubdivisions = 4U;
                                    v11.contributions_a),
         .contributions_b = mix_vec(v00.contributions_b, v10.contributions_b, v01.contributions_b,
                                    v11.contributions_b),
+        .hydrology = mix_vec(v00.hydrology, v10.hydrology, v01.hydrology, v11.hydrology),
     };
     vertex.normal = glm::normalize(vertex.normal);
     return vertex;
@@ -165,6 +167,9 @@ cubey::render::VertexInputLayout terrain_vertex_input_layout() {
                 cubey::render::vertex_input_attribute(
                     6, 0, VK_FORMAT_R32G32B32A32_SFLOAT,
                     offset_of(offsetof(TerrainVertex, contributions_b))),
+                cubey::render::vertex_input_attribute(
+                    7, 0, VK_FORMAT_R32G32B32A32_SFLOAT,
+                    offset_of(offsetof(TerrainVertex, hydrology))),
             },
     };
 }
@@ -235,6 +240,13 @@ TerrainMeshData make_terrain_mesh(const TerrainFieldData& fields) {
                         contributions.ridge_m,
                         contributions.broken_ridge_m - contributions.valley_cut_m,
                         contributions.relax_delta_m,
+                    },
+                .hydrology =
+                    {
+                        fields.flow_accumulation[sample],
+                        fields.stream_power[sample],
+                        fields.flow_direction[sample],
+                        0.0F,
                     },
             });
         }

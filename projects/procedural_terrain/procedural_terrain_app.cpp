@@ -59,6 +59,8 @@ make_terrain_diagnostics(const TerrainFieldData& fields, const TerrainMeshData& 
     diagnostics.max_height_m = fields.max_height_m;
     diagnostics.max_water_depth_m = fields.max_water_depth_m;
     diagnostics.max_abs_shore_sdf_m = fields.max_abs_shore_sdf_m;
+    diagnostics.max_flow_accumulation = fields.max_flow_accumulation;
+    diagnostics.max_stream_power = fields.max_stream_power;
     diagnostics.terrain_vertices = static_cast<std::uint32_t>(mesh.vertices.size());
     diagnostics.terrain_triangles = terrain_triangle_count(mesh);
     diagnostics.final_land_vertices = static_cast<std::uint32_t>(final_land_mesh.vertices.size());
@@ -410,8 +412,8 @@ TerrainPushConstants ProceduralTerrainApp::push_constants(VkExtent2D extent) con
         .relax_ranges =
             {
                 std::max(diagnostics_.max_abs_relax_delta_m, 1.0F),
-                1.0F,
-                1.0F,
+                std::max(diagnostics_.max_flow_accumulation, 1.0F),
+                std::max(diagnostics_.max_stream_power, 0.001F),
                 1.0F,
             },
     };

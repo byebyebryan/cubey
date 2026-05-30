@@ -21,18 +21,23 @@ enum class TerrainDebugView : std::uint32_t {
     Landform = 6,
     Ridges = 7,
     Valleys = 8,
-    MacroHeight = 9,
-    BaseNoise = 10,
-    DetailNoise = 11,
-    FeatureHeight = 12,
-    RelaxDelta = 13,
+    FlowAccumulation = 9,
+    StreamPower = 10,
+    MacroHeight = 11,
+    BaseNoise = 12,
+    DetailNoise = 13,
+    FeatureHeight = 14,
+    RelaxDelta = 15,
 };
 
-inline constexpr std::array<TerrainDebugView, 14> kTerrainDebugViews{
-    TerrainDebugView::Final,         TerrainDebugView::Height,     TerrainDebugView::WaterDepth,
-    TerrainDebugView::Shoreline,     TerrainDebugView::Material,   TerrainDebugView::Slope,
-    TerrainDebugView::Landform,      TerrainDebugView::Ridges,     TerrainDebugView::Valleys,
-    TerrainDebugView::MacroHeight,   TerrainDebugView::BaseNoise,  TerrainDebugView::DetailNoise,
+inline constexpr std::array<TerrainDebugView, 16> kTerrainDebugViews{
+    TerrainDebugView::Final,         TerrainDebugView::Height,
+    TerrainDebugView::WaterDepth,    TerrainDebugView::Shoreline,
+    TerrainDebugView::Material,      TerrainDebugView::Slope,
+    TerrainDebugView::Landform,      TerrainDebugView::Ridges,
+    TerrainDebugView::Valleys,       TerrainDebugView::FlowAccumulation,
+    TerrainDebugView::StreamPower,   TerrainDebugView::MacroHeight,
+    TerrainDebugView::BaseNoise,     TerrainDebugView::DetailNoise,
     TerrainDebugView::FeatureHeight, TerrainDebugView::RelaxDelta,
 };
 
@@ -85,6 +90,10 @@ struct TerrainConfig {
         return "ridges";
     case TerrainDebugView::Valleys:
         return "valleys";
+    case TerrainDebugView::FlowAccumulation:
+        return "flow_accumulation";
+    case TerrainDebugView::StreamPower:
+        return "stream_power";
     case TerrainDebugView::MacroHeight:
         return "macro_height";
     case TerrainDebugView::BaseNoise:

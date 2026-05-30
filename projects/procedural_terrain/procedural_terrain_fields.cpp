@@ -5,6 +5,7 @@
 #include <cmath>
 #include <cstdint>
 #include <limits>
+#include <queue>
 #include <stdexcept>
 #include <vector>
 
@@ -103,31 +104,8 @@ struct Point2 {
     return (a.x * b.x) + (a.y * b.y);
 }
 
-[[nodiscard]] float distance(Point2 a, Point2 b) {
-    return length({a.x - b.x, a.y - b.y});
-}
-
-[[nodiscard]] float distance_to_segment(Point2 p, Point2 a, Point2 b) {
-    const Point2 ab{b.x - a.x, b.y - a.y};
-    const float denom = (ab.x * ab.x) + (ab.y * ab.y);
-    const float t =
-        denom <= 0.000001F ? 0.0F : saturate((((p.x - a.x) * ab.x) + ((p.y - a.y) * ab.y)) / denom);
-    const Point2 q{a.x + (ab.x * t), a.y + (ab.y * t)};
-    return distance(p, q);
-}
-
 [[nodiscard]] std::size_t grid_index(std::uint32_t x, std::uint32_t y, std::uint32_t width) {
     return static_cast<std::size_t>(y) * width + x;
-}
-
-[[nodiscard]] Point2 polar_point(float angle, float radius) {
-    return {std::cos(angle) * radius, std::sin(angle) * radius};
-}
-
-[[nodiscard]] Point2 axis_point(float angle, float axial, float lateral) {
-    const Point2 dir{std::cos(angle), std::sin(angle)};
-    const Point2 normal{-dir.y, dir.x};
-    return {(dir.x * axial) + (normal.x * lateral), (dir.y * axial) + (normal.y * lateral)};
 }
 
 [[nodiscard]] float terrain_axis_angle(const TerrainConfig& config) {
@@ -396,39 +374,6 @@ void smooth_coastline_mask(std::vector<bool>& land_mask, std::uint32_t width,
     return strength;
 }
 
-[[nodiscard]] float valley_field(Point2 p, const TerrainConfig& config) {
-    const float base_angle = terrain_axis_angle(config);
-    const float base_offset = terrain_axis_offset(config);
-    float strength = 0.0F;
-    for (std::uint32_t index = 0; index < 5U; ++index) {
-        const float source_s = lerp(-0.58F, 0.58F, random01(config.seed, index, 601U));
-        const float source_l =
-            base_offset + lerp(-0.15F, 0.15F, random01(config.seed, index, 607U));
-        const Point2 start = axis_point(base_angle, source_s, source_l);
-        const float outlet_angle =
-            std::atan2(start.y, start.x) + ((random01(config.seed, index, 613U) - 0.5F) * 1.08F);
-        const Point2 end =
-            polar_point(outlet_angle, lerp(0.70F, 0.96F, random01(config.seed, index, 617U)));
-        const Point2 delta{end.x - start.x, end.y - start.y};
-        const float delta_length = std::max(length(delta), 0.001F);
-        const Point2 side{-delta.y / delta_length, delta.x / delta_length};
-        const float bend_t = lerp(0.40F, 0.66F, random01(config.seed, index, 619U));
-        const float bend_offset = lerp(-0.16F, 0.16F, random01(config.seed, index, 631U));
-        const Point2 bend{start.x + (delta.x * bend_t) + (side.x * bend_offset),
-                          start.y + (delta.y * bend_t) + (side.y * bend_offset)};
-        const float width = lerp(0.060F, 0.120F, random01(config.seed, index, 641U));
-        const float dist =
-            std::min(distance_to_segment(p, start, bend), distance_to_segment(p, bend, end));
-        const float line = 1.0F - smoothstep(width * 0.16F, width, dist);
-        const float downstream = smoothstep(0.06F, 0.24F, distance(p, start));
-        const float meander = 0.70F + (0.30F * fbm(p.x * 7.2F + static_cast<float>(index) * 3.0F,
-                                                   p.y * 7.2F - static_cast<float>(index) * 2.0F,
-                                                   config.seed + 700U + index, 3));
-        strength = std::max(strength, line * downstream * meander * 0.58F);
-    }
-    return strength;
-}
-
 [[nodiscard]] std::vector<float> squared_distance_to_mask(const std::vector<bool>& mask,
                                                           std::uint32_t width, std::uint32_t height,
                                                           bool feature_value) {
@@ -548,6 +493,246 @@ void smooth_coastline_mask(std::vector<bool>& land_mask, std::uint32_t width,
     };
 }
 
+void recompute_height_ranges(TerrainFieldData& fields) {
+    fields.min_height_m = std::numeric_limits<float>::max();
+    fields.max_height_m = std::numeric_limits<float>::lowest();
+    fields.max_water_depth_m = 0.0F;
+    for (std::size_t index = 0; index < fields.sample_count(); ++index) {
+        fields.water_depth_m[index] =
+            std::max(0.0F, fields.desc.sea_level_m - fields.height_m[index]);
+        fields.max_water_depth_m = std::max(fields.max_water_depth_m, fields.water_depth_m[index]);
+        fields.min_height_m = std::min(fields.min_height_m, fields.height_m[index]);
+        fields.max_height_m = std::max(fields.max_height_m, fields.height_m[index]);
+    }
+}
+
+[[nodiscard]] std::vector<float> filled_drainage_surface(const TerrainFieldData& fields,
+                                                         const std::vector<bool>& land_mask) {
+    struct QueueSample {
+        float elevation_m = 0.0F;
+        std::size_t index = 0;
+    };
+    struct QueueGreater {
+        bool operator()(QueueSample lhs, QueueSample rhs) const {
+            return lhs.elevation_m > rhs.elevation_m;
+        }
+    };
+
+    const std::size_t count = fields.sample_count();
+    std::vector<float> surface = fields.height_m;
+    std::vector<bool> visited(count, false);
+    std::priority_queue<QueueSample, std::vector<QueueSample>, QueueGreater> queue;
+
+    for (std::uint32_t y = 0; y < fields.desc.height; ++y) {
+        for (std::uint32_t x = 0; x < fields.desc.width; ++x) {
+            const std::size_t sample = fields.index(x, y);
+            const bool border =
+                x == 0U || y == 0U || x + 1U == fields.desc.width || y + 1U == fields.desc.height;
+            if (!land_mask[sample] || border) {
+                visited[sample] = true;
+                queue.push({surface[sample], sample});
+            }
+        }
+    }
+
+    constexpr float kFillStepMeters = 0.003F;
+    while (!queue.empty()) {
+        const QueueSample current = queue.top();
+        queue.pop();
+        const std::uint32_t x = static_cast<std::uint32_t>(current.index % fields.desc.width);
+        const std::uint32_t y = static_cast<std::uint32_t>(current.index / fields.desc.width);
+
+        for (std::int32_t oy = -1; oy <= 1; ++oy) {
+            const auto ny = static_cast<std::int32_t>(y) + oy;
+            if (ny < 0 || ny >= static_cast<std::int32_t>(fields.desc.height)) {
+                continue;
+            }
+            for (std::int32_t ox = -1; ox <= 1; ++ox) {
+                if (ox == 0 && oy == 0) {
+                    continue;
+                }
+                const auto nx = static_cast<std::int32_t>(x) + ox;
+                if (nx < 0 || nx >= static_cast<std::int32_t>(fields.desc.width)) {
+                    continue;
+                }
+
+                const std::size_t neighbor =
+                    fields.index(static_cast<std::uint32_t>(nx), static_cast<std::uint32_t>(ny));
+                if (visited[neighbor]) {
+                    continue;
+                }
+
+                visited[neighbor] = true;
+                if (land_mask[neighbor]) {
+                    surface[neighbor] =
+                        std::max(fields.height_m[neighbor], current.elevation_m + kFillStepMeters);
+                }
+                queue.push({surface[neighbor], neighbor});
+            }
+        }
+    }
+
+    return surface;
+}
+
+void compute_drainage_fields(TerrainFieldData& fields, const std::vector<bool>& land_mask) {
+    constexpr std::size_t kNoFlow = std::numeric_limits<std::size_t>::max();
+    const std::size_t count = fields.sample_count();
+    fields.flow_accumulation.assign(count, 0.0F);
+    fields.stream_power.assign(count, 0.0F);
+    fields.flow_direction.assign(count, 0.0F);
+    fields.max_flow_accumulation = 0.0F;
+    fields.max_stream_power = 0.0F;
+
+    const std::vector<float> drainage_surface = filled_drainage_surface(fields, land_mask);
+    std::vector<std::size_t> downstream(count, kNoFlow);
+    std::vector<std::size_t> order;
+    order.reserve(count);
+
+    for (std::uint32_t y = 0; y < fields.desc.height; ++y) {
+        for (std::uint32_t x = 0; x < fields.desc.width; ++x) {
+            const std::size_t sample = fields.index(x, y);
+            if (!land_mask[sample]) {
+                continue;
+            }
+            order.push_back(sample);
+            fields.flow_accumulation[sample] = 1.0F;
+
+            float best_slope = 0.0F;
+            std::size_t best_neighbor = kNoFlow;
+            for (std::int32_t oy = -1; oy <= 1; ++oy) {
+                const auto ny = static_cast<std::int32_t>(y) + oy;
+                if (ny < 0 || ny >= static_cast<std::int32_t>(fields.desc.height)) {
+                    continue;
+                }
+                for (std::int32_t ox = -1; ox <= 1; ++ox) {
+                    if (ox == 0 && oy == 0) {
+                        continue;
+                    }
+                    const auto nx = static_cast<std::int32_t>(x) + ox;
+                    if (nx < 0 || nx >= static_cast<std::int32_t>(fields.desc.width)) {
+                        continue;
+                    }
+                    const std::size_t neighbor = fields.index(static_cast<std::uint32_t>(nx),
+                                                              static_cast<std::uint32_t>(ny));
+                    const float distance_m =
+                        (ox != 0 && oy != 0 ? 1.41421356F : 1.0F) * fields.desc.cell_size_m;
+                    const float slope =
+                        (drainage_surface[sample] - drainage_surface[neighbor]) / distance_m;
+                    if (slope > best_slope) {
+                        best_slope = slope;
+                        best_neighbor = neighbor;
+                    }
+                }
+            }
+
+            downstream[sample] = best_neighbor;
+            if (best_neighbor != kNoFlow) {
+                const std::uint32_t nx =
+                    static_cast<std::uint32_t>(best_neighbor % fields.desc.width);
+                const std::uint32_t ny =
+                    static_cast<std::uint32_t>(best_neighbor / fields.desc.width);
+                const float angle = std::atan2(static_cast<float>(ny) - static_cast<float>(y),
+                                               static_cast<float>(nx) - static_cast<float>(x));
+                fields.flow_direction[sample] = (angle + 3.14159265359F) / kTau;
+            }
+        }
+    }
+
+    std::sort(order.begin(), order.end(), [&drainage_surface](std::size_t lhs, std::size_t rhs) {
+        return drainage_surface[lhs] > drainage_surface[rhs];
+    });
+    for (const std::size_t sample : order) {
+        const std::size_t next = downstream[sample];
+        if (next != kNoFlow && land_mask[next]) {
+            fields.flow_accumulation[next] += fields.flow_accumulation[sample];
+        }
+    }
+
+    for (const std::size_t sample : order) {
+        fields.max_flow_accumulation =
+            std::max(fields.max_flow_accumulation, fields.flow_accumulation[sample]);
+    }
+    const float inv_log_max_flow = fields.max_flow_accumulation <= 1.0F
+                                       ? 0.0F
+                                       : 1.0F / std::log(1.0F + fields.max_flow_accumulation);
+    for (const std::size_t sample : order) {
+        const std::size_t next = downstream[sample];
+        if (next == kNoFlow) {
+            continue;
+        }
+        const std::uint32_t x = static_cast<std::uint32_t>(sample % fields.desc.width);
+        const std::uint32_t y = static_cast<std::uint32_t>(sample / fields.desc.width);
+        const std::uint32_t nx = static_cast<std::uint32_t>(next % fields.desc.width);
+        const std::uint32_t ny = static_cast<std::uint32_t>(next / fields.desc.width);
+        const bool diagonal = x != nx && y != ny;
+        const float distance_m = (diagonal ? 1.41421356F : 1.0F) * fields.desc.cell_size_m;
+        const float slope =
+            std::max(0.0F, (drainage_surface[sample] - drainage_surface[next]) / distance_m);
+        const float flow_t = std::log(1.0F + fields.flow_accumulation[sample]) * inv_log_max_flow;
+        fields.stream_power[sample] = flow_t * std::sqrt(std::min(slope, 3.0F));
+        fields.max_stream_power = std::max(fields.max_stream_power, fields.stream_power[sample]);
+    }
+}
+
+void apply_drainage_valley_carving(TerrainFieldData& fields, const TerrainConfig& config) {
+    const float valley_scale = std::clamp(config.valley_scale, 0.0F, 2.0F);
+    if (valley_scale <= 0.0F) {
+        recompute_height_ranges(fields);
+        return;
+    }
+
+    std::vector<float> valley_mask(fields.sample_count(), 0.0F);
+    const float inv_log_max_flow = fields.max_flow_accumulation <= 1.0F
+                                       ? 0.0F
+                                       : 1.0F / std::log(1.0F + fields.max_flow_accumulation);
+    for (std::size_t sample = 0; sample < fields.sample_count(); ++sample) {
+        if (fields.height_m[sample] <= fields.desc.sea_level_m ||
+            fields.shore_sdf_m[sample] < 0.0F) {
+            continue;
+        }
+
+        const float flow_t = std::log(1.0F + fields.flow_accumulation[sample]) * inv_log_max_flow;
+        const float stream_t = fields.max_stream_power <= 0.0F
+                                   ? 0.0F
+                                   : fields.stream_power[sample] / fields.max_stream_power;
+        const float channel = smoothstep(0.48F, 0.92F, flow_t) * smoothstep(0.12F, 0.82F, stream_t);
+        const float lower_basin = smoothstep(0.70F, 0.96F, flow_t) * (1.0F - fields.inland[sample]);
+        const float shore_guard = smoothstep(28.0F, 190.0F, fields.shore_sdf_m[sample]);
+        valley_mask[sample] = saturate(((channel * 0.90F) + (lower_basin * 0.10F)) * shore_guard);
+    }
+
+    valley_mask = smoothed_scalar_field(valley_mask, fields.desc.width, fields.desc.height);
+    valley_mask = smoothed_scalar_field(valley_mask, fields.desc.width, fields.desc.height);
+
+    for (std::size_t sample = 0; sample < fields.sample_count(); ++sample) {
+        if (fields.height_m[sample] <= fields.desc.sea_level_m ||
+            fields.shore_sdf_m[sample] < 0.0F) {
+            fields.valley_strength[sample] = 0.0F;
+            continue;
+        }
+
+        TerrainHeightContributions& contributions = fields.height_contributions[sample];
+        const float flow_t = std::log(1.0F + fields.flow_accumulation[sample]) * inv_log_max_flow;
+        fields.valley_strength[sample] = saturate(valley_mask[sample]) * valley_scale;
+
+        const float coast = smoothstep(0.0F, 76.0F, fields.shore_sdf_m[sample]);
+        const float shore_floor = fields.desc.sea_level_m + 0.12F + (coast * 1.6F);
+        contributions.valley_cut_m = fields.valley_strength[sample] *
+                                     (2.0F + (14.0F * fields.inland[sample]) + (6.0F * flow_t)) *
+                                     config.relief_scale;
+        const float assembled = fields.desc.sea_level_m + 0.22F + contributions.coast_lift_m +
+                                contributions.inland_lift_m + contributions.broad_noise_m +
+                                contributions.detail_noise_m + contributions.foothills_m +
+                                contributions.ridge_m + contributions.broken_ridge_m -
+                                contributions.valley_cut_m;
+        fields.height_m[sample] = std::max(assembled, shore_floor);
+        contributions.pre_relax_height_m = fields.height_m[sample];
+    }
+
+    recompute_height_ranges(fields);
+}
+
 void relax_land_heights(TerrainFieldData& fields, const TerrainConfig& config) {
     std::vector<float> relaxed = fields.height_m;
     for (std::uint32_t y = 0; y < fields.desc.height; ++y) {
@@ -599,16 +784,7 @@ void relax_land_heights(TerrainFieldData& fields, const TerrainConfig& config) {
     }
 
     fields.height_m = std::move(relaxed);
-    fields.min_height_m = std::numeric_limits<float>::max();
-    fields.max_height_m = std::numeric_limits<float>::lowest();
-    fields.max_water_depth_m = 0.0F;
-    for (std::size_t index = 0; index < fields.sample_count(); ++index) {
-        fields.water_depth_m[index] =
-            std::max(0.0F, fields.desc.sea_level_m - fields.height_m[index]);
-        fields.max_water_depth_m = std::max(fields.max_water_depth_m, fields.water_depth_m[index]);
-        fields.min_height_m = std::min(fields.min_height_m, fields.height_m[index]);
-        fields.max_height_m = std::max(fields.max_height_m, fields.height_m[index]);
-    }
+    recompute_height_ranges(fields);
 }
 
 } // namespace
@@ -646,6 +822,9 @@ TerrainFieldData generate_terrain_fields(const TerrainConfig& config) {
     fields.inland.resize(count);
     fields.ridge_strength.resize(count);
     fields.valley_strength.resize(count);
+    fields.flow_accumulation.resize(count);
+    fields.stream_power.resize(count);
+    fields.flow_direction.resize(count);
 
     std::vector<bool> land_mask(count, false);
     for (std::uint32_t y = 0; y < fields.desc.height; ++y) {
@@ -738,10 +917,7 @@ TerrainFieldData generate_terrain_fields(const TerrainConfig& config) {
             const float ridge_gate = smoothstep(0.16F, 0.78F, raw_ridge);
             fields.ridge_strength[sample] =
                 raw_ridge * ridge_gate * std::clamp(config.ridge_scale, 0.0F, 2.0F);
-            fields.valley_strength[sample] = land ? valley_field(p, config) *
-                                                        smoothstep(20.0F, 210.0F, shore_sdf) *
-                                                        std::clamp(config.valley_scale, 0.0F, 2.0F)
-                                                  : 0.0F;
+            fields.valley_strength[sample] = 0.0F;
 
             const float nx = world_x / 360.0F;
             const float nz = z / 360.0F;
@@ -766,8 +942,6 @@ TerrainFieldData generate_terrain_fields(const TerrainConfig& config) {
                 contributions.broken_ridge_m =
                     soft_mounds(nx * 3.1F + 8.0F, nz * 3.1F - 5.0F, config.seed + 211U, 4) * 8.0F *
                     config.relief_scale * saturate(fields.ridge_strength[sample] * 0.72F);
-                contributions.valley_cut_m = fields.valley_strength[sample] *
-                                             (3.0F + (18.0F * inland)) * config.relief_scale;
                 height = fields.desc.sea_level_m + 0.22F + contributions.coast_lift_m +
                          contributions.inland_lift_m + contributions.broad_noise_m +
                          contributions.detail_noise_m + contributions.foothills_m +
@@ -798,6 +972,8 @@ TerrainFieldData generate_terrain_fields(const TerrainConfig& config) {
         }
     }
 
+    compute_drainage_fields(fields, land_mask);
+    apply_drainage_valley_carving(fields, config);
     relax_land_heights(fields, config);
 
     for (std::uint32_t y = 0; y < fields.desc.height; ++y) {

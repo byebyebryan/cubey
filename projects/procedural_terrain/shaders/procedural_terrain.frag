@@ -15,6 +15,7 @@ layout(location = 3) in vec4 frag_fields;
 layout(location = 4) in vec4 frag_generator;
 layout(location = 5) in vec4 frag_contributions_a;
 layout(location = 6) in vec4 frag_contributions_b;
+layout(location = 7) in vec4 frag_hydrology;
 
 layout(location = 0) out vec4 out_color;
 
@@ -27,11 +28,13 @@ const uint TERRAIN_VIEW_SLOPE = 5u;
 const uint TERRAIN_VIEW_LANDFORM = 6u;
 const uint TERRAIN_VIEW_RIDGES = 7u;
 const uint TERRAIN_VIEW_VALLEYS = 8u;
-const uint TERRAIN_VIEW_MACRO_HEIGHT = 9u;
-const uint TERRAIN_VIEW_BASE_NOISE = 10u;
-const uint TERRAIN_VIEW_DETAIL_NOISE = 11u;
-const uint TERRAIN_VIEW_FEATURE_HEIGHT = 12u;
-const uint TERRAIN_VIEW_RELAX_DELTA = 13u;
+const uint TERRAIN_VIEW_FLOW_ACCUMULATION = 9u;
+const uint TERRAIN_VIEW_STREAM_POWER = 10u;
+const uint TERRAIN_VIEW_MACRO_HEIGHT = 11u;
+const uint TERRAIN_VIEW_BASE_NOISE = 12u;
+const uint TERRAIN_VIEW_DETAIL_NOISE = 13u;
+const uint TERRAIN_VIEW_FEATURE_HEIGHT = 14u;
+const uint TERRAIN_VIEW_RELAX_DELTA = 15u;
 
 vec3 ramp3(float t, vec3 a, vec3 b, vec3 c) {
     t = clamp(t, 0.0, 1.0);
@@ -155,6 +158,15 @@ void main() {
     } else if (debug_view == TERRAIN_VIEW_VALLEYS) {
         color = ramp3(frag_generator.w, vec3(0.12, 0.15, 0.12), vec3(0.12, 0.40, 0.36),
                       vec3(0.68, 0.88, 0.78));
+    } else if (debug_view == TERRAIN_VIEW_FLOW_ACCUMULATION) {
+        float flow_t = log(1.0 + max(frag_hydrology.x, 0.0)) /
+                       max(log(1.0 + pc.relax_ranges.y), 0.001);
+        color = ramp3(flow_t, vec3(0.08, 0.11, 0.16), vec3(0.10, 0.46, 0.50),
+                      vec3(0.78, 0.92, 0.82));
+    } else if (debug_view == TERRAIN_VIEW_STREAM_POWER) {
+        float stream_t = clamp(frag_hydrology.y / max(pc.relax_ranges.z, 0.001), 0.0, 1.0);
+        color = ramp3(stream_t, vec3(0.11, 0.10, 0.08), vec3(0.42, 0.28, 0.12),
+                      vec3(0.94, 0.78, 0.34));
     } else if (debug_view == TERRAIN_VIEW_MACRO_HEIGHT) {
         color = signed_ramp(macro_height, pc.contribution_ranges.x);
     } else if (debug_view == TERRAIN_VIEW_BASE_NOISE) {

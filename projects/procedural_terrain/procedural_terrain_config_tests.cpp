@@ -86,6 +86,12 @@ int main() {
             "ridges terrain debug view should parse");
     require(terrain::terrain_debug_view_from_name("valleys") == terrain::TerrainDebugView::Valleys,
             "valleys terrain debug view should parse");
+    require(terrain::terrain_debug_view_from_name("flow_accumulation") ==
+                terrain::TerrainDebugView::FlowAccumulation,
+            "flow accumulation terrain debug view should parse");
+    require(terrain::terrain_debug_view_from_name("stream_power") ==
+                terrain::TerrainDebugView::StreamPower,
+            "stream power terrain debug view should parse");
     require(terrain::terrain_debug_view_from_name("macro_height") ==
                 terrain::TerrainDebugView::MacroHeight,
             "macro height terrain debug view should parse");
@@ -102,8 +108,11 @@ int main() {
                 terrain::TerrainDebugView::RelaxDelta,
             "relax delta terrain debug view should parse");
     require(terrain::next_terrain_debug_view(terrain::TerrainDebugView::Valleys) ==
+                terrain::TerrainDebugView::FlowAccumulation,
+            "terrain debug view cycle should include hydrology views");
+    require(terrain::next_terrain_debug_view(terrain::TerrainDebugView::StreamPower) ==
                 terrain::TerrainDebugView::MacroHeight,
-            "terrain debug view cycle should include contribution views");
+            "terrain debug view cycle should enter contribution views after hydrology views");
     require(terrain::next_terrain_debug_view(terrain::TerrainDebugView::RelaxDelta) ==
                 terrain::TerrainDebugView::Final,
             "terrain debug view cycle should wrap");
@@ -210,6 +219,12 @@ int main() {
             "terrain ridge field size mismatch");
     require(fields.valley_strength.size() == fields.sample_count(),
             "terrain valley field size mismatch");
+    require(fields.flow_accumulation.size() == fields.sample_count(),
+            "terrain flow accumulation field size mismatch");
+    require(fields.stream_power.size() == fields.sample_count(),
+            "terrain stream power field size mismatch");
+    require(fields.flow_direction.size() == fields.sample_count(),
+            "terrain flow direction field size mismatch");
     require(fields.material_masks.size() == fields.sample_count(),
             "terrain material field size mismatch");
     require(fields.height_contributions.size() == fields.sample_count(),
@@ -218,6 +233,8 @@ int main() {
     require(fields.max_height_m > 0.0F, "terrain should include land terrain");
     require(fields.max_water_depth_m > 0.0F, "terrain should include positive water depth");
     require(fields.max_abs_shore_sdf_m > 0.0F, "terrain should include shoreline distance");
+    require(fields.max_flow_accumulation > 0.0F, "terrain should include flow accumulation");
+    require(fields.max_stream_power >= 0.0F, "terrain stream power max should be non-negative");
     require(terrain::terrain_triangle_count(clipped_land) > 0U,
             "clipped land mesh should include land triangles");
     require(terrain::terrain_triangle_count(clipped_land) <=
@@ -235,6 +252,14 @@ int main() {
                 "terrain ridge field should be finite");
         require(std::isfinite(fields.valley_strength[index]),
                 "terrain valley field should be finite");
+        require(std::isfinite(fields.flow_accumulation[index]),
+                "terrain flow accumulation should be finite");
+        require(std::isfinite(fields.stream_power[index]), "terrain stream power should be finite");
+        require(std::isfinite(fields.flow_direction[index]),
+                "terrain flow direction should be finite");
+        require(fields.flow_accumulation[index] >= 0.0F,
+                "terrain flow accumulation should be non-negative");
+        require(fields.stream_power[index] >= 0.0F, "terrain stream power should be non-negative");
         const terrain::TerrainHeightContributions contributions =
             fields.height_contributions[index];
         require(std::isfinite(contributions.coast_lift_m), "terrain coast lift should be finite");
@@ -304,6 +329,12 @@ int main() {
                      "terrain mesh should carry feature contribution");
         require_near(vertex.contributions_b.w, contributions.relax_delta_m, 0.001F,
                      "terrain mesh should carry relax contribution");
+        require_near(vertex.hydrology.x, fields.flow_accumulation[index], 0.001F,
+                     "terrain mesh should carry flow accumulation");
+        require_near(vertex.hydrology.y, fields.stream_power[index], 0.001F,
+                     "terrain mesh should carry stream power");
+        require_near(vertex.hydrology.z, fields.flow_direction[index], 0.001F,
+                     "terrain mesh should carry flow direction");
     }
 
     terrain::TerrainConfig feature_grid = defaults;
@@ -312,12 +343,18 @@ int main() {
     const terrain::TerrainFieldData feature_fields = terrain::generate_terrain_fields(feature_grid);
     float ridge_sum = 0.0F;
     float valley_sum = 0.0F;
+    float flow_sum = 0.0F;
+    float stream_sum = 0.0F;
     for (std::size_t index = 0; index < feature_fields.sample_count(); ++index) {
         ridge_sum += feature_fields.ridge_strength[index];
         valley_sum += feature_fields.valley_strength[index];
+        flow_sum += feature_fields.flow_accumulation[index];
+        stream_sum += feature_fields.stream_power[index];
     }
     require(ridge_sum > 0.0F, "terrain should include ridge influence");
     require(valley_sum > 0.0F, "terrain should include valley influence");
+    require(flow_sum > 0.0F, "terrain should include drainage accumulation");
+    require(stream_sum > 0.0F, "terrain should include stream power");
 
     terrain::TerrainConfig isolated_relief = defaults;
     isolated_relief.coast_noise_strength = 0.0F;

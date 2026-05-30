@@ -15,6 +15,7 @@ layout(location = 3) in vec4 in_fields;
 layout(location = 4) in vec4 in_generator;
 layout(location = 5) in vec4 in_contributions_a;
 layout(location = 6) in vec4 in_contributions_b;
+layout(location = 7) in vec4 in_hydrology;
 
 layout(location = 0) out vec3 frag_world_position;
 layout(location = 1) out vec3 frag_normal;
@@ -23,6 +24,7 @@ layout(location = 3) out vec4 frag_fields;
 layout(location = 4) out vec4 frag_generator;
 layout(location = 5) out vec4 frag_contributions_a;
 layout(location = 6) out vec4 frag_contributions_b;
+layout(location = 7) out vec4 frag_hydrology;
 
 void main() {
     vec4 world_position = vec4(in_position, 1.0);
@@ -34,4 +36,5 @@ void main() {
     frag_generator = in_generator;
     frag_contributions_a = in_contributions_a;
     frag_contributions_b = in_contributions_b;
+    frag_hydrology = in_hydrology;
 }
