@@ -245,18 +245,34 @@ void ProceduralTerrainApp::draw_ui(cubey::host::WindowedAppContext& context) {
         .edit_config = edit_terrain_config_,
         .diagnostics = diagnostics_,
         .latest_frame_stats = latest_frame_stats_,
+        .rebuild_error = rebuild_error_,
         .water_visible = water_visible_,
         .rebuild_requested = rebuild_requested_,
+        .discard_edits_requested = discard_edits_requested_,
         .reset_camera_requested = reset_camera_requested_,
         .latest_fps = latest_fps_,
         .latest_frame_ms = latest_frame_ms_,
     });
+    if (discard_edits_requested_) {
+        edit_terrain_config_ = terrain_config_;
+        rebuild_error_.clear();
+        discard_edits_requested_ = false;
+    }
     if (reset_camera_requested_) {
         orbit_controller_.reset();
         reset_camera_requested_ = false;
     }
     if (rebuild_requested_) {
-        rebuild_terrain_resources(context);
+        try {
+            rebuild_terrain_resources(context);
+            rebuild_error_.clear();
+        } catch (const std::exception& error) {
+            rebuild_error_ = error.what();
+            edit_terrain_config_ = terrain_config_;
+        } catch (...) {
+            rebuild_error_ = "unknown terrain rebuild error";
+            edit_terrain_config_ = terrain_config_;
+        }
         rebuild_requested_ = false;
     }
 }
@@ -289,12 +305,21 @@ void ProceduralTerrainApp::rebuild_terrain_resources(cubey::host::WindowedAppCon
     mesh_.emplace(context.gpu(), mesh_data_.mesh_config());
     water_mesh_.emplace(context.gpu(), water_mesh_data_.mesh_config());
     static_cast<void>(context.gpu().drain());
+    refresh_camera_limits_for_terrain();
 
     const auto end = std::chrono::steady_clock::now();
     const double rebuild_ms =
         std::chrono::duration<double, std::milli>(end - start).count();
     ++rebuild_count_;
     refresh_diagnostics(rebuild_ms);
+}
+
+void ProceduralTerrainApp::refresh_camera_limits_for_terrain() {
+    const float current_distance = orbit_controller_.distance();
+    const float home_distance = terrain_camera_distance(terrain_config_);
+    orbit_controller_.set_distance_limits(48.0F, std::max(home_distance * 4.0F, 960.0F));
+    orbit_controller_.set_home_distance(home_distance);
+    orbit_controller_.set_distance(current_distance);
 }
 
 void ProceduralTerrainApp::refresh_diagnostics(double rebuild_ms) {

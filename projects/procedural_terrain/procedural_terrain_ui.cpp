@@ -118,10 +118,17 @@ void draw_terrain_ui(TerrainUiContext ui) {
     if (ImGui::Button("Apply Terrain")) {
         ui.rebuild_requested = true;
     }
+    ImGui::SameLine();
+    if (ImGui::Button("Discard Edits")) {
+        ui.discard_edits_requested = true;
+    }
     ImGui::EndDisabled();
     if (pending_rebuild) {
         ImGui::SameLine();
         ImGui::TextUnformatted("pending rebuild");
+    }
+    if (!ui.rebuild_error.empty()) {
+        ImGui::TextWrapped("Rebuild failed: %s", ui.rebuild_error.c_str());
     }
 
     if (cubey::host::imgui_section("Diagnostics", true)) {

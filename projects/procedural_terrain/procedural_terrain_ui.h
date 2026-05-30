@@ -7,6 +7,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <optional>
+#include <string>
 
 namespace cubey::projects::procedural_terrain {
 
@@ -38,8 +39,10 @@ struct TerrainUiContext {
     TerrainConfig& edit_config;
     const TerrainDiagnostics& diagnostics;
     std::optional<cubey::host::FrameStatsSnapshot>& latest_frame_stats;
+    std::string& rebuild_error;
     bool& water_visible;
     bool& rebuild_requested;
+    bool& discard_edits_requested;
     bool& reset_camera_requested;
     double latest_fps = 0.0;
     double latest_frame_ms = 0.0;

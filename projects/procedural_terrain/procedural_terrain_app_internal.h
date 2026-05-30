@@ -17,6 +17,7 @@
 
 #include <filesystem>
 #include <optional>
+#include <string>
 
 namespace cubey::projects::procedural_terrain {
 
@@ -53,6 +54,7 @@ class ProceduralTerrainApp {
     void draw_ui(cubey::host::WindowedAppContext& context);
     void update_input(const cubey::host::WindowedAppContext& context, const FrameTiming& timing);
     void rebuild_terrain_resources(cubey::host::WindowedAppContext& context);
+    void refresh_camera_limits_for_terrain();
     void refresh_diagnostics(double rebuild_ms);
     [[nodiscard]] std::optional<cubey::host::FrameStatsSample>
     record_frame_stats(VkExtent2D extent, const FrameTiming& timing);
@@ -81,8 +83,10 @@ class ProceduralTerrainApp {
     double latest_fps_ = 0.0;
     double latest_frame_ms_ = 0.0;
     std::uint64_t rebuild_count_ = 0;
+    std::string rebuild_error_{};
     bool water_visible_ = true;
     bool rebuild_requested_ = false;
+    bool discard_edits_requested_ = false;
     bool reset_camera_requested_ = false;
 };
 
