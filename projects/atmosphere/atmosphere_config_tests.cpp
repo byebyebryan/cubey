@@ -363,6 +363,12 @@ int main() {
                      "atmosphere shader should include night sky debug output");
     require_contains(shader_source, "moon_disk_radiance",
                      "atmosphere shader should include moon disk radiance");
+    require_contains(shader_source, "moon_surface_albedo",
+                     "atmosphere shader should include procedural moon albedo");
+    require_contains(shader_source, "moon_crater_layer",
+                     "atmosphere shader should include procedural moon crater detail");
+    require_contains(shader_source, "lunar_lambert",
+                     "atmosphere shader should include lunar-style moon lighting");
     require_contains(shader_source, "debug_view == 8",
                      "atmosphere shader should include moon debug output");
     require_contains(shader_source, "ground_reference_geometry",
