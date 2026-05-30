@@ -291,6 +291,19 @@ RunConfig parse_run_config(int argc, char** argv) {
                 need_value("--environment-rotation-degrees"), "--environment-rotation-degrees");
         } else if (arg == "--exposure") {
             config.pbr.exposure = parse_float(need_value("--exposure"), "--exposure");
+        } else if (arg == "--atmosphere-preset") {
+            config.atmosphere.preset = std::string(need_value("--atmosphere-preset"));
+        } else if (arg == "--sun-elevation") {
+            config.atmosphere.sun_elevation_degrees =
+                parse_float(need_value("--sun-elevation"), "--sun-elevation");
+        } else if (arg == "--sun-azimuth") {
+            config.atmosphere.sun_azimuth_degrees =
+                parse_float(need_value("--sun-azimuth"), "--sun-azimuth");
+        } else if (arg == "--camera-altitude-km") {
+            config.atmosphere.camera_altitude_km =
+                parse_float(need_value("--camera-altitude-km"), "--camera-altitude-km");
+        } else if (arg == "--mie-scale") {
+            config.atmosphere.mie_scale = parse_float(need_value("--mie-scale"), "--mie-scale");
         } else if (arg == "--animation-index") {
             config.gltf.animation_index =
                 parse_u32(need_value("--animation-index"), "--animation-index");
@@ -318,6 +331,16 @@ RunConfig parse_run_config(int argc, char** argv) {
     }
     if (config.profile_diagnostics && config.profile_output_prefix.empty()) {
         throw std::runtime_error("profile diagnostics require --profile-output");
+    }
+    if (config.atmosphere.sun_elevation_degrees < -90.0F ||
+        config.atmosphere.sun_elevation_degrees > 90.0F) {
+        throw std::runtime_error("atmosphere sun elevation must be in [-90, 90]");
+    }
+    if (config.atmosphere.camera_altitude_km < 0.0F) {
+        throw std::runtime_error("atmosphere camera altitude must be nonnegative");
+    }
+    if (config.atmosphere.mie_scale < 0.0F) {
+        throw std::runtime_error("atmosphere Mie scale must be nonnegative");
     }
     if (config.smoke.dye_decay < 0.0F || config.smoke.dye_decay > 1.0F) {
         throw std::runtime_error("smoke dye decay must be in [0, 1]");

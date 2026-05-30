@@ -191,6 +191,64 @@ void test_run_config_parses_pbr_debug_view_name() {
             "run config should preserve renderer debug view name");
 }
 
+void test_run_config_parses_atmosphere_options() {
+    std::string program = "cubey";
+    std::string preset_flag = "--atmosphere-preset";
+    std::string preset_value = "sunset";
+    std::string elevation_flag = "--sun-elevation";
+    std::string elevation_value = "4.5";
+    std::string azimuth_flag = "--sun-azimuth";
+    std::string azimuth_value = "-28.0";
+    std::string altitude_flag = "--camera-altitude-km";
+    std::string altitude_value = "2.25";
+    std::string mie_flag = "--mie-scale";
+    std::string mie_value = "1.75";
+    std::array<char*, 11> argv{program.data(),        preset_flag.data(),     preset_value.data(),
+                               elevation_flag.data(), elevation_value.data(), azimuth_flag.data(),
+                               azimuth_value.data(),  altitude_flag.data(),   altitude_value.data(),
+                               mie_flag.data(),       mie_value.data()};
+
+    const cubey::RunConfig config =
+        cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
+    require(config.atmosphere.preset == "sunset", "run config should parse atmosphere preset");
+    require(config.atmosphere.sun_elevation_degrees == 4.5F,
+            "run config should parse sun elevation");
+    require(config.atmosphere.sun_azimuth_degrees == -28.0F, "run config should parse sun azimuth");
+    require(config.atmosphere.camera_altitude_km == 2.25F,
+            "run config should parse camera altitude");
+    require(config.atmosphere.mie_scale == 1.75F, "run config should parse Mie scale");
+}
+
+void test_run_config_rejects_invalid_atmosphere_options() {
+    {
+        std::string program = "cubey";
+        std::string elevation_flag = "--sun-elevation";
+        std::string elevation_value = "91";
+        std::array<char*, 3> argv{program.data(), elevation_flag.data(), elevation_value.data()};
+        require_throws(
+            [&argv]() { cubey::parse_run_config(static_cast<int>(argv.size()), argv.data()); },
+            "run config should reject invalid sun elevation");
+    }
+    {
+        std::string program = "cubey";
+        std::string altitude_flag = "--camera-altitude-km";
+        std::string altitude_value = "-1";
+        std::array<char*, 3> argv{program.data(), altitude_flag.data(), altitude_value.data()};
+        require_throws(
+            [&argv]() { cubey::parse_run_config(static_cast<int>(argv.size()), argv.data()); },
+            "run config should reject negative camera altitude");
+    }
+    {
+        std::string program = "cubey";
+        std::string mie_flag = "--mie-scale";
+        std::string mie_value = "-0.5";
+        std::array<char*, 3> argv{program.data(), mie_flag.data(), mie_value.data()};
+        require_throws(
+            [&argv]() { cubey::parse_run_config(static_cast<int>(argv.size()), argv.data()); },
+            "run config should reject negative Mie scale");
+    }
+}
+
 void test_run_config_parses_frame_stats_flag() {
     std::array<char, 6> program{'c', 'u', 'b', 'e', 'y', '\0'};
     std::array<char, 20> stats_flag{'-', '-', 'p', 'r', 'i', 'n', 't', '-', 'f', 'r',

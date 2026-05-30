@@ -111,6 +111,14 @@ struct RunConfig {
         bool animation_paused = false;
     };
 
+    struct AtmosphereOptions {
+        std::string preset{};
+        float sun_elevation_degrees = kRunConfigUnsetFloat;
+        float sun_azimuth_degrees = kRunConfigUnsetFloat;
+        float camera_altitude_km = kRunConfigUnsetFloat;
+        float mie_scale = kRunConfigUnsetFloat;
+    };
+
     std::string title = "cubey";
     std::uint32_t width = 1280;
     std::uint32_t height = 720;
@@ -121,6 +129,7 @@ struct RunConfig {
     Water3DOptions water3d{};
     PbrOptions pbr{};
     GltfOptions gltf{};
+    AtmosphereOptions atmosphere{};
     std::uint32_t frames = 0;
     std::uint32_t fps = 60;
     std::filesystem::path output_path = "cubey-output.png";
