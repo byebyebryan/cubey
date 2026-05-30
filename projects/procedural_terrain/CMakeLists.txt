@@ -1,3 +1,19 @@
+cubey_add_app_target(
+    cubey_project_procedural_terrain
+    OUTPUT_NAME procedural_terrain
+    SHADER_DEFINE CUBEY_PROCEDURAL_TERRAIN_SHADER_DIR
+    WINDOWED_SMOKE_TEST procedural_terrain_reaches_glfw
+    WINDOWED_SMOKE_PATTERN "procedural_terrain: .*rendering procedural terrain"
+    SOURCES
+        main.cpp
+        procedural_terrain_app.cpp
+        procedural_terrain_fields.cpp
+        procedural_terrain_mesh.cpp
+    SHADERS
+        shaders/procedural_terrain.vert
+        shaders/procedural_terrain.frag
+)
+
 if (BUILD_TESTING)
     add_executable(cubey_project_procedural_terrain_tests
         procedural_terrain_config_tests.cpp
@@ -16,4 +32,16 @@ if (BUILD_TESTING)
             cubey_project_warnings
     )
     add_test(NAME procedural_terrain_config_tests COMMAND cubey_project_procedural_terrain_tests)
+
+    set(CUBEY_PROCEDURAL_TERRAIN_HEADLESS_SMOKE_OUTPUT
+        "${CMAKE_CURRENT_BINARY_DIR}/procedural-terrain-headless-smoke.png"
+    )
+    cubey_add_png_smoke_test(
+        procedural_terrain_headless_writes_png
+        cubey_project_procedural_terrain
+        "${CUBEY_PROCEDURAL_TERRAIN_HEADLESS_SMOKE_OUTPUT}"
+        --headless
+        --grid-width 65
+        --grid-height 65
+    )
 endif()
