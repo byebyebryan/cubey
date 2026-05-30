@@ -42,7 +42,7 @@ make_ocean_field_texture(const cubey::vulkan::Device& device, std::uint32_t reso
     const VkPushConstantRange push_constant_range{
         .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
         .offset = 0,
-        .size = sizeof(float) * 56U,
+        .size = sizeof(float) * 60U,
     };
     return {
         .label = "ocean.surface",

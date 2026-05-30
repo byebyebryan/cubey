@@ -4,11 +4,20 @@
 
 #include <cubey/host/frame_stats.h>
 
+#include <cstdint>
 #include <optional>
 
 namespace cubey::projects::ocean {
 
+enum class OceanCameraPreset : std::uint32_t {
+    Default = 0,
+    Low = 1,
+    Close = 2,
+    Overhead = 3,
+};
+
 struct OceanDiagnosticsConfig {
+    int selected_cascade = -1;
     bool wire_overlay = false;
     float wire_opacity = 0.65F;
 };
@@ -18,8 +27,11 @@ struct OceanUiContext {
     OceanDiagnosticsConfig& diagnostics;
     std::optional<cubey::host::FrameStatsSnapshot>& latest_frame_stats;
     OceanRenderView& render_view;
+    OceanCameraPreset& camera_preset;
     bool& paused;
     bool& reset_requested;
+    bool& step_requested;
+    bool& camera_preset_requested;
     double latest_fps = 0.0;
     double latest_frame_ms = 0.0;
 };

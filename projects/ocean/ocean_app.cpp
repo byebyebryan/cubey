@@ -60,6 +60,7 @@ struct OceanPushConstants {
     cubey::math::Vec4 patch_bounds;
     cubey::math::Vec4 display_transform;
     cubey::math::Vec4 debug_options;
+    cubey::math::Vec4 inspection_options;
     cubey::math::Vec4 tile_lengths;
     cubey::math::Vec4 displacement_scales;
     cubey::math::Vec4 normal_scales;
@@ -97,7 +98,7 @@ struct OceanUnpackPushConstants {
     cubey::math::Vec4 cascade_options;
 };
 
-static_assert(sizeof(OceanPushConstants) == sizeof(float) * 56U);
+static_assert(sizeof(OceanPushConstants) == sizeof(float) * 60U);
 static_assert(sizeof(OceanSkyPushConstants) == sizeof(float) * 20U);
 static_assert(sizeof(OceanSpectrumPushConstants) == sizeof(float) * 16U);
 static_assert(sizeof(OceanModulatePushConstants) == sizeof(float) * 8U);
@@ -113,6 +114,13 @@ struct OceanFrameGraph {
     cubey::render::CompiledRenderGraph graph;
     cubey::render::RenderGraphTextureHandle backbuffer{};
     cubey::render::RenderGraphTextureHandle surface_depth{};
+};
+
+struct OceanCameraPresetConfig {
+    OceanCameraPreset preset = OceanCameraPreset::Default;
+    float distance = kCameraDistance;
+    float yaw = kCameraBaseYaw;
+    float pitch = kCameraBasePitch;
 };
 
 [[nodiscard]] float radians(float degrees) {
@@ -160,8 +168,23 @@ ocean_depth_texture_desc(const char* label, VkExtent2D extent, VkFormat format) 
     };
 }
 
-[[nodiscard]] bool ocean_resolution_changed(const OceanConfig& lhs,
-                                                const OceanConfig& rhs) {
+[[nodiscard]] OceanCameraPresetConfig ocean_camera_preset_config(OceanCameraPreset preset) {
+    switch (preset) {
+    case OceanCameraPreset::Default:
+        return {.preset = preset, .distance = kCameraDistance, .yaw = kCameraBaseYaw,
+                .pitch = kCameraBasePitch};
+    case OceanCameraPreset::Low:
+        return {.preset = preset, .distance = 180.0F, .yaw = 0.42F, .pitch = -0.08F};
+    case OceanCameraPreset::Close:
+        return {.preset = preset, .distance = 48.0F, .yaw = 0.62F, .pitch = -0.28F};
+    case OceanCameraPreset::Overhead:
+        return {.preset = preset, .distance = 220.0F, .yaw = 0.20F, .pitch = -1.05F};
+    }
+    return {.preset = OceanCameraPreset::Default, .distance = kCameraDistance,
+            .yaw = kCameraBaseYaw, .pitch = kCameraBasePitch};
+}
+
+[[nodiscard]] bool ocean_resolution_changed(const OceanConfig& lhs, const OceanConfig& rhs) {
     return lhs.map_size != rhs.map_size;
 }
 
@@ -170,6 +193,7 @@ class OceanApp {
     explicit OceanApp(RunConfig config)
         : config_(std::move(config)), ocean_config_(ocean_config_from_run_config(config_)),
           render_view_(ocean_config_.render_view) {
+        diagnostics_.selected_cascade = config_.ocean.cascade;
         diagnostics_.wire_overlay = config_.ocean.wire_overlay;
         if (cubey::run_config_float_is_set(config_.ocean.wire_opacity)) {
             diagnostics_.wire_opacity = config_.ocean.wire_opacity;
@@ -178,6 +202,7 @@ class OceanApp {
         orbit_controller_.set_home_distance(kCameraDistance);
         orbit_controller_.set_distance_limits(kCameraMinDistance, kCameraMaxDistance);
         orbit_controller_.set_auto_rotation_speed(0.0F);
+        apply_camera_preset(camera_preset_);
     }
 
     OceanApp(const OceanApp&) = delete;
@@ -212,11 +237,18 @@ class OceanApp {
                 .diagnostics = diagnostics_,
                 .latest_frame_stats = latest_frame_stats_,
                 .render_view = render_view_,
+                .camera_preset = camera_preset_,
                 .paused = paused_,
                 .reset_requested = reset_requested_,
+                .step_requested = step_requested_,
+                .camera_preset_requested = camera_preset_requested_,
                 .latest_fps = latest_fps_,
                 .latest_frame_ms = latest_frame_ms_,
             });
+            if (camera_preset_requested_) {
+                apply_camera_preset(camera_preset_);
+                camera_preset_requested_ = false;
+            }
         };
         callbacks.record_frame = [this](cubey::host::WindowedAppContext& context,
                                         const cubey::host::WindowedRenderFrame& frame) {
@@ -291,11 +323,15 @@ class OceanApp {
         if (reset_requested_) {
             time_seconds_ = 0.0;
             foam_initialized_ = false;
-            orbit_controller_.reset();
+            apply_camera_preset(camera_preset_);
             reset_requested_ = false;
         }
-        if (!paused_) {
+        if (paused_ && step_requested_) {
+            time_seconds_ += 1.0 / 60.0;
+            step_requested_ = false;
+        } else if (!paused_) {
             time_seconds_ += timing.delta_seconds;
+            step_requested_ = false;
         }
         last_delta_seconds_ = timing.delta_seconds > 0.0 ? timing.delta_seconds : (1.0 / 60.0);
         sync_gpu_resources(context);
@@ -368,12 +404,21 @@ class OceanApp {
         }
     }
 
+    void apply_camera_preset(OceanCameraPreset preset) {
+        const OceanCameraPresetConfig config = ocean_camera_preset_config(preset);
+        camera_preset_ = config.preset;
+        camera_base_yaw_ = config.yaw;
+        camera_base_pitch_ = config.pitch;
+        orbit_controller_.set_home_distance(config.distance);
+        orbit_controller_.reset();
+    }
+
     [[nodiscard]] cubey::Transform3D camera_transform() const {
         return cubey::orbit_camera_transform(cubey::OrbitCameraState{
             .target = {0.0F, 0.0F, 0.0F},
             .distance = orbit_controller_.distance(),
-            .yaw = kCameraBaseYaw + orbit_controller_.yaw(),
-            .pitch = kCameraBasePitch + orbit_controller_.pitch(),
+            .yaw = camera_base_yaw_ + orbit_controller_.yaw(),
+            .pitch = camera_base_pitch_ + orbit_controller_.pitch(),
         });
     }
 
@@ -419,6 +464,13 @@ class OceanApp {
                     static_cast<float>(ocean_config_.mesh_lod_levels - 1U),
                     diagnostics_.wire_overlay ? std::clamp(diagnostics_.wire_opacity, 0.0F, 1.0F)
                                               : 0.0F,
+                },
+            .inspection_options =
+                {
+                    static_cast<float>(diagnostics_.selected_cascade),
+                    0.0F,
+                    0.0F,
+                    0.0F,
                 },
             .tile_lengths =
                 {
@@ -808,6 +860,7 @@ class OceanApp {
     OceanConfig ocean_config_;
     OceanDiagnosticsConfig diagnostics_;
     OceanRenderView render_view_ = OceanRenderView::Final;
+    OceanCameraPreset camera_preset_ = OceanCameraPreset::Default;
     cubey::Camera3D camera_;
     cubey::OrbitController orbit_controller_;
     cubey::host::FrameStats ui_frame_stats_;
@@ -820,8 +873,12 @@ class OceanApp {
     double last_delta_seconds_ = 1.0 / 60.0;
     double latest_fps_ = 0.0;
     double latest_frame_ms_ = 0.0;
+    float camera_base_yaw_ = kCameraBaseYaw;
+    float camera_base_pitch_ = kCameraBasePitch;
     bool paused_ = false;
     bool reset_requested_ = false;
+    bool step_requested_ = false;
+    bool camera_preset_requested_ = false;
     bool textures_initialized_ = false;
     bool spectrum_initialized_ = false;
     bool foam_initialized_ = false;

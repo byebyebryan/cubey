@@ -42,6 +42,22 @@ float parse_float(std::string_view value, const char* name) {
     return parsed;
 }
 
+int parse_ocean_cascade(std::string_view value, const char* name) {
+    if (value == "all") {
+        return -1;
+    }
+    if (value == "0") {
+        return 0;
+    }
+    if (value == "1") {
+        return 1;
+    }
+    if (value == "2") {
+        return 2;
+    }
+    throw std::runtime_error(std::string(name) + " must be all, 0, 1, or 2");
+}
+
 std::filesystem::path profile_output_prefix(std::string_view value) {
     std::filesystem::path prefix{std::string(value)};
     if (prefix.empty()) {
@@ -286,6 +302,9 @@ RunConfig parse_run_config(int argc, char** argv) {
         } else if (arg == "--ocean-map-size") {
             config.ocean.map_size =
                 parse_positive_u32(need_value("--ocean-map-size"), "--ocean-map-size");
+        } else if (arg == "--ocean-cascade") {
+            config.ocean.cascade = parse_ocean_cascade(need_value("--ocean-cascade"),
+                                                       "--ocean-cascade");
         } else if (arg == "--ocean-wire-overlay") {
             config.ocean.wire_overlay = true;
         } else if (arg == "--ocean-wire-opacity") {

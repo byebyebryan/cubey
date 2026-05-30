@@ -243,7 +243,8 @@ timestamp queries are available.
 starts from the GodotOceanWaves-derived spectrum/FFT/unpack path and exposes
 `--ocean-map-size 128|256|512|1024`,
 `--debug-view final|height|displacement|normal|foam|lod`, and
-`--ocean-wire-overlay` for captured LOD diagnostics.
+`--ocean-cascade all|0|1|2` for focused inspection. Use `--ocean-wire-overlay`
+for captured LOD diagnostics.
 `ocean_ref` keeps the same wave core under `--ocean-ref-*` options as a frozen
 known-good reference. `ocean_legacy` keeps the older Cubey experimental renderer
 with macro waves, foam history, refraction, seafloor, and additional debug views

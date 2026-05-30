@@ -177,17 +177,24 @@ int main() {
         const char* argv[] = {"ocean",
                               "--ocean-map-size",
                               "256",
+                              "--ocean-cascade",
+                              "2",
                               "--debug-view",
                               "normal",
                               "--ocean-wire-overlay",
                               "--ocean-wire-opacity",
                               "0.8"};
-        cubey::RunConfig parsed = cubey::parse_run_config(8, const_cast<char**>(argv));
+        cubey::RunConfig parsed = cubey::parse_run_config(10, const_cast<char**>(argv));
         require(parsed.ocean.map_size == 256U, "CLI parser should accept --ocean-map-size");
+        require(parsed.ocean.cascade == 2, "CLI parser should accept --ocean-cascade");
         require(parsed.debug_view == "normal", "CLI parser should preserve debug view");
         require(parsed.ocean.wire_overlay, "CLI parser should accept ocean wire overlay");
         require_near(parsed.ocean.wire_opacity, 0.8F, 0.001F,
                      "CLI parser should accept ocean wire opacity");
+
+        const char* all_cascade_argv[] = {"ocean", "--ocean-cascade", "all"};
+        parsed = cubey::parse_run_config(3, const_cast<char**>(all_cascade_argv));
+        require(parsed.ocean.cascade == -1, "CLI parser should accept all ocean cascades");
 
         ocean::OceanConfig invalid_map = defaults;
         invalid_map.map_size = 192U;
@@ -218,6 +225,8 @@ int main() {
             read_text_file(source_root / "shaders/ocean_unpack.comp");
         const std::string vertex_shader = read_text_file(source_root / "shaders/ocean.vert");
         const std::string fragment_shader = read_text_file(source_root / "shaders/ocean.frag");
+        const std::string gpu_resources_source =
+            read_text_file(source_root / "ocean_gpu_resources.cpp");
 
         require_contains(spectrum_shader, "xy = h0(k), zw = conj(h0(-k))",
                          "spectrum shader should document reference h0 packing");
@@ -248,9 +257,13 @@ int main() {
         require_contains(vertex_shader,
                          "distance_factor = min(exp(-(camera_distance - 150.0) * 0.007), 1.0)",
                          "vertex shader should preserve reference distance falloff");
+        require_contains(vertex_shader, "if (!ocean_cascade_enabled(cascade))",
+                         "vertex shader should gate displacement by inspected cascade");
         require_contains(fragment_shader,
                          "gradient += normal_foam.xyw * vec3(normal_scale, normal_scale, 1.0)",
                          "fragment shader should preserve normal/foam map scale packing");
+        require_contains(fragment_shader, "if (!ocean_cascade_enabled(cascade))",
+                         "fragment shader should gate normal and foam by inspected cascade");
         require_contains(fragment_shader,
                          "smoothstep(0.0, 1.0, gradient.z * 0.75) * exp(-dist * 0.0075)",
                          "fragment shader should preserve reference foam attenuation");
@@ -262,6 +275,8 @@ int main() {
                          "fragment shader should expose LOD diagnostics");
         require_contains(fragment_shader, "triangle_wire_factor(frag_barycentric)",
                          "fragment shader should expose wire diagnostics");
+        require_contains(gpu_resources_source, ".size = sizeof(float) * 60U",
+                         "surface pipeline push constants should match ocean shader layout");
 
         require_not_contains(vertex_shader, "ocean_macro_waves",
                              "ocean vertex shader should not use Cubey macro waves");

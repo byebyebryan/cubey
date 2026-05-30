@@ -6,7 +6,8 @@ Cubey now keeps three ocean lanes with different jobs:
   GodotOceanWaves-derived spectrum/FFT/unpack core and should stay close to
   that baseline until changes clearly improve it.
 - `projects/ocean_ref` is the frozen reference port. Keep it source-stable so
-  active ocean changes can be compared against a working wave-shape baseline.
+  active ocean changes can be checked against a working wave-shape guardrail,
+  not treated as an oracle.
 - `projects/ocean_legacy` is the previous Cubey experimental renderer. It is a
   feature donor for macro crests, persistent foam history, refraction, seafloor,
   atmosphere hooks, and shoreline/bathymetry ideas.
@@ -27,13 +28,16 @@ The active renderer currently focuses on:
 - the GodotOceanWaves-style multi-cascade spectrum, modulation, FFT, and unpack
   path;
 - displacement, normal, foam, and LOD debug views;
+- cascade isolation, camera presets, pause/step timing, and mesh diagnostics
+  for interactive inspection;
 - a compact procedural sky/background pass used by the standalone demo;
 - active `--ocean-*` CLI controls, while the frozen reference keeps
   `--ocean-ref-*` controls.
 
 The active renderer should not immediately absorb all legacy features. Additions
 should be ported one at a time only when they preserve or improve the
-reference-derived crest shape and foam behavior.
+interactive inspection result. The first bias is toward diagnostics that help
+reason about the wave core, not snapshot comparison tooling.
 
 ## Feature Donor Boundaries
 
@@ -47,8 +51,8 @@ Useful `ocean_legacy` ideas to revisit later:
   translucency inspection.
 
 Legacy code is evidence, not the base. The default path should be to port the
-smallest useful slice into `projects/ocean`, test it against `projects/ocean_ref`,
-and keep the reference intact.
+smallest useful slice into `projects/ocean`, use `projects/ocean_ref` only as a
+guardrail, and keep the reference intact.
 
 ## Rendering References
 

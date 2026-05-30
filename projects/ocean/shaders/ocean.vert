@@ -11,6 +11,7 @@ layout(push_constant) uniform OceanParams {
     vec4 patch_bounds;
     vec4 display_transform;
     vec4 debug_options;
+    vec4 inspection_options;
     vec4 tile_lengths;
     vec4 displacement_scales;
     vec4 normal_scales;
@@ -109,7 +110,15 @@ vec4 sample_displacement(uint cascade, vec2 uv) {
     return texture(displacement_cascade2_texture, uv);
 }
 
+bool ocean_cascade_enabled(uint cascade) {
+    float selected = ocean.inspection_options.x;
+    return selected < -0.5 || abs(selected - float(cascade)) < 0.5;
+}
+
 void add_displacement(inout vec3 displacement, uint cascade, vec2 position) {
+    if (!ocean_cascade_enabled(cascade)) {
+        return;
+    }
     float tile_length = max(cascade_tile_length(cascade), 0.001);
     vec2 uv = position / tile_length;
     displacement += sample_displacement(cascade, uv).xyz * cascade_displacement_scale(cascade);

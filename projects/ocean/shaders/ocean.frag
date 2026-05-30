@@ -16,6 +16,7 @@ layout(push_constant) uniform OceanParams {
     vec4 patch_bounds;
     vec4 display_transform;
     vec4 debug_options;
+    vec4 inspection_options;
     vec4 tile_lengths;
     vec4 displacement_scales;
     vec4 normal_scales;
@@ -99,10 +100,18 @@ vec4 sample_normal_foam(uint cascade, vec2 uv, float pixels_per_meter) {
                texture(normal_foam_cascade2_texture, uv), min(1.0, pixels_per_meter * 0.1));
 }
 
+bool ocean_cascade_enabled(uint cascade) {
+    float selected = ocean.inspection_options.x;
+    return selected < -0.5 || abs(selected - float(cascade)) < 0.5;
+}
+
 vec3 normal_foam_gradient(float dist) {
     vec3 gradient = vec3(0.0);
     float map_size = ocean.tile_lengths.w;
     for (uint cascade = 0u; cascade < 3u; ++cascade) {
+        if (!ocean_cascade_enabled(cascade)) {
+            continue;
+        }
         float tile_length = max(cascade_tile_length(cascade), 0.001);
         vec2 uv = frag_sample_position / tile_length;
         float pixels_per_meter = map_size / tile_length;

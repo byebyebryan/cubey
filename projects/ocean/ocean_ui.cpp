@@ -8,6 +8,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cstddef>
 #include <cstdint>
 #include <cstdio>
 
@@ -36,6 +37,47 @@ void draw_map_size_combo(OceanConfig& config) {
             }
         }
         ImGui::EndCombo();
+    }
+}
+
+void draw_selected_cascade_combo(OceanDiagnosticsConfig& diagnostics) {
+    const char* preview = diagnostics.selected_cascade < 0
+                              ? "All"
+                              : (diagnostics.selected_cascade == 0
+                                     ? "0"
+                                     : (diagnostics.selected_cascade == 1 ? "1" : "2"));
+    if (!ImGui::BeginCombo("Inspect cascade", preview)) {
+        return;
+    }
+    const std::array labels{"All", "0", "1", "2"};
+    const std::array values{-1, 0, 1, 2};
+    for (std::size_t index = 0; index < labels.size(); ++index) {
+        const bool selected = diagnostics.selected_cascade == values[index];
+        if (ImGui::Selectable(labels[index], selected)) {
+            diagnostics.selected_cascade = values[index];
+        }
+        if (selected) {
+            ImGui::SetItemDefaultFocus();
+        }
+    }
+    ImGui::EndCombo();
+}
+
+void request_camera_preset(OceanUiContext& ui, OceanCameraPreset preset) {
+    ui.camera_preset = preset;
+    ui.camera_preset_requested = true;
+}
+
+void draw_camera_preset_button(OceanUiContext& ui, OceanCameraPreset preset, const char* label) {
+    const bool selected = ui.camera_preset == preset;
+    if (selected) {
+        ImGui::BeginDisabled();
+    }
+    if (ImGui::Button(label)) {
+        request_camera_preset(ui, preset);
+    }
+    if (selected) {
+        ImGui::EndDisabled();
     }
 }
 
@@ -110,8 +152,15 @@ void draw_ocean_ui(OceanUiContext ui) {
     if (ImGui::Button("Reset")) {
         ui.reset_requested = true;
     }
+    ImGui::SameLine();
+    ImGui::BeginDisabled(!ui.paused);
+    if (ImGui::Button("Step")) {
+        ui.step_requested = true;
+    }
+    ImGui::EndDisabled();
     cubey::host::imgui_enum_combo("Debug view", ui.render_view, kOceanRenderViews,
                                   ocean_render_view_name);
+    draw_selected_cascade_combo(ui.diagnostics);
     ImGui::Checkbox("Wire overlay", &ui.diagnostics.wire_overlay);
     ImGui::BeginDisabled(!ui.diagnostics.wire_overlay);
     ImGui::SliderFloat("Wire opacity", &ui.diagnostics.wire_opacity, 0.05F, 1.0F, "%.2f");
@@ -122,6 +171,17 @@ void draw_ocean_ui(OceanUiContext ui) {
         draw_map_size_combo(ui.config);
         ImGui::SliderFloat("Depth", &ui.config.depth, 2.0F, 80.0F, "%.1f m");
         ImGui::TextUnformatted("GodotOceanWaves port");
+    }
+
+    if (cubey::host::imgui_section("Camera", true)) {
+        const cubey::host::ScopedImGuiId section_id("Camera");
+        draw_camera_preset_button(ui, OceanCameraPreset::Default, "Default");
+        ImGui::SameLine();
+        draw_camera_preset_button(ui, OceanCameraPreset::Low, "Low");
+        ImGui::SameLine();
+        draw_camera_preset_button(ui, OceanCameraPreset::Close, "Close");
+        ImGui::SameLine();
+        draw_camera_preset_button(ui, OceanCameraPreset::Overhead, "Overhead");
     }
 
     if (cubey::host::imgui_section("Mesh", true)) {
@@ -164,6 +224,13 @@ void draw_ocean_ui(OceanUiContext ui) {
     if (cubey::host::imgui_section("Diagnostics", true)) {
         const cubey::host::ScopedImGuiId section_id("Diagnostics");
         cubey::host::draw_frame_stats(ui.latest_frame_stats, ui.latest_fps, ui.latest_frame_ms);
+        ImGui::Text("Map: %u", ui.config.map_size);
+        ImGui::Text("C0: %.0f m / disp %.2f", ui.config.cascades[0].tile_length,
+                    ui.config.cascades[0].displacement_scale);
+        ImGui::Text("C1: %.0f m / disp %.2f", ui.config.cascades[1].tile_length,
+                    ui.config.cascades[1].displacement_scale);
+        ImGui::Text("C2: %.0f m / disp %.2f", ui.config.cascades[2].tile_length,
+                    ui.config.cascades[2].displacement_scale);
         ImGui::Text("Mesh: %u LOD / %u patches / %u tris", ui.config.mesh_lod_levels,
                     ocean_mesh_patch_count(ui.config),
                     ocean_mesh_total_triangle_count(ui.config));

@@ -330,6 +330,47 @@ void test_run_config_parses_water_controls() {
             "run config should parse Water 3D optional-system toggles");
 }
 
+void test_run_config_parses_ocean_controls() {
+    std::string program = "cubey";
+    std::string map_flag = "--ocean-map-size";
+    std::string map_value = "256";
+    std::string cascade_flag = "--ocean-cascade";
+    std::string cascade_value = "2";
+    std::string wire_flag = "--ocean-wire-overlay";
+    std::string opacity_flag = "--ocean-wire-opacity";
+    std::string opacity_value = "0.75";
+    std::array<char*, 8> argv{program.data(),      map_flag.data(),    map_value.data(),
+                              cascade_flag.data(), cascade_value.data(), wire_flag.data(),
+                              opacity_flag.data(), opacity_value.data()};
+
+    const cubey::RunConfig config =
+        cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
+    require(config.ocean.map_size == 256, "run config should parse ocean map size");
+    require(config.ocean.cascade == 2, "run config should parse ocean cascade selection");
+    require(config.ocean.wire_overlay, "run config should parse ocean wire overlay");
+    require(config.ocean.wire_opacity == 0.75F,
+            "run config should parse ocean wire opacity");
+
+    std::string all_value = "all";
+    std::array<char*, 3> all_argv{program.data(), cascade_flag.data(), all_value.data()};
+    const cubey::RunConfig all_config =
+        cubey::parse_run_config(static_cast<int>(all_argv.size()), all_argv.data());
+    require(all_config.ocean.cascade == -1, "run config should parse all ocean cascades");
+
+    const cubey::RunConfig defaults = cubey::parse_run_config(1, all_argv.data());
+    require(defaults.ocean.cascade == -1, "run config should default to all ocean cascades");
+}
+
+void test_run_config_rejects_invalid_ocean_controls() {
+    std::string program = "cubey";
+    std::string cascade_flag = "--ocean-cascade";
+    std::string cascade_value = "3";
+    std::array<char*, 3> argv{program.data(), cascade_flag.data(), cascade_value.data()};
+    require_throws(
+        [&argv]() { cubey::parse_run_config(static_cast<int>(argv.size()), argv.data()); },
+        "run config should reject unsupported ocean cascade selection");
+}
+
 void test_run_config_parses_shadow_volume_controls() {
     std::string program = "cubey";
     std::string width_flag = "--shadow-grid-width";
