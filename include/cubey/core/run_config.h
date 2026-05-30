@@ -102,6 +102,7 @@ struct RunConfig {
         float ibl_intensity = 1.0F;
         float environment_rotation_degrees = 0.0F;
         float exposure = 0.0F;
+        bool exposure_explicit = false;
     };
 
     struct GltfOptions {
@@ -113,10 +114,19 @@ struct RunConfig {
 
     struct AtmosphereOptions {
         std::string preset{};
+        std::string time_of_day_mode{};
         float sun_elevation_degrees = kRunConfigUnsetFloat;
         float sun_azimuth_degrees = kRunConfigUnsetFloat;
         float camera_altitude_km = kRunConfigUnsetFloat;
         float mie_scale = kRunConfigUnsetFloat;
+        float time_hours = kRunConfigUnsetFloat;
+        float day_of_year = kRunConfigUnsetFloat;
+        float latitude_degrees = kRunConfigUnsetFloat;
+        float sun_azimuth_offset_degrees = kRunConfigUnsetFloat;
+        float time_speed_hours_per_second = kRunConfigUnsetFloat;
+        float exposure_bias = kRunConfigUnsetFloat;
+        int time_paused = -1;
+        int auto_exposure = -1;
     };
 
     std::string title = "cubey";

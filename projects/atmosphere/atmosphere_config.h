@@ -3,9 +3,11 @@
 #include <cubey/core/math.h>
 #include <cubey/core/run_config.h>
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstdint>
+#include <numbers>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -46,9 +48,32 @@ inline constexpr std::array<AtmosphereRenderView, 7> kAtmosphereRenderViews{
     AtmosphereRenderView::AerialPerspective,
 };
 
+enum class SunControlMode : std::uint32_t {
+    ManualSun = 0,
+    SolarClock = 1,
+};
+
+inline constexpr std::array<SunControlMode, 2> kSunControlModes{
+    SunControlMode::ManualSun,
+    SunControlMode::SolarClock,
+};
+
+struct TimeOfDayConfig {
+    SunControlMode mode = SunControlMode::SolarClock;
+    float time_hours = 12.0F;
+    float day_of_year = 80.0F;
+    float latitude_degrees = 30.0F;
+    float azimuth_offset_degrees = 0.0F;
+    bool playing = true;
+    float speed_hours_per_second = 0.05F;
+    bool auto_exposure_enabled = true;
+    float exposure_bias = 0.0F;
+};
+
 struct AtmosphereConfig {
     AtmospherePreset preset = AtmospherePreset::Noon;
     AtmosphereRenderView render_view = AtmosphereRenderView::Final;
+    TimeOfDayConfig time_of_day{};
 
     float bottom_radius_km = 6371.0F;
     float top_radius_km = 6471.0F;
@@ -75,6 +100,11 @@ struct AtmosphereConfig {
     bool reference_geometry_enabled = true;
     float reference_grid_km = 1.0F;
     float reference_intensity = 0.72F;
+};
+
+struct SolarPosition {
+    float elevation_degrees = 0.0F;
+    float azimuth_degrees = 0.0F;
 };
 
 [[nodiscard]] inline const char* atmosphere_preset_name(AtmospherePreset preset) {
@@ -148,35 +178,134 @@ struct AtmosphereConfig {
     return AtmosphereRenderView::Final;
 }
 
+[[nodiscard]] inline const char* sun_control_mode_name(SunControlMode mode) {
+    switch (mode) {
+    case SunControlMode::ManualSun:
+        return "manual";
+    case SunControlMode::SolarClock:
+        return "solar";
+    }
+    return "solar";
+}
+
+[[nodiscard]] inline SunControlMode sun_control_mode_from_name(std::string_view name) {
+    if (name.empty()) {
+        return SunControlMode::SolarClock;
+    }
+    for (const SunControlMode mode : kSunControlModes) {
+        if (name == sun_control_mode_name(mode)) {
+            return mode;
+        }
+    }
+    throw std::runtime_error("unknown atmosphere time-of-day mode: " + std::string(name));
+}
+
+[[nodiscard]] inline float atmosphere_degrees_to_radians(float degrees) {
+    return degrees * (std::numbers::pi_v<float> / 180.0F);
+}
+
+[[nodiscard]] inline float atmosphere_radians_to_degrees(float radians) {
+    return radians * (180.0F / std::numbers::pi_v<float>);
+}
+
+[[nodiscard]] inline float atmosphere_wrap_time_hours(float time_hours) {
+    float wrapped = std::fmod(time_hours, 24.0F);
+    if (wrapped < 0.0F) {
+        wrapped += 24.0F;
+    }
+    return wrapped;
+}
+
+[[nodiscard]] inline float atmosphere_smoothstep(float edge0, float edge1, float value) {
+    const float t = std::clamp((value - edge0) / (edge1 - edge0), 0.0F, 1.0F);
+    return t * t * (3.0F - 2.0F * t);
+}
+
+[[nodiscard]] inline SolarPosition atmosphere_solar_position(const TimeOfDayConfig& time_of_day) {
+    const float day_angle =
+        atmosphere_degrees_to_radians((360.0F / 365.0F) * (time_of_day.day_of_year - 80.0F));
+    const float declination = atmosphere_degrees_to_radians(23.44F) * std::sin(day_angle);
+    const float latitude = atmosphere_degrees_to_radians(time_of_day.latitude_degrees);
+    const float hour_angle = atmosphere_degrees_to_radians(
+        15.0F * (atmosphere_wrap_time_hours(time_of_day.time_hours) - 12.0F));
+
+    const float sin_elevation = std::sin(latitude) * std::sin(declination) +
+                                std::cos(latitude) * std::cos(declination) * std::cos(hour_angle);
+    const float elevation = std::asin(std::clamp(sin_elevation, -1.0F, 1.0F));
+    const float east = -std::cos(declination) * std::sin(hour_angle);
+    const float south = -std::cos(latitude) * std::sin(declination) +
+                        std::sin(latitude) * std::cos(declination) * std::cos(hour_angle);
+    const float azimuth =
+        atmosphere_radians_to_degrees(std::atan2(east, south)) + time_of_day.azimuth_offset_degrees;
+
+    return {
+        .elevation_degrees = atmosphere_radians_to_degrees(elevation),
+        .azimuth_degrees = std::clamp(azimuth, -360.0F, 360.0F),
+    };
+}
+
+[[nodiscard]] inline float atmosphere_auto_exposure(float sun_elevation_degrees,
+                                                    float exposure_bias) {
+    const float daylight = atmosphere_smoothstep(-6.0F, 20.0F, sun_elevation_degrees);
+    return std::clamp(exposure_bias + 2.2F * (1.0F - daylight), -4.0F, 4.0F);
+}
+
+inline void resolve_atmosphere_time_of_day(AtmosphereConfig& config) {
+    if (config.time_of_day.mode == SunControlMode::SolarClock) {
+        const SolarPosition solar_position = atmosphere_solar_position(config.time_of_day);
+        config.sun_elevation_degrees = solar_position.elevation_degrees;
+        config.sun_azimuth_degrees = solar_position.azimuth_degrees;
+    }
+    if (config.time_of_day.auto_exposure_enabled) {
+        config.exposure = atmosphere_auto_exposure(config.sun_elevation_degrees,
+                                                   config.time_of_day.exposure_bias);
+    }
+}
+
+inline void advance_atmosphere_time_of_day(AtmosphereConfig& config, double delta_seconds) {
+    if (config.time_of_day.mode != SunControlMode::SolarClock || !config.time_of_day.playing ||
+        delta_seconds <= 0.0) {
+        return;
+    }
+    config.time_of_day.time_hours = atmosphere_wrap_time_hours(
+        config.time_of_day.time_hours +
+        static_cast<float>(delta_seconds) * config.time_of_day.speed_hours_per_second);
+}
+
 [[nodiscard]] inline AtmosphereConfig atmosphere_config_for_preset(AtmospherePreset preset) {
     AtmosphereConfig config;
     config.preset = preset;
     switch (preset) {
     case AtmospherePreset::Noon:
+        config.time_of_day.time_hours = 12.0F;
         config.sun_elevation_degrees = 60.0F;
         config.sun_azimuth_degrees = 0.0F;
         config.camera_altitude_km = 0.15F;
         config.exposure = 0.0F;
         break;
     case AtmospherePreset::LowSun:
+        config.time_of_day.time_hours = 17.1F;
         config.sun_elevation_degrees = 12.0F;
         config.sun_azimuth_degrees = -32.0F;
         config.camera_altitude_km = 0.15F;
         config.mie_density_scale = 1.15F;
         break;
     case AtmospherePreset::Sunset:
+        config.time_of_day.time_hours = 17.8F;
         config.sun_elevation_degrees = 2.0F;
         config.sun_azimuth_degrees = -48.0F;
         config.camera_altitude_km = 0.15F;
         config.mie_density_scale = 1.45F;
         break;
     case AtmospherePreset::Hazy:
+        config.time_of_day.time_hours = 16.6F;
         config.sun_elevation_degrees = 18.0F;
         config.sun_azimuth_degrees = -24.0F;
         config.camera_altitude_km = 0.15F;
         config.mie_density_scale = 3.50F;
         break;
     case AtmospherePreset::ThinAir:
+        config.time_of_day.time_hours = 13.9F;
         config.sun_elevation_degrees = 50.0F;
         config.sun_azimuth_degrees = 15.0F;
         config.camera_altitude_km = 0.15F;
@@ -184,6 +313,7 @@ struct AtmosphereConfig {
         config.mie_density_scale = 0.25F;
         break;
     case AtmospherePreset::HighAltitude:
+        config.time_of_day.time_hours = 17.3F;
         config.sun_elevation_degrees = 10.0F;
         config.sun_azimuth_degrees = -58.0F;
         config.camera_altitude_km = 25.0F;
@@ -208,9 +338,20 @@ inline void validate_atmosphere_config(const AtmosphereConfig& config) {
     require_finite(config.rayleigh_scale_height_km, "atmosphere Rayleigh scale height");
     require_finite(config.mie_scale_height_km, "atmosphere Mie scale height");
     require_finite(config.mie_anisotropy, "atmosphere Mie anisotropy");
+    require_finite(config.ozone_half_width_km, "atmosphere ozone half width");
+    require_finite(config.sun_angular_radius, "atmosphere sun angular radius");
+    require_finite(config.sun_elevation_degrees, "atmosphere sun elevation");
+    require_finite(config.sun_azimuth_degrees, "atmosphere sun azimuth");
     require_finite(config.camera_altitude_km, "atmosphere camera altitude");
+    require_finite(config.exposure, "atmosphere exposure");
     require_finite(config.reference_grid_km, "atmosphere reference grid scale");
     require_finite(config.reference_intensity, "atmosphere reference intensity");
+    require_finite(config.time_of_day.time_hours, "atmosphere time hours");
+    require_finite(config.time_of_day.day_of_year, "atmosphere day of year");
+    require_finite(config.time_of_day.latitude_degrees, "atmosphere latitude");
+    require_finite(config.time_of_day.azimuth_offset_degrees, "atmosphere sun azimuth offset");
+    require_finite(config.time_of_day.speed_hours_per_second, "atmosphere time speed");
+    require_finite(config.time_of_day.exposure_bias, "atmosphere exposure bias");
 
     if (config.bottom_radius_km <= 0.0F || config.top_radius_km <= config.bottom_radius_km) {
         throw std::runtime_error("atmosphere radii must be positive and ordered bottom < top");
@@ -233,11 +374,29 @@ inline void validate_atmosphere_config(const AtmosphereConfig& config) {
     if (config.ground_albedo < 0.0F || config.ground_albedo > 1.0F) {
         throw std::runtime_error("atmosphere ground albedo must be in [0, 1]");
     }
+    if (config.sun_elevation_degrees < -90.0F || config.sun_elevation_degrees > 90.0F ||
+        config.sun_azimuth_degrees < -360.0F || config.sun_azimuth_degrees > 360.0F) {
+        throw std::runtime_error("atmosphere sun angles must be within supported ranges");
+    }
     if (config.sun_angular_radius <= 0.0F || config.camera_altitude_km < 0.0F) {
         throw std::runtime_error("atmosphere sun radius must be positive and altitude nonnegative");
     }
     if (config.reference_grid_km <= 0.0F || config.reference_intensity < 0.0F) {
         throw std::runtime_error("atmosphere reference grid scale must be positive");
+    }
+    if (config.time_of_day.time_hours < 0.0F || config.time_of_day.time_hours > 24.0F ||
+        config.time_of_day.day_of_year < 1.0F || config.time_of_day.day_of_year > 366.0F) {
+        throw std::runtime_error("atmosphere time fields must be within supported ranges");
+    }
+    if (config.time_of_day.latitude_degrees < -90.0F ||
+        config.time_of_day.latitude_degrees > 90.0F ||
+        config.time_of_day.azimuth_offset_degrees < -360.0F ||
+        config.time_of_day.azimuth_offset_degrees > 360.0F) {
+        throw std::runtime_error("atmosphere solar clock angles must be within supported ranges");
+    }
+    if (config.time_of_day.speed_hours_per_second < 0.0F ||
+        config.time_of_day.exposure_bias < -4.0F || config.time_of_day.exposure_bias > 4.0F) {
+        throw std::runtime_error("atmosphere time speed and exposure bias are out of range");
     }
 }
 
@@ -245,7 +404,15 @@ inline void validate_atmosphere_config(const AtmosphereConfig& config) {
     AtmosphereConfig config =
         atmosphere_config_for_preset(atmosphere_preset_from_name(run.atmosphere.preset));
     config.render_view = atmosphere_render_view_from_name(run.debug_view);
-    config.exposure = run.pbr.exposure;
+    if (!run.atmosphere.time_of_day_mode.empty()) {
+        config.time_of_day.mode = sun_control_mode_from_name(run.atmosphere.time_of_day_mode);
+    }
+    const bool manual_sun_override =
+        run_config_float_is_set(run.atmosphere.sun_elevation_degrees) ||
+        run_config_float_is_set(run.atmosphere.sun_azimuth_degrees);
+    if (manual_sun_override) {
+        config.time_of_day.mode = SunControlMode::ManualSun;
+    }
     if (run_config_float_is_set(run.atmosphere.sun_elevation_degrees)) {
         config.sun_elevation_degrees = run.atmosphere.sun_elevation_degrees;
     }
@@ -258,6 +425,38 @@ inline void validate_atmosphere_config(const AtmosphereConfig& config) {
     if (run_config_float_is_set(run.atmosphere.mie_scale)) {
         config.mie_density_scale = run.atmosphere.mie_scale;
     }
+    if (run_config_float_is_set(run.atmosphere.time_hours)) {
+        config.time_of_day.time_hours = run.atmosphere.time_hours;
+    }
+    if (run_config_float_is_set(run.atmosphere.day_of_year)) {
+        config.time_of_day.day_of_year = run.atmosphere.day_of_year;
+    }
+    if (run_config_float_is_set(run.atmosphere.latitude_degrees)) {
+        config.time_of_day.latitude_degrees = run.atmosphere.latitude_degrees;
+    }
+    if (run_config_float_is_set(run.atmosphere.sun_azimuth_offset_degrees)) {
+        config.time_of_day.azimuth_offset_degrees = run.atmosphere.sun_azimuth_offset_degrees;
+    }
+    if (run_config_float_is_set(run.atmosphere.time_speed_hours_per_second)) {
+        config.time_of_day.speed_hours_per_second = run.atmosphere.time_speed_hours_per_second;
+    }
+    if (run.atmosphere.time_paused == 1) {
+        config.time_of_day.playing = false;
+    }
+    if (config.time_of_day.mode == SunControlMode::ManualSun && run.atmosphere.auto_exposure < 0) {
+        config.time_of_day.auto_exposure_enabled = false;
+    }
+    if (run.atmosphere.auto_exposure >= 0) {
+        config.time_of_day.auto_exposure_enabled = run.atmosphere.auto_exposure == 1;
+    }
+    if (run.pbr.exposure_explicit) {
+        config.exposure = run.pbr.exposure;
+        config.time_of_day.auto_exposure_enabled = false;
+    }
+    if (run_config_float_is_set(run.atmosphere.exposure_bias)) {
+        config.time_of_day.exposure_bias = run.atmosphere.exposure_bias;
+    }
+    resolve_atmosphere_time_of_day(config);
     validate_atmosphere_config(config);
     return config;
 }

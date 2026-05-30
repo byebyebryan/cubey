@@ -10,7 +10,9 @@ disk, and debug views. LUT-backed production rendering is intentionally deferred
 
 Low-sun planet shadowing uses a softened solar-disk visibility term. The
 transition is deliberately wider than the physical sun radius so sunrise and
-sunset remain inspectable before multiple-scattering LUTs exist.
+sunset remain inspectable before multiple-scattering LUTs exist. Time of day is
+resolved on the CPU from local solar time, day of year, and latitude, with manual
+sun direction still available for art/debug work.
 
 Useful runs:
 
@@ -18,15 +20,18 @@ Useful runs:
 ./build/dev/projects/atmosphere/atmosphere --headless --output /tmp/cubey-atmosphere.png
 ./build/dev/projects/atmosphere/atmosphere --headless --debug-view transmittance --output /tmp/cubey-atmosphere-transmittance.png
 ./build/dev/projects/atmosphere/atmosphere --headless --atmosphere-preset sunset --output /tmp/cubey-atmosphere-sunset.png
+./build/dev/projects/atmosphere/atmosphere --headless --time-of-day-mode solar --time-hours 17.8 --output /tmp/cubey-atmosphere-twilight.png
 ./build/dev/projects/atmosphere/atmosphere --headless --capture video --frames 120 --output /tmp/cubey-atmosphere.mp4
 ```
 
 Controls:
 
 - Left-drag: rotate view direction.
+- Space: play/pause solar time.
 - `R`: reset to the active preset.
 - `D`: cycle final, rayleigh, mie, transmittance, optical-depth, sun-disk, and
   aerial-perspective debug views.
+- The Time panel switches between manual sun direction and local solar time.
 - The Reference panel controls the ground grid, local red/cyan axes, and origin
   marker used for orientation.
 - Escape: close.

@@ -51,6 +51,42 @@ if (BUILD_TESTING)
         --headless
     )
 
+    set(CUBEY_ATMOSPHERE_SOLAR_NOON_SMOKE_OUTPUT
+        "${CMAKE_CURRENT_BINARY_DIR}/atmosphere-solar-noon.png"
+    )
+    cubey_add_png_smoke_test(
+        atmosphere_solar_noon_writes_png
+        cubey_project_atmosphere
+        "${CUBEY_ATMOSPHERE_SOLAR_NOON_SMOKE_OUTPUT}"
+        --headless
+        --time-of-day-mode
+        solar
+        --time-hours
+        12
+        --day-of-year
+        80
+        --latitude-degrees
+        30
+    )
+
+    set(CUBEY_ATMOSPHERE_TWILIGHT_SMOKE_OUTPUT
+        "${CMAKE_CURRENT_BINARY_DIR}/atmosphere-twilight.png"
+    )
+    cubey_add_png_smoke_test(
+        atmosphere_twilight_writes_png
+        cubey_project_atmosphere
+        "${CUBEY_ATMOSPHERE_TWILIGHT_SMOKE_OUTPUT}"
+        --headless
+        --time-of-day-mode
+        solar
+        --time-hours
+        17.8
+        --day-of-year
+        80
+        --latitude-degrees
+        30
+    )
+
     set(CUBEY_ATMOSPHERE_TRANSMITTANCE_SMOKE_OUTPUT
         "${CMAKE_CURRENT_BINARY_DIR}/atmosphere-transmittance.png"
     )
@@ -71,7 +107,7 @@ if (BUILD_TESTING)
             NAME atmosphere_headless_writes_video
             COMMAND
                 /bin/sh -c
-                "output=$1; target=$2; rm -f \"$output\"; out=$(\"$target\" --headless --capture video --frames 60 --fps 60 --width 64 --height 64 --output \"$output\" 2>&1); status=$?; printf '%s\n' \"$out\"; if printf '%s\n' \"$out\" | grep -q 'vulkan validation error'; then exit 1; fi; if [ \"$status\" -ne 0 ]; then printf '%s\n' \"$out\" | grep -Eq 'no Vulkan physical devices found|vkEnumeratePhysicalDevices|no Vulkan device with required queues and dynamic rendering found|vkCreateInstance'; exit; fi; test -s \"$output\"; strings \"$output\" | grep -q ftyp"
+                "output=$1; target=$2; rm -f \"$output\"; out=$(\"$target\" --headless --capture video --frames 60 --fps 60 --width 64 --height 64 --time-of-day-mode solar --time-speed-hours-per-second 2 --output \"$output\" 2>&1); status=$?; printf '%s\n' \"$out\"; if printf '%s\n' \"$out\" | grep -q 'vulkan validation error'; then exit 1; fi; if [ \"$status\" -ne 0 ]; then printf '%s\n' \"$out\" | grep -Eq 'no Vulkan physical devices found|vkEnumeratePhysicalDevices|no Vulkan device with required queues and dynamic rendering found|vkCreateInstance'; exit; fi; test -s \"$output\"; strings \"$output\" | grep -q ftyp"
                 "atmosphere_headless_writes_video"
                 "${CUBEY_ATMOSPHERE_HEADLESS_VIDEO_SMOKE_OUTPUT}"
                 "$<TARGET_FILE:cubey_project_atmosphere>"

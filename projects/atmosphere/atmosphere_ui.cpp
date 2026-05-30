@@ -30,10 +30,40 @@ void draw_atmosphere_ui(AtmosphereUiContext ui) {
     cubey::host::imgui_enum_combo("Render view", ui.render_view, kAtmosphereRenderViews,
                                   atmosphere_render_view_name);
 
+    if (cubey::host::imgui_section("Time", true)) {
+        const cubey::host::ScopedImGuiId section_id("Time");
+        SunControlMode selected_mode = ui.config.time_of_day.mode;
+        if (cubey::host::imgui_enum_combo("Mode", selected_mode, kSunControlModes,
+                                          sun_control_mode_name)) {
+            ui.config.time_of_day.mode = selected_mode;
+            ui.config.time_of_day.auto_exposure_enabled =
+                selected_mode == SunControlMode::SolarClock;
+        }
+        ImGui::SliderFloat("Time", &ui.config.time_of_day.time_hours, 0.0F, 24.0F, "%.2f h");
+        ImGui::SliderFloat("Day", &ui.config.time_of_day.day_of_year, 1.0F, 366.0F, "%.0f");
+        ImGui::SliderFloat("Latitude", &ui.config.time_of_day.latitude_degrees, -90.0F, 90.0F,
+                           "%.1f deg");
+        ImGui::SliderFloat("Azimuth offset", &ui.config.time_of_day.azimuth_offset_degrees, -180.0F,
+                           180.0F, "%.1f deg");
+        ImGui::Checkbox("Play", &ui.config.time_of_day.playing);
+        ImGui::SliderFloat("Speed", &ui.config.time_of_day.speed_hours_per_second, 0.0F, 6.0F,
+                           "%.2f h/s");
+
+        const SolarPosition solar_position = atmosphere_solar_position(ui.config.time_of_day);
+        ImGui::Text("Solar elevation: %.1f deg", solar_position.elevation_degrees);
+        ImGui::Text("Solar azimuth: %.1f deg", solar_position.azimuth_degrees);
+    }
+
     if (cubey::host::imgui_section("Sun", true)) {
         const cubey::host::ScopedImGuiId section_id("Sun");
+        if (ui.config.time_of_day.mode == SunControlMode::SolarClock) {
+            ImGui::BeginDisabled();
+        }
         ImGui::SliderFloat("Elevation", &ui.config.sun_elevation_degrees, -4.0F, 90.0F, "%.1f deg");
         ImGui::SliderFloat("Azimuth", &ui.config.sun_azimuth_degrees, -180.0F, 180.0F, "%.1f deg");
+        if (ui.config.time_of_day.mode == SunControlMode::SolarClock) {
+            ImGui::EndDisabled();
+        }
         ImGui::SliderFloat("Angular radius", &ui.config.sun_angular_radius, 0.001F, 0.012F,
                            "%.4f rad");
     }
@@ -59,7 +89,14 @@ void draw_atmosphere_ui(AtmosphereUiContext ui) {
 
     if (cubey::host::imgui_section("Display", true)) {
         const cubey::host::ScopedImGuiId section_id("Display");
-        ImGui::SliderFloat("Exposure", &ui.config.exposure, -4.0F, 4.0F, "%.2f");
+        ImGui::Checkbox("Auto exposure", &ui.config.time_of_day.auto_exposure_enabled);
+        ImGui::SliderFloat("Exposure bias", &ui.config.time_of_day.exposure_bias, -4.0F, 4.0F,
+                           "%.2f");
+        if (ui.config.time_of_day.auto_exposure_enabled) {
+            ImGui::Text("Exposure: %.2f", ui.config.exposure);
+        } else {
+            ImGui::SliderFloat("Exposure", &ui.config.exposure, -4.0F, 4.0F, "%.2f");
+        }
     }
 
     if (cubey::host::imgui_section("Diagnostics", true)) {

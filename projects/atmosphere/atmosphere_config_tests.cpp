@@ -2,6 +2,7 @@
 
 #include <cubey/core/run_config.h>
 
+#include <cmath>
 #include <filesystem>
 #include <fstream>
 #include <stdexcept>
@@ -22,6 +23,12 @@ template <typename Fn> void require_throws(Fn&& fn, const char* message) {
         return;
     }
     throw std::runtime_error(message);
+}
+
+void require_near(float actual, float expected, float tolerance, const char* message) {
+    if (std::abs(actual - expected) > tolerance) {
+        throw std::runtime_error(message);
+    }
 }
 
 [[nodiscard]] std::string read_text_file(const std::filesystem::path& path) {
@@ -56,6 +63,15 @@ int main() {
     require_throws([] { static_cast<void>(atmosphere_render_view_from_name("density")); },
                    "atmosphere render view parser should reject unknown views");
 
+    for (const SunControlMode mode : kSunControlModes) {
+        require(sun_control_mode_from_name(sun_control_mode_name(mode)) == mode,
+                "sun control mode names should round trip");
+    }
+    require(sun_control_mode_from_name("") == SunControlMode::SolarClock,
+            "empty sun control mode should default to solar clock");
+    require_throws([] { static_cast<void>(sun_control_mode_from_name("civil")); },
+                   "sun control mode parser should reject unknown modes");
+
     for (const AtmospherePreset preset : kAtmospherePresets) {
         require(atmosphere_preset_from_name(atmosphere_preset_name(preset)) == preset,
                 "atmosphere preset names should round trip");
@@ -87,6 +103,49 @@ int main() {
     require(defaults.reference_geometry_enabled && defaults.reference_grid_km > 0.0F &&
                 defaults.reference_intensity > 0.0F,
             "default atmosphere config should expose reference ground geometry");
+
+    {
+        TimeOfDayConfig solar_noon;
+        solar_noon.time_hours = 12.0F;
+        solar_noon.day_of_year = 80.0F;
+        solar_noon.latitude_degrees = 30.0F;
+        const SolarPosition position = atmosphere_solar_position(solar_noon);
+        require_near(position.elevation_degrees, 60.0F, 0.2F,
+                     "solar equinox noon at 30 degrees latitude should resolve near 60 degrees");
+        require_near(position.azimuth_degrees, 0.0F, 0.2F,
+                     "solar equinox noon should face scene south");
+    }
+    {
+        TimeOfDayConfig morning;
+        morning.time_hours = 9.0F;
+        TimeOfDayConfig afternoon = morning;
+        afternoon.time_hours = 15.0F;
+        require(atmosphere_solar_position(morning).azimuth_degrees > 0.0F,
+                "morning solar azimuth should be east-positive");
+        require(atmosphere_solar_position(afternoon).azimuth_degrees < 0.0F,
+                "afternoon solar azimuth should be west-negative");
+    }
+    {
+        TimeOfDayConfig sunset;
+        sunset.time_hours = 17.8F;
+        const SolarPosition position = atmosphere_solar_position(sunset);
+        require(position.elevation_degrees > -2.0F && position.elevation_degrees < 5.0F,
+                "solar sunset preset time should resolve near the horizon");
+    }
+    {
+        AtmosphereConfig clock = atmosphere_config_for_preset(AtmospherePreset::Noon);
+        clock.time_of_day.time_hours = 23.5F;
+        clock.time_of_day.speed_hours_per_second = 2.0F;
+        advance_atmosphere_time_of_day(clock, 0.5);
+        require_near(clock.time_of_day.time_hours, 0.5F, 0.001F,
+                     "atmosphere time playback should wrap across midnight");
+    }
+    {
+        require(atmosphere_auto_exposure(2.0F, 0.0F) > atmosphere_auto_exposure(60.0F, 0.0F),
+                "auto exposure should brighten low sun relative to daylight");
+        require(atmosphere_auto_exposure(-20.0F, 4.0F) <= 4.0F,
+                "auto exposure should clamp to the existing exposure range");
+    }
 
     {
         AtmosphereConfig invalid = defaults;
@@ -122,6 +181,41 @@ int main() {
         require(config.sun_elevation_degrees == 6.0F && config.sun_azimuth_degrees == 33.0F &&
                     config.camera_altitude_km == 2.0F && config.mie_density_scale == 2.25F,
                 "run config atmosphere overrides should win over preset defaults");
+        require(config.time_of_day.mode == SunControlMode::ManualSun,
+                "manual sun overrides should force manual sun mode");
+        require(!config.time_of_day.auto_exposure_enabled,
+                "manual sun mode should default to fixed exposure");
+    }
+    {
+        cubey::RunConfig run_config;
+        run_config.atmosphere.time_of_day_mode = "solar";
+        run_config.atmosphere.time_hours = 17.8F;
+        run_config.atmosphere.day_of_year = 80.0F;
+        run_config.atmosphere.latitude_degrees = 30.0F;
+        run_config.atmosphere.sun_azimuth_offset_degrees = 5.0F;
+        run_config.atmosphere.time_speed_hours_per_second = 1.25F;
+        run_config.atmosphere.exposure_bias = 0.5F;
+        AtmosphereConfig config = atmosphere_config_from_run_config(run_config);
+        require(config.time_of_day.mode == SunControlMode::SolarClock,
+                "run config should select solar clock mode");
+        require(config.time_of_day.time_hours == 17.8F && config.time_of_day.day_of_year == 80.0F &&
+                    config.time_of_day.latitude_degrees == 30.0F &&
+                    config.time_of_day.azimuth_offset_degrees == 5.0F &&
+                    config.time_of_day.speed_hours_per_second == 1.25F,
+                "run config should apply solar clock overrides");
+        require(config.sun_elevation_degrees > -2.0F && config.sun_elevation_degrees < 5.0F,
+                "solar clock config should resolve sun elevation");
+        require(config.exposure > 0.0F, "solar clock config should resolve auto exposure");
+    }
+    {
+        cubey::RunConfig run_config;
+        run_config.atmosphere.time_of_day_mode = "solar";
+        run_config.pbr.exposure = -1.25F;
+        run_config.pbr.exposure_explicit = true;
+        AtmosphereConfig config = atmosphere_config_from_run_config(run_config);
+        require(!config.time_of_day.auto_exposure_enabled,
+                "explicit exposure should disable auto exposure");
+        require(config.exposure == -1.25F, "explicit exposure should become fixed exposure");
     }
 
     const std::filesystem::path source_root = CUBEY_ATMOSPHERE_SOURCE_DIR;

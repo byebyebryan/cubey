@@ -291,8 +291,11 @@ RunConfig parse_run_config(int argc, char** argv) {
                 need_value("--environment-rotation-degrees"), "--environment-rotation-degrees");
         } else if (arg == "--exposure") {
             config.pbr.exposure = parse_float(need_value("--exposure"), "--exposure");
+            config.pbr.exposure_explicit = true;
         } else if (arg == "--atmosphere-preset") {
             config.atmosphere.preset = std::string(need_value("--atmosphere-preset"));
+        } else if (arg == "--time-of-day-mode") {
+            config.atmosphere.time_of_day_mode = std::string(need_value("--time-of-day-mode"));
         } else if (arg == "--sun-elevation") {
             config.atmosphere.sun_elevation_degrees =
                 parse_float(need_value("--sun-elevation"), "--sun-elevation");
@@ -304,6 +307,29 @@ RunConfig parse_run_config(int argc, char** argv) {
                 parse_float(need_value("--camera-altitude-km"), "--camera-altitude-km");
         } else if (arg == "--mie-scale") {
             config.atmosphere.mie_scale = parse_float(need_value("--mie-scale"), "--mie-scale");
+        } else if (arg == "--time-hours") {
+            config.atmosphere.time_hours = parse_float(need_value("--time-hours"), "--time-hours");
+        } else if (arg == "--day-of-year") {
+            config.atmosphere.day_of_year =
+                parse_float(need_value("--day-of-year"), "--day-of-year");
+        } else if (arg == "--latitude-degrees") {
+            config.atmosphere.latitude_degrees =
+                parse_float(need_value("--latitude-degrees"), "--latitude-degrees");
+        } else if (arg == "--sun-azimuth-offset") {
+            config.atmosphere.sun_azimuth_offset_degrees =
+                parse_float(need_value("--sun-azimuth-offset"), "--sun-azimuth-offset");
+        } else if (arg == "--time-speed-hours-per-second") {
+            config.atmosphere.time_speed_hours_per_second = parse_float(
+                need_value("--time-speed-hours-per-second"), "--time-speed-hours-per-second");
+        } else if (arg == "--pause-time") {
+            config.atmosphere.time_paused = 1;
+        } else if (arg == "--auto-exposure") {
+            config.atmosphere.auto_exposure = 1;
+        } else if (arg == "--no-auto-exposure") {
+            config.atmosphere.auto_exposure = 0;
+        } else if (arg == "--exposure-bias") {
+            config.atmosphere.exposure_bias =
+                parse_float(need_value("--exposure-bias"), "--exposure-bias");
         } else if (arg == "--animation-index") {
             config.gltf.animation_index =
                 parse_u32(need_value("--animation-index"), "--animation-index");
@@ -332,6 +358,16 @@ RunConfig parse_run_config(int argc, char** argv) {
     if (config.profile_diagnostics && config.profile_output_prefix.empty()) {
         throw std::runtime_error("profile diagnostics require --profile-output");
     }
+    if (!config.atmosphere.time_of_day_mode.empty() &&
+        config.atmosphere.time_of_day_mode != "manual" &&
+        config.atmosphere.time_of_day_mode != "solar") {
+        throw std::runtime_error("atmosphere time-of-day mode must be manual or solar");
+    }
+    if (config.atmosphere.time_of_day_mode == "solar" &&
+        (run_config_float_is_set(config.atmosphere.sun_elevation_degrees) ||
+         run_config_float_is_set(config.atmosphere.sun_azimuth_degrees))) {
+        throw std::runtime_error("manual sun elevation/azimuth cannot be combined with solar time");
+    }
     if (config.atmosphere.sun_elevation_degrees < -90.0F ||
         config.atmosphere.sun_elevation_degrees > 90.0F) {
         throw std::runtime_error("atmosphere sun elevation must be in [-90, 90]");
@@ -341,6 +377,25 @@ RunConfig parse_run_config(int argc, char** argv) {
     }
     if (config.atmosphere.mie_scale < 0.0F) {
         throw std::runtime_error("atmosphere Mie scale must be nonnegative");
+    }
+    if (config.atmosphere.time_hours < 0.0F || config.atmosphere.time_hours > 24.0F) {
+        throw std::runtime_error("atmosphere time hours must be in [0, 24]");
+    }
+    if (config.atmosphere.day_of_year < 1.0F || config.atmosphere.day_of_year > 366.0F) {
+        throw std::runtime_error("atmosphere day of year must be in [1, 366]");
+    }
+    if (config.atmosphere.latitude_degrees < -90.0F || config.atmosphere.latitude_degrees > 90.0F) {
+        throw std::runtime_error("atmosphere latitude must be in [-90, 90]");
+    }
+    if (config.atmosphere.sun_azimuth_offset_degrees < -360.0F ||
+        config.atmosphere.sun_azimuth_offset_degrees > 360.0F) {
+        throw std::runtime_error("atmosphere sun azimuth offset must be in [-360, 360]");
+    }
+    if (config.atmosphere.time_speed_hours_per_second < 0.0F) {
+        throw std::runtime_error("atmosphere time speed must be nonnegative");
+    }
+    if (config.atmosphere.exposure_bias < -4.0F || config.atmosphere.exposure_bias > 4.0F) {
+        throw std::runtime_error("atmosphere exposure bias must be in [-4, 4]");
     }
     if (config.smoke.dye_decay < 0.0F || config.smoke.dye_decay > 1.0F) {
         throw std::runtime_error("smoke dye decay must be in [0, 1]");

@@ -93,7 +93,8 @@ class AtmosphereApp {
     explicit AtmosphereApp(RunConfig config)
         : run_config_(std::move(config)),
           atmosphere_config_(atmosphere_config_from_run_config(run_config_)),
-          render_view_(atmosphere_config_.render_view) {
+          render_view_(atmosphere_config_.render_view),
+          headless_base_time_hours_(atmosphere_config_.time_of_day.time_hours) {
         view_controller_.set_auto_rotation_speed(0.0F);
     }
 
@@ -172,9 +173,10 @@ class AtmosphereApp {
             create_pipeline(context.device(), target.format, target.extent);
         };
         callbacks.record_frame = [this](cubey::host::HeadlessPngContext&,
-                                        const cubey::host::HeadlessCaptureFrame&,
+                                        const cubey::host::HeadlessCaptureFrame& frame,
                                         VkCommandBuffer command_buffer,
                                         const cubey::host::HeadlessRenderTarget& target) {
+            update_headless_time(frame);
             record_atmosphere_target(command_buffer, target);
         };
         callbacks.shutdown = [this](cubey::host::HeadlessPngContext&) {
@@ -193,15 +195,35 @@ class AtmosphereApp {
         if (input.key_pressed(cubey::input::Key::D)) {
             render_view_ = next_atmosphere_render_view(render_view_);
         }
+        if (input.key_pressed(cubey::input::Key::Space) &&
+            atmosphere_config_.time_of_day.mode == SunControlMode::SolarClock) {
+            atmosphere_config_.time_of_day.playing = !atmosphere_config_.time_of_day.playing;
+        }
         view_controller_.update_pointer_input(input, timing.delta_seconds);
         if (reset_requested_) {
             const AtmospherePreset preset = atmosphere_config_.preset;
             atmosphere_config_ = atmosphere_config_for_preset(preset);
+            headless_base_time_hours_ = atmosphere_config_.time_of_day.time_hours;
             render_view_ = atmosphere_config_.render_view;
             view_controller_.reset();
             reset_requested_ = false;
         }
+        advance_atmosphere_time_of_day(atmosphere_config_, timing.delta_seconds);
+        resolve_atmosphere_time_of_day(atmosphere_config_);
         atmosphere_config_.render_view = render_view_;
+        validate_atmosphere_config(atmosphere_config_);
+    }
+
+    void update_headless_time(const cubey::host::HeadlessCaptureFrame& frame) {
+        if (run_config_.capture_mode == CaptureMode::Video &&
+            atmosphere_config_.time_of_day.mode == SunControlMode::SolarClock &&
+            atmosphere_config_.time_of_day.playing) {
+            atmosphere_config_.time_of_day.time_hours = atmosphere_wrap_time_hours(
+                headless_base_time_hours_ +
+                static_cast<float>(frame.timing.elapsed_seconds) *
+                    atmosphere_config_.time_of_day.speed_hours_per_second);
+        }
+        resolve_atmosphere_time_of_day(atmosphere_config_);
         validate_atmosphere_config(atmosphere_config_);
     }
 
@@ -375,6 +397,7 @@ class AtmosphereApp {
     std::optional<FrameStatsSnapshot> latest_frame_stats_;
     double latest_fps_ = 0.0;
     double latest_frame_ms_ = 0.0;
+    float headless_base_time_hours_ = 12.0F;
     bool reset_requested_ = false;
 
     VkFormat pipeline_color_format_ = VK_FORMAT_UNDEFINED;
