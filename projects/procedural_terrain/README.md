@@ -6,6 +6,8 @@ positive-up terrain elevation, positive-down water depth, shoreline signed
 distance, and material masks for sand, rock, vegetation, and sediment. The
 default final view adds a visual sea-surface mesh over the same analytical
 fields so shoreline work is legible before the ocean renderer is integrated.
+The terrain-ocean data boundary is documented in
+[`terrain_ocean_contract.md`](terrain_ocean_contract.md).
 
 Run a windowed view:
 
