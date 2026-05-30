@@ -68,6 +68,8 @@ Current projects:
   implementation comparisons.
 - `ocean_legacy`: previous experimental ocean renderer, kept as a feature donor
   for macro waves, foam history, refraction, seafloor, and shoreline hooks.
+- `procedural_terrain`: deterministic heightfield terrain and bathymetry data
+  demo with shoreline/material debug views and headless capture output.
 - `fractal_2d`: fullscreen Mandelbrot-style shader with windowed navigation and
   headless output.
 - `gltf_viewer`: glTF/glb viewer for imported assets, PBR materials, texture
@@ -196,6 +198,7 @@ Useful windowed smokes:
 ./build/dev/projects/ocean/ocean --ocean-map-size 128 --frames 300 --width 1280 --height 720
 ./build/dev/projects/ocean_ref/ocean_ref --ocean-ref-map-size 128 --frames 300 --width 1280 --height 720
 ./build/dev/projects/ocean_legacy/ocean_legacy --frames 300 --width 1280 --height 720
+./build/dev/projects/procedural_terrain/procedural_terrain --frames 300 --width 1280 --height 720
 ./build/dev/projects/gltf_viewer/gltf_viewer --input path/to/model.glb --environment path/to/env.hdr --animation-index 0 --animation-speed 1.0 --frames 300 --width 1280 --height 720
 ./build/dev/projects/gltf_viewer/gltf_viewer --input path/to/model.glb --debug-view roughness --frames 300 --width 1280 --height 720
 ./build/dev/projects/pbr_furnace/pbr_furnace --frames 300 --width 1280 --height 720
@@ -249,6 +252,10 @@ for captured LOD diagnostics.
 known-good reference. `ocean_legacy` keeps the older Cubey experimental renderer
 with macro waves, foam history, refraction, seafloor, and additional debug views
 for future selective porting.
+`procedural_terrain` generates deterministic island/coast/shelf/seabed fields
+and renders an oblique heightfield mesh. It exposes
+`--debug-view final|height|water_depth|shoreline|material|slope`, plus
+`--grid-width` and `--grid-height` for lower-cost checks or denser captures.
 
 Useful headless PNG smokes:
 
@@ -263,6 +270,7 @@ Useful headless PNG smokes:
 ./build/dev/projects/ocean/ocean --headless --frames 120 --width 640 --height 360 --ocean-map-size 128 --output /tmp/cubey-ocean.png
 ./build/dev/projects/ocean_ref/ocean_ref --headless --frames 120 --width 640 --height 360 --ocean-ref-map-size 128 --output /tmp/cubey-ocean-ref.png
 ./build/dev/projects/ocean_legacy/ocean_legacy --headless --frames 120 --width 640 --height 360 --output /tmp/cubey-ocean-legacy.png
+./build/dev/projects/procedural_terrain/procedural_terrain --headless --width 640 --height 360 --output /tmp/cubey-procedural-terrain.png
 ./build/dev/projects/pbr_furnace/pbr_furnace --headless --width 640 --height 360 --output /tmp/cubey-pbr-furnace.png
 ```
 
