@@ -27,6 +27,7 @@ void test_run_config_rejects_invalid_profile_diagnostics_options();
 void test_run_config_parses_grid_dimensions();
 void test_run_config_parses_water_controls();
 void test_run_config_parses_ocean_controls();
+void test_run_config_parses_terrain_controls();
 void test_run_config_rejects_invalid_ocean_controls();
 void test_run_config_parses_shadow_volume_controls();
 void test_run_config_parses_smoke_injector_count();
@@ -63,6 +64,7 @@ std::span<const TestCase> core_test_cases() {
         CUBEY_TEST(test_run_config_parses_grid_dimensions),
         CUBEY_TEST(test_run_config_parses_water_controls),
         CUBEY_TEST(test_run_config_parses_ocean_controls),
+        CUBEY_TEST(test_run_config_parses_terrain_controls),
         CUBEY_TEST(test_run_config_rejects_invalid_ocean_controls),
         CUBEY_TEST(test_run_config_parses_shadow_volume_controls),
         CUBEY_TEST(test_run_config_parses_smoke_injector_count),

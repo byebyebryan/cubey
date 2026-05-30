@@ -65,10 +65,31 @@ int main() {
     run_config.grid.width = 65;
     run_config.grid.height = 33;
     run_config.debug_view = "shoreline";
+    run_config.terrain.seed = 77;
+    run_config.terrain.seed_set = true;
+    run_config.terrain.cell_size = 6.0F;
+    run_config.terrain.sea_level = 12.0F;
+    run_config.terrain.land_extent = 0.62F;
+    run_config.terrain.coast_noise = 0.25F;
+    run_config.terrain.relief = 1.25F;
+    run_config.terrain.ridges = 0.75F;
     const terrain::TerrainConfig from_run_config =
         terrain::terrain_config_from_run_config(run_config);
     require(from_run_config.grid_width == 65U, "terrain should read grid width from run config");
     require(from_run_config.grid_height == 33U, "terrain should read grid height from run config");
+    require(from_run_config.seed == 77U, "terrain should read seed from run config");
+    require_near(from_run_config.cell_size_m, 6.0F, 0.001F,
+                 "terrain should read cell size from run config");
+    require_near(from_run_config.sea_level_m, 12.0F, 0.001F,
+                 "terrain should read sea level from run config");
+    require_near(from_run_config.land_extent, 0.62F, 0.001F,
+                 "terrain should read land extent from run config");
+    require_near(from_run_config.coast_noise_strength, 0.25F, 0.001F,
+                 "terrain should read coast noise from run config");
+    require_near(from_run_config.relief_scale, 1.25F, 0.001F,
+                 "terrain should read relief scale from run config");
+    require_near(from_run_config.ridge_scale, 0.75F, 0.001F,
+                 "terrain should read ridge scale from run config");
     require(from_run_config.debug_view == terrain::TerrainDebugView::Shoreline,
             "terrain should read debug view from run config");
 

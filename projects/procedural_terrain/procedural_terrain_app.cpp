@@ -115,6 +115,9 @@ ProceduralTerrainApp::ProceduralTerrainApp(RunConfig config)
           .min_distance = 48.0F,
           .max_distance = std::max(terrain_camera_distance(terrain_config_) * 4.0F, 960.0F),
       }) {
+    if (config_.terrain.water_surface >= 0) {
+        water_visible_ = config_.terrain.water_surface != 0;
+    }
     refresh_diagnostics(0.0);
 }
 

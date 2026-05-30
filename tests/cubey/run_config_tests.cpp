@@ -361,6 +361,52 @@ void test_run_config_parses_ocean_controls() {
     require(defaults.ocean.cascade == -1, "run config should default to all ocean cascades");
 }
 
+void test_run_config_parses_terrain_controls() {
+    std::string program = "cubey";
+    std::string seed_flag = "--terrain-seed";
+    std::string seed_value = "12345";
+    std::string cell_size_flag = "--terrain-cell-size";
+    std::string cell_size_value = "5.5";
+    std::string sea_level_flag = "--terrain-sea-level";
+    std::string sea_level_value = "-3.25";
+    std::string land_extent_flag = "--terrain-land-extent";
+    std::string land_extent_value = "0.64";
+    std::string coast_noise_flag = "--terrain-coast-noise";
+    std::string coast_noise_value = "0.31";
+    std::string relief_flag = "--terrain-relief";
+    std::string relief_value = "1.35";
+    std::string ridges_flag = "--terrain-ridges";
+    std::string ridges_value = "0.85";
+    std::string water_surface_flag = "--no-terrain-water-surface";
+    std::array<char*, 16> argv{
+        program.data(),          seed_flag.data(),        seed_value.data(),
+        cell_size_flag.data(),   cell_size_value.data(),  sea_level_flag.data(),
+        sea_level_value.data(),  land_extent_flag.data(), land_extent_value.data(),
+        coast_noise_flag.data(), coast_noise_value.data(), relief_flag.data(),
+        relief_value.data(),     ridges_flag.data(),      ridges_value.data(),
+        water_surface_flag.data()};
+
+    const cubey::RunConfig config =
+        cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
+    require(config.terrain.seed_set, "run config should mark terrain seed as set");
+    require(config.terrain.seed == 12345U, "run config should parse terrain seed");
+    require(config.terrain.cell_size == 5.5F, "run config should parse terrain cell size");
+    require(config.terrain.sea_level == -3.25F, "run config should parse terrain sea level");
+    require(config.terrain.land_extent == 0.64F, "run config should parse terrain land extent");
+    require(config.terrain.coast_noise == 0.31F, "run config should parse terrain coast noise");
+    require(config.terrain.relief == 1.35F, "run config should parse terrain relief");
+    require(config.terrain.ridges == 0.85F, "run config should parse terrain ridges");
+    require(config.terrain.water_surface == 0,
+            "run config should parse disabled terrain water surface");
+
+    std::string enabled_flag = "--terrain-water-surface";
+    std::array<char*, 2> enabled_argv{program.data(), enabled_flag.data()};
+    const cubey::RunConfig enabled_config =
+        cubey::parse_run_config(static_cast<int>(enabled_argv.size()), enabled_argv.data());
+    require(enabled_config.terrain.water_surface == 1,
+            "run config should parse enabled terrain water surface");
+}
+
 void test_run_config_rejects_invalid_ocean_controls() {
     std::string program = "cubey";
     std::string cascade_flag = "--ocean-cascade";

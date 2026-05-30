@@ -23,6 +23,17 @@ std::uint32_t parse_u32(std::string_view value, const char* name) {
     return static_cast<std::uint32_t>(parsed);
 }
 
+std::uint64_t parse_u64(std::string_view value, const char* name) {
+    std::uint64_t parsed = 0;
+    const char* begin = value.data();
+    const char* end = value.data() + value.size();
+    auto result = std::from_chars(begin, end, parsed);
+    if (result.ec != std::errc{} || result.ptr != end) {
+        throw std::runtime_error("invalid unsigned integer for " + std::string(name));
+    }
+    return parsed;
+}
+
 std::uint32_t parse_positive_u32(std::string_view value, const char* name) {
     const std::uint32_t parsed = parse_u32(value, name);
     if (parsed == 0) {
@@ -255,6 +266,31 @@ RunConfig parse_run_config(int argc, char** argv) {
             config.pbr.environment_path = std::string(need_value("--environment"));
         } else if (arg == "--debug-view") {
             config.debug_view = std::string(need_value("--debug-view"));
+        } else if (arg == "--terrain-seed") {
+            config.terrain.seed = parse_u64(need_value("--terrain-seed"), "--terrain-seed");
+            config.terrain.seed_set = true;
+        } else if (arg == "--terrain-cell-size") {
+            config.terrain.cell_size =
+                parse_float(need_value("--terrain-cell-size"), "--terrain-cell-size");
+        } else if (arg == "--terrain-sea-level") {
+            config.terrain.sea_level =
+                parse_float(need_value("--terrain-sea-level"), "--terrain-sea-level");
+        } else if (arg == "--terrain-land-extent") {
+            config.terrain.land_extent =
+                parse_float(need_value("--terrain-land-extent"), "--terrain-land-extent");
+        } else if (arg == "--terrain-coast-noise") {
+            config.terrain.coast_noise =
+                parse_float(need_value("--terrain-coast-noise"), "--terrain-coast-noise");
+        } else if (arg == "--terrain-relief") {
+            config.terrain.relief =
+                parse_float(need_value("--terrain-relief"), "--terrain-relief");
+        } else if (arg == "--terrain-ridges") {
+            config.terrain.ridges =
+                parse_float(need_value("--terrain-ridges"), "--terrain-ridges");
+        } else if (arg == "--terrain-water-surface") {
+            config.terrain.water_surface = 1;
+        } else if (arg == "--no-terrain-water-surface") {
+            config.terrain.water_surface = 0;
         } else if (arg == "--water2d-transfer") {
             config.water2d.transfer_mode = std::string(need_value("--water2d-transfer"));
         } else if (arg == "--water2d-transfer-limit") {

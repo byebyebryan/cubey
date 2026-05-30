@@ -137,6 +137,27 @@ inline void validate_terrain_config(const TerrainConfig& config) {
     if (config.grid.height != 0U) {
         terrain.grid_height = config.grid.height;
     }
+    if (config.terrain.seed_set) {
+        terrain.seed = config.terrain.seed;
+    }
+    if (run_config_float_is_set(config.terrain.cell_size)) {
+        terrain.cell_size_m = config.terrain.cell_size;
+    }
+    if (run_config_float_is_set(config.terrain.sea_level)) {
+        terrain.sea_level_m = config.terrain.sea_level;
+    }
+    if (run_config_float_is_set(config.terrain.land_extent)) {
+        terrain.land_extent = config.terrain.land_extent;
+    }
+    if (run_config_float_is_set(config.terrain.coast_noise)) {
+        terrain.coast_noise_strength = config.terrain.coast_noise;
+    }
+    if (run_config_float_is_set(config.terrain.relief)) {
+        terrain.relief_scale = config.terrain.relief;
+    }
+    if (run_config_float_is_set(config.terrain.ridges)) {
+        terrain.ridge_scale = config.terrain.ridges;
+    }
     terrain.debug_view = terrain_debug_view_from_name(config.debug_view);
     validate_terrain_config(terrain);
     return terrain;

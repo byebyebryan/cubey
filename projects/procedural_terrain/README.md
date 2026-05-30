@@ -24,6 +24,13 @@ Run a deterministic headless capture:
 ./build/dev/projects/procedural_terrain/procedural_terrain --headless --width 1280 --height 720 --output /tmp/cubey-procedural-terrain.png
 ```
 
+Terrain tuning is available from both the UI and CLI:
+
+```sh
+./build/dev/projects/procedural_terrain/procedural_terrain --headless --terrain-seed 12345 --terrain-land-extent 0.64 --terrain-relief 1.35 --terrain-ridges 0.85 --output /tmp/cubey-terrain-tuned.png
+./build/dev/projects/procedural_terrain/procedural_terrain --headless --no-terrain-water-surface --output /tmp/cubey-terrain-land.png
+```
+
 Useful debug views:
 
 ```sh

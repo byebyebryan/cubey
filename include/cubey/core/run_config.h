@@ -124,6 +124,18 @@ struct RunConfig {
         bool animation_paused = false;
     };
 
+    struct TerrainOptions {
+        std::uint64_t seed = 0;
+        float cell_size = kRunConfigUnsetFloat;
+        float sea_level = kRunConfigUnsetFloat;
+        float land_extent = kRunConfigUnsetFloat;
+        float coast_noise = kRunConfigUnsetFloat;
+        float relief = kRunConfigUnsetFloat;
+        float ridges = kRunConfigUnsetFloat;
+        int water_surface = -1;
+        bool seed_set = false;
+    };
+
     std::string title = "cubey";
     std::uint32_t width = 1280;
     std::uint32_t height = 720;
@@ -136,6 +148,7 @@ struct RunConfig {
     OceanRefOptions ocean_ref{};
     PbrOptions pbr{};
     GltfOptions gltf{};
+    TerrainOptions terrain{};
     std::uint32_t frames = 0;
     std::uint32_t fps = 60;
     std::filesystem::path output_path = "cubey-output.png";
