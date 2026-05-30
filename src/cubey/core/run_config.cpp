@@ -283,6 +283,9 @@ RunConfig parse_run_config(int argc, char** argv) {
             config.water3d.whitewater = 1;
         } else if (arg == "--no-water3d-whitewater") {
             config.water3d.whitewater = 0;
+        } else if (arg == "--ocean-ref-map-size") {
+            config.ocean_ref.map_size =
+                parse_positive_u32(need_value("--ocean-ref-map-size"), "--ocean-ref-map-size");
         } else if (arg == "--ibl-intensity") {
             config.pbr.ibl_intensity =
                 parse_float(need_value("--ibl-intensity"), "--ibl-intensity");

@@ -97,6 +97,10 @@ struct RunConfig {
         int whitewater = -1;
     };
 
+    struct OceanRefOptions {
+        std::uint32_t map_size = 0;
+    };
+
     struct PbrOptions {
         std::filesystem::path environment_path{};
         float ibl_intensity = 1.0F;
@@ -119,6 +123,7 @@ struct RunConfig {
     PyroOptions pyro{};
     Water2DOptions water2d{};
     Water3DOptions water3d{};
+    OceanRefOptions ocean_ref{};
     PbrOptions pbr{};
     GltfOptions gltf{};
     std::uint32_t frames = 0;

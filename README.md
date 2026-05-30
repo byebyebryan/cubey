@@ -64,6 +64,9 @@ Current projects:
 - `ocean`: camera-relative procedural ocean renderer with horizon-scale
   multi-band waves, Fresnel/refraction-style water shading, foam/debug views,
   and first-class hooks for future wakes and shorelines.
+- `ocean_ref`: isolated port of the GodotOceanWaves spectrum/FFT/unpack path,
+  kept separate from `ocean` for reference-quality wave shape and foam
+  comparisons.
 - `fractal_2d`: fullscreen Mandelbrot-style shader with windowed navigation and
   headless output.
 - `gltf_viewer`: glTF/glb viewer for imported assets, PBR materials, texture
@@ -106,6 +109,7 @@ Project-local docs:
 - [Fire 3D](projects/fluid/fire_3d/README.md)
 - [Explosion 3D](projects/fluid/explosion_3d/README.md)
 - [Ocean](projects/ocean/README.md)
+- [Ocean Ref](projects/ocean_ref/README.md)
 
 ## Development Setup
 
@@ -188,6 +192,7 @@ Useful windowed smokes:
 ./build/dev/projects/fluid/fire_3d/fire_3d --frames 300 --width 1280 --height 720
 ./build/dev/projects/fluid/explosion_3d/explosion_3d --frames 300 --width 1280 --height 720
 ./build/dev/projects/ocean/ocean --frames 300 --width 1280 --height 720
+./build/dev/projects/ocean_ref/ocean_ref --frames 300 --width 1280 --height 720
 ./build/dev/projects/gltf_viewer/gltf_viewer --input path/to/model.glb --environment path/to/env.hdr --animation-index 0 --animation-speed 1.0 --frames 300 --width 1280 --height 720
 ./build/dev/projects/gltf_viewer/gltf_viewer --input path/to/model.glb --debug-view roughness --frames 300 --width 1280 --height 720
 ./build/dev/projects/pbr_furnace/pbr_furnace --frames 300 --width 1280 --height 720
@@ -236,6 +241,9 @@ camera-relative projected grid, non-repeating multi-band procedural waves,
 distance-filtered detail, horizon fog, Fresnel sky reflection, fake refraction,
 foam, and debug views. Use `--debug-view height|normal|foam|reflection|refraction|depth`
 to inspect the water renderer.
+`ocean_ref` is the isolated GodotOceanWaves reference port. Use
+`--ocean-ref-map-size 128|256|512|1024` to choose the FFT map size, and
+`--debug-view final|height|displacement|normal|foam` for focused comparisons.
 
 Useful headless PNG smokes:
 
@@ -248,6 +256,7 @@ Useful headless PNG smokes:
 ./build/dev/projects/fluid/fire_3d/fire_3d --headless --frames 120 --width 640 --height 360 --output /tmp/cubey-fire-3d.png
 ./build/dev/projects/fluid/explosion_3d/explosion_3d --headless --frames 120 --width 640 --height 360 --output /tmp/cubey-explosion-3d.png
 ./build/dev/projects/ocean/ocean --headless --frames 120 --width 640 --height 360 --output /tmp/cubey-ocean.png
+./build/dev/projects/ocean_ref/ocean_ref --headless --frames 120 --width 640 --height 360 --output /tmp/cubey-ocean-ref.png
 ./build/dev/projects/pbr_furnace/pbr_furnace --headless --width 640 --height 360 --output /tmp/cubey-pbr-furnace.png
 ```
 
@@ -297,6 +306,9 @@ layers are installed.
   Escape closes.
 - `ocean`: left-drag orbits the camera, mouse wheel zooms, Space pauses/resumes
   wave time, `R` resets, `D` cycles ocean debug views, Escape closes.
+- `ocean_ref`: left-drag orbits the camera, mouse wheel zooms, Space
+  pauses/resumes wave time, `R` resets, `D` cycles reference debug views, Escape
+  closes.
 - `pbr_furnace`: left-drag orbits the camera, Escape closes.
 
 `--debug-view` currently accepts `final`, `base-color`, `normal`,
