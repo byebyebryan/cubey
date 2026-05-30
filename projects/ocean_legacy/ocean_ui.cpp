@@ -11,7 +11,7 @@
 #include <cstdint>
 #include <cstdio>
 
-namespace cubey::projects::ocean {
+namespace cubey::projects::ocean_legacy {
 namespace {
 
 void draw_spectrum_resolution_combo(OceanConfig& config) {
@@ -168,4 +168,4 @@ void draw_ocean_ui(OceanUiContext ui) {
     ImGui::End();
 }
 
-} // namespace cubey::projects::ocean
+} // namespace cubey::projects::ocean_legacy

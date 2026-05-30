@@ -6,7 +6,7 @@
 
 #include <optional>
 
-namespace cubey::projects::ocean {
+namespace cubey::projects::ocean_legacy {
 
 struct OceanUiContext {
     OceanConfig& config;
@@ -20,4 +20,4 @@ struct OceanUiContext {
 
 void draw_ocean_ui(OceanUiContext ui);
 
-} // namespace cubey::projects::ocean
+} // namespace cubey::projects::ocean_legacy

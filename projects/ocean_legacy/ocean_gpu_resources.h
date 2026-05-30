@@ -18,7 +18,7 @@
 #include <optional>
 #include <vector>
 
-namespace cubey::projects::ocean {
+namespace cubey::projects::ocean_legacy {
 
 struct OceanGpuResourceConfig {
     OceanConfig ocean{};
@@ -163,4 +163,4 @@ class OceanGpuResources {
     std::optional<cubey::render::GraphicsPipelineResource> surface_pipeline_;
 };
 
-} // namespace cubey::projects::ocean
+} // namespace cubey::projects::ocean_legacy

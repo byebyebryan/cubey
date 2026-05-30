@@ -1,9 +1,9 @@
 cubey_add_app_target(
-    cubey_project_ocean
-    OUTPUT_NAME ocean
-    SHADER_DEFINE CUBEY_OCEAN_SHADER_DIR
-    WINDOWED_SMOKE_TEST ocean_reaches_glfw
-    WINDOWED_SMOKE_PATTERN "ocean: .*rendering ocean project"
+    cubey_project_ocean_legacy
+    OUTPUT_NAME ocean_legacy
+    SHADER_DEFINE CUBEY_OCEAN_LEGACY_SHADER_DIR
+    WINDOWED_SMOKE_TEST ocean_legacy_reaches_glfw
+    WINDOWED_SMOKE_PATTERN "ocean_legacy: .*rendering ocean legacy project"
     SOURCES
         ocean_app.cpp
         ocean_gpu_resources.cpp
@@ -32,38 +32,40 @@ cubey_add_app_target(
 )
 
 if (BUILD_TESTING)
-    add_executable(cubey_project_ocean_tests
+    add_executable(cubey_project_ocean_legacy_tests
         ocean_config_tests.cpp
     )
-    target_compile_definitions(cubey_project_ocean_tests
+    target_compile_definitions(cubey_project_ocean_legacy_tests
         PRIVATE
-            CUBEY_OCEAN_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}"
+            CUBEY_OCEAN_LEGACY_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}"
     )
     target_link_libraries(
-        cubey_project_ocean_tests
+        cubey_project_ocean_legacy_tests
         PRIVATE
             cubey::core
             cubey_project_options
             cubey_project_warnings
     )
-    add_test(NAME ocean_config_tests COMMAND cubey_project_ocean_tests)
+    add_test(NAME ocean_legacy_config_tests COMMAND cubey_project_ocean_legacy_tests)
 
-    set(CUBEY_OCEAN_HEADLESS_SMOKE_OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/ocean-headless.png")
+    set(CUBEY_OCEAN_LEGACY_HEADLESS_SMOKE_OUTPUT
+        "${CMAKE_CURRENT_BINARY_DIR}/ocean-legacy-headless.png"
+    )
     cubey_add_png_smoke_test(
-        ocean_headless_writes_png
-        cubey_project_ocean
-        "${CUBEY_OCEAN_HEADLESS_SMOKE_OUTPUT}"
+        ocean_legacy_headless_writes_png
+        cubey_project_ocean_legacy
+        "${CUBEY_OCEAN_LEGACY_HEADLESS_SMOKE_OUTPUT}"
         --headless
         --frames 4
     )
     if (CUBEY_HAS_LIBAV)
-        set(CUBEY_OCEAN_HEADLESS_VIDEO_SMOKE_OUTPUT
-            "${CMAKE_CURRENT_BINARY_DIR}/ocean-headless.mp4"
+        set(CUBEY_OCEAN_LEGACY_HEADLESS_VIDEO_SMOKE_OUTPUT
+            "${CMAKE_CURRENT_BINARY_DIR}/ocean-legacy-headless.mp4"
         )
         cubey_add_video_smoke_test(
-            ocean_headless_writes_video
-            cubey_project_ocean
-            "${CUBEY_OCEAN_HEADLESS_VIDEO_SMOKE_OUTPUT}"
+            ocean_legacy_headless_writes_video
+            cubey_project_ocean_legacy
+            "${CUBEY_OCEAN_LEGACY_HEADLESS_VIDEO_SMOKE_OUTPUT}"
         )
     endif()
 endif()

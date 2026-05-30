@@ -7,7 +7,7 @@
 #include <stdexcept>
 #include <utility>
 
-namespace cubey::projects::ocean {
+namespace cubey::projects::ocean_legacy {
 namespace {
 
 constexpr VkFormat kOceanFieldFormat = VK_FORMAT_R32G32B32A32_SFLOAT;
@@ -822,4 +822,4 @@ VkDescriptorSet OceanGpuResources::descriptor_at(std::span<const VkDescriptorSet
     return sets[index];
 }
 
-} // namespace cubey::projects::ocean
+} // namespace cubey::projects::ocean_legacy

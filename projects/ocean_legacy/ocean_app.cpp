@@ -34,11 +34,11 @@
 #include <stdexcept>
 #include <utility>
 
-#ifndef CUBEY_OCEAN_SHADER_DIR
-#error "CUBEY_OCEAN_SHADER_DIR must be defined by the ocean CMake target"
+#ifndef CUBEY_OCEAN_LEGACY_SHADER_DIR
+#error "CUBEY_OCEAN_LEGACY_SHADER_DIR must be defined by the ocean legacy CMake target"
 #endif
 
-namespace cubey::projects::ocean {
+namespace cubey::projects::ocean_legacy {
 namespace {
 
 using cubey::FrameTiming;
@@ -274,8 +274,8 @@ class OceanApp {
         return cubey::host::run_windowed_app(
             {
                 .run_config = config_,
-                .app_name = "ocean",
-                .ready_status = "rendering ocean project",
+                .app_name = "ocean_legacy",
+                .ready_status = "rendering ocean legacy project",
                 .required_queue_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
                 .swapchain_image_usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
                 .require_dynamic_rendering = true,
@@ -362,7 +362,7 @@ class OceanApp {
                          std::uint32_t frame_slot_count) {
         ocean_gpu_.create(device, OceanGpuResourceConfig{
                                       .ocean = ocean_config_,
-                                      .shader_dir = CUBEY_OCEAN_SHADER_DIR,
+                                      .shader_dir = CUBEY_OCEAN_LEGACY_SHADER_DIR,
                                       .color_format = color_format,
                                       .scene_depth_format = kOceanSceneDepthFormat,
                                       .target_extent = extent,
@@ -1100,9 +1100,9 @@ class OceanApp {
 
 } // namespace
 
-int run_ocean(const RunConfig& config) {
+int run_ocean_legacy(const RunConfig& config) {
     OceanApp app(config);
     return app.run();
 }
 
-} // namespace cubey::projects::ocean
+} // namespace cubey::projects::ocean_legacy

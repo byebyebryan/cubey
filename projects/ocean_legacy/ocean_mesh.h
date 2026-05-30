@@ -9,7 +9,7 @@
 #include <cstdint>
 #include <stdexcept>
 
-namespace cubey::projects::ocean {
+namespace cubey::projects::ocean_legacy {
 
 inline constexpr std::uint32_t kOceanMaxMeshPatches =
     1U + (4U * (kOceanMaxMeshLodLevels - 1U));
@@ -161,4 +161,4 @@ inline void ocean_mesh_add_patch(OceanMeshPatchList& list, std::uint32_t level,
     return vertices;
 }
 
-} // namespace cubey::projects::ocean
+} // namespace cubey::projects::ocean_legacy

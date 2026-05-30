@@ -8,7 +8,7 @@
 #include <string>
 #include <string_view>
 
-namespace cubey::projects::ocean {
+namespace cubey::projects::ocean_legacy {
 
 enum class OceanRenderView : std::uint32_t {
     Final = 0,
@@ -294,4 +294,4 @@ inline void validate_ocean_config(const OceanConfig& config) {
     }
 }
 
-} // namespace cubey::projects::ocean
+} // namespace cubey::projects::ocean_legacy

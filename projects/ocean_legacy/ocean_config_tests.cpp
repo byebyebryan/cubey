@@ -44,7 +44,7 @@ std::string require_block_between(const std::string& text, const std::string& be
 
 int main() {
     try {
-        namespace ocean = cubey::projects::ocean;
+        namespace ocean = cubey::projects::ocean_legacy;
 
         const ocean::OceanConfig defaults{};
         require(defaults.mesh_cells >= ocean::kOceanMinMeshCells &&
@@ -248,7 +248,7 @@ int main() {
         }
         require(rejected, "ocean spectrum cascades should require ordered patch lengths");
 
-        const std::filesystem::path source_root(CUBEY_OCEAN_SOURCE_DIR);
+        const std::filesystem::path source_root(CUBEY_OCEAN_LEGACY_SOURCE_DIR);
         const std::string vertex_shader = read_text_file(source_root / "shaders/ocean.vert");
         const std::string fragment_shader = read_text_file(source_root / "shaders/ocean.frag");
         const std::string sky_shader = read_text_file(source_root / "shaders/ocean_sky.frag");
@@ -478,7 +478,7 @@ int main() {
 
         return 0;
     } catch (const std::exception& error) {
-        std::cerr << "ocean_config_tests: " << error.what() << '\n';
+        std::cerr << "ocean_legacy_config_tests: " << error.what() << '\n';
         return 1;
     }
 }

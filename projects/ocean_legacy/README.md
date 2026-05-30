@@ -1,8 +1,11 @@
-# Ocean
+# Ocean Legacy
 
-`ocean` is a practical water-rendering project. It is deliberately separate from
-the particle-grid `water_3d` tank: this demo starts from a camera-relative
-surface renderer, not from a CFD solver.
+`ocean_legacy` is the previous practical water-rendering project. It is kept as
+a feature donor and comparison point while the active `ocean` renderer is
+rebased from the known-good reference implementation.
+
+The renderer is deliberately separate from the particle-grid `water_3d` tank:
+this demo starts from a camera-relative surface renderer, not from a CFD solver.
 
 The v1 target is scale. The surface follows the camera with a small ocean
 clipmap, evaluates a multi-cascade spectral wave field in world space, fades
@@ -64,16 +67,16 @@ first milestone keeps the water surface scalable and readable.
 Useful runs:
 
 ```sh
-./build/dev/projects/ocean/ocean --frames 300 --width 1280 --height 720
-./build/dev/projects/ocean/ocean --debug-view detail --frames 300 --width 1280 --height 720
-./build/dev/projects/ocean/ocean --debug-view foam --frames 300 --width 1280 --height 720
-./build/dev/projects/ocean/ocean --debug-view wireframe --frames 300 --width 1280 --height 720
-./build/dev/projects/ocean/ocean --debug-view thickness --frames 300 --width 1280 --height 720
-./build/dev/projects/ocean/ocean --debug-view compression --frames 300 --width 1280 --height 720
-./build/dev/projects/ocean/ocean --debug-view foam-source --frames 300 --width 1280 --height 720
-./build/dev/projects/ocean/ocean --debug-view foam-history --frames 300 --width 1280 --height 720
-./build/dev/projects/ocean/ocean --headless --frames 120 --width 640 --height 360 --output /tmp/cubey-ocean.png
-./build/dev/projects/ocean/ocean --headless --capture video --frames 180 --fps 60 --width 1280 --height 720 --output /tmp/cubey-ocean.mp4
+./build/dev/projects/ocean_legacy/ocean_legacy --frames 300 --width 1280 --height 720
+./build/dev/projects/ocean_legacy/ocean_legacy --debug-view detail --frames 300 --width 1280 --height 720
+./build/dev/projects/ocean_legacy/ocean_legacy --debug-view foam --frames 300 --width 1280 --height 720
+./build/dev/projects/ocean_legacy/ocean_legacy --debug-view wireframe --frames 300 --width 1280 --height 720
+./build/dev/projects/ocean_legacy/ocean_legacy --debug-view thickness --frames 300 --width 1280 --height 720
+./build/dev/projects/ocean_legacy/ocean_legacy --debug-view compression --frames 300 --width 1280 --height 720
+./build/dev/projects/ocean_legacy/ocean_legacy --debug-view foam-source --frames 300 --width 1280 --height 720
+./build/dev/projects/ocean_legacy/ocean_legacy --debug-view foam-history --frames 300 --width 1280 --height 720
+./build/dev/projects/ocean_legacy/ocean_legacy --headless --frames 120 --width 640 --height 360 --output /tmp/cubey-ocean-legacy.png
+./build/dev/projects/ocean_legacy/ocean_legacy --headless --capture video --frames 180 --fps 60 --width 1280 --height 720 --output /tmp/cubey-ocean-legacy.mp4
 ```
 
 Controls:
