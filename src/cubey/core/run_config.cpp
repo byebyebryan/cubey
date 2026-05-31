@@ -66,7 +66,13 @@ int parse_ocean_cascade(std::string_view value, const char* name) {
     if (value == "2") {
         return 2;
     }
-    throw std::runtime_error(std::string(name) + " must be all, 0, 1, or 2");
+    if (value == "3") {
+        return 3;
+    }
+    if (value == "4") {
+        return 4;
+    }
+    throw std::runtime_error(std::string(name) + " must be all, 0, 1, 2, 3, or 4");
 }
 
 std::filesystem::path profile_output_prefix(std::string_view value) {
@@ -341,6 +347,10 @@ RunConfig parse_run_config(int argc, char** argv) {
         } else if (arg == "--ocean-map-size") {
             config.ocean.map_size =
                 parse_positive_u32(need_value("--ocean-map-size"), "--ocean-map-size");
+        } else if (arg == "--ocean-spectral-domains") {
+            config.ocean.spectral_domains = 1;
+        } else if (arg == "--no-ocean-spectral-domains") {
+            config.ocean.spectral_domains = 0;
         } else if (arg == "--ocean-cascade") {
             config.ocean.cascade = parse_ocean_cascade(need_value("--ocean-cascade"),
                                                        "--ocean-cascade");
@@ -365,6 +375,89 @@ RunConfig parse_run_config(int argc, char** argv) {
                 need_value("--environment-rotation-degrees"), "--environment-rotation-degrees");
         } else if (arg == "--exposure") {
             config.pbr.exposure = parse_float(need_value("--exposure"), "--exposure");
+            config.pbr.exposure_explicit = true;
+        } else if (arg == "--atmosphere-preset") {
+            config.atmosphere.preset = std::string(need_value("--atmosphere-preset"));
+        } else if (arg == "--time-of-day-mode") {
+            config.atmosphere.time_of_day_mode = std::string(need_value("--time-of-day-mode"));
+        } else if (arg == "--night-sky-mode") {
+            config.atmosphere.night_sky_mode = std::string(need_value("--night-sky-mode"));
+        } else if (arg == "--milky-way-layer") {
+            config.atmosphere.milky_way_layer = std::string(need_value("--milky-way-layer"));
+        } else if (arg == "--sun-elevation") {
+            config.atmosphere.sun_elevation_degrees =
+                parse_float(need_value("--sun-elevation"), "--sun-elevation");
+        } else if (arg == "--sun-azimuth") {
+            config.atmosphere.sun_azimuth_degrees =
+                parse_float(need_value("--sun-azimuth"), "--sun-azimuth");
+        } else if (arg == "--camera-altitude-km") {
+            config.atmosphere.camera_altitude_km =
+                parse_float(need_value("--camera-altitude-km"), "--camera-altitude-km");
+        } else if (arg == "--mie-scale") {
+            config.atmosphere.mie_scale = parse_float(need_value("--mie-scale"), "--mie-scale");
+        } else if (arg == "--time-hours") {
+            config.atmosphere.time_hours = parse_float(need_value("--time-hours"), "--time-hours");
+        } else if (arg == "--day-of-year") {
+            config.atmosphere.day_of_year =
+                parse_float(need_value("--day-of-year"), "--day-of-year");
+        } else if (arg == "--latitude-degrees") {
+            config.atmosphere.latitude_degrees =
+                parse_float(need_value("--latitude-degrees"), "--latitude-degrees");
+        } else if (arg == "--sun-azimuth-offset") {
+            config.atmosphere.sun_azimuth_offset_degrees =
+                parse_float(need_value("--sun-azimuth-offset"), "--sun-azimuth-offset");
+        } else if (arg == "--time-speed-hours-per-second") {
+            config.atmosphere.time_speed_hours_per_second = parse_float(
+                need_value("--time-speed-hours-per-second"), "--time-speed-hours-per-second");
+        } else if (arg == "--pause-time") {
+            config.atmosphere.time_paused = 1;
+        } else if (arg == "--auto-exposure") {
+            config.atmosphere.auto_exposure = 1;
+        } else if (arg == "--no-auto-exposure") {
+            config.atmosphere.auto_exposure = 0;
+        } else if (arg == "--exposure-bias") {
+            config.atmosphere.exposure_bias =
+                parse_float(need_value("--exposure-bias"), "--exposure-bias");
+        } else if (arg == "--twilight-strength") {
+            config.atmosphere.twilight_strength =
+                parse_float(need_value("--twilight-strength"), "--twilight-strength");
+        } else if (arg == "--twilight-horizon-warmth") {
+            config.atmosphere.twilight_horizon_warmth =
+                parse_float(need_value("--twilight-horizon-warmth"), "--twilight-horizon-warmth");
+        } else if (arg == "--star-intensity") {
+            config.atmosphere.star_intensity =
+                parse_float(need_value("--star-intensity"), "--star-intensity");
+        } else if (arg == "--star-density") {
+            config.atmosphere.star_density =
+                parse_float(need_value("--star-density"), "--star-density");
+        } else if (arg == "--milky-way-intensity") {
+            config.atmosphere.milky_way_intensity =
+                parse_float(need_value("--milky-way-intensity"), "--milky-way-intensity");
+        } else if (arg == "--milky-way-contrast") {
+            config.atmosphere.milky_way_contrast =
+                parse_float(need_value("--milky-way-contrast"), "--milky-way-contrast");
+        } else if (arg == "--light-pollution") {
+            config.atmosphere.light_pollution =
+                parse_float(need_value("--light-pollution"), "--light-pollution");
+        } else if (arg == "--milky-way-variation") {
+            config.atmosphere.milky_way_variation =
+                parse_float(need_value("--milky-way-variation"), "--milky-way-variation");
+        } else if (arg == "--moon-intensity") {
+            config.atmosphere.moon_intensity =
+                parse_float(need_value("--moon-intensity"), "--moon-intensity");
+        } else if (arg == "--moonlight-intensity") {
+            config.atmosphere.moonlight_intensity =
+                parse_float(need_value("--moonlight-intensity"), "--moonlight-intensity");
+        } else if (arg == "--moon-phase-offset-days") {
+            config.atmosphere.moon_phase_offset_days =
+                parse_float(need_value("--moon-phase-offset-days"), "--moon-phase-offset-days");
+        } else if (arg == "--moon-size-scale") {
+            config.atmosphere.moon_size_scale =
+                parse_float(need_value("--moon-size-scale"), "--moon-size-scale");
+        } else if (arg == "--moon") {
+            config.atmosphere.moon = 1;
+        } else if (arg == "--no-moon") {
+            config.atmosphere.moon = 0;
         } else if (arg == "--animation-index") {
             config.gltf.animation_index =
                 parse_u32(need_value("--animation-index"), "--animation-index");
@@ -400,6 +493,106 @@ RunConfig parse_run_config(int argc, char** argv) {
     }
     if (config.profile_diagnostics && config.profile_output_prefix.empty()) {
         throw std::runtime_error("profile diagnostics require --profile-output");
+    }
+    if (!config.atmosphere.time_of_day_mode.empty() &&
+        config.atmosphere.time_of_day_mode != "manual" &&
+        config.atmosphere.time_of_day_mode != "solar") {
+        throw std::runtime_error("atmosphere time-of-day mode must be manual or solar");
+    }
+    if (!config.atmosphere.night_sky_mode.empty() && config.atmosphere.night_sky_mode != "human" &&
+        config.atmosphere.night_sky_mode != "camera") {
+        throw std::runtime_error("atmosphere night sky mode must be human or camera");
+    }
+    if (!config.atmosphere.milky_way_layer.empty() &&
+        config.atmosphere.milky_way_layer != "final" &&
+        config.atmosphere.milky_way_layer != "stellar-emission" &&
+        config.atmosphere.milky_way_layer != "dust-tau" &&
+        config.atmosphere.milky_way_layer != "star-clouds" &&
+        config.atmosphere.milky_way_layer != "hii-emission" &&
+        config.atmosphere.milky_way_layer != "speckles") {
+        throw std::runtime_error(
+            "atmosphere Milky Way layer must be final, stellar-emission, dust-tau, "
+            "star-clouds, hii-emission, or speckles");
+    }
+    if (config.atmosphere.time_of_day_mode == "solar" &&
+        (run_config_float_is_set(config.atmosphere.sun_elevation_degrees) ||
+         run_config_float_is_set(config.atmosphere.sun_azimuth_degrees))) {
+        throw std::runtime_error("manual sun elevation/azimuth cannot be combined with solar time");
+    }
+    if (config.atmosphere.sun_elevation_degrees < -90.0F ||
+        config.atmosphere.sun_elevation_degrees > 90.0F) {
+        throw std::runtime_error("atmosphere sun elevation must be in [-90, 90]");
+    }
+    if (config.atmosphere.sun_azimuth_degrees < -360.0F ||
+        config.atmosphere.sun_azimuth_degrees > 360.0F) {
+        throw std::runtime_error("atmosphere sun azimuth must be in [-360, 360]");
+    }
+    if (config.atmosphere.camera_altitude_km < 0.0F) {
+        throw std::runtime_error("atmosphere camera altitude must be nonnegative");
+    }
+    if (config.atmosphere.mie_scale < 0.0F) {
+        throw std::runtime_error("atmosphere Mie scale must be nonnegative");
+    }
+    if (config.atmosphere.time_hours < 0.0F || config.atmosphere.time_hours > 24.0F) {
+        throw std::runtime_error("atmosphere time hours must be in [0, 24]");
+    }
+    if (config.atmosphere.day_of_year < 1.0F || config.atmosphere.day_of_year > 366.0F) {
+        throw std::runtime_error("atmosphere day of year must be in [1, 366]");
+    }
+    if (config.atmosphere.latitude_degrees < -90.0F || config.atmosphere.latitude_degrees > 90.0F) {
+        throw std::runtime_error("atmosphere latitude must be in [-90, 90]");
+    }
+    if (config.atmosphere.sun_azimuth_offset_degrees < -360.0F ||
+        config.atmosphere.sun_azimuth_offset_degrees > 360.0F) {
+        throw std::runtime_error("atmosphere sun azimuth offset must be in [-360, 360]");
+    }
+    if (config.atmosphere.time_speed_hours_per_second < 0.0F) {
+        throw std::runtime_error("atmosphere time speed must be nonnegative");
+    }
+    if (config.atmosphere.exposure_bias < -4.0F || config.atmosphere.exposure_bias > 4.0F) {
+        throw std::runtime_error("atmosphere exposure bias must be in [-4, 4]");
+    }
+    if (config.atmosphere.twilight_strength < 0.0F || config.atmosphere.twilight_strength > 4.0F) {
+        throw std::runtime_error("atmosphere twilight strength must be in [0, 4]");
+    }
+    if (config.atmosphere.twilight_horizon_warmth < 0.0F ||
+        config.atmosphere.twilight_horizon_warmth > 2.0F) {
+        throw std::runtime_error("atmosphere twilight horizon warmth must be in [0, 2]");
+    }
+    if (config.atmosphere.star_intensity < 0.0F || config.atmosphere.star_intensity > 4.0F) {
+        throw std::runtime_error("atmosphere star intensity must be in [0, 4]");
+    }
+    if (config.atmosphere.star_density < 0.0F || config.atmosphere.star_density > 1.0F) {
+        throw std::runtime_error("atmosphere star density must be in [0, 1]");
+    }
+    if (config.atmosphere.milky_way_intensity < 0.0F ||
+        config.atmosphere.milky_way_intensity > 4.0F) {
+        throw std::runtime_error("atmosphere Milky Way intensity must be in [0, 4]");
+    }
+    if (config.atmosphere.milky_way_contrast < 0.0F ||
+        config.atmosphere.milky_way_contrast > 4.0F) {
+        throw std::runtime_error("atmosphere Milky Way contrast must be in [0, 4]");
+    }
+    if (config.atmosphere.light_pollution < 0.0F || config.atmosphere.light_pollution > 1.0F) {
+        throw std::runtime_error("atmosphere light pollution must be in [0, 1]");
+    }
+    if (config.atmosphere.milky_way_variation < 0.0F ||
+        config.atmosphere.milky_way_variation > 16.0F) {
+        throw std::runtime_error("atmosphere Milky Way variation must be in [0, 16]");
+    }
+    if (config.atmosphere.moon_intensity < 0.0F || config.atmosphere.moon_intensity > 4.0F) {
+        throw std::runtime_error("atmosphere moon intensity must be in [0, 4]");
+    }
+    if (config.atmosphere.moonlight_intensity < 0.0F ||
+        config.atmosphere.moonlight_intensity > 4.0F) {
+        throw std::runtime_error("atmosphere moonlight intensity must be in [0, 4]");
+    }
+    if (config.atmosphere.moon_phase_offset_days < 0.0F ||
+        config.atmosphere.moon_phase_offset_days > 29.530588F) {
+        throw std::runtime_error("atmosphere moon phase offset must be in [0, 29.530588]");
+    }
+    if (config.atmosphere.moon_size_scale <= 0.0F || config.atmosphere.moon_size_scale > 8.0F) {
+        throw std::runtime_error("atmosphere moon size scale must be in (0, 8]");
     }
     if (config.smoke.dye_decay < 0.0F || config.smoke.dye_decay > 1.0F) {
         throw std::runtime_error("smoke dye decay must be in [0, 1]");

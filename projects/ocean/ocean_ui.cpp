@@ -21,8 +21,28 @@ struct OceanLodStats {
     std::uint32_t vertices = 0;
 };
 
+[[nodiscard]] const char* cascade_role_name(std::uint32_t index) {
+    switch (index) {
+    case 0:
+        return "Macro swell";
+    case 1:
+        return "Macro chop";
+    case 2:
+        return "Primary crest";
+    case 3:
+        return "Secondary wave";
+    case 4:
+        return "Detail normals";
+    }
+    return "Cascade";
+}
+
+void format_cascade_label(char* buffer, std::size_t size, std::uint32_t index) {
+    std::snprintf(buffer, size, "C%u %s", index, cascade_role_name(index));
+}
+
 void draw_map_size_combo(OceanConfig& config) {
-    char preview[16]{};
+    char preview[40]{};
     std::snprintf(preview, sizeof(preview), "%u", config.map_size);
     if (ImGui::BeginCombo("Map size", preview)) {
         for (const std::uint32_t map_size : kOceanSupportedMapSizes) {
@@ -41,20 +61,29 @@ void draw_map_size_combo(OceanConfig& config) {
 }
 
 void draw_selected_cascade_combo(OceanDiagnosticsConfig& diagnostics) {
-    const char* preview = diagnostics.selected_cascade < 0
-                              ? "All"
-                              : (diagnostics.selected_cascade == 0
-                                     ? "0"
-                                     : (diagnostics.selected_cascade == 1 ? "1" : "2"));
+    char preview[40]{};
+    if (diagnostics.selected_cascade < 0) {
+        std::snprintf(preview, sizeof(preview), "All");
+    } else {
+        format_cascade_label(preview, sizeof(preview),
+                             static_cast<std::uint32_t>(diagnostics.selected_cascade));
+    }
     if (!ImGui::BeginCombo("Inspect cascade", preview)) {
         return;
     }
-    const std::array labels{"All", "0", "1", "2"};
-    const std::array values{-1, 0, 1, 2};
-    for (std::size_t index = 0; index < labels.size(); ++index) {
-        const bool selected = diagnostics.selected_cascade == values[index];
-        if (ImGui::Selectable(labels[index], selected)) {
-            diagnostics.selected_cascade = values[index];
+    const bool all_selected = diagnostics.selected_cascade < 0;
+    if (ImGui::Selectable("All", all_selected)) {
+        diagnostics.selected_cascade = -1;
+    }
+    if (all_selected) {
+        ImGui::SetItemDefaultFocus();
+    }
+    for (std::uint32_t cascade = 0; cascade < kOceanCascadeCount; ++cascade) {
+        char label[32]{};
+        format_cascade_label(label, sizeof(label), cascade);
+        const bool selected = diagnostics.selected_cascade == static_cast<int>(cascade);
+        if (ImGui::Selectable(label, selected)) {
+            diagnostics.selected_cascade = static_cast<int>(cascade);
         }
         if (selected) {
             ImGui::SetItemDefaultFocus();
@@ -82,16 +111,20 @@ void draw_camera_preset_button(OceanUiContext& ui, OceanCameraPreset preset, con
 }
 
 void draw_cascade_controls(OceanCascadeConfig& cascade, std::uint32_t index) {
-    char label[32]{};
-    std::snprintf(label, sizeof(label), "Cascade %u", index);
+    char label[40]{};
+    format_cascade_label(label, sizeof(label), index);
     if (!cubey::host::imgui_section(label, index == 0U)) {
         return;
     }
 
     const cubey::host::ScopedImGuiId section_id(label);
-    ImGui::SliderFloat("Tile length", &cascade.tile_length, 8.0F, 256.0F, "%.0f m");
-    ImGui::SliderFloat("Displacement scale", &cascade.displacement_scale, 0.0F, 2.0F, "%.2f");
-    ImGui::SliderFloat("Normal scale", &cascade.normal_scale, 0.0F, 2.0F, "%.2f");
+    const bool macro_layer = index < kOceanMacroCascadeCount;
+    ImGui::SliderFloat("Tile length", &cascade.tile_length, 8.0F,
+                       macro_layer ? 2400.0F : 256.0F, "%.0f m");
+    ImGui::SliderFloat("Displacement scale", &cascade.displacement_scale, 0.0F,
+                       macro_layer ? 1.50F : 2.0F, "%.2f");
+    ImGui::SliderFloat("Normal scale", &cascade.normal_scale, 0.0F,
+                       macro_layer ? 0.50F : 2.0F, "%.2f");
     ImGui::SliderFloat("Wind speed", &cascade.wind_speed, 0.1F, 32.0F, "%.1f m/s");
     ImGui::SliderFloat("Wind direction", &cascade.wind_direction_degrees, -180.0F, 180.0F,
                        "%.0f deg");
@@ -169,6 +202,9 @@ void draw_ocean_ui(OceanUiContext ui) {
     if (cubey::host::imgui_section("Wave Core", true)) {
         const cubey::host::ScopedImGuiId section_id("Wave Core");
         draw_map_size_combo(ui.config);
+        ImGui::Checkbox("Spectral domains", &ui.config.spectral_domains_enabled);
+        ImGui::SliderFloat("Anti-repeat", &ui.diagnostics.anti_repeat_strength, 0.0F, 1.0F,
+                           "%.2f");
         ImGui::SliderFloat("Depth", &ui.config.depth, 2.0F, 80.0F, "%.1f m");
         ImGui::TextUnformatted("GodotOceanWaves port");
     }
@@ -182,6 +218,8 @@ void draw_ocean_ui(OceanUiContext ui) {
         draw_camera_preset_button(ui, OceanCameraPreset::Close, "Close");
         ImGui::SameLine();
         draw_camera_preset_button(ui, OceanCameraPreset::Overhead, "Overhead");
+        ImGui::SameLine();
+        draw_camera_preset_button(ui, OceanCameraPreset::Wide, "Wide");
     }
 
     if (cubey::host::imgui_section("Mesh", true)) {
@@ -209,6 +247,8 @@ void draw_ocean_ui(OceanUiContext ui) {
         const cubey::host::ScopedImGuiId section_id("Shading");
         ImGui::SliderFloat("Roughness", &ui.config.roughness, 0.0F, 1.0F, "%.2f");
         ImGui::SliderFloat("Normal strength", &ui.config.normal_strength, 0.0F, 2.0F, "%.2f");
+        ImGui::SliderFloat("Foam density", &ui.config.foam_density, 0.0F, 4.0F, "%.2f");
+        ImGui::SliderFloat("Foam sharpness", &ui.config.foam_sharpness, 0.0F, 1.0F, "%.2f");
         ImGui::SliderFloat("Exposure", &ui.config.exposure, -4.0F, 4.0F, "%.2f");
         ImGui::ColorEdit3("Water", &ui.config.water_color_r);
         ImGui::ColorEdit3("Foam", &ui.config.foam_color_r);
@@ -225,12 +265,23 @@ void draw_ocean_ui(OceanUiContext ui) {
         const cubey::host::ScopedImGuiId section_id("Diagnostics");
         cubey::host::draw_frame_stats(ui.latest_frame_stats, ui.latest_fps, ui.latest_frame_ms);
         ImGui::Text("Map: %u", ui.config.map_size);
-        ImGui::Text("C0: %.0f m / disp %.2f", ui.config.cascades[0].tile_length,
-                    ui.config.cascades[0].displacement_scale);
-        ImGui::Text("C1: %.0f m / disp %.2f", ui.config.cascades[1].tile_length,
-                    ui.config.cascades[1].displacement_scale);
-        ImGui::Text("C2: %.0f m / disp %.2f", ui.config.cascades[2].tile_length,
-                    ui.config.cascades[2].displacement_scale);
+        ImGui::Text("Spectral domains: %s",
+                    ui.config.spectral_domains_enabled ? "enabled" : "disabled");
+        for (std::uint32_t index = 0; index < kOceanCascadeCount; ++index) {
+            char label[40]{};
+            format_cascade_label(label, sizeof(label), index);
+            const OceanCascadeDomain domain = ocean_cascade_domain(ui.config, index);
+            if (domain.active) {
+                ImGui::Text("%s: %.0f m / disp %.2f / domain %.2f-%.2f m", label,
+                            ui.config.cascades[index].tile_length,
+                            ui.config.cascades[index].displacement_scale,
+                            domain.low_wavelength, domain.high_wavelength);
+            } else {
+                ImGui::Text("%s: %.0f m / disp %.2f / domain inactive", label,
+                            ui.config.cascades[index].tile_length,
+                            ui.config.cascades[index].displacement_scale);
+            }
+        }
         ImGui::Text("Mesh: %u LOD / %u patches / %u tris", ui.config.mesh_lod_levels,
                     ocean_mesh_patch_count(ui.config),
                     ocean_mesh_total_triangle_count(ui.config));

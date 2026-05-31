@@ -14,12 +14,14 @@ enum class OceanCameraPreset : std::uint32_t {
     Low = 1,
     Close = 2,
     Overhead = 3,
+    Wide = 4,
 };
 
 struct OceanDiagnosticsConfig {
     int selected_cascade = -1;
     bool wire_overlay = false;
     float wire_opacity = 0.65F;
+    float anti_repeat_strength = 1.0F;
 };
 
 struct OceanUiContext {

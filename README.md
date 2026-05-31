@@ -44,6 +44,8 @@ Current examples:
 
 Current projects:
 
+- `atmosphere`: clear-sky scattering workbench with solar time of day, twilight,
+  procedural stars, moon rendering, Milky Way atlas layers, and headless output.
 - `smoke_2d`: compute-updated dye/velocity field with MacCormack advection,
   vorticity, pressure projection, debug views, and
   deterministic headless capture output.
@@ -104,6 +106,7 @@ Authoritative current docs:
 
 Project-local docs:
 
+- [Atmosphere](projects/atmosphere/README.md)
 - [Fluid overview](projects/fluid/README.md)
 - [Smoke 2D](projects/fluid/smoke_2d/README.md)
 - [Water 2D](projects/fluid/water_2d/README.md)
@@ -246,7 +249,7 @@ timestamp queries are available.
 starts from the GodotOceanWaves-derived spectrum/FFT/unpack path and exposes
 `--ocean-map-size 128|256|512|1024`,
 `--debug-view final|height|displacement|normal|foam|lod`, and
-`--ocean-cascade all|0|1|2` for focused inspection. Use `--ocean-wire-overlay`
+`--ocean-cascade all|0|1|2|3|4` for focused inspection. Use `--ocean-wire-overlay`
 for captured LOD diagnostics.
 `ocean_ref` keeps the same wave core under `--ocean-ref-*` options as a frozen
 known-good reference. `ocean_legacy` keeps the older Cubey experimental renderer

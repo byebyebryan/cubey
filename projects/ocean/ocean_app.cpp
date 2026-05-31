@@ -64,6 +64,7 @@ struct OceanPushConstants {
     cubey::math::Vec4 tile_lengths;
     cubey::math::Vec4 displacement_scales;
     cubey::math::Vec4 normal_scales;
+    cubey::math::Vec4 cascade4_options;
     cubey::math::Vec4 water_color;
     cubey::math::Vec4 foam_color;
 };
@@ -98,7 +99,7 @@ struct OceanUnpackPushConstants {
     cubey::math::Vec4 cascade_options;
 };
 
-static_assert(sizeof(OceanPushConstants) == sizeof(float) * 60U);
+static_assert(sizeof(OceanPushConstants) == sizeof(float) * 64U);
 static_assert(sizeof(OceanSkyPushConstants) == sizeof(float) * 20U);
 static_assert(sizeof(OceanSpectrumPushConstants) == sizeof(float) * 16U);
 static_assert(sizeof(OceanModulatePushConstants) == sizeof(float) * 8U);
@@ -179,6 +180,8 @@ ocean_depth_texture_desc(const char* label, VkExtent2D extent, VkFormat format) 
         return {.preset = preset, .distance = 48.0F, .yaw = 0.62F, .pitch = -0.28F};
     case OceanCameraPreset::Overhead:
         return {.preset = preset, .distance = 220.0F, .yaw = 0.20F, .pitch = -1.05F};
+    case OceanCameraPreset::Wide:
+        return {.preset = preset, .distance = 900.0F, .yaw = 0.20F, .pitch = -0.70F};
     }
     return {.preset = OceanCameraPreset::Default, .distance = kCameraDistance,
             .yaw = kCameraBaseYaw, .pitch = kCameraBasePitch};
@@ -468,30 +471,37 @@ class OceanApp {
             .inspection_options =
                 {
                     static_cast<float>(diagnostics_.selected_cascade),
-                    0.0F,
-                    0.0F,
-                    0.0F,
+                    diagnostics_.anti_repeat_strength,
+                    ocean_config_.foam_density,
+                    ocean_config_.foam_sharpness,
                 },
             .tile_lengths =
                 {
                     ocean_config_.cascades[0].tile_length,
                     ocean_config_.cascades[1].tile_length,
                     ocean_config_.cascades[2].tile_length,
-                    static_cast<float>(ocean_config_.map_size),
+                    ocean_config_.cascades[3].tile_length,
                 },
             .displacement_scales =
                 {
                     ocean_config_.cascades[0].displacement_scale,
                     ocean_config_.cascades[1].displacement_scale,
                     ocean_config_.cascades[2].displacement_scale,
-                    ocean_config_.depth,
+                    ocean_config_.cascades[3].displacement_scale,
                 },
             .normal_scales =
                 {
                     ocean_config_.cascades[0].normal_scale,
                     ocean_config_.cascades[1].normal_scale,
                     ocean_config_.cascades[2].normal_scale,
-                    ocean_config_.normal_strength,
+                    ocean_config_.cascades[3].normal_scale,
+                },
+            .cascade4_options =
+                {
+                    ocean_config_.cascades[4].tile_length,
+                    ocean_config_.cascades[4].displacement_scale,
+                    ocean_config_.cascades[4].normal_scale,
+                    static_cast<float>(ocean_config_.map_size),
                 },
             .water_color =
                 {
@@ -505,7 +515,7 @@ class OceanApp {
                     ocean_config_.foam_color_r,
                     ocean_config_.foam_color_g,
                     ocean_config_.foam_color_b,
-                    0.0F,
+                    ocean_config_.normal_strength,
                 },
         };
     }
@@ -544,6 +554,9 @@ class OceanApp {
     [[nodiscard]] OceanSpectrumPushConstants
     spectrum_push_constants(std::uint32_t cascade_index) const {
         const OceanCascadeConfig& cascade = ocean_cascade(ocean_config_, cascade_index);
+        const OceanCascadeDomain domain = ocean_config_.spectral_domains_enabled
+                                              ? ocean_cascade_domain(ocean_config_, cascade_index)
+                                              : OceanCascadeDomain{};
         const float fetch_m = cascade.fetch_length_km * 1000.0F;
         return {
             .seed_tile =
@@ -571,8 +584,8 @@ class OceanApp {
                 {
                     static_cast<float>(cascade_index),
                     static_cast<float>(ocean_config_.map_size),
-                    0.0F,
-                    0.0F,
+                    domain.active ? domain.low_k : 0.0F,
+                    domain.active ? domain.high_k : 0.0F,
                 },
         };
     }
@@ -731,7 +744,9 @@ class OceanApp {
             recorder.transition_image_layout(cubey::vulkan::begin_storage_image_write_transition(
                 ocean_gpu_.displacement(cascade).handle()));
             recorder.transition_image_layout(cubey::vulkan::begin_storage_image_write_transition(
-                ocean_gpu_.normal_foam(cascade).handle()));
+                ocean_gpu_.normal(cascade).handle()));
+            recorder.transition_image_layout(cubey::vulkan::begin_storage_image_write_transition(
+                ocean_gpu_.foam(cascade).handle()));
         }
     }
 

@@ -2,6 +2,7 @@
 
 #include <cubey/core/run_config.h>
 
+#include <algorithm>
 #include <array>
 #include <cstdint>
 #include <stdexcept>
@@ -16,22 +17,30 @@ enum class OceanRenderView : std::uint32_t {
     Displacement = 2,
     Normal = 3,
     Foam = 4,
-    Lod = 5,
+    FoamSource = 5,
+    Lod = 6,
 };
 
-inline constexpr std::array<OceanRenderView, 6> kOceanRenderViews{
+inline constexpr std::array<OceanRenderView, 7> kOceanRenderViews{
     OceanRenderView::Final,  OceanRenderView::Height, OceanRenderView::Displacement,
-    OceanRenderView::Normal, OceanRenderView::Foam,   OceanRenderView::Lod,
+    OceanRenderView::Normal, OceanRenderView::Foam,   OceanRenderView::FoamSource,
+    OceanRenderView::Lod,
 };
 
 inline constexpr std::array<std::uint32_t, 4> kOceanSupportedMapSizes{128U, 256U, 512U, 1024U};
 inline constexpr std::uint32_t kOceanDefaultMapSize = 1024U;
-inline constexpr std::uint32_t kOceanCascadeCount = 3U;
+inline constexpr std::uint32_t kOceanMacroCascadeCount = 2U;
+inline constexpr std::uint32_t kOceanReferenceCascadeCount = 3U;
+inline constexpr std::uint32_t kOceanCascadeCount =
+    kOceanMacroCascadeCount + kOceanReferenceCascadeCount;
 inline constexpr std::uint32_t kOceanSpectrumFieldCount = 4U;
 inline constexpr std::uint32_t kOceanMinMeshCells = 32U;
 inline constexpr std::uint32_t kOceanMaxMeshCells = 512U;
 inline constexpr std::uint32_t kOceanMinMeshLodLevels = 1U;
 inline constexpr std::uint32_t kOceanMaxMeshLodLevels = 6U;
+inline constexpr float kOceanPi = 3.14159265358979323846F;
+inline constexpr float kOceanCascadeMinWavesPerDomain = 3.0F;
+inline constexpr float kOceanCascadeSmallestWaveMultiplier = 4.0F;
 
 struct OceanCascadeConfig {
     float tile_length = 88.0F;
@@ -69,21 +78,71 @@ struct OceanConfig {
     float foam_color_r = 0.73F;
     float foam_color_g = 0.67F;
     float foam_color_b = 0.62F;
+    float foam_density = 3.15F;
+    float foam_sharpness = 0.62F;
+    bool spectral_domains_enabled = true;
     OceanRenderView render_view = OceanRenderView::Final;
     std::array<OceanCascadeConfig, kOceanCascadeCount> cascades{
-        OceanCascadeConfig{},
+        OceanCascadeConfig{
+            .tile_length = 1531.0F,
+            .displacement_scale = 0.55F,
+            .normal_scale = 0.16F,
+            .wind_speed = 32.0F,
+            .wind_direction_degrees = 17.0F,
+            .fetch_length_km = 1200.0F,
+            .swell = 1.15F,
+            .spread = 0.38F,
+            .detail = 0.38F,
+            .whitecap = 0.12F,
+            .foam_amount = 0.0F,
+            .seed_x = -5441,
+            .seed_y = 2203,
+            .time_offset = 131.5F,
+        },
+        OceanCascadeConfig{
+            .tile_length = 421.0F,
+            .displacement_scale = 0.95F,
+            .normal_scale = 0.36F,
+            .wind_speed = 30.0F,
+            .wind_direction_degrees = 19.0F,
+            .fetch_length_km = 1100.0F,
+            .swell = 1.10F,
+            .spread = 0.28F,
+            .detail = 0.70F,
+            .whitecap = 0.28F,
+            .foam_amount = 0.90F,
+            .seed_x = 9311,
+            .seed_y = -1733,
+            .time_offset = 117.0F,
+        },
+        OceanCascadeConfig{
+            .tile_length = 88.0F,
+            .displacement_scale = 1.35F,
+            .normal_scale = 1.35F,
+            .wind_speed = 18.0F,
+            .wind_direction_degrees = 20.0F,
+            .fetch_length_km = 350.0F,
+            .swell = 1.0F,
+            .spread = 0.14F,
+            .detail = 1.0F,
+            .whitecap = 0.50F,
+            .foam_amount = 5.80F,
+            .seed_x = 1337,
+            .seed_y = 4919,
+            .time_offset = 120.0F,
+        },
         OceanCascadeConfig{
             .tile_length = 57.0F,
-            .displacement_scale = 0.75F,
-            .normal_scale = 1.0F,
-            .wind_speed = 5.0F,
-            .wind_direction_degrees = 15.0F,
-            .fetch_length_km = 150.0F,
-            .swell = 0.8F,
-            .spread = 0.4F,
+            .displacement_scale = 1.08F,
+            .normal_scale = 1.35F,
+            .wind_speed = 16.0F,
+            .wind_direction_degrees = 17.0F,
+            .fetch_length_km = 330.0F,
+            .swell = 0.95F,
+            .spread = 0.25F,
             .detail = 1.0F,
-            .whitecap = 0.5F,
-            .foam_amount = 0.0F,
+            .whitecap = 0.48F,
+            .foam_amount = 4.80F,
             .seed_x = -2713,
             .seed_y = 8128,
             .time_offset = 123.14159F,
@@ -91,15 +150,15 @@ struct OceanConfig {
         OceanCascadeConfig{
             .tile_length = 16.0F,
             .displacement_scale = 0.0F,
-            .normal_scale = 0.25F,
-            .wind_speed = 20.0F,
+            .normal_scale = 0.50F,
+            .wind_speed = 30.0F,
             .wind_direction_degrees = 20.0F,
-            .fetch_length_km = 550.0F,
-            .swell = 0.8F,
-            .spread = 0.4F,
+            .fetch_length_km = 850.0F,
+            .swell = 0.9F,
+            .spread = 0.25F,
             .detail = 1.0F,
-            .whitecap = 0.25F,
-            .foam_amount = 3.0F,
+            .whitecap = 0.44F,
+            .foam_amount = 2.20F,
             .seed_x = 6619,
             .seed_y = -3544,
             .time_offset = 126.28318F,
@@ -107,6 +166,16 @@ struct OceanConfig {
     };
 
     friend bool operator==(const OceanConfig&, const OceanConfig&) = default;
+};
+
+struct OceanCascadeDomain {
+    float low_k = 0.0F;
+    float high_k = 0.0F;
+    float low_wavelength = 0.0F;
+    float high_wavelength = 0.0F;
+    bool active = false;
+
+    friend bool operator==(const OceanCascadeDomain&, const OceanCascadeDomain&) = default;
 };
 
 [[nodiscard]] inline const char* ocean_render_view_name(OceanRenderView view) {
@@ -121,6 +190,8 @@ struct OceanConfig {
         return "normal";
     case OceanRenderView::Foam:
         return "foam";
+    case OceanRenderView::FoamSource:
+        return "foam-source";
     case OceanRenderView::Lod:
         return "lod";
     }
@@ -176,6 +247,39 @@ struct OceanConfig {
     return config.cascades[cascade];
 }
 
+[[nodiscard]] inline float ocean_cascade_domain_high_k(const OceanConfig& config,
+                                                       std::uint32_t cascade) {
+    const OceanCascadeConfig& cascade_config = ocean_cascade(config, cascade);
+    if (config.map_size == 0U || cascade_config.tile_length <= 0.0F) {
+        return 0.0F;
+    }
+    return 2.0F * kOceanPi * static_cast<float>(config.map_size) /
+           (cascade_config.tile_length * kOceanCascadeSmallestWaveMultiplier);
+}
+
+[[nodiscard]] inline OceanCascadeDomain ocean_cascade_domain(const OceanConfig& config,
+                                                             std::uint32_t cascade) {
+    const OceanCascadeConfig& cascade_config = ocean_cascade(config, cascade);
+    if (config.map_size == 0U || cascade_config.tile_length <= 0.0F) {
+        return {};
+    }
+
+    const float low_k =
+        2.0F * kOceanPi * kOceanCascadeMinWavesPerDomain / cascade_config.tile_length;
+    const float high_k = ocean_cascade_domain_high_k(config, cascade);
+    if (low_k <= 0.0F || high_k <= low_k) {
+        return {.low_k = low_k, .high_k = high_k};
+    }
+
+    return {
+        .low_k = low_k,
+        .high_k = high_k,
+        .low_wavelength = 2.0F * kOceanPi / high_k,
+        .high_wavelength = 2.0F * kOceanPi / low_k,
+        .active = true,
+    };
+}
+
 inline void validate_ocean_config(const OceanConfig& config) {
     static_cast<void>(ocean_mesh_vertex_count(config));
     if (config.mesh_lod_levels < kOceanMinMeshLodLevels ||
@@ -189,7 +293,9 @@ inline void validate_ocean_config(const OceanConfig& config) {
     if (config.mesh_extent <= 0.0F || config.depth <= 0.0F) {
         throw std::runtime_error("ocean mesh extent and depth must be positive");
     }
-    if (config.normal_strength < 0.0F || config.roughness < 0.0F || config.roughness > 1.0F) {
+    if (config.normal_strength < 0.0F || config.roughness < 0.0F || config.roughness > 1.0F ||
+        config.foam_density < 0.0F || config.foam_sharpness < 0.0F ||
+        config.foam_sharpness > 1.0F) {
         throw std::runtime_error("ocean shading controls are out of range");
     }
     for (const OceanCascadeConfig& cascade : config.cascades) {
@@ -210,6 +316,9 @@ inline void validate_ocean_config(const OceanConfig& config) {
     OceanConfig ocean;
     if (config.ocean.map_size != 0U) {
         ocean.map_size = config.ocean.map_size;
+    }
+    if (config.ocean.spectral_domains >= 0) {
+        ocean.spectral_domains_enabled = config.ocean.spectral_domains != 0;
     }
     ocean.render_view = ocean_render_view_from_name(config.debug_view);
     ocean.exposure = config.pbr.exposure;

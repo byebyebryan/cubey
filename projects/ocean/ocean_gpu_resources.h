@@ -66,7 +66,8 @@ class OceanGpuResources {
     [[nodiscard]] const cubey::render::Texture2D& pong(std::uint32_t cascade,
                                                        std::uint32_t field) const;
     [[nodiscard]] const cubey::render::Texture2D& displacement(std::uint32_t cascade) const;
-    [[nodiscard]] const cubey::render::Texture2D& normal_foam(std::uint32_t cascade) const;
+    [[nodiscard]] const cubey::render::Texture2D& normal(std::uint32_t cascade) const;
+    [[nodiscard]] const cubey::render::Texture2D& foam(std::uint32_t cascade) const;
 
   private:
     using TextureArray = std::array<std::optional<cubey::render::Texture2D>, kOceanCascadeCount>;
@@ -93,7 +94,8 @@ class OceanGpuResources {
     FieldTextureArray ping_{};
     FieldTextureArray pong_{};
     TextureArray displacement_{};
-    TextureArray normal_foam_{};
+    TextureArray normal_{};
+    TextureArray foam_{};
 
     std::optional<cubey::vulkan::DescriptorSetLayout> spectrum_layout_;
     std::optional<cubey::vulkan::DescriptorPool> spectrum_pool_;

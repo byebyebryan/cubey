@@ -48,6 +48,7 @@ Detailed current foundation notes live under
 
 Project-specific design stays beside the project:
 
+- [Atmosphere](../projects/atmosphere/README.md)
 - [Smoke 2D](../projects/fluid/smoke_2d/README.md)
 - [Water 2D](../projects/fluid/water_2d/README.md)
 - [Water 3D](../projects/fluid/water_3d/README.md)

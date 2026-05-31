@@ -78,11 +78,32 @@ float TMA_spectrum(in float w, in float w_p, in float alpha) {
     return jonswap * depth_attenuation;
 }
 
+float spectral_domain_weight(in float k) {
+    float low_k = params.cascade_options.z;
+    float high_k = params.cascade_options.w;
+    if (high_k <= low_k) {
+        return 1.0;
+    }
+    if (k <= low_k || k >= high_k) {
+        return 0.0;
+    }
+
+    float band = max(high_k - low_k, 1e-6);
+    float feather = band * 0.08;
+    float low_weight = smoothstep(low_k, low_k + feather, k);
+    float high_weight = 1.0 - smoothstep(high_k - feather, high_k, k);
+    return clamp(low_weight * high_weight, 0.0, 1.0);
+}
+
 vec2 get_spectrum_amplitude(in ivec2 id, in ivec2 map_size) {
     vec2 tile_length = params.seed_tile.zw;
     vec2 dk = 2.0 * PI / tile_length;
     vec2 k_vec = (vec2(id) - vec2(map_size) * 0.5) * dk;
     float k = length(k_vec) + 1e-6;
+    float domain_weight = spectral_domain_weight(k);
+    if (domain_weight <= 0.0) {
+        return vec2(0.0);
+    }
     float theta = atan(k_vec.x, k_vec.y);
 
     vec2 dispersion = dispersion_relation(k);
@@ -98,7 +119,8 @@ vec2 get_spectrum_amplitude(in ivec2 id, in ivec2 map_size) {
             1.0 - spread) *
         exp(-(1.0 - detail) * (1.0 - detail) * k * k);
     ivec2 seed = ivec2(params.seed_tile.xy);
-    return gaussian(hash(uvec2(id + seed))) * sqrt(max(2.0 * spectrum * direction * w_norm, 0.0));
+    return gaussian(hash(uvec2(id + seed))) *
+           sqrt(max(2.0 * spectrum * direction * w_norm * domain_weight, 0.0));
 }
 
 void main() {

@@ -21,6 +21,8 @@ void test_run_cli_app_sets_default_title_and_returns_runner_status();
 void test_run_config_parses_animation_options();
 void test_run_config_parses_video_capture_defaults();
 void test_run_config_parses_pbr_debug_view_name();
+void test_run_config_parses_atmosphere_options();
+void test_run_config_rejects_invalid_atmosphere_options();
 void test_run_config_parses_frame_stats_flag();
 void test_run_config_parses_profile_options();
 void test_run_config_rejects_invalid_profile_diagnostics_options();
@@ -58,6 +60,8 @@ std::span<const TestCase> core_test_cases() {
         CUBEY_TEST(test_run_config_parses_input_path),
         CUBEY_TEST(test_run_config_parses_animation_options),
         CUBEY_TEST(test_run_config_parses_pbr_debug_view_name),
+        CUBEY_TEST(test_run_config_parses_atmosphere_options),
+        CUBEY_TEST(test_run_config_rejects_invalid_atmosphere_options),
         CUBEY_TEST(test_run_config_parses_frame_stats_flag),
         CUBEY_TEST(test_run_config_parses_profile_options),
         CUBEY_TEST(test_run_config_rejects_invalid_profile_diagnostics_options),

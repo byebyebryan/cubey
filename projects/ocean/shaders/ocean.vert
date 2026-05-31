@@ -3,6 +3,8 @@
 layout(set = 0, binding = 0) uniform sampler2D displacement_cascade0_texture;
 layout(set = 0, binding = 1) uniform sampler2D displacement_cascade1_texture;
 layout(set = 0, binding = 2) uniform sampler2D displacement_cascade2_texture;
+layout(set = 0, binding = 3) uniform sampler2D displacement_cascade3_texture;
+layout(set = 0, binding = 4) uniform sampler2D displacement_cascade4_texture;
 
 layout(push_constant) uniform OceanParams {
     mat4 view_projection;
@@ -15,6 +17,7 @@ layout(push_constant) uniform OceanParams {
     vec4 tile_lengths;
     vec4 displacement_scales;
     vec4 normal_scales;
+    vec4 cascade4_options;
     vec4 water_color;
     vec4 foam_color;
 } ocean;
@@ -28,6 +31,7 @@ layout(location = 5) noperspective out vec3 frag_barycentric;
 
 const float OCEAN_MESH_TRANSITION_CELLS = 16.0;
 const float OCEAN_MESH_MAX_TRANSITION_RATIO = 0.35;
+const float OCEAN_MACRO_ANTI_REPEAT_WEIGHT = 0.32;
 
 vec2 triangle_corner(uint vertex_in_cell) {
     if (vertex_in_cell == 0u) {
@@ -56,6 +60,25 @@ vec3 triangle_barycentric(uint vertex_in_cell) {
         return vec3(0.0, 1.0, 0.0);
     }
     return vec3(0.0, 0.0, 1.0);
+}
+
+vec2 rotate2(vec2 value, float angle) {
+    float s = sin(angle);
+    float c = cos(angle);
+    return vec2(c * value.x - s * value.y, s * value.x + c * value.y);
+}
+
+float macro_anti_repeat_angle(uint cascade) {
+    return cascade == 0u ? 0.47 : -0.61;
+}
+
+vec2 macro_anti_repeat_offset(uint cascade) {
+    return cascade == 0u ? vec2(347.0, -911.0) : vec2(-193.0, 467.0);
+}
+
+vec3 rotate_displacement_xz(vec3 displacement, float angle) {
+    vec2 xz = rotate2(displacement.xz, angle);
+    return vec3(xz.x, displacement.y, xz.y);
 }
 
 vec2 clipmap_patch_position(vec2 uv) {
@@ -87,7 +110,13 @@ float cascade_tile_length(uint cascade) {
     if (cascade == 1u) {
         return ocean.tile_lengths.y;
     }
-    return ocean.tile_lengths.z;
+    if (cascade == 2u) {
+        return ocean.tile_lengths.z;
+    }
+    if (cascade == 3u) {
+        return ocean.tile_lengths.w;
+    }
+    return ocean.cascade4_options.x;
 }
 
 float cascade_displacement_scale(uint cascade) {
@@ -97,7 +126,13 @@ float cascade_displacement_scale(uint cascade) {
     if (cascade == 1u) {
         return ocean.displacement_scales.y;
     }
-    return ocean.displacement_scales.z;
+    if (cascade == 2u) {
+        return ocean.displacement_scales.z;
+    }
+    if (cascade == 3u) {
+        return ocean.displacement_scales.w;
+    }
+    return ocean.cascade4_options.y;
 }
 
 vec4 sample_displacement(uint cascade, vec2 uv) {
@@ -107,7 +142,13 @@ vec4 sample_displacement(uint cascade, vec2 uv) {
     if (cascade == 1u) {
         return texture(displacement_cascade1_texture, uv);
     }
-    return texture(displacement_cascade2_texture, uv);
+    if (cascade == 2u) {
+        return texture(displacement_cascade2_texture, uv);
+    }
+    if (cascade == 3u) {
+        return texture(displacement_cascade3_texture, uv);
+    }
+    return texture(displacement_cascade4_texture, uv);
 }
 
 bool ocean_cascade_enabled(uint cascade) {
@@ -115,13 +156,55 @@ bool ocean_cascade_enabled(uint cascade) {
     return selected < -0.5 || abs(selected - float(cascade)) < 0.5;
 }
 
-void add_displacement(inout vec3 displacement, uint cascade, vec2 position) {
+bool ocean_macro_anti_repeat_enabled(uint cascade) {
+    return cascade < 2u && ocean.inspection_options.y > 0.0;
+}
+
+float cascade_displacement_lod_weight(uint cascade, float camera_distance) {
+    if (cascade == 0u) {
+        return 1.0;
+    }
+    if (cascade == 1u) {
+        return 1.0 - smoothstep(2400.0, 5200.0, camera_distance);
+    }
+    if (cascade == 2u) {
+        return 1.0 - smoothstep(900.0, 2400.0, camera_distance);
+    }
+    if (cascade == 3u) {
+        return 1.0 - smoothstep(520.0, 1600.0, camera_distance);
+    }
+    return 1.0 - smoothstep(220.0, 800.0, camera_distance);
+}
+
+float horizon_displacement_weight(float camera_distance) {
+    return 1.0 - smoothstep(ocean.mesh_options.z * 0.36, ocean.mesh_options.z * 0.76,
+                            camera_distance);
+}
+
+vec3 sample_ocean_displacement(uint cascade, vec2 position, float tile_length) {
+    vec3 primary = sample_displacement(cascade, position / tile_length).xyz;
+    if (!ocean_macro_anti_repeat_enabled(cascade)) {
+        return primary;
+    }
+
+    float angle = macro_anti_repeat_angle(cascade);
+    vec2 secondary_position = rotate2(position, angle) + macro_anti_repeat_offset(cascade);
+    vec3 secondary = sample_displacement(cascade, secondary_position / tile_length).xyz;
+    secondary = rotate_displacement_xz(secondary, -angle);
+
+    float weight = OCEAN_MACRO_ANTI_REPEAT_WEIGHT * clamp(ocean.inspection_options.y, 0.0, 1.0);
+    return (primary + secondary * weight) / (1.0 + weight);
+}
+
+void add_displacement(inout vec3 displacement, uint cascade, vec2 position,
+                      float camera_distance) {
     if (!ocean_cascade_enabled(cascade)) {
         return;
     }
     float tile_length = max(cascade_tile_length(cascade), 0.001);
-    vec2 uv = position / tile_length;
-    displacement += sample_displacement(cascade, uv).xyz * cascade_displacement_scale(cascade);
+    float lod_weight = cascade_displacement_lod_weight(cascade, camera_distance);
+    displacement += sample_ocean_displacement(cascade, position, tile_length) *
+                    cascade_displacement_scale(cascade) * lod_weight;
 }
 
 void main() {
@@ -145,19 +228,18 @@ void main() {
     vec2 patch_position = clipmap_patch_position(uv);
     vec2 base_position = snapped_center + patch_position;
     float camera_distance = length(base_position - camera_xz);
-    float distance_factor = min(exp(-(camera_distance - 150.0) * 0.007), 1.0);
 
     vec3 displacement = vec3(0.0);
-    add_displacement(displacement, 0u, base_position);
-    add_displacement(displacement, 1u, base_position);
-    add_displacement(displacement, 2u, base_position);
-    displacement *= distance_factor;
+    for (uint cascade = 0u; cascade < 5u; ++cascade) {
+        add_displacement(displacement, cascade, base_position, camera_distance);
+    }
+    displacement *= horizon_displacement_weight(camera_distance);
 
     vec3 world_position = vec3(base_position.x, 0.0, base_position.y) + displacement;
     frag_world_position = world_position;
     frag_displacement = displacement;
     frag_sample_position = base_position;
-    frag_wave = vec4(displacement.y, 0.0, camera_distance, ocean.normal_scales.w);
+    frag_wave = vec4(displacement.y, 0.0, camera_distance, ocean.foam_color.w);
     frag_patch_alpha = clipmap_patch_alpha(patch_position, patch_cell_size);
     frag_barycentric = triangle_barycentric(vertex_in_cell);
     gl_Position = ocean.view_projection * vec4(world_position, 1.0);
