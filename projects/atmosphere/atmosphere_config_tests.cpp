@@ -1,4 +1,5 @@
 #include "atmosphere_config.h"
+#include "atmosphere_environment.h"
 #include "lunar_atlas.h"
 #include "night_sky_atlas.h"
 
@@ -11,6 +12,7 @@
 #include <filesystem>
 #include <fstream>
 #include <limits>
+#include <numbers>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -247,6 +249,48 @@ int main() {
     require(atmosphere_config_for_preset(AtmospherePreset::MoonlitNight).moon.moonlight_intensity >
                 atmosphere_config_for_preset(AtmospherePreset::Night).moon.moonlight_intensity,
             "moonlit night preset should increase moonlight");
+    require(sizeof(AtmosphereFrameUniforms) == sizeof(float) * 64U,
+            "atmosphere frame uniforms should keep the shader vec4 layout size");
+    {
+        AtmosphereConfig config = atmosphere_config_for_preset(AtmospherePreset::Noon);
+        config.sun_elevation_degrees = 30.0F;
+        config.sun_azimuth_degrees = 90.0F;
+        const cubey::math::Vec3 sun = atmosphere_sun_direction(config);
+        require_near(sun.x, std::cos(atmosphere_degrees_to_radians(30.0F)), 0.0001F,
+                     "atmosphere sun direction should resolve azimuth around Y");
+        require_near(sun.y, 0.5F, 0.0001F,
+                     "atmosphere sun direction should resolve elevation");
+        require(std::abs(sun.z) < 0.0001F,
+                "atmosphere sun direction should face the requested azimuth");
+    }
+    {
+        AtmosphereConfig config = atmosphere_config_for_preset(AtmospherePreset::MoonlitNight);
+        const cubey::render::ViewRayBasis3D view_rays = cubey::render::view_ray_basis_3d(
+            cubey::math::identity_quat(), 1.5F, std::numbers::pi_v<float> * 0.5F);
+        const AtmosphereFrameUniforms uniforms = atmosphere_frame_uniforms(
+            config,
+            {
+                .view_rays = view_rays,
+                .render_view = AtmosphereRenderView::Moon,
+                .display_transform = {0.25F, 1.0F, 1.0F, 0.0F},
+            });
+        require(uniforms.camera_right_aspect == view_rays.right_aspect,
+                "frame uniforms should preserve packed view ray right/aspect");
+        require(uniforms.camera_up_tan_half_fovy == view_rays.up_tan_half_fovy,
+                "frame uniforms should preserve packed view ray up/fovy");
+        require_near(uniforms.camera_forward_debug_view.z, -1.0F, 0.0001F,
+                     "frame uniforms should preserve packed forward ray");
+        require(uniforms.camera_forward_debug_view.w ==
+                    static_cast<float>(static_cast<std::uint32_t>(AtmosphereRenderView::Moon)),
+                "frame uniforms should pack the debug render view");
+        require(uniforms.display_transform == cubey::math::Vec4{0.25F, 1.0F, 1.0F, 0.0F},
+                "frame uniforms should carry the resolved display transform");
+        require(uniforms.moon_options.x == 1.0F,
+                "frame uniforms should pack the moon enable flag");
+        require(uniforms.celestial_options.z ==
+                    std::sin(atmosphere_degrees_to_radians(config.time_of_day.latitude_degrees)),
+                "frame uniforms should pack the observer latitude sine");
+    }
     {
         const AtmosphereConfig moonlit =
             atmosphere_config_for_preset(AtmospherePreset::MoonlitNight);
@@ -654,11 +698,19 @@ int main() {
 
     const std::filesystem::path source_root = CUBEY_ATMOSPHERE_SOURCE_DIR;
     const std::string app_source = read_text_file(source_root / "atmosphere_app.cpp");
+    const std::string environment_header =
+        read_text_file(source_root / "atmosphere_environment.h");
+    const std::string environment_source =
+        read_text_file(source_root / "atmosphere_environment.cpp");
     const std::string shader_source = read_text_file(source_root / "shaders/atmosphere.frag");
-    require_contains(app_source, "static_assert(sizeof(AtmosphereFrameUniforms)",
-                     "atmosphere app should lock frame uniform size");
-    require_contains(app_source, "sizeof(float) * 64U",
-                     "atmosphere app should include celestial frame uniforms");
+    require_contains(environment_header, "static_assert(sizeof(AtmosphereFrameUniforms)",
+                     "atmosphere environment should lock frame uniform size");
+    require_contains(environment_header, "sizeof(float) * 64U",
+                     "atmosphere environment should include celestial frame uniforms");
+    require_contains(environment_source, "atmosphere_frame_uniforms",
+                     "atmosphere environment should own frame uniform packing");
+    require_contains(app_source, "atmosphere_frame_uniforms(",
+                     "atmosphere app should consume the environment uniform packer");
     require_contains(app_source, "FrameUniformMaterialInstance<AtmosphereFrameUniforms>",
                      "atmosphere app should store frame uniforms in material descriptors");
     require_contains(app_source, ".uniform_binding = 0",

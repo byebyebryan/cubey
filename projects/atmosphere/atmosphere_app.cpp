@@ -1,6 +1,7 @@
 #include "atmosphere_app.h"
 
 #include "atmosphere_config.h"
+#include "atmosphere_environment.h"
 #include "atmosphere_ui.h"
 #include "lunar_atlas.h"
 #include "night_sky_atlas.h"
@@ -29,7 +30,6 @@
 #include <vulkan/vulkan.h>
 
 #include <array>
-#include <cmath>
 #include <cstdint>
 #include <filesystem>
 #include <numbers>
@@ -55,27 +55,6 @@ constexpr float kBaseYaw = 0.0F;
 constexpr float kBasePitch = 0.0F;
 constexpr float kDefaultFovyRadians = 65.0F * (std::numbers::pi_v<float> / 180.0F);
 
-struct AtmosphereFrameUniforms {
-    cubey::math::Vec4 camera_right_aspect;
-    cubey::math::Vec4 camera_up_tan_half_fovy;
-    cubey::math::Vec4 camera_forward_debug_view;
-    cubey::math::Vec4 radii_ground;
-    cubey::math::Vec4 rayleigh;
-    cubey::math::Vec4 mie;
-    cubey::math::Vec4 ozone;
-    cubey::math::Vec4 sun_direction_radius;
-    cubey::math::Vec4 display_transform;
-    cubey::math::Vec4 atmosphere_options;
-    cubey::math::Vec4 night_options;
-    cubey::math::Vec4 celestial_options;
-    cubey::math::Vec4 moon_direction_radius;
-    cubey::math::Vec4 moon_options;
-    cubey::math::Vec4 moon_phase_options;
-    cubey::math::Vec4 milky_way_options;
-};
-
-static_assert(sizeof(AtmosphereFrameUniforms) == sizeof(float) * 64U);
-
 struct ResolvedNightSkyAtlas {
     float procedural_variation = 0.0F;
     NightSkyLayerView layer = NightSkyLayerView::Final;
@@ -93,21 +72,6 @@ struct PendingNightSkyAtlasJob {
 
 std::filesystem::path shader_path(const char* filename) {
     return std::filesystem::path(CUBEY_ATMOSPHERE_SHADER_DIR) / filename;
-}
-
-[[nodiscard]] float radians(float degrees) {
-    return degrees * (std::numbers::pi_v<float> / 180.0F);
-}
-
-[[nodiscard]] cubey::math::Vec3 sun_direction(const AtmosphereConfig& config) {
-    const float elevation = radians(config.sun_elevation_degrees);
-    const float azimuth = radians(config.sun_azimuth_degrees);
-    const float horizontal = std::cos(elevation);
-    return glm::normalize(cubey::math::Vec3{
-        horizontal * std::sin(azimuth),
-        std::sin(elevation),
-        -horizontal * std::cos(azimuth),
-    });
 }
 
 [[nodiscard]] ResolvedNightSkyAtlas resolve_night_sky_atlas(const AtmosphereConfig& config) {
@@ -680,116 +644,16 @@ class AtmosphereApp {
             cubey::math::angle_axis_quat(kBasePitch + view_controller_.pitch(), {1.0F, 0.0F, 0.0F});
         const cubey::render::ViewRayBasis3D view_rays =
             cubey::render::view_ray_basis_3d(rotation, aspect, kDefaultFovyRadians);
-        const cubey::math::Vec3 sun = sun_direction(atmosphere_config_);
-        const float sidereal_angle =
-            atmosphere_sidereal_angle_radians(atmosphere_config_.time_of_day);
-        const float latitude = radians(atmosphere_config_.time_of_day.latitude_degrees);
-        const LunarState lunar_state =
-            atmosphere_lunar_state(atmosphere_config_.time_of_day, atmosphere_config_.moon);
         const cubey::render::PbrDisplayTransform display_transform =
             cubey::render::pbr_display_transform_for_target(pipeline_color_format_,
                                                             atmosphere_config_.exposure);
-
-        return {
-            .camera_right_aspect = view_rays.right_aspect,
-            .camera_up_tan_half_fovy = view_rays.up_tan_half_fovy,
-            .camera_forward_debug_view =
-                {
-                    view_rays.forward.x,
-                    view_rays.forward.y,
-                    view_rays.forward.z,
-                    static_cast<float>(static_cast<std::uint32_t>(render_view_)),
-                },
-            .radii_ground =
-                {
-                    atmosphere_config_.bottom_radius_km,
-                    atmosphere_config_.top_radius_km,
-                    atmosphere_config_.camera_altitude_km,
-                    atmosphere_config_.ground_albedo,
-                },
-            .rayleigh =
-                {
-                    atmosphere_config_.rayleigh_scattering.x *
-                        atmosphere_config_.rayleigh_density_scale,
-                    atmosphere_config_.rayleigh_scattering.y *
-                        atmosphere_config_.rayleigh_density_scale,
-                    atmosphere_config_.rayleigh_scattering.z *
-                        atmosphere_config_.rayleigh_density_scale,
-                    atmosphere_config_.rayleigh_scale_height_km,
-                },
-            .mie =
-                {
-                    atmosphere_config_.mie_scattering * atmosphere_config_.mie_density_scale,
-                    atmosphere_config_.mie_extinction * atmosphere_config_.mie_density_scale,
-                    atmosphere_config_.mie_scale_height_km,
-                    atmosphere_config_.mie_anisotropy,
-                },
-            .ozone =
-                {
-                    atmosphere_config_.ozone_absorption.x,
-                    atmosphere_config_.ozone_absorption.y,
-                    atmosphere_config_.ozone_absorption.z,
-                    atmosphere_config_.ozone_center_altitude_km,
-                },
-            .sun_direction_radius =
-                {
-                    sun.x,
-                    sun.y,
-                    sun.z,
-                    atmosphere_config_.sun_angular_radius,
-                },
-            .display_transform = cubey::render::pbr_display_transform_uniform(display_transform),
-            .atmosphere_options =
-                {
-                    atmosphere_config_.ozone_half_width_km,
-                    atmosphere_config_.reference_geometry_enabled ? 1.0F : 0.0F,
-                    atmosphere_config_.reference_grid_km,
-                    atmosphere_config_.reference_intensity,
-                },
-            .night_options =
-                {
-                    atmosphere_config_.night_sky.twilight_strength,
-                    atmosphere_config_.night_sky.twilight_horizon_warmth,
-                    atmosphere_config_.night_sky.star_intensity,
-                    atmosphere_config_.night_sky.star_density,
-                },
-            .celestial_options =
-                {
-                    std::cos(sidereal_angle),
-                    std::sin(sidereal_angle),
-                    std::sin(latitude),
-                    std::cos(latitude),
-                },
-            .moon_direction_radius =
-                {
-                    lunar_state.direction.x,
-                    lunar_state.direction.y,
-                    lunar_state.direction.z,
-                    lunar_state.angular_radius,
-                },
-            .moon_options =
-                {
-                    atmosphere_config_.moon.enabled ? 1.0F : 0.0F,
-                    atmosphere_config_.moon.disk_intensity,
-                    atmosphere_config_.moon.moonlight_intensity,
-                    lunar_state.illumination,
-                },
-            .moon_phase_options =
-                {
-                    lunar_state.phase_fraction,
-                    std::sin(lunar_state.phase_fraction * 2.0F * std::numbers::pi_v<float>),
-                    0.0F,
-                    0.0F,
-                },
-            .milky_way_options =
-                {
-                    atmosphere_config_.night_sky.milky_way_intensity,
-                    atmosphere_config_.night_sky.milky_way_contrast,
-                    atmosphere_config_.night_sky.light_pollution,
-                    atmosphere_config_.night_sky.visual_mode == NightSkyVisualMode::Camera ? 1.0F
-                                                                                           : 0.0F,
-                },
-        };
+        return atmosphere_frame_uniforms(
+            atmosphere_config_,
+            {
+                .view_rays = view_rays,
+                .render_view = render_view_,
+                .display_transform = cubey::render::pbr_display_transform_uniform(display_transform),
+            });
     }
 
     void record_atmosphere_draw(const cubey::vulkan::CommandRecorder& recorder,

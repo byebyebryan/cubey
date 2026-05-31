@@ -6,6 +6,7 @@ cubey_add_app_target(
     WINDOWED_SMOKE_PATTERN "atmosphere: .*rendering atmosphere project"
     SOURCES
         atmosphere_app.cpp
+        atmosphere_environment.cpp
         lunar_atlas.cpp
         night_sky_atlas.cpp
         atmosphere_ui.cpp
@@ -23,6 +24,7 @@ cubey_add_app_target(
 if (BUILD_TESTING)
     add_executable(cubey_project_atmosphere_tests
         atmosphere_config_tests.cpp
+        atmosphere_environment.cpp
         lunar_atlas.cpp
         night_sky_atlas.cpp
     )
