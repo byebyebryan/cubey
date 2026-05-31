@@ -13,7 +13,7 @@
 namespace cubey::projects::procedural_terrain {
 namespace {
 
-constexpr std::array<std::uint32_t, 5> kGridPresets{129U, 193U, 257U, 385U, 513U};
+constexpr std::array<std::uint32_t, 7> kGridPresets{129U, 193U, 257U, 385U, 513U, 1025U, 2049U};
 
 void draw_grid_preset_combo(TerrainConfig& config) {
     char preview[32]{};
@@ -30,8 +30,12 @@ void draw_grid_preset_combo(TerrainConfig& config) {
         std::snprintf(label, sizeof(label), "%u", preset);
         const bool selected = config.grid_width == preset && config.grid_height == preset;
         if (ImGui::Selectable(label, selected)) {
+            const float extent_m =
+                static_cast<float>(std::max(config.grid_width, config.grid_height) - 1U) *
+                config.cell_size_m;
             config.grid_width = preset;
             config.grid_height = preset;
+            config.cell_size_m = extent_m / static_cast<float>(preset - 1U);
         }
         if (selected) {
             ImGui::SetItemDefaultFocus();

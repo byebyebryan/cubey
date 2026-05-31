@@ -56,6 +56,8 @@ int main() {
             "terrain default width should be stable");
     require(defaults.grid_height == terrain::kTerrainDefaultGridHeight,
             "terrain default height should be stable");
+    require_near(defaults.cell_size_m, terrain::kTerrainDefaultCellSizeMeters, 0.001F,
+                 "terrain default cell size should be stable");
     require_near(defaults.land_extent, terrain::kTerrainDefaultLandExtent, 0.001F,
                  "terrain default land extent should be stable");
     require_near(defaults.relief_scale, terrain::kTerrainDefaultReliefScale, 0.001F,
@@ -169,6 +171,21 @@ int main() {
         rejected = true;
     }
     require(rejected, "terrain should reject too-small grids");
+
+    terrain::TerrainConfig large = defaults;
+    large.grid_width = terrain::kTerrainMaxGridExtent;
+    large.grid_height = terrain::kTerrainMaxGridExtent;
+    terrain::validate_terrain_config(large);
+
+    invalid = defaults;
+    invalid.grid_width = terrain::kTerrainMaxGridExtent + 1U;
+    rejected = false;
+    try {
+        terrain::validate_terrain_config(invalid);
+    } catch (const std::runtime_error&) {
+        rejected = true;
+    }
+    require(rejected, "terrain should reject too-large grids");
 
     invalid = defaults;
     invalid.land_extent = 0.1F;
@@ -340,6 +357,7 @@ int main() {
     terrain::TerrainConfig feature_grid = defaults;
     feature_grid.grid_width = 129;
     feature_grid.grid_height = 129;
+    feature_grid.cell_size_m = 12.0F;
     const terrain::TerrainFieldData feature_fields = terrain::generate_terrain_fields(feature_grid);
     float ridge_sum = 0.0F;
     float valley_sum = 0.0F;
@@ -357,6 +375,9 @@ int main() {
     require(stream_sum > 0.0F, "terrain should include stream power");
 
     terrain::TerrainConfig isolated_relief = defaults;
+    isolated_relief.grid_width = 513;
+    isolated_relief.grid_height = 513;
+    isolated_relief.cell_size_m = 3.0F;
     isolated_relief.coast_noise_strength = 0.0F;
     isolated_relief.relief_scale = 2.0F;
     isolated_relief.ridge_scale = 0.0F;

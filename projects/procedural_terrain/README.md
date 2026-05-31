@@ -54,7 +54,10 @@ Useful debug views:
 ```
 
 Use `--grid-width` and `--grid-height` for lower-cost checks or denser local
-captures. The current generator computes fields on the CPU, including
+captures. The app supports grids up to `2049 x 2049`; the default is
+`1025 x 1025` at `1.5 m` cells, keeping the same physical footprint as the
+earlier `513 x 513` terrain. Grid presets in the UI preserve physical extent by
+adjusting cell size. The current generator computes fields on the CPU, including
 shoreline distance, ridge strength, flow accumulation, stream power, named
 height contributions, and a bounded relax delta, then uploads CPU terrain and
 water meshes. GPU texture-backed displacement, chunked LOD, CDLOD, heavier

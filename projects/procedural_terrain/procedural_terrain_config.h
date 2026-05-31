@@ -41,12 +41,12 @@ inline constexpr std::array<TerrainDebugView, 16> kTerrainDebugViews{
     TerrainDebugView::FeatureHeight, TerrainDebugView::RelaxDelta,
 };
 
-inline constexpr std::uint32_t kTerrainDefaultGridWidth = 513U;
-inline constexpr std::uint32_t kTerrainDefaultGridHeight = 513U;
+inline constexpr std::uint32_t kTerrainDefaultGridWidth = 1025U;
+inline constexpr std::uint32_t kTerrainDefaultGridHeight = 1025U;
 inline constexpr std::uint32_t kTerrainMinGridExtent = 17U;
-inline constexpr std::uint32_t kTerrainMaxGridExtent = 513U;
+inline constexpr std::uint32_t kTerrainMaxGridExtent = 2049U;
 inline constexpr std::uint64_t kTerrainDefaultSeed = 0x54e2'2026'0529ULL;
-inline constexpr float kTerrainDefaultCellSizeMeters = 3.0F;
+inline constexpr float kTerrainDefaultCellSizeMeters = 1.5F;
 inline constexpr float kTerrainDefaultSeaLevelMeters = 0.0F;
 inline constexpr float kTerrainDefaultLandExtent = 0.70F;
 inline constexpr float kTerrainDefaultCoastNoiseStrength = 0.20F;
@@ -132,7 +132,7 @@ struct TerrainConfig {
 inline void validate_terrain_config(const TerrainConfig& config) {
     if (config.grid_width < kTerrainMinGridExtent || config.grid_width > kTerrainMaxGridExtent ||
         config.grid_height < kTerrainMinGridExtent || config.grid_height > kTerrainMaxGridExtent) {
-        throw std::runtime_error("terrain grid dimensions must be in [17, 513]");
+        throw std::runtime_error("terrain grid dimensions must be in [17, 2049]");
     }
     if (!std::isfinite(config.cell_size_m) || config.cell_size_m <= 0.0F) {
         throw std::runtime_error("terrain cell size must be positive");
