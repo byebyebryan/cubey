@@ -2,15 +2,17 @@
 #extension GL_GOOGLE_include_directive : require
 
 #include "cubey/color_space.glsl"
-#include "ocean_atmosphere.glsl"
 
 layout(push_constant) uniform SkyParams {
     vec4 camera_time;
     vec4 camera_right_aspect;
     vec4 camera_up_tan_half_fovy;
     vec4 camera_forward;
-    vec4 display_transform;
+    vec4 sun_direction;
 } sky;
+
+#define OCEAN_ATMOSPHERE_SUN_DIRECTION sky.sun_direction.xyz
+#include "ocean_atmosphere.glsl"
 
 layout(location = 0) in vec2 frag_ndc;
 layout(location = 0) out vec4 out_color;

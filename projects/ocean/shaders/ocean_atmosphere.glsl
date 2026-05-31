@@ -24,8 +24,12 @@ struct OceanAtmosphereSample {
     OceanAtmosphereOpticalDepth optical_depth;
 };
 
+#ifndef OCEAN_ATMOSPHERE_SUN_DIRECTION
+#define OCEAN_ATMOSPHERE_SUN_DIRECTION vec3(-0.32, 0.34, -0.88)
+#endif
+
 vec3 ocean_sun_direction() {
-    return normalize(vec3(-0.32, 0.34, -0.88));
+    return normalize(OCEAN_ATMOSPHERE_SUN_DIRECTION);
 }
 
 vec3 ocean_sky_lookup_direction(vec3 direction) {

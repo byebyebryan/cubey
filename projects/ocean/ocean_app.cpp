@@ -11,6 +11,7 @@
 #include <cubey/host/windowed_app.h>
 #include <cubey/input/input.h>
 #include <cubey/input/orbit_controller.h>
+#include <cubey/render/atmosphere_environment.h>
 #include <cubey/render/hdr_post_frame.h>
 #include <cubey/render/material_instance.h>
 #include <cubey/render/pass.h>
@@ -58,13 +59,15 @@ constexpr float kCameraFarPlane = 14000.0F;
 constexpr VkFormat kOceanSceneColorFormat = VK_FORMAT_R16G16B16A16_SFLOAT;
 constexpr VkFormat kOceanDepthFormat = VK_FORMAT_D32_SFLOAT;
 constexpr float kGravity = 9.81F;
+constexpr float kOceanSunElevationDegrees = 20.0F;
+constexpr float kOceanSunAzimuthDegrees = -20.0F;
 
 struct OceanPushConstants {
     cubey::math::Mat4 view_projection;
     cubey::math::Vec4 camera_time;
     cubey::math::Vec4 mesh_options;
     cubey::math::Vec4 patch_bounds;
-    cubey::math::Vec4 display_transform;
+    cubey::math::Vec4 sun_direction;
     cubey::math::Vec4 debug_options;
     cubey::math::Vec4 inspection_options;
     cubey::math::Vec4 tile_lengths;
@@ -80,7 +83,7 @@ struct OceanSkyPushConstants {
     cubey::math::Vec4 camera_right_aspect;
     cubey::math::Vec4 camera_up_tan_half_fovy;
     cubey::math::Vec4 camera_forward;
-    cubey::math::Vec4 display_transform;
+    cubey::math::Vec4 sun_direction;
 };
 
 struct OceanSpectrumPushConstants {
@@ -133,6 +136,15 @@ struct OceanCameraPresetConfig {
 
 [[nodiscard]] float radians(float degrees) {
     return degrees * (std::numbers::pi_v<float> / 180.0F);
+}
+
+[[nodiscard]] cubey::math::Vec4 ocean_sun_direction_uniform() {
+    cubey::render::AtmosphereEnvironmentConfig environment;
+    environment.sun_elevation_degrees = kOceanSunElevationDegrees;
+    environment.sun_azimuth_degrees = kOceanSunAzimuthDegrees;
+    const cubey::math::Vec3 sun =
+        cubey::render::atmosphere_environment_sun_direction(environment);
+    return {sun.x, sun.y, sun.z, 0.0F};
 }
 
 [[nodiscard]] float jonswap_alpha(float wind_speed, float fetch_length_m) {
@@ -456,11 +468,7 @@ class OceanApp {
         const cubey::Transform3D transform = camera_transform();
         const float aspect = static_cast<float>(extent.width) / static_cast<float>(extent.height);
         const cubey::math::Mat4 view_projection = camera_.view_projection_matrix(transform, aspect);
-        const cubey::render::PbrDisplayTransform display_transform =
-            cubey::render::pbr_display_transform_for_target(pipeline_color_format_,
-                                                            ocean_config_.exposure);
-        const cubey::math::Vec4 display_uniform =
-            cubey::render::pbr_display_transform_uniform(display_transform);
+        const cubey::math::Vec4 sun_direction = ocean_sun_direction_uniform();
 
         return {
             .view_projection = view_projection,
@@ -485,7 +493,7 @@ class OceanApp {
                     patch.bounds.min_z,
                     patch.bounds.max_z,
                 },
-            .display_transform = display_uniform,
+            .sun_direction = sun_direction,
             .debug_options =
                 {
                     static_cast<float>(static_cast<std::uint32_t>(render_view_)),
@@ -551,11 +559,7 @@ class OceanApp {
         const float aspect = static_cast<float>(extent.width) / static_cast<float>(extent.height);
         const cubey::render::ViewRayBasis3D view_rays =
             cubey::render::view_ray_basis_3d(transform.rotation, aspect, camera_.fovy_radians());
-        const cubey::render::PbrDisplayTransform display_transform =
-            cubey::render::pbr_display_transform_for_target(pipeline_color_format_,
-                                                            ocean_config_.exposure);
-        const cubey::math::Vec4 display_uniform =
-            cubey::render::pbr_display_transform_uniform(display_transform);
+        const cubey::math::Vec4 sun_direction = ocean_sun_direction_uniform();
 
         return {
             .camera_time =
@@ -568,7 +572,7 @@ class OceanApp {
             .camera_right_aspect = view_rays.right_aspect,
             .camera_up_tan_half_fovy = view_rays.up_tan_half_fovy,
             .camera_forward = view_rays.forward,
-            .display_transform = display_uniform,
+            .sun_direction = sun_direction,
         };
     }
 

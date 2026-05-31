@@ -11,7 +11,7 @@ layout(push_constant) uniform OceanParams {
     vec4 camera_time;
     vec4 mesh_options;
     vec4 patch_bounds;
-    vec4 display_transform;
+    vec4 sun_direction;
     vec4 debug_options;
     vec4 inspection_options;
     vec4 tile_lengths;

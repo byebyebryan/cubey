@@ -581,6 +581,17 @@ int main() {
                          "surface descriptors should expose normal maps for every cascade");
         require_contains(gpu_resources_source, "cascade + kOceanCascadeCount * 2U",
                          "surface descriptors should expose foam maps for every cascade");
+        require_contains(app_source, "atmosphere_environment_sun_direction",
+                         "ocean app should derive sun direction from the shared environment helper");
+        require_contains(vertex_shader, "vec4 sun_direction",
+                         "ocean vertex push constants should reserve the shared sun direction slot");
+        require_contains(fragment_shader,
+                         "#define OCEAN_ATMOSPHERE_SUN_DIRECTION ocean.sun_direction.xyz",
+                         "ocean surface shader should feed shared sun direction to atmosphere lookup");
+        require_contains(sky_shader, "#define OCEAN_ATMOSPHERE_SUN_DIRECTION sky.sun_direction.xyz",
+                         "ocean sky shader should feed shared sun direction to atmosphere lookup");
+        require_contains(atmosphere_shader, "OCEAN_ATMOSPHERE_SUN_DIRECTION",
+                         "ocean atmosphere helper should allow caller-provided sun direction");
 
         require_not_contains(vertex_shader, "ocean_macro_waves",
                              "ocean vertex shader should not use Cubey macro waves");

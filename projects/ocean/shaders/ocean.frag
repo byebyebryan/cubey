@@ -2,7 +2,6 @@
 #extension GL_GOOGLE_include_directive : require
 
 #include "cubey/color_space.glsl"
-#include "ocean_atmosphere.glsl"
 
 layout(set = 0, binding = 5) uniform sampler2D normal_cascade0_texture;
 layout(set = 0, binding = 6) uniform sampler2D normal_cascade1_texture;
@@ -20,7 +19,7 @@ layout(push_constant) uniform OceanParams {
     vec4 camera_time;
     vec4 mesh_options;
     vec4 patch_bounds;
-    vec4 display_transform;
+    vec4 sun_direction;
     vec4 debug_options;
     vec4 inspection_options;
     vec4 tile_lengths;
@@ -30,6 +29,9 @@ layout(push_constant) uniform OceanParams {
     vec4 water_color;
     vec4 foam_color;
 } ocean;
+
+#define OCEAN_ATMOSPHERE_SUN_DIRECTION ocean.sun_direction.xyz
+#include "ocean_atmosphere.glsl"
 
 layout(location = 0) in vec3 frag_world_position;
 layout(location = 1) in vec3 frag_displacement;
