@@ -74,6 +74,9 @@ void ForwardPbrRenderer3D::Impl::record(const ForwardPbrRenderer3DRenderRequest&
         forward_pbr_renderer_3d_frame_plans(*view.frame_plan);
     const scene::RenderFramePlan3D& shadow_plan = *frame_plans.shadow;
     const scene::RenderFramePlan3D& scene_plan = *frame_plans.scene;
+    if (settings.background_mode == ForwardPbrRenderer3DBackgroundMode::Atmosphere) {
+        require_atmosphere_background_resources();
+    }
 
     const math::Vec3 camera_position =
         forward_pbr_renderer_3d_camera_world_position(*view.scene, view.camera_entity);
@@ -101,6 +104,10 @@ void ForwardPbrRenderer3D::Impl::record(const ForwardPbrRenderer3DRenderRequest&
             .environment_intensity = environment().intensity,
             .environment_rotation_degrees = settings.environment_rotation_degrees,
         }));
+    if (settings.background_mode == ForwardPbrRenderer3DBackgroundMode::Atmosphere) {
+        global_.atmosphere_background.upload(target.frame_slot,
+                                             settings.atmosphere_background.value());
+    }
     const bool uses_final_display_transform = settings.debug_view == render::PbrDebugView::Final;
     post_material().upload(
         target.frame_slot,
@@ -114,7 +121,8 @@ void ForwardPbrRenderer3D::Impl::record(const ForwardPbrRenderer3DRenderRequest&
         current_render_graph(target.color_target, target.frame_slot, target.color_initial_state,
                              target.color_final_state, shadow_plan, scene_plan, *resources.meshes,
                              resources.frame_meshes, resources.deformation_commands,
-                             *resources.materials, settings.debug_view);
+                             *resources.materials, settings.debug_view,
+                             settings.background_mode);
     global_.graph_executor.record(
         render::RenderGraphFrameRecordInfo{
             .device = target.device,
@@ -140,7 +148,8 @@ ForwardPbrRenderer3D::Impl::CompiledGraph ForwardPbrRenderer3D::Impl::current_re
     const render::MeshResourceTable<render::Mesh>& meshes,
     const render::FrameMeshResourceTable* frame_meshes,
     std::span<const render::GpuDeformationCommand> deformation_commands,
-    const render::PbrMaterialTable& materials, render::PbrDebugView debug_view) {
+    const render::PbrMaterialTable& materials, render::PbrDebugView debug_view,
+    ForwardPbrRenderer3DBackgroundMode background_mode) {
     render::RenderGraphBuilder graph;
     const render::RenderGraphTextureHandle backbuffer = graph.import_color_target(
         "backbuffer", color_target, color_initial_state, color_final_state);
@@ -195,11 +204,13 @@ ForwardPbrRenderer3D::Impl::CompiledGraph ForwardPbrRenderer3D::Impl::current_re
     declare_deformation_vertex_reads(scene_pass_builder, deformation_vertex_buffers);
     scene_pass_builder.execute([this, scene_color, frame_slot, &scene_plan, mesh_resolver,
                                 &materials,
-                                debug_view](const render::RenderGraphExecutionContext& context) {
+                                debug_view,
+                                background_mode](const render::RenderGraphExecutionContext&
+                                                     context) {
         const render::ColorTargetView target =
             render::resolved_color_target_view(context, scene_color);
         record_scene_pass(context.recorder(), target, scene_plan, frame_slot, mesh_resolver,
-                          materials, debug_view);
+                          materials, debug_view, background_mode);
     });
     graph.add_pass("post", render::RenderGraphQueueDomain::Graphics)
         .read_texture(scene_color)

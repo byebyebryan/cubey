@@ -697,6 +697,8 @@ void test_forward_pbr_shader_package_uses_renderer_names() {
                      "CMake should expose the shared forward PBR shader package");
     require_contains(shader_cmake, "forward_pbr_shadow_depth.frag",
                      "shared forward PBR package should include the shadow mask shader");
+    require_contains(shader_cmake, "projects/atmosphere/shaders/atmosphere.frag",
+                     "shared forward PBR package should include the atmosphere background shader");
     require_contains(viewer_cmake, "cubey_forward_pbr_shader_sources",
                      "glTF viewer should consume the shared forward PBR shader package");
     require_contains(material_cubes_cmake, "cubey_forward_pbr_shader_sources",
@@ -845,6 +847,10 @@ void test_pbr_consumers_use_atmosphere_lighting_foundation() {
         read_source_file(source_root / "projects/gltf_viewer/gltf_viewer_app_internal.h");
     const std::string gltf_app =
         read_source_file(source_root / "projects/gltf_viewer/gltf_viewer_app.cpp");
+    const std::string gltf_assets =
+        read_source_file(source_root / "projects/gltf_viewer/gltf_viewer_assets.cpp");
+    const std::string gltf_render =
+        read_source_file(source_root / "projects/gltf_viewer/gltf_viewer_render.cpp");
     const std::string gltf_scene =
         read_source_file(source_root / "projects/gltf_viewer/gltf_viewer_scene.cpp");
     const std::string ocean_app =
@@ -858,15 +864,23 @@ void test_pbr_consumers_use_atmosphere_lighting_foundation() {
                      "glTF viewer should resolve atmosphere options from RunConfig");
     require_contains(gltf_app, "atmosphere_environment_lighting(atmosphere_environment_)",
                      "glTF viewer should derive lighting from the shared atmosphere helper");
+    require_contains(gltf_app, "environment.reference_geometry_enabled = false",
+                     "glTF viewer should disable atmosphere reference geometry for PBR backgrounds");
     require_contains(gltf_scene, "primary_light_direction",
                      "glTF viewer should use atmosphere primary light for direct lighting");
     require_contains(gltf_scene, ".diffuse_irradiance_sh = atmosphere_lighting_.diffuse_irradiance_sh",
                      "glTF viewer should feed atmosphere diffuse SH into Environment3D");
     require_contains(gltf_scene, ".diffuse_irradiance_sh_enabled = true",
                      "glTF viewer should enable diffuse SH in the PBR renderer");
+    require_contains(gltf_assets, "atmosphere_background_textures()",
+                     "glTF viewer should provide atmosphere background texture bindings");
+    require_contains(gltf_render, "ForwardPbrRenderer3DBackgroundMode::Atmosphere",
+                     "glTF viewer should select the procedural atmosphere background");
+    require_contains(gltf_scene, "atmosphere_background_uniforms",
+                     "glTF viewer should compute procedural atmosphere background uniforms");
     require_contains(ocean_app, "atmosphere_environment_lighting(environment)",
                      "ocean should derive its sun direction through shared atmosphere lighting");
-    require_contains(pbr_docs, "direct light and diffuse SH only",
+    require_contains(pbr_docs, "procedural visible background, direct light, and diffuse SH",
                      "PBR docs should capture the current atmosphere lighting boundary");
 }
 

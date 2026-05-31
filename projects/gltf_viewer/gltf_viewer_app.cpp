@@ -48,6 +48,7 @@ gltf_viewer_atmosphere_environment_config(const RunConfig& run_config) {
     cubey::render::AtmosphereEnvironmentConfig environment;
     environment.sun_elevation_degrees = direction_elevation_degrees(kLightDirection);
     environment.sun_azimuth_degrees = direction_azimuth_degrees(kLightDirection);
+    environment.reference_geometry_enabled = false;
 
     const RunConfig::AtmosphereOptions& atmosphere = run_config.atmosphere;
     if (run_config_float_is_set(atmosphere.time_hours)) {

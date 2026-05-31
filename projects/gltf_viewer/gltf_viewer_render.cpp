@@ -23,6 +23,8 @@ void GltfViewerApp::destroy_all_resources() {
     engine_.renderers().destroy_all_resources();
     forward_pbr_renderer_ = nullptr;
     ibl_environment_.reset();
+    atmosphere_lunar_placeholder_.reset();
+    atmosphere_night_sky_placeholder_.reset();
     destroy_scene_if_needed();
     cubey::destroy_gltf_scene_import(engine_, import_resources_, import_result_);
     animation_playback_ = {};
@@ -75,6 +77,9 @@ void GltfViewerApp::record_viewer_target(
                 .environment_rotation_degrees = config_.pbr.environment_rotation_degrees,
                 .exposure = config_.pbr.exposure,
                 .debug_view = debug_view_,
+                .background_mode = cubey::ForwardPbrRenderer3DBackgroundMode::Atmosphere,
+                .atmosphere_background =
+                    atmosphere_background_uniforms(scene_view, color_target.extent),
             },
     });
 }

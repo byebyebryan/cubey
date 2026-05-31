@@ -57,6 +57,8 @@ forward_pbr_renderer_3d_config_from_shader_directory(std::filesystem::path shade
     base.pbr_fragment_shader = shader_directory / "forward_pbr.frag.spv";
     base.skybox_vertex_shader = shader_directory / "forward_pbr_skybox.vert.spv";
     base.skybox_fragment_shader = shader_directory / "forward_pbr_skybox.frag.spv";
+    base.atmosphere_vertex_shader = shader_directory / "atmosphere.vert.spv";
+    base.atmosphere_fragment_shader = shader_directory / "atmosphere.frag.spv";
     base.post_vertex_shader = shader_directory / "forward_pbr_post.vert.spv";
     base.post_fragment_shader = shader_directory / "forward_pbr_post.frag.spv";
     base.shadow_depth_vertex_shader = shader_directory / "forward_pbr_shadow_depth.vert.spv";
@@ -102,6 +104,11 @@ void validate_forward_pbr_renderer_3d_render_request(
     (void)forward_pbr_renderer_3d_frame_plans(*request.view.frame_plan);
     if (request.scene_resources.meshes == nullptr || request.scene_resources.materials == nullptr) {
         throw std::runtime_error("forward PBR render request requires scene resources");
+    }
+    if (request.settings.background_mode == ForwardPbrRenderer3DBackgroundMode::Atmosphere &&
+        !request.settings.atmosphere_background.has_value()) {
+        throw std::runtime_error(
+            "forward PBR atmosphere background requires atmosphere frame uniforms");
     }
 }
 
@@ -248,6 +255,7 @@ bool ForwardPbrRenderer3D::Impl::has_global_resources() const {
     return global_.environment != nullptr || global_.graph_executor.frame_slot_count() != 0 ||
            global_.shadow_pass.has_value() || global_.shadow_double_sided_pipeline.has_value() ||
            global_.scene_material.has_value() || global_.skybox_material.has_value() ||
+           global_.atmosphere_background.materials_created() ||
            global_.post_material.has_value();
 }
 
@@ -288,6 +296,14 @@ void ForwardPbrRenderer3D::Impl::require_swapchain_resources() const {
         !has_pipeline(ForwardPbrPipelineVariant::MaskShadowDoubleSided)) {
         throw std::runtime_error("forward PBR renderer swapchain resources are not initialized");
     }
+}
+
+void ForwardPbrRenderer3D::Impl::require_atmosphere_background_resources() const {
+    if (!global_.atmosphere_background.materials_created()) {
+        throw std::runtime_error(
+            "forward PBR atmosphere background resources are not initialized");
+    }
+    static_cast<void>(global_.atmosphere_background.pipeline());
 }
 
 void ForwardPbrRenderer3D::Impl::require_no_global_resources() const {

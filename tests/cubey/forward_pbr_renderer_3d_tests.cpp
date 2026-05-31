@@ -229,6 +229,12 @@ void test_forward_pbr_renderer_3d_config_from_shader_directory_fills_package_pat
     require(config.skybox_fragment_shader ==
                 std::filesystem::path{"build/shaders"} / "forward_pbr_skybox.frag.spv",
             "forward PBR shader directory helper should fill the skybox fragment shader path");
+    require(config.atmosphere_vertex_shader ==
+                std::filesystem::path{"build/shaders"} / "atmosphere.vert.spv",
+            "forward PBR shader directory helper should fill the atmosphere vertex shader path");
+    require(config.atmosphere_fragment_shader ==
+                std::filesystem::path{"build/shaders"} / "atmosphere.frag.spv",
+            "forward PBR shader directory helper should fill the atmosphere fragment shader path");
     require(config.post_vertex_shader ==
                 std::filesystem::path{"build/shaders"} / "forward_pbr_post.vert.spv",
             "forward PBR shader directory helper should fill the post vertex shader path");
@@ -377,6 +383,16 @@ void test_forward_pbr_renderer_3d_render_request_validates_required_resource_fie
                    "forward PBR render request should reject missing material table");
 }
 
+void test_forward_pbr_renderer_3d_render_request_validates_atmosphere_background_uniforms() {
+    cubey::ForwardPbrRenderer3DRenderRequest request = valid_render_request();
+    request.settings.background_mode = cubey::ForwardPbrRenderer3DBackgroundMode::Atmosphere;
+    require_throws([&request] { cubey::validate_forward_pbr_renderer_3d_render_request(request); },
+                   "forward PBR atmosphere background should require frame uniforms");
+
+    request.settings.atmosphere_background.emplace();
+    cubey::validate_forward_pbr_renderer_3d_render_request(request);
+}
+
 void test_forward_pbr_renderer_3d_frame_plan_selects_required_passes() {
     const cubey::scene::FrameRenderPlan3D valid({
         cubey::scene::RenderPassPlan3D{
@@ -433,6 +449,10 @@ void test_forward_pbr_renderer_3d_settings_defaults_to_aces_display_transform() 
             "forward PBR renderer settings should default to ACES tonemap");
     require(settings.debug_view == cubey::render::PbrDebugView::Final,
             "forward PBR renderer settings should default to final shaded output");
+    require(settings.background_mode == cubey::ForwardPbrRenderer3DBackgroundMode::IblSkybox,
+            "forward PBR renderer settings should default to the IBL skybox background");
+    require(!settings.atmosphere_background.has_value(),
+            "forward PBR renderer settings should not carry atmosphere uniforms by default");
 }
 
 void test_forward_pbr_renderer_3d_selects_requested_light_or_fallback() {
@@ -679,6 +699,53 @@ void test_forward_pbr_renderer_3d_threads_debug_view_into_shader_and_scene_pass(
                      "forward PBR fragment shader should expose named debug view constants");
     require_contains(fragment_shader, "cubey_pbr_debug_output",
                      "forward PBR fragment shader should centralize debug output mapping");
+}
+
+void test_forward_pbr_renderer_3d_threads_atmosphere_background_path() {
+    const std::filesystem::path root{CUBEY_SOURCE_DIR};
+    const std::string header =
+        read_source_file(root / "include/cubey/engine/forward_pbr_renderer_3d.h");
+    const std::string internal_header =
+        read_source_file(root / "src/cubey/engine/forward_pbr_renderer_3d_internal.h");
+    const std::string resources =
+        read_source_file(root / "src/cubey/engine/forward_pbr_renderer_3d_resources.cpp");
+    const std::string graph =
+        read_source_file(root / "src/cubey/engine/forward_pbr_renderer_3d_graph.cpp");
+    const std::string recording =
+        read_source_file(root / "src/cubey/engine/forward_pbr_renderer_3d_recording.cpp");
+    const std::string cmake =
+        read_source_file(root / "cmake/CubeyShaders.cmake");
+    const std::string gltf_assets =
+        read_source_file(root / "projects/gltf_viewer/gltf_viewer_assets.cpp");
+    const std::string gltf_render =
+        read_source_file(root / "projects/gltf_viewer/gltf_viewer_render.cpp");
+    const std::string gltf_scene =
+        read_source_file(root / "projects/gltf_viewer/gltf_viewer_scene.cpp");
+
+    require_contains(header, "enum class ForwardPbrRenderer3DBackgroundMode",
+                     "forward PBR settings should expose selectable background modes");
+    require_contains(header, "ForwardPbrRenderer3DGlobalResourcesInfo",
+                     "forward PBR global resources should accept optional atmosphere bindings");
+    require_contains(header, "std::optional<render::AtmosphereEnvironmentFrameUniforms>",
+                     "forward PBR settings should carry atmosphere frame uniforms");
+    require_contains(internal_header, "render::AtmosphereBackgroundFrame atmosphere_background",
+                     "forward PBR internals should own the atmosphere background frame");
+    require_contains(resources, "AtmosphereBackgroundFrameMaterialConfig",
+                     "forward PBR resources should create atmosphere descriptors when provided");
+    require_contains(resources, "AtmosphereBackgroundFramePipelineConfig",
+                     "forward PBR resources should create an atmosphere background pipeline");
+    require_contains(graph, "settings.atmosphere_background.value()",
+                     "forward PBR record path should upload per-frame atmosphere uniforms");
+    require_contains(recording, "ForwardPbrRenderer3DBackgroundMode::Atmosphere",
+                     "forward PBR scene pass should branch to the atmosphere background");
+    require_contains(cmake, "projects/atmosphere/shaders/atmosphere.frag",
+                     "forward PBR shader package should compile the shared atmosphere shader");
+    require_contains(gltf_assets, "create_atmosphere_background_placeholders",
+                     "glTF viewer should create placeholder atmosphere atlas textures");
+    require_contains(gltf_render, "ForwardPbrRenderer3DBackgroundMode::Atmosphere",
+                     "glTF viewer should select the procedural atmosphere background");
+    require_contains(gltf_scene, "atmosphere_environment_frame_uniforms",
+                     "glTF viewer should compute atmosphere background frame uniforms");
 }
 
 void test_forward_pbr_renderer_3d_skybox_uniforms_pack_inverse_view_camera_environment_and_display() {

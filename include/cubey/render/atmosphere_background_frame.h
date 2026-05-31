@@ -40,6 +40,7 @@ struct AtmosphereBackgroundFrameMaterialConfig {
 struct AtmosphereBackgroundFramePipelineConfig {
     VkExtent2D extent{};
     VkFormat color_format = VK_FORMAT_UNDEFINED;
+    VkFormat depth_format = VK_FORMAT_UNDEFINED;
     std::span<const ShaderStageFile> shader_stage_files{};
 };
 

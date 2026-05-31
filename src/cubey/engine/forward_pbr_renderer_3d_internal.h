@@ -68,6 +68,8 @@ struct ForwardPbrRenderer3D::Impl {
     void create_global_resources(const vulkan::Device& device,
                                  const render::GeneratedPbrEnvironment& environment,
                                  std::uint32_t frame_slot_count);
+    void create_global_resources(const vulkan::Device& device,
+                                 const ForwardPbrRenderer3DGlobalResourcesInfo& info);
     void create_swapchain_resources(const vulkan::Device& device,
                                     const ForwardPbrRenderer3DTargetResourcesInfo& info);
     void destroy_swapchain_resources();
@@ -79,6 +81,7 @@ struct ForwardPbrRenderer3D::Impl {
     [[nodiscard]] bool has_swapchain_resources() const;
     void require_global_resources() const;
     void require_swapchain_resources() const;
+    void require_atmosphere_background_resources() const;
     void require_no_global_resources() const;
     void require_no_swapchain_resources() const;
 
@@ -105,7 +108,8 @@ struct ForwardPbrRenderer3D::Impl {
         const render::MeshResourceTable<render::Mesh>& meshes,
         const render::FrameMeshResourceTable* frame_meshes,
         std::span<const render::GpuDeformationCommand> deformation_commands,
-        const render::PbrMaterialTable& materials, render::PbrDebugView debug_view);
+        const render::PbrMaterialTable& materials, render::PbrDebugView debug_view,
+        ForwardPbrRenderer3DBackgroundMode background_mode);
     void record_shadow_pass(const vulkan::CommandRecorder& recorder,
                             const scene::RenderFramePlan3D& shadow_plan,
                             render::FrameSlot frame_slot, const render::MeshResolver& mesh_resolver,
@@ -115,7 +119,8 @@ struct ForwardPbrRenderer3D::Impl {
                            const scene::RenderFramePlan3D& scene_plan, render::FrameSlot frame_slot,
                            const render::MeshResolver& mesh_resolver,
                            const render::PbrMaterialTable& materials,
-                           render::PbrDebugView debug_view) const;
+                           render::PbrDebugView debug_view,
+                           ForwardPbrRenderer3DBackgroundMode background_mode) const;
     void record_post_pass(const vulkan::CommandRecorder& recorder,
                           render::ColorTargetView color_target, render::FrameSlot frame_slot) const;
     void update_post_descriptor(const vulkan::Device& device, render::FrameSlot frame_slot,
@@ -155,6 +160,7 @@ struct ForwardPbrRenderer3D::Impl {
             scene_material{};
         std::optional<render::FrameUniformMaterialInstance<render::PbrSkyboxUniforms>>
             skybox_material{};
+        render::AtmosphereBackgroundFrame atmosphere_background{};
         std::optional<render::FrameUniformMaterialInstance<render::PbrPostUniforms>>
             post_material{};
     };

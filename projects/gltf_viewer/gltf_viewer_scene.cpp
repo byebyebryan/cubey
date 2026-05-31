@@ -1,10 +1,12 @@
 #include "gltf_viewer_app_internal.h"
 
+#include <cubey/render/view_ray_basis_3d.h>
 #include <cubey/scene/scene_builder.h>
 
 #include <glm/geometric.hpp>
 
 #include <algorithm>
+#include <cmath>
 #include <stdexcept>
 
 namespace cubey::projects::gltf_viewer {
@@ -138,6 +140,40 @@ cubey::scene::FrameRenderPlan3D GltfViewerApp::current_frame_plan(const cubey::S
                                                                    engine_.render_resources()),
         },
     });
+}
+
+cubey::render::AtmosphereEnvironmentFrameUniforms GltfViewerApp::atmosphere_background_uniforms(
+    const cubey::SceneReadView& view, VkExtent2D color_extent) const {
+    if (color_extent.width == 0 || color_extent.height == 0) {
+        throw std::runtime_error("glTF viewer atmosphere background requires a nonzero extent");
+    }
+
+    const float aspect = static_cast<float>(color_extent.width) /
+                         static_cast<float>(color_extent.height);
+    const cubey::CameraInstance3D camera_instance = view.cameras3d().instance(camera_entity_);
+    const cubey::Camera3D& camera = view.cameras3d().camera(camera_instance);
+    const cubey::math::Mat4& world =
+        view.transforms3d().world_affine_matrix(view.transforms3d().instance(camera_entity_));
+    const cubey::math::Vec3 right = glm::normalize(cubey::math::Vec3{world[0]});
+    const cubey::math::Vec3 up = glm::normalize(cubey::math::Vec3{world[1]});
+    const cubey::math::Vec3 forward = glm::normalize(-cubey::math::Vec3{world[2]});
+    const cubey::render::ViewRayBasis3D view_rays{
+        .right_aspect = {right.x, right.y, right.z, aspect},
+        .up_tan_half_fovy =
+            {
+                up.x,
+                up.y,
+                up.z,
+                std::tan(camera.fovy_radians() * 0.5F),
+            },
+        .forward = {forward.x, forward.y, forward.z, 0.0F},
+    };
+    return cubey::render::atmosphere_environment_frame_uniforms(
+        atmosphere_environment_, {
+                                     .view_rays = view_rays,
+                                     .render_view =
+                                         cubey::render::AtmosphereEnvironmentRenderView::Final,
+                                 });
 }
 
 cubey::LightPacket3D GltfViewerApp::fallback_light_packet() const {

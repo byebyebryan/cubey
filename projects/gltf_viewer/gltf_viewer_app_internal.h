@@ -76,6 +76,10 @@ class GltfViewerApp {
     [[nodiscard]] std::filesystem::path resolved_environment_path() const;
     void create_default_textures(const cubey::vulkan::Device& device,
                                  cubey::vulkan::GpuRuntime& gpu);
+    void create_atmosphere_background_placeholders(const cubey::vulkan::Device& device,
+                                                   cubey::vulkan::GpuRuntime& gpu);
+    [[nodiscard]] cubey::render::AtmosphereBackgroundTextureBindings
+    atmosphere_background_textures() const;
     void create_fallback_material(const cubey::vulkan::Device& device,
                                   std::uint32_t frame_slot_count);
     [[nodiscard]] std::vector<cubey::render::SampledImageMaterialBinding>
@@ -89,6 +93,8 @@ class GltfViewerApp {
     void update_camera_transform();
     [[nodiscard]] cubey::scene::FrameRenderPlan3D
     current_frame_plan(const cubey::SceneReadView& view, VkExtent2D color_extent) const;
+    [[nodiscard]] cubey::render::AtmosphereEnvironmentFrameUniforms
+    atmosphere_background_uniforms(const cubey::SceneReadView& view, VkExtent2D color_extent) const;
     [[nodiscard]] cubey::LightPacket3D fallback_light_packet() const;
     [[nodiscard]] cubey::Scene& scene();
     [[nodiscard]] const cubey::Scene& scene() const;
@@ -129,6 +135,8 @@ class GltfViewerApp {
     cubey::GltfSceneImportResources import_resources_{};
     cubey::GltfSceneImportResult import_result_{};
     std::optional<cubey::render::GeneratedPbrEnvironment> ibl_environment_;
+    std::optional<cubey::render::Texture2D> atmosphere_lunar_placeholder_;
+    std::optional<cubey::render::TextureCube> atmosphere_night_sky_placeholder_;
 };
 
 } // namespace cubey::projects::gltf_viewer

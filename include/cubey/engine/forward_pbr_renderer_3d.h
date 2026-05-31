@@ -1,6 +1,8 @@
 #pragma once
 
 #include <cubey/core/math.h>
+#include <cubey/render/atmosphere_background_frame.h>
+#include <cubey/render/atmosphere_environment.h>
 #include <cubey/render/deformation.h>
 #include <cubey/render/frame_data.h>
 #include <cubey/render/generated_ibl.h>
@@ -23,6 +25,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <memory>
+#include <optional>
 #include <span>
 
 namespace cubey {
@@ -32,6 +35,8 @@ struct ForwardPbrRenderer3DConfig {
     std::filesystem::path pbr_fragment_shader{};
     std::filesystem::path skybox_vertex_shader{};
     std::filesystem::path skybox_fragment_shader{};
+    std::filesystem::path atmosphere_vertex_shader{};
+    std::filesystem::path atmosphere_fragment_shader{};
     std::filesystem::path post_vertex_shader{};
     std::filesystem::path post_fragment_shader{};
     std::filesystem::path shadow_depth_vertex_shader{};
@@ -43,6 +48,12 @@ struct ForwardPbrRenderer3DConfig {
         .color = render::color_clear_value(0.018F, 0.020F, 0.026F, 1.0F),
         .depth = render::depth_clear_value(),
     };
+};
+
+struct ForwardPbrRenderer3DGlobalResourcesInfo {
+    const render::GeneratedPbrEnvironment* environment = nullptr;
+    std::uint32_t frame_slot_count = 1;
+    std::optional<render::AtmosphereBackgroundTextureBindings> atmosphere_background_textures{};
 };
 
 struct ForwardPbrRenderer3DTargetResourcesInfo {
@@ -103,11 +114,19 @@ struct ForwardPbrRenderer3DSceneResources {
     const render::PbrMaterialTable* materials = nullptr;
 };
 
+enum class ForwardPbrRenderer3DBackgroundMode : std::uint8_t {
+    IblSkybox,
+    Atmosphere,
+};
+
 struct ForwardPbrRenderer3DSettings {
     float environment_rotation_degrees = 0.0F;
     float exposure = 0.0F;
     render::PbrTonemap tonemap = render::PbrTonemap::Aces;
     render::PbrDebugView debug_view = render::PbrDebugView::Final;
+    ForwardPbrRenderer3DBackgroundMode background_mode =
+        ForwardPbrRenderer3DBackgroundMode::IblSkybox;
+    std::optional<render::AtmosphereEnvironmentFrameUniforms> atmosphere_background{};
 };
 
 struct ForwardPbrRenderer3DRenderRequest {
@@ -175,6 +194,8 @@ class ForwardPbrRenderer3D {
     void create_global_resources(const vulkan::Device& device,
                                  const render::GeneratedPbrEnvironment& environment,
                                  std::uint32_t frame_slot_count);
+    void create_global_resources(const vulkan::Device& device,
+                                 const ForwardPbrRenderer3DGlobalResourcesInfo& info);
     void create_swapchain_resources(const vulkan::Device& device,
                                     const ForwardPbrRenderer3DTargetResourcesInfo& info);
     void destroy_swapchain_resources();

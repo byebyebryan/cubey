@@ -113,6 +113,7 @@ void AtmosphereBackgroundFrame::create_pipeline(
     pipeline_.emplace(device, GraphicsPipelineFileResourceConfig{
                                   .extent = config.extent,
                                   .color_format = config.color_format,
+                                  .depth_format = config.depth_format,
                                   .shader_stage_files = config.shader_stage_files,
                                   .descriptor_set_layouts = descriptor_set_layouts,
                                   .material_pass = atmosphere_background_pass_info(),

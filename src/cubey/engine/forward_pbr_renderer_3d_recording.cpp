@@ -86,14 +86,25 @@ void ForwardPbrRenderer3D::Impl::record_scene_pass(const vulkan::CommandRecorder
                                                    render::FrameSlot frame_slot,
                                                    const render::MeshResolver& mesh_resolver,
                                                    const render::PbrMaterialTable& materials,
-                                                   render::PbrDebugView debug_view) const {
+                                                   render::PbrDebugView debug_view,
+                                                   ForwardPbrRenderer3DBackgroundMode
+                                                       background_mode) const {
     render::record_render_target_pass(
         recorder,
         render::render_target_view(color_target, render::depth_target_view(depth_attachment())),
         config_.scene_clear,
         [this, &scene_plan, mesh_resolver, &materials, debug_view,
-         frame_slot](const vulkan::CommandRecorder& pass_recorder) {
-            if (debug_view == render::PbrDebugView::Final) {
+         frame_slot, background_mode](const vulkan::CommandRecorder& pass_recorder) {
+            if (debug_view == render::PbrDebugView::Final &&
+                background_mode == ForwardPbrRenderer3DBackgroundMode::Atmosphere) {
+                render::record_fullscreen_pipeline_draw(
+                    pass_recorder,
+                    render::FullscreenPipelineDrawInfo{
+                        .pipeline = &global_.atmosphere_background.pipeline(),
+                        .descriptor_set = global_.atmosphere_background.material().set(frame_slot),
+                        .descriptor_set_index = 0,
+                    });
+            } else if (debug_view == render::PbrDebugView::Final) {
                 render::record_fullscreen_pipeline_draw(
                     pass_recorder, render::FullscreenPipelineDrawInfo{
                                        .pipeline = &skybox_pipeline(),

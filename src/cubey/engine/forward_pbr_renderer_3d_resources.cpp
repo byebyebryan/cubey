@@ -36,12 +36,28 @@ void ForwardPbrRenderer3D::create_global_resources(
 void ForwardPbrRenderer3D::Impl::create_global_resources(
     const vulkan::Device& device, const render::GeneratedPbrEnvironment& environment,
     std::uint32_t frame_slot_count) {
-    if (frame_slot_count == 0) {
+    create_global_resources(device, ForwardPbrRenderer3DGlobalResourcesInfo{
+                                        .environment = &environment,
+                                        .frame_slot_count = frame_slot_count,
+                                    });
+}
+
+void ForwardPbrRenderer3D::create_global_resources(
+    const vulkan::Device& device, const ForwardPbrRenderer3DGlobalResourcesInfo& info) {
+    impl_->create_global_resources(device, info);
+}
+
+void ForwardPbrRenderer3D::Impl::create_global_resources(
+    const vulkan::Device& device, const ForwardPbrRenderer3DGlobalResourcesInfo& info) {
+    if (info.frame_slot_count == 0) {
         throw std::runtime_error("forward PBR renderer requires at least one frame slot");
     }
+    if (info.environment == nullptr) {
+        throw std::runtime_error("forward PBR renderer requires a PBR environment");
+    }
     require_no_global_resources();
-    global_.environment = &environment;
-    global_.graph_executor.resize(frame_slot_count);
+    global_.environment = info.environment;
+    global_.graph_executor.resize(info.frame_slot_count);
 
     const VkPushConstantRange shadow_push_constants{
         .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
@@ -93,7 +109,7 @@ void ForwardPbrRenderer3D::Impl::create_global_resources(
         device, render::FrameUniformMaterialInstanceConfig{
                     .material_pass = render::pbr_skybox_pass_info(),
                     .descriptor_set = 0,
-                    .frame_slot_count = frame_slot_count,
+                    .frame_slot_count = info.frame_slot_count,
                     .uniform_binding =
                         forward_pbr_renderer_3d_binding(render::PbrSkyboxBinding::SkyboxUniforms),
                     .sampled_images =
@@ -101,11 +117,18 @@ void ForwardPbrRenderer3D::Impl::create_global_resources(
                             render::SampledImageMaterialBinding{
                                 .binding = forward_pbr_renderer_3d_binding(
                                     render::PbrSkyboxBinding::EnvironmentCube),
-                                .sampler = environment.prefiltered_cube.sampler().handle(),
-                                .image_view = environment.prefiltered_cube.view(),
+                                .sampler = info.environment->prefiltered_cube.sampler().handle(),
+                                .image_view = info.environment->prefiltered_cube.view(),
                             },
                         },
                 });
+    if (info.atmosphere_background_textures.has_value()) {
+        global_.atmosphere_background.create_materials(
+            device, render::AtmosphereBackgroundFrameMaterialConfig{
+                        .frame_slot_count = info.frame_slot_count,
+                        .textures = info.atmosphere_background_textures.value(),
+                    });
+    }
 
     const render::DepthTexture& shadow_texture = shadow_pass().depth_texture();
     global_.scene_material.emplace(
@@ -113,7 +136,7 @@ void ForwardPbrRenderer3D::Impl::create_global_resources(
         render::FrameUniformMaterialInstanceConfig{
             .material_pass = render::pbr_forward_pass_info(),
             .descriptor_set = 0,
-            .frame_slot_count = frame_slot_count,
+            .frame_slot_count = info.frame_slot_count,
             .uniform_binding =
                 forward_pbr_renderer_3d_binding(render::PbrSceneBinding::SceneUniforms),
             .sampled_images =
@@ -128,27 +151,27 @@ void ForwardPbrRenderer3D::Impl::create_global_resources(
                     render::SampledImageMaterialBinding{
                         .binding = forward_pbr_renderer_3d_binding(
                             render::PbrSceneBinding::IrradianceCube),
-                        .sampler = environment.irradiance_cube.sampler().handle(),
-                        .image_view = environment.irradiance_cube.view(),
+                        .sampler = info.environment->irradiance_cube.sampler().handle(),
+                        .image_view = info.environment->irradiance_cube.view(),
                     },
                     render::SampledImageMaterialBinding{
                         .binding = forward_pbr_renderer_3d_binding(
                             render::PbrSceneBinding::PrefilteredCube),
-                        .sampler = environment.prefiltered_cube.sampler().handle(),
-                        .image_view = environment.prefiltered_cube.view(),
+                        .sampler = info.environment->prefiltered_cube.sampler().handle(),
+                        .image_view = info.environment->prefiltered_cube.view(),
                     },
                     render::SampledImageMaterialBinding{
                         .binding =
                             forward_pbr_renderer_3d_binding(render::PbrSceneBinding::BrdfLut),
-                        .sampler = environment.brdf_lut.sampler().handle(),
-                        .image_view = environment.brdf_lut.view(),
+                        .sampler = info.environment->brdf_lut.sampler().handle(),
+                        .image_view = info.environment->brdf_lut.view(),
                     },
                 },
         });
     global_.post_material.emplace(device, render::FrameUniformMaterialInstanceConfig{
                                        .material_pass = render::pbr_post_pass_info(),
                                        .descriptor_set = 0,
-                                       .frame_slot_count = frame_slot_count,
+                                       .frame_slot_count = info.frame_slot_count,
                                        .uniform_binding = forward_pbr_renderer_3d_binding(
                                            render::PbrPostBinding::PostUniforms),
                                    });
@@ -195,6 +218,24 @@ void ForwardPbrRenderer3D::Impl::create_swapchain_resources(
                                              .descriptor_set_layouts = skybox_layouts,
                                              .material_pass = render::pbr_skybox_pass_info(),
                                          }));
+    if (global_.atmosphere_background.materials_created()) {
+        if (config_.atmosphere_vertex_shader.empty() ||
+            config_.atmosphere_fragment_shader.empty()) {
+            throw std::runtime_error(
+                "forward PBR atmosphere background requires atmosphere shaders");
+        }
+        const std::array<render::ShaderStageFile, 2> atmosphere_shaders{
+            render::vertex_shader_file(config_.atmosphere_vertex_shader),
+            render::fragment_shader_file(config_.atmosphere_fragment_shader),
+        };
+        global_.atmosphere_background.create_pipeline(
+            device, render::AtmosphereBackgroundFramePipelineConfig{
+                        .extent = info.extent,
+                        .color_format = config_.scene_color_format,
+                        .depth_format = depth_attachment().format(),
+                        .shader_stage_files = atmosphere_shaders,
+                    });
+    }
 
     const render::VertexInputLayout vertex_input = render::pbr_vertex_input_layout();
     const std::array<render::ShaderStageFile, 2> pbr_shaders{
@@ -329,6 +370,7 @@ void ForwardPbrRenderer3D::Impl::destroy_swapchain_resources() {
     pipeline_variant_slot(ForwardPbrPipelineVariant::Alpha).reset();
     pipeline_variant_slot(ForwardPbrPipelineVariant::OpaqueDoubleSided).reset();
     pipeline_variant_slot(ForwardPbrPipelineVariant::Opaque).reset();
+    global_.atmosphere_background.destroy_pipeline();
     swapchain_.skybox_pipeline.reset();
     swapchain_.depth_attachment.reset();
 }
@@ -341,6 +383,7 @@ void ForwardPbrRenderer3D::Impl::destroy_all_resources() {
     destroy_swapchain_resources();
     global_.graph_executor.clear();
     global_.post_material.reset();
+    global_.atmosphere_background.destroy();
     global_.scene_material.reset();
     global_.skybox_material.reset();
     for (std::optional<render::GraphicsPipelineResource>& pipeline : swapchain_.pipeline_variants) {
