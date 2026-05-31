@@ -140,6 +140,7 @@ target_link_libraries(
 
 add_library(cubey_render STATIC
     render/deformation.cpp
+    render/atmosphere_environment.cpp
     render/forward_pass.cpp
     render/generated_ibl.cpp
     render/frame_data.cpp

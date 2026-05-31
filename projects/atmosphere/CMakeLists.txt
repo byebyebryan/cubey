@@ -45,6 +45,7 @@ if (BUILD_TESTING)
         cubey_project_atmosphere_tests
         PRIVATE
             cubey::core
+            cubey::render
             cubey_project_options
             cubey_project_warnings
     )

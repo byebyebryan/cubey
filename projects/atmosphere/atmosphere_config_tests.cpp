@@ -697,19 +697,31 @@ int main() {
     }
 
     const std::filesystem::path source_root = CUBEY_ATMOSPHERE_SOURCE_DIR;
+    const std::filesystem::path repo_root = source_root.parent_path().parent_path();
     const std::string app_source = read_text_file(source_root / "atmosphere_app.cpp");
     const std::string environment_header =
         read_text_file(source_root / "atmosphere_environment.h");
     const std::string environment_source =
         read_text_file(source_root / "atmosphere_environment.cpp");
+    const std::string shared_environment_header =
+        read_text_file(repo_root / "include/cubey/render/atmosphere_environment.h");
+    const std::string shared_environment_source =
+        read_text_file(repo_root / "src/cubey/render/atmosphere_environment.cpp");
     const std::string shader_source = read_text_file(source_root / "shaders/atmosphere.frag");
     const std::string cmake_source = read_text_file(source_root / "CMakeLists.txt");
-    require_contains(environment_header, "static_assert(sizeof(AtmosphereFrameUniforms)",
-                     "atmosphere environment should lock frame uniform size");
-    require_contains(environment_header, "sizeof(float) * 64U",
-                     "atmosphere environment should include celestial frame uniforms");
-    require_contains(environment_source, "atmosphere_frame_uniforms",
-                     "atmosphere environment should own frame uniform packing");
+    require_contains(shared_environment_header, "struct AtmosphereEnvironmentFrameUniforms",
+                     "shared atmosphere environment should define frame uniforms");
+    require_contains(shared_environment_header,
+                     "static_assert(sizeof(AtmosphereEnvironmentFrameUniforms)",
+                     "shared atmosphere environment should lock frame uniform size");
+    require_contains(shared_environment_header, "sizeof(float) * 64U",
+                     "shared atmosphere environment should include celestial frame uniforms");
+    require_contains(shared_environment_source, "atmosphere_environment_frame_uniforms",
+                     "shared atmosphere environment should own frame uniform packing");
+    require_contains(environment_header, "using AtmosphereFrameUniforms",
+                     "project atmosphere environment should alias shared frame uniforms");
+    require_contains(environment_source, "atmosphere_environment_frame_uniforms",
+                     "project atmosphere environment should delegate frame packing");
     require_contains(app_source, "atmosphere_frame_uniforms(",
                      "atmosphere app should consume the environment uniform packer");
     require_contains(app_source, "FrameUniformMaterialInstance<AtmosphereFrameUniforms>",
