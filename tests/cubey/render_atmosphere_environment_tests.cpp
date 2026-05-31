@@ -1,5 +1,6 @@
 #include <cubey/render/atmosphere_background_frame.h>
 #include <cubey/render/atmosphere_environment.h>
+#include <cubey/render/atmosphere_reflection_probe.h>
 
 #include <cubey/core/math.h>
 
@@ -213,4 +214,24 @@ void test_atmosphere_background_pass_declares_frame_and_atlas_bindings() {
             "atmosphere background night sky atlas should be sampled");
     require(pass.push_constants.empty(),
             "atmosphere background pass should not use push constants");
+}
+
+void test_atmosphere_reflection_probe_declares_prefilter_and_irradiance_passes() {
+    const cubey::render::MaterialPassInfo prefilter =
+        cubey::render::atmosphere_reflection_prefilter_pass_info();
+    require(prefilter.label == "atmosphere.reflection.prefilter",
+            "atmosphere reflection prefilter pass should keep its label");
+    require(prefilter.descriptor_sets.size() == 1U,
+            "atmosphere reflection prefilter pass should declare one descriptor set");
+    require(prefilter.descriptor_sets[0].bindings.size() == 2U,
+            "atmosphere reflection prefilter pass should bind uniforms and sky radiance");
+
+    const cubey::render::MaterialPassInfo irradiance =
+        cubey::render::atmosphere_reflection_irradiance_pass_info();
+    require(irradiance.label == "atmosphere.reflection.irradiance",
+            "atmosphere reflection irradiance pass should keep its label");
+    require(irradiance.descriptor_sets.size() == 1U,
+            "atmosphere reflection irradiance pass should declare one descriptor set");
+    require(irradiance.descriptor_sets[0].bindings.size() == 2U,
+            "atmosphere reflection irradiance pass should bind uniforms and sky radiance");
 }

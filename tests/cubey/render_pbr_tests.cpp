@@ -701,6 +701,8 @@ void test_forward_pbr_shader_package_uses_renderer_names() {
                      "shared forward PBR package should include the atmosphere background shader");
     require_contains(shader_cmake, "atmosphere_reflection_prefilter.frag",
                      "shared forward PBR package should include the atmosphere probe prefilter");
+    require_contains(shader_cmake, "atmosphere_reflection_irradiance.frag",
+                     "shared forward PBR package should include the atmosphere irradiance shader");
     require_contains(viewer_cmake, "cubey_forward_pbr_shader_sources",
                      "glTF viewer should consume the shared forward PBR shader package");
     require_contains(material_cubes_cmake, "cubey_forward_pbr_shader_sources",
