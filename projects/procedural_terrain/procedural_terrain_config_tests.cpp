@@ -187,6 +187,20 @@ int main() {
     }
     require(rejected, "terrain should reject too-large grids");
 
+    terrain::TerrainConfig fine_cell = defaults;
+    fine_cell.cell_size_m = 0.5F;
+    terrain::validate_terrain_config(fine_cell);
+
+    invalid = defaults;
+    invalid.cell_size_m = 0.0F;
+    rejected = false;
+    try {
+        terrain::validate_terrain_config(invalid);
+    } catch (const std::runtime_error&) {
+        rejected = true;
+    }
+    require(rejected, "terrain should reject invalid cell size");
+
     invalid = defaults;
     invalid.land_extent = 0.1F;
     rejected = false;

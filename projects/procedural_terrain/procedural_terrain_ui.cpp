@@ -106,7 +106,7 @@ void draw_terrain_ui(TerrainUiContext ui) {
         const cubey::host::ScopedImGuiId section_id("Terrain Shape");
         draw_grid_preset_combo(ui.edit_config);
         draw_seed_control(ui.edit_config);
-        ImGui::SliderFloat("Cell size", &ui.edit_config.cell_size_m, 2.0F, 8.0F, "%.1f m");
+        ImGui::SliderFloat("Cell size", &ui.edit_config.cell_size_m, 0.5F, 8.0F, "%.2f m");
         ImGui::SliderFloat("Sea level", &ui.edit_config.sea_level_m, -24.0F, 48.0F, "%.1f m");
         ImGui::SliderFloat("Land extent", &ui.edit_config.land_extent, 0.35F, 0.90F, "%.2f");
         ImGui::SliderFloat("Coast noise", &ui.edit_config.coast_noise_strength, 0.0F, 0.50F,
