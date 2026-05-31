@@ -194,6 +194,51 @@ void test_material_pass_info_validates_descriptor_and_push_constant_shape() {
         "material pass info should reject zero-sized push constants");
 }
 
+void test_push_constant_range_validation_enforces_device_limit_and_alignment() {
+    const VkPushConstantRange valid{
+        .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+        .offset = 16,
+        .size = 64,
+    };
+    cubey::render::validate_push_constant_ranges({&valid, 1}, 128, "test pipeline");
+
+    const VkPushConstantRange missing_stage{
+        .stageFlags = 0,
+        .offset = 0,
+        .size = 16,
+    };
+    require_throws(
+        [&missing_stage] {
+            cubey::render::validate_push_constant_ranges({&missing_stage, 1}, 128,
+                                                         "test pipeline");
+        },
+        "push constant validation should reject missing stage flags");
+
+    const VkPushConstantRange misaligned{
+        .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+        .offset = 2,
+        .size = 16,
+    };
+    require_throws(
+        [&misaligned] {
+            cubey::render::validate_push_constant_ranges({&misaligned, 1}, 128,
+                                                         "test pipeline");
+        },
+        "push constant validation should reject misaligned ranges");
+
+    const VkPushConstantRange too_large{
+        .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+        .offset = 96,
+        .size = 64,
+    };
+    require_throws(
+        [&too_large] {
+            cubey::render::validate_push_constant_ranges({&too_large, 1}, 128,
+                                                         "test pipeline");
+        },
+        "push constant validation should reject ranges beyond the device limit");
+}
+
 void test_material_pass_info_applies_graphics_pipeline_state() {
     const cubey::render::MaterialPassInfo pass{
         .label = "transparent forward",

@@ -34,6 +34,7 @@ void test_material_instance_config_builds_descriptor_set_info();
 void test_material_pass_info_applies_graphics_pipeline_state();
 void test_material_pass_info_builds_descriptor_set_info();
 void test_material_pass_info_validates_descriptor_and_push_constant_shape();
+void test_push_constant_range_validation_enforces_device_limit_and_alignment();
 void test_material_pass_masks_include_requested_passes();
 void test_primitive_cube_normal_uv_mesh_preserves_normals_and_face_uvs();
 void test_primitive_cube_position_color_mesh_uses_face_colors_and_indices();
@@ -274,6 +275,7 @@ std::span<const TestCase> render_test_cases() {
         CUBEY_TEST(test_material_descriptor_writer_preserves_set_and_write_order),
         CUBEY_TEST(test_material_pass_masks_include_requested_passes),
         CUBEY_TEST(test_material_pass_info_validates_descriptor_and_push_constant_shape),
+        CUBEY_TEST(test_push_constant_range_validation_enforces_device_limit_and_alignment),
         CUBEY_TEST(test_material_pass_info_applies_graphics_pipeline_state),
         CUBEY_TEST(test_material_pass_info_builds_descriptor_set_info),
     };

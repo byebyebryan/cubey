@@ -1,7 +1,9 @@
 #include <cubey/render/material.h>
 
 #include <algorithm>
+#include <limits>
 #include <stdexcept>
+#include <string>
 #include <utility>
 
 namespace cubey::render {
@@ -28,6 +30,32 @@ void validate_descriptor_set(const MaterialDescriptorSetLayout& descriptor_set) 
 }
 
 } // namespace
+
+void validate_push_constant_ranges(std::span<const VkPushConstantRange> push_constants,
+                                   std::uint32_t max_push_constant_bytes,
+                                   std::string_view owner_label) {
+    for (const VkPushConstantRange& push_constant : push_constants) {
+        if (push_constant.stageFlags == 0) {
+            throw std::runtime_error(std::string(owner_label) +
+                                     " push constant stages must be nonzero");
+        }
+        if (push_constant.size == 0) {
+            throw std::runtime_error(std::string(owner_label) +
+                                     " push constant size must be nonzero");
+        }
+        if ((push_constant.offset % 4U) != 0U || (push_constant.size % 4U) != 0U) {
+            throw std::runtime_error(std::string(owner_label) +
+                                     " push constant ranges must be four-byte aligned");
+        }
+
+        const std::uint64_t range_end =
+            static_cast<std::uint64_t>(push_constant.offset) + push_constant.size;
+        if (range_end > max_push_constant_bytes) {
+            throw std::runtime_error(std::string(owner_label) +
+                                     " push constants exceed device maxPushConstantsSize");
+        }
+    }
+}
 
 MaterialDescriptorSetLayout sampled_texture_descriptor_set_layout(std::uint32_t set,
                                                                   std::uint32_t binding_count,
@@ -69,11 +97,8 @@ void validate_material_pass_info(const MaterialPassInfo& info) {
         }
     }
 
-    for (const VkPushConstantRange& push_constant : info.push_constants) {
-        if (push_constant.size == 0) {
-            throw std::runtime_error("material pass push constant size must be nonzero");
-        }
-    }
+    validate_push_constant_ranges(info.push_constants, std::numeric_limits<std::uint32_t>::max(),
+                                  "material pass");
 }
 
 const MaterialDescriptorSetLayout& material_descriptor_set_layout(const MaterialPassInfo& info,

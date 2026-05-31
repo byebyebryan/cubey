@@ -95,6 +95,9 @@ GraphicsPipelineResource::GraphicsPipelineResource(
 
 void GraphicsPipelineResource::create(const cubey::vulkan::Device& device,
                                       const GraphicsPipelineResourceConfig& config) {
+    validate_push_constant_ranges(config.material_pass.push_constants,
+                                  device.properties().limits.maxPushConstantsSize,
+                                  config.material_pass.label);
     const cubey::vulkan::PipelineLayoutInfo layout_info = graphics_pipeline_layout_info(config);
     layout_.emplace(device, layout_info.create_info());
 
@@ -155,6 +158,9 @@ void emplace_single_set_compute_pipeline_resource(
 ComputePipelineResource::ComputePipelineResource(const cubey::vulkan::Device& device,
                                                  const ComputePipelineResourceConfig& config) {
     validate_compute_pipeline_resource_config(config);
+    validate_push_constant_ranges(config.push_constants,
+                                  device.properties().limits.maxPushConstantsSize,
+                                  "compute pipeline resource");
 
     const cubey::vulkan::PipelineLayoutInfo layout_info = compute_pipeline_layout_info(config);
     layout_.emplace(device, layout_info.create_info());

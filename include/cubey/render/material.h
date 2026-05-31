@@ -6,7 +6,9 @@
 #include <vulkan/vulkan.h>
 
 #include <cstdint>
+#include <span>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace cubey::render {
@@ -125,6 +127,9 @@ struct MaterialPassInfo {
 [[nodiscard]] MaterialDescriptorSetLayout sampled_texture_descriptor_set_layout(
     std::uint32_t set, std::uint32_t binding_count = 1,
     VkShaderStageFlags stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT);
+void validate_push_constant_ranges(std::span<const VkPushConstantRange> push_constants,
+                                   std::uint32_t max_push_constant_bytes,
+                                   std::string_view owner_label);
 void validate_material_pass_info(const MaterialPassInfo& info);
 [[nodiscard]] const MaterialDescriptorSetLayout&
 material_descriptor_set_layout(const MaterialPassInfo& info, std::uint32_t set);
