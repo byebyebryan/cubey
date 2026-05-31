@@ -47,8 +47,10 @@ void GltfViewerApp::create_camera_and_light(cubey::SceneTransaction& setup) {
                                                   .far_z = std::max(radius * 12.0F, 100.0F),
                                               }));
 
+    const cubey::math::Vec3 light_direction =
+        glm::normalize(atmosphere_lighting_.primary_light_direction);
     const cubey::math::Vec3 light_eye =
-        scene_bounds_.center + (kLightDirection * std::max(radius * 4.0F, 6.0F));
+        scene_bounds_.center + (light_direction * std::max(radius * 4.0F, 6.0F));
     light_camera_entity_ = cubey::scene::create_camera_entity_3d(
         setup, look_at_transform(light_eye, scene_bounds_.center),
         cubey::Camera3D({
@@ -58,8 +60,9 @@ void GltfViewerApp::create_camera_and_light(cubey::SceneTransaction& setup) {
             .far_z = std::max(radius * 10.0F, 16.0F),
         }));
 
-    cubey::Light3D sunlight =
-        cubey::directional_light_3d(kLightDirection, {1.0F, 0.94F, 0.82F}, 2.2F);
+    cubey::Light3D sunlight = cubey::directional_light_3d(
+        light_direction, atmosphere_lighting_.primary_light_color,
+        atmosphere_lighting_.primary_light_intensity);
     sunlight.casts_shadows = true;
     light_entity_ = cubey::scene::create_directional_light_entity_3d(setup, sunlight);
 }
@@ -115,8 +118,10 @@ cubey::scene::FrameRenderPlan3D GltfViewerApp::current_frame_plan(const cubey::S
         .height = color_extent.height,
         .environment =
             cubey::scene::Environment3D{
-                .ambient_color = {0.04F, 0.045F, 0.055F},
-                .ambient_intensity = 1.0F,
+                .ambient_color = {0.0F, 0.0F, 0.0F},
+                .ambient_intensity = 0.0F,
+                .diffuse_irradiance_sh = atmosphere_lighting_.diffuse_irradiance_sh,
+                .diffuse_irradiance_sh_enabled = true,
             },
     };
     return cubey::scene::FrameRenderPlan3D({
@@ -139,9 +144,9 @@ cubey::LightPacket3D GltfViewerApp::fallback_light_packet() const {
     return cubey::LightPacket3D{
         .entity = light_entity_,
         .kind = cubey::LightKind3D::Directional,
-        .color = {1.0F, 0.94F, 0.82F},
-        .intensity = 2.2F,
-        .direction = kLightDirection,
+        .color = atmosphere_lighting_.primary_light_color,
+        .intensity = atmosphere_lighting_.primary_light_intensity,
+        .direction = glm::normalize(atmosphere_lighting_.primary_light_direction),
     };
 }
 

@@ -12,6 +12,7 @@
 #include <cubey/host/headless_png_host.h>
 #include <cubey/host/windowed_app.h>
 #include <cubey/input/orbit_controller.h>
+#include <cubey/render/atmosphere_environment.h>
 #include <cubey/render/generated_ibl.h>
 #include <cubey/render/mesh.h>
 #include <cubey/render/pbr.h>
@@ -119,6 +120,8 @@ class GltfViewerApp {
     cubey::Bounds3D scene_bounds_{};
     cubey::OrbitController orbit_controller_;
     cubey::render::PbrDebugView debug_view_ = cubey::render::PbrDebugView::Final;
+    cubey::render::AtmosphereEnvironmentConfig atmosphere_environment_{};
+    cubey::render::AtmosphereEnvironmentLighting atmosphere_lighting_{};
     cubey::animation::GltfAnimationPlayback animation_playback_{};
     std::optional<cubey::animation::GltfAnimationSample> animation_sample_{};
     std::uint32_t triangle_count_ = 0;

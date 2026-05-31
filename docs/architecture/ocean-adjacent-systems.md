@@ -53,6 +53,16 @@ Ocean integration target:
 - compare the integration against `ocean_ref` before retiring the ocean-local
   sky fallback.
 
+Current foundation checkpoint:
+
+- shared atmosphere lighting now owns direct light direction/color/intensity and
+  diffuse SH for PBR consumers;
+- `gltf_viewer` consumes the shared direct light and diffuse SH, but still uses
+  the existing static/generated IBL for skybox and specular reflections;
+- `projects/ocean` derives its sun direction through the shared lighting helper
+  while retaining the ocean-local sky shader until the dynamic sky/probe path is
+  ready.
+
 ## Terrain And Bathymetry Project
 
 The ocean renderer needs land and underwater shape before shoreline water can

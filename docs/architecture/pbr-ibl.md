@@ -36,6 +36,10 @@ Radiance HDR equirectangular environment assets:
   occlusion, emissive, shadow, alpha, and UV0 inspection; pipeline, shadow,
   graph, sampler, and attachment state stay internal to the engine
   implementation;
+- the atmosphere environment can now produce direct light data and low-order
+  diffuse irradiance SH. `Environment3D` can opt into those SH coefficients for
+  diffuse ambient while the existing irradiance cube path remains the default
+  and the prefiltered cube/DFG LUT still carry specular IBL;
 - `pbr_furnace` isolates the current IBL/specular behavior with a white sphere
   grid that sweeps roughness across columns and metallic across rows under a
   uniform white environment;
@@ -104,6 +108,9 @@ renderer-wide material management explicit future work.
 - The current HDR path performs setup-time CPU filtering. It is useful for
   development and material inspection, but higher-quality offline filtering and
   prefiltered KTX/KTX2 deployment remain future work.
+- Atmosphere-driven PBR currently covers direct light and diffuse SH only.
+  Runtime/time-sliced sky reflection probes are still needed before the skybox
+  and specular IBL can track day/night without setup-time HDR assets.
 - The current clearcoat, sheen, anisotropy, and iridescence lobes are pragmatic
   real-time approximations. Transmission, refraction, volume absorption,
   dispersion, and OIT-quality transparent material behavior remain future work.

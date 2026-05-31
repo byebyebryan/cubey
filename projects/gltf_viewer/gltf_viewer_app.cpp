@@ -8,6 +8,7 @@
 #include <glm/geometric.hpp>
 #include <glm/gtc/quaternion.hpp>
 
+#include <algorithm>
 #include <cmath>
 #include <filesystem>
 #include <span>
@@ -26,9 +27,86 @@ namespace {
 
 constexpr float kHeadlessVideoOrbitSpeed = 0.32F;
 
+[[nodiscard]] float direction_elevation_degrees(cubey::math::Vec3 direction) {
+    return cubey::render::atmosphere_environment_radians_to_degrees(
+        std::asin(std::clamp(glm::normalize(direction).y, -1.0F, 1.0F)));
+}
+
+[[nodiscard]] float direction_azimuth_degrees(cubey::math::Vec3 direction) {
+    const cubey::math::Vec3 normal = glm::normalize(direction);
+    return cubey::render::atmosphere_environment_wrap_signed_degrees(
+        cubey::render::atmosphere_environment_radians_to_degrees(
+            std::atan2(normal.x, -normal.z)));
+}
+
 } // namespace
 
 const cubey::math::Vec3 kLightDirection = glm::normalize(cubey::math::Vec3{0.45F, 0.82F, 0.35F});
+
+[[nodiscard]] cubey::render::AtmosphereEnvironmentConfig
+gltf_viewer_atmosphere_environment_config(const RunConfig& run_config) {
+    cubey::render::AtmosphereEnvironmentConfig environment;
+    environment.sun_elevation_degrees = direction_elevation_degrees(kLightDirection);
+    environment.sun_azimuth_degrees = direction_azimuth_degrees(kLightDirection);
+
+    const RunConfig::AtmosphereOptions& atmosphere = run_config.atmosphere;
+    if (run_config_float_is_set(atmosphere.time_hours)) {
+        environment.time_of_day.time_hours = atmosphere.time_hours;
+    }
+    if (run_config_float_is_set(atmosphere.day_of_year)) {
+        environment.time_of_day.day_of_year = atmosphere.day_of_year;
+    }
+    if (run_config_float_is_set(atmosphere.latitude_degrees)) {
+        environment.time_of_day.latitude_degrees = atmosphere.latitude_degrees;
+    }
+    if (run_config_float_is_set(atmosphere.sun_azimuth_offset_degrees)) {
+        environment.time_of_day.azimuth_offset_degrees = atmosphere.sun_azimuth_offset_degrees;
+    }
+
+    const bool explicit_solar_time =
+        atmosphere.time_of_day_mode == "solar" ||
+        (atmosphere.time_of_day_mode.empty() &&
+         (run_config_float_is_set(atmosphere.time_hours) ||
+          run_config_float_is_set(atmosphere.day_of_year) ||
+          run_config_float_is_set(atmosphere.latitude_degrees)));
+    if (explicit_solar_time) {
+        const cubey::render::AtmosphereEnvironmentSolarPosition solar =
+            cubey::render::atmosphere_environment_solar_position(environment.time_of_day);
+        environment.sun_elevation_degrees = solar.elevation_degrees;
+        environment.sun_azimuth_degrees = solar.azimuth_degrees;
+    } else {
+        if (run_config_float_is_set(atmosphere.sun_elevation_degrees)) {
+            environment.sun_elevation_degrees = atmosphere.sun_elevation_degrees;
+        }
+        if (run_config_float_is_set(atmosphere.sun_azimuth_degrees)) {
+            environment.sun_azimuth_degrees = atmosphere.sun_azimuth_degrees;
+        }
+    }
+
+    if (run_config_float_is_set(atmosphere.camera_altitude_km)) {
+        environment.camera_altitude_km = atmosphere.camera_altitude_km;
+    }
+    if (run_config_float_is_set(atmosphere.mie_scale)) {
+        environment.mie_density_scale = atmosphere.mie_scale;
+    }
+    if (run_config_float_is_set(atmosphere.moonlight_intensity)) {
+        environment.moon.moonlight_intensity = atmosphere.moonlight_intensity;
+    }
+    if (run_config_float_is_set(atmosphere.moon_intensity)) {
+        environment.moon.disk_intensity = atmosphere.moon_intensity;
+    }
+    if (run_config_float_is_set(atmosphere.moon_phase_offset_days)) {
+        environment.moon.phase_offset_days = atmosphere.moon_phase_offset_days;
+    }
+    if (run_config_float_is_set(atmosphere.moon_size_scale)) {
+        environment.moon.angular_radius_scale = atmosphere.moon_size_scale;
+    }
+    if (atmosphere.moon >= 0) {
+        environment.moon.enabled = atmosphere.moon == 1;
+    }
+
+    return environment;
+}
 
 std::filesystem::path shader_path(const char* filename) {
     return std::filesystem::path(CUBEY_GLTF_VIEWER_SHADER_DIR) / filename;
@@ -97,7 +175,9 @@ std::vector<std::uint32_t> fallback_cube_indices() {
 
 GltfViewerApp::GltfViewerApp(RunConfig config)
     : config_(std::move(config)),
-      debug_view_(render::pbr_debug_view_from_name(config_.debug_view)) {}
+      debug_view_(render::pbr_debug_view_from_name(config_.debug_view)),
+      atmosphere_environment_(gltf_viewer_atmosphere_environment_config(config_)),
+      atmosphere_lighting_(render::atmosphere_environment_lighting(atmosphere_environment_)) {}
 
 int GltfViewerApp::run() {
     if (config_.headless) {

@@ -142,9 +142,9 @@ struct OceanCameraPresetConfig {
     cubey::render::AtmosphereEnvironmentConfig environment;
     environment.sun_elevation_degrees = kOceanSunElevationDegrees;
     environment.sun_azimuth_degrees = kOceanSunAzimuthDegrees;
-    const cubey::math::Vec3 sun =
-        cubey::render::atmosphere_environment_sun_direction(environment);
-    return {sun.x, sun.y, sun.z, 0.0F};
+    const cubey::render::AtmosphereEnvironmentLighting lighting =
+        cubey::render::atmosphere_environment_lighting(environment);
+    return {lighting.sun_direction.x, lighting.sun_direction.y, lighting.sun_direction.z, 0.0F};
 }
 
 [[nodiscard]] float jonswap_alpha(float wind_speed, float fetch_length_m) {
