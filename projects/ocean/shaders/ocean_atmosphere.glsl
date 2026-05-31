@@ -1,7 +1,8 @@
 #ifndef CUBEY_OCEAN_ATMOSPHERE_GLSL
 #define CUBEY_OCEAN_ATMOSPHERE_GLSL
 
-const float OCEAN_ATMOSPHERE_PI = 3.14159265359;
+#include "cubey/atmosphere.glsl"
+
 const int OCEAN_ATMOSPHERE_VIEW_SAMPLE_COUNT = 8;
 const int OCEAN_ATMOSPHERE_LIGHT_SAMPLE_COUNT = 4;
 const float OCEAN_ATMOSPHERE_SUN_INTENSITY = 14.0;
@@ -67,15 +68,8 @@ vec3 ocean_ozone_absorption() {
 
 vec2 ocean_ray_sphere_intersection(vec3 ray_origin, vec3 ray_direction, vec3 sphere_center,
                                    float sphere_radius) {
-    vec3 offset = ray_origin - sphere_center;
-    float b = dot(offset, ray_direction);
-    float c = dot(offset, offset) - sphere_radius * sphere_radius;
-    float discriminant = b * b - c;
-    if (discriminant < 0.0) {
-        return vec2(1.0, -1.0);
-    }
-    float root = sqrt(discriminant);
-    return vec2(-b - root, -b + root);
+    return cubey_atmosphere_ray_sphere_intersection(ray_origin, ray_direction, sphere_center,
+                                                    sphere_radius);
 }
 
 OceanAtmosphereOpticalDepth ocean_optical_depth_zero() {
@@ -112,10 +106,9 @@ OceanAtmosphereOpticalDepth ocean_sample_density(vec3 position, vec3 planet_cent
 }
 
 vec3 ocean_transmittance_from_depth(OceanAtmosphereOpticalDepth depth) {
-    vec3 rayleigh_extinction = ocean_rayleigh_scattering() * depth.rayleigh;
-    vec3 mie_extinction = vec3(ocean_mie_extinction() * depth.mie);
-    vec3 ozone_extinction = ocean_ozone_absorption() * depth.ozone;
-    return exp(-(rayleigh_extinction + mie_extinction + ozone_extinction));
+    return cubey_atmosphere_transmittance_from_depth(
+        ocean_rayleigh_scattering(), ocean_mie_extinction(), ocean_ozone_absorption(),
+        depth.rayleigh, depth.mie, depth.ozone);
 }
 
 OceanAtmosphereOpticalDepth ocean_integrate_optical_depth(
@@ -140,28 +133,17 @@ OceanAtmosphereOpticalDepth ocean_integrate_optical_depth(
 }
 
 float ocean_rayleigh_phase(float cos_theta) {
-    return (3.0 / (16.0 * OCEAN_ATMOSPHERE_PI)) * (1.0 + cos_theta * cos_theta);
+    return cubey_atmosphere_rayleigh_phase(cos_theta);
 }
 
 float ocean_mie_phase(float cos_theta) {
-    float g = clamp(ocean_mie_anisotropy(), 0.0, 0.98);
-    float g2 = g * g;
-    float denom = pow(max(1.0 + g2 - 2.0 * g * cos_theta, 0.0001), 1.5);
-    return (3.0 / (8.0 * OCEAN_ATMOSPHERE_PI)) *
-           ((1.0 - g2) * (1.0 + cos_theta * cos_theta)) /
-           max((2.0 + g2) * denom, 0.0001);
+    return cubey_atmosphere_mie_phase(cos_theta, ocean_mie_anisotropy());
 }
 
 float ocean_sun_visibility(vec3 sample_position, vec3 sun_direction, vec3 planet_center) {
-    vec3 to_planet_center = planet_center - sample_position;
-    float center_distance = length(to_planet_center);
-    float planet_angular_radius =
-        asin(clamp(OCEAN_ATMOSPHERE_BOTTOM_RADIUS_KM / max(center_distance, 0.0001), 0.0, 1.0));
-    float sun_center_angle =
-        acos(clamp(dot(sun_direction, normalize(to_planet_center)), -1.0, 1.0));
-    float limb_clearance = sun_center_angle - planet_angular_radius;
-    float softness = max(OCEAN_ATMOSPHERE_SUN_RADIUS * 4.0, 0.022);
-    return smoothstep(-softness, softness, limb_clearance);
+    return cubey_atmosphere_limb_visibility(
+        sample_position, sun_direction, planet_center, OCEAN_ATMOSPHERE_BOTTOM_RADIUS_KM,
+        OCEAN_ATMOSPHERE_SUN_RADIUS, 0.022);
 }
 
 OceanAtmosphereSample ocean_integrate_atmosphere(vec3 ray_origin, vec3 ray_direction,

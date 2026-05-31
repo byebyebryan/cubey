@@ -719,6 +719,8 @@ int main() {
                          "atmosphere shader should not use push constants for frame data");
     require_contains(shader_source, "layout(set = 0, binding = 0) uniform AtmosphereFrame",
                      "atmosphere shader should read frame data from a uniform buffer");
+    require_contains(shader_source, "#include \"cubey/atmosphere.glsl\"",
+                     "atmosphere shader should use the shared atmosphere helper include");
     require_contains(shader_source, "rayleigh_phase",
                      "atmosphere shader should include Rayleigh phase");
     require_contains(shader_source, "mie_phase", "atmosphere shader should include Mie phase");

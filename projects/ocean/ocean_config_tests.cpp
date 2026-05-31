@@ -463,6 +463,8 @@ int main() {
                          "fragment shader should source its sky lighting from the ocean atmosphere include");
         require_contains(atmosphere_shader, "OCEAN_ATMOSPHERE_VIEW_SAMPLE_COUNT",
                          "ocean atmosphere shader should use view-ray scattering samples");
+        require_contains(atmosphere_shader, "#include \"cubey/atmosphere.glsl\"",
+                         "ocean atmosphere shader should use the shared atmosphere helper include");
         require_contains(atmosphere_shader, "OceanAtmosphereOpticalDepth",
                          "ocean atmosphere shader should carry atmosphere optical depth");
         require_contains(atmosphere_shader, "ocean_integrate_atmosphere",

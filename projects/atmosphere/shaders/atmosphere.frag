@@ -1,10 +1,10 @@
 #version 450
 #extension GL_GOOGLE_include_directive : require
 
+#include "cubey/atmosphere.glsl"
 #include "cubey/color_space.glsl"
 #include "cubey/pbr.glsl"
 
-const float ATMOSPHERE_PI = 3.14159265359;
 const int ATMOSPHERE_VIEW_SAMPLE_COUNT = 16;
 const int ATMOSPHERE_LIGHT_SAMPLE_COUNT = 8;
 const float ATMOSPHERE_SUN_INTENSITY = 22.0;
@@ -63,15 +63,8 @@ OpticalDepth optical_depth_scale(OpticalDepth value, float scale) {
 
 vec2 ray_sphere_intersection(vec3 ray_origin, vec3 ray_direction, vec3 sphere_center,
                              float sphere_radius) {
-    vec3 offset = ray_origin - sphere_center;
-    float b = dot(offset, ray_direction);
-    float c = dot(offset, offset) - sphere_radius * sphere_radius;
-    float discriminant = b * b - c;
-    if (discriminant < 0.0) {
-        return vec2(1.0, -1.0);
-    }
-    float root = sqrt(discriminant);
-    return vec2(-b - root, -b + root);
+    return cubey_atmosphere_ray_sphere_intersection(ray_origin, ray_direction, sphere_center,
+                                                    sphere_radius);
 }
 
 float altitude_at(vec3 position, vec3 planet_center) {
@@ -94,10 +87,9 @@ OpticalDepth sample_density(vec3 position, vec3 planet_center) {
 }
 
 vec3 transmittance_from_depth(OpticalDepth depth) {
-    vec3 rayleigh_extinction = atmosphere.rayleigh.xyz * depth.rayleigh;
-    vec3 mie_extinction = vec3(atmosphere.mie.y * depth.mie);
-    vec3 ozone_extinction = atmosphere.ozone.xyz * depth.ozone;
-    return exp(-(rayleigh_extinction + mie_extinction + ozone_extinction));
+    return cubey_atmosphere_transmittance_from_depth(
+        atmosphere.rayleigh.xyz, atmosphere.mie.y, atmosphere.ozone.xyz, depth.rayleigh, depth.mie,
+        depth.ozone);
 }
 
 vec3 safe_horizontal_direction(vec3 direction, vec3 fallback) {
@@ -136,28 +128,17 @@ OpticalDepth integrate_optical_depth(vec3 origin, vec3 direction, float ray_leng
 }
 
 float rayleigh_phase(float cos_theta) {
-    return (3.0 / (16.0 * ATMOSPHERE_PI)) * (1.0 + cos_theta * cos_theta);
+    return cubey_atmosphere_rayleigh_phase(cos_theta);
 }
 
 float mie_phase(float cos_theta) {
-    float g = clamp(atmosphere.mie.w, 0.0, 0.98);
-    float g2 = g * g;
-    float denom = pow(max(1.0 + g2 - 2.0 * g * cos_theta, 0.0001), 1.5);
-    return (3.0 / (8.0 * ATMOSPHERE_PI)) * ((1.0 - g2) * (1.0 + cos_theta * cos_theta)) /
-           max((2.0 + g2) * denom, 0.0001);
+    return cubey_atmosphere_mie_phase(cos_theta, atmosphere.mie.w);
 }
 
 float sun_visibility(vec3 sample_position, vec3 sun_direction, vec3 planet_center) {
-    vec3 to_planet_center = planet_center - sample_position;
-    float center_distance = length(to_planet_center);
-    float planet_angular_radius =
-        asin(clamp(atmosphere.radii_ground.x / max(center_distance, 0.0001), 0.0, 1.0));
-    float sun_center_angle =
-        acos(clamp(dot(sun_direction, normalize(to_planet_center)), -1.0, 1.0));
-    float limb_clearance = sun_center_angle - planet_angular_radius;
-    float softness =
-        max(atmosphere.sun_direction_radius.w * 4.0, ATMOSPHERE_MIN_TWILIGHT_SOFTNESS);
-    return smoothstep(-softness, softness, limb_clearance);
+    return cubey_atmosphere_limb_visibility(
+        sample_position, sun_direction, planet_center, atmosphere.radii_ground.x,
+        atmosphere.sun_direction_radius.w, ATMOSPHERE_MIN_TWILIGHT_SOFTNESS);
 }
 
 float ground_sun_visibility(vec3 normal, vec3 sun_direction) {
