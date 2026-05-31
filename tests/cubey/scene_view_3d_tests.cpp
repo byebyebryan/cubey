@@ -2,6 +2,7 @@
 #include <cubey/scene/transform_3d.h>
 #include <cubey/scene/view_3d.h>
 
+#include <array>
 #include <cmath>
 #include <functional>
 #include <stdexcept>
@@ -71,6 +72,8 @@ void test_environment_3d_defaults_to_low_linear_ambient() {
                   "default 3D ambient blue should be a low linear radiance");
     require_close(environment.ambient_intensity, 1.0F,
                   "default 3D ambient intensity should stay neutral");
+    require(!environment.diffuse_irradiance_sh_enabled,
+            "default 3D environment should keep diffuse SH disabled");
 }
 
 void test_render_view_3d_builds_frame_plan_with_environment_draws_and_lights() {
@@ -107,6 +110,12 @@ void test_render_view_3d_builds_frame_plan_with_environment_draws_and_lights() {
             cubey::scene::Environment3D{
                 .ambient_color = {0.1F, 0.2F, 0.3F},
                 .ambient_intensity = 2.0F,
+                .diffuse_irradiance_sh = [] {
+                    std::array<cubey::math::Vec3, 9> coefficients{};
+                    coefficients[0] = {0.4F, 0.5F, 0.6F};
+                    return coefficients;
+                }(),
+                .diffuse_irradiance_sh_enabled = true,
             },
     };
     const cubey::scene::RenderFramePlan3D plan =
@@ -118,6 +127,10 @@ void test_render_view_3d_builds_frame_plan_with_environment_draws_and_lights() {
     require_close(plan.environment.ambient_color.y, 0.2F, "frame plan should carry ambient color");
     require_close(plan.environment.ambient_intensity, 2.0F,
                   "frame plan should carry ambient intensity");
+    require(plan.environment.diffuse_irradiance_sh_enabled,
+            "frame plan should carry diffuse SH enablement");
+    require_close(plan.environment.diffuse_irradiance_sh[0].z, 0.6F,
+                  "frame plan should carry diffuse SH coefficients");
     require_close(plan.draw_packets[0].world_bounds.center.x, 1.0F,
                   "draw packet should carry world bounds center x");
     require_close(plan.draw_packets[0].world_bounds.center.z, -6.0F,

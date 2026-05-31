@@ -6,6 +6,7 @@
 
 #include <glm/matrix.hpp>
 
+#include <array>
 #include <cstddef>
 #include <memory>
 #include <stdexcept>
@@ -166,6 +167,11 @@ forward_pbr_renderer_3d_scene_uniforms(const ForwardPbrRenderer3DSceneUniformInf
     const math::Vec3 ambient = info.environment.ambient_color * info.environment.ambient_intensity;
     const float radians =
         forward_pbr_renderer_3d_rotation_radians(info.environment_rotation_degrees);
+    std::array<math::Vec4, 9> diffuse_irradiance_sh{};
+    for (std::size_t index = 0; index < diffuse_irradiance_sh.size(); ++index) {
+        const math::Vec3& coefficient = info.environment.diffuse_irradiance_sh[index];
+        diffuse_irradiance_sh[index] = {coefficient.x, coefficient.y, coefficient.z, 0.0F};
+    }
     return {
         .view_projection = info.view_projection,
         .light_view_projection = info.light_view_projection,
@@ -181,6 +187,14 @@ forward_pbr_renderer_3d_scene_uniforms(const ForwardPbrRenderer3DSceneUniformInf
                 std::sin(radians),
             },
         .debug_options = {static_cast<float>(info.debug_view), 0.0F, 0.0F, 0.0F},
+        .diffuse_irradiance_sh = diffuse_irradiance_sh,
+        .environment_options =
+            {
+                info.environment.diffuse_irradiance_sh_enabled ? 1.0F : 0.0F,
+                0.0F,
+                0.0F,
+                0.0F,
+            },
     };
 }
 

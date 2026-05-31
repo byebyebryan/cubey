@@ -4,6 +4,7 @@
 
 #include <vulkan/vulkan.h>
 
+#include <array>
 #include <cmath>
 #include <filesystem>
 #include <span>
@@ -583,6 +584,9 @@ void test_forward_pbr_renderer_3d_scene_uniforms_pack_view_light_environment_and
         .intensity = 3.5F,
         .direction = {0.0F, -1.0F, 0.0F},
     };
+    std::array<cubey::math::Vec3, 9> diffuse_sh{};
+    diffuse_sh[0] = {0.11F, 0.12F, 0.13F};
+    diffuse_sh[4] = {0.41F, 0.42F, 0.43F};
     const cubey::render::PbrSceneUniforms uniforms = cubey::forward_pbr_renderer_3d_scene_uniforms({
         .view_projection = cubey::math::Mat4{2.0F},
         .light_view_projection = cubey::math::Mat4{3.0F},
@@ -592,6 +596,8 @@ void test_forward_pbr_renderer_3d_scene_uniforms_pack_view_light_environment_and
             cubey::scene::Environment3D{
                 .ambient_color = {0.2F, 0.3F, 0.4F},
                 .ambient_intensity = 2.0F,
+                .diffuse_irradiance_sh = diffuse_sh,
+                .diffuse_irradiance_sh_enabled = true,
             },
         .environment_intensity = 5.0F,
         .prefiltered_mip_levels = 6,
@@ -624,6 +630,12 @@ void test_forward_pbr_renderer_3d_scene_uniforms_pack_view_light_environment_and
     require(uniforms.debug_options.y == 0.0F && uniforms.debug_options.z == 0.0F &&
                 uniforms.debug_options.w == 0.0F,
             "forward PBR scene uniforms should keep spare debug options neutral");
+    require(uniforms.diffuse_irradiance_sh[0] == cubey::math::Vec4{0.11F, 0.12F, 0.13F, 0.0F},
+            "forward PBR scene uniforms should pack diffuse SH coefficient zero");
+    require(uniforms.diffuse_irradiance_sh[4] == cubey::math::Vec4{0.41F, 0.42F, 0.43F, 0.0F},
+            "forward PBR scene uniforms should pack diffuse SH coefficient four");
+    require(uniforms.environment_options.x == 1.0F,
+            "forward PBR scene uniforms should enable diffuse SH only when requested");
 }
 
 void test_forward_pbr_renderer_3d_threads_debug_view_into_shader_and_scene_pass() {
@@ -659,6 +671,10 @@ void test_forward_pbr_renderer_3d_threads_debug_view_into_shader_and_scene_pass(
                      "forward PBR vertex shader uniform block should match scene uniforms");
     require_contains(fragment_shader, "vec4 debug_options",
                      "forward PBR fragment shader uniform block should match scene uniforms");
+    require_contains(fragment_shader, "diffuse_irradiance_sh[9]",
+                     "forward PBR fragment shader should receive diffuse SH coefficients");
+    require_contains(fragment_shader, "environment_options.x > 0.5",
+                     "forward PBR fragment shader should switch diffuse lighting to SH by flag");
     require_contains(fragment_shader, "CUBEY_PBR_DEBUG_ROUGHNESS",
                      "forward PBR fragment shader should expose named debug view constants");
     require_contains(fragment_shader, "cubey_pbr_debug_output",

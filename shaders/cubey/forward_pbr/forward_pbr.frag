@@ -13,6 +13,8 @@ layout(set = 0, binding = 0) uniform PbrSceneUniforms {
     vec4 environment_intensity_mip_count;
     vec4 display_transform;
     vec4 debug_options;
+    vec4 diffuse_irradiance_sh[9];
+    vec4 environment_options;
 } scene;
 
 layout(set = 0, binding = 1) uniform sampler2D shadow_map;
@@ -123,6 +125,36 @@ vec3 rotate_environment_direction(vec3 direction) {
         direction.y,
         (-s * direction.x) + (c * direction.z)
     );
+}
+
+vec3 cubey_pbr_evaluate_diffuse_irradiance_sh(vec3 direction) {
+    vec3 normal = normalize(direction);
+    float x = normal.x;
+    float y = normal.y;
+    float z = normal.z;
+    float basis[9] = float[](
+        0.282095,
+        0.488603 * y,
+        0.488603 * z,
+        0.488603 * x,
+        1.092548 * x * y,
+        1.092548 * y * z,
+        0.315392 * ((3.0 * z * z) - 1.0),
+        1.092548 * x * z,
+        0.546274 * ((x * x) - (y * y))
+    );
+    vec3 irradiance = vec3(0.0);
+    for (int index = 0; index < 9; ++index) {
+        irradiance += scene.diffuse_irradiance_sh[index].rgb * basis[index];
+    }
+    return max(irradiance, vec3(0.0));
+}
+
+vec3 cubey_pbr_diffuse_irradiance(vec3 normal) {
+    if (scene.environment_options.x > 0.5) {
+        return cubey_pbr_evaluate_diffuse_irradiance_sh(normal);
+    }
+    return texture(irradiance_cube, rotate_environment_direction(normal)).rgb;
 }
 
 vec4 cubey_pbr_debug_output(uint debug_view, vec4 base_color, float metallic,
@@ -369,7 +401,7 @@ void main() {
     vec3 direct = ((base_direct * ndotl) + (clearcoat_direct * clearcoat_ndotl)) * radiance *
                   visibility;
 
-    vec3 irradiance = texture(irradiance_cube, rotate_environment_direction(normal)).rgb;
+    vec3 irradiance = cubey_pbr_diffuse_irradiance(normal);
     vec3 diffuse_ibl = irradiance * diffuse_color;
     vec3 reflection = reflect(-view_direction, normal);
     float max_prefiltered_lod = max(scene.environment_intensity_mip_count.y - 1.0, 0.0);

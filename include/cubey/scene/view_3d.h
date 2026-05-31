@@ -21,6 +21,8 @@ namespace cubey::scene {
 struct Environment3D {
     math::Vec3 ambient_color{0.045F, 0.045F, 0.045F};
     float ambient_intensity = 1.0F;
+    std::array<math::Vec3, 9> diffuse_irradiance_sh{};
+    bool diffuse_irradiance_sh_enabled = false;
 };
 
 struct View3D {

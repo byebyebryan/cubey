@@ -9,6 +9,9 @@ layout(set = 0, binding = 0) uniform PbrSceneUniforms {
     vec4 ambient_color_intensity;
     vec4 environment_intensity_mip_count;
     vec4 display_transform;
+    vec4 debug_options;
+    vec4 diffuse_irradiance_sh[9];
+    vec4 environment_options;
 } scene;
 
 layout(push_constant) uniform PbrPushConstants {
