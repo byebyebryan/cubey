@@ -19,6 +19,12 @@ generated lunar atlas, and a procedural Milky Way atlas. The Milky Way generator
 is tuned in local layers for stellar emission, dust lanes, star clouds, H II
 regions, and speckles instead of consuming a source panorama.
 
+Windowed runs create the lunar and night-sky atlases in background jobs and show
+placeholder textures until uploads complete. Headless runs generate the same
+atlases synchronously for deterministic capture output. Presets resolve through
+the same solar-clock path used at runtime so their reported sun and exposure
+values match what is rendered.
+
 Useful runs:
 
 ```sh

@@ -44,6 +44,8 @@ Current examples:
 
 Current projects:
 
+- `atmosphere`: clear-sky scattering workbench with solar time of day, twilight,
+  procedural stars, moon rendering, Milky Way atlas layers, and headless output.
 - `smoke_2d`: compute-updated dye/velocity field with MacCormack advection,
   vorticity, pressure projection, debug views, and
   deterministic headless capture output.
@@ -98,6 +100,7 @@ Authoritative current docs:
 
 Project-local docs:
 
+- [Atmosphere](projects/atmosphere/README.md)
 - [Fluid overview](projects/fluid/README.md)
 - [Smoke 2D](projects/fluid/smoke_2d/README.md)
 - [Water 2D](projects/fluid/water_2d/README.md)
