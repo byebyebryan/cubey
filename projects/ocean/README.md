@@ -25,6 +25,10 @@ Useful debug views:
 ./build/dev/projects/ocean/ocean --debug-view normal
 ./build/dev/projects/ocean/ocean --debug-view foam
 ./build/dev/projects/ocean/ocean --debug-view foam-source
+./build/dev/projects/ocean/ocean --debug-view foam-history
+./build/dev/projects/ocean/ocean --debug-view foam-macro
+./build/dev/projects/ocean/ocean --debug-view foam-crest
+./build/dev/projects/ocean/ocean --debug-view foam-detail
 ./build/dev/projects/ocean/ocean --debug-view lod
 ./build/dev/projects/ocean/ocean --debug-view lod --ocean-wire-overlay
 ./build/dev/projects/ocean/ocean --debug-view displacement --ocean-cascade 2
@@ -48,11 +52,13 @@ defaults are biased toward a stormier sea state with accumulated foam driven
 mostly by C2 and C3, with C4 kept secondary and C0/C1 kept from creating broad
 cloudy white sheets. The anti-repeat control keeps a conservative C0/C1 geometry
 blend and adds distance-gated C1-C4 normal/foam anti-tiling for far-field
-whitecaps. Spectral domains are enabled by default to remove tile-sized waves
-from each cascade while preserving overlap between source bands; foam is stored
-separately from normal data as persistent history, current Jacobian breaking
-source, determinant, and compression diagnostic channels. Final whitecap
-coverage uses the accumulated Jacobian history, while compression is currently a
+whitecaps. Spectral domains are enabled by default for macro and detail bands,
+while C2/C3 keep the full reference spectrum so the primary whitecap carrier
+does not break into disconnected flecks. Foam is stored separately from normal
+data as persistent history, current Jacobian breaking source, determinant, and
+compression diagnostic channels. Final whitecap coverage composes macro, crest,
+and detail roles: C0/C1 are a low-brightness support layer, C2/C3 are the bright
+coherent crests, and C4 only adds gated fine breakup. Compression is currently a
 diagnostic signal only. This is still not a localized wind or weather simulation.
 
 The default FFT map is `1024`. Smoke tests and fast local checks can use
