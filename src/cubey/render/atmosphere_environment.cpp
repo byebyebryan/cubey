@@ -39,12 +39,13 @@ namespace {
     return wrapped + 1.0F;
 }
 
-struct SolarPosition {
-    float elevation_degrees = 0.0F;
-    float azimuth_degrees = 0.0F;
-};
+[[nodiscard]] float smoothstep(float edge0, float edge1, float value) {
+    const float t = std::clamp((value - edge0) / (edge1 - edge0), 0.0F, 1.0F);
+    return t * t * (3.0F - 2.0F * t);
+}
 
-[[nodiscard]] SolarPosition solar_position(const AtmosphereEnvironmentTimeOfDay& time_of_day) {
+[[nodiscard]] AtmosphereEnvironmentSolarPosition
+solar_position(const AtmosphereEnvironmentTimeOfDay& time_of_day) {
     const float day_angle = atmosphere_environment_degrees_to_radians(
         (360.0F / 365.0F) * (time_of_day.day_of_year - 80.0F));
     const float declination =
@@ -86,9 +87,39 @@ float atmosphere_environment_degrees_to_radians(float degrees) {
     return degrees * (std::numbers::pi_v<float> / 180.0F);
 }
 
+float atmosphere_environment_radians_to_degrees(float radians) {
+    return radians * (180.0F / std::numbers::pi_v<float>);
+}
+
+float atmosphere_environment_wrap_time_hours(float time_hours) {
+    return wrap_time_hours(time_hours);
+}
+
+float atmosphere_environment_wrap_signed_degrees(float degrees) {
+    return wrap_signed_degrees(degrees);
+}
+
+float atmosphere_environment_advance_day_of_year(float day_of_year, int day_delta) {
+    return advance_day_of_year(day_of_year, day_delta);
+}
+
+float atmosphere_environment_wrap_unit(float value) {
+    return wrap_unit(value);
+}
+
+AtmosphereEnvironmentSolarPosition atmosphere_environment_solar_position(
+    const AtmosphereEnvironmentTimeOfDay& time_of_day) {
+    return solar_position(time_of_day);
+}
+
+math::Vec3 atmosphere_environment_direction_from_alt_az(float elevation_degrees,
+                                                       float azimuth_degrees) {
+    return direction_from_alt_az(elevation_degrees, azimuth_degrees);
+}
+
 math::Vec3 atmosphere_environment_sun_direction(const AtmosphereEnvironmentConfig& config) {
-    return glm::normalize(direction_from_alt_az(config.sun_elevation_degrees,
-                                                config.sun_azimuth_degrees));
+    return glm::normalize(atmosphere_environment_direction_from_alt_az(
+        config.sun_elevation_degrees, config.sun_azimuth_degrees));
 }
 
 AtmosphereEnvironmentLunarState atmosphere_environment_lunar_state(
@@ -107,7 +138,8 @@ AtmosphereEnvironmentLunarState atmosphere_environment_lunar_state(
     moon_clock.time_hours = wrap_time_hours(time_of_day.time_hours - phase_fraction * 24.0F);
     moon_clock.day_of_year = advance_day_of_year(
         time_of_day.day_of_year, static_cast<int>(std::floor(phase_fraction * kTropicalYearDays)));
-    const SolarPosition moon_position = solar_position(moon_clock);
+    const AtmosphereEnvironmentSolarPosition moon_position =
+        atmosphere_environment_solar_position(moon_clock);
     return {
         .direction =
             direction_from_alt_az(moon_position.elevation_degrees, moon_position.azimuth_degrees),
@@ -128,6 +160,13 @@ float atmosphere_environment_sidereal_angle_radians(
         rotations += 1.0F;
     }
     return rotations * 2.0F * std::numbers::pi_v<float>;
+}
+
+float atmosphere_environment_auto_exposure(float sun_elevation_degrees, float exposure_bias) {
+    const float daylight = smoothstep(-6.0F, 20.0F, sun_elevation_degrees);
+    const float full_night = 1.0F - smoothstep(-18.0F, -6.0F, sun_elevation_degrees);
+    return std::clamp(exposure_bias + 2.2F * (1.0F - daylight) + 0.6F * full_night,
+                      -4.0F, 4.0F);
 }
 
 AtmosphereEnvironmentFrameUniforms atmosphere_environment_frame_uniforms(

@@ -715,10 +715,40 @@ int main() {
                      "shared atmosphere environment should include celestial frame uniforms");
     require_contains(shared_environment_source, "atmosphere_environment_frame_uniforms",
                      "shared atmosphere environment should own frame uniform packing");
+    require_contains(shared_environment_source, "atmosphere_environment_solar_position",
+                     "shared atmosphere environment should own solar position math");
+    require_contains(shared_environment_source, "atmosphere_environment_lunar_state",
+                     "shared atmosphere environment should own lunar state math");
+    require_contains(shared_environment_source, "atmosphere_environment_auto_exposure",
+                     "shared atmosphere environment should own auto exposure math");
+    require_contains(shared_environment_source, "smoothstep(-6.0F, 20.0F",
+                     "shared atmosphere environment should own exposure transition shaping");
+    require_contains(environment_source, "switch (view)",
+                     "project atmosphere environment should map render views explicitly");
+    require_contains(environment_source, "unknown atmosphere render view",
+                     "project atmosphere environment should reject unknown render views");
     require_contains(environment_header, "using AtmosphereFrameUniforms",
                      "project atmosphere environment should alias shared frame uniforms");
     require_contains(environment_source, "atmosphere_environment_frame_uniforms",
                      "project atmosphere environment should delegate frame packing");
+    require_contains(environment_header, "cubey/render/atmosphere_environment.h",
+                     "project atmosphere environment should depend on the shared environment API");
+    require_contains(environment_header, "using AtmosphereFrameUniforms",
+                     "project atmosphere environment should expose shared frame uniform type");
+    require_contains(environment_source, "atmosphere_environment_config(config)",
+                     "project atmosphere environment should adapt project config into shared config");
+    require_contains(environment_header, "atmosphere_environment_render_view",
+                     "project atmosphere environment should expose explicit render-view mapping");
+    require_contains(environment_header, "atmosphere_environment_config",
+                     "project atmosphere environment should expose shared config adaptation");
+    require_contains(environment_header, "atmosphere_frame_uniforms",
+                     "project atmosphere environment should expose frame uniform packing");
+    require_contains(environment_header, "atmosphere_sun_direction",
+                     "project atmosphere environment should expose shared sun direction");
+    require_contains(environment_source, "atmosphere_environment_sun_direction",
+                     "project atmosphere environment should delegate sun direction");
+    require_contains(environment_source, "atmosphere_environment_frame_uniforms",
+                     "project atmosphere environment should delegate frame uniforms");
     require_contains(app_source, "atmosphere_frame_uniforms(",
                      "atmosphere app should consume the environment uniform packer");
     require_contains(app_source, "FrameUniformMaterialInstance<AtmosphereFrameUniforms>",

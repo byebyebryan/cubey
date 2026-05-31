@@ -4,12 +4,12 @@
 
 #include <cubey/core/math.h>
 #include <cubey/core/run_config.h>
+#include <cubey/render/atmosphere_environment.h>
 
 #include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstdint>
-#include <numbers>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -148,17 +148,8 @@ struct AtmosphereConfig {
     float reference_intensity = 0.72F;
 };
 
-struct SolarPosition {
-    float elevation_degrees = 0.0F;
-    float azimuth_degrees = 0.0F;
-};
-
-struct LunarState {
-    cubey::math::Vec3 direction{0.0F, 1.0F, 0.0F};
-    float phase_fraction = 0.5F;
-    float illumination = 1.0F;
-    float angular_radius = 0.00452F;
-};
+using SolarPosition = cubey::render::AtmosphereEnvironmentSolarPosition;
+using LunarState = cubey::render::AtmosphereEnvironmentLunarState;
 
 [[nodiscard]] inline const char* atmosphere_preset_name(AtmospherePreset preset) {
     switch (preset) {
@@ -318,130 +309,76 @@ struct LunarState {
 }
 
 [[nodiscard]] inline float atmosphere_degrees_to_radians(float degrees) {
-    return degrees * (std::numbers::pi_v<float> / 180.0F);
+    return cubey::render::atmosphere_environment_degrees_to_radians(degrees);
 }
 
 [[nodiscard]] inline float atmosphere_radians_to_degrees(float radians) {
-    return radians * (180.0F / std::numbers::pi_v<float>);
+    return cubey::render::atmosphere_environment_radians_to_degrees(radians);
 }
 
 [[nodiscard]] inline float atmosphere_wrap_time_hours(float time_hours) {
-    float wrapped = std::fmod(time_hours, 24.0F);
-    if (wrapped < 0.0F) {
-        wrapped += 24.0F;
-    }
-    return wrapped;
+    return cubey::render::atmosphere_environment_wrap_time_hours(time_hours);
 }
 
 [[nodiscard]] inline float atmosphere_wrap_signed_degrees(float degrees) {
-    float wrapped = std::fmod(degrees + 180.0F, 360.0F);
-    if (wrapped < 0.0F) {
-        wrapped += 360.0F;
-    }
-    return wrapped - 180.0F;
+    return cubey::render::atmosphere_environment_wrap_signed_degrees(degrees);
 }
 
 [[nodiscard]] inline float atmosphere_advance_day_of_year(float day_of_year, int day_delta) {
-    float wrapped = std::fmod(day_of_year - 1.0F + static_cast<float>(day_delta), 366.0F);
-    if (wrapped < 0.0F) {
-        wrapped += 366.0F;
-    }
-    return wrapped + 1.0F;
+    return cubey::render::atmosphere_environment_advance_day_of_year(day_of_year, day_delta);
 }
 
-[[nodiscard]] inline float atmosphere_smoothstep(float edge0, float edge1, float value) {
-    const float t = std::clamp((value - edge0) / (edge1 - edge0), 0.0F, 1.0F);
-    return t * t * (3.0F - 2.0F * t);
+[[nodiscard]] inline cubey::render::AtmosphereEnvironmentTimeOfDay
+atmosphere_environment_time_of_day(const TimeOfDayConfig& time_of_day) {
+    return {
+        .time_hours = time_of_day.time_hours,
+        .day_of_year = time_of_day.day_of_year,
+        .latitude_degrees = time_of_day.latitude_degrees,
+        .azimuth_offset_degrees = time_of_day.azimuth_offset_degrees,
+    };
+}
+
+[[nodiscard]] inline cubey::render::AtmosphereEnvironmentMoon
+atmosphere_environment_moon(const MoonConfig& moon) {
+    return {
+        .enabled = moon.enabled,
+        .disk_intensity = moon.disk_intensity,
+        .moonlight_intensity = moon.moonlight_intensity,
+        .phase_offset_days = moon.phase_offset_days,
+        .angular_radius_scale = moon.angular_radius_scale,
+    };
 }
 
 [[nodiscard]] inline float atmosphere_wrap_unit(float value) {
-    float wrapped = std::fmod(value, 1.0F);
-    if (wrapped < 0.0F) {
-        wrapped += 1.0F;
-    }
-    return wrapped;
+    return cubey::render::atmosphere_environment_wrap_unit(value);
 }
 
 [[nodiscard]] inline SolarPosition atmosphere_solar_position(const TimeOfDayConfig& time_of_day) {
-    const float day_angle =
-        atmosphere_degrees_to_radians((360.0F / 365.0F) * (time_of_day.day_of_year - 80.0F));
-    const float declination = atmosphere_degrees_to_radians(23.44F) * std::sin(day_angle);
-    const float latitude = atmosphere_degrees_to_radians(time_of_day.latitude_degrees);
-    const float hour_angle = atmosphere_degrees_to_radians(
-        15.0F * (atmosphere_wrap_time_hours(time_of_day.time_hours) - 12.0F));
-
-    const float sin_elevation = std::sin(latitude) * std::sin(declination) +
-                                std::cos(latitude) * std::cos(declination) * std::cos(hour_angle);
-    const float elevation = std::asin(std::clamp(sin_elevation, -1.0F, 1.0F));
-    const float east = -std::cos(declination) * std::sin(hour_angle);
-    const float south = -std::cos(latitude) * std::sin(declination) +
-                        std::sin(latitude) * std::cos(declination) * std::cos(hour_angle);
-    const float azimuth =
-        atmosphere_radians_to_degrees(std::atan2(east, south)) + time_of_day.azimuth_offset_degrees;
-
-    return {
-        .elevation_degrees = atmosphere_radians_to_degrees(elevation),
-        .azimuth_degrees = atmosphere_wrap_signed_degrees(azimuth),
-    };
+    return cubey::render::atmosphere_environment_solar_position(
+        atmosphere_environment_time_of_day(time_of_day));
 }
 
 [[nodiscard]] inline cubey::math::Vec3 atmosphere_direction_from_alt_az(float elevation_degrees,
                                                                         float azimuth_degrees) {
-    const float elevation = atmosphere_degrees_to_radians(elevation_degrees);
-    const float azimuth = atmosphere_degrees_to_radians(azimuth_degrees);
-    const float horizontal = std::cos(elevation);
-    return {
-        horizontal * std::sin(azimuth),
-        std::sin(elevation),
-        -horizontal * std::cos(azimuth),
-    };
+    return cubey::render::atmosphere_environment_direction_from_alt_az(elevation_degrees,
+                                                                      azimuth_degrees);
 }
 
 [[nodiscard]] inline LunarState atmosphere_lunar_state(const TimeOfDayConfig& time_of_day,
                                                        const MoonConfig& moon) {
-    constexpr float kLunarCycleDays = 29.530588F;
-    constexpr float kTropicalYearDays = 365.2422F;
-    constexpr float kMeanMoonAngularRadius = 0.00452F;
-    const float lunar_age_days = std::fmod(
-        time_of_day.day_of_year - 80.0F + time_of_day.time_hours / 24.0F + moon.phase_offset_days,
-        kLunarCycleDays);
-    const float phase_fraction = atmosphere_wrap_unit(lunar_age_days / kLunarCycleDays);
-    const float phase_angle = phase_fraction * 2.0F * std::numbers::pi_v<float>;
-    const float illumination = 0.5F - 0.5F * std::cos(phase_angle);
-
-    TimeOfDayConfig moon_clock = time_of_day;
-    moon_clock.time_hours =
-        atmosphere_wrap_time_hours(time_of_day.time_hours - phase_fraction * 24.0F);
-    moon_clock.day_of_year = atmosphere_advance_day_of_year(
-        time_of_day.day_of_year, static_cast<int>(std::floor(phase_fraction * kTropicalYearDays)));
-    const SolarPosition moon_position = atmosphere_solar_position(moon_clock);
-    return {
-        .direction = atmosphere_direction_from_alt_az(moon_position.elevation_degrees,
-                                                      moon_position.azimuth_degrees),
-        .phase_fraction = phase_fraction,
-        .illumination = illumination,
-        .angular_radius = kMeanMoonAngularRadius * moon.angular_radius_scale,
-    };
+    return cubey::render::atmosphere_environment_lunar_state(
+        atmosphere_environment_time_of_day(time_of_day), atmosphere_environment_moon(moon));
 }
 
 [[nodiscard]] inline float atmosphere_sidereal_angle_radians(const TimeOfDayConfig& time_of_day) {
-    constexpr float kSiderealSolarRatio = 1.00273790935F;
-    constexpr float kTropicalYearDays = 365.2422F;
-    float rotations =
-        (atmosphere_wrap_time_hours(time_of_day.time_hours) / 24.0F) * kSiderealSolarRatio +
-        (time_of_day.day_of_year - 80.0F) / kTropicalYearDays;
-    rotations = rotations - std::floor(rotations);
-    if (rotations < 0.0F) {
-        rotations += 1.0F;
-    }
-    return rotations * 2.0F * std::numbers::pi_v<float>;
+    return cubey::render::atmosphere_environment_sidereal_angle_radians(
+        atmosphere_environment_time_of_day(time_of_day));
 }
 
 [[nodiscard]] inline float atmosphere_auto_exposure(float sun_elevation_degrees,
                                                     float exposure_bias) {
-    const float daylight = atmosphere_smoothstep(-6.0F, 20.0F, sun_elevation_degrees);
-    const float full_night = 1.0F - atmosphere_smoothstep(-18.0F, -6.0F, sun_elevation_degrees);
-    return std::clamp(exposure_bias + 2.2F * (1.0F - daylight) + 0.6F * full_night, -4.0F, 4.0F);
+    return cubey::render::atmosphere_environment_auto_exposure(sun_elevation_degrees,
+                                                               exposure_bias);
 }
 
 inline void resolve_atmosphere_time_of_day(AtmosphereConfig& config) {

@@ -1,13 +1,36 @@
 #include "atmosphere_environment.h"
 
-#include <cstdint>
+#include <stdexcept>
 
 namespace cubey::projects::atmosphere {
 
 cubey::render::AtmosphereEnvironmentRenderView
 atmosphere_environment_render_view(AtmosphereRenderView view) {
-    return static_cast<cubey::render::AtmosphereEnvironmentRenderView>(
-        static_cast<std::uint32_t>(view));
+    switch (view) {
+    case AtmosphereRenderView::Final:
+        return cubey::render::AtmosphereEnvironmentRenderView::Final;
+    case AtmosphereRenderView::Rayleigh:
+        return cubey::render::AtmosphereEnvironmentRenderView::Rayleigh;
+    case AtmosphereRenderView::Mie:
+        return cubey::render::AtmosphereEnvironmentRenderView::Mie;
+    case AtmosphereRenderView::Transmittance:
+        return cubey::render::AtmosphereEnvironmentRenderView::Transmittance;
+    case AtmosphereRenderView::OpticalDepth:
+        return cubey::render::AtmosphereEnvironmentRenderView::OpticalDepth;
+    case AtmosphereRenderView::SunDisk:
+        return cubey::render::AtmosphereEnvironmentRenderView::SunDisk;
+    case AtmosphereRenderView::AerialPerspective:
+        return cubey::render::AtmosphereEnvironmentRenderView::AerialPerspective;
+    case AtmosphereRenderView::NightSky:
+        return cubey::render::AtmosphereEnvironmentRenderView::NightSky;
+    case AtmosphereRenderView::MilkyWay:
+        return cubey::render::AtmosphereEnvironmentRenderView::MilkyWay;
+    case AtmosphereRenderView::Moon:
+        return cubey::render::AtmosphereEnvironmentRenderView::Moon;
+    case AtmosphereRenderView::MoonSurface:
+        return cubey::render::AtmosphereEnvironmentRenderView::MoonSurface;
+    }
+    throw std::runtime_error("unknown atmosphere render view");
 }
 
 cubey::render::AtmosphereEnvironmentConfig

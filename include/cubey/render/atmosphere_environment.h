@@ -28,6 +28,11 @@ struct AtmosphereEnvironmentTimeOfDay {
     float azimuth_offset_degrees = 0.0F;
 };
 
+struct AtmosphereEnvironmentSolarPosition {
+    float elevation_degrees = 0.0F;
+    float azimuth_degrees = 0.0F;
+};
+
 struct AtmosphereEnvironmentNightSky {
     float twilight_strength = 1.0F;
     float twilight_horizon_warmth = 1.0F;
@@ -111,12 +116,23 @@ struct AtmosphereEnvironmentFrameUniformInputs {
 };
 
 [[nodiscard]] float atmosphere_environment_degrees_to_radians(float degrees);
+[[nodiscard]] float atmosphere_environment_radians_to_degrees(float radians);
+[[nodiscard]] float atmosphere_environment_wrap_time_hours(float time_hours);
+[[nodiscard]] float atmosphere_environment_wrap_signed_degrees(float degrees);
+[[nodiscard]] float atmosphere_environment_advance_day_of_year(float day_of_year, int day_delta);
+[[nodiscard]] float atmosphere_environment_wrap_unit(float value);
+[[nodiscard]] AtmosphereEnvironmentSolarPosition
+atmosphere_environment_solar_position(const AtmosphereEnvironmentTimeOfDay& time_of_day);
+[[nodiscard]] math::Vec3 atmosphere_environment_direction_from_alt_az(float elevation_degrees,
+                                                                      float azimuth_degrees);
 [[nodiscard]] math::Vec3
 atmosphere_environment_sun_direction(const AtmosphereEnvironmentConfig& config);
 [[nodiscard]] AtmosphereEnvironmentLunarState atmosphere_environment_lunar_state(
     const AtmosphereEnvironmentTimeOfDay& time_of_day, const AtmosphereEnvironmentMoon& moon);
 [[nodiscard]] float atmosphere_environment_sidereal_angle_radians(
     const AtmosphereEnvironmentTimeOfDay& time_of_day);
+[[nodiscard]] float atmosphere_environment_auto_exposure(float sun_elevation_degrees,
+                                                        float exposure_bias);
 [[nodiscard]] AtmosphereEnvironmentFrameUniforms atmosphere_environment_frame_uniforms(
     const AtmosphereEnvironmentConfig& config,
     const AtmosphereEnvironmentFrameUniformInputs& inputs);

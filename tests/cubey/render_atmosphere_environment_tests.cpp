@@ -74,3 +74,64 @@ void test_atmosphere_environment_packs_frame_uniforms() {
                     config.time_of_day.latitude_degrees)),
             "atmosphere environment should pack the observer latitude sine");
 }
+
+void test_atmosphere_environment_resolves_celestial_time_math() {
+    require_near(cubey::render::atmosphere_environment_radians_to_degrees(
+                     std::numbers::pi_v<float>),
+                 180.0F, 0.0001F,
+                 "atmosphere environment should convert radians to degrees");
+    require_near(cubey::render::atmosphere_environment_wrap_time_hours(25.5F), 1.5F,
+                 0.0001F, "atmosphere environment should wrap time after midnight");
+    require_near(cubey::render::atmosphere_environment_wrap_time_hours(-1.0F), 23.0F,
+                 0.0001F, "atmosphere environment should wrap negative time before midnight");
+    require_near(cubey::render::atmosphere_environment_wrap_signed_degrees(190.0F),
+                 -170.0F, 0.0001F,
+                 "atmosphere environment should wrap azimuth into signed degrees");
+    require_near(cubey::render::atmosphere_environment_advance_day_of_year(365.0F, 2),
+                 1.0F, 0.0001F,
+                 "atmosphere environment should wrap positive day-of-year advancement");
+    require_near(cubey::render::atmosphere_environment_wrap_unit(-0.25F), 0.75F,
+                 0.0001F, "atmosphere environment should wrap unit intervals");
+
+    cubey::render::AtmosphereEnvironmentTimeOfDay solar_noon;
+    solar_noon.time_hours = 12.0F;
+    solar_noon.day_of_year = 80.0F;
+    solar_noon.latitude_degrees = 30.0F;
+    const cubey::render::AtmosphereEnvironmentSolarPosition position =
+        cubey::render::atmosphere_environment_solar_position(solar_noon);
+    require_near(position.elevation_degrees, 60.0F, 0.2F,
+                 "atmosphere environment should resolve equinox noon solar elevation");
+    require_near(position.azimuth_degrees, 0.0F, 0.2F,
+                 "atmosphere environment should resolve equinox noon solar azimuth");
+
+    const cubey::math::Vec3 east =
+        cubey::render::atmosphere_environment_direction_from_alt_az(0.0F, 90.0F);
+    require_near(east.x, 1.0F, 0.0001F,
+                 "atmosphere environment should convert azimuth to direction X");
+    require(std::abs(east.y) < 0.0001F && std::abs(east.z) < 0.0001F,
+            "atmosphere environment should keep horizon east direction level");
+
+    const cubey::render::AtmosphereEnvironmentMoon full_moon{
+        .enabled = true,
+        .disk_intensity = 1.0F,
+        .moonlight_intensity = 1.0F,
+        .phase_offset_days = 14.765294F,
+        .angular_radius_scale = 2.0F,
+    };
+    cubey::render::AtmosphereEnvironmentTimeOfDay lunar_time = solar_noon;
+    lunar_time.time_hours = 0.0F;
+    const cubey::render::AtmosphereEnvironmentLunarState lunar =
+        cubey::render::atmosphere_environment_lunar_state(lunar_time, full_moon);
+    require_near(lunar.phase_fraction, 0.5F, 0.001F,
+                 "atmosphere environment should resolve full moon phase fraction");
+    require_near(lunar.illumination, 1.0F, 0.001F,
+                 "atmosphere environment should resolve full moon illumination");
+    require_near(lunar.angular_radius, 0.00452F * 2.0F, 0.000001F,
+                 "atmosphere environment should scale lunar angular radius");
+
+    require(cubey::render::atmosphere_environment_auto_exposure(2.0F, 0.0F) >
+                cubey::render::atmosphere_environment_auto_exposure(60.0F, 0.0F),
+            "atmosphere environment auto exposure should brighten low sun");
+    require(cubey::render::atmosphere_environment_auto_exposure(-20.0F, 4.0F) <= 4.0F,
+            "atmosphere environment auto exposure should stay clamped");
+}
