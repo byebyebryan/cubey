@@ -15,6 +15,7 @@
 #include <cubey/render/pbr.h>
 #include <cubey/render/render_graph.h>
 #include <cubey/render/target.h>
+#include <cubey/render/view_ray_basis_3d.h>
 #include <cubey/scene/camera_3d.h>
 #include <cubey/vulkan/command_recorder.h>
 #include <cubey/vulkan/device.h>
@@ -523,13 +524,8 @@ class OceanApp {
     [[nodiscard]] OceanSkyPushConstants sky_push_constants(VkExtent2D extent) const {
         const cubey::Transform3D transform = camera_transform();
         const float aspect = static_cast<float>(extent.width) / static_cast<float>(extent.height);
-        const float tan_half_fovy = std::tan(camera_.fovy_radians() * 0.5F);
-        const cubey::math::Vec3 right =
-            glm::normalize(transform.rotation * cubey::math::Vec3{1.0F, 0.0F, 0.0F});
-        const cubey::math::Vec3 up =
-            glm::normalize(transform.rotation * cubey::math::Vec3{0.0F, 1.0F, 0.0F});
-        const cubey::math::Vec3 forward =
-            glm::normalize(transform.rotation * cubey::math::Vec3{0.0F, 0.0F, -1.0F});
+        const cubey::render::ViewRayBasis3D view_rays =
+            cubey::render::view_ray_basis_3d(transform.rotation, aspect, camera_.fovy_radians());
         const cubey::render::PbrDisplayTransform display_transform =
             cubey::render::pbr_display_transform_for_target(pipeline_color_format_,
                                                             ocean_config_.exposure);
@@ -544,9 +540,9 @@ class OceanApp {
                     transform.translation.z,
                     static_cast<float>(time_seconds_),
                 },
-            .camera_right_aspect = {right.x, right.y, right.z, aspect},
-            .camera_up_tan_half_fovy = {up.x, up.y, up.z, tan_half_fovy},
-            .camera_forward = {forward.x, forward.y, forward.z, 0.0F},
+            .camera_right_aspect = view_rays.right_aspect,
+            .camera_up_tan_half_fovy = view_rays.up_tan_half_fovy,
+            .camera_forward = view_rays.forward,
             .display_transform = display_uniform,
         };
     }

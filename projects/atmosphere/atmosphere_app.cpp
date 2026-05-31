@@ -18,6 +18,7 @@
 #include <cubey/render/pipeline_resource.h>
 #include <cubey/render/target.h>
 #include <cubey/render/texture.h>
+#include <cubey/render/view_ray_basis_3d.h>
 #include <cubey/vulkan/command_recorder.h>
 #include <cubey/vulkan/descriptors.h>
 #include <cubey/vulkan/device.h>
@@ -636,15 +637,11 @@ class AtmosphereApp {
 
     [[nodiscard]] AtmospherePushConstants push_constants(VkExtent2D extent) const {
         const float aspect = static_cast<float>(extent.width) / static_cast<float>(extent.height);
-        const float tan_half_fovy = std::tan(kDefaultFovyRadians * 0.5F);
         const cubey::math::Quat rotation =
             cubey::math::angle_axis_quat(kBaseYaw + view_controller_.yaw(), {0.0F, 1.0F, 0.0F}) *
             cubey::math::angle_axis_quat(kBasePitch + view_controller_.pitch(), {1.0F, 0.0F, 0.0F});
-        const cubey::math::Vec3 right =
-            glm::normalize(rotation * cubey::math::Vec3{1.0F, 0.0F, 0.0F});
-        const cubey::math::Vec3 up = glm::normalize(rotation * cubey::math::Vec3{0.0F, 1.0F, 0.0F});
-        const cubey::math::Vec3 forward =
-            glm::normalize(rotation * cubey::math::Vec3{0.0F, 0.0F, -1.0F});
+        const cubey::render::ViewRayBasis3D view_rays =
+            cubey::render::view_ray_basis_3d(rotation, aspect, kDefaultFovyRadians);
         const cubey::math::Vec3 sun = sun_direction(atmosphere_config_);
         const float sidereal_angle =
             atmosphere_sidereal_angle_radians(atmosphere_config_.time_of_day);
@@ -656,13 +653,13 @@ class AtmosphereApp {
                                                             atmosphere_config_.exposure);
 
         return {
-            .camera_right_aspect = {right.x, right.y, right.z, aspect},
-            .camera_up_tan_half_fovy = {up.x, up.y, up.z, tan_half_fovy},
+            .camera_right_aspect = view_rays.right_aspect,
+            .camera_up_tan_half_fovy = view_rays.up_tan_half_fovy,
             .camera_forward_debug_view =
                 {
-                    forward.x,
-                    forward.y,
-                    forward.z,
+                    view_rays.forward.x,
+                    view_rays.forward.y,
+                    view_rays.forward.z,
                     static_cast<float>(static_cast<std::uint32_t>(render_view_)),
                 },
             .radii_ground =

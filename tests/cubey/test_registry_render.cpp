@@ -130,6 +130,9 @@ void test_render_resource_table_resolves_move_only_resources_by_handle();
 void test_render_target_rendering_info_describes_dynamic_rendering();
 void test_render_target_views_describe_color_only_targets();
 void test_shadow_depth_pass_info_declares_depth_only_state();
+void test_view_ray_basis_packs_camera_axes_for_shader_contract();
+void test_view_ray_basis_reconstructs_fullscreen_ray_directions();
+void test_view_ray_basis_rejects_invalid_projection_inputs();
 void test_shadow_map_depth_texture_config_describes_sampled_depth_target();
 void test_shadow_map_sampler_uses_depth_texture_defaults();
 void test_texture_2d_config_maps_storage_sampled_usage();
@@ -264,6 +267,9 @@ std::span<const TestCase> render_test_cases() {
         CUBEY_TEST(test_shadow_depth_pass_info_declares_depth_only_state),
         CUBEY_TEST(test_render_target_views_describe_color_only_targets),
         CUBEY_TEST(test_render_target_rendering_info_describes_dynamic_rendering),
+        CUBEY_TEST(test_view_ray_basis_packs_camera_axes_for_shader_contract),
+        CUBEY_TEST(test_view_ray_basis_reconstructs_fullscreen_ray_directions),
+        CUBEY_TEST(test_view_ray_basis_rejects_invalid_projection_inputs),
         CUBEY_TEST(test_depth_only_rendering_info_describes_sampled_depth_target),
         CUBEY_TEST(test_texture_2d_config_maps_storage_sampled_usage),
         CUBEY_TEST(test_texture_3d_config_maps_storage_sampled_volume_usage),
