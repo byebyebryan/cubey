@@ -45,6 +45,34 @@ if (BUILD_TESTING)
     )
     add_test(NAME atmosphere_config_tests COMMAND cubey_project_atmosphere_tests)
 
+    add_executable(cubey_project_atmosphere_png_stats
+        atmosphere_png_stats.cpp
+    )
+    target_link_libraries(
+        cubey_project_atmosphere_png_stats
+        PRIVATE
+            cubey_external_stb_image
+            cubey_project_options
+            cubey_project_warnings
+    )
+    set_target_properties(cubey_project_atmosphere_png_stats PROPERTIES CXX_CLANG_TIDY "")
+
+    function(cubey_add_atmosphere_png_stats_test smoke_name output_path min_mean_luma min_luma_range)
+        set(stats_name "${smoke_name}_stats")
+        add_test(
+            NAME "${stats_name}"
+            COMMAND
+                /bin/sh -c
+                "output=$1; verifier=$2; min_mean=$3; min_range=$4; if ! test -s \"$output\"; then printf 'png_stats: skipped %s because no PNG was written\\n' \"$output\"; exit 0; fi; \"$verifier\" \"$output\" \"$min_mean\" \"$min_range\""
+                "${stats_name}"
+                "${output_path}"
+                "$<TARGET_FILE:cubey_project_atmosphere_png_stats>"
+                "${min_mean_luma}"
+                "${min_luma_range}"
+        )
+        set_tests_properties("${stats_name}" PROPERTIES TIMEOUT 10 DEPENDS "${smoke_name}")
+    endfunction()
+
     set(CUBEY_ATMOSPHERE_HEADLESS_SMOKE_OUTPUT
         "${CMAKE_CURRENT_BINARY_DIR}/atmosphere-headless.png"
     )
@@ -53,6 +81,12 @@ if (BUILD_TESTING)
         cubey_project_atmosphere
         "${CUBEY_ATMOSPHERE_HEADLESS_SMOKE_OUTPUT}"
         --headless
+    )
+    cubey_add_atmosphere_png_stats_test(
+        atmosphere_headless_writes_png
+        "${CUBEY_ATMOSPHERE_HEADLESS_SMOKE_OUTPUT}"
+        0.005
+        0.005
     )
 
     set(CUBEY_ATMOSPHERE_SOLAR_NOON_SMOKE_OUTPUT
@@ -72,6 +106,12 @@ if (BUILD_TESTING)
         --latitude-degrees
         30
     )
+    cubey_add_atmosphere_png_stats_test(
+        atmosphere_solar_noon_writes_png
+        "${CUBEY_ATMOSPHERE_SOLAR_NOON_SMOKE_OUTPUT}"
+        0.005
+        0.005
+    )
 
     set(CUBEY_ATMOSPHERE_TWILIGHT_SMOKE_OUTPUT
         "${CMAKE_CURRENT_BINARY_DIR}/atmosphere-twilight.png"
@@ -90,6 +130,12 @@ if (BUILD_TESTING)
         --latitude-degrees
         30
     )
+    cubey_add_atmosphere_png_stats_test(
+        atmosphere_twilight_writes_png
+        "${CUBEY_ATMOSPHERE_TWILIGHT_SMOKE_OUTPUT}"
+        0.0005
+        0.001
+    )
 
     set(CUBEY_ATMOSPHERE_NIGHT_SMOKE_OUTPUT
         "${CMAKE_CURRENT_BINARY_DIR}/atmosphere-night.png"
@@ -101,6 +147,12 @@ if (BUILD_TESTING)
         --headless
         --atmosphere-preset
         night
+    )
+    cubey_add_atmosphere_png_stats_test(
+        atmosphere_night_writes_png
+        "${CUBEY_ATMOSPHERE_NIGHT_SMOKE_OUTPUT}"
+        0.00001
+        0.00005
     )
 
     set(CUBEY_ATMOSPHERE_MOONLIT_SMOKE_OUTPUT
@@ -114,6 +166,12 @@ if (BUILD_TESTING)
         --atmosphere-preset
         moonlit-night
     )
+    cubey_add_atmosphere_png_stats_test(
+        atmosphere_moonlit_writes_png
+        "${CUBEY_ATMOSPHERE_MOONLIT_SMOKE_OUTPUT}"
+        0.00001
+        0.00005
+    )
 
     set(CUBEY_ATMOSPHERE_MOON_SURFACE_SMOKE_OUTPUT
         "${CMAKE_CURRENT_BINARY_DIR}/atmosphere-moon-surface.png"
@@ -126,6 +184,12 @@ if (BUILD_TESTING)
         --debug-view
         moon-surface
     )
+    cubey_add_atmosphere_png_stats_test(
+        atmosphere_moon_surface_writes_png
+        "${CUBEY_ATMOSPHERE_MOON_SURFACE_SMOKE_OUTPUT}"
+        0.005
+        0.005
+    )
 
     set(CUBEY_ATMOSPHERE_MILKY_WAY_SMOKE_OUTPUT
         "${CMAKE_CURRENT_BINARY_DIR}/atmosphere-milky-way.png"
@@ -137,6 +201,12 @@ if (BUILD_TESTING)
         --headless
         --debug-view
         milky-way
+    )
+    cubey_add_atmosphere_png_stats_test(
+        atmosphere_milky_way_writes_png
+        "${CUBEY_ATMOSPHERE_MILKY_WAY_SMOKE_OUTPUT}"
+        0.00001
+        0.00005
     )
 
     set(CUBEY_ATMOSPHERE_MILKY_WAY_DUST_SMOKE_OUTPUT
@@ -152,6 +222,12 @@ if (BUILD_TESTING)
         --milky-way-layer
         dust-tau
     )
+    cubey_add_atmosphere_png_stats_test(
+        atmosphere_milky_way_dust_writes_png
+        "${CUBEY_ATMOSPHERE_MILKY_WAY_DUST_SMOKE_OUTPUT}"
+        0.00001
+        0.00005
+    )
 
     set(CUBEY_ATMOSPHERE_MILKY_WAY_HII_SMOKE_OUTPUT
         "${CMAKE_CURRENT_BINARY_DIR}/atmosphere-milky-way-hii.png"
@@ -166,6 +242,12 @@ if (BUILD_TESTING)
         --milky-way-layer
         hii-emission
     )
+    cubey_add_atmosphere_png_stats_test(
+        atmosphere_milky_way_hii_writes_png
+        "${CUBEY_ATMOSPHERE_MILKY_WAY_HII_SMOKE_OUTPUT}"
+        0.00001
+        0.00005
+    )
 
     set(CUBEY_ATMOSPHERE_TRANSMITTANCE_SMOKE_OUTPUT
         "${CMAKE_CURRENT_BINARY_DIR}/atmosphere-transmittance.png"
@@ -178,6 +260,22 @@ if (BUILD_TESTING)
         --debug-view
         transmittance
     )
+    cubey_add_atmosphere_png_stats_test(
+        atmosphere_transmittance_writes_png
+        "${CUBEY_ATMOSPHERE_TRANSMITTANCE_SMOKE_OUTPUT}"
+        0.005
+        0.005
+    )
+
+    add_test(
+        NAME atmosphere_async_atlas_windowed_smoke
+        COMMAND
+            /bin/sh -c
+            "target=$1; out=$(\"$target\" --frames 240 --width 64 --height 64 2>&1); status=$?; printf '%s\n' \"$out\"; if printf '%s\n' \"$out\" | grep -q 'vulkan validation error'; then exit 1; fi; if [ \"$status\" -eq 0 ]; then printf '%s\n' \"$out\" | grep -q 'atmosphere: .*rendering atmosphere project'; else printf '%s\n' \"$out\" | grep -q 'glfwInit failed\\|GLFW reports Vulkan is not supported'; fi"
+            "atmosphere_async_atlas_windowed_smoke"
+            "$<TARGET_FILE:cubey_project_atmosphere>"
+    )
+    set_tests_properties(atmosphere_async_atlas_windowed_smoke PROPERTIES TIMEOUT 45)
 
     if (CUBEY_HAS_LIBAV)
         set(CUBEY_ATMOSPHERE_HEADLESS_VIDEO_SMOKE_OUTPUT
