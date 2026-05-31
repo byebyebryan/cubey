@@ -133,6 +133,45 @@ void test_atmosphere_environment_resolves_celestial_time_math() {
             "atmosphere environment auto exposure should stay clamped");
 }
 
+void test_atmosphere_environment_lighting_projects_diffuse_sh() {
+    cubey::render::AtmosphereEnvironmentConfig day_config;
+    day_config.sun_elevation_degrees = 55.0F;
+    day_config.sun_azimuth_degrees = 20.0F;
+    const cubey::render::AtmosphereEnvironmentLighting day_lighting =
+        cubey::render::atmosphere_environment_lighting(day_config);
+
+    cubey::render::AtmosphereEnvironmentConfig night = day_config;
+    night.sun_elevation_degrees = -24.0F;
+    const cubey::render::AtmosphereEnvironmentLighting night_lighting =
+        cubey::render::atmosphere_environment_lighting(night);
+
+    require(day_lighting.diffuse_irradiance_sh.size() == 9U,
+            "atmosphere lighting should project L2 SH coefficients");
+    for (const cubey::math::Vec3& coefficient : day_lighting.diffuse_irradiance_sh) {
+        require(std::isfinite(coefficient.x) && std::isfinite(coefficient.y) &&
+                    std::isfinite(coefficient.z),
+                "atmosphere lighting SH coefficients should be finite");
+    }
+
+    const cubey::math::Vec3 day_up = cubey::render::atmosphere_environment_evaluate_sh(
+        day_lighting.diffuse_irradiance_sh, {0.0F, 1.0F, 0.0F});
+    const cubey::math::Vec3 day_down = cubey::render::atmosphere_environment_evaluate_sh(
+        day_lighting.diffuse_irradiance_sh, {0.0F, -1.0F, 0.0F});
+    const cubey::math::Vec3 night_up = cubey::render::atmosphere_environment_evaluate_sh(
+        night_lighting.diffuse_irradiance_sh, {0.0F, 1.0F, 0.0F});
+
+    require(day_lighting.sun_intensity > night_lighting.sun_intensity,
+            "daylight atmosphere lighting should produce stronger sun intensity than night");
+    require(day_up.y > night_up.y * 8.0F,
+            "daylight atmosphere SH should be much brighter than night SH");
+    require(day_up.y > day_down.y,
+            "daylight atmosphere SH should light upward-facing normals more than ground-facing");
+    require(day_lighting.primary_light_intensity == day_lighting.sun_intensity,
+            "daylight primary atmosphere light should be the sun");
+    require(day_lighting.ambient_color.y == day_up.y,
+            "atmosphere ambient fallback should come from upward diffuse SH");
+}
+
 void test_atmosphere_background_pass_declares_frame_and_atlas_bindings() {
     const cubey::render::MaterialPassInfo pass = cubey::render::atmosphere_background_pass_info();
     require(pass.label == "atmosphere.fullscreen",

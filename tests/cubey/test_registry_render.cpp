@@ -102,6 +102,7 @@ void test_gpu_deformation_shader_morphs_before_skinning();
 void test_render_pass_helpers_describe_clear_values_and_fullscreen_triangle();
 void test_atmosphere_environment_packs_frame_uniforms();
 void test_atmosphere_environment_resolves_celestial_time_math();
+void test_atmosphere_environment_lighting_projects_diffuse_sh();
 void test_atmosphere_background_pass_declares_frame_and_atlas_bindings();
 void test_pbr_vertex_layout_matches_shader_contract();
 void test_pbr_debug_view_names_parse_and_cycle();
@@ -241,6 +242,7 @@ std::span<const TestCase> render_test_cases() {
         CUBEY_TEST(test_render_pass_helpers_describe_clear_values_and_fullscreen_triangle),
         CUBEY_TEST(test_atmosphere_environment_packs_frame_uniforms),
         CUBEY_TEST(test_atmosphere_environment_resolves_celestial_time_math),
+        CUBEY_TEST(test_atmosphere_environment_lighting_projects_diffuse_sh),
         CUBEY_TEST(test_atmosphere_background_pass_declares_frame_and_atlas_bindings),
         CUBEY_TEST(test_pbr_vertex_layout_matches_shader_contract),
         CUBEY_TEST(test_pbr_debug_view_names_parse_and_cycle),

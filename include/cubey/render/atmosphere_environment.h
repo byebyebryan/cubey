@@ -3,6 +3,7 @@
 #include <cubey/core/math.h>
 #include <cubey/render/view_ray_basis_3d.h>
 
+#include <array>
 #include <cstdint>
 
 namespace cubey::render {
@@ -115,6 +116,21 @@ struct AtmosphereEnvironmentFrameUniformInputs {
     AtmosphereEnvironmentRenderView render_view = AtmosphereEnvironmentRenderView::Final;
 };
 
+struct AtmosphereEnvironmentLighting {
+    math::Vec3 sun_direction{0.0F, 1.0F, 0.0F};
+    math::Vec3 sun_color{1.0F, 0.94F, 0.82F};
+    float sun_intensity = 1.0F;
+    math::Vec3 moon_direction{0.0F, 1.0F, 0.0F};
+    math::Vec3 moon_color{0.58F, 0.62F, 0.74F};
+    float moon_intensity = 0.0F;
+    math::Vec3 primary_light_direction{0.0F, 1.0F, 0.0F};
+    math::Vec3 primary_light_color{1.0F, 0.94F, 0.82F};
+    float primary_light_intensity = 1.0F;
+    math::Vec3 ambient_color{0.045F, 0.045F, 0.045F};
+    float ambient_intensity = 1.0F;
+    std::array<math::Vec3, 9> diffuse_irradiance_sh{};
+};
+
 [[nodiscard]] float atmosphere_environment_degrees_to_radians(float degrees);
 [[nodiscard]] float atmosphere_environment_radians_to_degrees(float radians);
 [[nodiscard]] float atmosphere_environment_wrap_time_hours(float time_hours);
@@ -136,5 +152,10 @@ atmosphere_environment_sun_direction(const AtmosphereEnvironmentConfig& config);
 [[nodiscard]] AtmosphereEnvironmentFrameUniforms atmosphere_environment_frame_uniforms(
     const AtmosphereEnvironmentConfig& config,
     const AtmosphereEnvironmentFrameUniformInputs& inputs);
+[[nodiscard]] std::array<float, 9> atmosphere_environment_sh_basis(math::Vec3 direction);
+[[nodiscard]] math::Vec3 atmosphere_environment_evaluate_sh(
+    const std::array<math::Vec3, 9>& coefficients, math::Vec3 direction);
+[[nodiscard]] AtmosphereEnvironmentLighting atmosphere_environment_lighting(
+    const AtmosphereEnvironmentConfig& config);
 
 } // namespace cubey::render
