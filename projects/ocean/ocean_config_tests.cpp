@@ -374,6 +374,8 @@ int main() {
             read_text_file(source_root / "shaders/ocean_unpack.comp");
         const std::string vertex_shader = read_text_file(source_root / "shaders/ocean.vert");
         const std::string fragment_shader = read_text_file(source_root / "shaders/ocean.frag");
+        const std::string atmosphere_shader =
+            read_text_file(source_root / "shaders/ocean_atmosphere.glsl");
         const std::string app_source = read_text_file(source_root / "ocean_app.cpp");
         const std::string ui_source = read_text_file(source_root / "ocean_ui.cpp");
         const std::string gpu_resources_source =
@@ -457,6 +459,20 @@ int main() {
                          "UI should show cascade diagnostic wavelength bands");
         require_contains(fragment_shader, "struct OceanFoamData",
                          "fragment shader should keep foam role diagnostics grouped");
+        require_contains(fragment_shader, "#include \"ocean_atmosphere.glsl\"",
+                         "fragment shader should source its sky lighting from the ocean atmosphere include");
+        require_contains(atmosphere_shader, "OCEAN_ATMOSPHERE_VIEW_SAMPLE_COUNT",
+                         "ocean atmosphere shader should use view-ray scattering samples");
+        require_contains(atmosphere_shader, "OceanAtmosphereOpticalDepth",
+                         "ocean atmosphere shader should carry atmosphere optical depth");
+        require_contains(atmosphere_shader, "ocean_integrate_atmosphere",
+                         "ocean atmosphere shader should integrate daylight scattering");
+        require_contains(atmosphere_shader, "ocean_sun_disk_luminance",
+                         "ocean atmosphere shader should preserve a transmittance-filtered sun disk");
+        require_contains(atmosphere_shader, "ocean_sky_lookup_direction",
+                         "ocean atmosphere shader should keep water reflection lookups above ground");
+        require_contains(atmosphere_shader, "ocean_atmosphere_grade",
+                         "ocean atmosphere shader should apply the ocean daylight calibration");
         require_contains(fragment_shader, "data.gradient += normal_foam.xy * normal_scale",
                          "fragment shader should preserve normal map scale packing");
         require_contains(fragment_shader, "data.total += weighted_foam;",
@@ -553,6 +569,8 @@ int main() {
                              "ocean unpack shader should not use bounded choppy clamps");
         require_not_contains(fragment_shader, "normal_foam_cascade",
                              "ocean fragment shader should not pack normals and foam in one sampler");
+        require_not_contains(atmosphere_shader, "upper_horizon_color",
+                             "ocean atmosphere shader should not use the old procedural sky gradient");
 
         return 0;
     } catch (const std::exception& error) {
