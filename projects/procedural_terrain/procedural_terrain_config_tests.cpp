@@ -1,5 +1,6 @@
 #include "procedural_terrain_config.h"
 #include "procedural_terrain_fields.h"
+#include "procedural_terrain_lod.h"
 #include "procedural_terrain_mesh.h"
 
 #include <cubey/core/run_config.h>
@@ -256,6 +257,40 @@ int main() {
     require_near(terrain::terrain_grid_sample_z_m(fields.desc, fields.desc.height / 2U),
                  fields.desc.origin_z_m, 0.001F,
                  "terrain grid center sample should land on origin Z for odd grids");
+    const terrain::TerrainClipmapPlan clipmap_plan = terrain::terrain_clipmap_plan(
+        fields.desc, terrain::kTerrainClipmapDefaultLodLevels, 32U);
+    require(clipmap_plan.grid.lod_levels == terrain::kTerrainClipmapDefaultLodLevels,
+            "terrain clipmap should preserve requested LOD levels");
+    require(clipmap_plan.patches.count ==
+                cubey::render::clipmap_grid_2d_patch_count(clipmap_plan.grid.lod_levels),
+            "terrain clipmap should use the shared patch count contract");
+    require_near(clipmap_plan.grid.outer_half_extent, half_width_m, 0.001F,
+                 "terrain clipmap should cover the centered terrain field");
+    require_near(clipmap_plan.field_half_extent_x_m, half_width_m, 0.001F,
+                 "terrain clipmap should report centered field half width");
+    require_near(clipmap_plan.field_half_extent_z_m, half_height_m, 0.001F,
+                 "terrain clipmap should report centered field half height");
+    const terrain::TerrainClipmapPatch& center_patch =
+        clipmap_plan.patches.patches[clipmap_plan.patches.count - 1U];
+    require(center_patch.level == 0U, "terrain clipmap should finish with the near center patch");
+    require_near(center_patch.bounds.min_x, -center_patch.bounds.max_x, 0.001F,
+                 "terrain clipmap center patch should be centered on world origin X");
+    require_near(center_patch.bounds.min_z, -center_patch.bounds.max_z, 0.001F,
+                 "terrain clipmap center patch should be centered on world origin Z");
+    for (const terrain::TerrainClipmapPatch& patch : clipmap_plan.patches) {
+        require(patch.cells_x > 0U && patch.cells_z > 0U,
+                "terrain clipmap patches should have drawable cell counts");
+        require(terrain::terrain_clipmap_patch_overlaps_field(fields.desc, patch),
+                "terrain clipmap patches should overlap the sampled terrain field");
+    }
+    rejected = false;
+    try {
+        static_cast<void>(
+            terrain::terrain_clipmap_plan(fields.desc, terrain::kTerrainClipmapMaxLodLevels + 1U));
+    } catch (const std::runtime_error&) {
+        rejected = true;
+    }
+    require(rejected, "terrain clipmap should reject unsupported LOD levels");
     require(fields.height_m.size() == fields.sample_count(), "terrain height field size mismatch");
     require(fields.water_depth_m.size() == fields.sample_count(),
             "terrain water depth field size mismatch");

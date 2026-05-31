@@ -1,5 +1,7 @@
 #include "procedural_terrain_app_internal.h"
 
+#include "procedural_terrain_lod.h"
+
 #include <cubey/render/material.h>
 #include <cubey/render/pass.h>
 #include <cubey/render/pipeline_resource.h>
@@ -69,6 +71,12 @@ make_terrain_diagnostics(const TerrainFieldData& fields, const TerrainMeshData& 
     diagnostics.water_triangles = terrain_triangle_count(water_mesh);
     diagnostics.last_rebuild_ms = rebuild_ms;
     diagnostics.rebuild_count = rebuild_count;
+    const TerrainClipmapPlan clipmap_plan = terrain_clipmap_plan(fields.desc);
+    diagnostics.clipmap_lod_levels = clipmap_plan.grid.lod_levels;
+    diagnostics.clipmap_patch_count = static_cast<std::uint32_t>(clipmap_plan.patches.count);
+    diagnostics.clipmap_outer_half_extent_m = clipmap_plan.grid.outer_half_extent;
+    diagnostics.clipmap_near_cell_size_m =
+        cubey::render::clipmap_grid_2d_near_cell_size(clipmap_plan.grid);
 
     double slope_sum = 0.0;
     for (std::size_t index = 0; index < diagnostics.sample_count; ++index) {

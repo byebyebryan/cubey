@@ -167,6 +167,11 @@ void draw_terrain_ui(TerrainUiContext ui) {
                     ui.diagnostics.final_land_triangles);
         ImGui::Text("Water mesh: %u verts / %u tris", ui.diagnostics.water_vertices,
                     ui.diagnostics.water_triangles);
+        ImGui::Text("LOD plan: %u levels / %u patches", ui.diagnostics.clipmap_lod_levels,
+                    ui.diagnostics.clipmap_patch_count);
+        ImGui::Text("LOD extent/cell: %.1f m / %.2f m",
+                    ui.diagnostics.clipmap_outer_half_extent_m,
+                    ui.diagnostics.clipmap_near_cell_size_m);
         ImGui::Text("Rebuilds: %llu | Last: %.2f ms",
                     static_cast<unsigned long long>(ui.diagnostics.rebuild_count),
                     ui.diagnostics.last_rebuild_ms);

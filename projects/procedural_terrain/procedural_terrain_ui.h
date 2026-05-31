@@ -41,6 +41,10 @@ struct TerrainDiagnostics {
     std::uint32_t final_land_triangles = 0;
     std::uint32_t water_vertices = 0;
     std::uint32_t water_triangles = 0;
+    std::uint32_t clipmap_lod_levels = 0;
+    std::uint32_t clipmap_patch_count = 0;
+    float clipmap_outer_half_extent_m = 0.0F;
+    float clipmap_near_cell_size_m = 0.0F;
     double last_rebuild_ms = 0.0;
     std::uint64_t rebuild_count = 0;
 };
