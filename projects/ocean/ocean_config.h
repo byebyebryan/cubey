@@ -18,13 +18,18 @@ enum class OceanRenderView : std::uint32_t {
     Normal = 3,
     Foam = 4,
     FoamSource = 5,
-    Lod = 6,
+    FoamHistory = 6,
+    FoamMacro = 7,
+    FoamCrest = 8,
+    FoamDetail = 9,
+    Lod = 10,
 };
 
-inline constexpr std::array<OceanRenderView, 7> kOceanRenderViews{
+inline constexpr std::array<OceanRenderView, 11> kOceanRenderViews{
     OceanRenderView::Final,  OceanRenderView::Height, OceanRenderView::Displacement,
     OceanRenderView::Normal, OceanRenderView::Foam,   OceanRenderView::FoamSource,
-    OceanRenderView::Lod,
+    OceanRenderView::FoamHistory, OceanRenderView::FoamMacro,
+    OceanRenderView::FoamCrest, OceanRenderView::FoamDetail, OceanRenderView::Lod,
 };
 
 inline constexpr std::array<std::uint32_t, 4> kOceanSupportedMapSizes{128U, 256U, 512U, 1024U};
@@ -192,6 +197,14 @@ struct OceanCascadeDomain {
         return "foam";
     case OceanRenderView::FoamSource:
         return "foam-source";
+    case OceanRenderView::FoamHistory:
+        return "foam-history";
+    case OceanRenderView::FoamMacro:
+        return "foam-macro";
+    case OceanRenderView::FoamCrest:
+        return "foam-crest";
+    case OceanRenderView::FoamDetail:
+        return "foam-detail";
     case OceanRenderView::Lod:
         return "lod";
     }

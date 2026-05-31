@@ -259,6 +259,18 @@ int main() {
         require(ocean::ocean_render_view_from_name("foam-source") ==
                     ocean::OceanRenderView::FoamSource,
                 "foam source debug view should parse");
+        require(ocean::ocean_render_view_from_name("foam-history") ==
+                    ocean::OceanRenderView::FoamHistory,
+                "foam history debug view should parse");
+        require(ocean::ocean_render_view_from_name("foam-macro") ==
+                    ocean::OceanRenderView::FoamMacro,
+                "foam macro debug view should parse");
+        require(ocean::ocean_render_view_from_name("foam-crest") ==
+                    ocean::OceanRenderView::FoamCrest,
+                "foam crest debug view should parse");
+        require(ocean::ocean_render_view_from_name("foam-detail") ==
+                    ocean::OceanRenderView::FoamDetail,
+                "foam detail debug view should parse");
         require(ocean::ocean_render_view_from_name("lod") ==
                     ocean::OceanRenderView::Lod,
                 "lod debug view should parse");
@@ -266,6 +278,18 @@ int main() {
                     ocean::OceanRenderView::FoamSource,
                 "ocean debug view cycle should include the foam source view");
         require(ocean::next_ocean_render_view(ocean::OceanRenderView::FoamSource) ==
+                    ocean::OceanRenderView::FoamHistory,
+                "ocean debug view cycle should include the foam history view");
+        require(ocean::next_ocean_render_view(ocean::OceanRenderView::FoamHistory) ==
+                    ocean::OceanRenderView::FoamMacro,
+                "ocean debug view cycle should include the macro foam view");
+        require(ocean::next_ocean_render_view(ocean::OceanRenderView::FoamMacro) ==
+                    ocean::OceanRenderView::FoamCrest,
+                "ocean debug view cycle should include the crest foam view");
+        require(ocean::next_ocean_render_view(ocean::OceanRenderView::FoamCrest) ==
+                    ocean::OceanRenderView::FoamDetail,
+                "ocean debug view cycle should include the detail foam view");
+        require(ocean::next_ocean_render_view(ocean::OceanRenderView::FoamDetail) ==
                     ocean::OceanRenderView::Lod,
                 "ocean debug view cycle should include the LOD view");
         require(ocean::next_ocean_render_view(ocean::OceanRenderView::Lod) ==
@@ -434,9 +458,18 @@ int main() {
                          "UI should expose cascade wavelength domain diagnostics");
         require_contains(ui_source, "domain %.2f-%.2f m",
                          "UI should show cascade diagnostic wavelength bands");
-        require_contains(fragment_shader,
-                         "gradient += normal_foam * vec4(normal_scale, normal_scale, 1.0, 1.0)",
-                         "fragment shader should preserve normal/foam map scale packing");
+        require_contains(fragment_shader, "struct OceanFoamData",
+                         "fragment shader should keep foam role diagnostics grouped");
+        require_contains(fragment_shader, "data.gradient += normal_foam.xy * normal_scale",
+                         "fragment shader should preserve normal map scale packing");
+        require_contains(fragment_shader, "data.total += weighted_foam;",
+                         "fragment shader should preserve accumulated foam sampling");
+        require_contains(fragment_shader, "data.macro += weighted_foam;",
+                         "fragment shader should accumulate macro foam diagnostics");
+        require_contains(fragment_shader, "data.crest += weighted_foam;",
+                         "fragment shader should accumulate crest foam diagnostics");
+        require_contains(fragment_shader, "data.detail += weighted_foam;",
+                         "fragment shader should accumulate detail foam diagnostics");
         require_contains(fragment_shader, "if (!ocean_cascade_enabled(cascade))",
                          "fragment shader should gate normal and foam by inspected cascade");
         require_contains(fragment_shader, "for (uint cascade = 0u; cascade < 5u; ++cascade)",
@@ -482,11 +515,21 @@ int main() {
                          "fragment shader should keep debug foam view as presentation coverage");
         require_contains(fragment_shader, "color = vec3(foam_current);",
                          "fragment shader should expose current foam source debug view");
+        require_contains(fragment_shader, "color = vec3(foam_persistent);",
+                         "fragment shader should expose accumulated foam history debug view");
+        require_contains(fragment_shader, "color = vec3(foam_data.macro.x);",
+                         "fragment shader should expose macro foam diagnostics");
+        require_contains(fragment_shader, "color = vec3(foam_data.crest.x);",
+                         "fragment shader should expose crest foam diagnostics");
+        require_contains(fragment_shader, "color = vec3(foam_data.detail.x);",
+                         "fragment shader should expose detail foam diagnostics");
         require_contains(vertex_shader, "triangle_barycentric(vertex_in_cell)",
                          "vertex shader should feed wireframe diagnostics");
         require_contains(fragment_shader, "const uint OCEAN_VIEW_FOAM_SOURCE = 5u",
                          "fragment shader should expose foam source diagnostics");
-        require_contains(fragment_shader, "const uint OCEAN_VIEW_LOD = 6u",
+        require_contains(fragment_shader, "const uint OCEAN_VIEW_FOAM_HISTORY = 6u",
+                         "fragment shader should expose foam history diagnostics");
+        require_contains(fragment_shader, "const uint OCEAN_VIEW_LOD = 10u",
                          "fragment shader should expose LOD diagnostics");
         require_contains(fragment_shader, "triangle_wire_factor(frag_barycentric)",
                          "fragment shader should expose wire diagnostics");
