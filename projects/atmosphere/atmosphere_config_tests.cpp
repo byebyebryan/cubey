@@ -244,9 +244,15 @@ int main() {
     {
         const AtmosphereConfig moonlit =
             atmosphere_config_for_preset(AtmospherePreset::MoonlitNight);
+        require(moonlit.sun_elevation_degrees < -30.0F,
+                "moonlit night preset should resolve below astronomical twilight");
+        require_near(moonlit.exposure, 2.4F, 0.05F,
+                     "moonlit night preset should use exposure bias for its resolved exposure");
         const LunarState moonlit_moon = atmosphere_lunar_state(moonlit.time_of_day, moonlit.moon);
-        require(std::abs(moonlit_moon.direction.x) < 0.02F && moonlit_moon.direction.y > 0.20F &&
-                    moonlit_moon.direction.y < 0.35F,
+        require(moonlit_moon.illumination > 0.90F,
+                "moonlit night preset should keep the moon mostly illuminated");
+        require(std::abs(moonlit_moon.direction.x) < 0.02F && moonlit_moon.direction.y > 0.35F &&
+                    moonlit_moon.direction.y < 0.45F,
                 "moonlit night preset should place the moon in the default horizon view");
     }
     require_throws([] { static_cast<void>(atmosphere_preset_from_name("storm")); },
@@ -438,6 +444,18 @@ int main() {
                 "morning solar azimuth should be east-positive");
         require(atmosphere_solar_position(afternoon).azimuth_degrees < 0.0F,
                 "afternoon solar azimuth should be west-negative");
+    }
+    {
+        require_near(atmosphere_wrap_signed_degrees(360.0F), 0.0F, 0.001F,
+                     "azimuth wrapping should preserve equivalent full turns");
+        TimeOfDayConfig morning;
+        morning.time_hours = 9.0F;
+        morning.day_of_year = 80.0F;
+        morning.latitude_degrees = 30.0F;
+        morning.azimuth_offset_degrees = 300.0F;
+        const SolarPosition position = atmosphere_solar_position(morning);
+        require_near(position.azimuth_degrees, 3.435F, 0.01F,
+                     "solar azimuth offset should wrap instead of clamp");
     }
     {
         TimeOfDayConfig sunset;
@@ -654,6 +672,8 @@ int main() {
                      "atmosphere shader should include aerial perspective debug output");
     require_contains(shader_source, "twilight_radiance",
                      "atmosphere shader should include twilight radiance");
+    require_contains(shader_source, "safe_horizontal_direction",
+                     "atmosphere shader should guard vertical twilight vectors");
     require_contains(shader_source, "procedural_star_radiance",
                      "atmosphere shader should include procedural stars");
     require_contains(shader_source, "bright_star_radiance",
@@ -682,6 +702,8 @@ int main() {
                      "atmosphere shader should include Milky Way radiance");
     require_contains(shader_source, "debug_view == 8",
                      "atmosphere shader should include Milky Way debug output");
+    require_contains(shader_source, "galactic_debug_direction",
+                     "atmosphere shader should map Milky Way debug view across the galactic plane");
     require_contains(shader_source, "moon_disk_radiance",
                      "atmosphere shader should include moon disk radiance");
     require_contains(shader_source, "sampler2D moon_atlas",
@@ -694,6 +716,8 @@ int main() {
                      "atmosphere shader should include moon debug output");
     require_contains(shader_source, "debug_view == 10",
                      "atmosphere shader should include moon surface debug output");
+    require_contains(shader_source, "hit_ground ? vec3(0.0) : sun_disk_luminance",
+                     "atmosphere shader should mask sun disk behind ground");
     require_contains(shader_source, "render_moon_surface_debug",
                      "atmosphere shader should include an enlarged moon atlas debug view");
     require_contains(shader_source, "ground_reference_geometry",

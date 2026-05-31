@@ -360,44 +360,60 @@ int HeadlessPngHost::run() {
     HeadlessPngContext context(config_.run_config, instance(), device(), gpu(), target,
                                profile_recorder());
 
-    if (callbacks_.create_resources) {
-        [[maybe_unused]] auto span = profile_span(0, "headless.create_resources");
-        callbacks_.create_resources(context);
-    }
-    drain_gpu_work();
-    if (callbacks_.before_capture) {
-        [[maybe_unused]] auto span = profile_span(0, "headless.before_capture");
-        callbacks_.before_capture(context);
-    }
-    drain_gpu_work();
-
-    if (config_.run_config.capture_mode == CaptureMode::Video) {
-        [[maybe_unused]] auto span = profile_span(0, "headless.write_video");
-        write_video(context, target);
-    } else {
-        const HeadlessCaptureFrame frame = headless_capture_frame(config_.run_config, 0);
-        if (callbacks_.before_frame) {
-            [[maybe_unused]] auto span = profile_span(frame.index, "headless.before_frame");
-            callbacks_.before_frame(context, frame);
-            drain_gpu_work();
+    try {
+        if (callbacks_.create_resources) {
+            [[maybe_unused]] auto span = profile_span(0, "headless.create_resources");
+            callbacks_.create_resources(context);
         }
-        record_capture(context, target, frame);
-        record_profile_frame(frame, target);
-        {
-            [[maybe_unused]] auto span = profile_span(frame.index, "headless.write_png");
-            write_png(target);
-        }
-    }
-    device().wait_idle();
-
-    drain_gpu_work();
-    if (callbacks_.shutdown) {
-        [[maybe_unused]] auto span = profile_span(0, "headless.shutdown");
-        callbacks_.shutdown(context);
         drain_gpu_work();
+        if (callbacks_.before_capture) {
+            [[maybe_unused]] auto span = profile_span(0, "headless.before_capture");
+            callbacks_.before_capture(context);
+        }
+        drain_gpu_work();
+
+        if (config_.run_config.capture_mode == CaptureMode::Video) {
+            [[maybe_unused]] auto span = profile_span(0, "headless.write_video");
+            write_video(context, target);
+        } else {
+            const HeadlessCaptureFrame frame = headless_capture_frame(config_.run_config, 0);
+            if (callbacks_.before_frame) {
+                [[maybe_unused]] auto span = profile_span(frame.index, "headless.before_frame");
+                callbacks_.before_frame(context, frame);
+                drain_gpu_work();
+            }
+            record_capture(context, target, frame);
+            record_profile_frame(frame, target);
+            {
+                [[maybe_unused]] auto span = profile_span(frame.index, "headless.write_png");
+                write_png(target);
+            }
+        }
+        device().wait_idle();
+
+        drain_gpu_work();
+        shutdown_resources(context);
+        write_profile_outputs();
+        return 0;
+    } catch (...) {
+        try {
+            device().wait_idle();
+            drain_gpu_work();
+        } catch (const std::exception& error) {
+            std::fprintf(stderr, "headless PNG host idle failed during cleanup: %s\n",
+                         error.what());
+        } catch (...) {
+            std::fprintf(stderr, "headless PNG host idle failed during cleanup\n");
+        }
+        try {
+            shutdown_resources(context);
+        } catch (const std::exception& error) {
+            std::fprintf(stderr, "headless PNG host shutdown failed: %s\n", error.what());
+        } catch (...) {
+            std::fprintf(stderr, "headless PNG host shutdown failed\n");
+        }
+        throw;
     }
-    write_profile_outputs();
-    return 0;
 }
 
 void HeadlessPngHost::create_instance() {
@@ -651,6 +667,17 @@ void HeadlessPngHost::write_video(HeadlessPngContext& context, const HeadlessRen
                 device().device_name(), output_path.c_str(), target.extent.width,
                 target.extent.height, frame_count, config_.run_config.fps,
                 video_encoding_backend_name());
+}
+
+void HeadlessPngHost::shutdown_resources(HeadlessPngContext& context) {
+    if (shutdown_called_ || !callbacks_.shutdown) {
+        return;
+    }
+
+    shutdown_called_ = true;
+    [[maybe_unused]] auto span = profile_span(0, "headless.shutdown");
+    callbacks_.shutdown(context);
+    drain_gpu_work();
 }
 
 cubey::vulkan::Instance& HeadlessPngHost::instance() {

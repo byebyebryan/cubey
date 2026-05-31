@@ -331,6 +331,15 @@ void test_run_config_rejects_invalid_atmosphere_options() {
     }
     {
         std::string program = "cubey";
+        std::string azimuth_flag = "--sun-azimuth";
+        std::string azimuth_value = "361";
+        std::array<char*, 3> argv{program.data(), azimuth_flag.data(), azimuth_value.data()};
+        require_throws(
+            [&argv]() { cubey::parse_run_config(static_cast<int>(argv.size()), argv.data()); },
+            "run config should reject invalid sun azimuth");
+    }
+    {
+        std::string program = "cubey";
         std::string altitude_flag = "--camera-altitude-km";
         std::string altitude_value = "-1";
         std::array<char*, 3> argv{program.data(), altitude_flag.data(), altitude_value.data()};

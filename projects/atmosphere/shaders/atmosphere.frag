@@ -100,15 +100,31 @@ vec3 transmittance_from_depth(OpticalDepth depth) {
     return exp(-(rayleigh_extinction + mie_extinction + ozone_extinction));
 }
 
+vec3 safe_horizontal_direction(vec3 direction, vec3 fallback) {
+    vec3 horizontal = vec3(direction.x, 0.0, direction.z);
+    float length_squared = dot(horizontal, horizontal);
+    if (length_squared > 0.00000001) {
+        return horizontal * inversesqrt(length_squared);
+    }
+
+    vec3 fallback_horizontal = vec3(fallback.x, 0.0, fallback.z);
+    float fallback_length_squared = dot(fallback_horizontal, fallback_horizontal);
+    if (fallback_length_squared > 0.00000001) {
+        return fallback_horizontal * inversesqrt(fallback_length_squared);
+    }
+    return vec3(0.0, 0.0, 1.0);
+}
+
 OpticalDepth integrate_optical_depth(vec3 origin, vec3 direction, float ray_length,
                                      vec3 planet_center, int sample_count) {
     if (ray_length <= 0.0) {
         return optical_depth_zero();
     }
+    int clamped_sample_count = clamp(sample_count, 1, ATMOSPHERE_LIGHT_SAMPLE_COUNT);
     OpticalDepth optical_depth = optical_depth_zero();
-    float step_length = ray_length / float(sample_count);
+    float step_length = ray_length / float(clamped_sample_count);
     for (int i = 0; i < ATMOSPHERE_LIGHT_SAMPLE_COUNT; ++i) {
-        if (i >= sample_count) {
+        if (i >= clamped_sample_count) {
             break;
         }
         float t = (float(i) + 0.5) * step_length;
@@ -173,8 +189,8 @@ vec3 twilight_radiance(vec3 ray_direction, vec3 sun_direction) {
 
     float horizon = 1.0 - smoothstep(0.02, 0.42, abs(ray_direction.y));
     float upper_sky = smoothstep(-0.10, 0.65, ray_direction.y);
-    vec3 ray_horizontal = normalize(vec3(ray_direction.x, 0.0, ray_direction.z));
-    vec3 sun_horizontal = normalize(vec3(sun_direction.x, 0.0, sun_direction.z));
+    vec3 ray_horizontal = safe_horizontal_direction(ray_direction, sun_direction);
+    vec3 sun_horizontal = safe_horizontal_direction(sun_direction, vec3(0.0, 0.0, 1.0));
     float sun_azimuth_lobe = pow(max(dot(ray_horizontal, sun_horizontal), 0.0), 2.5);
     float horizon_warmth = atmosphere.night_options.y;
 
@@ -453,10 +469,22 @@ vec3 milky_way_radiance(vec3 ray_direction, vec3 sun_direction) {
     return color * source_intensity * contrast_gain * exposure_gain * visibility;
 }
 
-vec3 render_milky_way_debug(vec3 ray_direction) {
-    vec3 atlas = max(texture(night_sky_atlas, star_sample_direction(ray_direction)).rgb, vec3(0.0));
+vec3 galactic_debug_direction() {
+    vec3 pole = normalize(vec3(0.31, 0.84, 0.44));
+    vec3 center_hint = normalize(vec3(-0.45, -0.12, -0.89));
+    vec3 center = normalize(center_hint - pole * dot(center_hint, pole));
+    vec3 tangent = normalize(cross(pole, center));
+    float longitude = frag_ndc.x * 3.14159265359;
+    float latitude = frag_ndc.y * 0.52;
+    float horizontal = cos(latitude);
+    return normalize(center * cos(longitude) * horizontal +
+                     tangent * sin(longitude) * horizontal + pole * sin(latitude));
+}
+
+vec3 render_milky_way_debug() {
+    vec3 atlas = max(texture(night_sky_atlas, galactic_debug_direction()).rgb, vec3(0.0));
     float luma = dot(atlas, vec3(0.2126, 0.7152, 0.0722));
-    return mix(vec3(luma), atlas, 0.75) * 18.0;
+    return vec3(1.0) - exp(-mix(vec3(luma), atlas, 0.75) * 900.0);
 }
 
 vec3 night_sky_radiance(vec3 ray_direction, vec3 sun_direction) {
@@ -780,7 +808,7 @@ void main() {
         return;
     }
     if (debug_view == 8) {
-        vec3 color = render_milky_way_debug(ray_direction);
+        vec3 color = render_milky_way_debug();
         out_color = vec4(cubey_pbr_apply_display_transform(color, atmosphere.display_transform),
                          1.0);
         return;
@@ -814,8 +842,8 @@ void main() {
         : night_sky_radiance(ray_direction, sun_direction) * atmosphere_sample.transmittance;
     vec3 moon_disk = hit_ground ? vec3(0.0) :
         moon_disk_radiance(ray_direction, sun_direction, planet_center);
-    vec3 color = atmosphere_sample.color + sun_disk_luminance(ray_direction, planet_center) +
-                 night_sky + moon_disk;
+    vec3 sun_disk = hit_ground ? vec3(0.0) : sun_disk_luminance(ray_direction, planet_center);
+    vec3 color = atmosphere_sample.color + sun_disk + night_sky + moon_disk;
     if (hit_ground) {
         color += ground_radiance(ray_direction, planet_center, ground_t) *
                  atmosphere_sample.transmittance;
@@ -830,7 +858,7 @@ void main() {
     } else if (debug_view == 4) {
         color = debug_optical_depth(atmosphere_sample.optical_depth);
     } else if (debug_view == 5) {
-        color = sun_disk_luminance(ray_direction, planet_center);
+        color = sun_disk;
     } else if (debug_view == 6) {
         color = render_aerial_perspective_debug(ray_direction, planet_center);
     } else if (debug_view == 7) {

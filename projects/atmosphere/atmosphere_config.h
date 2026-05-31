@@ -333,6 +333,14 @@ struct LunarState {
     return wrapped;
 }
 
+[[nodiscard]] inline float atmosphere_wrap_signed_degrees(float degrees) {
+    float wrapped = std::fmod(degrees + 180.0F, 360.0F);
+    if (wrapped < 0.0F) {
+        wrapped += 360.0F;
+    }
+    return wrapped - 180.0F;
+}
+
 [[nodiscard]] inline float atmosphere_advance_day_of_year(float day_of_year, int day_delta) {
     float wrapped = std::fmod(day_of_year - 1.0F + static_cast<float>(day_delta), 366.0F);
     if (wrapped < 0.0F) {
@@ -373,7 +381,7 @@ struct LunarState {
 
     return {
         .elevation_degrees = atmosphere_radians_to_degrees(elevation),
-        .azimuth_degrees = std::clamp(azimuth, -360.0F, 360.0F),
+        .azimuth_degrees = atmosphere_wrap_signed_degrees(azimuth),
     };
 }
 
@@ -526,12 +534,11 @@ inline void advance_atmosphere_time_of_day(AtmosphereConfig& config, double delt
         config.night_sky.milky_way_contrast = 1.10F;
         break;
     case AtmospherePreset::MoonlitNight:
-        config.time_of_day.time_hours = 0.0F;
-        config.time_of_day.latitude_degrees = 75.0F;
-        config.sun_elevation_degrees = -60.0F;
-        config.sun_azimuth_degrees = 180.0F;
+        config.time_of_day.time_hours = 1.75F;
+        config.time_of_day.day_of_year = 23.0F;
+        config.time_of_day.latitude_degrees = 78.0F;
+        config.time_of_day.exposure_bias = -0.40F;
         config.camera_altitude_km = 0.15F;
-        config.exposure = 2.4F;
         config.night_sky.star_intensity = 0.90F;
         config.night_sky.star_density = 0.58F;
         config.night_sky.milky_way_intensity = 0.55F;
@@ -541,6 +548,7 @@ inline void advance_atmosphere_time_of_day(AtmosphereConfig& config, double delt
         config.moon.angular_radius_scale = 3.0F;
         break;
     }
+    resolve_atmosphere_time_of_day(config);
     return config;
 }
 
@@ -622,11 +630,9 @@ inline void validate_atmosphere_config(const AtmosphereConfig& config) {
         config.night_sky.twilight_horizon_warmth > 2.0F || config.night_sky.star_intensity < 0.0F ||
         config.night_sky.star_intensity > 4.0F || config.night_sky.star_density < 0.0F ||
         config.night_sky.star_density > 1.0F || config.night_sky.milky_way_intensity < 0.0F ||
-        config.night_sky.milky_way_intensity > 4.0F ||
-        config.night_sky.milky_way_contrast < 0.0F ||
+        config.night_sky.milky_way_intensity > 4.0F || config.night_sky.milky_way_contrast < 0.0F ||
         config.night_sky.milky_way_contrast > 4.0F || config.night_sky.light_pollution < 0.0F ||
-        config.night_sky.light_pollution > 1.0F ||
-        config.night_sky.procedural_variation < 0.0F ||
+        config.night_sky.light_pollution > 1.0F || config.night_sky.procedural_variation < 0.0F ||
         config.night_sky.procedural_variation > 16.0F) {
         throw std::runtime_error("atmosphere night-sky controls are out of range");
     }

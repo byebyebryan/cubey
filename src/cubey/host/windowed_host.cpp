@@ -66,6 +66,13 @@ WindowedHost::~WindowedHost() {
     } catch (...) {
         std::fprintf(stderr, "windowed host cleanup failed\n");
     }
+    try {
+        shutdown_app_resources();
+    } catch (const std::exception& error) {
+        std::fprintf(stderr, "windowed host shutdown failed: %s\n", error.what());
+    } catch (...) {
+        std::fprintf(stderr, "windowed host shutdown failed\n");
+    }
     frame_resources_.reset();
     swapchain_.reset();
     gpu_.reset();
@@ -193,9 +200,8 @@ int WindowedHost::run() {
 
     if ((config_.run_config.print_frame_stats || config_.run_config.frames != 0) &&
         latest_stats_sample.has_value() && total_stats_seconds > 0.0 && total_stats_frames > 0) {
-        const FrameStatsSnapshot summary =
-            make_frame_stats_snapshot(latest_stats_sample.value(), total_stats_seconds,
-                                      total_stats_frames);
+        const FrameStatsSnapshot summary = make_frame_stats_snapshot(
+            latest_stats_sample.value(), total_stats_seconds, total_stats_frames);
         const std::string line =
             format_frame_stats_summary("windowed_perf", summary, total_stats_seconds);
         std::puts(line.c_str());
@@ -205,11 +211,7 @@ int WindowedHost::run() {
                          "vkDeviceWaitIdle after windowed host");
     destroy_swapchain_resources();
     static_cast<void>(gpu().drain());
-    if (callbacks_.shutdown) {
-        WindowedAppContext active_context = context();
-        callbacks_.shutdown(active_context);
-        static_cast<void>(gpu().drain());
-    }
+    shutdown_app_resources();
     write_profile_outputs();
     return 0;
 }
@@ -313,6 +315,22 @@ void WindowedHost::destroy_swapchain_resources() {
         ui_capture_ = {};
     }
     swapchain_resources_created_ = false;
+}
+
+void WindowedHost::shutdown_app_resources() {
+    if (shutdown_called_ || !callbacks_.shutdown) {
+        return;
+    }
+    if (!window_.has_value() || !instance_.has_value() || !surface_.has_value() ||
+        !device_.has_value() || !gpu_.has_value() || !swapchain_.has_value() ||
+        !frame_resources_.has_value()) {
+        return;
+    }
+
+    shutdown_called_ = true;
+    WindowedAppContext active_context = context();
+    callbacks_.shutdown(active_context);
+    static_cast<void>(gpu().drain());
 }
 
 void WindowedHost::recreate_swapchain_resources() {

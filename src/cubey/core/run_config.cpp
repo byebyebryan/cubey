@@ -407,8 +407,7 @@ RunConfig parse_run_config(int argc, char** argv) {
         config.atmosphere.time_of_day_mode != "solar") {
         throw std::runtime_error("atmosphere time-of-day mode must be manual or solar");
     }
-    if (!config.atmosphere.night_sky_mode.empty() &&
-        config.atmosphere.night_sky_mode != "human" &&
+    if (!config.atmosphere.night_sky_mode.empty() && config.atmosphere.night_sky_mode != "human" &&
         config.atmosphere.night_sky_mode != "camera") {
         throw std::runtime_error("atmosphere night sky mode must be human or camera");
     }
@@ -431,6 +430,10 @@ RunConfig parse_run_config(int argc, char** argv) {
     if (config.atmosphere.sun_elevation_degrees < -90.0F ||
         config.atmosphere.sun_elevation_degrees > 90.0F) {
         throw std::runtime_error("atmosphere sun elevation must be in [-90, 90]");
+    }
+    if (config.atmosphere.sun_azimuth_degrees < -360.0F ||
+        config.atmosphere.sun_azimuth_degrees > 360.0F) {
+        throw std::runtime_error("atmosphere sun azimuth must be in [-360, 360]");
     }
     if (config.atmosphere.camera_altitude_km < 0.0F) {
         throw std::runtime_error("atmosphere camera altitude must be nonnegative");
