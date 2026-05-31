@@ -52,11 +52,16 @@ void ForwardPbrRenderer3D::Impl::create_global_resources(
     if (info.frame_slot_count == 0) {
         throw std::runtime_error("forward PBR renderer requires at least one frame slot");
     }
-    if (info.environment == nullptr) {
+    if (info.environment == nullptr && !info.environment_textures.has_value()) {
         throw std::runtime_error("forward PBR renderer requires a PBR environment");
     }
     require_no_global_resources();
-    global_.environment = info.environment;
+    global_.environment_source = info.environment;
+    global_.environment = info.environment_textures.has_value()
+                              ? info.environment_textures.value()
+                              : render::pbr_environment_texture_bindings(*info.environment);
+    render::validate_pbr_environment_texture_bindings(global_.environment);
+    global_.environment_initialized = true;
     global_.graph_executor.resize(info.frame_slot_count);
 
     const VkPushConstantRange shadow_push_constants{
@@ -117,8 +122,9 @@ void ForwardPbrRenderer3D::Impl::create_global_resources(
                             render::SampledImageMaterialBinding{
                                 .binding = forward_pbr_renderer_3d_binding(
                                     render::PbrSkyboxBinding::EnvironmentCube),
-                                .sampler = info.environment->prefiltered_cube.sampler().handle(),
-                                .image_view = info.environment->prefiltered_cube.view(),
+                                .sampler = global_.environment.prefiltered_sampler,
+                                .image_view = global_.environment.prefiltered_view,
+                                .layout = global_.environment.prefiltered_layout,
                             },
                         },
                 });
@@ -151,20 +157,23 @@ void ForwardPbrRenderer3D::Impl::create_global_resources(
                     render::SampledImageMaterialBinding{
                         .binding = forward_pbr_renderer_3d_binding(
                             render::PbrSceneBinding::IrradianceCube),
-                        .sampler = info.environment->irradiance_cube.sampler().handle(),
-                        .image_view = info.environment->irradiance_cube.view(),
+                        .sampler = global_.environment.irradiance_sampler,
+                        .image_view = global_.environment.irradiance_view,
+                        .layout = global_.environment.irradiance_layout,
                     },
                     render::SampledImageMaterialBinding{
                         .binding = forward_pbr_renderer_3d_binding(
                             render::PbrSceneBinding::PrefilteredCube),
-                        .sampler = info.environment->prefiltered_cube.sampler().handle(),
-                        .image_view = info.environment->prefiltered_cube.view(),
+                        .sampler = global_.environment.prefiltered_sampler,
+                        .image_view = global_.environment.prefiltered_view,
+                        .layout = global_.environment.prefiltered_layout,
                     },
                     render::SampledImageMaterialBinding{
                         .binding =
                             forward_pbr_renderer_3d_binding(render::PbrSceneBinding::BrdfLut),
-                        .sampler = info.environment->brdf_lut.sampler().handle(),
-                        .image_view = info.environment->brdf_lut.view(),
+                        .sampler = global_.environment.brdf_lut_sampler,
+                        .image_view = global_.environment.brdf_lut_view,
+                        .layout = global_.environment.brdf_lut_layout,
                     },
                 },
         });
@@ -391,7 +400,9 @@ void ForwardPbrRenderer3D::Impl::destroy_all_resources() {
     }
     global_.shadow_double_sided_pipeline.reset();
     global_.shadow_pass.reset();
-    global_.environment = nullptr;
+    global_.environment = {};
+    global_.environment_initialized = false;
+    global_.environment_source = nullptr;
     swapchain_.shadow_depth_is_sampled = false;
 }
 

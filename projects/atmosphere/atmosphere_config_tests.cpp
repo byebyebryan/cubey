@@ -249,7 +249,7 @@ int main() {
     require(atmosphere_config_for_preset(AtmospherePreset::MoonlitNight).moon.moonlight_intensity >
                 atmosphere_config_for_preset(AtmospherePreset::Night).moon.moonlight_intensity,
             "moonlit night preset should increase moonlight");
-    require(sizeof(AtmosphereFrameUniforms) == sizeof(float) * 60U,
+    require(sizeof(AtmosphereFrameUniforms) == sizeof(float) * 64U,
             "atmosphere frame uniforms should keep the shader vec4 layout size");
     {
         AtmosphereConfig config = atmosphere_config_for_preset(AtmospherePreset::Noon);
@@ -716,7 +716,7 @@ int main() {
     require_contains(shared_environment_header,
                      "static_assert(sizeof(AtmosphereEnvironmentFrameUniforms)",
                      "shared atmosphere environment should lock frame uniform size");
-    require_contains(shared_environment_header, "sizeof(float) * 60U",
+    require_contains(shared_environment_header, "sizeof(float) * 64U",
                      "shared atmosphere environment should include celestial frame uniforms");
     require_contains(shared_environment_source, "atmosphere_environment_frame_uniforms",
                      "shared atmosphere environment should own frame uniform packing");

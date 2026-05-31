@@ -385,11 +385,42 @@ void validate_generated_pbr_environment_config(const GeneratedPbrEnvironmentConf
     }
 }
 
+void validate_pbr_environment_texture_bindings(const PbrEnvironmentTextureBindings& bindings) {
+    if (bindings.irradiance_sampler == VK_NULL_HANDLE ||
+        bindings.irradiance_view == VK_NULL_HANDLE) {
+        throw std::runtime_error("PBR environment irradiance cube binding is not initialized");
+    }
+    if (bindings.prefiltered_sampler == VK_NULL_HANDLE ||
+        bindings.prefiltered_view == VK_NULL_HANDLE) {
+        throw std::runtime_error("PBR environment prefiltered cube binding is not initialized");
+    }
+    if (bindings.brdf_lut_sampler == VK_NULL_HANDLE || bindings.brdf_lut_view == VK_NULL_HANDLE) {
+        throw std::runtime_error("PBR environment BRDF LUT binding is not initialized");
+    }
+    if (bindings.prefiltered_mip_levels == 0) {
+        throw std::runtime_error("PBR environment prefiltered mip count must be nonzero");
+    }
+}
+
 void validate_pbr_equirectangular_image(const PbrEquirectangularImage& image) {
     const std::size_t value_count = checked_equirectangular_value_count(image);
     if (image.rgba32f.size() != value_count) {
         throw std::runtime_error("PBR equirectangular image must contain RGBA32F pixels");
     }
+}
+
+PbrEnvironmentTextureBindings
+pbr_environment_texture_bindings(const GeneratedPbrEnvironment& environment) {
+    return {
+        .irradiance_sampler = environment.irradiance_cube.sampler().handle(),
+        .irradiance_view = environment.irradiance_cube.view(),
+        .prefiltered_sampler = environment.prefiltered_cube.sampler().handle(),
+        .prefiltered_view = environment.prefiltered_cube.view(),
+        .brdf_lut_sampler = environment.brdf_lut.sampler().handle(),
+        .brdf_lut_view = environment.brdf_lut.view(),
+        .prefiltered_mip_levels = environment.prefiltered_mip_levels,
+        .intensity = environment.intensity,
+    };
 }
 
 math::Vec3 sample_pbr_equirectangular_radiance(const PbrEquirectangularImage& image,

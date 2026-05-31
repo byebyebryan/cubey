@@ -699,6 +699,8 @@ void test_forward_pbr_shader_package_uses_renderer_names() {
                      "shared forward PBR package should include the shadow mask shader");
     require_contains(shader_cmake, "projects/atmosphere/shaders/atmosphere.frag",
                      "shared forward PBR package should include the atmosphere background shader");
+    require_contains(shader_cmake, "atmosphere_reflection_prefilter.frag",
+                     "shared forward PBR package should include the atmosphere probe prefilter");
     require_contains(viewer_cmake, "cubey_forward_pbr_shader_sources",
                      "glTF viewer should consume the shared forward PBR shader package");
     require_contains(material_cubes_cmake, "cubey_forward_pbr_shader_sources",
@@ -860,6 +862,8 @@ void test_pbr_consumers_use_atmosphere_lighting_foundation() {
 
     require_contains(gltf_header, "AtmosphereEnvironmentLighting atmosphere_lighting_",
                      "glTF viewer should cache atmosphere lighting for scene setup");
+    require_contains(gltf_header, "AtmosphereReflectionProbe atmosphere_reflection_probe_",
+                     "glTF viewer should own a runtime atmosphere reflection probe");
     require_contains(gltf_app, "gltf_viewer_atmosphere_environment_config",
                      "glTF viewer should resolve atmosphere options from RunConfig");
     require_contains(gltf_app, "atmosphere_environment_lighting(atmosphere_environment_)",
@@ -874,13 +878,17 @@ void test_pbr_consumers_use_atmosphere_lighting_foundation() {
                      "glTF viewer should enable diffuse SH in the PBR renderer");
     require_contains(gltf_assets, "atmosphere_background_textures()",
                      "glTF viewer should provide atmosphere background texture bindings");
+    require_contains(gltf_assets, "pbr_environment_bindings",
+                     "glTF viewer should route PBR specular through explicit environment bindings");
     require_contains(gltf_render, "ForwardPbrRenderer3DBackgroundMode::Atmosphere",
                      "glTF viewer should select the procedural atmosphere background");
+    require_contains(gltf_render, "record_atmosphere_probe_if_needed",
+                     "glTF viewer should update atmosphere reflection before the PBR pass");
     require_contains(gltf_scene, "atmosphere_background_uniforms",
                      "glTF viewer should compute procedural atmosphere background uniforms");
     require_contains(ocean_app, "atmosphere_environment_lighting(environment)",
                      "ocean should derive its sun direction through shared atmosphere lighting");
-    require_contains(pbr_docs, "procedural visible background, direct light, and diffuse SH",
+    require_contains(pbr_docs, "runtime atmosphere reflection probe",
                      "PBR docs should capture the current atmosphere lighting boundary");
 }
 

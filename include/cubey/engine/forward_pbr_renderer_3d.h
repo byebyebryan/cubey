@@ -52,6 +52,7 @@ struct ForwardPbrRenderer3DConfig {
 
 struct ForwardPbrRenderer3DGlobalResourcesInfo {
     const render::GeneratedPbrEnvironment* environment = nullptr;
+    std::optional<render::PbrEnvironmentTextureBindings> environment_textures{};
     std::uint32_t frame_slot_count = 1;
     std::optional<render::AtmosphereBackgroundTextureBindings> atmosphere_background_textures{};
 };

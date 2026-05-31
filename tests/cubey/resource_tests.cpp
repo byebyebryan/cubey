@@ -66,6 +66,8 @@ void test_resource_helpers_describe_device_local_upload_and_depth_setup() {
     static_assert(std::is_move_constructible_v<cubey::vulkan::Buffer>);
     static_assert(!std::is_copy_constructible_v<cubey::vulkan::Image>);
     static_assert(std::is_move_constructible_v<cubey::vulkan::Image>);
+    static_assert(!std::is_copy_constructible_v<cubey::vulkan::ImageView>);
+    static_assert(std::is_move_constructible_v<cubey::vulkan::ImageView>);
     static_assert(!std::is_copy_constructible_v<cubey::vulkan::Sampler>);
     static_assert(std::is_move_constructible_v<cubey::vulkan::Sampler>);
     static_assert(!std::is_copy_constructible_v<cubey::vulkan::DepthAttachment>);
@@ -189,4 +191,35 @@ void test_transfer_helpers_describe_texture_and_readback_paths() {
     static_assert(
         std::is_same_v<decltype(&cubey::vulkan::Buffer::download),
                        void (cubey::vulkan::Buffer::*)(void*, VkDeviceSize, VkDeviceSize) const>);
+}
+
+void test_image_view_create_info_preserves_subresource_range() {
+    const VkImage image = reinterpret_cast<VkImage>(0x1234);
+    const VkImageViewCreateInfo info =
+        cubey::vulkan::image_view_create_info(cubey::vulkan::ImageViewConfig{
+            .image = image,
+            .format = VK_FORMAT_R16G16B16A16_SFLOAT,
+            .aspect = VK_IMAGE_ASPECT_COLOR_BIT,
+            .view_type = VK_IMAGE_VIEW_TYPE_2D,
+            .base_mip_level = 2,
+            .level_count = 1,
+            .base_array_layer = 4,
+            .layer_count = 1,
+        });
+
+    require(info.image == image, "image view create info should preserve the image handle");
+    require(info.viewType == VK_IMAGE_VIEW_TYPE_2D,
+            "image view create info should preserve the view type");
+    require(info.format == VK_FORMAT_R16G16B16A16_SFLOAT,
+            "image view create info should preserve the format");
+    require(info.subresourceRange.aspectMask == VK_IMAGE_ASPECT_COLOR_BIT,
+            "image view create info should preserve the aspect mask");
+    require(info.subresourceRange.baseMipLevel == 2,
+            "image view create info should preserve the base mip");
+    require(info.subresourceRange.levelCount == 1,
+            "image view create info should preserve the mip count");
+    require(info.subresourceRange.baseArrayLayer == 4,
+            "image view create info should preserve the base array layer");
+    require(info.subresourceRange.layerCount == 1,
+            "image view create info should preserve the array layer count");
 }

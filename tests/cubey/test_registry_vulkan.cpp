@@ -31,6 +31,7 @@ void test_queue_submit_info_describes_waits_commands_signals_and_fence();
 void test_queue_submit_rejects_empty_command_buffer_list();
 void test_render_context_exposes_explicit_frame_boundary();
 void test_resource_helpers_describe_device_local_upload_and_depth_setup();
+void test_image_view_create_info_preserves_subresource_range();
 void test_sampler_config_describes_shadow_sampling();
 void test_shader_bytecode_reads_aligned_spirv_words();
 void test_shader_bytecode_rejects_misaligned_spirv_byte_count();
@@ -78,6 +79,7 @@ std::span<const TestCase> vulkan_test_cases() {
         CUBEY_TEST(test_queue_submit_rejects_empty_command_buffer_list),
         CUBEY_TEST(test_render_context_exposes_explicit_frame_boundary),
         CUBEY_TEST(test_resource_helpers_describe_device_local_upload_and_depth_setup),
+        CUBEY_TEST(test_image_view_create_info_preserves_subresource_range),
         CUBEY_TEST(test_sampler_config_describes_shadow_sampling),
         CUBEY_TEST(test_shader_bytecode_reads_aligned_spirv_words),
         CUBEY_TEST(test_shader_bytecode_rejects_misaligned_spirv_byte_count),

@@ -94,6 +94,29 @@ void GltfViewerApp::update_animation(float delta_seconds) {
     scene().commit(edits);
 }
 
+void GltfViewerApp::refresh_atmosphere_lighting_scene() {
+    if (scene_ == nullptr || !light_entity_ || !light_camera_entity_) {
+        return;
+    }
+
+    const float radius = std::max(glm::length(scene_bounds_.half_extent), 1.0F);
+    const cubey::math::Vec3 light_direction =
+        glm::normalize(atmosphere_lighting_.primary_light_direction);
+    const cubey::math::Vec3 light_eye =
+        scene_bounds_.center + (light_direction * std::max(radius * 4.0F, 6.0F));
+
+    cubey::Light3D sunlight = cubey::directional_light_3d(
+        light_direction, atmosphere_lighting_.primary_light_color,
+        atmosphere_lighting_.primary_light_intensity);
+    sunlight.casts_shadows = true;
+
+    cubey::SceneEditQueue edits = scene().create_edit_queue();
+    edits.lights3d().set_light(light_entity_, sunlight);
+    edits.transforms3d().set_local_transform(light_camera_entity_,
+                                             look_at_transform(light_eye, scene_bounds_.center));
+    scene().commit(edits);
+}
+
 void GltfViewerApp::update_camera_transform() {
     cubey::SceneEditQueue edits = scene().create_edit_queue();
     edits.transforms3d().set_local_transform(camera_entity_,
@@ -216,6 +239,14 @@ const cubey::render::GeneratedPbrEnvironment& GltfViewerApp::ibl_environment() c
         throw std::runtime_error("PBR IBL environment is not initialized");
     }
     return ibl_environment_.value();
+}
+
+const cubey::render::AtmosphereReflectionProbe&
+GltfViewerApp::atmosphere_reflection_probe() const {
+    if (!atmosphere_reflection_probe_.resources_created()) {
+        throw std::runtime_error("atmosphere reflection probe is not initialized");
+    }
+    return atmosphere_reflection_probe_;
 }
 
 cubey::ForwardPbrRenderer3D& GltfViewerApp::forward_pbr_renderer() const {

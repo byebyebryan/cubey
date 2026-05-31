@@ -37,10 +37,11 @@ Radiance HDR equirectangular environment assets:
   graph, sampler, and attachment state stay internal to the engine
   implementation;
 - the atmosphere environment can now produce a procedural visible background,
-  direct light data, and low-order diffuse irradiance SH. `Environment3D` can
-  opt into those SH coefficients for diffuse ambient while the existing
-  irradiance cube path remains the default and the prefiltered cube/DFG LUT
-  still carry specular IBL;
+  direct light data, low-order diffuse irradiance SH, and a runtime atmosphere
+  reflection probe for specular IBL. `Environment3D` can opt into those SH
+  coefficients for diffuse ambient, while the reusable forward PBR renderer can
+  bind either a complete generated/HDR environment or explicit environment
+  texture bindings supplied by a project;
 - `pbr_furnace` isolates the current IBL/specular behavior with a white sphere
   grid that sweeps roughness across columns and metallic across rows under a
   uniform white environment;
@@ -109,9 +110,12 @@ renderer-wide material management explicit future work.
 - The current HDR path performs setup-time CPU filtering. It is useful for
   development and material inspection, but higher-quality offline filtering and
   prefiltered KTX/KTX2 deployment remain future work.
-- Atmosphere-driven PBR currently covers procedural visible background, direct light, and diffuse SH.
-  Runtime/time-sliced sky reflection probes are still needed before specular IBL
-  can track day/night without setup-time HDR assets.
+- Atmosphere-driven PBR now covers procedural visible background, direct light,
+  diffuse SH, and a low-resolution runtime atmosphere reflection probe for
+  specular IBL in `gltf_viewer`. The probe is intentionally V1: it keeps the
+  static/generated irradiance and DFG resources as fallback foundation pieces,
+  updates all faces on first use, and then updates one face per frame when the
+  procedural time of day is animated.
 - The current clearcoat, sheen, anisotropy, and iridescence lobes are pragmatic
   real-time approximations. Transmission, refraction, volume absorption,
   dispersion, and OIT-quality transparent material behavior remain future work.

@@ -21,6 +21,7 @@ void test_generated_pbr_environment_config_rejects_zero_dimensions();
 void test_generated_pbr_environment_data_is_deterministic_and_sized();
 void test_generated_pbr_dfg_lut_stores_energy_compensation_term();
 void test_generated_pbr_prefilter_uses_ggx_convolution_not_legacy_average_mix();
+void test_pbr_environment_texture_bindings_validate_required_views();
 void test_pbr_environment_data_can_be_generated_from_equirectangular_hdr();
 void test_pbr_equirectangular_sampling_maps_cardinal_directions();
 void test_indexed_mesh_config_describes_u16_geometry();
@@ -149,6 +150,7 @@ void test_texture_2d_config_maps_transfer_sampled_usage();
 void test_texture_2d_config_preserves_mip_count();
 void test_texture_2d_byte_size_uses_compressed_blocks();
 void test_texture_cube_config_maps_transfer_sampled_cube_usage();
+void test_texture_cube_config_maps_color_attachment_sampled_usage();
 
 namespace cubey::tests {
 
@@ -271,6 +273,7 @@ std::span<const TestCase> render_test_cases() {
         CUBEY_TEST(test_generated_pbr_environment_data_is_deterministic_and_sized),
         CUBEY_TEST(test_generated_pbr_dfg_lut_stores_energy_compensation_term),
         CUBEY_TEST(test_generated_pbr_prefilter_uses_ggx_convolution_not_legacy_average_mix),
+        CUBEY_TEST(test_pbr_environment_texture_bindings_validate_required_views),
         CUBEY_TEST(test_pbr_equirectangular_sampling_maps_cardinal_directions),
         CUBEY_TEST(test_pbr_environment_data_can_be_generated_from_equirectangular_hdr),
         CUBEY_TEST(test_generated_pbr_environment_config_rejects_zero_dimensions),
@@ -293,6 +296,7 @@ std::span<const TestCase> render_test_cases() {
         CUBEY_TEST(test_texture_2d_config_preserves_mip_count),
         CUBEY_TEST(test_texture_2d_byte_size_uses_compressed_blocks),
         CUBEY_TEST(test_texture_cube_config_maps_transfer_sampled_cube_usage),
+        CUBEY_TEST(test_texture_cube_config_maps_color_attachment_sampled_usage),
         CUBEY_TEST(test_depth_texture_config_maps_sampled_depth_usage),
         CUBEY_TEST(test_compute_generated_texture_config_validates_dispatch_shape),
         CUBEY_TEST(test_material_alpha_modes_map_to_blend_and_pass_policy),

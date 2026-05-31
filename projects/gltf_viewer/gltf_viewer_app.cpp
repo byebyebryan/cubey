@@ -39,6 +39,36 @@ constexpr float kHeadlessVideoOrbitSpeed = 0.32F;
             std::atan2(normal.x, -normal.z)));
 }
 
+[[nodiscard]] bool gltf_viewer_uses_solar_time(const RunConfig& run_config) {
+    const RunConfig::AtmosphereOptions& atmosphere = run_config.atmosphere;
+    if (atmosphere.time_of_day_mode == "solar") {
+        return true;
+    }
+    if (atmosphere.time_of_day_mode == "manual") {
+        return false;
+    }
+    if (run_config_float_is_set(atmosphere.sun_elevation_degrees) ||
+        run_config_float_is_set(atmosphere.sun_azimuth_degrees)) {
+        return false;
+    }
+    return run_config_float_is_set(atmosphere.time_hours) ||
+           run_config_float_is_set(atmosphere.day_of_year) ||
+           run_config_float_is_set(atmosphere.latitude_degrees) ||
+           run_config_float_is_set(atmosphere.sun_azimuth_offset_degrees) ||
+           run_config_float_is_set(atmosphere.time_speed_hours_per_second);
+}
+
+[[nodiscard]] float gltf_viewer_atmosphere_time_speed(const RunConfig& run_config) {
+    return run_config_float_is_set(run_config.atmosphere.time_speed_hours_per_second)
+               ? run_config.atmosphere.time_speed_hours_per_second
+               : 0.0F;
+}
+
+[[nodiscard]] bool gltf_viewer_atmosphere_time_playing(const RunConfig& run_config) {
+    return run_config.atmosphere.time_paused != 1 &&
+           gltf_viewer_atmosphere_time_speed(run_config) > 0.0F;
+}
+
 } // namespace
 
 const cubey::math::Vec3 kLightDirection = glm::normalize(cubey::math::Vec3{0.45F, 0.82F, 0.35F});
@@ -48,6 +78,7 @@ gltf_viewer_atmosphere_environment_config(const RunConfig& run_config) {
     cubey::render::AtmosphereEnvironmentConfig environment;
     environment.sun_elevation_degrees = direction_elevation_degrees(kLightDirection);
     environment.sun_azimuth_degrees = direction_azimuth_degrees(kLightDirection);
+    environment.ground_mode = cubey::render::AtmosphereEnvironmentGroundMode::SkyOnly;
     environment.reference_geometry_enabled = false;
 
     const RunConfig::AtmosphereOptions& atmosphere = run_config.atmosphere;
@@ -64,13 +95,7 @@ gltf_viewer_atmosphere_environment_config(const RunConfig& run_config) {
         environment.time_of_day.azimuth_offset_degrees = atmosphere.sun_azimuth_offset_degrees;
     }
 
-    const bool explicit_solar_time =
-        atmosphere.time_of_day_mode == "solar" ||
-        (atmosphere.time_of_day_mode.empty() &&
-         (run_config_float_is_set(atmosphere.time_hours) ||
-          run_config_float_is_set(atmosphere.day_of_year) ||
-          run_config_float_is_set(atmosphere.latitude_degrees)));
-    if (explicit_solar_time) {
+    if (gltf_viewer_uses_solar_time(run_config)) {
         const cubey::render::AtmosphereEnvironmentSolarPosition solar =
             cubey::render::atmosphere_environment_solar_position(environment.time_of_day);
         environment.sun_elevation_degrees = solar.elevation_degrees;
@@ -178,7 +203,45 @@ GltfViewerApp::GltfViewerApp(RunConfig config)
     : config_(std::move(config)),
       debug_view_(render::pbr_debug_view_from_name(config_.debug_view)),
       atmosphere_environment_(gltf_viewer_atmosphere_environment_config(config_)),
-      atmosphere_lighting_(render::atmosphere_environment_lighting(atmosphere_environment_)) {}
+      atmosphere_lighting_(render::atmosphere_environment_lighting(atmosphere_environment_)),
+      atmosphere_solar_time_enabled_(gltf_viewer_uses_solar_time(config_)),
+      atmosphere_time_playing_(gltf_viewer_atmosphere_time_playing(config_)),
+      atmosphere_time_speed_hours_per_second_(gltf_viewer_atmosphere_time_speed(config_)) {}
+
+bool GltfViewerApp::update_atmosphere_time(double delta_seconds) {
+    if (!atmosphere_time_playing_ || atmosphere_time_speed_hours_per_second_ <= 0.0F ||
+        delta_seconds <= 0.0) {
+        return false;
+    }
+
+    const double current_time_hours =
+        static_cast<double>(atmosphere_environment_.time_of_day.time_hours);
+    const double next_time_hours =
+        current_time_hours +
+        (static_cast<double>(atmosphere_time_speed_hours_per_second_) * delta_seconds);
+    const int day_delta = static_cast<int>(std::floor(next_time_hours / 24.0));
+    atmosphere_environment_.time_of_day.time_hours =
+        cubey::render::atmosphere_environment_wrap_time_hours(
+            static_cast<float>(next_time_hours));
+    if (day_delta != 0) {
+        atmosphere_environment_.time_of_day.day_of_year =
+            cubey::render::atmosphere_environment_advance_day_of_year(
+                atmosphere_environment_.time_of_day.day_of_year, day_delta);
+    }
+
+    if (atmosphere_solar_time_enabled_) {
+        const cubey::render::AtmosphereEnvironmentSolarPosition solar =
+            cubey::render::atmosphere_environment_solar_position(
+                atmosphere_environment_.time_of_day);
+        atmosphere_environment_.sun_elevation_degrees = solar.elevation_degrees;
+        atmosphere_environment_.sun_azimuth_degrees = solar.azimuth_degrees;
+    }
+
+    atmosphere_lighting_ =
+        cubey::render::atmosphere_environment_lighting(atmosphere_environment_);
+    atmosphere_probe_time_dirty_ = true;
+    return true;
+}
 
 int GltfViewerApp::run() {
     if (config_.headless) {
@@ -201,6 +264,9 @@ int GltfViewerApp::run_windowed() {
     };
     callbacks.update = [this](cubey::host::WindowedAppContext& context, const FrameTiming& timing) {
         update_animation(static_cast<float>(timing.delta_seconds));
+        if (update_atmosphere_time(timing.delta_seconds)) {
+            refresh_atmosphere_lighting_scene();
+        }
         const auto input = context.filtered_input();
         if (input.key_pressed(cubey::input::Key::D)) {
             debug_view_ = render::next_pbr_debug_view(debug_view_);
@@ -260,6 +326,9 @@ int GltfViewerApp::run_headless() {
         callbacks.before_frame = [this](cubey::host::HeadlessPngContext&,
                                         const cubey::host::HeadlessCaptureFrame& frame) {
             update_animation(static_cast<float>(frame.timing.delta_seconds));
+            if (update_atmosphere_time(frame.timing.delta_seconds)) {
+                refresh_atmosphere_lighting_scene();
+            }
             orbit_controller_.update(frame.timing.delta_seconds);
             update_camera_transform();
         };

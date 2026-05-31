@@ -25,6 +25,40 @@ struct ImageConfig {
     VkImageViewType view_type = VK_IMAGE_VIEW_TYPE_2D;
 };
 
+struct ImageViewConfig {
+    VkImage image = VK_NULL_HANDLE;
+    VkFormat format = VK_FORMAT_UNDEFINED;
+    VkImageAspectFlags aspect = 0;
+    VkImageViewType view_type = VK_IMAGE_VIEW_TYPE_2D;
+    std::uint32_t base_mip_level = 0;
+    std::uint32_t level_count = 1;
+    std::uint32_t base_array_layer = 0;
+    std::uint32_t layer_count = 1;
+};
+
+class ImageView {
+  public:
+    ImageView() = default;
+    ImageView(const Device& device, const ImageViewConfig& config);
+    ~ImageView();
+
+    ImageView(const ImageView&) = delete;
+    ImageView& operator=(const ImageView&) = delete;
+    ImageView(ImageView&& other) noexcept;
+    ImageView& operator=(ImageView&& other) noexcept;
+
+    [[nodiscard]] VkImageView handle() const {
+        return view_;
+    }
+
+  private:
+    void destroy();
+    void move_from(ImageView& other) noexcept;
+
+    VkDevice device_ = VK_NULL_HANDLE;
+    VkImageView view_ = VK_NULL_HANDLE;
+};
+
 class Image {
   public:
     Image(const Device& device, const ImageConfig& config);
@@ -77,6 +111,10 @@ class Image {
 [[nodiscard]] ImageConfig transfer_sampled_image_config(VkExtent2D extent, VkFormat format);
 [[nodiscard]] ImageConfig
 transfer_sampled_cube_image_config(std::uint32_t extent, std::uint32_t mip_levels, VkFormat format);
+[[nodiscard]] ImageConfig color_attachment_sampled_cube_image_config(std::uint32_t extent,
+                                                                     std::uint32_t mip_levels,
+                                                                     VkFormat format);
+[[nodiscard]] VkImageViewCreateInfo image_view_create_info(const ImageViewConfig& config);
 struct BufferImageCopyConfig {
     VkExtent3D extent{1, 1, 1};
     VkDeviceSize buffer_offset = 0;

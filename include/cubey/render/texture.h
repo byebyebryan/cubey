@@ -35,6 +35,11 @@ struct Texture3DConfig {
     cubey::vulkan::SamplerConfig sampler;
 };
 
+enum class TextureCubeUsage : std::uint8_t {
+    TransferSampled,
+    ColorAttachmentSampled,
+};
+
 struct TextureFormatLayout {
     std::uint32_t block_width = 1;
     std::uint32_t block_height = 1;
@@ -46,6 +51,7 @@ struct TextureCubeConfig {
     std::uint32_t extent = 1;
     std::uint32_t mip_levels = 1;
     VkFormat format = VK_FORMAT_UNDEFINED;
+    TextureCubeUsage usage = TextureCubeUsage::TransferSampled;
     bool create_sampler = false;
     cubey::vulkan::SamplerConfig sampler;
 };
@@ -242,5 +248,8 @@ class DepthTexture {
 [[nodiscard]] TextureCube create_uploaded_texture_cube(const cubey::vulkan::Device& device,
                                                        cubey::vulkan::GpuRuntime& gpu,
                                                        const UploadedTextureCubeConfig& config);
+[[nodiscard]] cubey::vulkan::ImageView create_texture_cube_face_view(
+    const cubey::vulkan::Device& device, const TextureCube& texture, std::uint32_t mip_level,
+    std::uint32_t face_index);
 
 } // namespace cubey::render

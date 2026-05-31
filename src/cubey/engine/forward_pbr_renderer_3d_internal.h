@@ -152,7 +152,9 @@ struct ForwardPbrRenderer3D::Impl {
     [[nodiscard]] const vulkan::DepthAttachment& depth_attachment() const;
 
     struct GlobalResources {
-        const render::GeneratedPbrEnvironment* environment = nullptr;
+        const render::GeneratedPbrEnvironment* environment_source = nullptr;
+        render::PbrEnvironmentTextureBindings environment{};
+        bool environment_initialized = false;
         render::RenderGraphFrameExecutor graph_executor{};
         std::optional<render::ShadowMapPass3D> shadow_pass{};
         std::optional<render::GraphicsPipelineResource> shadow_double_sided_pipeline{};

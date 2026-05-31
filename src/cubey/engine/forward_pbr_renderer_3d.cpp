@@ -245,16 +245,17 @@ const render::GeneratedPbrEnvironment& ForwardPbrRenderer3D::environment() const
 }
 
 const render::GeneratedPbrEnvironment& ForwardPbrRenderer3D::Impl::environment() const {
-    if (global_.environment == nullptr) {
+    if (global_.environment_source == nullptr) {
         throw std::runtime_error("forward PBR renderer environment is not initialized");
     }
-    return *global_.environment;
+    return *global_.environment_source;
 }
 
 bool ForwardPbrRenderer3D::Impl::has_global_resources() const {
-    return global_.environment != nullptr || global_.graph_executor.frame_slot_count() != 0 ||
-           global_.shadow_pass.has_value() || global_.shadow_double_sided_pipeline.has_value() ||
-           global_.scene_material.has_value() || global_.skybox_material.has_value() ||
+    return global_.environment_initialized || global_.graph_executor.frame_slot_count() != 0 ||
+           global_.environment_source != nullptr || global_.shadow_pass.has_value() ||
+           global_.shadow_double_sided_pipeline.has_value() || global_.scene_material.has_value() ||
+           global_.skybox_material.has_value() ||
            global_.atmosphere_background.materials_created() ||
            global_.post_material.has_value();
 }

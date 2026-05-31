@@ -53,6 +53,11 @@ struct AtmosphereEnvironmentMoon {
     float angular_radius_scale = 1.0F;
 };
 
+enum class AtmosphereEnvironmentGroundMode : std::uint32_t {
+    Ground = 0,
+    SkyOnly = 1,
+};
+
 struct AtmosphereEnvironmentConfig {
     AtmosphereEnvironmentTimeOfDay time_of_day{};
     AtmosphereEnvironmentNightSky night_sky{};
@@ -79,6 +84,7 @@ struct AtmosphereEnvironmentConfig {
     float sun_elevation_degrees = 60.0F;
     float sun_azimuth_degrees = 0.0F;
     float camera_altitude_km = 0.15F;
+    AtmosphereEnvironmentGroundMode ground_mode = AtmosphereEnvironmentGroundMode::Ground;
     bool reference_geometry_enabled = true;
     float reference_grid_km = 1.0F;
     float reference_intensity = 0.72F;
@@ -107,9 +113,10 @@ struct AtmosphereEnvironmentFrameUniforms {
     math::Vec4 moon_options;
     math::Vec4 moon_phase_options;
     math::Vec4 milky_way_options;
+    math::Vec4 render_options;
 };
 
-static_assert(sizeof(AtmosphereEnvironmentFrameUniforms) == sizeof(float) * 60U);
+static_assert(sizeof(AtmosphereEnvironmentFrameUniforms) == sizeof(float) * 64U);
 
 struct AtmosphereEnvironmentFrameUniformInputs {
     ViewRayBasis3D view_rays{};

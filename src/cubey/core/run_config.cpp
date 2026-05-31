@@ -370,6 +370,8 @@ RunConfig parse_run_config(int argc, char** argv) {
         } else if (arg == "--ibl-intensity") {
             config.pbr.ibl_intensity =
                 parse_float(need_value("--ibl-intensity"), "--ibl-intensity");
+        } else if (arg == "--pbr-environment-source") {
+            config.pbr.environment_source = std::string(need_value("--pbr-environment-source"));
         } else if (arg == "--environment-rotation-degrees") {
             config.pbr.environment_rotation_degrees = parse_float(
                 need_value("--environment-rotation-degrees"), "--environment-rotation-degrees");
@@ -498,6 +500,10 @@ RunConfig parse_run_config(int argc, char** argv) {
         config.atmosphere.time_of_day_mode != "manual" &&
         config.atmosphere.time_of_day_mode != "solar") {
         throw std::runtime_error("atmosphere time-of-day mode must be manual or solar");
+    }
+    if (!config.pbr.environment_source.empty() && config.pbr.environment_source != "static" &&
+        config.pbr.environment_source != "atmosphere") {
+        throw std::runtime_error("PBR environment source must be static or atmosphere");
     }
     if (!config.atmosphere.night_sky_mode.empty() && config.atmosphere.night_sky_mode != "human" &&
         config.atmosphere.night_sky_mode != "camera") {

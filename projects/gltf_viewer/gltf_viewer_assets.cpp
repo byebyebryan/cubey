@@ -36,11 +36,20 @@ void GltfViewerApp::create_global_resources_if_needed(const cubey::vulkan::Devic
 
     create_ibl_resources(device, gpu);
     create_atmosphere_background_placeholders(device, gpu);
+    const bool use_atmosphere_environment = use_atmosphere_environment_source();
+    if (use_atmosphere_environment) {
+        create_atmosphere_reflection_probe(device, frame_slot_count);
+    }
     forward_pbr_renderer_ =
         &engine_.renderers().create_forward_pbr_renderer_3d(forward_pbr_renderer_3d_config());
+    std::optional<cubey::render::PbrEnvironmentTextureBindings> environment_textures;
+    if (use_atmosphere_environment) {
+        environment_textures = pbr_environment_bindings();
+    }
     forward_pbr_renderer().create_global_resources(
         device, cubey::ForwardPbrRenderer3DGlobalResourcesInfo{
-                    .environment = &ibl_environment(),
+                    .environment = use_atmosphere_environment ? nullptr : &ibl_environment(),
+                    .environment_textures = environment_textures,
                     .frame_slot_count = frame_slot_count,
                     .atmosphere_background_textures = atmosphere_background_textures(),
                 });
@@ -180,6 +189,53 @@ GltfViewerApp::atmosphere_background_textures() const {
         .night_sky_sampler = atmosphere_night_sky_placeholder_->sampler().handle(),
         .night_sky_view = atmosphere_night_sky_placeholder_->view(),
     };
+}
+
+bool GltfViewerApp::use_atmosphere_environment_source() const {
+    return config_.pbr.environment_source.empty() ||
+           config_.pbr.environment_source == "atmosphere";
+}
+
+cubey::render::PbrEnvironmentTextureBindings GltfViewerApp::pbr_environment_bindings() const {
+    cubey::render::PbrEnvironmentTextureBindings bindings =
+        cubey::render::pbr_environment_texture_bindings(ibl_environment());
+    if (!use_atmosphere_environment_source()) {
+        return bindings;
+    }
+
+    const cubey::render::TextureCube& prefiltered =
+        atmosphere_reflection_probe().prefiltered_cube();
+    bindings.prefiltered_sampler = prefiltered.sampler().handle();
+    bindings.prefiltered_view = prefiltered.view();
+    bindings.prefiltered_mip_levels = atmosphere_reflection_probe().mip_levels();
+    return bindings;
+}
+
+void GltfViewerApp::create_atmosphere_reflection_probe(const cubey::vulkan::Device& device,
+                                                       std::uint32_t frame_slot_count) {
+    if (atmosphere_reflection_probe_.resources_created()) {
+        return;
+    }
+
+    atmosphere_reflection_probe_.create_resources(
+        device, cubey::render::AtmosphereReflectionProbeConfig{
+                    .extent = 64,
+                    .mip_levels = 5,
+                    .format = VK_FORMAT_R16G16B16A16_SFLOAT,
+                    .frame_slot_count = frame_slot_count,
+                    .atmosphere_textures = atmosphere_background_textures(),
+                });
+    atmosphere_reflection_probe_.create_pipelines(
+        device, cubey::render::AtmosphereReflectionProbePipelineConfig{
+                    .atmosphere_vertex_shader = shader_path("atmosphere.vert.spv"),
+                    .atmosphere_fragment_shader = shader_path("atmosphere.frag.spv"),
+                    .prefilter_vertex_shader = shader_path("atmosphere.vert.spv"),
+                    .prefilter_fragment_shader =
+                        shader_path("atmosphere_reflection_prefilter.frag.spv"),
+                });
+    atmosphere_probe_full_update_pending_ = true;
+    atmosphere_probe_time_dirty_ = false;
+    atmosphere_probe_face_cursor_ = 0;
 }
 
 void GltfViewerApp::create_fallback_material(const cubey::vulkan::Device& device,

@@ -8,6 +8,45 @@
 
 namespace cubey::vulkan {
 
+ImageView::ImageView(const Device& device, const ImageViewConfig& config)
+    : device_(device.handle()) {
+    if (device_ == VK_NULL_HANDLE) {
+        throw std::runtime_error("image view creation requires a valid Vulkan device");
+    }
+    const VkImageViewCreateInfo info = image_view_create_info(config);
+    check(vkCreateImageView(device_, &info, nullptr, &view_), "vkCreateImageView");
+}
+
+ImageView::~ImageView() {
+    destroy();
+}
+
+ImageView::ImageView(ImageView&& other) noexcept {
+    move_from(other);
+}
+
+ImageView& ImageView::operator=(ImageView&& other) noexcept {
+    if (this != &other) {
+        destroy();
+        move_from(other);
+    }
+    return *this;
+}
+
+void ImageView::destroy() {
+    if (view_ != VK_NULL_HANDLE) {
+        vkDestroyImageView(device_, view_, nullptr);
+        view_ = VK_NULL_HANDLE;
+    }
+}
+
+void ImageView::move_from(ImageView& other) noexcept {
+    device_ = other.device_;
+    view_ = other.view_;
+    other.device_ = VK_NULL_HANDLE;
+    other.view_ = VK_NULL_HANDLE;
+}
+
 Image::Image(const Device& device, const ImageConfig& config) : device_(device.handle()) {
     if (device_ == VK_NULL_HANDLE || device.physical_device() == VK_NULL_HANDLE) {
         throw std::runtime_error("image creation requires a valid Vulkan device");
@@ -223,6 +262,47 @@ ImageConfig transfer_sampled_cube_image_config(std::uint32_t extent, std::uint32
         .array_layers = 6,
         .view_type = VK_IMAGE_VIEW_TYPE_CUBE,
     };
+}
+
+ImageConfig color_attachment_sampled_cube_image_config(std::uint32_t extent,
+                                                       std::uint32_t mip_levels,
+                                                       VkFormat format) {
+    return {
+        .extent = {extent, extent, 1},
+        .format = format,
+        .usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+        .aspect = VK_IMAGE_ASPECT_COLOR_BIT,
+        .flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT,
+        .mip_levels = mip_levels,
+        .array_layers = 6,
+        .view_type = VK_IMAGE_VIEW_TYPE_CUBE,
+    };
+}
+
+VkImageViewCreateInfo image_view_create_info(const ImageViewConfig& config) {
+    if (config.image == VK_NULL_HANDLE) {
+        throw std::runtime_error("image view creation requires an image");
+    }
+    if (config.format == VK_FORMAT_UNDEFINED) {
+        throw std::runtime_error("image view creation requires a format");
+    }
+    if (config.aspect == 0) {
+        throw std::runtime_error("image view creation requires an aspect");
+    }
+    if (config.level_count == 0 || config.layer_count == 0) {
+        throw std::runtime_error("image view creation requires nonzero subresource counts");
+    }
+
+    auto info = vk_struct<VkImageViewCreateInfo>(VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO);
+    info.image = config.image;
+    info.viewType = config.view_type;
+    info.format = config.format;
+    info.subresourceRange.aspectMask = config.aspect;
+    info.subresourceRange.baseMipLevel = config.base_mip_level;
+    info.subresourceRange.levelCount = config.level_count;
+    info.subresourceRange.baseArrayLayer = config.base_array_layer;
+    info.subresourceRange.layerCount = config.layer_count;
+    return info;
 }
 
 VkBufferImageCopy buffer_image_copy(VkExtent3D extent) {

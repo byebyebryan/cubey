@@ -420,6 +420,13 @@ AtmosphereEnvironmentFrameUniforms atmosphere_environment_frame_uniforms(
                 config.night_sky.light_pollution,
                 config.night_sky.camera_visual_mode ? 1.0F : 0.0F,
             },
+        .render_options =
+            {
+                static_cast<float>(static_cast<std::uint32_t>(config.ground_mode)),
+                0.0F,
+                0.0F,
+                0.0F,
+            },
     };
 }
 

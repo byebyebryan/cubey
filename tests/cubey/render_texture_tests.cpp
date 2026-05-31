@@ -195,6 +195,28 @@ void test_texture_cube_config_maps_transfer_sampled_cube_usage() {
     static_assert(std::is_move_constructible_v<cubey::render::TextureCube>);
 }
 
+void test_texture_cube_config_maps_color_attachment_sampled_usage() {
+    const cubey::render::TextureCubeConfig config{
+        .extent = 32,
+        .mip_levels = 4,
+        .format = VK_FORMAT_R16G16B16A16_SFLOAT,
+        .usage = cubey::render::TextureCubeUsage::ColorAttachmentSampled,
+        .create_sampler = false,
+        .sampler = {},
+    };
+
+    const cubey::vulkan::ImageConfig image_config =
+        cubey::render::texture_cube_image_config(config);
+    require((image_config.usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) != 0,
+            "color attachment cube should support rendering");
+    require((image_config.usage & VK_IMAGE_USAGE_SAMPLED_BIT) != 0,
+            "color attachment cube should support shader sampling");
+    require((image_config.usage & VK_IMAGE_USAGE_TRANSFER_DST_BIT) == 0,
+            "color attachment cube should not require upload transfer writes");
+    require(image_config.view_type == VK_IMAGE_VIEW_TYPE_CUBE,
+            "color attachment cube should keep a cube view");
+}
+
 void test_compute_generated_texture_config_validates_dispatch_shape() {
     require(cubey::render::compute_dispatch_group_count(64, 8) == 8,
             "compute generated texture dispatch should divide exact groups");

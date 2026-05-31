@@ -55,13 +55,14 @@ Ocean integration target:
 
 Current foundation checkpoint:
 
-- shared atmosphere lighting now owns direct light direction/color/intensity and
-  diffuse SH for PBR consumers;
-- `gltf_viewer` consumes the shared direct light and diffuse SH, but still uses
-  the existing static/generated IBL for skybox and specular reflections;
+- shared atmosphere lighting now owns direct light direction/color/intensity,
+  diffuse SH, and the ground/sky-only policy needed by runtime sky capture;
+- `gltf_viewer` consumes the shared direct light and diffuse SH, renders the
+  procedural atmosphere as the visible background, and uses a runtime atmosphere
+  reflection probe for PBR specular reflections;
 - `projects/ocean` derives its sun direction through the shared lighting helper
   while retaining the ocean-local sky shader until the dynamic sky/probe path is
-  ready.
+  promoted into the ocean renderer.
 
 ## Terrain And Bathymetry Project
 

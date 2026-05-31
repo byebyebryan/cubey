@@ -112,8 +112,15 @@ cubey::vulkan::ImageConfig texture_3d_image_config(const Texture3DConfig& config
 
 cubey::vulkan::ImageConfig texture_cube_image_config(const TextureCubeConfig& config) {
     validate_config(config);
-    return cubey::vulkan::transfer_sampled_cube_image_config(config.extent, config.mip_levels,
-                                                             config.format);
+    switch (config.usage) {
+    case TextureCubeUsage::TransferSampled:
+        return cubey::vulkan::transfer_sampled_cube_image_config(config.extent, config.mip_levels,
+                                                                 config.format);
+    case TextureCubeUsage::ColorAttachmentSampled:
+        return cubey::vulkan::color_attachment_sampled_cube_image_config(
+            config.extent, config.mip_levels, config.format);
+    }
+    throw std::runtime_error("unsupported texture cube usage");
 }
 
 cubey::vulkan::ImageConfig depth_texture_image_config(const DepthTextureConfig& config) {
@@ -475,6 +482,29 @@ TextureCube create_uploaded_texture_cube(const cubey::vulkan::Device& device,
             },
     }));
     return texture;
+}
+
+cubey::vulkan::ImageView create_texture_cube_face_view(const cubey::vulkan::Device& device,
+                                                       const TextureCube& texture,
+                                                       std::uint32_t mip_level,
+                                                       std::uint32_t face_index) {
+    if (mip_level >= texture.mip_levels()) {
+        throw std::runtime_error("texture cube face view mip level is out of range");
+    }
+    if (face_index >= 6U) {
+        throw std::runtime_error("texture cube face view face index is out of range");
+    }
+    return cubey::vulkan::ImageView(
+        device, cubey::vulkan::ImageViewConfig{
+                    .image = texture.handle(),
+                    .format = texture.format(),
+                    .aspect = VK_IMAGE_ASPECT_COLOR_BIT,
+                    .view_type = VK_IMAGE_VIEW_TYPE_2D,
+                    .base_mip_level = mip_level,
+                    .level_count = 1,
+                    .base_array_layer = face_index,
+                    .layer_count = 1,
+                });
 }
 
 } // namespace cubey::render

@@ -22,6 +22,10 @@ void GltfViewerApp::destroy_swapchain_resources() {
 void GltfViewerApp::destroy_all_resources() {
     engine_.renderers().destroy_all_resources();
     forward_pbr_renderer_ = nullptr;
+    atmosphere_reflection_probe_.destroy();
+    atmosphere_probe_full_update_pending_ = true;
+    atmosphere_probe_time_dirty_ = false;
+    atmosphere_probe_face_cursor_ = 0;
     ibl_environment_.reset();
     atmosphere_lunar_placeholder_.reset();
     atmosphere_night_sky_placeholder_.reset();
@@ -39,6 +43,21 @@ void GltfViewerApp::record_viewer_target(
     cubey::render::RenderGraphTextureState color_initial_state,
     cubey::render::RenderGraphTextureState color_final_state,
     cubey::render::RenderGraphCommandBufferMode command_buffer_mode) {
+    const cubey::vulkan::CommandRecorder recorder(command_buffer);
+    cubey::render::RenderGraphCommandBufferMode pbr_command_buffer_mode = command_buffer_mode;
+    bool owns_command_buffer = false;
+    switch (command_buffer_mode) {
+    case cubey::render::RenderGraphCommandBufferMode::BeginAndEnd:
+        recorder.begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+        pbr_command_buffer_mode = cubey::render::RenderGraphCommandBufferMode::AlreadyRecording;
+        owns_command_buffer = true;
+        break;
+    case cubey::render::RenderGraphCommandBufferMode::AlreadyRecording:
+        break;
+    default:
+        throw std::runtime_error("glTF viewer command buffer mode is invalid");
+    }
+
     cubey::SceneReadView scene_view = scene().read();
     const cubey::scene::FrameRenderPlan3D frame_plan =
         current_frame_plan(scene_view, color_target.extent);
@@ -51,6 +70,7 @@ void GltfViewerApp::record_viewer_target(
         cubey::gltf_deformation_commands_for_frame(import_resources_, frame_slot);
     const cubey::render::FrameMeshResourceTable* frame_meshes =
         deformation_commands.empty() ? nullptr : &import_resources_.deformation.frame_meshes;
+    record_atmosphere_probe_if_needed(recorder, frame_slot);
     forward_pbr_renderer().record({
         .device = &device,
         .command_buffer = command_buffer,
@@ -59,7 +79,7 @@ void GltfViewerApp::record_viewer_target(
         .color_initial_state = color_initial_state,
         .color_final_state = color_final_state,
         .command_buffer_label = "vkEndCommandBuffer gltf_viewer",
-        .command_buffer_mode = command_buffer_mode,
+        .command_buffer_mode = pbr_command_buffer_mode,
         .scene = &scene_view,
         .frame_plan = &frame_plan,
         .camera_entity = camera_entity_,
@@ -82,6 +102,37 @@ void GltfViewerApp::record_viewer_target(
                     atmosphere_background_uniforms(scene_view, color_target.extent),
             },
     });
+    if (owns_command_buffer) {
+        recorder.end("vkEndCommandBuffer gltf_viewer");
+    }
+}
+
+void GltfViewerApp::record_atmosphere_probe_if_needed(
+    const cubey::vulkan::CommandRecorder& recorder, cubey::render::FrameSlot frame_slot) {
+    if (!use_atmosphere_environment_source()) {
+        return;
+    }
+    if (!atmosphere_reflection_probe_.resources_created()) {
+        throw std::runtime_error("glTF viewer atmosphere reflection probe is not initialized");
+    }
+
+    const cubey::render::AtmosphereReflectionProbeUpdateInfo update{
+        .frame_slot = frame_slot,
+        .environment = atmosphere_environment_,
+    };
+    if (atmosphere_probe_full_update_pending_) {
+        atmosphere_reflection_probe_.record_full_update(recorder, update);
+        atmosphere_probe_full_update_pending_ = false;
+        atmosphere_probe_time_dirty_ = false;
+        atmosphere_probe_face_cursor_ = 0;
+        return;
+    }
+    if (atmosphere_probe_time_dirty_) {
+        atmosphere_reflection_probe_.record_face_update(recorder, update,
+                                                        atmosphere_probe_face_cursor_);
+        atmosphere_probe_face_cursor_ = (atmosphere_probe_face_cursor_ + 1U) % 6U;
+        atmosphere_probe_time_dirty_ = false;
+    }
 }
 
 void GltfViewerApp::record_viewer_frame(cubey::host::WindowedAppContext& context,

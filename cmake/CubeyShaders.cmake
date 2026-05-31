@@ -58,6 +58,7 @@ function(cubey_forward_pbr_shader_sources out_var)
         "${CMAKE_SOURCE_DIR}/shaders/cubey/forward_pbr/forward_pbr_skybox.frag"
         "${CMAKE_SOURCE_DIR}/projects/atmosphere/shaders/atmosphere.vert"
         "${CMAKE_SOURCE_DIR}/projects/atmosphere/shaders/atmosphere.frag"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere_reflection_prefilter.frag"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/forward_pbr/forward_pbr_post.vert"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/forward_pbr/forward_pbr_post.frag"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/forward_pbr/forward_pbr_shadow_depth.vert"

@@ -113,6 +113,7 @@ struct RunConfig {
 
     struct PbrOptions {
         std::filesystem::path environment_path{};
+        std::string environment_source{};
         float ibl_intensity = 1.0F;
         float environment_rotation_degrees = 0.0F;
         float exposure = 0.0F;

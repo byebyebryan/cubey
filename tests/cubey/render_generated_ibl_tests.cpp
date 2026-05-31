@@ -175,6 +175,25 @@ void test_generated_pbr_environment_config_rejects_zero_dimensions() {
         "generated IBL config should reject zero mip counts");
 }
 
+void test_pbr_environment_texture_bindings_validate_required_views() {
+    cubey::render::PbrEnvironmentTextureBindings bindings{
+        .irradiance_sampler = reinterpret_cast<VkSampler>(0x10),
+        .irradiance_view = reinterpret_cast<VkImageView>(0x11),
+        .prefiltered_sampler = reinterpret_cast<VkSampler>(0x12),
+        .prefiltered_view = reinterpret_cast<VkImageView>(0x13),
+        .brdf_lut_sampler = reinterpret_cast<VkSampler>(0x14),
+        .brdf_lut_view = reinterpret_cast<VkImageView>(0x15),
+        .prefiltered_mip_levels = 4,
+        .intensity = 1.0F,
+    };
+    cubey::render::validate_pbr_environment_texture_bindings(bindings);
+
+    bindings.prefiltered_view = VK_NULL_HANDLE;
+    require_throws(
+        [&] { cubey::render::validate_pbr_environment_texture_bindings(bindings); },
+        "PBR environment bindings should reject missing prefiltered cube views");
+}
+
 void test_generated_pbr_dfg_lut_stores_energy_compensation_term() {
     const cubey::render::GeneratedPbrEnvironmentConfig config{
         .irradiance_extent = 1,

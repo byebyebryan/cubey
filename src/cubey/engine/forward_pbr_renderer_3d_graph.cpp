@@ -91,8 +91,8 @@ void ForwardPbrRenderer3D::Impl::record(const ForwardPbrRenderer3DRenderRequest&
             .camera_position = camera_position,
             .light = light,
             .environment = scene_plan.environment,
-            .environment_intensity = environment().intensity,
-            .prefiltered_mip_levels = environment().prefiltered_mip_levels,
+            .environment_intensity = global_.environment.intensity,
+            .prefiltered_mip_levels = global_.environment.prefiltered_mip_levels,
             .environment_rotation_degrees = settings.environment_rotation_degrees,
             .debug_view = settings.debug_view,
         }));
@@ -101,7 +101,7 @@ void ForwardPbrRenderer3D::Impl::record(const ForwardPbrRenderer3DRenderRequest&
         forward_pbr_renderer_3d_skybox_uniforms({
             .view_projection = scene_plan.view_projection_matrix,
             .camera_position = camera_position,
-            .environment_intensity = environment().intensity,
+            .environment_intensity = global_.environment.intensity,
             .environment_rotation_degrees = settings.environment_rotation_degrees,
         }));
     if (settings.background_mode == ForwardPbrRenderer3DBackgroundMode::Atmosphere) {

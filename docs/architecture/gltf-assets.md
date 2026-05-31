@@ -110,7 +110,8 @@ owns default textures, texture upload, and material instance creation.
   setup-time sampled texture uploads for glTF textures and IBL cubemaps;
 - generated and equirectangular HDR PBR environment helpers provide
   deterministic or asset-backed irradiance, GGX-prefiltered radiance, and DFG
-  LUT resources for the current viewer checkpoint;
+  LUT resources, and the renderer can also accept explicit environment texture
+  bindings for runtime sky probes;
 - `ShadowMapPass3D` owns a sampled depth texture plus depth-only pipeline for
   directional shadow passes.
 
@@ -118,8 +119,9 @@ owns default textures, texture upload, and material instance creation.
 `--input`, falls back to the Khronos DamagedHelmet sample when the sample-assets
 directory is configured, and otherwise renders a generated PBR cube. It can use
 `--environment path/to/env.hdr` or the optional fetched Filament
-`lightroom_14b.hdr` sample for HDR-backed IBL and skybox rendering; without
-one, it falls back to the generated environment. It creates camera and light
+`lightroom_14b.hdr` sample for static HDR-backed IBL; by default it renders the
+procedural atmosphere as the visible background and captures that atmosphere
+into a runtime reflection probe for specular IBL. It creates camera and light
 entities around imported bounds, builds shadow and scene frame plans, and hands
 those plans plus scene resources to an engine-owned `ForwardPbrRenderer3D`
 through the shared forward-PBR request helper for pass recording. Its reusable

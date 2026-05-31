@@ -726,24 +726,38 @@ void test_forward_pbr_renderer_3d_threads_atmosphere_background_path() {
                      "forward PBR settings should expose selectable background modes");
     require_contains(header, "ForwardPbrRenderer3DGlobalResourcesInfo",
                      "forward PBR global resources should accept optional atmosphere bindings");
+    require_contains(header, "environment_textures",
+                     "forward PBR globals should accept explicit PBR environment textures");
     require_contains(header, "std::optional<render::AtmosphereEnvironmentFrameUniforms>",
                      "forward PBR settings should carry atmosphere frame uniforms");
     require_contains(internal_header, "render::AtmosphereBackgroundFrame atmosphere_background",
                      "forward PBR internals should own the atmosphere background frame");
+    require_contains(internal_header, "render::PbrEnvironmentTextureBindings environment",
+                     "forward PBR internals should store resolved environment bindings");
     require_contains(resources, "AtmosphereBackgroundFrameMaterialConfig",
                      "forward PBR resources should create atmosphere descriptors when provided");
     require_contains(resources, "AtmosphereBackgroundFramePipelineConfig",
                      "forward PBR resources should create an atmosphere background pipeline");
+    require_contains(resources, "validate_pbr_environment_texture_bindings",
+                     "forward PBR resources should validate explicit environment bindings");
     require_contains(graph, "settings.atmosphere_background.value()",
                      "forward PBR record path should upload per-frame atmosphere uniforms");
     require_contains(recording, "ForwardPbrRenderer3DBackgroundMode::Atmosphere",
                      "forward PBR scene pass should branch to the atmosphere background");
     require_contains(cmake, "projects/atmosphere/shaders/atmosphere.frag",
                      "forward PBR shader package should compile the shared atmosphere shader");
+    require_contains(cmake, "atmosphere_reflection_prefilter.frag",
+                     "forward PBR shader package should compile the atmosphere probe prefilter");
     require_contains(gltf_assets, "create_atmosphere_background_placeholders",
                      "glTF viewer should create placeholder atmosphere atlas textures");
+    require_contains(gltf_assets, "create_atmosphere_reflection_probe",
+                     "glTF viewer should create the runtime atmosphere reflection probe");
+    require_contains(gltf_assets, "pbr_environment_bindings",
+                     "glTF viewer should feed explicit PBR environment bindings");
     require_contains(gltf_render, "ForwardPbrRenderer3DBackgroundMode::Atmosphere",
                      "glTF viewer should select the procedural atmosphere background");
+    require_contains(gltf_render, "record_atmosphere_probe_if_needed",
+                     "glTF viewer should update the atmosphere probe before PBR recording");
     require_contains(gltf_scene, "atmosphere_environment_frame_uniforms",
                      "glTF viewer should compute atmosphere background frame uniforms");
 }

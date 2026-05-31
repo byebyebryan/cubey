@@ -25,6 +25,7 @@ layout(set = 0, binding = 0) uniform AtmosphereFrame {
     vec4 moon_options;
     vec4 moon_phase_options;
     vec4 milky_way_options;
+    vec4 render_options;
 } atmosphere;
 
 layout(set = 0, binding = 1) uniform sampler2D moon_atlas;
@@ -806,7 +807,9 @@ void main() {
     float ray_end = atmosphere_hit.y;
     float ground_t = nearest_positive_ground_hit(vec3(0.0), ray_direction, planet_center);
     bool hit_ground = ground_t > 0.0 && ground_t < ray_end;
-    if (hit_ground) {
+    bool sky_only = atmosphere.render_options.x >= 0.5;
+    bool shade_ground = hit_ground && !sky_only;
+    if (hit_ground && !sky_only) {
         ray_end = ground_t;
     }
 
@@ -820,7 +823,7 @@ void main() {
         moon_disk_radiance(ray_direction, sun_direction, planet_center);
     vec3 sun_disk = hit_ground ? vec3(0.0) : sun_disk_luminance(ray_direction, planet_center);
     vec3 color = atmosphere_sample.color + sun_disk + night_sky + moon_disk;
-    if (hit_ground) {
+    if (shade_ground) {
         color += ground_radiance(ray_direction, planet_center, ground_t) *
                  atmosphere_sample.transmittance;
     }
@@ -841,7 +844,7 @@ void main() {
         color = night_sky;
     } else if (debug_view == 9) {
         color = moon_disk;
-        if (hit_ground) {
+        if (shade_ground) {
             color = moon_ground_debug_radiance(ray_direction, planet_center, ground_t) *
                     atmosphere_sample.transmittance;
         }

@@ -24,7 +24,7 @@ void require_near(float actual, float expected, float tolerance, const char* mes
 } // namespace
 
 void test_atmosphere_environment_packs_frame_uniforms() {
-    require(sizeof(cubey::render::AtmosphereEnvironmentFrameUniforms) == sizeof(float) * 60U,
+    require(sizeof(cubey::render::AtmosphereEnvironmentFrameUniforms) == sizeof(float) * 64U,
             "atmosphere environment frame uniforms should keep the shader vec4 layout size");
 
     cubey::render::AtmosphereEnvironmentConfig config;
@@ -73,6 +73,18 @@ void test_atmosphere_environment_packs_frame_uniforms() {
                 std::sin(cubey::render::atmosphere_environment_degrees_to_radians(
                     config.time_of_day.latitude_degrees)),
             "atmosphere environment should pack the observer latitude sine");
+    require(uniforms.render_options.x == 0.0F,
+            "atmosphere environment should default to ground rendering");
+
+    config.ground_mode = cubey::render::AtmosphereEnvironmentGroundMode::SkyOnly;
+    const cubey::render::AtmosphereEnvironmentFrameUniforms sky_only_uniforms =
+        cubey::render::atmosphere_environment_frame_uniforms(
+            config, {
+                        .view_rays = view_rays,
+                        .render_view = cubey::render::AtmosphereEnvironmentRenderView::Final,
+                    });
+    require(sky_only_uniforms.render_options.x == 1.0F,
+            "atmosphere environment should pack sky-only ground policy");
 }
 
 void test_atmosphere_environment_resolves_celestial_time_math() {
