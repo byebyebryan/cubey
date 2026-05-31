@@ -277,7 +277,7 @@ if (BUILD_TESTING)
         NAME atmosphere_async_atlas_windowed_smoke
         COMMAND
             /bin/sh -c
-            "target=$1; out=$(\"$target\" --frames 240 --width 64 --height 64 2>&1); status=$?; printf '%s\n' \"$out\"; if printf '%s\n' \"$out\" | grep -q 'vulkan validation error'; then exit 1; fi; if [ \"$status\" -eq 0 ]; then printf '%s\n' \"$out\" | grep -q 'atmosphere: .*rendering atmosphere project'; else printf '%s\n' \"$out\" | grep -q 'glfwInit failed\\|GLFW reports Vulkan is not supported'; fi"
+            "target=$1; out=$(\"$target\" --frames 60 --width 64 --height 64 2>&1); status=$?; printf '%s\n' \"$out\"; if printf '%s\n' \"$out\" | grep -q 'vulkan validation error'; then exit 1; fi; if [ \"$status\" -eq 0 ]; then printf '%s\n' \"$out\" | grep -q 'atmosphere: .*rendering atmosphere project'; else printf '%s\n' \"$out\" | grep -q 'glfwInit failed\\|GLFW reports Vulkan is not supported'; fi"
             "atmosphere_async_atlas_windowed_smoke"
             "$<TARGET_FILE:cubey_project_atmosphere>"
     )

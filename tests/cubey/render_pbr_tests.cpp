@@ -874,7 +874,8 @@ void test_pbr_consumers_use_atmosphere_lighting_foundation() {
                      "glTF viewer should disable atmosphere reference geometry for PBR backgrounds");
     require_contains(gltf_scene, "primary_light_direction",
                      "glTF viewer should use atmosphere primary light for direct lighting");
-    require_contains(gltf_scene, "atmosphere_runtime_.scene_environment()",
+    require_contains(gltf_scene,
+                     "atmosphere_runtime_.scene_environment(atmosphere_diffuse_source_)",
                      "glTF viewer should feed runtime diffuse environment into Environment3D");
     require_contains(gltf_assets, "atmosphere_background_textures()",
                      "glTF viewer should provide atmosphere background texture bindings");

@@ -141,7 +141,7 @@ cubey::scene::FrameRenderPlan3D GltfViewerApp::current_frame_plan(const cubey::S
         .camera_entity = camera_entity_,
         .width = color_extent.width,
         .height = color_extent.height,
-        .environment = atmosphere_runtime_.scene_environment(),
+        .environment = atmosphere_runtime_.scene_environment(atmosphere_diffuse_source_),
     };
     return cubey::scene::FrameRenderPlan3D({
         cubey::scene::RenderPassPlan3D{

@@ -60,7 +60,9 @@ class AtmosphereEnvironmentRuntime {
     [[nodiscard]] bool resources_created() const noexcept;
     [[nodiscard]] const AtmosphereEnvironmentConfig& environment() const noexcept;
     [[nodiscard]] const AtmosphereEnvironmentLighting& lighting() const noexcept;
-    [[nodiscard]] cubey::scene::Environment3D scene_environment() const;
+    [[nodiscard]] cubey::scene::Environment3D
+    scene_environment(AtmosphereDiffuseSource diffuse_source =
+                          AtmosphereDiffuseSource::SphericalHarmonics) const;
     [[nodiscard]] PbrEnvironmentTextureBindings
     pbr_environment_bindings(const GeneratedPbrEnvironment& fallback,
                              AtmosphereDiffuseSource diffuse_source =

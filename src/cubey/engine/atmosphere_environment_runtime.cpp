@@ -98,12 +98,14 @@ const AtmosphereEnvironmentLighting& AtmosphereEnvironmentRuntime::lighting() co
     return lighting_;
 }
 
-cubey::scene::Environment3D AtmosphereEnvironmentRuntime::scene_environment() const {
+cubey::scene::Environment3D AtmosphereEnvironmentRuntime::scene_environment(
+    AtmosphereDiffuseSource diffuse_source) const {
     return cubey::scene::Environment3D{
         .ambient_color = lighting_.ambient_color,
         .ambient_intensity = 0.0F,
         .diffuse_irradiance_sh = lighting_.diffuse_irradiance_sh,
-        .diffuse_irradiance_sh_enabled = true,
+        .diffuse_irradiance_sh_enabled =
+            diffuse_source == AtmosphereDiffuseSource::SphericalHarmonics,
     };
 }
 
