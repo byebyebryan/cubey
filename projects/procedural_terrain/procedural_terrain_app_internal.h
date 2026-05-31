@@ -11,7 +11,9 @@
 #include <cubey/input/orbit_controller.h>
 #include <cubey/render/forward_pass.h>
 #include <cubey/render/mesh.h>
+#include <cubey/render/render_graph.h>
 #include <cubey/scene/camera_3d.h>
+#include <cubey/vulkan/device.h>
 
 #include <vulkan/vulkan.h>
 
@@ -50,7 +52,7 @@ class ProceduralTerrainApp {
 
     void create_global_resources_if_needed(cubey::vulkan::GpuRuntime& gpu);
     void create_forward_pass(const cubey::vulkan::Device& device, VkExtent2D extent,
-                             VkFormat color_format);
+                             VkFormat color_format, std::uint32_t frame_slot_count);
     void destroy_swapchain_resources();
     void destroy_all_resources();
     void draw_ui(cubey::host::WindowedAppContext& context);
@@ -60,8 +62,9 @@ class ProceduralTerrainApp {
     void refresh_diagnostics(double rebuild_ms);
     [[nodiscard]] std::optional<cubey::host::FrameStatsSample>
     record_frame_stats(VkExtent2D extent, const FrameTiming& timing);
-    void record_terrain_frame(VkCommandBuffer command_buffer,
-                              cubey::render::ColorTargetView color_target, bool present);
+    void record_terrain_frame(const cubey::vulkan::Device& device, VkCommandBuffer command_buffer,
+                              cubey::render::ColorTargetView color_target,
+                              cubey::render::FrameSlot frame_slot, bool present);
 
     [[nodiscard]] TerrainPushConstants push_constants(VkExtent2D extent) const;
     [[nodiscard]] const cubey::render::Mesh& mesh() const;
@@ -82,6 +85,7 @@ class ProceduralTerrainApp {
     std::optional<cubey::render::Mesh> final_land_mesh_;
     std::optional<cubey::render::Mesh> water_mesh_;
     std::optional<cubey::render::ForwardScenePass3D> forward_pass_;
+    cubey::render::RenderGraphFrameExecutor graph_executor_;
     cubey::host::FrameStats ui_frame_stats_;
     TerrainDiagnostics diagnostics_{};
     std::optional<cubey::host::FrameStatsSnapshot> latest_frame_stats_;
