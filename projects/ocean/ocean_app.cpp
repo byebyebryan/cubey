@@ -11,6 +11,7 @@
 #include <cubey/host/windowed_app.h>
 #include <cubey/input/input.h>
 #include <cubey/input/orbit_controller.h>
+#include <cubey/render/hdr_post_frame.h>
 #include <cubey/render/material_instance.h>
 #include <cubey/render/pass.h>
 #include <cubey/render/pbr.h>
@@ -373,17 +374,9 @@ class OceanApp {
                                       .depth_format = kOceanDepthFormat,
                                       .target_extent = extent,
                                   });
-        post_material_.emplace(
-            device, cubey::render::FrameUniformMaterialInstanceConfig{
-                        .material_pass = cubey::render::pbr_post_pass_info(),
-                        .descriptor_set = 0,
-                        .frame_slot_count = frame_slot_count,
-                        .uniform_binding =
-                            static_cast<std::uint32_t>(cubey::render::PbrPostBinding::PostUniforms),
-                    });
-        post_sampler_.emplace(device, cubey::vulkan::SamplerConfig{
-                                          .address_mode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
-                                      });
+        hdr_post_frame_.create_materials(device, {
+                                                     .frame_slot_count = frame_slot_count,
+                                                 });
         const std::array<cubey::render::ShaderStageFile, 2> post_shader_stage_files{
             cubey::render::ShaderStageFile{
                 .stage = VK_SHADER_STAGE_VERTEX_BIT,
@@ -394,14 +387,11 @@ class OceanApp {
                 .path = std::filesystem::path(CUBEY_OCEAN_SHADER_DIR) / "forward_pbr_post.frag.spv",
             },
         };
-        const std::array post_descriptor_set_layouts{post_material().layout()};
-        post_pipeline_.emplace(device, cubey::render::GraphicsPipelineFileResourceConfig{
-                                           .extent = extent,
-                                           .color_format = color_format,
-                                           .shader_stage_files = post_shader_stage_files,
-                                           .descriptor_set_layouts = post_descriptor_set_layouts,
-                                           .material_pass = cubey::render::pbr_post_pass_info(),
-                                       });
+        hdr_post_frame_.create_pipeline(device, {
+                                                    .extent = extent,
+                                                    .color_format = color_format,
+                                                    .shader_stage_files = post_shader_stage_files,
+                                                });
         graph_executor_.clear();
         graph_executor_.resize(frame_slot_count);
         pipeline_color_format_ = color_format;
@@ -413,9 +403,7 @@ class OceanApp {
 
     void destroy_swapchain_resources() {
         graph_executor_.clear();
-        post_pipeline_.reset();
-        post_sampler_.reset();
-        post_material_.reset();
+        hdr_post_frame_.destroy();
         ocean_gpu_.reset();
         pipeline_color_format_ = VK_FORMAT_UNDEFINED;
         textures_initialized_ = false;
@@ -714,30 +702,13 @@ class OceanApp {
     }
 
     [[nodiscard]] cubey::render::PbrPostUniforms post_uniforms() const {
-        const cubey::render::PbrDisplayTransform display_transform =
-            cubey::render::pbr_display_transform_for_target(pipeline_color_format_,
-                                                            ocean_config_.exposure);
-        return {
-            .display_transform = cubey::render::pbr_display_transform_uniform(display_transform),
-        };
+        return cubey::render::hdr_post_uniforms(pipeline_color_format_, ocean_config_.exposure);
     }
 
     void record_ocean_post(const cubey::vulkan::CommandRecorder& recorder,
                            cubey::render::ColorTargetView target,
                            cubey::render::FrameSlot frame_slot) const {
-        cubey::render::record_render_target_pass(
-            recorder, cubey::render::render_target_view(target),
-            cubey::render::RenderClearValues{
-                .color = cubey::render::color_clear_value(0.0F, 0.0F, 0.0F, 1.0F),
-            },
-            [this, frame_slot](const cubey::vulkan::CommandRecorder& draw_recorder) {
-                cubey::render::record_fullscreen_pipeline_draw(
-                    draw_recorder,
-                    {
-                        .pipeline = &post_pipeline(),
-                        .descriptor_set = post_material().set(frame_slot),
-                    });
-            });
+        hdr_post_frame_.record_pass(recorder, target, frame_slot);
     }
 
     [[nodiscard]] OceanFrameGraph
@@ -756,12 +727,8 @@ class OceanApp {
         const cubey::render::RenderGraphTextureHandle backbuffer = graph.import_color_target(
             "ocean backbuffer", color_target, initial_state, final_state);
         const cubey::render::RenderGraphTextureHandle scene_color =
-            graph.create_texture(cubey::render::RenderGraphTextureDesc{
-                .label = "ocean scene color",
-                .extent = {color_target.extent.width, color_target.extent.height, 1U},
-                .format = kOceanSceneColorFormat,
-                .aspects = VK_IMAGE_ASPECT_COLOR_BIT,
-            });
+            graph.create_texture(cubey::render::hdr_scene_color_texture_desc(
+                "ocean scene color", color_target.extent, kOceanSceneColorFormat));
         const cubey::render::RenderGraphTextureHandle surface_depth =
             graph.create_texture(ocean_depth_texture_desc(
                 "ocean surface depth", color_target.extent, kOceanDepthFormat));
@@ -809,13 +776,8 @@ class OceanApp {
                                 const cubey::render::CompiledRenderGraph& graph,
                                 const cubey::render::RenderGraphResourceSet& resources,
                                 cubey::render::RenderGraphTextureHandle scene_color) const {
-        const cubey::render::RenderGraphSampledTextureView sampled =
-            cubey::render::resolved_sampled_texture_view(graph, resources, scene_color);
-        cubey::render::MaterialDescriptorWriter(post_material().set(frame_slot))
-            .combined_image_sampler(
-                static_cast<std::uint32_t>(cubey::render::PbrPostBinding::SceneColor),
-                post_sampler().handle(), sampled.view, sampled.layout)
-            .update(device);
+        hdr_post_frame_.update_scene_color_descriptor(device, frame_slot, graph, resources,
+                                                      scene_color);
     }
 
     void record_initial_texture_transitions(const cubey::vulkan::CommandRecorder& recorder) const {
@@ -941,7 +903,7 @@ class OceanApp {
                                  OceanRenderTargetMode target_mode) {
         const cubey::vulkan::CommandRecorder recorder(command_buffer);
         record_ocean_compute(recorder);
-        post_material().upload(frame_slot, post_uniforms());
+        hdr_post_frame_.upload(frame_slot, post_uniforms());
         const OceanFrameGraph frame_graph = build_ocean_frame_graph(target, frame_slot, target_mode);
         graph_executor_.record(
             cubey::render::RenderGraphFrameRecordInfo{
@@ -969,28 +931,6 @@ class OceanApp {
         recorder.end("vkEndCommandBuffer ocean");
     }
 
-    [[nodiscard]] const cubey::render::FrameUniformMaterialInstance<cubey::render::PbrPostUniforms>&
-    post_material() const {
-        if (!post_material_.has_value()) {
-            throw std::runtime_error("ocean post material is not initialized");
-        }
-        return post_material_.value();
-    }
-
-    [[nodiscard]] const cubey::render::GraphicsPipelineResource& post_pipeline() const {
-        if (!post_pipeline_.has_value()) {
-            throw std::runtime_error("ocean post pipeline is not initialized");
-        }
-        return post_pipeline_.value();
-    }
-
-    [[nodiscard]] const cubey::vulkan::Sampler& post_sampler() const {
-        if (!post_sampler_.has_value()) {
-            throw std::runtime_error("ocean post sampler is not initialized");
-        }
-        return post_sampler_.value();
-    }
-
     RunConfig config_;
     OceanConfig ocean_config_;
     OceanDiagnosticsConfig diagnostics_;
@@ -1002,10 +942,7 @@ class OceanApp {
     std::optional<FrameStatsSnapshot> latest_frame_stats_;
     OceanGpuResources ocean_gpu_;
     cubey::render::RenderGraphFrameExecutor graph_executor_;
-    std::optional<cubey::render::FrameUniformMaterialInstance<cubey::render::PbrPostUniforms>>
-        post_material_;
-    std::optional<cubey::render::GraphicsPipelineResource> post_pipeline_;
-    std::optional<cubey::vulkan::Sampler> post_sampler_;
+    cubey::render::HdrPostFrame hdr_post_frame_;
     std::optional<OceanConfig> gpu_config_;
     VkFormat pipeline_color_format_ = VK_FORMAT_UNDEFINED;
     double time_seconds_ = 0.0;

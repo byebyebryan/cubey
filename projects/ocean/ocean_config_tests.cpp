@@ -450,8 +450,10 @@ int main() {
                          "app should define an HDR ocean scene color format");
         require_contains(app_source, "ocean scene color",
                          "app should render ocean sky and surface into an HDR scene target");
-        require_contains(app_source, "pbr_post_pass_info()",
-                         "app should reuse the shared PBR post pass for ocean display output");
+        require_contains(app_source, "HdrPostFrame",
+                         "app should use the shared HDR post frame helper");
+        require_contains(app_source, "hdr_scene_color_texture_desc",
+                         "app should use the shared HDR scene color descriptor helper");
         require_contains(app_source, "forward_pbr_post.frag.spv",
                          "app should load the shared PBR post shader");
         require_contains(cmake_source, "forward_pbr_post.frag",

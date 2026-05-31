@@ -1,5 +1,6 @@
 #include "source_file_test_helpers.h"
 
+#include <cubey/render/hdr_post_frame.h>
 #include <cubey/render/material.h>
 #include <cubey/render/pbr.h>
 #include <cubey/render/pbr_material_resources.h>
@@ -457,6 +458,28 @@ void test_pbr_post_pass_declares_uniforms_and_scene_color() {
     };
     require(uniforms.display_transform == cubey::math::Vec4{1.0F, 1.0F, 0.0F, 0.0F},
             "PBR post uniforms should carry final display transform controls");
+}
+
+void test_hdr_post_frame_helpers_pack_scene_color_and_display_transform() {
+    const cubey::render::RenderGraphTextureDesc desc = cubey::render::hdr_scene_color_texture_desc(
+        "test scene color", {640U, 360U}, VK_FORMAT_R16G16B16A16_SFLOAT);
+    require(desc.label == "test scene color", "HDR post scene color should keep caller labels");
+    require(desc.extent.width == 640U && desc.extent.height == 360U && desc.extent.depth == 1U,
+            "HDR post scene color should convert 2D target extents to graph texture extents");
+    require(desc.format == VK_FORMAT_R16G16B16A16_SFLOAT,
+            "HDR post scene color should preserve the requested format");
+    require(desc.aspects == VK_IMAGE_ASPECT_COLOR_BIT,
+            "HDR post scene color should declare color aspect usage");
+
+    const cubey::render::PbrPostUniforms uniforms =
+        cubey::render::hdr_post_uniforms(VK_FORMAT_B8G8R8A8_SRGB, 0.75F,
+                                        cubey::render::PbrTonemap::Linear);
+    const cubey::render::PbrDisplayTransform display_transform =
+        cubey::render::pbr_display_transform_for_target(VK_FORMAT_B8G8R8A8_SRGB, 0.75F,
+                                                        cubey::render::PbrTonemap::Linear);
+    require(uniforms.display_transform ==
+                cubey::render::pbr_display_transform_uniform(display_transform),
+            "HDR post uniforms should reuse the canonical PBR display transform packing");
 }
 
 void test_pbr_skybox_uniforms_are_uniform_buffer_safe() {

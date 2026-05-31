@@ -722,8 +722,10 @@ int main() {
                      "atmosphere app should render into an HDR scene color target");
     require_contains(app_source, "kAtmosphereSceneColorFormat = VK_FORMAT_R16G16B16A16_SFLOAT",
                      "atmosphere scene color should use a floating point HDR format");
-    require_contains(app_source, "pbr_post_pass_info()",
-                     "atmosphere app should reuse the shared PBR post pass");
+    require_contains(app_source, "HdrPostFrame",
+                     "atmosphere app should use the shared HDR post frame helper");
+    require_contains(app_source, "hdr_scene_color_texture_desc",
+                     "atmosphere app should use the shared HDR scene color descriptor helper");
     require_contains(app_source, "forward_pbr_post.frag.spv",
                      "atmosphere app should load the shared PBR post shader");
     require_contains(cmake_source, "forward_pbr_post.frag",

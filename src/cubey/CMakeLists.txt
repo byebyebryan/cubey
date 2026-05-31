@@ -144,6 +144,7 @@ add_library(cubey_render STATIC
     render/generated_ibl.cpp
     render/frame_data.cpp
     render/generated_texture.cpp
+    render/hdr_post_frame.cpp
     render/instance_buffer.cpp
     render/material_instance.cpp
     render/material.cpp

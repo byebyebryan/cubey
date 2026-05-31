@@ -107,6 +107,7 @@ void test_pbr_material_factors_are_uniforms_and_push_constants_are_model_only();
 void test_pbr_default_texture_specs_cover_all_sampled_material_bindings();
 void test_pbr_material_table_groups_factors_and_supports_lifetime_operations();
 void test_pbr_material_table_tracks_descriptor_layout_explicitly();
+void test_hdr_post_frame_helpers_pack_scene_color_and_display_transform();
 void test_pbr_post_pass_declares_uniforms_and_scene_color();
 void test_pbr_reflectance_helpers_match_filament_convention();
 void test_pbr_scene_uniforms_carry_display_transform();
@@ -244,6 +245,7 @@ std::span<const TestCase> render_test_cases() {
         CUBEY_TEST(test_pbr_material_table_tracks_descriptor_layout_explicitly),
         CUBEY_TEST(test_pbr_scene_uniforms_carry_display_transform),
         CUBEY_TEST(test_pbr_post_pass_declares_uniforms_and_scene_color),
+        CUBEY_TEST(test_hdr_post_frame_helpers_pack_scene_color_and_display_transform),
         CUBEY_TEST(test_pbr_skybox_uniforms_are_uniform_buffer_safe),
         CUBEY_TEST(test_pbr_skybox_pass_declares_scene_set),
         CUBEY_TEST(test_pbr_reflectance_helpers_match_filament_convention),
