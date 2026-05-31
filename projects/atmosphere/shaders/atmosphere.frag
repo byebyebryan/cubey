@@ -10,7 +10,7 @@ const int ATMOSPHERE_LIGHT_SAMPLE_COUNT = 8;
 const float ATMOSPHERE_SUN_INTENSITY = 22.0;
 const float ATMOSPHERE_MIN_TWILIGHT_SOFTNESS = 0.022;
 
-layout(push_constant) uniform AtmosphereParams {
+layout(set = 0, binding = 0) uniform AtmosphereFrame {
     vec4 camera_right_aspect;
     vec4 camera_up_tan_half_fovy;
     vec4 camera_forward_debug_view;
@@ -29,8 +29,8 @@ layout(push_constant) uniform AtmosphereParams {
     vec4 milky_way_options;
 } atmosphere;
 
-layout(set = 0, binding = 0) uniform sampler2D moon_atlas;
-layout(set = 0, binding = 1) uniform samplerCube night_sky_atlas;
+layout(set = 0, binding = 1) uniform sampler2D moon_atlas;
+layout(set = 0, binding = 2) uniform samplerCube night_sky_atlas;
 
 layout(location = 0) in vec2 frag_ndc;
 layout(location = 0) out vec4 out_color;

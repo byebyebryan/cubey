@@ -13,6 +13,7 @@
 #include <cubey/input/input.h>
 #include <cubey/input/orbit_controller.h>
 #include <cubey/render/material.h>
+#include <cubey/render/material_instance.h>
 #include <cubey/render/pass.h>
 #include <cubey/render/pbr.h>
 #include <cubey/render/pipeline_resource.h>
@@ -54,7 +55,7 @@ constexpr float kBaseYaw = 0.0F;
 constexpr float kBasePitch = 0.0F;
 constexpr float kDefaultFovyRadians = 65.0F * (std::numbers::pi_v<float> / 180.0F);
 
-struct AtmospherePushConstants {
+struct AtmosphereFrameUniforms {
     cubey::math::Vec4 camera_right_aspect;
     cubey::math::Vec4 camera_up_tan_half_fovy;
     cubey::math::Vec4 camera_forward_debug_view;
@@ -73,7 +74,7 @@ struct AtmospherePushConstants {
     cubey::math::Vec4 milky_way_options;
 };
 
-static_assert(sizeof(AtmospherePushConstants) == sizeof(float) * 64U);
+static_assert(sizeof(AtmosphereFrameUniforms) == sizeof(float) * 64U);
 
 struct ResolvedNightSkyAtlas {
     float procedural_variation = 0.0F;
@@ -137,15 +138,32 @@ generate_resolved_night_sky_atlas(ResolvedNightSkyAtlas resolved) {
 }
 
 [[nodiscard]] cubey::render::MaterialPassInfo atmosphere_pass_info() {
-    const VkPushConstantRange push_constant_range{
-        .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
-        .offset = 0,
-        .size = sizeof(AtmospherePushConstants),
-    };
     return cubey::render::MaterialPassInfo{
         .label = "atmosphere.fullscreen",
-        .descriptor_sets = {cubey::render::sampled_texture_descriptor_set_layout(0, 2)},
-        .push_constants = {push_constant_range},
+        .descriptor_sets =
+            {
+                cubey::render::MaterialDescriptorSetLayout{
+                    .set = 0,
+                    .bindings =
+                        {
+                            cubey::vulkan::DescriptorSetBindingConfig{
+                                .binding = 0,
+                                .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                                .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
+                            },
+                            cubey::vulkan::DescriptorSetBindingConfig{
+                                .binding = 1,
+                                .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
+                            },
+                            cubey::vulkan::DescriptorSetBindingConfig{
+                                .binding = 2,
+                                .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
+                            },
+                        },
+                },
+            },
     };
 }
 
@@ -181,7 +199,8 @@ class AtmosphereApp {
 
         cubey::host::WindowedAppCallbacks callbacks;
         callbacks.create_global_resources = [this](cubey::host::WindowedAppContext& context) {
-            create_windowed_global_resources(context.device(), context.gpu());
+            create_windowed_global_resources(context.device(), context.gpu(),
+                                             context.frame_slot_count());
         };
         callbacks.create_swapchain_resources = [this](cubey::host::WindowedAppContext& context) {
             create_pipeline(context.device(), context.swapchain().format(),
@@ -241,14 +260,15 @@ class AtmosphereApp {
         cubey::host::HeadlessPngHostCallbacks callbacks;
         callbacks.create_resources = [this](cubey::host::HeadlessPngContext& context) {
             const cubey::host::HeadlessRenderTarget& target = context.render_target();
-            create_gpu_resources(context.device(), context.gpu(), target.format, target.extent);
+            create_gpu_resources(context.device(), context.gpu(), target.format, target.extent,
+                                 cubey::host::headless_capture_frame_slot_count(context.config()));
         };
         callbacks.record_frame = [this](cubey::host::HeadlessPngContext&,
                                         const cubey::host::HeadlessCaptureFrame& frame,
                                         VkCommandBuffer command_buffer,
                                         const cubey::host::HeadlessRenderTarget& target) {
             update_headless_time(frame);
-            record_atmosphere_target(command_buffer, target);
+            record_atmosphere_target(command_buffer, target, frame.frame_slot);
         };
         callbacks.shutdown = [this](cubey::host::HeadlessPngContext&) {
             destroy_swapchain_resources();
@@ -323,30 +343,33 @@ class AtmosphereApp {
     }
 
     void create_gpu_resources(cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu,
-                              VkFormat color_format, VkExtent2D extent) {
-        create_synchronous_atlas_resources(device, gpu);
+                              VkFormat color_format, VkExtent2D extent,
+                              std::uint32_t frame_slot_count) {
+        create_synchronous_atlas_resources(device, gpu, frame_slot_count);
         create_pipeline(device, color_format, extent);
     }
 
     void create_windowed_global_resources(cubey::vulkan::Device& device,
-                                          cubey::vulkan::GpuRuntime& gpu) {
+                                          cubey::vulkan::GpuRuntime& gpu,
+                                          std::uint32_t frame_slot_count) {
         upload_placeholder_lunar_atlas(device, gpu);
         upload_placeholder_night_sky_atlas(device, gpu);
-        create_atmosphere_descriptors(device);
-        update_atlas_descriptor_bindings(device);
+        create_atmosphere_descriptors(device, frame_slot_count);
+        update_atmosphere_descriptor_bindings(device);
         refresh_loading_status();
     }
 
     void create_synchronous_atlas_resources(cubey::vulkan::Device& device,
-                                            cubey::vulkan::GpuRuntime& gpu) {
+                                            cubey::vulkan::GpuRuntime& gpu,
+                                            std::uint32_t frame_slot_count) {
         upload_lunar_atlas(device, gpu, generate_lunar_atlas());
         lunar_atlas_ready_ = true;
 
         const ResolvedNightSkyAtlas resolved = resolve_night_sky_atlas(atmosphere_config_);
         upload_night_sky_atlas(device, gpu, generate_resolved_night_sky_atlas(resolved));
 
-        create_atmosphere_descriptors(device);
-        update_atlas_descriptor_bindings(device);
+        create_atmosphere_descriptors(device, frame_slot_count);
+        update_atmosphere_descriptor_bindings(device);
         refresh_loading_status();
     }
 
@@ -435,33 +458,48 @@ class AtmosphereApp {
         lunar_atlas_error_.clear();
     }
 
-    void create_atmosphere_descriptors(cubey::vulkan::Device& device) {
-        const std::array bindings{
-            cubey::vulkan::DescriptorSetBindingConfig{
-                .binding = 0,
-                .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
-            },
-            cubey::vulkan::DescriptorSetBindingConfig{
-                .binding = 1,
-                .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
-            },
-        };
-        const cubey::vulkan::DescriptorSetInfo descriptor_info(bindings);
-        atmosphere_descriptors_.emplace(device, descriptor_info);
+    void create_atmosphere_descriptors(cubey::vulkan::Device& device,
+                                       std::uint32_t frame_slot_count) {
+        atmosphere_material_.emplace(
+            device, cubey::render::FrameUniformMaterialInstanceConfig{
+                        .material_pass = atmosphere_pass_info(),
+                        .descriptor_set = 0,
+                        .frame_slot_count = frame_slot_count,
+                        .uniform_binding = 0,
+                        .sampled_images =
+                            {
+                                cubey::render::SampledImageMaterialBinding{
+                                    .binding = 1,
+                                    .sampler = lunar_atlas_texture_->sampler().handle(),
+                                    .image_view = lunar_atlas_texture_->view(),
+                                },
+                                cubey::render::SampledImageMaterialBinding{
+                                    .binding = 2,
+                                    .sampler = night_sky_atlas_texture_->sampler().handle(),
+                                    .image_view = night_sky_atlas_texture_->view(),
+                                },
+                            },
+                    });
     }
 
-    void update_atlas_descriptor_bindings(cubey::vulkan::Device& device) {
-        cubey::vulkan::DescriptorWriteBatch descriptor_writes;
-        descriptor_writes
-            .combined_image_sampler(atmosphere_descriptors_->set(), 0,
-                                    lunar_atlas_texture_->sampler().handle(),
-                                    lunar_atlas_texture_->view())
-            .combined_image_sampler(atmosphere_descriptors_->set(), 1,
-                                    night_sky_atlas_texture_->sampler().handle(),
-                                    night_sky_atlas_texture_->view())
-            .update(device);
+    void update_atmosphere_descriptor_bindings(cubey::vulkan::Device& device) const {
+        const cubey::render::FrameUniformMaterialInstance<AtmosphereFrameUniforms>& material =
+            atmosphere_material();
+        for (std::uint32_t slot_index = 0; slot_index < material.material_instance().set_count();
+             ++slot_index) {
+            const cubey::render::FrameSlot frame_slot{
+                .index = slot_index,
+                .count = material.material_instance().set_count(),
+            };
+            cubey::render::MaterialDescriptorWriter(material.set(frame_slot))
+                .uniform_buffer(0, material.uniforms().buffer(frame_slot).handle(),
+                                material.uniforms().range())
+                .combined_image_sampler(1, lunar_atlas_texture_->sampler().handle(),
+                                        lunar_atlas_texture_->view())
+                .combined_image_sampler(2, night_sky_atlas_texture_->sampler().handle(),
+                                        night_sky_atlas_texture_->view())
+                .update(device);
+        }
     }
 
     void upload_night_sky_atlas(cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu,
@@ -530,7 +568,7 @@ class AtmosphereApp {
         if (atlas_shutdown_requested_) {
             return;
         }
-        if (!atmosphere_descriptors_.has_value()) {
+        if (!atmosphere_material_.has_value()) {
             return;
         }
         poll_lunar_atlas_job(device, gpu);
@@ -548,7 +586,7 @@ class AtmosphereApp {
             pending_lunar_atlas_.reset();
             wait_for_idle_before_descriptor_update(device);
             upload_lunar_atlas(device, gpu, atlas);
-            update_atlas_descriptor_bindings(device);
+            update_atmosphere_descriptor_bindings(device);
         } catch (const std::exception& error) {
             pending_lunar_atlas_.reset();
             lunar_atlas_error_ = error.what();
@@ -569,7 +607,7 @@ class AtmosphereApp {
             }
             wait_for_idle_before_descriptor_update(device);
             upload_night_sky_atlas(device, gpu, generated);
-            update_atlas_descriptor_bindings(device);
+            update_atmosphere_descriptor_bindings(device);
         } catch (const std::exception& error) {
             pending_night_sky_atlas_.reset();
             night_sky_atlas_error_ = error.what();
@@ -601,7 +639,7 @@ class AtmosphereApp {
                 .path = shader_path("atmosphere.frag.spv"),
             },
         };
-        const std::array descriptor_set_layouts{atmosphere_descriptors().layout()};
+        const std::array descriptor_set_layouts{atmosphere_material().layout()};
 
         pipeline_resource_.emplace(device, cubey::render::GraphicsPipelineFileResourceConfig{
                                                .extent = extent,
@@ -620,7 +658,7 @@ class AtmosphereApp {
 
     void destroy_global_resources() {
         shutdown_atlas_jobs();
-        atmosphere_descriptors_.reset();
+        atmosphere_material_.reset();
         lunar_atlas_texture_.reset();
         night_sky_atlas_texture_.reset();
         current_night_sky_atlas_.reset();
@@ -635,7 +673,7 @@ class AtmosphereApp {
         pending_night_sky_atlas_.reset();
     }
 
-    [[nodiscard]] AtmospherePushConstants push_constants(VkExtent2D extent) const {
+    [[nodiscard]] AtmosphereFrameUniforms frame_uniforms(VkExtent2D extent) const {
         const float aspect = static_cast<float>(extent.width) / static_cast<float>(extent.height);
         const cubey::math::Quat rotation =
             cubey::math::angle_axis_quat(kBaseYaw + view_controller_.yaw(), {0.0F, 1.0F, 0.0F}) *
@@ -755,21 +793,21 @@ class AtmosphereApp {
     }
 
     void record_atmosphere_draw(const cubey::vulkan::CommandRecorder& recorder,
-                                const cubey::render::ColorTargetView& target) const {
-        const AtmospherePushConstants constants = push_constants(target.extent);
+                                const cubey::render::ColorTargetView& target,
+                                cubey::render::FrameSlot frame_slot) const {
+        atmosphere_material().upload(frame_slot, frame_uniforms(target.extent));
         cubey::render::record_render_target_pass(
             recorder, cubey::render::render_target_view(target),
             cubey::render::RenderClearValues{
                 .color = cubey::render::color_clear_value(0.0F, 0.0F, 0.0F, 1.0F),
             },
-            [this, constants](const cubey::vulkan::CommandRecorder& pass_recorder) {
+            [this, frame_slot](const cubey::vulkan::CommandRecorder& pass_recorder) {
                 cubey::render::record_fullscreen_pipeline_draw(
                     pass_recorder,
                     {
                         .pipeline = &pipeline_resource(),
-                        .descriptor_set = atmosphere_descriptors().set(),
-                    },
-                    VK_SHADER_STAGE_FRAGMENT_BIT, constants);
+                        .descriptor_set = atmosphere_material().set(frame_slot),
+                    });
             });
     }
 
@@ -779,15 +817,16 @@ class AtmosphereApp {
         cubey::render::record_present_render_target(
             recorder, cubey::render::render_target_view(frame.color_target),
             [this, &frame](const cubey::vulkan::CommandRecorder& present_recorder) {
-                record_atmosphere_draw(present_recorder, frame.color_target);
+                record_atmosphere_draw(present_recorder, frame.color_target, frame.frame_slot);
             });
         recorder.end("vkEndCommandBuffer atmosphere");
     }
 
     void record_atmosphere_target(VkCommandBuffer command_buffer,
-                                  const cubey::host::HeadlessRenderTarget& target) {
+                                  const cubey::host::HeadlessRenderTarget& target,
+                                  cubey::render::FrameSlot frame_slot) {
         const cubey::vulkan::CommandRecorder recorder(command_buffer);
-        record_atmosphere_draw(recorder, target);
+        record_atmosphere_draw(recorder, target, frame_slot);
     }
 
     [[nodiscard]] const cubey::render::GraphicsPipelineResource& pipeline_resource() const {
@@ -797,11 +836,12 @@ class AtmosphereApp {
         return pipeline_resource_.value();
     }
 
-    [[nodiscard]] const cubey::vulkan::DescriptorSetBundle& atmosphere_descriptors() const {
-        if (!atmosphere_descriptors_.has_value()) {
-            throw std::runtime_error("atmosphere descriptors are not initialized");
+    [[nodiscard]] const cubey::render::FrameUniformMaterialInstance<AtmosphereFrameUniforms>&
+    atmosphere_material() const {
+        if (!atmosphere_material_.has_value()) {
+            throw std::runtime_error("atmosphere material is not initialized");
         }
-        return atmosphere_descriptors_.value();
+        return atmosphere_material_.value();
     }
 
     RunConfig run_config_;
@@ -826,7 +866,8 @@ class AtmosphereApp {
     std::optional<cubey::render::Texture2D> lunar_atlas_texture_;
     std::optional<cubey::render::TextureCube> night_sky_atlas_texture_;
     std::optional<ResolvedNightSkyAtlas> current_night_sky_atlas_;
-    std::optional<cubey::vulkan::DescriptorSetBundle> atmosphere_descriptors_;
+    std::optional<cubey::render::FrameUniformMaterialInstance<AtmosphereFrameUniforms>>
+        atmosphere_material_;
     std::optional<cubey::render::GraphicsPipelineResource> pipeline_resource_;
     cubey::jobs::JobSystem atlas_jobs_{2};
     std::optional<cubey::jobs::JobHandle<LunarAtlas>> pending_lunar_atlas_;

@@ -52,6 +52,12 @@ void require_contains(const std::string& haystack, const char* needle, const cha
     }
 }
 
+void require_not_contains(const std::string& haystack, const char* needle, const char* message) {
+    if (haystack.find(needle) != std::string::npos) {
+        throw std::runtime_error(message);
+    }
+}
+
 [[nodiscard]] const std::uint8_t*
 lunar_atlas_texel(const cubey::projects::atmosphere::LunarAtlas& atlas, std::uint32_t x,
                   std::uint32_t y, std::uint32_t mip = 0) {
@@ -649,10 +655,18 @@ int main() {
     const std::filesystem::path source_root = CUBEY_ATMOSPHERE_SOURCE_DIR;
     const std::string app_source = read_text_file(source_root / "atmosphere_app.cpp");
     const std::string shader_source = read_text_file(source_root / "shaders/atmosphere.frag");
-    require_contains(app_source, "static_assert(sizeof(AtmospherePushConstants)",
-                     "atmosphere app should lock push constant size");
+    require_contains(app_source, "static_assert(sizeof(AtmosphereFrameUniforms)",
+                     "atmosphere app should lock frame uniform size");
     require_contains(app_source, "sizeof(float) * 64U",
-                     "atmosphere app should include celestial push constants");
+                     "atmosphere app should include celestial frame uniforms");
+    require_contains(app_source, "FrameUniformMaterialInstance<AtmosphereFrameUniforms>",
+                     "atmosphere app should store frame uniforms in material descriptors");
+    require_contains(app_source, ".uniform_binding = 0",
+                     "atmosphere frame uniforms should use descriptor binding zero");
+    require_not_contains(shader_source, "layout(push_constant)",
+                         "atmosphere shader should not use push constants for frame data");
+    require_contains(shader_source, "layout(set = 0, binding = 0) uniform AtmosphereFrame",
+                     "atmosphere shader should read frame data from a uniform buffer");
     require_contains(shader_source, "rayleigh_phase",
                      "atmosphere shader should include Rayleigh phase");
     require_contains(shader_source, "mie_phase", "atmosphere shader should include Mie phase");
@@ -696,7 +710,7 @@ int main() {
                      "atmosphere shader should receive celestial rotation options");
     require_contains(shader_source, "debug_view == 7",
                      "atmosphere shader should include night sky debug output");
-    require_contains(shader_source, "samplerCube night_sky_atlas",
+    require_contains(shader_source, "layout(set = 0, binding = 2) uniform samplerCube night_sky_atlas",
                      "atmosphere shader should sample a night sky atlas");
     require_contains(shader_source, "milky_way_radiance",
                      "atmosphere shader should include Milky Way radiance");
@@ -706,7 +720,7 @@ int main() {
                      "atmosphere shader should map Milky Way debug view across the galactic plane");
     require_contains(shader_source, "moon_disk_radiance",
                      "atmosphere shader should include moon disk radiance");
-    require_contains(shader_source, "sampler2D moon_atlas",
+    require_contains(shader_source, "layout(set = 0, binding = 1) uniform sampler2D moon_atlas",
                      "atmosphere shader should sample a generated lunar atlas");
     require_contains(shader_source, "moon_surface_sample",
                      "atmosphere shader should include lunar atlas surface sampling");
