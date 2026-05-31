@@ -7,6 +7,9 @@ horizon aerial perspective.
 The first implementation is direct ray-marched single scattering with Rayleigh
 air scattering, Mie aerosol scattering, ozone absorption, transmittance, a sun
 disk, and debug views. LUT-backed production rendering is intentionally deferred.
+The reusable pieces now live under `cubey::render`: shared environment math and
+frame uniform packing are in `atmosphere_environment`, and fullscreen sky
+descriptor/pipeline/draw ownership is in `AtmosphereBackgroundFrame`.
 
 Low-sun planet shadowing uses a softened solar-disk visibility term. The
 transition is deliberately wider than the physical sun radius so sunrise and
@@ -23,7 +26,9 @@ Windowed runs create the lunar and night-sky atlases in background jobs and show
 placeholder textures until uploads complete. Headless runs generate the same
 atlases synchronously for deterministic capture output. Presets resolve through
 the same solar-clock path used at runtime so their reported sun and exposure
-values match what is rendered.
+values match what is rendered. This project still owns presets, UI, debug
+view selection, atlas generation, and render-graph wiring; the render helpers
+are intended to be reusable by ocean and later terrain/environment work.
 
 Useful runs:
 

@@ -704,8 +704,13 @@ int main() {
         read_text_file(repo_root / "include/cubey/render/atmosphere_environment.h");
     const std::string shared_environment_source =
         read_text_file(repo_root / "src/cubey/render/atmosphere_environment.cpp");
+    const std::string shared_background_header =
+        read_text_file(repo_root / "include/cubey/render/atmosphere_background_frame.h");
+    const std::string shared_background_source =
+        read_text_file(repo_root / "src/cubey/render/atmosphere_background_frame.cpp");
     const std::string shader_source = read_text_file(source_root / "shaders/atmosphere.frag");
     const std::string cmake_source = read_text_file(source_root / "CMakeLists.txt");
+    const std::string render_cmake_source = read_text_file(repo_root / "src/cubey/CMakeLists.txt");
     require_contains(shared_environment_header, "struct AtmosphereEnvironmentFrameUniforms",
                      "shared atmosphere environment should define frame uniforms");
     require_contains(shared_environment_header,
@@ -749,12 +754,42 @@ int main() {
                      "project atmosphere environment should delegate sun direction");
     require_contains(environment_source, "atmosphere_environment_frame_uniforms",
                      "project atmosphere environment should delegate frame uniforms");
+    require_contains(shared_background_header, "class AtmosphereBackgroundFrame",
+                     "shared render should expose the atmosphere background frame helper");
+    require_contains(shared_background_header, "AtmosphereBackgroundTextureBindings",
+                     "shared render should expose reusable atmosphere texture bindings");
+    require_contains(shared_background_header, "FrameUniforms = 0",
+                     "shared render should name atmosphere frame uniform binding zero");
+    require_contains(shared_background_source, "atmosphere_background_pass_info",
+                     "shared render should own atmosphere pass metadata");
+    require_contains(shared_background_source, "AtmosphereBackgroundBinding::MoonAtlas",
+                     "shared render should own moon atlas binding metadata");
+    require_contains(shared_background_source, "AtmosphereBackgroundBinding::NightSkyAtlas",
+                     "shared render should own night sky atlas binding metadata");
+    require_contains(shared_background_source, "FrameUniformMaterialInstanceConfig",
+                     "shared render should own atmosphere frame descriptor creation");
+    require_contains(shared_background_source, "MaterialDescriptorWriter",
+                     "shared render should refresh atmosphere atlas descriptors");
+    require_contains(shared_background_source, "record_fullscreen_pipeline_draw",
+                     "shared render should own atmosphere fullscreen draw recording");
+    require_contains(render_cmake_source, "render/atmosphere_background_frame.cpp",
+                     "shared render build should compile the atmosphere background helper");
     require_contains(app_source, "atmosphere_frame_uniforms(",
                      "atmosphere app should consume the environment uniform packer");
-    require_contains(app_source, "FrameUniformMaterialInstance<AtmosphereFrameUniforms>",
-                     "atmosphere app should store frame uniforms in material descriptors");
-    require_contains(app_source, ".uniform_binding = 0",
-                     "atmosphere frame uniforms should use descriptor binding zero");
+    require_contains(app_source, "AtmosphereBackgroundFrame",
+                     "atmosphere app should use the shared atmosphere background helper");
+    require_contains(app_source, "atmosphere_background_.create_materials",
+                     "atmosphere app should create background descriptors through shared render");
+    require_contains(app_source, "atmosphere_background_.update_texture_bindings",
+                     "atmosphere app should refresh atlas descriptors through shared render");
+    require_contains(app_source, "atmosphere_background_.create_pipeline",
+                     "atmosphere app should create the background pipeline through shared render");
+    require_contains(app_source, "atmosphere_background_.record_pass",
+                     "atmosphere app should record the background pass through shared render");
+    require_contains(app_source, "atmosphere_background_pass_info",
+                     "atmosphere app should annotate the graph with shared pass metadata");
+    require_not_contains(app_source, "FrameUniformMaterialInstance<AtmosphereFrameUniforms>",
+                         "atmosphere app should not own background frame descriptors directly");
     require_contains(app_source, "RenderGraphFrameExecutor",
                      "atmosphere app should record scene and post passes through the render graph");
     require_contains(app_source, "atmosphere scene color",

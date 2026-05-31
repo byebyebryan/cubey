@@ -1,3 +1,4 @@
+#include <cubey/render/atmosphere_background_frame.h>
 #include <cubey/render/atmosphere_environment.h>
 
 #include <cubey/core/math.h>
@@ -49,11 +50,10 @@ void test_atmosphere_environment_packs_frame_uniforms() {
     };
     const cubey::render::AtmosphereEnvironmentFrameUniforms uniforms =
         cubey::render::atmosphere_environment_frame_uniforms(
-            config,
-            {
-                .view_rays = view_rays,
-                .render_view = cubey::render::AtmosphereEnvironmentRenderView::Moon,
-            });
+            config, {
+                        .view_rays = view_rays,
+                        .render_view = cubey::render::AtmosphereEnvironmentRenderView::Moon,
+                    });
 
     require(uniforms.camera_right_aspect == view_rays.right_aspect,
             "atmosphere environment should preserve packed view ray right/aspect");
@@ -76,22 +76,19 @@ void test_atmosphere_environment_packs_frame_uniforms() {
 }
 
 void test_atmosphere_environment_resolves_celestial_time_math() {
-    require_near(cubey::render::atmosphere_environment_radians_to_degrees(
-                     std::numbers::pi_v<float>),
-                 180.0F, 0.0001F,
-                 "atmosphere environment should convert radians to degrees");
-    require_near(cubey::render::atmosphere_environment_wrap_time_hours(25.5F), 1.5F,
-                 0.0001F, "atmosphere environment should wrap time after midnight");
-    require_near(cubey::render::atmosphere_environment_wrap_time_hours(-1.0F), 23.0F,
-                 0.0001F, "atmosphere environment should wrap negative time before midnight");
-    require_near(cubey::render::atmosphere_environment_wrap_signed_degrees(190.0F),
-                 -170.0F, 0.0001F,
-                 "atmosphere environment should wrap azimuth into signed degrees");
-    require_near(cubey::render::atmosphere_environment_advance_day_of_year(365.0F, 2),
-                 1.0F, 0.0001F,
-                 "atmosphere environment should wrap positive day-of-year advancement");
-    require_near(cubey::render::atmosphere_environment_wrap_unit(-0.25F), 0.75F,
-                 0.0001F, "atmosphere environment should wrap unit intervals");
+    require_near(
+        cubey::render::atmosphere_environment_radians_to_degrees(std::numbers::pi_v<float>), 180.0F,
+        0.0001F, "atmosphere environment should convert radians to degrees");
+    require_near(cubey::render::atmosphere_environment_wrap_time_hours(25.5F), 1.5F, 0.0001F,
+                 "atmosphere environment should wrap time after midnight");
+    require_near(cubey::render::atmosphere_environment_wrap_time_hours(-1.0F), 23.0F, 0.0001F,
+                 "atmosphere environment should wrap negative time before midnight");
+    require_near(cubey::render::atmosphere_environment_wrap_signed_degrees(190.0F), -170.0F,
+                 0.0001F, "atmosphere environment should wrap azimuth into signed degrees");
+    require_near(cubey::render::atmosphere_environment_advance_day_of_year(365.0F, 2), 1.0F,
+                 0.0001F, "atmosphere environment should wrap positive day-of-year advancement");
+    require_near(cubey::render::atmosphere_environment_wrap_unit(-0.25F), 0.75F, 0.0001F,
+                 "atmosphere environment should wrap unit intervals");
 
     cubey::render::AtmosphereEnvironmentTimeOfDay solar_noon;
     solar_noon.time_hours = 12.0F;
@@ -134,4 +131,35 @@ void test_atmosphere_environment_resolves_celestial_time_math() {
             "atmosphere environment auto exposure should brighten low sun");
     require(cubey::render::atmosphere_environment_auto_exposure(-20.0F, 4.0F) <= 4.0F,
             "atmosphere environment auto exposure should stay clamped");
+}
+
+void test_atmosphere_background_pass_declares_frame_and_atlas_bindings() {
+    const cubey::render::MaterialPassInfo pass = cubey::render::atmosphere_background_pass_info();
+    require(pass.label == "atmosphere.fullscreen",
+            "atmosphere background pass should keep the fullscreen label");
+    require(pass.descriptor_sets.size() == 1U,
+            "atmosphere background pass should use one descriptor set");
+    require(pass.descriptor_sets[0].set == 0U,
+            "atmosphere background pass should use descriptor set zero");
+    require(pass.descriptor_sets[0].bindings.size() == 3U,
+            "atmosphere background pass should bind frame uniforms and two atlases");
+    require(
+        pass.descriptor_sets[0].bindings[0].binding ==
+            static_cast<std::uint32_t>(cubey::render::AtmosphereBackgroundBinding::FrameUniforms),
+        "atmosphere background frame uniforms should use binding zero");
+    require(pass.descriptor_sets[0].bindings[0].type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+            "atmosphere background frame uniforms should use a uniform buffer");
+    require(pass.descriptor_sets[0].bindings[1].binding ==
+                static_cast<std::uint32_t>(cubey::render::AtmosphereBackgroundBinding::MoonAtlas),
+            "atmosphere background moon atlas should use binding one");
+    require(pass.descriptor_sets[0].bindings[1].type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            "atmosphere background moon atlas should be sampled");
+    require(
+        pass.descriptor_sets[0].bindings[2].binding ==
+            static_cast<std::uint32_t>(cubey::render::AtmosphereBackgroundBinding::NightSkyAtlas),
+        "atmosphere background night sky atlas should use binding two");
+    require(pass.descriptor_sets[0].bindings[2].type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            "atmosphere background night sky atlas should be sampled");
+    require(pass.push_constants.empty(),
+            "atmosphere background pass should not use push constants");
 }

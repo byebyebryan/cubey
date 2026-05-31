@@ -13,18 +13,14 @@
 #include <cubey/host/windowed_app.h>
 #include <cubey/input/input.h>
 #include <cubey/input/orbit_controller.h>
+#include <cubey/render/atmosphere_background_frame.h>
 #include <cubey/render/hdr_post_frame.h>
-#include <cubey/render/material.h>
-#include <cubey/render/material_instance.h>
-#include <cubey/render/pass.h>
 #include <cubey/render/pbr.h>
-#include <cubey/render/pipeline_resource.h>
 #include <cubey/render/render_graph.h>
 #include <cubey/render/target.h>
 #include <cubey/render/texture.h>
 #include <cubey/render/view_ray_basis_3d.h>
 #include <cubey/vulkan/command_recorder.h>
-#include <cubey/vulkan/descriptors.h>
 #include <cubey/vulkan/device.h>
 #include <cubey/vulkan/gpu_runtime.h>
 #include <cubey/vulkan/sampler.h>
@@ -107,36 +103,6 @@ generate_resolved_night_sky_atlas(ResolvedNightSkyAtlas resolved) {
     return {
         .resolved = resolved,
         .atlas = generate_night_sky_atlas(night_sky_atlas_config(resolved)),
-    };
-}
-
-[[nodiscard]] cubey::render::MaterialPassInfo atmosphere_pass_info() {
-    return cubey::render::MaterialPassInfo{
-        .label = "atmosphere.fullscreen",
-        .descriptor_sets =
-            {
-                cubey::render::MaterialDescriptorSetLayout{
-                    .set = 0,
-                    .bindings =
-                        {
-                            cubey::vulkan::DescriptorSetBindingConfig{
-                                .binding = 0,
-                                .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-                                .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
-                            },
-                            cubey::vulkan::DescriptorSetBindingConfig{
-                                .binding = 1,
-                                .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                                .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
-                            },
-                            cubey::vulkan::DescriptorSetBindingConfig{
-                                .binding = 2,
-                                .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                                .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
-                            },
-                        },
-                },
-            },
     };
 }
 
@@ -433,26 +399,10 @@ class AtmosphereApp {
 
     void create_atmosphere_descriptors(cubey::vulkan::Device& device,
                                        std::uint32_t frame_slot_count) {
-        atmosphere_material_.emplace(
-            device, cubey::render::FrameUniformMaterialInstanceConfig{
-                        .material_pass = atmosphere_pass_info(),
-                        .descriptor_set = 0,
-                        .frame_slot_count = frame_slot_count,
-                        .uniform_binding = 0,
-                        .sampled_images =
-                            {
-                                cubey::render::SampledImageMaterialBinding{
-                                    .binding = 1,
-                                    .sampler = lunar_atlas_texture_->sampler().handle(),
-                                    .image_view = lunar_atlas_texture_->view(),
-                                },
-                                cubey::render::SampledImageMaterialBinding{
-                                    .binding = 2,
-                                    .sampler = night_sky_atlas_texture_->sampler().handle(),
-                                    .image_view = night_sky_atlas_texture_->view(),
-                                },
-                            },
-                    });
+        atmosphere_background_.create_materials(device, {
+                                                            .frame_slot_count = frame_slot_count,
+                                                            .textures = atmosphere_textures(),
+                                                        });
         hdr_post_frame_.create_materials(device, {
                                                      .frame_slot_count = frame_slot_count,
                                                  });
@@ -460,23 +410,7 @@ class AtmosphereApp {
     }
 
     void update_atmosphere_descriptor_bindings(cubey::vulkan::Device& device) const {
-        const cubey::render::FrameUniformMaterialInstance<AtmosphereFrameUniforms>& material =
-            atmosphere_material();
-        for (std::uint32_t slot_index = 0; slot_index < material.material_instance().set_count();
-             ++slot_index) {
-            const cubey::render::FrameSlot frame_slot{
-                .index = slot_index,
-                .count = material.material_instance().set_count(),
-            };
-            cubey::render::MaterialDescriptorWriter(material.set(frame_slot))
-                .uniform_buffer(0, material.uniforms().buffer(frame_slot).handle(),
-                                material.uniforms().range())
-                .combined_image_sampler(1, lunar_atlas_texture_->sampler().handle(),
-                                        lunar_atlas_texture_->view())
-                .combined_image_sampler(2, night_sky_atlas_texture_->sampler().handle(),
-                                        night_sky_atlas_texture_->view())
-                .update(device);
-        }
+        atmosphere_background_.update_texture_bindings(device, atmosphere_textures());
     }
 
     void upload_night_sky_atlas(cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu,
@@ -545,7 +479,7 @@ class AtmosphereApp {
         if (atlas_shutdown_requested_) {
             return;
         }
-        if (!atmosphere_material_.has_value()) {
+        if (!atmosphere_background_.materials_created()) {
             return;
         }
         poll_lunar_atlas_job(device, gpu);
@@ -616,15 +550,12 @@ class AtmosphereApp {
                 .path = shader_path("atmosphere.frag.spv"),
             },
         };
-        const std::array descriptor_set_layouts{atmosphere_material().layout()};
-
-        pipeline_resource_.emplace(device, cubey::render::GraphicsPipelineFileResourceConfig{
-                                               .extent = extent,
-                                               .color_format = kAtmosphereSceneColorFormat,
-                                               .shader_stage_files = atmosphere_shader_stage_files,
-                                               .descriptor_set_layouts = descriptor_set_layouts,
-                                               .material_pass = atmosphere_pass_info(),
-                                           });
+        atmosphere_background_.create_pipeline(
+            device, {
+                        .extent = extent,
+                        .color_format = kAtmosphereSceneColorFormat,
+                        .shader_stage_files = atmosphere_shader_stage_files,
+                    });
 
         const std::array<cubey::render::ShaderStageFile, 2> post_shader_stage_files{
             cubey::render::ShaderStageFile{
@@ -651,7 +582,7 @@ class AtmosphereApp {
             graph_executor_.resize(frame_slot_count);
         }
         hdr_post_frame_.destroy_pipeline();
-        pipeline_resource_.reset();
+        atmosphere_background_.destroy_pipeline();
         pipeline_color_format_ = VK_FORMAT_UNDEFINED;
     }
 
@@ -659,7 +590,7 @@ class AtmosphereApp {
         shutdown_atlas_jobs();
         graph_executor_.clear();
         hdr_post_frame_.destroy();
-        atmosphere_material_.reset();
+        atmosphere_background_.destroy();
         lunar_atlas_texture_.reset();
         night_sky_atlas_texture_.reset();
         current_night_sky_atlas_.reset();
@@ -681,34 +612,22 @@ class AtmosphereApp {
             cubey::math::angle_axis_quat(kBasePitch + view_controller_.pitch(), {1.0F, 0.0F, 0.0F});
         const cubey::render::ViewRayBasis3D view_rays =
             cubey::render::view_ray_basis_3d(rotation, aspect, kDefaultFovyRadians);
-        return atmosphere_frame_uniforms(
-            atmosphere_config_,
-            {
-                .view_rays = view_rays,
-                .render_view = render_view_,
-            });
+        return atmosphere_frame_uniforms(atmosphere_config_, {
+                                                                 .view_rays = view_rays,
+                                                                 .render_view = render_view_,
+                                                             });
     }
 
     [[nodiscard]] cubey::render::PbrPostUniforms post_uniforms() const {
-        return cubey::render::hdr_post_uniforms(pipeline_color_format_, atmosphere_config_.exposure);
+        return cubey::render::hdr_post_uniforms(pipeline_color_format_,
+                                                atmosphere_config_.exposure);
     }
 
     void record_atmosphere_scene_pass(const cubey::vulkan::CommandRecorder& recorder,
                                       const cubey::render::ColorTargetView& target,
                                       cubey::render::FrameSlot frame_slot) const {
-        atmosphere_material().upload(frame_slot, frame_uniforms(target.extent));
-        cubey::render::record_render_target_pass(
-            recorder, cubey::render::render_target_view(target),
-            cubey::render::RenderClearValues{
-                .color = cubey::render::color_clear_value(0.0F, 0.0F, 0.0F, 1.0F),
-            },
-            [this, frame_slot](const cubey::vulkan::CommandRecorder& pass_recorder) {
-                cubey::render::record_fullscreen_pipeline_draw(
-                    pass_recorder, {
-                                       .pipeline = &pipeline_resource(),
-                                       .descriptor_set = atmosphere_material().set(frame_slot),
-                                   });
-            });
+        atmosphere_background_.upload(frame_slot, frame_uniforms(target.extent));
+        atmosphere_background_.record_pass(recorder, target, frame_slot);
     }
 
     void record_atmosphere_post_pass(const cubey::vulkan::CommandRecorder& recorder,
@@ -730,7 +649,7 @@ class AtmosphereApp {
 
         graph.add_pass("atmosphere sky", cubey::render::RenderGraphQueueDomain::Graphics)
             .write_color(scene_color)
-            .material_pass(atmosphere_pass_info())
+            .material_pass(cubey::render::atmosphere_background_pass_info())
             .execute([this, scene_color,
                       frame_slot](const cubey::render::RenderGraphExecutionContext& context) {
                 record_atmosphere_scene_pass(
@@ -803,19 +722,16 @@ class AtmosphereApp {
                                 cubey::render::RenderGraphCommandBufferMode::AlreadyRecording);
     }
 
-    [[nodiscard]] const cubey::render::GraphicsPipelineResource& pipeline_resource() const {
-        if (!pipeline_resource_.has_value()) {
-            throw std::runtime_error("atmosphere pipeline resource is not initialized");
+    [[nodiscard]] cubey::render::AtmosphereBackgroundTextureBindings atmosphere_textures() const {
+        if (!lunar_atlas_texture_.has_value() || !night_sky_atlas_texture_.has_value()) {
+            throw std::runtime_error("atmosphere atlas textures are not initialized");
         }
-        return pipeline_resource_.value();
-    }
-
-    [[nodiscard]] const cubey::render::FrameUniformMaterialInstance<AtmosphereFrameUniforms>&
-    atmosphere_material() const {
-        if (!atmosphere_material_.has_value()) {
-            throw std::runtime_error("atmosphere material is not initialized");
-        }
-        return atmosphere_material_.value();
+        return {
+            .lunar_sampler = lunar_atlas_texture_->sampler().handle(),
+            .lunar_view = lunar_atlas_texture_->view(),
+            .night_sky_sampler = night_sky_atlas_texture_->sampler().handle(),
+            .night_sky_view = night_sky_atlas_texture_->view(),
+        };
     }
 
     RunConfig run_config_;
@@ -840,9 +756,7 @@ class AtmosphereApp {
     std::optional<cubey::render::Texture2D> lunar_atlas_texture_;
     std::optional<cubey::render::TextureCube> night_sky_atlas_texture_;
     std::optional<ResolvedNightSkyAtlas> current_night_sky_atlas_;
-    std::optional<cubey::render::FrameUniformMaterialInstance<AtmosphereFrameUniforms>>
-        atmosphere_material_;
-    std::optional<cubey::render::GraphicsPipelineResource> pipeline_resource_;
+    cubey::render::AtmosphereBackgroundFrame atmosphere_background_;
     cubey::render::HdrPostFrame hdr_post_frame_;
     cubey::render::RenderGraphFrameExecutor graph_executor_{};
     cubey::jobs::JobSystem atlas_jobs_{2};
