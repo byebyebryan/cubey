@@ -185,13 +185,9 @@ TerrainMeshData make_terrain_mesh(const TerrainFieldData& fields) {
     TerrainMeshData mesh;
     mesh.vertices.reserve(fields.sample_count());
     for (std::uint32_t y = 0; y < fields.desc.height; ++y) {
-        const float z =
-            (static_cast<float>(y) - (static_cast<float>(fields.desc.height - 1U) * 0.5F)) *
-            fields.desc.cell_size_m;
+        const float z = terrain_grid_sample_z_m(fields.desc, y);
         for (std::uint32_t x = 0; x < fields.desc.width; ++x) {
-            const float world_x =
-                (static_cast<float>(x) - (static_cast<float>(fields.desc.width - 1U) * 0.5F)) *
-                fields.desc.cell_size_m;
+            const float world_x = terrain_grid_sample_x_m(fields.desc, x);
             const std::uint32_t left = x == 0U ? x : x - 1U;
             const std::uint32_t right = std::min(x + 1U, fields.desc.width - 1U);
             const std::uint32_t down = y == 0U ? y : y - 1U;
@@ -346,8 +342,8 @@ TerrainMeshData make_water_surface_mesh(const TerrainFieldData& fields) {
         static_cast<float>(fields.desc.width - 1U) * fields.desc.cell_size_m;
     const float terrain_height_m =
         static_cast<float>(fields.desc.height - 1U) * fields.desc.cell_size_m;
-    const float min_x = -terrain_width_m * 0.5F;
-    const float min_z = -terrain_height_m * 0.5F;
+    const float min_x = fields.desc.origin_x_m - (terrain_width_m * 0.5F);
+    const float min_z = fields.desc.origin_z_m - (terrain_height_m * 0.5F);
     const float padding_m = std::max(terrain_width_m, terrain_height_m) * 6.0F;
     const float deep_water_m = std::max(fields.max_water_depth_m, 1.0F);
     const float far_shore_sdf_m = -std::max(fields.max_abs_shore_sdf_m + padding_m, padding_m);

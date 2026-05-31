@@ -7,7 +7,8 @@ surface shading, and water simulation state.
 ## Coordinates and Units
 
 - World space is right-handed with `+Y` up.
-- Terrain samples are laid out on the XZ plane, centered around world origin.
+- Terrain samples are laid out on the XZ plane, centered around
+  `TerrainGridDesc::origin_x_m` / `origin_z_m`.
 - `cell_size_m` is the spacing between neighboring field samples in meters.
 - Terrain height is `height_m`, measured in meters with positive values above
   the configured sea level.
@@ -18,8 +19,10 @@ surface shading, and water simulation state.
 
 - Field arrays are row-major: `index = y * width + x`.
 - `x` advances along world `+X`; `y` advances along world `+Z`.
-- The grid origin in `TerrainGridDesc` is the terrain-space origin for the
-  field; current generated terrain uses `origin_x_m = 0` and `origin_z_m = 0`.
+- The grid origin in `TerrainGridDesc` is the center of the sampled field.
+  Sample coordinates are
+  `origin + (sample_index - (sample_count - 1) / 2) * cell_size_m`.
+  Current generated terrain uses `origin_x_m = 0` and `origin_z_m = 0`.
 - Consumers must use the same `width`, `height`, and `cell_size_m` from
   `TerrainGridDesc`; do not infer dimensions from mesh vertex counts.
 

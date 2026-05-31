@@ -894,18 +894,14 @@ TerrainFieldData generate_terrain_fields(const TerrainConfig& config) {
         const float v = fields.desc.height == 1U
                             ? 0.0F
                             : (static_cast<float>(y) / static_cast<float>(fields.desc.height - 1U));
-        const float z =
-            (static_cast<float>(y) - (static_cast<float>(fields.desc.height - 1U) * 0.5F)) *
-            fields.desc.cell_size_m;
+        const float z = terrain_grid_sample_z_m(fields.desc, y);
         for (std::uint32_t x = 0; x < fields.desc.width; ++x) {
             const float u =
                 fields.desc.width == 1U
                     ? 0.0F
                     : (static_cast<float>(x) / static_cast<float>(fields.desc.width - 1U));
             const Point2 p{(u * 2.0F) - 1.0F, (v * 2.0F) - 1.0F};
-            const float world_x =
-                (static_cast<float>(x) - (static_cast<float>(fields.desc.width - 1U) * 0.5F)) *
-                fields.desc.cell_size_m;
+            const float world_x = terrain_grid_sample_x_m(fields.desc, x);
             const std::size_t sample = fields.index(x, y);
             const bool land = land_mask[sample];
             const float shore_sdf = fields.shore_sdf_m[sample];

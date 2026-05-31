@@ -4,6 +4,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <stdexcept>
 #include <vector>
 
 namespace cubey::projects::procedural_terrain {
@@ -18,6 +19,25 @@ struct TerrainGridDesc {
     float origin_x_m = 0.0F;
     float origin_z_m = 0.0F;
 };
+
+[[nodiscard]] inline float terrain_grid_centered_offset_m(std::uint32_t index,
+                                                          std::uint32_t count,
+                                                          float cell_size_m) {
+    if (index >= count) {
+        throw std::runtime_error("terrain grid sample index is out of bounds");
+    }
+    return (static_cast<float>(index) - (static_cast<float>(count - 1U) * 0.5F)) * cell_size_m;
+}
+
+[[nodiscard]] inline float terrain_grid_sample_x_m(const TerrainGridDesc& desc,
+                                                   std::uint32_t x) {
+    return desc.origin_x_m + terrain_grid_centered_offset_m(x, desc.width, desc.cell_size_m);
+}
+
+[[nodiscard]] inline float terrain_grid_sample_z_m(const TerrainGridDesc& desc,
+                                                   std::uint32_t y) {
+    return desc.origin_z_m + terrain_grid_centered_offset_m(y, desc.height, desc.cell_size_m);
+}
 
 struct TerrainMaterialMask {
     float sand = 0.0F;

@@ -237,7 +237,25 @@ int main() {
     const terrain::TerrainFieldData fields = terrain::generate_terrain_fields(small);
     const terrain::TerrainMeshData mesh = terrain::make_terrain_mesh(fields);
     const terrain::TerrainMeshData clipped_land = terrain::make_clipped_land_mesh(fields, mesh);
+    const float half_width_m =
+        static_cast<float>(fields.desc.width - 1U) * fields.desc.cell_size_m * 0.5F;
+    const float half_height_m =
+        static_cast<float>(fields.desc.height - 1U) * fields.desc.cell_size_m * 0.5F;
     require(fields.sample_count() == 33U * 33U, "terrain fields should match grid dimensions");
+    require_near(fields.desc.origin_x_m, 0.0F, 0.001F,
+                 "generated terrain should default to a world-centered grid origin");
+    require_near(fields.desc.origin_z_m, 0.0F, 0.001F,
+                 "generated terrain should default to a world-centered grid origin");
+    require_near(terrain::terrain_grid_sample_x_m(fields.desc, 0U), -half_width_m, 0.001F,
+                 "terrain grid origin should be the center of the X sample range");
+    require_near(terrain::terrain_grid_sample_x_m(fields.desc, fields.desc.width / 2U),
+                 fields.desc.origin_x_m, 0.001F,
+                 "terrain grid center sample should land on origin X for odd grids");
+    require_near(terrain::terrain_grid_sample_z_m(fields.desc, 0U), -half_height_m, 0.001F,
+                 "terrain grid origin should be the center of the Z sample range");
+    require_near(terrain::terrain_grid_sample_z_m(fields.desc, fields.desc.height / 2U),
+                 fields.desc.origin_z_m, 0.001F,
+                 "terrain grid center sample should land on origin Z for odd grids");
     require(fields.height_m.size() == fields.sample_count(), "terrain height field size mismatch");
     require(fields.water_depth_m.size() == fields.sample_count(),
             "terrain water depth field size mismatch");
@@ -271,6 +289,30 @@ int main() {
     require(terrain::terrain_triangle_count(clipped_land) <=
                 terrain::terrain_triangle_count(mesh) * 2U,
             "clipped land mesh should not exceed two triangles per source triangle");
+    require_near(mesh.vertices.front().position.x, -half_width_m, 0.001F,
+                 "terrain mesh should place the first column relative to center origin");
+    require_near(mesh.vertices.front().position.z, -half_height_m, 0.001F,
+                 "terrain mesh should place the first row relative to center origin");
+
+    terrain::TerrainFieldData offset_fields = fields;
+    offset_fields.desc.origin_x_m = 120.0F;
+    offset_fields.desc.origin_z_m = -45.0F;
+    const terrain::TerrainMeshData offset_mesh = terrain::make_terrain_mesh(offset_fields);
+    require_near(offset_mesh.vertices.front().position.x, 120.0F - half_width_m, 0.001F,
+                 "terrain mesh should honor nonzero center origin X");
+    require_near(offset_mesh.vertices.front().position.z, -45.0F - half_height_m, 0.001F,
+                 "terrain mesh should honor nonzero center origin Z");
+    require_near(offset_mesh.vertices[offset_fields.index(offset_fields.desc.width / 2U,
+                                                         offset_fields.desc.height / 2U)]
+                     .position.x,
+                 120.0F, 0.001F, "terrain mesh center sample should land on nonzero origin X");
+    const terrain::TerrainMeshData offset_water_mesh =
+        terrain::make_water_surface_mesh(offset_fields);
+    require_near(offset_water_mesh.vertices[1U].position.x, 120.0F - half_width_m, 0.001F,
+                 "terrain water mesh should honor nonzero center origin X");
+    require_near(offset_water_mesh.vertices[offset_fields.desc.width + 2U].position.z,
+                 -45.0F - half_height_m, 0.001F,
+                 "terrain water mesh should honor nonzero center origin Z");
 
     for (std::size_t index = 0; index < fields.sample_count(); ++index) {
         require(std::isfinite(fields.height_m[index]), "terrain height should be finite");
