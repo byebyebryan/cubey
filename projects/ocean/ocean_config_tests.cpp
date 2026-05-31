@@ -375,6 +375,7 @@ int main() {
         const std::string vertex_shader = read_text_file(source_root / "shaders/ocean.vert");
         const std::string fragment_shader = read_text_file(source_root / "shaders/ocean.frag");
         const std::string sky_shader = read_text_file(source_root / "shaders/ocean_sky.frag");
+        const std::string mesh_header = read_text_file(source_root / "ocean_mesh.h");
         const std::string atmosphere_shader =
             read_text_file(source_root / "shaders/ocean_atmosphere.glsl");
         const std::string app_source = read_text_file(source_root / "ocean_app.cpp");
@@ -439,6 +440,10 @@ int main() {
                          "vertex shader should gate macro anti-repeat to macro cascades");
         require_contains(vertex_shader, "sample_ocean_displacement(cascade, position, tile_length)",
                          "vertex shader should apply macro anti-repeat displacement sampling");
+        require_contains(mesh_header, "cubey/render/clipmap_grid_2d.h",
+                         "ocean clipmap should use the shared render helper");
+        require_contains(mesh_header, "clipmap_grid_2d_patches",
+                         "ocean clipmap should delegate patch generation to the shared helper");
         require_contains(app_source, "diagnostics_.anti_repeat_strength",
                          "app should pass anti-repeat as diagnostics push data");
         require_contains(app_source, "kOceanSceneColorFormat = VK_FORMAT_R16G16B16A16_SFLOAT",
