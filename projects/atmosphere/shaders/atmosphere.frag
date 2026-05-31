@@ -3,7 +3,6 @@
 
 #include "cubey/atmosphere.glsl"
 #include "cubey/color_space.glsl"
-#include "cubey/pbr.glsl"
 
 const int ATMOSPHERE_VIEW_SAMPLE_COUNT = 16;
 const int ATMOSPHERE_LIGHT_SAMPLE_COUNT = 8;
@@ -784,14 +783,12 @@ void main() {
 
     if (debug_view == 10) {
         vec3 color = render_moon_surface_debug();
-        out_color = vec4(cubey_pbr_apply_display_transform(color, atmosphere.display_transform),
-                         1.0);
+        out_color = vec4(color, 1.0);
         return;
     }
     if (debug_view == 8) {
         vec3 color = render_milky_way_debug();
-        out_color = vec4(cubey_pbr_apply_display_transform(color, atmosphere.display_transform),
-                         1.0);
+        out_color = vec4(color, 1.0);
         return;
     }
 
@@ -802,8 +799,7 @@ void main() {
         vec3 space_color = sun_disk_luminance(ray_direction, planet_center) +
                            night_sky_radiance(ray_direction, sun_direction) +
                            moon_disk_radiance(ray_direction, sun_direction, planet_center);
-        out_color = vec4(cubey_pbr_apply_display_transform(space_color,
-                                                           atmosphere.display_transform), 1.0);
+        out_color = vec4(space_color, 1.0);
         return;
     }
 
@@ -852,5 +848,5 @@ void main() {
         }
     }
 
-    out_color = vec4(cubey_pbr_apply_display_transform(color, atmosphere.display_transform), 1.0);
+    out_color = vec4(color, 1.0);
 }

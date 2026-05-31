@@ -703,6 +703,7 @@ int main() {
     const std::string environment_source =
         read_text_file(source_root / "atmosphere_environment.cpp");
     const std::string shader_source = read_text_file(source_root / "shaders/atmosphere.frag");
+    const std::string cmake_source = read_text_file(source_root / "CMakeLists.txt");
     require_contains(environment_header, "static_assert(sizeof(AtmosphereFrameUniforms)",
                      "atmosphere environment should lock frame uniform size");
     require_contains(environment_header, "sizeof(float) * 64U",
@@ -715,8 +716,22 @@ int main() {
                      "atmosphere app should store frame uniforms in material descriptors");
     require_contains(app_source, ".uniform_binding = 0",
                      "atmosphere frame uniforms should use descriptor binding zero");
+    require_contains(app_source, "RenderGraphFrameExecutor",
+                     "atmosphere app should record scene and post passes through the render graph");
+    require_contains(app_source, "atmosphere scene color",
+                     "atmosphere app should render into an HDR scene color target");
+    require_contains(app_source, "kAtmosphereSceneColorFormat = VK_FORMAT_R16G16B16A16_SFLOAT",
+                     "atmosphere scene color should use a floating point HDR format");
+    require_contains(app_source, "pbr_post_pass_info()",
+                     "atmosphere app should reuse the shared PBR post pass");
+    require_contains(app_source, "forward_pbr_post.frag.spv",
+                     "atmosphere app should load the shared PBR post shader");
+    require_contains(cmake_source, "forward_pbr_post.frag",
+                     "atmosphere build should compile the shared PBR post fragment shader");
     require_not_contains(shader_source, "layout(push_constant)",
                          "atmosphere shader should not use push constants for frame data");
+    require_not_contains(shader_source, "cubey_pbr_apply_display_transform",
+                         "atmosphere shader should leave display transform to the post pass");
     require_contains(shader_source, "layout(set = 0, binding = 0) uniform AtmosphereFrame",
                      "atmosphere shader should read frame data from a uniform buffer");
     require_contains(shader_source, "#include \"cubey/atmosphere.glsl\"",

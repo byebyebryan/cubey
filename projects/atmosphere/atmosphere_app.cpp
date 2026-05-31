@@ -18,6 +18,7 @@
 #include <cubey/render/pass.h>
 #include <cubey/render/pbr.h>
 #include <cubey/render/pipeline_resource.h>
+#include <cubey/render/render_graph.h>
 #include <cubey/render/target.h>
 #include <cubey/render/texture.h>
 #include <cubey/render/view_ray_basis_3d.h>
@@ -25,6 +26,7 @@
 #include <cubey/vulkan/descriptors.h>
 #include <cubey/vulkan/device.h>
 #include <cubey/vulkan/gpu_runtime.h>
+#include <cubey/vulkan/sampler.h>
 #include <cubey/vulkan/vk_check.h>
 
 #include <vulkan/vulkan.h>
@@ -54,6 +56,7 @@ using cubey::host::FrameStatsSnapshot;
 constexpr float kBaseYaw = 0.0F;
 constexpr float kBasePitch = 0.0F;
 constexpr float kDefaultFovyRadians = 65.0F * (std::numbers::pi_v<float> / 180.0F);
+constexpr VkFormat kAtmosphereSceneColorFormat = VK_FORMAT_R16G16B16A16_SFLOAT;
 
 struct ResolvedNightSkyAtlas {
     float procedural_variation = 0.0F;
@@ -68,6 +71,11 @@ struct GeneratedNightSkyAtlas {
 struct PendingNightSkyAtlasJob {
     ResolvedNightSkyAtlas resolved{};
     cubey::jobs::JobHandle<GeneratedNightSkyAtlas> job;
+};
+
+struct CompiledAtmosphereGraph {
+    cubey::render::CompiledRenderGraph graph{};
+    cubey::render::RenderGraphTextureHandle scene_color{};
 };
 
 std::filesystem::path shader_path(const char* filename) {
@@ -187,9 +195,9 @@ class AtmosphereApp {
                 .latest_frame_ms = latest_frame_ms_,
             });
         };
-        callbacks.record_frame = [this](cubey::host::WindowedAppContext&,
+        callbacks.record_frame = [this](cubey::host::WindowedAppContext& context,
                                         const cubey::host::WindowedRenderFrame& frame) {
-            record_windowed_frame(frame);
+            record_windowed_frame(context.device(), frame);
         };
         callbacks.frame_stats_sample =
             [this](cubey::host::WindowedAppContext& context,
@@ -227,12 +235,12 @@ class AtmosphereApp {
             create_gpu_resources(context.device(), context.gpu(), target.format, target.extent,
                                  cubey::host::headless_capture_frame_slot_count(context.config()));
         };
-        callbacks.record_frame = [this](cubey::host::HeadlessPngContext&,
+        callbacks.record_frame = [this](cubey::host::HeadlessPngContext& context,
                                         const cubey::host::HeadlessCaptureFrame& frame,
                                         VkCommandBuffer command_buffer,
                                         const cubey::host::HeadlessRenderTarget& target) {
             update_headless_time(frame);
-            record_atmosphere_target(command_buffer, target, frame.frame_slot);
+            record_atmosphere_target(context.device(), command_buffer, target, frame.frame_slot);
         };
         callbacks.shutdown = [this](cubey::host::HeadlessPngContext&) {
             destroy_swapchain_resources();
@@ -444,6 +452,17 @@ class AtmosphereApp {
                                 },
                             },
                     });
+        post_material_.emplace(device, cubey::render::FrameUniformMaterialInstanceConfig{
+                                           .material_pass = cubey::render::pbr_post_pass_info(),
+                                           .descriptor_set = 0,
+                                           .frame_slot_count = frame_slot_count,
+                                           .uniform_binding = static_cast<std::uint32_t>(
+                                               cubey::render::PbrPostBinding::PostUniforms),
+                                       });
+        post_sampler_.emplace(device, cubey::vulkan::SamplerConfig{
+                                          .address_mode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+                                      });
+        graph_executor_.resize(frame_slot_count);
     }
 
     void update_atmosphere_descriptor_bindings(cubey::vulkan::Device& device) const {
@@ -593,7 +612,7 @@ class AtmosphereApp {
     }
 
     void create_pipeline(cubey::vulkan::Device& device, VkFormat color_format, VkExtent2D extent) {
-        const std::array<cubey::render::ShaderStageFile, 2> shader_stage_files{
+        const std::array<cubey::render::ShaderStageFile, 2> atmosphere_shader_stage_files{
             cubey::render::ShaderStageFile{
                 .stage = VK_SHADER_STAGE_VERTEX_BIT,
                 .path = shader_path("atmosphere.vert.spv"),
@@ -607,21 +626,49 @@ class AtmosphereApp {
 
         pipeline_resource_.emplace(device, cubey::render::GraphicsPipelineFileResourceConfig{
                                                .extent = extent,
-                                               .color_format = color_format,
-                                               .shader_stage_files = shader_stage_files,
+                                               .color_format = kAtmosphereSceneColorFormat,
+                                               .shader_stage_files = atmosphere_shader_stage_files,
                                                .descriptor_set_layouts = descriptor_set_layouts,
                                                .material_pass = atmosphere_pass_info(),
                                            });
+
+        const std::array<cubey::render::ShaderStageFile, 2> post_shader_stage_files{
+            cubey::render::ShaderStageFile{
+                .stage = VK_SHADER_STAGE_VERTEX_BIT,
+                .path = shader_path("forward_pbr_post.vert.spv"),
+            },
+            cubey::render::ShaderStageFile{
+                .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
+                .path = shader_path("forward_pbr_post.frag.spv"),
+            },
+        };
+        const std::array post_descriptor_set_layouts{post_material().layout()};
+        post_pipeline_.emplace(device, cubey::render::GraphicsPipelineFileResourceConfig{
+                                           .extent = extent,
+                                           .color_format = color_format,
+                                           .shader_stage_files = post_shader_stage_files,
+                                           .descriptor_set_layouts = post_descriptor_set_layouts,
+                                           .material_pass = cubey::render::pbr_post_pass_info(),
+                                       });
         pipeline_color_format_ = color_format;
     }
 
     void destroy_swapchain_resources() {
+        const std::uint32_t frame_slot_count = graph_executor_.frame_slot_count();
+        graph_executor_.clear();
+        if (frame_slot_count != 0U) {
+            graph_executor_.resize(frame_slot_count);
+        }
+        post_pipeline_.reset();
         pipeline_resource_.reset();
         pipeline_color_format_ = VK_FORMAT_UNDEFINED;
     }
 
     void destroy_global_resources() {
         shutdown_atlas_jobs();
+        graph_executor_.clear();
+        post_sampler_.reset();
+        post_material_.reset();
         atmosphere_material_.reset();
         lunar_atlas_texture_.reset();
         night_sky_atlas_texture_.reset();
@@ -652,13 +699,23 @@ class AtmosphereApp {
             {
                 .view_rays = view_rays,
                 .render_view = render_view_,
-                .display_transform = cubey::render::pbr_display_transform_uniform(display_transform),
+                .display_transform =
+                    cubey::render::pbr_display_transform_uniform(display_transform),
             });
     }
 
-    void record_atmosphere_draw(const cubey::vulkan::CommandRecorder& recorder,
-                                const cubey::render::ColorTargetView& target,
-                                cubey::render::FrameSlot frame_slot) const {
+    [[nodiscard]] cubey::render::PbrPostUniforms post_uniforms() const {
+        const cubey::render::PbrDisplayTransform display_transform =
+            cubey::render::pbr_display_transform_for_target(pipeline_color_format_,
+                                                            atmosphere_config_.exposure);
+        return {
+            .display_transform = cubey::render::pbr_display_transform_uniform(display_transform),
+        };
+    }
+
+    void record_atmosphere_scene_pass(const cubey::vulkan::CommandRecorder& recorder,
+                                      const cubey::render::ColorTargetView& target,
+                                      cubey::render::FrameSlot frame_slot) const {
         atmosphere_material().upload(frame_slot, frame_uniforms(target.extent));
         cubey::render::record_render_target_pass(
             recorder, cubey::render::render_target_view(target),
@@ -667,30 +724,123 @@ class AtmosphereApp {
             },
             [this, frame_slot](const cubey::vulkan::CommandRecorder& pass_recorder) {
                 cubey::render::record_fullscreen_pipeline_draw(
-                    pass_recorder,
-                    {
-                        .pipeline = &pipeline_resource(),
-                        .descriptor_set = atmosphere_material().set(frame_slot),
-                    });
+                    pass_recorder, {
+                                       .pipeline = &pipeline_resource(),
+                                       .descriptor_set = atmosphere_material().set(frame_slot),
+                                   });
             });
     }
 
-    void record_windowed_frame(const cubey::host::WindowedRenderFrame& frame) {
-        const cubey::vulkan::CommandRecorder recorder(frame.command_buffer);
-        recorder.begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-        cubey::render::record_present_render_target(
-            recorder, cubey::render::render_target_view(frame.color_target),
-            [this, &frame](const cubey::vulkan::CommandRecorder& present_recorder) {
-                record_atmosphere_draw(present_recorder, frame.color_target, frame.frame_slot);
+    void record_atmosphere_post_pass(const cubey::vulkan::CommandRecorder& recorder,
+                                     const cubey::render::ColorTargetView& target,
+                                     cubey::render::FrameSlot frame_slot) const {
+        cubey::render::record_render_target_pass(
+            recorder, cubey::render::render_target_view(target),
+            cubey::render::RenderClearValues{
+                .color = cubey::render::color_clear_value(0.0F, 0.0F, 0.0F, 1.0F),
+            },
+            [this, frame_slot](const cubey::vulkan::CommandRecorder& pass_recorder) {
+                cubey::render::record_fullscreen_pipeline_draw(
+                    pass_recorder, {
+                                       .pipeline = &post_pipeline(),
+                                       .descriptor_set = post_material().set(frame_slot),
+                                   });
             });
-        recorder.end("vkEndCommandBuffer atmosphere");
     }
 
-    void record_atmosphere_target(VkCommandBuffer command_buffer,
+    [[nodiscard]] CompiledAtmosphereGraph
+    current_render_graph(cubey::render::ColorTargetView target, cubey::render::FrameSlot frame_slot,
+                         cubey::render::RenderGraphTextureState target_initial_state,
+                         cubey::render::RenderGraphTextureState target_final_state) const {
+        cubey::render::RenderGraphBuilder graph;
+        const cubey::render::RenderGraphTextureHandle backbuffer = graph.import_color_target(
+            "backbuffer", target, target_initial_state, target_final_state);
+        const cubey::render::RenderGraphTextureHandle scene_color =
+            graph.create_texture(cubey::render::RenderGraphTextureDesc{
+                .label = "atmosphere scene color",
+                .extent = {target.extent.width, target.extent.height, 1U},
+                .format = kAtmosphereSceneColorFormat,
+                .aspects = VK_IMAGE_ASPECT_COLOR_BIT,
+            });
+
+        graph.add_pass("atmosphere sky", cubey::render::RenderGraphQueueDomain::Graphics)
+            .write_color(scene_color)
+            .material_pass(atmosphere_pass_info())
+            .execute([this, scene_color,
+                      frame_slot](const cubey::render::RenderGraphExecutionContext& context) {
+                record_atmosphere_scene_pass(
+                    context.recorder(),
+                    cubey::render::resolved_color_target_view(context, scene_color), frame_slot);
+            });
+        graph.add_pass("atmosphere post", cubey::render::RenderGraphQueueDomain::Graphics)
+            .read_texture(scene_color)
+            .write_color(backbuffer)
+            .material_pass(cubey::render::pbr_post_pass_info())
+            .execute([this, target,
+                      frame_slot](const cubey::render::RenderGraphExecutionContext& context) {
+                record_atmosphere_post_pass(context.recorder(), target, frame_slot);
+            });
+
+        return {
+            .graph = graph.compile(),
+            .scene_color = scene_color,
+        };
+    }
+
+    void update_post_descriptor(const cubey::vulkan::Device& device,
+                                cubey::render::FrameSlot frame_slot,
+                                const cubey::render::CompiledRenderGraph& graph,
+                                const cubey::render::RenderGraphResourceSet& resources,
+                                cubey::render::RenderGraphTextureHandle scene_color) const {
+        const cubey::render::RenderGraphSampledTextureView sampled =
+            cubey::render::resolved_sampled_texture_view(graph, resources, scene_color);
+        cubey::render::MaterialDescriptorWriter(post_material().set(frame_slot))
+            .combined_image_sampler(
+                static_cast<std::uint32_t>(cubey::render::PbrPostBinding::SceneColor),
+                post_sampler().handle(), sampled.view, sampled.layout)
+            .update(device);
+    }
+
+    void record_atmosphere_graph(cubey::vulkan::Device& device, VkCommandBuffer command_buffer,
+                                 cubey::render::ColorTargetView target,
+                                 cubey::render::FrameSlot frame_slot,
+                                 cubey::render::RenderGraphTextureState target_initial_state,
+                                 cubey::render::RenderGraphTextureState target_final_state,
+                                 cubey::render::RenderGraphCommandBufferMode command_buffer_mode) {
+        post_material().upload(frame_slot, post_uniforms());
+        const CompiledAtmosphereGraph render_graph =
+            current_render_graph(target, frame_slot, target_initial_state, target_final_state);
+        graph_executor_.record(
+            cubey::render::RenderGraphFrameRecordInfo{
+                .device = &device,
+                .command_buffer = command_buffer,
+                .frame_slot = frame_slot,
+                .label = "vkEndCommandBuffer atmosphere",
+                .command_buffer_mode = command_buffer_mode,
+            },
+            render_graph.graph,
+            [this, &device, frame_slot,
+             &render_graph](const cubey::render::RenderGraphResourceSet& resources) {
+                update_post_descriptor(device, frame_slot, render_graph.graph, resources,
+                                       render_graph.scene_color);
+            });
+    }
+
+    void record_windowed_frame(cubey::vulkan::Device& device,
+                               const cubey::host::WindowedRenderFrame& frame) {
+        record_atmosphere_graph(device, frame.command_buffer, frame.color_target, frame.frame_slot,
+                                cubey::render::render_graph_undefined_texture_state(),
+                                cubey::render::render_graph_present_texture_state(),
+                                cubey::render::RenderGraphCommandBufferMode::BeginAndEnd);
+    }
+
+    void record_atmosphere_target(cubey::vulkan::Device& device, VkCommandBuffer command_buffer,
                                   const cubey::host::HeadlessRenderTarget& target,
                                   cubey::render::FrameSlot frame_slot) {
-        const cubey::vulkan::CommandRecorder recorder(command_buffer);
-        record_atmosphere_draw(recorder, target, frame_slot);
+        record_atmosphere_graph(device, command_buffer, target, frame_slot,
+                                cubey::render::render_graph_color_attachment_texture_state(),
+                                cubey::render::render_graph_color_attachment_texture_state(),
+                                cubey::render::RenderGraphCommandBufferMode::AlreadyRecording);
     }
 
     [[nodiscard]] const cubey::render::GraphicsPipelineResource& pipeline_resource() const {
@@ -700,12 +850,34 @@ class AtmosphereApp {
         return pipeline_resource_.value();
     }
 
+    [[nodiscard]] const cubey::render::GraphicsPipelineResource& post_pipeline() const {
+        if (!post_pipeline_.has_value()) {
+            throw std::runtime_error("atmosphere post pipeline resource is not initialized");
+        }
+        return post_pipeline_.value();
+    }
+
     [[nodiscard]] const cubey::render::FrameUniformMaterialInstance<AtmosphereFrameUniforms>&
     atmosphere_material() const {
         if (!atmosphere_material_.has_value()) {
             throw std::runtime_error("atmosphere material is not initialized");
         }
         return atmosphere_material_.value();
+    }
+
+    [[nodiscard]] const cubey::render::FrameUniformMaterialInstance<cubey::render::PbrPostUniforms>&
+    post_material() const {
+        if (!post_material_.has_value()) {
+            throw std::runtime_error("atmosphere post material is not initialized");
+        }
+        return post_material_.value();
+    }
+
+    [[nodiscard]] const cubey::vulkan::Sampler& post_sampler() const {
+        if (!post_sampler_.has_value()) {
+            throw std::runtime_error("atmosphere post sampler is not initialized");
+        }
+        return post_sampler_.value();
     }
 
     RunConfig run_config_;
@@ -733,6 +905,11 @@ class AtmosphereApp {
     std::optional<cubey::render::FrameUniformMaterialInstance<AtmosphereFrameUniforms>>
         atmosphere_material_;
     std::optional<cubey::render::GraphicsPipelineResource> pipeline_resource_;
+    std::optional<cubey::render::FrameUniformMaterialInstance<cubey::render::PbrPostUniforms>>
+        post_material_;
+    std::optional<cubey::render::GraphicsPipelineResource> post_pipeline_;
+    std::optional<cubey::vulkan::Sampler> post_sampler_;
+    cubey::render::RenderGraphFrameExecutor graph_executor_{};
     cubey::jobs::JobSystem atlas_jobs_{2};
     std::optional<cubey::jobs::JobHandle<LunarAtlas>> pending_lunar_atlas_;
     std::optional<PendingNightSkyAtlasJob> pending_night_sky_atlas_;
