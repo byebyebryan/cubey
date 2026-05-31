@@ -155,6 +155,7 @@ void test_run_config_parses_pbr_environment_options() {
     require(config.pbr.environment_rotation_degrees == 45.0F,
             "run config should parse environment rotation");
     require(config.pbr.exposure == -0.5F, "run config should parse exposure");
+    require(config.pbr.exposure_explicit, "run config should track explicit exposure");
 }
 
 void test_run_config_parses_animation_options() {
@@ -189,6 +190,260 @@ void test_run_config_parses_pbr_debug_view_name() {
         cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
     require(config.debug_view == debug_value.data(),
             "run config should preserve renderer debug view name");
+}
+
+void test_run_config_parses_atmosphere_options() {
+    std::string program = "cubey";
+    std::string preset_flag = "--atmosphere-preset";
+    std::string preset_value = "sunset";
+    std::string elevation_flag = "--sun-elevation";
+    std::string elevation_value = "4.5";
+    std::string azimuth_flag = "--sun-azimuth";
+    std::string azimuth_value = "-28.0";
+    std::string altitude_flag = "--camera-altitude-km";
+    std::string altitude_value = "2.25";
+    std::string mie_flag = "--mie-scale";
+    std::string mie_value = "1.75";
+    std::string mode_flag = "--time-of-day-mode";
+    std::string mode_value = "manual";
+    std::string time_flag = "--time-hours";
+    std::string time_value = "18.5";
+    std::string day_flag = "--day-of-year";
+    std::string day_value = "172";
+    std::string latitude_flag = "--latitude-degrees";
+    std::string latitude_value = "42.5";
+    std::string offset_flag = "--sun-azimuth-offset";
+    std::string offset_value = "12.5";
+    std::string speed_flag = "--time-speed-hours-per-second";
+    std::string speed_value = "1.25";
+    std::string pause_flag = "--pause-time";
+    std::string auto_exposure_flag = "--no-auto-exposure";
+    std::string exposure_bias_flag = "--exposure-bias";
+    std::string exposure_bias_value = "0.75";
+    std::string twilight_flag = "--twilight-strength";
+    std::string twilight_value = "1.5";
+    std::string twilight_warmth_flag = "--twilight-horizon-warmth";
+    std::string twilight_warmth_value = "0.8";
+    std::string star_intensity_flag = "--star-intensity";
+    std::string star_intensity_value = "1.7";
+    std::string star_density_flag = "--star-density";
+    std::string star_density_value = "0.4";
+    std::string moon_intensity_flag = "--moon-intensity";
+    std::string moon_intensity_value = "1.2";
+    std::string moonlight_intensity_flag = "--moonlight-intensity";
+    std::string moonlight_intensity_value = "1.4";
+    std::string moon_phase_offset_flag = "--moon-phase-offset-days";
+    std::string moon_phase_offset_value = "7.5";
+    std::string moon_size_scale_flag = "--moon-size-scale";
+    std::string moon_size_scale_value = "1.8";
+    std::string no_moon_flag = "--no-moon";
+    std::array<char*, 44> argv{program.data(),
+                               preset_flag.data(),
+                               preset_value.data(),
+                               elevation_flag.data(),
+                               elevation_value.data(),
+                               azimuth_flag.data(),
+                               azimuth_value.data(),
+                               altitude_flag.data(),
+                               altitude_value.data(),
+                               mie_flag.data(),
+                               mie_value.data(),
+                               mode_flag.data(),
+                               mode_value.data(),
+                               time_flag.data(),
+                               time_value.data(),
+                               day_flag.data(),
+                               day_value.data(),
+                               latitude_flag.data(),
+                               latitude_value.data(),
+                               offset_flag.data(),
+                               offset_value.data(),
+                               speed_flag.data(),
+                               speed_value.data(),
+                               pause_flag.data(),
+                               auto_exposure_flag.data(),
+                               exposure_bias_flag.data(),
+                               exposure_bias_value.data(),
+                               twilight_flag.data(),
+                               twilight_value.data(),
+                               twilight_warmth_flag.data(),
+                               twilight_warmth_value.data(),
+                               star_intensity_flag.data(),
+                               star_intensity_value.data(),
+                               star_density_flag.data(),
+                               star_density_value.data(),
+                               moon_intensity_flag.data(),
+                               moon_intensity_value.data(),
+                               moonlight_intensity_flag.data(),
+                               moonlight_intensity_value.data(),
+                               moon_phase_offset_flag.data(),
+                               moon_phase_offset_value.data(),
+                               moon_size_scale_flag.data(),
+                               moon_size_scale_value.data(),
+                               no_moon_flag.data()};
+
+    const cubey::RunConfig config =
+        cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
+    require(config.atmosphere.preset == "sunset", "run config should parse atmosphere preset");
+    require(config.atmosphere.sun_elevation_degrees == 4.5F,
+            "run config should parse sun elevation");
+    require(config.atmosphere.sun_azimuth_degrees == -28.0F, "run config should parse sun azimuth");
+    require(config.atmosphere.camera_altitude_km == 2.25F,
+            "run config should parse camera altitude");
+    require(config.atmosphere.mie_scale == 1.75F, "run config should parse Mie scale");
+    require(config.atmosphere.time_of_day_mode == "manual",
+            "run config should parse atmosphere time mode");
+    require(config.atmosphere.time_hours == 18.5F, "run config should parse time hours");
+    require(config.atmosphere.day_of_year == 172.0F, "run config should parse day of year");
+    require(config.atmosphere.latitude_degrees == 42.5F, "run config should parse latitude");
+    require(config.atmosphere.sun_azimuth_offset_degrees == 12.5F,
+            "run config should parse sun azimuth offset");
+    require(config.atmosphere.time_speed_hours_per_second == 1.25F,
+            "run config should parse time speed");
+    require(config.atmosphere.time_paused == 1, "run config should parse time pause flag");
+    require(config.atmosphere.auto_exposure == 0,
+            "run config should parse auto exposure disable flag");
+    require(config.atmosphere.exposure_bias == 0.75F, "run config should parse exposure bias");
+    require(config.atmosphere.twilight_strength == 1.5F,
+            "run config should parse twilight strength");
+    require(config.atmosphere.twilight_horizon_warmth == 0.8F,
+            "run config should parse twilight horizon warmth");
+    require(config.atmosphere.star_intensity == 1.7F, "run config should parse star intensity");
+    require(config.atmosphere.star_density == 0.4F, "run config should parse star density");
+    require(config.atmosphere.moon_intensity == 1.2F, "run config should parse moon intensity");
+    require(config.atmosphere.moonlight_intensity == 1.4F,
+            "run config should parse moonlight intensity");
+    require(config.atmosphere.moon_phase_offset_days == 7.5F,
+            "run config should parse moon phase offset");
+    require(config.atmosphere.moon_size_scale == 1.8F, "run config should parse moon size scale");
+    require(config.atmosphere.moon == 0, "run config should parse moon disable flag");
+}
+
+void test_run_config_rejects_invalid_atmosphere_options() {
+    {
+        std::string program = "cubey";
+        std::string elevation_flag = "--sun-elevation";
+        std::string elevation_value = "91";
+        std::array<char*, 3> argv{program.data(), elevation_flag.data(), elevation_value.data()};
+        require_throws(
+            [&argv]() { cubey::parse_run_config(static_cast<int>(argv.size()), argv.data()); },
+            "run config should reject invalid sun elevation");
+    }
+    {
+        std::string program = "cubey";
+        std::string azimuth_flag = "--sun-azimuth";
+        std::string azimuth_value = "361";
+        std::array<char*, 3> argv{program.data(), azimuth_flag.data(), azimuth_value.data()};
+        require_throws(
+            [&argv]() { cubey::parse_run_config(static_cast<int>(argv.size()), argv.data()); },
+            "run config should reject invalid sun azimuth");
+    }
+    {
+        std::string program = "cubey";
+        std::string altitude_flag = "--camera-altitude-km";
+        std::string altitude_value = "-1";
+        std::array<char*, 3> argv{program.data(), altitude_flag.data(), altitude_value.data()};
+        require_throws(
+            [&argv]() { cubey::parse_run_config(static_cast<int>(argv.size()), argv.data()); },
+            "run config should reject negative camera altitude");
+    }
+    {
+        std::string program = "cubey";
+        std::string mie_flag = "--mie-scale";
+        std::string mie_value = "-0.5";
+        std::array<char*, 3> argv{program.data(), mie_flag.data(), mie_value.data()};
+        require_throws(
+            [&argv]() { cubey::parse_run_config(static_cast<int>(argv.size()), argv.data()); },
+            "run config should reject negative Mie scale");
+    }
+    {
+        std::string program = "cubey";
+        std::string mode_flag = "--time-of-day-mode";
+        std::string mode_value = "civil";
+        std::array<char*, 3> argv{program.data(), mode_flag.data(), mode_value.data()};
+        require_throws(
+            [&argv]() { cubey::parse_run_config(static_cast<int>(argv.size()), argv.data()); },
+            "run config should reject unknown time-of-day mode");
+    }
+    {
+        std::string program = "cubey";
+        std::string mode_flag = "--time-of-day-mode";
+        std::string mode_value = "solar";
+        std::string elevation_flag = "--sun-elevation";
+        std::string elevation_value = "4";
+        std::array<char*, 5> argv{program.data(), mode_flag.data(), mode_value.data(),
+                                  elevation_flag.data(), elevation_value.data()};
+        require_throws(
+            [&argv]() { cubey::parse_run_config(static_cast<int>(argv.size()), argv.data()); },
+            "run config should reject solar mode with manual sun controls");
+    }
+    {
+        std::string program = "cubey";
+        std::string time_flag = "--time-hours";
+        std::string time_value = "24.5";
+        std::array<char*, 3> argv{program.data(), time_flag.data(), time_value.data()};
+        require_throws(
+            [&argv]() { cubey::parse_run_config(static_cast<int>(argv.size()), argv.data()); },
+            "run config should reject out-of-range time hours");
+    }
+    {
+        std::string program = "cubey";
+        std::string latitude_flag = "--latitude-degrees";
+        std::string latitude_value = "-91";
+        std::array<char*, 3> argv{program.data(), latitude_flag.data(), latitude_value.data()};
+        require_throws(
+            [&argv]() { cubey::parse_run_config(static_cast<int>(argv.size()), argv.data()); },
+            "run config should reject invalid latitude");
+    }
+    {
+        std::string program = "cubey";
+        std::string bias_flag = "--exposure-bias";
+        std::string bias_value = "4.5";
+        std::array<char*, 3> argv{program.data(), bias_flag.data(), bias_value.data()};
+        require_throws(
+            [&argv]() { cubey::parse_run_config(static_cast<int>(argv.size()), argv.data()); },
+            "run config should reject invalid exposure bias");
+    }
+    {
+        std::string program = "cubey";
+        std::string star_density_flag = "--star-density";
+        std::string star_density_value = "1.5";
+        std::array<char*, 3> argv{program.data(), star_density_flag.data(),
+                                  star_density_value.data()};
+        require_throws(
+            [&argv]() { cubey::parse_run_config(static_cast<int>(argv.size()), argv.data()); },
+            "run config should reject invalid star density");
+    }
+    {
+        std::string program = "cubey";
+        std::string twilight_warmth_flag = "--twilight-horizon-warmth";
+        std::string twilight_warmth_value = "2.5";
+        std::array<char*, 3> argv{program.data(), twilight_warmth_flag.data(),
+                                  twilight_warmth_value.data()};
+        require_throws(
+            [&argv]() { cubey::parse_run_config(static_cast<int>(argv.size()), argv.data()); },
+            "run config should reject invalid twilight horizon warmth");
+    }
+    {
+        std::string program = "cubey";
+        std::string moon_phase_offset_flag = "--moon-phase-offset-days";
+        std::string moon_phase_offset_value = "30";
+        std::array<char*, 3> argv{program.data(), moon_phase_offset_flag.data(),
+                                  moon_phase_offset_value.data()};
+        require_throws(
+            [&argv]() { cubey::parse_run_config(static_cast<int>(argv.size()), argv.data()); },
+            "run config should reject invalid moon phase offset");
+    }
+    {
+        std::string program = "cubey";
+        std::string moon_size_scale_flag = "--moon-size-scale";
+        std::string moon_size_scale_value = "0";
+        std::array<char*, 3> argv{program.data(), moon_size_scale_flag.data(),
+                                  moon_size_scale_value.data()};
+        require_throws(
+            [&argv]() { cubey::parse_run_config(static_cast<int>(argv.size()), argv.data()); },
+            "run config should reject invalid moon size scale");
+    }
 }
 
 void test_run_config_parses_frame_stats_flag() {

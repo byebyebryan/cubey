@@ -149,6 +149,7 @@ class WindowedHost {
     void create_frame_resources();
     void create_swapchain_resources();
     void destroy_swapchain_resources();
+    void shutdown_app_resources();
     void recreate_swapchain_resources();
     void create_profile_recorder();
     void write_profile_outputs();
@@ -174,6 +175,7 @@ class WindowedHost {
     WindowedHostConfig config_;
     WindowedHostCallbacks callbacks_;
     bool swapchain_resources_created_ = false;
+    bool shutdown_called_ = false;
     UiCaptureState ui_capture_{};
 
     std::optional<GlfwWindow> window_;

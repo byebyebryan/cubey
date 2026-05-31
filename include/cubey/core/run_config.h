@@ -116,6 +116,7 @@ struct RunConfig {
         float ibl_intensity = 1.0F;
         float environment_rotation_degrees = 0.0F;
         float exposure = 0.0F;
+        bool exposure_explicit = false;
     };
 
     struct GltfOptions {
@@ -123,6 +124,38 @@ struct RunConfig {
         std::uint32_t animation_index = 0;
         float animation_speed = 1.0F;
         bool animation_paused = false;
+    };
+
+    struct AtmosphereOptions {
+        std::string preset{};
+        std::string time_of_day_mode{};
+        std::string night_sky_mode{};
+        std::string milky_way_layer{};
+        float sun_elevation_degrees = kRunConfigUnsetFloat;
+        float sun_azimuth_degrees = kRunConfigUnsetFloat;
+        float camera_altitude_km = kRunConfigUnsetFloat;
+        float mie_scale = kRunConfigUnsetFloat;
+        float time_hours = kRunConfigUnsetFloat;
+        float day_of_year = kRunConfigUnsetFloat;
+        float latitude_degrees = kRunConfigUnsetFloat;
+        float sun_azimuth_offset_degrees = kRunConfigUnsetFloat;
+        float time_speed_hours_per_second = kRunConfigUnsetFloat;
+        float exposure_bias = kRunConfigUnsetFloat;
+        float twilight_strength = kRunConfigUnsetFloat;
+        float twilight_horizon_warmth = kRunConfigUnsetFloat;
+        float star_intensity = kRunConfigUnsetFloat;
+        float star_density = kRunConfigUnsetFloat;
+        float milky_way_intensity = kRunConfigUnsetFloat;
+        float milky_way_contrast = kRunConfigUnsetFloat;
+        float light_pollution = kRunConfigUnsetFloat;
+        float milky_way_variation = kRunConfigUnsetFloat;
+        float moon_intensity = kRunConfigUnsetFloat;
+        float moonlight_intensity = kRunConfigUnsetFloat;
+        float moon_phase_offset_days = kRunConfigUnsetFloat;
+        float moon_size_scale = kRunConfigUnsetFloat;
+        int time_paused = -1;
+        int auto_exposure = -1;
+        int moon = -1;
     };
 
     std::string title = "cubey";
@@ -137,6 +170,7 @@ struct RunConfig {
     OceanRefOptions ocean_ref{};
     PbrOptions pbr{};
     GltfOptions gltf{};
+    AtmosphereOptions atmosphere{};
     std::uint32_t frames = 0;
     std::uint32_t fps = 60;
     std::filesystem::path output_path = "cubey-output.png";

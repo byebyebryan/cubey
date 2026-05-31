@@ -11,5 +11,8 @@ the detailed foundation notes under `docs/architecture/`.
 
 - [Working notes](working-notes.md): broad implementation history and lessons
   learned.
+- [Atmosphere rendering research](atmosphere-rendering-research.md): early
+  notes on clear-sky scattering approaches and the first `projects/atmosphere`
+  implementation direction.
 - [Water 3D profiling notes](water-3d-profiling.md): current solver profiling
   captures and optimization candidates.

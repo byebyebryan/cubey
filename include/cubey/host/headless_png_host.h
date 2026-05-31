@@ -135,6 +135,7 @@ class HeadlessPngHost {
                                                            const char* label);
     void write_png(const HeadlessRenderTarget& target);
     void write_video(HeadlessPngContext& context, const HeadlessRenderTarget& target);
+    void shutdown_resources(HeadlessPngContext& context);
 
     [[nodiscard]] cubey::vulkan::Instance& instance();
     [[nodiscard]] cubey::vulkan::Device& device();
@@ -144,6 +145,7 @@ class HeadlessPngHost {
 
     HeadlessPngHostConfig config_;
     HeadlessPngHostCallbacks callbacks_;
+    bool shutdown_called_ = false;
     UploadQueue uploads_;
     vulkan::DeferredGpuDestructionQueue deferred_destruction_;
     std::optional<cubey::vulkan::Instance> instance_;
