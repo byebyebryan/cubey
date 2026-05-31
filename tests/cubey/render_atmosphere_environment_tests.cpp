@@ -216,7 +216,7 @@ void test_atmosphere_background_pass_declares_frame_and_atlas_bindings() {
             "atmosphere background pass should not use push constants");
 }
 
-void test_atmosphere_reflection_probe_declares_prefilter_and_irradiance_passes() {
+void test_atmosphere_reflection_probe_declares_prefilter_pass() {
     const cubey::render::MaterialPassInfo prefilter =
         cubey::render::atmosphere_reflection_prefilter_pass_info();
     require(prefilter.label == "atmosphere.reflection.prefilter",
@@ -225,13 +225,4 @@ void test_atmosphere_reflection_probe_declares_prefilter_and_irradiance_passes()
             "atmosphere reflection prefilter pass should declare one descriptor set");
     require(prefilter.descriptor_sets[0].bindings.size() == 2U,
             "atmosphere reflection prefilter pass should bind uniforms and sky radiance");
-
-    const cubey::render::MaterialPassInfo irradiance =
-        cubey::render::atmosphere_reflection_irradiance_pass_info();
-    require(irradiance.label == "atmosphere.reflection.irradiance",
-            "atmosphere reflection irradiance pass should keep its label");
-    require(irradiance.descriptor_sets.size() == 1U,
-            "atmosphere reflection irradiance pass should declare one descriptor set");
-    require(irradiance.descriptor_sets[0].bindings.size() == 2U,
-            "atmosphere reflection irradiance pass should bind uniforms and sky radiance");
 }

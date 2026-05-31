@@ -69,14 +69,6 @@ constexpr float kHeadlessVideoOrbitSpeed = 0.32F;
            gltf_viewer_atmosphere_time_speed(run_config) > 0.0F;
 }
 
-[[nodiscard]] cubey::render::AtmosphereDiffuseSource
-gltf_viewer_atmosphere_diffuse_source(const RunConfig& run_config) {
-    if (run_config.pbr.diffuse_source == "irradiance") {
-        return cubey::render::AtmosphereDiffuseSource::IrradianceCube;
-    }
-    return cubey::render::AtmosphereDiffuseSource::SphericalHarmonics;
-}
-
 } // namespace
 
 const cubey::math::Vec3 kLightDirection = glm::normalize(cubey::math::Vec3{0.45F, 0.82F, 0.35F});
@@ -210,7 +202,6 @@ std::vector<std::uint32_t> fallback_cube_indices() {
 GltfViewerApp::GltfViewerApp(RunConfig config)
     : config_(std::move(config)),
       debug_view_(render::pbr_debug_view_from_name(config_.debug_view)),
-      atmosphere_diffuse_source_(gltf_viewer_atmosphere_diffuse_source(config_)),
       atmosphere_solar_time_enabled_(gltf_viewer_uses_solar_time(config_)),
       atmosphere_time_playing_(gltf_viewer_atmosphere_time_playing(config_)),
       atmosphere_time_speed_hours_per_second_(gltf_viewer_atmosphere_time_speed(config_)) {

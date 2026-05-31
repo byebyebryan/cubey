@@ -10,20 +10,13 @@
 
 #include <vulkan/vulkan.h>
 
-#include <cstdint>
 #include <filesystem>
 
 namespace cubey::render {
 
-enum class AtmosphereDiffuseSource : std::uint8_t {
-    SphericalHarmonics,
-    IrradianceCube,
-};
-
 struct AtmosphereEnvironmentRuntimeResourceConfig {
     std::uint32_t reflection_extent = 64;
     std::uint32_t reflection_mip_levels = 5;
-    std::uint32_t irradiance_extent = 16;
     VkFormat format = VK_FORMAT_R16G16B16A16_SFLOAT;
     std::uint32_t frame_slot_count = 1;
     AtmosphereBackgroundTextureBindings atmosphere_textures{};
@@ -34,8 +27,6 @@ struct AtmosphereEnvironmentRuntimePipelineConfig {
     std::filesystem::path atmosphere_fragment_shader{};
     std::filesystem::path reflection_prefilter_vertex_shader{};
     std::filesystem::path reflection_prefilter_fragment_shader{};
-    std::filesystem::path irradiance_vertex_shader{};
-    std::filesystem::path irradiance_fragment_shader{};
 };
 
 class AtmosphereEnvironmentRuntime {
@@ -60,13 +51,9 @@ class AtmosphereEnvironmentRuntime {
     [[nodiscard]] bool resources_created() const noexcept;
     [[nodiscard]] const AtmosphereEnvironmentConfig& environment() const noexcept;
     [[nodiscard]] const AtmosphereEnvironmentLighting& lighting() const noexcept;
-    [[nodiscard]] cubey::scene::Environment3D
-    scene_environment(AtmosphereDiffuseSource diffuse_source =
-                          AtmosphereDiffuseSource::SphericalHarmonics) const;
+    [[nodiscard]] cubey::scene::Environment3D scene_environment() const;
     [[nodiscard]] PbrEnvironmentTextureBindings
-    pbr_environment_bindings(const GeneratedPbrEnvironment& fallback,
-                             AtmosphereDiffuseSource diffuse_source =
-                                 AtmosphereDiffuseSource::SphericalHarmonics) const;
+    pbr_environment_bindings(const GeneratedPbrEnvironment& fallback) const;
     [[nodiscard]] const AtmosphereReflectionProbe& reflection_probe() const;
 
   private:

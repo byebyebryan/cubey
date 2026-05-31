@@ -201,8 +201,7 @@ cubey::render::PbrEnvironmentTextureBindings GltfViewerApp::pbr_environment_bind
         return cubey::render::pbr_environment_texture_bindings(ibl_environment());
     }
 
-    return atmosphere_runtime_.pbr_environment_bindings(ibl_environment(),
-                                                       atmosphere_diffuse_source_);
+    return atmosphere_runtime_.pbr_environment_bindings(ibl_environment());
 }
 
 void GltfViewerApp::create_atmosphere_environment_runtime(const cubey::vulkan::Device& device,
@@ -215,7 +214,6 @@ void GltfViewerApp::create_atmosphere_environment_runtime(const cubey::vulkan::D
         device, cubey::render::AtmosphereEnvironmentRuntimeResourceConfig{
                     .reflection_extent = 64,
                     .reflection_mip_levels = 5,
-                    .irradiance_extent = 16,
                     .format = VK_FORMAT_R16G16B16A16_SFLOAT,
                     .frame_slot_count = frame_slot_count,
                     .atmosphere_textures = atmosphere_background_textures(),
@@ -227,9 +225,6 @@ void GltfViewerApp::create_atmosphere_environment_runtime(const cubey::vulkan::D
                     .reflection_prefilter_vertex_shader = shader_path("atmosphere.vert.spv"),
                     .reflection_prefilter_fragment_shader =
                         shader_path("atmosphere_reflection_prefilter.frag.spv"),
-                    .irradiance_vertex_shader = shader_path("atmosphere.vert.spv"),
-                    .irradiance_fragment_shader =
-                        shader_path("atmosphere_reflection_irradiance.frag.spv"),
                 });
     atmosphere_runtime_.mark_full_update_pending();
 }

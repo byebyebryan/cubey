@@ -29,13 +29,6 @@ void test_atmosphere_environment_runtime_derives_lighting_and_scene_environment(
             "atmosphere runtime scene environment should enable diffuse SH");
     require(scene_environment.diffuse_irradiance_sh[0] == lighting.diffuse_irradiance_sh[0],
             "atmosphere runtime scene environment should expose derived SH");
-
-    const cubey::scene::Environment3D irradiance_environment =
-        runtime.scene_environment(cubey::render::AtmosphereDiffuseSource::IrradianceCube);
-    require(!irradiance_environment.diffuse_irradiance_sh_enabled,
-            "atmosphere runtime irradiance scene environment should disable diffuse SH sampling");
-    require(irradiance_environment.diffuse_irradiance_sh[0] == lighting.diffuse_irradiance_sh[0],
-            "atmosphere runtime irradiance scene environment should retain derived SH data");
 }
 
 void test_atmosphere_environment_runtime_requires_resources_before_bindings() {

@@ -136,8 +136,6 @@ class GltfViewerApp {
     cubey::OrbitController orbit_controller_;
     cubey::render::PbrDebugView debug_view_ = cubey::render::PbrDebugView::Final;
     cubey::render::AtmosphereEnvironmentRuntime atmosphere_runtime_{};
-    cubey::render::AtmosphereDiffuseSource atmosphere_diffuse_source_ =
-        cubey::render::AtmosphereDiffuseSource::SphericalHarmonics;
     bool atmosphere_solar_time_enabled_ = false;
     bool atmosphere_time_playing_ = false;
     float atmosphere_time_speed_hours_per_second_ = 0.0F;

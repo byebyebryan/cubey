@@ -701,8 +701,8 @@ void test_forward_pbr_shader_package_uses_renderer_names() {
                      "shared forward PBR package should include the atmosphere background shader");
     require_contains(shader_cmake, "atmosphere_reflection_prefilter.frag",
                      "shared forward PBR package should include the atmosphere probe prefilter");
-    require_contains(shader_cmake, "atmosphere_reflection_irradiance.frag",
-                     "shared forward PBR package should include the atmosphere irradiance shader");
+    require_not_contains(shader_cmake, "atmosphere_reflection_irradiance.frag",
+                         "shared forward PBR package should not include removed atmosphere irradiance path");
     require_contains(viewer_cmake, "cubey_forward_pbr_shader_sources",
                      "glTF viewer should consume the shared forward PBR shader package");
     require_contains(material_cubes_cmake, "cubey_forward_pbr_shader_sources",
@@ -864,8 +864,8 @@ void test_pbr_consumers_use_atmosphere_lighting_foundation() {
 
     require_contains(gltf_header, "AtmosphereEnvironmentRuntime atmosphere_runtime_",
                      "glTF viewer should own a shared atmosphere environment runtime");
-    require_contains(gltf_header, "AtmosphereDiffuseSource atmosphere_diffuse_source_",
-                     "glTF viewer should track its selected atmosphere diffuse source");
+    require_not_contains(gltf_header, "AtmosphereDiffuseSource",
+                         "glTF viewer should not expose multiple atmosphere diffuse paths");
     require_contains(gltf_app, "gltf_viewer_atmosphere_environment_config",
                      "glTF viewer should resolve atmosphere options from RunConfig");
     require_contains(gltf_app, "atmosphere_runtime_.set_environment",
@@ -874,8 +874,7 @@ void test_pbr_consumers_use_atmosphere_lighting_foundation() {
                      "glTF viewer should disable atmosphere reference geometry for PBR backgrounds");
     require_contains(gltf_scene, "primary_light_direction",
                      "glTF viewer should use atmosphere primary light for direct lighting");
-    require_contains(gltf_scene,
-                     "atmosphere_runtime_.scene_environment(atmosphere_diffuse_source_)",
+    require_contains(gltf_scene, "atmosphere_runtime_.scene_environment()",
                      "glTF viewer should feed runtime diffuse environment into Environment3D");
     require_contains(gltf_assets, "atmosphere_background_textures()",
                      "glTF viewer should provide atmosphere background texture bindings");

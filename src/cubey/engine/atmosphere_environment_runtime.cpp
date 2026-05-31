@@ -21,7 +21,6 @@ void AtmosphereEnvironmentRuntime::create_resources(
     reflection_probe_.create_resources(device, AtmosphereReflectionProbeConfig{
                                                    .extent = config.reflection_extent,
                                                    .mip_levels = config.reflection_mip_levels,
-                                                   .irradiance_extent = config.irradiance_extent,
                                                    .format = config.format,
                                                    .frame_slot_count = config.frame_slot_count,
                                                    .atmosphere_textures =
@@ -39,8 +38,6 @@ void AtmosphereEnvironmentRuntime::create_pipelines(
                     .atmosphere_fragment_shader = config.atmosphere_fragment_shader,
                     .prefilter_vertex_shader = config.reflection_prefilter_vertex_shader,
                     .prefilter_fragment_shader = config.reflection_prefilter_fragment_shader,
-                    .irradiance_vertex_shader = config.irradiance_vertex_shader,
-                    .irradiance_fragment_shader = config.irradiance_fragment_shader,
                 });
 }
 
@@ -98,29 +95,22 @@ const AtmosphereEnvironmentLighting& AtmosphereEnvironmentRuntime::lighting() co
     return lighting_;
 }
 
-cubey::scene::Environment3D AtmosphereEnvironmentRuntime::scene_environment(
-    AtmosphereDiffuseSource diffuse_source) const {
+cubey::scene::Environment3D AtmosphereEnvironmentRuntime::scene_environment() const {
     return cubey::scene::Environment3D{
         .ambient_color = lighting_.ambient_color,
         .ambient_intensity = 0.0F,
         .diffuse_irradiance_sh = lighting_.diffuse_irradiance_sh,
-        .diffuse_irradiance_sh_enabled =
-            diffuse_source == AtmosphereDiffuseSource::SphericalHarmonics,
+        .diffuse_irradiance_sh_enabled = true,
     };
 }
 
 PbrEnvironmentTextureBindings AtmosphereEnvironmentRuntime::pbr_environment_bindings(
-    const GeneratedPbrEnvironment& fallback, AtmosphereDiffuseSource diffuse_source) const {
+    const GeneratedPbrEnvironment& fallback) const {
     if (!resources_created()) {
         throw std::runtime_error("atmosphere environment runtime resources are not initialized");
     }
 
     PbrEnvironmentTextureBindings bindings = pbr_environment_texture_bindings(fallback);
-    if (diffuse_source == AtmosphereDiffuseSource::IrradianceCube) {
-        const TextureCube& irradiance = reflection_probe_.irradiance_cube();
-        bindings.irradiance_sampler = irradiance.sampler().handle();
-        bindings.irradiance_view = irradiance.view();
-    }
     const TextureCube& prefiltered = reflection_probe_.prefiltered_cube();
     bindings.prefiltered_sampler = prefiltered.sampler().handle();
     bindings.prefiltered_view = prefiltered.view();
