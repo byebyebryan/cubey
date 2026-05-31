@@ -76,6 +76,43 @@ void test_render_graph_derives_compute_to_graphics_storage_buffer_barrier() {
             "storage read consumer should request shader read access");
 }
 
+void test_render_graph_derives_compute_to_graphics_storage_texture_barrier() {
+    cubey::render::RenderGraphBuilder graph;
+    const cubey::render::RenderGraphTextureHandle displacement =
+        graph.import_texture(color_texture_desc("displacement spectrum"), image(0x221),
+                             view(0x222));
+
+    graph.add_pass("spectrum", cubey::render::RenderGraphQueueDomain::Compute)
+        .write_storage_texture(displacement);
+    graph.add_pass("shade", cubey::render::RenderGraphQueueDomain::Graphics)
+        .read_storage_texture(displacement);
+
+    const cubey::render::CompiledRenderGraph compiled = graph.compile();
+
+    require(compiled.passes()[1].before_texture_barriers.size() == 1,
+            "graphics storage texture read after compute write should derive one barrier");
+    const cubey::render::RenderGraphTextureBarrier& barrier =
+        compiled.passes()[1].before_texture_barriers[0];
+    require(barrier.handle == displacement, "texture barrier should identify the storage image");
+    require(barrier.source_pass_index == 0, "storage image barrier should point at producer pass");
+    require(barrier.source_usage == cubey::render::RenderGraphTextureUsage::StorageWrite,
+            "storage image barrier should preserve write producer usage");
+    require(barrier.destination_usage == cubey::render::RenderGraphTextureUsage::StorageRead,
+            "storage image barrier should preserve read consumer usage");
+    require(barrier.source_state.layout == VK_IMAGE_LAYOUT_GENERAL,
+            "storage image producer should use general layout");
+    require(barrier.destination_state.layout == VK_IMAGE_LAYOUT_GENERAL,
+            "storage image consumer should stay in general layout");
+    require(barrier.source_state.stage_mask == VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+            "storage image producer should use compute shader source stage");
+    require(barrier.destination_state.stage_mask == VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+            "graphics storage image read should use fragment shader destination stage");
+    require(barrier.source_state.access_mask == VK_ACCESS_SHADER_WRITE_BIT,
+            "storage image producer should expose shader writes");
+    require(barrier.destination_state.access_mask == VK_ACCESS_SHADER_READ_BIT,
+            "storage image consumer should request shader reads");
+}
+
 void test_render_graph_honors_explicit_graphics_shader_stage_masks() {
     cubey::render::RenderGraphBuilder graph;
     const cubey::render::RenderGraphBufferHandle constants =
@@ -251,6 +288,44 @@ void test_render_graph_storage_read_write_initializes_transient_buffers() {
             "read-write storage usage should be preserved");
     require(compiled.passes()[1].before_buffer_barriers.size() == 1,
             "transient read-write producer should satisfy later storage reads");
+}
+
+void test_render_graph_storage_read_write_initializes_transient_textures() {
+    cubey::render::RenderGraphBuilder graph;
+    const cubey::render::RenderGraphTextureHandle spectrum =
+        graph.create_texture(color_texture_desc("transient spectrum"));
+
+    graph.add_pass("fft", cubey::render::RenderGraphQueueDomain::Compute)
+        .read_write_storage_texture(spectrum);
+    graph.add_pass("unpack", cubey::render::RenderGraphQueueDomain::Compute)
+        .read_storage_texture(spectrum);
+
+    const cubey::render::CompiledRenderGraph compiled = graph.compile();
+
+    require(compiled.passes()[0].texture_accesses[0].usage ==
+                cubey::render::RenderGraphTextureUsage::StorageReadWrite,
+            "read-write storage texture usage should be preserved");
+    require(compiled.passes()[0].before_texture_barriers.size() == 1,
+            "transient storage texture first use should derive an undefined acquire barrier");
+
+    const cubey::render::RenderGraphTextureBarrier& acquire =
+        compiled.passes()[0].before_texture_barriers[0];
+    require(acquire.source_state.layout == VK_IMAGE_LAYOUT_UNDEFINED,
+            "transient storage texture should begin from undefined");
+    require(acquire.destination_state.layout == VK_IMAGE_LAYOUT_GENERAL,
+            "transient storage texture first use should transition to general layout");
+    require(acquire.destination_state.access_mask ==
+                (VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT),
+            "read-write storage texture first use should request shader read/write access");
+
+    require(compiled.passes()[1].before_texture_barriers.size() == 1,
+            "transient read-write storage texture should satisfy later storage reads");
+    require(compiled.passes()[1].before_texture_barriers[0].source_usage ==
+                cubey::render::RenderGraphTextureUsage::StorageReadWrite,
+            "later storage texture barrier should start from read-write producer usage");
+    require(compiled.passes()[1].before_texture_barriers[0].destination_usage ==
+                cubey::render::RenderGraphTextureUsage::StorageRead,
+            "later storage texture barrier should target read consumer usage");
 }
 
 void test_render_graph_barrier_recording_rejects_unallocated_transient_resources() {
