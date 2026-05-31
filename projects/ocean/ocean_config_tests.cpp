@@ -374,12 +374,14 @@ int main() {
             read_text_file(source_root / "shaders/ocean_unpack.comp");
         const std::string vertex_shader = read_text_file(source_root / "shaders/ocean.vert");
         const std::string fragment_shader = read_text_file(source_root / "shaders/ocean.frag");
+        const std::string sky_shader = read_text_file(source_root / "shaders/ocean_sky.frag");
         const std::string atmosphere_shader =
             read_text_file(source_root / "shaders/ocean_atmosphere.glsl");
         const std::string app_source = read_text_file(source_root / "ocean_app.cpp");
         const std::string ui_source = read_text_file(source_root / "ocean_ui.cpp");
         const std::string gpu_resources_source =
             read_text_file(source_root / "ocean_gpu_resources.cpp");
+        const std::string cmake_source = read_text_file(source_root / "CMakeLists.txt");
 
         require_contains(spectrum_shader, "xy = h0(k), zw = conj(h0(-k))",
                          "spectrum shader should document reference h0 packing");
@@ -439,6 +441,16 @@ int main() {
                          "vertex shader should apply macro anti-repeat displacement sampling");
         require_contains(app_source, "diagnostics_.anti_repeat_strength",
                          "app should pass anti-repeat as diagnostics push data");
+        require_contains(app_source, "kOceanSceneColorFormat = VK_FORMAT_R16G16B16A16_SFLOAT",
+                         "app should define an HDR ocean scene color format");
+        require_contains(app_source, "ocean scene color",
+                         "app should render ocean sky and surface into an HDR scene target");
+        require_contains(app_source, "pbr_post_pass_info()",
+                         "app should reuse the shared PBR post pass for ocean display output");
+        require_contains(app_source, "forward_pbr_post.frag.spv",
+                         "app should load the shared PBR post shader");
+        require_contains(cmake_source, "forward_pbr_post.frag",
+                         "ocean build should compile the shared PBR post fragment shader");
         require_contains(app_source, "ocean_config_.foam_density",
                          "app should pass foam density as diagnostics push data");
         require_contains(app_source, "ocean_config_.foam_sharpness",
@@ -571,6 +583,10 @@ int main() {
                              "ocean unpack shader should not use bounded choppy clamps");
         require_not_contains(fragment_shader, "normal_foam_cascade",
                              "ocean fragment shader should not pack normals and foam in one sampler");
+        require_not_contains(fragment_shader, "cubey_pbr_apply_display_transform",
+                             "ocean surface shader should leave display transform to the post pass");
+        require_not_contains(sky_shader, "cubey_pbr_apply_display_transform",
+                             "ocean sky shader should leave display transform to the post pass");
         require_not_contains(atmosphere_shader, "upper_horizon_color",
                              "ocean atmosphere shader should not use the old procedural sky gradient");
 

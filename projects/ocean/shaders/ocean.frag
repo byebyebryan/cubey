@@ -2,7 +2,6 @@
 #extension GL_GOOGLE_include_directive : require
 
 #include "cubey/color_space.glsl"
-#include "cubey/pbr.glsl"
 #include "ocean_atmosphere.glsl"
 
 layout(set = 0, binding = 5) uniform sampler2D normal_cascade0_texture;
@@ -440,10 +439,6 @@ float triangle_wire_factor(vec3 barycentric) {
     return 1.0 - min(min(edge.x, edge.y), edge.z);
 }
 
-vec3 apply_display(vec3 color) {
-    return cubey_pbr_apply_display_transform(color, ocean.display_transform);
-}
-
 void main() {
     uint view = uint(ocean.debug_options.x + 0.5);
     vec3 camera_position = ocean.camera_time.xyz;
@@ -521,5 +516,5 @@ void main() {
         color = mix(color, wire_color, wire * clamp(ocean.debug_options.w, 0.0, 1.0));
     }
 
-    out_color = vec4(apply_display(color), clamp(frag_patch_alpha, 0.0, 1.0));
+    out_color = vec4(color, clamp(frag_patch_alpha, 0.0, 1.0));
 }

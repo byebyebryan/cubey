@@ -11,6 +11,7 @@
 #include <cubey/host/windowed_app.h>
 #include <cubey/input/input.h>
 #include <cubey/input/orbit_controller.h>
+#include <cubey/render/material_instance.h>
 #include <cubey/render/pass.h>
 #include <cubey/render/pbr.h>
 #include <cubey/render/render_graph.h>
@@ -21,6 +22,7 @@
 #include <cubey/vulkan/device.h>
 #include <cubey/vulkan/image_transitions.h>
 #include <cubey/vulkan/memory_barriers.h>
+#include <cubey/vulkan/sampler.h>
 #include <cubey/vulkan/vk_check.h>
 
 #include <vulkan/vulkan.h>
@@ -28,6 +30,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <filesystem>
 #include <numbers>
 #include <optional>
 #include <stdexcept>
@@ -51,6 +54,7 @@ constexpr float kCameraBaseYaw = 0.38F;
 constexpr float kCameraBasePitch = -0.22F;
 constexpr float kCameraNearPlane = 0.25F;
 constexpr float kCameraFarPlane = 14000.0F;
+constexpr VkFormat kOceanSceneColorFormat = VK_FORMAT_R16G16B16A16_SFLOAT;
 constexpr VkFormat kOceanDepthFormat = VK_FORMAT_D32_SFLOAT;
 constexpr float kGravity = 9.81F;
 
@@ -115,6 +119,7 @@ enum class OceanRenderTargetMode : std::uint8_t {
 struct OceanFrameGraph {
     cubey::render::CompiledRenderGraph graph;
     cubey::render::RenderGraphTextureHandle backbuffer{};
+    cubey::render::RenderGraphTextureHandle scene_color{};
     cubey::render::RenderGraphTextureHandle surface_depth{};
 };
 
@@ -364,10 +369,39 @@ class OceanApp {
         ocean_gpu_.create(device, OceanGpuResourceConfig{
                                       .ocean = ocean_config_,
                                       .shader_dir = CUBEY_OCEAN_SHADER_DIR,
-                                      .color_format = color_format,
+                                      .color_format = kOceanSceneColorFormat,
                                       .depth_format = kOceanDepthFormat,
                                       .target_extent = extent,
                                   });
+        post_material_.emplace(
+            device, cubey::render::FrameUniformMaterialInstanceConfig{
+                        .material_pass = cubey::render::pbr_post_pass_info(),
+                        .descriptor_set = 0,
+                        .frame_slot_count = frame_slot_count,
+                        .uniform_binding =
+                            static_cast<std::uint32_t>(cubey::render::PbrPostBinding::PostUniforms),
+                    });
+        post_sampler_.emplace(device, cubey::vulkan::SamplerConfig{
+                                          .address_mode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+                                      });
+        const std::array<cubey::render::ShaderStageFile, 2> post_shader_stage_files{
+            cubey::render::ShaderStageFile{
+                .stage = VK_SHADER_STAGE_VERTEX_BIT,
+                .path = std::filesystem::path(CUBEY_OCEAN_SHADER_DIR) / "forward_pbr_post.vert.spv",
+            },
+            cubey::render::ShaderStageFile{
+                .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
+                .path = std::filesystem::path(CUBEY_OCEAN_SHADER_DIR) / "forward_pbr_post.frag.spv",
+            },
+        };
+        const std::array post_descriptor_set_layouts{post_material().layout()};
+        post_pipeline_.emplace(device, cubey::render::GraphicsPipelineFileResourceConfig{
+                                           .extent = extent,
+                                           .color_format = color_format,
+                                           .shader_stage_files = post_shader_stage_files,
+                                           .descriptor_set_layouts = post_descriptor_set_layouts,
+                                           .material_pass = cubey::render::pbr_post_pass_info(),
+                                       });
         graph_executor_.clear();
         graph_executor_.resize(frame_slot_count);
         pipeline_color_format_ = color_format;
@@ -379,6 +413,9 @@ class OceanApp {
 
     void destroy_swapchain_resources() {
         graph_executor_.clear();
+        post_pipeline_.reset();
+        post_sampler_.reset();
+        post_material_.reset();
         ocean_gpu_.reset();
         pipeline_color_format_ = VK_FORMAT_UNDEFINED;
         textures_initialized_ = false;
@@ -676,9 +713,37 @@ class OceanApp {
         }
     }
 
+    [[nodiscard]] cubey::render::PbrPostUniforms post_uniforms() const {
+        const cubey::render::PbrDisplayTransform display_transform =
+            cubey::render::pbr_display_transform_for_target(pipeline_color_format_,
+                                                            ocean_config_.exposure);
+        return {
+            .display_transform = cubey::render::pbr_display_transform_uniform(display_transform),
+        };
+    }
+
+    void record_ocean_post(const cubey::vulkan::CommandRecorder& recorder,
+                           cubey::render::ColorTargetView target,
+                           cubey::render::FrameSlot frame_slot) const {
+        cubey::render::record_render_target_pass(
+            recorder, cubey::render::render_target_view(target),
+            cubey::render::RenderClearValues{
+                .color = cubey::render::color_clear_value(0.0F, 0.0F, 0.0F, 1.0F),
+            },
+            [this, frame_slot](const cubey::vulkan::CommandRecorder& draw_recorder) {
+                cubey::render::record_fullscreen_pipeline_draw(
+                    draw_recorder,
+                    {
+                        .pipeline = &post_pipeline(),
+                        .descriptor_set = post_material().set(frame_slot),
+                    });
+            });
+    }
+
     [[nodiscard]] OceanFrameGraph
     build_ocean_frame_graph(cubey::render::ColorTargetView color_target,
-                                OceanRenderTargetMode target_mode) const {
+                            cubey::render::FrameSlot frame_slot,
+                            OceanRenderTargetMode target_mode) const {
         cubey::render::RenderGraphBuilder graph;
         const cubey::render::RenderGraphTextureState initial_state =
             target_mode == OceanRenderTargetMode::Present
@@ -690,17 +755,24 @@ class OceanApp {
                 : cubey::render::render_graph_color_attachment_texture_state();
         const cubey::render::RenderGraphTextureHandle backbuffer = graph.import_color_target(
             "ocean backbuffer", color_target, initial_state, final_state);
+        const cubey::render::RenderGraphTextureHandle scene_color =
+            graph.create_texture(cubey::render::RenderGraphTextureDesc{
+                .label = "ocean scene color",
+                .extent = {color_target.extent.width, color_target.extent.height, 1U},
+                .format = kOceanSceneColorFormat,
+                .aspects = VK_IMAGE_ASPECT_COLOR_BIT,
+            });
         const cubey::render::RenderGraphTextureHandle surface_depth =
             graph.create_texture(ocean_depth_texture_desc(
                 "ocean surface depth", color_target.extent, kOceanDepthFormat));
 
-        graph.add_pass("ocean final", cubey::render::RenderGraphQueueDomain::Graphics)
-            .write_color(backbuffer)
+        graph.add_pass("ocean scene", cubey::render::RenderGraphQueueDomain::Graphics)
+            .write_color(scene_color)
             .write_depth(surface_depth)
-            .execute([this, backbuffer,
+            .execute([this, scene_color,
                       surface_depth](const cubey::render::RenderGraphExecutionContext& context) {
                 const cubey::render::ColorTargetView target =
-                    cubey::render::resolved_color_target_view(context, backbuffer);
+                    cubey::render::resolved_color_target_view(context, scene_color);
                 const cubey::render::DepthTargetView depth =
                     cubey::render::resolved_depth_target_view(context, surface_depth);
                 cubey::render::record_render_target_pass(
@@ -714,12 +786,36 @@ class OceanApp {
                         record_ocean_draw(draw_recorder, target.extent);
                     });
             });
+        graph.add_pass("ocean post", cubey::render::RenderGraphQueueDomain::Graphics)
+            .read_texture(scene_color)
+            .write_color(backbuffer)
+            .material_pass(cubey::render::pbr_post_pass_info())
+            .execute(
+                [this, color_target,
+                 frame_slot](const cubey::render::RenderGraphExecutionContext& context) {
+                    record_ocean_post(context.recorder(), color_target, frame_slot);
+                });
 
         return {
             .graph = graph.compile(),
             .backbuffer = backbuffer,
+            .scene_color = scene_color,
             .surface_depth = surface_depth,
         };
+    }
+
+    void update_post_descriptor(const cubey::vulkan::Device& device,
+                                cubey::render::FrameSlot frame_slot,
+                                const cubey::render::CompiledRenderGraph& graph,
+                                const cubey::render::RenderGraphResourceSet& resources,
+                                cubey::render::RenderGraphTextureHandle scene_color) const {
+        const cubey::render::RenderGraphSampledTextureView sampled =
+            cubey::render::resolved_sampled_texture_view(graph, resources, scene_color);
+        cubey::render::MaterialDescriptorWriter(post_material().set(frame_slot))
+            .combined_image_sampler(
+                static_cast<std::uint32_t>(cubey::render::PbrPostBinding::SceneColor),
+                post_sampler().handle(), sampled.view, sampled.layout)
+            .update(device);
     }
 
     void record_initial_texture_transitions(const cubey::vulkan::CommandRecorder& recorder) const {
@@ -845,7 +941,8 @@ class OceanApp {
                                  OceanRenderTargetMode target_mode) {
         const cubey::vulkan::CommandRecorder recorder(command_buffer);
         record_ocean_compute(recorder);
-        const OceanFrameGraph frame_graph = build_ocean_frame_graph(target, target_mode);
+        post_material().upload(frame_slot, post_uniforms());
+        const OceanFrameGraph frame_graph = build_ocean_frame_graph(target, frame_slot, target_mode);
         graph_executor_.record(
             cubey::render::RenderGraphFrameRecordInfo{
                 .device = &device,
@@ -855,7 +952,12 @@ class OceanApp {
                 .command_buffer_mode =
                     cubey::render::RenderGraphCommandBufferMode::AlreadyRecording,
             },
-            frame_graph.graph);
+            frame_graph.graph,
+            [this, &device, frame_slot,
+             &frame_graph](const cubey::render::RenderGraphResourceSet& resources) {
+                update_post_descriptor(device, frame_slot, frame_graph.graph, resources,
+                                       frame_graph.scene_color);
+            });
     }
 
     void record_windowed_frame(const cubey::vulkan::Device& device,
@@ -865,6 +967,28 @@ class OceanApp {
         record_ocean_target(frame.command_buffer, device, frame.color_target, frame.frame_slot,
                                 OceanRenderTargetMode::Present);
         recorder.end("vkEndCommandBuffer ocean");
+    }
+
+    [[nodiscard]] const cubey::render::FrameUniformMaterialInstance<cubey::render::PbrPostUniforms>&
+    post_material() const {
+        if (!post_material_.has_value()) {
+            throw std::runtime_error("ocean post material is not initialized");
+        }
+        return post_material_.value();
+    }
+
+    [[nodiscard]] const cubey::render::GraphicsPipelineResource& post_pipeline() const {
+        if (!post_pipeline_.has_value()) {
+            throw std::runtime_error("ocean post pipeline is not initialized");
+        }
+        return post_pipeline_.value();
+    }
+
+    [[nodiscard]] const cubey::vulkan::Sampler& post_sampler() const {
+        if (!post_sampler_.has_value()) {
+            throw std::runtime_error("ocean post sampler is not initialized");
+        }
+        return post_sampler_.value();
     }
 
     RunConfig config_;
@@ -878,6 +1002,10 @@ class OceanApp {
     std::optional<FrameStatsSnapshot> latest_frame_stats_;
     OceanGpuResources ocean_gpu_;
     cubey::render::RenderGraphFrameExecutor graph_executor_;
+    std::optional<cubey::render::FrameUniformMaterialInstance<cubey::render::PbrPostUniforms>>
+        post_material_;
+    std::optional<cubey::render::GraphicsPipelineResource> post_pipeline_;
+    std::optional<cubey::vulkan::Sampler> post_sampler_;
     std::optional<OceanConfig> gpu_config_;
     VkFormat pipeline_color_format_ = VK_FORMAT_UNDEFINED;
     double time_seconds_ = 0.0;

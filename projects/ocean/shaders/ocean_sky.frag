@@ -2,7 +2,6 @@
 #extension GL_GOOGLE_include_directive : require
 
 #include "cubey/color_space.glsl"
-#include "cubey/pbr.glsl"
 #include "ocean_atmosphere.glsl"
 
 layout(push_constant) uniform SkyParams {
@@ -23,5 +22,5 @@ void main() {
                                    sky.camera_right_aspect.w * tan_half_fovy -
                                sky.camera_up_tan_half_fovy.xyz * frag_ndc.y * tan_half_fovy);
     vec3 color = ocean_sky_color(direction);
-    out_color = vec4(cubey_pbr_apply_display_transform(color, sky.display_transform), 1.0);
+    out_color = vec4(color, 1.0);
 }
