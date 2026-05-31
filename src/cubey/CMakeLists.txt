@@ -215,6 +215,7 @@ target_link_libraries(
 )
 
 add_library(cubey_engine STATIC
+    engine/atmosphere_environment_runtime.cpp
     engine/capture_queue.cpp
     engine/engine.cpp
     engine/gltf_basisu_texture.cpp

@@ -2,6 +2,8 @@
 
 void test_capture_queue_encodes_png_with_inline_executor();
 void test_capture_queue_propagates_encoding_errors();
+void test_atmosphere_environment_runtime_derives_lighting_and_scene_environment();
+void test_atmosphere_environment_runtime_requires_resources_before_bindings();
 void test_engine_attaches_gpu_services_to_project_context();
 void test_engine_created_scenes_validate_render_resource_handles();
 void test_engine_creates_independent_scenes();
@@ -78,6 +80,8 @@ std::span<const TestCase> engine_host_input_test_cases() {
     static constexpr std::array tests{
         CUBEY_TEST(test_capture_queue_encodes_png_with_inline_executor),
         CUBEY_TEST(test_capture_queue_propagates_encoding_errors),
+        CUBEY_TEST(test_atmosphere_environment_runtime_derives_lighting_and_scene_environment),
+        CUBEY_TEST(test_atmosphere_environment_runtime_requires_resources_before_bindings),
         CUBEY_TEST(test_engine_exposes_project_runtime_services),
         CUBEY_TEST(test_engine_attaches_gpu_services_to_project_context),
         CUBEY_TEST(test_engine_reuses_project_frame_for_same_timing),
