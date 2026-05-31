@@ -95,55 +95,50 @@ int main() {
                 "ocean should place two macro cascades first");
         require(ocean::kOceanReferenceCascadeCount == 3U,
                 "ocean should keep three reference-derived cascades");
-        require(domain0.active && domain1.active && domain2.active && domain3.active &&
+        require(domain0.active && domain1.active && !domain2.active && !domain3.active &&
                     domain4.active,
-                "default cascade wavelength domains should all be active");
+                "default cascade wavelength domains should leave crest carriers unfiltered");
         require(domain0.low_k < domain0.high_k && domain1.low_k < domain1.high_k &&
-                    domain2.low_k < domain2.high_k && domain3.low_k < domain3.high_k &&
                     domain4.low_k < domain4.high_k,
                 "default cascade domains should have increasing k bounds");
         require(domain0.low_wavelength < domain0.high_wavelength &&
                     domain1.low_wavelength < domain1.high_wavelength &&
-                    domain2.low_wavelength < domain2.high_wavelength &&
-                    domain3.low_wavelength < domain3.high_wavelength &&
                     domain4.low_wavelength < domain4.high_wavelength,
                 "default cascade domains should expose low/high wavelength bounds");
         require(domain0.high_wavelength > domain1.high_wavelength &&
-                    domain1.high_wavelength > domain2.high_wavelength &&
-                    domain2.high_wavelength > domain3.high_wavelength &&
-                    domain3.high_wavelength > domain4.high_wavelength,
-                "cascade diagnostic domains should run from macro to detail wavelengths");
+                    domain1.high_wavelength > domain4.high_wavelength,
+                "active cascade diagnostic domains should run from macro to detail wavelengths");
+        require_near(ocean::ocean_cascade_min_waves_per_domain(0), 3.0F, 0.001F,
+                     "cascade 0 should keep a conservative macro spectral low cutoff");
+        require_near(ocean::ocean_cascade_min_waves_per_domain(1), 2.0F, 0.001F,
+                     "cascade 1 should keep more long macro chop wavelengths");
+        require_near(ocean::ocean_cascade_min_waves_per_domain(2), 0.0F, 0.001F,
+                     "cascade 2 should preserve the primary coherent whitecap carrier");
+        require_near(ocean::ocean_cascade_min_waves_per_domain(3), 0.0F, 0.001F,
+                     "cascade 3 should support but not dominate the crest carrier");
+        require_near(ocean::ocean_cascade_min_waves_per_domain(4), 3.0F, 0.001F,
+                     "cascade 4 should stay detail-biased");
         require_near(domain0.high_wavelength,
-                     cascade0.tile_length / ocean::kOceanCascadeMinWavesPerDomain, 0.01F,
-                     "cascade 0 largest wavelength should follow min waves per domain");
+                     cascade0.tile_length / ocean::ocean_cascade_min_waves_per_domain(0), 0.01F,
+                     "cascade 0 largest wavelength should follow its min waves per domain");
         require_near(domain0.low_wavelength,
                      cascade0.tile_length * ocean::kOceanCascadeSmallestWaveMultiplier /
                          static_cast<float>(defaults.map_size),
                      0.01F, "cascade 0 smallest wavelength should follow map sampling");
         require_near(domain1.high_wavelength,
-                     cascade1.tile_length / ocean::kOceanCascadeMinWavesPerDomain, 0.01F,
-                     "cascade 1 largest wavelength should follow min waves per domain");
+                     cascade1.tile_length / ocean::ocean_cascade_min_waves_per_domain(1), 0.01F,
+                     "cascade 1 largest wavelength should follow its min waves per domain");
         require_near(domain1.low_wavelength,
                      cascade1.tile_length * ocean::kOceanCascadeSmallestWaveMultiplier /
                          static_cast<float>(defaults.map_size),
                      0.01F, "cascade 1 smallest wavelength should follow map sampling");
-        require_near(domain2.high_wavelength,
-                     cascade2.tile_length / ocean::kOceanCascadeMinWavesPerDomain, 0.01F,
-                     "cascade 2 largest wavelength should follow min waves per domain");
-        require_near(domain2.low_wavelength,
-                     cascade2.tile_length * ocean::kOceanCascadeSmallestWaveMultiplier /
-                         static_cast<float>(defaults.map_size),
-                     0.01F, "cascade 2 smallest wavelength should follow map sampling");
-        require_near(domain3.high_wavelength,
-                     cascade3.tile_length / ocean::kOceanCascadeMinWavesPerDomain, 0.01F,
-                     "cascade 3 largest wavelength should follow min waves per domain");
-        require_near(domain3.low_wavelength,
-                     cascade3.tile_length * ocean::kOceanCascadeSmallestWaveMultiplier /
-                         static_cast<float>(defaults.map_size),
-                     0.01F, "cascade 3 smallest wavelength should follow map sampling");
+        require(!domain2.active && domain2.low_k == 0.0F && domain2.high_k == 0.0F,
+                "cascade 2 should disable spectral filtering for coherent whitecaps");
+        require(!domain3.active && domain3.low_k == 0.0F && domain3.high_k == 0.0F,
+                "cascade 3 should disable spectral filtering for coherent whitecaps");
         require_near(domain4.high_wavelength,
-                     cascade4.tile_length / ocean::kOceanCascadeMinWavesPerDomain, 0.01F,
-                     "cascade 4 largest wavelength should follow min waves per domain");
+                     cascade4.tile_length / ocean::ocean_cascade_min_waves_per_domain(4), 0.01F,
+                     "cascade 4 largest wavelength should follow its min waves per domain");
         require_near(domain4.low_wavelength,
                      cascade4.tile_length * ocean::kOceanCascadeSmallestWaveMultiplier /
                          static_cast<float>(defaults.map_size),
@@ -390,6 +385,8 @@ int main() {
                          "spectrum shader should pack conjugated negative frequency");
         require_contains(spectrum_shader, "float spectral_domain_weight",
                          "spectrum shader should apply spectral source-domain filtering");
+        require_contains(app_source, "ocean_cascade_domain(ocean_config_, cascade_index)",
+                         "app should pass per-cascade spectral domain bounds");
         require_contains(modulate_shader, "const uint NUM_SPECTRA = 4U",
                          "modulate shader should preserve four reference spectra");
         require_contains(modulate_shader, "vec2 dhy_dx = h_inv * k_vec.y;",
@@ -480,6 +477,8 @@ int main() {
                          "fragment shader should use stable world-space noise weights");
         require_contains(fragment_shader, "float foam_breakup_weight",
                          "fragment shader should use distance-gated world-space foam breakup");
+        require_contains(fragment_shader, "cascade != 4u",
+                         "fragment shader should only break up detail foam mechanically");
         require_contains(fragment_shader,
                          "sample_normal_foam_domain(cascade, position, tile_length, pixels_per_meter",
                          "fragment shader should sample secondary normal/foam domains");
@@ -503,8 +502,12 @@ int main() {
                          "float ocean_foam_signal(float persistent, float current, float dist)",
                          "fragment shader should combine persistent foam and crest core");
         require_contains(fragment_shader,
-                         "float ocean_foam_coverage(float persistent, float current",
+                         "float ocean_foam_coverage(OceanFoamData foam_data",
                          "fragment shader should derive presentation foam coverage from foam data");
+        require_contains(fragment_shader, "float coherent_crest",
+                         "fragment shader should keep crest foam as the coherent carrier");
+        require_contains(fragment_shader, "float detail_gate",
+                         "fragment shader should gate detail foam by existing support");
         require_contains(fragment_shader, "vec3 ocean_shaded_foam(",
                          "fragment shader should shade foam as a material");
         require_contains(fragment_shader, "specular *= mix(1.0, 0.35, material_distance)",

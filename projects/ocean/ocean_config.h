@@ -44,7 +44,9 @@ inline constexpr std::uint32_t kOceanMaxMeshCells = 512U;
 inline constexpr std::uint32_t kOceanMinMeshLodLevels = 1U;
 inline constexpr std::uint32_t kOceanMaxMeshLodLevels = 6U;
 inline constexpr float kOceanPi = 3.14159265358979323846F;
-inline constexpr float kOceanCascadeMinWavesPerDomain = 3.0F;
+inline constexpr std::array<float, kOceanCascadeCount> kOceanCascadeMinWavesPerDomainByCascade{
+    3.0F, 2.0F, 0.0F, 0.0F, 3.0F,
+};
 inline constexpr float kOceanCascadeSmallestWaveMultiplier = 4.0F;
 
 struct OceanCascadeConfig {
@@ -270,6 +272,13 @@ struct OceanCascadeDomain {
            (cascade_config.tile_length * kOceanCascadeSmallestWaveMultiplier);
 }
 
+[[nodiscard]] inline float ocean_cascade_min_waves_per_domain(std::uint32_t cascade) {
+    if (cascade >= kOceanCascadeCount) {
+        throw std::runtime_error("ocean cascade index out of range");
+    }
+    return kOceanCascadeMinWavesPerDomainByCascade[cascade];
+}
+
 [[nodiscard]] inline OceanCascadeDomain ocean_cascade_domain(const OceanConfig& config,
                                                              std::uint32_t cascade) {
     const OceanCascadeConfig& cascade_config = ocean_cascade(config, cascade);
@@ -277,10 +286,15 @@ struct OceanCascadeDomain {
         return {};
     }
 
+    const float min_waves_per_domain = ocean_cascade_min_waves_per_domain(cascade);
+    if (min_waves_per_domain <= 0.0F) {
+        return {};
+    }
+
     const float low_k =
-        2.0F * kOceanPi * kOceanCascadeMinWavesPerDomain / cascade_config.tile_length;
+        2.0F * kOceanPi * min_waves_per_domain / cascade_config.tile_length;
     const float high_k = ocean_cascade_domain_high_k(config, cascade);
-    if (low_k <= 0.0F || high_k <= low_k) {
+    if (low_k < 0.0F || high_k <= low_k) {
         return {.low_k = low_k, .high_k = high_k};
     }
 
