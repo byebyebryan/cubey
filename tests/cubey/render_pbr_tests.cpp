@@ -862,30 +862,28 @@ void test_pbr_consumers_use_atmosphere_lighting_foundation() {
     const std::string pbr_docs =
         read_source_file(source_root / "docs/architecture/pbr-ibl.md");
 
-    require_contains(gltf_header, "AtmosphereEnvironmentLighting atmosphere_lighting_",
-                     "glTF viewer should cache atmosphere lighting for scene setup");
-    require_contains(gltf_header, "AtmosphereReflectionProbe atmosphere_reflection_probe_",
-                     "glTF viewer should own a runtime atmosphere reflection probe");
+    require_contains(gltf_header, "AtmosphereEnvironmentRuntime atmosphere_runtime_",
+                     "glTF viewer should own a shared atmosphere environment runtime");
+    require_contains(gltf_header, "AtmosphereDiffuseSource atmosphere_diffuse_source_",
+                     "glTF viewer should track its selected atmosphere diffuse source");
     require_contains(gltf_app, "gltf_viewer_atmosphere_environment_config",
                      "glTF viewer should resolve atmosphere options from RunConfig");
-    require_contains(gltf_app, "atmosphere_environment_lighting(atmosphere_environment_)",
-                     "glTF viewer should derive lighting from the shared atmosphere helper");
+    require_contains(gltf_app, "atmosphere_runtime_.set_environment",
+                     "glTF viewer should feed atmosphere config into the shared runtime");
     require_contains(gltf_app, "environment.reference_geometry_enabled = false",
                      "glTF viewer should disable atmosphere reference geometry for PBR backgrounds");
     require_contains(gltf_scene, "primary_light_direction",
                      "glTF viewer should use atmosphere primary light for direct lighting");
-    require_contains(gltf_scene, ".diffuse_irradiance_sh = atmosphere_lighting_.diffuse_irradiance_sh",
-                     "glTF viewer should feed atmosphere diffuse SH into Environment3D");
-    require_contains(gltf_scene, ".diffuse_irradiance_sh_enabled = true",
-                     "glTF viewer should enable diffuse SH in the PBR renderer");
+    require_contains(gltf_scene, "atmosphere_runtime_.scene_environment()",
+                     "glTF viewer should feed runtime diffuse environment into Environment3D");
     require_contains(gltf_assets, "atmosphere_background_textures()",
                      "glTF viewer should provide atmosphere background texture bindings");
-    require_contains(gltf_assets, "pbr_environment_bindings",
-                     "glTF viewer should route PBR specular through explicit environment bindings");
+    require_contains(gltf_assets, "atmosphere_runtime_.pbr_environment_bindings",
+                     "glTF viewer should route PBR environment bindings through the runtime");
     require_contains(gltf_render, "ForwardPbrRenderer3DBackgroundMode::Atmosphere",
                      "glTF viewer should select the procedural atmosphere background");
-    require_contains(gltf_render, "record_atmosphere_probe_if_needed",
-                     "glTF viewer should update atmosphere reflection before the PBR pass");
+    require_contains(gltf_render, "record_atmosphere_environment_if_needed",
+                     "glTF viewer should update atmosphere runtime before the PBR pass");
     require_contains(gltf_scene, "atmosphere_background_uniforms",
                      "glTF viewer should compute procedural atmosphere background uniforms");
     require_contains(ocean_app, "atmosphere_environment_lighting(environment)",

@@ -144,11 +144,14 @@ void test_run_config_parses_pbr_environment_options() {
     std::array<char, 5> exposure_value{'-', '0', '.', '5', '\0'};
     std::string source_flag = "--pbr-environment-source";
     std::string source_value = "atmosphere";
-    std::array<char*, 11> argv{
+    std::string diffuse_flag = "--pbr-diffuse-source";
+    std::string diffuse_value = "irradiance";
+    std::array<char*, 13> argv{
         program.data(),        environment_flag.data(), environment_value.data(),
         intensity_flag.data(), intensity_value.data(),  rotation_flag.data(),
         rotation_value.data(), exposure_flag.data(),    exposure_value.data(),
-        source_flag.data(),    source_value.data()};
+        source_flag.data(),    source_value.data(),     diffuse_flag.data(),
+        diffuse_value.data()};
 
     const cubey::RunConfig config =
         cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
@@ -161,6 +164,8 @@ void test_run_config_parses_pbr_environment_options() {
     require(config.pbr.exposure_explicit, "run config should track explicit exposure");
     require(config.pbr.environment_source == source_value,
             "run config should parse PBR environment source");
+    require(config.pbr.diffuse_source == diffuse_value,
+            "run config should parse PBR diffuse source");
 }
 
 void test_run_config_rejects_invalid_pbr_options() {
@@ -171,6 +176,12 @@ void test_run_config_rejects_invalid_pbr_options() {
     require_throws(
         [&argv]() { cubey::parse_run_config(static_cast<int>(argv.size()), argv.data()); },
         "run config should reject unknown PBR environment sources");
+
+    source_flag = "--pbr-diffuse-source";
+    source_value = "ambient";
+    require_throws(
+        [&argv]() { cubey::parse_run_config(static_cast<int>(argv.size()), argv.data()); },
+        "run config should reject unknown PBR diffuse sources");
 }
 
 void test_run_config_parses_animation_options() {

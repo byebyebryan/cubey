@@ -49,8 +49,9 @@ void GltfViewerApp::create_camera_and_light(cubey::SceneTransaction& setup) {
                                                   .far_z = std::max(radius * 12.0F, 100.0F),
                                               }));
 
+    const cubey::render::AtmosphereEnvironmentLighting& lighting = atmosphere_runtime_.lighting();
     const cubey::math::Vec3 light_direction =
-        glm::normalize(atmosphere_lighting_.primary_light_direction);
+        glm::normalize(lighting.primary_light_direction);
     const cubey::math::Vec3 light_eye =
         scene_bounds_.center + (light_direction * std::max(radius * 4.0F, 6.0F));
     light_camera_entity_ = cubey::scene::create_camera_entity_3d(
@@ -63,8 +64,7 @@ void GltfViewerApp::create_camera_and_light(cubey::SceneTransaction& setup) {
         }));
 
     cubey::Light3D sunlight = cubey::directional_light_3d(
-        light_direction, atmosphere_lighting_.primary_light_color,
-        atmosphere_lighting_.primary_light_intensity);
+        light_direction, lighting.primary_light_color, lighting.primary_light_intensity);
     sunlight.casts_shadows = true;
     light_entity_ = cubey::scene::create_directional_light_entity_3d(setup, sunlight);
 }
@@ -100,14 +100,14 @@ void GltfViewerApp::refresh_atmosphere_lighting_scene() {
     }
 
     const float radius = std::max(glm::length(scene_bounds_.half_extent), 1.0F);
+    const cubey::render::AtmosphereEnvironmentLighting& lighting = atmosphere_runtime_.lighting();
     const cubey::math::Vec3 light_direction =
-        glm::normalize(atmosphere_lighting_.primary_light_direction);
+        glm::normalize(lighting.primary_light_direction);
     const cubey::math::Vec3 light_eye =
         scene_bounds_.center + (light_direction * std::max(radius * 4.0F, 6.0F));
 
     cubey::Light3D sunlight = cubey::directional_light_3d(
-        light_direction, atmosphere_lighting_.primary_light_color,
-        atmosphere_lighting_.primary_light_intensity);
+        light_direction, lighting.primary_light_color, lighting.primary_light_intensity);
     sunlight.casts_shadows = true;
 
     cubey::SceneEditQueue edits = scene().create_edit_queue();
@@ -141,13 +141,7 @@ cubey::scene::FrameRenderPlan3D GltfViewerApp::current_frame_plan(const cubey::S
         .camera_entity = camera_entity_,
         .width = color_extent.width,
         .height = color_extent.height,
-        .environment =
-            cubey::scene::Environment3D{
-                .ambient_color = {0.0F, 0.0F, 0.0F},
-                .ambient_intensity = 0.0F,
-                .diffuse_irradiance_sh = atmosphere_lighting_.diffuse_irradiance_sh,
-                .diffuse_irradiance_sh_enabled = true,
-            },
+        .environment = atmosphere_runtime_.scene_environment(),
     };
     return cubey::scene::FrameRenderPlan3D({
         cubey::scene::RenderPassPlan3D{
@@ -192,20 +186,21 @@ cubey::render::AtmosphereEnvironmentFrameUniforms GltfViewerApp::atmosphere_back
         .forward = {forward.x, forward.y, forward.z, 0.0F},
     };
     return cubey::render::atmosphere_environment_frame_uniforms(
-        atmosphere_environment_, {
-                                     .view_rays = view_rays,
-                                     .render_view =
-                                         cubey::render::AtmosphereEnvironmentRenderView::Final,
-                                 });
+        atmosphere_runtime_.environment(),
+        {
+            .view_rays = view_rays,
+            .render_view = cubey::render::AtmosphereEnvironmentRenderView::Final,
+        });
 }
 
 cubey::LightPacket3D GltfViewerApp::fallback_light_packet() const {
+    const cubey::render::AtmosphereEnvironmentLighting& lighting = atmosphere_runtime_.lighting();
     return cubey::LightPacket3D{
         .entity = light_entity_,
         .kind = cubey::LightKind3D::Directional,
-        .color = atmosphere_lighting_.primary_light_color,
-        .intensity = atmosphere_lighting_.primary_light_intensity,
-        .direction = glm::normalize(atmosphere_lighting_.primary_light_direction),
+        .color = lighting.primary_light_color,
+        .intensity = lighting.primary_light_intensity,
+        .direction = glm::normalize(lighting.primary_light_direction),
     };
 }
 
@@ -239,14 +234,6 @@ const cubey::render::GeneratedPbrEnvironment& GltfViewerApp::ibl_environment() c
         throw std::runtime_error("PBR IBL environment is not initialized");
     }
     return ibl_environment_.value();
-}
-
-const cubey::render::AtmosphereReflectionProbe&
-GltfViewerApp::atmosphere_reflection_probe() const {
-    if (!atmosphere_reflection_probe_.resources_created()) {
-        throw std::runtime_error("atmosphere reflection probe is not initialized");
-    }
-    return atmosphere_reflection_probe_;
 }
 
 cubey::ForwardPbrRenderer3D& GltfViewerApp::forward_pbr_renderer() const {

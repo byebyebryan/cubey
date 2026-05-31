@@ -69,6 +69,14 @@ constexpr float kHeadlessVideoOrbitSpeed = 0.32F;
            gltf_viewer_atmosphere_time_speed(run_config) > 0.0F;
 }
 
+[[nodiscard]] cubey::render::AtmosphereDiffuseSource
+gltf_viewer_atmosphere_diffuse_source(const RunConfig& run_config) {
+    if (run_config.pbr.diffuse_source == "irradiance") {
+        return cubey::render::AtmosphereDiffuseSource::IrradianceCube;
+    }
+    return cubey::render::AtmosphereDiffuseSource::SphericalHarmonics;
+}
+
 } // namespace
 
 const cubey::math::Vec3 kLightDirection = glm::normalize(cubey::math::Vec3{0.45F, 0.82F, 0.35F});
@@ -202,11 +210,12 @@ std::vector<std::uint32_t> fallback_cube_indices() {
 GltfViewerApp::GltfViewerApp(RunConfig config)
     : config_(std::move(config)),
       debug_view_(render::pbr_debug_view_from_name(config_.debug_view)),
-      atmosphere_environment_(gltf_viewer_atmosphere_environment_config(config_)),
-      atmosphere_lighting_(render::atmosphere_environment_lighting(atmosphere_environment_)),
+      atmosphere_diffuse_source_(gltf_viewer_atmosphere_diffuse_source(config_)),
       atmosphere_solar_time_enabled_(gltf_viewer_uses_solar_time(config_)),
       atmosphere_time_playing_(gltf_viewer_atmosphere_time_playing(config_)),
-      atmosphere_time_speed_hours_per_second_(gltf_viewer_atmosphere_time_speed(config_)) {}
+      atmosphere_time_speed_hours_per_second_(gltf_viewer_atmosphere_time_speed(config_)) {
+    atmosphere_runtime_.set_environment(gltf_viewer_atmosphere_environment_config(config_));
+}
 
 bool GltfViewerApp::update_atmosphere_time(double delta_seconds) {
     if (!atmosphere_time_playing_ || atmosphere_time_speed_hours_per_second_ <= 0.0F ||
@@ -214,32 +223,30 @@ bool GltfViewerApp::update_atmosphere_time(double delta_seconds) {
         return false;
     }
 
-    const double current_time_hours =
-        static_cast<double>(atmosphere_environment_.time_of_day.time_hours);
+    cubey::render::AtmosphereEnvironmentConfig environment = atmosphere_runtime_.environment();
+    const double current_time_hours = static_cast<double>(environment.time_of_day.time_hours);
     const double next_time_hours =
         current_time_hours +
         (static_cast<double>(atmosphere_time_speed_hours_per_second_) * delta_seconds);
     const int day_delta = static_cast<int>(std::floor(next_time_hours / 24.0));
-    atmosphere_environment_.time_of_day.time_hours =
+    environment.time_of_day.time_hours =
         cubey::render::atmosphere_environment_wrap_time_hours(
             static_cast<float>(next_time_hours));
     if (day_delta != 0) {
-        atmosphere_environment_.time_of_day.day_of_year =
+        environment.time_of_day.day_of_year =
             cubey::render::atmosphere_environment_advance_day_of_year(
-                atmosphere_environment_.time_of_day.day_of_year, day_delta);
+                environment.time_of_day.day_of_year, day_delta);
     }
 
     if (atmosphere_solar_time_enabled_) {
         const cubey::render::AtmosphereEnvironmentSolarPosition solar =
             cubey::render::atmosphere_environment_solar_position(
-                atmosphere_environment_.time_of_day);
-        atmosphere_environment_.sun_elevation_degrees = solar.elevation_degrees;
-        atmosphere_environment_.sun_azimuth_degrees = solar.azimuth_degrees;
+                environment.time_of_day);
+        environment.sun_elevation_degrees = solar.elevation_degrees;
+        environment.sun_azimuth_degrees = solar.azimuth_degrees;
     }
 
-    atmosphere_lighting_ =
-        cubey::render::atmosphere_environment_lighting(atmosphere_environment_);
-    atmosphere_probe_time_dirty_ = true;
+    atmosphere_runtime_.set_environment(environment);
     return true;
 }
 

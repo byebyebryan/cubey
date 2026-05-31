@@ -38,7 +38,7 @@ void GltfViewerApp::create_global_resources_if_needed(const cubey::vulkan::Devic
     create_atmosphere_background_placeholders(device, gpu);
     const bool use_atmosphere_environment = use_atmosphere_environment_source();
     if (use_atmosphere_environment) {
-        create_atmosphere_reflection_probe(device, frame_slot_count);
+        create_atmosphere_environment_runtime(device, frame_slot_count);
     }
     forward_pbr_renderer_ =
         &engine_.renderers().create_forward_pbr_renderer_3d(forward_pbr_renderer_3d_config());
@@ -197,45 +197,41 @@ bool GltfViewerApp::use_atmosphere_environment_source() const {
 }
 
 cubey::render::PbrEnvironmentTextureBindings GltfViewerApp::pbr_environment_bindings() const {
-    cubey::render::PbrEnvironmentTextureBindings bindings =
-        cubey::render::pbr_environment_texture_bindings(ibl_environment());
     if (!use_atmosphere_environment_source()) {
-        return bindings;
+        return cubey::render::pbr_environment_texture_bindings(ibl_environment());
     }
 
-    const cubey::render::TextureCube& prefiltered =
-        atmosphere_reflection_probe().prefiltered_cube();
-    bindings.prefiltered_sampler = prefiltered.sampler().handle();
-    bindings.prefiltered_view = prefiltered.view();
-    bindings.prefiltered_mip_levels = atmosphere_reflection_probe().mip_levels();
-    return bindings;
+    return atmosphere_runtime_.pbr_environment_bindings(ibl_environment(),
+                                                       atmosphere_diffuse_source_);
 }
 
-void GltfViewerApp::create_atmosphere_reflection_probe(const cubey::vulkan::Device& device,
-                                                       std::uint32_t frame_slot_count) {
-    if (atmosphere_reflection_probe_.resources_created()) {
+void GltfViewerApp::create_atmosphere_environment_runtime(const cubey::vulkan::Device& device,
+                                                          std::uint32_t frame_slot_count) {
+    if (atmosphere_runtime_.resources_created()) {
         return;
     }
 
-    atmosphere_reflection_probe_.create_resources(
-        device, cubey::render::AtmosphereReflectionProbeConfig{
-                    .extent = 64,
-                    .mip_levels = 5,
+    atmosphere_runtime_.create_resources(
+        device, cubey::render::AtmosphereEnvironmentRuntimeResourceConfig{
+                    .reflection_extent = 64,
+                    .reflection_mip_levels = 5,
+                    .irradiance_extent = 16,
                     .format = VK_FORMAT_R16G16B16A16_SFLOAT,
                     .frame_slot_count = frame_slot_count,
                     .atmosphere_textures = atmosphere_background_textures(),
                 });
-    atmosphere_reflection_probe_.create_pipelines(
-        device, cubey::render::AtmosphereReflectionProbePipelineConfig{
+    atmosphere_runtime_.create_pipelines(
+        device, cubey::render::AtmosphereEnvironmentRuntimePipelineConfig{
                     .atmosphere_vertex_shader = shader_path("atmosphere.vert.spv"),
                     .atmosphere_fragment_shader = shader_path("atmosphere.frag.spv"),
-                    .prefilter_vertex_shader = shader_path("atmosphere.vert.spv"),
-                    .prefilter_fragment_shader =
+                    .reflection_prefilter_vertex_shader = shader_path("atmosphere.vert.spv"),
+                    .reflection_prefilter_fragment_shader =
                         shader_path("atmosphere_reflection_prefilter.frag.spv"),
+                    .irradiance_vertex_shader = shader_path("atmosphere.vert.spv"),
+                    .irradiance_fragment_shader =
+                        shader_path("atmosphere_reflection_irradiance.frag.spv"),
                 });
-    atmosphere_probe_full_update_pending_ = true;
-    atmosphere_probe_time_dirty_ = false;
-    atmosphere_probe_face_cursor_ = 0;
+    atmosphere_runtime_.mark_full_update_pending();
 }
 
 void GltfViewerApp::create_fallback_material(const cubey::vulkan::Device& device,

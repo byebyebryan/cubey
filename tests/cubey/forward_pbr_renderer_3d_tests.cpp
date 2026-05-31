@@ -752,14 +752,14 @@ void test_forward_pbr_renderer_3d_threads_atmosphere_background_path() {
                      "forward PBR shader package should compile the atmosphere irradiance shader");
     require_contains(gltf_assets, "create_atmosphere_background_placeholders",
                      "glTF viewer should create placeholder atmosphere atlas textures");
-    require_contains(gltf_assets, "create_atmosphere_reflection_probe",
-                     "glTF viewer should create the runtime atmosphere reflection probe");
+    require_contains(gltf_assets, "create_atmosphere_environment_runtime",
+                     "glTF viewer should create the shared atmosphere environment runtime");
     require_contains(gltf_assets, "pbr_environment_bindings",
                      "glTF viewer should feed explicit PBR environment bindings");
     require_contains(gltf_render, "ForwardPbrRenderer3DBackgroundMode::Atmosphere",
                      "glTF viewer should select the procedural atmosphere background");
-    require_contains(gltf_render, "record_atmosphere_probe_if_needed",
-                     "glTF viewer should update the atmosphere probe before PBR recording");
+    require_contains(gltf_render, "record_atmosphere_environment_if_needed",
+                     "glTF viewer should update the atmosphere runtime before PBR recording");
     require_contains(gltf_scene, "atmosphere_environment_frame_uniforms",
                      "glTF viewer should compute atmosphere background frame uniforms");
 }

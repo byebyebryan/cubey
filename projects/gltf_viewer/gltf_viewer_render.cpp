@@ -22,10 +22,7 @@ void GltfViewerApp::destroy_swapchain_resources() {
 void GltfViewerApp::destroy_all_resources() {
     engine_.renderers().destroy_all_resources();
     forward_pbr_renderer_ = nullptr;
-    atmosphere_reflection_probe_.destroy();
-    atmosphere_probe_full_update_pending_ = true;
-    atmosphere_probe_time_dirty_ = false;
-    atmosphere_probe_face_cursor_ = 0;
+    atmosphere_runtime_.destroy();
     ibl_environment_.reset();
     atmosphere_lunar_placeholder_.reset();
     atmosphere_night_sky_placeholder_.reset();
@@ -70,7 +67,7 @@ void GltfViewerApp::record_viewer_target(
         cubey::gltf_deformation_commands_for_frame(import_resources_, frame_slot);
     const cubey::render::FrameMeshResourceTable* frame_meshes =
         deformation_commands.empty() ? nullptr : &import_resources_.deformation.frame_meshes;
-    record_atmosphere_probe_if_needed(recorder, frame_slot);
+    record_atmosphere_environment_if_needed(recorder, frame_slot);
     forward_pbr_renderer().record({
         .device = &device,
         .command_buffer = command_buffer,
@@ -107,32 +104,16 @@ void GltfViewerApp::record_viewer_target(
     }
 }
 
-void GltfViewerApp::record_atmosphere_probe_if_needed(
+void GltfViewerApp::record_atmosphere_environment_if_needed(
     const cubey::vulkan::CommandRecorder& recorder, cubey::render::FrameSlot frame_slot) {
     if (!use_atmosphere_environment_source()) {
         return;
     }
-    if (!atmosphere_reflection_probe_.resources_created()) {
-        throw std::runtime_error("glTF viewer atmosphere reflection probe is not initialized");
+    if (!atmosphere_runtime_.resources_created()) {
+        throw std::runtime_error("glTF viewer atmosphere runtime is not initialized");
     }
 
-    const cubey::render::AtmosphereReflectionProbeUpdateInfo update{
-        .frame_slot = frame_slot,
-        .environment = atmosphere_environment_,
-    };
-    if (atmosphere_probe_full_update_pending_) {
-        atmosphere_reflection_probe_.record_full_update(recorder, update);
-        atmosphere_probe_full_update_pending_ = false;
-        atmosphere_probe_time_dirty_ = false;
-        atmosphere_probe_face_cursor_ = 0;
-        return;
-    }
-    if (atmosphere_probe_time_dirty_) {
-        atmosphere_reflection_probe_.record_face_update(recorder, update,
-                                                        atmosphere_probe_face_cursor_);
-        atmosphere_probe_face_cursor_ = (atmosphere_probe_face_cursor_ + 1U) % 6U;
-        atmosphere_probe_time_dirty_ = false;
-    }
+    atmosphere_runtime_.record_pending_update(recorder, frame_slot);
 }
 
 void GltfViewerApp::record_viewer_frame(cubey::host::WindowedAppContext& context,
