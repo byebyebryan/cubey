@@ -36,12 +36,12 @@ Radiance HDR equirectangular environment assets:
   occlusion, emissive, shadow, alpha, and UV0 inspection; pipeline, shadow,
   graph, sampler, and attachment state stay internal to the engine
   implementation;
-- the atmosphere environment can now produce a procedural visible background,
-  direct light data, low-order diffuse irradiance SH, and a runtime atmosphere
-  reflection probe for specular IBL. `Environment3D` can opt into those SH
-  coefficients for diffuse ambient, while the reusable forward PBR renderer can
-  bind either a complete generated/HDR environment or explicit environment
-  texture bindings supplied by a project;
+- the shared atmosphere runtime now produces a procedural visible background,
+  direct light data, low-order diffuse irradiance SH, a runtime atmosphere
+  irradiance cube, and a runtime atmosphere reflection probe for specular IBL.
+  `Environment3D` can opt into SH diffuse ambient, while the reusable forward
+  PBR renderer can bind either a complete generated/HDR environment or explicit
+  environment texture bindings supplied by a project;
 - `pbr_furnace` isolates the current IBL/specular behavior with a white sphere
   grid that sweeps roughness across columns and metallic across rows under a
   uniform white environment;
@@ -111,11 +111,12 @@ renderer-wide material management explicit future work.
   development and material inspection, but higher-quality offline filtering and
   prefiltered KTX/KTX2 deployment remain future work.
 - Atmosphere-driven PBR now covers procedural visible background, direct light,
-  diffuse SH, and a low-resolution runtime atmosphere reflection probe for
-  specular IBL in `gltf_viewer`. The probe is intentionally V1: it keeps the
-  static/generated irradiance and DFG resources as fallback foundation pieces,
-  updates all faces on first use, and then updates one face per frame when the
-  procedural time of day is animated.
+  diffuse SH, optional runtime irradiance, and a low-resolution runtime
+  atmosphere reflection probe for specular IBL in `gltf_viewer`. The runtime is
+  intentionally V1: it keeps the static/generated DFG resource as a fallback
+  foundation piece, defaults glTF diffuse lighting to SH, can opt into runtime
+  irradiance with `--pbr-diffuse-source irradiance`, updates all faces on first
+  use, and then updates one face per frame when procedural time is animated.
 - The current clearcoat, sheen, anisotropy, and iridescence lobes are pragmatic
   real-time approximations. Transmission, refraction, volume absorption,
   dispersion, and OIT-quality transparent material behavior remain future work.

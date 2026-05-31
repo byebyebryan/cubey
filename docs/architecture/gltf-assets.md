@@ -111,7 +111,7 @@ owns default textures, texture upload, and material instance creation.
 - generated and equirectangular HDR PBR environment helpers provide
   deterministic or asset-backed irradiance, GGX-prefiltered radiance, and DFG
   LUT resources, and the renderer can also accept explicit environment texture
-  bindings for runtime sky probes;
+  bindings from runtime sky irradiance/reflection probes;
 - `ShadowMapPass3D` owns a sampled depth texture plus depth-only pipeline for
   directional shadow passes.
 
@@ -121,10 +121,12 @@ directory is configured, and otherwise renders a generated PBR cube. It can use
 `--environment path/to/env.hdr` or the optional fetched Filament
 `lightroom_14b.hdr` sample for static HDR-backed IBL; by default it renders the
 procedural atmosphere as the visible background and captures that atmosphere
-into a runtime reflection probe for specular IBL. It creates camera and light
-entities around imported bounds, builds shadow and scene frame plans, and hands
-those plans plus scene resources to an engine-owned `ForwardPbrRenderer3D`
-through the shared forward-PBR request helper for pass recording. Its reusable
+through the shared atmosphere runtime for specular IBL. Atmosphere diffuse
+lighting defaults to SH and can be switched to the runtime irradiance cube with
+`--pbr-diffuse-source irradiance`. It creates camera and light entities around
+imported bounds, builds shadow and scene frame plans, and hands those plans plus
+scene resources to an engine-owned `ForwardPbrRenderer3D` through the shared
+forward-PBR request helper for pass recording. Its reusable
 forward-PBR shader package under `shaders/cubey/forward_pbr` writes linear HDR
 scene color and uses the shared Cubey PBR helper include for
 base-color-to-diffuse/F0 remapping, reflectance/specular factor controls,
