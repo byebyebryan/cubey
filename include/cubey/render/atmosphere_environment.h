@@ -94,7 +94,6 @@ struct AtmosphereEnvironmentFrameUniforms {
     math::Vec4 mie;
     math::Vec4 ozone;
     math::Vec4 sun_direction_radius;
-    math::Vec4 display_transform;
     math::Vec4 atmosphere_options;
     math::Vec4 night_options;
     math::Vec4 celestial_options;
@@ -104,12 +103,11 @@ struct AtmosphereEnvironmentFrameUniforms {
     math::Vec4 milky_way_options;
 };
 
-static_assert(sizeof(AtmosphereEnvironmentFrameUniforms) == sizeof(float) * 64U);
+static_assert(sizeof(AtmosphereEnvironmentFrameUniforms) == sizeof(float) * 60U);
 
 struct AtmosphereEnvironmentFrameUniformInputs {
     ViewRayBasis3D view_rays{};
     AtmosphereEnvironmentRenderView render_view = AtmosphereEnvironmentRenderView::Final;
-    math::Vec4 display_transform{0.0F, 0.0F, 0.0F, 0.0F};
 };
 
 [[nodiscard]] float atmosphere_environment_degrees_to_radians(float degrees);

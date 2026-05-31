@@ -249,7 +249,7 @@ int main() {
     require(atmosphere_config_for_preset(AtmospherePreset::MoonlitNight).moon.moonlight_intensity >
                 atmosphere_config_for_preset(AtmospherePreset::Night).moon.moonlight_intensity,
             "moonlit night preset should increase moonlight");
-    require(sizeof(AtmosphereFrameUniforms) == sizeof(float) * 64U,
+    require(sizeof(AtmosphereFrameUniforms) == sizeof(float) * 60U,
             "atmosphere frame uniforms should keep the shader vec4 layout size");
     {
         AtmosphereConfig config = atmosphere_config_for_preset(AtmospherePreset::Noon);
@@ -272,7 +272,6 @@ int main() {
             {
                 .view_rays = view_rays,
                 .render_view = AtmosphereRenderView::Moon,
-                .display_transform = {0.25F, 1.0F, 1.0F, 0.0F},
             });
         require(uniforms.camera_right_aspect == view_rays.right_aspect,
                 "frame uniforms should preserve packed view ray right/aspect");
@@ -283,8 +282,6 @@ int main() {
         require(uniforms.camera_forward_debug_view.w ==
                     static_cast<float>(static_cast<std::uint32_t>(AtmosphereRenderView::Moon)),
                 "frame uniforms should pack the debug render view");
-        require(uniforms.display_transform == cubey::math::Vec4{0.25F, 1.0F, 1.0F, 0.0F},
-                "frame uniforms should carry the resolved display transform");
         require(uniforms.moon_options.x == 1.0F,
                 "frame uniforms should pack the moon enable flag");
         require(uniforms.celestial_options.z ==
@@ -714,7 +711,7 @@ int main() {
     require_contains(shared_environment_header,
                      "static_assert(sizeof(AtmosphereEnvironmentFrameUniforms)",
                      "shared atmosphere environment should lock frame uniform size");
-    require_contains(shared_environment_header, "sizeof(float) * 64U",
+    require_contains(shared_environment_header, "sizeof(float) * 60U",
                      "shared atmosphere environment should include celestial frame uniforms");
     require_contains(shared_environment_source, "atmosphere_environment_frame_uniforms",
                      "shared atmosphere environment should own frame uniform packing");
@@ -746,6 +743,8 @@ int main() {
                          "atmosphere shader should not use push constants for frame data");
     require_not_contains(shader_source, "cubey_pbr_apply_display_transform",
                          "atmosphere shader should leave display transform to the post pass");
+    require_not_contains(shader_source, "display_transform",
+                         "atmosphere shader should not carry a stale display transform uniform");
     require_contains(shader_source, "layout(set = 0, binding = 0) uniform AtmosphereFrame",
                      "atmosphere shader should read frame data from a uniform buffer");
     require_contains(shader_source, "#include \"cubey/atmosphere.glsl\"",

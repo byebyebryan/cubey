@@ -23,7 +23,7 @@ void require_near(float actual, float expected, float tolerance, const char* mes
 } // namespace
 
 void test_atmosphere_environment_packs_frame_uniforms() {
-    require(sizeof(cubey::render::AtmosphereEnvironmentFrameUniforms) == sizeof(float) * 64U,
+    require(sizeof(cubey::render::AtmosphereEnvironmentFrameUniforms) == sizeof(float) * 60U,
             "atmosphere environment frame uniforms should keep the shader vec4 layout size");
 
     cubey::render::AtmosphereEnvironmentConfig config;
@@ -53,7 +53,6 @@ void test_atmosphere_environment_packs_frame_uniforms() {
             {
                 .view_rays = view_rays,
                 .render_view = cubey::render::AtmosphereEnvironmentRenderView::Moon,
-                .display_transform = {0.25F, 1.0F, 1.0F, 0.0F},
             });
 
     require(uniforms.camera_right_aspect == view_rays.right_aspect,
@@ -66,8 +65,6 @@ void test_atmosphere_environment_packs_frame_uniforms() {
                 static_cast<float>(static_cast<std::uint32_t>(
                     cubey::render::AtmosphereEnvironmentRenderView::Moon)),
             "atmosphere environment should pack the debug render view");
-    require(uniforms.display_transform == cubey::math::Vec4{0.25F, 1.0F, 1.0F, 0.0F},
-            "atmosphere environment should carry the resolved display transform");
     require(uniforms.moon_options.x == 0.0F,
             "atmosphere environment should pack the moon enable flag");
     require(uniforms.milky_way_options.w == 1.0F,

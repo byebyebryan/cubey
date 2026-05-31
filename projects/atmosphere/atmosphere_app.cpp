@@ -681,16 +681,11 @@ class AtmosphereApp {
             cubey::math::angle_axis_quat(kBasePitch + view_controller_.pitch(), {1.0F, 0.0F, 0.0F});
         const cubey::render::ViewRayBasis3D view_rays =
             cubey::render::view_ray_basis_3d(rotation, aspect, kDefaultFovyRadians);
-        const cubey::render::PbrDisplayTransform display_transform =
-            cubey::render::pbr_display_transform_for_target(pipeline_color_format_,
-                                                            atmosphere_config_.exposure);
         return atmosphere_frame_uniforms(
             atmosphere_config_,
             {
                 .view_rays = view_rays,
                 .render_view = render_view_,
-                .display_transform =
-                    cubey::render::pbr_display_transform_uniform(display_transform),
             });
     }
 

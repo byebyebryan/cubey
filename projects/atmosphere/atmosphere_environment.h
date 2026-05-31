@@ -8,12 +8,11 @@
 namespace cubey::projects::atmosphere {
 
 using AtmosphereFrameUniforms = cubey::render::AtmosphereEnvironmentFrameUniforms;
-static_assert(sizeof(AtmosphereFrameUniforms) == sizeof(float) * 64U);
+static_assert(sizeof(AtmosphereFrameUniforms) == sizeof(float) * 60U);
 
 struct AtmosphereFrameUniformInputs {
     cubey::render::ViewRayBasis3D view_rays{};
     AtmosphereRenderView render_view = AtmosphereRenderView::Final;
-    cubey::math::Vec4 display_transform{0.0F, 0.0F, 0.0F, 0.0F};
 };
 
 [[nodiscard]] cubey::render::AtmosphereEnvironmentRenderView

@@ -186,7 +186,6 @@ AtmosphereEnvironmentFrameUniforms atmosphere_environment_frame_uniforms(
                 sun.z,
                 config.sun_angular_radius,
             },
-        .display_transform = inputs.display_transform,
         .atmosphere_options =
             {
                 config.ozone_half_width_km,

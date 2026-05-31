@@ -76,7 +76,6 @@ AtmosphereFrameUniforms atmosphere_frame_uniforms(const AtmosphereConfig& config
         {
             .view_rays = inputs.view_rays,
             .render_view = atmosphere_environment_render_view(inputs.render_view),
-            .display_transform = inputs.display_transform,
         });
 }
 

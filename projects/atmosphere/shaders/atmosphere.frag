@@ -18,7 +18,6 @@ layout(set = 0, binding = 0) uniform AtmosphereFrame {
     vec4 mie;
     vec4 ozone;
     vec4 sun_direction_radius;
-    vec4 display_transform;
     vec4 atmosphere_options;
     vec4 night_options;
     vec4 celestial_options;
