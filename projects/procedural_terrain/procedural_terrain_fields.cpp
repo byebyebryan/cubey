@@ -1022,4 +1022,20 @@ TerrainFieldData generate_terrain_fields(const TerrainConfig& config) {
     return fields;
 }
 
+cubey::render::TerrainOceanFieldView terrain_ocean_field_view(const TerrainFieldData& fields) {
+    return {
+        .desc = fields.desc,
+        .height_m = fields.height_m,
+        .water_depth_m = fields.water_depth_m,
+        .shore_sdf_m = fields.shore_sdf_m,
+        .slope = fields.slope,
+        .material_masks = fields.material_masks,
+    };
+}
+
+cubey::render::TerrainOceanPackedFields pack_terrain_ocean_fields(
+    const TerrainFieldData& fields) {
+    return cubey::render::pack_terrain_ocean_fields(terrain_ocean_field_view(fields));
+}
+
 } // namespace cubey::projects::procedural_terrain

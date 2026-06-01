@@ -2,6 +2,8 @@
 
 #include "procedural_terrain_config.h"
 
+#include <cubey/render/terrain_ocean_fields.h>
+
 #include <cstddef>
 #include <cstdint>
 #include <stdexcept>
@@ -9,16 +11,8 @@
 
 namespace cubey::projects::procedural_terrain {
 
-struct TerrainGridDesc {
-    std::uint32_t version = 1;
-    std::uint64_t seed = kTerrainDefaultSeed;
-    std::uint32_t width = kTerrainDefaultGridWidth;
-    std::uint32_t height = kTerrainDefaultGridHeight;
-    float cell_size_m = kTerrainDefaultCellSizeMeters;
-    float sea_level_m = kTerrainDefaultSeaLevelMeters;
-    float origin_x_m = 0.0F;
-    float origin_z_m = 0.0F;
-};
+using TerrainGridDesc = cubey::render::TerrainOceanGridDesc;
+using TerrainMaterialMask = cubey::render::TerrainOceanMaterialMask;
 
 [[nodiscard]] inline float terrain_grid_centered_offset_m(std::uint32_t index,
                                                           std::uint32_t count,
@@ -38,13 +32,6 @@ struct TerrainGridDesc {
                                                    std::uint32_t y) {
     return desc.origin_z_m + terrain_grid_centered_offset_m(y, desc.height, desc.cell_size_m);
 }
-
-struct TerrainMaterialMask {
-    float sand = 0.0F;
-    float rock = 0.0F;
-    float vegetation = 0.0F;
-    float sediment = 0.0F;
-};
 
 struct TerrainHeightContributions {
     float coast_lift_m = 0.0F;
@@ -86,5 +73,9 @@ struct TerrainFieldData {
 };
 
 [[nodiscard]] TerrainFieldData generate_terrain_fields(const TerrainConfig& config);
+[[nodiscard]] cubey::render::TerrainOceanFieldView terrain_ocean_field_view(
+    const TerrainFieldData& fields);
+[[nodiscard]] cubey::render::TerrainOceanPackedFields pack_terrain_ocean_fields(
+    const TerrainFieldData& fields);
 
 } // namespace cubey::projects::procedural_terrain
