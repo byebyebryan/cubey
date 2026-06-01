@@ -35,7 +35,7 @@ ocean_mesh_clipmap_config(const OceanConfig& config) {
 }
 
 [[nodiscard]] inline float ocean_mesh_level_half_extent(const OceanConfig& config,
-                                                       std::uint32_t level) {
+                                                        std::uint32_t level) {
     return cubey::render::clipmap_grid_2d_level_half_extent(ocean_mesh_clipmap_config(config),
                                                             level);
 }
@@ -45,13 +45,12 @@ ocean_mesh_clipmap_config(const OceanConfig& config) {
 }
 
 [[nodiscard]] inline float ocean_mesh_level_cell_size(const OceanConfig& config,
-                                                     std::uint32_t level) {
-    return cubey::render::clipmap_grid_2d_level_cell_size(ocean_mesh_clipmap_config(config),
-                                                          level);
+                                                      std::uint32_t level) {
+    return cubey::render::clipmap_grid_2d_level_cell_size(ocean_mesh_clipmap_config(config), level);
 }
 
 [[nodiscard]] inline float ocean_mesh_transition_width(float coarse_cell_size,
-                                                      float boundary_extent) {
+                                                       float boundary_extent) {
     return cubey::render::clipmap_grid_2d_transition_width(
         coarse_cell_size, boundary_extent, kOceanMeshTransitionCells, kOceanMeshMaxTransitionRatio);
 }
@@ -61,11 +60,11 @@ ocean_mesh_clipmap_config(const OceanConfig& config) {
 }
 
 [[nodiscard]] inline std::uint32_t ocean_mesh_patch_vertex_count(const OceanMeshPatch& patch) {
-    return patch.cells_x * patch.cells_z * 6U;
+    return cubey::render::clipmap_grid_2d_patch_vertex_count(patch);
 }
 
 [[nodiscard]] inline std::uint32_t ocean_mesh_patch_triangle_count(const OceanMeshPatch& patch) {
-    return patch.cells_x * patch.cells_z * 2U;
+    return cubey::render::clipmap_grid_2d_patch_triangle_count(patch);
 }
 
 inline void ocean_mesh_add_patch(OceanMeshPatchList& list, std::uint32_t level,
@@ -85,20 +84,12 @@ inline void ocean_mesh_add_patch(OceanMeshPatchList& list, std::uint32_t level,
 
 [[nodiscard]] inline std::uint32_t ocean_mesh_total_triangle_count(const OceanConfig& config) {
     const OceanMeshPatchList patches = ocean_mesh_clipmap_patches(config);
-    std::uint32_t triangles = 0;
-    for (const OceanMeshPatch& patch : patches) {
-        triangles += ocean_mesh_patch_triangle_count(patch);
-    }
-    return triangles;
+    return cubey::render::clipmap_grid_2d_total_triangle_count(patches);
 }
 
 [[nodiscard]] inline std::uint32_t ocean_mesh_total_vertex_count(const OceanConfig& config) {
     const OceanMeshPatchList patches = ocean_mesh_clipmap_patches(config);
-    std::uint32_t vertices = 0;
-    for (const OceanMeshPatch& patch : patches) {
-        vertices += ocean_mesh_patch_vertex_count(patch);
-    }
-    return vertices;
+    return cubey::render::clipmap_grid_2d_total_vertex_count(patches);
 }
 
 } // namespace cubey::projects::ocean

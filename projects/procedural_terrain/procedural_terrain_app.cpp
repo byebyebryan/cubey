@@ -72,11 +72,10 @@ make_terrain_diagnostics(const TerrainFieldData& fields, const TerrainMeshData& 
     diagnostics.last_rebuild_ms = rebuild_ms;
     diagnostics.rebuild_count = rebuild_count;
     const TerrainClipmapPlan clipmap_plan = terrain_clipmap_plan(fields.desc);
-    diagnostics.clipmap_lod_levels = clipmap_plan.grid.lod_levels;
-    diagnostics.clipmap_patch_count = static_cast<std::uint32_t>(clipmap_plan.patches.count);
-    diagnostics.clipmap_outer_half_extent_m = clipmap_plan.grid.outer_half_extent;
-    diagnostics.clipmap_near_cell_size_m =
-        cubey::render::clipmap_grid_2d_near_cell_size(clipmap_plan.grid);
+    diagnostics.clipmap_lod_levels = clipmap_plan.diagnostics.lod_levels;
+    diagnostics.clipmap_patch_count = clipmap_plan.diagnostics.patch_count;
+    diagnostics.clipmap_outer_half_extent_m = clipmap_plan.diagnostics.outer_half_extent;
+    diagnostics.clipmap_near_cell_size_m = clipmap_plan.diagnostics.near_cell_size;
 
     double slope_sum = 0.0;
     for (std::size_t index = 0; index < diagnostics.sample_count; ++index) {
@@ -214,12 +213,12 @@ int ProceduralTerrainApp::run_headless() {
                             context.render_target().format,
                             cubey::host::headless_capture_frame_slot_count(config_));
     };
-    callbacks.record_frame =
-        [this](cubey::host::HeadlessPngContext& context,
-               const cubey::host::HeadlessCaptureFrame& frame,
-               VkCommandBuffer command_buffer, const cubey::host::HeadlessRenderTarget& target) {
-            record_terrain_frame(context.device(), command_buffer, target, frame.frame_slot, false);
-        };
+    callbacks.record_frame = [this](cubey::host::HeadlessPngContext& context,
+                                    const cubey::host::HeadlessCaptureFrame& frame,
+                                    VkCommandBuffer command_buffer,
+                                    const cubey::host::HeadlessRenderTarget& target) {
+        record_terrain_frame(context.device(), command_buffer, target, frame.frame_slot, false);
+    };
     callbacks.shutdown = [this](cubey::host::HeadlessPngContext&) { destroy_all_resources(); };
 
     cubey::host::HeadlessPngHost host(std::move(host_config), std::move(callbacks));
@@ -437,8 +436,7 @@ TerrainPushConstants ProceduralTerrainApp::push_constants(VkExtent2D extent) con
 void ProceduralTerrainApp::record_terrain_frame(const cubey::vulkan::Device& device,
                                                 VkCommandBuffer command_buffer,
                                                 cubey::render::ColorTargetView color_target,
-                                                cubey::render::FrameSlot frame_slot,
-                                                bool present) {
+                                                cubey::render::FrameSlot frame_slot, bool present) {
     const TerrainPushConstants constants = push_constants(color_target.extent);
     const auto record = [this, &constants](const cubey::vulkan::CommandRecorder& pass_recorder) {
         pass_recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS,
@@ -466,12 +464,11 @@ void ProceduralTerrainApp::record_terrain_frame(const cubey::vulkan::Device& dev
     const cubey::render::RenderGraphTextureState final_state =
         present ? cubey::render::render_graph_present_texture_state()
                 : cubey::render::render_graph_color_attachment_texture_state();
-    const cubey::render::RenderGraphTextureHandle backbuffer =
-        graph.import_color_target("procedural terrain backbuffer", color_target, initial_state,
-                                  final_state);
-    const cubey::render::RenderGraphTextureHandle depth = graph.import_depth_target(
-        "procedural terrain depth", forward_pass().depth_target(),
-        cubey::render::render_graph_undefined_texture_state());
+    const cubey::render::RenderGraphTextureHandle backbuffer = graph.import_color_target(
+        "procedural terrain backbuffer", color_target, initial_state, final_state);
+    const cubey::render::RenderGraphTextureHandle depth =
+        graph.import_depth_target("procedural terrain depth", forward_pass().depth_target(),
+                                  cubey::render::render_graph_undefined_texture_state());
 
     graph.add_pass("procedural terrain scene", cubey::render::RenderGraphQueueDomain::Graphics)
         .write_color(backbuffer)
@@ -484,8 +481,8 @@ void ProceduralTerrainApp::record_terrain_frame(const cubey::vulkan::Device& dev
             const cubey::render::DepthTargetView resolved_depth =
                 cubey::render::resolved_depth_target_view(context, depth);
             cubey::render::record_render_target_pass(
-                context.recorder(), cubey::render::render_target_view(resolved_color,
-                                                                      resolved_depth),
+                context.recorder(),
+                cubey::render::render_target_view(resolved_color, resolved_depth),
                 forward_pass().clear_values(), record);
         });
 

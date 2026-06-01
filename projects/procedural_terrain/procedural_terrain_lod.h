@@ -17,12 +17,12 @@ inline constexpr std::uint32_t kTerrainClipmapMaxPatches =
     cubey::render::clipmap_grid_2d_patch_count(kTerrainClipmapMaxLodLevels);
 
 using TerrainClipmapPatch = cubey::render::ClipmapGrid2DPatch;
-using TerrainClipmapPatchList =
-    cubey::render::ClipmapGrid2DPatchList<kTerrainClipmapMaxPatches>;
+using TerrainClipmapPatchList = cubey::render::ClipmapGrid2DPatchList<kTerrainClipmapMaxPatches>;
 
 struct TerrainClipmapPlan {
     cubey::render::ClipmapGrid2DConfig grid{};
     TerrainClipmapPatchList patches{};
+    cubey::render::ClipmapGrid2DDiagnostics diagnostics{};
     float field_half_extent_x_m = 0.0F;
     float field_half_extent_z_m = 0.0F;
 };
@@ -41,9 +41,10 @@ struct TerrainClipmapPlan {
     return static_cast<float>(desc.height - 1U) * desc.cell_size_m * 0.5F;
 }
 
-[[nodiscard]] inline cubey::render::ClipmapGrid2DConfig terrain_clipmap_grid_config(
-    const TerrainGridDesc& desc, std::uint32_t lod_levels = kTerrainClipmapDefaultLodLevels,
-    std::uint32_t cells_per_axis = kTerrainClipmapDefaultCellsPerAxis) {
+[[nodiscard]] inline cubey::render::ClipmapGrid2DConfig
+terrain_clipmap_grid_config(const TerrainGridDesc& desc,
+                            std::uint32_t lod_levels = kTerrainClipmapDefaultLodLevels,
+                            std::uint32_t cells_per_axis = kTerrainClipmapDefaultCellsPerAxis) {
     if (lod_levels == 0U || lod_levels > kTerrainClipmapMaxLodLevels) {
         throw std::runtime_error("terrain clipmap LOD levels out of supported range");
     }
@@ -58,9 +59,10 @@ struct TerrainClipmapPlan {
     };
 }
 
-[[nodiscard]] inline TerrainClipmapPatchList terrain_clipmap_patches(
-    const TerrainGridDesc& desc, std::uint32_t lod_levels = kTerrainClipmapDefaultLodLevels,
-    std::uint32_t cells_per_axis = kTerrainClipmapDefaultCellsPerAxis) {
+[[nodiscard]] inline TerrainClipmapPatchList
+terrain_clipmap_patches(const TerrainGridDesc& desc,
+                        std::uint32_t lod_levels = kTerrainClipmapDefaultLodLevels,
+                        std::uint32_t cells_per_axis = kTerrainClipmapDefaultCellsPerAxis) {
     return cubey::render::clipmap_grid_2d_patches<kTerrainClipmapMaxPatches>(
         terrain_clipmap_grid_config(desc, lod_levels, cells_per_axis));
 }
@@ -73,14 +75,18 @@ struct TerrainClipmapPlan {
            patch.bounds.max_z >= -half_z && patch.bounds.min_z <= half_z;
 }
 
-[[nodiscard]] inline TerrainClipmapPlan terrain_clipmap_plan(
-    const TerrainGridDesc& desc, std::uint32_t lod_levels = kTerrainClipmapDefaultLodLevels,
-    std::uint32_t cells_per_axis = kTerrainClipmapDefaultCellsPerAxis) {
+[[nodiscard]] inline TerrainClipmapPlan
+terrain_clipmap_plan(const TerrainGridDesc& desc,
+                     std::uint32_t lod_levels = kTerrainClipmapDefaultLodLevels,
+                     std::uint32_t cells_per_axis = kTerrainClipmapDefaultCellsPerAxis) {
     const cubey::render::ClipmapGrid2DConfig grid =
         terrain_clipmap_grid_config(desc, lod_levels, cells_per_axis);
+    const TerrainClipmapPatchList patches =
+        cubey::render::clipmap_grid_2d_patches<kTerrainClipmapMaxPatches>(grid);
     return {
         .grid = grid,
-        .patches = cubey::render::clipmap_grid_2d_patches<kTerrainClipmapMaxPatches>(grid),
+        .patches = patches,
+        .diagnostics = cubey::render::clipmap_grid_2d_diagnostics(grid, patches),
         .field_half_extent_x_m = terrain_field_half_extent_x_m(desc),
         .field_half_extent_z_m = terrain_field_half_extent_z_m(desc),
     };

@@ -31,6 +31,15 @@ struct ClipmapGrid2DPatch {
     ClipmapGrid2DBounds bounds{};
 };
 
+struct ClipmapGrid2DDiagnostics {
+    std::uint32_t lod_levels = 0;
+    std::uint32_t patch_count = 0;
+    std::uint32_t total_vertices = 0;
+    std::uint32_t total_triangles = 0;
+    float near_cell_size = 0.0F;
+    float outer_half_extent = 0.0F;
+};
+
 template <std::size_t MaxPatches> struct ClipmapGrid2DPatchList {
     std::array<ClipmapGrid2DPatch, MaxPatches> patches{};
     std::size_t count = 0;
@@ -46,6 +55,16 @@ template <std::size_t MaxPatches> struct ClipmapGrid2DPatchList {
 
 [[nodiscard]] constexpr std::uint32_t clipmap_grid_2d_patch_count(std::uint32_t lod_levels) {
     return lod_levels == 0U ? 0U : 1U + (4U * (lod_levels - 1U));
+}
+
+[[nodiscard]] constexpr std::uint32_t
+clipmap_grid_2d_patch_vertex_count(const ClipmapGrid2DPatch& patch) {
+    return patch.cells_x * patch.cells_z * 6U;
+}
+
+[[nodiscard]] constexpr std::uint32_t
+clipmap_grid_2d_patch_triangle_count(const ClipmapGrid2DPatch& patch) {
+    return patch.cells_x * patch.cells_z * 2U;
 }
 
 inline void validate_clipmap_grid_2d_config(const ClipmapGrid2DConfig& config) {
@@ -70,7 +89,7 @@ inline void validate_clipmap_grid_2d_config(const ClipmapGrid2DConfig& config) {
 }
 
 [[nodiscard]] inline float clipmap_grid_2d_level_half_extent(const ClipmapGrid2DConfig& config,
-                                                            std::uint32_t level) {
+                                                             std::uint32_t level) {
     validate_clipmap_grid_2d_config(config);
     if (level >= config.lod_levels) {
         throw std::runtime_error("clipmap grid level out of range");
@@ -84,7 +103,7 @@ inline void validate_clipmap_grid_2d_config(const ClipmapGrid2DConfig& config) {
 }
 
 [[nodiscard]] inline float clipmap_grid_2d_level_cell_size(const ClipmapGrid2DConfig& config,
-                                                          std::uint32_t level) {
+                                                           std::uint32_t level) {
     return clipmap_grid_2d_near_cell_size(config) * static_cast<float>(1U << level);
 }
 
@@ -110,9 +129,8 @@ inline void validate_clipmap_grid_2d_config(const ClipmapGrid2DConfig& config) {
 }
 
 template <std::size_t MaxPatches>
-inline void clipmap_grid_2d_add_patch(ClipmapGrid2DPatchList<MaxPatches>& list,
-                                      std::uint32_t level, ClipmapGrid2DBounds bounds,
-                                      float target_cell_size) {
+inline void clipmap_grid_2d_add_patch(ClipmapGrid2DPatchList<MaxPatches>& list, std::uint32_t level,
+                                      ClipmapGrid2DBounds bounds, float target_cell_size) {
     if (list.count >= list.patches.size()) {
         throw std::runtime_error("clipmap grid patch list overflow");
     }
@@ -149,9 +167,8 @@ clipmap_grid_2d_patches(const ClipmapGrid2DConfig& config) {
         }
 
         const float inner = clipmap_grid_2d_level_half_extent(config, level - 1U);
-        const float overlap =
-            clipmap_grid_2d_transition_width(target_cell_size, inner, config.transition_cells,
-                                             config.max_transition_ratio);
+        const float overlap = clipmap_grid_2d_transition_width(
+            target_cell_size, inner, config.transition_cells, config.max_transition_ratio);
         clipmap_grid_2d_add_patch(list, level, {-outer, outer, inner - overlap, outer},
                                   target_cell_size);
         clipmap_grid_2d_add_patch(list, level, {-outer, outer, -outer, -inner + overlap},
@@ -162,6 +179,41 @@ clipmap_grid_2d_patches(const ClipmapGrid2DConfig& config) {
                                   target_cell_size);
     }
     return list;
+}
+
+template <std::size_t MaxPatches>
+[[nodiscard]] inline std::uint32_t
+clipmap_grid_2d_total_vertex_count(const ClipmapGrid2DPatchList<MaxPatches>& patches) {
+    std::uint32_t vertices = 0;
+    for (const ClipmapGrid2DPatch& patch : patches) {
+        vertices += clipmap_grid_2d_patch_vertex_count(patch);
+    }
+    return vertices;
+}
+
+template <std::size_t MaxPatches>
+[[nodiscard]] inline std::uint32_t
+clipmap_grid_2d_total_triangle_count(const ClipmapGrid2DPatchList<MaxPatches>& patches) {
+    std::uint32_t triangles = 0;
+    for (const ClipmapGrid2DPatch& patch : patches) {
+        triangles += clipmap_grid_2d_patch_triangle_count(patch);
+    }
+    return triangles;
+}
+
+template <std::size_t MaxPatches>
+[[nodiscard]] inline ClipmapGrid2DDiagnostics
+clipmap_grid_2d_diagnostics(const ClipmapGrid2DConfig& config,
+                            const ClipmapGrid2DPatchList<MaxPatches>& patches) {
+    validate_clipmap_grid_2d_config(config);
+    return {
+        .lod_levels = config.lod_levels,
+        .patch_count = static_cast<std::uint32_t>(patches.count),
+        .total_vertices = clipmap_grid_2d_total_vertex_count(patches),
+        .total_triangles = clipmap_grid_2d_total_triangle_count(patches),
+        .near_cell_size = clipmap_grid_2d_near_cell_size(config),
+        .outer_half_extent = config.outer_half_extent,
+    };
 }
 
 } // namespace cubey::render

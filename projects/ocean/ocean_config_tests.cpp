@@ -485,6 +485,10 @@ int main() {
                          "ocean clipmap should use the shared render helper");
         require_contains(mesh_header, "clipmap_grid_2d_patches",
                          "ocean clipmap should delegate patch generation to the shared helper");
+        require_contains(mesh_header, "clipmap_grid_2d_total_triangle_count",
+                         "ocean clipmap should delegate triangle totals to the shared helper");
+        require_contains(mesh_header, "clipmap_grid_2d_total_vertex_count",
+                         "ocean clipmap should delegate vertex totals to the shared helper");
         require_contains(app_source, "diagnostics_.anti_repeat_strength",
                          "app should pass anti-repeat as diagnostics push data");
         require_contains(app_source, "kOceanSceneColorFormat = VK_FORMAT_R16G16B16A16_SFLOAT",

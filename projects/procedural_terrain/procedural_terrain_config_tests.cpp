@@ -258,15 +258,25 @@ int main() {
     require_near(terrain::terrain_grid_sample_z_m(fields.desc, fields.desc.height / 2U),
                  fields.desc.origin_z_m, 0.001F,
                  "terrain grid center sample should land on origin Z for odd grids");
-    const terrain::TerrainClipmapPlan clipmap_plan = terrain::terrain_clipmap_plan(
-        fields.desc, terrain::kTerrainClipmapDefaultLodLevels, 32U);
+    const terrain::TerrainClipmapPlan clipmap_plan =
+        terrain::terrain_clipmap_plan(fields.desc, terrain::kTerrainClipmapDefaultLodLevels, 32U);
     require(clipmap_plan.grid.lod_levels == terrain::kTerrainClipmapDefaultLodLevels,
             "terrain clipmap should preserve requested LOD levels");
     require(clipmap_plan.patches.count ==
                 cubey::render::clipmap_grid_2d_patch_count(clipmap_plan.grid.lod_levels),
             "terrain clipmap should use the shared patch count contract");
+    require(clipmap_plan.diagnostics.patch_count == clipmap_plan.patches.count,
+            "terrain clipmap diagnostics should report shared patch count");
+    require(clipmap_plan.diagnostics.total_vertices ==
+                cubey::render::clipmap_grid_2d_total_vertex_count(clipmap_plan.patches),
+            "terrain clipmap diagnostics should report shared vertex totals");
+    require(clipmap_plan.diagnostics.total_triangles ==
+                cubey::render::clipmap_grid_2d_total_triangle_count(clipmap_plan.patches),
+            "terrain clipmap diagnostics should report shared triangle totals");
     require_near(clipmap_plan.grid.outer_half_extent, half_width_m, 0.001F,
                  "terrain clipmap should cover the centered terrain field");
+    require_near(clipmap_plan.diagnostics.outer_half_extent, half_width_m, 0.001F,
+                 "terrain clipmap diagnostics should expose shared outer extent");
     require_near(clipmap_plan.field_half_extent_x_m, half_width_m, 0.001F,
                  "terrain clipmap should report centered field half width");
     require_near(clipmap_plan.field_half_extent_z_m, half_height_m, 0.001F,
@@ -314,7 +324,8 @@ int main() {
             "terrain material field size mismatch");
     require(fields.height_contributions.size() == fields.sample_count(),
             "terrain contribution field size mismatch");
-    const render::TerrainOceanFieldView ocean_field_view = terrain::terrain_ocean_field_view(fields);
+    const render::TerrainOceanFieldView ocean_field_view =
+        terrain::terrain_ocean_field_view(fields);
     require(ocean_field_view.desc.width == fields.desc.width &&
                 ocean_field_view.desc.height == fields.desc.height,
             "terrain should expose shared ocean field dimensions");
@@ -325,10 +336,10 @@ int main() {
         terrain::pack_terrain_ocean_fields(fields);
     require(packed_ocean_fields.rgba32f.size() == fields.sample_count() * 4U,
             "packed terrain-ocean fields should use one RGBA32F texel per sample");
-    require_near(packed_ocean_fields.rgba32f[static_cast<std::uint32_t>(
-                     render::TerrainOceanFieldChannel::HeightMeters)],
-                 fields.height_m[0], 0.001F,
-                 "packed terrain-ocean fields should store height in R");
+    require_near(
+        packed_ocean_fields
+            .rgba32f[static_cast<std::uint32_t>(render::TerrainOceanFieldChannel::HeightMeters)],
+        fields.height_m[0], 0.001F, "packed terrain-ocean fields should store height in R");
     require_near(packed_ocean_fields.rgba32f[static_cast<std::uint32_t>(
                      render::TerrainOceanFieldChannel::WaterDepthMeters)],
                  fields.water_depth_m[0], 0.001F,
@@ -337,9 +348,9 @@ int main() {
                      render::TerrainOceanFieldChannel::ShoreSignedDistanceMeters)],
                  fields.shore_sdf_m[0], 0.001F,
                  "packed terrain-ocean fields should store shoreline SDF in B");
-    require_near(
-        packed_ocean_fields.rgba32f[static_cast<std::uint32_t>(render::TerrainOceanFieldChannel::Slope)],
-        fields.slope[0], 0.001F, "packed terrain-ocean fields should store slope in A");
+    require_near(packed_ocean_fields
+                     .rgba32f[static_cast<std::uint32_t>(render::TerrainOceanFieldChannel::Slope)],
+                 fields.slope[0], 0.001F, "packed terrain-ocean fields should store slope in A");
     require(fields.min_height_m < 0.0F, "terrain should include underwater terrain");
     require(fields.max_height_m > 0.0F, "terrain should include land terrain");
     require(fields.max_water_depth_m > 0.0F, "terrain should include positive water depth");
@@ -364,8 +375,9 @@ int main() {
                  "terrain mesh should honor nonzero center origin X");
     require_near(offset_mesh.vertices.front().position.z, -45.0F - half_height_m, 0.001F,
                  "terrain mesh should honor nonzero center origin Z");
-    require_near(offset_mesh.vertices[offset_fields.index(offset_fields.desc.width / 2U,
-                                                         offset_fields.desc.height / 2U)]
+    require_near(offset_mesh
+                     .vertices[offset_fields.index(offset_fields.desc.width / 2U,
+                                                   offset_fields.desc.height / 2U)]
                      .position.x,
                  120.0F, 0.001F, "terrain mesh center sample should land on nonzero origin X");
     const terrain::TerrainMeshData offset_water_mesh =
