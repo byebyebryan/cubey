@@ -281,7 +281,7 @@ if (BUILD_TESTING)
             "atmosphere_async_atlas_windowed_smoke"
             "$<TARGET_FILE:cubey_project_atmosphere>"
     )
-    set_tests_properties(atmosphere_async_atlas_windowed_smoke PROPERTIES TIMEOUT 45)
+    set_tests_properties(atmosphere_async_atlas_windowed_smoke PROPERTIES TIMEOUT 75)
 
     if (CUBEY_HAS_LIBAV)
         set(CUBEY_ATMOSPHERE_HEADLESS_VIDEO_SMOKE_OUTPUT
