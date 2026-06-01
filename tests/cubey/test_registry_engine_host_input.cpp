@@ -73,6 +73,8 @@ void test_upload_queue_owns_payload_until_drain();
 void test_upload_queue_tracks_failed_uploads();
 void test_windowed_app_config_preserves_windowed_host_defaults();
 void test_windowed_host_config_defaults_to_two_frame_slots();
+void test_atmosphere_environment_run_config_resolves_manual_and_solar_modes();
+void test_atmosphere_environment_run_config_advances_dynamic_time();
 
 namespace cubey::tests {
 
@@ -80,6 +82,8 @@ std::span<const TestCase> engine_host_input_test_cases() {
     static constexpr std::array tests{
         CUBEY_TEST(test_capture_queue_encodes_png_with_inline_executor),
         CUBEY_TEST(test_capture_queue_propagates_encoding_errors),
+        CUBEY_TEST(test_atmosphere_environment_run_config_resolves_manual_and_solar_modes),
+        CUBEY_TEST(test_atmosphere_environment_run_config_advances_dynamic_time),
         CUBEY_TEST(test_atmosphere_environment_runtime_derives_lighting_and_scene_environment),
         CUBEY_TEST(test_atmosphere_environment_runtime_requires_resources_before_bindings),
         CUBEY_TEST(test_engine_exposes_project_runtime_services),
