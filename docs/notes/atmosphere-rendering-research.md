@@ -1,16 +1,16 @@
 # Atmosphere Rendering Research
 
-This note is initial research for the `atmo-rendering` branch. It should stay a
-working note until the implementation direction is proven in `projects/atmosphere`
-and then promoted into `docs/architecture/`.
+This note is historical research for the `atmo-rendering` branch. The proven
+architecture now lives in `projects/atmosphere` and `docs/architecture/`; keep
+this file as scratch context rather than current implementation truth.
 
 ## Current Cubey Context
 
-`projects/ocean` currently owns a local procedural sky gradient and sun disk in
-`projects/ocean/shaders/ocean_atmosphere.glsl`. Ocean already samples that same
-function for the sky pass, Fresnel reflection, horizon fog, and sun glint, which
-is the right integration shape. The missing piece is that the sky function is not
-yet a real atmosphere model.
+The early active-ocean prototype owned a local procedural sky gradient and sun
+disk in `projects/ocean/shaders/ocean_atmosphere.glsl`. That path is now
+legacy-only under `projects/ocean_legacy`; the active ocean renderer consumes
+the shared atmosphere background/runtime path for sky, reflection, horizon fog,
+and sun/ambient diagnostics.
 
 `docs/architecture/ocean-adjacent-systems.md` already points at the intended
 split: build `projects/atmosphere` as a standalone clear-sky scattering demo,

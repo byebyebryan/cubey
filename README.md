@@ -248,9 +248,12 @@ timestamp queries are available.
 `ocean` is a rendering-focused water project rather than a CFD solver. It now
 starts from the GodotOceanWaves-derived spectrum/FFT/unpack path and exposes
 `--ocean-map-size 128|256|512|1024`,
-`--debug-view final|height|displacement|normal|foam|lod`, and
-`--ocean-cascade all|0|1|2|3|4` for focused inspection. Use `--ocean-wire-overlay`
-for captured LOD diagnostics.
+`--debug-view final|height|displacement|normal|foam|foam-source|foam-history|foam-macro|foam-crest|foam-detail|lod|sky-radiance|reflection|direct-light|ambient-light|exposure|raw-foam|lit-foam|terrain-depth|terrain-shore|terrain-slope`,
+and `--ocean-cascade all|0|1|2|3|4` for focused inspection. Use
+`--ocean-wire-overlay`, `--ocean-wire-opacity 0.0..1.0`,
+`--ocean-spectral-domains`, `--no-ocean-spectral-domains`,
+`--ocean-terrain-fields`, and `--no-ocean-terrain-fields` for captured
+diagnostics.
 `ocean_ref` keeps the same wave core under `--ocean-ref-*` options as a frozen
 known-good reference. `ocean_legacy` keeps the older Cubey experimental renderer
 with macro waves, foam history, refraction, seafloor, and additional debug views

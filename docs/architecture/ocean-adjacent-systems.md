@@ -30,9 +30,12 @@ presentation while the supporting systems become inspectable in isolation.
 
 The atmosphere path has the highest immediate visual leverage because ocean
 reflection, sun glint, horizon fade, and background color all need one coherent
-sky model. The standalone atmosphere project now owns the clear-sky runtime and
-shared background/probe path; future atmosphere work should continue there
-before promotion into individual renderers.
+sky model. The standalone atmosphere project owns the clear-sky model, atlas
+generation, background shader, and debug surface. The consumer-facing
+`AtmosphereEnvironmentRuntime` owns the shared environment-lighting bridge used
+by glTF and ocean. Future atmosphere model work should continue in the
+standalone project before promotion into that shared runtime or individual
+renderers.
 
 First useful scope:
 
