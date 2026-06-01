@@ -16,6 +16,10 @@ layout(set = 0, binding = 14) uniform sampler2D foam_cascade4_texture;
 layout(set = 0, binding = 15) uniform samplerCube atmosphere_reflection_texture;
 layout(set = 0, binding = 16) uniform samplerCube atmosphere_sky_radiance_texture;
 layout(set = 0, binding = 17) uniform sampler2D terrain_ocean_fields_texture;
+layout(set = 0, binding = 18) uniform TerrainOceanFieldParams {
+    vec4 uv_transform;
+    vec4 ranges_flags;
+} terrain_ocean;
 
 layout(push_constant) uniform OceanParams {
     mat4 view_projection;
@@ -96,11 +100,11 @@ vec3 ocean_primary_light_color() {
 }
 
 bool ocean_terrain_fields_enabled() {
-    return ocean.mesh_options.w < 0.0;
+    return terrain_ocean.ranges_flags.w > 0.5;
 }
 
 float ocean_horizon_fog_strength() {
-    return abs(ocean.mesh_options.w);
+    return max(ocean.mesh_options.w, 0.0);
 }
 
 vec3 ocean_sky_radiance(vec3 direction) {
@@ -119,8 +123,8 @@ float ocean_ambient_light_scale() {
 }
 
 vec2 terrain_ocean_field_uv(vec2 position) {
-    float extent = max(ocean.mesh_options.z * 2.0, 0.001);
-    return clamp((position / extent) + vec2(0.5), vec2(0.0), vec2(1.0));
+    return clamp((position - terrain_ocean.uv_transform.xy) * terrain_ocean.uv_transform.zw,
+                 vec2(0.0), vec2(1.0));
 }
 
 vec4 sample_terrain_ocean_fields(vec2 position) {
@@ -128,14 +132,14 @@ vec4 sample_terrain_ocean_fields(vec2 position) {
 }
 
 vec3 terrain_depth_color(float water_depth) {
-    float value = clamp(water_depth / max(ocean.water_color.w * 80.0 + 1.0, 1.0), 0.0, 1.0);
+    float value = clamp(water_depth / max(terrain_ocean.ranges_flags.x, 1.0), 0.0, 1.0);
     vec3 shallow = cubey_srgb_to_linear(vec3(0.34, 0.72, 0.68));
     vec3 deep = cubey_srgb_to_linear(vec3(0.02, 0.09, 0.24));
     return mix(shallow, deep, value);
 }
 
 vec3 terrain_shore_color(float shore_sdf) {
-    float value = clamp(shore_sdf / max(ocean.mesh_options.z * 0.35, 1.0), -1.0, 1.0);
+    float value = clamp(shore_sdf / max(terrain_ocean.ranges_flags.y, 1.0), -1.0, 1.0);
     vec3 water = cubey_srgb_to_linear(vec3(0.05, 0.18, 0.45));
     vec3 beach = cubey_srgb_to_linear(vec3(0.70, 0.58, 0.38));
     vec3 land = cubey_srgb_to_linear(vec3(0.20, 0.38, 0.20));
@@ -631,7 +635,8 @@ void main() {
     } else if (view == OCEAN_VIEW_TERRAIN_SHORE) {
         color = terrain_shore_color(terrain_fields.z);
     } else if (view == OCEAN_VIEW_TERRAIN_SLOPE) {
-        color = vec3(clamp(terrain_fields.w, 0.0, 1.0));
+        color = vec3(clamp(terrain_fields.w / max(terrain_ocean.ranges_flags.z, 0.001), 0.0,
+                           1.0));
     }
 
     if (ocean.debug_options.w > 0.0) {

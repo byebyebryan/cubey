@@ -634,6 +634,12 @@ int main() {
                          "fragment shader should expose terrain depth diagnostics");
         require_contains(fragment_shader, "sampler2D terrain_ocean_fields_texture",
                          "fragment shader should sample shared terrain-ocean fields");
+        require_contains(fragment_shader, "TerrainOceanFieldParams",
+                         "fragment shader should consume terrain-ocean field metadata");
+        require_contains(fragment_shader, "terrain_ocean.uv_transform",
+                         "fragment shader should map terrain fields from shared grid metadata");
+        require_contains(fragment_shader, "terrain_ocean.ranges_flags.w > 0.5",
+                         "fragment shader should use an explicit terrain field influence flag");
         require_contains(fragment_shader, "sample_terrain_ocean_fields",
                          "fragment shader should centralize terrain-ocean field sampling");
         require_contains(fragment_shader, "ocean_terrain_fields_enabled",
@@ -657,17 +663,23 @@ int main() {
                          "surface descriptors should expose the atmosphere sky radiance cube");
         require_contains(gpu_resources_source, "kOceanSurfaceTerrainFieldBinding",
                          "surface descriptors should expose terrain-ocean fields");
+        require_contains(gpu_resources_source, "kOceanSurfaceTerrainFieldUniformBinding",
+                         "surface descriptors should expose terrain-ocean metadata uniforms");
         require_contains(
             gpu_resources_source, "update_atmosphere_probe_descriptors",
             "surface descriptors should update both atmosphere probe bindings together");
         require_contains(gpu_resources_source, "update_terrain_ocean_field_descriptor",
                          "surface descriptors should update the terrain-ocean field binding");
+        require_contains(gpu_resources_source, "update_terrain_ocean_field_uniform_descriptor",
+                         "surface descriptors should update the terrain-ocean uniform binding");
         require_contains(app_source, "AtmosphereEnvironmentRuntime atmosphere_runtime_",
                          "ocean app should own the shared atmosphere runtime");
         require_contains(app_source, "make_ocean_diagnostic_terrain_fields",
                          "ocean app should create a diagnostic terrain-ocean field");
         require_contains(app_source, "create_uploaded_terrain_ocean_field_texture",
                          "ocean app should upload the shared terrain-ocean field texture");
+        require_contains(app_source, "FrameUniformBuffer<OceanTerrainFieldUniforms>",
+                         "ocean app should upload terrain-ocean metadata per frame");
         require_contains(app_source, "AtmosphereBackgroundFrame atmosphere_background_",
                          "ocean app should own the shared atmosphere background frame");
         require_contains(app_source, "create_atmosphere_background_generated_textures",
@@ -718,6 +730,8 @@ int main() {
                              "ocean foam should not keep a fixed daylight diffuse floor");
         require_not_contains(fragment_shader, "foam_color * 0.58",
                              "ocean far foam should not keep a fixed daylight color floor");
+        require_not_contains(fragment_shader, "ocean.mesh_options.w < 0.0",
+                             "terrain field influence should not overload horizon fog sign");
         require_not_contains(gpu_resources_source, "sky_pipeline",
                              "ocean GPU resources should not keep the old local sky pipeline");
         require_not_contains(cmake_source, "ocean_sky.frag",

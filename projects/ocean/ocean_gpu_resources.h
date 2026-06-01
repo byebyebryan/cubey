@@ -2,6 +2,7 @@
 
 #include "ocean_config.h"
 
+#include <cubey/render/frame_data.h>
 #include <cubey/render/pipeline_resource.h>
 #include <cubey/render/texture.h>
 #include <cubey/vulkan/descriptors.h>
@@ -14,6 +15,7 @@
 #include <filesystem>
 #include <optional>
 #include <span>
+#include <vector>
 
 namespace cubey::projects::ocean {
 
@@ -23,6 +25,7 @@ struct OceanGpuResourceConfig {
     VkFormat color_format = VK_FORMAT_UNDEFINED;
     VkFormat depth_format = VK_FORMAT_D32_SFLOAT;
     VkExtent2D target_extent{};
+    std::uint32_t frame_slot_count = 1U;
 };
 
 class OceanGpuResources {
@@ -40,6 +43,9 @@ class OceanGpuResources {
                                              const cubey::render::TextureCube& sky_radiance);
     void update_terrain_ocean_field_descriptor(const cubey::vulkan::Device& device,
                                                const cubey::render::Texture2D& fields);
+    void update_terrain_ocean_field_uniform_descriptor(const cubey::vulkan::Device& device,
+                                                       cubey::render::FrameSlot frame_slot,
+                                                       VkBuffer buffer, VkDeviceSize range);
 
     [[nodiscard]] bool initialized() const {
         return surface_pipeline_.has_value();
@@ -56,7 +62,7 @@ class OceanGpuResources {
     [[nodiscard]] VkDescriptorSet fft_set(std::uint32_t cascade, std::uint32_t field,
                                           std::uint32_t set_index) const;
     [[nodiscard]] VkDescriptorSet unpack_set(std::uint32_t cascade) const;
-    [[nodiscard]] VkDescriptorSet surface_set() const;
+    [[nodiscard]] VkDescriptorSet surface_set(cubey::render::FrameSlot frame_slot) const;
 
     [[nodiscard]] std::uint32_t resolution() const {
         return resolution_;
@@ -79,7 +85,8 @@ class OceanGpuResources {
                                          kOceanCascadeCount * kOceanSpectrumFieldCount>;
 
     void create_textures(const cubey::vulkan::Device& device, const OceanConfig& config);
-    void create_descriptor_sets(const cubey::vulkan::Device& device);
+    void create_descriptor_sets(const cubey::vulkan::Device& device,
+                                std::uint32_t frame_slot_count);
     void update_descriptors(const cubey::vulkan::Device& device);
     void create_pipelines(const cubey::vulkan::Device& device,
                           const OceanGpuResourceConfig& config);
@@ -119,7 +126,7 @@ class OceanGpuResources {
 
     std::optional<cubey::vulkan::DescriptorSetLayout> surface_layout_;
     std::optional<cubey::vulkan::DescriptorPool> surface_pool_;
-    VkDescriptorSet surface_set_ = VK_NULL_HANDLE;
+    std::vector<VkDescriptorSet> surface_sets_{};
 
     std::optional<cubey::render::ComputePipelineResource> spectrum_pipeline_;
     std::optional<cubey::render::ComputePipelineResource> modulate_pipeline_;

@@ -22,6 +22,7 @@
 #include <cubey/render/render_graph.h>
 #include <cubey/render/target.h>
 #include <cubey/render/terrain_ocean_fields.h>
+#include <cubey/render/uniform_buffer.h>
 #include <cubey/render/view_ray_basis_3d.h>
 #include <cubey/scene/camera_3d.h>
 #include <cubey/vulkan/command_recorder.h>
@@ -93,6 +94,11 @@ struct OceanSpectrumPushConstants {
     cubey::math::Vec4 cascade_options;
 };
 
+struct OceanTerrainFieldUniforms {
+    cubey::math::Vec4 uv_transform;
+    cubey::math::Vec4 ranges_flags;
+};
+
 struct OceanModulatePushConstants {
     cubey::math::Vec4 tile_depth_time;
     cubey::math::Vec4 cascade_options;
@@ -110,6 +116,7 @@ struct OceanUnpackPushConstants {
 
 static_assert(sizeof(OceanPushConstants) == sizeof(float) * 64U);
 static_assert(sizeof(OceanSpectrumPushConstants) == sizeof(float) * 16U);
+static_assert(sizeof(OceanTerrainFieldUniforms) == sizeof(float) * 8U);
 static_assert(sizeof(OceanModulatePushConstants) == sizeof(float) * 8U);
 static_assert(sizeof(OceanFftPushConstants) == sizeof(float) * 8U);
 static_assert(sizeof(OceanUnpackPushConstants) == sizeof(float) * 8U);
@@ -216,6 +223,38 @@ ocean_depth_texture_desc(const char* label, VkExtent2D extent, VkFormat format) 
     return lhs.map_size != rhs.map_size;
 }
 
+[[nodiscard]] bool ocean_terrain_field_source_changed(const OceanConfig& lhs,
+                                                      const OceanConfig& rhs) {
+    return lhs.mesh_extent != rhs.mesh_extent || lhs.depth != rhs.depth;
+}
+
+[[nodiscard]] OceanTerrainFieldUniforms ocean_terrain_field_uniforms(
+    const cubey::render::TerrainOceanPackedFields& fields, bool enabled) {
+    const cubey::render::TerrainOceanGridDesc& desc = fields.desc;
+    const float span_x =
+        std::max(static_cast<float>(desc.width > 1U ? desc.width - 1U : 1U) * desc.cell_size_m,
+                 desc.cell_size_m);
+    const float span_z =
+        std::max(static_cast<float>(desc.height > 1U ? desc.height - 1U : 1U) * desc.cell_size_m,
+                 desc.cell_size_m);
+    return {
+        .uv_transform =
+            {
+                desc.origin_x_m - span_x * 0.5F,
+                desc.origin_z_m - span_z * 0.5F,
+                1.0F / span_x,
+                1.0F / span_z,
+            },
+        .ranges_flags =
+            {
+                fields.max_water_depth_m,
+                fields.max_abs_shore_sdf_m,
+                fields.max_slope,
+                enabled ? 1.0F : 0.0F,
+            },
+    };
+}
+
 [[nodiscard]] cubey::render::TerrainOceanPackedFields
 make_ocean_diagnostic_terrain_fields(const OceanConfig& config) {
     constexpr std::uint32_t field_extent = 129U;
@@ -266,11 +305,16 @@ make_ocean_diagnostic_terrain_fields(const OceanConfig& config) {
             slope[index] = std::clamp(shoal * 0.75F + std::abs(signed_shore) /
                                                           std::max(config.mesh_extent, 1.0F),
                                       0.0F, 1.0F);
+            const float sand = std::clamp(shoal, 0.0F, 1.0F);
+            const float rock = 0.15F;
+            const float vegetation = signed_shore > 0.0F ? 0.35F : 0.0F;
+            const float sediment = 0.50F;
+            const float material_sum = sand + rock + vegetation + sediment;
             material_masks[index] = {
-                .sand = std::clamp(shoal, 0.0F, 1.0F),
-                .rock = 0.15F,
-                .vegetation = signed_shore > 0.0F ? 0.35F : 0.0F,
-                .sediment = 0.50F,
+                .sand = sand / material_sum,
+                .rock = rock / material_sum,
+                .vegetation = vegetation / material_sum,
+                .sediment = sediment / material_sum,
             };
         }
     }
@@ -480,10 +524,12 @@ class OceanApp {
                                       .color_format = kOceanSceneColorFormat,
                                       .depth_format = kOceanDepthFormat,
                                       .target_extent = extent,
+                                      .frame_slot_count = frame_slot_count,
                                   });
-        create_terrain_ocean_field_resources(device, gpu);
+        create_terrain_ocean_field_resources(device, gpu, frame_slot_count);
         ocean_gpu_.update_terrain_ocean_field_descriptor(device,
                                                          terrain_ocean_fields_texture_.value());
+        update_terrain_ocean_field_uniform_descriptors(device);
         const cubey::render::AtmosphereReflectionProbe& atmosphere_probe =
             atmosphere_runtime_.reflection_probe();
         ocean_gpu_.update_atmosphere_probe_descriptors(device, atmosphere_probe.prefiltered_cube(),
@@ -517,11 +563,36 @@ class OceanApp {
     }
 
     void create_terrain_ocean_field_resources(cubey::vulkan::Device& device,
-                                              cubey::vulkan::GpuRuntime& gpu) {
+                                              cubey::vulkan::GpuRuntime& gpu,
+                                              std::uint32_t frame_slot_count) {
         terrain_ocean_fields_ = make_ocean_diagnostic_terrain_fields(ocean_config_);
         terrain_ocean_fields_texture_.emplace(
             cubey::render::create_uploaded_terrain_ocean_field_texture(device, gpu,
                                                                        terrain_ocean_fields_));
+        terrain_ocean_field_uniforms_.emplace(device, frame_slot_count);
+    }
+
+    void upload_terrain_ocean_field_uniform(cubey::render::FrameSlot frame_slot) const {
+        if (!terrain_ocean_field_uniforms_.has_value()) {
+            throw std::runtime_error("ocean terrain field uniforms are not initialized");
+        }
+        terrain_ocean_field_uniforms_->upload(
+            frame_slot, ocean_terrain_field_uniforms(terrain_ocean_fields_,
+                                                     ocean_config_.terrain_fields_enabled));
+    }
+
+    void update_terrain_ocean_field_uniform_descriptors(const cubey::vulkan::Device& device) {
+        if (!terrain_ocean_field_uniforms_.has_value()) {
+            throw std::runtime_error("ocean terrain field uniforms are not initialized");
+        }
+        const std::uint32_t slot_count = terrain_ocean_field_uniforms_->slot_count();
+        for (std::uint32_t index = 0; index < slot_count; ++index) {
+            const cubey::render::FrameSlot frame_slot{.index = index, .count = slot_count};
+            upload_terrain_ocean_field_uniform(frame_slot);
+            ocean_gpu_.update_terrain_ocean_field_uniform_descriptor(
+                device, frame_slot, terrain_ocean_field_uniforms_->buffer(frame_slot).handle(),
+                terrain_ocean_field_uniforms_->range());
+        }
     }
 
     void create_atmosphere_environment_runtime(cubey::vulkan::Device& device,
@@ -592,6 +663,7 @@ class OceanApp {
         ocean_gpu_.reset();
         atmosphere_runtime_.destroy();
         terrain_ocean_fields_texture_.reset();
+        terrain_ocean_field_uniforms_.reset();
         terrain_ocean_fields_ = {};
         atmosphere_background_atlases_.reset();
         pipeline_color_format_ = VK_FORMAT_UNDEFINED;
@@ -614,6 +686,17 @@ class OceanApp {
             create_pipeline(context.device(), context.gpu(), context.swapchain().format(),
                             context.swapchain().extent(), context.frame_slot_count());
             return;
+        }
+        if (ocean_terrain_field_source_changed(ocean_config_, gpu_config_.value())) {
+            cubey::vulkan::check(vkDeviceWaitIdle(context.device().handle()),
+                                 "vkDeviceWaitIdle before ocean terrain field recreation");
+            terrain_ocean_fields_texture_.reset();
+            terrain_ocean_field_uniforms_.reset();
+            create_terrain_ocean_field_resources(context.device(), context.gpu(),
+                                                 context.frame_slot_count());
+            ocean_gpu_.update_terrain_ocean_field_descriptor(
+                context.device(), terrain_ocean_fields_texture_.value());
+            update_terrain_ocean_field_uniform_descriptors(context.device());
         }
         if (ocean_config_ != gpu_config_.value()) {
             spectrum_initialized_ = false;
@@ -664,8 +747,7 @@ class OceanApp {
                     static_cast<float>(patch.cells_x),
                     static_cast<float>(patch.cells_z),
                     ocean_config_.mesh_extent,
-                    ocean_config_.terrain_fields_enabled ? -ocean_config_.horizon_fog
-                                                         : ocean_config_.horizon_fog,
+                    ocean_config_.horizon_fog,
                 },
             .patch_bounds =
                 {
@@ -866,14 +948,14 @@ class OceanApp {
                       });
     }
 
-    void record_ocean_draw(const cubey::vulkan::CommandRecorder& recorder,
-                           VkExtent2D extent) const {
+    void record_ocean_draw(const cubey::vulkan::CommandRecorder& recorder, VkExtent2D extent,
+                           cubey::render::FrameSlot frame_slot) const {
         const OceanMeshPatchList patches = ocean_mesh_clipmap_patches(ocean_config_);
         const cubey::render::GraphicsPipelineResource& surface_pipeline =
             ocean_gpu_.surface_pipeline();
         recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, surface_pipeline.pipeline());
         recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS, surface_pipeline.layout(), 0,
-                                     ocean_gpu_.surface_set());
+                                     ocean_gpu_.surface_set(frame_slot));
         for (const OceanMeshPatch& patch : patches) {
             const OceanPushConstants constants = surface_push_constants(extent, patch);
             recorder.push_constants(surface_pipeline.layout(),
@@ -940,7 +1022,7 @@ class OceanApp {
                     [this, target,
                      frame_slot](const cubey::vulkan::CommandRecorder& draw_recorder) {
                         record_atmosphere_background(draw_recorder, target.extent, frame_slot);
-                        record_ocean_draw(draw_recorder, target.extent);
+                        record_ocean_draw(draw_recorder, target.extent, frame_slot);
                     });
             });
         graph.add_pass("ocean post", cubey::render::RenderGraphQueueDomain::Graphics)
@@ -1096,6 +1178,7 @@ class OceanApp {
         const cubey::vulkan::CommandRecorder recorder(command_buffer);
         record_atmosphere_environment_if_needed(recorder, frame_slot);
         record_ocean_compute(recorder);
+        upload_terrain_ocean_field_uniform(frame_slot);
         hdr_post_frame_.upload(frame_slot, post_uniforms());
         const OceanFrameGraph frame_graph =
             build_ocean_frame_graph(target, frame_slot, target_mode);
@@ -1144,6 +1227,8 @@ class OceanApp {
     cubey::render::AtmosphereEnvironmentRuntime atmosphere_runtime_{};
     cubey::render::TerrainOceanPackedFields terrain_ocean_fields_{};
     std::optional<cubey::render::Texture2D> terrain_ocean_fields_texture_;
+    std::optional<cubey::render::FrameUniformBuffer<OceanTerrainFieldUniforms>>
+        terrain_ocean_field_uniforms_;
     std::optional<OceanConfig> gpu_config_;
     VkFormat pipeline_color_format_ = VK_FORMAT_UNDEFINED;
     double time_seconds_ = 0.0;
