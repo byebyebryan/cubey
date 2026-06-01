@@ -34,7 +34,8 @@ void validate_descriptor_set(const MaterialDescriptorSetLayout& descriptor_set) 
 void validate_push_constant_ranges(std::span<const VkPushConstantRange> push_constants,
                                    std::uint32_t max_push_constant_bytes,
                                    std::string_view owner_label) {
-    for (const VkPushConstantRange& push_constant : push_constants) {
+    for (std::size_t index = 0; index < push_constants.size(); ++index) {
+        const VkPushConstantRange& push_constant = push_constants[index];
         if (push_constant.stageFlags == 0) {
             throw std::runtime_error(std::string(owner_label) +
                                      " push constant stages must be nonzero");
@@ -53,6 +54,19 @@ void validate_push_constant_ranges(std::span<const VkPushConstantRange> push_con
         if (range_end > max_push_constant_bytes) {
             throw std::runtime_error(std::string(owner_label) +
                                      " push constants exceed device maxPushConstantsSize");
+        }
+
+        for (std::size_t prior_index = 0; prior_index < index; ++prior_index) {
+            const VkPushConstantRange& prior = push_constants[prior_index];
+            const std::uint64_t prior_end =
+                static_cast<std::uint64_t>(prior.offset) + prior.size;
+            const bool ranges_overlap =
+                static_cast<std::uint64_t>(push_constant.offset) < prior_end &&
+                static_cast<std::uint64_t>(prior.offset) < range_end;
+            if (ranges_overlap && (push_constant.stageFlags & prior.stageFlags) != 0) {
+                throw std::runtime_error(std::string(owner_label) +
+                                         " push constant ranges overlap for shared stages");
+            }
         }
     }
 }

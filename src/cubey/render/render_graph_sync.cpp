@@ -45,7 +45,7 @@ namespace {
     if (domain == RenderGraphQueueDomain::Compute) {
         return VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
     }
-    return VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+    return VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT;
 }
 
 [[nodiscard]] VkPipelineStageFlags shader_stage_for_access(RenderGraphQueueDomain domain,

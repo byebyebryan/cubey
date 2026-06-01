@@ -237,6 +237,53 @@ void test_push_constant_range_validation_enforces_device_limit_and_alignment() {
                                                          "test pipeline");
         },
         "push constant validation should reject ranges beyond the device limit");
+
+    const std::array<VkPushConstantRange, 2> disjoint_ranges{
+        VkPushConstantRange{
+            .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+            .offset = 0,
+            .size = 16,
+        },
+        VkPushConstantRange{
+            .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+            .offset = 16,
+            .size = 16,
+        },
+    };
+    cubey::render::validate_push_constant_ranges(disjoint_ranges, 128, "test pipeline");
+
+    const std::array<VkPushConstantRange, 2> shared_stage_overlap{
+        VkPushConstantRange{
+            .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+            .offset = 0,
+            .size = 32,
+        },
+        VkPushConstantRange{
+            .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+            .offset = 16,
+            .size = 32,
+        },
+    };
+    require_throws(
+        [&shared_stage_overlap] {
+            cubey::render::validate_push_constant_ranges(shared_stage_overlap, 128,
+                                                         "test pipeline");
+        },
+        "push constant validation should reject overlapping ranges for shared stages");
+
+    const std::array<VkPushConstantRange, 2> separate_stage_overlap{
+        VkPushConstantRange{
+            .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+            .offset = 0,
+            .size = 32,
+        },
+        VkPushConstantRange{
+            .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
+            .offset = 16,
+            .size = 32,
+        },
+    };
+    cubey::render::validate_push_constant_ranges(separate_stage_overlap, 128, "test pipeline");
 }
 
 void test_material_pass_info_applies_graphics_pipeline_state() {

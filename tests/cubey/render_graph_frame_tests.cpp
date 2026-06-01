@@ -102,6 +102,34 @@ void test_render_graph_resource_set_rejects_incompatible_shapes() {
             "resource set should reject incompatible graph resource descriptors");
 }
 
+void test_render_graph_resource_set_rejects_undersized_bound_buffers() {
+    cubey::render::RenderGraphBuilder graph;
+    const cubey::render::RenderGraphBufferHandle transient =
+        graph.create_buffer(buffer_desc("slot buffer"));
+    graph.add_pass("write", cubey::render::RenderGraphQueueDomain::Compute)
+        .write_storage_buffer(transient)
+        .execute([](const cubey::render::RenderGraphExecutionContext&) {});
+    const cubey::render::CompiledRenderGraph compiled = graph.compile();
+    cubey::render::RenderGraphResourceSet resources(compiled);
+
+    require_throws(
+        [&] {
+            resources.bind_buffer(transient, cubey::render::RenderGraphResolvedBuffer{
+                                                 .buffer = buffer(0x941),
+                                                 .byte_size =
+                                                     buffer_desc("slot buffer").byte_size - 1,
+                                             });
+        },
+        "resource set should reject external buffers smaller than the graph declaration");
+
+    resources.bind_buffer(transient, cubey::render::RenderGraphResolvedBuffer{
+                                         .buffer = buffer(0x942),
+                                         .byte_size = buffer_desc("slot buffer").byte_size + 1,
+                                     });
+    require(resources.buffer(transient).has_value(),
+            "resource set should accept external buffers large enough for the graph declaration");
+}
+
 void test_render_graph_frame_resources_reject_invalid_slots() {
     cubey::render::RenderGraphFrameResources frame_resources(2);
 

@@ -105,6 +105,31 @@ void test_render_graph_execute_with_recorder_exposes_command_recorder() {
     require(saw_recorder, "recorder-aware execution should run the pass callback");
 }
 
+void test_render_graph_execute_rejects_incompatible_resource_set() {
+    cubey::render::RenderGraphBuilder graph;
+    const cubey::render::RenderGraphBufferHandle original =
+        graph.create_buffer(buffer_desc("transient field"));
+    graph.add_pass("simulate", cubey::render::RenderGraphQueueDomain::Compute)
+        .write_storage_buffer(original)
+        .execute([](const cubey::render::RenderGraphExecutionContext&) {});
+    const cubey::render::CompiledRenderGraph compiled = graph.compile();
+    const cubey::render::RenderGraphResourceSet resources(compiled);
+
+    cubey::render::RenderGraphBuilder changed_graph;
+    const cubey::render::RenderGraphBufferHandle changed =
+        changed_graph.create_buffer(cubey::render::RenderGraphBufferDesc{
+            .label = "transient field",
+            .byte_size = buffer_desc("transient field").byte_size + 4,
+        });
+    changed_graph.add_pass("simulate", cubey::render::RenderGraphQueueDomain::Compute)
+        .write_storage_buffer(changed)
+        .execute([](const cubey::render::RenderGraphExecutionContext&) {});
+    const cubey::render::CompiledRenderGraph changed_compiled = changed_graph.compile();
+
+    require_throws([&] { changed_compiled.execute(resources); },
+                   "graph execution should reject incompatible resource sets");
+}
+
 void test_render_graph_recorder_access_rejects_recorderless_execution() {
     cubey::render::RenderGraphBuilder graph;
     const cubey::render::RenderGraphTextureHandle color =

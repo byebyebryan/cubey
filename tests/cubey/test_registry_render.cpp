@@ -64,6 +64,7 @@ void test_render_graph_derives_imported_texture_acquire_and_release_barriers();
 void test_render_graph_derives_transient_texture_first_use_barrier();
 void test_render_graph_execute_propagates_callback_exceptions();
 void test_render_graph_execute_rejects_missing_callbacks_but_compile_allows_declarations();
+void test_render_graph_execute_rejects_incompatible_resource_set();
 void test_render_graph_execute_with_recorder_exposes_command_recorder();
 void test_render_graph_executes_callbacks_in_pass_order_and_exposes_context();
 void test_render_graph_execution_resolves_bound_transient_resources();
@@ -72,6 +73,7 @@ void test_render_graph_frame_record_info_separates_command_buffer_ownership();
 void test_render_graph_frame_resources_manage_frame_slots();
 void test_render_graph_frame_resources_reuse_compatible_slots();
 void test_render_graph_resource_set_rejects_incompatible_shapes();
+void test_render_graph_resource_set_rejects_undersized_bound_buffers();
 void test_render_graph_frame_resources_reject_invalid_slots();
 void test_render_graph_frame_resources_replace_one_slot_without_disturbing_another();
 void test_render_graph_imports_color_and_depth_targets();
@@ -81,6 +83,7 @@ void test_render_graph_recorder_access_rejects_recorderless_execution();
 void test_render_graph_rejects_attachment_usage_outside_graphics_pass();
 void test_render_graph_rejects_incompatible_same_pass_resource_access();
 void test_render_graph_rejects_invalid_resource_descriptors_and_handles();
+void test_render_graph_rejects_shader_stage_masks_outside_pass_domain();
 void test_render_graph_rejects_transient_texture_read_before_write();
 void test_render_graph_texture_state_helpers_describe_common_frame_states();
 void test_render_graph_resolved_color_target_view_rejects_depth_texture();
@@ -203,6 +206,7 @@ std::span<const TestCase> render_test_cases() {
         CUBEY_TEST(test_render_graph_frame_resources_manage_frame_slots),
         CUBEY_TEST(test_render_graph_frame_resources_reuse_compatible_slots),
         CUBEY_TEST(test_render_graph_resource_set_rejects_incompatible_shapes),
+        CUBEY_TEST(test_render_graph_resource_set_rejects_undersized_bound_buffers),
         CUBEY_TEST(test_render_graph_frame_resources_reject_invalid_slots),
         CUBEY_TEST(test_render_graph_frame_resources_replace_one_slot_without_disturbing_another),
         CUBEY_TEST(test_render_graph_resolves_sampled_color_texture_view),
@@ -211,12 +215,14 @@ std::span<const TestCase> render_test_cases() {
         CUBEY_TEST(
             test_render_graph_execute_rejects_missing_callbacks_but_compile_allows_declarations),
         CUBEY_TEST(test_render_graph_execute_propagates_callback_exceptions),
+        CUBEY_TEST(test_render_graph_execute_rejects_incompatible_resource_set),
         CUBEY_TEST(test_render_graph_execute_with_recorder_exposes_command_recorder),
         CUBEY_TEST(test_render_graph_recorder_access_rejects_recorderless_execution),
         CUBEY_TEST(test_render_graph_rejects_transient_texture_read_before_write),
         CUBEY_TEST(test_render_graph_allows_imported_texture_read_without_prior_write),
         CUBEY_TEST(test_render_graph_rejects_invalid_resource_descriptors_and_handles),
         CUBEY_TEST(test_render_graph_rejects_attachment_usage_outside_graphics_pass),
+        CUBEY_TEST(test_render_graph_rejects_shader_stage_masks_outside_pass_domain),
         CUBEY_TEST(test_render_graph_rejects_incompatible_same_pass_resource_access),
         CUBEY_TEST(test_render_graph_declares_compute_storage_buffer_flow),
         CUBEY_TEST(test_render_graph_transfer_pass_accepts_only_transfer_usages),

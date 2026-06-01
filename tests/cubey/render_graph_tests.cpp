@@ -38,8 +38,8 @@ void test_render_graph_texture_state_helpers_describe_common_frame_states() {
             "sampled depth helper should describe sampled depth layout");
     require(sampled_depth.access_mask == VK_ACCESS_SHADER_READ_BIT,
             "sampled depth helper should request shader reads");
-    require(sampled_depth.stage_mask == VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-            "sampled depth helper should use fragment shader stage");
+    require(sampled_depth.stage_mask == VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT,
+            "sampled depth helper should cover graphics shader consumers");
 }
 
 void test_render_graph_imports_color_and_depth_targets() {
@@ -335,4 +335,36 @@ void test_render_graph_transfer_pass_accepts_only_transfer_usages() {
                 .read_texture(invalid_source);
         },
         "transfer passes should reject non-transfer texture usages");
+}
+
+void test_render_graph_rejects_shader_stage_masks_outside_pass_domain() {
+    require_throws(
+        [] {
+            cubey::render::RenderGraphBuilder graph;
+            const cubey::render::RenderGraphBufferHandle constants =
+                graph.import_buffer(buffer_desc("constants"), buffer(0x531));
+            graph.add_pass("graphics", cubey::render::RenderGraphQueueDomain::Graphics)
+                .read_uniform_buffer(constants, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+        },
+        "graphics passes should reject compute shader stage masks");
+
+    require_throws(
+        [] {
+            cubey::render::RenderGraphBuilder graph;
+            const cubey::render::RenderGraphBufferHandle field =
+                graph.import_buffer(buffer_desc("field"), buffer(0x532));
+            graph.add_pass("compute", cubey::render::RenderGraphQueueDomain::Compute)
+                .read_storage_buffer(field, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
+        },
+        "compute passes should reject graphics shader stage masks");
+
+    require_throws(
+        [] {
+            cubey::render::RenderGraphBuilder graph;
+            const cubey::render::RenderGraphTextureHandle texture =
+                graph.import_texture(color_texture_desc("texture"), image(0x533), view(0x534));
+            graph.add_pass("graphics", cubey::render::RenderGraphQueueDomain::Graphics)
+                .read_texture(texture, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
+        },
+        "graphics shader resource accesses should reject fixed-function stage masks");
 }

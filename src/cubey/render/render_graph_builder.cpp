@@ -57,6 +57,50 @@ void validate_next_resource_index(std::size_t resource_count, const char* messag
            usage == RenderGraphBufferUsage::TransferWrite;
 }
 
+[[nodiscard]] bool is_shader_texture_usage(RenderGraphTextureUsage usage) {
+    return usage == RenderGraphTextureUsage::SampledRead ||
+           usage == RenderGraphTextureUsage::StorageRead ||
+           usage == RenderGraphTextureUsage::StorageWrite ||
+           usage == RenderGraphTextureUsage::StorageReadWrite;
+}
+
+[[nodiscard]] bool is_shader_buffer_usage(RenderGraphBufferUsage usage) {
+    return usage == RenderGraphBufferUsage::UniformRead ||
+           usage == RenderGraphBufferUsage::StorageRead ||
+           usage == RenderGraphBufferUsage::StorageWrite ||
+           usage == RenderGraphBufferUsage::StorageReadWrite;
+}
+
+[[nodiscard]] constexpr VkPipelineStageFlags graphics_shader_stage_mask() noexcept {
+    return VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT |
+           VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT |
+           VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+}
+
+[[nodiscard]] constexpr VkPipelineStageFlags compute_shader_stage_mask() noexcept {
+    return VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+}
+
+void validate_shader_stage_mask_for_pass(const RenderGraphCompiledPass& pass,
+                                         VkPipelineStageFlags stage_mask) {
+    if (stage_mask == 0) {
+        return;
+    }
+    if (pass.queue_domain == RenderGraphQueueDomain::Graphics) {
+        if ((stage_mask & ~graphics_shader_stage_mask()) != 0) {
+            throw std::runtime_error(
+                "render graph graphics shader stage mask must use graphics shader stages");
+        }
+        return;
+    }
+    if (pass.queue_domain == RenderGraphQueueDomain::Compute) {
+        if ((stage_mask & ~compute_shader_stage_mask()) != 0) {
+            throw std::runtime_error(
+                "render graph compute shader stage mask must use compute shader stage");
+        }
+    }
+}
+
 void validate_texture_usage_for_pass(const RenderGraphCompiledPass& pass,
                                      const RenderGraphTextureResource& resource,
                                      RenderGraphTextureUsage usage,
@@ -81,12 +125,11 @@ void validate_texture_usage_for_pass(const RenderGraphCompiledPass& pass,
         !is_color_aspect(resource.desc.aspects)) {
         throw std::runtime_error("render graph color/storage usage requires a color texture");
     }
-    if (stage_mask != 0 &&
-        usage != RenderGraphTextureUsage::SampledRead &&
-        usage != RenderGraphTextureUsage::StorageRead &&
-        usage != RenderGraphTextureUsage::StorageWrite &&
-        usage != RenderGraphTextureUsage::StorageReadWrite) {
+    if (stage_mask != 0 && !is_shader_texture_usage(usage)) {
         throw std::runtime_error("render graph explicit texture stage mask requires shader usage");
+    }
+    if (is_shader_texture_usage(usage)) {
+        validate_shader_stage_mask_for_pass(pass, stage_mask);
     }
 }
 
@@ -101,12 +144,11 @@ void validate_buffer_usage_for_pass(const RenderGraphCompiledPass& pass,
         pass.queue_domain != RenderGraphQueueDomain::Graphics) {
         throw std::runtime_error("render graph vertex/index buffer usage requires a graphics pass");
     }
-    if (stage_mask != 0 &&
-        usage != RenderGraphBufferUsage::UniformRead &&
-        usage != RenderGraphBufferUsage::StorageRead &&
-        usage != RenderGraphBufferUsage::StorageWrite &&
-        usage != RenderGraphBufferUsage::StorageReadWrite) {
+    if (stage_mask != 0 && !is_shader_buffer_usage(usage)) {
         throw std::runtime_error("render graph explicit buffer stage mask requires shader usage");
+    }
+    if (is_shader_buffer_usage(usage)) {
+        validate_shader_stage_mask_for_pass(pass, stage_mask);
     }
 }
 

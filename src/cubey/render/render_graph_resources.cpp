@@ -167,7 +167,11 @@ void RenderGraphResourceSet::bind_buffer(RenderGraphBufferHandle handle,
     if (buffer.buffer == VK_NULL_HANDLE || buffer.byte_size == 0) {
         throw std::runtime_error("render graph resolved buffer requires buffer and byte size");
     }
-    buffers_[static_cast<std::size_t>(handle.index - 1U)] = buffer;
+    const std::size_t index = static_cast<std::size_t>(handle.index - 1U);
+    if (buffer.byte_size < buffer_keys_[index].desc.byte_size) {
+        throw std::runtime_error("render graph resolved buffer is smaller than graph declaration");
+    }
+    buffers_[index] = buffer;
 }
 
 std::optional<RenderGraphResolvedTexture>

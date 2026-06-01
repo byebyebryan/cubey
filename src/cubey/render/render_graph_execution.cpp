@@ -126,6 +126,9 @@ void CompiledRenderGraph::execute(const RenderGraphResourceSet* resources,
                                   const cubey::vulkan::CommandRecorder* recorder,
                                   cubey::vulkan::GpuTimestampProfiler* profiler,
                                   std::uint32_t frame_slot_index) const {
+    if (resources != nullptr && !resources->compatible(*this)) {
+        throw std::runtime_error("render graph resource set is incompatible with graph");
+    }
     if (recorder != nullptr && resources == nullptr) {
         throw std::runtime_error("recorder-backed render graph execution requires resources");
     }

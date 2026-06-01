@@ -30,7 +30,7 @@ RenderGraphTextureState render_graph_sampled_depth_texture_state() noexcept {
     return {
         .layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
         .access_mask = VK_ACCESS_SHADER_READ_BIT,
-        .stage_mask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+        .stage_mask = VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT,
     };
 }
 

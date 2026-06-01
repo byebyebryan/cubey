@@ -67,8 +67,8 @@ void test_render_graph_derives_compute_to_graphics_storage_buffer_barrier() {
             "buffer barrier should preserve storage-read consumer usage");
     require(barrier.source_state.stage_mask == VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
             "compute producer should use compute shader source stage");
-    require(barrier.destination_state.stage_mask == VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-            "graphics storage read should use fragment shader destination stage");
+    require(barrier.destination_state.stage_mask == VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT,
+            "graphics storage read should default to all graphics shader-capable stages");
     require(barrier.source_state.access_mask ==
                 (VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT),
             "read-write producer should expose shader read and write access");
@@ -105,8 +105,8 @@ void test_render_graph_derives_compute_to_graphics_storage_texture_barrier() {
             "storage image consumer should stay in general layout");
     require(barrier.source_state.stage_mask == VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
             "storage image producer should use compute shader source stage");
-    require(barrier.destination_state.stage_mask == VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-            "graphics storage image read should use fragment shader destination stage");
+    require(barrier.destination_state.stage_mask == VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT,
+            "graphics storage image read should default to all graphics shader-capable stages");
     require(barrier.source_state.access_mask == VK_ACCESS_SHADER_WRITE_BIT,
             "storage image producer should expose shader writes");
     require(barrier.destination_state.access_mask == VK_ACCESS_SHADER_READ_BIT,
@@ -128,7 +128,7 @@ void test_render_graph_honors_explicit_graphics_shader_stage_masks() {
             "explicit stage read should derive an imported buffer acquire barrier");
     require(compiled.passes()[0].before_buffer_barriers[0].destination_state.stage_mask ==
                 VK_PIPELINE_STAGE_VERTEX_SHADER_BIT,
-            "explicit buffer stage mask should override the default graphics fragment stage");
+            "explicit buffer stage mask should override the default graphics stage mask");
 }
 
 void test_render_graph_derives_compute_to_vertex_buffer_barrier() {
