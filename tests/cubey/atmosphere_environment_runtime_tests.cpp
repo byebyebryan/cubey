@@ -110,6 +110,32 @@ void test_atmosphere_environment_runtime_derives_lighting_and_scene_environment(
             "atmosphere runtime scene environment should expose derived SH");
 }
 
+void test_atmosphere_environment_runtime_builds_frame_payload() {
+    cubey::AtmosphereEnvironmentRuntime runtime;
+    cubey::render::AtmosphereEnvironmentConfig environment;
+    environment.sun_elevation_degrees = 20.0F;
+    environment.sun_azimuth_degrees = 45.0F;
+    runtime.set_environment(environment);
+
+    const cubey::AtmosphereEnvironmentRuntimeFrame frame = runtime.frame({
+        .view_rays =
+            cubey::render::ViewRayBasis3D{
+                .right_aspect = {1.0F, 0.0F, 0.0F, 1.75F},
+                .up_tan_half_fovy = {0.0F, 1.0F, 0.0F, 0.5F},
+                .forward = {0.0F, 0.0F, -1.0F, 0.0F},
+            },
+        .render_view = cubey::render::AtmosphereEnvironmentRenderView::Final,
+    });
+
+    require_near(frame.background.camera_right_aspect.w, 1.75F, 0.0001F,
+                 "atmosphere runtime frame should pack caller view rays");
+    require(frame.scene_environment.diffuse_irradiance_sh_enabled,
+            "atmosphere runtime frame should carry scene environment lighting");
+    require(frame.scene_environment.diffuse_irradiance_sh[0] ==
+                frame.lighting.diffuse_irradiance_sh[0],
+            "atmosphere runtime frame should keep lighting and scene environment in sync");
+}
+
 void test_atmosphere_environment_runtime_requires_resources_before_bindings() {
     cubey::AtmosphereEnvironmentRuntime runtime;
 

@@ -116,6 +116,20 @@ cubey::scene::Environment3D AtmosphereEnvironmentRuntime::scene_environment() co
     };
 }
 
+AtmosphereEnvironmentRuntimeFrame
+AtmosphereEnvironmentRuntime::frame(const AtmosphereEnvironmentRuntimeFrameInfo& info) const {
+    return {
+        .background =
+            render::atmosphere_environment_frame_uniforms(
+                environment_, render::AtmosphereEnvironmentFrameUniformInputs{
+                                  .view_rays = info.view_rays,
+                                  .render_view = info.render_view,
+                              }),
+        .scene_environment = scene_environment(),
+        .lighting = lighting_,
+    };
+}
+
 render::PbrEnvironmentTextureBindings AtmosphereEnvironmentRuntime::pbr_environment_bindings(
     const render::GeneratedPbrEnvironment& fallback) const {
     if (!resources_created()) {

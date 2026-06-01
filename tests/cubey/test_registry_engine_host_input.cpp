@@ -3,6 +3,7 @@
 void test_capture_queue_encodes_png_with_inline_executor();
 void test_capture_queue_propagates_encoding_errors();
 void test_atmosphere_environment_runtime_derives_lighting_and_scene_environment();
+void test_atmosphere_environment_runtime_builds_frame_payload();
 void test_atmosphere_environment_runtime_requires_resources_before_bindings();
 void test_atmosphere_environment_runtime_queues_all_faces_after_environment_change();
 void test_engine_attaches_gpu_services_to_project_context();
@@ -86,6 +87,7 @@ std::span<const TestCase> engine_host_input_test_cases() {
         CUBEY_TEST(test_atmosphere_environment_run_config_resolves_manual_and_solar_modes),
         CUBEY_TEST(test_atmosphere_environment_run_config_advances_dynamic_time),
         CUBEY_TEST(test_atmosphere_environment_runtime_derives_lighting_and_scene_environment),
+        CUBEY_TEST(test_atmosphere_environment_runtime_builds_frame_payload),
         CUBEY_TEST(test_atmosphere_environment_runtime_requires_resources_before_bindings),
         CUBEY_TEST(test_atmosphere_environment_runtime_queues_all_faces_after_environment_change),
         CUBEY_TEST(test_engine_exposes_project_runtime_services),

@@ -29,6 +29,18 @@ struct AtmosphereEnvironmentRuntimePipelineConfig {
     std::filesystem::path reflection_prefilter_fragment_shader{};
 };
 
+struct AtmosphereEnvironmentRuntimeFrameInfo {
+    render::ViewRayBasis3D view_rays{};
+    render::AtmosphereEnvironmentRenderView render_view =
+        render::AtmosphereEnvironmentRenderView::Final;
+};
+
+struct AtmosphereEnvironmentRuntimeFrame {
+    render::AtmosphereEnvironmentFrameUniforms background{};
+    cubey::scene::Environment3D scene_environment{};
+    render::AtmosphereEnvironmentLighting lighting{};
+};
+
 class AtmosphereEnvironmentRuntime {
   public:
     AtmosphereEnvironmentRuntime();
@@ -56,6 +68,8 @@ class AtmosphereEnvironmentRuntime {
     [[nodiscard]] const render::AtmosphereEnvironmentConfig& environment() const noexcept;
     [[nodiscard]] const render::AtmosphereEnvironmentLighting& lighting() const noexcept;
     [[nodiscard]] cubey::scene::Environment3D scene_environment() const;
+    [[nodiscard]] AtmosphereEnvironmentRuntimeFrame
+    frame(const AtmosphereEnvironmentRuntimeFrameInfo& info) const;
     [[nodiscard]] render::PbrEnvironmentTextureBindings
     pbr_environment_bindings(const render::GeneratedPbrEnvironment& fallback) const;
     [[nodiscard]] const render::AtmosphereReflectionProbe& reflection_probe() const;

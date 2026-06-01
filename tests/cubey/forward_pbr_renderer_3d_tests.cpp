@@ -787,8 +787,10 @@ void test_forward_pbr_renderer_3d_threads_atmosphere_background_path() {
                      "glTF viewer should select the procedural atmosphere background");
     require_contains(gltf_render, "record_atmosphere_environment_if_needed",
                      "glTF viewer should update the atmosphere runtime before PBR recording");
-    require_contains(gltf_scene, "atmosphere_environment_frame_uniforms",
-                     "glTF viewer should compute atmosphere background frame uniforms");
+    require_contains(gltf_scene, "atmosphere_runtime_",
+                     "glTF viewer should derive atmosphere background uniforms from the runtime");
+    require_contains(gltf_scene, ".frame({",
+                     "glTF viewer should use the shared atmosphere runtime frame payload");
 }
 
 void test_forward_pbr_renderer_3d_skybox_uniforms_pack_inverse_view_camera_environment_and_display() {

@@ -185,12 +185,12 @@ cubey::render::AtmosphereEnvironmentFrameUniforms GltfViewerApp::atmosphere_back
             },
         .forward = {forward.x, forward.y, forward.z, 0.0F},
     };
-    return cubey::render::atmosphere_environment_frame_uniforms(
-        atmosphere_runtime_.environment(),
-        {
+    return atmosphere_runtime_
+        .frame({
             .view_rays = view_rays,
             .render_view = cubey::render::AtmosphereEnvironmentRenderView::Final,
-        });
+        })
+        .background;
 }
 
 cubey::LightPacket3D GltfViewerApp::fallback_light_packet() const {

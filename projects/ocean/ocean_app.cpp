@@ -823,12 +823,12 @@ class OceanApp {
         const float aspect = static_cast<float>(extent.width) / static_cast<float>(extent.height);
         const cubey::render::ViewRayBasis3D view_rays =
             cubey::render::view_ray_basis_3d(transform.rotation, aspect, camera_.fovy_radians());
-        return cubey::render::atmosphere_environment_frame_uniforms(
-            atmosphere_state_.environment,
-            {
+        return atmosphere_runtime_
+            .frame({
                 .view_rays = view_rays,
                 .render_view = cubey::render::AtmosphereEnvironmentRenderView::Final,
-            });
+            })
+            .background;
     }
 
     [[nodiscard]] OceanSpectrumPushConstants
