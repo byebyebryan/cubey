@@ -42,6 +42,8 @@ void draw_grid_preset_combo(TerrainConfig& config) {
         }
     }
     ImGui::EndCombo();
+    cubey::host::imgui_attach_help(
+        "Square terrain-grid presets. Cell size is adjusted to preserve the current extent.");
 }
 
 void draw_seed_control(TerrainConfig& config) {
@@ -51,6 +53,7 @@ void draw_seed_control(TerrainConfig& config) {
     if (ImGui::InputInt("Seed", &seed, 1, 1000)) {
         config.seed = static_cast<std::uint64_t>(std::max(seed, 0));
     }
+    cubey::host::imgui_attach_help("Deterministic terrain seed.");
 }
 
 void draw_material_table(const TerrainDiagnostics& diagnostics) {
@@ -95,25 +98,38 @@ void draw_terrain_ui(TerrainUiContext ui) {
     }
 
     TerrainDebugView debug_view = ui.active_config.debug_view;
-    if (cubey::host::imgui_enum_combo("Debug view", debug_view, kTerrainDebugViews,
-                                      terrain_debug_view_name)) {
+    if (cubey::host::imgui_enum_combo(
+            "Debug view", debug_view, kTerrainDebugViews, terrain_debug_view_name,
+            "Inspect terrain material, height, shoreline, and ocean-field outputs.")) {
         ui.active_config.debug_view = debug_view;
         ui.edit_config.debug_view = debug_view;
     }
-    ImGui::Checkbox("Water surface", &ui.water_visible);
+    cubey::host::imgui_checkbox("Water surface", &ui.water_visible,
+                                "Toggle the rendered water surface mesh.");
 
-    if (cubey::host::imgui_section("Terrain Shape", true)) {
+    if (const cubey::host::ScopedImGuiGroup group{
+            "Terrain Shape",
+            {.help = "Heightfield, shoreline, and material-field generation controls."}};
+        group) {
         const cubey::host::ScopedImGuiId section_id("Terrain Shape");
         draw_grid_preset_combo(ui.edit_config);
         draw_seed_control(ui.edit_config);
-        ImGui::SliderFloat("Cell size", &ui.edit_config.cell_size_m, 0.5F, 8.0F, "%.2f m");
-        ImGui::SliderFloat("Sea level", &ui.edit_config.sea_level_m, -24.0F, 48.0F, "%.1f m");
-        ImGui::SliderFloat("Land extent", &ui.edit_config.land_extent, 0.35F, 0.90F, "%.2f");
-        ImGui::SliderFloat("Coast noise", &ui.edit_config.coast_noise_strength, 0.0F, 0.50F,
-                           "%.2f");
-        ImGui::SliderFloat("Relief", &ui.edit_config.relief_scale, 0.20F, 2.0F, "%.2f");
-        ImGui::SliderFloat("Ridges", &ui.edit_config.ridge_scale, 0.0F, 2.0F, "%.2f");
-        ImGui::SliderFloat("Valleys", &ui.edit_config.valley_scale, 0.0F, 2.0F, "%.2f");
+        cubey::host::imgui_slider_float("Cell size", &ui.edit_config.cell_size_m, 0.5F, 8.0F,
+                                        "%.2f m", "World-space size of one heightfield cell.");
+        cubey::host::imgui_slider_float(
+            "Sea level", &ui.edit_config.sea_level_m, -24.0F, 48.0F, "%.1f m",
+            "Waterline elevation used for bathymetry and shoreline fields.");
+        cubey::host::imgui_slider_float("Land extent", &ui.edit_config.land_extent, 0.35F, 0.90F,
+                                        "%.2f",
+                                        "Approximate normalized footprint of above-water land.");
+        cubey::host::imgui_slider_float("Coast noise", &ui.edit_config.coast_noise_strength, 0.0F,
+                                        0.50F, "%.2f", "Amount of coastline perturbation.");
+        cubey::host::imgui_slider_float("Relief", &ui.edit_config.relief_scale, 0.20F, 2.0F, "%.2f",
+                                        "Overall terrain elevation contrast.");
+        cubey::host::imgui_slider_float("Ridges", &ui.edit_config.ridge_scale, 0.0F, 2.0F, "%.2f",
+                                        "Ridged-noise contribution.");
+        cubey::host::imgui_slider_float("Valleys", &ui.edit_config.valley_scale, 0.0F, 2.0F, "%.2f",
+                                        "Valley/erosion contribution.");
     }
 
     const bool pending_rebuild = !terrain_rebuild_config_equal(ui.active_config, ui.edit_config);
@@ -134,7 +150,9 @@ void draw_terrain_ui(TerrainUiContext ui) {
         ImGui::TextWrapped("Rebuild failed: %s", ui.rebuild_error.c_str());
     }
 
-    if (cubey::host::imgui_section("Diagnostics", true)) {
+    if (const cubey::host::ScopedImGuiGroup group{
+            "Diagnostics", {.help = "Read-only terrain rebuild, LOD, and field statistics."}};
+        group) {
         const cubey::host::ScopedImGuiId section_id("Diagnostics");
         cubey::host::draw_frame_stats(ui.latest_frame_stats, ui.latest_fps, ui.latest_frame_ms);
         ImGui::Text("Grid: %u x %u", ui.active_config.grid_width, ui.active_config.grid_height);
@@ -169,8 +187,7 @@ void draw_terrain_ui(TerrainUiContext ui) {
                     ui.diagnostics.water_triangles);
         ImGui::Text("LOD plan: %u levels / %u patches", ui.diagnostics.clipmap_lod_levels,
                     ui.diagnostics.clipmap_patch_count);
-        ImGui::Text("LOD extent/cell: %.1f m / %.2f m",
-                    ui.diagnostics.clipmap_outer_half_extent_m,
+        ImGui::Text("LOD extent/cell: %.1f m / %.2f m", ui.diagnostics.clipmap_outer_half_extent_m,
                     ui.diagnostics.clipmap_near_cell_size_m);
         ImGui::Text("Rebuilds: %llu | Last: %.2f ms",
                     static_cast<unsigned long long>(ui.diagnostics.rebuild_count),

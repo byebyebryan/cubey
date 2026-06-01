@@ -11,6 +11,7 @@
 #include <cstdint>
 #include <optional>
 #include <span>
+#include <string_view>
 
 namespace cubey::host {
 
@@ -33,6 +34,12 @@ struct ImGuiControlPanelConfig {
     ImGuiCond condition = ImGuiCond_FirstUseEver;
 };
 
+struct ImGuiGroupConfig {
+    bool default_open = true;
+    std::uint32_t level = 0;
+    const char* help = nullptr;
+};
+
 [[nodiscard]] inline bool begin_control_panel(const char* title,
                                               ImGuiControlPanelConfig config = {}) {
     ImGui::SetNextWindowPos(config.position, config.condition);
@@ -46,9 +53,107 @@ struct ImGuiControlPanelConfig {
     return ImGui::CollapsingHeader(label, flags);
 }
 
+inline void imgui_help_marker(const char* help) {
+    if (help == nullptr || std::string_view(help).empty()) {
+        return;
+    }
+
+    ImGui::SameLine();
+    ImGui::TextDisabled("?");
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayShort)) {
+        ImGui::BeginTooltip();
+        ImGui::PushTextWrapPos(ImGui::GetFontSize() * 32.0F);
+        ImGui::TextUnformatted(help);
+        ImGui::PopTextWrapPos();
+        ImGui::EndTooltip();
+    }
+}
+
+inline void imgui_attach_help(const char* help) {
+    if (help == nullptr || std::string_view(help).empty()) {
+        return;
+    }
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayShort)) {
+        ImGui::BeginTooltip();
+        ImGui::PushTextWrapPos(ImGui::GetFontSize() * 32.0F);
+        ImGui::TextUnformatted(help);
+        ImGui::PopTextWrapPos();
+        ImGui::EndTooltip();
+    }
+    imgui_help_marker(help);
+}
+
+class ScopedImGuiGroup {
+  public:
+    ScopedImGuiGroup(const char* label, ImGuiGroupConfig config = {}) : level_(config.level) {
+        if (level_ > 0U) {
+            ImGui::Indent(static_cast<float>(level_) * 8.0F);
+            indented_ = true;
+        }
+
+        ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_SpanAvailWidth;
+        if (config.default_open) {
+            flags |= ImGuiTreeNodeFlags_DefaultOpen;
+        }
+        if (level_ == 0U) {
+            flags |= ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_FramePadding;
+        }
+
+        open_ = ImGui::TreeNodeEx(label, flags);
+        imgui_help_marker(config.help);
+    }
+
+    ~ScopedImGuiGroup() {
+        if (open_) {
+            ImGui::TreePop();
+        }
+        if (indented_) {
+            ImGui::Unindent(static_cast<float>(level_) * 8.0F);
+        }
+    }
+
+    ScopedImGuiGroup(const ScopedImGuiGroup&) = delete;
+    ScopedImGuiGroup& operator=(const ScopedImGuiGroup&) = delete;
+
+    [[nodiscard]] operator bool() const {
+        return open_;
+    }
+
+  private:
+    bool open_ = false;
+    bool indented_ = false;
+    std::uint32_t level_ = 0;
+};
+
+inline bool imgui_checkbox(const char* label, bool* value, const char* help = nullptr) {
+    const bool changed = ImGui::Checkbox(label, value);
+    imgui_attach_help(help);
+    return changed;
+}
+
+inline bool imgui_slider_float(const char* label, float* value, float min, float max,
+                               const char* format = "%.3f", const char* help = nullptr) {
+    const bool changed = ImGui::SliderFloat(label, value, min, max, format);
+    imgui_attach_help(help);
+    return changed;
+}
+
+inline bool imgui_slider_int(const char* label, int* value, int min, int max,
+                             const char* help = nullptr) {
+    const bool changed = ImGui::SliderInt(label, value, min, max);
+    imgui_attach_help(help);
+    return changed;
+}
+
+inline bool imgui_color_edit3(const char* label, float* value, const char* help = nullptr) {
+    const bool changed = ImGui::ColorEdit3(label, value);
+    imgui_attach_help(help);
+    return changed;
+}
+
 template <typename Value, typename NameFn>
 bool imgui_enum_combo(const char* label, Value& value, std::span<const Value> values,
-                      NameFn&& name_fn) {
+                      NameFn&& name_fn, const char* help = nullptr) {
     bool changed = false;
     if (ImGui::BeginCombo(label, name_fn(value))) {
         for (Value candidate : values) {
@@ -63,13 +168,14 @@ bool imgui_enum_combo(const char* label, Value& value, std::span<const Value> va
         }
         ImGui::EndCombo();
     }
+    imgui_attach_help(help);
     return changed;
 }
 
 template <typename Value, std::size_t Count, typename NameFn>
 bool imgui_enum_combo(const char* label, Value& value, const std::array<Value, Count>& values,
-                      NameFn&& name_fn) {
-    return imgui_enum_combo(label, value, std::span<const Value>(values), name_fn);
+                      NameFn&& name_fn, const char* help = nullptr) {
+    return imgui_enum_combo(label, value, std::span<const Value>(values), name_fn, help);
 }
 
 [[nodiscard]] inline double bytes_to_mib(std::uint64_t bytes) {

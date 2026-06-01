@@ -58,6 +58,7 @@ void draw_map_size_combo(OceanConfig& config) {
         }
         ImGui::EndCombo();
     }
+    cubey::host::imgui_attach_help("FFT texture resolution for each ocean cascade.");
 }
 
 void draw_selected_cascade_combo(OceanDiagnosticsConfig& diagnostics) {
@@ -69,6 +70,7 @@ void draw_selected_cascade_combo(OceanDiagnosticsConfig& diagnostics) {
                              static_cast<std::uint32_t>(diagnostics.selected_cascade));
     }
     if (!ImGui::BeginCombo("Inspect cascade", preview)) {
+        cubey::host::imgui_attach_help("Select which cascade is isolated in cascade debug views.");
         return;
     }
     const bool all_selected = diagnostics.selected_cascade < 0;
@@ -90,6 +92,7 @@ void draw_selected_cascade_combo(OceanDiagnosticsConfig& diagnostics) {
         }
     }
     ImGui::EndCombo();
+    cubey::host::imgui_attach_help("Select which cascade is isolated in cascade debug views.");
 }
 
 void request_camera_preset(OceanUiContext& ui, OceanCameraPreset preset) {
@@ -113,27 +116,43 @@ void draw_camera_preset_button(OceanUiContext& ui, OceanCameraPreset preset, con
 void draw_cascade_controls(OceanCascadeConfig& cascade, std::uint32_t index) {
     char label[40]{};
     format_cascade_label(label, sizeof(label), index);
-    if (!cubey::host::imgui_section(label, index == 0U)) {
+    const cubey::host::ScopedImGuiGroup group(
+        label, {.default_open = index < 2U,
+                .level = 1U,
+                .help = "Per-scale spectral wave controls. Larger tile lengths drive macro "
+                        "shape; smaller tile lengths contribute crest detail and foam."});
+    if (!group) {
         return;
     }
 
     const cubey::host::ScopedImGuiId section_id(label);
     const bool macro_layer = index < kOceanMacroCascadeCount;
-    ImGui::SliderFloat("Tile length", &cascade.tile_length, 8.0F, macro_layer ? 2400.0F : 256.0F,
-                       "%.0f m");
-    ImGui::SliderFloat("Displacement scale", &cascade.displacement_scale, 0.0F,
-                       macro_layer ? 1.50F : 2.0F, "%.2f");
-    ImGui::SliderFloat("Normal scale", &cascade.normal_scale, 0.0F, macro_layer ? 0.50F : 2.0F,
-                       "%.2f");
-    ImGui::SliderFloat("Wind speed", &cascade.wind_speed, 0.1F, 32.0F, "%.1f m/s");
-    ImGui::SliderFloat("Wind direction", &cascade.wind_direction_degrees, -180.0F, 180.0F,
-                       "%.0f deg");
-    ImGui::SliderFloat("Fetch", &cascade.fetch_length_km, 10.0F, 1200.0F, "%.0f km");
-    ImGui::SliderFloat("Swell", &cascade.swell, 0.0F, 2.0F, "%.2f");
-    ImGui::SliderFloat("Spread", &cascade.spread, 0.0F, 1.0F, "%.2f");
-    ImGui::SliderFloat("Detail", &cascade.detail, 0.0F, 1.0F, "%.2f");
-    ImGui::SliderFloat("Whitecap", &cascade.whitecap, 0.0F, 2.0F, "%.2f");
-    ImGui::SliderFloat("Foam amount", &cascade.foam_amount, 0.0F, 10.0F, "%.2f");
+    cubey::host::imgui_slider_float("Tile length", &cascade.tile_length, 8.0F,
+                                    macro_layer ? 2400.0F : 256.0F, "%.0f m",
+                                    "World-space repeat length for this cascade.");
+    cubey::host::imgui_slider_float("Displacement scale", &cascade.displacement_scale, 0.0F,
+                                    macro_layer ? 1.50F : 2.0F, "%.2f",
+                                    "Vertical and horizontal displacement contribution.");
+    cubey::host::imgui_slider_float("Normal scale", &cascade.normal_scale, 0.0F,
+                                    macro_layer ? 0.50F : 2.0F, "%.2f",
+                                    "Surface-normal contribution from this cascade.");
+    cubey::host::imgui_slider_float("Wind speed", &cascade.wind_speed, 0.1F, 32.0F, "%.1f m/s",
+                                    "Wind speed used by the spectral wave model.");
+    cubey::host::imgui_slider_float("Wind direction", &cascade.wind_direction_degrees, -180.0F,
+                                    180.0F, "%.0f deg",
+                                    "Dominant wind direction for this wave scale.");
+    cubey::host::imgui_slider_float("Fetch", &cascade.fetch_length_km, 10.0F, 1200.0F, "%.0f km",
+                                    "Effective distance over which wind transfers energy.");
+    cubey::host::imgui_slider_float("Swell", &cascade.swell, 0.0F, 2.0F, "%.2f",
+                                    "Boost for organized long-travel wave energy.");
+    cubey::host::imgui_slider_float("Spread", &cascade.spread, 0.0F, 1.0F, "%.2f",
+                                    "Directional spread around the dominant wind.");
+    cubey::host::imgui_slider_float("Detail", &cascade.detail, 0.0F, 1.0F, "%.2f",
+                                    "High-frequency detail weight inside this cascade.");
+    cubey::host::imgui_slider_float("Whitecap", &cascade.whitecap, 0.0F, 2.0F, "%.2f",
+                                    "Crest threshold bias used by foam generation.");
+    cubey::host::imgui_slider_float("Foam amount", &cascade.foam_amount, 0.0F, 10.0F, "%.2f",
+                                    "Foam contribution produced by this cascade.");
 }
 
 void draw_lod_diagnostics(const OceanConfig& config) {
@@ -180,7 +199,7 @@ void draw_ocean_ui(OceanUiContext ui) {
         return;
     }
 
-    ImGui::Checkbox("Paused", &ui.paused);
+    cubey::host::imgui_checkbox("Paused", &ui.paused, "Pause ocean time integration.");
     ImGui::SameLine();
     if (ImGui::Button("Reset")) {
         ui.reset_requested = true;
@@ -192,24 +211,38 @@ void draw_ocean_ui(OceanUiContext ui) {
     }
     ImGui::EndDisabled();
     cubey::host::imgui_enum_combo("Debug view", ui.render_view, kOceanRenderViews,
-                                  ocean_render_view_name);
+                                  ocean_render_view_name,
+                                  "Inspect final shading, wave fields, foam, lighting, and LOD.");
     draw_selected_cascade_combo(ui.diagnostics);
-    ImGui::Checkbox("Wire overlay", &ui.diagnostics.wire_overlay);
+    cubey::host::imgui_checkbox("Wire overlay", &ui.diagnostics.wire_overlay,
+                                "Draw mesh topology over the ocean surface.");
     ImGui::BeginDisabled(!ui.diagnostics.wire_overlay);
-    ImGui::SliderFloat("Wire opacity", &ui.diagnostics.wire_opacity, 0.05F, 1.0F, "%.2f");
+    cubey::host::imgui_slider_float("Wire opacity", &ui.diagnostics.wire_opacity, 0.05F, 1.0F,
+                                    "%.2f", "Opacity used by the wire overlay.");
     ImGui::EndDisabled();
 
-    if (cubey::host::imgui_section("Wave Core", true)) {
+    if (const cubey::host::ScopedImGuiGroup group{
+            "Wave Core", {.help = "Global controls for the FFT wave field and terrain coupling."}};
+        group) {
         const cubey::host::ScopedImGuiId section_id("Wave Core");
         draw_map_size_combo(ui.config);
-        ImGui::Checkbox("Spectral domains", &ui.config.spectral_domains_enabled);
-        ImGui::SliderFloat("Anti-repeat", &ui.diagnostics.anti_repeat_strength, 0.0F, 1.0F, "%.2f");
-        ImGui::SliderFloat("Depth", &ui.config.depth, 2.0F, 80.0F, "%.1f m");
-        ImGui::Checkbox("Terrain field influence", &ui.config.terrain_fields_enabled);
+        cubey::host::imgui_checkbox(
+            "Spectral domains", &ui.config.spectral_domains_enabled,
+            "Limit cascades to wavelength bands so scales blend without duplicating energy.");
+        cubey::host::imgui_slider_float("Anti-repeat", &ui.diagnostics.anti_repeat_strength, 0.0F,
+                                        1.0F, "%.2f",
+                                        "Strength of domain perturbation used to break tiling.");
+        cubey::host::imgui_slider_float("Depth", &ui.config.depth, 2.0F, 80.0F, "%.1f m",
+                                        "Water depth used by the dispersion model.");
+        cubey::host::imgui_checkbox(
+            "Terrain field influence", &ui.config.terrain_fields_enabled,
+            "Use terrain-ocean fields to affect the ocean instead of diagnostics only.");
         ImGui::TextUnformatted("GodotOceanWaves port");
     }
 
-    if (cubey::host::imgui_section("Camera", true)) {
+    if (const cubey::host::ScopedImGuiGroup group{
+            "Camera", {.help = "Quick camera viewpoints for inspecting wave shape and scale."}};
+        group) {
         const cubey::host::ScopedImGuiId section_id("Camera");
         draw_camera_preset_button(ui, OceanCameraPreset::Default, "Default");
         ImGui::SameLine();
@@ -222,46 +255,64 @@ void draw_ocean_ui(OceanUiContext ui) {
         draw_camera_preset_button(ui, OceanCameraPreset::Wide, "Wide");
     }
 
-    if (cubey::host::imgui_section("Mesh", true)) {
+    if (const cubey::host::ScopedImGuiGroup group{
+            "Mesh", {.help = "Camera-relative ocean mesh and clipmap LOD controls."}};
+        group) {
         const cubey::host::ScopedImGuiId section_id("Mesh");
         int mesh_cells = static_cast<int>(ui.config.mesh_cells);
-        if (ImGui::SliderInt("Base cells", &mesh_cells, static_cast<int>(kOceanMinMeshCells),
-                             static_cast<int>(kOceanMaxMeshCells))) {
+        if (cubey::host::imgui_slider_int(
+                "Base cells", &mesh_cells, static_cast<int>(kOceanMinMeshCells),
+                static_cast<int>(kOceanMaxMeshCells), "Grid resolution per clipmap patch.")) {
             ui.config.mesh_cells = static_cast<std::uint32_t>(
                 std::clamp(mesh_cells, static_cast<int>(kOceanMinMeshCells),
                            static_cast<int>(kOceanMaxMeshCells)));
         }
         int mesh_lod_levels = static_cast<int>(ui.config.mesh_lod_levels);
-        if (ImGui::SliderInt("LOD levels", &mesh_lod_levels,
-                             static_cast<int>(kOceanMinMeshLodLevels),
-                             static_cast<int>(kOceanMaxMeshLodLevels))) {
+        if (cubey::host::imgui_slider_int(
+                "LOD levels", &mesh_lod_levels, static_cast<int>(kOceanMinMeshLodLevels),
+                static_cast<int>(kOceanMaxMeshLodLevels), "Number of concentric mesh LOD rings.")) {
             ui.config.mesh_lod_levels = static_cast<std::uint32_t>(
                 std::clamp(mesh_lod_levels, static_cast<int>(kOceanMinMeshLodLevels),
                            static_cast<int>(kOceanMaxMeshLodLevels)));
         }
-        ImGui::SliderFloat("Extent", &ui.config.mesh_extent, 400.0F, 9000.0F, "%.0f m");
-        ImGui::SliderFloat("Horizon fog", &ui.config.horizon_fog, 0.0F, 1.0F, "%.2f");
+        cubey::host::imgui_slider_float("Extent", &ui.config.mesh_extent, 400.0F, 9000.0F, "%.0f m",
+                                        "Half extent covered by the ocean mesh.");
+        cubey::host::imgui_slider_float("Horizon fog", &ui.config.horizon_fog, 0.0F, 1.0F, "%.2f",
+                                        "Distance fade used to soften the horizon.");
     }
 
-    if (cubey::host::imgui_section("Shading", true)) {
+    if (const cubey::host::ScopedImGuiGroup group{
+            "Shading", {.help = "Surface material, foam, color, and exposure controls."}};
+        group) {
         const cubey::host::ScopedImGuiId section_id("Shading");
-        ImGui::SliderFloat("Roughness", &ui.config.roughness, 0.0F, 1.0F, "%.2f");
-        ImGui::SliderFloat("Normal strength", &ui.config.normal_strength, 0.0F, 2.0F, "%.2f");
-        ImGui::SliderFloat("Foam density", &ui.config.foam_density, 0.0F, 4.0F, "%.2f");
-        ImGui::SliderFloat("Foam sharpness", &ui.config.foam_sharpness, 0.0F, 1.0F, "%.2f");
-        ImGui::SliderFloat("Exposure", &ui.config.exposure, -4.0F, 4.0F, "%.2f");
-        ImGui::ColorEdit3("Water", &ui.config.water_color_r);
-        ImGui::ColorEdit3("Foam", &ui.config.foam_color_r);
+        cubey::host::imgui_slider_float("Roughness", &ui.config.roughness, 0.0F, 1.0F, "%.2f",
+                                        "Microfacet roughness used by ocean shading.");
+        cubey::host::imgui_slider_float("Normal strength", &ui.config.normal_strength, 0.0F, 2.0F,
+                                        "%.2f", "Final normal-map intensity.");
+        cubey::host::imgui_slider_float("Foam density", &ui.config.foam_density, 0.0F, 4.0F, "%.2f",
+                                        "Global density multiplier for rendered foam.");
+        cubey::host::imgui_slider_float("Foam sharpness", &ui.config.foam_sharpness, 0.0F, 1.0F,
+                                        "%.2f", "Contrast of the foam mask.");
+        cubey::host::imgui_slider_float("Exposure", &ui.config.exposure, -4.0F, 4.0F, "%.2f",
+                                        "Manual exposure bias in stops.");
+        cubey::host::imgui_color_edit3("Water", &ui.config.water_color_r,
+                                       "Base water tint before lighting.");
+        cubey::host::imgui_color_edit3("Foam", &ui.config.foam_color_r,
+                                       "Foam tint before lighting.");
     }
 
-    if (cubey::host::imgui_section("Cascades", true)) {
+    if (const cubey::host::ScopedImGuiGroup group{
+            "Cascades", {.help = "Wave cascades ordered from macro swell to fine surface detail."}};
+        group) {
         const cubey::host::ScopedImGuiId section_id("Cascades");
         for (std::uint32_t index = 0; index < kOceanCascadeCount; ++index) {
             draw_cascade_controls(ui.config.cascades[index], index);
         }
     }
 
-    if (cubey::host::imgui_section("Diagnostics", true)) {
+    if (const cubey::host::ScopedImGuiGroup group{
+            "Diagnostics", {.help = "Read-only runtime, cascade, and mesh statistics."}};
+        group) {
         const cubey::host::ScopedImGuiId section_id("Diagnostics");
         cubey::host::draw_frame_stats(ui.latest_frame_stats, ui.latest_fps, ui.latest_frame_ms);
         ImGui::Text("Map: %u", ui.config.map_size);
