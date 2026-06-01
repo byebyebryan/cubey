@@ -62,12 +62,12 @@ Current foundation checkpoint:
   as the visible background, and uses runtime atmosphere reflection for dynamic
   specular environment lighting;
 - `projects/ocean` consumes the same shared atmosphere run-config/time helper,
-  derives direct sun lighting from shared atmosphere lighting, and samples the
-  runtime atmosphere reflection probe for water reflections;
-- `projects/ocean` still retains its ocean-local sky, horizon fog, foam
-  lighting, and non-PBR water material. Replacing those with the shared
-  atmosphere background and a cleaner ocean material is the next integration
-  step.
+  renders the shared atmosphere background, samples runtime sky/reflection
+  probes for water reflection/fog/fill, and scales foam/water lighting from
+  atmosphere light energy;
+- `projects/ocean` still uses its own non-PBR water material and placeholder
+  lunar/Milky Way atlas textures. Full terrain depth, clouds, and
+  aerial-perspective composition remain future integration points.
 
 ## Terrain And Bathymetry Project
 
@@ -144,8 +144,8 @@ the same contract without special cases.
 1. Build `projects/atmosphere` as a clear-sky scattering demo with headless
    capture output.
 2. Build `projects/procedural_terrain` as a terrain and bathymetry data demo.
-3. Integrate atmosphere into ocean for background, reflection, fog, and sun
-   lighting coherence.
+3. Refine ocean/material lighting now that atmosphere background, reflection,
+   fog, and light-energy coherence are in place.
 4. Integrate terrain scene color/depth plus bathymetry into ocean for shallow
    water and shorelines.
 5. Continue `fluid_25d` toward dynamic terrain water, then feed its fields into

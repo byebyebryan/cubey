@@ -43,11 +43,12 @@ and triangle load while tuning the mesh. Headless captures can use
 `--ocean-wire-overlay`, `--ocean-wire-opacity 0.0..1.0`,
 `--ocean-spectral-domains`, and `--no-ocean-spectral-domains`.
 
-The sky and water environment lighting use the daylight single-scattering model
-from the `atmosphere` project, calibrated for ocean reflections and horizon fog.
-This is intentionally not the full atmosphere app pipeline yet: night sky,
-moon, cloud, terrain, and aerial-perspective descriptors still live outside the
-ocean project.
+The visible sky now uses the shared `atmosphere` background path, and water
+lighting samples the runtime atmosphere sky/probe data for reflection, ambient
+fill, horizon fog, and night-aware foam shading. Ocean still uses its own
+non-PBR water material and placeholder lunar/Milky Way atlas textures; cloud,
+terrain, and full aerial-perspective composition remain outside the ocean
+project.
 
 Cascades are ordered from macro to detail for tuning: `0` is broad macro swell,
 `1` is mid-scale macro chop, `2` is the primary reference crest, `3` is the
