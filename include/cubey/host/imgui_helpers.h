@@ -53,13 +53,11 @@ struct ImGuiGroupConfig {
     return ImGui::CollapsingHeader(label, flags);
 }
 
-inline void imgui_help_marker(const char* help) {
+inline void imgui_show_hover_help(const char* help) {
     if (help == nullptr || std::string_view(help).empty()) {
         return;
     }
 
-    ImGui::SameLine();
-    ImGui::TextDisabled("?");
     if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayShort)) {
         ImGui::BeginTooltip();
         ImGui::PushTextWrapPos(ImGui::GetFontSize() * 32.0F);
@@ -70,17 +68,7 @@ inline void imgui_help_marker(const char* help) {
 }
 
 inline void imgui_attach_help(const char* help) {
-    if (help == nullptr || std::string_view(help).empty()) {
-        return;
-    }
-    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayShort)) {
-        ImGui::BeginTooltip();
-        ImGui::PushTextWrapPos(ImGui::GetFontSize() * 32.0F);
-        ImGui::TextUnformatted(help);
-        ImGui::PopTextWrapPos();
-        ImGui::EndTooltip();
-    }
-    imgui_help_marker(help);
+    imgui_show_hover_help(help);
 }
 
 class ScopedImGuiGroup {
@@ -100,7 +88,7 @@ class ScopedImGuiGroup {
         }
 
         open_ = ImGui::TreeNodeEx(label, flags);
-        imgui_help_marker(config.help);
+        imgui_attach_help(config.help);
     }
 
     ~ScopedImGuiGroup() {

@@ -2,6 +2,7 @@
 
 #include "ocean_config.h"
 
+#include <cubey/engine/atmosphere_environment_config.h>
 #include <cubey/host/frame_stats.h>
 
 #include <cstdint>
@@ -27,6 +28,7 @@ struct OceanDiagnosticsConfig {
 struct OceanUiContext {
     OceanConfig& config;
     OceanDiagnosticsConfig& diagnostics;
+    cubey::AtmosphereEnvironmentRunState& atmosphere;
     std::optional<cubey::host::FrameStatsSnapshot>& latest_frame_stats;
     OceanRenderView& render_view;
     OceanCameraPreset& camera_preset;
@@ -34,6 +36,7 @@ struct OceanUiContext {
     bool& reset_requested;
     bool& step_requested;
     bool& camera_preset_requested;
+    bool& atmosphere_changed;
     double latest_fps = 0.0;
     double latest_frame_ms = 0.0;
 };

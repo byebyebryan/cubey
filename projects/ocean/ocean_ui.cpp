@@ -117,7 +117,7 @@ void draw_cascade_controls(OceanCascadeConfig& cascade, std::uint32_t index) {
     char label[40]{};
     format_cascade_label(label, sizeof(label), index);
     const cubey::host::ScopedImGuiGroup group(
-        label, {.default_open = index < 2U,
+        label, {.default_open = false,
                 .level = 1U,
                 .help = "Per-scale spectral wave controls. Larger tile lengths drive macro "
                         "shape; smaller tile lengths contribute crest detail and foam."});
@@ -153,6 +153,138 @@ void draw_cascade_controls(OceanCascadeConfig& cascade, std::uint32_t index) {
                                     "Crest threshold bias used by foam generation.");
     cubey::host::imgui_slider_float("Foam amount", &cascade.foam_amount, 0.0F, 10.0F, "%.2f",
                                     "Foam contribution produced by this cascade.");
+}
+
+void mark_changed(bool changed, bool& dirty) {
+    dirty = dirty || changed;
+}
+
+void draw_environment_controls(cubey::AtmosphereEnvironmentRunState& atmosphere, bool& changed) {
+    auto& environment = atmosphere.environment;
+    if (const cubey::host::ScopedImGuiGroup group{
+            "Environment",
+            {.default_open = false,
+             .help = "Shared procedural atmosphere used by ocean sky, lighting, reflection, and "
+                     "exposure."}};
+        group) {
+        const cubey::host::ScopedImGuiId section_id("Environment");
+
+        mark_changed(cubey::host::imgui_checkbox(
+                         "Solar clock", &atmosphere.solar_time_enabled,
+                         "Compute sun position from time, date, latitude, and azimuth offset."),
+                     changed);
+
+        if (atmosphere.solar_time_enabled) {
+            mark_changed(cubey::host::imgui_slider_float(
+                             "Time", &environment.time_of_day.time_hours, 0.0F, 24.0F, "%.2f h",
+                             "Local solar-clock time in hours."),
+                         changed);
+            mark_changed(cubey::host::imgui_slider_float(
+                             "Day", &environment.time_of_day.day_of_year, 1.0F, 366.0F, "%.0f",
+                             "Day of year used by the solar position model."),
+                         changed);
+            mark_changed(cubey::host::imgui_slider_float(
+                             "Latitude", &environment.time_of_day.latitude_degrees, -90.0F, 90.0F,
+                             "%.1f deg", "Observer latitude used by solar mode."),
+                         changed);
+            mark_changed(cubey::host::imgui_slider_float(
+                             "Azimuth offset", &environment.time_of_day.azimuth_offset_degrees,
+                             -180.0F, 180.0F, "%.1f deg",
+                             "Rotation offset applied to the computed solar azimuth."),
+                         changed);
+            mark_changed(cubey::host::imgui_checkbox("Play", &atmosphere.time_playing,
+                                                     "Advance atmosphere time every frame."),
+                         changed);
+            mark_changed(cubey::host::imgui_slider_float(
+                             "Speed", &atmosphere.time_speed_hours_per_second, 0.0F, 6.0F,
+                             "%.2f h/s", "Simulated hours advanced per real second."),
+                         changed);
+            const cubey::render::AtmosphereEnvironmentSolarPosition solar =
+                cubey::render::atmosphere_environment_solar_position(environment.time_of_day);
+            ImGui::Text("Solar: %.1f deg / %.1f deg", solar.elevation_degrees,
+                        solar.azimuth_degrees);
+        } else {
+            mark_changed(cubey::host::imgui_slider_float(
+                             "Sun elevation", &environment.sun_elevation_degrees, -90.0F, 90.0F,
+                             "%.1f deg", "Manual sun angle above the horizon."),
+                         changed);
+            mark_changed(cubey::host::imgui_slider_float(
+                             "Sun azimuth", &environment.sun_azimuth_degrees, -180.0F, 180.0F,
+                             "%.1f deg", "Manual horizontal sun direction."),
+                         changed);
+        }
+
+        if (const cubey::host::ScopedImGuiGroup night_group{
+                "Night sky",
+                {.default_open = false,
+                 .level = 1U,
+                 .help = "Night-sky visibility used by the ocean sky background."}};
+            night_group) {
+            const cubey::host::ScopedImGuiId night_id("Night sky");
+            mark_changed(cubey::host::imgui_slider_float(
+                             "Twilight", &environment.night_sky.twilight_strength, 0.0F, 4.0F,
+                             "%.2f", "Brightness of the twilight band."),
+                         changed);
+            mark_changed(cubey::host::imgui_slider_float(
+                             "Stars", &environment.night_sky.star_intensity, 0.0F, 4.0F, "%.2f",
+                             "Brightness of procedural stars."),
+                         changed);
+            mark_changed(
+                cubey::host::imgui_slider_float("Star density", &environment.night_sky.star_density,
+                                                0.0F, 1.0F, "%.2f", "Density of procedural stars."),
+                changed);
+            mark_changed(cubey::host::imgui_slider_float(
+                             "Milky Way", &environment.night_sky.milky_way_intensity, 0.0F, 4.0F,
+                             "%.2f", "Brightness of the generated Milky Way layer."),
+                         changed);
+            mark_changed(cubey::host::imgui_slider_float(
+                             "Light pollution", &environment.night_sky.light_pollution, 0.0F, 1.0F,
+                             "%.2f", "Skyglow amount that suppresses stars."),
+                         changed);
+        }
+
+        if (const cubey::host::ScopedImGuiGroup moon_group{
+                "Moon",
+                {.default_open = false,
+                 .level = 1U,
+                 .help = "Moon disk and moonlight contribution for night lighting."}};
+            moon_group) {
+            const cubey::host::ScopedImGuiId moon_id("Moon");
+            mark_changed(cubey::host::imgui_checkbox("Moon", &environment.moon.enabled,
+                                                     "Enable moon disk and moonlight."),
+                         changed);
+            mark_changed(cubey::host::imgui_slider_float("Disk", &environment.moon.disk_intensity,
+                                                         0.0F, 4.0F, "%.2f",
+                                                         "Brightness of the visible moon disk."),
+                         changed);
+            mark_changed(cubey::host::imgui_slider_float(
+                             "Moonlight", &environment.moon.moonlight_intensity, 0.0F, 4.0F, "%.2f",
+                             "Brightness of indirect moonlight."),
+                         changed);
+            mark_changed(cubey::host::imgui_slider_float(
+                             "Phase offset", &environment.moon.phase_offset_days, 0.0F, 29.530588F,
+                             "%.2f d", "Offset in days through the lunar phase cycle."),
+                         changed);
+        }
+
+        if (const cubey::host::ScopedImGuiGroup exposure_group{
+                "Exposure",
+                {.default_open = false,
+                 .level = 1U,
+                 .help = "Environment-driven exposure used by ocean post shading."}};
+            exposure_group) {
+            const cubey::host::ScopedImGuiId exposure_id("Exposure");
+            mark_changed(
+                cubey::host::imgui_checkbox("Auto exposure", &atmosphere.auto_exposure_enabled,
+                                            "Adapt exposure across day, twilight, and night."),
+                changed);
+            mark_changed(cubey::host::imgui_slider_float(
+                             "Exposure bias", &atmosphere.exposure_bias, -4.0F, 4.0F, "%.2f",
+                             "Bias applied to automatic exposure in stops."),
+                         changed);
+            ImGui::Text("Resolved exposure: %.2f", atmosphere.resolved_exposure);
+        }
+    }
 }
 
 void draw_lod_diagnostics(const OceanConfig& config) {
@@ -194,7 +326,7 @@ void draw_lod_diagnostics(const OceanConfig& config) {
 } // namespace
 
 void draw_ocean_ui(OceanUiContext ui) {
-    if (!cubey::host::begin_control_panel("Ocean", {.width = 390.0F})) {
+    if (!cubey::host::begin_control_panel("Ocean", {.width = 430.0F})) {
         ImGui::End();
         return;
     }
@@ -241,7 +373,9 @@ void draw_ocean_ui(OceanUiContext ui) {
     }
 
     if (const cubey::host::ScopedImGuiGroup group{
-            "Camera", {.help = "Quick camera viewpoints for inspecting wave shape and scale."}};
+            "Camera",
+            {.default_open = false,
+             .help = "Quick camera viewpoints for inspecting wave shape and scale."}};
         group) {
         const cubey::host::ScopedImGuiId section_id("Camera");
         draw_camera_preset_button(ui, OceanCameraPreset::Default, "Default");
@@ -256,7 +390,9 @@ void draw_ocean_ui(OceanUiContext ui) {
     }
 
     if (const cubey::host::ScopedImGuiGroup group{
-            "Mesh", {.help = "Camera-relative ocean mesh and clipmap LOD controls."}};
+            "Mesh",
+            {.default_open = false,
+             .help = "Camera-relative ocean mesh and clipmap LOD controls."}};
         group) {
         const cubey::host::ScopedImGuiId section_id("Mesh");
         int mesh_cells = static_cast<int>(ui.config.mesh_cells);
@@ -282,7 +418,9 @@ void draw_ocean_ui(OceanUiContext ui) {
     }
 
     if (const cubey::host::ScopedImGuiGroup group{
-            "Shading", {.help = "Surface material, foam, color, and exposure controls."}};
+            "Shading",
+            {.default_open = false,
+             .help = "Surface material, foam, color, and exposure controls."}};
         group) {
         const cubey::host::ScopedImGuiId section_id("Shading");
         cubey::host::imgui_slider_float("Roughness", &ui.config.roughness, 0.0F, 1.0F, "%.2f",
@@ -301,8 +439,12 @@ void draw_ocean_ui(OceanUiContext ui) {
                                        "Foam tint before lighting.");
     }
 
+    draw_environment_controls(ui.atmosphere, ui.atmosphere_changed);
+
     if (const cubey::host::ScopedImGuiGroup group{
-            "Cascades", {.help = "Wave cascades ordered from macro swell to fine surface detail."}};
+            "Cascades",
+            {.default_open = false,
+             .help = "Wave cascades ordered from macro swell to fine surface detail."}};
         group) {
         const cubey::host::ScopedImGuiId section_id("Cascades");
         for (std::uint32_t index = 0; index < kOceanCascadeCount; ++index) {
@@ -311,7 +453,8 @@ void draw_ocean_ui(OceanUiContext ui) {
     }
 
     if (const cubey::host::ScopedImGuiGroup group{
-            "Diagnostics", {.help = "Read-only runtime, cascade, and mesh statistics."}};
+            "Diagnostics",
+            {.default_open = false, .help = "Read-only runtime, cascade, and mesh statistics."}};
         group) {
         const cubey::host::ScopedImGuiId section_id("Diagnostics");
         cubey::host::draw_frame_stats(ui.latest_frame_stats, ui.latest_fps, ui.latest_frame_ms);

@@ -375,9 +375,11 @@ class OceanApp {
         callbacks.update = [this](cubey::host::WindowedAppContext& context,
                                   const FrameTiming& timing) { update_windowed(context, timing); };
         callbacks.draw_ui = [this](cubey::host::WindowedAppContext&) {
+            bool atmosphere_changed = false;
             draw_ocean_ui({
                 .config = ocean_config_,
                 .diagnostics = diagnostics_,
+                .atmosphere = atmosphere_state_,
                 .latest_frame_stats = latest_frame_stats_,
                 .render_view = render_view_,
                 .camera_preset = camera_preset_,
@@ -385,12 +387,16 @@ class OceanApp {
                 .reset_requested = reset_requested_,
                 .step_requested = step_requested_,
                 .camera_preset_requested = camera_preset_requested_,
+                .atmosphere_changed = atmosphere_changed,
                 .latest_fps = latest_fps_,
                 .latest_frame_ms = latest_frame_ms_,
             });
             if (camera_preset_requested_) {
                 apply_camera_preset(camera_preset_);
                 camera_preset_requested_ = false;
+            }
+            if (atmosphere_changed) {
+                resolve_atmosphere_controls();
             }
         };
         callbacks.record_frame = [this](cubey::host::WindowedAppContext& context,
@@ -488,6 +494,23 @@ class OceanApp {
         if (atmosphere_runtime_.resources_created()) {
             atmosphere_runtime_.set_environment(atmosphere_state_.environment);
         }
+    }
+
+    void resolve_atmosphere_controls() {
+        if (atmosphere_state_.solar_time_enabled) {
+            const cubey::render::AtmosphereEnvironmentSolarPosition solar =
+                cubey::render::atmosphere_environment_solar_position(
+                    atmosphere_state_.environment.time_of_day);
+            atmosphere_state_.environment.sun_elevation_degrees = solar.elevation_degrees;
+            atmosphere_state_.environment.sun_azimuth_degrees = solar.azimuth_degrees;
+        }
+        atmosphere_state_.resolved_exposure =
+            atmosphere_state_.auto_exposure_enabled
+                ? cubey::render::atmosphere_environment_auto_exposure(
+                      atmosphere_state_.environment.sun_elevation_degrees,
+                      atmosphere_state_.exposure_bias)
+                : 0.0F;
+        refresh_atmosphere_lighting();
     }
 
     void update_atmosphere_time(double delta_seconds) {
