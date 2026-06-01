@@ -37,7 +37,8 @@ void ForwardPbrRenderer3D::Impl::create_global_resources(
     const vulkan::Device& device, const render::GeneratedPbrEnvironment& environment,
     std::uint32_t frame_slot_count) {
     create_global_resources(device, ForwardPbrRenderer3DGlobalResourcesInfo{
-                                        .environment = &environment,
+                                        .environment_textures =
+                                            render::pbr_environment_texture_bindings(environment),
                                         .frame_slot_count = frame_slot_count,
                                     });
 }
@@ -52,14 +53,8 @@ void ForwardPbrRenderer3D::Impl::create_global_resources(
     if (info.frame_slot_count == 0) {
         throw std::runtime_error("forward PBR renderer requires at least one frame slot");
     }
-    if (info.environment == nullptr && !info.environment_textures.has_value()) {
-        throw std::runtime_error("forward PBR renderer requires a PBR environment");
-    }
     require_no_global_resources();
-    global_.environment_source = info.environment;
-    global_.environment = info.environment_textures.has_value()
-                              ? info.environment_textures.value()
-                              : render::pbr_environment_texture_bindings(*info.environment);
+    global_.environment = info.environment_textures;
     render::validate_pbr_environment_texture_bindings(global_.environment);
     global_.environment_initialized = true;
     global_.graph_executor.resize(info.frame_slot_count);
@@ -402,7 +397,6 @@ void ForwardPbrRenderer3D::Impl::destroy_all_resources() {
     global_.shadow_pass.reset();
     global_.environment = {};
     global_.environment_initialized = false;
-    global_.environment_source = nullptr;
     swapchain_.shadow_depth_is_sampled = false;
 }
 

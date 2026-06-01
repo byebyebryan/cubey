@@ -748,18 +748,24 @@ void test_forward_pbr_renderer_3d_threads_atmosphere_background_path() {
                      "forward PBR global resources should accept optional atmosphere bindings");
     require_contains(header, "environment_textures",
                      "forward PBR globals should accept explicit PBR environment textures");
+    require_not_contains(header, "const render::GeneratedPbrEnvironment* environment",
+                         "forward PBR globals should not expose a pointer-only environment path");
     require_contains(header, "std::optional<render::AtmosphereEnvironmentFrameUniforms>",
                      "forward PBR settings should carry atmosphere frame uniforms");
     require_contains(internal_header, "render::AtmosphereBackgroundFrame atmosphere_background",
                      "forward PBR internals should own the atmosphere background frame");
     require_contains(internal_header, "render::PbrEnvironmentTextureBindings environment",
                      "forward PBR internals should store resolved environment bindings");
+    require_not_contains(internal_header, "environment_source",
+                         "forward PBR internals should not retain a generated environment pointer");
     require_contains(resources, "AtmosphereBackgroundFrameMaterialConfig",
                      "forward PBR resources should create atmosphere descriptors when provided");
     require_contains(resources, "AtmosphereBackgroundFramePipelineConfig",
                      "forward PBR resources should create an atmosphere background pipeline");
     require_contains(resources, "validate_pbr_environment_texture_bindings",
                      "forward PBR resources should validate explicit environment bindings");
+    require_contains(resources, "global_.environment = info.environment_textures",
+                     "forward PBR resources should consume explicit environment bindings directly");
     require_contains(graph, "settings.atmosphere_background.value()",
                      "forward PBR record path should upload per-frame atmosphere uniforms");
     require_contains(recording, "ForwardPbrRenderer3DBackgroundMode::Atmosphere",

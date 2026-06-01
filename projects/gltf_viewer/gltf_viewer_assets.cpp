@@ -42,14 +42,9 @@ void GltfViewerApp::create_global_resources_if_needed(const cubey::vulkan::Devic
     }
     forward_pbr_renderer_ =
         &engine_.renderers().create_forward_pbr_renderer_3d(forward_pbr_renderer_3d_config());
-    std::optional<cubey::render::PbrEnvironmentTextureBindings> environment_textures;
-    if (use_atmosphere_environment) {
-        environment_textures = pbr_environment_bindings();
-    }
     forward_pbr_renderer().create_global_resources(
         device, cubey::ForwardPbrRenderer3DGlobalResourcesInfo{
-                    .environment = use_atmosphere_environment ? nullptr : &ibl_environment(),
-                    .environment_textures = environment_textures,
+                    .environment_textures = pbr_environment_bindings(),
                     .frame_slot_count = frame_slot_count,
                     .atmosphere_background_textures = atmosphere_background_textures(),
                 });

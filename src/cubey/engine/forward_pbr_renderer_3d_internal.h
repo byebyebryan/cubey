@@ -76,7 +76,6 @@ struct ForwardPbrRenderer3D::Impl {
     void destroy_all_resources();
     void record(const ForwardPbrRenderer3DRenderRequest& request);
 
-    [[nodiscard]] const render::GeneratedPbrEnvironment& environment() const;
     [[nodiscard]] bool has_global_resources() const;
     [[nodiscard]] bool has_swapchain_resources() const;
     void require_global_resources() const;
@@ -152,7 +151,6 @@ struct ForwardPbrRenderer3D::Impl {
     [[nodiscard]] const vulkan::DepthAttachment& depth_attachment() const;
 
     struct GlobalResources {
-        const render::GeneratedPbrEnvironment* environment_source = nullptr;
         render::PbrEnvironmentTextureBindings environment{};
         bool environment_initialized = false;
         render::RenderGraphFrameExecutor graph_executor{};
