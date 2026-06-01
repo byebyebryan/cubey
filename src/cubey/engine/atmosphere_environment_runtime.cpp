@@ -83,6 +83,15 @@ void AtmosphereEnvironmentRuntime::record_pending_update(
     }
 }
 
+void AtmosphereEnvironmentRuntime::update_atmosphere_texture_bindings(
+    const cubey::vulkan::Device& device,
+    const AtmosphereBackgroundTextureBindings& textures) const {
+    if (!resources_created()) {
+        throw std::runtime_error("atmosphere environment runtime resources are not initialized");
+    }
+    reflection_probe_.update_atmosphere_texture_bindings(device, textures);
+}
+
 bool AtmosphereEnvironmentRuntime::resources_created() const noexcept {
     return reflection_probe_.resources_created();
 }

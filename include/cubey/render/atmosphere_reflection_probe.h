@@ -78,6 +78,9 @@ class AtmosphereReflectionProbe {
     void record_face_update(const cubey::vulkan::CommandRecorder& recorder,
                             const AtmosphereReflectionProbeUpdateInfo& info,
                             std::uint32_t face_index);
+    void update_atmosphere_texture_bindings(
+        const cubey::vulkan::Device& device,
+        const AtmosphereBackgroundTextureBindings& textures) const;
 
     [[nodiscard]] bool resources_created() const noexcept;
     [[nodiscard]] bool pipelines_created() const noexcept;

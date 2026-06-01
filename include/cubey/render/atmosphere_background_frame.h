@@ -1,6 +1,8 @@
 #pragma once
 
 #include <cubey/render/atmosphere_environment.h>
+#include <cubey/render/atmosphere_lunar_atlas.h>
+#include <cubey/render/atmosphere_night_sky_atlas.h>
 #include <cubey/render/frame_data.h>
 #include <cubey/render/material.h>
 #include <cubey/render/material_instance.h>
@@ -34,14 +36,31 @@ struct AtmosphereBackgroundTextureBindings {
     VkImageLayout night_sky_layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 };
 
-struct AtmosphereBackgroundPlaceholderTextures {
+struct AtmosphereBackgroundAtlasResources {
     Texture2D lunar;
     TextureCube night_sky;
+    bool lunar_placeholder = false;
+    bool night_sky_placeholder = false;
 
     [[nodiscard]] AtmosphereBackgroundTextureBindings bindings() const;
 };
 
-[[nodiscard]] AtmosphereBackgroundPlaceholderTextures
+using AtmosphereBackgroundPlaceholderTextures = AtmosphereBackgroundAtlasResources;
+
+[[nodiscard]] Texture2D create_atmosphere_lunar_atlas_texture(
+    const cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu,
+    const LunarAtlas& atlas);
+[[nodiscard]] TextureCube create_atmosphere_night_sky_atlas_texture(
+    const cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu,
+    const NightSkyAtlas& atlas);
+
+[[nodiscard]] AtmosphereBackgroundAtlasResources create_atmosphere_background_atlas_resources(
+    const cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu,
+    const LunarAtlas& lunar, const NightSkyAtlas& night_sky);
+[[nodiscard]] AtmosphereBackgroundAtlasResources create_atmosphere_background_generated_textures(
+    const cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu,
+    const NightSkyAtlasConfig& night_sky = {});
+[[nodiscard]] AtmosphereBackgroundAtlasResources
 create_atmosphere_background_placeholder_textures(const cubey::vulkan::Device& device,
                                                   cubey::vulkan::GpuRuntime& gpu);
 

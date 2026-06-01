@@ -6,6 +6,7 @@
 #include <span>
 #include <stdexcept>
 #include <utility>
+#include <vector>
 
 namespace cubey::render {
 namespace {
@@ -26,7 +27,7 @@ void validate_texture_bindings(const AtmosphereBackgroundTextureBindings& textur
 
 } // namespace
 
-AtmosphereBackgroundTextureBindings AtmosphereBackgroundPlaceholderTextures::bindings() const {
+AtmosphereBackgroundTextureBindings AtmosphereBackgroundAtlasResources::bindings() const {
     return {
         .lunar_sampler = lunar.sampler().handle(),
         .lunar_view = lunar.view(),
@@ -35,7 +36,81 @@ AtmosphereBackgroundTextureBindings AtmosphereBackgroundPlaceholderTextures::bin
     };
 }
 
-AtmosphereBackgroundPlaceholderTextures create_atmosphere_background_placeholder_textures(
+Texture2D create_atmosphere_lunar_atlas_texture(const cubey::vulkan::Device& device,
+                                                cubey::vulkan::GpuRuntime& gpu,
+                                                const LunarAtlas& atlas) {
+    std::vector<UploadedTexture2DMip> upload_mips;
+    upload_mips.reserve(atlas.mips.size());
+    for (const LunarAtlasMip& mip : atlas.mips) {
+        upload_mips.push_back(UploadedTexture2DMip{
+            .extent = {mip.width, mip.height},
+            .byte_offset = static_cast<VkDeviceSize>(mip.byte_offset),
+            .byte_count = mip.byte_count,
+        });
+    }
+
+    const cubey::vulkan::SamplerConfig sampler{
+        .min_filter = VK_FILTER_LINEAR,
+        .mag_filter = VK_FILTER_LINEAR,
+        .address_mode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+        .mipmap_mode = VK_SAMPLER_MIPMAP_MODE_LINEAR,
+        .max_lod = static_cast<float>(atlas.mip_levels - 1U),
+    };
+    return create_uploaded_texture_2d(
+        device, gpu,
+        {
+            .extent = {atlas.width, atlas.height},
+            .mip_levels = atlas.mip_levels,
+            .format = VK_FORMAT_R8G8B8A8_UNORM,
+            .rgba8 = std::span<const std::uint8_t>{atlas.rgba8.data(), atlas.rgba8.size()},
+            .mips = std::span<const UploadedTexture2DMip>{upload_mips.data(), upload_mips.size()},
+            .create_sampler = true,
+            .sampler = sampler,
+        });
+}
+
+TextureCube create_atmosphere_night_sky_atlas_texture(const cubey::vulkan::Device& device,
+                                                      cubey::vulkan::GpuRuntime& gpu,
+                                                      const NightSkyAtlas& atlas) {
+    const std::span<const std::uint8_t> bytes{
+        reinterpret_cast<const std::uint8_t*>(atlas.rgba32f.data()),
+        atlas.rgba32f.size() * sizeof(float),
+    };
+    const cubey::vulkan::SamplerConfig sampler{
+        .min_filter = VK_FILTER_LINEAR,
+        .mag_filter = VK_FILTER_LINEAR,
+        .address_mode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+        .mipmap_mode = VK_SAMPLER_MIPMAP_MODE_LINEAR,
+        .max_lod = static_cast<float>(atlas.mip_levels - 1U),
+    };
+    return create_uploaded_texture_cube(device, gpu,
+                                        {
+                                            .extent = atlas.extent,
+                                            .mip_levels = atlas.mip_levels,
+                                            .format = VK_FORMAT_R32G32B32A32_SFLOAT,
+                                            .bytes = bytes,
+                                            .create_sampler = true,
+                                            .sampler = sampler,
+                                        });
+}
+
+AtmosphereBackgroundAtlasResources create_atmosphere_background_atlas_resources(
+    const cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu, const LunarAtlas& lunar,
+    const NightSkyAtlas& night_sky) {
+    return {
+        .lunar = create_atmosphere_lunar_atlas_texture(device, gpu, lunar),
+        .night_sky = create_atmosphere_night_sky_atlas_texture(device, gpu, night_sky),
+    };
+}
+
+AtmosphereBackgroundAtlasResources create_atmosphere_background_generated_textures(
+    const cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu,
+    const NightSkyAtlasConfig& night_sky) {
+    return create_atmosphere_background_atlas_resources(
+        device, gpu, generate_lunar_atlas(), generate_night_sky_atlas(night_sky));
+}
+
+AtmosphereBackgroundAtlasResources create_atmosphere_background_placeholder_textures(
     const cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu) {
     const std::array<std::uint8_t, 4> lunar_pixel{112U, 128U, 128U, 255U};
     const cubey::vulkan::SamplerConfig atlas_sampler{
@@ -75,6 +150,8 @@ AtmosphereBackgroundPlaceholderTextures create_atmosphere_background_placeholder
     return {
         .lunar = std::move(lunar),
         .night_sky = std::move(night_sky),
+        .lunar_placeholder = true,
+        .night_sky_placeholder = true,
     };
 }
 

@@ -256,6 +256,12 @@ void AtmosphereReflectionProbe::record_face_update(
     }
 }
 
+void AtmosphereReflectionProbe::update_atmosphere_texture_bindings(
+    const cubey::vulkan::Device& device,
+    const AtmosphereBackgroundTextureBindings& textures) const {
+    sky_frame_.update_texture_bindings(device, textures);
+}
+
 bool AtmosphereReflectionProbe::resources_created() const noexcept {
     return sky_radiance_cube_.has_value() && prefiltered_cube_.has_value();
 }
