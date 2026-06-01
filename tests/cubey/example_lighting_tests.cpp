@@ -56,6 +56,8 @@ void test_smoke_tests_fail_on_vulkan_validation_errors() {
 
     require_contains(smoke, "vulkan validation error",
                      "smoke tests should fail when validation reports Vulkan errors");
+    require_contains(smoke, "set_tests_properties(\"${name}\" PROPERTIES TIMEOUT 20)",
+                     "PNG/video smoke tests should allow heavier GPU startup paths");
 }
 
 void test_pbr_furnace_headless_path_transitions_depth_attachment() {

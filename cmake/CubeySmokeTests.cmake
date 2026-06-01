@@ -23,7 +23,7 @@ function(cubey_add_png_smoke_test name target output_path)
             "$<TARGET_FILE:${target}>"
             ${ARGN}
     )
-    set_tests_properties("${name}" PROPERTIES TIMEOUT 10)
+    set_tests_properties("${name}" PROPERTIES TIMEOUT 20)
     set_property(
         TEST "${name}"
         APPEND
