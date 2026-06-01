@@ -115,10 +115,11 @@ renderer-wide material management explicit future work.
   prefiltered KTX/KTX2 deployment remain future work.
 - Atmosphere-driven PBR now covers procedural visible background, direct light,
   diffuse SH, and a low-resolution runtime atmosphere reflection probe for
-  specular IBL in `gltf_viewer`. `projects/ocean` uses that same probe for
-  water reflections, but still uses local sky/fog and non-PBR water shading.
-  The runtime is intentionally V1: it keeps the static/generated diffuse
-  irradiance and DFG resources as fallback foundation pieces, uses SH for
+  specular IBL in `gltf_viewer`. `projects/ocean` uses the shared atmosphere
+  background plus the same runtime sky/reflection probes for water reflection,
+  fog, and fill, but its water material remains bespoke rather than a full PBR
+  surface. The runtime is intentionally V1: it keeps the static/generated
+  diffuse irradiance and DFG resources as fallback foundation pieces, uses SH for
   atmosphere diffuse lighting, updates all reflection faces on first use, and
   then updates one face per frame when procedural time is animated.
 - The current clearcoat, sheen, anisotropy, and iridescence lobes are pragmatic

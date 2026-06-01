@@ -4,6 +4,10 @@
 ocean rendering can consume. Ocean systems own time-varying wave motion, foam,
 surface shading, and water simulation state.
 
+The shared C++ boundary is `cubey::render::TerrainOceanFieldView`. It can be
+packed with `cubey::render::pack_terrain_ocean_fields` and uploaded as an
+`RGBA32F` texture with the channel layout documented below.
+
 ## Coordinates and Units
 
 - World space is right-handed with `+Y` up.
@@ -34,6 +38,18 @@ surface shading, and water simulation state.
   negative underwater, approximately zero at the shoreline.
 - `slope`: magnitude of the sampled height gradient.
 - `material_masks`: normalized weights for sand, rock, vegetation, and sediment.
+
+## Packed Texture Layout
+
+- `R`: `height_m`
+- `G`: `water_depth_m`
+- `B`: `shore_sdf_m`
+- `A`: `slope`
+
+`projects/ocean` currently binds a diagnostic texture through this layout for
+`terrain-depth`, `terrain-shore`, and `terrain-slope` debug views. Real
+terrain-to-ocean integration should replace that diagnostic source with terrain
+or shallow-water output without changing the channel contract.
 
 ## Ownership Boundary
 

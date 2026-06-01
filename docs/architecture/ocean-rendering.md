@@ -30,10 +30,14 @@ The active renderer currently focuses on:
 - five regular cascades ordered from broad macro swell through primary crest to
   fine normal/foam detail, with storm-biased defaults for stronger long-wave
   displacement and crest energy;
-- displacement, normal, foam, and LOD debug views;
+- displacement, normal, foam, LOD, environment-lighting, and terrain-field
+  debug views;
 - cascade isolation, camera presets, pause/step timing, and mesh diagnostics
   for interactive inspection;
-- a compact procedural sky/background pass used by the standalone demo;
+- the shared atmosphere background path plus runtime sky/reflection probes for
+  water fog, fill, and reflection;
+- a diagnostic terrain-ocean `RGBA32F` field texture bound through the shared
+  height/depth/shore/slope contract;
 - active `--ocean-*` CLI controls, while the frozen reference keeps
   `--ocean-ref-*` controls.
 
@@ -87,6 +91,12 @@ The renderer should expose inputs that later systems can feed:
 V1 keeps these as compact controls and shader inputs. Boat physics, buoyancy,
 shoreline authoring, and shallow-water simulation should arrive as separate
 projects or later integration slices.
+
+The current terrain-field path is intentionally a diagnostic consumer, not a
+full shoreline renderer. It proves the descriptor and shader contract, exposes
+field debug views, and provides a small opt-in shoreline foam hook. Real
+bathymetry, scene depth, seafloor shading, and surf-zone wave behavior still
+belong to later terrain/ocean integration work.
 
 ## Breaking Waves
 

@@ -30,8 +30,9 @@ presentation while the supporting systems become inspectable in isolation.
 
 The atmosphere path has the highest immediate visual leverage because ocean
 reflection, sun glint, horizon fade, and background color all need one coherent
-sky model. The current ocean-local procedural sky is a placeholder; a standalone
-atmosphere project should prove the model before it is promoted.
+sky model. The standalone atmosphere project now owns the clear-sky runtime and
+shared background/probe path; future atmosphere work should continue there
+before promotion into individual renderers.
 
 First useful scope:
 
@@ -65,9 +66,12 @@ Current foundation checkpoint:
   renders the shared atmosphere background, samples runtime sky/reflection
   probes for water reflection/fog/fill, and scales foam/water lighting from
   atmosphere light energy;
-- `projects/ocean` still uses its own non-PBR water material and placeholder
-  lunar/Milky Way atlas textures. Full terrain depth, clouds, and
-  aerial-perspective composition remain future integration points.
+- `gltf_viewer`, `projects/atmosphere`, and `projects/ocean` now all use the
+  shared generated lunar and night-sky atlas upload path instead of
+  project-local placeholder textures;
+- `projects/ocean` still uses its own non-PBR water material. Full terrain
+  depth, clouds, and aerial-perspective composition remain future integration
+  points.
 
 ## Terrain And Bathymetry Project
 
@@ -97,6 +101,21 @@ Ocean integration target:
 `projects/procedural_terrain` should stay rendering/data focused. Gameplay
 water movement, rainfall, sources, sinks, and flooding belong in
 `projects/fluid_25d`.
+
+Current foundation checkpoint:
+
+- `cubey::render::TerrainOceanFieldView` is the shared terrain/ocean field
+  contract for height, water depth, shoreline signed distance, slope, and
+  material masks;
+- the shared packer uploads that contract as one `RGBA32F` texture with
+  `height_m`, `water_depth_m`, `shore_sdf_m`, and `slope` in `R/G/B/A`;
+- `projects/procedural_terrain` exports its analytical fields through this
+  shared view, while `projects/ocean` can bind and inspect a diagnostic field
+  texture through `terrain-depth`, `terrain-shore`, and `terrain-slope` debug
+  views;
+- the current ocean terrain field influence is intentionally opt-in and minimal:
+  it proves the descriptor/shader boundary and a small shoreline foam hook, but
+  it is not yet real bathymetry-driven surf or seafloor rendering.
 
 ## Fluid 2.5D Relationship
 
@@ -134,10 +153,13 @@ These are more important than exact implementation details:
   cloud, and shallow-water fields;
 - render order: atmosphere background, opaque terrain/scene depth, ocean water,
   then optional cloud or post layers.
+- shared clipmap diagnostics for patch count, triangle/vertex totals, near cell
+  size, and outer extent so terrain and ocean LOD can report the same concepts.
 
 The initial contracts can remain project-local structs and GLSL includes. Promote
-them to shared renderer or shader packages only after at least two projects use
-the same contract without special cases.
+them to shared renderer or shader packages when at least two projects use the
+same contract without special cases; the terrain-ocean field texture and clipmap
+diagnostic helpers have crossed that threshold and now live in `cubey::render`.
 
 ## Suggested Order
 

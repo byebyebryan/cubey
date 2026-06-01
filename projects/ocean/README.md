@@ -30,9 +30,18 @@ Useful debug views:
 ./build/dev/projects/ocean/ocean --debug-view foam-crest
 ./build/dev/projects/ocean/ocean --debug-view foam-detail
 ./build/dev/projects/ocean/ocean --debug-view lod
+./build/dev/projects/ocean/ocean --debug-view sky-radiance
+./build/dev/projects/ocean/ocean --debug-view reflection
+./build/dev/projects/ocean/ocean --debug-view direct-light
+./build/dev/projects/ocean/ocean --debug-view ambient-light
+./build/dev/projects/ocean/ocean --debug-view exposure
+./build/dev/projects/ocean/ocean --debug-view terrain-depth
+./build/dev/projects/ocean/ocean --debug-view terrain-shore
+./build/dev/projects/ocean/ocean --debug-view terrain-slope
 ./build/dev/projects/ocean/ocean --debug-view lod --ocean-wire-overlay
 ./build/dev/projects/ocean/ocean --debug-view displacement --ocean-cascade 2
 ./build/dev/projects/ocean/ocean --no-ocean-spectral-domains
+./build/dev/projects/ocean/ocean --ocean-terrain-fields
 ```
 
 The GUI panel also includes cascade isolation, camera presets including a wide
@@ -41,14 +50,17 @@ overlay, and an LOD breakdown table for checking clipmap coverage, patch counts,
 and triangle load while tuning the mesh. Headless captures can use
 `--ocean-cascade all|0|1|2|3|4`,
 `--ocean-wire-overlay`, `--ocean-wire-opacity 0.0..1.0`,
-`--ocean-spectral-domains`, and `--no-ocean-spectral-domains`.
+`--ocean-spectral-domains`, `--no-ocean-spectral-domains`,
+`--ocean-terrain-fields`, and `--no-ocean-terrain-fields`.
 
 The visible sky now uses the shared `atmosphere` background path, and water
 lighting samples the runtime atmosphere sky/probe data for reflection, ambient
 fill, horizon fog, and night-aware foam shading. Ocean still uses its own
-non-PBR water material and placeholder lunar/Milky Way atlas textures; cloud,
-terrain, and full aerial-perspective composition remain outside the ocean
-project.
+non-PBR water material, but the background atlases now come from the shared
+generated lunar and night-sky atlas path. A diagnostic terrain-ocean field
+texture is bound for terrain depth/shore/slope debug views; enabling
+`--ocean-terrain-fields` only proves a small shoreline foam hook and is not yet
+full bathymetry, seafloor visibility, or surf-zone rendering.
 
 Cascades are ordered from macro to detail for tuning: `0` is broad macro swell,
 `1` is mid-scale macro chop, `2` is the primary reference crest, `3` is the
