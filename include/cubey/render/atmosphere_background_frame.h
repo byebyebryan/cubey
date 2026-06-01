@@ -6,8 +6,10 @@
 #include <cubey/render/material_instance.h>
 #include <cubey/render/pipeline_resource.h>
 #include <cubey/render/target.h>
+#include <cubey/render/texture.h>
 #include <cubey/vulkan/command_recorder.h>
 #include <cubey/vulkan/device.h>
+#include <cubey/vulkan/gpu_runtime.h>
 
 #include <vulkan/vulkan.h>
 
@@ -31,6 +33,17 @@ struct AtmosphereBackgroundTextureBindings {
     VkImageView night_sky_view = VK_NULL_HANDLE;
     VkImageLayout night_sky_layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 };
+
+struct AtmosphereBackgroundPlaceholderTextures {
+    Texture2D lunar;
+    TextureCube night_sky;
+
+    [[nodiscard]] AtmosphereBackgroundTextureBindings bindings() const;
+};
+
+[[nodiscard]] AtmosphereBackgroundPlaceholderTextures
+create_atmosphere_background_placeholder_textures(const cubey::vulkan::Device& device,
+                                                  cubey::vulkan::GpuRuntime& gpu);
 
 struct AtmosphereBackgroundFrameMaterialConfig {
     std::uint32_t frame_slot_count = 1;

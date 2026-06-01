@@ -145,8 +145,8 @@ class GltfViewerApp {
     cubey::GltfSceneImportResources import_resources_{};
     cubey::GltfSceneImportResult import_result_{};
     std::optional<cubey::render::GeneratedPbrEnvironment> ibl_environment_;
-    std::optional<cubey::render::Texture2D> atmosphere_lunar_placeholder_;
-    std::optional<cubey::render::TextureCube> atmosphere_night_sky_placeholder_;
+    std::optional<cubey::render::AtmosphereBackgroundPlaceholderTextures>
+        atmosphere_background_placeholders_;
 };
 
 } // namespace cubey::projects::gltf_viewer

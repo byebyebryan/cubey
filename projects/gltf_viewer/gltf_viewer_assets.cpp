@@ -135,60 +135,21 @@ void GltfViewerApp::create_default_textures(const cubey::vulkan::Device& device,
 
 void GltfViewerApp::create_atmosphere_background_placeholders(
     const cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu) {
-    if (atmosphere_lunar_placeholder_.has_value() &&
-        atmosphere_night_sky_placeholder_.has_value()) {
+    if (atmosphere_background_placeholders_.has_value()) {
         return;
     }
 
-    const std::array<std::uint8_t, 4> lunar_pixel{112U, 128U, 128U, 255U};
-    const cubey::vulkan::SamplerConfig atlas_sampler{
-        .min_filter = VK_FILTER_LINEAR,
-        .mag_filter = VK_FILTER_LINEAR,
-        .address_mode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
-        .mipmap_mode = VK_SAMPLER_MIPMAP_MODE_NEAREST,
-        .max_lod = 0.0F,
-    };
-    atmosphere_lunar_placeholder_.emplace(cubey::render::create_uploaded_texture_2d(
-        device, gpu,
-        {
-            .extent = {1U, 1U},
-            .mip_levels = 1U,
-            .format = VK_FORMAT_R8G8B8A8_UNORM,
-            .rgba8 = std::span<const std::uint8_t>{lunar_pixel.data(), lunar_pixel.size()},
-            .create_sampler = true,
-            .sampler = atlas_sampler,
-        }));
-
-    const std::array<float, 24> night_sky_rgba32f{};
-    const std::span<const std::uint8_t> night_sky_bytes{
-        reinterpret_cast<const std::uint8_t*>(night_sky_rgba32f.data()),
-        night_sky_rgba32f.size() * sizeof(float),
-    };
-    atmosphere_night_sky_placeholder_.emplace(cubey::render::create_uploaded_texture_cube(
-        device, gpu,
-        {
-            .extent = 1U,
-            .mip_levels = 1U,
-            .format = VK_FORMAT_R32G32B32A32_SFLOAT,
-            .bytes = night_sky_bytes,
-            .create_sampler = true,
-            .sampler = atlas_sampler,
-        }));
+    atmosphere_background_placeholders_.emplace(
+        cubey::render::create_atmosphere_background_placeholder_textures(device, gpu));
 }
 
 cubey::render::AtmosphereBackgroundTextureBindings
 GltfViewerApp::atmosphere_background_textures() const {
-    if (!atmosphere_lunar_placeholder_.has_value() ||
-        !atmosphere_night_sky_placeholder_.has_value()) {
+    if (!atmosphere_background_placeholders_.has_value()) {
         throw std::runtime_error(
             "glTF viewer atmosphere background placeholders are not initialized");
     }
-    return {
-        .lunar_sampler = atmosphere_lunar_placeholder_->sampler().handle(),
-        .lunar_view = atmosphere_lunar_placeholder_->view(),
-        .night_sky_sampler = atmosphere_night_sky_placeholder_->sampler().handle(),
-        .night_sky_view = atmosphere_night_sky_placeholder_->view(),
-    };
+    return atmosphere_background_placeholders_->bindings();
 }
 
 bool GltfViewerApp::use_atmosphere_environment_source() const {

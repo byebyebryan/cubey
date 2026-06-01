@@ -3,7 +3,9 @@
 #include <cubey/render/pass.h>
 
 #include <array>
+#include <span>
 #include <stdexcept>
+#include <utility>
 
 namespace cubey::render {
 namespace {
@@ -23,6 +25,58 @@ void validate_texture_bindings(const AtmosphereBackgroundTextureBindings& textur
 }
 
 } // namespace
+
+AtmosphereBackgroundTextureBindings AtmosphereBackgroundPlaceholderTextures::bindings() const {
+    return {
+        .lunar_sampler = lunar.sampler().handle(),
+        .lunar_view = lunar.view(),
+        .night_sky_sampler = night_sky.sampler().handle(),
+        .night_sky_view = night_sky.view(),
+    };
+}
+
+AtmosphereBackgroundPlaceholderTextures create_atmosphere_background_placeholder_textures(
+    const cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu) {
+    const std::array<std::uint8_t, 4> lunar_pixel{112U, 128U, 128U, 255U};
+    const cubey::vulkan::SamplerConfig atlas_sampler{
+        .min_filter = VK_FILTER_LINEAR,
+        .mag_filter = VK_FILTER_LINEAR,
+        .address_mode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+        .mipmap_mode = VK_SAMPLER_MIPMAP_MODE_NEAREST,
+        .max_lod = 0.0F,
+    };
+    Texture2D lunar = create_uploaded_texture_2d(
+        device, gpu,
+        {
+            .extent = {1U, 1U},
+            .mip_levels = 1U,
+            .format = VK_FORMAT_R8G8B8A8_UNORM,
+            .rgba8 = std::span<const std::uint8_t>{lunar_pixel.data(), lunar_pixel.size()},
+            .create_sampler = true,
+            .sampler = atlas_sampler,
+        });
+
+    const std::array<float, 24> night_sky_rgba32f{};
+    const std::span<const std::uint8_t> night_sky_bytes{
+        reinterpret_cast<const std::uint8_t*>(night_sky_rgba32f.data()),
+        night_sky_rgba32f.size() * sizeof(float),
+    };
+    TextureCube night_sky = create_uploaded_texture_cube(
+        device, gpu,
+        {
+            .extent = 1U,
+            .mip_levels = 1U,
+            .format = VK_FORMAT_R32G32B32A32_SFLOAT,
+            .bytes = night_sky_bytes,
+            .create_sampler = true,
+            .sampler = atlas_sampler,
+        });
+
+    return {
+        .lunar = std::move(lunar),
+        .night_sky = std::move(night_sky),
+    };
+}
 
 MaterialPassInfo atmosphere_background_pass_info() {
     return MaterialPassInfo{
