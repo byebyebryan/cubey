@@ -142,6 +142,8 @@ add_library(cubey_render STATIC
     render/deformation.cpp
     render/atmosphere_background_frame.cpp
     render/atmosphere_environment.cpp
+    render/atmosphere_lunar_atlas.cpp
+    render/atmosphere_night_sky_atlas.cpp
     render/atmosphere_reflection_probe.cpp
     render/forward_pass.cpp
     render/generated_ibl.cpp

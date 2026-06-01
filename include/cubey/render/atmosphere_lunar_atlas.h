@@ -5,7 +5,7 @@
 #include <span>
 #include <vector>
 
-namespace cubey::projects::atmosphere {
+namespace cubey::render {
 
 inline constexpr std::uint32_t kLunarAtlasExtent = 512;
 
@@ -28,4 +28,4 @@ struct LunarAtlas {
 [[nodiscard]] LunarAtlas generate_lunar_atlas(std::uint32_t extent = kLunarAtlasExtent);
 [[nodiscard]] std::uint64_t lunar_atlas_hash(std::span<const std::uint8_t> bytes);
 
-} // namespace cubey::projects::atmosphere
+} // namespace cubey::render

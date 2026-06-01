@@ -1,4 +1,4 @@
-#include "night_sky_atlas.h"
+#include <cubey/render/atmosphere_night_sky_atlas.h>
 
 #include <algorithm>
 #include <array>
@@ -10,7 +10,7 @@
 #include <stdexcept>
 #include <vector>
 
-namespace cubey::projects::atmosphere {
+namespace cubey::render {
 namespace {
 
 struct Vec2 {
@@ -577,4 +577,4 @@ std::uint64_t night_sky_atlas_hash(std::span<const float> values) {
     return hash;
 }
 
-} // namespace cubey::projects::atmosphere
+} // namespace cubey::render

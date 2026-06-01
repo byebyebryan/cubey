@@ -1,4 +1,4 @@
-#include "lunar_atlas.h"
+#include <cubey/render/atmosphere_lunar_atlas.h>
 
 #include <algorithm>
 #include <array>
@@ -10,7 +10,7 @@
 #include <stdexcept>
 #include <vector>
 
-namespace cubey::projects::atmosphere {
+namespace cubey::render {
 namespace {
 
 struct Vec2 {
@@ -608,4 +608,4 @@ std::uint64_t lunar_atlas_hash(std::span<const std::uint8_t> bytes) {
     return hash;
 }
 
-} // namespace cubey::projects::atmosphere
+} // namespace cubey::render

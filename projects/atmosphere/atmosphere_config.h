@@ -1,10 +1,9 @@
 #pragma once
 
-#include "night_sky_atlas.h"
-
 #include <cubey/core/math.h>
 #include <cubey/core/run_config.h>
 #include <cubey/render/atmosphere_environment.h>
+#include <cubey/render/atmosphere_night_sky_atlas.h>
 
 #include <algorithm>
 #include <array>
@@ -15,6 +14,9 @@
 #include <string_view>
 
 namespace cubey::projects::atmosphere {
+
+using cubey::render::kNightSkyLayerViews;
+using cubey::render::NightSkyLayerView;
 
 enum class AtmospherePreset : std::uint32_t {
     Noon = 0,

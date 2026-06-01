@@ -7,8 +7,6 @@ cubey_add_app_target(
     SOURCES
         atmosphere_app.cpp
         atmosphere_environment.cpp
-        lunar_atlas.cpp
-        night_sky_atlas.cpp
         atmosphere_ui.cpp
         main.cpp
     SHADERS
@@ -28,8 +26,6 @@ if (BUILD_TESTING)
     add_executable(cubey_project_atmosphere_tests
         atmosphere_config_tests.cpp
         atmosphere_environment.cpp
-        lunar_atlas.cpp
-        night_sky_atlas.cpp
     )
     target_include_directories(
         cubey_project_atmosphere_tests

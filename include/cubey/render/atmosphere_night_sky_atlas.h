@@ -6,7 +6,7 @@
 #include <span>
 #include <vector>
 
-namespace cubey::projects::atmosphere {
+namespace cubey::render {
 
 inline constexpr std::uint32_t kNightSkyAtlasExtent = 512;
 
@@ -52,4 +52,4 @@ struct NightSkyAtlas {
     const NightSkyAtlasConfig& config, std::uint32_t extent = kNightSkyAtlasExtent);
 [[nodiscard]] std::uint64_t night_sky_atlas_hash(std::span<const float> values);
 
-} // namespace cubey::projects::atmosphere
+} // namespace cubey::render

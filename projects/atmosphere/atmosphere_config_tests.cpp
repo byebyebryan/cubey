@@ -1,9 +1,9 @@
 #include "atmosphere_config.h"
 #include "atmosphere_environment.h"
-#include "lunar_atlas.h"
-#include "night_sky_atlas.h"
 
 #include <cubey/core/run_config.h>
+#include <cubey/render/atmosphere_lunar_atlas.h>
+#include <cubey/render/atmosphere_night_sky_atlas.h>
 
 #include <algorithm>
 #include <cmath>
@@ -61,9 +61,9 @@ void require_not_contains(const std::string& haystack, const char* needle, const
 }
 
 [[nodiscard]] const std::uint8_t*
-lunar_atlas_texel(const cubey::projects::atmosphere::LunarAtlas& atlas, std::uint32_t x,
+lunar_atlas_texel(const cubey::render::LunarAtlas& atlas, std::uint32_t x,
                   std::uint32_t y, std::uint32_t mip = 0) {
-    const cubey::projects::atmosphere::LunarAtlasMip& level = atlas.mips.at(mip);
+    const cubey::render::LunarAtlasMip& level = atlas.mips.at(mip);
     const std::size_t texel =
         (static_cast<std::size_t>(y) * static_cast<std::size_t>(level.width) + x) * 4U;
     return atlas.rgba8.data() + level.byte_offset + texel;
@@ -114,7 +114,7 @@ struct TestVec3 {
 }
 
 [[nodiscard]] float night_sky_luminance_at(
-    const cubey::projects::atmosphere::NightSkyAtlas& atlas, TestVec3 direction) {
+    const cubey::render::NightSkyAtlas& atlas, TestVec3 direction) {
     direction = test_normalize(direction);
     const TestVec3 axis{std::abs(direction.x), std::abs(direction.y), std::abs(direction.z)};
     std::uint32_t face = 0;
@@ -157,7 +157,7 @@ struct AtlasLuminanceStats {
 };
 
 [[nodiscard]] AtlasLuminanceStats night_sky_luminance_stats(
-    const cubey::projects::atmosphere::NightSkyAtlas& atlas, float threshold) {
+    const cubey::render::NightSkyAtlas& atlas, float threshold) {
     AtlasLuminanceStats stats;
     for (std::size_t index = 0; index + 2U < atlas.rgba32f.size(); index += 4U) {
         const float luma = atlas.rgba32f[index] * 0.2126F +
@@ -177,6 +177,7 @@ struct AtlasLuminanceStats {
 
 int main() {
     using namespace cubey::projects::atmosphere;
+    using namespace cubey::render;
 
     for (const AtmosphereRenderView view : kAtmosphereRenderViews) {
         require(atmosphere_render_view_from_name(atmosphere_render_view_name(view)) == view,

@@ -3,8 +3,6 @@
 #include "atmosphere_config.h"
 #include "atmosphere_environment.h"
 #include "atmosphere_ui.h"
-#include "lunar_atlas.h"
-#include "night_sky_atlas.h"
 
 #include <cubey/core/jobs.h>
 #include <cubey/core/math.h>
@@ -14,6 +12,8 @@
 #include <cubey/input/input.h>
 #include <cubey/input/orbit_controller.h>
 #include <cubey/render/atmosphere_background_frame.h>
+#include <cubey/render/atmosphere_lunar_atlas.h>
+#include <cubey/render/atmosphere_night_sky_atlas.h>
 #include <cubey/render/hdr_post_frame.h>
 #include <cubey/render/pbr.h>
 #include <cubey/render/render_graph.h>
@@ -49,6 +49,12 @@ namespace {
 using cubey::FrameTiming;
 using cubey::host::FrameStatsSample;
 using cubey::host::FrameStatsSnapshot;
+using cubey::render::generate_lunar_atlas;
+using cubey::render::generate_night_sky_atlas;
+using cubey::render::LunarAtlas;
+using cubey::render::LunarAtlasMip;
+using cubey::render::NightSkyAtlas;
+using cubey::render::NightSkyAtlasConfig;
 
 constexpr float kBaseYaw = 0.0F;
 constexpr float kBasePitch = 0.0F;
