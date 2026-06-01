@@ -288,11 +288,9 @@ RunConfig parse_run_config(int argc, char** argv) {
             config.terrain.coast_noise =
                 parse_float(need_value("--terrain-coast-noise"), "--terrain-coast-noise");
         } else if (arg == "--terrain-relief") {
-            config.terrain.relief =
-                parse_float(need_value("--terrain-relief"), "--terrain-relief");
+            config.terrain.relief = parse_float(need_value("--terrain-relief"), "--terrain-relief");
         } else if (arg == "--terrain-ridges") {
-            config.terrain.ridges =
-                parse_float(need_value("--terrain-ridges"), "--terrain-ridges");
+            config.terrain.ridges = parse_float(need_value("--terrain-ridges"), "--terrain-ridges");
         } else if (arg == "--terrain-valleys") {
             config.terrain.valleys =
                 parse_float(need_value("--terrain-valleys"), "--terrain-valleys");
@@ -351,9 +349,13 @@ RunConfig parse_run_config(int argc, char** argv) {
             config.ocean.spectral_domains = 1;
         } else if (arg == "--no-ocean-spectral-domains") {
             config.ocean.spectral_domains = 0;
+        } else if (arg == "--ocean-terrain-fields") {
+            config.ocean.terrain_fields = 1;
+        } else if (arg == "--no-ocean-terrain-fields") {
+            config.ocean.terrain_fields = 0;
         } else if (arg == "--ocean-cascade") {
-            config.ocean.cascade = parse_ocean_cascade(need_value("--ocean-cascade"),
-                                                       "--ocean-cascade");
+            config.ocean.cascade =
+                parse_ocean_cascade(need_value("--ocean-cascade"), "--ocean-cascade");
         } else if (arg == "--ocean-wire-overlay") {
             config.ocean.wire_overlay = true;
         } else if (arg == "--ocean-wire-opacity") {

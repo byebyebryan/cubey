@@ -30,16 +30,19 @@ enum class OceanRenderView : std::uint32_t {
     Exposure = 15,
     FoamRaw = 16,
     FoamLit = 17,
+    TerrainDepth = 18,
+    TerrainShore = 19,
+    TerrainSlope = 20,
 };
 
-inline constexpr std::array<OceanRenderView, 18> kOceanRenderViews{
-    OceanRenderView::Final,  OceanRenderView::Height, OceanRenderView::Displacement,
-    OceanRenderView::Normal, OceanRenderView::Foam,   OceanRenderView::FoamSource,
-    OceanRenderView::FoamHistory, OceanRenderView::FoamMacro,
-    OceanRenderView::FoamCrest, OceanRenderView::FoamDetail, OceanRenderView::Lod,
-    OceanRenderView::SkyRadiance, OceanRenderView::Reflection, OceanRenderView::DirectLight,
-    OceanRenderView::AmbientLight, OceanRenderView::Exposure, OceanRenderView::FoamRaw,
-    OceanRenderView::FoamLit,
+inline constexpr std::array<OceanRenderView, 21> kOceanRenderViews{
+    OceanRenderView::Final,        OceanRenderView::Height,       OceanRenderView::Displacement,
+    OceanRenderView::Normal,       OceanRenderView::Foam,         OceanRenderView::FoamSource,
+    OceanRenderView::FoamHistory,  OceanRenderView::FoamMacro,    OceanRenderView::FoamCrest,
+    OceanRenderView::FoamDetail,   OceanRenderView::Lod,          OceanRenderView::SkyRadiance,
+    OceanRenderView::Reflection,   OceanRenderView::DirectLight,  OceanRenderView::AmbientLight,
+    OceanRenderView::Exposure,     OceanRenderView::FoamRaw,      OceanRenderView::FoamLit,
+    OceanRenderView::TerrainDepth, OceanRenderView::TerrainShore, OceanRenderView::TerrainSlope,
 };
 
 inline constexpr std::array<std::uint32_t, 4> kOceanSupportedMapSizes{128U, 256U, 512U, 1024U};
@@ -98,6 +101,7 @@ struct OceanConfig {
     float foam_density = 3.15F;
     float foam_sharpness = 0.62F;
     bool spectral_domains_enabled = true;
+    bool terrain_fields_enabled = false;
     OceanRenderView render_view = OceanRenderView::Final;
     std::array<OceanCascadeConfig, kOceanCascadeCount> cascades{
         OceanCascadeConfig{
@@ -233,6 +237,12 @@ struct OceanCascadeDomain {
         return "foam-raw";
     case OceanRenderView::FoamLit:
         return "foam-lit";
+    case OceanRenderView::TerrainDepth:
+        return "terrain-depth";
+    case OceanRenderView::TerrainShore:
+        return "terrain-shore";
+    case OceanRenderView::TerrainSlope:
+        return "terrain-slope";
     }
     return "final";
 }
@@ -279,7 +289,7 @@ struct OceanCascadeDomain {
 }
 
 [[nodiscard]] inline const OceanCascadeConfig& ocean_cascade(const OceanConfig& config,
-                                                                    std::uint32_t cascade) {
+                                                             std::uint32_t cascade) {
     if (cascade >= kOceanCascadeCount) {
         throw std::runtime_error("ocean cascade index out of range");
     }
@@ -315,8 +325,7 @@ struct OceanCascadeDomain {
         return {};
     }
 
-    const float low_k =
-        2.0F * kOceanPi * min_waves_per_domain / cascade_config.tile_length;
+    const float low_k = 2.0F * kOceanPi * min_waves_per_domain / cascade_config.tile_length;
     const float high_k = ocean_cascade_domain_high_k(config, cascade);
     if (low_k < 0.0F || high_k <= low_k) {
         return {.low_k = low_k, .high_k = high_k};
@@ -337,8 +346,7 @@ inline void validate_ocean_config(const OceanConfig& config) {
         config.mesh_lod_levels > kOceanMaxMeshLodLevels) {
         throw std::runtime_error("ocean mesh LOD levels out of supported range");
     }
-    if (!ocean_is_supported_map_size(config.map_size) ||
-        !ocean_is_power_of_two(config.map_size)) {
+    if (!ocean_is_supported_map_size(config.map_size) || !ocean_is_power_of_two(config.map_size)) {
         throw std::runtime_error("ocean map size must be 128, 256, 512, or 1024");
     }
     if (config.mesh_extent <= 0.0F || config.depth <= 0.0F) {
@@ -370,6 +378,9 @@ inline void validate_ocean_config(const OceanConfig& config) {
     }
     if (config.ocean.spectral_domains >= 0) {
         ocean.spectral_domains_enabled = config.ocean.spectral_domains != 0;
+    }
+    if (config.ocean.terrain_fields >= 0) {
+        ocean.terrain_fields_enabled = config.ocean.terrain_fields != 0;
     }
     ocean.render_view = ocean_render_view_from_name(config.debug_view);
     ocean.exposure = config.pbr.exposure;

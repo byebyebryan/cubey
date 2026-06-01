@@ -50,12 +50,9 @@ int main() {
                 "ocean should default to the reference 1024 map size");
         require(ocean::ocean_is_supported_map_size(128),
                 "ocean should support 128 maps for smoke tests");
-        require(ocean::ocean_is_supported_map_size(256),
-                "ocean should support 256 maps");
-        require(ocean::ocean_is_supported_map_size(512),
-                "ocean should support 512 maps");
-        require(ocean::ocean_is_supported_map_size(1024),
-                "ocean should support 1024 maps");
+        require(ocean::ocean_is_supported_map_size(256), "ocean should support 256 maps");
+        require(ocean::ocean_is_supported_map_size(512), "ocean should support 512 maps");
+        require(ocean::ocean_is_supported_map_size(1024), "ocean should support 1024 maps");
         require(!ocean::ocean_is_supported_map_size(192),
                 "ocean should reject non-reference map sizes");
         require(defaults.mesh_cells >= ocean::kOceanMinMeshCells &&
@@ -70,8 +67,7 @@ int main() {
                     defaults.mesh_cells * defaults.mesh_cells * 6U,
                 "ocean vertex count should match generated grid triangles");
 
-        const ocean::OceanMeshPatchList patches =
-            ocean::ocean_mesh_clipmap_patches(defaults);
+        const ocean::OceanMeshPatchList patches = ocean::ocean_mesh_clipmap_patches(defaults);
         require(patches.count == ocean::ocean_mesh_patch_count(defaults),
                 "ocean clipmap helper should emit all expected patches");
         require(patches.patches[0].level == defaults.mesh_lod_levels - 1U,
@@ -152,10 +148,8 @@ int main() {
                      "cascade 0 storm macro displacement should be tuned");
         require_near(cascade1.displacement_scale, 0.95F, 0.001F,
                      "cascade 1 storm macro displacement should be tuned");
-        require_near(cascade0.wind_speed, 32.0F, 0.001F,
-                     "cascade 0 should carry storm swell wind");
-        require_near(cascade1.wind_speed, 30.0F, 0.001F,
-                     "cascade 1 should carry storm chop wind");
+        require_near(cascade0.wind_speed, 32.0F, 0.001F, "cascade 0 should carry storm swell wind");
+        require_near(cascade1.wind_speed, 30.0F, 0.001F, "cascade 1 should carry storm chop wind");
         require(cascade0.tile_length > cascade1.tile_length &&
                     cascade1.tile_length > cascade2.tile_length,
                 "cascades should run from macro scale into crest scale");
@@ -237,20 +231,16 @@ int main() {
                      "ocean diagnostics should default to anti-repeat sampling");
         ocean::validate_ocean_config(defaults);
 
-        require(ocean::ocean_render_view_from_name("") ==
-                    ocean::OceanRenderView::Final,
+        require(ocean::ocean_render_view_from_name("") == ocean::OceanRenderView::Final,
                 "empty debug view should use final ocean rendering");
-        require(ocean::ocean_render_view_from_name("height") ==
-                    ocean::OceanRenderView::Height,
+        require(ocean::ocean_render_view_from_name("height") == ocean::OceanRenderView::Height,
                 "height debug view should parse");
         require(ocean::ocean_render_view_from_name("displacement") ==
                     ocean::OceanRenderView::Displacement,
                 "displacement debug view should parse");
-        require(ocean::ocean_render_view_from_name("normal") ==
-                    ocean::OceanRenderView::Normal,
+        require(ocean::ocean_render_view_from_name("normal") == ocean::OceanRenderView::Normal,
                 "normal debug view should parse");
-        require(ocean::ocean_render_view_from_name("foam") ==
-                    ocean::OceanRenderView::Foam,
+        require(ocean::ocean_render_view_from_name("foam") == ocean::OceanRenderView::Foam,
                 "foam debug view should parse");
         require(ocean::ocean_render_view_from_name("foam-source") ==
                     ocean::OceanRenderView::FoamSource,
@@ -267,8 +257,7 @@ int main() {
         require(ocean::ocean_render_view_from_name("foam-detail") ==
                     ocean::OceanRenderView::FoamDetail,
                 "foam detail debug view should parse");
-        require(ocean::ocean_render_view_from_name("lod") ==
-                    ocean::OceanRenderView::Lod,
+        require(ocean::ocean_render_view_from_name("lod") == ocean::OceanRenderView::Lod,
                 "lod debug view should parse");
         require(ocean::ocean_render_view_from_name("sky-radiance") ==
                     ocean::OceanRenderView::SkyRadiance,
@@ -282,15 +271,21 @@ int main() {
         require(ocean::ocean_render_view_from_name("ambient-light") ==
                     ocean::OceanRenderView::AmbientLight,
                 "ambient light debug view should parse");
-        require(ocean::ocean_render_view_from_name("exposure") ==
-                    ocean::OceanRenderView::Exposure,
+        require(ocean::ocean_render_view_from_name("exposure") == ocean::OceanRenderView::Exposure,
                 "exposure debug view should parse");
-        require(ocean::ocean_render_view_from_name("foam-raw") ==
-                    ocean::OceanRenderView::FoamRaw,
+        require(ocean::ocean_render_view_from_name("foam-raw") == ocean::OceanRenderView::FoamRaw,
                 "raw foam debug view should parse");
-        require(ocean::ocean_render_view_from_name("foam-lit") ==
-                    ocean::OceanRenderView::FoamLit,
+        require(ocean::ocean_render_view_from_name("foam-lit") == ocean::OceanRenderView::FoamLit,
                 "lit foam debug view should parse");
+        require(ocean::ocean_render_view_from_name("terrain-depth") ==
+                    ocean::OceanRenderView::TerrainDepth,
+                "terrain depth debug view should parse");
+        require(ocean::ocean_render_view_from_name("terrain-shore") ==
+                    ocean::OceanRenderView::TerrainShore,
+                "terrain shore debug view should parse");
+        require(ocean::ocean_render_view_from_name("terrain-slope") ==
+                    ocean::OceanRenderView::TerrainSlope,
+                "terrain slope debug view should parse");
         require(ocean::next_ocean_render_view(ocean::OceanRenderView::Foam) ==
                     ocean::OceanRenderView::FoamSource,
                 "ocean debug view cycle should include the foam source view");
@@ -316,8 +311,11 @@ int main() {
                     ocean::OceanRenderView::FoamLit,
                 "ocean debug view cycle should include lit foam after raw foam");
         require(ocean::next_ocean_render_view(ocean::OceanRenderView::FoamLit) ==
+                    ocean::OceanRenderView::TerrainDepth,
+                "ocean debug view cycle should include terrain depth after lit foam");
+        require(ocean::next_ocean_render_view(ocean::OceanRenderView::TerrainSlope) ==
                     ocean::OceanRenderView::Final,
-                "ocean debug view cycle should wrap after lit foam");
+                "ocean debug view cycle should wrap after terrain slope");
 
         bool rejected = false;
         try {
@@ -331,15 +329,16 @@ int main() {
         run_config.debug_view = "foam";
         run_config.ocean.map_size = 128;
         run_config.ocean.spectral_domains = 0;
+        run_config.ocean.terrain_fields = 1;
         run_config.pbr.exposure = 0.5F;
-        const ocean::OceanConfig from_run_config =
-            ocean::ocean_config_from_run_config(run_config);
+        const ocean::OceanConfig from_run_config = ocean::ocean_config_from_run_config(run_config);
         require(from_run_config.render_view == ocean::OceanRenderView::Foam,
                 "run config should initialize ocean debug view");
-        require(from_run_config.map_size == 128U,
-                "run config should initialize ocean map size");
+        require(from_run_config.map_size == 128U, "run config should initialize ocean map size");
         require(!from_run_config.spectral_domains_enabled,
                 "run config should initialize ocean spectral domain override");
+        require(from_run_config.terrain_fields_enabled,
+                "run config should initialize ocean terrain field override");
         require_near(from_run_config.exposure, 0.5F, 0.001F,
                      "run config should initialize ocean exposure");
         cubey::RunConfig solar_run_config;
@@ -363,6 +362,7 @@ int main() {
                               "--ocean-map-size",
                               "256",
                               "--no-ocean-spectral-domains",
+                              "--ocean-terrain-fields",
                               "--ocean-cascade",
                               "4",
                               "--debug-view",
@@ -370,10 +370,12 @@ int main() {
                               "--ocean-wire-overlay",
                               "--ocean-wire-opacity",
                               "0.8"};
-        cubey::RunConfig parsed = cubey::parse_run_config(11, const_cast<char**>(argv));
+        cubey::RunConfig parsed = cubey::parse_run_config(12, const_cast<char**>(argv));
         require(parsed.ocean.map_size == 256U, "CLI parser should accept --ocean-map-size");
         require(parsed.ocean.spectral_domains == 0,
                 "CLI parser should accept --no-ocean-spectral-domains");
+        require(parsed.ocean.terrain_fields == 1,
+                "CLI parser should accept --ocean-terrain-fields");
         require(parsed.ocean.cascade == 4, "CLI parser should accept --ocean-cascade");
         require(parsed.debug_view == "normal", "CLI parser should preserve debug view");
         require(parsed.ocean.wire_overlay, "CLI parser should accept ocean wire overlay");
@@ -414,8 +416,7 @@ int main() {
             read_text_file(source_root / "shaders/ocean_spectrum.comp");
         const std::string modulate_shader =
             read_text_file(source_root / "shaders/ocean_modulate.comp");
-        const std::string unpack_shader =
-            read_text_file(source_root / "shaders/ocean_unpack.comp");
+        const std::string unpack_shader = read_text_file(source_root / "shaders/ocean_unpack.comp");
         const std::string vertex_shader = read_text_file(source_root / "shaders/ocean.vert");
         const std::string fragment_shader = read_text_file(source_root / "shaders/ocean.frag");
         const std::string mesh_header = read_text_file(source_root / "ocean_mesh.h");
@@ -448,8 +449,7 @@ int main() {
         require_contains(unpack_shader,
                          "float sign_shift = -2.0 * float((id.x & 1) ^ (id.y & 1)) + 1.0;",
                          "unpack shader should apply checkerboard ifft shift");
-        require_contains(unpack_shader,
-                         "float jacobian = jxx * jzz - jxz * jxz;",
+        require_contains(unpack_shader, "float jacobian = jxx * jzz - jxz * jxz;",
                          "unpack shader should preserve Jacobian foam source");
         require_contains(unpack_shader, "float compression = 0.5 * (jxx + jzz)",
                          "unpack shader should derive compression diagnostics");
@@ -489,8 +489,9 @@ int main() {
                          "app should pass anti-repeat as diagnostics push data");
         require_contains(app_source, "kOceanSceneColorFormat = VK_FORMAT_R16G16B16A16_SFLOAT",
                          "app should define an HDR ocean scene color format");
-        require_contains(app_source, "ocean scene color",
-                         "app should render atmosphere background and surface into an HDR scene target");
+        require_contains(
+            app_source, "ocean scene color",
+            "app should render atmosphere background and surface into an HDR scene target");
         require_contains(app_source, "HdrPostFrame",
                          "app should use the shared HDR post frame helper");
         require_contains(app_source, "display_exposure()",
@@ -515,10 +516,10 @@ int main() {
                          "UI should expose anti-repeat as a diagnostics control");
         require_contains(ui_source, "&ui.config.spectral_domains_enabled",
                          "UI should expose spectral domain filtering");
-        require_contains(ui_source, "&ui.config.foam_density",
-                         "UI should expose foam density");
-        require_contains(ui_source, "&ui.config.foam_sharpness",
-                         "UI should expose foam sharpness");
+        require_contains(ui_source, "&ui.config.terrain_fields_enabled",
+                         "UI should expose optional terrain field influence");
+        require_contains(ui_source, "&ui.config.foam_density", "UI should expose foam density");
+        require_contains(ui_source, "&ui.config.foam_sharpness", "UI should expose foam sharpness");
         require_contains(ui_source, "ocean_cascade_domain(ui.config, index)",
                          "UI should expose cascade wavelength domain diagnostics");
         require_contains(ui_source, "domain %.2f-%.2f m",
@@ -531,8 +532,9 @@ int main() {
                          "fragment shader should centralize atmosphere sky radiance sampling");
         require_contains(fragment_shader, "float ocean_direct_light_scale",
                          "fragment shader should derive direct light from atmosphere intensity");
-        require_contains(fragment_shader, "float ocean_ambient_light_scale",
-                         "fragment shader should derive ambient fill from atmosphere sky luminance");
+        require_contains(
+            fragment_shader, "float ocean_ambient_light_scale",
+            "fragment shader should derive ambient fill from atmosphere sky luminance");
         require_contains(fragment_shader, "data.gradient += normal_foam.xy * normal_scale",
                          "fragment shader should preserve normal map scale packing");
         require_contains(fragment_shader, "data.total += weighted_foam;",
@@ -555,11 +557,13 @@ int main() {
                          "fragment shader should use distance-gated world-space foam breakup");
         require_contains(fragment_shader, "cascade != 4u",
                          "fragment shader should only break up detail foam mechanically");
-        require_contains(fragment_shader,
-                         "sample_normal_foam_domain(cascade, position, tile_length, pixels_per_meter",
-                         "fragment shader should sample secondary normal/foam domains");
-        require_contains(fragment_shader, "vec2 foam = vec2(1.0)",
-                         "fragment shader should combine persistent and current foam with a soft union");
+        require_contains(
+            fragment_shader,
+            "sample_normal_foam_domain(cascade, position, tile_length, pixels_per_meter",
+            "fragment shader should sample secondary normal/foam domains");
+        require_contains(
+            fragment_shader, "vec2 foam = vec2(1.0)",
+            "fragment shader should combine persistent and current foam with a soft union");
         require_contains(fragment_shader, "OCEAN_FAR_ANTI_REPEAT_START",
                          "fragment shader should distance-gate far anti-repeat");
         require_contains(fragment_shader, "float map_size = ocean.cascade4_options.w;",
@@ -570,15 +574,16 @@ int main() {
                          "fragment shader should preserve reference normal fade");
         require_contains(fragment_shader, "float ocean_material_distance_factor(float dist)",
                          "fragment shader should distance-filter material response");
-        require_contains(fragment_shader, "float ocean_persistent_foam(float persistent, float dist)",
+        require_contains(fragment_shader,
+                         "float ocean_persistent_foam(float persistent, float dist)",
                          "fragment shader should shape accumulated foam before presentation");
-        require_contains(fragment_shader, "float ocean_current_foam_core(float current, float dist)",
+        require_contains(fragment_shader,
+                         "float ocean_current_foam_core(float current, float dist)",
                          "fragment shader should keep current foam as a tight crest core");
         require_contains(fragment_shader,
                          "float ocean_foam_signal(float persistent, float current, float dist)",
                          "fragment shader should combine persistent foam and crest core");
-        require_contains(fragment_shader,
-                         "float ocean_foam_coverage(OceanFoamData foam_data",
+        require_contains(fragment_shader, "float ocean_foam_coverage(OceanFoamData foam_data",
                          "fragment shader should derive presentation foam coverage from foam data");
         require_contains(fragment_shader, "float coherent_crest",
                          "fragment shader should keep crest foam as the coherent carrier");
@@ -586,11 +591,14 @@ int main() {
                          "fragment shader should gate detail foam by existing support");
         require_contains(fragment_shader, "vec3 ocean_shaded_foam(",
                          "fragment shader should shade foam as a material");
-        require_contains(fragment_shader, "ocean_primary_light_intensity()",
-                         "fragment shader should scale material lighting by atmosphere light energy");
-        require_contains(fragment_shader, "specular *= direct_light * mix(1.0, 0.35, material_distance)",
+        require_contains(
+            fragment_shader, "ocean_primary_light_intensity()",
+            "fragment shader should scale material lighting by atmosphere light energy");
+        require_contains(fragment_shader,
+                         "specular *= direct_light * mix(1.0, 0.35, material_distance)",
                          "fragment shader should reduce far and foam-covered specular");
-        require_contains(fragment_shader, "float ocean_horizon_fog_factor(vec3 view_dir, float dist)",
+        require_contains(fragment_shader,
+                         "float ocean_horizon_fog_factor(vec3 view_dir, float dist)",
                          "fragment shader should use view-angle-aware horizon haze");
         require_contains(fragment_shader, "color = vec3(foam_coverage);",
                          "fragment shader should keep debug foam view as presentation coverage");
@@ -618,14 +626,23 @@ int main() {
                          "fragment shader should expose reflection diagnostics");
         require_contains(fragment_shader, "const uint OCEAN_VIEW_FOAM_RAW = 16u",
                          "fragment shader should expose raw foam diagnostics");
+        require_contains(fragment_shader, "const uint OCEAN_VIEW_TERRAIN_DEPTH = 18u",
+                         "fragment shader should expose terrain depth diagnostics");
+        require_contains(fragment_shader, "sampler2D terrain_ocean_fields_texture",
+                         "fragment shader should sample shared terrain-ocean fields");
+        require_contains(fragment_shader, "sample_terrain_ocean_fields",
+                         "fragment shader should centralize terrain-ocean field sampling");
+        require_contains(fragment_shader, "ocean_terrain_fields_enabled",
+                         "fragment shader should gate optional terrain field influence");
         require_contains(fragment_shader, "ocean_lit_foam_color",
                          "fragment shader should isolate lit foam diagnostics");
         require_contains(fragment_shader, "triangle_wire_factor(frag_barycentric)",
                          "fragment shader should expose wire diagnostics");
         require_contains(gpu_resources_source, ".size = sizeof(float) * 64U",
                          "surface pipeline push constants should match ocean shader layout");
-        require_contains(gpu_resources_source, "kOceanCascadeCount * 3U",
-                         "surface layout should bind displacement, normal, and foam for every cascade");
+        require_contains(
+            gpu_resources_source, "kOceanCascadeCount * 3U",
+            "surface layout should bind displacement, normal, and foam for every cascade");
         require_contains(gpu_resources_source, "cascade + kOceanCascadeCount",
                          "surface descriptors should expose normal maps for every cascade");
         require_contains(gpu_resources_source, "cascade + kOceanCascadeCount * 2U",
@@ -634,10 +651,19 @@ int main() {
                          "surface descriptors should expose the atmosphere reflection probe");
         require_contains(gpu_resources_source, "kOceanSurfaceSkyRadianceBinding",
                          "surface descriptors should expose the atmosphere sky radiance cube");
-        require_contains(gpu_resources_source, "update_atmosphere_probe_descriptors",
-                         "surface descriptors should update both atmosphere probe bindings together");
+        require_contains(gpu_resources_source, "kOceanSurfaceTerrainFieldBinding",
+                         "surface descriptors should expose terrain-ocean fields");
+        require_contains(
+            gpu_resources_source, "update_atmosphere_probe_descriptors",
+            "surface descriptors should update both atmosphere probe bindings together");
+        require_contains(gpu_resources_source, "update_terrain_ocean_field_descriptor",
+                         "surface descriptors should update the terrain-ocean field binding");
         require_contains(app_source, "AtmosphereEnvironmentRuntime atmosphere_runtime_",
                          "ocean app should own the shared atmosphere runtime");
+        require_contains(app_source, "make_ocean_diagnostic_terrain_fields",
+                         "ocean app should create a diagnostic terrain-ocean field");
+        require_contains(app_source, "create_uploaded_terrain_ocean_field_texture",
+                         "ocean app should upload the shared terrain-ocean field texture");
         require_contains(app_source, "AtmosphereBackgroundFrame atmosphere_background_",
                          "ocean app should own the shared atmosphere background frame");
         require_contains(app_source, "create_atmosphere_background_generated_textures",
@@ -646,20 +672,26 @@ int main() {
                          "ocean app should draw the shared atmosphere background");
         require_contains(app_source, "record_atmosphere_environment_if_needed",
                          "ocean app should update the atmosphere probe before drawing water");
-        require_contains(app_source, "atmosphere_environment_run_state_from_config",
-                         "ocean app should resolve atmosphere run options through the shared helper");
-        require_contains(app_source, "atmosphere_environment_advance_time",
-                         "ocean app should advance dynamic atmosphere time through the shared helper");
-        require_contains(app_source, "kOceanSunElevationDegrees",
-                         "ocean app should keep the current default sun elevation as its atmosphere fallback");
+        require_contains(
+            app_source, "atmosphere_environment_run_state_from_config",
+            "ocean app should resolve atmosphere run options through the shared helper");
+        require_contains(
+            app_source, "atmosphere_environment_advance_time",
+            "ocean app should advance dynamic atmosphere time through the shared helper");
+        require_contains(
+            app_source, "kOceanSunElevationDegrees",
+            "ocean app should keep the current default sun elevation as its atmosphere fallback");
         require_contains(app_source, "atmosphere_environment_lighting",
                          "ocean app should derive sun direction from the shared lighting helper");
-        require_contains(vertex_shader, "vec4 sun_direction",
-                         "ocean vertex push constants should reserve the shared light direction slot");
-        require_contains(fragment_shader, "ocean.sun_direction.w",
-                         "ocean surface shader should read shared light intensity from push constants");
-        require_contains(fragment_shader, "samplerCube atmosphere_reflection_texture",
-                         "ocean surface shader should sample the shared atmosphere reflection probe");
+        require_contains(
+            vertex_shader, "vec4 sun_direction",
+            "ocean vertex push constants should reserve the shared light direction slot");
+        require_contains(
+            fragment_shader, "ocean.sun_direction.w",
+            "ocean surface shader should read shared light intensity from push constants");
+        require_contains(
+            fragment_shader, "samplerCube atmosphere_reflection_texture",
+            "ocean surface shader should sample the shared atmosphere reflection probe");
         require_contains(fragment_shader, "ocean_environment_reflection",
                          "ocean surface shader should isolate atmosphere reflection lookup");
 
@@ -669,12 +701,15 @@ int main() {
                              "ocean fragment shader should not use Cubey macro waves");
         require_not_contains(unpack_shader, "bounded_choppy",
                              "ocean unpack shader should not use bounded choppy clamps");
-        require_not_contains(fragment_shader, "normal_foam_cascade",
-                             "ocean fragment shader should not pack normals and foam in one sampler");
-        require_not_contains(fragment_shader, "cubey_pbr_apply_display_transform",
-                             "ocean surface shader should leave display transform to the post pass");
-        require_not_contains(fragment_shader, "ocean_sky_color",
-                             "ocean fragment shader should not use the removed local ocean sky model");
+        require_not_contains(
+            fragment_shader, "normal_foam_cascade",
+            "ocean fragment shader should not pack normals and foam in one sampler");
+        require_not_contains(
+            fragment_shader, "cubey_pbr_apply_display_transform",
+            "ocean surface shader should leave display transform to the post pass");
+        require_not_contains(
+            fragment_shader, "ocean_sky_color",
+            "ocean fragment shader should not use the removed local ocean sky model");
         require_not_contains(fragment_shader, "diffuse_light = 0.36",
                              "ocean foam should not keep a fixed daylight diffuse floor");
         require_not_contains(fragment_shader, "foam_color * 0.58",

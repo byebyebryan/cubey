@@ -171,7 +171,6 @@ void test_run_config_rejects_invalid_pbr_options() {
     require_throws(
         [&argv]() { cubey::parse_run_config(static_cast<int>(argv.size()), argv.data()); },
         "run config should reject unknown PBR environment sources");
-
 }
 
 void test_run_config_parses_animation_options() {
@@ -607,20 +606,21 @@ void test_run_config_parses_ocean_controls() {
     std::string map_value = "256";
     std::string cascade_flag = "--ocean-cascade";
     std::string cascade_value = "4";
+    std::string terrain_fields_flag = "--ocean-terrain-fields";
     std::string wire_flag = "--ocean-wire-overlay";
     std::string opacity_flag = "--ocean-wire-opacity";
     std::string opacity_value = "0.75";
-    std::array<char*, 8> argv{program.data(),      map_flag.data(),    map_value.data(),
-                              cascade_flag.data(), cascade_value.data(), wire_flag.data(),
-                              opacity_flag.data(), opacity_value.data()};
+    std::array<char*, 9> argv{program.data(),      map_flag.data(),      map_value.data(),
+                              cascade_flag.data(), cascade_value.data(), terrain_fields_flag.data(),
+                              wire_flag.data(),    opacity_flag.data(),  opacity_value.data()};
 
     const cubey::RunConfig config =
         cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
     require(config.ocean.map_size == 256, "run config should parse ocean map size");
     require(config.ocean.cascade == 4, "run config should parse ocean cascade selection");
+    require(config.ocean.terrain_fields == 1, "run config should parse ocean terrain field toggle");
     require(config.ocean.wire_overlay, "run config should parse ocean wire overlay");
-    require(config.ocean.wire_opacity == 0.75F,
-            "run config should parse ocean wire opacity");
+    require(config.ocean.wire_opacity == 0.75F, "run config should parse ocean wire opacity");
 
     std::string all_value = "all";
     std::array<char*, 3> all_argv{program.data(), cascade_flag.data(), all_value.data()};
@@ -630,6 +630,15 @@ void test_run_config_parses_ocean_controls() {
 
     const cubey::RunConfig defaults = cubey::parse_run_config(1, all_argv.data());
     require(defaults.ocean.cascade == -1, "run config should default to all ocean cascades");
+    require(defaults.ocean.terrain_fields == -1,
+            "run config should default ocean terrain fields to project defaults");
+
+    std::string no_terrain_fields_flag = "--no-ocean-terrain-fields";
+    std::array<char*, 2> no_terrain_fields_argv{program.data(), no_terrain_fields_flag.data()};
+    const cubey::RunConfig no_terrain_fields_config = cubey::parse_run_config(
+        static_cast<int>(no_terrain_fields_argv.size()), no_terrain_fields_argv.data());
+    require(no_terrain_fields_config.ocean.terrain_fields == 0,
+            "run config should parse disabled ocean terrain fields");
 }
 
 void test_run_config_parses_terrain_controls() {
@@ -652,12 +661,12 @@ void test_run_config_parses_terrain_controls() {
     std::string valleys_value = "1.15";
     std::string water_surface_flag = "--no-terrain-water-surface";
     std::array<char*, 18> argv{
-        program.data(),          seed_flag.data(),        seed_value.data(),
-        cell_size_flag.data(),   cell_size_value.data(),  sea_level_flag.data(),
-        sea_level_value.data(),  land_extent_flag.data(), land_extent_value.data(),
+        program.data(),          seed_flag.data(),         seed_value.data(),
+        cell_size_flag.data(),   cell_size_value.data(),   sea_level_flag.data(),
+        sea_level_value.data(),  land_extent_flag.data(),  land_extent_value.data(),
         coast_noise_flag.data(), coast_noise_value.data(), relief_flag.data(),
-        relief_value.data(),     ridges_flag.data(),      ridges_value.data(),
-        valleys_flag.data(),     valleys_value.data(),    water_surface_flag.data()};
+        relief_value.data(),     ridges_flag.data(),       ridges_value.data(),
+        valleys_flag.data(),     valleys_value.data(),     water_surface_flag.data()};
 
     const cubey::RunConfig config =
         cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());

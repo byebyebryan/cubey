@@ -38,6 +38,8 @@ class OceanGpuResources {
     void update_atmosphere_probe_descriptors(const cubey::vulkan::Device& device,
                                              const cubey::render::TextureCube& reflection_probe,
                                              const cubey::render::TextureCube& sky_radiance);
+    void update_terrain_ocean_field_descriptor(const cubey::vulkan::Device& device,
+                                               const cubey::render::Texture2D& fields);
 
     [[nodiscard]] bool initialized() const {
         return surface_pipeline_.has_value();
@@ -109,8 +111,7 @@ class OceanGpuResources {
 
     std::optional<cubey::vulkan::DescriptorSetLayout> fft_layout_;
     std::optional<cubey::vulkan::DescriptorPool> fft_pool_;
-    std::array<VkDescriptorSet, kOceanCascadeCount * kOceanSpectrumFieldCount * 3U>
-        fft_sets_{};
+    std::array<VkDescriptorSet, kOceanCascadeCount * kOceanSpectrumFieldCount * 3U> fft_sets_{};
 
     std::optional<cubey::vulkan::DescriptorSetLayout> unpack_layout_;
     std::optional<cubey::vulkan::DescriptorPool> unpack_pool_;

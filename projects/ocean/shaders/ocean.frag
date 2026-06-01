@@ -15,6 +15,7 @@ layout(set = 0, binding = 13) uniform sampler2D foam_cascade3_texture;
 layout(set = 0, binding = 14) uniform sampler2D foam_cascade4_texture;
 layout(set = 0, binding = 15) uniform samplerCube atmosphere_reflection_texture;
 layout(set = 0, binding = 16) uniform samplerCube atmosphere_sky_radiance_texture;
+layout(set = 0, binding = 17) uniform sampler2D terrain_ocean_fields_texture;
 
 layout(push_constant) uniform OceanParams {
     mat4 view_projection;
@@ -59,6 +60,9 @@ const uint OCEAN_VIEW_AMBIENT_LIGHT = 14u;
 const uint OCEAN_VIEW_EXPOSURE = 15u;
 const uint OCEAN_VIEW_FOAM_RAW = 16u;
 const uint OCEAN_VIEW_FOAM_LIT = 17u;
+const uint OCEAN_VIEW_TERRAIN_DEPTH = 18u;
+const uint OCEAN_VIEW_TERRAIN_SHORE = 19u;
+const uint OCEAN_VIEW_TERRAIN_SLOPE = 20u;
 const float OCEAN_REFLECTANCE = 0.02;
 const float OCEAN_FAR_ANTI_REPEAT_START = 220.0;
 const float OCEAN_FAR_ANTI_REPEAT_END = 900.0;
@@ -91,6 +95,14 @@ vec3 ocean_primary_light_color() {
     return mix(moon, sun, daylight);
 }
 
+bool ocean_terrain_fields_enabled() {
+    return ocean.mesh_options.w < 0.0;
+}
+
+float ocean_horizon_fog_strength() {
+    return abs(ocean.mesh_options.w);
+}
+
 vec3 ocean_sky_radiance(vec3 direction) {
     return max(textureLod(atmosphere_sky_radiance_texture, normalize(direction), 0.0).rgb,
                vec3(0.0));
@@ -104,6 +116,30 @@ float ocean_ambient_light_scale() {
     vec3 sky_up = ocean_sky_radiance(vec3(0.0, 1.0, 0.0));
     return clamp(ocean_luminance(sky_up) * 1.8 + ocean_primary_light_intensity() * 0.05,
                  0.015, 1.2);
+}
+
+vec2 terrain_ocean_field_uv(vec2 position) {
+    float extent = max(ocean.mesh_options.z * 2.0, 0.001);
+    return clamp((position / extent) + vec2(0.5), vec2(0.0), vec2(1.0));
+}
+
+vec4 sample_terrain_ocean_fields(vec2 position) {
+    return texture(terrain_ocean_fields_texture, terrain_ocean_field_uv(position));
+}
+
+vec3 terrain_depth_color(float water_depth) {
+    float value = clamp(water_depth / max(ocean.water_color.w * 80.0 + 1.0, 1.0), 0.0, 1.0);
+    vec3 shallow = cubey_srgb_to_linear(vec3(0.34, 0.72, 0.68));
+    vec3 deep = cubey_srgb_to_linear(vec3(0.02, 0.09, 0.24));
+    return mix(shallow, deep, value);
+}
+
+vec3 terrain_shore_color(float shore_sdf) {
+    float value = clamp(shore_sdf / max(ocean.mesh_options.z * 0.35, 1.0), -1.0, 1.0);
+    vec3 water = cubey_srgb_to_linear(vec3(0.05, 0.18, 0.45));
+    vec3 beach = cubey_srgb_to_linear(vec3(0.70, 0.58, 0.38));
+    vec3 land = cubey_srgb_to_linear(vec3(0.20, 0.38, 0.20));
+    return value < 0.0 ? mix(beach, water, -value) : mix(beach, land, value);
 }
 
 vec2 rotate2(vec2 value, float angle) {
@@ -466,7 +502,8 @@ float ocean_horizon_fog_factor(vec3 view_dir, float dist) {
     float low_angle = 1.0 - smoothstep(0.035, 0.36, abs(view_dir.y));
     float angle_fog =
         low_angle * smoothstep(ocean.mesh_options.z * 0.18, ocean.mesh_options.z * 0.72, dist);
-    return clamp((distance_fog * 0.86 + angle_fog * 0.34) * ocean.mesh_options.w, 0.0, 0.96);
+    return clamp((distance_fog * 0.86 + angle_fog * 0.34) * ocean_horizon_fog_strength(), 0.0,
+                 0.96);
 }
 
 vec3 ocean_environment_reflection(vec3 direction, float roughness) {
@@ -514,7 +551,13 @@ void main() {
     float ndotv = clamp(dot(normal, view_dir), 0.0, 1.0);
     float ndotl = clamp(dot(normal, sun_dir), 0.0, 1.0);
     float material_distance = ocean_material_distance_factor(dist);
-    float foam_coverage = ocean_foam_coverage(foam_data, dist, ndotv);
+    vec4 terrain_fields = sample_terrain_ocean_fields(frag_sample_position);
+    float terrain_shore_foam =
+        ocean_terrain_fields_enabled()
+            ? (1.0 - smoothstep(0.0, 42.0, abs(terrain_fields.z))) *
+                  (1.0 - smoothstep(0.5, 5.0, terrain_fields.y)) * 0.16
+            : 0.0;
+    float foam_coverage = max(ocean_foam_coverage(foam_data, dist, ndotv), terrain_shore_foam);
     float ambient_light = ocean_ambient_light_scale();
     float direct_light = ocean_direct_light_scale();
     float roughness = clamp(ocean.water_color.w, 0.02, 1.0);
@@ -583,6 +626,12 @@ void main() {
     } else if (view == OCEAN_VIEW_FOAM_LIT) {
         color = ocean_lit_foam_color(foam_color, normal, ndotl, dist) *
                 max(foam_coverage, 0.035);
+    } else if (view == OCEAN_VIEW_TERRAIN_DEPTH) {
+        color = terrain_depth_color(terrain_fields.y);
+    } else if (view == OCEAN_VIEW_TERRAIN_SHORE) {
+        color = terrain_shore_color(terrain_fields.z);
+    } else if (view == OCEAN_VIEW_TERRAIN_SLOPE) {
+        color = vec3(clamp(terrain_fields.w, 0.0, 1.0));
     }
 
     if (ocean.debug_options.w > 0.0) {

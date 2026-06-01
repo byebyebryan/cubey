@@ -101,6 +101,7 @@ struct RunConfig {
         std::uint32_t map_size = 0;
         int cascade = -1;
         int spectral_domains = -1;
+        int terrain_fields = -1;
         float wire_opacity = kRunConfigUnsetFloat;
         bool wire_overlay = false;
     };

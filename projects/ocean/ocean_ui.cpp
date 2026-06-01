@@ -119,12 +119,12 @@ void draw_cascade_controls(OceanCascadeConfig& cascade, std::uint32_t index) {
 
     const cubey::host::ScopedImGuiId section_id(label);
     const bool macro_layer = index < kOceanMacroCascadeCount;
-    ImGui::SliderFloat("Tile length", &cascade.tile_length, 8.0F,
-                       macro_layer ? 2400.0F : 256.0F, "%.0f m");
+    ImGui::SliderFloat("Tile length", &cascade.tile_length, 8.0F, macro_layer ? 2400.0F : 256.0F,
+                       "%.0f m");
     ImGui::SliderFloat("Displacement scale", &cascade.displacement_scale, 0.0F,
                        macro_layer ? 1.50F : 2.0F, "%.2f");
-    ImGui::SliderFloat("Normal scale", &cascade.normal_scale, 0.0F,
-                       macro_layer ? 0.50F : 2.0F, "%.2f");
+    ImGui::SliderFloat("Normal scale", &cascade.normal_scale, 0.0F, macro_layer ? 0.50F : 2.0F,
+                       "%.2f");
     ImGui::SliderFloat("Wind speed", &cascade.wind_speed, 0.1F, 32.0F, "%.1f m/s");
     ImGui::SliderFloat("Wind direction", &cascade.wind_direction_degrees, -180.0F, 180.0F,
                        "%.0f deg");
@@ -203,9 +203,9 @@ void draw_ocean_ui(OceanUiContext ui) {
         const cubey::host::ScopedImGuiId section_id("Wave Core");
         draw_map_size_combo(ui.config);
         ImGui::Checkbox("Spectral domains", &ui.config.spectral_domains_enabled);
-        ImGui::SliderFloat("Anti-repeat", &ui.diagnostics.anti_repeat_strength, 0.0F, 1.0F,
-                           "%.2f");
+        ImGui::SliderFloat("Anti-repeat", &ui.diagnostics.anti_repeat_strength, 0.0F, 1.0F, "%.2f");
         ImGui::SliderFloat("Depth", &ui.config.depth, 2.0F, 80.0F, "%.1f m");
+        ImGui::Checkbox("Terrain field influence", &ui.config.terrain_fields_enabled);
         ImGui::TextUnformatted("GodotOceanWaves port");
     }
 
@@ -267,6 +267,8 @@ void draw_ocean_ui(OceanUiContext ui) {
         ImGui::Text("Map: %u", ui.config.map_size);
         ImGui::Text("Spectral domains: %s",
                     ui.config.spectral_domains_enabled ? "enabled" : "disabled");
+        ImGui::Text("Terrain fields: %s",
+                    ui.config.terrain_fields_enabled ? "influence enabled" : "diagnostic only");
         for (std::uint32_t index = 0; index < kOceanCascadeCount; ++index) {
             char label[40]{};
             format_cascade_label(label, sizeof(label), index);
@@ -274,8 +276,8 @@ void draw_ocean_ui(OceanUiContext ui) {
             if (domain.active) {
                 ImGui::Text("%s: %.0f m / disp %.2f / domain %.2f-%.2f m", label,
                             ui.config.cascades[index].tile_length,
-                            ui.config.cascades[index].displacement_scale,
-                            domain.low_wavelength, domain.high_wavelength);
+                            ui.config.cascades[index].displacement_scale, domain.low_wavelength,
+                            domain.high_wavelength);
             } else {
                 ImGui::Text("%s: %.0f m / disp %.2f / domain inactive", label,
                             ui.config.cascades[index].tile_length,
@@ -283,8 +285,7 @@ void draw_ocean_ui(OceanUiContext ui) {
             }
         }
         ImGui::Text("Mesh: %u LOD / %u patches / %u tris", ui.config.mesh_lod_levels,
-                    ocean_mesh_patch_count(ui.config),
-                    ocean_mesh_total_triangle_count(ui.config));
+                    ocean_mesh_patch_count(ui.config), ocean_mesh_total_triangle_count(ui.config));
         ImGui::Text("Near cell: %.2f m", ocean_mesh_near_cell_size(ui.config));
         ImGui::Text("Vertices: %u", ocean_mesh_total_vertex_count(ui.config));
         draw_lod_diagnostics(ui.config);

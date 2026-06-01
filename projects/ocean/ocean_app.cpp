@@ -21,6 +21,7 @@
 #include <cubey/render/pbr.h>
 #include <cubey/render/render_graph.h>
 #include <cubey/render/target.h>
+#include <cubey/render/terrain_ocean_fields.h>
 #include <cubey/render/view_ray_basis_3d.h>
 #include <cubey/scene/camera_3d.h>
 #include <cubey/vulkan/command_recorder.h>
@@ -40,8 +41,10 @@
 #include <filesystem>
 #include <numbers>
 #include <optional>
+#include <span>
 #include <stdexcept>
 #include <utility>
+#include <vector>
 
 #ifndef CUBEY_OCEAN_SHADER_DIR
 #error "CUBEY_OCEAN_SHADER_DIR must be defined by the ocean CMake target"
@@ -190,7 +193,9 @@ ocean_depth_texture_desc(const char* label, VkExtent2D extent, VkFormat format) 
 [[nodiscard]] OceanCameraPresetConfig ocean_camera_preset_config(OceanCameraPreset preset) {
     switch (preset) {
     case OceanCameraPreset::Default:
-        return {.preset = preset, .distance = kCameraDistance, .yaw = kCameraBaseYaw,
+        return {.preset = preset,
+                .distance = kCameraDistance,
+                .yaw = kCameraBaseYaw,
                 .pitch = kCameraBasePitch};
     case OceanCameraPreset::Low:
         return {.preset = preset, .distance = 180.0F, .yaw = 0.42F, .pitch = -0.08F};
@@ -201,12 +206,82 @@ ocean_depth_texture_desc(const char* label, VkExtent2D extent, VkFormat format) 
     case OceanCameraPreset::Wide:
         return {.preset = preset, .distance = 900.0F, .yaw = 0.20F, .pitch = -0.70F};
     }
-    return {.preset = OceanCameraPreset::Default, .distance = kCameraDistance,
-            .yaw = kCameraBaseYaw, .pitch = kCameraBasePitch};
+    return {.preset = OceanCameraPreset::Default,
+            .distance = kCameraDistance,
+            .yaw = kCameraBaseYaw,
+            .pitch = kCameraBasePitch};
 }
 
 [[nodiscard]] bool ocean_resolution_changed(const OceanConfig& lhs, const OceanConfig& rhs) {
     return lhs.map_size != rhs.map_size;
+}
+
+[[nodiscard]] cubey::render::TerrainOceanPackedFields
+make_ocean_diagnostic_terrain_fields(const OceanConfig& config) {
+    constexpr std::uint32_t field_extent = 129U;
+    const float cell_size = (config.mesh_extent * 2.0F) / static_cast<float>(field_extent - 1U);
+    cubey::render::TerrainOceanFieldView field_view;
+    field_view.desc = {
+        .version = 1,
+        .seed = 0x4f6365616eULL,
+        .width = field_extent,
+        .height = field_extent,
+        .cell_size_m = cell_size,
+        .sea_level_m = 0.0F,
+        .origin_x_m = 0.0F,
+        .origin_z_m = 0.0F,
+    };
+
+    const std::size_t count = cubey::render::terrain_ocean_sample_count(field_view.desc);
+    std::vector<float> height(count, 0.0F);
+    std::vector<float> water_depth(count, 0.0F);
+    std::vector<float> shore_sdf(count, 0.0F);
+    std::vector<float> slope(count, 0.0F);
+    std::vector<cubey::render::TerrainOceanMaterialMask> material_masks(count);
+
+    const float island_radius = config.mesh_extent * 0.22F;
+    const float shoal_radius = config.mesh_extent * 0.42F;
+    const float minimum_depth = std::max(config.depth * 0.10F, 0.75F);
+    const float deep_depth = std::max(config.depth, minimum_depth + 1.0F);
+    for (std::uint32_t y = 0; y < field_view.desc.height; ++y) {
+        const float z =
+            (static_cast<float>(y) - static_cast<float>(field_view.desc.height - 1U) * 0.5F) *
+            cell_size;
+        for (std::uint32_t x = 0; x < field_view.desc.width; ++x) {
+            const float world_x =
+                (static_cast<float>(x) - static_cast<float>(field_view.desc.width - 1U) * 0.5F) *
+                cell_size;
+            const std::size_t index =
+                static_cast<std::size_t>(y) * field_view.desc.width + static_cast<std::size_t>(x);
+            const float radius = std::sqrt(world_x * world_x + z * z);
+            const float signed_shore = island_radius - radius;
+            const float shoal = 1.0F - std::clamp((radius - island_radius) /
+                                                      std::max(shoal_radius - island_radius, 1.0F),
+                                                  0.0F, 1.0F);
+            const float depth = std::max(minimum_depth, deep_depth * (1.0F - shoal * 0.82F));
+
+            shore_sdf[index] = signed_shore;
+            water_depth[index] = signed_shore > 0.0F ? 0.0F : depth;
+            height[index] = signed_shore > 0.0F ? signed_shore * 0.035F : -depth;
+            slope[index] = std::clamp(shoal * 0.75F + std::abs(signed_shore) /
+                                                          std::max(config.mesh_extent, 1.0F),
+                                      0.0F, 1.0F);
+            material_masks[index] = {
+                .sand = std::clamp(shoal, 0.0F, 1.0F),
+                .rock = 0.15F,
+                .vegetation = signed_shore > 0.0F ? 0.35F : 0.0F,
+                .sediment = 0.50F,
+            };
+        }
+    }
+
+    field_view.height_m = std::span<const float>(height.data(), height.size());
+    field_view.water_depth_m = std::span<const float>(water_depth.data(), water_depth.size());
+    field_view.shore_sdf_m = std::span<const float>(shore_sdf.data(), shore_sdf.size());
+    field_view.slope = std::span<const float>(slope.data(), slope.size());
+    field_view.material_masks = std::span<const cubey::render::TerrainOceanMaterialMask>(
+        material_masks.data(), material_masks.size());
+    return cubey::render::pack_terrain_ocean_fields(field_view);
 }
 
 class OceanApp {
@@ -322,7 +397,7 @@ class OceanApp {
                 frame.timing.delta_seconds > 0.0 ? frame.timing.delta_seconds : (1.0 / 60.0);
             update_atmosphere_time(frame.timing.delta_seconds);
             record_ocean_target(command_buffer, context.device(), target, frame.frame_slot,
-                                    OceanRenderTargetMode::ColorAttachment);
+                                OceanRenderTargetMode::ColorAttachment);
         };
         callbacks.shutdown = [this](cubey::host::HeadlessPngContext&) {
             destroy_swapchain_resources();
@@ -406,10 +481,13 @@ class OceanApp {
                                       .depth_format = kOceanDepthFormat,
                                       .target_extent = extent,
                                   });
+        create_terrain_ocean_field_resources(device, gpu);
+        ocean_gpu_.update_terrain_ocean_field_descriptor(device,
+                                                         terrain_ocean_fields_texture_.value());
         const cubey::render::AtmosphereReflectionProbe& atmosphere_probe =
             atmosphere_runtime_.reflection_probe();
-        ocean_gpu_.update_atmosphere_probe_descriptors(
-            device, atmosphere_probe.prefiltered_cube(), atmosphere_probe.sky_radiance_cube());
+        ocean_gpu_.update_atmosphere_probe_descriptors(device, atmosphere_probe.prefiltered_cube(),
+                                                       atmosphere_probe.sky_radiance_cube());
         create_atmosphere_background_frame(device, extent, frame_slot_count);
         hdr_post_frame_.create_materials(device, {
                                                      .frame_slot_count = frame_slot_count,
@@ -438,6 +516,14 @@ class OceanApp {
         gpu_config_ = ocean_config_;
     }
 
+    void create_terrain_ocean_field_resources(cubey::vulkan::Device& device,
+                                              cubey::vulkan::GpuRuntime& gpu) {
+        terrain_ocean_fields_ = make_ocean_diagnostic_terrain_fields(ocean_config_);
+        terrain_ocean_fields_texture_.emplace(
+            cubey::render::create_uploaded_terrain_ocean_field_texture(device, gpu,
+                                                                       terrain_ocean_fields_));
+    }
+
     void create_atmosphere_environment_runtime(cubey::vulkan::Device& device,
                                                cubey::vulkan::GpuRuntime& gpu,
                                                std::uint32_t frame_slot_count) {
@@ -461,14 +547,14 @@ class OceanApp {
                         });
             const std::filesystem::path shader_dir = CUBEY_OCEAN_SHADER_DIR;
             atmosphere_runtime_.create_pipelines(
-                device, cubey::render::AtmosphereEnvironmentRuntimePipelineConfig{
-                            .atmosphere_vertex_shader = shader_dir / "atmosphere.vert.spv",
-                            .atmosphere_fragment_shader = shader_dir / "atmosphere.frag.spv",
-                            .reflection_prefilter_vertex_shader =
-                                shader_dir / "atmosphere.vert.spv",
-                            .reflection_prefilter_fragment_shader =
-                                shader_dir / "atmosphere_reflection_prefilter.frag.spv",
-                        });
+                device,
+                cubey::render::AtmosphereEnvironmentRuntimePipelineConfig{
+                    .atmosphere_vertex_shader = shader_dir / "atmosphere.vert.spv",
+                    .atmosphere_fragment_shader = shader_dir / "atmosphere.frag.spv",
+                    .reflection_prefilter_vertex_shader = shader_dir / "atmosphere.vert.spv",
+                    .reflection_prefilter_fragment_shader =
+                        shader_dir / "atmosphere_reflection_prefilter.frag.spv",
+                });
             atmosphere_runtime_.mark_full_update_pending();
         }
         atmosphere_runtime_.set_environment(atmosphere_state_.environment);
@@ -505,6 +591,8 @@ class OceanApp {
         atmosphere_background_.destroy();
         ocean_gpu_.reset();
         atmosphere_runtime_.destroy();
+        terrain_ocean_fields_texture_.reset();
+        terrain_ocean_fields_ = {};
         atmosphere_background_atlases_.reset();
         pipeline_color_format_ = VK_FORMAT_UNDEFINED;
         textures_initialized_ = false;
@@ -552,8 +640,8 @@ class OceanApp {
         });
     }
 
-    [[nodiscard]] OceanPushConstants
-    surface_push_constants(VkExtent2D extent, const OceanMeshPatch& patch) const {
+    [[nodiscard]] OceanPushConstants surface_push_constants(VkExtent2D extent,
+                                                            const OceanMeshPatch& patch) const {
         const cubey::Transform3D transform = camera_transform();
         const float aspect = static_cast<float>(extent.width) / static_cast<float>(extent.height);
         const cubey::math::Mat4 view_projection = camera_.view_projection_matrix(transform, aspect);
@@ -576,7 +664,8 @@ class OceanApp {
                     static_cast<float>(patch.cells_x),
                     static_cast<float>(patch.cells_z),
                     ocean_config_.mesh_extent,
-                    ocean_config_.horizon_fog,
+                    ocean_config_.terrain_fields_enabled ? -ocean_config_.horizon_fog
+                                                         : ocean_config_.horizon_fog,
                 },
             .patch_bounds =
                 {
@@ -726,7 +815,7 @@ class OceanApp {
     }
 
     [[nodiscard]] OceanFftPushConstants fft_push_constants(std::uint32_t stage, bool horizontal,
-                                                              bool first_pass) const {
+                                                           bool first_pass) const {
         return {
             .fft_options =
                 {
@@ -778,7 +867,7 @@ class OceanApp {
     }
 
     void record_ocean_draw(const cubey::vulkan::CommandRecorder& recorder,
-                               VkExtent2D extent) const {
+                           VkExtent2D extent) const {
         const OceanMeshPatchList patches = ocean_mesh_clipmap_patches(ocean_config_);
         const cubey::render::GraphicsPipelineResource& surface_pipeline =
             ocean_gpu_.surface_pipeline();
@@ -824,14 +913,14 @@ class OceanApp {
             target_mode == OceanRenderTargetMode::Present
                 ? cubey::render::render_graph_present_texture_state()
                 : cubey::render::render_graph_color_attachment_texture_state();
-        const cubey::render::RenderGraphTextureHandle backbuffer = graph.import_color_target(
-            "ocean backbuffer", color_target, initial_state, final_state);
+        const cubey::render::RenderGraphTextureHandle backbuffer =
+            graph.import_color_target("ocean backbuffer", color_target, initial_state, final_state);
         const cubey::render::RenderGraphTextureHandle scene_color =
             graph.create_texture(cubey::render::hdr_scene_color_texture_desc(
                 "ocean scene color", color_target.extent, kOceanSceneColorFormat));
         const cubey::render::RenderGraphTextureHandle surface_depth =
-            graph.create_texture(ocean_depth_texture_desc(
-                "ocean surface depth", color_target.extent, kOceanDepthFormat));
+            graph.create_texture(ocean_depth_texture_desc("ocean surface depth",
+                                                          color_target.extent, kOceanDepthFormat));
 
         graph.add_pass("ocean scene", cubey::render::RenderGraphQueueDomain::Graphics)
             .write_color(scene_color)
@@ -858,11 +947,10 @@ class OceanApp {
             .read_texture(scene_color)
             .write_color(backbuffer)
             .material_pass(cubey::render::pbr_post_pass_info())
-            .execute(
-                [this, color_target,
-                 frame_slot](const cubey::render::RenderGraphExecutionContext& context) {
-                    record_ocean_post(context.recorder(), color_target, frame_slot);
-                });
+            .execute([this, color_target,
+                      frame_slot](const cubey::render::RenderGraphExecutionContext& context) {
+                record_ocean_post(context.recorder(), color_target, frame_slot);
+            });
 
         return {
             .graph = graph.compile(),
@@ -906,8 +994,7 @@ class OceanApp {
     }
 
     void record_spectrum_init(const cubey::vulkan::CommandRecorder& recorder) const {
-        const cubey::render::ComputeDispatchGroups groups =
-            ocean_dispatch_groups(ocean_config_);
+        const cubey::render::ComputeDispatchGroups groups = ocean_dispatch_groups(ocean_config_);
         for (std::uint32_t cascade = 0; cascade < kOceanCascadeCount; ++cascade) {
             cubey::render::record_compute_pipeline_dispatch(
                 recorder,
@@ -918,8 +1005,7 @@ class OceanApp {
     }
 
     void record_modulate(const cubey::vulkan::CommandRecorder& recorder) const {
-        const cubey::render::ComputeDispatchGroups groups =
-            ocean_dispatch_groups(ocean_config_);
+        const cubey::render::ComputeDispatchGroups groups = ocean_dispatch_groups(ocean_config_);
         for (std::uint32_t cascade = 0; cascade < kOceanCascadeCount; ++cascade) {
             cubey::render::record_compute_pipeline_dispatch(
                 recorder,
@@ -932,8 +1018,7 @@ class OceanApp {
     void record_fft_pass(const cubey::vulkan::CommandRecorder& recorder, std::uint32_t cascade,
                          std::uint32_t field, std::uint32_t stage, bool horizontal, bool first_pass,
                          std::uint32_t descriptor_set_index) const {
-        const cubey::render::ComputeDispatchGroups groups =
-            ocean_dispatch_groups(ocean_config_);
+        const cubey::render::ComputeDispatchGroups groups = ocean_dispatch_groups(ocean_config_);
         cubey::render::record_compute_pipeline_dispatch(
             recorder,
             cubey::render::compute_pipeline_dispatch_info(
@@ -965,8 +1050,7 @@ class OceanApp {
     }
 
     void record_unpack(const cubey::vulkan::CommandRecorder& recorder) {
-        const cubey::render::ComputeDispatchGroups groups =
-            ocean_dispatch_groups(ocean_config_);
+        const cubey::render::ComputeDispatchGroups groups = ocean_dispatch_groups(ocean_config_);
         for (std::uint32_t cascade = 0; cascade < kOceanCascadeCount; ++cascade) {
             cubey::render::record_compute_pipeline_dispatch(
                 recorder,
@@ -997,24 +1081,24 @@ class OceanApp {
                                                    VK_ACCESS_SHADER_READ_BIT);
     }
 
-    void record_atmosphere_environment_if_needed(
-        const cubey::vulkan::CommandRecorder& recorder, cubey::render::FrameSlot frame_slot) {
+    void record_atmosphere_environment_if_needed(const cubey::vulkan::CommandRecorder& recorder,
+                                                 cubey::render::FrameSlot frame_slot) {
         if (!atmosphere_runtime_.resources_created()) {
             throw std::runtime_error("ocean atmosphere runtime is not initialized");
         }
         atmosphere_runtime_.record_pending_update(recorder, frame_slot);
     }
 
-    void record_ocean_target(VkCommandBuffer command_buffer,
-                                 const cubey::vulkan::Device& device,
-                                 cubey::render::ColorTargetView target,
-                                 cubey::render::FrameSlot frame_slot,
-                                 OceanRenderTargetMode target_mode) {
+    void record_ocean_target(VkCommandBuffer command_buffer, const cubey::vulkan::Device& device,
+                             cubey::render::ColorTargetView target,
+                             cubey::render::FrameSlot frame_slot,
+                             OceanRenderTargetMode target_mode) {
         const cubey::vulkan::CommandRecorder recorder(command_buffer);
         record_atmosphere_environment_if_needed(recorder, frame_slot);
         record_ocean_compute(recorder);
         hdr_post_frame_.upload(frame_slot, post_uniforms());
-        const OceanFrameGraph frame_graph = build_ocean_frame_graph(target, frame_slot, target_mode);
+        const OceanFrameGraph frame_graph =
+            build_ocean_frame_graph(target, frame_slot, target_mode);
         graph_executor_.record(
             cubey::render::RenderGraphFrameRecordInfo{
                 .device = &device,
@@ -1037,7 +1121,7 @@ class OceanApp {
         const cubey::vulkan::CommandRecorder recorder(frame.command_buffer);
         recorder.begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
         record_ocean_target(frame.command_buffer, device, frame.color_target, frame.frame_slot,
-                                OceanRenderTargetMode::Present);
+                            OceanRenderTargetMode::Present);
         recorder.end("vkEndCommandBuffer ocean");
     }
 
@@ -1058,6 +1142,8 @@ class OceanApp {
     cubey::render::HdrPostFrame hdr_post_frame_;
     std::optional<cubey::render::AtmosphereBackgroundAtlasResources> atmosphere_background_atlases_;
     cubey::render::AtmosphereEnvironmentRuntime atmosphere_runtime_{};
+    cubey::render::TerrainOceanPackedFields terrain_ocean_fields_{};
+    std::optional<cubey::render::Texture2D> terrain_ocean_fields_texture_;
     std::optional<OceanConfig> gpu_config_;
     VkFormat pipeline_color_format_ = VK_FORMAT_UNDEFINED;
     double time_seconds_ = 0.0;
