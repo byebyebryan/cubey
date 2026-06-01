@@ -713,8 +713,7 @@ void test_forward_pbr_renderer_3d_threads_atmosphere_background_path() {
         read_source_file(root / "src/cubey/engine/forward_pbr_renderer_3d_graph.cpp");
     const std::string recording =
         read_source_file(root / "src/cubey/engine/forward_pbr_renderer_3d_recording.cpp");
-    const std::string cmake =
-        read_source_file(root / "cmake/CubeyShaders.cmake");
+    const std::string cmake = read_source_file(root / "cmake/CubeyShaders.cmake");
     const std::string gltf_assets =
         read_source_file(root / "projects/gltf_viewer/gltf_viewer_assets.cpp");
     const std::string gltf_render =
@@ -748,10 +747,11 @@ void test_forward_pbr_renderer_3d_threads_atmosphere_background_path() {
                      "forward PBR shader package should compile the shared atmosphere shader");
     require_contains(cmake, "atmosphere_reflection_prefilter.frag",
                      "forward PBR shader package should compile the atmosphere probe prefilter");
-    require_not_contains(cmake, "atmosphere_reflection_irradiance.frag",
-                         "forward PBR shader package should not compile removed atmosphere irradiance shader");
-    require_contains(gltf_assets, "create_atmosphere_background_placeholders",
-                     "glTF viewer should create placeholder atmosphere atlas textures");
+    require_not_contains(
+        cmake, "atmosphere_reflection_irradiance.frag",
+        "forward PBR shader package should not compile removed atmosphere irradiance shader");
+    require_contains(gltf_assets, "create_atmosphere_background_generated_textures",
+                     "glTF viewer should create generated atmosphere atlas textures");
     require_contains(gltf_assets, "create_atmosphere_environment_runtime",
                      "glTF viewer should create the shared atmosphere environment runtime");
     require_contains(gltf_assets, "pbr_environment_bindings",
