@@ -194,11 +194,11 @@ full engine architecture.
   carries final exposure, tone-map, and output-encoding controls; the reusable
   forward PBR renderer applies it in the post pass after HDR scene-color
   shading.
-- `cubey::engine::RendererService` is the Engine-owned renderer instance
+- `cubey::RendererService` is the Engine-owned renderer instance
   service. It creates, destroys, and fan-outs lifecycle calls to renderer
   instances without owning assets, shader packages, material tables, or render
   settings.
-- `cubey::engine::ForwardPbrRenderer3D` is the first reusable renderer policy
+- `cubey::ForwardPbrRenderer3D` is the first reusable renderer policy
   layer above scene/render/vulkan. It owns the repeated shadow map, skybox,
   forward PBR pipelines, HDR scene-color graph target, post pipeline,
   scene/skybox/post material descriptors, depth attachment, and render-graph

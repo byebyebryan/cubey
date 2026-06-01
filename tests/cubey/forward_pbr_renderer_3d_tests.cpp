@@ -281,14 +281,35 @@ void test_forward_pbr_renderer_3d_target_resources_use_material_table() {
 }
 
 void test_forward_pbr_renderer_3d_builds_render_request_from_frame_info() {
-    const cubey::ForwardPbrRenderer3DFrameRequestInfo info = valid_frame_request_info();
+    cubey::ForwardPbrRenderer3DFrameRequestInfo info = valid_frame_request_info();
+    info.command_buffer_mode = cubey::render::RenderGraphCommandBufferMode::AlreadyRecording;
     const cubey::ForwardPbrRenderer3DRenderRequest request =
         cubey::forward_pbr_renderer_3d_render_request(info);
 
     require(request.target.device == info.device,
             "forward PBR request helper should copy the target device");
+    require(request.target.command_buffer == info.command_buffer,
+            "forward PBR request helper should copy the command buffer");
+    require(request.target.color_target.image == info.color_target.image,
+            "forward PBR request helper should copy the color target image");
+    require(request.target.color_target.view == info.color_target.view,
+            "forward PBR request helper should copy the color target view");
+    require(request.target.color_target.extent.width == info.color_target.extent.width,
+            "forward PBR request helper should copy the color target extent");
+    require(request.target.color_target.format == info.color_target.format,
+            "forward PBR request helper should copy the color target format");
+    require(request.target.frame_slot.index == info.frame_slot.index,
+            "forward PBR request helper should copy the frame slot index");
+    require(request.target.frame_slot.count == info.frame_slot.count,
+            "forward PBR request helper should copy the frame slot count");
+    require(request.target.color_initial_state == info.color_initial_state,
+            "forward PBR request helper should copy the initial color state");
+    require(request.target.color_final_state == info.color_final_state,
+            "forward PBR request helper should copy the final color state");
     require(request.target.command_buffer_label == info.command_buffer_label,
             "forward PBR request helper should copy the command buffer label");
+    require(request.target.command_buffer_mode == info.command_buffer_mode,
+            "forward PBR request helper should copy the command buffer mode");
     require(request.view.scene == info.scene, "forward PBR request helper should copy scene view");
     require(request.view.frame_plan == info.frame_plan,
             "forward PBR request helper should copy frame plan");

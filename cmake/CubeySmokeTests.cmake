@@ -17,7 +17,7 @@ function(cubey_add_png_smoke_test name target output_path)
         NAME "${name}"
         COMMAND
             /bin/sh -c
-            "output=$1; target=$2; shift 2; rm -f \"$output\"; out=$(\"$target\" \"$@\" --width 64 --height 64 --output \"$output\" 2>&1); status=$?; printf '%s\n' \"$out\"; if printf '%s\n' \"$out\" | grep -q 'vulkan validation error'; then exit 1; fi; if [ \"$status\" -ne 0 ]; then printf '%s\n' \"$out\" | grep -Eq 'no Vulkan physical devices found|vkEnumeratePhysicalDevices|no Vulkan device with required queues and dynamic rendering found|vkCreateInstance'; exit; fi; test -s \"$output\"; sig=$(od -An -tx1 -N8 \"$output\" | tr -d ' \\n'); test \"$sig\" = \"89504e470d0a1a0a\""
+            "output=$1; target=$2; shift 2; rm -f \"$output\"; out=$(\"$target\" \"$@\" --width 64 --height 64 --output \"$output\" 2>&1); status=$?; printf '%s\n' \"$out\"; if printf '%s\n' \"$out\" | grep -q 'vulkan validation error'; then exit 1; fi; if [ \"$status\" -ne 0 ]; then printf '%s\n' \"$out\" | grep -Eq 'no Vulkan physical devices found|vkEnumeratePhysicalDevices|no Vulkan device with required queues and dynamic rendering found'; exit; fi; test -s \"$output\"; sig=$(od -An -tx1 -N8 \"$output\" | tr -d ' \\n'); test \"$sig\" = \"89504e470d0a1a0a\""
             "${name}"
             "${output_path}"
             "$<TARGET_FILE:${target}>"
@@ -36,7 +36,7 @@ function(cubey_add_video_smoke_test name target output_path)
         NAME "${name}"
         COMMAND
             /bin/sh -c
-            "output=$1; target=$2; shift 2; rm -f \"$output\"; out=$(\"$target\" \"$@\" --headless --capture video --frames 5 --fps 5 --width 64 --height 64 --output \"$output\" 2>&1); status=$?; printf '%s\n' \"$out\"; if printf '%s\n' \"$out\" | grep -q 'vulkan validation error'; then exit 1; fi; if [ \"$status\" -ne 0 ]; then printf '%s\n' \"$out\" | grep -Eq 'no Vulkan physical devices found|vkEnumeratePhysicalDevices|no Vulkan device with required queues and dynamic rendering found|vkCreateInstance'; exit; fi; test -s \"$output\"; strings \"$output\" | grep -q ftyp"
+            "output=$1; target=$2; shift 2; rm -f \"$output\"; out=$(\"$target\" \"$@\" --headless --capture video --frames 5 --fps 5 --width 64 --height 64 --output \"$output\" 2>&1); status=$?; printf '%s\n' \"$out\"; if printf '%s\n' \"$out\" | grep -q 'vulkan validation error'; then exit 1; fi; if [ \"$status\" -ne 0 ]; then printf '%s\n' \"$out\" | grep -Eq 'no Vulkan physical devices found|vkEnumeratePhysicalDevices|no Vulkan device with required queues and dynamic rendering found'; exit; fi; test -s \"$output\"; strings \"$output\" | grep -q ftyp"
             "${name}"
             "${output_path}"
             "$<TARGET_FILE:${target}>"

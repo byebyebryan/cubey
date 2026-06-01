@@ -58,6 +58,8 @@ void test_smoke_tests_fail_on_vulkan_validation_errors() {
                      "smoke tests should fail when validation reports Vulkan errors");
     require_contains(smoke, "set_tests_properties(\"${name}\" PROPERTIES TIMEOUT 20)",
                      "PNG/video smoke tests should allow heavier GPU startup paths");
+    require_not_contains(smoke, "|vkCreateInstance",
+                         "smoke tests should not treat generic Vulkan instance failures as no-GPU skips");
 }
 
 void test_pbr_furnace_headless_path_transitions_depth_attachment() {
@@ -88,6 +90,10 @@ void test_render_app_dynamic_rendering_scan_covers_built_projects() {
 
     require_contains(cmake, "NAME render_apps_use_dynamic_rendering",
                      "dynamic-rendering hygiene test should name examples and projects");
+    require_contains(cmake, "BUILD_TESTING AND (CUBEY_BUILD_EXAMPLES OR CUBEY_BUILD_PROJECTS)",
+                     "dynamic-rendering hygiene test should register for project-only builds");
+    require_contains(cmake, "CUBEY_DYNAMIC_RENDERING_SCAN_DIRS",
+                     "dynamic-rendering hygiene test should build scan dirs conditionally");
     require_contains(cmake, "projects/gltf_viewer",
                      "dynamic-rendering hygiene test should scan the glTF viewer");
     require_contains(cmake, "projects/ocean_ref",

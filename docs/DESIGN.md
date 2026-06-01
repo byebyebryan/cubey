@@ -148,7 +148,7 @@ Reusable spatial types should stay explicit and narrow:
 - `cubey::render::ForwardScenePass3D` remains a lower-level/simple pass helper.
   It is useful when an example or validation project needs direct control over
   pass recording; reusable PBR renderer policy belongs in
-  `cubey::engine::ForwardPbrRenderer3D`. Cube examples may use local helpers
+  `cubey::ForwardPbrRenderer3D`. Cube examples may use local helpers
   under `examples/common/` to remove repeated pass setup, but that glue stays
   outside the library until it proves to be real renderer policy.
 - `cubey::render` owns the current generated and HDR equirectangular PBR IBL

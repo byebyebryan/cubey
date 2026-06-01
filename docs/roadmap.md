@@ -195,7 +195,7 @@ Current checkpoint:
   metadata, material descriptor set ownership, world bounds propagation, and
   deterministic draw sorting without owning pass order, shader selection, or
   renderer policy.
-- Reusable `cubey::engine::ForwardPbrRenderer3D` now shades glTF/PBR scene and
+- Reusable `cubey::ForwardPbrRenderer3D` now shades glTF/PBR scene and
   skybox passes into a graph-created `R16G16B16A16_SFLOAT` HDR scene color
   target, then samples that target in a fullscreen post pass for exposure,
   tone mapping, and final output encoding into the caller's swapchain or

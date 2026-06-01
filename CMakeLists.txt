@@ -254,18 +254,17 @@ if (CUBEY_BUILD_EXAMPLES)
     add_subdirectory(examples/material_cubes)
     add_subdirectory(examples/headless_cube)
     add_subdirectory(examples/particle_cubes)
+endif()
 
-    if (BUILD_TESTING)
-        set(CUBEY_CLASSIC_RENDERING_PATTERN
-            "vkCreateRenderPass|vkDestroyRenderPass|VkRenderPass|vkCreateFramebuffer|vkDestroyFramebuffer|VkFramebuffer|vkCmdBeginRenderPass|vkCmdEndRenderPass|VkRenderPassBeginInfo"
-        )
-        add_test(
-            NAME render_apps_use_dynamic_rendering
-            COMMAND
-                /bin/sh -c
-                "pattern=\"$1\"; shift; grep -RE \"$pattern\" \"$@\"; status=$?; test \"$status\" -eq 1"
-                render_apps_use_dynamic_rendering
-                "${CUBEY_CLASSIC_RENDERING_PATTERN}"
+if (BUILD_TESTING AND (CUBEY_BUILD_EXAMPLES OR CUBEY_BUILD_PROJECTS))
+    set(CUBEY_CLASSIC_RENDERING_PATTERN
+        "vkCreateRenderPass|vkDestroyRenderPass|VkRenderPass|vkCreateFramebuffer|vkDestroyFramebuffer|VkFramebuffer|vkCmdBeginRenderPass|vkCmdEndRenderPass|VkRenderPassBeginInfo"
+    )
+    set(CUBEY_DYNAMIC_RENDERING_SCAN_DIRS)
+    if (CUBEY_BUILD_EXAMPLES)
+        list(
+            APPEND
+            CUBEY_DYNAMIC_RENDERING_SCAN_DIRS
                 "${CMAKE_SOURCE_DIR}/examples/spinning_cube"
                 "${CMAKE_SOURCE_DIR}/examples/textured_cube"
                 "${CMAKE_SOURCE_DIR}/examples/shadow_cube"
@@ -273,6 +272,12 @@ if (CUBEY_BUILD_EXAMPLES)
                 "${CMAKE_SOURCE_DIR}/examples/material_cubes"
                 "${CMAKE_SOURCE_DIR}/examples/headless_cube"
                 "${CMAKE_SOURCE_DIR}/examples/particle_cubes"
+        )
+    endif()
+    if (CUBEY_BUILD_PROJECTS)
+        list(
+            APPEND
+            CUBEY_DYNAMIC_RENDERING_SCAN_DIRS
                 "${CMAKE_SOURCE_DIR}/projects/atmosphere"
                 "${CMAKE_SOURCE_DIR}/projects/fractal_2d"
                 "${CMAKE_SOURCE_DIR}/projects/fluid"
@@ -284,6 +289,15 @@ if (CUBEY_BUILD_EXAMPLES)
                 "${CMAKE_SOURCE_DIR}/projects/procedural_terrain"
         )
     endif()
+    add_test(
+        NAME render_apps_use_dynamic_rendering
+        COMMAND
+            /bin/sh -c
+            "pattern=\"$1\"; shift; grep -RE \"$pattern\" \"$@\"; status=$?; test \"$status\" -eq 1"
+            render_apps_use_dynamic_rendering
+            "${CUBEY_CLASSIC_RENDERING_PATTERN}"
+            ${CUBEY_DYNAMIC_RENDERING_SCAN_DIRS}
+    )
 endif()
 
 if (CUBEY_FETCH_GLTF_SAMPLE_ASSETS)
