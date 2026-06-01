@@ -4,9 +4,13 @@
 
 #include <cubey/core/math.h>
 
+#include "source_file_test_helpers.h"
+
 #include <cmath>
+#include <filesystem>
 #include <numbers>
 #include <stdexcept>
+#include <string>
 
 namespace {
 
@@ -216,6 +220,17 @@ void test_atmosphere_background_pass_declares_frame_and_atlas_bindings() {
             "atmosphere background pass should not use push constants");
 }
 
+void test_atmosphere_background_texture_bindings_reject_null_atlases() {
+    bool threw = false;
+    try {
+        cubey::render::validate_atmosphere_background_texture_bindings({});
+    } catch (const std::runtime_error&) {
+        threw = true;
+    }
+
+    require(threw, "atmosphere background bindings should reject missing atlas handles");
+}
+
 void test_atmosphere_reflection_probe_declares_prefilter_pass() {
     const cubey::render::MaterialPassInfo prefilter =
         cubey::render::atmosphere_reflection_prefilter_pass_info();
@@ -225,4 +240,25 @@ void test_atmosphere_reflection_probe_declares_prefilter_pass() {
             "atmosphere reflection prefilter pass should declare one descriptor set");
     require(prefilter.descriptor_sets[0].bindings.size() == 2U,
             "atmosphere reflection prefilter pass should bind uniforms and sky radiance");
+}
+
+void test_atmosphere_reflection_probe_uses_per_subresource_uniform_materials() {
+    const std::filesystem::path source_root{CUBEY_SOURCE_DIR};
+    const std::string header = cubey::tests::read_source_file(
+        source_root / "include/cubey/render/atmosphere_reflection_probe.h");
+    const std::string source = cubey::tests::read_source_file(
+        source_root / "src/cubey/render/atmosphere_reflection_probe.cpp");
+
+    cubey::tests::require_contains(
+        header, "sky_face_materials_",
+        "reflection probe should keep distinct atmosphere uniforms per sky face");
+    cubey::tests::require_contains(
+        header, "prefilter_materials_",
+        "reflection probe should keep distinct prefilter uniforms per face mip");
+    cubey::tests::require_contains(
+        source, "sky_face_material(face_index)",
+        "reflection probe should upload sky face uniforms to a face-local material");
+    cubey::tests::require_contains(
+        source, "prefilter_material(mip_level, face_index)",
+        "reflection probe should upload prefilter uniforms to a subresource-local material");
 }

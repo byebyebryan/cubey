@@ -53,16 +53,17 @@ struct AtmosphereBackgroundGeneratedAtlasConfig {
     std::uint32_t night_sky_extent = kNightSkyAtlasExtent;
 };
 
-[[nodiscard]] Texture2D create_atmosphere_lunar_atlas_texture(
-    const cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu,
-    const LunarAtlas& atlas);
-[[nodiscard]] TextureCube create_atmosphere_night_sky_atlas_texture(
-    const cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu,
-    const NightSkyAtlas& atlas);
+[[nodiscard]] Texture2D create_atmosphere_lunar_atlas_texture(const cubey::vulkan::Device& device,
+                                                              cubey::vulkan::GpuRuntime& gpu,
+                                                              const LunarAtlas& atlas);
+[[nodiscard]] TextureCube
+create_atmosphere_night_sky_atlas_texture(const cubey::vulkan::Device& device,
+                                          cubey::vulkan::GpuRuntime& gpu,
+                                          const NightSkyAtlas& atlas);
 
 [[nodiscard]] AtmosphereBackgroundAtlasResources create_atmosphere_background_atlas_resources(
-    const cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu,
-    const LunarAtlas& lunar, const NightSkyAtlas& night_sky);
+    const cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu, const LunarAtlas& lunar,
+    const NightSkyAtlas& night_sky);
 [[nodiscard]] AtmosphereBackgroundAtlasResources create_atmosphere_background_generated_textures(
     const cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu,
     const AtmosphereBackgroundGeneratedAtlasConfig& config = {});
@@ -83,6 +84,12 @@ struct AtmosphereBackgroundFramePipelineConfig {
 };
 
 [[nodiscard]] MaterialPassInfo atmosphere_background_pass_info();
+void validate_atmosphere_background_texture_bindings(
+    const AtmosphereBackgroundTextureBindings& textures);
+void update_atmosphere_background_frame_material_texture_bindings(
+    const cubey::vulkan::Device& device,
+    const FrameUniformMaterialInstance<AtmosphereEnvironmentFrameUniforms>& material,
+    const AtmosphereBackgroundTextureBindings& textures);
 
 class AtmosphereBackgroundFrame {
   public:
@@ -105,6 +112,8 @@ class AtmosphereBackgroundFrame {
     void upload(FrameSlot frame_slot, const AtmosphereEnvironmentFrameUniforms& uniforms) const;
     void record_pass(const cubey::vulkan::CommandRecorder& recorder, ColorTargetView target,
                      FrameSlot frame_slot) const;
+    void record_pass(const cubey::vulkan::CommandRecorder& recorder, ColorTargetView target,
+                     VkDescriptorSet descriptor_set) const;
 
     [[nodiscard]] bool materials_created() const noexcept;
     [[nodiscard]] const FrameUniformMaterialInstance<AtmosphereEnvironmentFrameUniforms>&

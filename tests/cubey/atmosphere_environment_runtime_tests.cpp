@@ -1,8 +1,12 @@
 #include <cubey/engine/atmosphere_environment_config.h>
 #include <cubey/engine/atmosphere_environment_runtime.h>
 
+#include "source_file_test_helpers.h"
+
 #include <cmath>
+#include <filesystem>
 #include <stdexcept>
+#include <string>
 
 namespace {
 
@@ -117,4 +121,25 @@ void test_atmosphere_environment_runtime_requires_resources_before_bindings() {
     }
 
     require(threw, "atmosphere runtime should reject resource access before resources exist");
+}
+
+void test_atmosphere_environment_runtime_queues_all_faces_after_environment_change() {
+    const std::filesystem::path source_root{CUBEY_SOURCE_DIR};
+    const std::string header = cubey::tests::read_source_file(
+        source_root / "include/cubey/engine/atmosphere_environment_runtime.h");
+    const std::string source = cubey::tests::read_source_file(
+        source_root / "src/cubey/engine/atmosphere_environment_runtime.cpp");
+
+    cubey::tests::require_contains(
+        header, "std::uint32_t pending_face_updates_",
+        "atmosphere runtime should track queued incremental face updates");
+    cubey::tests::require_contains(
+        source, "pending_face_updates_ = 6U",
+        "atmosphere runtime should refresh every cube face after an environment change");
+    cubey::tests::require_contains(
+        source, "--pending_face_updates_",
+        "atmosphere runtime should drain one queued face update per recording call");
+    cubey::tests::require_not_contains(
+        source, "time_dirty_",
+        "atmosphere runtime should not collapse an environment change into one dirty face");
 }

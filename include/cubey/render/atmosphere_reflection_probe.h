@@ -15,6 +15,7 @@
 #include <array>
 #include <cstdint>
 #include <filesystem>
+#include <memory>
 #include <optional>
 #include <span>
 #include <vector>
@@ -78,9 +79,9 @@ class AtmosphereReflectionProbe {
     void record_face_update(const cubey::vulkan::CommandRecorder& recorder,
                             const AtmosphereReflectionProbeUpdateInfo& info,
                             std::uint32_t face_index);
-    void update_atmosphere_texture_bindings(
-        const cubey::vulkan::Device& device,
-        const AtmosphereBackgroundTextureBindings& textures) const;
+    void
+    update_atmosphere_texture_bindings(const cubey::vulkan::Device& device,
+                                       const AtmosphereBackgroundTextureBindings& textures) const;
 
     [[nodiscard]] bool resources_created() const noexcept;
     [[nodiscard]] bool pipelines_created() const noexcept;
@@ -97,11 +98,14 @@ class AtmosphereReflectionProbe {
                                               std::uint32_t mip_level,
                                               std::uint32_t face_index) const;
     void record_sky_face(const cubey::vulkan::CommandRecorder& recorder, FrameSlot frame_slot,
-                         const AtmosphereEnvironmentConfig& environment,
-                         std::uint32_t face_index);
+                         const AtmosphereEnvironmentConfig& environment, std::uint32_t face_index);
     void record_prefilter_face_mip(const cubey::vulkan::CommandRecorder& recorder,
                                    FrameSlot frame_slot, std::uint32_t face_index,
                                    std::uint32_t mip_level);
+    [[nodiscard]] const FrameUniformMaterialInstance<AtmosphereEnvironmentFrameUniforms>&
+    sky_face_material(std::uint32_t face_index) const;
+    [[nodiscard]] const FrameUniformMaterialInstance<AtmosphereReflectionPrefilterUniforms>&
+    prefilter_material(std::uint32_t mip_level, std::uint32_t face_index) const;
     void transition_face(const cubey::vulkan::CommandRecorder& recorder, VkImage image,
                          std::uint32_t mip_level, std::uint32_t face_index,
                          VkImageLayout old_layout, VkImageLayout new_layout,
@@ -109,7 +113,7 @@ class AtmosphereReflectionProbe {
                          VkPipelineStageFlags src_stage, VkPipelineStageFlags dst_stage) const;
     [[nodiscard]] VkImageLayout current_sky_layout(std::uint32_t face_index) const;
     [[nodiscard]] VkImageLayout current_prefiltered_layout(std::uint32_t mip_level,
-                                                          std::uint32_t face_index) const;
+                                                           std::uint32_t face_index) const;
 
     std::uint32_t extent_ = 0;
     std::uint32_t mip_levels_ = 0;
@@ -121,8 +125,11 @@ class AtmosphereReflectionProbe {
     std::array<bool, 6> sky_face_initialized_{};
     std::vector<bool> prefiltered_face_mip_initialized_{};
     AtmosphereBackgroundFrame sky_frame_{};
-    std::optional<FrameUniformMaterialInstance<AtmosphereReflectionPrefilterUniforms>>
-        prefilter_material_{};
+    std::array<std::unique_ptr<FrameUniformMaterialInstance<AtmosphereEnvironmentFrameUniforms>>, 6>
+        sky_face_materials_{};
+    std::vector<
+        std::unique_ptr<FrameUniformMaterialInstance<AtmosphereReflectionPrefilterUniforms>>>
+        prefilter_materials_{};
     std::optional<GraphicsPipelineResource> prefilter_pipeline_{};
 };
 

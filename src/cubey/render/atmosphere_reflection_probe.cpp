@@ -4,6 +4,7 @@
 #include <cubey/vulkan/image_transitions.h>
 
 #include <array>
+#include <memory>
 #include <stdexcept>
 
 namespace cubey::render {
@@ -17,8 +18,7 @@ namespace {
     return static_cast<std::size_t>(mip_level) * 6U + static_cast<std::size_t>(face_index);
 }
 
-[[nodiscard]] ViewRayBasis3D cube_face_basis(math::Vec3 right, math::Vec3 up,
-                                             math::Vec3 forward) {
+[[nodiscard]] ViewRayBasis3D cube_face_basis(math::Vec3 right, math::Vec3 up, math::Vec3 forward) {
     return {
         .right_aspect = {right.x, right.y, right.z, 1.0F},
         .up_tan_half_fovy = {up.x, up.y, up.z, 1.0F},
@@ -53,6 +53,51 @@ prefilter_uniforms(const ViewRayBasis3D& view_rays, float roughness, std::uint32
     };
 }
 
+[[nodiscard]] FrameUniformMaterialInstanceConfig
+atmosphere_background_material_config(std::uint32_t frame_slot_count,
+                                      const AtmosphereBackgroundTextureBindings& textures) {
+    return FrameUniformMaterialInstanceConfig{
+        .material_pass = atmosphere_background_pass_info(),
+        .descriptor_set = 0,
+        .frame_slot_count = frame_slot_count,
+        .uniform_binding = static_cast<std::uint32_t>(AtmosphereBackgroundBinding::FrameUniforms),
+        .sampled_images =
+            {
+                SampledImageMaterialBinding{
+                    .binding = static_cast<std::uint32_t>(AtmosphereBackgroundBinding::MoonAtlas),
+                    .sampler = textures.lunar_sampler,
+                    .image_view = textures.lunar_view,
+                    .layout = textures.lunar_layout,
+                },
+                SampledImageMaterialBinding{
+                    .binding =
+                        static_cast<std::uint32_t>(AtmosphereBackgroundBinding::NightSkyAtlas),
+                    .sampler = textures.night_sky_sampler,
+                    .image_view = textures.night_sky_view,
+                    .layout = textures.night_sky_layout,
+                },
+            },
+    };
+}
+
+[[nodiscard]] FrameUniformMaterialInstanceConfig
+prefilter_material_config(std::uint32_t frame_slot_count, const TextureCube& sky_radiance_cube) {
+    return FrameUniformMaterialInstanceConfig{
+        .material_pass = atmosphere_reflection_prefilter_pass_info(),
+        .descriptor_set = 0,
+        .frame_slot_count = frame_slot_count,
+        .uniform_binding = binding(AtmosphereReflectionPrefilterBinding::FrameUniforms),
+        .sampled_images =
+            {
+                SampledImageMaterialBinding{
+                    .binding = binding(AtmosphereReflectionPrefilterBinding::SkyRadianceCube),
+                    .sampler = sky_radiance_cube.sampler().handle(),
+                    .image_view = sky_radiance_cube.view(),
+                },
+            },
+    };
+}
+
 } // namespace
 
 MaterialPassInfo atmosphere_reflection_prefilter_pass_info() {
@@ -65,14 +110,14 @@ MaterialPassInfo atmosphere_reflection_prefilter_pass_info() {
                     .bindings =
                         {
                             cubey::vulkan::DescriptorSetBindingConfig{
-                                .binding = binding(
-                                    AtmosphereReflectionPrefilterBinding::FrameUniforms),
+                                .binding =
+                                    binding(AtmosphereReflectionPrefilterBinding::FrameUniforms),
                                 .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
                                 .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
                             },
                             cubey::vulkan::DescriptorSetBindingConfig{
-                                .binding = binding(
-                                    AtmosphereReflectionPrefilterBinding::SkyRadianceCube),
+                                .binding =
+                                    binding(AtmosphereReflectionPrefilterBinding::SkyRadianceCube),
                                 .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
                                 .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
                             },
@@ -93,8 +138,8 @@ std::array<ViewRayBasis3D, 6> atmosphere_reflection_probe_cube_face_view_rays() 
     };
 }
 
-void AtmosphereReflectionProbe::create_resources(
-    const cubey::vulkan::Device& device, const AtmosphereReflectionProbeConfig& config) {
+void AtmosphereReflectionProbe::create_resources(const cubey::vulkan::Device& device,
+                                                 const AtmosphereReflectionProbeConfig& config) {
     if (config.extent == 0 || config.mip_levels == 0) {
         throw std::runtime_error("atmosphere reflection probe dimensions must be nonzero");
     }
@@ -107,6 +152,7 @@ void AtmosphereReflectionProbe::create_resources(
     if (resources_created()) {
         throw std::runtime_error("atmosphere reflection probe resources are already initialized");
     }
+    validate_atmosphere_background_texture_bindings(config.atmosphere_textures);
 
     extent_ = config.extent;
     mip_levels_ = config.mip_levels;
@@ -116,24 +162,22 @@ void AtmosphereReflectionProbe::create_resources(
         .mipmap_mode = VK_SAMPLER_MIPMAP_MODE_LINEAR,
         .max_lod = static_cast<float>(mip_levels_ - 1U),
     };
-    sky_radiance_cube_.emplace(
-        device, TextureCubeConfig{
-                    .extent = extent_,
-                    .mip_levels = 1,
-                    .format = format_,
-                    .usage = TextureCubeUsage::ColorAttachmentSampled,
-                    .create_sampler = true,
-                    .sampler = cube_sampler,
-                });
-    prefiltered_cube_.emplace(
-        device, TextureCubeConfig{
-                    .extent = extent_,
-                    .mip_levels = mip_levels_,
-                    .format = format_,
-                    .usage = TextureCubeUsage::ColorAttachmentSampled,
-                    .create_sampler = true,
-                    .sampler = cube_sampler,
-                });
+    sky_radiance_cube_.emplace(device, TextureCubeConfig{
+                                           .extent = extent_,
+                                           .mip_levels = 1,
+                                           .format = format_,
+                                           .usage = TextureCubeUsage::ColorAttachmentSampled,
+                                           .create_sampler = true,
+                                           .sampler = cube_sampler,
+                                       });
+    prefiltered_cube_.emplace(device, TextureCubeConfig{
+                                          .extent = extent_,
+                                          .mip_levels = mip_levels_,
+                                          .format = format_,
+                                          .usage = TextureCubeUsage::ColorAttachmentSampled,
+                                          .create_sampler = true,
+                                          .sampler = cube_sampler,
+                                      });
 
     sky_face_views_.reserve(6U);
     for (std::uint32_t face = 0; face < 6U; ++face) {
@@ -154,23 +198,26 @@ void AtmosphereReflectionProbe::create_resources(
                                             .frame_slot_count = config.frame_slot_count,
                                             .textures = config.atmosphere_textures,
                                         });
-    prefilter_material_.emplace(
-        device, FrameUniformMaterialInstanceConfig{
-                    .material_pass = atmosphere_reflection_prefilter_pass_info(),
-                    .descriptor_set = 0,
-                    .frame_slot_count = config.frame_slot_count,
-                    .uniform_binding =
-                        binding(AtmosphereReflectionPrefilterBinding::FrameUniforms),
-                    .sampled_images =
-                        {
-                            SampledImageMaterialBinding{
-                                .binding = binding(
-                                    AtmosphereReflectionPrefilterBinding::SkyRadianceCube),
-                                .sampler = sky_radiance_cube_->sampler().handle(),
-                                .image_view = sky_radiance_cube_->view(),
-                            },
-                        },
-                });
+    const FrameUniformMaterialInstanceConfig sky_material_config =
+        atmosphere_background_material_config(config.frame_slot_count, config.atmosphere_textures);
+    for (std::unique_ptr<FrameUniformMaterialInstance<AtmosphereEnvironmentFrameUniforms>>&
+             material : sky_face_materials_) {
+        material =
+            std::make_unique<FrameUniformMaterialInstance<AtmosphereEnvironmentFrameUniforms>>(
+                device, sky_material_config);
+    }
+
+    const FrameUniformMaterialInstanceConfig prefilter_config =
+        prefilter_material_config(config.frame_slot_count, *sky_radiance_cube_);
+    prefilter_materials_.reserve(static_cast<std::size_t>(mip_levels_) * 6U);
+    for (std::uint32_t mip = 0; mip < mip_levels_; ++mip) {
+        for (std::uint32_t face = 0; face < 6U; ++face) {
+            prefilter_materials_.push_back(
+                std::make_unique<
+                    FrameUniformMaterialInstance<AtmosphereReflectionPrefilterUniforms>>(
+                    device, prefilter_config));
+        }
+    }
 }
 
 void AtmosphereReflectionProbe::create_pipelines(
@@ -197,18 +244,18 @@ void AtmosphereReflectionProbe::create_pipelines(
         vertex_shader_file(config.prefilter_vertex_shader),
         fragment_shader_file(config.prefilter_fragment_shader),
     };
-    const std::array<VkDescriptorSetLayout, 1> layouts{prefilter_material_->layout()};
-    prefilter_pipeline_.emplace(device, graphics_pipeline_file_resource_config(
-                                            {
-                                                .extent = {extent_, extent_},
-                                                .color_format = format_,
-                                            },
-                                            {
-                                                .shader_stage_files = prefilter_shaders,
-                                                .descriptor_set_layouts = layouts,
-                                                .material_pass =
-                                                    atmosphere_reflection_prefilter_pass_info(),
-                                            }));
+    const std::array<VkDescriptorSetLayout, 1> layouts{prefilter_material(0, 0).layout()};
+    prefilter_pipeline_.emplace(
+        device, graphics_pipeline_file_resource_config(
+                    {
+                        .extent = {extent_, extent_},
+                        .color_format = format_,
+                    },
+                    {
+                        .shader_stage_files = prefilter_shaders,
+                        .descriptor_set_layouts = layouts,
+                        .material_pass = atmosphere_reflection_prefilter_pass_info(),
+                    }));
 }
 
 void AtmosphereReflectionProbe::destroy_pipelines() {
@@ -218,7 +265,11 @@ void AtmosphereReflectionProbe::destroy_pipelines() {
 
 void AtmosphereReflectionProbe::destroy() {
     destroy_pipelines();
-    prefilter_material_.reset();
+    prefilter_materials_.clear();
+    for (std::unique_ptr<FrameUniformMaterialInstance<AtmosphereEnvironmentFrameUniforms>>&
+             material : sky_face_materials_) {
+        material.reset();
+    }
     sky_frame_.destroy();
     prefiltered_face_views_.clear();
     sky_face_views_.clear();
@@ -244,9 +295,9 @@ void AtmosphereReflectionProbe::record_full_update(
     }
 }
 
-void AtmosphereReflectionProbe::record_face_update(
-    const cubey::vulkan::CommandRecorder& recorder,
-    const AtmosphereReflectionProbeUpdateInfo& info, std::uint32_t face_index) {
+void AtmosphereReflectionProbe::record_face_update(const cubey::vulkan::CommandRecorder& recorder,
+                                                   const AtmosphereReflectionProbeUpdateInfo& info,
+                                                   std::uint32_t face_index) {
     if (face_index >= 6U) {
         throw std::runtime_error("atmosphere reflection probe face index is out of range");
     }
@@ -260,6 +311,14 @@ void AtmosphereReflectionProbe::update_atmosphere_texture_bindings(
     const cubey::vulkan::Device& device,
     const AtmosphereBackgroundTextureBindings& textures) const {
     sky_frame_.update_texture_bindings(device, textures);
+    for (const std::unique_ptr<FrameUniformMaterialInstance<AtmosphereEnvironmentFrameUniforms>>&
+             material : sky_face_materials_) {
+        if (material == nullptr) {
+            throw std::runtime_error(
+                "atmosphere reflection probe sky face material is not initialized");
+        }
+        update_atmosphere_background_frame_material_texture_bindings(device, *material, textures);
+    }
 }
 
 bool AtmosphereReflectionProbe::resources_created() const noexcept {
@@ -279,16 +338,16 @@ const TextureCube& AtmosphereReflectionProbe::sky_radiance_cube() const {
 
 const TextureCube& AtmosphereReflectionProbe::prefiltered_cube() const {
     if (!prefiltered_cube_.has_value()) {
-        throw std::runtime_error(
-            "atmosphere reflection probe prefiltered cube is not initialized");
+        throw std::runtime_error("atmosphere reflection probe prefiltered cube is not initialized");
     }
     return prefiltered_cube_.value();
 }
 
-ColorTargetView AtmosphereReflectionProbe::face_target(
-    const TextureCube& texture, std::uint32_t extent, VkFormat format,
-    const std::vector<cubey::vulkan::ImageView>& views, std::uint32_t mip_level,
-    std::uint32_t face_index) const {
+ColorTargetView
+AtmosphereReflectionProbe::face_target(const TextureCube& texture, std::uint32_t extent,
+                                       VkFormat format,
+                                       const std::vector<cubey::vulkan::ImageView>& views,
+                                       std::uint32_t mip_level, std::uint32_t face_index) const {
     if (face_index >= 6U || mip_level >= texture.mip_levels()) {
         throw std::runtime_error("atmosphere reflection probe target subresource is out of range");
     }
@@ -297,9 +356,10 @@ ColorTargetView AtmosphereReflectionProbe::face_target(
                              views.at(face_mip_index(mip_level, face_index)).handle());
 }
 
-void AtmosphereReflectionProbe::record_sky_face(
-    const cubey::vulkan::CommandRecorder& recorder, FrameSlot frame_slot,
-    const AtmosphereEnvironmentConfig& environment, std::uint32_t face_index) {
+void AtmosphereReflectionProbe::record_sky_face(const cubey::vulkan::CommandRecorder& recorder,
+                                                FrameSlot frame_slot,
+                                                const AtmosphereEnvironmentConfig& environment,
+                                                std::uint32_t face_index) {
     if (!pipelines_created()) {
         throw std::runtime_error("atmosphere reflection probe pipelines are not initialized");
     }
@@ -308,12 +368,14 @@ void AtmosphereReflectionProbe::record_sky_face(
     AtmosphereEnvironmentConfig sky_environment = environment;
     sky_environment.ground_mode = AtmosphereEnvironmentGroundMode::SkyOnly;
     sky_environment.reference_geometry_enabled = false;
-    sky_frame_.upload(frame_slot, atmosphere_environment_frame_uniforms(
-                                      sky_environment,
-                                      {
-                                          .view_rays = face_view_rays.at(face_index),
-                                          .render_view = AtmosphereEnvironmentRenderView::Final,
-                                      }));
+    const FrameUniformMaterialInstance<AtmosphereEnvironmentFrameUniforms>& material =
+        sky_face_material(face_index);
+    material.upload(frame_slot,
+                    atmosphere_environment_frame_uniforms(
+                        sky_environment, {
+                                             .view_rays = face_view_rays.at(face_index),
+                                             .render_view = AtmosphereEnvironmentRenderView::Final,
+                                         }));
 
     transition_face(recorder, sky_radiance_cube_->handle(), 0, face_index,
                     current_sky_layout(face_index), VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
@@ -323,13 +385,13 @@ void AtmosphereReflectionProbe::record_sky_face(
                                                          : VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
                     VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
     sky_frame_.record_pass(
-        recorder, face_target(*sky_radiance_cube_, extent_, format_, sky_face_views_, 0, face_index),
-        frame_slot);
+        recorder,
+        face_target(*sky_radiance_cube_, extent_, format_, sky_face_views_, 0, face_index),
+        material.set(frame_slot));
     transition_face(recorder, sky_radiance_cube_->handle(), 0, face_index,
                     VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                    VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT,
-                    VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                    VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
                     VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
     sky_face_initialized_.at(face_index) = true;
 }
@@ -344,50 +406,70 @@ void AtmosphereReflectionProbe::record_prefilter_face_mip(
         atmosphere_reflection_probe_cube_face_view_rays();
     const float roughness =
         mip_levels_ == 1U ? 0.0F
-                          : static_cast<float>(mip_level) /
-                                static_cast<float>(mip_levels_ - 1U);
-    prefilter_material_->upload(frame_slot,
-                                prefilter_uniforms(face_view_rays.at(face_index), roughness,
-                                                   mip_level));
+                          : static_cast<float>(mip_level) / static_cast<float>(mip_levels_ - 1U);
+    const FrameUniformMaterialInstance<AtmosphereReflectionPrefilterUniforms>& material =
+        prefilter_material(mip_level, face_index);
+    material.upload(frame_slot,
+                    prefilter_uniforms(face_view_rays.at(face_index), roughness, mip_level));
 
     const std::size_t index = face_mip_index(mip_level, face_index);
-    transition_face(recorder, prefiltered_cube_->handle(), mip_level, face_index,
-                    current_prefiltered_layout(mip_level, face_index),
-                    VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                    prefiltered_face_mip_initialized_.at(index) ? VK_ACCESS_SHADER_READ_BIT : 0,
-                    VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-                    prefiltered_face_mip_initialized_.at(index)
-                        ? VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
-                        : VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-                    VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
+    transition_face(
+        recorder, prefiltered_cube_->handle(), mip_level, face_index,
+        current_prefiltered_layout(mip_level, face_index), VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+        prefiltered_face_mip_initialized_.at(index) ? VK_ACCESS_SHADER_READ_BIT : 0,
+        VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+        prefiltered_face_mip_initialized_.at(index) ? VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+                                                    : VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
     record_render_target_pass(
         recorder,
         render_target_view(face_target(*prefiltered_cube_, extent_, format_,
                                        prefiltered_face_views_, mip_level, face_index)),
         RenderClearValues{.color = color_clear_value(0.0F, 0.0F, 0.0F, 1.0F)},
-        [this, frame_slot](const cubey::vulkan::CommandRecorder& pass_recorder) {
+        [this, frame_slot, &material](const cubey::vulkan::CommandRecorder& pass_recorder) {
             record_fullscreen_pipeline_draw(pass_recorder,
                                             {
                                                 .pipeline = &prefilter_pipeline_.value(),
-                                                .descriptor_set =
-                                                    prefilter_material_->set(frame_slot),
+                                                .descriptor_set = material.set(frame_slot),
                                                 .descriptor_set_index = 0,
                                             });
         });
     transition_face(recorder, prefiltered_cube_->handle(), mip_level, face_index,
                     VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                    VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT,
-                    VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                    VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
                     VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
     prefiltered_face_mip_initialized_.at(index) = true;
 }
 
-void AtmosphereReflectionProbe::transition_face(
-    const cubey::vulkan::CommandRecorder& recorder, VkImage image, std::uint32_t mip_level,
-    std::uint32_t face_index, VkImageLayout old_layout, VkImageLayout new_layout,
-    VkAccessFlags src_access, VkAccessFlags dst_access, VkPipelineStageFlags src_stage,
-    VkPipelineStageFlags dst_stage) const {
+const FrameUniformMaterialInstance<AtmosphereEnvironmentFrameUniforms>&
+AtmosphereReflectionProbe::sky_face_material(std::uint32_t face_index) const {
+    if (face_index >= sky_face_materials_.size() || sky_face_materials_.at(face_index) == nullptr) {
+        throw std::runtime_error(
+            "atmosphere reflection probe sky face material is not initialized");
+    }
+    return *sky_face_materials_.at(face_index);
+}
+
+const FrameUniformMaterialInstance<AtmosphereReflectionPrefilterUniforms>&
+AtmosphereReflectionProbe::prefilter_material(std::uint32_t mip_level,
+                                              std::uint32_t face_index) const {
+    const std::size_t index = face_mip_index(mip_level, face_index);
+    if (mip_level >= mip_levels_ || face_index >= 6U || index >= prefilter_materials_.size() ||
+        prefilter_materials_.at(index) == nullptr) {
+        throw std::runtime_error(
+            "atmosphere reflection probe prefilter material is not initialized");
+    }
+    return *prefilter_materials_.at(index);
+}
+
+void AtmosphereReflectionProbe::transition_face(const cubey::vulkan::CommandRecorder& recorder,
+                                                VkImage image, std::uint32_t mip_level,
+                                                std::uint32_t face_index, VkImageLayout old_layout,
+                                                VkImageLayout new_layout, VkAccessFlags src_access,
+                                                VkAccessFlags dst_access,
+                                                VkPipelineStageFlags src_stage,
+                                                VkPipelineStageFlags dst_stage) const {
     recorder.transition_image_layout(cubey::vulkan::ImageLayoutTransition{
         .image = image,
         .aspect_mask = VK_IMAGE_ASPECT_COLOR_BIT,
@@ -409,8 +491,9 @@ VkImageLayout AtmosphereReflectionProbe::current_sky_layout(std::uint32_t face_i
                                                 : VK_IMAGE_LAYOUT_UNDEFINED;
 }
 
-VkImageLayout AtmosphereReflectionProbe::current_prefiltered_layout(
-    std::uint32_t mip_level, std::uint32_t face_index) const {
+VkImageLayout
+AtmosphereReflectionProbe::current_prefiltered_layout(std::uint32_t mip_level,
+                                                      std::uint32_t face_index) const {
     const std::size_t index = face_mip_index(mip_level, face_index);
     return prefiltered_face_mip_initialized_.at(index) ? VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
                                                        : VK_IMAGE_LAYOUT_UNDEFINED;

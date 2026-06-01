@@ -15,7 +15,10 @@ namespace {
     return static_cast<std::uint32_t>(value);
 }
 
-void validate_texture_bindings(const AtmosphereBackgroundTextureBindings& textures) {
+} // namespace
+
+void validate_atmosphere_background_texture_bindings(
+    const AtmosphereBackgroundTextureBindings& textures) {
     if (textures.lunar_sampler == VK_NULL_HANDLE || textures.lunar_view == VK_NULL_HANDLE) {
         throw std::runtime_error("atmosphere background lunar atlas binding is not initialized");
     }
@@ -24,8 +27,6 @@ void validate_texture_bindings(const AtmosphereBackgroundTextureBindings& textur
             "atmosphere background night sky atlas binding is not initialized");
     }
 }
-
-} // namespace
 
 AtmosphereBackgroundTextureBindings AtmosphereBackgroundAtlasResources::bindings() const {
     return {
@@ -111,8 +112,9 @@ AtmosphereBackgroundAtlasResources create_atmosphere_background_generated_textur
         generate_night_sky_atlas(config.night_sky, config.night_sky_extent));
 }
 
-AtmosphereBackgroundAtlasResources create_atmosphere_background_placeholder_textures(
-    const cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu) {
+AtmosphereBackgroundAtlasResources
+create_atmosphere_background_placeholder_textures(const cubey::vulkan::Device& device,
+                                                  cubey::vulkan::GpuRuntime& gpu) {
     const std::array<std::uint8_t, 4> lunar_pixel{112U, 128U, 128U, 255U};
     const cubey::vulkan::SamplerConfig atlas_sampler{
         .min_filter = VK_FILTER_LINEAR,
@@ -137,16 +139,16 @@ AtmosphereBackgroundAtlasResources create_atmosphere_background_placeholder_text
         reinterpret_cast<const std::uint8_t*>(night_sky_rgba32f.data()),
         night_sky_rgba32f.size() * sizeof(float),
     };
-    TextureCube night_sky = create_uploaded_texture_cube(
-        device, gpu,
-        {
-            .extent = 1U,
-            .mip_levels = 1U,
-            .format = VK_FORMAT_R32G32B32A32_SFLOAT,
-            .bytes = night_sky_bytes,
-            .create_sampler = true,
-            .sampler = atlas_sampler,
-        });
+    TextureCube night_sky =
+        create_uploaded_texture_cube(device, gpu,
+                                     {
+                                         .extent = 1U,
+                                         .mip_levels = 1U,
+                                         .format = VK_FORMAT_R32G32B32A32_SFLOAT,
+                                         .bytes = night_sky_bytes,
+                                         .create_sampler = true,
+                                         .sampler = atlas_sampler,
+                                     });
 
     return {
         .lunar = std::move(lunar),
@@ -188,7 +190,7 @@ MaterialPassInfo atmosphere_background_pass_info() {
 
 void AtmosphereBackgroundFrame::create_materials(
     const cubey::vulkan::Device& device, const AtmosphereBackgroundFrameMaterialConfig& config) {
-    validate_texture_bindings(config.textures);
+    validate_atmosphere_background_texture_bindings(config.textures);
     material_.emplace(
         device, FrameUniformMaterialInstanceConfig{
                     .material_pass = atmosphere_background_pass_info(),
@@ -213,22 +215,21 @@ void AtmosphereBackgroundFrame::create_materials(
                 });
 }
 
-void AtmosphereBackgroundFrame::update_texture_bindings(
+void update_atmosphere_background_frame_material_texture_bindings(
     const cubey::vulkan::Device& device,
-    const AtmosphereBackgroundTextureBindings& textures) const {
-    validate_texture_bindings(textures);
-    const FrameUniformMaterialInstance<AtmosphereEnvironmentFrameUniforms>& current_material =
-        material();
-    for (std::uint32_t slot_index = 0U;
-         slot_index < current_material.material_instance().set_count(); ++slot_index) {
+    const FrameUniformMaterialInstance<AtmosphereEnvironmentFrameUniforms>& material,
+    const AtmosphereBackgroundTextureBindings& textures) {
+    validate_atmosphere_background_texture_bindings(textures);
+    for (std::uint32_t slot_index = 0U; slot_index < material.material_instance().set_count();
+         ++slot_index) {
         const FrameSlot frame_slot{
             .index = slot_index,
-            .count = current_material.material_instance().set_count(),
+            .count = material.material_instance().set_count(),
         };
-        MaterialDescriptorWriter(current_material.set(frame_slot))
+        MaterialDescriptorWriter(material.set(frame_slot))
             .uniform_buffer(binding(AtmosphereBackgroundBinding::FrameUniforms),
-                            current_material.uniforms().buffer(frame_slot).handle(),
-                            current_material.uniforms().range())
+                            material.uniforms().buffer(frame_slot).handle(),
+                            material.uniforms().range())
             .combined_image_sampler(binding(AtmosphereBackgroundBinding::MoonAtlas),
                                     textures.lunar_sampler, textures.lunar_view,
                                     textures.lunar_layout)
@@ -237,6 +238,12 @@ void AtmosphereBackgroundFrame::update_texture_bindings(
                                     textures.night_sky_layout)
             .update(device);
     }
+}
+
+void AtmosphereBackgroundFrame::update_texture_bindings(
+    const cubey::vulkan::Device& device,
+    const AtmosphereBackgroundTextureBindings& textures) const {
+    update_atmosphere_background_frame_material_texture_bindings(device, material(), textures);
 }
 
 void AtmosphereBackgroundFrame::create_pipeline(
@@ -268,17 +275,22 @@ void AtmosphereBackgroundFrame::upload(FrameSlot frame_slot,
 
 void AtmosphereBackgroundFrame::record_pass(const cubey::vulkan::CommandRecorder& recorder,
                                             ColorTargetView target, FrameSlot frame_slot) const {
+    record_pass(recorder, target, material().set(frame_slot));
+}
+
+void AtmosphereBackgroundFrame::record_pass(const cubey::vulkan::CommandRecorder& recorder,
+                                            ColorTargetView target,
+                                            VkDescriptorSet descriptor_set) const {
     record_render_target_pass(
         recorder, render_target_view(target),
         RenderClearValues{
             .color = color_clear_value(0.0F, 0.0F, 0.0F, 1.0F),
         },
-        [this, frame_slot](const cubey::vulkan::CommandRecorder& pass_recorder) {
-            record_fullscreen_pipeline_draw(pass_recorder,
-                                            {
-                                                .pipeline = &pipeline(),
-                                                .descriptor_set = material().set(frame_slot),
-                                            });
+        [this, descriptor_set](const cubey::vulkan::CommandRecorder& pass_recorder) {
+            record_fullscreen_pipeline_draw(pass_recorder, {
+                                                               .pipeline = &pipeline(),
+                                                               .descriptor_set = descriptor_set,
+                                                           });
         });
 }
 

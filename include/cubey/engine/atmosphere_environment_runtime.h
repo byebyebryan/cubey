@@ -46,10 +46,11 @@ class AtmosphereEnvironmentRuntime {
 
     void set_environment(const AtmosphereEnvironmentConfig& environment);
     void mark_full_update_pending();
-    void record_pending_update(const cubey::vulkan::CommandRecorder& recorder, FrameSlot frame_slot);
-    void update_atmosphere_texture_bindings(
-        const cubey::vulkan::Device& device,
-        const AtmosphereBackgroundTextureBindings& textures) const;
+    void record_pending_update(const cubey::vulkan::CommandRecorder& recorder,
+                               FrameSlot frame_slot);
+    void
+    update_atmosphere_texture_bindings(const cubey::vulkan::Device& device,
+                                       const AtmosphereBackgroundTextureBindings& textures) const;
 
     [[nodiscard]] bool resources_created() const noexcept;
     [[nodiscard]] const AtmosphereEnvironmentConfig& environment() const noexcept;
@@ -66,8 +67,8 @@ class AtmosphereEnvironmentRuntime {
     AtmosphereEnvironmentLighting lighting_{};
     AtmosphereReflectionProbe reflection_probe_{};
     bool full_update_pending_ = true;
-    bool time_dirty_ = false;
     std::uint32_t face_cursor_ = 0;
+    std::uint32_t pending_face_updates_ = 0;
 };
 
 } // namespace cubey::render

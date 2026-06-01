@@ -9,29 +9,28 @@ AtmosphereEnvironmentRuntime::AtmosphereEnvironmentRuntime() {
 }
 
 void AtmosphereEnvironmentRuntime::create_resources(
-    const cubey::vulkan::Device& device,
-    const AtmosphereEnvironmentRuntimeResourceConfig& config) {
+    const cubey::vulkan::Device& device, const AtmosphereEnvironmentRuntimeResourceConfig& config) {
     if (config.frame_slot_count == 0) {
         throw std::runtime_error("atmosphere environment runtime requires at least one frame slot");
     }
     if (resources_created()) {
-        throw std::runtime_error("atmosphere environment runtime resources are already initialized");
+        throw std::runtime_error(
+            "atmosphere environment runtime resources are already initialized");
     }
 
-    reflection_probe_.create_resources(device, AtmosphereReflectionProbeConfig{
-                                                   .extent = config.reflection_extent,
-                                                   .mip_levels = config.reflection_mip_levels,
-                                                   .format = config.format,
-                                                   .frame_slot_count = config.frame_slot_count,
-                                                   .atmosphere_textures =
-                                                       config.atmosphere_textures,
-                                               });
+    reflection_probe_.create_resources(device,
+                                       AtmosphereReflectionProbeConfig{
+                                           .extent = config.reflection_extent,
+                                           .mip_levels = config.reflection_mip_levels,
+                                           .format = config.format,
+                                           .frame_slot_count = config.frame_slot_count,
+                                           .atmosphere_textures = config.atmosphere_textures,
+                                       });
     mark_full_update_pending();
 }
 
 void AtmosphereEnvironmentRuntime::create_pipelines(
-    const cubey::vulkan::Device& device,
-    const AtmosphereEnvironmentRuntimePipelineConfig& config) {
+    const cubey::vulkan::Device& device, const AtmosphereEnvironmentRuntimePipelineConfig& config) {
     reflection_probe_.create_pipelines(
         device, AtmosphereReflectionProbePipelineConfig{
                     .atmosphere_vertex_shader = config.atmosphere_vertex_shader,
@@ -46,17 +45,18 @@ void AtmosphereEnvironmentRuntime::destroy() {
     mark_full_update_pending();
 }
 
-void AtmosphereEnvironmentRuntime::set_environment(
-    const AtmosphereEnvironmentConfig& environment) {
+void AtmosphereEnvironmentRuntime::set_environment(const AtmosphereEnvironmentConfig& environment) {
     environment_ = environment;
     refresh_lighting();
-    time_dirty_ = true;
+    if (!full_update_pending_) {
+        pending_face_updates_ = 6U;
+    }
 }
 
 void AtmosphereEnvironmentRuntime::mark_full_update_pending() {
     full_update_pending_ = true;
-    time_dirty_ = false;
     face_cursor_ = 0;
+    pending_face_updates_ = 0;
 }
 
 void AtmosphereEnvironmentRuntime::record_pending_update(
@@ -72,14 +72,14 @@ void AtmosphereEnvironmentRuntime::record_pending_update(
     if (full_update_pending_) {
         reflection_probe_.record_full_update(recorder, update);
         full_update_pending_ = false;
-        time_dirty_ = false;
         face_cursor_ = 0;
+        pending_face_updates_ = 0;
         return;
     }
-    if (time_dirty_) {
+    if (pending_face_updates_ > 0) {
         reflection_probe_.record_face_update(recorder, update, face_cursor_);
         face_cursor_ = (face_cursor_ + 1U) % 6U;
-        time_dirty_ = false;
+        --pending_face_updates_;
     }
 }
 
