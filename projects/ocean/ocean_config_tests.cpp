@@ -270,6 +270,27 @@ int main() {
         require(ocean::ocean_render_view_from_name("lod") ==
                     ocean::OceanRenderView::Lod,
                 "lod debug view should parse");
+        require(ocean::ocean_render_view_from_name("sky-radiance") ==
+                    ocean::OceanRenderView::SkyRadiance,
+                "sky radiance debug view should parse");
+        require(ocean::ocean_render_view_from_name("reflection") ==
+                    ocean::OceanRenderView::Reflection,
+                "reflection debug view should parse");
+        require(ocean::ocean_render_view_from_name("direct-light") ==
+                    ocean::OceanRenderView::DirectLight,
+                "direct light debug view should parse");
+        require(ocean::ocean_render_view_from_name("ambient-light") ==
+                    ocean::OceanRenderView::AmbientLight,
+                "ambient light debug view should parse");
+        require(ocean::ocean_render_view_from_name("exposure") ==
+                    ocean::OceanRenderView::Exposure,
+                "exposure debug view should parse");
+        require(ocean::ocean_render_view_from_name("foam-raw") ==
+                    ocean::OceanRenderView::FoamRaw,
+                "raw foam debug view should parse");
+        require(ocean::ocean_render_view_from_name("foam-lit") ==
+                    ocean::OceanRenderView::FoamLit,
+                "lit foam debug view should parse");
         require(ocean::next_ocean_render_view(ocean::OceanRenderView::Foam) ==
                     ocean::OceanRenderView::FoamSource,
                 "ocean debug view cycle should include the foam source view");
@@ -289,8 +310,14 @@ int main() {
                     ocean::OceanRenderView::Lod,
                 "ocean debug view cycle should include the LOD view");
         require(ocean::next_ocean_render_view(ocean::OceanRenderView::Lod) ==
+                    ocean::OceanRenderView::SkyRadiance,
+                "ocean debug view cycle should include environment diagnostics after LOD");
+        require(ocean::next_ocean_render_view(ocean::OceanRenderView::FoamRaw) ==
+                    ocean::OceanRenderView::FoamLit,
+                "ocean debug view cycle should include lit foam after raw foam");
+        require(ocean::next_ocean_render_view(ocean::OceanRenderView::FoamLit) ==
                     ocean::OceanRenderView::Final,
-                "ocean debug view cycle should wrap");
+                "ocean debug view cycle should wrap after lit foam");
 
         bool rejected = false;
         try {
@@ -585,6 +612,14 @@ int main() {
                          "fragment shader should expose foam history diagnostics");
         require_contains(fragment_shader, "const uint OCEAN_VIEW_LOD = 10u",
                          "fragment shader should expose LOD diagnostics");
+        require_contains(fragment_shader, "const uint OCEAN_VIEW_SKY_RADIANCE = 11u",
+                         "fragment shader should expose sky radiance diagnostics");
+        require_contains(fragment_shader, "const uint OCEAN_VIEW_REFLECTION = 12u",
+                         "fragment shader should expose reflection diagnostics");
+        require_contains(fragment_shader, "const uint OCEAN_VIEW_FOAM_RAW = 16u",
+                         "fragment shader should expose raw foam diagnostics");
+        require_contains(fragment_shader, "ocean_lit_foam_color",
+                         "fragment shader should isolate lit foam diagnostics");
         require_contains(fragment_shader, "triangle_wire_factor(frag_barycentric)",
                          "fragment shader should expose wire diagnostics");
         require_contains(gpu_resources_source, ".size = sizeof(float) * 64U",

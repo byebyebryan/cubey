@@ -52,6 +52,13 @@ const uint OCEAN_VIEW_FOAM_MACRO = 7u;
 const uint OCEAN_VIEW_FOAM_CREST = 8u;
 const uint OCEAN_VIEW_FOAM_DETAIL = 9u;
 const uint OCEAN_VIEW_LOD = 10u;
+const uint OCEAN_VIEW_SKY_RADIANCE = 11u;
+const uint OCEAN_VIEW_REFLECTION = 12u;
+const uint OCEAN_VIEW_DIRECT_LIGHT = 13u;
+const uint OCEAN_VIEW_AMBIENT_LIGHT = 14u;
+const uint OCEAN_VIEW_EXPOSURE = 15u;
+const uint OCEAN_VIEW_FOAM_RAW = 16u;
+const uint OCEAN_VIEW_FOAM_LIT = 17u;
 const float OCEAN_REFLECTANCE = 0.02;
 const float OCEAN_FAR_ANTI_REPEAT_START = 220.0;
 const float OCEAN_FAR_ANTI_REPEAT_END = 900.0;
@@ -429,11 +436,8 @@ float ocean_foam_coverage(OceanFoamData foam_data, float dist, float ndotv) {
                  0.0, 0.72);
 }
 
-vec3 ocean_shaded_foam(vec3 water, vec3 foam_color, vec3 normal, float ndotl, float coverage,
-                       float dist) {
+vec3 ocean_lit_foam_color(vec3 foam_color, vec3 normal, float ndotl, float dist) {
     float far_factor = ocean_material_distance_factor(dist);
-    float edge = smoothstep(0.04, 0.28, coverage) *
-                 (1.0 - smoothstep(0.58, 0.92, coverage));
     float ambient_light = ocean_ambient_light_scale();
     float direct_light = ocean_direct_light_scale();
     vec3 sky_light = ocean_sky_radiance(normal) * 0.10;
@@ -442,9 +446,18 @@ vec3 ocean_shaded_foam(vec3 water, vec3 foam_color, vec3 normal, float ndotl, fl
     vec3 lit_foam = foam_color * diffuse_light + sky_light;
     vec3 far_foam = foam_color * (ambient_light * 0.18 + direct_light * 0.34) +
                     ocean_sky_radiance(vec3(0.0, 1.0, 0.0)) * 0.08;
+    return mix(lit_foam, far_foam, far_factor * 0.55);
+}
+
+vec3 ocean_shaded_foam(vec3 water, vec3 foam_color, vec3 normal, float ndotl, float coverage,
+                       float dist) {
+    float far_factor = ocean_material_distance_factor(dist);
+    float edge = smoothstep(0.04, 0.28, coverage) *
+                 (1.0 - smoothstep(0.58, 0.92, coverage));
+    vec3 foam_lighting = ocean_lit_foam_color(foam_color, normal, ndotl, dist);
     vec3 wet_water = mix(water, water * 1.14 + foam_color * 0.08,
                          edge * mix(0.36, 0.18, far_factor));
-    return mix(wet_water, mix(lit_foam, far_foam, far_factor * 0.55), coverage);
+    return mix(wet_water, foam_lighting, coverage);
 }
 
 float ocean_horizon_fog_factor(vec3 view_dir, float dist) {
@@ -555,6 +568,21 @@ void main() {
         color = vec3(foam_data.detail.x);
     } else if (view == OCEAN_VIEW_LOD) {
         color = debug_lod_color(ocean.debug_options.y, ocean.debug_options.z);
+    } else if (view == OCEAN_VIEW_SKY_RADIANCE) {
+        color = ocean_sky_radiance(reflection_dir);
+    } else if (view == OCEAN_VIEW_REFLECTION) {
+        color = reflection;
+    } else if (view == OCEAN_VIEW_DIRECT_LIGHT) {
+        color = vec3(clamp(direct_light / 1.25, 0.0, 1.0));
+    } else if (view == OCEAN_VIEW_AMBIENT_LIGHT) {
+        color = vec3(clamp(ambient_light / 1.2, 0.0, 1.0));
+    } else if (view == OCEAN_VIEW_EXPOSURE) {
+        color = vec3(clamp((ocean.debug_options.z + 4.0) / 8.0, 0.0, 1.0));
+    } else if (view == OCEAN_VIEW_FOAM_RAW) {
+        color = vec3(clamp(max(foam_persistent, foam_current), 0.0, 1.0));
+    } else if (view == OCEAN_VIEW_FOAM_LIT) {
+        color = ocean_lit_foam_color(foam_color, normal, ndotl, dist) *
+                max(foam_coverage, 0.035);
     }
 
     if (ocean.debug_options.w > 0.0) {

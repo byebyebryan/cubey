@@ -558,6 +558,9 @@ class OceanApp {
         const float aspect = static_cast<float>(extent.width) / static_cast<float>(extent.height);
         const cubey::math::Mat4 view_projection = camera_.view_projection_matrix(transform, aspect);
         const cubey::math::Vec4 sun_direction = atmosphere_primary_light_uniform();
+        const float debug_z = render_view_ == OceanRenderView::Exposure
+                                  ? display_exposure()
+                                  : static_cast<float>(ocean_config_.mesh_lod_levels - 1U);
 
         return {
             .view_projection = view_projection,
@@ -587,7 +590,7 @@ class OceanApp {
                 {
                     static_cast<float>(static_cast<std::uint32_t>(render_view_)),
                     static_cast<float>(patch.level),
-                    static_cast<float>(ocean_config_.mesh_lod_levels - 1U),
+                    debug_z,
                     diagnostics_.wire_overlay ? std::clamp(diagnostics_.wire_opacity, 0.0F, 1.0F)
                                               : 0.0F,
                 },

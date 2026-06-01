@@ -23,13 +23,23 @@ enum class OceanRenderView : std::uint32_t {
     FoamCrest = 8,
     FoamDetail = 9,
     Lod = 10,
+    SkyRadiance = 11,
+    Reflection = 12,
+    DirectLight = 13,
+    AmbientLight = 14,
+    Exposure = 15,
+    FoamRaw = 16,
+    FoamLit = 17,
 };
 
-inline constexpr std::array<OceanRenderView, 11> kOceanRenderViews{
+inline constexpr std::array<OceanRenderView, 18> kOceanRenderViews{
     OceanRenderView::Final,  OceanRenderView::Height, OceanRenderView::Displacement,
     OceanRenderView::Normal, OceanRenderView::Foam,   OceanRenderView::FoamSource,
     OceanRenderView::FoamHistory, OceanRenderView::FoamMacro,
     OceanRenderView::FoamCrest, OceanRenderView::FoamDetail, OceanRenderView::Lod,
+    OceanRenderView::SkyRadiance, OceanRenderView::Reflection, OceanRenderView::DirectLight,
+    OceanRenderView::AmbientLight, OceanRenderView::Exposure, OceanRenderView::FoamRaw,
+    OceanRenderView::FoamLit,
 };
 
 inline constexpr std::array<std::uint32_t, 4> kOceanSupportedMapSizes{128U, 256U, 512U, 1024U};
@@ -209,6 +219,20 @@ struct OceanCascadeDomain {
         return "foam-detail";
     case OceanRenderView::Lod:
         return "lod";
+    case OceanRenderView::SkyRadiance:
+        return "sky-radiance";
+    case OceanRenderView::Reflection:
+        return "reflection";
+    case OceanRenderView::DirectLight:
+        return "direct-light";
+    case OceanRenderView::AmbientLight:
+        return "ambient-light";
+    case OceanRenderView::Exposure:
+        return "exposure";
+    case OceanRenderView::FoamRaw:
+        return "foam-raw";
+    case OceanRenderView::FoamLit:
+        return "foam-lit";
     }
     return "final";
 }
