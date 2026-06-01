@@ -61,9 +61,13 @@ Current foundation checkpoint:
 - `gltf_viewer` consumes the shared runtime, renders the procedural atmosphere
   as the visible background, and uses runtime atmosphere reflection for dynamic
   specular environment lighting;
-- `projects/ocean` derives its sun direction through the shared lighting helper
-  while retaining the ocean-local sky shader until the dynamic sky/probe path is
-  promoted into the ocean renderer.
+- `projects/ocean` consumes the same shared atmosphere run-config/time helper,
+  derives direct sun lighting from shared atmosphere lighting, and samples the
+  runtime atmosphere reflection probe for water reflections;
+- `projects/ocean` still retains its ocean-local sky, horizon fog, foam
+  lighting, and non-PBR water material. Replacing those with the shared
+  atmosphere background and a cleaner ocean material is the next integration
+  step.
 
 ## Terrain And Bathymetry Project
 

@@ -42,7 +42,9 @@ Radiance HDR equirectangular environment assets:
   generated/HDR fallback resources for diffuse irradiance and DFG lookup.
   `Environment3D` can opt into SH diffuse ambient, while the reusable forward
   PBR renderer can bind either a complete generated/HDR environment or explicit
-  environment texture bindings supplied by a project;
+  environment texture bindings supplied by a project. `projects/ocean` also
+  consumes the runtime reflection probe directly for water reflection while its
+  bespoke ocean shader remains outside the full PBR material path;
 - `pbr_furnace` isolates the current IBL/specular behavior with a white sphere
   grid that sweeps roughness across columns and metallic across rows under a
   uniform white environment;
@@ -113,11 +115,12 @@ renderer-wide material management explicit future work.
   prefiltered KTX/KTX2 deployment remain future work.
 - Atmosphere-driven PBR now covers procedural visible background, direct light,
   diffuse SH, and a low-resolution runtime atmosphere reflection probe for
-  specular IBL in `gltf_viewer`. The runtime is intentionally V1: it keeps the
-  static/generated diffuse irradiance and DFG resources as fallback foundation
-  pieces, uses SH for atmosphere diffuse lighting, updates all reflection faces
-  on first use, and then updates one face per frame when procedural time is
-  animated.
+  specular IBL in `gltf_viewer`. `projects/ocean` uses that same probe for
+  water reflections, but still uses local sky/fog and non-PBR water shading.
+  The runtime is intentionally V1: it keeps the static/generated diffuse
+  irradiance and DFG resources as fallback foundation pieces, uses SH for
+  atmosphere diffuse lighting, updates all reflection faces on first use, and
+  then updates one face per frame when procedural time is animated.
 - The current clearcoat, sheen, anisotropy, and iridescence lobes are pragmatic
   real-time approximations. Transmission, refraction, volume absorption,
   dispersion, and OIT-quality transparent material behavior remain future work.
