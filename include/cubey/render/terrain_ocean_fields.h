@@ -52,6 +52,7 @@ struct TerrainOceanPackedFields {
     float max_height_m = 0.0F;
     float max_water_depth_m = 0.0F;
     float max_abs_shore_sdf_m = 0.0F;
+    float max_slope = 0.0F;
 };
 
 [[nodiscard]] std::size_t terrain_ocean_sample_count(const TerrainOceanGridDesc& desc);

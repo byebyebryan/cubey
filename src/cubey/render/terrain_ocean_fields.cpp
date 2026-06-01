@@ -5,6 +5,33 @@
 #include <stdexcept>
 
 namespace cubey::render {
+namespace {
+
+constexpr float kTerrainOceanMaskTolerance = 0.001F;
+
+void validate_finite(float value, const char* message) {
+    if (!std::isfinite(value)) {
+        throw std::runtime_error(message);
+    }
+}
+
+void validate_material_mask(const TerrainOceanMaterialMask& mask) {
+    validate_finite(mask.sand, "terrain-ocean material masks must be finite");
+    validate_finite(mask.rock, "terrain-ocean material masks must be finite");
+    validate_finite(mask.vegetation, "terrain-ocean material masks must be finite");
+    validate_finite(mask.sediment, "terrain-ocean material masks must be finite");
+    if (mask.sand < 0.0F || mask.sand > 1.0F || mask.rock < 0.0F || mask.rock > 1.0F ||
+        mask.vegetation < 0.0F || mask.vegetation > 1.0F || mask.sediment < 0.0F ||
+        mask.sediment > 1.0F) {
+        throw std::runtime_error("terrain-ocean material masks must be normalized weights");
+    }
+    const float sum = mask.sand + mask.rock + mask.vegetation + mask.sediment;
+    if (std::abs(sum - 1.0F) > kTerrainOceanMaskTolerance) {
+        throw std::runtime_error("terrain-ocean material masks must sum to one");
+    }
+}
+
+} // namespace
 
 std::size_t terrain_ocean_sample_count(const TerrainOceanGridDesc& desc) {
     return static_cast<std::size_t>(desc.width) * static_cast<std::size_t>(desc.height);
@@ -19,6 +46,10 @@ void validate_terrain_ocean_field_view(const TerrainOceanFieldView& fields) {
     if (fields.desc.width == 0U || fields.desc.height == 0U) {
         throw std::runtime_error("terrain-ocean fields require nonzero dimensions");
     }
+    validate_finite(fields.desc.cell_size_m, "terrain-ocean fields require finite grid metadata");
+    validate_finite(fields.desc.sea_level_m, "terrain-ocean fields require finite grid metadata");
+    validate_finite(fields.desc.origin_x_m, "terrain-ocean fields require finite grid metadata");
+    validate_finite(fields.desc.origin_z_m, "terrain-ocean fields require finite grid metadata");
     if (fields.desc.cell_size_m <= 0.0F) {
         throw std::runtime_error("terrain-ocean fields require a positive cell size");
     }
@@ -27,6 +58,23 @@ void validate_terrain_ocean_field_view(const TerrainOceanFieldView& fields) {
         fields.shore_sdf_m.size() != count || fields.slope.size() != count ||
         fields.material_masks.size() != count) {
         throw std::runtime_error("terrain-ocean field spans must match grid dimensions");
+    }
+    for (std::size_t index = 0; index < count; ++index) {
+        const float height = fields.height_m[index];
+        const float water_depth = fields.water_depth_m[index];
+        const float shore_sdf = fields.shore_sdf_m[index];
+        const float slope = fields.slope[index];
+        validate_finite(height, "terrain-ocean fields must be finite");
+        validate_finite(water_depth, "terrain-ocean fields must be finite");
+        validate_finite(shore_sdf, "terrain-ocean fields must be finite");
+        validate_finite(slope, "terrain-ocean fields must be finite");
+        if (water_depth < 0.0F) {
+            throw std::runtime_error("terrain-ocean water depth must be non-negative");
+        }
+        if (slope < 0.0F) {
+            throw std::runtime_error("terrain-ocean slope must be non-negative");
+        }
+        validate_material_mask(fields.material_masks[index]);
     }
 }
 
@@ -49,10 +97,6 @@ TerrainOceanPackedFields pack_terrain_ocean_fields(const TerrainOceanFieldView& 
         const float water_depth = fields.water_depth_m[index];
         const float shore_sdf = fields.shore_sdf_m[index];
         const float slope = fields.slope[index];
-        if (!std::isfinite(height) || !std::isfinite(water_depth) || !std::isfinite(shore_sdf) ||
-            !std::isfinite(slope)) {
-            throw std::runtime_error("terrain-ocean fields must be finite");
-        }
 
         packed.rgba32f[(index * 4U) + static_cast<std::uint32_t>(
                                            TerrainOceanFieldChannel::HeightMeters)] = height;
@@ -69,6 +113,7 @@ TerrainOceanPackedFields pack_terrain_ocean_fields(const TerrainOceanFieldView& 
         packed.max_height_m = std::max(packed.max_height_m, height);
         packed.max_water_depth_m = std::max(packed.max_water_depth_m, water_depth);
         packed.max_abs_shore_sdf_m = std::max(packed.max_abs_shore_sdf_m, std::abs(shore_sdf));
+        packed.max_slope = std::max(packed.max_slope, slope);
     }
     return packed;
 }

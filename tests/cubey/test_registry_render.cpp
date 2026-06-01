@@ -46,6 +46,8 @@ void test_color_space_converts_srgb_authored_values_to_linear();
 void test_color_space_converts_hsv_and_hsl_authored_values();
 void test_clipmap_grid_2d_emits_far_to_near_annular_patches();
 void test_clipmap_grid_2d_rejects_invalid_config();
+void test_terrain_ocean_fields_pack_channel_layout_and_ranges();
+void test_terrain_ocean_fields_reject_invalid_contract_data();
 void test_render_graph_allows_imported_texture_read_without_prior_write();
 void test_render_graph_barrier_recording_rejects_unallocated_transient_resources();
 void test_render_graph_creates_transient_texture_and_preserves_pass_order();
@@ -229,6 +231,8 @@ std::span<const TestCase> render_test_cases() {
         CUBEY_TEST(test_color_space_converts_hsv_and_hsl_authored_values),
         CUBEY_TEST(test_clipmap_grid_2d_emits_far_to_near_annular_patches),
         CUBEY_TEST(test_clipmap_grid_2d_rejects_invalid_config),
+        CUBEY_TEST(test_terrain_ocean_fields_pack_channel_layout_and_ranges),
+        CUBEY_TEST(test_terrain_ocean_fields_reject_invalid_contract_data),
         CUBEY_TEST(test_primitive_cube_position_color_mesh_uses_face_colors_and_indices),
         CUBEY_TEST(test_primitive_cube_normal_uv_mesh_preserves_normals_and_face_uvs),
         CUBEY_TEST(test_primitive_xz_plane_mesh_uses_center_half_extents_and_up_normal),

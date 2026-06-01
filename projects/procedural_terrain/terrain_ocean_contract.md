@@ -50,6 +50,8 @@ packed with `cubey::render::pack_terrain_ocean_fields` and uploaded as an
 `terrain-depth`, `terrain-shore`, and `terrain-slope` debug views. Real
 terrain-to-ocean integration should replace that diagnostic source with terrain
 or shallow-water output without changing the channel contract.
+`material_masks` are still validated on the shared field view, but they are not
+packed into this V1 `RGBA32F` texture.
 
 ## Ownership Boundary
 
