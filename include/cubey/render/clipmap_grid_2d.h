@@ -5,6 +5,7 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <limits>
 #include <stdexcept>
 
 namespace cubey::render {
@@ -74,10 +75,11 @@ inline void validate_clipmap_grid_2d_config(const ClipmapGrid2DConfig& config) {
     if (config.cells_per_axis == 0U) {
         throw std::runtime_error("clipmap grid cells per axis must be positive");
     }
-    if (config.outer_half_extent <= 0.0F) {
+    if (!std::isfinite(config.outer_half_extent) || config.outer_half_extent <= 0.0F) {
         throw std::runtime_error("clipmap grid outer half extent must be positive");
     }
-    if (config.transition_cells <= 0.0F || config.max_transition_ratio <= 0.0F) {
+    if (!std::isfinite(config.transition_cells) || !std::isfinite(config.max_transition_ratio) ||
+        config.transition_cells <= 0.0F || config.max_transition_ratio <= 0.0F) {
         throw std::runtime_error("clipmap grid transition settings must be positive");
     }
 }
@@ -111,7 +113,9 @@ inline void validate_clipmap_grid_2d_config(const ClipmapGrid2DConfig& config) {
                                                             float boundary_extent,
                                                             float transition_cells,
                                                             float max_transition_ratio) {
-    if (coarse_cell_size <= 0.0F || boundary_extent <= 0.0F || transition_cells <= 0.0F ||
+    if (!std::isfinite(coarse_cell_size) || !std::isfinite(boundary_extent) ||
+        !std::isfinite(transition_cells) || !std::isfinite(max_transition_ratio) ||
+        coarse_cell_size <= 0.0F || boundary_extent <= 0.0F || transition_cells <= 0.0F ||
         max_transition_ratio <= 0.0F) {
         throw std::runtime_error("clipmap grid transition inputs must be positive");
     }
@@ -122,10 +126,16 @@ inline void validate_clipmap_grid_2d_config(const ClipmapGrid2DConfig& config) {
 
 [[nodiscard]] inline std::uint32_t clipmap_grid_2d_cells_for_span(float span,
                                                                   float target_cell_size) {
-    if (span <= 0.0F || target_cell_size <= 0.0F) {
+    if (!std::isfinite(span) || !std::isfinite(target_cell_size) || span <= 0.0F ||
+        target_cell_size <= 0.0F) {
         throw std::runtime_error("clipmap grid patch span must be positive");
     }
-    return std::max(1U, static_cast<std::uint32_t>(std::ceil(span / target_cell_size)));
+    const double cells =
+        std::ceil(static_cast<double>(span) / static_cast<double>(target_cell_size));
+    if (cells > static_cast<double>(std::numeric_limits<std::uint32_t>::max())) {
+        throw std::runtime_error("clipmap grid patch cell count exceeds uint32 range");
+    }
+    return std::max(1U, static_cast<std::uint32_t>(cells));
 }
 
 template <std::size_t MaxPatches>

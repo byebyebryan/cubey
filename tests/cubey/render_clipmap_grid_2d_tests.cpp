@@ -1,6 +1,7 @@
 #include <cubey/render/clipmap_grid_2d.h>
 
 #include <cmath>
+#include <limits>
 #include <stdexcept>
 
 namespace {
@@ -91,12 +92,34 @@ void test_clipmap_grid_2d_rejects_invalid_config() {
     require_throws([&config] { (void)cubey::render::clipmap_grid_2d_patches<1U>(config); },
                    "clipmap grid should reject too-small patch storage");
 
+    require_throws([] { (void)cubey::render::clipmap_grid_2d_cells_for_span(0.0F, 1.0F); },
+                   "clipmap grid should reject non-positive spans");
     require_throws(
-        [] { (void)cubey::render::clipmap_grid_2d_cells_for_span(0.0F, 1.0F); },
-        "clipmap grid should reject non-positive spans");
+        [] { (void)cubey::render::clipmap_grid_2d_transition_width(1.0F, 0.0F, 1.0F, 0.35F); },
+        "clipmap grid should reject non-positive transition bounds");
     require_throws(
         [] {
-            (void)cubey::render::clipmap_grid_2d_transition_width(1.0F, 0.0F, 1.0F, 0.35F);
+            cubey::render::ClipmapGrid2DConfig invalid{};
+            invalid.outer_half_extent = std::numeric_limits<float>::quiet_NaN();
+            (void)cubey::render::clipmap_grid_2d_patches<1U>(invalid);
         },
-        "clipmap grid should reject non-positive transition bounds");
+        "clipmap grid should reject NaN extents");
+    require_throws(
+        [] {
+            (void)cubey::render::clipmap_grid_2d_transition_width(
+                std::numeric_limits<float>::infinity(), 1.0F, 1.0F, 0.35F);
+        },
+        "clipmap grid should reject non-finite transition inputs");
+    require_throws(
+        [] {
+            (void)cubey::render::clipmap_grid_2d_cells_for_span(
+                std::numeric_limits<float>::infinity(), 1.0F);
+        },
+        "clipmap grid should reject non-finite patch spans");
+    require_throws(
+        [] {
+            (void)cubey::render::clipmap_grid_2d_cells_for_span(std::numeric_limits<float>::max(),
+                                                                0.5F);
+        },
+        "clipmap grid should reject patch cell count overflow");
 }
