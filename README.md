@@ -212,6 +212,16 @@ Useful windowed smokes:
 Windowed `--frames` runs print a final `windowed_perf` FPS/frame-time summary.
 Use `--print-frame-stats` for periodic stdout samples while a window remains
 open; the window title also shows the latest sampled FPS and frame time.
+Shared run options can also be loaded from JSON config files:
+
+```bash
+./build/dev/projects/ocean/ocean --config ocean.json --set ocean.map_size=512
+./build/dev/projects/atmosphere/atmosphere --write-config-template atmosphere-template.json
+```
+
+Config precedence is defaults, `--config`, named CLI flags, then `--set
+path=value`. Config descriptors carry labels, groups, value ranges, and help
+text so command-line, config-file, and ImGui control surfaces stay aligned.
 `smoke_2d` defaults to a `1024x1024` solver grid and five procedural
 injectors; use `--grid-width`, `--grid-height`, and `--smoke-injectors 1..16` to
 compare other simulation/demo shapes. Use `--smoke-pressure-solver jacobi|rbgs`

@@ -105,6 +105,14 @@ Current checkpoint:
   camera-backed 2D pan/zoom, and input-aware orbit-control helpers.
 - Reusable `cubey::host::FrameStats` covers lightweight
   FPS/frame-time/extent/triangle telemetry formatting for windowed examples.
+- Reusable `cubey::ConfigOptionDescriptor` and JSON run-config loading provide
+  the first shared option metadata layer: stable option paths, labels, groups,
+  value kinds, ranges, enum choices, help text, config templates, and generic
+  `--set path=value` overrides. Existing named CLI flags remain compatible.
+- Reusable ImGui helpers now cover hierarchical debug-panel groups, standard
+  option hover help, and common bool/int/float/enum/color controls. Active
+  ocean, atmosphere, and terrain panels use those helpers while keeping project
+  commands and diagnostics project-owned.
 - Reusable `cubey::math` wraps GLM matrix/vector/quaternion types and the
   current Vulkan transform/projection conventions used by the shared
   transform/camera helpers and cube examples.

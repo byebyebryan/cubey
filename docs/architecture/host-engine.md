@@ -14,8 +14,16 @@ The host layer is responsible for host flow:
 - Input collection, per-frame input snapshots, and low-level event dispatch.
 - Windowed frame loop, frame timing, window-title/stdout frame stats, and frame
   limits.
-- Shared CLI parsing for common window, frame-limit, capture, diagnostics, and
-  project-tuning options such as simulation grid dimensions and obstacle masks.
+- Shared CLI/config parsing for common window, frame-limit, capture,
+  diagnostics, and project-tuning options. JSON config files load before named
+  CLI flags, and generic `--set path=value` overrides are applied last.
+- Shared option descriptors for configurable runtime state: stable paths,
+  labels, group paths, value kinds, ranges, enum choices, and help text. UI,
+  config templates, docs, and CLI overrides should reuse this metadata instead
+  of inventing parallel option names.
+- Shared ImGui control helpers for project debug panels: hierarchical groups,
+  consistent parent/child visual treatment, and hover help sourced from option
+  metadata where the control is descriptor-backed.
 - Swapchain resize/out-of-date recreation orchestration.
 - Project lifecycle calls.
 
@@ -265,8 +273,8 @@ setup before swapchain setup, and callback forwarding.
 - Keep command recording explicit in examples/projects.
 - Keep lifecycle APIs small enough that focused cube examples remain readable.
 - Prefer project-owned render intent over host-owned render policy.
-- Add input/UI hosting when the contract is clear enough to keep projects
-  cleaner, not only after the projects become messy.
+- Add input/UI/config helpers when the contract is clear enough to keep
+  projects cleaner, not only after the projects become messy.
 - Keep the headless host narrow: no scene/render abstraction, no implicit
   project lifecycle, and no GLFW dependency. Video capture may provide frame
   timing and artifact writing, but projects still own animation/simulation
@@ -279,5 +287,6 @@ setup before swapchain setup, and callback forwarding.
 - Dedicated render thread.
 - Split graphics/compute/present queue scheduler.
 - Parallel command recording.
-- ImGui/UI hosting.
+- Editor-style UI hosting, layout persistence, and project-agnostic inspector
+  ownership.
 - Backend parity work.
