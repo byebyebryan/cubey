@@ -133,18 +133,18 @@ void GltfViewerApp::create_default_textures(const cubey::vulkan::Device& device,
         cubey::render::create_pbr_default_texture_set(device, gpu));
 }
 
-void GltfViewerApp::create_atmosphere_background_atlases(
-    const cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu) {
+void GltfViewerApp::create_atmosphere_background_atlases(const cubey::vulkan::Device& device,
+                                                         cubey::vulkan::GpuRuntime& gpu) {
     if (atmosphere_background_atlases_.has_value()) {
         return;
     }
 
-    atmosphere_background_atlases_.emplace(cubey::render::create_atmosphere_background_generated_textures(
-        device, gpu,
-        {
-            .lunar_extent = 128,
-            .night_sky_extent = 128,
-        }));
+    atmosphere_background_atlases_.emplace(
+        cubey::render::create_atmosphere_background_generated_textures(device, gpu,
+                                                                       {
+                                                                           .lunar_extent = 128,
+                                                                           .night_sky_extent = 128,
+                                                                       }));
 }
 
 cubey::render::AtmosphereBackgroundTextureBindings
@@ -156,8 +156,7 @@ GltfViewerApp::atmosphere_background_textures() const {
 }
 
 bool GltfViewerApp::use_atmosphere_environment_source() const {
-    return config_.pbr.environment_source.empty() ||
-           config_.pbr.environment_source == "atmosphere";
+    return config_.pbr.environment_source.empty() || config_.pbr.environment_source == "atmosphere";
 }
 
 cubey::render::PbrEnvironmentTextureBindings GltfViewerApp::pbr_environment_bindings() const {
@@ -175,7 +174,7 @@ void GltfViewerApp::create_atmosphere_environment_runtime(const cubey::vulkan::D
     }
 
     atmosphere_runtime_.create_resources(
-        device, cubey::render::AtmosphereEnvironmentRuntimeResourceConfig{
+        device, cubey::AtmosphereEnvironmentRuntimeResourceConfig{
                     .reflection_extent = 64,
                     .reflection_mip_levels = 5,
                     .format = VK_FORMAT_R16G16B16A16_SFLOAT,
@@ -183,7 +182,7 @@ void GltfViewerApp::create_atmosphere_environment_runtime(const cubey::vulkan::D
                     .atmosphere_textures = atmosphere_background_textures(),
                 });
     atmosphere_runtime_.create_pipelines(
-        device, cubey::render::AtmosphereEnvironmentRuntimePipelineConfig{
+        device, cubey::AtmosphereEnvironmentRuntimePipelineConfig{
                     .atmosphere_vertex_shader = shader_path("atmosphere.vert.spv"),
                     .atmosphere_fragment_shader = shader_path("atmosphere.frag.spv"),
                     .reflection_prefilter_vertex_shader = shader_path("atmosphere.vert.spv"),
@@ -199,12 +198,12 @@ void GltfViewerApp::create_fallback_material(const cubey::vulkan::Device& device
         engine_.render_resources().create_material("gltf_viewer.fallback.material");
     import_result_.material_handles.push_back(material);
     import_result_.first_material_handle = material;
-    import_resources_.materials.set_factors(
-        material, cubey::render::PbrMaterialFactors{
-                      .base_color_factor = {0.86F, 0.82F, 0.72F, 1.0F},
-                      .metallic_factor = 0.0F,
-                      .roughness_factor = 0.58F,
-                  });
+    import_resources_.materials.set_factors(material,
+                                            cubey::render::PbrMaterialFactors{
+                                                .base_color_factor = {0.86F, 0.82F, 0.72F, 1.0F},
+                                                .metallic_factor = 0.0F,
+                                                .roughness_factor = 0.58F,
+                                            });
     import_resources_.materials.emplace_instance(
         material, device,
         cubey::render::FrameUniformMaterialInstanceConfig{

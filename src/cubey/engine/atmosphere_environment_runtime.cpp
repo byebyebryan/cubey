@@ -2,7 +2,7 @@
 
 #include <stdexcept>
 
-namespace cubey::render {
+namespace cubey {
 
 AtmosphereEnvironmentRuntime::AtmosphereEnvironmentRuntime() {
     refresh_lighting();
@@ -19,7 +19,7 @@ void AtmosphereEnvironmentRuntime::create_resources(
     }
 
     reflection_probe_.create_resources(device,
-                                       AtmosphereReflectionProbeConfig{
+                                       render::AtmosphereReflectionProbeConfig{
                                            .extent = config.reflection_extent,
                                            .mip_levels = config.reflection_mip_levels,
                                            .format = config.format,
@@ -32,7 +32,7 @@ void AtmosphereEnvironmentRuntime::create_resources(
 void AtmosphereEnvironmentRuntime::create_pipelines(
     const cubey::vulkan::Device& device, const AtmosphereEnvironmentRuntimePipelineConfig& config) {
     reflection_probe_.create_pipelines(
-        device, AtmosphereReflectionProbePipelineConfig{
+        device, render::AtmosphereReflectionProbePipelineConfig{
                     .atmosphere_vertex_shader = config.atmosphere_vertex_shader,
                     .atmosphere_fragment_shader = config.atmosphere_fragment_shader,
                     .prefilter_vertex_shader = config.reflection_prefilter_vertex_shader,
@@ -45,7 +45,8 @@ void AtmosphereEnvironmentRuntime::destroy() {
     mark_full_update_pending();
 }
 
-void AtmosphereEnvironmentRuntime::set_environment(const AtmosphereEnvironmentConfig& environment) {
+void AtmosphereEnvironmentRuntime::set_environment(
+    const render::AtmosphereEnvironmentConfig& environment) {
     environment_ = environment;
     refresh_lighting();
     if (!full_update_pending_) {
@@ -60,12 +61,12 @@ void AtmosphereEnvironmentRuntime::mark_full_update_pending() {
 }
 
 void AtmosphereEnvironmentRuntime::record_pending_update(
-    const cubey::vulkan::CommandRecorder& recorder, FrameSlot frame_slot) {
+    const cubey::vulkan::CommandRecorder& recorder, render::FrameSlot frame_slot) {
     if (!resources_created()) {
         throw std::runtime_error("atmosphere environment runtime resources are not initialized");
     }
 
-    const AtmosphereReflectionProbeUpdateInfo update{
+    const render::AtmosphereReflectionProbeUpdateInfo update{
         .frame_slot = frame_slot,
         .environment = environment_,
     };
@@ -85,7 +86,7 @@ void AtmosphereEnvironmentRuntime::record_pending_update(
 
 void AtmosphereEnvironmentRuntime::update_atmosphere_texture_bindings(
     const cubey::vulkan::Device& device,
-    const AtmosphereBackgroundTextureBindings& textures) const {
+    const render::AtmosphereBackgroundTextureBindings& textures) const {
     if (!resources_created()) {
         throw std::runtime_error("atmosphere environment runtime resources are not initialized");
     }
@@ -96,11 +97,13 @@ bool AtmosphereEnvironmentRuntime::resources_created() const noexcept {
     return reflection_probe_.resources_created();
 }
 
-const AtmosphereEnvironmentConfig& AtmosphereEnvironmentRuntime::environment() const noexcept {
+const render::AtmosphereEnvironmentConfig&
+AtmosphereEnvironmentRuntime::environment() const noexcept {
     return environment_;
 }
 
-const AtmosphereEnvironmentLighting& AtmosphereEnvironmentRuntime::lighting() const noexcept {
+const render::AtmosphereEnvironmentLighting&
+AtmosphereEnvironmentRuntime::lighting() const noexcept {
     return lighting_;
 }
 
@@ -113,21 +116,22 @@ cubey::scene::Environment3D AtmosphereEnvironmentRuntime::scene_environment() co
     };
 }
 
-PbrEnvironmentTextureBindings AtmosphereEnvironmentRuntime::pbr_environment_bindings(
-    const GeneratedPbrEnvironment& fallback) const {
+render::PbrEnvironmentTextureBindings AtmosphereEnvironmentRuntime::pbr_environment_bindings(
+    const render::GeneratedPbrEnvironment& fallback) const {
     if (!resources_created()) {
         throw std::runtime_error("atmosphere environment runtime resources are not initialized");
     }
 
-    PbrEnvironmentTextureBindings bindings = pbr_environment_texture_bindings(fallback);
-    const TextureCube& prefiltered = reflection_probe_.prefiltered_cube();
+    render::PbrEnvironmentTextureBindings bindings =
+        render::pbr_environment_texture_bindings(fallback);
+    const render::TextureCube& prefiltered = reflection_probe_.prefiltered_cube();
     bindings.prefiltered_sampler = prefiltered.sampler().handle();
     bindings.prefiltered_view = prefiltered.view();
     bindings.prefiltered_mip_levels = reflection_probe_.mip_levels();
     return bindings;
 }
 
-const AtmosphereReflectionProbe& AtmosphereEnvironmentRuntime::reflection_probe() const {
+const render::AtmosphereReflectionProbe& AtmosphereEnvironmentRuntime::reflection_probe() const {
     if (!resources_created()) {
         throw std::runtime_error("atmosphere environment runtime resources are not initialized");
     }
@@ -135,7 +139,7 @@ const AtmosphereReflectionProbe& AtmosphereEnvironmentRuntime::reflection_probe(
 }
 
 void AtmosphereEnvironmentRuntime::refresh_lighting() {
-    lighting_ = atmosphere_environment_lighting(environment_);
+    lighting_ = render::atmosphere_environment_lighting(environment_);
 }
 
-} // namespace cubey::render
+} // namespace cubey

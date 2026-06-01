@@ -92,7 +92,7 @@ void test_atmosphere_environment_run_config_advances_dynamic_time() {
 }
 
 void test_atmosphere_environment_runtime_derives_lighting_and_scene_environment() {
-    cubey::render::AtmosphereEnvironmentRuntime runtime;
+    cubey::AtmosphereEnvironmentRuntime runtime;
     cubey::render::AtmosphereEnvironmentConfig environment;
     environment.sun_elevation_degrees = 35.0F;
     environment.sun_azimuth_degrees = 90.0F;
@@ -111,7 +111,7 @@ void test_atmosphere_environment_runtime_derives_lighting_and_scene_environment(
 }
 
 void test_atmosphere_environment_runtime_requires_resources_before_bindings() {
-    cubey::render::AtmosphereEnvironmentRuntime runtime;
+    cubey::AtmosphereEnvironmentRuntime runtime;
 
     bool threw = false;
     try {

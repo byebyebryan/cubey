@@ -5,10 +5,10 @@
 #include <cubey/animation/gltf_animation.h>
 #include <cubey/asset/gltf_asset.h>
 #include <cubey/core/math.h>
-#include <cubey/engine/engine.h>
 #include <cubey/engine/atmosphere_environment_config.h>
-#include <cubey/engine/forward_pbr_renderer_3d.h>
 #include <cubey/engine/atmosphere_environment_runtime.h>
+#include <cubey/engine/engine.h>
+#include <cubey/engine/forward_pbr_renderer_3d.h>
 #include <cubey/engine/gltf_scene_importer.h>
 #include <cubey/host/frame_stats.h>
 #include <cubey/host/headless_png_host.h>
@@ -137,7 +137,7 @@ class GltfViewerApp {
     cubey::Bounds3D scene_bounds_{};
     cubey::OrbitController orbit_controller_;
     cubey::render::PbrDebugView debug_view_ = cubey::render::PbrDebugView::Final;
-    cubey::render::AtmosphereEnvironmentRuntime atmosphere_runtime_{};
+    cubey::AtmosphereEnvironmentRuntime atmosphere_runtime_{};
     cubey::AtmosphereEnvironmentRunState atmosphere_state_{};
     cubey::animation::GltfAnimationPlayback animation_playback_{};
     std::optional<cubey::animation::GltfAnimationSample> animation_sample_{};

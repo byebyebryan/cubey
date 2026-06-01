@@ -228,8 +228,8 @@ ocean_depth_texture_desc(const char* label, VkExtent2D extent, VkFormat format) 
     return lhs.mesh_extent != rhs.mesh_extent || lhs.depth != rhs.depth;
 }
 
-[[nodiscard]] OceanTerrainFieldUniforms ocean_terrain_field_uniforms(
-    const cubey::render::TerrainOceanPackedFields& fields, bool enabled) {
+[[nodiscard]] OceanTerrainFieldUniforms
+ocean_terrain_field_uniforms(const cubey::render::TerrainOceanPackedFields& fields, bool enabled) {
     const cubey::render::TerrainOceanGridDesc& desc = fields.desc;
     const float span_x =
         std::max(static_cast<float>(desc.width > 1U ? desc.width - 1U : 1U) * desc.cell_size_m,
@@ -609,7 +609,7 @@ class OceanApp {
         }
         if (!atmosphere_runtime_.resources_created()) {
             atmosphere_runtime_.create_resources(
-                device, cubey::render::AtmosphereEnvironmentRuntimeResourceConfig{
+                device, cubey::AtmosphereEnvironmentRuntimeResourceConfig{
                             .reflection_extent = 64,
                             .reflection_mip_levels = 5,
                             .format = VK_FORMAT_R16G16B16A16_SFLOAT,
@@ -619,7 +619,7 @@ class OceanApp {
             const std::filesystem::path shader_dir = CUBEY_OCEAN_SHADER_DIR;
             atmosphere_runtime_.create_pipelines(
                 device,
-                cubey::render::AtmosphereEnvironmentRuntimePipelineConfig{
+                cubey::AtmosphereEnvironmentRuntimePipelineConfig{
                     .atmosphere_vertex_shader = shader_dir / "atmosphere.vert.spv",
                     .atmosphere_fragment_shader = shader_dir / "atmosphere.frag.spv",
                     .reflection_prefilter_vertex_shader = shader_dir / "atmosphere.vert.spv",
@@ -694,8 +694,8 @@ class OceanApp {
             terrain_ocean_field_uniforms_.reset();
             create_terrain_ocean_field_resources(context.device(), context.gpu(),
                                                  context.frame_slot_count());
-            ocean_gpu_.update_terrain_ocean_field_descriptor(
-                context.device(), terrain_ocean_fields_texture_.value());
+            ocean_gpu_.update_terrain_ocean_field_descriptor(context.device(),
+                                                             terrain_ocean_fields_texture_.value());
             update_terrain_ocean_field_uniform_descriptors(context.device());
         }
         if (ocean_config_ != gpu_config_.value()) {
@@ -1224,7 +1224,7 @@ class OceanApp {
     cubey::render::AtmosphereBackgroundFrame atmosphere_background_{};
     cubey::render::HdrPostFrame hdr_post_frame_;
     std::optional<cubey::render::AtmosphereBackgroundAtlasResources> atmosphere_background_atlases_;
-    cubey::render::AtmosphereEnvironmentRuntime atmosphere_runtime_{};
+    cubey::AtmosphereEnvironmentRuntime atmosphere_runtime_{};
     cubey::render::TerrainOceanPackedFields terrain_ocean_fields_{};
     std::optional<cubey::render::Texture2D> terrain_ocean_fields_texture_;
     std::optional<cubey::render::FrameUniformBuffer<OceanTerrainFieldUniforms>>
