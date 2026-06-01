@@ -866,11 +866,11 @@ void test_pbr_consumers_use_atmosphere_lighting_foundation() {
                      "glTF viewer should own a shared atmosphere environment runtime");
     require_not_contains(gltf_header, "AtmosphereDiffuseSource",
                          "glTF viewer should not expose multiple atmosphere diffuse paths");
-    require_contains(gltf_app, "gltf_viewer_atmosphere_environment_config",
+    require_contains(gltf_app, "gltf_viewer_atmosphere_run_state",
                      "glTF viewer should resolve atmosphere options from RunConfig");
     require_contains(gltf_app, "atmosphere_runtime_.set_environment",
                      "glTF viewer should feed atmosphere config into the shared runtime");
-    require_contains(gltf_app, "environment.reference_geometry_enabled = false",
+    require_contains(gltf_app, ".reference_geometry_enabled = false",
                      "glTF viewer should disable atmosphere reference geometry for PBR backgrounds");
     require_contains(gltf_scene, "primary_light_direction",
                      "glTF viewer should use atmosphere primary light for direct lighting");

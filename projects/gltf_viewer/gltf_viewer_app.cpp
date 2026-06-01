@@ -39,99 +39,20 @@ constexpr float kHeadlessVideoOrbitSpeed = 0.32F;
             std::atan2(normal.x, -normal.z)));
 }
 
-[[nodiscard]] bool gltf_viewer_uses_solar_time(const RunConfig& run_config) {
-    const RunConfig::AtmosphereOptions& atmosphere = run_config.atmosphere;
-    if (atmosphere.time_of_day_mode == "solar") {
-        return true;
-    }
-    if (atmosphere.time_of_day_mode == "manual") {
-        return false;
-    }
-    if (run_config_float_is_set(atmosphere.sun_elevation_degrees) ||
-        run_config_float_is_set(atmosphere.sun_azimuth_degrees)) {
-        return false;
-    }
-    return run_config_float_is_set(atmosphere.time_hours) ||
-           run_config_float_is_set(atmosphere.day_of_year) ||
-           run_config_float_is_set(atmosphere.latitude_degrees) ||
-           run_config_float_is_set(atmosphere.sun_azimuth_offset_degrees) ||
-           run_config_float_is_set(atmosphere.time_speed_hours_per_second);
-}
-
-[[nodiscard]] float gltf_viewer_atmosphere_time_speed(const RunConfig& run_config) {
-    return run_config_float_is_set(run_config.atmosphere.time_speed_hours_per_second)
-               ? run_config.atmosphere.time_speed_hours_per_second
-               : 0.0F;
-}
-
-[[nodiscard]] bool gltf_viewer_atmosphere_time_playing(const RunConfig& run_config) {
-    return run_config.atmosphere.time_paused != 1 &&
-           gltf_viewer_atmosphere_time_speed(run_config) > 0.0F;
-}
-
 } // namespace
 
 const cubey::math::Vec3 kLightDirection = glm::normalize(cubey::math::Vec3{0.45F, 0.82F, 0.35F});
 
-[[nodiscard]] cubey::render::AtmosphereEnvironmentConfig
-gltf_viewer_atmosphere_environment_config(const RunConfig& run_config) {
-    cubey::render::AtmosphereEnvironmentConfig environment;
-    environment.sun_elevation_degrees = direction_elevation_degrees(kLightDirection);
-    environment.sun_azimuth_degrees = direction_azimuth_degrees(kLightDirection);
-    environment.ground_mode = cubey::render::AtmosphereEnvironmentGroundMode::SkyOnly;
-    environment.reference_geometry_enabled = false;
-
-    const RunConfig::AtmosphereOptions& atmosphere = run_config.atmosphere;
-    if (run_config_float_is_set(atmosphere.time_hours)) {
-        environment.time_of_day.time_hours = atmosphere.time_hours;
-    }
-    if (run_config_float_is_set(atmosphere.day_of_year)) {
-        environment.time_of_day.day_of_year = atmosphere.day_of_year;
-    }
-    if (run_config_float_is_set(atmosphere.latitude_degrees)) {
-        environment.time_of_day.latitude_degrees = atmosphere.latitude_degrees;
-    }
-    if (run_config_float_is_set(atmosphere.sun_azimuth_offset_degrees)) {
-        environment.time_of_day.azimuth_offset_degrees = atmosphere.sun_azimuth_offset_degrees;
-    }
-
-    if (gltf_viewer_uses_solar_time(run_config)) {
-        const cubey::render::AtmosphereEnvironmentSolarPosition solar =
-            cubey::render::atmosphere_environment_solar_position(environment.time_of_day);
-        environment.sun_elevation_degrees = solar.elevation_degrees;
-        environment.sun_azimuth_degrees = solar.azimuth_degrees;
-    } else {
-        if (run_config_float_is_set(atmosphere.sun_elevation_degrees)) {
-            environment.sun_elevation_degrees = atmosphere.sun_elevation_degrees;
-        }
-        if (run_config_float_is_set(atmosphere.sun_azimuth_degrees)) {
-            environment.sun_azimuth_degrees = atmosphere.sun_azimuth_degrees;
-        }
-    }
-
-    if (run_config_float_is_set(atmosphere.camera_altitude_km)) {
-        environment.camera_altitude_km = atmosphere.camera_altitude_km;
-    }
-    if (run_config_float_is_set(atmosphere.mie_scale)) {
-        environment.mie_density_scale = atmosphere.mie_scale;
-    }
-    if (run_config_float_is_set(atmosphere.moonlight_intensity)) {
-        environment.moon.moonlight_intensity = atmosphere.moonlight_intensity;
-    }
-    if (run_config_float_is_set(atmosphere.moon_intensity)) {
-        environment.moon.disk_intensity = atmosphere.moon_intensity;
-    }
-    if (run_config_float_is_set(atmosphere.moon_phase_offset_days)) {
-        environment.moon.phase_offset_days = atmosphere.moon_phase_offset_days;
-    }
-    if (run_config_float_is_set(atmosphere.moon_size_scale)) {
-        environment.moon.angular_radius_scale = atmosphere.moon_size_scale;
-    }
-    if (atmosphere.moon >= 0) {
-        environment.moon.enabled = atmosphere.moon == 1;
-    }
-
-    return environment;
+[[nodiscard]] cubey::AtmosphereEnvironmentRunState
+gltf_viewer_atmosphere_run_state(const RunConfig& run_config) {
+    return cubey::atmosphere_environment_run_state_from_config(
+        run_config.atmosphere,
+        {
+            .sun_elevation_degrees = direction_elevation_degrees(kLightDirection),
+            .sun_azimuth_degrees = direction_azimuth_degrees(kLightDirection),
+            .ground_mode = cubey::render::AtmosphereEnvironmentGroundMode::SkyOnly,
+            .reference_geometry_enabled = false,
+        });
 }
 
 std::filesystem::path shader_path(const char* filename) {
@@ -202,42 +123,16 @@ std::vector<std::uint32_t> fallback_cube_indices() {
 GltfViewerApp::GltfViewerApp(RunConfig config)
     : config_(std::move(config)),
       debug_view_(render::pbr_debug_view_from_name(config_.debug_view)),
-      atmosphere_solar_time_enabled_(gltf_viewer_uses_solar_time(config_)),
-      atmosphere_time_playing_(gltf_viewer_atmosphere_time_playing(config_)),
-      atmosphere_time_speed_hours_per_second_(gltf_viewer_atmosphere_time_speed(config_)) {
-    atmosphere_runtime_.set_environment(gltf_viewer_atmosphere_environment_config(config_));
+      atmosphere_state_(gltf_viewer_atmosphere_run_state(config_)) {
+    atmosphere_runtime_.set_environment(atmosphere_state_.environment);
 }
 
 bool GltfViewerApp::update_atmosphere_time(double delta_seconds) {
-    if (!atmosphere_time_playing_ || atmosphere_time_speed_hours_per_second_ <= 0.0F ||
-        delta_seconds <= 0.0) {
+    if (!cubey::atmosphere_environment_advance_time(atmosphere_state_, delta_seconds)) {
         return false;
     }
 
-    cubey::render::AtmosphereEnvironmentConfig environment = atmosphere_runtime_.environment();
-    const double current_time_hours = static_cast<double>(environment.time_of_day.time_hours);
-    const double next_time_hours =
-        current_time_hours +
-        (static_cast<double>(atmosphere_time_speed_hours_per_second_) * delta_seconds);
-    const int day_delta = static_cast<int>(std::floor(next_time_hours / 24.0));
-    environment.time_of_day.time_hours =
-        cubey::render::atmosphere_environment_wrap_time_hours(
-            static_cast<float>(next_time_hours));
-    if (day_delta != 0) {
-        environment.time_of_day.day_of_year =
-            cubey::render::atmosphere_environment_advance_day_of_year(
-                environment.time_of_day.day_of_year, day_delta);
-    }
-
-    if (atmosphere_solar_time_enabled_) {
-        const cubey::render::AtmosphereEnvironmentSolarPosition solar =
-            cubey::render::atmosphere_environment_solar_position(
-                environment.time_of_day);
-        environment.sun_elevation_degrees = solar.elevation_degrees;
-        environment.sun_azimuth_degrees = solar.azimuth_degrees;
-    }
-
-    atmosphere_runtime_.set_environment(environment);
+    atmosphere_runtime_.set_environment(atmosphere_state_.environment);
     return true;
 }
 

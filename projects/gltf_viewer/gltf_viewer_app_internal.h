@@ -6,6 +6,7 @@
 #include <cubey/asset/gltf_asset.h>
 #include <cubey/core/math.h>
 #include <cubey/engine/engine.h>
+#include <cubey/engine/atmosphere_environment_config.h>
 #include <cubey/engine/forward_pbr_renderer_3d.h>
 #include <cubey/engine/atmosphere_environment_runtime.h>
 #include <cubey/engine/gltf_scene_importer.h>
@@ -136,9 +137,7 @@ class GltfViewerApp {
     cubey::OrbitController orbit_controller_;
     cubey::render::PbrDebugView debug_view_ = cubey::render::PbrDebugView::Final;
     cubey::render::AtmosphereEnvironmentRuntime atmosphere_runtime_{};
-    bool atmosphere_solar_time_enabled_ = false;
-    bool atmosphere_time_playing_ = false;
-    float atmosphere_time_speed_hours_per_second_ = 0.0F;
+    cubey::AtmosphereEnvironmentRunState atmosphere_state_{};
     cubey::animation::GltfAnimationPlayback animation_playback_{};
     std::optional<cubey::animation::GltfAnimationSample> animation_sample_{};
     std::uint32_t triangle_count_ = 0;
