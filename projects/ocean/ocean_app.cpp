@@ -13,6 +13,7 @@
 #include <cubey/host/windowed_app.h>
 #include <cubey/input/input.h>
 #include <cubey/input/orbit_controller.h>
+#include <cubey/render/atmosphere_background_frame.h>
 #include <cubey/render/atmosphere_environment.h>
 #include <cubey/render/hdr_post_frame.h>
 #include <cubey/render/material_instance.h>
@@ -33,6 +34,7 @@
 #include <vulkan/vulkan.h>
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <cstdint>
 #include <filesystem>
@@ -81,14 +83,6 @@ struct OceanPushConstants {
     cubey::math::Vec4 foam_color;
 };
 
-struct OceanSkyPushConstants {
-    cubey::math::Vec4 camera_time;
-    cubey::math::Vec4 camera_right_aspect;
-    cubey::math::Vec4 camera_up_tan_half_fovy;
-    cubey::math::Vec4 camera_forward;
-    cubey::math::Vec4 sun_direction;
-};
-
 struct OceanSpectrumPushConstants {
     cubey::math::Vec4 seed_tile;
     cubey::math::Vec4 spectrum_options;
@@ -112,7 +106,6 @@ struct OceanUnpackPushConstants {
 };
 
 static_assert(sizeof(OceanPushConstants) == sizeof(float) * 64U);
-static_assert(sizeof(OceanSkyPushConstants) == sizeof(float) * 20U);
 static_assert(sizeof(OceanSpectrumPushConstants) == sizeof(float) * 16U);
 static_assert(sizeof(OceanModulatePushConstants) == sizeof(float) * 8U);
 static_assert(sizeof(OceanFftPushConstants) == sizeof(float) * 8U);
@@ -413,8 +406,11 @@ class OceanApp {
                                       .depth_format = kOceanDepthFormat,
                                       .target_extent = extent,
                                   });
-        ocean_gpu_.update_reflection_probe_descriptor(
-            device, atmosphere_runtime_.reflection_probe().prefiltered_cube());
+        const cubey::render::AtmosphereReflectionProbe& atmosphere_probe =
+            atmosphere_runtime_.reflection_probe();
+        ocean_gpu_.update_atmosphere_probe_descriptors(
+            device, atmosphere_probe.prefiltered_cube(), atmosphere_probe.sky_radiance_cube());
+        create_atmosphere_background_frame(device, extent, frame_slot_count);
         hdr_post_frame_.create_materials(device, {
                                                      .frame_slot_count = frame_slot_count,
                                                  });
@@ -473,9 +469,35 @@ class OceanApp {
         atmosphere_runtime_.set_environment(atmosphere_state_.environment);
     }
 
+    void create_atmosphere_background_frame(const cubey::vulkan::Device& device, VkExtent2D extent,
+                                            std::uint32_t frame_slot_count) {
+        if (!atmosphere_background_placeholders_.has_value()) {
+            throw std::runtime_error("ocean atmosphere background textures are not initialized");
+        }
+        atmosphere_background_.destroy();
+        atmosphere_background_.create_materials(
+            device, cubey::render::AtmosphereBackgroundFrameMaterialConfig{
+                        .frame_slot_count = frame_slot_count,
+                        .textures = atmosphere_background_placeholders_->bindings(),
+                    });
+        const std::filesystem::path shader_dir = CUBEY_OCEAN_SHADER_DIR;
+        const std::array<cubey::render::ShaderStageFile, 2> shaders{
+            cubey::render::vertex_shader_file(shader_dir / "atmosphere.vert.spv"),
+            cubey::render::fragment_shader_file(shader_dir / "atmosphere.frag.spv"),
+        };
+        atmosphere_background_.create_pipeline(
+            device, cubey::render::AtmosphereBackgroundFramePipelineConfig{
+                        .extent = extent,
+                        .color_format = kOceanSceneColorFormat,
+                        .depth_format = kOceanDepthFormat,
+                        .shader_stage_files = shaders,
+                    });
+    }
+
     void destroy_swapchain_resources() {
         graph_executor_.clear();
         hdr_post_frame_.destroy();
+        atmosphere_background_.destroy();
         ocean_gpu_.reset();
         atmosphere_runtime_.destroy();
         atmosphere_background_placeholders_.reset();
@@ -530,7 +552,7 @@ class OceanApp {
         const cubey::Transform3D transform = camera_transform();
         const float aspect = static_cast<float>(extent.width) / static_cast<float>(extent.height);
         const cubey::math::Mat4 view_projection = camera_.view_projection_matrix(transform, aspect);
-        const cubey::math::Vec4 sun_direction = atmosphere_sun_direction_uniform();
+        const cubey::math::Vec4 sun_direction = atmosphere_primary_light_uniform();
 
         return {
             .view_projection = view_projection,
@@ -616,26 +638,18 @@ class OceanApp {
         };
     }
 
-    [[nodiscard]] OceanSkyPushConstants sky_push_constants(VkExtent2D extent) const {
+    [[nodiscard]] cubey::render::AtmosphereEnvironmentFrameUniforms
+    atmosphere_background_uniforms(VkExtent2D extent) const {
         const cubey::Transform3D transform = camera_transform();
         const float aspect = static_cast<float>(extent.width) / static_cast<float>(extent.height);
         const cubey::render::ViewRayBasis3D view_rays =
             cubey::render::view_ray_basis_3d(transform.rotation, aspect, camera_.fovy_radians());
-        const cubey::math::Vec4 sun_direction = atmosphere_sun_direction_uniform();
-
-        return {
-            .camera_time =
-                {
-                    transform.translation.x,
-                    transform.translation.y,
-                    transform.translation.z,
-                    static_cast<float>(time_seconds_),
-                },
-            .camera_right_aspect = view_rays.right_aspect,
-            .camera_up_tan_half_fovy = view_rays.up_tan_half_fovy,
-            .camera_forward = view_rays.forward,
-            .sun_direction = sun_direction,
-        };
+        return cubey::render::atmosphere_environment_frame_uniforms(
+            atmosphere_state_.environment,
+            {
+                .view_rays = view_rays,
+                .render_view = cubey::render::AtmosphereEnvironmentRenderView::Final,
+            });
     }
 
     [[nodiscard]] OceanSpectrumPushConstants
@@ -677,9 +691,9 @@ class OceanApp {
         };
     }
 
-    [[nodiscard]] cubey::math::Vec4 atmosphere_sun_direction_uniform() const {
-        const cubey::math::Vec3& sun = atmosphere_lighting_.sun_direction;
-        return {sun.x, sun.y, sun.z, 0.0F};
+    [[nodiscard]] cubey::math::Vec4 atmosphere_primary_light_uniform() const {
+        const cubey::math::Vec3& light = atmosphere_lighting_.primary_light_direction;
+        return {light.x, light.y, light.z, atmosphere_lighting_.primary_light_intensity};
     }
 
     [[nodiscard]] OceanModulatePushConstants
@@ -743,16 +757,16 @@ class OceanApp {
         };
     }
 
-    void record_ocean_sky(const cubey::vulkan::CommandRecorder& recorder,
-                              VkExtent2D extent) const {
-        const OceanSkyPushConstants constants = sky_push_constants(extent);
-        const cubey::render::GraphicsPipelineResource& sky_pipeline = ocean_gpu_.sky_pipeline();
+    void record_atmosphere_background(const cubey::vulkan::CommandRecorder& recorder,
+                                      VkExtent2D extent,
+                                      cubey::render::FrameSlot frame_slot) const {
+        atmosphere_background_.upload(frame_slot, atmosphere_background_uniforms(extent));
         cubey::render::record_fullscreen_pipeline_draw(
-            recorder,
-            {
-                .pipeline = &sky_pipeline,
-            },
-            VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, constants);
+            recorder, cubey::render::FullscreenPipelineDrawInfo{
+                          .pipeline = &atmosphere_background_.pipeline(),
+                          .descriptor_set = atmosphere_background_.material().set(frame_slot),
+                          .descriptor_set_index = 0,
+                      });
     }
 
     void record_ocean_draw(const cubey::vulkan::CommandRecorder& recorder,
@@ -773,7 +787,14 @@ class OceanApp {
     }
 
     [[nodiscard]] cubey::render::PbrPostUniforms post_uniforms() const {
-        return cubey::render::hdr_post_uniforms(pipeline_color_format_, ocean_config_.exposure);
+        return cubey::render::hdr_post_uniforms(pipeline_color_format_, display_exposure());
+    }
+
+    [[nodiscard]] float display_exposure() const {
+        if (atmosphere_state_.auto_exposure_enabled && !config_.pbr.exposure_explicit) {
+            return atmosphere_state_.resolved_exposure;
+        }
+        return ocean_config_.exposure;
     }
 
     void record_ocean_post(const cubey::vulkan::CommandRecorder& recorder,
@@ -807,7 +828,7 @@ class OceanApp {
         graph.add_pass("ocean scene", cubey::render::RenderGraphQueueDomain::Graphics)
             .write_color(scene_color)
             .write_depth(surface_depth)
-            .execute([this, scene_color,
+            .execute([this, scene_color, frame_slot,
                       surface_depth](const cubey::render::RenderGraphExecutionContext& context) {
                 const cubey::render::ColorTargetView target =
                     cubey::render::resolved_color_target_view(context, scene_color);
@@ -819,8 +840,9 @@ class OceanApp {
                         .color = cubey::render::color_clear_value(0.0F, 0.0F, 0.0F, 1.0F),
                         .depth = cubey::render::depth_clear_value(),
                     },
-                    [this, target](const cubey::vulkan::CommandRecorder& draw_recorder) {
-                        record_ocean_sky(draw_recorder, target.extent);
+                    [this, target,
+                     frame_slot](const cubey::vulkan::CommandRecorder& draw_recorder) {
+                        record_atmosphere_background(draw_recorder, target.extent, frame_slot);
                         record_ocean_draw(draw_recorder, target.extent);
                     });
             });
@@ -1024,6 +1046,7 @@ class OceanApp {
     std::optional<FrameStatsSnapshot> latest_frame_stats_;
     OceanGpuResources ocean_gpu_;
     cubey::render::RenderGraphFrameExecutor graph_executor_;
+    cubey::render::AtmosphereBackgroundFrame atmosphere_background_{};
     cubey::render::HdrPostFrame hdr_post_frame_;
     std::optional<cubey::render::AtmosphereBackgroundPlaceholderTextures>
         atmosphere_background_placeholders_;

@@ -3,6 +3,7 @@
 #include "ocean_ui.h"
 
 #include <cubey/core/run_config.h>
+#include <cubey/engine/atmosphere_environment_config.h>
 
 #include <filesystem>
 #include <fstream>
@@ -314,6 +315,22 @@ int main() {
                 "run config should initialize ocean spectral domain override");
         require_near(from_run_config.exposure, 0.5F, 0.001F,
                      "run config should initialize ocean exposure");
+        cubey::RunConfig solar_run_config;
+        solar_run_config.atmosphere.time_of_day_mode = "solar";
+        solar_run_config.atmosphere.time_hours = 0.0F;
+        const cubey::AtmosphereEnvironmentRunState solar_state =
+            cubey::atmosphere_environment_run_state_from_config(solar_run_config.atmosphere);
+        require(solar_state.auto_exposure_enabled,
+                "solar atmosphere run state should default to auto exposure");
+        require(solar_state.resolved_exposure > 0.0F,
+                "solar atmosphere run state should resolve a night exposure");
+
+        cubey::RunConfig manual_run_config;
+        manual_run_config.atmosphere.sun_elevation_degrees = 20.0F;
+        const cubey::AtmosphereEnvironmentRunState manual_state =
+            cubey::atmosphere_environment_run_state_from_config(manual_run_config.atmosphere);
+        require(!manual_state.auto_exposure_enabled,
+                "manual atmosphere run state should default to fixed exposure");
 
         const char* argv[] = {"ocean",
                               "--ocean-map-size",
@@ -374,10 +391,7 @@ int main() {
             read_text_file(source_root / "shaders/ocean_unpack.comp");
         const std::string vertex_shader = read_text_file(source_root / "shaders/ocean.vert");
         const std::string fragment_shader = read_text_file(source_root / "shaders/ocean.frag");
-        const std::string sky_shader = read_text_file(source_root / "shaders/ocean_sky.frag");
         const std::string mesh_header = read_text_file(source_root / "ocean_mesh.h");
-        const std::string atmosphere_shader =
-            read_text_file(source_root / "shaders/ocean_atmosphere.glsl");
         const std::string app_source = read_text_file(source_root / "ocean_app.cpp");
         const std::string ui_source = read_text_file(source_root / "ocean_ui.cpp");
         const std::string gpu_resources_source =
@@ -449,9 +463,11 @@ int main() {
         require_contains(app_source, "kOceanSceneColorFormat = VK_FORMAT_R16G16B16A16_SFLOAT",
                          "app should define an HDR ocean scene color format");
         require_contains(app_source, "ocean scene color",
-                         "app should render ocean sky and surface into an HDR scene target");
+                         "app should render atmosphere background and surface into an HDR scene target");
         require_contains(app_source, "HdrPostFrame",
                          "app should use the shared HDR post frame helper");
+        require_contains(app_source, "display_exposure()",
+                         "app should allow atmosphere auto exposure to drive display exposure");
         require_contains(app_source, "hdr_scene_color_texture_desc",
                          "app should use the shared HDR scene color descriptor helper");
         require_contains(app_source, "forward_pbr_post.frag.spv",
@@ -482,22 +498,14 @@ int main() {
                          "UI should show cascade diagnostic wavelength bands");
         require_contains(fragment_shader, "struct OceanFoamData",
                          "fragment shader should keep foam role diagnostics grouped");
-        require_contains(fragment_shader, "#include \"ocean_atmosphere.glsl\"",
-                         "fragment shader should source its sky lighting from the ocean atmosphere include");
-        require_contains(atmosphere_shader, "OCEAN_ATMOSPHERE_VIEW_SAMPLE_COUNT",
-                         "ocean atmosphere shader should use view-ray scattering samples");
-        require_contains(atmosphere_shader, "#include \"cubey/atmosphere.glsl\"",
-                         "ocean atmosphere shader should use the shared atmosphere helper include");
-        require_contains(atmosphere_shader, "OceanAtmosphereOpticalDepth",
-                         "ocean atmosphere shader should carry atmosphere optical depth");
-        require_contains(atmosphere_shader, "ocean_integrate_atmosphere",
-                         "ocean atmosphere shader should integrate daylight scattering");
-        require_contains(atmosphere_shader, "ocean_sun_disk_luminance",
-                         "ocean atmosphere shader should preserve a transmittance-filtered sun disk");
-        require_contains(atmosphere_shader, "ocean_sky_lookup_direction",
-                         "ocean atmosphere shader should keep water reflection lookups above ground");
-        require_contains(atmosphere_shader, "ocean_atmosphere_grade",
-                         "ocean atmosphere shader should apply the ocean daylight calibration");
+        require_contains(fragment_shader, "samplerCube atmosphere_sky_radiance_texture",
+                         "fragment shader should sample the atmosphere sky radiance cube");
+        require_contains(fragment_shader, "vec3 ocean_sky_radiance",
+                         "fragment shader should centralize atmosphere sky radiance sampling");
+        require_contains(fragment_shader, "float ocean_direct_light_scale",
+                         "fragment shader should derive direct light from atmosphere intensity");
+        require_contains(fragment_shader, "float ocean_ambient_light_scale",
+                         "fragment shader should derive ambient fill from atmosphere sky luminance");
         require_contains(fragment_shader, "data.gradient += normal_foam.xy * normal_scale",
                          "fragment shader should preserve normal map scale packing");
         require_contains(fragment_shader, "data.total += weighted_foam;",
@@ -551,7 +559,9 @@ int main() {
                          "fragment shader should gate detail foam by existing support");
         require_contains(fragment_shader, "vec3 ocean_shaded_foam(",
                          "fragment shader should shade foam as a material");
-        require_contains(fragment_shader, "specular *= mix(1.0, 0.35, material_distance)",
+        require_contains(fragment_shader, "ocean_primary_light_intensity()",
+                         "fragment shader should scale material lighting by atmosphere light energy");
+        require_contains(fragment_shader, "specular *= direct_light * mix(1.0, 0.35, material_distance)",
                          "fragment shader should reduce far and foam-covered specular");
         require_contains(fragment_shader, "float ocean_horizon_fog_factor(vec3 view_dir, float dist)",
                          "fragment shader should use view-angle-aware horizon haze");
@@ -587,10 +597,18 @@ int main() {
                          "surface descriptors should expose foam maps for every cascade");
         require_contains(gpu_resources_source, "kOceanSurfaceReflectionBinding",
                          "surface descriptors should expose the atmosphere reflection probe");
+        require_contains(gpu_resources_source, "kOceanSurfaceSkyRadianceBinding",
+                         "surface descriptors should expose the atmosphere sky radiance cube");
+        require_contains(gpu_resources_source, "update_atmosphere_probe_descriptors",
+                         "surface descriptors should update both atmosphere probe bindings together");
         require_contains(app_source, "AtmosphereEnvironmentRuntime atmosphere_runtime_",
                          "ocean app should own the shared atmosphere runtime");
+        require_contains(app_source, "AtmosphereBackgroundFrame atmosphere_background_",
+                         "ocean app should own the shared atmosphere background frame");
         require_contains(app_source, "create_atmosphere_background_placeholder_textures",
                          "ocean app should use shared atmosphere placeholder textures");
+        require_contains(app_source, "record_atmosphere_background",
+                         "ocean app should draw the shared atmosphere background");
         require_contains(app_source, "record_atmosphere_environment_if_needed",
                          "ocean app should update the atmosphere probe before drawing water");
         require_contains(app_source, "atmosphere_environment_run_state_from_config",
@@ -602,14 +620,9 @@ int main() {
         require_contains(app_source, "atmosphere_environment_lighting",
                          "ocean app should derive sun direction from the shared lighting helper");
         require_contains(vertex_shader, "vec4 sun_direction",
-                         "ocean vertex push constants should reserve the shared sun direction slot");
-        require_contains(fragment_shader,
-                         "#define OCEAN_ATMOSPHERE_SUN_DIRECTION ocean.sun_direction.xyz",
-                         "ocean surface shader should feed shared sun direction to atmosphere lookup");
-        require_contains(sky_shader, "#define OCEAN_ATMOSPHERE_SUN_DIRECTION sky.sun_direction.xyz",
-                         "ocean sky shader should feed shared sun direction to atmosphere lookup");
-        require_contains(atmosphere_shader, "OCEAN_ATMOSPHERE_SUN_DIRECTION",
-                         "ocean atmosphere helper should allow caller-provided sun direction");
+                         "ocean vertex push constants should reserve the shared light direction slot");
+        require_contains(fragment_shader, "ocean.sun_direction.w",
+                         "ocean surface shader should read shared light intensity from push constants");
         require_contains(fragment_shader, "samplerCube atmosphere_reflection_texture",
                          "ocean surface shader should sample the shared atmosphere reflection probe");
         require_contains(fragment_shader, "ocean_environment_reflection",
@@ -625,10 +638,18 @@ int main() {
                              "ocean fragment shader should not pack normals and foam in one sampler");
         require_not_contains(fragment_shader, "cubey_pbr_apply_display_transform",
                              "ocean surface shader should leave display transform to the post pass");
-        require_not_contains(sky_shader, "cubey_pbr_apply_display_transform",
-                             "ocean sky shader should leave display transform to the post pass");
-        require_not_contains(atmosphere_shader, "upper_horizon_color",
-                             "ocean atmosphere shader should not use the old procedural sky gradient");
+        require_not_contains(fragment_shader, "ocean_sky_color",
+                             "ocean fragment shader should not use the removed local ocean sky model");
+        require_not_contains(fragment_shader, "diffuse_light = 0.36",
+                             "ocean foam should not keep a fixed daylight diffuse floor");
+        require_not_contains(fragment_shader, "foam_color * 0.58",
+                             "ocean far foam should not keep a fixed daylight color floor");
+        require_not_contains(gpu_resources_source, "sky_pipeline",
+                             "ocean GPU resources should not keep the old local sky pipeline");
+        require_not_contains(cmake_source, "ocean_sky.frag",
+                             "ocean build should not compile the removed local sky shader");
+        require_not_contains(cmake_source, "ocean_atmosphere.glsl",
+                             "ocean build should not depend on the removed local sky include");
 
         return 0;
     } catch (const std::exception& error) {

@@ -18,6 +18,9 @@ struct AtmosphereEnvironmentRunState {
     bool solar_time_enabled = false;
     bool time_playing = false;
     float time_speed_hours_per_second = 0.0F;
+    bool auto_exposure_enabled = false;
+    float exposure_bias = 0.0F;
+    float resolved_exposure = 0.0F;
 };
 
 [[nodiscard]] bool atmosphere_environment_run_config_uses_solar_time(

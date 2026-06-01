@@ -11,6 +11,7 @@ namespace {
 
 constexpr VkFormat kOceanFieldFormat = VK_FORMAT_R32G32B32A32_SFLOAT;
 constexpr std::uint32_t kOceanSurfaceReflectionBinding = kOceanCascadeCount * 3U;
+constexpr std::uint32_t kOceanSurfaceSkyRadianceBinding = kOceanSurfaceReflectionBinding + 1U;
 
 [[nodiscard]] std::filesystem::path shader_path(const std::filesystem::path& shader_dir,
                                                 const char* filename) {
@@ -60,22 +61,6 @@ make_ocean_field_texture(const cubey::vulkan::Device& device, std::uint32_t reso
     };
 }
 
-[[nodiscard]] cubey::render::MaterialPassInfo ocean_sky_pass_info() {
-    const VkPushConstantRange push_constant_range{
-        .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-        .offset = 0,
-        .size = sizeof(float) * 20U,
-    };
-    return {
-        .label = "ocean.sky",
-        .push_constants = {push_constant_range},
-        .cull_mode = VK_CULL_MODE_NONE,
-        .depth_test = false,
-        .depth_write = false,
-        .blend_enable = false,
-    };
-}
-
 [[nodiscard]] VkPushConstantRange compute_push_constant_range(std::uint32_t float_count) {
     return {
         .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
@@ -118,7 +103,6 @@ void OceanGpuResources::create(const cubey::vulkan::Device& device,
 
 void OceanGpuResources::reset() {
     surface_pipeline_.reset();
-    sky_pipeline_.reset();
     unpack_pipeline_.reset();
     fft_pipeline_.reset();
     modulate_pipeline_.reset();
@@ -283,7 +267,7 @@ void OceanGpuResources::create_descriptor_sets(const cubey::vulkan::Device& devi
         set = unpack_pool_->allocate(unpack_layout_->handle());
     }
 
-    std::array<cubey::vulkan::DescriptorSetBindingConfig, kOceanCascadeCount * 3U + 1U>
+    std::array<cubey::vulkan::DescriptorSetBindingConfig, kOceanCascadeCount * 3U + 2U>
         surface_bindings{};
     for (std::uint32_t cascade = 0; cascade < kOceanCascadeCount; ++cascade) {
         surface_bindings[cascade] = cubey::vulkan::DescriptorSetBindingConfig{
@@ -310,6 +294,11 @@ void OceanGpuResources::create_descriptor_sets(const cubey::vulkan::Device& devi
     }
     surface_bindings[kOceanSurfaceReflectionBinding] = cubey::vulkan::DescriptorSetBindingConfig{
         .binding = kOceanSurfaceReflectionBinding,
+        .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
+    };
+    surface_bindings[kOceanSurfaceSkyRadianceBinding] = cubey::vulkan::DescriptorSetBindingConfig{
+        .binding = kOceanSurfaceSkyRadianceBinding,
         .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
         .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
     };
@@ -360,8 +349,9 @@ void OceanGpuResources::update_descriptors(const cubey::vulkan::Device& device) 
     writes.update(device);
 }
 
-void OceanGpuResources::update_reflection_probe_descriptor(
-    const cubey::vulkan::Device& device, const cubey::render::TextureCube& reflection_probe) {
+void OceanGpuResources::update_atmosphere_probe_descriptors(
+    const cubey::vulkan::Device& device, const cubey::render::TextureCube& reflection_probe,
+    const cubey::render::TextureCube& sky_radiance) {
     if (surface_set_ == VK_NULL_HANDLE) {
         throw std::runtime_error("ocean surface descriptor set is not initialized");
     }
@@ -369,6 +359,9 @@ void OceanGpuResources::update_reflection_probe_descriptor(
     writes
         .combined_image_sampler(surface_set_, kOceanSurfaceReflectionBinding,
                                 reflection_probe.sampler().handle(), reflection_probe.view(),
+                                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+        .combined_image_sampler(surface_set_, kOceanSurfaceSkyRadianceBinding,
+                                sky_radiance.sampler().handle(), sky_radiance.view(),
                                 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
         .update(device);
 }
@@ -429,25 +422,6 @@ void OceanGpuResources::create_pipelines(const cubey::vulkan::Device& device,
                                           .material_pass = ocean_surface_pass_info(),
                                       });
 
-    const std::array sky_shader_stage_files{
-        cubey::render::vertex_shader_file(shader_path(config.shader_dir, "ocean_sky.vert.spv")),
-        cubey::render::fragment_shader_file(
-            shader_path(config.shader_dir, "ocean_sky.frag.spv")),
-    };
-    sky_pipeline_.emplace(device, cubey::render::GraphicsPipelineFileResourceConfig{
-                                      .extent = config.target_extent,
-                                      .color_format = config.color_format,
-                                      .depth_format = config.depth_format,
-                                      .shader_stage_files = sky_shader_stage_files,
-                                      .material_pass = ocean_sky_pass_info(),
-                                  });
-}
-
-const cubey::render::GraphicsPipelineResource& OceanGpuResources::sky_pipeline() const {
-    if (!sky_pipeline_.has_value()) {
-        throw std::runtime_error("ocean sky pipeline is not initialized");
-    }
-    return sky_pipeline_.value();
 }
 
 const cubey::render::GraphicsPipelineResource& OceanGpuResources::surface_pipeline() const {

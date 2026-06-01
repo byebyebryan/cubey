@@ -17,8 +17,6 @@ cubey_add_app_target(
         shaders/ocean_modulate.comp
         shaders/ocean_fft.comp
         shaders/ocean_unpack.comp
-        shaders/ocean_sky.vert
-        shaders/ocean_sky.frag
         shaders/ocean.vert
         shaders/ocean.frag
         "${CMAKE_SOURCE_DIR}/projects/atmosphere/shaders/atmosphere.vert"
@@ -30,7 +28,6 @@ cubey_add_app_target(
         "${CMAKE_CURRENT_SOURCE_DIR}/shaders"
         "${CMAKE_SOURCE_DIR}/shaders"
     SHADER_DEPENDS
-        "${CMAKE_CURRENT_SOURCE_DIR}/shaders/ocean_atmosphere.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/color_space.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/pbr.glsl"
@@ -48,6 +45,7 @@ if (BUILD_TESTING)
         cubey_project_ocean_tests
         PRIVATE
             cubey::core
+            cubey::engine
             cubey_project_options
             cubey_project_warnings
     )

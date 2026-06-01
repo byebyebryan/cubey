@@ -35,14 +35,14 @@ class OceanGpuResources {
 
     void create(const cubey::vulkan::Device& device, const OceanGpuResourceConfig& config);
     void reset();
-    void update_reflection_probe_descriptor(const cubey::vulkan::Device& device,
-                                            const cubey::render::TextureCube& reflection_probe);
+    void update_atmosphere_probe_descriptors(const cubey::vulkan::Device& device,
+                                             const cubey::render::TextureCube& reflection_probe,
+                                             const cubey::render::TextureCube& sky_radiance);
 
     [[nodiscard]] bool initialized() const {
-        return sky_pipeline_.has_value() && surface_pipeline_.has_value();
+        return surface_pipeline_.has_value();
     }
 
-    [[nodiscard]] const cubey::render::GraphicsPipelineResource& sky_pipeline() const;
     [[nodiscard]] const cubey::render::GraphicsPipelineResource& surface_pipeline() const;
     [[nodiscard]] const cubey::render::ComputePipelineResource& spectrum_pipeline() const;
     [[nodiscard]] const cubey::render::ComputePipelineResource& modulate_pipeline() const;
@@ -124,7 +124,6 @@ class OceanGpuResources {
     std::optional<cubey::render::ComputePipelineResource> modulate_pipeline_;
     std::optional<cubey::render::ComputePipelineResource> fft_pipeline_;
     std::optional<cubey::render::ComputePipelineResource> unpack_pipeline_;
-    std::optional<cubey::render::GraphicsPipelineResource> sky_pipeline_;
     std::optional<cubey::render::GraphicsPipelineResource> surface_pipeline_;
 };
 

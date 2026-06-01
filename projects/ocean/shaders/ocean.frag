@@ -14,6 +14,7 @@ layout(set = 0, binding = 12) uniform sampler2D foam_cascade2_texture;
 layout(set = 0, binding = 13) uniform sampler2D foam_cascade3_texture;
 layout(set = 0, binding = 14) uniform sampler2D foam_cascade4_texture;
 layout(set = 0, binding = 15) uniform samplerCube atmosphere_reflection_texture;
+layout(set = 0, binding = 16) uniform samplerCube atmosphere_sky_radiance_texture;
 
 layout(push_constant) uniform OceanParams {
     mat4 view_projection;
@@ -30,9 +31,6 @@ layout(push_constant) uniform OceanParams {
     vec4 water_color;
     vec4 foam_color;
 } ocean;
-
-#define OCEAN_ATMOSPHERE_SUN_DIRECTION ocean.sun_direction.xyz
-#include "ocean_atmosphere.glsl"
 
 layout(location = 0) in vec3 frag_world_position;
 layout(location = 1) in vec3 frag_displacement;
@@ -66,6 +64,40 @@ struct OceanFoamData {
     vec2 crest;
     vec2 detail;
 };
+
+float ocean_luminance(vec3 color) {
+    return dot(max(color, vec3(0.0)), vec3(0.2126, 0.7152, 0.0722));
+}
+
+vec3 ocean_primary_light_direction() {
+    return normalize(ocean.sun_direction.xyz);
+}
+
+float ocean_primary_light_intensity() {
+    return max(ocean.sun_direction.w, 0.0);
+}
+
+vec3 ocean_primary_light_color() {
+    float daylight = smoothstep(0.18, 0.72, ocean_primary_light_intensity());
+    vec3 moon = cubey_srgb_to_linear(vec3(0.58, 0.62, 0.74));
+    vec3 sun = cubey_srgb_to_linear(vec3(1.0, 0.86, 0.58));
+    return mix(moon, sun, daylight);
+}
+
+vec3 ocean_sky_radiance(vec3 direction) {
+    return max(textureLod(atmosphere_sky_radiance_texture, normalize(direction), 0.0).rgb,
+               vec3(0.0));
+}
+
+float ocean_direct_light_scale() {
+    return clamp(ocean_primary_light_intensity() / 2.25, 0.0, 1.25);
+}
+
+float ocean_ambient_light_scale() {
+    vec3 sky_up = ocean_sky_radiance(vec3(0.0, 1.0, 0.0));
+    return clamp(ocean_luminance(sky_up) * 1.8 + ocean_primary_light_intensity() * 0.05,
+                 0.015, 1.2);
+}
 
 vec2 rotate2(vec2 value, float angle) {
     float s = sin(angle);
@@ -402,10 +434,14 @@ vec3 ocean_shaded_foam(vec3 water, vec3 foam_color, vec3 normal, float ndotl, fl
     float far_factor = ocean_material_distance_factor(dist);
     float edge = smoothstep(0.04, 0.28, coverage) *
                  (1.0 - smoothstep(0.58, 0.92, coverage));
-    vec3 sky_light = ocean_sky_color(normal) * 0.055;
-    float diffuse_light = 0.36 + 0.18 * clamp(normal.y, 0.0, 1.0) + 0.28 * ndotl;
+    float ambient_light = ocean_ambient_light_scale();
+    float direct_light = ocean_direct_light_scale();
+    vec3 sky_light = ocean_sky_radiance(normal) * 0.10;
+    float diffuse_light = ambient_light * (0.08 + 0.24 * clamp(normal.y, 0.0, 1.0)) +
+                          direct_light * ndotl * 0.62;
     vec3 lit_foam = foam_color * diffuse_light + sky_light;
-    vec3 far_foam = foam_color * 0.58 + ocean_sky_color(vec3(0.0, 1.0, 0.0)) * 0.045;
+    vec3 far_foam = foam_color * (ambient_light * 0.18 + direct_light * 0.34) +
+                    ocean_sky_radiance(vec3(0.0, 1.0, 0.0)) * 0.08;
     vec3 wet_water = mix(water, water * 1.14 + foam_color * 0.08,
                          edge * mix(0.36, 0.18, far_factor));
     return mix(wet_water, mix(lit_foam, far_foam, far_factor * 0.55), coverage);
@@ -421,10 +457,8 @@ float ocean_horizon_fog_factor(vec3 view_dir, float dist) {
 }
 
 vec3 ocean_environment_reflection(vec3 direction, float roughness) {
-    vec3 local_sky = ocean_sky_color(direction);
-    vec3 probe = textureLod(atmosphere_reflection_texture, normalize(direction),
-                            clamp(roughness, 0.0, 1.0) * OCEAN_ATMOSPHERE_REFLECTION_MAX_LOD).rgb;
-    return mix(local_sky, probe, 0.72);
+    return textureLod(atmosphere_reflection_texture, normalize(direction),
+                      clamp(roughness, 0.0, 1.0) * OCEAN_ATMOSPHERE_REFLECTION_MAX_LOD).rgb;
 }
 
 vec3 debug_height_color(float height) {
@@ -462,12 +496,14 @@ void main() {
     vec3 water_color = cubey_srgb_to_linear(ocean.water_color.rgb);
     vec3 foam_color = cubey_srgb_to_linear(ocean.foam_color.rgb);
     vec3 view_dir = normalize(camera_position - frag_world_position);
-    vec3 sun_dir = ocean_sun_direction();
+    vec3 sun_dir = ocean_primary_light_direction();
     vec3 reflection_dir = reflect(-view_dir, normal);
     float ndotv = clamp(dot(normal, view_dir), 0.0, 1.0);
     float ndotl = clamp(dot(normal, sun_dir), 0.0, 1.0);
     float material_distance = ocean_material_distance_factor(dist);
     float foam_coverage = ocean_foam_coverage(foam_data, dist, ndotv);
+    float ambient_light = ocean_ambient_light_scale();
+    float direct_light = ocean_direct_light_scale();
     float roughness = clamp(ocean.water_color.w, 0.02, 1.0);
     roughness = mix(roughness, max(roughness, 0.78), material_distance);
 
@@ -476,25 +512,27 @@ void main() {
                 (1.0 + 22.7 * pow(roughness, 1.5)),
             1.0, OCEAN_REFLECTANCE);
     vec3 reflection = ocean_environment_reflection(reflection_dir, roughness);
-    vec3 ambient = water_color * (0.42 + 0.28 * normal.y) + ocean_sky_color(normal) * 0.08;
+    vec3 ambient = water_color * (0.08 + 0.34 * ambient_light * clamp(normal.y, 0.0, 1.0)) +
+                   ocean_sky_radiance(normal) * 0.08;
     float sss_height = max(0.0, frag_wave.x + 2.5) *
                        pow(max(dot(sun_dir, -view_dir), 0.0), 4.0) *
                        pow(0.5 - 0.5 * dot(sun_dir, normal), 3.0);
     float sss_near = 0.5 * pow(ndotv, 2.0);
     vec3 subsurface = (sss_height + sss_near) * cubey_srgb_to_linear(vec3(0.9, 1.15, 0.85));
-    vec3 direct = water_color * (0.18 + 0.72 * ndotl) + subsurface * (1.0 - fresnel);
+    vec3 direct = water_color * (ambient_light * 0.05 + 0.72 * ndotl * direct_light) +
+                  subsurface * direct_light * (1.0 - fresnel);
 
     vec3 halfway = normalize(sun_dir + view_dir);
     float specular =
         pow(max(dot(normal, halfway), 0.0), mix(24.0, 110.0, 1.0 - roughness)) * fresnel * 1.6;
-    specular *= mix(1.0, 0.35, material_distance) * (1.0 - foam_coverage * 0.82);
+    specular *= direct_light * mix(1.0, 0.35, material_distance) * (1.0 - foam_coverage * 0.82);
     vec3 water = mix(ambient + direct, reflection, clamp(fresnel, 0.0, 0.92));
-    water += cubey_srgb_to_linear(vec3(1.0, 0.78, 0.46)) * specular;
+    water += ocean_primary_light_color() * specular;
     water = ocean_shaded_foam(water, foam_color, normal, ndotl, foam_coverage, dist);
 
     float horizon_fog = ocean_horizon_fog_factor(view_dir, dist);
     vec3 horizon_dir = normalize(vec3(-view_dir.x, 0.055, -view_dir.z));
-    vec3 color = mix(water, ocean_sky_color(horizon_dir), horizon_fog);
+    vec3 color = mix(water, ocean_sky_radiance(horizon_dir), horizon_fog);
 
     if (view == OCEAN_VIEW_HEIGHT) {
         color = debug_height_color(frag_wave.x);

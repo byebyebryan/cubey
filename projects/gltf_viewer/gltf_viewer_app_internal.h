@@ -103,6 +103,7 @@ class GltfViewerApp {
     current_frame_plan(const cubey::SceneReadView& view, VkExtent2D color_extent) const;
     [[nodiscard]] cubey::render::AtmosphereEnvironmentFrameUniforms
     atmosphere_background_uniforms(const cubey::SceneReadView& view, VkExtent2D color_extent) const;
+    [[nodiscard]] float display_exposure() const;
     [[nodiscard]] cubey::LightPacket3D fallback_light_packet() const;
     [[nodiscard]] cubey::Scene& scene();
     [[nodiscard]] const cubey::Scene& scene() const;

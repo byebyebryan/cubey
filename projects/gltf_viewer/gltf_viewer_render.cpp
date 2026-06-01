@@ -91,7 +91,7 @@ void GltfViewerApp::record_viewer_target(
         .settings =
             {
                 .environment_rotation_degrees = config_.pbr.environment_rotation_degrees,
-                .exposure = config_.pbr.exposure,
+                .exposure = display_exposure(),
                 .debug_view = debug_view_,
                 .background_mode = cubey::ForwardPbrRenderer3DBackgroundMode::Atmosphere,
                 .atmosphere_background =
@@ -101,6 +101,13 @@ void GltfViewerApp::record_viewer_target(
     if (owns_command_buffer) {
         recorder.end("vkEndCommandBuffer gltf_viewer");
     }
+}
+
+float GltfViewerApp::display_exposure() const {
+    if (atmosphere_state_.auto_exposure_enabled && !config_.pbr.exposure_explicit) {
+        return atmosphere_state_.resolved_exposure;
+    }
+    return config_.pbr.exposure;
 }
 
 void GltfViewerApp::record_atmosphere_environment_if_needed(
