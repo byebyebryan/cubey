@@ -886,8 +886,10 @@ void test_pbr_consumers_use_atmosphere_lighting_foundation() {
                      "glTF viewer should update atmosphere runtime before the PBR pass");
     require_contains(gltf_scene, "atmosphere_background_uniforms",
                      "glTF viewer should compute procedural atmosphere background uniforms");
-    require_contains(ocean_app, "atmosphere_environment_lighting(environment)",
-                     "ocean should derive its sun direction through shared atmosphere lighting");
+    require_contains(ocean_app, "atmosphere_environment_lighting(atmosphere_state_.environment)",
+                     "ocean should derive its sun direction through shared atmosphere state");
+    require_contains(ocean_app, "AtmosphereEnvironmentRuntime atmosphere_runtime_",
+                     "ocean should own the shared atmosphere runtime for reflections");
     require_contains(pbr_docs, "runtime atmosphere reflection probe",
                      "PBR docs should capture the current atmosphere lighting boundary");
 }
