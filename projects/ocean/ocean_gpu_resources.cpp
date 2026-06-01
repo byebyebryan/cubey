@@ -10,6 +10,7 @@ namespace cubey::projects::ocean {
 namespace {
 
 constexpr VkFormat kOceanFieldFormat = VK_FORMAT_R32G32B32A32_SFLOAT;
+constexpr std::uint32_t kOceanSurfaceReflectionBinding = kOceanCascadeCount * 3U;
 
 [[nodiscard]] std::filesystem::path shader_path(const std::filesystem::path& shader_dir,
                                                 const char* filename) {
@@ -282,7 +283,7 @@ void OceanGpuResources::create_descriptor_sets(const cubey::vulkan::Device& devi
         set = unpack_pool_->allocate(unpack_layout_->handle());
     }
 
-    std::array<cubey::vulkan::DescriptorSetBindingConfig, kOceanCascadeCount * 3U>
+    std::array<cubey::vulkan::DescriptorSetBindingConfig, kOceanCascadeCount * 3U + 1U>
         surface_bindings{};
     for (std::uint32_t cascade = 0; cascade < kOceanCascadeCount; ++cascade) {
         surface_bindings[cascade] = cubey::vulkan::DescriptorSetBindingConfig{
@@ -307,6 +308,11 @@ void OceanGpuResources::create_descriptor_sets(const cubey::vulkan::Device& devi
                 .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
             };
     }
+    surface_bindings[kOceanSurfaceReflectionBinding] = cubey::vulkan::DescriptorSetBindingConfig{
+        .binding = kOceanSurfaceReflectionBinding,
+        .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
+    };
     const cubey::vulkan::DescriptorSetInfo surface_info = descriptor_info(surface_bindings, 1U);
     surface_layout_.emplace(device, surface_info.layout_info());
     surface_pool_.emplace(device, surface_info.pool_info());
@@ -352,6 +358,19 @@ void OceanGpuResources::update_descriptors(const cubey::vulkan::Device& device) 
         }
     }
     writes.update(device);
+}
+
+void OceanGpuResources::update_reflection_probe_descriptor(
+    const cubey::vulkan::Device& device, const cubey::render::TextureCube& reflection_probe) {
+    if (surface_set_ == VK_NULL_HANDLE) {
+        throw std::runtime_error("ocean surface descriptor set is not initialized");
+    }
+    cubey::vulkan::DescriptorWriteBatch writes;
+    writes
+        .combined_image_sampler(surface_set_, kOceanSurfaceReflectionBinding,
+                                reflection_probe.sampler().handle(), reflection_probe.view(),
+                                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+        .update(device);
 }
 
 void OceanGpuResources::create_pipelines(const cubey::vulkan::Device& device,

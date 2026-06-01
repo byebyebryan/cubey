@@ -13,6 +13,7 @@ layout(set = 0, binding = 11) uniform sampler2D foam_cascade1_texture;
 layout(set = 0, binding = 12) uniform sampler2D foam_cascade2_texture;
 layout(set = 0, binding = 13) uniform sampler2D foam_cascade3_texture;
 layout(set = 0, binding = 14) uniform sampler2D foam_cascade4_texture;
+layout(set = 0, binding = 15) uniform samplerCube atmosphere_reflection_texture;
 
 layout(push_constant) uniform OceanParams {
     mat4 view_projection;
@@ -56,6 +57,7 @@ const uint OCEAN_VIEW_LOD = 10u;
 const float OCEAN_REFLECTANCE = 0.02;
 const float OCEAN_FAR_ANTI_REPEAT_START = 220.0;
 const float OCEAN_FAR_ANTI_REPEAT_END = 900.0;
+const float OCEAN_ATMOSPHERE_REFLECTION_MAX_LOD = 4.0;
 
 struct OceanFoamData {
     vec2 gradient;
@@ -418,6 +420,13 @@ float ocean_horizon_fog_factor(vec3 view_dir, float dist) {
     return clamp((distance_fog * 0.86 + angle_fog * 0.34) * ocean.mesh_options.w, 0.0, 0.96);
 }
 
+vec3 ocean_environment_reflection(vec3 direction, float roughness) {
+    vec3 local_sky = ocean_sky_color(direction);
+    vec3 probe = textureLod(atmosphere_reflection_texture, normalize(direction),
+                            clamp(roughness, 0.0, 1.0) * OCEAN_ATMOSPHERE_REFLECTION_MAX_LOD).rgb;
+    return mix(local_sky, probe, 0.72);
+}
+
 vec3 debug_height_color(float height) {
     float value = clamp(height * 0.08 + 0.5, 0.0, 1.0);
     vec3 low = cubey_srgb_to_linear(vec3(0.04, 0.18, 0.42));
@@ -466,7 +475,7 @@ void main() {
         mix(pow(1.0 - ndotv, 5.0 * exp(-2.69 * roughness)) /
                 (1.0 + 22.7 * pow(roughness, 1.5)),
             1.0, OCEAN_REFLECTANCE);
-    vec3 reflection = ocean_sky_color(reflection_dir);
+    vec3 reflection = ocean_environment_reflection(reflection_dir, roughness);
     vec3 ambient = water_color * (0.42 + 0.28 * normal.y) + ocean_sky_color(normal) * 0.08;
     float sss_height = max(0.0, frag_wave.x + 2.5) *
                        pow(max(dot(sun_dir, -view_dir), 0.0), 4.0) *

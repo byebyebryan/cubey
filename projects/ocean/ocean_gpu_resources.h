@@ -35,6 +35,8 @@ class OceanGpuResources {
 
     void create(const cubey::vulkan::Device& device, const OceanGpuResourceConfig& config);
     void reset();
+    void update_reflection_probe_descriptor(const cubey::vulkan::Device& device,
+                                            const cubey::render::TextureCube& reflection_probe);
 
     [[nodiscard]] bool initialized() const {
         return sky_pipeline_.has_value() && surface_pipeline_.has_value();

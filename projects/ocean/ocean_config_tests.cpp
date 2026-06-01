@@ -458,6 +458,10 @@ int main() {
                          "app should load the shared PBR post shader");
         require_contains(cmake_source, "forward_pbr_post.frag",
                          "ocean build should compile the shared PBR post fragment shader");
+        require_contains(cmake_source, "projects/atmosphere/shaders/atmosphere.frag",
+                         "ocean build should compile the shared atmosphere background shader");
+        require_contains(cmake_source, "atmosphere_reflection_prefilter.frag",
+                         "ocean build should compile the atmosphere reflection prefilter shader");
         require_contains(app_source, "ocean_config_.foam_density",
                          "app should pass foam density as diagnostics push data");
         require_contains(app_source, "ocean_config_.foam_sharpness",
@@ -581,6 +585,14 @@ int main() {
                          "surface descriptors should expose normal maps for every cascade");
         require_contains(gpu_resources_source, "cascade + kOceanCascadeCount * 2U",
                          "surface descriptors should expose foam maps for every cascade");
+        require_contains(gpu_resources_source, "kOceanSurfaceReflectionBinding",
+                         "surface descriptors should expose the atmosphere reflection probe");
+        require_contains(app_source, "AtmosphereEnvironmentRuntime atmosphere_runtime_",
+                         "ocean app should own the shared atmosphere runtime");
+        require_contains(app_source, "create_atmosphere_background_placeholder_textures",
+                         "ocean app should use shared atmosphere placeholder textures");
+        require_contains(app_source, "record_atmosphere_environment_if_needed",
+                         "ocean app should update the atmosphere probe before drawing water");
         require_contains(app_source, "atmosphere_environment_run_state_from_config",
                          "ocean app should resolve atmosphere run options through the shared helper");
         require_contains(app_source, "atmosphere_environment_advance_time",
@@ -598,6 +610,10 @@ int main() {
                          "ocean sky shader should feed shared sun direction to atmosphere lookup");
         require_contains(atmosphere_shader, "OCEAN_ATMOSPHERE_SUN_DIRECTION",
                          "ocean atmosphere helper should allow caller-provided sun direction");
+        require_contains(fragment_shader, "samplerCube atmosphere_reflection_texture",
+                         "ocean surface shader should sample the shared atmosphere reflection probe");
+        require_contains(fragment_shader, "ocean_environment_reflection",
+                         "ocean surface shader should isolate atmosphere reflection lookup");
 
         require_not_contains(vertex_shader, "ocean_macro_waves",
                              "ocean vertex shader should not use Cubey macro waves");

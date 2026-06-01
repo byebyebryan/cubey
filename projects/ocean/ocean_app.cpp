@@ -7,6 +7,7 @@
 
 #include <cubey/core/math.h>
 #include <cubey/engine/atmosphere_environment_config.h>
+#include <cubey/engine/atmosphere_environment_runtime.h>
 #include <cubey/host/frame_stats.h>
 #include <cubey/host/headless_png_host.h>
 #include <cubey/host/windowed_app.h>
@@ -23,6 +24,7 @@
 #include <cubey/scene/camera_3d.h>
 #include <cubey/vulkan/command_recorder.h>
 #include <cubey/vulkan/device.h>
+#include <cubey/vulkan/gpu_runtime.h>
 #include <cubey/vulkan/image_transitions.h>
 #include <cubey/vulkan/memory_barriers.h>
 #include <cubey/vulkan/sampler.h>
@@ -252,7 +254,7 @@ class OceanApp {
     int run_windowed() {
         cubey::host::WindowedAppCallbacks callbacks;
         callbacks.create_swapchain_resources = [this](cubey::host::WindowedAppContext& context) {
-            create_pipeline(context.device(), context.swapchain().format(),
+            create_pipeline(context.device(), context.gpu(), context.swapchain().format(),
                             context.swapchain().extent(), context.frame_slot_count());
         };
         callbacks.destroy_swapchain_resources = [this](cubey::host::WindowedAppContext&) {
@@ -315,7 +317,7 @@ class OceanApp {
         cubey::host::HeadlessPngHostCallbacks callbacks;
         callbacks.create_resources = [this](cubey::host::HeadlessPngContext& context) {
             const cubey::host::HeadlessRenderTarget& target = context.render_target();
-            create_pipeline(context.device(), target.format, target.extent,
+            create_pipeline(context.device(), context.gpu(), target.format, target.extent,
                             cubey::host::headless_capture_frame_slot_count(config_));
         };
         callbacks.record_frame = [this](cubey::host::HeadlessPngContext& context,
@@ -371,6 +373,9 @@ class OceanApp {
     void refresh_atmosphere_lighting() {
         atmosphere_lighting_ =
             cubey::render::atmosphere_environment_lighting(atmosphere_state_.environment);
+        if (atmosphere_runtime_.resources_created()) {
+            atmosphere_runtime_.set_environment(atmosphere_state_.environment);
+        }
     }
 
     void update_atmosphere_time(double delta_seconds) {
@@ -397,8 +402,10 @@ class OceanApp {
         return sample;
     }
 
-    void create_pipeline(cubey::vulkan::Device& device, VkFormat color_format, VkExtent2D extent,
+    void create_pipeline(cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu,
+                         VkFormat color_format, VkExtent2D extent,
                          std::uint32_t frame_slot_count = 1U) {
+        create_atmosphere_environment_runtime(device, gpu, frame_slot_count);
         ocean_gpu_.create(device, OceanGpuResourceConfig{
                                       .ocean = ocean_config_,
                                       .shader_dir = CUBEY_OCEAN_SHADER_DIR,
@@ -406,6 +413,8 @@ class OceanApp {
                                       .depth_format = kOceanDepthFormat,
                                       .target_extent = extent,
                                   });
+        ocean_gpu_.update_reflection_probe_descriptor(
+            device, atmosphere_runtime_.reflection_probe().prefiltered_cube());
         hdr_post_frame_.create_materials(device, {
                                                      .frame_slot_count = frame_slot_count,
                                                  });
@@ -433,10 +442,43 @@ class OceanApp {
         gpu_config_ = ocean_config_;
     }
 
+    void create_atmosphere_environment_runtime(cubey::vulkan::Device& device,
+                                               cubey::vulkan::GpuRuntime& gpu,
+                                               std::uint32_t frame_slot_count) {
+        if (!atmosphere_background_placeholders_.has_value()) {
+            atmosphere_background_placeholders_.emplace(
+                cubey::render::create_atmosphere_background_placeholder_textures(device, gpu));
+        }
+        if (!atmosphere_runtime_.resources_created()) {
+            atmosphere_runtime_.create_resources(
+                device, cubey::render::AtmosphereEnvironmentRuntimeResourceConfig{
+                            .reflection_extent = 64,
+                            .reflection_mip_levels = 5,
+                            .format = VK_FORMAT_R16G16B16A16_SFLOAT,
+                            .frame_slot_count = frame_slot_count,
+                            .atmosphere_textures = atmosphere_background_placeholders_->bindings(),
+                        });
+            const std::filesystem::path shader_dir = CUBEY_OCEAN_SHADER_DIR;
+            atmosphere_runtime_.create_pipelines(
+                device, cubey::render::AtmosphereEnvironmentRuntimePipelineConfig{
+                            .atmosphere_vertex_shader = shader_dir / "atmosphere.vert.spv",
+                            .atmosphere_fragment_shader = shader_dir / "atmosphere.frag.spv",
+                            .reflection_prefilter_vertex_shader =
+                                shader_dir / "atmosphere.vert.spv",
+                            .reflection_prefilter_fragment_shader =
+                                shader_dir / "atmosphere_reflection_prefilter.frag.spv",
+                        });
+            atmosphere_runtime_.mark_full_update_pending();
+        }
+        atmosphere_runtime_.set_environment(atmosphere_state_.environment);
+    }
+
     void destroy_swapchain_resources() {
         graph_executor_.clear();
         hdr_post_frame_.destroy();
         ocean_gpu_.reset();
+        atmosphere_runtime_.destroy();
+        atmosphere_background_placeholders_.reset();
         pipeline_color_format_ = VK_FORMAT_UNDEFINED;
         textures_initialized_ = false;
         spectrum_initialized_ = false;
@@ -447,14 +489,14 @@ class OceanApp {
     void sync_gpu_resources(cubey::host::WindowedAppContext& context) {
         validate_ocean_config(ocean_config_);
         if (!gpu_config_.has_value()) {
-            create_pipeline(context.device(), context.swapchain().format(),
+            create_pipeline(context.device(), context.gpu(), context.swapchain().format(),
                             context.swapchain().extent(), context.frame_slot_count());
             return;
         }
         if (ocean_resolution_changed(ocean_config_, gpu_config_.value())) {
             cubey::vulkan::check(vkDeviceWaitIdle(context.device().handle()),
                                  "vkDeviceWaitIdle before ocean resource recreation");
-            create_pipeline(context.device(), context.swapchain().format(),
+            create_pipeline(context.device(), context.gpu(), context.swapchain().format(),
                             context.swapchain().extent(), context.frame_slot_count());
             return;
         }
@@ -925,12 +967,21 @@ class OceanApp {
                                                    VK_ACCESS_SHADER_READ_BIT);
     }
 
+    void record_atmosphere_environment_if_needed(
+        const cubey::vulkan::CommandRecorder& recorder, cubey::render::FrameSlot frame_slot) {
+        if (!atmosphere_runtime_.resources_created()) {
+            throw std::runtime_error("ocean atmosphere runtime is not initialized");
+        }
+        atmosphere_runtime_.record_pending_update(recorder, frame_slot);
+    }
+
     void record_ocean_target(VkCommandBuffer command_buffer,
                                  const cubey::vulkan::Device& device,
                                  cubey::render::ColorTargetView target,
                                  cubey::render::FrameSlot frame_slot,
                                  OceanRenderTargetMode target_mode) {
         const cubey::vulkan::CommandRecorder recorder(command_buffer);
+        record_atmosphere_environment_if_needed(recorder, frame_slot);
         record_ocean_compute(recorder);
         hdr_post_frame_.upload(frame_slot, post_uniforms());
         const OceanFrameGraph frame_graph = build_ocean_frame_graph(target, frame_slot, target_mode);
@@ -974,6 +1025,9 @@ class OceanApp {
     OceanGpuResources ocean_gpu_;
     cubey::render::RenderGraphFrameExecutor graph_executor_;
     cubey::render::HdrPostFrame hdr_post_frame_;
+    std::optional<cubey::render::AtmosphereBackgroundPlaceholderTextures>
+        atmosphere_background_placeholders_;
+    cubey::render::AtmosphereEnvironmentRuntime atmosphere_runtime_{};
     std::optional<OceanConfig> gpu_config_;
     VkFormat pipeline_color_format_ = VK_FORMAT_UNDEFINED;
     double time_seconds_ = 0.0;
