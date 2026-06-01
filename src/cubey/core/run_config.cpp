@@ -1,3 +1,4 @@
+#include <cubey/core/config_options.h>
 #include <cubey/core/run_config.h>
 
 #include <charconv>
@@ -7,6 +8,7 @@
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <vector>
 
 namespace cubey {
 namespace {
@@ -91,6 +93,29 @@ std::filesystem::path profile_output_prefix(std::string_view value) {
 RunConfig parse_run_config(int argc, char** argv) {
     RunConfig config;
     bool output_path_explicit = false;
+    std::vector<std::string> deferred_sets;
+
+    for (int i = 1; i < argc; ++i) {
+        std::string_view arg(argv[i]);
+        auto need_special_value = [&](std::string_view name) -> std::string_view {
+            if (i + 1 >= argc) {
+                throw std::runtime_error("missing value for " + std::string(name));
+            }
+            ++i;
+            return argv[i];
+        };
+
+        if (arg == "--config") {
+            const std::filesystem::path path{std::string(need_special_value("--config"))};
+            const RunConfigFileApplyResult result = apply_run_config_file(config, path);
+            output_path_explicit = output_path_explicit || result.output_path_set;
+        } else if (arg == "--set") {
+            deferred_sets.emplace_back(need_special_value("--set"));
+        } else if (arg == "--write-config-template") {
+            config.write_config_template_path =
+                std::string(need_special_value("--write-config-template"));
+        }
+    }
 
     for (int i = 1; i < argc; ++i) {
         std::string_view arg(argv[i]);
@@ -102,7 +127,9 @@ RunConfig parse_run_config(int argc, char** argv) {
             return argv[i];
         };
 
-        if (arg == "--headless") {
+        if (arg == "--config" || arg == "--set" || arg == "--write-config-template") {
+            static_cast<void>(need_value(arg));
+        } else if (arg == "--headless") {
             config.headless = true;
         } else if (arg == "--validation") {
             config.validation = true;
@@ -478,6 +505,20 @@ RunConfig parse_run_config(int argc, char** argv) {
         }
     }
 
+    for (const std::string& assignment : deferred_sets) {
+        const std::size_t separator = assignment.find('=');
+        if (separator == std::string::npos || separator == 0U) {
+            throw std::runtime_error("--set expects path=value");
+        }
+        const std::string_view path{assignment.data(), separator};
+        const std::string_view value{assignment.data() + separator + 1U,
+                                     assignment.size() - separator - 1U};
+        set_run_config_option_from_string(config, path, value);
+        if (path == "output") {
+            output_path_explicit = true;
+        }
+    }
+
     if (config.width == 0 || config.height == 0) {
         throw std::runtime_error("width and height must be positive");
     }
@@ -702,6 +743,10 @@ RunConfig parse_run_config(int argc, char** argv) {
         if (!output_path_explicit) {
             config.output_path = "cubey-output.mp4";
         }
+    }
+
+    if (!config.write_config_template_path.empty()) {
+        write_run_config_template(config, config.write_config_template_path);
     }
 
     return config;

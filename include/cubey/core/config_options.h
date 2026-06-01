@@ -1,0 +1,133 @@
+#pragma once
+
+#include <cubey/core/run_config.h>
+
+#include <filesystem>
+#include <span>
+#include <string_view>
+
+namespace cubey {
+
+enum class ConfigOptionType {
+    Bool,
+    Int,
+    UInt32,
+    UInt64,
+    Float,
+    String,
+    Path,
+    Enum,
+};
+
+enum class RunConfigOptionId {
+    Title,
+    Width,
+    Height,
+    Frames,
+    Fps,
+    OutputPath,
+    DebugView,
+    Headless,
+    Validation,
+    RequireValidation,
+    PrintFrameStats,
+    CaptureMode,
+    GltfInput,
+    GltfAnimationIndex,
+    GltfAnimationSpeed,
+    GltfAnimationPaused,
+    PbrEnvironment,
+    PbrEnvironmentSource,
+    PbrIblIntensity,
+    PbrEnvironmentRotation,
+    PbrExposure,
+    OceanMapSize,
+    OceanCascade,
+    OceanSpectralDomains,
+    OceanTerrainFields,
+    OceanWireOverlay,
+    OceanWireOpacity,
+    OceanRefMapSize,
+    OceanRefWireOverlay,
+    OceanRefWireOpacity,
+    TerrainSeed,
+    TerrainCellSize,
+    TerrainSeaLevel,
+    TerrainLandExtent,
+    TerrainCoastNoise,
+    TerrainRelief,
+    TerrainRidges,
+    TerrainValleys,
+    TerrainWaterSurface,
+    AtmospherePreset,
+    AtmosphereTimeOfDayMode,
+    AtmosphereNightSkyMode,
+    AtmosphereMilkyWayLayer,
+    AtmosphereSunElevation,
+    AtmosphereSunAzimuth,
+    AtmosphereCameraAltitude,
+    AtmosphereMieScale,
+    AtmosphereTimeHours,
+    AtmosphereDayOfYear,
+    AtmosphereLatitude,
+    AtmosphereSunAzimuthOffset,
+    AtmosphereTimeSpeed,
+    AtmosphereTimePaused,
+    AtmosphereAutoExposure,
+    AtmosphereExposureBias,
+    AtmosphereTwilightStrength,
+    AtmosphereTwilightHorizonWarmth,
+    AtmosphereStarIntensity,
+    AtmosphereStarDensity,
+    AtmosphereMilkyWayIntensity,
+    AtmosphereMilkyWayContrast,
+    AtmosphereLightPollution,
+    AtmosphereMilkyWayVariation,
+    AtmosphereMoonIntensity,
+    AtmosphereMoonlightIntensity,
+    AtmosphereMoonPhaseOffset,
+    AtmosphereMoonSizeScale,
+    AtmosphereMoon,
+};
+
+struct ConfigOptionRange {
+    bool has_min = false;
+    bool has_max = false;
+    double min = 0.0;
+    double max = 0.0;
+};
+
+struct ConfigEnumChoices {
+    const std::string_view* values = nullptr;
+    std::size_t count = 0;
+};
+
+struct ConfigOptionDescriptor {
+    RunConfigOptionId id;
+    std::string_view path;
+    std::string_view cli_name;
+    std::string_view label;
+    std::string_view group_path;
+    std::string_view help;
+    ConfigOptionType type = ConfigOptionType::String;
+    ConfigOptionRange range{};
+    ConfigEnumChoices enum_choices{};
+};
+
+struct RunConfigFileApplyResult {
+    bool output_path_set = false;
+};
+
+[[nodiscard]] std::span<const ConfigOptionDescriptor> run_config_option_descriptors();
+[[nodiscard]] const ConfigOptionDescriptor* find_run_config_option(std::string_view path);
+[[nodiscard]] bool config_option_has_choice(const ConfigOptionDescriptor& option,
+                                            std::string_view value);
+void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDescriptor& option,
+                                       std::string_view value);
+void set_run_config_option_from_string(RunConfig& config, std::string_view path,
+                                       std::string_view value);
+RunConfigFileApplyResult apply_run_config_file(RunConfig& config,
+                                               const std::filesystem::path& path);
+void write_run_config_template(const RunConfig& config, const std::filesystem::path& path);
+
+} // namespace cubey

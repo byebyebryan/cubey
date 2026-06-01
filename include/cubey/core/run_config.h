@@ -190,6 +190,8 @@ struct RunConfig {
     std::uint32_t frames = 0;
     std::uint32_t fps = 60;
     std::filesystem::path output_path = "cubey-output.png";
+    std::filesystem::path config_path{};
+    std::filesystem::path write_config_template_path{};
     std::filesystem::path profile_output_prefix{};
     std::string debug_view{};
     CaptureMode capture_mode = CaptureMode::Png;
@@ -207,6 +209,9 @@ RunConfig parse_run_config(int argc, char** argv);
 template <typename RunFn> int run_cli_app(int argc, char** argv, CliAppInfo info, RunFn&& run) {
     try {
         RunConfig config = parse_run_config(argc, argv);
+        if (!config.write_config_template_path.empty()) {
+            return 0;
+        }
         if (config.title == "cubey") {
             config.title = info.default_title;
         }

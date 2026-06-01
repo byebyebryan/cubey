@@ -46,6 +46,11 @@ void test_run_config_rejects_invalid_pbr_options();
 void test_run_config_parses_png_output_path();
 void test_run_config_preserves_explicit_video_capture_timing_and_output();
 void test_run_config_rejects_invalid_capture_options();
+void test_run_config_descriptors_have_help_text();
+void test_run_config_loads_json_config_file();
+void test_run_config_cli_and_set_override_config_file();
+void test_run_config_rejects_invalid_json_config_file();
+void test_run_config_writes_json_template();
 void test_video_encoder_validates_config_and_frame_size();
 void test_video_encoder_writes_mp4_when_backend_is_available();
 
@@ -57,6 +62,11 @@ std::span<const TestCase> core_test_cases() {
         CUBEY_TEST(test_run_config_parses_video_capture_defaults),
         CUBEY_TEST(test_run_config_preserves_explicit_video_capture_timing_and_output),
         CUBEY_TEST(test_run_config_rejects_invalid_capture_options),
+        CUBEY_TEST(test_run_config_descriptors_have_help_text),
+        CUBEY_TEST(test_run_config_loads_json_config_file),
+        CUBEY_TEST(test_run_config_cli_and_set_override_config_file),
+        CUBEY_TEST(test_run_config_rejects_invalid_json_config_file),
+        CUBEY_TEST(test_run_config_writes_json_template),
         CUBEY_TEST(test_run_config_parses_pbr_environment_options),
         CUBEY_TEST(test_run_config_rejects_invalid_pbr_options),
         CUBEY_TEST(test_video_encoder_validates_config_and_frame_size),

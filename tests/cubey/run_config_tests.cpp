@@ -1,7 +1,10 @@
+#include <cubey/core/config_options.h>
 #include <cubey/core/run_config.h>
 
 #include <array>
 #include <filesystem>
+#include <fstream>
+#include <iterator>
 #include <stdexcept>
 #include <string>
 
@@ -20,6 +23,26 @@ template <typename Fn> void require_throws(Fn&& fn, const char* message) {
         return;
     }
     throw std::runtime_error(message);
+}
+
+std::filesystem::path temp_config_path(const char* name) {
+    return std::filesystem::temp_directory_path() / name;
+}
+
+void write_text_file(const std::filesystem::path& path, const std::string& text) {
+    std::ofstream output(path);
+    if (!output) {
+        throw std::runtime_error("failed to write test file");
+    }
+    output << text;
+}
+
+std::string read_text_file(const std::filesystem::path& path) {
+    std::ifstream input(path);
+    if (!input) {
+        throw std::runtime_error("failed to read test file");
+    }
+    return {std::istreambuf_iterator<char>(input), std::istreambuf_iterator<char>()};
 }
 
 } // namespace
@@ -113,6 +136,165 @@ void test_run_config_rejects_invalid_capture_options() {
             [&argv]() { cubey::parse_run_config(static_cast<int>(argv.size()), argv.data()); },
             "run config should reject video capture without headless mode");
     }
+}
+
+void test_run_config_descriptors_have_help_text() {
+    bool saw_ocean = false;
+    bool saw_atmosphere = false;
+    for (const cubey::ConfigOptionDescriptor& option : cubey::run_config_option_descriptors()) {
+        require(!option.path.empty(), "config descriptor path should not be empty");
+        require(!option.label.empty(), "config descriptor label should not be empty");
+        require(!option.group_path.empty(), "config descriptor group should not be empty");
+        require(!option.help.empty(), "config descriptor help should not be empty");
+        if (option.path == "ocean.map_size") {
+            saw_ocean = true;
+        }
+        if (option.path == "atmosphere.time_of_day_mode") {
+            saw_atmosphere = true;
+        }
+    }
+    require(saw_ocean, "config descriptors should include active ocean controls");
+    require(saw_atmosphere, "config descriptors should include atmosphere controls");
+}
+
+void test_run_config_loads_json_config_file() {
+    const std::filesystem::path path = temp_config_path("cubey-run-config-load-test.json");
+    write_text_file(path,
+                    R"({
+  "width": 640,
+  "height": 360,
+  "headless": true,
+  "output": "/tmp/cubey-config.png",
+  "pbr": {
+    "environment_source": "atmosphere",
+    "exposure": -0.75
+  },
+  "ocean": {
+    "map_size": 512,
+    "cascade": "4",
+    "spectral_domains": false,
+    "terrain_fields": true
+  },
+  "terrain": {
+    "seed": 12345,
+    "water_surface": false
+  },
+  "atmosphere": {
+    "time_of_day_mode": "solar",
+    "time_hours": 18.5,
+    "moon": false
+  }
+})");
+
+    std::string program = "cubey";
+    std::string config_flag = "--config";
+    std::string config_path = path.string();
+    std::array<char*, 3> argv{program.data(), config_flag.data(), config_path.data()};
+    const cubey::RunConfig config =
+        cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
+
+    require(config.width == 640 && config.height == 360,
+            "config file should set window dimensions");
+    require(config.headless, "config file should set boolean options");
+    require(config.output_path == "/tmp/cubey-config.png",
+            "config file should preserve explicit output path");
+    require(config.pbr.environment_source == "atmosphere",
+            "config file should set nested PBR options");
+    require(config.pbr.exposure == -0.75F && config.pbr.exposure_explicit,
+            "config file should set explicit exposure");
+    require(config.ocean.map_size == 512 && config.ocean.cascade == 4,
+            "config file should set ocean controls");
+    require(config.ocean.spectral_domains == 0 && config.ocean.terrain_fields == 1,
+            "config file should set ocean tri-state booleans");
+    require(config.terrain.seed_set && config.terrain.seed == 12345U,
+            "config file should mark terrain seed as explicit");
+    require(config.terrain.water_surface == 0, "config file should set terrain booleans");
+    require(config.atmosphere.time_of_day_mode == "solar" &&
+                config.atmosphere.time_hours == 18.5F && config.atmosphere.moon == 0,
+            "config file should set atmosphere controls");
+}
+
+void test_run_config_cli_and_set_override_config_file() {
+    const std::filesystem::path path = temp_config_path("cubey-run-config-override-test.json");
+    write_text_file(path,
+                    R"({
+  "width": 640,
+  "height": 360,
+  "pbr": {
+    "environment_source": "static"
+  },
+  "ocean": {
+    "terrain_fields": false
+  }
+})");
+
+    std::string program = "cubey";
+    std::string config_flag = "--config";
+    std::string config_path = path.string();
+    std::string width_flag = "--width";
+    std::string width_value = "800";
+    std::string set_flag = "--set";
+    std::string set_height = "height=720";
+    std::string set_env = "pbr.environment_source=atmosphere";
+    std::string set_terrain = "ocean.terrain_fields=true";
+    std::array<char*, 11> argv{program.data(),     width_flag.data(),  width_value.data(),
+                               config_flag.data(), config_path.data(), set_flag.data(),
+                               set_height.data(),  set_flag.data(),    set_env.data(),
+                               set_flag.data(),    set_terrain.data()};
+
+    const cubey::RunConfig config =
+        cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
+    require(config.width == 800, "named CLI flags should override config files");
+    require(config.height == 720, "--set should override config files");
+    require(config.pbr.environment_source == "atmosphere",
+            "--set should override nested config values");
+    require(config.ocean.terrain_fields == 1, "--set should parse bool overrides");
+}
+
+void test_run_config_rejects_invalid_json_config_file() {
+    {
+        const std::filesystem::path path = temp_config_path("cubey-run-config-unknown-test.json");
+        write_text_file(path, R"({"ocean":{"unknown":1}})");
+        std::string program = "cubey";
+        std::string config_flag = "--config";
+        std::string config_path = path.string();
+        std::array<char*, 3> argv{program.data(), config_flag.data(), config_path.data()};
+        require_throws(
+            [&argv]() { cubey::parse_run_config(static_cast<int>(argv.size()), argv.data()); },
+            "config file should reject unknown options");
+    }
+    {
+        const std::filesystem::path path = temp_config_path("cubey-run-config-type-test.json");
+        write_text_file(path, R"({"width":"640"})");
+        std::string program = "cubey";
+        std::string config_flag = "--config";
+        std::string config_path = path.string();
+        std::array<char*, 3> argv{program.data(), config_flag.data(), config_path.data()};
+        require_throws(
+            [&argv]() { cubey::parse_run_config(static_cast<int>(argv.size()), argv.data()); },
+            "config file should reject wrong JSON types");
+    }
+}
+
+void test_run_config_writes_json_template() {
+    const std::filesystem::path path = temp_config_path("cubey-run-config-template-test.json");
+    std::string program = "cubey";
+    std::string template_flag = "--write-config-template";
+    std::string template_path = path.string();
+    std::array<char*, 3> argv{program.data(), template_flag.data(), template_path.data()};
+
+    const cubey::RunConfig config =
+        cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
+    require(config.write_config_template_path == path,
+            "run config should preserve template output path");
+
+    const std::string text = read_text_file(path);
+    require(text.find("\"width\"") != std::string::npos,
+            "config template should include common options");
+    require(text.find("\"atmosphere\"") != std::string::npos,
+            "config template should include nested atmosphere options");
+    require(text.find("\"ocean\"") != std::string::npos,
+            "config template should include nested ocean options");
 }
 
 void test_run_config_parses_input_path() {
