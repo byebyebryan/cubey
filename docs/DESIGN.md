@@ -337,8 +337,9 @@ named explicitly and live in either `examples/` or `projects/`:
   example-local private modules for lifecycle, resources, scene setup, and
   command recording; that split is not automatically Cubey library API.
 - `projects/` - first-class graphics experiments and longer-lived creative
-  work, including `smoke_2d`, `fire_3d`, `explosion_3d`, `fractal_2d`,
-  `gltf_viewer`, `ocean`, `ocean_ref`, `ocean_legacy`, and `pbr_furnace`, plus
+  work, including `atmosphere`, `smoke_2d`, `water_2d`, `water_3d`,
+  `fire_3d`, `explosion_3d`, `fractal_2d`, `gltf_viewer`, `ocean`,
+  `ocean_ref`, `ocean_legacy`, `procedural_terrain`, and `pbr_furnace`, plus
   later candidates such as `marching_cubes` and `sdf_sculpt`.
 - `third_party/` - small vendored dependencies with explicit license notes.
 - `tools/` - repo utilities, asset processors, shader tools, or diagnostics.
@@ -496,6 +497,12 @@ cubey/
     headless_cube/         -- no-window offscreen cube PNG/MP4 capture path
     particle_cubes/        -- compute-updated cube particles
   projects/
+      atmosphere/
+        CMakeLists.txt
+        main.cpp
+        atmosphere_app.* -- solar time, sky, moon, Milky Way, and HDR post host path
+        atmosphere_environment.* -- project-to-shared atmosphere config adapter
+        atmosphere_ui.* -- live atmosphere and night-sky controls
       fractal_2d/
         CMakeLists.txt
         main.cpp
@@ -593,6 +600,7 @@ cubey/
           ocean.frag      -- water shading, foam, and debug views
       ocean_ref/          -- frozen known-good GodotOceanWaves comparison port
       ocean_legacy/       -- previous Cubey ocean renderer and feature donor
+      procedural_terrain/ -- terrain, bathymetry, shoreline, and LOD diagnostics
       pbr_furnace/
         CMakeLists.txt
         main.cpp

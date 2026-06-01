@@ -471,9 +471,8 @@ void test_hdr_post_frame_helpers_pack_scene_color_and_display_transform() {
     require(desc.aspects == VK_IMAGE_ASPECT_COLOR_BIT,
             "HDR post scene color should declare color aspect usage");
 
-    const cubey::render::PbrPostUniforms uniforms =
-        cubey::render::hdr_post_uniforms(VK_FORMAT_B8G8R8A8_SRGB, 0.75F,
-                                        cubey::render::PbrTonemap::Linear);
+    const cubey::render::PbrPostUniforms uniforms = cubey::render::hdr_post_uniforms(
+        VK_FORMAT_B8G8R8A8_SRGB, 0.75F, cubey::render::PbrTonemap::Linear);
     const cubey::render::PbrDisplayTransform display_transform =
         cubey::render::pbr_display_transform_for_target(VK_FORMAT_B8G8R8A8_SRGB, 0.75F,
                                                         cubey::render::PbrTonemap::Linear);
@@ -701,8 +700,9 @@ void test_forward_pbr_shader_package_uses_renderer_names() {
                      "shared forward PBR package should include the atmosphere background shader");
     require_contains(shader_cmake, "atmosphere_reflection_prefilter.frag",
                      "shared forward PBR package should include the atmosphere probe prefilter");
-    require_not_contains(shader_cmake, "atmosphere_reflection_irradiance.frag",
-                         "shared forward PBR package should not include removed atmosphere irradiance path");
+    require_not_contains(
+        shader_cmake, "atmosphere_reflection_irradiance.frag",
+        "shared forward PBR package should not include removed atmosphere irradiance path");
     require_contains(viewer_cmake, "cubey_forward_pbr_shader_sources",
                      "glTF viewer should consume the shared forward PBR shader package");
     require_contains(material_cubes_cmake, "cubey_forward_pbr_shader_sources",
@@ -731,6 +731,10 @@ void test_gltf_viewer_sample_asset_smoke_tests_cover_material_and_tangent_cases(
 
     require_contains(cmake, "function(cubey_add_gltf_viewer_sample_smoke_test",
                      "glTF viewer sample smoke tests should use a helper");
+    require_contains(cmake, "gltf_viewer_static_environment_headless_writes_png",
+                     "glTF viewer smoke tests should cover the static PBR environment path");
+    require_contains(cmake, "--pbr-environment-source",
+                     "glTF viewer smoke tests should exercise explicit environment source wiring");
     require_contains(cmake, "if (NOT CUBEY_GLTF_SAMPLE_ASSETS_DIR)",
                      "glTF viewer sample smoke tests should stay optional");
     require_contains(cmake, "FATAL_ERROR",
@@ -857,10 +861,8 @@ void test_pbr_consumers_use_atmosphere_lighting_foundation() {
         read_source_file(source_root / "projects/gltf_viewer/gltf_viewer_render.cpp");
     const std::string gltf_scene =
         read_source_file(source_root / "projects/gltf_viewer/gltf_viewer_scene.cpp");
-    const std::string ocean_app =
-        read_source_file(source_root / "projects/ocean/ocean_app.cpp");
-    const std::string pbr_docs =
-        read_source_file(source_root / "docs/architecture/pbr-ibl.md");
+    const std::string ocean_app = read_source_file(source_root / "projects/ocean/ocean_app.cpp");
+    const std::string pbr_docs = read_source_file(source_root / "docs/architecture/pbr-ibl.md");
 
     require_contains(gltf_header, "AtmosphereEnvironmentRuntime atmosphere_runtime_",
                      "glTF viewer should own a shared atmosphere environment runtime");
@@ -870,8 +872,9 @@ void test_pbr_consumers_use_atmosphere_lighting_foundation() {
                      "glTF viewer should resolve atmosphere options from RunConfig");
     require_contains(gltf_app, "atmosphere_runtime_.set_environment",
                      "glTF viewer should feed atmosphere config into the shared runtime");
-    require_contains(gltf_app, ".reference_geometry_enabled = false",
-                     "glTF viewer should disable atmosphere reference geometry for PBR backgrounds");
+    require_contains(
+        gltf_app, ".reference_geometry_enabled = false",
+        "glTF viewer should disable atmosphere reference geometry for PBR backgrounds");
     require_contains(gltf_scene, "primary_light_direction",
                      "glTF viewer should use atmosphere primary light for direct lighting");
     require_contains(gltf_scene, "atmosphere_runtime_.scene_environment()",

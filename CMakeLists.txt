@@ -260,11 +260,11 @@ if (CUBEY_BUILD_EXAMPLES)
             "vkCreateRenderPass|vkDestroyRenderPass|VkRenderPass|vkCreateFramebuffer|vkDestroyFramebuffer|VkFramebuffer|vkCmdBeginRenderPass|vkCmdEndRenderPass|VkRenderPassBeginInfo"
         )
         add_test(
-            NAME examples_use_dynamic_rendering
+            NAME render_apps_use_dynamic_rendering
             COMMAND
                 /bin/sh -c
                 "pattern=\"$1\"; shift; grep -RE \"$pattern\" \"$@\"; status=$?; test \"$status\" -eq 1"
-                examples_use_dynamic_rendering
+                render_apps_use_dynamic_rendering
                 "${CUBEY_CLASSIC_RENDERING_PATTERN}"
                 "${CMAKE_SOURCE_DIR}/examples/spinning_cube"
                 "${CMAKE_SOURCE_DIR}/examples/textured_cube"
@@ -276,8 +276,12 @@ if (CUBEY_BUILD_EXAMPLES)
                 "${CMAKE_SOURCE_DIR}/projects/atmosphere"
                 "${CMAKE_SOURCE_DIR}/projects/fractal_2d"
                 "${CMAKE_SOURCE_DIR}/projects/fluid"
+                "${CMAKE_SOURCE_DIR}/projects/gltf_viewer"
                 "${CMAKE_SOURCE_DIR}/projects/ocean"
+                "${CMAKE_SOURCE_DIR}/projects/ocean_legacy"
+                "${CMAKE_SOURCE_DIR}/projects/ocean_ref"
                 "${CMAKE_SOURCE_DIR}/projects/pbr_furnace"
+                "${CMAKE_SOURCE_DIR}/projects/procedural_terrain"
         )
     endif()
 endif()

@@ -60,9 +60,9 @@ void require_not_contains(const std::string& haystack, const char* needle, const
     }
 }
 
-[[nodiscard]] const std::uint8_t*
-lunar_atlas_texel(const cubey::render::LunarAtlas& atlas, std::uint32_t x,
-                  std::uint32_t y, std::uint32_t mip = 0) {
+[[nodiscard]] const std::uint8_t* lunar_atlas_texel(const cubey::render::LunarAtlas& atlas,
+                                                    std::uint32_t x, std::uint32_t y,
+                                                    std::uint32_t mip = 0) {
     const cubey::render::LunarAtlasMip& level = atlas.mips.at(mip);
     const std::size_t texel =
         (static_cast<std::size_t>(y) * static_cast<std::size_t>(level.width) + x) * 4U;
@@ -107,14 +107,13 @@ struct TestVec3 {
 [[nodiscard]] TestVec3 test_galactic_direction(TestVec3 center, TestVec3 tangent, TestVec3 pole,
                                                float longitude, float latitude) {
     const float horizontal = std::cos(latitude);
-    return test_normalize(test_add(
-        test_add(test_mul(center, std::cos(longitude) * horizontal),
-                 test_mul(tangent, std::sin(longitude) * horizontal)),
-        test_mul(pole, std::sin(latitude))));
+    return test_normalize(test_add(test_add(test_mul(center, std::cos(longitude) * horizontal),
+                                            test_mul(tangent, std::sin(longitude) * horizontal)),
+                                   test_mul(pole, std::sin(latitude))));
 }
 
-[[nodiscard]] float night_sky_luminance_at(
-    const cubey::render::NightSkyAtlas& atlas, TestVec3 direction) {
+[[nodiscard]] float night_sky_luminance_at(const cubey::render::NightSkyAtlas& atlas,
+                                           TestVec3 direction) {
     direction = test_normalize(direction);
     const TestVec3 axis{std::abs(direction.x), std::abs(direction.y), std::abs(direction.z)};
     std::uint32_t face = 0;
@@ -141,10 +140,9 @@ struct TestVec3 {
     };
     const std::uint32_t x = to_index(u);
     const std::uint32_t y = to_index(v);
-    const std::size_t offset =
-        (static_cast<std::size_t>(face) * extent * extent + static_cast<std::size_t>(y) * extent +
-         x) *
-        4U;
+    const std::size_t offset = (static_cast<std::size_t>(face) * extent * extent +
+                                static_cast<std::size_t>(y) * extent + x) *
+                               4U;
     return atlas.rgba32f[offset] * 0.2126F + atlas.rgba32f[offset + 1U] * 0.7152F +
            atlas.rgba32f[offset + 2U] * 0.0722F;
 }
@@ -156,12 +154,11 @@ struct AtlasLuminanceStats {
     std::size_t above_threshold = 0;
 };
 
-[[nodiscard]] AtlasLuminanceStats night_sky_luminance_stats(
-    const cubey::render::NightSkyAtlas& atlas, float threshold) {
+[[nodiscard]] AtlasLuminanceStats
+night_sky_luminance_stats(const cubey::render::NightSkyAtlas& atlas, float threshold) {
     AtlasLuminanceStats stats;
     for (std::size_t index = 0; index + 2U < atlas.rgba32f.size(); index += 4U) {
-        const float luma = atlas.rgba32f[index] * 0.2126F +
-                           atlas.rgba32f[index + 1U] * 0.7152F +
+        const float luma = atlas.rgba32f[index] * 0.2126F + atlas.rgba32f[index + 1U] * 0.7152F +
                            atlas.rgba32f[index + 2U] * 0.0722F;
         stats.min = std::min(stats.min, luma);
         stats.max = std::max(stats.max, luma);
@@ -259,8 +256,7 @@ int main() {
         const cubey::math::Vec3 sun = atmosphere_sun_direction(config);
         require_near(sun.x, std::cos(atmosphere_degrees_to_radians(30.0F)), 0.0001F,
                      "atmosphere sun direction should resolve azimuth around Y");
-        require_near(sun.y, 0.5F, 0.0001F,
-                     "atmosphere sun direction should resolve elevation");
+        require_near(sun.y, 0.5F, 0.0001F, "atmosphere sun direction should resolve elevation");
         require(std::abs(sun.z) < 0.0001F,
                 "atmosphere sun direction should face the requested azimuth");
     }
@@ -268,12 +264,11 @@ int main() {
         AtmosphereConfig config = atmosphere_config_for_preset(AtmospherePreset::MoonlitNight);
         const cubey::render::ViewRayBasis3D view_rays = cubey::render::view_ray_basis_3d(
             cubey::math::identity_quat(), 1.5F, std::numbers::pi_v<float> * 0.5F);
-        const AtmosphereFrameUniforms uniforms = atmosphere_frame_uniforms(
-            config,
-            {
-                .view_rays = view_rays,
-                .render_view = AtmosphereRenderView::Moon,
-            });
+        const AtmosphereFrameUniforms uniforms =
+            atmosphere_frame_uniforms(config, {
+                                                  .view_rays = view_rays,
+                                                  .render_view = AtmosphereRenderView::Moon,
+                                              });
         require(uniforms.camera_right_aspect == view_rays.right_aspect,
                 "frame uniforms should preserve packed view ray right/aspect");
         require(uniforms.camera_up_tan_half_fovy == view_rays.up_tan_half_fovy,
@@ -283,8 +278,7 @@ int main() {
         require(uniforms.camera_forward_debug_view.w ==
                     static_cast<float>(static_cast<std::uint32_t>(AtmosphereRenderView::Moon)),
                 "frame uniforms should pack the debug render view");
-        require(uniforms.moon_options.x == 1.0F,
-                "frame uniforms should pack the moon enable flag");
+        require(uniforms.moon_options.x == 1.0F, "frame uniforms should pack the moon enable flag");
         require(uniforms.celestial_options.z ==
                     std::sin(atmosphere_degrees_to_radians(config.time_of_day.latitude_degrees)),
                 "frame uniforms should pack the observer latitude sine");
@@ -399,13 +393,11 @@ int main() {
                 "procedural night sky atlas should preserve selected diagnostic layer");
         require(atlas.mips.size() == atlas.mip_levels,
                 "night sky atlas should include a complete mip chain");
-        require(night_sky_atlas_hash(atlas.rgba32f) ==
-                    night_sky_atlas_hash(atlas_again.rgba32f),
+        require(night_sky_atlas_hash(atlas.rgba32f) == night_sky_atlas_hash(atlas_again.rgba32f),
                 "procedural night sky atlas generation should be deterministic");
         require(night_sky_atlas_hash(atlas.rgba32f) != night_sky_atlas_hash(varied.rgba32f),
                 "procedural night sky atlas variation should alter generated structure");
-        require(night_sky_atlas_hash(atlas.rgba32f) !=
-                    night_sky_atlas_hash(dust_layer.rgba32f),
+        require(night_sky_atlas_hash(atlas.rgba32f) != night_sky_atlas_hash(dust_layer.rgba32f),
                 "procedural diagnostic layers should differ from final output");
         for (std::uint32_t mip = 0; mip < atlas.mip_levels; ++mip) {
             const NightSkyAtlasMip& level = atlas.mips.at(mip);
@@ -445,25 +437,24 @@ int main() {
                 "procedural night sky dust lane should darken adjacent galactic light");
         const AtlasLuminanceStats dust_stats = night_sky_luminance_stats(dust_layer, 0.006F);
         const AtlasLuminanceStats hii_stats = night_sky_luminance_stats(hii_layer, 0.0004F);
-        const AtlasLuminanceStats speckle_stats =
-            night_sky_luminance_stats(speckle_layer, 0.0008F);
+        const AtlasLuminanceStats speckle_stats = night_sky_luminance_stats(speckle_layer, 0.0008F);
         require(dust_stats.max - dust_stats.min > 0.006F,
                 "procedural dust optical depth layer should expose visible contrast");
-        require(hii_stats.above_threshold > 0U && hii_stats.above_threshold < atlas.extent *
-                    atlas.extent * 6U / 3U,
+        require(hii_stats.above_threshold > 0U &&
+                    hii_stats.above_threshold < atlas.extent * atlas.extent * 6U / 3U,
                 "procedural H II layer should be sparse and nonzero");
         require(speckle_stats.above_threshold > 0U,
                 "procedural speckle layer should contain faint dense stars");
         const float seam_latitude = 0.035F;
         const float seam_epsilon = 0.025F;
         const float seam_a = night_sky_luminance_at(
-            atlas, test_galactic_direction(center, tangent, pole,
-                                           std::numbers::pi_v<float> - seam_epsilon,
-                                           seam_latitude));
+            atlas,
+            test_galactic_direction(center, tangent, pole, std::numbers::pi_v<float> - seam_epsilon,
+                                    seam_latitude));
         const float seam_b = night_sky_luminance_at(
-            atlas, test_galactic_direction(center, tangent, pole,
-                                           -std::numbers::pi_v<float> + seam_epsilon,
-                                           seam_latitude));
+            atlas,
+            test_galactic_direction(center, tangent, pole,
+                                    -std::numbers::pi_v<float> + seam_epsilon, seam_latitude));
         require(std::abs(seam_a - seam_b) < std::max(seam_a, seam_b) * 0.35F + 0.0001F,
                 "procedural night sky should stay continuous across the longitude seam");
         for (const float value : atlas.rgba32f) {
@@ -697,8 +688,7 @@ int main() {
     const std::filesystem::path source_root = CUBEY_ATMOSPHERE_SOURCE_DIR;
     const std::filesystem::path repo_root = source_root.parent_path().parent_path();
     const std::string app_source = read_text_file(source_root / "atmosphere_app.cpp");
-    const std::string environment_header =
-        read_text_file(source_root / "atmosphere_environment.h");
+    const std::string environment_header = read_text_file(source_root / "atmosphere_environment.h");
     const std::string environment_source =
         read_text_file(source_root / "atmosphere_environment.cpp");
     const std::string shared_environment_header =
@@ -709,6 +699,8 @@ int main() {
         read_text_file(repo_root / "include/cubey/render/atmosphere_background_frame.h");
     const std::string shared_background_source =
         read_text_file(repo_root / "src/cubey/render/atmosphere_background_frame.cpp");
+    const std::string shared_helper_source =
+        read_text_file(repo_root / "shaders/cubey/atmosphere.glsl");
     const std::string shader_source = read_text_file(source_root / "shaders/atmosphere.frag");
     const std::string cmake_source = read_text_file(source_root / "CMakeLists.txt");
     const std::string render_cmake_source = read_text_file(repo_root / "src/cubey/CMakeLists.txt");
@@ -741,8 +733,9 @@ int main() {
                      "project atmosphere environment should depend on the shared environment API");
     require_contains(environment_header, "using AtmosphereFrameUniforms",
                      "project atmosphere environment should expose shared frame uniform type");
-    require_contains(environment_source, "atmosphere_environment_config(config)",
-                     "project atmosphere environment should adapt project config into shared config");
+    require_contains(
+        environment_source, "atmosphere_environment_config(config)",
+        "project atmosphere environment should adapt project config into shared config");
     require_contains(environment_header, "atmosphere_environment_render_view",
                      "project atmosphere environment should expose explicit render-view mapping");
     require_contains(environment_header, "atmosphere_environment_config",
@@ -830,7 +823,9 @@ int main() {
                      "atmosphere shader should soften low-sun ground lighting");
     require_contains(shader_source, "ATMOSPHERE_MIN_TWILIGHT_SOFTNESS",
                      "atmosphere shader should include a twilight terminator softness floor");
-    require_contains(shader_source, "debug_view == 6",
+    require_contains(shared_helper_source, "CUBEY_ATMOSPHERE_VIEW_AERIAL_PERSPECTIVE = 6",
+                     "shared atmosphere shader include should define aerial debug view value");
+    require_contains(shader_source, "debug_view == CUBEY_ATMOSPHERE_VIEW_AERIAL_PERSPECTIVE",
                      "atmosphere shader should include aerial perspective debug output");
     require_contains(shader_source, "twilight_radiance",
                      "atmosphere shader should include twilight radiance");
@@ -856,13 +851,18 @@ int main() {
                      "atmosphere shader should rotate star sampling through celestial space");
     require_contains(shader_source, "celestial_options",
                      "atmosphere shader should receive celestial rotation options");
-    require_contains(shader_source, "debug_view == 7",
+    require_contains(shared_helper_source, "CUBEY_ATMOSPHERE_VIEW_NIGHT_SKY = 7",
+                     "shared atmosphere shader include should define night sky debug view value");
+    require_contains(shader_source, "debug_view == CUBEY_ATMOSPHERE_VIEW_NIGHT_SKY",
                      "atmosphere shader should include night sky debug output");
-    require_contains(shader_source, "layout(set = 0, binding = 2) uniform samplerCube night_sky_atlas",
+    require_contains(shader_source,
+                     "layout(set = 0, binding = 2) uniform samplerCube night_sky_atlas",
                      "atmosphere shader should sample a night sky atlas");
     require_contains(shader_source, "milky_way_radiance",
                      "atmosphere shader should include Milky Way radiance");
-    require_contains(shader_source, "debug_view == 8",
+    require_contains(shared_helper_source, "CUBEY_ATMOSPHERE_VIEW_MILKY_WAY = 8",
+                     "shared atmosphere shader include should define Milky Way debug view value");
+    require_contains(shader_source, "debug_view == CUBEY_ATMOSPHERE_VIEW_MILKY_WAY",
                      "atmosphere shader should include Milky Way debug output");
     require_contains(shader_source, "galactic_debug_direction",
                      "atmosphere shader should map Milky Way debug view across the galactic plane");
@@ -874,9 +874,13 @@ int main() {
                      "atmosphere shader should include lunar atlas surface sampling");
     require_contains(shader_source, "lunar_lambert",
                      "atmosphere shader should include lunar-style moon lighting");
-    require_contains(shader_source, "debug_view == 9",
+    require_contains(shared_helper_source, "CUBEY_ATMOSPHERE_VIEW_MOON = 9",
+                     "shared atmosphere shader include should define moon debug view value");
+    require_contains(shader_source, "debug_view == CUBEY_ATMOSPHERE_VIEW_MOON",
                      "atmosphere shader should include moon debug output");
-    require_contains(shader_source, "debug_view == 10",
+    require_contains(shared_helper_source, "CUBEY_ATMOSPHERE_VIEW_MOON_SURFACE = 10",
+                     "shared atmosphere shader include should define moon surface view value");
+    require_contains(shader_source, "debug_view == CUBEY_ATMOSPHERE_VIEW_MOON_SURFACE",
                      "atmosphere shader should include moon surface debug output");
     require_contains(shader_source, "hit_ground ? vec3(0.0) : sun_disk_luminance",
                      "atmosphere shader should mask sun disk behind ground");

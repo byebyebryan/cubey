@@ -40,21 +40,23 @@ Useful debug views:
 
 ```sh
 ./build/dev/projects/procedural_terrain/procedural_terrain --debug-view height
-./build/dev/projects/procedural_terrain/procedural_terrain --debug-view water_depth
+./build/dev/projects/procedural_terrain/procedural_terrain --debug-view water-depth
 ./build/dev/projects/procedural_terrain/procedural_terrain --debug-view shoreline
 ./build/dev/projects/procedural_terrain/procedural_terrain --debug-view material
 ./build/dev/projects/procedural_terrain/procedural_terrain --debug-view slope
 ./build/dev/projects/procedural_terrain/procedural_terrain --debug-view landform
 ./build/dev/projects/procedural_terrain/procedural_terrain --debug-view ridges
 ./build/dev/projects/procedural_terrain/procedural_terrain --debug-view valleys
-./build/dev/projects/procedural_terrain/procedural_terrain --debug-view flow_accumulation
-./build/dev/projects/procedural_terrain/procedural_terrain --debug-view stream_power
-./build/dev/projects/procedural_terrain/procedural_terrain --debug-view macro_height
-./build/dev/projects/procedural_terrain/procedural_terrain --debug-view base_noise
-./build/dev/projects/procedural_terrain/procedural_terrain --debug-view detail_noise
-./build/dev/projects/procedural_terrain/procedural_terrain --debug-view feature_height
-./build/dev/projects/procedural_terrain/procedural_terrain --debug-view relax_delta
+./build/dev/projects/procedural_terrain/procedural_terrain --debug-view flow-accumulation
+./build/dev/projects/procedural_terrain/procedural_terrain --debug-view stream-power
+./build/dev/projects/procedural_terrain/procedural_terrain --debug-view macro-height
+./build/dev/projects/procedural_terrain/procedural_terrain --debug-view base-noise
+./build/dev/projects/procedural_terrain/procedural_terrain --debug-view detail-noise
+./build/dev/projects/procedural_terrain/procedural_terrain --debug-view feature-height
+./build/dev/projects/procedural_terrain/procedural_terrain --debug-view relax-delta
 ```
+
+Underscore spellings remain accepted as compatibility aliases.
 
 Use `--grid-width` and `--grid-height` for lower-cost checks or denser local
 captures. The app supports grids up to `2049 x 2049`; the default is

@@ -2,6 +2,17 @@
 #define CUBEY_ATMOSPHERE_GLSL
 
 const float CUBEY_ATMOSPHERE_PI = 3.14159265359;
+const int CUBEY_ATMOSPHERE_VIEW_FINAL = 0;
+const int CUBEY_ATMOSPHERE_VIEW_RAYLEIGH = 1;
+const int CUBEY_ATMOSPHERE_VIEW_MIE = 2;
+const int CUBEY_ATMOSPHERE_VIEW_TRANSMITTANCE = 3;
+const int CUBEY_ATMOSPHERE_VIEW_OPTICAL_DEPTH = 4;
+const int CUBEY_ATMOSPHERE_VIEW_SUN_DISK = 5;
+const int CUBEY_ATMOSPHERE_VIEW_AERIAL_PERSPECTIVE = 6;
+const int CUBEY_ATMOSPHERE_VIEW_NIGHT_SKY = 7;
+const int CUBEY_ATMOSPHERE_VIEW_MILKY_WAY = 8;
+const int CUBEY_ATMOSPHERE_VIEW_MOON = 9;
+const int CUBEY_ATMOSPHERE_VIEW_MOON_SURFACE = 10;
 
 vec2 cubey_atmosphere_ray_sphere_intersection(vec3 ray_origin, vec3 ray_direction,
                                               vec3 sphere_center, float sphere_radius) {

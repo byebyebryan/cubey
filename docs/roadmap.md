@@ -178,6 +178,11 @@ Current checkpoint:
   with matching single- and multi-binding vertex input layouts, a helper for primitive mesh
   registry/table upload, and generational mesh/material handles issued by
   `RenderResourceRegistry`.
+- Reusable atmosphere and terrain-adjacent render helpers now cover atmosphere
+  frame uniforms, background atlas bindings, lunar and night-sky generated
+  atlases, runtime atmosphere reflection-probe cubemaps for dynamic PBR
+  environment lighting, terrain-ocean field packing, and shared 2D clipmap grid
+  planning for ocean and terrain LOD diagnostics.
 - Reusable `cubey::render::ResourceTable`,
   `cubey::render::RenderItem`,
   `cubey::render::MaterialPassInfo`,

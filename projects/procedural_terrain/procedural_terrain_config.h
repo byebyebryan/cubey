@@ -4,6 +4,7 @@
 
 #include <array>
 #include <cmath>
+#include <cstddef>
 #include <cstdint>
 #include <stdexcept>
 #include <string>
@@ -108,12 +109,26 @@ struct TerrainConfig {
     return "final";
 }
 
+[[nodiscard]] inline bool terrain_debug_view_name_matches(std::string_view value,
+                                                          std::string_view canonical) {
+    if (value.size() != canonical.size()) {
+        return false;
+    }
+    for (std::size_t index = 0; index < value.size(); ++index) {
+        const char character = value[index] == '-' ? '_' : value[index];
+        if (character != canonical[index]) {
+            return false;
+        }
+    }
+    return true;
+}
+
 [[nodiscard]] inline TerrainDebugView terrain_debug_view_from_name(std::string_view name) {
     if (name.empty()) {
         return TerrainDebugView::Final;
     }
     for (const TerrainDebugView view : kTerrainDebugViews) {
-        if (name == terrain_debug_view_name(view)) {
+        if (terrain_debug_view_name_matches(name, terrain_debug_view_name(view))) {
             return view;
         }
     }

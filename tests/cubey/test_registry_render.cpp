@@ -12,6 +12,7 @@ void test_example_lighting_uses_low_linear_ambient_terms();
 void test_pbr_furnace_headless_path_transitions_depth_attachment();
 void test_smoke_tests_fail_on_vulkan_validation_errors();
 void test_hostless_cmake_defaults_disable_host_dependent_targets();
+void test_render_app_dynamic_rendering_scan_covers_built_projects();
 void test_frame_slot_defaults_to_single_frame_slot();
 void test_frame_slot_rejects_invalid_slots();
 void test_frame_slot_wraps_frame_indices();
@@ -171,6 +172,7 @@ std::span<const TestCase> render_test_cases() {
         CUBEY_TEST(test_pbr_furnace_headless_path_transitions_depth_attachment),
         CUBEY_TEST(test_smoke_tests_fail_on_vulkan_validation_errors),
         CUBEY_TEST(test_hostless_cmake_defaults_disable_host_dependent_targets),
+        CUBEY_TEST(test_render_app_dynamic_rendering_scan_covers_built_projects),
         CUBEY_TEST(test_frame_slot_wraps_frame_indices),
         CUBEY_TEST(test_frame_slot_rejects_invalid_slots),
         CUBEY_TEST(test_frame_uniform_buffer_config_describes_host_visible_uniform_storage),

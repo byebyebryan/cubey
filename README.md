@@ -117,6 +117,7 @@ Project-local docs:
 - [Ocean](projects/ocean/README.md)
 - [Ocean Ref](projects/ocean_ref/README.md)
 - [Ocean Legacy](projects/ocean_legacy/README.md)
+- [Procedural Terrain](projects/procedural_terrain/README.md)
 
 ## Development Setup
 
@@ -198,6 +199,7 @@ Useful windowed smokes:
 ./build/dev/projects/fluid/water_3d/water_3d --frames 300 --width 1280 --height 720
 ./build/dev/projects/fluid/fire_3d/fire_3d --frames 300 --width 1280 --height 720
 ./build/dev/projects/fluid/explosion_3d/explosion_3d --frames 300 --width 1280 --height 720
+./build/dev/projects/atmosphere/atmosphere --frames 300 --width 1280 --height 720
 ./build/dev/projects/ocean/ocean --ocean-map-size 128 --frames 300 --width 1280 --height 720
 ./build/dev/projects/ocean_ref/ocean_ref --ocean-ref-map-size 128 --frames 300 --width 1280 --height 720
 ./build/dev/projects/ocean_legacy/ocean_legacy --frames 300 --width 1280 --height 720
@@ -260,8 +262,9 @@ with macro waves, foam history, refraction, seafloor, and additional debug views
 for future selective porting.
 `procedural_terrain` generates deterministic island/coast/shelf/seabed fields
 and renders an oblique heightfield mesh. It exposes
-`--debug-view final|height|water_depth|shoreline|material|slope`, plus
+`--debug-view final|height|water-depth|shoreline|material|slope`, plus
 `--grid-width` and `--grid-height` for lower-cost checks or denser captures.
+Underscore spellings such as `water_depth` remain accepted for older scripts.
 
 Useful headless PNG smokes:
 
@@ -273,6 +276,7 @@ Useful headless PNG smokes:
 ./build/dev/projects/fluid/water_3d/water_3d --headless --frames 120 --width 640 --height 360 --output /tmp/cubey-water-3d.png
 ./build/dev/projects/fluid/fire_3d/fire_3d --headless --frames 120 --width 640 --height 360 --output /tmp/cubey-fire-3d.png
 ./build/dev/projects/fluid/explosion_3d/explosion_3d --headless --frames 120 --width 640 --height 360 --output /tmp/cubey-explosion-3d.png
+./build/dev/projects/atmosphere/atmosphere --headless --frames 120 --width 640 --height 360 --output /tmp/cubey-atmosphere.png
 ./build/dev/projects/ocean/ocean --headless --frames 120 --width 640 --height 360 --ocean-map-size 128 --output /tmp/cubey-ocean.png
 ./build/dev/projects/ocean_ref/ocean_ref --headless --frames 120 --width 640 --height 360 --ocean-ref-map-size 128 --output /tmp/cubey-ocean-ref.png
 ./build/dev/projects/ocean_legacy/ocean_legacy --headless --frames 120 --width 640 --height 360 --output /tmp/cubey-ocean-legacy.png

@@ -38,9 +38,14 @@ Detailed current foundation notes live under
 - [Ocean rendering](architecture/ocean-rendering.md): active/reference/legacy
   ocean split, reference-derived wave core, feature donor boundaries, and
   breaking-wave tradeoffs.
+- [Ocean adjacent systems](architecture/ocean-adjacent-systems.md): atmosphere,
+  terrain, bathymetry, shoreline, and shallow-water integration boundaries.
 - [glTF assets and PBR](architecture/gltf-assets.md): glTF import, PBR material
   contract, animation/deformation, texture upload, HDR environments, and viewer
   boundaries.
+- [Animation and deformation](architecture/animation-deformation.md): glTF
+  animation, morph targets, skinning, GPU deformation, and validation asset
+  direction.
 - [PBR and IBL direction](architecture/pbr-ibl.md): generated and HDR-backed
   cubemap IBL, PBR shader contract, and environment asset boundaries.
 

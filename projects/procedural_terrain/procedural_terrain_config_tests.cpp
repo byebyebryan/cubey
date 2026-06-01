@@ -75,6 +75,9 @@ int main() {
     require(terrain::terrain_debug_view_from_name("water_depth") ==
                 terrain::TerrainDebugView::WaterDepth,
             "water depth terrain debug view should parse");
+    require(terrain::terrain_debug_view_from_name("water-depth") ==
+                terrain::TerrainDebugView::WaterDepth,
+            "water depth terrain debug view should accept hyphen aliases");
     require(terrain::terrain_debug_view_from_name("shoreline") ==
                 terrain::TerrainDebugView::Shoreline,
             "shoreline terrain debug view should parse");
@@ -93,6 +96,9 @@ int main() {
     require(terrain::terrain_debug_view_from_name("flow_accumulation") ==
                 terrain::TerrainDebugView::FlowAccumulation,
             "flow accumulation terrain debug view should parse");
+    require(terrain::terrain_debug_view_from_name("flow-accumulation") ==
+                terrain::TerrainDebugView::FlowAccumulation,
+            "flow accumulation terrain debug view should accept hyphen aliases");
     require(terrain::terrain_debug_view_from_name("stream_power") ==
                 terrain::TerrainDebugView::StreamPower,
             "stream power terrain debug view should parse");

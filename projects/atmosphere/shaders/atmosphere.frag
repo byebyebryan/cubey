@@ -781,12 +781,12 @@ void main() {
     vec3 planet_center = vec3(0.0, -atmosphere.radii_ground.x - atmosphere.radii_ground.z, 0.0);
     int debug_view = int(atmosphere.camera_forward_debug_view.w + 0.5);
 
-    if (debug_view == 10) {
+    if (debug_view == CUBEY_ATMOSPHERE_VIEW_MOON_SURFACE) {
         vec3 color = render_moon_surface_debug();
         out_color = vec4(color, 1.0);
         return;
     }
-    if (debug_view == 8) {
+    if (debug_view == CUBEY_ATMOSPHERE_VIEW_MILKY_WAY) {
         vec3 color = render_milky_way_debug();
         out_color = vec4(color, 1.0);
         return;
@@ -828,21 +828,21 @@ void main() {
                  atmosphere_sample.transmittance;
     }
 
-    if (debug_view == 1) {
+    if (debug_view == CUBEY_ATMOSPHERE_VIEW_RAYLEIGH) {
         color = atmosphere_sample.rayleigh;
-    } else if (debug_view == 2) {
+    } else if (debug_view == CUBEY_ATMOSPHERE_VIEW_MIE) {
         color = atmosphere_sample.mie;
-    } else if (debug_view == 3) {
+    } else if (debug_view == CUBEY_ATMOSPHERE_VIEW_TRANSMITTANCE) {
         color = atmosphere_sample.transmittance;
-    } else if (debug_view == 4) {
+    } else if (debug_view == CUBEY_ATMOSPHERE_VIEW_OPTICAL_DEPTH) {
         color = debug_optical_depth(atmosphere_sample.optical_depth);
-    } else if (debug_view == 5) {
+    } else if (debug_view == CUBEY_ATMOSPHERE_VIEW_SUN_DISK) {
         color = sun_disk;
-    } else if (debug_view == 6) {
+    } else if (debug_view == CUBEY_ATMOSPHERE_VIEW_AERIAL_PERSPECTIVE) {
         color = render_aerial_perspective_debug(ray_direction, planet_center);
-    } else if (debug_view == 7) {
+    } else if (debug_view == CUBEY_ATMOSPHERE_VIEW_NIGHT_SKY) {
         color = night_sky;
-    } else if (debug_view == 9) {
+    } else if (debug_view == CUBEY_ATMOSPHERE_VIEW_MOON) {
         color = moon_disk;
         if (shade_ground) {
             color = moon_ground_debug_radiance(ray_direction, planet_center, ground_t) *

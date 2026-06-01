@@ -29,11 +29,11 @@ void test_example_lighting_uses_low_linear_ambient_terms() {
         read_source_file(root / "examples/particle_cubes/shaders/particle_cubes.frag");
     const std::string shadow =
         read_source_file(root / "examples/shadow_cube/shaders/shadow_cube.frag");
-    const std::string textured_app = read_example_sources(
-        root, {"examples/textured_cube/textured_cube_app_internal.h",
-               "examples/textured_cube/textured_cube_resources.cpp",
-               "examples/textured_cube/textured_cube_scene.cpp",
-               "examples/textured_cube/textured_cube_render.cpp"});
+    const std::string textured_app =
+        read_example_sources(root, {"examples/textured_cube/textured_cube_app_internal.h",
+                                    "examples/textured_cube/textured_cube_resources.cpp",
+                                    "examples/textured_cube/textured_cube_scene.cpp",
+                                    "examples/textured_cube/textured_cube_render.cpp"});
 
     for (const std::string* shader : {&instanced, &particle, &shadow}) {
         require_contains(*shader, "kAmbientRadiance",
@@ -78,4 +78,20 @@ void test_hostless_cmake_defaults_disable_host_dependent_targets() {
                      "hostless builds should default projects off with the host layer");
     require_contains(cmake, "set(BUILD_TESTING ${CUBEY_BUILD_HOST}",
                      "hostless builds should default tests off with the host layer");
+}
+
+void test_render_app_dynamic_rendering_scan_covers_built_projects() {
+    const std::filesystem::path root{CUBEY_SOURCE_DIR};
+    const std::string cmake = read_source_file(root / "CMakeLists.txt");
+
+    require_contains(cmake, "NAME render_apps_use_dynamic_rendering",
+                     "dynamic-rendering hygiene test should name examples and projects");
+    require_contains(cmake, "projects/gltf_viewer",
+                     "dynamic-rendering hygiene test should scan the glTF viewer");
+    require_contains(cmake, "projects/ocean_ref",
+                     "dynamic-rendering hygiene test should scan the ocean reference project");
+    require_contains(cmake, "projects/ocean_legacy",
+                     "dynamic-rendering hygiene test should scan the ocean legacy project");
+    require_contains(cmake, "projects/procedural_terrain",
+                     "dynamic-rendering hygiene test should scan procedural terrain");
 }
