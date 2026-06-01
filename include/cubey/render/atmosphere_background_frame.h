@@ -47,6 +47,12 @@ struct AtmosphereBackgroundAtlasResources {
 
 using AtmosphereBackgroundPlaceholderTextures = AtmosphereBackgroundAtlasResources;
 
+struct AtmosphereBackgroundGeneratedAtlasConfig {
+    NightSkyAtlasConfig night_sky{};
+    std::uint32_t lunar_extent = kLunarAtlasExtent;
+    std::uint32_t night_sky_extent = kNightSkyAtlasExtent;
+};
+
 [[nodiscard]] Texture2D create_atmosphere_lunar_atlas_texture(
     const cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu,
     const LunarAtlas& atlas);
@@ -59,7 +65,7 @@ using AtmosphereBackgroundPlaceholderTextures = AtmosphereBackgroundAtlasResourc
     const LunarAtlas& lunar, const NightSkyAtlas& night_sky);
 [[nodiscard]] AtmosphereBackgroundAtlasResources create_atmosphere_background_generated_textures(
     const cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu,
-    const NightSkyAtlasConfig& night_sky = {});
+    const AtmosphereBackgroundGeneratedAtlasConfig& config = {});
 [[nodiscard]] AtmosphereBackgroundAtlasResources
 create_atmosphere_background_placeholder_textures(const cubey::vulkan::Device& device,
                                                   cubey::vulkan::GpuRuntime& gpu);

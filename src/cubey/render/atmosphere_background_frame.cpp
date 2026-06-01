@@ -105,9 +105,10 @@ AtmosphereBackgroundAtlasResources create_atmosphere_background_atlas_resources(
 
 AtmosphereBackgroundAtlasResources create_atmosphere_background_generated_textures(
     const cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu,
-    const NightSkyAtlasConfig& night_sky) {
+    const AtmosphereBackgroundGeneratedAtlasConfig& config) {
     return create_atmosphere_background_atlas_resources(
-        device, gpu, generate_lunar_atlas(), generate_night_sky_atlas(night_sky));
+        device, gpu, generate_lunar_atlas(config.lunar_extent),
+        generate_night_sky_atlas(config.night_sky, config.night_sky_extent));
 }
 
 AtmosphereBackgroundAtlasResources create_atmosphere_background_placeholder_textures(

@@ -441,9 +441,14 @@ class OceanApp {
     void create_atmosphere_environment_runtime(cubey::vulkan::Device& device,
                                                cubey::vulkan::GpuRuntime& gpu,
                                                std::uint32_t frame_slot_count) {
-        if (!atmosphere_background_placeholders_.has_value()) {
-            atmosphere_background_placeholders_.emplace(
-                cubey::render::create_atmosphere_background_placeholder_textures(device, gpu));
+        if (!atmosphere_background_atlases_.has_value()) {
+            atmosphere_background_atlases_.emplace(
+                cubey::render::create_atmosphere_background_generated_textures(
+                    device, gpu,
+                    {
+                        .lunar_extent = 128,
+                        .night_sky_extent = 128,
+                    }));
         }
         if (!atmosphere_runtime_.resources_created()) {
             atmosphere_runtime_.create_resources(
@@ -452,7 +457,7 @@ class OceanApp {
                             .reflection_mip_levels = 5,
                             .format = VK_FORMAT_R16G16B16A16_SFLOAT,
                             .frame_slot_count = frame_slot_count,
-                            .atmosphere_textures = atmosphere_background_placeholders_->bindings(),
+                            .atmosphere_textures = atmosphere_background_atlases_->bindings(),
                         });
             const std::filesystem::path shader_dir = CUBEY_OCEAN_SHADER_DIR;
             atmosphere_runtime_.create_pipelines(
@@ -471,14 +476,14 @@ class OceanApp {
 
     void create_atmosphere_background_frame(const cubey::vulkan::Device& device, VkExtent2D extent,
                                             std::uint32_t frame_slot_count) {
-        if (!atmosphere_background_placeholders_.has_value()) {
+        if (!atmosphere_background_atlases_.has_value()) {
             throw std::runtime_error("ocean atmosphere background textures are not initialized");
         }
         atmosphere_background_.destroy();
         atmosphere_background_.create_materials(
             device, cubey::render::AtmosphereBackgroundFrameMaterialConfig{
                         .frame_slot_count = frame_slot_count,
-                        .textures = atmosphere_background_placeholders_->bindings(),
+                        .textures = atmosphere_background_atlases_->bindings(),
                     });
         const std::filesystem::path shader_dir = CUBEY_OCEAN_SHADER_DIR;
         const std::array<cubey::render::ShaderStageFile, 2> shaders{
@@ -500,7 +505,7 @@ class OceanApp {
         atmosphere_background_.destroy();
         ocean_gpu_.reset();
         atmosphere_runtime_.destroy();
-        atmosphere_background_placeholders_.reset();
+        atmosphere_background_atlases_.reset();
         pipeline_color_format_ = VK_FORMAT_UNDEFINED;
         textures_initialized_ = false;
         spectrum_initialized_ = false;
@@ -1048,8 +1053,7 @@ class OceanApp {
     cubey::render::RenderGraphFrameExecutor graph_executor_;
     cubey::render::AtmosphereBackgroundFrame atmosphere_background_{};
     cubey::render::HdrPostFrame hdr_post_frame_;
-    std::optional<cubey::render::AtmosphereBackgroundPlaceholderTextures>
-        atmosphere_background_placeholders_;
+    std::optional<cubey::render::AtmosphereBackgroundAtlasResources> atmosphere_background_atlases_;
     cubey::render::AtmosphereEnvironmentRuntime atmosphere_runtime_{};
     std::optional<OceanConfig> gpu_config_;
     VkFormat pipeline_color_format_ = VK_FORMAT_UNDEFINED;

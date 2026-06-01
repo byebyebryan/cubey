@@ -24,7 +24,7 @@ void GltfViewerApp::destroy_all_resources() {
     forward_pbr_renderer_ = nullptr;
     atmosphere_runtime_.destroy();
     ibl_environment_.reset();
-    atmosphere_background_placeholders_.reset();
+    atmosphere_background_atlases_.reset();
     destroy_scene_if_needed();
     cubey::destroy_gltf_scene_import(engine_, import_resources_, import_result_);
     animation_playback_ = {};

@@ -605,8 +605,8 @@ int main() {
                          "ocean app should own the shared atmosphere runtime");
         require_contains(app_source, "AtmosphereBackgroundFrame atmosphere_background_",
                          "ocean app should own the shared atmosphere background frame");
-        require_contains(app_source, "create_atmosphere_background_placeholder_textures",
-                         "ocean app should use shared atmosphere placeholder textures");
+        require_contains(app_source, "create_atmosphere_background_generated_textures",
+                         "ocean app should use shared generated atmosphere atlas textures");
         require_contains(app_source, "record_atmosphere_background",
                          "ocean app should draw the shared atmosphere background");
         require_contains(app_source, "record_atmosphere_environment_if_needed",

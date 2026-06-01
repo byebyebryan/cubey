@@ -78,8 +78,8 @@ class GltfViewerApp {
     [[nodiscard]] std::filesystem::path resolved_environment_path() const;
     void create_default_textures(const cubey::vulkan::Device& device,
                                  cubey::vulkan::GpuRuntime& gpu);
-    void create_atmosphere_background_placeholders(const cubey::vulkan::Device& device,
-                                                   cubey::vulkan::GpuRuntime& gpu);
+    void create_atmosphere_background_atlases(const cubey::vulkan::Device& device,
+                                              cubey::vulkan::GpuRuntime& gpu);
     [[nodiscard]] cubey::render::AtmosphereBackgroundTextureBindings
     atmosphere_background_textures() const;
     [[nodiscard]] bool use_atmosphere_environment_source() const;
@@ -146,8 +146,7 @@ class GltfViewerApp {
     cubey::GltfSceneImportResources import_resources_{};
     cubey::GltfSceneImportResult import_result_{};
     std::optional<cubey::render::GeneratedPbrEnvironment> ibl_environment_;
-    std::optional<cubey::render::AtmosphereBackgroundPlaceholderTextures>
-        atmosphere_background_placeholders_;
+    std::optional<cubey::render::AtmosphereBackgroundAtlasResources> atmosphere_background_atlases_;
 };
 
 } // namespace cubey::projects::gltf_viewer

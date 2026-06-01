@@ -35,7 +35,7 @@ void GltfViewerApp::create_global_resources_if_needed(const cubey::vulkan::Devic
     }
 
     create_ibl_resources(device, gpu);
-    create_atmosphere_background_placeholders(device, gpu);
+    create_atmosphere_background_atlases(device, gpu);
     const bool use_atmosphere_environment = use_atmosphere_environment_source();
     if (use_atmosphere_environment) {
         create_atmosphere_environment_runtime(device, frame_slot_count);
@@ -133,23 +133,26 @@ void GltfViewerApp::create_default_textures(const cubey::vulkan::Device& device,
         cubey::render::create_pbr_default_texture_set(device, gpu));
 }
 
-void GltfViewerApp::create_atmosphere_background_placeholders(
+void GltfViewerApp::create_atmosphere_background_atlases(
     const cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu) {
-    if (atmosphere_background_placeholders_.has_value()) {
+    if (atmosphere_background_atlases_.has_value()) {
         return;
     }
 
-    atmosphere_background_placeholders_.emplace(
-        cubey::render::create_atmosphere_background_placeholder_textures(device, gpu));
+    atmosphere_background_atlases_.emplace(cubey::render::create_atmosphere_background_generated_textures(
+        device, gpu,
+        {
+            .lunar_extent = 128,
+            .night_sky_extent = 128,
+        }));
 }
 
 cubey::render::AtmosphereBackgroundTextureBindings
 GltfViewerApp::atmosphere_background_textures() const {
-    if (!atmosphere_background_placeholders_.has_value()) {
-        throw std::runtime_error(
-            "glTF viewer atmosphere background placeholders are not initialized");
+    if (!atmosphere_background_atlases_.has_value()) {
+        throw std::runtime_error("glTF viewer atmosphere background atlases are not initialized");
     }
-    return atmosphere_background_placeholders_->bindings();
+    return atmosphere_background_atlases_->bindings();
 }
 
 bool GltfViewerApp::use_atmosphere_environment_source() const {
