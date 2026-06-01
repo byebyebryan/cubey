@@ -6,6 +6,7 @@
 #include "ocean_ui.h"
 
 #include <cubey/core/math.h>
+#include <cubey/engine/atmosphere_environment_config.h>
 #include <cubey/host/frame_stats.h>
 #include <cubey/host/headless_png_host.h>
 #include <cubey/host/windowed_app.h>
@@ -138,13 +139,16 @@ struct OceanCameraPresetConfig {
     return degrees * (std::numbers::pi_v<float> / 180.0F);
 }
 
-[[nodiscard]] cubey::math::Vec4 ocean_sun_direction_uniform() {
-    cubey::render::AtmosphereEnvironmentConfig environment;
-    environment.sun_elevation_degrees = kOceanSunElevationDegrees;
-    environment.sun_azimuth_degrees = kOceanSunAzimuthDegrees;
-    const cubey::render::AtmosphereEnvironmentLighting lighting =
-        cubey::render::atmosphere_environment_lighting(environment);
-    return {lighting.sun_direction.x, lighting.sun_direction.y, lighting.sun_direction.z, 0.0F};
+[[nodiscard]] cubey::AtmosphereEnvironmentRunState
+ocean_atmosphere_run_state(const RunConfig& run_config) {
+    return cubey::atmosphere_environment_run_state_from_config(
+        run_config.atmosphere,
+        {
+            .sun_elevation_degrees = kOceanSunElevationDegrees,
+            .sun_azimuth_degrees = kOceanSunAzimuthDegrees,
+            .ground_mode = cubey::render::AtmosphereEnvironmentGroundMode::SkyOnly,
+            .reference_geometry_enabled = false,
+        });
 }
 
 [[nodiscard]] float jonswap_alpha(float wind_speed, float fetch_length_m) {
@@ -214,6 +218,9 @@ class OceanApp {
   public:
     explicit OceanApp(RunConfig config)
         : config_(std::move(config)), ocean_config_(ocean_config_from_run_config(config_)),
+          atmosphere_state_(ocean_atmosphere_run_state(config_)),
+          atmosphere_lighting_(
+              cubey::render::atmosphere_environment_lighting(atmosphere_state_.environment)),
           render_view_(ocean_config_.render_view) {
         diagnostics_.selected_cascade = config_.ocean.cascade;
         diagnostics_.wire_overlay = config_.ocean.wire_overlay;
@@ -318,6 +325,7 @@ class OceanApp {
             time_seconds_ = frame.timing.elapsed_seconds;
             last_delta_seconds_ =
                 frame.timing.delta_seconds > 0.0 ? frame.timing.delta_seconds : (1.0 / 60.0);
+            update_atmosphere_time(frame.timing.delta_seconds);
             record_ocean_target(command_buffer, context.device(), target, frame.frame_slot,
                                     OceanRenderTargetMode::ColorAttachment);
         };
@@ -356,7 +364,19 @@ class OceanApp {
             step_requested_ = false;
         }
         last_delta_seconds_ = timing.delta_seconds > 0.0 ? timing.delta_seconds : (1.0 / 60.0);
+        update_atmosphere_time(timing.delta_seconds);
         sync_gpu_resources(context);
+    }
+
+    void refresh_atmosphere_lighting() {
+        atmosphere_lighting_ =
+            cubey::render::atmosphere_environment_lighting(atmosphere_state_.environment);
+    }
+
+    void update_atmosphere_time(double delta_seconds) {
+        if (cubey::atmosphere_environment_advance_time(atmosphere_state_, delta_seconds)) {
+            refresh_atmosphere_lighting();
+        }
     }
 
     std::optional<FrameStatsSample> record_frame_stats(VkExtent2D extent,
@@ -468,7 +488,7 @@ class OceanApp {
         const cubey::Transform3D transform = camera_transform();
         const float aspect = static_cast<float>(extent.width) / static_cast<float>(extent.height);
         const cubey::math::Mat4 view_projection = camera_.view_projection_matrix(transform, aspect);
-        const cubey::math::Vec4 sun_direction = ocean_sun_direction_uniform();
+        const cubey::math::Vec4 sun_direction = atmosphere_sun_direction_uniform();
 
         return {
             .view_projection = view_projection,
@@ -559,7 +579,7 @@ class OceanApp {
         const float aspect = static_cast<float>(extent.width) / static_cast<float>(extent.height);
         const cubey::render::ViewRayBasis3D view_rays =
             cubey::render::view_ray_basis_3d(transform.rotation, aspect, camera_.fovy_radians());
-        const cubey::math::Vec4 sun_direction = ocean_sun_direction_uniform();
+        const cubey::math::Vec4 sun_direction = atmosphere_sun_direction_uniform();
 
         return {
             .camera_time =
@@ -613,6 +633,11 @@ class OceanApp {
                     domain.active ? domain.high_k : 0.0F,
                 },
         };
+    }
+
+    [[nodiscard]] cubey::math::Vec4 atmosphere_sun_direction_uniform() const {
+        const cubey::math::Vec3& sun = atmosphere_lighting_.sun_direction;
+        return {sun.x, sun.y, sun.z, 0.0F};
     }
 
     [[nodiscard]] OceanModulatePushConstants
@@ -937,6 +962,8 @@ class OceanApp {
 
     RunConfig config_;
     OceanConfig ocean_config_;
+    cubey::AtmosphereEnvironmentRunState atmosphere_state_;
+    cubey::render::AtmosphereEnvironmentLighting atmosphere_lighting_;
     OceanDiagnosticsConfig diagnostics_;
     OceanRenderView render_view_ = OceanRenderView::Final;
     OceanCameraPreset camera_preset_ = OceanCameraPreset::Default;

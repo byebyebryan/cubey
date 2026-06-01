@@ -581,6 +581,12 @@ int main() {
                          "surface descriptors should expose normal maps for every cascade");
         require_contains(gpu_resources_source, "cascade + kOceanCascadeCount * 2U",
                          "surface descriptors should expose foam maps for every cascade");
+        require_contains(app_source, "atmosphere_environment_run_state_from_config",
+                         "ocean app should resolve atmosphere run options through the shared helper");
+        require_contains(app_source, "atmosphere_environment_advance_time",
+                         "ocean app should advance dynamic atmosphere time through the shared helper");
+        require_contains(app_source, "kOceanSunElevationDegrees",
+                         "ocean app should keep the current default sun elevation as its atmosphere fallback");
         require_contains(app_source, "atmosphere_environment_lighting",
                          "ocean app should derive sun direction from the shared lighting helper");
         require_contains(vertex_shader, "vec4 sun_direction",
