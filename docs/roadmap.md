@@ -119,7 +119,9 @@ Current checkpoint:
   bool/int/unsigned-int/float/vector/enum/color controls. Active ocean,
   atmosphere, terrain, smoke, water, fire, and explosion panels use those
   helpers for standard controls while keeping project commands, diagnostics,
-  reset behavior, and custom selectors project-owned.
+  reset behavior, and custom selectors project-owned. Startup panel disclosure
+  is curated so diagnostics, source details, solver tuning, and deep render
+  controls stay collapsed until needed.
 - Reusable `cubey::math` wraps GLM matrix/vector/quaternion types and the
   current Vulkan transform/projection conventions used by the shared
   transform/camera helpers and cube examples.

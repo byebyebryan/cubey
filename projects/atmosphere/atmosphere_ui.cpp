@@ -116,7 +116,8 @@ void draw_atmosphere_ui(AtmosphereUiContext ui) {
     }
 
     if (const cubey::host::ScopedImGuiGroup group{
-            "Sun", {.help = "Manual sun disk and light direction controls."}};
+            "Sun",
+            {.default_open = false, .help = "Manual sun disk and light direction controls."}};
         group) {
         const cubey::host::ScopedImGuiId section_id("Sun");
         if (ui.config.time_of_day.mode == SunControlMode::SolarClock) {
@@ -135,7 +136,9 @@ void draw_atmosphere_ui(AtmosphereUiContext ui) {
     }
 
     if (const cubey::host::ScopedImGuiGroup group{
-            "Medium", {.help = "Atmospheric scattering density and ground response."}};
+            "Medium",
+            {.default_open = false,
+             .help = "Atmospheric scattering density and ground response."}};
         group) {
         const cubey::host::ScopedImGuiId section_id("Medium");
         cubey::host::imgui_slider_float("Camera altitude", &ui.config.camera_altitude_km, 0.0F,
@@ -153,7 +156,9 @@ void draw_atmosphere_ui(AtmosphereUiContext ui) {
     }
 
     if (const cubey::host::ScopedImGuiGroup group{
-            "Reference", {.help = "Optional ground grid used to judge scale and horizon color."}};
+            "Reference",
+            {.default_open = false,
+             .help = "Optional ground grid used to judge scale and horizon color."}};
         group) {
         const cubey::host::ScopedImGuiId section_id("Reference");
         cubey::host::imgui_checkbox("Ground reference", &ui.config.reference_geometry_enabled,
@@ -166,7 +171,8 @@ void draw_atmosphere_ui(AtmosphereUiContext ui) {
 
     if (const cubey::host::ScopedImGuiGroup group{
             "Night sky",
-            {.help = "Twilight, stars, Milky Way, and night-sky visibility controls."}};
+            {.default_open = false,
+             .help = "Twilight, stars, Milky Way, and night-sky visibility controls."}};
         group) {
         const cubey::host::ScopedImGuiId section_id("Night sky");
         cubey::host::imgui_enum_combo(
@@ -199,7 +205,9 @@ void draw_atmosphere_ui(AtmosphereUiContext ui) {
     }
 
     if (const cubey::host::ScopedImGuiGroup group{
-            "Moon", {.help = "Moon disk and moonlight contribution controls."}};
+            "Moon",
+            {.default_open = false,
+             .help = "Moon disk and moonlight contribution controls."}};
         group) {
         const cubey::host::ScopedImGuiId section_id("Moon");
         cubey::host::imgui_checkbox("Moon", &ui.config.moon.enabled,
@@ -216,7 +224,9 @@ void draw_atmosphere_ui(AtmosphereUiContext ui) {
     }
 
     if (const cubey::host::ScopedImGuiGroup group{
-            "Display", {.help = "Exposure controls for mapping HDR sky lighting to display."}};
+            "Display",
+            {.default_open = false,
+             .help = "Exposure controls for mapping HDR sky lighting to display."}};
         group) {
         const cubey::host::ScopedImGuiId section_id("Display");
         cubey::host::imgui_checkbox("Auto exposure", &ui.config.time_of_day.auto_exposure_enabled,
@@ -233,7 +243,9 @@ void draw_atmosphere_ui(AtmosphereUiContext ui) {
     }
 
     if (const cubey::host::ScopedImGuiGroup group{
-            "Diagnostics", {.help = "Read-only atmosphere runtime and frame statistics."}};
+            "Diagnostics",
+            {.default_open = false,
+             .help = "Read-only atmosphere runtime and frame statistics."}};
         group) {
         const cubey::host::ScopedImGuiId section_id("Diagnostics");
         cubey::host::draw_frame_stats(ui.latest_frame_stats, ui.latest_fps, ui.latest_frame_ms);

@@ -244,7 +244,8 @@ class Pyro3DApp {
 
         if (const cubey::host::ScopedImGuiGroup group{
                 "Simulation",
-                {.help = "Pressure projection, decay, buoyancy, and vorticity controls."}};
+                {.default_open = false,
+                 .help = "Pressure projection, decay, buoyancy, and vorticity controls."}};
             group) {
             const cubey::host::ScopedImGuiId section_id("Simulation");
             cubey::host::imgui_slider_uint32("Pressure iterations",
@@ -289,7 +290,8 @@ class Pyro3DApp {
             pyro_config_.mode == Pyro3DMode::Fire ? "Fire model" : "Explosion model";
         if (const cubey::host::ScopedImGuiGroup group{
                 model_section,
-                {.help = "Mode-specific flame, combustion, and explosion shaping controls."}};
+                {.default_open = false,
+                 .help = "Mode-specific flame, combustion, and explosion shaping controls."}};
             group) {
             const cubey::host::ScopedImGuiId section_id(model_section);
             if (pyro_config_.mode == Pyro3DMode::Explosion) {
@@ -339,7 +341,9 @@ class Pyro3DApp {
         }
 
         if (const cubey::host::ScopedImGuiGroup group{
-                "Rendering", {.help = "Raymarch, exposure, flame, smoke, and backdrop controls."}};
+                "Rendering",
+                {.default_open = false,
+                 .help = "Raymarch, exposure, flame, smoke, and backdrop controls."}};
             group) {
             const cubey::host::ScopedImGuiId section_id("Rendering");
             cubey::host::imgui_slider_uint32("Raymarch steps", &pyro_config_.raymarch_steps, 24U,
@@ -391,7 +395,9 @@ class Pyro3DApp {
         }
 
         if (const cubey::host::ScopedImGuiGroup group{
-                "Diagnostics", {.help = "Read-only grid and GPU timing statistics."}};
+                "Diagnostics",
+                {.default_open = false,
+                 .help = "Read-only grid and GPU timing statistics."}};
             group) {
             const cubey::host::ScopedImGuiId section_id("Diagnostics");
             ImGui::Text("Grid: %u x %u x %u", pyro_config_.grid_width, pyro_config_.grid_height,

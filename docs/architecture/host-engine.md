@@ -274,7 +274,9 @@ setup before swapchain setup, and callback forwarding.
   controls. Active ocean, atmosphere, terrain, smoke, water, fire, and
   explosion panels use those helpers for standard controls while keeping
   commands, diagnostics, reset behavior, and genuinely custom selectors
-  project-owned.
+  project-owned. Project panels curate startup disclosure state: only primary
+  controls start expanded, while diagnostics, source details, solver tuning,
+  and deep render controls start collapsed.
 - A generic project host is still deferred; the current contract is limited to
   shared service ownership, GPU bridge attachment, and frame bridging.
 

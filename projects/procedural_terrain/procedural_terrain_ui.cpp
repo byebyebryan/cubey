@@ -153,7 +153,9 @@ void draw_terrain_ui(TerrainUiContext ui) {
     }
 
     if (const cubey::host::ScopedImGuiGroup group{
-            "Diagnostics", {.help = "Read-only terrain rebuild, LOD, and field statistics."}};
+            "Diagnostics",
+            {.default_open = false,
+             .help = "Read-only terrain rebuild, LOD, and field statistics."}};
         group) {
         const cubey::host::ScopedImGuiId section_id("Diagnostics");
         cubey::host::draw_frame_stats(ui.latest_frame_stats, ui.latest_fps, ui.latest_frame_ms);

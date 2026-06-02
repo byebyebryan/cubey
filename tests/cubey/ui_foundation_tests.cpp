@@ -28,6 +28,33 @@ std::size_t count_occurrences(std::string_view text, std::string_view needle) {
     return count;
 }
 
+std::string remove_ascii_whitespace(std::string_view text) {
+    std::string compact;
+    compact.reserve(text.size());
+    for (const char ch : text) {
+        switch (ch) {
+        case ' ':
+        case '\n':
+        case '\r':
+        case '\t':
+            continue;
+        default:
+            compact.push_back(ch);
+            break;
+        }
+    }
+    return compact;
+}
+
+void require_section_default_collapsed(const char* relative_path, const char* label,
+                                       const char* message) {
+    const std::string source = cubey::tests::read_source_file(source_root() / relative_path);
+    const std::string compact = remove_ascii_whitespace(source);
+    const std::string needle =
+        remove_ascii_whitespace(std::string{"\""} + label + "\",{.default_open=false");
+    cubey::tests::require_contains(compact, needle, message);
+}
+
 } // namespace
 
 void test_active_project_ui_uses_shared_common_controls() {
@@ -95,4 +122,47 @@ void test_imgui_helper_layer_covers_active_common_controls() {
                                    "shared UI helpers should cover integer inputs");
     cubey::tests::require_contains(helper, "imgui_uint32_combo",
                                    "shared UI helpers should cover simple uint preset combos");
+}
+
+void test_active_project_ui_starts_low_noise_sections_collapsed() {
+    require_section_default_collapsed("projects/atmosphere/atmosphere_ui.cpp", "Sun",
+                                      "atmosphere manual sun controls should start collapsed");
+    require_section_default_collapsed("projects/atmosphere/atmosphere_ui.cpp", "Medium",
+                                      "atmosphere medium controls should start collapsed");
+    require_section_default_collapsed("projects/atmosphere/atmosphere_ui.cpp", "Night sky",
+                                      "atmosphere night controls should start collapsed");
+    require_section_default_collapsed("projects/atmosphere/atmosphere_ui.cpp", "Diagnostics",
+                                      "atmosphere diagnostics should start collapsed");
+
+    require_section_default_collapsed("projects/procedural_terrain/procedural_terrain_ui.cpp",
+                                      "Diagnostics", "terrain diagnostics should start collapsed");
+
+    require_section_default_collapsed("projects/fluid/sim/smoke_2d/smoke_2d_ui.cpp", "Injectors",
+                                      "smoke injector tuning should start collapsed");
+    require_section_default_collapsed("projects/fluid/sim/smoke_2d/smoke_2d_ui.cpp", "Diagnostics",
+                                      "smoke diagnostics should start collapsed");
+
+    require_section_default_collapsed("projects/fluid/sim/water_2d/water_2d_ui.cpp",
+                                      "Sources and forces",
+                                      "water 2D source controls should start collapsed");
+    require_section_default_collapsed("projects/fluid/sim/water_2d/water_2d_ui.cpp", "Diagnostics",
+                                      "water 2D diagnostics should start collapsed");
+
+    require_section_default_collapsed("projects/fluid/sim/water_3d/water_3d_ui.cpp",
+                                      "Sources and forces",
+                                      "water 3D source controls should start collapsed");
+    require_section_default_collapsed("projects/fluid/sim/water_3d/water_3d_ui.cpp", "Diagnostics",
+                                      "water 3D diagnostics should start collapsed");
+
+    require_section_default_collapsed("projects/fluid/sim/pyro_3d/pyro_3d_app.cpp", "Simulation",
+                                      "pyro solver controls should start collapsed");
+    require_section_default_collapsed("projects/fluid/sim/pyro_3d/pyro_3d_app.cpp", "Rendering",
+                                      "pyro render tuning should start collapsed");
+    require_section_default_collapsed("projects/fluid/sim/pyro_3d/pyro_3d_app.cpp", "Diagnostics",
+                                      "pyro diagnostics should start collapsed");
+
+    const std::string pyro = remove_ascii_whitespace(cubey::tests::read_source_file(
+        source_root() / "projects/fluid/sim/pyro_3d/pyro_3d_app.cpp"));
+    cubey::tests::require_contains(pyro, "model_section,{.default_open=false",
+                                   "pyro mode-specific model controls should start collapsed");
 }

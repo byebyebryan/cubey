@@ -72,7 +72,9 @@ void draw_smoke_2d_ui(Smoke2DUiContext ui) {
     }
 
     if (const cubey::host::ScopedImGuiGroup group{
-            "Injectors", {.help = "Procedural smoke source placement and force controls."}};
+            "Injectors",
+            {.default_open = false,
+             .help = "Procedural smoke source placement and force controls."}};
         group) {
         const cubey::host::ScopedImGuiId section_id("Injectors");
         if (cubey::host::imgui_slider_uint32("Injector count",
@@ -111,7 +113,9 @@ void draw_smoke_2d_ui(Smoke2DUiContext ui) {
     }
 
     if (const cubey::host::ScopedImGuiGroup group{
-            "Diagnostics", {.help = "Read-only smoke grid and GPU timing statistics."}};
+            "Diagnostics",
+            {.default_open = false,
+             .help = "Read-only smoke grid and GPU timing statistics."}};
         group) {
         const cubey::host::ScopedImGuiId section_id("Diagnostics");
         ImGui::Text("Grid: %u x %u", ui.config.grid_width, ui.config.grid_height);

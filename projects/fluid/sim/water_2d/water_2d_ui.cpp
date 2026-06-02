@@ -122,11 +122,13 @@ void draw_water_2d_ui(Water2DUiContext ui) {
 
     if (const cubey::host::ScopedImGuiGroup group{
             "Sources and forces",
-            {.help = "Particle emitters, drains, and wave forcing controls."}};
+            {.default_open = false,
+             .help = "Particle emitters, drains, and wave forcing controls."}};
         group) {
         const cubey::host::ScopedImGuiId section_id("Sources and forces");
         if (const cubey::host::ScopedImGuiGroup hose_group{
-                "Hose", {.level = 1U, .help = "Continuous particle emitter."}};
+                "Hose",
+                {.default_open = false, .level = 1U, .help = "Continuous particle emitter."}};
             hose_group) {
             const cubey::host::ScopedImGuiId hose_id("hose");
             cubey::host::imgui_checkbox("Enabled", &ui.config.hose.enabled);
@@ -144,7 +146,10 @@ void draw_water_2d_ui(Water2DUiContext ui) {
         }
 
         if (const cubey::host::ScopedImGuiGroup drain_group{
-                "Drain", {.level = 1U, .help = "Particle removal and pull-force region."}};
+                "Drain",
+                {.default_open = false,
+                 .level = 1U,
+                 .help = "Particle removal and pull-force region."}};
             drain_group) {
             const cubey::host::ScopedImGuiId drain_id("drain");
             cubey::host::imgui_checkbox("Enabled", &ui.config.drain.enabled);
@@ -159,7 +164,10 @@ void draw_water_2d_ui(Water2DUiContext ui) {
         }
 
         if (const cubey::host::ScopedImGuiGroup wave_group{
-                "Wave", {.level = 1U, .help = "Moving force region for surface motion."}};
+                "Wave",
+                {.default_open = false,
+                 .level = 1U,
+                 .help = "Moving force region for surface motion."}};
             wave_group) {
             const cubey::host::ScopedImGuiId wave_id("wave");
             cubey::host::imgui_checkbox("Enabled", &ui.config.wave.enabled);
@@ -235,7 +243,9 @@ void draw_water_2d_ui(Water2DUiContext ui) {
     }
 
     if (const cubey::host::ScopedImGuiGroup group{
-            "Diagnostics", {.help = "Read-only particle, frame, and GPU-memory statistics."}};
+            "Diagnostics",
+            {.default_open = false,
+             .help = "Read-only particle, frame, and GPU-memory statistics."}};
         group) {
         const cubey::host::ScopedImGuiId section_id("Diagnostics");
         ImGui::Text("Grid: %u x %u", ui.config.grid_width, ui.config.grid_height);
