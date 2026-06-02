@@ -3,20 +3,16 @@
 
 #include "cubey/color_space.glsl"
 
-layout(set = 0, binding = 5) uniform sampler2D normal_cascade0_texture;
-layout(set = 0, binding = 6) uniform sampler2D normal_cascade1_texture;
-layout(set = 0, binding = 7) uniform sampler2D normal_cascade2_texture;
-layout(set = 0, binding = 8) uniform sampler2D normal_cascade3_texture;
-layout(set = 0, binding = 9) uniform sampler2D normal_cascade4_texture;
-layout(set = 0, binding = 10) uniform sampler2D foam_cascade0_texture;
-layout(set = 0, binding = 11) uniform sampler2D foam_cascade1_texture;
-layout(set = 0, binding = 12) uniform sampler2D foam_cascade2_texture;
-layout(set = 0, binding = 13) uniform sampler2D foam_cascade3_texture;
-layout(set = 0, binding = 14) uniform sampler2D foam_cascade4_texture;
-layout(set = 0, binding = 15) uniform samplerCube atmosphere_reflection_texture;
-layout(set = 0, binding = 16) uniform samplerCube atmosphere_sky_radiance_texture;
-layout(set = 0, binding = 17) uniform sampler2D terrain_ocean_fields_texture;
-layout(set = 0, binding = 18) uniform TerrainOceanFieldParams {
+layout(set = 0, binding = 3) uniform sampler2D normal_cascade0_texture;
+layout(set = 0, binding = 4) uniform sampler2D normal_cascade1_texture;
+layout(set = 0, binding = 5) uniform sampler2D normal_cascade2_texture;
+layout(set = 0, binding = 6) uniform sampler2D foam_cascade0_texture;
+layout(set = 0, binding = 7) uniform sampler2D foam_cascade1_texture;
+layout(set = 0, binding = 8) uniform sampler2D foam_cascade2_texture;
+layout(set = 0, binding = 9) uniform samplerCube atmosphere_reflection_texture;
+layout(set = 0, binding = 10) uniform samplerCube atmosphere_sky_radiance_texture;
+layout(set = 0, binding = 11) uniform sampler2D terrain_ocean_fields_texture;
+layout(set = 0, binding = 12) uniform TerrainOceanFieldParams {
     vec4 uv_transform;
     vec4 ranges_flags;
 } terrain_ocean;
@@ -32,7 +28,6 @@ layout(push_constant) uniform OceanParams {
     vec4 tile_lengths;
     vec4 displacement_scales;
     vec4 normal_scales;
-    vec4 cascade4_options;
     vec4 water_color;
     vec4 foam_color;
 } ocean;
@@ -217,7 +212,7 @@ vec2 detail_anti_repeat_weights(uint cascade, vec2 position, float factor) {
 }
 
 float foam_breakup_weight(uint cascade, vec2 position, float factor) {
-    if (cascade != 4u || factor <= 0.0) {
+    if (cascade != 2u || factor <= 0.0) {
         return 1.0;
     }
     float seed = float(cascade) * 31.19;
@@ -234,13 +229,7 @@ float cascade_tile_length(uint cascade) {
     if (cascade == 1u) {
         return ocean.tile_lengths.y;
     }
-    if (cascade == 2u) {
-        return ocean.tile_lengths.z;
-    }
-    if (cascade == 3u) {
-        return ocean.tile_lengths.w;
-    }
-    return ocean.cascade4_options.x;
+    return ocean.tile_lengths.z;
 }
 
 float cascade_normal_scale(uint cascade) {
@@ -250,13 +239,7 @@ float cascade_normal_scale(uint cascade) {
     if (cascade == 1u) {
         return ocean.normal_scales.y;
     }
-    if (cascade == 2u) {
-        return ocean.normal_scales.z;
-    }
-    if (cascade == 3u) {
-        return ocean.normal_scales.w;
-    }
-    return ocean.cascade4_options.z;
+    return ocean.normal_scales.z;
 }
 
 vec4 texture_bicubic(in sampler2D source_texture, in vec2 uv) {
@@ -294,16 +277,8 @@ vec4 sample_normal(uint cascade, vec2 uv, float pixels_per_meter) {
         return mix(texture_bicubic(normal_cascade1_texture, uv),
                    texture(normal_cascade1_texture, uv), min(1.0, pixels_per_meter * 0.1));
     }
-    if (cascade == 2u) {
-        return mix(texture_bicubic(normal_cascade2_texture, uv),
-                   texture(normal_cascade2_texture, uv), min(1.0, pixels_per_meter * 0.1));
-    }
-    if (cascade == 3u) {
-        return mix(texture_bicubic(normal_cascade3_texture, uv),
-                   texture(normal_cascade3_texture, uv), min(1.0, pixels_per_meter * 0.1));
-    }
-    return mix(texture_bicubic(normal_cascade4_texture, uv),
-               texture(normal_cascade4_texture, uv), min(1.0, pixels_per_meter * 0.1));
+    return mix(texture_bicubic(normal_cascade2_texture, uv),
+               texture(normal_cascade2_texture, uv), min(1.0, pixels_per_meter * 0.1));
 }
 
 vec4 sample_foam(uint cascade, vec2 uv, float pixels_per_meter) {
@@ -315,15 +290,7 @@ vec4 sample_foam(uint cascade, vec2 uv, float pixels_per_meter) {
         return mix(texture_bicubic(foam_cascade1_texture, uv), texture(foam_cascade1_texture, uv),
                    min(1.0, pixels_per_meter * 0.1));
     }
-    if (cascade == 2u) {
-        return mix(texture_bicubic(foam_cascade2_texture, uv), texture(foam_cascade2_texture, uv),
-                   min(1.0, pixels_per_meter * 0.1));
-    }
-    if (cascade == 3u) {
-        return mix(texture_bicubic(foam_cascade3_texture, uv), texture(foam_cascade3_texture, uv),
-                   min(1.0, pixels_per_meter * 0.1));
-    }
-    return mix(texture_bicubic(foam_cascade4_texture, uv), texture(foam_cascade4_texture, uv),
+    return mix(texture_bicubic(foam_cascade2_texture, uv), texture(foam_cascade2_texture, uv),
                min(1.0, pixels_per_meter * 0.1));
 }
 
@@ -342,12 +309,6 @@ float cascade_surface_lod_weight(uint cascade, float dist) {
     }
     if (cascade == 1u) {
         return 1.0 - smoothstep(2600.0, 5600.0, dist);
-    }
-    if (cascade == 2u) {
-        return 1.0 - smoothstep(1100.0, 3600.0, dist);
-    }
-    if (cascade == 3u) {
-        return 1.0 - smoothstep(650.0, 2200.0, dist);
     }
     return 1.0 - smoothstep(260.0, 1200.0, dist);
 }
@@ -396,11 +357,11 @@ OceanFoamData ocean_foam_data(float dist) {
     data.crest = vec2(0.0);
     data.detail = vec2(0.0);
 
-    float map_size = ocean.cascade4_options.w;
+    float map_size = ocean.tile_lengths.w;
     float anti_repeat_factor =
         clamp(ocean.inspection_options.y, 0.0, 1.0) *
         smoothstep(OCEAN_FAR_ANTI_REPEAT_START, OCEAN_FAR_ANTI_REPEAT_END, dist);
-    for (uint cascade = 0u; cascade < 5u; ++cascade) {
+    for (uint cascade = 0u; cascade < 3u; ++cascade) {
         if (!ocean_cascade_enabled(cascade)) {
             continue;
         }
@@ -415,8 +376,6 @@ OceanFoamData ocean_foam_data(float dist) {
         data.gradient += normal_foam.xy * normal_scale * lod_weight;
         data.total += weighted_foam;
         if (cascade < 2u) {
-            data.macro += weighted_foam;
-        } else if (cascade < 4u) {
             data.crest += weighted_foam;
         } else {
             data.detail += weighted_foam;

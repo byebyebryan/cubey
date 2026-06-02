@@ -25,14 +25,10 @@ struct OceanLodStats {
 [[nodiscard]] const char* cascade_role_name(std::uint32_t index) {
     switch (index) {
     case 0:
-        return "Macro swell";
-    case 1:
-        return "Macro chop";
-    case 2:
         return "Primary crest";
-    case 3:
+    case 1:
         return "Secondary wave";
-    case 4:
+    case 2:
         return "Detail normals";
     }
     return "Cascade";
@@ -112,15 +108,12 @@ void draw_cascade_controls(OceanCascadeConfig& cascade, std::uint32_t index) {
     }
 
     const cubey::host::ScopedImGuiId section_id(label);
-    const bool macro_layer = index < kOceanMacroCascadeCount;
-    cubey::host::imgui_slider_float("Tile length", &cascade.tile_length, 8.0F,
-                                    macro_layer ? 2400.0F : 256.0F, "%.0f m",
+    cubey::host::imgui_slider_float("Tile length", &cascade.tile_length, 8.0F, 256.0F, "%.0f m",
                                     "World-space repeat length for this cascade.");
-    cubey::host::imgui_slider_float("Displacement scale", &cascade.displacement_scale, 0.0F,
-                                    macro_layer ? 1.50F : 2.0F, "%.2f",
+    cubey::host::imgui_slider_float("Displacement scale", &cascade.displacement_scale, 0.0F, 2.0F,
+                                    "%.2f",
                                     "Vertical and horizontal displacement contribution.");
-    cubey::host::imgui_slider_float("Normal scale", &cascade.normal_scale, 0.0F,
-                                    macro_layer ? 0.50F : 2.0F, "%.2f",
+    cubey::host::imgui_slider_float("Normal scale", &cascade.normal_scale, 0.0F, 2.0F, "%.2f",
                                     "Surface-normal contribution from this cascade.");
     cubey::host::imgui_slider_float("Wind speed", &cascade.wind_speed, 0.1F, 32.0F, "%.1f m/s",
                                     "Wind speed used by the spectral wave model.");
@@ -300,7 +293,7 @@ void draw_ocean_ui(OceanUiContext ui) {
     if (const cubey::host::ScopedImGuiGroup group{
             "Cascades",
             {.default_open = false,
-             .help = "Wave cascades ordered from macro swell to fine surface detail."}};
+             .help = "Wave cascades ordered from primary crest to fine surface detail."}};
         group) {
         const cubey::host::ScopedImGuiId section_id("Cascades");
         for (std::uint32_t index = 0; index < kOceanCascadeCount; ++index) {

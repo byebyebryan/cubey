@@ -82,7 +82,6 @@ struct OceanPushConstants {
     cubey::math::Vec4 tile_lengths;
     cubey::math::Vec4 displacement_scales;
     cubey::math::Vec4 normal_scales;
-    cubey::math::Vec4 cascade4_options;
     cubey::math::Vec4 water_color;
     cubey::math::Vec4 foam_color;
 };
@@ -114,7 +113,7 @@ struct OceanUnpackPushConstants {
     cubey::math::Vec4 cascade_options;
 };
 
-static_assert(sizeof(OceanPushConstants) == sizeof(float) * 64U);
+static_assert(sizeof(OceanPushConstants) == sizeof(float) * 60U);
 static_assert(sizeof(OceanSpectrumPushConstants) == sizeof(float) * 16U);
 static_assert(sizeof(OceanTerrainFieldUniforms) == sizeof(float) * 8U);
 static_assert(sizeof(OceanModulatePushConstants) == sizeof(float) * 8U);
@@ -788,28 +787,21 @@ class OceanApp {
                     ocean_config_.cascades[0].tile_length,
                     ocean_config_.cascades[1].tile_length,
                     ocean_config_.cascades[2].tile_length,
-                    ocean_config_.cascades[3].tile_length,
+                    static_cast<float>(ocean_config_.map_size),
                 },
             .displacement_scales =
                 {
                     ocean_config_.cascades[0].displacement_scale,
                     ocean_config_.cascades[1].displacement_scale,
                     ocean_config_.cascades[2].displacement_scale,
-                    ocean_config_.cascades[3].displacement_scale,
+                    0.0F,
                 },
             .normal_scales =
                 {
                     ocean_config_.cascades[0].normal_scale,
                     ocean_config_.cascades[1].normal_scale,
                     ocean_config_.cascades[2].normal_scale,
-                    ocean_config_.cascades[3].normal_scale,
-                },
-            .cascade4_options =
-                {
-                    ocean_config_.cascades[4].tile_length,
-                    ocean_config_.cascades[4].displacement_scale,
-                    ocean_config_.cascades[4].normal_scale,
-                    static_cast<float>(ocean_config_.map_size),
+                    0.0F,
                 },
             .water_color =
                 {

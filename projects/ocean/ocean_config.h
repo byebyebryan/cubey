@@ -47,10 +47,7 @@ inline constexpr std::array<OceanRenderView, 21> kOceanRenderViews{
 
 inline constexpr std::array<std::uint32_t, 4> kOceanSupportedMapSizes{128U, 256U, 512U, 1024U};
 inline constexpr std::uint32_t kOceanDefaultMapSize = 1024U;
-inline constexpr std::uint32_t kOceanMacroCascadeCount = 2U;
-inline constexpr std::uint32_t kOceanReferenceCascadeCount = 3U;
-inline constexpr std::uint32_t kOceanCascadeCount =
-    kOceanMacroCascadeCount + kOceanReferenceCascadeCount;
+inline constexpr std::uint32_t kOceanCascadeCount = 3U;
 inline constexpr std::uint32_t kOceanSpectrumFieldCount = 4U;
 inline constexpr std::uint32_t kOceanMinMeshCells = 32U;
 inline constexpr std::uint32_t kOceanMaxMeshCells = 512U;
@@ -58,7 +55,7 @@ inline constexpr std::uint32_t kOceanMinMeshLodLevels = 1U;
 inline constexpr std::uint32_t kOceanMaxMeshLodLevels = 6U;
 inline constexpr float kOceanPi = 3.14159265358979323846F;
 inline constexpr std::array<float, kOceanCascadeCount> kOceanCascadeMinWavesPerDomainByCascade{
-    3.0F, 2.0F, 0.0F, 0.0F, 3.0F,
+    0.0F, 0.0F, 3.0F,
 };
 inline constexpr float kOceanCascadeSmallestWaveMultiplier = 4.0F;
 
@@ -104,38 +101,6 @@ struct OceanConfig {
     bool terrain_fields_enabled = false;
     OceanRenderView render_view = OceanRenderView::Final;
     std::array<OceanCascadeConfig, kOceanCascadeCount> cascades{
-        OceanCascadeConfig{
-            .tile_length = 1531.0F,
-            .displacement_scale = 0.0F,
-            .normal_scale = 0.0F,
-            .wind_speed = 32.0F,
-            .wind_direction_degrees = 17.0F,
-            .fetch_length_km = 1200.0F,
-            .swell = 1.15F,
-            .spread = 0.38F,
-            .detail = 0.38F,
-            .whitecap = 0.12F,
-            .foam_amount = 0.0F,
-            .seed_x = -5441,
-            .seed_y = 2203,
-            .time_offset = 131.5F,
-        },
-        OceanCascadeConfig{
-            .tile_length = 421.0F,
-            .displacement_scale = 0.0F,
-            .normal_scale = 0.0F,
-            .wind_speed = 30.0F,
-            .wind_direction_degrees = 19.0F,
-            .fetch_length_km = 1100.0F,
-            .swell = 1.10F,
-            .spread = 0.28F,
-            .detail = 0.70F,
-            .whitecap = 0.28F,
-            .foam_amount = 0.0F,
-            .seed_x = 9311,
-            .seed_y = -1733,
-            .time_offset = 117.0F,
-        },
         OceanCascadeConfig{
             .tile_length = 88.0F,
             .displacement_scale = 1.0F,

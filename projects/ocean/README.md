@@ -46,7 +46,7 @@ The GUI panel also includes cascade isolation, camera presets including a wide
 repeat-inspection camera, a paused single-frame step button, a portable wire
 overlay, and an LOD breakdown table for checking clipmap coverage, patch counts,
 and triangle load while tuning the mesh. Headless captures can use
-`--ocean-cascade all|0|1|2|3|4`,
+`--ocean-cascade all|0|1|2`,
 `--ocean-wire-overlay`, `--ocean-wire-opacity 0.0..1.0`,
 `--ocean-spectral-domains`, `--no-ocean-spectral-domains`,
 `--ocean-terrain-fields`, and `--no-ocean-terrain-fields`.
@@ -60,13 +60,11 @@ texture is bound for terrain depth/shore/slope debug views; enabling
 `--ocean-terrain-fields` only proves a small shoreline foam hook and is not yet
 full bathymetry, seafloor visibility, or surf-zone rendering.
 
-Cascades are still allocated as five slots because the current shader and
-descriptor ABI expects that layout, but the defaults now behave as a reference
-baseline: `0` and `1` are dormant preserved macro slots, `2` is the primary
-reference crest, `3` is the secondary reference wave, and `4` is fine
+Cascades now match the three-slot reference layout: `0` is the primary
+reference crest, `1` is the secondary reference wave, and `2` is fine
 normal/foam detail. Spectral source-domain filtering defaults off so the visible
 cascades use the full reference spectrum; turn it on only when inspecting the
-old macro/detail banding path. Foam is stored separately from normal data as
+old detail banding path. Foam is stored separately from normal data as
 persistent history, current Jacobian breaking source, determinant, and
 compression diagnostic channels. Compression is currently a diagnostic signal
 only. This is still not a localized wind or weather simulation.

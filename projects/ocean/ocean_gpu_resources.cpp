@@ -48,7 +48,7 @@ constexpr std::uint32_t kOceanSurfaceTerrainFieldUniformBinding =
     const VkPushConstantRange push_constant_range{
         .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
         .offset = 0,
-        .size = sizeof(float) * 64U,
+        .size = sizeof(float) * 60U,
     };
     return {
         .label = "ocean.surface",
